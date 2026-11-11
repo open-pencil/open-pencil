@@ -123,6 +123,33 @@ describe('scaleSelected', () => {
       expect(current(text.id).derivedTextHeight).toBe(54)
     })
 
+    test('measures the reach at the width auto layout stretches the text to', () => {
+      editor = createEditor()
+      setTextMeasurer((node) => ({
+        width: node.width,
+        height: Math.ceil((node.text.length * node.fontSize) / node.width) * node.fontSize
+      }))
+      const frame = editor.graph.createNode('FRAME', editor.state.currentPageId, {
+        width: 100,
+        height: 200,
+        layoutMode: 'VERTICAL'
+      })
+      const text = editor.graph.createNode('TEXT', frame.id, {
+        width: 100,
+        height: 10,
+        fontSize: 10,
+        text: 'abcdefghijklmnopqrst',
+        textAutoResize: 'NONE',
+        layoutAlignSelf: 'STRETCH',
+        derivedTextHeight: 20
+      })
+      editor.select([text.id])
+
+      editor.scaleSelected(2, { x: 0, y: 0 })
+
+      expect(current(text.id)).toMatchObject({ width: 100, fontSize: 20, derivedTextHeight: 80 })
+    })
+
     test('leaves a text that sizes itself without a reach', () => {
       editor = createEditor()
       measureLinesRoundedToPixels()

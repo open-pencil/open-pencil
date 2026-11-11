@@ -57,10 +57,12 @@ export function scaleLayers(
   const apply = (side: 'before' | 'after') => {
     for (const field of fields) {
       if (ctx.graph.getNode(field.id)) ctx.graph.updateNode(field.id, structuredClone(field[side]))
-      remeasureFixedTextReach(ctx, field.id)
     }
     for (const root of roots) {
       if (ctx.graph.getNode(root.id)) ctx.runLayoutForNode(root.id)
+    }
+    for (const field of fields) {
+      remeasureFixedTextReach(ctx, field.id)
     }
     ctx.requestRender()
   }
