@@ -29,6 +29,7 @@ export async function restoreReloadState(
     editor.graph.getNode(snapshot.pageId)?.type === 'CANVAS'
   ) {
     await editor.switchPage(snapshot.pageId)
+    if (state.currentPageId !== snapshot.pageId) return
   }
   state.panX = snapshot.viewport.panX
   state.panY = snapshot.viewport.panY

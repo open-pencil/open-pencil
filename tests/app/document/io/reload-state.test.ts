@@ -7,6 +7,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { applyImportedDocument } from '@/app/document/io/imported-document'
 import { captureReloadState, restoreReloadState } from '@/app/document/io/reload-state'
+import { createDeferred } from '@/app/runtime/deferred'
 
 let editors: Editor[] = []
 
@@ -50,6 +51,42 @@ test('a reload returns to the page on screen with its layers loaded', async () =
   expect(editor.graph.getNode(frameId)?.parentId).toBe(second.id)
   expect(editor.state.panX).toBe(120)
   expect(editor.state.zoom).toBe(2)
+})
+
+test('a superseded reload keeps the newer page viewport', async () => {
+  const graph = new SceneGraph()
+  const restored = graph.addPage('Restored')
+  const newer = graph.addPage('Newer')
+  graph.createNode('TEXT', restored.id, { text: 'Loading', fontFamily: 'Reload Test' })
+  const loading = createDeferred<undefined>()
+  const fontReady = createDeferred<undefined>()
+  const editor = createEditor({
+    graph,
+    skipInitialGraphSetup: true,
+    loadFont: async () => {
+      loading.resolve(undefined)
+      await fontReady.promise
+      return null
+    }
+  })
+  editors.push(editor)
+  const restoring = restoreReloadState(editor, editor.state, {
+    pageId: restored.id,
+    viewport: { panX: 120, panY: 80, zoom: 2 }
+  })
+  try {
+    await loading.promise
+    await editor.switchPage(newer.id)
+    editor.state.panX = 340
+    editor.state.panY = 210
+    editor.state.zoom = 3
+  } finally {
+    fontReady.resolve(undefined)
+    await restoring
+  }
+
+  expect(editor.state.currentPageId).toBe(newer.id)
+  expect(captureReloadState(editor.state).viewport).toEqual({ panX: 340, panY: 210, zoom: 3 })
 })
 
 test('a reload whose file no longer has the page on screen stays on its first page', async () => {
