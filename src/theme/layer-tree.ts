@@ -1,3 +1,5 @@
+import { focusStyles } from './focus/styles'
+
 const layerTreeTheme = {
   slots: {
     viewport: 'h-full overflow-y-auto px-1',
@@ -8,8 +10,10 @@ const layerTreeTheme = {
     icon: 'size-3 shrink-0',
     label: 'flex min-w-0 flex-1 items-center gap-1.5',
     actions: 'flex shrink-0 items-center gap-0.5',
-    action:
-      'flex size-4 items-center justify-center rounded text-current outline-none hover:bg-white/15 focus-visible:ring-1 focus-visible:ring-panel-focus',
+    action: [
+      'flex size-4 items-center justify-center rounded text-current hover:bg-white/15',
+      focusStyles.ring
+    ],
     actionIcon: 'size-3',
     dropIndicator: 'pointer-events-none absolute bg-accent',
     renameRow: 'group/row relative flex w-full items-center gap-1 pe-1 text-2xs text-surface',
@@ -43,7 +47,8 @@ const layerTreeTheme = {
       false: {}
     },
     expanded: {
-      true: { disclosure: 'rotate-90' },
+      // Mirrored, the chevron points left and turns the other way to point down when open.
+      true: { disclosure: 'rotate-90 rtl:-rotate-90' },
       false: { disclosure: 'rotate-0' }
     },
     actionsVisible: {

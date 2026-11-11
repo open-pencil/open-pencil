@@ -217,3 +217,65 @@ test('a drop shadow shows behind transparent areas until unchecked', async ({ pa
   await page.keyboard.press('ControlOrMeta+z')
   await expect(checkbox).toBeChecked()
 })
+
+test('turn a layer blur progressive and drag where it ends', async ({ page }) => {
+  await page.goto('/?test')
+  const canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+  const id = await page.evaluate(() => {
+    const editor = window.openPencil?.getStore?.()
+    if (!editor) throw new Error('Editor unavailable')
+    editor.state.zoom = 1
+    editor.state.panX = 0
+    editor.state.panY = 0
+    const id = editor.createShape('RECTANGLE', 100, 100, 180, 120)
+    editor.updateNode(id, {
+      effects: [
+        {
+          type: 'LAYER_BLUR',
+          color: { r: 0, g: 0, b: 0, a: 0 },
+          offset: { x: 0, y: 0 },
+          radius: 12,
+          spread: 0,
+          visible: true
+        }
+      ]
+    })
+    editor.select([id])
+    return id
+  })
+  const blur = () =>
+    page.evaluate((id) => window.openPencil?.getStore?.().graph.getNode(id)?.effects[0], id)
+  const section = page.getByRole('region', { name: 'Effects', exact: true })
+  await section.getByRole('button', { name: 'Expand effect settings' }).click()
+  await expect(section.getByText('Blur', { exact: true })).toBeVisible()
+  await section.getByRole('button', { name: 'Progressive', exact: true }).click()
+  // As in Figma, a blur turned progressive runs from none at the top to its radius at the bottom.
+  await expect
+    .poll(async () => (await blur())?.progressive)
+    .toEqual({ startRadius: 0, startOffset: { x: 0.5, y: 0 }, endOffset: { x: 0.5, y: 1 } })
+  await expect(section.getByText('Start', { exact: true })).toBeVisible()
+  await expect(section.getByText('End', { exact: true })).toBeVisible()
+
+  const start = section.getByRole('spinbutton', { name: 'Start', exact: true })
+  await start.focus()
+  await start.fill('4')
+  await start.press('Enter')
+  await expect.poll(async () => (await blur())?.progressive?.startRadius).toBe(4)
+  // While its settings are open, the canvas shows the blur's start and end in place of the selection.
+  await canvas.waitForRender()
+  expect(await canvas.screenshotCanvasRegion(380, 320)).toMatchSnapshot(
+    'progressive-blur-handles.png'
+  )
+
+  // The end's handle sits at the bottom centre; a drag moves it to whole pixels of the layer.
+  await canvas.drag(190, 220, 140.4, 190.4)
+  await expect
+    .poll(async () => (await blur())?.progressive?.endOffset)
+    .toEqual({ x: 40 / 180, y: 0.75 })
+  await canvas.undo()
+  await expect.poll(async () => (await blur())?.progressive?.endOffset).toEqual({ x: 0.5, y: 1 })
+
+  await section.getByRole('button', { name: 'Uniform', exact: true }).click()
+  await expect.poll(async () => (await blur())?.progressive).toBeUndefined()
+})

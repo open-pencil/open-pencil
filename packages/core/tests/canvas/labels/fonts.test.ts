@@ -1,10 +1,10 @@
 import { beforeAll, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { repoPath } from '@open-pencil/test-support/paths'
 
-import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { LabelParagraphCache } from '#core/canvas/labels/paragraph-cache'
 import { resolveLabelFontCoverage } from '#core/canvas/renderer/fonts'
 import { resolveParagraphFontFamilies } from '#core/text/font/families'

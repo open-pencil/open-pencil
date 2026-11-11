@@ -1,9 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor, replaceSelectionColor, selectionColors, selectionColorsShown } from '@open-pencil/core'
+import {
+  createEditor,
+  replaceSelectionColor,
+  selectionColors,
+  selectionColorsShown
+} from '@open-pencil/core'
+import type { Fill } from '@open-pencil/scene-graph'
 import { createSticky, stickySublayers } from '@open-pencil/scene-graph/generated'
 import type { Color } from '@open-pencil/scene-graph/primitives'
-import type { Fill } from '@open-pencil/scene-graph'
 
 const RED = { r: 1, g: 0.3, b: 0.2, a: 1 }
 const BLUE = { r: 0.2, g: 0.4, b: 1, a: 1 }
@@ -106,7 +111,7 @@ describe('selection colors', () => {
     expect(selectionColorsShown(graph, [frame])).toBe(true)
   })
 
-  test("a sticky note lists its body and colour, not its author line, as in Figma", () => {
+  test('a sticky note lists its body and colour, not its author line, as in Figma', () => {
     const editor = createEditor()
     const { graph } = editor
     const note = createSticky(graph, graph.getPages()[0].id, { text: 'Hi' })

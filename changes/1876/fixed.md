@@ -1,1 +1,0 @@
-- Cloud collaboration rooms refuse an edit that would grow the document past 256 MiB, or 32 MiB on Cloudflare, instead of crashing the room; the editor then saves on its own.

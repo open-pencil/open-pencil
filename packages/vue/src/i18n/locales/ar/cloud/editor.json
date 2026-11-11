@@ -249,6 +249,8 @@
   "settingsSignedOut": "تم تسجيل الخروج",
   "settingsWaitingForApproval": "بانتظار موافقة أحد المسؤولين على حسابك",
   "settingsAccessClosed": "رفض أحد المسؤولين وصولك أو أزاله",
+  "settingsAcceptTerms": "اقبل شروط هذا الخادم لمواصلة استخدامه",
+  "settingsReviewTerms": "مراجعة الشروط",
   "settingsOptionsFor": "خيارات {host}",
   "settingsAccountAndSecurity": "الحساب والأمان",
   "settingsShowOnHome": "إظهار في الصفحة الرئيسية",

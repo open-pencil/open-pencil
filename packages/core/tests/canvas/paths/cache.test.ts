@@ -1,9 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import type { Path } from '@open-pencil/canvaskit'
-
 import { SceneGraph, type Stroke } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { SkiaRenderer } from '#core/canvas'
 import { createPathCache, NodePathCaches } from '#core/canvas/paths/cache'

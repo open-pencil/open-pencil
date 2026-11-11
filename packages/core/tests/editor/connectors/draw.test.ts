@@ -73,8 +73,16 @@ describe('where a connector end attaches', () => {
     const { editor, page, a } = setup()
     const at = (x: number, y: number, modifiers: { pin?: boolean; centre?: boolean }) =>
       connectorAttachment(editor.graph, page, { x, y }, { zoom: 1, ...modifiers }).endpoint
-    expect(at(60, 40, { pin: true })).toEqual({ nodeId: a.id, magnet: 'NONE', position: { x: 60, y: 40 } })
-    expect(at(100, -4, { pin: true })).toEqual({ nodeId: a.id, magnet: 'NONE', position: { x: 100, y: 0 } })
+    expect(at(60, 40, { pin: true })).toEqual({
+      nodeId: a.id,
+      magnet: 'NONE',
+      position: { x: 60, y: 40 }
+    })
+    expect(at(100, -4, { pin: true })).toEqual({
+      nodeId: a.id,
+      magnet: 'NONE',
+      position: { x: 100, y: 0 }
+    })
     expect(at(100, -20, { pin: true }).nodeId).toBeNull()
     expect(at(60, 40, { centre: true })).toMatchObject({ nodeId: a.id, magnet: 'CENTER' })
   })
@@ -101,7 +109,12 @@ describe('where a connector end attaches inside a section', () => {
   test("a pinned end keeps the point in the section's own axes", () => {
     const editor = createEditor()
     const page = editor.state.currentPageId
-    const section = editor.graph.createNode('SECTION', page, { x: 480, y: -100, width: 400, height: 320 })
+    const section = editor.graph.createNode('SECTION', page, {
+      x: 480,
+      y: -100,
+      width: 400,
+      height: 320
+    })
     expect(connectorAttachment(editor.graph, page, { x: 520, y: 158 }, { zoom: 1 })).toEqual({
       endpoint: { nodeId: section.id, magnet: 'ABSOLUTE', position: { x: 40, y: 258 } },
       target: { nodeId: section.id, magnet: 'ABSOLUTE' }

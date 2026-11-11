@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/vue",
-  "version": "0.17.0-beta.2",
+  "version": "0.17.0-beta.4",
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -158,6 +158,11 @@
       "types": "./dist/controls/property-list/index.d.ts",
       "import": "./dist/controls/property-list/index.js",
       "default": "./dist/controls/property-list/index.js"
+    },
+    "./controls/scale": {
+      "types": "./dist/controls/scale/index.d.ts",
+      "import": "./dist/controls/scale/index.js",
+      "default": "./dist/controls/scale/index.js"
     },
     "./controls/selection-colors": {
       "types": "./dist/controls/selection-colors/index.d.ts",

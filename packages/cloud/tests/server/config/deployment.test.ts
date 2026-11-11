@@ -186,6 +186,33 @@ describe('Cloud TOML deployment configuration', () => {
     ).toThrow()
   })
 
+  test('reads the operator’s legal links and advertises them in discovery', () => {
+    expect(parseCloudDeploymentTOML(minimalSource, environment).legal).toBeUndefined()
+    const source = `${minimalSource}
+[legal]
+terms_url = "https://example.com/terms"
+privacy_url = "https://example.com/privacy"
+terms_version = "2026-11-15"
+require_acceptance = true
+abuse_email = "abuse@example.com"
+minimum_age = 16
+`
+    const legal = {
+      termsURL: 'https://example.com/terms',
+      privacyURL: 'https://example.com/privacy',
+      termsVersion: '2026-11-15',
+      requireAcceptance: true,
+      abuseEmail: 'abuse@example.com',
+      minimumAge: 16
+    }
+    const config = parseCloudDeploymentTOML(source, environment)
+    expect(config.legal).toEqual(legal)
+    expect(cloudDiscoveryFromConfig(config).legal).toEqual(legal)
+    expect(() =>
+      parseCloudDeploymentTOML(source.replace('terms_version = "2026-11-15"\n', ''), environment)
+    ).toThrow('terms_version')
+  })
+
   test('keeps deleted files under a prefix only when one is configured', () => {
     expect(parseCloudDeploymentTOML(minimalSource, environment).s3DeletedPrefix).toBeUndefined()
     const keeping = (prefix: string) =>

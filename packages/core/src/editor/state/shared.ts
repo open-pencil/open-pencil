@@ -13,6 +13,7 @@ export function createDefaultEditorSharedState(): EditorSharedState {
     showPixelGrid: true,
     showSizeLabels: true,
     gradientEdit: null,
+    blurRampEdit: null,
     presenceCursors: [],
     documentName: 'Untitled',
     designIssues: null,

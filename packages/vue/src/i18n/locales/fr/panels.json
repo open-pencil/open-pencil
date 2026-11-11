@@ -431,7 +431,6 @@
   "effectSettings": "Réglages de l’effet",
   "expandEffectSettings": "Développer les réglages de l’effet",
   "collapseEffectSettings": "Réduire les réglages de l’effet",
-  "toggleExportPreview": "Afficher/masquer l’aperçu d’export",
   "untitled": "Sans titre",
   "xAxis": "Axe X",
   "yAxis": "Axe Y",
@@ -445,6 +444,11 @@
   "starRatio": "Rapport",
   "spread": "Diffusion",
   "blur": "Flou",
+  "blurType": "Type de flou",
+  "uniformBlur": "Uniforme",
+  "progressiveBlur": "Progressif",
+  "blurStart": "Début",
+  "blurEnd": "Fin",
   "showShadowBehind": "Afficher derrière les zones transparentes",
   "effectColor": "Couleur",
   "foregroundBlur": "Flou de premier plan",
@@ -655,5 +659,8 @@
   "variableModesFromLibraries": "Des bibliothèques",
   "variableModeAuto": "Auto ({mode})",
   "variableModeAutoMixed": "Auto",
-  "variableModeHeading": "Mode"
+  "variableModeHeading": "Mode",
+  "scale": "Mettre à l’échelle",
+  "scaleMultiplier": "Facteur d’échelle",
+  "scaleAnchor": "Ancre de mise à l’échelle"
 }

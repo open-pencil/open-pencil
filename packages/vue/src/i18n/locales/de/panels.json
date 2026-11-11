@@ -431,7 +431,6 @@
   "effectSettings": "Effekteinstellungen",
   "expandEffectSettings": "Effekteinstellungen erweitern",
   "collapseEffectSettings": "Effekteinstellungen einklappen",
-  "toggleExportPreview": "Exportvorschau umschalten",
   "untitled": "Unbenannt",
   "xAxis": "X-Achse",
   "yAxis": "Y-Achse",
@@ -445,6 +444,11 @@
   "starRatio": "Verhältnis",
   "spread": "Ausbreitung",
   "blur": "Unschärfe",
+  "blurType": "Unschärfetyp",
+  "uniformBlur": "Gleichmäßig",
+  "progressiveBlur": "Progressiv",
+  "blurStart": "Anfang",
+  "blurEnd": "Ende",
   "showShadowBehind": "Hinter transparenten Bereichen anzeigen",
   "effectColor": "Farbe",
   "foregroundBlur": "Vordergrund-Weichzeichnung",
@@ -655,5 +659,8 @@
   "variableModesFromLibraries": "Aus Bibliotheken",
   "variableModeAuto": "Automatisch ({mode})",
   "variableModeAutoMixed": "Automatisch",
-  "variableModeHeading": "Modus"
+  "variableModeHeading": "Modus",
+  "scale": "Skalieren",
+  "scaleMultiplier": "Skalierungsfaktor",
+  "scaleAnchor": "Skalierungsanker"
 }

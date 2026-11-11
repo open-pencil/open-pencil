@@ -1,11 +1,12 @@
 import { describe, expect, mock, test } from 'bun:test'
 
+import { asCanvas } from '#core-tests/canvas/helpers'
+
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
 import { renderShapeUncached } from '#core/canvas/scene'
 
-import { asCanvas } from '#core-tests/canvas/helpers'
 import { createMockCanvas, createMockRenderer } from './helpers'
 
 describe('Renderer effect ordering (Behavioral)', () => {

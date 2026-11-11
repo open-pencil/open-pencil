@@ -425,7 +425,6 @@
   "effectSettings": "效果设置",
   "expandEffectSettings": "展开效果设置",
   "collapseEffectSettings": "收起效果设置",
-  "toggleExportPreview": "切换导出预览",
   "untitled": "未命名",
   "xAxis": "X 轴",
   "yAxis": "Y 轴",
@@ -439,6 +438,11 @@
   "starRatio": "比例",
   "spread": "扩展",
   "blur": "模糊",
+  "blurType": "模糊类型",
+  "uniformBlur": "均匀",
+  "progressiveBlur": "渐进",
+  "blurStart": "起点",
+  "blurEnd": "终点",
   "showShadowBehind": "在透明区域后方显示",
   "effectColor": "颜色",
   "foregroundBlur": "前景模糊",
@@ -648,5 +652,8 @@
   "variableModesFromLibraries": "来自库",
   "variableModeAuto": "自动（{mode}）",
   "variableModeAutoMixed": "自动",
-  "variableModeHeading": "模式"
+  "variableModeHeading": "模式",
+  "scale": "缩放",
+  "scaleMultiplier": "缩放倍数",
+  "scaleAnchor": "缩放锚点"
 }

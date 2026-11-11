@@ -30,7 +30,10 @@
     "dist",
     "desktop",
     "packages/mermaid/src/upstream",
-    "*.config.*"
+    "*.config.*",
+    "lint/",
+    "packages/feedback/worker-configuration.d.ts",
+    "packages/vue/example/"
   ],
   "rules": {
     "no-restricted-imports": [
@@ -102,6 +105,7 @@
       }
     ],
     "@open-pencil/editor/no-structuredclone-scene-arrays": "error",
+    "@open-pencil/vue/icon-direction": "error",
     "@open-pencil/vue/no-style-blocks": "error",
     "@open-pencil/vue/no-native-title-attributes": "error",
     "@open-pencil/vue/no-overlay-content-from-open-state": "error",

@@ -1,11 +1,13 @@
 import type { Canvas, ImageFilter, MaskFilter, Path } from '@open-pencil/canvaskit'
 import { readEffectiveFigmaRawField } from '@open-pencil/fig'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { Effect, SceneNode } from '@open-pencil/scene-graph'
+import { blurSigma, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { ResourceCache } from '#core/cache/resource'
 import { BLACK } from '#core/constants'
 
+import { isPlainRamp, makeProgressiveBlur, progressiveBlurRamp } from './blur/progressive'
 import type { SkiaRenderer } from './renderer'
 
 /**
@@ -51,6 +53,34 @@ export function getCachedDecalBlur(r: SkiaRenderer, sigma: number): ImageFilter 
   )
 }
 
+/**
+ * The filter a layer or background blur draws with over a `width` × `height` layer: a plain blur,
+ * or Figma's progressive one with its points mapped by `toFilter` into the filter's coordinates.
+ * `bounds` holds what it blurs, in those coordinates, so each level blurs only its share.
+ */
+export function getCachedLayerBlur(
+  r: SkiaRenderer,
+  effect: Pick<Effect, 'radius' | 'progressive'>,
+  width: number,
+  height: number,
+  bounds: VisualBounds | null,
+  toFilter?: (point: Vector) => Vector
+): ImageFilter | null {
+  if (!effect.progressive) return r.getCachedBlur(blurSigma(effect.radius))
+  const ramp = progressiveBlurRamp(
+    effect.progressive,
+    effect.radius,
+    width,
+    height,
+    bounds,
+    toFilter
+  )
+  if (isPlainRamp(ramp)) return r.getCachedBlur(ramp.endSigma)
+  const box = bounds ? `${bounds.minX},${bounds.minY},${bounds.maxX},${bounds.maxY}` : 'unbounded'
+  const key = `pblur:${ramp.start.x},${ramp.start.y},${ramp.end.x},${ramp.end.y},${ramp.startSigma},${ramp.endSigma}:${box}`
+  return cachedImageFilter(r, key, () => makeProgressiveBlur(r.ck, ramp, r.ck.TileMode.Clamp))
+}
+
 /** CanvasKit makes no filter for a blur too small to draw; a paint takes null as none. */
 export function getCachedMaskBlur(r: SkiaRenderer, sigma: number): MaskFilter | null {
   const cached = r.maskFilterCache.get(sigma)
@@ -81,7 +111,7 @@ export function applyClippedBlur(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
-  sigma: number,
+  effect: Pick<Effect, 'radius' | 'progressive'>,
   shape: Path | null = null
 ): void {
   const rect = r.ck.LTRBRect(0, 0, node.width, node.height)
@@ -93,7 +123,13 @@ export function applyClippedBlur(
   canvas.save()
   if (shape) canvas.clipPath(shape, r.ck.ClipOp.Intersect, true)
   else r.clipNodeShape(canvas, node)
-  canvas.saveLayer(undefined, rect, r.getCachedBlur(sigma), undefined, r.ck.TileMode.Clamp)
+  const filter = r.getCachedLayerBlur(effect, node.width, node.height, {
+    minX: 0,
+    minY: 0,
+    maxX: node.width,
+    maxY: node.height
+  })
+  canvas.saveLayer(undefined, rect, filter, undefined, r.ck.TileMode.Clamp)
   canvas.restore()
   // Exit guard: ensure shared paint is in clean state
   r.effectLayerPaint.setImageFilter(null)

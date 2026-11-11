@@ -1,1 +1,0 @@
-- Deleted OpenPencil Cloud documents go to Trash on Home, which shows who deleted each one and how long it stays; restore it, or, as its owner or a workspace admin, delete it forever. A document deleted forever leaves your storage at once; the server keeps it out of sight for `purge_grace_days` (7 by default), when its administrators can still restore it from the console.

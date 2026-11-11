@@ -17,6 +17,7 @@ import { useEyedropperKeepOpen } from '@/components/color-picker-panel/eyedroppe
 import GradientEditor from '@/components/fill-picker/GradientEditor.vue'
 import ImageFillPicker from '@/components/fill-picker/ImageFillPicker.vue'
 import ShaderFillPicker from '@/components/fill-picker/shader/ShaderFillPicker.vue'
+import { useInlineSide } from '@/components/ui/direction/inline-side'
 import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 import Tip from '@/components/ui/overlay/Tip.vue'
@@ -25,6 +26,7 @@ import fillPickerTheme from '@/theme/fill-picker'
 
 import { useImageFill } from './useImageFill'
 
+const startSide = useInlineSide('start')
 const fillPicker = tv(fillPickerTheme)
 
 function tabClass(active: boolean) {
@@ -101,7 +103,7 @@ const outside = pickerOutsideHandlers(() => keepPickerOpen)
         <PopoverContent
           :class="cls.content"
           :side-offset="4"
-          side="left"
+          :side="startSide"
           data-picker-content
           @escape-key-down="emit('cancel')"
           @pointer-down-outside="outside.onPointerDownOutside"

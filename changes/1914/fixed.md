@@ -1,1 +1,0 @@
-- Layers in a group or boolean keep their own constraints against the frame or instance around it, as in Figma: resizing moves them and the group fits them, the Design panel shows and sets a group's constraints from its layers, and the canvas draws their indicators (#1914).

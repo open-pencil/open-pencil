@@ -18,6 +18,7 @@ import { useFlatReorderDrag } from '@open-pencil/vue/shared/drag'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import { useInlineSide } from '@/components/ui/direction/inline-side'
 import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
@@ -32,6 +33,7 @@ import PropertyRow from './PropertyRow.vue'
 import PropertyTypeIcon from './PropertyTypeIcon.vue'
 import VariantValueList from './variant/VariantValueList.vue'
 
+const startSide = useInlineSide('start')
 /** A main component's text, boolean and swap properties, and the nested instances it exposes. */
 const authoring = useComponentPropertyAuthoring()
 const { context, definitions, rows, conflicts, componentSet, nestedInstances, editable } = authoring
@@ -293,7 +295,7 @@ function valueLabel(type: ComponentPropertyType, value: string) {
     </PopoverAnchor>
     <PopoverPortal>
       <PopoverContent
-        side="left"
+        :side="startSide"
         align="start"
         :side-offset="8"
         :aria-label="panels.nestedInstances"

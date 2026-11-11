@@ -40,6 +40,11 @@
   "starRatio": "Proporción",
   "spread": "Esparcimiento",
   "blur": "Desenfoque",
+  "blurType": "Tipo de desenfoque",
+  "uniformBlur": "Uniforme",
+  "progressiveBlur": "Progresivo",
+  "blurStart": "Inicio",
+  "blurEnd": "Fin",
   "showShadowBehind": "Mostrar detrás de las áreas transparentes",
   "effectColor": "Color",
   "fill": "Relleno",
@@ -459,7 +464,6 @@
   "effectSettings": "Ajustes del efecto",
   "expandEffectSettings": "Expandir ajustes del efecto",
   "collapseEffectSettings": "Contraer ajustes del efecto",
-  "toggleExportPreview": "Alternar vista previa de exportación",
   "searchFonts": "Buscar fuentes...",
   "blendMode": "Modo de fusión",
   "mask": "Máscara",
@@ -655,5 +659,8 @@
   "variableModesFromLibraries": "De bibliotecas",
   "variableModeAuto": "Automático ({mode})",
   "variableModeAutoMixed": "Automático",
-  "variableModeHeading": "Modo"
+  "variableModeHeading": "Modo",
+  "scale": "Escalar",
+  "scaleMultiplier": "Factor de escala",
+  "scaleAnchor": "Ancla de escala"
 }

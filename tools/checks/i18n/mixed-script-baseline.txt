@@ -199,6 +199,9 @@ ja:menu.exportSelectionAsDrawIO
 ja:menu.exportSelectionAsPPTX
 ja:menu.exportSelectionAsSVG
 ja:menu.supportOpenPencil
+ja:menu.community
+ja:menu.documentation
+ja:menu.github
 ja:menu.toggleAIChat
 ja:menu.toggleUI
 ja:panels.behaviourAddVariants
@@ -436,6 +439,9 @@ zh-cn:menu.exportSelectionAsDrawIO
 zh-cn:menu.exportSelectionAsPPTX
 zh-cn:menu.exportSelectionAsSVG
 zh-cn:menu.supportOpenPencil
+zh-cn:menu.community
+zh-cn:menu.documentation
+zh-cn:menu.github
 zh-cn:menu.toggleAIChat
 zh-cn:panels.behaviourAddVariants
 zh-cn:panels.colorHintHsb

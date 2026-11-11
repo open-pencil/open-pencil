@@ -1,14 +1,13 @@
 import { mock } from 'bun:test'
 
-import type { InputRect, Paint } from '@open-pencil/canvaskit'
+import { asRenderer } from '#core-tests/canvas/helpers'
 
+import type { InputRect, Paint } from '@open-pencil/canvaskit'
 import { SceneGraph, type Fill, type SceneNode } from '@open-pencil/scene-graph'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { renderEffects } from '#core/canvas/shadows'
-
-import { asRenderer } from '#core-tests/canvas/helpers'
 
 /**
  * Reads the recorded calls off a stand-in method. The renderer stand-ins are widened to the real
@@ -160,6 +159,7 @@ export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaR
     getCachedDropShadow: mock(() => ({})),
     getCachedDecalBlur: mock(() => ({})),
     getCachedBlur: mock(() => ({})),
+    getCachedLayerBlur: mock(() => ({})),
     getStrokeGeometry: mock(() => null),
     getFillGeometry: mock(() => null),
     getVectorPaths: mock(() => null),

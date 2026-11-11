@@ -46,6 +46,7 @@ const styles = computed(() => tv(paintFieldTheme)({ tone }))
 
 <template>
   <div
+    dir="ltr"
     :class="styles.root({ class: [ui?.root, className] })"
     data-slot="paint-field"
     data-property="paint"

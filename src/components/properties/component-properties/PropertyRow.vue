@@ -11,6 +11,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
+import { useInlineSide } from '@/components/ui/direction/inline-side'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
@@ -20,6 +21,7 @@ import PropertyBindings from './PropertyBindings.vue'
 import PropertyTypeIcon from './PropertyTypeIcon.vue'
 import PropertyValueField from './PropertyValueField.vue'
 
+const startSide = useInlineSide('start')
 /** One property of a main component: a single row that opens its settings. */
 const {
   name,
@@ -90,7 +92,7 @@ const shownValue = computed(() => {
     </PopoverTrigger>
     <PopoverPortal v-if="portalActive">
       <PopoverContent
-        side="left"
+        :side="startSide"
         align="start"
         :side-offset="8"
         :aria-label="name"

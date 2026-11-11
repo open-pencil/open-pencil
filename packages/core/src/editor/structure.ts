@@ -4,6 +4,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import { TRANSFORM_FIELDS } from '@open-pencil/scene-graph/fields'
 import { generatedFrameKind } from '@open-pencil/scene-graph/generated'
 import { createsComponentCycle } from '@open-pencil/scene-graph/instances'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { acceptingParent, acceptsChildren, prepareSlotEdits } from '#core/editor/components/slots'
 import { fitEnclosingGroupsWithUndo } from '#core/editor/structure/group/bounds'
@@ -28,6 +29,7 @@ import {
   type RenameSelectionOptions
 } from './structure/rename'
 import { createStructureReorderActions } from './structure/reorder'
+import { scaleLayers } from './structure/scale'
 import { createStructureStateActions } from './structure/state'
 import type { EditorContext } from './types'
 
@@ -219,6 +221,9 @@ export function createStructureActions(ctx: EditorContext) {
     acceptingParent: (parentId: string) => acceptingParent(ctx, parentId),
     fitEnclosingGroups: (parentIds: Iterable<string>) => fitEnclosingGroupsWithUndo(ctx, parentIds),
     ...reorderActions,
+    /** Scales these layers evenly about a canvas point, as Figma's Scale tool does. */
+    scaleLayers: (nodes: readonly SceneNode[], scale: number, anchor: Vector) =>
+      scaleLayers(ctx, nodes, scale, anchor),
     reparentNodes,
     wrapSelectionInContainer,
     wrapInAutoLayout,
