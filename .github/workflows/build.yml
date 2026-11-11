@@ -189,7 +189,10 @@ jobs:
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
-          tauriScript: node node_modules/@tauri-apps/cli/tauri.js
+          # The action searches projectPath for tauri.conf.json; from the checkout root that search also
+          # walks the tooling checked out in .pipeline and runs out of memory. The script runs in desktop.
+          projectPath: desktop
+          tauriScript: node ../node_modules/@tauri-apps/cli/tauri.js
           args: --target ${{ matrix.target }} --config "${{ github.workspace }}/release-build-config.json" --verbose
           retryAttempts: 0
       - name: Collect only reported bundles and signatures
