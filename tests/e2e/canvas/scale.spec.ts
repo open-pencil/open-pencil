@@ -44,7 +44,8 @@ test('K scales text and its stroke from a corner handle', async () => {
   await canvas.waitForRender()
 
   await canvas.pressKey('k')
-  expect(await page.evaluate(() => window.openPencil?.getStore?.().state.activeTool)).toBe('SCALE')
+  // The Scale section, and its factor, show only while the Scale tool is picked.
+  await expect(propertyField(page, 'scale')).toBeVisible()
 
   const handle = await layers.selectedCorner()
   await canvas.drag(handle.x, handle.y, handle.x + 120, handle.y + 40)
@@ -56,7 +57,7 @@ test('K scales text and its stroke from a corner handle', async () => {
   expect(scaled.strokeWeight).toBe(4)
 
   await canvas.pressKey('v')
-  expect(await page.evaluate(() => window.openPencil?.getStore?.().state.activeTool)).toBe('SELECT')
+  await expect(propertyField(page, 'scale')).toBeHidden()
 
   await page.keyboard.press('ControlOrMeta+z')
   await canvas.waitForRender()
@@ -130,7 +131,7 @@ test('the Scale panel scales about the anchor and hands back to Move', async () 
   const scaled = expectDefined(await getSelectedNode(page), 'scaled rectangle')
   expect({ width: scaled.width, height: scaled.height }).toEqual({ width: 200, height: 100 })
   expect({ x: scaled.x, y: scaled.y }).toEqual({ x: before.x - 50, y: before.y - 25 })
-  expect(await page.evaluate(() => window.openPencil?.getStore?.().state.activeTool)).toBe('SELECT')
+  await expect(propertyField(page, 'scale')).toBeHidden()
   canvas.assertNoErrors()
 })
 
@@ -147,7 +148,7 @@ test('scrubbing the Scale factor scales the selection and stays in the tool', as
   const scaled = expectDefined(await getSelectedNode(page), 'scaled rectangle')
   expect(scaled.width).toBeGreaterThan(before.width)
   expect(scaled.width / scaled.height).toBeCloseTo(before.width / before.height)
-  expect(await page.evaluate(() => window.openPencil?.getStore?.().state.activeTool)).toBe('SCALE')
+  await expect(propertyField(page, 'scale')).toBeVisible()
   canvas.assertNoErrors()
 })
 
