@@ -167,6 +167,21 @@ const rawCloudServerConfigSchema = v.object({
   billingPortalURL: v.optional(httpURLSchema),
   /** The bearer token services such as billing present to the internal API. */
   internalServiceToken: v.optional(v.pipe(v.string(), v.minLength(32))),
+  /**
+   * The operator's own terms, privacy policy, abuse contact, and minimum age; without it the
+   * server shows none. With `requireAcceptance`, an account uses the server only once it accepted
+   * `termsVersion`.
+   */
+  legal: v.optional(
+    v.object({
+      termsURL: v.optional(httpURLSchema),
+      privacyURL: v.optional(httpURLSchema),
+      termsVersion: optionalTextSchema,
+      requireAcceptance: v.boolean(),
+      abuseEmail: v.optional(v.pipe(v.string(), v.email())),
+      minimumAge: v.optional(v.pipe(v.number(), v.integer(), v.minValue(13), v.maxValue(21)))
+    })
+  ),
   /** Where server errors are reported; without it the server reports nothing. */
   errorTracking: v.optional(
     v.object({
@@ -268,6 +283,13 @@ function validateServiceConfig(config: CloudServerConfig): void {
   }
 }
 
+function validateLegalConfig(config: CloudServerConfig): void {
+  const legal = config.legal
+  if (legal?.requireAcceptance && !(legal.termsURL && legal.termsVersion)) {
+    throw new CloudConfigError('[legal] require_acceptance needs terms_url and terms_version')
+  }
+}
+
 function validateObjectStorageConfig(config: CloudServerConfig): void {
   if (config.s3KmsKeyId && config.s3ServerSideEncryption !== 'aws:kms') {
     throw new CloudConfigError('S3 KMS key ID requires aws:kms server-side encryption')
@@ -291,6 +313,7 @@ export function parseCloudServerConfig(input: unknown): CloudServerConfig {
   validateEmailConfig(config)
   validateServiceConfig(config)
   validateObjectStorageConfig(config)
+  validateLegalConfig(config)
   return config
 }
 
@@ -544,6 +567,20 @@ export const cloudDeploymentConfigSchema = v.strictObject({
   billing: v.optional(v.strictObject({ portal_url: urlSchema })),
   internal_api: v.optional(
     v.strictObject({ service_token: defaultReference(DEFAULT_SECRET_NAMES.internalServiceToken) })
+  ),
+  /**
+   * Optional: the operator's terms and privacy policy, linked at sign-up and in the portal, and
+   * with `require_acceptance`, accepted once per `terms_version` before an account uses the server.
+   */
+  legal: v.optional(
+    v.strictObject({
+      terms_url: v.optional(urlSchema),
+      privacy_url: v.optional(urlSchema),
+      terms_version: v.optional(textSchema),
+      require_acceptance: v.optional(v.boolean(), false),
+      abuse_email: v.optional(v.pipe(v.string(), v.email())),
+      minimum_age: v.optional(v.pipe(v.number(), v.integer(), v.minValue(13), v.maxValue(21)))
+    })
   ),
   /** Optional: reports server errors to PostHog error tracking. Leave it out to send nothing. */
   error_tracking: v.optional(

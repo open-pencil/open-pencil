@@ -27,6 +27,10 @@ export interface SidebarLabels {
   techStack: string
   comparison: string
   privacy: string
+  cloudLegal: string
+  cloudTerms: string
+  cloudPrivacy: string
+  subprocessors: string
   figmaMatrix: string
 }
 
@@ -183,6 +187,10 @@ export const EN: SidebarLabels = {
   techStack: 'Tech Stack',
   comparison: 'Comparison',
   privacy: 'Privacy',
+  cloudLegal: 'OpenPencil Cloud legal',
+  cloudTerms: 'Terms of Service',
+  cloudPrivacy: 'Privacy Policy',
+  subprocessors: 'Subprocessors',
   figmaMatrix: 'Figma Feature Matrix'
 }
 export const DE: SidebarLabels = {
@@ -214,6 +222,10 @@ export const DE: SidebarLabels = {
   techStack: 'Tech-Stack',
   comparison: 'Vergleich',
   privacy: 'Datenschutz',
+  cloudLegal: 'OpenPencil Cloud – Rechtliches',
+  cloudTerms: 'Nutzungsbedingungen',
+  cloudPrivacy: 'Datenschutzerklärung',
+  subprocessors: 'Unterauftragsverarbeiter',
   figmaMatrix: 'Figma-Funktionsmatrix'
 }
 export const IT: SidebarLabels = {
@@ -245,6 +257,10 @@ export const IT: SidebarLabels = {
   techStack: 'Stack tecnologico',
   comparison: 'Confronto',
   privacy: 'Privacy',
+  cloudLegal: 'OpenPencil Cloud – Note legali',
+  cloudTerms: 'Termini di servizio',
+  cloudPrivacy: 'Informativa sulla privacy',
+  subprocessors: 'Sub-responsabili',
   figmaMatrix: 'Matrice funzionalità Figma'
 }
 export const FR: SidebarLabels = {
@@ -276,6 +292,10 @@ export const FR: SidebarLabels = {
   techStack: 'Stack technique',
   comparison: 'Comparaison',
   privacy: 'Confidentialité',
+  cloudLegal: 'OpenPencil Cloud – Mentions légales',
+  cloudTerms: 'Conditions d’utilisation',
+  cloudPrivacy: 'Politique de confidentialité',
+  subprocessors: 'Sous-traitants',
   figmaMatrix: 'Matrice des fonctionnalités Figma'
 }
 export const ES: SidebarLabels = {
@@ -307,6 +327,10 @@ export const ES: SidebarLabels = {
   techStack: 'Stack tecnológico',
   comparison: 'Comparación',
   privacy: 'Privacidad',
+  cloudLegal: 'OpenPencil Cloud – Aviso legal',
+  cloudTerms: 'Términos del servicio',
+  cloudPrivacy: 'Política de privacidad',
+  subprocessors: 'Subencargados',
   figmaMatrix: 'Matriz de funcionalidades Figma'
 }
 export const PL: SidebarLabels = {
@@ -338,6 +362,10 @@ export const PL: SidebarLabels = {
   techStack: 'Stack technologiczny',
   comparison: 'Porównanie',
   privacy: 'Prywatność',
+  cloudLegal: 'OpenPencil Cloud – Informacje prawne',
+  cloudTerms: 'Warunki korzystania',
+  cloudPrivacy: 'Polityka prywatności',
+  subprocessors: 'Podmioty przetwarzające',
   figmaMatrix: 'Matryca funkcji Figma'
 }
 export const RU: SidebarLabels = {
@@ -369,5 +397,9 @@ export const RU: SidebarLabels = {
   techStack: 'Технологии',
   comparison: 'Сравнение',
   privacy: 'Конфиденциальность',
+  cloudLegal: 'OpenPencil Cloud — правовая информация',
+  cloudTerms: 'Условия использования',
+  cloudPrivacy: 'Политика конфиденциальности',
+  subprocessors: 'Субобработчики',
   figmaMatrix: 'Матрица функций Figma'
 }

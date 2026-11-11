@@ -172,6 +172,8 @@
   "settingsSignedOut": "サインアウト済み",
   "settingsWaitingForApproval": "管理者によるアカウントの承認待ち",
   "settingsAccessClosed": "管理者がアクセスを却下または削除しました",
+  "settingsAcceptTerms": "使い続けるにはこのサーバーの規約に同意してください",
+  "settingsReviewTerms": "規約を確認",
   "settingsOptionsFor": "{host} のオプション",
   "settingsAccountAndSecurity": "アカウントとセキュリティ",
   "settingsShowOnHome": "ホームに表示",

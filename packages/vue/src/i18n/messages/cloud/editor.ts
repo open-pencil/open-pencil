@@ -296,6 +296,8 @@ export const cloudMessageDefaults = {
   settingsSignedOut: 'Signed out',
   settingsWaitingForApproval: 'Waiting for an administrator to approve your account',
   settingsAccessClosed: 'An administrator declined or removed your access',
+  settingsAcceptTerms: 'Accept this server’s terms to keep using it',
+  settingsReviewTerms: 'Review terms',
   settingsOptionsFor: params('Options for {host}'),
   settingsAccountAndSecurity: 'Account and security',
   settingsShowOnHome: 'Show on Home',

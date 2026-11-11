@@ -12,6 +12,15 @@ export const guideSidebar = (prefix: string, labels: SidebarLabels): DefaultThem
       { text: labels.privacy, link: '/overview/privacy' },
     ],
   },
+  {
+    // The hosted service's own documents, in English: a Cloud server someone else runs has its own.
+    text: labels.cloudLegal,
+    items: [
+      { text: labels.cloudTerms, link: '/overview/legal/terms' },
+      { text: labels.cloudPrivacy, link: '/overview/legal/privacy' },
+      { text: labels.subprocessors, link: '/overview/legal/subprocessors' },
+    ],
+  },
 ]
 
 export const userGuideSidebar = (

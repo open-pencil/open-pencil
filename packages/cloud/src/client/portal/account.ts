@@ -26,6 +26,14 @@ export function createAccountAPI(call: CloudCall, { account }: PortalRouteClient
         signal
       )
     },
+    /** Accepts the server's terms at `version`, the one its discovery names. */
+    acceptTerms(version: string, signal?: AbortSignal) {
+      return call(
+        (options) => account.terms.$post({ json: { version } }, options),
+        cloudAccountMutationResponseSchema,
+        signal
+      )
+    },
     authenticationMethods(signal?: AbortSignal) {
       return call(
         (options) => account.authentication.$get(undefined, options),
