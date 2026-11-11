@@ -19,6 +19,10 @@ interface ScaledFields {
   after: Partial<SceneNode>
 }
 
+function rescaledReach(reach: number | null, ratio: number): number | null {
+  return reach === null ? null : reach * ratio
+}
+
 function remeasureFixedTextReach(ctx: EditorContext, id: string): void {
   const node = ctx.graph.getNode(id)
   const reach = node && measuredFixedTextReach(node)
@@ -55,8 +59,21 @@ export function scaleLayers(
     return [{ id, before: structuredClone(pick(node, keys)), after: pick(after, keys) }]
   })
   const apply = (side: 'before' | 'after') => {
+    const ratio = side === 'after' ? scale : 1 / scale
+    const opposite = side === 'after' ? 'before' : 'after'
     for (const field of fields) {
-      if (ctx.graph.getNode(field.id)) ctx.graph.updateNode(field.id, structuredClone(field[side]))
+      const node = ctx.graph.getNode(field.id)
+      if (!node) {
+        continue
+      }
+      const values = structuredClone(field[side])
+      const reachChangedSince =
+        'derivedTextHeight' in values &&
+        node.derivedTextHeight !== field[opposite].derivedTextHeight
+      if (reachChangedSince) {
+        values.derivedTextHeight = rescaledReach(node.derivedTextHeight, ratio)
+      }
+      ctx.graph.updateNode(field.id, values)
     }
     for (const root of roots) {
       if (ctx.graph.getNode(root.id)) ctx.runLayoutForNode(root.id)

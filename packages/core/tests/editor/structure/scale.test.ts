@@ -67,6 +67,29 @@ describe('scaleSelected', () => {
     expect(current(text.id)).toMatchObject({ height: 20, fontSize: 20, derivedTextHeight: 60 })
   })
 
+  test('undo with no fonts rescales the reach someone else set since the scale', () => {
+    editor = createEditor()
+    const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+      width: 100,
+      height: 20,
+      fontSize: 20,
+      textAutoResize: 'NONE',
+      derivedTextHeight: 36
+    })
+    editor.select([text.id])
+    editor.scaleSelected(1.37, { x: 0, y: 0 })
+    editor.undo.undo()
+    expect(current(text.id).derivedTextHeight).toBe(36)
+    editor.undo.redo()
+
+    editor.graph.updateNode(text.id, { text: 'longer', derivedTextHeight: 137 })
+    editor.undo.undo()
+    expect(current(text.id).derivedTextHeight).toBeCloseTo(100)
+    editor.graph.updateNode(text.id, { derivedTextHeight: 50 })
+    editor.undo.redo()
+    expect(current(text.id).derivedTextHeight).toBeCloseTo(68.5)
+  })
+
   describe('with fonts to measure the lines in', () => {
     afterEach(() => setTextMeasurer(null))
 
