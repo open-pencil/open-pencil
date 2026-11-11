@@ -5,7 +5,7 @@ import { DEFAULT_GLASS } from '@open-pencil/scene-graph/constants'
 
 import { createDefaultEffect, effectOptions, effectOptionsFor } from '#vue/controls/effects/helpers'
 import { setLocale } from '#vue/i18n/locale'
-import { panelMessages } from '#vue/i18n/messages'
+import { panelMessageDefaults, panelMessages } from '#vue/i18n/messages/panels'
 
 const glass: Effect = { ...createDefaultEffect(), type: 'GLASS', glass: { ...DEFAULT_GLASS } }
 const offersGlass = (effects: Effect[], index: number) =>
@@ -29,19 +29,37 @@ describe('effect type options', () => {
 describe('effect type labels', () => {
   afterEach(() => setLocale('en'))
 
+  /** The labels `effectOptions` gives, beside the active catalog's, in the same order. */
+  const labelsBesideCatalog = () => {
+    const catalog = panelMessages.get()
+    return {
+      labels: effectOptions().map((option) => option.label),
+      catalog: [
+        catalog.dropShadow,
+        catalog.innerShadow,
+        catalog.layerBlur,
+        catalog.backgroundBlur,
+        catalog.foregroundBlur,
+        catalog.glass
+      ]
+    }
+  }
+
   test('follow the language once its translations load', async () => {
-    const label = (type: string) => effectOptions().find((option) => option.value === type)?.label
-    expect(label('DROP_SHADOW')).toBe('Drop shadow')
+    const before = labelsBesideCatalog()
+    expect(before.labels).toEqual(before.catalog)
+    const english = panelMessages.get()
     setLocale('de')
-    // The panel messages switch when the German translations arrive.
+    // The catalog is replaced when the German translations arrive.
     await new Promise<void>((resolve) => {
       const stop = panelMessages.subscribe((messages) => {
-        if (messages.dropShadow === 'Drop shadow') return
+        if (messages === english) return
         queueMicrotask(() => stop())
         resolve()
       })
     })
-    expect(label('DROP_SHADOW')).toBe('Schlagschatten')
-    expect(label('LAYER_BLUR')).toBe('Ebenenunschärfe')
+    expect(panelMessages.get().dropShadow).not.toBe(panelMessageDefaults.dropShadow)
+    const after = labelsBesideCatalog()
+    expect(after.labels).toEqual(after.catalog)
   })
 })
