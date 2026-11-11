@@ -119,6 +119,54 @@ test('statuses read for a list that changed meanwhile are dropped', async () => 
   })
 })
 
+test('a record that points at another repository keeps no status from the old one', async () => {
+  let markFirst: () => void = () => undefined
+  const firstStarted = new Promise<void>((resolve) => {
+    markFirst = resolve
+  })
+  let finish: (value: unknown) => void = () => undefined
+  const answer = new Promise<unknown>((resolve) => {
+    finish = resolve
+  })
+  let markSecond: () => void = () => undefined
+  const secondStarted = new Promise<void>((resolve) => {
+    markSecond = resolve
+  })
+  let releaseSecond: () => void = () => undefined
+  const secondAnswer = new Promise<void>((resolve) => {
+    releaseSecond = resolve
+  })
+  const transport: GitTransport = async (_command, args) => {
+    const payload = args as { repo: string }
+    if (payload.repo === karbid.repository) {
+      markFirst()
+      return answer
+    }
+    markSecond()
+    await secondAnswer
+    return { code: 0, stdout: PENCIL_STATUS, stderr: '' }
+  }
+
+  // The id is kept while the repository changes, which is what a record edited by hand looks like.
+  const moved: Project = { ...karbid, repository: 'D:/Elsewhere' }
+  const list = ref<Project[]>([karbid])
+  const statuses = useProjectStatuses(list, transport)
+  await firstStarted
+  list.value = [moved]
+  finish({ code: 0, stdout: KARBID_STATUS, stderr: '' })
+  await secondStarted
+
+  // The status read for `D:/Karbid2` belongs to a record that no longer points there.
+  expect(statuses.statuses.value).toEqual({})
+
+  releaseSecond()
+  await statuses.refresh()
+
+  expect(statuses.statuses.value).toEqual({
+    [karbid.id]: { branch: 'feat/git-sync', changed: 2 }
+  })
+})
+
 test('a detached or unborn branch still reports its changes', () => {
   const status = {
     branch: { head: null, oid: null, upstream: null, detached: true, ahead: 0, behind: 0 },

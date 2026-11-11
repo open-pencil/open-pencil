@@ -27,10 +27,14 @@ export function useProjectStatuses(
   transport?: GitTransport
 ) {
   const statuses = ref<Record<string, ProjectStatus>>({})
-  /** The ids being listed, so a list that changed meanwhile never receives their statuses. */
+  /**
+   * The list a read belongs to, id and repository together: the id comes from the repository, but a
+   * record edited outside the app can keep the id of the folder it no longer points at, and the
+   * status of that folder is then not the one the list would show.
+   */
   const listed = computed(() =>
     toValue(projects)
-      .map((project) => project.id)
+      .map((project) => `${project.id} ${project.repository}`)
       .join('\n')
   )
   /** Reads run one after another, so a refresh asked for mid-read waits for that read. */
