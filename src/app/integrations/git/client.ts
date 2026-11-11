@@ -35,6 +35,9 @@ export type GitOutcome<T> = { ok: true; value: T } | GitFailure
 /** The remote the panel pushes to and fetches from unless a repository says otherwise. */
 export const DEFAULT_GIT_REMOTE = 'origin'
 
+/** Why a branch the panel was asked for is not one it will name to git. */
+const NOT_A_BRANCH_NAME = 'A branch name cannot start with a dash or hold spaces.'
+
 export async function readGitAvailability(
   transport: GitTransport = invoke
 ): Promise<GitOutcome<GitAvailability>> {
@@ -156,6 +159,15 @@ export async function pushCurrentBranch(
   return report.ok ? { ok: true, value: null } : report
 }
 
+/**
+ * Whether the panel can hand git this name as a branch. A name that starts with a dash reads as a
+ * flag (`push origin -f` would force the push), and one with whitespace splits into two arguments,
+ * so neither is offered to the gateway at all.
+ */
+function isBranchName(name: string): boolean {
+  return !name.startsWith('-') && !/[\s\0]/.test(name)
+}
+
 /** Push one named branch and set its upstream, which is what a pull request is opened from. */
 export async function pushBranch(
   repo: string,
@@ -164,6 +176,7 @@ export async function pushBranch(
 ): Promise<GitOutcome<null>> {
   const trimmed = branch.trim()
   if (trimmed === '') return failure(0, '', 'A branch needs a name.')
+  if (!isBranchName(trimmed)) return failure(0, '', NOT_A_BRANCH_NAME)
   const report = await runGit(
     repo,
     'push',
@@ -259,6 +272,7 @@ export async function switchBranch(
 ): Promise<GitOutcome<null>> {
   const trimmed = name.trim()
   if (trimmed === '') return failure(0, '', 'A branch needs a name.')
+  if (!isBranchName(trimmed)) return failure(0, '', NOT_A_BRANCH_NAME)
   const report = await runGit(repo, 'switch', create ? ['-c', trimmed] : [trimmed], transport)
   return report.ok ? { ok: true, value: null } : report
 }

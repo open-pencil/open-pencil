@@ -7,6 +7,7 @@ import {
   type GitTransport,
   listGitBranches,
   pullFastForward,
+  pushBranch,
   readDefaultBranch,
   readFileDiff,
   readFileHistory,
@@ -141,6 +142,43 @@ describe('switchBranch', () => {
     await switchBranch('/repo', 'main', false, transport)
 
     expect(calls[0]?.args).toEqual({ repo: '/repo', subcommand: 'switch', args: ['main'] })
+  })
+
+  test('refuses a name git would read as a flag, and never asks git', async () => {
+    const { transport, calls } = recorder(report())
+    const outcome = await switchBranch('/repo', '--discard-changes', true, transport)
+
+    expect(outcome.ok).toBe(false)
+    expect(calls).toHaveLength(0)
+  })
+
+  test('refuses a name that splits into two arguments', async () => {
+    const { transport, calls } = recorder(report())
+    const outcome = await switchBranch('/repo', 'feat/git-sync --force', true, transport)
+
+    expect(outcome.ok).toBe(false)
+    expect(calls).toHaveLength(0)
+  })
+})
+
+describe('pushBranch', () => {
+  test('pushes the named branch and sets its upstream', async () => {
+    const { transport, calls } = recorder(report())
+    await pushBranch('/repo', 'feat/git-sync', transport)
+
+    expect(calls[0]?.args).toEqual({
+      repo: '/repo',
+      subcommand: 'push',
+      args: ['--set-upstream', 'origin', 'feat/git-sync']
+    })
+  })
+
+  test('refuses a name git would read as a flag', async () => {
+    const { transport, calls } = recorder(report())
+    const outcome = await pushBranch('/repo', '-f', transport)
+
+    expect(outcome.ok).toBe(false)
+    expect(calls).toHaveLength(0)
   })
 })
 
