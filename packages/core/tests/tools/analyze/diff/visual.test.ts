@@ -47,11 +47,11 @@ function setup() {
 }
 
 async function visualDiff(figma: FigmaAPI, args: Record<string, unknown>) {
-  const tool = expectDefined(ALL_TOOLS.find((candidate) => candidate.name === 'diff_visual'))
+  const tool = expectDefined(ALL_TOOLS.find((candidate) => candidate.name === 'diff_pixels'))
   return (await tool.execute(figma, args)) as VisualDiff
 }
 
-describe('diff_visual', () => {
+describe('diff_pixels', () => {
   test('reports no changed pixels for an identical copy', async () => {
     const { figma, card } = setup()
     const copy = card.clone()

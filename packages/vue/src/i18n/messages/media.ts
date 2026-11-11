@@ -13,7 +13,7 @@ export const mediaMessageDefaults = {
     'With your own Exa key, the AI agent and agents using OpenPencil’s tools can search the web with any model, and Exa bills you instead of using Cloud credits.',
   pexelsAPIKey: 'Pexels API Key (stock photos)',
   unsplashAccessKey: 'Unsplash Access Key',
-  stockPhotoToolOptional: 'Optional — for stock_photo tool',
+  stockPhotoToolOptional: 'Optional — for search_stock_photos tool',
   pexelsAlternativeOptional: 'Optional — alternative to Pexels',
   getPexelsAPIKey: 'Get free Pexels API key →',
   getUnsplashAccessKey: 'Get free Unsplash access key →',

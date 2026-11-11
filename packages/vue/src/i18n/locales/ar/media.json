@@ -7,7 +7,7 @@
   "webSearchDescription": "بمفتاح Exa الخاص بك، يستطيع وكيل الذكاء الاصطناعي والوكلاء الذين يستخدمون أدوات OpenPencil البحث على الويب بأي نموذج، وتُحاسبك Exa بدلًا من استخدام أرصدة Cloud.",
   "pexelsAPIKey": "مفتاح Pexels API (صور مخزنية)",
   "unsplashAccessKey": "مفتاح وصول Unsplash",
-  "stockPhotoToolOptional": "اختياري — لأداة stock_photo",
+  "stockPhotoToolOptional": "اختياري — لأداة search_stock_photos",
   "pexelsAlternativeOptional": "اختياري — بديل لـ Pexels",
   "getPexelsAPIKey": "احصل على مفتاح Pexels API مجاني ←",
   "getUnsplashAccessKey": "احصل على مفتاح وصول Unsplash مجاني ←",

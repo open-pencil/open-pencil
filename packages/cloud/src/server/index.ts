@@ -193,6 +193,7 @@ export {
 export {
   CLOUD_ERROR_SOURCES,
   cloudErrorHandler,
+  createLoggingErrorReporter,
   reportCloudError,
   type CloudErrorContext,
   type CloudErrorReporter,
@@ -202,6 +203,15 @@ export {
   type ErrorReporter,
   type PostHogErrorReporterOptions
 } from './errors'
+export {
+  cloudRequestId,
+  logCloud,
+  loggedError,
+  writeJSONLine,
+  type CloudLogLine,
+  type CloudLogWriter,
+  type ForwardedRequestId
+} from './logging'
 export {
   createInternalRoutes,
   createInternalService,

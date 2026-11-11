@@ -298,7 +298,7 @@ function formattedDate(updatedAt: string): string {
               {{ storageDescription }}
             </p>
           </div>
-          <div class="ml-auto flex shrink-0 items-center gap-1">
+          <div class="ms-auto flex shrink-0 items-center gap-1">
             <IconButton
               :label="common.refresh"
               class="size-10 sm:size-7"

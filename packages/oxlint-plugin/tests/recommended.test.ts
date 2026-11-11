@@ -4,8 +4,13 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { lintWithConfig } from '#oxlint-plugin-tests/helpers/lint'
-import plugin from '#oxlint-plugin/index'
+import { DOMAINS, lintWithConfig } from '#oxlint-plugin-tests/helpers/lint'
+import data from '#oxlint-plugin/plugins/data'
+import imports from '#oxlint-plugin/plugins/imports'
+import runtime from '#oxlint-plugin/plugins/runtime'
+import security from '#oxlint-plugin/plugins/security'
+import structure from '#oxlint-plugin/plugins/structure'
+import types from '#oxlint-plugin/plugins/types'
 import recommended from '#oxlint-plugin/recommended'
 import * as v from 'valibot'
 
@@ -18,11 +23,19 @@ const presetSchema = v.pipe(
 )
 /** Rules that fit only some code, which a project turns on where they apply. */
 const OPT_IN = new Set([
-  'no-dynamic-html',
-  'no-raw-runtime-effect',
-  'no-raw-sql',
-  'no-unvalidated-route-params'
+  '@open-pencil/security/no-dynamic-html',
+  '@open-pencil/data/no-raw-runtime-effect',
+  '@open-pencil/data/no-raw-sql',
+  '@open-pencil/security/no-unvalidated-route-params'
 ])
+
+/** The domain plugins, by the domain each names: `@open-pencil/<domain>`. */
+const PLUGINS = { data, imports, runtime, security, structure, types }
+
+/** Every rule the domain plugins define, by its full `@open-pencil/<domain>/<rule>` ID. */
+const PLUGIN_RULES = Object.entries(PLUGINS).flatMap(([domain, plugin]) =>
+  Object.keys(plugin.rules).map((rule) => `@open-pencil/${domain}/${rule}`)
+)
 
 async function preset() {
   return v.parse(presetSchema, await Bun.file(PRESET).text())
@@ -31,11 +44,27 @@ async function preset() {
 describe('recommended', () => {
   test('turns on every plugin rule but the opt-in ones, and only rules the plugin has', async () => {
     const { rules } = await preset()
-    const pluginRules = Object.keys(plugin.rules)
-    const enabled = Object.keys(rules)
-      .filter((rule) => rule.startsWith('open-pencil/'))
-      .map((rule) => rule.slice('open-pencil/'.length))
-    expect(enabled.toSorted()).toEqual(pluginRules.filter((rule) => !OPT_IN.has(rule)).toSorted())
+    const enabled = Object.keys(rules).filter((rule) => rule.startsWith('@open-pencil/'))
+    expect(enabled.toSorted()).toEqual(PLUGIN_RULES.filter((rule) => !OPT_IN.has(rule)).toSorted())
+  })
+
+  test('each domain plugin is named for its domain, loaded by the tests, and exported', async () => {
+    const manifest = v.parse(
+      v.pipe(
+        v.string(),
+        v.parseJson(),
+        v.looseObject({ exports: v.record(v.string(), v.unknown()) })
+      ),
+      await Bun.file(new URL('../package.json', import.meta.url)).text()
+    )
+    const domains = Object.keys(PLUGINS)
+    expect(Object.values(PLUGINS).map((plugin) => plugin.meta?.name)).toEqual(
+      domains.map((domain) => `@open-pencil/${domain}`)
+    )
+    expect(domains).toEqual([...DOMAINS])
+    expect(Object.keys(manifest.exports).filter((path) => path !== './recommended')).toEqual(
+      domains.map((domain) => `./${domain}`)
+    )
   })
 
   test('the module export is the JSON file', async () => {
@@ -55,7 +84,7 @@ describe('recommended', () => {
         (diagnostic) => diagnostic.code
       )
       expect(codes).toContain('eslint(eqeqeq)')
-      expect(codes).toContain('open-pencil(no-silent-catch)')
+      expect(codes).toContain('@open-pencil/runtime(no-silent-catch)')
     } finally {
       await rm(directory, { recursive: true, force: true })
     }

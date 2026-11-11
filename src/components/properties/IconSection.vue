@@ -56,7 +56,7 @@ function confirmSwap() {
 <template>
   <PanelSection v-if="name" :label="panels.icon">
     <template #actions>
-      <span v-if="modified" class="mr-1 text-2xs text-muted" data-property="icon-modified">
+      <span v-if="modified" class="me-1 text-2xs text-muted" data-property="icon-modified">
         {{ panels.iconModified }}
       </span>
       <IconButton v-if="modified" :label="panels.resetIcon" @click="reset">
@@ -81,12 +81,12 @@ function confirmSwap() {
             :aria-label="panels.swapIcon"
             :class="styles.trigger()"
           >
-            <IconPreview :svg="preview" class="mr-1.5 size-3.5 text-surface" />
+            <IconPreview :svg="preview" class="me-1.5 size-3.5 text-surface" />
             <span :class="styles.value()">
               {{ iconLayerName(name) }}
               <span class="text-muted">{{ setName ?? name.slice(0, name.indexOf(':')) }}</span>
             </span>
-            <icon-lucide-chevron-down class="ml-1 size-3 shrink-0 text-muted" />
+            <icon-lucide-chevron-down :class="styles.chevron()" />
           </button>
         </template>
       </IconPicker>

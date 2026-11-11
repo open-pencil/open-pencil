@@ -21,18 +21,46 @@
   ],
   "type": "module",
   "sideEffects": false,
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "imports": {
     "#oxlint-plugin/*": "./src/*.ts",
     "#oxlint-plugin-tests/*": "./tests/*.ts"
   },
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "bun": "./src/index.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
+    "./data": {
+      "types": "./dist/plugins/data.d.ts",
+      "bun": "./src/plugins/data.ts",
+      "import": "./dist/plugins/data.js",
+      "default": "./dist/plugins/data.js"
+    },
+    "./imports": {
+      "types": "./dist/plugins/imports.d.ts",
+      "bun": "./src/plugins/imports.ts",
+      "import": "./dist/plugins/imports.js",
+      "default": "./dist/plugins/imports.js"
+    },
+    "./runtime": {
+      "types": "./dist/plugins/runtime.d.ts",
+      "bun": "./src/plugins/runtime.ts",
+      "import": "./dist/plugins/runtime.js",
+      "default": "./dist/plugins/runtime.js"
+    },
+    "./security": {
+      "types": "./dist/plugins/security.d.ts",
+      "bun": "./src/plugins/security.ts",
+      "import": "./dist/plugins/security.js",
+      "default": "./dist/plugins/security.js"
+    },
+    "./structure": {
+      "types": "./dist/plugins/structure.d.ts",
+      "bun": "./src/plugins/structure.ts",
+      "import": "./dist/plugins/structure.js",
+      "default": "./dist/plugins/structure.js"
+    },
+    "./types": {
+      "types": "./dist/plugins/types.d.ts",
+      "bun": "./src/plugins/types.ts",
+      "import": "./dist/plugins/types.js",
+      "default": "./dist/plugins/types.js"
     },
     "./recommended": {
       "types": "./dist/recommended.d.ts",

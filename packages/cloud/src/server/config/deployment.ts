@@ -189,6 +189,7 @@ export function parseCloudDeploymentConfig(
     s3ChecksumVerification: config.object_storage.checksum_verification,
     s3ServerSideEncryption: config.object_storage.server_side_encryption,
     s3KmsKeyId: config.object_storage.kms_key_id,
+    s3DeletedPrefix: config.object_storage.deleted_prefix,
     relayURL: config.collaboration.relay_url,
     staticEntitlements: staticEntitlements(config),
     ...emailConfig(config, environment),

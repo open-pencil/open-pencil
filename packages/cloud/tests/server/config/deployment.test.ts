@@ -213,6 +213,18 @@ minimum_age = 16
     ).toThrow('terms_version')
   })
 
+  test('keeps deleted files under a prefix only when one is configured', () => {
+    expect(parseCloudDeploymentTOML(minimalSource, environment).s3DeletedPrefix).toBeUndefined()
+    const keeping = (prefix: string) =>
+      minimalSource.replace('[object_storage]', `[object_storage]\ndeleted_prefix = "${prefix}"`)
+    expect(parseCloudDeploymentTOML(keeping('deleted/'), environment).s3DeletedPrefix).toBe(
+      'deleted/'
+    )
+    for (const prefix of ['deleted', '/deleted/', 'Deleted/', 'a/b/', 'documents/']) {
+      expect(() => parseCloudDeploymentTOML(keeping(prefix), environment)).toThrow()
+    }
+  })
+
   test('reports server errors only when error tracking is configured', () => {
     expect(parseCloudDeploymentTOML(minimalSource, environment).errorTracking).toBeUndefined()
 
@@ -224,7 +236,7 @@ provider = "posthog"
     expect(
       parseCloudDeploymentTOML(tracked, { ...environment, POSTHOG_PROJECT_API_KEY: 'phc_test' })
         .errorTracking
-    ).toEqual({ provider: 'posthog', host: 'https://us.i.posthog.com', projectAPIKey: 'phc_test' })
+    ).toEqual({ provider: 'posthog', host: 'https://eu.i.posthog.com', projectAPIKey: 'phc_test' })
 
     const inline = tracked.replace(
       'provider = "posthog"',

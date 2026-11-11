@@ -33,6 +33,12 @@ export interface ACPAgentDef {
    * agent keeps what was said. Set only for agents whose adapter is known to resume reliably.
    */
   resumesSessions?: boolean
+  /**
+   * Whether the agent holds back MCP tools past a total schema size and tells its model to call
+   * them through a `call_mcp_tool` tool it does not provide over ACP, as Antigravity CLI does.
+   * OpenPencil's MCP server then provides that tool for the agent's sessions.
+   */
+  defersMCPTools?: boolean
 }
 
 export const ACP_AGENTS: ACPAgentDef[] = [
@@ -80,7 +86,8 @@ export const ACP_AGENTS: ACPAgentDef[] = [
     setupURL: 'https://antigravity.google',
     installCommand: 'curl -fsSL https://antigravity.google/cli/install.sh | bash',
     windowsInstallCommand: 'irm https://antigravity.google/cli/install.ps1 | iex',
-    resumesSessions: true
+    resumesSessions: true,
+    defersMCPTools: true
   },
   {
     id: 'cursor',

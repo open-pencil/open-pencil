@@ -138,12 +138,12 @@ describe('read-only documents', () => {
 
   test('agents cannot edit through atomic tools', () => {
     const { editor, rect } = setup()
-    const setOpacity = ALL_TOOLS.find((tool) => tool.name === 'set_opacity')
-    if (!setOpacity) throw new Error('set_opacity is missing')
+    const updateNode = ALL_TOOLS.find((tool) => tool.name === 'update_node')
+    if (!updateNode) throw new Error('update_node is missing')
     editor.setReadOnly(true)
 
     expect(() =>
-      executeAtomicTool(editor, new FigmaAPI(editor.graph), setOpacity, { id: rect.id, value: 0.5 })
+      executeAtomicTool(editor, new FigmaAPI(editor.graph), updateNode, { id: rect.id, opacity: 0.5 })
     ).toThrow(ReadOnlyDocumentError)
     expect(getNodeOrThrow(editor.graph, rect.id).opacity).toBe(1)
   })
