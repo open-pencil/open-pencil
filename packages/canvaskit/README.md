@@ -5,7 +5,7 @@
 - **`PDFDocument`**: Skia's PDF backend. Each page is an ordinary `Canvas`, so anything drawn to a surface can be drawn to a PDF page. Fonts are subset and embedded, text stays searchable, and effects PDF cannot express are drawn as images at the document's raster DPI.
 - **Text keeps its characters** through shaping: Arabic joining forms and ligatures in a PDF map back to the text they draw.
 - **Variable fonts embed as the instance they draw**, as TrueType rather than Type3 outlines.
-- **`ImageFilter.MakeRuntimeShader`**: a runtime shader effect as an image filter, sampling its input or, as a `saveLayer` backdrop filter, the backdrop.
+- **`ImageFilter.MakeRuntimeShader`**: a runtime shader effect as an image filter, sampling its input or, as a `saveLayer` backdrop filter, the backdrop. Under a scaled or rotated canvas it runs once per device pixel, with its coordinates still in the filter's own units, where upstream Skia runs it at those units' resolution and stretches the result.
 
 The API and types are otherwise CanvasKit's.
 

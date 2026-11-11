@@ -3,7 +3,7 @@ import * as v from 'valibot'
 import { toolNumber, defineTool } from '#core/tools/schema'
 
 export const viewportGet = defineTool({
-  name: 'viewport_get',
+  name: 'get_viewport',
   description: 'Get current viewport position and zoom level.',
   execution: { kind: 'sync', mutation: 'none' },
   exposure: { webmcp: false },
@@ -14,7 +14,7 @@ export const viewportGet = defineTool({
 })
 
 export const viewportSet = defineTool({
-  name: 'viewport_set',
+  name: 'set_viewport',
 
   description: 'Set viewport position and zoom.',
   execution: { kind: 'sync', mutation: 'view' },
@@ -30,7 +30,7 @@ export const viewportSet = defineTool({
 })
 
 export const viewportZoomToFit = defineTool({
-  name: 'viewport_zoom_to_fit',
+  name: 'zoom_to_fit',
 
   description: 'Zoom viewport to fit specified nodes.',
   execution: { kind: 'sync', mutation: 'view' },

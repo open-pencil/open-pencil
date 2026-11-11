@@ -249,6 +249,27 @@ describe('agentSetupView', () => {
     expect(view.manualAgentCommand).toBe(gemini.installCommand ?? null)
   })
 
+  test('offers the install command for Antigravity CLI on POSIX and Windows', () => {
+    const agy = agent('antigravity')
+    const posixView = agentSetupView(
+      agy,
+      agentState({
+        detected: { definition: agy, status: 'not-installed', cliPath: null, adapterPath: null }
+      }),
+      'Mozilla/5.0 (Macintosh)'
+    )
+    expect(posixView.manualAgentCommand).toBe(agy.installCommand ?? null)
+
+    const windowsView = agentSetupView(
+      agy,
+      agentState({
+        detected: { definition: agy, status: 'not-installed', cliPath: null, adapterPath: null }
+      }),
+      'Mozilla/5.0 (Windows NT 10.0)'
+    )
+    expect(windowsView.manualAgentCommand).toBe(agy.windowsInstallCommand ?? null)
+  })
+
   test('shows the commands after a failed installation', () => {
     const view = agentSetupView(
       claude,

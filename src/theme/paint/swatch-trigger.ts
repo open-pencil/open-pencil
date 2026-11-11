@@ -4,6 +4,15 @@ export default {
     swatch: 'size-full',
     preview: 'pointer-events-none absolute inset-0'
   },
-  variants: { size: { sm: { root: 'size-4' }, md: { root: 'size-5' } } },
-  defaultVariants: { size: 'sm' }
+  variants: {
+    size: { sm: { root: 'size-4' }, md: { root: 'size-5' } },
+    /** A preview that is sometimes an icon, such as an effect's, gets a frame of its own. */
+    framed: {
+      true: {
+        root: 'flex items-center justify-center overflow-hidden border border-border bg-input'
+      },
+      false: {}
+    }
+  },
+  defaultVariants: { size: 'sm', framed: false }
 } as const

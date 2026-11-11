@@ -1,6 +1,6 @@
 import type { SessionUpdate } from '@agentclientprotocol/sdk'
 import type { UIMessageChunk } from 'ai'
-import { isEmptyObject } from 'es-toolkit'
+import { isEmptyObject, omit } from 'es-toolkit'
 import * as v from 'valibot'
 
 import { OPEN_PENCIL_MCP_SERVER } from '@open-pencil/core/constants'
@@ -26,6 +26,13 @@ interface ToolIdentity {
 
 const OWN_PREFIX = `mcp__${OPEN_PENCIL_MCP_SERVER}__`
 const GROK_OWN_PREFIX = `${OPEN_PENCIL_MCP_SERVER}__`
+const ANTIGRAVITY_OWN_TITLE = `Run mcp_${OPEN_PENCIL_MCP_SERVER}_`
+/** The tool OpenPencil's MCP server gives agents that defer tools; see `ACPAgentDef.defersMCPTools`. */
+const CALL_TOOL = 'call_mcp_tool'
+const callToolInputSchema = v.object({
+  toolName: v.string(),
+  arguments: v.optional(v.record(v.string(), v.unknown()))
+})
 
 const codexMCPInputSchema = v.object({
   server: v.string(),
@@ -58,6 +65,7 @@ const grokMCPOutputSchema = v.object({
   output: v.union([v.object({ OkayOutput: v.string() }), v.object({ Error: v.string() })]),
   is_error: v.optional(v.boolean())
 })
+const inputObjectSchema = v.record(v.string(), v.unknown())
 const mcpResultSchema = v.object({
   content: v.array(v.unknown()),
   isError: v.optional(v.boolean())
@@ -115,12 +123,31 @@ function grokIdentity(update: ToolCallReport): ToolIdentity | null {
     : { name: `mcp__${name}`, kind: 'mcp', input: args ?? {} }
 }
 
+/**
+ * Antigravity CLI titles an MCP call `Run mcp_<server>_<tool>` and adds a `toolSummary` of its own
+ * to the input. Server and tool names may hold underscores, so only OpenPencil's server, whose
+ * name is known, splits off; another server's calls keep the agent's title.
+ */
+function antigravityIdentity(update: ToolCallReport): ToolIdentity | null {
+  if (!update.title?.startsWith(ANTIGRAVITY_OWN_TITLE)) return null
+  const name = update.title.slice(ANTIGRAVITY_OWN_TITLE.length)
+  const parsed = v.safeParse(inputObjectSchema, update.rawInput)
+  const input = parsed.success ? omit(parsed.output, ['toolSummary']) : {}
+  // A deferred tool runs through the server's `call_mcp_tool`; show the tool it ran.
+  const called = name === CALL_TOOL ? v.safeParse(callToolInputSchema, input) : null
+  if (called?.success) {
+    return { name: called.output.toolName, kind: 'own', input: called.output.arguments ?? {} }
+  }
+  return { name, kind: 'own', input }
+}
+
 function identify(update: ToolCallReport): ToolIdentity {
   return (
     codexIdentity(update) ??
     claudeIdentity(update) ??
     cursorIdentity(update) ??
-    grokIdentity(update) ?? { name: update.title || 'unknown', kind: 'agent' }
+    grokIdentity(update) ??
+    antigravityIdentity(update) ?? { name: update.title || 'unknown', kind: 'agent' }
   )
 }
 

@@ -13,30 +13,30 @@ export const designCheckTheme = {
     status: 'px-3 py-2 text-2xs text-muted',
     // Group slots override the matching AppCollapsible slots.
     group: 'group/issue border-b border-border/60 last:border-b-0',
-    groupHeader: 'group/header relative h-8 gap-0 pr-2 pl-1.5',
+    groupHeader: 'group/header relative h-8 gap-0 pe-2 ps-1.5',
     groupTrigger:
-      'h-7 cursor-pointer gap-1.5 rounded pr-1 text-2xs focus-visible:ring-1 focus-visible:ring-panel-focus',
+      'h-7 cursor-pointer gap-1.5 rounded pe-1 text-2xs focus-visible:ring-1 focus-visible:ring-panel-focus',
     chevron: 'size-3 text-muted',
     groupLabel: 'flex min-w-0 flex-1 items-center gap-1.5',
     groupTitle: 'block min-w-0 truncate font-semibold',
     groupCount:
-      'ml-auto shrink-0 pr-1 text-muted tabular-nums group-focus-within/header:invisible group-hover/header:invisible group-data-[menu-open]/issue:invisible',
+      'ms-auto shrink-0 pe-1 text-muted tabular-nums group-focus-within/header:invisible group-hover/header:invisible group-data-[menu-open]/issue:invisible',
     groupActions:
-      'invisible absolute inset-y-0 right-1.5 flex items-center gap-0.5 group-focus-within/header:visible group-hover/header:visible group-data-[menu-open]/issue:visible',
+      'invisible absolute inset-y-0 inset-e-1.5 flex items-center gap-0.5 group-focus-within/header:visible group-hover/header:visible group-data-[menu-open]/issue:visible',
     rows: 'pb-1',
     rowItem: 'group/row relative',
-    row: 'flex h-7 w-full cursor-default items-center gap-2 pr-2 pl-7 text-left text-2xs text-surface outline-none hover:bg-hover focus-visible:bg-hover data-[selected]:bg-panel-selected-muted data-[missing]:text-muted',
+    row: 'flex h-7 w-full cursor-default items-center gap-2 pe-2 ps-7 text-start text-2xs text-surface outline-none hover:bg-hover focus-visible:bg-hover data-[selected]:bg-panel-selected-muted data-[missing]:text-muted',
     rowIcon: 'size-3 shrink-0 text-muted',
     rowName: 'min-w-0 flex-1 truncate',
     rowTag: 'shrink-0 text-3xs text-muted',
     rowDetail: 'flex max-w-[50%] min-w-0 shrink items-center gap-1.5 text-muted tabular-nums',
     rowDetailText: 'truncate',
     rowAction:
-      'absolute top-1/2 right-1.5 hidden h-5 -translate-y-1/2 cursor-pointer items-center rounded bg-panel px-1.5 text-primary shadow-[0_0_0_1px_var(--color-border)] outline-none group-focus-within/row:flex group-hover/row:flex hover:bg-hover focus-visible:ring-1 focus-visible:ring-panel-focus',
+      'absolute top-1/2 inset-e-1.5 hidden h-5 -translate-y-1/2 cursor-pointer items-center rounded bg-panel px-1.5 text-primary shadow-[0_0_0_1px_var(--color-border)] outline-none group-focus-within/row:flex group-hover/row:flex hover:bg-hover focus-visible:ring-1 focus-visible:ring-panel-focus',
     contrastSwatch:
       'flex h-3.5 shrink-0 items-center rounded-[0.1875rem] px-0.75 text-4xs leading-none font-semibold shadow-[inset_0_0_0_1px_rgb(0_0_0/0.12)]',
     swatch: 'size-2.5 shrink-0 rounded-[0.1875rem] shadow-[inset_0_0_0_1px_rgb(0_0_0/0.12)]',
-    more: 'mb-1 ml-6'
+    more: 'mb-1 ms-6'
   }
 } as const
 
@@ -77,7 +77,7 @@ export const issueTooltipTheme = {
     itemBody: 'min-w-0 flex-1',
     itemTitle: 'truncate',
     itemDetail: 'truncate text-muted tabular-nums',
-    more: 'px-2.5 py-1 pl-7 text-muted',
+    more: 'px-2.5 py-1 ps-7 text-muted',
     hint: 'mt-1 border-t border-border px-2.5 pt-1.5 text-muted'
   }
 } as const

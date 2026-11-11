@@ -25,7 +25,7 @@ export default defineCommand({
   async run({ args }) {
     const { result } = await runToolData(
       args.file,
-      'diff_show',
+      'preview_patch',
       { id: args.id, attributes: args.attributes },
       args
     )

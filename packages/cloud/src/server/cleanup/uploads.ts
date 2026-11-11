@@ -101,7 +101,7 @@ export function createUploadCleanupService(
           }
         } catch (error) {
           failed++
-          await reportCloudError(reportError, `Cleaning up upload ${upload.id} failed:`, error, {
+          await reportCloudError(reportError, `Cleaning up upload ${upload.id} failed`, error, {
             source: 'cleanup'
           })
           await database

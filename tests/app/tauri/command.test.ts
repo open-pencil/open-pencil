@@ -10,7 +10,12 @@ import { signInScope } from '@/app/ai/agents/acp/auth/terminal'
 import { HARNESS_PACKAGE } from '@/app/ai/agents/pi/companion'
 import { bunInstallArgs, npmInstallArgs } from '@/app/ai/agents/setup/native'
 import { MCP_PACKAGE_NAME } from '@/app/automation/mcp/failure'
-import { resolvePlatformCommand, resolveScopedCommand } from '@/app/tauri/command'
+import {
+  platformCommandEnv,
+  resolvePlatformCommand,
+  resolveScopedCommand
+} from '@/app/tauri/command'
+
 const WINDOWS_UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0'
 const MAC_UA =
@@ -61,6 +66,11 @@ describe('resolvePlatformCommand', () => {
       command: 'openpencil-mcp-http',
       args: ['--stdio']
     })
+  })
+
+  test('keeps cmd from running programs out of its own folder on Windows', () => {
+    expect(platformCommandEnv(WINDOWS_UA)).toEqual({ NoDefaultCurrentDirectoryInExePath: '1' })
+    expect(platformCommandEnv(MAC_UA)).toEqual({})
   })
 })
 

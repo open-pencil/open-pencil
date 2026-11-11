@@ -89,6 +89,8 @@ export interface EditorSharedState {
   snappingPreferences: SnappingPreferences
   /** Draw the pixel grid once zoomed in far enough, as Figma's View › Pixel grid; shown unless false. */
   showPixelGrid?: boolean
+  /** Draw the selection's width × height under it, as Figma does; shown unless false. */
+  showSizeLabels?: boolean
   /** The gradient being edited, whose handles the canvas draws and drags. */
   gradientEdit?: GradientEdit | null
   presenceCursors: PresenceCursor[]

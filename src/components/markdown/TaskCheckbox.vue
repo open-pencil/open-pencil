@@ -23,7 +23,7 @@ const checked = computed(() => {
   <!-- A task list's checkbox shows a reply's state and cannot be changed; it still needs a name. -->
   <input
     data-stream-markdown="input"
-    class="mr-2 align-middle task-list-item-checkbox"
+    class="me-2 align-middle task-list-item-checkbox"
     type="checkbox"
     disabled
     :checked="checked"

@@ -104,237 +104,91 @@ const noCoreBrowserGlobals = {
   }
 } satisfies RuleDefinition
 
-/** Modules that draw document content into the cached scene. */
-const SCENE_DRAWING_FILES = [
-  '/packages/core/src/canvas/scene.ts',
-  '/packages/core/src/canvas/strokes.ts',
-  '/packages/core/src/canvas/fills.ts',
-  '/packages/core/src/canvas/boolean.ts'
-]
-const SCENE_DRAWING_DIRECTORIES = ['/packages/core/src/canvas/text/']
-
-/** Whether `node` is an argument of `effectRasterScale(...)`, not inside a function passed to it. */
-function inEffectRasterScale(node: TSESTree.Node): boolean {
-  for (let current = node.parent; current; current = current.parent) {
-    if (
-      current.type === 'ArrowFunctionExpression' ||
-      current.type === 'FunctionExpression' ||
-      current.type === 'FunctionDeclaration'
-    )
-      return false
-    if (
-      current.type === 'CallExpression' &&
-      current.callee.type === 'Identifier' &&
-      current.callee.name === 'effectRasterScale'
-    )
-      return true
-  }
-  return false
-}
-
-const noZoomInSceneDrawing = {
-  meta: {
-    docs: {
-      description:
-        'Disallow reading the zoom where document content is drawn: the scene is cached and scaled, so screen-sized chrome belongs in the overlay pass'
-    }
-  },
+const noBunGlobalsInCli = {
+  meta: { docs: { description: 'Disallow Bun globals in Node-compatible CLI source' } },
   create(context) {
     const file = normalizedFilename(context)
-    const scene =
-      SCENE_DRAWING_FILES.some((suffix) => file.endsWith(suffix)) ||
-      SCENE_DRAWING_DIRECTORIES.some((directory) => file.includes(directory))
-    if (!scene) return {}
-
+    if (!file.includes('/packages/cli/src/')) return {}
     return {
       MemberExpression(node) {
-        if (node.computed || node.property.type !== 'Identifier') return
-        if (node.property.name !== 'zoom' || inEffectRasterScale(node)) return
+        if (node.object?.type !== 'Identifier' || node.object.name !== 'Bun') return
         context.report({
           node,
-          message:
-            'Do not size scene drawing by the zoom; the scene is cached and scaled while navigating. Draw screen-sized chrome in the overlay pass with withScreenStroke.'
+          message: 'Use Node-compatible APIs in CLI source instead of Bun globals.'
         })
       }
     }
   }
 } satisfies RuleDefinition
 
-const noDirectGraphEmitterSubscriptions = {
-  meta: {
-    docs: {
-      description: 'Disallow direct graph.emitter.on subscriptions outside SceneGraph helpers'
-    }
-  },
-  create(context) {
-    const file = normalizedFilename(context)
-    if (file.endsWith('/packages/core/src/scene-graph/index.ts')) return {}
-
-    return {
-      CallExpression(node) {
-        const callee = node.callee
-        if (callee?.type !== 'MemberExpression') return
-        if (callee.property?.type !== 'Identifier' || callee.property.name !== 'on') return
-        const object = callee.object
-        if (object?.type !== 'MemberExpression') return
-        if (object.property?.type !== 'Identifier' || object.property.name !== 'emitter') return
-        context.report({
-          node,
-          message: 'Use SceneGraph.onNodeEvents() instead of subscribing to graph.emitter directly.'
-        })
-      }
-    }
-  }
-} satisfies RuleDefinition
-
-const noOnUnmountedInCompositionRoots = {
-  meta: {
-    docs: {
-      description: 'Prefer tryOnScopeDispose over onUnmounted in composable roots'
-    }
-  },
-  create(context) {
-    const file = normalizedFilename(context)
-    const applies =
-      (file.includes('/src/app/') || file.includes('/packages/vue/src/')) &&
-      /\/(?:use|create)\.ts$/.test(file)
-    if (!applies) return {}
-
-    return {
-      CallExpression(node) {
-        if (node.callee?.type !== 'Identifier' || node.callee.name !== 'onUnmounted') return
-        context.report({
-          node,
-          message:
-            'Use tryOnScopeDispose() for composable cleanup so callers outside component setup are handled safely.'
-        })
-      }
-    }
-  }
-} satisfies RuleDefinition
-
-const noComposableStateWrappers = {
-  meta: {
-    docs: {
-      description: 'Disallow create*ComposableState wrapper factories in app and Vue SDK code'
-    }
-  },
-  create(context) {
-    const file = normalizedFilename(context)
-    const applies = file.includes('/src/app/') || file.includes('/packages/vue/src/')
-    if (!applies) return {}
-
-    return {
-      FunctionDeclaration(node) {
-        if (!node.id?.name || !/^create\w*ComposableState$/.test(node.id.name)) return
-        context.report({
-          node,
-          message:
-            'Avoid wrapper-of-wrapper composable state factories; keep setup local or extract a cohesive domain helper.'
-        })
-      }
-    }
-  }
-} satisfies RuleDefinition
-
-const preferVueUseIntervals = {
-  meta: {
-    docs: {
-      description: 'Prefer VueUse interval helpers over manual setInterval/clearInterval pairs'
-    }
-  },
-  create(context) {
-    const file = normalizedFilename(context)
-    const applies = file.includes('/src/app/') || file.includes('/packages/vue/src/')
-    if (!applies) return {}
-
-    function intervalName(callee: TSESTree.Expression): string | null {
-      if (callee?.type === 'Identifier') return callee.name
-      if (callee?.type === 'MemberExpression' && callee.property?.type === 'Identifier') {
-        return callee.property.name
-      }
-      return null
-    }
-
-    return {
-      CallExpression(node) {
-        const name = intervalName(node.callee)
-        if (name !== 'setInterval' && name !== 'clearInterval') return
-        context.report({
-          node,
-          message: 'Use useIntervalFn() from @vueuse/core instead of manual interval cleanup.'
-        })
-      }
-    }
-  }
-} satisfies RuleDefinition
-
-const preferVueUseTimeouts = {
-  meta: {
-    docs: {
-      description: 'Prefer VueUse timeout helpers over manual timeout cleanup in composables'
-    }
-  },
-  create(context) {
-    const file = normalizedFilename(context)
-    const applies =
-      ((file.includes('/src/app/') || file.includes('/packages/vue/src/')) &&
-        /\/(?:use|create)\.ts$/.test(file)) ||
-      file.endsWith('/src/app/shell/toast/action.ts')
-    if (!applies) return {}
-
-    return {
-      CallExpression(node) {
-        if (node.callee?.type !== 'Identifier' || node.callee.name !== 'clearTimeout') return
-        context.report({
-          node,
-          message:
-            'Use useTimeoutFn() from @vueuse/core instead of manual timeout cleanup in composables.'
-        })
-      }
-    }
-  }
-} satisfies RuleDefinition
-
-const maxCompositionRootLines = {
+const noRawConsoleFormat = {
   meta: {
     docs: {
       description:
-        'Keep composition roots small; extract domain helpers before they become cleanup projects'
-    },
-    schema: [
-      {
-        type: 'object',
-        properties: {
-          max: { type: 'number' }
-        },
-        additionalProperties: false
+        'Disallow hand-rolled formatting in console.log — use agentfmt helpers (bold, dim, kv, entity, fmtTree, fmtList, etc.)'
+    }
+  },
+  create(context) {
+    return {
+      CallExpression(node) {
+        if (
+          node.callee?.type !== 'MemberExpression' ||
+          node.callee.object?.type !== 'Identifier' ||
+          node.callee.object.name !== 'console' ||
+          node.callee.property?.type !== 'Identifier' ||
+          node.callee.property.name !== 'log'
+        )
+          return
+        if (!node.arguments?.length) return
+
+        for (const arg of node.arguments) {
+          if (arg.type === 'TemplateLiteral' && arg.expressions?.length > 0) {
+            context.report({
+              node,
+              message:
+                'Use agentfmt helpers (bold, dim, kv, entity, etc.) instead of template literals in console.log.'
+            })
+            return
+          }
+          if (arg.type === 'BinaryExpression' && arg.operator === '+') {
+            context.report({
+              node,
+              message:
+                'Use agentfmt helpers (bold, dim, kv, entity, etc.) instead of string concatenation in console.log.'
+            })
+            return
+          }
+        }
       }
-    ]
+    }
+  }
+} satisfies RuleDefinition
+
+const noTypeofWindowCheck = {
+  meta: {
+    docs: {
+      description: 'Disallow raw typeof window checks — use IS_BROWSER or IS_TAURI from constants'
+    }
   },
   create(context) {
     const file = normalizedFilename(context)
-    const applies =
-      (file.includes('/src/app/') || file.includes('/packages/vue/src/')) &&
-      /\/(?:use|create)\.ts$/.test(file)
-    if (!applies) return {}
-
-    const options = context.options[0]
-    const max =
-      options && typeof options === 'object' && 'max' in options && typeof options.max === 'number'
-        ? options.max
-        : 260
+    if (file.endsWith('constants.ts')) return {}
 
     return {
-      Program(node) {
-        const source = context.sourceCode.getText()
-        const normalized = source.endsWith('\n') ? source.slice(0, -1) : source
-        const lineCount = normalized.split('\n').length
-        if (lineCount <= max) return
-        context.report({
-          node,
-          message: `Composition root is ${lineCount} lines; extract helpers before exceeding ${max} lines.`
-        })
+      BinaryExpression(node) {
+        if (node.operator !== '!==' && node.operator !== '===') return
+        const isTypeofWindow = (side: TSESTree.Expression) =>
+          side.type === 'UnaryExpression' &&
+          side.operator === 'typeof' &&
+          side.argument?.type === 'Identifier' &&
+          side.argument.name === 'window'
+        if (isTypeofWindow(node.left) || isTypeofWindow(node.right)) {
+          context.report({
+            node,
+            message:
+              "Use IS_BROWSER or IS_TAURI from constants instead of raw 'typeof window' checks."
+          })
+        }
       }
     }
   }
@@ -344,11 +198,7 @@ export {
   noDirectStorageAccess,
   noViteHotOutsideReload,
   noCoreBrowserGlobals,
-  noZoomInSceneDrawing,
-  noDirectGraphEmitterSubscriptions,
-  noOnUnmountedInCompositionRoots,
-  noComposableStateWrappers,
-  preferVueUseIntervals,
-  preferVueUseTimeouts,
-  maxCompositionRootLines
+  noBunGlobalsInCli,
+  noRawConsoleFormat,
+  noTypeofWindowCheck
 }

@@ -220,6 +220,6 @@ function setBudgetHeaders(context: Context, use: RateLimitUse, windowMs: number)
 export function routeParamResource(name: string) {
   return (context: Context): string =>
     // Lowercased as validation lowercases UUIDs, so one row's spellings share a budget.
-    // eslint-disable-next-line open-pencil/no-unvalidated-route-params -- a counter name, hashed, never queried.
+    // eslint-disable-next-line @open-pencil/security/no-unvalidated-route-params -- a counter name, hashed, never queried.
     context.req.param(name)?.toLowerCase() ?? 'unknown'
 }

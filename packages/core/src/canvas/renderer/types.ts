@@ -47,6 +47,8 @@ export interface RenderOverlays {
   hoveredNodeId?: string | null
   /** Draw the pixel grid when zoomed in far enough. */
   showPixelGrid?: boolean
+  /** Draw the selection's size under it; drawn unless false. */
+  showSizeLabels?: boolean
   /** The gradient whose handles to draw in place of the selection. */
   gradientEdit?: GradientEdit | null
   transforming?: boolean
