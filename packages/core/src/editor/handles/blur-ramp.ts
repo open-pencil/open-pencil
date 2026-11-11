@@ -1,9 +1,8 @@
 import type { Effect, ProgressiveBlur, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
-import { createSceneGeometry, type RotationPreview, type ViewportTransform } from '#core/geometry'
-
 import type { BlurRampEdit } from '#core/editor/types'
+import { createSceneGeometry, type RotationPreview, type ViewportTransform } from '#core/geometry'
 
 /** Figma 126's progressive blur handles: white dots 8 px across, on a 1 px line between them. */
 export const BLUR_RAMP_HANDLE = {

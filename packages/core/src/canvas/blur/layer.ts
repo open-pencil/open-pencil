@@ -5,11 +5,10 @@ import type { Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 
-import { nodeOrientationMatrix } from '#core/geometry'
-import { mapVisualBounds } from '#core/geometry/render-bounds'
-
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import { subtreeVisualBounds } from '#core/canvas/renderer/visual-bounds'
+import { nodeOrientationMatrix } from '#core/geometry'
+import { mapVisualBounds } from '#core/geometry/render-bounds'
 
 /**
  * A layer blur's filter. It runs before the layer's rotation and flips are applied, so a
