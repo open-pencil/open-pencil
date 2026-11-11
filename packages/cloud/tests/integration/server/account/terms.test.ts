@@ -229,13 +229,26 @@ describe('terms acceptance', () => {
       })
       expect((await post(`/api/uploads/${upload.id}/commit`, { checksum })).status).toBe(200)
 
+      // Someone else joins, so this account is the workspace's only admin: deleting it waits for
+      // a handover, and the plan must still list what it made there.
+      await runtime.database
+        .insertInto('workspaceMember')
+        .values({ workspaceId: workspace.id, userId: 'teammate', role: 'editor' })
+        .execute()
+
       // Then the terms change, and this account has not accepted them yet.
       accepted = false
       const deletion = await responseJSON(
         await app.request('/api/account/deletion'),
-        v.object({ deletion: v.object({ documents: v.array(v.object({ id: v.string() })) }) })
+        v.object({
+          deletion: v.object({
+            blockedBy: v.array(v.object({ id: v.string() })),
+            documents: v.array(v.object({ id: v.string() }))
+          })
+        })
       )
-      expect(deletion.deletion.documents.map((entry) => entry.id)).toContain(document.id)
+      expect(deletion.deletion.blockedBy.map((entry) => entry.id)).toEqual([workspace.id])
+      expect(deletion.deletion.documents.map((entry) => entry.id)).toEqual([document.id])
       expect((await app.request(`/api/documents/${document.id}`)).status).toBe(200)
 
       expect((await app.request('/api/workspaces')).status).toBe(401)
