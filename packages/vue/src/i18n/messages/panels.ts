@@ -372,7 +372,6 @@ export const panelMessageDefaults = {
   effectSettings: 'Effect settings',
   expandEffectSettings: 'Expand effect settings',
   collapseEffectSettings: 'Collapse effect settings',
-  toggleExportPreview: 'Toggle export preview',
 
   dropShadow: 'Drop shadow',
   innerShadow: 'Inner shadow',
