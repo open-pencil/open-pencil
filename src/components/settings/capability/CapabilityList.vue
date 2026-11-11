@@ -67,7 +67,7 @@ function isOpen(group: CapabilityGroup) {
             />
           </span>
           <CollapsibleTrigger
-            class="group flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+            class="group flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
           >
             <icon-lucide-chevron-right
               class="size-3 shrink-0 text-muted transition-transform group-data-[state=open]:rotate-90 motion-reduce:transition-none"
@@ -84,7 +84,7 @@ function isOpen(group: CapabilityGroup) {
         <CollapsibleContent :class="collapsibleContentMotion">
           <p
             v-if="!group.items.length"
-            class="border-t border-border py-2 pr-3 pl-13 text-2xs text-muted"
+            class="border-t border-border py-2 pe-3 ps-13 text-2xs text-muted"
           >
             {{ group.empty }}
           </p>
@@ -95,7 +95,7 @@ function isOpen(group: CapabilityGroup) {
               class="flex min-h-8 items-stretch border-t border-border transition-colors hover:bg-hover"
               :data-item="item.name"
             >
-              <span class="flex shrink-0 items-center py-1 pr-3 pl-3">
+              <span class="flex shrink-0 items-center py-1 pe-3 ps-3">
                 <AppSwitch
                   :id="`${baseId}-${group.key}-${index}`"
                   :model-value="item.enabled"
@@ -112,7 +112,7 @@ function isOpen(group: CapabilityGroup) {
                     ? { type: 'button', 'aria-label': openLabel(item) }
                     : { for: `${baseId}-${group.key}-${index}` }
                 "
-                class="flex min-w-0 flex-1 items-center gap-3 py-1 pr-3 text-left @max-md/capabilities:flex-wrap"
+                class="flex min-w-0 flex-1 items-center gap-3 py-1 pe-3 text-start @max-md/capabilities:flex-wrap"
                 :class="item.locked && !openLabel ? 'cursor-default' : 'cursor-pointer'"
                 @click="openLabel && emit('open', group.key, item.key)"
               >

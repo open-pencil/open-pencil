@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 import type { Effect, Fill, GlassEffectParams } from '@open-pencil/scene-graph'
 import { colorToHexRaw } from '@open-pencil/scene-graph/color'
 import { UNSET_GLASS } from '@open-pencil/scene-graph/constants'
@@ -8,7 +10,7 @@ import {
   useColorBindingProvider,
   type BindingTarget
 } from '@open-pencil/vue/controls/binding-provider'
-import { useEffectsControls } from '@open-pencil/vue/controls/effects'
+import { type BlurKind, useEffectsControls } from '@open-pencil/vue/controls/effects'
 import { useI18n } from '@open-pencil/vue/i18n'
 import {
   BindableValueRoot,
@@ -23,6 +25,7 @@ import {
   commitDiscretePropertyListChange,
   useBlendModeGroups
 } from '@/components/properties/blend-mode/use'
+import { useBlurRampEditing } from '@/components/properties/effects/blur-ramp'
 import PropertyItemRow from '@/components/properties/item-list/PropertyItemRow.vue'
 import { applyPaintMutation, commitPaintMutation } from '@/components/properties/paint/binding'
 import PaintValue from '@/components/properties/paint/PaintValue.vue'
@@ -32,14 +35,24 @@ import VariableNumberField from '@/components/properties/VariableNumberField.vue
 import IconButton from '@/components/ui/button/IconButton.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
+import { fillSwatchTrigger } from '@/components/ui/paint/swatch-trigger'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
+import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import AppCheckbox from '@/components/ui/toggle/AppCheckbox.vue'
 
 const effectsCtx = useEffectsControls()
 const { panels, common } = useI18n()
+// An effect's preview toggles its settings; it is a swatch for shadows and an icon otherwise.
+const effectPreviewButton = fillSwatchTrigger({ size: 'md', framed: true }).root()
+useBlurRampEditing(effectsCtx.expandedIndex)
+
+const blurKindOptions = computed(() => [
+  { value: 'UNIFORM', label: panels.value.uniformBlur },
+  { value: 'PROGRESSIVE', label: panels.value.progressiveBlur }
+])
 const colorProvider = useColorBindingProvider()
 const blendModeGroups = useBlendModeGroups()
 const {
@@ -75,6 +88,12 @@ function glassChange<K extends keyof GlassEffectParams>(
   value: GlassEffectParams[K]
 ): Partial<Effect> {
   return { glass: { ...(effect.glass ?? UNSET_GLASS), [key]: value } }
+}
+
+/** `effect`, a progressive blur, starting at `radius`; Figma keeps a start over 100 at 100. */
+function startRadiusChange(effect: Effect, radius: number): Partial<Effect> {
+  if (!effect.progressive) return {}
+  return { progressive: { ...effect.progressive, startRadius: Math.min(Math.max(radius, 0), 100) } }
 }
 
 /** A percentage field's value as Figma's 0–1 glass amount. */
@@ -163,7 +182,7 @@ function effectPreview(effect: Effect): Fill {
                       : panels.expandEffectSettings
                   "
                   data-property="effect-expand"
-                  class="flex size-5 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded border border-border bg-input p-0"
+                  :class="effectPreviewButton"
                   @click="effectsCtx.toggleExpand(index)"
                 >
                   <FillSwatch
@@ -487,22 +506,49 @@ function effectPreview(effect: Effect): Fill {
             </PanelGrid>
           </template>
 
-          <PanelGrid v-else :columns="2">
-            <PanelFieldGroup :label="panels.blur">
-              <VariableNumberField
-                :aria-label="panels.blur"
-                :model-value="effect.radius"
-                :min="0"
-                :node-id="selectedNodeIds[0] ?? ''"
-                :node-ids="selectedNodeIds"
-                :binding-path="`effects/${index}/radius`"
-                @update:model-value="effectsCtx.scrubEffect(index, { radius: $event })"
-                @commit="effectsCtx.commitEffect(index, { radius: $event })"
-              >
-                <template #icon><icon-lucide-droplet class="size-3" /></template>
-              </VariableNumberField>
-            </PanelFieldGroup>
-          </PanelGrid>
+          <template v-else>
+            <SegmentedControl
+              :model-value="effect.progressive ? 'PROGRESSIVE' : 'UNIFORM'"
+              :options="blurKindOptions"
+              :label="panels.blurType"
+              data-property="effect-blur-type"
+              @change="
+                effectsCtx.commitEffect(index, effectsCtx.blurKindChange($event as BlurKind))
+              "
+            />
+            <PanelGrid :columns="2">
+              <PanelFieldGroup v-if="effect.progressive" :label="panels.blurStart">
+                <NumberField
+                  :inherit-binding="false"
+                  :aria-label="panels.blurStart"
+                  :model-value="effect.progressive.startRadius"
+                  :min="0"
+                  :max="100"
+                  data-property="effect-blur-start"
+                  @update:model-value="
+                    effectsCtx.scrubEffect(index, startRadiusChange(effect, $event))
+                  "
+                  @commit="effectsCtx.commitEffect(index, startRadiusChange(effect, $event))"
+                >
+                  <template #icon><icon-lucide-droplet class="size-3" /></template>
+                </NumberField>
+              </PanelFieldGroup>
+              <PanelFieldGroup :label="effect.progressive ? panels.blurEnd : panels.blur">
+                <VariableNumberField
+                  :aria-label="effect.progressive ? panels.blurEnd : panels.blur"
+                  :model-value="effect.radius"
+                  :min="0"
+                  :node-id="selectedNodeIds[0] ?? ''"
+                  :node-ids="selectedNodeIds"
+                  :binding-path="`effects/${index}/radius`"
+                  @update:model-value="effectsCtx.scrubEffect(index, { radius: $event })"
+                  @commit="effectsCtx.commitEffect(index, { radius: $event })"
+                >
+                  <template #icon><icon-lucide-droplet class="size-3" /></template>
+                </VariableNumberField>
+              </PanelFieldGroup>
+            </PanelGrid>
+          </template>
         </div>
       </div>
     </PanelSection>

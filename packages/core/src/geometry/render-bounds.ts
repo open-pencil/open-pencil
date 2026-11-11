@@ -8,7 +8,8 @@ import {
   strokeOverflow,
   textDecorationOverflow,
   unionVisualBounds,
-  type VisualBounds
+  type VisualBounds,
+  widestBlurRadius
 } from '@open-pencil/scene-graph/geometry'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
@@ -201,7 +202,7 @@ function withEffects(
       const shadow = shadowOf(content, matrix, effect.offset, effect.radius + effect.spread)
       bounds = unionVisualBounds(bounds, shadow) ?? bounds
     } else if (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR') {
-      const by = effect.radius
+      const by = widestBlurRadius(effect)
       bounds = swept(bounds, matrix, { minX: -by, minY: -by, maxX: by, maxY: by })
     }
   }

@@ -62,6 +62,13 @@ export interface GradientEdit {
   stop: number
 }
 
+/** The progressive blur whose start and end handles the canvas shows while its settings are open. */
+export interface BlurRampEdit {
+  nodeId: string
+  /** The blur's place in the layer's effects. */
+  index: number
+}
+
 /** The selected shape's radius, point count, and ratio handles, shown while the pointer is over it. */
 export interface ShapeHandleHover {
   nodeId: string
@@ -89,8 +96,12 @@ export interface EditorSharedState {
   snappingPreferences: SnappingPreferences
   /** Draw the pixel grid once zoomed in far enough, as Figma's View › Pixel grid; shown unless false. */
   showPixelGrid?: boolean
+  /** Draw the selection's width × height under it, as Figma does; shown unless false. */
+  showSizeLabels?: boolean
   /** The gradient being edited, whose handles the canvas draws and drags. */
   gradientEdit?: GradientEdit | null
+  /** The progressive blur being edited, whose start and end the canvas draws and drags. */
+  blurRampEdit?: BlurRampEdit | null
   presenceCursors: PresenceCursor[]
   documentName: string
   /** Design check markers and highlight, shared by every canvas pane. */

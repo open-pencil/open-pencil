@@ -331,6 +331,15 @@ export interface DragGradient {
   cancel: () => void
 }
 
+/** Dragging the start or end of a progressive blur whose settings are open. */
+export interface DragBlurRamp {
+  type: 'blur-ramp'
+  /** Moves the dragged point to a screen point. */
+  update: (screenX: number, screenY: number) => void
+  commit: () => void
+  cancel: () => void
+}
+
 /** Dragging a radius, point count, or ratio handle of the selected rectangle, polygon, or star. */
 export interface DragShapeHandle {
   type: 'shape-handle'
@@ -342,6 +351,7 @@ export interface DragShapeHandle {
 
 export type DragState =
   | DragShapeHandle
+  | DragBlurRamp
   | DragDraw
   | DragStickyDraw
   | DragConnectorDraw

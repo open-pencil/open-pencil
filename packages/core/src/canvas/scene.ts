@@ -1,11 +1,7 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import { type SceneNode, type SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
-import {
-  blurSigma,
-  intersectVisualBounds,
-  type VisualBounds
-} from '@open-pencil/scene-graph/geometry'
+import { intersectVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import { textLinesOverflow } from '@open-pencil/scene-graph/text'
@@ -16,6 +12,7 @@ import { drawnLayerBlurReach, mapVisualBounds } from '#core/geometry/render-boun
 import { fontManager } from '#core/text/font/manager'
 
 import { needsIsolatedBlendLayer, setPaintBlendMode } from './blend'
+import { blurredContent, layerBlurFilter } from './blur/layer'
 import { renderBooleanOperation } from './boolean'
 import { drawVectorMultiStyleFills, paintFills } from './fills'
 import { drawLayoutGrids } from './layout-grids'
@@ -174,7 +171,8 @@ function renderMaskNodeContent(
     const world = () => worldMatrixIn(frame, node, absX, absY, overlays.rotationPreview)
     r.opacityPaint.setAlphaf(node.opacity)
     r.opacityPaint.setBlendMode(r.ck.BlendMode.SrcOver)
-    r.opacityPaint.setImageFilter(blur ? r.getCachedBlur(blurSigma(blur.radius)) : null)
+    const content = blurredContent(graph, node, overlays)
+    r.opacityPaint.setImageFilter(blur ? layerBlurFilter(r, node, blur, overlays, content) : null)
     canvas.saveLayer(
       r.opacityPaint,
       nodeLayerBounds(r, graph, node, world, overlays.rotationPreview)
@@ -410,7 +408,8 @@ export function renderNode(
     r.effectLayerPaint.setColorFilter(null)
     r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
 
-    r.effectLayerPaint.setImageFilter(r.getCachedBlur(blurSigma(layerBlur.radius)))
+    const content = blurredContent(graph, node, overlays)
+    r.effectLayerPaint.setImageFilter(layerBlurFilter(r, node, layerBlur, overlays, content))
     canvas.saveLayer(r.effectLayerPaint, layerBounds)
   }
 

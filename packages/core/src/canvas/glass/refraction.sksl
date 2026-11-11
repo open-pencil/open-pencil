@@ -37,7 +37,7 @@ half4 refracted(float2 p, float2 dir, float d) {
 // exports and high-density screens draw. Points outside the outline are left to the clip's
 // antialiasing.
 half4 main(float2 p) {
-  float3 g = geometry(p, depth);
+  float3 g = shape(p, depth);
   float2 dir = g.yz;
   if (g.x >= 1.5) return refracted(p, dir, refraction * displacement(g.x));
   half4 sum = half4(0.0);

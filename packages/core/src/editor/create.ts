@@ -405,6 +405,7 @@ export function createEditor(options?: EditorOptions) {
       shapes.penCancel()
       shapes.pencilCancel()
       state.gradientEdit = null
+      state.blurRampEdit = null
     },
     endPathContinuation: () => {
       if (state.penState?.resumingNodeId) shapes.penCommit(false)

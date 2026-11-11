@@ -1,6 +1,6 @@
 import { isEqual, noop } from 'es-toolkit'
 
-import type { SceneNode, SceneGraph, Fill, Stroke } from '@open-pencil/scene-graph'
+import type { Effect, SceneNode, SceneGraph, Fill, Stroke } from '@open-pencil/scene-graph'
 import type { RenderColorSpace, ResolvedRenderColor } from '@open-pencil/scene-graph/color'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
@@ -20,6 +20,7 @@ import { RenderProfiler } from '#core/profiler'
 import type { FontResolutionSnapshot } from '#core/text/resolver'
 
 import { createImageFilterCache, createMaskFilterCache } from './effects'
+import { createGlassMapCache } from './glass/map'
 import { createRendererImages } from './images/state'
 import { LabelCache } from './labels/cache'
 import * as LabelHitTest from './labels/hit-test'
@@ -131,6 +132,7 @@ export class SkiaRenderer {
   readonly shaders = createCompiledShaders()
   imageFilterCache = createImageFilterCache()
   maskFilterCache = createMaskFilterCache()
+  glassMaps = createGlassMapCache()
   /** Dashes the overlay pass draws with, kept between frames. */
   readonly dashEffects = createDashEffectCache()
   private readonly colors = new Map<string, Float32Array>()
@@ -203,6 +205,15 @@ export class SkiaRenderer {
   tiledScenePending = false
   /** Tile work beyond the visible tiles remains; the frame loop keeps idle frames coming. */
   tiledSceneBackgroundPending = false
+  /** WebGL has built the programs of progressive blurs and glass (`warmUpEffectPrograms`). */
+  effectProgramsWarm = false
+  /**
+   * The page and document version last found without effects worth warming up, so a page is
+   * scanned again only once the document changes.
+   */
+  effectWarmUpScan: { pageId: string; sceneVersion: number } | null = null
+  /** The page whose warm-up failed, which is not retried; another page may still warm up. */
+  effectWarmUpFailedPage: string | null = null
   tiledSceneCovered = false
   readonly transientPreviews = new Map<string, TransientCanvasPreview>()
 
@@ -415,8 +426,11 @@ export class SkiaRenderer {
       }
     } else {
       this.tiledScene.destroy()
-      // Live textures belong to the old surface's context, so they go before it does.
+      // Live textures belong to the old surface's context, so they go before it does, as do glass
+      // geometry maps and the node pictures that may have recorded them.
       releaseLiveImages(this)
+      this.glassMaps.clear()
+      this.invalidateAllPictures()
     }
     this.surface.delete()
     this.surface = surface
@@ -880,6 +894,16 @@ export class SkiaRenderer {
     return Effects.getCachedBlur(this, sigma)
   }
 
+  getCachedLayerBlur(
+    effect: Pick<Effect, 'radius' | 'progressive'>,
+    width: number,
+    height: number,
+    bounds: VisualBounds | null,
+    toFilter?: (point: Vector) => Vector
+  ): ImageFilter | null {
+    return Effects.getCachedLayerBlur(this, effect, width, height, bounds, toFilter)
+  }
+
   getCachedDecalBlur(sigma: number): ImageFilter | null {
     return Effects.getCachedDecalBlur(this, sigma)
   }
@@ -897,8 +921,13 @@ export class SkiaRenderer {
     return Effects.getCachedMaskBlur(this, sigma)
   }
 
-  applyClippedBlur(canvas: Canvas, node: SceneNode, sigma: number, shape?: Path | null): void {
-    Effects.applyClippedBlur(this, canvas, node, sigma, shape)
+  applyClippedBlur(
+    canvas: Canvas,
+    node: SceneNode,
+    effect: Pick<Effect, 'radius' | 'progressive'>,
+    shape?: Path | null
+  ): void {
+    Effects.applyClippedBlur(this, canvas, node, effect, shape)
   }
 
   destroy(): void {

@@ -2,7 +2,7 @@ export default {
   slots: {
     choices: 'flex flex-col gap-2',
     choice:
-      'group flex w-full items-center gap-3 rounded-lg border border-border bg-panel-field px-3 py-2.5 text-left outline-none hover:bg-panel-field-hover focus-visible:ring-2 focus-visible:ring-accent/50 data-[state=checked]:border-panel-focus data-[state=checked]:bg-panel-selected-muted',
+      'group flex w-full items-center gap-3 rounded-lg border border-border bg-panel-field px-3 py-2.5 text-start outline-none hover:bg-panel-field-hover focus-visible:ring-2 focus-visible:ring-accent/50 data-[state=checked]:border-panel-focus data-[state=checked]:bg-panel-selected-muted',
     choiceIcon:
       'flex size-8 shrink-0 items-center justify-center rounded-md bg-panel text-muted group-data-[state=checked]:text-primary',
     choiceBody: 'min-w-0 flex-1',

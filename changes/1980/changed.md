@@ -1,0 +1,1 @@
+- Buttons that open a menu or popover in the panel stay highlighted while it is open, the boolean operations button matches the buttons beside it, and the export Preview toggle is a standard collapsible that keyboard and screen-reader users can operate (#1980).

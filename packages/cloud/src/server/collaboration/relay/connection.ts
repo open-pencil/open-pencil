@@ -138,7 +138,7 @@ export function openRelayConnection(
       state.busy = true
       void authenticate(frame.token)
         .catch((error: unknown) => {
-          relay.report('Admitting a collaboration peer failed:', error)
+          relay.report('Admitting a collaboration peer failed', error)
           socket.close(RELAY_CLOSE.protocol, 'Could not open the collaboration room')
         })
         .finally(() => {

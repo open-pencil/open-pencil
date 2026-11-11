@@ -105,7 +105,7 @@ function listStopClass(active: boolean) {
         >
           <NumberField
             class="w-14 flex-none"
-            :ui="{ leading: 'hidden', field: 'pl-1.5', display: 'pl-1.5' }"
+            :ui="{ leading: 'hidden', field: 'ps-1.5', display: 'ps-1.5' }"
             suffix="%"
             :model-value="s.positionPercent"
             :min="0"

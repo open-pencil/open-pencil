@@ -1,9 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-// eslint-disable-next-line open-pencil/no-mixed-case-acronym-identifiers -- Upstream export spelling.
-import { toJsonSchema as toJSONSchema } from '@valibot/to-json-schema'
 
-import { isAtomicTool, isToolExposed } from '@open-pencil/core/tools'
+import { isAtomicTool, isToolExposed, toolJSONSchema } from '@open-pencil/core/tools'
 
 import { ALL_TOOLS } from '#core-tests/helpers/tools'
 describe('tool definitions', () => {
@@ -23,7 +21,7 @@ describe('tool definitions', () => {
       expect(tool.name).toBeTruthy()
       expect(tool.description).toBeTruthy()
       expect(typeof tool.execute).toBe('function')
-      expect(toJSONSchema(tool.input, { typeMode: 'input' }).type).toBe('object')
+      expect(toolJSONSchema(tool.input, { typeMode: 'input' }).type).toBe('object')
     }
   })
 

@@ -44,6 +44,24 @@ export function isShadow(type: string) {
   return type === 'DROP_SHADOW' || type === 'INNER_SHADOW'
 }
 
+/** Whether `type` is a layer or background blur, which can be uniform or progressive. */
+export function isBlur(type: string) {
+  return type === 'LAYER_BLUR' || type === 'FOREGROUND_BLUR' || type === 'BACKGROUND_BLUR'
+}
+
+export type BlurKind = 'UNIFORM' | 'PROGRESSIVE'
+
+/**
+ * The change that makes a blur uniform or progressive. A blur turned progressive starts as Figma
+ * desktop 126 starts it: from no blur at the top centre to its radius at the bottom centre.
+ */
+export function blurKindChange(kind: BlurKind): Partial<Effect> {
+  if (kind === 'UNIFORM') return { progressive: undefined }
+  return {
+    progressive: { startRadius: 0, startOffset: { x: 0.5, y: 0 }, endOffset: { x: 0.5, y: 1 } }
+  }
+}
+
 export function createDefaultEffect(): Effect {
   return {
     type: 'DROP_SHADOW',
@@ -124,6 +142,8 @@ export function createEffectControlActions(expandedIndex: Ref<number | null>) {
     const changes: Partial<Effect> = { type }
     if (type === 'GLASS') changes.glass = { ...DEFAULT_GLASS }
     else if (node.effects[index].type === 'GLASS') changes.glass = undefined
+    // Only a blur can be progressive; a blur changed to the other kind keeps its ramp.
+    if (!isBlur(type) && node.effects[index].progressive) changes.progressive = undefined
     if (!isShadow(type)) {
       changes.offset = { x: 0, y: 0 }
       changes.spread = 0

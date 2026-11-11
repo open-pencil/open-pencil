@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { SelectTrigger } from 'reka-ui'
 import { computed, ref } from 'vue'
 
 import { panelNumber } from '@open-pencil/core/geometry'
@@ -8,9 +7,11 @@ import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 import { useLayoutControlsContext } from '@open-pencil/vue/primitives/LayoutControls'
 
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
+import PanelField from '@/components/ui/panel/PanelField.vue'
 import AppSelectContent from '@/components/ui/select/AppSelectContent.vue'
 import AppSelectItem from '@/components/ui/select/AppSelectItem.vue'
 import AppSelectRoot from '@/components/ui/select/AppSelectRoot.vue'
+import SelectFieldTrigger from '@/components/ui/select/SelectFieldTrigger.vue'
 
 const { axis = 'primary' } = defineProps<{ axis?: 'primary' | 'counter' }>()
 const ctx = useLayoutControlsContext()
@@ -36,26 +37,20 @@ function setMode(value: string) {
     @update:model-value="setMode"
   >
     <div ref="anchor" class="min-w-0">
-      <div
-        v-if="auto"
-        data-test-id="layout-gap-input"
-        class="flex h-6.5 items-center rounded border border-border bg-input focus-within:border-panel-focus"
-      >
-        <span class="px-1.25 text-muted">
+      <PanelField v-if="auto" data-test-id="layout-gap-input">
+        <template #leading>
           <icon-lucide-align-horizontal-space-between v-if="horizontal" class="size-3.5" />
           <icon-lucide-align-vertical-space-between v-else class="size-3.5" />
-        </span>
-        <span class="min-w-0 flex-1 truncate text-xs text-surface">{{ panels.auto }}</span>
-        <SelectTrigger
-          data-test-id="layout-gap-menu"
-          :aria-label="label"
-          :reference="anchor ?? undefined"
-          class="flex shrink-0 items-center self-stretch px-1 text-muted"
-          @pointerdown.stop
-        >
-          <icon-lucide-chevron-down class="size-3" />
-        </SelectTrigger>
-      </div>
+        </template>
+        {{ panels.auto }}
+        <template #trailing>
+          <SelectFieldTrigger
+            data-test-id="layout-gap-menu"
+            :label="label"
+            :reference="anchor ?? undefined"
+          />
+        </template>
+      </PanelField>
       <VariableNumberField
         :round="panelNumber"
         v-else
@@ -73,16 +68,12 @@ function setMode(value: string) {
           <icon-lucide-align-horizontal-space-between v-if="horizontal" class="size-3.5" />
           <icon-lucide-align-vertical-space-between v-else class="size-3.5" />
         </template>
-        <template v-if="allowAuto" #after-variable>
-          <SelectTrigger
+        <template v-if="allowAuto" #menu>
+          <SelectFieldTrigger
             data-test-id="layout-gap-menu"
-            :aria-label="label"
+            :label="label"
             :reference="anchor ?? undefined"
-            class="flex shrink-0 items-center self-stretch px-1 text-muted"
-            @pointerdown.stop
-          >
-            <icon-lucide-chevron-down class="size-3" />
-          </SelectTrigger>
+          />
         </template>
       </VariableNumberField>
     </div>

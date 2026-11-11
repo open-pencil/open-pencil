@@ -145,6 +145,11 @@ export const panelMessageDefaults = {
   starRatio: 'Ratio',
   spread: 'Spread',
   blur: 'Blur',
+  blurType: 'Blur type',
+  uniformBlur: 'Uniform',
+  progressiveBlur: 'Progressive',
+  blurStart: 'Start',
+  blurEnd: 'End',
   showShadowBehind: 'Show behind transparent areas',
   effectColor: 'Color',
 
@@ -372,7 +377,6 @@ export const panelMessageDefaults = {
   effectSettings: 'Effect settings',
   expandEffectSettings: 'Expand effect settings',
   collapseEffectSettings: 'Collapse effect settings',
-  toggleExportPreview: 'Toggle export preview',
 
   dropShadow: 'Drop shadow',
   innerShadow: 'Inner shadow',

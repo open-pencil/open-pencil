@@ -91,7 +91,7 @@ const candidates = computed<AppPickerItem[]>(() =>
           <icon-lucide-square-dashed class="size-3.5 text-slot" />
           <h3 class="truncate text-xs font-semibold text-surface">{{ slot.name }}</h3>
           <PopoverClose as-child>
-            <AppButton :aria-label="common.close" class="ml-auto">
+            <AppButton :aria-label="common.close" class="ms-auto">
               <icon-lucide-x class="size-3.5" />
             </AppButton>
           </PopoverClose>

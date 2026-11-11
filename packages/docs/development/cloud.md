@@ -448,7 +448,7 @@ Other capabilities are optional: a service lists each one it offers in its catal
 and answers `capability_unavailable` for one it does not. Web search is the first. A catalog with
 `search` takes `POST /v1/search` with a query and up to ten results, and returns each page's URL,
 title, date, author, and an excerpt; the contract names no search engine. The editor offers the
-model OpenPencil's `web_search` tool, which also reaches agents through OpenPencil's MCP server.
+model OpenPencil's `search_web` tool, which also reaches agents through OpenPencil's MCP server.
 It searches the services when the Design model runs on them and their catalog lists search, charged
 to the same account; the reference services server offers no search. In the desktop app, an Exa key saved
 under Settings › Integrations is used instead, whatever the model, and Exa bills its owner; Exa

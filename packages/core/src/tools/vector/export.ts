@@ -85,8 +85,7 @@ export const exportSVG = defineTool({
 export const exportPDF = defineTool({
   name: 'export_pdf',
   description:
-    'Export nodes as a vector PDF document. Text remains selectable and keeps its line breaks, paths stay sharp at any zoom. Returns base64-encoded PDF data and the size of each PDF page. ' +
-    'mode "single" (default) puts all ids on one PDF page; "frames" makes one PDF page per id (or per top-level frame of the current page); "pages" makes one PDF page per design page (all pages, or page_ids). ' +
+    'Export nodes as a vector PDF document, with selectable text and sharp paths. Returns base64-encoded PDF data and the size of each PDF page. ' +
     'Pages are drawn as the canvas draws them, with the fonts the text uses embedded; blurs, shadows, and shader fills are drawn as images.',
   execution: { kind: 'async', mutation: 'none' },
   exposure: { webmcp: false },
@@ -96,7 +95,7 @@ export const exportPDF = defineTool({
       v.pipe(
         v.picklist(PDF_MODES),
         v.description(
-          '"single" (default): one PDF page for all ids. "frames": one PDF page per id or top-level frame. "pages": one PDF page per design page.'
+          'single: one PDF page for all ids. frames: one per id, or per top-level frame of the current page. pages: one per design page'
         )
       ),
       'single'
