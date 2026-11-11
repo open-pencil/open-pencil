@@ -13,16 +13,14 @@ import {
   MATERIAL_SYMBOLS_PREFIXES
 } from '@open-pencil/core/icons'
 import { IORegistry, penFormat } from '@open-pencil/core/io'
-import {
-  comparePNGs,
-  createCanvasKitRasterCodec,
-  headlessRenderNodes,
-  initCanvasKit
-} from '@open-pencil/core/io/formats/raster'
+import { comparePNGs, createCanvasKitRasterCodec, headlessRenderNodes } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { fontManager, prepareGraphFonts, WEB_FONT_PROVIDER_IDS } from '@open-pencil/core/text'
 import { parsePenDocument } from '@open-pencil/pen'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+
+import { iconSetSchema } from '#core/icons/schema'
 
 // pen.dev's own exports of every frame in probes.pen, recorded with the fonts and icons they draw
 // by `bun tools/generate/visual-oracles/src/cli.ts compare pen`.
@@ -41,17 +39,6 @@ const manifestSchema = v.pipe(
         note: v.optional(v.string())
       })
     )
-  })
-)
-
-const iconSetSchema = v.pipe(
-  v.string(),
-  v.parseJson(),
-  v.looseObject({
-    prefix: v.string(),
-    width: v.optional(v.number()),
-    height: v.optional(v.number()),
-    icons: v.record(v.string(), v.looseObject({ body: v.string() }))
   })
 )
 
@@ -145,7 +132,7 @@ describe('.pen frames against pen.dev', () => {
   for (const target of manifest.targets) {
     test(`${target.node} draws as pen.dev draws it`, async () => {
       const graph = await readProbes()
-      const codec = createCanvasKitRasterCodec(await initCanvasKit())
+      const codec = createCanvasKitRasterCodec(await getCanvasKit())
       const pen = await Bun.file(join(ORACLES, `${target.penNodeId}.png`)).bytes()
       const ours = await headlessRenderNodes(graph, graph.getPages()[0].id, [target.penNodeId])
       expect(ours).not.toBeNull()

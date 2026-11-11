@@ -4,14 +4,14 @@ import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { SkiaRenderer } from '#core/canvas'
 import { recordRenderChunk, RenderChunkIndex } from '#core/canvas/renderer/chunks'
-import { initCanvasKit } from '#core/io/formats/raster'
+import { getCanvasKit } from '#core/canvaskit'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 
 const WIDTH = 240
 const HEIGHT = 160
 
-const ck = await initCanvasKit()
+const ck = await getCanvasKit()
 const direct = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(WIDTH, HEIGHT), 'direct surface'))
 const chunked = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(WIDTH, HEIGHT), 'chunk surface'))
 

@@ -71,7 +71,14 @@ async function testApp(options: {
   const workspaceId = crypto.randomUUID()
   await runtime.database
     .insertInto('workspace')
-    .values({ id: workspaceId, name: 'W', slug: `w-${workspaceId}`, createdBy: member.userId })
+    .values({
+      id: workspaceId,
+      name: 'W',
+      slug: `w-${workspaceId}`,
+      // Made by the member, owned by someone else since: credits follow the owner.
+      createdBy: member.userId,
+      ownerId: 'owner'
+    })
     .execute()
   await runtime.database
     .insertInto('workspaceMember')
@@ -121,6 +128,8 @@ describe('Service tokens', () => {
       expect(v.parse(servicesTokenClaimsSchema, payload)).toMatchObject({
         sub: member.userId,
         workspaceId: context.workspaceId,
+        // The credits are the workspace owner's, not the member's who asked.
+        accountId: 'owner',
         monthlyCreditAllowance: 5000
       })
       expect(new Date(expiresAt).getTime()).toBe((payload.exp ?? 0) * 1000)

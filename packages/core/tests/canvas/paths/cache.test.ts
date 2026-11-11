@@ -1,16 +1,16 @@
 import { describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
-import type { Path } from 'canvaskit-wasm'
+import type { Path } from '@open-pencil/canvaskit'
 
 import { SceneGraph, type Stroke } from '@open-pencil/scene-graph'
 
 import { SkiaRenderer } from '#core/canvas'
 import { createPathCache, NodePathCaches } from '#core/canvas/paths/cache'
 import { render, renderSceneToCanvas } from '#core/canvas/renderer/pipeline'
-import { initCanvasKit } from '#core/io/formats/raster/headless'
+import { getCanvasKit } from '#core/canvaskit'
 
-const ck = await initCanvasKit()
+const ck = await getCanvasKit()
 
 function linePath(points: number): Path {
   const builder = new ck.PathBuilder()

@@ -59,7 +59,7 @@ describe('Iconify API client', () => {
     const client = createIconifyAPIClient(fetcher, 'https://icons.example')
 
     await expect(client.fetchCollection('lucide', ['home'])).rejects.toThrow(
-      'Iconify API error: 503 for prefix "lucide"'
+      'Iconify API error: 503 for /lucide.json'
     )
     expect(fetcher).toHaveBeenCalledTimes(1)
   })

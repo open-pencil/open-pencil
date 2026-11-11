@@ -5,7 +5,7 @@ import { defineConfig } from 'tsdown'
 export default defineConfig({
   entry: {
     server: './src/runtime/node/main.ts',
-    'ai-relay': './src/runtime/node/ai-relay/main.ts'
+    services: './src/runtime/node/services/main.ts'
   },
   platform: 'node',
   format: ['esm'],

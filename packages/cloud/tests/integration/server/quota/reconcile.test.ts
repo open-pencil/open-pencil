@@ -10,7 +10,7 @@ async function seed() {
   const objectId = crypto.randomUUID()
   await runtime.database
     .insertInto('workspace')
-    .values({ id: workspaceId, name: 'W', slug: `w-${workspaceId}`, createdBy: 'u' })
+    .values({ id: workspaceId, name: 'W', slug: `w-${workspaceId}`, createdBy: 'u', ownerId: 'u' })
     .execute()
   await runtime.database
     .insertInto('document')

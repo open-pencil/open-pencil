@@ -20,7 +20,7 @@ import ShaderFillPicker from '@/components/fill-picker/shader/ShaderFillPicker.v
 import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 import Tip from '@/components/ui/overlay/Tip.vue'
-import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
+import FillSwatchTrigger from '@/components/ui/paint/FillSwatchTrigger.vue'
 import fillPickerTheme from '@/theme/fill-picker'
 
 import { useImageFill } from './useImageFill'
@@ -89,19 +89,12 @@ const outside = pickerOutsideHandlers(() => keepPickerOpen)
       @update:open="emit('openChange', $event)"
     >
       <PopoverTrigger as-child>
-        <button
-          type="button"
-          :aria-label="label ?? panels.fill"
+        <FillSwatchTrigger
+          :fill="fill"
+          :label="label ?? panels.fill"
+          :background="swatchBackground ?? imageBackground"
           data-test-id="fill-picker-swatch"
-          class="size-4 shrink-0 cursor-pointer rounded-sm border-0 bg-transparent p-0"
-        >
-          <FillSwatch :fill="fill" class="size-full" v-slot="swatch">
-            <span
-              class="pointer-events-none absolute inset-0"
-              :style="{ background: swatchBackground ?? imageBackground ?? swatch.background }"
-            />
-          </FillSwatch>
-        </button>
+        />
       </PopoverTrigger>
 
       <PopoverPortal v-if="portalActive">

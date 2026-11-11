@@ -1,0 +1,1 @@
+- Figma Glass effects render on the canvas and in exports, and can be added and edited in the Effects panel: refraction, depth, light angle and intensity, dispersion, and frost. They keep these settings through `.fig` files, the plugin API, and design JSX (`glass()`) (#1921, #1942).

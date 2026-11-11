@@ -31,6 +31,16 @@ const websocketURLSchema = v.pipe(
 
 const optionalTextSchema = v.optional(v.pipe(v.string(), v.trim(), v.minLength(1)))
 
+/**
+ * A prefix deleted files move under: one lowercase path segment and a slash, which no object key
+ * the server makes starts with (they start with `documents/`).
+ */
+const deletedPrefixSchema = v.pipe(
+  v.string(),
+  v.regex(/^[a-z0-9][a-z0-9-]*\/$/),
+  v.check((prefix) => prefix !== 'documents/', 'deleted_prefix cannot be documents/')
+)
+
 const rawCloudServerConfigSchema = v.object({
   deployment: v.picklist(['official', 'self-hosted']),
   publicURL: httpURLSchema,
@@ -111,6 +121,8 @@ const rawCloudServerConfigSchema = v.object({
   s3ChecksumVerification: v.optional(v.picklist(['native', 'metadata']), 'native'),
   s3ServerSideEncryption: v.optional(v.picklist(['AES256', 'aws:kms'])),
   s3KmsKeyId: optionalTextSchema,
+  /** Where a deleted file is kept until the bucket's lifecycle rule expires it; see `deleted_prefix`. */
+  s3DeletedPrefix: v.optional(deletedPrefixSchema),
   smtpHost: optionalTextSchema,
   smtpPort: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(65_535))),
   smtpSecure: v.optional(v.boolean()),
@@ -135,6 +147,14 @@ const rawCloudServerConfigSchema = v.object({
   documentRetentionMs: v.optional(
     v.pipe(v.number(), v.integer(), v.minValue(0)),
     30 * 24 * 60 * 60_000
+  ),
+  /**
+   * How long a document deleted forever keeps its files and rows, out of everyone's sight, so a
+   * server administrator can still bring it back; 0 destroys it at once.
+   */
+  documentPurgeGraceMs: v.optional(
+    v.pipe(v.number(), v.integer(), v.minValue(0)),
+    7 * 24 * 60 * 60_000
   ),
   /** The OpenPencil services editors reach with tokens this server signs; see `src/contract/services.ts`. */
   servicesEndpoint: v.optional(httpURLSchema),
@@ -188,6 +208,9 @@ function validateAuthenticationConfig(config: CloudServerConfig): void {
   }
   if (config.deploymentAdminMFARequired && !config.totpEnabled && !config.passkeysEnabled) {
     throw new CloudConfigError('Deployment administrator MFA requires TOTP or passkeys')
+  }
+  if (config.deployment === 'official' && !config.deploymentAdminMFARequired) {
+    throw new CloudConfigError('An official deployment requires MFA for deployment administrators')
   }
   if (config.recoveryCodesEnabled && !config.totpEnabled) {
     throw new CloudConfigError('MFA recovery codes require TOTP')
@@ -271,8 +294,8 @@ export function parseCloudServerConfig(input: unknown): CloudServerConfig {
   return config
 }
 
-/** PostHog's US Cloud ingestion host. */
-const POSTHOG_DEFAULT_HOST = 'https://us.i.posthog.com'
+/** PostHog's EU Cloud ingestion host, where OpenPencil's own project is. */
+const POSTHOG_DEFAULT_HOST = 'https://eu.i.posthog.com'
 
 const DEFAULT_SECRET_NAMES = {
   databaseURL: 'DATABASE_URL',
@@ -457,6 +480,11 @@ export const cloudDeploymentConfigSchema = v.strictObject({
     checksum_verification: v.optional(v.picklist(['native', 'metadata']), 'native'),
     server_side_encryption: v.optional(v.picklist(['AES256', 'aws:kms'])),
     kms_key_id: v.optional(textSchema),
+    /**
+     * Keeps each file cleanup deletes under this prefix, such as `deleted/`, so a database restored
+     * to an earlier time still finds it; a lifecycle rule on the prefix expires them.
+     */
+    deleted_prefix: v.optional(deletedPrefixSchema),
     maximum_upload_bytes: v.optional(positiveIntegerSchema)
   }),
   collaboration: v.optional(
@@ -469,9 +497,10 @@ export const cloudDeploymentConfigSchema = v.strictObject({
   ),
   documents: v.optional(
     v.strictObject({
-      retention_days: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0)), 30)
+      retention_days: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0)), 30),
+      purge_grace_days: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0)), 7)
     }),
-    { retention_days: 30 }
+    { retention_days: 30, purge_grace_days: 7 }
   ),
   email: emailSchema,
   workers: v.optional(

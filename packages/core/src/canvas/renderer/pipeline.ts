@@ -1,10 +1,10 @@
-import type { Canvas } from 'canvaskit-wasm'
-
+import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { needsImagePreviews } from '#core/canvas/images/previews'
 import { paintPageBackground } from '#core/canvas/page/background'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
+import { warmUpEffectPrograms } from '#core/canvas/warm-up'
 import { playIslandRoots } from '#core/editor/play/islands'
 import type { EditorState } from '#core/editor/types'
 import { resolveEditorProfile } from '#core/editor/views/profile'
@@ -106,7 +106,7 @@ export function renderFromEditorState(
   const { editChrome, live, edits } = profile
   r.pageDotGrid = profile.dotGrid
   r.sectionTitles = profile.sectionTitles
-  r.editHandles = edits
+  r.editHandles = edits && profile.layerEdits === 'all'
   render(
     r,
     graph,
@@ -116,7 +116,9 @@ export function renderFromEditorState(
       playIslands: live ? new Set(playIslandRoots(graph, state.currentPageId)) : undefined,
       hoveredNodeId: editChrome ? state.hoveredNodeId : null,
       showPixelGrid: showsPixelGrid(profile, state),
+      showSizeLabels: state.showSizeLabels,
       gradientEdit: state.gradientEdit,
+      blurRampEdit: state.blurRampEdit,
       transforming: state.transforming,
       measurementMode: state.measurementMode,
       editingTextId: state.editingTextId,
@@ -149,6 +151,7 @@ export function renderFromEditorState(
     layer,
     interactive
   )
+  warmUpEffectPrograms(r, graph, layer, state.sceneVersion, interactive)
 }
 
 function sceneContentDependsOnOverlay(overlays: RenderOverlays): boolean {

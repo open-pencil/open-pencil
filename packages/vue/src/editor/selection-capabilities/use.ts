@@ -73,18 +73,17 @@ export function useSelectionCapabilities() {
     canCreateInstance: computed(() => selectedNode.value?.type === 'COMPONENT'),
     canCreateSlot: selection.canCreateSlot,
     canMoveToPage: useSceneComputed(() => hasSelection.value && editor.graph.getPages().length > 1),
-    canSetOpacity: computed(() => hasSelection.value),
     canSelectAll: useSceneComputed(
       () => editor.graph.getChildren(editor.state.currentPageId).length > 0
     ),
-    // In vector edit mode, undo/redo route to the session-local history —
-    // keep the commands enabled so the shortcut reaches them.
+    // A pen point or a path change not yet recorded becomes a step when undo runs, so undo stays
+    // on while the pen draws or a path is open.
     canUndo: useSceneComputed(
-      () => historyVersion.value >= 0 && (editor.state.nodeEditState != null || editor.undo.canUndo)
+      () =>
+        historyVersion.value >= 0 &&
+        (editor.state.penState != null || editor.state.nodeEditState != null || editor.undo.canUndo)
     ),
-    canRedo: useSceneComputed(
-      () => historyVersion.value >= 0 && (editor.state.nodeEditState != null || editor.undo.canRedo)
-    ),
+    canRedo: useSceneComputed(() => historyVersion.value >= 0 && editor.undo.canRedo),
     canZoomToSelection: computed(() => hasSelection.value)
   }
 }

@@ -24,9 +24,15 @@ const DATABASE_NAME = APP_DATABASE_NAMES.libraries
 
 const libraryDatabase = defineAppDatabase<LocalLibraryDatabase>({
   name: APP_DATABASE_NAMES.libraries,
-  version: 1,
+  version: 2,
   callbacks: {
-    upgrade(database) {
+    upgrade(database, oldVersion, _newVersion, transaction) {
+      // Version 1 held libraries of the first library schema, which this one cannot read; they
+      // are published again.
+      if (oldVersion === 1) {
+        void transaction.objectStore('revisions').clear()
+        void transaction.objectStore('latest').clear()
+      }
       if (!database.objectStoreNames.contains('revisions')) {
         const revisions = database.createObjectStore('revisions', {
           keyPath: ['libraryId', 'revisionId']

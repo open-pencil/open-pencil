@@ -202,7 +202,7 @@ describe('a path the host keeps open', () => {
     editor.nodeEditDeleteSelected()
     expect(editor.graph.getNode(vector.id)).toBeDefined()
     expect(editor.state.nodeEditState?.vertices).toHaveLength(3)
-    expect(editor.state.nodeEditState?.history).toEqual([])
+    expect(editor.undo.canUndo).toBe(false)
   })
 
   test('is not left for the pen', () => {
@@ -243,7 +243,7 @@ test('a host can show the handles of every point, not only near the selection', 
   editor.enterNodeEditMode(vector.id)
   expect(handleVisibleVertices(expectDefined(editor.state.nodeEditState))).toEqual(new Set())
   editor.exitNodeEditMode(true)
-  editor.enterNodeEditMode(vector.id, { handles: 'all' })
+  editor.enterNodeEditMode(vector.id, { showHandles: 'all' })
   expect(handleVisibleVertices(expectDefined(editor.state.nodeEditState))).toEqual(
     new Set([0, 1, 2])
   )

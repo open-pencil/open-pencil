@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test'
 
-import { pageScene, showView } from '#tests/helpers/canvas/page-scene'
+import { pageScene, showView, waitForSettledScene } from '#tests/helpers/canvas/page-scene'
 import { readScenePixels } from '#tests/helpers/canvas/pixels'
 import {
   SAVED_GLYPH_LAYER_BOX,
@@ -20,11 +20,12 @@ export function savedGlyphLayerDriver(page: () => Page) {
 
   return {
     async show() {
+      await showView(page(), { zoom: 1, panX: 0, panY: 0 })
       const texts = await scenes.build('createSavedGlyphLayerScene')
       await page().evaluate(async (ids) => {
         await window.openPencil?.getStore?.().loadFontsForNodes(ids)
       }, texts)
-      await showView(page(), { zoom: 1, panX: 0, panY: 0 })
+      await waitForSettledScene(page())
     },
 
     /** Whether a copy draws the same pixel above, inside, and below its box, and draws one at all. */

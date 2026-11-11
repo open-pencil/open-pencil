@@ -4,7 +4,7 @@ import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 
 import { placeIcon } from '#core/icons/render'
-import { buildIconData } from '#core/icons/svg'
+import { buildIconData } from '#core/icons/artwork'
 import { renderNodesToHTML } from '#core/io/formats/html'
 
 const gradient: Fill = {
@@ -72,7 +72,7 @@ describe('icons in HTML export', () => {
     const graph = new SceneGraph()
     const frame = graph.createNode('FRAME', graph.getPages()[0].id, { name: 'Card', width: 100, height: 100 })
     const body = '<path fill="currentColor" d="M0 0h12v12H0z"/><path fill="#ff0000" d="M12 12h12v12H12z"/>'
-    const icon = buildIconData({ body }, 'test', 'icon', 24, 24, 24)
+    const icon = buildIconData({ body, width: 24, height: 24 }, 'test', 'icon', 24)
     placeIcon(graph, frame.id, icon, { size: 24, color: parseColor('#4f46e5') })
 
     const { html } = await renderNodesToHTML(graph, [frame.id])
@@ -87,7 +87,12 @@ describe('icons in HTML export', () => {
   test('an icon whose paths were edited draws its paths, no longer named as the icon', async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0].id
-    const icon = buildIconData({ body: '<path fill="currentColor" d="M0 0h24v24H0z"/>' }, 'test', 'icon', 24, 24, 24)
+    const icon = buildIconData(
+      { body: '<path fill="currentColor" d="M0 0h24v24H0z"/>', width: 24, height: 24 },
+      'test',
+      'icon',
+      24
+    )
     const frame = placeIcon(graph, page, icon, { size: 24, color: parseColor('#000000') })
     graph.createNode('RECTANGLE', frame.id, {
       width: 4,

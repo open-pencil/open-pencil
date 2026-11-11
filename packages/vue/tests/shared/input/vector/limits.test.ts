@@ -32,7 +32,7 @@ function setup() {
     }
   })
   editor.setHostRestrictions({ pathEdits: 'handles' })
-  editor.enterNodeEditMode(path.id, { handles: 'all' })
+  editor.enterNodeEditMode(path.id, { showHandles: 'all' })
 }
 
 function press(cx: number, cy: number) {

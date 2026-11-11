@@ -2,11 +2,11 @@ import { describe, expect, test } from 'bun:test'
 
 import { lint, ruleDiagnostics } from './helpers/lint.ts'
 
-const rule = 'no-document-change-capture'
-const rules = { [`open-pencil/${rule}`]: 'error' }
+const rule = '@open-pencil/editor/no-document-change-capture'
+const rules = { [rule]: 'error' }
 const capture = "import { captureDocumentChange } from '#core/editor/history/document-change'"
 
-describe('no-document-change-capture', () => {
+describe('@open-pencil/editor/no-document-change-capture', () => {
   test.each([
     'packages/core/src/editor/alignment/arrange.ts',
     'packages/core/src/tools/structure/arrange.ts',

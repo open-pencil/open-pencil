@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
@@ -11,10 +11,10 @@ import {
   snapDerivedGlyphBaseline
 } from '#core/canvas/text/derived'
 import { renderNodesToImage } from '#core/io/formats/raster/render'
-let ck: Awaited<ReturnType<typeof initCanvasKit>>
+let ck: Awaited<ReturnType<typeof getCanvasKit>>
 
 beforeAll(async () => {
-  ck = await initCanvasKit()
+  ck = await getCanvasKit()
 })
 
 /** Saved glyphs as Figma saves them, one per character with its advance, 8px apart from x 2. */

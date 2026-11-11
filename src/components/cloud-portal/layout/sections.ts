@@ -1,4 +1,6 @@
 import type { Component } from 'vue'
+import IconFileText from '~icons/lucide/file-text'
+import IconFlag from '~icons/lucide/flag'
 import IconGauge from '~icons/lucide/gauge'
 import IconHistory from '~icons/lucide/history'
 import IconMail from '~icons/lucide/mail'
@@ -15,6 +17,8 @@ export const PORTAL_SECTION_ICONS = {
   sessions: IconMonitorSmartphone,
   overview: IconGauge,
   requests: IconUserPlus,
+  reports: IconFlag,
+  documents: IconFileText,
   people: IconUsers,
   email: IconMail,
   activity: IconHistory

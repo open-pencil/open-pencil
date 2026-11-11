@@ -1,11 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 import { expectDefined } from '@open-pencil/test-support/assert'
-import { outlineColorInMode, canvasLabelForeground } from '@open-pencil/core/canvas'
+import { canvasLabelForeground } from '@open-pencil/core/canvas'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { reconcileVariableBindings } from '@open-pencil/scene-graph/variables'
 import { figJamColor, figJamSectionColorFields, figJamSectionTitleColors } from '@open-pencil/scene-graph/figjam'
 
 describe('section title colours', () => {
-  // A board titles a section in the outline it draws, which a variable sets per mode.
+  // A board titles a section in the outline it draws, which a variable sets per mode and which
+  // the outline stores once the section's mode changes, as Figma refreshes a bound paint.
   test("take the outline's colour in the section's active mode", () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
@@ -14,18 +16,14 @@ describe('section title colours', () => {
     const dark = expectDefined(graph.createMode(collection.id, 'Dark'), 'dark mode')
     const outline = graph.createVariable('Outline', 'COLOR', collection.id, figJamColor('red'))
     outline.valuesByMode[dark] = figJamColor('yellow')
-    const section = graph.createNode('SECTION', page.id, {
-      ...figJamSectionColorFields({ strokes: [] }, 'red'),
-      boundVariables: { 'strokes/0/color': outline.id }
-    })
+    const section = graph.createNode('SECTION', page.id, figJamSectionColorFields({ strokes: [] }, 'red'))
+    graph.bindVariable(section.id, 'strokes/0/color', outline.id)
     const titleIn = (modeId: string) => {
       graph.updateNode(section.id, { variableModes: { [collection.id]: modeId } })
-      const node = expectDefined(graph.getNode(section.id), 'section')
-      return figJamSectionTitleColors(node, (stroke, index) =>
-        outlineColorInMode(graph, node, stroke, index)
-      )?.lightText
+      reconcileVariableBindings(graph, { subtrees: [section.id] })
+      return figJamSectionTitleColors(expectDefined(graph.getNode(section.id), 'section'))?.lightText
     }
-    // Red takes white text, yellow black, though the stored outline stays red.
+    // Red takes white text, yellow black.
     expect(titleIn(light)).toBe(true)
     expect(titleIn(dark)).toBe(false)
   })

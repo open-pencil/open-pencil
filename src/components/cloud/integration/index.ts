@@ -4,10 +4,12 @@
  * that build; components outside Cloud's folders import Cloud only from here.
  */
 export { default as CloudSharedSection } from '@/components/home/cloud/CloudSharedSection.vue'
+export { default as CloudTrashSection } from '@/components/home/cloud/CloudTrashSection.vue'
 export { default as CloudWorkspaceSection } from '@/components/home/cloud/CloudWorkspaceSection.vue'
 export { default as CloudSettingsSection } from '@/components/settings/cloud/CloudSettingsSection.vue'
 export { default as CloudHosts } from '../CloudHosts.vue'
 export { default as CloudShareButton } from '../share/CloudShareButton.vue'
 export { default as CloudDocumentStatusHost } from '../status/CloudDocumentStatusHost.vue'
+export { default as CloudReportButton } from '../report/CloudReportButton.vue'
 export { default as CloudVersionDialog } from '../versions/CloudVersionDialog.vue'
 export { default as CloudVersionHistory } from '../versions/CloudVersionHistory.vue'

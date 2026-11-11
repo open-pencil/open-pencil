@@ -256,6 +256,23 @@ describe('variable roundtrip', () => {
     )
   })
 
+  test("a page's variable mode survives export → re-import, and so does clearing it", async () => {
+    await initCodec()
+    const graph = new SceneGraph()
+    const collection = graph.createCollection('Theme')
+    const darkId = expectDefined(graph.createMode(collection.id, 'Dark'), 'dark mode')
+    const page = graph.getPages()[0]
+    graph.updateNode(page.id, { variableModes: { [collection.id]: darkId } })
+
+    const pageModes = async (source: SceneGraph) => {
+      const exported = await exportFigFile(source)
+      return (await parseFigFile(exported.buffer as ArrayBuffer)).getPages()[0].variableModes
+    }
+    expect(await pageModes(graph)).toEqual({ [collection.id]: darkId })
+    graph.updateNode(page.id, { variableModes: {} })
+    expect(await pageModes(graph)).toEqual({})
+  })
+
   test('variable metadata and plugin data survive export → re-import', async () => {
     await initCodec()
     const graph = new SceneGraph()

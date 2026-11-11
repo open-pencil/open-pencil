@@ -1,5 +1,4 @@
-import type { Canvas } from 'canvaskit-wasm'
-
+import type { Canvas } from '@open-pencil/canvaskit'
 import type { Fill, SceneNode } from '@open-pencil/scene-graph'
 import { textVerticalOffset } from '@open-pencil/scene-graph/text'
 

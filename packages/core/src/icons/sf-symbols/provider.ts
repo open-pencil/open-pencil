@@ -3,6 +3,7 @@ import * as v from 'valibot'
 import type { IconOptions } from '@open-pencil/scene-graph/icons'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 
+import { tintedIconPath } from '#core/icons/artwork'
 import { parseIconName, type IconProvider } from '#core/icons/provider'
 import type {
   IconCollection,
@@ -89,15 +90,7 @@ export function sfSymbolsOptions(options: IconOptions = {}): Record<string, stri
 }
 
 function iconPath(d: string, opacity: number): IconPath {
-  return {
-    vectorNetwork: parseSVGPath(d, 'NONZERO'),
-    fill: 'currentColor',
-    fillOpacity: opacity,
-    stroke: null,
-    strokeWidth: 0,
-    strokeCap: 'butt',
-    strokeJoin: 'miter'
-  }
+  return tintedIconPath(parseSVGPath(d, 'NONZERO'), opacity)
 }
 
 /** SF Symbols, drawn as outlines by `host` at the weight, scale, and rendering each icon sets. */

@@ -1,30 +1,26 @@
 import { invoke } from '@tauri-apps/api/core'
 
-import { setFigArchiveAssembler } from '@open-pencil/core/io/formats/fig'
+import { setFigCanvasCompressor } from '@open-pencil/core/io/formats/fig'
 
 /**
- * The desktop app packs every `.fig` it writes in Rust, on a blocking thread, since high
- * compression levels take seconds (`build_fig_file`, `desktop/AGENTS.md`).
+ * The desktop app compresses a save's document data in Rust, on a blocking thread, since high
+ * compression levels take seconds (`compress_fig_canvas`, `desktop/AGENTS.md`). The schema and
+ * the encoded document travel as one raw body; the images stay in the webview, which writes the
+ * archive around the compressed data.
  */
 export function installNativeFigArchives(): void {
-  setFigArchiveAssembler(
-    async (parts) =>
-      new Uint8Array(
-        await invoke<ArrayBuffer>('build_fig_file', {
-          file: {
-            schemaDeflated: Array.from(parts.schemaDeflated),
-            kiwiData: Array.from(parts.kiwiData),
-            thumbnailPng: Array.from(parts.thumbnailPNG),
-            metaJson: parts.metaJSON,
-            images: parts.images.map((image) => ({
-              name: image.name,
-              data: Array.from(image.data)
-            })),
-            figKiwiVersion: parts.figKiwiVersion,
-            compressionLevel: parts.compressionLevel,
-            board: parts.documentKind === 'board'
-          }
-        })
-      )
-  )
+  setFigCanvasCompressor(async (parts) => {
+    const body = new Uint8Array(parts.schemaDeflated.byteLength + parts.kiwiData.byteLength)
+    body.set(parts.schemaDeflated)
+    body.set(parts.kiwiData, parts.schemaDeflated.byteLength)
+    const headers: Record<string, string> = {
+      'x-fig-schema-length': String(parts.schemaDeflated.byteLength),
+      'x-fig-board': String(parts.kind === 'board')
+    }
+    if (parts.figKiwiVersion !== undefined) headers['x-fig-version'] = String(parts.figKiwiVersion)
+    if (parts.compressionLevel !== undefined) {
+      headers['x-fig-compression-level'] = String(parts.compressionLevel)
+    }
+    return new Uint8Array(await invoke<ArrayBuffer>('compress_fig_canvas', body, { headers }))
+  })
 }

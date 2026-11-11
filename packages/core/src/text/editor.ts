@@ -1,5 +1,4 @@
-import type { CanvasKit } from 'canvaskit-wasm'
-
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import type { DerivedTextGlyph, SceneNode } from '@open-pencil/scene-graph'
 import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'

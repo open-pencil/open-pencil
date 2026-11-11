@@ -5,8 +5,7 @@ export default {
     search:
       'h-8 flex-1 rounded-none border-0 bg-transparent px-0 text-[0.8125rem] outline-none placeholder:text-muted',
     back: 'px-2 pt-2 text-xs text-muted',
-    content:
-      'min-h-0 flex-1 overflow-y-auto px-2 pb-2 pt-1 [scrollbar-color:theme(colors.muted)_transparent]',
+    content: 'min-h-0 flex-1 overflow-y-auto px-2 pb-2 pt-1',
     label: 'px-2 py-1 text-2xs font-medium text-muted',
     group: 'mb-2 last:mb-0',
     item: 'mx-0 flex h-8 cursor-pointer items-center gap-2 rounded-md p-1 text-[0.8125rem] leading-6 text-surface outline-none data-[disabled]:cursor-not-allowed data-[disabled]:text-muted data-[disabled]:opacity-55 data-[highlighted]:bg-hover',

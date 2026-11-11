@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { panelNumber } from '@open-pencil/core/geometry'
 import { useI18n } from '@open-pencil/vue/i18n'
 import { useLayoutControlsContext } from '@open-pencil/vue/primitives/LayoutControls'
 
@@ -25,8 +26,9 @@ const paddingSides: Array<{ prop: PaddingProp; icon: string }> = [
         class="mt-1.5 grid grid-cols-2 gap-1.5"
       >
         <VariableNumberField
+          :round="panelNumber"
           data-test-id="layout-horizontal-padding-input"
-          :model-value="Math.round(ctx.node.paddingLeft)"
+          :model-value="panelNumber(ctx.node.paddingLeft)"
           :min="0"
           :node-id="ctx.node.id"
           binding-path="paddingLeft"
@@ -39,8 +41,9 @@ const paddingSides: Array<{ prop: PaddingProp; icon: string }> = [
           </template>
         </VariableNumberField>
         <VariableNumberField
+          :round="panelNumber"
           data-test-id="layout-vertical-padding-input"
-          :model-value="Math.round(ctx.node.paddingTop)"
+          :model-value="panelNumber(ctx.node.paddingTop)"
           :min="0"
           :node-id="ctx.node.id"
           binding-path="paddingTop"
@@ -56,9 +59,10 @@ const paddingSides: Array<{ prop: PaddingProp; icon: string }> = [
 
       <div v-else-if="ctx.isGrid || ctx.isFlex" class="mt-1.5 grid grid-cols-2 gap-1.5">
         <VariableNumberField
+          :round="panelNumber"
           v-for="side in paddingSides"
           :key="side.prop"
-          :model-value="Math.round(ctx.node[side.prop])"
+          :model-value="panelNumber(ctx.node[side.prop])"
           :min="0"
           :node-id="ctx.node.id"
           :binding-path="side.prop"

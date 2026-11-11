@@ -60,6 +60,7 @@ import { handleNodeEditMarqueeMove, handleNodeEditMove } from '#vue/shared/input
 const ESCAPABLE_DRAGS: ReadonlySet<DragState['type']> = new Set<DragState['type']>([
   'draw',
   'gradient',
+  'blur-ramp',
   'rotate',
   'rotate-selection',
   'connector-draw',
@@ -344,6 +345,11 @@ export function useCanvasInput(
       return
     }
 
+    if (d.type === 'blur-ramp') {
+      d.update(sx, sy)
+      return
+    }
+
     if (d.type === 'guide') {
       const frameId = e.altKey && !d.guideId ? selectedTopLevelGuideFrameId(editor) : null
       guideInput.handleMove(
@@ -460,11 +466,9 @@ export function useCanvasInput(
     } else if (d.type === 'resize') commitResizePreview(d, editor)
     else if (d.type === 'resize-selection') commitSelectionResize(d, editor)
     else if (d.type === 'pen-drag') {
-      const penState = editor.state.penState
-      if (penState?.pendingClose) {
-        editor.penCommit(true)
-      }
+      // Cleared first: a host that refuses the release cancels the gesture, which drops the drag.
       drag.value = null
+      editor.penRelease()
       return
     } else if (d.type === 'pencil-drag') finishPencilDrag(editor)
     else if (d.type === 'rotate' || d.type === 'rotate-selection') commitRotationDrag(editor, d)
@@ -565,7 +569,8 @@ export function useCanvasInput(
     if (event.code !== 'Space' || drag.value?.type !== 'move' || !isEnabled()) return
     event.preventDefault()
     event.stopImmediatePropagation()
-    drag.value.keepParents = held
+    // Where layers only move, they stay in their parents whatever the key.
+    drag.value.keepParents = held || profile().layerEdits === 'move'
     if (held) editor.setDropTarget(null)
   }
   useEventListener(window, 'keydown', (event) => holdParentsDuringMove(event, true), {
@@ -597,6 +602,9 @@ export function useCanvasInput(
     { capture: true }
   )
 
+  // A host that refused the gesture in progress (`cancelGesture`): the drag is undone as Escape
+  // undoes it, its preview put back.
+  const stopGestureListener = editor.onEditorEvent('gesture:cancelled', cancelPointerInteraction)
   const stopRotationListener = editor.onEditorEvent('rotation:preview-changed', (preview) => {
     if (drag.value?.type === 'rotate' && preview?.nodeId !== drag.value.nodeId)
       cancelPointerInteraction()
@@ -635,6 +643,7 @@ export function useCanvasInput(
       })
   )
   onScopeDispose(() => {
+    stopGestureListener()
     stopRotationListener()
     stopToolListener()
     stopReadOnlyListener()

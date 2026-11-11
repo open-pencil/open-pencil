@@ -2,9 +2,15 @@ import { handleNodeEditDown } from '#vue/shared/input/vector'
 export { resolveHit } from '#vue/shared/input/select/hit'
 import { hitTestLabel, resolveHit, tinySelectionAt } from '#vue/shared/input/select/hit'
 export { updateHoverCursor } from '#vue/shared/input/select/hover'
-import { editedGradient, resolveEditorProfile, type Editor } from '@open-pencil/core'
+import {
+  editedBlurRamp,
+  editedGradient,
+  resolveEditorProfile,
+  type Editor
+} from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
+import { tryStartBlurRampDrag } from '#vue/shared/input/blur-ramp'
 import { tryStartConnectorEndDrag } from '#vue/shared/input/connector/end'
 import { tryStartConnectorLineDrag } from '#vue/shared/input/connector/line'
 import { tryStartGradientDrag } from '#vue/shared/input/gradient'
@@ -56,10 +62,13 @@ function tryStartHandleDrag(
   tryStartRotation: (cx: number, cy: number) => boolean,
   setDrag: (d: DragState) => void
 ): boolean {
-  if (resolveEditorProfile(editor.state).layerEdits === 'none') return false
+  if (resolveEditorProfile(editor.state).layerEdits !== 'all') return false
   if (tryStartGradientDrag(editor, sx, sy, setDrag)) return true
-  // An open gradient's handles replace the layer's selection handles, which then do not respond.
+  if (tryStartBlurRampDrag(editor, sx, sy, setDrag)) return true
+  // An open gradient's or blur's handles replace the layer's selection handles, which then do not
+  // respond.
   if (editedGradient(editor.graph, editor.state.gradientEdit)) return false
+  if (editedBlurRamp(editor.graph, editor.state.blurRampEdit)) return false
   if (tryStartShapeHandleDrag(editor, sx, sy, altKey, setDrag)) return true
   if (tryStartConnectorEndDrag(editor, sx, sy, setDrag)) return true
   if (tryStartConnectorLineDrag(editor, cx, cy, sx, sy, setDrag)) return true
@@ -129,9 +138,11 @@ export function handleSelectDown(
   selectOnPress(hit, e.shiftKey, pressSelects(hit, cx, cy, editor, deep), editor)
 
   // A read-only document, or one whose layers the host keeps as they are, moves nothing.
-  if (resolveEditorProfile(editor.state).layerEdits === 'none') return
+  const layerEdits = resolveEditorProfile(editor.state).layerEdits
+  if (layerEdits === 'none') return
   if (selectionIsLocked(editor)) return
 
   // A press inside the selection drags it; its layers are a double-click or ⌘-click away, as in Figma.
-  setDrag(createSelectionMoveDrag(cx, cy, sx, sy, editor, e.altKey))
+  // Where layers only move, Alt copies nothing and layers stay in their parents.
+  setDrag(createSelectionMoveDrag(cx, cy, sx, sy, editor, e.altKey && layerEdits === 'all'))
 }

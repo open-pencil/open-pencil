@@ -1,6 +1,6 @@
-import type { CanvasKit } from 'canvaskit-wasm'
 import { isEqual } from 'es-toolkit'
 
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import type { Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { newStrokeGeometry } from '@open-pencil/scene-graph/node-defaults'
 import type { Color } from '@open-pencil/scene-graph/primitives'

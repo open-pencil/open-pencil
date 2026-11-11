@@ -80,7 +80,7 @@ function select(choice: VariableModeChoice, value: string) {
                       "
                     >
                       <DropdownMenuRadioItem :value="AUTO_MODE" :class="item">
-                        <DropdownMenuItemIndicator class="absolute left-1.5">
+                        <DropdownMenuItemIndicator class="absolute inset-s-1.5">
                           <icon-lucide-check :class="menu.icon" />
                         </DropdownMenuItemIndicator>
                         {{ autoModeLabel(panels, choice) }}
@@ -95,7 +95,7 @@ function select(choice: VariableModeChoice, value: string) {
                         :value="mode.modeId"
                         :class="item"
                       >
-                        <DropdownMenuItemIndicator class="absolute left-1.5">
+                        <DropdownMenuItemIndicator class="absolute inset-s-1.5">
                           <icon-lucide-check :class="menu.icon" />
                         </DropdownMenuItemIndicator>
                         {{ mode.name }}

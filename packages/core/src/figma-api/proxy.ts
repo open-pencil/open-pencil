@@ -34,6 +34,7 @@ import type { FigmaFrameNode, FigmaInstanceNode } from './node-types'
 import { installInstanceOverrideAccessors } from './overrides'
 import { getPageBackgrounds, setPageBackgrounds } from './page-backgrounds'
 import { parseFigmaPaints, toFigmaPaint, type FigmaPaint } from './paints'
+import { flushPendingComponentSync } from './pending-sync'
 import { installPluginDataMethods } from './plugin-data'
 import { nodeProxyToJSON } from './serialization'
 import { installShapeWithTextAccessors } from './shape-with-text'
@@ -41,6 +42,7 @@ import { installSlotAccessors, prepareSlotMove, prepareSlotRemoval } from './slo
 import * as TextProxy from './text'
 import { containerTransform, setContainerTransform } from './transform'
 import * as Traversal from './traversal'
+import { waitOutsideScript } from './waits'
 
 const MIXED = Symbol('mixed')
 
@@ -66,12 +68,15 @@ export function setPageHost(api: NodeProxyHost, host: PageHost): void {
 }
 
 export function loadPage(api: NodeProxyHost, pageId: string): Promise<void> {
-  return pageHosts.get(api)?.load(pageId) ?? Promise.resolve()
+  const host = pageHosts.get(api)
+  // A page's layers load as the document was saved, which is no part of the script's edit.
+  return host ? waitOutsideScript(api, () => host.load(pageId)) : Promise.resolve()
 }
 
 /** The page holding a layer not loaded yet, which loading that page brings in. */
 export function pageOfNode(api: NodeProxyHost, nodeId: string): Promise<string | null> {
-  return pageHosts.get(api)?.pageOfNode?.(nodeId) ?? Promise.resolve(null)
+  const find = pageHosts.get(api)?.pageOfNode
+  return find ? waitOutsideScript(api, () => find(nodeId)) : Promise.resolve(null)
 }
 
 export interface NodeProxyHost extends ExportHost {
@@ -139,6 +144,7 @@ export class FigmaNodeProxy extends FigmaNodeMembers {
   }
 
   #raw(): SceneNode {
+    flushPendingComponentSync(this.#graph, this[INTERNAL_ID])
     const n = this.#graph.getNode(this[INTERNAL_ID])
     if (!n) throw new Error(`Node ${this[INTERNAL_ID]} has been removed`)
     return n
@@ -255,6 +261,7 @@ export class FigmaNodeProxy extends FigmaNodeMembers {
   }
 
   get children(): FigmaNodeProxy[] {
+    flushPendingComponentSync(this.#graph, this[INTERNAL_ID])
     return pluginChildren(this.#graph, this[INTERNAL_ID]).map((c) =>
       this[INTERNAL_API].wrapNode(c.id)
     )

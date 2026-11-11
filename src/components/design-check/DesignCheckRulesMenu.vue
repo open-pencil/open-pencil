@@ -61,7 +61,7 @@ const presetModel = computed({
               :value="preset"
               :class="itemCls"
             >
-              <DropdownMenuItemIndicator class="absolute left-2">
+              <DropdownMenuItemIndicator class="absolute inset-s-2">
                 <icon-lucide-check class="size-3.5" />
               </DropdownMenuItemIndicator>
               {{ presetLabels[preset] }}
@@ -79,7 +79,7 @@ const presetModel = computed({
             :class="itemCls"
             @update:model-value="setDesignIssuesOnCanvas"
           >
-            <DropdownMenuItemIndicator class="absolute left-2">
+            <DropdownMenuItemIndicator class="absolute inset-s-2">
               <icon-lucide-check class="size-3.5" />
             </DropdownMenuItemIndicator>
             {{ messages.showOnCanvas }}

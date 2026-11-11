@@ -16,9 +16,9 @@ describe('atomic agent tools', () => {
     const component = figma.createComponent()
     const instance = component.createInstance()
     await Promise.resolve()
-    const def = ALL_TOOLS.find((tool) => tool.name === 'set_opacity')
-    if (!def) throw new Error('Missing set_opacity')
-    executeAtomicTool(editor, figma, def, { id: component.id, value: 0.5 })
+    const def = ALL_TOOLS.find((tool) => tool.name === 'update_node')
+    if (!def) throw new Error('Missing update_node')
+    executeAtomicTool(editor, figma, def, { id: component.id, opacity: 0.5 })
     await Promise.resolve()
     expect(instance.opacity).toBe(0.5)
     editor.undo.undo()
@@ -33,7 +33,7 @@ describe('atomic agent tools', () => {
   test('undo targets the original page and keeps unrelated later changes', () => {
     const { figma, editor, undo, rectangle, tool } = setup()
     const pageId = figma.currentPage.id
-    executeAtomicTool(editor, figma, tool('set_opacity'), { id: rectangle.id, value: 0.5 })
+    executeAtomicTool(editor, figma, tool('update_node'), { id: rectangle.id, opacity: 0.5 })
     const another = figma.createPage()
     figma.currentPage = another
     rectangle.name = 'Later name'
@@ -97,10 +97,11 @@ describe('atomic agent tools', () => {
           editor,
           figma,
           {
-            ...tool('set_opacity'),
+            ...tool('update_node'),
             execute: () => {
-              // Code that writes into a node directly reports it first.
+              // Code that writes into a node or variable directly reports it first.
               if (kind === 'node') graph.willChangeNode(graph.getNode(rectangle.id))
+              else graph.willChangeVariable(variable.id)
               set(after)
             }
           },
@@ -127,7 +128,7 @@ describe('atomic agent tools', () => {
         editor,
         figma,
         {
-          ...tool('set_opacity'),
+          ...tool('update_node'),
           execute: () => {
             if (kind === 'node') graph.nodes.set(node.id, structuredClone(node))
             else graph.variables.set(variable.id, structuredClone(variable))
@@ -151,7 +152,7 @@ describe('atomic agent tools', () => {
         editor,
         figma,
         {
-          ...tool('set_opacity'),
+          ...tool('update_node'),
           execute: () => {
             graph.instanceIndex.get(component.id)?.delete(instance.id)
           }
@@ -166,7 +167,7 @@ describe('atomic agent tools', () => {
   test('partial failures roll back without adding history', () => {
     const { figma, editor, undo, rectangle, tool } = setup()
     const def: ToolDef = {
-      ...tool('set_opacity'),
+      ...tool('update_node'),
       description: 'failure seam',
       execute: () => {
         rectangle.opacity = 0.25
@@ -195,10 +196,9 @@ describe('atomic agent tools', () => {
     const variables = structuredClone(graph.variables)
     const collections = structuredClone(graph.variableCollections)
     const index = structuredClone(graph.instanceIndex)
-    const modes = structuredClone(graph.activeMode)
     const original = graph.getNode(instance.id)
     const def: ToolDef = {
-      ...tool('set_opacity'),
+      ...tool('update_node'),
       execute: () => {
         rectangle.opacity = 0.25
         switch (operation) {
@@ -229,7 +229,6 @@ describe('atomic agent tools', () => {
     expect(graph.variables).toEqual(variables)
     expect(graph.variableCollections).toEqual(collections)
     expect(graph.instanceIndex).toEqual(index)
-    expect(graph.activeMode).toEqual(modes)
     expect(graph.getNode(instance.id)).toBe(original)
     expect(undo.canUndo).toBe(false)
   })
@@ -238,7 +237,7 @@ describe('atomic agent tools', () => {
     const { graph, figma, editor, undo, tool } = setup()
     const nodes = structuredClone(graph.nodes)
     const def: ToolDef = {
-      ...tool('set_opacity'),
+      ...tool('update_node'),
       execute: () => {
         figma.createRectangle()
         return { ok: true }
@@ -251,10 +250,10 @@ describe('atomic agent tools', () => {
 
   test('error results roll back; no-op operations do not create history', () => {
     const { figma, editor, undo, rectangle, tool } = setup()
-    executeAtomicTool(editor, figma, tool('set_opacity'), { id: rectangle.id, value: 1 })
+    executeAtomicTool(editor, figma, tool('update_node'), { id: rectangle.id, opacity: 1 })
     expect(undo.canUndo).toBe(false)
     expect(() =>
-      executeAtomicTool(editor, figma, tool('set_opacity'), { id: 'missing', value: 0 })
+      executeAtomicTool(editor, figma, tool('update_node'), { id: 'missing', opacity: 0 })
     ).toThrow()
     expect(undo.canUndo).toBe(false)
   })
@@ -262,13 +261,13 @@ describe('atomic agent tools', () => {
   test('aborted and closed/replaced targets are rejected before mutation', () => {
     const { figma, editor, rectangle, tool } = setup()
     const signal = AbortSignal.abort()
-    const args = { id: rectangle.id, value: 0.5 }
-    expect(() => executeAtomicTool(editor, figma, tool('set_opacity'), args, { signal })).toThrow()
+    const args = { id: rectangle.id, opacity: 0.5 }
+    expect(() => executeAtomicTool(editor, figma, tool('update_node'), args, { signal })).toThrow()
     expect(() =>
-      executeAtomicTool(editor, figma, tool('set_opacity'), args, { isLive: () => false })
+      executeAtomicTool(editor, figma, tool('update_node'), args, { isLive: () => false })
     ).toThrow('no longer open')
     editor.graph = new SceneGraph()
-    expect(() => executeAtomicTool(editor, figma, tool('set_opacity'), args)).toThrow(
+    expect(() => executeAtomicTool(editor, figma, tool('update_node'), args)).toThrow(
       'no longer open'
     )
     expect(rectangle.opacity).toBe(1)
@@ -278,7 +277,7 @@ describe('atomic agent tools', () => {
     const { figma, editor, undo, rectangle, tool } = setup()
     await Promise.all(
       [0.5, 0.25].map(async (value) =>
-        executeAtomicTool(editor, figma, tool('set_opacity'), { id: rectangle.id, value })
+        executeAtomicTool(editor, figma, tool('update_node'), { id: rectangle.id, opacity: value })
       )
     )
     expect(rectangle.opacity).toBe(0.25)
@@ -295,7 +294,7 @@ describe('atomic agent tools', () => {
       const { rect } = withOtherPage(graph)
       const first = node(graph, rectangle.id)
       const def: ToolDef = {
-        ...tool('set_opacity'),
+        ...tool('update_node'),
         execute: () => {
           graph.updateNode(rect.id, { opacity: 0.25 })
           graph.updateNode(first.id, { opacity: 0.75 })
@@ -326,8 +325,8 @@ describe('atomic agent tools', () => {
     executeAtomicTool(
       editor,
       figma,
-      tool('set_opacity'),
-      { id: rectangle.id, value: 0.5 },
+      tool('update_node'),
+      { id: rectangle.id, opacity: 0.5 },
       { onRecorded }
     )
     expect(rectangle.opacity).toBe(0.5)
@@ -340,7 +339,7 @@ describe('atomic agent tools', () => {
     const { graph, figma, editor, undo, rectangle, tool } = setup()
     const other = graph.createNode('RECTANGLE', figma.currentPage.id)
     const def: ToolDef = {
-      ...tool('set_opacity'),
+      ...tool('update_node'),
       execute: () => {
         rectangle.opacity = 0.25
         graph.emitter.emit('node:updated', other.id, {})
@@ -392,7 +391,7 @@ describe('atomic agent tools', () => {
     const { graph, figma, editor, undo, rectangle, tool } = setup()
     const keys = [...graph.nodes.keys()]
     const def: ToolDef = {
-      ...tool('set_opacity'),
+      ...tool('update_node'),
       execute: () => {
         graph.nodes.set('silent:1', {
           ...structuredClone(node(graph, rectangle.id)),
@@ -412,7 +411,7 @@ describe('atomic agent tools', () => {
       () => graph.createNode('RECTANGLE', figma.currentPage.id).id
     )
     const def: ToolDef = {
-      ...tool('set_opacity'),
+      ...tool('update_node'),
       execute: () => {
         for (const id of ids) graph.updateNode(id, { opacity: 0.5 })
       }
@@ -431,7 +430,7 @@ describe('atomic agent tools', () => {
       () => graph.createNode('RECTANGLE', figma.currentPage.id).id
     )
     const def: ToolDef = {
-      ...tool('set_opacity'),
+      ...tool('update_node'),
       execute: () => {
         for (const id of ids) graph.updateNode(id, { opacity: 1 })
       }

@@ -1,0 +1,1 @@
+- The AI agent and agents using OpenPencil's tools can search the web for current facts, references, and real copy with `search_web`: with an OpenPencil Cloud model whose workspace's services offer search, paid for with its credits, or in the desktop app with an Exa key under Settings › Integrations. The pages found show as sources in the chat.

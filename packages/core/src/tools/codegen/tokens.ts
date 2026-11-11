@@ -49,9 +49,9 @@ export async function exportTokenStylesheet(
 }
 
 export const designToTokens = defineTool({
-  name: 'design_to_tokens',
+  name: 'export_design_tokens',
   description:
-    'Write the document variables as a stylesheet of CSS custom properties: defaults in :root, every other mode under its condition (a selector such as [data-theme="dark"] or an @media query), aliases as var() references. The tailwind format puts tokens with a Tailwind v4 namespace (--color-*, --spacing-*, --radius-*, --text-*, …) in @theme and adds a @custom-variant per mode. The dtcg format returns W3C design token files instead: one per collection mode, text and effect styles as typography and shadow tokens, and a resolver document; collection and type filters do not apply to it. Issues lists tokens or modes that could not be written.',
+    'Write the document variables as CSS custom properties: defaults in :root, other modes under their selector or @media query, aliases as var(). tailwind puts Tailwind v4 namespaces (--color-*, --spacing-*, …) in @theme with a @custom-variant per mode. dtcg returns W3C design token files instead, one per collection mode with text and effect styles and a resolver; collection and type filters do not apply. Issues lists what could not be written.',
   execution: { kind: 'async', mutation: 'none' },
   input: v.strictObject({
     format: v.optional(
@@ -91,7 +91,7 @@ export const designToTokens = defineTool({
 export const importDesignTokens = defineTool({
   name: 'import_design_tokens',
   description:
-    'Import W3C design token (DTCG) files into the document as variables, and typography and shadow tokens as text and effect styles. Pass each file with its path: a file per mode grouped by folder (as Figma exports modes), a .resolver.json with the files it refers to, or a Tokens Studio file with $themes. Collections and modes with the same names as existing ones are updated, variables are matched by name, and nothing is deleted. Returns what was added, updated, and skipped and why.',
+    'Import W3C design token (DTCG) files as variables, and typography and shadow tokens as text and effect styles. Pass each file with its path: a file per mode in folders (as Figma exports), a .resolver.json with its files, or a Tokens Studio file with $themes. Same-named collections, modes, and variables are updated; nothing is deleted. Returns what was added, updated, and skipped and why.',
   execution: { kind: 'async', mutation: 'document' },
   input: v.strictObject({
     files: v.pipe(
@@ -100,13 +100,10 @@ export const importDesignTokens = defineTool({
       v.description('Token files, each with its path (folders name collections) and JSON text')
     ),
     add_missing: v.optional(
-      v.pipe(v.boolean(), v.description('Add tokens that match no variable (default true)')),
+      v.pipe(v.boolean(), v.description('Add tokens that match no variable')),
       true
     ),
-    styles: v.optional(
-      v.pipe(v.boolean(), v.description('Make text and effect styles (default true)')),
-      true
-    )
+    styles: v.optional(v.pipe(v.boolean(), v.description('Make text and effect styles')), true)
   }),
   execute: async (figma, args) => {
     const tokens = await import('#core/io/formats/design-tokens')

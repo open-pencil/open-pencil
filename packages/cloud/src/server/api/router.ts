@@ -13,6 +13,7 @@ import {
   type DocumentVersionService
 } from '#cloud/server/documents/versions'
 import type { EntitlementService } from '#cloud/server/policy'
+import { createPublicReportRoutes, type DocumentReportService } from '#cloud/server/reports'
 import { createServicesRoutes, type ServicesTokenService } from '#cloud/server/services'
 import type { DocumentSharingService } from '#cloud/server/sharing'
 import {
@@ -33,6 +34,8 @@ export type CloudAPIServices = {
   documents: DocumentService
   versions: DocumentVersionService
   sharing: DocumentSharingService
+  /** Reports about documents shared by link. */
+  reports: DocumentReportService
   resolveSession?: CloudSessionResolver
   entitlements?: EntitlementService
   /** Signs service tokens; without it the deployment offers no services. */
@@ -43,6 +46,7 @@ export type CloudAPIServices = {
 
 export function createPublicCloudAPIRouter(services: CloudAPIServices) {
   return new Hono<CloudAPIEnvironment>()
+    .route('/', createPublicReportRoutes(services.reports, services.resolveSession))
     .route('/', createPublicSharingRoutes(services.sharing, services.resolveSession))
     .route(
       '/',

@@ -10,9 +10,9 @@ import {
   STROKE_FIELDS,
   TEXT_STYLE_FIELDS
 } from '@open-pencil/scene-graph/fields'
+import { copyImages, imagePaintHashes } from '@open-pencil/scene-graph/images'
 import { STYLE_LINK_FIELDS, sharedStyleRefKey } from '@open-pencil/scene-graph/shared-styles'
 
-import { parseOpenPencilClipboard } from '#core/clipboard'
 import { importClipboardDependenciesWithUndo } from '#core/editor/clipboard/dependencies'
 import type { ClipboardSnapshot } from '#core/editor/clipboard/snapshot'
 import type { EditorContext } from '#core/editor/types'
@@ -147,11 +147,6 @@ interface PastedSource {
 
 /** The one layer a clipboard payload from another app or tab holds, or null. */
 async function sourceFromHTML(html: string): Promise<PastedSource | null> {
-  const openPencil = parseOpenPencilClipboard(html)
-  if (openPencil) {
-    const { nodes, images } = openPencil
-    return nodes.length === 1 ? { node: nodes[0], images } : null
-  }
   const figma = await parseFigmaClipboard(html)
   if (!figma) return null
   const fragment = materializeFigFragment(figma.nodes, figma.blobs, {
@@ -182,11 +177,7 @@ export function createClipboardPropertiesActions(
     images: ReadonlyMap<string, Uint8Array>,
     nodes: SceneNode[]
   ): string[] {
-    for (const paint of [...source.fills, ...source.strokes]) {
-      const bytes = paint.imageHash ? images.get(paint.imageHash) : undefined
-      if (paint.imageHash && bytes && !ctx.graph.images.has(paint.imageHash))
-        ctx.graph.images.set(paint.imageHash, bytes)
-    }
+    copyImages(images, ctx.graph.images, imagePaintHashes([...source.fills, ...source.strokes]))
     return nodes.flatMap((target) => {
       const changes = pastedPropertyChanges(source, target)
       if (!changes) return []

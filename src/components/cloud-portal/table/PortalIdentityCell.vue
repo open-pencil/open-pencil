@@ -38,7 +38,7 @@ const messages = useCloudPortalMessages()
     <component
       :is="link ? 'button' : 'div'"
       :type="link ? 'button' : undefined"
-      class="min-w-0 rounded text-left focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:outline-none"
+      class="min-w-0 rounded text-start focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:outline-none"
       @click="link && emit('open')"
     >
       <span :class="ui.title()">

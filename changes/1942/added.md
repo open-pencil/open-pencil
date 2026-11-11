@@ -1,0 +1,1 @@
+- Drop shadows have a Show behind transparent areas option in the Effects panel (#1942).

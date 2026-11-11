@@ -1,7 +1,7 @@
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { EditorContext } from '#core/editor/types'
-import { pushNodeEditHistory } from '#core/editor/vector/history'
+import type { VectorEditHistory } from '#core/editor/vector/history'
 import { getLiveNetwork } from '#core/editor/vector/network'
 import type { NodeEditState } from '#core/editor/vector/types'
 import { findAllHandles, findOppositeHandle, mirrorHandle } from '#core/vector'
@@ -12,7 +12,8 @@ type GetNodeEditState = () => NodeEditState | null
 
 export function createVectorEditHandleActions(
   ctx: EditorContext,
-  getNodeEditState: GetNodeEditState
+  getNodeEditState: GetNodeEditState,
+  history: VectorEditHistory
 ) {
   function nodeEditSetHandle(
     segmentIndex: number,
@@ -132,7 +133,7 @@ export function createVectorEditHandleActions(
   function nodeEditZeroVertexHandles(vertexIndex: number) {
     const es = getNodeEditState()
     if (!es) return
-    pushNodeEditHistory(es)
+    history.begin(es)
     const live = getLiveNetwork(es)
     const handles = findAllHandles(live, vertexIndex)
     for (const h of handles) {

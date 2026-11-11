@@ -1,0 +1,1 @@
+- Switching the app theme with the demo tour open now repaints the whole canvas background instead of leaving the old one around the sections (#1958).

@@ -23,5 +23,8 @@
   "unavailable": "アップデートはまだ利用できません。まず、latest.json を含む署名付きバージョンを公開してください。",
   "checkFailed": "アップデートの確認中にエラーが発生しました: {error}",
   "webUpdateReady": "OpenPencil の新しいバージョンの準備ができました",
-  "reload": "再読み込み"
+  "reload": "再読み込み",
+  "settingsSection": "アップデート",
+  "checkOnStartup": "起動時にアップデートを確認",
+  "checkOnStartupDescription": "デスクトップアプリを開いて少ししてから、新しいバージョンを探します。これを切っても、メニューの「アップデートを確認」は使えます。"
 }

@@ -1,10 +1,10 @@
 export { readFigFile, parseFigFile, type ParseFigFileOptions } from './read'
 export {
   exportFigFile,
-  compressFigData,
-  setFigArchiveAssembler,
-  type FigArchiveAssembler,
-  type FigArchiveParts,
+  exportFigFileStream,
+  setFigCanvasCompressor,
+  type FigCanvasCompressor,
+  type FigCanvasParts,
   type FigFileExtrasOptions
 } from './write'
 export { figThumbnailPageId } from './thumbnail-page'
@@ -15,3 +15,4 @@ export {
   readerDiagnostics
 } from '#core/kiwi/fig/session/document-state'
 export { buildFontDigestMap } from '#core/kiwi/fig/node-change/font/digests'
+export { stopFigReaderWorker } from '#core/kiwi/fig/population/client'

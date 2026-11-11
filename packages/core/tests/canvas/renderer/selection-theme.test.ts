@@ -3,9 +3,9 @@ import { expect, test } from 'bun:test'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { SkiaRenderer } from '#core/canvas'
 import { DEFAULT_SELECTION_THEME } from '#core/constants'
-import { initCanvasKit } from '#core/io/formats/raster/headless'
+import { getCanvasKit } from '#core/canvaskit'
 
-const ck = await initCanvasKit()
+const ck = await getCanvasKit()
 
 function withRenderer(run: (renderer: SkiaRenderer) => void) {
   const surface = expectDefined(ck.MakeSurface(64, 64), 'surface')
@@ -38,15 +38,37 @@ test('long-lived selection paints and text follow a new selection theme', () => 
     renderer.setSelectionTheme(GREEN_THEME)
     const { r, g, b } = GREEN_THEME.color
     const expected = rgb(ck.Color4f(r, g, b, 1))
+    const edit = renderer.nodeEditPaints
     for (const paint of [
       renderer.selectionPaint,
       renderer.penHandlePaint,
-      renderer.penVertexStroke
+      renderer.penVertexStroke,
+      edit.vertexStroke1px,
+      edit.vertexSelectedFill,
+      edit.handleSelectedFill,
+      edit.handleLineSelectedPaint,
+      edit.segmentSelectedPaint
     ]) {
       expect(rgb(paint.getColor())).toEqual(expected)
     }
     expect(rgb(renderer.selColor())).toEqual(expected)
     expect(rgb(renderer.selForegroundColor())).toEqual([0, 0, 0])
+  })
+})
+
+test('hovered vector edit points and handles take a lighter selection colour', () => {
+  withRenderer((renderer) => {
+    renderer.setSelectionTheme(GREEN_THEME)
+    const [r, g, b] = rgb(renderer.selColor())
+    for (const paint of [
+      renderer.nodeEditPaints.handleHoverFill,
+      renderer.nodeEditPaints.handleLineHoverPaint
+    ]) {
+      const [hr, hg, hb] = rgb(paint.getColor())
+      expect(hr).toBeGreaterThan(r)
+      expect(hg).toBeGreaterThan(g)
+      expect(hb).toBeGreaterThan(b)
+    }
   })
 })
 

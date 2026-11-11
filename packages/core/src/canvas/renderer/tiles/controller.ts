@@ -1,5 +1,4 @@
-import type { Canvas } from 'canvaskit-wasm'
-
+import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
@@ -102,6 +101,8 @@ export class TiledSceneController {
   private contentGeneration = -1
   /** The dot grid the cached tiles were painted with, which a document kind change replaces. */
   private dotGrid: number | null = null
+  /** The page colour under the cached tiles, which a theme or page background change replaces. */
+  private pageColor = ''
   private navigationGeneration = -1
   private navigationActive = false
   private cancelledJobs = 0
@@ -210,9 +211,12 @@ export class TiledSceneController {
   ): TiledSceneFrameResult {
     this.navigationGeneration = navigationGeneration
     this.navigationActive = this.isNavigationActive(renderer)
-    if (renderer.pageDotGrid !== this.dotGrid) {
+    const { r, g, b, a } = renderer.pageColor
+    const pageColor = `${r},${g},${b},${a}`
+    if (renderer.pageDotGrid !== this.dotGrid || pageColor !== this.pageColor) {
       this.invalidate()
       this.dotGrid = renderer.pageDotGrid
+      this.pageColor = pageColor
     }
     this.prepareGeneration(renderer, graph, contentGeneration, navigationGeneration)
     const viewport = {
@@ -493,6 +497,12 @@ export class TiledSceneController {
     const backdropLevel = tileLevel((level / BACKDROP_LEVEL_RATIO) * (1 - 1e-9))
     const pageBackdrop = pageBackdropPlan(index.bounds(), level)
     if (pageBackdrop) this.tileCache.touchLevel(pageId, pageBackdrop.level)
+    // The last complete level is what a zoom stands on until the new one is whole: at a zoom
+    // from fit there is no coarser page copy, and the levels a zoom passes through would
+    // otherwise evict it within a few steps and leave holes at the edges of the view.
+    if (this.committedLevel !== null && this.committedLevel !== level) {
+      this.tileCache.touchLevel(pageId, this.committedLevel)
+    }
     this.cancelledJobs += this.scheduler.discard(
       (job) =>
         job.kind !== 'downsample' &&

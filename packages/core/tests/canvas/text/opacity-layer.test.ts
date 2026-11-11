@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, test } from 'bun:test'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import {
   type DerivedTextGlyph,
   type Effect,
@@ -32,7 +32,7 @@ const ARABIC_FAMILY = 'Noto Naskh Arabic'
 const ARABIC_WORD = '\u0628\u062C'
 const SHORT_LINE = { value: 50, unit: 'PERCENT' as const }
 
-const ck = await initCanvasKit()
+const ck = await getCanvasKit()
 const loading = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(SIZE, SIZE), 'surface'))
 const loaded = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(SIZE, SIZE), 'surface'))
 await loaded.loadFonts()

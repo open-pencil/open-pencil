@@ -1340,8 +1340,8 @@ function extractFigmaSymbolMetadata(
   }
 }
 
-function extractSymbolId(nc: NodeChange): string {
+function extractSymbolId(nc: NodeChange): string | null {
   const sd = nc.symbolData as { symbolID?: GUID } | undefined
-  if (!sd?.symbolID) return ''
+  if (!sd?.symbolID) return null
   return guidToString(sd.symbolID)
 }

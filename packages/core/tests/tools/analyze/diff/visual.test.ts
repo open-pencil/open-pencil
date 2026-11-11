@@ -2,11 +2,8 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
-import {
-  createCanvasKitRasterCodec,
-  headlessRenderNodes,
-  initCanvasKit
-} from '@open-pencil/core/io/formats/raster'
+import { createCanvasKitRasterCodec, headlessRenderNodes } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Color, Rect } from '@open-pencil/scene-graph/primitives'
@@ -24,7 +21,7 @@ type VisualDiff = {
 let codec: ReturnType<typeof createCanvasKitRasterCodec>
 
 beforeAll(async () => {
-  codec = createCanvasKitRasterCodec(await initCanvasKit())
+  codec = createCanvasKitRasterCodec(await getCanvasKit())
 })
 
 const WHITE: Color = { r: 1, g: 1, b: 1, a: 1 }
@@ -50,11 +47,11 @@ function setup() {
 }
 
 async function visualDiff(figma: FigmaAPI, args: Record<string, unknown>) {
-  const tool = expectDefined(ALL_TOOLS.find((candidate) => candidate.name === 'diff_visual'))
+  const tool = expectDefined(ALL_TOOLS.find((candidate) => candidate.name === 'diff_pixels'))
   return (await tool.execute(figma, args)) as VisualDiff
 }
 
-describe('diff_visual', () => {
+describe('diff_pixels', () => {
   test('reports no changed pixels for an identical copy', async () => {
     const { figma, card } = setup()
     const copy = card.clone()

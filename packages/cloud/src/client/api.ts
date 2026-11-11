@@ -18,6 +18,7 @@ import {
   documentVersionsSchema,
   restoredDocumentSchema,
   sharedDocumentSchema,
+  trashSchema,
   invitationContinuationSchema,
   invitationPreviewSchema,
   resolvedDocumentShareSchema,
@@ -46,10 +47,12 @@ import {
   type SaveDocumentVersionInput,
   type UpdateDocumentVersionInput,
   type SharedDocument,
+  type TrashedDocument,
   type InvitationPreview,
-  type LookupCloudUserInput,
   type PutDocumentGrantInput,
   type ResolveDocumentShareInput,
+  fileDocumentReportResponseSchema,
+  type FileDocumentReportInput,
   type UpdateDocumentShareInput,
   type AcceptedInvitation
 } from '#cloud/contract'
@@ -145,20 +148,6 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
         options.onDiagnostic
       )
     },
-    async lookupUser(
-      documentId: string,
-      input: LookupCloudUserInput
-    ): Promise<CloudUserProfile | null> {
-      const response = await parseResponse(
-        client.documents[':documentId'].users.lookup.$post({
-          param: { documentId },
-          json: input
-        }),
-        userLookupResponseSchema,
-        options.onDiagnostic
-      )
-      return response.user
-    },
     async getUserProfile(documentId: string, userId: string): Promise<CloudUserProfile | null> {
       const response = await parseResponse(
         client.documents[':documentId'].users[':userId'].$get({
@@ -203,6 +192,24 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
         options.onDiagnostic
       )
       return response.document
+    },
+    /** Documents in Trash the person may restore, across their workspaces, newest first. */
+    async listTrash(): Promise<TrashedDocument[]> {
+      const response = await parseResponse(client.trash.$get(), trashSchema, options.onDiagnostic)
+      return response.documents
+    },
+    async restoreDocument(documentId: string): Promise<void> {
+      await responseBody(
+        await client.trash[':documentId'].restore.$post({ param: { documentId } }),
+        options.onDiagnostic
+      )
+    },
+    /** Deletes a document in Trash for good. */
+    async purgeDocument(documentId: string): Promise<void> {
+      await responseBody(
+        await client.trash[':documentId'].$delete({ param: { documentId } }),
+        options.onDiagnostic
+      )
     },
     async deleteDocument(documentId: string): Promise<void> {
       await responseBody(
@@ -377,6 +384,14 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
         await client.documents[':documentId'].invitations[':invitationId'].$delete({
           param: { documentId, invitationId }
         }),
+        options.onDiagnostic
+      )
+    },
+    /** Reports the document a share link opens to the server's administrators. */
+    async fileDocumentReport(shareId: string, input: FileDocumentReportInput): Promise<void> {
+      await parseResponse(
+        publicClient.shares[':shareId'].reports.$post({ param: { shareId }, json: input }),
+        fileDocumentReportResponseSchema,
         options.onDiagnostic
       )
     },

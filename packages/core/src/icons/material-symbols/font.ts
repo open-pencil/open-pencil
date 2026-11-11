@@ -1,6 +1,7 @@
 import type { IconOptions } from '@open-pencil/scene-graph/icons'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 
+import { tintedIconPath } from '#core/icons/artwork'
 import type { IconOption, IconPath } from '#core/icons/types'
 import {
   fontInstance,
@@ -126,12 +127,5 @@ export function materialSymbolsPath(
   size: number,
   axes: Record<string, number>
 ): IconPath {
-  return {
-    vectorNetwork: parseSVGPath(materialSymbolsPathData(font, glyph, size, axes), 'NONZERO'),
-    fill: 'currentColor',
-    stroke: null,
-    strokeWidth: 0,
-    strokeCap: 'butt',
-    strokeJoin: 'miter'
-  }
+  return tintedIconPath(parseSVGPath(materialSymbolsPathData(font, glyph, size, axes), 'NONZERO'))
 }
