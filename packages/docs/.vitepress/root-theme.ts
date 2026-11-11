@@ -3,6 +3,7 @@ import type { DefaultTheme } from 'vitepress'
 import { EN, EN_PROG } from './labels.ts'
 import { sdkSidebar } from './sdk-sidebar.ts'
 import {
+  cloudSidebar,
   developmentSidebar,
   guideSidebar,
   programmableSidebar,
@@ -21,6 +22,7 @@ export const rootThemeConfig = (): DefaultTheme.Config => ({
     { text: 'SDK', link: '/programmable/sdk/' },
     { text: 'Reference', link: '/reference/keyboard-shortcuts' },
     { text: 'Development', link: '/development/contributing' },
+    { text: 'Cloud', link: '/cloud/', activeMatch: '^/cloud/' },
     { text: 'Open App', link: 'https://app.openpencil.dev' }
   ],
 
@@ -30,6 +32,7 @@ export const rootThemeConfig = (): DefaultTheme.Config => ({
     '/programmable/': programmableSidebar('', EN_PROG),
     '/reference/': referenceSidebar('', 'Reference', EN),
     '/development/': developmentSidebar('', 'Development', EN),
+    '/cloud/': cloudSidebar(),
     '/': guideSidebar('', EN)
   },
 
