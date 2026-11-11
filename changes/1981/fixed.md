@@ -1,0 +1,1 @@
+- A layer with a NaN stroke weight no longer blanks every other layer on its page.
