@@ -1,7 +1,12 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { TEXT_METRIC_FIELDS } from '@open-pencil/scene-graph/fields'
 
-import { autoWidthWrapWidth, measureAutoWidthText, measureTextForLayout } from './text-measurement'
+import {
+  autoWidthWrapWidth,
+  getTextMeasurer,
+  measureAutoWidthText,
+  measureTextForLayout
+} from './text-measurement'
 
 const WRAP_WIDTH_KEYS = ['minWidth', 'maxWidth'] as const satisfies readonly (keyof SceneNode)[]
 
@@ -40,6 +45,17 @@ type TextSizeChanges = Partial<
   Pick<SceneNode, 'width' | 'height' | 'derivedLayout' | 'derivedTextGlyphs' | 'derivedTextHeight'>
 >
 
+function sizesItself(node: Pick<SceneNode, 'textAutoResize'>): boolean {
+  return node.textAutoResize === 'HEIGHT' || node.textAutoResize === 'WIDTH_AND_HEIGHT'
+}
+
+export function measuredFixedTextReach(node: SceneNode): number | null {
+  if (node.type !== 'TEXT' || node.textPathData || sizesItself(node)) {
+    return null
+  }
+  return getTextMeasurer()?.(node, node.width)?.height || null
+}
+
 export function textAutoResizeChanges(
   node: SceneNode | undefined,
   changes: Partial<SceneNode>
@@ -56,8 +72,9 @@ export function textAutoResizeChanges(
   const next = { ...node, ...changes }
   const mode = next.textAutoResize
   // A fixed-size box keeps its size; its lines are measured at its width, since they draw past it.
-  if (mode !== 'HEIGHT' && mode !== 'WIDTH_AND_HEIGHT')
+  if (!sizesItself(next)) {
     return { derivedTextHeight: measureTextForLayout(next, next.width).height || null }
+  }
 
   const measured =
     mode === 'HEIGHT'

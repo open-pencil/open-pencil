@@ -10,12 +10,21 @@ import {
 } from '@open-pencil/scene-graph/scaling'
 
 import type { EditorContext } from '#core/editor/types'
+import { measuredFixedTextReach } from '#core/layout/text-auto-resize'
 
 /** One layer's fields a Scale edit changed: as they were, and as it left them. */
 interface ScaledFields {
   id: string
   before: Partial<SceneNode>
   after: Partial<SceneNode>
+}
+
+function remeasureFixedTextReach(ctx: EditorContext, id: string): void {
+  const node = ctx.graph.getNode(id)
+  const reach = node && measuredFixedTextReach(node)
+  if (reach && reach !== node.derivedTextHeight) {
+    ctx.graph.updateNode(id, { derivedTextHeight: reach })
+  }
 }
 
 /**
@@ -48,6 +57,7 @@ export function scaleLayers(
   const apply = (side: 'before' | 'after') => {
     for (const field of fields) {
       if (ctx.graph.getNode(field.id)) ctx.graph.updateNode(field.id, structuredClone(field[side]))
+      remeasureFixedTextReach(ctx, field.id)
     }
     for (const root of roots) {
       if (ctx.graph.getNode(root.id)) ctx.runLayoutForNode(root.id)

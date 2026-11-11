@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
 import { createEditor, EDITOR_TOOLS, TOOL_SHORTCUTS, type Editor } from '@open-pencil/core'
+import { setTextMeasurer } from '@open-pencil/core/layout'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
@@ -64,6 +65,80 @@ describe('scaleSelected', () => {
     expect(current(text.id)).toMatchObject({ height: 40, fontSize: 40, derivedTextHeight: 120 })
     editor.undo.undo()
     expect(current(text.id)).toMatchObject({ height: 20, fontSize: 20, derivedTextHeight: 60 })
+  })
+
+  describe('with fonts to measure the lines in', () => {
+    afterEach(() => setTextMeasurer(null))
+
+    function measureLinesRoundedToPixels() {
+      setTextMeasurer((node) => ({
+        width: node.width,
+        height: node.text.split('\n').length * Math.round(node.fontSize * 1.24)
+      }))
+    }
+
+    function fixedText(text: string, derivedTextHeight: number) {
+      const node = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+        width: 100,
+        height: 20,
+        fontSize: 10,
+        text,
+        textAutoResize: 'NONE',
+        derivedTextHeight
+      })
+      editor.select([node.id])
+      return node
+    }
+
+    test('measures the reach again, as lines rounded to whole pixels do not scale evenly', () => {
+      editor = createEditor()
+      measureLinesRoundedToPixels()
+      const text = fixedText('a\nb\nc', 36)
+
+      editor.scaleSelected(1.37, { x: 0, y: 0 })
+
+      expect(current(text.id).derivedTextHeight).toBe(51)
+    })
+
+    test('undo measures the text as it is now, edited by someone else since the scale', () => {
+      editor = createEditor()
+      measureLinesRoundedToPixels()
+      const text = fixedText('a\nb\nc', 36)
+      editor.scaleSelected(2, { x: 0, y: 0 })
+
+      editor.graph.updateNode(text.id, { text: 'a\nb\nc\nd\ne', derivedTextHeight: 125 })
+      editor.undo.undo()
+      expect(current(text.id)).toMatchObject({ fontSize: 10, derivedTextHeight: 60 })
+      editor.undo.redo()
+      expect(current(text.id)).toMatchObject({ fontSize: 20, derivedTextHeight: 125 })
+    })
+
+    test('keeps the scaled reach while the fonts cannot be measured', () => {
+      editor = createEditor()
+      setTextMeasurer(() => null)
+      const text = fixedText('a\nb\nc', 36)
+
+      editor.scaleSelected(1.5, { x: 0, y: 0 })
+
+      expect(current(text.id).derivedTextHeight).toBe(54)
+    })
+
+    test('leaves a text that sizes itself without a reach', () => {
+      editor = createEditor()
+      measureLinesRoundedToPixels()
+      const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+        width: 100,
+        height: 36,
+        fontSize: 10,
+        text: 'a\nb\nc',
+        textAutoResize: 'HEIGHT'
+      })
+      editor.select([text.id])
+
+      editor.scaleSelected(2, { x: 0, y: 0 })
+
+      expect(current(text.id).derivedTextHeight).toBeNull()
+    })
   })
 
   test('undoing a scale keeps the selection, a later edit to the layer, and a layer added since', () => {
