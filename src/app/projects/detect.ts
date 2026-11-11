@@ -78,9 +78,34 @@ async function applicationInPickedFolder(
   folder: string
 ): Promise<Application | null> {
   const picked = normalizePath(folder)
-  if (picked === repository || !picked.startsWith(`${repository}/`)) return null
+  const directory = directoryIn(repository, picked, foldsPathCase())
+  if (directory === null) return null
   const manifest = await readManifest(io, picked)
-  return applicationOf(manifest, picked.slice(repository.length + 1))
+  return applicationOf(manifest, directory)
+}
+
+/**
+ * Where the picked folder sits inside the repository: `code/web` for `D:/app/code/web`, and null
+ * for the repository root itself or a folder outside it. The folder that comes back keeps the
+ * spelling the person picked, since git answers the root in its own.
+ */
+export function directoryIn(repository: string, picked: string, foldsCase: boolean): string | null {
+  // One more character than the root is the shortest folder that can sit inside it.
+  if (picked.length <= repository.length + 1) return null
+  if (picked[repository.length] !== '/') return null
+  const prefix = picked.slice(0, repository.length)
+  const same = foldsCase ? prefix.toLowerCase() === repository.toLowerCase() : prefix === repository
+  return same ? picked.slice(repository.length + 1) : null
+}
+
+/**
+ * Whether this platform names one folder in either case. Windows answers `d:/karbid2` for the root
+ * it calls `D:/Karbid2`, so a prefix compared exactly would leave the picked application out; on a
+ * file system that keeps case, two spellings are two folders and only an exact prefix counts.
+ */
+function foldsPathCase(): boolean {
+  if (typeof navigator === 'undefined') return false
+  return /win|mac|darwin/i.test(navigator.platform)
 }
 
 /** A manifest makes an application when it has a script that starts one. */

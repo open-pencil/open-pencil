@@ -51,14 +51,26 @@ export function folderName(path: string): string {
  * A project id is derived from the repository path, so the same repository added twice answers
  * the same record instead of a duplicate: two project entries for one repository would each
  * carry their own branch and changes.
+ *
+ * The path is folded to one case first: Windows hands back either spelling for one folder, and a
+ * project would appear twice. On a case-sensitive file system two folders that differ only by
+ * case therefore share an id, which is the price of one repository staying one project.
  */
 export function projectIdFor(repository: string): string {
-  const normal = normalizePath(repository).toLowerCase()
-  let hash = 0
-  for (let index = 0; index < normal.length; index += 1) {
-    hash = (hash * 31 + normal.charCodeAt(index)) | 0
+  return `project-${digestOf(normalizePath(repository).toLowerCase())}`
+}
+
+/**
+ * FNV-1a over the folded path, 64 bits wide. A 32-bit digest meets another path after a few
+ * thousand projects, and the list keeps one record per id, so a collision would replace one
+ * project with another one from a different folder.
+ */
+function digestOf(text: string): string {
+  let hash = 0xcbf29ce484222325n
+  for (let index = 0; index < text.length; index += 1) {
+    hash = ((hash ^ BigInt(text.charCodeAt(index))) * 0x100000001b3n) & 0xffffffffffffffffn
   }
-  return `project-${(hash >>> 0).toString(36)}`
+  return hash.toString(36)
 }
 
 /** Build the record a caller can persist, rejecting a draft without a repository. */

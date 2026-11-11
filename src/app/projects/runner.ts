@@ -14,8 +14,15 @@ import type { Project } from './schema'
 
 /** How many lines of the application's output the screen keeps. */
 const MAX_OUTPUT_LINES = 300
-/** A dev server names its address on the line that says it is ready. */
-const ADDRESS = /https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\]):\d{2,5}/
+/**
+ * A dev server names its address on the line that says it is ready. Only an address of this
+ * machine is taken: a server started with `--host` prints its network address after the local
+ * one, and a page that opens there is one the app cannot draw a picture of.
+ */
+const ADDRESS = /https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\]):\d{2,5}(?!\d)/
+/** The colours and the cursor a terminal is given, which a dev server prints around its address. */
+// eslint-disable-next-line no-control-regex -- Escape sequences are what it removes.
+const TERMINAL_CODES = /\u001B\[[0-9;?]*[A-Za-z]/g
 
 export type ProjectRunState = 'idle' | 'starting' | 'running' | 'stopped' | 'failed'
 
@@ -78,7 +85,7 @@ export function applicationFolder(project: Project): string {
 export function applicationAddress(project: Project, output: readonly string[]): string {
   if (project.startUrl !== '') return project.startUrl
   for (let index = output.length - 1; index >= 0; index -= 1) {
-    const found = ADDRESS.exec(output[index])
+    const found = ADDRESS.exec(output[index].replace(TERMINAL_CODES, ''))
     if (found) return found[0]
   }
   return ''

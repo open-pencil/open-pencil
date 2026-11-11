@@ -2,6 +2,7 @@ import { expect, test } from 'bun:test'
 
 import {
   detectProject,
+  directoryIn,
   type ProjectDetection,
   type ProjectDetectorIo,
   type RepositoryRootAnswer
@@ -165,4 +166,18 @@ test("the root's application wins over the picked folder's", async () => {
 
   expect(project.appDirectory).toBe('')
   expect(project.startCommand).toBe('node server.js')
+})
+
+test('a picked folder is placed by its path, in the spelling it was picked in', () => {
+  expect(directoryIn('D:/Karbid2', 'D:/Karbid2/code/web', true)).toBe('code/web')
+  // git answers the root in its own case, which is not the one the folder was picked in.
+  expect(directoryIn('D:/Karbid2', 'd:/karbid2/code', true)).toBe('code')
+  expect(directoryIn('D:/Karbid2', 'd:/karbid2/code', false)).toBeNull()
+})
+
+test('a folder that only starts with the root name is not inside it', () => {
+  expect(directoryIn('D:/Karbid2', 'D:/Karbid22/code', true)).toBeNull()
+  expect(directoryIn('D:/Karbid2', 'D:/Karbid2', true)).toBeNull()
+  expect(directoryIn('D:/Karbid2', 'D:/Karbid2/', true)).toBeNull()
+  expect(directoryIn('D:/Karbid2', 'C:/Karbid2/code', true)).toBeNull()
 })

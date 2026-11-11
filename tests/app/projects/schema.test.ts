@@ -20,6 +20,12 @@ test('two spellings of one folder compare equal', () => {
   expect(projectIdFor('D:\\Karbid2')).toBe(projectIdFor('d:/karbid2/'))
 })
 
+test('two repositories whose old digests met still get their own id', () => {
+  // Both paths fold to 3701632494, which the 32-bit digest this id started with answered for
+  // either of them: the second project would replace the first one in the list.
+  expect(projectIdFor('D:/repos/gg59ka0pfs')).not.toBe(projectIdFor('D:/repos/q30ca6bmyk'))
+})
+
 test('a project takes the repository folder name until it is renamed', () => {
   expect(folderName('D:/Karbid2')).toBe('Karbid2')
   expect(createProject({ repository: 'D:/Karbid2' })?.name).toBe('Karbid2')

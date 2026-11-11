@@ -105,6 +105,36 @@ test('the address the command names wins over the printed one', () => {
   expect(applicationAddress(project('D:/app', '', 'vite --port 4000'), [])).toBe('')
 })
 
+test('an address printed in colour is read without the colour', () => {
+  const app = project('D:/app-colour')
+  // A dev server colours the port it prints, and the escape would end the address before it.
+  const line = '  ➜  Local:   http://localhost:\u001B[1m5173\u001B[22m/'
+
+  expect(applicationAddress(app, [line])).toBe('http://localhost:5173')
+})
+
+test('a port is read whole or not at all', () => {
+  const app = project('D:/app-port')
+
+  // `\d{2,5}` alone would answer `…:51734` here, a port of five digits out of six.
+  expect(applicationAddress(app, ['  ➜  Local:   http://localhost:517345/'])).toBe('')
+  expect(applicationAddress(app, ['listening on http://127.0.0.1:65535'])).toBe(
+    'http://127.0.0.1:65535'
+  )
+})
+
+test('the address of this machine wins over the one on the network', () => {
+  const app = project('D:/app-host')
+
+  // `vite --host` prints the network address last; a page on it is one the app cannot draw.
+  expect(
+    applicationAddress(app, [
+      '  ➜  Local:   http://localhost:5173/',
+      '  ➜  Network: http://192.168.1.7:5173/'
+    ])
+  ).toBe('http://localhost:5173')
+})
+
 test('an exit ends the run and keeps its code', async () => {
   const app = project('D:/app-exit')
   const fired = events()
