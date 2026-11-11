@@ -1,1 +1,1 @@
-- Download all, before deleting a Cloud account, saves archives of any size in Chrome and Edge: it asks where to save the zip and writes each document into it in turn instead of building the whole zip in memory.
+- Download all, before deleting a Cloud account, saves large accounts in Chrome and Edge: it asks where to save the zip and writes the documents into it one at a time, so memory holds about one document instead of the whole zip.

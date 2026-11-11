@@ -58,14 +58,22 @@ const id = (n: number) => `00000000-0000-4000-8000-00000000010${n}`
 /** A file the person picked, collecting what the archive writes into it. */
 function pickedFile() {
   const chunks: Uint8Array[] = []
+  const state = { closed: false, aborted: false }
   return {
     chunks,
+    state,
     bytes: () => Uint8Array.from(chunks.flatMap((chunk) => [...chunk])),
     file: {
       createWritable: async () =>
         new WritableStream<Uint8Array>({
           write(chunk) {
             chunks.push(chunk)
+          },
+          close() {
+            state.closed = true
+          },
+          abort() {
+            state.aborted = true
           }
         })
     }
@@ -197,5 +205,18 @@ describe('account archive', () => {
       failed: [{ id: id(1), name: 'Lost', workspaceName: 'Solo' }]
     })
     expect(saved).toEqual([])
+  })
+
+  test('aborts the picked file instead of writing an empty zip when no document arrives', async () => {
+    const picked = pickedFile()
+    const result = await saveAccountArchive([{ id: id(1), name: 'Lost', workspaceName: 'Solo' }], {
+      apiURL: `${ORIGIN}/api`,
+      archiveName: 'Files.zip',
+      fetch: server([{ id: id(1), name: 'Lost', kind: 'design', bytes: null }]),
+      pickFile: async () => picked.file
+    })
+    expect(result?.saved).toBe(0)
+    expect(result?.failed.map((document) => document.name)).toEqual(['Lost'])
+    expect(picked.state).toEqual({ closed: false, aborted: true })
   })
 })
