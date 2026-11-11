@@ -34,37 +34,42 @@ export function usePortalAccountDeletion(options: PortalAccountDeletionOptions) 
   const deletion: Ref<CloudAccountDeletion | null> = ref(null)
   const loadError = ref<string | null>(null)
   const archive = ref<PortalAccountArchive | null>(null)
-  /** Which opening of the dialog a download belongs to, so a stale one can't write into a newer. */
-  let session = 0
+  /** Which opening of the dialog a plan request belongs to, so a stale one can't fill a newer. */
+  let opening = 0
+  /**
+   * Whether Download all is still running. It outlives closing the dialog: reopening shows its
+   * progress, and deleting stays blocked, until it ends.
+   */
+  let downloading = false
 
   async function show() {
-    session++
+    const current = ++opening
     remove.clear()
     deletion.value = null
     loadError.value = null
-    archive.value = null
+    if (!downloading) archive.value = null
     open.value = true
     try {
-      deletion.value = (await portal.api.accountDeletion()).deletion
+      const plan = (await portal.api.accountDeletion()).deletion
+      if (current === opening) deletion.value = plan
     } catch (error) {
-      loadError.value = failures.api(error)
+      if (current === opening) loadError.value = failures.api(error)
     }
   }
 
   async function downloadAll() {
-    const opening = session
+    if (downloading) return
+    downloading = true
     const documents = deletion.value?.documents ?? []
-    const current = () => opening === session
     archive.value = { done: 0, total: documents.length, saved: null, failed: [] }
     try {
       const result = await saveAccountArchive(documents, {
         apiURL: portal.discovery.apiURL,
         archiveName: `${messages.value.accountArchiveName({ host: portal.host })}.zip`,
         onProgress: ({ done, total }) => {
-          if (current() && archive.value) archive.value = { ...archive.value, done, total }
+          if (archive.value) archive.value = { ...archive.value, done, total }
         }
       })
-      if (!current()) return
       archive.value = {
         done: documents.length,
         total: documents.length,
@@ -73,9 +78,10 @@ export function usePortalAccountDeletion(options: PortalAccountDeletionOptions) 
       }
     } catch (error) {
       // Zipping or saving failed as a whole, such as out of memory; nothing was saved.
-      if (!current()) return
       archive.value = null
       options.onArchiveFailed(failures.api(error))
+    } finally {
+      downloading = false
     }
   }
 
