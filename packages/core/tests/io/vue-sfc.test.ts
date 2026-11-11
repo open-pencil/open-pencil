@@ -27,3 +27,16 @@ test('a stylesheet the markup carries moves out of the template', () => {
   expect(sfc).toContain('<template>\n<div class="card">Hi</div>\n</template>')
   expect(sfc.match(/\.card\{color:red\}/g)).toHaveLength(1)
 })
+
+test('braces a layer shows stay text rather than becoming an interpolation', () => {
+  const sfc = htmlToVueSFC('<p>Total: {{ price }}</p>')
+
+  expect(sfc).not.toContain('{{ price }}')
+  expect(sfc).toContain('<p>Total: &#123;&#123; price }}</p>')
+})
+
+test('an attribute value keeps the braces it was given', () => {
+  const sfc = htmlToVueSFC('<div data-text="{{ price }}">Hi</div>')
+
+  expect(sfc).toContain('<div data-text="{{ price }}">Hi</div>')
+})

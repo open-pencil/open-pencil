@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import { useCommonMessages, useSourceControlMessages } from '@open-pencil/vue/i18n'
+import {
+  useCommonMessages,
+  usePanelMessages,
+  useSourceControlMessages
+} from '@open-pencil/vue/i18n'
 
 import type { GitFailure } from '@/app/integrations/git/client'
 import type {
@@ -54,6 +58,8 @@ const emit = defineEmits<{
 
 const labels = useSourceControlMessages()
 const common = useCommonMessages()
+/** The reading state of a patch says it is loading, in words a screen reader can read out. */
+const panels = usePanelMessages()
 
 /** The new branch being named; the panel owns the field, the workflow creates it. */
 const naming = ref(false)
@@ -160,7 +166,7 @@ function createBranch(): void {
           </IconButton>
           <span class="truncate text-2xs text-surface">{{ diff.path }}</span>
         </div>
-        <p v-if="diff.reading" class="text-2xs text-muted">…</p>
+        <p v-if="diff.reading" class="text-2xs text-muted">{{ panels.loading }}</p>
         <p v-else-if="diff.kind === 'untracked'" class="text-2xs text-muted">
           {{ labels.untrackedNote }}
         </p>

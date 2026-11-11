@@ -141,7 +141,10 @@ const patch: GitDiff = {
 }
 
 export const ReadingDiff: Story = {
-  args: { status: changedStatus, diff: patch }
+  args: {
+    status: changedStatus,
+    diff: { path: patch.path, kind: 'changed', patch: '', reading: true }
+  }
 }
 
 export const UntrackedFile: Story = {
