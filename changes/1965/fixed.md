@@ -1,1 +1,0 @@
-- A layer blur on a rotated layer no longer cuts off the corners the rotation moves past the layer's box (#1965).

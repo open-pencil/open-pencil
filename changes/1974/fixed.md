@@ -1,1 +1,0 @@
-- Zooming in fast no longer leaves gaps of canvas colour at the edges of the view while tiles render.

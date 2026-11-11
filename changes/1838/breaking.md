@@ -1,1 +1,0 @@
-- `CanvasRoot` now takes pointer input and typing itself; a host that also calls `useCanvasInput` or `useTextEdit` on its canvas drops those calls, or passes `:input="false"` to keep its own (#1838).

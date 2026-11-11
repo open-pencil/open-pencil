@@ -1,1 +1,0 @@
-- Settings → General can turn off the desktop app's update check at startup. The check stays on unless you turn it off, and Check for Updates in the menu still checks.
