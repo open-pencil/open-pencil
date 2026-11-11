@@ -38,8 +38,8 @@ const ALLOWED_SUBCOMMANDS: &[&str] = &[
     "tag",
 ];
 
-/// Flags that move git away from the repository it is given or let it run another program.
-/// They are denied for every subcommand.
+/// Flags that move git away from the repository it is given, let it run another program, or write a
+/// file of its own. They are denied for every subcommand.
 const DENIED_FLAGS: &[&str] = &[
     "-c",
     "-C",
@@ -47,6 +47,7 @@ const DENIED_FLAGS: &[&str] = &[
     "--exec",
     "--git-dir",
     "--namespace",
+    "--output",
     "--receive-pack",
     "--super-prefix",
     "--upload-pack",
@@ -151,11 +152,10 @@ fn repository_root(folder: &Path) -> Result<Option<String>, String> {
 }
 
 fn read_version(git: &Path) -> Option<String> {
-    let output = Command::new(git)
-        .arg("--version")
-        .stdin(Stdio::null())
-        .output()
-        .ok()?;
+    let mut command = Command::new(git);
+    command.arg("--version").stdin(Stdio::null());
+    crate::process::hide_console_window(&mut command);
+    let output = command.output().ok()?;
     let text = String::from_utf8_lossy(&output.stdout).trim().to_string();
     (!text.is_empty()).then_some(text)
 }
@@ -165,7 +165,8 @@ fn run(repo: &Path, subcommand: &str, args: &[String]) -> Result<GitRunReport, S
         "git is not installed or not on PATH. Install git and try again.".to_string()
     })?;
 
-    let output = Command::new(git)
+    let mut command = Command::new(git);
+    command
         .arg(subcommand)
         .args(args)
         .current_dir(repo)
@@ -173,7 +174,9 @@ fn run(repo: &Path, subcommand: &str, args: &[String]) -> Result<GitRunReport, S
         .env("GIT_TERMINAL_PROMPT", "0")
         .env("GIT_PAGER", "cat")
         .env("GIT_OPTIONAL_LOCKS", "0")
-        .stdin(Stdio::null())
+        .stdin(Stdio::null());
+    crate::process::hide_console_window(&mut command);
+    let output = command
         .output()
         .map_err(|error| format!("git {subcommand} could not start: {error}"))?;
 
@@ -235,13 +238,19 @@ fn is_allowed_for(subcommand: &str, flag: &str) -> bool {
         .any(|(allowed_for, allowed_flag)| *allowed_for == subcommand && *allowed_flag == flag)
 }
 
-/// A flag is denied both on its own and with an `=`-joined value: `--upload-pack` and
-/// `--upload-pack=sh` reach the same program.
+/// A flag is denied under every spelling git accepts for it. `git fetch --upload-p=sh` runs `sh`:
+/// the fetch side resolves an unambiguous prefix of its long options, so the full spelling is not
+/// the only way to reach one. A short option may carry its value attached, as `-ccore.pager=sh`
+/// sets configuration the way `-c` does.
 fn matches_flag(arg: &str, flag: &str) -> bool {
-    arg == flag
-        || arg
-            .strip_prefix(flag)
-            .is_some_and(|rest| rest.starts_with('='))
+    let name = arg.split('=').next().unwrap_or(arg);
+    if name == flag || arg.starts_with(&format!("{flag}=")) {
+        return true;
+    }
+    if flag.starts_with("--") {
+        return name.len() > 2 && flag.starts_with(name);
+    }
+    arg.starts_with(flag)
 }
 
 #[cfg(test)]
@@ -273,6 +282,32 @@ mod tests {
         assert!(validate_args("log", &args(&["-c", "core.pager=sh"])).is_err());
         assert!(validate_args("fetch", &args(&["--upload-pack=sh"])).is_err());
         assert!(validate_args("status", &args(&["-C", "/tmp"])).is_err());
+        assert!(validate_args("diff", &args(&["--stat"])).is_ok());
+    }
+
+    #[test]
+    fn rejects_the_abbreviations_git_accepts_for_them() {
+        // Checked against git: `git fetch --upload-p=sh origin` runs `sh origin`, so the short
+        // spelling reaches the same program as the full one.
+        assert!(validate_args("fetch", &args(&["--upload-p=sh"])).is_err());
+        assert!(validate_args("fetch", &args(&["--upload-pa=sh"])).is_err());
+        assert!(validate_args("log", &args(&["--exe=sh"])).is_err());
+        // A short option may carry its value: `-ccore.pager=sh` sets configuration as `-c` does.
+        assert!(validate_args("log", &args(&["-ccore.pager=sh"])).is_err());
+        assert!(validate_args("status", &args(&["-C/tmp"])).is_err());
+        // An option that merely starts like a denied one is not touched.
+        assert!(validate_args("log", &args(&["--format=%s", "--no-merges"])).is_ok());
+        assert!(validate_args("diff", &args(&["--no-color"])).is_ok());
+    }
+
+    #[test]
+    fn rejects_a_diff_that_writes_a_file_of_its_own() {
+        // Checked against git: `git diff --output=<path>` writes the patch to that path, which
+        // may sit outside every folder the app is scoped to.
+        assert!(validate_args("diff", &args(&["--output=/tmp/x.patch"])).is_err());
+        // This git calls `--outp` ambiguous, but the panel does not rest on that.
+        assert!(validate_args("diff", &args(&["--outp=/tmp/x.patch"])).is_err());
+        assert!(validate_args("log", &args(&["--output", "/tmp/x"])).is_err());
         assert!(validate_args("diff", &args(&["--stat"])).is_ok());
     }
 

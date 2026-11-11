@@ -87,7 +87,8 @@ fn run(program: &str, cwd: &Path, args: &[String]) -> Result<ProgramReport, Stri
         format!("{program} is not installed or not on PATH. Install it and try again.")
     })?;
 
-    let output = Command::new(binary)
+    let mut command = Command::new(binary);
+    command
         .args(args)
         .current_dir(cwd)
         // A prompt would hang the panel: fail instead and report the program's own message.
@@ -95,7 +96,9 @@ fn run(program: &str, cwd: &Path, args: &[String]) -> Result<ProgramReport, Stri
         .env("GH_PAGER", "cat")
         .env("GIT_TERMINAL_PROMPT", "0")
         .env("NO_COLOR", "1")
-        .stdin(Stdio::null())
+        .stdin(Stdio::null());
+    crate::process::hide_console_window(&mut command);
+    let output = command
         .output()
         .map_err(|error| format!("{program} could not start: {error}"))?;
 

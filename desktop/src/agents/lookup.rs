@@ -77,12 +77,7 @@ fn run_for_output(
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::null());
-    #[cfg(windows)]
-    {
-        use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-        command.creation_flags(CREATE_NO_WINDOW);
-    }
+    crate::process::hide_console_window(&mut command);
     let mut child = command.spawn().ok()?;
     let deadline = Instant::now() + timeout;
     while child.try_wait().ok()?.is_none() {

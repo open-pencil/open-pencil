@@ -188,6 +188,7 @@ fn shell(command: &str) -> Command {
     {
         let mut process = Command::new("cmd");
         process.arg("/S").arg("/C").arg(command);
+        crate::process::hide_console_window(&mut process);
         process
     }
     #[cfg(not(windows))]
@@ -202,12 +203,14 @@ fn shell(command: &str) -> Command {
 fn kill_tree(pid: u32) {
     #[cfg(windows)]
     {
-        let _ = Command::new("taskkill")
+        let mut command = Command::new("taskkill");
+        command
             .args(["/PID", &pid.to_string(), "/T", "/F"])
             .stdin(Stdio::null())
             .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .status();
+            .stderr(Stdio::null());
+        crate::process::hide_console_window(&mut command);
+        let _ = command.status();
     }
     #[cfg(not(windows))]
     {

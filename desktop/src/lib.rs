@@ -11,6 +11,7 @@ mod icons;
 mod launch;
 mod menu;
 mod network;
+mod process;
 mod runner;
 mod system;
 
