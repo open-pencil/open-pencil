@@ -90,7 +90,7 @@ function loadPreviewFont(family: string, source: string) {
       >
         <icon-lucide-check v-if="selected" class="size-3 shrink-0 text-primary" />
         <span v-else class="size-3 shrink-0" />
-        <span class="truncate" :style="{ fontFamily: `'${family}', sans-serif` }">{{
+        <span dir="auto" class="truncate" :style="{ fontFamily: `'${family}', sans-serif` }">{{
           family
         }}</span>
         <span

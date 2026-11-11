@@ -69,6 +69,7 @@ export {
   cloudDeploymentSchema,
   cloudDiscoverySchema,
   cloudEditorVersionSchema,
+  cloudLegalDiscoverySchema,
   cloudListingSchema,
   cloudServerOrigin,
   parseCloudDiscovery,
@@ -76,6 +77,7 @@ export {
   type CloudCapabilities,
   type CloudDeployment,
   type CloudDiscovery,
+  type CloudLegalDiscovery,
   type CloudListing
 } from './discovery'
 export {

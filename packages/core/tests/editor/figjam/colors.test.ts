@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { createEditor, figJamColoredLayers } from '@open-pencil/core'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import { createSticky } from '@open-pencil/scene-graph/generated'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 function setup() {
   const editor = createEditor({ loadFont: () => Promise.resolve(null) })
@@ -21,7 +21,10 @@ describe("FigJam's colour menu", () => {
     const text = editor.createShape('TEXT', 700, 0, 100, 20, pageId)
     editor.setFigJamColor([section, rect, text], 'red')
     const get = (id: string) => expectDefined(editor.graph.getNode(id))
-    expect([hex(get(section).fills[0]), hex(get(section).strokes[0])]).toEqual(['#ffe2e0', '#f24822'])
+    expect([hex(get(section).fills[0]), hex(get(section).strokes[0])]).toEqual([
+      '#ffe2e0',
+      '#f24822'
+    ])
     expect([hex(get(rect).fills[0]), hex(get(rect).strokes[0])]).toEqual(['#f24822', '#f24822'])
     expect(hex(get(text).fills[0])).toBe('#f24822')
     editor.undo.undo()

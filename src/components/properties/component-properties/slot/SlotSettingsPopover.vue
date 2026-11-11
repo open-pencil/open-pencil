@@ -8,6 +8,7 @@ import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import { useInlineSide } from '@/components/ui/direction/inline-side'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppTextarea from '@/components/ui/input/AppTextarea.vue'
 import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
@@ -16,6 +17,7 @@ import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import AppPicker, { type AppPickerItem } from '@/components/ui/select/AppPicker.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
+const startSide = useInlineSide('start')
 /** A main component's slot settings: description, layer limits, and preferred components. */
 const { slot, options } = defineProps<{
   slot: SlotDefinitionControl
@@ -80,7 +82,7 @@ const candidates = computed<AppPickerItem[]>(() =>
     </PopoverTrigger>
     <PopoverPortal v-if="portalActive">
       <PopoverContent
-        side="left"
+        :side="startSide"
         align="start"
         :side-offset="8"
         :aria-label="panels.slotSettings"

@@ -173,6 +173,8 @@
   "settingsSignedOut": "Abgemeldet",
   "settingsWaitingForApproval": "Wartet darauf, dass ein Administrator dein Konto genehmigt",
   "settingsAccessClosed": "Ein Administrator hat deinen Zugang abgelehnt oder entzogen",
+  "settingsAcceptTerms": "Akzeptiere die Bedingungen dieses Servers, um ihn weiter zu nutzen",
+  "settingsReviewTerms": "Bedingungen ansehen",
   "settingsOptionsFor": "Optionen für {host}",
   "settingsAccountAndSecurity": "Konto und Sicherheit",
   "settingsShowOnHome": "Auf der Startseite anzeigen",

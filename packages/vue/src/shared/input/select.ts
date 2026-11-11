@@ -17,6 +17,7 @@ import { tryStartGradientDrag } from '#vue/shared/input/gradient'
 import { tryStartLineEndDrag } from '#vue/shared/input/line/end'
 import { tryStartResize } from '#vue/shared/input/resize'
 import { tryStartSelectionResize } from '#vue/shared/input/resize/selection'
+import { tryStartScale } from '#vue/shared/input/scale'
 import {
   createSelectionMoveDrag,
   pressSelects,
@@ -127,7 +128,23 @@ export function handleSelectDown(
   if (editor.state.editingTextId) editor.commitTextEdit()
 
   if (tryStartHandleDrag(cx, cy, sx, sy, e.altKey, editor, fns, tryStartRotation, setDrag)) return
+  pressLayers(e, cx, cy, sx, sy, editor, fns, setDrag)
+}
 
+/**
+ * A press that took no handle: on a layer it selects and drags the selection, on nothing it starts
+ * a marquee.
+ */
+function pressLayers(
+  e: MouseEvent,
+  cx: number,
+  cy: number,
+  sx: number,
+  sy: number,
+  editor: Editor,
+  fns: HitTestFns,
+  setDrag: (d: DragState) => void
+) {
   const deep = e.metaKey || e.ctrlKey
   const hit = tinySelectionAt(cx, cy, editor) ?? resolveHit(cx, cy, fns, deep)
   if (!hit) {
@@ -145,4 +162,32 @@ export function handleSelectDown(
   // A press inside the selection drags it; its layers are a double-click or ⌘-click away, as in Figma.
   // Where layers only move, Alt copies nothing and layers stay in their parents.
   setDrag(createSelectionMoveDrag(cx, cy, sx, sy, editor, e.altKey && layerEdits === 'all'))
+}
+
+/**
+ * A press with the Scale tool: a handle scales the selection, and anywhere else the press selects
+ * and moves layers as the Move tool's does, as in Figma.
+ */
+export function handleScaleDown(
+  e: MouseEvent,
+  cx: number,
+  cy: number,
+  sx: number,
+  sy: number,
+  editor: Editor,
+  fns: HitTestFns,
+  setDrag: (d: DragState) => void
+) {
+  if (editor.getNodeEditState()) {
+    handleNodeEditDown(e, cx, cy, editor, setDrag)
+    return
+  }
+  if (editor.state.editingTextId) editor.commitTextEdit()
+
+  const scaleDrag = tryStartScale(cx, cy, editor)
+  if (scaleDrag) {
+    setDrag(scaleDrag)
+    return
+  }
+  pressLayers(e, cx, cy, sx, sy, editor, fns, setDrag)
 }

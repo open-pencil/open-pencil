@@ -7,9 +7,9 @@ import { rulerEdgeLabel, rulerLabel, separatedBadgeCenters } from '#core/canvas/
 // and 8033.458. Tick numbers stay whole.
 describe('ruler labels', () => {
   test('a selection edge shows three decimals, as Figma labels it', () => {
-    expect([8000.375, 8000.375 + 151.256, 8000.125, 8000.125 + 33.333333].map(rulerEdgeLabel)).toEqual(
-      ['8000.375', '8151.631', '8000.125', '8033.458']
-    )
+    expect(
+      [8000.375, 8000.375 + 151.256, 8000.125, 8000.125 + 33.333333].map(rulerEdgeLabel)
+    ).toEqual(['8000.375', '8151.631', '8000.125', '8033.458'])
     expect(rulerEdgeLabel(-0.0001)).toBe('0')
     expect(rulerEdgeLabel(120)).toBe('120')
   })

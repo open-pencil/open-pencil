@@ -5,6 +5,7 @@ export default {
     bar: 'pointer-events-auto absolute top-0 left-1/2 flex max-w-[calc(100%-1rem)] -translate-x-1/2 items-center gap-1.5 rounded-b-md py-1 pe-1 ps-2.5 text-2xs font-medium text-white shadow-md',
     icon: 'size-3 shrink-0',
     label: 'min-w-0 truncate',
+    // Drawn in the followed collaborator's colour, so its focus ring uses that colour too.
     stop: 'ms-1.5 shrink-0 cursor-pointer rounded bg-black/15 px-1.5 py-0.5 text-2xs font-medium outline-none hover:bg-black/25 focus-visible:ring-1 focus-visible:ring-current'
   }
 } as const

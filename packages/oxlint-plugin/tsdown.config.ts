@@ -12,6 +12,6 @@ export default defineConfig(
       'plugins/structure': './src/plugins/structure.ts',
       'plugins/types': './src/plugins/types.ts',
       recommended: './src/recommended.ts'
-    },
+    }
   })
 )

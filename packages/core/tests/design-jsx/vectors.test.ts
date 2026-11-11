@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { pick } from 'es-toolkit'
 
 import { renderJSX } from '@open-pencil/core/design-jsx'
 import { sceneNodeToJSX } from '@open-pencil/design-jsx'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { vectorNetworkPaths } from '@open-pencil/scene-graph/vector-network'
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 async function render(jsx: string) {
   const graph = new SceneGraph()

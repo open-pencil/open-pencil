@@ -1,6 +1,6 @@
 {
   "name": "open-pencil-app",
-  "version": "0.17.0-beta.2",
+  "version": "0.17.0-beta.4",
   "private": true,
   "license": "MIT",
   "workspaces": [
@@ -170,8 +170,8 @@
     "@open-pencil/feedback": "workspace:*",
     "@open-pencil/fig": "workspace:*",
     "@open-pencil/harness": "workspace:*",
-    "@open-pencil/kiwi": "workspace:*",
     "@open-pencil/html-engine": "workspace:*",
+    "@open-pencil/kiwi": "workspace:*",
     "@open-pencil/mermaid": "workspace:*",
     "@open-pencil/pen": "workspace:*",
     "@open-pencil/scene-graph": "workspace:*",
@@ -199,6 +199,7 @@
     "@vueuse/core": "^14.4.0",
     "@xmldom/xmldom": "^0.9.12",
     "ai": "^7.0.127",
+    "client-zip": "2.5.1",
     "copy-to-clipboard": "^4.0.2",
     "culori": "^4.0.2",
     "dedent": "^1.7.2",

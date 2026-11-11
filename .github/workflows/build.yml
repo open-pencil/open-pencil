@@ -157,6 +157,12 @@ jobs:
         with:
           workspaces: . -> target
           key: ${{ matrix.target }}
+      # Packages come from kernel.org's Ubuntu mirror first, a domain apart from ubuntu.com, so an
+      # outage resolving it does not stop a release; apt verifies them against Ubuntu's key either
+      # way, and the runner's own mirrors remain the fallback.
+      - name: Prefer kernel.org's Ubuntu mirror
+        if: runner.os == 'Linux'
+        run: sudo sed -i '1i https://mirrors.edge.kernel.org/ubuntu/\tpriority:0' /etc/apt/apt-mirrors.txt
       - name: Install native dependencies on Linux
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
@@ -189,7 +195,10 @@ jobs:
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
-          tauriScript: node node_modules/@tauri-apps/cli/tauri.js
+          # The action searches projectPath for tauri.conf.json; from the checkout root that search also
+          # walks the tooling checked out in .pipeline and runs out of memory. The script runs in desktop.
+          projectPath: desktop
+          tauriScript: node ../node_modules/@tauri-apps/cli/tauri.js
           args: --target ${{ matrix.target }} --config "${{ github.workspace }}/release-build-config.json" --verbose
           retryAttempts: 0
       - name: Collect only reported bundles and signatures
@@ -248,6 +257,9 @@ jobs:
         with:
           pattern: native-*
           path: native-artifacts
+      # As in the native job: kernel.org's Ubuntu mirror first, the runner's own as the fallback.
+      - name: Prefer kernel.org's Ubuntu mirror
+        run: sudo sed -i '1i https://mirrors.edge.kernel.org/ubuntu/\tpriority:0' /etc/apt/apt-mirrors.txt
       - name: Install signature verifier
         run: sudo apt-get update && sudo apt-get install -y minisign
       - name: Resume npm versions this tag already published

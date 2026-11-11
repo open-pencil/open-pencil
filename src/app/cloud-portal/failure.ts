@@ -53,7 +53,8 @@ export function usePortalFailureMessages() {
       email_unchanged: value.errorEmailUnchanged,
       email_change_unavailable: value.emailChangeUnavailable,
       current_session: value.errorCurrentSession,
-      picture_invalid: value.errorPictureInvalid
+      picture_invalid: value.errorPictureInvalid,
+      terms_changed: value.termsChanged
     }
     return (error.code && words[error.code]) ?? value.failureUnavailable
   }

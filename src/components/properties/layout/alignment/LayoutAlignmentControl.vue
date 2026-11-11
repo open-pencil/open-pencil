@@ -72,6 +72,7 @@ function navigate(event: KeyboardEvent, index: number) {
 <template>
   <div
     role="group"
+    dir="ltr"
     :aria-label="label"
     data-slot="alignment"
     :class="styles.grid({ class: [ui?.grid, normalizeClass(className)] })"

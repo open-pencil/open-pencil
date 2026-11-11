@@ -1,2 +1,0 @@
-- An agent's undo step holds only its own changes: edits you or another agent make while its call waits on fonts, icons, images, or page loads stay out of it, and `eval` scripts take turns with tool calls. A script's own `fetch` calls and timers are not covered (#1866).
-- A tool call or `eval` script that fails part way is rolled back and leaves no undo step, and an MCP call that times out is cancelled in the app instead of editing later. The unsaved dot no longer stays on after an edit is rolled back or a drag is cancelled (#1866).

@@ -111,34 +111,40 @@ export function createAccountDeletionService(database: Kysely<CloudDatabase>) {
       const { deletes, blockedBy, leaves } = classify(await memberships(database, userId))
       const deleted = deletes.map((membership) => membership.workspaceId)
       const left = leaves.map((membership) => membership.workspaceId)
-      const documents =
-        deleted.length + left.length === 0
-          ? []
-          : await database
-              .selectFrom('document')
-              .innerJoin('workspace', 'workspace.id', 'document.workspaceId')
-              .select(['document.id', 'document.name', 'workspace.name as workspaceName'])
-              .where('document.deletedAt', 'is', null)
-              .where('document.disabledAt', 'is', null)
-              .where((expression) =>
-                expression.or([
-                  ...(deleted.length > 0
-                    ? [expression('document.workspaceId', 'in', deleted)]
-                    : []),
-                  ...(left.length > 0
-                    ? [
-                        expression.and([
-                          expression('document.workspaceId', 'in', left),
-                          expression('document.createdBy', '=', userId)
-                        ])
-                      ]
-                    : [])
-                ])
-              )
-              .orderBy('workspace.name')
-              .orderBy('document.name')
-              .orderBy('document.id')
-              .execute()
+      const blocked = blockedBy.map((membership) => membership.workspaceId)
+      // What the account can still download: everything in workspaces that go with it, and what
+      // it created in workspaces it leaves, keeps an admin role in, or reaches only by a grant.
+      const documents = await database
+        .selectFrom('document')
+        .innerJoin('workspace', 'workspace.id', 'document.workspaceId')
+        .select(['document.id', 'document.name', 'workspace.name as workspaceName'])
+        .where('document.deletedAt', 'is', null)
+        .where('document.disabledAt', 'is', null)
+        .where((expression) =>
+          expression.or([
+            ...(deleted.length > 0 ? [expression('document.workspaceId', 'in', deleted)] : []),
+            expression.and([
+              expression('document.createdBy', '=', userId),
+              expression.or([
+                ...(left.length > 0 ? [expression('document.workspaceId', 'in', left)] : []),
+                ...(blocked.length > 0 ? [expression('document.workspaceId', 'in', blocked)] : []),
+                expression(
+                  'document.id',
+                  'in',
+                  expression
+                    .selectFrom('documentGrant')
+                    .select('documentGrant.documentId')
+                    .where('documentGrant.userId', '=', userId)
+                    .where('documentGrant.revokedAt', 'is', null)
+                )
+              ])
+            ])
+          ])
+        )
+        .orderBy('workspace.name')
+        .orderBy('document.name')
+        .orderBy('document.id')
+        .execute()
       return {
         lastAdministrator: await lastAdministrator(database, userId, false),
         blockedBy: blockedBy.map(workspaceSummary),
@@ -247,6 +253,7 @@ export function createAccountDeletionService(database: Kysely<CloudDatabase>) {
         await transaction.deleteFrom('invitationSend').where('senderId', '=', user.id).execute()
         for (const table of [
           'accountEntitlement',
+          'termsAcceptance',
           'userPicture',
           'signIn',
           'mfaAssurance'

@@ -18,6 +18,7 @@ import {
 } from '#cloud/contract'
 import { createAccountDeletionService } from '#cloud/server/account/deletion'
 import { createAccountRoutes } from '#cloud/server/account/routes'
+import { createTermsService } from '#cloud/server/account/terms'
 import {
   createCloudAPIRouter,
   createPublicCloudAPIRouter,
@@ -78,6 +79,11 @@ export type CloudServices = {
   objects: ObjectStore
   resolveIdentity?: CloudIdentityResolver
   resolveSession?: CloudSessionResolver
+  /**
+   * An approved account even before it accepted the current terms, for leaving: reading its
+   * documents and deleting the account. Defaults to `resolveSession` when that is given.
+   */
+  resolveAccountSession?: CloudSessionResolver
   invitationDelivery?: InvitationDelivery
   invitationOutbox?: InvitationOutbox
   transactionalEmail?: TransactionalEmailService
@@ -143,6 +149,11 @@ export function createCloudApp(services: CloudServices) {
   const discovery = discoveryFromServices(services)
   const resolveIdentity = services.resolveIdentity ?? createCloudIdentityResolver(services.auth)
   const resolveSession = services.resolveSession ?? createCloudSessionResolver(services.auth)
+  const resolveAccountSession =
+    services.resolveAccountSession ??
+    (services.resolveSession
+      ? services.resolveSession
+      : (request: Request) => services.auth.resolveAccountSession(request.headers))
   const allowedOrigins = new Set(
     [services.config.publicURL, ...services.config.trustedOrigins].map(
       (origin) => new URL(origin).origin
@@ -258,9 +269,29 @@ export function createCloudApp(services: CloudServices) {
     : undefined
 
   const requireActiveSession = async (context: Context, next: () => Promise<void>) => {
+    // A route that lets an account leave before accepting the terms named it already.
+    if (context.get('actor')) return next()
     const actor = await resolveSession(context.req.raw)
     if (!actor) return context.json({ error: { code: 'unauthorized' as const } }, 401)
     context.set('actor', actor)
+    return next()
+  }
+  /**
+   * An account that may leave: one that has terms to accept can still download its documents and
+   * delete itself, which nothing else lets it do until it accepts.
+   */
+  const requireAccountSession = async (context: Context, next: () => Promise<void>) => {
+    const actor = await resolveAccountSession(context.req.raw)
+    if (!actor) return context.json({ error: { code: 'unauthorized' as const } }, 401)
+    context.set('actor', actor)
+    return next()
+  }
+  /** Reading one document, which downloading everything before leaving needs, without the terms. */
+  const allowLeavingRead = async (context: Context, next: () => Promise<void>) => {
+    if (context.req.method === 'GET') {
+      const actor = await resolveAccountSession(context.req.raw)
+      if (actor) context.set('actor', actor)
+    }
     return next()
   }
   const publicRateLimiter = createTrustedIPRateLimiter(
@@ -294,6 +325,7 @@ export function createCloudApp(services: CloudServices) {
 
   const accountRoutes = createAccountRoutes({
     auth: services.auth,
+    terms: createTermsService(services.database, services.config),
     pictures,
     config: services.config,
     enrollment,
@@ -302,6 +334,7 @@ export function createCloudApp(services: CloudServices) {
     resolveIdentity,
     resolveSession,
     requireActiveSession,
+    requireAccountSession,
     authenticatedMutationLimiter
   })
   const reports = createDocumentReportService(services.database, {
@@ -410,6 +443,7 @@ export function createCloudApp(services: CloudServices) {
     .use('/api/invitations/*', publicRateLimiter)
     .route('/api', publicCloudAPI)
     .route('/api/internal', internalAPI)
+    .use('/api/documents/:documentId', allowLeavingRead)
     .use('/api/*', requireActiveSession)
     .route('/api/admin', admin)
     .use('/api/*', authenticatedMutationLimiter)

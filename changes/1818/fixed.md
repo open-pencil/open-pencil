@@ -1,1 +1,0 @@
-- Canvas shortcuts and arrow-key nudging keep working while a tooltip or hover card is showing (#1818).

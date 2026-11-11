@@ -2,7 +2,10 @@
 
 import { describe, test, expect, mock, spyOn } from 'bun:test'
 
+import { asDouble, attachFontProvider, expectRgbaPixels } from '#core-tests/canvas/helpers'
+
 import { SkiaRenderer as SkiaRendererClass } from '@open-pencil/core/canvas'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 import { pixelLength, textVerticalOffset } from '@open-pencil/scene-graph/text'
@@ -10,7 +13,6 @@ import { detectTextDirection, resolveTextDirection } from '@open-pencil/scene-gr
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { repoPath } from '@open-pencil/test-support/paths'
 
-import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { renderText } from '#core/canvas/scene'
 import { buildParagraph, isNodeFontLoaded, nodeFontReadiness } from '#core/canvas/text'
@@ -18,8 +20,6 @@ import { createDerivedGlyphPathCache } from '#core/canvas/text/derived'
 import { transformTextCase } from '#core/text/case'
 import { fontManager } from '#core/text/font/manager'
 import { fontFaceDemand, fontResolver, missingGlyphCharacters } from '#core/text/resolver'
-
-import { asDouble, attachFontProvider, expectRgbaPixels } from '#core-tests/canvas/helpers'
 
 function createMockCanvas() {
   return {
@@ -425,7 +425,9 @@ describe('renderText headless visual', () => {
   test('observes CanvasKit notdef glyphs for unsupported CJK text', async () => {
     const ck = await getCanvasKit()
     const fontProvider = attachFontProvider(ck)
-    const interData = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
+    const interData = await Bun.file(
+      repoPath('packages/core/assets/InterVariable.ttf')
+    ).arrayBuffer()
     fontProvider.registerFont(interData, 'Inter')
     await fontManager.markLoaded('Inter', 'Regular', interData)
     const fallbackFamilies = fontManager.getCJKFallbackFamilies()
@@ -454,7 +456,9 @@ describe('renderText headless visual', () => {
   test('requests a CJK fallback for text whose face is substituted', async () => {
     const ck = await getCanvasKit()
     const fontProvider = attachFontProvider(ck)
-    const interData = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
+    const interData = await Bun.file(
+      repoPath('packages/core/assets/InterVariable.ttf')
+    ).arrayBuffer()
     await fontManager.markLoaded('Inter', 'Regular', interData)
     const fallbackFamilies = fontManager.getCJKFallbackFamilies()
     const originalFallbacks = [...fallbackFamilies]
@@ -506,7 +510,9 @@ describe('renderText headless visual', () => {
     const ck = await getCanvasKit()
     const fontProvider = attachFontProvider(ck)
 
-    const interData = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
+    const interData = await Bun.file(
+      repoPath('packages/core/assets/InterVariable.ttf')
+    ).arrayBuffer()
     await fontManager.markLoaded('Inter', 'Regular', interData)
 
     const notoPath = repoPath('tests/fixtures/fonts/NotoSansSC-Regular.ttf')
@@ -577,7 +583,9 @@ describe('renderText headless visual', () => {
     const ck = await getCanvasKit()
     const fontProvider = attachFontProvider(ck)
 
-    const interData = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
+    const interData = await Bun.file(
+      repoPath('packages/core/assets/InterVariable.ttf')
+    ).arrayBuffer()
     fontProvider.registerFont(interData, 'Inter')
     await fontManager.markLoaded('Inter', 'Regular', interData)
 
@@ -655,7 +663,9 @@ describe('renderText headless visual', () => {
     const ck = await getCanvasKit()
     const fontProvider = attachFontProvider(ck)
 
-    const interData = await Bun.file(repoPath('packages/core/assets/InterVariable.ttf')).arrayBuffer()
+    const interData = await Bun.file(
+      repoPath('packages/core/assets/InterVariable.ttf')
+    ).arrayBuffer()
     fontProvider.registerFont(interData, 'Inter')
     await fontManager.markLoaded('Inter', 'Regular', interData)
 

@@ -1,9 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { exportSVG, exportSVGOrThrow, renderNodesToSVGOrThrow } from './helpers'
 import { makeSceneGraph, firstPageId } from '@open-pencil/test-support/scene'
 
 import { boxOutlinePath } from '#core/io/formats/svg/paths'
+
+import { exportSVG, exportSVGOrThrow, renderNodesToSVGOrThrow } from './helpers'
 
 // --- Full SVG export tests ---
 
@@ -343,7 +344,9 @@ describe('renderNodesToSVG()', () => {
     })
     graph.createNode('RECTANGLE', frame.id, { width: 100, height: 10 })
     const result = exportSVGOrThrow(graph, [frame.id])
-    expect(result).toMatch(/<clipPath id="clip[^"]*">\s*<rect width="100" height="10" rx="5" ry="5"/)
+    expect(result).toMatch(
+      /<clipPath id="clip[^"]*">\s*<rect width="100" height="10" rx="5" ry="5"/
+    )
     expect(result).not.toContain('rx="20"')
   })
 

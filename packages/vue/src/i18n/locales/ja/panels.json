@@ -651,5 +651,8 @@
   "variableModesFromLibraries": "ライブラリから",
   "variableModeAuto": "自動（{mode}）",
   "variableModeAutoMixed": "自動",
-  "variableModeHeading": "モード"
+  "variableModeHeading": "モード",
+  "scale": "拡大縮小",
+  "scaleMultiplier": "倍率",
+  "scaleAnchor": "基準点"
 }

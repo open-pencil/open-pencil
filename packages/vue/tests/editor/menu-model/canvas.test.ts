@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'bun:test'
+
 import { ref, computed } from 'vue'
+
 import type { EditorCommandId } from '@open-pencil/vue/editor/commands'
+
 import { buildCanvasContextMenu, type CanvasMenuOptions } from '#vue/editor/menu-model/canvas'
 
 /** The canvas menu's command ids for a selection that is an icon or not. */

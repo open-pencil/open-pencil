@@ -1,19 +1,20 @@
 import { describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
-import { FIXTURES } from '@open-pencil/test-support/paths'
-import type { CanvasKit, TypefaceFontProvider } from '@open-pencil/canvaskit'
+import { fakeGoogleFonts, withGoogleFonts } from '#core-tests/helpers/google-fonts'
 
+import type { CanvasKit, TypefaceFontProvider } from '@open-pencil/canvaskit'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import { buildParagraph } from '#core/canvas/text'
-import { withFigExportRuntime } from '#core/io/formats/fig/export/runtime'
 import { getCanvasKit } from '#core/canvaskit'
-import { FontManager, fontManager } from '#core/text/font/manager'
+import { withFigExportRuntime } from '#core/io/formats/fig/export/runtime'
 import { glyphOutlineSourceSync } from '#core/text/font/glyphs'
-import { fakeGoogleFonts, withGoogleFonts } from '#core-tests/helpers/google-fonts'
+import { FontManager, fontManager } from '#core/text/font/manager'
+
 import { attachFontProvider } from '../helpers'
 
 /** A family only these tests load, so faces other tests load cannot answer for it. */
@@ -123,7 +124,11 @@ describe('text faces', () => {
     const fontProvider = attachFontProvider(ck)
     // Inter with an extra instance, "Display Heavy" at wght 850, as Roboto has "Condensed Bold".
     const fontFamily = 'Faces Test Named'
-    await fontManager.markLoaded(fontFamily, 'Regular', await fixtureFont('InterVariable-Named.ttf'))
+    await fontManager.markLoaded(
+      fontFamily,
+      'Regular',
+      await fixtureFont('InterVariable-Named.ttf')
+    )
     expect(await fontManager.loadFont(fontFamily, 'Display Heavy')).not.toBeNull()
     // A name the font has no instance of is not drawn by some other instance.
     expect(await fontManager.loadFont(fontFamily, 'Condensed Bold')).toBeNull()
@@ -161,7 +166,9 @@ describe('text faces', () => {
     expect(range({ fontVariations: [{ axis: 'opsz', value: 14 }] })).toEqual(automatic)
     expect(
       range({ opticalSizeFromFontSize: false, fontVariations: [{ axis: 'opsz', value: 14 }] })
-    ).toEqual(face({ opticalSizeFromFontSize: false, fontVariations: [{ axis: 'opsz', value: 14 }] }))
+    ).toEqual(
+      face({ opticalSizeFromFontSize: false, fontVariations: [{ axis: 'opsz', value: 14 }] })
+    )
   })
 
   test('draws each style of a family loaded from several files from its own file', async () => {
@@ -187,7 +194,11 @@ describe('text faces', () => {
     const ck = await getCanvasKit()
     const fontProvider = attachFontProvider(ck)
     const fontFamily = 'Faces Test Replaced'
-    await fontManager.markLoaded(fontFamily, 'Regular', await fixtureFont('InterVariable-Latin.ttf'))
+    await fontManager.markLoaded(
+      fontFamily,
+      'Regular',
+      await fixtureFont('InterVariable-Latin.ttf')
+    )
     await fontManager.markLoaded(fontFamily, 'Regular', await fixtureFont('NotoSansSC-Regular.ttf'))
     expect(missingGlyphs(ck, fontProvider, fontFamily, '中文')).toBe(0)
   })
