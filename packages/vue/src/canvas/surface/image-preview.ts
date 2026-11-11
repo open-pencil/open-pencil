@@ -240,7 +240,7 @@ async function decodeAtTarget(
       const width = Math.max(target.width, Math.ceil(dimensions.width / 8))
       const height = Math.max(target.height, Math.ceil(dimensions.height / 8))
       if (width !== target.width || height !== target.height) {
-        return decodeAtTarget(source, mime, { width, height }, dimensions)
+        return await decodeAtTarget(source, mime, { width, height }, dimensions)
       }
     }
     return null

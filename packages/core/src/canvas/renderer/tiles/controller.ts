@@ -236,17 +236,12 @@ export class TiledSceneController {
   /** Presents the frame's level, and lets a committed level present whole again after a pan. */
   private presentFrame(
     renderer: SkiaRenderer,
+    pageId: string,
     visible: TilePlan['visible'],
     level: number,
     content: TileWorldBounds | null
   ): VisiblePresentation {
-    const presentation = this.presentLevel(
-      visible,
-      renderer.pageId,
-      level,
-      content,
-      this.panPresentation
-    )
+    const presentation = this.presentLevel(visible, pageId, level, content, this.panPresentation)
     if (renderer.navigationPhase === 'idle' && this.committedLevel === level) {
       this.panPresentation = false
     }
@@ -342,7 +337,13 @@ export class TiledSceneController {
       },
       true
     ).visible
-    const presentation = this.presentFrame(renderer, visible, level, index.bounds())
+    const presentation = this.presentFrame(
+      renderer,
+      renderer.pageId,
+      visible,
+      level,
+      index.bounds()
+    )
     canvas.save()
     // Snapped to device pixels, an exact tile lands texel on pixel and copies rather than samples.
     canvas.translate(
