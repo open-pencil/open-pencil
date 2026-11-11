@@ -32,6 +32,23 @@ function recorder(answer: unknown): { transport: GitTransport; calls: RecordedCa
   return { transport, calls }
 }
 
+/**
+ * A transport that answers each git subcommand from its own entry, so a test can say what one call
+ * sees when another has already answered something else.
+ */
+function answering(table: Record<string, unknown>): {
+  transport: GitTransport
+  calls: RecordedCall[]
+} {
+  const calls: RecordedCall[] = []
+  const transport: GitTransport = async (command, args) => {
+    calls.push({ command, args })
+    const subcommand = (args as { subcommand?: string } | undefined)?.subcommand
+    return subcommand === undefined ? table[command] : (table[subcommand] ?? report())
+  }
+  return { transport, calls }
+}
+
 function report(overrides: Partial<GitRunReport> = {}): GitRunReport {
   return { code: 0, stdout: '', stderr: '', ...overrides }
 }
@@ -101,6 +118,32 @@ describe('listGitBranches', () => {
         { name: 'feat/git-sync', current: false }
       ]
     })
+  })
+
+  test('a detached HEAD and a rebase in progress are not offered as branches', async () => {
+    // git spells the row that would name the current branch as a note about HEAD instead.
+    const { transport } = recorder(
+      report({ stdout: '* (HEAD detached at a1b2c3d)\n  main\n  feat/git-sync\n' })
+    )
+    const outcome = await listGitBranches('/repo', transport)
+
+    expect(outcome).toEqual({
+      ok: true,
+      value: [
+        { name: 'main', current: false },
+        { name: 'feat/git-sync', current: false }
+      ]
+    })
+  })
+})
+
+describe('an answer the app does not expect', () => {
+  test('is a failure the panel can show, not a rejection it never sees', async () => {
+    const { transport } = recorder({ unexpected: true })
+
+    expect((await readGitAvailability(transport)).ok).toBe(false)
+    expect((await runGit('/repo', 'status', [], transport)).ok).toBe(false)
+    expect((await listGitBranches('/repo', transport)).ok).toBe(false)
   })
 })
 
@@ -269,17 +312,36 @@ describe('readFileHistory', () => {
   })
 
   test('a repository with no commits yet has no history rather than a failure', async () => {
-    const { transport } = recorder(
-      report({
+    // Git says this in its own language, so the read asks whether HEAD resolves instead.
+    const { transport, calls } = answering({
+      log: report({
         code: 128,
-        stderr: "fatal: your current branch 'main' does not have any commits yet"
-      })
-    )
+        stderr: "fatal: ветка 'main' пока не содержит ни одного коммита"
+      }),
+      'rev-parse': report({ code: 128, stderr: 'fatal: Needed a single revision' })
+    })
 
     expect(await readFileHistory('/repo', 'design/catalog.fig', transport)).toEqual({
       ok: true,
       value: []
     })
+    expect(calls[1]?.args).toEqual({
+      repo: '/repo',
+      subcommand: 'rev-parse',
+      args: ['--verify', 'HEAD']
+    })
+  })
+
+  test('a history git refused is reported when the branch does have commits', async () => {
+    const { transport } = answering({
+      log: report({ code: 128, stderr: 'fatal: bad object HEAD' }),
+      'rev-parse': report({ stdout: 'a1b2c3d\n' })
+    })
+    const outcome = await readFileHistory('/repo', 'design/catalog.fig', transport)
+
+    expect(outcome.ok).toBe(false)
+    if (outcome.ok) throw new Error('expected a failure')
+    expect(outcome.summary).toBe('fatal: bad object HEAD')
   })
 })
 

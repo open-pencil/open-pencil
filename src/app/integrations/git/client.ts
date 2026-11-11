@@ -43,11 +43,12 @@ export async function readGitAvailability(
 ): Promise<GitOutcome<GitAvailability>> {
   const raw = await call('git_version', undefined, transport)
   if (!raw.ok) return raw
-  const availability = v.parse(gitAvailabilitySchema, raw.value)
-  if (!availability.available) {
+  const availability = readAnswer(gitAvailabilitySchema, raw.value)
+  if (!availability.ok) return availability
+  if (!availability.value.available) {
     return failure(0, '', 'git is not installed or not on PATH.')
   }
-  return { ok: true, value: availability }
+  return availability
 }
 
 /**
@@ -67,6 +68,18 @@ async function call(
 }
 
 /**
+ * Read an answer into the shape the app expects. A gateway that answered something else is a
+ * failure like any other unwanted answer: validating here would otherwise throw past every caller,
+ * and the panel, which only renders outcomes, would never learn what went wrong.
+ */
+function readAnswer<T>(schema: v.GenericSchema<unknown, T>, answer: unknown): GitOutcome<T> {
+  const result = v.safeParse(schema, answer)
+  return result.success
+    ? { ok: true, value: result.output }
+    : failure(0, '', 'git answered something this app does not understand.')
+}
+
+/**
  * Run one allow-listed subcommand. A non-zero exit is reported as a failure with git's stderr
  * intact, because that is where hooks and remotes explain what went wrong.
  */
@@ -78,7 +91,9 @@ export async function runGit(
 ): Promise<GitOutcome<GitRunReport>> {
   const raw = await call('git_run', { repo, subcommand, args }, transport)
   if (!raw.ok) return raw
-  const report = v.parse(gitRunReportSchema, raw.value)
+  const answer = readAnswer(gitRunReportSchema, raw.value)
+  if (!answer.ok) return answer
+  const report = answer.value
   return report.code === 0 ? { ok: true, value: report } : failure(report.code, report.stderr)
 }
 
@@ -106,19 +121,24 @@ export async function readGitStatus(
   return { ok: true, value: parseGitStatus(report.value.stdout) }
 }
 
-/** List local branches, newest first is git's own order. */
+/**
+ * List local branches, newest first is git's own order. A detached HEAD and a rebase are spelled
+ * `(HEAD detached at …)` and `(no branch, rebasing …)` in place of a branch name, and neither can
+ * be switched to, so they are left out rather than offered.
+ */
 export async function listGitBranches(
   repo: string,
   transport: GitTransport = invoke
 ): Promise<GitOutcome<GitBranch[]>> {
   const report = await runGit(repo, 'branch', ['--format=%(HEAD) %(refname:short)'], transport)
   if (!report.ok) return report
-  const branches = report.value.stdout
+  const listed = report.value.stdout
     .split('\n')
     .map((line) => line.trimEnd())
     .filter((line) => line.trim() !== '')
-    .map((line) => v.parse(gitBranchSchema, { name: line.slice(2), current: line.startsWith('*') }))
-  return { ok: true, value: branches }
+    .map((line) => ({ name: line.slice(2), current: line.startsWith('*') }))
+    .filter((branch) => !branch.name.startsWith('('))
+  return readAnswer(v.array(gitBranchSchema), listed)
 }
 
 /** Stage every change, including deletions, so a panel commit needs one action. */
@@ -308,11 +328,11 @@ export async function readFileHistory(
     [`--format=${LOG_FORMAT}`, `--max-count=${HISTORY_LIMIT}`, '--', path],
     transport
   )
-  // A repository without commits has no history to report, which is not a failure.
-  if (!report.ok && report.stderr.includes('does not have any commits')) {
-    return { ok: true, value: [] }
-  }
-  return report.ok ? { ok: true, value: parseFileHistory(report.value.stdout) } : report
+  if (report.ok) return { ok: true, value: parseFileHistory(report.value.stdout) }
+  // A branch without a first commit has no versions to report, which is not a failure. Git says so
+  // in its own language, so ask whether HEAD resolves rather than read the message.
+  const head = await runGit(repo, 'rev-parse', ['--verify', 'HEAD'], transport)
+  return head.ok ? report : { ok: true, value: [] }
 }
 
 /**

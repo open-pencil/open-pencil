@@ -116,6 +116,35 @@ test('an upstream of another name is the branch a pull request lands in', async 
   expect(control.baseBranch.value).toBe('main')
 })
 
+test('a branch that would land in itself has no pull request to open', async () => {
+  // Working on the default branch: `--base master --head master` is refused by gh, and
+  // `master...master` is a comparison page that does not exist.
+  const { transport } = gateway({
+    status: STATUS.replaceAll('feat/git-sync', 'master'),
+    remote: 'git@github.com:open-pencil/open-pencil.git',
+    defaultBranch: 'master'
+  })
+  const control = useSourceControl(ref('D:/Karbid2'), transport)
+
+  await control.refresh()
+
+  expect(control.baseBranch.value).toBe('master')
+  expect(control.compareLink.value).toBeNull()
+})
+
+test('a remote on another host gets no pull request, since the app opens them on GitHub', async () => {
+  const { transport } = gateway({
+    status: STATUS,
+    remote: 'git@gitlab.example.com:group/site.git',
+    defaultBranch: 'master'
+  })
+  const control = useSourceControl(ref('D:/Karbid2'), transport)
+
+  await control.refresh()
+
+  expect(control.compareLink.value).toBeNull()
+})
+
 test('follows a project switch instead of the repository it read first', async () => {
   const { transport, calls } = gateway({ status: STATUS })
   const repository = ref('D:/Karbid2')
@@ -241,7 +270,13 @@ test('fetching asks the remote and reads the branch again', async () => {
 
   expect(await control.fetchBranches()).toBe(true)
 
-  expect(calls.map((call) => call.subcommand)).toEqual(['fetch', 'status', 'branch', 'remote', 'rev-parse'])
+  expect(calls.map((call) => call.subcommand)).toEqual([
+    'fetch',
+    'status',
+    'branch',
+    'remote',
+    'rev-parse'
+  ])
 })
 
 test('pulling reads the tree again', async () => {
@@ -252,7 +287,13 @@ test('pulling reads the tree again', async () => {
 
   expect(await control.pull()).toBe(true)
 
-  expect(calls.map((call) => call.subcommand)).toEqual(['pull', 'status', 'branch', 'remote', 'rev-parse'])
+  expect(calls.map((call) => call.subcommand)).toEqual([
+    'pull',
+    'status',
+    'branch',
+    'remote',
+    'rev-parse'
+  ])
 })
 
 test('stashing parks the changes and reads the clean tree', async () => {
@@ -263,7 +304,13 @@ test('stashing parks the changes and reads the clean tree', async () => {
 
   expect(await control.stash()).toBe(true)
 
-  expect(calls.map((call) => call.subcommand)).toEqual(['stash', 'status', 'branch', 'remote', 'rev-parse'])
+  expect(calls.map((call) => call.subcommand)).toEqual([
+    'stash',
+    'status',
+    'branch',
+    'remote',
+    'rev-parse'
+  ])
 })
 
 test('a pull git refuses is reported with its own words', async () => {

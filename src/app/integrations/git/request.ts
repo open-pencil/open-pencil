@@ -1,7 +1,7 @@
 import { computed, type ComputedRef, type ShallowRef } from 'vue'
 
 import type { ProgramTransport } from './gh'
-import { compareURL, parseRemoteURL } from './pr'
+import { compareURL, isGitHubRemote, parseRemoteURL } from './pr'
 import { openPullRequest } from './pulls'
 import type { GitStatus } from './schema'
 
@@ -23,6 +23,11 @@ export type PullRequestInputs = {
 export function usePullRequest(inputs: PullRequestInputs) {
   const headBranch = computed(() => inputs.status.value?.branch.head ?? null)
 
+  /** The remote the repository pushes to, or null while it is unknown or this app cannot read it. */
+  const remote = computed(() =>
+    inputs.remoteURL.value === null ? null : parseRemoteURL(inputs.remoteURL.value)
+  )
+
   /**
    * The branch a pull request would land in: the upstream's own name, unless the branch tracks
    * its own name on the remote, which says nothing about where it should land.
@@ -34,12 +39,23 @@ export function usePullRequest(inputs: PullRequestInputs) {
     return inputs.defaultBranch.value ?? 'main'
   })
 
-  /** The page a pull request opens from, or null while the remote or the branch is unknown. */
-  const compareLink = computed(() => {
-    const remote = inputs.remoteURL.value === null ? null : parseRemoteURL(inputs.remoteURL.value)
+  /**
+   * The pull request this tab would open, or null when there is none to open. Working on the
+   * default branch is a normal thing to do, and there is nothing between it and itself: the GitHub
+   * CLI refuses `--base X --head X`, and `X...X` is a comparison page that does not exist.
+   */
+  const pullRequest = computed(() => {
     const head = headBranch.value
-    if (remote === null || head === null) return null
-    return compareURL(remote, baseBranch.value, head)
+    const location = remote.value
+    if (head === null || location === null) return null
+    if (!isGitHubRemote(location) || head === baseBranch.value) return null
+    return { location, base: baseBranch.value, head }
+  })
+
+  /** The page a pull request opens from, or null while there is no pull request to open. */
+  const compareLink = computed(() => {
+    const open = pullRequest.value
+    return open === null ? null : compareURL(open.location, open.base, open.head)
   })
 
   /**
@@ -48,10 +64,13 @@ export function usePullRequest(inputs: PullRequestInputs) {
    */
   function createPullRequest(): Promise<string | null> {
     const current = inputs.repository.value
-    const head = headBranch.value
-    return current === '' || head === null
+    const open = pullRequest.value
+    return current === '' || open === null
       ? Promise.resolve(null)
-      : openPullRequest({ repo: current, base: baseBranch.value, head }, inputs.programTransport)
+      : openPullRequest(
+          { repo: current, base: open.base, head: open.head },
+          inputs.programTransport
+        )
   }
 
   return { headBranch, baseBranch, compareLink, createPullRequest }

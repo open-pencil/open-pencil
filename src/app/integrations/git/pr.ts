@@ -28,6 +28,15 @@ export function parseRemoteURL(url: string): RemoteLocation | null {
 }
 
 /**
+ * Whether a remote is one this app opens pull requests on. `gh pr create` and the comparison page
+ * both follow GitHub's own addresses, so a remote on another host — GitLab, Gitea, a bare server —
+ * gets neither instead of a link built for a path layout it may not share.
+ */
+export function isGitHubRemote(remote: RemoteLocation): boolean {
+  return remote.host.toLowerCase() === 'github.com'
+}
+
+/**
  * The page a pull request is opened from: the comparison between the branch that would be pushed
  * and the branch it would land in. The link needs no token, and the person opens it signed in
  * with whatever account the browser already holds.
