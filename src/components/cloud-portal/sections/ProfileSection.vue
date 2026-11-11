@@ -278,7 +278,7 @@ onMounted(async () => {
       :load-error="deletion.loadError.value"
       :archive="deletion.archive.value"
       :error="deleteAccount.error.value"
-      :deleting="deleteAccount.busy.value"
+      :deleting="deletion.deleting.value"
       @download-all="deletion.downloadAll"
       @confirm="deleteAccount.run()"
     />

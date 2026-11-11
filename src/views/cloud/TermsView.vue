@@ -77,7 +77,7 @@ function reload() {
     :load-error="deletion.loadError.value"
     :archive="deletion.archive.value"
     :error="deletion.remove.error.value"
-    :deleting="deletion.remove.busy.value"
+    :deleting="deletion.deleting.value"
     @download-all="deletion.downloadAll"
     @confirm="deletion.remove.run()"
   />

@@ -32,6 +32,8 @@ export type PortalAccountDeletionOptions = {
  * nor unblocks deleting while it runs.
  */
 const download = {
+  /** Whose download it is: another account signed in to this tab sees none of it. */
+  owner: shallowRef<string | null>(null),
   archive: ref<PortalAccountArchive | null>(null),
   /** The documents the last download set out to save. */
   covered: shallowRef<ReadonlySet<string>>(new Set()),
@@ -49,7 +51,9 @@ export function usePortalAccountDeletion(options: PortalAccountDeletionOptions) 
    * The shared download as this plan sees it: documents the plan has that the download did not set
    * out to save, such as one added meanwhile, count as not saved.
    */
+  const accountId = computed(() => portal.account.value?.user.userId ?? null)
   const archive = computed<PortalAccountArchive | null>(() => {
+    if (download.owner.value !== accountId.value) return null
     const current = download.archive.value
     if (!current || current.saved === null || !deletion.value) return current
     const missing = deletion.value.documents
@@ -74,9 +78,13 @@ export function usePortalAccountDeletion(options: PortalAccountDeletionOptions) 
     }
   }
 
+  /** Set while the account is being deleted, which no download may start during. */
+  const finishing = ref(false)
+
   async function downloadAll() {
-    if (download.running) return
+    if (download.running || finishing.value || remove.busy.value) return
     download.running = true
+    download.owner.value = accountId.value
     const documents = deletion.value?.documents ?? []
     download.covered.value = new Set(documents.map((document) => document.id))
     download.archive.value = { done: 0, total: documents.length, saved: null, failed: [] }
@@ -106,10 +114,19 @@ export function usePortalAccountDeletion(options: PortalAccountDeletionOptions) 
 
   /** Deletes the account, with the password when the session is too old. */
   async function finish(password?: string) {
-    await portal.api.deleteAccount(password)
+    finishing.value = true
+    try {
+      await portal.api.deleteAccount(password)
+    } finally {
+      finishing.value = false
+    }
     open.value = false
-    download.archive.value = null
-    download.covered.value = new Set()
+    // The account's download goes with it, unless one is still running, which keeps its own state.
+    if (!download.running) {
+      download.owner.value = null
+      download.archive.value = null
+      download.covered.value = new Set()
+    }
     // The account is gone either way; a status check that fails now must not keep the page on it.
     await portal.refreshAccount().catch(() => {
       portal.account.value = null
@@ -131,5 +148,8 @@ export function usePortalAccountDeletion(options: PortalAccountDeletionOptions) 
     }
   })
 
-  return { open, deletion, loadError, archive, show, downloadAll, finish, remove }
+  /** Deleting, whether from the dialog or after a password prompt. */
+  const deleting = computed(() => remove.busy.value || finishing.value)
+
+  return { open, deletion, loadError, archive, deleting, show, downloadAll, finish, remove }
 }
