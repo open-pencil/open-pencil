@@ -366,21 +366,24 @@ function cssNameDone(event: KeyboardEvent) {
       </PanelFieldGroup>
       <PanelFieldGroup :label="variables.cssName" :for="cssNameId">
         <Tip :label="variables.cssNameHint">
-          <AppInput
-            :id="cssNameId"
-            v-model="draft.cssName"
-            size="sm"
-            :placeholder="row.cssName"
-            :state="cssNameInvalid ? 'invalid' : 'idle'"
-            :aria-invalid="cssNameInvalid"
-            :aria-describedby="cssNameInvalid ? cssNameErrorId : cssNameHintId"
-            :ui="{ input: 'font-mono ps-7' }"
-            data-test-id="variables-css-name"
-            @change="commitCSSName"
-            @enter="cssNameDone"
-          >
-            <template #leading><span :class="ui.prefix()">--</span></template>
-          </AppInput>
+          <!-- A CSS name is code: --brand, prefix first, in either direction. -->
+          <div dir="ltr">
+            <AppInput
+              :id="cssNameId"
+              v-model="draft.cssName"
+              size="sm"
+              :placeholder="row.cssName"
+              :state="cssNameInvalid ? 'invalid' : 'idle'"
+              :aria-invalid="cssNameInvalid"
+              :aria-describedby="cssNameInvalid ? cssNameErrorId : cssNameHintId"
+              :ui="{ input: 'font-mono ps-7' }"
+              data-test-id="variables-css-name"
+              @change="commitCSSName"
+              @enter="cssNameDone"
+            >
+              <template #leading><span :class="ui.prefix()">--</span></template>
+            </AppInput>
+          </div>
         </Tip>
         <p v-if="cssNameInvalid" :id="cssNameErrorId" :class="ui.error()" role="alert">
           {{ variables.cssNameInvalid }}
