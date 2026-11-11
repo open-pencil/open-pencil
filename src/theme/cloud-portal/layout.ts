@@ -1,10 +1,11 @@
+import { focusStyles } from '../focus/styles'
+
 /** The Cloud console: a bar with the server and account, sections in a sidebar. */
 export default {
   slots: {
     page: 'flex h-full min-h-0 flex-col overflow-hidden bg-canvas text-surface',
     bar: 'flex h-11 shrink-0 items-center gap-2 border-b border-border bg-panel px-4',
-    barHome:
-      'flex items-center gap-2 rounded focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:outline-none',
+    barHome: ['flex items-center gap-2 rounded', focusStyles.ring],
     barTitle: 'text-xs font-semibold whitespace-nowrap',
     barHost: 'truncate text-2xs text-muted max-sm:hidden',
     barEnd: 'ms-auto flex items-center gap-2',

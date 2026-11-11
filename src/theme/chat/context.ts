@@ -1,3 +1,4 @@
+import { focusStyles } from '../focus/styles'
 import { motionStyles } from '../motion/styles'
 
 /**
@@ -6,8 +7,10 @@ import { motionStyles } from '../motion/styles'
  */
 export default {
   slots: {
-    meter:
-      'flex h-6 shrink-0 cursor-pointer items-center gap-1 rounded px-1.5 text-3xs text-muted outline-none hover:bg-hover hover:text-surface focus-visible:ring-2 focus-visible:ring-accent data-[state=open]:bg-hover data-[state=open]:text-surface',
+    meter: [
+      'flex h-6 shrink-0 cursor-pointer items-center gap-1 rounded px-1.5 text-3xs text-muted outline-none hover:bg-hover hover:text-surface data-[state=open]:bg-hover data-[state=open]:text-surface',
+      focusStyles.ring
+    ],
     miniBar: 'flex h-1.5 w-5 shrink-0 overflow-hidden rounded-full bg-border',
     popover: ['z-50 flex w-64 flex-col gap-2.5 p-3 text-2xs text-surface', motionStyles.floating],
     popoverHeader: 'flex items-baseline justify-between gap-2',

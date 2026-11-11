@@ -1,6 +1,11 @@
+import { focusStyles } from '../focus/styles'
+
 const switchTheme = {
   slots: {
-    root: 'relative inline-flex shrink-0 cursor-pointer items-center rounded-full border border-border bg-panel-field outline-none transition-colors hover:border-muted focus-visible:ring-1 focus-visible:ring-panel-focus data-[state=checked]:border-accent data-[state=checked]:bg-accent data-[disabled]:cursor-default data-[disabled]:opacity-50',
+    root: [
+      'relative inline-flex shrink-0 cursor-pointer items-center rounded-full border border-border bg-panel-field outline-none transition-colors hover:border-muted data-[state=checked]:border-accent data-[state=checked]:bg-accent data-[disabled]:cursor-default data-[disabled]:opacity-50',
+      focusStyles.ring
+    ],
     thumb:
       'pointer-events-none block rounded-full bg-muted shadow-sm transition-transform data-[state=checked]:bg-white'
   },

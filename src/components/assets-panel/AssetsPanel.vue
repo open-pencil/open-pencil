@@ -34,6 +34,7 @@ import { useHeldContent } from '@/components/ui/overlay/held'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import { ASSET_GRID_THUMBNAIL_SIZE, ASSET_LIST_THUMBNAIL_SIZE } from '@/constants'
+import { focusStyles } from '@/theme/focus/styles'
 
 type AssetView = 'grid' | 'list'
 
@@ -401,7 +402,8 @@ async function insertSelectedAsset() {
                 :draggable="!!asset.componentId"
                 :aria-busy="insertingAssetId === asset.id"
                 :class="[
-                  'group/asset rounded text-start text-xs text-surface outline-none hover:bg-hover focus-visible:ring-1 focus-visible:ring-panel-focus',
+                  'group/asset rounded text-start text-xs text-surface outline-none hover:bg-hover',
+                  focusStyles.ring,
                   assetView === 'grid'
                     ? 'flex min-w-0 flex-col items-center gap-1 p-1.5'
                     : 'flex w-full items-center gap-2 px-1.5 py-1'

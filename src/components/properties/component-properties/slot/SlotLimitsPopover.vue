@@ -10,6 +10,7 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 import SeverityIcon from '@/components/ui/feedback/SeverityIcon.vue'
 import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
+import { focusStyles } from '@/theme/focus/styles'
 
 const { limits } = defineProps<{ limits: SlotLimit[] }>()
 const emit = defineEmits<{ selectLayers: [] }>()
@@ -34,7 +35,10 @@ function label(limit: SlotLimit): string {
     <PopoverTrigger
       :data-issues="issues > 0 || undefined"
       data-property="slot-limits"
-      class="flex h-5 shrink-0 cursor-pointer items-center gap-1 rounded bg-panel-field px-1.5 text-3xs text-muted outline-none hover:bg-hover hover:text-surface focus-visible:ring-1 focus-visible:ring-panel-focus data-issues:bg-warning/15 data-issues:text-warning"
+      :class="[
+        'flex h-5 shrink-0 cursor-pointer items-center gap-1 rounded bg-panel-field px-1.5 text-3xs text-muted outline-none hover:bg-hover hover:text-surface data-issues:bg-warning/15 data-issues:text-warning',
+        focusStyles.ring
+      ]"
     >
       <SeverityIcon v-if="issues" severity="warning" />
       <icon-lucide-check v-else class="size-3 text-success" />

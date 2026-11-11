@@ -1,25 +1,35 @@
+import { focusStyles } from './focus/styles'
+
 const toolbarTheme = {
   slots: {
     /** The desktop toolbar's position over the canvas. */
     dock: 'absolute z-10 flex',
     bar: 'flex min-h-0 min-w-0 gap-0.5 rounded-xl bg-panel p-1 shadow-(--floating-bar-shadow) *:shrink-0',
-    button:
-      'flex size-8 cursor-pointer items-center justify-center border-none bg-transparent text-muted transition-colors outline-none focus-visible:ring-1 focus-visible:ring-panel-focus',
+    button: [
+      'flex size-8 cursor-pointer items-center justify-center border-none bg-transparent text-muted transition-colors outline-none',
+      focusStyles.ring
+    ],
     icon: 'size-4',
     flyoutGroup: 'flex items-center',
-    flyoutTrigger:
-      'flex cursor-pointer items-center justify-center border-none bg-transparent text-muted transition-colors outline-none data-[state=open]:bg-hover data-[state=open]:text-surface focus-visible:ring-1 focus-visible:ring-panel-focus',
+    flyoutTrigger: [
+      'flex cursor-pointer items-center justify-center border-none bg-transparent text-muted transition-colors outline-none data-[state=open]:bg-hover data-[state=open]:text-surface',
+      focusStyles.ring
+    ],
     flyoutTriggerIcon: 'size-2.5',
     flyoutContent: '',
     flyoutItem: '',
     flyoutItemIndicator: 'flex size-3.5 shrink-0 items-center justify-center',
     flyoutItemIcon: 'size-3.5',
     flyoutItemLabel: 'flex-1',
-    navigationAction:
-      'flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border bg-panel text-muted shadow-sm outline-none select-none focus-visible:ring-1 focus-visible:ring-panel-focus disabled:pointer-events-none',
+    navigationAction: [
+      'flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border bg-panel text-muted shadow-sm outline-none select-none disabled:pointer-events-none',
+      focusStyles.ring
+    ],
     navigationIcon: 'size-3.5',
-    action:
-      'flex size-8 cursor-pointer items-center justify-center rounded-md border-none bg-transparent text-muted transition-colors outline-none select-none active:bg-hover active:text-surface focus-visible:ring-1 focus-visible:ring-panel-focus',
+    action: [
+      'flex size-8 cursor-pointer items-center justify-center rounded-md border-none bg-transparent text-muted transition-colors outline-none select-none active:bg-hover active:text-surface',
+      focusStyles.ring
+    ],
     actionIcon: 'size-4'
   },
   variants: {

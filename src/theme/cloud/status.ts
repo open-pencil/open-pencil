@@ -1,7 +1,11 @@
+import { focusStyles } from '../focus/styles'
+
 export default {
   slots: {
-    trigger:
-      'flex h-6 shrink-0 items-center gap-1 rounded px-1 text-muted outline-none hover:bg-hover hover:text-surface focus-visible:ring-2 focus-visible:ring-accent/50 data-[state=open]:bg-hover data-[state-sync=conflict]:bg-warning-bg data-[state-sync=conflict]:text-warning data-[state-sync=error]:text-error data-[state-sync=view]:bg-panel-field data-[state-sync=view]:text-surface data-[state-sync=not-live]:bg-warning-bg data-[state-sync=not-live]:text-warning',
+    trigger: [
+      'flex h-6 shrink-0 items-center gap-1 rounded px-1 text-muted outline-none hover:bg-hover hover:text-surface data-[state=open]:bg-hover data-[state-sync=conflict]:bg-warning-bg data-[state-sync=conflict]:text-warning data-[state-sync=error]:text-error data-[state-sync=view]:bg-panel-field data-[state-sync=view]:text-surface data-[state-sync=not-live]:bg-warning-bg data-[state-sync=not-live]:text-warning',
+      focusStyles.ring
+    ],
     triggerLabel: 'text-2xs font-medium',
     header: 'flex items-start gap-2.5',
     headerIcon:

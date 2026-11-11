@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dialog'
 import { useHeldContent } from '@/components/ui/overlay/held'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
+import { focusStyles } from '@/theme/focus/styles'
 
 const editor = useEditorStore()
 const dialog = useDialogUI()
@@ -257,7 +258,10 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
             <SliderRange class="absolute h-full bg-accent" />
           </SliderTrack>
           <SliderThumb
-            class="block size-3.5 rounded-full border border-accent bg-panel shadow outline-none focus-visible:ring-2 focus-visible:ring-panel-focus"
+            :class="[
+              'block size-3.5 rounded-full border border-accent bg-panel shadow outline-none',
+              focusStyles.thumb
+            ]"
           />
         </SliderRoot>
         <span v-if="mode === 'overlay'" class="w-8 text-end text-3xs text-muted">

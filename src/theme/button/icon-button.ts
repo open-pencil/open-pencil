@@ -1,10 +1,15 @@
+import { focusStyles } from '../focus/styles'
+
 export default {
   // The icon passes the pointer to the button: Reka's Splitter only sees that a control covers
   // its resize handle when the event target is an HTML element, so a press or hover on an SVG
   // icon over a handle, as in a picker beside the properties panel, reached the handle.
   // A button that opens a menu or popover reads as open while it is (`aria-expanded`); its
   // trigger's own `data-state` is replaced by the button's on and off.
-  base: 'flex cursor-pointer items-center justify-center bg-transparent text-muted outline-none hover:bg-hover hover:text-surface focus-visible:border-panel-focus aria-expanded:bg-hover aria-expanded:text-surface [&_svg]:pointer-events-none',
+  base: [
+    'flex cursor-pointer items-center justify-center bg-transparent text-muted outline-none hover:bg-hover hover:text-surface aria-expanded:bg-hover aria-expanded:text-surface [&_svg]:pointer-events-none',
+    focusStyles.ring
+  ],
   variants: {
     size: {
       xs: 'h-6 w-6 rounded border border-transparent text-sm leading-none',
