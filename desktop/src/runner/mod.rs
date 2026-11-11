@@ -359,7 +359,10 @@ mod tests {
         let running = processes(&[("karbid", 7)]);
 
         assert!(forget_own(&running, "karbid", 7));
-        assert!(running.lock().expect("the lock is held by nobody").is_empty());
+        assert!(running
+            .lock()
+            .expect("the lock is held by nobody")
+            .is_empty());
     }
 
     #[test]
@@ -369,7 +372,10 @@ mod tests {
         // The first run woke after the second one was started and recorded.
         assert!(!forget_own(&running, "karbid", 1));
         assert_eq!(
-            running.lock().expect("the lock is held by nobody").get("karbid"),
+            running
+                .lock()
+                .expect("the lock is held by nobody")
+                .get("karbid"),
             Some(&2)
         );
     }
