@@ -172,6 +172,8 @@
   "settingsSignedOut": "已退出登录",
   "settingsWaitingForApproval": "正在等待管理员批准你的账号",
   "settingsAccessClosed": "管理员拒绝或移除了你的访问权限",
+  "settingsAcceptTerms": "接受此服务器的条款以继续使用",
+  "settingsReviewTerms": "查看条款",
   "settingsOptionsFor": "{host} 的选项",
   "settingsAccountAndSecurity": "账号与安全",
   "settingsShowOnHome": "在主页显示",

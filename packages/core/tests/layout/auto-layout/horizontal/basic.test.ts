@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
+import { autoFrame, pageId, rect } from '#core-tests/helpers/layout'
+
 import { createEditor } from '@open-pencil/core'
 import { computeAllLayouts, computeLayout } from '@open-pencil/core/layout'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { autoFrame, pageId, rect } from '#core-tests/helpers/layout'
 
 describe('horizontal basic', () => {
   test('positions children left-to-right', () => {

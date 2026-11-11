@@ -1,8 +1,8 @@
 import { afterAll, describe, expect, test } from 'bun:test'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
+import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import {
   SceneGraph,
   type Effect,
@@ -10,7 +10,6 @@ import {
   type VectorNetwork
 } from '@open-pencil/scene-graph'
 import { drawnBlurRadius } from '@open-pencil/scene-graph/geometry'
-
 import { expectDefined } from '@open-pencil/test-support/assert'
 const ck = await getCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
@@ -238,19 +237,22 @@ describe('a negative blur, which only a bound variable gives', () => {
     test(`draws a ${type.toLowerCase()} cast from a boolean's silhouette as no blur`, () => {
       const inner = type === 'INNER_SHADOW'
       const row = (radius: number) =>
-        edgeRow((graph, frameId) => {
-          const union = graph.createNode('BOOLEAN_OPERATION', frameId, {
-            x: 100,
-            y: 100,
-            width: 200,
-            height: 200,
-            booleanOperation: 'UNION',
-            fills: [solid(1, 1, 1)],
-            effects: [{ ...effect(type, radius), offset: { x: inner ? 10 : -10, y: 0 } }]
-          })
-          graph.createNode('RECTANGLE', union.id, { width: 200, height: 120 })
-          graph.createNode('RECTANGLE', union.id, { y: 80, width: 200, height: 120 })
-        }, inner ? 0 : 3)
+        edgeRow(
+          (graph, frameId) => {
+            const union = graph.createNode('BOOLEAN_OPERATION', frameId, {
+              x: 100,
+              y: 100,
+              width: 200,
+              height: 200,
+              booleanOperation: 'UNION',
+              fills: [solid(1, 1, 1)],
+              effects: [{ ...effect(type, radius), offset: { x: inner ? 10 : -10, y: 0 } }]
+            })
+            graph.createNode('RECTANGLE', union.id, { width: 200, height: 120 })
+            graph.createNode('RECTANGLE', union.id, { y: 80, width: 200, height: 120 })
+          },
+          inner ? 0 : 3
+        )
       expect(row(-6)).toEqual(row(0))
     })
   }

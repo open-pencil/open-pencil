@@ -1,7 +1,5 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
-
 import { computeContentBounds } from '@open-pencil/core/io/formats/raster'
 import {
   SceneGraph,
@@ -14,6 +12,7 @@ import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { blurReach, shadowReach } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { RenderedBoundsCache } from '#core/canvas/renderer/visual-bounds'
 

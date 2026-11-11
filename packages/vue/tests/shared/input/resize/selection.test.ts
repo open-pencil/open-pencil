@@ -304,7 +304,12 @@ describe('resizing a fractional multi-selection on the pixel grid', () => {
     editor = createEditor()
     editor.state.snappingPreferences = { geometry: true, objects: false, pixelGrid: true }
     const page = editor.state.currentPageId
-    const a = editor.graph.createNode('RECTANGLE', page, { x: 400.375, y: 100, width: 60.25, height: 20.5 })
+    const a = editor.graph.createNode('RECTANGLE', page, {
+      x: 400.375,
+      y: 100,
+      width: 60.25,
+      height: 20.5
+    })
     const b = editor.graph.createNode('RECTANGLE', page, {
       x: 500.125,
       y: 130.25,
@@ -315,15 +320,26 @@ describe('resizing a fractional multi-selection on the pixel grid', () => {
     // The box: 400.375…551.125 across, 100…143.333333 down.
     return { a: a.id, b: b.id, right: 551.125, middle: 100 + 43.333333 / 2 }
   }
-  const near = (node: SceneNode | undefined) => mapValues(box(node), (v) => Math.round(v * 1e4) / 1e4)
+  const near = (node: SceneNode | undefined) =>
+    mapValues(box(node), (v) => Math.round(v * 1e4) / 1e4)
 
   test('a side drag gives the box and its layers whole pixels', () => {
     const { a, b, right, middle } = fractional()
     const drag = start(right, middle)
     applySelectionResize(drag, right + 10, middle, false, editor)
     commitSelectionResize(drag, editor)
-    expect(near(editor.graph.getNode(a))).toEqual({ x: 400.375, y: 100.1667, width: 64, height: 20 })
-    expect(near(editor.graph.getNode(b))).toEqual({ x: 507.375, y: 130.1667, width: 54, height: 13 })
+    expect(near(editor.graph.getNode(a))).toEqual({
+      x: 400.375,
+      y: 100.1667,
+      width: 64,
+      height: 20
+    })
+    expect(near(editor.graph.getNode(b))).toEqual({
+      x: 507.375,
+      y: 130.1667,
+      width: 54,
+      height: 13
+    })
   })
 
   test('a press without moving and a Control drag leave the layers unrounded', () => {

@@ -1,9 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
+import { ALL_TOOLS } from '#core-tests/helpers/tools'
 
 import { isAtomicTool, isToolExposed, toolJSONSchema } from '@open-pencil/core/tools'
-
-import { ALL_TOOLS } from '#core-tests/helpers/tools'
 describe('tool definitions', () => {
   test('exposure defaults to inclusion and exclusions affect only the named interface', () => {
     for (const target of ['mcp', 'ai', 'webmcp'] as const) {

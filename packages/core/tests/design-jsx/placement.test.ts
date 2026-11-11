@@ -10,7 +10,6 @@ import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
 import { createStreamingJSXParser } from '@open-pencil/design-jsx'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-
 import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 function setupToolTest() {
   const graph = new SceneGraph()

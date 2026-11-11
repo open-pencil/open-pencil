@@ -2,14 +2,14 @@ import { afterEach, describe, expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { BLACK, TRANSPARENT } from '@open-pencil/core/constants'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
+import { BLACK, TRANSPARENT } from '@open-pencil/core/constants'
 import { fontManager } from '@open-pencil/core/text'
 import { vectorNetworkToPath } from '@open-pencil/core/vector'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { repoPath } from '@open-pencil/test-support/paths'
 
 import { textNodeToOutlineLayout } from '#core/text/outlines'
-import { repoPath } from '@open-pencil/test-support/paths'
 
 const cleanups: (() => void)[] = []
 
@@ -127,7 +127,11 @@ describe('flattenSelected', () => {
     const network = vector?.vectorNetwork
     if (!vector || !network) throw new Error('Expected a flattened vector')
     expect([vector.x, vector.y, vector.width, vector.height]).toEqual([0, 0, 120, 70])
-    expect([vector.strokeWeight, vector.strokeAlign, vector.strokes.length]).toEqual([4, 'OUTSIDE', 1])
+    expect([vector.strokeWeight, vector.strokeAlign, vector.strokes.length]).toEqual([
+      4,
+      'OUTSIDE',
+      1
+    ])
     expect(vector.fills.map((fill) => fill.visible)).toEqual([false])
     const [path] = vectorNetworkToPath(await getCanvasKit(), network)
     expect(path?.contains(60, 35)).toBe(true)
@@ -457,8 +461,16 @@ describe('flattenSelected', () => {
 
     test("takes a frame's shapes with their fills, never the frames' own", async () => {
       const vector = await flattened((graph, pageId) => {
-        const frame = graph.createNode('FRAME', pageId, { width: 80, height: 60, fills: [paint(0, 1, 0)] })
-        const inner = graph.createNode('FRAME', frame.id, { width: 40, height: 40, fills: [paint(1, 1, 0)] })
+        const frame = graph.createNode('FRAME', pageId, {
+          width: 80,
+          height: 60,
+          fills: [paint(0, 1, 0)]
+        })
+        const inner = graph.createNode('FRAME', frame.id, {
+          width: 40,
+          height: 40,
+          fills: [paint(1, 1, 0)]
+        })
         graph.createNode('RECTANGLE', inner.id, { width: 20, height: 20, fills: [RED] })
         graph.createNode('RECTANGLE', frame.id, { x: 50, width: 20, height: 20, fills: [BLUE] })
         return [frame]

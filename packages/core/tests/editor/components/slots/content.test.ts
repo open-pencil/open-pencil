@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { createEditor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { ownsSlotContent, slotPropertyId } from '@open-pencil/scene-graph/slots'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 /** A Card component whose `Body` slot holds `Default`, an instance of it, and a free layer. */
 function setup() {

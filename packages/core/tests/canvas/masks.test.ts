@@ -1,13 +1,15 @@
 import { afterAll, describe, expect, test, mock } from 'bun:test'
+
+import type { Canvas, InputRect, Paint } from '@open-pencil/canvaskit'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
+import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph, type MaskType, type SceneNode } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
-import type { Canvas, InputRect, Paint } from '@open-pencil/canvaskit'
 
-import { renderNode } from '#core/canvas/scene'
 import { RenderedBoundsCache } from '#core/canvas/renderer/visual-bounds'
+import { renderNode } from '#core/canvas/scene'
+
 import { asCanvas, asRenderer } from './helpers'
 
 const ck = await getCanvasKit()

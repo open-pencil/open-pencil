@@ -1,10 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
+import { getTool, setupToolTest } from '#core-tests/helpers/tools'
 import * as v from 'valibot'
 
 import { toolNumber, toolStandardJSONSchema } from '@open-pencil/core/tools'
-
-import { getTool, setupToolTest } from '#core-tests/helpers/tools'
 describe('native tool input contracts', () => {
   const schema = v.object({ value: toolNumber(v.pipe(v.number(), v.minValue(0), v.maxValue(100))) })
 

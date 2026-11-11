@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { RED, worldBox } from '#core-tests/helpers/flipped-layers'
 
 import { parseDrawIOFile } from '@open-pencil/drawio'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { shadowReach } from '@open-pencil/scene-graph/geometry'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '#core/io'
 

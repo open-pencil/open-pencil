@@ -1,12 +1,13 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
+import { getTool, runTool, setupToolTest, type ToolResult } from '#core-tests/helpers/tools'
+
 import { computeAllLayouts, estimateTextSize } from '@open-pencil/core/layout'
 import { fontManager } from '@open-pencil/core/text'
 import { expectDefined, expectFills, getNodeOrThrow } from '@open-pencil/test-support/assert'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 import { repoPath } from '@open-pencil/test-support/paths'
 
-import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
-import { getTool, runTool, setupToolTest, type ToolResult } from '#core-tests/helpers/tools'
 import { graphOf } from '#core/figma-api/graph'
 beforeAll(() => registerTestFont())
 

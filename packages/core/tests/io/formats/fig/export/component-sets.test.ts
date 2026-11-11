@@ -1,10 +1,8 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { deflateSync } from 'fflate'
 
 import { buildFigmaClipboardHTML } from '@open-pencil/core/clipboard'
-import { createEditor } from '#core/editor'
 import {
   FigmaAPI,
   type FigmaComponentNode,
@@ -29,7 +27,9 @@ import { createComponentPropertyId } from '@open-pencil/scene-graph/components'
 import { buildConnectorSublayers } from '@open-pencil/scene-graph/connectors'
 import { createSlotProperty } from '@open-pencil/scene-graph/slots'
 import { parseVariantName } from '@open-pencil/scene-graph/variant-name'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
+import { createEditor } from '#core/editor'
 import { releaseFigArchive } from '#core/kiwi/fig/session/archive/access'
 
 setDefaultTimeout(60_000)

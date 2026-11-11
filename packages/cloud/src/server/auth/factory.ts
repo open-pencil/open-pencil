@@ -1,5 +1,6 @@
 import { createEnrollmentService, type EnrollmentService } from '#cloud/admin/enrollment/service'
 import { accountDeletionOptions } from '#cloud/server/account/deletion'
+import { createTermsService } from '#cloud/server/account/terms'
 import type { CloudServerConfig } from '#cloud/server/config'
 import type { CloudDatabase } from '#cloud/server/db'
 import { createUserPictures, providerPictures } from '#cloud/server/pictures'
@@ -87,6 +88,7 @@ export function createBetterAuthAdapter(
 ): CloudAuthAdapter {
   const authenticationEmail = runtime.email
   const assurance = createMFAAssuranceService(database, config)
+  const terms = createTermsService(database, config)
   const activity = createSignInActivity(database, authenticationEmail)
   // A new address is confirmed through a link sent to it, so changing one needs email delivery.
   const emailChangeAvailable = Boolean(config.emailPasswordEnabled && authenticationEmail)
@@ -337,8 +339,18 @@ export function createBetterAuthAdapter(
     })
   }
 
-  /** The signed-in person while their account may use the server, which awaiting approval it may not. */
+  /**
+   * The signed-in person while their account may use the server: not while it awaits approval, nor
+   * before it accepted the deployment's current terms when those are required.
+   */
   async function resolveSession(headers: Headers) {
+    const identity = await resolveAccountSession(headers)
+    if (!identity || !(await terms.hasAccepted(identity.userId))) return null
+    return identity
+  }
+
+  /** The signed-in person while their account is approved, before or after accepting the terms. */
+  async function resolveAccountSession(headers: Headers) {
     const identity = await resolveIdentity(headers)
     if (!identity) return null
     if (config.enrollmentMode === 'approval' && !(await enrollment.isApproved(identity.email))) {
@@ -397,6 +409,7 @@ export function createBetterAuthAdapter(
     },
     resolveIdentity,
     resolveSession,
+    resolveAccountSession,
     async listAuthenticationMethods(headers) {
       const accounts = await auth.api.listUserAccounts({ headers })
       return accounts.map((account) => ({

@@ -1,11 +1,12 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { nodeFontReadiness } from '#core/canvas/text'
 import { getCanvasKit } from '#core/canvaskit'
 import { fontManager } from '#core/text/font/manager'
+
 import { attachFontProvider } from '../helpers'
 
 /**

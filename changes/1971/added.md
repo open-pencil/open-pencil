@@ -1,1 +1,0 @@
-- A host can turn off the width × height label under a selection with `editor.state.showSizeLabels = false`, and vector edit mode's points and handles follow `selectionTheme` (#1971).

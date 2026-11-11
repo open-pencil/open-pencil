@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import {
   renderNodesToSVG,
   renderSVGNode,
@@ -11,6 +10,7 @@ import { SceneGraph, type Fill, type SceneNode, type Stroke } from '@open-pencil
 import { createShapeWithText } from '@open-pencil/scene-graph/generated'
 import { outlineSVGPath } from '@open-pencil/scene-graph/polygon'
 import { shapeWithTextGeometry } from '@open-pencil/scene-graph/shape-with-text'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { renderNodeSVGElement } from '#core/io/formats/svg/export'
 
@@ -532,7 +532,12 @@ describe('a stroke over fills SVG cannot all draw', () => {
     align: 'CENTER'
   }
   // Noise has no SVG paint, so it is left out; the stroke goes on the fill drawn last.
-  const noise: Fill = { type: 'NOISE', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }
+  const noise: Fill = {
+    type: 'NOISE',
+    color: { r: 1, g: 1, b: 1, a: 1 },
+    opacity: 1,
+    visible: true
+  }
 
   test('goes on the last fill a shape draws', () => {
     const svg = svgOf((graph, pageId) => [
@@ -576,7 +581,9 @@ describe('a stroke over fills SVG cannot all draw', () => {
         fillGeometry: [{ windingRule: 'NONZERO', commandsBlob: moveTo(0, 0) }]
       }).id
     ])
-    expect(paths(svg)).toEqual(['<path d="M0 0" fill="#0000FF" stroke="#000000" stroke-width="2"/>'])
+    expect(paths(svg)).toEqual([
+      '<path d="M0 0" fill="#0000FF" stroke="#000000" stroke-width="2"/>'
+    ])
   })
 })
 

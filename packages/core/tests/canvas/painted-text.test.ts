@@ -1,11 +1,11 @@
 import { beforeAll, expect, test } from 'bun:test'
 
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import type { Fill } from '@open-pencil/scene-graph'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { repoPath } from '@open-pencil/test-support/paths'
 
-import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SkiaRenderer } from '#core/canvas/renderer'
 import { withTextParagraph, type TextLayout } from '#core/canvas/text'
 import { fontManager } from '#core/text/font/manager'

@@ -4,6 +4,7 @@ import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { ALL_TOOLS, type ToolDef } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
+
 import { graphOf } from '#core/figma-api/graph'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)

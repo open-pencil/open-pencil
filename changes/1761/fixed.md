@@ -1,1 +1,0 @@
-- Documents with thousands of texts in a variable font with many glyphs, such as Noto Sans SC, open instead of running out of memory: every paragraph drawn in the font kept about 64 KB, and a `.pen` file of 24,000 Chinese texts aborted while it opened (#1761).

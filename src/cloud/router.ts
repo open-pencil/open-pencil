@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { isCloudPortalPage } from '@open-pencil/cloud/contract'
 
 import type { PortalContext } from '@/app/cloud-portal/context'
-import { PORTAL_HOME, portalDestination } from '@/app/cloud-portal/navigation'
+import { PORTAL_HOME, portalDestination, TERMS_PAGE } from '@/app/cloud-portal/navigation'
 
 /**
  * The Cloud portal's pages, guarded by the portal's access rules (`portalDestination`). The
@@ -78,6 +78,12 @@ export function createCloudPortalRouter(context: PortalContext) {
         path: '/account/closed',
         name: 'closed',
         component: () => import('@/views/cloud/StandingView.vue'),
+        meta: { account: true }
+      },
+      {
+        path: TERMS_PAGE,
+        name: 'terms',
+        component: () => import('@/views/cloud/TermsView.vue'),
         meta: { account: true }
       },
       {

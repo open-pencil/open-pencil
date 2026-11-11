@@ -134,6 +134,7 @@ function caretToEnd(event: PointerEvent) {
     @editing-change="(editing: boolean) => emit('editing-change', editing)"
   >
     <div
+      dir="ltr"
       v-bind="{ ...attrs, ...rootAttrs }"
       data-slot="root"
       :class="styles.root({ class: [ui?.root, normalizeClass(attrs.class)] })"

@@ -1,10 +1,11 @@
+import { focusStyles } from '../focus/styles'
+
 export default {
   slots: {
     root: 'group relative min-w-0',
     // The context menu's trigger: it fills the root, so a right-click anywhere on the entry opens it.
     surface: '',
-    trigger:
-      'min-w-0 w-full text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:opacity-50',
+    trigger: ['min-w-0 w-full text-start disabled:opacity-50', focusStyles.ring],
     preview:
       'flex aspect-video items-center justify-center overflow-hidden rounded-lg border border-border bg-panel-field transition-colors group-hover:border-panel-focus',
     image: 'size-full object-contain transition-transform duration-200 group-hover:scale-[1.015]',

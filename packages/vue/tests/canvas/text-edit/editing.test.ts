@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
 import type { CanvasKit } from '@open-pencil/canvaskit'
-
 import { createEditor, type Editor } from '@open-pencil/core'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'

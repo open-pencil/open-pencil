@@ -1,1 +1,0 @@
-- The Vue SDK's `panels.toggleExportPreview` message is removed in every locale; the export Preview toggle now uses its visible label (#1980).

@@ -101,4 +101,6 @@ export interface RenderOverlays {
   presenceCursors?: PresenceCursor[]
   designIssues?: DesignIssueOverlay | null
   codeFocusNodeId?: string | null
+  /** The Scale tool hides the rotation handle, since it only scales. */
+  scaleTool?: boolean
 }

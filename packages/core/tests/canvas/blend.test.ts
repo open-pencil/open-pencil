@@ -1,12 +1,14 @@
 import { afterAll, describe, expect, test, mock } from 'bun:test'
-import { expectDefined } from '@open-pencil/test-support/assert'
+
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph, type BlendMode, type Fill, type SceneNode } from '@open-pencil/scene-graph'
-import { figmaBlendModeToSkia } from '#core/canvas/blend'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { renderNode, renderSection } from '#core/canvas/scene'
+import { figmaBlendModeToSkia } from '#core/canvas/blend'
 import { RenderedBoundsCache } from '#core/canvas/renderer/visual-bounds'
+import { renderNode, renderSection } from '#core/canvas/scene'
+
 import { asCanvas, asCanvasKit, asRenderer } from './helpers'
 
 const SIZE = 40

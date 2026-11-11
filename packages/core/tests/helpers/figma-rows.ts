@@ -1,11 +1,9 @@
 import { expect } from 'bun:test'
 
 import type { CanvasKit } from '@open-pencil/canvaskit'
-
 import type { SkiaRenderer } from '@open-pencil/core/canvas'
 import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
 import { expectDefined } from '@open-pencil/test-support/assert'
 /** Builds a scene into the frame `hostId`. */
 export type FigmaRowScene = (graph: SceneGraph, hostId: string) => void

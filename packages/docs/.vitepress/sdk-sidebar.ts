@@ -59,7 +59,7 @@ const SDK_COMPOSABLE_PAGES = [
   { text: 'useVariableModes', slug: 'use-variable-modes', canonical: true },
   { text: 'useDocumentWorkspace', slug: 'use-document-workspace', canonical: true },
   { text: 'usePageList', slug: 'use-page-list' },
-  { text: 'useI18n', slug: 'use-i18n' },
+  { text: 'useI18n', slug: 'use-i18n' }
 ] as const
 
 const SDK_ADVANCED_PAGES = [
@@ -85,7 +85,7 @@ const SDK_ADVANCED_PAGES = [
   { text: 'useOkHCL', slug: 'use-okhcl' },
   { text: 'useVariables', slug: 'use-variables' },
   { text: 'Locale APIs', slug: 'locale-apis' },
-  { text: 'useViewportKind', slug: 'use-viewport-kind' },
+  { text: 'useViewportKind', slug: 'use-viewport-kind' }
 ] as const
 
 export const sdkSidebar = (prefix: string): DefaultTheme.SidebarItem[] => [
