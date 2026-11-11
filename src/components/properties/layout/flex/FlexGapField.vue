@@ -7,11 +7,11 @@ import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 import { useLayoutControlsContext } from '@open-pencil/vue/primitives/LayoutControls'
 
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
+import PanelField from '@/components/ui/panel/PanelField.vue'
 import AppSelectContent from '@/components/ui/select/AppSelectContent.vue'
 import AppSelectItem from '@/components/ui/select/AppSelectItem.vue'
 import AppSelectRoot from '@/components/ui/select/AppSelectRoot.vue'
 import SelectFieldTrigger from '@/components/ui/select/SelectFieldTrigger.vue'
-import { panelFieldBase } from '@/theme/panel/field/base'
 
 const { axis = 'primary' } = defineProps<{ axis?: 'primary' | 'counter' }>()
 const ctx = useLayoutControlsContext()
@@ -37,22 +37,20 @@ function setMode(value: string) {
     @update:model-value="setMode"
   >
     <div ref="anchor" class="min-w-0">
-      <div
-        v-if="auto"
-        data-test-id="layout-gap-input"
-        :class="[panelFieldBase, 'flex items-center pe-0.5 text-2xs']"
-      >
-        <span class="flex shrink-0 items-center px-1.25 text-muted">
+      <PanelField v-if="auto" data-test-id="layout-gap-input">
+        <template #leading>
           <icon-lucide-align-horizontal-space-between v-if="horizontal" class="size-3.5" />
           <icon-lucide-align-vertical-space-between v-else class="size-3.5" />
-        </span>
-        <span class="min-w-0 flex-1 truncate text-surface">{{ panels.auto }}</span>
-        <SelectFieldTrigger
-          data-test-id="layout-gap-menu"
-          :label="label"
-          :reference="anchor ?? undefined"
-        />
-      </div>
+        </template>
+        {{ panels.auto }}
+        <template #trailing>
+          <SelectFieldTrigger
+            data-test-id="layout-gap-menu"
+            :label="label"
+            :reference="anchor ?? undefined"
+          />
+        </template>
+      </PanelField>
       <VariableNumberField
         :round="panelNumber"
         v-else

@@ -147,3 +147,30 @@ test('an untouched bound size sends nothing, and the next layer still takes a ty
   expect([await widthOf(ids.frame), await widthOf(ids.bar)]).toEqual([150, 70])
   editor.canvas.assertNoErrors()
 })
+
+test('NumberField keeps the unit after the number and the caret after a press past the text', async () => {
+  const field = propertyField(editor.page, 'opacity').first()
+  const unitGap = () =>
+    field.evaluate((root) => {
+      const text = root.querySelector('input') ?? root.querySelector('[data-slot=number]')
+      const unit = root.querySelector('[data-slot=unit]')
+      if (!text || !unit) throw new Error('Opacity text or unit missing')
+      return unit.getBoundingClientRect().left - text.getBoundingClientRect().right
+    })
+  // At rest and while editing, the unit follows the digits whatever their count.
+  expect(Math.abs(await unitGap())).toBeLessThan(3)
+
+  await field.click()
+  const input = field.getByRole('spinbutton', { name: 'Opacity' })
+  await expect(input).toBeFocused()
+  expect(Math.abs(await unitGap())).toBeLessThan(3)
+
+  // A press on the empty end of the field keeps editing and appends rather than replaces.
+  const box = expectDefined(await field.boundingBox(), 'opacity field bounds')
+  await editor.page.mouse.click(box.x + box.width - 30, box.y + box.height / 2)
+  await expect(input).toBeFocused()
+  await editor.page.keyboard.type('0')
+  await expect(input).toHaveValue('1000')
+  await input.press('Escape')
+  editor.canvas.assertNoErrors()
+})

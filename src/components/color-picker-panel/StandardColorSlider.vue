@@ -72,7 +72,7 @@ const styles = useColorSliderUI(
       :max="numberMax"
       :step="numberStep"
       :suffix="suffix"
-      :ui="{ leading: 'hidden', field: 'pl-1.5', display: 'pl-1.5' }"
+      :ui="{ leading: 'hidden', field: 'ps-1.5', display: 'ps-1.5' }"
       @update:model-value="emit('updateNumber', $event)"
     />
   </div>

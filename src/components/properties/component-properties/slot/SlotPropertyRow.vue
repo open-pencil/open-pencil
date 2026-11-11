@@ -13,8 +13,8 @@ import IconButton from '@/components/ui/button/IconButton.vue'
 import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
+import PanelField from '@/components/ui/panel/PanelField.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
-import { panelFieldBase } from '@/theme/panel/field/base'
 
 import AddInstancesPopover from './AddInstancesPopover.vue'
 import SlotLimitsPopover from './SlotLimitsPopover.vue'
@@ -51,18 +51,17 @@ const item = menuItem({ justify: 'start' })
 <template>
   <PanelFieldGroup :label="name">
     <div class="flex items-center gap-1" :data-property="`slot-${name}`">
-      <div
-        :class="[panelFieldBase, 'flex flex-1 items-center gap-1.5 px-2 text-xs']"
-        :data-modified="modified || undefined"
-      >
-        <icon-lucide-square-dashed class="size-3.5 shrink-0 text-slot" />
+      <PanelField class="flex-1" :data-modified="modified || undefined">
+        <template #leading>
+          <icon-lucide-square-dashed class="size-3.5 text-slot" />
+        </template>
         <span class="truncate" :class="modified ? 'text-surface' : 'text-muted'">
           {{ modified ? panels.slotModified : panels.slotDefault }}
         </span>
-        <span class="ms-auto shrink-0 text-2xs text-muted">
+        <span class="ms-auto shrink-0 text-muted">
           {{ panels.slotItemCount(itemCount) }}
         </span>
-      </div>
+      </PanelField>
       <AddInstancesPopover
         :options="options"
         :preferred-only="preferredOnly"

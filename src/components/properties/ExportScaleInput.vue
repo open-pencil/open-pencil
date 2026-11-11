@@ -9,13 +9,12 @@ import { onDeactivated, ref, watch } from 'vue'
 
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
-import { useInputUI } from '@/components/ui/input/input'
 import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
+import PanelField from '@/components/ui/panel/PanelField.vue'
 import { useSelectFieldTriggerUI } from '@/components/ui/select/field-trigger'
-import { panelFieldBase } from '@/theme/panel/field/base'
 
 interface ExportScaleInputProps {
   presets: readonly number[]
@@ -39,12 +38,9 @@ onDeactivated(() => {
 // Keep the editable text in sync with the committed scale (e.g. 1.5 -> "1.5x").
 watch(modelValue, (value) => (text.value = `${value}x`), { immediate: true })
 
-const inputClass = useInputUI({
-  size: 'xs',
-  ui: {
-    base: 'h-full min-w-0 flex-1 rounded-none border-0 bg-transparent px-1.5 text-2xs focus:border-transparent focus:ring-0'
-  }
-}).base
+// The field draws the frame and focus border; the input only holds the text.
+const inputClass =
+  'min-w-0 flex-1 self-stretch border-0 bg-transparent p-0 text-2xs tabular-nums text-surface outline-none'
 const trigger = useSelectFieldTriggerUI()
 const menuCls = useMenuUI({ content: 'min-w-[7rem]' })
 const itemCls = menuItem({ justify: 'between' })
@@ -69,7 +65,7 @@ function isActive(scale: number) {
 
 <template>
   <Tip :label="label" :disabled="!label">
-    <div :class="[panelFieldBase, 'flex min-w-0 flex-1 items-center overflow-hidden pe-0.5']">
+    <PanelField class="min-w-0 flex-1">
       <input
         ref="inputRef"
         v-model="text"
@@ -86,28 +82,35 @@ function isActive(scale: number) {
         @keydown.enter.prevent="inputRef?.blur()"
         @keydown.escape.prevent="((text = `${modelValue}x`), inputRef?.blur())"
       />
-      <AppDropdownMenuRoot v-model:open="open">
-        <DropdownMenuTrigger as-child>
-          <button type="button" :aria-label="label" :class="trigger.root">
-            <icon-lucide-chevron-down :class="trigger.chevron" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuPortal v-if="portalActive">
-          <DropdownMenuContent side="bottom" align="end" :side-offset="4" :class="menuCls.content">
-            <MenuScrollArea>
-              <DropdownMenuItem
-                v-for="scale in presets"
-                :key="scale"
-                :class="itemCls"
-                @select="pick(scale)"
-              >
-                <span>{{ scale }}x</span>
-                <icon-lucide-check v-if="isActive(scale)" class="size-3 text-primary" />
-              </DropdownMenuItem>
-            </MenuScrollArea>
-          </DropdownMenuContent>
-        </DropdownMenuPortal>
-      </AppDropdownMenuRoot>
-    </div>
+      <template #trailing>
+        <AppDropdownMenuRoot v-model:open="open">
+          <DropdownMenuTrigger as-child>
+            <button type="button" :aria-label="label" :class="trigger.root">
+              <icon-lucide-chevron-down :class="trigger.chevron" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuPortal v-if="portalActive">
+            <DropdownMenuContent
+              side="bottom"
+              align="end"
+              :side-offset="4"
+              :class="menuCls.content"
+            >
+              <MenuScrollArea>
+                <DropdownMenuItem
+                  v-for="scale in presets"
+                  :key="scale"
+                  :class="itemCls"
+                  @select="pick(scale)"
+                >
+                  <span>{{ scale }}x</span>
+                  <icon-lucide-check v-if="isActive(scale)" class="size-3 text-primary" />
+                </DropdownMenuItem>
+              </MenuScrollArea>
+            </DropdownMenuContent>
+          </DropdownMenuPortal>
+        </AppDropdownMenuRoot>
+      </template>
+    </PanelField>
   </Tip>
 </template>

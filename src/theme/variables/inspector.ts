@@ -13,9 +13,8 @@ export default {
     prefix: 'font-mono text-xs text-muted',
     /** A scope's checkbox and name, only as wide as they are, so a click beside them toggles nothing. */
     scope: 'flex w-fit items-center gap-2 text-xs text-surface',
-    /** A mode's value control beside the button that points it at a variable. */
+    /** A mode's value field, which holds the button that points it at a variable. */
     valueRow: 'flex items-center gap-1 [&>*:first-child]:min-w-0 [&>*:first-child]:flex-1',
-    valueControl: 'flex min-h-7 min-w-0 items-center gap-1.5',
     /** One mode in the collection inspector: its name, when it applies, and the CSS it writes. */
     mode: 'flex flex-col gap-1.5 border-b border-border pb-3 last:border-b-0 last:pb-0',
     /** The CSS a mode is written under, wrapped rather than cut so it reads in full. */
