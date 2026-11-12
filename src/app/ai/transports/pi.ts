@@ -10,6 +10,7 @@ import type {
 import { spawnHarnessProcess, type HarnessProcess } from '@/app/ai/agents/pi/process'
 import { compactionOf, type StepCompaction } from '@/app/ai/chat/compaction/marker'
 import { createReplyStream, type ReplyStream } from '@/app/ai/reply/stream'
+import { createSteering, type Steering } from '@/app/ai/transports/steering'
 import { withAbortSignal } from '@/app/runtime/abort'
 
 interface PendingRequest {
@@ -17,6 +18,8 @@ interface PendingRequest {
   resolve: (message: HarnessSidecarMessage) => void
   reject: (error: Error) => void
   stream: ReplyStream
+  /** Gives the turn up for a waiting message; only a turn has it. */
+  steering?: Steering
   /** The reply's steps so far; a compaction starts the next one. */
   steps: number
   /** The reply's compactions so far; its metadata carries the whole list. */
@@ -50,6 +53,7 @@ function finishReply(pending: PendingRequest): void {
 function close(pending: PendingRequest): void {
   const { controller } = pending
   pending.controller = undefined
+  pending.steering?.stop()
   controller?.close()
 }
 
@@ -81,8 +85,10 @@ function mapEvent(event: HarnessTurnEvent, pending: PendingRequest): UIMessageCh
     case 'reasoning-delta':
       return stream.thought(event.text)
     case 'tool-call':
+      pending.steering?.callRunning(event.toolCallId, true)
       return stream.toolInput({ id: event.toolCallId, name: event.toolName }, event.input)
     case 'tool-result':
+      pending.steering?.callRunning(event.toolCallId, false)
       return stream.toolResult(event.toolCallId, event.output)
     case 'error':
       return [{ type: 'error', errorText: event.message }]
@@ -105,7 +111,13 @@ export class HarnessChatTransport implements ChatTransport<UIMessage> {
     private readonly environment: Record<string, string>,
     private readonly spawnProcess: typeof spawnHarnessProcess = spawnHarnessProcess,
     /** Told each turn's tokens, which the Usage settings count with the chat's other models. */
-    private readonly onUsage?: (usage: HarnessTurnUsage) => void
+    private readonly onUsage?: (usage: HarnessTurnUsage) => void,
+    /**
+     * Whether the person has a message waiting to go in mid-turn. Pi cannot take it, so once no
+     * tool call runs its turn is cancelled and the reply ends as a finished one; the chat then
+     * sends the message. Read from reactive state, it also reacts when a message starts waiting.
+     */
+    private readonly yieldWhen: () => boolean = () => false
   ) {}
 
   async sendMessages({
@@ -142,6 +154,7 @@ export class HarnessChatTransport implements ChatTransport<UIMessage> {
         .send({ id: requestID(), method: 'session.cancel', params: { sessionId: this.sessionId } })
         .catch(this.fail)
     }
+    pending.steering = createSteering({ yieldWhen: this.yieldWhen, cancel })
 
     return new ReadableStream<UIMessageChunk>({
       start: (controller) => {
@@ -213,6 +226,7 @@ export class HarnessChatTransport implements ChatTransport<UIMessage> {
   async destroy(): Promise<void> {
     if (this.destroyed) return
     this.destroyed = true
+    for (const pending of this.pending.values()) pending.steering?.stop()
     const process = this.process
     const sessionCreated = this.sessionCreated
     this.process = null
@@ -235,16 +249,17 @@ export class HarnessChatTransport implements ChatTransport<UIMessage> {
 
   /** Asks the companion for the session, once, however many sends wait on the answer. */
   private startSession(): Promise<void> {
-    this.creating ??= this.request({
-      method: 'session.create',
-      params: { sessionId: this.sessionId, configuration: this.configuration }
-    })
-      .then(() => {
+    this.creating ??= (async () => {
+      try {
+        await this.request({
+          method: 'session.create',
+          params: { sessionId: this.sessionId, configuration: this.configuration }
+        })
         this.sessionCreated = true
-      })
-      .finally(() => {
+      } finally {
         this.creating = null
-      })
+      }
+    })()
     return this.creating
   }
 
@@ -297,7 +312,10 @@ export class HarnessChatTransport implements ChatTransport<UIMessage> {
         const message = next.value
         if (message.type === 'turn.event') {
           const pending = this.pending.get(message.id)
-          if (pending) emit(pending, ...mapEvent(message.event, pending))
+          if (pending) {
+            emit(pending, ...mapEvent(message.event, pending))
+            pending.steering?.check()
+          }
           if (pending && message.event.type === 'finish' && message.event.usage) {
             this.onUsage?.(message.event.usage)
           }

@@ -74,7 +74,8 @@ export async function createACPTransport(
     onSession:
       agentSession &&
       ((id) => agentSession.record(id === null ? null : { agent: agentDef.id, id })),
-    onAgentError
+    onAgentError,
+    yieldWhen: hasSteeringMessage
   })
 }
 
@@ -233,7 +234,8 @@ export function createChatSessionManager({
         ? { OPENPENCIL_HARNESS_API_KEY: apiKey }
         : { OPENPENCIL_HARNESS_AGENT_DIR: account?.agentDir ?? '' },
       undefined,
-      (usage) => recordModelStepCompleted({ provider: providerID.value, model, ...usage }, context)
+      (usage) => recordModelStepCompleted({ provider: providerID.value, model, ...usage }, context),
+      hasSteeringMessage
     )
     harnessTransportInstance = transport
     return transport as ChatTransport<UIMessage>

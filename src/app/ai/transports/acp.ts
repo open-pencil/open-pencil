@@ -3,7 +3,6 @@ import type {
   Client,
   Agent,
   SessionNotification,
-  SessionUpdate,
   RequestPermissionRequest,
   RequestPermissionResponse,
   Usage
@@ -16,7 +15,6 @@ import type { ACPAgentDef } from '@open-pencil/core/constants'
 
 import { parseAuthStatusUpdate } from '@/app/ai/agents/acp/auth/status'
 import { setAgentCommands } from '@/app/ai/agents/acp/commands'
-import { createUpdateMapper } from '@/app/ai/agents/acp/events'
 import { requestPermissionFromUser } from '@/app/ai/agents/acp/permission'
 import { spawnACPProcess, type ACPProcess } from '@/app/ai/agents/acp/process'
 import {
@@ -32,7 +30,8 @@ import { resolveSpawnTarget } from '@/app/ai/agents/setup/discovery'
 import { AgentNotInstalledError } from '@/app/ai/agents/setup/readiness'
 import { notifyPermissionWaiting } from '@/app/ai/chat/notifications'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
-import { endRun, forgetAgentChat, startAgentRun } from '@/app/ai/reply/run'
+import { forgetAgentChat } from '@/app/ai/reply/run'
+import { streamAgentTurn } from '@/app/ai/transports/agent-turn'
 import { getAutomationAuthToken } from '@/app/automation/mcp/spawn'
 import { describeDiagnosticError, recordACPTransportFailure } from '@/app/diagnostics'
 import type { EditorStore } from '@/app/editor/active-store'
@@ -53,20 +52,6 @@ const DEFAULT_STARTUP: ACPStartup = {
   authToken: getAutomationAuthToken,
   linkTools: linkOwnTools
 }
-
-/**
- * Updates that belong to a turn the agent took, after which it can continue the session even if
- * the turn is cut off. Claude Code and Codex cannot resume a session that never took a prompt, and
- * both send command, usage, and session info updates before they take one.
- */
-const TURN_UPDATES: ReadonlySet<SessionUpdate['sessionUpdate']> = new Set([
-  'user_message_chunk',
-  'agent_message_chunk',
-  'agent_thought_chunk',
-  'tool_call',
-  'tool_call_update',
-  'plan'
-])
 
 /** How long each startup request may take; resuming starts the agent's CLI, which is slowest. */
 const AGENT_START_TIMEOUT_MS = 60_000
@@ -208,6 +193,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
   private onAgentError: ((error: unknown) => void) | null
   private startup: ACPStartup
   private startTimeoutMs: number
+  private yieldWhen: () => boolean
 
   constructor(options: {
     agentDef: ACPAgentDef
@@ -229,6 +215,11 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     onAgentError?: (error: unknown) => void
     startup?: ACPStartup
     startTimeoutMs?: number
+    /**
+     * Whether a message waits to go in mid-turn. An agent cannot take it, so once no tool call
+     * runs its turn is cancelled and the reply ends as a finished one. Read from reactive state.
+     */
+    yieldWhen?: () => boolean
   }) {
     this.agentDef = options.agentDef
     this.cwd = options.cwd ?? '.'
@@ -239,6 +230,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     this.onAgentError = options.onAgentError ?? null
     this.startup = options.startup ?? DEFAULT_STARTUP
     this.startTimeoutMs = options.startTimeoutMs ?? AGENT_START_TIMEOUT_MS
+    this.yieldWhen = options.yieldWhen ?? (() => false)
   }
 
   async sendMessages({
@@ -272,102 +264,28 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
 
     const carriesContext = !this.sentContext
     const promptText = carriesContext ? `${SYSTEM_PROMPT}\n\n${text}` : text
-    this.sentContext = true
+    // Stopped before the prompt could go out, the instructions went with nothing: the next message
+    // carries them.
+    this.sentContext = !carriesContext || !abortSignal?.aborted
 
-    const { connection, sessionId } = this.session
     const session = this.session
-
-    const mapper = createUpdateMapper(`turn-${Date.now()}`)
-    // The reply's run collects the edits the agent's calls make in the chat's document.
-    const store = this.store
-    const run = store ? startAgentRun(store, session.chat) : null
-    /** The reply's stream while someone reads it; once it ended or its reader left, null. */
-    let reading: ReadableStreamDefaultController<UIMessageChunk> | null = null
-
-    /** Ends the reply, once, and hands back its stream if someone still reads it. */
-    function release() {
-      const controller = reading
-      reading = null
-      if (controller) {
-        if (store && run) endRun(store, run)
-        session.onUpdate = null
-      }
-      return controller
-    }
-
-    function finish(reason: 'stop' | 'other' | 'error', errorText?: string) {
-      const controller = release()
-      if (!controller) return
-      if (errorText) controller.enqueue({ type: 'error', errorText })
-      for (const chunk of mapper.end()) controller.enqueue(chunk)
-      controller.enqueue({ type: 'finish-step' })
-      controller.enqueue({ type: 'finish', finishReason: reason })
-      controller.close()
-    }
-
-    return new ReadableStream<UIMessageChunk>({
-      start: (controller) => {
-        reading = controller
-
-        session.onUpdate = (params) => {
-          const open = reading
-          if (!open) return
-          if (TURN_UPDATES.has(params.update.sessionUpdate)) this.recordSession(sessionId)
-          for (const chunk of mapper.map(params.update)) open.enqueue(chunk)
-        }
-
-        abortSignal?.addEventListener('abort', () => {
-          void connection.cancel({ sessionId })
-          finish('stop')
-        })
-
-        controller.enqueue({ type: 'start' })
-        controller.enqueue({ type: 'start-step' })
-
-        // Stopped while the agent started and reached its tools: the abort event already fired.
-        if (abortSignal?.aborted) {
-          // The instructions went out with nothing, so the next message carries them.
-          if (carriesContext) this.sentContext = false
-          finish('stop')
-          return
-        }
-
-        // The SDK leaves the prompt pending when the agent exits, so the reply races the exit.
-        const exited = connection.closed.then((): never => {
-          throw new Error('Agent process exited unexpectedly.')
-        })
-        Promise.race([
-          connection.prompt({
-            sessionId,
-            prompt: [{ type: 'text', text: promptText }]
-          }),
-          exited
-        ])
-          // The prompt answers once the agent's turn is over, or the agent exits.
-          .then((result) => {
-            this.recordSession(sessionId)
-            if (result.usage) this.onUsage?.(agentTurnUsage(result.usage, session.model))
-            finish(result.stopReason === 'end_turn' ? 'stop' : 'other')
-            return undefined
-          })
-          .catch((e) => {
-            // The chat closed its agent, as it does with a reply still going: nothing failed.
-            if (this.destroying) {
-              finish('stop')
-              return
-            }
-            recordACPTransportFailure({
-              operation: 'message',
-              ...describeDiagnosticError(e)
-            })
-            this.onAgentError?.(e)
-            finish('error', formatConnectionError(e, this.agentDef))
-          })
+    const { sessionId } = session
+    return streamAgentTurn({
+      session,
+      promptText,
+      abortSignal,
+      store: this.store,
+      yieldWhen: this.yieldWhen,
+      onTurn: () => this.recordSession(sessionId),
+      onAnswer: (result) => {
+        if (result.usage) this.onUsage?.(agentTurnUsage(result.usage, session.model))
       },
-      // The reader went away without a Stop, as when the chat cannot process a chunk: the agent
-      // must not keep working on a reply nobody sees.
-      cancel: () => {
-        if (release()) void connection.cancel({ sessionId })
+      onFailure: (e) => {
+        // The chat closed its agent, as it does with a reply still going: nothing failed.
+        if (this.destroying) return null
+        recordACPTransportFailure({ operation: 'message', ...describeDiagnosticError(e) })
+        this.onAgentError?.(e)
+        return formatConnectionError(e, this.agentDef)
       }
     })
   }

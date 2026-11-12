@@ -112,7 +112,7 @@ Hover a reply to see the tokens it used; **Settings → Chat → Token usage** s
 
 ## Messages while the assistant works
 
-You can keep typing while a reply runs. **Enter** sends the message as soon as the current step's tool calls finish, so the built-in AI can change course without being stopped; **Alt+Enter** waits until it has finished all work. Waiting messages show dimmed below the reply, with a button to remove each. **Escape** stops the reply and sends what is waiting at once, and **Up** on the first line takes waiting messages back to edit. ACP agents and Pi take a waiting message once their turn ends.
+You can keep typing while a reply runs. **Enter** sends the message as soon as the current step's tool calls finish, so the AI can change course without being stopped; **Alt+Enter** waits until it has finished all work. A coding agent or Pi cannot take a message mid-turn, so **Enter** ends its current turn once the tool call it is running finishes, and your message goes next, in the same session; the reply is not marked stopped. Waiting messages show dimmed below the reply, with a button to remove each. **Escape** stops the reply and sends what is waiting at once, and **Up** on the first line takes waiting messages back to edit.
 
 ## Stopping a reply
 

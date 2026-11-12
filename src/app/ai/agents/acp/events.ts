@@ -156,7 +156,8 @@ export function isOwnToolCall(update: ToolCallReport): boolean {
   return identify(update).kind === 'own'
 }
 
-function isFinished(update: ToolCallReport): boolean {
+/** Whether a tool call's report says the call is over, completed or failed. */
+export function isFinished(update: ToolCallReport): boolean {
   return update.status === 'completed' || update.status === 'failed'
 }
 
