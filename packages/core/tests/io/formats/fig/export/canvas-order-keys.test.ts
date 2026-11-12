@@ -114,3 +114,14 @@ test('a page added or moved among Figma-numbered pages keeps its place', async (
     'Added'
   ])
 })
+
+test('a cloned page appends after pages with persisted order keys', async () => {
+  await initCodec()
+  const graph = new SceneGraph()
+  const [original] = graph.getPages()
+  graph.addPage('Added')
+  const clone = graph.cloneTree(original.id, graph.rootId, { name: 'Cloned' })
+
+  expect(clone?.name).toBe('Cloned')
+  expect(savedPageOrder(await exportFigFile(graph))).toEqual(['Page 1', 'Added', 'Cloned'])
+})

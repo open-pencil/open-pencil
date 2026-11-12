@@ -100,13 +100,9 @@ export class SceneGraph {
     this.addPage('Page 1')
   }
   addPage(name: string): SceneNode {
-    const pages = this.getPages(true)
-    const lastOrderKey = pages.reduce<string | null>((maximum, page, index) => {
-      const key = page.source.orderKey ?? fractionalPosition(index)
-      return maximum === null || key > maximum ? key : maximum
-    }, null)
     const source = createDefaultSourceMetadata()
-    if (lastOrderKey !== null) source.orderKey = orderKeyBetween(lastOrderKey, null)
+    const orderKey = this.nextPageOrderKey()
+    if (orderKey !== null) source.orderKey = orderKey
     return this.createNode('CANVAS', this.rootId, { name, width: 0, height: 0, source })
   }
 
@@ -115,6 +111,16 @@ export class SceneGraph {
       (n) => n.type === 'CANVAS' && (includeInternal || !n.internalOnly)
     )
   }
+
+  private nextPageOrderKey(): string | null {
+    const pages = this.getPages(true)
+    const lastOrderKey = pages.reduce<string | null>((maximum, page, index) => {
+      const key = page.source.orderKey ?? fractionalPosition(index)
+      return maximum === null || key > maximum ? key : maximum
+    }, null)
+    return lastOrderKey === null ? null : orderKeyBetween(lastOrderKey, null)
+  }
+
   getAllNodes(): Iterable<SceneNode> {
     return this.nodes.values()
   }
@@ -867,7 +873,17 @@ export class SceneGraph {
     if (props.source) props.source = { ...props.source, id: null, orderKey: null }
     // A copy is a new design nobody has reviewed: Figma's duplicate and clone() drop the status.
     props.status = null
-    const clone = this.createNode(src.type, parentId, { ...props, ...overrides })
+    const cloneProps = { ...props, ...overrides }
+    if (src.type === 'CANVAS' && parentId === this.rootId) {
+      const source = cloneProps.source ?? createDefaultSourceMetadata()
+      const orderKey = this.nextPageOrderKey()
+      cloneProps.source = {
+        ...source,
+        id: null,
+        ...(orderKey === null ? {} : { orderKey })
+      }
+    }
+    const clone = this.createNode(src.type, parentId, cloneProps)
     Variables.copyAppliedBoundPaints(src, clone)
     if (src.status) markSourceFieldsEdited(clone, ['status'])
     ids.set(src.id, clone.id)

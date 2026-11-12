@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 
 import { movePageInGraph } from '#core/editor/pages/move'
+import { graphOf } from '#core/figma-api/graph'
 import { defineTool, toolNumber } from '#core/tools/schema'
 
 export const movePage = defineTool({
@@ -22,12 +23,13 @@ export const movePage = defineTool({
     )
   }),
   execute: (figma, { target_page_id, index }) => {
-    const page = figma.graph.getNode(target_page_id)
-    if (page?.type !== 'CANVAS' || page.parentId !== figma.graph.rootId) {
+    const graph = graphOf(figma)
+    const page = graph.getNode(target_page_id)
+    if (page?.type !== 'CANVAS' || page.parentId !== graph.rootId) {
       return { error: `Page "${target_page_id}" not found` }
     }
 
-    const movedIndex = movePageInGraph(figma.graph, target_page_id, index, {
+    const movedIndex = movePageInGraph(graph, target_page_id, index, {
       includeInternal: true
     })
     if (movedIndex === null) return { error: `Page "${target_page_id}" not found` }
