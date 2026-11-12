@@ -117,10 +117,13 @@ export function streamAgentTurn({
       session.onUpdate = ({ update }) => {
         const open = reading
         if (!open) return
-        if (TURN_UPDATES.has(update.sessionUpdate)) onTurn()
+        const inTurn = TURN_UPDATES.has(update.sessionUpdate)
+        if (inTurn) onTurn()
         for (const chunk of mapper.map(update)) open.enqueue(chunk)
         followToolCalls(steering, update)
-        steering.check()
+        // A message waiting from the start lets the agent take a turn first, as the built-in
+        // chat's step runs before it yields. A cancel before the agent took the prompt can miss it.
+        if (inTurn) steering.check()
       }
 
       abortSignal?.addEventListener('abort', stopTurn)

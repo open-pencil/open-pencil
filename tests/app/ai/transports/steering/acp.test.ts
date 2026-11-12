@@ -63,10 +63,16 @@ test("a steering message cancels the agent's turn once its running tool calls fi
   await chat.destroy()
 })
 
-test('a steering message waiting before the agent says anything cancels at its first update', async () => {
+test('a steering message waiting at the start lets the agent take a turn first', async () => {
   const agents = fakeAgents({ turn: 'held' })
   const { transport: chat } = transport(agents, { yieldWhen: () => true })
   const reply = sending(chat, 'first')
+  await agents.promptTaken
+  // The agent has sent only a command update; it took no turn, and a cancel now may miss it.
+  await tick()
+  expect(agents.cancels).toEqual([])
+
+  await agents.say(agentText('On it'))
   await reply.ended
   expect(agents.cancels).toEqual(['session-1'])
   await chat.destroy()
