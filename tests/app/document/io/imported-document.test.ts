@@ -1,4 +1,4 @@
-import { expect, test } from 'bun:test'
+import { expect, spyOn, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core'
 import { SceneGraph } from '@open-pencil/scene-graph'
@@ -47,9 +47,16 @@ test('deferred imported documents replace the graph without staging the first pa
   const liveGraph = new SceneGraph()
   const liveEditor = createEditor({ graph: liveGraph, skipInitialGraphSetup: true })
   const imported = new SceneGraph()
+  const controller = createEditorPreparationController(
+    createInitialAppEditorState(liveGraph.rootId)
+  )
+  const preparation = controller.begin({ kind: 'document-open' })
+  const progress = spyOn(preparation, 'update')
 
-  await applyImportedDocument(liveEditor, imported, undefined, { prepare: false })
+  await applyImportedDocument(liveEditor, imported, preparation, { prepare: false })
 
   expect(liveEditor.graph).toBe(imported)
+  // Staging reports populating the first page; the page the tab shows prepares itself later.
+  expect(progress).not.toHaveBeenCalled()
   liveEditor.dispose()
 })
