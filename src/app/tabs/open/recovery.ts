@@ -1,6 +1,7 @@
+import { readFigDocument } from '@/app/document/io/fig'
 import { getRecoveryStore, type RecoverySnapshotMeta } from '@/app/document/recovery'
 import { recoverySessionId } from '@/app/document/recovery/session'
-import { figFile, readFigForTab } from '@/app/tabs/open/fig'
+import { figFile } from '@/app/tabs/open/fig'
 import {
   failPreparation,
   releaseOpeningTab,
@@ -35,7 +36,7 @@ export async function restoreRecoverySnapshot(id: string): Promise<void> {
     load.update({ phase: 'reading', detail: snapshot.documentName })
     const file = figFile(new Uint8Array(snapshot.figBytes), snapshot.documentName)
     load.update({ phase: 'decoding', detail: snapshot.documentName })
-    const imported = await readFigForTab(file, load.signal)
+    const imported = await readFigDocument(file, load.signal)
 
     await showImportedGraph(
       store,

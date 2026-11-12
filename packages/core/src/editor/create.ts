@@ -101,8 +101,11 @@ export function createEditor(options?: EditorOptions) {
     options?.getViewportSize,
     () => (IS_BROWSER ? { width: window.innerWidth, height: window.innerHeight } : null)
   )
-  const canvas = createCanvasRenderers((renderer, node, maxWidth) =>
-    pendingTextLayout.measure(renderer, node, maxWidth)
+  const canvas = createCanvasRenderers(
+    (renderer, node, maxWidth) => pendingTextLayout.measure(renderer, node, maxWidth),
+    // A page shown before this editor had a canvas to measure its text, as one a tab opens while
+    // its canvas loads, is laid out now that one can.
+    () => pages.layOutStaleCurrentPage()
   )
   const _renderers = canvas.renderers
   const stopFontResolutionEvents = fontResolver.subscribe((event, snapshot) =>
