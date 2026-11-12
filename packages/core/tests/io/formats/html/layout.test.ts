@@ -82,6 +82,25 @@ describe('laying out HTML from its captured layout', () => {
     expect(second).toMatchObject({ y: 40, height: 60 })
   })
 
+  test('lays out again after correcting a fixed size, so its siblings follow and auto layout stays', async () => {
+    // The page sized the first box 30px though its style says 20px, as a min-height would.
+    const column = element(
+      { display: 'block', width: '200px', height: '70px' },
+      { box: rect(0, 0, 200, 70) },
+      [
+        element({ display: 'block', width: '200px', height: '20px' }, { box: rect(0, 0, 200, 30) }),
+        element({ display: 'block', width: '200px', height: '40px' }, { box: rect(0, 30, 200, 40) })
+      ]
+    )
+    const graph = await sceneGraphFromStyledHTML({ type: 'document', children: [column] })
+    const columnLayer = graph.getChildren(graph.getPages()[0].id)[0]
+    const [first, second] = graph.getChildren(columnLayer.id)
+
+    expect(columnLayer.layoutMode).toBe('VERTICAL')
+    expect(first).toMatchObject({ y: 0, height: 30 })
+    expect(second).toMatchObject({ y: 30, height: 40 })
+  })
+
   test('sets the text of an inline element on its line, sized to its words', async () => {
     // A flex item of inline text: its words are on its one fragment.
     const span: DesignElement = {

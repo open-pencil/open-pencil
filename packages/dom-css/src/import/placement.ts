@@ -225,12 +225,16 @@ export function placeLayersFromLayout(graph: SceneGraph, boxes: CapturedBoxes): 
     } else if (changedSize) {
       // Laid out once more at its corrected size, as wrapped text measures its height at a new
       // width; corrected again, its parent imposes the size, and places it below instead.
-      if (resizedBefore.has(node.id)) imposed.add(node.id)
-      else resizedBefore.add(node.id)
-      resized++
+      if (resizedBefore.has(node.id)) {
+        imposed.add(node.id)
+      } else {
+        resizedBefore.add(node.id)
+        resized++
+      }
     }
   }
-  if (changed > 0) return changed
+  // Children are placed only once layout has run at the corrected sizes.
+  if (changed + resized > 0) return changed + resized
   for (const node of layers) {
     const own = boxes.get(node.id)
     if (!own || !hasAutoLayout(node)) continue
@@ -243,5 +247,5 @@ export function placeLayersFromLayout(graph: SceneGraph, boxes: CapturedBoxes): 
       changed++
     }
   }
-  return changed + resized - imposed.size
+  return changed
 }
