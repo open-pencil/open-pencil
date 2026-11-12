@@ -14,8 +14,9 @@ import {
   type Props
 } from '#core-tests/helpers/text/letter-spacing'
 
-import { maxOf } from '@open-pencil/scene-graph/arrays'
+import { appendAll, maxOf } from '@open-pencil/scene-graph/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
+import { repoPath } from '@open-pencil/test-support/paths'
 
 import type { TextLayout } from '#core/canvas/text/layout'
 import {
@@ -29,12 +30,24 @@ import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
 import { fontManager } from '#core/text/font/manager'
 import { utf8Length } from '#core/text/utf8'
 
+const CJK_FAMILY = 'Joiner Test CJK'
+const hostCJKFallbacks = [...fontManager.getCJKFallbackFamilies()]
+
 beforeAll(async () => {
   await loadSpacedTextFonts()
   const emoji = await fontManager.fetchBundledFont('/OpenPencilEmojiMetrics-Regular.ttf')
   await fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', expectDefined(emoji, 'emoji'))
+  const cjk = await Bun.file(repoPath('tests/fixtures/fonts/NotoSansCJK-Test.otf')).arrayBuffer()
+  await fontManager.markLoaded(CJK_FAMILY, 'Regular', cjk)
+  fontManager.getCJKFallbackFamilies().length = 0
+  fontManager.setCJKFallbackFamily(CJK_FAMILY)
 })
-afterAll(releaseSpacedTextFonts)
+afterAll(() => {
+  const fallbacks = fontManager.getCJKFallbackFamilies()
+  fallbacks.length = 0
+  appendAll(fallbacks, hostCJKFallbacks)
+  releaseSpacedTextFonts()
+})
 
 const WIDTH = 133
 const FAR = 1e4
@@ -197,7 +210,7 @@ describe('a truncated hard line ending in a fallback glyph', () => {
   const box = 140
   const centredEnds = [
     ['👍', 118.688],
-    ['本', 115.938],
+    ['本', 118.688],
     ['ok', 120.273],
     ['שלום', 132.648]
   ] as const
