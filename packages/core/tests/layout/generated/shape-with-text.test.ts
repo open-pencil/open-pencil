@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
 import { computeAllLayouts, setTextMeasurer } from '@open-pencil/core/layout'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { createShapeWithText, shapeWithTextLabel } from '@open-pencil/scene-graph/generated'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
@@ -9,7 +10,7 @@ import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 beforeEach(() =>
   setTextMeasurer((node, maxWidth) => {
     const lines = node.text.split('\n')
-    const widest = Math.max(...lines.map((line) => line.length * 12))
+    const widest = maxOf(lines.map((line) => line.length * 12))
     return { width: Math.min(maxWidth ?? widest, widest), height: lines.length * 36 }
   })
 )

@@ -6,6 +6,7 @@ import {
   type ImageScaleMode,
   type SceneNode
 } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { TRANSPARENT } from '@open-pencil/scene-graph/constants'
 import { parseCSSAlignSelf, parseCSSNumber, parseCSSShadows } from '@open-pencil/scene-graph/css'
 import { blurRadiusForSigma } from '@open-pencil/scene-graph/geometry'
@@ -306,20 +307,26 @@ interface Recorded {
 }
 
 /** Remembers where the layer's element was laid out, and how many lines its text took. */
-function record(recorded: Recorded, node: SceneNode, captured: CapturedBox | undefined) {
+function record(
+  graph: SceneGraph,
+  recorded: Recorded,
+  node: SceneNode,
+  captured: CapturedBox | undefined
+) {
   if (!captured) return
   recorded.boxes.set(node.id, captured)
-  applyCapturedLines(node, captured)
+  applyCapturedLines(graph, node, captured)
 }
 
 /** Remembers the element's box, and its transform, for the layer built for it. */
 function recordElement(
+  graph: SceneGraph,
   recorded: Recorded,
   node: SceneNode,
   element: DesignElement,
   style: DesignStyleDeclaration
 ) {
-  record(recorded, node, capturedBox(element))
+  record(graph, recorded, node, capturedBox(element))
   const transform = cssTransform(style)
   if (transform) recorded.transforms.set(node.id, transform)
 }
@@ -341,12 +348,12 @@ function createElementNode(
   ) {
     const text = createTextNode(graph, parentId, textContent(element), style, display, parentFlow)
     linkText(text, element)
-    recordElement(recorded, text, element, style)
+    recordElement(graph, recorded, text, element, style)
     return text
   }
   if (!hasBoxStyle(element, style) && holdsRichText(element)) {
     const text = createRichTextNode(graph, parentId, element, style, display, parentFlow)
-    recordElement(recorded, text, element, style)
+    recordElement(graph, recorded, text, element, style)
     return text
   }
 
@@ -355,7 +362,7 @@ function createElementNode(
     clipsContent: false
   })
   applyElementStyle(graph, node, element, style)
-  recordElement(recorded, node, element, style)
+  recordElement(graph, recorded, node, element, style)
   // A box without content keeps its own size, as an image does, unless it declares a layout.
   const flow = hasContent(element) || flowOf(display) === 'flex' ? flowOf(display) : null
   if (flow) {
@@ -384,7 +391,7 @@ function createChildLayers(
     const textStyle = inheritedTextStyle(element, style)
     const textDisplay = flow === 'inline' ? 'inline' : 'block'
     const text = createRichTextNode(graph, node.id, element, textStyle, textDisplay, flow ?? 'none')
-    record(recorded, text, capturedTextBox(element))
+    record(graph, recorded, text, capturedTextBox(element))
     return
   }
   // Text alone in a box takes the box its lines are in; text among elements has none of its own.
@@ -394,7 +401,7 @@ function createChildLayers(
   for (const child of element.children) {
     const inherited = inheritedTextStyle(element, style)
     const layer = createDesignNode(graph, node.id, child, flow ?? 'none', recorded, inherited)
-    if (layer?.type === 'TEXT') record(recorded, layer, textBox)
+    if (layer?.type === 'TEXT') record(graph, recorded, layer, textBox)
   }
 }
 
@@ -419,8 +426,8 @@ function createDesignNode(
 function fitPageToChildren(page: SceneNode, graph: SceneGraph): void {
   const children = graph.getChildren(page.id)
   if (children.length === 0) return
-  page.width = Math.max(...children.map((child) => child.x + child.width))
-  page.height = Math.max(...children.map((child) => child.y + child.height))
+  page.width = maxOf(children.map((child) => child.x + child.width))
+  page.height = maxOf(children.map((child) => child.y + child.height))
 }
 
 /** Layers built from a styled document, with the boxes its layout was captured at. */
