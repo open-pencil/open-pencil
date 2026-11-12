@@ -1,7 +1,5 @@
 import { test, expect } from '@playwright/test'
 
-import { appendAll } from '@open-pencil/scene-graph/arrays'
-
 import type * as AppFonts from '@/app/editor/fonts'
 
 import type { FontManager } from '#core/text/font/manager'
@@ -163,7 +161,7 @@ test('CJK text waits for fallback fonts and repaints after they load', async ({ 
       }
     } finally {
       cjkFallbackFamilies.length = 0
-      appendAll(cjkFallbackFamilies, originalFamilies)
+      for (const family of originalFamilies) cjkFallbackFamilies.push(family)
       fontManager.ensureFallbackPack = originalEnsureFallbackPack
       renderer.renderFromEditorState = originalRender
     }

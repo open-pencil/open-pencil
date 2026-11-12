@@ -2,8 +2,6 @@ import { Buffer } from 'node:buffer'
 
 import type { Page } from '@playwright/test'
 
-import { appendAll } from '@open-pencil/scene-graph/arrays'
-
 import type { FontManager } from '#core/text/font/manager'
 
 import { expect, test } from '#tests/e2e/fixtures'
@@ -394,7 +392,7 @@ test('substituted fonts still request fallbacks for CJK text', async ({ page }) 
     // Supply the fixture only when the renderer requests a CJK fallback for the substituted text.
     const requestedScripts: string[] = []
     fontManager.ensureFallbackPack = async (scripts = ['cjk', 'arabic']) => {
-      appendAll(requestedScripts, scripts)
+      for (const script of scripts) requestedScripts.push(script)
       await fontManager.markLoaded('Noto Sans CJK SC', 'Regular', cjk, 'fallback')
       fontManager.setCJKFallbackFamily('Noto Sans CJK SC')
       return { cjk: ['Noto Sans CJK SC'] }

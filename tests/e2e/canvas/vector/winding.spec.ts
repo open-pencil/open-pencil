@@ -1,5 +1,3 @@
-import { appendAll } from '@open-pencil/scene-graph/arrays'
-
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 
 const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
@@ -68,7 +66,7 @@ test('even-odd vector geometry preserves holes', async () => {
     const pushFloat = (value: number) => {
       const buffer = new ArrayBuffer(4)
       new DataView(buffer).setFloat32(0, value, true)
-      appendAll(bytes, new Uint8Array(buffer))
+      for (const byte of new Uint8Array(buffer)) bytes.push(byte)
     }
     const moveTo = (x: number, y: number) => {
       bytes.push(1)
