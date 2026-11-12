@@ -6,7 +6,16 @@ import { styleDetachmentChanges } from '@open-pencil/scene-graph/shared-styles'
 import { assertNodeEditable } from '#core/editor/capabilities'
 import type { FigmaNodeProxy } from '#core/figma-api'
 import { graphOf } from '#core/figma-api/graph'
-import { toolNumber, nodeIdInputSchema, defineTool, nodeNotFound } from '#core/tools/schema'
+import {
+  layoutAngle,
+  layoutFontSize,
+  layoutLength,
+  layoutPosition,
+  toolNumber,
+  nodeIdInputSchema,
+  defineTool,
+  nodeNotFound
+} from '#core/tools/schema'
 
 /** The size of a layer and how auto layout or its text sizes it, which a resize may change. */
 function sizing(node: FigmaNodeProxy) {
@@ -41,17 +50,15 @@ export const updateNode = defineTool({
   execution: { kind: 'sync', mutation: 'properties' },
   input: v.strictObject({
     id: nodeIdInputSchema,
-    x: v.optional(toolNumber(v.pipe(v.number(), v.description('X position')))),
-    y: v.optional(toolNumber(v.pipe(v.number(), v.description('Y position')))),
-    width: v.optional(toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Width')))),
-    height: v.optional(toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Height')))),
-    rotation: v.optional(toolNumber(v.pipe(v.number(), v.description('Rotation in degrees')))),
+    x: v.optional(layoutPosition('X position')),
+    y: v.optional(layoutPosition('Y position')),
+    width: v.optional(layoutLength('Width', 1)),
+    height: v.optional(layoutLength('Height', 1)),
+    rotation: v.optional(layoutAngle('Rotation in degrees')),
     opacity: v.optional(
       toolNumber(v.pipe(v.number(), v.minValue(0), v.maxValue(1), v.description('Opacity (0-1)')))
     ),
-    corner_radius: v.optional(
-      toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Corner radius')))
-    ),
+    corner_radius: v.optional(layoutLength('Corner radius')),
     visible: v.optional(v.pipe(v.boolean(), v.description('Visibility'))),
     locked: v.optional(v.pipe(v.boolean(), v.description('Locked'))),
     text: v.optional(v.pipe(v.string(), v.description('Text content (TEXT nodes)'))),
@@ -64,9 +71,7 @@ export const updateNode = defineTool({
         v.description('Auto-layout flow direction for FRAME nodes')
       )
     ),
-    font_size: v.optional(
-      toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Font size')))
-    ),
+    font_size: v.optional(layoutFontSize('Font size')),
     font_weight: v.optional(
       toolNumber(
         v.pipe(v.number(), v.minValue(100), v.maxValue(900), v.description('Font weight (100-900)'))
