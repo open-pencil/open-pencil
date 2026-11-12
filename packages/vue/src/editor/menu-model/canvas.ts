@@ -47,7 +47,6 @@ const CANVAS_MENU_GROUPS = [
     'selection.wrapInAutoLayout',
     'selection.toggleMask',
     'selection.flatten',
-    'selection.outlineText',
     'selection.outlineStroke'
   ],
   [

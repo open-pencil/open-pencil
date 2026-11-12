@@ -2,10 +2,8 @@ import { createEnrollmentService, type EnrollmentService } from '#cloud/admin/en
 import {
   CLOUD_ACCESS_TOKEN_MAX_DAYS,
   CLOUD_ACCESS_TOKEN_NAME_MAX_LENGTH,
-  CLOUD_ACCESS_TOKEN_PREFIX,
-  type CloudAccessToken
+  CLOUD_ACCESS_TOKEN_PREFIX
 } from '#cloud/contract'
-import { accountDeletionOptions } from '#cloud/server/account/deletion'
 import { createTermsService } from '#cloud/server/account/terms'
 import type { CloudServerConfig } from '#cloud/server/config'
 import type { CloudDatabase } from '#cloud/server/db'
@@ -24,60 +22,24 @@ import {
 } from 'better-auth/plugins'
 import type { Kysely } from 'kysely'
 
+import { accessTokenAccount, bearerAccessToken, toAccessToken } from './access-tokens'
 import { accountActivity, createSignInActivity } from './activity'
 import type { CloudAuthAdapter } from './adapter'
 import type { AuthenticationEmailService } from './email'
 import { AUTH_BASE_PATH, CORE_AUTH_PATHS, authRequestPath } from './endpoints'
+import { enrollmentOptions } from './enrollment'
 import { betterAuthLogger } from './logger'
-import { createMFAAssuranceService } from './mfa-assurance'
+import {
+  createMFAAssuranceService,
+  recordResponseAssurance,
+  verifySecondFactor
+} from './mfa-assurance'
+import { passwordOptions } from './passwords'
 import { APPLE_AUDIENCE, socialProviders } from './social-providers'
 
 const BETTER_AUTH_SCHEMA_VERSION = '1.7.7+mfa.1'
 const DAY_SECONDS = 24 * 60 * 60
 const ACCOUNT_SECURITY_FRESH_AGE_SECONDS = 10 * 60
-
-async function recordResponseAssurance(
-  response: Response,
-  method: 'totp' | 'recovery-code' | 'passkey',
-  database: Kysely<CloudDatabase>,
-  assurance: ReturnType<typeof createMFAAssuranceService>
-): Promise<void> {
-  const signedToken = response.headers.get('set-auth-token')
-  const token = signedToken?.split('.', 1)[0]
-  if (!token) return
-  const session = await database
-    .selectFrom('session')
-    .select(['id', 'userId'])
-    .where('token', '=', token)
-    .executeTakeFirst()
-  if (session) await assurance.record({ sessionId: session.id, userId: session.userId, method })
-}
-
-async function verifySecondFactor(
-  auth: { handler(request: Request): Promise<Response> },
-  config: CloudServerConfig,
-  database: Kysely<CloudDatabase>,
-  assurance: ReturnType<typeof createMFAAssuranceService>,
-  headers: Headers,
-  code: string,
-  method: 'totp' | 'recovery-code',
-  /** The two-step plugin's endpoint that checks this kind of code. */
-  endpoint: { path: string }
-): Promise<Response> {
-  const response = await auth.handler(
-    new Request(new URL(authRequestPath(endpoint.path), config.publicURL), {
-      method: 'POST',
-      headers: new Headers({
-        ...Object.fromEntries(headers),
-        'Content-Type': 'application/json'
-      }),
-      body: JSON.stringify({ code, trustDevice: false })
-    })
-  )
-  if (!response.ok) throw APIError.fromStatus(response.status as 401)
-  await recordResponseAssurance(response, method, database, assurance)
-  return response
-}
 
 export type CloudAuthRuntimeOptions = {
   email?: AuthenticationEmailService
@@ -194,87 +156,8 @@ export function createBetterAuthAdapter(
         [CORE_AUTH_PATHS.sendVerificationEmail]: { window: 60, max: 3 }
       }
     },
-    emailAndPassword: config.emailPasswordEnabled
-      ? {
-          enabled: true,
-          disableSignUp: !config.emailPasswordSignUpEnabled,
-          requireEmailVerification: true,
-          minPasswordLength: config.emailPasswordMinimumLength,
-          maxPasswordLength: config.emailPasswordMaximumLength,
-          autoSignIn: false,
-          resetPasswordTokenExpiresIn: config.passwordResetExpiresIn,
-          revokeSessionsOnPasswordReset: true,
-          sendResetPassword: authenticationEmail
-            ? ({ user, url, token }) =>
-                authenticationEmail.sendPasswordReset({
-                  email: user.email,
-                  name: user.name,
-                  url,
-                  token
-                })
-            : undefined,
-          onPasswordReset: authenticationEmail
-            ? ({ user }) =>
-                authenticationEmail.sendPasswordChanged({
-                  email: user.email,
-                  name: user.name,
-                  userId: user.id,
-                  url: config.publicURL
-                })
-            : undefined
-        }
-      : undefined,
-    emailVerification:
-      config.emailPasswordEnabled && authenticationEmail
-        ? {
-            expiresIn: config.emailVerificationExpiresIn,
-            sendOnSignUp: true,
-            // Signing in unverified only says so; people ask for another link with Send again.
-            sendOnSignIn: false,
-            autoSignInAfterVerification: true,
-            // A change of address sends the link to the new address as `user.email`, on the
-            // account it already confirmed; a new account has not confirmed one yet. This runs
-            // inside sign-up's transaction, so it must not query the database itself.
-            sendVerificationEmail: ({ user, url, token }) =>
-              authenticationEmail.sendVerification({
-                email: user.email,
-                name: user.name,
-                url,
-                token,
-                purpose: user.emailVerified ? 'change' : 'account'
-              }),
-            afterEmailVerification: async (user) => {
-              await enrollment.followEmailChange(user.id, user.email)
-              if (config.enrollmentMode === 'approval') {
-                await enrollment.request({ email: user.email, name: user.name })
-              }
-              await enrollment.bindApprovedUser(user.email, user.id)
-            }
-          }
-        : undefined,
-    user: {
-      changeEmail: { enabled: emailChangeAvailable },
-      deleteUser: accountDeletionOptions(database),
-      validateUserInfo: ({ source }) => {
-        if (source.action === 'create-user' && config.enrollmentMode === 'closed') {
-          return { error: 'enrollment_closed', errorDescription: 'Cloud enrollment is closed' }
-        }
-        return undefined
-      }
-    },
-    databaseHooks: {
-      user: {
-        create: {
-          after: async (user) => {
-            if (!user.emailVerified) return
-            if (config.enrollmentMode === 'approval') {
-              await enrollment.request({ email: user.email, name: user.name })
-            }
-            await enrollment.bindApprovedUser(user.email, user.id)
-          }
-        }
-      }
-    },
+    emailAndPassword: passwordOptions(config, authenticationEmail),
+    ...enrollmentOptions(config, database, enrollment, authenticationEmail, emailChangeAvailable),
     plugins: [
       ...(config.captchaProvider && config.captchaSecretKey
         ? [
@@ -383,27 +266,15 @@ export function createBetterAuthAdapter(
     return identity
   }
 
-  /**
-   * The account a personal access token in `Authorization: Bearer` stands for, held to what a
-   * session would be: not banned, approved, and with the current terms accepted.
-   */
+  /** The account a personal access token in `Authorization: Bearer` stands for. */
   async function resolveAccessToken(headers: Headers) {
-    const key = headers.get('authorization')?.match(/^Bearer\s+(\S+)$/i)?.[1]
-    if (!key?.startsWith(CLOUD_ACCESS_TOKEN_PREFIX)) return null
+    const key = bearerAccessToken(headers)
+    if (!key) return null
     const verified = await auth.api.verifyApiKey({ body: { key } })
     if (!verified.valid || !verified.key) return null
-    const user = await database
-      .selectFrom('user')
-      .select(['id', 'email', 'name', 'image', 'role', 'banned', 'banExpires'])
-      .where('id', '=', verified.key.referenceId)
-      .executeTakeFirst()
+    const context = { database, config, enrollment, terms }
+    const user = await accessTokenAccount(context, verified.key.referenceId)
     if (!user) return null
-    const banExpires = user.banExpires ? new Date(user.banExpires).getTime() : null
-    if (user.banned && (banExpires === null || banExpires > Date.now())) return null
-    if (config.enrollmentMode === 'approval' && !(await enrollment.isApproved(user.email))) {
-      return null
-    }
-    if (!(await terms.hasAccepted(user.id))) return null
     return {
       userId: user.id,
       email: user.email,
@@ -412,22 +283,6 @@ export function createBetterAuthAdapter(
       credential: 'token' as const
     }
   }
-
-  const toAccessToken = (key: {
-    id: string
-    name: string | null
-    start: string | null
-    createdAt: Date
-    expiresAt: Date | null
-    lastRequest: Date | null
-  }): CloudAccessToken => ({
-    id: key.id,
-    name: key.name ?? '',
-    start: key.start,
-    createdAt: new Date(key.createdAt).toISOString(),
-    expiresAt: key.expiresAt ? new Date(key.expiresAt).toISOString() : null,
-    lastUsedAt: key.lastRequest ? new Date(key.lastRequest).toISOString() : null
-  })
 
   /**
    * The endpoints that read or change an account, which only an account that may use the server
