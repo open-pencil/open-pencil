@@ -79,8 +79,12 @@ describe('fetchRelease', () => {
   test('rejects a release.json without a commit tag', async () => {
     await writeFile(
       join(dir, 'release.json'),
-      JSON.stringify({ repository: 'open-pencil/example', tag: 'latest', files: {} })
+      JSON.stringify({
+        repository: 'open-pencil/example',
+        tag: 'latest',
+        files: { 'module.js': sha256(bytes('module')) }
+      })
     )
-    await expect(readRelease(dir)).rejects.toThrow(/release\.json/)
+    await expect(readRelease(dir)).rejects.toThrow(/release\.json: [\s\S]*at tag/)
   })
 })
