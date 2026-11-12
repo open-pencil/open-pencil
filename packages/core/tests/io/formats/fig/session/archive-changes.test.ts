@@ -183,3 +183,17 @@ test('a component gap edit saves its instances as layout places them, not as ove
       .toSorted((a, b) => a - b)
   ).toEqual([0, 60])
 })
+
+test('a variable edited and undone is no change to its archive', async () => {
+  const source = new SceneGraph()
+  const collection = source.createCollection('Theme')
+  source.createVariable('Brand', 'COLOR', collection.id, { r: 1, g: 0, b: 0, a: 1 })
+  const { graph } = await reopen(source)
+  const editor = createEditor({ graph })
+  const [variable] = graph.variables.values()
+  editor.updateVariableValue(variable.id, collection.defaultModeId, { r: 0, g: 0, b: 1, a: 1 })
+  expect([...(archiveChanges(graph)?.changedVariables ?? [])]).toEqual([variable.id])
+  editor.undoAction()
+  expect([...(archiveChanges(graph)?.changedVariables ?? [])]).toEqual([])
+  expect(archiveChanges(graph)?.collectionsChanged).toBe(false)
+})
