@@ -18,6 +18,7 @@
         { "name": "agy", "cmd": "agy", "args": ["acp", "--process-per-session"] },
         { "name": "cursor-agent", "cmd": "cursor-agent", "args": ["acp"] },
         { "name": "grok", "cmd": "grok", "args": ["agent", "stdio"] },
+        { "name": "omp", "cmd": "omp", "args": ["acp"] },
         {
           "name": "npm",
           "cmd": "npm",
@@ -55,6 +56,7 @@
         { "name": "cmd-agy", "cmd": "cmd", "args": ["/c", "agy", "acp", "--process-per-session"] },
         { "name": "cmd-cursor-agent", "cmd": "cmd", "args": ["/c", "cursor-agent", "acp"] },
         { "name": "cmd-grok", "cmd": "cmd", "args": ["/c", "grok", "agent", "stdio"] },
+        { "name": "cmd-omp", "cmd": "cmd", "args": ["/c", "omp", "acp"] },
         {
           "name": "cmd-npm",
           "cmd": "cmd",

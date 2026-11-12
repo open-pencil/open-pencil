@@ -7,6 +7,7 @@ export type ACPAgentID =
   | 'antigravity'
   | 'cursor'
   | 'grok-build'
+  | 'omp'
 
 export interface ACPAgentDef {
   id: ACPAgentID
@@ -104,6 +105,16 @@ export const ACP_AGENTS: ACPAgentDef[] = [
     command: 'grok',
     args: ['agent', 'stdio'],
     setupURL: 'https://docs.x.ai/build/overview'
+  },
+  {
+    id: 'omp',
+    name: 'Oh My Pi',
+    command: 'omp',
+    args: ['acp'],
+    setupURL: 'https://omp.sh',
+    installCommand: 'curl -fsSL https://omp.sh/install | sh',
+    windowsInstallCommand: 'irm https://omp.sh/install.ps1 | iex',
+    resumesSessions: true
   }
 ]
 

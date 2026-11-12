@@ -120,6 +120,30 @@ function antigravityCall(id: string, name: string, args: Record<string, unknown>
   }
 }
 
+/**
+ * Oh My Pi mounts MCP tools as devices and calls one by writing its arguments as JSON to
+ * `xd://mcp__<server>_<tool>`, with the model's intent as the title.
+ */
+function ompCall(id: string, device: string, args: unknown): SessionUpdate {
+  return {
+    sessionUpdate: 'tool_call',
+    toolCallId: id,
+    title: 'Calling an MCP tool',
+    kind: 'execute',
+    status: 'pending',
+    rawInput: { path: `xd://${device}`, content: JSON.stringify(args) }
+  }
+}
+
+function ompDone(id: string, text: string, failed = false): SessionUpdate {
+  return {
+    sessionUpdate: 'tool_call_update',
+    toolCallId: id,
+    status: failed ? 'failed' : 'completed',
+    rawOutput: { content: [{ type: 'text', text }], ...(failed ? { isError: true } : {}) }
+  }
+}
+
 function mcpText(value: unknown, isError?: boolean) {
   return {
     content: [{ type: 'text', text: JSON.stringify(value) }],
@@ -321,6 +345,37 @@ describe('an ACP turn in the chat', () => {
     expect(shown(expectDefined(call, 'tool part'))).toMatchObject({
       type: 'tool-create_shape',
       input: { type: 'FRAME', width: 200, height: 100 }
+    })
+  })
+
+  test('Oh My Pi’s calls to OpenPencil’s tools show by name, with their result or error', async () => {
+    const [done, failed] = await transcript([
+      ompCall('omp-1', 'mcp__open_pencil_get_node', { id: '1:2' }),
+      ompDone('omp-1', JSON.stringify({ id: '1:2', name: 'Card' })),
+      ompCall('omp-2', 'mcp__open_pencil_get_node', { id: '9:9' }),
+      ompDone('omp-2', `Error: ${JSON.stringify({ error: 'Node 9:9 not found' })}`, true)
+    ])
+    expect(shown(expectDefined(done, 'tool part'))).toMatchObject({
+      type: 'tool-get_node',
+      input: { id: '1:2' },
+      state: 'done',
+      output: { id: '1:2', name: 'Card' }
+    })
+    expect(shown(expectDefined(failed, 'tool part'))).toMatchObject({
+      type: 'tool-get_node',
+      state: 'error',
+      errorText: 'Node 9:9 not found'
+    })
+  })
+
+  test('Oh My Pi’s calls to another server keep the agent’s title', async () => {
+    const [call] = await transcript([
+      ompCall('omp-1', 'mcp__github_create_issue', { title: 'Bug' }),
+      ompDone('omp-1', 'created')
+    ])
+    expect(shown(expectDefined(call, 'tool part'))).toMatchObject({
+      type: 'tool-Calling an MCP tool',
+      state: 'done'
     })
   })
 

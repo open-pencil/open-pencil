@@ -210,6 +210,19 @@ describe('permission for OpenPencil’s own tools', () => {
     })
   })
 
+  test('Oh My Pi’s calls to OpenPencil’s server are allowed once without asking', () => {
+    const approval = createOwnToolApproval()
+    approval.noteUpdate({
+      sessionUpdate: 'tool_call',
+      toolCallId: 'tc-1',
+      title: 'Getting node 1:2',
+      rawInput: { path: 'xd://mcp__open_pencil_get_node', content: '{"id":"1:2"}' }
+    })
+    expect(approval.answer(makeRequest())).toEqual({
+      outcome: { outcome: 'selected', optionId: 'allow' }
+    })
+  })
+
   test('another server’s calls and the agent’s own tools are left to the person', () => {
     const approval = createOwnToolApproval()
     approval.noteUpdate({

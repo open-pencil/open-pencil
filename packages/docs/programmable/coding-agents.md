@@ -1,6 +1,6 @@
 # Coding agents
 
-The OpenPencil desktop app can use a coding agent you already have — Claude Code, Codex, [Antigravity CLI](#antigravity), Gemini CLI, [Cursor](#cursor), [Grok Build](#grok-build), or [Pi](#pi) — as its design agent. The agent runs on your computer with your own subscription and chooses its own model; OpenPencil starts it when you send a message, through the [Agent Client Protocol](https://agentclientprotocol.com/) or, for Pi, its Harness companion, and gives it the canvas tools through OpenPencil's local [MCP server](./mcp-server).
+The OpenPencil desktop app can use a coding agent you already have — Claude Code, Codex, [Antigravity CLI](#antigravity), Gemini CLI, [Cursor](#cursor), [Grok Build](#grok-build), [Oh My Pi](#omp), or [Pi](#pi) — as its design agent. The agent runs on your computer with your own subscription and chooses its own model; OpenPencil starts it when you send a message, through the [Agent Client Protocol](https://agentclientprotocol.com/) or, for Pi, its Harness companion, and gives it the canvas tools through OpenPencil's local [MCP server](./mcp-server).
 
 Coding agents need the desktop app; the browser cannot start programs on your computer. They take only the **Design agent** role. Visual review, plan reviews, and fast background work need an API model, which guided setup can add for you.
 
@@ -89,6 +89,24 @@ curl -fsSL https://x.ai/cli/install.sh | bash
 ```
 
 On Windows, use the PowerShell command on that page. OpenPencil starts it as `grok agent stdio`. Run `grok login` once to sign in.
+
+## Oh My Pi {#omp}
+
+Oh My Pi speaks ACP itself through `omp acp`, so there is no separate program. Install it from the [Oh My Pi site](https://omp.sh):
+
+```sh
+curl -fsSL https://omp.sh/install | sh
+```
+
+On Windows, run this in PowerShell instead:
+
+```powershell
+irm https://omp.sh/install.ps1 | iex
+```
+
+Sign in with `omp login`, or set the provider keys it reads, and pick a model in `omp`; OpenPencil uses the model Oh My Pi has selected. Oh My Pi does not report the account it uses, so guided setup shows it as installed without a plan or email.
+
+Oh My Pi does not tell OpenPencil which of its tool calls an edit belongs to, so the changes it makes to the canvas show in the chat but are not part of the reply: **Revert changes** and **Restore changes** do not cover them.
 
 ## Pi
 

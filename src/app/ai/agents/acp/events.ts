@@ -27,6 +27,9 @@ interface ToolIdentity {
 const OWN_PREFIX = `mcp__${OPEN_PENCIL_MCP_SERVER}__`
 const GROK_OWN_PREFIX = `${OPEN_PENCIL_MCP_SERVER}__`
 const ANTIGRAVITY_OWN_TITLE = `Run mcp_${OPEN_PENCIL_MCP_SERVER}_`
+/** Oh My Pi names a server `open_pencil` where it is `open-pencil`, which a device name cannot hold. */
+const OMP_OWN_DEVICE = `xd://mcp__${OPEN_PENCIL_MCP_SERVER.replaceAll('-', '_')}_`
+const OMP_ERROR_PREFIX = /^Error: /
 /** The tool OpenPencil's MCP server gives agents that defer tools; see `ACPAgentDef.defersMCPTools`. */
 const CALL_TOOL = 'call_mcp_tool'
 const callToolInputSchema = v.object({
@@ -59,6 +62,8 @@ const cursorMCPInputSchema = v.object({
 })
 const grokMetaSchema = v.object({ 'x.ai/tool': v.object({ name: v.literal('use_tool') }) })
 const grokMCPInputSchema = v.object({ tool_name: v.string(), tool_input: v.optional(v.unknown()) })
+/** Oh My Pi's write to a device, such as `xd://mcp__open_pencil_get_node`, with the arguments as JSON. */
+const ompDeviceInputSchema = v.object({ path: v.string(), content: v.optional(v.string()) })
 /** Grok Build's MCP result: the tool's text, under `OkayOutput` or, for a failure, `Error`. */
 const grokMCPOutputSchema = v.object({
   type: v.literal('MCP'),
@@ -141,12 +146,29 @@ function antigravityIdentity(update: ToolCallReport): ToolIdentity | null {
   return { name, kind: 'own', input }
 }
 
+/**
+ * Oh My Pi mounts MCP tools as devices and calls one by writing its arguments, as JSON, to
+ * `xd://mcp__<server>_<tool>`. The name joins server and tool with single underscores, so only
+ * OpenPencil's server, whose name is known, splits off; another server's calls keep the title.
+ */
+function ompIdentity(update: ToolCallReport): ToolIdentity | null {
+  const input = v.safeParse(ompDeviceInputSchema, update.rawInput)
+  if (!input.success || !input.output.path.startsWith(OMP_OWN_DEVICE)) return null
+  const args = v.safeParse(jsonObjectSchema, input.output.content)
+  return {
+    name: input.output.path.slice(OMP_OWN_DEVICE.length),
+    kind: 'own',
+    input: args.success ? args.output : {}
+  }
+}
+
 function identify(update: ToolCallReport): ToolIdentity {
   return (
     codexIdentity(update) ??
     claudeIdentity(update) ??
     cursorIdentity(update) ??
     grokIdentity(update) ??
+    ompIdentity(update) ??
     antigravityIdentity(update) ?? { name: update.title || 'unknown', kind: 'agent' }
   )
 }
@@ -204,11 +226,14 @@ function ownToolOutput(blocks: unknown[]): unknown {
   return output
 }
 
-/** An OpenPencil tool reports a failure as `{ "error": … }` text. */
+/**
+ * An OpenPencil tool reports a failure as `{ "error": … }` text, which Oh My Pi's device writes
+ * show after "Error: ".
+ */
 function ownToolError(blocks: unknown[]): string | undefined {
   const text = blockText(blocks)
   if (text === undefined) return undefined
-  const parsed = v.safeParse(jsonObjectSchema, text)
+  const parsed = v.safeParse(jsonObjectSchema, text.replace(OMP_ERROR_PREFIX, ''))
   return parsed.success && typeof parsed.output.error === 'string' ? parsed.output.error : text
 }
 

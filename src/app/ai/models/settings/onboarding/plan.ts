@@ -17,6 +17,7 @@ export const ONBOARDING_AGENTS = [
   'acp:gemini-cli',
   'acp:cursor',
   'acp:grok-build',
+  'acp:omp',
   'harness:pi'
 ] as const
 /** Subscriptions OpenPencil's own agent signs in to; the sign-in needs the desktop app. */
