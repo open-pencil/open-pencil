@@ -1,11 +1,13 @@
 import { noop } from 'es-toolkit'
 
 import type { CanvasKit } from '@open-pencil/canvaskit'
-import { createTextActions, type EditorContext, type EditorState } from '@open-pencil/core'
+import { createTextActions, type EditorContext } from '@open-pencil/core'
 import { iconify } from '@open-pencil/core/icons'
 import { TextEditor } from '@open-pencil/core/text'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { UndoManager } from '@open-pencil/scene-graph/undo'
+
+import { createDefaultEditorState } from '#core/editor'
 
 /**
  * Text actions over a bare editor context with one 100 × 20 text layer, "Hello", on the page,
@@ -17,13 +19,7 @@ export function setupTextEdit() {
   const undo = new UndoManager()
   const textEditor = new TextEditor({} as CanvasKit)
 
-  const state = {
-    editingTextId: null,
-    currentPageId: pageId,
-    renderVersion: 0,
-    sceneVersion: 0,
-    canvasVersion: 0
-  } as EditorState
+  const state = createDefaultEditorState(pageId)
 
   const ctx: EditorContext = {
     graph,
