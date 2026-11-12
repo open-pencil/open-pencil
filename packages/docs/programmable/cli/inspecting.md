@@ -147,6 +147,13 @@ List all pages in the document:
 openpencil pages design.fig
 ```
 
+Commands that work on one page — `tree`, `find`, `query`, `analyze overlaps`, `export`, `eval`, `tool call`, and the `diff` commands that compare layers — take it as `--page` with its name or `--page-id` with its ID from `openpencil pages`, but not both. Both mean the same with a file and with the running app:
+
+```sh
+openpencil tree design.fig --page "Components"
+openpencil find design.fig --page-id 0:46566 --type TEXT
+```
+
 ## Variables
 
 List design variables and their collections:

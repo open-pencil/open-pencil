@@ -1,7 +1,16 @@
 import { createEnrollmentService, type EnrollmentService } from '#cloud/admin/enrollment/service'
+import {
+  CLOUD_ACCESS_TOKEN_MAX_DAYS,
+  CLOUD_ACCESS_TOKEN_NAME_MAX_LENGTH,
+  CLOUD_ACCESS_TOKEN_PREFIX,
+  type CloudAccessToken
+} from '#cloud/contract'
+import { accountDeletionOptions } from '#cloud/server/account/deletion'
+import { createTermsService } from '#cloud/server/account/terms'
 import type { CloudServerConfig } from '#cloud/server/config'
 import type { CloudDatabase } from '#cloud/server/db'
 import { createUserPictures, providerPictures } from '#cloud/server/pictures'
+import { apiKey } from '@better-auth/api-key'
 import { passkey } from '@better-auth/passkey'
 import { APIError, betterAuth } from 'better-auth'
 import { getMigrations } from 'better-auth/db/migration'
@@ -19,10 +28,12 @@ import { accountActivity, createSignInActivity } from './activity'
 import type { CloudAuthAdapter } from './adapter'
 import type { AuthenticationEmailService } from './email'
 import { AUTH_BASE_PATH, CORE_AUTH_PATHS, authRequestPath } from './endpoints'
+import { betterAuthLogger } from './logger'
 import { createMFAAssuranceService } from './mfa-assurance'
 import { APPLE_AUDIENCE, socialProviders } from './social-providers'
 
 const BETTER_AUTH_SCHEMA_VERSION = '1.7.7+mfa.1'
+const DAY_SECONDS = 24 * 60 * 60
 const ACCOUNT_SECURITY_FRESH_AGE_SECONDS = 10 * 60
 
 async function recordResponseAssurance(
@@ -86,6 +97,7 @@ export function createBetterAuthAdapter(
 ): CloudAuthAdapter {
   const authenticationEmail = runtime.email
   const assurance = createMFAAssuranceService(database, config)
+  const terms = createTermsService(database, config)
   const activity = createSignInActivity(database, authenticationEmail)
   // A new address is confirmed through a link sent to it, so changing one needs email delivery.
   const emailChangeAvailable = Boolean(config.emailPasswordEnabled && authenticationEmail)
@@ -110,17 +122,35 @@ export function createBetterAuthAdapter(
     validateClient: (clientId) => clientId.startsWith('openpencil-desktop:')
   })
   const administration = admin()
+  // Personal access tokens. Cloud reads them itself (`resolveAccessToken`), for the document API
+  // alone, so they never become sessions; Cloud's own limiters count their requests.
+  const accessTokens = apiKey({
+    defaultPrefix: CLOUD_ACCESS_TOKEN_PREFIX,
+    requireName: true,
+    maximumNameLength: CLOUD_ACCESS_TOKEN_NAME_MAX_LENGTH,
+    startingCharactersConfig: { charactersLength: CLOUD_ACCESS_TOKEN_PREFIX.length + 4 },
+    keyExpiration: { minExpiresIn: 1, maxExpiresIn: CLOUD_ACCESS_TOKEN_MAX_DAYS },
+    rateLimit: { enabled: false },
+    enableSessionForAPIKeys: false
+  })
   const auth = betterAuth({
     appName: 'OpenPencil Cloud',
+    logger: betterAuthLogger,
     baseURL: config.publicURL,
     basePath: AUTH_BASE_PATH,
     // Clients never reach Better Auth's own administration, which `/api/admin` replaces with MFA,
-    // origin, last-administrator, and audit checks, nor the two endpoints Cloud's policy manages
+    // origin, last-administrator, and audit checks, nor the endpoints Cloud's policy manages
     // through its account routes; the server still calls them itself.
     disabledPaths: [
       ...Object.values(administration.endpoints).map((endpoint) => endpoint.path),
+      // Tokens are made, listed, and revoked through `/api/account/tokens`, with a fresh session.
+      ...Object.values(accessTokens.endpoints).map((endpoint) => endpoint.path),
       passkeys.endpoints.deletePasskey.path,
-      twoStep.endpoints.disableTwoFactor.path
+      twoStep.endpoints.disableTwoFactor.path,
+      // Accounts are deleted through `/api/account/delete`, which an account awaiting approval
+      // cannot reach either.
+      CORE_AUTH_PATHS.deleteUser,
+      CORE_AUTH_PATHS.deleteUserCallback
     ],
     secret: config.authSecret,
     database: {
@@ -224,6 +254,7 @@ export function createBetterAuthAdapter(
         : undefined,
     user: {
       changeEmail: { enabled: emailChangeAvailable },
+      deleteUser: accountDeletionOptions(database),
       validateUserInfo: ({ source }) => {
         if (source.action === 'create-user' && config.enrollmentMode === 'closed') {
           return { error: 'enrollment_closed', errorDescription: 'Cloud enrollment is closed' }
@@ -272,7 +303,8 @@ export function createBetterAuthAdapter(
         { twoStep: twoStep.endpoints, passkeys: passkeys.endpoints, devices: devices.endpoints },
         (user) => notifyTwoStep(user, 'passkey-added')
       ),
-      providerPictures(createUserPictures(database, { publicURL: config.publicURL }))
+      providerPictures(createUserPictures(database, { publicURL: config.publicURL })),
+      accessTokens
     ],
     socialProviders: socialProviders(config),
     trustedOrigins: [
@@ -331,8 +363,18 @@ export function createBetterAuthAdapter(
     })
   }
 
-  /** The signed-in person while their account may use the server, which awaiting approval it may not. */
+  /**
+   * The signed-in person while their account may use the server: not while it awaits approval, nor
+   * before it accepted the deployment's current terms when those are required.
+   */
   async function resolveSession(headers: Headers) {
+    const identity = await resolveAccountSession(headers)
+    if (!identity || !(await terms.hasAccepted(identity.userId))) return null
+    return identity
+  }
+
+  /** The signed-in person while their account is approved, before or after accepting the terms. */
+  async function resolveAccountSession(headers: Headers) {
     const identity = await resolveIdentity(headers)
     if (!identity) return null
     if (config.enrollmentMode === 'approval' && !(await enrollment.isApproved(identity.email))) {
@@ -340,6 +382,52 @@ export function createBetterAuthAdapter(
     }
     return identity
   }
+
+  /**
+   * The account a personal access token in `Authorization: Bearer` stands for, held to what a
+   * session would be: not banned, approved, and with the current terms accepted.
+   */
+  async function resolveAccessToken(headers: Headers) {
+    const key = headers.get('authorization')?.match(/^Bearer\s+(\S+)$/i)?.[1]
+    if (!key?.startsWith(CLOUD_ACCESS_TOKEN_PREFIX)) return null
+    const verified = await auth.api.verifyApiKey({ body: { key } })
+    if (!verified.valid || !verified.key) return null
+    const user = await database
+      .selectFrom('user')
+      .select(['id', 'email', 'name', 'image', 'role', 'banned', 'banExpires'])
+      .where('id', '=', verified.key.referenceId)
+      .executeTakeFirst()
+    if (!user) return null
+    const banExpires = user.banExpires ? new Date(user.banExpires).getTime() : null
+    if (user.banned && (banExpires === null || banExpires > Date.now())) return null
+    if (config.enrollmentMode === 'approval' && !(await enrollment.isApproved(user.email))) {
+      return null
+    }
+    if (!(await terms.hasAccepted(user.id))) return null
+    return {
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      deploymentRole: deploymentRole(user),
+      credential: 'token' as const
+    }
+  }
+
+  const toAccessToken = (key: {
+    id: string
+    name: string | null
+    start: string | null
+    createdAt: Date
+    expiresAt: Date | null
+    lastRequest: Date | null
+  }): CloudAccessToken => ({
+    id: key.id,
+    name: key.name ?? '',
+    start: key.start,
+    createdAt: new Date(key.createdAt).toISOString(),
+    expiresAt: key.expiresAt ? new Date(key.expiresAt).toISOString() : null,
+    lastUsedAt: key.lastRequest ? new Date(key.lastRequest).toISOString() : null
+  })
 
   /**
    * The endpoints that read or change an account, which only an account that may use the server
@@ -391,6 +479,29 @@ export function createBetterAuthAdapter(
     },
     resolveIdentity,
     resolveSession,
+    resolveAccountSession,
+    resolveAccessToken,
+    async listAccessTokens(headers) {
+      const session = await currentSession(headers)
+      if (!session) return null
+      const { apiKeys } = await auth.api.listApiKeys({ headers })
+      return apiKeys.map(toAccessToken)
+    },
+    async createAccessToken(headers, input) {
+      // A token outlives the session that makes it, so making one needs a recent sign-in.
+      const session = await freshSession(headers)
+      const created = await auth.api.createApiKey({
+        body: {
+          name: input.name,
+          expiresIn: input.expiresInDays * DAY_SECONDS,
+          userId: session.user.id
+        }
+      })
+      return { token: created.key, accessToken: toAccessToken(created) }
+    },
+    async revokeAccessToken(headers, id) {
+      await auth.api.deleteApiKey({ headers, body: { keyId: id } })
+    },
     async listAuthenticationMethods(headers) {
       const accounts = await auth.api.listUserAccounts({ headers })
       return accounts.map((account) => ({
@@ -427,6 +538,14 @@ export function createBetterAuthAdapter(
         }
       })
       return response.url
+    },
+    async deleteAccount(headers, password) {
+      const { headers: answer } = await auth.api.deleteUser({
+        headers,
+        body: password ? { password } : {},
+        returnHeaders: true
+      })
+      return answer
     },
     async unlinkAuthenticationMethod(headers, methodId) {
       await auth.api.unlinkAccount({ headers, body: { accountId: methodId } })
@@ -576,7 +695,11 @@ export function createBetterAuthAdapter(
     },
     schemaVersion: BETTER_AUTH_SCHEMA_VERSION,
     async migrate() {
-      const migrations = await getMigrations(auth.options)
+      // The access token table is Cloud's migration `009_access_tokens`, built before this runs.
+      const migrations = await getMigrations({
+        ...auth.options,
+        plugins: auth.options.plugins.filter((plugin) => plugin.id !== accessTokens.id)
+      })
       await migrations.runMigrations()
     }
   }

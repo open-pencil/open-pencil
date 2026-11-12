@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
+import { getTool, setupToolTest, type ToolResult } from '#core-tests/helpers/tools'
+
 import type { Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { expectDefined } from '@open-pencil/test-support/assert'
-
-import { getTool, setupToolTest, type ToolResult } from '#core-tests/helpers/tools'
 const NAVY: Color = { r: 2 / 255, g: 26 / 255, b: 59 / 255, a: 1 }
 
 const HIDDEN_STROKE: Stroke = {

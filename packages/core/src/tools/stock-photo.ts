@@ -1,16 +1,16 @@
 import * as v from 'valibot'
 
 import { defineTool } from './schema'
-import { applyPhoto } from './stock-photo/apply'
+import { applyPhotos } from './stock-photo/apply'
 import { getActiveProvider } from './stock-photo/providers'
 import { parsePhotoRequests } from './stock-photo/requests'
 
-export { applyPhoto, type PhotoRequest, type PhotoResult } from './stock-photo/apply'
+export { applyPhotos, type PhotoRequest, type PhotoResult } from './stock-photo/apply'
 export { parsePhotoRequests } from './stock-photo/requests'
 export { setPexelsAPIKey, setUnsplashAccessKey } from './stock-photo/providers'
 
 export const stockPhoto = defineTool({
-  name: 'stock_photo',
+  name: 'search_stock_photos',
 
   description:
     'Search stock photos and apply to leaf image placeholders or closed area geometry. ' +
@@ -37,7 +37,7 @@ export const stockPhoto = defineTool({
     const reqs = parsePhotoRequests(requests)
     if ('error' in reqs) return reqs
 
-    const results = await Promise.all(reqs.map((request) => applyPhoto(figma, provider, request)))
+    const results = await applyPhotos(figma, provider, reqs)
     const ok = results.filter((result) => result.photo).length
 
     return { applied: ok, failed: results.length - ok, provider: provider.name, results }

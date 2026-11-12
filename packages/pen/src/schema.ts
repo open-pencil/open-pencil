@@ -213,8 +213,12 @@ const variableSchema = v.looseObject({
   ])
 })
 
+/** A font file the document bundles, which its text names by `name` as a family. */
+const fontSchema = v.looseObject({ name: strSchema, url: strSchema })
+
 export const penDocumentSchema = v.looseObject({
   version: v.optional(strSchema),
+  fonts: v.optional(v.array(fontSchema)),
   themes: v.optional(v.record(strSchema, v.array(strSchema))),
   imports: v.optional(v.record(strSchema, strSchema)),
   variables: v.optional(v.record(strSchema, variableSchema)),
@@ -222,6 +226,7 @@ export const penDocumentSchema = v.looseObject({
 })
 
 export type PenDocument = v.InferOutput<typeof penDocumentSchema>
+export type PenFont = v.InferOutput<typeof fontSchema>
 export type PenVariable = v.InferOutput<typeof variableSchema>
 export type PenVariableScalar = v.InferOutput<typeof variableScalarSchema>
 export type PenPaint = v.InferOutput<typeof paintSchema>

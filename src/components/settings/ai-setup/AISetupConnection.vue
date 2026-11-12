@@ -26,7 +26,7 @@ import PiSetup from '@/components/settings/agents/PiSetup.vue'
 import ProviderConnectionTestButton from '@/components/settings/provider/ProviderConnectionTestButton.vue'
 import ProviderLogo from '@/components/settings/provider/ProviderLogo.vue'
 import ProviderSettingsKeyField from '@/components/settings/provider/ProviderSettingsKeyField.vue'
-import theme from '@/theme/settings/ai-setup/flow'
+import theme from '@/theme/settings/ai-setup/connection'
 
 import AISetupServer from './AISetupServer.vue'
 import AISetupSignIn from './AISetupSignIn.vue'

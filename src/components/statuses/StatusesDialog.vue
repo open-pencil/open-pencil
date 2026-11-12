@@ -132,9 +132,7 @@ function discard() {
   <AppDialog
     v-model:open="open"
     :heading="messages.statuses"
-    :close-label="common.close"
     size="md"
-    :ui="{ footer: 'justify-end' }"
     data-test-id="statuses-dialog"
     @keydown="onKeydown"
   >
@@ -225,23 +223,24 @@ function discard() {
           <li v-for="(change, index) in impact" :key="index" class="flex items-center gap-1.5">
             <span class="tabular-nums">{{ messages.layerCount(change.count) }}</span>
             <span>{{ change.from }}</span>
-            <icon-lucide-arrow-right class="size-3" aria-hidden="true" />
+            <icon-lucide-arrow-right data-direction="reading" class="size-3" aria-hidden="true" />
             <span>{{ change.to ?? messages.noStatus }}</span>
           </li>
         </ul>
       </AppAlert>
     </div>
 
-    <template #footer>
+    <template #footer-start>
       <AppSelect
         :model-value="preset ?? CUSTOM"
         :options="presetOptions"
         :label="messages.preset"
         size="sm"
         :ui="{ trigger: 'w-40' }"
-        class="mr-auto"
         @update:model-value="choosePreset(String($event))"
       />
+    </template>
+    <template #footer>
       <AppButton variant="ghost" :disabled="!dirty" @click="editor.reset()">
         {{ common.cancel }}
       </AppButton>
@@ -260,7 +259,6 @@ function discard() {
     v-model:open="confirmingDiscard"
     :heading="messages.discardTitle"
     :description="messages.discardDescription"
-    :cancel-label="common.cancel"
     :confirm-label="messages.discard"
     tone="danger"
     @confirm="discard"

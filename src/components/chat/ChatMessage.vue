@@ -179,7 +179,7 @@ function groupKey(group: MessagePartGroup): string {
             <div
               v-else-if="isTextUIPart(group.part) && group.part.text"
               data-test-id="chat-text-bubble"
-              class="group/response relative rounded-xl rounded-tl-md bg-hover px-3 py-2 text-xs leading-relaxed text-surface"
+              class="group/response relative rounded-xl rounded-ss-md bg-hover px-3 py-2 text-xs leading-relaxed text-surface"
             >
               <ChatMarkdown :content="group.part.text" :mode="markdownMode" />
               <!-- With usage shown on hover, the usage and the copy button appear in the last
@@ -242,7 +242,7 @@ function groupKey(group: MessagePartGroup): string {
         <div v-else class="group/request relative">
           <div
             data-test-id="chat-text-bubble"
-            class="rounded-xl rounded-br-md bg-accent px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap text-on-accent"
+            class="rounded-xl rounded-ee-md bg-accent px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap text-on-accent"
           >
             <ChatReferenceText :text="userText" />
           </div>
@@ -250,7 +250,7 @@ function groupKey(group: MessagePartGroup): string {
             v-if="canEdit"
             :label="ai.editMessage"
             size="xs"
-            class="absolute top-1/2 -left-7 -translate-y-1/2 opacity-0 focus-visible:opacity-100 group-hover/request:opacity-100"
+            class="absolute top-1/2 -inset-s-7 -translate-y-1/2 opacity-0 focus-visible:opacity-100 group-hover/request:opacity-100"
             @click="editing = true"
           >
             <icon-lucide-pencil class="size-3" />

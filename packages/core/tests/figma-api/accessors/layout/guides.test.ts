@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createAPI } from '#core-tests/helpers/figma-api'// Measured with the same scripts in Figma's plugin API (Figma desktop 126).
+import { createAPI } from '#core-tests/helpers/figma-api' // Measured with the same scripts in Figma's plugin API (Figma desktop 126).
+
+import { graphOf } from '#core/figma-api/graph'
 
 describe('guides', () => {
   test('read and set a frame’s and a page’s own guides', () => {
@@ -17,7 +19,9 @@ describe('guides', () => {
     ])
     expect(Object.isFrozen(frame.guides)).toBe(true)
     expect(
-      figma.graph.getNode(frame.id)?.guides.map(({ axis, position }) => [axis, position])
+      graphOf(figma)
+        .getNode(frame.id)
+        ?.guides.map(({ axis, position }) => [axis, position])
     ).toEqual([
       ['x', 10],
       ['y', 2.5]
@@ -31,12 +35,12 @@ describe('guides', () => {
     const figma = createAPI()
     const frame = figma.createFrame()
     frame.guides = [{ axis: 'X', offset: 10 }]
-    const [before] = figma.graph.getNode(frame.id)?.guides ?? []
+    const [before] = graphOf(figma).getNode(frame.id)?.guides ?? []
     frame.guides = [
       { axis: 'X', offset: 20 },
       { axis: 'Y', offset: 5 }
     ]
-    const [moved, added] = figma.graph.getNode(frame.id)?.guides ?? []
+    const [moved, added] = graphOf(figma).getNode(frame.id)?.guides ?? []
     expect(moved?.id).toBe(before?.id)
     expect(added?.id).not.toBe(before?.id)
   })

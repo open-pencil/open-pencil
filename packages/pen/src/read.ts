@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import type { FontFamilyStyle } from '@open-pencil/scene-graph/font-style'
 import { internalCanvas } from '@open-pencil/scene-graph/shared-styles'
 
 import { pathNetwork } from './geometry'
@@ -25,6 +26,12 @@ export interface PenReadOptions {
   images?: ReadonlyMap<string, Uint8Array>
   /** Where icon glyphs come from; icons are empty frames without it. */
   icons?: PenIconSource
+  /**
+   * The family and style each bundled font file names itself with, by its `name` in the
+   * document's `fonts`. pen.dev registers a bundled file under that name, such as
+   * `Geist-SemiBold`, and its text uses it as the family; the text takes the file's own names.
+   */
+  fonts?: ReadonlyMap<string, FontFamilyStyle>
   /**
    * The documents the document imports, by alias, as `importedDocument` gives them. Their
    * components and variables are the document's under `<alias>:`. The components it uses go on
@@ -99,6 +106,7 @@ export function buildPenGraph(doc: PenDocument, options: PenReadOptions = {}): S
     ctx: buildVarContext(graph, withImports(doc, imports)),
     images: createImageStore(graph, options.images),
     icons: options.icons,
+    fonts: options.fonts ?? new Map(),
     components: new Map(),
     effective: new Map(),
     instances: new Map(),

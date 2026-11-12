@@ -17,7 +17,11 @@ const fill = (overrides: Partial<Fill> = {}): Fill => ({
   ...overrides
 })
 
-const stroke = (weight: number, align: Stroke['align'] = 'CENTER', overrides: Partial<Stroke> = {}): Stroke => ({
+const stroke = (
+  weight: number,
+  align: Stroke['align'] = 'CENTER',
+  overrides: Partial<Stroke> = {}
+): Stroke => ({
   ...fill({ color: { r: 0, g: 0, b: 0, a: 1 } }),
   weight,
   align,
@@ -57,8 +61,10 @@ function straight(length: number) {
 function setup() {
   const graph = new SceneGraph()
   const page = graph.getPages()[0].id
-  const add = (type: SceneNode['type'], props: Partial<SceneNode>) => graph.createNode(type, page, props)
-  const hits = (node: SceneNode, x: number, y: number, pad = PAD) => hitsShape(graph, node, x, y, pad)
+  const add = (type: SceneNode['type'], props: Partial<SceneNode>) =>
+    graph.createNode(type, page, props)
+  const hits = (node: SceneNode, x: number, y: number, pad = PAD) =>
+    hitsShape(graph, node, x, y, pad)
   return { graph, add, hits }
 }
 
@@ -94,7 +100,12 @@ describe('a stroked shape without a fill', () => {
 
   test('reaches 3.5 px past a thick stroke centred on an open path', () => {
     const { add, hits } = setup()
-    const path = add('VECTOR', { width: 300, height: 0, strokes: [stroke(10)], vectorNetwork: straight(300) })
+    const path = add('VECTOR', {
+      width: 300,
+      height: 0,
+      strokes: [stroke(10)],
+      vectorNetwork: straight(300)
+    })
     expect(hits(path, 150, 8)).toBe(true)
     expect(hits(path, 150, 9)).toBe(false)
   })
@@ -115,7 +126,12 @@ describe('a stroked shape without a fill', () => {
 
   test('scales its reach with the zoom, as the pad is screen pixels', () => {
     const { add, hits } = setup()
-    const path = add('VECTOR', { width: 300, height: 0, strokes: [stroke(1)], vectorNetwork: straight(300) })
+    const path = add('VECTOR', {
+      width: 300,
+      height: 0,
+      strokes: [stroke(1)],
+      vectorNetwork: straight(300)
+    })
     // At 400% the 0.5 unit half stroke is 2 px, so 5 px out hits and 6 px misses.
     expect(hits(path, 150, 5 / 4, PAD / 4)).toBe(true)
     expect(hits(path, 150, 6 / 4, PAD / 4)).toBe(false)
@@ -123,7 +139,13 @@ describe('a stroked shape without a fill', () => {
 
   test('is hit on a rectangle by its inside stroke, not in its middle', () => {
     const { add, hits } = setup()
-    const box = add('RECTANGLE', { x: 0, y: 0, width: 200, height: 150, strokes: [stroke(1, 'INSIDE')] })
+    const box = add('RECTANGLE', {
+      x: 0,
+      y: 0,
+      width: 200,
+      height: 150,
+      strokes: [stroke(1, 'INSIDE')]
+    })
     expect(hits(box, 100, 75)).toBe(false)
     expect(hits(box, 4, 75)).toBe(true)
     expect(hits(box, 5, 75)).toBe(false)
@@ -165,7 +187,13 @@ describe('a filled shape', () => {
     expect(hits(ellipse, -3, 100)).toBe(true)
     expect(hits(ellipse, -4, 100)).toBe(false)
 
-    const rounded = add('RECTANGLE', { x: 300, width: 200, height: 200, cornerRadius: 80, fills: [fill()] })
+    const rounded = add('RECTANGLE', {
+      x: 300,
+      width: 200,
+      height: 200,
+      cornerRadius: 80,
+      fills: [fill()]
+    })
     expect(hits(rounded, 303, 3)).toBe(false)
     expect(hits(rounded, 298, 100)).toBe(true)
   })
@@ -227,7 +255,7 @@ describe('a boolean operation without saved geometry', () => {
     expect(hits(boolean, 98, 100)).toBe(false)
   })
 
-  test("reaches the edges its result draws", () => {
+  test('reaches the edges its result draws', () => {
     const { graph, add, hits } = setup()
     const boolean = add('BOOLEAN_OPERATION', {
       width: 200,
@@ -274,14 +302,25 @@ describe('which paints take clicks', () => {
 
   test('a stroke at 0% opacity is missed on its edge', () => {
     const { add, hits } = setup()
-    const box = add('RECTANGLE', { width: 200, height: 150, strokes: [stroke(1, 'INSIDE', { opacity: 0 })] })
+    const box = add('RECTANGLE', {
+      width: 200,
+      height: 150,
+      strokes: [stroke(1, 'INSIDE', { opacity: 0 })]
+    })
     expect(hits(box, 0, 75)).toBe(false)
   })
 })
 
 test('a rotated line is hit where it draws, not where it would lie unrotated', () => {
   const { graph, add, hits } = setup()
-  const line = add('LINE', { x: 100, y: 100, width: 200, height: 0, rotation: 90, strokes: [stroke(1)] })
+  const line = add('LINE', {
+    x: 100,
+    y: 100,
+    width: 200,
+    height: 0,
+    rotation: 90,
+    strokes: [stroke(1)]
+  })
   const drawn = getAxisAlignedWorldBounds(line, graph)
   // Turned a quarter, the line stands upright: its world box is a vertical sliver.
   expect(drawn.width).toBeLessThan(1)
@@ -448,11 +487,23 @@ describe('outline details', () => {
 
   test('a flat cap ends an open path at its end; a round one paints past it', () => {
     const { add, hits } = setup()
-    const flat = add('VECTOR', { width: 100, height: 0, strokeCap: 'NONE', strokes: [stroke(20)], vectorNetwork: straight(100) })
+    const flat = add('VECTOR', {
+      width: 100,
+      height: 0,
+      strokeCap: 'NONE',
+      strokes: [stroke(20)],
+      vectorNetwork: straight(100)
+    })
     // 8 units past the end, on the path's axis.
     expect(hits(flat, 108, 0)).toBe(false)
     expect(hits(flat, 103, 0)).toBe(true)
-    const round = add('VECTOR', { width: 100, height: 0, strokeCap: 'ROUND', strokes: [stroke(20)], vectorNetwork: straight(100) })
+    const round = add('VECTOR', {
+      width: 100,
+      height: 0,
+      strokeCap: 'ROUND',
+      strokes: [stroke(20)],
+      vectorNetwork: straight(100)
+    })
     expect(hits(round, 108, 0)).toBe(true)
   })
 
@@ -562,7 +613,13 @@ describe('outline details', () => {
 
   test('past a flat end the reach is measured from the painted corner', () => {
     const { add, hits } = setup()
-    const path = add('VECTOR', { width: 100, height: 0, strokeCap: 'NONE', strokes: [stroke(20)], vectorNetwork: straight(100) })
+    const path = add('VECTOR', {
+      width: 100,
+      height: 0,
+      strokeCap: 'NONE',
+      strokes: [stroke(20)],
+      vectorNetwork: straight(100)
+    })
     // 4.24 units from the corner (100, 10): beyond the 3.5 pad.
     expect(hits(path, 103, 13)).toBe(false)
     expect(hits(path, 102, 11)).toBe(true)
@@ -629,7 +686,9 @@ describe('outline details', () => {
     // rim there by about 0.24 units, far more than the 0.014-unit pad.
     const angle = Math.PI / 1024
     const r = radius - pad / 2
-    expect(hits(ellipse, radius + r * Math.cos(angle), radius + r * Math.sin(angle), pad)).toBe(true)
+    expect(hits(ellipse, radius + r * Math.cos(angle), radius + r * Math.sin(angle), pad)).toBe(
+      true
+    )
   })
 })
 

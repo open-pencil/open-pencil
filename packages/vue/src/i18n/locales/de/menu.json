@@ -5,6 +5,7 @@
   "object": "Objekt",
   "arrange": "Anordnen",
   "text": "Text",
+  "help": "Hilfe",
   "new": "Neues Design",
   "newTab": "Neuer Tab",
   "open": "Öffnen…",
@@ -90,5 +91,12 @@
   "showVersionHistory": "Versionsverlauf anzeigen",
   "saveToVersionHistory": "Im Versionsverlauf speichern…",
   "reportProblem": "Problem melden…",
-  "supportOpenPencil": "OpenPencil unterstützen…"
+  "supportOpenPencil": "OpenPencil unterstützen…",
+  "documentation": "OpenPencil-Dokumentation",
+  "keyboardShortcuts": "Tastenkürzel",
+  "whatsNew": "Neuigkeiten",
+  "community": "Community auf Discord",
+  "github": "OpenPencil auf GitHub",
+  "newBoard": "Neues Board",
+  "toggleAIChat": "KI-Chat umschalten"
 }

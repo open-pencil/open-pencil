@@ -7,12 +7,14 @@ import type {
   SaveDocumentVersionInput,
   UpdateDocumentVersionInput
 } from '#cloud/contract'
+import { workspaceRoleCan } from '#cloud/server/auth/access-control'
 import type { CloudDatabase } from '#cloud/server/db'
 import { canEditDocument, resolveDocumentAccess } from '#cloud/server/documents/access'
 import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/documents/errors'
 import { copyRevisionImages, revisionImageDownloads } from '#cloud/server/documents/images'
 import { findDocument, insertDocument, workspaceRole } from '#cloud/server/documents/repository'
 import { documentSummary, getDocumentSummaryRow } from '#cloud/server/documents/summary'
+import { logCloud, loggedError } from '#cloud/server/logging'
 import type { ObjectStore } from '#cloud/server/objects'
 import type { CloudPolicyContext } from '#cloud/server/policy/keys'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
@@ -24,7 +26,6 @@ import { historyStart } from './history'
 const DOWNLOAD_LIFETIME_MS = 5 * 60 * 1000
 const DEFAULT_PAGE_SIZE = 50
 const MAXIMUM_PAGE_SIZE = 100
-const WRITABLE_ROLES = new Set(['admin', 'editor'])
 
 type VersionRow = {
   id: string
@@ -103,7 +104,13 @@ export function createDocumentVersionService(
     if (!document) throw new DocumentNotFoundError()
     return {
       document,
-      start: await historyStart(options.policy, deploymentMode, document.workspaceId, new Date())
+      start: await historyStart(
+        database,
+        options.policy,
+        deploymentMode,
+        document.workspaceId,
+        new Date()
+      )
     }
   }
 
@@ -331,7 +338,9 @@ export function createDocumentVersionService(
       try {
         options.onRestored?.(documentId)
       } catch (error) {
-        console.error('[Cloud] Ending the rooms of a restored document failed:', error)
+        logCloud('error', 'Ending the rooms of a restored document failed', {
+          error: loggedError(error)
+        })
       }
       const document = await findDocument(database, userId, documentId)
       if (!document) throw new DocumentNotFoundError()
@@ -351,7 +360,7 @@ export function createDocumentVersionService(
       const { document, start } = await openHistory(userId, documentId, false)
       const role = await workspaceRole(database, userId, document.workspaceId)
       if (!role) throw new DocumentNotFoundError()
-      if (!WRITABLE_ROLES.has(role)) throw new DocumentForbiddenError()
+      if (!workspaceRoleCan(role, { document: ['create'] })) throw new DocumentForbiddenError()
       const version = await findVersion(documentId, versionId, start)
       const copyId = crypto.randomUUID()
       const revisionId = crypto.randomUUID()

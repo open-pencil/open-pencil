@@ -1,6 +1,5 @@
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 
-import { useAIChat } from '@/app/ai/chat/use'
 import { useEditorStore } from '@/app/editor/active-store'
 import { createKeyboardActions } from '@/app/shell/keyboard/actions'
 import { bindEditorClipboard } from '@/app/shell/keyboard/clipboard'
@@ -15,10 +14,9 @@ import {
 } from '@/app/tabs'
 
 export function useKeyboard() {
-  const { activeTab } = useAIChat()
   const store = useEditorStore()
   const { isMobile } = useViewportKind()
-  const actions = createKeyboardActions({ store, activeTab, isMobile })
+  const actions = createKeyboardActions({ store, isMobile })
 
   bindEditorClipboard(store)
 

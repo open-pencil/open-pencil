@@ -2,9 +2,9 @@ import { describe, expect, test } from 'bun:test'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
-
 import { expectRgbaPixels } from '#core-tests/canvas/helpers'
+
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 
 const MATRIX_PATH = '/tmp/open-pencil-boolean-matrix.png'
 const CELL_W = 180
@@ -45,7 +45,7 @@ describe('boolean visual matrix', () => {
     expect(proc.exitCode).toBe(0)
     expect(existsSync(MATRIX_PATH)).toBe(true)
 
-    const ck = await initCanvasKit()
+    const ck = await getCanvasKit()
     const bytes = await Bun.file(MATRIX_PATH).arrayBuffer()
     const image = ck.MakeImageFromEncoded(bytes)
     expect(image).not.toBeNull()

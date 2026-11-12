@@ -15,10 +15,18 @@ import { limitToSelection } from '@/app/automation/bridge/selection-scope'
 import type { AutomationTarget } from '@/app/automation/bridge/target'
 import { useLibraryService } from '@/app/libraries'
 
-type FigmaFactory = (store: AutomationTarget['store'], pageId?: string) => FigmaAPI
+type FigmaFactory = (
+  store: AutomationTarget['store'],
+  pageId?: string,
+  signal?: AbortSignal
+) => FigmaAPI
 
 export function createAutomationToolHandler(makeFigma: FigmaFactory) {
-  return async function handleTool(target: AutomationTarget, args: unknown): Promise<unknown> {
+  return async function handleTool(
+    target: AutomationTarget,
+    args: unknown,
+    signal?: AbortSignal
+  ): Promise<unknown> {
     const toolName = (args as { name?: string }).name
     const requestedArgs = (args as { args?: Record<string, unknown> }).args ?? {}
     if (!toolName) throw new Error('Missing "name" in args')
@@ -31,7 +39,7 @@ export function createAutomationToolHandler(makeFigma: FigmaFactory) {
     // A call from an MCP session shows as that session's agent, working where the call works.
     const session = readAgentSession((args as { agent?: unknown }).agent)
     const reply = session ? agentStarted(target.store, session, target.pageId) : 0
-    const response = await runTool(target, toolName, toolArgs, session)
+    const response = await runTool(target, toolName, toolArgs, session, signal)
     if (session) {
       agentFinished(target.store, session, {
         reply,
@@ -57,7 +65,8 @@ export function createAutomationToolHandler(makeFigma: FigmaFactory) {
     target: AutomationTarget,
     toolName: string,
     toolArgs: Record<string, unknown>,
-    session: AgentSession | null
+    session: AgentSession | null,
+    signal?: AbortSignal
   ): Promise<{ result: unknown; edited: boolean }> {
     const def = ALL_TOOLS.find((t) => t.name === toolName && isToolExposed(t, 'mcp'))
     if (!def) throw new Error(`Unknown tool: ${toolName}`)
@@ -65,13 +74,14 @@ export function createAutomationToolHandler(makeFigma: FigmaFactory) {
     const libraryService = useLibraryService()
     libraryService.bindEditor(store)
     registerComponentCatalog(store.graph, libraryService)
-    const figma = makeFigma(store, target.pageId)
+    const figma = makeFigma(store, target.pageId, signal)
     const result = await runEditorTool({
       store,
       figma,
       def,
       args: toolArgs,
-      reply: replyOf(target, session)
+      reply: replyOf(target, session),
+      signal
     })
     if (def.mutates) {
       store.requestRender()

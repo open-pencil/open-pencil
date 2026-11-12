@@ -1,6 +1,9 @@
+import { omit } from 'es-toolkit'
+
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
 
-import { agentSessionOpened, endAgentSession } from '@/app/automation/agents'
+import { agentChatStore } from '@/app/ai/reply/run'
+import { agentSessionOpened, endAgentSession, readAgentSession } from '@/app/automation/agents'
 import {
   handleActivateDocument,
   handleGetSettings,
@@ -26,9 +29,14 @@ import {
 import { createAutomationToolHandler } from '@/app/automation/bridge/tool-handlers'
 import type { EditorStore } from '@/app/editor/active-store'
 
-type FigmaFactory = (store: EditorStore, pageId?: string) => FigmaAPI
+type FigmaFactory = (store: EditorStore, pageId?: string, signal?: AbortSignal) => FigmaAPI
 
-type CommandHandler = (target: AutomationTarget, args: unknown) => Promise<unknown>
+/** Runs a command; `signal` aborts once the caller stops waiting, as an MCP timeout does. */
+type CommandHandler = (
+  target: AutomationTarget,
+  args: unknown,
+  signal?: AbortSignal
+) => Promise<unknown>
 
 export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?: AutomationFiles) {
   const handleEval = createAutomationEvalHandler(makeFigma)
@@ -42,10 +50,10 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?:
     export: handleExport,
     export_jsx: handleExportJSX,
     selection: handleSelection,
-    save_file: handleSaveFile,
-    close_file: handleCloseFile,
-    new_document: handleNewDocument,
-    open_file: handleOpenFile,
+    save_document: handleSaveFile,
+    close_document: handleCloseFile,
+    create_document: handleNewDocument,
+    open_document: handleOpenFile,
     activate_document: handleActivateDocument,
     undo: handleUndo,
     redo: handleRedo
@@ -55,14 +63,16 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?:
   async function handleTargetCommand(
     target: AutomationTarget,
     command: string,
-    args: UnknownRecord
+    args: UnknownRecord,
+    signal?: AbortSignal
   ): Promise<unknown> {
     if (!(await target.store.preparePageNodes(target.pageId))) {
       throw new Error(`Page "${target.pageId}" was closed before it finished loading`)
     }
+    signal?.throwIfAborted()
     const handler = commandHandlers[command]
     const result = handler
-      ? await handler(target, args)
+      ? await handler(target, args, signal)
       : await handleRPCFallback(target, command, args)
     return responseWithTarget(result, target)
   }
@@ -70,12 +80,13 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?:
   async function handleRequest(
     store: EditorStore,
     command: string,
-    args: unknown
+    args: unknown,
+    signal?: AbortSignal
   ): Promise<unknown> {
     if (command === 'list_documents') {
       return { ok: true, result: { documents: listAutomationDocuments(store) } }
     }
-    if (command === 'list_recent_files') return handleListRecentFiles()
+    if (command === 'list_recent_documents') return handleListRecentFiles()
     if (command === 'agent_session_opened') {
       agentSessionOpened(args)
       return { ok: true, result: null }
@@ -88,14 +99,28 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?:
     if (command === 'get_settings') return handleGetSettings()
     if (command === 'update_settings') return handleUpdateSettings(args)
 
-    if (command === 'open_file' || command === 'new_document') {
+    if (command === 'open_document' || command === 'create_document') {
       const handler = commandHandlers[command]
       if (handler) return handler(resolveAutomationTarget(store, undefined), args)
     }
 
     const rawArgs = isUnknownRecord(args) ? args : {}
-    const target = resolveAutomationTarget(store, rawArgs)
-    return handleTargetCommand(target, command, stripAutomationTargetArgs(rawArgs))
+    // An ACP chat's agent works on the chat's document unless a call names another; once the
+    // chat is gone, a late call must name one rather than land in whatever tab is in front.
+    const chat = readAgentSession(rawArgs.agent)?.chat
+    const chatStore = agentChatStore(chat)
+    const namesDocument = typeof rawArgs.document_id === 'string' && rawArgs.document_id.length > 0
+    if (chat !== undefined && !chatStore && !namesDocument) {
+      throw new Error(
+        'The chat this agent works for is closed. Pass document_id from list_documents to work on an open document.'
+      )
+    }
+    const target = resolveAutomationTarget(chatStore ?? store, rawArgs)
+    // A graph command such as `tree` reads the page it was asked for from its own arguments.
+    const commandArgs = commandHandlers[command]
+      ? stripAutomationTargetArgs(rawArgs)
+      : omit(rawArgs, ['document_id'])
+    return handleTargetCommand(target, command, commandArgs, signal)
   }
 
   return { handleRequest, handleTargetCommand }

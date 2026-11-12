@@ -27,7 +27,8 @@ const {
   nodeIds,
   bindingPath,
   bindingPaths,
-  units
+  units,
+  round
 } = defineProps<{
   modelValue: number | symbol
   min?: number
@@ -45,6 +46,8 @@ const {
   bindingPaths?: readonly NumberBindingPath[]
   /** Units a typed value may end with; the commit reports the one typed. */
   units?: readonly string[]
+  /** How a bound value is shown and edited from, as the unbound value the caller passes is. */
+  round?: (value: number) => number
 }>()
 
 const emit = defineEmits<{
@@ -89,6 +92,7 @@ defineOptions({ inheritAttrs: false })
       :max="max"
       :step="step"
       :units="units"
+      :round="round"
       :ui="{ root: bindingStyles.root }"
       :data-property="bindingPath"
       :aria-label="accessibleLabel"
@@ -116,22 +120,20 @@ defineOptions({ inheritAttrs: false })
       <template #suffix>
         <!-- A field's own control, such as Hug or a mode menu, sits beside its value; the variable
              button ends every field, so it lines up down the panel. -->
-        <slot name="after-variable" />
-        <span class="flex items-center pr-1">
-          <VariableBindingPicker
-            :trigger-label="panels.applyVariable"
-            :search-placeholder="common.search"
-            :empty-label="panels.noVariablesFound"
-            :detach-label="panels.detachVariable"
-            :create-label="
-              panels.createNumberVariable({
-                value: typeof modelValue === 'number' ? Math.round(modelValue) : 0
-              })
-            "
-            :create-name-placeholder="panels.variableName"
-            :create-submit-label="panels.create"
-          />
-        </span>
+        <slot name="menu" />
+        <VariableBindingPicker
+          :trigger-label="panels.applyVariable"
+          :search-placeholder="common.search"
+          :empty-label="panels.noVariablesFound"
+          :detach-label="panels.detachVariable"
+          :create-label="
+            panels.createNumberVariable({
+              value: typeof modelValue === 'number' ? modelValue : 0
+            })
+          "
+          :create-name-placeholder="panels.variableName"
+          :create-submit-label="panels.create"
+        />
       </template>
     </NumberField>
   </BindableValueRoot>

@@ -1,11 +1,13 @@
 import { expect, test } from 'bun:test'
 import { join } from 'node:path'
 
+import { fakeGoogleFonts, withGoogleFonts } from '#core-tests/helpers/google-fonts'
+
+import type { CanvasKit, TypefaceFontProvider } from '@open-pencil/canvaskit'
+import { FontManager, facesFromStyles } from '@open-pencil/core/text'
 import { FIXTURES } from '@open-pencil/test-support/paths'
-import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
 import { getCanvasKit } from '#core/canvaskit'
-import { FontManager, facesFromStyles } from '@open-pencil/core/text'
 
 /** A font manager that asks no web provider, so a family's faces come from its catalog. */
 function offlineManager() {
@@ -259,7 +261,9 @@ test('leaves installed faces to the page, which draws them by name', async () =>
   expect(registered).toEqual(['Inter Regular'])
 
   // A file that replaces the installed one, as a web font does a fallback, keeps that one off it.
-  const replacement = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
+  const replacement = await Bun.file(
+    join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')
+  ).arrayBuffer()
   await manager.markLoaded('Installed Sans', 'Regular', replacement)
   expect(registered).toEqual(['Inter Regular', 'Installed Sans Regular'])
 })
@@ -311,31 +315,27 @@ test('an installed face of the style comes before a variable file loaded for ano
 
 test('a variable font shared with another weight still fetches the characters it lacks', async () => {
   const manager = new FontManager()
-  manager.setOnlineFontProviders({ google: true })
   const family = 'Fonts Test Shared Coverage'
-  const fontURL = 'https://fonts.gstatic.com/s/test/shared.ttf'
   const variable = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
-  const asked: string[] = []
-  manager.setWebFontFetch(async (url) => {
-    if (url.startsWith('https://fonts.google.com/metadata/fonts'))
-      return Response.json({
-        familyMetadataList: [
-          { family, fonts: { '400': {}, '700': {} }, axes: [{ tag: 'wght', min: 100, max: 900 }] }
-        ]
-      })
-    if (url.startsWith('https://fonts.googleapis.com/css2')) {
-      asked.push(new URL(url).searchParams.get('text') ?? '')
-      return new Response(
-        `@font-face { font-family: '${family}'; font-style: normal; font-weight: 100 900; src: url(${fontURL}) format('truetype'); }`
-      )
+  const google = fakeGoogleFonts([
+    {
+      family,
+      weights: [400, 700],
+      axes: [{ tag: 'wght', min: 100, max: 900 }],
+      files: [
+        { url: 'https://fonts.gstatic.com/s/test/shared.ttf', data: variable, weight: '100 900' }
+      ]
     }
-    if (url === fontURL) return new Response(variable.slice(0))
-    return new Response(null, { status: 404 })
-  })
-
-  await manager.loadFont(family, 'Regular', 'abc')
-  await manager.loadFont(family, 'Bold', 'xyz')
-  expect(asked.at(-1)).toContain('xyz')
+  ])
+  await withGoogleFonts(
+    google,
+    async () => {
+      await manager.loadFont(family, 'Regular', 'abc')
+      await manager.loadFont(family, 'Bold', 'xyz')
+    },
+    manager
+  )
+  expect(google.stylesheets.at(-1)?.searchParams.get('text')).toContain('xyz')
 })
 
 test('keeps the file it has when the same font is read or downloaded again', async () => {

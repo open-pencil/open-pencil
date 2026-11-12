@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { seedSharing } from '#cloud-tests/helpers/sharing'
+import { grantByInvitation, seedSharing } from '#cloud-tests/helpers/sharing'
 import { DocumentForbiddenError } from '#cloud/server'
 
 describe('document sharing facade integration', () => {
@@ -39,9 +39,7 @@ describe('document sharing facade integration', () => {
           }
         ])
         .execute()
-      await context.sharing.putGrant('owner', context.documentId, outsider, {
-        permission: 'view'
-      })
+      await grantByInvitation(context, { userId: outsider, email: 'outside@example.com' })
       expect(
         await context.sharing.userProfile('owner', context.documentId, outsider)
       ).toMatchObject({ id: outsider, email: 'outside@example.com' })

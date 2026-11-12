@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { createEditor, graphFromDocumentChange, isEmptyDocumentChange } from '@open-pencil/core'
 import type { CommentThread } from '@open-pencil/scene-graph'
 import { readComments, writeComments } from '@open-pencil/scene-graph/comments'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { captureDocumentChange } from '#core/editor/history/document-change'
 
@@ -221,6 +221,7 @@ describe('document changes', () => {
     })
     roundTrip(editor, () => {
       const faded = editor.graph.createVariable('Faded', 'FLOAT', collection.id, 0.5)
+      editor.graph.willChangeVariable(brand.id)
       brand.name = 'Primary'
       editor.graph.bindVariable(title.id, 'opacity', faded.id)
     })

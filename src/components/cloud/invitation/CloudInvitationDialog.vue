@@ -81,7 +81,7 @@ const target = computed(() => {
 
 <template>
   <AppDialogRoot v-model:open="open" size="sm">
-    <AppDialogHeader :heading="heading" :description="description" :close-label="common.close" />
+    <AppDialogHeader :heading="heading" :description="description" />
 
     <AppDialogBody v-if="state === 'loading'">
       <p :class="ui.loading()" role="status">

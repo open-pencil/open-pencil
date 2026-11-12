@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { createEditor, figJamColoredLayers } from '@open-pencil/core'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import { createSticky } from '@open-pencil/scene-graph/generated'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 function setup() {
   const editor = createEditor({ loadFont: () => Promise.resolve(null) })
@@ -21,7 +21,10 @@ describe("FigJam's colour menu", () => {
     const text = editor.createShape('TEXT', 700, 0, 100, 20, pageId)
     editor.setFigJamColor([section, rect, text], 'red')
     const get = (id: string) => expectDefined(editor.graph.getNode(id))
-    expect([hex(get(section).fills[0]), hex(get(section).strokes[0])]).toEqual(['#ffe2e0', '#f24822'])
+    expect([hex(get(section).fills[0]), hex(get(section).strokes[0])]).toEqual([
+      '#ffe2e0',
+      '#f24822'
+    ])
     expect([hex(get(rect).fills[0]), hex(get(rect).strokes[0])]).toEqual(['#f24822', '#f24822'])
     expect(hex(get(text).fills[0])).toBe('#f24822')
     editor.undo.undo()
@@ -45,7 +48,7 @@ describe("FigJam's colour menu", () => {
     }
     editor.graph.updateNode(photo, { fills: [image] })
     editor.select([a, b, photo])
-    const group = expectDefined(editor.groupSelected())
+    const group = expectDefined(editor.groupSelected()[0])
     const sticky = createSticky(editor.graph, pageId, {})
     const before = hex(sticky.fills[0])
     editor.setFigJamColor([group, sticky.id], 'blue')
@@ -73,7 +76,7 @@ describe("FigJam's colour menu", () => {
     })
     const other = editor.createShape('RECTANGLE', 200, 0, 100, 100, pageId)
     editor.select([photo, other])
-    const group = expectDefined(editor.groupSelected())
+    const group = expectDefined(editor.groupSelected()[0])
     editor.graph.deleteNode(other)
     const label = editor.undo.undoLabel
     editor.setFigJamColor([group], 'blue')

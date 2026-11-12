@@ -1,5 +1,4 @@
-import type { Font } from 'canvaskit-wasm'
-
+import type { Font } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import type { RotationPreview } from '#core/geometry'

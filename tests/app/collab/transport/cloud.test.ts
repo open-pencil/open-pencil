@@ -11,7 +11,8 @@ import {
 } from '@open-pencil/cloud/contract'
 import { asDouble } from '@open-pencil/test-support/doubles'
 
-import { createCloudRelayJoin } from '@/app/collab/transport/cloud'
+import { createCloudRelayJoin, relayReconnectDelay } from '@/app/collab/transport/cloud'
+
 /** A socket the test opens, feeds, and closes by hand. */
 class FakeSocket extends EventTarget {
   readyState: number = WebSocket.CONNECTING
@@ -525,6 +526,21 @@ describe('Cloud relay transport', () => {
       await transport.leave()
     } finally {
       jest.useRealTimers()
+    }
+  })
+})
+
+describe('relay reconnect delay', () => {
+  test('waits a random half of a doubling step, capped at 30 seconds', () => {
+    for (const [attempt, step] of [
+      [0, 1_000],
+      [3, 8_000],
+      [10, 30_000]
+    ] as const) {
+      const delays = Array.from({ length: 50 }, () => relayReconnectDelay(attempt))
+      expect(Math.min(...delays)).toBeGreaterThanOrEqual(step / 2)
+      expect(Math.max(...delays)).toBeLessThanOrEqual(step)
+      expect(new Set(delays).size).toBeGreaterThan(1)
     }
   })
 })

@@ -26,6 +26,7 @@ import { prepareGraphFonts } from '#core/text/prepare'
 
 import type { DrawIOExportTarget } from './formats/drawio/export'
 import { exportFigFile, parseFigFile } from './formats/fig'
+import { loadPenFonts } from './formats/pen/fonts'
 import type { PPTXExportOptions } from './formats/pptx'
 import { headlessRenderNodes, renderNodesToImage, type RasterExportFormat } from './formats/raster'
 import { extractExportGraph, findPageId } from './subgraph'
@@ -249,10 +250,10 @@ const PEN_ICON_SIZE = 24
 type ReadFile = ReadDocumentInput['readAsset']
 
 /**
- * An image's bytes: a data URL decoded by the platform's own URL handling, a file through the
+ * A file's bytes, such as an image's or a font's: a data URL decoded by the platform's own URL handling, a file through the
  * host; null when either fails.
  */
-async function loadPenImage(url: string, read: ReadFile): Promise<Uint8Array | null> {
+async function loadPenFile(url: string, read: ReadFile): Promise<Uint8Array | null> {
   try {
     // pen.dev writes the path percent-encoded, as `My%20Design-assets/…`; the host keeps the
     // read inside the folder it allows.
@@ -271,7 +272,7 @@ async function loadPenImages(
 ): Promise<Map<string, Uint8Array>> {
   await Promise.all(
     urls.map(async (url) => {
-      const bytes = await loadPenImage(url, read)
+      const bytes = await loadPenFile(url, read)
       if (bytes) images.set(url, bytes)
     })
   )
@@ -387,14 +388,15 @@ export const penFormat: IOFormatAdapter<'pen'> = {
     // Icons the imported components draw too, and their images, which may lie outside the
     // document's folder and so are read as imports are.
     const images = new Map<string, Uint8Array>()
-    const [icons] = await Promise.all([
+    const [icons, fonts] = await Promise.all([
       loadPenIcons(penAssets(withImports(doc, imports)).icons, context?.icons ?? defaultIcons),
+      loadPenFonts(doc.fonts ?? [], (url) => loadPenFile(url, input.readAsset)),
       loadPenImages(ownImages, input.readAsset, images),
       loadPenImages(importedImages, input.readImport, images)
     ])
     // Its text takes fonts from variables and components too, so the fonts it uses are read
     // from a build without layout and prepared before the build that lays it out.
-    const unlaid = buildPenGraph(doc, { images, icons, imports })
+    const unlaid = buildPenGraph(doc, { images, icons, fonts, imports })
     await prepareGraphFonts(
       unlaid,
       unlaid.getPages(true).map((page) => page.id)
@@ -403,6 +405,7 @@ export const penFormat: IOFormatAdapter<'pen'> = {
     const graph = buildPenGraph(doc, {
       images,
       icons,
+      fonts,
       imports,
       // The internal page too, which holds the imported components the document uses.
       layout: (target) =>
@@ -559,12 +562,12 @@ export const pdfFormat: IOFormatAdapter<'pdf'> = {
   mimeTypes: ['application/pdf'],
   support: EXPORT_EVERY_TARGET,
   exportOptions: FIXED_SIZE_EXPORT,
-  async exportContent(request) {
+  async exportContent(request, _options, context?: IOContext) {
     const target = resolveExportNodes(request)
     if (!target) throw new Error('Nothing to export')
-    // Embedded, as Figma embeds every face its PDFs draw.
     const { exportPDFDocument } = await import('./formats/pdf/document')
-    const data = (await exportPDFDocument(request.graph, [target], { embedFonts: true }))?.data
+    const data = (await exportPDFDocument(request.graph, [target], { renderer: context?.renderer }))
+      ?.data
     if (!data) throw new Error('Nothing to export')
     return {
       format: 'pdf',

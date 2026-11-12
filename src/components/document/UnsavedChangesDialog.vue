@@ -36,14 +36,11 @@ function updateOpen(open: boolean) {
       :ui="documentCloseUI"
     />
     <AppDialogFooter :ui="documentCloseUI">
-      <AppButton
-        color="neutral"
-        variant="ghost"
-        class="mr-auto"
-        @click="answerClosePrompt('discard')"
-      >
-        {{ files.discard }}
-      </AppButton>
+      <template #start>
+        <AppButton color="neutral" variant="ghost" @click="answerClosePrompt('discard')">
+          {{ files.discard }}
+        </AppButton>
+      </template>
       <AppButton
         color="neutral"
         variant="outline"

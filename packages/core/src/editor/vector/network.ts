@@ -3,7 +3,7 @@ import type { VectorNetwork } from '@open-pencil/scene-graph'
 import type { EditorContext } from '#core/editor/types'
 import { nearestPointOnNetwork, removeVertex, splitSegmentAt } from '#core/vector'
 
-import { pushNodeEditHistory } from './history'
+import type { VectorEditHistory } from './history'
 import { editsHandlesOnly } from './limits'
 import type { NodeEditState } from './types'
 
@@ -37,7 +37,8 @@ export function getLiveNetwork(es: NodeEditState): VectorNetwork {
 
 export function createVectorEditNetworkActions(
   ctx: EditorContext,
-  getNodeEditState: () => NodeEditState | null
+  getNodeEditState: () => NodeEditState | null,
+  history: VectorEditHistory
 ) {
   const nodeEditHitThreshold = 8
 
@@ -45,7 +46,7 @@ export function createVectorEditNetworkActions(
     const es = getNodeEditState()
     if (!es || a === b || editsHandlesOnly(ctx.state)) return
     if (a < 0 || b < 0 || a >= es.vertices.length || b >= es.vertices.length) return
-    pushNodeEditHistory(es)
+    history.begin(es)
 
     const removeIndex = a
     const keepIndex = b > a ? b - 1 : b
@@ -80,7 +81,7 @@ export function createVectorEditNetworkActions(
     const live = getLiveNetwork(es)
     const nearest = nearestPointOnNetwork(cx, cy, live, nodeEditHitThreshold / ctx.state.zoom)
     if (!nearest) return false
-    pushNodeEditHistory(es)
+    history.begin(es)
     const split = splitSegmentAt(live, nearest.segmentIndex, nearest.t)
     setNodeEditNetwork(es, split.network)
     es.selectedVertexIndices = new Set([split.newVertexIndex])
@@ -97,7 +98,7 @@ export function createVectorEditNetworkActions(
     const live = getLiveNetwork(es)
     const next = removeVertex(live, vertexIndex)
     if (!next) return
-    pushNodeEditHistory(es)
+    history.begin(es)
     setNodeEditNetwork(es, next)
     es.selectedVertexIndices = new Set()
     es.selectedSegmentIndices = new Set()

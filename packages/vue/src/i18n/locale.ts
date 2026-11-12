@@ -1,40 +1,58 @@
 import { localeFrom } from '@nanostores/i18n'
 import { atom, onStart } from 'nanostores'
 
-export const AVAILABLE_LOCALES = ['en', 'de', 'es', 'fr', 'it', 'ja', 'pl', 'ru', 'zh-CN'] as const
-export type Locale = (typeof AVAILABLE_LOCALES)[number]
-export type TranslatedLocale = Exclude<Locale, 'en'>
-
-export const TRANSLATED_LOCALES = [
+export const AVAILABLE_LOCALES = [
+  'en',
+  'ar',
   'de',
   'es',
   'fr',
   'it',
   'ja',
   'pl',
+  'pt-BR',
+  'ru',
+  'zh-CN'
+] as const
+export type Locale = (typeof AVAILABLE_LOCALES)[number]
+export type TranslatedLocale = Exclude<Locale, 'en'>
+
+export const TRANSLATED_LOCALES = [
+  'ar',
+  'de',
+  'es',
+  'fr',
+  'it',
+  'ja',
+  'pl',
+  'pt-BR',
   'ru',
   'zh-CN'
 ] as const satisfies ReadonlyArray<TranslatedLocale>
 
 export const LOCALE_DIR_NAMES = {
+  ar: 'ar',
   de: 'de',
   es: 'es',
   fr: 'fr',
   it: 'it',
   ja: 'ja',
   pl: 'pl',
+  'pt-BR': 'pt-br',
   ru: 'ru',
   'zh-CN': 'zh-cn'
 } as const satisfies Record<TranslatedLocale, string>
 
 export const LOCALE_LABELS: Record<Locale, string> = {
   en: 'English',
+  ar: 'العربية',
   de: 'Deutsch',
   es: 'Español',
   fr: 'Français',
   it: 'Italiano',
   ja: '日本語',
   pl: 'Polski',
+  'pt-BR': 'Português (Brasil)',
   ru: 'Русский',
   'zh-CN': '中文（简体）'
 }

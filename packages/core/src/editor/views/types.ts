@@ -1,23 +1,28 @@
 import type { EditorState, Tool } from '#core/editor/types'
 
 /**
- * How much of a path vector edit mode may change: anything, or only the handles of its points,
- * which keep their places and connections. A host that lets players reshape curves but not
- * redraw them, as a lettering game does, offers handles only.
+ * How much of a path vector edit mode may change, widest first: anything, or only the handles of
+ * its points, which keep their places and connections. A host that lets players reshape curves
+ * but not redraw them, as a lettering game does, offers handles only.
  */
-export type PathEdits = 'all' | 'handles'
+export const PATH_EDIT_LEVELS = ['all', 'handles'] as const
+export type PathEdits = (typeof PATH_EDIT_LEVELS)[number]
 
 /**
- * Whether layers may change: anything, or none of them, so nothing is moved, resized, restyled,
- * renamed, added, or deleted, while vector edit mode still reshapes a path as far as `PathEdits`
- * lets it. A host that hands the player one path to reshape, as a lettering game does, offers
- * none.
+ * Whether layers may change, widest first: anything; only where they are, so layers move within
+ * their parents and nothing is resized, rotated, restyled, renamed, added, or deleted, as a game
+ * whose pieces are dragged into place offers; or none of them, while vector edit mode still
+ * reshapes a path as far as `PathEdits` lets it, as a lettering game that hands the player one
+ * path offers.
  */
-export type LayerEdits = 'all' | 'none'
+export const LAYER_EDIT_LEVELS = ['all', 'move', 'none'] as const
+export type LayerEdits = (typeof LAYER_EDIT_LEVELS)[number]
 
 /**
  * What the host takes away from every view, whatever the canvas shows. A restriction only ever
- * takes away from what the document's kind and the view offer.
+ * takes away from what the document's kind and the view offer. Each edit restriction is a level
+ * from a list ordered widest first: `'all'`, then narrower levels named for what still works,
+ * then `'none'` where a host needs it; the host's level and the view's combine to the narrower.
  */
 export interface EditorRestrictions {
   /**
@@ -75,7 +80,7 @@ export interface EditorProfile {
    * scrubbing, and guide editing. None while the document is read-only.
    */
   layerEdits: LayerEdits
-  /** Which tool each key picks, by key code (`KeyR`, `Shift+KeyS`). */
+  /** Which tool each key picks, by shortcut (`R`, `Shift+S`), as TanStack Hotkeys spells it. */
   toolKeys: Readonly<Partial<Record<string, Tool>>>
   /**
    * The grid moves, resizes, and placements land on while Snap to pixel grid is on, in canvas

@@ -31,6 +31,16 @@ const websocketURLSchema = v.pipe(
 
 const optionalTextSchema = v.optional(v.pipe(v.string(), v.trim(), v.minLength(1)))
 
+/**
+ * A prefix deleted files move under: one lowercase path segment and a slash, which no object key
+ * the server makes starts with (they start with `documents/`).
+ */
+const deletedPrefixSchema = v.pipe(
+  v.string(),
+  v.regex(/^[a-z0-9][a-z0-9-]*\/$/),
+  v.check((prefix) => prefix !== 'documents/', 'deleted_prefix cannot be documents/')
+)
+
 const rawCloudServerConfigSchema = v.object({
   deployment: v.picklist(['official', 'self-hosted']),
   publicURL: httpURLSchema,
@@ -58,6 +68,8 @@ const rawCloudServerConfigSchema = v.object({
     }
   ),
   staticEntitlements: v.optional(staticEntitlementsSchema),
+  /** With database entitlements, what an account without stored ones takes, value by value. */
+  defaultEntitlements: v.optional(staticEntitlementsSchema),
   databaseURL: v.pipe(v.string(), v.url()),
   authSecret: v.pipe(v.string(), v.minLength(32)),
   trustedOrigins: v.optional(v.array(httpURLSchema), []),
@@ -111,6 +123,8 @@ const rawCloudServerConfigSchema = v.object({
   s3ChecksumVerification: v.optional(v.picklist(['native', 'metadata']), 'native'),
   s3ServerSideEncryption: v.optional(v.picklist(['AES256', 'aws:kms'])),
   s3KmsKeyId: optionalTextSchema,
+  /** Where a deleted file is kept until the bucket's lifecycle rule expires it; see `deleted_prefix`. */
+  s3DeletedPrefix: v.optional(deletedPrefixSchema),
   smtpHost: optionalTextSchema,
   smtpPort: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(65_535))),
   smtpSecure: v.optional(v.boolean()),
@@ -136,6 +150,14 @@ const rawCloudServerConfigSchema = v.object({
     v.pipe(v.number(), v.integer(), v.minValue(0)),
     30 * 24 * 60 * 60_000
   ),
+  /**
+   * How long a document deleted forever keeps its files and rows, out of everyone's sight, so a
+   * server administrator can still bring it back; 0 destroys it at once.
+   */
+  documentPurgeGraceMs: v.optional(
+    v.pipe(v.number(), v.integer(), v.minValue(0)),
+    7 * 24 * 60 * 60_000
+  ),
   /** The OpenPencil services editors reach with tokens this server signs; see `src/contract/services.ts`. */
   servicesEndpoint: v.optional(httpURLSchema),
   /** The PKCS #8 PEM of the P-256 key that signs service tokens. */
@@ -144,9 +166,25 @@ const rawCloudServerConfigSchema = v.object({
     v.pipe(v.number(), v.integer(), v.minValue(60), v.maxValue(60 * 60)),
     10 * 60
   ),
-  billingPortalURL: v.optional(httpURLSchema),
+  /** The billing service accounts buy plans and credits from, which discovery advertises. */
+  billingEndpoint: v.optional(httpURLSchema),
   /** The bearer token services such as billing present to the internal API. */
   internalServiceToken: v.optional(v.pipe(v.string(), v.minLength(32))),
+  /**
+   * The operator's own terms, privacy policy, abuse contact, and minimum age; without it the
+   * server shows none. With `requireAcceptance`, an account uses the server only once it accepted
+   * `termsVersion`.
+   */
+  legal: v.optional(
+    v.object({
+      termsURL: v.optional(httpURLSchema),
+      privacyURL: v.optional(httpURLSchema),
+      termsVersion: optionalTextSchema,
+      requireAcceptance: v.boolean(),
+      abuseEmail: v.optional(v.pipe(v.string(), v.email())),
+      minimumAge: v.optional(v.pipe(v.number(), v.integer(), v.minValue(13), v.maxValue(21)))
+    })
+  ),
   /** Where server errors are reported; without it the server reports nothing. */
   errorTracking: v.optional(
     v.object({
@@ -188,6 +226,9 @@ function validateAuthenticationConfig(config: CloudServerConfig): void {
   }
   if (config.deploymentAdminMFARequired && !config.totpEnabled && !config.passkeysEnabled) {
     throw new CloudConfigError('Deployment administrator MFA requires TOTP or passkeys')
+  }
+  if (config.deployment === 'official' && !config.deploymentAdminMFARequired) {
+    throw new CloudConfigError('An official deployment requires MFA for deployment administrators')
   }
   if (config.recoveryCodesEnabled && !config.totpEnabled) {
     throw new CloudConfigError('MFA recovery codes require TOTP')
@@ -231,17 +272,34 @@ function validateEmailConfig(config: CloudServerConfig): void {
 
 function validateServiceConfig(config: CloudServerConfig): void {
   requireTogether(config, 'Services', ['servicesEndpoint', 'servicesSigningKey'])
+  // Billing tokens are signed with the services' key, and billing sets plans through the
+  // internal API, which static entitlements would hide.
+  if (config.billingEndpoint && !config.servicesSigningKey) {
+    throw new CloudConfigError('Billing needs the services signing key to sign its tokens')
+  }
+  if (config.billingEndpoint && !config.internalServiceToken) {
+    throw new CloudConfigError('Billing needs the internal API to set the plans it sells')
+  }
   if (config.internalServiceToken && config.staticEntitlements) {
     throw new CloudConfigError(
       'The internal API writes database entitlements, which static entitlements would hide'
     )
   }
-  if (
-    config.deployment === 'official' &&
-    config.servicesEndpoint &&
-    new URL(config.servicesEndpoint).protocol !== 'https:'
-  ) {
-    throw new CloudConfigError('Official services endpoint must use HTTPS')
+  // Editors send these endpoints a bearer token, which must not cross the network in the clear.
+  for (const [name, endpoint] of [
+    ['services', config.servicesEndpoint],
+    ['billing', config.billingEndpoint]
+  ] as const) {
+    if (config.deployment === 'official' && endpoint && new URL(endpoint).protocol !== 'https:') {
+      throw new CloudConfigError(`Official ${name} endpoint must use HTTPS`)
+    }
+  }
+}
+
+function validateLegalConfig(config: CloudServerConfig): void {
+  const legal = config.legal
+  if (legal?.requireAcceptance && !(legal.termsURL && legal.termsVersion)) {
+    throw new CloudConfigError('[legal] require_acceptance needs terms_url and terms_version')
   }
 }
 
@@ -268,11 +326,12 @@ export function parseCloudServerConfig(input: unknown): CloudServerConfig {
   validateEmailConfig(config)
   validateServiceConfig(config)
   validateObjectStorageConfig(config)
+  validateLegalConfig(config)
   return config
 }
 
-/** PostHog's US Cloud ingestion host. */
-const POSTHOG_DEFAULT_HOST = 'https://us.i.posthog.com'
+/** PostHog's EU Cloud ingestion host, where OpenPencil's own project is. */
+const POSTHOG_DEFAULT_HOST = 'https://eu.i.posthog.com'
 
 const DEFAULT_SECRET_NAMES = {
   databaseURL: 'DATABASE_URL',
@@ -457,6 +516,11 @@ export const cloudDeploymentConfigSchema = v.strictObject({
     checksum_verification: v.optional(v.picklist(['native', 'metadata']), 'native'),
     server_side_encryption: v.optional(v.picklist(['AES256', 'aws:kms'])),
     kms_key_id: v.optional(textSchema),
+    /**
+     * Keeps each file cleanup deletes under this prefix, such as `deleted/`, so a database restored
+     * to an earlier time still finds it; a lifecycle rule on the prefix expires them.
+     */
+    deleted_prefix: v.optional(deletedPrefixSchema),
     maximum_upload_bytes: v.optional(positiveIntegerSchema)
   }),
   collaboration: v.optional(
@@ -469,9 +533,10 @@ export const cloudDeploymentConfigSchema = v.strictObject({
   ),
   documents: v.optional(
     v.strictObject({
-      retention_days: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0)), 30)
+      retention_days: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0)), 30),
+      purge_grace_days: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0)), 7)
     }),
-    { retention_days: 30 }
+    { retention_days: 30, purge_grace_days: 7 }
   ),
   email: emailSchema,
   workers: v.optional(
@@ -499,7 +564,8 @@ export const cloudDeploymentConfigSchema = v.strictObject({
   entitlements: v.optional(
     v.variant('source', [
       v.strictObject({ source: v.literal('static'), ...staticEntitlementsTOMLSchema.entries }),
-      v.strictObject({ source: v.literal('database') })
+      // The values every account takes until billing or an operator stores its own: the free plan.
+      v.strictObject({ source: v.literal('database'), ...staticEntitlementsTOMLSchema.entries })
     ])
   ),
   services: v.optional(
@@ -512,9 +578,23 @@ export const cloudDeploymentConfigSchema = v.strictObject({
       )
     })
   ),
-  billing: v.optional(v.strictObject({ portal_url: urlSchema })),
+  billing: v.optional(v.strictObject({ endpoint: urlSchema })),
   internal_api: v.optional(
     v.strictObject({ service_token: defaultReference(DEFAULT_SECRET_NAMES.internalServiceToken) })
+  ),
+  /**
+   * Optional: the operator's terms and privacy policy, linked at sign-up and in the portal, and
+   * with `require_acceptance`, accepted once per `terms_version` before an account uses the server.
+   */
+  legal: v.optional(
+    v.strictObject({
+      terms_url: v.optional(urlSchema),
+      privacy_url: v.optional(urlSchema),
+      terms_version: v.optional(textSchema),
+      require_acceptance: v.optional(v.boolean(), false),
+      abuse_email: v.optional(v.pipe(v.string(), v.email())),
+      minimum_age: v.optional(v.pipe(v.number(), v.integer(), v.minValue(13), v.maxValue(21)))
+    })
   ),
   /** Optional: reports server errors to PostHog error tracking. Leave it out to send nothing. */
   error_tracking: v.optional(

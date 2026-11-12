@@ -102,6 +102,31 @@ describe('Cloud AI client', () => {
     expect(calls).toBe(2)
   })
 
+  test('searches with a JSON body and reads the results', async () => {
+    const requests: Request[] = []
+    const results = [
+      {
+        url: 'https://example.com/grids',
+        title: 'Grids',
+        publishedAt: null,
+        author: null,
+        text: 'Columns and gutters.'
+      }
+    ]
+    const client = createCloudServicesClient({
+      endpoint: 'https://services.example.com',
+      tokens: tokens('token').source,
+      fetch: async (input, init) => {
+        requests.push(new Request(input, init))
+        return Response.json({ results })
+      }
+    })
+    expect(await client.search({ query: 'grids', numResults: 3 })).toEqual({ results })
+    expect(requests[0]?.url).toBe(`https://services.example.com${CLOUD_SERVICES_API_PATHS.search}`)
+    expect(requests[0]?.method).toBe('POST')
+    expect(await requests[0]?.json()).toEqual({ query: 'grids', numResults: 3 })
+  })
+
   test('does not resend a body it cannot replay', async () => {
     let calls = 0
     const fetch = cloudServicesFetch(tokens('one', 'two', 'three').source, async () => {

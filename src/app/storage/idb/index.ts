@@ -1,5 +1,5 @@
 export { APP_DATABASE_NAMES } from './database-names'
 export { connectAppDatabase, defineAppDatabase } from './client'
 export type { AppDatabase, AppDatabaseDefinition } from './client'
-export { binaryStorage, readStoredBinary } from './binary'
+export { binaryStorage, readStoredBinary, storedBinary } from './binary'
 export type { StoreBinary, StoredBinary } from './binary'

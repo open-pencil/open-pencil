@@ -29,10 +29,12 @@ function sourceLibrary() {
   })
   const nested = graph.createInstance(icon.id, small.id)
   if (!nested) throw new Error('Expected nested icon')
+  // Below Small, so Small is the set's default variant, its top-left one.
   const large = graph.createNode('COMPONENT', set.id, {
     name: 'Size=Large',
     componentKey: 'button-large',
-    componentPropertyValues: { Size: 'Large' }
+    componentPropertyValues: { Size: 'Large' },
+    y: 100
   })
   return { graph, set, small, large, icon }
 }

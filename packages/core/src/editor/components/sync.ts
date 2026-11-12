@@ -4,7 +4,11 @@ import { computeAllLayouts } from '#core/layout'
 
 const isComponent = (node: SceneNode) => node.type === 'COMPONENT'
 
-function componentSyncOrder(graph: SceneGraph, seeds: Set<string>): string[] {
+/**
+ * The components to sync after `seeds` changed, each before the components that hold its
+ * instances, so a copy of an instance syncs from a component already synced.
+ */
+export function componentSyncOrder(graph: SceneGraph, seeds: Set<string>): string[] {
   const dependents = new Map<string, Set<string>>()
   const discover = (id: string): void => {
     if (dependents.has(id)) return
@@ -31,6 +35,20 @@ function componentSyncOrder(graph: SceneGraph, seeds: Set<string>): string[] {
   }
   for (const id of seeds) visit(id)
   return result.reverse()
+}
+
+/**
+ * Brings the instances of every component holding one of `ids` in line with it, inner components
+ * first, and returns those components. A removed layer is found through the parent it left.
+ */
+export function syncComponentsHolding(graph: SceneGraph, ids: Iterable<string>): Set<string> {
+  const componentIds = new Set<string>()
+  for (const id of ids) {
+    const component = graph.closest(id, isComponent)
+    if (component) componentIds.add(component.id)
+  }
+  graph.syncInstancesTogether(componentSyncOrder(graph, componentIds))
+  return componentIds
 }
 
 type ComputeLayouts = (graph: SceneGraph, scopeId?: string) => void
@@ -74,12 +92,7 @@ export function createComponentSyncScheduler(
     isFlushingComponentSync = true
     try {
       const graph = getGraph()
-      const componentIds = new Set<string>()
-      for (const id of ids) {
-        const component = graph.closest(id, isComponent)
-        if (component) componentIds.add(component.id)
-      }
-      graph.syncInstancesTogether(componentSyncOrder(graph, componentIds))
+      const componentIds = syncComponentsHolding(graph, ids)
       if (componentIds.size > 0) {
         const pageIds = affectedPageIds(graph, ids, componentIds)
         if (pageIds.size === 0) computeLayouts(graph)
@@ -107,6 +120,8 @@ export function createComponentSyncScheduler(
 
   return {
     scheduleComponentSync,
+    /** Brings instances in line with the component edits scheduled so far, now. */
+    flushComponentSync,
     /** Instances are being brought in line with their components: results, not edits. */
     isSyncingComponents: () => isFlushingComponentSync
   }

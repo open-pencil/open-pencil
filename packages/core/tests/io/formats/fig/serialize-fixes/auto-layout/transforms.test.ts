@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
+import { ROOT_GUID, pageId } from '#core-tests/io/formats/fig/serialize-fixes/helpers'
+
 import { sceneNodeToKiwi } from '@open-pencil/fig/node-change'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
-
-import { ROOT_GUID, pageId } from '#core-tests/io/formats/fig/serialize-fixes/helpers'
 
 describe('Fix 1: auto-layout child transforms', () => {
   test('auto-layout child preserves its stored transform offsets', () => {

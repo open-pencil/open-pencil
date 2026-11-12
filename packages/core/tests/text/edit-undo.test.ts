@@ -1,7 +1,8 @@
 import { describe, test, expect } from 'bun:test'
 
-import type { CanvasKit } from 'canvaskit-wasm'
+import { noop } from 'es-toolkit'
 
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import { createTextActions, type EditorContext, type EditorState } from '@open-pencil/core'
 import { iconify } from '@open-pencil/core/icons'
 import { TextEditor } from '@open-pencil/core/text'
@@ -37,6 +38,7 @@ function setup() {
     requestRefresh: () => {
       state.sceneVersion++
     },
+    constrainMove: (_node, changes) => changes,
     getUserName: () => '',
     requestRepaint: () => {
       state.renderVersion++
@@ -45,10 +47,11 @@ function setup() {
     getRenderer: () => null,
     getRenderers: () => [],
     runLayoutForNode: () => undefined,
-    runMutationWithLayout: async (operation) => operation(),
+    runMutationWithLayout: async (operation) => ({ result: await operation(), relayout: noop }),
     getCk: () => null,
     loadFont: async () => null,
     getViewportSize: () => ({ width: 800, height: 600 }),
+    getViewportChrome: () => ({ left: 0, right: 0, top: 0, bottom: 0 }),
     icons: iconify,
     subscribeToGraph: () => undefined,
     resolveFigmaClipboardImages: null,

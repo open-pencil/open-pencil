@@ -18,6 +18,7 @@ import { useFlatReorderDrag } from '@open-pencil/vue/shared/drag'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import { useInlineSide } from '@/components/ui/direction/inline-side'
 import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
@@ -32,6 +33,7 @@ import PropertyRow from './PropertyRow.vue'
 import PropertyTypeIcon from './PropertyTypeIcon.vue'
 import VariantValueList from './variant/VariantValueList.vue'
 
+const startSide = useInlineSide('start')
 /** A main component's text, boolean and swap properties, and the nested instances it exposes. */
 const authoring = useComponentPropertyAuthoring()
 const { context, definitions, rows, conflicts, componentSet, nestedInstances, editable } = authoring
@@ -272,7 +274,7 @@ function valueLabel(type: ComponentPropertyType, value: string) {
             >
               <button
                 type="button"
-                class="flex min-w-0 flex-1 items-center gap-1.5 text-left"
+                class="flex min-w-0 flex-1 items-center gap-1.5 text-start"
                 @click="authoring.select(node.id)"
               >
                 <icon-lucide-component class="size-3.5 shrink-0 text-component" />
@@ -293,7 +295,7 @@ function valueLabel(type: ComponentPropertyType, value: string) {
     </PopoverAnchor>
     <PopoverPortal>
       <PopoverContent
-        side="left"
+        :side="startSide"
         align="start"
         :side-offset="8"
         :aria-label="panels.nestedInstances"
@@ -301,7 +303,7 @@ function valueLabel(type: ComponentPropertyType, value: string) {
       >
         <div :class="nestedStyles.header">
           <h3 class="text-xs font-semibold text-surface">{{ panels.nestedInstances }}</h3>
-          <AppButton :aria-label="common.close" class="ml-auto" @click="nestedOpen = false">
+          <AppButton :aria-label="common.close" class="ms-auto" @click="nestedOpen = false">
             <icon-lucide-x class="size-3.5" />
           </AppButton>
         </div>
