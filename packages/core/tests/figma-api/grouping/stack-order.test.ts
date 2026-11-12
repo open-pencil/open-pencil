@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createStackHost } from '#core-tests/helpers/figma-api'
+import { createStackHost } from '#core-tests/helpers/figma-api' // Recorded with the same script in Figma desktop 126.
 
-// Recorded with the same script in Figma desktop 126.
+import { graphOf } from '#core/figma-api/graph'
 
 describe('group and boolean stack order', () => {
   test('a group without an index goes on top of its parent', () => {
@@ -38,7 +38,7 @@ describe('group and boolean stack order', () => {
     const union = figma.union([b, c], host)
     expect(union.name).toBe('Union')
     expect(order()).toEqual(['a', 'Union'])
-    const raw = figma.graph.getNode(union.id)
+    const raw = graphOf(figma).getNode(union.id)
     expect(raw?.fills[0]?.color.r).toBeCloseTo(217 / 255)
     expect(raw?.childIds).toEqual([b.id, c.id])
     expect(figma.subtract([rect('e', 0), rect('f', 10)], host).name).toBe('Subtract')

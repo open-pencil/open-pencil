@@ -1,0 +1,2 @@
+- A Cloud account that holds its whole storage allowance becomes read-only until space is freed or its plan grows: its files still open, download, and delete, but take no edits, uploads, or new files, and the editor shows **Storage full** beside the file's name, with **Manage plan** when the server has a billing portal (#2017).
+- Cloud servers that take plans from the database set the plan an account has until billing stores one, the free plan, with the same keys under `[entitlements]` as the static form (#2017).

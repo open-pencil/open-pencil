@@ -4,7 +4,11 @@ import { readFileSync } from 'node:fs'
 import { compact } from 'es-toolkit'
 import * as v from 'valibot'
 
-import { polygonCorners, polygonOutline, type PolygonOutlineCommand } from '@open-pencil/scene-graph/polygon'
+import {
+  polygonCorners,
+  polygonOutline,
+  type PolygonOutlineCommand
+} from '@open-pencil/scene-graph/polygon'
 
 // Outlines Figma desktop gives as `fillGeometry` for polygons and stars, recorded on 2026-10-10.
 const oracleSchema = v.object({
@@ -37,7 +41,8 @@ function figmaCommands(data: string): Array<{ type: string; points: Point[] }> {
   for (const [, type, args] of data.matchAll(/([MLCZ])([^MLCZ]*)/g)) {
     const numbers = compact(args.trim().split(/\s+/)).map(Number)
     const points: Point[] = []
-    for (let index = 0; index < numbers.length; index += 2) points.push([numbers[index], numbers[index + 1]])
+    for (let index = 0; index < numbers.length; index += 2)
+      points.push([numbers[index], numbers[index + 1]])
     const end = points.at(-1)
     if (type === 'L' && end && Math.hypot(end[0] - last[0], end[1] - last[1]) < 1e-3) continue
     if (end) last = end

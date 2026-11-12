@@ -1,11 +1,12 @@
 import { expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import { createEditor, graphFromPageSnapshot } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
 import { sceneNodeToJSX } from '@open-pencil/design-jsx'
+import { expectDefined } from '@open-pencil/test-support/assert'
+
+import { graphOf } from '#core/figma-api/graph'
 
 type ChangesResult = { diff?: string | null; message?: string; error?: string }
 
@@ -14,8 +15,8 @@ const diffChanges = expectDefined(
   'diff_changes'
 )
 const diffApply = expectDefined(
-  ALL_TOOLS.find((tool) => tool.name === 'diff_apply'),
-  'diff_apply'
+  ALL_TOOLS.find((tool) => tool.name === 'apply_patch'),
+  'apply_patch'
 )
 
 function setup() {
@@ -68,7 +69,7 @@ test('shows only the edit that adds or removes a node asked about', async () => 
   expect((await run(figma, { id: card.id })).diff).toBe(`@@ /Page 1/Card #${card.id} removed`)
 })
 
-test('replays on the starting state with diff_apply', async () => {
+test('replays on the starting state with apply_patch', async () => {
   const { editor, pageId, card, figma, startEditing } = setup()
   startEditing()
   editor.graph.updateNode(card.id, { width: 240, opacity: 0.5 })
@@ -121,7 +122,7 @@ test("compares a node on another page with that page's own baseline", async () =
 
 test('explains when there is no run or no edit to compare with', async () => {
   const { figma } = setup()
-  const noRun = new FigmaAPI(figma.graph)
+  const noRun = new FigmaAPI(graphOf(figma))
   noRun.currentPage = figma.currentPage
   expect((await run(noRun)).error).toContain('AI chat run')
   expect(await run(figma)).toEqual({ diff: null, message: 'This run has not changed that page' })

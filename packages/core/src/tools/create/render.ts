@@ -1,6 +1,8 @@
 import * as v from 'valibot'
 
 import { finishRenderPlacement, resolveRenderPlacement } from '#core/design-jsx/placement'
+import { graphOf } from '#core/figma-api/graph'
+import { prepareSlotInsertion } from '#core/figma-api/slots'
 import { toolNumber, defineTool } from '#core/tools/schema'
 
 export const render = defineTool({
@@ -32,12 +34,13 @@ export const render = defineTool({
     jsx: v.pipe(v.string(), v.description('JSX string to render'))
   }),
   execute: async (figma, args) => {
-    const { designJSXRenderer } = await import('#core/design-jsx')
+    const { designJSXRenderer } = await graphOf(figma).waitOutsideEdit(import('#core/design-jsx'))
     const { renderJSX } = designJSXRenderer(figma.icons)
 
-    const placement = resolveRenderPlacement(figma.graph, args, figma.currentPageId)
-    const results = await renderJSX(figma.graph, args.jsx, placement)
-    finishRenderPlacement(figma.graph, results, placement)
+    const placement = resolveRenderPlacement(graphOf(figma), args, figma.currentPageId)
+    prepareSlotInsertion(graphOf(figma), placement.parentId, 'render')
+    const results = await renderJSX(graphOf(figma), args.jsx, placement)
+    finishRenderPlacement(graphOf(figma), results, placement)
     const result = results[0]
 
     const response: {

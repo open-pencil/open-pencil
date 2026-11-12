@@ -22,8 +22,17 @@ describe('canvas view profiles', () => {
       leaveTo: null,
       edits: true,
       tools: null,
+      pathEdits: 'all',
+      layerEdits: 'all',
       toolKeys: TOOL_SHORTCUTS,
-      snapGrid: 1
+      snapGrid: 1,
+      dotGrid: null,
+      pixelGrid: true,
+      framesOpen: true,
+      sectionTitles: 'fill',
+      lint: true,
+      rulers: true,
+      panelsOpen: true
     })
   })
 
@@ -39,8 +48,17 @@ describe('canvas view profiles', () => {
       leaveTo: { id: 'edit' },
       edits: true,
       tools: null,
+      pathEdits: 'all',
+      layerEdits: 'all',
       toolKeys: TOOL_SHORTCUTS,
-      snapGrid: 1
+      snapGrid: 1,
+      dotGrid: null,
+      pixelGrid: true,
+      framesOpen: true,
+      sectionTitles: 'fill',
+      lint: true,
+      rulers: true,
+      panelsOpen: true
     })
   })
 
@@ -106,7 +124,7 @@ describe('host restrictions', () => {
 })
 
 describe('document kinds', () => {
-  test('a board offers FigJam\'s tools and keys and snaps to its 16-unit grid', () => {
+  test("a board offers FigJam's tools and keys and snaps to its 16-unit grid", () => {
     const editor = createEditor()
     editor.setDocumentKind('board')
     const profile = resolveEditorProfile(editor.state)
@@ -121,6 +139,18 @@ describe('document kinds', () => {
       'COMMENT'
     ])
     expect([profile.toolKeys, profile.snapGrid]).toEqual([BOARD_TOOL_SHORTCUTS, 16])
+    // FigJam draws its dots every 16 units and has no pixel grid.
+    const { dotGrid, pixelGrid, framesOpen, lint, rulers, panelsOpen } = profile
+    expect([dotGrid, pixelGrid, framesOpen, lint, rulers, panelsOpen]).toEqual([
+      16,
+      false,
+      false,
+      false,
+      false,
+      false
+    ])
+    // FigJam colours a section's title from its outline.
+    expect(profile.sectionTitles).toBe('outline')
   })
 
   test('becoming a board drops a design tool, and refuses picking one', () => {
@@ -145,12 +175,12 @@ describe('document kinds', () => {
   test('a board opened or swapped in with a design tool active gives way to Move', () => {
     const state = createDefaultEditorState(new SceneGraph().getPages()[0].id)
     state.activeTool = 'RECTANGLE'
-    const opened = createEditor({ graph: createDocumentGraph('board'), state })
+    const opened = createEditor({ graph: createDocumentGraph('board', 'light'), state })
     expect(opened.state.activeTool).toBe('SELECT')
 
     const editor = createEditor()
     editor.setTool('PEN')
-    editor.replaceGraph(createDocumentGraph('board'))
+    editor.replaceGraph(createDocumentGraph('board', 'light'))
     expect(editor.state.activeTool).toBe('SELECT')
   })
 
@@ -164,5 +194,54 @@ describe('document kinds', () => {
       ['SELECT', 'HAND'],
       16
     ])
+  })
+
+  test('a host that offers some tools leaves only those, and the tool in use gives way to Move', () => {
+    const editor = createEditor()
+    editor.setTool('PEN')
+    editor.setHostRestrictions({ tools: new Set(['SELECT', 'HAND']) })
+    expect([...(resolveEditorProfile(editor.state).tools ?? [])]).toEqual(['SELECT', 'HAND'])
+    expect(editor.state.activeTool).toBe('SELECT')
+    editor.setTool('RECTANGLE')
+    expect(editor.state.activeTool).toBe('SELECT')
+    expect(resolveEditorProfile(editor.state).toolKeys).toEqual({ V: 'SELECT', H: 'HAND' })
+  })
+
+  test('a pen path in progress is kept when the host stops offering the pen', () => {
+    const editor = createEditor()
+    editor.setTool('PEN')
+    editor.penAddVertex(0, 0)
+    editor.penAddVertex(100, 0)
+    editor.setHostRestrictions({ tools: new Set(['SELECT', 'HAND']) })
+    expect(editor.state.penState).toBeNull()
+    expect(editor.state.activeTool).toBe('SELECT')
+    const drawn = editor.graph.getChildren(editor.state.currentPageId)
+    expect(drawn.map((node) => node.type)).toEqual(['VECTOR'])
+  })
+
+  test("a host's tools only narrow a board's, and read-only narrows them further", () => {
+    const editor = createEditor()
+    editor.setDocumentKind('board')
+    editor.setHostRestrictions({ tools: new Set(['SELECT', 'HAND', 'RECTANGLE', 'STICKY']) })
+    expect([...(resolveEditorProfile(editor.state).tools ?? [])].toSorted()).toEqual([
+      'HAND',
+      'SELECT',
+      'STICKY'
+    ])
+    editor.setReadOnly(true)
+    expect([...(resolveEditorProfile(editor.state).tools ?? [])].toSorted()).toEqual([
+      'HAND',
+      'SELECT'
+    ])
+  })
+
+  test('a host can let paths change only by their handles, and give them back whole', () => {
+    const editor = createEditor()
+    editor.setHostRestrictions({ pathEdits: 'handles' })
+    expect(resolveEditorProfile(editor.state).pathEdits).toBe('handles')
+    editor.setHostRestrictions({ tools: new Set(['SELECT']) })
+    expect(resolveEditorProfile(editor.state).pathEdits).toBe('handles')
+    editor.setHostRestrictions({ pathEdits: 'all', tools: null })
+    expect(resolveEditorProfile(editor.state)).toMatchObject({ pathEdits: 'all', tools: null })
   })
 })

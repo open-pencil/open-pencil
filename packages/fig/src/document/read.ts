@@ -10,6 +10,7 @@ import {
   bySavedPosition,
   createSourceIndex,
   parentIdOf,
+  type InterpreterIndex,
   type SourceIndex
 } from '../instance-overrides/source-index'
 import { symbolOverridesOf } from '../instance-overrides/types'
@@ -22,7 +23,13 @@ import {
 import { planComponentConstruction } from './components'
 import { DecodedMap } from './decoded-map'
 import { collectSceneDependencies } from './dependency-closure'
-import { inheritComponentPropertyDefinitions, inheritFromAncestors } from './property-inheritance'
+import {
+  inheritComponentPropertyDefinitions,
+  inheritFromAncestors,
+  linkedPropertyCopies
+} from './property-inheritance'
+import { vectorStyleTable } from './style-dependencies'
+import { createDocumentVariables, type DocumentVariables } from './variables'
 
 /** Indexed source document. Resources remain separate from scene occurrences. */
 export function createDocumentReader(source: readonly NodeChange[], pageIds?: ReadonlySet<string>) {
@@ -44,7 +51,10 @@ export const RECORD_HEADER_FIELDS = [
   'key',
   'version',
   'styleType',
-  'overrideKey'
+  'overrideKey',
+  // A variant's copies of its set's properties are read for every variant a page links, which
+  // would otherwise keep each variant's whole record decoded for the session.
+  'componentPropDefs'
 ] as const
 
 /** Parse into exclusively owned records; callers never receive the mutable source index. */
@@ -80,7 +90,8 @@ interface ReaderRecords {
   /** Whole records kept for the document: components the interpreter reads, and styles. */
   shared: WholeRecord
   /** Indexes whole records, for the interpreter that reads components on demand. */
-  interpreterIndex(): SourceIndex
+  interpreterIndex(): InterpreterIndex
+  readonly variables: DocumentVariables
 }
 
 function assetIds(records: readonly NodeChange[]): Map<string, string> {
@@ -92,6 +103,20 @@ function assetIds(records: readonly NodeChange[]): Map<string, string> {
       if (typeof node.version === 'string') assets.set(`${node.key}@${node.version}`, id)
     }
   return assets
+}
+
+/**
+ * Gives a record the fields of the styles it names, as do its overrides and its vector's regions,
+ * whose style table entry may name a style without its paints.
+ */
+function resolveStyleFields(
+  styles: Parameters<typeof applyStyleRefsToFields>[0],
+  node: NodeChange,
+  assets: ReadonlyMap<string, string>
+): void {
+  applyStyleRefsToFields(styles, node, assets)
+  for (const entry of vectorStyleTable(node)) applyStyleRefsToFields(styles, entry, assets)
+  for (const override of symbolOverridesOf(node)) resolveStyleFields(styles, override, assets)
 }
 
 function isResource(record: NodeChange): boolean {
@@ -108,19 +133,20 @@ function wholeRecords(source: readonly NodeChange[]): ReaderRecords {
   const index = createSourceIndex(records)
   inheritComponentPropertyDefinitions(records, index.sources)
   const assets = assetIds(records)
-  const resolveStyles = (node: NodeChange): void => {
-    applyStyleRefsToFields(index.sources, node, assets)
-    for (const override of symbolOverridesOf(node)) resolveStyles(override)
-  }
-  for (const node of records) resolveStyles(node)
+  for (const node of records) resolveStyleFields(index.sources, node, assets)
   const same: WholeRecord = (record) => record
+  const variables = createDocumentVariables(records)
   return {
     records,
     index,
     bindingDiagnostics,
     scope: () => same,
     shared: same,
-    interpreterIndex: () => createSourceIndex(records.filter((record) => !isResource(record)))
+    interpreterIndex: () => ({
+      ...createSourceIndex(records.filter((record) => !isResource(record))),
+      variables
+    }),
+    variables
   }
 }
 
@@ -172,11 +198,7 @@ function archiveRecords(headers: readonly NodeChange[]): ReaderRecords {
       )
         ancestors.push(whole(parent))
       inheritFromAncestors(record, ancestors)
-      const resolveStyles = (node: NodeChange): void => {
-        applyStyleRefsToFields(styles, node, assets)
-        for (const override of symbolOverridesOf(node)) resolveStyles(override)
-      }
-      resolveStyles(record)
+      resolveStyleFields(styles, record, assets)
       return record
     } finally {
       preparing.delete(header)
@@ -190,10 +212,12 @@ function archiveRecords(headers: readonly NodeChange[]): ReaderRecords {
     }
     return record
   }
-  const interpreterIndex = (): SourceIndex => {
+  const variables = createDocumentVariables(records, decodeRecord)
+  const interpreterIndex = (): InterpreterIndex => {
     const { sources, children } = createSourceIndex(records.filter((record) => !isResource(record)))
     const lists = new WeakMap<readonly NodeChange[], NodeChange[]>()
     return {
+      variables,
       sources: new DecodedMap(sources, shared),
       children: new DecodedMap(children, (list) => {
         let whole = lists.get(list)
@@ -221,7 +245,8 @@ function archiveRecords(headers: readonly NodeChange[]): ReaderRecords {
       return whole
     },
     shared,
-    interpreterIndex
+    interpreterIndex,
+    variables
   }
 }
 
@@ -269,7 +294,10 @@ function createScopedReader(
     )
     .map(whole)
   const sourceInterpreter = shared.sourceInterpreter
-  const interpreter = createIndexedOccurrenceInterpreter(createSourceIndex(sceneChanges))
+  const interpreter = createIndexedOccurrenceInterpreter({
+    ...createSourceIndex(sceneChanges),
+    variables: shared.records.variables
+  })
   const pages = changes
     .filter((change) => change.type === 'CANVAS')
     .toSorted(bySavedPosition)
@@ -308,6 +336,12 @@ function createScopedReader(
       return structuredClone(resources.map(whole))
     },
     bindingDiagnostics,
+    /** A record's copies of its set's properties, each by its own id to the set property's. */
+    propertyCopies(id: string): Map<string, string> {
+      // Headers carry the saved definitions, links included, so no whole record is decoded.
+      const header = index.sources.get(id)
+      return header ? linkedPropertyCopies(header) : new Map()
+    },
     readPage(id: string, options: InterpretInstanceOptions = {}) {
       if (!knownPageIds.has(id)) throw new Error(`Unknown page ${id}`)
       const page = interpreter.page(id, options)

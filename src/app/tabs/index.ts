@@ -1,19 +1,20 @@
-import { promiseTimeout } from '@vueuse/core'
+import { createEventHook, promiseTimeout } from '@vueuse/core'
 import { filename } from 'pathe/utils'
 import { shallowRef, computed, triggerRef } from 'vue'
 
 import { createDocumentGraph } from '@open-pencil/core'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { figThumbnailPageId, populateFigPage } from '@open-pencil/core/io/formats/fig'
-import { renderThumbnail } from '@open-pencil/core/io/formats/raster'
 import { computeAllLayouts } from '@open-pencil/core/layout'
+import { prepareGraphFonts } from '@open-pencil/core/text'
 import type { DocumentKind, SceneGraph } from '@open-pencil/scene-graph'
+import { nextFrame, nextShownFrame } from '@open-pencil/vue/shared/frame'
 
 import { setOpenPencilStore } from '@/app/browser-bridge'
 import { describeDiagnosticError, recordStorageFailure } from '@/app/diagnostics'
 import { viewDiagnosticsAction } from '@/app/diagnostics/view'
 import { confirmAllDocuments } from '@/app/document/close/all'
-import { confirmDocumentClose } from '@/app/document/close/controller'
+import { confirmDocumentClose, holdsUnkeptEdits } from '@/app/document/close/controller'
 import { requestDocumentClose } from '@/app/document/close/prompt'
 import { documentAssetReader } from '@/app/document/io/assets'
 import { readFigDocument } from '@/app/document/io/fig'
@@ -21,7 +22,9 @@ import { applyImportedDocument } from '@/app/document/io/imported-document'
 import { isFigArchiveName } from '@/app/document/io/names'
 import type { DocumentSourceIdentity } from '@/app/document/io/types'
 import { getRecoveryStore, type RecoverySnapshotMeta } from '@/app/document/recovery'
+import { recoverySessionId } from '@/app/document/recovery/session'
 import { setActiveEditorStore } from '@/app/editor/active-store'
+import { loadFont } from '@/app/editor/fonts'
 import { appIcons } from '@/app/editor/icons/provider'
 import type { EditorPreparationHandle as DocumentLoadSession } from '@/app/editor/preparation/types'
 import { createEditorStore } from '@/app/editor/session'
@@ -36,11 +39,14 @@ import {
   type StorageLocation
 } from '@/app/integrations/storage'
 import {
-  cacheRecentFileThumbnail,
+  cacheRecentFileCover,
   loadCachedRecentFileThumbnail,
+  rememberDocumentView,
+  rememberedDocumentView,
   rememberRecentStorageDocument
 } from '@/app/recent-files'
 import { createDeferred } from '@/app/runtime/deferred'
+import { resolvedAppTheme } from '@/app/shell/theme'
 import { toast } from '@/app/shell/ui'
 import { createFileOpenCoordinator } from '@/app/tabs/open/coordinator'
 import { findTabByFileIdentity } from '@/app/tabs/open/identity'
@@ -60,7 +66,6 @@ export interface Tab {
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 const fileOpenCoordinator = createFileOpenCoordinator()
-const RECENT_FILE_THUMBNAIL_SIZE = 512
 const coverThumbnailListeners = new WeakMap<EditorStore, () => void>()
 
 let nextTabId = 1
@@ -85,7 +90,9 @@ export const allTabs = computed(() =>
     name: t.store.state.documentName,
     isHome: t.kind === 'home',
     isNewFile: t.kind === 'new-file',
-    isDirty: t.kind === 'document' && t.store.hasUnsavedChanges(),
+    isDirty: t.kind === 'document' && holdsUnkeptEdits(t.store),
+    // What kind of file the tab holds, for its icon, as Home marks its files.
+    fileKind: t.kind === 'document' ? t.store.state.documentKind : undefined,
     isPreparing: t.store.state.preparation !== null,
     preparationProgress: t.store.state.preparation?.progress ?? null,
     isActive: t.id === activeTabId.value
@@ -128,7 +135,7 @@ export function createTab(store?: EditorStore, initialGraph?: SceneGraph): Tab {
  */
 export function createDocumentTab(kind: DocumentKind): Tab {
   const picker = activeTab.value?.kind === 'new-file' ? activeTab.value : undefined
-  const tab = createTab(undefined, createDocumentGraph(kind))
+  const tab = createTab(undefined, createDocumentGraph(kind, resolvedAppTheme.value))
   if (picker) {
     const rest = tabsRef.value.filter((entry) => entry !== tab)
     tabsRef.value = rest.map((entry) => (entry === picker ? tab : entry))
@@ -241,7 +248,8 @@ export async function closeTab(tabId: string, unsaved?: 'save' | 'discard'): Pro
   if (choice === 'discard') await closingTab.store.discardRecovery()
   else await closingTab.store.persistRecoveryNow()
   if (!tabsRef.value.includes(closingTab)) return
-  if (choice !== 'discard' && closingTab.store.hasUnsavedChanges()) return
+  if (choice !== 'discard' && holdsUnkeptEdits(closingTab.store)) return
+  rememberDocumentView(closingTab.store)
   removeTab(closingTab)
 }
 
@@ -264,19 +272,15 @@ function removeTab(closingTab: Tab): void {
   }
 }
 
-function yieldToUI(): Promise<void> {
-  return new Promise((resolve) => {
-    requestAnimationFrame(() => resolve())
-  })
-}
-
 function isDOMImportFile(file: File): boolean {
   return /\.(html?|xhtml)$/i.test(file.name)
 }
 
 /**
- * A tab a document opens in: a new one, or an untouched empty design in front; never Home. `from`
- * is the tab in front when the open began, which comes back to the front if the open fails.
+ * A tab a document opens in: a new one, or an untouched empty design in front; never Home. A
+ * restored copy is not untouched, though it has no history or source, and may still be on its way
+ * to a server. `from` is the tab in front when the open began, which comes back to the front if
+ * the open fails.
  */
 type OpeningTab = { store: EditorStore; created: boolean; from: Tab | undefined }
 
@@ -287,6 +291,7 @@ function reusableTabStore(): OpeningTab {
     current?.kind === 'document' &&
     current.store.state.documentName === 'Untitled' &&
     !current.store.undo.canUndo &&
+    !current.store.hasUnsavedChanges() &&
     current.store.getStorageBinding() === null &&
     source?.path === null &&
     source.handle === null
@@ -326,16 +331,27 @@ async function discardFailedRecovery(store: EditorStore): Promise<void> {
 async function readFigForTab(file: File, signal?: AbortSignal): Promise<SceneGraph> {
   const imported = await readFigDocument(file, signal)
   const firstPageId = imported.getPages()[0]?.id
-  const layOut = (pageId: string) =>
+  // Each page is laid out once its text's fonts are prepared, never in a face it would lose.
+  const layOut = async (pageId: string) => {
+    await prepareGraphFonts(imported, [pageId], { loadFont, signal })
     imported.applyDerivedLayoutDuring(() => computeAllLayouts(imported, pageId))
-  if (firstPageId) layOut(firstPageId)
+  }
+  if (firstPageId) await layOut(firstPageId)
   const thumbnailPageId = figThumbnailPageId(imported.getPages())
   if (thumbnailPageId && thumbnailPageId !== firstPageId) {
     populateFigPage(imported, thumbnailPageId)
-    layOut(thumbnailPageId)
+    await layOut(thumbnailPageId)
   }
   return imported
 }
+
+const documentReplaced = createEventHook<EditorStore>()
+
+/**
+ * Hears a tab's store take another document, as when opening a file reuses an untouched tab,
+ * so whatever was kept about the document it showed can be dropped.
+ */
+export const onTabDocumentReplaced = documentReplaced.on
 
 async function showImportedGraph(
   store: EditorStore,
@@ -345,21 +361,35 @@ async function showImportedGraph(
 ): Promise<void> {
   load?.update({ phase: 'materializing', detail: store.state.documentName })
   await applyImportedDocument(store, graph, load)
+  void documentReplaced.trigger(store)
   load?.signal.throwIfAborted()
   await prepare?.()
   load?.signal.throwIfAborted()
-  const pageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
+  // A document opens where it was left; a new one on its first page, fitted.
+  const remembered = rememberedDocumentView(store)
+  const firstPageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
+  const pageId = remembered?.pageId ?? firstPageId
   load?.update({ phase: 'populating-page', detail: store.graph.getNode(pageId)?.name ?? null })
-  await store.switchPage(pageId, { preparation: load })
+  // The view is placed before the first frame counts as shown, so the loader gives way to the
+  // page drawn where it opens rather than one that then moves and fills in.
+  await store.switchPage(pageId, {
+    preparation: load,
+    beforePresentation: async () => {
+      if (remembered) {
+        await nextShownFrame({ signal: load?.signal })
+        store.centerOn(remembered.center.x, remembered.center.y, remembered.zoom)
+      } else {
+        await store.fitCurrentPageToViewport(load?.signal)
+      }
+    }
+  })
   load?.signal.throwIfAborted()
-  load?.update({ phase: 'preparing-render', detail: store.state.documentName })
-  await store.fitCurrentPageToViewport()
 }
 
 async function cacheOpenedFigCover(path: string, store: EditorStore): Promise<void> {
   if (await loadCachedRecentFileThumbnail(path)) return
-  const thumbnailPageId = figThumbnailPageId(store.graph.getPages())
-  if (!thumbnailPageId) return
+  // A document without a page has no cover, so it never waits for a renderer.
+  if (!figThumbnailPageId(store.graph.getPages())) return
   for (let attempt = 0; attempt < 240 && !store.renderer; attempt++) {
     await promiseTimeout(250)
   }
@@ -368,19 +398,9 @@ async function cacheOpenedFigCover(path: string, store: EditorStore): Promise<vo
     console.warn('[Recent files] Thumbnail skipped because the renderer was unavailable')
     return
   }
-  const bytes = renderThumbnail(
-    renderer.ck,
-    renderer,
-    store.graph,
-    thumbnailPageId,
-    RECENT_FILE_THUMBNAIL_SIZE,
-    RECENT_FILE_THUMBNAIL_SIZE
-  )
-  if (!bytes) {
+  if (!(await cacheRecentFileCover(path, store.graph, renderer))) {
     console.warn('[Recent files] Thumbnail skipped because its page was empty')
-    return
   }
-  await cacheRecentFileThumbnail(path, bytes)
 }
 
 function watchOpenedFigCover(path: string, store: EditorStore): void {
@@ -494,7 +514,7 @@ export async function openStorageDocumentInNewTab(
   const existing = findStorageTab(binding)
   if (existing) {
     switchTab(existing.id)
-    rememberRecentStorageDocument(binding, document.name)
+    rememberRecentStorageDocument(binding, document.name, existing.store.state.documentKind)
     return existing.store
   }
 
@@ -508,7 +528,7 @@ export async function openStorageDocumentInNewTab(
   let succeeded = false
   try {
     await showStorageDocument(store, binding, document, load)
-    rememberRecentStorageDocument(binding, document.name)
+    rememberRecentStorageDocument(binding, document.name, store.state.documentKind)
     succeeded = true
   } catch (error) {
     if (!load.signal.aborted) {
@@ -595,7 +615,7 @@ export async function openFileInNewTab(
       return store
     }
 
-    await yieldToUI()
+    await nextFrame()
     load.update({ phase: 'reading', detail: file.name })
     const isFig = isFigArchiveName(file.name)
     let imported: SceneGraph
@@ -650,6 +670,13 @@ export async function listRecoverySnapshots(): Promise<RecoverySnapshotMeta[]> {
   return getRecoveryStore().list()
 }
 
+/** The recovery copies of the documents open in tabs, which belong to those tabs while open. */
+export function openRecoveryIds(): Set<string> {
+  return new Set(
+    tabsRef.value.filter((tab) => tab.kind === 'document').map((tab) => tab.store.getRecoveryId())
+  )
+}
+
 export async function discardRecoverySnapshot(id: string): Promise<void> {
   await getRecoveryStore().remove(id)
 }
@@ -680,6 +707,8 @@ export async function restoreRecoverySnapshot(id: string): Promise<void> {
       async () => {
         store.state.documentName = snapshot.documentName
         await store.adoptRecoverySnapshot(id)
+        // The copy is this window's now, so no other window lists it while it is open here.
+        await getRecoveryStore().claim(id, recoverySessionId)
       },
       load
     )
@@ -693,13 +722,18 @@ export async function restoreRecoverySnapshot(id: string): Promise<void> {
   }
 }
 
-export function prepareForClose(): Promise<boolean> {
-  return confirmAllDocuments(() =>
-    tabsRef.value.filter((tab) => tab.kind === 'document').map((tab) => tab.store)
-  )
+function documentStores(): EditorStore[] {
+  return tabsRef.value.filter((tab) => tab.kind === 'document').map((tab) => tab.store)
+}
+
+export async function prepareForClose(): Promise<boolean> {
+  const closing = await confirmAllDocuments(documentStores)
+  if (closing) documentStores().forEach(rememberDocumentView)
+  return closing
 }
 
 export async function prepareForReload(): Promise<void> {
+  documentStores().forEach(rememberDocumentView)
   await Promise.all(tabsRef.value.map((tab) => tab.store.persistRecoveryNow()))
 }
 

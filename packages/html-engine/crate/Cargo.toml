@@ -1,0 +1,19 @@
+[package]
+name = "open-pencil-html-engine"
+version = "0.0.0"
+description = "Lays HTML out with Blitz and captures every node's box, computed styles, and text lines."
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+# Blitz at DioxusLabs/blitz#1279's head, which requests atomic inline baselines from Taffy so
+# inline-block and inline-flex boxes sit on their lines; move to a main commit once it merges.
+[dependencies]
+blitz-dom = { git = "https://github.com/DioxusLabs/blitz", rev = "f540c664d6c37cbe1a232880223b28ef4a56f2af", default-features = false, features = ["svg", "woff", "floats"] }
+blitz-html = { git = "https://github.com/DioxusLabs/blitz", rev = "f540c664d6c37cbe1a232880223b28ef4a56f2af" }
+blitz-traits = { git = "https://github.com/DioxusLabs/blitz", rev = "f540c664d6c37cbe1a232880223b28ef4a56f2af" }
+parley = { version = "0.12", default-features = false, features = ["std"] }
+serde_json = "1"

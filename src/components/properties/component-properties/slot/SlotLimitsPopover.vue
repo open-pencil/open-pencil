@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PopoverClose, PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
+import { PopoverClose, PopoverContent, PopoverPortal, PopoverTrigger } from 'reka-ui'
 import { computed } from 'vue'
 
 import type { SlotLimit } from '@open-pencil/vue/controls/slots'
@@ -7,9 +7,13 @@ import { useI18n } from '@open-pencil/vue/i18n'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
+import { useInlineSide } from '@/components/ui/direction/inline-side'
 import SeverityIcon from '@/components/ui/feedback/SeverityIcon.vue'
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
+import { focusStyles } from '@/theme/focus/styles'
 
+const startSide = useInlineSide('start')
 const { limits } = defineProps<{ limits: SlotLimit[] }>()
 const emit = defineEmits<{ selectLayers: [] }>()
 const { panels, common } = useI18n()
@@ -29,11 +33,14 @@ function label(limit: SlotLimit): string {
 </script>
 
 <template>
-  <PopoverRoot v-model:open="popupOpen">
+  <AppPopoverRoot v-model:open="popupOpen">
     <PopoverTrigger
       :data-issues="issues > 0 || undefined"
       data-property="slot-limits"
-      class="flex h-5 shrink-0 cursor-pointer items-center gap-1 rounded bg-panel-field px-1.5 text-[10px] text-muted outline-none hover:bg-hover hover:text-surface focus-visible:ring-1 focus-visible:ring-panel-focus data-issues:bg-warning/15 data-issues:text-warning"
+      :class="[
+        'flex h-5 shrink-0 cursor-pointer items-center gap-1 rounded bg-panel-field px-1.5 text-3xs text-muted hover:bg-hover hover:text-surface data-issues:bg-warning/15 data-issues:text-warning',
+        focusStyles.ring
+      ]"
     >
       <SeverityIcon v-if="issues" severity="warning" />
       <icon-lucide-check v-else class="size-3 text-success" />
@@ -41,7 +48,7 @@ function label(limit: SlotLimit): string {
     </PopoverTrigger>
     <PopoverPortal v-if="portalActive">
       <PopoverContent
-        side="left"
+        :side="startSide"
         align="start"
         :side-offset="8"
         :aria-label="panels.slotLimits"
@@ -49,11 +56,11 @@ function label(limit: SlotLimit): string {
       >
         <div :class="styles.header">
           <h3 class="text-xs font-semibold text-surface">{{ panels.slotLimits }}</h3>
-          <span v-if="issues" class="text-[11px] text-muted">
+          <span v-if="issues" class="text-2xs text-muted">
             {{ panels.slotLimitIssueCount(issues) }}
           </span>
           <PopoverClose as-child>
-            <AppButton :aria-label="common.close" class="ml-auto">
+            <AppButton :aria-label="common.close" class="ms-auto">
               <icon-lucide-x class="size-3.5" />
             </AppButton>
           </PopoverClose>
@@ -62,14 +69,14 @@ function label(limit: SlotLimit): string {
           <li
             v-for="limit in limits"
             :key="limit.kind"
-            class="grid grid-cols-[14px_minmax(0,1fr)] gap-x-2 text-xs text-surface"
+            class="grid grid-cols-[0.875rem_minmax(0,1fr)] gap-x-2 text-xs text-surface"
           >
             <icon-lucide-check v-if="limit.met" class="mt-px size-3.5 text-success" />
             <SeverityIcon v-else severity="warning" class="mt-px size-3.5" />
             <span>{{ label(limit) }}</span>
             <template v-if="limit.kind === 'preferred' && !limit.met">
               <span />
-              <span class="text-[11px] text-muted">
+              <span class="text-2xs text-muted">
                 {{ panels.slotNonPreferredFound(limit.offending) }}
               </span>
               <span />
@@ -85,5 +92,5 @@ function label(limit: SlotLimit): string {
         </ul>
       </PopoverContent>
     </PopoverPortal>
-  </PopoverRoot>
+  </AppPopoverRoot>
 </template>

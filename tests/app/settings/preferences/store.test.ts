@@ -3,6 +3,19 @@ import { describe, expect, test } from 'bun:test'
 import { DEFAULT_APP_PREFERENCES, parseAppPreferences } from '@/app/settings/preferences/store'
 
 describe('parseAppPreferences', () => {
+  test('defaults old and invalid interface sizes without discarding other appearance choices', () => {
+    for (const interfaceScale of [undefined, null, '125', 0, 90, 120, 200, Number.NaN]) {
+      const preferences = parseAppPreferences({ appearance: { interfaceScale, animations: 'off' } })
+      expect(preferences.appearance.interfaceScale).toBe(100)
+      expect(preferences.appearance.animations).toBe('off')
+    }
+    for (const interfaceScale of [100, 110, 125, 150] as const) {
+      expect(
+        parseAppPreferences({ appearance: { interfaceScale } }).appearance.interfaceScale
+      ).toBe(interfaceScale)
+    }
+  })
+
   test('starts from the defaults when nothing usable is stored', () => {
     for (const stored of [undefined, null, 'preferences', [], {}]) {
       expect(parseAppPreferences(stored)).toEqual(DEFAULT_APP_PREFERENCES)
@@ -31,8 +44,7 @@ describe('parseAppPreferences', () => {
     const preferences = parseAppPreferences({
       appearance: { animations: 'off' },
       chat: { reasoningDisplay: 'sometimes', changePreviewSize: 'large', maxAgentSteps: 'many' },
-      editing: { snapping: { geometry: false, objects: 'yes' } },
-      rendering: 'tiled'
+      editing: { snapping: { geometry: false, objects: 'yes' } }
     })
     expect(preferences.appearance.animations).toBe('off')
     expect(preferences.chat).toEqual({
@@ -43,7 +55,6 @@ describe('parseAppPreferences', () => {
       ...DEFAULT_APP_PREFERENCES.editing.snapping,
       geometry: false
     })
-    expect(preferences.rendering).toEqual(DEFAULT_APP_PREFERENCES.rendering)
   })
 
   test('keeps each disabled design check rule once and drops what is not a rule name', () => {
@@ -51,10 +62,21 @@ describe('parseAppPreferences', () => {
       designCheck: { preset: 'strict', disabledRules: ['contrast', 7, 'contrast', 'spacing'] }
     })
     expect(designCheck).toEqual({
-      showOnCanvas: true,
+      showOnCanvas: false,
       preset: 'strict',
       disabledRules: ['contrast', 'spacing']
     })
+  })
+
+  test('keeps a stored canvas marker choice and leaves markers off when none is stored', () => {
+    expect(DEFAULT_APP_PREFERENCES.designCheck.showOnCanvas).toBe(false)
+    expect(parseAppPreferences({}).designCheck.showOnCanvas).toBe(false)
+    expect(
+      parseAppPreferences({ designCheck: { showOnCanvas: true } }).designCheck.showOnCanvas
+    ).toBe(true)
+    expect(
+      parseAppPreferences({ designCheck: { showOnCanvas: false, preset: 'strict' } }).designCheck
+    ).toEqual({ showOnCanvas: false, preset: 'strict', disabledRules: [] })
   })
 
   test('keeps a preset or a custom accent and falls back to blue for anything else', () => {
@@ -91,6 +113,20 @@ describe('parseAppPreferences', () => {
     }
   })
 
+  test('checks for updates on startup unless that switch is stored off', () => {
+    expect(DEFAULT_APP_PREFERENCES.updates).toEqual({ checkOnStartup: true })
+    expect(parseAppPreferences({}).updates.checkOnStartup).toBe(true)
+    const storedOff = parseAppPreferences({
+      updates: { checkOnStartup: false },
+      recovery: { enabled: false }
+    })
+    expect(storedOff.updates.checkOnStartup).toBe(false)
+    expect(storedOff.recovery.enabled).toBe(false)
+    for (const checkOnStartup of [undefined, null, 'false', 0, 1]) {
+      expect(parseAppPreferences({ updates: { checkOnStartup } }).updates.checkOnStartup).toBe(true)
+    }
+  })
+
   test('keeps comment view choices and drops an unknown sort order', () => {
     const { comments } = parseAppPreferences({
       comments: { showOnCanvas: false, showResolved: true, sort: 'loudest' }
@@ -99,6 +135,19 @@ describe('parseAppPreferences', () => {
       ...DEFAULT_APP_PREFERENCES.comments,
       showOnCanvas: false,
       showResolved: true
+    })
+  })
+
+  test('keeps the toolbar edge and alignment, defaulting each to the bottom center', () => {
+    expect(
+      parseAppPreferences({ toolbarDock: { side: 'left', align: 'start' } }).toolbarDock
+    ).toEqual({ side: 'left', align: 'start' })
+    expect(
+      parseAppPreferences({ toolbarDock: { side: 'top', align: 'middle' } }).toolbarDock
+    ).toEqual({ side: 'top', align: 'center' })
+    expect(parseAppPreferences({ toolbarDock: 'left' }).toolbarDock).toEqual({
+      side: 'bottom',
+      align: 'center'
     })
   })
 })

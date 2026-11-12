@@ -18,8 +18,9 @@ import { rescaleNodeTree } from '@open-pencil/scene-graph/scaling'
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'
 import type { EditorContext } from '#core/editor/types'
 import { pushCreatedSubtreesUndo } from '#core/editor/undo'
+import { textStyleChanges } from '#core/text/character-style'
 
-import type { NodeActions } from './nodes'
+import type { NodeActions } from './nodes/actions'
 
 /**
  * Sticky note commands. A note's colour sits on the note and its text on its sublayers, so each
@@ -86,7 +87,11 @@ export function createStickyActions(ctx: EditorContext, nodes: NodeActions) {
     editStickies('Change sticky text size', ids, (sticky) => {
       const body = stickySublayers(ctx.graph, sticky)?.body
       if (body) {
-        nodes.updateNode(body.id, figJamTextSizeFields(size, figJamTypeface(body) ?? 'simple'))
+        // Characters sized on their own take the size too, as text layers do.
+        nodes.updateNode(
+          body.id,
+          textStyleChanges(body, figJamTextSizeFields(size, figJamTypeface(body) ?? 'simple'))
+        )
       }
     })
   }

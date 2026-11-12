@@ -22,7 +22,7 @@ test('storage settings keep secrets behind the credential manager', async ({ pag
   await expect(secret).toHaveAttribute('placeholder', /Key saved/)
   expect(
     await page.evaluate(() => {
-      // oxlint-disable-next-line open-pencil/no-direct-storage-access -- Inspect persisted bytes to detect plaintext credential leaks.
+      // oxlint-disable-next-line @open-pencil/runtime/no-direct-storage-access -- Inspect persisted bytes to detect plaintext credential leaks.
       return Object.values(localStorage).some((value) => value.includes('storage-secret'))
     })
   ).toBe(false)
@@ -149,7 +149,7 @@ test('MCP automation settings filter and persist tool availability', async ({ pa
   await page.getByTestId('settings-mcp-tool-access').click()
   await expect(createShape).toHaveAttribute('data-state', 'unchecked')
 
-  await page.getByRole('button', { name: 'Restore defaults' }).click()
+  await page.getByRole('button', { name: 'Reset to default' }).click()
   await expect(createShape).toHaveAttribute('data-state', 'checked')
 })
 

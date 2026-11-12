@@ -26,7 +26,7 @@ export async function resolveCloudConflict(
     const copyId = await keepBothVersions(binding.documentId, copyName)
     const copy = { ...binding, documentId: copyId }
     store.setStorageDocumentSource(copy, copyName)
-    rememberRecentStorageDocument(copy, copyName)
+    rememberRecentStorageDocument(copy, copyName, store.state.documentKind)
   } else if (choice === 'use-cloud') {
     await takeStoredVersion(binding.documentId)
     await reloadStorageDocumentInTab(store)

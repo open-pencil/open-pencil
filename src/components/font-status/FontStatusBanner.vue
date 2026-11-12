@@ -23,7 +23,7 @@ const issues = computed(() => status.value.issues)
       <button
         type="button"
         data-test-id="font-status-toggle"
-        class="min-w-0 flex-1 text-left font-medium"
+        class="min-w-0 flex-1 text-start font-medium"
         @click="expanded = !expanded"
       >
         {{ issues.length === 1 ? fonts.issueFound : fonts.issuesFound({ count: issues.length }) }}
@@ -71,7 +71,7 @@ const issues = computed(() => status.value.issues)
             <span class="ms-1 opacity-75">· {{ fonts.unsupportedFormatShort }}</span>
           </Tip>
         </span>
-        <span class="shrink-0 text-[10px] opacity-75">
+        <span class="shrink-0 text-3xs opacity-75">
           {{
             issue.nodeIds.length === 1
               ? fonts.affectedLayer

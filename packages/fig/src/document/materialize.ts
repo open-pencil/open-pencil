@@ -1,6 +1,7 @@
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import { generateId, SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { compareOrderKeys } from '@open-pencil/scene-graph/order-keys'
 import { OPEN_PENCIL_PLUGIN_DATA } from '@open-pencil/scene-graph/plugin-data'
 import { remapStyleRunReferences } from '@open-pencil/scene-graph/text'
 
@@ -24,6 +25,7 @@ import { nodeChangeToProps } from '../node-change'
 import { generatedFrameCodec } from '../node-change/generated/codecs'
 import { readNodeChangePluginData } from '../node-change/plugin-data'
 import { figArchiveRecordInfo, type FigArchiveRecordInfo } from '../record-patch'
+import { applyDocumentEffectBindings } from './bindings/effects'
 import { applyDocumentLayoutBindings } from './bindings/layout'
 import { applyDocumentPaintBindings } from './bindings/paint'
 import type { BindingReferenceDiagnostic } from './bindings/references'
@@ -33,6 +35,7 @@ import {
   restoreComponentCheckpoint,
   type ComponentCheckpoint
 } from './component/checkpoint'
+import { foldVariantPropertyCopies, type PropertyCopies } from './component/links'
 import { linkComponentPropertyValues, resolveVariantPropertyValues } from './component/values'
 import type { ComponentConstruction } from './components'
 import { loadPageTransaction } from './load-transaction'
@@ -83,6 +86,8 @@ export interface AssemblyState {
   savedSizeNodes: Set<string>
   /** Component property types by definition id, carried across page loads. */
   definitionTypes?: Map<string, string>
+  /** A variant's copies of its set's properties, read from its record by GUID. */
+  propertyCopies: (sourceId: string) => PropertyCopies
 }
 
 export interface FigSessionCheckpoint {
@@ -141,7 +146,8 @@ function restoreAssemblyState(
     components,
     sources: new Map(checkpoint.sources),
     componentIds: new Map(checkpoint.componentIds),
-    savedSizeNodes: new Set(checkpoint.savedSizeNodeIds)
+    savedSizeNodes: new Set(checkpoint.savedSizeNodeIds),
+    propertyCopies: (sourceId) => reader.propertyCopies(sourceId)
   }
 }
 
@@ -304,7 +310,8 @@ function createAssemblyState(
     sources: new Map(),
     components: new Map(),
     componentIds: new Map(),
-    savedSizeNodes: new Set()
+    savedSizeNodes: new Set(),
+    propertyCopies: (sourceId) => reader.propertyCopies(sourceId)
   }
   applyDocumentMetadata(graph, document)
   for (const [hash, bytes] of options.images ?? []) graph.images.set(hash, bytes.slice())
@@ -393,6 +400,69 @@ function materializeReader(
     () => materializeReaderInto(pages, plan, blobs, state, load),
     () => mintImportedId(state)
   )
+}
+
+function pushTo(groups: Map<string, string[]>, key: string, id: string): void {
+  const group = groups.get(key)
+  if (group) group.push(id)
+  else groups.set(key, [id])
+}
+
+/**
+ * A parent's children once a pass has read records of them, which list them in the order the
+ * file saved them. A parent the pass made gets that order. A parent the graph already had keeps
+ * the order of the children it held, which may be an edit: a page already open, or one loaded
+ * only for the components other pages use. Each child the pass added goes where the file saved
+ * it among them, by order key: after the held child saved nearest before it, or before the first
+ * held child when none is.
+ */
+function mergeSavedOrder(
+  graph: SceneGraph,
+  current: readonly string[],
+  saved: readonly string[],
+  existing: ReadonlySet<string>
+): string[] {
+  const savedIds = new Set(saved)
+  const held = current.filter((id) => existing.has(id))
+  if (held.length === 0) return [...savedIds, ...current.filter((id) => !savedIds.has(id))]
+  const keyOf = (id: string) => graph.getNode(id)?.source.orderKey ?? null
+  const heldIds = new Set(held)
+  const anchors = held
+    .flatMap((id) => {
+      const key = keyOf(id)
+      return key === null ? [] : [{ id, key }]
+    })
+    .sort((a, b) => compareOrderKeys(a.key, b.key))
+  const before = new Map<string, string[]>()
+  const after = new Map<string, string[]>()
+  const unplaced: string[] = []
+  const added = [...savedIds].filter((id) => !heldIds.has(id))
+  for (const id of added) {
+    const key = keyOf(id)
+    if (key === null || anchors.length === 0) {
+      unplaced.push(id)
+      continue
+    }
+    // The number of held children saved before this one.
+    let below = 0
+    let end = anchors.length
+    while (below < end) {
+      const middle = (below + end) >> 1
+      if (compareOrderKeys(anchors[middle].key, key) < 0) below = middle + 1
+      else end = middle
+    }
+    if (below === 0) pushTo(before, anchors[0].id, id)
+    else pushTo(after, anchors[below - 1].id, id)
+  }
+  const byKey = (ids: string[]) =>
+    ids.sort((a, b) => compareOrderKeys(keyOf(a) ?? '', keyOf(b) ?? ''))
+  const merged: string[] = []
+  for (const id of held) {
+    merged.push(...byKey(before.get(id) ?? []), id, ...byKey(after.get(id) ?? []))
+  }
+  merged.push(...unplaced)
+  for (const id of current) if (!heldIds.has(id) && !savedIds.has(id)) merged.push(id)
+  return merged
 }
 
 function materializeReaderInto(
@@ -517,10 +587,17 @@ function materializeReaderInto(
       if (graph.getNode(id)?.parentId === parentId) ordered.push(id)
     }
     const parent = graph.getNode(parentId)
-    if (parent)
-      parent.childIds = [...ordered, ...parent.childIds.filter((id) => !ordered.includes(id))]
+    if (parent) parent.childIds = mergeSavedOrder(graph, parent.childIds, ordered, existingNodeIds)
   }
   for (const page of pages) populateInstances(page)
+  // Before instances sync, so they bind and assign the set properties their variants' copies
+  // stand for.
+  const componentSources = new Map([...componentIds].map(([source, node]) => [node, source]))
+  foldVariantPropertyCopies(
+    graph,
+    [...graph.nodes.values()].filter((node) => !existingNodeIds.has(node.id)),
+    (variant) => state.propertyCopies(componentSources.get(variant.id) ?? variant.id)
+  )
   for (const instanceId of resync) graph.syncInstance(instanceId)
   if (resync.size > 0) restoreDerivedSizes(graph, derivedSizes)
   // Records name other layers by GUID, so links wait until every layer of the pass exists,
@@ -547,6 +624,7 @@ function materializeReaderInto(
     resolveVariantPropertyValues(graph, materialized)
     applyDocumentLayoutBindings(graph, savedSizeNodes, materialized, layoutScales)
     applyDocumentPaintBindings(graph, materialized)
+    applyDocumentEffectBindings(graph, materialized)
     applyDocumentValueBindings(graph, materialized)
   })
   return state

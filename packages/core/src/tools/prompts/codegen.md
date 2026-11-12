@@ -12,7 +12,7 @@ Understand the full picture before writing any code.
 
 ```
 get_page_tree          → document structure, all top-level frames
-get_components         → reusable components defined by the designer
+list_components         → reusable components defined by the designer
 list_variables         → design tokens (colors, numbers, strings, booleans)
 list_collections       → variable collections and modes (light/dark, density, etc.)
 analyze_colors         → color palette, frequencies, which colors use variables

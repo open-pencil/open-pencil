@@ -2,6 +2,7 @@ import * as v from 'valibot'
 
 import { sceneNodeToJSX } from '@open-pencil/design-jsx'
 
+import { graphOf } from '#core/figma-api/graph'
 import { jsxPatch } from '#core/tools/analyze/diff/jsx'
 import { nodeIdInputSchema, nodeComparisonInputSchema, defineTool } from '#core/tools/schema'
 
@@ -26,7 +27,7 @@ export const getJSX = defineTool({
   execute: (figma, { id }) => {
     const node = figma.getNodeById(id)
     if (!node) return { error: `Node "${id}" not found` }
-    const jsx = sceneNodeToJSX(id, figma.graph)
+    const jsx = sceneNodeToJSX(id, graphOf(figma))
     if (jsx.length > MAX_JSX_LENGTH) {
       return {
         id,
@@ -45,6 +46,8 @@ export const diffJSX = defineTool({
   description:
     'Structural diff between two nodes in JSX format. Shows added/removed children, changed props.',
   execution: { kind: 'sync', mutation: 'none' },
+  // Kept for `open-pencil diff jsx`; agents get diff_nodes, which also gives an appliable patch.
+  exposure: { mcp: false, ai: false, webmcp: false },
   input: nodeComparisonInputSchema,
   execute: (figma, { from, to }) => {
     const fromNode = figma.getNodeById(from)
@@ -55,8 +58,8 @@ export const diffJSX = defineTool({
     const patch = jsxPatch(
       fromNode.name,
       toNode.name,
-      sceneNodeToJSX(from, figma.graph),
-      sceneNodeToJSX(to, figma.graph)
+      sceneNodeToJSX(from, graphOf(figma)),
+      sceneNodeToJSX(to, graphOf(figma))
     )
     return patch === null ? { diff: null, message: 'No differences' } : { diff: patch }
   }

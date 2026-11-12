@@ -1,8 +1,15 @@
-import { getAxisAlignedBoundsInParent } from './coordinate'
+import { getAxisAlignedBoundsInParent, getNodeLocalMatrix } from './coordinate'
 import type { SceneGraph } from './graph'
+import Matrix from './matrix'
 import { FITTED_CONTAINER_TYPES } from './node-defaults'
 import type { Rect, Vector } from './primitives'
 import type { SceneNode } from './types'
+
+/**
+ * What fitting a group reads: its layers and their parents, as the graph has them or as a resize
+ * plans them before writing.
+ */
+export type GroupFitGraph = Pick<SceneGraph, 'getNode' | 'rootId'>
 
 /** Where a layer sits, with a connector's ends, since a free end is in the parent's axes too. */
 type Placement = Pick<SceneNode, 'x' | 'y' | 'width' | 'height'> &
@@ -80,7 +87,7 @@ function groupBoundingLayers(children: readonly SceneNode[]): SceneNode[] {
  * empty at `origin`, where Figma leaves it.
  */
 export function groupBounds(
-  graph: SceneGraph,
+  graph: GroupFitGraph,
   children: readonly SceneNode[],
   parentId: string,
   origin: Vector
@@ -102,6 +109,76 @@ function shiftedBack(child: SceneNode, dx: number, dy: number): Partial<SceneNod
   }
 }
 
+function isTransformed(node: SceneNode): boolean {
+  return node.rotation !== 0 || node.flipX || node.flipY
+}
+
+/**
+ * The group's new box in its parent's space and how far its children shift in its own frame, so
+ * that the group holds its children while they stay put on the canvas. An unrotated group takes
+ * their bounds in its parent's space. A rotated or flipped group keeps its angle: it takes their
+ * bounds in its own frame, and its position is solved so its frame still maps every child to the
+ * same canvas point, as its rotation and flips are unchanged. A rotated or flipped boolean, whose
+ * box comes from its result's path, keeps its bounds.
+ */
+function fittedBox(
+  graph: GroupFitGraph,
+  group: SceneNode,
+  parentId: string,
+  children: SceneNode[],
+  options: GroupFitOptions
+): { box: Rect; shift: Vector } | null {
+  if (!isTransformed(group)) {
+    const box =
+      (group.type === 'BOOLEAN_OPERATION' ? options.booleanBounds?.(group) : null) ??
+      groupBounds(graph, children, parentId, group)
+    return { box, shift: { x: box.x - group.x, y: box.y - group.y } }
+  }
+  if (group.type === 'BOOLEAN_OPERATION') return null
+  const local = groupBounds(graph, children, group.id, { x: 0, y: 0 })
+  const [px, py] = Matrix.mapPoints(getNodeLocalMatrix(group), [local.x, local.y])
+  const sized = { ...group, width: local.width, height: local.height }
+  const [qx, qy] = Matrix.mapPoints(getNodeLocalMatrix(sized, { x: 0, y: 0 }), [0, 0])
+  return {
+    box: { x: px - qx, y: py - qy, width: local.width, height: local.height },
+    shift: { x: local.x, y: local.y }
+  }
+}
+
+const FIT_TOLERANCE = 1e-9
+
+function unchanged(value: number, previous: number): boolean {
+  return Math.abs(value - previous) <= FIT_TOLERANCE * Math.max(1, Math.abs(previous))
+}
+
+/**
+ * The changes that fit `group` to `children`: its box in its parent's space, and each child moved
+ * back so it stays put on the canvas. Null when the fit changes nothing.
+ */
+export function groupFitChanges(
+  graph: GroupFitGraph,
+  group: SceneNode,
+  children: SceneNode[],
+  options: GroupFitOptions = {}
+): Map<string, Partial<SceneNode>> | null {
+  if (!group.parentId) return null
+  const fitted = fittedBox(graph, group, group.parentId, children, options)
+  if (!fitted) return null
+  const { box, shift } = fitted
+  // A rotated group's frame leaves rounding residue; a fit within it changes nothing.
+  if (
+    unchanged(shift.x, 0) &&
+    unchanged(shift.y, 0) &&
+    unchanged(box.width, group.width) &&
+    unchanged(box.height, group.height)
+  ) {
+    return null
+  }
+  const changes = new Map<string, Partial<SceneNode>>([[group.id, box]])
+  for (const child of children) changes.set(child.id, shiftedBack(child, shift.x, shift.y))
+  return changes
+}
+
 /** Moves the group to its children's bounds, shifting them back so they stay put. */
 function fitGroup(
   graph: SceneGraph,
@@ -110,22 +187,12 @@ function fitGroup(
   fit: GroupFit,
   options: GroupFitOptions
 ) {
-  if (!group.parentId || group.rotation !== 0 || group.flipX || group.flipY) return
-  const bounds =
-    (group.type === 'BOOLEAN_OPERATION' ? options.booleanBounds?.(group) : null) ??
-    groupBounds(graph, children, group.parentId, group)
-  const dx = bounds.x - group.x
-  const dy = bounds.y - group.y
-  if (dx === 0 && dy === 0 && bounds.width === group.width && bounds.height === group.height) {
-    return
-  }
+  const changes = groupFitChanges(graph, group, children, options)
+  if (!changes) return
   for (const node of [group, ...children]) {
     if (!fit.before.has(node.id)) fit.before.set(node.id, placement(node))
   }
-  graph.updateNode(group.id, bounds)
-  for (const child of children) {
-    graph.updateNode(child.id, shiftedBack(child, dx, dy))
-  }
+  for (const [id, change] of changes) graph.updateNode(id, change)
   for (const node of [group, ...children]) {
     const current = graph.getNode(node.id)
     if (current) fit.after.set(node.id, placement(current))
@@ -143,8 +210,8 @@ function removeEmptyGroup(graph: SceneGraph, group: SceneNode, fit: GroupFit) {
 /**
  * Refits the groups and booleans around these parents to their children, keeping every child where
  * it is on the canvas, and removes groups left empty, as Figma does after a layer inside one moves,
- * resizes, or leaves. Rotated or flipped containers keep their bounds. Returns null when nothing
- * changed.
+ * resizes, or leaves. Rotated or flipped groups keep their angle; a rotated or flipped boolean keeps
+ * its bounds. Returns null when nothing changed.
  */
 export function fitEnclosingGroups(
   graph: SceneGraph,

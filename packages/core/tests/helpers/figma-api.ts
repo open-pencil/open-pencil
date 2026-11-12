@@ -1,22 +1,18 @@
+import type {
+  ComponentNode,
+  PageNode,
+  SolidPaint,
+  TextNode
+} from '@figma/plugin-typings/plugin-api-standalone'
+
+import type { SkiaRenderer } from '@open-pencil/core/canvas'
 import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
-import { fontManager } from '@open-pencil/core/text'
+import { headlessRenderer } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 export function createAPI(): FigmaAPI {
   return new FigmaAPI(new SceneGraph())
-}
-
-/**
- * Registers the app's bundled variable Inter as `family`, upright and italic, as a host's own
- * fonts are, so `loadFontAsync` loads any weight of it. Plugin text edits refuse fonts that are
- * not loaded, as in Figma, so tests that edit text load their fonts first, as scripts do.
- */
-export async function registerTestFont(family = 'Inter'): Promise<void> {
-  const data = await fontManager.fetchBundledFont('/InterVariable.ttf')
-  if (!data) throw new Error('The bundled Inter font is missing')
-  await fontManager.markLoaded(family, 'Regular', data)
-  await fontManager.markLoaded(family, 'Regular Italic', data)
 }
 
 /** Reads a proxy through Figma's `TextNode` surface, which `wrapNode()` cannot name. */
@@ -32,14 +28,17 @@ export function asComponentNode(node: FigmaNodeProxy): FigmaNodeProxy & Componen
   return node as FigmaNodeProxy & ComponentNode
 }
 
+function isPageNode(node: FigmaNodeProxy): node is FigmaNodeProxy & PageNode {
+  return node.type === 'PAGE'
+}
+
 /**
  * Names `api.currentPage` as a page. The boolean-operation entry points only take Figma's node
  * types, while the current-page proxy is typed by its selection alone.
  */
-export function asPageNode(
-  page: FigmaNodeProxy & { selection: FigmaNodeProxy[] }
-): FigmaNodeProxy & PageNode {
-  return page as FigmaNodeProxy & PageNode
+export function asPageNode(page: FigmaNodeProxy): FigmaNodeProxy & PageNode {
+  if (!isPageNode(page)) throw new Error(`Expected a page, got ${page.type}`)
+  return page
 }
 
 /**
@@ -76,4 +75,18 @@ export function createStackHost() {
   }
   const order = () => host.children.map((child: FigmaNodeProxy) => child.name)
   return { figma, host, rect, order }
+}
+
+/**
+ * Attaches the process's headless renderer to `api`, as the app and `open-pencil eval` do, so
+ * geometry, booleans, and flatten measure real paths. One renderer serves every test, as each new
+ * one would keep its own copy of every font loaded after it; the paths it keeps by layer id are
+ * cleared, since another document's layers share those ids.
+ */
+export async function attachTestRenderer(api: FigmaAPI): Promise<SkiaRenderer> {
+  const renderer = await headlessRenderer()
+  renderer.nodePaths.clear()
+  renderer.invalidateAllPictures()
+  api.setRenderer(renderer)
+  return renderer
 }

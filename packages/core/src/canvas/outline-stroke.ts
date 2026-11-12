@@ -1,6 +1,6 @@
-import type { Path } from 'canvaskit-wasm'
 import { omit, pick } from 'es-toolkit/object'
 
+import type { Path } from '@open-pencil/canvaskit'
 import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix, localTransformFromWorld } from '@open-pencil/scene-graph/coordinate'
 import { copyFills } from '@open-pencil/scene-graph/copy'
@@ -19,7 +19,7 @@ import {
   windingRuleOf
 } from './boolean'
 import type { SkiaRenderer } from './renderer'
-import { textGlyphPaths } from './text/outlines'
+import { textGlyphPaths } from './text/outlines/glyphs'
 
 /**
  * A layer Outline stroke makes in place of another: a vector, or for text a group holding one

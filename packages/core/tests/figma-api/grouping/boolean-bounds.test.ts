@@ -1,13 +1,14 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
-import type { Surface } from 'canvaskit-wasm'
-
+import type { Surface } from '@open-pencil/canvaskit'
 import { createEditor } from '@open-pencil/core'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { FigmaAPI, type FigmaNodeProxy } from '@open-pencil/core/figma-api'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
+
+import { makeBooleanOperationPath } from '#core/canvas/boolean'
 
 // Recorded with the same script in Figma desktop 126: a boolean operation takes the box of its
 // result, and an empty result keeps its operands' box. Measuring needs a renderer.
@@ -18,7 +19,7 @@ let renderer: SkiaRenderer
 let surface: Surface
 
 beforeAll(async () => {
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const made = ck.MakeSurface(64, 64)
   if (!made) throw new Error('Could not create CanvasKit surface')
   surface = made
@@ -69,6 +70,21 @@ describe('boolean operation bounds', () => {
     expect(box(intersect)).toEqual([40, 20, 10, 30])
   })
 
+  test('switching the operation refits the boolean and the group around it', () => {
+    const { figma, square } = api()
+    const boolean = figma.union([square(0, 0), square(20, 20)], figma.currentPage)
+    const group = figma.group([boolean, square(100, 0, 10, 10)], figma.currentPage)
+    expect([box(boolean), box(group)]).toEqual([
+      [0, 0, 70, 70],
+      [0, 0, 110, 70]
+    ])
+    boolean.booleanOperation = 'INTERSECT'
+    expect([box(boolean), box(group)]).toEqual([
+      [20, 20, 30, 30],
+      [20, 0, 90, 50]
+    ])
+  })
+
   test('from the canvas, a boolean takes the box of its result too', () => {
     const editor = createEditor()
     // Attaching CanvasKit installs a global text measurer that later tests must not inherit.
@@ -88,6 +104,21 @@ describe('boolean operation bounds', () => {
       const booleanNode = editor.graph.getNode(booleanId ?? '')
       expect(booleanNode && box(booleanNode)).toEqual([20, 20, 30, 30])
       expect(editor.graph.getAbsolutePosition(b.id)).toEqual({ x: 20, y: 20 })
+
+      // The operation itself changing drops the renderer's kept result: the next reading is
+      // built from the new operation.
+      const resultSize = () => {
+        const node = editor.graph.getNode(booleanId ?? '')
+        const path = node && makeBooleanOperationPath(renderer, node, editor.graph)
+        const bounds = path?.getBounds()
+        path?.delete()
+        return bounds && [bounds[2] - bounds[0], bounds[3] - bounds[1]].map(Math.round)
+      }
+      expect(resultSize()).toEqual([30, 30])
+      editor.updateNode(booleanId ?? '', { booleanOperation: 'UNION' })
+      expect(resultSize()).toEqual([70, 70])
+      // And the boolean takes the box of that result, as it does when an operand moves.
+      expect(booleanNode && box(booleanNode)).toEqual([0, 0, 70, 70])
     } finally {
       editor.dispose()
     }

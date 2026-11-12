@@ -1,0 +1,230 @@
+import { describe, expect, test, beforeEach, jest } from 'bun:test'
+
+import type { RequestPermissionRequest, RequestPermissionResponse } from '@agentclientprotocol/sdk'
+
+import {
+  permissionQueue,
+  currentPermission,
+  requestPermissionFromUser,
+  respondToPermission,
+  rejectCurrentPermission
+} from '@/app/ai/agents/acp/permission'
+import { createOwnToolApproval } from '@/app/ai/agents/acp/tools'
+import { AGENT_INPUT_NOTIFY_DELAY_MS } from '@/constants'
+
+function makeRequest(
+  options: { optionId: string; kind: string; name: string }[] = [
+    { optionId: 'allow', kind: 'allow_once', name: 'Allow once' },
+    { optionId: 'reject', kind: 'reject_once', name: 'Reject' }
+  ]
+): RequestPermissionRequest {
+  return {
+    sessionId: 'session-1',
+    options: options.map((o) => ({
+      optionId: o.optionId,
+      kind: o.kind as 'allow_once' | 'allow_always' | 'reject_once' | 'reject_always',
+      name: o.name
+    })),
+    toolCall: {
+      toolCallId: 'tc-1',
+      status: 'pending' as const
+    }
+  }
+}
+
+function selectedOptionId(response: RequestPermissionResponse): string | null {
+  const { outcome } = response
+  return outcome.outcome === 'selected' ? outcome.optionId : null
+}
+
+describe('acp-permission', () => {
+  beforeEach(() => {
+    permissionQueue.value = []
+  })
+
+  test('requestPermissionFromUser queues an entry', () => {
+    void requestPermissionFromUser(makeRequest())
+    expect(permissionQueue.value).toHaveLength(1)
+    expect(currentPermission.value).not.toBeNull()
+    expect(currentPermission.value?.request.sessionId).toBe('session-1')
+    respondToPermission('allow')
+  })
+
+  test('respondToPermission resolves with selected optionId', async () => {
+    const promise = requestPermissionFromUser(makeRequest())
+    respondToPermission('allow')
+    const result = await promise
+    expect(result.outcome.outcome).toBe('selected')
+    expect(selectedOptionId(result)).toBe('allow')
+    expect(permissionQueue.value).toHaveLength(0)
+  })
+
+  test('rejectCurrentPermission picks reject option', async () => {
+    const promise = requestPermissionFromUser(makeRequest())
+    rejectCurrentPermission()
+    const result = await promise
+    expect(selectedOptionId(result)).toBe('reject')
+  })
+
+  test('rejectCurrentPermission falls back to first option when no reject kind', async () => {
+    const req = makeRequest([{ optionId: 'only-allow', kind: 'allow_once', name: 'Allow' }])
+    const promise = requestPermissionFromUser(req)
+    rejectCurrentPermission()
+    const result = await promise
+    expect(selectedOptionId(result)).toBe('only-allow')
+  })
+
+  test('queue handles multiple concurrent requests in order', async () => {
+    const p1 = requestPermissionFromUser(
+      makeRequest([{ optionId: 'a1', kind: 'allow_once', name: 'First' }])
+    )
+    const p2 = requestPermissionFromUser(
+      makeRequest([{ optionId: 'a2', kind: 'allow_once', name: 'Second' }])
+    )
+    expect(permissionQueue.value).toHaveLength(2)
+    expect(currentPermission.value?.request.options[0].optionId).toBe('a1')
+
+    respondToPermission('a1')
+    const r1 = await p1
+    expect(selectedOptionId(r1)).toBe('a1')
+    expect(currentPermission.value?.request.options[0].optionId).toBe('a2')
+
+    respondToPermission('a2')
+    const r2 = await p2
+    expect(selectedOptionId(r2)).toBe('a2')
+    expect(permissionQueue.value).toHaveLength(0)
+  })
+
+  test('respondToPermission is no-op when queue is empty', () => {
+    expect(permissionQueue.value).toHaveLength(0)
+    respondToPermission('anything')
+    expect(permissionQueue.value).toHaveLength(0)
+  })
+
+  test('rejectCurrentPermission is no-op when queue is empty', () => {
+    expect(permissionQueue.value).toHaveLength(0)
+    rejectCurrentPermission()
+    expect(permissionQueue.value).toHaveLength(0)
+  })
+
+  test('timer cleared on manual resolution (no double resolve)', async () => {
+    const promise = requestPermissionFromUser(makeRequest())
+    respondToPermission('allow')
+    const result = await promise
+    expect(selectedOptionId(result)).toBe('allow')
+    // Timer should be cleared — wait to ensure no stale timeout fires
+    await new Promise((resolve) => {
+      setTimeout(resolve, 50)
+    })
+    expect(permissionQueue.value).toHaveLength(0)
+  })
+
+  test('timeout auto-rejects after delay', async () => {
+    const req = makeRequest()
+    // Override timeout for test speed by creating request and manually triggering the timer
+    const promise = requestPermissionFromUser(req)
+    const entry = permissionQueue.value[0]
+    expect(entry).toBeDefined()
+
+    // Fast-forward: manually fire the timer callback
+    clearTimeout(entry.timer)
+    const timerFn = () => {
+      const idx = permissionQueue.value.indexOf(entry)
+      if (idx === -1) return
+      permissionQueue.value = permissionQueue.value.filter((e) => e !== entry)
+      entry.resolve({
+        outcome: {
+          outcome: 'selected',
+          optionId:
+            req.options.find((o) => o.kind.startsWith('reject'))?.optionId ??
+            req.options[0]?.optionId ??
+            ''
+        }
+      })
+    }
+    timerFn()
+
+    const result = await promise
+    expect(selectedOptionId(result)).toBe('reject')
+    expect(permissionQueue.value).toHaveLength(0)
+  })
+
+  test('a request left unanswered calls onUnanswered once, and an answered one never', () => {
+    jest.useFakeTimers()
+    try {
+      let unanswered = 0
+      void requestPermissionFromUser(makeRequest(), () => unanswered++)
+      jest.advanceTimersByTime(AGENT_INPUT_NOTIFY_DELAY_MS - 1)
+      expect(unanswered).toBe(0)
+      jest.advanceTimersByTime(1)
+      expect(unanswered).toBe(1)
+      respondToPermission('allow')
+
+      void requestPermissionFromUser(makeRequest(), () => unanswered++)
+      respondToPermission('allow')
+      jest.advanceTimersByTime(AGENT_INPUT_NOTIFY_DELAY_MS)
+      expect(unanswered).toBe(1)
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+})
+
+describe('permission for OpenPencil’s own tools', () => {
+  test('a call to OpenPencil’s server is allowed once without asking', () => {
+    const approval = createOwnToolApproval()
+    approval.noteUpdate({
+      sessionUpdate: 'tool_call_update',
+      toolCallId: 'tc-1',
+      rawInput: { providerIdentifier: 'open-pencil', toolName: 'get_current_page', args: {} }
+    })
+    expect(approval.answer(makeRequest())).toEqual({
+      outcome: { outcome: 'selected', optionId: 'allow' }
+    })
+  })
+
+  test('Grok Build’s calls to OpenPencil’s server are allowed once without asking', () => {
+    const approval = createOwnToolApproval()
+    approval.noteUpdate({
+      sessionUpdate: 'tool_call',
+      toolCallId: 'tc-1',
+      title: 'use_tool',
+      rawInput: { tool_name: 'open-pencil__get_node', tool_input: { id: '1:2' } },
+      _meta: { 'x.ai/tool': { name: 'use_tool' } }
+    })
+    expect(approval.answer(makeRequest())).toEqual({
+      outcome: { outcome: 'selected', optionId: 'allow' }
+    })
+  })
+
+  test('Antigravity CLI’s calls to OpenPencil’s server are allowed once without asking', () => {
+    const approval = createOwnToolApproval()
+    approval.noteUpdate({
+      sessionUpdate: 'tool_call',
+      toolCallId: 'tc-1',
+      title: 'Run mcp_open-pencil_get_node',
+      rawInput: { id: '1:2', toolSummary: 'Inspect the node' }
+    })
+    expect(approval.answer(makeRequest())).toEqual({
+      outcome: { outcome: 'selected', optionId: 'allow' }
+    })
+  })
+
+  test('another server’s calls and the agent’s own tools are left to the person', () => {
+    const approval = createOwnToolApproval()
+    approval.noteUpdate({
+      sessionUpdate: 'tool_call_update',
+      toolCallId: 'tc-1',
+      rawInput: { providerIdentifier: 'github', toolName: 'create_issue', args: {} }
+    })
+    approval.noteUpdate({
+      sessionUpdate: 'tool_call',
+      toolCallId: 'tc-2',
+      title: 'rm -rf build',
+      kind: 'execute',
+      rawInput: { command: 'rm -rf build' }
+    })
+    expect(approval.answer(makeRequest())).toBeNull()
+    expect(approval.answer({ ...makeRequest(), toolCall: { toolCallId: 'tc-2' } })).toBeNull()
+  })
+})

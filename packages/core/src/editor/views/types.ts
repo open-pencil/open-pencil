@@ -1,11 +1,41 @@
 import type { EditorState, Tool } from '#core/editor/types'
 
 /**
- * What the host takes away from every view, whatever the canvas shows: a read-only document, as
- * for a viewer or an earlier version, can be looked at, selected in, and copied from, not changed.
+ * How much of a path vector edit mode may change, widest first: anything, or only the handles of
+ * its points, which keep their places and connections. A host that lets players reshape curves
+ * but not redraw them, as a lettering game does, offers handles only.
+ */
+export const PATH_EDIT_LEVELS = ['all', 'handles'] as const
+export type PathEdits = (typeof PATH_EDIT_LEVELS)[number]
+
+/**
+ * Whether layers may change, widest first: anything; only where they are, so layers move within
+ * their parents and nothing is resized, rotated, restyled, renamed, added, or deleted, as a game
+ * whose pieces are dragged into place offers; or none of them, while vector edit mode still
+ * reshapes a path as far as `PathEdits` lets it, as a lettering game that hands the player one
+ * path offers.
+ */
+export const LAYER_EDIT_LEVELS = ['all', 'move', 'none'] as const
+export type LayerEdits = (typeof LAYER_EDIT_LEVELS)[number]
+
+/**
+ * What the host takes away from every view, whatever the canvas shows. A restriction only ever
+ * takes away from what the document's kind and the view offer. Each edit restriction is a level
+ * from a list ordered widest first: `'all'`, then narrower levels named for what still works,
+ * then `'none'` where a host needs it; the host's level and the view's combine to the narrower.
  */
 export interface EditorRestrictions {
+  /**
+   * A read-only document, as for a viewer or an earlier version, can be looked at, selected in,
+   * and copied from, not changed.
+   */
   readOnly: boolean
+  /** The only tools the host offers, or null to leave the profile's tools as they are. */
+  tools: ReadonlySet<Tool> | null
+  /** How much of a path vector edit mode may change. */
+  pathEdits: PathEdits
+  /** Whether layers may change outside vector edit mode. */
+  layerEdits: LayerEdits
 }
 
 /**
@@ -43,13 +73,43 @@ export interface EditorProfile {
   edits: boolean
   /** The tools on offer, or null for every tool. */
   tools: ReadonlySet<Tool> | null
-  /** Which tool each key picks, by key code (`KeyR`, `Shift+KeyS`). */
+  /** How much of a path vector edit mode may change: anything, or only its handles. */
+  pathEdits: PathEdits
+  /**
+   * Whether layers may change: the canvas's edit handles, layer drags, text editing, value
+   * scrubbing, and guide editing. None while the document is read-only.
+   */
+  layerEdits: LayerEdits
+  /** Which tool each key picks, by shortcut (`R`, `Shift+S`), as TanStack Hotkeys spells it. */
   toolKeys: Readonly<Partial<Record<string, Tool>>>
   /**
    * The grid moves, resizes, and placements land on while Snap to pixel grid is on, in canvas
    * units: whole pixels in a design, FigJam's 16 on a board.
    */
   snapGrid: number
+  /** The grid of dots drawn under the page's layers, in canvas units, as a FigJam board's; null for none. */
+  dotGrid: number | null
+  /** Whether Figma's pixel grid shows when zoomed in far enough; a FigJam board has none. */
+  pixelGrid: boolean
+  /**
+   * Whether a click looks into a top-level frame by itself, as in Figma Design; on a FigJam
+   * board it selects the frame, and double-click or Enter goes inside.
+   */
+  framesOpen: boolean
+  /**
+   * What a section's title is coloured from: its fill, as in Figma Design, or its outline, as a
+   * FigJam board draws it.
+   */
+  sectionTitles: 'fill' | 'outline'
+  /** Whether design lint checks the document; a FigJam board has none. */
+  lint: boolean
+  /** Whether the canvas shows rulers, from which guides are dragged; a FigJam board has none. */
+  rulers: boolean
+  /**
+   * Whether the side panels start open: a design's do, while a board starts on the canvas alone,
+   * as FigJam shows it, with the panels a click away.
+   */
+  panelsOpen: boolean
 }
 
 /** The state a profile resolves from: the document's kind, the pane's view, and the host's limits. */

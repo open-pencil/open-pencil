@@ -3,17 +3,21 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuPortal,
-  ContextMenuRoot,
   ContextMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuTrigger
 } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed, normalizeClass, type HTMLAttributes } from 'vue'
 
+import type { DocumentKind } from '@open-pencil/scene-graph'
+import { useI18n } from '@open-pencil/vue/i18n'
+
+import { DOCUMENT_KIND_ICONS } from '@/components/document/kinds'
+import AppContextMenuRoot from '@/components/ui/menu/AppContextMenuRoot.vue'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import iconButtonTheme from '@/theme/button/icon-button'
@@ -24,6 +28,7 @@ const iconButton = tv(iconButtonTheme)
 
 const {
   name,
+  kind,
   metadata,
   previewURL,
   view = 'grid',
@@ -32,23 +37,45 @@ const {
   class: className
 } = defineProps<{
   name: string
+  /** A design or a board, marked before the name as Figma marks its files; unknown leaves no mark. */
+  kind?: DocumentKind
   metadata: string
   previewURL?: string | null
   view?: 'grid' | 'list'
   disabled?: boolean
-  /** Labels of the entry's menu, opened from its ⋯ button or by right-clicking; none without them. */
-  menu?: { actions: string; delete: string }
+  /**
+   * Labels of the entry's menu, opened from its ⋯ button or by right-clicking; none without them.
+   * `destructive: false` marks an item that only takes the entry off a list, such as Recents.
+   */
+  menu?: { actions: string; delete: string; destructive?: boolean }
   class?: HTMLAttributes['class']
 }>()
 const emit = defineEmits<{ open: []; delete: [] }>()
-const styles = computed(() => documentEntry({ view }))
-const menuUI = useMenuUI({ content: 'min-w-40', item: 'justify-start gap-2 text-error' })
+const styles = computed(() => documentEntry({ view, kind }))
+const { files } = useI18n()
+const kindLabel = computed(() =>
+  kind ? { design: files.value.createDesign, board: files.value.createBoard }[kind] : null
+)
+const menuUI = computed(() =>
+  useMenuUI({
+    content: 'min-w-40',
+    item: menu?.destructive === false ? 'justify-start gap-2' : 'justify-start gap-2 text-error'
+  })
+)
 </script>
 
 <template>
-  <ContextMenuRoot :disabled="!menu">
-    <ContextMenuTrigger as-child>
-      <div data-slot="document-entry" :class="styles.root({ class: normalizeClass(className) })">
+  <!--
+    The entry's own element is its root, so a parent's directives and attributes reach it, as the
+    preview directives of Home do; under the context menu they would land on a fragment.
+  -->
+  <div
+    data-slot="document-entry"
+    :data-kind="kind"
+    :class="styles.root({ class: normalizeClass(className) })"
+  >
+    <AppContextMenuRoot :disabled="!menu">
+      <ContextMenuTrigger as="div" data-slot="surface" :class="styles.surface()">
         <button
           type="button"
           :disabled="disabled"
@@ -60,9 +87,22 @@ const menuUI = useMenuUI({ content: 'min-w-40', item: 'justify-start gap-2 text-
             <img v-if="previewURL" :src="previewURL" alt="" :class="styles.image()" />
             <icon-lucide-file-image v-else :class="styles.fallback()" />
           </span>
+          <component
+            :is="DOCUMENT_KIND_ICONS[kind]"
+            v-else-if="kind"
+            :class="styles.icon()"
+            aria-hidden="true"
+          />
           <icon-lucide-file-image v-else :class="styles.icon()" />
           <span data-slot="body" :class="styles.body()">
             <span data-slot="title" :class="styles.title()">
+              <component
+                :is="DOCUMENT_KIND_ICONS[kind]"
+                v-if="kind && view === 'grid'"
+                :class="styles.kind()"
+                aria-hidden="true"
+              />
+              <span v-if="kindLabel" class="sr-only">{{ kindLabel }},</span>
               <span data-slot="name" :class="styles.name()">{{ name }}</span>
               <span v-if="$slots.status" data-slot="status" :class="styles.status()">
                 <slot name="status" />
@@ -75,7 +115,7 @@ const menuUI = useMenuUI({ content: 'min-w-40', item: 'justify-start gap-2 text-
         <div v-if="$slots.actions" data-slot="actions" :class="styles.actions()">
           <slot name="actions" />
         </div>
-        <DropdownMenuRoot v-if="menu">
+        <AppDropdownMenuRoot v-if="menu">
           <DropdownMenuTrigger
             :aria-label="menu.actions"
             data-test-id="home-document-actions"
@@ -91,24 +131,26 @@ const menuUI = useMenuUI({ content: 'min-w-40', item: 'justify-start gap-2 text-
                   data-test-id="home-document-delete"
                   @select="emit('delete')"
                 >
-                  <icon-lucide-trash-2 :class="menuUI.icon" />
+                  <icon-lucide-trash-2 v-if="menu.destructive !== false" :class="menuUI.icon" />
+                  <icon-lucide-x v-else :class="menuUI.icon" />
                   {{ menu.delete }}
                 </DropdownMenuItem>
               </MenuScrollArea>
             </DropdownMenuContent>
           </DropdownMenuPortal>
-        </DropdownMenuRoot>
-      </div>
-    </ContextMenuTrigger>
-    <ContextMenuPortal v-if="menu">
-      <ContextMenuContent :class="menuUI.content">
-        <MenuScrollArea>
-          <ContextMenuItem :class="menuUI.item" @select="emit('delete')">
-            <icon-lucide-trash-2 :class="menuUI.icon" />
-            {{ menu.delete }}
-          </ContextMenuItem>
-        </MenuScrollArea>
-      </ContextMenuContent>
-    </ContextMenuPortal>
-  </ContextMenuRoot>
+        </AppDropdownMenuRoot>
+      </ContextMenuTrigger>
+      <ContextMenuPortal v-if="menu">
+        <ContextMenuContent :class="menuUI.content">
+          <MenuScrollArea>
+            <ContextMenuItem :class="menuUI.item" @select="emit('delete')">
+              <icon-lucide-trash-2 v-if="menu.destructive !== false" :class="menuUI.icon" />
+              <icon-lucide-x v-else :class="menuUI.icon" />
+              {{ menu.delete }}
+            </ContextMenuItem>
+          </MenuScrollArea>
+        </ContextMenuContent>
+      </ContextMenuPortal>
+    </AppContextMenuRoot>
+  </div>
 </template>

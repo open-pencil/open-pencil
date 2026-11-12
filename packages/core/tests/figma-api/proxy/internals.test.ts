@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createAPI } from '#core-tests/helpers/figma-api'
-
 describe('internals not exposed', () => {
   test('node has no _id, _graph, _api properties', () => {
     const api = createAPI()

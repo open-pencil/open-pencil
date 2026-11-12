@@ -2,13 +2,14 @@ import type { Ref } from 'vue'
 
 import type { Editor, Tool } from '@open-pencil/core'
 
+import { handleEyedropperDown } from '#vue/canvas/eyedropper'
 import { startPenInput, updatePenHover } from '#vue/canvas/pen/input'
 import { startPencilInput } from '#vue/canvas/pencil/input'
 import { HAND_GRAB_CURSOR } from '#vue/editor/tool-cursor'
 import { attachModifiers, startConnectorDraw } from '#vue/shared/input/connector/draw'
 import { startShapeDraw, startTextDraw } from '#vue/shared/input/draw'
 import { startPanDrag } from '#vue/shared/input/pan/drag'
-import { handleSelectDown } from '#vue/shared/input/select'
+import { handleScaleDown, handleSelectDown } from '#vue/shared/input/select'
 import type { HitTestFns } from '#vue/shared/input/select'
 import { startStickyDraw } from '#vue/shared/input/sticky/draw'
 import type { DragState } from '#vue/shared/input/types'
@@ -76,6 +77,16 @@ export const CANVAS_TOOLS: Readonly<Record<Tool, CanvasTool>> = {
   HAND: pan,
   // Comments are placed by the app's comments layer above the canvas.
   COMMENT: { press: () => undefined },
+  EYEDROPPER: {
+    press: ({ event, cx, cy }, { editor }) => {
+      if (event.button === 0) handleEyedropperDown(editor, cx, cy, event.altKey)
+    }
+  },
+  SCALE: {
+    press: ({ event, cx, cy, sx, sy }, context) =>
+      handleScaleDown(event, cx, cy, sx, sy, context.editor, context.hitFns, context.setDrag),
+    hover: (pointer, { hoverLayers }) => hoverLayers(pointer)
+  },
   PEN: {
     press: ({ event, cx, cy }, { editor, setDrag, cursorOverride }) =>
       startPenInput(event, cx, cy, editor, setDrag, cursorOverride),

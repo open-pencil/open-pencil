@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
 import { createAPI } from '#core-tests/helpers/figma-api'
 
+import { expectDefined } from '@open-pencil/test-support/assert'
 describe('tree operations', () => {
   test('appendChild reparents', () => {
     const api = createAPI()
@@ -12,6 +12,18 @@ describe('tree operations', () => {
     expect(parent.children.length).toBe(1)
     expect(parent.children[0].id).toBe(child.id)
     expect(expectDefined(child.parent, 'child parent').id).toBe(parent.id)
+  })
+
+  // Measured in Figma's plugin API (Figma desktop 126).
+  test('appendChild moves a child already there to the end', () => {
+    const api = createAPI()
+    const parent = api.createFrame()
+    const a = api.createRectangle()
+    const b = api.createRectangle()
+    parent.appendChild(a)
+    parent.appendChild(b)
+    parent.appendChild(a)
+    expect(parent.children.map((c) => c.id)).toEqual([b.id, a.id])
   })
 
   test('insertChild at index', () => {

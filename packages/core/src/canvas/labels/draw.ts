@@ -1,5 +1,4 @@
-import type { Canvas } from 'canvaskit-wasm'
-
+import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneNode, SceneGraph } from '@open-pencil/scene-graph'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
@@ -28,7 +27,7 @@ export function drawSectionTitles(
   overlays?: RenderOverlays
 ): void {
   const provider = r.fontProvider
-  if (!r.sectionTitleFont || !provider) return
+  if (!r.chromeFonts.sectionTitle || !provider) return
 
   const sections = r.labelCache.getSections(
     graph,
@@ -73,7 +72,7 @@ function drawSectionTitle(
       try {
         const matrix = labelScreenMatrix(labelTransform(node, graph, overlays?.rotationPreview), r)
         canvas.concat(matrix)
-        r.auxFill.setColor(r.ck.Color4f(background.r, background.g, background.b, background.a))
+        r.auxFill.setColorComponents(background.r, background.g, background.b, background.a)
         const { x, y, width, height } = layout.bounds
         const bounds = r.ck.RRectXY(
           r.ck.LTRBRect(x, y, x + width, y + height),
@@ -131,7 +130,7 @@ export function drawComponentLabels(
   graph: SceneGraph,
   overlays?: RenderOverlays
 ): void {
-  if (!r.componentLabelFont || !r.fontProvider) return
+  if (!r.chromeFonts.componentLabel || !r.fontProvider) return
 
   const components = r.labelCache.getComponents(
     graph,
@@ -229,7 +228,7 @@ export function drawFrameTitles(
   overlays?: RenderOverlays
 ): void {
   const provider = r.fontProvider
-  if (!r.labelFont || !provider) return
+  if (!r.chromeFonts.label || !provider) return
 
   const frames = r.labelCache.getFrames(
     graph,

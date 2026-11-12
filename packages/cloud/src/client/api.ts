@@ -1,7 +1,7 @@
 import type { CloudFetch } from '#cloud/client/discovery'
 import {
   acceptedInvitationSchema,
-  aiTokenSchema,
+  servicesTokenSchema,
   cloudSessionSchema,
   cloudUserProfileSchema,
   collaborationTicketSchema,
@@ -18,18 +18,19 @@ import {
   documentVersionsSchema,
   restoredDocumentSchema,
   sharedDocumentSchema,
+  trashSchema,
   invitationContinuationSchema,
   invitationPreviewSchema,
   resolvedDocumentShareSchema,
   type AcceptDocumentInvitationInput,
-  type AIToken,
+  type ServicesToken,
   type CloudSession,
   type CloudUserProfile,
   type CollaborationTicket,
   type CreateInvitationContinuationInput,
   type InvitationContinuation,
   type CommitUploadRequest,
-  type CreateDocumentInput,
+  type CreateDocumentRequest,
   type CreateDocumentInvitationInput,
   type CreateDocumentShareInput,
   type CreateUploadInput,
@@ -46,10 +47,12 @@ import {
   type SaveDocumentVersionInput,
   type UpdateDocumentVersionInput,
   type SharedDocument,
+  type TrashedDocument,
   type InvitationPreview,
-  type LookupCloudUserInput,
   type PutDocumentGrantInput,
   type ResolveDocumentShareInput,
+  fileDocumentReportResponseSchema,
+  type FileDocumentReportInput,
   type UpdateDocumentShareInput,
   type AcceptedInvitation
 } from '#cloud/contract'
@@ -137,27 +140,13 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       if (response.status === 401) return null
       return v.parse(cloudSessionSchema, await responseBody(response, options.onDiagnostic))
     },
-    /** A short-lived token for the deployment's AI service, on the workspace's behalf. */
-    async requestAIToken(workspaceId: string): Promise<AIToken> {
+    /** A short-lived token for the deployment's services, on the workspace's behalf. */
+    async requestServicesToken(workspaceId: string): Promise<ServicesToken> {
       return parseResponse(
-        client.ai.token.$post({ json: { workspaceId } }),
-        aiTokenSchema,
+        client.services.token.$post({ json: { workspaceId } }),
+        servicesTokenSchema,
         options.onDiagnostic
       )
-    },
-    async lookupUser(
-      documentId: string,
-      input: LookupCloudUserInput
-    ): Promise<CloudUserProfile | null> {
-      const response = await parseResponse(
-        client.documents[':documentId'].users.lookup.$post({
-          param: { documentId },
-          json: input
-        }),
-        userLookupResponseSchema,
-        options.onDiagnostic
-      )
-      return response.user
     },
     async getUserProfile(documentId: string, userId: string): Promise<CloudUserProfile | null> {
       const response = await parseResponse(
@@ -192,17 +181,35 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
     },
     async createDocument(
       workspaceId: string,
-      input: CreateDocumentInput
+      input: CreateDocumentRequest
     ): Promise<DocumentSummary> {
       const response = await parseResponse(
         client.workspaces[':workspaceId'].documents.$post({
           param: { workspaceId },
-          json: input
+          json: { ...input, kind: input.kind ?? 'design' }
         }),
         documentResponseSchema,
         options.onDiagnostic
       )
       return response.document
+    },
+    /** Documents in Trash the person may restore, across their workspaces, newest first. */
+    async listTrash(): Promise<TrashedDocument[]> {
+      const response = await parseResponse(client.trash.$get(), trashSchema, options.onDiagnostic)
+      return response.documents
+    },
+    async restoreDocument(documentId: string): Promise<void> {
+      await responseBody(
+        await client.trash[':documentId'].restore.$post({ param: { documentId } }),
+        options.onDiagnostic
+      )
+    },
+    /** Deletes a document in Trash for good. */
+    async purgeDocument(documentId: string): Promise<void> {
+      await responseBody(
+        await client.trash[':documentId'].$delete({ param: { documentId } }),
+        options.onDiagnostic
+      )
     },
     async deleteDocument(documentId: string): Promise<void> {
       await responseBody(
@@ -377,6 +384,14 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
         await client.documents[':documentId'].invitations[':invitationId'].$delete({
           param: { documentId, invitationId }
         }),
+        options.onDiagnostic
+      )
+    },
+    /** Reports the document a share link opens to the server's administrators. */
+    async fileDocumentReport(shareId: string, input: FileDocumentReportInput): Promise<void> {
+      await parseResponse(
+        publicClient.shares[':shareId'].reports.$post({ param: { shareId }, json: input }),
+        fileDocumentReportResponseSchema,
         options.onDiagnostic
       )
     },

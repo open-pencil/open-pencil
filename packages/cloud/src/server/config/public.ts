@@ -1,5 +1,5 @@
 import {
-  CLOUD_AI_CONTRACT_VERSION,
+  CLOUD_SERVICES_CONTRACT_VERSION,
   CLOUD_PROTOCOL_VERSION,
   parseCloudDiscovery,
   type CloudDiscovery
@@ -58,9 +58,10 @@ export function cloudDiscoveryFromConfig(config: CloudServerConfig): CloudDiscov
     listing: config.listingMinimumEditorVersion
       ? { minimumEditorVersion: config.listingMinimumEditorVersion }
       : undefined,
-    ai: config.aiEndpoint
-      ? { endpoint: config.aiEndpoint, contractVersion: CLOUD_AI_CONTRACT_VERSION }
+    services: config.servicesEndpoint
+      ? { endpoint: config.servicesEndpoint, contractVersion: CLOUD_SERVICES_CONTRACT_VERSION }
       : undefined,
-    billing: config.billingPortalURL ? { portalURL: config.billingPortalURL } : undefined
+    billing: config.billingPortalURL ? { portalURL: config.billingPortalURL } : undefined,
+    legal: config.legal
   })
 }

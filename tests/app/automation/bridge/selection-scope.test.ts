@@ -1,12 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { limitToSelection } from '@/app/automation/bridge/selection-scope'
 import { createEditorStore, type EditorStore } from '@/app/editor/session'
-
-import { expectDefined } from '#tests/helpers/assert'
-
 let store: EditorStore
 let ids: { card: string; title: string; other: string }
 
@@ -61,7 +59,9 @@ describe('limitToSelection', () => {
   })
 
   test('rejects other tools and calls without a selection', () => {
-    expect(() => limitToSelection(store, 'delete_node', { id: ids.title })).toThrow(/unavailable/)
+    expect(() => limitToSelection(store, 'delete_nodes', { ids: [ids.title] })).toThrow(
+      /unavailable/
+    )
     store.clearSelection()
     expect(() => limitToSelection(store, 'get_selection', {})).toThrow(/Nothing is selected/)
   })

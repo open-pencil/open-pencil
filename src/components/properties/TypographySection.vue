@@ -16,6 +16,7 @@ import LetterSpacingField from '@/components/properties/typography/LetterSpacing
 import LineHeightField from '@/components/properties/typography/LineHeightField.vue'
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import LeftToRight from '@/components/ui/direction/LeftToRight.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
@@ -198,19 +199,21 @@ function picked<T>(value: MixedValue<T>): T | '' {
         </PanelFieldGroup>
 
         <PanelFieldGroup :label="panels.textAlignment" class="mb-3">
-          <SegmentedControl
-            :model-value="picked(ctx.merged('textAlignHorizontal'))"
-            :options="alignmentOptions"
-            :label="panels.textAlignment"
-            @change="ctx.actions.align($event as 'LEFT' | 'CENTER' | 'RIGHT' | 'JUSTIFIED')"
-          >
-            <template #option="{ option }">
-              <icon-lucide-align-left v-if="option.value === 'LEFT'" class="size-3.5" />
-              <icon-lucide-align-center v-else-if="option.value === 'CENTER'" class="size-3.5" />
-              <icon-lucide-align-right v-else-if="option.value === 'RIGHT'" class="size-3.5" />
-              <icon-lucide-align-justify v-else class="size-3.5" />
-            </template>
-          </SegmentedControl>
+          <LeftToRight>
+            <SegmentedControl
+              :model-value="picked(ctx.merged('textAlignHorizontal'))"
+              :options="alignmentOptions"
+              :label="panels.textAlignment"
+              @change="ctx.actions.align($event as 'LEFT' | 'CENTER' | 'RIGHT' | 'JUSTIFIED')"
+            >
+              <template #option="{ option }">
+                <icon-lucide-align-left v-if="option.value === 'LEFT'" class="size-3.5" />
+                <icon-lucide-align-center v-else-if="option.value === 'CENTER'" class="size-3.5" />
+                <icon-lucide-align-right v-else-if="option.value === 'RIGHT'" class="size-3.5" />
+                <icon-lucide-align-justify v-else class="size-3.5" />
+              </template>
+            </SegmentedControl>
+          </LeftToRight>
         </PanelFieldGroup>
 
         <PanelFieldGroup :label="panels.verticalTextAlignment" class="mb-3">
@@ -398,7 +401,7 @@ function picked<T>(value: MixedValue<T>): T | '' {
         <label
           v-for="feature in commonFeatures"
           :key="feature.tag"
-          class="flex items-center justify-between gap-1.5 text-[11px] text-muted"
+          class="flex items-center justify-between gap-1.5 text-2xs text-muted"
         >
           <span>{{ feature.label }}</span>
           <AppSwitch

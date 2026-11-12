@@ -8,7 +8,6 @@ export * from './font/style'
 export * from './font/variation'
 export * from './font/woff2'
 export * from './font/status'
-export { setHarfBuzzSubsetLocator, type HarfBuzzSubsetLocator } from './font/harfbuzz'
 export * from './fallbacks'
 export * from './resolver'
 export * from './requirements/collect'
@@ -19,8 +18,12 @@ export * from './prepare'
 export * from './font/faces'
 export type { HostFontFamily } from './font/catalog'
 export * from './font/names'
+export { drawnFontAxes, type DrawnFontAxes, type DrawnFontAxis } from './font/families'
 export {
   probeGlyphOutlineCommands,
   type GlyphOutlineProbe,
   type OutlineCommand
 } from './font/glyphs'
+export { layerTextStyleChanges, shownTextStyle } from './character-style'
+export { markdownText, type MarkdownBase, type MarkdownText } from './markdown'
+export { installTextInkMeasurer, withTextInkMeasurer, type TextInkMeasurer } from './ink'

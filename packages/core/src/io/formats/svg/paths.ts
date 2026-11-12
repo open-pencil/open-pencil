@@ -1,20 +1,18 @@
 import { compact } from 'es-toolkit/array'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { polygonVertices } from '@open-pencil/scene-graph/geometry'
+import {
+  GeometryCommand,
+  polygonVertices,
+  readGeometryBlob
+} from '@open-pencil/scene-graph/geometry'
 import { outlineSVGPath, polygonOutline } from '@open-pencil/scene-graph/polygon'
 import { shapeWithTextGeometry } from '@open-pencil/scene-graph/shape-with-text'
 import { vectorNetworkToSVGPaths } from '@open-pencil/scene-graph/vector-network'
 
 import { traceSmoothRect, type SmoothCornerSink } from '#core/canvas/paths/smooth-corners'
-import { nodeHasRadius } from '#core/canvas/shapes'
+import { nodeHasRadius, nodeHasSmoothCorners } from '#core/canvas/shapes'
 import type { PathSink } from '#core/vector/path-helpers'
-
-const CMD_CLOSE = 0
-const CMD_MOVE_TO = 1
-const CMD_LINE_TO = 2
-const CMD_QUAD_TO = 3
-const CMD_CUBIC_TO = 4
 
 export function round(n: number, decimals = 2): number {
   const factor = 10 ** decimals
@@ -26,56 +24,18 @@ function coordinate(value: number, decimals: number | null): number {
 }
 
 export function geometryBlobToSVGPath(blob: Uint8Array, decimals: number | null = 2): string {
-  if (blob.length === 0) return ''
-  const dv = new DataView(blob.buffer, blob.byteOffset, blob.byteLength)
-  let o = 0
   const parts: string[] = []
-
-  while (o < blob.length) {
-    const cmd = blob[o++]
-    switch (cmd) {
-      case CMD_CLOSE:
-        parts.push('Z')
-        break
-      case CMD_MOVE_TO: {
-        const x = coordinate(dv.getFloat32(o, true), decimals)
-        const y = coordinate(dv.getFloat32(o + 4, true), decimals)
-        o += 8
-        parts.push(`M${x} ${y}`)
-        break
-      }
-      case CMD_LINE_TO: {
-        const x = coordinate(dv.getFloat32(o, true), decimals)
-        const y = coordinate(dv.getFloat32(o + 4, true), decimals)
-        o += 8
-        parts.push(`L${x} ${y}`)
-        break
-      }
-      case CMD_QUAD_TO: {
-        const x1 = coordinate(dv.getFloat32(o, true), decimals)
-        const y1 = coordinate(dv.getFloat32(o + 4, true), decimals)
-        const x = coordinate(dv.getFloat32(o + 8, true), decimals)
-        const y = coordinate(dv.getFloat32(o + 12, true), decimals)
-        o += 16
-        parts.push(`Q${x1} ${y1} ${x} ${y}`)
-        break
-      }
-      case CMD_CUBIC_TO: {
-        const x1 = coordinate(dv.getFloat32(o, true), decimals)
-        const y1 = coordinate(dv.getFloat32(o + 4, true), decimals)
-        const x2 = coordinate(dv.getFloat32(o + 8, true), decimals)
-        const y2 = coordinate(dv.getFloat32(o + 12, true), decimals)
-        const x = coordinate(dv.getFloat32(o + 16, true), decimals)
-        const y = coordinate(dv.getFloat32(o + 20, true), decimals)
-        o += 24
-        parts.push(`C${x1} ${y1} ${x2} ${y2} ${x} ${y}`)
-        break
-      }
-      default:
-        return parts.join('')
-    }
+  const letters: Record<GeometryCommand, string> = {
+    [GeometryCommand.CLOSE]: 'Z',
+    [GeometryCommand.MOVE]: 'M',
+    [GeometryCommand.LINE]: 'L',
+    [GeometryCommand.QUAD]: 'Q',
+    [GeometryCommand.CUBIC]: 'C'
   }
-
+  readGeometryBlob(blob, (command, coords) => {
+    const values = coords.map((value) => coordinate(value, decimals))
+    parts.push(`${letters[command]}${values.join(' ')}`)
+  })
   return parts.join('')
 }
 
@@ -91,6 +51,7 @@ export function makePolygonPoints(node: SceneNode): string {
 }
 
 export const hasRadius = nodeHasRadius
+export const hasSmoothCorners = nodeHasSmoothCorners
 
 type RectOutlineNode = Pick<
   SceneNode,
@@ -180,9 +141,15 @@ export function arcPath(node: Pick<SceneNode, 'width' | 'height' | 'arcData'>): 
   return parts.join('')
 }
 
-/** Path commands written as SVG path data into `parts`, as the canvas would build a path. */
-export function svgPathSink(parts: string[]): PathSink {
-  const point = (x: number, y: number) => `${round(x)} ${round(y)}`
+/**
+ * Path commands written as SVG path data into `parts`, as the canvas would build a path, each
+ * coordinate written by `format`.
+ */
+export function svgPathSink(
+  parts: string[],
+  format: (value: number) => number = (value) => round(value)
+): PathSink {
+  const point = (x: number, y: number) => `${format(x)} ${format(y)}`
   return {
     moveTo: (x, y) => parts.push(`M${point(x, y)}`),
     lineTo: (x, y) => parts.push(`L${point(x, y)}`),
@@ -207,6 +174,14 @@ function smoothRectPath(node: RectOutlineNode & Pick<SceneNode, 'cornerSmoothing
   return traceSmoothRect(sink, node, box) ? parts.join('') : roundedRectPath(node)
 }
 
+/**
+ * A box layer's outline as path data: its rectangle with its corner radii, smoothed as the canvas
+ * draws them. Frames, rectangles, and other box layers share it for fills, strokes, and clips.
+ */
+export function boxOutlinePath(node: RectOutlineNode & Pick<SceneNode, 'cornerSmoothing'>): string {
+  return node.cornerSmoothing > 0 ? smoothRectPath(node) : roundedRectPath(node)
+}
+
 /** What a layer's outline is drawn from. */
 export type OutlineNode = RectOutlineNode &
   Pick<
@@ -223,7 +198,7 @@ const FULL_ELLIPSE = { startingAngle: 0, endingAngle: Math.PI * 2, innerRadius: 
 export function nodeOutlinePath(node: OutlineNode): string | null {
   switch (node.type) {
     case 'RECTANGLE':
-      return node.cornerSmoothing > 0 ? smoothRectPath(node) : roundedRectPath(node)
+      return boxOutlinePath(node)
     case 'ELLIPSE':
       return arcPath({ ...node, arcData: node.arcData ?? FULL_ELLIPSE })
     case 'LINE':

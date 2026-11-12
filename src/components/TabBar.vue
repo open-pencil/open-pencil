@@ -7,6 +7,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 
 import { animationsEnabled } from '@/app/shell/motion'
 import { openNewFileTab, useTabsStore } from '@/app/tabs'
+import { DOCUMENT_KIND_ICONS } from '@/components/document/kinds'
 import PreparationIndicator from '@/components/preparation/tab/PreparationIndicator.vue'
 import { useScrollOverflow } from '@/components/ui/list/useScrollOverflow'
 import Tip from '@/components/ui/overlay/Tip.vue'
@@ -99,6 +100,11 @@ function onClose(e: MouseEvent, tabId: string) {
           >
             <icon-lucide-house v-if="tab.isHome" :class="baseStyles.icon()" />
             <PreparationIndicator v-else-if="tab.isPreparing" :progress="tab.preparationProgress" />
+            <component
+              :is="DOCUMENT_KIND_ICONS[tab.fileKind]"
+              v-else-if="tab.fileKind"
+              :class="baseStyles.icon()"
+            />
             <icon-lucide-file v-else :class="baseStyles.icon()" />
             <span v-if="!tab.isHome" :class="baseStyles.label()">{{
               tab.isNewFile ? files.newFile : tab.name
@@ -139,8 +145,12 @@ function onClose(e: MouseEvent, tabId: string) {
       :data-start="!overflowEnd || undefined"
       @click="scrollTowardHidden"
     >
-      <icon-lucide-chevron-right v-if="overflowEnd" :class="baseStyles.scrollIcon()" />
-      <icon-lucide-chevron-left v-else :class="baseStyles.scrollIcon()" />
+      <icon-lucide-chevron-right
+        v-if="overflowEnd"
+        data-direction="reading"
+        :class="baseStyles.scrollIcon()"
+      />
+      <icon-lucide-chevron-left v-else data-direction="reading" :class="baseStyles.scrollIcon()" />
     </button>
     <Tip :label="files.newFile" side="bottom">
       <button

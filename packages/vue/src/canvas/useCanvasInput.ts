@@ -16,6 +16,11 @@ import type { CanvasToolContext, CanvasToolPointer } from '#vue/canvas/tools/reg
 import { createCanvasTransformInput } from '#vue/canvas/transform/input'
 import { finishMarquee } from '#vue/canvas/transform/marquee'
 import {
+  cancelRotationDrag,
+  commitRotationDrag,
+  handleSelectionRotateMove
+} from '#vue/canvas/transform/rotation'
+import {
   cancelNodeEditDrag,
   handleBendHandleMove,
   handleNodeEditPointerUp,
@@ -31,7 +36,13 @@ import {
 import { handleDrawMove } from '#vue/shared/input/draw'
 import { cancelMove, handleMoveMove, handleMoveUp } from '#vue/shared/input/move/drag'
 import { setupPanZoom } from '#vue/shared/input/pan/zoom'
-import { applyResize, cancelResizePreview, commitResizePreview } from '#vue/shared/input/resize'
+import { applyResize, commitResizePreview } from '#vue/shared/input/resize'
+import {
+  applySelectionResize,
+  cancelResizeDrag,
+  commitSelectionResize
+} from '#vue/shared/input/resize/selection'
+import { applyScale } from '#vue/shared/input/scale'
 import { updateHoverCursor } from '#vue/shared/input/select'
 import { resolveShapeHandleHover } from '#vue/shared/input/shape-handles'
 import { useSpaceHeld } from '#vue/shared/input/space-key'
@@ -50,11 +61,14 @@ import { handleNodeEditMarqueeMove, handleNodeEditMove } from '#vue/shared/input
 const ESCAPABLE_DRAGS: ReadonlySet<DragState['type']> = new Set<DragState['type']>([
   'draw',
   'gradient',
+  'blur-ramp',
   'rotate',
+  'rotate-selection',
   'connector-draw',
   'connector-end',
   'connector-line',
-  'line-end'
+  'line-end',
+  'scale'
 ])
 
 export function useCanvasInput(
@@ -71,17 +85,26 @@ export function useCanvasInput(
 ) {
   const drag = ref<DragState | null>(null)
   const profile = () => resolveEditorProfile(editor.state)
+  /** Whether layers may change: not in a read-only document, nor while the host keeps them. */
+  const editsLayers = () => profile().layerEdits === 'all'
   // Canvas chrome that explains layout, such as auto layout child outlines, steps aside while
   // layers move, resize, or rotate.
   watch(
     () => drag.value?.type,
-    (type) => editor.setTransforming(type === 'move' || type === 'resize' || type === 'rotate')
+    (type) =>
+      editor.setTransforming(
+        type === 'move' ||
+          type === 'resize' ||
+          type === 'resize-selection' ||
+          type === 'scale' ||
+          type === 'rotate' ||
+          type === 'rotate-selection'
+      )
   )
   const canvasLabelEdit = createCanvasLabelEdit(editor)
   const cursorOverride = ref<string | null>(null)
   /** Whether the primary button is held on a preview control, such as a slider thumb. */
   const valueEdit = createAutoLayoutValueEdit(editor)
-  const selectedIdsBeforeClickSequence = ref<ReadonlySet<string>>(new Set())
   const lastPointer = ref<{ cx: number; cy: number; sx: number; sy: number } | null>(null)
   const pointerInside = ref(false)
   let altHeld = false
@@ -90,7 +113,7 @@ export function useCanvasInput(
   const spaceHeld = useSpaceHeld()
   const { recordClick, getClickCount } = createClickCounter()
 
-  const { getCoords, canvasToLocal, hitTestInScope, hitFns } = createCanvasPointer(
+  const { getCoords, canvasToLocal, hitTestLayer, hitFns } = createCanvasPointer(
     canvasRef,
     editor,
     hitTestSectionTitle,
@@ -134,11 +157,11 @@ export function useCanvasInput(
 
   // Handles that edit, which a read-only document does not offer.
   function autoLayoutHoverAt(cx: number, cy: number, mode: typeof editor.state.measurementMode) {
-    return mode === 'off' && profile().edits ? resolveAutoLayoutHover(cx, cy, editor) : null
+    return mode === 'off' && editsLayers() ? resolveAutoLayoutHover(cx, cy, editor) : null
   }
 
   function shapeHandleHoverAt(sx: number, sy: number, altKey: boolean) {
-    return profile().edits ? resolveShapeHandleHover(editor, sx, sy, altKey) : null
+    return editsLayers() ? resolveShapeHandleHover(editor, sx, sy, altKey) : null
   }
 
   function updateModifier(code: string, held: boolean) {
@@ -173,15 +196,14 @@ export function useCanvasInput(
     }
   })
 
-  const { handleTextEditClick, onDblClick: onTextDblClick } = createTextEditInput({
+  const { handleTextEditClick, pressDeeper } = createTextEditInput({
     editor,
     getCoords,
-    hitTestInScope,
+    hitTestLayer,
     hitTestSectionTitle,
     hitTestComponentLabel,
     hitTestFrameTitle,
     getClickCount,
-    wasSelectedBeforeClickSequence: (id) => selectedIdsBeforeClickSequence.value.has(id),
     onEditCanvasLabel: canvasLabelEdit.start,
     setDrag
   })
@@ -194,28 +216,54 @@ export function useCanvasInput(
     handleMarqueeMove
   } = createCanvasTransformInput(editor, setDrag)
 
-  function onDblClick(e: MouseEvent) {
-    if (profile().pointer === 'pan') return
+  /**
+   * Only a plain press of the select tool takes a double-click on its press: a drawing tool, a
+   * vector being edited, and a Shift-press that adds to the selection keep their own press.
+   */
+  function takesMultiClick(e: MouseEvent): boolean {
+    return (
+      e.button === 0 &&
+      !e.shiftKey &&
+      editor.state.activeTool === 'SELECT' &&
+      !editor.state.editingTextId &&
+      !editor.state.nodeEditState &&
+      profile().pointer !== 'pan'
+    )
+  }
+
+  /**
+   * The second click of a run and every one after it, on its press: one level deeper, or a value
+   * field, as in Figma. The press decides so that every click of a quick run counts; the browser
+   * fires its double-click event by its own count, which a click shortly before the run shifts.
+   */
+  function onMultiClickDown(e: MouseEvent, clickCount: number) {
     const { cx, cy } = getCoords(e)
-    if (profile().edits && valueEdit.start(cx, cy)) {
+    if (clickCount === 2 && editsLayers() && valueEdit.start(cx, cy)) {
       e.preventDefault()
       e.stopPropagation()
       return
     }
-    onTextDblClick(e)
+    pressDeeper(e, clickCount > 2)
+  }
+
+  function onDblClick(e: MouseEvent) {
+    // Handled on the press; the event only must not start a browser text selection.
+    e.preventDefault()
   }
 
   function hoverLayers({ event, cx, cy, sx, sy }: CanvasToolPointer) {
-    const guideCursor = profile().edits ? guideInput.updateHover(sx, sy) : null
+    const guideCursor = editsLayers() ? guideInput.updateHover(sx, sy) : null
     cursorOverride.value =
       guideCursor ??
-      updateHoverCursor(
-        cx,
-        cy,
-        editor,
-        hitFns,
-        editor.state.measurementMode === 'deep' || hoverDeep(event)
-      )
+      (editor.state.activeTool === 'SCALE'
+        ? null
+        : updateHoverCursor(
+            cx,
+            cy,
+            editor,
+            hitFns,
+            editor.state.measurementMode === 'deep' || hoverDeep(event)
+          ))
     editor.setAutoLayoutHover(autoLayoutHoverAt(cx, cy, editor.state.measurementMode))
   }
 
@@ -248,7 +296,7 @@ export function useCanvasInput(
     editor.setHoveredNode(null)
     const { sx, sy, cx, cy } = getCoords(e)
     // Guides belong to the document, so a read-only one neither moves nor gains them.
-    const guidesEditable = e.button === 0 && profile().edits
+    const guidesEditable = e.button === 0 && editsLayers()
     if (guidesEditable && guideInput.tryStartExisting(sx, sy, e.altKey)) {
       e.preventDefault()
       return
@@ -259,9 +307,11 @@ export function useCanvasInput(
     }
     editor.setSelectedGuide(null)
 
-    const selectedIdsBeforeMouseDown = new Set(editor.state.selectedIds)
-    const clickCount = recordClick(sx, sy)
-    if (clickCount === 1) selectedIdsBeforeClickSequence.value = selectedIdsBeforeMouseDown
+    const clickCount = recordClick(sx, sy, e.detail)
+    if (clickCount >= 2 && takesMultiClick(e)) {
+      onMultiClickDown(e, clickCount)
+      return
+    }
     pressCanvasTool({ event: e, cx, cy, sx, sy }, toolContext)
   }
 
@@ -300,6 +350,11 @@ export function useCanvasInput(
       return
     }
 
+    if (d.type === 'blur-ramp') {
+      d.update(sx, sy)
+      return
+    }
+
     if (d.type === 'guide') {
       const frameId = e.altKey && !d.guideId ? selectedTopLevelGuideFrameId(editor) : null
       guideInput.handleMove(
@@ -313,6 +368,10 @@ export function useCanvasInput(
       return
     }
 
+    if (d.type === 'rotate-selection') {
+      handleSelectionRotateMove(editor, d, cx, cy, e.shiftKey)
+      return
+    }
     if (d.type === 'rotate') {
       handleRotateMove(d, cx, cy, e.shiftKey)
       return
@@ -327,6 +386,10 @@ export function useCanvasInput(
     }
     if (d.type === 'resize') {
       applyResize(d, cx, cy, e.shiftKey, editor, e.ctrlKey)
+      return
+    }
+    if (d.type === 'resize-selection') {
+      applySelectionResize(d, cx, cy, e.shiftKey, editor, e.ctrlKey)
       return
     }
 
@@ -386,7 +449,12 @@ export function useCanvasInput(
     }
 
     if (d.type === 'sticky-scale') {
-      applyStickyScale(d, cx, cy, editor)
+      applyStickyScale(d, cx, cy, editor, e.ctrlKey)
+      return
+    }
+
+    if (d.type === 'scale') {
+      applyScale(d, cx, cy, editor, { centred: e.altKey, disableSnapping: e.ctrlKey })
       return
     }
 
@@ -406,22 +474,15 @@ export function useCanvasInput(
       drag.value = null
       return
     } else if (d.type === 'resize') commitResizePreview(d, editor)
+    else if (d.type === 'resize-selection') commitSelectionResize(d, editor)
     else if (d.type === 'pen-drag') {
-      const penState = editor.state.penState
-      if (penState?.pendingClose) {
-        editor.penCommit(true)
-      }
+      // Cleared first: a host that refuses the release cancels the gesture, which drops the drag.
       drag.value = null
+      editor.penRelease()
       return
     } else if (d.type === 'pencil-drag') finishPencilDrag(editor)
-    else if (d.type === 'rotate') {
-      const preview = editor.state.rotationPreview
-      if (preview?.nodeId === d.nodeId && preview.angle !== d.origRotation) {
-        editor.updateNode(d.nodeId, { rotation: preview.angle })
-        editor.commitRotation(d.nodeId, d.origRotation)
-      }
-      if (editor.state.rotationPreview === preview) editor.setRotationPreview(null)
-    } else if ('commit' in d) d.commit()
+    else if (d.type === 'rotate' || d.type === 'rotate-selection') commitRotationDrag(editor, d)
+    else if ('commit' in d) d.commit()
     else if (d.type === 'marquee') finishMarquee(editor, d)
 
     drag.value = null
@@ -439,7 +500,7 @@ export function useCanvasInput(
 
   /** Drops what a drag showed without changing the document. */
   function discardDrawnPreview(d: DragState) {
-    if (d.type === 'resize') cancelResizePreview(d, editor)
+    if (d.type === 'resize' || d.type === 'resize-selection') cancelResizeDrag(d, editor)
     else if ('cancel' in d) d.cancel()
     else if (d.type === 'pencil-drag') editor.pencilCancel()
   }
@@ -448,9 +509,8 @@ export function useCanvasInput(
   function discardDrag(d: DragState) {
     discardDrawnPreview(d)
     if (d.type === 'move') cancelMove(d, editor)
-    else if (d.type === 'rotate') {
-      if (editor.state.rotationPreview?.nodeId === d.nodeId) editor.setRotationPreview(null)
-    } else cancelNodeEditDrag(d, editor)
+    else if (d.type === 'rotate' || d.type === 'rotate-selection') cancelRotationDrag(editor, d)
+    else cancelNodeEditDrag(d, editor)
   }
 
   function cancelPointerInteraction() {
@@ -519,7 +579,8 @@ export function useCanvasInput(
     if (event.code !== 'Space' || drag.value?.type !== 'move' || !isEnabled()) return
     event.preventDefault()
     event.stopImmediatePropagation()
-    drag.value.keepParents = held
+    // Where layers only move, they stay in their parents whatever the key.
+    drag.value.keepParents = held || profile().layerEdits === 'move'
     if (held) editor.setDropTarget(null)
   }
   useEventListener(window, 'keydown', (event) => holdParentsDuringMove(event, true), {
@@ -551,6 +612,9 @@ export function useCanvasInput(
     { capture: true }
   )
 
+  // A host that refused the gesture in progress (`cancelGesture`): the drag is undone as Escape
+  // undoes it, its preview put back.
+  const stopGestureListener = editor.onEditorEvent('gesture:cancelled', cancelPointerInteraction)
   const stopRotationListener = editor.onEditorEvent('rotation:preview-changed', (preview) => {
     if (drag.value?.type === 'rotate' && preview?.nodeId !== drag.value.nodeId)
       cancelPointerInteraction()
@@ -561,11 +625,17 @@ export function useCanvasInput(
     cancelPointerInteraction()
   })
   // A document that turns read-only mid-gesture drops the gesture and any open inline edit.
-  const stopReadOnlyListener = editor.onEditorEvent('document:read-only-changed', (readOnly) => {
-    if (!readOnly) return
+  /** Abandons the gestures that change layers once layers may no longer change. */
+  function cancelLayerEdits() {
     valueEdit.cancel()
     canvasLabelEdit.cancel()
     cancelPointerInteraction()
+  }
+  const stopReadOnlyListener = editor.onEditorEvent('document:read-only-changed', (readOnly) => {
+    if (readOnly) cancelLayerEdits()
+  })
+  const stopRestrictionsListener = editor.onEditorEvent('document:restrictions-changed', () => {
+    if (!editsLayers()) cancelLayerEdits()
   })
   const stopPlayListeners = (['selection:changed', 'page:changed', 'graph:replaced'] as const).map(
     (event) =>
@@ -575,16 +645,20 @@ export function useCanvasInput(
           type === 'draw' ||
           type === 'sticky-draw' ||
           type === 'rotate' ||
+          type === 'rotate-selection' ||
           type === 'shape-handle' ||
-          type === 'sticky-scale'
+          type === 'sticky-scale' ||
+          type === 'scale'
         )
           cancelPointerInteraction()
       })
   )
   onScopeDispose(() => {
+    stopGestureListener()
     stopRotationListener()
     stopToolListener()
     stopReadOnlyListener()
+    stopRestrictionsListener()
     for (const stop of stopPlayListeners) stop()
     cancelPointerInteraction()
     // A canvas unmounted mid-rename keeps the name typed, as the field's blur does in Chromium.
@@ -596,6 +670,7 @@ export function useCanvasInput(
     drag,
     cursorOverride,
     canvasLabelEdit: canvasLabelEdit.edit,
+    startCanvasLabelEdit: canvasLabelEdit.start,
     updateCanvasLabelEdit: canvasLabelEdit.update,
     commitCanvasLabelEdit: canvasLabelEdit.commit,
     cancelCanvasLabelEdit: canvasLabelEdit.cancel,

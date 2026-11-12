@@ -19,7 +19,7 @@ import { AUTO, textLengthJSX } from '../overrides/text'
 import { SPAN_STYLE_FIELDS, type SpanStyle } from '../text-content'
 import { collectDecorationProps } from './decoration'
 import { collectFontSettingProps } from './font'
-import { collectFillProps } from './paint'
+import { collectFillProps } from './paints'
 import { fontWeightValue } from './props'
 import { propAttribute, type JSXProp } from './value'
 

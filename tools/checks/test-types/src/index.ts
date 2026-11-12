@@ -4,7 +4,8 @@
  * repository tools (`tools/tsconfig.json`). `tsconfig.json` includes only `src/**`, each package
  * config only its own `src`, and bun strips types without checking them.
  *
- * Application and package sources are reported only by `bun run typecheck`, never here. Both
+ * Application and package sources are reported only by `bun run typecheck`, never here, except
+ * `packages/test-support/src`: test helpers that no other program checks. Both
  * programs reach them — tests drive the app, and tools read `window.openPencil` in pages — but
  * narrow `types` to Bun's, whose globals disagree with the browser ones the app is built against:
  * `fetch` carries a `preconnect` the DOM one does not. Judging source by those globals would fail
@@ -18,7 +19,7 @@ const FILE_DIAGNOSTIC = /^(?<file>\S[^(]*)\(\d+,\d+\): error TS/
 const PROGRAMS = {
   tests: {
     project: 'tsconfig.tests.json',
-    owns: /^(tests|packages\/[^/]+\/tests)\//,
+    owns: /^(tests|packages\/[^/]+\/tests|packages\/test-support\/src)\//,
     name: 'test'
   },
   tools: { project: 'tools/tsconfig.json', owns: /^tools\//, name: 'tool' }

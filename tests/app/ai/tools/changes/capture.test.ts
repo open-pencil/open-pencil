@@ -91,7 +91,7 @@ test('records nothing for calls that leave the page as it was', async () => {
 test('keeps an undo step per structural call and records removed layers', async () => {
   const card = store.graph.createNode('FRAME', store.state.currentPageId, { name: 'Card' })
 
-  await execute('delete_node', { id: card.id }, 'delete-call')
+  await execute('delete_nodes', { ids: [card.id] }, 'delete-call')
 
   const change = readToolChange('delete-call')
   expect(change?.nodeIds).toEqual([card.id])
@@ -106,7 +106,7 @@ test('diff_changes compares the run page with its state before the run first edi
   startRun(store, 10)
 
   await execute('set_fill', { id: card.id, color: '#ff0000' }, 'first')
-  await execute('node_resize', { id: card.id, width: 240, height: 60 }, 'second')
+  await execute('update_node', { id: card.id, width: 240, height: 60 }, 'second')
   const result = (await execute('diff_changes', {}, 'check')) as { diff: string | null }
 
   // Both calls show up against the state before the first one.
@@ -146,7 +146,7 @@ test('concurrent calls in one step each undo only their own edit', async () => {
   const right = store.graph.createNode('FRAME', pageId, { name: 'Right', width: 100, height: 60 })
   const tools = createAITools(store)
   const resize = (id: string, width: number, toolCallId: string) =>
-    tools.node_resize?.execute?.({ id, width, height: 60 }, call(toolCallId))
+    tools.update_node?.execute?.({ id, width, height: 60 }, call(toolCallId))
 
   await Promise.all([resize(left.id, 200, 'left'), resize(right.id, 300, 'right')])
   expect(store.graph.getNode(left.id)?.width).toBe(200)

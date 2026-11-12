@@ -1,35 +1,27 @@
-import type { Paragraph } from 'canvaskit-wasm'
 import { uniq } from 'es-toolkit/array'
 import { isEqual } from 'es-toolkit/predicate'
 
+import type { Paragraph } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { textLengthPixels } from '@open-pencil/scene-graph/text'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
-import {
-  drawnFontVariations,
-  loadedFace,
-  paragraphSourceFamilies
-} from '#core/canvas/text/font-families'
-import { laidOutText } from '#core/canvas/text/keycap'
 import type { TextLayout, TextLayoutMarker } from '#core/canvas/text/layout'
-import { utf16IndicesByUtf8 } from '#core/canvas/text/utf8'
-import { DEFAULT_FONT_FAMILY } from '#core/constants'
-import { shownCharacters } from '#core/text/case'
+import { shownSourceIndices } from '#core/text/case'
+import { candidateSources, fontAt, styleRunAt, type StyleRun } from '#core/text/character-face'
 import { ELLIPSIS } from '#core/text/ellipsis'
 import {
   glyphOutlineSourceSync,
-  shardCovers,
-  shardOutlineSources,
   type GlyphOutlineSource,
   type RunShaping,
   type ShapedGlyph
 } from '#core/text/font/glyphs'
 import type { ShapingFeature } from '#core/text/font/harfbuzz'
-import { fontManager } from '#core/text/font/manager'
-import { textFontFace } from '#core/text/requirements/collect'
+import { laidOutText } from '#core/text/keycap'
+import { utf16IndicesByUtf8 } from '#core/text/utf8'
 
 type GlyphRun = ReturnType<Paragraph['getShapedLines']>[number]['runs'][number]
+type ShapedLine = ReturnType<Paragraph['getShapedLines']>[number]
 
 /** A glyph of laid-out text where the renderer draws it, with the font its outline comes from. */
 export interface LaidOutGlyph {
@@ -38,6 +30,11 @@ export interface LaidOutGlyph {
   x: number
   /** The baseline of its line. */
   y: number
+  /**
+   * How far below `y` CanvasKit drew it, as it places a mark over or under its base. Saved glyphs
+   * leave it out: their underlines group glyphs into lines by `y`.
+   */
+  markShift: number
   fontSize: number
   /** The character it draws, left out for a list marker. */
   firstCharacter?: number
@@ -46,46 +43,6 @@ export interface LaidOutGlyph {
   lineLeft: number
   /** The font that drew it, or `null` when the shaper may have used another. */
   source: GlyphOutlineSource | null
-}
-
-/** The loaded face of a family the paragraph draws a face in, as its key. */
-function loadedStyle(
-  family: string,
-  weight: number,
-  italic: boolean,
-  style: string
-): string | null {
-  return loadedFace(family, weight, italic, style)?.style ?? null
-}
-
-/**
- * The font a character asks for: its family, weight, and slant, and the variable axes it sets;
- * and the face the paragraph asks every family for, the one its own family has loaded, as
- * `drawnFontStyle` asks CanvasKit.
- */
-function fontAt(node: SceneNode, index: number) {
-  const run = styleRunAt(node, index)
-  const family = run?.style.fontFamily ?? (node.fontFamily || DEFAULT_FONT_FAMILY)
-  const weight = run?.style.fontWeight ?? node.fontWeight
-  const italic = run?.style.italic ?? node.italic
-  const style = textFontFace(node, run?.style).style
-  const variations = drawnFontVariations({
-    family,
-    weight,
-    italic,
-    style,
-    fontSize: run?.style.fontSize ?? node.fontSize,
-    variations: run?.style.fontVariations ?? node.fontVariations,
-    opticalSizeFromFontSize: run?.style.opticalSizeFromFontSize ?? node.opticalSizeFromFontSize
-  })
-  const drawn = loadedFace(family, weight, italic, style) ?? { weight, italic, style }
-  return { family, weight, italic, style, variations, drawn }
-}
-
-type StyleRun = SceneNode['styleRuns'][number]
-
-function styleRunAt(node: SceneNode, index: number): StyleRun | undefined {
-  return node.styleRuns.find((item) => index >= item.start && index < item.start + item.length)
 }
 
 /**
@@ -123,72 +80,6 @@ function featuresOf(node: SceneNode, run: StyleRun | undefined): ShapingFeature[
     tag: feature.tag.toLowerCase(),
     value: feature.enabled ? 1 : 0
   }))
-}
-
-/**
- * The style a family of the paragraph is drawn in: the face its own family draws the asked style
- * in, and Regular for the Arabic and CJK fallbacks, as the paragraph asks CanvasKit for them.
- */
-function sourceStyle(family: string, font: ReturnType<typeof fontAt>): string | null {
-  const scriptFallback =
-    family !== font.family &&
-    (fontManager.getArabicFallbackFamilies().includes(family) ||
-      fontManager.getCJKFallbackFamilies().includes(family))
-  if (scriptFallback) return fontManager.isStyleLoaded(family, 'Regular') ? 'Regular' : null
-  return loadedStyle(family, font.drawn.weight, font.drawn.italic, font.drawn.style)
-}
-
-/**
- * The outline source of each file the paragraph may have drawn a character in, in its order:
- * each family's own file, then its shards.
- */
-function* candidateSources(font: ReturnType<typeof fontAt>) {
-  for (const family of paragraphSourceFamilies(font.family)) {
-    const style = sourceStyle(family, font)
-    if (!style) continue
-    const source = glyphOutlineSourceSync(family, style, font.variations)
-    if (source) yield source
-    yield* shardOutlineSources(family, style, font.variations)
-  }
-}
-
-/** The face and file the paragraph draws a character in. */
-export interface CharacterFace {
-  family: string
-  style: string
-  /** Which of the style's files: 0 for its own, then its shards, as `FontManager.shardData` lists them. */
-  file: number
-  /** Whether it is not the character's own family. */
-  fallback: boolean
-}
-
-/**
- * The loaded face the paragraph draws the character at `index` of `text` in, as it falls back:
- * of the fonts it lists, the style's own then its fallbacks, each file then its shards, the first
- * that maps the character.
- */
-export function characterFace(node: SceneNode, text: string, index: number): CharacterFace | null {
-  const codePoint = text.codePointAt(index)
-  if (codePoint === undefined) return null
-  const character = String.fromCodePoint(codePoint)
-  const font = fontAt(node, index)
-  for (const family of paragraphSourceFamilies(font.family)) {
-    const style = sourceStyle(family, font)
-    if (!style) continue
-    const fallback = family !== font.family
-    if (glyphOutlineSourceSync(family, style, font.variations)?.covers(character))
-      return { family, style, file: 0, fallback }
-    const shard = fontManager
-      .shardData(family, style)
-      .findIndex((data) => shardCovers(data, character))
-    if (shard !== -1) return { family, style, file: shard + 1, fallback }
-  }
-  return null
-}
-
-/** The family the paragraph draws the character at `index` of `text` in; see {@link characterFace}. */
-export function characterFamily(node: SceneNode, text: string, index: number): string | null {
-  return characterFace(node, text, index)?.family ?? null
 }
 
 /** The characters of a run as the paragraph laid them out, and the features it shaped them with. */
@@ -277,16 +168,17 @@ function runOutline(
   node: SceneNode,
   shaped: string,
   run: GlyphRun,
-  characterAt: (offset: number) => number,
-  sourceAt: (index: number) => number
+  indices: RunIndices
 ): RunOutline | null {
+  const { characterAt, sourceAt } = indices
   if (run.glyphs.length === 0) return null
   const offsets = Array.from(run.offsets, characterAt)
-  const start = Math.min(...offsets)
-  const end = Math.max(...offsets)
+  const glyphOffsets = offsets.slice(0, run.glyphs.length)
+  const start = Math.min(...glyphOffsets)
+  const end = runEnd(offsets, run.glyphs.length, indices.lineBoundaries)
   // A glyph covers the characters up to the next greater offset in the run, whatever its
   // direction; the sorted offsets give that once for every glyph.
-  const boundaries = uniq([...offsets, end]).sort((a, b) => a - b)
+  const boundaries = uniq([...glyphOffsets, end]).sort((a, b) => a - b)
   const nextBoundary = new Map(
     boundaries.map((offset, index) => [offset, boundaries[index + 1] ?? end])
   )
@@ -374,6 +266,43 @@ function ellipsisSource(
   return null
 }
 
+interface RunIndices {
+  characterAt: (offset: number) => number
+  sourceAt: (index: number) => number
+  /** Where each run of the line starts, and where the line ends, in the shown text. */
+  lineBoundaries: readonly number[]
+}
+
+/**
+ * Where a run's characters end. CanvasKit gives a run one offset past its glyphs: its end when
+ * it runs left to right, but not when it runs right to left, so such a run ends where the next
+ * run of its line starts, or where the line ends.
+ */
+function runEnd(
+  offsets: readonly number[],
+  glyphCount: number,
+  lineBoundaries: readonly number[]
+): number {
+  const lastStart = Math.max(...offsets.slice(0, glyphCount))
+  const trailing = offsets.at(glyphCount)
+  if (trailing !== undefined && trailing > lastStart) {
+    return trailing
+  }
+  return lineBoundaries.find((boundary) => boundary > lastStart) ?? lastStart
+}
+
+/** The line's own end comes from its metrics: CanvasKit derives `textRange` from the same offsets. */
+function lineRunBoundaries(
+  line: ShapedLine,
+  lineEnd: number,
+  characterAt: (offset: number) => number
+): number[] {
+  const runStarts = line.runs.map((run) =>
+    Math.min(...Array.from(run.offsets.slice(0, run.glyphs.length), characterAt))
+  )
+  return [...runStarts, lineEnd].sort((a, b) => a - b)
+}
+
 /**
  * The outline of a run of a line, and whether the run is the ellipsis that ends truncated text.
  * The last run of truncated text that no font confirms may be an ellipsis, which keeps its glyph
@@ -384,12 +313,12 @@ function lineRunOutline(
   shaped: string,
   run: GlyphRun,
   endsTruncated: boolean,
-  indices: { characterAt: (offset: number) => number; sourceAt: (index: number) => number }
+  indices: RunIndices
 ): { outline: RunOutline | null; ellipsis: boolean } {
   const { characterAt, sourceAt } = indices
   const ellipsis = endsTruncated ? ellipsisSource(node, run, characterAt, sourceAt) : null
   if (ellipsis) return { outline: { source: ellipsis }, ellipsis: true }
-  const outline = runOutline(node, shaped, run, characterAt, sourceAt)
+  const outline = runOutline(node, shaped, run, indices)
   return { outline: endsTruncated && outline?.glyphs ? null : outline, ellipsis: false }
 }
 
@@ -400,10 +329,7 @@ function lineRunOutline(
  */
 function sourceIndices(node: SceneNode, text: string): (index: number) => number {
   if (text === node.text) return (index) => index
-  const indices: number[] = []
-  for (const { character, sourceIndex } of shownCharacters(node)) {
-    indices.push(...Array.from({ length: character.length }, () => sourceIndex))
-  }
+  const indices = shownSourceIndices(node)
   return (index) => indices.at(index) ?? index
 }
 
@@ -441,6 +367,7 @@ function reshapedGlyphs(
       id: glyph.id,
       x: x + glyph.xOffset * run.size,
       y: y - glyph.yOffset * run.size,
+      markShift: 0,
       fontSize: run.size,
       firstCharacter: outline.start + glyph.cluster,
       advance,
@@ -468,6 +395,7 @@ function markerGlyphs(marker: TextLayoutMarker, offsetY: number): LaidOutGlyph[]
           id: run.glyphs[index],
           x: marker.x + x,
           y: marker.y + baseline + offsetY,
+          markShift: 0,
           fontSize: run.size,
           advance: run.positions[(index + 1) * 2] - x,
           lineLeft: marker.x,
@@ -502,14 +430,16 @@ export function laidOutGlyphs(
   for (const [lineIndex, line] of lines.entries()) {
     const marker = markers.get(lineIndex)
     if (marker) glyphs.push(...markerGlyphs(marker, offsetY))
-    const { left, baseline } = metrics[lineIndex]
+    const { left, baseline, endIndex } = metrics[lineIndex]
+    const lineBoundaries = lineRunBoundaries(line, endIndex, characterAt)
     const lastLine = lineIndex === lines.length - 1
     for (const [runIndex, run] of line.runs.entries()) {
       const endsTruncated =
         lastLine && runIndex === line.runs.length - 1 && layout.didExceedMaxLines()
       const { outline, ellipsis } = lineRunOutline(node, shaped, run, endsTruncated, {
         characterAt,
-        sourceAt
+        sourceAt,
+        lineBoundaries
       })
       // Run positions round the baseline to whole pixels; line metrics keep it exact.
       const y = baseline + offsetY
@@ -523,6 +453,7 @@ export function laidOutGlyphs(
           id: outline?.glyphs?.[index].id ?? run.glyphs[index],
           x,
           y,
+          markShift: run.positions[index * 2 + 1] - line.baseline,
           fontSize: run.size,
           // The ellipsis truncation adds draws no character, as Figma saves it.
           firstCharacter: ellipsis ? undefined : characterAt(run.offsets[index]),

@@ -75,7 +75,13 @@ export function accountAuthenticationObjects() {
     async head() {
       return null
     },
-    delete: ignore
+    delete: ignore,
+    async write() {
+      throw new Error('not used')
+    },
+    async read() {
+      return null
+    }
   }
 }
 

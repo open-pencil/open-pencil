@@ -13,7 +13,7 @@ Headless Vue 3 primitives and composables; the root app is one consumer. Primiti
 
 ## Retained panels
 
-The app's `DesignPanel` retains at most one selection-property subtree through `RetainedPanel`. The app installs `createRetainedScopePlugin()`; opted-in descendants receive `provideRetainedActivity()`. Vue component scopes are detached, so pausing only a parent or bare `KeepAlive` does not suspend descendant work. Cancel drafts synchronously before DOM detachment can fire blur, close transient state and gate portals with `useRetainedPopup()`, and invalidate pending async results on deactivation or disposal. The plugin lets cleanup flush before pausing each component scope and resumes it on activation; it requires Vue's Options API. Unmounting the owning editor releases the retained subtree.
+The app's `DesignPanel` retains at most one selection-property subtree through `RetainedPanel`. The app installs `createRetainedScopePlugin()`; opted-in descendants receive `provideRetainedActivity()`. Vue component scopes are detached, so pausing only a parent or bare `KeepAlive` does not suspend descendant work. Cancel drafts synchronously before DOM detachment can fire blur, close transient state and gate portals with `useRetainedPopup()`, and invalidate pending async results on deactivation or disposal. The plugin lets cleanup flush before pausing each component scope and resumes it on activation; it requires Vue's Options API. Unmounting the owning editor releases the retained subtree. `useRetainedPopup()` also counts the popup as open through `useOverlayOpen()`, which the app's `createOpenOverlaysPlugin()` collects for code that waits on overlays (`packages/vue/tests/lifecycle/overlays.test.ts`).
 
 ## Canvas tools
 
@@ -29,7 +29,7 @@ The app's `DesignPanel` retains at most one selection-property subtree through `
 
 ## Commands, menus, i18n
 
-- Commands use `packages/vue/src/editor/commands/registry.ts` for shortcuts, bindings, and menu IDs. Store portable tokens (`MOD+D`) and format them at render time; labels and translations never contain shortcuts.
+- Commands use `packages/vue/src/editor/commands/registry.ts` for shortcuts, bindings, and menu IDs. Store `HotkeyChord` shortcuts (`Mod+D`) and format them at render time; labels and translations never contain shortcuts.
 - Canvas menu structure lives in `packages/vue/src/editor/menu-model/canvas.ts`; the app's `CanvasMenu.vue` renders it.
 - `useEditorEvent(event, handler)` in `packages/vue/src/editor/events/use.ts` wraps the editor event bus.
 - i18n uses narrow product-domain catalogs under `packages/vue/src/i18n/messages/` with matching locale files; namespaces of one domain share a folder (`messages/cloud/editor.ts`, `locales/<locale>/cloud/editor.json`) mapped in `LOCALE_FILE_NAMES` (`tools/checks/i18n/src/check-locales.ts`). Inspect existing domains instead of adding generic UI/component namespaces; prefer narrow `use*Messages()` composables over aggregate `useI18n()`. `bun run check:i18n` enforces structure, placeholder parity, and reviewed translation baselines; remove stale baseline identities when fixing existing debt.
@@ -37,3 +37,5 @@ The app's `DesignPanel` retains at most one selection-property subtree through `
 ## Documentation
 
 VitePress is the canonical public SDK documentation; Storybook is the internal state workshop. API tables are extracted from source and JSDoc with `vue-component-meta`, so keep descriptions next to public props, events, and slots, and keep examples valid against public exports (`packages/docs/AGENTS.md`). An example shared by Storybook and a docs page lives in `packages/vue/src/primitives/<Primitive>/examples/<Variant>.vue` (PascalCase variant, e.g. `States.vue`); the story renders it and the docs page imports it with `#vue/primitives/...`. Do not render Storybook stories inside VitePress pages: `@storybook/vue3` assigns `window.STORYBOOK_ENV` on import so it cannot be server-rendered, the docs bundle ships runtime-only Vue so runtime templates silently fail, and a client-only embed drops examples from the prerendered HTML while adding the Storybook preview runtime and `storybook/test` to the published docs.
+
+- Editor keys live in `useEditorKeyboard` (`packages/vue/src/editor/keyboard/`): commands' keybindings, the profile's tool keys, the held Space hand, nudging, Delete, Enter, Escape, and opacity digits. A host adds its own keys through `shortcuts`, which run before an editor key on the same chord and decline it by returning `false`, rather than binding a second listener; the app's `src/app/shell/keyboard/registry.ts` is the example (`packages/vue/tests/editor/keyboard/use.test.ts`).

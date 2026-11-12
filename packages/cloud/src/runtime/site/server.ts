@@ -1,5 +1,11 @@
 import { CLOUD_PORTAL_PAGE_ROOTS } from '#cloud/contract'
-import { withIndexingPolicy } from '#cloud/server'
+import {
+  cloudErrorHandler,
+  cloudRequestId,
+  withIndexingPolicy,
+  type CloudErrorReporter,
+  type ForwardedRequestId
+} from '#cloud/server'
 import { Hono } from 'hono'
 
 /** A file of the Cloud site (`bun run build:cloud`): the editor and the portal. */
@@ -16,11 +22,28 @@ export type SiteFiles = (path: string, request: Request) => Promise<SiteFile | n
 const PORTAL_PAGE = '/cloud.html'
 const EDITOR_PAGE = '/index.html'
 
+/**
+ * What the site's pages may run: only the site's own scripts and Turnstile's on the portal, so an
+ * injected script tag or one from another host never runs. The pages carry no inline script (the
+ * boot splash loads its own file). The editor compiles design JSX and code-tool snippets with
+ * `Function` and runs WebAssembly and workers from blobs, which the policy keeps; plugins and AI
+ * providers reach other hosts through `fetch`, which it leaves be. Desktop sign-in approval and
+ * the editor must never be framed by another site.
+ */
+export const SITE_CONTENT_SECURITY_POLICY = [
+  "script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://challenges.cloudflare.com",
+  "worker-src 'self' blob:",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "frame-ancestors 'none'"
+].join('; ')
+
 const PAGE_HEADERS = {
   'Content-Type': 'text/html; charset=utf-8',
   'Cache-Control': 'no-cache',
-  // Desktop sign-in approval and the editor must never be framed by another site.
-  'Content-Security-Policy': "frame-ancestors 'none'",
+  'Content-Security-Policy': SITE_CONTENT_SECURITY_POLICY,
+  // Browsers take this only over HTTPS; a deployment on plain HTTP is unaffected.
+  'Strict-Transport-Security': 'max-age=31536000',
   'Referrer-Policy': 'no-referrer',
   'X-Content-Type-Options': 'nosniff'
 }
@@ -29,6 +52,10 @@ export type CloudServerOptions = {
   /** The built site; without it, the server answers only its API. */
   site?: SiteFiles
   indexingPolicy: 'allow' | 'deny'
+  /** Reports errors reading the site's files, when the deployment configures error tracking. */
+  reportError?: CloudErrorReporter
+  /** The request ID the runtime trusts from what stands in front of it; see `cloudRequestId`. */
+  forwardedRequestId?: ForwardedRequestId
 }
 
 function cacheControl(path: string): string {
@@ -43,9 +70,11 @@ function cacheControl(path: string): string {
  */
 export function createCloudServer(
   api: { fetch(request: Request): Response | Promise<Response> },
-  { site, indexingPolicy }: CloudServerOptions
+  { site, indexingPolicy, reportError, forwardedRequestId }: CloudServerOptions
 ) {
   const server = new Hono()
+    .onError(cloudErrorHandler(reportError))
+    .use(cloudRequestId(forwardedRequestId))
   server.use(async (c, next) => {
     await next()
     c.res = withIndexingPolicy(c.res, c.req.path, indexingPolicy)

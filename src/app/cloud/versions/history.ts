@@ -1,4 +1,4 @@
-import { shallowReactive, shallowRef } from 'vue'
+import { ref, shallowReactive, shallowRef } from 'vue'
 
 import type { DocumentVersion } from '@open-pencil/cloud/contract'
 
@@ -32,6 +32,8 @@ const histories = shallowRef<ReadonlyMap<EditorStore, VersionHistory>>(new Map()
 /** The version info dialog: naming the document as it is now, or editing a version's info. */
 export type VersionDialog = { store: EditorStore; version: DocumentVersion | null }
 export const versionDialog = shallowRef<VersionDialog | null>(null)
+/** What the version info dialog's fields hold; each opening fills them from its version. */
+export const versionDraft = ref({ name: '', description: '' })
 
 /** Each document's history changes so far, here or anywhere the server says. */
 const listRevisions = shallowReactive(new WeakMap<EditorStore, number>())
@@ -75,6 +77,7 @@ export function openVersionDialog(
   store: EditorStore,
   version: DocumentVersion | null = null
 ): void {
+  versionDraft.value = { name: version?.name ?? '', description: version?.description ?? '' }
   versionDialog.value = { store: versionHistoryOf(store)?.store ?? store, version }
 }
 

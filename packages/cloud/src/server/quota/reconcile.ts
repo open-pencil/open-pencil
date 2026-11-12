@@ -28,6 +28,8 @@ export function createStorageReconciliationService(database: Kysely<CloudDatabas
             .select(['storageObject.id', 'storageObject.byteSize'])
             .distinct()
             .where('document.workspaceId', '=', workspace.id)
+            // A document deleted forever came off the usage then, though its files wait out a grace.
+            .where('document.purgedAt', 'is', null)
             // Images are the workspace's once, whichever revisions use them.
             .union((union) =>
               union

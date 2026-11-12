@@ -3,13 +3,13 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from 'reka-ui'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menu } from '@/components/ui/menu/menu'
 
 /**
@@ -35,7 +35,7 @@ const menuUI = menu()
 </script>
 
 <template>
-  <DropdownMenuRoot :modal="false">
+  <AppDropdownMenuRoot :modal="false">
     <DropdownMenuTrigger as-child>
       <IconButton v-if="look === 'icon'" :label="label" :disabled="disabled || !items.length">
         <icon-lucide-ellipsis class="size-3.5" />
@@ -68,5 +68,5 @@ const menuUI = menu()
         </template>
       </DropdownMenuContent>
     </DropdownMenuPortal>
-  </DropdownMenuRoot>
+  </AppDropdownMenuRoot>
 </template>

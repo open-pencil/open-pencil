@@ -1,7 +1,7 @@
-import type { CanvasKit } from 'canvaskit-wasm'
 import { createNanoEvents } from 'nanoevents'
 import type { Emitter } from 'nanoevents'
 
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { UndoManager } from '@open-pencil/scene-graph/undo'
 
@@ -21,6 +21,8 @@ import { createLayoutRunner } from '#core/layout/mutations'
 import { emitNavigationTrace } from '#core/profiler'
 import { TextEditor } from '#core/text/editor'
 import { fontManager } from '#core/text/font/manager'
+import { installTextInkMeasurer } from '#core/text/ink'
+import { prepareTextFonts } from '#core/text/prepare'
 import { fontResolver } from '#core/text/resolver'
 
 import { createAlignmentActions } from './alignment'
@@ -33,8 +35,8 @@ import { createUndoBridge } from './bridges/undo'
 import { createClipboardActions } from './clipboard'
 import { createClipboardPropertiesActions } from './clipboard/paste/properties'
 import { createColorSpaceActions } from './color-space'
-import { createComponentSyncScheduler } from './component-sync'
 import { createComponentActions } from './components'
+import { createComponentSyncScheduler } from './components/sync'
 import { createConnectorDrawActions, createConnectorEndpointActions } from './connectors/draw'
 import { createConnectorLineActions } from './connectors/line'
 import { createConnectorRouting } from './connectors/routing'
@@ -42,19 +44,22 @@ import { createConnectorStyleActions } from './connectors/style'
 import { createDesignTokenActions } from './design-tokens'
 import { createDocumentSettingsActions } from './document-settings'
 import { createFigCompressionActions } from './fig-compression'
+import { createFigJamColorActions } from './figjam/colors'
 import { createGraphEventSubscription } from './graph-events'
 import { createGraphReadActions } from './graph-reads'
 import { createGuideActions } from './guides'
 import { createIconActions } from './icons'
 import { createDesignIssueActions } from './issues'
 import { createLineEndActions } from './line-ends'
-import { createNodeActions } from './nodes'
+import { createMovePolicy } from './move-policy'
+import { createNodeActions } from './nodes/actions'
 import { createPageActions } from './pages'
-import { createReadOnlyActions, guardReadOnly, guardUndo } from './read-only'
+import { createReadOnlyActions, guardEdits, guardUndo } from './read-only'
 import { createSelectionActions } from './selection'
 import { createShaderActions } from './shaders/actions'
 import { createShaderFrames } from './shaders/frames'
 import { createShapeActions } from './shapes'
+import { createPenResumeActions } from './shapes/pen/resume'
 import { createShapeWithTextActions } from './shapes/with-text'
 import { createDefaultEditorState } from './state'
 import { createStatusActions } from './statuses'
@@ -63,47 +68,65 @@ import { createStructureActions } from './structure'
 import { createTextActions } from './text'
 import { createPendingTextLayout } from './text/pending-layout'
 import { createTextSelectionStyle } from './text/selection-style'
-import { createGeneratedTextActions } from './text/typeface'
+import { createFigJamTextActions } from './text/typeface'
 import type {
   EditorContext,
   EditorEventName,
   EditorEvents,
   EditorOptions,
-  EditorState
+  EditorState,
+  RenderVersions,
+  Tool
 } from './types'
 import { createUndoActions } from './undo'
-import { createVariableActions } from './variables'
+import { createVariableActions } from './variables/actions'
+import { createVectorEditActions } from './vector/create'
 import { createVectorizeActions } from './vectorize'
-import { createViewportActions } from './viewport'
-import { createCanvasViewActions, offeredTool, resolveEditorProfile } from './views'
+import { createViewportActions, DEFAULT_VIEWPORT_CHROME, type ViewportInsets } from './viewport'
+import { createCanvasViewActions, offeredTool } from './views'
 
 export { createDefaultEditorState } from './state'
 
 export function createEditor(options?: EditorOptions) {
   let _graph = options?.graph ?? new SceneGraph()
   const skipInitialGraphSetup = options?.skipInitialGraphSetup ?? false
-  const undo = new UndoManager({ onChange: () => emitEditorEvent('history:changed') })
+  const undo = new UndoManager({
+    onChange: (change, step) => emitEditorEvent('history:changed', change, step),
+    onDiscard: () => emitEditorEvent('edit:discarded'),
+    runReplay: (replay) => _graph.runOutsideEdits(replay)
+  })
   const _loadFont = options?.loadFont ?? fontManager.loadFont.bind(fontManager)
+  // The canvas reports its size through `setViewportSize`; until it does, the window stands in.
+  const viewportSize = { width: 0, height: 0 }
   const _getViewportSize =
     options?.getViewportSize ??
     (() => {
+      if (viewportSize.width > 0 && viewportSize.height > 0) return { ...viewportSize }
       if (IS_BROWSER) return { width: window.innerWidth, height: window.innerHeight }
       return { width: 800, height: 600 }
     })
+  // Floating UI over the canvas edges, which fits keep clear of; the host reports where it sits.
+  let viewportChrome: ViewportInsets = { ...DEFAULT_VIEWPORT_CHROME }
   let _ck: CanvasKit | null = null
   let _renderer: SkiaRenderer | null = null
   const _renderers = new Set<SkiaRenderer>()
   let uninstallTextMeasurer: (() => void) | null = null
+  let uninstallTextInkMeasurer: (() => void) | null = null
   const interactiveEdits = new Set<symbol>()
   let _textEditor: TextEditor | null = null
   const events: Emitter<EditorEvents> = createNanoEvents()
-  const stopFontResolutionEvents = fontResolver.subscribe((event, snapshot) => {
-    if (event === 'settled') pendingTextLayout.relayoutReady(_renderer)
+  const stopFontResolutionEvents = fontResolver.subscribe((event, snapshot) =>
     events.emit('font:resolution-changed', event, snapshot)
-  })
+  )
   const stopFontLoadEvents = fontManager.onFaceLoaded((family, style) =>
     events.emit('font:loaded', family, style)
   )
+  // Text blocked while its fonts were prepared is missing from the tiles drawn meanwhile.
+  const stopUnblockEvents = fontManager.onNodesUnblocked((graph, nodeIds) => {
+    if (graph !== _graph) return
+    for (const renderer of _renderers) for (const id of nodeIds) renderer.redrawNode(id, graph)
+    requestRender()
+  })
 
   void prefetchFigmaSchema()
 
@@ -148,6 +171,11 @@ export function createEditor(options?: EditorOptions) {
 
   function requestRefresh() {
     state.sceneVersion++
+  }
+
+  /** A canvas showed a frame of `versions` with nothing left to fill in. */
+  function reportPresented(versions: RenderVersions) {
+    emitEditorEvent('render:presented', versions)
   }
 
   function requestRepaint() {
@@ -217,6 +245,8 @@ export function createEditor(options?: EditorOptions) {
     state.activeTool = tool
     if (tool !== 'SELECT') state.measurementMode = 'off'
     if (previous === tool) return
+    // The Scale tool starts from the center of the box, as Figma's does.
+    if (tool === 'SCALE') state.scaleAnchor = { x: 0.5, y: 0.5 }
     // Guides the pen showed for its next point do not belong to the next tool.
     if (previous === 'PEN') state.snapGuides = []
     emitEditorEvent('tool:changed', tool, previous)
@@ -226,10 +256,14 @@ export function createEditor(options?: EditorOptions) {
   const { runLayoutForNode, runMutationWithLayout } = createLayoutRunner(() => _graph)
   const pendingTextLayout = createPendingTextLayout({
     getGraph: () => _graph,
+    getRenderer: () => _renderer,
+    prepareFonts: (texts) => prepareTextFonts(texts, { loadFont: _loadFont }),
     runLayoutForNode,
-    requestRender
+    requestRender,
+    onEditorEvent
   })
-  const { scheduleComponentSync } = createComponentSyncScheduler(() => _graph, requestRender)
+  const { scheduleComponentSync, flushComponentSync, isSyncingComponents } =
+    createComponentSyncScheduler(() => _graph, requestRender)
 
   const { subscribeToGraph, unsubscribeFromGraph } = createGraphEventSubscription({
     getGraph: () => _graph,
@@ -251,6 +285,7 @@ export function createEditor(options?: EditorOptions) {
   }
 
   // Build the shared context
+  const movePolicy = createMovePolicy(undo)
   const ctx: EditorContext = {
     get graph() {
       return _graph
@@ -263,6 +298,7 @@ export function createEditor(options?: EditorOptions) {
     loadFont: _loadFont,
     resolveFigmaClipboardImages: options?.resolveFigmaClipboardImages ?? null,
     getViewportSize: _getViewportSize,
+    getViewportChrome: () => viewportChrome,
     getUserName: () => options?.getUserName?.() ?? '',
     icons: options?.icons ?? defaultIcons,
     getCk: () => _ck,
@@ -270,6 +306,7 @@ export function createEditor(options?: EditorOptions) {
     getRenderers: () => _renderers,
     getTextEditor: () => _textEditor,
     requestRender,
+    constrainMove: movePolicy.constrainMove,
     requestRefresh,
     requestRepaint,
     beginInteractiveEdit,
@@ -310,7 +347,8 @@ export function createEditor(options?: EditorOptions) {
   const icons = createIconActions(ctx)
   const stickies = createStickyActions(ctx, nodes)
   const shapesWithText = createShapeWithTextActions(ctx, nodes)
-  const generatedText = createGeneratedTextActions(ctx, nodes)
+  const figJamText = createFigJamTextActions(ctx, nodes, { ...stickies, ...shapesWithText })
+  const figJamColors = createFigJamColorActions(ctx, nodes)
   const statuses = createStatusActions(ctx)
   const figCompression = createFigCompressionActions(ctx)
   createConnectorRouting(ctx)
@@ -333,15 +371,48 @@ export function createEditor(options?: EditorOptions) {
   const undoBridge = createUndoBridge(undoActions, selection, nodes.flushNudge)
   const lintFixBridge = createLintFixBridge(ctx, nodes, structure, clipboard)
   const textSelectionStyle = createTextSelectionStyle(ctx, text.runTextEditStep)
-  /** Whether the editor refuses edits: its profile offers none, as for a read-only document. */
-  const readsOnly = () => !resolveEditorProfile(state).edits
-  const readOnly = createReadOnlyActions(ctx, () => {
+  const vectorEdit = createVectorEditActions(ctx, {
+    updateNodeWithUndo: nodes.updateNodeWithUndo,
+    select: selection.select,
+    deleteSelected: clipboard.deleteSelected,
+    penCommit: shapes.penCommit
+  })
+  const { cancelPenGesture, ...shapeActions } = shapes
+  const { cancelNodeEditChange, ...vectorEditActions } = vectorEdit
+  /**
+   * Takes back the gesture in progress, such as a press of the pen or a drag in vector edit mode,
+   * leaving no undo step or redo, and tells the canvas to drop it (`gesture:cancelled`). A host
+   * refuses what the person is doing so, from the gesture's own events, such as `pen:pressed`.
+   */
+  function cancelGesture() {
+    if (!cancelPenGesture()) cancelNodeEditChange()
+    emitEditorEvent('gesture:cancelled')
+  }
+  const penResume = createPenResumeActions(ctx, {
+    penCommit: shapes.penCommit,
+    penPushHistory: shapes.penPushHistory,
+    exitNodeEditMode: vectorEdit.exitNodeEditMode
+  })
+  function endLayerEdits() {
     nodes.flushNudge()
     nodes.cancelNodePreviews()
     if (state.editingTextId) text.commitTextEdit()
-    shapes.penCancel()
-    shapes.pencilCancel()
-    state.gradientEdit = null
+  }
+  const readOnly = createReadOnlyActions(ctx, movePolicy, {
+    endLayerEdits,
+    flushPendingStep: nodes.flushNudge,
+    endEdits: () => {
+      endLayerEdits()
+      vectorEdit.exitNodeEditMode(true, { release: true })
+      shapes.penCancel()
+      shapes.pencilCancel()
+      state.gradientEdit = null
+      state.blurRampEdit = null
+    },
+    endPathContinuation: () => {
+      if (state.penState?.resumingNodeId) shapes.penCommit(false)
+    },
+    pickTool: shapes.setTool
   })
 
   // The edited text follows changes made outside the editor, such as a panel field being
@@ -360,17 +431,25 @@ export function createEditor(options?: EditorOptions) {
     _renderers.add(renderer)
     _textEditor ??= new TextEditor(ck)
     uninstallTextMeasurer?.()
+    // Measures with the editor's current renderer, which removing this one falls back from.
     uninstallTextMeasurer =
       typeof renderer.measureTextNode === 'function'
         ? installTextMeasurer((node, maxWidth) =>
-            pendingTextLayout.measure(renderer, node, maxWidth)
+            _renderer ? pendingTextLayout.measure(_renderer, node, maxWidth) : null
           )
+        : null
+    uninstallTextInkMeasurer?.()
+    uninstallTextInkMeasurer =
+      typeof renderer.measureTextInk === 'function'
+        ? installTextInkMeasurer((node) => _renderer?.measureTextInk(node))
         : null
   }
 
   function releaseTextMeasurer() {
     uninstallTextMeasurer?.()
     uninstallTextMeasurer = null
+    uninstallTextInkMeasurer?.()
+    uninstallTextInkMeasurer = null
   }
 
   function removeCanvasRenderer(renderer: SkiaRenderer) {
@@ -383,11 +462,13 @@ export function createEditor(options?: EditorOptions) {
 
   function replaceGraph(newGraph: SceneGraph) {
     nodes.cancelNodePreviews()
+    // A pen path belongs to the document it was drawn in.
+    if (state.penState) shapes.penCancel()
     undo.discardBatches()
+    pendingTextLayout.clear()
     _graph = newGraph
     state.documentKind = _graph.documentKind
     setActiveTool(offeredTool(state, state.activeTool))
-    pendingTextLayout.clear()
     subscribeToGraph()
     const previousPageId = state.currentPageId
     state.currentPageId = _graph.getPages()[0]?.id ?? _graph.rootId
@@ -396,6 +477,8 @@ export function createEditor(options?: EditorOptions) {
     state.transforming = false
     state.measurementMode = 'off'
     state.snapGuides = []
+    // Snap targets are points on the document's pages, which are gone.
+    state.snapTargets = { points: [] }
     state.guides = { preview: null, hovered: null, selected: null, redline: null }
     state.layoutInsertIndicator = null
     state.dropTargetId = null
@@ -414,12 +497,14 @@ export function createEditor(options?: EditorOptions) {
     interactiveEdits.clear()
     stopFontResolutionEvents()
     stopFontLoadEvents()
+    stopUnblockEvents()
     unsubscribeFromGraph()
   }
 
-  function releaseGraphResources() {
-    releaseFigPopulationWorker(_graph)
-    releaseOriginalFigArchive(_graph)
+  /** Releases what a document opened from a `.fig` holds: the editor's own, or one it replaced. */
+  function releaseGraphResources(graph: SceneGraph = _graph) {
+    releaseFigPopulationWorker(graph)
+    releaseOriginalFigArchive(graph)
   }
 
   const editor = {
@@ -435,7 +520,7 @@ export function createEditor(options?: EditorOptions) {
     get textEditor() {
       return _textEditor
     },
-    undo: guardUndo(undo, readsOnly),
+    undo: guardUndo(undo, readOnly.historyRefusal),
     state,
 
     // Graph reads
@@ -446,10 +531,13 @@ export function createEditor(options?: EditorOptions) {
     // Lifecycle
     beginInteractiveEdit,
     isInteractiveEditing: () => interactiveEdits.size > 0,
+    isSyncingComponents,
+    flushComponentSync,
     requestRender,
     requestRefresh,
     textSelectionChanged,
     requestRepaint,
+    reportPresented,
     onEditorEvent,
     setCanvasKit,
     setNavigationPhase,
@@ -465,12 +553,45 @@ export function createEditor(options?: EditorOptions) {
     // Pages
     ...pages,
 
+    /** The size of the canvas the editor draws into, in screen pixels. */
+    getViewportSize: _getViewportSize,
+    /** Records the canvas's size in screen pixels, which zooming to fit and centring use. */
+    setViewportSize(width: number, height: number) {
+      viewportSize.width = width
+      viewportSize.height = height
+    },
+    /** Floating UI over each canvas edge, in screen pixels, that zooming to fit keeps clear of. */
+    getViewportChrome: () => ({ ...viewportChrome }),
+    /**
+     * Records the floating UI over each canvas edge, such as a toolbar docked there, which zooming
+     * to fit and a page's first view keep clear of; Figma's bottom toolbar until a host reports.
+     */
+    setViewportChrome(chrome: ViewportInsets) {
+      viewportChrome = { ...chrome }
+    },
+
     // Canvas and frame guides
     ...guides,
     ...designIssues,
 
     // Shapes & tools
-    ...shapes,
+    ...shapeActions,
+
+    // Vector edit mode: a path edited point by point, and the pen continuing a path
+    ...vectorEditActions,
+    cancelGesture,
+    ...penResume,
+    /**
+     * Picks a tool. Only Move and the pen work on a path being edited, so picking another, such as
+     * the hand with H, commits the path and leaves vector edit mode, as in Figma desktop 126; a
+     * tool held while a key is down, as Space holds the hand, leaves it open.
+     */
+    setTool: (tool: Tool, options?: { held?: boolean }) => {
+      const picked = !options?.held && offeredTool(state, tool) === tool
+      if (picked && state.nodeEditState && tool !== 'SELECT' && tool !== 'PEN')
+        vectorEdit.exitNodeEditMode(true)
+      shapes.setTool(tool, options)
+    },
 
     // Structure (group, reorder, reparent, z-order)
     ...structure,
@@ -484,6 +605,7 @@ export function createEditor(options?: EditorOptions) {
         nodes.updateNodeWithUndo(target, next, label)
       ),
     getTextSelectionStyle: textSelectionStyle.selectionStyle,
+    layerChanges: textSelectionStyle.layerChanges,
 
     // Alignment (align, flip, rotate)
     ...alignment,
@@ -496,7 +618,8 @@ export function createEditor(options?: EditorOptions) {
     ...icons,
     ...stickies,
     ...shapesWithText,
-    ...generatedText,
+    ...figJamText,
+    ...figJamColors,
     statusWorkflow: statuses.statusWorkflow,
     getShownStatus: statuses.getShownStatus,
     setStatus: statuses.setStatus,
@@ -556,9 +679,9 @@ export function createEditor(options?: EditorOptions) {
     ...lintFixBridge,
 
     // Read-only documents, which refuse every action above that changes them
-    ...readOnly
+    ...readOnly.actions
   }
-  return guardReadOnly(editor, readsOnly)
+  return guardEdits(editor, readOnly.refusal)
 }
 
 /**

@@ -1,27 +1,50 @@
 import { pick } from 'es-toolkit'
-import { isValid, toUint8Array } from 'js-base64'
 
 import {
   SceneGraph,
-  type Fill,
+  type Effect,
   type ImageScaleMode,
-  type SceneNode,
-  type Stroke
+  type SceneNode
 } from '@open-pencil/scene-graph'
 import { TRANSPARENT } from '@open-pencil/scene-graph/constants'
 import { parseCSSAlignSelf, parseCSSNumber, parseCSSShadows } from '@open-pencil/scene-graph/css'
-import { computeImageHash } from '@open-pencil/scene-graph/images'
+import { blurRadiusForSigma } from '@open-pencil/scene-graph/geometry'
+import { computeImageHash, imageHeader, parseDataURL } from '@open-pencil/scene-graph/images'
 
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
-import { colorToFillFromCSS, colorToStrokeFromCSS, mergedStyle, pickStyle } from './css-values'
+import {
+  applyBoxSizing,
+  applyCornerRadii,
+  applyFlexGap,
+  applyPadding,
+  applyPositioning,
+  dashPatternFromCSS,
+  fillsFromStyle,
+  firstStrokeColor,
+  setBorderWeights,
+  setNodeBox,
+  hasBorder,
+  strokeWeightFromStyle
+} from './box'
+import { hasBoxStyle } from './boxes'
+import { colorToStrokeFromCSS, mergedStyle, pickStyle } from './css-values'
 import {
   applyContainerLayout,
   applyFlowSizing,
   elementDisplay,
   flowOf,
   inheritedTextStyle,
+  type FlowKind,
   type ParentFlow
 } from './flow'
+import {
+  applyCapturedLines,
+  capturedBox,
+  capturedTextBox,
+  placeTopLevelLayers,
+  type CapturedBox,
+  type CapturedBoxes
+} from './placement'
 import {
   blockRichText,
   characterStyleFromCSS,
@@ -32,12 +55,24 @@ import {
   applyParagraphs,
   type CSSCharacterStyle
 } from './text'
+import { cssTransform, type CSSTransforms } from './transform'
 
 const DOM_CSS_PLUGIN_ID = 'open-pencil-dom-css'
 const IMAGE_SOURCE_URL_KEY = 'image-source-url'
 
 export interface DesignDocumentToSceneGraphOptions {
   pageName?: string
+}
+
+/**
+ * CSS shadows as the layer's effects, each blurred as the browser blurs it: CSS blurs a shadow
+ * by half its blur length, which the canvas draws from the radius that gives that sigma.
+ */
+function cssShadows(value: string | undefined): Effect[] {
+  return parseCSSShadows(value).map((effect) => ({
+    ...effect,
+    radius: blurRadiusForSigma(effect.radius / 2)
+  }))
 }
 
 function textContent(node: DesignNode): string {
@@ -63,205 +98,19 @@ function isTextLikeElement(node: DesignElement): boolean {
   ].includes(node.tagName.toLowerCase())
 }
 
-function firstCSSNumber(style: DesignStyleDeclaration, ...properties: string[]): number | null {
-  for (const property of properties) {
-    const parsed = parseCSSNumber(pickStyle(style, property))
-    if (parsed !== null) return parsed
-  }
-  return null
-}
-
-function fillsFromStyle(style: DesignStyleDeclaration, property: string): Fill[] {
-  return colorToFillFromCSS(pickStyle(style, property))
-}
-
-function aspectRatioFromCSS(value: string | undefined): number | null {
-  if (!value || value === 'auto') return null
-  const parts = value
-    .split('/')
-    .map((part) => Number.parseFloat(part.trim()))
-    .filter(Number.isFinite)
-  if (parts.length === 1 && parts[0] > 0) return parts[0]
-  if (parts.length === 2 && parts[0] > 0 && parts[1] > 0) return parts[0] / parts[1]
-  return null
-}
-
-function setNodeBox(node: SceneNode, style: DesignStyleDeclaration): void {
-  const width = firstCSSNumber(style, 'width')
-  const height = firstCSSNumber(style, 'height')
-  const minWidth = firstCSSNumber(style, 'min-width')
-  const maxWidth = firstCSSNumber(style, 'max-width')
-  const minHeight = firstCSSNumber(style, 'min-height')
-  const maxHeight = firstCSSNumber(style, 'max-height')
-  const aspectRatio = aspectRatioFromCSS(pickStyle(style, 'aspect-ratio'))
-  if (width !== null) node.width = width
-  if (height !== null) node.height = height
-  if (height === null && width !== null && aspectRatio !== null) node.height = width / aspectRatio
-  if (width === null && height !== null && aspectRatio !== null) node.width = height * aspectRatio
-  if (minWidth !== null) node.minWidth = minWidth
-  if (maxWidth !== null) node.maxWidth = maxWidth
-  if (minHeight !== null) node.minHeight = minHeight
-  if (maxHeight !== null) node.maxHeight = maxHeight
-}
-
-function firstStrokeColor(style: DesignStyleDeclaration) {
-  return (
-    pickStyle(style, 'border-color') ??
-    pickStyle(style, 'border-top-color') ??
-    pickStyle(style, 'border-right-color') ??
-    pickStyle(style, 'border-bottom-color') ??
-    pickStyle(style, 'border-left-color')
-  )
-}
-
-function strokeWeightFromStyle(style: DesignStyleDeclaration) {
-  const borderWidth = firstCSSNumber(style, 'border-width')
-  if (borderWidth !== null) return borderWidth
-
-  const sideWeights = [
-    firstCSSNumber(style, 'border-top-width'),
-    firstCSSNumber(style, 'border-right-width'),
-    firstCSSNumber(style, 'border-bottom-width'),
-    firstCSSNumber(style, 'border-left-width')
-  ].filter((weight): weight is number => weight !== null)
-  if (sideWeights.length === 0) return null
-  return Math.max(...sideWeights)
-}
-
-function borderStyleFromCSS(style: DesignStyleDeclaration): string | undefined {
-  return (
-    pickStyle(style, 'border-style') ??
-    pickStyle(style, 'border-top-style') ??
-    pickStyle(style, 'border-right-style') ??
-    pickStyle(style, 'border-bottom-style') ??
-    pickStyle(style, 'border-left-style')
-  )
-}
-
-function dashPatternFromCSS(style: DesignStyleDeclaration, strokeWeight: number): number[] {
-  const borderStyle = borderStyleFromCSS(style)
-  if (borderStyle === 'dashed') return [strokeWeight * 3, strokeWeight * 2]
-  if (borderStyle === 'dotted') return [strokeWeight, strokeWeight]
-  return []
-}
-
-function setBorderWeights(node: SceneNode, style: DesignStyleDeclaration, stroke: Stroke): void {
-  const top = firstCSSNumber(style, 'border-top-width') ?? stroke.weight
-  const right = firstCSSNumber(style, 'border-right-width') ?? stroke.weight
-  const bottom = firstCSSNumber(style, 'border-bottom-width') ?? stroke.weight
-  const left = firstCSSNumber(style, 'border-left-width') ?? stroke.weight
-  node.borderTopWeight = top
-  node.borderRightWeight = right
-  node.borderBottomWeight = bottom
-  node.borderLeftWeight = left
-  node.independentStrokeWeights = [top, right, bottom, left].some(
-    (weight) => weight !== stroke.weight
-  )
-}
-
-function applyCornerRadii(node: SceneNode, style: DesignStyleDeclaration): void {
-  const cornerRadius = firstCSSNumber(style, 'border-radius')
-  const topLeft = firstCSSNumber(style, 'border-top-left-radius')
-  const topRight = firstCSSNumber(style, 'border-top-right-radius')
-  const bottomRight = firstCSSNumber(style, 'border-bottom-right-radius')
-  const bottomLeft = firstCSSNumber(style, 'border-bottom-left-radius')
-
-  if (cornerRadius !== null) node.cornerRadius = cornerRadius
-  if (topLeft === null && topRight === null && bottomRight === null && bottomLeft === null) return
-
-  const fallback = cornerRadius ?? 0
-  node.topLeftRadius = topLeft ?? fallback
-  node.topRightRadius = topRight ?? fallback
-  node.bottomRightRadius = bottomRight ?? fallback
-  node.bottomLeftRadius = bottomLeft ?? fallback
-  node.independentCorners = [
-    node.topLeftRadius,
-    node.topRightRadius,
-    node.bottomRightRadius,
-    node.bottomLeftRadius
-  ].some((radius) => radius !== fallback)
-}
-
-function applyFlexGap(node: SceneNode, style: DesignStyleDeclaration): void {
-  const gap = firstCSSNumber(style, 'gap')
-  const rowGap = firstCSSNumber(style, 'row-gap')
-  const columnGap = firstCSSNumber(style, 'column-gap')
-  const isHorizontal = node.layoutMode === 'HORIZONTAL'
-  const isWrapped = node.layoutWrap === 'WRAP'
-
-  node.itemSpacing = (isHorizontal ? columnGap : rowGap) ?? gap ?? 0
-  node.counterAxisSpacing = (isHorizontal ? rowGap : columnGap) ?? (isWrapped ? (gap ?? 0) : 0)
-}
-
-function applyPositioning(node: SceneNode, style: DesignStyleDeclaration): void {
-  const position = pickStyle(style, 'position')
-  if (position === 'absolute' || position === 'fixed') node.layoutPositioning = 'ABSOLUTE'
-
-  const left = firstCSSNumber(style, 'left')
-  const top = firstCSSNumber(style, 'top')
-  if (left !== null) node.x = left
-  if (top !== null) node.y = top
-}
-
-/**
- * What CSS adds outside an explicit size: padding and borders, unless `box-sizing: border-box`
- * puts them inside it as auto layout does.
- */
-function contentBoxExtras(style: DesignStyleDeclaration): { width: number; height: number } {
-  if (pickStyle(style, 'box-sizing')?.trim() === 'border-box') return { width: 0, height: 0 }
-  // A border takes room once it has a style other than none, its CSS default, whatever its color.
-  const borderStyle = borderStyleFromCSS(style)
-  const bordered = borderStyle !== undefined && borderStyle !== 'none' && borderStyle !== 'hidden'
-  const side = (name: 'top' | 'right' | 'bottom' | 'left', axis: 'block' | 'inline') =>
-    (firstCSSNumber(style, `padding-${name}`, `padding-${axis}`, 'padding') ?? 0) +
-    (bordered ? (firstCSSNumber(style, `border-${name}-width`, 'border-width') ?? 0) : 0)
-  return {
-    width: side('left', 'inline') + side('right', 'inline'),
-    height: side('top', 'block') + side('bottom', 'block')
-  }
-}
-
-/** Explicit sizes count the padding and borders CSS places outside them. */
-function applyBoxSizing(node: SceneNode, style: DesignStyleDeclaration): void {
-  const extras = contentBoxExtras(style)
-  const width = firstCSSNumber(style, 'width')
-  const height = firstCSSNumber(style, 'height')
-  // A size `aspect-ratio` derives from the other is a content size too.
-  const ratio = aspectRatioFromCSS(pickStyle(style, 'aspect-ratio')) !== null
-  if (extras.width > 0) {
-    if (width !== null || (ratio && height !== null)) node.width += extras.width
-    if (node.minWidth !== null) node.minWidth += extras.width
-    if (node.maxWidth !== null) node.maxWidth += extras.width
-  }
-  if (extras.height > 0) {
-    if (height !== null || (ratio && width !== null)) node.height += extras.height
-    if (node.minHeight !== null) node.minHeight += extras.height
-    if (node.maxHeight !== null) node.maxHeight += extras.height
-  }
-}
-
-function applyPadding(node: SceneNode, style: DesignStyleDeclaration): void {
-  node.paddingTop = firstCSSNumber(style, 'padding-top', 'padding-block', 'padding') ?? 0
-  node.paddingRight = firstCSSNumber(style, 'padding-right', 'padding-inline', 'padding') ?? 0
-  node.paddingBottom = firstCSSNumber(style, 'padding-bottom', 'padding-block', 'padding') ?? 0
-  node.paddingLeft = firstCSSNumber(style, 'padding-left', 'padding-inline', 'padding') ?? 0
-}
-
 function imageScaleModeFromObjectFit(value: string | undefined): ImageScaleMode | null {
   if (value === 'contain' || value === 'scale-down') return 'FIT'
   if (value === 'cover') return 'FILL'
   return null
 }
 
-function bytesFromDataURL(value: string | undefined): Uint8Array | null {
-  if (!value?.startsWith('data:')) return null
-  const commaIndex = value.indexOf(',')
-  if (commaIndex === -1) return null
-  const metadata = value.slice(0, commaIndex)
-  const body = value.slice(commaIndex + 1)
-  // Invalid Base64 in imported HTML drops that image instead of the whole import.
-  if (!metadata.endsWith(';base64') || !isValid(body)) return null
-  return toUint8Array(body)
+/**
+ * The raster image a data URL carries. Anything else, such as an SVG or Base64 that does not
+ * decode, stays the element's source URL rather than an image fill nothing could draw.
+ */
+function imageFromDataURL(value: string | undefined): Uint8Array | null {
+  const bytes = value ? parseDataURL(value)?.bytes : undefined
+  return bytes && imageHeader(bytes) ? bytes : null
 }
 
 function applyImageFill(
@@ -272,7 +121,7 @@ function applyImageFill(
 ): void {
   if (element.tagName.toLowerCase() !== 'img') return
   const source = element.attrs.src
-  const bytes = bytesFromDataURL(source)
+  const bytes = imageFromDataURL(source)
   if (!bytes) {
     if (source) {
       node.pluginData.push({
@@ -313,10 +162,10 @@ function applyElementStyle(
   if (fills.length > 0) node.fills = fills
   applyImageFill(graph, node, element, style)
 
-  const strokes = colorToStrokeFromCSS(
-    firstStrokeColor(style),
-    strokeWeightFromStyle(style)?.toString()
-  )
+  // A border without a style is not drawn and takes no room.
+  const strokes = hasBorder(style)
+    ? colorToStrokeFromCSS(firstStrokeColor(style), strokeWeightFromStyle(style)?.toString())
+    : []
   if (strokes.length > 0) {
     const dashPattern = dashPatternFromCSS(style, strokes[0].weight)
     if (dashPattern.length > 0) {
@@ -325,9 +174,11 @@ function applyElementStyle(
     }
     node.strokes = strokes
     setBorderWeights(node, style, strokes[0])
+    // A CSS border takes room inside the box, as an inside stroke included in layout does.
+    node.strokesIncludedInLayout = true
   }
 
-  const effects = parseCSSShadows(pickStyle(style, 'box-shadow'))
+  const effects = cssShadows(pickStyle(style, 'box-shadow'))
   if (effects.length > 0) node.effects = effects
 
   const opacity = parseCSSNumber(pickStyle(style, 'opacity'))
@@ -367,7 +218,7 @@ function applyTextStyle(node: SceneNode, style: DesignStyleDeclaration): void {
   const opacity = parseCSSNumber(pickStyle(style, 'opacity'))
   if (opacity !== null) node.opacity = opacity
 
-  const effects = parseCSSShadows(pickStyle(style, 'text-shadow'))
+  const effects = cssShadows(pickStyle(style, 'text-shadow'))
   if (effects.length > 0) node.effects = effects
 
   const textAlign = pickStyle(style, 'text-align')?.toUpperCase()
@@ -375,6 +226,8 @@ function applyTextStyle(node: SceneNode, style: DesignStyleDeclaration): void {
     node.textAlignHorizontal = textAlign
   }
 
+  // Lays out as one line through its sizing; the line limit is for truncating it, as an
+  // export writes it back as `nowrap`.
   if (pickStyle(style, 'white-space') === 'nowrap') node.maxLines = 1
 }
 
@@ -405,12 +258,12 @@ function createRichTextNode(
 
 /** Whether an element draws nothing of its own, so its text can join the text around it. */
 function isPlainElement(element: DesignElement): boolean {
-  return !hasBoxStyle(mergedStyle(element))
+  return !hasBoxStyle(element, mergedStyle(element))
 }
 
 function isInlineElement(element: DesignElement): boolean {
   const style = mergedStyle(element)
-  return elementDisplay(element, style) === 'inline' && !hasBoxStyle(style)
+  return elementDisplay(element, style) === 'inline' && !hasBoxStyle(element, style)
 }
 
 /** Whether the element's children are text in one layer: inline content, or text blocks. */
@@ -442,73 +295,59 @@ function linkText(node: SceneNode, element: DesignElement): void {
   }
 }
 
-function hasBoxStyle(style: DesignStyleDeclaration): boolean {
-  return [
-    'aspect-ratio',
-    'background-color',
-    'border-color',
-    'border-style',
-    'border-width',
-    'border-top-style',
-    'border-top-width',
-    'border-right-style',
-    'border-right-width',
-    'border-bottom-style',
-    'border-bottom-width',
-    'border-left-style',
-    'border-left-width',
-    'border-radius',
-    'box-shadow',
-    'display',
-    'height',
-    'padding',
-    'padding-top',
-    'padding-right',
-    'padding-bottom',
-    'padding-left',
-    'padding-block',
-    'padding-inline',
-    'width',
-    'min-width',
-    'max-width',
-    'min-height',
-    'max-height',
-    'object-fit',
-    'overflow',
-    'position',
-    'top',
-    'right',
-    'bottom',
-    'left',
-    'flex-wrap',
-    'align-self'
-  ].some((property) => pickStyle(style, property) !== undefined)
-}
-
 function hasContent(element: DesignElement): boolean {
   return element.children.some((child) => child.type !== 'text' || child.text.trim().length > 0)
+}
+
+/** What building the layers records for laying them out: captured boxes and transforms. */
+interface Recorded {
+  boxes: CapturedBoxes
+  transforms: CSSTransforms
+}
+
+/** Remembers where the layer's element was laid out, and how many lines its text took. */
+function record(recorded: Recorded, node: SceneNode, captured: CapturedBox | undefined) {
+  if (!captured) return
+  recorded.boxes.set(node.id, captured)
+  applyCapturedLines(node, captured)
+}
+
+/** Remembers the element's box, and its transform, for the layer built for it. */
+function recordElement(
+  recorded: Recorded,
+  node: SceneNode,
+  element: DesignElement,
+  style: DesignStyleDeclaration
+) {
+  record(recorded, node, capturedBox(element))
+  const transform = cssTransform(style)
+  if (transform) recorded.transforms.set(node.id, transform)
 }
 
 function createElementNode(
   graph: SceneGraph,
   parentId: string,
   element: DesignElement,
-  parentFlow: ParentFlow
+  parentFlow: ParentFlow,
+  recorded: Recorded
 ): SceneNode | null {
   const style = mergedStyle(element)
   const display = elementDisplay(element, style)
   if (display === 'none') return null
   if (
     isTextLikeElement(element) &&
-    !hasBoxStyle(style) &&
+    !hasBoxStyle(element, style) &&
     element.children.every((child) => child.type === 'text')
   ) {
     const text = createTextNode(graph, parentId, textContent(element), style, display, parentFlow)
     linkText(text, element)
+    recordElement(recorded, text, element, style)
     return text
   }
-  if (!hasBoxStyle(style) && holdsRichText(element)) {
-    return createRichTextNode(graph, parentId, element, style, display, parentFlow)
+  if (!hasBoxStyle(element, style) && holdsRichText(element)) {
+    const text = createRichTextNode(graph, parentId, element, style, display, parentFlow)
+    recordElement(recorded, text, element, style)
+    return text
   }
 
   const node = graph.createNode('FRAME', parentId, {
@@ -516,6 +355,7 @@ function createElementNode(
     clipsContent: false
   })
   applyElementStyle(graph, node, element, style)
+  recordElement(recorded, node, element, style)
   // A box without content keeps its own size, as an image does, unless it declares a layout.
   const flow = hasContent(element) || flowOf(display) === 'flex' ? flowOf(display) : null
   if (flow) {
@@ -524,18 +364,38 @@ function createElementNode(
   }
   applyFlowSizing(graph, node, style, display, parentFlow)
 
-  // Blocks of text in a box's own flow are one text; a flex box's children are items.
+  createChildLayers(graph, node, element, style, flow, recorded)
+  return node
+}
+
+/**
+ * A box's children as layers: blocks of text in its own flow as one text, since a flex box's
+ * children are items, or each child as a layer of its own.
+ */
+function createChildLayers(
+  graph: SceneGraph,
+  node: SceneNode,
+  element: DesignElement,
+  style: DesignStyleDeclaration,
+  flow: FlowKind | null,
+  recorded: Recorded
+): void {
   if (flow !== 'flex' && holdsRichText(element)) {
     const textStyle = inheritedTextStyle(element, style)
     const textDisplay = flow === 'inline' ? 'inline' : 'block'
-    createRichTextNode(graph, node.id, element, textStyle, textDisplay, flow ?? 'none')
-    return node
+    const text = createRichTextNode(graph, node.id, element, textStyle, textDisplay, flow ?? 'none')
+    record(recorded, text, capturedTextBox(element))
+    return
   }
+  // Text alone in a box takes the box its lines are in; text among elements has none of its own.
+  const textBox = element.children.every((child) => child.type === 'text')
+    ? capturedTextBox(element)
+    : undefined
   for (const child of element.children) {
-    createDesignNode(graph, node.id, child, flow ?? 'none', inheritedTextStyle(element, style))
+    const inherited = inheritedTextStyle(element, style)
+    const layer = createDesignNode(graph, node.id, child, flow ?? 'none', recorded, inherited)
+    if (layer?.type === 'TEXT') record(recorded, layer, textBox)
   }
-
-  return node
 }
 
 function createDesignNode(
@@ -543,6 +403,7 @@ function createDesignNode(
   parentId: string,
   node: DesignNode,
   parentFlow: ParentFlow,
+  recorded: Recorded,
   inheritedStyle: DesignStyleDeclaration = {}
 ): SceneNode | null {
   if (node.type === 'text') {
@@ -552,7 +413,7 @@ function createDesignNode(
     return createTextNode(graph, parentId, node.text, inheritedStyle, display, parentFlow)
   }
 
-  return createElementNode(graph, parentId, node, parentFlow)
+  return createElementNode(graph, parentId, node, parentFlow, recorded)
 }
 
 function fitPageToChildren(page: SceneNode, graph: SceneGraph): void {
@@ -562,21 +423,47 @@ function fitPageToChildren(page: SceneNode, graph: SceneGraph): void {
   page.height = Math.max(...children.map((child) => child.y + child.height))
 }
 
-export function designDocumentToSceneGraph(
+/** Layers built from a styled document, with the boxes its layout was captured at. */
+export interface DesignLayers {
+  graph: SceneGraph
+  /** Empty unless the document's layout was recorded; see `placeLayersFromLayout`. */
+  boxes: CapturedBoxes
+  /** The elements' transforms, for `applyCSSTransforms` once the layers are laid out. */
+  transforms: CSSTransforms
+}
+
+/**
+ * The layers a styled document describes. Where its layout was recorded, top-level layers sit
+ * at their captured boxes, and `boxes` lets the caller check auto layout against the rest once
+ * it has laid the layers out.
+ */
+export function designDocumentToLayers(
   document: DesignDocument,
   options: DesignDocumentToSceneGraphOptions = {}
-): SceneGraph {
+): DesignLayers {
   const graph = new SceneGraph()
   const page = graph.getPages().find((node) => node.type === 'CANVAS') ?? graph.addPage('DesignDOM')
+  const recorded: Recorded = { boxes: new Map(), transforms: new Map() }
 
   page.name = options.pageName ?? 'DesignDOM'
 
   for (const child of document.children) {
-    createDesignNode(graph, page.id, child, 'none')
+    createDesignNode(graph, page.id, child, 'none', recorded)
   }
+  placeTopLevelLayers(graph, page.id, recorded.boxes)
 
   fitPageToChildren(page, graph)
-  return graph
+  return { graph, ...recorded }
 }
+
+export function designDocumentToSceneGraph(
+  document: DesignDocument,
+  options: DesignDocumentToSceneGraphOptions = {}
+): SceneGraph {
+  return designDocumentToLayers(document, options).graph
+}
+
+export { placeLayersFromLayout, type CapturedBox, type CapturedBoxes } from './placement'
+export { applyCSSTransforms, type CSSTransform, type CSSTransforms } from './transform'
 
 export type { DesignDocumentToSceneGraphOptions as ToSceneGraphOptions }

@@ -51,6 +51,8 @@ export interface WorkspaceTable {
   name: string
   slug: string
   createdBy: string
+  /** Whose plan the workspace's limits come from; ownership passes to another admin when they go. */
+  ownerId: string
   createdAt: TimestampColumn
   updatedAt: TimestampColumn
 }
@@ -79,6 +81,8 @@ export interface DocumentTable {
   id: string
   workspaceId: string
   name: string
+  /** A design or a board; see migration 027. */
+  kind: Generated<'design' | 'board'>
   currentRevisionId: string | null
   collaborationEpoch: Generated<number>
   version: Generated<number>
@@ -86,8 +90,37 @@ export interface DocumentTable {
   createdAt: TimestampColumn
   updatedAt: TimestampColumn
   deletedAt: TimestampColumn | null
+  /** Who moved the document to Trash; empty when its account's deletion did. */
+  deletedBy: string | null
+  /**
+   * When it was deleted forever, and by whom (empty for an account's deletion): out of everyone's
+   * sight, its files wait out the deployment's grace before cleanup destroys them.
+   */
+  purgedAt: TimestampColumn | null
+  purgedBy: string | null
+  /** Storage taken off its workspace's usage when it was deleted forever; see migration 007. */
+  purgedBytes: Generated<number>
   cleanupClaimId: Generated<string | null>
   cleanupClaimedAt: TimestampColumn | null
+  /** Set while a deployment administrator has taken the document down; see migration 032. */
+  disabledAt: TimestampColumn | null
+  disabledReason: Generated<string | null>
+}
+
+/** A report someone filed about a document shared with them by link; see migration 032. */
+export interface DocumentReportTable {
+  id: string
+  documentId: string
+  shareId: string | null
+  reporterUserId: string | null
+  reporterGuestId: string | null
+  replyEmail: string | null
+  reason: 'spam-phishing' | 'illegal' | 'copyright' | 'harassment' | 'other'
+  description: string
+  status: Generated<'open' | 'dismissed' | 'actioned'>
+  createdAt: TimestampColumn
+  resolvedAt: TimestampColumn | null
+  resolvedBy: string | null
 }
 
 export interface StorageObjectTable {
@@ -177,6 +210,17 @@ export interface AuthUserTable {
   updatedAt: TimestampColumn
 }
 
+/** Better Auth's API keys, which are Cloud's personal access tokens; the plugin owns the rest. */
+export interface AccessTokenTable {
+  id: string
+  referenceId: string
+  name: string | null
+  start: string | null
+  expiresAt: TimestampColumn | null
+  lastRequest: TimestampColumn | null
+  createdAt: TimestampColumn
+}
+
 export interface TwoFactorTable {
   id: string
   secret: string
@@ -231,13 +275,26 @@ export interface UserPictureTable {
   createdAt: TimestampColumn
 }
 
-export interface DocumentCollaborationStateTable {
+/** A collaboration room's latest snapshot, a stored file, by document and epoch. */
+export interface DocumentRoomSnapshotTable {
   documentId: string
   roomEpoch: number
-  state: Uint8Array
-  version: Generated<number>
+  /** The stored file holding the room's snapshot. */
+  snapshotObjectId: string
+  /** The last logged update the snapshot holds; later ones are in `documentRoomUpdate`. */
+  throughSequence: number
   createdAt: TimestampColumn
   updatedAt: TimestampColumn
+}
+
+/** An update a room logged after its snapshot, one per save. */
+export interface DocumentRoomUpdateTable {
+  documentId: string
+  roomEpoch: number
+  sequence: number
+  /** One Yjs update, as the relay merged the changes of one save. */
+  data: Uint8Array
+  createdAt: TimestampColumn
 }
 
 export interface InvitationContinuationTable {
@@ -249,8 +306,15 @@ export interface InvitationContinuationTable {
   createdAt: TimestampColumn
 }
 
-export interface WorkspaceEntitlementTable {
-  workspaceId: string
+/** Which version of the server's terms an account accepted, and when; one row per version. */
+export interface TermsAcceptanceTable {
+  userId: string
+  version: string
+  acceptedAt: TimestampColumn
+}
+
+export interface AccountEntitlementTable {
+  userId: string
   values: unknown
   source: string
   revision: Generated<number>
@@ -336,6 +400,14 @@ export interface AuthSchemaVersionTable {
   updatedAt: TimestampColumn
 }
 
+/** One invitation sent, for the daily invitation budget; see `src/server/invitations/budget.ts`. */
+export interface InvitationSendTable {
+  id: string
+  senderId: string
+  emailNormalized: string
+  sentAt: TimestampColumn
+}
+
 export interface CloudDatabase {
   account: Account
   session: Session
@@ -345,6 +417,7 @@ export interface CloudDatabase {
   signIn: SignInTable
   userPicture: UserPictureTable
   user: AuthUserTable
+  apikey: AccessTokenTable
   authSchemaVersion: AuthSchemaVersionTable
   enrollment: EnrollmentTable
   apiRateLimit: APIRateLimitTable
@@ -361,13 +434,17 @@ export interface CloudDatabase {
   documentShare: DocumentShareTable
   documentGrant: DocumentGrantTable
   documentInvitation: DocumentInvitationTable
-  documentCollaborationState: DocumentCollaborationStateTable
+  documentRoomSnapshot: DocumentRoomSnapshotTable
+  documentRoomUpdate: DocumentRoomUpdateTable
   invitationContinuation: InvitationContinuationTable
-  workspaceEntitlement: WorkspaceEntitlementTable
+  accountEntitlement: AccountEntitlementTable
+  termsAcceptance: TermsAcceptanceTable
   workspaceStorageUsage: WorkspaceStorageUsageTable
   transactionalEmail: TransactionalEmailTable
   uploadStorageReservation: UploadStorageReservationTable
   upload: UploadTable
+  invitationSend: InvitationSendTable
+  documentReport: DocumentReportTable
 }
 
 export type NewTransactionalEmail = Insertable<TransactionalEmailTable>

@@ -1,11 +1,9 @@
 import type * as HarfBuzzModule from 'harfbuzzjs'
 
 import type { FontVariation } from '@open-pencil/scene-graph'
+import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import { ResourceCache } from '#core/cache/resource'
-import { IS_BROWSER } from '#core/constants'
-
-import { fontTableView } from './variation'
 
 export interface OutlineCommand {
   type: string
@@ -43,88 +41,6 @@ export function loadHarfBuzz(): Promise<HarfBuzz | null> {
   return harfBuzzLoading
 }
 
-/**
- * Where HarfBuzz's subsetter (`harfbuzz-subset.wasm`) loads from. Mirrors the CanvasKit locator:
- * under Node the file is read beside the harfbuzzjs package; in a browser the default expects the
- * host to serve it at the site root, and a bundling host sets its emitted URL instead.
- */
-export type HarfBuzzSubsetLocator = () => string
-
-let locator: HarfBuzzSubsetLocator = () =>
-  IS_BROWSER
-    ? '/harfbuzz-subset.wasm'
-    : new URL('harfbuzz-subset.wasm', import.meta.resolve('harfbuzzjs')).href
-
-/** Points the subsetter at the host's copy of its file. Call before the first instance. */
-export function setHarfBuzzSubsetLocator(locate: HarfBuzzSubsetLocator): void {
-  locator = locate
-}
-
-const SUBSET_FUNCTIONS = [
-  'malloc',
-  'free',
-  'hb_blob_create',
-  'hb_blob_destroy',
-  'hb_blob_get_data',
-  'hb_face_create',
-  'hb_face_destroy',
-  'hb_face_reference_blob',
-  'hb_subset_input_create_or_fail',
-  'hb_subset_input_destroy',
-  'hb_subset_input_keep_everything',
-  'hb_subset_input_pin_all_axes_to_default',
-  'hb_subset_input_pin_axis_location',
-  'hb_subset_or_fail'
-] as const
-
-type SubsetFunction = (...args: number[]) => number
-
-export type HarfBuzzSubsetter = Record<(typeof SUBSET_FUNCTIONS)[number], SubsetFunction> & {
-  memory: WebAssembly.Memory
-}
-
-async function readSubsetModule(): Promise<ArrayBuffer> {
-  const url = locator()
-  if (IS_BROWSER || !url.startsWith('file:')) {
-    const response = await fetch(url)
-    if (!response.ok) throw new Error(`HarfBuzz subsetter answered ${response.status}`)
-    return response.arrayBuffer()
-  }
-  const { readFile } = await import(/* @vite-ignore */ 'node:fs/promises')
-  const file = await readFile(new URL(url))
-  return file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength)
-}
-
-function subsetter(exports: WebAssembly.Exports): HarfBuzzSubsetter {
-  const memory = exports.memory
-  if (!(memory instanceof WebAssembly.Memory)) throw new Error('HarfBuzz subsetter has no memory')
-  const functions: Partial<Record<(typeof SUBSET_FUNCTIONS)[number], SubsetFunction>> = {}
-  for (const name of SUBSET_FUNCTIONS) {
-    const exported = exports[name]
-    if (typeof exported !== 'function') throw new Error(`HarfBuzz subsetter lacks ${name}`)
-    functions[name] = (...args) => Number(Reflect.apply(exported, undefined, args))
-  }
-  return { ...(functions as Record<(typeof SUBSET_FUNCTIONS)[number], SubsetFunction>), memory }
-}
-
-let subsetterLoading: Promise<HarfBuzzSubsetter> | null = null
-
-/**
- * Loads HarfBuzz's subsetter, a WebAssembly build of its own that harfbuzzjs ships without a
- * wrapper, once; a failed load is retried by the next caller.
- */
-export function loadHarfBuzzSubsetter(): Promise<HarfBuzzSubsetter> {
-  if (subsetterLoading) return subsetterLoading
-  const loading = readSubsetModule()
-    .then((bytes) => WebAssembly.instantiate(bytes, {}))
-    .then(({ instance }) => subsetter(instance.exports))
-  subsetterLoading = loading
-  loading.catch(() => {
-    if (subsetterLoading === loading) subsetterLoading = null
-  })
-  return loading
-}
-
 /** A font drawing one instance of a font file, and the number its outlines are cached under. */
 export interface HarfBuzzInstance {
   font: HarfBuzzModule.Font
@@ -155,15 +71,29 @@ const outlineCache = new ResourceCache<number, readonly OutlineCommand[]>({
   maxWeight: 100_000,
   weight: (commands) => commands.length + 1
 })
+/** Glyph boxes any instance measured, in font units with y running up; `null` for no ink. */
+const boxCache = new ResourceCache<number, VisualBounds | null>({ maxEntries: 50_000 })
 let nextInstanceId = 0
+
+/**
+ * A copy of one of the face's tables as HarfBuzz finds it, in a file or a collection. HarfBuzz
+ * hands back a view of its memory, which the next call can move; the tables read this way are a
+ * few dozen bytes.
+ */
+export function harfBuzzTable(face: HarfBuzzModule.Face, tag: string): DataView | null {
+  const table = face.referenceTable(tag)
+  return table ? new DataView(table.slice().buffer) : null
+}
 
 /** A font file read by HarfBuzz, or `null` when HarfBuzz is not loaded or the file has no glyphs. */
 export function harfBuzzFont(bytes: ArrayBuffer): HarfBuzzFont | null {
   const hb = harfBuzz
-  const maxp = fontTableView(bytes, 'maxp')
-  const glyphCount = maxp && maxp.byteLength >= 6 ? maxp.getUint16(4) : 0
-  if (!hb || glyphCount === 0) return null
+  if (!hb) return null
+  // The first face of a collection, the one CanvasKit draws.
   const face = new hb.Face(new hb.Blob(bytes))
+  const maxp = harfBuzzTable(face, 'maxp')
+  const glyphCount = maxp && maxp.byteLength >= 6 ? maxp.getUint16(4) : 0
+  if (glyphCount === 0) return null
   return {
     hb,
     face,
@@ -215,6 +145,42 @@ function outlineDrawFuncs(hb: HarfBuzz): HarfBuzzModule.DrawFuncs {
   draw.setClosePathFunc((data) => commands(data).push({ type: 'Z' }))
   outlineDrawing = draw
   return draw
+}
+
+/**
+ * The box around `glyphId`'s outline in `instance`, as the font measures it at its axes, scaled
+ * from font units to `fontSize` with y running down from the baseline; `null` for a glyph that
+ * draws nothing.
+ */
+export function glyphBox(
+  parsed: HarfBuzzFont,
+  instance: HarfBuzzInstance,
+  glyphId: number,
+  fontSize: number
+): VisualBounds | null {
+  const key = instance.id + glyphId
+  let box = boxCache.get(key)
+  if (box === undefined) {
+    const extents = instance.font.glyphExtents(glyphId)
+    box =
+      extents && extents.width !== 0 && extents.height !== 0
+        ? {
+            minX: extents.xBearing,
+            minY: extents.yBearing + extents.height,
+            maxX: extents.xBearing + extents.width,
+            maxY: extents.yBearing
+          }
+        : null
+    boxCache.set(key, box)
+  }
+  if (!box) return null
+  const scale = fontSize / parsed.face.upem
+  return {
+    minX: box.minX * scale,
+    minY: -box.maxY * scale,
+    maxX: box.maxX * scale,
+    maxY: -box.minY * scale
+  }
 }
 
 /**

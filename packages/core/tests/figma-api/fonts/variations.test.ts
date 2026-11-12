@@ -1,11 +1,10 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
-import { FIXTURES } from '#core-tests/helpers/paths'
-
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { facesFromStyles, fontManager } from '@open-pencil/core/text'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 
 // Behaviour measured in live Figma (2026-10-25) with its variable Inter and Roboto Flex. These
 // tests draw from our bundled Inter, whose axes are `opsz` and `wght`, with nine named instances

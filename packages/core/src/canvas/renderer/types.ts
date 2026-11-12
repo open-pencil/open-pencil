@@ -1,11 +1,11 @@
-import type { VectorRegion, VectorVertex } from '@open-pencil/scene-graph'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 
 import type { GuideOverlayState } from '#core/canvas/guides/types'
 import type { DesignIssueOverlay } from '#core/canvas/issues/types'
+import type { NodeEditOverlayState } from '#core/canvas/node-edit-overlay'
 import type { ConnectorTarget } from '#core/editor/connectors/attach'
-import type { ShapeHandleHover, GradientEdit, PencilState } from '#core/editor/types'
+import type { BlurRampEdit, GradientEdit, PencilState, ShapeHandleHover } from '#core/editor/types'
 import type { RotationPreview } from '#core/geometry'
 import type { TextEditor } from '#core/text/editor'
 
@@ -47,11 +47,14 @@ export interface RenderOverlays {
   hoveredNodeId?: string | null
   /** Draw the pixel grid when zoomed in far enough. */
   showPixelGrid?: boolean
+  /** Draw the selection's size under it; drawn unless false. */
+  showSizeLabels?: boolean
   /** The gradient whose handles to draw in place of the selection. */
   gradientEdit?: GradientEdit | null
+  /** The progressive blur whose start and end handles to draw in place of the selection. */
+  blurRampEdit?: BlurRampEdit | null
   transforming?: boolean
   measurementMode?: MeasurementMode
-  enteredContainerId?: string | null
   editingTextId?: string | null
   /** The layer whose name a field over the canvas renames, whose title the canvas leaves out. */
   renamingLabelId?: string | null
@@ -89,30 +92,15 @@ export interface RenderOverlays {
     oppositeDragTangent?: Vector | null
     closingToFirst: boolean
     pendingClose?: boolean
+    closeTangent?: Vector | null
     cursorX?: number
     cursorY?: number
   } | null
   pencilState?: PencilState | null
-  nodeEditState?: {
-    nodeId: string
-    vertices: VectorVertex[]
-    segments: Array<{
-      start: number
-      end: number
-      tangentStart: Vector
-      tangentEnd: Vector
-    }>
-    regions: VectorRegion[]
-    selectedVertexIndices: Set<number>
-    selectedSegmentIndices?: Set<number>
-    selectedHandles?: Set<number>
-    hoveredHandleInfo?: { segmentIndex: number; tangentField: 'tangentStart' | 'tangentEnd' } | null
-    /** The region under the pointer, hatched as in Figma. */
-    hoveredRegion?: number | null
-    /** Regions picked by clicking inside them, hatched while selected. */
-    selectedRegions?: Set<number>
-  } | null
+  nodeEditState?: NodeEditOverlayState | null
   presenceCursors?: PresenceCursor[]
   designIssues?: DesignIssueOverlay | null
   codeFocusNodeId?: string | null
+  /** The Scale tool hides the rotation handle, since it only scales. */
+  scaleTool?: boolean
 }

@@ -51,7 +51,3 @@ export function textCacheInvalidationChanges(
   }
   return invalidated
 }
-
-export function invalidateTextCaches(node: SceneNode, changes: Partial<SceneNode>): void {
-  Object.assign(node, textCacheInvalidationChanges(node, changes))
-}

@@ -32,9 +32,9 @@ export function staticEntitlementsFromTOML(
       enabled: value.collaboration?.enabled,
       maximumParticipants: value.collaboration?.maximum_participants
     },
-    ai: {
-      enabled: value.ai?.enabled,
-      monthlyCreditAllowance: value.ai?.monthly_credit_allowance
+    services: {
+      enabled: value.services?.enabled,
+      monthlyCreditAllowance: value.services?.monthly_credit_allowance
     }
   })
 }
@@ -55,8 +55,8 @@ export function staticEntitlementValues(input: unknown): Record<string, boolean 
     [CLOUD_FEATURE_KEYS.guestPresence]: entitlements.sharing.guestPresence,
     [CLOUD_FEATURE_KEYS.collaboration]: entitlements.collaboration.enabled,
     [CLOUD_FEATURE_KEYS.maximumParticipants]: entitlements.collaboration.maximumParticipants,
-    [CLOUD_FEATURE_KEYS.cloudAI]: entitlements.ai.enabled,
-    [CLOUD_FEATURE_KEYS.monthlyCreditAllowance]: entitlements.ai.monthlyCreditAllowance
+    [CLOUD_FEATURE_KEYS.cloudServices]: entitlements.services.enabled,
+    [CLOUD_FEATURE_KEYS.monthlyCreditAllowance]: entitlements.services.monthlyCreditAllowance
   }
   return pickBy(values, isNotNil) as Record<string, boolean | number>
 }

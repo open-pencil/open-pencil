@@ -1,15 +1,17 @@
 import { useI18n } from '@open-pencil/vue/i18n'
 
-import { openTour } from '@/app/demo/document'
 import { requestAppExit } from '@/app/document/close/exit'
+import { useActiveEditorStoreRef } from '@/app/editor/active-store'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { setDesignIssuesOnCanvas, setSnappingPreference } from '@/app/settings/preferences/apply'
 import {
+  followNativeCanvasViewMenu,
   syncNativeCommentsMenu,
   syncNativeDesignIssuesMenu,
   syncNativeSnappingMenu
 } from '@/app/settings/preferences/native-menu'
 import { appPreferences } from '@/app/settings/preferences/store'
+import { createHelpMenuActions } from '@/app/shell/menu/help'
 import { useNativeMenuEvents } from '@/app/shell/menu/native-events'
 import { APP_MENU_SCHEMA, type AppMenuEntry } from '@/app/shell/menu/schema'
 import { useAppTheme } from '@/app/shell/theme'
@@ -49,14 +51,13 @@ export function useShellMenu() {
     }
   )
 
+  followNativeCanvasViewMenu(useActiveEditorStoreRef())
+
   const { setTheme } = useAppTheme()
   const { updates } = useI18n()
   const actions: Partial<Record<string, () => void>> = {
-    'open-tour': () => {
-      openTour().catch((error: unknown) => console.error('[Tour] Could not open the tour:', error))
-    },
     settings: openSettingsDialog,
-    diagnostics: () => openSettingsDialog('diagnostics'),
+    ...createHelpMenuActions(),
     'snap-geometry': () => {
       const current = appPreferences.value.editing.snapping.geometry
       setSnappingPreference('geometry', !current)

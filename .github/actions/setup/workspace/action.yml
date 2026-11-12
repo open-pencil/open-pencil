@@ -1,0 +1,94 @@
+name: Set up the workspace
+
+description: Bun, the installed workspace, optional Git LFS files, and optionally its built packages.
+
+inputs:
+  install-args:
+    description: Arguments passed to bun install.
+    required: false
+    default: --frozen-lockfile
+  lfs:
+    description: Pull Git LFS files before installing dependencies.
+    required: false
+    default: 'false'
+  lfs-include:
+    description: Comma-separated `git lfs pull --include` patterns. Empty pulls every LFS object.
+    required: false
+    default: ''
+
+  packages:
+    description: Build the workspace packages (`bun run build:packages`) after installing.
+    required: false
+    default: 'false'
+
+  cache-save:
+    description: Save the dependency cache; set false for other jobs sharing the same cache key.
+    required: false
+    default: 'true'
+  cache-scope:
+    description: Separate dependency caches for independently running workflow groups.
+    required: false
+    default: workspace
+
+runs:
+  using: composite
+  steps:
+    - name: Pull LFS files
+      if: inputs.lfs == 'true' && inputs.lfs-include == ''
+      shell: bash
+      run: git lfs install --force && git lfs pull
+
+    - name: Pull the included LFS files
+      if: inputs.lfs == 'true' && inputs.lfs-include != ''
+      shell: bash
+      env:
+        LFS_INCLUDE: ${{ inputs.lfs-include }}
+      run: git lfs install --force && git lfs pull --include="$LFS_INCLUDE"
+
+    - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      with:
+        # Avoid a second cache/upload lifecycle for the small Bun executable.
+        no-cache: true
+
+    - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      id: dependencies
+      with:
+        path: ~/.bun/install/cache
+        key: bun-${{ inputs.cache-scope }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock') }}
+        restore-keys: bun-${{ inputs.cache-scope }}-${{ runner.os }}-${{ runner.arch }}-
+
+    # CanvasKit, the open-pencil/skia release packages/canvaskit/release.json pins. The install's
+    # postinstall keeps files whose hashes match the pin, so only a new pin downloads.
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: packages/canvaskit/dist
+        key: canvaskit-${{ hashFiles('packages/canvaskit/release.json') }}
+        enableCrossOsArchive: true
+
+    - name: Install dependencies
+      shell: bash
+      env:
+        INSTALL_ARGS: ${{ inputs.install-args }}
+      # Unquoted: the input holds several arguments.
+      run: bun install $INSTALL_ARGS
+
+    - name: Save dependency cache
+      if: inputs.cache-save == 'true' && steps.dependencies.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.bun/install/cache
+        key: ${{ steps.dependencies.outputs.cache-primary-key }}
+
+    # The HTML engine's WebAssembly module, by the sources it builds from. Its build script skips
+    # Cargo when the module and its stamp match them, so only a change to the crate compiles Rust;
+    # the job that builds it saves it when it ends.
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: packages/html-engine/wasm
+        key: html-engine-wasm-${{ hashFiles('Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', 'packages/html-engine/crate/**') }}
+        enableCrossOsArchive: true
+
+    - name: Build the workspace packages
+      if: inputs.packages == 'true'
+      shell: bash
+      run: bun run build:packages

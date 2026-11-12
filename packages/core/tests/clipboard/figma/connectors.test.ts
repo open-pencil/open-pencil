@@ -3,9 +3,6 @@ import { join } from 'node:path'
 
 import * as v from 'valibot'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-import { FIXTURES } from '#core-tests/helpers/paths'
-
 import { buildFigmaClipboardHTML, importClipboardNodes } from '@open-pencil/core/clipboard'
 import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
@@ -18,6 +15,8 @@ import {
   layoutConnector
 } from '@open-pencil/scene-graph/connectors'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 
 /** Two FigJam stickies joined by four connectors, as FigJam copies them. */
 const FIXTURE = join(FIXTURES, 'clipboard/figjam-connectors.html')
@@ -145,7 +144,12 @@ const HANDLES = v.optional(
 test('a connector copied before a layer it joins keeps both ends joined', async () => {
   const graph = new SceneGraph()
   const page = graph.getPages()[0].id
-  const target = graph.createNode('RECTANGLE', page, { name: 'Target', x: 400, width: 100, height: 100 })
+  const target = graph.createNode('RECTANGLE', page, {
+    name: 'Target',
+    x: 400,
+    width: 100,
+    height: 100
+  })
   const connector = createConnector(graph, page, {
     start: freeEndpoint(0, 0),
     end: freeEndpoint(0, 0)
@@ -209,9 +213,7 @@ describe('FigJam connectors dragged into place', () => {
     const source = expectDefined(await parseFigmaClipboard(html))
     const { graph, ids } = await importFixture(html)
     // A label dragged along the line keeps its place.
-    const elbow = expectDefined(
-      [...graph.getAllNodes()].find((node) => node.name === 'cp-elbow')
-    )
+    const elbow = expectDefined([...graph.getAllNodes()].find((node) => node.name === 'cp-elbow'))
     graph.updateNode(elbow.id, {
       connectorLabelPosition: { section: 'MIDDLE_TO_END', offset: 0.5, offAxis: 'ABOVE' }
     })

@@ -8,8 +8,10 @@ description: Collega @open-pencil/vue, crea un editor e configura l'area di lavo
 ## Installazione
 
 ```bash
-bun add @open-pencil/core @open-pencil/vue canvaskit-wasm
+bun add @open-pencil/core @open-pencil/vue @open-pencil/canvaskit
 ```
+
+Il canvas carica in fase di esecuzione `canvaskit.wasm` da `@open-pencil/canvaskit/dist/` e i font inclusi; come servirli è spiegato in [Serve the engine’s files](/programmable/sdk/getting-started#serve-the-engine-s-files) (in inglese).
 
 L'SDK si trova nel monorepo OpenPencil ed è pubblicato come pacchetto `@open-pencil/vue`.
 

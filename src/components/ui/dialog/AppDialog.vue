@@ -51,6 +51,9 @@ const hasHeader = computed(() =>
       <template #close-icon><slot name="close-icon" /></template>
     </AppDialogHeader>
     <AppDialogBody v-if="$slots.default" :ui="ui"><slot /></AppDialogBody>
-    <AppDialogFooter v-if="$slots.footer" :ui="ui"><slot name="footer" /></AppDialogFooter>
+    <AppDialogFooter v-if="$slots.footer" :ui="ui">
+      <template v-if="$slots['footer-start']" #start><slot name="footer-start" /></template>
+      <slot name="footer" />
+    </AppDialogFooter>
   </AppDialogRoot>
 </template>

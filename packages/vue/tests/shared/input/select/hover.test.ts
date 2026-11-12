@@ -2,7 +2,11 @@ import { afterEach, expect, test } from 'bun:test'
 
 import { createEditor, type Editor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { boundEndpoint, createConnector, layoutConnector } from '@open-pencil/scene-graph/connectors'
+import {
+  boundEndpoint,
+  createConnector,
+  layoutConnector
+} from '@open-pencil/scene-graph/connectors'
 import { createSticky } from '@open-pencil/scene-graph/generated'
 
 import {
@@ -26,7 +30,7 @@ function selectedFrame(labelled: boolean) {
   })
   editor.select([frame.id])
   const fns = {
-    hitTestInScope: () => null,
+    hitTestLayer: () => null,
     hitTestFrameTitle: (): SceneNode | null => (labelled ? frame : null),
     hitTestSectionTitle: () => null,
     hitTestComponentLabel: () => null
@@ -51,7 +55,7 @@ test('a label does not take the press from a resize band', () => {
 })
 
 const NO_HITS = {
-  hitTestInScope: () => null,
+  hitTestLayer: () => null,
   hitTestFrameTitle: () => null,
   hitTestSectionTitle: () => null,
   hitTestComponentLabel: () => null

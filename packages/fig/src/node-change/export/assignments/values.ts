@@ -1,11 +1,7 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 
-import {
-  getOrCreateNodeGuid,
-  getOrCreatePropertyGuid,
-  parseGuidOrNull,
-  type SceneNodeToKiwiContext
-} from '../context'
+import { getOrCreateNodeGuid, parseGuidOrNull, type SceneNodeToKiwiContext } from '../context'
+import { assignedPropertyGuid } from '../property-copies'
 import { slotContentAssignment } from '../slots'
 
 export function componentPropertyValue(
@@ -62,7 +58,7 @@ export function componentPropAssignment(
 ) {
   const definition = context.componentPropertyDefinitionsById.get(propertyId)
   if (!definition) return null
-  const defID = getOrCreatePropertyGuid(context, propertyId, localIdCounter)
+  const defID = assignedPropertyGuid(context, instance, propertyId, localIdCounter)
   if (definition.type === 'SLOT')
     return slotContentAssignment(context, instance, propertyId, defID, localIdCounter)
   return {

@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectFills } from '#core-tests/helpers/assert'
 import { createAPI, solidFill } from '#core-tests/helpers/figma-api'
 
+import { expectFills } from '@open-pencil/test-support/assert'
 describe('property access', () => {
   test('name get/set', () => {
     const api = createAPI()

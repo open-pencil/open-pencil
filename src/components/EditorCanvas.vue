@@ -1,12 +1,5 @@
 <script setup lang="ts">
-import {
-  ContextMenuPortal,
-  ContextMenuRoot,
-  ContextMenuTrigger,
-  PopoverContent,
-  PopoverPortal,
-  PopoverRoot
-} from 'reka-ui'
+import { ContextMenuPortal, ContextMenuTrigger, PopoverContent, PopoverPortal } from 'reka-ui'
 import { computed, onUnmounted, ref, shallowRef, useTemplateRef, watch, type Component } from 'vue'
 import IconLucideAlignHorizontalSpaceBetween from '~icons/lucide/align-horizontal-space-between'
 import IconLucideAlignVerticalSpaceBetween from '~icons/lucide/align-vertical-space-between'
@@ -28,6 +21,7 @@ import {
 import type { ViewportTransform } from '@open-pencil/core/geometry'
 import { PlayIslands, useCanvasInput } from '@open-pencil/vue/canvas'
 import { useCanvasDrop } from '@open-pencil/vue/canvas/drop'
+import { useEyedropperLoupe } from '@open-pencil/vue/canvas/eyedropper'
 import { useCanvasIssueMarkers } from '@open-pencil/vue/canvas/issues'
 import { useCanvasVirtualReference } from '@open-pencil/vue/canvas/overlays'
 import { useCanvasStatusLabels } from '@open-pencil/vue/canvas/statuses'
@@ -44,12 +38,16 @@ import { canvasOverlayObstacles } from '@/app/editor/canvas/obstacles'
 import { useFollowView } from '@/app/presence/follow-view'
 import { appRuntimeConfig } from '@/app/runtime/config'
 import { appPreferences } from '@/app/settings/preferences/store'
+import CanvasEyedropperLoupe from '@/components/canvas/CanvasEyedropperLoupe.vue'
 import CommentsLayer from '@/components/comments/CommentsLayer.vue'
 import IssueMarkerTooltip from '@/components/design-check/IssueMarkerTooltip.vue'
+import SelectionToolbar from '@/components/figjam/SelectionToolbar.vue'
 import PreparationOverlay from '@/components/preparation/canvas/PreparationOverlay.vue'
 import FollowFrame from '@/components/presence/FollowFrame.vue'
 import StatusLabelMenu from '@/components/statuses/StatusLabelMenu.vue'
 import AppDropOverlay from '@/components/ui/feedback/AppDropOverlay.vue'
+import AppContextMenuRoot from '@/components/ui/menu/AppContextMenuRoot.vue'
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { motionStyles } from '@/theme/motion/styles'
 import { floatingSurface } from '@/theme/overlay'
 
@@ -96,6 +94,8 @@ const shouldSuspendRender = () =>
 
 /** The pan and zoom of the scene's last drawn frame, which preview islands follow. */
 const drawnView = shallowRef<ViewportTransform | null>(null)
+/** Where popovers on the canvas are placed: the drawn frame, or the live view before one is drawn. */
+const overlayView = computed(() => drawnView.value ?? paneView.value)
 
 // The tab's scene is presented only here once the canvas can draw, so waiting for it times out
 // only while it is shown and drawing, not while the renderer and its fonts download.
@@ -111,7 +111,6 @@ useCanvas(sceneCanvasRef, store, {
   onFrame: (view) => {
     drawnView.value = view
   },
-  sceneRenderer: appRuntimeConfig.sceneRenderer,
   onReady: canvasReady,
   onFailed: (error) =>
     store.preparationController.failCanvas(
@@ -121,8 +120,6 @@ useCanvas(sceneCanvasRef, store, {
   showRulers: false,
   getRenderState,
   onViewportResize,
-  onPresented: ({ sceneVersion }) =>
-    store.preparationController.acknowledgePresentation(sceneVersion),
   onPresentation: (colorSpace) => {
     store.state.canvasPresentation = colorSpace
   }
@@ -138,7 +135,12 @@ const {
   // The scene canvas reports a canvas that cannot start.
   onFailed: () => undefined,
   get showRulers() {
-    return appRuntimeConfig.showRulers && store.state.showRulers && paneProfile.value.editChrome
+    return (
+      appRuntimeConfig.showRulers &&
+      store.state.showRulers &&
+      paneProfile.value.editChrome &&
+      paneProfile.value.rulers
+    )
   },
   getOverlayObstacles: () => canvasOverlayObstacles(canvasRef.value),
   shouldSuspendRender,
@@ -146,8 +148,10 @@ const {
   onViewportResize
 })
 const {
+  drag,
   cursorOverride,
   canvasLabelEdit,
+  startCanvasLabelEdit,
   updateCanvasLabelEdit,
   commitCanvasLabelEdit,
   cancelCanvasLabelEdit,
@@ -217,7 +221,8 @@ const canvasLabelEditAnchor = computed(() => {
   const node = canvasLabelEditNode.value
   if (!node) return null
   const origin = store.graph.getAbsolutePosition(node.id)
-  const { zoom, panX, panY } = store.state
+  // The view the reference projects through, so screen-sized offsets match the drawn frame.
+  const { zoom, panX, panY } = overlayView.value
   const kind = canvasLabelEdit.value?.kind
   // The canvas starts an upright label on a whole screen pixel; the field starts on the same one.
   const abs = {
@@ -238,16 +243,37 @@ const canvasLabelEditAnchor = computed(() => {
   }
   return { x: abs.x, y: abs.y }
 })
-const canvasLabelEditReference = useCanvasVirtualReference(canvasRef, store, canvasLabelEditAnchor)
+const canvasLabelEditReference = useCanvasVirtualReference(
+  canvasRef,
+  overlayView,
+  canvasLabelEditAnchor
+)
 const canvasLabelEditPresentation = computed(() =>
   canvasLabelPresentation(store, canvasLabelEditNode.value ?? null, canvasLabelEdit.value?.kind)
+)
+
+/** Names the selected section on the canvas, as its title does on a double-click. */
+function renameSelectedSection() {
+  const [id] = store.state.selectedIds
+  const section = id ? store.graph.getNode(id) : undefined
+  if (section?.type === 'SECTION') startCanvasLabelEdit('section-title', section)
+}
+
+// With the side panels away, a sticky, shape, or connector shows its controls over the canvas,
+// as FigJam does.
+const selectionToolbar = computed(
+  () =>
+    isActivePane.value &&
+    !store.state.showUI &&
+    paneProfile.value.edits &&
+    paneProfile.value.editChrome
 )
 
 const valueEditorAnchor = computed(() => {
   const edit = autoLayoutValueEdit.value
   return edit ? autoLayoutValueAnchor(store, edit.nodeId, edit.field, edit.gap) : null
 })
-const valueEditorReference = useCanvasVirtualReference(canvasRef, store, valueEditorAnchor)
+const valueEditorReference = useCanvasVirtualReference(canvasRef, overlayView, valueEditorAnchor)
 const valueEditorIcon = computed(() => {
   const edit = autoLayoutValueEdit.value
   if (!edit) return IconLucidePanelTop
@@ -257,19 +283,25 @@ const valueEditorIcon = computed(() => {
     : IconLucideAlignHorizontalSpaceBetween
 })
 
+const eyedropperLoupe = useEyedropperLoupe(store, canvasRef, () => isActivePane.value)
+
+// The eyedropper's loupe stands in for the cursor while it shows.
 const cursor = computed(() =>
-  toolCursor(
-    store.state.activeTool,
-    issueMarkerCursor.value ?? statusLabelCursor.value ?? cursorOverride.value
-  )
+  eyedropperLoupe.visible.value
+    ? 'none'
+    : toolCursor(
+        store.state.activeTool,
+        issueMarkerCursor.value ?? statusLabelCursor.value ?? cursorOverride.value
+      )
 )
 </script>
 
 <template>
-  <ContextMenuRoot :modal="false">
+  <AppContextMenuRoot :modal="false">
     <ContextMenuTrigger as-child @contextmenu.capture="selectAtContextPoint">
       <div
         ref="area"
+        dir="ltr"
         data-test-id="canvas-area"
         :data-pane-id="paneId"
         :data-active-pane="isActivePane ? 'true' : 'false'"
@@ -297,6 +329,7 @@ const cursor = computed(() =>
         <PlayIslands :view="paneView" :drawn="drawnView" :canvas="canvasRef" />
         <AppDropOverlay :visible="isDraggingOver" />
         <IssueMarkerTooltip :marker="hoveredIssueMarker" :canvas="canvasRef" />
+        <CanvasEyedropperLoupe :loupe="eyedropperLoupe" />
         <StatusLabelMenu
           :label="openStatusLabel"
           :canvas="canvasRef"
@@ -310,7 +343,14 @@ const cursor = computed(() =>
           @commit="commitCanvasLabelEdit"
           @cancel="cancelCanvasLabelEdit"
         />
-        <PopoverRoot :open="!!autoLayoutValueEdit">
+        <SelectionToolbar
+          v-if="selectionToolbar"
+          :canvas="canvasRef"
+          :view="overlayView"
+          :hidden="!!drag || !!canvasLabelEdit"
+          @rename-section="renameSelectedSection"
+        />
+        <AppPopoverRoot :open="!!autoLayoutValueEdit">
           <PopoverPortal>
             <PopoverContent
               v-if="autoLayoutValueEdit && valueEditorReference"
@@ -345,7 +385,7 @@ const cursor = computed(() =>
               </NumberField>
             </PopoverContent>
           </PopoverPortal>
-        </PopoverRoot>
+        </AppPopoverRoot>
         <FollowFrame
           v-if="isActivePane && followView.label.value"
           :followed="followView.label.value"
@@ -362,5 +402,5 @@ const cursor = computed(() =>
     <ContextMenuPortal>
       <CanvasMenu />
     </ContextMenuPortal>
-  </ContextMenuRoot>
+  </AppContextMenuRoot>
 </template>

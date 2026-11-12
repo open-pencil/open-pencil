@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { createIconifyAPIClient } from '#core/icons/api'
 import { createIconifyProvider } from '#core/icons/provider'
+import type { IconData } from '#core/icons/types'
 
 const SET = {
   prefix: 'test',
@@ -12,6 +13,37 @@ const SET = {
     wide: { body: '<path fill="currentColor" d="M0 0h32v16H0z"/>', width: 32, height: 16 }
   },
   aliases: { box: { parent: 'square' } }
+}
+
+/** Sets shaped as Iconify serves real ones, each drawing one square that fills its icon box. */
+const DRAWN_SETS: Record<string, object> = {
+  // Bootstrap Icons gives no box, so each icon takes Iconify's default 16.
+  '/bi.json': { prefix: 'bi', icons: { square: { body: '<path d="M0 0h16v16H0z"/>' } } },
+  // Jam moves every icon's box to -2, -2.
+  '/jam.json': {
+    prefix: 'jam',
+    left: -2,
+    top: -2,
+    width: 24,
+    height: 24,
+    icons: { square: { body: '<path d="M-2 -2h24v24H-2z"/>' } }
+  },
+  // Font Awesome 4 draws mirrored icons as aliases that flip their parent.
+  '/fa.json': {
+    prefix: 'fa',
+    width: 16,
+    height: 16,
+    icons: { half: { body: '<path d="M0 0h8v16H0z"/>' } },
+    aliases: { 'half-flipped': { parent: 'half', hFlip: true } }
+  }
+}
+
+/** The x and y extent of an icon's first path. */
+function extent(icon: IconData | undefined) {
+  const vertices = icon?.paths[0]?.vectorNetwork.vertices ?? []
+  const xs = vertices.map((vertex) => vertex.x)
+  const ys = vertices.map((vertex) => vertex.y)
+  return { x: [Math.min(...xs), Math.max(...xs)], y: [Math.min(...ys), Math.max(...ys)] }
 }
 
 const CATALOGUE = {
@@ -38,7 +70,7 @@ function setup() {
     if (failing.has(url.pathname)) return new Response('', { status: 500 })
     if (url.pathname === '/collections') return Response.json(CATALOGUE)
     if (url.pathname === '/collection') return Response.json(LIST)
-    return Response.json(SET)
+    return Response.json(DRAWN_SETS[url.pathname] ?? SET)
   }
   const provider = createIconifyProvider(
     createIconifyAPIClient(fetcher as typeof fetch, 'https://icons.test')
@@ -64,6 +96,28 @@ describe('Iconify provider', () => {
 
     expect(requests).toHaveLength(1)
     expect(icons.get('test:wide')).toMatchObject({ name: 'wide', width: 48 })
+  })
+
+  test("an icon from a set without a box fills the icon at Iconify's default 16", async () => {
+    const { provider } = setup()
+    const icon = (await provider.icons(['bi:square'], 24)).get('bi:square')
+
+    expect(extent(icon)).toEqual({ x: [0, 24], y: [0, 24] })
+  })
+
+  test("a set's box offset moves its icons into the icon box", async () => {
+    const { provider } = setup()
+    const icon = (await provider.icons(['jam:square'], 24)).get('jam:square')
+
+    expect(extent(icon)).toEqual({ x: [0, 24], y: [0, 24] })
+  })
+
+  test('an alias draws its parent flipped as it says', async () => {
+    const { provider } = setup()
+    const icons = await provider.icons(['fa:half', 'fa:half-flipped'], 16)
+
+    expect(extent(icons.get('fa:half'))).toEqual({ x: [0, 8], y: [0, 16] })
+    expect(extent(icons.get('fa:half-flipped'))).toEqual({ x: [8, 16], y: [0, 16] })
   })
 
   test('a long list of names is split over several requests', async () => {

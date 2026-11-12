@@ -1,11 +1,10 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
-
+import type { CanvasKit, TypefaceFontProvider } from '@open-pencil/canvaskit'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { pixelLength } from '@open-pencil/scene-graph/text'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { TextLayout } from '#core/canvas/text/layout'
 import { laidOutGlyphs } from '#core/canvas/text/placed'
@@ -132,9 +131,17 @@ describe('the font saved glyphs are outlined from', () => {
     const source = variableSource()
     const text = 'a->b a->b'
     // The second arrow keeps its characters: the run drawn from one font has both arrows.
-    const glyphs = placed(text, variableProvider, [], {
-      styleRuns: [{ start: 5, length: 4, style: { fontFeatures: [{ tag: 'CALT', enabled: false }] } }]
-    }, { from: 5, features: [{ name: 'calt', value: 0 }] })
+    const glyphs = placed(
+      text,
+      variableProvider,
+      [],
+      {
+        styleRuns: [
+          { start: 5, length: 4, style: { fontFeatures: [{ tag: 'CALT', enabled: false }] } }
+        ]
+      },
+      { from: 5, features: [{ name: 'calt', value: 0 }] }
+    )
 
     expect(glyphs.map((glyph) => glyph.firstCharacter)).toEqual([0, 1, 3, 4, 5, 6, 7, 8])
     expect(glyphs.slice(4).map((glyph) => glyph.id)).toEqual(
@@ -163,6 +170,40 @@ describe('the font saved glyphs are outlined from', () => {
       advances[2],
       advances[3] + 4
     ])
+  })
+
+  test('spaces a reshaped ligature once, as the paragraph draws it', () => {
+    const text = 'a->b'
+    const spacing = 10
+    // The width the paragraph draws the arrow ligature at, with `letterSpacing`.
+    const drawnArrow = (letterSpacing: number) => {
+      const textStyle = { fontFamilies: [FAMILY], fontSize: FONT_SIZE, letterSpacing }
+      const builder = ck.ParagraphBuilder.MakeFromFontProvider(
+        new ck.ParagraphStyle({ textStyle }),
+        variableProvider
+      )
+      builder.addText(text)
+      const paragraph = builder.build()
+      builder.delete()
+      try {
+        paragraph.layout(1000)
+        const [run] = paragraph.getShapedLines()[0].runs
+        expect(Array.from(run.offsets)).toEqual([0, 1, 3, 4])
+        return run.positions[4] - run.positions[2]
+      } finally {
+        paragraph.delete()
+      }
+    }
+    // The static file draws the arrow's characters apart, so the run is shaped again.
+    const reshapedArrow = (letterSpacing: number) =>
+      placed(text, staticProvider, [{ name: 'calt', value: 0 }], {
+        letterSpacing: pixelLength(letterSpacing)
+      })[1]
+
+    expect(reshapedArrow(spacing).firstCharacter).toBe(1)
+    expect(reshapedArrow(spacing).id).toBe(variableSource().shape(text, {})[1].id)
+    expect(drawnArrow(spacing) - drawnArrow(0)).toBeCloseTo(spacing, 3)
+    expect(reshapedArrow(spacing).advance - reshapedArrow(0).advance).toBeCloseTo(spacing, 3)
   })
 
   test('shapes the run itself with the features the text sets', () => {

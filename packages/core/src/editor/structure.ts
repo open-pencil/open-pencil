@@ -4,16 +4,21 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import { TRANSFORM_FIELDS } from '@open-pencil/scene-graph/fields'
 import { generatedFrameKind } from '@open-pencil/scene-graph/generated'
 import { createsComponentCycle } from '@open-pencil/scene-graph/instances'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { acceptingParent, acceptsChildren, prepareSlotEdits } from '#core/editor/components/slots'
 import { fitEnclosingGroupsWithUndo } from '#core/editor/structure/group/bounds'
 
+import { layerTheme, newLayerDefaults } from './shapes/defaults'
 import { wrapInAutoLayout as wrapInAutoLayoutImpl } from './structure/auto-layout-wrap'
 import {
   booleanOperationSelected as booleanOperationSelectedImpl,
   type BooleanOperation
 } from './structure/boolean'
-import { wrapSelectionInContainer as wrapSelectionInContainerImpl } from './structure/container-wrap'
+import {
+  sharedParentId,
+  wrapSelectionInContainer as wrapSelectionInContainerImpl
+} from './structure/container-wrap'
 import { flattenSelected as flattenSelectedImpl } from './structure/flatten'
 import { ungroupSelected as ungroupImpl } from './structure/group/ungroup'
 import { createLayerTypeActions } from './structure/layer-type'
@@ -24,6 +29,7 @@ import {
   type RenameSelectionOptions
 } from './structure/rename'
 import { createStructureReorderActions } from './structure/reorder'
+import { scaleLayers } from './structure/scale'
 import { createStructureStateActions } from './structure/state'
 import type { EditorContext } from './types'
 
@@ -81,6 +87,30 @@ export function createStructureActions(ctx: EditorContext) {
   /** Figma frames a selection without a fill or clipping, unlike a drawn frame. */
   function frameSelection(selectedNodes: SceneNode[]) {
     return wrapSelectionInContainer('FRAME', selectedNodes)
+  }
+
+  /**
+   * Whether layers can go in a new section: siblings on a page or in a section, where sections
+   * live. Toolbars ask while they draw, so it reads the parent without claiming anything.
+   */
+  function canWrapInSection(selectedNodes: SceneNode[]) {
+    const parentId = sharedParentId(ctx, selectedNodes)
+    const parent = parentId ? ctx.graph.getNode(parentId) : undefined
+    return parent?.type === 'CANVAS' || parent?.type === 'SECTION'
+  }
+
+  /**
+   * Wraps layers in a new section with room around them, as FigJam's selection toolbar does,
+   * painted as a drawn section is.
+   */
+  function wrapInSection(selectedNodes: SceneNode[]) {
+    if (!canWrapInSection(selectedNodes)) return null
+    return wrapSelectionInContainerImpl(
+      ctx,
+      'SECTION',
+      selectedNodes,
+      newLayerDefaults('SECTION', layerTheme(ctx.state))
+    )
   }
 
   function booleanOperationSelected(selectedNodes: SceneNode[], operation: BooleanOperation) {
@@ -191,11 +221,16 @@ export function createStructureActions(ctx: EditorContext) {
     acceptingParent: (parentId: string) => acceptingParent(ctx, parentId),
     fitEnclosingGroups: (parentIds: Iterable<string>) => fitEnclosingGroupsWithUndo(ctx, parentIds),
     ...reorderActions,
+    /** Scales these layers evenly about a canvas point, as Figma's Scale tool does. */
+    scaleLayers: (nodes: readonly SceneNode[], scale: number, anchor: Vector) =>
+      scaleLayers(ctx, nodes, scale, anchor),
     reparentNodes,
     wrapSelectionInContainer,
     wrapInAutoLayout,
     groupSelected,
     frameSelection,
+    canWrapInSection,
+    wrapInSection,
     ...layerTypeActions,
     booleanOperationSelected,
     ungroupSelected,

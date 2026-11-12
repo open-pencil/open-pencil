@@ -190,6 +190,13 @@ export const OPEN_PENCIL_MCP_SERVER = 'open-pencil'
  */
 export const MCP_CHAT_HEADER = 'x-openpencil-chat'
 
+/**
+ * Request header an app chat sends, set to `1`, for an agent that loads MCP tools only up to a
+ * total schema size: the server keeps their schemas small and provides the `call_mcp_tool` the
+ * agent calls the rest through.
+ */
+export const MCP_DEFERS_TOOLS_HEADER = 'x-openpencil-defers-tools'
+
 export const GOOGLE_FONTS_API_KEY = 'AIzaSyD1tYDR_dUEiV-Tw1vksEhZbUytgKW5pc8'
 
 export const CJK_FALLBACK_FAMILIES_MACOS = [
@@ -277,10 +284,15 @@ export const SECTION_DEFAULT_STROKE: Stroke = {
 export const SECTION_CORNER_RADIUS = 2
 
 export const ZOOM_DIVISOR = 50
+/** Figma's zoom range, 2% to 25,600%. */
+export const ZOOM_MIN = 0.02
+export const ZOOM_MAX = 256
 export const ZOOM_SCALE_MIN = 0.75
 export const ZOOM_SCALE_MAX = 1.25
 
 export const PEN_CLOSE_THRESHOLD = 8
+/** Points a pen path needs before a press on its first point closes it: two make a closed shape, as in Figma. */
+export const PEN_CLOSE_MIN_POINTS = 2
 /**
  * Screen pixels a pencil sample may stray from the line through its neighbours before the curve
  * keeps it, so a stroke drawn zoomed in keeps more detail.

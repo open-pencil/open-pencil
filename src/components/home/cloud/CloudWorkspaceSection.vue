@@ -108,6 +108,7 @@ const rows = computed<CloudDocumentRow[]>(() =>
   listed.value.map((document) => ({
     id: document.id,
     name: document.name,
+    kind: document.kind,
     previewURL: files.previewURL(document.id),
     editedAt: dates.relative(document.updatedAt),
     sync: cloudSyncState(
@@ -170,5 +171,9 @@ function open(row: CloudDocumentRow) {
     @new-design="createStoredDocument(location)"
     @review-conflicts="reviewConflicts"
   />
-  <DocumentDeleteDialog v-model:document="deleting" :location="location" />
+  <DocumentDeleteDialog
+    v-model:document="deleting"
+    :location="location"
+    :description="t.homeTrashMoveDescription"
+  />
 </template>

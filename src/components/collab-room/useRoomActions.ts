@@ -1,4 +1,3 @@
-import { useClipboard } from '@vueuse/core'
 import { computed } from 'vue'
 
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
@@ -6,16 +5,12 @@ import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 import { roomLinkURL } from '@/app/collab/room/links'
 import { showsRoomDocument, type PendingRoomStatus } from '@/app/collab/room/status'
 import { DEFAULT_COLLAB_STATE, useCollabInjected } from '@/app/collab/use'
-import { useNotificationMessages } from '@/app/i18n/notifications'
-import { toast } from '@/app/shell/ui'
 import { DESKTOP_DOWNLOAD_URL, getShareURL, IS_BROWSER, IS_TAURI } from '@/constants'
 
 /** What the room screens offer for the active tab's room: its link, a desktop handoff, Leave. */
 export function useRoomActions() {
   const collab = useCollabInjected()
-  const notifications = useNotificationMessages()
   const { isMobile } = useViewportKind()
-  const { copy, copied } = useClipboard({ copiedDuring: 2000 })
 
   const state = computed(() => collab?.state.value ?? DEFAULT_COLLAB_STATE)
   const leftRoom = computed(() => collab?.leftRoom.value ?? false)
@@ -40,12 +35,8 @@ export function useRoomActions() {
   /** Offered beside the desktop link, for people without the app. */
   const downloadURL = computed(() => (desktopLink.value ? DESKTOP_DOWNLOAD_URL : null))
 
-  function copyLink() {
-    const roomId = state.value.roomId
-    if (!roomId) return
-    void copy(getShareURL(roomId))
-    toast.info(notifications.value.linkCopied)
-  }
+  /** The link that invites someone into the room. */
+  const shareLink = computed(() => (state.value.roomId ? getShareURL(state.value.roomId) : ''))
 
   function leave() {
     collab?.disconnect()
@@ -66,10 +57,9 @@ export function useRoomActions() {
     pendingStatus,
     sender,
     othersWaiting,
-    copied,
     desktopLink,
     downloadURL,
-    copyLink,
+    shareLink,
     leave,
     rename,
     dismissLeftRoomNote

@@ -1,5 +1,4 @@
-import type { Canvas, CanvasKit } from 'canvaskit-wasm'
-
+import type { Canvas, CanvasKit } from '@open-pencil/canvaskit'
 import type { SceneNode, SceneGraph } from '@open-pencil/scene-graph'
 import { computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
 
@@ -20,6 +19,7 @@ import {
   RULER_MAJOR_TOLERANCE
 } from '#core/constants'
 
+import { cachedGlyphWidth } from './labels/paragraph-cache'
 import type { SkiaRenderer } from './renderer'
 
 interface SelectionScreenBounds {
@@ -61,12 +61,14 @@ function drawHorizontalRulerTicks(
   const worldRight = (vw - r.panX) / r.zoom
   const startX = Math.floor(worldLeft / step) * step
 
+  // Every tick is one line segment in a single draw; only the labels are drawn one by one.
+  const ticks: number[] = []
   for (let wx = startX; wx <= worldRight; wx += minorStep) {
     const sx = wx * r.zoom + r.panX
     if (sx < R) continue
     const isMajor = Math.abs(wx % step) < RULER_MAJOR_TOLERANCE
     const tickLen = isMajor ? R * RULER_MAJOR_TICK : R * RULER_MINOR_TICK
-    canvas.drawLine(sx, R - tickLen, sx, R, r.rulerTickPaint)
+    ticks.push(sx, R - tickLen, sx, R)
 
     if (isMajor) {
       const skipForBadge =
@@ -77,6 +79,7 @@ function drawHorizontalRulerTicks(
       }
     }
   }
+  canvas.drawPoints(r.ck.PointMode.Lines, ticks, r.rulerTickPaint)
   canvas.restore()
 }
 
@@ -98,12 +101,13 @@ function drawVerticalRulerTicks(
   const worldBottom = (vh - r.panY) / r.zoom
   const startY = Math.floor(worldTop / step) * step
 
+  const ticks: number[] = []
   for (let wy = startY; wy <= worldBottom; wy += minorStep) {
     const sy = wy * r.zoom + r.panY
     if (sy < R) continue
     const isMajor = Math.abs(wy % step) < RULER_MAJOR_TOLERANCE
     const tickLen = isMajor ? R * RULER_MAJOR_TICK : R * RULER_MINOR_TICK
-    canvas.drawLine(R - tickLen, sy, R, sy, r.rulerTickPaint)
+    ticks.push(R - tickLen, sy, R, sy)
 
     if (isMajor) {
       const skipForBadge =
@@ -118,6 +122,7 @@ function drawVerticalRulerTicks(
       }
     }
   }
+  canvas.drawPoints(r.ck.PointMode.Lines, ticks, r.rulerTickPaint)
   canvas.restore()
 }
 
@@ -133,18 +138,11 @@ export function drawRulers(
   const vh = r.viewportHeight
   if (vw === 0 || vh === 0) return
 
-  if (r.rulerTheme) {
-    const { background, tick, text } = r.rulerTheme
-    r.rulerBgPaint.setColor(r.ck.Color4f(background.r, background.g, background.b, background.a))
-    r.rulerTickPaint.setColor(r.ck.Color4f(tick.r, tick.g, tick.b, tick.a))
-    r.rulerTextPaint.setColor(r.ck.Color4f(text.r, text.g, text.b, text.a))
-  }
-
   canvas.drawRect(r.ck.LTRBRect(0, 0, vw, R), r.rulerBgPaint)
   canvas.drawRect(r.ck.LTRBRect(0, R, R, vh), r.rulerBgPaint)
   canvas.drawRect(r.ck.LTRBRect(0, 0, R, R), r.rulerBgPaint)
 
-  const font = r.sizeFont ?? r.textFont
+  const font = r.chromeFonts.size ?? r.chromeFonts.text
   if (!font) return
 
   const step = rulerStep(r)
@@ -161,40 +159,26 @@ export function drawRulers(
     canvas.drawRect(r.ck.LTRBRect(Math.max(R, selBounds.sx1), 0, selBounds.sx2, R), r.rulerHlPaint)
     canvas.drawRect(r.ck.LTRBRect(0, Math.max(R, selBounds.sy1), R, selBounds.sy2), r.rulerHlPaint)
 
-    drawRulerBadge(
+    drawEdgeBadges(
       r,
       canvas,
       font,
-      Math.round((selBounds.sx1 - r.panX) / r.zoom).toString(),
-      Math.max(R, selBounds.sx1),
-      0,
+      [
+        rulerEdgeLabel((selBounds.sx1 - r.panX) / r.zoom),
+        rulerEdgeLabel((selBounds.sx2 - r.panX) / r.zoom)
+      ],
+      [Math.max(R, selBounds.sx1), selBounds.sx2],
       'horizontal'
     )
-    drawRulerBadge(
+    drawEdgeBadges(
       r,
       canvas,
       font,
-      Math.round((selBounds.sx2 - r.panX) / r.zoom).toString(),
-      selBounds.sx2,
-      0,
-      'horizontal'
-    )
-    drawRulerBadge(
-      r,
-      canvas,
-      font,
-      Math.round((selBounds.sy1 - r.panY) / r.zoom).toString(),
-      0,
-      Math.max(R, selBounds.sy1),
-      'vertical'
-    )
-    drawRulerBadge(
-      r,
-      canvas,
-      font,
-      Math.round((selBounds.sy2 - r.panY) / r.zoom).toString(),
-      0,
-      selBounds.sy2,
+      [
+        rulerEdgeLabel((selBounds.sy1 - r.panY) / r.zoom),
+        rulerEdgeLabel((selBounds.sy2 - r.panY) / r.zoom)
+      ],
+      [Math.max(R, selBounds.sy1), selBounds.sy2],
       'vertical'
     )
   }
@@ -225,10 +209,9 @@ function drawGuideRulerLabel(
   screenPosition: number
 ): void {
   const label = String(Math.round(position * 100) / 100)
-  r.auxFill.setColor(r.ck.Color4f(MEASUREMENT_COLOR.r, MEASUREMENT_COLOR.g, MEASUREMENT_COLOR.b, 1))
+  r.auxFill.setColorComponents(MEASUREMENT_COLOR.r, MEASUREMENT_COLOR.g, MEASUREMENT_COLOR.b, 1)
   if (axis === 'x') {
-    const widths = font.getGlyphWidths(font.getGlyphIDs(label))
-    const textWidth = widths.reduce((sum, width) => sum + width, 0)
+    const textWidth = cachedGlyphWidth(r, font, label)
     canvas.drawText(
       label,
       screenPosition - textWidth / 2,
@@ -295,6 +278,40 @@ function drawGuideRulerPositions(
   }
 }
 
+/** The space kept between a selection's two edge badges on one ruler. */
+const EDGE_BADGE_GAP = 2
+
+/**
+ * Where a selection's two edge badges sit along a ruler, centered on their edges unless they would
+ * overlap, as they do on a narrow selection: then they part evenly about the space between them.
+ */
+export function separatedBadgeCenters(
+  edges: readonly [number, number],
+  widths: readonly [number, number]
+): [number, number] {
+  const [near, far] = edges
+  const overlap = near + widths[0] / 2 + EDGE_BADGE_GAP - (far - widths[1] / 2)
+  if (overlap <= 0) return [near, far]
+  return [near - overlap / 2, far + overlap / 2]
+}
+
+/** A selection's two edge badges on one ruler, kept apart when the selection is narrow. */
+function drawEdgeBadges(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  font: InstanceType<CanvasKit['Font']>,
+  labels: readonly [string, string],
+  edges: readonly [number, number],
+  axis: 'horizontal' | 'vertical'
+): void {
+  const width = (label: string) => cachedGlyphWidth(r, font, label) + RULER_BADGE_PADDING * 2
+  const [near, far] = separatedBadgeCenters(edges, [width(labels[0]), width(labels[1])])
+  const at = (center: number): [number, number] =>
+    axis === 'horizontal' ? [center, 0] : [0, center]
+  drawRulerBadge(r, canvas, font, labels[0], ...at(near), axis)
+  drawRulerBadge(r, canvas, font, labels[1], ...at(far), axis)
+}
+
 export function drawRulerBadge(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -305,9 +322,7 @@ export function drawRulerBadge(
   axis: 'horizontal' | 'vertical'
 ): void {
   const R = RULER_SIZE
-  const glyphIds = font.getGlyphIDs(label)
-  const widths = font.getGlyphWidths(glyphIds)
-  const textW = widths.reduce((s, w) => s + w, 0)
+  const textW = cachedGlyphWidth(r, font, label)
   const pad = RULER_BADGE_PADDING
   const h = RULER_BADGE_HEIGHT
 
@@ -360,4 +375,9 @@ export function rulerStep(r: SkiaRenderer): number {
 
 export function rulerLabel(value: number): string {
   return Math.round(value).toString()
+}
+
+/** A selection edge on the ruler, to three decimals at any zoom, as Figma labels it (8000.375). */
+export function rulerEdgeLabel(value: number): string {
+  return String(Math.round(value * 1000) / 1000 + 0)
 }

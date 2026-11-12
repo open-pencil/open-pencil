@@ -12,6 +12,7 @@ const { panels } = useI18n()
 
 <template>
   <div
+    dir="ltr"
     class="grid grid-cols-[repeat(3,minmax(0,1fr))] gap-px overflow-hidden rounded border border-border bg-border"
   >
     <input
@@ -72,5 +73,5 @@ const { panels } = useI18n()
     @update-number="ctx.updateHSBChannelValue('b', $event)"
   />
 
-  <p class="text-[10px] leading-4 text-muted">{{ ctx.panels.colorHintHsb }}</p>
+  <p class="text-3xs leading-4 text-muted">{{ ctx.panels.colorHintHsb }}</p>
 </template>

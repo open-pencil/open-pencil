@@ -8,6 +8,7 @@
 **/test-results
 **/playwright-report
 .git
-desktop/target
+target
 packages/cloud/deploy/generated
 scratch
+.pipeline

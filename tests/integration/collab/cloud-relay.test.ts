@@ -96,7 +96,7 @@ describe('collaboration through the Cloud relay', () => {
 
   test('viewers receive edits but their own never reach anyone', async () => {
     const relay = await startRelay()
-    const { states } = relay
+    const { rooms } = relay
     const editor = joinAs(relay, 'Editor', 'edit')
     const viewer = joinAs(relay, 'Viewer', 'view')
     await until(
@@ -110,9 +110,12 @@ describe('collaboration through the Cloud relay', () => {
     expect(editor.text()).toBe('kept')
     await editor.leave()
     await viewer.leave()
-    await until(() => states.size > 0)
+    await until(() => [...rooms.values()].some((room) => room.snapshot !== null))
     const saved = new Y.Doc()
-    Y.applyUpdate(saved, [...states.values()][0] ?? new Uint8Array())
+    for (const room of rooms.values()) {
+      if (room.snapshot) Y.applyUpdate(saved, room.snapshot)
+      for (const update of room.updates) Y.applyUpdate(saved, update)
+    }
     expect(saved.getText('t').toString()).toBe('kept')
   })
 
@@ -425,6 +428,27 @@ describe('Cloud document rooms', () => {
     expect(compact([grace.state.autosaveEnabled, ada.state.autosaveEnabled])).toHaveLength(1)
     // The document lives in its room, so neither tab offers leaving it.
     expect([first.session.leavable, second.session.leavable]).toEqual([false, false])
+  })
+
+  test('a tab says the room keeps its edits only while the relay is in the room', async () => {
+    const relay = await startTestRelay()
+    const documentId = crypto.randomUUID()
+    const [grace] = await openedCopies(1)
+    if (!grace) throw new Error('Expected a tab')
+    const room = openCloudDocumentRoom(grace, {
+      roomId: `cloud:${documentId}:0`,
+      transport: relay.join(documentId, 'Grace', 'edit', 'user'),
+      permission: 'edit'
+    })
+    cleanups.push(() => {
+      room.stop()
+      room.session.dispose()
+    })
+    expect(grace.state.roomKeepsEdits).toBe(false)
+    await until(() => grace.state.roomKeepsEdits)
+    // The relay goes away, and with it the log that kept the tab's edits.
+    await relay.close()
+    await until(() => !grace.state.roomKeepsEdits)
   })
 
   test('a tab that does not save has the saver upload its latest edit', async () => {

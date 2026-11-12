@@ -1,17 +1,24 @@
 import { describe, expect, test } from 'bun:test'
 
-import { BOARD_TOOL_SHORTCUTS, resolveEditorProfile, TOOL_SHORTCUTS } from '@open-pencil/core'
+import {
+  BOARD_TOOL_SHORTCUTS,
+  NO_HOST_RESTRICTIONS,
+  resolveEditorProfile,
+  TOOL_SHORTCUTS
+} from '@open-pencil/core'
 import type { DocumentKind } from '@open-pencil/scene-graph'
 
 import {
   combineToolbarEntry,
   DEFAULT_TOOLBAR_LAYOUT,
   detachToolbarEntry,
+  hiddenToolbarActions,
   joinToolbarEntry,
   moveToolbarEntry,
   normalizeToolbarLayout,
   placeToolbarEntry,
   setToolbarEntryHidden,
+  shownToolbarActions,
   toolbarDropOperations,
   toolbarItems,
   toolbarLayoutFor,
@@ -39,7 +46,10 @@ describe('normalizeToolbarLayout', () => {
   test('drops unknown entries, repeats and empty groups', () => {
     const groups = [['SELECT', 'LASSO', 'SELECT'], [], ['FRAME', 'SECTION', 'FRAME']]
     const result = normalizeToolbarLayout(groups, ['HAND', 'HAND', 'GHOST'])
-    expect(result.groups.slice(0, 2)).toEqual([['SELECT'], ['FRAME', 'SECTION']])
+    expect(result.groups.slice(0, 2)).toEqual([
+      ['SELECT', 'SCALE'],
+      ['FRAME', 'SECTION']
+    ])
     // The sticky, shape and connector tools are placed hidden, as the default layout keeps them.
     expect(result.hidden).toEqual(['HAND', 'STICKY', 'SHAPE_WITH_TEXT', 'CONNECTOR'])
   })
@@ -73,7 +83,7 @@ describe('normalizeToolbarLayout', () => {
       ['STICKY'],
       ['SHAPE_WITH_TEXT'],
       ['CONNECTOR'],
-      ['SELECT'],
+      ['SELECT', 'SCALE'],
       ['FRAME', 'SECTION'],
       SHAPES,
       ['PEN', 'PENCIL'],
@@ -143,14 +153,17 @@ describe('editing', () => {
   test('a button swaps with the button or flyout next to it', () => {
     const moved = moveToolbarEntry(base, 'TEXT', -1)
     expect(moved.groups.slice(3, 5)).toEqual([['TEXT'], ['PEN', 'PENCIL']])
-    expect(moveToolbarEntry(base, 'SELECT', -1)).toBe(base)
+    // Move leads its flyout with Scale: up, it leaves the flyout as the first button, and no further.
+    const first = moveToolbarEntry(base, 'SELECT', -1)
+    expect(first.groups.slice(0, 2)).toEqual([['SELECT'], ['SCALE']])
+    expect(moveToolbarEntry(first, 'SELECT', -1)).toBe(first)
   })
 
   test('a flyout member moves inside the flyout and past its end becomes a button', () => {
     const inside = moveToolbarEntry(base, 'SECTION', -1)
     expect(inside.groups[1]).toEqual(['SECTION', 'FRAME'])
     const out = moveToolbarEntry(inside, 'SECTION', -1)
-    expect(out.groups.slice(0, 3)).toEqual([['SELECT'], ['SECTION'], ['FRAME']])
+    expect(out.groups.slice(0, 3)).toEqual([['SELECT', 'SCALE'], ['SECTION'], ['FRAME']])
     const below = moveToolbarEntry(base, 'SECTION', 1)
     expect(below.groups.slice(1, 3)).toEqual([['FRAME'], ['SECTION']])
   })
@@ -174,11 +187,8 @@ describe('editing', () => {
   test('rows say how each entry relates to the one above', () => {
     const rows = toolbarRows(base)
     const row = (entry: ToolbarEntry) => rows.find((candidate) => candidate.entry === entry)
-    expect(row('SELECT')).toMatchObject({
-      joined: false,
-      canJoin: false,
-      canMoveUp: false
-    })
+    expect(row('SELECT')).toMatchObject({ joined: false, canJoin: false, inFlyout: true })
+    expect(row('SCALE')).toMatchObject({ joined: true, canJoin: false, canMoveUp: true })
     expect(row('SECTION')).toMatchObject({
       joined: true,
       canJoin: false,
@@ -248,7 +258,7 @@ describe('toolbarLayoutFor', () => {
     resolveEditorProfile({
       documentKind,
       canvasView: { id: 'edit' },
-      hostRestrictions: { readOnly }
+      hostRestrictions: { ...NO_HOST_RESTRICTIONS, readOnly }
     }).tools
 
   test('keeps the whole layout when the profile offers every tool', () => {
@@ -282,6 +292,27 @@ describe('toolbarLayoutFor', () => {
       'HAND',
       'COMMENT'
     ])
+  })
+})
+
+describe('toolbar commands', () => {
+  const items = (groups: ToolbarEntry[][], hidden: ToolbarEntry[] = []) =>
+    toolbarItems(layout(groups, hidden), LABELS, SHORTCUTS)
+
+  test('a shown command has its button and nothing hidden', () => {
+    const shown = items([['SELECT'], ['insert-icon']])
+    expect(shownToolbarActions(shown)).toEqual(['insert-icon'])
+    expect(hiddenToolbarActions(shown, true)).toEqual([])
+  })
+
+  test('a command hidden from the toolbar keeps its picker for the menu and the palette', () => {
+    const shown = items([['SELECT'], ['insert-icon']], ['insert-icon'])
+    expect(shownToolbarActions(shown)).toEqual([])
+    expect(hiddenToolbarActions(shown, true)).toEqual(['insert-icon'])
+  })
+
+  test('a document that cannot be edited keeps no pickers', () => {
+    expect(hiddenToolbarActions(items([['SELECT']], ['insert-icon']), false)).toEqual([])
   })
 })
 

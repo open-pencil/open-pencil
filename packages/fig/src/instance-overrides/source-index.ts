@@ -1,6 +1,9 @@
+import { createDocumentVariables, type DocumentVariables } from '#fig/document/variables'
+
 import type { GUID } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, isUnsetGuid } from '@open-pencil/kiwi/fig/guid'
+import { compareOrderKeys } from '@open-pencil/scene-graph/order-keys'
 
 import { findWithinBoundary, type TreeShape } from './tree'
 
@@ -8,6 +11,10 @@ import { findWithinBoundary, type TreeShape } from './tree'
 export interface SourceIndex {
   readonly sources: ReadonlyMap<string, NodeChange>
   readonly children: ReadonlyMap<string, readonly NodeChange[]>
+}
+
+export interface InterpreterIndex extends SourceIndex {
+  readonly variables: DocumentVariables
 }
 
 /** A record's archive identity, or undefined for the rare record without a GUID. */
@@ -31,10 +38,7 @@ export function indexRecords(changes: readonly NodeChange[]): Map<string, NodeCh
 
 /** Saved sibling order: the fractional position string, compared as text. */
 export function bySavedPosition(a: NodeChange, b: NodeChange): number {
-  const left = a.parentIndex?.position ?? ''
-  const right = b.parentIndex?.position ?? ''
-  if (left === right) return 0
-  return left < right ? -1 : 1
+  return compareOrderKeys(a.parentIndex?.position ?? '', b.parentIndex?.position ?? '')
 }
 
 export function createSourceIndex(changes: readonly NodeChange[]): SourceIndex {
@@ -53,6 +57,10 @@ export function createSourceIndex(changes: readonly NodeChange[]): SourceIndex {
   }
   for (const siblings of children.values()) siblings.sort(bySavedPosition)
   return { sources, children }
+}
+
+export function createInterpreterIndex(changes: readonly NodeChange[]): InterpreterIndex {
+  return { ...createSourceIndex(changes), variables: createDocumentVariables(changes) }
 }
 
 export function sameGuid(left: GUID | undefined, right: GUID): boolean {

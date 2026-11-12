@@ -1,7 +1,12 @@
+import { isEqual } from 'es-toolkit'
 import { computed, ref } from 'vue'
 
 import { configurableAITools } from '@/app/ai/tools/catalog'
-import { aiToolOverrides, disabledAITools } from '@/app/ai/tools/preferences'
+import {
+  aiToolOverrides,
+  defaultDisabledAITools,
+  disabledAITools
+} from '@/app/ai/tools/preferences'
 import { configurableMCPTools, disabledMCPTools } from '@/app/automation/mcp/preferences'
 import { openSettingsDialog } from '@/app/settings/dialog'
 
@@ -43,10 +48,17 @@ export function useToolAccessSettings(target: ToolAccessTarget) {
     }
   })
 
+  /** Whether the enabled tools differ from the defaults, which Reset to default puts back. */
+  const modified = computed(() =>
+    target === 'ai'
+      ? !isEqual(disabled.value, defaultDisabledAITools())
+      : disabledMCPTools.value.length > 0
+  )
+
   function reset() {
     if (target === 'ai') aiToolOverrides.value = {}
     else disabledMCPTools.value = []
   }
 
-  return { tools, disabled, reset }
+  return { tools, disabled, modified, reset }
 }

@@ -2,6 +2,7 @@ import { uniq } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
+import { GENERATED_FRAME_TYPES, generatedFrameOwner } from '@open-pencil/scene-graph/generated'
 
 import { presets } from './presets'
 import { allRules } from './rules'
@@ -17,16 +18,41 @@ import type {
 } from './types'
 import { getNodePath } from './utils'
 
+/**
+ * How many of the text's characters some run styles. Runs are clipped to the text, which an
+ * imported `characterStyleIDs` can outrun, and overlapping runs count each character once.
+ */
+function coveredCharacters(runs: readonly SceneNode['styleRuns'][number][], length: number) {
+  const spans = runs
+    .map((run) => [Math.max(0, run.start), Math.min(length, run.start + run.length)] as const)
+    .filter(([from, to]) => to > from)
+    .sort((a, b) => a[0] - b[0])
+  let covered = 0
+  let end = 0
+  for (const [from, to] of spans) {
+    const start = Math.max(from, end)
+    if (to <= start) continue
+    covered += to - start
+    end = to
+  }
+  return covered
+}
+
 /** The size and weight of each stretch of a text layer's characters, as the canvas draws them. */
 function effectiveTextStyles(node: SceneNode): { fontSize: number; fontWeight: number }[] {
   const base = { fontSize: node.fontSize, fontWeight: node.fontWeight }
-  const runs = node.styleRuns.map((run) => ({
+  const length = node.text.length
+  // A run past the end of the text styles nothing the canvas draws.
+  const inText = node.styleRuns.filter((run) => run.start < length && run.start + run.length > 0)
+  const runs = inText.map((run) => ({
     fontSize: run.style.fontSize ?? base.fontSize,
     fontWeight: run.style.fontWeight ?? base.fontWeight
   }))
-  const covered = node.styleRuns.reduce((total, run) => total + run.length, 0)
-  return covered < node.text.length || runs.length === 0 ? [base, ...runs] : runs
+  return coveredCharacters(inText, length) < length || runs.length === 0 ? [base, ...runs] : runs
 }
+
+/** Sticky notes, shapes, and connectors: FigJam's own layers, which lint leaves alone. */
+const GENERATED_TYPES: ReadonlySet<string> = GENERATED_FRAME_TYPES
 
 export class Linter {
   private rules = new Map<string, Rule>()
@@ -72,7 +98,12 @@ export class Linter {
     this.variables = describeVariables(graph)
     this.checks = this.ruleChecks()
     const roots = rootIds && rootIds.length > 0 ? rootIds : graph.getPages().map((p) => p.id)
-    for (const id of outermostRoots(graph, roots)) this.lintNode(id, undefined)
+    for (const id of outermostRoots(graph, roots)) {
+      // A sublayer of a sticky note, shape, or connector is skipped as a root, as in a page's walk.
+      const node = graph.getNode(id)
+      if (node && generatedFrameOwner(graph, node)) continue
+      this.lintNode(id, undefined)
+    }
     this.graph = null
     this.checks = []
     return {
@@ -92,22 +123,14 @@ export class Linter {
     if (cached) return cached
     const raw = this.graph?.getNode(id)
     if (!this.graph || !raw) return undefined
-    const node = this.toLintNode(this.graph, raw)
+    const node = this.toLintNode(raw)
     node.parent = parent
     this.nodes.set(id, node)
     return node
   }
 
-  private toLintNode(graph: SceneGraph, raw: SceneNode): LintNode {
-    // Rules see the color a paint renders with, including a bound variable in this node's mode.
-    const paintColor = (
-      field: 'fills' | 'strokes',
-      index: number,
-      color: SceneNode['fills'][number]['color']
-    ) => {
-      const variableId = raw.boundVariables[`${field}/${index}/color`]
-      return (variableId && graph.resolveColorVariableForNode(raw.id, variableId)) || color
-    }
+  private toLintNode(raw: SceneNode): LintNode {
+    // Rules see the color a paint draws with, which a bound paint stores as its variable gave it.
     return {
       id: raw.id,
       name: raw.name,
@@ -140,16 +163,16 @@ export class Linter {
       textStyles: raw.type === 'TEXT' ? effectiveTextStyles(raw) : undefined,
       styleRunCount: raw.styleRuns.length,
       boundVariables: raw.boundVariables,
-      fills: raw.fills.map((f, index) => ({
+      fills: raw.fills.map((f) => ({
         type: f.type,
         visible: f.visible,
         opacity: f.opacity,
-        color: f.type === 'SOLID' ? paintColor('fills', index, f.color) : undefined
+        color: f.type === 'SOLID' ? f.color : undefined
       })),
-      strokes: raw.strokes.map((stroke, index) => ({
+      strokes: raw.strokes.map((stroke) => ({
         visible: stroke.visible,
         opacity: stroke.opacity,
-        color: paintColor('strokes', index, stroke.color)
+        color: stroke.color
       })),
       effects: raw.effects.map((effect) => ({
         type: effect.type,
@@ -198,6 +221,9 @@ export class Linter {
   private lintNode(id: string, parent: LintNode | undefined) {
     const node = this.nodeFor(id, parent)
     if (!node) return
+    // A sticky note, shape, or connector is FigJam's own, with its fixed choices: no design
+    // system rule applies to it or to the sublayers it generates.
+    if (GENERATED_TYPES.has(node.type)) return
     for (const { rule, context } of this.checks) {
       if (rule.match && !rule.match.includes(node.type)) continue
       rule.check(node, context)

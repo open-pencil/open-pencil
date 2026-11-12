@@ -15,6 +15,7 @@ export type TransactionalEmailKind =
   | 'email-change-requested'
   | 'new-sign-in'
   | 'two-step-changed'
+  | 'document-report'
 
 const documentInvitationEmailPayloadSchema = v.object({
   inviterName: v.string(),
@@ -41,6 +42,13 @@ const adminEnrollmentNotificationPayloadSchema = v.object({
   requesterEmail: v.string(),
   requesterName: v.string(),
   reason: v.string(),
+  actionURL: v.string()
+})
+
+const documentReportPayloadSchema = v.object({
+  documentName: v.string(),
+  reason: v.string(),
+  description: v.string(),
   actionURL: v.string()
 })
 
@@ -102,7 +110,8 @@ export const transactionalEmailContentSchema = v.variant('kind', [
   content('password-changed', authenticationEmailPayloadSchema),
   content('email-change-requested', emailChangeRequestedPayloadSchema),
   content('new-sign-in', newSignInPayloadSchema),
-  content('two-step-changed', twoStepChangedPayloadSchema)
+  content('two-step-changed', twoStepChangedPayloadSchema),
+  content('document-report', documentReportPayloadSchema)
 ])
 
 /** A transactional email's kind with the payload that kind renders. */
@@ -142,3 +151,4 @@ export type RenderedTransactionalEmail = {
   html: string
   text: string
 }
+export type DocumentReportPayload = v.InferOutput<typeof documentReportPayloadSchema>

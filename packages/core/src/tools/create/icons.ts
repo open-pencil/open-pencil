@@ -2,11 +2,13 @@ import * as v from 'valibot'
 
 import { parseColor } from '@open-pencil/scene-graph/color'
 
+import { graphOf } from '#core/figma-api/graph'
+import { prepareSlotInsertion } from '#core/figma-api/slots'
 import { placeIcon } from '#core/icons'
 import { toolNumber, defineTool } from '#core/tools/schema'
 
 export const fetchIconsTool = defineTool({
-  name: 'fetch_icons',
+  name: 'get_icons',
   exposure: { webmcp: false },
   description:
     'Pre-fetch icons from Iconify into cache. Batches by prefix (one HTTP request per set). Call this once with all needed icons, then use insert_icon to place them instantly. Popular sets: lucide (outline), mdi (filled), heroicons, tabler, solar, mingcute, ri (remix).',
@@ -41,7 +43,7 @@ export const insertIcon = defineTool({
   name: 'insert_icon',
 
   description:
-    'Insert one or more vector icons onto the canvas. Pass a single name or multiple names to batch-insert into the same parent. If already cached by fetch_icons — instant, no network request.',
+    'Insert one or more vector icons onto the canvas. Pass a single name or multiple names to batch-insert into the same parent. If already cached by get_icons — instant, no network request.',
   execution: { kind: 'async', mutation: 'document' },
   capabilities: ['document:write', 'network:access'],
   input: v.strictObject({
@@ -75,7 +77,7 @@ export const insertIcon = defineTool({
 
     let icons
     try {
-      icons = await figma.icons.icons(names, size)
+      icons = await graphOf(figma).waitOutsideEdit(figma.icons.icons(names, size))
     } catch (e) {
       return { error: (e as Error).message }
     }
@@ -83,14 +85,15 @@ export const insertIcon = defineTool({
     const inserted: { id: string; name: string; icon: string }[] = []
     const notFound: string[] = []
 
+    const parentId = args.parent_id ?? figma.currentPage.id
+    prepareSlotInsertion(graphOf(figma), parentId, 'insert_icon')
     for (const name of names) {
       const icon = icons.get(name)
       if (!icon || icon.paths.length === 0) {
         notFound.push(name)
         continue
       }
-      const parentId = args.parent_id ?? figma.currentPage.id
-      const frame = placeIcon(figma.graph, parentId, icon, { size, color: parsedColor })
+      const frame = placeIcon(graphOf(figma), parentId, icon, { size, color: parsedColor })
       inserted.push({ id: frame.id, name: frame.name, icon: name })
     }
 

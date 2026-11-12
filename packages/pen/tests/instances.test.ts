@@ -3,8 +3,8 @@ import { describe, expect, test } from 'bun:test'
 import type { PenNode } from '@open-pencil/pen'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { hasInstanceOverride, syncInstance } from '@open-pencil/scene-graph/instances'
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
-import { expectDefined, getNodeOrThrow } from './helpers/assert'
 import { parseDocument } from './helpers/document'
 
 const button: PenNode = {

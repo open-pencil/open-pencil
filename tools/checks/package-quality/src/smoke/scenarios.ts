@@ -41,6 +41,10 @@ export const runtimeScenarios: RuntimeScenario[] = [
     code: "const { parseFlowchart } = await import('@open-pencil/mermaid'); const chart = parseFlowchart('flowchart LR\\n  A[Start] --> B{Done?}'); if (chart.direction !== 'LR' || chart.nodes[1]?.shape !== 'diam' || chart.edges.length !== 1) throw new Error('Mermaid package smoke failed')"
   },
   {
+    name: 'HTML engine',
+    code: "const { loadHTMLEngine } = await import('@open-pencil/html-engine'); const engine = await loadHTMLEngine(); const capture = await engine.layout('<body style=margin:0><div id=box style=width:120px;height:40px></div></body>', { viewport: { width: 800, height: 600 } }); const box = capture.nodes.find((node) => node.attrs?.id === 'box')?.box; if (box?.[2] !== 120 || box[3] !== 40) throw new Error('HTML engine package smoke failed')"
+  },
+  {
     name: 'Emit package',
     code: "const { jsx } = await import('@open-pencil/emit'); const code = jsx.printJSX(jsx.element('Card', [jsx.attribute('wide', null)], [], 0)); if (code !== '<Card wide />') throw new Error('Codegen package smoke failed: ' + code)"
   },
@@ -65,11 +69,23 @@ export const runtimeScenarios: RuntimeScenario[] = [
     code: "const { jsx, jsxToDesignDocument } = await import('@open-pencil/dom-css/jsx-runtime'); const document = await jsxToDesignDocument(jsx('section', { class: 'card', style: { width: '120px' }, children: 'OpenPencil' })); const node = document.children[0]; if (node?.type !== 'element' || node.inlineStyle?.width !== '120px') throw new Error('DOM/CSS JSX runtime failed')"
   },
   {
+    name: 'Oxlint plugin',
+    code: "const domains = ['data', 'imports', 'runtime', 'security', 'structure', 'types']; const plugins = await Promise.all(domains.map(async (domain) => (await import('@open-pencil/oxlint-plugin/' + domain)).default)); if (plugins.some((plugin, index) => plugin.meta.name !== '@open-pencil/' + domains[index] || Object.keys(plugin.rules).length === 0) || plugins.reduce((count, plugin) => count + Object.keys(plugin.rules).length, 0) < 30 || !plugins[0].rules['no-unvalidated-json-parse']?.meta) throw new Error('Oxlint plugin smoke failed')"
+  },
+  {
+    name: 'Oxlint recommended configuration',
+    code: "const { default: preset } = await import('@open-pencil/oxlint-plugin/recommended'); if (preset.rules['@open-pencil/runtime/no-silent-catch'] !== 'error' || !preset.plugins.includes('typescript')) throw new Error('Oxlint recommended configuration smoke failed')"
+  },
+  {
     name: 'Cloud contract',
-    code: "const { CLOUD_AI_TOKEN_AUDIENCE, aiWalletSchema } = await import('@open-pencil/cloud/contract'); const { safeParse } = await import('valibot'); if (CLOUD_AI_TOKEN_AUDIENCE !== 'openpencil-ai' || !safeParse(aiWalletSchema, { balance: 5, buckets: [] }).success) throw new Error('Cloud contract smoke failed')"
+    code: "const { CLOUD_SERVICES_TOKEN_AUDIENCE, creditWalletSchema } = await import('@open-pencil/cloud/contract'); const { safeParse } = await import('valibot'); if (CLOUD_SERVICES_TOKEN_AUDIENCE !== 'openpencil-services' || !safeParse(creditWalletSchema, { balance: 5, buckets: [] }).success) throw new Error('Cloud contract smoke failed')"
   },
   {
     name: 'XPath query',
     code: "const { SceneGraph } = await import('@open-pencil/scene-graph'); const { FigmaAPI } = await import('@open-pencil/core/figma-api'); const { matchByXPath, queryByXPath } = await import('@open-pencil/core/xpath'); const graph = new SceneGraph(); new FigmaAPI(graph).createRectangle(); const found = await queryByXPath(graph, '//RECTANGLE'); if (found.length !== 1 || !(await matchByXPath(graph, '@width > 0', found[0]))) throw new Error('XPath query smoke failed')"
+  },
+  {
+    name: 'PDF export',
+    code: "const { SceneGraph } = await import('@open-pencil/scene-graph'); const { FigmaAPI } = await import('@open-pencil/core/figma-api'); const { BUILTIN_IO_FORMATS, IORegistry } = await import('@open-pencil/core/io'); const graph = new SceneGraph(); const rectangle = new FigmaAPI(graph).createRectangle(); const result = await new IORegistry(BUILTIN_IO_FORMATS).exportContent('pdf', { graph, target: { scope: 'node', nodeId: rectangle.id } }); if (!(result.data instanceof Uint8Array) || new TextDecoder().decode(result.data.subarray(0, 5)) !== '%PDF-') throw new Error('PDF export smoke failed')"
   }
 ]

@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 
-import { expectDefined } from '#tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
+
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { getSelectedIds, getPageChildren, getSelectedNode, getNodeById } from '#tests/helpers/store'
 
@@ -11,7 +12,7 @@ test.describe.configure({ mode: 'serial' })
 
 test.beforeAll(async ({ browser }) => {
   page = await browser.newPage()
-  await page.goto('/')
+  await page.goto('/?test')
   canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   await canvas.clearCanvas()
@@ -154,7 +155,8 @@ test('resize snapping preferences control pixel alignment and Control bypass', a
   await page.mouse.down()
   await page.mouse.move(box.x + 212.25, box.y + 214.25, { steps: 5 })
   await page.mouse.up()
-  expect(await getSelectedNode(page)).toMatchObject({ width: 111.75, height: 113.75 })
+  // Snapping rounds the size, as Figma does, and the layer keeps its fractional position.
+  expect(await getSelectedNode(page)).toMatchObject({ x: 100.25, width: 112, height: 114 })
 
   await page.mouse.move(box.x + 212, box.y + 214)
   await page.mouse.down()
@@ -162,7 +164,7 @@ test('resize snapping preferences control pixel alignment and Control bypass', a
   await page.mouse.move(box.x + 218, box.y + 221, { steps: 5 })
   await page.keyboard.up('Control')
   await page.mouse.up()
-  expect(await getSelectedNode(page)).toMatchObject({ width: 117.75, height: 120.75 })
+  expect(await getSelectedNode(page)).toMatchObject({ width: 118, height: 121 })
   canvas.assertNoErrors()
 })
 

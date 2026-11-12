@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/drawio",
-  "version": "0.16.0",
+  "version": "0.17.0-beta.4",
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -41,6 +41,7 @@
     "js-base64": "^3.9.3"
   },
   "devDependencies": {
+    "@open-pencil/package-artifacts-tools": "workspace:*",
     "@types/bun": "^1.3.14",
     "tsdown": "^0.22.14",
     "typescript": "npm:@typescript/typescript6@^6.0.2"

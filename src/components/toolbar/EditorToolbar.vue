@@ -1,76 +1,42 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-
-import { resolveEditorProfile } from '@open-pencil/core'
-import { useEditorCommands } from '@open-pencil/vue/editor/commands'
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
-import { useI18n } from '@open-pencil/vue/i18n'
-import { ToolbarRoot, useToolbarState } from '@open-pencil/vue/primitives/Toolbar'
+import { ToolbarRoot } from '@open-pencil/vue/primitives/Toolbar'
 
 import { useEditorStore } from '@/app/editor/active-store'
-import { TOOLBAR_ACTIONS, toolbarItems, toolbarLayoutFor } from '@/app/editor/toolbar/layout'
-import { toolShortcutLabels } from '@/app/editor/toolbar/shortcuts'
-import { appPreferences } from '@/app/settings/preferences/store'
-import { useActionToast } from '@/app/shell/toast/action'
-import InsertIconButton from '@/components/icon-picker/InsertIconButton.vue'
+import { useToolbarCanvasRoom, type ToolbarDock } from '@/app/editor/toolbar/dock'
+import { appPreferences, updateToolbarDock } from '@/app/settings/preferences/store'
 import { toolIcons } from '@/components/icons'
-import { useToolbarActions } from '@/components/toolbar/actions'
+import { useToolbarContents } from '@/components/toolbar/contents'
 import DesktopToolbar from '@/components/toolbar/DesktopToolbar.vue'
-import { useToolLabels } from '@/components/toolbar/labels'
 import MobileToolbar from '@/components/toolbar/MobileToolbar.vue'
+import ToolbarAction from '@/components/toolbar/ToolbarAction.vue'
 import ToolbarContextMenu from '@/components/toolbar/ToolbarContextMenu.vue'
-import type { ToolbarActionItem } from '@/components/toolbar/types'
 import { useMenuUI } from '@/components/ui/menu/menu'
+
+/** A phone's toolbar sits along the bottom, wherever the desktop one is docked. */
+const PHONE_DOCK: Readonly<ToolbarDock> = { side: 'bottom', align: 'center' }
 
 const store = useEditorStore()
 const { isMobile } = useViewportKind()
-const { getCommand } = useEditorCommands()
-const { showActionToast } = useActionToast()
-const { menu } = useI18n()
+const { toolLabels, toolShortcuts, items, tools, actions, hiddenActions, customizable } =
+  useToolbarContents(store)
 
-const toolLabels = useToolLabels()
-
-const profile = computed(() => resolveEditorProfile(store.state))
-const toolShortcuts = computed(() => toolShortcutLabels(profile.value.toolKeys))
-const items = computed(() => {
-  const layout = appPreferences.value.toolbar
-  return toolbarItems(
-    toolbarLayoutFor(layout, profile.value.tools),
-    toolLabels.value,
-    toolShortcuts.value
-  )
-})
-const tools = computed(() =>
-  items.value.flatMap((item) => (item.kind === 'tool' ? [item.tool] : []))
-)
-const actionItems = computed(() =>
-  items.value.flatMap((item) => (item.kind === 'action' ? [item.action] : []))
-)
-/**
- * Commands hidden from the toolbar keep their pickers, which the menu and the palette still open;
- * a read-only document leaves them out, as it does the buttons.
- */
-const hiddenActions = computed(() =>
-  !profile.value.edits
-    ? []
-    : TOOLBAR_ACTIONS.filter((action) => !actionItems.value.includes(action))
-)
+useToolbarCanvasRoom(store, () => (isMobile.value ? PHONE_DOCK : appPreferences.value.toolbarDock))
 
 const flyoutMenuCls = useMenuUI({ content: 'min-w-32' })
 const toolbarUI = { flyoutContent: flyoutMenuCls.content }
-const { editActions, arrangeActions } = useToolbarActions({ store, getCommand, menu })
-
-const { mobileCategory, slideDirection, hasPrev, hasNext, goPrev, goNext } = useToolbarState()
-
-function onActionTap(item: ToolbarActionItem) {
-  item.action()
-  showActionToast(item.label)
-}
 </script>
 
 <template>
-  <ToolbarRoot v-slot="{ activeTool, flyoutSelections, actions }" :tools="tools">
-    <ToolbarContextMenu>
+  <ToolbarRoot
+    v-slot="{ activeTool, flyoutSelections, actions: toolbar }"
+    :tools="tools"
+    :side="appPreferences.toolbarDock.side"
+    :align="appPreferences.toolbarDock.align"
+    @update:side="updateToolbarDock({ side: $event })"
+    @update:align="updateToolbarDock({ align: $event })"
+  >
+    <ToolbarContextMenu :disabled="!customizable" :dockable="!isMobile">
       <DesktopToolbar
         v-if="!isMobile"
         :items="items"
@@ -79,16 +45,23 @@ function onActionTap(item: ToolbarActionItem) {
         :tool-icons="toolIcons"
         :tool-labels="toolLabels"
         :tool-shortcuts="toolShortcuts"
+        :side="appPreferences.toolbarDock.side"
+        :align="appPreferences.toolbarDock.align"
         :ui="toolbarUI"
-        @set-tool="actions.setTool"
+        @set-tool="toolbar.setTool"
       >
-        <template #action="{ action }">
-          <InsertIconButton v-if="action === 'insert-icon'" :ui="toolbarUI" />
+        <template #action="{ action, side, align }">
+          <ToolbarAction :action="action" :side="side" :align="align" :ui="toolbarUI" />
         </template>
-        <template #hidden>
-          <template v-for="action in hiddenActions" :key="action">
-            <InsertIconButton v-if="action === 'insert-icon'" anchored />
-          </template>
+        <template #hidden="{ side, align }">
+          <ToolbarAction
+            v-for="action in hiddenActions"
+            :key="action"
+            :action="action"
+            anchored
+            :side="side"
+            :align="align"
+          />
         </template>
       </DesktopToolbar>
 
@@ -101,24 +74,17 @@ function onActionTap(item: ToolbarActionItem) {
         :tool-labels="toolLabels"
         :tool-shortcuts="toolShortcuts"
         :ui="toolbarUI"
-        :mobile-category="mobileCategory"
-        :slide-direction="slideDirection"
-        :has-prev="hasPrev"
-        :has-next="hasNext"
-        :edit-actions="editActions"
-        :arrange-actions="arrangeActions"
-        @set-tool="actions.setTool"
-        @prev="goPrev"
-        @next="goNext"
-        @action="onActionTap"
+        @set-tool="toolbar.setTool"
       >
         <template #end>
-          <template v-for="action in actionItems" :key="action">
-            <InsertIconButton v-if="action === 'insert-icon'" mobile :ui="toolbarUI" />
-          </template>
-          <template v-for="action in hiddenActions" :key="action">
-            <InsertIconButton v-if="action === 'insert-icon'" anchored />
-          </template>
+          <ToolbarAction
+            v-for="action in actions"
+            :key="action"
+            :action="action"
+            mobile
+            :ui="toolbarUI"
+          />
+          <ToolbarAction v-for="action in hiddenActions" :key="action" :action="action" anchored />
         </template>
       </MobileToolbar>
     </ToolbarContextMenu>

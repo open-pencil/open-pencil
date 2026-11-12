@@ -1,5 +1,6 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
+import { figmaNodeType } from './accessors/basic'
 import { pluginChildren } from './accessors/sticky'
 import { figmaFills, figmaStrokes } from './accessors/visual'
 import type { NodeProxyHost } from './proxy'
@@ -35,6 +36,19 @@ function appendTextProps(obj: Record<string, unknown>, n: SceneNode): void {
   if (n.maxLines != null) obj.maxLines = n.maxLines
 }
 
+function appendComponentProperties(obj: Record<string, unknown>, n: SceneNode): void {
+  if (
+    (n.type === 'COMPONENT' || n.type === 'COMPONENT_SET') &&
+    n.componentPropertyDefinitions.length > 0
+  ) {
+    obj.componentPropertyDefinitions = n.componentPropertyDefinitions
+  }
+  if (n.componentPropertyReferences.length > 0)
+    obj.componentPropertyReferences = n.componentPropertyReferences
+  if (n.type === 'INSTANCE' && Object.keys(n.componentPropertyAssignments).length > 0)
+    obj.componentPropertyAssignments = n.componentPropertyAssignments
+}
+
 export function nodeProxyToJSON(
   graph: SceneGraph,
   api: NodeProxyHost,
@@ -47,20 +61,21 @@ export function nodeProxyToJSON(
 
   const obj: Record<string, unknown> = {
     id: n.id,
-    type: n.type,
+    type: figmaNodeType(graph, n),
     name: n.name,
     x: n.x,
     y: n.y,
     width: n.width,
     height: n.height
   }
-  if (n.fills.length > 0) obj.fills = figmaFills(graph, n)
-  if (n.strokes.length > 0) obj.strokes = figmaStrokes(graph, n)
+  if (n.fills.length > 0) obj.fills = figmaFills(n)
+  if (n.strokes.length > 0) obj.strokes = figmaStrokes(n)
   if (n.effects.length > 0) obj.effects = n.effects
   if (n.opacity !== 1) obj.opacity = n.opacity
   if (n.cornerRadius > 0) obj.cornerRadius = n.cornerRadius
   if (!n.visible) obj.visible = false
   if (n.text) obj.characters = n.text
+  appendComponentProperties(obj, n)
   if (n.type === 'TEXT') {
     appendTextProps(obj, n)
   }

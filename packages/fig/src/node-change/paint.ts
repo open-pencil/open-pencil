@@ -1,16 +1,18 @@
-import type { Paint, Effect as KiwiEffect } from '@open-pencil/kiwi/fig/codec'
+import type { Effect as KiwiEffect, Paint, VariableAliasValue } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type {
   Fill,
   Stroke,
   Effect,
+  GlassEffectParams,
+  ProgressiveBlur,
   BlendMode,
   ImageScaleMode,
   GradientTransform,
   StrokeCap,
   StrokeJoin
 } from '@open-pencil/scene-graph'
-import { BLACK } from '@open-pencil/scene-graph/constants'
+import { BLACK, UNSET_GLASS } from '@open-pencil/scene-graph/constants'
 import type { Color, Matrix } from '@open-pencil/scene-graph/primitives'
 
 import { hexToBytes } from './bytes'
@@ -70,12 +72,10 @@ function convertGradientTransform(t?: Matrix): GradientTransform | undefined {
   return { m00: t.m00, m01: t.m01, m02: t.m02, m10: t.m10, m11: t.m11, m12: t.m12 }
 }
 
-type VariableAliasRef = NonNullable<NonNullable<NonNullable<Paint['colorVar']>['value']>['alias']>
-
-let variableColorResolver: ((alias: VariableAliasRef) => Color | null) | null = null
+let variableColorResolver: ((alias: VariableAliasValue) => Color | null) | null = null
 
 export function setVariableColorResolver(
-  resolver: ((alias: VariableAliasRef) => Color | null) | null
+  resolver: ((alias: VariableAliasValue) => Color | null) | null
 ): void {
   variableColorResolver = resolver
 }
@@ -192,14 +192,43 @@ export function convertStrokes(
 
 export function convertEffects(effects?: KiwiEffect[]): Effect[] {
   if (!effects) return []
-  return effects.map((e) => ({
-    type: e.type,
-    color: convertColor(e.color),
-    offset: e.offset ?? { x: 0, y: 0 },
-    radius: e.radius ?? 0,
-    spread: e.spread ?? 0,
-    visible: e.visible ?? true,
-    blendMode: (e.blendMode ?? 'NORMAL') as BlendMode,
-    showShadowBehindNode: e.showShadowBehindNode ?? true
-  }))
+  return effects.map((e) => {
+    const effect: Effect = {
+      type: e.type,
+      color: convertColor(e.color),
+      offset: e.offset ?? { x: 0, y: 0 },
+      radius: e.radius ?? 0,
+      spread: e.spread ?? 0,
+      visible: e.visible ?? true,
+      blendMode: (e.blendMode ?? 'NORMAL') as BlendMode,
+      showShadowBehindNode: e.showShadowBehindNode ?? true
+    }
+    if (e.type === 'GLASS') effect.glass = convertGlass(e)
+    if (e.blurOpType === 'PROGRESSIVE' && isBlur(e.type)) effect.progressive = convertProgressive(e)
+    return effect
+  })
+}
+
+function isBlur(type: KiwiEffect['type']): boolean {
+  return type === 'FOREGROUND_BLUR' || type === 'LAYER_BLUR' || type === 'BACKGROUND_BLUR'
+}
+
+/** A progressive blur's ramp, top centre to bottom centre where the archive leaves it out. */
+function convertProgressive(e: KiwiEffect): ProgressiveBlur {
+  return {
+    startRadius: e.startRadius ?? 0,
+    startOffset: { ...(e.startOffset ?? { x: 0.5, y: 0 }) },
+    endOffset: { ...(e.endOffset ?? { x: 0.5, y: 1 }) }
+  }
+}
+
+/** A glass effect's lens from the archive's names for its fields (`refractionRadius` is depth). */
+function convertGlass(e: KiwiEffect): GlassEffectParams {
+  return {
+    refraction: e.refractionIntensity ?? UNSET_GLASS.refraction,
+    depth: e.refractionRadius ?? UNSET_GLASS.depth,
+    lightAngle: e.specularAngle ?? UNSET_GLASS.lightAngle,
+    lightIntensity: e.specularIntensity ?? UNSET_GLASS.lightIntensity,
+    dispersion: e.chromaticAberration ?? UNSET_GLASS.dispersion
+  }
 }

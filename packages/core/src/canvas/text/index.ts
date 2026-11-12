@@ -1,4 +1,5 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
+import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { shownCharacters, shownText } from '#core/text/case'
@@ -14,6 +15,7 @@ import {
 } from '#core/text/resolver'
 
 import { drawTextLayout } from './decorations'
+import { textInkBounds } from './ink'
 import { buildParagraph } from './layout/build'
 import { resolveParagraphLayoutWidth } from './paragraph'
 import { withPreparedText } from './preparation'
@@ -22,7 +24,7 @@ import type { FontReadinessRenderer, TextRenderer } from './renderer'
 export { buildParagraph } from './layout/build'
 export type { TextLayout } from './layout'
 export type { ParagraphBuildOptions } from './paint'
-export { textFontFeatures, textFontVariations, textHeightBehaviorValue } from './paragraph'
+export { textFontFeatures, textFontVariations } from './paragraph'
 export { withTextParagraph } from './preparation'
 
 function demandFace(
@@ -67,6 +69,11 @@ function requiredFacesReadiness(r: FontReadinessRenderer, node: SceneNode): Node
   let exhausted = false
   for (const { family, style } of requiredNodeFaces(node)) {
     if (fontManager.isStyleLoaded(family, style)) continue
+    // A face a load found nowhere draws in another face of the family, or the substitute.
+    if (fontManager.isFaceMissing(family, style)) {
+      if (!fontManager.isLoaded(family)) exhausted = true
+      continue
+    }
     const demand = fontFaceDemand(family, style, node.text)
     const state = fontResolver.state(demand).state
     demandFace(r, node, family, style)
@@ -191,6 +198,19 @@ export function measureTextNode(
   maxWidth?: number
 ): { width: number; height: number } | null {
   if (!r.fontsLoaded || !r.fontProvider || !isNodeFontLoaded(r, node)) return null
+  return measureTextAsDrawn(r, node, maxWidth)
+}
+
+/**
+ * `node`'s size in the fonts the canvas draws it with now, ready or not: what a text being typed
+ * shows, which its edit draws from the same fonts.
+ */
+export function measureTextAsDrawn(
+  r: TextRenderer,
+  node: SceneNode,
+  maxWidth?: number
+): { width: number; height: number } | null {
+  if (!r.fontsLoaded || !r.fontProvider) return null
   if (node.type !== 'TEXT' || !node.text) return null
 
   const layoutWidth = resolveParagraphLayoutWidth(node, maxWidth)
@@ -238,6 +258,35 @@ export function buildTextPicture(r: TextRenderer, node: SceneNode): Uint8Array |
   const bytes = picture.serialize()
   picture.delete()
   return bytes ?? null
+}
+
+/**
+ * Where `node`'s glyphs draw ink in its box (`textInkBounds`), measured once per shaping, box,
+ * and alignment; `undefined` while its fonts are not ready or for text set on a path.
+ */
+export function measureTextInkAsDrawn(
+  r: TextRenderer,
+  node: SceneNode
+): VisualBounds | null | undefined {
+  if (!r.fontsLoaded || !r.fontProvider) return undefined
+  if (node.type !== 'TEXT' || node.textPathData) return undefined
+  // Text in faces other than its own draws its saved glyphs, whose ink its layout does not show.
+  const readiness = nodeFontReadiness(r, node)
+  if (readiness === 'pending' || readiness === 'exhausted') return undefined
+  if (readiness !== 'ready' && (node.derivedTextGlyphs?.length ?? 0) > 0) return undefined
+  if (!node.text) return null
+  const compute = () => {
+    const layout = buildParagraph(r, node, undefined, { halfLeading: true })
+    try {
+      return textInkBounds(node, layout, textVerticalOffset(node, layout.getHeight()))
+    } finally {
+      layout.delete()
+    }
+  }
+  const key = `${node.width}:${node.height}:${node.textAlignVertical}`
+  return r.textPreparationCache
+    ? r.textPreparationCache.ink(node, key, fontManager.generation(), r.fontProvider, compute)
+    : compute()
 }
 
 /** Offset that places laid-out text of `contentHeight` in the node box by vertical alignment. */

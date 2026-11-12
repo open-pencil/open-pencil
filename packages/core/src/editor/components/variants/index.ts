@@ -3,6 +3,12 @@ import { buildVariantName, parseVariantName } from '@open-pencil/scene-graph/var
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import { reapplyInstanceComponentProperties } from '#core/editor/components/properties'
+import {
+  applyDocumentChange,
+  isEmptyDocumentChange,
+  type DocumentChange
+} from '#core/editor/history/document-change'
+import { recordEdit } from '#core/editor/history/edit'
 import { restoreSubtree, snapshotSubtree } from '#core/editor/history/subtree'
 import type { EditorContext } from '#core/editor/types'
 
@@ -72,6 +78,23 @@ export function createVariantActions(ctx: EditorContext) {
     }))
   }
 
+  function pushSwitchStep(change: DocumentChange) {
+    if (isEmptyDocumentChange(change)) {
+      return
+    }
+    const show = (side: 'before' | 'after') => {
+      applyDocumentChange(ctx.graph, change, side)
+      ctx.setSelectedIds(new Set())
+      ctx.state.hoveredNodeId = null
+      ctx.requestRender()
+    }
+    ctx.undo.push({
+      label: 'Switch variant',
+      forward: () => show('after'),
+      inverse: () => show('before')
+    })
+  }
+
   function switchInstanceVariant(
     instanceId: string,
     propertyName: string,
@@ -98,18 +121,17 @@ export function createVariantActions(ctx: EditorContext) {
     if (!target) return { kind: 'unavailable', requested }
     if (target.id === instance.componentId) return { kind: 'unchanged', componentId: target.id }
 
-    const previousComponentId = instance.componentId
-    const applyComponent = (componentId: string) => {
-      ctx.graph.swapInstanceComponent(instanceId, componentId)
-      reapplyInstanceComponentProperties(ctx, instanceId)
-      ctx.requestRender()
-    }
-    applyComponent(target.id)
-    ctx.undo.push({
+    const options = {
       label: 'Switch variant',
-      forward: () => applyComponent(target.id),
-      inverse: () => applyComponent(previousComponentId)
+      push: false,
+      onRecorded: pushSwitchStep
+    }
+    recordEdit(ctx, options, () => {
+      ctx.graph.swapInstanceComponent(instanceId, target.id)
+      reapplyInstanceComponentProperties(ctx, instanceId)
+      ctx.runLayoutForNode(instanceId)
     })
+    ctx.requestRender()
     return { kind: 'changed', componentId: target.id }
   }
 

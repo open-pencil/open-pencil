@@ -11,6 +11,5 @@ export interface PortableSceneGraphData {
   images: Array<[string, Uint8Array]>
   variables: Array<[string, Variable]>
   variableCollections: Array<[string, VariableCollection]>
-  activeMode: Array<[string, string]>
   documentColorSpace: DocumentColorSpace
 }

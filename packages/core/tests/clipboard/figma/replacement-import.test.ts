@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test'
 
-import { capturedFigRecordsSchema, readFixture } from '#core-tests/helpers/fig/fixtures'
-
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { readFixture } from '@open-pencil/test-support/fig/fixtures'
+import { capturedFigRecordsSchema } from '@open-pencil/test-support/fig/schema'
 
 import { prepareClipboardImport } from '#core/clipboard/fig-import'
 

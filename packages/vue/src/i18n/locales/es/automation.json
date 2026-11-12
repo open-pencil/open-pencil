@@ -1,5 +1,4 @@
 {
-  "restoreToolDefaults": "Restaurar valores predeterminados",
   "aiToolAccessDescription": "Elige herramientas para conexiones directas a modelos de IA. Los agentes ACP y Pi utilizan el acceso MCP.",
   "mcpToolAccessDescription": "Elige las herramientas que el servidor local ofrece a los agentes y clientes conectados.",
   "aiToolsNotice": "Los cambios se aplican al siguiente mensaje. Los interruptores no aíslan la ejecución: las herramientas de scripts habilitadas pueden realizar otras operaciones de diseño.",
