@@ -20,7 +20,9 @@ import {
   resolveFill,
   solidFillOpacity,
   SVG_STROKE_CAP,
-  SVG_STROKE_JOIN
+  SVG_STROKE_JOIN,
+  type SVGExportContext,
+  type SVGExportWarning
 } from './defs'
 import {
   round,
@@ -44,7 +46,6 @@ import {
 } from '@open-pencil/scene-graph/vector-network'
 
 import { arrowHeadElements, openPathElements, vectorArrowHeads } from './arrows'
-import type { SVGExportContext } from './defs'
 import { svg, renderSVGNode } from './node'
 import type { SVGNode } from './node'
 import { fillOutlines, outlineElements } from './regions'
@@ -254,7 +255,7 @@ function buildGroupAttrs(
     attrs.style = `mix-blend-mode: ${blend}`
   }
 
-  const filterDef = createFilterDef(node.effects, ctx)
+  const filterDef = createFilterDef(node.effects, ctx, node)
   if (filterDef) {
     ctx.defs.push(filterDef.node)
     attrs.filter = `url(#${filterDef.id})`
@@ -488,6 +489,10 @@ export interface SVGExportOptions {
   xmlDeclaration?: boolean
   /** Target export color space (default: srgb) */
   colorSpace?: 'srgb' | 'display-p3'
+  /** Omit visible effects SVG cannot represent, reporting each omission through `onWarning`. */
+  skipUnsupportedEffects?: boolean
+  /** Receives an explanation when `skipUnsupportedEffects` omits an effect. */
+  onWarning?: (warning: SVGExportWarning) => void
   /**
    * Line breaks of text nodes as the editor laid them out, wraps included. Without them, only
    * explicit newlines start a new baseline, which renderers that do not wrap SVG text keep.
@@ -517,6 +522,8 @@ export function renderNodesToSVG(
     defIdCounter: 0,
     graph,
     colorSpace: options.colorSpace ?? 'srgb',
+    skipUnsupportedEffects: options.skipUnsupportedEffects,
+    onWarning: options.onWarning,
     textLayout: options.textLayout,
     layerIds: options.layerIds ? { names: new Map(), taken: new Set() } : undefined
   }
@@ -572,10 +579,24 @@ export function renderNodeSVGElement(
   {
     idPrefix,
     colorSpace = 'srgb',
-    tint
-  }: Pick<SVGExportContext, 'tint'> & { idPrefix: string; colorSpace?: RenderColorSpace }
+    tint,
+    skipUnsupportedEffects,
+    onWarning
+  }: Pick<SVGExportContext, 'tint' | 'skipUnsupportedEffects' | 'onWarning'> & {
+    idPrefix: string
+    colorSpace?: RenderColorSpace
+  }
 ): SVGNode | null {
-  const ctx: SVGExportContext = { defs: [], defIdCounter: 0, graph, colorSpace, idPrefix, tint }
+  const ctx: SVGExportContext = {
+    defs: [],
+    defIdCounter: 0,
+    graph,
+    colorSpace,
+    idPrefix,
+    tint,
+    skipUnsupportedEffects,
+    onWarning
+  }
   const drawn = renderNode({ ...node, x: 0, y: 0, rotation: 0, opacity: 1 }, ctx)
   if (!drawn) return null
   // A straight line has no height or width, but its stroke still needs a viewport to draw in.
