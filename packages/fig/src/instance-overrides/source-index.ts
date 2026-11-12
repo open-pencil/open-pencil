@@ -71,10 +71,11 @@ export function createSourceIndex(changes: readonly NodeChange[]): SourceIndex {
 
 export function createInterpreterIndex(changes: readonly NodeChange[]): InterpreterIndex {
   const activeRecords = changes.filter(isActiveRecord)
+  const index = createSourceIndex(activeRecords)
   return {
-    ...createSourceIndex(changes),
-    variables: createDocumentVariables(changes),
-    textStyle: createTextStyleLookup(indexRecords(activeRecords), assetIdsByKey(activeRecords))
+    ...index,
+    variables: createDocumentVariables(activeRecords),
+    textStyle: createTextStyleLookup(index.sources, assetIdsByKey(activeRecords))
   }
 }
 

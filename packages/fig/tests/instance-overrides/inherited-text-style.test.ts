@@ -7,6 +7,7 @@ import { guid } from '@open-pencil/test-support/fig/guid'
 
 const STYLE_SIZE = 28
 const STALE_SOURCE_SIZE = 16
+const CLAIM_SIZE = 20
 
 const changes: NodeChange[] = [
   { guid: guid(1), type: 'TEXT', styleType: 'TEXT', fontSize: STYLE_SIZE },
@@ -24,7 +25,7 @@ const changes: NodeChange[] = [
     type: 'INSTANCE',
     symbolData: {
       symbolID: guid(2),
-      symbolOverrides: [{ guidPath: { guids: [guid(3)] }, fontSize: 20 }]
+      symbolOverrides: [{ guidPath: { guids: [guid(3)] }, fontSize: CLAIM_SIZE }]
     }
   } as NodeChange
 ]
@@ -37,7 +38,7 @@ test('raw records keep the claim when the inherited style was removed', () => {
   const removedStyle = changes.map((change) =>
     change.styleType === 'TEXT' ? { ...change, phase: 'REMOVED' as const } : change
   )
-  expect(interpretInstance(removedStyle, '1:4').children[0].properties.fontSize).toBe(20)
+  expect(interpretInstance(removedStyle, '1:4').children[0].properties.fontSize).toBe(CLAIM_SIZE)
 })
 
 test('a library style key resolves to the active style, not a removed one with that key', () => {
@@ -63,4 +64,15 @@ test('a library style key resolves to the active style, not a removed one with t
   expect(
     interpretInstance([...keyedRecords, removedDuplicate], '1:4').children[0].properties.fontSize
   ).toBe(ACTIVE_STYLE_SIZE)
+})
+
+test('raw records leave a removed child out of the instance, as the reader does', () => {
+  const removedChild: NodeChange = {
+    guid: guid(6),
+    type: 'TEXT',
+    parentIndex: { guid: guid(2), position: '"' },
+    textData: { characters: 'Gone' },
+    phase: 'REMOVED'
+  }
+  expect(interpretInstance([...changes, removedChild], '1:4').children).toHaveLength(1)
 })
