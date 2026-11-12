@@ -155,7 +155,7 @@ Endpoints are available over both active transports:
 3. **Read** — `get_page_tree`, `find_nodes`, `get_node`, `list_pages`
 4. **Create** — `create_shape`, `render` (JSX)
 5. **Modify** — `set_fill`, `set_stroke`, `set_layout`, `update_node`, `set_effects`
-6. **Structure** — `reparent_node`, `group_nodes`, `clone_nodes`, `delete_nodes`
+6. **Structure** — `reparent_node`, `group_nodes`, `clone_nodes`, `delete_nodes`, `move_page`
 7. **Save** — `save_document` to write back to `.fig`
 8. **Close** — `close_document` to close an open document tab. With unsaved changes it fails unless `unsaved` is `"save"` or `"discard"`; it never prompts in the app.
 
@@ -163,7 +163,7 @@ Endpoints are available over both active transports:
 
 Each MCP session shows in the app as an agent with a callsign, like the built-in chat: its cursor and outline sit on the layers each tool reads or changes, it rests after a quiet spell and leaves when the session ends, and people can follow it from their avatar. Collaborators in a shared room see it too.
 
-Most tools accept optional `document_id` and `page_id` fields. Pass them explicitly for agent workflows instead of relying on the visible active tab/page. An app chat's agent works on the chat's document unless a call names another. `create_page` only creates a page; call `switch_page` separately when the workflow should change the active page.
+Most tools accept optional `document_id` and `page_id` fields. Pass them explicitly for agent workflows instead of relying on the visible active tab/page. An app chat's agent works on the chat's document unless a call names another. `create_page` only creates a page; call `switch_page` separately when the workflow should change the active page. Use `move_page { target_page_id, index }` to reorder a page; `target_page_id` is separate from the active-page `page_id` used for routing.
 
 ## AI Agent Skill
 
@@ -268,10 +268,13 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 
 ### Structure
 
+`move_page { target_page_id, index }` moves a page to a zero-based position in the document page list; its order persists when the document is saved and reopened.
+
 | Tool            | Description                                                       |
 | --------------- | ----------------------------------------------------------------- |
 | `delete_nodes`  | Delete nodes                                                      |
 | `clone_nodes`   | Duplicate nodes                                                   |
+| `move_page`    | Move a page to a zero-based position in the page list, persisting its order |
 | `reparent_node` | Move a node into a different parent                               |
 | `set_selection` | Select nodes by ID                                                |
 | `group_nodes`   | Group nodes                                                       |
