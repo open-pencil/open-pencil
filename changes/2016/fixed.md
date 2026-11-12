@@ -1,2 +1,3 @@
 - Wrapped auto layout from `.fig` files whose spacing between rows follows the item spacing lays its rows out that far apart, where they touched before.
 - Undoing a change to how a layer sizes in auto layout, such as setting it to Fill, gives the layer back the size it had.
+- Layout keeps working after a text measurement fails or a grid item has an invalid span, where auto layout could stop until the app was reloaded (#1928).

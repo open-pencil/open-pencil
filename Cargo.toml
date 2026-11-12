@@ -24,4 +24,4 @@ panic = "abort"
 # fixes that wait on upstream (its OPENPENCIL.md), so HTML import and auto layout, which runs on
 # that branch's release in packages/taffy, share one Taffy. Move `rev` with packages/taffy's pin.
 [patch."https://github.com/DioxusLabs/taffy"]
-taffy = { git = "https://github.com/open-pencil/taffy", rev = "9c9fcf89f081d013946c821af77ac3df6e3aca79" }
+taffy = { git = "https://github.com/open-pencil/taffy", rev = "f0c51f71f3a1a6f40bb78be49e08716d34ca57e9" }
