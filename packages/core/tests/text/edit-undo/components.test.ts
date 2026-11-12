@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
-import { setupTextEdit } from '#core-tests/helpers/text-edit'
+import { setupTextEdit } from '#core-tests/helpers/text/edit'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { getInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
