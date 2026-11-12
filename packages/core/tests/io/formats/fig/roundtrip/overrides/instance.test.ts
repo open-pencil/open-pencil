@@ -63,6 +63,22 @@ test('instance style overrides come back as overrides after saving and reopening
   expect([reopenedLabel.letterSpacing, reopenedLabel.textCase]).toEqual([pixelLength(2), 'UPPER'])
 })
 
+test('an instance text set to truncate keeps truncating after reopening', async () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0].id
+  const card = graph.createNode('COMPONENT', page, { name: 'Card', width: 200, height: 100 })
+  graph.createNode('TEXT', card.id, { name: 'Label', text: 'A long label', width: 40, height: 16 })
+  const instance = expectDefined(graph.createInstance(card.id, page))
+  const [label] = graph.getChildren(instance.id)
+  graph.updateNode(label.id, { textAutoResize: 'TRUNCATE' })
+  recordInstanceOverride(graph, label.id, ['textAutoResize'])
+
+  const reopened = await parseFigFile((await exportFigFile(graph)).slice().buffer)
+  const copy = expectDefined([...reopened.getAllNodes()].find((node) => node.type === 'INSTANCE'))
+  const [reopenedLabel] = reopened.getChildren(copy.id)
+  expect(reopenedLabel).toMatchObject({ textAutoResize: 'NONE', textTruncation: 'ENDING' })
+})
+
 test('an instance that clears its component’s fill style keeps it cleared after reopening', async () => {
   // Figma desktop 126 claims the cleared style as the unset GUID, with the paints it keeps.
   const graph = new SceneGraph()

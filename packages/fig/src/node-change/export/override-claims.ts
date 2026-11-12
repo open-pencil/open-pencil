@@ -93,7 +93,12 @@ function layoutModeClaim(
     return { [raw]: hugs ? 'RESIZE_TO_FIT_WITH_IMPLICIT_SIZE' : 'FIXED' }
   }
   if (raw === 'textAutoResize' && target.type === 'TEXT') {
-    return { [raw]: figmaTextAutoResize(target.textAutoResize) }
+    // The schema has no TRUNCATE: the claim carries the truncation the layer record writes for it.
+    const truncates = target.textAutoResize === 'TRUNCATE'
+    return {
+      [raw]: figmaTextAutoResize(target.textAutoResize),
+      ...(truncates && { textTruncation: 'ENDING' })
+    }
   }
   return { [raw]: value }
 }
