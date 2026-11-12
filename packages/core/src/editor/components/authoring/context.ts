@@ -75,7 +75,8 @@ export function componentPropertyNameExists(
   const parent = owner.parentId ? graph.getNode(owner.parentId) : undefined
   if (parent?.type === 'COMPONENT_SET') scopes.push(parent)
   if (owner.type === 'COMPONENT_SET') {
-    scopes.push(...graph.getChildren(owner.id).filter((node) => node.type === 'COMPONENT'))
+    for (const child of graph.getChildren(owner.id))
+      if (child.type === 'COMPONENT') scopes.push(child)
   }
   return scopes.some((scope) =>
     scope.componentPropertyDefinitions.some(

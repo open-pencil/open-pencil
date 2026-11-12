@@ -2,6 +2,7 @@ import { maxBy } from 'es-toolkit'
 
 import type { SelectionTheme } from '@open-pencil/core/canvas'
 import { SELECTION_COLOR } from '@open-pencil/core/constants'
+import { minOf } from '@open-pencil/scene-graph/arrays'
 import {
   colorToHex,
   contrastRatio,
@@ -121,7 +122,7 @@ function relateTo(base: Color, shift: number): (reference: Color, tint?: boolean
 }
 
 function worstContrast(text: Color, surfaces: Color[]): number {
-  return Math.min(...surfaces.map((surface) => contrastRatio(text, surface)))
+  return minOf(surfaces.map((surface) => contrastRatio(text, surface)))
 }
 
 /** White or ink, whichever reads worst-case better on every surface the text sits on. */
