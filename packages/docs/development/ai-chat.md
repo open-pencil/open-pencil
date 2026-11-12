@@ -63,7 +63,7 @@ An image a call returns, such as `export_image`'s, reaches the model as a file, 
 
 A run ends once, in one of three ways: finished (`onFinish`), failed (`handleError`), or stopped (the request's abort signal). The agent goes idle and its cursor leaves the canvas. A tool already running keeps going: its edit lands in its run, but cannot move the agent again.
 
-When the chat's own `onFinish` reports a reply that was stopped, failed, or cut off, `settleEndedReply` waits for the run's last edit, then settles the message (`reply/settle.ts`):
+Whenever the chat's own `onFinish` reports a reply, `settleEndedReply` waits for the run's last edit, then settles the message (`reply/settle.ts`), so a reply that ended any way, even a finished one whose agent left a call unreported, shows nothing as running:
 
 - reasoning and text are marked done;
 - each call that never reported back fails with whether it changed the document, which the model reads next time;
@@ -80,6 +80,10 @@ A reply that finished or failed on its own, rather than one you stopped or one c
 An ACP agent calls OpenPencil's tools through the MCP server, and its replies keep their edits the same way. The ACP transport (`transports/acp.ts`) starts a run for each reply with `startAgentRun`, without the built-in chat's agent presence, since the agent shows through its MCP session, and ends it however the reply ends. Each MCP tool call carries the chat id from the agent's `x-openpencil-chat` header and the call's id in the agent's conversation, which Codex sends as `_meta.callId` and Claude Code as `_meta["claudecode/toolUseId"]`. While the reply goes on, a call that edits the chat's own document joins the run through `runEditorTool`, which `automation/bridge/tool-handlers.ts` calls with the reply, so Revert, Restore, and the undone marks work as for a provider model.
 
 Each request while the agent starts must answer within `AGENT_START_TIMEOUT_MS`, and Stop stops an agent that is still starting, so a message never waits on an agent that does not answer; either way the agent never gets the message.
+
+The SDK never rejects a request that is still pending when the agent exits, so each startup request races the connection closing, and so does a reply's prompt: an agent that exits mid-prompt ends its reply with an error, and the chat's status returns to ready instead of waiting for Stop; one the chat closed itself ends it quietly. When the chat's reader goes away without a Stop, as it does when the chat cannot process a chunk, the transport cancels the agent's turn.
+
+Pi's transport has the same rule for its session start: Stop ends a message that waits on a companion that does not answer, and a start that answers late is awaited by the next message rather than asked for again.
 
 ## Undo and the model
 

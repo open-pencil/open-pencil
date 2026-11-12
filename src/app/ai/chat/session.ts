@@ -79,8 +79,9 @@ export async function createACPTransport(
 }
 
 /**
- * A reply that ended unfinished is settled once its last edit landed, so it no longer reads as
- * running and the model learns which of its calls changed the document.
+ * A reply that ended is settled once its last edit landed, so nothing in it reads as running and
+ * the model learns which of its calls changed the document. A reply that finished with every
+ * call reported back stays as it is.
  */
 async function settleEndedReply(
   chat: Chat<UIMessage>,
@@ -337,9 +338,9 @@ export function createChatSessionManager({
           handleChatFinish(diagnosticContext, event)
           // The reply is over, however it ended; its agent rests instead of waiting it out.
           if (agentKind) restAgents(agentKind)
-          if (event.isAbort || event.isDisconnect || event.isError) {
-            void settleEndedReply(created, store, event.message.id, event.isAbort)
-          }
+          // However it ended, nothing in the reply may still read as running: an agent can finish
+          // its turn with a call it never reported back.
+          void settleEndedReply(created, store, event.message.id, event.isAbort)
           // A reply stopped by the person, or cut off with its connection, ends unannounced.
           if (!event.isAbort && !event.isDisconnect)
             void notifyReplyEnded(

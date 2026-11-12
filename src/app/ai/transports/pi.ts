@@ -10,6 +10,7 @@ import type {
 import { spawnHarnessProcess, type HarnessProcess } from '@/app/ai/agents/pi/process'
 import { compactionOf, type StepCompaction } from '@/app/ai/chat/compaction/marker'
 import { createReplyStream, type ReplyStream } from '@/app/ai/reply/stream'
+import { withAbortSignal } from '@/app/runtime/abort'
 
 interface PendingRequest {
   controller?: ReadableStreamDefaultController<UIMessageChunk>
@@ -94,6 +95,8 @@ export class HarnessChatTransport implements ChatTransport<UIMessage> {
   private process: HarnessProcess | null = null
   private readonly pending = new Map<string, PendingRequest>()
   private sessionCreated = false
+  /** The session start the companion has not answered yet, shared by every send that waits on it. */
+  private creating: Promise<void> | null = null
   private destroyed = false
 
   constructor(
@@ -113,11 +116,10 @@ export class HarnessChatTransport implements ChatTransport<UIMessage> {
   > {
     const process = await this.ensureProcess()
     if (!this.sessionCreated) {
-      await this.request({
-        method: 'session.create',
-        params: { sessionId: this.sessionId, configuration: this.configuration }
-      })
-      this.sessionCreated = true
+      // Stop ends the wait, not the start: a later send waits on the same start instead of
+      // asking the companion for a session it is already making.
+      const starting = this.startSession()
+      await (abortSignal ? withAbortSignal(starting, abortSignal) : starting)
     }
     // A compaction's divider is not something the person said.
     const lastUserMessage = messages.findLast(
@@ -229,6 +231,21 @@ export class HarnessChatTransport implements ChatTransport<UIMessage> {
     }
     for (const pending of this.pending.values()) pending.reject(new Error('Harness stopped'))
     this.pending.clear()
+  }
+
+  /** Asks the companion for the session, once, however many sends wait on the answer. */
+  private startSession(): Promise<void> {
+    this.creating ??= this.request({
+      method: 'session.create',
+      params: { sessionId: this.sessionId, configuration: this.configuration }
+    })
+      .then(() => {
+        this.sessionCreated = true
+      })
+      .finally(() => {
+        this.creating = null
+      })
+    return this.creating
   }
 
   private createPending(id: string): PendingRequest {

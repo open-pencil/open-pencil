@@ -7,7 +7,9 @@ import {
   RequestError,
   type Agent,
   type NewSessionRequest,
-  type ResumeSessionRequest
+  type ResumeSessionRequest,
+  type SessionUpdate,
+  type StopReason
 } from '@agentclientprotocol/sdk'
 import type { UIMessage, UIMessageChunk } from 'ai'
 
@@ -42,8 +44,9 @@ interface FakeAgentOptions {
   /**
    * How the agent's turn ends: `refused` fails before the agent takes the prompt, `cut-off` fails
    * after it started answering. Either way it first sends updates that are not part of a turn.
+   * `held` takes the prompt and answers only when `endTurn` says so, or when it is cancelled.
    */
-  turn?: 'answered' | 'refused' | 'cut-off'
+  turn?: 'answered' | 'refused' | 'cut-off' | 'held'
   /** True for a command lookup that waits until `finishLookup`, as a slow PATH search does. */
   lookupWaits?: boolean
 }
@@ -70,6 +73,11 @@ function fakeAgents({
   const defersTools: boolean[] = []
   const cwds: (string | undefined)[] = []
   let crashLatest: (() => void) | null = null
+  const cancels: string[] = []
+  const promptTaken = createDeferred<undefined>()
+  const heldTurn = createDeferred<StopReason>()
+  let latest: AgentSideConnection | null = null
+  let promptedSession = ''
 
   const spawn: ACPStartup['spawn'] = async (options) => {
     spawns++
@@ -102,10 +110,13 @@ function fakeAgents({
         const [part] = params.prompt
         prompts.push(part?.type === 'text' ? part.text : '')
         const { sessionId } = params
+        promptedSession = sessionId
         await connection.sessionUpdate({
           sessionId,
           update: { sessionUpdate: 'available_commands_update', availableCommands: [] }
         })
+        promptTaken.resolve(undefined)
+        if (turn === 'held') return { stopReason: await heldTurn.promise }
         if (turn === 'refused') throw new Error('The prompt never reached the model')
         if (turn === 'cut-off') {
           await connection.sessionUpdate({
@@ -122,12 +133,17 @@ function fakeAgents({
       async authenticate() {
         return {}
       },
-      cancel: async () => undefined
+      async cancel({ sessionId }) {
+        cancels.push(sessionId)
+        // Agents answer a cancelled turn with its stop reason.
+        heldTurn.resolve('cancelled')
+      }
     }
     const connection = new AgentSideConnection(
       () => agent,
       ndJsonStream(toClient.writable, toAgent.readable)
     )
+    latest = connection
     // Ending the pipe ends what the client reads, as a process that exits does.
     const output = new TransformStream<Uint8Array, Uint8Array>()
     const stop = new AbortController()
@@ -184,12 +200,45 @@ function fakeAgents({
     cwds,
     defersTools,
     finishLookup: () => lookup.resolve(undefined),
-    crash: () => expectDefined(crashLatest, 'a started agent')()
+    crash: () => expectDefined(crashLatest, 'a started agent')(),
+    cancels,
+    promptTaken: promptTaken.promise,
+    /** Sends an update as the agent's turn goes on. */
+    say: (update: SessionUpdate) =>
+      expectDefined(latest, 'a started agent').sessionUpdate({
+        sessionId: promptedSession,
+        update
+      }),
+    endTurn: (stopReason: StopReason) => heldTurn.resolve(stopReason)
   }
 }
 
 function message(role: UIMessage['role'], text: string): UIMessage {
   return { id: crypto.randomUUID(), role, parts: [{ type: 'text', text }] }
+}
+
+/**
+ * Sends `text` after `history`, without waiting for the reply to end: `chunks` fills as it goes
+ * and `ended` settles once the stream closes.
+ */
+function sending(
+  transport: ACPChatTransport,
+  text: string,
+  history: UIMessage[] = [],
+  abortSignal?: AbortSignal
+) {
+  const chunks: UIMessageChunk[] = []
+  const ended = (async () => {
+    const reply = await transport.sendMessages({
+      trigger: 'submit-message',
+      chatId: 'chat',
+      messageId: undefined,
+      messages: [...history, message('user', text)],
+      abortSignal
+    })
+    await reply.pipeTo(new WritableStream({ write: (chunk) => void chunks.push(chunk) }))
+  })()
+  return { chunks, ended }
 }
 
 /** Sends `text` after `history` and waits for the reply to end. */
@@ -199,16 +248,9 @@ async function send(
   history: UIMessage[] = [],
   abortSignal?: AbortSignal
 ): Promise<UIMessageChunk[]> {
-  const reply = await transport.sendMessages({
-    trigger: 'submit-message',
-    chatId: 'chat',
-    messageId: undefined,
-    messages: [...history, message('user', text)],
-    abortSignal
-  })
-  const chunks: UIMessageChunk[] = []
-  await reply.pipeTo(new WritableStream({ write: (chunk) => void chunks.push(chunk) }))
-  return chunks
+  const reply = sending(transport, text, history, abortSignal)
+  await reply.ended
+  return reply.chunks
 }
 
 function transport(
@@ -450,4 +492,54 @@ test('a startup step outside the agent connection is bounded by the deadline too
   await expect(send(chat, 'first')).rejects.toBeInstanceOf(Error)
   await agents.killed
   expect(agents.prompts).toEqual([])
+})
+
+test('the reply ends with an error when the agent exits mid-prompt', async () => {
+  const agents = fakeAgents({ turn: 'held' })
+  const { transport: chat } = transport(agents)
+  const reply = sending(chat, 'first')
+  await agents.promptTaken
+  await agents.say({
+    sessionUpdate: 'agent_message_chunk',
+    content: { type: 'text', text: 'On it' }
+  })
+  agents.crash()
+  await reply.ended
+  expect(reply.chunks.map((chunk) => chunk.type)).toContain('text-end')
+  expect(reply.chunks).toContainEqual(expect.objectContaining({ type: 'error' }))
+  expect(reply.chunks.at(-1)).toEqual({ type: 'finish', finishReason: 'error' })
+  await chat.destroy()
+})
+
+test("a reply nobody reads any more cancels the agent's turn", async () => {
+  const agents = fakeAgents({ turn: 'held' })
+  const { transport: chat, agentErrors } = transport(agents)
+  const reply = await chat.sendMessages({
+    trigger: 'submit-message',
+    chatId: 'chat',
+    messageId: undefined,
+    messages: [message('user', 'first')],
+    abortSignal: undefined
+  })
+  await agents.promptTaken
+  // As when the chat cannot process a chunk: its reader goes away without a Stop.
+  await reply.cancel()
+  await new Promise((resolve) => {
+    setTimeout(resolve, 0)
+  })
+  expect(agents.cancels).toEqual(['session-1'])
+  expect(agentErrors).toEqual([])
+  await chat.destroy()
+})
+
+test('closing the chat ends its reply without reporting the agent as failed', async () => {
+  const agents = fakeAgents({ turn: 'held' })
+  const { transport: chat, agentErrors } = transport(agents)
+  const reply = sending(chat, 'first')
+  await agents.promptTaken
+  await chat.destroy()
+  await reply.ended
+  expect(reply.chunks.some((chunk) => chunk.type === 'error')).toBe(false)
+  expect(reply.chunks.at(-1)).toEqual({ type: 'finish', finishReason: 'stop' })
+  expect(agentErrors).toEqual([])
 })

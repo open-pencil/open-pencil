@@ -97,9 +97,11 @@ const configuration = {
  */
 const promptParams = v.object({ prompt: v.string() })
 
-function fakeCompanion({ turnsFail = false } = {}) {
+function fakeCompanion({ turnsFail = false, createWaits = false } = {}) {
   let output: ReadableStreamDefaultController<HarnessSidecarMessage> | undefined
   const methods: string[] = []
+  /** The session starts the companion has not answered yet, which `finishCreate` answers. */
+  const unanswered: string[] = []
   const turns: string[] = []
   const prompts: unknown[] = []
   let spawns = 0
@@ -122,13 +124,17 @@ function fakeCompanion({ turnsFail = false } = {}) {
           turns.push(id)
           if ('params' in request && v.is(promptParams, request.params))
             prompts.push(request.params.prompt)
-        } else output?.enqueue({ type: 'response', id, result: {} })
+        } else if (method === 'session.create' && createWaits) unanswered.push(id)
+        else output?.enqueue({ type: 'response', id, result: {} })
       }
     }
   }
   return {
     spawn,
     methods,
+    finishCreate: () => {
+      for (const id of unanswered.splice(0)) output?.enqueue({ type: 'response', id, result: {} })
+    },
     get spawns() {
       return spawns
     },
@@ -357,5 +363,50 @@ test('compacting asks Pi to, and a turn keeps each compaction Pi runs in it', as
   expect(JSON.stringify(next[0])).toContain('Greeted thrice.')
   expect(JSON.stringify(next[1])).toContain('And once more')
   expect(JSON.stringify(next[1])).not.toContain('And again')
+  await transport.destroy()
+})
+
+/** A task boundary, which runs everything the transport queued meanwhile. */
+function tick() {
+  return new Promise((resolve) => {
+    setTimeout(resolve, 0)
+  })
+}
+
+test('stopping while the companion has not answered the session start ends the send', async () => {
+  const companion = fakeCompanion({ createWaits: true })
+  const transport = new HarnessChatTransport('silent-session', configuration, {}, companion.spawn)
+  const stop = new AbortController()
+  const sending = send(transport, stop.signal)
+  await tick()
+  stop.abort()
+  await expect(sending).rejects.toMatchObject({ name: 'AbortError' })
+  expect(companion.turns).toEqual([])
+  await transport.destroy()
+})
+
+test('a session start that answers after Stop is not started a second time', async () => {
+  const companion = fakeCompanion({ createWaits: true })
+  const transport = new HarnessChatTransport('late-session', configuration, {}, companion.spawn)
+  const stop = new AbortController()
+  const stopped = send(transport, stop.signal)
+  await tick()
+  stop.abort()
+  await expect(stopped).rejects.toMatchObject({ name: 'AbortError' })
+
+  const sending = send(transport)
+  await tick()
+  companion.finishCreate()
+  const next = (await sending).getReader()
+  await tick()
+  const turn = companion.turns.at(-1) ?? ''
+  companion.text(turn, 'pong')
+  companion.complete(turn)
+  const chunks: string[] = []
+  for (let read = await next.read(); !read.done; read = await next.read()) {
+    if (read.value.type === 'text-delta') chunks.push(read.value.delta)
+  }
+  expect(chunks).toEqual(['pong'])
+  expect(companion.methods.filter((method) => method === 'session.create')).toHaveLength(1)
   await transport.destroy()
 })

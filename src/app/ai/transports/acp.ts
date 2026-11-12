@@ -277,30 +277,43 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     const { connection, sessionId } = this.session
     const session = this.session
 
+    const mapper = createUpdateMapper(`turn-${Date.now()}`)
+    // The reply's run collects the edits the agent's calls make in the chat's document.
+    const store = this.store
+    const run = store ? startAgentRun(store, session.chat) : null
+    /** The reply's stream while someone reads it; once it ended or its reader left, null. */
+    let reading: ReadableStreamDefaultController<UIMessageChunk> | null = null
+
+    /** Ends the reply, once, and hands back its stream if someone still reads it. */
+    function release() {
+      const controller = reading
+      reading = null
+      if (controller) {
+        if (store && run) endRun(store, run)
+        session.onUpdate = null
+      }
+      return controller
+    }
+
+    function finish(reason: 'stop' | 'other' | 'error', errorText?: string) {
+      const controller = release()
+      if (!controller) return
+      if (errorText) controller.enqueue({ type: 'error', errorText })
+      for (const chunk of mapper.end()) controller.enqueue(chunk)
+      controller.enqueue({ type: 'finish-step' })
+      controller.enqueue({ type: 'finish', finishReason: reason })
+      controller.close()
+    }
+
     return new ReadableStream<UIMessageChunk>({
       start: (controller) => {
-        const mapper = createUpdateMapper(`turn-${Date.now()}`)
-        let closed = false
-        // The reply's run collects the edits the agent's calls make in the chat's document.
-        const store = this.store
-        const run = store ? startAgentRun(store, session.chat) : null
-
-        function finish(reason: 'stop' | 'other' | 'error', errorText?: string) {
-          if (closed) return
-          closed = true
-          if (store && run) endRun(store, run)
-          if (errorText) controller.enqueue({ type: 'error', errorText })
-          for (const chunk of mapper.end()) controller.enqueue(chunk)
-          controller.enqueue({ type: 'finish-step' })
-          controller.enqueue({ type: 'finish', finishReason: reason })
-          session.onUpdate = null
-          controller.close()
-        }
+        reading = controller
 
         session.onUpdate = (params) => {
-          if (closed) return
+          const open = reading
+          if (!open) return
           if (TURN_UPDATES.has(params.update.sessionUpdate)) this.recordSession(sessionId)
-          for (const chunk of mapper.map(params.update)) controller.enqueue(chunk)
+          for (const chunk of mapper.map(params.update)) open.enqueue(chunk)
         }
 
         abortSignal?.addEventListener('abort', () => {
@@ -319,12 +332,18 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           return
         }
 
-        connection
-          .prompt({
+        // The SDK leaves the prompt pending when the agent exits, so the reply races the exit.
+        const exited = connection.closed.then((): never => {
+          throw new Error('Agent process exited unexpectedly.')
+        })
+        Promise.race([
+          connection.prompt({
             sessionId,
             prompt: [{ type: 'text', text: promptText }]
-          })
-          // The prompt answers once the agent's turn is over; nothing else ends the reply.
+          }),
+          exited
+        ])
+          // The prompt answers once the agent's turn is over, or the agent exits.
           .then((result) => {
             this.recordSession(sessionId)
             if (result.usage) this.onUsage?.(agentTurnUsage(result.usage, session.model))
@@ -332,6 +351,11 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
             return undefined
           })
           .catch((e) => {
+            // The chat closed its agent, as it does with a reply still going: nothing failed.
+            if (this.destroying) {
+              finish('stop')
+              return
+            }
             recordACPTransportFailure({
               operation: 'message',
               ...describeDiagnosticError(e)
@@ -339,6 +363,11 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
             this.onAgentError?.(e)
             finish('error', formatConnectionError(e, this.agentDef))
           })
+      },
+      // The reader went away without a Stop, as when the chat cannot process a chunk: the agent
+      // must not keep working on a reply nobody sees.
+      cancel: () => {
+        if (release()) void connection.cancel({ sessionId })
       }
     })
   }
