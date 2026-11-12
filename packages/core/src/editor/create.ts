@@ -428,6 +428,7 @@ export function createEditor(options?: EditorOptions) {
   function setCanvasKit(ck: CanvasKit, renderer: SkiaRenderer) {
     _ck = ck
     _renderer = renderer
+    const firstRenderer = _renderers.size === 0
     _renderers.add(renderer)
     _textEditor ??= new TextEditor(ck)
     uninstallTextMeasurer?.()
@@ -443,6 +444,9 @@ export function createEditor(options?: EditorOptions) {
       typeof renderer.measureTextInk === 'function'
         ? installTextInkMeasurer((node) => _renderer?.measureTextInk(node))
         : null
+    // A page shown before this editor had a canvas to measure its text, as one a tab opens while
+    // its canvas loads, is laid out now that one can.
+    if (firstRenderer) pages.layOutStaleCurrentPage()
   }
 
   function releaseTextMeasurer() {

@@ -448,8 +448,8 @@ async function showStorageDocument(
 }
 
 /**
- * Reads a `.fig` file's bytes as a tab opens them, laid out and ready to show, for an editor of
- * its own such as an earlier version's preview.
+ * Reads a `.fig` file's bytes as a tab opens them, for an editor of its own such as an earlier
+ * version's preview. The page it shows prepares its own fonts and layout.
  */
 export function readFigBytes(
   bytes: Uint8Array,
