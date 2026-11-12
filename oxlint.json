@@ -433,7 +433,7 @@
     },
     {
       "files": [
-        "tests/e2e/perf/basic.spec.ts",
+        "tests/e2e/perf/**",
         "tests/e2e/viewport/zoom-pan.spec.ts",
         "packages/core/tests/canvas/visual/*.ts"
       ],
