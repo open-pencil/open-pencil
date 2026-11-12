@@ -59,7 +59,14 @@ export async function serviceJSON<TSchema extends v.GenericSchema>(
   schema: TSchema,
   refused: (status: number, body: string) => Error
 ): Promise<v.InferOutput<TSchema>> {
-  const text = await response.text()
-  if (!response.ok) throw refused(response.status, text)
-  return v.parse(v.pipe(v.string(), v.parseJson(), schema), text)
+  if (!response.ok) {
+    // An unreadable body still leaves the status, which callers tell refusals apart by.
+    const body = await response.text().catch((failure: unknown) => {
+      const error = refused(response.status, '')
+      error.cause = failure
+      throw error
+    })
+    throw refused(response.status, body)
+  }
+  return v.parse(v.pipe(v.string(), v.parseJson(), schema), await response.text())
 }

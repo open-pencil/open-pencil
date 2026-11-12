@@ -65,6 +65,22 @@ describe('Cloud billing client', () => {
     expect(error).toBeInstanceOf(CloudBillingError)
     expect(error).toMatchObject({ status: 409, code: 'not_allowed' })
 
+    // A refusal whose body cannot be read still says how it was refused.
+    const unreadable = billing(
+      () =>
+        new Response(
+          new ReadableStream({
+            start(controller) {
+              controller.error(new Error('connection reset'))
+            }
+          }),
+          { status: 502 }
+        )
+    ).client
+    const cut = await unreadable.portal().catch((e: unknown) => e)
+    expect(cut).toBeInstanceOf(CloudBillingError)
+    expect(cut).toMatchObject({ status: 502, code: undefined })
+
     const garbled = billing(() => Response.json({ url: 'not a URL' })).client
     await expect(garbled.portal()).rejects.toThrow()
     // Only an HTTPS page is opened, never a scheme a browser would run.
