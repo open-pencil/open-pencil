@@ -43,6 +43,8 @@ export function readAgentSession(value: unknown): AgentSession | null {
 
 interface SessionAgent {
   session: string
+  /** The app chat whose agent this shows, when it is an ACP chat's; see `restAgents`. */
+  chat: string | undefined
   store: EditorStore
   /** The Agent call of the subagent this agent shows, or undefined for the session's own agent. */
   subagent: string | undefined
@@ -81,6 +83,7 @@ function sessionAgent(store: EditorStore, session: AgentSession): SessionAgent {
   if (!agent) {
     agent = {
       session: session.session,
+      chat: session.chat,
       store,
       subagent: session.subagent,
       handle: addAgent(store, session.kind, session.client || undefined),
@@ -185,10 +188,12 @@ export function agentFinished(
  * The app's own ACP or Pi chat ended a reply, finished, stopped, or failed: that chat's agent
  * rests now rather than when its idle timer runs out, and its subagents leave. Only the app's
  * chats send these kinds (`src/app/integrations/mcp`), so no outside MCP client is touched.
+ * An ACP chat names itself with `chat`, so a reply ending leaves other chats' agents at work;
+ * a Pi chat carries no chat id, so without one every agent of the kind rests.
  */
-export function restAgents(kind: Exclude<AgentSession['kind'], 'mcp'>): void {
+export function restAgents(kind: Exclude<AgentSession['kind'], 'mcp'>, chat?: string): void {
   for (const agent of sessionAgents) {
-    if (agent.kind !== kind) continue
+    if (agent.kind !== kind || (chat !== undefined && agent.chat !== chat)) continue
     if (agent.subagent) {
       leave(agent)
       continue
@@ -198,20 +203,28 @@ export function restAgents(kind: Exclude<AgentSession['kind'], 'mcp'>): void {
     rest(agent)
   }
   // What the reply's updates said about its subagents ends with it.
-  if (kind === 'acp') subagentCalls.clear()
+  if (kind !== 'acp') return
+  if (chat === undefined) subagentCalls.clear()
+  else subagentCalls.delete(chat)
 }
 
 /**
  * An app chat's agent reported a tool call over ACP: the Agent call of the subagent that made it,
  * if one did, and whether it ended (`src/app/ai/agents/acp/subagents.ts`). An ended call is
- * forgotten, and when it is a subagent's Agent call, that subagent is done and its agent leaves.
+ * forgotten, and when it is a subagent's Agent call, that subagent is done: its agent leaves and
+ * the calls it made are forgotten too.
  */
 export function noteToolCall(
   chat: string,
   call: { id: string; subagent?: string; ended: boolean }
 ): void {
   if (call.ended) {
-    subagentCalls.get(chat)?.delete(call.id)
+    const calls = subagentCalls.get(chat)
+    if (calls) {
+      calls.delete(call.id)
+      // Deleting entries while iterating a Map is safe: visited ones stay visited.
+      for (const [id, subagent] of calls) if (subagent === call.id) calls.delete(id)
+    }
     for (const agent of sessionAgents) if (agent.subagent === call.id) leave(agent)
   } else if (call.subagent) {
     const calls = subagentCalls.get(chat) ?? new Map<string, string>()

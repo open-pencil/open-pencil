@@ -189,16 +189,19 @@ describe("a chat's agent reaching OpenPencil's tools", () => {
 
 describe("a coding agent's subagents", () => {
   const CHAT = '0123456789abcdef'
+  const OTHER_CHAT = 'fedcba9876543210'
   const acp: AgentSession = {
     session: 'session-acp',
     kind: 'acp',
     client: 'claude-code',
     chat: CHAT
   }
+  const otherACP: AgentSession = { ...acp, session: 'session-acp-2', chat: OTHER_CHAT }
   let layers = 0
 
   afterEach(() => {
     endAgentSession(acp.session)
+    endAgentSession(otherACP.session)
     restAgents('acp')
   })
 
@@ -208,9 +211,9 @@ describe("a coding agent's subagents", () => {
   }
 
   /** The agent's call `call` works on a new layer; returns the agent that shows it there. */
-  function work(call: string) {
+  function work(call: string, from = acp) {
     const node = store.graph.createNode('RECTANGLE', pageId(), { x: 100 * layers++, y: 0 })
-    const session = withSubagent({ ...acp, call })
+    const session = withSubagent({ ...from, call })
     const reply = agentStarted(store, session, pageId())
     agentFinished(store, session, { pageId: pageId(), nodeIds: [node.id], edited: true, reply })
     return expectDefined(
@@ -296,12 +299,47 @@ describe("a coding agent's subagents", () => {
     const own = work('toolu_own')
     work('toolu_a1')
 
-    restAgents('acp')
+    restAgents('acp', CHAT)
 
     expect(agents().map(({ id, status }) => ({ id, status }))).toEqual([
       { id: own.id, status: 'idle' }
     ])
     // What the reply's updates said about its subagents is not carried into the next reply.
+    work('toolu_a1')
+    expect(agents()).toHaveLength(1)
+  })
+
+  test('one chat’s reply ending leaves another chat’s agents and subagents at work', () => {
+    reported('toolu_a1', 'toolu_task_a')
+    noteToolCall(OTHER_CHAT, { id: 'toolu_b1', subagent: 'toolu_task_b', ended: false })
+    work('toolu_a1')
+    const otherOwn = work('toolu_own', otherACP)
+    const otherSub = work('toolu_b1', otherACP)
+    // A call of the other chat is still running when this chat's reply ends.
+    const running = withSubagent({ ...otherACP, call: 'toolu_b1' })
+    const reply = agentStarted(store, running, pageId())
+
+    restAgents('acp', CHAT)
+
+    expect(agents().map(({ id }) => id)).toEqual([otherOwn.id, otherSub.id])
+    expect(agents().find((agent) => agent.id === otherOwn.id)?.status).toBe('editing')
+    expect(withSubagent({ ...otherACP, call: 'toolu_b1' }).subagent).toBe('toolu_task_b')
+    const node = store.graph.createNode('RECTANGLE', pageId(), {})
+    agentFinished(store, running, { pageId: pageId(), nodeIds: [node.id], edited: true, reply })
+    expect(agents().find((agent) => agent.id === otherSub.id)).toMatchObject({
+      status: 'editing',
+      selection: [node.id]
+    })
+  })
+
+  test('a finished Agent call takes the calls made inside it along', () => {
+    reported('toolu_a1', 'toolu_task_a')
+    work('toolu_a1')
+    noteToolCall(CHAT, { id: 'toolu_task_a', ended: true })
+    expect(agents()).toEqual([])
+
+    // An inner call that reaches OpenPencil after its Agent call ended is the chat's own agent's.
+    expect(withSubagent({ ...acp, call: 'toolu_a1' }).subagent).toBeUndefined()
     work('toolu_a1')
     expect(agents()).toHaveLength(1)
   })

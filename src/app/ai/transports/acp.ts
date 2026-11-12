@@ -355,6 +355,11 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     return null
   }
 
+  /** The id this chat's agent's MCP session and tool calls carry; null before the agent starts. */
+  get agentChat(): string | null {
+    return this.session?.chat ?? null
+  }
+
   async destroy(): Promise<void> {
     this.destroying = true
     const starting = this.starting
