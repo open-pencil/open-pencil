@@ -72,6 +72,21 @@ describe('the HTML engine runtime', () => {
     expect(elementById(document, 'half').layout?.box.width).toBe(392)
   })
 
+  test('gives an inline element the box around its fragments, as a browser does', async () => {
+    const document = await styled(
+      `<p style="width:120px">Some words before <span id="s">a span that wraps onto the next line</span></p>`
+    )
+    const layout = elementById(document, 's').layout
+    const fragments = layout?.fragments ?? []
+
+    expect(fragments.length).toBeGreaterThan(1)
+    const left = Math.min(...fragments.map((f) => f.x))
+    const right = Math.max(...fragments.map((f) => f.x + f.width))
+    const top = Math.min(...fragments.map((f) => f.y))
+    const bottom = Math.max(...fragments.map((f) => f.y + f.height))
+    expect(layout?.box).toEqual({ x: left, y: top, width: right - left, height: bottom - top })
+  })
+
   test('applies media queries for the viewport it lays out in', async () => {
     const document = await styled(
       `<style>@media (max-width: 700px) { #nav { display: none } }</style><nav id="nav">Menu</nav>`

@@ -11,6 +11,7 @@ import {
   type DesignStyleDeclaration,
   type DesignViewport
 } from '@open-pencil/dom-css'
+import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import type { HTMLEngine, HTMLEngineFetch, HTMLEngineResource } from './engine'
@@ -208,6 +209,8 @@ function layoutOf(node: HTMLEngineNode): DesignLayout | undefined {
   const fragments = node.fragments?.filter(hasArea)
   if (fragments && fragments.length > 0) {
     layout.fragments = fragments.map(rect)
+    // An inline element's box is the one around its fragments, as getBoundingClientRect gives.
+    layout.box = computeBounds(layout.fragments)
     return layout
   }
   const whiteSpace = node.style?.['white-space']
