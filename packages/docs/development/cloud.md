@@ -417,7 +417,7 @@ from abandoned uploads.
 An owner who holds their whole storage allowance or more is read-only (`storageLimitReached`):
 their documents open, download, and can be deleted, but take no saves or uploads, and no new
 documents. Collaboration tickets for them carry `view` and `readOnly: "storage-limit"`, so the
-editor opens the file view-only and says why, with the server's billing portal when it has one.
+editor opens the file view-only and says why, with the server's plan page when it bills.
 A plan that shrinks below what the account holds, as when billing moves a lapsed subscription to
 the free plan, reaches this the same way as filling it; nothing is deleted. Freeing space or a
 bigger plan lifts it at the next ticket.
@@ -430,12 +430,19 @@ a short-lived ES256 token for a workspace member when the workspace owner's plan
 `services.enabled` entitlement. The token names the user, the workspace, the account whose credits it
 spends (`accountId`, the owner), and that plan's `services.monthly_credit_allowance`;
 the service verifies it against the keys at `/.well-known/jwks.json`, so it never reads Cloud's
-database. A token from a Cloud before account plans names no account, and the services server charges it to
-the workspace's own allowance, so the services server can upgrade first; usage recorded before it
-kept accounts still counts this month for requests from its workspace. The contract editors and services share, including the service's catalog, wallet, and
+database. A service refuses a token that names no account. The contract editors and services share, including the service's catalog, wallet, and
 error codes, is `src/contract/services.ts`; it has its own version so a service can change without
 a Cloud release. AI models are the first capability; image generation and search join the same
-contract and the same credits. A `[billing]` table only advertises where people manage their plan.
+contract and the same credits.
+
+A `[billing]` table advertises a billing service by its `endpoint`, which needs the services'
+signing key and the internal API. `POST /api/billing/token` signs a short-lived token for the
+signed-in person's own account, with the services' key but the `openpencil-billing` audience, so it
+spends no credits. The billing service verifies it against the same published keys, sells the plans
+and credit packs of its catalog, sends the person to its payment provider's checkout or portal, and
+sets the account's plan through the internal API as it is paid. The contract is
+`src/contract/billing.ts`. Editors link to the server's plan page, `CLOUD_ACCOUNT_PLAN_PATH`, whenever
+it advertises billing.
 
 A service answers below its endpoint at the paths in `CLOUD_SERVICES_API_PATHS`: model requests
 follow the OpenAI chat completions API, so editors reach it with an OpenAI-compatible client, and the
