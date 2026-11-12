@@ -5752,7 +5752,7 @@ dependencies = [
 [[package]]
 name = "taffy"
 version = "0.15.0"
-source = "git+https://github.com/open-pencil/taffy?rev=1f71b6eb16afb91a38547f89c5b1873edb1156c6#1f71b6eb16afb91a38547f89c5b1873edb1156c6"
+source = "git+https://github.com/open-pencil/taffy?rev=9c9fcf89f081d013946c821af77ac3df6e3aca79#9c9fcf89f081d013946c821af77ac3df6e3aca79"
 dependencies = [
  "serde",
  "slotmap",
