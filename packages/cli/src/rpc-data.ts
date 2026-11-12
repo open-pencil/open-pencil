@@ -2,7 +2,7 @@ import { executeRPCCommand } from '@open-pencil/core/rpc'
 
 import { isAppMode, requireFile, rpc } from '#cli/app/client'
 import { appPageTargetRPCArgs, requestedPage, type PageCLIArgs } from '#cli/app/target'
-import { loadDocument, prepareDocumentForRPC } from '#cli/headless'
+import { loadDocument, prepareDocumentForRPC, requirePage } from '#cli/headless'
 
 type RPCArgs = { [key: string]: unknown }
 
@@ -28,6 +28,8 @@ export async function loadRPCData<Result>(
   const page = targetArgs ? requestedPage(targetArgs) : undefined
   if (page) Object.assign(rpcArgs, 'id' in page ? { page_id: page.id } : { page: page.name })
   const graph = await loadDocument(requireFile(file))
+  // A page the document lacks is an error, not a page with nothing on it, as in the app.
+  if (page) requirePage(graph, page)
   prepareDocumentForRPC(graph, command, rpcArgs)
   return executeRPCCommand(graph, command, rpcArgs) as Result
 }

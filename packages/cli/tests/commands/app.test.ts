@@ -131,16 +131,19 @@ describe('--page and --page-id', () => {
     }
   ]
 
-  test('a page name reaches the app as the page ID, for reads, scripts, and tools alike', async () => {
+  test('a page name reaches the app as the page ID of the document it was found in, for reads, scripts, and tools alike', async () => {
     responses.set('list_documents', { documents })
     responses.set('tree', { page: { id: '0:2', name: 'Worklist', type: 'CANVAS' }, children: [] })
     await cli(['tree', '--page', 'Worklist'])
     await cli(['eval', '--page', 'Worklist', '-c', 'return 1'])
     await cli(['tool', 'call', 'get_selection', '--page', 'Worklist'])
     expect(requests.filter((request) => request.command !== 'list_documents')).toEqual([
-      { command: 'tree', args: { page_id: '0:2' } },
-      { command: 'eval', args: { code: 'return 1', page_id: '0:2' } },
-      { command: 'tool', args: { page_id: '0:2', name: 'get_selection', args: {} } }
+      { command: 'tree', args: { document_id: 'doc-2', page_id: '0:2' } },
+      { command: 'eval', args: { code: 'return 1', document_id: 'doc-2', page_id: '0:2' } },
+      {
+        command: 'tool',
+        args: { document_id: 'doc-2', page_id: '0:2', name: 'get_selection', args: {} }
+      }
     ])
   })
 

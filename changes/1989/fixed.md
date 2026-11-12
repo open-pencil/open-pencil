@@ -1,1 +1,2 @@
 - `openpencil tree`, `find`, and `query` with `--page-id` read that page of the running app instead of ignoring it.
+- `openpencil find` and `query` on a file report a page the document lacks as an error, as `tree` does, instead of finding nothing.

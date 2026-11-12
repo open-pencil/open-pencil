@@ -79,8 +79,14 @@ export function appTargetRPCArgs(args: AppTargetCLIArgs): AppTargetRPCArgs {
   return target
 }
 
-/** The app addresses pages by ID, so a `--page` name is looked up in the target document. */
-async function appPageId(documentId: string | undefined, pageName: string): Promise<string> {
+/**
+ * The app addresses pages by ID, so a `--page` name is looked up in the target document, which
+ * the command then names too, so switching tabs meanwhile does not move it to another document.
+ */
+async function appNamedPage(
+  documentId: string | undefined,
+  pageName: string
+): Promise<Required<AppTargetRPCArgs>> {
   const { documents } = await rpc<{ documents: AutomationDocumentSummary[] }>('list_documents')
   const document = documents.find((doc) => (documentId ? doc.id === documentId : doc.active))
   if (!document) {
@@ -93,13 +99,12 @@ async function appPageId(documentId: string | undefined, pageName: string): Prom
     printError(`Page "${pageName}" not found. Available pages: ${available || 'none'}.`)
     process.exit(1)
   }
-  return page.id
+  return { document_id: document.id, page_id: page.id }
 }
 
 /** The app target of a command that takes `--page` or `--page-id`, with a page name made an ID. */
 export async function appPageTargetRPCArgs(args: PageCLIArgs): Promise<AppTargetRPCArgs> {
-  const target = appTargetRPCArgs(args)
   const page = requestedPage(args)
-  if (page && 'name' in page) target.page_id = await appPageId(args['document-id'], page.name)
-  return target
+  if (page && 'name' in page) return appNamedPage(args['document-id'], page.name)
+  return appTargetRPCArgs(args)
 }

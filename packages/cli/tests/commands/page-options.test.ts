@@ -73,6 +73,8 @@ describe('--page and --page-id on a file', () => {
     const { path } = await writeFourPageFig()
     for (const command of [
       ['tree', path],
+      ['find', path, '--name', 'Frame'],
+      ['query', path, '//FRAME'],
       ['eval', path, '--code', 'return 1']
     ]) {
       const { exitCode, stderr } = await runCLI([...command, '--page-id', '9:9'])
