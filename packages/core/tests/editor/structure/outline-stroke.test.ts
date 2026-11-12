@@ -18,13 +18,15 @@ afterEach(() => {
   for (const cleanup of cleanups.splice(0)) cleanup()
 })
 
-async function createEditorWithRenderer() {
+/** `fonts` loads the renderer's fonts, which shaping needs to tell each glyph's character. */
+async function createEditorWithRenderer({ fonts = false } = {}) {
   const ck = await getCanvasKit()
   const surface = ck.MakeSurface(200, 200)
   if (!surface) throw new Error('Could not create CanvasKit surface')
   const renderer = new SkiaRenderer(ck, surface)
   const editor = createEditor()
   editor.setCanvasKit(ck, renderer)
+  if (fonts) await renderer.loadFonts()
   cleanups.push(() => {
     editor.dispose()
     renderer.destroy()
@@ -232,6 +234,37 @@ describe('outlineStrokeSelected', () => {
       ['Vector', 'Vector'],
       ['Stroke', 'Stroke']
     ])
+  })
+
+  test('turns text without a stroke into its glyphs, each in its character’s fill', async () => {
+    // Recorded in Figma desktop 126: "Hey" in red then blue, underlined, with no stroke outlines
+    // to a group "Hey" of one vector per glyph and the underline.
+    const inter = await fontManager.fetchBundledFont('/InterVariable.ttf')
+    if (!inter) throw new Error('Expected the bundled Inter')
+    await fontManager.markLoaded('Inter', 'Regular', inter)
+    const editor = await createEditorWithRenderer({ fonts: true })
+    const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+      name: 'Hey',
+      text: 'Hey',
+      fontFamily: 'Inter',
+      fontSize: 40,
+      width: 120,
+      height: 50,
+      textDecoration: 'UNDERLINE',
+      styleRuns: [
+        { start: 0, length: 1, style: { fills: [solid(RED)] } },
+        { start: 1, length: 2, style: { fills: [solid(BLUE)] } }
+      ]
+    })
+    editor.select([text.id])
+    editor.outlineStrokeSelected()
+
+    const [group] = [...editor.state.selectedIds].map((id) => editor.graph.getNode(id))
+    expect([group?.type, group?.name]).toEqual(['GROUP', 'Hey'])
+    const colors = editor.graph.getChildren(group?.id ?? '').map((glyph) => glyph.fills[0]?.color)
+    // The glyphs, then the underline in the colours it is drawn in.
+    expect(colors.slice(0, 3)).toEqual([RED, BLUE, BLUE])
+    expect(colors.length).toBeGreaterThan(3)
   })
 
   test('outlines a boolean’s combined shape, not its box', async () => {
