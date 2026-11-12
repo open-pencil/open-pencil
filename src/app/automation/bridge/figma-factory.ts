@@ -36,7 +36,11 @@ function editorViewport(store: EditorStore): FigmaViewportHost {
     get: () => {
       const { width, height } = store.getViewportSize()
       const { panX, panY, zoom } = store.state
-      return { center: { x: (width / 2 - panX) / zoom, y: (height / 2 - panY) / zoom }, zoom }
+      return {
+        center: { x: (width / 2 - panX) / zoom, y: (height / 2 - panY) / zoom },
+        zoom,
+        bounds: { x: -panX / zoom, y: -panY / zoom, width: width / zoom, height: height / zoom }
+      }
     },
     set: (pageId, center, zoom) => {
       assertOnScreen(pageId)
@@ -44,7 +48,9 @@ function editorViewport(store: EditorStore): FigmaViewportHost {
     },
     fit: (pageId, bounds) => {
       assertOnScreen(pageId)
-      store.zoomToBounds(bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height)
+      // Figma's `scrollAndZoomIntoView` fits as Zoom to selection does but stops at 100%.
+      const { x, y, width, height } = bounds
+      store.zoomToBounds(x, y, x + width, y + height, { maxZoom: 1 })
     }
   }
 }

@@ -20,7 +20,8 @@ function setup(viewport?: FigmaViewportHost) {
   const pageId = graph.getPages()[0].id
   const frame = (width: number, height: number) =>
     graph.createNode('FRAME', pageId, { x: 100, y: 50, width, height }).id
-  return { figma, pageId, frame }
+  const elsewhere = () => graph.createNode('FRAME', graph.addPage('Other').id, {}).id
+  return { figma, pageId, frame, elsewhere }
 }
 
 /** A host view that records what it was asked to do and settles where it was told. */
@@ -31,7 +32,7 @@ function recordingHost() {
   }
   let view: { center: Vector; zoom: number } = { center: { x: 0, y: 0 }, zoom: 1 }
   const host: FigmaViewportHost = {
-    get: () => view,
+    get: () => ({ ...view, bounds: { ...view.center, width: 100, height: 50 } }),
     set: (pageId, center, zoom) => {
       calls.set.push({ pageId })
       view = { center, zoom }
@@ -40,58 +41,99 @@ function recordingHost() {
       calls.fit.push({ pageId, bounds })
       view = {
         center: { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 },
-        zoom: 2
+        zoom: 0.25
       }
     }
   }
   return { host, calls }
 }
 
-// Without a host nothing shows the document, so there is no screen to size a zoom to.
-describe('zoom_to_fit without a host view', () => {
-  test('centres the layers and keeps the zoom', async () => {
+// Figma's `figma.viewport` is one object whose `center` and `zoom` move the view when set.
+describe('figma.viewport', () => {
+  test('setting center and zoom moves the host view', () => {
+    const { host, calls } = recordingHost()
+    const { figma, pageId } = setup(host)
+
+    figma.viewport.zoom = 0.5
+    figma.viewport.center = { x: 10, y: 20 }
+
+    expect(calls.set).toEqual([{ pageId }, { pageId }])
+    expect(figma.viewport.center).toEqual({ x: 10, y: 20 })
+    expect(figma.viewport.zoom).toBe(0.5)
+    expect(figma.viewport.bounds).toEqual({ x: 10, y: 20, width: 100, height: 50 })
+    expect(figma.viewport).toBe(figma.viewport)
+  })
+
+  test('refuses a negative zoom or a center that is not a number, as Figma does', () => {
+    const { figma } = setup()
+
+    expect(() => {
+      figma.viewport.zoom = -1
+    }).toThrow(
+      'in set_zoom: Property "viewport.zoom" failed validation: Too small: expected number to be >=0'
+    )
+    expect(() => {
+      figma.viewport.center = { x: Number.NaN, y: 0 }
+    }).toThrow('in set_center: Property "viewport.center" failed validation')
+    expect(figma.viewport.zoom).toBe(1)
+  })
+
+  test('scrollAndZoomIntoView fits layers from another page by their coordinates, as Figma does', () => {
+    const { host, calls } = recordingHost()
+    const { figma, pageId, elsewhere } = setup(host)
+    const node = figma.getNodeById(elsewhere())
+    if (!node) throw new Error('node missing')
+
+    figma.viewport.scrollAndZoomIntoView([node])
+
+    expect(calls.fit.map((call) => call.pageId)).toEqual([pageId])
+  })
+
+  test('without a host it keeps a view with no screen, which fitting only centres', () => {
     const { figma, frame } = setup()
-    figma.viewport = { center: { x: 0, y: 0 }, zoom: 0.5 }
+    figma.viewport.zoom = 0.5
+    const node = figma.getNodeById(frame(4000, 2400))
+    if (!node) throw new Error('node missing')
 
-    const result = await zoomToFit.execute(figma, { ids: [frame(4000, 2400)] })
+    figma.viewport.scrollAndZoomIntoView([node])
 
-    expect(figma.viewport).toMatchObject({ center: { x: 2100, y: 1250 }, zoom: 0.5 })
-    expect(result).toMatchObject({ center: { x: 2100, y: 1250 }, zoom: 0.5 })
+    expect(figma.viewport.center).toEqual({ x: 2100, y: 1250 })
+    expect(figma.viewport.zoom).toBe(0.5)
+    expect(figma.viewport.bounds).toEqual({ x: 2100, y: 1250, width: 0, height: 0 })
   })
 })
 
-describe('the view of a host that shows the document', () => {
-  test('zoom_to_fit fits the layers in it and answers with the view it settled on', async () => {
+// #1390: the tool centred the layers but always set 100%, and never moved the view.
+describe('viewport tools', () => {
+  test('zoom_to_fit fits the layers and answers with the view the host settled on', async () => {
     const { host, calls } = recordingHost()
     const { figma, pageId, frame } = setup(host)
-    const id = frame(400, 300)
 
-    const result = await zoomToFit.execute(figma, { ids: [id] })
+    const result = await zoomToFit.execute(figma, { ids: [frame(400, 300)] })
 
     expect(calls.fit).toEqual([{ pageId, bounds: { x: 100, y: 50, width: 400, height: 300 } }])
-    expect(result).toMatchObject({ center: { x: 300, y: 200 }, zoom: 2 })
+    expect(result).toMatchObject({ center: { x: 300, y: 200 }, zoom: 0.25 })
   })
 
   test('zoom_to_fit refuses a layer on another page and leaves the view alone', async () => {
     const { host, calls } = recordingHost()
-    const graph = new SceneGraph()
-    const elsewhere = graph.createNode('FRAME', graph.addPage('Other').id, {
-      width: 400,
-      height: 300
-    })
-    const figma = new FigmaAPI(graph, { viewport: host })
+    const { figma, frame, elsewhere } = setup(host)
+    const away = elsewhere()
 
-    expect(() => zoomToFit.execute(figma, { ids: [elsewhere.id] })).toThrow(elsewhere.id)
+    const result = await zoomToFit.execute(figma, { ids: [frame(400, 300), away] })
+
+    expect(result).toEqual({
+      error: `Layers not on page "Page 1": ${away}. Show their page with activate_document (page_id) first.`
+    })
     expect(calls.fit).toEqual([])
   })
 
-  test('set_viewport moves it', async () => {
-    const { host, calls } = recordingHost()
-    const { figma, pageId } = setup(host)
+  test('set_viewport moves the view and answers with where it settled', async () => {
+    const { host } = recordingHost()
+    const { figma } = setup(host)
 
     const result = await setViewport.execute(figma, { x: 10, y: 20, zoom: 0.5 })
 
-    expect(calls.set).toEqual([{ pageId }])
     expect(result).toEqual({ x: 10, y: 20, zoom: 0.5 })
     expect(figma.viewport.center).toEqual({ x: 10, y: 20 })
   })

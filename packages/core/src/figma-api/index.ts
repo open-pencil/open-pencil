@@ -2,9 +2,7 @@ import type { Image, PageNode, UtilAPI } from '@figma/plugin-typings/plugin-api-
 import { fromUint8Array, isValid, toUint8Array } from 'js-base64'
 
 import type { SceneGraph, SceneNode as CoreSceneNode } from '@open-pencil/scene-graph'
-import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import type { GroupFitOptions } from '@open-pencil/scene-graph/group-bounds'
-import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas'
 import { groupFitOptions } from '#core/canvas/boolean'
@@ -15,7 +13,6 @@ import {
 } from '#core/editor/graph-events'
 import { defaultIcons, type IconProvider } from '#core/icons'
 import type { RasterCodec } from '#core/io/formats/raster'
-import { findPageId } from '#core/io/subgraph'
 import { fontManager } from '#core/text/font/manager'
 
 import { listFigmaFonts } from './fonts/list'
@@ -40,6 +37,7 @@ import { FigmaStructureMethods, nodeIdOf, sceneNodeOf } from './structure'
 import type { ExportImageOptions } from './types'
 import { figmaUtil } from './util'
 import { FigmaVariablesAPI } from './variables'
+import { detachedViewport, Viewport, type FigmaViewport, type FigmaViewportHost } from './viewport'
 import { cancelScriptWaits, waitOutsideScript } from './waits'
 
 const noop = () => undefined
@@ -78,19 +76,9 @@ export interface FigmaAPIOptions {
   /**
    * The view of a host that shows the document, which `figma.viewport` reads and moves. Without
    * one nothing shows the document, so the API keeps a center and zoom of its own and fitting
-   * layers only centres them: there is no screen to size a zoom to.
+   * layers only centres them: there is no screen to size a zoom to (`detachedViewport`).
    */
   viewport?: FigmaViewportHost
-}
-
-/** A host's view of the canvas, for `figma.viewport`. */
-export interface FigmaViewportHost {
-  /** The world point at the middle of the view, and the zoom. */
-  get(): { center: Vector; zoom: number }
-  /** Centres the view on `center` at `zoom` on the page `pageId`. */
-  set(pageId: string, center: Vector, zoom: number): void
-  /** Scrolls and zooms the page `pageId` so the world rectangle fills the view. */
-  fit(pageId: string, bounds: Rect): void
 }
 
 export { FigmaNodeProxy } from './proxy'
@@ -101,6 +89,7 @@ export { flushPendingComponentSync } from './pending-sync'
 export type { FigmaEffect } from './effects'
 export type { ExportImageOptions } from './types'
 export { MAX_IMAGE_FETCH_BYTES, type ImageFetch } from './images'
+export type { FigmaViewport, FigmaViewportHost } from './viewport'
 export {
   FigmaVariable,
   FigmaVariableCollection,
@@ -157,12 +146,12 @@ export class FigmaAPI extends FigmaStructureMethods implements NodeProxyHost {
   /** How `createImageAsync` fetches HTTP(S) URLs; a host passes one that gets past CORS. */
   readonly #fetch: images.ImageFetch
   readonly #prepareFontList: (() => Promise<void>) | undefined
-  readonly #viewportHost: FigmaViewportHost | undefined
+  readonly #viewport: Viewport
 
   constructor(graph: SceneGraph, options: FigmaAPIOptions = {}) {
     super()
     this.#graph = graph
-    this.#viewportHost = options.viewport
+    this.#viewport = new Viewport(options.viewport ?? detachedViewport(), () => this.#currentPageId)
     bindGraph(this, graph)
     this.#fetch = options.fetch ?? ((input, init) => fetch(input, init))
     if (options.signal) cancelScriptWaits(this, options.signal)
@@ -307,44 +296,8 @@ export class FigmaAPI extends FigmaStructureMethods implements NodeProxyHost {
 
   // --- Viewport ---
 
-  /** The view the API keeps when no host shows the document. */
-  #viewport = { center: { x: 0, y: 0 }, zoom: 1 }
-
-  get viewport(): {
-    center: Vector
-    zoom: number
-    scrollAndZoomIntoView: (nodes: readonly { absoluteBoundingBox: Rect }[]) => void
-  } {
-    const { center, zoom } = this.#viewportHost?.get() ?? this.#viewport
-    return {
-      center: { ...center },
-      zoom,
-      scrollAndZoomIntoView: (nodes) => {
-        if (nodes.length === 0) return
-        // The view shows the current page: a layer elsewhere would fit to coordinates on this
-        // page where it is not.
-        for (const node of nodes) {
-          if (!(node instanceof FigmaNodeProxy)) continue
-          const id = nodeIdOf(node)
-          if (findPageId(this.#graph, id) === this.#currentPageId) continue
-          throw new Error(`in scrollAndZoomIntoView: node ${id} is not on the current page`)
-        }
-        const bounds = computeBounds(nodes.map((n) => n.absoluteBoundingBox))
-        if (this.#viewportHost) {
-          this.#viewportHost.fit(this.#currentPageId, bounds)
-          return
-        }
-        this.#viewport = {
-          center: { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 },
-          zoom: this.#viewport.zoom
-        }
-      }
-    }
-  }
-
-  set viewport(v: { center: Vector; zoom: number }) {
-    if (this.#viewportHost) this.#viewportHost.set(this.#currentPageId, v.center, v.zoom)
-    else this.#viewport = { center: { ...v.center }, zoom: v.zoom }
+  get viewport(): FigmaViewport {
+    return this.#viewport
   }
 
   createImage(data: Uint8Array): Image {

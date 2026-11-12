@@ -300,7 +300,7 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 | -------------- | ---------------------------------------------------------------------------- |
 | `get_viewport` | Get current viewport position and zoom level                                 |
 | `set_viewport` | Set viewport position and zoom                                               |
-| `zoom_to_fit`  | Scroll and zoom so the given layers fill the view, as Zoom to selection does |
+| `zoom_to_fit`  | Scroll and zoom the view to fit layers on the current page, up to 100%       |
 
 ### Variables
 

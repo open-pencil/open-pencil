@@ -138,10 +138,28 @@ describe('figma.viewport in the app', () => {
     const tab = shownDocument()
     const figma = makeFigmaFromStore(tab.store)
 
-    figma.viewport = { center: { x: 200, y: 100 }, zoom: 0.5 }
+    figma.viewport.zoom = 0.5
+    figma.viewport.center = { x: 200, y: 100 }
 
     expect(tab.store.state.zoom).toBe(0.5)
     expect(figma.viewport.center).toEqual({ x: 200, y: 100 })
+    expect(figma.viewport.bounds).toEqual({ x: -800, y: -500, width: 2000, height: 1200 })
+  })
+
+  test('scrollAndZoomIntoView zooms in on small layers no further than 100%, as Figma does', () => {
+    const tab = shownDocument()
+    const frame = tab.store.graph.createNode('FRAME', tab.store.state.currentPageId, {
+      x: 100,
+      y: 100,
+      width: 200,
+      height: 120
+    })
+    const figma = makeFigmaFromStore(tab.store)
+    figma.viewport.zoom = 0.3
+
+    figma.viewport.scrollAndZoomIntoView([{ absoluteBoundingBox: frame }])
+
+    expect(tab.store.state.zoom).toBe(1)
   })
 
   test('a page that is not on screen keeps its view', () => {
@@ -151,7 +169,7 @@ describe('figma.viewport in the app', () => {
     const figma = makeFigmaFromStore(tab.store, other)
 
     expect(() => {
-      figma.viewport = { center: { x: 0, y: 0 }, zoom: 2 }
+      figma.viewport.zoom = 2
     }).toThrow()
     expect(viewOf(tab)).toEqual(before)
   })
@@ -163,7 +181,7 @@ describe('figma.viewport in the app', () => {
     const figma = makeFigmaFromStore(background.store)
 
     expect(() => {
-      figma.viewport = { center: { x: 0, y: 0 }, zoom: 2 }
+      figma.viewport.zoom = 2
     }).toThrow()
     expect(viewOf(background)).toEqual(before)
   })
