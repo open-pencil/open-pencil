@@ -9,7 +9,7 @@ import {
   type SceneNode,
   type VectorNetwork
 } from '@open-pencil/scene-graph'
-import { maxOf } from '@open-pencil/scene-graph/arrays'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { drawnBlurRadius } from '@open-pencil/scene-graph/geometry'
 import { expectDefined } from '@open-pencil/test-support/assert'
 const ck = await getCanvasKit()
@@ -394,7 +394,7 @@ describe('a layer blur on a glowing dot', () => {
     const blurred = glowRow([glow, effect('FOREGROUND_BLUR', 1)])
     const firstPastOldLayer = oldLayerRight + margin - rowStart
     const pastOldLayer = blurred.slice(firstPastOldLayer, firstPastOldLayer + 4)
-    expect(Math.min(...pastOldLayer)).toBeGreaterThan(90)
+    expect(minOf(pastOldLayer)).toBeGreaterThan(90)
     for (const [i, alpha] of blurred.entries()) {
       expect(Math.abs(alpha - halo[i])).toBeLessThanOrEqual(4)
     }
@@ -604,7 +604,7 @@ describe('a frame casting its drop shadow from a child past its box', () => {
   const unlayered = shadowRow({ effects: [shadow] })
 
   test('casts a visible shadow past the child without a layer', () => {
-    expect(Math.min(...unlayered)).toBeGreaterThan(25)
+    expect(minOf(unlayered)).toBeGreaterThan(25)
   })
 
   test('keeps the shadow past the child at 0.6 opacity', () => {
