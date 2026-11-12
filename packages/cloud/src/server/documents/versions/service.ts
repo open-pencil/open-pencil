@@ -304,7 +304,9 @@ export function createDocumentVersionService(
         .where('documentVersion.kind', '=', 'named')
       if (start) query = query.where('documentVersion.createdAt', '>=', start)
       const rows = await query.orderBy('documentVersion.createdAt', 'desc').execute()
-      const current = new Map(documents.map((document) => [document.id, document.currentRevisionId]))
+      const current = new Map(
+        documents.map((document) => [document.id, document.currentRevisionId])
+      )
       for (const row of rows) {
         named.get(row.documentId)?.push(versionOf(row, current.get(row.documentId) ?? null))
       }
