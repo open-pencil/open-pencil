@@ -72,6 +72,16 @@ const provider: BindingProvider<Color> = {
         >
           <span class="absolute inset-0" :style="{ background: swatch.background }" />
         </FillSwatch>
+        <span class="flex items-center gap-2 text-xs">
+          <FillSwatch
+            v-slot="swatch"
+            :fill="solid"
+            class="relative size-4 overflow-hidden rounded-sm border border-[var(--vp-c-divider)]"
+          >
+            <span class="absolute inset-0" :style="{ background: swatch.background }" />
+          </FillSwatch>
+          Brand blue
+        </span>
         <BindableValueRoot
           v-slot="binding"
           :provider="provider"
