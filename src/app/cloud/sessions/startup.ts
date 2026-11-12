@@ -23,7 +23,8 @@ import {
   resumeCloudLink
 } from '../links'
 import { addCloudSiteServer, cloudServers, findCloudServer } from '../servers/store'
-import { cloudConnection, refreshCloudConnection } from './connection'
+import { cloudConnection, cloudPortalClient, refreshCloudConnection } from './connection'
+import { onCloudLocaleChange, tellCloudLocale } from './locale'
 import { leftForCloudSignIn, takePendingCloudSignIn } from './sign-in'
 
 /**
@@ -44,6 +45,21 @@ function opensWithCloudDocument(): boolean {
   )
 }
 
+/** States in which a server has an account to write to. */
+const WRITTEN_TO = new Set(['signed-in', 'pending', 'terms'])
+
+/** Tells every server the app is signed in to the language the person picks. */
+function followCloudLocale(): void {
+  onCloudLocaleChange(() => {
+    for (const server of cloudServers.value) {
+      const { state, discovery } = cloudConnection(server.id)
+      if (discovery && WRITTEN_TO.has(state)) {
+        void tellCloudLocale(server.id, cloudPortalClient(server, discovery))
+      }
+    }
+  })
+}
+
 /**
  * Adds the server that serves this editor, if one does, checks every known server once the app
  * starts, finishes a sign-in this tab left for the server's pages to do, and opens an invitation,
@@ -58,6 +74,7 @@ export async function startCloudSessions(options: {
 }): Promise<void> {
   // Taken first, so a sign-in this tab leaves for below is the only one left pending.
   const pending = takePendingCloudSignIn()
+  followCloudLocale()
   try {
     if (IS_CLOUD_SITE) await addCloudSiteServer()
     void checkCloudAvailability(globalThis.location.href)

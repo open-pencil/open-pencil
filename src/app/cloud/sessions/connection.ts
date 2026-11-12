@@ -8,7 +8,8 @@ import {
   discoverCloud,
   type CloudAPIClient,
   type CloudDiscoveryFailure,
-  type CloudFetch
+  type CloudFetch,
+  type CloudPortalClient
 } from '@open-pencil/cloud/client'
 import type { CloudDiscovery, WorkspaceSummary } from '@open-pencil/cloud/contract'
 
@@ -16,6 +17,7 @@ import { tauriFetch } from '@/app/tauri/http'
 import { IS_TAURI } from '@/constants'
 
 import { rememberCloudAccount, type CloudAccount, type CloudServer } from '../servers/store'
+import { forgetCloudLocale, tellCloudLocale } from './locale'
 import { clearCloudSessionToken, readCloudSessionToken } from './token'
 
 /**
@@ -94,14 +96,22 @@ export function cloudAPIClient(server: CloudServer, discovery: CloudDiscovery): 
   return createCloudAPIClient(discovery.apiURL, { fetch: cloudServerFetch(server.id) })
 }
 
+/** The server's account pages' API, as this app's session there. */
+export function cloudPortalClient(
+  server: CloudServer,
+  discovery: CloudDiscovery
+): CloudPortalClient {
+  return createCloudPortalClient({
+    baseURL: new URL(discovery.apiURL).origin,
+    fetch: cloudServerFetch(server.id)
+  })
+}
+
 async function signedInConnection(
   server: CloudServer,
   discovery: CloudDiscovery
 ): Promise<CloudConnection> {
-  const portal = createCloudPortalClient({
-    baseURL: new URL(discovery.apiURL).origin,
-    fetch: cloudServerFetch(server.id)
-  })
+  const portal = cloudPortalClient(server, discovery)
   let status: Awaited<ReturnType<typeof portal.accountStatus>>
   try {
     status = await portal.accountStatus()
@@ -125,6 +135,8 @@ async function signedInConnection(
     image: status.user.image ?? null
   }
   rememberCloudAccount(server.id, account)
+  // Waiting for approval or for terms, the account is still written to.
+  void tellCloudLocale(server.id, portal)
   if (status.state !== 'active') {
     const state = status.state === 'pending' || status.state === 'terms' ? status.state : 'closed'
     return { ...INITIAL, state, discovery, account }
@@ -191,6 +203,7 @@ async function askServer(server: CloudServer, generation: number): Promise<Cloud
 
 /** Drops what the app knows about a server's session, after signing out or removing it. */
 export function forgetCloudConnection(serverId: string): void {
+  forgetCloudLocale(serverId)
   generations.set(serverId, (generations.get(serverId) ?? 0) + 1)
   checks.delete(serverId)
   const { [serverId]: _removed, ...rest } = cloudConnections.value

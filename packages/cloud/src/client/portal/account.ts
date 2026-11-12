@@ -17,7 +17,8 @@ import {
   cloudProfileResponseSchema,
   cloudSignInsResponseSchema,
   cloudSocialLinkResponseSchema,
-  type CloudAccessTokenCreate
+  type CloudAccessTokenCreate,
+  type CloudLocale
 } from '#cloud/contract'
 
 import type { CloudCall, PortalRouteClients } from './request'
@@ -141,6 +142,14 @@ export function createAccountAPI(call: CloudCall, { account, tokens, api }: Port
       return call(
         (options) => account.profile.$get(undefined, options),
         cloudProfileResponseSchema,
+        signal
+      )
+    },
+    /** The language the server writes to the account in: the app's. */
+    setLocale(locale: CloudLocale, signal?: AbortSignal) {
+      return call(
+        (options) => account.locale.$put({ json: { locale } }, options),
+        cloudAccountMutationResponseSchema,
         signal
       )
     },
