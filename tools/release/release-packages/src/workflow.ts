@@ -19,6 +19,7 @@ import {
 } from '@open-pencil/package-artifacts-tools/tarball'
 import { verifyArtifactConsumers } from '@open-pencil/package-quality-tools/consumer'
 
+import { assertNoticesPrepared } from './notices/artifacts'
 import { NPM_RELEASE_POLICY } from './policy'
 import {
   discoverPublishPackages,
@@ -128,6 +129,10 @@ export async function packReleasePackages(
   const paths = releasePaths(root)
   const packDirectory = options.packDirectory ?? npmPackDirectory
   const plan = await createPublicationPlan(root, isPublished)
+  await assertNoticesPrepared(
+    paths.prepared,
+    plan.map(({ package: pkg }) => pkg.directory)
+  )
   await rm(paths.artifacts, { recursive: true, force: true })
   await mkdir(paths.artifacts, { recursive: true })
 
@@ -142,7 +147,7 @@ export async function packReleasePackages(
   return plan
 }
 
-async function artifactsByPackage(directory: string): Promise<Map<string, string>> {
+export async function artifactsByPackage(directory: string): Promise<Map<string, string>> {
   const artifacts = new Map<string, string>()
   for (const filename of (await readdir(directory)).filter((name) => name.endsWith('.tgz'))) {
     const path = join(directory, filename)

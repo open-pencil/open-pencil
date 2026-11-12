@@ -3,13 +3,12 @@ import * as v from 'valibot'
 import { parseColor } from '@open-pencil/scene-graph/color'
 
 import type { FigmaAPI, FigmaNodeProxy } from '#core/figma-api'
-import type {
-  FigmaFontName,
-  FigmaFontNameInput,
-  FigmaVariationSettings
-} from '#core/figma-api/fonts'
+import type { FigmaFontName, FigmaFontNameInput } from '#core/figma-api/fonts/names'
+import type { FigmaVariationSettings } from '#core/figma-api/fonts/variations'
+import { graphOf } from '#core/figma-api/graph'
 import { OpenPencilAPI } from '#core/openpencil-api'
-import { collectNodeFontFaces } from '#core/text/requirements'
+import { textMarkdownChanges } from '#core/openpencil-api/nodes'
+import { collectNodeFontFaces } from '#core/text/requirements/collect'
 import {
   toolNumber,
   nodeIdInputSchema,
@@ -20,25 +19,36 @@ import {
 
 /** The fonts a text layer uses, which an edit that lays it out again needs loaded. */
 export function textFonts(figma: FigmaAPI, id: string): FigmaFontNameInput[] {
-  const node = figma.graph.getNode(id)
+  const node = graphOf(figma).getNode(id)
   return node ? collectNodeFontFaces(node) : []
 }
 
 export const setText = defineTool({
   name: 'set_text',
 
-  description: 'Set text content of a text node.',
+  description:
+    "Set text content of a text node. With markdown, the text is Markdown: # and ## headings, **bold**, *italic*, ~~strike~~, `code`, [links](url), lists, and > quotes become styled ranges and paragraphs over the text's own style.",
   execution: { kind: 'sync', mutation: 'properties' },
   input: v.strictObject({
     id: nodeIdInputSchema,
-    text: v.pipe(v.string(), v.description('Text content'))
+    text: v.pipe(v.string(), v.description('Text content')),
+    markdown: v.optional(v.pipe(v.boolean(), v.description('Read the text as Markdown')))
   }),
-  fonts: (figma, { id }) => textFonts(figma, id),
-  execute: (figma, { id, text }) => {
+  fonts: (figma, { id, text, markdown }) => {
+    const node = graphOf(figma).getNode(id)
+    if (!markdown || node?.type !== 'TEXT') return textFonts(figma, id)
+    return collectNodeFontFaces({ ...node, ...textMarkdownChanges(node, text) })
+  },
+  execute: (figma, { id, text, markdown }) => {
     const node = figma.getNodeById(id)
     if (!node) return { error: `Node "${id}" not found` }
-    node.characters = text
-    return { id, text }
+    try {
+      if (markdown) new OpenPencilAPI(figma).setTextMarkdown(node, text)
+      else node.characters = text
+    } catch (error) {
+      return toolFailure(error)
+    }
+    return { id, text: node.characters }
   }
 })
 
@@ -128,7 +138,7 @@ export const setFont = defineTool({
   }
 })
 
-/** The font `set_font_range` gives its range: what it names, the rest from the range's start. */
+/** The font `set_text_range` gives its range: what it names, the rest from the range's start. */
 function rangeFont(
   node: FigmaNodeProxy,
   args: { start: number; family?: string; style?: string; variations?: FigmaVariationSettings }
@@ -139,7 +149,7 @@ function rangeFont(
 }
 
 export const setFontRange = defineTool({
-  name: 'set_font_range',
+  name: 'set_text_range',
 
   description: 'Set font properties for a text range.',
   execution: { kind: 'sync', mutation: 'properties' },
@@ -167,7 +177,7 @@ export const setFontRange = defineTool({
     const { start, end } = args
     if (!args.family && !args.size && !args.style && !args.variations && !args.color) {
       return {
-        error: 'set_font_range needs at least one of family, size, style, variations, or color'
+        error: 'set_text_range needs at least one of family, size, style, variations, or color'
       }
     }
     // The range methods reject an empty range or one past the text, before changing anything.
@@ -183,27 +193,6 @@ export const setFontRange = defineTool({
       return toolFailure(error)
     }
     return { id: args.id, range: { start, end } }
-  }
-})
-
-export const setTextResize = defineTool({
-  name: 'set_text_resize',
-
-  description: 'Set text auto-resize mode.',
-  execution: { kind: 'sync', mutation: 'properties' },
-  input: v.strictObject({
-    id: nodeIdInputSchema,
-    mode: v.pipe(
-      v.picklist(['NONE', 'WIDTH_AND_HEIGHT', 'HEIGHT', 'TRUNCATE']),
-      v.description('Resize mode')
-    )
-  }),
-  fonts: (figma, { id }) => textFonts(figma, id),
-  execute: (figma, { id, mode }) => {
-    const node = figma.getNodeById(id)
-    if (!node) return { error: `Node "${id}" not found` }
-    node.textAutoResize = mode
-    return { id, textAutoResize: mode }
   }
 })
 

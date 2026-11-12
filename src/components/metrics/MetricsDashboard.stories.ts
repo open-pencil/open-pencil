@@ -26,6 +26,17 @@ const dailyActive = [
   { day: '2026-10-18', desktop: 401, web: 298 },
   { day: '2026-10-19', desktop: 330, web: 257 }
 ]
+// Illustrative: a release that counts its days ships on Oct 16, so upgrading installs start over as
+// new, and a saved state restored over and over replays its second day.
+const installs = [
+  { day: '2026-10-13', new: 0, returning: 0, replayed: 0 },
+  { day: '2026-10-14', new: 0, returning: 0, replayed: 0 },
+  { day: '2026-10-15', new: 0, returning: 0, replayed: 0 },
+  { day: '2026-10-16', new: 212, returning: 0, replayed: 0 },
+  { day: '2026-10-17', new: 141, returning: 118, replayed: 240 },
+  { day: '2026-10-18', new: 96, returning: 187, replayed: 310 },
+  { day: '2026-10-19', new: 74, returning: 203, replayed: 250 }
+]
 const visits = [
   { day: '2026-10-13', site: 2342, app: 1107 },
   { day: '2026-10-14', site: 3884, app: 729 },
@@ -232,6 +243,7 @@ function scope(range: MetricsRange, withUsage: boolean, withActivity: boolean): 
     start: range.start,
     end: range.end,
     dailyActive: inRange(dailyActive),
+    installs: inRange(installs),
     platforms: [
       { os: 'macos', desktop: 428, web: 356 },
       { os: 'windows', desktop: 386, web: 327 },
@@ -239,6 +251,18 @@ function scope(range: MetricsRange, withUsage: boolean, withActivity: boolean): 
       { os: 'android', desktop: 0, web: 43 },
       { os: 'ios', desktop: 0, web: 28 }
     ],
+    // Networks are illustrative, shaped like a cloud network's automated installs.
+    networks: {
+      total: 2512,
+      top: [
+        { asn: 136907, name: 'Huawei Cloud Singapore Region', desktop: 2089, web: 0 },
+        { asn: 7922, name: 'Comcast Cable Communications, LLC', desktop: 101, web: 88 },
+        { asn: 4134, name: 'Chinanet', desktop: 54, web: 61 },
+        { asn: 3320, name: 'Deutsche Telekom AG', desktop: 40, web: 33 },
+        { asn: 9299, name: 'Philippine Long Distance Telephone Company', desktop: 12, web: 9 },
+        { asn: 0, name: '', desktop: 3, web: 1 }
+      ]
+    },
     versions: { latest: '0.16.0', daily: inRange(versions) },
     releases: inRange([{ day: '2026-10-14', version: '0.16.0' }]),
     visits: inRange(visits),
@@ -330,13 +354,13 @@ const story = (frame: string, withUsage = true, withActivity = true): Story => (
   })
 })
 
-export const Overview = story('h-[3950px]')
+export const Overview = story('h-987.5')
 
 /** PostHog did not answer: retention and usage give way to a notice, the rest stays. */
-export const WithoutUsage = story('h-[3550px]', false)
+export const WithoutUsage = story('h-887.5', false)
 
 /** Before the first nightly sync, issues and pull requests give way to a notice. */
-export const BeforeIssueSync = story('h-[3000px]', true, false)
+export const BeforeIssueSync = story('h-850', true, false)
 
 /** The dashboard in a phone-width window. */
-export const Narrow = story('h-[6100px] w-[390px]')
+export const Narrow = story('h-1612.5 w-97.5')

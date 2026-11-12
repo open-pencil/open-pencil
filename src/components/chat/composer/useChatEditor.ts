@@ -3,6 +3,7 @@ import {
   autocompletion,
   completionKeymap,
   completionStatus,
+  selectedCompletion,
   type Completion,
   type CompletionSource
 } from '@codemirror/autocomplete'
@@ -11,10 +12,12 @@ import { EditorSelection, EditorState, Prec } from '@codemirror/state'
 import { drawSelection, EditorView, keymap, placeholder, tooltips } from '@codemirror/view'
 import { getCurrentInstance, h, render, shallowRef, type Component, type ShallowRef } from 'vue'
 
+import { codeMirrorKey } from '@/components/code-editor/keys'
 import { useCodeMirror } from '@/components/code-editor/useCodeMirror'
 import { chatComposerTheme } from '@/theme/chat/composer'
 
 import { isComposerCompletion } from './complete'
+import { CHAT_COMPOSER_KEYS } from './keys'
 import { composerAppContext, referenceChips } from './references'
 
 /**
@@ -80,6 +83,9 @@ export function useChatEditor(
         override: options.completions,
         icons: false,
         activateOnTyping: true,
+        // The field sits at the panel's bottom: a short list fits under its first line but would
+        // cover the field's own buttons, so lists always open above.
+        aboveCursor: true,
         addToOptions: [{ render: renderCompletionIcon, position: 20 }]
       }),
       // The list opens above the field and may be wider than the panel, which clips its content.
@@ -89,7 +95,7 @@ export function useChatEditor(
       Prec.highest(
         keymap.of([
           {
-            key: 'Enter',
+            key: codeMirrorKey(CHAT_COMPOSER_KEYS.send),
             run: (editor) => {
               if (completionStatus(editor.state) === 'active') return acceptCompletion(editor)
               options.onSubmit(false)
@@ -97,13 +103,24 @@ export function useChatEditor(
             }
           },
           {
-            key: 'Alt-Enter',
+            // Typing a completion's whole label, such as `/compact`, then a space picks it, so a
+            // command typed in full becomes the same chip as one chosen from the list.
+            key: 'Space',
+            run: (editor) => {
+              const selected = selectedCompletion(editor.state)
+              if (completionStatus(editor.state) !== 'active' || !selected) return false
+              const typed = editor.state.sliceDoc(0, editor.state.selection.main.head)
+              return typed === selected.label && acceptCompletion(editor)
+            }
+          },
+          {
+            key: codeMirrorKey(CHAT_COMPOSER_KEYS.followUp),
             run: () => {
               options.onSubmit(true)
               return true
             }
           },
-          { key: 'Shift-Enter', run: insertNewline },
+          { key: codeMirrorKey(CHAT_COMPOSER_KEYS.newline), run: insertNewline },
           {
             key: 'ArrowUp',
             run: (editor) => {

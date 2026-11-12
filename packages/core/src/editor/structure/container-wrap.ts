@@ -1,8 +1,11 @@
+import { groupBy } from 'es-toolkit'
+
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
 import { groupBounds } from '@open-pencil/scene-graph/group-bounds'
 
-import { prepareSlotEdits } from '#core/editor/components/slots'
+import { acceptsChildren, prepareSlotEdits } from '#core/editor/components/slots'
+import { recordEdit } from '#core/editor/history/edit'
 import { nextNumberedName } from '#core/editor/structure/rename'
 import type { EditorContext } from '#core/editor/types'
 
@@ -12,31 +15,44 @@ export type WrapContainerType =
   | 'COMPONENT'
   | 'COMPONENT_SET'
   | 'BOOLEAN_OPERATION'
+  | 'SECTION'
 
 const CONTAINER_NAMES: Record<WrapContainerType, string> = {
   BOOLEAN_OPERATION: 'Boolean',
   COMPONENT_SET: 'Component Set',
   COMPONENT: 'Component',
   GROUP: 'Group',
-  FRAME: 'Frame'
+  FRAME: 'Frame',
+  SECTION: 'Section'
 }
 
 const NUMBERED_WHEN_WRAPPED: ReadonlySet<WrapContainerType> = new Set([
   'GROUP',
   'FRAME',
-  'COMPONENT'
+  'COMPONENT',
+  'SECTION'
 ])
 
-/**
- * The parent these layers share when a new container may go there, or null when they are not
- * siblings or sit in the locked part of an instance.
- */
-export function wrapParentId(ctx: EditorContext, nodes: readonly SceneNode[]): string | null {
+/** The room FigJam leaves around layers it wraps in a new section, in canvas units. */
+const SECTION_WRAP_PADDING = 48
+
+/** The parent these layers share, or null when they are not siblings; it changes nothing. */
+export function sharedParentId(ctx: EditorContext, nodes: readonly SceneNode[]): string | null {
   const first = nodes.at(0)
   if (!first) return null
   const parentId = first.parentId ?? ctx.state.currentPageId
-  if (nodes.some((node) => (node.parentId ?? ctx.state.currentPageId) !== parentId)) return null
-  return prepareSlotEdits(ctx, [parentId]) ? parentId : null
+  return nodes.every((node) => (node.parentId ?? ctx.state.currentPageId) === parentId)
+    ? parentId
+    : null
+}
+
+/**
+ * The parent these layers share when a new container may go there, or null when they are not
+ * siblings or sit in the locked part of an instance; an instance slot there is claimed for edits.
+ */
+export function wrapParentId(ctx: EditorContext, nodes: readonly SceneNode[]): string | null {
+  const parentId = sharedParentId(ctx, nodes)
+  return parentId && prepareSlotEdits(ctx, [parentId]) ? parentId : null
 }
 
 /**
@@ -53,11 +69,19 @@ export function wrapNodes(
   index: number | undefined,
   props: Partial<SceneNode> = {}
 ): SceneNode {
-  // A group spans only the layers it shows, as Figma's does; other containers span them all.
-  const bounds =
+  // A group spans only the layers it shows, as Figma's does; other containers span them all, and
+  // a section leaves FigJam's room around them.
+  const spanned =
     type === 'GROUP'
       ? groupBounds(graph, inStackOrder(graph, nodes, parentId), parentId, { x: 0, y: 0 })
       : getAxisAlignedBoundsInParent(nodes, parentId, graph)
+  const pad = type === 'SECTION' ? SECTION_WRAP_PADDING : 0
+  const bounds = {
+    x: spanned.x - pad,
+    y: spanned.y - pad,
+    width: spanned.width + pad * 2,
+    height: spanned.height + pad * 2
+  }
   const container = graph.createNode(type, parentId, {
     name: CONTAINER_NAMES[type],
     ...bounds,
@@ -140,4 +164,49 @@ export function wrapSelectionInContainer(
   })
 
   return containerId
+}
+
+/**
+ * Wraps the selected layers in a new group or frame in each parent they sit in, as Figma's Group
+ * and Frame selection do: one layer is enough, a layer inside another selected one goes with it,
+ * and parents in the locked part of an instance are left alone. One undo step; selects the new
+ * containers and returns their ids.
+ */
+export function wrapEachParent(
+  ctx: EditorContext,
+  containerType: 'GROUP' | 'FRAME',
+  selectedNodes: SceneNode[]
+): string[] {
+  const selected = new Set(selectedNodes.map((node) => node.id))
+  const outermost = selectedNodes.filter(
+    (node) => !node.parentId || !ctx.graph.closest(node.parentId, (n) => selected.has(n.id))
+  )
+  const byParent = groupBy(outermost, (node) => node.parentId ?? ctx.state.currentPageId)
+  const parentIds = Object.keys(byParent).filter((id) => acceptsChildren(ctx, id))
+  if (parentIds.length === 0) return []
+
+  // Named before any is made, so each parent's new container is "Group 1" there, as in Figma.
+  const names = new Map(
+    parentIds.map((id) => [id, nextNumberedName(ctx.graph, id, CONTAINER_NAMES[containerType])])
+  )
+  const label = `Create ${containerType.toLowerCase()}`
+  // Claiming an instance slot's content is part of the same undo step.
+  return ctx.undo.runBatch(label, () => {
+    if (!prepareSlotEdits(ctx, parentIds)) return []
+    return recordEdit(ctx, { label, restoresSelection: true }, () => {
+      const ids = parentIds.flatMap((parentId) => {
+        const parent = ctx.graph.getNode(parentId)
+        const nodes = byParent[parentId]
+        if (!parent) return []
+        const name = names.get(parentId) ?? CONTAINER_NAMES[containerType]
+        const index = canvasWrapIndex(parent, nodes)
+        const id = wrapNodes(ctx.graph, containerType, nodes, parentId, index, { name }).id
+        // An auto layout places the new container among the layers left beside it.
+        if (parent.layoutMode !== 'NONE') ctx.runLayoutForNode(parentId)
+        return [id]
+      })
+      ctx.setSelectedIds(new Set(ids))
+      return ids
+    })
+  })
 }

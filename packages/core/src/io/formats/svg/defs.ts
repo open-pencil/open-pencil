@@ -1,6 +1,4 @@
-import { fromUint8Array } from 'js-base64'
-
-import type { Effect, Fill, FontVariation, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Effect, Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   colorToHex,
   colorToDisplayCSS,
@@ -12,29 +10,12 @@ import {
   invertGradientTransform,
   isIdentityGradientTransform
 } from '@open-pencil/scene-graph/gradient'
-import { imageMimeType } from '@open-pencil/scene-graph/images'
+import { imageDataURL } from '@open-pencil/scene-graph/images'
 import type { Color } from '@open-pencil/scene-graph/primitives'
-
-import type { FontFaceRef } from '#core/text/face'
 
 import { svg, type SVGNode } from './node'
 import { round } from './paths'
 import type { SVGTextLayout } from './text/lines'
-
-/**
- * A face text is drawn in, with what sets its axes: the font size the optical size follows unless
- * `opticalSizeFromFontSize` is off, and the axes the text sets.
- */
-export interface SVGFontRequest extends FontFaceRef {
-  /** Which of the style's files draws the text, 0 for its own then its shards; 0 when left out. */
-  file?: number
-  fontSize: number
-  variations: readonly FontVariation[]
-  opticalSizeFromFontSize: boolean
-}
-
-/** The family to name a font face by instead of its own, or null to keep the face. */
-export type SVGFontAlias = (font: SVGFontRequest) => string | null
 
 export interface SVGExportContext {
   defs: SVGNode[]
@@ -47,11 +28,18 @@ export interface SVGExportContext {
   tint?: (node: SceneNode) => readonly ('fill' | 'stroke')[]
   /** Measured line breaks. Without them, only explicit newlines start a new baseline. */
   textLayout?: SVGTextLayout
-  fontAlias?: SVGFontAlias
+  /**
+   * When layers are written with their names as ids: how many have taken each name, and every id
+   * given out so far, defs included, so no two elements share one.
+   */
+  layerIds?: { names: Map<string, number>; taken: Set<string> }
 }
 
 export function nextDefId(ctx: SVGExportContext, prefix: string): string {
-  return `${ctx.idPrefix ?? ''}${prefix}${ctx.defIdCounter++}`
+  let id = `${ctx.idPrefix ?? ''}${prefix}${ctx.defIdCounter++}`
+  while (ctx.layerIds?.taken.has(id)) id = `${ctx.idPrefix ?? ''}${prefix}${ctx.defIdCounter++}`
+  ctx.layerIds?.taken.add(id)
+  return id
 }
 
 export function formatColor(
@@ -186,9 +174,6 @@ function createImagePattern(
   if (!data) return null
 
   const id = nextDefId(ctx, 'img')
-  const base64 = fromUint8Array(data)
-  const mime = imageMimeType(data)
-
   return {
     id,
     node: svg(
@@ -200,7 +185,7 @@ function createImagePattern(
         height: 1
       },
       svg('image', {
-        href: `data:${mime};base64,${base64}`,
+        href: imageDataURL(data),
         width: node.width,
         height: node.height,
         preserveAspectRatio: fill.imageScaleMode === 'FIT' ? 'xMidYMid meet' : 'xMidYMid slice'
@@ -298,6 +283,18 @@ export function resolveFill(fill: Fill, node: SceneNode, ctx: SVGExportContext):
   return null
 }
 
+/** The paints SVG can draw, each with its fill attribute: a stroke goes on the last of them. */
+export function drawnFills(
+  fills: readonly Fill[],
+  node: SceneNode,
+  ctx: SVGExportContext
+): Array<{ fill: Fill; paint: string }> {
+  return fills.flatMap((fill) => {
+    const paint = resolveFill(fill, node, ctx)
+    return paint ? [{ fill, paint }] : []
+  })
+}
+
 export const SVG_STROKE_CAP: Record<string, string> = {
   NONE: 'butt',
   ROUND: 'round',
@@ -308,23 +305,4 @@ export const SVG_STROKE_JOIN: Record<string, string> = {
   MITER: 'miter',
   ROUND: 'round',
   BEVEL: 'bevel'
-}
-
-export const SVG_BLEND_MODE: Record<string, string> = {
-  NORMAL: 'normal',
-  DARKEN: 'darken',
-  MULTIPLY: 'multiply',
-  COLOR_BURN: 'color-burn',
-  LIGHTEN: 'lighten',
-  SCREEN: 'screen',
-  COLOR_DODGE: 'color-dodge',
-  OVERLAY: 'overlay',
-  SOFT_LIGHT: 'soft-light',
-  HARD_LIGHT: 'hard-light',
-  DIFFERENCE: 'difference',
-  EXCLUSION: 'exclusion',
-  HUE: 'hue',
-  SATURATION: 'saturation',
-  COLOR: 'color',
-  LUMINOSITY: 'luminosity'
 }

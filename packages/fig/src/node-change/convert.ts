@@ -7,7 +7,6 @@ import {
   DEFAULT_STROKE_WEIGHT
 } from '@open-pencil/scene-graph/constants'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
-import { styleToWeight } from '@open-pencil/scene-graph/font-style'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
 import { OPEN_PENCIL_PLUGIN_DATA } from '@open-pencil/scene-graph/plugin-data'
 import { POINT_COUNT_RANGE } from '@open-pencil/scene-graph/polygon'
@@ -25,6 +24,7 @@ import { expandPathTextLayoutBox } from './path/text-layout'
 import {
   extractBoundVariables,
   extractExportSettings,
+  extractLibraryLayerId,
   extractLibrarySource,
   extractTextPathBox,
   extractPluginData,
@@ -44,8 +44,7 @@ import {
 import {
   alignGeometryWindingRules,
   resolveGeometryPaths,
-  resolveVectorNetwork,
-  resolveVectorStyleOverrideFills
+  resolveVectorNetwork
 } from './vector/geometry'
 import { decodeVectorNetworkBlob, textPathStartSegment, type StyleOverride } from './vector/network'
 
@@ -91,17 +90,12 @@ import type {
 } from '@open-pencil/scene-graph'
 import type { Vector, GUID } from '@open-pencil/scene-graph/primitives'
 
+import { savedFace } from './font/style'
 import { numericVariableAssignmentScales, sourceVariableBindingScales } from './variable/bindings'
 export { VARIABLE_BINDING_FIELDS, VARIABLE_BINDING_FIELDS_INVERSE } from './variable/bindings'
+import type { FigVariableModeMap } from './variable/maps'
 
-interface FigVariableModeMap {
-  entries?: Array<{
-    variableSetID?: { guid?: GUID }
-    variableModeID?: GUID
-  }>
-}
-
-function extractVariableModes(nc: NodeChange): VariableModeMap {
+export function extractVariableModes(nc: NodeChange): VariableModeMap {
   const result: VariableModeMap = {}
   const modeMap = nc.variableModeBySetMap as FigVariableModeMap | undefined
   for (const entry of modeMap?.entries ?? []) {
@@ -368,6 +362,7 @@ type TextProps = Pick<
   | 'fontFamily'
   | 'fontWeight'
   | 'italic'
+  | 'fontStyle'
   | 'textAlignHorizontal'
   | 'textAlignVertical'
   | 'textAutoResize'
@@ -407,7 +402,7 @@ function convertTextDecorationProps(
   | 'textUnderlineOffset'
 > {
   return {
-    textDecoration: mapTextDecoration(nc.textDecoration as string),
+    textDecoration: mapTextDecoration(nc.textDecoration),
     textDecorationStyle: (nc.textDecorationStyle ?? 'SOLID') as SceneNode['textDecorationStyle'],
     textDecorationThickness: nc.textDecorationThickness?.value ?? null,
     textDecorationFills: convertFills(nc.textDecorationFillPaints),
@@ -453,12 +448,15 @@ function convertShapeWithTextProps(
 }
 
 function convertTextProps(nc: NodeChange, blobs: Uint8Array[]): TextProps {
+  const face = nc.fontName ? savedFace(nc, nc.fontName) : { fontWeight: 400, italic: false }
   return {
     text: nc.textData?.characters ?? '',
     fontSize: nc.fontSize ?? 14,
     fontFamily: nc.fontName?.family ?? DEFAULT_FONT_FAMILY,
-    fontWeight: styleToWeight(nc.fontName?.style ?? ''),
-    italic: nc.fontName?.style.toLowerCase().includes('italic') ?? false,
+    fontWeight: face.fontWeight,
+    italic: face.italic,
+    // Figma finds the face by this exact name, which the weight and slant cannot always name.
+    fontStyle: nc.fontName?.style || null,
     textAlignHorizontal: (nc.textAlignHorizontal ?? 'LEFT') as
       | 'LEFT'
       | 'CENTER'
@@ -676,7 +674,7 @@ function convertVectorAndStrokeProps(nc: NodeChange, blobs: Uint8Array[]) {
   const strokeCap = getVectorStrokeCap(nc)
   const strokeJoin = getVectorStrokeJoin(nc, vectorNetwork)
   const fillGeometry = alignGeometryWindingRules(
-    resolveGeometryPaths(nc.fillGeometry, blobs, resolveVectorStyleOverrideFills(nc)),
+    resolveGeometryPaths(nc.fillGeometry, blobs),
     vectorNetwork
   )
   return {
@@ -699,7 +697,7 @@ function convertVectorAndStrokeProps(nc: NodeChange, blobs: Uint8Array[]) {
 function resolveNodeType(nc: NodeChange): NodeType | 'DOCUMENT' | 'VARIABLE' {
   const nodeType = mapNodeType(nc.type)
   if (
-    (nodeType === 'FRAME' && isComponentSet(nc)) ||
+    (nodeType === 'FRAME' && isComponentSetRecord(nc)) ||
     readNodeChangePluginData(nc, OPEN_PENCIL_PLUGIN_DATA.nodeType) === 'COMPONENT_SET'
   ) {
     return 'COMPONENT_SET'
@@ -765,8 +763,8 @@ export function nodeChangeToProps(
     ...convertPolygonProps(nc),
     ...convertTextProps(nc, blobs),
     ...convertShapeWithTextProps(nc),
-    horizontalConstraint: mapConstraint(nc.horizontalConstraint as string),
-    verticalConstraint: mapConstraint(nc.verticalConstraint as string),
+    horizontalConstraint: mapConstraint(nc.horizontalConstraint),
+    verticalConstraint: mapConstraint(nc.verticalConstraint),
     ...convertLayoutProps(nc),
     ...vectorAndStrokeProps,
     minWidth: minimumSizeDimension(nc.minSize, 'x'),
@@ -791,6 +789,7 @@ export function nodeChangeToProps(
     status: extractNodeStatus(nc),
     pluginData: extractPluginData(nc),
     librarySource: extractLibrarySource(nc),
+    libraryLayerId: extractLibraryLayerId(nc),
     pluginRelaunchData: extractPluginRelaunchData(nc),
     clipsContent: nc.frameMaskDisabled === false && nc.resizeToFit !== true,
     componentId: extractSymbolId(nc),
@@ -911,12 +910,17 @@ function extractComponentPropertyDefs(nc: NodeChange): ComponentPropertyDefiniti
   for (const def of defs) {
     if (!def.id || !def.name) continue
     const propType = COMPONENT_PROP_TYPE_MAP[def.type ?? ''] ?? 'VARIANT'
+    // A set saved without its values keeps their order apart, which Figma reads them in.
+    const valueOrder = nc.stateGroupPropertyValueOrders?.find(
+      (order) => order.property === def.name
+    )?.values
     const definition: ComponentPropertyDefinition = {
       id: guidToString(def.id),
       name: def.name,
       type: propType,
       defaultValue: componentPropValueToString(def.initialValue),
-      variantOptions: propType === 'VARIANT' ? def.preferredValues?.stringValues : undefined,
+      variantOptions:
+        propType === 'VARIANT' ? (def.preferredValues?.stringValues ?? valueOrder) : undefined,
       preferredValues:
         propType === 'INSTANCE_SWAP' || propType === 'SLOT'
           ? def.preferredValues?.instanceSwapValues
@@ -1064,10 +1068,17 @@ function extractComponentMetadata(nc: NodeChange): ComponentMetadataProps {
   }
 }
 
-function isComponentSet(nc: NodeChange): boolean {
+/**
+ * Whether a record is a component set: typed as one, or a frame that defines a variant property
+ * or that OpenPencil marked one.
+ */
+export function isComponentSetRecord(nc: NodeChange): boolean {
+  if (mapNodeType(nc.type) === 'COMPONENT_SET') return true
   const defs = nc.componentPropDefs as Array<{ type?: string }> | undefined
-  if (!defs?.length) return false
-  return defs.some((d) => d.type === 'VARIANT')
+  return (
+    !!defs?.some((d) => d.type === 'VARIANT') ||
+    readNodeChangePluginData(nc, OPEN_PENCIL_PLUGIN_DATA.nodeType) === 'COMPONENT_SET'
+  )
 }
 
 function extractFigmaLayoutMetadata(nc: NodeChange): SceneNode['source']['fig']['layout'] {
@@ -1320,8 +1331,8 @@ function extractFigmaSymbolMetadata(
   }
 }
 
-function extractSymbolId(nc: NodeChange): string {
+function extractSymbolId(nc: NodeChange): string | null {
   const sd = nc.symbolData as { symbolID?: GUID } | undefined
-  if (!sd?.symbolID) return ''
+  if (!sd?.symbolID) return null
   return guidToString(sd.symbolID)
 }

@@ -3,11 +3,12 @@ import { tryOnScopeDispose } from '@vueuse/core'
 import { AlertDialogCancel, DialogClose } from 'reka-ui'
 import { computed, type Component } from 'vue'
 import IconActivity from '~icons/lucide/activity'
+import IconBell from '~icons/lucide/bell'
+import IconBlocks from '~icons/lucide/blocks'
 import IconBookOpen from '~icons/lucide/book-open'
 import IconChartNoAxesCombined from '~icons/lucide/chart-no-axes-combined'
 import IconCloud from '~icons/lucide/cloud'
 import IconDatabase from '~icons/lucide/database'
-import IconImage from '~icons/lucide/image'
 import IconPenTool from '~icons/lucide/pen-tool'
 import IconPlug from '~icons/lucide/plug'
 import IconSettings from '~icons/lucide/settings'
@@ -38,6 +39,7 @@ import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
 import MCPWorkspacePanel from '@/components/settings/mcp/MCPWorkspacePanel.vue'
 import MediaSettingsPanel from '@/components/settings/media/MediaSettingsPanel.vue'
 import ModelsPanel from '@/components/settings/models/ModelsPanel.vue'
+import NotificationSettingsSection from '@/components/settings/notifications/NotificationSettingsSection.vue'
 import PrivacySettingsPanel from '@/components/settings/privacy/PrivacySettingsPanel.vue'
 import SkillsSettingsPanel from '@/components/settings/skills/SkillsSettingsPanel.vue'
 import StorageSettingsPanel from '@/components/settings/storage/StorageSettingsPanel.vue'
@@ -79,6 +81,7 @@ const groups = computed<{ label: string; sections: SectionItem[] }[]>(() => [
       { value: 'editor', label: settings.value.editor, icon: IconPenTool },
       { value: 'fonts', label: settings.value.fonts, icon: IconType },
       { value: 'storage', label: settings.value.storage, icon: IconDatabase },
+      { value: 'notifications', label: settings.value.notifications, icon: IconBell },
       ...(CLOUD_INCLUDED
         ? [{ value: 'cloud' as const, label: settings.value.cloud, icon: IconCloud }]
         : [])
@@ -90,7 +93,7 @@ const groups = computed<{ label: string; sections: SectionItem[] }[]>(() => [
       { value: 'ai', label: settings.value.models, icon: IconSparkles },
       { value: 'tools', label: settings.value.toolAccess, icon: IconSlidersHorizontal },
       { value: 'skills', label: settings.value.skills, icon: IconBookOpen },
-      { value: 'services', label: settings.value.imageServices, icon: IconImage },
+      { value: 'services', label: settings.value.integrations, icon: IconBlocks },
       { value: 'mcp', label: settings.value.mcp, icon: IconPlug },
       { value: 'usage', label: settings.value.usage, icon: IconChartNoAxesCombined }
     ]
@@ -142,11 +145,7 @@ function onOpenChange(open: boolean): void {
     data-test-id="app-settings-dialog"
     @update:open="onOpenChange"
   >
-    <AppDialogHeader
-      :heading="settings.title"
-      :description="settings.description"
-      :close-label="common.close"
-    >
+    <AppDialogHeader :heading="settings.title" :description="settings.description">
       <!-- An open editor turns the title into the path back to where it was opened from. On a
            phone the section picker below already names the section, so the path starts at the
            list. -->
@@ -200,6 +199,9 @@ function onOpenChange(open: boolean): void {
       </AppTabsContent>
       <AppTabsContent value="storage" as-child>
         <StorageSettingsPanel />
+      </AppTabsContent>
+      <AppTabsContent value="notifications" as-child>
+        <SettingsPage><NotificationSettingsSection /></SettingsPage>
       </AppTabsContent>
       <AppTabsContent v-if="CLOUD_INCLUDED" value="cloud" as-child>
         <CloudSettingsSection />

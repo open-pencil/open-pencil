@@ -28,6 +28,7 @@ flowchart LR
 | `@open-pencil/cloud/contract`     | Valibot schemas and types shared by every side of the network              |
 | `@open-pencil/cloud/client`       | Discovery, authentication, device authorization, and the typed Hono client |
 | `@open-pencil/cloud/email`        | Vue Email rendering for transactional mail                                 |
+| `@open-pencil/cloud/errors`       | The PostHog error reporter, for services beside Cloud; only `posthog-node` |
 | `@open-pencil/cloud/server`       | Hono routes and services; every dependency is injected                     |
 | `@open-pencil/cloud/runtime/node` | PostgreSQL, S3, SMTP, the HTTP listener, workers, and operator commands    |
 
@@ -52,8 +53,24 @@ revision has its own object key.
 - Each upload names the revision it was based on, so a stale base is rejected instead of silently
   overwriting a newer revision. The client then chooses: take the Cloud revision, keep both, or
   replace it.
-- Deleting a document is immediate for users; the cleanup worker removes revisions and objects once
-  the retention period passes.
+- Deleting a document moves it to Trash: `deleted_at` and `deleted_by` are set, and the cleanup
+  worker destroys revisions and objects once the retention period passes. `GET /api/trash` lists
+  what the person may restore across their workspaces, and `POST /api/trash/:documentId/restore`
+  clears the deletion while retention lasts and no cleanup has claimed the document. Restoring
+  needs the `delete` permission; deleting forever, `DELETE /api/trash/:documentId`, the `purge`
+  one, which the document's owner and workspace admins hold. A document in Trash keeps its bytes
+  in the workspace's usage, so restoring checks no quota.
+- Deleting forever (`markPurged` in `src/server/documents/purge.ts`) sets `purged_at` and
+  `purged_by`: the document leaves Trash, and the files only it holds come off the workspace's
+  usage at once, recorded in `purged_bytes`. Its files and rows stay through `purge_grace_days`, so
+  a server administrator can restore it from the console (`POST /api/admin/documents/:id/undelete`,
+  audited as `document.undeleted`), live in its workspace with its bytes counted again, unless the
+  workspace has nobody left in it. Cleanup then destroys it like a document past retention, taking
+  off the usage only what `purged_bytes` didn't, and storage reconciliation leaves such documents
+  out. With no grace, deleting forever destroys the document in the request. An account's deletion
+  deletes the documents of the workspaces only it belonged to forever, with the same grace.
+- Every document, upload, or compaction step cleanup can't finish is reported to error tracking
+  with source `cleanup`, by ID only, and retried by a later pass.
 - Images are stored once per workspace, keyed by the SHA-256 the object store verifies, and a stored
   revision leaves them out of its file: it lists the images it uses under the names the file gives
   them, and a download returns a link for each. Before a save the client asks which of its images
@@ -112,13 +129,21 @@ accepts the resulting bearer token.
 
 Access to a document comes from ownership, workspace membership, a direct grant, or a capability
 link, and the strongest source wins. Revoking one source leaves access inherited from another.
-Documents granted to someone outside their own workspaces are listed for them separately, so a
-client can show what was shared with them.
+Ownership counts only while the document's maker is still in its workspace, so someone removed
+keeps no way back in; their collaboration tickets lapse within five minutes. A direct grant comes
+only from an invitation the person accepted: sharing can change or revoke a grant, never give one,
+and the server never looks people up by email, so nobody can find out who has an account or put a
+document in a stranger's files. Documents granted to someone outside their own workspaces are
+listed for them separately, so a client can show what was shared with them. A share link stops
+working while the person who made it, or made its document, is banned.
 
 Workspace administrators invite people by email with a role. Workspace invitations use the same
 `/invitations/:id` link as document invitations: preview and accept look for a workspace
 invitation first and fall back to a document one, so email, the desktop handoff, and the editor's
-invitation dialog serve both. A workspace with members always keeps an administrator.
+invitation dialog serve both. A workspace with members always keeps an administrator. Each
+invitation emails the inviter's and the file's names, which the sender chooses, so one person may
+send 100 invitations a day and one address may receive 5, documents and workspaces together
+(`src/server/invitations/budget.ts`).
 
 Database rows use UUIDs. Capability secrets and invitation tokens are random hex; only their SHA-256
 digests are stored, and they travel in URL fragments so they never reach access logs or `Referer`
@@ -137,6 +162,22 @@ an administrator resetting them.
 A new email address is confirmed from that address through Better Auth's change-email link, and
 the old address is told which address is taking over. An approved enrollment follows the account
 to its new address, so the approval stays with the account.
+
+Deleting an account goes through Better Auth's `deleteUser`, reached only at
+`POST /api/account/delete`, which wants a session from the last ten minutes or the password. Its
+`beforeDelete` hook (`src/server/account/deletion.ts`) takes Cloud's part in one transaction, or
+refuses and changes nothing while the account is the only admin of a workspace other people
+belong to (`account_sole_admin`) or the deployment's only active administrator
+(`last_admin_required`). The same transaction deletes the user row, whose keys cascade to its
+sessions, sign-in methods, passkeys, and two-step secrets, so a failure leaves the account whole;
+Better Auth's own deletes after the hook then find nothing. Workspaces only the account belongs to lose their documents,
+deleted forever, and the cleanup worker removes each such workspace once it has destroyed
+the last of them after the grace; in the workspaces others keep the account drops out, and the longest-standing
+other admin becomes the owner whose plan the workspace draws on. Its document grants, invitation
+budget, plan, picture, sign-ins, MFA assurances and enrollment go, and invitations it sent are
+withdrawn. `GET /api/account/deletion` says beforehand what would go and what stops it, and
+the account page's Download all saves, as one zip, the documents the account would lose: those
+workspaces' and the ones it created in workspaces it leaves.
 
 Collaboration tickets are signed, epoch-scoped JWTs naming the principal and permission. Rotating a
 capability secret keeps the current epoch; revoking access advances it so old tickets stop working.
@@ -166,17 +207,30 @@ sequenceDiagram
   B->>R: yjs-update (dropped)
 ```
 
-The relay joins every room as a peer named `server`. It holds the room's Yjs document, saved in
-PostgreSQL by document and collaboration epoch, so a newcomer gets the document even when nobody
-else is online. Tickets are short-lived signed JWTs; the client presents a fresh one before the
-current one expires, and the relay closes a socket whose ticket lapsed or changed identity.
+The relay joins every room as a peer named `server`. It holds the room's Yjs document, saved by
+document and collaboration epoch, so a newcomer gets the document even when nobody else is online.
+A save logs what changed since the last one in PostgreSQL as a single update, a few bytes for a
+typical edit, rather than rewriting the room; once the log reaches 500 updates or 4 MiB, and when
+the room closes, a fresh snapshot replaces it. Snapshots are files in the object store beside the
+documents' revisions, which a room's row names, so the database holds only the updates since the
+last one. A compaction records its file before writing it and points the room at it last, so a
+replaced or abandoned snapshot is one nothing refers to, which the object sweep removes once it is
+15 minutes old. A room reopens from its snapshot and the updates logged after it. Tickets are
+short-lived signed JWTs; the client presents a fresh one before the current one expires, and the
+relay closes a socket whose ticket lapsed or changed identity. It checks a ticket when it hears from
+the peer or sends it anything, not on a timer, so on Cloudflare an idle room's Durable Object
+hibernates while its sockets stay open: each socket keeps its peer as an attachment, and the object
+it wakes to resumes them and loads the room's document only once a message needs it. Presence alone
+wakes the object without loading the document.
 
 A socket message carries at most 256 KiB of a frame, under the deployment's per-message limit,
 which may not be lower. A larger frame, such as a big paste, the first editor's copy of a large
 document, or a newcomer's sync reply, travels as fragments in a row that the receiver joins again.
-The relay joins an editor's fragments up to 256 MiB and holds viewers and peers not yet admitted to
-one message, so only an editor can make it buffer more. A peer the relay turns away for good, for
-a ticket, a full room, or a frame past those limits, leaves the room: the document's status says it
+The relay joins an editor's fragments up to the room's limit and holds viewers and peers not yet
+admitted to one message, so only an editor can make it buffer more. A room's document may hold at
+most 256 MiB, or 32 MiB on Cloudflare, where a Durable Object has 128 MB of memory; an editor's
+update that would grow it past that is refused, while one that only deletes always goes through. A peer the relay turns away for good, for a
+ticket, a full room, or a frame past those limits, leaves the room: the document's status says it
 is not editing live and offers to rejoin, a viewer stays read-only, and an editor saves on its own,
 since a tab that was not the room's saver had its edits counted as saved by the room.
 
@@ -204,7 +258,8 @@ not carried over the relay yet; the transport reports no media.
 Enrollment is `open`, `approval`, or `closed`. In approval mode a verified identity creates a
 pending request that a deployment administrator approves or rejects; approval can be revoked later.
 Deployment administrators are separate from workspace administrators, and startup never grants
-either role: the first operator is approved and promoted through the `admin` command.
+either role: the first operator is approved and promoted through the `admin` command. An official
+deployment must require a second sign-in step from them (`required_for_admins`).
 
 The console's lists are tables the server pages, searches, and filters: each admin list endpoint
 takes `search`, `filter`, `limit`, and `offset` and answers with its rows, the `total` matching, and
@@ -220,6 +275,27 @@ sign-ins. Administrators make and remove administrators, sign people out everywh
 with a reason the activity log keeps, and reset a locked-out person's two-step sign-in, which
 removes their authenticator app, recovery codes, and passkeys, and take down a person's picture.
 Every action asks once more.
+
+Anyone a share link lets in, guest or signed in, may report its document: why (spam or
+phishing, illegal content, copyright, harassment, or something else), what to look at, and,
+optionally, where to answer. `POST /api/shares/:shareId/reports` resolves the link as opening it
+does, so a wrong secret, a revoked link, or a server that turns guests away refuses the report,
+and its answer says only that it arrived. One reporter may report a link three times a day and a
+link gathers at most fifty reports a day (`src/server/reports/service.ts`), besides the public
+routes' per-address limit. Where email delivery is configured, each report emails the
+deployment's administrator notification addresses, the ones enrollment uses; without it, reports
+wait in the console's Reports list unannounced. The console's Reports list shows open reports first, with
+the document, its workspace and owner, and the link; from a report an administrator takes the
+document down, revokes the link, suspends the owner, dismisses the report, or marks it handled.
+Documents lists every document, searched by name, ID, or the owner's name or email, and filtered
+to reported or taken-down ones. A document taken down (`document.disabled_at`) is out of reach
+for everyone, its owner included: access, listings, share links, invitations, and collaboration
+tickets all treat it as gone, and the relay admits nobody to its rooms even with a ticket issued
+before. Its live rooms close and are saved, and its collaboration epoch stays, so restoring it
+gives everything back, edits not yet in a revision included; its open reports count as acted on.
+Revoking a link from the console works as the owner's revocation does: the epoch moves on, so the
+link's guests lose their tickets while members keep editing. Each of these actions goes into the
+activity log.
 
 Account pictures live in `user_picture`, one per account, and `user.image` holds the address the
 server serves them from, `/api/pictures/:userId/:version`, where the version is the start of the
@@ -247,8 +323,12 @@ code. A verification link started in the editor lands on `/auth/verified`, which
 back to the editor.
 
 `CLOUD_PORTAL_PAGE_ROOTS` in the contract lists the page paths, and every runtime serves
-`cloud.html` at and below them with `frame-ancestors 'none'`, so the approval page cannot be
-framed. Both runtimes put the API behind the same Hono router, `createCloudServer` in
+`cloud.html` at and below them with a fixed content security policy that runs only the site's own
+scripts and Turnstile, and with `frame-ancestors 'none'`, so the approval page cannot be framed.
+The pages carry no inline script for it to allow: a build loads the boot splash's script from its
+own file. The desktop approval page never shows the code it
+was opened with: the person types the code the app shows, so a link someone else sent cannot be
+approved in one click. Both runtimes put the API behind the same Hono router, `createCloudServer` in
 `src/runtime/site`, which answers portal pages before the API, and only where the API returns 404
 the site's files, then the editor's `index.html` for any other page, so the editor's router keeps
 its own addresses. Node reads the build named by `OPENPENCIL_CLOUD_SITE_DIR`, and the Worker reads
@@ -313,44 +393,90 @@ OpenFeature answers concrete questions such as whether links work, whether guest
 follow a link without signing in, may view or edit through one, or whether full revision history
 is kept, and what a numeric limit is. Links always work for people signed in to the server: the
 share routes resolve the session, and a guest the server turns away gets `401` so the editor signs
-in and opens the link again. Its provider reads one entitlement
+in and opens the link again. A guest who may view but not edit opens an edit link view-only; the
+resolution names the link's own permission as well, so the editor offers signing in to edit. Its provider reads one entitlement
 source, chosen by `[entitlements] source`: the static table in the deployment TOML, which applies to
-every workspace, or per-workspace rows in the database that the `entitlements` command sets. The two
-are alternatives, not layers. Technical limits cap the file size and participant limits the source
-reports.
+every account, or per-account rows in the database that the `entitlements` command and the internal
+API set. The two are alternatives, not layers. With `source = "database"`, the same table under
+`[entitlements]` holds the defaults: what an account without a row takes, which is the free plan
+when billing writes rows only for paid accounts, and what a row leaves out. Technical limits cap the
+file size and participant limits the source reports.
 
-Storage quota uses reservations: the upload locks the workspace's quota row, counts committed usage
-plus active reservations, reserves the requested bytes, and commits the verified size when the
-upload finishes. Cleanup releases reservations from abandoned uploads.
+Plans belong to accounts, not workspaces. Every workspace has an owner, its creator at first, and
+every question about a workspace or its documents is asked of the owner's plan
+(`workspacePolicyContext`), so a person's workspaces share one allowance however many they create.
+When the owner leaves the workspace or stops being an admin, it passes to the longest-standing other
+admin.
 
-## AI service and billing
+Storage quota uses reservations: an upload takes a transaction lock on the workspace's owner, counts
+committed usage plus active reservations across every workspace that owner owns, reserves the
+requested bytes, and commits the verified size when the upload finishes. Usage is still recorded per
+workspace, and the entitlements endpoint reports the owner's total. Cleanup releases reservations
+from abandoned uploads.
 
-Cloud does not proxy models or keep credit balances. An `[ai]` table advertises a separate AI
-service in discovery, and `POST /api/ai/token` signs a short-lived ES256 token for a workspace
-member when the workspace has the `ai.enabled` entitlement. The token names the user, the
-workspace, and its `ai.monthly_credit_allowance`; the service verifies it against the keys at
-`/.well-known/jwks.json`, so it never reads Cloud's database. The contract editors and services
-share, including the service's catalog, wallet, and error codes, is `src/contract/ai.ts`; it has its
-own version so a service can change without a Cloud release. A `[billing]` table only advertises
-where people manage their plan.
+An owner who holds their whole storage allowance or more is read-only (`storageLimitReached`):
+their documents open, download, and can be deleted, but take no saves or uploads, and no new
+documents. Collaboration tickets for them carry `view` and `readOnly: "storage-limit"`, so the
+editor opens the file view-only and says why, with the server's plan page when it bills.
+A plan that shrinks below what the account holds, as when billing moves a lapsed subscription to
+the free plan, reaches this the same way as filling it; nothing is deleted. Freeing space or a
+bigger plan lifts it at the next ticket.
 
-A service answers below its endpoint at the paths in `CLOUD_AI_API_PATHS`: model requests follow
-the OpenAI chat completions API, so editors reach it with an OpenAI-compatible client, and the
-catalog, wallet, and usage pages are the contract's own. The reference service is the AI relay in
-`src/ai-relay`, run by `src/runtime/node/ai-relay`: it verifies tokens against Cloud's keys,
-forwards completions to one upstream with one key, and keeps one usage row per settled request, so a
-workspace's monthly spend is the sum of its rows. It reads usage from the upstream's answer, asking
+## Services and billing
+
+Cloud does not proxy models or other paid capabilities, and keeps no credit balances. A
+`[services]` table advertises a separate service in discovery, and `POST /api/services/token` signs
+a short-lived ES256 token for a workspace member when the workspace owner's plan has the
+`services.enabled` entitlement. The token names the user, the workspace, the account whose credits it
+spends (`accountId`, the owner), and that plan's `services.monthly_credit_allowance`;
+the service verifies it against the keys at `/.well-known/jwks.json`, so it never reads Cloud's
+database. A service refuses a token that names no account. The contract editors and services share, including the service's catalog, wallet, and
+error codes, is `src/contract/services.ts`; it has its own version so a service can change without
+a Cloud release. AI models are the first capability; image generation and search join the same
+contract and the same credits.
+
+A `[billing]` table advertises a billing service by its `endpoint`, which needs the services'
+signing key and the internal API. `POST /api/billing/token` signs a short-lived token for the
+signed-in person's own account, with the services' key but the `openpencil-billing` audience, so it
+spends no credits. The billing service verifies it against the same published keys, sells the plans
+and credit packs of its catalog, sends the person to its payment provider's checkout or portal, and
+sets the account's plan through the internal API as it is paid. The contract is
+`src/contract/billing.ts`. Editors link to the server's plan page, `CLOUD_ACCOUNT_PLAN_PATH`, whenever
+it advertises billing.
+
+A service answers below its endpoint at the paths in `CLOUD_SERVICES_API_PATHS`: model requests
+follow the OpenAI chat completions API, so editors reach it with an OpenAI-compatible client, and the
+catalog, wallet, and usage pages are the contract's own. `CloudServicesSchema` types those routes as
+Hono does, so the client calls them through `hc` and still parses each answer, since a service is
+deployed apart from the editor; a service built with Hono can check its app against the same type.
+The reference service is the services server in `src/services`, run by `src/runtime/node/services`:
+it verifies tokens against Cloud's keys, forwards completions to one upstream with one key, and
+keeps one usage row per settled request, so an account's monthly spend is the sum of its rows across
+the workspaces it owns. The usage page lists one workspace's requests only, since the owner's other
+workspaces have other members. It reads usage from the upstream's answer, asking
 streams for it with `stream_options.include_usage`, and keeps reading after the editor disconnects
 so a request is still charged. It admits a request while credits remain and charges it afterwards,
 so in-flight requests can overdraw an allowance; the official service reserves credits instead. An
 answer ends only after its charge is recorded, so the wallet the editor reads once a reply ends
 includes it, and a refusal for lack of credits says when the allowance renews. It forwards only
 chat completion fields, so a router's fallback or provider fields cannot run a model outside the
-catalog on its key. An upstream answer has ten minutes in all, streamed or not, before the relay ends it.
+catalog on its key. An upstream answer has ten minutes in all, streamed or not, before the services server ends it.
+
+Other capabilities are optional: a service lists each one it offers in its catalog with its price,
+and answers `capability_unavailable` for one it does not. Web search is the first. A catalog with
+`search` takes `POST /v1/search` with a query and up to ten results, and returns each page's URL,
+title, date, author, and an excerpt; the contract names no search engine. The editor offers the
+model OpenPencil's `search_web` tool, which also reaches agents through OpenPencil's MCP server.
+It searches the services when the Design model runs on them and their catalog lists search, charged
+to the same account; the reference services server offers no search. In the desktop app, an Exa key saved
+under Settings › Integrations is used instead, whatever the model, and Exa bills its owner; Exa
+refuses browsers' cross-origin requests, so the web app has no such setting. Without either, the
+tool tells the model how to set search up.
 
 Services that decide entitlements, such as billing, write them through the internal API rather than
-the database: `setWorkspaceEntitlements` in `src/server/internal`, which runtimes expose over HTTP
-with a bearer token (`[internal_api]`) or a private transport of their own. Every write carries an
+the database: `setAccountEntitlements` in `src/server/internal`, which runtimes expose over HTTP at
+`PUT /api/internal/accounts/:userId/entitlements` with a bearer token (`[internal_api]`) or a
+private transport of their own. Every write carries an
 increasing `externalVersion`, and a write older than the stored one is refused, because billing
 events arrive out of order. Cloud keeps answering from the last entitlements it received while the
 writer is down.

@@ -33,7 +33,7 @@ const splitterStyles = tv(splitterTheme)({ direction: 'vertical' })
 <template>
   <aside
     data-test-id="layers-panel"
-    class="flex min-w-0 flex-1 flex-col overflow-hidden border-r border-border bg-panel"
+    class="flex min-w-0 flex-1 flex-col overflow-hidden border-e border-border bg-panel"
     style="contain: paint layout style"
   >
     <AppMenu />
@@ -75,7 +75,7 @@ const splitterStyles = tv(splitterTheme)({ direction: 'vertical' })
       <SplitterPanel :default-size="70" :min-size="20" class="flex flex-col overflow-hidden">
         <header
           data-test-id="layers-header"
-          class="shrink-0 px-3 py-2 text-[11px] font-semibold text-surface"
+          class="shrink-0 px-3 py-2 text-2xs font-semibold text-surface"
         >
           {{ panels.layers }}
         </header>

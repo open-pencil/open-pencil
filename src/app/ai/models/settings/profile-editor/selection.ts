@@ -1,7 +1,7 @@
 import { computed, ref, watch, type Ref } from 'vue'
 
 import {
-  ACP_AGENTS,
+  acpAgentFor,
   AI_PROVIDERS,
   type AIProviderID,
   type ModelOption
@@ -42,9 +42,7 @@ export function useProfileModelSelection(
   const supportsThinking = computed(() => supportsThinkingLevel(draft.providerID))
   const providerDisplayName = computed(() => {
     if (!isACP.value) return providerDef.value.name
-
-    const agentID = draft.providerID.slice('acp:'.length)
-    return ACP_AGENTS.find((agent) => agent.id === agentID)?.name ?? draft.providerID
+    return acpAgentFor(draft.providerID)?.name ?? draft.providerID
   })
   const modelOptions = computed(() => {
     const options = modelPickerOptions(availableModels.value, providerDef.value.models, ai.value)

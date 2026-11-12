@@ -1,9 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import { renderNodesToSVG } from '@open-pencil/core/io/formats/svg'
 import { SceneGraph, type SceneNode, type Stroke } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 const stroke = (align: Stroke['align']): Stroke => ({
   type: 'SOLID',

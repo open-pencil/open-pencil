@@ -1,3 +1,4 @@
+import { cubicPoint } from '../cubic'
 import { computeBounds } from '../geometry'
 import type { Rect, Vector } from '../primitives'
 import type { StrokeCap, VectorNetwork } from '../types'
@@ -47,11 +48,7 @@ export function pointAt(piece: ConnectorPiece, t: number): Vector {
   const { from: a, to: b } = piece
   if (isStraight(piece)) return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }
   const [c1, c2] = controls(piece)
-  const u = 1 - t
-  return {
-    x: u * u * u * a.x + 3 * u * u * t * c1.x + 3 * u * t * t * c2.x + t * t * t * b.x,
-    y: u * u * u * a.y + 3 * u * u * t * c1.y + 3 * u * t * t * c2.y + t * t * t * b.y
-  }
+  return cubicPoint(a, c1, c2, b, t)
 }
 
 function derivativeAt(piece: ConnectorPiece, t: number): Vector {

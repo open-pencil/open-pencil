@@ -8,14 +8,17 @@ export function createDefaultEditorViewState(pageId: string): EditorViewState {
     selectedIds: new Set<string>(),
     marquee: null,
     snapGuides: [],
+    snapTargets: { points: [] },
     guides: createGuideOverlayState(),
     rotationPreview: null,
     dropTargetId: null,
     layoutInsertIndicator: null,
     hoveredNodeId: null,
+    scaleAnchor: { x: 0.5, y: 0.5 },
     transforming: false,
     measurementMode: 'off',
     editingTextId: null,
+    renamingLabelId: null,
     penState: null,
     penCursorX: null,
     penCursorY: null,
@@ -34,7 +37,7 @@ export function createDefaultEditorViewState(pageId: string): EditorViewState {
     nodeEditState: null,
     cursorCanvasX: null,
     cursorCanvasY: null,
-    play: null
+    canvasView: { id: 'edit' }
   }
 }
 
@@ -44,6 +47,7 @@ export function copyEditorViewState(source: EditorViewState): EditorViewState {
     selectedIds: new Set(source.selectedIds),
     marquee: structuredClone(source.marquee),
     snapGuides: structuredClone(source.snapGuides),
+    snapTargets: structuredClone(source.snapTargets),
     guides: structuredClone(source.guides),
     rotationPreview: structuredClone(source.rotationPreview),
     layoutInsertIndicator: structuredClone(source.layoutInsertIndicator),
@@ -53,8 +57,10 @@ export function copyEditorViewState(source: EditorViewState): EditorViewState {
     shapeHandleHover: structuredClone(source.shapeHandleHover),
     connectorTarget: structuredClone(source.connectorTarget),
     pageColor: { ...source.pageColor },
+    scaleAnchor: { ...source.scaleAnchor },
     navigation: { ...source.navigation },
-    nodeEditState: structuredClone(source.nodeEditState)
+    nodeEditState: structuredClone(source.nodeEditState),
+    canvasView: { ...source.canvasView }
   }
 }
 

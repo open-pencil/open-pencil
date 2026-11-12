@@ -1,0 +1,30 @@
+# Licenses the crates compiled into the desktop app may carry (`bun run check:licenses:desktop`).
+# The MPL-2.0 crates are file-level copyleft, met by the notices the release bundles with the app
+# (`notices` in tools/release/release-packages), which name every crate's source. They accept the
+# licenses allowed here.
+[graph]
+targets = [
+  "aarch64-apple-darwin",
+  "x86_64-apple-darwin",
+  "x86_64-pc-windows-msvc",
+  "aarch64-pc-windows-msvc",
+  "x86_64-unknown-linux-gnu",
+]
+
+[licenses]
+allow = [
+  "Apache-2.0",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "BSL-1.0",
+  "CC0-1.0",
+  "CDLA-Permissive-2.0",
+  "ISC",
+  "MIT",
+  "MPL-2.0",
+  "Unicode-3.0",
+  "Zlib",
+]
+confidence-threshold = 0.9
+# Only system-deps' build scripts use it, so it is never compiled into the app.
+exceptions = [{ allow = ["Apache-2.0 WITH LLVM-exception"], crate = "target-lexicon" }]

@@ -1,0 +1,373 @@
+import { describe, expect, setDefaultTimeout, test } from 'bun:test'
+
+import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { decompressFigKiwiDataAsync } from '@open-pencil/kiwi/fig/container'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import type { JSONObject } from '@open-pencil/scene-graph/primitives'
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { parseFixture } from '@open-pencil/test-support/fig/fixtures'
+import { runsHeavyTests } from '@open-pencil/test-support/heavy'
+setDefaultTimeout(60_000)
+
+describe('text node export', () => {
+  test('text nodes have derivedTextData and textUserLayoutVersion', async () => {
+    await initCodec()
+
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    graph.createNode('TEXT', page.id, {
+      name: 'Greeting',
+      text: 'Hello World',
+      width: 120,
+      height: 24,
+      fontFamily: 'Inter',
+      fontWeight: 400,
+      fontSize: 16
+    })
+
+    const exported = await exportFigFile(graph)
+    const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+
+    const greeting = [...reimported.getAllNodes()].find((n) => n.name === 'Greeting')
+    expect(greeting).toBeDefined()
+    const textNode = expectDefined(greeting, 'textNode')
+    expect(textNode.type).toBe('TEXT')
+    expect(textNode.text).toBe('Hello World')
+    expect(textNode.fontFamily).toBe('Inter')
+    expect(textNode.fontSize).toBe(16)
+  })
+
+  test('roundtrips advanced typography fields', async () => {
+    await initCodec()
+
+    const graph = new SceneGraph()
+    graph.createNode('TEXT', graph.getPages()[0].id, {
+      name: 'Advanced type',
+      text: 'Advanced',
+      textAlignHorizontal: 'JUSTIFIED',
+      textAlignVertical: 'BOTTOM',
+      textCase: 'UPPER',
+      textTruncation: 'ENDING',
+      maxLines: 2,
+      fontFeatures: [
+        { tag: 'liga', enabled: false },
+        { tag: 'kern', enabled: true }
+      ]
+    })
+
+    const reimported = await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)
+    const textNode = [...reimported.getAllNodes()].find((node) => node.name === 'Advanced type')
+    expect(textNode).toMatchObject({
+      textAlignHorizontal: 'JUSTIFIED',
+      textAlignVertical: 'BOTTOM',
+      textCase: 'UPPER',
+      textTruncation: 'ENDING',
+      maxLines: 2
+    })
+    expect(textNode?.fontFeatures).toContainEqual({ tag: 'LIGA', enabled: false })
+  })
+
+  test('keeps OpenPencil text language hints out of the .fig schema', async () => {
+    await initCodec()
+
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    graph.createNode('TEXT', page.id, {
+      name: 'Localized Han',
+      text: '骨',
+      textLanguage: 'ja-JP',
+      fontFamily: 'Inter'
+    })
+
+    const reimported = await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)
+    const textNode = [...reimported.getAllNodes()].find((node) => node.name === 'Localized Han')
+
+    expect(expectDefined(textNode, 'textNode').text).toBe('骨')
+    expect(textNode?.textLanguage).toBeNull()
+  })
+
+  test('text node has lines in textData', async () => {
+    await initCodec()
+
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    graph.createNode('TEXT', page.id, {
+      name: 'Multiline',
+      text: 'Line 1\nLine 2\nLine 3',
+      width: 100,
+      height: 60,
+      fontFamily: 'Inter',
+      fontWeight: 400,
+      fontSize: 14
+    })
+
+    const exported = await exportFigFile(graph)
+    const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+
+    const textNode = [...reimported.getAllNodes()].find((n) => n.name === 'Multiline')
+    expect(textNode).toBeDefined()
+    expect(expectDefined(textNode, 'textNode').text).toBe('Line 1\nLine 2\nLine 3')
+  })
+
+  test('derivedTextData fields present in raw binary', async () => {
+    await initCodec()
+
+    const { unzipSync, inflateSync } = await import('fflate')
+    const { decodeBinarySchema, compileSchema, ByteBuffer } =
+      await import('@open-pencil/kiwi/schema-runtime')
+    const { parseFigKiwiChunks } = await import('@open-pencil/kiwi/fig/container')
+
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    graph.createNode('TEXT', page.id, {
+      name: 'Raw Test',
+      text: 'Check binary',
+      width: 80,
+      height: 18,
+      fontFamily: 'Roboto',
+      fontWeight: 700,
+      fontSize: 12
+    })
+
+    const exported = await exportFigFile(graph)
+    const zip = unzipSync(new Uint8Array(exported))
+    const canvasData = zip['canvas.fig'] ?? zip['canvas']
+    expect(canvasData).toBeDefined()
+
+    const chunks = parseFigKiwiChunks(canvasData)
+    expect(chunks).not.toBeNull()
+    expect(chunks?.length).toBeGreaterThanOrEqual(2)
+
+    const schemaBytes = inflateSync(chunks?.[0] ?? new Uint8Array())
+    const schema = decodeBinarySchema(new ByteBuffer(schemaBytes))
+    const compiled = compileSchema(schema) as {
+      decodeMessage(data: Uint8Array): Record<string, unknown>
+    }
+    const dataRaw = await decompressFigKiwiDataAsync(chunks?.[1] ?? new Uint8Array())
+    const message = compiled.decodeMessage(dataRaw)
+
+    const nodeChanges = message.nodeChanges as JSONObject[]
+    const found = nodeChanges.find((nc) => nc.type === 'TEXT')
+    expect(found).toBeDefined()
+    const textNc = expectDefined(found, 'text node change')
+
+    const textData = textNc.textData as JSONObject
+    expect(textData.characters).toBe('Check binary')
+    expect(textData.lines).toBeDefined()
+    const lines = textData.lines as JSONObject[]
+    expect(lines.length).toBeGreaterThanOrEqual(1)
+    expect(lines[0].lineType).toBe('PLAIN')
+
+    expect(textNc.textUserLayoutVersion).toBe(4)
+
+    expect(textNc.derivedTextData).toBeDefined()
+    const derivedTextData = textNc.derivedTextData as JSONObject
+    expect(derivedTextData.layoutSize).toBeDefined()
+    const layoutSize = derivedTextData.layoutSize as JSONObject
+    expect(layoutSize.x).toBe(80)
+    expect(layoutSize.y).toBe(18)
+
+    expect(derivedTextData.fontMetaData).toBeDefined()
+    const fontMetaData = derivedTextData.fontMetaData as JSONObject[]
+    expect(fontMetaData.length).toBe(1)
+    expect((textNc.fontName as JSONObject).style).toBe('Bold')
+    expect((fontMetaData[0].key as JSONObject).family).toBe('Roboto')
+    expect((fontMetaData[0].key as JSONObject).style).toBe('Bold')
+    expect(fontMetaData[0].fontWeight).toBe(700)
+    expect(fontMetaData[0].fontStyle).toBe('NORMAL')
+  })
+
+  test('uses Figma font style names for weighted text', async () => {
+    await initCodec()
+
+    const { unzipSync, inflateSync } = await import('fflate')
+    const { decodeBinarySchema, compileSchema, ByteBuffer } =
+      await import('@open-pencil/kiwi/schema-runtime')
+    const { parseFigKiwiChunks } = await import('@open-pencil/kiwi/fig/container')
+
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    graph.createNode('TEXT', page.id, {
+      name: 'Weighted',
+      text: 'Semi bold',
+      width: 120,
+      height: 24,
+      fontFamily: 'Inter',
+      fontWeight: 600,
+      fontSize: 16
+    })
+
+    const exported = await exportFigFile(graph)
+    const zip = unzipSync(new Uint8Array(exported))
+    const chunks = parseFigKiwiChunks(zip['canvas.fig'] ?? zip['canvas'])
+    const schemaBytes = inflateSync(chunks?.[0] ?? new Uint8Array())
+    const schema = decodeBinarySchema(new ByteBuffer(schemaBytes))
+    const compiled = compileSchema(schema) as {
+      decodeMessage(data: Uint8Array): Record<string, unknown>
+    }
+    const message = compiled.decodeMessage(
+      await decompressFigKiwiDataAsync(chunks?.[1] ?? new Uint8Array())
+    )
+    const nodeChanges = message.nodeChanges as JSONObject[]
+    const textNc = expectDefined(
+      nodeChanges.find((nc) => nc.type === 'TEXT'),
+      'text node change'
+    )
+    const derivedTextData = textNc.derivedTextData as JSONObject
+    const fontMetaData = expectDefined(
+      derivedTextData.fontMetaData as JSONObject[] | undefined,
+      'font metadata'
+    )
+
+    expect((textNc.fontName as JSONObject).style).toBe('Semi Bold')
+    expect((fontMetaData[0].key as JSONObject).style).toBe('Semi Bold')
+  })
+
+  test('auto-layout text children preserve explicit fixed text sizing', async () => {
+    await initCodec()
+
+    const { unzipSync, inflateSync } = await import('fflate')
+    const { decodeBinarySchema, compileSchema, ByteBuffer } =
+      await import('@open-pencil/kiwi/schema-runtime')
+    const { parseFigKiwiChunks } = await import('@open-pencil/kiwi/fig/container')
+
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const frame = graph.createNode('FRAME', page.id, {
+      name: 'Card',
+      layoutMode: 'VERTICAL',
+      width: 280,
+      height: 160
+    })
+    graph.createNode('TEXT', frame.id, {
+      name: 'Body',
+      text: 'Track your key metrics and performance indicators in real time.',
+      width: 240,
+      height: 36,
+      fontFamily: 'Inter',
+      fontSize: 13,
+      fontWeight: 400,
+      textAutoResize: 'NONE'
+    })
+
+    const exported = await exportFigFile(graph)
+    const zip = unzipSync(new Uint8Array(exported))
+    const chunks = parseFigKiwiChunks(zip['canvas.fig'] ?? zip['canvas'])
+    const schemaBytes = inflateSync(chunks?.[0] ?? new Uint8Array())
+    const schema = decodeBinarySchema(new ByteBuffer(schemaBytes))
+    const compiled = compileSchema(schema) as {
+      decodeMessage(data: Uint8Array): Record<string, unknown>
+    }
+    const message = compiled.decodeMessage(
+      await decompressFigKiwiDataAsync(chunks?.[1] ?? new Uint8Array())
+    )
+    const nodeChanges = message.nodeChanges as JSONObject[]
+    const textNc = expectDefined(
+      nodeChanges.find((nc) => nc.type === 'TEXT'),
+      'text node change'
+    )
+
+    expect(textNc.textAutoResize).toBe('NONE')
+    // Auto line height, written as Figma writes it.
+    expect(textNc.lineHeight).toEqual({ value: 100, units: 'PERCENT' })
+    expect(textNc.stackChildAlignSelf).toBeUndefined()
+  })
+
+  test('omits implicit fixed text sizing for imported auto-layout text', async () => {
+    await initCodec()
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const frame = graph.createNode('FRAME', page.id, { layoutMode: 'VERTICAL' })
+    const text = graph.createNode('TEXT', frame.id, {
+      text: 'Supporting text',
+      textAutoResize: 'NONE',
+      source: {
+        ...frame.source,
+        format: 'fig',
+        id: '1:2',
+        fig: {
+          ...frame.source.fig,
+          rawNodeFields: {}
+        }
+      }
+    })
+
+    const exported = await exportFigFile(graph)
+    const parsed = await parseFigFile(exported.buffer as ArrayBuffer)
+    const restored = [...parsed.getAllNodes()].find((node) => node.name === text.name)
+
+    expect(restored?.textAutoResize).toBe('NONE')
+    expect(restored?.source.fig.rawNodeFields).not.toHaveProperty('textAutoResize')
+  })
+
+  test('style runs produce multiple fontMetaData entries', async () => {
+    await initCodec()
+
+    const { unzipSync, inflateSync } = await import('fflate')
+    const { decodeBinarySchema, compileSchema, ByteBuffer } =
+      await import('@open-pencil/kiwi/schema-runtime')
+    const { parseFigKiwiChunks } = await import('@open-pencil/kiwi/fig/container')
+
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    graph.createNode('TEXT', page.id, {
+      name: 'Styled',
+      text: 'Bold and Normal',
+      width: 150,
+      height: 20,
+      fontFamily: 'Inter',
+      fontWeight: 400,
+      fontSize: 16,
+      styleRuns: [
+        { start: 0, length: 4, style: { fontWeight: 700 } },
+        { start: 5, length: 10, style: {} }
+      ]
+    })
+
+    const exported = await exportFigFile(graph)
+    const zip = unzipSync(new Uint8Array(exported))
+    const canvasData = zip['canvas.fig'] ?? zip['canvas']
+    const chunks = parseFigKiwiChunks(canvasData)
+    expect(chunks).toBeDefined()
+
+    const schemaBytes = inflateSync(chunks?.[0] ?? new Uint8Array())
+    const schema = decodeBinarySchema(new ByteBuffer(schemaBytes))
+    const compiled = compileSchema(schema) as {
+      decodeMessage(data: Uint8Array): Record<string, unknown>
+    }
+    const dataRaw = await decompressFigKiwiDataAsync(chunks?.[1] ?? new Uint8Array())
+    const message = compiled.decodeMessage(dataRaw)
+
+    const nodeChanges = message.nodeChanges as JSONObject[]
+    const textNc = nodeChanges.find((nc) => nc.type === 'TEXT')
+
+    const derivedTextData = textNc?.derivedTextData as JSONObject | undefined
+    const fontMetaData = derivedTextData?.fontMetaData as JSONObject[] | undefined
+    expect(fontMetaData?.length).toBe(2)
+
+    const families = (fontMetaData ?? []).map((m) => (m.key as JSONObject)?.style as string)
+    expect(families).toContain('Bold')
+    expect(families).toContain('Regular')
+  })
+
+  test.if(runsHeavyTests)(
+    'material3.fig text nodes have derivedTextData after round-trip',
+    async () => {
+      const original = await parseFixture('material3.fig')
+
+      const textNodes = [...original.getAllNodes()].filter((n) => n.type === 'TEXT')
+      expect(textNodes.length).toBeGreaterThan(0)
+
+      const exported = await exportFigFile(original)
+      const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+
+      const reimportedText = [...reimported.getAllNodes()].filter((n) => n.type === 'TEXT')
+      expect(reimportedText.length).toBe(textNodes.length)
+
+      for (const node of reimportedText.slice(0, 10)) {
+        expect(node.text.length).toBeGreaterThan(0)
+      }
+    }
+  )
+})

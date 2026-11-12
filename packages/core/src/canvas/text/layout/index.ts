@@ -8,64 +8,34 @@ import type {
   RectWidthStyle,
   RectWithDirection,
   ShapedLine
-} from 'canvaskit-wasm'
+} from '@open-pencil/canvaskit'
 
+import { blockCaretRect } from '#core/canvas/text/layout/caret'
+import { type BlockDrawing, blockDrawing, drawBlock } from '#core/canvas/text/layout/drawing'
 import {
+  figmaLineBox,
   placeLines,
-  shapedLinesByLine,
   type BlockPlacement,
   type TextLayoutBlockLines
 } from '#core/canvas/text/layout/lines'
+import { lineOffset, offsetAt, paragraphY } from '#core/canvas/text/layout/placement'
+import { blockShapedLines } from '#core/canvas/text/layout/shaped'
+import type {
+  LineCapHeight,
+  TextCaretBox,
+  TextLayoutBlock,
+  TextLayoutMarker
+} from '#core/canvas/text/layout/types'
 
-/** A list item's number or bullet, laid out on its own. */
-export interface TextLayoutMarker {
-  paragraph: Paragraph
-  kind: 'bullet' | 'number'
-  /** Font size of the list's first character, which sets the marker's distance from the text. */
-  em: number
-  /** The face the marker is set in, for its glyph outlines. */
-  face: { family: string; style: string }
-  /** Where the marker is drawn and the line of the item it marks, set by layout. */
-  x: number
-  y: number
-  lineNumber: number
-}
+export type {
+  LineCapHeight,
+  TextCaretBox,
+  TextLayoutBlock,
+  TextLayoutMarker
+} from '#core/canvas/text/layout/types'
 
-/** One paragraph of the text, or the whole text when it needs no paragraph layout of its own. */
-export interface TextLayoutBlock {
-  paragraph: Paragraph
-  /** Rebuilds the paragraph to show at most `maxLines` lines, when the text is truncated. */
-  rebuild?: (maxLines: number) => Paragraph
-  /** The first character the block holds, as an index into the text and in UTF-8 bytes. */
-  start: number
-  utf8Start: number
-  /** Characters the block holds, not counting the newline that ends it. */
-  length: number
-  /** Indices before the text, in UTF-16 and UTF-8, and its width: a first-line indent. */
-  lead: number
-  utf8Lead: number
-  leadWidth: number
-  /** Laid out from a space, standing for a paragraph with no characters. */
-  empty: boolean
-  /** Distance of the text from the start edge: a list item's indent. */
-  inset: number
-  rtl: boolean
-  /** Space above the block, from the paragraph before it. */
-  spaceBefore: number
-  marker: TextLayoutMarker | null
-  /** What placing its lines as Figma does needs; without it they stack as the paragraph's. */
-  lines?: TextLayoutBlockLines
-  x: number
-  y: number
-  /** Whether the block is shown, as truncation hides blocks past its last line. */
-  visible: boolean
-}
-
-export interface TextCaretBox {
-  x: number
-  top: number
-  bottom: number
-}
+/** Fractions of a pixel a text is drawn below its top at that keep their drawing. */
+const MAX_DRAWN_FRACTIONS = 4
 
 /**
  * A laid-out text node: one native paragraph per block, stacked with paragraph and list
@@ -78,6 +48,11 @@ export class TextLayout {
   private lineOffsets: number[] = []
   private truncated = false
   private readonly placements = new Map<TextLayoutBlock, BlockPlacement>()
+  /**
+   * How each block is drawn below a top of a given fraction of a pixel, worked out on the first
+   * draw there after a layout (`prepareDrawing`).
+   */
+  private readonly drawing = new Map<number, Map<TextLayoutBlock, BlockDrawing>>()
   /** The text's height when layout placed its lines itself. */
   private placedHeight: number | null = null
 
@@ -86,39 +61,42 @@ export class TextLayout {
     ck: CanvasKit,
     paragraph: Paragraph,
     length: number,
-    lines?: TextLayoutBlockLines
+    lines?: TextLayoutBlockLines,
+    capHeight?: LineCapHeight
   ): TextLayout {
-    return new TextLayout(ck, [
-      {
-        paragraph,
-        start: 0,
-        utf8Start: 0,
-        length,
-        lead: 0,
-        utf8Lead: 0,
-        leadWidth: 0,
-        empty: false,
-        inset: 0,
-        rtl: false,
-        spaceBefore: 0,
-        marker: null,
-        lines,
-        x: 0,
-        y: 0,
-        visible: true
-      }
-    ])
+    const block: TextLayoutBlock = {
+      paragraph,
+      start: 0,
+      utf8Start: 0,
+      length,
+      lead: 0,
+      utf8Lead: 0,
+      leadWidth: 0,
+      empty: false,
+      inset: 0,
+      rtl: false,
+      spaceBefore: 0,
+      marker: null,
+      lines,
+      x: 0,
+      y: 0,
+      visible: true,
+      metrics: []
+    }
+    return new TextLayout(ck, [block], undefined, capHeight)
   }
 
   constructor(
     private readonly ck: CanvasKit,
     readonly blocks: TextLayoutBlock[],
     /** Lines the text may show in all, when it is truncated across blocks. */
-    private readonly maxLines?: number
+    private readonly maxLines?: number,
+    private readonly capHeight?: LineCapHeight
   ) {}
 
   /** The line cap a block's paragraph was rebuilt with, when it differs from `maxLines`. */
   private readonly caps = new Map<TextLayoutBlock, number>()
+  private readonly capHeights = new Map<string, number>()
 
   private visibleBlocks(): TextLayoutBlock[] {
     return this.blocks.filter((block) => block.visible)
@@ -137,26 +115,41 @@ export class TextLayout {
         continue
       }
       block.paragraph.layout(Math.max(1, width - block.inset))
+      block.metrics = block.paragraph.getLineMetrics()
       // A block capped for a narrower layout gets its lines back when there is room for them.
       const cap = this.caps.get(block) ?? this.maxLines ?? Infinity
-      const overflows = block.paragraph.getLineMetrics().length > remaining
+      const overflows = block.metrics.length > remaining
       const clipped = cap < remaining && block.paragraph.didExceedMaxLines()
       if ((overflows || clipped) && block.rebuild) {
         block.paragraph.delete()
         block.paragraph = block.rebuild(remaining)
         this.caps.set(block, remaining)
+        this.capHeights.clear()
         block.paragraph.layout(Math.max(1, width - block.inset))
+        block.metrics = block.paragraph.getLineMetrics()
       }
       if (block.paragraph.didExceedMaxLines()) this.truncated = true
       if (index > 0) y += block.spaceBefore
       block.x = block.rtl ? 0 : block.inset
       block.y = y
       y += block.paragraph.getHeight()
-      lines += block.paragraph.getLineMetrics().length
+      lines += block.metrics.length
     }
     this.placeLines(width)
+    this.alignFirstBaseline()
+    this.trimToCapHeight()
     for (const block of this.visibleBlocks()) this.placeMarker(block)
     this.collectLines()
+    this.height = this.measureHeight()
+  }
+
+  /** The laid-out height, kept from the layout so a draw asks the paragraphs nothing. */
+  private height: number | null = null
+
+  private measureHeight(): number {
+    const last = this.visibleBlocks().at(-1)
+    if (this.placedHeight !== null) return this.placedHeight
+    return last ? last.y + last.paragraph.getHeight() : 0
   }
 
   private clearPlacements(): void {
@@ -164,7 +157,9 @@ export class TextLayout {
       for (const piece of placement.pieces ?? []) piece.paragraph.delete()
     }
     this.placements.clear()
+    this.drawing.clear()
     this.placedHeight = null
+    this.height = null
   }
 
   /**
@@ -181,18 +176,75 @@ export class TextLayout {
     this.placedHeight = placed.height
   }
 
-  /** The block's line `index` stands this far below where its paragraph has it. */
-  private lineOffset(block: TextLayoutBlock, index: number): number {
-    return this.placements.get(block)?.offsets[index] ?? 0
+  /**
+   * Puts the first baseline where Figma does, its font centred in its line height, when lines
+   * keep the paragraph's placement, which centres it a little apart. The height stays, but a
+   * single line is as tall as its line height, which a paragraph rounds and ignores at zero.
+   */
+  private alignFirstBaseline(): void {
+    if (this.placedHeight !== null) return
+    const visible = this.visibleBlocks()
+    const first = visible.at(0)
+    const line = first?.metrics.at(0)
+    const heights = first?.lines?.heights
+    if (!first || !line || !heights) return
+    const box = figmaLineBox(this.ck, first.paragraph, line, heights, first.metrics)
+    if (!box) return
+    const single = visible.length === 1 && first.metrics.length === 1
+    const shift = box.ascent - this.firstBaseline(first)
+    if (shift === 0 && !single) return
+    this.placedHeight = single ? box.height : this.measureHeight()
+    for (const block of visible) block.y += shift
   }
 
-  /** How far a point `y` of the block's paragraph moves, by the line it falls on. */
-  private offsetAt(block: TextLayoutBlock, y: number): number {
-    const placement = this.placements.get(block)
-    if (!placement) return 0
-    const lines = block.paragraph.getLineMetrics()
-    const index = lines.findIndex((line) => y < line.baseline + line.descent)
-    return placement.offsets[index === -1 ? lines.length - 1 : index] ?? 0
+  /** Trims the text from its first line's cap height to its last baseline, as Figma does. */
+  private trimToCapHeight(): void {
+    const visible = this.visibleBlocks()
+    const first = visible.at(0)
+    const last = visible.at(-1)
+    if (this.capHeight === undefined || !first || !last) {
+      return
+    }
+    const firstBaseline = this.firstBaseline(first)
+    const lastLine = last.metrics.at(-1)
+    const lastBaseline = lastLine
+      ? last.y + lastLine.baseline + this.lineOffset(last, last.metrics.length - 1)
+      : firstBaseline
+    // Figma starts the box at the first line's cap height and makes it as tall as the last
+    // baseline stands below that, to the nearest pixel, so the last baseline drawn on a whole
+    // pixel ends it (Figma desktop 126).
+    const top = firstBaseline - this.firstLineCapHeight(first, this.capHeight)
+    for (const block of visible) {
+      block.y -= top
+    }
+    this.placedHeight = Math.round(lastBaseline - top)
+  }
+
+  /** Skia lays an empty paragraph out without lines, but with a baseline. */
+  private firstBaseline(block: TextLayoutBlock): number {
+    const line = block.metrics.at(0)
+    if (!line) {
+      return block.y + block.paragraph.getAlphabeticBaseline()
+    }
+    return block.y + line.baseline + this.lineOffset(block, 0)
+  }
+
+  private firstLineCapHeight(block: TextLayoutBlock, capHeight: LineCapHeight): number {
+    const line = block.metrics.at(0)
+    const start = line ? this.toTextIndex(block, line.startIndex) : block.start
+    const end = line ? this.toTextIndex(block, line.endIndex) : block.start
+    const key = `${start}:${end}`
+    let height = this.capHeights.get(key)
+    if (height === undefined) {
+      height = capHeight(start, end)
+      this.capHeights.set(key, height)
+    }
+    return height
+  }
+
+  /** The block's line `index` stands this far below where its paragraph has it. */
+  private lineOffset(block: TextLayoutBlock, index: number): number {
+    return lineOffset(this.placements.get(block), index)
   }
 
   private blockHeight(block: TextLayoutBlock): number {
@@ -201,7 +253,7 @@ export class TextLayout {
 
   private placeMarker(block: TextLayoutBlock): void {
     const marker = block.marker
-    const first = block.paragraph.getLineMetrics().at(0)
+    const first = block.metrics.at(0)
     if (!marker || !first) return
     const markerLine = marker.paragraph.getLineMetrics().at(0)
     const width = marker.paragraph.getLongestLine()
@@ -232,7 +284,7 @@ export class TextLayout {
     for (const [blockIndex, block] of visible.entries()) {
       this.lineOffsets.push(this.lines.length)
       if (block.marker) block.marker.lineNumber = this.lines.length
-      const metrics = block.paragraph.getLineMetrics()
+      const metrics = block.metrics
       const boxes = this.placements.get(block)?.boxes
       const blockEnd = block.start + block.length
       for (const [lineIndex, line] of metrics.entries()) {
@@ -265,9 +317,7 @@ export class TextLayout {
   }
 
   getHeight(): number {
-    const last = this.visibleBlocks().at(-1)
-    if (this.placedHeight !== null) return this.placedHeight
-    return last ? last.y + last.paragraph.getHeight() : 0
+    return this.height ?? this.measureHeight()
   }
 
   getLongestLine(): number {
@@ -330,7 +380,7 @@ export class TextLayout {
     if (!block) return { pos: 0, affinity: this.ck.Affinity.Downstream }
     const local = block.paragraph.getGlyphPositionAtCoordinate(
       x - block.x,
-      this.paragraphY(block, y - block.y)
+      paragraphY(block, this.placements.get(block), y - block.y)
     )
     return {
       pos: block.empty ? block.start : this.toTextIndex(block, local.pos),
@@ -357,7 +407,7 @@ export class TextLayout {
         widthStyle
       )
       for (const { rect, dir } of local) {
-        const y = block.y + this.offsetAt(block, (rect[1] + rect[3]) / 2)
+        const y = block.y + offsetAt(block, this.placements.get(block), (rect[1] + rect[3]) / 2)
         rects.push({
           rect: Float32Array.of(rect[0] + block.x, rect[1] + y, rect[2] + block.x, rect[3] + y),
           dir
@@ -375,46 +425,7 @@ export class TextLayout {
     const found = this.blockAt(index)
     if (!found) return null
     const { block } = found
-    const local = index - block.start
-    const first = block.paragraph.getLineMetrics().at(0)
-    if (block.empty || block.length === 0) {
-      if (!first) return null
-      const top = block.y + first.baseline - first.ascent
-      // The caret stands where typing starts: after a first-line indent.
-      return {
-        x: block.x + first.left + (rtl ? first.width - block.leadWidth : block.leadWidth),
-        top,
-        bottom: top + first.height
-      }
-    }
-    let lo = local
-    let hi = local + 1
-    let useRight = false
-    if (local <= 0) {
-      lo = 0
-      hi = 1
-      useRight = rtl
-    } else if (local >= block.length) {
-      lo = block.length - 1
-      hi = block.length
-      useRight = !rtl
-    }
-    // The box of the whole character beside the caret: half an emoji or a surrogate pair has none.
-    const cluster = block.paragraph.getGlyphInfoAt(lo + block.lead)?.graphemeClusterTextRange
-    const rects = block.paragraph.getRectsForRange(
-      cluster?.start ?? lo + block.lead,
-      cluster?.end ?? hi + block.lead,
-      this.ck.RectHeightStyle.Max,
-      this.ck.RectWidthStyle.Tight
-    )
-    const rect = rects.at(0)?.rect
-    if (!rect) return null
-    const y = block.y + this.offsetAt(block, (rect[1] + rect[3]) / 2)
-    return {
-      x: block.x + (useRight ? rect[2] : rect[0]),
-      top: y + rect[1],
-      bottom: y + rect[3]
-    }
+    return blockCaretRect(this.ck, block, this.placements.get(block), index - block.start, rtl)
   }
 
   /**
@@ -423,49 +434,9 @@ export class TextLayout {
    * leaves out, has no runs and starts where the line before it ends.
    */
   getShapedLines(): ShapedLine[] {
-    const shaped: ShapedLine[] = []
-    for (const block of this.visibleBlocks()) {
-      const metrics = block.paragraph.getLineMetrics()
-      for (const [lineIndex, line] of shapedLinesByLine(block.paragraph).entries()) {
-        const y = block.y + this.lineOffset(block, lineIndex)
-        if (!line) {
-          const { baseline, ascent, descent } = metrics[lineIndex]
-          const previous = lineIndex > 0 ? shaped.at(-1) : undefined
-          const start = previous?.textRange.last ?? block.utf8Start
-          shaped.push({
-            textRange: { first: start, last: start },
-            top: baseline - ascent + y,
-            bottom: baseline + descent + y,
-            baseline: baseline + y,
-            runs: []
-          })
-          continue
-        }
-        shaped.push({
-          textRange: {
-            first: this.toUtf8(block, line.textRange.first),
-            last: this.toUtf8(block, line.textRange.last)
-          },
-          top: line.top + y,
-          bottom: line.bottom + y,
-          baseline: line.baseline + y,
-          runs: block.empty
-            ? []
-            : line.runs.map((run) => ({
-                ...run,
-                positions: run.positions.map(
-                  (value, index) => value + (index % 2 === 0 ? block.x : y)
-                ),
-                offsets: run.offsets.map((offset) => this.toUtf8(block, offset))
-              }))
-        })
-      }
-    }
-    return shaped
-  }
-
-  private toUtf8(block: TextLayoutBlock, offset: number): number {
-    return block.empty ? block.utf8Start : block.utf8Start + Math.max(0, offset - block.utf8Lead)
+    return this.visibleBlocks().flatMap((block) =>
+      blockShapedLines(block, this.placements.get(block))
+    )
   }
 
   /** Markers of the visible list items, where layout placed them. */
@@ -475,31 +446,31 @@ export class TextLayout {
     return markers
   }
 
-  draw(canvas: Canvas, x: number, y: number): void {
+  /**
+   * Works out how far each block's lines and marker move when the text is drawn `top` down, so
+   * every baseline lands on the whole pixel of the box its exact one rounds to, as Figma draws it,
+   * a vertical alignment's offset included. Lines a paragraph or piece draws together step by
+   * whole pixels both as it draws them and as they are placed, so they move as one.
+   */
+  private prepareDrawing(top: number): Map<TextLayoutBlock, BlockDrawing> {
+    const fraction = top - Math.floor(top)
+    const cached = this.drawing.get(fraction)
+    if (cached) return cached
+    const drawing = new Map<TextLayoutBlock, BlockDrawing>()
     for (const block of this.visibleBlocks()) {
-      const pieces = this.placements.get(block)?.pieces
-      if (!pieces) canvas.drawParagraph(block.paragraph, x + block.x, y + block.y)
-      for (const piece of pieces ?? []) {
-        canvas.drawParagraph(piece.paragraph, x + block.x + piece.x, y + block.y + piece.y)
-      }
-      const marker = block.marker
-      if (marker) canvas.drawParagraph(marker.paragraph, x + marker.x, y + marker.y)
+      drawing.set(block, blockDrawing(block, this.placements.get(block), fraction))
     }
+    if (this.drawing.size >= MAX_DRAWN_FRACTIONS) this.drawing.clear()
+    this.drawing.set(fraction, drawing)
+    return drawing
   }
 
-  /** Where in the block's paragraph a point `y` below the block's top falls, by its line. */
-  private paragraphY(block: TextLayoutBlock, y: number): number {
-    const placement = this.placements.get(block)
-    if (!placement) return y
-    const lines = block.paragraph.getLineMetrics()
-    // A point belongs to the line whose box it is in, or the nearest after the one above it.
-    const index = lines.findIndex((line, lineIndex) => {
-      const box = placement.boxes[lineIndex]
-      const baseline = line.baseline + placement.offsets[lineIndex]
-      return y < baseline - box.ascent + box.height
-    })
-    const line = lines[index === -1 ? lines.length - 1 : index]
-    return line.baseline
+  /** Draws the text with every baseline on a whole pixel of its box, as Figma does. */
+  draw(canvas: Canvas, x: number, y: number): void {
+    const drawing = this.prepareDrawing(y)
+    for (const block of this.visibleBlocks()) {
+      drawBlock(canvas, block, this.placements.get(block), drawing.get(block), x, y)
+    }
   }
 
   isDeleted(): boolean {

@@ -2,8 +2,6 @@ import { describe, expect, test } from 'bun:test'
 
 import { pick } from 'es-toolkit'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import { renderJSX, renderTree } from '@open-pencil/core/design-jsx'
 import {
   defineMode,
@@ -14,6 +12,7 @@ import {
   selectionToJSXWithLayers
 } from '@open-pencil/design-jsx'
 import { SceneGraph, type VariableCollection } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 const THEME = `
 const palette = defineVars('Palette', { 'Gray/900': '#111111', 'Gray/50': '#FAFAFA' })
@@ -124,10 +123,14 @@ describe('Design JSX variable definitions', () => {
 describe('Design JSX export of variables', () => {
   test('writes the definitions its layers use, which render the same tokens in another file', async () => {
     const graph = new SceneGraph()
-    await renderJSX(graph, `const unused = defineVars('Unused', { Other: 1 }); return <Frame w={unused.Other} />`)
+    await renderJSX(
+      graph,
+      `const unused = defineVars('Unused', { Other: 1 }); return <Frame w={unused.Other} />`
+    )
     const [card] = await renderJSX(graph, THEME)
     const exported = sceneNodeToJSX(card.id, graph)
-    expect(exported).toBe(`const palette = defineVars("Palette", { "Gray/900": "#111111", "Gray/50": "#FAFAFA" })
+    expect(exported)
+      .toBe(`const palette = defineVars("Palette", { "Gray/900": "#111111", "Gray/50": "#FAFAFA" })
 const theme = defineVars("Theme", { Page: palette["Gray/50"], Radius: 12 }, { mode: "Light" })
 const dark = defineMode(theme, "Dark", { Page: palette["Gray/900"] })
 
@@ -219,7 +222,10 @@ return <Frame name="Card" flex="col" mode={roomy} p={space.Base} />`
     const space = 'const s = defineVars("Space", { M: 8, L: 16 })'
     const [even] = await renderJSX(graph, `${space}; return <Frame flex="col" p={s.M} />`)
     expect(sceneNodeToJSX(even.id, graph)).toContain('p={space.M}')
-    const [uneven] = await renderJSX(graph, `${space}; return <Frame flex="col" px={s.M} py={s.L} pt={4} />`)
+    const [uneven] = await renderJSX(
+      graph,
+      `${space}; return <Frame flex="col" px={s.M} py={s.L} pt={4} />`
+    )
     const exported = sceneNodeToJSX(uneven.id, graph)
     expect(exported).toContain('pt={4} pr={space.M} pb={space.L} pl={space.M}')
     expect(exported).not.toContain('bind=')
@@ -277,7 +283,9 @@ return <svg mode={dark} color={ink.Line} w={10} h={10} body="<path d='M0 0h10v10
   const line = ink.variableIds[0]
   const node = graph.getNode(svg.id)
   expect(node?.variableModes).toEqual({ [ink.id]: ink.modes[1].modeId })
-  const paths = graph.getChildren(svg.id).flatMap((child) => [child, ...graph.getChildren(child.id)])
+  const paths = graph
+    .getChildren(svg.id)
+    .flatMap((child) => [child, ...graph.getChildren(child.id)])
   const painted = paths.find((child) => child.fills[0]?.type === 'SOLID')
   expect(painted?.boundVariables['fills/0/color']).toBe(line)
   expect(painted?.fills[0]?.color).toMatchObject({ r: 1, g: 1, b: 1 })
@@ -305,7 +313,10 @@ test('a variable whose value cannot be resolved is an error, not a dropped paint
 test('designVar names a variable by collection when several collections share its name', async () => {
   const graph = new SceneGraph()
   await renderJSX(graph, THEME)
-  await renderJSX(graph, `const d = defineVars('Density', { Page: 8 }); return <Frame p={d.Page} />`)
+  await renderJSX(
+    graph,
+    `const d = defineVars('Density', { Page: 8 }); return <Frame p={d.Page} />`
+  )
   await expect(renderJSX(graph, `<Frame bg={designVar('Page')} />`)).rejects.toThrow(
     "Variable name Page is in more than one collection; name one, as in designVar('Theme', 'Page')"
   )
@@ -387,4 +398,25 @@ test('a reference export writes is one rendering resolves back to the same varia
   expect(references).toContain('bg={designVar("Ink", "x")}')
   const [copy] = await renderJSX(graph, references)
   expect(graph.getNode(copy.id)?.boundVariables['fills/0/color']).toBe(named.id)
+})
+
+test('a shadow bound to variables exports its bindings and renders them back', async () => {
+  const graph = new SceneGraph()
+  const elevation = graph.createCollection('Elevation')
+  const blur = graph.createVariable('Blur', 'FLOAT', elevation.id, 12)
+  const tint = graph.createVariable('Tint', 'COLOR', elevation.id, { r: 0, g: 0, b: 0, a: 0.5 })
+  const [card] = await renderJSX(
+    graph,
+    '<Frame name="Card" w={40} h={40} shadow="0 4 12 #00000080" />'
+  )
+  graph.bindVariable(card.id, 'effects/0/radius', blur.id)
+  graph.bindVariable(card.id, 'effects/0/color', tint.id)
+
+  const exported = sceneNodeToJSX(card.id, graph)
+  expect(exported).toContain('"effects/0/radius": elevation.Blur')
+  const [copy] = await renderJSX(graph, exported)
+  expect(graph.getNode(copy.id)?.boundVariables).toEqual({
+    'effects/0/color': tint.id,
+    'effects/0/radius': blur.id
+  })
 })

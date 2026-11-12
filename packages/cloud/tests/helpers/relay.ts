@@ -113,9 +113,12 @@ export function connectTestClient(connect: (socket: RelaySocket) => RelayConnect
 }
 
 /** Resolves once `condition` holds, yielding to pending work between checks. */
-export async function until(condition: () => boolean, attempts = 200): Promise<void> {
+export async function until(
+  condition: () => boolean | Promise<boolean>,
+  attempts = 200
+): Promise<void> {
   for (let attempt = 0; attempt < attempts; attempt++) {
-    if (condition()) return
+    if (await condition()) return
     await new Promise((resolve) => {
       setTimeout(resolve, 1)
     })
@@ -124,17 +127,46 @@ export async function until(condition: () => boolean, attempts = 200): Promise<v
 }
 
 export function memoryStateStore() {
-  const states = new Map<string, Uint8Array>()
+  /** Each room's snapshot, through which sequence it holds, and its logged updates by sequence. */
+  const states = new Map<
+    string,
+    { snapshot: Uint8Array | null; through: number; updates: Map<number, Uint8Array> }
+  >()
   const key = (room: CollaborationRoomIdentity) => `${room.documentId}:${room.roomEpoch}`
+  const saved = (room: CollaborationRoomIdentity) => {
+    const entry = states.get(key(room)) ?? { snapshot: null, through: 0, updates: new Map() }
+    states.set(key(room), entry)
+    return entry
+  }
   const store: CollaborationStateStore = {
     async load(room) {
-      return states.get(key(room)) ?? null
+      const entry = states.get(key(room))
+      if (!entry) return { snapshot: null, updates: [], sequence: 0 }
+      const sequences = [...entry.updates.keys()].filter((sequence) => sequence > entry.through)
+      sequences.sort((a, b) => a - b)
+      return {
+        snapshot: entry.snapshot,
+        updates: sequences.flatMap((sequence) => entry.updates.get(sequence) ?? []),
+        sequence: sequences.at(-1) ?? entry.through
+      }
     },
-    async store(room, state) {
-      states.set(key(room), state)
+    async append(room, sequence, update) {
+      const entry = saved(room)
+      if (entry.updates.has(sequence)) throw new Error(`Sequence ${sequence} is taken`)
+      entry.updates.set(sequence, update)
+    },
+    async compact(room, sequence, state) {
+      const entry = saved(room)
+      entry.snapshot = state
+      entry.through = sequence
+      for (const logged of entry.updates.keys()) {
+        if (logged <= sequence) entry.updates.delete(logged)
+      }
     }
   }
-  return { store, states }
+  /** Whether the store holds anything for a room. */
+  const holds = (room: CollaborationRoomIdentity) => states.has(key(room))
+  return { store, states, holds }
 }
 
 /** A relay over an in-memory store that saves at once, with whatever a test changes. */

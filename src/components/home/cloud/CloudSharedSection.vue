@@ -58,6 +58,7 @@ const rows = computed<CloudDocumentRow[]>(() =>
   documents.value.map((document) => ({
     id: document.id,
     name: document.name,
+    kind: document.kind,
     editedAt: dates.relative(document.updatedAt),
     editedBy: document.sharedBy
       ? t.value.homeSharedBy({ name: document.sharedBy.name })

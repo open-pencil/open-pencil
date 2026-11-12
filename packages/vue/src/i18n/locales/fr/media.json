@@ -2,10 +2,19 @@
   "vectorization": "Vectorisation d’image",
   "vectorizationDescription": "Envoie les calques d’image à Recraft, fal.ai ou QuiverAI et renvoie des vecteurs modifiables. Des frais peuvent s’appliquer.",
   "vectorizeProvider": "Service de vectorisation",
+  "stockPhotos": "Photos de stock",
+  "webSearch": "Recherche web",
+  "webSearchDescription": "Avec votre propre clé Exa, l’agent IA et les agents qui utilisent les outils d’OpenPencil peuvent chercher sur le web avec n’importe quel modèle, et Exa vous facture au lieu d’utiliser des crédits Cloud.",
   "pexelsAPIKey": "Clé API Pexels",
   "unsplashAccessKey": "Clé d’accès Unsplash",
   "stockPhotoToolOptional": "Facultatif — active l’outil de photos de stock",
   "pexelsAlternativeOptional": "Facultatif — source alternative de photos",
   "getPexelsAPIKey": "Obtenir une clé API Pexels gratuite →",
-  "getUnsplashAccessKey": "Obtenir une clé d’accès Unsplash gratuite →"
+  "getUnsplashAccessKey": "Obtenir une clé d’accès Unsplash gratuite →",
+  "photoKeyWorks": "{service} a accepté cette clé.",
+  "photoKeyRejected": "{service} a refusé cette clé. Vérifiez que vous l’avez copiée en entier.",
+  "unsplashKeyRejected": "Unsplash a refusé cette clé. Collez l’Access Key de votre application, pas sa Secret key.",
+  "photoKeyRateLimited": "Cette clé a épuisé ses requêtes {service} pour cette heure. Réessayez plus tard.",
+  "photoKeyUnreachable": "Impossible de joindre {service}. Vérifiez votre connexion réseau.",
+  "photoKeyCheckFailed": "{service} n’a pas répondu au test. Réessayez plus tard."
 }

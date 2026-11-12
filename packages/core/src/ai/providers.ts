@@ -1,6 +1,12 @@
 /** ACP agents, direct AI providers, and the models each provider recommends. */
 
-export type ACPAgentID = 'claude-code' | 'codex' | 'gemini-cli'
+export type ACPAgentID =
+  | 'claude-code'
+  | 'codex'
+  | 'gemini-cli'
+  | 'antigravity'
+  | 'cursor'
+  | 'grok-build'
 
 export interface ACPAgentDef {
   id: ACPAgentID
@@ -14,12 +20,25 @@ export interface ACPAgentDef {
   /** The vendor's installation guide for the agent itself. */
   setupURL?: string
   installCommand?: string
+  /** The install command for Windows, run in PowerShell, where `installCommand` needs a POSIX shell. */
+  windowsInstallCommand?: string
   /**
    * The ACP auth method setup signs in with, once the agent offers it. `acp` methods run inside
    * the agent through `authenticate`; `terminal` methods run the agent's command with `args`,
    * which the desktop shell scope pins under `<command>-sign-in`.
    */
   signIn?: { via: 'acp'; method: string } | { via: 'terminal'; method: string; args: string[] }
+  /**
+   * Whether a saved chat continues the agent's own session through ACP `session/resume`, so the
+   * agent keeps what was said. Set only for agents whose adapter is known to resume reliably.
+   */
+  resumesSessions?: boolean
+  /**
+   * Whether the agent holds back MCP tools past a total schema size and tells its model to call
+   * them through a `call_mcp_tool` tool it does not provide over ACP, as Antigravity CLI does.
+   * OpenPencil's MCP server then provides that tool for the agent's sessions.
+   */
+  defersMCPTools?: boolean
 }
 
 export const ACP_AGENTS: ACPAgentDef[] = [
@@ -36,7 +55,8 @@ export const ACP_AGENTS: ACPAgentDef[] = [
       via: 'terminal',
       method: 'claude-ai-login',
       args: ['--cli', 'auth', 'login', '--claudeai']
-    }
+    },
+    resumesSessions: true
   },
   {
     id: 'codex',
@@ -47,7 +67,8 @@ export const ACP_AGENTS: ACPAgentDef[] = [
     adapterPackage: '@agentclientprotocol/codex-acp',
     setupURL: 'https://developers.openai.com/codex/cli',
     installCommand: 'npm i -g @agentclientprotocol/codex-acp',
-    signIn: { via: 'acp', method: 'chat-gpt' }
+    signIn: { via: 'acp', method: 'chat-gpt' },
+    resumesSessions: true
   },
   {
     id: 'gemini-cli',
@@ -56,8 +77,40 @@ export const ACP_AGENTS: ACPAgentDef[] = [
     args: ['--acp'],
     setupURL: 'https://geminicli.com/docs/get-started/installation/',
     installCommand: 'npm i -g @google/gemini-cli'
+  },
+  {
+    id: 'antigravity',
+    name: 'Antigravity CLI',
+    command: 'agy',
+    args: ['acp', '--process-per-session'],
+    setupURL: 'https://antigravity.google',
+    installCommand: 'curl -fsSL https://antigravity.google/cli/install.sh | bash',
+    windowsInstallCommand: 'irm https://antigravity.google/cli/install.ps1 | iex',
+    resumesSessions: true,
+    defersMCPTools: true
+  },
+  {
+    id: 'cursor',
+    name: 'Cursor',
+    // Cursor's installer links both `agent` and `cursor-agent`; other CLIs, such as Grok Build,
+    // install an `agent` of their own, so only `cursor-agent` is sure to be Cursor.
+    command: 'cursor-agent',
+    args: ['acp'],
+    setupURL: 'https://cursor.com/docs/cli/installation'
+  },
+  {
+    id: 'grok-build',
+    name: 'Grok Build',
+    command: 'grok',
+    args: ['agent', 'stdio'],
+    setupURL: 'https://docs.x.ai/build/overview'
   }
 ]
+
+/** The ACP agent a provider runs, or undefined for a provider that is not one. */
+export function acpAgentFor(providerID: string): ACPAgentDef | undefined {
+  return ACP_AGENTS.find((agent) => `acp:${agent.id}` === providerID)
+}
 
 export type AIProviderID =
   | 'openrouter'
@@ -83,6 +136,8 @@ export interface ModelOption {
   tag?: string
   capabilities?: readonly ('tools' | 'vision')[]
   recommendedMaxOutputTokens?: number
+  /** Tokens a request may hold, prompt and reply together, as the provider's catalog gives it. */
+  contextWindow?: number
   releaseDate?: string
   status?: 'active' | 'beta' | 'deprecated'
   /** Lowest reasoning effort the model accepts; lower thinking levels, Off included, use it. */

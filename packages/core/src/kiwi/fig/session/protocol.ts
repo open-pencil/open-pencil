@@ -42,11 +42,20 @@ export interface FigSessionComponentPagesRequest {
   componentIds: string[]
 }
 
+export interface FigSessionRecordPagesRequest {
+  type: 'record-pages'
+  requestId: string
+  /** Archive GUIDs of the records, as `session:local`. */
+  recordIds: string[]
+}
+
 export interface FigSessionPatchArchiveRequest {
   type: 'patch-archive'
   requestId: string
   patch: FigRecordPatch
   input: FigPatchedArchiveInput
+  /** Where the patched archive streams, transferred: `receiveStream` reads it there. */
+  port: MessagePort
 }
 
 /** The graph diverged from the worker's: stop loading pages there, keep the archive. */
@@ -68,6 +77,7 @@ export type FigSessionRequest =
   | FigSessionOriginalArchiveRequest
   | FigSessionArchiveInfoRequest
   | FigSessionComponentPagesRequest
+  | FigSessionRecordPagesRequest
   | FigSessionPatchArchiveRequest
   | FigSessionRetireRequest
   | FigSessionCancelRequest
@@ -97,6 +107,8 @@ export type FigSessionResponse =
   | { type: 'original-archive-result'; requestId: string; bytes: Uint8Array }
   | { type: 'archive-info-result'; requestId: string; info: FigArchiveRecordInfo }
   | { type: 'component-pages-result'; requestId: string; pageIds: string[] }
-  | { type: 'patch-archive-result'; requestId: string; bytes: Uint8Array }
+  | { type: 'record-pages-result'; requestId: string; pageIds: (string | null)[] }
+  /** The archive is patched and streaming on the request's port. */
+  | { type: 'patch-archive-result'; requestId: string }
   | { type: 'archive-error'; requestId: string; error: string }
   | { type: 'disposed' }

@@ -1,8 +1,8 @@
-import type { ClosableDocument } from './controller'
+import { holdsUnkeptEdits, type ClosableDocument } from './controller'
 import { requestDocumentClose } from './prompt'
 
 interface OpenDocument extends ClosableDocument {
-  state: { documentName: string }
+  state: { documentName: string; roomKeepsEdits: boolean }
   persistRecoveryNow(): Promise<void>
   discardRecovery(): Promise<void>
 }
@@ -19,7 +19,7 @@ export async function confirmAllDocuments(
       current.length === documents.length &&
       current.every(
         (document) =>
-          documents.includes(document) && (discarded.has(document) || !document.hasUnsavedChanges())
+          documents.includes(document) && (discarded.has(document) || !holdsUnkeptEdits(document))
       )
     )
   }

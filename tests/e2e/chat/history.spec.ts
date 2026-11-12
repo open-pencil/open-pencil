@@ -37,9 +37,7 @@ test('multiple conversations preserve messages and manual titles', async ({
   await page.getByRole('menuitem', { name: 'Rename', exact: true }).click()
   await page.getByRole('textbox', { name: 'Conversation title' }).fill('First design')
   await page.getByRole('button', { name: 'Save', exact: true }).click()
-  await expect(
-    page.getByRole('button', { name: 'Conversation history', exact: true })
-  ).toContainText('First design')
+  await expect(page.getByTestId('chat-title')).toHaveText('First design')
 })
 
 test('saved transcripts remain readable after reload without provider setup', async ({

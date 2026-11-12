@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 import type * as AppFonts from '@/app/editor/fonts'
 
-import type { FontManager } from '#core/text/fonts'
+import type { FontManager } from '#core/text/font/manager'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { trackFontModuleResources } from '#tests/helpers/fonts/runtime'
@@ -26,7 +26,7 @@ test('tool-created CJK text requests fallback through app font loading', async (
     const fontModuleURL = performance
       .getEntriesByType('resource')
       .map((entry) => entry.name)
-      .find((url) => url.includes('/packages/core/src/text/fonts.ts'))
+      .find((url) => url.includes('/packages/core/src/text/font/manager.ts'))
     if (!fontModuleURL) throw new Error('Active font manager module not found')
     const { fontManager } = (await import(/* @vite-ignore */ fontModuleURL)) as {
       fontManager: FontManager
@@ -88,7 +88,7 @@ test('CJK text waits for fallback fonts and repaints after they load', async ({ 
     const fontModuleURL = performance
       .getEntriesByType('resource')
       .map((entry) => entry.name)
-      .find((url) => url.includes('/packages/core/src/text/fonts.ts'))
+      .find((url) => url.includes('/packages/core/src/text/font/manager.ts'))
     if (!fontModuleURL) throw new Error('Active font manager module not found')
     const { fontManager } = (await import(/* @vite-ignore */ fontModuleURL)) as {
       fontManager: FontManager

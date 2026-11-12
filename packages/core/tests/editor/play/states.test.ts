@@ -4,6 +4,7 @@ import { createEditor, playIslandRoots, resolvePlayState } from '@open-pencil/co
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { emptyBehaviour, findLayerByPath, layerPath } from '@open-pencil/scene-graph/behaviours'
 import { instanceMainComponent } from '@open-pencil/scene-graph/instances'
+import { reconcileVariableBindings } from '@open-pencil/scene-graph/variables'
 
 /** A Switch set (State × Interaction) and a card frame holding an Off instance with a label. */
 function switchCard() {
@@ -114,10 +115,10 @@ describe('preview islands', () => {
     editor.startPlay()
     editor.resetPlay()
     editor.replaceGraph(new SceneGraph())
-    expect(editor.state.play).toEqual({ revision: 2 })
+    expect(editor.state.canvasView).toEqual({ id: 'play', revision: 2 })
   })
 
-  test('a copy paints bound colors in the mode the canvas is showing, not as they were saved', () => {
+  test('a copy paints bound colors as the document stores them, edits included', () => {
     const { graph, card } = switchCard()
     const collection = graph.createCollection('Theme')
     const dark = collection.defaultModeId
@@ -133,11 +134,17 @@ describe('preview islands', () => {
       fills: [{ type: 'SOLID', color: { r: 0.1, g: 0.1, b: 0.1, a: 1 }, opacity: 1, visible: true }]
     })
     graph.bindVariable(card.id, 'fills/0/color', surface.id)
-    graph.setActiveMode(collection.id, 'light')
+    const pageId = graph.pageOf(card.id) ?? ''
+    graph.updateNode(pageId, { variableModes: { [collection.id]: 'light' } })
+    reconcileVariableBindings(graph, { subtrees: [pageId] })
+    // Figma keeps an edit to a bound paint until its variable's color changes.
+    const stored = graph.getNode(card.id)?.fills[0]
+    if (!stored) throw new Error('Missing fill')
+    graph.updateNode(card.id, { fills: [{ ...stored, opacity: 0.5 }] })
 
-    const shown = resolvePlayState(graph, card.id, new Map())
+    const shown = resolvePlayState(graph, card.id, new Map()).getNode(card.id)?.fills[0]
 
-    expect(shown.getNode(card.id)?.fills[0]?.color).toEqual({ r: 1, g: 1, b: 1, a: 1 })
-    expect(graph.getNode(card.id)?.fills[0]?.color).toEqual({ r: 0.1, g: 0.1, b: 0.1, a: 1 })
+    expect(shown?.color).toEqual({ r: 1, g: 1, b: 1, a: 1 })
+    expect(shown?.opacity).toBe(0.5)
   })
 })

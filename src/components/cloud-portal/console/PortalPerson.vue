@@ -87,7 +87,9 @@ const workspaces = usePortalRows(() => detail.workspaces, {
 <template>
   <div class="flex max-w-3xl flex-col gap-6">
     <AppButton class="self-start" size="sm" variant="ghost" @click="emit('back')">
-      <template #leading><icon-lucide-arrow-left class="size-3.5" /></template>
+      <template #leading
+        ><icon-lucide-arrow-left data-direction="reading" class="size-3.5"
+      /></template>
       {{ messages.backToPeople }}
     </AppButton>
 
@@ -105,7 +107,7 @@ const workspaces = usePortalRows(() => detail.workspaces, {
           </span>
         </p>
         <p class="truncate text-xs text-muted">{{ person.email }}</p>
-        <p v-if="person.suspendedReason" class="mt-0.5 text-[11px] text-muted">
+        <p v-if="person.suspendedReason" class="mt-0.5 text-2xs text-muted">
           {{ messages.suspendedReason({ reason: person.suspendedReason }) }}
         </p>
       </div>

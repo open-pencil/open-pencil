@@ -1,7 +1,5 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import {
   boundEndpoint,
@@ -10,6 +8,7 @@ import {
   createConnector
 } from '@open-pencil/scene-graph/connectors'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { arrangeLayers } from '#core/layout/arrange/layers'
 
@@ -133,6 +132,24 @@ describe('arrangeLayers', () => {
     await expect(
       arrangeLayers(graph, [box('Page').id, box('Framed', frame.id).id], { layout: 'flow' })
     ).rejects.toThrow('must share a parent')
+  })
+
+  test('spreads the same pile the same way every time', async () => {
+    const spreadPile = async () => {
+      const { graph, box } = pile()
+      const layers = ['A', 'B', 'C', 'D', 'E'].map((name) => box(name))
+      await arrangeLayers(
+        graph,
+        layers.map((layer) => layer.id),
+        { layout: 'spread' }
+      )
+      return layers.map((layer) => {
+        const { x, y } = node(graph, layer.id)
+        return { x, y }
+      })
+    }
+    const first = await spreadPile()
+    for (let run = 0; run < 5; run++) expect(await spreadPile()).toEqual(first)
   })
 
   test('spread unpiles layers without connectors and keeps the pile’s corner', async () => {

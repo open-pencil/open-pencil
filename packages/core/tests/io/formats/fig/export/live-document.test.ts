@@ -1,15 +1,14 @@
 import { expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import { createEditor } from '@open-pencil/core'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { emptyBehaviour, readBehaviour } from '@open-pencil/scene-graph/behaviours'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { settleFontDigestMap } from '#core/kiwi/fig/node-change/font/digests'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 // A save reads the document after its last wait, so the font digests it waits for must cover
 // a font an edit brought in while they loaded.

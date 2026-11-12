@@ -4,13 +4,14 @@ import { useI18n } from '@open-pencil/vue/i18n'
 
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 
-import { useTextLength } from './useTextLength'
+import { TEXT_LENGTH_UNITS, useTextLength } from './useTextLength'
 
 /** Every selected text layer; the field reads Mixed when their letter spacings differ. */
 const { nodes } = defineProps<{ nodes: readonly SceneNode[] }>()
 const emit = defineEmits<{
   update: [value: TextLength]
   commit: [value: TextLength, previous: TextLength]
+  cancel: []
 }>()
 const { panels } = useI18n()
 const { value, suffix, length } = useTextLength(
@@ -18,6 +19,11 @@ const { value, suffix, length } = useTextLength(
   'letterSpacing',
   () => 0
 )
+/** The panel commits what it previewed, so a typed unit is previewed first. */
+function commit(current: number, previous: number, unit?: string) {
+  if (unit) emit('update', length(current, unit))
+  emit('commit', length(current, unit), length(previous))
+}
 </script>
 
 <template>
@@ -27,9 +33,11 @@ const { value, suffix, length } = useTextLength(
     :aria-label="panels.letterSpacing"
     :node-id="nodes.at(0)?.id ?? ''"
     :node-ids="nodes.map((node) => node.id)"
+    :units="TEXT_LENGTH_UNITS"
     binding-path="letterSpacing"
-    @update:model-value="emit('update', length($event))"
-    @commit="(current, previous) => emit('commit', length(current), length(previous))"
+    @update:model-value="(value, unit) => emit('update', length(value, unit))"
+    @commit="commit"
+    @cancel="emit('cancel')"
   >
     <template #icon>
       <icon-lucide-a-large-small class="size-3" />

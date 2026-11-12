@@ -1,5 +1,6 @@
-import type { ProgrammableLabels, SidebarLabels } from './labels.ts'
 import type { DefaultTheme } from 'vitepress'
+
+import type { ProgrammableLabels, SidebarLabels } from './labels.ts'
 
 export const guideSidebar = (prefix: string, labels: SidebarLabels): DefaultTheme.SidebarItem[] => [
   {
@@ -9,22 +10,22 @@ export const guideSidebar = (prefix: string, labels: SidebarLabels): DefaultThem
       { text: labels.features, link: `${prefix}/overview/features` },
       { text: labels.comparison, link: `${prefix}/overview/comparison` },
       // English only until translated; locales link to the canonical page.
-      { text: labels.privacy, link: '/overview/privacy' },
-    ],
-  },
+      { text: labels.privacy, link: '/overview/privacy' }
+    ]
+  }
 ]
 
 export const userGuideSidebar = (
   prefix: string,
-  labels: SidebarLabels,
+  labels: SidebarLabels
 ): DefaultTheme.SidebarItem[] => [
   {
     text: labels.gettingAround,
     items: [
       { text: labels.canvasNav, link: `${prefix}/user-guide/canvas-navigation` },
       { text: labels.selection, link: `${prefix}/user-guide/selection-and-manipulation` },
-      { text: labels.contextMenu, link: `${prefix}/user-guide/context-menu` },
-    ],
+      { text: labels.contextMenu, link: `${prefix}/user-guide/context-menu` }
+    ]
   },
   {
     text: labels.creatingContent,
@@ -35,7 +36,8 @@ export const userGuideSidebar = (
       { text: labels.vectorEditing, link: `${prefix}/user-guide/vector-edit` },
       // English only until translated; locales link to the canonical page.
       { text: labels.icons, link: '/user-guide/icons' },
-    ],
+      { text: labels.photos, link: '/user-guide/photos' }
+    ]
   },
   {
     text: labels.organizing,
@@ -43,9 +45,8 @@ export const userGuideSidebar = (
       { text: labels.layers, link: `${prefix}/user-guide/layers-and-pages` },
       { text: labels.exporting, link: `${prefix}/user-guide/exporting` },
       // English only until translated; locales link to the canonical page.
-      { text: labels.openPencilCloud, link: '/user-guide/openpencil-cloud' },
-      { text: labels.cloudStorage, link: '/user-guide/cloud-storage' },
-    ],
+      { text: labels.cloudStorage, link: '/user-guide/cloud-storage' }
+    ]
   },
   {
     text: labels.advanced,
@@ -54,14 +55,14 @@ export const userGuideSidebar = (
       { text: labels.components, link: `${prefix}/user-guide/components` },
       { text: labels.variables, link: `${prefix}/user-guide/variables` },
       // English only until translated; locales link to the canonical page.
-      { text: labels.checkingDesigns, link: '/user-guide/checking-designs' },
-    ],
-  },
+      { text: labels.checkingDesigns, link: '/user-guide/checking-designs' }
+    ]
+  }
 ]
 
 export const programmableSidebar = (
   prefix: string,
-  labels: ProgrammableLabels,
+  labels: ProgrammableLabels
 ): DefaultTheme.SidebarItem[] => [
   {
     text: labels.overview,
@@ -84,19 +85,19 @@ export const programmableSidebar = (
             { text: 'Coding agents', link: '/programmable/coding-agents' },
             {
               text: 'BYOK Compatibility',
-              link: '/programmable/byok-provider-compatibility',
-            },
+              link: '/programmable/byok-provider-compatibility'
+            }
           ]
         : []),
-      { text: labels.collaboration, link: `${prefix}/programmable/collaboration` },
-    ],
-  },
+      { text: labels.collaboration, link: `${prefix}/programmable/collaboration` }
+    ]
+  }
 ]
 
 export const referenceSidebar = (
   prefix: string,
   label: string,
-  labels: SidebarLabels,
+  labels: SidebarLabels
 ): DefaultTheme.SidebarItem[] => [
   {
     text: label,
@@ -107,16 +108,15 @@ export const referenceSidebar = (
       { text: 'Scene Graph', link: '/reference/scene-graph' },
       { text: labels.figmaMatrix, link: `${prefix}/reference/figma-compatibility` },
       ...(!prefix ? [{ text: 'DOM/CSS Mapping', link: '/reference/dom-css-mapping' }] : []),
-      { text: 'File Format', link: '/reference/file-format' },
-      { text: 'Self-hosting Cloud', link: '/reference/self-hosting-cloud' },
-    ],
-  },
+      { text: 'File Format', link: '/reference/file-format' }
+    ]
+  }
 ]
 
 export const developmentSidebar = (
   prefix: string,
   label: string,
-  labels: SidebarLabels,
+  labels: SidebarLabels
 ): DefaultTheme.SidebarItem[] => [
   {
     text: label,
@@ -132,12 +132,47 @@ export const developmentSidebar = (
             { text: 'AI Chat Replies', link: '/development/ai-chat' },
             { text: 'Behaviours and Preview', link: '/development/behaviours-and-preview' },
             { text: 'Cloud Architecture', link: '/development/cloud' },
+            { text: 'Demo Tour', link: '/development/demo-tour' },
             { text: 'Navigation Performance', link: '/development/navigation-performance' },
             { text: 'Renderer Lifecycle', link: '/development/renderer-lifecycle' },
             { text: 'Renderer Profiler', link: '/development/renderer-profiler' },
-            { text: 'Vector Conversion', link: '/development/vector-conversion' },
+            { text: 'Vector Conversion', link: '/development/vector-conversion' }
           ]
-        : []),
-    ],
+        : [])
+    ]
+  }
+]
+
+/** OpenPencil Cloud, in English only: using it, running a server, and the hosted service's legal documents. */
+export const cloudSidebar = (): DefaultTheme.SidebarItem[] => [
+  {
+    text: 'Using Cloud',
+    items: [
+      { text: 'Overview', link: '/cloud/' },
+      { text: 'Your Account', link: '/cloud/account' },
+      { text: 'Documents', link: '/cloud/documents' },
+      { text: 'Sharing and Teams', link: '/cloud/sharing' },
+      { text: 'AI on Cloud', link: '/cloud/ai' },
+      { text: 'Support', link: '/cloud/support' }
+    ]
   },
+  {
+    text: 'Self-hosting',
+    items: [
+      { text: 'Install and Configure', link: '/cloud/self-hosting/' },
+      { text: 'Cloudflare Workers', link: '/cloud/self-hosting/cloudflare' },
+      { text: 'Storage and Email', link: '/cloud/self-hosting/storage-and-email' },
+      { text: 'AI Services', link: '/cloud/self-hosting/ai-services' },
+      { text: 'Operations', link: '/cloud/self-hosting/operations' }
+    ]
+  },
+  {
+    // The hosted service's own documents: a Cloud server someone else runs has its own.
+    text: 'Hosted Service Legal',
+    items: [
+      { text: 'Terms of Service', link: '/cloud/legal/terms' },
+      { text: 'Privacy Policy', link: '/cloud/legal/privacy' },
+      { text: 'Subprocessors', link: '/cloud/legal/subprocessors' }
+    ]
+  }
 ]

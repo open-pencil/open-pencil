@@ -1,4 +1,9 @@
-import type { CloudAccountSession, CloudSignIn } from '#cloud/contract'
+import type {
+  CloudAccessToken,
+  CloudAccessTokenCreate,
+  CloudAccountSession,
+  CloudSignIn
+} from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth/session'
 
 export type CloudMFAStatus = {
@@ -38,6 +43,23 @@ export interface CloudAuthAdapter {
   handler(request: Request): Promise<Response>
   resolveIdentity(headers: Headers): Promise<CloudIdentity | null>
   resolveSession(headers: Headers): Promise<CloudActor | null>
+  /**
+   * The signed-in person while their account is approved, whether or not it accepted the current
+   * terms: enough to leave, by downloading its documents and deleting the account.
+   */
+  resolveAccountSession(headers: Headers): Promise<CloudActor | null>
+  /**
+   * The account a personal access token stands for, from `Authorization: Bearer`, once it is held
+   * to what a session would be. Only the document API reads tokens.
+   */
+  resolveAccessToken(headers: Headers): Promise<CloudActor | null>
+  listAccessTokens(headers: Headers): Promise<CloudAccessToken[] | null>
+  /** Makes a token for the signed-in account; answers the whole token, shown this once. */
+  createAccessToken(
+    headers: Headers,
+    input: CloudAccessTokenCreate
+  ): Promise<{ token: string; accessToken: CloudAccessToken }>
+  revokeAccessToken(headers: Headers, id: string): Promise<void>
   listAuthenticationMethods(headers: Headers): Promise<CloudAuthenticationMethodRecord[]>
   changePassword(
     headers: Headers,
@@ -74,6 +96,12 @@ export interface CloudAuthAdapter {
   revokeSession(headers: Headers, sessionId: string): Promise<void>
   revokeOtherSessions(headers: Headers): Promise<void>
   signIns(headers: Headers): Promise<CloudSignIn[] | null>
+  /**
+   * Deletes the signed-in account through Better Auth, after Cloud removes what it keeps about
+   * it; a session that signed in a while ago gives its password. Answers the headers that clear the
+   * session cookie.
+   */
+  deleteAccount(headers: Headers, password?: string): Promise<Headers>
   migrate: () => Promise<void>
   schemaVersion: string
 }

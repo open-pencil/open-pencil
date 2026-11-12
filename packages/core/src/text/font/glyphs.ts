@@ -1,18 +1,22 @@
 import type { FontVariation } from '@open-pencil/scene-graph'
+import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 import {
   fontInstance,
+  glyphBox,
   glyphCommands,
   harfBuzzFont,
+  harfBuzzTable,
   isHarfBuzzLoaded,
   loadHarfBuzz,
   shapeText,
   type HarfBuzzFont,
-  type OutlineCommand
+  type HarfBuzzInstance,
+  type OutlineCommand,
+  type ShapingOptions
 } from './harfbuzz'
-import { fontTableView } from './variation'
 
 export type { OutlineCommand } from './harfbuzz'
 
@@ -24,23 +28,42 @@ export interface GlyphOutlineProbe {
   firstGlyphCommandSample: OutlineCommand[]
 }
 
-const parsedFontCache = new WeakMap<ArrayBuffer, HarfBuzzFont | null>()
+interface ParsedFontCacheEntry {
+  bytes: ArrayBuffer
+  font: HarfBuzzFont | null
+}
+
+const parsedFontCache = new Map<string, ParsedFontCacheEntry>()
+
+/** Shards of a style, read only to tell which one maps a character. */
+const shardFontCache = new WeakMap<ArrayBuffer, HarfBuzzFont | null>()
 
 /** Whether a shard of a style, one of `FontManager.shardData`'s files, maps `character`. */
 export function shardCovers(data: ArrayBuffer, character: string): boolean {
-  const parsed = getParsedFontData(data)
+  if (!isHarfBuzzLoaded()) return false
+  const parsed = shardFont(data)
   return parsed !== null && glyphIndex(parsed, character) !== 0
 }
 
-function getParsedFont(family: string, style: string): HarfBuzzFont | null {
-  const bytes = fontManager.loadedData(family, style)
-  return bytes ? getParsedFontData(bytes) : null
+function shardFont(data: ArrayBuffer): HarfBuzzFont | null {
+  let parsed = shardFontCache.get(data)
+  if (parsed === undefined) {
+    parsed = harfBuzzFont(data)
+    shardFontCache.set(data, parsed)
+  }
+  return parsed
 }
 
-function getParsedFontData(bytes: ArrayBuffer): HarfBuzzFont | null {
+function getParsedFont(family: string, style: string): HarfBuzzFont | null {
   if (!isHarfBuzzLoaded()) return null
-  if (!parsedFontCache.has(bytes)) parsedFontCache.set(bytes, harfBuzzFont(bytes))
-  return parsedFontCache.get(bytes) ?? null
+  const key = `${family}|${style}`
+  const bytes = fontManager.loadedData(family, style)
+  if (!bytes) return null
+  const cached = parsedFontCache.get(key)
+  if (cached?.bytes === bytes) return cached.font
+  const font = harfBuzzFont(bytes)
+  parsedFontCache.set(key, { bytes, font })
+  return font
 }
 
 /** The glyph the font maps a character to, 0 (`.notdef`) when it has none. */
@@ -93,8 +116,8 @@ const lineMetricsCache = new WeakMap<HarfBuzzFont, LineMetrics>()
 function lineMetrics(parsed: HarfBuzzFont): LineMetrics {
   const cached = lineMetricsCache.get(parsed)
   if (cached) return cached
-  const hhea = fontTableView(parsed.bytes, 'hhea')
-  const os2 = fontTableView(parsed.bytes, 'OS/2')
+  const hhea = harfBuzzTable(parsed.face, 'hhea')
+  const os2 = harfBuzzTable(parsed.face, 'OS/2')
   const hasHhea = hhea !== null && hhea.byteLength >= 8
   const metrics = {
     ascender: hasHhea ? hhea.getInt16(4) : 0,
@@ -105,6 +128,15 @@ function lineMetrics(parsed: HarfBuzzFont): LineMetrics {
   return metrics
 }
 
+/** A cap height most Latin fonts are near, in ems, for text whose font cannot be read. */
+export const TYPICAL_CAP_HEIGHT_EMS = 0.7
+
+export interface MeasuredTextLines {
+  width: number
+  lines: number
+  lineHeight: number
+}
+
 export function measureTextWithFont(
   text: string,
   fontSize: number,
@@ -112,7 +144,7 @@ export function measureTextWithFont(
   style: string,
   maxWidth?: number,
   lineHeight?: number
-): { width: number; height: number } | null {
+): MeasuredTextLines | null {
   const parsed = getParsedFont(family, style)
   if (!parsed) return null
 
@@ -126,9 +158,9 @@ export function measureTextWithFont(
 
   if (maxWidth && maxWidth > 0 && singleLineWidth > maxWidth) {
     const lines = Math.ceil(singleLineWidth / maxWidth)
-    return { width: maxWidth, height: Math.ceil(lines * lineH) }
+    return { width: maxWidth, lines, lineHeight: lineH }
   }
-  return { width: Math.ceil(singleLineWidth), height: lineH }
+  return { width: Math.ceil(singleLineWidth), lines: 1, lineHeight: lineH }
 }
 
 /**
@@ -188,6 +220,8 @@ export interface GlyphOutlineMetrics {
   commands: OutlineCommand[]
   x: number
   advance: number
+  /** The UTF-16 index in the shaped text the glyph starts at. */
+  cluster: number
 }
 
 export type FontGlyphCoverage = 'has' | 'missing' | 'unknown'
@@ -206,19 +240,23 @@ export function fontHasGlyphSync(family: string, style: string, char: string): b
   return fontGlyphCoverageSync(family, style, char) === 'has'
 }
 
-/** Each glyph HarfBuzz shapes `text` into, with its outline, pen position, and advance. */
+/**
+ * Each glyph HarfBuzz shapes `text` into, with its outline, pen position, and advance. A variable
+ * font shapes and draws the instance at `variations`.
+ */
 export function getGlyphOutlineMetricsSync(
   family: string,
   style: string,
   text: string,
-  fontSize: number
+  fontSize: number,
+  variations: readonly FontVariation[] = []
 ): GlyphOutlineMetrics[] | null {
   const parsed = getParsedFont(family, style)
   if (!parsed) return null
   const scale = fontSize / parsed.face.upem
-  const instance = fontInstance(parsed, [])
+  const instance = fontInstance(parsed, variations)
   let pen = 0
-  return shapeText(parsed, text).map((glyph) => {
+  return shapeText(parsed, text, { instance }).map((glyph) => {
     // Shaping moves some glyphs off the pen, such as marks onto their base letter.
     const offsetX = (glyph.xOffset ?? 0) * scale
     // y runs down; subtracting keeps an unmoved glyph's baseline 0 rather than -0.
@@ -226,20 +264,64 @@ export function getGlyphOutlineMetricsSync(
     const metrics = {
       commands: glyphCommands(parsed, instance, glyph.codepoint, fontSize, baseline, offsetX),
       x: pen,
-      advance: (glyph.xAdvance ?? 0) * scale
+      advance: (glyph.xAdvance ?? 0) * scale,
+      cluster: glyph.cluster
     }
     pen += metrics.advance
     return metrics
   })
 }
 
+/**
+ * The advance of each glyph HarfBuzz shapes `text` into and the UTF-16 index it starts at, at
+ * `fontSize` and, in a variable font, the instance at `variations`.
+ */
+export function shapedAdvancesSync(
+  family: string,
+  style: string,
+  text: string,
+  fontSize: number,
+  variations: readonly FontVariation[] = []
+): { cluster: number; advance: number }[] | null {
+  const parsed = getParsedFont(family, style)
+  if (!parsed) return null
+  const scale = fontSize / parsed.face.upem
+  const instance = fontInstance(parsed, variations)
+  return shapeText(parsed, text, { instance }).map((glyph) => ({
+    cluster: glyph.cluster,
+    advance: (glyph.xAdvance ?? 0) * scale
+  }))
+}
+
 /** Outlines of one loaded font, addressed by the glyph IDs a shaper produced. */
+/** A glyph HarfBuzz shaped text into: its ID, the UTF-16 index it starts at, and its advance in em. */
+export interface ShapedGlyph {
+  id: number
+  cluster: number
+  advance: number
+  /** How far HarfBuzz moved it from the pen, in em, such as a mark onto its base; y runs up. */
+  xOffset: number
+  yOffset: number
+}
+
+/** How a run is shaped, apart from the font and its axes. */
+export type RunShaping = Omit<ShapingOptions, 'instance'>
+
 export interface GlyphOutlineSource {
   /** Whether the font has a glyph for every code point, so a shaper used it rather than a fallback. */
   covers(text: string): boolean
   /** The glyph the font maps `character` to, to check a shaper's glyph IDs are this font's. */
   glyphOf(character: string): number
+  /** The glyphs HarfBuzz shapes `text` into in this font, at its axes and as `shaping` asks. */
+  shape(text: string, shaping: RunShaping): ShapedGlyph[]
   outline(glyphId: number, fontSize: number): OutlineCommand[] | null
+  /**
+   * The box around `glyphId`'s outline at `fontSize`, y down from the baseline, as the font
+   * measures it at its axes; `null` for a glyph that draws nothing.
+   */
+  extents(glyphId: number, fontSize: number): VisualBounds | null
+  /** The cap height at the font's axes, in ems; HarfBuzz measures `H` when no table declares it. */
+  capHeight(): number
 }
 
 /**
@@ -251,24 +333,61 @@ export function glyphOutlineSourceSync(
   style: string,
   variations: readonly FontVariation[] = []
 ): GlyphOutlineSource | null {
-  const data = fontManager.loadedData(family, style)
-  return data ? glyphOutlineSourceForDataSync(data, variations) : null
+  const parsed = getParsedFont(family, style)
+  return parsed ? outlineSource(parsed, variations) : null
 }
 
-/** Outlines from a paragraph's font file, including a coverage shard. */
-export function glyphOutlineSourceForDataSync(
-  data: ArrayBuffer,
+/**
+ * Glyph outlines of each shard of a loaded style, the files `FontManager.shardData` lists for
+ * the characters its own file lacks, at `variations`.
+ */
+export function shardOutlineSources(
+  family: string,
+  style: string,
   variations: readonly FontVariation[] = []
-): GlyphOutlineSource | null {
-  const parsed = getParsedFontData(data)
-  if (!parsed) return null
+): GlyphOutlineSource[] {
+  if (!isHarfBuzzLoaded()) return []
+  return fontManager.shardData(family, style).flatMap((data) => {
+    const parsed = shardFont(data)
+    return parsed ? [outlineSource(parsed, variations)] : []
+  })
+}
+
+function outlineSource(
+  parsed: HarfBuzzFont,
+  variations: readonly FontVariation[]
+): GlyphOutlineSource {
   const instance = fontInstance(parsed, variations)
   return {
     covers: (text) => Array.from(text).every((char) => glyphIndex(parsed, char) !== 0),
     glyphOf: (character) => glyphIndex(parsed, character),
+    shape: (text, shaping) =>
+      shapeText(parsed, text, { ...shaping, instance }).map((glyph) => ({
+        id: glyph.codepoint,
+        cluster: glyph.cluster,
+        advance: (glyph.xAdvance ?? 0) / parsed.face.upem,
+        xOffset: (glyph.xOffset ?? 0) / parsed.face.upem,
+        yOffset: (glyph.yOffset ?? 0) / parsed.face.upem
+      })),
     outline: (glyphId, fontSize) =>
-      glyphId < parsed.glyphCount ? glyphCommands(parsed, instance, glyphId, fontSize) : null
+      glyphId < parsed.glyphCount ? glyphCommands(parsed, instance, glyphId, fontSize) : null,
+    extents: (glyphId, fontSize) =>
+      glyphId < parsed.glyphCount ? glyphBox(parsed, instance, glyphId, fontSize) : null,
+    capHeight: () => instanceCapHeight(parsed, instance)
   }
+}
+
+const capHeights = new WeakMap<HarfBuzzInstance, number>()
+
+function instanceCapHeight(parsed: HarfBuzzFont, instance: HarfBuzzInstance): number {
+  let capHeight = capHeights.get(instance)
+  if (capHeight === undefined) {
+    const units = instance.font.getMetricPositionWithFallback(parsed.hb.MetricsTag.CAP_HEIGHT)
+    capHeight =
+      Number.isFinite(units) && units > 0 ? units / parsed.face.upem : TYPICAL_CAP_HEIGHT_EMS
+    capHeights.set(instance, capHeight)
+  }
+  return capHeight
 }
 
 /** The advance of glyph `glyphId` of a loaded font at `fontSize`, or `null` when it has none. */

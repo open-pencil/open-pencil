@@ -1,7 +1,7 @@
 {
   "name": "@open-pencil/cloud",
-  "version": "0.16.0",
-  "description": "Self-hostable OpenPencil Cloud: accounts, workspaces, document revisions, sharing, collaboration, and the AI relay, for Node and Cloudflare Workers.",
+  "version": "0.17.0-beta.4",
+  "description": "Self-hostable OpenPencil Cloud: accounts, workspaces, document revisions, sharing, collaboration, and the services server, for Node and Cloudflare Workers.",
   "license": "Apache-2.0 AND MIT",
   "repository": {
     "type": "git",
@@ -9,7 +9,7 @@
     "directory": "packages/cloud"
   },
   "bin": {
-    "openpencil-ai-relay": "./dist/bin/ai-relay.mjs",
+    "openpencil-services": "./dist/bin/services.mjs",
     "openpencil-cloud": "./dist/bin/server.mjs"
   },
   "files": [
@@ -22,16 +22,17 @@
   "sideEffects": false,
   "imports": {
     "#cloud/admin": "./src/admin/index.ts",
-    "#cloud/ai-relay": "./src/ai-relay/index.ts",
+    "#cloud/services": "./src/services/index.ts",
     "#cloud/client": "./src/client/index.ts",
     "#cloud/contract": "./src/contract/index.ts",
     "#cloud/email": "./src/email/index.ts",
+    "#cloud/errors": "./src/errors/index.ts",
     "#cloud/runtime/cloudflare": "./src/runtime/cloudflare/index.ts",
     "#cloud/runtime/node": "./src/runtime/node/index.ts",
     "#cloud/server": "./src/server/index.ts",
-    "#cloud/server/ai": "./src/server/ai/index.ts",
     "#cloud/server/api": "./src/server/api/index.ts",
     "#cloud/server/auth": "./src/server/auth/index.ts",
+    "#cloud/server/billing": "./src/server/billing/index.ts",
     "#cloud/server/cleanup": "./src/server/cleanup/index.ts",
     "#cloud/server/collaboration": "./src/server/collaboration/index.ts",
     "#cloud/server/config": "./src/server/config/index.ts",
@@ -39,6 +40,7 @@
     "#cloud/server/documents": "./src/server/documents/index.ts",
     "#cloud/server/documents/versions": "./src/server/documents/versions/index.ts",
     "#cloud/server/email": "./src/server/email/index.ts",
+    "#cloud/server/errors": "./src/server/errors/index.ts",
     "#cloud/server/internal": "./src/server/internal/index.ts",
     "#cloud/server/invitations": "./src/server/invitations/index.ts",
     "#cloud/server/objects": "./src/server/objects/index.ts",
@@ -46,6 +48,8 @@
     "#cloud/server/policy": "./src/server/policy/index.ts",
     "#cloud/server/quota": "./src/server/quota/index.ts",
     "#cloud/server/rate-limit": "./src/server/rate-limit/index.ts",
+    "#cloud/server/reports": "./src/server/reports/index.ts",
+    "#cloud/server/services": "./src/server/services/index.ts",
     "#cloud/server/sharing": "./src/server/sharing/index.ts",
     "#cloud/server/workspaces": "./src/server/workspaces/index.ts",
     "#cloud/*": "./src/*.ts",
@@ -76,6 +80,12 @@
       "import": "./dist/runtime-node.mjs",
       "default": "./dist/runtime-node.mjs"
     },
+    "./errors": {
+      "types": "./dist/errors.d.ts",
+      "bun": "./src/errors/index.ts",
+      "import": "./dist/errors.js",
+      "default": "./dist/errors.js"
+    },
     "./server": {
       "types": "./dist/server.d.ts",
       "bun": "./src/server/index.ts",
@@ -92,10 +102,10 @@
     "build:standalone": "bunx tsdown --config tsdown.standalone.config.ts",
     "start": "node dist-standalone/server.mjs",
     "dev": "bun --watch src/runtime/node/main.ts",
-    "ai-relay": "bun src/runtime/node/ai-relay/main.ts",
+    "services": "bun src/runtime/node/services/main.ts",
     "check": "bun run typecheck && bun run test && bun run build",
     "test": "bun run test:unit && bun run test:integration",
-    "test:unit": "bun test tests/ai-relay tests/client tests/contract tests/email tests/runtime tests/server",
+    "test:unit": "bun test tests/client tests/contract tests/email tests/errors tests/runtime tests/server tests/services",
     "test:integration": "bun test --max-concurrency 8 tests/integration",
     "test:e2e": "bun tests/e2e/run.ts",
     "test:e2e:garage": "bun tests/e2e/garage.ts",
@@ -105,11 +115,12 @@
     "quota:reconcile": "bun src/runtime/node/quota-reconcile.ts",
     "entitlements": "bun src/runtime/node/entitlements/main.ts",
     "admin": "bun src/runtime/node/admin.ts",
-    "typecheck": "bunx tsc --noEmit -p tsconfig.json && bunx tsc -p src/runtime/cloudflare/tsconfig.json"
+    "typecheck": "bunx tsc --noEmit -p tsconfig.json && bunx tsc -p src/runtime/cloudflare/tsconfig.json && bunx tsc -p tsconfig.cloudflare.tests.json"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1149.0",
     "@aws-sdk/s3-request-presigner": "^3.1149.0",
+    "@better-auth/api-key": "1.7.7",
     "@better-auth/core": "1.7.7",
     "@better-auth/passkey": "1.7.7",
     "@better-auth/utils": "0.4.2",
@@ -133,6 +144,7 @@
     "kysely": "^0.29.6",
     "lib0": "^0.2.117",
     "nodemailer": "^9.0.5",
+    "posthog-node": "5.56.0",
     "smol-toml": "^1.8.0",
     "ufo": "^1.6.4",
     "valibot": "^1.5.0",
@@ -143,13 +155,14 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261011.1",
     "@electric-sql/pglite": "0.4.1",
+    "@open-pencil/test-support": "workspace:*",
     "@types/bun": "^1.3.14",
     "@types/nodemailer": "^8.0.1",
     "@types/pg": "^8.21.0",
     "@types/ws": "^8.18.1",
     "kysely-pglite-dialect": "1.3.1",
     "tsdown": "^0.22.14",
-    "typescript": "~5.8.3",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
     "wrangler": "4.149.0",
     "y-protocols": "^1.0.7"
   },

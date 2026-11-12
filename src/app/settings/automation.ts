@@ -9,7 +9,6 @@ import { applySnappingPreferences, setDesignIssuesOnCanvas } from '@/app/setting
 import {
   ANIMATION_PREFERENCES,
   appPreferences,
-  CANVAS_RENDERING_MODES,
   CHANGE_PREVIEW_SIZES,
   DESIGN_CHECK_PRESETS,
   REASONING_DISPLAYS,
@@ -30,10 +29,10 @@ export interface AutomationSettings {
     theme: AppTheme
     language: Locale
     animations: AppPreferences['appearance']['animations']
+    mirrorInterface: boolean
     accent: AppPreferences['appearance']['accent']
   }
   editing: AppPreferences['editing']
-  rendering: AppPreferences['rendering']
   recovery: AppPreferences['recovery']
   chat: AppPreferences['chat']
   designCheck: AppPreferences['designCheck']
@@ -47,6 +46,7 @@ const automationSettingsPatchSchema = v.strictObject({
       theme: v.optional(v.picklist(APP_THEMES)),
       language: v.optional(v.picklist(AVAILABLE_LOCALES)),
       animations: v.optional(v.picklist(ANIMATION_PREFERENCES)),
+      mirrorInterface: optionalBooleanSchema,
       accent: v.optional(accentPreferenceSchema)
     })
   ),
@@ -60,9 +60,6 @@ const automationSettingsPatchSchema = v.strictObject({
         })
       )
     })
-  ),
-  rendering: v.optional(
-    v.strictObject({ canvasMode: v.optional(v.picklist(CANVAS_RENDERING_MODES)) })
   ),
   recovery: v.optional(v.strictObject({ enabled: optionalBooleanSchema })),
   chat: v.optional(
@@ -91,10 +88,10 @@ export function readAutomationSettings(): AutomationSettings {
       theme: getAppTheme(),
       language: locale.get(),
       animations: preferences.appearance.animations,
+      mirrorInterface: preferences.appearance.mirrorInterface,
       accent: { ...preferences.appearance.accent }
     },
     editing: { snapping: { ...preferences.editing.snapping } },
-    rendering: { ...preferences.rendering },
     recovery: { ...preferences.recovery },
     chat: { ...preferences.chat },
     designCheck: {
@@ -122,7 +119,6 @@ export function updateAutomationSettings(input: unknown): AutomationSettings {
   appPreferences.value = {
     ...current,
     appearance: { ...current.appearance, ...appearance },
-    rendering: { ...current.rendering, ...patch.rendering },
     recovery: { ...current.recovery, ...patch.recovery },
     chat: { ...current.chat, ...patch.chat }
   }

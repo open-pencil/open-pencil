@@ -1,11 +1,14 @@
 import { requireTrustedMutationOrigin } from '#cloud/admin/api/security'
 import type { AdminAuditService } from '#cloud/admin/audit/service'
+import type { AdminDocumentService } from '#cloud/admin/documents/service'
 import type { AdminEmailService } from '#cloud/admin/email/service'
 import type { EnrollmentService } from '#cloud/admin/enrollment/service'
 import { adminErrorStatus, AdminDomainError } from '#cloud/admin/errors'
 import type { AdminOperationsService } from '#cloud/admin/operations/service'
+import type { AdminReportService } from '#cloud/admin/reports/service'
 import {
   enrollmentStatusSchema,
+  parseDocumentTakedown,
   parseEnrollmentReview,
   parseUserMutation,
   parseUserRoleMutation
@@ -13,14 +16,16 @@ import {
 import type { AdminUserService } from '#cloud/admin/users/service'
 import {
   cloudAdminAuditFilterSchema,
+  cloudAdminDocumentFilterSchema,
   cloudAdminEmailFilterSchema,
+  cloudAdminReportFilterSchema,
   cloudAdminUserFilterSchema
 } from '#cloud/contract'
 import type { CloudAPIEnvironment } from '#cloud/server/api'
 import type { CloudAuthAdapter } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
 import { CLOUD_RATE_LIMITS, createActorRateLimiter } from '#cloud/server/rate-limit'
-import { validatedJSON, validatedQuery } from '#cloud/server/validation'
+import { idParams, validatedJSON, validatedQuery } from '#cloud/server/validation'
 import { Hono, type Context } from 'hono'
 import { NoResultError, type Kysely } from 'kysely'
 import * as v from 'valibot'
@@ -44,6 +49,8 @@ const parseEnrollmentQuery = listQuery(enrollmentStatusSchema)
 const parseUserQuery = listQuery(cloudAdminUserFilterSchema)
 const parseEmailQuery = listQuery(cloudAdminEmailFilterSchema)
 const parseAuditQuery = listQuery(cloudAdminAuditFilterSchema)
+const parseDocumentQuery = listQuery(cloudAdminDocumentFilterSchema)
+const parseReportQuery = listQuery(cloudAdminReportFilterSchema)
 /** Accounts are named by UUID; anything else names no one, rather than failing the query. */
 const accountIdSchema = v.pipe(v.string(), v.uuid())
 
@@ -66,6 +73,8 @@ export type CloudAdminServices = {
   users: AdminUserService
   audit: AdminAuditService
   operations: AdminOperationsService
+  documents: AdminDocumentService
+  reports: AdminReportService
 }
 
 export function createCloudAdminRoutes(
@@ -123,42 +132,53 @@ export function createCloudAdminRoutes(
     .get('/enrollments', validatedQuery(parseEnrollmentQuery), async (context) =>
       context.json(await services.enrollment.list(context.req.valid('query')))
     )
-    .post('/enrollments/:id/approve', validatedJSON(parseEnrollmentReview), async (context) =>
-      context.json({
-        enrollment: await services.enrollment.review(
-          context.get('actor').userId,
-          context.req.param('id'),
-          'approved',
-          context.req.valid('json')
-        )
-      })
+    .post(
+      '/enrollments/:id/approve',
+      idParams,
+      validatedJSON(parseEnrollmentReview),
+      async (context) =>
+        context.json({
+          enrollment: await services.enrollment.review(
+            context.get('actor').userId,
+            context.req.valid('param').id,
+            'approved',
+            context.req.valid('json')
+          )
+        })
     )
-    .post('/enrollments/:id/reject', validatedJSON(parseEnrollmentReview), async (context) =>
-      context.json({
-        enrollment: await services.enrollment.review(
-          context.get('actor').userId,
-          context.req.param('id'),
-          'rejected',
-          context.req.valid('json')
-        )
-      })
+    .post(
+      '/enrollments/:id/reject',
+      idParams,
+      validatedJSON(parseEnrollmentReview),
+      async (context) =>
+        context.json({
+          enrollment: await services.enrollment.review(
+            context.get('actor').userId,
+            context.req.valid('param').id,
+            'rejected',
+            context.req.valid('json')
+          )
+        })
     )
-    .post('/enrollments/:id/revoke', validatedJSON(parseEnrollmentReview), async (context) =>
-      context.json({
-        enrollment: await services.enrollment.review(
-          context.get('actor').userId,
-          context.req.param('id'),
-          'revoked',
-          context.req.valid('json')
-        )
-      })
+    .post(
+      '/enrollments/:id/revoke',
+      idParams,
+      validatedJSON(parseEnrollmentReview),
+      async (context) =>
+        context.json({
+          enrollment: await services.enrollment.review(
+            context.get('actor').userId,
+            context.req.valid('param').id,
+            'revoked',
+            context.req.valid('json')
+          )
+        })
     )
     .get('/users', validatedQuery(parseUserQuery), async (context) =>
       context.json(await services.users.list(context.req.valid('query')))
     )
-    .get('/users/:id', async (context) => {
-      const id = context.req.param('id')
-      const detail = v.is(accountIdSchema, id) ? await services.users.detail(id) : null
+    .get('/users/:id', idParams, async (context) => {
+      const detail = await services.users.detail(context.req.valid('param').id)
       if (!detail) return context.json({ error: { code: 'not_found' as const } }, 404)
       return context.json(detail)
     })
@@ -209,14 +229,64 @@ export function createCloudAdminRoutes(
     .get('/email', validatedQuery(parseEmailQuery), async (context) =>
       context.json(await services.email.list(context.req.valid('query')))
     )
-    .post('/email/:id/regenerate', async (context) => {
-      await services.email.regenerate(context.get('actor').userId, context.req.param('id'))
+    .post('/email/:id/regenerate', idParams, async (context) => {
+      await services.email.regenerate(context.get('actor').userId, context.req.valid('param').id)
       return context.json({ ok: true as const })
     })
     .get('/audit', validatedQuery(parseAuditQuery), async (context) =>
       context.json(await services.audit.list(context.req.valid('query')))
     )
     .get('/operations', async (context) => context.json(await services.operations.summary()))
+    .get('/reports', validatedQuery(parseReportQuery), async (context) =>
+      context.json(await services.reports.list(context.req.valid('query')))
+    )
+    .post('/reports/:id/dismiss', idParams, async (context) => {
+      await services.reports.resolve(
+        context.get('actor').userId,
+        context.req.valid('param').id,
+        'dismissed'
+      )
+      return context.json({ ok: true as const })
+    })
+    .post('/reports/:id/action', idParams, async (context) => {
+      await services.reports.resolve(
+        context.get('actor').userId,
+        context.req.valid('param').id,
+        'actioned'
+      )
+      return context.json({ ok: true as const })
+    })
+    .get('/documents', validatedQuery(parseDocumentQuery), async (context) =>
+      context.json(await services.documents.list(context.req.valid('query')))
+    )
+    .post(
+      '/documents/:id/disable',
+      idParams,
+      validatedJSON(parseDocumentTakedown),
+      async (context) => {
+        await services.documents.disable(
+          context.get('actor').userId,
+          context.req.valid('param').id,
+          context.req.valid('json').reason
+        )
+        return context.json({ ok: true as const })
+      }
+    )
+    .post('/documents/:id/enable', idParams, async (context) => {
+      await services.documents.enable(context.get('actor').userId, context.req.valid('param').id)
+      return context.json({ ok: true as const })
+    })
+    .post('/documents/:id/undelete', idParams, async (context) => {
+      await services.documents.undelete(context.get('actor').userId, context.req.valid('param').id)
+      return context.json({ ok: true as const })
+    })
+    .post('/shares/:id/revoke', idParams, async (context) => {
+      await services.documents.revokeShare(
+        context.get('actor').userId,
+        context.req.valid('param').id
+      )
+      return context.json({ ok: true as const })
+    })
 }
 
 /** The administration routes' types, for the portal's typed client. */

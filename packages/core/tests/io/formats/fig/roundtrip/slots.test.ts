@@ -1,12 +1,13 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { FIXTURES } from '#core-tests/helpers/fig/fixtures'
-
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer } from '@open-pencil/fig'
+import type { GUID } from '@open-pencil/kiwi/fig'
 import { initCodec, type NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { slotPropertyId } from '@open-pencil/scene-graph/slots'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import { releaseFigPopulationWorker } from '#core/kiwi/fig/population/client'
 
@@ -57,14 +58,73 @@ describe('slots round trip', () => {
     expect(slotContents(reopened)).toEqual(before)
   })
 
+  test('a component position edit keeps saved sibling order', async () => {
+    const graph = await parseFigFile(await Bun.file(`${FIXTURES}/slots.fig`).arrayBuffer())
+    const page = graph.getPages().find((candidate) => candidate.name === 'Slots fixture')
+    if (!page) throw new Error('Missing slots fixture page')
+    const target = graph.getChildren(page.id).find((node) => node.name === 'Card default content')
+    if (!target) throw new Error('Missing edited component')
+    // By ID as well as name: swapping two layers of the same name keeps the names in order.
+    const layers = (of: SceneGraph, pageId: string) =>
+      of.getChildren(pageId).map((node) => `${node.id} ${node.name}`)
+    const before = layers(graph, page.id)
+    graph.updateNode(target.id, { x: target.x + 37 })
+    releaseFigPopulationWorker(graph)
+    const exported = await exportFigFile(graph)
+    const reopened = await parseFigFile(exported.slice().buffer)
+    const reopenedPage = reopened.getPages().find((candidate) => candidate.name === 'Slots fixture')
+    if (!reopenedPage) throw new Error('Missing reopened slots fixture page')
+    expect(layers(reopened, reopenedPage.id)).toEqual(before)
+    const positions = reopened
+      .getChildren(reopenedPage.id)
+      .map((node) => node.source.orderKey ?? '')
+    expect(positions).toEqual([...positions].sort())
+    expect(new Set(positions).size).toBe(positions.length)
+    expect(reopened.getNode(target.id)?.x).toBe(357)
+  })
+
   test('slot properties are written as SLOT definitions with their settings', () => {
     const definitions = records.flatMap((record) => (record as SlotRecord).componentPropDefs ?? [])
     const slots = definitions.filter((definition) => definition.type === 'SLOT')
-    // Card empty slot, Card default content, List, Panel, and Panel's two variants. Figma
-    // links a variant's definition to the set's through `parentPropDefId`; the exporter
-    // writes every variant definition in full, as it does for the other property types.
-    expect(slots).toHaveLength(6)
+    // Card empty slot, Card default content, List, and Panel.
+    expect(slots).toHaveLength(4)
     expect(slots.filter((definition) => definition.slotPropConfig)).toHaveLength(1)
+  })
+
+  // As Figma saves a set: each variant copies the set's slot under an id of its own, linked by
+  // `parentPropDefId`, its slot frame binds the copy, and an instance assigns its variant's copy.
+  test("each of a set's variants links its own copy of the set's slot", () => {
+    const id = (guid: unknown) => (guid ? guidToString(guid as GUID) : null)
+    const byId = new Map(records.map((record) => [id(record.guid), record]))
+    const set = records.find((record) => record.name === 'Panel' && record.isStateGroup)
+    const content = (set as SlotRecord | undefined)?.componentPropDefs?.find(
+      (definition) => definition.type === 'SLOT'
+    ) as { id?: GUID } | undefined
+    const variants = records.filter(
+      (record) => record.type === 'SYMBOL' && id(record.parentIndex?.guid) === id(set?.guid)
+    )
+    expect(variants).toHaveLength(2)
+    const copies = variants.map((variant) => {
+      const [copy] = (variant.componentPropDefs ?? []) as { id?: GUID; parentPropDefId?: GUID }[]
+      expect(id(copy?.parentPropDefId)).toBe(id(content?.id))
+      return id(copy?.id)
+    })
+    expect(new Set(copies).size).toBe(2)
+    for (const record of records) {
+      const binding = (record as SlotRecord).parameterConsumptionMap?.entries?.find(
+        (entry) => entry.variableField === 'SLOT_CONTENT_ID'
+      ) as { variableData?: { value?: { propRefValue?: { defId?: GUID } } } } | undefined
+      const variant = variants.find((item) => id(item.guid) === id(record.parentIndex?.guid))
+      if (binding && variant)
+        expect(id(binding.variableData?.value?.propRefValue?.defId)).toBe(
+          copies[variants.indexOf(variant)]
+        )
+      if (record.type !== 'INSTANCE') continue
+      const main = byId.get(id(record.symbolData?.symbolID))
+      if (!main || !variants.includes(main)) continue
+      const [assignment] = (record.componentPropAssignments ?? []) as { defID?: GUID }[]
+      expect(id(assignment?.defID)).toBe(copies[variants.indexOf(main)])
+    }
   })
 
   test('slot frames are bound through the parameter map', () => {

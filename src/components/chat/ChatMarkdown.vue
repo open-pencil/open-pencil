@@ -3,7 +3,7 @@ import { computed } from 'vue'
 
 import { referenceComponents } from '@/app/ai/chat/references/link'
 import { markdownRenderKey, type MarkdownSurface } from '@/app/shell/markdown/state'
-import MarkdownReference from '@/components/chat/reference/MarkdownReference.vue'
+import ChatReferenceLink from '@/components/chat/reference/ChatReferenceLink.vue'
 import MarkdownContent from '@/components/markdown/MarkdownContent.vue'
 
 const {
@@ -19,7 +19,7 @@ const {
 const renderKey = computed(() => markdownRenderKey({ mode, surface }))
 // References to layers, pages, and skills render as chips; other links stay links.
 const rendered = computed(() => referenceComponents(content))
-const components = { 'chat-reference': MarkdownReference }
+const components = { 'chat-reference': ChatReferenceLink }
 </script>
 
 <template>

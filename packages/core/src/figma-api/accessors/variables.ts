@@ -4,12 +4,12 @@ import type { SceneGraph, Variable } from '@open-pencil/scene-graph'
 
 import {
   assertProxyEditable,
-  graph,
   raw,
   updateNode,
   type NodeProxyInternals,
   type ProxyThis
-} from '#core/figma-api/accessor-utils'
+} from '#core/figma-api/accessors/utils'
+import { graphOf } from '#core/figma-api/graph'
 import {
   type FigmaBindableField,
   assertBindableField,
@@ -51,7 +51,7 @@ function setVariableModes(
 ): void {
   const node = raw(target, internals)
   updateNode(target, internals, { variableModes })
-  reconcileVariableLayouts(graph(target, internals), { subtrees: [node.id] })
+  reconcileVariableLayouts(graphOf(target), { subtrees: [node.id] })
 }
 
 type RangeBinder = (start: number, end: number, field: string, variable: Variable | null) => void
@@ -68,7 +68,7 @@ export function installVariableModeNodeProxyAccessors(
     },
     resolvedVariableModes: {
       get(this: ProxyThis): Readonly<Record<string, string>> {
-        const sceneGraph: SceneGraph = graph(this, internals)
+        const sceneGraph: SceneGraph = graphOf(this)
         const node = raw(this, internals)
         const modes: Record<string, string> = {}
         for (const collectionId of sceneGraph.variableCollections.keys()) {
@@ -81,7 +81,7 @@ export function installVariableModeNodeProxyAccessors(
     setExplicitVariableModeForCollection: {
       value(this: ProxyThis, collection: CollectionRef, modeId: string): void {
         const id = collectionId(collection)
-        const found = graph(this, internals).variableCollections.get(id)
+        const found = graphOf(this).variableCollections.get(id)
         // Figma's message names the two ids the other way round.
         if (!found?.modes.some((mode) => mode.modeId === modeId)) {
           throw new Error(
@@ -115,7 +115,7 @@ export function installVariableModeNodeProxyAccessors(
         variable: { readonly id: string } | string | null
       ): void {
         const name = assertBindableField(field)
-        const sceneGraph = graph(this, internals)
+        const sceneGraph = graphOf(this)
         const bound =
           variable === null ? null : bindingVariable(sceneGraph, 'setBoundVariable', name, variable)
         const node = raw(this, internals)

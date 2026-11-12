@@ -7,7 +7,7 @@ export default {
     control: 'min-w-0',
     toolbar: 'flex min-w-0 items-center gap-1 px-1.5 pb-1.5',
     model: 'min-w-0 flex-1',
-    actions: 'ml-auto flex shrink-0 items-center gap-1'
+    actions: 'ms-auto flex shrink-0 items-center gap-1'
   },
   variants: {
     size: {

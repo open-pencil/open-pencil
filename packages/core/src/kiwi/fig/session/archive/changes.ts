@@ -2,6 +2,7 @@ import { isEqual } from 'es-toolkit/predicate'
 
 import type {
   DocumentColorSpace,
+  DocumentKind,
   EnabledLibraryBinding,
   SceneGraph,
   SceneNode,
@@ -36,29 +37,25 @@ interface ArchiveChanges {
 /** The document's own settings, which its record holds rather than any layer. */
 interface SettingsSnapshot {
   colorSpace: DocumentColorSpace
+  kind: DocumentKind
   libraries: Array<[string, EnabledLibraryBinding]>
 }
 
-/** The variable collections and the modes the document shows them in. */
-interface CollectionsSnapshot {
-  collections: Array<[string, VariableCollection]>
-  activeMode: Array<[string, string]>
-}
+/** The variable collections, with their modes. */
+type CollectionsSnapshot = Array<[string, VariableCollection]>
 
 const changes = new WeakMap<SceneGraph, ArchiveChanges>()
 
 function settingsSnapshot(graph: SceneGraph): SettingsSnapshot {
   return structuredClone({
     colorSpace: graph.documentColorSpace,
+    kind: graph.documentKind,
     libraries: [...graph.enabledLibraries]
   })
 }
 
 function collectionsSnapshot(graph: SceneGraph): CollectionsSnapshot {
-  return structuredClone({
-    collections: [...graph.variableCollections],
-    activeMode: [...graph.activeMode]
-  })
+  return structuredClone([...graph.variableCollections])
 }
 
 function resourceIdsOf(graph: SceneGraph): Set<string> {
@@ -83,8 +80,14 @@ export function trackArchiveChanges(graph: SceneGraph): void {
     collections: collectionsSnapshot(graph),
     settings: settingsSnapshot(graph)
   }
+  // What a copy takes from its component is saved with the component, not as the copy's edit.
   const touch = (id: string) => {
-    if (!graph.isApplyingImportedState && !graph.isApplyingDerivedLayout) entry.touched.add(id)
+    if (
+      !graph.isApplyingImportedState &&
+      !graph.isApplyingDerivedLayout &&
+      !graph.isApplyingComponentDerived
+    )
+      entry.touched.add(id)
   }
   const edits = () => !graph.isApplyingImportedState && !graph.isApplyingDerivedLayout
   graph.observeNodeChanges({

@@ -9,21 +9,29 @@ import {
   type RelayClientFrame,
   type RelayServerFrame
 } from '@open-pencil/cloud/contract'
+import { asDouble } from '@open-pencil/test-support/doubles'
 
-import { createCloudRelayJoin } from '@/app/collab/transport/cloud'
-
-import { asDouble } from '#tests/helpers/doubles'
+import { createCloudRelayJoin, relayReconnectDelay } from '@/app/collab/transport/cloud'
 
 /** A socket the test opens, feeds, and closes by hand. */
 class FakeSocket extends EventTarget {
   readyState: number = WebSocket.CONNECTING
   binaryType = 'blob'
   readonly sent: RelayClientFrame[] = []
+  /** Text the transport sent, which is only ever its heartbeat. */
+  readonly texts: string[] = []
+  /** Whether a relay answers the heartbeat, as a live one does. */
+  answersHeartbeat = true
   /** Socket messages sent, which outnumber frames once a frame travels in fragments. */
   messages = 0
   private readonly assembler = createRelayClientAssembler(() => Infinity)
 
-  send(data: Uint8Array) {
+  send(data: Uint8Array | string) {
+    if (typeof data === 'string') {
+      this.texts.push(data)
+      if (data === 'ping' && this.answersHeartbeat) this.receiveText('pong')
+      return
+    }
     this.messages++
     const assembled = this.assembler.push(data)
     const frame = assembled.type === 'frame' ? decodeRelayClientFrame(assembled.data) : null
@@ -39,6 +47,10 @@ class FakeSocket extends EventTarget {
     for (const data of relayServerMessages(frame)) {
       this.dispatchEvent(new MessageEvent('message', { data: data.slice().buffer }))
     }
+  }
+
+  receiveText(text: string) {
+    this.dispatchEvent(new MessageEvent('message', { data: text }))
   }
 
   /** Delivers bytes as one socket message, whatever they hold. */
@@ -61,6 +73,9 @@ function room(
     failTicket?: (attempt: number) => boolean
     /** The document moved to another room by this ticket request. */
     movedAt?: number
+    page?: EventTarget
+    /** Whether the relay answers the heartbeat, as its tickets say. */
+    heartbeat?: boolean
   } = {}
 ) {
   const sockets: FakeSocket[] = []
@@ -81,6 +96,8 @@ function room(
       return asDouble<WebSocket>(socket)
     },
     reconnectDelayMs: () => 0,
+    page: options.page ? asDouble<Window>(options.page) : undefined,
+    heartbeat: options.heartbeat,
     onError: (_message, error) => errors.push(error),
     onRestored: () => {
       restored += 1
@@ -327,5 +344,203 @@ describe('Cloud relay transport', () => {
     await transport.leave()
     socket?.receive({ type: 'welcome', peerId: 'me', peers: ['server', 'ada'] })
     expect(joined).toEqual([])
+  })
+
+  test('leaves the room while the page is hidden and joins again when it is shown', async () => {
+    const page = new EventTarget()
+    const { transport, sockets, joined, left, tickets } = room({ page })
+    await settle()
+    sockets[0]?.open()
+    sockets[0]?.receive({ type: 'welcome', peerId: 'me', peers: ['server', 'alice'] })
+
+    page.dispatchEvent(Object.assign(new Event('pagehide'), { persisted: true }))
+    await settle()
+    expect(sockets[0]?.readyState).toBe(WebSocket.CLOSED)
+    expect(left).toEqual(['server', 'alice'])
+    expect(transport.signalingConnected()).toBe(false)
+    // A hidden page asks for nothing until it is shown again.
+    expect(sockets).toHaveLength(1)
+    expect(tickets()).toBe(1)
+
+    page.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: true }))
+    await settle()
+    expect(sockets).toHaveLength(2)
+    sockets[1]?.open()
+    expect(sockets[1]?.sent).toEqual([{ type: 'auth', token: 'ticket-2' }])
+    sockets[1]?.receive({ type: 'welcome', peerId: 'me-again', peers: ['server', 'alice'] })
+    expect(joined).toEqual(['server', 'alice', 'server', 'alice'])
+    await transport.leave()
+  })
+
+  test('drops a ticket refresh that comes back while the page is hidden', async () => {
+    jest.useFakeTimers()
+    try {
+      const page = new EventTarget()
+      const { transport, sockets, tickets } = room({ page })
+      await settle()
+      sockets[0]?.open()
+      // The refresh is waiting on its ticket as the page is hidden.
+      jest.advanceTimersByTime(240_000)
+      page.dispatchEvent(Object.assign(new Event('pagehide'), { persisted: true }))
+      await settle()
+      expect(tickets()).toBe(2)
+      jest.advanceTimersByTime(240_000)
+      await settle()
+      expect(tickets()).toBe(2)
+      await transport.leave()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  test('does not retry a ticket refresh that fails while the page is hidden', async () => {
+    jest.useFakeTimers()
+    try {
+      const page = new EventTarget()
+      const { transport, sockets, tickets, errors } = room({
+        page,
+        failTicket: (attempt) => attempt === 2
+      })
+      await settle()
+      sockets[0]?.open()
+      // The refresh is waiting on its ticket as the page is hidden, and then fails.
+      jest.advanceTimersByTime(240_000)
+      page.dispatchEvent(Object.assign(new Event('pagehide'), { persisted: true }))
+      await settle()
+      expect(errors).toHaveLength(1)
+      jest.advanceTimersByTime(60_000)
+      await settle()
+      expect(tickets()).toBe(2)
+      await transport.leave()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  test('stays out of the room after it was left, whatever the page does', async () => {
+    const page = new EventTarget()
+    const { transport, sockets } = room({ page })
+    await settle()
+    sockets[0]?.open()
+    await transport.leave()
+    page.dispatchEvent(Object.assign(new Event('pagehide'), { persisted: true }))
+    page.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: true }))
+    await settle()
+    expect(sockets).toHaveLength(1)
+  })
+
+  test('asks the relay whether it still hears this peer, and keeps a socket that answers', async () => {
+    jest.useFakeTimers()
+    try {
+      const { transport, sockets } = room({ heartbeat: true })
+      await settle()
+      const socket = sockets[0]
+      if (!socket) throw new Error('Expected a socket')
+      socket.open()
+      socket.receive({ type: 'welcome', peerId: 'me', peers: ['server'] })
+      jest.advanceTimersByTime(20_000)
+      expect(socket.texts).toEqual(['ping'])
+      jest.advanceTimersByTime(20_000)
+      expect(socket.texts).toEqual(['ping', 'ping'])
+      expect(socket.readyState).toBe(WebSocket.OPEN)
+      expect(sockets).toHaveLength(1)
+      await transport.leave()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  test('gives up a socket the relay stopped answering, and connects again', async () => {
+    jest.useFakeTimers()
+    try {
+      const { transport, sockets, left } = room({ heartbeat: true })
+      await settle()
+      const socket = sockets[0]
+      if (!socket) throw new Error('Expected a socket')
+      socket.open()
+      socket.receive({ type: 'welcome', peerId: 'me', peers: ['server'] })
+      // The network went away without the socket closing: nothing answers the heartbeat.
+      socket.answersHeartbeat = false
+      jest.advanceTimersByTime(40_000)
+      expect(socket.readyState).toBe(WebSocket.CLOSED)
+      expect(left).toEqual(['server'])
+      expect(transport.signalingConnected()).toBe(false)
+      jest.advanceTimersByTime(0)
+      await settle()
+      expect(sockets).toHaveLength(2)
+      await transport.leave()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  test('never pings a relay whose tickets do not say it answers', async () => {
+    jest.useFakeTimers()
+    try {
+      const { transport, sockets } = room()
+      await settle()
+      const socket = sockets[0]
+      if (!socket) throw new Error('Expected a socket')
+      socket.open()
+      socket.answersHeartbeat = false
+      jest.advanceTimersByTime(60_000)
+      expect(socket.texts).toEqual([])
+      expect(socket.readyState).toBe(WebSocket.OPEN)
+      await transport.leave()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  test('waits for a slow connection instead of giving it up', async () => {
+    jest.useFakeTimers()
+    try {
+      const { transport, sockets } = room({ heartbeat: true })
+      await settle()
+      jest.advanceTimersByTime(60_000)
+      expect(sockets).toHaveLength(1)
+      expect(sockets[0]?.readyState).toBe(WebSocket.CONNECTING)
+      await transport.leave()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  test('gives up a socket whose relay still sends but no longer hears this peer', async () => {
+    jest.useFakeTimers()
+    try {
+      const { transport, sockets, left } = room({ heartbeat: true })
+      await settle()
+      const socket = sockets[0]
+      if (!socket) throw new Error('Expected a socket')
+      socket.open()
+      socket.receive({ type: 'welcome', peerId: 'me', peers: ['server', 'ada'] })
+      // Ada's edits keep arriving, but the pings never reach the relay.
+      socket.answersHeartbeat = false
+      for (let tick = 0; tick < 4; tick++) {
+        socket.receive({ type: 'join', peerId: `peer-${tick}` })
+        jest.advanceTimersByTime(10_000)
+      }
+      expect(socket.readyState).toBe(WebSocket.CLOSED)
+      expect(left).toContain('server')
+      await transport.leave()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+})
+
+describe('relay reconnect delay', () => {
+  test('waits a random half of a doubling step, capped at 30 seconds', () => {
+    for (const [attempt, step] of [
+      [0, 1_000],
+      [3, 8_000],
+      [10, 30_000]
+    ] as const) {
+      const delays = Array.from({ length: 50 }, () => relayReconnectDelay(attempt))
+      expect(Math.min(...delays)).toBeGreaterThanOrEqual(step / 2)
+      expect(Math.max(...delays)).toBeLessThanOrEqual(step)
+      expect(new Set(delays).size).toBeGreaterThan(1)
+    }
   })
 })

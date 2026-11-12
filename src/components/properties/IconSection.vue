@@ -4,7 +4,7 @@ import { ref, watch } from 'vue'
 
 import { iconLayerName } from '@open-pencil/scene-graph/icons'
 import { useIcon } from '@open-pencil/vue/controls/icon'
-import { useCommonMessages, usePanelMessages } from '@open-pencil/vue/i18n'
+import { usePanelMessages } from '@open-pencil/vue/i18n'
 
 import ColorInput from '@/components/ColorPicker/ColorInput.vue'
 import IconPicker from '@/components/icon-picker/IconPicker.vue'
@@ -17,7 +17,6 @@ import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import theme from '@/theme/select/app'
 
 const panels = usePanelMessages()
-const common = useCommonMessages()
 const {
   frameId,
   name,
@@ -57,7 +56,7 @@ function confirmSwap() {
 <template>
   <PanelSection v-if="name" :label="panels.icon">
     <template #actions>
-      <span v-if="modified" class="mr-1 text-[11px] text-muted" data-property="icon-modified">
+      <span v-if="modified" class="me-1 text-2xs text-muted" data-property="icon-modified">
         {{ panels.iconModified }}
       </span>
       <IconButton v-if="modified" :label="panels.resetIcon" @click="reset">
@@ -82,12 +81,12 @@ function confirmSwap() {
             :aria-label="panels.swapIcon"
             :class="styles.trigger()"
           >
-            <IconPreview :svg="preview" class="mr-1.5 size-3.5 text-surface" />
+            <IconPreview :svg="preview" class="me-1.5 size-3.5 text-surface" />
             <span :class="styles.value()">
               {{ iconLayerName(name) }}
               <span class="text-muted">{{ setName ?? name.slice(0, name.indexOf(':')) }}</span>
             </span>
-            <icon-lucide-chevron-down class="ml-1 size-3 shrink-0 text-muted" />
+            <icon-lucide-chevron-down :class="styles.chevron()" />
           </button>
         </template>
       </IconPicker>
@@ -105,7 +104,6 @@ function confirmSwap() {
       :open="pendingSwap !== null"
       :heading="panels.swapEditedIconHeading"
       :description="panels.swapEditedIconDescription({ name: iconLayerName(swapShown ?? '') })"
-      :cancel-label="common.cancel"
       :confirm-label="panels.swapIcon"
       tone="warning"
       @update:open="(open: boolean) => !open && (pendingSwap = null)"

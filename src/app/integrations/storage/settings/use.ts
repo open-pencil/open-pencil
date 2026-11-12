@@ -29,6 +29,7 @@ const storageSettingsServices = {
 }
 
 import type { StorageProviderID } from '@/app/integrations/storage/types'
+import { settingsErrorMessage } from '@/app/settings/credentials/errors'
 import type { SettingsSaveResult } from '@/app/settings/save-result'
 
 export function useStorageSettings(
@@ -151,7 +152,7 @@ export function useStorageSettings(
     } catch (cause) {
       const result = persisted ? 'partial' : 'failed'
       if (current(request)) {
-        error.value = cause instanceof Error ? cause.message : String(cause)
+        error.value = settingsErrorMessage(cause)
         saveResult.value = result
         await refreshStatuses()
       }
@@ -179,9 +180,7 @@ export function useStorageSettings(
       )
       return current(request) ? result : null
     } catch (cause) {
-      return current(request)
-        ? { ok: false as const, message: cause instanceof Error ? cause.message : String(cause) }
-        : null
+      return current(request) ? { ok: false as const, message: settingsErrorMessage(cause) } : null
     } finally {
       operation.value = null
     }

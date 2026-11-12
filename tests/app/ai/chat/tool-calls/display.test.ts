@@ -11,9 +11,11 @@ import {
   toolNodeIds,
   toolSource,
   toolSummary,
+  toolWebResults,
   type ChatMessagePart,
   type ToolCallPart
 } from '@/app/ai/chat/tool-calls/display'
+import { classifyToolState, isMCPToolName, toolCallState } from '@/components/chat/tool/state'
 
 function call(part: Partial<ToolCallPart> & { type: `tool-${string}` }): ToolCallPart {
   return {
@@ -72,13 +74,23 @@ describe('tool call display', () => {
     expect(
       toolNodeIds(
         call({
-          type: 'tool-delete_node',
+          type: 'tool-delete_nodes',
           state: 'output-available',
-          input: {},
-          output: { deleted: '1:5', id: '1:5' }
+          input: { ids: ['1:5'] },
+          output: { deleted: ['1:5'] }
         })
       )
     ).toEqual([])
+    expect(
+      toolNodeIds(
+        call({
+          type: 'tool-clone_nodes',
+          state: 'output-available',
+          input: {},
+          output: { clones: [{ id: '1:6' }, { id: '1:7' }] }
+        })
+      )
+    ).toEqual(['1:6', '1:7'])
   })
 
   test('reads errors from failed calls and from error outputs', () => {
@@ -116,6 +128,36 @@ describe('tool call display', () => {
     ).toBeNull()
   })
 
+  test('shows the pages a web search found as sources, not its own output', () => {
+    const results = [
+      {
+        url: 'https://example.com/grids',
+        title: 'Grids',
+        publishedAt: null,
+        author: null,
+        text: 'Columns and gutters.'
+      }
+    ]
+    const found = call({ type: 'tool-search_web', state: 'output-available', output: { results } })
+    expect(toolWebResults(found)).toEqual(results)
+    const refused = call({
+      type: 'tool-search_web',
+      state: 'output-available',
+      output: { error: 'Out of credits' }
+    })
+    expect(toolWebResults(refused)).toBeNull()
+    expect(
+      toolWebResults(call({ type: 'tool-get_jsx', state: 'output-available', output: { results } }))
+    ).toBeNull()
+    // An agent such as Claude Code gets it from OpenPencil's MCP server as JSON text.
+    const throughMCP = call({
+      type: 'tool-mcp__open-pencil__search_web',
+      state: 'output-available',
+      output: { content: [{ type: 'text', text: JSON.stringify({ results }) }] }
+    })
+    expect(toolWebResults(throughMCP)).toEqual(results)
+  })
+
   test('groups consecutive tool calls between other parts', () => {
     const parts: ChatMessagePart[] = [
       { type: 'text', text: 'Plan' },
@@ -145,6 +187,22 @@ describe('tool call display', () => {
       )
     ).toEqual([[0, 2], 4])
   })
+
+  test('puts each compaction within the reply before the step it kept', () => {
+    const parts: ChatMessagePart[] = [
+      { type: 'step-start' },
+      call({ type: 'tool-render' }),
+      { type: 'step-start' },
+      call({ type: 'tool-render' }),
+      { type: 'step-start' },
+      { type: 'text', text: 'Done' }
+    ]
+    expect(
+      groupMessageParts(parts, [1, 2]).map((group) =>
+        group.kind === 'compaction' ? `compaction ${group.compaction}` : group.kind
+      )
+    ).toEqual(['tools', 'compaction 0', 'tools', 'compaction 1', 'part'])
+  })
 })
 
 describe('toolHasInput', () => {
@@ -153,5 +211,78 @@ describe('toolHasInput', () => {
     expect(toolHasInput(call({ type: 'tool-get_node', input: { id: '1:2' } }))).toBe(true)
     expect(toolHasInput(call({ type: 'tool-get_selection', input: {} }))).toBe(false)
     expect(toolHasInput(call({ type: 'tool-get_selection', input: undefined }))).toBe(false)
+  })
+})
+
+describe('classifyToolState', () => {
+  test('recognizes MCP tools by their names', () => {
+    expect(isMCPToolName('mcp__server__search')).toBe(true)
+    expect(isMCPToolName('get_nodes')).toBe(false)
+  })
+
+  test('treats omitted and false MCP isError as success', () => {
+    expect(
+      classifyToolState({
+        toolName: 'mcp__server__search',
+        state: 'output-available',
+        output: { content: [{ type: 'text', text: 'ok' }] }
+      })
+    ).toBe('done')
+    expect(
+      classifyToolState({
+        toolName: 'mcp__server__search',
+        state: 'output-available',
+        output: { content: [], isError: false }
+      })
+    ).toBe('done')
+  })
+
+  test('treats true MCP isError as an error', () => {
+    expect(
+      classifyToolState({
+        toolName: 'mcp__server__search',
+        state: 'output-available',
+        output: { content: [], isError: true }
+      })
+    ).toBe('error')
+  })
+
+  test('does not classify non-MCP content objects as MCP results', () => {
+    expect(
+      classifyToolState({
+        toolName: 'get_nodes',
+        state: 'output-available',
+        output: { content: [] }
+      })
+    ).toBe('done')
+  })
+
+  test('preserves generic error precedence', () => {
+    expect(
+      classifyToolState({
+        toolName: 'mcp__server__search',
+        state: 'output-available',
+        output: { content: [], error: 'failed' }
+      })
+    ).toBe('error')
+    expect(
+      classifyToolState({
+        toolName: 'mcp__server__search',
+        state: 'output-error',
+        output: { content: [] }
+      })
+    ).toBe('error')
+  })
+})
+
+describe('toolCallState', () => {
+  test('classifies a chat part by its tool name, state, and output', () => {
+    const part = (fields: Partial<ToolCallPart>) =>
+      ({ type: 'tool-apply_patch', toolCallId: 'call', input: {}, ...fields }) as ToolCallPart
+    expect(toolCallState(part({ state: 'input-streaming' }))).toBe('pending')
+    expect(toolCallState(part({ state: 'output-available', output: { applied: 1 } }))).toBe('done')
+    expect(
+      toolCallState(part({ state: 'output-available', output: { error: 'Patch does not apply' } }))
+    ).toBe('error')
   })
 })

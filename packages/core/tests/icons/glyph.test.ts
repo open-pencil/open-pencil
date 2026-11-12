@@ -9,8 +9,8 @@ import {
   computeConstrainedResizeChanges
 } from '@open-pencil/scene-graph/resize'
 
+import { buildIconData } from '#core/icons/artwork'
 import { detachIcon, placeIcon, recolorIcon, swapIcon } from '#core/icons/render'
-import { buildIconData } from '#core/icons/svg'
 
 const BLACK = parseColor('#000000')
 const OUTLINE = '<path fill="none" stroke="currentColor" stroke-width="2" d="M4 4h16v16H4z"/>'
@@ -18,7 +18,7 @@ const LOGO = '<path fill="#e11d48" d="M2 2h20v20H2z"/><path fill="currentColor" 
 
 function placed(body: string, size = 24) {
   const graph = new SceneGraph()
-  const icon = buildIconData({ body }, 'test', 'icon', 24, 24, size)
+  const icon = buildIconData({ body, width: 24, height: 24 }, 'test', 'icon', size)
   const frame = placeIcon(graph, graph.getPages()[0].id, icon, { size, color: BLACK })
   const modified = () => isIconModified(graph, graph.getNode(frame.id) ?? frame)
   return { graph, frame, modified }
@@ -74,7 +74,29 @@ describe('icon glyphs', () => {
   test('resizing scales the glyph with its frame', () => {
     const { graph, frame } = placed(OUTLINE)
     resize(graph, frame.id, 48, 48)
-    expect(graph.getChildren(frame.id)[0]).toMatchObject({ width: 48, height: 48 })
+    // The outline's 16px square at 4, 4 doubles with the frame.
+    expect(graph.getChildren(frame.id)[0]).toMatchObject({ x: 8, y: 8, width: 32, height: 32 })
+  })
+
+  test('a flat path, such as a minus sign, stretches with its icon when resized or swapped', () => {
+    const MINUS = '<path fill="none" stroke="currentColor" stroke-width="2" d="M5 12h14"/>'
+    const { graph, frame } = placed(MINUS)
+    const line = () => {
+      const path = graph.getChildren(frame.id)[0]
+      const ends = path?.vectorNetwork?.vertices.map((vertex) => (path.x ?? 0) + vertex.x)
+      return { height: path?.height, ends }
+    }
+    expect(line()).toEqual({ height: 0, ends: [5, 19] })
+
+    resize(graph, frame.id, 48, 48)
+    expect(line()).toEqual({ height: 0, ends: [10, 38] })
+
+    swapIcon(
+      graph,
+      frame.id,
+      buildIconData({ body: MINUS, width: 24, height: 24 }, 'test', 'minus', 24)
+    )
+    expect(line()).toEqual({ height: 0, ends: [10, 38] })
   })
 
   test('moving a point, adding a path, or changing a color of its own is an edit', () => {
@@ -110,7 +132,11 @@ describe('icon glyphs', () => {
   test('a swap draws a fresh glyph, so an edited icon is as placed again', () => {
     const { graph, frame, modified } = placed(OUTLINE)
     graph.createNode('RECTANGLE', frame.id, { width: 4, height: 4 })
-    swapIcon(graph, frame.id, buildIconData({ body: OUTLINE }, 'test', 'other', 24, 24, 24))
+    swapIcon(
+      graph,
+      frame.id,
+      buildIconData({ body: OUTLINE, width: 24, height: 24 }, 'test', 'other', 24)
+    )
     expect(modified()).toBe(false)
   })
 
@@ -127,9 +153,19 @@ describe('icon glyphs', () => {
   test('a swap into an unevenly resized icon stretches the glyph to it', () => {
     const { graph, frame, modified } = placed(OUTLINE)
     resize(graph, frame.id, 40, 20)
-    swapIcon(graph, frame.id, buildIconData({ body: OUTLINE }, 'test', 'other', 24, 24, 20))
+    swapIcon(
+      graph,
+      frame.id,
+      buildIconData({ body: OUTLINE, width: 24, height: 24 }, 'test', 'other', 20)
+    )
 
-    expect(graph.getChildren(frame.id)[0]).toMatchObject({ width: 40, height: 20 })
+    // Built at 20, the outline's square spans 3.33 to 16.67 (paths keep two decimals), then
+    // stretches twice as wide.
+    const path = graph.getChildren(frame.id)[0]
+    expect(path?.x).toBeCloseTo(20 / 3, 1)
+    expect(path?.y).toBeCloseTo(10 / 3, 1)
+    expect(path?.width).toBeCloseTo(80 / 3, 1)
+    expect(path?.height).toBeCloseTo(40 / 3, 1)
     expect(modified()).toBe(false)
   })
 

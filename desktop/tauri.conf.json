@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "OpenPencil",
-  "version": "0.16.0",
+  "version": "0.17.0-beta.4",
   "identifier": "net.dannote.open-pencil",
   "build": {
     "beforeDevCommand": "bun run generate:icons --target desktop && bun run generate:tauri-menu && bun run dev",
@@ -15,15 +15,18 @@
         "title": "OpenPencil",
         "width": 1280,
         "height": 800,
-        "dragDropEnabled": false
+        "dragDropEnabled": false,
+        "create": false
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "capabilities": ["default", "updater"]
     }
   },
   "bundle": {
     "active": true,
+    "category": "GraphicsAndDesign",
     "targets": "all",
     "createUpdaterArtifacts": true,
     "icon": [
@@ -51,6 +54,14 @@
         "rank": "Alternate"
       },
       {
+        "ext": ["jam"],
+        "name": "FigJam Board",
+        "description": "FigJam board",
+        "role": "Editor",
+        "mimeType": "application/x-figjam",
+        "rank": "Alternate"
+      },
+      {
         "ext": ["drawio", "dio"],
         "name": "draw.io Diagram",
         "description": "draw.io diagram",
@@ -68,11 +79,22 @@
       }
     ],
     "linux": {
+      "appimage": {
+        "files": {
+          "/usr/share/metainfo/net.dannote.open-pencil.metainfo.xml": "linux/net.dannote.open-pencil.metainfo.xml"
+        }
+      },
       "deb": {
-        "desktopTemplate": "linux/main.desktop"
+        "desktopTemplate": "linux/main.desktop",
+        "files": {
+          "/usr/share/metainfo/net.dannote.open-pencil.metainfo.xml": "linux/net.dannote.open-pencil.metainfo.xml"
+        }
       },
       "rpm": {
-        "desktopTemplate": "linux/main.desktop"
+        "desktopTemplate": "linux/main.desktop",
+        "files": {
+          "/usr/share/metainfo/net.dannote.open-pencil.metainfo.xml": "linux/net.dannote.open-pencil.metainfo.xml"
+        }
       }
     },
     "macOS": {
@@ -89,7 +111,9 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDU4QzBCRjBFNzhFNEVEMDEKUldRQjdlUjREci9BV0hLaEJPeG5tRXdsWkhQWFdEa0VxcEtNR1o1S2VJeGlKU1VDTldQTi9wYncK",
       "requireSignedVersion": true,
-      "endpoints": ["https://github.com/open-pencil/open-pencil/releases/latest/download/latest.json"],
+      "endpoints": [
+        "https://github.com/open-pencil/open-pencil/releases/latest/download/latest.json"
+      ],
       "windows": {
         "installMode": "passive"
       }

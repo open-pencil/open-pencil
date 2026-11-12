@@ -6,8 +6,12 @@ import { createGraphEventSubscription, type GraphEventRenderer } from '#core/edi
 
 function createRenderer() {
   const invalidated: string[] = []
-  const renderer: GraphEventRenderer & { invalidated: string[] } = {
-    invalidateVectorPath: () => undefined,
+  const paths: string[] = []
+  const renderer: GraphEventRenderer & { invalidated: string[]; paths: string[] } = {
+    invalidateVectorPath: (nodeId: string) => {
+      paths.push(nodeId)
+    },
+    forgetNode: () => undefined,
     invalidateNodePicture: (nodeId: string) => {
       invalidated.push(nodeId)
     },
@@ -15,7 +19,8 @@ function createRenderer() {
       invalidateNode: mock(),
       invalidateStructure: mock()
     },
-    invalidated
+    invalidated,
+    paths
   }
   return renderer
 }
@@ -59,6 +64,26 @@ describe('graph event picture invalidation integration', () => {
     renderer.invalidated.length = 0
     graph.deleteNode(node.id)
     expect(renderer.invalidated).toContain(node.id)
+  })
+
+  test('a change inside a boolean operation drops its cached result', () => {
+    const { graph, renderer } = setup()
+    const page = graph.getPages()[0]
+    if (!page) throw new Error('Expected default page')
+    const boolean = graph.createNode('BOOLEAN_OPERATION', page.id, { booleanOperation: 'UNION' })
+    const child = graph.createNode('RECTANGLE', boolean.id, { width: 10, height: 10 })
+
+    renderer.paths.length = 0
+    renderer.invalidated.length = 0
+    graph.updateNode(child.id, { x: 5 })
+    expect(renderer.paths).toContain(boolean.id)
+    expect(renderer.invalidated).toContain(boolean.id)
+
+    renderer.paths.length = 0
+    renderer.invalidated.length = 0
+    graph.deleteNode(child.id)
+    expect(renderer.paths).toContain(boolean.id)
+    expect(renderer.invalidated).toContain(boolean.id)
   })
 
   test('isolation changes are evaluated against live tiled chunk topology', () => {

@@ -6,6 +6,7 @@ export type SettingsSection =
   | 'editor'
   | 'fonts'
   | 'storage'
+  | 'notifications'
   | 'cloud'
   | 'ai'
   | 'tools'

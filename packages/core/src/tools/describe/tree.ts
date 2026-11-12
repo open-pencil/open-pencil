@@ -41,24 +41,24 @@ function describeChild(
 }
 
 export function describeOneNode(
-  figma: { graph: SceneGraph },
+  graph: SceneGraph,
   nodeId: string,
   depth: number,
   gridSize: number
 ): Record<string, unknown> {
-  const raw = figma.graph.getNode(nodeId)
+  const raw = graph.getNode(nodeId)
   if (!raw) return { id: nodeId, error: `Node "${nodeId}" not found` }
 
   const role = detectRole(raw)
-  const visual = describeVisual(raw, figma.graph)
+  const visual = describeVisual(raw, graph)
   const layout = describeLayout(raw)
-  const issues = detectIssues(raw, gridSize, figma.graph)
+  const issues = detectIssues(raw, gridSize, graph)
 
   const children: ChildDescription[] = []
   for (const childId of raw.childIds) {
-    const child = figma.graph.getNode(childId)
+    const child = graph.getNode(childId)
     if (!child || !child.visible) continue
-    children.push(describeChild(child, figma.graph, depth - 1, gridSize))
+    children.push(describeChild(child, graph, depth - 1, gridSize))
   }
 
   const result: Record<string, unknown> = {

@@ -11,17 +11,21 @@ import { RECENT_FILES_LIMIT_MIN, RECENT_FILES_LIMIT_MAX } from '@/app/recent-fil
 import {
   appPreferences,
   DEFAULT_APP_PREFERENCES,
+  INTERFACE_SCALES,
   updateAccentPreference
 } from '@/app/settings/preferences/store'
 import { DEFAULT_THEME } from '@/app/settings/theme'
 import { DEFAULT_ACCENT } from '@/app/shell/accent/palette'
+import { isRightToLeftLocale, mirrorInterfacePreference } from '@/app/shell/direction'
+import { interfaceScalePreference } from '@/app/shell/interface-scale'
 import { animationPreference } from '@/app/shell/motion'
 import { useAppTheme } from '@/app/shell/theme'
 import CredentialSettingsSection from '@/components/settings/credentials/CredentialSettingsSection.vue'
 import AccentColorPicker from '@/components/settings/general/AccentColorPicker.vue'
 import CollaborationNameSection from '@/components/settings/general/CollaborationNameSection.vue'
+import SupportSettingsSection from '@/components/settings/general/SupportSettingsSection.vue'
+import UpdatesSettingsSection from '@/components/settings/general/UpdatesSettingsSection.vue'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
-import SettingsResetButton from '@/components/settings/layout/SettingsResetButton.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import PresetNumberField from '@/components/ui/input/PresetNumberField.vue'
@@ -59,6 +63,12 @@ const preserveUnsavedWork = computed({
   get: () => recoveryEnabled.value,
   set: setRecoveryEnabled
 })
+const defaultInterfaceScale = DEFAULT_APP_PREFERENCES.appearance.interfaceScale
+const defaultMirror = DEFAULT_APP_PREFERENCES.appearance.mirrorInterface
+const interfaceScaleOptions = computed(() => {
+  const format = new Intl.NumberFormat(locale.value, { style: 'percent' })
+  return INTERFACE_SCALES.map((value) => ({ value, label: format.format(value / 100) }))
+})
 </script>
 
 <template>
@@ -76,12 +86,41 @@ const preserveUnsavedWork = computed({
             data-test-id="settings-language"
           />
         </SettingsRow>
+        <SettingsRow
+          v-if="isRightToLeftLocale(locale)"
+          as="label"
+          :label="settings.mirrorInterface"
+          :description="settings.mirrorInterfaceDescription"
+          :modified="mirrorInterfacePreference !== defaultMirror"
+          @reset="mirrorInterfacePreference = defaultMirror"
+        >
+          <AppSwitch
+            v-model="mirrorInterfacePreference"
+            :label="settings.mirrorInterface"
+            data-test-id="settings-mirror-interface"
+          />
+        </SettingsRow>
       </SettingsGroup>
     </SettingsSection>
 
     <SettingsSection>
       <template #title>{{ settings.appearance }}</template>
       <SettingsGroup>
+        <SettingsRow
+          :label="settings.interfaceScale"
+          :description="settings.interfaceScaleDescription"
+          :modified="interfaceScalePreference !== defaultInterfaceScale"
+          class="flex-wrap"
+          @reset="interfaceScalePreference = defaultInterfaceScale"
+        >
+          <AppSelect
+            v-model="interfaceScalePreference"
+            :label="settings.interfaceScale"
+            :options="interfaceScaleOptions"
+            :ui="selectUI"
+            data-test-id="settings-interface-scale"
+          />
+        </SettingsRow>
         <SettingsRow
           as="label"
           :label="menu.theme"
@@ -99,16 +138,14 @@ const preserveUnsavedWork = computed({
             :ui="selectUI"
           />
         </SettingsRow>
-        <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-3 py-2.5">
-          <span class="text-xs font-medium text-surface">{{ settings.accentColor }}</span>
-          <span class="flex items-center gap-1">
-            <SettingsResetButton
-              v-if="accentModified"
-              @reset="updateAccentPreference({ ...DEFAULT_ACCENT })"
-            />
-            <AccentColorPicker />
-          </span>
-        </div>
+        <SettingsRow
+          :label="settings.accentColor"
+          :modified="accentModified"
+          class="flex-wrap gap-y-2"
+          @reset="updateAccentPreference({ ...DEFAULT_ACCENT })"
+        >
+          <AccentColorPicker />
+        </SettingsRow>
         <SettingsRow
           as="label"
           :label="settings.animations"
@@ -173,6 +210,10 @@ const preserveUnsavedWork = computed({
       </SettingsGroup>
     </SettingsSection>
 
+    <UpdatesSettingsSection />
+
     <CredentialSettingsSection />
+
+    <SupportSettingsSection />
   </section>
 </template>

@@ -1,5 +1,6 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { styleRunReferences } from '@open-pencil/scene-graph/text'
+import { copyImages } from '@open-pencil/scene-graph/images'
+import { layerDependencies } from '@open-pencil/scene-graph/transfer'
 
 import { clipboardPlacement, type ClipboardPlacement } from './placement'
 import { captureClipboardVariables, type ClipboardVariables } from './variables'
@@ -19,38 +20,15 @@ export interface ClipboardSnapshot {
   properties?: boolean
 }
 
-function referencedStyleIds(nodes: SceneNode[]): Set<string> {
-  const ids = new Set<string>()
-  for (const node of nodes) {
-    for (const id of [
-      node.fillStyleId,
-      node.strokeStyleId,
-      node.textStyleId,
-      node.effectStyleId,
-      node.gridStyleId,
-      ...styleRunReferences(node.styleRuns).styles
-    ]) {
-      if (id) ids.add(id)
-    }
-  }
-  return ids
-}
-
 export function captureClipboardSnapshot(
   graph: SceneGraph,
   selectedNodes: SceneNode[]
 ): ClipboardSnapshot {
   const selectedIds = new Set(selectedNodes.map((node) => node.id))
   const roots = selectedNodes.filter((node) => !node.parentId || !selectedIds.has(node.parentId))
-  const images = new Map<string, Uint8Array>()
   const capturedNodes: SceneNode[] = []
   function capture(node: SceneNode): ClipboardNodeTree {
     capturedNodes.push(node)
-    for (const paint of node.fills) {
-      if (!paint.imageHash) continue
-      const bytes = graph.images.get(paint.imageHash)
-      if (bytes) images.set(paint.imageHash, bytes.slice())
-    }
     return { ...structuredClone(node), children: graph.getChildren(node.id).map(capture) }
   }
   const nodes = roots.map(capture)
@@ -68,16 +46,14 @@ export function captureClipboardSnapshot(
     for (const child of node.children ?? []) visitReferences(child)
   }
   for (const node of nodes) visitReferences(node)
-  const styleIds = referencedStyleIds(capturedNodes)
-  const styleDefinitions: SceneNode[] = []
-  for (const node of graph.getAllNodes()) {
-    if (node.source.id && styleIds.has(node.source.id)) styleDefinitions.push(structuredClone(node))
-  }
+  const dependencies = layerDependencies(graph, capturedNodes)
+  const images = new Map<string, Uint8Array>()
+  copyImages(graph.images, images, dependencies.images)
   return {
     sourceRootId: graph.rootId,
     componentDependencies: [...componentDependencies.values()],
-    styleDefinitions,
-    variableDependencies: captureClipboardVariables(graph, capturedNodes),
+    styleDefinitions: dependencies.styles.map((style) => structuredClone(style)),
+    variableDependencies: captureClipboardVariables(graph, dependencies),
     nodes,
     placement: clipboardPlacement(graph, roots),
     images

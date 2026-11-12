@@ -30,8 +30,7 @@ export function createSelectionCommands({
   capabilities,
   messages: t,
   otherPages,
-  moveSelectionToPage,
-  getOpacityTarget
+  moveSelectionToPage
 }: EditorCommandMapOptions): Record<SelectionCommandId, EditorCommand> {
   function arrangeSelection(options: Parameters<typeof editor.arrangeNodes>[1]) {
     void editor.arrangeNodes([...selection.selectedIds.value], options).catch((error: unknown) => {
@@ -119,6 +118,14 @@ export function createSelectionCommands({
       },
       enabled: capabilities.canFrameSelection,
       run: () => editor.frameSelection()
+    },
+    'selection.wrapInSection': {
+      id: 'selection.wrapInSection',
+      get label() {
+        return t.value.wrapInSection
+      },
+      enabled: capabilities.canWrapInSection,
+      run: () => editor.wrapSelectionInSection()
     },
     'selection.ungroup': {
       id: 'selection.ungroup',
@@ -433,14 +440,6 @@ export function createSelectionCommands({
       enabled: capabilities.canFlatten,
       run: () => editor.flattenSelected()
     },
-    'selection.outlineText': {
-      id: 'selection.outlineText',
-      get label() {
-        return t.value.outlineText
-      },
-      enabled: capabilities.canOutlineText,
-      run: () => editor.outlineTextSelected()
-    },
     'selection.outlineStroke': {
       id: 'selection.outlineStroke',
       get label() {
@@ -457,17 +456,6 @@ export function createSelectionCommands({
       enabled: capabilities.canMoveToPage,
       run: () => {
         moveSelectionToPage(otherPages.value[0].id)
-      }
-    },
-    'selection.setOpacity': {
-      id: 'selection.setOpacity',
-      get label() {
-        return t.value.setOpacity
-      },
-      enabled: capabilities.canSetOpacity,
-      run: () => {
-        const target = getOpacityTarget()
-        editor.setOpacity(target.value, target.coalesceKey)
       }
     }
   }

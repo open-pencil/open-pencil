@@ -1,6 +1,6 @@
 import type { LayoutMode, SceneNode } from '@open-pencil/scene-graph'
 
-import type { NodePreview } from './node-preview'
+import type { NodePreview } from './nodes/preview'
 import type { EditorContext } from './types'
 
 export function createLayoutModeActions(

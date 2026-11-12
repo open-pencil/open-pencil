@@ -364,11 +364,13 @@ async function remove() {
         <SettingsSaveFeedback :error="saveError" :result="saveResult" />
       </fieldset>
 
-      <template #footer>
-        <AppButton v-if="canDelete" color="error" :disabled="busy" @click="deleteOpen = true">
+      <template v-if="canDelete" #footer-start>
+        <AppButton color="error" :disabled="busy" @click="deleteOpen = true">
           {{ ai.deleteModel }}
         </AppButton>
-        <AppButton class="ml-auto" :disabled="busy" @click="emit('done')">
+      </template>
+      <template #footer>
+        <AppButton :disabled="busy" @click="emit('done')">
           {{ common.cancel }}
         </AppButton>
         <AppButton v-if="!choosing" type="submit" color="primary" variant="solid" :loading="busy">
@@ -383,7 +385,6 @@ async function remove() {
     data-test-id="delete-model-dialog"
     :heading="ai.deleteModel"
     :description="ai.deleteModelDescription"
-    :cancel-label="common.cancel"
     :confirm-label="ai.deleteModel"
     tone="danger"
     @confirm="remove"

@@ -1,14 +1,14 @@
 import { expect, setDefaultTimeout, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import {
   createCanvasKitRasterCodec,
   headlessRenderThumbnail,
-  initCanvasKit
+  thumbnailFrame
 } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 setDefaultTimeout(60_000)
 
@@ -24,7 +24,7 @@ test('a thumbnail shows the page background between its layers', async () => {
   ]
 
   const png = expectDefined(await headlessRenderThumbnail(graph, page.id, 100, 100), 'thumbnail')
-  const image = expectDefined(createCanvasKitRasterCodec(await initCanvasKit()).decode(png))
+  const image = expectDefined(createCanvasKitRasterCodec(await getCanvasKit()).decode(png))
   const gap = (50 * image.width + 50) * 4
 
   expect([...image.data.subarray(gap, gap + 4)]).toEqual([30, 30, 30, 255])
@@ -43,8 +43,24 @@ test('a thumbnail loads the faces its text is set in before drawing it', async (
   })
 
   const png = expectDefined(await headlessRenderThumbnail(graph, page.id, 200, 60), 'thumbnail')
-  const image = expectDefined(createCanvasKitRasterCodec(await initCanvasKit()).decode(png))
+  const image = expectDefined(createCanvasKitRasterCodec(await getCanvasKit()).decode(png))
   const inked = image.data.filter((red, index) => index % 4 === 0 && red < 128).length
 
   expect(inked).toBeGreaterThan(0)
+})
+
+test('a letterboxed thumbnail fills its size with the whole content centred', () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0]
+  graph.createNode('RECTANGLE', page.id, { x: 0, y: 0, width: 1000, height: 1000 })
+
+  const contained = expectDefined(thumbnailFrame(graph, page.id, 160, 90), 'contained frame')
+  expect([contained.width, contained.height]).toEqual([90, 90])
+
+  const boxed = expectDefined(thumbnailFrame(graph, page.id, 160, 90, 'letterbox'), 'boxed frame')
+  expect([boxed.width, boxed.height, boxed.scale]).toEqual([160, 90, 0.09])
+  expect(boxed.bounds.minY).toBe(0)
+  expect(boxed.bounds.maxY).toBe(1000)
+  expect(boxed.bounds.minX).toBeCloseTo(-388.89, 2)
+  expect(boxed.bounds.maxX).toBeCloseTo(1388.89, 2)
 })

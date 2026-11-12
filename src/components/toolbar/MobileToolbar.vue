@@ -6,11 +6,17 @@ import IconChevronLeft from '~icons/lucide/chevron-left'
 import IconChevronRight from '~icons/lucide/chevron-right'
 
 import type { EditorToolDef, Tool } from '@open-pencil/core'
-import { getToolbarToolSelection, ToolbarItem } from '@open-pencil/vue/primitives/Toolbar'
+import {
+  getToolbarToolSelection,
+  ToolbarItem,
+  useToolbarState
+} from '@open-pencil/vue/primitives/Toolbar'
 import { toolbarToolTestId } from '@open-pencil/vue/testing'
 
 import { animationsEnabled } from '@/app/shell/motion'
 import { useMotionTransitions } from '@/app/shell/motion/transitions'
+import { useActionToast } from '@/app/shell/toast/action'
+import { useToolbarActions } from '@/components/toolbar/actions'
 import ShapeToolButton from '@/components/toolbar/ShapeToolButton.vue'
 import ToolbarActionGroup from '@/components/toolbar/ToolbarActionGroup.vue'
 import ToolButton from '@/components/toolbar/ToolButton.vue'
@@ -23,45 +29,32 @@ import type {
 } from '@/components/toolbar/types'
 import toolbarTheme from '@/theme/toolbar'
 
-const {
-  tools,
-  activeTool,
-  flyoutSelections,
-  toolIcons,
-  toolLabels,
-  toolShortcuts,
-  ui,
-  mobileCategory,
-  slideDirection,
-  hasPrev,
-  hasNext,
-  editActions,
-  arrangeActions
-} = defineProps<{
-  tools: EditorToolDef[]
-  activeTool: Tool
-  flyoutSelections: ReadonlyMap<Tool, Tool>
-  toolIcons: ToolIconMap
-  toolLabels: ToolLabels
-  toolShortcuts: Readonly<Record<Tool, string>>
-  ui?: ToolbarUI
-  mobileCategory: number
-  slideDirection: number
-  hasPrev: boolean
-  hasNext: boolean
-  editActions: ToolbarActionItem[]
-  arrangeActions: ToolbarActionItem[]
-}>()
+const { tools, activeTool, flyoutSelections, toolIcons, toolLabels, toolShortcuts, ui } =
+  defineProps<{
+    tools: EditorToolDef[]
+    activeTool: Tool
+    flyoutSelections: ReadonlyMap<Tool, Tool>
+    toolIcons: ToolIconMap
+    toolLabels: ToolLabels
+    toolShortcuts: Readonly<Record<Tool, string>>
+    ui?: ToolbarUI
+  }>()
 
 const toolbar = tv(toolbarTheme)
 const styles = toolbar()
 
 const emit = defineEmits<{
   setTool: [tool: Tool]
-  prev: []
-  next: []
-  action: [item: ToolbarActionItem]
 }>()
+
+const { mobileCategory, slideDirection, hasPrev, hasNext, goPrev, goNext } = useToolbarState()
+const { editActions, arrangeActions } = useToolbarActions()
+const { showActionToast } = useActionToast()
+
+function runAction(item: ToolbarActionItem) {
+  item.action()
+  showActionToast(item.label)
+}
 
 const { quick: itemTransition, layout: layoutTransition } = useMotionTransitions()
 
@@ -83,7 +76,7 @@ function navigationClass(disabled: boolean) {
     class="fixed left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5"
     :style="{
       maxWidth: 'calc(100vw - 2rem)',
-      bottom: `calc(56px + env(safe-area-inset-bottom) + 0.75rem)`
+      bottom: `calc(3.5rem + env(safe-area-inset-bottom) + 0.75rem)`
     }"
   >
     <motion.button
@@ -93,16 +86,19 @@ function navigationClass(disabled: boolean) {
       :class="navigationClass(!hasPrev)"
       :animate="{ opacity: hasPrev ? 1 : 0 }"
       :transition="itemTransition"
-      @click="emit('prev')"
+      @click="goPrev"
     >
-      <IconChevronLeft :class="styles.navigationIcon({ class: ui?.navigationIcon })" />
+      <IconChevronLeft
+        data-direction="reading"
+        :class="styles.navigationIcon({ class: ui?.navigationIcon })"
+      />
     </motion.button>
 
     <ToolbarRoot as-child>
       <motion.div
         :layout="animationsEnabled"
         data-test-id="mobile-toolbar-container"
-        class="relative flex h-11 items-center overflow-hidden rounded-[8px] border border-border bg-panel px-2 shadow-lg"
+        class="scrollbar-none relative flex h-11 min-w-0 items-center overflow-x-auto rounded-lg border border-border bg-panel px-2 shadow-lg [&>*]:shrink-0"
         :transition="layoutTransition"
       >
         <AnimatePresence mode="popLayout" :custom="slideDirection">
@@ -165,7 +161,7 @@ function navigationClass(disabled: boolean) {
               :actions="editActions"
               :ui="ui"
               test-prefix="mobile-toolbar"
-              @action="emit('action', $event)"
+              @action="runAction"
             />
           </motion.div>
 
@@ -184,7 +180,7 @@ function navigationClass(disabled: boolean) {
               :actions="arrangeActions"
               :ui="ui"
               test-prefix="mobile-toolbar"
-              @action="emit('action', $event)"
+              @action="runAction"
             />
           </motion.div>
         </AnimatePresence>
@@ -200,9 +196,12 @@ function navigationClass(disabled: boolean) {
       :class="navigationClass(!hasNext)"
       :animate="{ opacity: hasNext ? 1 : 0 }"
       :transition="itemTransition"
-      @click="emit('next')"
+      @click="goNext"
     >
-      <IconChevronRight :class="styles.navigationIcon({ class: ui?.navigationIcon })" />
+      <IconChevronRight
+        data-direction="reading"
+        :class="styles.navigationIcon({ class: ui?.navigationIcon })"
+      />
     </motion.button>
   </div>
 </template>

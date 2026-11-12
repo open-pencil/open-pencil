@@ -22,7 +22,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Canvas guides | ✅ | Drag guides from rulers onto the canvas or frames; select, move, duplicate, delete, and undo; saved in `.fig` |
 | Actions menu / command palette | ✅ | <kbd>⌘</kbd><kbd>K</kbd> opens a searchable palette of editor and app actions |
 | Context menu | ✅ | Right-click with clipboard, z-order, grouping, component, visibility, lock, move-to-page actions |
-| Keyboard shortcuts | 🟡 | Tools, editing, booleans, flatten, masks, components, align, z-order, navigation, text formatting; no Scale (<kbd>K</kbd>), Arrow, Eyedropper (<kbd>I</kbd>), or zoom tool |
+| Keyboard shortcuts | 🟡 | Tools, editing, booleans, flatten, masks, components, align, z-order, navigation, text formatting; no Scale (<kbd>K</kbd>), Arrow, or zoom tool |
 | Find and replace | 🔲 | Text search/replace across document |
 | Layer outlines view | 🔲 | Wireframe view of all layers |
 | Custom file thumbnails | 🔲 | Saved files preview their first page, as Figma's do without a Cover page; no thumbnail picker |
@@ -70,7 +70,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Boolean operations (Union, Subtract, Intersect, Exclude) | ✅ | Object menu (<kbd>⌥</kbd><kbd>⇧</kbd><kbd>U</kbd> / <kbd>S</kbd> / <kbd>I</kbd> / <kbd>E</kbd>) and panel control; results stay editable boolean layers |
 | Flatten layers | ✅ | Flatten (<kbd>⌥</kbd><kbd>⇧</kbd><kbd>F</kbd>) from the Object and canvas menus |
 | Convert strokes to paths | ✅ | Outline stroke replaces each stroked layer with its fill and a stroke vector, keeping rotation, opacity, and effects |
-| Convert text to paths | ✅ | Outline text turns text into glyph vectors from the font's outlines |
+| Convert text to paths | ✅ | Flatten turns text into one vector, and Outline stroke into a group of glyph vectors, each glyph in its character's fills |
 | Shape builder tool | 🔲 | Interactive boolean tool |
 | Offset path | 🔲 | Inset/outset a vector path |
 | Simplify path | 🔲 | Reduce vector point count |
@@ -113,7 +113,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Add images & videos | 🟡 | Drop or paste PNG, JPEG, GIF, WebP, AVIF, and SVG onto the canvas; no video |
 | Image property adjustment | 🔲 | Exposure, contrast, saturation, etc. |
 | Crop an image | 🟡 | The Crop mode in the image fill picker keeps a crop; no on-canvas crop handles |
-| Eyedropper tool | 🔲 | Sample colors from canvas |
+| Eyedropper tool | ✅ | <kbd>I</kbd> or the color picker button; samples the rendered canvas with a loupe of the pixels under the pointer, <kbd>Alt</kbd> targets the stroke |
 | Mixed selection color editing | ✅ | Selection colors changes a color everywhere across a multi-selection |
 | Color models (RGB, HSL, HSB, Hex) | ✅ | Hex, RGB, HSL, HSB, and OkHCL fields with gamut warnings |
 
@@ -140,7 +140,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| Horizontal & vertical flow | ✅ | Yoga WASM flexbox engine |
+| Horizontal & vertical flow | ✅ | Taffy WASM flexbox engine |
 | Toggle auto layout (<kbd>⇧</kbd><kbd>A</kbd>) | ✅ | Toggle on frame or wrap selection |
 | Gap (spacing between children) | ✅ | Configurable in properties panel |
 | Padding (uniform & per-side) | ✅ | All four sides independently |
@@ -148,7 +148,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Align items | ✅ | Start, center, end, stretch |
 | Child sizing (fixed, fill, hug) | ✅ | Per-child sizing modes |
 | Wrap | ✅ | Flex wrap for multi-line layout |
-| Grid auto layout flow | ✅ | CSS Grid via Yoga fork — column/row tracks, gaps, spans |
+| Grid auto layout flow | ✅ | CSS Grid via Taffy — column/row tracks, gaps, spans |
 | Combined flows (nested) | ✅ | Nested auto-layout frames with different directions |
 | Drag reorder within auto layout | ✅ | Visual insertion indicator |
 | Min/max width and height | ✅ | Min and max width and height in Layout, bindable to number variables |

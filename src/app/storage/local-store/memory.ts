@@ -1,4 +1,9 @@
-import { buildIndexMeta, buildWriteMeta, sortAndFilterMetas } from '@/app/storage/local-store/meta'
+import {
+  buildIndexMeta,
+  buildWriteMeta,
+  sameLocalCanvasState,
+  sortAndFilterMetas
+} from '@/app/storage/local-store/meta'
 import type { LocalCanvasStore } from '@/app/storage/local-store/store'
 import type { LocalCanvasMeta, LocalCanvasWriteInput } from '@/app/storage/local-store/types'
 
@@ -29,7 +34,12 @@ export function createMemoryLocalCanvasStore(): LocalCanvasStore {
 
     async writeCanvas(input: LocalCanvasWriteInput) {
       const existing = metas.get(input.id) ?? null
-      figs.set(input.id, new Uint8Array(input.figBytes))
+      figs.set(
+        input.id,
+        input.figBytes instanceof Blob
+          ? new Uint8Array(await input.figBytes.arrayBuffer())
+          : new Uint8Array(input.figBytes)
+      )
 
       let hasThumb = existing?.hasThumb ?? false
       if (input.thumbBytes != null) {
@@ -102,10 +112,14 @@ export function createMemoryLocalCanvasStore(): LocalCanvasStore {
       return meta
     },
 
-    async remove(id: string) {
+    async remove(id: string, options) {
+      const expected = options?.unchangedFrom
+      const existing = metas.get(id)
+      if (expected && (!existing || !sameLocalCanvasState(existing, expected))) return false
       metas.delete(id)
       figs.delete(id)
       thumbs.delete(id)
+      return true
     },
 
     async clearAll() {

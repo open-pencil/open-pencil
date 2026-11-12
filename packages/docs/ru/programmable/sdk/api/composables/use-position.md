@@ -5,15 +5,9 @@ description: Чтение и изменение положения, размер
 
 # usePosition
 
-`usePosition()` предоставляет панелям положения и размера значения выбранного объекта:
+`usePosition()` предоставляет панелям положения и размера значения выделения: `panelProp(key)` для `'x'`, `'y'`, `'width'`, `'height'` и `'rotation'` возвращает значение поля, округлённое до двух знаков, как в панели Figma, или `MIXED`, если выделенные слои показывают разные значения. Сами слои сохраняют точные значения.
 
-- `x`
-- `y`
-- `width`
-- `height`
-- `rotation`
-
-и действия:
+Также доступны действия:
 
 - выравнивание;
 - отражение;
@@ -31,7 +25,9 @@ const position = usePosition()
 ## Пример
 
 ```ts
-const { x, y, width, height, rotation, updateProp, commitProp } = usePosition()
+const { panelProp, updateProp, commitProp } = usePosition()
+const x = panelProp('x')
+const width = panelProp('width')
 ```
 
 ## Примеры

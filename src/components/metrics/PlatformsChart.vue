@@ -30,7 +30,7 @@ const height = computed(() => rows.value.length * ROW_HEIGHT + LEGEND_HEIGHT)
     :margin="{ top: 0, right: 0, bottom: 0, left: 0 }"
     :bar-category-gap="6"
     :is-animation-active="false"
-    class="text-[11px]"
+    class="text-2xs"
     title="Daily pings by OS, desktop and web"
   >
     <XAxis type="number" hide />

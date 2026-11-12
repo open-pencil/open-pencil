@@ -10,8 +10,8 @@ import {
   StorageLibraryCatalog,
   type LibraryService
 } from '@/app/libraries'
-import type { LibraryAssetUpdateGroup } from '@/app/libraries/update-groups'
-import { scopeLibraryUpdateGroups } from '@/app/libraries/update-groups'
+import type { LibraryAssetUpdateGroup } from '@/app/libraries/updates/groups'
+import { scopeLibraryUpdateGroups } from '@/app/libraries/updates/groups'
 import { toast } from '@/app/shell/ui'
 
 function errorDetail(cause: unknown): string {

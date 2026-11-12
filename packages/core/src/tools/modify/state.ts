@@ -2,25 +2,8 @@ import * as v from 'valibot'
 
 import { nodeIdInputSchema, defineTool } from '#core/tools/schema'
 
-export const setVisible = defineTool({
-  name: 'set_visible',
-
-  description: 'Set visibility of a node.',
-  execution: { kind: 'sync', mutation: 'properties' },
-  input: v.strictObject({
-    id: nodeIdInputSchema,
-    value: v.pipe(v.boolean(), v.description('Visible (true/false)'))
-  }),
-  execute: (figma, { id, value }) => {
-    const node = figma.getNodeById(id)
-    if (!node) return { error: `Node "${id}" not found` }
-    node.visible = value
-    return { id, visible: value }
-  }
-})
-
 export const setBlend = defineTool({
-  name: 'set_blend',
+  name: 'set_blend_mode',
 
   description: 'Set blend mode of a node.',
   execution: { kind: 'sync', mutation: 'properties' },
@@ -31,9 +14,11 @@ export const setBlend = defineTool({
         'NORMAL',
         'DARKEN',
         'MULTIPLY',
+        'LINEAR_BURN',
         'COLOR_BURN',
         'LIGHTEN',
         'SCREEN',
+        'LINEAR_DODGE',
         'COLOR_DODGE',
         'OVERLAY',
         'SOFT_LIGHT',
@@ -53,39 +38,5 @@ export const setBlend = defineTool({
     if (!node) return { error: `Node "${id}" not found` }
     node.blendMode = mode
     return { id, blendMode: mode }
-  }
-})
-
-export const setLocked = defineTool({
-  name: 'set_locked',
-
-  description: 'Set locked state of a node.',
-  execution: { kind: 'sync', mutation: 'properties' },
-  input: v.strictObject({
-    id: nodeIdInputSchema,
-    value: v.pipe(v.boolean(), v.description('Locked (true/false)'))
-  }),
-  execute: (figma, { id, value }) => {
-    const node = figma.getNodeById(id)
-    if (!node) return { error: `Node "${id}" not found` }
-    node.locked = value
-    return { id, locked: value }
-  }
-})
-
-export const setStrokeAlign = defineTool({
-  name: 'set_stroke_align',
-
-  description: 'Set stroke alignment of a node.',
-  execution: { kind: 'sync', mutation: 'properties' },
-  input: v.strictObject({
-    id: nodeIdInputSchema,
-    align: v.pipe(v.picklist(['INSIDE', 'CENTER', 'OUTSIDE']), v.description('Stroke alignment'))
-  }),
-  execute: (figma, { id, align }) => {
-    const node = figma.getNodeById(id)
-    if (!node) return { error: `Node "${id}" not found` }
-    node.strokeAlign = align
-    return { id, strokeAlign: align }
   }
 })

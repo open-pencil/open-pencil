@@ -1,11 +1,26 @@
-import { describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 
 import { updateNode } from '#core/tools/modify/update'
 
+// Text edits need the text's font loaded, as in Figma; this file must not rely on another's.
+beforeAll(() => registerTestFont())
+
 describe('update_node', () => {
+  test('rotates and locks a layer', async () => {
+    const figma = new FigmaAPI(new SceneGraph())
+    const rect = figma.createRectangle()
+
+    const result = await updateNode.execute(figma, { id: rect.id, rotation: 30, locked: true })
+
+    expect(result).toEqual({ id: rect.id, updated: ['rotation', 'locked'] })
+    expect(rect.rotation).toBeCloseTo(30)
+    expect(rect.locked).toBe(true)
+  })
+
   test('does not report a size it could not set on a layer inside an instance', async () => {
     const figma = new FigmaAPI(new SceneGraph())
     const component = figma.createComponent()

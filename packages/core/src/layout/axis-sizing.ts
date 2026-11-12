@@ -1,7 +1,6 @@
-import { Align, type Node as YogaNode } from 'yoga-layout'
-
 import type { LayoutSizing, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { layoutSizing } from '@open-pencil/scene-graph/layout'
+import type { LayoutNode } from '@open-pencil/taffy'
 
 type Axis = 'width' | 'height'
 
@@ -39,26 +38,34 @@ export function asFlatLeaf(child: SceneNode, parent: SceneNode): SceneNode {
 }
 
 /**
- * The counter axis a frame hugs but keeps its size on, because every child in its flow fills
- * that axis and none has content of its own to hug, as Figma keeps it.
+ * The axes a frame hugs but keeps its size on, as Figma keeps them. With nothing in its flow,
+ * no visible layer that is not placed absolutely, it keeps every axis it hugs: a new frame keeps
+ * the size it was made at, and one that loses its last layer keeps the size it hugged to. On the
+ * counter axis it also keeps its size when every child in its flow fills that axis and none has
+ * content of its own to hug.
  */
-export function heldHugAxis(graph: SceneGraph, frame: SceneNode): 'width' | 'height' | null {
-  if (frame.counterAxisSizing !== 'HUG') return null
-  if (frame.layoutMode !== 'HORIZONTAL' && frame.layoutMode !== 'VERTICAL') return null
+export function heldHugAxes(graph: SceneGraph, frame: SceneNode): ('width' | 'height')[] {
+  if (frame.layoutMode !== 'HORIZONTAL' && frame.layoutMode !== 'VERTICAL') return []
+  const [primary, counter] =
+    frame.layoutMode === 'HORIZONTAL'
+      ? (['width', 'height'] as const)
+      : (['height', 'width'] as const)
+  const hugged = [
+    ...(frame.primaryAxisSizing === 'HUG' ? [primary] : []),
+    ...(frame.counterAxisSizing === 'HUG' ? [counter] : [])
+  ]
   const flow = graph
     .getChildren(frame.id)
     .filter((child) => child.visible && child.layoutPositioning !== 'ABSOLUTE')
-  const holds =
-    flow.length > 0 &&
-    flow.every(
-      (child) =>
-        child.layoutMode === 'NONE' &&
-        child.type !== 'TEXT' &&
-        (child.layoutAlignSelf === 'STRETCH' ||
-          (child.layoutAlignSelf === 'AUTO' && frame.counterAxisAlign === 'STRETCH'))
-    )
-  if (!holds) return null
-  return frame.layoutMode === 'HORIZONTAL' ? 'height' : 'width'
+  if (flow.length === 0) return hugged
+  const filled = flow.every(
+    (child) =>
+      child.layoutMode === 'NONE' &&
+      child.type !== 'TEXT' &&
+      (child.layoutAlignSelf === 'STRETCH' ||
+        (child.layoutAlignSelf === 'AUTO' && frame.counterAxisAlign === 'STRETCH'))
+  )
+  return filled && frame.counterAxisSizing === 'HUG' ? [counter] : []
 }
 
 /** The fields that set how a layer sizes in its parent's layout. */
@@ -93,36 +100,36 @@ export function ownAxisSizing(child: SceneNode, axis: Axis): SceneNode['primaryA
 }
 
 export function setMainAxisSizing(
-  yogaNode: YogaNode,
+  layoutNode: LayoutNode,
   axis: Axis,
   sizing: LayoutSizing,
   fixedValue: number,
   grow: number
 ): void {
   if (grow > 0) {
-    yogaNode.setFlexGrow(grow)
-    yogaNode.setFlexShrink(1)
-    yogaNode.setFlexBasis(0)
+    layoutNode.style.flexGrow = grow
+    layoutNode.style.flexShrink = 1
+    layoutNode.style.flexBasis = 0
     return
   }
 
   switch (sizing) {
     case 'FIXED':
-      if (axis === 'width') yogaNode.setWidth(fixedValue)
-      else yogaNode.setHeight(fixedValue)
+      if (axis === 'width') layoutNode.style.width = fixedValue
+      else layoutNode.style.height = fixedValue
       break
     case 'HUG':
       break
     case 'FILL':
-      yogaNode.setFlexGrow(1)
-      yogaNode.setFlexShrink(1)
-      yogaNode.setFlexBasis(0)
+      layoutNode.style.flexGrow = 1
+      layoutNode.style.flexShrink = 1
+      layoutNode.style.flexBasis = 0
       break
   }
 }
 
 export function setCrossAxisSizing(
-  yogaNode: YogaNode,
+  layoutNode: LayoutNode,
   axis: Axis,
   sizing: LayoutSizing,
   fixedValue: number,
@@ -130,16 +137,16 @@ export function setCrossAxisSizing(
 ): void {
   switch (sizing) {
     case 'FIXED':
-      if (axis === 'width') yogaNode.setWidth(fixedValue)
-      else yogaNode.setHeight(fixedValue)
+      if (axis === 'width') layoutNode.style.width = fixedValue
+      else layoutNode.style.height = fixedValue
       break
     case 'HUG':
       break
     case 'FILL':
-      yogaNode.setAlignSelf(Align.Stretch)
+      layoutNode.style.alignSelf = 'stretch'
       if (fillKeepsSize) {
-        if (axis === 'width') yogaNode.setMinWidth(fixedValue)
-        else yogaNode.setMinHeight(fixedValue)
+        if (axis === 'width') layoutNode.style.minWidth = fixedValue
+        else layoutNode.style.minHeight = fixedValue
       }
       break
   }

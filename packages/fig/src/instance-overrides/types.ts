@@ -22,7 +22,7 @@ export interface SymbolData {
 
 /** The Kiwi codec types only `symbolID`; the remaining symbol fields are read through here. */
 export function symbolDataOf(record: NodeChange): SymbolData | undefined {
-  return record.symbolData as SymbolData | undefined
+  return record.symbolData
 }
 
 export function symbolOverridesOf(record: NodeChange): readonly SymbolOverride[] {
@@ -45,8 +45,7 @@ export function forEachOverrideRecord(
   override?: SymbolOverride
 ): void {
   visit(record, override)
-  for (const nested of symbolOverridesOf(record))
-    forEachOverrideRecord(nested as NodeChange, visit, nested)
+  for (const nested of symbolOverridesOf(record)) forEachOverrideRecord(nested, visit, nested)
 }
 
 export interface ComponentPropRef {

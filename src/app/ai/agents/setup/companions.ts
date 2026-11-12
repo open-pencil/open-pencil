@@ -1,3 +1,5 @@
+import type { ACPAgentDef } from '@open-pencil/core/constants'
+
 import { APP_VERSION } from '@/app/runtime/version'
 
 function majorMinor(version: string): string | null {
@@ -42,4 +44,9 @@ export function globalInstallCommand(
   if (manager === 'bun') return `bun add -g ${target}`
   const command = `npm i -g ${target}`
   return options.admin && !options.windows ? `sudo ${command}` : command
+}
+
+/** The command that installs an agent by hand, in the shell this platform opens by default. */
+export function agentInstallCommand(agent: ACPAgentDef, windows: boolean): string | null {
+  return (windows ? agent.windowsInstallCommand : undefined) ?? agent.installCommand ?? null
 }

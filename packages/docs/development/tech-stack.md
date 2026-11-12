@@ -8,7 +8,7 @@
 | **UI Framework** | Vue 3 + VueUse | Reactive composition API, excellent TypeScript support |
 | **Components** | Reka UI | Headless, accessible UI primitives (tree, slider, etc.) |
 | **Styling** | Tailwind CSS 4 | Utility-first, fast iteration, dark theme |
-| **Layout** | Yoga WASM | CSS flexbox and grid engine from Meta, battle-tested in React Native |
+| **Layout** | Taffy WASM | Rust CSS flexbox and grid engine, also used by Servo, Blitz, Bevy, and Zed |
 | **File Format** | Kiwi binary + Zstd | Figma's own format — compact, fast parsing, .fig compatible |
 | **Collaboration** | Trystero + Yjs | P2P WebRTC via MQTT signaling, CRDT sync, y-indexeddb persistence |
 | **Color** | culori | Color space conversions (HSV, RGB, hex) |
@@ -20,15 +20,15 @@
 | **Testing** | Playwright + bun:test | Visual regression (E2E) + fast unit tests |
 | **Linting** | oxlint | Rust-based, orders of magnitude faster than ESLint |
 | **Formatting** | oxfmt | Rust-based formatter |
-| **Type Checking** | typescript-go (tsgo) | Native Go implementation of TypeScript type checker |
+| **Type Checking** | TypeScript 7, vue-tsc | TypeScript 7 (the native Go compiler) checks `.ts`; vue-tsc checks `.vue` on the TypeScript 6 API |
 
 ## Key Dependencies
 
 ```json
 {
-  "canvaskit-wasm": "^0.41.1",
+  "@open-pencil/canvaskit": "workspace:*",
   "vue": "^3.5.41",
-  "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.3",
+  "@open-pencil/taffy": "workspace:*",
   "nanoevents": "^9.1.0",
   "sucrase": "^3.35.1",
   "reka-ui": "^2.10.3",
@@ -58,10 +58,10 @@ The project migrated from React to Vue 3 early in development. Vue's reactivity 
 
 ### Why not custom layout engine?
 
-Yoga is maintained by Meta, battle-tested across billions of React Native devices, and implements the CSS flexbox spec. Building a custom engine would be months of work to reach the same correctness level.
+Taffy implements the CSS flexbox and CSS Grid specs and is shared by Servo, Blitz, Bevy, and Zed; the same build also lays out HTML import, through Blitz. It replaced Yoga: on Figma's Material 3 kit (78k layers) Taffy places 432 more layers where Figma saved them than Yoga did, mostly Fill items in rows, and none the other way round. Building a custom engine would be months of work to reach the same correctness level.
 
 ## Additional Technologies
 
 | Technology | Purpose | Status |
 |-----------|---------|--------|
-| CSS Grid in Yoga | Grid-based auto layout | Shipped via [Yoga fork](https://github.com/open-pencil/yoga/tree/grid) (`@open-pencil/yoga-layout`) |
+| CSS Grid in Taffy | Grid-based auto layout | Shipped; Taffy implements CSS Grid upstream, so no grid fork is needed |

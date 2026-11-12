@@ -1,5 +1,4 @@
-import type { Canvas } from 'canvaskit-wasm'
-
+import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
@@ -64,7 +63,7 @@ export function drawTextEditOverlay(
     const caret = editor.getCaretRect()
     if (caret) {
       const color = textCaretColor(node, editor.caretIndex ?? 0)
-      r.auxFill.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
+      r.auxFill.setColorComponents(color.r, color.g, color.b, color.a)
       const w = TEXT_CARET_WIDTH / r.zoom
       canvas.drawRect(
         r.ck.LTRBRect(caret.x - w / 2, caret.y0, caret.x + w / 2, caret.y1),
@@ -118,7 +117,7 @@ function drawPathTextCaret(
   if (!caret) return
   r.auxStroke.setStrokeWidth(TEXT_CARET_WIDTH / r.zoom)
   const color = textCaretColor(node, editor.caretIndex ?? 0)
-  r.auxStroke.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
+  r.auxStroke.setColorComponents(color.r, color.g, color.b, color.a)
   r.auxStroke.setPathEffect(null)
   canvas.drawLine(caret.from.x, caret.from.y, caret.to.x, caret.to.y, r.auxStroke)
 }

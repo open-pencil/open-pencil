@@ -9,7 +9,7 @@ Naciśnij <kbd>⌘</kbd><kbd>J</kbd> albo <kbd>Ctrl</kbd> + <kbd>J</kbd>. Asyste
 
 ## Konfiguracja
 
-Przy pierwszym uruchomieniu konfiguracja z przewodnikiem pyta, w czym ma pomagać AI i z czego już korzystasz: z agenta programistycznego, takiego jak Claude Code, Codex lub Gemini CLI w aplikacji na komputer, z konta API albo z serwera lokalnego lub firmowego. Łączy ten dostęp i przypisuje go do ról **Design agent** i **Vision**, nie zmieniając ręcznej konfiguracji. W przypadku OpenRouter wystarczy się zalogować zamiast wklejać klucz API. Możesz ją pominąć i uruchomić ponownie w **Ustawienia → AI i agenci → Uruchom konfigurację z przewodnikiem**. Aby skonfigurować modele ręcznie:
+Przy pierwszym uruchomieniu konfiguracja z przewodnikiem pyta, w czym ma pomagać AI i z czego już korzystasz: z agenta programistycznego, takiego jak Claude Code, Codex, Antigravity CLI, Gemini CLI, Cursor lub Grok Build w aplikacji na komputer, z konta API albo z serwera lokalnego lub firmowego. Łączy ten dostęp i przypisuje go do ról **Design agent** i **Vision**, nie zmieniając ręcznej konfiguracji. W przypadku OpenRouter wystarczy się zalogować zamiast wklejać klucz API. Możesz ją pominąć i uruchomić ponownie w **Ustawienia → AI i agenci → Uruchom konfigurację z przewodnikiem**. Aby skonfigurować modele ręcznie:
 
 1. Otwórz panel czatu AI.
 2. Kliknij ikonę ustawień.
@@ -44,7 +44,7 @@ Zdalny serwer musi używać HTTPS. W lokalnym środowisku programistycznym dozwo
 
 ## Możliwości
 
-Asystent korzysta z ponad 90 narzędzi do tworzenia, stylizowania, układu, komponentów, zmiennych, wyszukiwania, inspekcji, analizy, eksportu i operacji wektorowych. Do inspekcji należą `get_jsx` (widok JSX w obie strony), `diff_create` i `diff_jsx` (różnice strukturalne), `diff_visual` (różnice pikseli) oraz `describe` (rola semantyczna i wykrywanie problemów projektowych).
+Asystent korzysta z ponad 90 narzędzi do tworzenia, stylizowania, układu, komponentów, zmiennych, wyszukiwania, inspekcji, analizy, eksportu i operacji wektorowych. Do inspekcji należą `get_jsx` (widok JSX w obie strony), `diff_nodes` (różnice strukturalne), `diff_pixels` (różnice pikseli) oraz `describe` (rola semantyczna i wykrywanie problemów projektowych).
 
 ## Umiejętności
 
@@ -54,7 +54,7 @@ W **Ustawienia → Umiejętności** prześlij umiejętność jako ZIP jej folder
 
 ## Kontrola wizualna
 
-Po utworzeniu lub zmianie projektu asystent może wywołać `export_image`, uzyskać obraz wyniku i porównać go z pierwotnym poleceniem. Pozwala to wykryć problemy z układem, brakujące elementy i nieprawidłowe kolory. Domyślnie włączone `diff_visual` porównuje zmieniony obiekt z kopią wzorcową i zwraca zmienione piksele oraz obszar, dzięki czemu asystent może sprawdzić, że zmiana nie wyszła poza cel.
+Po utworzeniu lub zmianie projektu asystent może wywołać `export_image`, uzyskać obraz wyniku i porównać go z pierwotnym poleceniem. Pozwala to wykryć problemy z układem, brakujące elementy i nieprawidłowe kolory. Domyślnie włączone `diff_pixels` porównuje zmieniony obiekt z kopią wzorcową i zwraca zmienione piksele oraz obszar, dzięki czemu asystent może sprawdzić, że zmiana nie wyszła poza cel.
 
 ## Wskazówki
 

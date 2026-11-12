@@ -1,24 +1,25 @@
-import type { TypefaceFontProvider } from 'canvaskit-wasm'
-
+import type { TypefaceFontProvider } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 import type { Size } from '@open-pencil/scene-graph/primitives'
 
 import { ResourceCache } from '#core/cache/resource'
 import type { missingGlyphOccurrences } from '#core/text/resolver'
 
-// Bound both the number of native paragraphs and the text retained by them.
-// Source UTF-16 units are a workload bound, not an estimate of native bytes.
-const MAX_PREPARED_PARAGRAPHS = 1024
-const MAX_PREPARED_TEXT_UNITS = 262_144
+// Bound both the number of native paragraphs and the text retained by them. Source UTF-16 units
+// are a workload bound, not an estimate of native bytes. A page of a few thousand texts must fit,
+// or every record shapes them all again: the Preline CMS page holds 2,448.
+const MAX_PREPARED_PARAGRAPHS = 8192
+const MAX_PREPARED_TEXT_UNITS = 1_048_576
 // Layout measures a text at a few widths; more than this means the widths are not repeating.
 const MAX_MEASURED_WIDTHS = 16
 // Bound the shapings layers share by their key length, which holds the text.
 const MAX_SHARED_SHAPINGS = 8192
 const MAX_SHARED_SHAPING_UNITS = 1_048_576
 
-import type { TextDecorationRect } from '#core/canvas/text/decorations'
 import type { TextLayout } from '#core/canvas/text/layout'
 import { PARAGRAPH_INPUT_KEYS, shapingInputs } from '#core/canvas/text/paragraph/inputs'
+import type { TextDecorationRect } from '#core/text/decorations'
 
 type PreparationInput = SceneNode[(typeof PARAGRAPH_INPUT_KEYS)[number]]
 
@@ -33,6 +34,8 @@ export interface PreparedText {
 interface ShapingResult {
   covered: boolean
   sizes: Map<number, Size>
+  /** Where the text draws ink, by its box and vertical alignment; `null` for none. */
+  inks: Map<string, VisualBounds | null>
 }
 
 /**
@@ -157,6 +160,27 @@ export class TextPreparationCache {
   }
 
   /**
+   * Where `node`'s text draws ink in a box `key` names, measured once per shaping; `undefined`
+   * from `compute`, ink that cannot be known, is not kept.
+   */
+  ink(
+    node: SceneNode,
+    key: string,
+    generation: number,
+    provider: TypefaceFontProvider,
+    compute: () => VisualBounds | null | undefined
+  ): VisualBounds | null | undefined {
+    this.useScope(generation, provider)
+    const inks = this.shapingFor(node).result.inks
+    if (inks.has(key)) return inks.get(key) ?? null
+    const ink = compute()
+    if (ink === undefined) return undefined
+    if (inks.size >= MAX_MEASURED_WIDTHS) inks.clear()
+    inks.set(key, ink)
+    return ink
+  }
+
+  /**
    * Drops `id`'s paragraphs and, unless `keepShaping`, its coverage and measured sizes. Keep
    * them only for changes `shapingInputs` compares, such as layout resizing the box.
    */
@@ -207,7 +231,7 @@ export class TextPreparationCache {
     const key = JSON.stringify(inputs)
     let result = this.results.get(key)
     if (!result) {
-      result = { covered: false, sizes: new Map() }
+      result = { covered: false, sizes: new Map(), inks: new Map() }
       this.results.set(key, result)
     }
     const created: Shaping = { inputs, key, result }

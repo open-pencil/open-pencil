@@ -1,10 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import { createEditor } from '@open-pencil/core'
-import { boundEndpoint, buildConnectorSublayers, connectorSublayers } from '@open-pencil/scene-graph/connectors'
+import {
+  boundEndpoint,
+  buildConnectorSublayers,
+  connectorSublayers
+} from '@open-pencil/scene-graph/connectors'
 import { figJamColor } from '@open-pencil/scene-graph/figjam'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 function setup() {
   const editor = createEditor()
@@ -43,5 +46,20 @@ describe("FigJam's connector line menu", () => {
     editor.setConnectorDashed([connector.id], false)
     expect(line().strokes[0]?.dashPattern).toEqual([])
     expect(line().strokeWeight).toBe(8)
+  })
+
+  test('thickness and dashes keep the stroke style, which gives the paint only', () => {
+    const { editor, connector, line } = setup()
+    editor.graph.updateNode(line().id, { strokeStyleId: 'stroke-style' })
+    editor.setConnectorThick([connector.id], true)
+    editor.setConnectorDashed([connector.id], true)
+    expect(line().strokeStyleId).toBe('stroke-style')
+  })
+
+  test('a palette colour leaves the stroke style it replaces', () => {
+    const { editor, connector, line } = setup()
+    editor.graph.updateNode(line().id, { strokeStyleId: 'stroke-style' })
+    editor.setConnectorColor([connector.id], 'red')
+    expect(line().strokeStyleId).toBeNull()
   })
 })
