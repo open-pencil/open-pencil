@@ -10,6 +10,8 @@ import { openStatusPopover, statusToolbarTemplate } from './examples/toolbar'
 type Args = {
   state: CloudSyncState
   viewOnly: boolean
+  atStorageLimit: boolean
+  canManagePlan: boolean
   savedAgo: string | null
   notLive: boolean
   canRejoin: boolean
@@ -21,6 +23,8 @@ const meta = {
   args: {
     state: 'synced',
     viewOnly: false,
+    atStorageLimit: false,
+    canManagePlan: false,
     savedAgo: 'just now',
     notLive: false,
     canRejoin: false
@@ -29,7 +33,7 @@ const meta = {
     components: { CloudDocumentStatus, IconButton, IconSettings },
     setup: () => ({ args }),
     template: statusToolbarTemplate(
-      `<CloudDocumentStatus :state="args.state" :view-only="args.viewOnly" :not-live="args.notLive" :can-rejoin="args.canRejoin" :saved-ago="args.savedAgo" workspace="Design team" host="cloud.openpencil.dev" />
+      `<CloudDocumentStatus :state="args.state" :view-only="args.viewOnly" :at-storage-limit="args.atStorageLimit" :can-manage-plan="args.canManagePlan" :not-live="args.notLive" :can-rejoin="args.canRejoin" :saved-ago="args.savedAgo" workspace="Design team" host="cloud.openpencil.dev" />
           <IconButton label="Settings"><IconSettings class="size-3.5" /></IconButton>`,
       'h-80'
     )
@@ -46,4 +50,7 @@ export const Offline: Story = { args: { state: 'offline' } }
 export const NeedsAChoice: Story = { args: { state: 'conflict' } }
 export const CouldNotSave: Story = { args: { state: 'error' } }
 export const ViewOnly: Story = { args: { viewOnly: true } }
+export const StorageFull: Story = {
+  args: { viewOnly: true, atStorageLimit: true, canManagePlan: true }
+}
 export const NotLive: Story = { args: { notLive: true, canRejoin: true } }

@@ -3,12 +3,11 @@ import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+import { runCLI } from '#cli-tests/helpers/run'
 import { unzipSync } from 'fflate'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { createRect, firstPageId, makeSceneGraph } from '@open-pencil/test-support/scene'
-
-import { runCLI } from '#cli-tests/helpers/run'
 setDefaultTimeout(30_000)
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)

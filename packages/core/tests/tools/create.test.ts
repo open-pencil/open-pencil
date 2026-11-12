@@ -1,11 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
+import { getTool, setupToolTest, type ToolResult } from '#core-tests/helpers/tools'
 import * as v from 'valibot'
 
 import { toolJSONSchema } from '@open-pencil/core/tools'
 import { expectDefined } from '@open-pencil/test-support/assert'
-
-import { getTool, setupToolTest, type ToolResult } from '#core-tests/helpers/tools'
 /** The `render` tool answers with the rendered root and its child IDs. */
 interface RenderToolResult extends ToolResult {
   children: string[]

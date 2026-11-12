@@ -1,11 +1,9 @@
 import { expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 import { parseFigBuffer } from '@open-pencil/fig'
 import type { FigPageManifestEntry } from '@open-pencil/kiwi/fig'
-
-import { join } from 'node:path'
-
 import { FIXTURES } from '@open-pencil/test-support/paths'
 const fixturePath = join(FIXTURES, 'gold-preview.fig')
 

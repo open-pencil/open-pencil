@@ -43,7 +43,13 @@ describe('scaleSelected', () => {
 
     editor.scaleSelected(2, { x: 100, y: 50 })
 
-    expect(current(text.id)).toMatchObject({ x: 100, y: 50, width: 400, fontSize: 40, strokeWeight: 4 })
+    expect(current(text.id)).toMatchObject({
+      x: 100,
+      y: 50,
+      width: 400,
+      fontSize: 40,
+      strokeWeight: 4
+    })
     editor.undo.undo()
     expect(current(text.id)).toMatchObject({ width: 200, fontSize: 20, strokeWeight: 2 })
   })

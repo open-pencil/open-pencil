@@ -3,14 +3,14 @@ import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+import { requireBuiltWorkspacePackages } from '#cli-tests/helpers/paths'
+import { runCLI } from '#cli-tests/helpers/run'
+
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import type { DocumentFontStatus } from '@open-pencil/core/text'
 import { heavy } from '@open-pencil/test-support/heavy'
 import { repoPath } from '@open-pencil/test-support/paths'
 import { firstPageId, makeSceneGraph } from '@open-pencil/test-support/scene'
-
-import { runCLI } from '#cli-tests/helpers/run'
-import { requireBuiltWorkspacePackages } from '#cli-tests/helpers/paths'
 requireBuiltWorkspacePackages()
 setDefaultTimeout(30_000)
 

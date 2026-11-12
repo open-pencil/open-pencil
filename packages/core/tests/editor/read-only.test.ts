@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { createEditor, executeAtomicTool, ReadOnlyDocumentError } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 import { READ_ONLY_ACTIONS } from '#core/editor/read-only/actions'
 
@@ -143,7 +143,10 @@ describe('read-only documents', () => {
     editor.setReadOnly(true)
 
     expect(() =>
-      executeAtomicTool(editor, new FigmaAPI(editor.graph), updateNode, { id: rect.id, opacity: 0.5 })
+      executeAtomicTool(editor, new FigmaAPI(editor.graph), updateNode, {
+        id: rect.id,
+        opacity: 0.5
+      })
     ).toThrow(ReadOnlyDocumentError)
     expect(getNodeOrThrow(editor.graph, rect.id).opacity).toBe(1)
   })

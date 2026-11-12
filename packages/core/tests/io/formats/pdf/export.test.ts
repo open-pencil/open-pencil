@@ -3,9 +3,9 @@ import { join } from 'node:path'
 
 import { unzlibSync } from 'fflate'
 
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { FIXTURES } from '@open-pencil/test-support/paths'
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
 import { exportPDFDocument } from '#core/io/formats/pdf'
 import { fontManager } from '#core/text/font/manager'
@@ -136,9 +136,7 @@ test('is null when no page has anything to draw', async () => {
   const hidden = card(graph, 'Hidden')
   graph.updateNode(hidden.id, { visible: false })
   expect(
-    await exportPDFDocument(graph, [
-      { pageId: graph.getPages()[0].id, nodeIds: [hidden.id] }
-    ])
+    await exportPDFDocument(graph, [{ pageId: graph.getPages()[0].id, nodeIds: [hidden.id] }])
   ).toBeNull()
 })
 

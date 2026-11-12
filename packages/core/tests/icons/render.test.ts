@@ -1,16 +1,16 @@
 import { describe, expect, test } from 'bun:test'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
-import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 import { readIcon, readIconTint } from '@open-pencil/scene-graph/icons'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { iconColor, placeIcon, recolorIcon, swapIcon } from '#core/icons/render'
 import { buildIconData } from '#core/icons/artwork'
+import { iconColor, placeIcon, recolorIcon, swapIcon } from '#core/icons/render'
 
 const BLACK = parseColor('#000000')
 

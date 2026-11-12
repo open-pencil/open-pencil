@@ -1,5 +1,6 @@
+import { createPostHogErrorReporter } from '#cloud/errors'
 import type { CloudServerConfig } from '#cloud/server'
-import { createPostHogErrorReporter, type CloudErrorReporter } from '#cloud/server/errors'
+import type { CloudErrorReporter } from '#cloud/server/errors'
 import type { PostHogOptions } from 'posthog-node'
 
 /** Which runtime serves the deployment, as its error reports name it. */

@@ -197,11 +197,7 @@ export {
   reportCloudError,
   type CloudErrorContext,
   type CloudErrorReporter,
-  type CloudErrorSource,
-  createPostHogErrorReporter,
-  type ErrorReportContext,
-  type ErrorReporter,
-  type PostHogErrorReporterOptions
+  type CloudErrorSource
 } from './errors'
 export {
   cloudRequestId,

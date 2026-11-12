@@ -102,9 +102,20 @@ function swatchRows() {
   }
   const pressAt = (x: number, y: number) => {
     let drag: DragState | null = null
-    handleSelectDown(press, x, y, x, y, editor, fns, () => false, () => false, (next) => {
-      drag = next
-    })
+    handleSelectDown(
+      press,
+      x,
+      y,
+      x,
+      y,
+      editor,
+      fns,
+      () => false,
+      () => false,
+      (next) => {
+        drag = next
+      }
+    )
     return drag as DragState | null
   }
   const selected = () => [...editor.state.selectedIds].map((id) => editor.graph.getNode(id)?.name)

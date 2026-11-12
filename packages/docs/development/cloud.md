@@ -28,6 +28,7 @@ flowchart LR
 | `@open-pencil/cloud/contract`     | Valibot schemas and types shared by every side of the network              |
 | `@open-pencil/cloud/client`       | Discovery, authentication, device authorization, and the typed Hono client |
 | `@open-pencil/cloud/email`        | Vue Email rendering for transactional mail                                 |
+| `@open-pencil/cloud/errors`       | The PostHog error reporter, for services beside Cloud; only `posthog-node` |
 | `@open-pencil/cloud/server`       | Hono routes and services; every dependency is injected                     |
 | `@open-pencil/cloud/runtime/node` | PostgreSQL, S3, SMTP, the HTTP listener, workers, and operator commands    |
 
@@ -396,8 +397,10 @@ in and opens the link again. A guest who may view but not edit opens an edit lin
 resolution names the link's own permission as well, so the editor offers signing in to edit. Its provider reads one entitlement
 source, chosen by `[entitlements] source`: the static table in the deployment TOML, which applies to
 every account, or per-account rows in the database that the `entitlements` command and the internal
-API set. The two are alternatives, not layers. Technical limits cap the file size and participant
-limits the source reports.
+API set. The two are alternatives, not layers. With `source = "database"`, the same table under
+`[entitlements]` holds the defaults: what an account without a row takes, which is the free plan
+when billing writes rows only for paid accounts, and what a row leaves out. Technical limits cap the
+file size and participant limits the source reports.
 
 Plans belong to accounts, not workspaces. Every workspace has an owner, its creator at first, and
 every question about a workspace or its documents is asked of the owner's plan
@@ -410,6 +413,14 @@ committed usage plus active reservations across every workspace that owner owns,
 requested bytes, and commits the verified size when the upload finishes. Usage is still recorded per
 workspace, and the entitlements endpoint reports the owner's total. Cleanup releases reservations
 from abandoned uploads.
+
+An owner who holds their whole storage allowance or more is read-only (`storageLimitReached`):
+their documents open, download, and can be deleted, but take no saves or uploads, and no new
+documents. Collaboration tickets for them carry `view` and `readOnly: "storage-limit"`, so the
+editor opens the file view-only and says why, with the server's billing portal when it has one.
+A plan that shrinks below what the account holds, as when billing moves a lapsed subscription to
+the free plan, reaches this the same way as filling it; nothing is deleted. Freeing space or a
+bigger plan lifts it at the next ticket.
 
 ## Services and billing
 

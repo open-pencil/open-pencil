@@ -81,7 +81,9 @@ test('an edited worker-opened .fig streams from the worker as it is read', async
   const opened = await openViaWorker()
   edit(opened)
   try {
-    expect(names(await readStreamBytes(await exportFigFileStream(opened)))).toContain('Edited again')
+    expect(names(await readStreamBytes(await exportFigFileStream(opened)))).toContain(
+      'Edited again'
+    )
   } finally {
     releaseFigPopulationWorker(opened)
   }

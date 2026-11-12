@@ -1,6 +1,5 @@
 import type { SceneGraph, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { pixelLength } from '@open-pencil/scene-graph/text'
-
 import { expectDefined } from '@open-pencil/test-support/assert'
 const RED = { r: 1, g: 0, b: 0, a: 1 }
 const BLUE = { r: 0, g: 0, b: 1, a: 1 }

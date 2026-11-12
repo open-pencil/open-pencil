@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
-
 import { getTool, setupToolTest, type ToolResult } from '#core-tests/helpers/tools'
+
+import { expectDefined } from '@open-pencil/test-support/assert'
 describe('delete_nodes', () => {
   test('removes nodes, including one inside another', () => {
     const { figma } = setupToolTest()

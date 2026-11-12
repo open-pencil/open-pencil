@@ -126,6 +126,13 @@ jobs:
       - name: Keep workflow steps to one line of shell
         run: bun run check:workflows
 
+      - name: Keep Dockerfiles to one style
+        run: bun run check:dockerfiles
+
+      # hadolint's own image, which parses and lints every tracked Dockerfile (.hadolint.yaml).
+      - name: Lint Dockerfiles
+        run: git ls-files -z '*Dockerfile' | xargs -0 docker run --rm -v "$PWD:/repo" --workdir /repo hadolint/hadolint:v2.15.1@sha256:32dac94127fd60b7b7e3fbfc65e1383b9b5e25c9bfd7b8536de7a539fe68a12d hadolint
+
       # actionlint's own image, which also runs ShellCheck over every step's shell.
       - name: Lint workflows and actions
         run: docker run --rm -v "$PWD:/repo" --workdir /repo rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667 -color

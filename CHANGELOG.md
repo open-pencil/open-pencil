@@ -2,9 +2,9 @@
 
 ## Unreleased
 
-## 0.17.0-beta.3 — 2026-11-11
+## 0.17.0-beta.4 — 2026-11-11
 
-This is a pre-release that lists changes since 0.17.0-beta.2: npm packages are published under the `next` tag, and installed apps on the stable release do not update to it. Linux package managers see `0.17.0-beta.3` as newer than `0.17.0`, so `.deb` and `.rpm` users should remove the beta before installing the final 0.17.0.
+This is a pre-release that lists changes since 0.17.0-beta.2: npm packages are published under the `next` tag, and installed apps on the stable release do not update to it. Linux package managers see `0.17.0-beta.4` as newer than `0.17.0`, so `.deb` and `.rpm` users should remove the beta before installing the final 0.17.0. 0.17.0-beta.3 was not released because of a problem in the release pipeline; this pre-release includes all of its changes.
 
 ### Breaking changes
 
@@ -84,6 +84,7 @@ This is a pre-release that lists changes since 0.17.0-beta.2: npm packages are p
 - Cloud's `[object_storage] deleted_prefix` keeps each file cleanup deletes under that prefix until a lifecycle rule expires it, so after restoring the database to an earlier time its missing files can be copied back, on buckets without versioning such as R2.
 - Figma's progressive blurs render on the canvas and in exports, keep their settings through `.fig` files, the plugin API, and design JSX, and can be switched on and edited in the Effects panel, with start and end handles on the canvas (#1965).
 - A host can turn off the width × height label under a selection with `editor.state.showSizeLabels = false`, and vector edit mode's points and handles follow `selectionTheme` (#1971).
+- Cloud servers can link their own terms, privacy policy, abuse address, and minimum age through a `[legal]` table, shown at sign-up and in the portal's footer; with `require_acceptance`, each account accepts the current `terms_version` before using the server, and again when it changes.
 
 ### Changed
 
@@ -106,6 +107,7 @@ This is a pre-release that lists changes since 0.17.0-beta.2: npm packages are p
 - Units such as % and px follow the number directly in panel fields, also while typing, instead of sitting at the field's far end (#1976).
 - In the variables inspector, colour, text, and aliased values sit in the same bordered field as number values, with the variable button inside at its end (#1976).
 - Buttons that open a menu or popover in the panel stay highlighted while it is open, the boolean operations button matches the buttons beside it, and the export Preview toggle is a standard collapsible that keyboard and screen-reader users can operate (#1980).
+- Keyboard focus looks the same across the app: fields show it on their border and every other control with a thin ring in the focus colour, instead of the soft accent halo some buttons, lists, and collapsibles drew (#1983).
 
 ### Fixed
 

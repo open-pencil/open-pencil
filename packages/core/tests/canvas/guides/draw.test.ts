@@ -1,12 +1,12 @@
 import { describe, expect, mock, test } from 'bun:test'
 
+import { createMockCanvas, createMockRenderer, mockCalls } from '#core-tests/canvas/effects/helpers'
+import { asCanvas } from '#core-tests/canvas/helpers'
+
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
 import { drawGuides } from '#core/canvas/guides/draw'
-
-import { createMockCanvas, createMockRenderer, mockCalls } from '#core-tests/canvas/effects/helpers'
-import { asCanvas } from '#core-tests/canvas/helpers'
 
 function graphWithGuides(guides: SceneNode['guides']): SceneGraph {
   const graph = new SceneGraph()
