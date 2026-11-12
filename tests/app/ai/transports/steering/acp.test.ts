@@ -131,12 +131,18 @@ test('the agent carries on in its session with the steering message', async () =
   enqueueMessage(submission('Make it blue'), 'steer')
   await first.ended
 
-  // The chat sends what waited, once the reply is over.
+  // The chat sends what waited, once the reply is over, and the agent works on it in its session.
   const steer = takeNextMessage()?.modelText ?? ''
-  await send(chat, steer, [message('user', 'first'), message('assistant', 'Reading')])
+  const second = sending(chat, steer, [message('user', 'first'), message('assistant', 'Reading')])
+  await agents.promptsTaken(2)
+  await tick()
+  expect(agents.cancels).toEqual(['session-1'])
+  agents.endTurn('end_turn')
+  await second.ended
   expect(agents.spawns()).toBe(1)
   expect(agents.created).toHaveLength(1)
   expect(agents.prompts[1]).toBe('Make it blue')
+  expect(second.chunks.at(-1)).toEqual({ type: 'finish', finishReason: 'stop' })
   await chat.destroy()
 })
 

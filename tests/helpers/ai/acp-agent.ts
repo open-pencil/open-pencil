@@ -37,7 +37,7 @@ interface FakeAgentOptions {
   /**
    * How the agent's turn ends: `refused` fails before the agent takes the prompt, `cut-off` fails
    * after it started answering. Either way it first sends updates that are not part of a turn.
-   * `held` takes the prompt and answers only when `endTurn` says so, or when it is cancelled.
+   * `held` takes each prompt and answers it only when `endTurn` says so, or when it is cancelled.
    */
   turn?: 'answered' | 'refused' | 'cut-off' | 'held'
   /** True for a command lookup that waits until `finishLookup`, as a slow PATH search does. */
@@ -68,7 +68,9 @@ export function fakeAgents({
   let crashLatest: (() => void) | null = null
   const cancels: string[] = []
   const promptTaken = createDeferred<undefined>()
-  const heldTurn = createDeferred<StopReason>()
+  // Each held prompt waits on its own signal, so one cancelled or ended never frees a later one.
+  let heldTurn = createDeferred<StopReason>()
+  const promptWaiters: { count: number; taken: () => void }[] = []
   let latest: AgentSideConnection | null = null
   let promptedSession = ''
 
@@ -104,12 +106,15 @@ export function fakeAgents({
         prompts.push(part?.type === 'text' ? part.text : '')
         const { sessionId } = params
         promptedSession = sessionId
+        const held = createDeferred<StopReason>()
+        heldTurn = held
+        for (const waiter of promptWaiters) if (prompts.length >= waiter.count) waiter.taken()
         await connection.sessionUpdate({
           sessionId,
           update: { sessionUpdate: 'available_commands_update', availableCommands: [] }
         })
         promptTaken.resolve(undefined)
-        if (turn === 'held') return { stopReason: await heldTurn.promise }
+        if (turn === 'held') return { stopReason: await held.promise }
         if (turn === 'refused') throw new Error('The prompt never reached the model')
         if (turn === 'cut-off') {
           await connection.sessionUpdate({
@@ -196,6 +201,12 @@ export function fakeAgents({
     crash: () => expectDefined(crashLatest, 'a started agent')(),
     cancels,
     promptTaken: promptTaken.promise,
+    /** Settles once the agent has taken `count` prompts in all, for a later prompt of a session. */
+    promptsTaken: (count: number) =>
+      new Promise<void>((resolve) => {
+        if (prompts.length >= count) resolve()
+        else promptWaiters.push({ count, taken: resolve })
+      }),
     /** Sends an update as the agent's turn goes on. */
     say: (update: SessionUpdate) =>
       expectDefined(latest, 'a started agent').sessionUpdate({
