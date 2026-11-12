@@ -10,6 +10,7 @@ import {
   type GlassEffectParams,
   type SceneNode
 } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { asDouble } from '@open-pencil/test-support/doubles'
 
@@ -149,7 +150,7 @@ function columns(graph: SceneGraph, frameId: string) {
 function expectFigma(ours: number[], figma: number[], maxDifference: number, maxRms: number) {
   const differences = ours.map((value, index) => Math.abs(value - figma[index]))
   const rms = Math.sqrt(differences.reduce((sum, d) => sum + d * d, 0) / differences.length)
-  expect(Math.max(...differences)).toBeLessThanOrEqual(maxDifference)
+  expect(maxOf(differences)).toBeLessThanOrEqual(maxDifference)
   expect(rms).toBeLessThanOrEqual(maxRms)
 }
 

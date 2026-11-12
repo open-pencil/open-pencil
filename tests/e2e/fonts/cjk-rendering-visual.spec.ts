@@ -392,7 +392,7 @@ test('substituted fonts still request fallbacks for CJK text', async ({ page }) 
     // Supply the fixture only when the renderer requests a CJK fallback for the substituted text.
     const requestedScripts: string[] = []
     fontManager.ensureFallbackPack = async (scripts = ['cjk', 'arabic']) => {
-      requestedScripts.push(...scripts)
+      for (const script of scripts) requestedScripts.push(script)
       await fontManager.markLoaded('Noto Sans CJK SC', 'Regular', cjk, 'fallback')
       fontManager.setCJKFallbackFamily('Noto Sans CJK SC')
       return { cjk: ['Noto Sans CJK SC'] }

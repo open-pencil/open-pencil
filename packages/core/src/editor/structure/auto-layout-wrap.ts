@@ -1,4 +1,5 @@
 import type { LayoutMode, SceneNode } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
@@ -53,7 +54,7 @@ export function wrapInAutoLayout(ctx: EditorContext, selectedNodes: SceneNode[])
     .sort((a, b) => a.pos.y - b.pos.y || a.pos.x - b.pos.x)
     .map((n) => n.id)
   // Just above the topmost selected layer, before the selected layers move into the frame.
-  const slot = Math.max(...selectedNodes.map((n) => order.indexOf(n.id))) + 1
+  const slot = maxOf(selectedNodes.map((n) => order.indexOf(n.id))) + 1
 
   function wrap(frameId?: string): string {
     const frame = ctx.graph.createNode('FRAME', parentId, {

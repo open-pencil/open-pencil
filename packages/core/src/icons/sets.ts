@@ -1,3 +1,4 @@
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import type { IconOptions } from '@open-pencil/scene-graph/icons'
 
 import { parseIconName, type IconProvider } from '#core/icons/provider'
@@ -73,7 +74,7 @@ export function createIconSetsProvider({
       if (found.length === 0 && results[0]?.status === 'rejected') throw results[0].reason
       // The sources take turns, so one with many matches cannot crowd the others past the limit.
       const lists = found.map((result) => result.icons.filter(shown))
-      const longest = Math.max(0, ...lists.map((list) => list.length))
+      const longest = maxOf([0, ...lists.map((list) => list.length)])
       const icons = Array.from({ length: longest }, (_, index) =>
         lists.flatMap((list) => (index < list.length ? [list[index]] : []))
       )

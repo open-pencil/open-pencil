@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import type { ShapedText } from '@open-pencil/fig/node-change'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { appendAll, maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { pixelLength } from '@open-pencil/scene-graph/text'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { FIXTURES } from '@open-pencil/test-support/paths'
@@ -137,7 +138,7 @@ describe('text shaping for saved glyphs', () => {
       const values = (frame.commands ?? []).flatMap((command) =>
         command[axis] === undefined ? [] : [command[axis]]
       )
-      return [Math.min(...values), Math.max(...values)].map((value) => Number(value.toFixed(2)))
+      return [minOf(values), maxOf(values)].map((value) => Number(value.toFixed(2)))
     }
     expect(frame.advance).toBe(0)
     expect(frame.x).toBeCloseTo(digit.x + digit.advance, 3)
@@ -347,7 +348,8 @@ describe('text shaping for saved glyphs', () => {
           .commands
       )
     } finally {
-      fallbackFamilies.splice(0, fallbackFamilies.length, ...originalFallbacks)
+      fallbackFamilies.length = 0
+      appendAll(fallbackFamilies, originalFallbacks)
     }
   })
 
@@ -366,7 +368,7 @@ describe('text shaping for saved glyphs', () => {
     // The default instance is the regular weight; the bold stem is wider.
     const width = (commands: readonly { x?: number }[]) => {
       const xs = commands.flatMap((command) => (command.x === undefined ? [] : [command.x]))
-      return Math.max(...xs) - Math.min(...xs)
+      return maxOf(xs) - minOf(xs)
     }
     expect(width(bold)).toBeGreaterThan(width(regular) * 1.2)
   })

@@ -1,5 +1,6 @@
 import { describeDiagnosticError, recordStorageFailure } from '@/app/diagnostics'
 import { viewDiagnosticsAction } from '@/app/diagnostics/view'
+import { readFigDocument } from '@/app/document/io/fig'
 import type { EditorPreparationHandle } from '@/app/editor/preparation/types'
 import type { EditorStore } from '@/app/editor/session'
 import { notificationMessages } from '@/app/i18n/notifications'
@@ -16,7 +17,7 @@ import { rememberRecentStorageDocument } from '@/app/recent-files'
 import { toast } from '@/app/shell/ui'
 import { getLocalCanvasStore, type LocalCanvasMeta } from '@/app/storage/local-store'
 import { seedStorageCanvasFromRemote } from '@/app/storage/sync/persist'
-import { figFile, readFigForTab } from '@/app/tabs/open/fig'
+import { figFile } from '@/app/tabs/open/fig'
 import {
   failPreparation,
   releaseOpeningTab,
@@ -91,7 +92,7 @@ async function showStorageDocument(
   const bytes = given ?? (await readStorageDocument(binding, document, load))
   const file = figFile(bytes, document.name)
   load.update({ phase: 'decoding', detail: document.name })
-  const imported = await readFigForTab(file, load.signal)
+  const imported = await readFigDocument(file, load.signal)
   await showImportedGraph(
     store,
     imported,

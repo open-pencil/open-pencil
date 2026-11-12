@@ -1,4 +1,5 @@
 import type { CharacterStyleOverride, FontVariation, SceneNode } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
@@ -331,7 +332,7 @@ export function textNodeToOutlineLayout(node: SceneNode): TextOutlineLayout | nu
       xOffset === 0
         ? measured.glyphs
         : measured.glyphs.map((glyph) => ({ ...glyph, x: glyph.x + xOffset }))
-    glyphs.push(...placed)
+    appendAll(glyphs, placed)
   }
 
   return { glyphs, width: maxWidth, height: contentHeight }

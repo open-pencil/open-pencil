@@ -1,14 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createCloudAITokens } from '@/app/cloud/ai/tokens'
+import { createCloudTokenCache } from '@/app/cloud/tokens'
 
 const MINUTE = 60_000
 
-describe('Cloud AI tokens', () => {
+describe('Cloud token cache', () => {
   test('reuses a token until shortly before it expires, signing one at a time', async () => {
     let now = Date.parse('2026-10-21T12:00:00.000Z')
     let signed = 0
-    const tokens = createCloudAITokens(
+    const tokens = createCloudTokenCache(
       async () => {
         signed++
         return { token: `token-${signed}`, expiresAt: new Date(now + 10 * MINUTE).toISOString() }
@@ -26,7 +26,7 @@ describe('Cloud AI tokens', () => {
 
   test('drops a refused token, but not a newer one signed meanwhile', async () => {
     let signed = 0
-    const tokens = createCloudAITokens(async () => {
+    const tokens = createCloudTokenCache(async () => {
       signed++
       return { token: `token-${signed}`, expiresAt: '2099-01-01T00:00:00.000Z' }
     })
@@ -39,7 +39,7 @@ describe('Cloud AI tokens', () => {
 
   test('signs again after a failed request', async () => {
     let attempts = 0
-    const tokens = createCloudAITokens(async () => {
+    const tokens = createCloudTokenCache(async () => {
       attempts++
       if (attempts === 1) throw new Error('offline')
       return { token: 'token', expiresAt: '2099-01-01T00:00:00.000Z' }

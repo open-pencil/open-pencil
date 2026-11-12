@@ -1,5 +1,6 @@
 export {
   CloudServiceError,
+  CloudServiceInsecureEndpointError,
   cloudServicesFetch,
   createCloudServicesClient,
   type CloudServicesClient,
