@@ -21,7 +21,7 @@ const store = computed(() => {
 </script>
 
 <template>
-  <AppBanner v-if="store" @action="openSaveTo(store)">
+  <AppBanner v-if="store" @action="openSaveTo(store, { exceptPublic: true })">
     <span class="inline-flex items-center gap-1.5">
       <icon-lucide-eye class="size-3.5 shrink-0" />
       {{ t.communityBanner }}

@@ -9,7 +9,13 @@ import { followUpload } from '@/app/storage/sync'
 import { IS_BROWSER } from '@/constants'
 
 import { listSaveDestinations } from './destinations'
-import { canSaveTo, type SaveDestination, type SaveFailure, type SaveToState } from './model'
+import {
+  canSaveTo,
+  initialSaveChoice,
+  type SaveDestination,
+  type SaveFailure,
+  type SaveToState
+} from './model'
 import { writeDocumentTo } from './write'
 
 /** One Save to, from choosing where the document goes until it is there. */
@@ -52,6 +58,8 @@ export async function openSaveTo(
   options: {
     /** Keeps the choice to one storage profile, such as the Cloud server a draft signed up to. */
     profileId?: string
+    /** Leaves out places anyone may open, for a copy that is the person's own. */
+    exceptPublic?: boolean
   } = {}
 ): Promise<void> {
   const current = saveToSession.value
@@ -60,25 +68,25 @@ export async function openSaveTo(
     return
   }
   const destinations = (await listSaveDestinations()).filter(
-    (destination) => !options.profileId || destination.location.profileId === options.profileId
+    (destination) =>
+      (!options.profileId || destination.location.profileId === options.profileId) &&
+      !(options.exceptPublic && destination.public)
   )
-  const writable = destinations.filter(canSaveTo)
-  const first = writable.at(0)
-  if (!first) {
+  if (!destinations.some(canSaveTo)) {
     if (!signInToSaveTo()) openSettingsDialog(CLOUD_INCLUDED ? 'cloud' : 'storage')
     return
   }
-  const last = writable.find((destination) => destination.key === lastDestination.value)
+  const { chosen, ask } = initialSaveChoice(destinations, lastDestination.value)
   saveToSession.value = reactive<SaveToSession>({
     store: markRaw(store),
     destinations,
     name: store.state.documentName || 'Untitled',
-    chosen: (last ?? first).key,
+    chosen,
     state: { kind: 'ready' },
-    open: writable.length > 1,
+    open: ask,
     following: markRaw(new AbortController())
   })
-  if (writable.length === 1) await confirmSaveTo()
+  if (!ask) await confirmSaveTo()
 }
 
 /**
@@ -100,7 +108,7 @@ export async function confirmSaveTo(): Promise<void> {
   try {
     const binding = await writeDocumentTo(session.store, destination.location, name)
     if (!binding) return fail(session, { reason: 'unavailable' })
-    lastDestination.value = destination.key
+    if (!destination.public) lastDestination.value = destination.key
     const meta = await getLocalCanvasStore().getMeta(binding.documentId)
     const totalBytes = meta?.figSize ?? 0
     const outcome = await followUpload(binding.documentId, {

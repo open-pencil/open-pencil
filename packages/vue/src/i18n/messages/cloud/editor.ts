@@ -391,6 +391,10 @@ export const cloudMessageDefaults = {
   communityLinkFailed: 'This document isn’t in the gallery any more.',
   communityBanner: 'A community example, open read-only.',
   communitySaveCopy: 'Save a copy',
+  savePublicLabel: 'Public',
+  savePublicHeading: 'Anyone can open what you save here',
+  savePublicDescription:
+    'This workspace is the server’s community gallery, so saving to it publishes the document.',
   documentLinkFailed: 'Couldn’t open this document. Ask its owner for access.',
   documentLinkUnknownServer: params('Sign in to {host} first to open this link.'),
   shareOpenedInBrowser: 'Opened in the browser',

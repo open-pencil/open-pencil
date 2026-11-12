@@ -96,6 +96,7 @@ export {
   cloudAuthenticationSchema,
   cloudCapabilitiesSchema,
   cloudDeploymentSchema,
+  cloudCommunityDiscoverySchema,
   cloudDiscoverySchema,
   cloudEditorVersionSchema,
   cloudLegalDiscoverySchema,
@@ -105,6 +106,7 @@ export {
   type CloudAuthentication,
   type CloudCapabilities,
   type CloudDeployment,
+  type CloudCommunityDiscovery,
   type CloudDiscovery,
   type CloudLegalDiscovery,
   type CloudListing

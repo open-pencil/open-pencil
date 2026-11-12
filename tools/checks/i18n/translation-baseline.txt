@@ -669,3 +669,4 @@ ar:cloudPortal.providerApple
 ar:cloudPortal.deploymentOfficial
 ar:cloudPortal.emailTransportSMTP
 ar:cloudPortal.emailTransportCloudflare
+fr:cloud.savePublicLabel

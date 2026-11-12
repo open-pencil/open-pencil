@@ -77,3 +77,13 @@ export const TooLarge: Story = {
   args: { state: { kind: 'error', reason: 'too-large', limitBytes: 256 * 1024 ** 2 } }
 }
 export const Offline: Story = { args: { state: { kind: 'error', reason: 'offline' } } }
+/** The server's community gallery, chosen on purpose: saving there publishes. */
+export const PublicGallery: Story = {
+  args: {
+    destinations: [
+      ...official,
+      { ...workspace(officialServer, 'community', 'Community', 'admin'), public: true }
+    ],
+    destination: 'official/community'
+  }
+}
