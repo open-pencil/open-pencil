@@ -1,0 +1,1 @@
+- A paint bound to a color variable takes the variable's color again whenever the mode set for its layer changes, even to a mode giving the same color, as in Figma, and a pasted one keeps its edited color or opacity (#2047).
