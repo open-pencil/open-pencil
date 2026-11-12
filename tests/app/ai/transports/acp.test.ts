@@ -455,31 +455,37 @@ test('a startup step outside the agent connection is bounded by the deadline too
   expect(agents.prompts).toEqual([])
 })
 
-test('a call the agent reports as a subagent’s is known as that subagent’s while its reply goes on', async () => {
+test('a subagent’s work is known by its session and stays out of the chat', async () => {
+  const toolCall = (toolCallId: string): SessionUpdate => ({
+    sessionUpdate: 'tool_call',
+    toolCallId,
+    title: 'mcp__open-pencil__create_shape',
+    status: 'pending'
+  })
   const agents = fakeAgents({
     updates: [
+      { update: { sessionUpdate: 'subagent_update', sessionId: 'subagent-1', title: 'Layout' } },
       {
-        update: {
-          sessionUpdate: 'tool_call',
-          toolCallId: 'toolu_inner',
-          title: 'mcp__open-pencil__create_shape',
-          status: 'pending',
-          _meta: { claudeCode: { parentToolUseId: 'toolu_task' } }
-        }
-      }
+        session: 'subagent-1',
+        update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'Mine' } }
+      },
+      { session: 'subagent-1', update: toolCall('call-inner') },
+      { update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'Ours' } } },
+      { update: toolCall('call-own') }
     ]
   })
   const { transport: chat } = transport(agents)
+  /** The subagent of a call, as OpenPencil's MCP server sees it; `linkTools` names the chat. */
+  const subagentOf = (call: string) =>
+    withSubagent({ session: 'session-1', kind: 'acp', chat: 'chat', call }).subagent
   try {
-    await send(chat, 'go')
-    // `linkTools` above names the chat 'chat', which the agent's MCP calls carry.
-    const call = withSubagent({
-      session: 'session-1',
-      kind: 'acp',
-      chat: 'chat',
-      call: 'toolu_inner'
-    })
-    expect(call.subagent).toBe('toolu_task')
+    const chunks = await send(chat, 'go')
+    expect(agents.capabilities).toMatchObject([{ subagents: {} }])
+    expect(subagentOf('call-inner')).toBe('subagent-1')
+    expect(subagentOf('call-own')).toBeUndefined()
+    const shown = JSON.stringify(chunks)
+    expect(shown).toContain('Ours')
+    expect(shown).not.toContain('Mine')
   } finally {
     restAgents('acp')
     await chat.destroy()

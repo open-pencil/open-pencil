@@ -32,7 +32,7 @@ const agentSessionSchema = v.object({
  * subagent of an app chat's agent, that subagent (`withSubagent`).
  */
 export type AgentSession = v.InferOutput<typeof agentSessionSchema> & {
-  /** The Agent call of the subagent that made the call; the MCP server never sends it. */
+  /** The ACP session of the subagent that made the call; the MCP server never sends it. */
   subagent?: string
 }
 
@@ -46,7 +46,7 @@ interface SessionAgent {
   /** The app chat whose agent this shows, when it is an ACP chat's; see `restAgents`. */
   chat: string | undefined
   store: EditorStore
-  /** The Agent call of the subagent this agent shows, or undefined for the session's own agent. */
+  /** The ACP session of the subagent this agent shows, or undefined for the session's own agent. */
   subagent: string | undefined
   handle: AgentHandle
   kind: AgentSession['kind']
@@ -62,7 +62,7 @@ interface SessionAgent {
  */
 const sessionAgents = new Set<SessionAgent>()
 
-/** For each app chat, the Agent call of the subagent that made each tool call its agent reported. */
+/** For each app chat, the subagent's ACP session that made each tool call its agent reported. */
 const subagentCalls = new Map<string, Map<string, string>>()
 
 function findAgent(store: EditorStore, session: AgentSession): SessionAgent | undefined {
@@ -209,27 +209,33 @@ export function restAgents(kind: Exclude<AgentSession['kind'], 'mcp'>, chat?: st
 }
 
 /**
- * An app chat's agent reported a tool call over ACP: the Agent call of the subagent that made it,
- * if one did, and whether it ended (`src/app/ai/agents/acp/subagents.ts`). An ended call is
- * forgotten, and when it is a subagent's Agent call, that subagent is done: its agent leaves and
- * the calls it made are forgotten too.
+ * An app chat's agent reported a tool call over ACP: the session of the subagent that made it, if
+ * one did, and whether it ended (`src/app/ai/agents/acp/subagents.ts`). An ended call is forgotten.
  */
 export function noteToolCall(
   chat: string,
   call: { id: string; subagent?: string; ended: boolean }
 ): void {
   if (call.ended) {
-    const calls = subagentCalls.get(chat)
-    if (calls) {
-      calls.delete(call.id)
-      // Deleting entries while iterating a Map is safe: visited ones stay visited.
-      for (const [id, subagent] of calls) if (subagent === call.id) calls.delete(id)
-    }
-    for (const agent of sessionAgents) if (agent.subagent === call.id) leave(agent)
+    subagentCalls.get(chat)?.delete(call.id)
   } else if (call.subagent) {
     const calls = subagentCalls.get(chat) ?? new Map<string, string>()
     calls.set(call.id, call.subagent)
     subagentCalls.set(chat, calls)
+  }
+}
+
+/**
+ * An app chat's agent says its subagent `subagent`, an ACP session, finished its work: the
+ * subagent's agent leaves and the calls it made are forgotten, so a late one shows as the chat's
+ * own agent. Given more work, the subagent comes back as a new agent with its next call.
+ */
+export function subagentFinished(chat: string, subagent: string): void {
+  const calls = subagentCalls.get(chat)
+  // Deleting entries while iterating a Map is safe: visited ones stay visited.
+  if (calls) for (const [id, owner] of calls) if (owner === subagent) calls.delete(id)
+  for (const agent of sessionAgents) {
+    if (agent.chat === chat && agent.subagent === subagent) leave(agent)
   }
 }
 

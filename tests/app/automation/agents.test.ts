@@ -13,6 +13,7 @@ import {
   noteToolCall,
   readAgentSession,
   restAgents,
+  subagentFinished,
   touchedNodeIds,
   withSubagent,
   type AgentSession,
@@ -205,7 +206,7 @@ describe("a coding agent's subagents", () => {
     restAgents('acp')
   })
 
-  /** The chat's agent reported tool call `call`, made by the subagent of its Agent call `subagent`. */
+  /** The chat's agent reported tool call `call` in the session of its subagent `subagent`. */
   function reported(call: string, subagent?: string) {
     noteToolCall(CHAT, { id: call, subagent, ended: false })
   }
@@ -223,8 +224,8 @@ describe("a coding agent's subagents", () => {
   }
 
   test("a call of the chat's own agent stays with its agent, and a subagent keeps its agent", () => {
-    reported('toolu_a1', 'toolu_task_a')
-    reported('toolu_a2', 'toolu_task_a')
+    reported('toolu_a1', 'subagent-a')
+    reported('toolu_a2', 'subagent-a')
     const first = work('toolu_a1')
     const own = work('toolu_own')
     const ownAgain = work('toolu_own_2')
@@ -236,28 +237,28 @@ describe("a coding agent's subagents", () => {
   })
 
   test('a call is a subagent’s only in the chat whose agent reported it', () => {
-    noteToolCall('fedcba9876543210', { id: 'toolu_a1', subagent: 'toolu_task_a', ended: false })
+    noteToolCall('fedcba9876543210', { id: 'toolu_a1', subagent: 'subagent-a', ended: false })
     work('toolu_a1')
     expect(agents()).toHaveLength(1)
   })
 
-  test('a subagent leaves when its Agent call finishes, and the others carry on', () => {
-    reported('toolu_a1', 'toolu_task_a')
-    reported('toolu_b1', 'toolu_task_b')
+  test('a subagent leaves when the agent says it is done, and the others carry on', () => {
+    reported('toolu_a1', 'subagent-a')
+    reported('toolu_b1', 'subagent-b')
     const own = work('toolu_own')
     work('toolu_a1')
     const staying = work('toolu_b1')
 
-    noteToolCall(CHAT, { id: 'toolu_task_a', ended: true })
+    subagentFinished(CHAT, 'subagent-a')
 
     expect(agents().map((agent) => agent.id)).toEqual([own.id, staying.id])
   })
 
   test('a call still running when its subagent finished does not bring the agent back', () => {
-    reported('toolu_a1', 'toolu_task_a')
+    reported('toolu_a1', 'subagent-a')
     const session = withSubagent({ ...acp, call: 'toolu_a1' })
     const reply = agentStarted(store, session, pageId())
-    noteToolCall(CHAT, { id: 'toolu_task_a', ended: true })
+    subagentFinished(CHAT, 'subagent-a')
 
     const node = store.graph.createNode('RECTANGLE', pageId(), {})
     agentFinished(store, session, { pageId: pageId(), nodeIds: [node.id], edited: true, reply })
@@ -266,13 +267,13 @@ describe("a coding agent's subagents", () => {
   })
 
   test('the view moves on to another agent at work when the followed subagent finishes', () => {
-    reported('toolu_a1', 'toolu_task_a')
-    reported('toolu_b1', 'toolu_task_b')
+    reported('toolu_a1', 'subagent-a')
+    reported('toolu_b1', 'subagent-b')
     const followed = work('toolu_a1')
     const other = work('toolu_b1')
     expect(presenceOf(store).following.value).toEqual({ kind: 'agent', agentId: followed.id })
 
-    noteToolCall(CHAT, { id: 'toolu_task_a', ended: true })
+    subagentFinished(CHAT, 'subagent-a')
 
     expect(presenceOf(store).following.value).toEqual({ kind: 'agent', agentId: other.id })
   })
@@ -282,20 +283,20 @@ describe("a coding agent's subagents", () => {
     const session = withSubagent({ ...acp, call: 'toolu_a1' })
     const reply = agentStarted(store, session, pageId())
     // The update that names its subagent lands while the call runs.
-    reported('toolu_a1', 'toolu_task_a')
+    reported('toolu_a1', 'subagent-a')
     agentFinished(store, session, { pageId: pageId(), nodeIds: [card.id], edited: true, reply })
 
     expect(agents()).toHaveLength(1)
     expect(agents()[0]).toMatchObject({ status: 'editing', selection: [card.id] })
 
     // The subagent's next call shows as the subagent.
-    reported('toolu_a2', 'toolu_task_a')
+    reported('toolu_a2', 'subagent-a')
     work('toolu_a2')
     expect(agents()).toHaveLength(2)
   })
 
   test('when the chat’s reply ends, its subagents leave and its own agent rests', () => {
-    reported('toolu_a1', 'toolu_task_a')
+    reported('toolu_a1', 'subagent-a')
     const own = work('toolu_own')
     work('toolu_a1')
 
@@ -310,8 +311,8 @@ describe("a coding agent's subagents", () => {
   })
 
   test('one chat’s reply ending leaves another chat’s agents and subagents at work', () => {
-    reported('toolu_a1', 'toolu_task_a')
-    noteToolCall(OTHER_CHAT, { id: 'toolu_b1', subagent: 'toolu_task_b', ended: false })
+    reported('toolu_a1', 'subagent-a')
+    noteToolCall(OTHER_CHAT, { id: 'toolu_b1', subagent: 'subagent-b', ended: false })
     work('toolu_a1')
     const otherOwn = work('toolu_own', otherACP)
     const otherSub = work('toolu_b1', otherACP)
@@ -323,7 +324,7 @@ describe("a coding agent's subagents", () => {
 
     expect(agents().map(({ id }) => id)).toEqual([otherOwn.id, otherSub.id])
     expect(agents().find((agent) => agent.id === otherOwn.id)?.status).toBe('editing')
-    expect(withSubagent({ ...otherACP, call: 'toolu_b1' }).subagent).toBe('toolu_task_b')
+    expect(withSubagent({ ...otherACP, call: 'toolu_b1' }).subagent).toBe('subagent-b')
     const node = store.graph.createNode('RECTANGLE', pageId(), {})
     agentFinished(store, running, { pageId: pageId(), nodeIds: [node.id], edited: true, reply })
     expect(agents().find((agent) => agent.id === otherSub.id)).toMatchObject({
@@ -332,20 +333,36 @@ describe("a coding agent's subagents", () => {
     })
   })
 
-  test('a finished Agent call takes the calls made inside it along', () => {
-    reported('toolu_a1', 'toolu_task_a')
+  test('a finished subagent takes the calls it made along, and comes back with more work', () => {
+    reported('toolu_a1', 'subagent-a')
     work('toolu_a1')
-    noteToolCall(CHAT, { id: 'toolu_task_a', ended: true })
+    subagentFinished(CHAT, 'subagent-a')
     expect(agents()).toEqual([])
 
-    // An inner call that reaches OpenPencil after its Agent call ended is the chat's own agent's.
+    // An inner call that reaches OpenPencil after its subagent finished is the chat's own agent's.
     expect(withSubagent({ ...acp, call: 'toolu_a1' }).subagent).toBeUndefined()
-    work('toolu_a1')
+    const own = work('toolu_a1')
     expect(agents()).toHaveLength(1)
+
+    // Given more work, the same subagent session shows as an agent again.
+    reported('toolu_a2', 'subagent-a')
+    const back = work('toolu_a2')
+    expect(agents().map(({ id }) => id)).toEqual([own.id, back.id])
+  })
+
+  test('a subagent finishing in one chat leaves another chat’s subagents be', () => {
+    reported('toolu_a1', 'subagent-a')
+    noteToolCall(OTHER_CHAT, { id: 'toolu_b1', subagent: 'subagent-a', ended: false })
+    work('toolu_a1')
+    const other = work('toolu_b1', otherACP)
+
+    subagentFinished(CHAT, 'subagent-a')
+
+    expect(agents().map(({ id }) => id)).toEqual([other.id])
   })
 
   test('a session that ends takes its subagents with it', () => {
-    reported('toolu_a1', 'toolu_task_a')
+    reported('toolu_a1', 'subagent-a')
     work('toolu_own')
     work('toolu_a1')
     endAgentSession(acp.session)

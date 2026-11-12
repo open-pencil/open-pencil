@@ -451,8 +451,12 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       })
       .onNotification(methods.client.session.update, ({ params }) => {
         const { update } = params
-        // Claude's adapter names its model only in its usage updates.
         ownToolApproval.noteUpdate(update)
+        // The agent's MCP calls name only their own id; its updates say which subagent made them.
+        if (sessionRef) noteSubagents(sessionRef.chat, sessionRef.sessionId, params)
+        // A subagent works in a session of its own, which the chat does not show.
+        if (sessionRef && params.sessionId !== sessionRef.sessionId) return
+        // Claude's adapter names its model only in its usage updates.
         if (update.sessionUpdate === 'usage_update') {
           const meta = v.safeParse(usageMetaSchema, update._meta)
           if (meta.success && sessionRef) sessionRef.model = meta.output['_claude/model']
@@ -460,8 +464,6 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         if (update.sessionUpdate === 'available_commands_update') {
           setAgentCommands(agentId, update.availableCommands)
         }
-        // The agent's MCP calls name only their own id; its reports say which subagent made them.
-        if (sessionRef) noteSubagents(sessionRef.chat, update)
         onUpdate?.(params)
       })
       .onNotification(AUTH_STATUS_UPDATE_METHOD, parseAuthStatusUpdate, ({ params }) => {
@@ -496,7 +498,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     const initialized = await step(
       connection.agent.request(methods.agent.initialize, {
         protocolVersion: PROTOCOL_VERSION,
-        clientCapabilities: {}
+        // Agents that run subagents then report each one's work in a session of its own.
+        clientCapabilities: { subagents: {} }
       })
     )
 

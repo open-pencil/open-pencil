@@ -1,1 +1,1 @@
-- When Claude Code hands work to subagents, each subagent that works on the canvas shows as its own agent, with its own cursor and callsign, and leaves when it finishes (#2033).
+- When a coding agent hands work to subagents, each subagent that works on the canvas shows as its own agent, with its own cursor and callsign, and leaves when it finishes. This works with agents that report their subagents over ACP, such as Claude Code and Codex through their current adapters (#2033).

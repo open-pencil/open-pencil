@@ -126,7 +126,7 @@ describe("an ACP chat's subagents calling tools", () => {
   test('show as an agent of their own, and their edits still join the reply', async () => {
     const { store, target } = document()
     const run = startAgentRun(store, CHAT)
-    noteToolCall(CHAT, { id: 'toolu_inner', subagent: 'toolu_task', ended: false })
+    noteToolCall(CHAT, { id: 'toolu_inner', subagent: 'subagent-1', ended: false })
 
     const own = await made(target, { kind: 'acp', chat: CHAT, call: 'toolu_own' })
     const sub = await made(target, subagentCall)

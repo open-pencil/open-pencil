@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import type { SessionUpdate } from '@agentclientprotocol/sdk/unstable'
+import type { SessionNotification, SessionUpdate } from '@agentclientprotocol/sdk/unstable'
 
 import { OPEN_PENCIL_MCP_SERVER } from '@open-pencil/core/constants'
 
@@ -8,72 +8,64 @@ import { noteSubagents } from '@/app/ai/agents/acp/subagents'
 import { restAgents, withSubagent } from '@/app/automation/agents'
 
 const CHAT = '0123456789abcdef'
+const ROOT = 'session-root'
 const TOOL = `mcp__${OPEN_PENCIL_MCP_SERVER}__create_shape`
 
 afterEach(() => restAgents('acp'))
 
-/** Claude Code's adapter stamps a call made inside a subagent with that subagent's Agent call. */
-function claudeCall(id: string, parent?: string): SessionUpdate {
-  return {
-    sessionUpdate: 'tool_call',
-    toolCallId: id,
-    title: TOOL,
-    kind: 'other',
-    status: 'pending',
-    rawInput: {},
-    _meta: { claudeCode: { toolName: TOOL, ...(parent ? { parentToolUseId: parent } : {}) } }
-  }
+/** The chat's agent reported `update` in its session `sessionId`. */
+function report(update: SessionUpdate, sessionId = ROOT): void {
+  const notification: SessionNotification = { sessionId, update }
+  noteSubagents(CHAT, ROOT, notification)
 }
 
-function claudeEnded(id: string, parent: string): SessionUpdate {
-  return {
-    sessionUpdate: 'tool_call_update',
-    toolCallId: id,
-    status: 'completed',
-    _meta: { claudeCode: { parentToolUseId: parent } }
-  }
+function call(id: string, status: 'pending' | 'completed' = 'pending'): SessionUpdate {
+  return { sessionUpdate: 'tool_call_update', toolCallId: id, title: TOOL, status }
 }
 
 /** The subagent a tool call of the chat's agent belongs to, as OpenPencil's MCP server sees it. */
-function subagentOf(call: string, chat = CHAT): string | undefined {
-  return withSubagent({ session: 'session-1', kind: 'acp', chat, call }).subagent
+function subagentOf(id: string, chat = CHAT): string | undefined {
+  return withSubagent({ session: 'session-1', kind: 'acp', chat, call: id }).subagent
 }
 
 describe('which subagent a coding agent’s tool call belongs to', () => {
-  test('is the Agent call its report names, for that chat only', () => {
-    noteSubagents(CHAT, claudeCall('toolu_inner', 'toolu_task'))
-    expect(subagentOf('toolu_inner')).toBe('toolu_task')
-    expect(subagentOf('toolu_inner', 'fedcba9876543210')).toBeUndefined()
+  test('is the session the agent reported it in, for that chat only', () => {
+    report(call('call-inner'), 'subagent-1')
+    expect(subagentOf('call-inner')).toBe('subagent-1')
+    expect(subagentOf('call-inner', 'fedcba9876543210')).toBeUndefined()
   })
 
-  test('is learned from a later report too, for a call first reported without it', () => {
-    noteSubagents(CHAT, claudeCall('toolu_inner'))
-    expect(subagentOf('toolu_inner')).toBeUndefined()
-    noteSubagents(CHAT, {
-      sessionUpdate: 'tool_call_update',
-      toolCallId: 'toolu_inner',
-      status: 'in_progress',
-      _meta: { claudeCode: { parentToolUseId: 'toolu_task' } }
-    })
-    expect(subagentOf('toolu_inner')).toBe('toolu_task')
+  test('is a nested subagent’s own session', () => {
+    report({ sessionUpdate: 'subagent_update', sessionId: 'subagent-2' }, 'subagent-1')
+    report(call('call-nested'), 'subagent-2')
+    expect(subagentOf('call-nested')).toBe('subagent-2')
   })
 
-  test('is none for a call the agent itself made, or one another agent reports', () => {
-    noteSubagents(CHAT, claudeCall('toolu_own'))
-    noteSubagents(CHAT, {
-      sessionUpdate: 'tool_call',
-      toolCallId: 'call-1',
-      title: `mcp.${OPEN_PENCIL_MCP_SERVER}.create_shape`,
-      status: 'in_progress',
-      rawInput: { server: OPEN_PENCIL_MCP_SERVER, tool: 'create_shape', arguments: {} }
-    })
-    expect(subagentOf('toolu_own')).toBeUndefined()
-    expect(subagentOf('call-1')).toBeUndefined()
+  test('is none for a call the agent made in its own session', () => {
+    report(call('call-own'))
+    expect(subagentOf('call-own')).toBeUndefined()
   })
 
   test('ends with the call: a finished call is forgotten', () => {
-    noteSubagents(CHAT, claudeCall('toolu_inner', 'toolu_task'))
-    noteSubagents(CHAT, claudeEnded('toolu_inner', 'toolu_task'))
-    expect(subagentOf('toolu_inner')).toBeUndefined()
+    report(call('call-inner'), 'subagent-1')
+    report(call('call-inner', 'completed'), 'subagent-1')
+    expect(subagentOf('call-inner')).toBeUndefined()
+  })
+
+  test('ends when the agent says the subagent is done, and not while it works', () => {
+    report(call('call-inner'), 'subagent-1')
+    const state = (s: 'running' | 'idle' | 'unknown'): SessionUpdate => ({
+      sessionUpdate: 'subagent_update',
+      sessionId: 'subagent-1',
+      state: { state: s }
+    })
+    report(state('running'))
+    expect(subagentOf('call-inner')).toBe('subagent-1')
+    report(state('idle'))
+    expect(subagentOf('call-inner')).toBeUndefined()
+
+    report(call('call-later'), 'subagent-1')
+    report(state('unknown'))
+    expect(subagentOf('call-later')).toBeUndefined()
   })
 })
