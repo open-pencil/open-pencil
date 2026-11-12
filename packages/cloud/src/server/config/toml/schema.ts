@@ -1,8 +1,12 @@
 import { cloudEditorVersionSchema } from '#cloud/contract'
+import { deletedPrefixSchema } from '#cloud/server/config/schema'
 import { staticEntitlementsTOMLSchema } from '#cloud/server/policy/schema'
 import * as v from 'valibot'
 
-import { deletedPrefixSchema } from '../schema'
+/*
+ * The deployment file, `openpencil-cloud.toml`: what an operator writes, with secrets named by the
+ * environment variables that hold them. `../deployment.ts` reads it into the server's configuration.
+ */
 
 /** PostHog's EU Cloud ingestion host, where OpenPencil's own project is. */
 const POSTHOG_DEFAULT_HOST = 'https://eu.i.posthog.com'

@@ -156,7 +156,8 @@ export function createFileHandlers(files?: AutomationFiles) {
     return { ok: true, result: { closed: getTabById(target.documentId) === undefined } }
   }
 
-  async function handleNewDocument(_target: AutomationTarget, args: unknown): Promise<unknown> {
+  // Creating and opening work while the selected tab is Home or a New file tab.
+  async function handleNewDocument(args: unknown): Promise<unknown> {
     const { path } = parseToolArgs('create_document', saveArgsSchema, args)
     const tab = createTab()
     if (path) {
@@ -171,7 +172,7 @@ export function createFileHandlers(files?: AutomationFiles) {
     return responseWithTarget({ ok: true, result: { created: true } }, target)
   }
 
-  async function handleOpenFile(_target: AutomationTarget, args: unknown): Promise<unknown> {
+  async function handleOpenFile(args: unknown): Promise<unknown> {
     const path = (args as { path?: string }).path
     if (!path) throw new Error('Missing "path" in args')
     if (isTauri()) {

@@ -27,7 +27,7 @@ const TOKENS: PortalAccessToken[] = [
 ]
 
 const meta = {
-  title: 'App/Cloud Portal/Access Tokens',
+  title: 'App/Cloud/Portal/Access Tokens',
   parameters: { layout: 'padded' }
 } satisfies Meta
 
