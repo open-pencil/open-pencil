@@ -151,7 +151,8 @@ export function applySizeOverrides(
     o.layoutPositioning = 'ABSOLUTE'
   }
 
-  return { w, h }
+  // A size that was dropped sizes nothing, so sizing modes treat it as never given.
+  return { w: typeof w === 'number' ? width : w, h: typeof h === 'number' ? height : h }
 }
 
 /**
@@ -468,9 +469,9 @@ function applyTextAlignmentOverrides(props: Record<string, unknown>, o: Partial<
 function applyTextAutoResize(
   props: Record<string, unknown>,
   o: Partial<SceneNode>,
+  w: unknown,
   parentLayout: SceneNode['layoutMode']
 ): void {
-  const w = designJSXProp(props, 'w')
   const hasExplicitWidth = w !== undefined
   const fillsParent = w === 'fill' || (props.grow as number) > 0
   const isInsideAutoLayout = parentLayout !== 'NONE'
@@ -491,11 +492,12 @@ function applyTextAutoResize(
 function applyTextOverrides(
   props: Record<string, unknown>,
   o: Partial<SceneNode>,
+  w: unknown,
   parentLayout: SceneNode['layoutMode']
 ): void {
   applyTextStyleOverrides(props, o)
   o.textDirection = parseDirection(props.dir) ?? o.textDirection
-  applyTextAutoResize(props, o, parentLayout)
+  applyTextAutoResize(props, o, w, parentLayout)
 }
 
 const FULL_TURN_DEGREES = 360
@@ -553,7 +555,7 @@ export function propsToOverrides(
   const { w, h } = applySizeOverrides(props, o, parentLayout)
   applyVisualOverrides(props, o)
   applyLayoutOverrides(props, o, w, h, isText, parentLayout)
-  if (isText) applyTextOverrides(props, o, parentLayout)
+  if (isText) applyTextOverrides(props, o, w, parentLayout)
   applyEffectOverrides(props, o)
   applyStateOverrides(props, o)
 

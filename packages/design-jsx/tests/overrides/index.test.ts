@@ -104,6 +104,17 @@ describe('layout bounds', () => {
     expect(propsToOverrides({ x: 10 }, false, 'HORIZONTAL').layoutPositioning).toBe('ABSOLUTE')
   })
 
+  test('sizes a layer as if a size layout cannot use were never given', () => {
+    const infinite = Number.POSITIVE_INFINITY
+    const frame = propsToOverrides({ flex: 'row', w: infinite, h: infinite }, false, 'NONE')
+    const hugging = propsToOverrides({ flex: 'row' }, false, 'NONE')
+    expect(frame.primaryAxisSizing).toBe(hugging.primaryAxisSizing)
+    expect(frame.counterAxisSizing).toBe(hugging.counterAxisSizing)
+    expect(propsToOverrides({ w: infinite }, true, 'NONE').textAutoResize).toBe(
+      propsToOverrides({}, true, 'NONE').textAutoResize
+    )
+  })
+
   test('draws a polygon with at least three points', () => {
     expect(shapeOverrides('POLYGON', { points: 1 }).pointCount).toBe(3)
   })
