@@ -35,20 +35,23 @@ const TRANSLATIONS: Record<TranslatedLocale, Record<string, string>> = {
 /** Locales written right to left. */
 const RIGHT_TO_LEFT: ReadonlySet<CloudLocale> = new Set<CloudLocale>(['ar'])
 
+const RIGHT_TO_LEFT_MARK = String.fromCodePoint(0x200f)
 const FIRST_STRONG_ISOLATE = String.fromCodePoint(0x2068)
 const POP_DIRECTIONAL_ISOLATE = String.fromCodePoint(0x2069)
 
 /**
- * Isolates each placeholder of a right-to-left message, so a name or address put into it keeps
- * its own order: `report.pdf`, not `pdf.report`.
+ * Right-to-left messages as the app shows them: each between right-to-left marks, so punctuation
+ * after a Latin name ends the sentence on its left, and each placeholder isolated, so a name or
+ * address put into it keeps its own order: `report.pdf`, not `pdf.report`.
  */
-function isolatePlaceholders(messages: Record<string, string>): Record<string, string> {
-  return mapValues(messages, (message) =>
-    message.replaceAll(
+function directed(messages: Record<string, string>): Record<string, string> {
+  return mapValues(messages, (message) => {
+    const isolated = message.replaceAll(
       /\{\w+\}/g,
       (placeholder) => `${FIRST_STRONG_ISOLATE}${placeholder}${POP_DIRECTIONAL_ISOLATE}`
     )
-  )
+    return `${RIGHT_TO_LEFT_MARK}${isolated}${RIGHT_TO_LEFT_MARK}`
+  })
 }
 
 export type EmailMessages = StoreValue<Messages<typeof emailMessageDefaults>>
@@ -76,9 +79,7 @@ function messages(locale: CloudLocale): EmailMessages {
       ? {}
       : {
           [locale]: {
-            email: RIGHT_TO_LEFT.has(locale)
-              ? isolatePlaceholders(TRANSLATIONS[locale])
-              : TRANSLATIONS[locale]
+            email: RIGHT_TO_LEFT.has(locale) ? directed(TRANSLATIONS[locale]) : TRANSLATIONS[locale]
           }
         }
   // Every translation is in the cache, so nothing is ever fetched.
