@@ -1,0 +1,1 @@
+- `export_image` and other image exports work for a document in a background tab instead of failing (#1169).
