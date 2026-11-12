@@ -13,11 +13,13 @@ export default {
     ]
   },
   variants: {
-    // Over the bubble's own colour, fading out the end of a full last line beneath it.
+    // Over the bubble's own colour, fading out the end of a full last line beneath it, toward
+    // the line's end in either direction. It stays on one line inside the bubble: a narrow
+    // reply fades over less of the line, and one too narrow even then cuts the usage short.
     usage: {
       true: {
         corner:
-          'flex h-6 items-center gap-1 rounded-ee-xl bg-[linear-gradient(to_right,transparent,var(--color-hover)_2rem)] ps-8'
+          'flex h-6 max-w-[calc(100%-0.5rem)] items-center gap-1 rounded-ee-xl bg-[linear-gradient(to_right,transparent,var(--color-hover)_var(--fade))] ps-(--fade) whitespace-nowrap [--fade:2rem] @max-[16rem]/reply:[--fade:0.75rem] rtl:bg-[linear-gradient(to_left,transparent,var(--color-hover)_var(--fade))]'
       }
     }
   }

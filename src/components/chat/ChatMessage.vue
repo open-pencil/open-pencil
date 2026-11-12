@@ -179,7 +179,7 @@ function groupKey(group: MessagePartGroup): string {
             <div
               v-else-if="isTextUIPart(group.part) && group.part.text"
               data-test-id="chat-text-bubble"
-              class="group/response relative rounded-xl rounded-ss-md bg-hover px-3 py-2 text-xs leading-relaxed text-surface"
+              class="group/response @container/reply relative rounded-xl rounded-ss-md bg-hover px-3 py-2 text-xs leading-relaxed text-surface"
             >
               <ChatMarkdown :content="group.part.text" :mode="markdownMode" />
               <!-- With usage shown on hover, the usage and the copy button appear in the last
@@ -198,7 +198,7 @@ function groupKey(group: MessagePartGroup): string {
               >
                 <span
                   v-if="usageOnHover && group.index === lastAssistantTextPartIndex"
-                  class="px-1"
+                  class="min-w-0 truncate px-1"
                   data-slot="chat-reply-usage"
                 >
                   {{ usageOnHover }}

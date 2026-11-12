@@ -156,3 +156,41 @@ export const WithUsage: Story = {
     )
   }
 }
+
+/** In a narrow chat, a reply's usage with cached tokens stays on one line in its corner. */
+export const WithCachedUsageInNarrowChat: Story = {
+  args: {
+    message: {
+      id: 'narrow-usage-message',
+      role: 'assistant',
+      parts: [
+        {
+          type: 'text',
+          text: 'The right column moved left from x=705 to x=619, because the old horizontal gap was 126px against 40px vertically. I also zoomed the view to fit the grid.'
+        }
+      ],
+      metadata: {
+        usage: {
+          contextTokens: 88_000,
+          inputTokens: 88_000,
+          outputTokens: 883,
+          cacheReadTokens: 87_100
+        }
+      }
+    },
+    canRegenerate: true
+  },
+  render: (args) => ({
+    components: { ChatMessage },
+    setup: () => ({ args }),
+    template:
+      '<div class="w-64 rounded-xl bg-panel p-4 text-surface"><ChatMessage v-bind="args" /></div>'
+  }),
+  play: async ({ canvasElement }) => {
+    const usage = canvasElement.querySelector('[data-slot="chat-reply-usage"]')
+    await expect(usage).toHaveTextContent('88K in · 883 out · 87.1K cached')
+    if (!(usage instanceof HTMLElement)) throw new Error('No usage in the reply')
+    const lineHeight = Number.parseFloat(getComputedStyle(usage).lineHeight)
+    await expect(usage.getBoundingClientRect().height).toBeLessThanOrEqual(lineHeight)
+  }
+}
