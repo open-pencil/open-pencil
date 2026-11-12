@@ -1,8 +1,11 @@
+import { groupBy } from 'es-toolkit'
+
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
 import { groupBounds } from '@open-pencil/scene-graph/group-bounds'
 
-import { prepareSlotEdits } from '#core/editor/components/slots'
+import { acceptsChildren, prepareSlotEdits } from '#core/editor/components/slots'
+import { recordEdit } from '#core/editor/history/edit'
 import { nextNumberedName } from '#core/editor/structure/rename'
 import type { EditorContext } from '#core/editor/types'
 
@@ -161,4 +164,42 @@ export function wrapSelectionInContainer(
   })
 
   return containerId
+}
+
+/**
+ * Wraps the selected layers in a new group or frame in each parent they sit in, as Figma's Group
+ * and Frame selection do: one layer is enough, a layer inside another selected one goes with it,
+ * and parents in the locked part of an instance are left alone. One undo step; selects the new
+ * containers and returns their ids.
+ */
+export function wrapEachParent(
+  ctx: EditorContext,
+  containerType: 'GROUP' | 'FRAME',
+  selectedNodes: SceneNode[]
+): string[] {
+  const selected = new Set(selectedNodes.map((node) => node.id))
+  const outermost = selectedNodes.filter(
+    (node) => !node.parentId || !ctx.graph.closest(node.parentId, (n) => selected.has(n.id))
+  )
+  const byParent = groupBy(outermost, (node) => node.parentId ?? ctx.state.currentPageId)
+  const parentIds = Object.keys(byParent).filter((id) => acceptsChildren(ctx, id))
+  if (parentIds.length === 0 || !prepareSlotEdits(ctx, parentIds)) return []
+
+  // Named before any is made, so each parent's new container is "Group 1" there, as in Figma.
+  const names = new Map(
+    parentIds.map((id) => [id, nextNumberedName(ctx.graph, id, CONTAINER_NAMES[containerType])])
+  )
+  const label = `Create ${containerType.toLowerCase()}`
+  return recordEdit(ctx, { label, restoresSelection: true }, () => {
+    const ids = parentIds.flatMap((parentId) => {
+      const parent = ctx.graph.getNode(parentId)
+      const nodes = byParent[parentId]
+      if (!parent) return []
+      const name = names.get(parentId) ?? CONTAINER_NAMES[containerType]
+      const index = canvasWrapIndex(parent, nodes)
+      return [wrapNodes(ctx.graph, containerType, nodes, parentId, index, { name }).id]
+    })
+    ctx.setSelectedIds(new Set(ids))
+    return ids
+  })
 }

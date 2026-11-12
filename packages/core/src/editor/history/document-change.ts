@@ -476,11 +476,15 @@ export function applyDocumentChange(graph: SceneGraph, change: DocumentChange, s
   graph.clearAbsPosCache()
 }
 
-/** Undoes or redoes an edit in the editor, whichever page is on screen. */
+/**
+ * Undoes or redoes an edit in the editor, whichever page is on screen. The selection on that page
+ * is cleared, or becomes `selection` where the edit says what it selects.
+ */
 export function restoreDocumentChange(
   ctx: EditorContext,
   change: DocumentChange,
-  side: Side
+  side: Side,
+  selection?: ReadonlySet<string>
 ): void {
   applyDocumentChange(ctx.graph, change, side)
   const pageIds = new Set(change.pageIds)
@@ -490,7 +494,7 @@ export function restoreDocumentChange(
     if (ctx.graph.getNode(pageId)) computeAllLayouts(ctx.graph, pageId)
   }
   if (pageIds.has(ctx.state.currentPageId)) {
-    ctx.setSelectedIds(new Set())
+    ctx.setSelectedIds(new Set([...(selection ?? [])].filter((id) => ctx.graph.getNode(id))))
     ctx.state.hoveredNodeId = null
   }
   ctx.requestRender()
