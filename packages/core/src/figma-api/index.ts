@@ -16,6 +16,7 @@ import {
 import { fitViewport, SELECTION_INSETS } from '#core/editor/viewport'
 import { defaultIcons, type IconProvider } from '#core/icons'
 import type { RasterCodec } from '#core/io/formats/raster'
+import { findPageId } from '#core/io/subgraph'
 import { fontManager } from '#core/text/font/manager'
 
 import { listFigmaFonts } from './fonts/list'
@@ -315,6 +316,14 @@ export class FigmaAPI extends FigmaStructureMethods implements NodeProxyHost {
       zoom,
       scrollAndZoomIntoView: (nodes) => {
         if (nodes.length === 0) return
+        // The view shows the current page: a layer elsewhere would fit to coordinates on this
+        // page where it is not.
+        for (const node of nodes) {
+          if (!(node instanceof FigmaNodeProxy)) continue
+          const id = nodeIdOf(node)
+          if (findPageId(this.#graph, id) === this.#currentPageId) continue
+          throw new Error(`in scrollAndZoomIntoView: node ${id} is not on the current page`)
+        }
         const bounds = computeBounds(nodes.map((n) => n.absoluteBoundingBox))
         if (this.#viewportHost) {
           this.#viewportHost.fit(this.#currentPageId, bounds)

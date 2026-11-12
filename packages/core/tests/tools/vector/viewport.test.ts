@@ -82,6 +82,19 @@ describe('the view of a host that shows the document', () => {
     expect(result).toMatchObject({ center: { x: 300, y: 200 }, zoom: 2 })
   })
 
+  test('zoom_to_fit refuses a layer on another page and leaves the view alone', async () => {
+    const { host, calls } = recordingHost()
+    const graph = new SceneGraph()
+    const elsewhere = graph.createNode('FRAME', graph.addPage('Other').id, {
+      width: 400,
+      height: 300
+    })
+    const figma = new FigmaAPI(graph, { viewport: host })
+
+    expect(() => zoomToFit.execute(figma, { ids: [elsewhere.id] })).toThrow(elsewhere.id)
+    expect(calls.fit).toEqual([])
+  })
+
   test('set_viewport moves it', async () => {
     const { host, calls } = recordingHost()
     const { figma, pageId } = setup(host)
