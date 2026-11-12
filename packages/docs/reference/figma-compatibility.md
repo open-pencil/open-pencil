@@ -69,7 +69,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Edit vector layers | 🟡 | Select and drag points, handles, segments, and regions; <kbd>⌘</kbd> bends; Delete splits paths; the pen extends them; no per-point mirroring or corner controls |
 | Boolean operations (Union, Subtract, Intersect, Exclude) | ✅ | Object menu (<kbd>⌥</kbd><kbd>⇧</kbd><kbd>U</kbd> / <kbd>S</kbd> / <kbd>I</kbd> / <kbd>E</kbd>) and panel control; results stay editable boolean layers |
 | Flatten layers | ✅ | Flatten (<kbd>⌥</kbd><kbd>⇧</kbd><kbd>F</kbd>) from the Object and canvas menus |
-| Convert strokes to paths | ✅ | Outline stroke replaces each stroked layer with its fill and a stroke vector, keeping rotation, opacity, and effects |
+| Convert strokes to paths | ✅ | Outline stroke replaces each layer with its fill and a stroke vector, a fill-only shape with a vector of its fill, keeping rotation, opacity, and effects |
 | Convert text to paths | ✅ | Flatten turns text into one vector, and Outline stroke into a group of glyph vectors, each glyph in its character's fills |
 | Shape builder tool | 🔲 | Interactive boolean tool |
 | Offset path | 🔲 | Inset/outset a vector path |
