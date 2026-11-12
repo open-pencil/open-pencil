@@ -156,18 +156,27 @@ export const metricsReportTheme = {
 /** An error report's exception: what was thrown, then its frames with the app's own leading. */
 export const metricsExceptionTheme = {
   slots: {
-    root: 'overflow-hidden rounded-md border border-error/40',
-    head: 'flex flex-col gap-1 bg-error/10 px-3 py-2.5',
-    type: 'font-mono text-xs font-semibold text-error',
-    message: 'font-mono text-xs break-words text-surface',
-    meta: 'text-2xs text-muted',
-    frames: 'flex flex-col py-1 font-mono text-2xs',
-    frame: 'grid grid-cols-[minmax(0,14rem)_1fr] gap-x-3 px-3 py-1 data-[app=false]:text-muted',
-    function: 'truncate data-[app=true]:font-semibold data-[app=true]:text-surface',
-    location: 'truncate text-muted',
+    root: 'flex flex-col gap-2',
+    head: 'flex items-start gap-3',
+    heading: 'flex min-w-0 flex-1 flex-col gap-0.5',
+    cause: 'text-2xs font-medium text-muted',
+    type: 'text-sm font-semibold text-surface',
+    message: 'text-sm break-words text-surface',
+    tags: 'flex flex-wrap items-center gap-1.5 pt-1',
+    tag: 'rounded border border-border px-1.5 py-px text-2xs text-muted',
+    unhandled: 'rounded bg-error/10 px-1.5 py-px text-2xs font-medium text-error',
+    frames: 'flex flex-col overflow-hidden rounded-md border border-border',
+    frame:
+      'relative flex flex-col gap-0.5 border-b border-border px-3 py-2 last:border-b-0 data-[threw=true]:bg-error/5',
+    threw: 'absolute inset-y-0 inset-s-0 w-0.5 bg-error',
+    function: 'font-mono text-xs font-semibold break-all text-surface',
+    path: 'font-mono text-2xs break-all text-muted',
+    file: 'text-surface',
+    library: 'flex flex-col border-b border-border bg-hover/50 last:border-b-0',
+    libraryFrame: 'flex flex-wrap gap-x-2 px-3 py-1 font-mono text-2xs text-muted',
     folded:
-      'flex w-full cursor-pointer items-center gap-1.5 px-3 py-1 text-start text-2xs text-muted hover:text-surface',
-    unresolved: 'border-t border-border px-3 py-2 text-2xs text-muted'
+      'flex w-full cursor-pointer items-center gap-1.5 px-3 py-1.5 text-start text-2xs text-muted hover:text-surface',
+    footer: 'text-2xs text-muted'
   }
 } as const
 

@@ -1,6 +1,11 @@
 import { compact } from 'es-toolkit'
 
-import type { InboxFrame, InboxReport, ReportStatus } from '@open-pencil/feedback/contract'
+import type {
+  InboxException,
+  InboxFrame,
+  InboxReport,
+  ReportStatus
+} from '@open-pencil/feedback/contract'
 
 export const REPORT_STATUS_LABELS: Record<
   ReportStatus,
@@ -69,12 +74,33 @@ export function beforeReport(timestamp: string | null, receivedAt: string): stri
 }
 
 /** Where a frame points: its file, shortened to the path within the app, with line and column. */
-export function frameLocation(frame: InboxFrame): string {
-  if (!frame.file) return ''
-  const file = frame.file
+/** Where a frame points, split so its file name can stand out of the folders before it. */
+export function frameLocation(frame: InboxFrame): {
+  folder: string
+  file: string
+  position: string
+} {
+  const path = (frame.file ?? '')
     .replace(/^(?:webpack|vite):\/\/\/?/, '')
     .replace(/^https?:\/\/[^/]+\//, '')
-  return compact([file, frame.line, frame.column]).join(':')
+  const slash = path.lastIndexOf('/') + 1
+  return {
+    folder: path.slice(0, slash),
+    file: path.slice(slash),
+    position: compact([frame.line, frame.column])
+      .map((part) => `:${part}`)
+      .join('')
+  }
+}
+
+/** An exception as a JavaScript engine prints it, for pasting into an issue or a search. */
+export function exceptionText(exception: InboxException): string {
+  const frames = exception.frames.map((frame) => {
+    const { folder, file, position } = frameLocation(frame)
+    const where = `${folder}${file}${position}`
+    return `    at ${compact([frame.function, where && `(${where})`]).join(' ') || '<unknown>'}`
+  })
+  return [compact([exception.type, exception.message]).join(': '), ...frames].join('\n')
 }
 
 /** A step's level as a glyph: errors and warnings stand out, the rest stay quiet. */
