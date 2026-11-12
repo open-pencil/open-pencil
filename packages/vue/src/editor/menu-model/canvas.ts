@@ -12,7 +12,7 @@ type CanvasMenuCommand =
   | 'selection.componentSetAction'
   | 'selection.instanceActions'
   | 'selection.iconActions'
-  | 'selection.ungroupWhenGroup'
+  | 'selection.ungroupWhenAvailable'
   | 'selection.moveToPageWhenAvailable'
   | 'selection.arrangeWhenAvailable'
 
@@ -43,7 +43,7 @@ const CANVAS_MENU_GROUPS = [
   [
     'selection.group',
     'selection.frameSelection',
-    'selection.ungroupWhenGroup',
+    'selection.ungroupWhenAvailable',
     'selection.wrapInAutoLayout',
     'selection.toggleMask',
     'selection.flatten',
@@ -135,8 +135,10 @@ function conditionalCommand(command: CanvasMenuCommand, options: CanvasMenuOptio
       return instanceItems(options)
     case 'selection.iconActions':
       return iconItems(options)
-    case 'selection.ungroupWhenGroup':
-      return options.selection.isGroup.value ? [options.commandMenuItem('selection.ungroup')] : []
+    case 'selection.ungroupWhenAvailable':
+      return options.selection.canUngroup.value
+        ? [options.commandMenuItem('selection.ungroup')]
+        : []
     default:
       return [options.commandMenuItem(command)]
   }
