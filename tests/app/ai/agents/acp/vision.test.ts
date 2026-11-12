@@ -71,6 +71,19 @@ describe('analyzing images with a coding agent', () => {
     expect(fake.kills()).toBe(1)
   })
 
+  test('fails, and stops the agent, when the agent never answers the prompt', async () => {
+    const fake = fakeOneOffAgent({ stalls: { on: 'prompt', as: 'hangs' } })
+    await expect(
+      analyzeImagesWithAgent(agent, {
+        instruction: 'Look',
+        images,
+        startup: fake.startup,
+        answerTimeoutMs: 20
+      })
+    ).rejects.toThrow()
+    expect(fake.kills()).toBe(1)
+  })
+
   test('stopping while the agent answers stops the agent', async () => {
     const fake = fakeOneOffAgent({ stalls: { on: 'prompt', as: 'hangs' } })
     const stop = new AbortController()

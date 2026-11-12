@@ -3,7 +3,10 @@ import type { ACPAgentDef } from '@open-pencil/core/constants'
 import type { ACPProcess } from '@/app/ai/agents/acp/process'
 import { createDeferred } from '@/app/runtime/deferred'
 
-/** How long each startup request may take; resuming starts the agent's CLI, which is slowest. */
+/**
+ * How long an agent may take to answer one request: each startup request, where resuming starts
+ * the agent's CLI, which is slowest, and a one-off agent's prompt.
+ */
 export const AGENT_START_TIMEOUT_MS = 60_000
 
 /**

@@ -5,7 +5,11 @@ import type { ACPAgentDef } from '@open-pencil/core/constants'
 
 import { agentModels, chooseAgentModel, type AgentModels } from '@/app/ai/agents/acp/models'
 import { spawnACPProcess } from '@/app/ai/agents/acp/process'
-import { boundAgentStart } from '@/app/ai/agents/acp/startup'
+import {
+  AGENT_START_TIMEOUT_MS,
+  boundAgentStart,
+  withinDeadline
+} from '@/app/ai/agents/acp/startup'
 import { resolveSpawnTarget } from '@/app/ai/agents/setup/discovery'
 import { agentWorkspace } from '@/app/ai/agents/setup/native'
 
@@ -31,6 +35,8 @@ export interface OneOffAgentOptions {
   onUpdate?: (update: SessionUpdate) => void
   startup?: OneOffStartup
   startTimeoutMs?: number
+  /** How long a request after the start may take to answer; defaults to the startup limit. */
+  answerTimeoutMs?: number
 }
 
 /** An agent started for one job, with a session of its own that has no OpenPencil tools. */
@@ -41,8 +47,9 @@ export interface OneOffAgentSession {
   /** The session the agent opened, with the models it offers. */
   opened: NewSessionResponse
   /**
-   * The request's answer, unless the agent exits or `signal` stops it first. The SDK leaves
-   * requests pending when the agent's process exits, so a request that waits on one needs this.
+   * The request's answer, unless the agent exits, `signal` stops it, or the agent does not answer
+   * within the deadline. The SDK leaves requests pending when the agent's process exits, so a
+   * request that waits on one needs this.
    */
   untilStopped<T>(request: Promise<T>): Promise<T>
   /** Stops the agent. */
@@ -61,7 +68,8 @@ export async function startAgentSession(
     signal,
     onUpdate,
     startup = DEFAULT_STARTUP,
-    startTimeoutMs
+    startTimeoutMs,
+    answerTimeoutMs = AGENT_START_TIMEOUT_MS
   }: OneOffAgentOptions = {}
 ): Promise<OneOffAgentSession> {
   const { bounded, stoppedByUser, launch } = boundAgentStart(agent, {
@@ -117,7 +125,14 @@ export async function startAgentSession(
       connection,
       imageInput: initialized.agentCapabilities?.promptCapabilities?.image === true,
       opened,
-      untilStopped: (request) => Promise.race([request, stopped, stoppedByUser]),
+      untilStopped: (request) =>
+        withinDeadline(
+          request,
+          answerTimeoutMs,
+          `${agent.name} did not answer in time.`,
+          stopped,
+          stoppedByUser
+        ),
       close
     }
   } catch (e) {

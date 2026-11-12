@@ -12,7 +12,8 @@ export interface AgentImageAnalysisOptions extends Omit<OneOffAgentOptions, 'onU
 
 /**
  * What a coding agent says about images, from a session of its own that has no OpenPencil tools.
- * The agent exits, or `signal` stops it, instead of leaving the analysis waiting.
+ * The agent exits, `signal` stops it, or it does not answer in time, instead of leaving the
+ * analysis waiting.
  */
 export async function analyzeImagesWithAgent(
   agent: ACPAgentDef,
