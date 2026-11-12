@@ -1,4 +1,4 @@
-import { focusStyles } from './focus/styles'
+import { focusStyles } from '../focus/styles'
 
 const tabBarTheme = {
   slots: {
