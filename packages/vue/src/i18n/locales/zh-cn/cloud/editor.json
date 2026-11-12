@@ -253,6 +253,7 @@
   "shareLinkFailed": "此链接无法打开文档。请索取新链接。",
   "communityLinkFailed": "此文档已不在图库中。",
   "communityBanner": "社区示例，以只读方式打开。",
+  "communitySaveCopy": "保存副本",
   "documentLinkFailed": "无法打开此文档。请向所有者申请访问权限。",
   "documentLinkUnknownServer": "请先登录 {host}，再打开此链接。",
   "connectServerHeading": "连接团队的服务器",

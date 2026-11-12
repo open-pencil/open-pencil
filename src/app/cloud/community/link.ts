@@ -24,18 +24,36 @@ export const cloudCommunityTabs = shallowRef<ReadonlyMap<EditorStore, CloudCommu
   new Map()
 )
 
+/** What each gallery tab watches: the tab closing, and Save to moving it to a copy. */
+const tabWatchers = new Map<EditorStore, () => void>()
+
 function setCommunityTab(store: EditorStore, link: CloudCommunityLink | null): void {
   const next = new Map(cloudCommunityTabs.value)
   if (link) {
-    if (!next.has(store)) {
-      const stopWatching = watch(allTabs, () => {
-        if (getTabForStore(store)) return
-        stopWatching()
-        setCommunityTab(store, null)
+    if (!tabWatchers.has(store)) {
+      const closed = watch(allTabs, () => {
+        if (!getTabForStore(store)) setCommunityTab(store, null)
+      })
+      // Save to moves the tab to the copy it wrote, which is the visitor's own to edit.
+      const saved = watch(
+        () => store.getStorageBinding(),
+        (binding) => {
+          if (!binding) return
+          store.setReadOnly(false)
+          setCommunityTab(store, null)
+        }
+      )
+      tabWatchers.set(store, () => {
+        closed()
+        saved()
       })
     }
     next.set(store, link)
-  } else next.delete(store)
+  } else {
+    tabWatchers.get(store)?.()
+    tabWatchers.delete(store)
+    next.delete(store)
+  }
   cloudCommunityTabs.value = next
 }
 

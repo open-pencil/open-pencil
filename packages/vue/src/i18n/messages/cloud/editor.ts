@@ -390,6 +390,7 @@ export const cloudMessageDefaults = {
   shareLinkFailed: 'This link doesn’t open a document. Ask for a new one.',
   communityLinkFailed: 'This document isn’t in the gallery any more.',
   communityBanner: 'A community example, open read-only.',
+  communitySaveCopy: 'Save a copy',
   documentLinkFailed: 'Couldn’t open this document. Ask its owner for access.',
   documentLinkUnknownServer: params('Sign in to {host} first to open this link.'),
   shareOpenedInBrowser: 'Opened in the browser',

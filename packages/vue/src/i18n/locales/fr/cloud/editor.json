@@ -257,6 +257,7 @@
   "shareLinkFailed": "Ce lien n’ouvre aucun document. Demandez-en un nouveau.",
   "communityLinkFailed": "Ce document n’est plus dans la galerie.",
   "communityBanner": "Un exemple de la communauté, ouvert en lecture seule.",
+  "communitySaveCopy": "Enregistrer une copie",
   "documentLinkFailed": "Impossible d’ouvrir ce document. Demandez l’accès à son propriétaire.",
   "documentLinkUnknownServer": "Connectez-vous d’abord à {host} pour ouvrir ce lien.",
   "connectServerHeading": "Connecter le serveur de votre équipe",

@@ -345,6 +345,7 @@
   "shareLinkFailed": "هذا الرابط لا يفتح مستندًا. اطلب رابطًا جديدًا.",
   "communityLinkFailed": "لم يعد هذا المستند في المعرض.",
   "communityBanner": "مثال من المجتمع، مفتوح للقراءة فقط.",
+  "communitySaveCopy": "حفظ نسخة",
   "documentLinkFailed": "تعذّر فتح هذا المستند. اطلب الوصول من مالكه.",
   "documentLinkUnknownServer": "سجّل الدخول إلى {host} أولًا لفتح هذا الرابط.",
   "shareOpenedInBrowser": "فُتح في المتصفح",

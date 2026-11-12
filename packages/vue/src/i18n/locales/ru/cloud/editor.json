@@ -261,6 +261,7 @@
   "shareLinkFailed": "Эта ссылка не открывает документ. Попросите новую.",
   "communityLinkFailed": "Этого документа больше нет в галерее.",
   "communityBanner": "Пример из сообщества, открыт только для просмотра.",
+  "communitySaveCopy": "Сохранить копию",
   "documentLinkFailed": "Не удалось открыть документ. Попросите доступ у владельца.",
   "documentLinkUnknownServer": "Сначала войдите на {host}, чтобы открыть эту ссылку.",
   "connectServerHeading": "Подключите сервер команды",

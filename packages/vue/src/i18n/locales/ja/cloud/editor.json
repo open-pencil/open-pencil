@@ -253,6 +253,7 @@
   "shareLinkFailed": "このリンクではドキュメントを開けません。新しいリンクを依頼してください。",
   "communityLinkFailed": "このドキュメントはもうギャラリーにありません。",
   "communityBanner": "コミュニティのサンプルを読み取り専用で開いています。",
+  "communitySaveCopy": "コピーを保存",
   "documentLinkFailed": "このドキュメントを開けませんでした。オーナーにアクセス権を依頼してください。",
   "documentLinkUnknownServer": "このリンクを開くには、先に {host} にサインインしてください。",
   "connectServerHeading": "チームのサーバーに接続",
