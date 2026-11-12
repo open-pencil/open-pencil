@@ -8,6 +8,7 @@ import {
   parseCloudUnlinkAuthenticationMethod,
   parseCloudEmailChange,
   parseCloudProfileUpdate,
+  parseCloudLocaleUpdate,
   parseCloudPictureUpload,
   CLOUD_PICTURE_MAX_BYTES,
   parseCloudSessionRevoke,
@@ -65,279 +66,304 @@ export function createAccountRoutes(services: AccountRouteDependencies) {
   const accountAuthentication = createAccountAuthenticationService(services.auth, services.config)
   const { accountAction, activeAccountAction, verifiedMFAAction } =
     createAccountActions(resolveSession)
-  return new Hono<CloudAPIEnvironment>()
-    .get('/api/account/status', async (context) => {
-      const identity = await resolveIdentity(context.req.raw)
-      if (!identity) return context.json({ error: { code: 'unauthorized' as const } }, 401)
-      let enrollmentStatus = await enrollment.statusForEmail(identity.email)
-      if (services.config.enrollmentMode === 'approval' && !enrollmentStatus) {
-        await enrollment.request({ email: identity.email, name: identity.name })
-        enrollmentStatus = 'pending'
-      }
-      // Waiting or declined, from enrollment; null once the account may use the server.
-      const enrollmentState =
-        services.config.enrollmentMode !== 'approval' || enrollmentStatus === 'approved'
-          ? null
-          : (enrollmentStatus ?? 'pending')
-      // Terms come after approval: an account still waiting has nothing to accept yet.
-      let state: CloudAccountStatus['state'] = enrollmentState ?? 'active'
-      if (!enrollmentState && !(await services.terms.hasAccepted(identity.userId))) state = 'terms'
-      if (state === 'active') await workspaces.ensurePersonal(identity)
-      return context.json({ user: identity, state })
-    })
-    .post('/api/account/terms', validatedJSON(parseCloudTermsAcceptance), async (context) => {
-      const identity = await resolveIdentity(context.req.raw)
-      if (!identity) return context.json({ error: { code: 'unauthorized' as const } }, 401)
-      if (!services.terms.requiredVersion) {
-        return context.json({ error: { code: 'not_found' as const } }, 404)
-      }
-      // Accepting is for the version shown; one that changed meanwhile is read again first.
-      if (!(await services.terms.accept(identity.userId, context.req.valid('json').version))) {
-        return context.json({ error: { code: 'terms_changed' as const } }, 409)
-      }
-      return context.json({ ok: true as const })
-    })
-    .get('/api/account/mfa', async (context) => {
-      const actor = await resolveSession(context.req.raw)
-      if (!actor) return context.json({ error: { code: 'unauthorized' as const } }, 401)
-      const mfa = await services.auth.mfaStatus(context.req.raw.headers)
-      return mfa
-        ? context.json({ mfa })
-        : context.json({ error: { code: 'unauthorized' as const } }, 401)
-    })
-    .post('/api/account/mfa/totp/enable', validatedJSON(parseCloudMFAEnable), async (context) => {
-      const result = await activeAccountAction(context, () =>
-        services.auth.enableTOTP(context.req.raw.headers, context.req.valid('json').password)
-      )
-      return result instanceof Response ? result : context.json(result)
-    })
-    .post('/api/account/mfa/totp/verify', validatedJSON(parseCloudMFAVerify), (context) =>
-      verifiedMFAAction(context, resolveSession, () =>
-        services.auth.verifyTOTP(context.req.raw.headers, context.req.valid('json').code)
-      )
-    )
-    .post('/api/account/mfa/recovery/verify', validatedJSON(parseCloudMFAVerify), (context) =>
-      verifiedMFAAction(context, resolveIdentity, () =>
-        services.auth.verifyRecoveryCode(context.req.raw.headers, context.req.valid('json').code)
-      )
-    )
-    .post(
-      '/api/account/mfa/recovery/regenerate',
-      validatedJSON(parseCloudMFAEnable),
-      async (context) => {
-        const result = await activeAccountAction(context, () =>
-          services.auth.generateRecoveryCodes(
-            context.req.raw.headers,
-            context.req.valid('json').password
-          )
-        )
-        return result instanceof Response ? result : context.json({ backupCodes: result })
-      }
-    )
-    .post('/api/account/mfa/totp/disable', validatedJSON(parseCloudMFAEnable), async (context) => {
-      const actor = await resolveSession(context.req.raw)
-      if (!actor) return context.json({ error: { code: 'unauthorized' as const } }, 401)
-      if (actor.deploymentRole === 'admin' && services.config.deploymentAdminMFARequired) {
-        const passkeys = await services.auth.listPasskeys(context.req.raw.headers)
-        if (passkeys.length === 0) {
-          return context.json({ error: { code: 'mfa_required' as const } }, 403)
+  return (
+    new Hono<CloudAPIEnvironment>()
+      .get('/api/account/status', async (context) => {
+        const identity = await resolveIdentity(context.req.raw)
+        if (!identity) return context.json({ error: { code: 'unauthorized' as const } }, 401)
+        let enrollmentStatus = await enrollment.statusForEmail(identity.email)
+        if (services.config.enrollmentMode === 'approval' && !enrollmentStatus) {
+          await enrollment.request({ email: identity.email, name: identity.name })
+          enrollmentStatus = 'pending'
         }
-      }
-      const result = await accountAction(
-        () =>
-          services.auth.disableTOTP(context.req.raw.headers, context.req.valid('json').password),
-        context
-      )
-      return result instanceof Response ? result : context.json({ ok: true as const })
-    })
-    .get('/api/account/mfa/passkeys', async (context) => {
-      const actor = await resolveSession(context.req.raw)
-      if (!actor) return context.json({ error: { code: 'unauthorized' as const } }, 401)
-      return context.json({ passkeys: await services.auth.listPasskeys(context.req.raw.headers) })
-    })
-    .post(
-      '/api/account/mfa/passkeys/delete',
-      validatedJSON(parseCloudPasskeyDelete),
-      async (context) => {
+        // Waiting or declined, from enrollment; null once the account may use the server.
+        const enrollmentState =
+          services.config.enrollmentMode !== 'approval' || enrollmentStatus === 'approved'
+            ? null
+            : (enrollmentStatus ?? 'pending')
+        // Terms come after approval: an account still waiting has nothing to accept yet.
+        let state: CloudAccountStatus['state'] = enrollmentState ?? 'active'
+        if (!enrollmentState && !(await services.terms.hasAccepted(identity.userId)))
+          state = 'terms'
+        if (state === 'active') await workspaces.ensurePersonal(identity)
+        return context.json({ user: identity, state })
+      })
+      .post('/api/account/terms', validatedJSON(parseCloudTermsAcceptance), async (context) => {
+        const identity = await resolveIdentity(context.req.raw)
+        if (!identity) return context.json({ error: { code: 'unauthorized' as const } }, 401)
+        if (!services.terms.requiredVersion) {
+          return context.json({ error: { code: 'not_found' as const } }, 404)
+        }
+        // Accepting is for the version shown; one that changed meanwhile is read again first.
+        if (!(await services.terms.accept(identity.userId, context.req.valid('json').version))) {
+          return context.json({ error: { code: 'terms_changed' as const } }, 409)
+        }
+        return context.json({ ok: true as const })
+      })
+      .get('/api/account/mfa', async (context) => {
         const actor = await resolveSession(context.req.raw)
         if (!actor) return context.json({ error: { code: 'unauthorized' as const } }, 401)
-        const { id } = context.req.valid('json')
-        if (actor.deploymentRole === 'admin' && services.config.deploymentAdminMFARequired) {
-          // An administrator keeps at least one second factor: TOTP or another passkey.
-          const status = await services.auth.mfaStatus(context.req.raw.headers)
-          const passkeys = await services.auth.listPasskeys(context.req.raw.headers)
-          const otherPasskeys = passkeys.filter((passkey) => passkey.id !== id)
-          if (!status?.totpEnabled && otherPasskeys.length === 0) {
-            return context.json({ error: { code: 'mfa_required' as const } }, 403)
+        const mfa = await services.auth.mfaStatus(context.req.raw.headers)
+        return mfa
+          ? context.json({ mfa })
+          : context.json({ error: { code: 'unauthorized' as const } }, 401)
+      })
+      .post('/api/account/mfa/totp/enable', validatedJSON(parseCloudMFAEnable), async (context) => {
+        const result = await activeAccountAction(context, () =>
+          services.auth.enableTOTP(context.req.raw.headers, context.req.valid('json').password)
+        )
+        return result instanceof Response ? result : context.json(result)
+      })
+      .post('/api/account/mfa/totp/verify', validatedJSON(parseCloudMFAVerify), (context) =>
+        verifiedMFAAction(context, resolveSession, () =>
+          services.auth.verifyTOTP(context.req.raw.headers, context.req.valid('json').code)
+        )
+      )
+      .post('/api/account/mfa/recovery/verify', validatedJSON(parseCloudMFAVerify), (context) =>
+        verifiedMFAAction(context, resolveIdentity, () =>
+          services.auth.verifyRecoveryCode(context.req.raw.headers, context.req.valid('json').code)
+        )
+      )
+      .post(
+        '/api/account/mfa/recovery/regenerate',
+        validatedJSON(parseCloudMFAEnable),
+        async (context) => {
+          const result = await activeAccountAction(context, () =>
+            services.auth.generateRecoveryCodes(
+              context.req.raw.headers,
+              context.req.valid('json').password
+            )
+          )
+          return result instanceof Response ? result : context.json({ backupCodes: result })
+        }
+      )
+      .post(
+        '/api/account/mfa/totp/disable',
+        validatedJSON(parseCloudMFAEnable),
+        async (context) => {
+          const actor = await resolveSession(context.req.raw)
+          if (!actor) return context.json({ error: { code: 'unauthorized' as const } }, 401)
+          if (actor.deploymentRole === 'admin' && services.config.deploymentAdminMFARequired) {
+            const passkeys = await services.auth.listPasskeys(context.req.raw.headers)
+            if (passkeys.length === 0) {
+              return context.json({ error: { code: 'mfa_required' as const } }, 403)
+            }
+          }
+          const result = await accountAction(
+            () =>
+              services.auth.disableTOTP(
+                context.req.raw.headers,
+                context.req.valid('json').password
+              ),
+            context
+          )
+          return result instanceof Response ? result : context.json({ ok: true as const })
+        }
+      )
+      .get('/api/account/mfa/passkeys', async (context) => {
+        const actor = await resolveSession(context.req.raw)
+        if (!actor) return context.json({ error: { code: 'unauthorized' as const } }, 401)
+        return context.json({ passkeys: await services.auth.listPasskeys(context.req.raw.headers) })
+      })
+      .post(
+        '/api/account/mfa/passkeys/delete',
+        validatedJSON(parseCloudPasskeyDelete),
+        async (context) => {
+          const actor = await resolveSession(context.req.raw)
+          if (!actor) return context.json({ error: { code: 'unauthorized' as const } }, 401)
+          const { id } = context.req.valid('json')
+          if (actor.deploymentRole === 'admin' && services.config.deploymentAdminMFARequired) {
+            // An administrator keeps at least one second factor: TOTP or another passkey.
+            const status = await services.auth.mfaStatus(context.req.raw.headers)
+            const passkeys = await services.auth.listPasskeys(context.req.raw.headers)
+            const otherPasskeys = passkeys.filter((passkey) => passkey.id !== id)
+            if (!status?.totpEnabled && otherPasskeys.length === 0) {
+              return context.json({ error: { code: 'mfa_required' as const } }, 403)
+            }
+          }
+          const result = await accountAction(
+            () => services.auth.deletePasskey(context.req.raw.headers, id),
+            context
+          )
+          return result instanceof Response ? result : context.json({ ok: true as const })
+        }
+      )
+      .use('/api/account/authentication/*', requireActiveSession)
+      .use('/api/account/authentication/*', authenticatedMutationLimiter)
+      .post(
+        '/api/account/authentication/change-password',
+        validatedJSON(parseCloudPasswordChange),
+        async (context) => {
+          const result = await accountAction(
+            () =>
+              accountAuthentication.changePassword(
+                context.req.raw.headers,
+                context.req.valid('json')
+              ),
+            context
+          )
+          return result instanceof Response ? result : context.json({ ok: true as const })
+        }
+      )
+      .post(
+        '/api/account/authentication/link-social',
+        validatedJSON(parseCloudSocialLink),
+        async (context) => {
+          const result = await accountAction(
+            () =>
+              accountAuthentication.startSocialLink(
+                context.req.raw.headers,
+                context.req.valid('json')
+              ),
+            context
+          )
+          return result instanceof Response ? result : context.json({ url: result })
+        }
+      )
+      .post(
+        '/api/account/authentication/unlink',
+        validatedJSON(parseCloudUnlinkAuthenticationMethod),
+        async (context) => {
+          const result = await accountAction(
+            () =>
+              accountAuthentication.unlink(
+                context.req.raw.headers,
+                context.req.valid('json').methodId
+              ),
+            context
+          )
+          return result instanceof Response ? result : context.json({ ok: true as const })
+        }
+      )
+      .use('/api/account/profile', requireActiveSession)
+      .use('/api/account/profile/*', requireActiveSession)
+      .use('/api/account/sessions', requireActiveSession)
+      .use('/api/account/sessions/*', requireActiveSession)
+      .use('/api/account/sign-ins', requireActiveSession)
+      .use('/api/account/deletion', services.requireAccountSession)
+      .use('/api/account/delete', services.requireAccountSession)
+      .use('/api/account/delete', authenticatedMutationLimiter)
+      .use('/api/account/profile', authenticatedMutationLimiter)
+      // An account awaiting approval is written to as well, so it can say its language too.
+      .use('/api/account/locale', services.requireAccountSession)
+      .use('/api/account/locale', authenticatedMutationLimiter)
+      .use('/api/account/profile/*', authenticatedMutationLimiter)
+      .use('/api/account/sessions/*', authenticatedMutationLimiter)
+      .get('/api/account/profile', async (context) => {
+        const profile = await services.auth.profile(context.req.raw.headers)
+        if (!profile) return context.json({ error: { code: 'unauthorized' as const } }, 401)
+        return context.json({
+          profile: {
+            ...profile,
+            createdAt: profile.createdAt.toISOString(),
+            emailChangeAvailable: services.auth.emailChangeAvailable
+          }
+        })
+      })
+      .post('/api/account/profile', validatedJSON(parseCloudProfileUpdate), async (context) => {
+        const result = await accountAction(
+          () => services.auth.updateProfile(context.req.raw.headers, context.req.valid('json')),
+          context
+        )
+        return result instanceof Response ? result : context.json({ ok: true as const })
+      })
+      // The app says which language it uses after signing in and whenever the person changes it.
+      .put('/api/account/locale', validatedJSON(parseCloudLocaleUpdate), async (context) => {
+        const result = await accountAction(
+          () => services.auth.setLocale(context.req.raw.headers, context.req.valid('json').locale),
+          context
+        )
+        return result instanceof Response ? result : context.json({ ok: true as const })
+      })
+      .put(
+        '/api/account/profile/picture',
+        bodyLimit({
+          maxSize: PICTURE_BODY_BYTES,
+          onError: (context) => context.json({ error: { code: 'picture_invalid' as const } }, 413)
+        }),
+        validatedJSON(parseCloudPictureUpload),
+        async (context) => {
+          const bytes = toUint8Array(context.req.valid('json').data)
+          try {
+            const image = await services.pictures.upload(context.get('actor').userId, bytes)
+            return context.json({ image })
+          } catch (error) {
+            if (!(error instanceof PictureInvalidError)) throw error
+            return context.json({ error: { code: 'picture_invalid' as const } }, 400)
           }
         }
-        const result = await accountAction(
-          () => services.auth.deletePasskey(context.req.raw.headers, id),
-          context
-        )
-        return result instanceof Response ? result : context.json({ ok: true as const })
-      }
-    )
-    .use('/api/account/authentication/*', requireActiveSession)
-    .use('/api/account/authentication/*', authenticatedMutationLimiter)
-    .post(
-      '/api/account/authentication/change-password',
-      validatedJSON(parseCloudPasswordChange),
-      async (context) => {
-        const result = await accountAction(
-          () =>
-            accountAuthentication.changePassword(
-              context.req.raw.headers,
-              context.req.valid('json')
-            ),
-          context
-        )
-        return result instanceof Response ? result : context.json({ ok: true as const })
-      }
-    )
-    .post(
-      '/api/account/authentication/link-social',
-      validatedJSON(parseCloudSocialLink),
-      async (context) => {
-        const result = await accountAction(
-          () =>
-            accountAuthentication.startSocialLink(
-              context.req.raw.headers,
-              context.req.valid('json')
-            ),
-          context
-        )
-        return result instanceof Response ? result : context.json({ url: result })
-      }
-    )
-    .post(
-      '/api/account/authentication/unlink',
-      validatedJSON(parseCloudUnlinkAuthenticationMethod),
-      async (context) => {
-        const result = await accountAction(
-          () =>
-            accountAuthentication.unlink(
-              context.req.raw.headers,
-              context.req.valid('json').methodId
-            ),
-          context
-        )
-        return result instanceof Response ? result : context.json({ ok: true as const })
-      }
-    )
-    .use('/api/account/profile', requireActiveSession)
-    .use('/api/account/profile/*', requireActiveSession)
-    .use('/api/account/sessions', requireActiveSession)
-    .use('/api/account/sessions/*', requireActiveSession)
-    .use('/api/account/sign-ins', requireActiveSession)
-    .use('/api/account/deletion', services.requireAccountSession)
-    .use('/api/account/delete', services.requireAccountSession)
-    .use('/api/account/delete', authenticatedMutationLimiter)
-    .use('/api/account/profile', authenticatedMutationLimiter)
-    .use('/api/account/profile/*', authenticatedMutationLimiter)
-    .use('/api/account/sessions/*', authenticatedMutationLimiter)
-    .get('/api/account/profile', async (context) => {
-      const profile = await services.auth.profile(context.req.raw.headers)
-      if (!profile) return context.json({ error: { code: 'unauthorized' as const } }, 401)
-      return context.json({
-        profile: {
-          ...profile,
-          createdAt: profile.createdAt.toISOString(),
-          emailChangeAvailable: services.auth.emailChangeAvailable
-        }
+      )
+      .delete('/api/account/profile/picture', async (context) => {
+        await services.pictures.remove(context.get('actor').userId)
+        return context.json({ ok: true as const })
       })
-    })
-    .post('/api/account/profile', validatedJSON(parseCloudProfileUpdate), async (context) => {
-      const result = await accountAction(
-        () => services.auth.updateProfile(context.req.raw.headers, context.req.valid('json')),
-        context
-      )
-      return result instanceof Response ? result : context.json({ ok: true as const })
-    })
-    .put(
-      '/api/account/profile/picture',
-      bodyLimit({
-        maxSize: PICTURE_BODY_BYTES,
-        onError: (context) => context.json({ error: { code: 'picture_invalid' as const } }, 413)
-      }),
-      validatedJSON(parseCloudPictureUpload),
-      async (context) => {
-        const bytes = toUint8Array(context.req.valid('json').data)
-        try {
-          const image = await services.pictures.upload(context.get('actor').userId, bytes)
-          return context.json({ image })
-        } catch (error) {
-          if (!(error instanceof PictureInvalidError)) throw error
-          return context.json({ error: { code: 'picture_invalid' as const } }, 400)
-        }
-      }
-    )
-    .delete('/api/account/profile/picture', async (context) => {
-      await services.pictures.remove(context.get('actor').userId)
-      return context.json({ ok: true as const })
-    })
-    .post('/api/account/profile/email', validatedJSON(parseCloudEmailChange), async (context) => {
-      const result = await accountAction(
-        () => accountAuthentication.changeEmail(context.req.raw.headers, context.req.valid('json')),
-        context
-      )
-      return result instanceof Response ? result : context.json({ ok: true as const })
-    })
-    .get('/api/account/sessions', async (context) => {
-      const sessions = await services.auth.sessions(context.req.raw.headers)
-      if (!sessions) return context.json({ error: { code: 'unauthorized' as const } }, 401)
-      return context.json({ sessions })
-    })
-    .post(
-      '/api/account/sessions/revoke',
-      validatedJSON(parseCloudSessionRevoke),
-      async (context) => {
+      .post('/api/account/profile/email', validatedJSON(parseCloudEmailChange), async (context) => {
         const result = await accountAction(
           () =>
-            services.auth.revokeSession(
-              context.req.raw.headers,
-              context.req.valid('json').sessionId
-            ),
+            accountAuthentication.changeEmail(context.req.raw.headers, context.req.valid('json')),
           context
         )
         return result instanceof Response ? result : context.json({ ok: true as const })
-      }
-    )
-    .post('/api/account/sessions/revoke-others', async (context) => {
-      const result = await accountAction(
-        () => services.auth.revokeOtherSessions(context.req.raw.headers),
-        context
+      })
+      .get('/api/account/sessions', async (context) => {
+        const sessions = await services.auth.sessions(context.req.raw.headers)
+        if (!sessions) return context.json({ error: { code: 'unauthorized' as const } }, 401)
+        return context.json({ sessions })
+      })
+      .post(
+        '/api/account/sessions/revoke',
+        validatedJSON(parseCloudSessionRevoke),
+        async (context) => {
+          const result = await accountAction(
+            () =>
+              services.auth.revokeSession(
+                context.req.raw.headers,
+                context.req.valid('json').sessionId
+              ),
+            context
+          )
+          return result instanceof Response ? result : context.json({ ok: true as const })
+        }
       )
-      return result instanceof Response ? result : context.json({ ok: true as const })
-    })
-    .get('/api/account/sign-ins', async (context) => {
-      const signIns = await services.auth.signIns(context.req.raw.headers)
-      if (!signIns) return context.json({ error: { code: 'unauthorized' as const } }, 401)
-      return context.json({ signIns })
-    })
-    .get('/api/account/deletion', async (context) => {
-      return context.json({ deletion: await services.deletion.plan(context.get('actor').userId) })
-    })
-    .post('/api/account/delete', validatedJSON(parseCloudAccountDelete), async (context) => {
-      const result = await accountAction(
-        () =>
-          services.auth.deleteAccount(context.req.raw.headers, context.req.valid('json').password),
-        context
-      )
-      if (result instanceof Response) return result
-      // The session is gone with the account; the cookie that named it goes too.
-      for (const cookie of result.getSetCookie()) {
-        context.header('Set-Cookie', cookie, { append: true })
-      }
-      return context.json({ ok: true as const })
-    })
-    .get('/api/account/authentication', async (context) => {
-      const result = await accountAction(
-        () => accountAuthentication.methods(context.req.raw.headers),
-        context
-      )
-      return result instanceof Response ? result : context.json(result)
-    })
+      .post('/api/account/sessions/revoke-others', async (context) => {
+        const result = await accountAction(
+          () => services.auth.revokeOtherSessions(context.req.raw.headers),
+          context
+        )
+        return result instanceof Response ? result : context.json({ ok: true as const })
+      })
+      .get('/api/account/sign-ins', async (context) => {
+        const signIns = await services.auth.signIns(context.req.raw.headers)
+        if (!signIns) return context.json({ error: { code: 'unauthorized' as const } }, 401)
+        return context.json({ signIns })
+      })
+      .get('/api/account/deletion', async (context) => {
+        return context.json({ deletion: await services.deletion.plan(context.get('actor').userId) })
+      })
+      .post('/api/account/delete', validatedJSON(parseCloudAccountDelete), async (context) => {
+        const result = await accountAction(
+          () =>
+            services.auth.deleteAccount(
+              context.req.raw.headers,
+              context.req.valid('json').password
+            ),
+          context
+        )
+        if (result instanceof Response) return result
+        // The session is gone with the account; the cookie that named it goes too.
+        for (const cookie of result.getSetCookie()) {
+          context.header('Set-Cookie', cookie, { append: true })
+        }
+        return context.json({ ok: true as const })
+      })
+      .get('/api/account/authentication', async (context) => {
+        const result = await accountAction(
+          () => accountAuthentication.methods(context.req.raw.headers),
+          context
+        )
+        return result instanceof Response ? result : context.json(result)
+      })
+  )
 }
 
 /** The account routes' types, for the portal's typed client. */

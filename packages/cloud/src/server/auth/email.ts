@@ -1,3 +1,4 @@
+import type { CloudLocale } from '#cloud/contract'
 import type { TwoStepChange } from '#cloud/email'
 import type { TransactionalEmailService } from '#cloud/server/email'
 import { sha256 } from '@noble/hashes/sha2.js'
@@ -10,6 +11,8 @@ export type AuthenticationEmailService = {
     url: string
     token: string
     purpose?: 'account' | 'change'
+    /** The account's language while it's being made, before Cloud can look it up. */
+    locale?: CloudLocale | null
   }): Promise<void>
   sendPasswordReset(input: {
     email: string
@@ -62,6 +65,7 @@ export function createAuthenticationEmailService(
         idempotencyKey: `email-verification/${input.email.toLowerCase()}/${tokenHash(input.token)}`,
         kind: 'email-verification',
         recipientEmail: input.email,
+        locale: input.locale,
         payload: { name: input.name, actionURL: input.url, purpose: input.purpose }
       })
     },

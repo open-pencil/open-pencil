@@ -5,6 +5,8 @@ import { rateLimited, validatedJSON } from '#feedback/http/request'
 import { Hono, type Context } from 'hono'
 import * as v from 'valibot'
 
+import { acceptedLocale } from '@open-pencil/cloud/email'
+
 import { confirmationEmail } from './email/confirmation'
 import { actionPage, page } from './pages'
 import { confirmSignup, leaveWaitlist, signUp } from './signup'
@@ -57,10 +59,13 @@ export function waitlistRoutes(services: FeedbackServices) {
             await c.env.EMAIL.send({
               from: { name: 'OpenPencil', email: c.env.EMAIL_FROM },
               to: signup.email,
-              ...(await confirmationEmail({
-                confirmURL: linkTo(c, CONFIRM_PATH, token),
-                leaveURL: linkTo(c, LEAVE_PATH, token)
-              }))
+              ...(await confirmationEmail(
+                {
+                  confirmURL: linkTo(c, CONFIRM_PATH, token),
+                  leaveURL: linkTo(c, LEAVE_PATH, token)
+                },
+                acceptedLocale(c.req.header('accept-language')) ?? 'en'
+              ))
             })
           }
           return c.body(null, 202)

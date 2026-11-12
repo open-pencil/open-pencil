@@ -2,6 +2,7 @@ import type {
   CloudAccessToken,
   CloudAccessTokenCreate,
   CloudAccountSession,
+  CloudLocale,
   CloudSignIn
 } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth/session'
@@ -89,6 +90,8 @@ export interface CloudAuthAdapter {
   emailChangeAvailable: boolean
   profile(headers: Headers): Promise<CloudAccountProfile | null>
   updateProfile(headers: Headers, input: { name: string }): Promise<void>
+  /** The language Cloud writes to the account in, as the app says it uses. */
+  setLocale(headers: Headers, locale: CloudLocale): Promise<void>
   /** Sends the confirmation to the new address and tells the old one which address it is. */
   changeEmail(headers: Headers, input: { newEmail: string; callbackURL: string }): Promise<void>
   sessions(headers: Headers): Promise<CloudAccountSession[] | null>

@@ -1,3 +1,4 @@
+import type { CloudLocale } from '#cloud/contract'
 import type {
   RenderedTransactionalEmail,
   TransactionalEmailKind,
@@ -28,6 +29,11 @@ export type EnqueueTransactionalEmailInput<Kind extends TransactionalEmailKind> 
   kind: Kind
   recipientEmail: string
   payload: TransactionalEmailPayloadByKind[Kind]
+  /**
+   * The language to write in when the recipient has no account that chose one: the inviter's for
+   * an invitation, or the account's own while signing up, before it's saved. English otherwise.
+   */
+  locale?: CloudLocale | null
 }
 
 export type TransactionalEmailDeliveryOptions = {

@@ -1,6 +1,14 @@
-export { renderTransactionalEmail } from './render'
-export { emailLayout, type EmailLayoutProps } from './templates/brand'
+export {
+  acceptedLocale,
+  emailLocalization,
+  type EmailLocalization,
+  type EmailMessages
+} from './i18n'
+export { emailMessageDefaults } from './messages'
+export { renderEmail, renderTransactionalEmail } from './render'
 export { transactionalEmailContentSchema } from './schema'
+export type { EmailContent, EmailTemplate } from './templates/content'
+export { waitlistConfirmation } from './templates/waitlist'
 export type {
   AdminEnrollmentNotificationPayload,
   DocumentInvitationEmailPayload,

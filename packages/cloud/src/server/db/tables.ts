@@ -1,5 +1,10 @@
 import type { EnrollmentStatus } from '#cloud/admin/enrollment/service'
-import type { CloudSignInMethod, DocumentPermission, WorkspaceRole } from '#cloud/contract'
+import type {
+  CloudLocale,
+  CloudSignInMethod,
+  DocumentPermission,
+  WorkspaceRole
+} from '#cloud/contract'
 import type { TransactionalEmailKind, TransactionalEmailPayloadByKind } from '#cloud/email'
 import type { Account, Session } from 'better-auth'
 import type { ColumnType, Generated, Insertable, Selectable, Updateable } from 'kysely'
@@ -206,6 +211,8 @@ export interface AuthUserTable {
   banExpires: TimestampColumn | null
   /** Unset on accounts that never turned two-step sign-in on. */
   twoFactorEnabled: Generated<boolean | null>
+  /** The language Cloud writes to the account in; unset is English. */
+  locale: Generated<CloudLocale | null>
   createdAt: TimestampColumn
   updatedAt: TimestampColumn
 }
@@ -354,6 +361,8 @@ export interface TransactionalEmailTable {
   kind: TransactionalEmailKind
   recipientEmailNormalized: string
   payloadEncrypted: string | null
+  /** The language the email is written in. */
+  locale: Generated<CloudLocale>
   status: TransactionalEmailStatus
   attemptCount: Generated<number>
   nextAttemptAt: TimestampColumn

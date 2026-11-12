@@ -223,7 +223,7 @@ export function createWorkspaceMemberService(
     if (existing) throw new WorkspaceAlreadyMemberError()
     const inviter = await database
       .selectFrom('user')
-      .select('name')
+      .select(['name', 'locale'])
       .where('id', '=', userId)
       .executeTakeFirst()
     const id = crypto.randomUUID()
@@ -260,8 +260,10 @@ export function createWorkspaceMemberService(
           idempotencyKey: `workspace-invitation/${id}`,
           kind: 'workspace-invitation',
           recipientEmail: input.email,
+          // Someone without an account yet reads the inviter's language.
+          locale: inviter?.locale,
           payload: {
-            inviterName: inviter?.name ?? 'An OpenPencil user',
+            inviterName: inviter?.name ?? null,
             workspaceName: workspace.name,
             role: input.role,
             expiresAt: expiresAt.toISOString(),
