@@ -1,10 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import {
-  progressComponent,
-  sliderComponent,
-  tabsOfTabSets
-} from '#dom-css-tests/behaviours/fixtures'
+import { progressComponent, sliderComponent } from '#dom-css-tests/behaviours/fixtures/fields'
+import { tabsOfTabSets } from '#dom-css-tests/behaviours/fixtures/groups'
 import { behaviourControls, booleanOf } from '#dom-css/behaviours/controls'
 import { controlRoles } from '#dom-css/behaviours/roles'
 

@@ -16,5 +16,6 @@
   "hand": "Mano",
   "comment": "Comentario",
   "eyedropper": "Cuentagotas",
-  "eyedropperSample": "Tomar un color del lienzo"
+  "eyedropperSample": "Tomar un color del lienzo",
+  "scale": "Escalar"
 }

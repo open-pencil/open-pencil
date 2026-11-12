@@ -1,8 +1,11 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { asTextNode, createAPI } from '#core-tests/helpers/figma-api'
+
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
+
+import { graphOf } from '#core/figma-api/graph'
 beforeAll(() => registerTestFont())
 
 // Expected values were observed by running the same scripts in live Figma on 2026-10-06.
@@ -145,7 +148,7 @@ describe('layout sizing', () => {
     child.layoutSizingVertical = 'FIXED'
     child.resize(375, 44)
     expect(child.layoutSizingVertical).toBe('FIXED')
-    const raw = getNodeOrThrow(api.graph, child.id)
+    const raw = getNodeOrThrow(graphOf(api), child.id)
     expect(raw.counterAxisSizing).toBe('FIXED')
   })
 
@@ -160,7 +163,7 @@ describe('layout sizing', () => {
     child.layoutSizingHorizontal = 'FIXED'
     child.resize(200, 600)
     expect(child.layoutSizingHorizontal).toBe('FIXED')
-    const raw = getNodeOrThrow(api.graph, child.id)
+    const raw = getNodeOrThrow(graphOf(api), child.id)
     expect(raw.counterAxisSizing).toBe('FIXED')
   })
 })

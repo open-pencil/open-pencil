@@ -1,3 +1,5 @@
+import { useEventListener } from '@vueuse/core'
+
 import { IS_BROWSER } from '@open-pencil/core/constants'
 
 import { resumingAgent } from '@/app/ai/agents/acp/session'
@@ -32,6 +34,7 @@ import {
   setUnsplashKey,
   setRememberCredentials
 } from '@/app/settings/credentials/media'
+import { onBeforeReload } from '@/app/shell/reload'
 
 const chatSession = createChatSessionManager({
   isConfigured,
@@ -55,6 +58,20 @@ const history = createConversationHistory({
 })
 
 registerAIChatEffects(chatSession.markTransportDirty)
+
+// Stop the reply and save the conversation before the page goes. An announced reload waits for
+// it; `pagehide` cannot, so other reloads save what they can.
+onBeforeReload(({ asks }) =>
+  // When leaving asks first, the conversation is saved before the question and the chat keeps
+  // running for a user who stays; leaving stops the reply from `pagehide`.
+  asks ? history.flush() : history.dispose()
+)
+if (IS_BROWSER) {
+  useEventListener(window, 'pagehide', (event) => {
+    // A page kept for back navigation comes back with its chat.
+    if (!event.persisted) void history.dispose()
+  })
+}
 
 if (IS_BROWSER) {
   exposeChatTransportOverride((factory) => {

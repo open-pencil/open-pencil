@@ -5,13 +5,13 @@ import type { SceneNode, SharedStyleKind } from '@open-pencil/scene-graph'
 import { sharedStyleRefKey } from '@open-pencil/scene-graph/shared-styles'
 
 import {
-  graph,
   raw,
   strokeOwner,
   updateNode,
   type NodeProxyInternals,
   type ProxyThis
-} from '#core/figma-api/accessor-utils'
+} from '#core/figma-api/accessors/utils'
+import { graphOf } from '#core/figma-api/graph'
 import { bindStyleVariables, STYLE_NOT_FOUND, styleChanges } from '#core/figma-api/styles/apply'
 import { getTextStyle } from '#core/figma-api/text/style'
 import { parseFigma } from '#core/figma-api/validation'
@@ -47,7 +47,7 @@ function applyStyle(
   refusal: string
 ): void {
   const holder = kind === 'stroke' ? strokeOwner(target, internals) : target
-  const scene = graph(target, internals)
+  const scene = graphOf(target)
   const changes = styleChanges(scene, raw(holder, internals), kind, styleId)
   if (!changes) throw new Error(refusal)
   updateNode(holder, internals, changes)

@@ -7,6 +7,8 @@ import satisfies from 'spdx-satisfies'
 import * as v from 'valibot'
 import type { Plugin, PluginOption } from 'vite'
 
+import { maxOf } from '@open-pencil/scene-graph/arrays'
+
 /**
  * The licenses a bundled npm package may carry. EPL-2.0 and MPL-2.0 are file-level copyleft, met
  * by notices that name each package's source.
@@ -39,6 +41,8 @@ export function licenseAllowed({ name, license: spdx }: Pick<Dependency, 'name' 
   }
 }
 
+const NOTICES = 'THIRD-PARTY-NOTICES.md'
+
 const manifestSchema = v.object({
   name: v.optional(v.string()),
   version: v.optional(v.string()),
@@ -52,14 +56,31 @@ function readManifest(directory: string) {
   return v.parse(v.pipe(v.string(), v.parseJson(), manifestSchema), text)
 }
 
-/** The names of the workspace's own packages, which are OpenPencil's, not third parties'. */
-function workspacePackages(root: string): Set<string> {
+/** The workspace's own packages by name, with their directories. */
+function workspacePackages(root: string): Map<string, string> {
   const directories = readManifest(root).workspaces ?? []
-  return new Set(directories.flatMap((directory) => readManifest(join(root, directory)).name ?? []))
+  return new Map(
+    directories.flatMap((directory) => {
+      const { name } = readManifest(join(root, directory))
+      return name ? [[name, join(root, directory)] as const] : []
+    })
+  )
+}
+
+/**
+ * The notices of a workspace package built from one of OpenPencil's forks, such as CanvasKit or
+ * Taffy: the fork's release, which the package pins in `release.json`, carries the licenses of
+ * what it compiled in. Null for the workspace's own code.
+ */
+function forkNotices(directory: string): string | null {
+  if (!existsSync(join(directory, 'release.json'))) return null
+  const notices = join(directory, 'dist', NOTICES)
+  if (!existsSync(notices)) throw new Error(`${notices} is missing; run bun install`)
+  return readFileSync(notices, 'utf8')
 }
 
 function fenced(text: string): string {
-  const longest = Math.max(2, ...[...text.matchAll(/`+/g)].map(([run]) => run.length))
+  const longest = maxOf([2, ...[...text.matchAll(/`+/g)].map(([run]) => run.length)])
   const fence = '`'.repeat(longest + 1)
   return `${fence}text\n${text.trimEnd()}\n${fence}`
 }
@@ -75,8 +96,6 @@ function section(dependency: NoticeEntry): string {
     ...(texts.length > 0 ? texts.map(fenced) : ['The package carries no license file.'])
   ].join('\n\n')
 }
-
-const NOTICES = 'THIRD-PARTY-NOTICES.md'
 
 /** The directory a package resolves to from `from`, by Node's lookup through `node_modules`. */
 function packageDirectory(name: string, from: string): string {
@@ -140,7 +159,8 @@ function serviceWorkerPackages(outDir: string): NoticeEntry[] {
  * Writes `THIRD-PARTY-NOTICES.md` into `outDir` with the license of every npm package the build
  * bundles, the service worker's Workbox packages included, which the licenses ask a redistributed
  * bundle to carry, and fails the build on a
- * license outside `ALLOWED_LICENSES`. The workspace's own packages are left out.
+ * license outside `ALLOWED_LICENSES`. The workspace's own packages are left out, apart from the
+ * builds of OpenPencil's forks, which carry their forks' notices.
  */
 export function thirdPartyNoticesPlugin(root: string, outDir: string): PluginOption[] {
   const own = workspacePackages(root)
@@ -175,7 +195,13 @@ export function thirdPartyNoticesPlugin(root: string, outDir: string): PluginOpt
             '# Third-party notices',
             'This app bundles the npm packages below, each at the version listed and under the license it is listed with.',
             ...dependencies
-              .filter((dependency) => !own.has(dependency.name ?? ''))
+              .flatMap((dependency) => {
+                const directory = own.get(dependency.name ?? '')
+                if (directory === undefined) return [dependency]
+                // A fork's build is third-party code, under its own license and its notices.
+                const noticeText = forkNotices(directory)
+                return noticeText === null ? [] : [{ ...dependency, noticeText }]
+              })
               .toSorted((a, b) => `${a.name}@${a.version}`.localeCompare(`${b.name}@${b.version}`))
               .map(section)
           ].join('\n\n')

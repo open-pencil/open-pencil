@@ -10,7 +10,7 @@ import { toolCallState } from '@/components/chat/tool/state'
 import AppBadge from '@/components/ui/feedback/AppBadge.vue'
 import { collapsibleContentMotion } from '@/theme/collapsible/collapsible'
 
-import { chatToolTheme } from './ui'
+import { chatToolGroupTheme } from './ui'
 
 /** Runs up to this long stay expanded; longer ones fold all but the latest call. */
 const INLINE_CALLS = 3
@@ -18,7 +18,7 @@ const INLINE_CALLS = 3
 /** `undone`: the calls whose edit the user undid. */
 const { parts, undone } = defineProps<{ parts: ToolCallPart[]; undone?: ReadonlySet<string> }>()
 const { ai } = useI18n()
-const ui = chatToolTheme()
+const ui = chatToolGroupTheme()
 
 const earlier = computed(() => parts.slice(0, -1))
 const latest = computed(() => parts.at(-1))
@@ -43,18 +43,18 @@ const label = computed(() => {
     />
   </div>
   <div v-else class="space-y-1.5">
-    <CollapsibleRoot :class="ui.group()" data-slot="chat-tool-group">
-      <CollapsibleTrigger :class="ui.groupTrigger()" :aria-label="label">
-        <icon-lucide-list-checks :class="ui.groupIcon()" aria-hidden="true" />
-        <span :class="ui.groupNames()" aria-hidden="true">{{ names }}</span>
-        <AppBadge v-if="failed" :ui="{ base: ui.groupFailed() }" aria-hidden="true">
+    <CollapsibleRoot :class="ui.root()" data-slot="chat-tool-group">
+      <CollapsibleTrigger :class="ui.trigger()" :aria-label="label">
+        <icon-lucide-list-checks :class="ui.icon()" aria-hidden="true" />
+        <span :class="ui.names()" aria-hidden="true">{{ names }}</span>
+        <AppBadge v-if="failed" :ui="{ base: ui.failed() }" aria-hidden="true">
           {{ ai.toolStepsFailed({ count: failed }) }}
         </AppBadge>
         <AppBadge aria-hidden="true">{{ earlier.length }}</AppBadge>
         <icon-lucide-chevron-down :class="ui.chevron()" aria-hidden="true" />
       </CollapsibleTrigger>
       <CollapsibleContent :class="collapsibleContentMotion">
-        <div :class="ui.groupItems()">
+        <div :class="ui.items()">
           <ChatToolCallCard
             v-for="part in earlier"
             :key="part.toolCallId"

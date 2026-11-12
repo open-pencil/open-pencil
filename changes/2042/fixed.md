@@ -1,0 +1,5 @@
+- Outline stroke turns shapes with only a fill into a vector of their fill, alone or inside groups, frames, and components, as in Figma.
+- Underlines and strikethroughs across characters of different colours are drawn as Figma draws them: one line broken only around descenders, each piece in one character's colour.
+- Flatten, Outline stroke, and rounded booleans keep rounded corners and ellipses as one curve each instead of dozens of points.
+- Editing a vector's path no longer stretches its gradient when the drag ends; the gradient stays where it was, as in Figma.
+- Pages with a layer of more than about 120,000 direct children open, lay out, and save in Chrome instead of failing with a stack overflow.

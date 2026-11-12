@@ -15,9 +15,10 @@ import {
 } from '@codemirror/commands'
 import { Annotation, EditorSelection, Prec } from '@codemirror/state'
 import { EditorView, keymap, placeholder, tooltips } from '@codemirror/view'
+import { matchesKeyboardEvent } from '@tanstack/hotkeys'
 import { getCurrentInstance, watch, type Ref, type ShallowRef } from 'vue'
 
-import { shortcutCode } from '@open-pencil/vue/editor/keyboard'
+import { editorCommandShortcuts } from '@open-pencil/vue/editor/commands'
 
 import { useCodeMirror } from '@/components/code-editor/useCodeMirror'
 import { formulaEditorTheme } from '@/theme/code/formula'
@@ -84,11 +85,13 @@ export function useFormulaField(
         EditorView.domEventHandlers({
           keydown(event, editor) {
             if (event.isComposing) return false
-            const code = shortcutCode(event)
-            if ((event.metaKey || event.ctrlKey) && (code === 'KeyZ' || code === 'KeyY')) {
+            const pressed = (id: 'edit.undo' | 'edit.redo') =>
+              editorCommandShortcuts(id).some((shortcut) => matchesKeyboardEvent(event, shortcut))
+            const redoing = pressed('edit.redo')
+            if (redoing || pressed('edit.undo')) {
               event.preventDefault()
               event.stopPropagation()
-              if (event.shiftKey || code === 'KeyY') redo(editor)
+              if (redoing) redo(editor)
               else undo(editor)
               return true
             }

@@ -3,10 +3,13 @@ import { ref, shallowRef } from 'vue'
 import type { Effect } from '@open-pencil/scene-graph'
 
 import {
-  EFFECT_OPTIONS,
+  effectOptions,
   createDefaultEffect,
+  effectOptionsFor,
   createEffectControlActions,
   createEffectEditActions,
+  blurKindChange,
+  isBlur,
   isShadow,
   type EffectEditSnapshot
 } from '#vue/controls/effects/helpers'
@@ -30,9 +33,15 @@ export function useEffectsControls() {
 
   return {
     expandedIndex,
-    effectOptions: EFFECT_OPTIONS,
+    /** The effect types, labelled in the current language. */
+    get effectOptions() {
+      return effectOptions()
+    },
+    effectOptionsFor,
     createDefaultEffect,
     isShadow,
+    isBlur,
+    blurKindChange,
     /** Previews a change to one effect on every selected layer. */
     scrubEffect: (index: number, changes: Partial<Effect>) =>
       editActions.scrubEffect(nodes.value, index, changes),

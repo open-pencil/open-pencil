@@ -1,13 +1,13 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
-
-import { runCLI } from '#cli-tests/helpers/run'
 import { mkdtemp, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+import { runCLI } from '#cli-tests/helpers/run'
 import * as v from 'valibot'
 
 import { FileSystemLibraryCatalog } from '@open-pencil/cli/library'
+import { isLibraryComponentAsset } from '@open-pencil/core/library'
 
 setDefaultTimeout(60_000)
 const librarySchema = v.object({ latestRevisionId: v.string() })
@@ -72,6 +72,8 @@ describe('libraries CLI', () => {
     expect(third.stdout).not.toContain('asset key')
 
     const revision = await new FileSystemLibraryCatalog(catalog).getRevision('ds')
-    expect(revision.manifest.assets.map((asset) => asset.key)).toEqual(['primary-button'])
+    expect(
+      revision.manifest.assets.filter(isLibraryComponentAsset).map((asset) => asset.key)
+    ).toEqual(['primary-button'])
   })
 })

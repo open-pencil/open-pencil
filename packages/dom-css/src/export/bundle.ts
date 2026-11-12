@@ -1,8 +1,9 @@
 import type { CSSFontFaceRule } from '@acemir/cssom'
-import { isValid, toUint8Array } from 'js-base64'
 import { parseFragment, serialize, type DefaultTreeAdapterTypes } from 'parse5'
 
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { normalizeFontFamily } from '@open-pencil/scene-graph/font-style'
+import { parseDataURL } from '@open-pencil/scene-graph/images'
 
 import { tokenStylesheet, type TokenStylesheetFormat } from '../tokens/stylesheet'
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
@@ -129,10 +130,10 @@ function standaloneSize(document: DesignDocument): StandaloneBounds {
   const bounds = document.children
     .map(nodeBounds)
     .filter((value): value is NonNullable<typeof value> => value !== undefined)
-  const minX = bounds.length > 0 ? Math.min(...bounds.map((bound) => bound.minX)) : 0
-  const minY = bounds.length > 0 ? Math.min(...bounds.map((bound) => bound.minY)) : 0
-  const maxX = bounds.length > 0 ? Math.max(...bounds.map((bound) => bound.minX + bound.width)) : 1
-  const maxY = bounds.length > 0 ? Math.max(...bounds.map((bound) => bound.minY + bound.height)) : 1
+  const minX = bounds.length > 0 ? minOf(bounds.map((bound) => bound.minX)) : 0
+  const minY = bounds.length > 0 ? minOf(bounds.map((bound) => bound.minY)) : 0
+  const maxX = bounds.length > 0 ? maxOf(bounds.map((bound) => bound.minX + bound.width)) : 1
+  const maxY = bounds.length > 0 ? maxOf(bounds.map((bound) => bound.minY + bound.height)) : 1
   return { minX, minY, width: Math.max(1, maxX - minX), height: Math.max(1, maxY - minY) }
 }
 
@@ -298,23 +299,13 @@ async function fontFaceAssets(
   return { css: await fontFaceStylesheet(assets, { from: '' }), files: assets }
 }
 
-function dataImageParts(value: string): { mime: string; base64: string } | undefined {
-  if (!value.startsWith('data:image/')) return undefined
-  const marker = ';base64,'
-  const markerIndex = value.indexOf(marker)
-  if (markerIndex === -1) return undefined
-  const base64 = value.slice(markerIndex + marker.length)
-  // Documents can come from parsed HTML; an invalid payload stays inline rather than decoding to other bytes.
-  if (!isValid(base64)) return undefined
-  return { mime: value.slice('data:'.length, markerIndex), base64 }
-}
-
-function extensionForMime(mime: string): string {
-  if (mime === 'image/jpeg') return 'jpg'
-  if (mime === 'image/webp') return 'webp'
-  if (mime === 'image/gif') return 'gif'
-  if (mime === 'image/svg+xml') return 'svg'
-  return 'png'
+/** The file extension of each raster type a bundle moves out of the page. */
+const IMAGE_EXTENSIONS: Partial<Record<string, string>> = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+  'image/avif': 'avif'
 }
 
 /** Inline images moved into files under `assetBasePath`, the HTML pointing at them. */
@@ -328,16 +319,20 @@ export function extractImageAssets(
   walkParseTree(fragment, (element) => {
     const src = element.attrs.find((attr) => attr.name === 'src')
     if (!src) return
-    const parts = dataImageParts(src.value)
-    if (!parts) return
     const cachedPath = sources.get(src.value)
     if (cachedPath) {
       src.value = cachedPath
       return
     }
-    const path = `${assetBasePath}/images/image-${sources.size + 1}.${extensionForMime(parts.mime)}`
+    // Documents can come from parsed HTML. Only a raster type a file extension names moves to a
+    // file: an SVG could run script when its file is opened on the site's origin, and the rest,
+    // such as a data URL that does not decode, stays inline.
+    const image = parseDataURL(src.value)
+    const extension = image && IMAGE_EXTENSIONS[image.mimeType]
+    if (!image || !extension) return
+    const path = `${assetBasePath}/images/image-${sources.size + 1}.${extension}`
     sources.set(src.value, path)
-    files.push({ path, content: toUint8Array(parts.base64) })
+    files.push({ path, content: image.bytes })
     src.value = path
   })
   return { html: serialize(fragment), files }

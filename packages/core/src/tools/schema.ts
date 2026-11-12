@@ -5,12 +5,22 @@
  * Adapters consume these contracts rather than maintaining transport-specific schemas.
  */
 
+import {
+  // eslint-disable-next-line @open-pencil/structure/no-mixed-case-acronym-identifiers -- Upstream export spelling.
+  toJsonSchema as toJSONSchema,
+  // eslint-disable-next-line @open-pencil/structure/no-mixed-case-acronym-identifiers -- Upstream export spelling.
+  type toStandardJsonSchema as toStandardJSONSchema
+} from '@valibot/to-json-schema'
 import * as v from 'valibot'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import type { FigmaAPI, FigmaNodeProxy } from '#core/figma-api'
 import type { FigmaFontNameInput } from '#core/figma-api/fonts/names'
+import { graphOf } from '#core/figma-api/graph'
+
+/** The number each `toolNumber` input takes, by the union that also takes a numeric string. */
+const toolNumberSchemas = new WeakMap<v.GenericSchema, v.GenericSchema>()
 
 export type ToolCapability =
   | 'document:read'
@@ -153,7 +163,7 @@ export function getRawNodeOrError(
   figma: FigmaAPI,
   id: string
 ): { node: SceneNode } | { error: string } {
-  const node = figma.graph.getNode(id)
+  const node = graphOf(figma).getNode(id)
   return node ? { node } : nodeNotFound(id)
 }
 
@@ -165,7 +175,8 @@ export function nodeSummary(node: FigmaNodeProxy): { id: string; name: string; t
   return { id: node.id, name: node.name, type: node.type }
 }
 
-export const nodeIdInputSchema = v.pipe(v.string(), v.description('Node ID'))
+/** A node's ID, under a name that says so; a description would only repeat it. */
+export const nodeIdInputSchema = v.string()
 export const nodeInputSchema = v.strictObject({ id: nodeIdInputSchema })
 export const nodeComparisonInputSchema = v.strictObject({
   from: v.pipe(v.string(), v.description('Source node ID')),
@@ -185,9 +196,8 @@ export const positionInputs = {
 
 /** Reuse a native number schema for both numeric and numeric-string agent inputs. */
 export function toolNumber(schema: v.GenericSchema<number, number> = v.number()) {
-  // JSON Schema numbers are finite. Express that with representable bounds as well as at runtime.
-  const finite = v.pipe(schema, v.minValue(-Number.MAX_VALUE), v.maxValue(Number.MAX_VALUE))
-  return v.union([
+  const finite = v.pipe(schema, v.finite())
+  const input = v.union([
     finite,
     v.pipe(
       v.string(),
@@ -197,4 +207,66 @@ export function toolNumber(schema: v.GenericSchema<number, number> = v.number())
       finite
     )
   ])
+  toolNumberSchemas.set(input, finite)
+  return input
+}
+
+/**
+ * The number a `toolNumber` input takes, without the numeric string it also accepts, for
+ * describing the input to clients in less space; `undefined` for any other schema.
+ */
+export function toolNumberSchema(schema: v.GenericSchema): v.GenericSchema | undefined {
+  return toolNumberSchemas.get(schema)
+}
+
+type JSONSchemaConfig = NonNullable<Parameters<typeof toJSONSchema>[1]>
+export type JSONSchemaTarget = NonNullable<JSONSchemaConfig['target']>
+
+const JSON_SCHEMA_TARGETS: readonly string[] = [
+  'draft-07',
+  'draft-2020-12',
+  'openapi-3.0'
+] satisfies JSONSchemaTarget[]
+
+function isJSONSchemaTarget(target: string): target is JSONSchemaTarget {
+  return JSON_SCHEMA_TARGETS.includes(target)
+}
+
+/** A Standard JSON Schema target `toJSONSchema` converts to; throws on any other. */
+export function jsonSchemaTarget(target: string): JSONSchemaTarget {
+  if (!isJSONSchemaTarget(target)) throw new Error(`Unsupported JSON Schema target: ${target}`)
+  return target
+}
+
+/**
+ * A tool input as JSON Schema. JSON numbers are always finite, so `toolNumber`'s `finite` check,
+ * which JSON Schema cannot express, is left to runtime validation.
+ */
+export function toolJSONSchema(schema: v.GenericSchema, config: JSONSchemaConfig = {}) {
+  return toJSONSchema(schema, {
+    ...config,
+    ignoreActions: ['finite', ...(config.ignoreActions ?? [])]
+  })
+}
+
+/** A tool input as a Standard JSON Schema, converted as `toolJSONSchema` converts it. */
+export function toolStandardJSONSchema<T extends v.GenericSchema>(
+  schema: T
+): ReturnType<typeof toStandardJSONSchema<T>> {
+  const convert =
+    (typeMode: 'input' | 'output') =>
+    (options: { target: string; libraryOptions?: Record<string, unknown> }) => {
+      const { ...json } = toolJSONSchema(schema, {
+        ...options.libraryOptions,
+        typeMode,
+        target: jsonSchemaTarget(options.target)
+      })
+      return json
+    }
+  return {
+    '~standard': {
+      ...schema['~standard'],
+      jsonSchema: { input: convert('input'), output: convert('output') }
+    }
+  }
 }

@@ -10,7 +10,7 @@ import { useEditorStore } from '@/app/editor/active-store'
 import ExportScaleInput from '@/components/properties/ExportScaleInput.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
-import Tip from '@/components/ui/overlay/Tip.vue'
+import AppCollapsible from '@/components/ui/collapsible/AppCollapsible.vue'
 import PanelItemRow from '@/components/ui/panel/PanelItemRow.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
@@ -178,26 +178,20 @@ watch(previewKey, updatePreview, { flush: 'post' })
       <span class="truncate">{{ panels.export }} {{ activeName }}</span>
     </AppButton>
 
-    <Tip v-if="activeSettings.length > 0" :label="panels.toggleExportPreview">
-      <button
-        data-test-id="export-preview-toggle"
-        class="mt-1 flex w-full cursor-pointer items-center gap-1 rounded border-none bg-transparent px-0 py-1 text-2xs text-muted hover:text-surface"
-        @click="showPreview = !showPreview"
-      >
-        <icon-lucide-chevron-down v-if="showPreview" class="size-3" />
-        <icon-lucide-chevron-right v-else class="size-3" />
-        {{ panels.exportPreview }}
-      </button>
-    </Tip>
-
-    <div v-if="showPreview && previewURL" class="mt-1 overflow-hidden rounded border border-border">
-      <img :src="previewURL" :class="['block w-full', CHECKERBOARD_BACKGROUND]" />
-    </div>
-    <div
-      v-else-if="showPreview"
-      class="mt-1 rounded border border-border px-3 py-2 text-2xs text-muted"
+    <AppCollapsible
+      v-if="activeSettings.length > 0"
+      v-model:open="showPreview"
+      :label="panels.exportPreview"
+      data-test-id="export-preview-toggle"
+      class="mt-1"
+      :ui="{ trigger: 'gap-1 py-1 text-2xs text-muted hover:text-surface', icon: 'size-3' }"
     >
-      {{ panels.exportRenderingPreview }}
-    </div>
+      <div v-if="previewURL" class="mt-1 overflow-hidden rounded border border-border">
+        <img :src="previewURL" :class="['block w-full', CHECKERBOARD_BACKGROUND]" />
+      </div>
+      <div v-else class="mt-1 rounded border border-border px-3 py-2 text-2xs text-muted">
+        {{ panels.exportRenderingPreview }}
+      </div>
+    </AppCollapsible>
   </PanelSection>
 </template>

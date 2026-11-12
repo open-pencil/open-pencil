@@ -206,7 +206,9 @@ describe('reading HTML', () => {
           if (path !== 'once.css') return null
           reads++
           // A second read would lose the rule, as a network that fails the second time does.
-          return reads === 1 ? new TextEncoder().encode('.box { width: 300px; height: 10px }') : null
+          return reads === 1
+            ? new TextEncoder().encode('.box { width: 300px; height: 10px }')
+            : null
         }
       }
     )
@@ -251,4 +253,3 @@ describe('reading HTML', () => {
     expect(families).toEqual([TEST_FAMILY, 'Inter', 'Inter'])
   })
 })
-

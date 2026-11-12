@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 
-import { cloudAIDiscoverySchema, cloudBillingDiscoverySchema } from './ai'
+import { cloudBillingDiscoverySchema } from './billing'
+import { cloudServicesDiscoverySchema } from './services'
 
 export const CLOUD_PROTOCOL_VERSION = '1' as const
 export const CLOUD_DISCOVERY_PATH = '/.well-known/openpencil' as const
@@ -54,6 +55,23 @@ export const cloudEditorVersionSchema = v.pipe(v.string(), v.regex(/^\d+\.\d+\.\
 export const cloudListingSchema = v.object({ minimumEditorVersion: cloudEditorVersionSchema })
 export type CloudListing = v.InferOutput<typeof cloudListingSchema>
 
+const legalURLSchema = v.pipe(v.string(), v.url())
+
+/**
+ * The operator's legal links, which clients show at sign-up and in account pages. A server that
+ * names none shows none; `requireAcceptance` means an account accepts `termsVersion` before it uses
+ * the server.
+ */
+export const cloudLegalDiscoverySchema = v.object({
+  termsURL: v.optional(legalURLSchema),
+  privacyURL: v.optional(legalURLSchema),
+  termsVersion: v.optional(v.string()),
+  requireAcceptance: v.boolean(),
+  abuseEmail: v.optional(v.pipe(v.string(), v.email())),
+  minimumAge: v.optional(v.pipe(v.number(), v.integer()))
+})
+export type CloudLegalDiscovery = v.InferOutput<typeof cloudLegalDiscoverySchema>
+
 export const cloudDiscoverySchema = v.object({
   protocolVersion: v.literal(CLOUD_PROTOCOL_VERSION),
   deployment: cloudDeploymentSchema,
@@ -64,10 +82,11 @@ export const cloudDiscoverySchema = v.object({
   authentication: cloudAuthenticationSchema,
   capabilities: cloudCapabilitiesSchema,
   listing: v.optional(cloudListingSchema),
-  /** The AI service editors reach with Cloud-signed tokens; absent when the deployment has none. */
-  ai: v.optional(cloudAIDiscoverySchema),
+  /** The services editors reach with Cloud-signed tokens; absent when the deployment has none. */
+  services: v.optional(cloudServicesDiscoverySchema),
   /** Where people manage their plan and buy credits; absent when the deployment does not bill. */
-  billing: v.optional(cloudBillingDiscoverySchema)
+  billing: v.optional(cloudBillingDiscoverySchema),
+  legal: v.optional(cloudLegalDiscoverySchema)
 })
 export type CloudDiscovery = v.InferOutput<typeof cloudDiscoverySchema>
 

@@ -154,7 +154,6 @@ async function saveDiagnostics() {
     v-model:open="clearOpen"
     :heading="diagnosticMessages.clear"
     :description="diagnosticMessages.clearDescription"
-    :cancel-label="common.cancel"
     :confirm-label="diagnosticMessages.clear"
     tone="danger"
     @confirm="clearDiagnostics"

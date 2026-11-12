@@ -2,10 +2,10 @@ import { expect, test } from 'bun:test'
 
 import { lintFiles, ruleDiagnostics } from './helpers/lint.ts'
 
-const RULE = 'no-raw-overlay-roots-in-app'
+const RULE = '@open-pencil/vue/no-raw-overlay-roots'
 
 async function flagged(files: Record<string, string>): Promise<string[]> {
-  const diagnostics = await lintFiles(files, { [`open-pencil/${RULE}`]: 'error' })
+  const diagnostics = await lintFiles(files, { [RULE]: 'error' })
   return ruleDiagnostics(diagnostics, RULE)
     .map((item) => item.message)
     .sort()

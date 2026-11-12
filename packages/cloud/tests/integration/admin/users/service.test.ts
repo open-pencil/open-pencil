@@ -37,6 +37,21 @@ function authAdapter() {
     async resolveSession() {
       return null
     },
+    async resolveAccountSession() {
+      return null
+    },
+    async resolveAccessToken() {
+      return null
+    },
+    async listAccessTokens() {
+      return []
+    },
+    async createAccessToken() {
+      throw new Error('Access tokens are not used here')
+    },
+    async revokeAccessToken() {
+      throw new Error('Access tokens are not used here')
+    },
     async listAuthenticationMethods() {
       return []
     },
@@ -48,6 +63,9 @@ function authAdapter() {
     },
     async unlinkAuthenticationMethod() {
       return complete()
+    },
+    async deleteAccount() {
+      return new Headers()
     },
     async mfaStatus() {
       return null
@@ -207,7 +225,13 @@ describe('deployment admin user safety', () => {
       const workspaceId = crypto.randomUUID()
       await runtime.database
         .insertInto('workspace')
-        .values({ id: workspaceId, name: 'Studio', slug: 'studio', createdBy: USER_ID })
+        .values({
+          id: workspaceId,
+          name: 'Studio',
+          slug: 'studio',
+          createdBy: USER_ID,
+          ownerId: USER_ID
+        })
         .execute()
       await runtime.database
         .insertInto('workspaceMember')

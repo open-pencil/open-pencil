@@ -120,6 +120,25 @@ export function createSelectionMoveDrag(
     return duplicateAndDrag(cx, cy, sx, sy, editor).drag
 
   const originals = collectMoveOriginals(editor)
+  // Where layers only move, they stay in their parents; along an auto layout flow they reorder,
+  // as arrow keys do.
+  if (resolveEditorProfile(editor.state).layerEdits === 'move') {
+    return {
+      type: 'move',
+      startX: cx,
+      startY: cy,
+      currentX: cx,
+      currentY: cy,
+      appliedDx: 0,
+      appliedDy: 0,
+      startScreenX: sx,
+      startScreenY: sy,
+      dragStarted: false,
+      originals,
+      keepParents: true,
+      flows: collectFlowDrags(originals, editor)
+    }
+  }
 
   return {
     type: 'move',
@@ -151,5 +170,7 @@ export function pressSelects(
   deep = false
 ): boolean {
   if (deep || !pressesSelection(hit, cx, cy, editor)) return true
-  return !resolveEditorProfile(editor.state).edits && insideSelectedFrame(hit, editor)
+  return (
+    resolveEditorProfile(editor.state).layerEdits === 'none' && insideSelectedFrame(hit, editor)
+  )
 }

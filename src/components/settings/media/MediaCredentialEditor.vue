@@ -31,15 +31,15 @@ const media = useMediaMessages()
 const settings = useSettingsMessages()
 const provider = computed(() => editor.vector?.provider.value)
 const providerOptions = editor.vector?.providerOptions ?? []
-const title = computed(() => {
-  if (service === 'vectorize') return media.value.vectorization
-  return service === 'pexels' ? 'Pexels' : 'Unsplash'
-})
+const SERVICE_NAMES = { pexels: 'Pexels', unsplash: 'Unsplash', exa: 'Exa' }
+const title = computed(() =>
+  service === 'vectorize' ? media.value.vectorization : SERVICE_NAMES[service]
+)
 useSettingsFormGuard({
   dirty,
   busy,
   cancel: () => emit('done'),
-  crumb: { parent: () => settings.value.media, title }
+  crumb: { parent: () => settings.value.integrations, title }
 })
 const keyLabel = computed(() =>
   service === 'unsplash' ? credentials.value.accessKey : credentials.value.apiKey
@@ -47,6 +47,7 @@ const keyLabel = computed(() =>
 const keyURL = computed(() => {
   if (service === 'pexels') return 'https://www.pexels.com/api/'
   if (service === 'unsplash') return 'https://unsplash.com/oauth/applications'
+  if (service === 'exa') return 'https://dashboard.exa.ai/api-keys'
   return provider.value?.keyURL
 })
 const placeholder = computed(() => {

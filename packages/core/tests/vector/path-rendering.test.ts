@@ -1,10 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { CanvasKit } from 'canvaskit-wasm'
-
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import { vectorNetworkToPath } from '@open-pencil/core/vector'
 import type { VectorNetwork } from '@open-pencil/scene-graph'
-
 import { asDouble } from '@open-pencil/test-support/doubles'
 interface RecordedPath {
   operations: string[]

@@ -21,12 +21,14 @@ import { requestPermissionFromUser } from '@/app/ai/agents/acp/permission'
 import { spawnACPProcess, type ACPProcess } from '@/app/ai/agents/acp/process'
 import {
   AgentSessionResumeError,
+  AgentSessionRetryError,
+  acpErrorMessage,
   isAuthRequiredError,
   openAgentSession
 } from '@/app/ai/agents/acp/session'
 import { createOwnToolApproval, linkOwnTools, type OwnToolsLink } from '@/app/ai/agents/acp/tools'
 import { agentAccounts } from '@/app/ai/agents/setup/accounts'
-import { resolveSpawnCommand } from '@/app/ai/agents/setup/discovery'
+import { resolveSpawnTarget } from '@/app/ai/agents/setup/discovery'
 import { AgentNotInstalledError } from '@/app/ai/agents/setup/readiness'
 import { notifyPermissionWaiting } from '@/app/ai/chat/notifications'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
@@ -39,14 +41,14 @@ type TauriChild = ACPProcess['child']
 
 /** What starting an agent reaches outside the transport, which tests replace. */
 export interface ACPStartup {
-  resolveCommand: typeof resolveSpawnCommand
+  resolveTarget: typeof resolveSpawnTarget
   spawn: typeof spawnACPProcess
   authToken: typeof getAutomationAuthToken
   linkTools: typeof linkOwnTools
 }
 
 const DEFAULT_STARTUP: ACPStartup = {
-  resolveCommand: resolveSpawnCommand,
+  resolveTarget: resolveSpawnTarget,
   spawn: spawnACPProcess,
   authToken: getAutomationAuthToken,
   linkTools: linkOwnTools
@@ -125,7 +127,7 @@ function missingCommandMessage(agentDef?: ACPAgentDef): string {
 }
 
 export function formatConnectionError(e: unknown, agentDef?: ACPAgentDef): string {
-  const msg = e instanceof Error ? e.message : String(e)
+  const msg = acpErrorMessage(e)
   if (
     msg.includes('ECONNREFUSED') ||
     msg.includes('fetch failed') ||
@@ -158,9 +160,20 @@ function stopWhenLinked(linking: Promise<OwnToolsLink>): void {
   linking.then((late) => late.stop()).catch(() => undefined)
 }
 
-function startupError(error: unknown, agentDef: ACPAgentDef): Error {
-  recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(error) })
-  return new Error(formatConnectionError(error, agentDef))
+function startupError(
+  error: unknown,
+  agentDef: ACPAgentDef,
+  onAgentError: ((error: unknown) => void) | null
+): Error {
+  // Diagnostics record what the agent answered, not the conversation's reading of it.
+  const original =
+    (error instanceof AgentSessionResumeError || error instanceof AgentSessionRetryError) &&
+    error.cause !== undefined
+      ? error.cause
+      : error
+  recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(original) })
+  onAgentError?.(original)
+  return new Error(formatConnectionError(error, agentDef), { cause: error })
 }
 
 export function buildCrashChunks(
@@ -192,6 +205,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
   /** The agent session the next start continues: a saved chat's, then the one a turn ran in. */
   private resume: string | null
   private onSession: ((sessionId: string | null) => void) | null
+  private onAgentError: ((error: unknown) => void) | null
   private startup: ACPStartup
   private startTimeoutMs: number
 
@@ -208,6 +222,11 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
      * and null when the saved session can no longer be continued.
      */
     onSession?: (sessionId: string | null) => void
+    /**
+     * Told what the agent answered when its start or a prompt failed. The chat shows the agent's
+     * text, which can quote the conversation, so diagnostics record this instead.
+     */
+    onAgentError?: (error: unknown) => void
     startup?: ACPStartup
     startTimeoutMs?: number
   }) {
@@ -217,6 +236,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     this.onUsage = options.onUsage ?? null
     this.resume = options.resume ?? null
     this.onSession = options.onSession ?? null
+    this.onAgentError = options.onAgentError ?? null
     this.startup = options.startup ?? DEFAULT_STARTUP
     this.startTimeoutMs = options.startTimeoutMs ?? AGENT_START_TIMEOUT_MS
   }
@@ -316,6 +336,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
               operation: 'message',
               ...describeDiagnosticError(e)
             })
+            this.onAgentError?.(e)
             finish('error', formatConnectionError(e, this.agentDef))
           })
       }
@@ -371,7 +392,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     // Aborted once the startup gave up, by Stop or the deadline, so a lookup still running launches nothing.
     const gaveUp = new AbortController()
     const spawning = (async () => {
-      const command = await this.startup.resolveCommand(this.agentDef)
+      const { command, searchPath } = await this.startup.resolveTarget(this.agentDef)
       if (gaveUp.signal.aborted || abortSignal?.aborted) {
         throw new Error('The reply was stopped before the agent started.')
       }
@@ -379,6 +400,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         command,
         args: this.agentDef.args,
         logId: this.agentDef.id,
+        searchPath,
+        cwd: this.cwd,
         destroying: () => this.destroying,
         onUnexpectedClose: () => {
           if (!this.session) return
@@ -396,9 +419,9 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       void spawning.then((late) => late.child.kill()).catch(() => undefined)
       recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(e) })
       if (e instanceof AgentNotInstalledError) throw e
-      const message = e instanceof Error ? e.message : String(e)
+      const message = acpErrorMessage(e)
       if (isMissingCommandError(message)) throw new AgentNotInstalledError(this.agentDef)
-      throw new Error(formatConnectionError(e, this.agentDef))
+      throw new Error(formatConnectionError(e, this.agentDef), { cause: e })
     }
     const { child, input, output } = process
     const stream = ndJsonStream(input, output)
@@ -464,7 +487,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         return await untilStopped(request)
       } catch (e) {
         failed?.(e)
-        return abandon(startupError(e, this.agentDef))
+        return abandon(startupError(e, this.agentDef, this.onAgentError))
       }
     }
 
@@ -475,7 +498,9 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
 
     // The agent must reach OpenPencil's tools before it gets a prompt. An outside MCP connection
     // whose credential cannot be read fails here.
-    const linking = this.startup.linkTools(automationAuthToken)
+    const linking = this.startup.linkTools(automationAuthToken, {
+      defersTools: this.agentDef.defersMCPTools === true
+    })
     release = () => stopWhenLinked(linking)
     const tools = await step(linking)
     release = () => tools.stop()

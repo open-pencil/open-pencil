@@ -5,6 +5,7 @@ import { parseColor } from '@open-pencil/scene-graph/color'
 import type { FigmaAPI, FigmaNodeProxy } from '#core/figma-api'
 import type { FigmaFontName, FigmaFontNameInput } from '#core/figma-api/fonts/names'
 import type { FigmaVariationSettings } from '#core/figma-api/fonts/variations'
+import { graphOf } from '#core/figma-api/graph'
 import { OpenPencilAPI } from '#core/openpencil-api'
 import { textMarkdownChanges } from '#core/openpencil-api/nodes'
 import { collectNodeFontFaces } from '#core/text/requirements/collect'
@@ -18,7 +19,7 @@ import {
 
 /** The fonts a text layer uses, which an edit that lays it out again needs loaded. */
 export function textFonts(figma: FigmaAPI, id: string): FigmaFontNameInput[] {
-  const node = figma.graph.getNode(id)
+  const node = graphOf(figma).getNode(id)
   return node ? collectNodeFontFaces(node) : []
 }
 
@@ -34,7 +35,7 @@ export const setText = defineTool({
     markdown: v.optional(v.pipe(v.boolean(), v.description('Read the text as Markdown')))
   }),
   fonts: (figma, { id, text, markdown }) => {
-    const node = figma.graph.getNode(id)
+    const node = graphOf(figma).getNode(id)
     if (!markdown || node?.type !== 'TEXT') return textFonts(figma, id)
     return collectNodeFontFaces({ ...node, ...textMarkdownChanges(node, text) })
   },
@@ -137,7 +138,7 @@ export const setFont = defineTool({
   }
 })
 
-/** The font `set_font_range` gives its range: what it names, the rest from the range's start. */
+/** The font `set_text_range` gives its range: what it names, the rest from the range's start. */
 function rangeFont(
   node: FigmaNodeProxy,
   args: { start: number; family?: string; style?: string; variations?: FigmaVariationSettings }
@@ -148,7 +149,7 @@ function rangeFont(
 }
 
 export const setFontRange = defineTool({
-  name: 'set_font_range',
+  name: 'set_text_range',
 
   description: 'Set font properties for a text range.',
   execution: { kind: 'sync', mutation: 'properties' },
@@ -176,7 +177,7 @@ export const setFontRange = defineTool({
     const { start, end } = args
     if (!args.family && !args.size && !args.style && !args.variations && !args.color) {
       return {
-        error: 'set_font_range needs at least one of family, size, style, variations, or color'
+        error: 'set_text_range needs at least one of family, size, style, variations, or color'
       }
     }
     // The range methods reject an empty range or one past the text, before changing anything.
@@ -192,27 +193,6 @@ export const setFontRange = defineTool({
       return toolFailure(error)
     }
     return { id: args.id, range: { start, end } }
-  }
-})
-
-export const setTextResize = defineTool({
-  name: 'set_text_resize',
-
-  description: 'Set text auto-resize mode.',
-  execution: { kind: 'sync', mutation: 'properties' },
-  input: v.strictObject({
-    id: nodeIdInputSchema,
-    mode: v.pipe(
-      v.picklist(['NONE', 'WIDTH_AND_HEIGHT', 'HEIGHT', 'TRUNCATE']),
-      v.description('Resize mode')
-    )
-  }),
-  fonts: (figma, { id }) => textFonts(figma, id),
-  execute: (figma, { id, mode }) => {
-    const node = figma.getNodeById(id)
-    if (!node) return { error: `Node "${id}" not found` }
-    node.textAutoResize = mode
-    return { id, textAutoResize: mode }
   }
 })
 

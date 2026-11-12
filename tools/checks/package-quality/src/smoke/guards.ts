@@ -9,6 +9,7 @@ import {
   inspectTarball,
   type TarballDiagnostic
 } from '@open-pencil/package-artifacts-tools/tarball'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 
 import { installPackedPackages } from './install'
 import { evaluateRuntime, type RuntimeName } from './runtime'
@@ -203,7 +204,7 @@ export async function verifyPackagingGuards(guards = packagingGuards): Promise<v
     const mismatches: string[] = []
     for (const [index, guard] of guards.entries()) {
       const observed = await observeGuard(join(root, String(index)), guard)
-      mismatches.push(...packagingGuardMismatches(guard, observed))
+      appendAll(mismatches, packagingGuardMismatches(guard, observed))
     }
     if (mismatches.length > 0) throw new Error(mismatches.join('\n'))
   } finally {

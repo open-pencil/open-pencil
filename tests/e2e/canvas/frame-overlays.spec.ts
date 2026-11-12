@@ -4,6 +4,8 @@ import { TRANSFORM_ZONE } from '@open-pencil/core/geometry'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
+import { waitForSettledScene } from '#tests/helpers/canvas/page-scene'
+
 const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
 
 async function expectCanvas(name: string) {
@@ -75,7 +77,7 @@ async function createOverlayDemo(rotation: number) {
     store.requestRender()
   }, rotation)
 
-  await editor.canvas.waitForRender()
+  await waitForSettledScene(editor.page)
 }
 
 test('rotated frame selection labels render with hovered child', async () => {
@@ -146,8 +148,12 @@ test('nested frame labels use the parent transform during rotation preview', asy
   await editor.canvas.waitForRender()
   const after = await editor.canvas.screenshotCanvasRegion()
   await writeFile(test.info().outputPath('nested-frame-held.png'), during)
-  await writeFile(test.info().outputPath('nested-frame-released.png'), after)
-  expect(after.equals(during)).toBe(true)
+  // Released, the frame draws from tiles rather than the preview's direct pass, which rounds the
+  // rotated section's edges up to 3 levels apart; a label that jumped would differ far more.
+  expect(after).toMatchSnapshot('nested-frame-rotation-preview.png', {
+    maxDiffPixels: 0,
+    threshold: 0.02
+  })
 })
 
 for (const angle of [-32, 32]) {
@@ -264,3 +270,26 @@ for (const [name, size] of [
     await expectCanvas(name)
   })
 }
+
+// Figma desktop (2026-11-08) labels a 151.25 × 33.333333 layer "151.25 × 33.33", to two decimals
+// as its Design panel shows them.
+test('a fractional layer’s size label shows two decimals', async () => {
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const layer = store.graph.createNode('RECTANGLE', store.state.currentPageId, {
+      x: 200,
+      y: 200,
+      width: 151.25,
+      height: 33.333333,
+      fills: [{ type: 'SOLID', color: { r: 0.8, g: 0.8, b: 0.8, a: 1 }, visible: true, opacity: 1 }]
+    })
+    store.state.zoom = 1
+    store.state.panX = 0
+    store.state.panY = 0
+    store.select([layer.id])
+    store.requestRender()
+  })
+  await editor.canvas.waitForRender()
+  await expectCanvas('fractional-layer-selected')
+})

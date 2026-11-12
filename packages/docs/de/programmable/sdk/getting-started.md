@@ -8,8 +8,10 @@ description: Binden Sie @open-pencil/vue ein, erstellen Sie einen Editor und ric
 ## Installation
 
 ```bash
-bun add @open-pencil/core @open-pencil/vue canvaskit-wasm
+bun add @open-pencil/core @open-pencil/vue @open-pencil/canvaskit
 ```
+
+Die Zeichenfläche lädt zur Laufzeit `canvaskit.wasm` aus `@open-pencil/canvaskit/dist/` und die mitgelieferten Schriften; wie du sie bereitstellst, steht in [Serve the engine’s files](/programmable/sdk/getting-started#serve-the-engine-s-files) (Englisch).
 
 Das SDK befindet sich im OpenPencil-Monorepo und wird als Paket `@open-pencil/vue` veröffentlicht.
 

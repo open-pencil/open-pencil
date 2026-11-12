@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { createComponentSyncScheduler } from '#core/editor/components/sync'
 

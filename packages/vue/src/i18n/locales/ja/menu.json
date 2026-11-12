@@ -5,6 +5,7 @@
   "object": "オブジェクト",
   "arrange": "配置",
   "text": "テキスト",
+  "help": "ヘルプ",
   "new": "新規デザイン",
   "newTab": "新規タブ",
   "open": "開く…",
@@ -90,5 +91,12 @@
   "showVersionHistory": "バージョン履歴を表示",
   "saveToVersionHistory": "バージョン履歴に保存…",
   "reportProblem": "問題を報告…",
-  "supportOpenPencil": "OpenPencil を支援…"
+  "supportOpenPencil": "OpenPencil を支援…",
+  "documentation": "OpenPencil ドキュメント",
+  "keyboardShortcuts": "キーボードショートカット",
+  "whatsNew": "新機能",
+  "community": "Discord コミュニティ",
+  "github": "GitHub の OpenPencil",
+  "newBoard": "新規ボード",
+  "toggleAIChat": "AIチャットの切り替え"
 }

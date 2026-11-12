@@ -1,20 +1,20 @@
 import { describe, expect, spyOn, test } from 'bun:test'
 
+import { asRenderer } from '#core-tests/canvas/helpers'
+import { asPageNode, createAPI } from '#core-tests/helpers/figma-api'
+
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { makeBooleanOperationPath } from '#core/canvas/boolean'
 import { NodePathCaches } from '#core/canvas/paths/cache'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { makeNodeShapePath, makePolygonPath, makeRRect } from '#core/canvas/shapes'
 import { BLACK } from '#core/constants'
-
-import { asPageNode, createAPI } from '#core-tests/helpers/figma-api'
-
-import { asRenderer } from '#core-tests/canvas/helpers'
+import { graphOf } from '#core/figma-api/graph'
 
 async function createRenderer(): Promise<SkiaRenderer> {
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const renderer = {
     ck,
     nodePaths: new NodePathCaches(),
@@ -48,10 +48,10 @@ describe('boolean operation paths', () => {
     second.x = 50
 
     const booleanNode = api.union([first, second], asPageNode(api.currentPage))
-    const node = api.graph.getNode(booleanNode.id)
+    const node = graphOf(api).getNode(booleanNode.id)
     expect(node).toBeDefined()
     if (!node) return
-    const path = makeBooleanOperationPath(r, node, api.graph)
+    const path = makeBooleanOperationPath(r, node, graphOf(api))
 
     expect(path?.getBounds()).toEqual(new Float32Array([0, 0, 150, 100]))
     path?.delete()
@@ -67,10 +67,10 @@ describe('boolean operation paths', () => {
     second.x = 50
 
     const booleanNode = api.subtract([first, second], asPageNode(api.currentPage))
-    const node = api.graph.getNode(booleanNode.id)
+    const node = graphOf(api).getNode(booleanNode.id)
     expect(node).toBeDefined()
     if (!node) return
-    const path = makeBooleanOperationPath(r, node, api.graph)
+    const path = makeBooleanOperationPath(r, node, graphOf(api))
 
     expect(path?.getBounds()).toEqual(new Float32Array([0, 0, 50, 100]))
     path?.delete()
@@ -86,10 +86,10 @@ describe('boolean operation paths', () => {
     second.x = 50
 
     const booleanNode = api.exclude([first, second], asPageNode(api.currentPage))
-    const node = api.graph.getNode(booleanNode.id)
+    const node = graphOf(api).getNode(booleanNode.id)
     expect(node).toBeDefined()
     if (!node) return
-    const path = makeBooleanOperationPath(r, node, api.graph)
+    const path = makeBooleanOperationPath(r, node, graphOf(api))
 
     expect(path?.getBounds()).toEqual(new Float32Array([0, 0, 150, 100]))
     path?.delete()
@@ -103,13 +103,13 @@ describe('boolean operation paths', () => {
     first.resize(100, 100)
     second.resize(100, 100)
     second.x = 50
-    api.graph.updateNode(second.id, { flipX: true })
+    graphOf(api).updateNode(second.id, { flipX: true })
 
     const booleanNode = api.intersect([first, second], asPageNode(api.currentPage))
-    const node = api.graph.getNode(booleanNode.id)
+    const node = graphOf(api).getNode(booleanNode.id)
     expect(node).toBeDefined()
     if (!node) return
-    const path = makeBooleanOperationPath(r, node, api.graph)
+    const path = makeBooleanOperationPath(r, node, graphOf(api))
 
     expect(path?.getBounds()).toEqual(new Float32Array([50, 0, 100, 100]))
     path?.delete()
@@ -124,14 +124,14 @@ describe('boolean operation paths', () => {
       stick.resize(160, 20)
       stick.y = 70
     }
-    api.graph.updateNode(first.id, { rotation: 45 })
-    api.graph.updateNode(second.id, { rotation: 45, flipX: true })
+    graphOf(api).updateNode(first.id, { rotation: 45 })
+    graphOf(api).updateNode(second.id, { rotation: 45, flipX: true })
 
     const booleanNode = api.union([first, second], asPageNode(api.currentPage))
-    const node = api.graph.getNode(booleanNode.id)
+    const node = graphOf(api).getNode(booleanNode.id)
     expect(node).toBeDefined()
     if (!node) return
-    const path = makeBooleanOperationPath(r, node, api.graph)
+    const path = makeBooleanOperationPath(r, node, graphOf(api))
     const crossing = (x: number) => path?.contains(x, 30)
 
     expect([crossing(30), crossing(node.width - 30)]).toEqual([true, true])
@@ -146,8 +146,8 @@ describe('boolean operation paths', () => {
     first.resize(100, 100)
     second.resize(100, 100)
     second.x = 50
-    const firstNode = api.graph.getNode(first.id)
-    const secondNode = api.graph.getNode(second.id)
+    const firstNode = graphOf(api).getNode(first.id)
+    const secondNode = graphOf(api).getNode(second.id)
     expect(firstNode).toBeDefined()
     expect(secondNode).toBeDefined()
     if (!firstNode || !secondNode) return
@@ -155,10 +155,10 @@ describe('boolean operation paths', () => {
     secondNode.arcData = { startingAngle: 0, endingAngle: Math.PI, innerRadius: 0 }
 
     const booleanNode = api.union([first, second], asPageNode(api.currentPage))
-    const node = api.graph.getNode(booleanNode.id)
+    const node = graphOf(api).getNode(booleanNode.id)
     expect(node).toBeDefined()
     if (!node) return
-    const path = makeBooleanOperationPath(r, node, api.graph)
+    const path = makeBooleanOperationPath(r, node, graphOf(api))
 
     expect(path?.getBounds()).toEqual(new Float32Array([0, 50, 150, 100]))
     path?.delete()
@@ -172,8 +172,8 @@ describe('boolean operation paths', () => {
     first.resize(100, 100)
     second.resize(100, 100)
     second.x = 50
-    const firstNode = api.graph.getNode(first.id)
-    const secondNode = api.graph.getNode(second.id)
+    const firstNode = graphOf(api).getNode(first.id)
+    const secondNode = graphOf(api).getNode(second.id)
     expect(firstNode).toBeDefined()
     expect(secondNode).toBeDefined()
     if (!firstNode || !secondNode) return
@@ -185,10 +185,10 @@ describe('boolean operation paths', () => {
     ]
 
     const booleanNode = api.union([first, second], asPageNode(api.currentPage))
-    const node = api.graph.getNode(booleanNode.id)
+    const node = graphOf(api).getNode(booleanNode.id)
     expect(node).toBeDefined()
     if (!node) return
-    const path = makeBooleanOperationPath(r, node, api.graph)
+    const path = makeBooleanOperationPath(r, node, graphOf(api))
     const bounds = path?.getBounds()
 
     // A line is stroked to its upper side, so the outline reaches past it to the right.
@@ -209,7 +209,7 @@ describe('boolean operation paths', () => {
     })
     const api = createAPI()
 
-    const path = makeBooleanOperationPath(r, node, api.graph)
+    const path = makeBooleanOperationPath(r, node, graphOf(api))
 
     expect(path?.getBounds()).toEqual(new Float32Array([5, 6, 25, 36]))
     path?.delete()
@@ -230,10 +230,10 @@ describe('boolean operation paths', () => {
 
     const union = api.union([first, second], asPageNode(api.currentPage))
     const booleanNode = api.union([union, third], asPageNode(api.currentPage))
-    const node = api.graph.getNode(booleanNode.id)
+    const node = graphOf(api).getNode(booleanNode.id)
     expect(node).toBeDefined()
     if (!node) return
-    const path = makeBooleanOperationPath(r, node, api.graph)
+    const path = makeBooleanOperationPath(r, node, graphOf(api))
 
     expect(path?.getBounds()).toEqual(new Float32Array([0, 0, 175, 100]))
     path?.delete()
@@ -249,11 +249,11 @@ describe('boolean operation paths', () => {
     second.x = 100
 
     const booleanNode = api.union([first, second], asPageNode(api.currentPage))
-    api.graph.updateNode(booleanNode.id, { cornerRadius: 20 })
-    const node = api.graph.getNode(booleanNode.id)
+    graphOf(api).updateNode(booleanNode.id, { cornerRadius: 20 })
+    const node = graphOf(api).getNode(booleanNode.id)
     expect(node).toBeDefined()
     if (!node) return
-    const path = makeBooleanOperationPath(r, node, api.graph)
+    const path = makeBooleanOperationPath(r, node, graphOf(api))
 
     expect([path?.contains(2, 2), path?.contains(2, 50), path?.contains(125, 25)]).toEqual([
       false,
@@ -272,15 +272,15 @@ describe('boolean operation paths', () => {
     second.resize(50, 50)
     second.x = 100
     const booleanNode = api.union([first, second], asPageNode(api.currentPage))
-    api.graph.updateNode(booleanNode.id, { cornerRadius: 20 })
-    const node = api.graph.getNode(booleanNode.id)
+    graphOf(api).updateNode(booleanNode.id, { cornerRadius: 20 })
+    const node = graphOf(api).getNode(booleanNode.id)
     expect(node).toBeDefined()
     if (!node) return
-    makeBooleanOperationPath(r, node, api.graph)?.delete()
+    makeBooleanOperationPath(r, node, graphOf(api))?.delete()
 
     const outlineReads = spyOn(r.ck.Path.prototype, 'toSVGString')
     try {
-      makeBooleanOperationPath(r, node, api.graph)?.delete()
+      makeBooleanOperationPath(r, node, graphOf(api))?.delete()
       expect(outlineReads).not.toHaveBeenCalled()
     } finally {
       outlineReads.mockRestore()
@@ -296,14 +296,14 @@ describe('boolean operation paths', () => {
     second.resize(50, 50)
     second.x = 100
     const booleanNode = api.union([first, second], asPageNode(api.currentPage))
-    api.graph.updateNode(booleanNode.id, { cornerRadius: 20 })
-    const node = api.graph.getNode(booleanNode.id)
+    graphOf(api).updateNode(booleanNode.id, { cornerRadius: 20 })
+    const node = graphOf(api).getNode(booleanNode.id)
     expect(node).toBeDefined()
     if (!node) return
-    makeBooleanOperationPath(r, node, api.graph)?.delete()
+    makeBooleanOperationPath(r, node, graphOf(api))?.delete()
 
     second.resize(80, 50)
-    const path = makeBooleanOperationPath(r, node, api.graph)
+    const path = makeBooleanOperationPath(r, node, graphOf(api))
     const bounds = path?.computeTightBounds()
 
     expect(bounds && bounds[2] - bounds[0]).toBe(180)

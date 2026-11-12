@@ -4,8 +4,10 @@ import * as v from 'valibot'
 
 import { DEFAULT_SNAPPING_PREFERENCES, type SnappingPreferences } from '@open-pencil/core'
 import { COMMENT_SORTS, type CommentSort } from '@open-pencil/scene-graph/comments'
+import { TOOLBAR_ALIGNS, TOOLBAR_SIDES } from '@open-pencil/vue/primitives/Toolbar'
 
 import { DEFAULT_AGENT_STEPS, resolveAgentStepLimit } from '@/app/ai/reply/step-limit'
+import { DEFAULT_TOOLBAR_DOCK, type ToolbarDock } from '@/app/editor/toolbar/dock'
 import {
   DEFAULT_TOOLBAR_LAYOUT,
   normalizeToolbarLayout,
@@ -90,11 +92,19 @@ export interface NotificationPreferences {
   agentFailed: boolean
 }
 
+/** Desktop update checks. The menu item is separate from the silent launch check. */
+export interface UpdatePreferences {
+  /** Silent check a few seconds after the desktop app opens. */
+  checkOnStartup: boolean
+}
+
 export interface AppPreferences {
   appearance: {
     animations: AnimationPreference
     accent: AccentPreference
     interfaceScale: InterfaceScale
+    /** Whether a right-to-left language mirrors the interface; left-to-right languages ignore it. */
+    mirrorInterface: boolean
   }
   chat: {
     reasoningDisplay: ReasoningDisplay
@@ -120,16 +130,24 @@ export interface AppPreferences {
   designCheck: DesignCheckPreferences
   comments: CommentPreferences
   toolbar: ToolbarLayout
+  /** Where the desktop toolbar floats over the canvas. */
+  toolbarDock: ToolbarDock
   onboarding: {
     aiSetup: AISetupState
   }
   sharing: SharingPreferences
   donation: DonationPreferences
   notifications: NotificationPreferences
+  updates: UpdatePreferences
 }
 
 export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
-  appearance: { animations: 'system', accent: { ...DEFAULT_ACCENT }, interfaceScale: 100 },
+  appearance: {
+    animations: 'system',
+    accent: { ...DEFAULT_ACCENT },
+    interfaceScale: 100,
+    mirrorInterface: true
+  },
   chat: {
     reasoningDisplay: 'collapsed',
     maxAgentSteps: DEFAULT_AGENT_STEPS,
@@ -145,7 +163,7 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
     snapping: { ...DEFAULT_SNAPPING_PREFERENCES }
   },
   navigation: { zoomSpeed: 1 },
-  designCheck: { showOnCanvas: true, preset: 'recommended', disabledRules: [] },
+  designCheck: { showOnCanvas: false, preset: 'recommended', disabledRules: [] },
   comments: {
     showOnCanvas: true,
     showResolved: false,
@@ -154,10 +172,12 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
     sort: 'newest'
   },
   toolbar: structuredClone(DEFAULT_TOOLBAR_LAYOUT),
+  toolbarDock: { ...DEFAULT_TOOLBAR_DOCK },
   onboarding: { aiSetup: 'pending' },
   sharing: { dailyPing: true, usageStats: 'unset' },
   donation: { promptAfter: null },
-  notifications: { agentNeedsInput: true, agentFinished: false, agentFailed: false }
+  notifications: { agentNeedsInput: true, agentFinished: false, agentFailed: false },
+  updates: { checkOnStartup: true }
 }
 
 const STORAGE_KEY = 'open-pencil:preferences:v1'
@@ -175,6 +195,7 @@ const snapping = defaults.editing.snapping
 const appPreferencesSchema = section({
   appearance: section({
     interfaceScale: v.fallback(v.picklist(INTERFACE_SCALES), defaults.appearance.interfaceScale),
+    mirrorInterface: v.fallback(v.boolean(), defaults.appearance.mirrorInterface),
     animations: v.fallback(v.picklist(ANIMATION_PREFERENCES), defaults.appearance.animations),
     accent: v.fallback(accentPreferenceSchema, () => ({ ...DEFAULT_ACCENT }))
   }),
@@ -237,6 +258,10 @@ const appPreferencesSchema = section({
     ),
     () => structuredClone(DEFAULT_TOOLBAR_LAYOUT)
   ),
+  toolbarDock: section({
+    side: v.fallback(v.picklist(TOOLBAR_SIDES), defaults.toolbarDock.side),
+    align: v.fallback(v.picklist(TOOLBAR_ALIGNS), defaults.toolbarDock.align)
+  }),
   onboarding: section({
     aiSetup: v.fallback(v.picklist(AI_SETUP_STATES), defaults.onboarding.aiSetup)
   }),
@@ -254,6 +279,9 @@ const appPreferencesSchema = section({
     agentNeedsInput: v.fallback(v.boolean(), defaults.notifications.agentNeedsInput),
     agentFinished: v.fallback(v.boolean(), defaults.notifications.agentFinished),
     agentFailed: v.fallback(v.boolean(), defaults.notifications.agentFailed)
+  }),
+  updates: section({
+    checkOnStartup: v.fallback(v.boolean(), defaults.updates.checkOnStartup)
   })
 })
 
@@ -348,9 +376,30 @@ export function updateToolbarLayout(toolbar: ToolbarLayout): void {
   appPreferences.value = { ...appPreferences.value, toolbar }
 }
 
+export function updateToolbarDock(changes: Partial<ToolbarDock>): void {
+  appPreferences.value = {
+    ...appPreferences.value,
+    toolbarDock: { ...appPreferences.value.toolbarDock, ...changes }
+  }
+}
+
 export function updateInterfaceScale(interfaceScale: InterfaceScale): void {
   appPreferences.value = {
     ...appPreferences.value,
     appearance: { ...appPreferences.value.appearance, interfaceScale }
+  }
+}
+
+export function updateMirrorInterface(mirrorInterface: boolean): void {
+  appPreferences.value = {
+    ...appPreferences.value,
+    appearance: { ...appPreferences.value.appearance, mirrorInterface }
+  }
+}
+
+export function updateStartupUpdateCheck(checkOnStartup: boolean): void {
+  appPreferences.value = {
+    ...appPreferences.value,
+    updates: { ...appPreferences.value.updates, checkOnStartup }
   }
 }

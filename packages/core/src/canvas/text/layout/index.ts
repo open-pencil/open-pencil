@@ -8,84 +8,34 @@ import type {
   RectWidthStyle,
   RectWithDirection,
   ShapedLine
-} from 'canvaskit-wasm'
+} from '@open-pencil/canvaskit'
 
+import { blockCaretRect } from '#core/canvas/text/layout/caret'
+import { type BlockDrawing, blockDrawing, drawBlock } from '#core/canvas/text/layout/drawing'
 import {
   figmaLineBox,
   placeLines,
-  shapedLinesByLine,
-  wholePixelShift,
   type BlockPlacement,
   type TextLayoutBlockLines
 } from '#core/canvas/text/layout/lines'
+import { lineOffset, offsetAt, paragraphY } from '#core/canvas/text/layout/placement'
+import { blockShapedLines } from '#core/canvas/text/layout/shaped'
+import type {
+  LineCapHeight,
+  TextCaretBox,
+  TextLayoutBlock,
+  TextLayoutMarker
+} from '#core/canvas/text/layout/types'
 
-/** How a block is drawn: each line's shift, `null` for one without glyphs, and its marker's. */
-interface BlockDrawing {
-  lines: Array<number | null>
-  marker: number
-}
+export type {
+  LineCapHeight,
+  TextCaretBox,
+  TextLayoutBlock,
+  TextLayoutMarker
+} from '#core/canvas/text/layout/types'
 
 /** Fractions of a pixel a text is drawn below its top at that keep their drawing. */
 const MAX_DRAWN_FRACTIONS = 4
-
-/** The shift of the first line from `line` on that draws glyphs. */
-function firstShift(drawn: BlockDrawing | undefined, line: number): number {
-  return drawn?.lines.slice(line).find((shift) => shift !== null) ?? 0
-}
-
-/** A list item's number or bullet, laid out on its own. */
-export interface TextLayoutMarker {
-  paragraph: Paragraph
-  kind: 'bullet' | 'number'
-  /** Font size of the list's first character, which sets the marker's distance from the text. */
-  em: number
-  /** The face the marker is set in, for its glyph outlines. */
-  face: { family: string; style: string }
-  /** Where the marker is drawn and the line of the item it marks, set by layout. */
-  x: number
-  y: number
-  lineNumber: number
-}
-
-/** One paragraph of the text, or the whole text when it needs no paragraph layout of its own. */
-export interface TextLayoutBlock {
-  paragraph: Paragraph
-  /** Rebuilds the paragraph to show at most `maxLines` lines, when the text is truncated. */
-  rebuild?: (maxLines: number) => Paragraph
-  /** The first character the block holds, as an index into the text and in UTF-8 bytes. */
-  start: number
-  utf8Start: number
-  /** Characters the block holds, not counting the newline that ends it. */
-  length: number
-  /** Indices before the text, in UTF-16 and UTF-8, and its width: a first-line indent. */
-  lead: number
-  utf8Lead: number
-  leadWidth: number
-  /** Laid out from a space, standing for a paragraph with no characters. */
-  empty: boolean
-  /** Distance of the text from the start edge: a list item's indent. */
-  inset: number
-  rtl: boolean
-  /** Space above the block, from the paragraph before it. */
-  spaceBefore: number
-  marker: TextLayoutMarker | null
-  /** What placing its lines as Figma does needs; without it they stack as the paragraph's. */
-  lines?: TextLayoutBlockLines
-  x: number
-  y: number
-  /** Whether the block is shown, as truncation hides blocks past its last line. */
-  visible: boolean
-  /** The paragraph's line metrics, read once when the block is laid out. */
-  metrics: LineMetrics[]
-}
-
-export type LineCapHeight = (start: number, end: number) => number
-
-export interface TextCaretBox {
-  x: number
-  top: number
-  bottom: number
-}
 
 /**
  * A laid-out text node: one native paragraph per block, stacked with paragraph and list
@@ -294,16 +244,7 @@ export class TextLayout {
 
   /** The block's line `index` stands this far below where its paragraph has it. */
   private lineOffset(block: TextLayoutBlock, index: number): number {
-    return this.placements.get(block)?.offsets[index] ?? 0
-  }
-
-  /** How far a point `y` of the block's paragraph moves, by the line it falls on. */
-  private offsetAt(block: TextLayoutBlock, y: number): number {
-    const placement = this.placements.get(block)
-    if (!placement) return 0
-    const lines = block.metrics
-    const index = lines.findIndex((line) => y < line.baseline + line.descent)
-    return placement.offsets[index === -1 ? lines.length - 1 : index] ?? 0
+    return lineOffset(this.placements.get(block), index)
   }
 
   private blockHeight(block: TextLayoutBlock): number {
@@ -439,7 +380,7 @@ export class TextLayout {
     if (!block) return { pos: 0, affinity: this.ck.Affinity.Downstream }
     const local = block.paragraph.getGlyphPositionAtCoordinate(
       x - block.x,
-      this.paragraphY(block, y - block.y)
+      paragraphY(block, this.placements.get(block), y - block.y)
     )
     return {
       pos: block.empty ? block.start : this.toTextIndex(block, local.pos),
@@ -466,7 +407,7 @@ export class TextLayout {
         widthStyle
       )
       for (const { rect, dir } of local) {
-        const y = block.y + this.offsetAt(block, (rect[1] + rect[3]) / 2)
+        const y = block.y + offsetAt(block, this.placements.get(block), (rect[1] + rect[3]) / 2)
         rects.push({
           rect: Float32Array.of(rect[0] + block.x, rect[1] + y, rect[2] + block.x, rect[3] + y),
           dir
@@ -484,63 +425,7 @@ export class TextLayout {
     const found = this.blockAt(index)
     if (!found) return null
     const { block } = found
-    const local = index - block.start
-    const first = block.paragraph.getLineMetrics().at(0)
-    if (block.empty || block.length === 0) {
-      if (!first) return null
-      const top = block.y + first.baseline - first.ascent
-      // The caret stands where typing starts: after a first-line indent.
-      return {
-        x: block.x + first.left + (rtl ? first.width - block.leadWidth : block.leadWidth),
-        top,
-        bottom: top + first.height
-      }
-    }
-    const after = this.caretAfterLineBreak(block, local)
-    if (after) return after
-    let lo = local
-    let hi = local + 1
-    let useRight = false
-    if (local <= 0) {
-      lo = 0
-      hi = 1
-      useRight = rtl
-    } else if (local >= block.length) {
-      lo = block.length - 1
-      hi = block.length
-      useRight = !rtl
-    }
-    // The box of the whole character beside the caret: half an emoji or a surrogate pair has none.
-    const cluster = block.paragraph.getGlyphInfoAt(lo + block.lead)?.graphemeClusterTextRange
-    const rects = block.paragraph.getRectsForRange(
-      cluster?.start ?? lo + block.lead,
-      cluster?.end ?? hi + block.lead,
-      this.ck.RectHeightStyle.Max,
-      this.ck.RectWidthStyle.Tight
-    )
-    const rect = rects.at(0)?.rect
-    if (!rect) return null
-    const y = block.y + this.offsetAt(block, (rect[1] + rect[3]) / 2)
-    return {
-      x: block.x + (useRight ? rect[2] : rect[0]),
-      top: y + rect[1],
-      bottom: y + rect[3]
-    }
-  }
-
-  /**
-   * The caret after a line break that ends the paragraph: at the start of the empty line Skia
-   * lays out below it, where typing goes, not after the break on the line above.
-   */
-  private caretAfterLineBreak(block: TextLayoutBlock, local: number): TextCaretBox | null {
-    if (local < block.length) return null
-    const lines = block.paragraph.getLineMetrics()
-    const last = lines.at(-1)
-    const previous = lines.at(-2)
-    if (!last || !previous?.isHardBreak || last.endIndex > previous.endIncludingNewline) return null
-    const lineTop = last.baseline - last.ascent
-    const y = block.y + this.offsetAt(block, lineTop + last.height / 2)
-    return { x: block.x + last.left, top: y + lineTop, bottom: y + lineTop + last.height }
+    return blockCaretRect(this.ck, block, this.placements.get(block), index - block.start, rtl)
   }
 
   /**
@@ -549,49 +434,9 @@ export class TextLayout {
    * leaves out, has no runs and starts where the line before it ends.
    */
   getShapedLines(): ShapedLine[] {
-    const shaped: ShapedLine[] = []
-    for (const block of this.visibleBlocks()) {
-      const metrics = block.paragraph.getLineMetrics()
-      for (const [lineIndex, line] of shapedLinesByLine(block.paragraph).entries()) {
-        const y = block.y + this.lineOffset(block, lineIndex)
-        if (!line) {
-          const { baseline, ascent, descent } = metrics[lineIndex]
-          const previous = lineIndex > 0 ? shaped.at(-1) : undefined
-          const start = previous?.textRange.last ?? block.utf8Start
-          shaped.push({
-            textRange: { first: start, last: start },
-            top: baseline - ascent + y,
-            bottom: baseline + descent + y,
-            baseline: baseline + y,
-            runs: []
-          })
-          continue
-        }
-        shaped.push({
-          textRange: {
-            first: this.toUtf8(block, line.textRange.first),
-            last: this.toUtf8(block, line.textRange.last)
-          },
-          top: line.top + y,
-          bottom: line.bottom + y,
-          baseline: line.baseline + y,
-          runs: block.empty
-            ? []
-            : line.runs.map((run) => ({
-                ...run,
-                positions: run.positions.map(
-                  (value, index) => value + (index % 2 === 0 ? block.x : y)
-                ),
-                offsets: run.offsets.map((offset) => this.toUtf8(block, offset))
-              }))
-        })
-      }
-    }
-    return shaped
-  }
-
-  private toUtf8(block: TextLayoutBlock, offset: number): number {
-    return block.empty ? block.utf8Start : block.utf8Start + Math.max(0, offset - block.utf8Lead)
+    return this.visibleBlocks().flatMap((block) =>
+      blockShapedLines(block, this.placements.get(block))
+    )
   }
 
   /** Markers of the visible list items, where layout placed them. */
@@ -613,61 +458,19 @@ export class TextLayout {
     if (cached) return cached
     const drawing = new Map<TextLayoutBlock, BlockDrawing>()
     for (const block of this.visibleBlocks()) {
-      const shaped = shapedLinesByLine(block.paragraph)
-      const lines = block.metrics.map((line, index) => {
-        const drawn = shaped[index]
-        if (!drawn || drawn.runs.length === 0) return null
-        const lineTop = fraction + block.y + this.lineOffset(block, index)
-        return wholePixelShift(lineTop, line.baseline, drawn.baseline)
-      })
-      drawing.set(block, { lines, marker: this.markerShift(block, fraction) })
+      drawing.set(block, blockDrawing(block, this.placements.get(block), fraction))
     }
     if (this.drawing.size >= MAX_DRAWN_FRACTIONS) this.drawing.clear()
     this.drawing.set(fraction, drawing)
     return drawing
   }
 
-  private markerShift(block: TextLayoutBlock, fraction: number): number {
-    const marker = block.marker
-    const line = marker?.paragraph.getLineMetrics().at(0)
-    const drawn = marker ? shapedLinesByLine(marker.paragraph).at(0) : undefined
-    if (!marker || !line || !drawn) return 0
-    return wholePixelShift(fraction + marker.y, line.baseline, drawn.baseline)
-  }
-
   /** Draws the text with every baseline on a whole pixel of its box, as Figma does. */
   draw(canvas: Canvas, x: number, y: number): void {
     const drawing = this.prepareDrawing(y)
     for (const block of this.visibleBlocks()) {
-      const drawn = drawing.get(block)
-      const pieces = this.placements.get(block)?.pieces
-      if (!pieces) {
-        canvas.drawParagraph(block.paragraph, x + block.x, y + block.y + firstShift(drawn, 0))
-      }
-      for (const piece of pieces ?? []) {
-        const top = y + block.y + piece.y + firstShift(drawn, piece.line)
-        canvas.drawParagraph(piece.paragraph, x + block.x + piece.x, top)
-      }
-      const marker = block.marker
-      if (marker) {
-        canvas.drawParagraph(marker.paragraph, x + marker.x, y + marker.y + (drawn?.marker ?? 0))
-      }
+      drawBlock(canvas, block, this.placements.get(block), drawing.get(block), x, y)
     }
-  }
-
-  /** Where in the block's paragraph a point `y` below the block's top falls, by its line. */
-  private paragraphY(block: TextLayoutBlock, y: number): number {
-    const placement = this.placements.get(block)
-    if (!placement) return y
-    const lines = block.paragraph.getLineMetrics()
-    // A point belongs to the line whose box it is in, or the nearest after the one above it.
-    const index = lines.findIndex((line, lineIndex) => {
-      const box = placement.boxes[lineIndex]
-      const baseline = line.baseline + placement.offsets[lineIndex]
-      return y < baseline - box.ascent + box.height
-    })
-    const line = lines[index === -1 ? lines.length - 1 : index]
-    return line.baseline
   }
 
   isDeleted(): boolean {

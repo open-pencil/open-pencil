@@ -1,5 +1,4 @@
-import type { CanvasKit, Path } from 'canvaskit-wasm'
-
+import type { CanvasKit, Path } from '@open-pencil/canvaskit'
 import type { VectorPath } from '@open-pencil/scene-graph/vector-network'
 
 import { tracePath } from '#core/canvas/paths/verbs'

@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test'
 
-import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { renderJSX } from '@open-pencil/core/design-jsx'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 async function render(jsx: string) {
   const graph = new SceneGraph()

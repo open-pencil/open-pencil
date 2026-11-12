@@ -3,7 +3,6 @@ import { describe, expect, test } from 'bun:test'
 import { createEditor } from '@open-pencil/core'
 import { vectorHandleId } from '@open-pencil/core/vector'
 import { SceneGraph, type VectorNetwork } from '@open-pencil/scene-graph'
-
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 /** An open path of three points, curved between the first two. */

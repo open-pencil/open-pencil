@@ -2,9 +2,10 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { captureTouchedCheckpoint } from '@open-pencil/scene-graph/checkpoint'
 
 import type { Editor } from '#core/editor/create'
-import { ReadOnlyDocumentError } from '#core/editor/read-only'
+import { layerEditRefusal } from '#core/editor/read-only'
 import { resolveEditorProfile, type EditorProfileInputs } from '#core/editor/views'
 import type { FigmaAPI } from '#core/figma-api'
+import { graphOf } from '#core/figma-api/graph'
 import { isAtomicTool, type ToolDef } from '#core/tools/schema'
 
 import {
@@ -58,12 +59,13 @@ export function executeAtomicTool(
   options: AtomicToolOptions = {}
 ): unknown {
   if (!isAtomicTool(def)) throw new Error(`Not an atomic tool: ${def.name}`)
-  if (!resolveEditorProfile(editor.state).edits) throw new ReadOnlyDocumentError()
+  const refused = layerEditRefusal(resolveEditorProfile(editor.state))
+  if (refused) throw refused
   options.signal?.throwIfAborted()
-  if (editor.graph !== figma.graph || options.isLive?.() === false) {
+  if (editor.graph !== graphOf(figma) || options.isLive?.() === false) {
     throw new Error('The target document is no longer open')
   }
-  const graph = figma.graph
+  const graph = graphOf(figma)
   const pageId = figma.currentPageId
   const checkpoint = captureTouchedCheckpoint(graph)
   let recorded = emptyDocumentChange(pageId)

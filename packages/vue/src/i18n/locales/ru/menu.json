@@ -5,6 +5,7 @@
   "object": "Объект",
   "arrange": "Порядок",
   "text": "Текст",
+  "help": "Справка",
   "new": "Новый дизайн",
   "newTab": "Новая вкладка",
   "open": "Открыть…",
@@ -90,5 +91,12 @@
   "showVersionHistory": "Показать историю версий",
   "saveToVersionHistory": "Сохранить в историю версий…",
   "reportProblem": "Сообщить о проблеме…",
-  "supportOpenPencil": "Поддержать OpenPencil…"
+  "supportOpenPencil": "Поддержать OpenPencil…",
+  "documentation": "Документация OpenPencil",
+  "keyboardShortcuts": "Сочетания клавиш",
+  "whatsNew": "Что нового",
+  "community": "Сообщество в Discord",
+  "github": "OpenPencil на GitHub",
+  "newBoard": "Новая доска",
+  "toggleAIChat": "Переключить чат AI"
 }
