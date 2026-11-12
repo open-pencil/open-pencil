@@ -15,6 +15,7 @@ import {
 import type { GUID } from '@open-pencil/kiwi/fig'
 import { initCodec, type NodeChange as KiwiNodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import {
   collectionAssetKey,
   derivedAssetVersion,
@@ -191,8 +192,9 @@ async function writeFigmaClipboardHTML(
   const slotContentRecords: KiwiNodeChange[] = []
   for (let i = 0; i < nodes.length; i++) {
     collectTextNodes(nodes[i])
-    nodeChanges.push(
-      ...sceneNodeToKiwi(nodes[i], canvasGuid, i, localIdCounter, graph, blobs, {
+    appendAll(
+      nodeChanges,
+      sceneNodeToKiwi(nodes[i], canvasGuid, i, localIdCounter, graph, blobs, {
         nodeIdToGuid,
         fontDigestMap,
         varIdToGuid: variableIds,
@@ -248,8 +250,9 @@ async function writeFigmaClipboardHTML(
   const dependencyGuids = new Map([...nodeIdToGuid].filter(([id]) => !selected.has(id)))
   for (const component of dependencies.values()) {
     collectTextNodes(component)
-    nodeChanges.push(
-      ...sceneNodeToKiwi(component, dependencyCanvas, 0, localIdCounter, graph, blobs, {
+    appendAll(
+      nodeChanges,
+      sceneNodeToKiwi(component, dependencyCanvas, 0, localIdCounter, graph, blobs, {
         nodeIdToGuid: dependencyGuids,
         fontDigestMap,
         varIdToGuid: variableIds,
@@ -270,7 +273,7 @@ async function writeFigmaClipboardHTML(
       change.parentIndex.guid.localID === dependencyCanvas.localID
   ).length
   placeSlotContent(slotContentRecords, dependencyCanvas, written, fractionalPosition)
-  nodeChanges.push(...slotContentRecords)
+  appendAll(nodeChanges, slotContentRecords)
   // A connector copied before a layer its end joins is joined to it now that both have GUIDs.
   relinkConnectorEnds(nodeChanges, graph, nodeIdToGuid)
   // A connector in a dependency joins the copies written beside it there, not the page's.

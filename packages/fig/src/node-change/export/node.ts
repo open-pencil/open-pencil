@@ -12,6 +12,7 @@ import type {
   SceneNode,
   VariantPropSpec
 } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { variantOptions } from '@open-pencil/scene-graph/components'
 import {
   DEFAULT_STROKE_MITER_LIMIT,
@@ -413,12 +414,13 @@ function applyInstancePayload(
     const symbolData: Record<string, unknown> = { symbolID }
     const symbolOverrides: KiwiSymbolOverridePayload[] = []
     if (node.source.fig.symbolOverrides.length > 0) {
-      symbolOverrides.push(
-        ...(materializeFigmaPayload(node.source.fig.symbolOverrides, context.blobs, {
+      appendAll(
+        symbolOverrides,
+        materializeFigmaPayload(node.source.fig.symbolOverrides, context.blobs, {
           blobIndexByHex: context.blobIndexByHex,
           includePaintVariables: true,
           includeVariableMaps: true
-        }) as KiwiSymbolOverridePayload[])
+        }) as KiwiSymbolOverridePayload[]
       )
     }
     mergeOverrides(

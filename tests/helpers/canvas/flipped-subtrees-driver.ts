@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test'
 import { fromUint8Array } from 'js-base64'
 
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
@@ -134,7 +135,7 @@ export function flippedSubtreesDriver(page: () => Page) {
           .filter(({ detail }) => detail.layer === 'tiled-scheduler' && detail.remaining === 0)
           .map(({ detail }) => detail.presentedTileCount)
           .filter((count) => typeof count === 'number')
-        return { sceneRenderer: recording.sceneRenderer, presentedTiles: Math.max(0, ...presented) }
+        return { sceneRenderer: recording.sceneRenderer, presentedTiles: maxOf([0, ...presented]) }
       })
       return { pixels, submission }
     },

@@ -8,6 +8,7 @@ import {
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 
@@ -24,7 +25,6 @@ import { compressFigCanvas } from './compress'
 import { archiveImagesNamedForFigma, writePatchedFigFile } from './patch'
 import { withFigExportRuntime } from './runtime'
 import {
-  appendRecords,
   exportSchema,
   figExportRecordOptions,
   type FigExportSetup,
@@ -63,7 +63,7 @@ function appendInternalResources(context: InternalResourceContext): void {
     context.assignedGuidValues
   )
   for (let index = 0; index < sharedStyleNodes.length; index++) {
-    appendRecords(
+    appendAll(
       nodeChanges,
       sceneNodeToKiwi(
         sharedStyleNodes[index],
@@ -172,7 +172,7 @@ async function writeFigFile(
       .filter((child) => !child.internalOnly && child.sharedStyleType === null)
     const base = countCanvasChildren(nodeChanges, canvasGuid)
     for (let i = 0; i < children.length; i++) {
-      appendRecords(
+      appendAll(
         nodeChanges,
         sceneNodeToKiwi(
           children[i],
@@ -189,7 +189,7 @@ async function writeFigFile(
   if (internalCanvasGuid) {
     const first = countCanvasChildren(nodeChanges, internalCanvasGuid)
     placeSlotContent(slotContentRecords, internalCanvasGuid, first, fractionalPosition)
-    appendRecords(nodeChanges, slotContentRecords)
+    appendAll(nodeChanges, slotContentRecords)
   }
 
   const msg: Record<string, unknown> = {

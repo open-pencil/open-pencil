@@ -2,6 +2,7 @@ import { isEqual } from 'es-toolkit'
 
 import type { Path } from '@open-pencil/canvaskit'
 import type { Fill, SceneGraph, SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import { copyEffects, copyFills, copyStrokes } from '@open-pencil/scene-graph/copy'
 import Matrix from '@open-pencil/scene-graph/matrix'
@@ -165,10 +166,10 @@ function topStroke(node: SceneNode): Pick<SceneNode, StrokeFields> {
 function boundsOf(paths: Path[]): Rect | null {
   if (paths.length === 0) return null
   const all = paths.map((path) => path.getBounds())
-  const left = Math.min(...all.map((bounds) => bounds[0]))
-  const top = Math.min(...all.map((bounds) => bounds[1]))
-  const right = Math.max(...all.map((bounds) => bounds[2]))
-  const bottom = Math.max(...all.map((bounds) => bounds[3]))
+  const left = minOf(all.map((bounds) => bounds[0]))
+  const top = minOf(all.map((bounds) => bounds[1]))
+  const right = maxOf(all.map((bounds) => bounds[2]))
+  const bottom = maxOf(all.map((bounds) => bounds[3]))
   return { x: left, y: top, width: right - left, height: bottom - top }
 }
 

@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { SkiaRenderer } from '#core/canvas/renderer'
@@ -261,7 +262,7 @@ describe('derived text rendering', () => {
         'pixels'
       )
 
-      expect(Math.max(...pixels.filter((_, index) => index % 4 === 3))).toBeGreaterThan(0)
+      expect(maxOf(pixels.filter((_, index) => index % 4 === 3))).toBeGreaterThan(0)
       image.delete()
     } finally {
       surface.delete()

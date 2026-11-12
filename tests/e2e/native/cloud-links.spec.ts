@@ -1,5 +1,7 @@
 import { strict as assert } from 'node:assert'
 
+import { appendAll } from '@open-pencil/scene-graph/arrays'
+
 import { invokeNative } from '#tests/helpers/tauri/invoke'
 
 const SIGN_IN_URL = 'https://cloud.example.test/auth/device?user_code=ABCD-EFGH'
@@ -61,7 +63,7 @@ describe('native Cloud links', () => {
       const opened: string[] = []
       await browser.waitUntil(
         async () => {
-          opened.push(...(await invokeNative<string[]>('take_native_test_opened_urls')))
+          appendAll(opened, await invokeNative<string[]>('take_native_test_opened_urls'))
           return opened.length > 0
         },
         { timeout: 5_000, timeoutMsg: 'The link did not open' }

@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, setDefaultTimeout, test } from 'bun:test'
 import { parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { parseFixture } from '@open-pencil/test-support/fig/fixtures'
 import {
   childMatching,
@@ -263,8 +264,8 @@ describe('derived instance layout regressions', () => {
     for (const vector of linkVectors) {
       const xs = vector.vectorNetwork?.vertices.map((vertex) => vertex.x) ?? []
       const ys = vector.vectorNetwork?.vertices.map((vertex) => vertex.y) ?? []
-      expect(Math.max(...xs)).toBeLessThanOrEqual(vector.width + 0.001)
-      expect(Math.max(...ys)).toBeLessThanOrEqual(vector.height + 0.001)
+      expect(maxOf(xs)).toBeLessThanOrEqual(vector.width + 0.001)
+      expect(maxOf(ys)).toBeLessThanOrEqual(vector.height + 0.001)
     }
   })
 

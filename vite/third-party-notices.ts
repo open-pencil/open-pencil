@@ -7,6 +7,8 @@ import satisfies from 'spdx-satisfies'
 import * as v from 'valibot'
 import type { Plugin, PluginOption } from 'vite'
 
+import { maxOf } from '@open-pencil/scene-graph/arrays'
+
 /**
  * The licenses a bundled npm package may carry. EPL-2.0 and MPL-2.0 are file-level copyleft, met
  * by notices that name each package's source.
@@ -59,7 +61,7 @@ function workspacePackages(root: string): Set<string> {
 }
 
 function fenced(text: string): string {
-  const longest = Math.max(2, ...[...text.matchAll(/`+/g)].map(([run]) => run.length))
+  const longest = maxOf([2, ...[...text.matchAll(/`+/g)].map(([run]) => run.length)])
   const fence = '`'.repeat(longest + 1)
   return `${fence}text\n${text.trimEnd()}\n${fence}`
 }

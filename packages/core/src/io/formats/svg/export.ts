@@ -37,6 +37,7 @@ import {
 export { geometryBlobToSVGPath, nodeOutlinePath, type OutlineNode } from './paths'
 
 import type { SceneGraph, SceneNode, Fill, Stroke, VectorNetwork } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import {
   hasRegionFills,
   looseSegments,
@@ -79,12 +80,12 @@ function vectorShapeElements(
 ): SVGNode[] {
   const elements: SVGNode[] = []
   const filled = fillOutlines(node)
-  elements.push(...outlineElements(node, filled?.outlines ?? [], common, ctx, fallbackFills))
+  appendAll(elements, outlineElements(node, filled?.outlines ?? [], common, ctx, fallbackFills))
   const network = node.vectorNetwork
-  if (network && !filled) elements.push(...networkElements(node, network, common))
+  if (network && !filled) appendAll(elements, networkElements(node, network, common))
   // Traced regions leave the open segments, which the canvas strokes, to add here.
   else if (network && filled?.traced && looseSegments(network).length > 0)
-    elements.push(...openPathElements(node, network, common, looseSegments))
+    appendAll(elements, openPathElements(node, network, common, looseSegments))
   if (node.strokeGeometry.length > 0 && strokeAttrs.stroke && strokeAttrs.stroke !== 'none') {
     for (const geo of node.strokeGeometry) {
       const d = geometryBlobToSVGPath(geo.commandsBlob)
@@ -100,7 +101,8 @@ function vectorShapeElements(
       }
     }
   }
-  if (node.vectorNetwork) elements.push(...vectorArrowHeads(node, node.vectorNetwork, strokeAttrs))
+  if (node.vectorNetwork)
+    appendAll(elements, vectorArrowHeads(node, node.vectorNetwork, strokeAttrs))
   return elements.length > 0
     ? elements
     : [svg('rect', { width: round(node.width), height: round(node.height), ...common })]
@@ -461,7 +463,7 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   if (clipId && childContent.length > 0) {
     children.push(svg('g', { 'clip-path': `url(#${clipId})` }, ...childContent))
   } else {
-    children.push(...childContent)
+    appendAll(children, childContent)
   }
 
   const validChildren = children.filter((c): c is SVGNode => c !== null)
@@ -542,7 +544,7 @@ export function renderNodesToSVG(
   if (ctx.defs.length > 0) {
     rootChildren.push(svg('defs', {}, ...ctx.defs))
   }
-  rootChildren.push(...contentNodes)
+  appendAll(rootChildren, contentNodes)
 
   const root = svg(
     'svg',

@@ -12,6 +12,7 @@ import {
 } from '@open-pencil/fig/node-change'
 import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
 import { computeImageHash } from '@open-pencil/scene-graph/images'
 import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
@@ -26,7 +27,6 @@ import {
 
 import { figCompressionLevel } from '#core/io/formats/fig/compression'
 import {
-  appendRecords,
   figExportRecordOptions,
   type FigExportSetup,
   figFileExtras,
@@ -348,7 +348,7 @@ function writeRecords(setup: FigExportSetup, plan: RecordPlan): KiwiNodeChange[]
       if (!internal) return null
       if (!internal.page.id && !internalWritten) written.push(internal.canvasNc)
       internalWritten = true
-      appendRecords(
+      appendAll(
         written,
         sceneNodeToKiwi(
           node,
@@ -375,7 +375,7 @@ function writeRecords(setup: FigExportSetup, plan: RecordPlan): KiwiNodeChange[]
         : setup.nodeIdToGuid.get(parent.id)
     if (!parentGuid) return null
     const index = graph.getChildren(parent.id).findIndex((child) => child.id === node.id)
-    appendRecords(
+    appendAll(
       written,
       sceneNodeToKiwi(node, parentGuid, index, setup.localIdCounter, graph, setup.blobs, options)
     )

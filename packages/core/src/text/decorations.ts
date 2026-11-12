@@ -6,6 +6,7 @@ import type {
   SceneNode,
   TextDecorationStyle
 } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 
 import { characterStyles, TEXT_STYLE_KEYS, type CharacterStyle } from './character-style'
@@ -270,7 +271,10 @@ export function textDecorationRects(
     }
     let end = start + 1
     while (end < text.length && text[end] !== '\n' && sameDecoration(styles[end], style)) end++
-    rects.push(...decorationRects(style, start, lineSpans(glyphs, byCharacter, start, end), styles))
+    appendAll(
+      rects,
+      decorationRects(style, start, lineSpans(glyphs, byCharacter, start, end), styles)
+    )
     start = end
   }
   return rects
