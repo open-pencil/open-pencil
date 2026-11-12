@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { joinURL } from 'ufo'
 import { computed, ref } from 'vue'
 
 import { useCloudMessages } from '@open-pencil/vue/i18n'
@@ -65,7 +66,7 @@ async function askToRemove(id: string) {
 
 function manageAccount(id: string) {
   const server = findCloudServer(id)
-  if (server) void openExternalLink(new URL('/account', server.url).href)
+  if (server) void openExternalLink(joinURL(server.url, '/account'))
 }
 
 /** Opens the server's terms page, where accepting the current version lets the account back in. */
