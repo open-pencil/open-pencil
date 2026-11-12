@@ -12,8 +12,8 @@ import type { InstanceOverrideState } from '@open-pencil/scene-graph/instances/o
 
 import { graphOf } from '#core/figma-api/graph'
 
-import type { NodeProxyInternals, ProxyThis } from './accessor-utils'
-import { assertProxyEditable, raw } from './accessor-utils'
+import type { NodeProxyInternals, ProxyThis } from './accessors/utils'
+import { assertProxyEditable, raw } from './accessors/utils'
 import { flushPendingLayout } from './pending-layout'
 
 /** One layer of an instance and the fields an edit changed on it, as Figma's `overrides`. */
