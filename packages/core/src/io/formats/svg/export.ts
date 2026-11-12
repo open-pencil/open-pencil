@@ -46,7 +46,7 @@ import {
 
 import { arrowHeadElements, openPathElements, vectorArrowHeads } from './arrows'
 import type { SVGExportContext } from './defs'
-import { svg, renderSVGNode } from './node'
+import { svg, svgElement, renderSVGNode } from './node'
 import type { SVGNode } from './node'
 import { fillOutlines, outlineElements } from './regions'
 import { alignedStroke, alignedStrokeElement, shapeWithTextDetailElements } from './strokes'
@@ -461,7 +461,7 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   }
 
   if (clipId && childContent.length > 0) {
-    children.push(svg('g', { 'clip-path': `url(#${clipId})` }, ...childContent))
+    children.push(svgElement('g', { 'clip-path': `url(#${clipId})` }, childContent))
   } else {
     appendAll(children, childContent)
   }
@@ -476,7 +476,7 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
     return validChildren[0]
   }
 
-  return svg('g', groupAttrs, ...validChildren)
+  return svgElement('g', groupAttrs, validChildren)
 }
 
 function isGroupLike(node: SceneNode): boolean {
@@ -542,11 +542,11 @@ export function renderNodesToSVG(
 
   const rootChildren: (SVGNode | string)[] = []
   if (ctx.defs.length > 0) {
-    rootChildren.push(svg('defs', {}, ...ctx.defs))
+    rootChildren.push(svgElement('defs', {}, ctx.defs))
   }
   appendAll(rootChildren, contentNodes)
 
-  const root = svg(
+  const root = svgElement(
     'svg',
     {
       xmlns: 'http://www.w3.org/2000/svg',
@@ -555,7 +555,7 @@ export function renderNodesToSVG(
       height,
       viewBox: `0 0 ${width} ${height}`
     },
-    ...(rootChildren as SVGNode[])
+    rootChildren
   )
 
   const svgStr = renderSVGNode(root)
@@ -586,7 +586,7 @@ export function renderNodeSVGElement(
   return svg(
     'svg',
     { width, height, viewBox: `0 0 ${width} ${height}` },
-    ctx.defs.length > 0 ? svg('defs', {}, ...ctx.defs) : null,
+    ctx.defs.length > 0 ? svgElement('defs', {}, ctx.defs) : null,
     drawn
   )
 }

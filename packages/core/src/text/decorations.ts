@@ -67,7 +67,7 @@ export function hasDecoration(node: SceneNode): boolean {
 /**
  * Whether two characters' decorations are one line: Figma joins characters of one style and
  * decoration paint, whatever their fills, and paints each piece as its last character
- * (`pieceCharacter`).
+ * (`pieceCharacters`).
  */
 function sameDecoration(a: CharacterStyle, b: CharacterStyle): boolean {
   return (
@@ -179,18 +179,8 @@ function paintsOf(
   return style ? decorationPaints(style) : fallback
 }
 
-/**
- * The character whose paints a decoration piece ending at `x2` takes, as Figma paints them (Figma
- * desktop 126): the one whose descender breaks the underline there, or the line's last character
- * where the piece runs to its end, as a strikethrough always does.
- */
-function pieceCharacter(
-  line: LineSpan,
-  x2: number,
-  breaks: readonly InkBreak[]
-): number | undefined {
-  const at = breaks.find(({ left }) => Math.abs(left - x2) < 1e-6)
-  if (at) return at.character
+/** The character drawn rightmost on `line`, whose paints a piece running to the line's end takes. */
+function lastCharacter(line: LineSpan): number | undefined {
   let last: number | undefined
   let lastX = -Infinity
   for (const { glyph } of line.glyphs) {
@@ -199,6 +189,21 @@ function pieceCharacter(
     lastX = glyph.x
   }
   return last
+}
+
+/**
+ * The character whose paints each piece of `line` takes, by where the piece ends, as Figma paints
+ * them (Figma desktop 126): the one whose descender breaks the underline there, or the line's last
+ * character where the piece runs to its end, as a strikethrough always does.
+ */
+function pieceCharacters(
+  line: LineSpan,
+  breaks: readonly InkBreak[]
+): (x2: number) => number | undefined {
+  const atBreak = new Map<number, number | undefined>()
+  for (const { left, character } of breaks) if (!atBreak.has(left)) atBreak.set(left, character)
+  const last = lastCharacter(line)
+  return (x2) => (atBreak.has(x2) ? atBreak.get(x2) : last)
 }
 
 function decorationRects(
@@ -230,6 +235,7 @@ function decorationRects(
     const breaks = skipInk ? inkBreaks(line, top, height, pad) : []
     const gaps = breaks.map(({ left, right }): InkSpan => [left, right])
     const parts = withoutGaps(line.x1, line.x2, gaps, minWidth)
+    const characterAt = pieceCharacters(line, breaks)
     return parts.map(([x1, x2]) => ({
       firstCharacter,
       x: x1,
@@ -237,7 +243,7 @@ function decorationRects(
       width: x2 - x1,
       height,
       style: underline ? style.textDecorationStyle : 'SOLID',
-      fills: paintsOf(pieceCharacter(line, x2, breaks), styles, fills)
+      fills: paintsOf(characterAt(x2), styles, fills)
     }))
   })
 }

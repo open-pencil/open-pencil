@@ -53,6 +53,12 @@ const KEPT_FIELDS = [
   'layoutPositioning'
 ] as const
 
+/**
+ * How the layer fills its auto layout parent, which each outline vector keeps; text's outlines
+ * are a group, which Figma sizes fixed (Figma desktop 126).
+ */
+const FILL_SIZING_FIELDS = ['layoutGrow', 'layoutAlignSelf'] as const
+
 /** A layer's strokes as fills, which paint what the strokes painted. */
 function strokePaints(node: SceneNode): Fill[] {
   return node.strokes.map((stroke) =>
@@ -118,7 +124,12 @@ function pieceOf(
     const vectorNetwork = networkIn(r, first.path, box)
     return {
       type: 'VECTOR',
-      props: { ...props, fills: copyFills(first.fills), vectorNetwork },
+      props: {
+        ...props,
+        ...pick(node, FILL_SIZING_FIELDS),
+        fills: copyFills(first.fills),
+        vectorNetwork
+      },
       children: []
     }
   }

@@ -24,9 +24,12 @@ export type VectorPathChanges = Pick<
 /**
  * A layer's paints with its gradients kept where they were on the canvas rather than stretched to
  * its new box `bounds`, in its old frame, as Figma keeps them when a path edit resizes the layer.
+ * A box flat on either axis keeps them as they are: a gradient squeezed into it could not be
+ * inverted, so it would neither draw nor come back when the path widens again.
  */
 function paintsKeptInPlace(node: SceneNode, bounds: Rect): Pick<SceneNode, 'fills' | 'strokes'> {
-  if (!(node.width > 0 && node.height > 0)) return { fills: node.fills, strokes: node.strokes }
+  const flat = !(node.width > 0 && node.height > 0 && bounds.width > 0 && bounds.height > 0)
+  if (flat) return { fills: node.fills, strokes: node.strokes }
   const box = {
     x: bounds.x / node.width,
     y: bounds.y / node.height,

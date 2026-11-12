@@ -404,6 +404,42 @@ describe('outlineStrokeSelected', () => {
     expect(editor.graph.getNode(frame.id)?.type).toBe('FRAME')
   })
 
+  test('keeps Fill sizing in auto layout on each outline, but not on text’s group', async () => {
+    // Recorded in Figma desktop 126 (scratch/pr-oracle/grouping/layout-sizing.ts): a layer that
+    // fills its row on both axes leaves outlines that fill it too; text's glyph group is fixed.
+    const editor = await createEditorWithRenderer({ fonts: true })
+    const row = editor.graph.createNode('FRAME', editor.state.currentPageId, {
+      layoutMode: 'HORIZONTAL',
+      width: 400,
+      height: 120
+    })
+    const fill = { layoutGrow: 1, layoutAlignSelf: 'STRETCH' } as const
+    const shape = editor.graph.createNode('RECTANGLE', row.id, {
+      name: 'R',
+      fills: [solid(BLUE)],
+      strokes: [stroke('CENTER')],
+      ...fill
+    })
+    const text = editor.graph.createNode('TEXT', row.id, {
+      name: 'T',
+      text: 'Hey',
+      fontSize: 32,
+      fills: [solid(BLUE)],
+      ...fill
+    })
+    editor.select([shape.id, text.id])
+    editor.outlineStrokeSelected()
+
+    const sizing = editor.graph
+      .getChildren(row.id)
+      .map((node) => [node.name, node.type, node.layoutGrow, node.layoutAlignSelf])
+    expect(sizing).toEqual([
+      ['R', 'VECTOR', 1, 'STRETCH'],
+      ['R (Stroke)', 'VECTOR', 1, 'STRETCH'],
+      ['T', 'GROUP', 0, 'AUTO']
+    ])
+  })
+
   test('leaves a shape with neither fill nor stroke, and a frame on its own, alone', async () => {
     const editor = await createEditorWithRenderer()
     const pageId = editor.state.currentPageId
