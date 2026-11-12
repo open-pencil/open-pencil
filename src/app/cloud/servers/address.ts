@@ -1,4 +1,4 @@
-import { cleanDoubleSlashes, hasProtocol, withoutTrailingSlash } from 'ufo'
+import { hasProtocol } from 'ufo'
 
 /**
  * The canonical address of a Cloud server from what a person typed: HTTPS unless they wrote a
@@ -23,7 +23,8 @@ export function normalizeCloudServerURL(input: string): string | null {
   if (url.username || url.password) return null
   url.search = ''
   url.hash = ''
-  return withoutTrailingSlash(cleanDoubleSlashes(url.href))
+  // Every trailing slash, and no other: a path's own slashes may route differently behind a proxy.
+  return url.href.replace(/\/+$/, '')
 }
 
 /** The host a person recognizes a server by, such as `cloud.example.com`. */

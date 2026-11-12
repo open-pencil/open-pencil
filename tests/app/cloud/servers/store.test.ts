@@ -26,6 +26,10 @@ describe('Cloud server addresses', () => {
     expect(normalizeCloudServerURL('https://cloud.example.com/team//')).toBe(
       'https://cloud.example.com/team'
     )
+    // A path's own slashes stay, since a proxy may route them differently.
+    expect(normalizeCloudServerURL('https://cloud.example.com/team//cloud/')).toBe(
+      'https://cloud.example.com/team//cloud'
+    )
   })
 
   test('refuse what cannot be a server', () => {

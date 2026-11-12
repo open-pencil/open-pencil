@@ -1,6 +1,5 @@
 import { escapeUTF8 } from 'entities'
 import { compact } from 'es-toolkit/array'
-import { cleanDoubleSlashes, withoutTrailingSlash } from 'ufo'
 
 import { IS_BROWSER, WEB_APP_ORIGIN } from '@/constants'
 
@@ -22,7 +21,7 @@ export const CLOUD_CORS_STATIC_ORIGINS = [
 
 export function collectCloudCORSOrigins(extra?: string | null): string[] {
   const set = new Set<string>(CLOUD_CORS_STATIC_ORIGINS)
-  if (extra?.trim()) set.add(withoutTrailingSlash(cleanDoubleSlashes(extra.trim())))
+  if (extra?.trim()) set.add(extra.trim().replace(/\/+$/, ''))
   if (IS_BROWSER && window.location.origin) {
     set.add(window.location.origin)
   }
