@@ -1,0 +1,1 @@
+- A coding agent's capabilities belong to its model profile: image input starts as the agent reports it and can be turned off, Pi profiles have none, and guided setup lets Review and Fast tasks follow a coding-agent Design model (#2032).
