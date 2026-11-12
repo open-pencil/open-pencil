@@ -186,6 +186,10 @@ export const cloudMessageDefaults = {
 
   // Status
   statusViewOnlyDetail: 'You can look around and follow others; your changes won’t reach anyone.',
+  statusStorageFull: 'Storage full',
+  statusStorageFullDetail:
+    'The owner of this file has used all their storage, so it’s view only until space is freed or their plan grows. It can still be opened, downloaded, and deleted.',
+  statusManagePlan: 'Manage plan',
   // Keeping a file without an account
   draftHeading: 'Keep this file',
   draftDescription: params<{ host: string }>(
