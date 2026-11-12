@@ -1,6 +1,7 @@
 import { serviceCatalogSchema, type ServiceCatalog } from '#cloud/contract'
 import { httpURLSchema } from '#cloud/server/config/schema'
 import { parse as parseTOML } from 'smol-toml'
+import { withoutTrailingSlash } from 'ufo'
 import * as v from 'valibot'
 
 export type ServicesEnvironment = Readonly<Record<string, string | undefined>>
@@ -112,7 +113,7 @@ export function parseServicesConfig(
     maximumConcurrentRequests: config.relay.max_concurrent_requests,
     maximumRequestBytes: config.relay.max_request_bytes,
     databaseURL: requiredSecret(environment, config.database.url.from_env),
-    upstreamURL: config.upstream.base_url.replace(/\/+$/, ''),
+    upstreamURL: withoutTrailingSlash(config.upstream.base_url),
     upstreamKey: requiredSecret(environment, config.upstream.api_key.from_env),
     catalog: catalogFrom(config.catalog)
   }
