@@ -26,7 +26,10 @@ export interface FillRootSlots {
 export interface FillSwatchProps extends PrimitiveProps {
   /** Fill represented by the swatch. */
   fill: Fill
-  /** Accessible name for the preview. */
+  /**
+   * Accessible name for the preview. Without one the swatch is decorative and hidden from
+   * assistive technology, as when a button or row around it already names the color.
+   */
   label?: string
 }
 
