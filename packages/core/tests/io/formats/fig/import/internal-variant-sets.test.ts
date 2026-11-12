@@ -9,8 +9,8 @@ import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
 import { switchVariant, syncVariantName } from '#core/figma-api/variants'
 import { parseFigFileViaWorker } from '#core/io/formats/fig/read'
-import { releaseFigPopulationWorker } from '#core/kiwi/fig/population/client'
 import { deserializeSceneGraph, serializeSceneGraph } from '#core/kiwi/fig/parse/transfer'
+import { releaseFigPopulationWorker } from '#core/kiwi/fig/population/client'
 import {
   loadReaderVariants,
   populateFigInternalPages,
@@ -69,7 +69,9 @@ async function libraryVariantFile({
   const internal = graph.addPage('Internal Only Canvas')
   graph.updateNode(internal.id, { internalOnly: true })
   const icons = variantSet(graph, internal.id, 'Icon', 'Kind')
-  const iconVariants = KINDS.map((kind, index) => variant(graph, icons.id, 'Kind', kind, index * 120))
+  const iconVariants = KINDS.map((kind, index) =>
+    variant(graph, icons.id, 'Kind', kind, index * 120)
+  )
   const chip = variantSet(graph, internal.id, 'Chip', 'State')
   const chipVariants = STATES.map((state, index) => {
     const node = variant(graph, chip.id, 'State', state, index * 120)
@@ -159,9 +161,7 @@ test('switching to an unbuilt variant builds it, with the sets it uses, in saved
   ])
   expect(builtValues(graph, 'Icon', 'Kind')).toEqual(['Star'])
   const icon = graph.getChildren(target?.id ?? '').find((node) => node.type === 'INSTANCE')
-  expect(editor.getVariantOptionAvailability(icon?.id ?? '', 'Kind')).toEqual(
-    allAvailable(KINDS)
-  )
+  expect(editor.getVariantOptionAvailability(icon?.id ?? '', 'Kind')).toEqual(allAvailable(KINDS))
 
   editor.undo.undo()
   expect(graph.getNode(pageInstance(graph).componentId ?? '')?.componentPropertyValues.State).toBe(
@@ -257,9 +257,12 @@ test('loading the internal canvas after a switch adds the other variants once, i
 
 test('a variant whose name disagrees with its saved values is listed and found by its values', async () => {
   const misnamed = (state: string) => (state === 'Disabled' ? 'State=Off' : `State=${state}`)
-  const graph = await parseFigFile((await libraryVariantFile({ chipName: misnamed })).slice().buffer, {
-    populate: 'first-page'
-  })
+  const graph = await parseFigFile(
+    (await libraryVariantFile({ chipName: misnamed })).slice().buffer,
+    {
+      populate: 'first-page'
+    }
+  )
   const editor = createEditor({ graph })
   expect(editor.getVariantOptionAvailability(pageInstance(graph).id, 'State')).toEqual(
     allAvailable(STATES)
@@ -316,7 +319,9 @@ function componentNamed(graph: SceneGraph, name: string): SceneNode | undefined 
 }
 
 function optionValues(editor: Editor, graph: SceneGraph, property: string): string[] {
-  return editor.getVariantOptionAvailability(pageInstance(graph).id, property).map(({ value }) => value)
+  return editor
+    .getVariantOptionAvailability(pageInstance(graph).id, property)
+    .map(({ value }) => value)
 }
 
 test('a variant renamed through the plugin API to an unbuilt variant keeps its values', async () => {
