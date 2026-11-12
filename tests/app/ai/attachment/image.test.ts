@@ -9,6 +9,7 @@ import type { AgentImageAnalysisOptions } from '@/app/ai/agents/acp/vision'
 import {
   analyzeAttachedImages,
   designMessageWithImageFindings,
+  VisionModelUnavailableError,
   type ImageAnalysisDependencies
 } from '@/app/ai/attachment/image/analyze'
 import {
@@ -16,6 +17,7 @@ import {
   validateImageAttachmentFile
 } from '@/app/ai/attachment/image/prepare'
 import type { PreparedImageAttachment } from '@/app/ai/attachment/image/types'
+import type { AIModelRuntime } from '@/app/ai/models/runtime'
 import type { EditorStore } from '@/app/editor/session/create'
 const image: PreparedImageAttachment = {
   data: new Uint8Array([4, 5, 6]),
@@ -110,14 +112,14 @@ describe('image attachment analysis', () => {
   describe('when a coding agent holds Vision', () => {
     const agentRuntime = (providerID: string, kind: 'acp' | 'harness') => ({
       createRuntime: async () =>
-        ({
+        asDouble<AIModelRuntime>({
           kind,
           role: {
             requestedRole: 'vision',
             profile: { modelID: '', customModelID: ' opus ', maxOutputTokens: 8000 },
             connection: { providerID }
           }
-        }) as never,
+        }),
       inspect: async () => {
         throw new Error('A direct model is not in play.')
       }
@@ -157,7 +159,7 @@ describe('image attachment analysis', () => {
       const store = asDouble<EditorStore>({ state: { selectedIds: new Set() } })
       await expect(
         analyzeAttachedImages(store, 'Look', [image], agentRuntime('harness:pi', 'harness'))
-      ).rejects.toThrow('Configure a Vision model in Settings to attach images.')
+      ).rejects.toBeInstanceOf(VisionModelUnavailableError)
     })
   })
 

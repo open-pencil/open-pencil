@@ -52,6 +52,7 @@ export function fakeOneOffAgent({
   const prompts: ContentBlock[][] = []
   const cwds: (string | undefined)[] = []
   const sessionRequested = createDeferred<undefined>()
+  const promptRequested = createDeferred<undefined>()
   let kills = 0
   let spawns = 0
 
@@ -94,6 +95,7 @@ export function fakeOneOffAgent({
         },
         async prompt(params) {
           prompts.push(params.prompt)
+          promptRequested.resolve(undefined)
           await stall('prompt')
           for (const text of answer) {
             await connection.sessionUpdate({
@@ -133,6 +135,7 @@ export function fakeOneOffAgent({
     prompts,
     cwds,
     sessionRequested: sessionRequested.promise,
+    promptRequested: promptRequested.promise,
     kills: () => kills,
     spawns: () => spawns
   }

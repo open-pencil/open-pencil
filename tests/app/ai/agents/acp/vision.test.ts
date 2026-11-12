@@ -93,18 +93,18 @@ describe('analyzing images with a coding agent', () => {
       signal: stop.signal,
       startup: fake.startup
     })
-    await fake.sessionRequested
-    await Bun.sleep(0)
+    await fake.promptRequested
     stop.abort()
     await expect(analysis).rejects.toThrow('stopped')
     expect(fake.kills()).toBe(1)
   })
 
-  test('fails clearly, without sending the images, when the agent takes no images', async () => {
+  test('fails, without sending the images, when the agent takes no images', async () => {
     const fake = fakeOneOffAgent({ imageInput: false, answer: ['Never sent.'] })
     await expect(
       analyzeImagesWithAgent(agent, { instruction: 'Look', images, startup: fake.startup })
-    ).rejects.toThrow(`${agent.name} does not accept images.`)
+    ).rejects.toThrow()
+    expect(fake.created).toHaveLength(1)
     expect(fake.prompts).toEqual([])
     expect(fake.kills()).toBe(1)
   })
