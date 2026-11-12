@@ -150,15 +150,6 @@ function sourcePaths(r: SkiaRenderer, node: SceneNode, graph: SceneGraph): Path[
   return path ? [path] : []
 }
 
-/** Whether a layer paints a fill: in its own fills, or for text in any character's. */
-function paintsFill(node: SceneNode): boolean {
-  if (nodeHasVisibleFill(node)) return true
-  return (
-    node.type === 'TEXT' &&
-    node.styleRuns.some((run) => run.style.fills?.some((fill) => fill.visible))
-  )
-}
-
 /**
  * Whether Outline stroke turns this layer itself into outlines: one with a stroke, or text with a
  * fill, which Figma outlines into its glyphs even without a stroke.
@@ -166,7 +157,7 @@ function paintsFill(node: SceneNode): boolean {
 export function canOutlineStroke(node: SceneNode): boolean {
   return (
     canMakeBooleanSourcePath(node) &&
-    (nodeHasVisibleStroke(node) || (node.type === 'TEXT' && paintsFill(node)))
+    (nodeHasVisibleStroke(node) || (node.type === 'TEXT' && nodeHasVisibleFill(node)))
   )
 }
 
@@ -189,7 +180,7 @@ export function outlineStrokeLayer(
 ): OutlinedLayer | null {
   if (!canOutlineStroke(node)) return null
   const text = node.type === 'TEXT'
-  const filled = node.type !== 'LINE' && paintsFill(node)
+  const filled = node.type !== 'LINE' && nodeHasVisibleFill(node)
   const sources = sourcePaths(r, node, graph)
   const glyphs = text && filled ? (textOutlinePieces(r, node) ?? []) : []
   try {

@@ -267,7 +267,7 @@ describe('outlineStrokeSelected', () => {
     expect(colors.length).toBeGreaterThan(3)
   })
 
-  test('outlines text painted only by its characters’ fills', async () => {
+  test('leaves text without a layer fill, which the canvas does not draw, alone', async () => {
     const inter = await fontManager.fetchBundledFont('/InterVariable.ttf')
     if (!inter) throw new Error('Expected the bundled Inter')
     await fontManager.markLoaded('Inter', 'Regular', inter)
@@ -285,10 +285,7 @@ describe('outlineStrokeSelected', () => {
     editor.select([text.id])
     editor.outlineStrokeSelected()
 
-    const [group] = [...editor.state.selectedIds].map((id) => editor.graph.getNode(id))
-    expect([group?.type, group?.name]).toEqual(['GROUP', 'Hi'])
-    const colors = editor.graph.getChildren(group?.id ?? '').map((glyph) => glyph.fills[0]?.color)
-    expect(colors).toEqual([RED, RED])
+    expect(editor.graph.getNode(text.id)?.type).toBe('TEXT')
   })
 
   test('outlines a boolean’s combined shape, not its box', async () => {
