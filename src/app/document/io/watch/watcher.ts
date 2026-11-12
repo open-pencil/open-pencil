@@ -5,6 +5,7 @@ type FileWatchOptions = {
   getFilePath: () => string | null
   getFileHandle: () => FileSystemFileHandle | null
   getLastWriteTime: () => number
+  getWriting: () => boolean
   reloadFromDisk: () => void
 }
 
@@ -12,6 +13,7 @@ export function createFileWatcher({
   getFilePath,
   getFileHandle,
   getLastWriteTime,
+  getWriting,
   reloadFromDisk
 }: FileWatchOptions) {
   let unwatchFile: (() => void) | null = null
@@ -29,12 +31,13 @@ export function createFileWatcher({
     const fileHandle = getFileHandle()
 
     if (filePath && IS_TAURI) {
-      unwatchFile = await watchTauriFile(filePath, getLastWriteTime, reloadFromDisk)
+      unwatchFile = await watchTauriFile(filePath, getLastWriteTime, getWriting, reloadFromDisk)
     } else if (fileHandle) {
       unwatchFile = await watchBrowserFile(
         fileHandle,
         getFileHandle,
         getLastWriteTime,
+        getWriting,
         reloadFromDisk,
         stopWatchingFile
       )

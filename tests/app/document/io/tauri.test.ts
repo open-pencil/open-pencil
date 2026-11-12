@@ -199,6 +199,15 @@ describe('Tauri document IO helpers', () => {
     expect(savedVersions).toEqual([17])
   })
 
+  test('marks the document as writing while it writes', async () => {
+    await mockTauriIPC(() => null)
+    const states: boolean[] = []
+    const write = writer({ setWriting: (writing) => states.push(writing) })
+
+    await expect(write(streamOf([1]), 1)).resolves.toBe(true)
+    expect(states).toEqual([true, false])
+  })
+
   test('chooses a Tauri save path through plugin-dialog', async () => {
     await mockTauriIPC((cmd, args) => {
       expect(cmd).toBe('plugin:dialog|save')

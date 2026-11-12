@@ -1,0 +1,1 @@
+- Saving a document no longer reloads it from disk, and Ctrl+S on a document with no changes returns at once.

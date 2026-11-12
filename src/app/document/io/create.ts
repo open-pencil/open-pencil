@@ -10,6 +10,7 @@ import {
 } from '@/app/document/io/source/actions'
 import { createFileWatcher } from '@/app/document/io/watch/watcher'
 import type { EditorPreparationController } from '@/app/editor/preparation/controller'
+import { appPreferences } from '@/app/settings/preferences/store'
 
 type DocumentIOState = EditorState & {
   documentName: string
@@ -24,6 +25,10 @@ export function createDocumentIOActions(
   preparationController: EditorPreparationController
 ) {
   const sourceState = createDocumentSourceState()
+
+  // A document starts with the person's autosave preference; a stored document turns it on
+  // itself once it has a server to save to.
+  state.autosaveEnabled = appPreferences.value.files.autosave
 
   void prefetchFigmaSchema()
 
@@ -40,6 +45,7 @@ export function createDocumentIOActions(
     getFilePath: sourceState.getFilePath,
     getFileHandle: sourceState.getFileHandle,
     getLastWriteTime: sourceState.getLastWriteTime,
+    getWriting: sourceState.getWriting,
     reloadFromDisk: () => {
       void reloadFromDisk()
     }

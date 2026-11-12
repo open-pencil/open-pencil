@@ -17,6 +17,8 @@ type DocumentWriterOptions = {
   getStorageBinding: () => StorageDocumentBinding | null
   setSavedVersion: (version: number) => void
   setLastWriteTime: (time: number) => void
+  /** Marks the document as writing, so its file watcher ignores its own change. */
+  setWriting?: (writing: boolean) => void
   /** A desktop save replaced the file, which a watcher on the old one may no longer see. */
   onFileReplaced?: () => void
   onWriteSuccess?: (version: number) => void | Promise<void>
@@ -91,20 +93,22 @@ export function createDocumentWriter({
   getStorageBinding,
   setSavedVersion,
   setLastWriteTime,
+  setWriting,
   onFileReplaced,
   onWriteSuccess
 }: DocumentWriterOptions) {
   async function finishWrite(version: number): Promise<true> {
     setLastWriteTime(Date.now())
     setSavedVersion(version)
-    try {
-      await onWriteSuccess?.(version)
-    } catch (error) {
-      console.warn('[Recovery] Cleanup after document write failed:', error)
+    if (onWriteSuccess) {
+      // A cover or recovery snapshot can take longer than the file write itself. Let the save
+      // finish first and let that work run after it, so saving never waits for cleanup.
+      setTimeout(() => {
+        void Promise.resolve(onWriteSuccess(version)).catch((error: unknown) => {
+          console.warn('[Recovery] Cleanup after document write failed:', error)
+        })
+      }, 0)
     }
-    // The watcher ignores a change this recent; reset it after cleanup so a slow recovery
-    // snapshot cannot let the completed write look like an external edit.
-    setLastWriteTime(Date.now())
     return true
   }
 
@@ -113,6 +117,7 @@ export function createDocumentWriter({
     version: number,
     { storage, filePath, fileHandle }: WriteTarget
   ): Promise<boolean> {
+    setWriting?.(true)
     try {
       if (storage) {
         await persistStorageCanvasLocally({
@@ -147,6 +152,8 @@ export function createDocumentWriter({
         retryable: describeDiagnosticError(error).retryable
       })
       throw error
+    } finally {
+      setWriting?.(false)
     }
   }
 

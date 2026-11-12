@@ -116,7 +116,7 @@ export interface AppPreferences {
     compactAutomatically: boolean
     tokenUsage: TokenUsageDisplay
   }
-  files: { recentLimit: number }
+  files: { recentLimit: number; autosave: boolean }
   version: 1
   recovery: {
     enabled: boolean
@@ -156,7 +156,7 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
     compactAutomatically: true,
     tokenUsage: 'hover'
   },
-  files: { recentLimit: DEFAULT_RECENT_FILES_LIMIT },
+  files: { recentLimit: DEFAULT_RECENT_FILES_LIMIT, autosave: true },
   version: 1,
   recovery: { enabled: true },
   editing: {
@@ -214,7 +214,8 @@ const appPreferencesSchema = section({
     tokenUsage: v.fallback(v.picklist(TOKEN_USAGE_DISPLAYS), defaults.chat.tokenUsage)
   }),
   files: section({
-    recentLimit: v.fallback(recentFilesLimitSchema, defaults.files.recentLimit)
+    recentLimit: v.fallback(recentFilesLimitSchema, defaults.files.recentLimit),
+    autosave: v.fallback(v.boolean(), defaults.files.autosave)
   }),
   version: v.fallback(v.literal(1), 1),
   recovery: section({ enabled: v.fallback(v.boolean(), defaults.recovery.enabled) }),
@@ -314,6 +315,13 @@ export function updateRecoveryEnabled(enabled: boolean): void {
   const preferences = structuredClone(appPreferences.value)
   preferences.recovery.enabled = enabled
   appPreferences.value = preferences
+}
+
+export function updateFilePreferences(changes: Partial<AppPreferences['files']>): void {
+  appPreferences.value = {
+    ...appPreferences.value,
+    files: { ...appPreferences.value.files, ...changes }
+  }
 }
 
 export function updateAISetupState(aiSetup: AISetupState): void {

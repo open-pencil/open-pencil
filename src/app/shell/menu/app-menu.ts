@@ -32,7 +32,7 @@ import {
   setDesignIssuesOnCanvas,
   setSnappingPreference
 } from '@/app/settings/preferences/apply'
-import { appPreferences } from '@/app/settings/preferences/store'
+import { appPreferences, updateFilePreferences } from '@/app/settings/preferences/store'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/actions/editor'
 import { createSelectionMenuActions } from '@/app/shell/menu/actions/selection'
 import { createTabMenuActions } from '@/app/shell/menu/actions/tabs'
@@ -235,6 +235,7 @@ export function useAppMenu() {
       case 'autosave':
         return (value: boolean) => {
           store.state.autosaveEnabled = value
+          updateFilePreferences({ autosave: value })
         }
       case 'profiler':
         return () => store.toggleProfiler()

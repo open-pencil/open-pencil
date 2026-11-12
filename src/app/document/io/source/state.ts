@@ -14,6 +14,7 @@ export function createDocumentSourceState() {
   const storageBinding = shallowRef<StorageDocumentBinding | null>(null)
   let savedVersion = 0
   let lastWriteTime = 0
+  let writing = false
 
   return {
     getFileHandle: () => fileHandle.value,
@@ -49,6 +50,11 @@ export function createDocumentSourceState() {
     getLastWriteTime: () => lastWriteTime,
     setLastWriteTime: (time: number) => {
       lastWriteTime = time
+    },
+    /** Whether this document is writing itself, so its watcher ignores the change. */
+    getWriting: () => writing,
+    setWriting: (value: boolean) => {
+      writing = value
     }
   }
 }

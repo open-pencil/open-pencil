@@ -1,0 +1,1 @@
+- Autosave is on by default for local files, saves 3 seconds after the last edit, and remembers the File > Autosave choice.
