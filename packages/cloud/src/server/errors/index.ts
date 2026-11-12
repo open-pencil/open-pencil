@@ -1,9 +1,8 @@
+import type { ErrorReportContext, ErrorReporter } from '#cloud/errors'
 import { loggedError, writeJSONLine, type CloudLogWriter } from '#cloud/server/logging'
 import type { Context, ErrorHandler } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { routePath } from 'hono/route'
-
-import type { ErrorReportContext, ErrorReporter } from './posthog'
 
 /** Where the server caught an error. */
 export const CLOUD_ERROR_SOURCES = [
@@ -90,10 +89,3 @@ export function cloudErrorHandler(reporter: CloudErrorReporter | undefined): Err
     return context.text('Internal Server Error', 500)
   }
 }
-
-export {
-  createPostHogErrorReporter,
-  type ErrorReportContext,
-  type ErrorReporter,
-  type PostHogErrorReporterOptions
-} from './posthog'

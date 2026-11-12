@@ -252,7 +252,7 @@ export const cloudDeploymentConfigSchema = v.strictObject({
       )
     })
   ),
-  billing: v.optional(v.strictObject({ portal_url: urlSchema })),
+  billing: v.optional(v.strictObject({ endpoint: urlSchema })),
   internal_api: v.optional(
     v.strictObject({ service_token: defaultReference(DEFAULT_SECRET_NAMES.internalServiceToken) })
   ),

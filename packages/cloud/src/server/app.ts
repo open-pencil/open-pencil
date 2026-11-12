@@ -34,6 +34,7 @@ import {
   type CloudIdentityResolver,
   type CloudSessionResolver
 } from '#cloud/server/auth'
+import { createBillingTokenService } from '#cloud/server/billing'
 import { createCollaborationTicketService } from '#cloud/server/collaboration'
 import { createCommunityService, createCommunityThumbnailRoutes } from '#cloud/server/community'
 import {
@@ -293,6 +294,14 @@ export function createCloudApp(services: CloudServices) {
         lifetimeSeconds: services.config.servicesTokenLifetimeSeconds
       })
     : undefined
+  const billingTokens =
+    services.servicesSigningKey && services.config.billingEndpoint
+      ? createBillingTokenService({
+          issuer: new URL(services.config.publicURL).origin,
+          signingKey: services.servicesSigningKey,
+          lifetimeSeconds: services.config.servicesTokenLifetimeSeconds
+        })
+      : undefined
 
   const requireActiveSession = async (context: Context, next: () => Promise<void>) => {
     // A route that lets an account leave before accepting the terms named it already.
@@ -400,6 +409,7 @@ export function createCloudApp(services: CloudServices) {
     community,
     entitlements,
     servicesTokens,
+    billingTokens,
     sharing,
     reports,
     workspaces,

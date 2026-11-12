@@ -26,11 +26,13 @@
     "#cloud/client": "./src/client/index.ts",
     "#cloud/contract": "./src/contract/index.ts",
     "#cloud/email": "./src/email/index.ts",
+    "#cloud/errors": "./src/errors/index.ts",
     "#cloud/runtime/cloudflare": "./src/runtime/cloudflare/index.ts",
     "#cloud/runtime/node": "./src/runtime/node/index.ts",
     "#cloud/server": "./src/server/index.ts",
     "#cloud/server/api": "./src/server/api/index.ts",
     "#cloud/server/auth": "./src/server/auth/index.ts",
+    "#cloud/server/billing": "./src/server/billing/index.ts",
     "#cloud/server/cleanup": "./src/server/cleanup/index.ts",
     "#cloud/server/collaboration": "./src/server/collaboration/index.ts",
     "#cloud/server/community": "./src/server/community/index.ts",
@@ -79,6 +81,12 @@
       "import": "./dist/runtime-node.mjs",
       "default": "./dist/runtime-node.mjs"
     },
+    "./errors": {
+      "types": "./dist/errors.d.ts",
+      "bun": "./src/errors/index.ts",
+      "import": "./dist/errors.js",
+      "default": "./dist/errors.js"
+    },
     "./server": {
       "types": "./dist/server.d.ts",
       "bun": "./src/server/index.ts",
@@ -98,7 +106,7 @@
     "services": "bun src/runtime/node/services/main.ts",
     "check": "bun run typecheck && bun run test && bun run build",
     "test": "bun run test:unit && bun run test:integration",
-    "test:unit": "bun test tests/client tests/contract tests/email tests/runtime tests/server tests/services",
+    "test:unit": "bun test tests/client tests/contract tests/email tests/errors tests/runtime tests/server tests/services",
     "test:integration": "bun test --max-concurrency 8 tests/integration",
     "test:e2e": "bun tests/e2e/run.ts",
     "test:e2e:garage": "bun tests/e2e/garage.ts",

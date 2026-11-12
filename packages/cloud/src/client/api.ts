@@ -2,6 +2,7 @@ import type { CloudFetch } from '#cloud/client/discovery'
 import {
   acceptedInvitationSchema,
   servicesTokenSchema,
+  billingTokenSchema,
   cloudSessionSchema,
   cloudUserProfileSchema,
   collaborationTicketSchema,
@@ -24,6 +25,7 @@ import {
   resolvedDocumentShareSchema,
   type AcceptDocumentInvitationInput,
   type ServicesToken,
+  type BillingToken,
   type CloudSession,
   type CloudUserProfile,
   type CollaborationTicket,
@@ -147,6 +149,10 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
         servicesTokenSchema,
         options.onDiagnostic
       )
+    },
+    /** A short-lived token for the deployment's billing, for the signed-in person's own account. */
+    async requestBillingToken(): Promise<BillingToken> {
+      return parseResponse(client.billing.token.$post(), billingTokenSchema, options.onDiagnostic)
     },
     async getUserProfile(documentId: string, userId: string): Promise<CloudUserProfile | null> {
       const response = await parseResponse(
