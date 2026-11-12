@@ -355,6 +355,13 @@ export function createCloudApp(services: CloudServices) {
     (context) => context.json({ error: { code: 'not_found' as const } }, 404),
     { resource: (context) => context.req.path, route: true }
   )
+  const communityLimiter = createTrustedIPRateLimiter(
+    services.database,
+    services.config.authSecret,
+    CLOUD_RATE_LIMITS.communityRead,
+    { trustedHeaders: services.config.authTrustedIPHeaders },
+    (context) => context.json({ error: { code: 'not_found' as const } }, 404)
+  )
   const authenticatedMutationLimiter = createActorRateLimiter(
     services.database,
     services.config.authSecret,
@@ -493,8 +500,8 @@ export function createCloudApp(services: CloudServices) {
     .use('/api/public/*', publicRateLimiter)
     .use('/api/shares/*', publicRateLimiter)
     .use('/api/invitations/*', publicRateLimiter)
-    .use('/api/community', publicRateLimiter)
-    .use('/api/community/*', publicRateLimiter)
+    .use('/api/community', communityLimiter, publicRateLimiter)
+    .use('/api/community/*', communityLimiter, publicRateLimiter)
     .route('/', createCommunityThumbnailRoutes(community))
     .route('/api', publicCloudAPI)
     .route('/api/internal', internalAPI)

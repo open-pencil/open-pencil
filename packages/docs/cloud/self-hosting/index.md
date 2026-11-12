@@ -117,3 +117,5 @@ The gallery is served without signing in:
 
 Name a version for each state you want people to be able to open later, such as a release.
 
+These routes are limited per visitor by IP address, which the server only knows from a header your proxy sets. Name that header under `[authentication.trusted_proxies]` before you turn the gallery on; without one, nothing limits how often it is read.
+
