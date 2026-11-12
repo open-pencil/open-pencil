@@ -70,6 +70,7 @@
         "@vueuse/core": "^14.4.0",
         "@xmldom/xmldom": "^0.9.12",
         "ai": "^7.0.127",
+        "client-zip": "2.5.1",
         "copy-to-clipboard": "^4.0.2",
         "culori": "^4.0.2",
         "dedent": "^1.7.2",
@@ -108,7 +109,6 @@
         "y-protocols": "^1.0.7",
         "yaml": "^2.9.0",
         "yjs": "^13.6.32",
-        "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.3",
         "zod": "^4.6.5",
       },
       "devDependencies": {
@@ -198,18 +198,17 @@
     },
     "packages/canvaskit": {
       "name": "@open-pencil/canvaskit",
-      "version": "0.17.0-beta.3",
+      "version": "0.17.0-beta.4",
       "dependencies": {
         "@webgpu/types": "0.1.21",
       },
       "devDependencies": {
-        "@types/bun": "^1.3.14",
-        "valibot": "^1.5.0",
+        "@open-pencil/fork-releases-tools": "workspace:*",
       },
     },
     "packages/cli": {
       "name": "@open-pencil/cli",
-      "version": "0.17.0-beta.3",
+      "version": "0.17.0-beta.4",
       "bin": {
         "openpencil": "./bin/openpencil.js",
       },
@@ -234,7 +233,7 @@
     },
     "packages/cloud": {
       "name": "@open-pencil/cloud",
-      "version": "0.17.0-beta.3",
+      "version": "0.17.0-beta.4",
       "bin": {
         "openpencil-services": "./dist/bin/services.mjs",
         "openpencil-cloud": "./dist/bin/server.mjs",
@@ -242,6 +241,7 @@
       "dependencies": {
         "@aws-sdk/client-s3": "^3.1149.0",
         "@aws-sdk/s3-request-presigner": "^3.1149.0",
+        "@better-auth/api-key": "1.7.7",
         "@better-auth/core": "1.7.7",
         "@better-auth/passkey": "1.7.7",
         "@better-auth/utils": "0.4.2",
@@ -293,7 +293,7 @@
     },
     "packages/collab": {
       "name": "@open-pencil/collab",
-      "version": "0.17.0-beta.3",
+      "version": "0.17.0-beta.4",
       "dependencies": {
         "@open-pencil/scene-graph": "workspace:*",
         "es-toolkit": "^1.52.0",
@@ -308,7 +308,7 @@
     },
     "packages/core": {
       "name": "@open-pencil/core",
-      "version": "0.17.0-beta.3",
+      "version": "0.17.0-beta.4",
       "dependencies": {
         "@figma/plugin-typings": "^1.140.0",
         "@iconify/utils": "^3.1.4",
@@ -322,6 +322,7 @@
         "@open-pencil/mermaid": "workspace:*",
         "@open-pencil/pen": "workspace:*",
         "@open-pencil/scene-graph": "workspace:*",
+        "@open-pencil/taffy": "workspace:*",
         "@tauri-apps/api": "^2.12.1",
         "@valibot/to-json-schema": "^1.8.0",
         "@xmldom/xmldom": "^0.9.12",
@@ -357,7 +358,6 @@
         "unifont": "1.0.3",
         "valibot": "^1.5.0",
         "woff2-encoder": "2.0.0",
-        "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.3",
       },
       "devDependencies": {
         "@open-pencil/package-artifacts-tools": "workspace:*",
@@ -382,7 +382,7 @@
     },
     "packages/design-jsx": {
       "name": "@open-pencil/design-jsx",
-      "version": "0.17.0-beta.3",
+      "version": "0.17.0-beta.4",
       "dependencies": {
         "@lezer/common": "^1.5.2",
         "@lezer/javascript": "^1.5.4",
@@ -442,7 +442,7 @@
     },
     "packages/dom-css": {
       "name": "@open-pencil/dom-css",
-      "version": "0.17.0-beta.3",
+      "version": "0.17.0-beta.4",
       "dependencies": {
         "@acemir/cssom": "^0.9.31",
         "@open-pencil/emit": "workspace:*",
@@ -482,7 +482,7 @@
     },
     "packages/drawio": {
       "name": "@open-pencil/drawio",
-      "version": "0.17.0-beta.3",
+      "version": "0.17.0-beta.4",
       "dependencies": {
         "@xmldom/xmldom": "^0.9.12",
         "fflate": "^0.8.3",
@@ -498,7 +498,7 @@
     },
     "packages/emit": {
       "name": "@open-pencil/emit",
-      "version": "0.17.0-beta.3",
+      "version": "0.17.0-beta.4",
       "dependencies": {
         "@sveltejs/acorn-typescript": "^1.0.13",
         "acorn": "^8.18.0",
@@ -515,10 +515,11 @@
     },
     "packages/feedback": {
       "name": "@open-pencil/feedback",
-      "version": "0.17.0-beta.3",
+      "version": "0.17.0-beta.4",
       "dependencies": {
         "@internationalized/date": "^3.12.3",
         "@open-pencil/cloud": "workspace:*",
+        "@open-pencil/fig": "workspace:*",
         "@open-pencil/scene-graph": "workspace:*",
         "@vue-email/components": "^0.0.21",
         "@vue-email/render": "^0.0.9",
@@ -539,7 +540,7 @@
     },
     "packages/fig": {
       "name": "@open-pencil/fig",
-      "version": "0.17.0-beta.3",
+      "version": "0.17.0-beta.4",
       "dependencies": {
         "es-toolkit": "^1.52.0",
         "fflate": "^0.8.3",
@@ -560,7 +561,7 @@
     },
     "packages/harness": {
       "name": "@open-pencil/harness",
-      "version": "0.17.0-beta.3",
+      "version": "0.17.0-beta.4",
       "bin": {
         "openpencil-harness": "./dist/stdio.mjs",
       },
@@ -580,7 +581,7 @@
     },
     "packages/html-engine": {
       "name": "@open-pencil/html-engine",
-      "version": "0.17.0-beta.3",
+      "version": "0.17.0-beta.4",
       "dependencies": {
         "@open-pencil/dom-css": "workspace:*",
         "valibot": "^1.5.0",
@@ -598,7 +599,7 @@
     },
     "packages/kiwi": {
       "name": "@open-pencil/kiwi",
-      "version": "0.17.0-beta.3",
+      "version": "0.17.0-beta.4",
       "dependencies": {
         "@hpcc-js/wasm-zstd": "^1.16.2",
         "fflate": "^0.8.3",
@@ -612,7 +613,7 @@
     },
     "packages/mcp": {
       "name": "@open-pencil/mcp",
-      "version": "0.17.0-beta.3",
+      "version": "0.17.0-beta.4",
       "bin": {
         "openpencil-mcp": "./dist/stdio.mjs",
         "openpencil-mcp-http": "./dist/index.mjs",
@@ -638,7 +639,7 @@
     },
     "packages/mermaid": {
       "name": "@open-pencil/mermaid",
-      "version": "0.17.0-beta.3",
+      "version": "0.17.0-beta.4",
       "dependencies": {
         "entities": "^8.0.0",
         "parse5": "^8.0.1",
@@ -654,7 +655,7 @@
     },
     "packages/oxlint-plugin": {
       "name": "@open-pencil/oxlint-plugin",
-      "version": "0.17.0-beta.3",
+      "version": "0.17.0-beta.4",
       "dependencies": {
         "@oxlint/plugins": "1.57.0",
         "es-toolkit": "^1.52.0",
@@ -668,7 +669,7 @@
     },
     "packages/pen": {
       "name": "@open-pencil/pen",
-      "version": "0.17.0-beta.3",
+      "version": "0.17.0-beta.4",
       "dependencies": {
         "es-toolkit": "^1.52.0",
         "valibot": "^1.5.0",
@@ -686,7 +687,7 @@
     },
     "packages/scene-graph": {
       "name": "@open-pencil/scene-graph",
-      "version": "0.17.0-beta.3",
+      "version": "0.17.0-beta.4",
       "dependencies": {
         "@noble/hashes": "^2.4.0",
         "culori": "^4.0.2",
@@ -705,6 +706,13 @@
         "@types/culori": "^4.0.1",
         "tsdown": "^0.22.14",
         "typescript": "npm:@typescript/typescript6@^6.0.2",
+      },
+    },
+    "packages/taffy": {
+      "name": "@open-pencil/taffy",
+      "version": "0.17.0-beta.4",
+      "devDependencies": {
+        "@open-pencil/fork-releases-tools": "workspace:*",
       },
     },
     "packages/test-support": {
@@ -737,7 +745,7 @@
     },
     "packages/vue": {
       "name": "@open-pencil/vue",
-      "version": "0.17.0-beta.3",
+      "version": "0.17.0-beta.4",
       "dependencies": {
         "@atlaskit/pragmatic-drag-and-drop": "^1.8.1",
         "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.2.0",
@@ -796,6 +804,14 @@
       "dependencies": {
         "@open-pencil/package-artifacts-tools": "workspace:*",
         "vite": "8.1.4",
+      },
+    },
+    "tools/checks/dockerfiles": {
+      "name": "@open-pencil/dockerfiles-tools",
+      "dependencies": {
+        "@open-pencil/package-artifacts-tools": "workspace:*",
+        "dockerfile-ast": "0.7.1",
+        "es-toolkit": "^1.52.0",
       },
     },
     "tools/checks/docs": {
@@ -988,6 +1004,18 @@
       "name": "@open-pencil/visual-oracles-tools",
       "dependencies": {
         "citty": "^0.1.6",
+      },
+    },
+    "tools/release/fork-releases": {
+      "name": "@open-pencil/fork-releases-tools",
+      "version": "0.0.0",
+      "bin": {
+        "fork-release": "./src/cli.ts",
+      },
+      "dependencies": {
+        "@open-pencil/package-artifacts-tools": "workspace:*",
+        "citty": "^0.1.6",
+        "valibot": "^1.5.0",
       },
     },
     "tools/release/package-artifacts": {
@@ -1330,6 +1358,8 @@
     "@babel/traverse": ["@babel/traverse@7.29.8", "", { "dependencies": { "@babel/code-frame": "^7.29.7", "@babel/generator": "^7.29.8", "@babel/helper-globals": "^7.29.7", "@babel/parser": "^7.29.8", "@babel/template": "^7.29.7", "@babel/types": "^7.29.8", "debug": "^4.3.1" } }, "sha512-I5z7H3bf/41ktsNVLtpN0wAa336HkqIHQ5BuPLEhTkt1jVSyZpeNKIzTgEWmlxjdg81R0IgUCcaE+Ok3NvrfZg=="],
 
     "@babel/types": ["@babel/types@7.29.8", "", { "dependencies": { "@babel/helper-string-parser": "^7.29.7", "@babel/helper-validator-identifier": "^7.29.7" } }, "sha512-Vj1jF3cPfxg7OAfoI7QnVKLoILlm2JF9pnVHrX8qx7AHMiYWT+NDAA7jChlNgRS4WTLc/fD1lXLmPixluj+3Gg=="],
+
+    "@better-auth/api-key": ["@better-auth/api-key@1.7.7", "", { "dependencies": { "zod": "^4.5.4" }, "peerDependencies": { "@better-auth/core": "^1.7.7", "@better-auth/utils": "0.4.2", "better-auth": "^1.7.7", "better-call": "1.4.0" } }, "sha512-XWtZxF37A7BURHh/GvsYh2Vype1p+R1ZxvQHkRzB4tK3uniZpILe2WRIXfVj3m8NIBHdg8Ez8S8sZJY/ewTu7w=="],
 
     "@better-auth/core": ["@better-auth/core@1.7.7", "", { "dependencies": { "@opentelemetry/semantic-conventions": "^1.41.1", "@standard-schema/spec": "^1.1.0", "zod": "^4.5.4" }, "peerDependencies": { "@better-auth/utils": "0.4.2", "@better-fetch/fetch": "1.3.2", "@opentelemetry/api": "^1.9.0", "better-call": "1.4.0", "jose": "^6.1.0", "kysely": "^0.28.5 || ^0.29.0", "nanostores": "^1.0.1" }, "optionalPeers": ["@opentelemetry/api"] }, "sha512-srgFzHEjB2WWlokFz1i4BfG41sNhsA105Pukgqu6RrEh5A+LSkzf1mCHydVipkjt9l5qswtBMi7IL6ouHbZL4Q=="],
 
@@ -1851,6 +1881,8 @@
 
     "@open-pencil/dev-server-tools": ["@open-pencil/dev-server-tools@workspace:tools/dev/dev-server"],
 
+    "@open-pencil/dockerfiles-tools": ["@open-pencil/dockerfiles-tools@workspace:tools/checks/dockerfiles"],
+
     "@open-pencil/docs": ["@open-pencil/docs@workspace:packages/docs"],
 
     "@open-pencil/docs-tools": ["@open-pencil/docs-tools@workspace:tools/checks/docs"],
@@ -1866,6 +1898,8 @@
     "@open-pencil/feedback": ["@open-pencil/feedback@workspace:packages/feedback"],
 
     "@open-pencil/fig": ["@open-pencil/fig@workspace:packages/fig"],
+
+    "@open-pencil/fork-releases-tools": ["@open-pencil/fork-releases-tools@workspace:tools/release/fork-releases"],
 
     "@open-pencil/harness": ["@open-pencil/harness@workspace:packages/harness"],
 
@@ -1902,6 +1936,8 @@
     "@open-pencil/scene-graph": ["@open-pencil/scene-graph@workspace:packages/scene-graph"],
 
     "@open-pencil/secret-scan-tools": ["@open-pencil/secret-scan-tools@workspace:tools/checks/secret-scan"],
+
+    "@open-pencil/taffy": ["@open-pencil/taffy@workspace:packages/taffy"],
 
     "@open-pencil/tauri-menu-tools": ["@open-pencil/tauri-menu-tools@workspace:tools/generate/tauri-menu"],
 
@@ -3215,6 +3251,8 @@
 
     "cli-width": ["cli-width@4.1.0", "", {}, "sha512-ouuZd4/dm2Sw5Gmqy6bGyNNNe1qt9RpmxveLSO7KcgsTnU7RXfsw+/bukWGo1abgBiMAic068rclZsO4IWmmxQ=="],
 
+    "client-zip": ["client-zip@2.5.1", "", {}, "sha512-yOvNSBsQX1B7wtdvIVXJEIIShrlPiX+adhli7sWvQhsx3nX1DjvpSt+AwOxaX+3DCsT/Yx0nRy5hIjRLIYfebw=="],
+
     "cliui": ["cliui@9.0.1", "", { "dependencies": { "string-width": "^7.2.0", "strip-ansi": "^7.1.0", "wrap-ansi": "^9.0.0" } }, "sha512-k7ndgKhwoQveBL+/1tqGJYNz097I7WOvwbmmU2AR5+magtbjPWQTS1C5vzGkBC8Ym8UWRzfKUzUUqFLypY4Q+w=="],
 
     "clone": ["clone@2.1.2", "", {}, "sha512-3Pe/CF1Nn94hyhIYpjtiLhdCoEoz0DqQ+988E9gmeEdQZlojxnOb74wctFyuwWQHzqyf9X7C7MG8juUpqBJT8w=="],
@@ -3418,6 +3456,8 @@
     "diff": ["diff@8.0.4", "", {}, "sha512-DPi0FmjiSU5EvQV0++GFDOJ9ASQUVFh5kD+OzOnYdi7n3Wpm9hWWGfB/O2blfHcMVTL5WkQXSnRiK9makhrcnw=="],
 
     "dijkstrajs": ["dijkstrajs@1.0.3", "", {}, "sha512-qiSlmBq9+BCdCA/L46dw8Uy93mloxsPSbwnm5yrKn2vMPiy8KyAskTF6zuV/j5BMsmOGZDPs7KjU+mjb670kfA=="],
+
+    "dockerfile-ast": ["dockerfile-ast@0.7.1", "", { "dependencies": { "vscode-languageserver-textdocument": "^1.0.8", "vscode-languageserver-types": "^3.17.3" } }, "sha512-oX/A4I0EhSkGqrFv0YuvPkBUSYp1XiY8O8zAKc8Djglx8ocz+JfOr8gP0ryRMC2myqvDLagmnZaU9ot1vG2ijw=="],
 
     "doctypes": ["doctypes@1.1.0", "", {}, "sha512-LLBi6pEqS6Do3EKQ3J0NqHWV5hhb78Pi8vvESYwyOy2c31ZEZVdtitdzsQsKb7878PEERhzUk0ftqGhG6Mz+pQ=="],
 
@@ -5253,6 +5293,10 @@
 
     "void-elements": ["void-elements@3.1.0", "", {}, "sha512-Dhxzh5HZuiHQhbvTW9AMetFfBHDMYpo23Uo9btPXgdYP+3T5S+p+jgNy7spra+veYhBP2dCSgxR/i2Y02h5/6w=="],
 
+    "vscode-languageserver-textdocument": ["vscode-languageserver-textdocument@1.0.16", "", {}, "sha512-qeNEuOi9a3qkqRf7Gfez2WL2VwlBTLCNekHBGO9kxPVUp9XuY15yfTJ9jwvOwKI0I2MhUUfZq95NSp+LK1CLQg=="],
+
+    "vscode-languageserver-types": ["vscode-languageserver-types@3.18.5", "", {}, "sha512-kPd6+JQNz3HMJvjKlqUxERSlZHAntl/aGpsk7ImwIh0ewDKDcjgAEyVSYciPiOJD3ftbK9IrfiqUeTZLSbCizw=="],
+
     "vscode-uri": ["vscode-uri@3.1.0", "", {}, "sha512-/BpdSx+yCQGnCvecbyXdxHDkuk55/G3xwnC0GqY4gmQ3j+A+g8kzzgB4Nk/SINjqn6+waqw3EgbVF2QKExkRxQ=="],
 
     "vue": ["vue@3.5.43", "", { "dependencies": { "@vue/compiler-dom": "3.5.43", "@vue/compiler-sfc": "3.5.43", "@vue/runtime-dom": "3.5.43", "@vue/server-renderer": "3.5.43", "@vue/shared": "3.5.43" }, "peerDependencies": { "typescript": "*" }, "optionalPeers": ["typescript"] }, "sha512-o5qZoksdnjIKvW1srZ3ab7pcDNYAerBjRe54D0LBLfRdCYFrSgBHVXokMas35czQc0//lmx4/tuY4ZNQ+Rf2Ng=="],
@@ -5406,8 +5450,6 @@
     "yoctocolors": ["yoctocolors@2.2.0", "", {}, "sha512-xYqdZFUK/VYazNl/oCDYN+3WloWQwMfZxBoiNt6qNyk+xfOdi598muWE42rNZFp1kNOiqW936q5RhUdnpqElSg=="],
 
     "yoctocolors-cjs": ["yoctocolors-cjs@2.1.3", "", {}, "sha512-U/PBtDf35ff0D8X8D0jfdzHYEPFxAI7jJlxZXwCSez5M3190m+QobIfh+sWDWSHMCWWJN2AWamkegn6vr6YBTw=="],
-
-    "yoga-layout": ["@open-pencil/yoga-layout@3.3.0-grid.3", "", {}, "sha512-L1mWkFxQIGFYULih376hVel5lLU+E8UYIaX/5VR1cBbtk7oeF4HDpfGttZ5BSH9ofnOpxeOh2V5yv2ZgOKc5Yw=="],
 
     "youch": ["youch@4.1.0-beta.10", "", { "dependencies": { "@poppinss/colors": "^4.1.5", "@poppinss/dumper": "^0.6.4", "@speed-highlight/core": "^1.2.7", "cookie": "^1.0.2", "youch-core": "^0.3.3" } }, "sha512-rLfVLB4FgQneDr0dv1oddCVZmKjcJ6yX6mS4pU82Mq/Dt9a3cLZQ62pDBL4AUO+uVrCvtWz3ZFUL2HFAFJ/BXQ=="],
 

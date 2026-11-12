@@ -1,4 +1,6 @@
 import {
+  cloudAccessTokenCreatedResponseSchema,
+  cloudAccessTokensResponseSchema,
   cloudAccountDeletionResponseSchema,
   cloudAccountMutationResponseSchema,
   cloudAccountSessionsResponseSchema,
@@ -12,17 +14,26 @@ import {
   cloudPictureResponseSchema,
   cloudProfileResponseSchema,
   cloudSignInsResponseSchema,
-  cloudSocialLinkResponseSchema
+  cloudSocialLinkResponseSchema,
+  type CloudAccessTokenCreate
 } from '#cloud/contract'
 
 import type { CloudCall, PortalRouteClients } from './request'
 
-export function createAccountAPI(call: CloudCall, { account }: PortalRouteClients) {
+export function createAccountAPI(call: CloudCall, { account, tokens }: PortalRouteClients) {
   return {
     accountStatus(signal?: AbortSignal) {
       return call(
         (options) => account.status.$get(undefined, options),
         cloudAccountStatusResponseSchema,
+        signal
+      )
+    },
+    /** Accepts the server's terms at `version`, the one its discovery names. */
+    acceptTerms(version: string, signal?: AbortSignal) {
+      return call(
+        (options) => account.terms.$post({ json: { version } }, options),
+        cloudAccountMutationResponseSchema,
         signal
       )
     },
@@ -141,6 +152,29 @@ export function createAccountAPI(call: CloudCall, { account }: PortalRouteClient
     changeEmail(newEmail: string, callbackURL: string, signal?: AbortSignal) {
       return call(
         (options) => account.profile.email.$post({ json: { newEmail, callbackURL } }, options),
+        cloudAccountMutationResponseSchema,
+        signal
+      )
+    },
+    /** The account's personal access tokens, by their first characters; never a whole one. */
+    accessTokens(signal?: AbortSignal) {
+      return call(
+        (options) => tokens.$get(undefined, options),
+        cloudAccessTokensResponseSchema,
+        signal
+      )
+    },
+    /** Makes a token; the answer holds the whole token, which is shown this once. */
+    createAccessToken(input: CloudAccessTokenCreate, signal?: AbortSignal) {
+      return call(
+        (options) => tokens.create.$post({ json: input }, options),
+        cloudAccessTokenCreatedResponseSchema,
+        signal
+      )
+    },
+    revokeAccessToken(id: string, signal?: AbortSignal) {
+      return call(
+        (options) => tokens.revoke.$post({ json: { id } }, options),
         cloudAccountMutationResponseSchema,
         signal
       )

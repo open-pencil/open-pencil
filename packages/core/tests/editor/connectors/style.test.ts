@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { createEditor } from '@open-pencil/core'
 import {
   boundEndpoint,
@@ -8,6 +7,7 @@ import {
   connectorSublayers
 } from '@open-pencil/scene-graph/connectors'
 import { figJamColor } from '@open-pencil/scene-graph/figjam'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 function setup() {
   const editor = createEditor()

@@ -1,11 +1,12 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { SkiaRenderer } from '#core/canvas/renderer'
 import { getCanvasKit } from '#core/canvaskit'
-import { renderNodesToImage } from '#core/io/formats/raster/render'
+
+import { exportedPixels } from './helpers'
 
 let ck: Awaited<ReturnType<typeof getCanvasKit>>
 
@@ -67,24 +68,9 @@ describe('derived text decorations', () => {
     renderer.nodeFontReadiness = () => 'exhausted'
 
     try {
-      const png = expectDefined(
-        renderNodesToImage(ck, renderer, graph, page.id, [text.id], { scale: 1, format: 'PNG' }),
-        'png'
-      )
-      const image = expectDefined(ck.MakeImageFromEncoded(png), 'image')
-      const pixels = expectDefined(
-        image.readPixels(0, 0, {
-          alphaType: ck.AlphaType.Unpremul,
-          colorType: ck.ColorType.RGBA_8888,
-          colorSpace: ck.ColorSpace.SRGB,
-          width: image.width(),
-          height: image.height()
-        }),
-        'pixels'
-      )
-      expect(underlineAlpha(pixels, image.width(), 8)).toBeGreaterThan(0)
-      expect(underlineAlpha(pixels, image.width(), 30)).toBe(0)
-      image.delete()
+      const { pixels, width } = exportedPixels(ck, renderer, graph, page.id, text.id)
+      expect(underlineAlpha(pixels, width, 8)).toBeGreaterThan(0)
+      expect(underlineAlpha(pixels, width, 30)).toBe(0)
     } finally {
       surface.delete()
     }

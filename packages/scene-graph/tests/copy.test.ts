@@ -18,7 +18,6 @@ import {
   copyGeometryPaths,
   scaleGeometryPaths
 } from '@open-pencil/scene-graph/copy'
-
 import { expectDefined } from '@open-pencil/test-support/assert'
 describe('copy helpers — mutation isolation', () => {
   test('copyFill: mutating copy does not affect original', () => {

@@ -4,8 +4,8 @@ import { createEditor, type Editor } from '@open-pencil/core'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
-import { snapshotScale } from '@open-pencil/scene-graph/scaling'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import { snapshotScale } from '@open-pencil/scene-graph/scaling'
 
 import {
   applyScale,
@@ -40,13 +40,7 @@ function card(neighbour?: Rect) {
   return { frame, text }
 }
 
-function scaleFrom(
-  frame: SceneNode,
-  at: Vector,
-  dx: number,
-  dy: number,
-  modifiers = PLAIN
-) {
+function scaleFrom(frame: SceneNode, at: Vector, dx: number, dy: number, modifiers = PLAIN) {
   const drag = tryStartScale(at.x, at.y, editor)
   if (!drag) throw new Error('No handle')
   applyScale(drag, at.x + dx, at.y + dy, editor, modifiers)
@@ -213,7 +207,12 @@ describe('Scale tool input', () => {
     editor = createEditor()
     const page = editor.state.currentPageId
     const left = editor.graph.createNode('RECTANGLE', page, { width: 50, height: 50 })
-    const right = editor.graph.createNode('RECTANGLE', page, { x: 150, y: 50, width: 50, height: 50 })
+    const right = editor.graph.createNode('RECTANGLE', page, {
+      x: 150,
+      y: 50,
+      width: 50,
+      height: 50
+    })
     editor.select([left.id, right.id])
 
     const drag = tryStartScale(200, 100, editor)

@@ -1,3 +1,4 @@
+import { joinURL } from 'ufo'
 import { computed } from 'vue'
 
 import { openExternalLink } from '@/app/shell/ui'
@@ -37,7 +38,7 @@ export function useHomeCloud() {
     /** The server's own account pages, in the browser. */
     openAccount: () => {
       const server = signedIn.value?.server
-      if (server) void openExternalLink(new URL('/account', server.url).href)
+      if (server) void openExternalLink(joinURL(server.url, '/account'))
     },
     newWorkspace: () => {
       const server = signedIn.value?.server

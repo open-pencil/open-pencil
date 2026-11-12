@@ -50,7 +50,11 @@ describe('scaling a sticky note by a corner on a board', () => {
   })
 
   test('scales from the bottom edge around its centre, with the bottom on the grid', () => {
-    expect(scaleNote({ x: 1264, y: 400 }, 's', 0, 37)).toMatchObject({ x: 1248, y: 400, width: 272 })
+    expect(scaleNote({ x: 1264, y: 400 }, 's', 0, 37)).toMatchObject({
+      x: 1248,
+      y: 400,
+      width: 272
+    })
   })
 
   test("takes another layer's edge before the grid", () => {
@@ -102,6 +106,8 @@ describe('scaling a sticky note by a corner on a board', () => {
   })
 
   test('Control scales it freely, off the grid', () => {
-    expect(scaleNote({ x: 1264, y: 400 }, 'se', 37, 37, undefined, true)).toMatchObject({ width: 277 })
+    expect(scaleNote({ x: 1264, y: 400 }, 'se', 37, 37, undefined, true)).toMatchObject({
+      width: 277
+    })
   })
 })

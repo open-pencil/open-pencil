@@ -42,7 +42,10 @@ export function renderPagesToPDF(
       doc.abort()
       return null
     }
-    return { data: doc.close(), pages }
+    const data = doc.close()
+    // Null only for a document closed or aborted before, which this one is not.
+    if (!data) throw new Error('The PDF document was closed before its pages were written')
+    return { data, pages }
   } finally {
     doc.delete()
   }
@@ -67,6 +70,7 @@ function drawPage(
   prepareSelectionRenderGraph(graph, extracted.graph, extracted.pageId, spec.nodeIds)
 
   const canvas = doc.beginPage(width, height)
+  if (!canvas) throw new Error('The PDF document was closed before its pages were drawn')
   canvas.translate(-bounds.minX, -bounds.minY)
   renderer.renderSceneToCanvas(canvas, extracted.graph, extracted.pageId)
   doc.endPage()

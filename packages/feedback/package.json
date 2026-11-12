@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/feedback",
-  "version": "0.17.0-beta.3",
+  "version": "0.17.0-beta.4",
   "private": true,
   "license": "MIT",
   "description": "The OpenPencil feedback service on Cloudflare Workers: usage pings, opt-in usage stats, error and problem reports, the Cloud waitlist, and the daily metrics snapshot.",
@@ -23,6 +23,7 @@
   "dependencies": {
     "@internationalized/date": "^3.12.3",
     "@open-pencil/cloud": "workspace:*",
+    "@open-pencil/fig": "workspace:*",
     "@open-pencil/scene-graph": "workspace:*",
     "@vue-email/components": "^0.0.21",
     "@vue-email/render": "^0.0.9",

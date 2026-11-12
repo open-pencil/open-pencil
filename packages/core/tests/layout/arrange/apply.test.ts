@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { connectorRoute, createConnector, freeEndpoint } from '@open-pencil/scene-graph/connectors'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { applyArrangement } from '#core/layout/arrange/apply'
 import { arrangeBoxes, type ArrangeInput } from '#core/layout/arrange/boxes'

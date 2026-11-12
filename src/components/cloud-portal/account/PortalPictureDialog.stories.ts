@@ -15,7 +15,7 @@ const picture = new File(
 )
 
 const meta = {
-  title: 'App/Cloud Portal/Picture',
+  title: 'App/Cloud/Portal/Picture',
   args: { file: picture, error: null, onSave: fn() },
   render: (args) => ({
     components: { PortalPictureDialog },

@@ -271,7 +271,12 @@ async function variableText(fontSize = 24) {
     fontSize
   })
   const scope = effectScope()
-  const axes = scope.run(() => createTypographyAxes(editor, computed(() => [text])))
+  const axes = scope.run(() =>
+    createTypographyAxes(
+      editor,
+      computed(() => [text])
+    )
+  )
   if (!axes) throw new Error('Expected the axes')
   return { editor, text, axes, stop: () => scope.stop() }
 }
@@ -365,7 +370,12 @@ test('an axis set while text is edited styles the selected characters, and undoe
   state.selectionAnchor = 6
   state.cursor = 11
   const scope = effectScope()
-  const axes = scope.run(() => createTypographyAxes(editor, computed(() => [text])))
+  const axes = scope.run(() =>
+    createTypographyAxes(
+      editor,
+      computed(() => [text])
+    )
+  )
   if (!axes) throw new Error('Expected the axes')
   const node = () => editor.graph.getNode(text.id)
   try {
@@ -472,7 +482,12 @@ test('a cancelled axis edit on selected characters puts back their own axes', as
   state.selectionAnchor = 6
   state.cursor = 11
   const scope = effectScope()
-  const axes = scope.run(() => createTypographyAxes(editor, computed(() => [text])))
+  const axes = scope.run(() =>
+    createTypographyAxes(
+      editor,
+      computed(() => [text])
+    )
+  )
   if (!axes) throw new Error('Expected the axes')
   try {
     axes.previewAxis('wght', 500)
@@ -493,7 +508,12 @@ test('an axis set on a whole text keeps the other axes a range sets', () => {
     styleRuns: [width]
   })
   const scope = effectScope()
-  const axes = scope.run(() => createTypographyAxes(editor, computed(() => [text])))
+  const axes = scope.run(() =>
+    createTypographyAxes(
+      editor,
+      computed(() => [text])
+    )
+  )
   if (!axes) throw new Error('Expected the axes')
   const node = () => editor.graph.getNode(text.id)
   try {
@@ -543,7 +563,12 @@ test('a cancelled axis preview that outlived text editing puts back the layer an
   state.selectionAnchor = 6
   state.cursor = 11
   const scope = effectScope()
-  const axes = scope.run(() => createTypographyAxes(editor, computed(() => [text])))
+  const axes = scope.run(() =>
+    createTypographyAxes(
+      editor,
+      computed(() => [text])
+    )
+  )
   if (!axes) throw new Error('Expected the axes')
   const node = () => editor.graph.getNode(text.id)
   try {

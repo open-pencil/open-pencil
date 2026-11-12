@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { joinURL } from 'ufo'
 import { computed, ref } from 'vue'
 
 import { useCloudMessages } from '@open-pencil/vue/i18n'
@@ -35,6 +36,7 @@ const entries = computed<CloudServerEntry[]>(() =>
     if (
       connection.state === 'pending' ||
       connection.state === 'closed' ||
+      connection.state === 'terms' ||
       connection.state === 'expired' ||
       connection.state === 'signed-out'
     ) {
@@ -64,7 +66,13 @@ async function askToRemove(id: string) {
 
 function manageAccount(id: string) {
   const server = findCloudServer(id)
-  if (server) void openExternalLink(new URL('/account', server.url).href)
+  if (server) void openExternalLink(joinURL(server.url, '/account'))
+}
+
+/** Opens the server's terms page, where accepting the current version lets the account back in. */
+function reviewTerms(id: string) {
+  const server = findCloudServer(id)
+  if (server) void openExternalLink(new URL('/account/terms', server.url).href)
 }
 
 async function signOut(id: string) {
@@ -98,6 +106,7 @@ async function remove() {
       @connect="(kind) => openCloudConnect({ kind })"
       @sign-in="(id) => openCloudConnect({ serverId: id })"
       @manage-account="manageAccount"
+      @review-terms="reviewTerms"
       @show-on-home="showCloudServerOnHome"
       @sign-out="signOut"
       @remove="askToRemove"

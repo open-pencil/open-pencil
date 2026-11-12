@@ -210,6 +210,17 @@ export interface AuthUserTable {
   updatedAt: TimestampColumn
 }
 
+/** Better Auth's API keys, which are Cloud's personal access tokens; the plugin owns the rest. */
+export interface AccessTokenTable {
+  id: string
+  referenceId: string
+  name: string | null
+  start: string | null
+  expiresAt: TimestampColumn | null
+  lastRequest: TimestampColumn | null
+  createdAt: TimestampColumn
+}
+
 export interface TwoFactorTable {
   id: string
   secret: string
@@ -293,6 +304,13 @@ export interface InvitationContinuationTable {
   expiresAt: TimestampColumn
   consumedAt: TimestampColumn | null
   createdAt: TimestampColumn
+}
+
+/** Which version of the server's terms an account accepted, and when; one row per version. */
+export interface TermsAcceptanceTable {
+  userId: string
+  version: string
+  acceptedAt: TimestampColumn
 }
 
 export interface AccountEntitlementTable {
@@ -399,6 +417,7 @@ export interface CloudDatabase {
   signIn: SignInTable
   userPicture: UserPictureTable
   user: AuthUserTable
+  apikey: AccessTokenTable
   authSchemaVersion: AuthSchemaVersionTable
   enrollment: EnrollmentTable
   apiRateLimit: APIRateLimitTable
@@ -419,6 +438,7 @@ export interface CloudDatabase {
   documentRoomUpdate: DocumentRoomUpdateTable
   invitationContinuation: InvitationContinuationTable
   accountEntitlement: AccountEntitlementTable
+  termsAcceptance: TermsAcceptanceTable
   workspaceStorageUsage: WorkspaceStorageUsageTable
   transactionalEmail: TransactionalEmailTable
   uploadStorageReservation: UploadStorageReservationTable

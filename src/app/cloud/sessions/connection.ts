@@ -19,14 +19,16 @@ import { rememberCloudAccount, type CloudAccount, type CloudServer } from '../se
 import { clearCloudSessionToken, readCloudSessionToken } from './token'
 
 /**
- * Where this app stands with a server: signed in, waiting for an administrator, refused, signed
- * out after having been signed in, never signed in, or out of reach.
+ * Where this app stands with a server: signed in, waiting for an administrator, refused, asked to
+ * accept the server's current terms, signed out after having been signed in, never signed in, or
+ * out of reach.
  */
 export type CloudSessionState =
   | 'checking'
   | 'signed-in'
   | 'pending'
   | 'closed'
+  | 'terms'
   | 'expired'
   | 'signed-out'
   | 'unreachable'
@@ -124,7 +126,7 @@ async function signedInConnection(
   }
   rememberCloudAccount(server.id, account)
   if (status.state !== 'active') {
-    const state = status.state === 'pending' ? 'pending' : 'closed'
+    const state = status.state === 'pending' || status.state === 'terms' ? status.state : 'closed'
     return { ...INITIAL, state, discovery, account }
   }
   const { workspaces } = await cloudAPIClient(server, discovery).listWorkspaces()

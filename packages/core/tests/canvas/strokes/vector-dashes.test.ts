@@ -1,8 +1,8 @@
 import { afterAll, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { SceneGraph, type VectorNetwork } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { SkiaRenderer } from '#core/canvas/renderer'
 import { getCanvasKit } from '#core/canvaskit'
@@ -49,10 +49,7 @@ const RING: VectorNetwork = {
   regions: [
     {
       windingRule: 'EVENODD',
-      loops: [
-        outer.map((_, i) => i),
-        inner.map((_, i) => outer.length + i)
-      ]
+      loops: [outer.map((_, i) => i), inner.map((_, i) => outer.length + i)]
     }
   ]
 }

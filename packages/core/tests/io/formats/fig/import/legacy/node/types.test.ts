@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { materializeDocument } from '@open-pencil/fig'
-
 import { canvas, doc, node } from '#core-tests/io/formats/fig/import/legacy/helpers'
+
+import { materializeDocument } from '@open-pencil/fig'
 
 describe('fig-import: node types', () => {
   test('ROUNDED_RECTANGLE imported as its own type', () => {

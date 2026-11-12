@@ -40,8 +40,8 @@ Official builds send one anonymous ping a day and share usage stats only if you 
 - **Design-to-code export** — export selections as JSX/Tailwind, generate token outputs, and map designs into component-oriented code workflows
 - **Vue SDK for custom editors** — headless components and composables for embedding OpenPencil into other apps or building workflow-specific editing surfaces. [Read the SDK docs →](https://openpencil.dev/programmable/sdk/)
 - **Real-time collaboration** — share a peer-to-peer room over WebRTC with no server or account, or edit Cloud documents together. Cursors, presence, follow mode, voice calls
-- **Optional Cloud** — keep documents on your team's own [OpenPencil Cloud](https://openpencil.dev/user-guide/openpencil-cloud) server, or on the hosted service once it opens, and share them by invitation
-- **Auto layout & CSS Grid** — flex and grid layout via Yoga WASM, with gap, padding, alignment, track sizing
+- **Optional Cloud** — keep documents on your team's own [OpenPencil Cloud](https://openpencil.dev/cloud/) server, or on the hosted service once it opens, and share them by invitation
+- **Auto layout & CSS Grid** — flex and grid layout via Taffy WASM, with gap, padding, alignment, track sizing
 - **~15 MB desktop app** — Tauri v2 for macOS, Windows, Linux. Also runs in the browser as a PWA
 
 ## CLI
@@ -232,7 +232,7 @@ bun run tauri dev     # Desktop app (requires Rust)
 | Layer         | Tech                                                                              |
 | ------------- | --------------------------------------------------------------------------------- |
 | Rendering     | Skia (CanvasKit WASM)                                                             |
-| Layout        | Yoga WASM (flex + grid via [fork](https://github.com/open-pencil/yoga/tree/grid)) |
+| Layout        | [Taffy](https://github.com/DioxusLabs/taffy) WASM (flex + grid)                   |
 | UI            | Vue 3, Reka UI, Tailwind CSS 4                                                    |
 | File format   | Kiwi binary + Zstd + ZIP                                                          |
 | Collaboration | Trystero (WebRTC P2P) + Yjs (CRDT)                                                |

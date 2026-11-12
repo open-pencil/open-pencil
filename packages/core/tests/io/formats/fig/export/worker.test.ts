@@ -3,20 +3,24 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
+import { corePackagePath } from '#core-tests/helpers/paths'
+
 import { parseFigFile, exportFigFile, type FigCanvasParts } from '@open-pencil/core/io/formats/fig'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { heavy } from '@open-pencil/test-support/heavy'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import { buildFigCanvas } from '#core/io/formats/fig/export/compress'
-import { corePackagePath } from '#core-tests/helpers/paths'
-import { FIXTURES } from '@open-pencil/test-support/paths'
 setDefaultTimeout(30_000)
 
 function compressInWorker(parts: FigCanvasParts): Promise<Uint8Array> {
   return new Promise((resolve, reject) => {
-    const worker = new Worker(pathToFileURL(corePackagePath('src', 'io/formats/fig/export/worker.ts')), {
-      type: 'module'
-    })
+    const worker = new Worker(
+      pathToFileURL(corePackagePath('src', 'io/formats/fig/export/worker.ts')),
+      {
+        type: 'module'
+      }
+    )
     worker.onmessage = (event: MessageEvent<Uint8Array>) => {
       worker.terminate()
       resolve(event.data)

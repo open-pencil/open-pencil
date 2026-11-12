@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
 import type { CanvasKit, TypefaceFontProvider } from '@open-pencil/canvaskit'
-
 import { FontManager, fontManager } from '@open-pencil/core/text'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
