@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useObjectUrl } from '@vueuse/core'
 import { isEqual } from 'es-toolkit'
+import { joinURL } from 'ufo'
 import { computed, ref, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
 
@@ -49,7 +50,7 @@ const atStorageLimit = computed(() => cloudRoomsAtStorageLimit.value.has(store))
 const billingURL = computed(() => {
   const binding = store.getStorageBinding()
   const target = binding && cloudShareTarget(binding)
-  return target?.discovery.billing ? new URL(CLOUD_ACCOUNT_PLAN_PATH, target.server.url).href : null
+  return target?.discovery.billing ? joinURL(target.server.url, CLOUD_ACCOUNT_PLAN_PATH) : null
 })
 const notLive = computed(() => cloudRoomsRefused.value.has(store))
 /** A tab opened from a link without an account has no Cloud file of its own to report on. */

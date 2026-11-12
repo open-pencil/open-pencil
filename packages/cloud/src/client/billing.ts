@@ -12,6 +12,7 @@ import {
   type CloudBillingAPI
 } from '#cloud/contract'
 import { hc } from 'hono/client'
+import { withoutTrailingSlash } from 'ufo'
 import * as v from 'valibot'
 
 export class CloudBillingError extends Error {
@@ -56,7 +57,7 @@ export type CloudBillingClientOptions = {
  * never travels in a URL.
  */
 export function createCloudBillingClient(options: CloudBillingClientOptions) {
-  const endpoint = options.endpoint.replace(/\/+$/, '')
+  const endpoint = withoutTrailingSlash(options.endpoint)
   // Answers are parsed rather than trusted: the service is deployed apart from this client.
   const { v1 } = hc<CloudBillingAPI>(endpoint, {
     fetch: cloudServicesFetch(options.tokens, options.fetch)

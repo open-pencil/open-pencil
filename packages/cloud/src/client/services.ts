@@ -13,6 +13,7 @@ import {
   type CloudServicesAPI
 } from '#cloud/contract'
 import { hc } from 'hono/client'
+import { joinURL, withoutTrailingSlash } from 'ufo'
 import * as v from 'valibot'
 
 /** Where a request gets the token it sends, and how it drops one the service refused. */
@@ -89,13 +90,13 @@ export type CloudServicesClientOptions = {
 
 /** The services a Cloud advertises: the model API base URL, catalog, wallet, and search. */
 export function createCloudServicesClient(options: CloudServicesClientOptions) {
-  const endpoint = options.endpoint.replace(/\/+$/, '')
+  const endpoint = withoutTrailingSlash(options.endpoint)
   const fetch = cloudServicesFetch(options.tokens, options.fetch)
   // Answers are parsed rather than trusted: the service is deployed apart from this client.
   const { v1 } = hc<CloudServicesAPI>(endpoint, { fetch })
   return {
     /** The base URL an OpenAI-compatible client sends chat completions below. */
-    modelBaseURL: `${endpoint}${CLOUD_SERVICES_API_PATHS.base}`,
+    modelBaseURL: joinURL(endpoint, CLOUD_SERVICES_API_PATHS.base),
     fetch,
     async catalog(): Promise<ServiceCatalog> {
       return parsed(await v1.catalog.$get(), serviceCatalogSchema)

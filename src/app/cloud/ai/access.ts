@@ -1,4 +1,5 @@
 import { compact } from 'es-toolkit'
+import { joinURL } from 'ufo'
 import { computed } from 'vue'
 
 import {
@@ -35,7 +36,7 @@ export const cloudAIIdentity = computed(() => {
 /** Where people manage the plan that pays for AI: the Home server's plan page, when it bills. */
 export const cloudBillingURL = computed(() => {
   const home = homeAI.value
-  return home?.discovery.billing ? new URL(CLOUD_ACCOUNT_PLAN_PATH, home.server.url).href : null
+  return home?.discovery.billing ? joinURL(home.server.url, CLOUD_ACCOUNT_PLAN_PATH) : null
 })
 
 // Keyed by account too, so a token signed for one person is never sent for another.
