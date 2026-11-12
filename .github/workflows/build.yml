@@ -257,11 +257,6 @@ jobs:
         with:
           pattern: native-*
           path: native-artifacts
-      # As in the native job: kernel.org's Ubuntu mirror first, the runner's own as the fallback.
-      - name: Prefer kernel.org's Ubuntu mirror
-        run: sudo sed -i '1i https://mirrors.edge.kernel.org/ubuntu/\tpriority:0' /etc/apt/apt-mirrors.txt
-      - name: Install signature verifier
-        run: sudo apt-get update && sudo apt-get install -y minisign
       - name: Resume npm versions this tag already published
         run: bun .pipeline/tools/release/release-packages/src/cli.ts resume
       - name: Verify all targets, digests and updater signatures

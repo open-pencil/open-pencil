@@ -61,7 +61,6 @@ test('command adapters delegate argument arrays and deadlines to shared tooling'
   expect(await commands.git('rev-parse', 'HEAD')).toBe('output')
   expect(await commands.github(['release', 'view', 'v0.15.0'])).toBe('output\n')
   await commands.github(['release', 'download', 'v0.15.0'], ARTIFACT_TRANSFER_TIMEOUT_MS)
-  await commands.verifySignature('asset with spaces', 'key.pub', 'asset.sig')
 
   expect(requests).toEqual([
     { command: 'git', args: ['rev-parse', 'HEAD'], cwd, timeoutMs: 60_000 },
@@ -71,13 +70,6 @@ test('command adapters delegate argument arrays and deadlines to shared tooling'
       args: ['release', 'download', 'v0.15.0'],
       cwd,
       timeoutMs: ARTIFACT_TRANSFER_TIMEOUT_MS
-    },
-    {
-      command: 'minisign',
-      args: ['-Vm', 'asset with spaces', '-p', 'key.pub', '-x', 'asset.sig'],
-      cwd,
-      output: 'inherit',
-      timeoutMs: 60_000
     }
   ])
 })
