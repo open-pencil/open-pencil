@@ -1,6 +1,6 @@
-import { compact } from 'es-toolkit'
+import { refDebounced } from '@vueuse/core'
 import * as v from 'valibot'
-import { computed, ref, shallowRef, watch, type Ref } from 'vue'
+import { ref, shallowRef, watch } from 'vue'
 
 import { createFeedbackClient } from '@open-pencil/feedback/client'
 import {
@@ -9,17 +9,15 @@ import {
   reportTriageRecordSchema,
   type InboxReport,
   type ReportDetail,
+  type ReportInbox,
+  type ReportInboxFilter,
   type ReportStatus,
   type ReportTriage,
   type ReportTriageRecord
 } from '@open-pencil/feedback/contract'
 
-import type { PortalListPage, PortalListRequest } from '@/app/cloud-portal/list'
-
-import type { MetricsRange } from './range'
-
-/** The inbox's filters: one per status, and every report. */
-export type ReportInboxFilter = ReportStatus | 'all'
+/** How long typing pauses before a search asks PostHog. */
+const SEARCH_DELAY_MS = 300
 
 const client = () => createFeedbackClient({ origin: globalThis.location.origin })
 
@@ -30,16 +28,24 @@ async function parsed<T extends v.GenericSchema>(response: Response, schema: T) 
   return result.output
 }
 
-/** The reports received in a range, with the team's triage. */
-export async function fetchReportInbox(range: MetricsRange) {
-  const response = await client().admin.api.reports.$get({
-    query: { start: range.start, end: range.end }
-  })
+/** One page of the inbox: a filter, an optional search, and where the last page ended. */
+export async function fetchReportInbox(query: {
+  filter: ReportInboxFilter
+  search?: string
+  after?: string
+}): Promise<ReportInbox> {
+  // Left out rather than sent empty: the server takes no search and no cursor as their defaults.
+  const params: { filter: ReportInboxFilter; search?: string; after?: string } = {
+    filter: query.filter
+  }
+  if (query.search) params.search = query.search
+  if (query.after) params.after = query.after
+  const response = await client().admin.api.reports.$get({ query: params })
   if (response.status !== 200) throw new Error(`The reports API answered ${response.status}`)
   return parsed(response, reportInboxSchema)
 }
 
-/** One report with the steps that led up to it. */
+/** One report whole: its steps and, for an error, its exceptions. */
 export async function fetchReportDetail(reportId: string): Promise<ReportDetail> {
   const response = await client().admin.api.reports[':reportId'].$get({ param: { reportId } })
   if (response.status !== 200) throw new Error(`The report answered ${response.status}`)
@@ -59,113 +65,125 @@ export async function saveReportTriage(
   return parsed(response, reportTriageRecordSchema)
 }
 
-const searchable = (report: InboxReport) =>
-  [report.note, report.email, report.error, report.version, report.platform, report.app]
-    .filter((field) => field !== null)
-    .join('\n')
-    .toLowerCase()
-
 /**
- * One page of the inbox for the console table: the reports matching the search under the filter,
- * with how many match under each filter. The page already holds the range's reports, so this
- * runs in the browser.
+ * The inbox as the team works through it: one filter and search at a time, page after page as the
+ * list scrolls, across all time. A newer filter or search wins over a load still in flight.
+ * Triage saved here shows at once and stays over later loads, since PostHog takes a moment to
+ * have it; the counts follow it.
  */
-export function reportInboxPage(
-  reports: readonly InboxReport[],
-  request: PortalListRequest<ReportInboxFilter>
-): PortalListPage<ReportInboxFilter, InboxReport> {
-  const words = compact((request.search ?? '').toLowerCase().split(/\s+/))
-  const found = reports.filter((report) => {
-    const text = searchable(report)
-    return words.every((word) => text.includes(word))
-  })
-  const count = (status: ReportStatus) => found.filter((report) => report.status === status).length
-  const counts = {
-    all: found.length,
-    open: count('open'),
-    replied: count('replied'),
-    closed: count('closed')
-  }
-  const matching =
-    request.filter === 'all' ? found : found.filter((report) => report.status === request.filter)
-  return {
-    rows: matching.slice(request.offset, request.offset + request.limit),
-    total: matching.length,
-    counts
-  }
-}
-
-/**
- * The inbox for the range as it changes. A newer request wins over one still in flight. A failed
- * refresh keeps the range's reports on screen; a failed load of another range clears them, so
- * they never stand for days they don't cover. `update` saves triage and shows it at once.
- */
-export function useReportInbox(range: Ref<MetricsRange>) {
+export function useReportInbox() {
+  const filter = ref<ReportInboxFilter>('open')
+  const query = ref('')
+  const search = refDebounced(query, SEARCH_DELAY_MS)
   const reports = shallowRef<InboxReport[]>([])
-  const truncated = ref(false)
+  const counts = shallowRef<Record<ReportInboxFilter, number> | null>(null)
+  const next = ref<string | null>(null)
+  /** The first page of the filter and search shown is loading. */
   const loading = ref(false)
+  /** A further page is loading. */
+  const loadingMore = ref(false)
   const loaded = ref(false)
   const failed = ref(false)
-  /** The range `reports` belongs to. */
-  let shownRange: MetricsRange | null = null
-  const shownFor = shallowRef<MetricsRange | null>(null)
-  /** `reports` are the selected range's, not another's still on screen while it loads. */
-  const current = computed(
-    () => shownFor.value?.start === range.value.start && shownFor.value.end === range.value.end
-  )
+  /** Counts loads, so an answer for an earlier filter or search is dropped. */
   let latest = 0
-  /** Triage saved here, numbered, so a load that read the triage before a save doesn't undo it. */
-  let saveCount = 0
-  const saves = new Map<string, { count: number; record: ReportTriageRecord }>()
+  /** Triage saved in this page, which a load that read PostHog before it took it in would undo. */
+  const saves = new Map<string, ReportTriageRecord>()
+
+  const withSaves = (page: InboxReport[]) =>
+    page.map((report) => {
+      const save = saves.get(report.id)
+      return save && (!report.handledAt || report.handledAt < save.handledAt)
+        ? { ...report, ...save }
+        : report
+    })
 
   async function load() {
     const request = ++latest
-    const asked = range.value
-    const savedBefore = saveCount
     loading.value = true
     try {
-      const next = await fetchReportInbox(asked)
+      const page = await fetchReportInbox({ filter: filter.value, search: search.value.trim() })
       if (request !== latest) return
-      reports.value = next.reports.map((report) => {
-        const save = saves.get(report.id)
-        return save && save.count > savedBefore ? { ...report, ...save.record } : report
-      })
-      truncated.value = next.truncated
-      shownRange = asked
-      shownFor.value = asked
+      reports.value = withSaves(page.reports)
+      counts.value = page.counts
+      next.value = page.next
       loaded.value = true
       failed.value = false
     } catch (error) {
       if (request !== latest) return
       console.warn('Reports could not load', error)
+      reports.value = []
+      next.value = null
+      loaded.value = false
       failed.value = true
-      if (shownRange?.start !== asked.start || shownRange.end !== asked.end) {
-        reports.value = []
-        truncated.value = false
-        shownRange = null
-        shownFor.value = null
-        loaded.value = false
-      }
     } finally {
       if (request === latest) loading.value = false
+    }
+  }
+
+  /** Appends the next page, as the list scrolls to its end. */
+  async function loadMore() {
+    const after = next.value
+    if (!after || loadingMore.value || loading.value) return
+    const request = latest
+    loadingMore.value = true
+    try {
+      const page = await fetchReportInbox({
+        filter: filter.value,
+        search: search.value.trim(),
+        after
+      })
+      if (request !== latest) return
+      const shown = new Set(reports.value.map((report) => report.id))
+      reports.value = [
+        ...reports.value,
+        ...withSaves(page.reports.filter((report) => !shown.has(report.id)))
+      ]
+      next.value = page.next
+    } catch (error) {
+      if (request !== latest) return
+      console.warn('More reports could not load', error)
+      failed.value = true
+    } finally {
+      loadingMore.value = false
     }
   }
 
   /** Saves triage and shows it, with who saved it, in place; returns the report as it now is. */
   async function update(reportId: string, triage: ReportTriage): Promise<InboxReport | null> {
     const saved = await saveReportTriage(reportId, triage)
-    saves.set(reportId, { count: ++saveCount, record: saved })
+    saves.set(reportId, saved)
     let updated: InboxReport | null = null
     reports.value = reports.value.map((report) => {
       if (report.id !== reportId) return report
+      // The counts follow a status that moved; the report stays where it is until the next load.
+      if (counts.value && report.status !== saved.status) {
+        counts.value = {
+          ...counts.value,
+          [report.status]: Math.max(0, counts.value[report.status] - 1),
+          [saved.status]: counts.value[saved.status] + 1
+        }
+      }
       updated = { ...report, ...saved }
       return updated
     })
     return updated
   }
 
-  watch(range, load)
-  return { reports, truncated, loading, loaded, current, failed, refresh: load, update }
+  watch([filter, search], () => void load())
+  return {
+    filter,
+    query,
+    reports,
+    counts,
+    next,
+    loading,
+    loadingMore,
+    loaded,
+    failed,
+    refresh: load,
+    loadMore,
+    update
+  }
 }
 
 /**
@@ -202,10 +220,13 @@ export function useReportTriage(
    * report as the last save left it, so a status picked while a note saves keeps that note.
    */
   let queue: Promise<unknown> = Promise.resolve()
-  function apply(reportId: string, change: Partial<ReportTriage>): Promise<boolean> {
+  function apply(report: InboxReport, change: Partial<ReportTriage>): Promise<boolean> {
+    const reportId = report.id
     const run = async () => {
-      const current = inbox.reports.value.find((report) => report.id === reportId)
-      if (!current) return false
+      // As the last save left it: in the list, or open here after another filter took it away.
+      const current =
+        inbox.reports.value.find((each) => each.id === reportId) ??
+        (selected.value?.id === reportId ? selected.value : report)
       saving.value = true
       try {
         const updated = await inbox.update(reportId, {
@@ -227,9 +248,9 @@ export function useReportTriage(
   }
 
   /** Moves a report to another status, keeping its note. */
-  const setStatus = (report: InboxReport, status: ReportStatus) => apply(report.id, { status })
+  const setStatus = (report: InboxReport, status: ReportStatus) => apply(report, { status })
   /** Saves the team's note on a report, keeping its status. */
-  const setNote = (report: InboxReport, note: string | null) => apply(report.id, { note })
+  const setNote = (report: InboxReport, note: string | null) => apply(report, { note })
 
   return { selected, detail, detailFailed, saving, open, setStatus, setNote }
 }

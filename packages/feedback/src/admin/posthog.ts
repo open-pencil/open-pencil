@@ -54,7 +54,9 @@ export async function queryPostHog<T extends v.GenericSchema>(
   env: FeedbackBindings,
   services: FeedbackServices,
   sql: string,
-  row: T
+  row: T,
+  /** Constants the query names as `{placeholder}`, which PostHog binds rather than splices in. */
+  values?: Record<string, string | number>
 ): Promise<v.InferOutput<T>[]> {
   const response = await services.fetch(
     `${env.POSTHOG_APP_HOST}/api/projects/${env.POSTHOG_PROJECT_ID}/query/`,
@@ -64,7 +66,9 @@ export async function queryPostHog<T extends v.GenericSchema>(
         Authorization: `Bearer ${env.POSTHOG_PERSONAL_KEY}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ query: { kind: 'HogQLQuery', query: sql } }),
+      body: JSON.stringify({
+        query: { kind: 'HogQLQuery', query: sql, ...(values && { values }) }
+      }),
       signal: AbortSignal.timeout(QUERY_TIMEOUT_MS)
     }
   )

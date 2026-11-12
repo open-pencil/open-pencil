@@ -251,12 +251,15 @@ const sharingNote = computed(() => {
       <SegmentedControl v-model="tabValue" :options="tabs" label="Dashboard" />
       <span :class="ui.barHost()">{{ host }}</span>
       <div :class="ui.barEnd()">
-        <span :class="ui.barMeta()">Updated {{ formatTime(snapshot.asOf) }}</span>
-        <MetricsRangePicker
-          v-model="range"
-          :today="snapshot.today"
-          :earliest="snapshot.earliest ?? snapshot.start"
-        />
+        <!-- The inbox spans all time, so the range belongs to the numbers alone. -->
+        <template v-if="tab === 'metrics'">
+          <span :class="ui.barMeta()">Updated {{ formatTime(snapshot.asOf) }}</span>
+          <MetricsRangePicker
+            v-model="range"
+            :today="snapshot.today"
+            :earliest="snapshot.earliest ?? snapshot.start"
+          />
+        </template>
         <IconButton label="Refresh" :disabled="loading" @click="emit('refresh')">
           <icon-lucide-refresh-cw class="size-3.5" />
         </IconButton>

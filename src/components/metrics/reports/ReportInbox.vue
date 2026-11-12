@@ -2,7 +2,12 @@
 import { tv } from 'tailwind-variants'
 import { ref } from 'vue'
 
-import type { InboxReport, ReportDetail, ReportStatus } from '@open-pencil/feedback/contract'
+import type {
+  InboxReport,
+  ReportDetail,
+  ReportInboxFilter,
+  ReportStatus
+} from '@open-pencil/feedback/contract'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
@@ -19,21 +24,31 @@ const metricsInbox = tv(metricsInboxTheme)
  */
 const {
   reports,
+  counts = null,
+  hasMore = false,
+  loadingMore = false,
   selected = null,
   detail = null,
   detailFailed = false,
   saveFailed = false
 } = defineProps<{
   reports: InboxReport[]
+  counts?: Record<ReportInboxFilter, number> | null
+  hasMore?: boolean
+  loadingMore?: boolean
   selected?: InboxReport | null
   detail?: ReportDetail | null
   detailFailed?: boolean
   saveFailed?: boolean
 }>()
+const filter = defineModel<ReportInboxFilter>('filter', { required: true })
+const query = defineModel<string>('query', { required: true })
 const emit = defineEmits<{
   select: [report: InboxReport]
+  more: []
   status: [report: InboxReport, status: ReportStatus]
   note: [report: InboxReport, note: string | null]
+  preview: [url: string]
 }>()
 
 const ui = metricsInbox()
@@ -50,10 +65,16 @@ function choose(report: InboxReport) {
   <div :class="ui.root()">
     <div :class="ui.listPane()" :data-hidden="reading">
       <ReportList
+        v-model:filter="filter"
+        v-model:query="query"
         :reports="reports"
+        :counts="counts"
+        :has-more="hasMore"
+        :loading-more="loadingMore"
         :selected-id="selected?.id ?? null"
         @select="choose"
         @preselect="(report) => emit('select', report)"
+        @more="emit('more')"
       />
     </div>
     <div :class="ui.detailPane()" :data-hidden="!reading">
@@ -76,6 +97,7 @@ function choose(report: InboxReport) {
           :save-failed="saveFailed"
           @status="(status) => emit('status', selected, status)"
           @note="(note) => emit('note', selected, note)"
+          @preview="(url) => emit('preview', url)"
         />
       </template>
       <div v-else class="flex flex-1 items-center justify-center">

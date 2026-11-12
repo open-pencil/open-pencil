@@ -1,11 +1,10 @@
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
 
-import { nextTick, ref, shallowRef } from 'vue'
+import { nextTick, shallowRef } from 'vue'
 
 import type { InboxReport, ReportStatus } from '@open-pencil/feedback/contract'
 
-import type { MetricsRange } from '@/app/metrics/range'
-import { reportInboxPage, useReportInbox, useReportTriage } from '@/app/metrics/reports'
+import { useReportInbox, useReportTriage } from '@/app/metrics/reports'
 
 function report(id: string, status: ReportStatus, fields: Partial<InboxReport> = {}): InboxReport {
   return {
@@ -31,41 +30,10 @@ function report(id: string, status: ReportStatus, fields: Partial<InboxReport> =
   }
 }
 
-const REPORTS = [
-  report('a', 'open', { note: 'PDF export hangs' }),
-  report('b', 'open', { kind: 'error', error: 'TypeError: x is undefined', platform: 'windows' }),
-  report('c', 'replied', { note: 'Export to SVG loses gradients', email: 'lee@example.com' }),
-  report('d', 'closed', { note: 'Fonts missing' })
-]
-
-const page = (request: Partial<Parameters<typeof reportInboxPage>[1]>) =>
-  reportInboxPage(REPORTS, { filter: 'all', limit: 50, offset: 0, ...request })
-
-describe('report inbox page', () => {
-  test('lists the reports under a status, with how many each status holds', () => {
-    const open = page({ filter: 'open' })
-    expect(open.rows.map((row) => row.id)).toEqual(['a', 'b'])
-    expect(open.total).toBe(2)
-    expect(open.counts).toEqual({ all: 4, open: 2, replied: 1, closed: 1 })
-  })
-
-  test('searches every word across the note, address, error, and build', () => {
-    expect(page({ search: 'export' }).rows.map((row) => row.id)).toEqual(['a', 'c'])
-    expect(page({ search: 'EXPORT lee@' }).rows.map((row) => row.id)).toEqual(['c'])
-    expect(page({ search: 'typeerror windows' }).rows.map((row) => row.id)).toEqual(['b'])
-    // Counts follow the search, so each filter says how many of the matches it holds.
-    expect(page({ search: 'export' }).counts).toEqual({ all: 2, open: 1, replied: 1, closed: 0 })
-  })
-
-  test('pages through the matches', () => {
-    const second = page({ limit: 2, offset: 2 })
-    expect(second.rows.map((row) => row.id)).toEqual(['c', 'd'])
-    expect(second.total).toBe(4)
-  })
-})
-
-/** A report ID as the contract requires one. */
+/** Report IDs as the contract requires them. */
 const A = '11111111-1111-4111-8111-111111111111'
+const B = '22222222-2222-4222-8222-222222222222'
+const C = '33333333-3333-4333-8333-333333333333'
 
 /** A request to the dashboard's API, answered when the test says so. */
 type Pending = { url: string; method: string; answer: (response: Response) => void }
@@ -91,6 +59,11 @@ beforeAll(() => {
   })
 })
 
+// A request one test left waiting never answers another's.
+beforeEach(() => {
+  pending.length = 0
+})
+
 afterAll(() => {
   for (const [name, descriptor] of saved) {
     if (descriptor) Object.defineProperty(globalThis, name, descriptor)
@@ -98,12 +71,24 @@ afterAll(() => {
   }
 })
 
-/** The oldest request still waiting whose URL holds `part`. */
-function take(part: string): Pending {
-  const index = pending.findIndex((request) => request.url.includes(part))
-  const [request] = pending.splice(index, 1)
-  if (!request) throw new Error(`No request for ${part}`)
-  return request
+/** The oldest request whose URL holds `part`, once the code under test has sent it. */
+async function take(part: string): Promise<Pending> {
+  for (let tick = 0; tick < 20; tick++) {
+    const index = pending.findIndex((request) => request.url.includes(part))
+    if (index !== -1) {
+      const [request] = pending.splice(index, 1)
+      if (request) return request
+    }
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0)
+    })
+  }
+  throw new Error(`No request for ${part}; waiting: ${pending.map((each) => each.url).join(', ')}`)
+}
+
+/** Answers the oldest request whose URL holds `part`. */
+async function answer(part: string, response: Response): Promise<void> {
+  ;(await take(part)).answer(response)
 }
 
 /** Lets awaited responses and Vue's watchers run. */
@@ -116,59 +101,79 @@ const settle = async () => {
   }
 }
 
-const RANGE: MetricsRange = { preset: '7d', start: '2026-11-05', end: '2026-11-11' }
+/** Where a page ends, as the server writes it: Unix milliseconds and the event's UUID. */
+const CURSOR = `1762851600000:${C}`
+const COUNTS = { open: 2, replied: 0, closed: 0, all: 2 }
+const page = (reports: InboxReport[], next: string | null = null, counts: unknown = COUNTS) =>
+  Response.json({ reports, next, counts })
+const SAVED = {
+  status: 'closed',
+  triageNote: null,
+  handledBy: 'dan@example.com',
+  handledAt: '2026-11-11T10:00:00.000Z'
+}
 
 describe('report inbox state', () => {
-  test('keeps a status saved while an older load was still on its way', async () => {
-    const range = ref(RANGE)
-    const inbox = useReportInbox(range)
+  test('keeps saved triage over a load that read PostHog before it took the triage in', async () => {
+    const inbox = useReportInbox()
     const first = inbox.refresh()
-    take('/admin/api/reports?').answer(
-      Response.json({ reports: [report(A, 'open')], truncated: false })
-    )
+    await answer('/admin/api/reports?', page([report(A, 'open'), report(B, 'open')]))
     await first
 
-    // A refresh reads the triage, then the team closes the report before its answer arrives.
-    const refreshing = inbox.refresh()
     const save = inbox.update(A, { status: 'closed', note: null })
-    take('/triage').answer(
-      Response.json({
-        status: 'closed',
-        triageNote: null,
-        handledBy: 'dan@example.com',
-        handledAt: '2026-11-11T10:00:00.000Z'
-      })
-    )
+    await answer('/triage', Response.json(SAVED))
     await save
-    take('/admin/api/reports?').answer(
-      Response.json({ reports: [report(A, 'open')], truncated: false })
-    )
+    // The counts follow the status that moved.
+    expect(inbox.counts.value).toEqual({ open: 1, replied: 0, closed: 1, all: 2 })
+
+    const refreshing = inbox.refresh()
+    await answer('/admin/api/reports?', page([report(A, 'open'), report(B, 'open')]))
     await refreshing
 
     expect(inbox.reports.value[0]).toMatchObject({ status: 'closed', handledBy: 'dan@example.com' })
   })
 
-  test("clears another range's reports when the new range fails, but keeps them on a failed refresh", async () => {
-    const range = ref(RANGE)
-    const inbox = useReportInbox(range)
+  test('appends the next page once, and starts over for another filter', async () => {
+    const inbox = useReportInbox()
     const first = inbox.refresh()
-    take('/admin/api/reports?').answer(
-      Response.json({ reports: [report(A, 'open')], truncated: false })
-    )
+    const asked = await take('/admin/api/reports?')
+    expect(new URL(asked.url).searchParams.get('filter')).toBe('open')
+    asked.answer(page([report(A, 'open'), report(B, 'open')], CURSOR))
     await first
 
-    const again = inbox.refresh()
-    take('/admin/api/reports?').answer(new Response(null, { status: 502 }))
-    await again
-    expect(inbox.failed.value).toBe(true)
-    expect(inbox.reports.value.map((each) => each.id)).toEqual([A])
+    const more = inbox.loadMore()
+    // A second scroll to the end while a page loads asks for nothing more.
+    void inbox.loadMore()
+    const next = await take('/admin/api/reports?')
+    expect(new URL(next.url).searchParams.get('after')).toBe(CURSOR)
+    expect(pending.filter((request) => request.url.includes('/admin/api/reports?'))).toEqual([])
+    next.answer(page([report(B, 'open'), report(C, 'open')], null, null))
+    await more
+    expect(inbox.reports.value.map((each) => each.id)).toEqual([A, B, C])
+    expect(inbox.next.value).toBeNull()
 
-    range.value = { preset: '30d', start: '2026-10-13', end: '2026-11-11' }
+    inbox.filter.value = 'closed'
     await settle()
-    take('/admin/api/reports?').answer(new Response(null, { status: 502 }))
+    const closed = await take('/admin/api/reports?')
+    expect(new URL(closed.url).searchParams.get('filter')).toBe('closed')
+    expect(new URL(closed.url).searchParams.has('after')).toBe(false)
+    closed.answer(page([]))
     await settle()
     expect(inbox.reports.value).toEqual([])
-    expect(inbox.loaded.value).toBe(false)
+  })
+
+  test('drops an answer for a filter that was left before it arrived', async () => {
+    const inbox = useReportInbox()
+    void inbox.refresh()
+    const stale = await take('/admin/api/reports?')
+    inbox.filter.value = 'all'
+    await settle()
+    const current = await take('/admin/api/reports?')
+    current.answer(page([report(B, 'replied')]))
+    await settle()
+    stale.answer(page([report(A, 'open')]))
+    await settle()
+    expect(inbox.reports.value.map((each) => each.id)).toEqual([B])
   })
 
   test('shows the steps of the latest opening when the same report is reopened', async () => {
@@ -177,10 +182,18 @@ describe('report inbox state', () => {
     const older = triage.open(opened)
     const newer = triage.open(opened)
     const [olderRequest, newerRequest] = [
-      take(`/admin/api/reports/${A}`),
-      take(`/admin/api/reports/${A}`)
+      await take(`/admin/api/reports/${A}`),
+      await take(`/admin/api/reports/${A}`)
     ]
-    newerRequest.answer(Response.json({ ...opened, steps: [], stepsUnreadable: false }))
+    newerRequest.answer(
+      Response.json({
+        ...opened,
+        steps: [],
+        stepsUnreadable: false,
+        exceptions: [],
+        issueURL: null
+      })
+    )
     await newer
     olderRequest.answer(new Response(null, { status: 502 }))
     await older

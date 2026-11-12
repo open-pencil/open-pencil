@@ -1,7 +1,12 @@
-import { metricsQuerySchema, reportFileNameSchema, reportTriageSchema } from '#feedback/contract'
+import {
+  metricsQuerySchema,
+  reportFileNameSchema,
+  reportInboxQuerySchema,
+  reportTriageSchema
+} from '#feedback/contract'
 import type { FeedbackEnv, FeedbackServices } from '#feedback/env'
 import { validatedJSON, validatedQuery } from '#feedback/http/request'
-import { reportFileKey } from '#feedback/reports/files'
+import { reportFileKey, reportFileThumbnail } from '#feedback/reports/files'
 import { Hono } from 'hono'
 import * as v from 'valibot'
 
@@ -30,8 +35,8 @@ export function adminRoutes(services: FeedbackServices) {
         c.header('Cache-Control', 'private, no-store')
         return c.json(await buildSnapshot(c.env, services, c.req.valid('query')), 200)
       })
-      // The report inbox: reports from PostHog with the team's triage, for a range of days.
-      .get('/admin/api/reports', validatedQuery(metricsQuerySchema), async (c) => {
+      // The report inbox: one page of reports from PostHog with the team's triage.
+      .get('/admin/api/reports', validatedQuery(reportInboxQuerySchema), async (c) => {
         c.header('Cache-Control', 'private, no-store')
         return c.json(await fetchReportInbox(c.env, services, c.req.valid('query')), 200)
       })
@@ -48,13 +53,25 @@ export function adminRoutes(services: FeedbackServices) {
         if (!params.success) return c.body(null, 404)
         const saved = await saveReportTriage(
           c.env,
+          services,
           params.output.reportId,
           c.req.valid('json'),
-          c.get('adminEmail') ?? 'unknown',
-          services.now()
+          c.get('adminEmail') ?? 'unknown'
         )
         c.header('Cache-Control', 'private, no-store')
         return c.json(saved, 200)
+      })
+      // An attached document's own thumbnail, read from the file in ranges, for the inbox to show.
+      .get('/admin/reports/:reportId/files/:name/thumbnail', async (c) => {
+        const params = v.safeParse(reportFileParamsSchema, c.req.param())
+        if (!params.success) return c.notFound()
+        const { reportId, name } = params.output
+        const png = await reportFileThumbnail(c.env.REPORTS, reportFileKey(reportId, name))
+        if (!png) return c.notFound()
+        return c.body(png.slice().buffer, 200, {
+          'Content-Type': 'image/png',
+          'Cache-Control': 'private, max-age=3600'
+        })
       })
       // A file attached to a report, linked from its PostHog event; always a download, never rendered.
       .get('/admin/reports/:reportId/files/:name', async (c) => {

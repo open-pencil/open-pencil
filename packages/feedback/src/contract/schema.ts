@@ -500,7 +500,8 @@ export const reportReceiptSchema = v.strictObject({
 })
 export type ReportReceipt = v.InferOutput<typeof reportReceiptSchema>
 
-// The team's report inbox in the metrics dashboard.
+// The team's report inbox in the metrics dashboard. Reports and their triage live in PostHog;
+// the service keeps nothing of either.
 
 /**
  * Where the team stands with a report: nobody has looked yet, someone wrote back to the sender,
@@ -508,11 +509,30 @@ export type ReportReceipt = v.InferOutput<typeof reportReceiptSchema>
  */
 export const REPORT_STATUSES = ['open', 'replied', 'closed'] as const
 export type ReportStatus = (typeof REPORT_STATUSES)[number]
+/** The inbox's filters: one per status, and every report. */
+export const REPORT_INBOX_FILTERS = [...REPORT_STATUSES, 'all'] as const
+export type ReportInboxFilter = (typeof REPORT_INBOX_FILTERS)[number]
 
 /** How long an internal note on a report may be. */
 export const REPORT_TRIAGE_NOTE_MAX_LENGTH = 2000
-/** The most reports the inbox lists for one range; older ones in it are left out. */
-export const REPORT_INBOX_LIMIT = 500
+/** How many reports one page of the inbox holds. */
+export const REPORT_INBOX_PAGE_SIZE = 50
+/** How long a search of the inbox may be. */
+export const REPORT_INBOX_SEARCH_MAX_LENGTH = 200
+
+/**
+ * Where a page of the inbox starts: after the report received at `at` (Unix milliseconds) with
+ * event `uuid`, newest first. Opaque to the dashboard, which hands back what the last page gave.
+ */
+const reportCursorSchema = v.pipe(v.string(), v.regex(/^\d{1,15}:[0-9a-f-]{36}$/))
+
+/** A page of the inbox: one filter, an optional search, and where the last page ended. */
+export const reportInboxQuerySchema = v.object({
+  filter: v.optional(v.picklist(REPORT_INBOX_FILTERS), 'open'),
+  search: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(REPORT_INBOX_SEARCH_MAX_LENGTH))),
+  after: v.optional(reportCursorSchema)
+})
+export type ReportInboxQuery = v.InferOutput<typeof reportInboxQuerySchema>
 
 /** What the team records about a report: its status and an internal note. */
 export const reportTriageSchema = v.strictObject({
@@ -532,7 +552,7 @@ export type ReportTriageRecord = v.InferOutput<typeof reportTriageRecordSchema>
 
 const nullableTextSchema = v.nullable(v.string())
 
-/** One report in the inbox: what the sender wrote and their build, from PostHog, and its triage. */
+/** One report in the inbox: what the sender wrote and their build, and the team's triage. */
 export const inboxReportSchema = v.object({
   id: v.pipe(v.string(), v.uuid()),
   kind: v.picklist(['error', 'problem']),
@@ -564,28 +584,61 @@ export const inboxReportSchema = v.object({
 })
 export type InboxReport = v.InferOutput<typeof inboxReportSchema>
 
-/** The reports received in a range, newest first. */
+/** One page of the inbox, newest first, with how many match under each filter on the first. */
 export const reportInboxSchema = v.object({
   reports: v.array(inboxReportSchema),
-  /** More reports arrived in the range than the inbox lists. */
-  truncated: v.boolean()
+  /** Where the next page starts, or null on the last. */
+  next: v.nullable(reportCursorSchema),
+  /** How many reports match the search under each filter; only the first page counts. */
+  counts: v.nullable(
+    v.object({ open: v.number(), replied: v.number(), closed: v.number(), all: v.number() })
+  )
 })
 export type ReportInbox = v.InferOutput<typeof reportInboxSchema>
 
-/** A step the app recorded before the report, as the inbox shows it. */
+/** One stack frame as the inbox shows it: symbolicated by PostHog where it could be. */
+export const inboxFrameSchema = v.object({
+  function: nullableTextSchema,
+  file: nullableTextSchema,
+  line: v.nullable(v.number()),
+  column: v.nullable(v.number()),
+  /** The app's own code, rather than a library's or the browser's. */
+  inApp: v.boolean(),
+  /** PostHog mapped it to the source through the release's source maps. */
+  resolved: v.boolean()
+})
+export type InboxFrame = v.InferOutput<typeof inboxFrameSchema>
+
+/** One exception of an error report; a cause chain gives several, the outermost first. */
+export const inboxExceptionSchema = v.object({
+  type: v.string(),
+  message: nullableTextSchema,
+  handled: v.nullable(v.boolean()),
+  /** Where it was caught: a window error, an unhandled rejection, Vue, or a WASM panic. */
+  source: nullableTextSchema,
+  /** The most recent call first. */
+  frames: v.array(inboxFrameSchema)
+})
+export type InboxException = v.InferOutput<typeof inboxExceptionSchema>
+
+/** A step the app recorded before the report, with what it recorded about it. */
 export const inboxReportStepSchema = v.object({
   name: v.string(),
   category: nullableTextSchema,
   level: nullableTextSchema,
-  timestamp: nullableTextSchema
+  timestamp: nullableTextSchema,
+  attributes: v.record(v.string(), v.nullable(v.union([v.string(), v.number(), v.boolean()])))
 })
 export type InboxReportStep = v.InferOutput<typeof inboxReportStepSchema>
 
-/** One report with the steps that led up to it. */
+/** One report whole: the steps that led up to it and, for an error, its exceptions. */
 export const reportDetailSchema = v.object({
   ...inboxReportSchema.entries,
   steps: v.array(inboxReportStepSchema),
   /** PostHog's list of steps couldn't be read, so none are shown rather than some. */
-  stepsUnreadable: v.boolean()
+  stepsUnreadable: v.boolean(),
+  exceptions: v.array(inboxExceptionSchema),
+  /** The error-tracking issue PostHog grouped the error into, where the code around each frame shows. */
+  issueURL: nullableTextSchema
 })
 export type ReportDetail = v.InferOutput<typeof reportDetailSchema>

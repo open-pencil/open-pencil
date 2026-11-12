@@ -1,16 +1,13 @@
 <script setup lang="ts">
-import { useNow } from '@vueuse/core'
-import { computed, ref } from 'vue'
+import { computed, defineAsyncComponent, ref } from 'vue'
 
-import { MAX_METRICS_RANGE_DAYS, type MetricsSnapshot } from '@open-pencil/feedback/contract'
+import type { MetricsSnapshot } from '@open-pencil/feedback/contract'
 
 import { usePortalTheme } from '@/app/cloud-portal/theme'
-import { utcDayOfTimestamp } from '@/app/metrics/days'
 import { useMetricsSnapshot } from '@/app/metrics/load'
 import type { MetricsRange } from '@/app/metrics/range'
 import { useReportInbox, useReportTriage } from '@/app/metrics/reports'
 import MetricsDashboard from '@/components/metrics/MetricsDashboard.vue'
-import MetricsRangePicker from '@/components/metrics/MetricsRangePicker.vue'
 import ReportInboxPanel from '@/components/metrics/reports/ReportInboxPanel.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
@@ -31,29 +28,38 @@ const { snapshot, loading, failed, refresh } = useMetricsSnapshot(range, initial
 const tab = ref<'metrics' | 'reports'>('metrics')
 
 // The inbox loads with the page, so its tab can show how many reports are open.
-const inbox = useReportInbox(range)
+const inbox = useReportInbox()
 void inbox.refresh()
 const {
+  filter,
+  query,
   reports,
-  truncated,
+  counts,
+  next,
   loading: inboxLoading,
+  loadingMore,
   loaded: inboxLoaded,
-  current: inboxCurrent,
   failed: inboxFailed
 } = inbox
-const openReports = computed(() =>
-  inboxLoaded.value ? reports.value.filter((report) => report.status === 'open').length : undefined
-)
+const openReports = computed(() => counts.value?.open)
 const triage = useReportTriage(inbox)
 const { selected, detail, detailFailed } = triage
 const saveFailed = ref(false)
+/** The document open read-only, by the address it downloads from. */
+const previewing = ref<string | null>(null)
+
+// The editor loads only when a document is opened, so the dashboard itself stays light.
+const ReportDocumentViewer = defineAsyncComponent(
+  () => import('@/components/document-viewer/DocumentViewer.vue')
+)
 
 const inboxPanel = computed(() => ({
   reports: reports.value,
-  // A new range shows the loading state, not the last range's reports or its empty state.
-  loaded: inboxLoaded.value && inboxCurrent.value,
-  truncated: truncated.value,
+  loaded: inboxLoaded.value,
   loadFailed: inboxFailed.value,
+  counts: counts.value,
+  hasMore: next.value !== null,
+  loadingMore: loadingMore.value,
   selected: selected.value,
   detail: detail.value,
   detailFailed: detailFailed.value,
@@ -68,17 +74,14 @@ const inboxPanelEvents = {
     saveFailed.value = false
     void triage.open(report)
   },
+  more: () => void inbox.loadMore(),
   status: (...args: Parameters<typeof triage.setStatus>) => saved(triage.setStatus(...args)),
   note: (...args: Parameters<typeof triage.setNote>) => saved(triage.setNote(...args)),
+  preview: (url: string) => {
+    previewing.value = url
+  },
   reload: () => reload()
 }
-// Without the metrics' own dates, the reports page offers the longest range the API takes,
-// moving on at UTC midnight while the page stays open.
-const now = useNow({ interval: 60_000 })
-const today = computed(() => utcDayOfTimestamp(now.value.toISOString()))
-const earliest = computed(() =>
-  today.value.subtract({ days: MAX_METRICS_RANGE_DAYS - 1 }).toString()
-)
 const refreshTab = () => (tab.value === 'reports' ? inbox.refresh() : refresh())
 const host = globalThis.location.host
 // Access's session may have run out; reloading the page signs in again.
@@ -97,7 +100,12 @@ const reload = () => globalThis.location.reload()
     @refresh="refreshTab"
   >
     <template #reports>
-      <ReportInboxPanel v-bind="inboxPanel" v-on="inboxPanelEvents" />
+      <ReportInboxPanel
+        v-model:filter="filter"
+        v-model:query="query"
+        v-bind="inboxPanel"
+        v-on="inboxPanelEvents"
+      />
     </template>
     <template v-if="failed" #alert>
       <AppAlert
@@ -122,9 +130,13 @@ const reload = () => globalThis.location.reload()
           <icon-lucide-arrow-left class="size-3.5" data-direction="reading" />
           Metrics
         </AppButton>
-        <MetricsRangePicker v-model="range" :today="today.toString()" :earliest="earliest" />
       </div>
-      <ReportInboxPanel v-bind="inboxPanel" v-on="inboxPanelEvents" />
+      <ReportInboxPanel
+        v-model:filter="filter"
+        v-model:query="query"
+        v-bind="inboxPanel"
+        v-on="inboxPanelEvents"
+      />
     </div>
   </main>
   <main v-else-if="failed" class="flex h-full bg-canvas text-surface">
@@ -141,4 +153,9 @@ const reload = () => globalThis.location.reload()
       </template>
     </AppPlaceholder>
   </main>
+  <ReportDocumentViewer
+    v-if="previewing"
+    :url="previewing"
+    @update:open="(open: boolean) => !open && (previewing = null)"
+  />
 </template>

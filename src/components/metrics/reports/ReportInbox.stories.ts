@@ -1,7 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { computed, shallowRef } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
 
-import type { InboxReport, ReportDetail, ReportStatus } from '@open-pencil/feedback/contract'
+import type {
+  InboxReport,
+  ReportDetail,
+  ReportInboxFilter,
+  ReportStatus
+} from '@open-pencil/feedback/contract'
 
 import ReportInbox from './ReportInbox.vue'
 
@@ -90,43 +95,141 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-const DETAIL: ReportDetail = {
-  ...REPORTS[0],
-  stepsUnreadable: false,
-  steps: [
-    {
-      name: 'document.opened',
-      category: 'document',
-      level: 'info',
-      timestamp: '2026-11-11T09:40:12.000Z'
-    },
-    {
-      name: 'export.started',
-      category: 'export',
-      level: 'info',
-      timestamp: '2026-11-11T09:41:30.000Z'
-    },
-    {
-      name: 'shader.frame_failed',
-      category: 'render',
-      level: 'warning',
-      timestamp: '2026-11-11T09:41:58.000Z'
-    }
-  ]
+const [PROBLEM, ERROR] = REPORTS
+
+const DETAILS: Partial<Record<string, Omit<ReportDetail, keyof InboxReport>>> = {
+  [REPORTS[0]?.id ?? '']: {
+    stepsUnreadable: false,
+    exceptions: [],
+    issueURL: null,
+    steps: [
+      {
+        name: 'document.opened',
+        category: 'document',
+        level: 'info',
+        timestamp: '2026-11-11T09:40:12.000Z',
+        attributes: { format: 'fig', pages: 3, bytes: 482113, source: 'local' }
+      },
+      {
+        name: 'export.started',
+        category: 'export',
+        level: 'info',
+        timestamp: '2026-11-11T09:41:30.000Z',
+        attributes: { format: 'pdf', frames: 1, scale: 2 }
+      },
+      {
+        name: 'shader.frame_failed',
+        category: 'render',
+        level: 'warning',
+        timestamp: '2026-11-11T09:41:58.000Z',
+        attributes: { shader: 'mesh-gradient', backend: 'webgpu', reason: 'device lost' }
+      }
+    ]
+  },
+  [REPORTS[1]?.id ?? '']: {
+    stepsUnreadable: false,
+    issueURL: 'https://eu.posthog.com/project/1/error_tracking/0199aaaa',
+    steps: [
+      {
+        name: 'clipboard.paste',
+        category: 'clipboard',
+        level: 'info',
+        timestamp: '2026-11-10T17:04:51.000Z',
+        attributes: { source: 'figma', nodes: 48 }
+      },
+      {
+        name: 'runtime.error',
+        category: 'runtime',
+        level: 'error',
+        timestamp: '2026-11-10T17:04:52.000Z',
+        attributes: { type: 'TypeError' }
+      }
+    ],
+    exceptions: [
+      {
+        type: 'TypeError',
+        message: "Cannot read properties of undefined (reading 'children')",
+        handled: false,
+        source: 'window',
+        frames: [
+          {
+            function: 'collectChildren',
+            file: 'packages/fig/src/clipboard/nodes.ts',
+            line: 214,
+            column: 31,
+            inApp: true,
+            resolved: true
+          },
+          {
+            function: 'convertClipboardNodes',
+            file: 'packages/fig/src/clipboard/convert.ts',
+            line: 88,
+            column: 12,
+            inApp: true,
+            resolved: true
+          },
+          {
+            function: 'Array.map',
+            file: null,
+            line: null,
+            column: null,
+            inApp: false,
+            resolved: false
+          },
+          {
+            function: 'r',
+            file: 'https://app.openpencil.dev/assets/vendor-kiwi.js',
+            line: 1,
+            column: 48812,
+            inApp: false,
+            resolved: false
+          },
+          {
+            function: 'r',
+            file: 'https://app.openpencil.dev/assets/vendor-kiwi.js',
+            line: 1,
+            column: 51003,
+            inApp: false,
+            resolved: false
+          },
+          {
+            function: 'pasteFromClipboard',
+            file: 'src/app/editor/clipboard/paste.ts',
+            line: 61,
+            column: 9,
+            inApp: true,
+            resolved: true
+          },
+          {
+            function: 'callWithAsyncErrorHandling',
+            file: 'node_modules/@vue/runtime-core/dist/runtime-core.esm-bundler.js',
+            line: 199,
+            column: 21,
+            inApp: false,
+            resolved: true
+          }
+        ]
+      }
+    ]
+  }
+}
+const detailOf = (report: InboxReport | null): ReportDetail | null => {
+  if (!report) return null
+  const extra = DETAILS[report.id]
+  return extra
+    ? { ...report, ...extra }
+    : { ...report, steps: [], stepsUnreadable: false, exceptions: [], issueURL: null }
 }
 
-/** The inbox as the team works through it: choosing, and changing a status, apply at once. */
-export const Inbox: Story = {
+const story = (first: InboxReport | undefined): Story => ({
   render: () => ({
     components: { ReportInbox },
     setup: () => {
       const reports = shallowRef(REPORTS)
-      const selected = shallowRef<InboxReport | null>(null)
-      const detail = computed(() =>
-        selected.value?.id === DETAIL.id
-          ? { ...DETAIL, ...selected.value }
-          : selected.value && { ...selected.value, steps: [], stepsUnreadable: false }
-      )
+      const selected = shallowRef<InboxReport | null>(first ?? null)
+      const filter = ref<ReportInboxFilter>('all')
+      const query = ref('')
+      const detail = computed(() => detailOf(selected.value))
       function update(report: InboxReport, change: Partial<InboxReport>) {
         reports.value = reports.value.map((each) =>
           each.id === report.id ? { ...each, ...change } : each
@@ -136,16 +239,22 @@ export const Inbox: Story = {
       return {
         reports,
         selected,
+        filter,
+        query,
         detail,
+        counts: { open: 2, replied: 1, closed: 0, all: 3 },
         select: (report: InboxReport) => (selected.value = report),
         setStatus: (report: InboxReport, status: ReportStatus) => update(report, { status }),
         setNote: (report: InboxReport, note: string | null) => update(report, { triageNote: note })
       }
     },
     template: `
-      <div class="max-w-6xl">
+      <div class="max-w-7xl">
         <ReportInbox
+          v-model:filter="filter"
+          v-model:query="query"
           :reports="reports"
+          :counts="counts"
           :selected="selected"
           :detail="detail"
           @select="select"
@@ -154,4 +263,10 @@ export const Inbox: Story = {
         />
       </div>`
   })
-}
+})
+
+/** A problem report: what the sender wrote, the document they had open, and the steps before. */
+export const Problem = story(PROBLEM)
+
+/** An error report: its exception with the app's frames leading and library frames folded. */
+export const Error = story(ERROR)

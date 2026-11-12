@@ -102,7 +102,7 @@ export const metricsRetentionTheme = {
  */
 export const metricsInboxTheme = {
   slots: {
-    root: 'grid h-[calc(100dvh-9rem)] min-h-[28rem] overflow-hidden rounded-lg border border-border bg-panel md:grid-cols-[minmax(17rem,24rem)_1fr]',
+    root: 'grid h-[calc(100dvh-9rem)] min-h-[28rem] overflow-hidden rounded-lg border border-border bg-panel md:grid-cols-[minmax(17rem,22rem)_1fr]',
     listPane: 'flex min-h-0 flex-col border-border md:border-e data-[hidden=true]:max-md:hidden',
     toolbar: 'flex flex-col gap-2 border-b border-border p-3',
     list: 'min-h-0 flex-1 overflow-y-auto outline-none',
@@ -115,25 +115,77 @@ export const metricsInboxTheme = {
     statusDot:
       'size-1.5 shrink-0 rounded-full data-[status=open]:bg-warning data-[status=replied]:bg-success data-[status=closed]:bg-muted',
     listEmpty: 'flex flex-1 items-center justify-center p-6',
-    detailPane: 'flex min-h-0 flex-col data-[hidden=true]:max-md:hidden',
-    detailBar: 'flex h-12 shrink-0 items-center gap-2 border-b border-border px-4',
-    detailBody: 'flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-6 py-5',
-    kind: 'text-2xs font-medium tracking-wide text-muted uppercase',
+    detailPane: 'flex min-h-0 flex-col data-[hidden=true]:max-md:hidden'
+  }
+} as const
+
+/**
+ * One report as an issue tracker shows one: a header with what it is and what to do with it, the
+ * evidence in the main column, and facts about the sender and their build in a properties column.
+ */
+export const metricsReportTheme = {
+  slots: {
+    header: 'flex shrink-0 items-start gap-3 border-b border-border px-5 py-3',
+    headerIcon: 'mt-1 size-4 shrink-0 data-[kind=error]:text-error data-[kind=problem]:text-muted',
+    headerText: 'flex min-w-0 flex-1 flex-col gap-0.5',
+    title: 'line-clamp-2 text-sm font-semibold text-surface',
+    subtitle: 'text-2xs text-muted',
+    actions: 'flex shrink-0 items-center gap-1',
+    body: 'min-h-0 flex-1 overflow-y-auto',
+    columns: 'grid gap-0 lg:grid-cols-[1fr_15rem]',
+    main: 'flex min-w-0 flex-col gap-6 px-5 py-5',
+    aside: 'flex flex-col gap-4 border-border px-5 py-5 lg:border-s max-lg:border-t',
+    section: 'flex flex-col gap-2',
+    sectionTitle: 'flex items-center gap-2 text-2xs font-medium text-muted',
     message: 'text-sm leading-relaxed whitespace-pre-wrap text-surface',
-    error: 'font-mono text-2xs break-words text-error',
-    facts: 'flex flex-wrap items-center gap-x-1.5 gap-y-1 text-2xs text-muted',
-    reportId: 'font-mono',
-    sectionTitle: 'mb-2 text-2xs font-medium text-muted',
-    files: 'flex flex-col overflow-hidden rounded-md border border-border',
-    file: 'flex h-10 items-center gap-2 border-b border-border px-3 text-xs last:border-b-0',
-    fileName: 'min-w-0 flex-1 truncate',
-    fileGone: 'text-2xs text-muted',
-    steps: 'flex flex-col font-mono text-2xs',
-    step: 'grid grid-cols-[4.5rem_1rem_1fr] items-baseline py-1',
-    stepTime: 'text-muted tabular-nums',
-    stepLevel: 'text-muted data-[level=error]:text-error data-[level=warning]:text-warning',
-    stepName: 'truncate text-surface',
-    stepsNote: 'text-2xs text-muted',
-    noteHint: 'mt-1 text-2xs text-muted'
+    properties: 'grid grid-cols-[5.5rem_1fr] gap-x-3 gap-y-2.5 text-2xs',
+    propertyLabel: 'text-muted',
+    propertyValue: 'min-w-0 break-words text-surface',
+    mono: 'font-mono',
+    links: 'flex flex-col gap-1.5 text-2xs',
+    link: 'inline-flex w-fit items-center gap-1 text-accent underline-offset-2 hover:underline',
+    document: 'flex items-center gap-4 rounded-md border border-border p-3',
+    thumbnail: 'h-20 w-32 shrink-0 rounded border border-border bg-canvas object-contain',
+    documentText: 'flex min-w-0 flex-1 flex-col gap-0.5 text-xs',
+    documentActions: 'flex shrink-0 flex-col items-end gap-1',
+    note: 'text-2xs text-muted',
+    alert: 'mx-5 mt-4'
+  }
+} as const
+
+/** An error report's exception: what was thrown, then its frames with the app's own leading. */
+export const metricsExceptionTheme = {
+  slots: {
+    root: 'overflow-hidden rounded-md border border-error/40',
+    head: 'flex flex-col gap-1 bg-error/10 px-3 py-2.5',
+    type: 'font-mono text-xs font-semibold text-error',
+    message: 'font-mono text-xs break-words text-surface',
+    meta: 'text-2xs text-muted',
+    frames: 'flex flex-col py-1 font-mono text-2xs',
+    frame: 'grid grid-cols-[minmax(0,14rem)_1fr] gap-x-3 px-3 py-1 data-[app=false]:text-muted',
+    function: 'truncate data-[app=true]:font-semibold data-[app=true]:text-surface',
+    location: 'truncate text-muted',
+    folded:
+      'flex w-full cursor-pointer items-center gap-1.5 px-3 py-1 text-start text-2xs text-muted hover:text-surface',
+    unresolved: 'border-t border-border px-3 py-2 text-2xs text-muted'
+  }
+} as const
+
+/** What the app recorded before a report: when, how serious, what, and what it noted. */
+export const metricsStepsTheme = {
+  slots: {
+    title: 'text-2xs font-medium text-muted',
+    root: 'flex flex-col overflow-hidden rounded-md border border-border',
+    step: 'border-b border-border last:border-b-0 data-[level=error]:bg-error/5 data-[level=warning]:bg-warning/5',
+    row: 'grid w-full cursor-pointer grid-cols-[4.5rem_1rem_minmax(0,1fr)_auto] items-baseline gap-x-2 px-3 py-1.5 text-start font-mono text-2xs hover:bg-hover/50 disabled:cursor-default disabled:hover:bg-transparent',
+    when: 'text-muted tabular-nums',
+    level: 'text-muted data-[level=error]:text-error data-[level=warning]:text-warning',
+    name: 'truncate text-surface',
+    category: 'font-sans text-3xs text-muted',
+    attributes:
+      'grid grid-cols-[minmax(0,10rem)_1fr] gap-x-3 gap-y-1 px-3 pb-2 ps-[6.5rem] font-mono text-2xs',
+    attributeKey: 'truncate text-muted',
+    attributeValue: 'break-all text-surface',
+    empty: 'text-2xs text-muted'
   }
 } as const
