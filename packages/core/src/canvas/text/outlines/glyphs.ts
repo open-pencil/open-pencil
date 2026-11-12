@@ -64,7 +64,7 @@ export function textOutlinePieces(r: SkiaRenderer, node: SceneNode): PaintedPath
   if (!glyphs) return null
   const styles = characterStyles(node, 0, node.text.length)
   // The canvas paints text once per layer fill, a character's own fill taking its colour, so text
-  // without a layer fill draws nothing, whatever its characters say.
+  // without a layer fill draws nothing, glyphs or decorations, whatever its characters say.
   const paints = node.fills.some((fill) => fill.visible)
   const outlines = glyphs.flatMap((glyph) => {
     const path = glyphPath(r, glyph.commands, glyph.x, glyph.y)
@@ -78,7 +78,7 @@ export function textOutlinePieces(r: SkiaRenderer, node: SceneNode): PaintedPath
   const decorations = textDecorationRects(node, decorated).map((rect) => {
     const path = new r.ck.PathBuilder()
     path.addRect(r.ck.XYWHRect(rect.x, rect.y, rect.width, rect.height))
-    return { path: path.detachAndDelete(), fills: rect.fills }
+    return { path: path.detachAndDelete(), fills: paints ? rect.fills : node.fills }
   })
   return [...outlines, ...decorations]
 }

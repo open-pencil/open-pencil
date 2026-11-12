@@ -196,6 +196,38 @@ describe('flattenSelected', () => {
     expect(vector?.vectorNetwork?.regions.length).toBeGreaterThanOrEqual(4)
   })
 
+  test('flattens text without a layer fill, which the canvas does not draw, unpainted', async () => {
+    await loadInterRegular()
+    const { editor, renderer } = await createEditorWithRenderer()
+    await renderer.loadFonts()
+    const red = {
+      type: 'SOLID' as const,
+      color: { r: 1, g: 0, b: 0, a: 1 },
+      opacity: 1,
+      visible: true
+    }
+    const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+      text: 'Hey',
+      fontFamily: 'Inter',
+      fontWeight: 400,
+      fontSize: 40,
+      width: 120,
+      height: 50,
+      fills: [],
+      textDecoration: 'UNDERLINE',
+      styleRuns: [{ start: 0, length: 3, style: { fills: [red] } }]
+    })
+
+    editor.select([text.id])
+    editor.flattenSelected()
+
+    const vector = editor.graph.getNode([...editor.state.selectedIds][0] ?? '')
+    const painted = (vector?.vectorNetwork?.regions ?? []).filter((region) =>
+      (region.fills ?? vector?.fills ?? []).some((fill) => fill.visible)
+    )
+    expect(painted).toEqual([])
+  })
+
   test('names a vector made of several shapes "Vector"', async () => {
     const { editor } = await createEditorWithRenderer()
     const pageId = editor.state.currentPageId
