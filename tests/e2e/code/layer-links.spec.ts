@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test'
 
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
+import { setDesignIssuesOnCanvas } from '#tests/helpers/design-check'
 
 const editor = useEditorSetup('/?test&no-rulers')
 
@@ -90,6 +91,7 @@ function cardSize(page: Page) {
 
 test('the element around the cursor marks its tags and its layer', async () => {
   await buildScene(editor.page)
+  await setDesignIssuesOnCanvas(editor.page, true)
   await openCode(editor.page)
 
   await codeLine(editor.page, 'name="Swatch"').click({ position: { x: 24, y: 8 } })
@@ -121,6 +123,7 @@ test('the element around the cursor marks its tags and its layer', async () => {
 
 test('design issues are underlined on the property that causes them', async () => {
   await buildScene(editor.page)
+  await setDesignIssuesOnCanvas(editor.page, true)
   await openCode(editor.page)
 
   const warning = editor.page.locator('[data-slot="code-editor"] .cm-lintRange-warning')
@@ -134,6 +137,7 @@ for (const [format, swatch, finePrint] of [
 ] as const) {
   test(`generated ${format} links its elements and issues to their layers`, async () => {
     await buildScene(editor.page)
+    await setDesignIssuesOnCanvas(editor.page, true)
     await openCode(editor.page)
     await editor.page.getByTestId('code-panel-source').click()
     await editor.page.getByRole('option', { name: format, exact: true }).click()
@@ -149,6 +153,7 @@ for (const [format, swatch, finePrint] of [
 
 test('links follow the code after a live edit', async () => {
   await buildScene(editor.page)
+  await setDesignIssuesOnCanvas(editor.page, true)
   await openCode(editor.page)
 
   await codeLine(editor.page, 'name="Card"').click()

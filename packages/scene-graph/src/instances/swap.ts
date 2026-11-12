@@ -1,5 +1,6 @@
 import { isEqual } from 'es-toolkit/predicate'
 
+import { appendAll } from '../arrays'
 import {
   overriddenAssignmentId,
   reapplyComponentPropertyAssignments
@@ -12,11 +13,10 @@ import { applyEnclosingAssignments } from './assignments'
 import { keepOverrides, restoreOverrides, type OverrideScope } from './kept-overrides'
 import { ownsSelfFillField } from './main-component'
 import { hasInstanceOverride, overriddenBindingField, setInstanceOverride } from './overrides'
+import { bindingProtection, NOTHING_PROTECTED } from './protection'
 import {
-  bindingProtection,
   cloneChildInCoordinates,
   cloneChildrenWithMapping,
-  NOTHING_PROTECTED,
   syncCopy,
   type MatchedCopy
 } from './sync'
@@ -128,7 +128,7 @@ function untakenCopies(byLayer: CopiesByLayer): SceneNode[] {
     }
   }
   for (const namesakes of byLayer.unlinked.values()) {
-    untaken.push(...namesakes)
+    appendAll(untaken, namesakes)
   }
   return untaken
 }
@@ -328,7 +328,7 @@ function matchCopies(swap: Swap, compParent: SceneNode, instParent: SceneNode) {
     retyped.set(index, copy)
     return undefined
   })
-  stale.push(...untakenCopies(byLayer))
+  appendAll(stale, untakenCopies(byLayer))
   return { matched, stale, retyped }
 }
 

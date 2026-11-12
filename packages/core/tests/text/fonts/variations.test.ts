@@ -148,7 +148,9 @@ describe('namedInstanceVariations with malformed fonts', () => {
     const tableRecord = (tag: string) => {
       for (let i = 0; i < view.getUint16(4); i++) {
         const record = 12 + i * 16
-        const recordTag = String.fromCharCode(...new Uint8Array(data, record, 4))
+        const recordTag = Array.from(new Uint8Array(data, record, 4), (code) =>
+          String.fromCharCode(code)
+        ).join('')
         if (recordTag === tag) return record
       }
       throw new Error(`Missing ${tag}`)

@@ -9,6 +9,7 @@ import {
   type SceneNode,
   type VectorNetwork
 } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { drawnBlurRadius } from '@open-pencil/scene-graph/geometry'
 import { expectDefined } from '@open-pencil/test-support/assert'
 const ck = await getCanvasKit()
@@ -146,7 +147,7 @@ function expectFigmaEdge(row: number[], figma: number[], from = 60) {
     60 + index < from ? [] : [Math.abs(value - figma[index])]
   )
   const rms = Math.sqrt(differences.reduce((sum, d) => sum + d * d, 0) / differences.length)
-  expect(Math.max(...differences)).toBeLessThanOrEqual(6)
+  expect(maxOf(differences)).toBeLessThanOrEqual(6)
   expect(rms).toBeLessThanOrEqual(2)
 }
 
@@ -274,7 +275,7 @@ describe('shadows of a transparent fill', () => {
     )
 
   test('a fill at 0% opacity casts no shadow', () => {
-    expect(Math.max(...shadowRow(0))).toBe(0)
+    expect(maxOf(shadowRow(0))).toBe(0)
   })
 
   test('a fill at 1% opacity casts a full one', () => {
@@ -282,7 +283,7 @@ describe('shadows of a transparent fill', () => {
   })
 
   test('a fill at 0% opacity casts none when the shadow shows behind the node', () => {
-    expect(Math.max(...shadowRow(0, true))).toBe(0)
+    expect(maxOf(shadowRow(0, true))).toBe(0)
   })
 
   test('a fill at 0% opacity takes no inner shadow', () => {
@@ -294,7 +295,7 @@ describe('shadows of a transparent fill', () => {
         }),
       3
     )
-    expect(Math.max(...row)).toBe(0)
+    expect(maxOf(row)).toBe(0)
   })
 
   test('a frame with a fill at 0% opacity casts only its child shadow', () => {
@@ -316,7 +317,7 @@ describe('shadows of a transparent fill', () => {
         fills: [solid(0, 0, 1)]
       })
     }, 3)
-    expect(Math.max(...row.slice(0, 41))).toBe(0)
+    expect(maxOf(row.slice(0, 41))).toBe(0)
     expect(row[79]).toBeGreaterThan(0)
   })
 })
@@ -630,10 +631,7 @@ describe('a mask whose drawing reaches past its box', () => {
    * Red under `mask`, from a sibling whose own box is a 10px square at `maskedX` and whose child
    * covers the whole frame, so only the mask's bounds can hold the masked-in area.
    */
-  function maskedArea(
-    addMask: (graph: SceneGraph, frameId: string) => void,
-    maskedX = 0
-  ): number {
+  function maskedArea(addMask: (graph: SceneGraph, frameId: string) => void, maskedX = 0): number {
     return inkArea((graph, frameId) => {
       addMask(graph, frameId)
       const masked = graph.createNode('FRAME', frameId, {

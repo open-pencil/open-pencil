@@ -33,7 +33,7 @@ const components = {
 }
 
 const meta = {
-  title: 'App/Cloud Portal/Public Pages',
+  title: 'App/Cloud/Portal/Public Pages',
   tags: ['autodocs'],
   parameters: { layout: 'fullscreen' }
 } satisfies Meta

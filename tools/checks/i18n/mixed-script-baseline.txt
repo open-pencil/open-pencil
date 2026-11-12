@@ -551,6 +551,8 @@ ja:cloudPortal.desktopApp
 ja:cloudPortal.methodDesktop
 ja:cloudPortal.pictureUnreadable
 ja:cloudPortal.noDocumentsFoundDescription
+ja:cloudPortal.accessTokenCreatedDescription
+ja:cloudPortal.accessTokensDescription
 zh-cn:cloud.connectHeading
 zh-cn:cloud.connectServerDescription
 zh-cn:cloud.officialDescription
@@ -574,6 +576,8 @@ zh-cn:cloudPortal.desktopApp
 zh-cn:cloudPortal.methodDesktop
 zh-cn:cloudPortal.pictureUnreadable
 zh-cn:cloudPortal.noDocumentsFoundDescription
+zh-cn:cloudPortal.accessTokenCreatedDescription
+zh-cn:cloudPortal.accessTokensDescription
 ja:ai.cloudAIUnavailable
 ja:ai.cloudAINoWorkspace
 ja:ai.chatCloudCreditsExhausted
@@ -647,3 +651,5 @@ zh-cn:diagnostics.reportProblemDescription
 zh-cn:diagnostics.reportUnexpectedError
 zh-cn:diagnostics.supportDescription
 zh-cn:diagnostics.supportTitle
+ja:cloudPortal.creditPacksDescription
+zh-cn:cloudPortal.creditPacksDescription

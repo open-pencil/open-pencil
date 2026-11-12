@@ -5,6 +5,7 @@ import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { FigmaAPI, type FigmaFrameNode } from '@open-pencil/core/figma-api'
 import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { blurReach } from '@open-pencil/scene-graph/geometry'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
@@ -167,7 +168,7 @@ function backdropRamp(axis: 'x' | 'y', start: [number, number], end: [number, nu
 }
 
 function worstDifference(ours: number[], figma: number[]): number {
-  return Math.max(...ours.map((value, index) => Math.abs(value - figma[index])))
+  return maxOf(ours.map((value, index) => Math.abs(value - figma[index])))
 }
 
 describe('progressive blur levels', () => {

@@ -9,7 +9,7 @@ export {
   type CloudDeploymentConfig,
   type CloudDeploymentInput,
   type CloudSecretReference
-} from './schema'
+} from './toml/schema'
 export { CLOUD_PROTOCOL_MAX_UPLOAD_BYTES } from '#cloud/contract'
 export {
   CLOUD_DEFAULT_MAX_COLLABORATION_MESSAGE_BYTES,

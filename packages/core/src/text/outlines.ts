@@ -1,4 +1,5 @@
 import type { CharacterStyleOverride, FontVariation, SceneNode } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
@@ -27,6 +28,10 @@ export interface TextOutlineGlyph {
   commands: OutlineCommand[]
   x: number
   y: number
+  /** The character in the text the glyph starts at, left out for a list marker. */
+  firstCharacter?: number
+  /** Horizontal advance in pixels, spacing included, where the shaping source gave one. */
+  advance?: number
 }
 
 export interface TextOutlineLayout {
@@ -292,8 +297,15 @@ function lineGlyphs(
     if (!metrics) return null
 
     for (const glyph of metrics) {
-      glyphs.push({ commands: glyph.commands, x: cursorX, y: baseline })
-      cursorX += glyph.advance + textLengthPixels(style.letterSpacing, style.fontSize)
+      const advance = glyph.advance + textLengthPixels(style.letterSpacing, style.fontSize)
+      glyphs.push({
+        commands: glyph.commands,
+        x: cursorX,
+        y: baseline,
+        firstCharacter: line.start + start + glyph.cluster,
+        advance
+      })
+      cursorX += advance
     }
   }
 
@@ -320,7 +332,7 @@ export function textNodeToOutlineLayout(node: SceneNode): TextOutlineLayout | nu
       xOffset === 0
         ? measured.glyphs
         : measured.glyphs.map((glyph) => ({ ...glyph, x: glyph.x + xOffset }))
-    glyphs.push(...placed)
+    appendAll(glyphs, placed)
   }
 
   return { glyphs, width: maxWidth, height: contentHeight }

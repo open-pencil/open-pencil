@@ -321,53 +321,15 @@ describe('Services server', () => {
     expect((await context.complete(unlimited, { model: MODEL })).status).toBe(200)
   })
 
-  test('counts this month’s spend from before accounts, and takes tokens without one', async () => {
+  test('refuses a token that names no account', async () => {
     const context = await relay(() =>
       Response.json({ choices: [], usage: { prompt_tokens: 1, completion_tokens: 0 } })
     )
-    const balance = async (bearer: string) =>
-      (
-        await responseJSON(
-          await context.request(CLOUD_SERVICES_API_PATHS.wallet, bearer),
-          creditWalletSchema
-        )
-      ).balance
-    // A request recorded before the upgrade, with no account, still counts for its workspace.
-    await context.database
-      .insertInto('servicesUsage')
-      .values({
-        id: crypto.randomUUID(),
-        workspaceId: context.workspaceId,
-        accountId: null,
-        userId: 'user-1',
-        modelId: MODEL,
-        inputTokens: 0,
-        outputTokens: 0,
-        credits: 400,
-        createdAt: new Date('2026-10-20T00:00:00Z')
-      })
-      .execute()
-    expect(await balance(await context.token())).toBe(600)
-    // A Cloud not yet upgraded issues tokens without an account: they spend the workspace's own.
-    const older = await context.token({ accountId: null })
-    expect(await balance(older)).toBe(600)
-    const answer = await context.complete(older, { model: MODEL })
-    expect(answer.status).toBe(200)
-    await answer.text()
-    // What such a token spends is recorded under no account, so it still counts once Cloud
-    // upgrades and tokens name the workspace's owner.
-    const recorded = async () =>
-      context.database
-        .selectFrom('servicesUsage')
-        .select('accountId')
-        .where('credits', '!=', 400)
-        .execute()
-    for (let attempt = 0; attempt < 100 && (await recorded()).length === 0; attempt++) {
-      await Bun.sleep(5)
-    }
-    expect(await recorded()).toEqual([{ accountId: null }])
-    expect(await balance(await context.token())).toBe(await balance(older))
-    expect(await balance(older)).toBeLessThan(600)
+    const response = await context.request(
+      CLOUD_SERVICES_API_PATHS.wallet,
+      await context.token({ accountId: null })
+    )
+    expect(response.status).toBe(401)
   })
 
   test('limits an account to its concurrent requests until metering settles', async () => {

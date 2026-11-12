@@ -1,4 +1,5 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 
 import type {
   RenderChunk,
@@ -123,14 +124,14 @@ function rebuildLayer(
   const added: RenderChunk[] = []
   const merge = (change: ChunkChange | null) => {
     if (!change) return false
-    removed.push(...change.removed)
-    added.push(...change.added)
+    appendAll(removed, change.removed)
+    appendAll(added, change.added)
     return true
   }
   const reordered = node.parentId === pageId || index.hasTop(node.id)
   if (reordered) merge(index.rebuildTop(graph, pageId, node.id))
   if (node.parentId !== pageId) {
-    removed.push(...index.dropChunksOf(graph, node.id))
+    appendAll(removed, index.dropChunksOf(graph, node.id))
     if (!merge(index.rebuildFrom(graph, pageId, node.id))) return null
   }
   for (const chunk of holding) {

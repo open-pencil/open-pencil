@@ -473,7 +473,7 @@ export class SkiaRenderer {
         this.redrawNode(id, graph)
         this.invalidateBooleanAncestors(graph, node)
       }
-      pending.push(...node.childIds)
+      for (const childId of node.childIds) pending.push(childId)
     }
   }
 

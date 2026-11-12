@@ -30,7 +30,7 @@ function pageHasHeavyEffects(graph: SceneGraph, pageId: string): boolean {
       )
     )
       return true
-    stack.push(...graph.getChildren(node.id))
+    for (const child of graph.getChildren(node.id)) stack.push(child)
   }
   return false
 }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { SdkComponentMeta } from '../../sdk/component-meta'
+import type { SdkComponentMeta } from '#docs/sdk/component-meta.ts'
+
 import SdkDataTable from './SdkDataTable.vue'
 import SdkEventsTable from './SdkEventsTable.vue'
 import SdkPropsTable from './SdkPropsTable.vue'

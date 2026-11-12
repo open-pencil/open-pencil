@@ -7,6 +7,7 @@ import { asDouble, attachFontProvider, expectRgbaPixels } from '#core-tests/canv
 import { SkiaRenderer as SkiaRendererClass } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 import { pixelLength } from '@open-pencil/scene-graph/text'
 import { detectTextDirection, resolveTextDirection } from '@open-pencil/scene-graph/text/direction'
@@ -448,7 +449,8 @@ describe('renderText headless visual', () => {
       expect(missingGlyphCharacters('A𠀀B', paragraph.getShapedLines())).toEqual(['𠀀'])
       paragraph.delete()
     } finally {
-      fallbackFamilies.splice(0, fallbackFamilies.length, ...originalFallbacks)
+      fallbackFamilies.length = 0
+      appendAll(fallbackFamilies, originalFallbacks)
       surface.delete()
     }
   })
@@ -481,7 +483,8 @@ describe('renderText headless visual', () => {
     } finally {
       fallbackPack.mockRestore()
       fontResolver.reset(face)
-      fallbackFamilies.splice(0, fallbackFamilies.length, ...originalFallbacks)
+      fallbackFamilies.length = 0
+      appendAll(fallbackFamilies, originalFallbacks)
       surface.delete()
     }
   })
@@ -502,7 +505,8 @@ describe('renderText headless visual', () => {
 
       expect(loaded).toBe(true)
     } finally {
-      fallbackFamilies.splice(0, fallbackFamilies.length, ...originalFallbacks)
+      fallbackFamilies.length = 0
+      appendAll(fallbackFamilies, originalFallbacks)
     }
   })
 
