@@ -147,7 +147,7 @@ export const metricsReportTheme = {
     document: 'flex items-center gap-4 rounded-md border border-border p-3',
     thumbnail: 'h-20 w-32 shrink-0 rounded border border-border bg-canvas object-contain',
     documentText: 'flex min-w-0 flex-1 flex-col gap-0.5 text-xs',
-    documentActions: 'flex shrink-0 flex-col items-end gap-1',
+    documentActions: 'flex shrink-0 items-center gap-1',
     note: 'text-2xs text-muted',
     alert: 'mx-5 mt-4'
   }
