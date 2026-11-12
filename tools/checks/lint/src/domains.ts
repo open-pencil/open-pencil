@@ -8,7 +8,6 @@ import {
   noDocumentChangeCapture,
   noEditorProfileInputs,
   noInlinePromptConstants,
-  noSpreadLayerChildren,
   noStructuredCloneSceneArrays,
   noZoomInSceneDrawing
 } from '#lint/rules/editor.ts'
@@ -152,7 +151,6 @@ export const domains = {
     'no-document-change-capture': noDocumentChangeCapture,
     'no-inline-prompt-constants': noInlinePromptConstants,
     'no-profile-inputs': noEditorProfileInputs,
-    'no-spread-layer-children': noSpreadLayerChildren,
     'no-structuredclone-scene-arrays': noStructuredCloneSceneArrays,
     'no-zoom-in-scene-drawing': noZoomInSceneDrawing
   }

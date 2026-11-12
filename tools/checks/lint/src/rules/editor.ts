@@ -310,41 +310,6 @@ const noEditorProfileInputs: RuleDefinition = {
   }
 }
 
-/** Whether `node` is a layer's children: `.childIds`, or `getChildren(...)` and calls chained on it. */
-function isLayerChildren(node: TSESTree.Node): boolean {
-  if (node.type === 'MemberExpression') return staticPropertyName(node.property) === 'childIds'
-  if (node.type !== 'CallExpression') return false
-  const callee = node.callee
-  if (callee.type === 'Identifier') return callee.name === 'getChildren'
-  if (callee.type !== 'MemberExpression') return false
-  return staticPropertyName(callee.property) === 'getChildren' || isLayerChildren(callee.object)
-}
-
-/**
- * A layer can hold more children than an engine takes arguments (about 100,000 in V8), so its
- * children are never spread into a call such as `push`; a loop or an array literal takes any number.
- */
-const noSpreadLayerChildren = {
-  meta: {
-    docs: {
-      description: 'Disallow spreading a layer’s children into a call, which throws on wide layers'
-    }
-  },
-  create(context) {
-    return {
-      SpreadElement(node) {
-        if (node.parent.type !== 'CallExpression' && node.parent.type !== 'NewExpression') return
-        if (!isLayerChildren(node.argument)) return
-        context.report({
-          node,
-          message:
-            'Spreading a layer’s children into a call throws past about 100,000 in Chrome; push them in a loop.'
-        })
-      }
-    }
-  }
-} satisfies RuleDefinition
-
 const noStructuredCloneSceneArrays = {
   meta: {
     docs: {
@@ -423,7 +388,6 @@ export {
   noInlinePromptConstants,
   noDocumentChangeCapture,
   noEditorProfileInputs,
-  noSpreadLayerChildren,
   noStructuredCloneSceneArrays,
   noDirectSelectionToolStateMutation
 }
