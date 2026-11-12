@@ -78,16 +78,32 @@ export function lineSpacing(spaced: SpacedText): LineSpacing {
   if (used.every((spacing) => spacing === 0)) {
     return NO_LINE_SPACING
   }
-  const styled = (index: number) => {
-    const source = spaced.sourceIndex(index)
-    return runs.find((run) => source >= run.start && source < run.end)?.spacing ?? base
-  }
+  const spacingAt = spacingBySourceIndex(spaced.sourceLength, base, runs)
+  const styled = (index: number) => spacingAt[spaced.sourceIndex(index)] ?? base
   if (!UNSPACED_SCRIPT.test(spaced.text)) {
     return { after: styled, least: Math.min(...used), most: Math.max(...used) }
   }
   const unspaced = unspacedRuns(spaced.text)
   const after = (index: number) => (unspaced[index] === 1 ? 0 : styled(index))
   return { after, ...lineEndSpacings(spaced.text, after) }
+}
+
+interface RunSpacing {
+  start: number
+  end: number
+  spacing: number
+}
+
+function spacingBySourceIndex(
+  sourceLength: number,
+  base: number,
+  runs: readonly RunSpacing[]
+): Float64Array {
+  const spacingAt = new Float64Array(sourceLength).fill(base)
+  for (const run of runs.toReversed()) {
+    spacingAt.fill(run.spacing, run.start, run.end)
+  }
+  return spacingAt
 }
 
 function evenSpacing(text: string, spacing: number): LineSpacing {

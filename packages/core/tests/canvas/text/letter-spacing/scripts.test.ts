@@ -15,6 +15,8 @@ import {
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import type { TextLayout } from '#core/canvas/text/layout'
+import { lineSpacing } from '#core/canvas/text/layout/letter-spacing'
+import { styledRanges } from '#core/canvas/text/paragraph/runs'
 
 beforeAll(loadSpacedTextFonts)
 afterAll(releaseSpacedTextFonts)
@@ -141,4 +143,54 @@ describe('right-to-left text', () => {
       layout.delete()
     }
   )
+})
+
+describe('spacing after each character', () => {
+  const ARABIC_PREFIX = 'سلام '
+  const BASE_SPACING = 7
+  const LATIN_LENGTH = 300
+
+  function runSpacing(index: number): number {
+    return index % 4
+  }
+
+  function spacingOfEveryCharacter(sourceIndex: (index: number) => number): number[] {
+    const text = ARABIC_PREFIX + 'a'.repeat(LATIN_LENGTH)
+    const runs = Array.from({ length: LATIN_LENGTH / 2 }, (_, index) => ({
+      start: ARABIC_PREFIX.length + index * 2,
+      length: 1,
+      style: { letterSpacing: pixels(runSpacing(index)) }
+    }))
+    const spacing = lineSpacing({
+      text,
+      letterSpacing: pixels(BASE_SPACING),
+      fontSize: 16,
+      styleRuns: styledRanges(text, runs),
+      sourceLength: text.length,
+      sourceIndex
+    })
+    return Array.from(text, (_, index) => spacing.after(index))
+  }
+
+  function expectedSpacing(shownIndex: number, sourceIndex: number): number {
+    if (shownIndex < ARABIC_PREFIX.length) {
+      return 0
+    }
+    const latin = sourceIndex - ARABIC_PREFIX.length
+    if (latin < 0 || latin % 2 === 1) {
+      return BASE_SPACING
+    }
+    return runSpacing(latin / 2)
+  }
+
+  test('each character takes its own run’s spacing among many one-character runs', () => {
+    const spacings = spacingOfEveryCharacter((index) => index)
+    expect(spacings).toEqual(spacings.map((_, index) => expectedSpacing(index, index)))
+  })
+
+  test('a shown character takes the spacing of the source character it came from', () => {
+    const shifted = (index: number) => Math.max(0, index - 1)
+    const spacings = spacingOfEveryCharacter(shifted)
+    expect(spacings).toEqual(spacings.map((_, index) => expectedSpacing(index, shifted(index))))
+  })
 })
