@@ -31,12 +31,12 @@ OpenPencil est environ onze fois plus petit. Cette différence vient surtout de 
 │  │  Vue 3 + TypeScript       │  │
 │  │  Editor + Kiwi codec      │  │
 │  │  SceneGraph in TypeScript │  │
-│  │  CanvasKit + Yoga WASM    │  │
+│  │  CanvasKit + Taffy WASM   │  │
 │  └───────────────────────────┘  │
 └─────────────────────────────────┘
 ```
 
-L’éditeur, SceneGraph, le codec de fichiers et le moteur de rendu s’exécutent dans le même processus. Aucun serveur, aucune base de données et aucun Docker ne sont nécessaires. SceneGraph est stocké dans `Map<string, SceneNode>`. TypeScript appelle directement CanvasKit et Yoga WASM calcule la disposition de manière synchrone.
+L’éditeur, SceneGraph, le codec de fichiers et le moteur de rendu s’exécutent dans le même processus. Aucun serveur, aucune base de données et aucun Docker ne sont nécessaires. SceneGraph est stocké dans `Map<string, SceneNode>`. TypeScript appelle directement CanvasKit et Taffy WASM calcule la disposition de manière synchrone.
 
 ### Penpot : plateforme Client-Server
 
@@ -117,19 +117,19 @@ OpenPencil utilise directement le schéma Kiwi. Penpot doit synchroniser son mod
 
 ## 5. Moteur de disposition
 
-OpenPencil utilise Yoga WASM de manière synchrone :
+OpenPencil utilise Taffy WASM de manière synchrone :
 
 ```typescript
-import Yoga from 'yoga-layout'
-const root = Yoga.Node.create()
-root.setFlexDirection(FlexDirection.Row)
-root.calculateLayout()
-applyYogaLayout(graph, frame, yogaRoot)
+import { computeLayout } from '@open-pencil/taffy'
+const root = createLayoutNode()
+setFlexFlow(root, frame)
+computeLayout(root)
+applyComputedLayout(graph, frame, root, computeLayoutInternal)
 ```
 
 Penpot maintient ses propres Implementations de Flex et Grid en ClojureScript et Rust WASM. Les deux Engines doivent produire le même résultat.
 
-OpenPencil utilise Yoga, avec une variante prenant Grid en charge. Penpot maintient plusieurs milliers de lignes de code de disposition dans deux langages.
+OpenPencil utilise pour Flexbox et CSS Grid la bibliothèque établie Taffy, qu’utilisent aussi Servo, Blitz, Bevy et Zed. Penpot maintient plusieurs milliers de lignes de code de disposition dans deux langages.
 
 ## 6. Formats et Figma
 
@@ -181,12 +181,11 @@ Les changements sérialisables conviennent à la collaboration via serveur, mais
 ## 10. Avantages de Penpot
 
 1. **Collaboration via serveur :** comptes, contrôle d’accès et stockage central avec WebSockets.
-2. **Export PDF :** exportateur Chromium dédié.
-3. **Système de plugins :** exécution isolée et API de plugins.
-4. **Variables de design :** prise en charge intégrée.
-5. **CSS Grid :** implémentation propre ; OpenPencil utilise une variante de Yoga avec Grid.
-6. **Auto-hébergement :** déploiement d’une plateforme d’équipe avec Docker.
-7. **Maturité :** plusieurs années d’utilisation en production.
+2. **Système de plugins :** exécution isolée et API de plugins.
+3. **Variables de design :** prise en charge intégrée.
+4. **CSS Grid :** implémentation propre ; OpenPencil utilise le CSS Grid de Taffy.
+5. **Auto-hébergement :** déploiement d’une plateforme d’équipe avec Docker.
+6. **Maturité :** plusieurs années d’utilisation en production.
 
 ## 11. Scripts et extensibilité
 
@@ -204,9 +203,9 @@ Penpot propose des plugins isolés, mais pas d’API équivalente pour les scrip
 | Compatibilité Figma | OpenPencil | Kiwi et `.fig` natifs |
 | Développement | OpenPencil | TypeScript et Vue plutôt que Clojure, Rust et Docker |
 | Application de bureau | OpenPencil | Tauri natif |
-| Disposition | OpenPencil | Yoga plutôt que deux implémentations propres |
+| Disposition | OpenPencil | Taffy plutôt que deux implémentations propres |
 | Collaboration | Forces différentes | Penpot : serveur et contrôle d’accès ; OpenPencil : P2P sans hébergement |
 | Auto-hébergement | Penpot | Déploiement Docker |
 | Maturité de l’écosystème | Penpot | Plusieurs années en production |
 
-OpenPencil est un éditeur compact à processus unique avec moteur CanvasKit et prise en charge native de `.fig`. Penpot est une plateforme client-serveur complète utilisant Clojure, ClojureScript, Rust, des bases de données et des services Docker. Les deux offrent la collaboration selon des modèles différents. Penpot propose un écosystème de plugins et l’export PDF ; OpenPencil fournit des scripts sans interface compatibles Figma, 90 outils AI/MCP, l’export SVG et une application de bureau.
+OpenPencil est un éditeur compact à processus unique avec moteur CanvasKit et prise en charge native de `.fig`. Penpot est une plateforme client-serveur complète utilisant Clojure, ClojureScript, Rust, des bases de données et des services Docker. Les deux offrent la collaboration selon des modèles différents. Penpot propose un écosystème de plugins ; OpenPencil fournit des scripts sans interface compatibles Figma, 90 outils AI/MCP, l’export SVG et PDF, et une application de bureau.

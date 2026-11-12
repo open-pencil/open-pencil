@@ -4,7 +4,7 @@ import { renderTransactionalEmail } from '#cloud/email'
 
 describe('workspace invitation email', () => {
   test('names the workspace, the inviter, and what joining lets the person do', async () => {
-    const acceptanceURL = 'https://app.example.com/cloud/invitations/id?server=x#secret'
+    const acceptanceURL = 'https://cloud.example.com/invitations/id#secret'
     const rendered = await renderTransactionalEmail({
       kind: 'workspace-invitation',
       payload: {

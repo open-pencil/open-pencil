@@ -3,14 +3,25 @@
  * resolves this module to `./off`, which offers the same names and does nothing, so Cloud's code
  * stays out of that build; app code outside Cloud's folders imports Cloud only from here.
  */
+import type { SaveToCloud } from '../drafts/save'
 import { watchCloudRooms } from '../rooms/live'
 import { startCloudSessions } from '../sessions/startup'
 
+export {
+  cloudAIAvailable,
+  cloudAIIdentity,
+  cloudAIClient,
+  cloudAIWorkspaces,
+  cloudBillingURL,
+  type CloudAIWorkspace
+} from '../ai/access'
 export { cloudDocumentAddress } from '../documents/link'
 export { isCloudBinding } from '../documents/status'
+export { saveDocument } from '../drafts/save'
 export { openCloudShare } from '../sharing/dialog'
 export { cloudSaveDestinations, cloudUploadFailure, signInToSaveTo } from '../documents/save'
 export { useHomeCloud } from '../home'
+export { openingCloudLink } from '../sessions/startup'
 export { CLOUD_STORAGE_PROVIDER_ID } from '../sessions/token'
 export {
   isVersionHistoryOpen,
@@ -24,7 +35,10 @@ export {
 export const CLOUD_INCLUDED: boolean = true
 
 /** Starts Cloud sign-ins, links, and live rooms; returns what stops the room watcher. */
-export function startCloud(options: { leaveLinkAddress(): Promise<unknown> }): () => void {
+export function startCloud(options: {
+  leaveLinkAddress(): Promise<unknown>
+  saveTo: SaveToCloud
+}): () => void {
   const stop = watchCloudRooms()
   void startCloudSessions(options)
   return stop

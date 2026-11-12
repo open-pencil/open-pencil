@@ -1,16 +1,21 @@
 import { defaultRelayURL, RELAY_PATH } from '#cloud/contract'
-import { createCloudServer } from '#cloud/runtime/portal/server'
 import { createPostgresCloudDatabase } from '#cloud/runtime/postgres/database'
 import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
+import { createCloudServer } from '#cloud/runtime/site/server'
 import {
   cleanupPassOptions,
+  cloudErrorHandler,
+  cloudRequestId,
   createCleanupServices,
   createCloudApp,
   createCloudAuthenticationRuntime,
   createConfiguredCloudPolicy,
   createInvitationOutbox,
   createTransactionalEmailService,
+  reportCloudError,
   runCleanup,
+  type CloudErrorReporter,
+  type CloudErrorSource,
   type TransactionalEmailService
 } from '#cloud/server'
 import { Hono } from 'hono'
@@ -21,13 +26,28 @@ import {
   type CloudflareCloudEnvironment,
   type PreparedCloudflareCloud
 } from './environment'
-import { assetPortalFiles } from './portal'
-import { createCloudflareRelayObject, relayFor, routeToRelay } from './relay'
+import { cloudflareRayId } from './logging'
+import { inMaintenance, maintenanceResponse } from './maintenance'
+import { createCloudflareRelayObject, relayFor, relayRoute } from './relay'
+import { assetSiteFiles } from './site'
 
 function emailTransport({ config }: PreparedCloudflareCloud, env: CloudflareCloudEnvironment) {
   if (config.emailTransport !== 'cloudflare') return undefined
   if (!env.EMAIL) throw new Error('[email] transport = "cloudflare" needs the EMAIL binding')
   return createCloudflareEmailTransport(env.EMAIL)
+}
+
+/** A reporter whose reports keep the Worker running until they are sent. */
+function keptAlive(
+  reporter: CloudErrorReporter | undefined,
+  context: Pick<ExecutionContext, 'waitUntil'>
+): CloudErrorReporter | undefined {
+  if (!reporter) return undefined
+  return (error, errorContext) => {
+    const reported = reporter(error, errorContext)
+    context.waitUntil(reported)
+    return reported
+  }
 }
 
 /**
@@ -40,7 +60,14 @@ function cloudServices(
   context: Pick<ExecutionContext, 'waitUntil'>
 ) {
   const { config } = prepared
-  const database = createPostgresCloudDatabase({ connectionString: config.databaseURL })
+  const reporter = keptAlive(prepared.reportError, context)
+  const reportError = (message: string, error: unknown, source: CloudErrorSource) =>
+    reportCloudError(reporter, message, error, { source })
+  // Hyperdrive keeps no session settings and ends queries past its own limit.
+  const database = createPostgresCloudDatabase({
+    connectionString: config.databaseURL,
+    statementTimeoutMs: null
+  })
   const objects = createS3ObjectStore(config)
   const transport = emailTransport(prepared, env)
   const queued = createTransactionalEmailService(database, {
@@ -61,7 +88,7 @@ function cloudServices(
   const background: Promise<unknown>[] = []
   const runInBackground = (task: Promise<unknown>) => {
     background.push(
-      task.catch((error: unknown) => console.error('[Cloud] Background work failed:', error))
+      task.catch((error: unknown) => reportError('Background work failed', error, 'background'))
     )
   }
   const deliver = () =>
@@ -78,28 +105,67 @@ function cloudServices(
     transport,
     runInBackground,
     deliver,
+    reporter,
     /** Sends what the request queued and closes the database after everything it started. */
     finish() {
       context.waitUntil(
         Promise.allSettled(background)
           .then(() => (enqueued && transport ? deliver() : undefined))
-          .catch((error: unknown) => console.error('[Cloud] Sending email failed:', error))
+          .catch((error: unknown) => reportError('Sending email failed', error, 'email'))
           .then(() => database.destroy())
       )
     }
   }
 }
 
+/** Cleanup, and email that failed to send after its request or that a full batch left behind. */
+async function runScheduled(
+  prepared: PreparedCloudflareCloud,
+  env: CloudflareCloudEnvironment,
+  context: Pick<ExecutionContext, 'waitUntil'>
+) {
+  const services = cloudServices(prepared, env, context)
+  const { config, database, objects } = services
+  try {
+    if (config.cleanupEnabled) {
+      const policy = createConfiguredCloudPolicy(config, database)
+      await runCleanup(
+        createCleanupServices(config, database, objects, policy, services.reporter),
+        cleanupPassOptions(config)
+      )
+    }
+    if (services.transport) await services.deliver()
+  } finally {
+    services.finish()
+  }
+}
+
 /**
  * OpenPencil Cloud on Cloudflare Workers, configured by a deployment TOML. The Worker serves the
- * API and portal per request, a Durable Object per document runs its collaboration rooms, and a
+ * API, the editor, and the portal per request, a Durable Object per document runs its collaboration rooms, and a
  * Cron Trigger runs cleanup and retries email.
  */
-export function createCloudflareCloud(configSource: string) {
-  const prepare = cloudflareCloudSetup(configSource)
+export type CloudflareCloudOptions = {
+  /**
+   * Where collaboration rooms' Durable Objects run and keep their storage, such as `eu` for a
+   * deployment whose data stays in the EU; by default, near whoever opens the room first.
+   */
+  relayJurisdiction?: DurableObjectJurisdiction
+}
+
+export function createCloudflareCloud(
+  configSource: string,
+  { relayJurisdiction }: CloudflareCloudOptions = {}
+) {
+  const { prepare, reporter } = cloudflareCloudSetup(configSource)
+  const relay = (env: CloudflareCloudEnvironment, documentId: string) =>
+    relayFor(env, documentId, relayJurisdiction)
 
   const router = new Hono<{ Bindings: CloudflareCloudEnvironment }>()
-    .get(RELAY_PATH, routeToRelay)
+    // Setup, relay routing, and the runtime around the app; the app reports its own errors.
+    .onError((error, c) => cloudErrorHandler(keptAlive(reporter(), c.executionCtx))(error, c))
+    .use('*', cloudRequestId(cloudflareRayId))
+    .get(RELAY_PATH, relayRoute(relayJurisdiction))
     .all('*', async (c) => {
       const prepared = await prepare(c.env)
       const services = cloudServices(prepared, c.env, c.executionCtx)
@@ -117,16 +183,21 @@ export function createCloudflareCloud(configSource: string) {
           invitationOutbox: transport ? createInvitationOutbox(email) : undefined,
           transactionalEmail: email,
           enrollment,
-          aiSigningKey: prepared.aiSigningKey,
+          servicesSigningKey: prepared.servicesSigningKey,
           relayURL: config.relayURL ?? defaultRelayURL(config.publicURL),
           onDocumentRestored: (documentId) =>
-            runInBackground(relayFor(c.env, documentId).startOver(documentId)),
+            runInBackground(relay(c.env, documentId).startOver(documentId)),
+          onDocumentTakenDown: (documentId) =>
+            runInBackground(relay(c.env, documentId).closeDocument(documentId)),
           onDocumentVersionsChanged: (documentId) =>
-            runInBackground(relayFor(c.env, documentId).announceVersions(documentId))
+            runInBackground(relay(c.env, documentId).announceVersions(documentId)),
+          reportError: services.reporter,
+          forwardedRequestId: cloudflareRayId
         })
         return await createCloudServer(app, {
-          portal: assetPortalFiles(c.env.ASSETS),
-          indexingPolicy: config.indexingPolicy
+          site: assetSiteFiles(c.env.ASSETS),
+          indexingPolicy: config.indexingPolicy,
+          reportError: services.reporter
         }).fetch(c.req.raw)
       } finally {
         services.finish()
@@ -134,24 +205,16 @@ export function createCloudflareCloud(configSource: string) {
     })
 
   const worker: ExportedHandler<CloudflareCloudEnvironment> = {
-    fetch: (request, env, context) => router.fetch(request, env, context),
+    fetch: (request, env, context) =>
+      inMaintenance(env) ? maintenanceResponse(request) : router.fetch(request, env, context),
 
     async scheduled(_controller, env, context) {
-      const prepared = await prepare(env)
-      const services = cloudServices(prepared, env, context)
-      const { config, database, objects } = services
+      if (inMaintenance(env)) return
       try {
-        if (config.cleanupEnabled) {
-          const policy = createConfiguredCloudPolicy(config, database)
-          await runCleanup(
-            createCleanupServices(config, database, objects, policy),
-            cleanupPassOptions(config)
-          )
-        }
-        // Retries what failed to send after its request, and what a full batch left behind.
-        if (services.transport) await services.deliver()
-      } finally {
-        services.finish()
+        await runScheduled(await prepare(env), env, context)
+      } catch (error) {
+        await reportCloudError(reporter(), 'Scheduled run failed', error, { source: 'scheduled' })
+        throw error
       }
     }
   }

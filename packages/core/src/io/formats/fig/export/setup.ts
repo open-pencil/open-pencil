@@ -1,9 +1,10 @@
-import type { CanvasKit } from 'canvaskit-wasm'
 import { deflateSync, inflateSync } from 'fflate'
 import { toUint8Array } from 'js-base64'
 
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import { figArchiveMetaJSON } from '@open-pencil/fig'
 import {
+  applyVariableModes,
   buildComponentPropIndex,
   exportCanvasGuides,
   figImageEntries,
@@ -11,7 +12,8 @@ import {
   parseGuidOrNull,
   type FigNodeChangeExportRuntime,
   makeCanvasNodeChange,
-  makeDocumentNodeChange
+  makeDocumentNodeChange,
+  savedPropertyCopyIds
 } from '@open-pencil/fig/node-change'
 import { getCompiledSchema, getSchemaBytes, type NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
@@ -22,7 +24,7 @@ import {
   renameBehaviourProperties,
   withBehaviour
 } from '@open-pencil/scene-graph/behaviours'
-import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
+import { orderKeyBetween, siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
 import type { GUID, Rect, Size } from '@open-pencil/scene-graph/primitives'
 import { ownsSlotContent } from '@open-pencil/scene-graph/slots'
 
@@ -30,7 +32,7 @@ import type { SkiaRenderer } from '#core/canvas'
 import { CANVAS_BG_COLOR, IS_BROWSER, IS_TAURI } from '#core/constants'
 import { getPageColor } from '#core/figma-api/page-backgrounds'
 import { applyDocumentPluginData } from '#core/io/formats/fig/document-metadata'
-import { findFigThumbnailPageId } from '#core/io/formats/fig/thumbnail-page'
+import { figThumbnailPageId } from '#core/io/formats/fig/thumbnail-page'
 import { renderThumbnail, thumbnailFrame } from '#core/io/formats/raster'
 import { settleFontDigestMap } from '#core/kiwi/fig/node-change/serialize'
 
@@ -116,8 +118,8 @@ function ownGuid(
   sourceOwners: ReadonlyMap<string, string>,
   assignedGuidValues: ReadonlySet<string>
 ): GUID | null {
-  if (!/^\d+:\d+$/.test(id)) return null
-  const guid = stringToGuid(id)
+  const guid = parseGuidOrNull(id)
+  if (!guid) return null
   const key = `${guid.sessionID}:${guid.localID}`
   const owner = sourceOwners.get(key)
   return (owner !== undefined && owner !== id) || assignedGuidValues.has(key) ? null : guid
@@ -149,11 +151,11 @@ function assignOwnLayerGuids(
 
 /**
  * The first local ID the counter can mint in sessions 0 and 1: past every saved GUID and every
- * ID that layers, collections, modes, variables and component properties are saved under.
+ * ID that layers, collections, modes, variables, component properties, and variants' copies of
+ * their sets' properties are saved under.
  */
-/** The first local ID above every GUID the graph's layers, variables, and properties claim. */
 export function firstUnclaimedLocalId(graph: SceneGraph, propertyIds: readonly string[]): number {
-  const ids = [...propertyIds]
+  const ids = [...propertyIds, ...savedPropertyCopyIds(graph)]
   for (const node of graph.nodes.values()) ids.push(node.source.id || node.id)
   for (const [collectionId, collection] of graph.variableCollections) {
     ids.push(collectionId, ...collection.modes.map((mode) => mode.modeId))
@@ -161,9 +163,8 @@ export function firstUnclaimedLocalId(graph: SceneGraph, propertyIds: readonly s
   }
   let last = 0
   for (const id of ids) {
-    if (!/^\d+:\d+$/.test(id)) continue
-    const guid = stringToGuid(id)
-    if (guid.sessionID <= 1) last = Math.max(last, guid.localID)
+    const guid = parseGuidOrNull(id)
+    if (guid && guid.sessionID <= 1) last = Math.max(last, guid.localID)
   }
   return last + 1
 }
@@ -195,14 +196,26 @@ export function collectComponentPropertyIds(graph: SceneGraph): string[] {
   return [...ids]
 }
 
+/**
+ * Writing into an archive, a property keeps the GUID it was read with, however large: the
+ * records left as they were name it by that GUID. Otherwise a GUID past 31 bits, which Figma
+ * drops from a paste, is replaced.
+ */
 function assignComponentPropertyGuids(
   propertyIds: readonly string[],
   localIdCounter: { value: number },
   propertyIdToGuid: Map<string, GUID>,
   assignedGuidValues: Set<string>,
-  nodeSourceGuidValues: Set<string>
+  nodeSourceGuidValues: Set<string>,
+  intoArchive: boolean
 ): void {
   for (const propertyId of propertyIds) {
+    const kept = intoArchive ? parseGuidOrNull(propertyId, { wholeParts: true }) : null
+    if (kept && !assignedGuidValues.has(propertyId) && !nodeSourceGuidValues.has(propertyId)) {
+      assignedGuidValues.add(propertyId)
+      propertyIdToGuid.set(propertyId, kept)
+      continue
+    }
     const guid = assignVariableGuid(
       propertyId,
       localIdCounter,
@@ -271,6 +284,9 @@ function buildCanvasEntries(
 ): { canvasEntries: CanvasExportEntry[]; internalCanvasGuid: GUID | null } {
   const canvasEntries: CanvasExportEntry[] = []
   let internalCanvasGuid: GUID | null = null
+  // Pages keep the keys they were read with while those stay in order; a page added or moved
+  // gets one between its neighbours', as Figma sorts pages by these keys.
+  const orderKeys = siblingOrderKeys(pages.map((page) => page.source.orderKey))
   for (let p = 0; p < pages.length; p++) {
     const page = pages[p]
     const canvasGuid = (() => {
@@ -299,17 +315,11 @@ function buildCanvasEntries(
     assignedGuidValues.add(`${canvasGuid.sessionID}:${canvasGuid.localID}`)
     if (page.internalOnly) internalCanvasGuid = canvasGuid
 
-    const canvasNc = makeCanvasNodeChange(
-      canvasGuid,
-      docGuid,
-      page.source.orderKey ?? fractionalPosition(p),
-      page.name,
-      {
-        backgroundOpacity: 1,
-        backgroundColor: { ...CANVAS_BG_COLOR },
-        backgroundEnabled: true
-      }
-    )
+    const canvasNc = makeCanvasNodeChange(canvasGuid, docGuid, orderKeys[p], page.name, {
+      backgroundOpacity: 1,
+      backgroundColor: { ...CANVAS_BG_COLOR },
+      backgroundEnabled: true
+    })
     applyImportedCanvasFields(page, canvasNc)
     if (page.internalOnly) canvasNc.internalOnly = true
     canvasEntries.push({ page, canvasGuid, canvasNc })
@@ -329,7 +339,7 @@ function buildCanvasEntries(
       canvasNc: makeCanvasNodeChange(
         internalCanvasGuid,
         docGuid,
-        fractionalPosition(canvasEntries.length),
+        orderKeyBetween(orderKeys.at(-1) ?? null, null),
         'Internal Only Canvas',
         { internalOnly: true }
       )
@@ -375,6 +385,8 @@ export interface FigExportSetup {
   varIdToGuid: Map<string, GUID>
   modeIdToGuid: Map<string, GUID>
   propertyIdToGuid: Map<string, GUID>
+  /** The GUID each variant's copy of a set property is written with, by variant and property. */
+  propertyCopyGuids: Map<string, GUID>
   fontDigestMap: Map<string, Uint8Array>
   glyphBlobMap: Map<string, number>
   blobIndexByHex: Map<string, number>
@@ -478,8 +490,14 @@ export async function prepareFigExport(
     localIdCounter,
     propertyIdToGuid,
     assignedGuidValues,
-    nodeSourceGuidValues
+    nodeSourceGuidValues,
+    archived !== undefined
   )
+  // Pages set modes as layers do, through the collection and mode GUIDs just assigned.
+  for (const { page, canvasNc } of canvasEntries) {
+    const node = graph.getNode(page.id)
+    if (node) applyVariableModes({ graph, varIdToGuid, modeIdToGuid }, node, canvasNc)
+  }
   const pluginDataOverrides = renamedBehaviourPluginData(graph, propertyIdToGuid)
   assignOwnLayerGuids(graph, sourceOwners, nodeIdToGuid, assignedGuidValues)
 
@@ -498,6 +516,7 @@ export async function prepareFigExport(
     varIdToGuid,
     modeIdToGuid,
     propertyIdToGuid,
+    propertyCopyGuids: new Map<string, GUID>(),
     fontDigestMap,
     glyphBlobMap: new Map(),
     blobIndexByHex: new Map(),
@@ -519,6 +538,7 @@ export function figExportRecordOptions(setup: FigExportSetup) {
     componentPropertyDefinitionsById: setup.componentPropertyDefinitionsById,
     modeIdToGuid: setup.modeIdToGuid,
     propertyIdToGuid: setup.propertyIdToGuid,
+    propertyCopyGuids: setup.propertyCopyGuids,
     pluginDataOverrides: setup.pluginDataOverrides,
     recordOwners: setup.recordOwners,
     runtime: setup.runtime
@@ -550,7 +570,8 @@ export async function figFileExtras(
   imageNames: ReadonlyMap<string, string>,
   options: FigFileExtrasOptions
 ): Promise<FigFileExtras> {
-  const thumbnailPageId = options.pageId ?? findFigThumbnailPageId(graph.getPages(true))
+  // Internal pages hold library data, not anything a person drew, so the thumbnail skips them.
+  const thumbnailPageId = options.pageId ?? figThumbnailPageId(graph.getPages())
   const thumbnail = await renderFigThumbnail(graph, thumbnailPageId, options)
   const metaJSON = figArchiveMetaJSON({
     fileName: options.documentName || UNTITLED_FILE_NAME,

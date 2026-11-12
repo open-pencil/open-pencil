@@ -4,10 +4,13 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import {
   applyComponentPropertyValue,
   componentPropertyDefinitions,
-  findComponentPropertyTargets
+  findComponentPropertyTargets,
+  recordAssignmentOverride
 } from '@open-pencil/scene-graph/components'
+import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
 import { cloneInstanceOverrideState } from '@open-pencil/scene-graph/instances/overrides'
 
+import { refitGroupsAroundLayers } from '#core/editor/structure/group/bounds'
 import type { EditorContext } from '#core/editor/types'
 
 /** Whether a boolean property drives the layer's visibility. */
@@ -47,22 +50,34 @@ export function applyBoundVisibilityEdit(
   const layers = findComponentPropertyTargets(ctx.graph, instance, propertyId).flatMap((target) =>
     target.field === 'VISIBLE' ? [target.node.id] : []
   )
+  const owner = instance.parentId ? findInstanceAncestor(ctx.graph, instance.parentId) : undefined
   const snapshot = () => ({
     componentPropertyAssignments: { ...instance.componentPropertyAssignments },
     instanceOverrides: cloneInstanceOverrideState(instance.instanceOverrides),
+    ownerOverrides: owner && cloneInstanceOverrideState(owner.instanceOverrides),
     layers: layers.map((id) => [id, ctx.graph.getNode(id)?.visible ?? true] as const)
   })
   const before = snapshot()
   applyComponentPropertyValue(ctx.graph, instance.id, definition, String(visible))
-  const after = snapshot()
   // The property already had the value, as when another layer it drives was just shown.
-  if (isEqual(before, after)) return true
+  if (isEqual(before, snapshot())) {
+    return true
+  }
+  recordAssignmentOverride(ctx.graph, instance.id, propertyId)
+  const after = snapshot()
+  refitGroupsAroundLayers(ctx, layers)
   const apply = (values: typeof before) => {
     ctx.graph.updateNode(instance.id, {
       componentPropertyAssignments: { ...values.componentPropertyAssignments },
       instanceOverrides: cloneInstanceOverrideState(values.instanceOverrides)
     })
+    if (owner && values.ownerOverrides) {
+      ctx.graph.updateNode(owner.id, {
+        instanceOverrides: cloneInstanceOverrideState(values.ownerOverrides)
+      })
+    }
     for (const [id, shown] of values.layers) ctx.graph.updateNode(id, { visible: shown })
+    refitGroupsAroundLayers(ctx, layers)
     ctx.runLayoutForNode(instance.id)
     ctx.requestRender()
   }

@@ -10,7 +10,7 @@ Kilka osób może jednocześnie edytować jeden dokument. Uczestnicy łączą si
 ## Udostępnianie pokoju
 
 1. Kliknij przycisk „Udostępnij” w prawym górnym rogu.
-2. Kliknij **Udostępnij ten plik** — odnośnik `app.openpencil.dev/share/<room-id>` zostanie skopiowany.
+2. Kliknij **Udostępnij ten plik** — odnośnik `app.openpencil.dev/rooms/<room-id>` zostanie skopiowany.
 3. Wyślij go innym uczestnikom.
 
 Tylko udostępnienie umieszcza dokument w pokoju: karta, z której udostępniasz, staje się kartą pokoju i pozostaje powiązana ze swoim plikiem. Dołączyć może każda osoba znająca odnośnik.

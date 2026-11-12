@@ -14,9 +14,9 @@ export const staticEntitlementsSchema = v.object({
   storage: v.optional(v.object({ maximumBytes: v.optional(positiveIntegerSchema) }), {}),
   sharing: v.optional(
     v.object({
-      capabilityLinks: v.optional(v.boolean()),
-      anonymousView: v.optional(v.boolean()),
-      anonymousEdit: v.optional(v.boolean()),
+      links: v.optional(v.boolean()),
+      guestView: v.optional(v.boolean()),
+      guestEdit: v.optional(v.boolean()),
       guestPresence: v.optional(v.boolean())
     }),
     {}
@@ -28,7 +28,7 @@ export const staticEntitlementsSchema = v.object({
     }),
     {}
   ),
-  ai: v.optional(
+  services: v.optional(
     v.object({
       enabled: v.optional(v.boolean()),
       monthlyCreditAllowance: v.optional(nonNegativeIntegerSchema)
@@ -38,30 +38,30 @@ export const staticEntitlementsSchema = v.object({
 })
 export type StaticEntitlements = v.InferOutput<typeof staticEntitlementsSchema>
 
-export const staticEntitlementsTOMLSchema = v.object({
+export const staticEntitlementsTOMLSchema = v.strictObject({
   documents: v.optional(
-    v.object({
+    v.strictObject({
       maximum_file_bytes: v.optional(positiveIntegerSchema),
       revision_history: v.optional(v.boolean())
     })
   ),
-  storage: v.optional(v.object({ maximum_bytes: v.optional(positiveIntegerSchema) })),
+  storage: v.optional(v.strictObject({ maximum_bytes: v.optional(positiveIntegerSchema) })),
   sharing: v.optional(
-    v.object({
-      capability_links: v.optional(v.boolean()),
-      anonymous_view: v.optional(v.boolean()),
-      anonymous_edit: v.optional(v.boolean()),
+    v.strictObject({
+      links: v.optional(v.boolean()),
+      guest_view: v.optional(v.boolean()),
+      guest_edit: v.optional(v.boolean()),
       guest_presence: v.optional(v.boolean())
     })
   ),
   collaboration: v.optional(
-    v.object({
+    v.strictObject({
       enabled: v.optional(v.boolean()),
       maximum_participants: v.optional(positiveIntegerSchema)
     })
   ),
-  ai: v.optional(
-    v.object({
+  services: v.optional(
+    v.strictObject({
       enabled: v.optional(v.boolean()),
       monthly_credit_allowance: v.optional(nonNegativeIntegerSchema)
     })

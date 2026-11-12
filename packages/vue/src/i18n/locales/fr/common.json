@@ -32,6 +32,7 @@
   "noResults": "Aucun résultat",
   "save": "Enregistrer",
   "done": "Terminé",
+  "task": "Tâche",
   "back": "Retour",
   "supported": "Pris en charge",
   "unsupported": "Non pris en charge",
@@ -40,5 +41,6 @@
   "dismiss": "Ignorer",
   "browserSupport": "Vérifier la compatibilité",
   "showPassword": "Afficher le mot de passe",
-  "hidePassword": "Masquer le mot de passe"
+  "hidePassword": "Masquer le mot de passe",
+  "typeToConfirm": "Pour confirmer, saisissez « {text} »."
 }

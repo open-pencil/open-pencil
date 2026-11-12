@@ -1,9 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined, getNodeOrThrow } from '#core-tests/helpers/assert'
-import { createRect, firstPageId } from '#core-tests/helpers/scene'
-
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
+import { createRect, firstPageId } from '@open-pencil/test-support/scene'
 
 describe('flip', () => {
   test('flipX defaults to false', () => {

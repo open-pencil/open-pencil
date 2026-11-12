@@ -6,13 +6,21 @@ import {
 import { compact } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { forEachInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
+import { overriddenAssignmentId } from '@open-pencil/scene-graph/components'
+import {
+  forEachInstanceOverride,
+  overriddenBindingField
+} from '@open-pencil/scene-graph/instances/overrides'
 import type { GUID, Vector } from '@open-pencil/scene-graph/primitives'
 import { scaleNodeChanges } from '@open-pencil/scene-graph/scaling'
 import { ownsSlotContent } from '@open-pencil/scene-graph/slots'
+import { paintBindingTarget } from '@open-pencil/scene-graph/variables'
 
 import { instanceExportAddress } from '../instance/geometry'
 import { mergeVariableConsumptionMaps, overrideVariableBindingEntry } from '../variable/bindings'
+import { mergeVariableModeClaims } from '../variable/maps'
+import { nestedPropertyAssignments } from './assignments/nested'
+import { componentPropAssignment } from './assignments/values'
 import {
   createFillPaints,
   createStrokePaints,
@@ -26,6 +34,7 @@ import {
 } from './context'
 import { fillsOwnSizingAxis } from './fill-sizing'
 import { exportedNode } from './resolved-bindings'
+import { claimedVariableModes } from './variable-modes'
 
 function unscaledRootSize(instance: SceneNode, target: SceneNode): Vector {
   const scale = instance.componentScale
@@ -42,6 +51,29 @@ function exportedSwapOverride(
   if (!path || target.type !== 'INSTANCE' || !target.componentId) return undefined
   const component = getOrCreateNodeGuid(context, target.componentId, counter)
   return component ? { guidPath: { guids: path }, overriddenSymbolID: component } : undefined
+}
+
+function assignmentOverride(
+  context: SceneNodeToKiwiContext,
+  target: SceneNode,
+  propertyId: string,
+  path: GUID[],
+  counter: { value: number }
+): KiwiSymbolOverridePayload | undefined {
+  const assigned =
+    target.type === 'INSTANCE' && Object.hasOwn(target.componentPropertyAssignments, propertyId)
+  const assignment = assigned
+    ? componentPropAssignment(
+        context,
+        target,
+        propertyId,
+        target.componentPropertyAssignments[propertyId],
+        counter
+      )
+    : null
+  return assignment
+    ? { guidPath: { guids: path }, componentPropAssignments: [assignment] }
+    : undefined
 }
 
 /**
@@ -77,6 +109,7 @@ function layoutDistanceClaim(
 interface ClaimInput {
   context: SceneNodeToKiwiContext
   instance: SceneNode
+  owner: SceneNode
   target: SceneNode
   /** The recorded override value, when the override stored one. */
   value: unknown
@@ -121,7 +154,7 @@ function rawClaim(
   raw: string,
   definition: OverrideField,
   field: keyof SceneNode,
-  { context, instance, target, value, nodeFields }: ClaimInput
+  { context, instance, owner, target, value, nodeFields }: ClaimInput
 ): Omit<KiwiSymbolOverridePayload, 'guidPath'> | undefined {
   switch (definition.kind) {
     case 'node': {
@@ -154,6 +187,10 @@ function rawClaim(
       return layoutDistanceClaim(raw, target[field], instance)
     case 'layout-mode':
       return layoutModeClaim(raw, target[field], context.graph, target)
+    case 'variable-modes': {
+      const modes = claimedVariableModes(context, instance, owner, target)
+      return modes.entries.length > 0 ? { variableModeBySetMap: modes } : undefined
+    }
     default:
       return undefined
   }
@@ -164,19 +201,17 @@ function paintBindingOverride(
   target: SceneNode,
   bindingField: string
 ): Partial<Pick<KiwiSymbolOverridePayload, 'fillPaints' | 'strokePaints'>> | undefined {
-  if (/^fills\/\d+\/color$/.test(bindingField))
-    return { fillPaints: createFillPaints(context, target) }
-  if (/^strokes\/\d+\/color$/.test(bindingField))
-    return { strokePaints: createStrokePaints(context, target) }
+  const paint = paintBindingTarget(bindingField)
+  if (paint?.list === 'fills') return { fillPaints: createFillPaints(context, target) }
+  if (paint?.list === 'strokes') return { strokePaints: createStrokePaints(context, target) }
   return undefined
 }
 
 /** A binding override is a paint claim for paint colours and a consumption entry otherwise. */
 function bindingClaim(
   { context, instance, target }: ClaimInput,
-  field: string
+  bindingField: string
 ): Omit<KiwiSymbolOverridePayload, 'guidPath'> | undefined {
-  const bindingField = field.slice('boundVariables/'.length)
   const paints = paintBindingOverride(context, target, bindingField)
   if (paints) return paints
   const entry = overrideVariableBindingEntry(
@@ -210,9 +245,13 @@ function overrideClaim(
   const input: ClaimInput = { ...claimed, target, nodeFields }
   if (field === 'componentId')
     return exportedSwapOverride(input.context, input.target, path, counter)
-  const claim = field.startsWith('boundVariables/')
-    ? bindingClaim(input, field)
-    : registryClaim(field as keyof SceneNode, input)
+  const assignedPropertyId = overriddenAssignmentId(field)
+  if (assignedPropertyId !== undefined) {
+    return assignmentOverride(input.context, input.target, assignedPropertyId, path, counter)
+  }
+  const binding = overriddenBindingField(field)
+  const claim =
+    binding === null ? registryClaim(field as keyof SceneNode, input) : bindingClaim(input, binding)
   return claim && { guidPath: { guids: path }, ...claim }
 }
 
@@ -247,13 +286,29 @@ export function serializeRuntimePropertyOverrides(
         const resolved = resolveTarget(node, nodeId)
         if (!resolved) return
         const claim = overrideClaim(
-          { context, instance, target: resolved.target, value, records, writeNodeFields },
+          {
+            context,
+            instance,
+            owner: node,
+            target: resolved.target,
+            value,
+            records,
+            writeNodeFields
+          },
           field,
           resolved.path,
           localIdCounter
         )
         if (claim) result.push(claim)
       })
+    if (node.type === 'INSTANCE' && node.id !== instance.id) {
+      const resolved = resolveTarget(node, node.id)
+      const assignments = resolved
+        ? nestedPropertyAssignments(context, instance, node, localIdCounter)
+        : []
+      if (resolved && assignments.length > 0)
+        result.push({ guidPath: { guids: resolved.path }, componentPropAssignments: assignments })
+    }
     // Slot content the instance owns carries its own values; it has no component address.
     if (ownsSlotContent(context.graph, node)) return
     for (const child of context.graph.getChildren(node.id)) visit(child)
@@ -267,6 +322,30 @@ function overridePathKey(payload: KiwiSymbolOverridePayload): string | null {
   return guids?.length
     ? guids.map(({ sessionID, localID }) => `${sessionID}:${localID}`).join('/')
     : null
+}
+
+function assignmentKey(assignment: unknown): string {
+  const defID =
+    typeof assignment === 'object' && assignment !== null && 'defID' in assignment
+      ? assignment.defID
+      : undefined
+  return JSON.stringify(defID ?? assignment)
+}
+
+function mergedAssignments(
+  earlier: KiwiSymbolOverridePayload,
+  later: KiwiSymbolOverridePayload
+): KiwiSymbolOverridePayload {
+  const before = earlier.componentPropAssignments
+  const after = later.componentPropAssignments
+  if (!Array.isArray(before) || !Array.isArray(after)) {
+    return {}
+  }
+  const byProperty = new Map<string, unknown>()
+  for (const assignment of [...before, ...after]) {
+    byProperty.set(assignmentKey(assignment), assignment)
+  }
+  return { componentPropAssignments: [...byProperty.values()] }
 }
 
 export function mergeOverrides(
@@ -289,7 +368,9 @@ export function mergeOverrides(
       symbolOverrides[existingIndex] = {
         ...symbolOverrides[existingIndex],
         ...override,
-        ...mergeVariableConsumptionMaps(symbolOverrides[existingIndex], override)
+        ...mergeVariableConsumptionMaps(symbolOverrides[existingIndex], override),
+        ...mergeVariableModeClaims(symbolOverrides[existingIndex], override),
+        ...mergedAssignments(symbolOverrides[existingIndex], override)
       }
   }
 }

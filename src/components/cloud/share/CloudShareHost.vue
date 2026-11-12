@@ -12,6 +12,7 @@ import { useActiveEditorStoreRef } from '@/app/editor/active-store'
 import { useDateFormat } from '@/app/i18n/date'
 import { useSendLink } from '@/app/shell/share/link'
 import { toast } from '@/app/shell/ui'
+import { useHeldContent } from '@/components/ui/overlay/held'
 
 import CloudShareDialog from './CloudShareDialog.vue'
 
@@ -28,6 +29,20 @@ const target = computed(() => {
 })
 const cloudSharing = useCloudSharing(target)
 const { sharing, linkURL, inviting } = cloudSharing
+
+/**
+ * The dialog appears once the document's sharing has loaded, so it never opens on a restricted
+ * document with no members and then fills in.
+ */
+const dialogOpen = computed({
+  get: () => cloudShareOpen.value && sharing.value !== null,
+  set: (open) => {
+    cloudShareOpen.value = open
+  }
+})
+// Losing the document, as after signing out, closes the dialog; it keeps drawing it as it fades.
+const shownTarget = useHeldContent(target)
+const shown = useHeldContent(sharing, dialogOpen)
 const { sendsLink, copied, send } = useSendLink()
 
 const workspace = computed(() => {
@@ -40,14 +55,17 @@ const workspace = computed(() => {
 })
 const dates = useDateFormat()
 const members = computed(() =>
-  (sharing.value?.members ?? []).map((member) => ({
+  (shown.value?.members ?? []).map((member) => ({
     ...member,
     pendingUntil: member.pendingUntil ? dates.format(member.pendingUntil, 'day') : undefined
   }))
 )
 
 async function refresh() {
-  if (!(await cloudSharing.refresh())) toast.error(t.value.shareLoadFailed)
+  if (await cloudSharing.refresh()) return
+  toast.error(t.value.shareLoadFailed)
+  // Nothing loaded to show, so the dialog that was waiting for it does not open.
+  if (sharing.value === null) cloudShareOpen.value = false
 }
 
 /** Says when a change did not take; the dialog shows what the server kept either way. */
@@ -85,14 +103,14 @@ watch(
 
 <template>
   <CloudShareDialog
-    v-if="target"
-    v-model:open="cloudShareOpen"
+    v-if="shownTarget"
+    v-model:open="dialogOpen"
     :document-name="storeRef?.state.documentName ?? ''"
     :workspace="workspace"
     :members="members"
-    :link="sharing?.link ?? { access: 'restricted' }"
-    :can-manage="sharing?.canManage ?? false"
-    :links="sharing?.links"
+    :link="shown?.link ?? { access: 'restricted' }"
+    :can-manage="shown?.canManage ?? false"
+    :links="shown?.links"
     :inviting="inviting"
     :copied="copied"
     :sends-link="sendsLink"

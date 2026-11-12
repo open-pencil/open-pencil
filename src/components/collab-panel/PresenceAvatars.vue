@@ -6,9 +6,9 @@ import {
   HoverCardTrigger,
   PopoverContent,
   PopoverPortal,
-  PopoverRoot,
   PopoverTrigger
 } from 'reka-ui'
+import { tv } from 'tailwind-variants'
 
 import { useI18n } from '@open-pencil/vue/i18n'
 
@@ -18,7 +18,10 @@ import PersonAvatar from '@/components/presence/PersonAvatar.vue'
 import PresenceList from '@/components/presence/PresenceList.vue'
 import { isFollowing, type PresencePersonRow } from '@/components/presence/rows'
 import AppButton from '@/components/ui/button/AppButton.vue'
-import { presenceAvatars } from '@/theme/collaboration/presence-avatars'
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
+import presenceAvatarsTheme from '@/theme/collaboration/presence-avatars'
+
+const presenceAvatars = tv(presenceAvatarsTheme)
 
 /** How many collaborators the stack shows besides you before "+N". */
 const MAX_PEERS = 3
@@ -60,7 +63,7 @@ function toggleFollow(clientId: number) {
 <template>
   <AvatarStack data-test-id="collab-avatars" :people="rows" :max="MAX_PEERS + 1">
     <template #person="{ person }">
-      <PopoverRoot v-if="person.clientId === undefined">
+      <AppPopoverRoot v-if="person.clientId === undefined">
         <PopoverTrigger as-child>
           <button
             type="button"
@@ -108,7 +111,7 @@ function toggleFollow(clientId: number) {
             </AppButton>
           </PopoverContent>
         </PopoverPortal>
-      </PopoverRoot>
+      </AppPopoverRoot>
 
       <HoverCardRoot v-else :open-delay="250" :close-delay="150">
         <HoverCardTrigger as-child>
@@ -153,7 +156,7 @@ function toggleFollow(clientId: number) {
 
     <!-- Everyone, by click or keyboard: hover cards are mouse-only. -->
     <template #overflow="{ hidden }">
-      <PopoverRoot v-if="rows.length > 1">
+      <AppPopoverRoot v-if="rows.length > 1">
         <PopoverTrigger as-child>
           <button
             type="button"
@@ -177,7 +180,7 @@ function toggleFollow(clientId: number) {
             />
           </PopoverContent>
         </PopoverPortal>
-      </PopoverRoot>
+      </AppPopoverRoot>
     </template>
   </AvatarStack>
 </template>

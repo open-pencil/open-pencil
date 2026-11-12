@@ -1,11 +1,12 @@
-import { createServer } from 'node:http'
-
 import { defaultRelayURL } from '#cloud/contract'
-import { createCloudServer } from '#cloud/runtime/portal/server'
+import { createPostgresCloudDatabase } from '#cloud/runtime/postgres/database'
+import { createCloudErrorReporter } from '#cloud/runtime/posthog/errors'
 import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
+import { createCloudServer, type SiteFiles } from '#cloud/runtime/site/server'
 import {
   createCloudApp,
-  loadAISigningKey,
+  createLoggingErrorReporter,
+  loadServicesSigningKey,
   createCloudAuthenticationRuntime,
   createCollaborationRelay,
   createCollaborationStateStore,
@@ -13,26 +14,70 @@ import {
   createCleanupServices,
   createConfiguredCloudPolicy,
   relayDocumentLookups,
+  reportCloudError,
   startCleanupWorker,
-  startTransactionalEmailWorker
+  startTransactionalEmailWorker,
+  writeJSONLine,
+  type CloudErrorReporter,
+  type CloudServerConfig
 } from '#cloud/server'
-import { getRequestListener } from '@hono/node-server'
 
-import { createMigratedNodeCloudDatabase } from './bootstrap'
+import { migratedNodeCloudDatabase } from './bootstrap'
+import { loadNodeCloudServerConfig } from './config'
 import { createNodeTransactionalEmailRuntime } from './email/runtime'
-import { nodePortalFiles } from './portal'
+import { listen } from './listen'
 import { attachCollaborationRelay } from './relay'
+import { proxyRequestId } from './request-id'
+import { developmentSiteFiles, nodeSiteFiles } from './site'
 
 export type NodeCloudServerOptions = {
   environment?: Readonly<Record<string, string | undefined>>
   port?: number
 }
 
+/** The site the server serves: a build, or in `cloud:dev` a development server's source. */
+function siteFiles(
+  environment: Readonly<Record<string, string | undefined>>
+): SiteFiles | undefined {
+  const developmentSite = environment.OPENPENCIL_CLOUD_DEV_SITE_URL
+  if (developmentSite) return developmentSiteFiles(developmentSite)
+  const siteDirectory = environment.OPENPENCIL_CLOUD_SITE_DIR
+  if (siteDirectory) return nodeSiteFiles(siteDirectory)
+  console.warn(
+    '[Cloud] OPENPENCIL_CLOUD_SITE_DIR is not set; the editor and sign-in pages are off.'
+  )
+  return undefined
+}
+
+/**
+ * Starts the server. Once the config parses, a startup that fails, such as a migration, a signing
+ * key, or a port that cannot be bound, is reported before it is thrown; a config that does not
+ * parse has no error tracking to report to.
+ */
 export async function startNodeCloudServer(options: NodeCloudServerOptions = {}) {
   const environment = options.environment ?? process.env
-  const { config, database } = await createMigratedNodeCloudDatabase(environment)
+  const config = await loadNodeCloudServerConfig(environment)
+  const reportError = createLoggingErrorReporter(
+    writeJSONLine,
+    createCloudErrorReporter(config, 'node')
+  )
+  try {
+    return await startConfiguredServer(config, environment, options, reportError)
+  } catch (error) {
+    await reportCloudError(reportError, 'Starting the server failed', error, { source: 'setup' })
+    throw error
+  }
+}
+
+async function startConfiguredServer(
+  config: CloudServerConfig,
+  environment: Readonly<Record<string, string | undefined>>,
+  options: NodeCloudServerOptions,
+  reportError: CloudErrorReporter | undefined
+) {
+  const { database } = await migratedNodeCloudDatabase(config)
   // Before any worker starts, so a key that cannot sign leaves nothing running.
-  const aiSigningKey = await loadAISigningKey(config).catch(async (error: unknown) => {
+  const servicesSigningKey = await loadServicesSigningKey(config).catch(async (error: unknown) => {
     await database.destroy()
     throw error
   })
@@ -44,18 +89,34 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
   } = createNodeTransactionalEmailRuntime(config, database)
   const { auth, enrollment } = createCloudAuthenticationRuntime(config, database, email)
   const policy = createConfiguredCloudPolicy(config, database)
-  const cleanup = config.cleanupEnabled
-    ? startCleanupWorker(createCleanupServices(config, database, objects, policy), {
-        ...cleanupPassOptions(config),
-        intervalMs: config.cleanupIntervalMs,
-        onError: (error) => console.error('[Cloud] Cleanup worker failed:', error)
+  // Cleanup sweeps may run longer than a request should, so they have a connection of their own
+  // without the statement timeout.
+  const cleanupDatabase = config.cleanupEnabled
+    ? createPostgresCloudDatabase({
+        connectionString: config.databaseURL,
+        statementTimeoutMs: null
       })
+    : undefined
+  const cleanup = cleanupDatabase
+    ? startCleanupWorker(
+        createCleanupServices(config, cleanupDatabase, objects, policy, reportError),
+        {
+          ...cleanupPassOptions(config),
+          intervalMs: config.cleanupIntervalMs,
+          onError: (error) =>
+            void reportCloudError(reportError, 'Cleanup worker failed', error, {
+              source: 'cleanup'
+            })
+        }
+      )
     : undefined
   const relay = createCollaborationRelay({
     authSecret: config.authSecret,
-    store: createCollaborationStateStore(database),
+    store: createCollaborationStateStore(database, objects),
     maximumMessageBytes: config.technicalLimits.maximumCollaborationMessageBytes,
     maximumConnectionsPerRoom: config.technicalLimits.maximumConnectionsPerRoom,
+    onError: (message, error) =>
+      void reportCloudError(reportError, message, error, { source: 'relay' }),
     ...relayDocumentLookups(database, policy, config.deployment)
   })
   const app = createCloudApp({
@@ -66,10 +127,13 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
     invitationOutbox,
     transactionalEmail: email,
     enrollment,
-    aiSigningKey,
+    servicesSigningKey,
     relayURL: config.relayURL ?? defaultRelayURL(config.publicURL),
     onDocumentRestored: (documentId) => relay.startOver(documentId),
-    onDocumentVersionsChanged: (documentId) => relay.announceVersions(documentId)
+    onDocumentTakenDown: (documentId) => relay.closeDocument(documentId),
+    onDocumentVersionsChanged: (documentId) => relay.announceVersions(documentId),
+    reportError,
+    forwardedRequestId: proxyRequestId
   })
   const emailWorker = emailTransport
     ? startTransactionalEmailWorker(email, {
@@ -77,15 +141,15 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
         intervalMs: config.emailIntervalMs,
         leaseDurationMs: config.emailLeaseDurationMs,
         maximumAttempts: config.emailMaximumAttempts,
-        onError: (error) => console.error('[Cloud] Email worker failed:', error)
+        onError: (error) =>
+          void reportCloudError(reportError, 'Email worker failed', error, { source: 'email' })
       })
     : undefined
-  const portalDirectory = environment.OPENPENCIL_CLOUD_PORTAL_DIR
-  if (!portalDirectory)
-    console.warn('[Cloud] OPENPENCIL_CLOUD_PORTAL_DIR is not set; sign-in pages are off.')
   const cloudServer = createCloudServer(app, {
-    portal: portalDirectory ? nodePortalFiles(portalDirectory) : undefined,
-    indexingPolicy: config.indexingPolicy
+    site: siteFiles(environment),
+    indexingPolicy: config.indexingPolicy,
+    reportError,
+    forwardedRequestId: proxyRequestId
   })
   const server = await listen(
     async (request) => cloudServer.fetch(request),
@@ -105,39 +169,9 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
       await relayListener.close()
       await server.close()
       await cleanup?.stop()
+      await cleanupDatabase?.destroy()
       await emailWorker?.stop()
       await database.destroy()
     }
-  }
-}
-
-async function listen(
-  fetch: (request: Request) => Promise<Response>,
-  port: number,
-  hostname: string
-) {
-  const listener = getRequestListener(fetch)
-  const server = createServer((request, response) => {
-    void listener(request, response)
-  })
-  await new Promise<void>((resolve, reject) => {
-    server.once('error', reject)
-    server.listen(port, hostname, () => {
-      server.off('error', reject)
-      resolve()
-    })
-  })
-  const address = server.address()
-  const boundPort = typeof address === 'object' && address ? address.port : port
-  return {
-    url: new URL(`http://localhost:${boundPort}`),
-    http: server,
-    close: () =>
-      new Promise<void>((done, fail) => {
-        server.close((error) => {
-          if (error) fail(error)
-          else done()
-        })
-      })
   }
 }

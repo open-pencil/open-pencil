@@ -40,9 +40,12 @@ const {
   max,
   step,
   tone = 'default',
-  size = 'md',
+  size = 'sm',
   state = 'idle'
 } = defineProps<AppInputProps>()
+
+/** Numbers, addresses, and passwords read left to right in a mirrored interface too. */
+const LEFT_TO_RIGHT_TYPES = new Set<AppInputProps['type']>(['number', 'url', 'email', 'password'])
 
 defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
@@ -62,8 +65,8 @@ function inputClass() {
     // An instance's own input classes come last, so they can override the adornment padding.
     class: [
       !slots.leading && !slots.trailing ? normalizeClass(className) : '',
-      slots.leading ? 'pl-10' : '',
-      slots.trailing ? 'pr-10 [&::-webkit-search-cancel-button]:appearance-none' : '',
+      slots.leading ? 'ps-10' : '',
+      slots.trailing ? 'pe-10 [&::-webkit-search-cancel-button]:appearance-none' : '',
       ui?.input
     ]
   })
@@ -96,6 +99,7 @@ const emit = defineEmits<{
       :id="id"
       v-model="modelValue"
       :type="type"
+      :dir="LEFT_TO_RIGHT_TYPES.has(type) ? 'ltr' : undefined"
       :placeholder="placeholder"
       :aria-label="ariaLabel"
       :readonly="readonly"

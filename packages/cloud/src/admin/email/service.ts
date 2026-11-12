@@ -1,9 +1,16 @@
 import type { EnrollmentStatus } from '#cloud/admin/enrollment/service'
 import { AdminDomainError } from '#cloud/admin/errors'
-import { ADMIN_LIST_MAXIMUM } from '#cloud/admin/schema'
+import {
+  containsPattern,
+  countEachFilter,
+  listSearch,
+  listWindow,
+  type AdminListQuery,
+  type ListFilters
+} from '#cloud/admin/list'
+import { cloudAdminEmailFilterSchema, type CloudAdminEmailFilter } from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
 import type { TransactionalEmailService } from '#cloud/server/email'
-import { clamp } from 'es-toolkit'
 import type { Kysely } from 'kysely'
 
 /** The enrollment status each message describes; a message is resent only while it still holds. */
@@ -14,15 +21,32 @@ const ENROLLMENT_MESSAGE_STATUS: Partial<Record<string, EnrollmentStatus>> = {
   'enrollment-revoked': 'revoked'
 }
 
+/** Messages by how their delivery went; every message is under `all`. */
+const FILTERS: ListFilters<CloudAdminEmailFilter, 'transactionalEmail'> = {
+  all: (expression) => expression.lit(true),
+  sent: (expression) => expression('status', '=', 'accepted'),
+  waiting: (expression) => expression('status', 'in', ['pending', 'sending']),
+  failed: (expression) => expression('status', '=', 'failed')
+}
+
 export function createAdminEmailService(
   database: Kysely<CloudDatabase>,
   email?: TransactionalEmailService,
-  links: { appURL: string; portalURL: string } = { appURL: '', portalURL: '' }
+  links: { publicURL: string } = { publicURL: '' }
 ) {
   return {
-    async list(limit = 100) {
-      const rows = await database
-        .selectFrom('transactionalEmail')
+    /** A page of messages, newest first, with how many match the search under each filter. */
+    async list(query: AdminListQuery<CloudAdminEmailFilter> = {}) {
+      const search = listSearch(query)
+      const filter = query.filter ?? 'all'
+      const { limit, offset } = listWindow(query)
+      let searched = database.selectFrom('transactionalEmail')
+      if (search) {
+        searched = searched.where('recipientEmailNormalized', 'ilike', containsPattern(search))
+      }
+      const counts = await countEachFilter(searched, cloudAdminEmailFilterSchema.options, FILTERS)
+      const rows = await searched
+        .where(FILTERS[filter])
         .select([
           'id',
           'kind',
@@ -37,9 +61,18 @@ export function createAdminEmailService(
           'acceptedAt'
         ])
         .orderBy('createdAt', 'desc')
-        .limit(clamp(limit, 1, ADMIN_LIST_MAXIMUM))
+        .orderBy('id', 'desc')
+        .limit(limit)
+        .offset(offset)
         .execute()
-      return rows.map((row) => ({ ...row, regeneratable: row.kind.startsWith('enrollment-') }))
+      return {
+        messages: rows.map((row) => ({
+          ...row,
+          regeneratable: row.kind.startsWith('enrollment-')
+        })),
+        total: counts[filter],
+        counts
+      }
     },
     async regenerate(actorId: string, messageId: string): Promise<void> {
       if (!email)
@@ -61,7 +94,7 @@ export function createAdminEmailService(
         }
         const kind = original.kind
         const enrollment = await transaction
-          .selectFrom('cloudEnrollment')
+          .selectFrom('enrollment')
           .selectAll()
           .where('emailNormalized', '=', original.recipientEmailNormalized)
           .executeTakeFirst()
@@ -82,14 +115,14 @@ export function createAdminEmailService(
               name: enrollment.name ?? 'there',
               actionURL:
                 kind === 'enrollment-approved'
-                  ? links.appURL
-                  : new URL('/auth/sign-in', links.portalURL).href
+                  ? links.publicURL
+                  : new URL('/auth/sign-in', links.publicURL).href
             }
           },
           transaction
         )
         await transaction
-          .insertInto('cloudAdminAuditEvent')
+          .insertInto('adminAuditEvent')
           .values({
             id: crypto.randomUUID(),
             actorUserId: actorId,

@@ -9,6 +9,9 @@ export interface TileFrameTrace {
   tileCacheEntries: number
   visibleTileCount: number
   presentedTileCount: number
+  fallbackTileCount: number
+  uncoveredAreaCount: number
+  uncoveredContentAreaCount: number
   covered: boolean
 }
 
@@ -26,6 +29,7 @@ export function emitTileFrameTrace(frame: TileFrameTrace): void {
     maximumJobRenderMs: metrics.maximumJobRenderMs,
     staleJobsDiscarded: metrics.staleJobsDiscarded,
     cancelledJobs: metrics.cancelledJobs,
+    deferredJobs: metrics.deferredJobs,
     tileAllocationMs: metrics.totalAllocationMs,
     tileDrawMs: metrics.totalDrawMs,
     tileFlushMs: metrics.totalFlushMs,
@@ -35,6 +39,9 @@ export function emitTileFrameTrace(frame: TileFrameTrace): void {
     tileCacheEntries: frame.tileCacheEntries,
     visibleTileCount: frame.visibleTileCount,
     presentedTileCount: frame.presentedTileCount,
+    fallbackTileCount: frame.fallbackTileCount,
+    uncoveredAreaCount: frame.uncoveredAreaCount,
+    uncoveredContentAreaCount: frame.uncoveredContentAreaCount,
     covered: frame.covered
   })
 }

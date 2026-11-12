@@ -7,12 +7,12 @@ import { turnOffDesignCheckRule } from '@/app/settings/preferences/apply'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
-import { designCheck } from '@/theme/design-check'
 
 import DesignCheckRulesMenu from './DesignCheckRulesMenu.vue'
 import IssueGroup from './IssueGroup.vue'
 import SeverityFilters from './SeverityFilters.vue'
 import type { DesignCheckScope } from './types'
+import { designCheck } from './ui'
 import { useDesignCheckPanel } from './useDesignCheckPanel'
 
 const { active, initialScope = 'page' } = defineProps<{

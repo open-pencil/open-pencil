@@ -1,10 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "ignore": [
-    "desktop/target/**",
-    "**/dist/**",
-    "**/node_modules/**"
-  ],
+  "ignore": ["target/**", "**/dist/**", "**/node_modules/**"],
   "ignoreWorkspaces": ["packages/acp", "packages/demos"],
   "ignoreUnresolved": [
     "~icons/*",
@@ -14,5 +10,6 @@
     "/src/app/tabs/index.ts",
     "#core/*"
   ],
+  "ignoreDependencies": ["cloudflare", "@better-auth/core"],
   "ignoreBinaries": ["figma-use", "identify", "magick", "open", "osascript"]
 }

@@ -6,8 +6,12 @@ import Icons from 'unplugin-icons/vite'
 import Components from 'unplugin-vue-components/vite'
 import type { Alias, Plugin, PluginOption } from 'vite'
 
+import { openPencil } from '@open-pencil/core/node/vite'
+
 import rootManifest from '../package.json' with { type: 'json' }
 import { createOpenPencilAliases } from './aliases.ts'
+import { donationDefine } from './funding.ts'
+import { inlineScriptPlugin } from './inline-script.ts'
 
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
 const SOURCE_ROOT = fileURLToPath(new URL('../src/', import.meta.url))
@@ -50,7 +54,8 @@ export interface AppSourceConfig {
 
 /**
  * What another Vite host needs to compile the app's components from source: the app's
- * aliases, its icon plugins, its text imports, and the build-time constants it reads. The
+ * aliases, its icon plugins, its text and inline-script imports, and the build-time constants it
+ * reads. The
  * host has no local automation server, so those constants are empty.
  */
 export function appSourceConfig(): AppSourceConfig {
@@ -65,12 +70,16 @@ export function appSourceConfig(): AppSourceConfig {
     ],
     define: {
       __OPENPENCIL_APP_VERSION__: JSON.stringify(rootManifest.version),
+      ...donationDefine(REPO_ROOT),
       __OPENPENCIL_LOCAL_AUTOMATION_TOKEN__: JSON.stringify(''),
       __OPENPENCIL_LOCAL_AUTOMATION_URL__: JSON.stringify(''),
       __OPENPENCIL_LOCAL_AUTOMATION_HTTP_URL__: JSON.stringify('')
     },
     plugins: [
       appRawText(),
+      inlineScriptPlugin(),
+      // The app's canvas module imports the module that points Core at the engine's files.
+      openPencil({ inject: false }),
       Icons({ compiler: 'vue3' }),
       Components({ dirs: [], dts: false, resolvers: [IconsResolver({ prefix: 'icon' })] })
     ]

@@ -5,6 +5,11 @@ import { reportBootFailure, runSupportGate } from '@/app/shell/support/gate'
 async function start(): Promise<void> {
   if (!(await runSupportGate())) return
   try {
+    // A Cloud server's root welcomes visitors who are not signed in before loading the editor.
+    if (__OPENPENCIL_CLOUD_SITE__) {
+      const { enterCloudSite } = await import('@/app/cloud-portal/site')
+      if (!(await enterCloudSite())) return
+    }
     const { boot } = await import('./boot')
     await boot()
   } catch (error) {

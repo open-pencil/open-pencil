@@ -4,7 +4,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from 'reka-ui'
@@ -16,8 +15,10 @@ import { useEditor } from '@open-pencil/vue'
 import { useI18n } from '@open-pencil/vue/i18n'
 import { useSceneComputed } from '@open-pencil/vue/internal/scene-computed'
 
+import { variablesStylesheet } from '@/app/editor/tokens/stylesheet'
 import CodeViewer from '@/components/code-editor/CodeViewer.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import outputTheme from '@/theme/variables/output'
@@ -45,8 +46,7 @@ const collectionVariables = useSceneComputed(() => [
  */
 const stylesheet = computedAsync(async () => {
   const ids = new Set(collectionVariables.value.map((variable) => variable.id))
-  const { tokenStylesheet } = await import('@open-pencil/dom-css/export')
-  const { css } = await tokenStylesheet(editor.graph, {
+  const { css } = await variablesStylesheet(editor.graph, {
     format: 'css',
     include: (variable) => ids.has(variable.id)
   })
@@ -59,7 +59,7 @@ const stylesheet = computedAsync(async () => {
     <div class="flex items-center gap-2 px-4 py-1.5">
       <span v-if="layout === 'side'" :class="ui.title()">{{ variables.stylesheet }}</span>
       <span class="flex-1" />
-      <DropdownMenuRoot>
+      <AppDropdownMenuRoot>
         <DropdownMenuTrigger as-child>
           <IconButton :label="variables.copyStylesheet" data-test-id="variables-copy-stylesheet">
             <icon-lucide-copy class="size-3.5" />
@@ -96,7 +96,7 @@ const stylesheet = computedAsync(async () => {
             </MenuScrollArea>
           </DropdownMenuContent>
         </DropdownMenuPortal>
-      </DropdownMenuRoot>
+      </AppDropdownMenuRoot>
     </div>
     <CodeViewer
       class="min-h-0 flex-1"

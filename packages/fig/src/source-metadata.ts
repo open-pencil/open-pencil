@@ -61,6 +61,7 @@ const EDITED_RAW_FIELDS: Partial<Record<string, readonly string[]>> = {
   fontFamily: ['fontName', 'fontVersion', ...TEXT_DERIVED_RAW_FIELDS],
   fontWeight: ['semanticWeight', ...TEXT_DERIVED_RAW_FIELDS],
   italic: ['semanticItalic', ...TEXT_DERIVED_RAW_FIELDS],
+  fontStyle: ['fontName', 'fontVersion', ...TEXT_DERIVED_RAW_FIELDS],
   textAlignHorizontal: ['textAlignHorizontal', ...TEXT_DERIVED_RAW_FIELDS],
   textAlignVertical: ['textAlignVertical', ...TEXT_DERIVED_RAW_FIELDS],
   lineHeight: ['lineHeight', ...TEXT_DERIVED_RAW_FIELDS],
@@ -78,6 +79,7 @@ const EDITED_RAW_FIELDS: Partial<Record<string, readonly string[]>> = {
   paragraphIndent: ['paragraphIndent', ...TEXT_DERIVED_RAW_FIELDS],
   hangingList: ['hangingList', ...TEXT_DERIVED_RAW_FIELDS],
   fontVariations: ['fontVariations', ...TEXT_DERIVED_RAW_FIELDS],
+  opticalSizeFromFontSize: ['detachOpticalSizeFromFontSize', ...TEXT_DERIVED_RAW_FIELDS],
   fontFeatures: [
     'fontVariantCommonLigatures',
     'fontVariantContextualLigatures',
@@ -95,13 +97,20 @@ const EDITED_RAW_FIELDS: Partial<Record<string, readonly string[]>> = {
   isMask: ['mask'],
   maskType: ['maskType'],
   maskIsOutline: ['maskIsOutline'],
-  componentPropertyDefinitions: ['componentPropDefs'],
+  // A set's saved value order lists the values its properties had; preferred values replace it.
+  componentPropertyDefinitions: ['componentPropDefs', 'stateGroupPropertyValueOrders'],
   componentPropertyReferences: ['componentPropRefs'],
   componentPropertyAssignments: ['componentPropAssignments'],
+  // A variant's specs are written from its values.
+  componentPropertyValues: ['variantPropSpecs'],
   variantPropSpecs: ['variantPropSpecs']
 }
 
+const NO_STALE_FIELDS: ReadonlySet<string> = new Set()
+
 export function staleFigmaRawFields(editedFields: readonly string[] = []): ReadonlySet<string> {
+  // Read for every layer the renderer draws, so an unedited layer allocates nothing.
+  if (editedFields.length === 0) return NO_STALE_FIELDS
   return new Set(editedFields.flatMap((key) => EDITED_RAW_FIELDS[key] ?? []))
 }
 

@@ -1,4 +1,5 @@
 import { uniq } from 'es-toolkit/array'
+import { isEmptyObject } from 'es-toolkit/predicate'
 
 import {
   TEXT_BINDABLE_FIELDS,
@@ -8,7 +9,18 @@ import {
   type Variable,
   type VariableType
 } from '@open-pencil/scene-graph'
+import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
+import {
+  effectBindableProperties,
+  effectBindingField,
+  effectBindingTarget,
+  effectBindingVariableType,
+  independentCornerChanges,
+  paintBindingTarget
+} from '@open-pencil/scene-graph/variables'
 
+import type { FigmaEffect, FigmaEffectBindings } from '#core/figma-api/effects'
+import type { FigmaPaint } from '#core/figma-api/paints'
 import { reconcileVariableLayouts } from '#core/layout/variables'
 
 import { variableAlias, type FigmaVariableAlias } from './values'
@@ -135,6 +147,17 @@ function documentFields(field: FigmaBindableNodeField): readonly string[] {
   return field === 'cornerRadius' ? CORNER_FIELDS : [NODE_FIELDS[field]]
 }
 
+const isCornerField = (field: string): boolean =>
+  field === 'cornerRadius' || (CORNER_FIELDS as readonly string[]).includes(field)
+
+/** Draws the layer corner by corner before a script binds or unbinds one, as Figma does. */
+function separateCorners(graph: SceneGraph, node: SceneNode): void {
+  const changes = independentCornerChanges(node)
+  if (isEmptyObject(changes)) return
+  graph.updateNode(node.id, changes)
+  recordInstanceOverride(graph, node.id, Object.keys(changes))
+}
+
 /**
  * Binds or unbinds the document fields behind a Figma node field, then shows the variable's value
  * on the layer and lays out what it moves.
@@ -145,6 +168,9 @@ export function setLayerBinding(
   field: FigmaBindableNodeField,
   variable: Variable | null
 ): void {
+  // Figma keeps the corners' own bindings when a script unbinds the radius as a whole.
+  if (field === 'cornerRadius' && !variable) return
+  if (isCornerField(field)) separateCorners(graph, node)
   for (const name of documentFields(field)) {
     if (variable) graph.bindVariable(node.id, name, variable.id)
     else graph.unbindVariable(node.id, name)
@@ -186,14 +212,12 @@ const FIGMA_FIELD_BY_DOCUMENT_FIELD = new Map<string, string>(
     .map(([figma, field]) => [field, figma])
 )
 
-const PAINT_FIELD = /^(fills|strokes)\/(\d+)\/color$/
-
 /** The variable bound to each paint's colour, by paint index, for `fills` or `strokes`. */
 export function paintBindings(node: SceneNode, key: 'fills' | 'strokes'): Map<number, string> {
   const bindings = new Map<number, string>()
   for (const [field, id] of Object.entries(node.boundVariables)) {
-    const match = PAINT_FIELD.exec(field)
-    if (match?.[1] === key) bindings.set(Number(match[2]), id)
+    const paint = paintBindingTarget(field)
+    if (paint?.list === key) bindings.set(paint.index, id)
   }
   return bindings
 }
@@ -206,12 +230,12 @@ export function setPaintBindings(
   graph: SceneGraph,
   node: SceneNode,
   key: 'fills' | 'strokes',
-  paints: readonly { boundVariables?: { color?: FigmaVariableAlias } }[]
+  paints: readonly FigmaPaint[]
 ): void {
   const current = paintBindings(node, key)
   const wanted = new Map<number, string>()
   paints.forEach((paint, index) => {
-    const id = paint.boundVariables?.color?.id
+    const id = 'boundVariables' in paint ? paint.boundVariables?.color?.id : undefined
     if (id && graph.variables.get(id)?.type === 'COLOR') wanted.set(index, id)
   })
   for (const index of current.keys()) {
@@ -223,16 +247,62 @@ export function setPaintBindings(
   if (current.size > 0 || wanted.size > 0) reconcileVariableLayouts(graph, { subtrees: [node.id] })
 }
 
-/** A paint as Figma reads it, carrying the reference its colour is bound to. */
-export function withPaintBinding<T extends object>(paint: T, variableId: string | undefined): T {
-  return variableId ? { ...paint, boundVariables: { color: variableAlias(variableId) } } : paint
+/** The variables each effect's properties are bound to, by effect index. */
+export function effectBindings(node: SceneNode): Map<number, FigmaEffectBindings> {
+  const bindings = new Map<number, FigmaEffectBindings>()
+  for (const [field, id] of Object.entries(node.boundVariables)) {
+    const target = effectBindingTarget(field)
+    if (!target) continue
+    const effect = bindings.get(target.index) ?? {}
+    effect[target.property] = variableAlias(id)
+    bindings.set(target.index, effect)
+  }
+  return bindings
+}
+
+/**
+ * Binds each effect's properties to the variables its `boundVariables` names, as Figma does when
+ * effects are set, and drops bindings the effects no longer carry. A reference to a missing
+ * variable, one of the wrong type, or a property the effect lacks binds nothing.
+ */
+export function setEffectBindings(
+  graph: SceneGraph,
+  node: SceneNode,
+  effects: readonly FigmaEffect[]
+): void {
+  const current = new Map(
+    Object.entries(node.boundVariables).filter(([field]) => effectBindingTarget(field))
+  )
+  const wanted = new Map<string, string>()
+  effects.forEach((effect, index) => {
+    const bound: FigmaEffectBindings = effect.boundVariables ?? {}
+    for (const property of effectBindableProperties(effect.type)) {
+      const id = bound[property]?.id
+      if (id && graph.variables.get(id)?.type === effectBindingVariableType(property))
+        wanted.set(effectBindingField(index, property), id)
+    }
+  })
+  for (const field of current.keys()) {
+    if (!wanted.has(field)) graph.unbindVariable(node.id, field)
+  }
+  for (const [field, id] of wanted) {
+    if (current.get(field) !== id) graph.bindVariable(node.id, field, id)
+  }
+  if (current.size > 0 || wanted.size > 0) reconcileVariableLayouts(graph, { subtrees: [node.id] })
+}
+
+/** Figma's order for a list of variables: by ID, each once. */
+function byVariableId(ids: readonly string[]): FigmaVariableAlias[] {
+  return uniq(ids)
+    .sort((a, b) => a.localeCompare(b, 'en', { numeric: true }))
+    .map(variableAlias)
 }
 
 type FigmaBoundVariables = Record<string, FigmaVariableAlias | FigmaVariableAlias[]>
 
 /**
  * A layer's bindings as Figma's `boundVariables` reads them: a reference per node field, a list
- * per text style field and per bound paint.
+ * per text style field and per bound paint, and one list of every variable its effects use.
  */
 export function figmaBoundVariables(node: SceneNode): FigmaBoundVariables {
   const result: FigmaBoundVariables = {}
@@ -240,6 +310,9 @@ export function figmaBoundVariables(node: SceneNode): FigmaBoundVariables {
     const name = FIGMA_FIELD_BY_DOCUMENT_FIELD.get(field)
     if (name) result[name] = variableAlias(id)
   }
+  // Figma lists a uniform radius by its corners; a file can bind it as one field.
+  const radius = node.boundVariables.cornerRadius
+  if (radius) for (const corner of CORNER_FIELDS) result[corner] ??= variableAlias(radius)
   if (node.type === 'TEXT') {
     for (const field of TEXT_BINDABLE_FIELDS) {
       const ids = uniq([
@@ -259,5 +332,9 @@ export function figmaBoundVariables(node: SceneNode): FigmaBoundVariables {
       .sort(([a], [b]) => a - b)
       .map(([, id]) => variableAlias(id))
   }
+  const effectIds = Object.entries(node.boundVariables)
+    .filter(([field]) => effectBindingTarget(field))
+    .map(([, id]) => id)
+  if (effectIds.length > 0) result.effects = byVariableId(effectIds)
   return result
 }

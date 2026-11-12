@@ -58,13 +58,13 @@ provideEditor(editor)
     </ToolbarRoot>
 
     <aside class="border-r">
-      <PageListRoot v-slot="{ pages, currentPageId, switchPage }">
+      <PageListRoot v-slot="{ pages, currentPageId, actions }">
         <nav>
           <button
             v-for="page in pages"
             :key="page.id"
             :data-active="page.id === currentPageId"
-            @click="switchPage(page.id)"
+            @click="actions.switch(page.id)"
           >
             {{ page.name }}
           </button>

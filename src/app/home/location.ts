@@ -8,6 +8,8 @@ const homeLocationSchema = v.variant('kind', [
   v.object({ kind: v.literal('recent') }),
   v.object({ kind: v.literal('storage') }),
   v.object({ kind: v.literal('shared') }),
+  /** Documents deleted from the workspaces of the server Home shows, while they can be restored. */
+  v.object({ kind: v.literal('trash') }),
   /** A workspace of the server Home shows. */
   v.object({ kind: v.literal('workspace'), id: v.string() })
 ])
@@ -33,3 +35,6 @@ export const homeLocation = computed<HomeLocation>({
     stored.value = location
   }
 })
+
+/** Whether the person picked a place on Home, rather than Home showing its default. */
+export const homeLocationChosen = computed(() => v.is(homeLocationSchema, stored.value))

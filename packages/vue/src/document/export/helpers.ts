@@ -1,10 +1,16 @@
+import { omit } from 'es-toolkit/object'
+import { isEqual } from 'es-toolkit/predicate'
 import { computed } from 'vue'
 import type { ComputedRef } from 'vue'
 
 import type { Editor } from '@open-pencil/core'
 import { BUILTIN_IO_FORMATS, IORegistry, type BuiltinIOFormatId } from '@open-pencil/core/io'
 import type { ExportSetting, PluginDataEntry } from '@open-pencil/scene-graph'
-import { EXPORT_FORMAT_IDS, type ExportFormatId } from '@open-pencil/scene-graph/export-format'
+import {
+  compactExportSetting,
+  EXPORT_FORMAT_IDS,
+  type ExportFormatId
+} from '@open-pencil/scene-graph/export-format'
 import {
   MAX_EXPORT_SCALE,
   MIN_EXPORT_SCALE,
@@ -31,10 +37,13 @@ export { MIN_EXPORT_SCALE, MAX_EXPORT_SCALE, clampExportScale }
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 
+/** Formats known by a product name rather than their extension. */
+const PRODUCT_LABELS: Partial<Record<ExportFormatId, string>> = { drawio: 'draw.io' }
+
 /** Short, extension-style labels for the node export formats (PNG, PDF, PPTX, …). */
 export const EXPORT_FORMAT_OPTIONS: ExportFormatOption[] = EXPORT_FORMATS.map((id) => ({
   value: id,
-  label: (io.getFormat(id)?.extensions[0] ?? id).toUpperCase()
+  label: PRODUCT_LABELS[id] ?? (io.getFormat(id)?.extensions[0] ?? id).toUpperCase()
 }))
 
 export function createDefaultExportSetting(): ExportSetting {
@@ -84,7 +93,7 @@ export function createExportTargetState(editor: Editor, selectedIds: ComputedRef
     const first = editor.graph.getNode(firstId)?.exportSettings ?? []
     return otherIds.some((id) => {
       const settings = editor.graph.getNode(id)?.exportSettings ?? []
-      return !exportSettingsEqual(first, settings)
+      return !isEqual(first.map(compactExportSetting), settings.map(compactExportSetting))
     })
   })
 
@@ -98,14 +107,6 @@ export function createExportTargetState(editor: Editor, selectedIds: ComputedRef
     activeSettings,
     mixed
   }
-}
-
-function exportSettingsEqual(a: ExportSetting[], b: ExportSetting[]) {
-  if (a.length !== b.length) return false
-  return a.every((setting, index) => {
-    const other = b[index]
-    return setting.scale === other.scale && setting.format === other.format
-  })
 }
 
 function nextExportSetting(settings: ExportSetting[]): ExportSetting {
@@ -169,7 +170,8 @@ export function createExportSettingActions(editor: Editor, targetIds: ComputedRe
   function updateScale(index: number, scale: number) {
     updateEveryTarget(editor, targetIds, 'Update export scale', (settings) =>
       settings.map((setting, i) =>
-        i === index ? { ...setting, scale: clampExportScale(scale) } : setting
+        // A scale replaces a fixed width or height, which the panel has no field for.
+        i === index ? { ...omit(setting, ['size']), scale: clampExportScale(scale) } : setting
       )
     )
   }

@@ -1,6 +1,13 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import {
+  isLibraryCollection,
+  type SceneGraph,
+  type SceneNode,
+  type VariableCollection
+} from '@open-pencil/scene-graph'
+import { collectionAssetKey, styleAssetKey } from '@open-pencil/scene-graph/asset-keys'
 
-import { isValidLibraryAssetKey } from './identity'
+import { assertLibraryAssetKey, isValidLibraryAssetKey } from './identity'
+import type { LibraryAssetDescriptor, LibraryAssetType, LibraryComponentAssetType } from './types'
 
 export interface AssetKeyAssignment {
   nodeId: string
@@ -8,12 +15,17 @@ export interface AssetKeyAssignment {
   existing: boolean
 }
 
+/** The longest key a name gives, leaving room for the `-N` a namesake's key takes. */
+const MAX_NAME_KEY_LENGTH = 240
+
+/** A valid asset key from a component's name: it starts with a letter or digit. */
 function normalizeAssetKey(name: string): string {
   const normalized = name
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9._:/-]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+    .replace(/^[^a-z0-9]+|-+$/g, '')
+    .slice(0, MAX_NAME_KEY_LENGTH)
   return normalized || 'component'
 }
 
@@ -30,25 +42,55 @@ export function publishableLibraryRoots(
   )
 }
 
-function publishedRoots(graph: SceneGraph, assetNodeIds?: string[]): SceneNode[] {
-  if (!assetNodeIds) return publishableLibraryRoots(graph)
-  const selected = new Set(assetNodeIds)
+/** The document's own shared styles; a style a library brought in stays that library's. */
+export function publishableLibraryStyles(graph: SceneGraph): SceneNode[] {
+  return [...graph.getAllNodes()].filter(
+    // A style is known by its source ID, as `getSharedStyles` lists them; layers link it by that.
+    (node) => node.sharedStyleType !== null && !!node.source.id && !node.librarySource?.readOnly
+  )
+}
+
+/** The document's own variable collections; one a library brought in stays that library's. */
+export function publishableLibraryCollections(graph: SceneGraph): VariableCollection[] {
+  return [...graph.variableCollections.values()].filter(
+    (collection) => !isLibraryCollection(collection)
+  )
+}
+
+function publishedRoots(graph: SceneGraph, assetIds?: string[]): SceneNode[] {
+  if (!assetIds) return publishableLibraryRoots(graph)
+  const selected = new Set(assetIds)
   return publishableLibraryRoots(graph).filter((node) => selected.has(node.id))
 }
 
+/**
+ * The asset key a component already publishes under: its own key, or else the library key, publish
+ * ID or file ID it was read with — the identity a revision gives the asset.
+ */
+export function existingAssetKey(node: SceneNode): string | null {
+  return node.componentKey ?? node.sourceLibraryKey ?? node.publishId ?? node.source.id
+}
+
+/**
+ * Gives each published component without an asset key one made from its name, distinct from every
+ * key the document already uses; a component keeps the identity it already publishes under.
+ */
 export function ensureLibraryAssetKeys(
   graph: SceneGraph,
-  assetNodeIds?: string[]
+  assetIds?: string[]
 ): AssetKeyAssignment[] {
-  const roots = publishedRoots(graph, assetNodeIds)
+  const roots = publishedRoots(graph, assetIds)
   const used = new Set(
-    [...graph.getAllNodes()].flatMap((node) =>
-      node.componentKey && isValidLibraryAssetKey(node.componentKey) ? [node.componentKey] : []
-    )
+    [...graph.getAllNodes()].flatMap((node) => {
+      const key =
+        node.type === 'COMPONENT' || node.type === 'COMPONENT_SET' ? existingAssetKey(node) : null
+      return key && isValidLibraryAssetKey(key) ? [key] : []
+    })
   )
   return roots.map((node) => {
-    if (node.componentKey && isValidLibraryAssetKey(node.componentKey)) {
-      return { nodeId: node.id, assetKey: node.componentKey, existing: true }
+    const existing = existingAssetKey(node)
+    if (existing && isValidLibraryAssetKey(existing)) {
+      return { nodeId: node.id, assetKey: existing, existing: true }
     }
     const base = normalizeAssetKey(node.name)
     let assetKey = base
@@ -70,4 +112,63 @@ export function duplicateLibraryAssetKeys(graph: SceneGraph): Map<string, string
     byKey.set(node.componentKey, ids)
   }
   return new Map([...byKey].filter(([, ids]) => ids.length > 1))
+}
+
+/** The key a component, set, or style publishes under. */
+export function libraryAssetKey(node: SceneNode): string {
+  if (node.sharedStyleType !== null) return styleAssetKey(node)
+  const key = existingAssetKey(node)
+  if (!key) throw new Error(`Component ${node.name} has no stable library asset key`)
+  assertLibraryAssetKey(key)
+  return key
+}
+
+/** What a document can publish, as the publish dialog lists it before any revision exists. */
+export type PublishableLibraryAsset = Omit<LibraryAssetDescriptor, 'contentHash' | 'thumbnail'>
+
+function libraryLayerAssetType(node: SceneNode): LibraryAssetType {
+  if (node.sharedStyleType !== null) return 'STYLE'
+  return node.type === 'COMPONENT_SET' ? 'COMPONENT_SET' : 'COMPONENT'
+}
+
+/** What a library asset of a component, set, or style says of it, but for its content. */
+export function libraryLayerAsset(node: SceneNode): PublishableLibraryAsset {
+  return {
+    key: libraryAssetKey(node),
+    type: libraryLayerAssetType(node),
+    name: node.name,
+    description: node.symbolDescription,
+    sourceId: node.id
+  }
+}
+
+/** What a library asset of a variable collection says of it, but for its content. */
+export function libraryCollectionAsset(collection: VariableCollection): PublishableLibraryAsset {
+  return {
+    key: collectionAssetKey(collection),
+    type: 'VARIABLE_COLLECTION',
+    name: collection.name,
+    description: '',
+    sourceId: collection.id
+  }
+}
+
+/**
+ * Every component, set, style, and collection the document can publish, under the keys a
+ * revision gives them. Components without a key get one first (`ensureLibraryAssetKeys`).
+ */
+export function publishableLibraryAssets(graph: SceneGraph): PublishableLibraryAsset[] {
+  return [
+    ...[...publishableLibraryRoots(graph), ...publishableLibraryStyles(graph)].map(
+      libraryLayerAsset
+    ),
+    ...publishableLibraryCollections(graph).map(libraryCollectionAsset)
+  ]
+}
+
+/** An asset a document inserts as instances: a component or a component set. */
+export function isLibraryComponentAsset<T extends Pick<LibraryAssetDescriptor, 'type'>>(
+  asset: T
+): asset is T & { type: LibraryComponentAssetType } {
+  return asset.type === 'COMPONENT' || asset.type === 'COMPONENT_SET'
 }

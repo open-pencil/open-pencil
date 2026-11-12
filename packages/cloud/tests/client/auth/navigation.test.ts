@@ -8,14 +8,13 @@ const discovery: CloudDiscovery = {
   deployment: 'self-hosted',
   apiURL: 'https://cloud.example/api',
   authURL: 'https://cloud.example/api/auth',
-  appURL: 'https://editor.example',
+  localEditor: true,
   authentication: { socialProviders: [], enterpriseSSO: false, enrollmentMode: 'open' },
   capabilities: { documents: true, workspaces: true, collaboration: true }
 }
 
 test('email-only instance owns sign-in and preserves an opaque invitation continuation', () => {
-  const target =
-    'https://editor.example/cloud/invitations/id?continuation=opaque&server=https%3A%2F%2Fcloud.example'
+  const target = 'https://cloud.example/invitations/id?continuation=opaque'
   const login = new URL(cloudSignInURL(discovery, target))
   expect(login.origin).toBe('https://cloud.example')
   expect(login.pathname).toBe('/auth/sign-in')
@@ -24,22 +23,28 @@ test('email-only instance owns sign-in and preserves an opaque invitation contin
   expect(cloudEditorReturnURL(discovery, callback.searchParams.get('editor') ?? '')).toBe(target)
 })
 
+test('the sign-up page comes back to the editor as sign-in does', () => {
+  const signUp = new URL(cloudSignInURL(discovery, 'https://cloud.example/', undefined, 'sign-up'))
+  expect(signUp.pathname).toBe('/auth/sign-up')
+  const callback = new URL(signUp.searchParams.get('redirect') ?? '', signUp.origin)
+  expect(callback.pathname).toBe('/auth/return')
+  expect(callback.searchParams.get('editor')).toBe('https://cloud.example/')
+})
+
 test('return navigation rejects foreign origins and userinfo and strips fragment secrets', () => {
   for (const value of [
     'https://evil.example',
-    'https://editor.example.evil.example',
-    'https://user:secret@editor.example',
+    'https://editor.example',
+    'https://cloud.example.evil.example',
+    'https://user:secret@cloud.example',
     // eslint-disable-next-line no-script-url -- Reject script URLs at the untrusted navigation boundary.
     'javascript:alert(1)'
   ]) {
     expect(() => cloudEditorReturnURL(discovery, value)).toThrow()
   }
-  expect(cloudEditorReturnURL(discovery, 'https://editor.example/storage#secret')).toBe(
-    'https://editor.example/storage'
+  expect(cloudEditorReturnURL(discovery, 'https://cloud.example/storage#secret')).toBe(
+    'https://cloud.example/storage'
   )
-  expect(() =>
-    cloudSignInURL({ ...discovery, appURL: undefined }, 'https://editor.example')
-  ).toThrow()
 })
 
 test('a chosen provider rides along only when the server offers it', () => {
@@ -47,14 +52,14 @@ test('a chosen provider rides along only when the server offers it', () => {
     ...discovery,
     authentication: { ...discovery.authentication, socialProviders: ['google' as const] }
   }
-  const google = new URL(cloudSignInURL(social, 'https://editor.example/', 'google'))
+  const google = new URL(cloudSignInURL(social, 'https://cloud.example/', 'google'))
   expect(google.searchParams.get('provider')).toBe('google')
-  const apple = new URL(cloudSignInURL(social, 'https://editor.example/', 'apple'))
+  const apple = new URL(cloudSignInURL(social, 'https://cloud.example/', 'apple'))
   expect(apple.searchParams.has('provider')).toBe(false)
 })
 
 test('authentication continuation stays on the issuing origin', () => {
-  expect(cloudRedirectPath('/cloud/device?user_code=ABCD')).toBe('/cloud/device?user_code=ABCD')
+  expect(cloudRedirectPath('/auth/device?user_code=ABCD')).toBe('/auth/device?user_code=ABCD')
   for (const input of [
     '//evil.example',
     '/\\evil.example',

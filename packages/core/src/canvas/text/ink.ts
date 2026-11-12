@@ -1,146 +1,156 @@
-import { geometryCommandCoordCount } from '@open-pencil/scene-graph/geometry'
+import type { DerivedTextGlyph, SceneNode } from '@open-pencil/scene-graph'
+import {
+  geometryBlobBounds,
+  unionVisualBounds,
+  type VisualBounds
+} from '@open-pencil/scene-graph/geometry'
 
-import type { OutlineCommand } from '#core/text/opentype'
+import type { SkiaRenderer } from '#core/canvas/renderer'
+import { decorationInk, laidOutDecoratedGlyphs } from '#core/canvas/text/decorations'
+import { hasRotatedDerivedGlyphs, snapDerivedGlyphBaseline } from '#core/canvas/text/derived'
+import { emojiSquare } from '#core/canvas/text/emoji'
+import type { TextLayout } from '#core/canvas/text/layout'
+import { drawnBaseline } from '#core/canvas/text/layout/lines'
+import { laidOutGlyphs } from '#core/canvas/text/placed'
+import { shownText } from '#core/text/case'
+import { characterFamily } from '#core/text/character-face'
+import {
+  hasDecoration,
+  savedTextDecorationRects,
+  textDecorationRects
+} from '#core/text/decorations'
+import { EMOJI_METRICS_FAMILY, mayHoldEmoji } from '#core/text/emoji'
+import { nextGraphemeBoundary } from '#core/text/graphemes'
+import { COMBINING_KEYCAP, keycapFrameBounds } from '#core/text/keycap'
 
-/** Straight pieces a curve is followed in: a fraction of a pixel off at display sizes. */
-const CURVE_STEPS = 24
-
-/** Where a glyph's ink crosses a horizontal band: its leftmost and rightmost x there. */
-export type InkSpan = [number, number]
-
-/** Collects the x where outline edges run through the band `[top, bottom]`. */
-class BandInk {
-  private left = Infinity
-  private right = -Infinity
-  private x = 0
-  private y = 0
-
-  constructor(
-    private readonly top: number,
-    private readonly bottom: number
-  ) {}
-
-  moveTo(x: number, y: number): void {
-    this.x = x
-    this.y = y
-  }
-
-  lineTo(x: number, y: number): void {
-    const { x: x0, y: y0, top, bottom } = this
-    if (y0 >= top && y0 <= bottom) this.include(x0)
-    if (y >= top && y <= bottom) this.include(x)
-    for (const edge of [top, bottom]) {
-      if ((y0 - edge) * (y - edge) < 0) this.include(x0 + ((edge - y0) / (y - y0)) * (x - x0))
-    }
-    this.x = x
-    this.y = y
-  }
-
-  quadTo(x1: number, y1: number, x: number, y: number): void {
-    const { x: x0, y: y0 } = this
-    for (let step = 1; step <= CURVE_STEPS; step++) {
-      const t = step / CURVE_STEPS
-      const u = 1 - t
-      this.lineTo(u * u * x0 + 2 * u * t * x1 + t * t * x, u * u * y0 + 2 * u * t * y1 + t * t * y)
-    }
-  }
-
-  cubicTo(x1: number, y1: number, x2: number, y2: number, x: number, y: number): void {
-    const { x: x0, y: y0 } = this
-    for (let step = 1; step <= CURVE_STEPS; step++) {
-      const t = step / CURVE_STEPS
-      const u = 1 - t
-      const a = u * u * u
-      const b = 3 * u * u * t
-      const c = 3 * u * t * t
-      const d = t * t * t
-      this.lineTo(a * x0 + b * x1 + c * x2 + d * x, a * y0 + b * y1 + c * y2 + d * y)
-    }
-  }
-
-  span(): InkSpan | null {
-    return this.left <= this.right ? [this.left, this.right] : null
-  }
-
-  private include(x: number): void {
-    this.left = Math.min(this.left, x)
-    this.right = Math.max(this.right, x)
+function moved(bounds: VisualBounds, x: number, y: number): VisualBounds {
+  return {
+    minX: bounds.minX + x,
+    minY: bounds.minY + y,
+    maxX: bounds.maxX + x,
+    maxY: bounds.maxY + y
   }
 }
 
+const savedGlyphInks = new WeakMap<readonly DerivedTextGlyph[], VisualBounds | null>()
+
 /**
- * The ink of a font outline in the band, given in pixels below the baseline as opentype.js
- * draws it, for a glyph at `x`, `y`.
+ * A saved glyph's outline where `applyGlyphTransform` and the em scale draw it. Each corner is
+ * mapped on its own, so a glyph turned along a path or flipped by a negative scale keeps its
+ * bounds the right way round.
  */
-export function outlineInk(
-  commands: readonly OutlineCommand[],
-  x: number,
-  y: number,
-  top: number,
-  bottom: number
-): InkSpan | null {
-  const ink = new BandInk(top, bottom)
-  let startX = 0
-  let startY = 0
-  for (const command of commands) {
-    const px = x + (command.x ?? 0)
-    const py = y + (command.y ?? 0)
-    if (command.type === 'M') {
-      ink.moveTo(px, py)
-      startX = px
-      startY = py
-    } else if (command.type === 'L') ink.lineTo(px, py)
-    else if (command.type === 'Q') ink.quadTo(x + (command.x1 ?? 0), y + (command.y1 ?? 0), px, py)
-    else if (command.type === 'C') {
-      ink.cubicTo(
-        x + (command.x1 ?? 0),
-        y + (command.y1 ?? 0),
-        x + (command.x2 ?? 0),
-        y + (command.y2 ?? 0),
-        px,
-        py
-      )
-    } else if (command.type === 'Z') ink.lineTo(startX, startY)
+function placedGlyphInk(glyph: DerivedTextGlyph, baseline: number): VisualBounds | null {
+  const outline = geometryBlobBounds([glyph])
+  if (!outline) {
+    return null
   }
-  return ink.span()
+  const angle = -(glyph.rotation ?? 0)
+  const cos = Math.cos(angle)
+  const sin = Math.sin(angle)
+  const scaleX = glyph.scaleX ?? 1
+  const scaleY = glyph.scaleY ?? 1
+  let ink: VisualBounds | null = null
+  for (const emX of [outline.x, outline.x + outline.width]) {
+    for (const emY of [outline.y, outline.y + outline.height]) {
+      const x = emX * glyph.fontSize
+      const y = -emY * glyph.fontSize
+      const placedX = glyph.x + (x * cos - y * sin) * scaleX
+      const placedY = baseline + (x * sin + y * cos) * scaleY
+      ink = unionVisualBounds(ink, { minX: placedX, minY: placedY, maxX: placedX, maxY: placedY })
+    }
+  }
+  return ink
+}
+
+function savedOutlinesInk(
+  glyphs: readonly DerivedTextGlyph[],
+  snapBaselines: boolean
+): VisualBounds | null {
+  if (savedGlyphInks.has(glyphs)) {
+    return savedGlyphInks.get(glyphs) ?? null
+  }
+  let ink: VisualBounds | null = null
+  for (const glyph of glyphs) {
+    const baseline = snapBaselines ? snapDerivedGlyphBaseline(glyph.y) : glyph.y
+    ink = unionVisualBounds(ink, placedGlyphInk(glyph, baseline))
+  }
+  savedGlyphInks.set(glyphs, ink)
+  return ink
 }
 
 /**
- * The ink of a saved glyph in the band: its outline is in ems with y up, drawn at `size` and
- * stretched by `scaleX` and `scaleY`.
+ * Where a text drawn from its saved glyphs draws ink, as `drawDerivedText` draws it, in its own
+ * axes: each outline where it is placed, and the underline and strikethrough along straight lines.
  */
-export function savedGlyphInk(
-  blob: Uint8Array,
-  glyph: { x: number; y: number; fontSize: number; scaleX?: number; scaleY?: number },
-  top: number,
-  bottom: number
-): InkSpan | null {
-  const ink = new BandInk(top, bottom)
-  const view = new DataView(blob.buffer, blob.byteOffset, blob.byteLength)
-  const sx = glyph.fontSize * (glyph.scaleX ?? 1)
-  const sy = glyph.fontSize * (glyph.scaleY ?? 1)
-  const points: number[] = []
-  let startX = 0
-  let startY = 0
-  let offset = 0
-  while (offset < blob.length) {
-    const command = blob[offset++]
-    const count = geometryCommandCoordCount(command)
-    if (count === null || offset + count * 8 > blob.length) break
-    points.length = 0
-    for (let index = 0; index < count; index++) {
-      points.push(glyph.x + view.getFloat32(offset, true) * sx)
-      points.push(glyph.y - view.getFloat32(offset + 4, true) * sy)
-      offset += 8
-    }
-    if (command === 0) ink.lineTo(startX, startY)
-    else if (command === 1) {
-      ink.moveTo(points[0], points[1])
-      startX = points[0]
-      startY = points[1]
-    } else if (command === 2) ink.lineTo(points[0], points[1])
-    else if (command === 3) ink.quadTo(points[0], points[1], points[2], points[3])
-    else ink.cubicTo(points[0], points[1], points[2], points[3], points[4], points[5])
+export function savedTextInk(
+  r: Pick<SkiaRenderer, 'textCaches' | 'fontGeneration'>,
+  node: SceneNode
+): VisualBounds | null {
+  const glyphs = node.derivedTextGlyphs ?? []
+  const straightLines = !hasRotatedDerivedGlyphs(node)
+  let ink = savedOutlinesInk(glyphs, straightLines)
+  if (!straightLines || !hasDecoration(node)) {
+    return ink
   }
-  return ink.span()
+  const rects = savedTextDecorationRects(
+    r.textCaches.derivedDecorations,
+    node,
+    glyphs,
+    r.fontGeneration
+  )
+  for (const rect of rects) {
+    ink = unionVisualBounds(ink, decorationInk(rect))
+  }
+  return ink
+}
+
+/**
+ * Where a laid-out text's glyphs draw ink when drawn `offsetY` below its top, in its own axes:
+ * each glyph's outline bounds on the whole pixel its baseline is drawn on, with list markers,
+ * underlines, strikethroughs, keycap frames, and emoji squares, as Figma's render bounds take a
+ * text (Figma desktop 126). `null` when it draws nothing, and `undefined` when a glyph's font, and
+ * so its outline, is not known.
+ */
+export function textInkBounds(
+  node: SceneNode,
+  layout: TextLayout,
+  offsetY: number
+): VisualBounds | null | undefined {
+  const text = shownText(node)
+  const glyphs = laidOutGlyphs(node, layout, text, offsetY)
+  // Most text holds neither, and asking each glyph's face would cost more than its outline.
+  const keycaps = text.includes(COMBINING_KEYCAP)
+  const emoji = mayHoldEmoji(text)
+  if (!glyphs) return undefined
+  let ink: VisualBounds | null = null
+  const add = (bounds: VisualBounds | null) => {
+    if (bounds) ink = unionVisualBounds(ink, bounds)
+  }
+  // A sequence the font does not join is several glyphs; its emoji draws once, at its first.
+  let emojiUntil = 0
+  for (const glyph of glyphs) {
+    if (!glyph.source) return undefined
+    const x = glyph.x
+    const y = drawnBaseline(glyph.y) + glyph.markShift
+    const character = glyph.firstCharacter
+    const outline = glyph.source.extents(glyph.id, glyph.fontSize)
+    if (outline) add(moved(outline, x, y))
+    if (character === undefined) continue
+    // A keycap's frame and an emoji's image draw where its glyph stands, as their drawing does.
+    if (keycaps && text[character] === COMBINING_KEYCAP) {
+      add(moved(keycapFrameBounds(glyph.fontSize), x, y))
+    } else if (
+      emoji &&
+      character >= emojiUntil &&
+      characterFamily(node, text, character) === EMOJI_METRICS_FAMILY
+    ) {
+      emojiUntil = nextGraphemeBoundary(text, character)
+      add(moved(emojiSquare(glyph.fontSize), x, y))
+    }
+  }
+  if (!hasDecoration(node)) return ink
+  for (const rect of textDecorationRects(node, laidOutDecoratedGlyphs(glyphs))) {
+    add(decorationInk(rect))
+  }
+  return ink
 }

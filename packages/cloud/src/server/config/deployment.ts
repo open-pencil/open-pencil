@@ -2,13 +2,12 @@ import { staticEntitlementsFromTOML } from '#cloud/server/policy/static'
 import { parse as parseTOML } from 'smol-toml'
 import * as v from 'valibot'
 
+import { parseCloudServerConfig, type CloudServerConfig } from './schema'
 import {
   cloudDeploymentConfigSchema,
-  parseCloudServerConfig,
   type CloudDeploymentConfig,
-  type CloudSecretReference,
-  type CloudServerConfig
-} from './schema'
+  type CloudSecretReference
+} from './toml/schema'
 
 export type CloudEnvironment = Readonly<Record<string, string | undefined>>
 
@@ -38,6 +37,11 @@ function optionalSecret(
 
 function staticEntitlements(config: CloudDeploymentConfig) {
   if (config.entitlements?.source !== 'static') return undefined
+  return staticEntitlementsFromTOML(config.entitlements)
+}
+
+function defaultEntitlements(config: CloudDeploymentConfig) {
+  if (config.entitlements?.source !== 'database') return undefined
   return staticEntitlementsFromTOML(config.entitlements)
 }
 
@@ -83,29 +87,56 @@ function workerConfig(config: CloudDeploymentConfig) {
     cleanupBatchSize: cleanup?.batch_size,
     cleanupIntervalMs: cleanup?.interval_ms,
     cleanupLeaseDurationMs: cleanup?.lease_ms,
-    documentRetentionMs: cleanup ? cleanup.document_retention_days * 86_400_000 : undefined
+    documentRetentionMs: config.documents.retention_days * 86_400_000,
+    documentPurgeGraceMs: config.documents.purge_grace_days * 86_400_000
   }
 }
 
 function serviceConfig(config: CloudDeploymentConfig, environment: CloudEnvironment) {
   return {
-    aiEndpoint: config.ai?.endpoint,
-    aiSigningKey: config.ai ? requiredSecret(environment, config.ai.signing_key) : undefined,
-    aiTokenLifetimeSeconds: config.ai ? config.ai.token_lifetime_minutes * 60 : undefined,
-    billingPortalURL: config.billing?.portal_url,
+    servicesEndpoint: config.services?.endpoint,
+    servicesSigningKey: config.services
+      ? requiredSecret(environment, config.services.signing_key)
+      : undefined,
+    servicesTokenLifetimeSeconds: config.services
+      ? config.services.token_lifetime_minutes * 60
+      : undefined,
+    billingEndpoint: config.billing?.endpoint,
     internalServiceToken: config.internal_api
       ? requiredSecret(environment, config.internal_api.service_token)
       : undefined
   }
 }
 
-function technicalLimits(config: CloudDeploymentConfig) {
-  const limits = config.technical_limits
-  if (!limits) return undefined
+function legalConfig(config: CloudDeploymentConfig) {
+  const legal = config.legal
+  if (!legal) return undefined
   return {
-    maximumUploadBytes: limits.maximum_upload_bytes,
-    maximumCollaborationMessageBytes: limits.maximum_collaboration_message_bytes,
-    maximumConnectionsPerRoom: limits.maximum_connections_per_room
+    termsURL: legal.terms_url,
+    privacyURL: legal.privacy_url,
+    termsVersion: legal.terms_version,
+    requireAcceptance: legal.require_acceptance,
+    abuseEmail: legal.abuse_email,
+    minimumAge: legal.minimum_age
+  }
+}
+
+function errorTrackingConfig(config: CloudDeploymentConfig, environment: CloudEnvironment) {
+  const tracking = config.error_tracking
+  if (!tracking) return undefined
+  return {
+    provider: tracking.provider,
+    host: tracking.host,
+    projectAPIKey: configuredText(environment, tracking.project_api_key)
+  }
+}
+
+/** Hard limits, whatever a plan allows; each lives in the section it limits. */
+function technicalLimits(config: CloudDeploymentConfig) {
+  return {
+    maximumUploadBytes: config.object_storage.maximum_upload_bytes,
+    maximumCollaborationMessageBytes: config.collaboration.maximum_message_bytes,
+    maximumConnectionsPerRoom: config.collaboration.maximum_connections_per_room
   }
 }
 
@@ -117,32 +148,29 @@ export function parseCloudDeploymentConfig(
   return parseCloudServerConfig({
     deployment: config.deployment.mode,
     publicURL: config.deployment.public_url,
-    appURL: config.deployment.app_url,
     indexingPolicy: config.deployment.indexing,
     trustedOrigins: config.deployment.trusted_origins,
+    localEditor: config.deployment.local_editor,
     listingMinimumEditorVersion: config.deployment.listing?.minimum_editor_version,
     databaseURL: requiredSecret(environment, config.database.url),
     authSecret: requiredSecret(environment, config.authentication.secret),
-    enrollmentMode: config.authentication.enrollment_mode,
-    enrollmentAdminNotificationEmails: config.authentication.admin_notification_emails,
-    deploymentAdminUserIds: config.authentication.admin_user_ids,
+    enrollmentMode: config.authentication.enrollment.mode,
+    enrollmentAdminNotificationEmails: config.authentication.enrollment.notification_emails,
     emailPasswordEnabled: config.authentication.email_password.enabled,
     emailPasswordSignUpEnabled: config.authentication.email_password.sign_up,
     emailPasswordMinimumLength: config.authentication.email_password.minimum_password_length,
     emailPasswordMaximumLength: config.authentication.email_password.maximum_password_length,
     emailVerificationExpiresIn:
-      config.authentication.email_password.verification_link_expires_minutes * 60,
+      config.authentication.email_password.verification_link_lifetime_minutes * 60,
     passwordResetExpiresIn:
-      config.authentication.email_password.password_reset_link_expires_minutes * 60,
+      config.authentication.email_password.password_reset_link_lifetime_minutes * 60,
     compromisedPasswordCheck: config.authentication.email_password.compromised_password_check,
-    deploymentAdminMFARequired: config.authentication.mfa.deployment_admin_required,
-    totpEnabled: config.authentication.mfa.totp_enabled,
-    passkeysEnabled: config.authentication.mfa.passkeys_enabled,
-    recoveryCodesEnabled: config.authentication.mfa.recovery_codes_enabled,
-    mfaTrustedDeviceDays: config.authentication.mfa.trusted_device_days,
-    passkeyRPID: config.authentication.passkeys?.rp_id,
-    passkeyRPName: config.authentication.passkeys?.rp_name,
-    passkeyOrigin: config.authentication.passkeys?.origin,
+    deploymentAdminMFARequired: config.authentication.mfa.required_for_admins,
+    totpEnabled: config.authentication.mfa.totp,
+    recoveryCodesEnabled: config.authentication.mfa.recovery_codes,
+    mfaTrustedDeviceDays: config.authentication.mfa.trusted_device_lifetime_days,
+    passkeysEnabled: config.authentication.passkeys.enabled,
+    passkeyRPName: config.authentication.passkeys.rp_name,
     captchaProvider: config.authentication.captcha?.provider,
     captchaSiteKey: config.authentication.captcha?.site_key,
     captchaSecretKey: config.authentication.captcha
@@ -165,11 +193,15 @@ export function parseCloudDeploymentConfig(
     s3ChecksumVerification: config.object_storage.checksum_verification,
     s3ServerSideEncryption: config.object_storage.server_side_encryption,
     s3KmsKeyId: config.object_storage.kms_key_id,
-    relayURL: config.collaboration?.relay_url,
+    s3DeletedPrefix: config.object_storage.deleted_prefix,
+    relayURL: config.collaboration.relay_url,
     staticEntitlements: staticEntitlements(config),
+    defaultEntitlements: defaultEntitlements(config),
     ...emailConfig(config, environment),
     ...workerConfig(config),
     ...serviceConfig(config, environment),
+    legal: legalConfig(config),
+    errorTracking: errorTrackingConfig(config, environment),
     technicalLimits: technicalLimits(config)
   })
 }

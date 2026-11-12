@@ -1,6 +1,6 @@
 # Coding agents
 
-The OpenPencil desktop app can use a coding agent you already have — Claude Code, Codex, Gemini CLI, or [Pi](#pi) — as its design agent. The agent runs on your computer with your own subscription and chooses its own model; OpenPencil starts it when you send a message, through the [Agent Client Protocol](https://agentclientprotocol.com/) or, for Pi, its Harness companion, and gives it the canvas tools through OpenPencil's local [MCP server](./mcp-server).
+The OpenPencil desktop app can use a coding agent you already have — Claude Code, Codex, [Antigravity CLI](#antigravity), Gemini CLI, [Cursor](#cursor), [Grok Build](#grok-build), or [Pi](#pi) — as its design agent. The agent runs on your computer with your own subscription and chooses its own model; OpenPencil starts it when you send a message, through the [Agent Client Protocol](https://agentclientprotocol.com/) or, for Pi, its Harness companion, and gives it the canvas tools through OpenPencil's local [MCP server](./mcp-server).
 
 Coding agents need the desktop app; the browser cannot start programs on your computer. They take only the **Design agent** role. Visual review, plan reviews, and fast background work need an API model, which guided setup can add for you.
 
@@ -16,7 +16,7 @@ Coding agents need the desktop app; the browser cannot start programs on your co
 
 4. The agent signed in to your account. Pi can use an AI Gateway key instead (see [Pi](#pi)).
 
-Then open **Settings → AI & agents → Run guided setup**, choose the agent under **Coding agents on this computer**, and check that both the agent and the MCP server show as installed. **Install adapter** runs the npm command shown under it. Once the ACP program is installed, guided setup asks the agent which account it uses and shows what it reports, such as the plan and email; when it is not signed in, **Sign in** opens the agent's own login in your browser. For a signed-in agent, **OpenPencil tools** shows whether a session reaches OpenPencil's MCP server, checked the way a chat starts, without sending a message. **Check again** repeats the check after you install something or sign in elsewhere.
+Then open **Settings → Models → Run guided setup**, choose the agent under **Coding agents on this computer**, and check that both the agent and the MCP server show as installed. **Install adapter** runs the npm command shown under it. Once the ACP program is installed, guided setup asks the agent which account it uses and shows what it reports, such as the plan and email; when it is not signed in, **Sign in** opens the agent's own login in your browser. For a signed-in agent, **OpenPencil tools** shows whether a session reaches OpenPencil's MCP server, checked the way a chat starts, without sending a message. **Check again** repeats the check after you install something or sign in elsewhere.
 
 ### Let your agent set itself up
 
@@ -40,13 +40,55 @@ Sign in with ChatGPT from guided setup, or with `codex login`; both use the same
 
 An older adapter from the `@zed-industries/codex-acp` package also installs a `codex-acp` program. It neither reports nor signs in to your account, so guided setup asks you to install the supported one and to remove the older one or put it later on your `PATH`.
 
+## Antigravity CLI {#antigravity}
+
+Antigravity CLI is Google's command-line agent for Gemini. It speaks ACP itself through `agy acp`, so there is no separate program. Install it from the [Antigravity site](https://antigravity.google):
+
+```sh
+curl -fsSL https://antigravity.google/cli/install.sh | bash
+```
+
+On Windows, run this in PowerShell instead:
+
+```powershell
+irm https://antigravity.google/cli/install.ps1 | iex
+```
+
+Run `agy` once and choose a sign-in method. Antigravity CLI does not report the account it uses, so guided setup shows it as installed without a plan or email.
+
+Antigravity CLI loads MCP tools only up to a total size and holds the rest back, telling its model to call them through a `call_mcp_tool` tool it does not provide over ACP. For Antigravity chats, OpenPencil's MCP server leaves `document_id` and `page_id` out of its tool schemas so that every tool fits, and provides `call_mcp_tool` in case one does not. The agent works on the chat's document. The model sometimes asks to list its own MCP folder, `~/.gemini/antigravity-cli/mcp`, before it starts; declining ends its turn.
+
 ## Gemini CLI
+
+Google no longer lets individual Google accounts sign in to Gemini CLI; use [Antigravity CLI](#antigravity) with those.
 
 ```sh
 npm install -g @google/gemini-cli
 ```
 
 Gemini CLI speaks ACP itself, so there is no separate program. Run `gemini` once and choose a sign-in method.
+
+## Cursor
+
+Cursor's CLI speaks ACP itself, so there is no separate program. Install it from the [CLI installation guide](https://cursor.com/docs/cli/installation):
+
+```sh
+curl https://cursor.com/install -fsS | bash
+```
+
+On Windows, use the PowerShell command on that page. The installer adds two commands for the same program, `agent` and `cursor-agent`. OpenPencil starts `cursor-agent`, because other coding agents, such as Grok Build, install an `agent` command of their own.
+
+Run `cursor-agent login` once to sign in.
+
+## Grok Build
+
+Grok Build speaks ACP itself, so there is no separate program. Install it from the [Grok Build guide](https://docs.x.ai/build/overview):
+
+```sh
+curl -fsSL https://x.ai/cli/install.sh | bash
+```
+
+On Windows, use the PowerShell command on that page. OpenPencil starts it as `grok agent stdio`. Run `grok login` once to sign in.
 
 ## Pi
 

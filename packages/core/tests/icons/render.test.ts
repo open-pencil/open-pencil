@@ -1,27 +1,36 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import { SkiaRenderer } from '@open-pencil/core/canvas'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
+import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 import { readIcon, readIconTint } from '@open-pencil/scene-graph/icons'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
+import { buildIconData } from '#core/icons/artwork'
 import { iconColor, placeIcon, recolorIcon, swapIcon } from '#core/icons/render'
-import { buildIconData } from '#core/icons/svg'
 
 const BLACK = parseColor('#000000')
 
 function insertIcon(graph: SceneGraph, body: string, viewBox = 24, size = 24) {
-  const icon = buildIconData({ body }, 'test', 'icon', viewBox, viewBox, size)
+  const icon = buildIconData({ body, width: viewBox, height: viewBox }, 'test', 'icon', size)
   const page = graph.getPages()[0]
   const frame = placeIcon(graph, page.id, icon, { size, color: BLACK })
   return { page, frame, vectors: graph.getChildren(frame.id) }
 }
 
 describe('placeIcon', () => {
+  test('leaves out shapes the SVG hides', () => {
+    const body = (hidden: string, none: string) =>
+      `<g ${hidden}><path d="M2 2h8v8H2z"/></g><path ${none} d="M14 2h8v8h-8z"/><path d="M2 14h8v8H2z"/>`
+    expect(insertIcon(new SceneGraph(), body('', '')).vectors).toHaveLength(3)
+    expect(
+      insertIcon(new SceneGraph(), body('visibility="hidden"', 'display="none"')).vectors
+    ).toHaveLength(1)
+  })
+
   test('keeps round stroke caps and joins after a .fig round trip', async () => {
     const graph = new SceneGraph()
     insertIcon(
@@ -51,7 +60,7 @@ describe('placeIcon', () => {
       '<path fill="currentColor" d="M0 0h24v24H0M6 6v12h12V6z"/>'
     )
 
-    const ck = await initCanvasKit()
+    const ck = await getCanvasKit()
     const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
     try {
       const png = expectDefined(
@@ -83,6 +92,19 @@ describe('placeIcon', () => {
     } finally {
       renderer.destroy()
     }
+  })
+
+  test('paints gradient fills and strokes as gradients, kept out of the icon color', () => {
+    const { vectors } = insertIcon(
+      new SceneGraph(),
+      '<defs><linearGradient id="a"><stop offset="0" stop-color="#f00"/><stop offset="1" stop-color="#00f"/></linearGradient></defs>' +
+        '<path fill="url(#a)" stroke="url(#a)" stroke-width="2" stroke-linecap="round" d="M2 2h20v20H2z"/>'
+    )
+    const vector = expectDefined(vectors[0], 'vector')
+
+    expect(vector.fills[0]?.type).toBe('GRADIENT_LINEAR')
+    expect(vector.strokes[0]).toMatchObject({ type: 'GRADIENT_LINEAR', weight: 2, cap: 'ROUND' })
+    expect(readIconTint(vector)).toEqual([])
   })
 })
 
@@ -119,11 +141,9 @@ describe('icon identity', () => {
     const green = parseColor('#00ff00')
     recolorIcon(graph, frame.id, green)
     const other = buildIconData(
-      { body: '<path fill="currentColor" d="M0 0h24v24H0z"/>' },
+      { body: '<path fill="currentColor" d="M0 0h24v24H0z"/>', width: 24, height: 24 },
       'test',
       'square',
-      24,
-      24,
       32
     )
     swapIcon(graph, frame.id, other)
@@ -138,7 +158,7 @@ describe('icon identity', () => {
 
   test('leaves artwork without a name in a set unnamed', () => {
     const graph = new SceneGraph()
-    const icon = buildIconData({ body: BODY }, 'svg', 'custom', 24, 24, 24)
+    const icon = buildIconData({ body: BODY, width: 24, height: 24 }, 'svg', 'custom', 24)
     const frame = placeIcon(graph, graph.getPages()[0].id, icon, {
       size: 24,
       color: BLACK,

@@ -1,11 +1,8 @@
 import type { SceneGraph } from '@open-pencil/scene-graph'
-import { resolvedPaintBindings } from '@open-pencil/scene-graph/variables'
 
 import { reconcileVariableLayouts } from '#core/layout/variables'
 
 import { nodeOf, type NodeRef } from './behaviours'
-
-const PAINT_FIELD = /^(fills|strokes)\/\d+\/color$/
 
 /** A variable as `figma` hands it out, such as from `figma.variables.getLocalVariables()`. */
 export type VariableRef = { readonly id: string }
@@ -31,13 +28,11 @@ export function bindVariable(
   reconcileVariableLayouts(graph, { subtrees: [target.id] })
 }
 
-/** Lets a layer field go of its variable; the field keeps the value the variable last gave it. */
+/** Lets a layer field go of its variable, keeping the value it holds, as Figma's detach does. */
 export function unbindVariable(graph: SceneGraph, node: NodeRef, field: string): void {
   const target = nodeOf(graph, node)
   if (!(field in target.boundVariables))
     throw new Error(`${target.name} has no variable bound to ${field}`)
-  // A paint keeps the color its variable last gave it, as values do and as Figma's detach does.
-  if (PAINT_FIELD.test(field)) graph.updateNode(target.id, resolvedPaintBindings(graph, target))
   graph.unbindVariable(target.id, field)
   reconcileVariableLayouts(graph, { subtrees: [target.id] })
 }

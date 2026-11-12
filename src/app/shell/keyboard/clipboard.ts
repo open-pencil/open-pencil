@@ -1,16 +1,21 @@
 import { useEventListener } from '@vueuse/core'
 
-import { isSVGMarkup } from '@open-pencil/core/io/formats/svg'
 import { extractImageFilesFromClipboard } from '@open-pencil/vue/canvas/drop'
+import { hasDocumentTextSelection, isEditing } from '@open-pencil/vue/editor/keyboard'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { isDesignClipboardHTML } from '@/app/editor/clipboard/html'
-import { getInMemoryClipboardHTML } from '@/app/editor/clipboard/memory'
-import { pasteClipboardHTML, pastePoint, pasteSVGText } from '@/app/editor/clipboard/paste/content'
+import { getInMemoryClipboardHTML, matchingClipboardSnapshot } from '@/app/editor/clipboard/memory'
+import {
+  isLayerText,
+  pasteClipboardHTML,
+  pasteLayerText,
+  pastePoint
+} from '@/app/editor/clipboard/paste/content'
+import { pasteWebClipboard } from '@/app/editor/clipboard/paste/web'
 import { browserSystemClipboard } from '@/app/editor/clipboard/system/browser'
 import { tauriSystemClipboard } from '@/app/editor/clipboard/system/tauri'
 import type { SystemClipboard } from '@/app/editor/clipboard/system/types'
-import { hasDocumentTextSelection, isEditing } from '@/app/shell/keyboard/focus'
 import { isTauri } from '@/app/tauri/env'
 
 function cursorPosition(store: EditorStore) {
@@ -86,13 +91,20 @@ export function bindEditorClipboard(store: EditorStore) {
     }
 
     const text = e.clipboardData?.getData('text/plain') ?? ''
-    if (isSVGMarkup(text)) {
-      void pasteSVGText(store, text, cursorPos)
+    if (isLayerText(text)) {
+      void pasteLayerText(store, text, cursorPos)
       return
     }
 
-    if (html) {
+    // A copy of ours whose markers the browser dropped still pastes as the copied layers.
+    if (html && matchingClipboardSnapshot(html)) {
       void pasteClipboardHTML(store, html)
+      return
+    }
+
+    // Text and web pages from elsewhere paste as text, as in Figma, offering layers for HTML.
+    if (html || text) {
+      void pasteWebClipboard(store, { html, text }, cursorPos)
       return
     }
 

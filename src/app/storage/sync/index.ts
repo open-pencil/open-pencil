@@ -2,7 +2,6 @@ export {
   clearStorageLocalMirror,
   enqueueDeleteCanvas,
   enqueuePutCanvas,
-  enqueuePutThumb,
   kickSyncEngine,
   resumeStorageSync
 } from './engine'

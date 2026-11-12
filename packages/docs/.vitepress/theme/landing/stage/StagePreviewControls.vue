@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { tinykeys } from 'tinykeys'
-import { onScopeDispose } from 'vue'
+import { matchesKeyboardEvent } from '@tanstack/hotkeys'
+import { useEventListener } from '@vueuse/core'
 
+import { resolveEditorProfile } from '@open-pencil/core'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import { getActiveEditorStoreOrNull, useEditorStore } from '@/app/editor/active-store'
-import { appMenuShortcutLabel, appMenuTinykeysShortcut } from '@/app/shell/menu/shortcut'
+import { appMenuShortcut, appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import WorkspacePill from '@/components/editor/WorkspacePill.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 
@@ -19,22 +20,18 @@ const store = useEditorStore()
 const { menu } = useI18n()
 const shortcut = appMenuShortcutLabel(PREVIEW_COMMAND) ?? ''
 
-const keys = appMenuTinykeysShortcut(PREVIEW_COMMAND)
-if (keys) {
-  const unsubscribe = tinykeys(window, {
-    [keys]: (event) => {
-      if (getActiveEditorStoreOrNull() !== store) return
-      event.preventDefault()
-      store.togglePlay()
-    }
-  })
-  onScopeDispose(unsubscribe)
-}
+const previewKey = appMenuShortcut(PREVIEW_COMMAND)
+useEventListener(window, 'keydown', (event) => {
+  if (!previewKey || !matchesKeyboardEvent(event, previewKey)) return
+  if (getActiveEditorStoreOrNull() !== store) return
+  event.preventDefault()
+  store.togglePlay()
+})
 </script>
 
 <template>
   <WorkspacePill
-    v-if="store.state.play"
+    v-if="resolveEditorProfile(store.state).live"
     mode="preview"
     :document-name="store.state.documentName"
     :shortcut="shortcut"

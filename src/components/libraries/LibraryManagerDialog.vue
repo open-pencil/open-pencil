@@ -17,10 +17,7 @@ import {
 } from '@/components/ui/dialog'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
-import AppTabsContent from '@/components/ui/tabs/AppTabsContent.vue'
-import AppTabsList from '@/components/ui/tabs/AppTabsList.vue'
-import AppTabsRoot from '@/components/ui/tabs/AppTabsRoot.vue'
-import AppTabsTrigger from '@/components/ui/tabs/AppTabsTrigger.vue'
+import { AppTabsContent, AppTabsList, AppTabsRoot, AppTabsTrigger } from '@/components/ui/tabs'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 const { initialSection = 'browse' } = defineProps<{
@@ -30,7 +27,7 @@ const open = defineModel<boolean>({ required: true })
 const editor = useEditorStore()
 const service = useLibraryService()
 const { isMobile } = useViewportKind()
-const { panels, common } = useI18n()
+const { panels } = useI18n()
 
 async function openPublish() {
   open.value = false
@@ -40,6 +37,7 @@ async function openPublish() {
 const {
   section,
   loading,
+  ready,
   showAllPages,
   applying,
   visibleUpdateGroups,
@@ -69,14 +67,19 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
 </script>
 
 <template>
-  <AppDialogRoot v-model:open="open" size="lg" height="tall" data-test-id="asset-libraries-dialog">
+  <AppDialogRoot
+    :open="open && ready"
+    size="lg"
+    height="tall"
+    data-test-id="asset-libraries-dialog"
+    @update:open="open = $event"
+  >
     <AppDialogHeader
       :heading="panels.manageLibraries"
       :description="panels.manageLibrariesDescription"
-      :close-label="common.close"
     >
       <template #actions>
-        <AppButton color="primary" variant="link" class="ml-auto" @click="openPublish">
+        <AppButton color="primary" variant="link" class="ms-auto" @click="openPublish">
           {{ panels.publishLibrary }}
         </AppButton>
       </template>
@@ -91,7 +94,7 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
           <template #leading><icon-lucide-refresh-cw class="size-3.5" /></template>
           {{ panels.libraryUpdates }}
           <template v-if="visibleUpdateGroups.length" #trailing>
-            <span class="rounded-full bg-accent px-1.5 text-[10px] text-on-accent">{{
+            <span class="rounded-full bg-accent px-1.5 text-3xs text-on-accent">{{
               visibleUpdateGroups.length
             }}</span>
           </template>
@@ -118,7 +121,7 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
             <icon-lucide-library class="size-4 text-component" />
             <div class="min-w-0 flex-1">
               <p class="truncate text-xs text-surface">{{ library.name }}</p>
-              <p class="text-[10px] text-muted">
+              <p class="text-3xs text-muted">
                 {{ panels.libraryAssetCount({ count: library.assetCount }) }}
               </p>
             </div>
@@ -154,9 +157,9 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
           >
             <icon-lucide-component class="size-4 text-component" />
             <div class="min-w-0 flex-1">
-              <button type="button" class="block w-full text-left" @click="reviewUpdate(asset)">
+              <button type="button" class="block w-full text-start" @click="reviewUpdate(asset)">
                 <p class="truncate text-xs text-surface">{{ asset.name }}</p>
-                <p data-test-id="library-update-instance-count" class="text-[10px] text-muted">
+                <p data-test-id="library-update-instance-count" class="text-3xs text-muted">
                   {{ panels.libraryInstanceCount({ count: asset.instanceIds.length }) }}
                 </p>
               </button>
@@ -171,8 +174,10 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
             size="compact"
           />
         </AppDialogBody>
-        <AppDialogFooter :ui="{ footer: 'justify-between' }">
-          <AppSwitch v-model="showAllPages" :label="panels.showUpdatesForAllPages" />
+        <AppDialogFooter>
+          <template #start>
+            <AppSwitch v-model="showAllPages" :label="panels.showUpdatesForAllPages" />
+          </template>
           <AppButton
             color="primary"
             variant="solid"

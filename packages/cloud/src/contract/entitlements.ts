@@ -2,14 +2,14 @@ import * as v from 'valibot'
 
 export const workspaceEntitlementsSchema = v.object({
   features: v.object({
-    capabilityLinks: v.boolean(),
-    anonymousView: v.boolean(),
-    anonymousEdit: v.boolean(),
+    links: v.boolean(),
+    guestView: v.boolean(),
+    guestEdit: v.boolean(),
     guestPresence: v.boolean(),
     collaboration: v.boolean(),
     revisionHistory: v.boolean(),
-    // Optional so editors keep reading servers released before the AI service.
-    cloudAI: v.optional(v.boolean(), false)
+    // Optional so editors keep reading servers released before services.
+    cloudServices: v.optional(v.boolean(), false)
   }),
   limits: v.object({
     maximumFileBytes: v.pipe(v.number(), v.integer(), v.minValue(1)),
@@ -26,3 +26,13 @@ export const workspaceEntitlementsSchema = v.object({
   })
 })
 export type WorkspaceEntitlements = v.InferOutput<typeof workspaceEntitlementsSchema>
+
+/**
+ * An account's own plan and the storage its workspaces hold together. A workspace reports the
+ * same for its owner, so the two read alike.
+ */
+export const accountEntitlementsSchema = workspaceEntitlementsSchema
+export type AccountEntitlements = WorkspaceEntitlements
+export const accountEntitlementsResponseSchema = v.object({
+  entitlements: accountEntitlementsSchema
+})

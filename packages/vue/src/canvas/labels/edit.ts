@@ -24,6 +24,7 @@ export function createCanvasLabelEdit(editor: Editor): CanvasLabelEditController
 
   function start(kind: CanvasLabelKind, node: SceneNode) {
     edit.value = { nodeId: node.id, kind, value: node.name }
+    editor.setRenamingLabel(node.id)
   }
 
   function update(value: string) {
@@ -39,10 +40,12 @@ export function createCanvasLabelEdit(editor: Editor): CanvasLabelEditController
       if (value !== node.name) editor.updateNodeWithUndo(node.id, { name: value }, 'Rename layer')
     }
     edit.value = null
+    editor.setRenamingLabel(null)
   }
 
   function cancel() {
     edit.value = null
+    editor.setRenamingLabel(null)
   }
 
   return { edit, start, update, commit, cancel }

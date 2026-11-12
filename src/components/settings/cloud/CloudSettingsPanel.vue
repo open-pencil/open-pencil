@@ -3,7 +3,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from 'reka-ui'
@@ -17,10 +16,11 @@ import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppActionRow from '@/components/ui/list/AppActionRow.vue'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menu } from '@/components/ui/menu/menu'
-import { cloudServers } from '@/theme/cloud/servers'
 
 import type { CloudServerEntry } from './types'
+import { cloudServers } from './ui'
 
 /**
  * The Cloud servers this app syncs with: who is signed in to each, which one Home shows, and
@@ -35,15 +35,19 @@ const emit = defineEmits<{
   connect: [kind?: 'official' | 'self-hosted']
   signIn: [id: string]
   manageAccount: [id: string]
+  reviewTerms: [id: string]
   showOnHome: [id: string]
   signOut: [id: string]
   remove: [id: string]
 }>()
 
 const ui = cloudServers()
-/** Signed in, even to an account still waiting for approval or declined. */
+/** Signed in, even to an account still waiting for approval, declined, or with terms to accept. */
 const hasSession = (server: CloudServerEntry) =>
-  server.session === 'signed-in' || server.session === 'pending' || server.session === 'closed'
+  server.session === 'signed-in' ||
+  server.session === 'pending' ||
+  server.session === 'closed' ||
+  server.session === 'terms'
 const menuUI = menu()
 const t = useCloudMessages()
 const title = (server: CloudServerEntry) =>
@@ -76,7 +80,9 @@ const title = (server: CloudServerEntry) =>
           </template>
           {{ t.productName }}
           <template #description>{{ t.settingsOfficialDescription }}</template>
-          <template #trailing><icon-lucide-chevron-right class="size-3.5" /></template>
+          <template #trailing
+            ><icon-lucide-chevron-right data-direction="reading" class="size-3.5"
+          /></template>
         </AppActionRow>
         <AppActionRow @click="emit('connect', 'self-hosted')">
           <template #leading>
@@ -84,7 +90,9 @@ const title = (server: CloudServerEntry) =>
           </template>
           {{ t.selfHostedLabel }}
           <template #description>{{ t.settingsSelfHostedDescription }}</template>
-          <template #trailing><icon-lucide-chevron-right class="size-3.5" /></template>
+          <template #trailing
+            ><icon-lucide-chevron-right data-direction="reading" class="size-3.5"
+          /></template>
         </AppActionRow>
       </div>
 
@@ -116,8 +124,16 @@ const title = (server: CloudServerEntry) =>
               <icon-lucide-circle-x class="size-3 shrink-0" />
               {{ t.settingsAccessClosed }}
             </p>
+            <p v-else-if="server.session === 'terms'" :class="ui.expired()">
+              <icon-lucide-scroll-text class="size-3 shrink-0" />
+              {{ t.settingsAcceptTerms }}
+            </p>
             <p v-else-if="server.account && server.session === 'signed-in'" :class="ui.account()">
-              <AccountAvatar :id="server.account.id" :name="server.account.name" />
+              <AccountAvatar
+                :id="server.account.id"
+                :name="server.account.name"
+                :image="server.account.image ?? null"
+              />
               <span :class="ui.accountText()">
                 {{ server.account.name }} · {{ server.account.email }}
               </span>
@@ -133,7 +149,15 @@ const title = (server: CloudServerEntry) =>
             >
               {{ t.signIn }}
             </AppButton>
-            <DropdownMenuRoot :modal="false">
+            <AppButton
+              v-else-if="server.session === 'terms'"
+              size="sm"
+              variant="outline"
+              @click="emit('reviewTerms', server.id)"
+            >
+              {{ t.settingsReviewTerms }}
+            </AppButton>
+            <AppDropdownMenuRoot :modal="false">
               <DropdownMenuTrigger as-child>
                 <IconButton :label="t.settingsOptionsFor({ host: server.host })">
                   <icon-lucide-ellipsis class="size-3.5" />
@@ -180,7 +204,7 @@ const title = (server: CloudServerEntry) =>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenuPortal>
-            </DropdownMenuRoot>
+            </AppDropdownMenuRoot>
           </div>
         </div>
       </SettingsGroup>

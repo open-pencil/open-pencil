@@ -1,40 +1,13 @@
-import type { Editor } from '@open-pencil/core'
-import type { VectorSegment } from '@open-pencil/scene-graph'
+import type { Editor, NodeEditState } from '@open-pencil/core'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { DragState } from '#vue/shared/input/types'
 
-export type CanvasNodeEditState = {
-  segments: VectorSegment[]
-  vertices: Vector[]
-  hoveredHandleInfo: {
-    segmentIndex: number
-    tangentField: 'tangentStart' | 'tangentEnd'
-  } | null
-}
-
-export type CanvasNodeEditMethods = Partial<{
-  nodeEditBendHandle: (
-    vertexIndex: number,
-    dx: number,
-    dy: number,
-    independent: boolean,
-    targetSegmentIndex: number | null,
-    targetTangentField: 'tangentStart' | 'tangentEnd' | null
-  ) => void
-  nodeEditCancelDrag: () => void
-  commitNodeEditChanges: () => void
-  nodeEditZeroVertexHandles: (vertexIndex: number) => void
-  nodeEditConnectEndpoints: (a: number, b: number) => void
-  enterNodeEditMode: (nodeId: string) => void
-}>
-
-export function getCanvasNodeEditState(editor: Editor): CanvasNodeEditState | null | undefined {
-  return editor.state.nodeEditState as CanvasNodeEditState | null | undefined
-}
+/** What picking a bend's handle reads from the edit session. */
+export type CanvasNodeEditState = Pick<NodeEditState, 'segments' | 'vertices'>
 
 export function resolveBendTargetHandle(
-  es: CanvasNodeEditState | null | undefined,
+  es: CanvasNodeEditState | null,
   vertexIndex: number,
   samples: Vector[]
 ): { segmentIndex: number; tangentField: 'tangentStart' | 'tangentEnd' } | null {
@@ -94,8 +67,7 @@ export function handleBendHandleMove(
   event: MouseEvent,
   editor: Editor
 ): void {
-  const nodeEditEditor = editor as Editor & CanvasNodeEditMethods
-  const nodeEditState = getCanvasNodeEditState(editor)
+  const nodeEditState = editor.getNodeEditState()
   const dx = cx - d.startX
   const dy = cy - d.startY
   if (Math.hypot(dx, dy) < 2) return
@@ -113,7 +85,7 @@ export function handleBendHandleMove(
     }
   }
   if (d.targetSegmentIndex === null || d.targetTangentField === null) return
-  nodeEditEditor.nodeEditBendHandle?.(
+  editor.nodeEditBendHandle(
     d.vertexIndex,
     dx,
     dy,

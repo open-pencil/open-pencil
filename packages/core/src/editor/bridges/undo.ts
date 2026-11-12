@@ -31,7 +31,12 @@ export function createUndoBridge(
     },
     snapshotPage: undoActions.snapshotPage,
     restorePageFromSnapshot: undoActions.restorePageFromSnapshot,
-    captureDocumentChange: undoActions.captureDocumentChange,
+    recordEdit: <T>(options: Parameters<UndoActions['recordEdit']>[0], run: () => T): T => {
+      // A response to a step comes after a nudge made since, which is the newer step once recorded.
+      if (options.joinStep) flushPending()
+      return undoActions.recordEdit(options, run)
+    },
+    recordEditAsync: undoActions.recordEditAsync,
     restoreDocumentChange: undoActions.restoreDocumentChange,
     pushUndoEntry: undoActions.pushUndoEntry,
     pushUndoStep: undoActions.pushUndoStep

@@ -10,6 +10,7 @@ export interface SidebarLabels {
   pen: string
   vectorEditing: string
   icons: string
+  photos: string
   layers: string
   contextMenu: string
   exporting: string
@@ -17,7 +18,6 @@ export interface SidebarLabels {
   components: string
   variables: string
   checkingDesigns: string
-  openPencilCloud: string
   cloudStorage: string
   overview: string
   gettingStarted: string
@@ -51,6 +51,7 @@ export interface NavLabels {
   sdk: string
   reference: string
   development: string
+  cloud: string
   openApp: string
 }
 
@@ -171,9 +172,9 @@ export const EN: SidebarLabels = {
   components: 'Components',
   variables: 'Variables',
   checkingDesigns: 'Checking Designs',
-  openPencilCloud: 'OpenPencil Cloud',
   cloudStorage: 'Cloud Storage',
   icons: 'Icons',
+  photos: 'Photos',
   overview: 'Overview',
   gettingStarted: 'Getting Started',
   features: 'Features',
@@ -201,9 +202,9 @@ export const DE: SidebarLabels = {
   components: 'Komponenten',
   variables: 'Variablen',
   checkingDesigns: 'Designs prüfen',
-  openPencilCloud: 'OpenPencil Cloud',
   cloudStorage: 'Cloud-Speicher',
   icons: 'Symbole',
+  photos: 'Fotos',
   overview: 'Überblick',
   gettingStarted: 'Erste Schritte',
   features: 'Funktionen',
@@ -231,9 +232,9 @@ export const IT: SidebarLabels = {
   components: 'Componenti',
   variables: 'Variabili',
   checkingDesigns: 'Verificare i design',
-  openPencilCloud: 'OpenPencil Cloud',
   cloudStorage: 'Archiviazione cloud',
   icons: 'Icone',
+  photos: 'Foto',
   overview: 'Panoramica',
   gettingStarted: 'Per iniziare',
   features: 'Funzionalità',
@@ -261,9 +262,9 @@ export const FR: SidebarLabels = {
   components: 'Composants',
   variables: 'Variables',
   checkingDesigns: 'Vérifier les designs',
-  openPencilCloud: 'OpenPencil Cloud',
   cloudStorage: 'Stockage cloud',
   icons: 'Icônes',
+  photos: 'Photos',
   overview: 'Vue d’ensemble',
   gettingStarted: 'Premiers pas',
   features: 'Fonctionnalités',
@@ -291,9 +292,9 @@ export const ES: SidebarLabels = {
   components: 'Componentes',
   variables: 'Variables',
   checkingDesigns: 'Revisar diseños',
-  openPencilCloud: 'OpenPencil Cloud',
   cloudStorage: 'Almacenamiento en la nube',
   icons: 'Iconos',
+  photos: 'Fotos',
   overview: 'Resumen',
   gettingStarted: 'Primeros pasos',
   features: 'Características',
@@ -321,9 +322,9 @@ export const PL: SidebarLabels = {
   components: 'Komponenty',
   variables: 'Zmienne',
   checkingDesigns: 'Sprawdzanie projektów',
-  openPencilCloud: 'OpenPencil Cloud',
   cloudStorage: 'Przechowywanie w chmurze',
   icons: 'Ikony',
+  photos: 'Zdjęcia',
   overview: 'Przegląd',
   gettingStarted: 'Rozpoczęcie pracy',
   features: 'Funkcje',
@@ -351,9 +352,9 @@ export const RU: SidebarLabels = {
   components: 'Компоненты',
   variables: 'Переменные',
   checkingDesigns: 'Проверка дизайна',
-  openPencilCloud: 'OpenPencil Cloud',
   cloudStorage: 'Облачное хранилище',
   icons: 'Иконки',
+  photos: 'Фото',
   overview: 'Обзор',
   gettingStarted: 'Начало работы',
   features: 'Возможности',

@@ -3,9 +3,12 @@ schema_version = 2
 [deployment]
 mode = "self-hosted"
 public_url = "http://localhost:8787"
-app_url = "http://localhost:5173"
 indexing = "deny"
-trusted_origins = ["http://localhost:5173"]
+# The server serves the editor itself, and its links point there. Trust any other editor origin
+# that connects to it, such as a development build.
+# trusted_origins = ["https://editor.example.com"]
+# The editor works with files on the device without signing in; false asks everyone to sign in.
+local_editor = true
 # Editors read this only from the official OpenPencil Cloud: it shows Cloud in editors from this
 # version on. Self-hosted servers leave it out.
 # listing = { minimum_editor_version = "0.14.0" }
@@ -13,31 +16,32 @@ trusted_origins = ["http://localhost:5173"]
 # Defaults to DATABASE_URL.
 [database]
 
-[authentication]
-enrollment_mode = "open"
-admin_notification_emails = []
 # The signing secret defaults to BETTER_AUTH_SECRET.
+[authentication]
+
+# "open", "approval" (an administrator reviews each new account), or "closed".
+[authentication.enrollment]
+mode = "open"
+notification_emails = []
 
 [authentication.mfa]
-deployment_admin_required = false
-totp_enabled = false
-passkeys_enabled = false
-recovery_codes_enabled = false
-trusted_device_days = 14
+required_for_admins = false
+totp = false
+recovery_codes = false
+trusted_device_lifetime_days = 14
 
-# Required when passkeys are enabled.
-# [authentication.passkeys]
-# rp_id = "localhost"
-# rp_name = "OpenPencil Cloud"
-# origin = "http://localhost:8787"
+# Passkeys belong to public_url's host.
+[authentication.passkeys]
+enabled = false
+rp_name = "OpenPencil Cloud"
 
 [authentication.email_password]
 enabled = false
 sign_up = true
 minimum_password_length = 8
 maximum_password_length = 128
-verification_link_expires_minutes = 60
-password_reset_link_expires_minutes = 60
+verification_link_lifetime_minutes = 60
+password_reset_link_lifetime_minutes = 60
 compromised_password_check = false
 
 # Recommended when enabling public sign-up. TURNSTILE_SECRET_KEY remains external.
@@ -70,31 +74,67 @@ bucket = "openpencil"
 force_path_style = true
 checksum_verification = "metadata"
 # Credentials default to S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY.
+maximum_upload_bytes = 1073741824
+# Keep each file cleanup deletes under this prefix, and expire the prefix with a lifecycle rule
+# longer than the database's restore window. After restoring the database to an earlier time, copy
+# deleted/<key> back to <key> for each missing file a revision, image, or room snapshot refers to,
+# before serving it. Useful where the bucket keeps no versions, as on R2.
+# deleted_prefix = "deleted/"
 
-# The collaboration relay is served on the API origin. Set this only when clients reach it
-# through a different URL, such as a separate proxy.
-# [collaboration]
+[collaboration]
+# One WebSocket message on the relay, at least 262160. Larger edits arrive as 256 KiB fragments.
+maximum_message_bytes = 1048576
+maximum_connections_per_room = 1000
+# The relay is served on the API origin. Set this only when clients reach it through a different
+# URL, such as a separate proxy.
 # relay_url = "wss://relay.example.com/api/collaboration/relay"
+
+# How long deleted documents stay in Trash, where people can restore them, and how long one deleted
+# forever there keeps its files, out of sight, so a server administrator can still restore it
+# (0 destroys it at once).
+[documents]
+retention_days = 30
+purge_grace_days = 7
 
 [email]
 transport = "none"
 
-# Add this table to offer an AI service to editors. Cloud never proxies models: it advertises the
+# Add this table to offer OpenPencil services (AI models and other paid capabilities) to editors.
+# Cloud never proxies them: it advertises the
 # endpoint and signs short-lived ES256 tokens the service verifies against /.well-known/jwks.json.
-# The PKCS #8 signing key defaults to OPENPENCIL_CLOUD_AI_SIGNING_KEY. Workspaces also need the
-# [entitlements.ai] enabled entitlement.
-# [ai]
+# The PKCS #8 signing key defaults to OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY. Workspaces also need the
+# [entitlements.services] enabled entitlement.
+# [services]
 # endpoint = "https://ai.example.com"
 # token_lifetime_minutes = 10
 
-# Where people manage their plan; editors link to it. Leave it out when the deployment does not bill.
+# The billing service that sells plans and credits; editors link to the plan page whenever it is
+# set. Needs the [services] signing key, which signs its tokens, and the [internal_api], through
+# which it sets the plans it sells. Leave it out when the deployment does not bill.
 # [billing]
-# portal_url = "https://billing.example.com"
+# endpoint = "https://billing.example.com"
 
-# Add this table to let services such as billing set workspace entitlements over HTTP at
-# PUT /api/internal/workspaces/<id>/entitlements. The bearer token defaults to
-# OPENPENCIL_CLOUD_SERVICE_TOKEN; requires entitlements from the database.
+# Add this table to let services such as billing set an account's entitlements, which every
+# workspace it owns takes, over HTTP at PUT /api/internal/accounts/<user id>/entitlements. The
+# bearer token defaults to OPENPENCIL_CLOUD_SERVICE_TOKEN; requires entitlements from the database.
 # [internal_api]
+
+# Optional: your own terms and privacy policy, linked at sign-up and in the portal's footer. With
+# require_acceptance, each account accepts terms_version once before using the server, and again
+# whenever you change it. Leave the table out to show none.
+# [legal]
+# terms_url = "https://example.com/terms"
+# privacy_url = "https://example.com/privacy"
+# terms_version = "2026-01-01"
+# require_acceptance = true
+# abuse_email = "abuse@example.com"
+# minimum_age = 16
+
+# Optional: reports server errors to PostHog error tracking. Leave it out to send nothing. The host
+# defaults to https://eu.i.posthog.com and the project API key to POSTHOG_PROJECT_API_KEY.
+# [error_tracking]
+# provider = "posthog"
+# host = "https://us.i.posthog.com"
 
 [workers.email]
 batch_size = 50
@@ -107,7 +147,6 @@ enabled = true
 batch_size = 100
 interval_ms = 60000
 lease_ms = 300000
-document_retention_days = 30
 
 [entitlements]
 source = "static"
@@ -120,24 +159,19 @@ revision_history = true
 [entitlements.storage]
 maximum_bytes = 1_099_511_627_776
 
+# Links work for people signed in to the server; guests are people who follow them without.
 [entitlements.sharing]
-capability_links = true
-anonymous_view = true
-anonymous_edit = true
+links = true
+guest_view = true
+guest_edit = false
 guest_presence = true
 
 [entitlements.collaboration]
 enabled = true
 maximum_participants = 100
 
-# The AI service [ai] advertises. The allowance is credits per month, passed to the service in
+# The services [services] advertises. The allowance is credits per month, passed to the service in
 # every token; leave it out for no allowance.
-[entitlements.ai]
+[entitlements.services]
 enabled = false
 # monthly_credit_allowance = 10000
-
-[technical_limits]
-maximum_upload_bytes = 1073741824
-# One WebSocket message on the relay, at least 262160. Larger edits arrive as 256 KiB fragments.
-maximum_collaboration_message_bytes = 1048576
-maximum_connections_per_room = 1000

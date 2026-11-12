@@ -6,13 +6,16 @@ import {
   roleChoiceKey,
   roleOptions,
   type OnboardingAnswers,
-  type OnboardingPlan
+  type OnboardingPlan,
+  usableCurrentModels
 } from '@/app/ai/models/settings/onboarding/plan'
 
 import { defaultModel, isFastToolModel } from '#tests/helpers/ai/model-catalog'
 
 const desktop = { agentsAvailable: true }
 const browser = { agentsAvailable: false }
+/** A sandboxed desktop package: no host processes, but subscription sign-in still works. */
+const sandboxed = { agentsAvailable: false, subscriptionsAvailable: true }
 
 function answers(overrides: Partial<OnboardingAnswers>): OnboardingAnswers {
   return { goals: ['design'], access: [], spending: 'existing', ...overrides }
@@ -23,6 +26,12 @@ function plannedModelID(choice: OnboardingPlan['fast']): string {
 }
 
 describe('planOnboarding', () => {
+  test('a sandboxed package keeps the ChatGPT subscription but not agents', () => {
+    const plan = planOnboarding(answers({ access: ['acp:codex', 'chatgpt'] }), sandboxed)
+    expect(plan.design).toMatchObject({ providerID: 'chatgpt', modelID: defaultModel('chatgpt') })
+    expect(plan.connections).toEqual(['chatgpt'])
+  })
+
   test('uses an agent the person already has for design', () => {
     const plan = planOnboarding(answers({ access: ['acp:codex'] }), desktop)
     expect(plan.design).toMatchObject({ providerID: 'acp:codex', modelID: '' })
@@ -43,6 +52,38 @@ describe('planOnboarding', () => {
   test('ignores agents outside the desktop app', () => {
     const plan = planOnboarding(answers({ access: ['acp:claude-code', 'openai'] }), browser)
     expect(plan.design).toMatchObject({ providerID: 'openai', modelID: defaultModel('openai') })
+  })
+
+  test('prefers a ChatGPT plan over an API account for every role', () => {
+    const plan = planOnboarding(
+      answers({ goals: ['design', 'vision'], access: ['openai', 'chatgpt'] }),
+      desktop
+    )
+    expect(plan.design).toMatchObject({ providerID: 'chatgpt', modelID: defaultModel('chatgpt') })
+    expect(plan.vision).toBe('design')
+    expect(plan.connections).toEqual(['chatgpt', 'openai'])
+  })
+
+  test('takes visual review from a ChatGPT plan when design runs on an agent', () => {
+    const plan = planOnboarding(
+      answers({ goals: ['design', 'vision'], access: ['acp:claude-code', 'chatgpt', 'openai'] }),
+      desktop
+    )
+    expect(plan.vision).toMatchObject({ providerID: 'chatgpt' })
+  })
+
+  test('connects a selected ChatGPT plan that no planned model needs', () => {
+    const plan = planOnboarding(answers({ access: ['acp:claude-code', 'chatgpt'] }), desktop)
+    expect(plan.design).toMatchObject({ providerID: 'acp:claude-code' })
+    expect(plan.connections).toEqual(['acp:claude-code', 'chatgpt'])
+    expect(roleOptions('design', plan, []).map(roleChoiceKey)).toContain(
+      `chatgpt::${defaultModel('chatgpt')}`
+    )
+  })
+
+  test('ignores ChatGPT sign-in outside the desktop app', () => {
+    const plan = planOnboarding(answers({ access: ['chatgpt', 'openai'] }), browser)
+    expect(plan.design).toMatchObject({ providerID: 'openai' })
   })
 
   test('reuses a vision-capable design model for visual review', () => {
@@ -125,6 +166,45 @@ describe('planOnboarding with configured models', () => {
     capabilities: ['tools' as const, 'vision' as const],
     profileId: 'model-glm' as const
   }
+
+  const codex = {
+    providerID: 'acp:codex' as const,
+    modelID: '',
+    name: 'Codex',
+    capabilities: [],
+    profileId: 'model-codex' as const
+  }
+
+  test('does not keep a configured agent design model where agents cannot run', () => {
+    const current = { configured: true, design: codex, vision: null, review: null, fast: null }
+    // Not asked about design: the agent is still dropped, so setup cannot finish on it.
+    const kept = planOnboarding(answers({ goals: ['vision'], access: [] }), { ...browser, current })
+    expect(kept.design).toBeNull()
+    // Asked about design with another account: that account takes the role.
+    const replaced = planOnboarding(answers({ access: ['openai'] }), { ...browser, current })
+    expect(replaced.design).toMatchObject({ providerID: 'openai' })
+  })
+
+  test('drops configured models this app cannot run, and only those', () => {
+    const current = { configured: true, design: codex, vision: opus, review: null, fast: null }
+    expect(usableCurrentModels(current, browser)).toEqual({ ...current, design: null })
+    expect(usableCurrentModels(current, desktop)).toEqual(current)
+  })
+
+  test('plans review and fast again for a subscription the browser cannot use', () => {
+    const chatgpt = {
+      providerID: 'chatgpt' as const,
+      modelID: defaultModel('chatgpt'),
+      name: 'ChatGPT',
+      capabilities: ['tools' as const],
+      profileId: 'model-chatgpt' as const
+    }
+    // A configured none stays none; an unusable model is planned like an unconfigured role.
+    const current = { configured: true, design: opus, vision: null, review: chatgpt, fast: null }
+    const plan = planOnboarding(answers({ access: ['anthropic'] }), { ...browser, current })
+    expect(plan.review).toBe('design')
+    expect(plan.fast).toBeNull()
+  })
 
   test('keeps a configured design model while its access is still selected', () => {
     const plan = planOnboarding(answers({ access: ['anthropic'] }), {

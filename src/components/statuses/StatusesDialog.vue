@@ -2,12 +2,12 @@
 import { computed, nextTick, ref, useTemplateRef, watch, type ComponentPublicInstance } from 'vue'
 
 import type { StatusWorkflowPreset } from '@open-pencil/scene-graph/statuses'
+import { useDocumentShortcuts } from '@open-pencil/vue/editor/keyboard'
 import { useCommonMessages, useStatusMessages } from '@open-pencil/vue/i18n'
 import { useFlatReorderDrag } from '@open-pencil/vue/shared/drag'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { useStatusWorkflowDraft } from '@/app/editor/statuses/workflow'
-import { useDocumentShortcuts } from '@/app/shell/keyboard/document'
 import StatusDot from '@/components/statuses/StatusDot.vue'
 import StatusStateRow from '@/components/statuses/StatusStateRow.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -17,7 +17,8 @@ import AppDialog from '@/components/ui/dialog/AppDialog.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
-import { statusRows } from '@/theme/statuses'
+
+import { statusRows } from './ui'
 
 /**
  * The document's statuses: their order, colors, names, categories, and what editing does to each.
@@ -45,9 +46,14 @@ const open = computed({
   }
 })
 
+/** Discarded edits are dropped as the dialog next opens, so its closing animation keeps them. */
+let discarded = false
+
 // A draft opens on the document's statuses as they are now, unless it holds edits not applied.
 watch(open, (value) => {
-  if (value && !dirty.value) editor.reset()
+  if (!value || (dirty.value && !discarded)) return
+  discarded = false
+  editor.reset()
 })
 
 /** The preset menu's value while the statuses match no preset. */
@@ -117,7 +123,7 @@ function choosePreset(value: string) {
 }
 
 function discard() {
-  editor.reset()
+  discarded = true
   store.state.statusesOpen = false
 }
 </script>
@@ -126,9 +132,7 @@ function discard() {
   <AppDialog
     v-model:open="open"
     :heading="messages.statuses"
-    :close-label="common.close"
     size="md"
-    :ui="{ footer: 'justify-end' }"
     data-test-id="statuses-dialog"
     @keydown="onKeydown"
   >
@@ -171,7 +175,7 @@ function discard() {
       <div
         v-for="state in removed"
         :key="state.id"
-        :class="[rows.row(), 'text-[11px] text-muted']"
+        :class="[rows.row(), 'text-2xs text-muted']"
         data-test-id="status-removed-row"
         :data-state-id="state.id"
       >
@@ -219,22 +223,24 @@ function discard() {
           <li v-for="(change, index) in impact" :key="index" class="flex items-center gap-1.5">
             <span class="tabular-nums">{{ messages.layerCount(change.count) }}</span>
             <span>{{ change.from }}</span>
-            <icon-lucide-arrow-right class="size-3" aria-hidden="true" />
+            <icon-lucide-arrow-right data-direction="reading" class="size-3" aria-hidden="true" />
             <span>{{ change.to ?? messages.noStatus }}</span>
           </li>
         </ul>
       </AppAlert>
     </div>
 
-    <template #footer>
+    <template #footer-start>
       <AppSelect
         :model-value="preset ?? CUSTOM"
         :options="presetOptions"
         :label="messages.preset"
+        size="sm"
         :ui="{ trigger: 'w-40' }"
-        class="mr-auto"
         @update:model-value="choosePreset(String($event))"
       />
+    </template>
+    <template #footer>
       <AppButton variant="ghost" :disabled="!dirty" @click="editor.reset()">
         {{ common.cancel }}
       </AppButton>
@@ -253,7 +259,6 @@ function discard() {
     v-model:open="confirmingDiscard"
     :heading="messages.discardTitle"
     :description="messages.discardDescription"
-    :cancel-label="common.cancel"
     :confirm-label="messages.discard"
     tone="danger"
     @confirm="discard"

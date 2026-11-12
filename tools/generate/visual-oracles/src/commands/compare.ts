@@ -20,6 +20,11 @@ export default defineCommand({
       'Capture every page a reader produces, and diff it against an earlier capture',
       'tools/generate/visual-oracles/src/operations/compare/digest.ts'
     ),
+    pen: operationCommand(
+      'pen',
+      'Export every frame of the document open in pen.dev and record the .pen fixtures',
+      'tools/generate/visual-oracles/src/operations/compare/pen.ts'
+    ),
     'interpreted-document': operationCommand(
       'interpreted-document',
       'Compare an interpreted archive with the same document opened in Figma',

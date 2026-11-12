@@ -1,5 +1,3 @@
-import { fromUint8Array } from 'js-base64'
-
 import type { Effect, Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   colorToHex,
@@ -12,15 +10,12 @@ import {
   invertGradientTransform,
   isIdentityGradientTransform
 } from '@open-pencil/scene-graph/gradient'
-import { imageMimeType } from '@open-pencil/scene-graph/images'
+import { imageDataURL } from '@open-pencil/scene-graph/images'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { svg, type SVGNode } from './node'
 import { round } from './paths'
 import type { SVGTextLayout } from './text/lines'
-
-/** The family to name a font face by instead of its own, or null to keep the face. */
-export type SVGFontAlias = (family: string, style: string) => string | null
 
 export interface SVGExportContext {
   defs: SVGNode[]
@@ -31,13 +26,20 @@ export interface SVGExportContext {
   idPrefix?: string
   /** Paints drawn in `currentColor`, such as an icon's tinted paths, so CSS `color` sets them. */
   tint?: (node: SceneNode) => readonly ('fill' | 'stroke')[]
-  /** Line breaks of text nodes; without them each text node is drawn on one line. */
+  /** Measured line breaks. Without them, only explicit newlines start a new baseline. */
   textLayout?: SVGTextLayout
-  fontAlias?: SVGFontAlias
+  /**
+   * When layers are written with their names as ids: how many have taken each name, and every id
+   * given out so far, defs included, so no two elements share one.
+   */
+  layerIds?: { names: Map<string, number>; taken: Set<string> }
 }
 
 export function nextDefId(ctx: SVGExportContext, prefix: string): string {
-  return `${ctx.idPrefix ?? ''}${prefix}${ctx.defIdCounter++}`
+  let id = `${ctx.idPrefix ?? ''}${prefix}${ctx.defIdCounter++}`
+  while (ctx.layerIds?.taken.has(id)) id = `${ctx.idPrefix ?? ''}${prefix}${ctx.defIdCounter++}`
+  ctx.layerIds?.taken.add(id)
+  return id
 }
 
 export function formatColor(
@@ -49,7 +51,39 @@ export function formatColor(
   if (colorSpace === 'display-p3') {
     return colorToDisplayCSS(alphaColor, { colorSpace })
   }
+  // Hex has no alpha. Stops and shadows already emit theirs; solid fills use `solidFillOpacity`.
   return colorToHex(alphaColor)
+}
+
+/**
+ * A solid paint's SVG color. The canvas paints `opacity` and drops color alpha: `setAlphaf`
+ * replaces it, and `.pen` stores a hex alpha in both fields. Display P3 carries that painted
+ * alpha in the color. sRGB hex cannot, so `solidFillOpacity` emits it beside the color.
+ */
+export function formatSolidColor(
+  color: Color,
+  opacity: number,
+  colorSpace: RenderColorSpace
+): string {
+  if (colorSpace === 'display-p3') {
+    return formatColor({ ...color, a: 1 }, round(opacity), colorSpace)
+  }
+  return formatColor(color, 1, colorSpace)
+}
+
+/**
+ * `fill-opacity` for a solid paint. Omitted at full opacity so an opaque export stays unchanged.
+ * Display P3 already carries the same alpha in the color `formatSolidColor` returns, unless
+ * `separate` is set because that color was replaced and can no longer carry it.
+ */
+export function solidFillOpacity(
+  fill: Fill,
+  colorSpace: RenderColorSpace,
+  separate = false
+): number | undefined {
+  if (fill.type !== 'SOLID' || (colorSpace === 'display-p3' && !separate)) return undefined
+  const alpha = round(fill.opacity)
+  return alpha < 1 ? alpha : undefined
 }
 
 function createGradientDef(
@@ -140,9 +174,6 @@ function createImagePattern(
   if (!data) return null
 
   const id = nextDefId(ctx, 'img')
-  const base64 = fromUint8Array(data)
-  const mime = imageMimeType(data)
-
   return {
     id,
     node: svg(
@@ -154,7 +185,7 @@ function createImagePattern(
         height: 1
       },
       svg('image', {
-        href: `data:${mime};base64,${base64}`,
+        href: imageDataURL(data),
         width: node.width,
         height: node.height,
         preserveAspectRatio: fill.imageScaleMode === 'FIT' ? 'xMidYMid meet' : 'xMidYMid slice'
@@ -230,7 +261,7 @@ export function resolveFill(fill: Fill, node: SceneNode, ctx: SVGExportContext):
   if (!fill.visible) return null
 
   if (fill.type === 'SOLID') {
-    return formatColor(fill.color, fill.opacity, ctx.colorSpace)
+    return formatSolidColor(fill.color, fill.opacity, ctx.colorSpace)
   }
 
   if (fill.type.startsWith('GRADIENT')) {
@@ -252,6 +283,18 @@ export function resolveFill(fill: Fill, node: SceneNode, ctx: SVGExportContext):
   return null
 }
 
+/** The paints SVG can draw, each with its fill attribute: a stroke goes on the last of them. */
+export function drawnFills(
+  fills: readonly Fill[],
+  node: SceneNode,
+  ctx: SVGExportContext
+): Array<{ fill: Fill; paint: string }> {
+  return fills.flatMap((fill) => {
+    const paint = resolveFill(fill, node, ctx)
+    return paint ? [{ fill, paint }] : []
+  })
+}
+
 export const SVG_STROKE_CAP: Record<string, string> = {
   NONE: 'butt',
   ROUND: 'round',
@@ -262,23 +305,4 @@ export const SVG_STROKE_JOIN: Record<string, string> = {
   MITER: 'miter',
   ROUND: 'round',
   BEVEL: 'bevel'
-}
-
-export const SVG_BLEND_MODE: Record<string, string> = {
-  NORMAL: 'normal',
-  DARKEN: 'darken',
-  MULTIPLY: 'multiply',
-  COLOR_BURN: 'color-burn',
-  LIGHTEN: 'lighten',
-  SCREEN: 'screen',
-  COLOR_DODGE: 'color-dodge',
-  OVERLAY: 'overlay',
-  SOFT_LIGHT: 'soft-light',
-  HARD_LIGHT: 'hard-light',
-  DIFFERENCE: 'difference',
-  EXCLUSION: 'exclusion',
-  HUE: 'hue',
-  SATURATION: 'saturation',
-  COLOR: 'color',
-  LUMINOSITY: 'luminosity'
 }

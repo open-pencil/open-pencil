@@ -1,4 +1,4 @@
-import type { CanvasKit, Canvas, Paint, Font, Typeface } from 'canvaskit-wasm'
+import type { CanvasKit, Canvas, Paint, Font, Typeface } from '@open-pencil/canvaskit'
 
 import type { FrameStats } from './frame/stats'
 

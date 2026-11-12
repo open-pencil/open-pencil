@@ -9,7 +9,7 @@ Appuyez sur <kbd>⌘</kbd><kbd>J</kbd> ou <kbd>Ctrl</kbd><kbd>J</kbd>. L’assis
 
 ## Configurer les modèles
 
-Au premier lancement, la configuration guidée demande pour quoi l’IA doit vous aider et ce que vous utilisez déjà : un agent de code comme Claude Code, Codex ou Gemini CLI dans l’application de bureau, un compte API, ou un serveur local ou d’entreprise. Elle connecte cet accès et l’attribue aux rôles **Design agent** et **Vision**, sans toucher à ce que vous avez configuré à la main. Avec OpenRouter, il suffit de se connecter au lieu de coller une clé API. Vous pouvez la passer et la relancer depuis **Réglages → IA et agents → Lancer la configuration guidée**. Pour configurer les modèles à la main :
+Au premier lancement, la configuration guidée demande pour quoi l’IA doit vous aider et ce que vous utilisez déjà : un agent de code comme Claude Code, Codex, Antigravity CLI, Gemini CLI, Cursor ou Grok Build dans l’application de bureau, un compte API, ou un serveur local ou d’entreprise. Elle connecte cet accès et l’attribue aux rôles **Design agent** et **Vision**, sans toucher à ce que vous avez configuré à la main. Avec OpenRouter, il suffit de se connecter au lieu de coller une clé API. Vous pouvez la passer et la relancer depuis **Réglages → IA et agents → Lancer la configuration guidée**. Pour configurer les modèles à la main :
 
 1. Ouvrez le chat.
 2. Sélectionnez l’icône des réglages.
@@ -31,11 +31,17 @@ Le jeton est conservé dans le stockage sécurisé des identifiants, pas dans le
 
 ## Outils
 
-Les outils couvrent lecture, création, modification, structure, variables, vecteurs, analyse, description, génération de code et images de stock. L’inspection comprend `get_jsx` pour la vue JSX aller-retour, `diff_create` et `diff_jsx` pour les différences structurelles, `diff_visual` pour les différences de pixels et `describe` pour le rôle sémantique et la détection des problèmes de design. Chaque appel agit sur l’éditeur actif et participe à l’historique d’annulation lorsque cela s’applique.
+Les outils couvrent lecture, création, modification, structure, variables, vecteurs, analyse, description, génération de code et images de stock. L’inspection comprend `get_jsx` pour la vue JSX aller-retour, `diff_nodes` pour les différences structurelles, `diff_pixels` pour les différences de pixels et `describe` pour le rôle sémantique et la détection des problèmes de design. Chaque appel agit sur l’éditeur actif et participe à l’historique d’annulation lorsque cela s’applique.
+
+## Compétences
+
+Les compétences sont des dossiers contenant un `SKILL.md` au format [Agent Skills](https://agentskills.io/specification) : des instructions pour un type de travail, avec des fichiers de référence facultatifs. L’IA intégrée voit le nom et la description de chaque compétence active et charge ses instructions quand une demande correspond ; les scripts d’une compétence ne s’exécutent pas.
+
+Dans **Réglages → Compétences**, importez une compétence sous forme de ZIP de son dossier ou de `SKILL.md`. Dans l’application de bureau, `~/.agents/skills` et `~/.claude/skills` sont aussi lus, ainsi que les dossiers `.agents/skills` et `.claude/skills` à côté du document ouvert, utilisés seulement après **Faire confiance au dossier**. Tapez `/` au début d’un message pour choisir une compétence, et `@` pour mentionner un calque, une page ou une compétence. Les mentions s’affichent sous forme de puces, y compris dans les réponses ; un clic montre le calque sur le canevas.
 
 ## Vérification visuelle
 
-L’assistant peut vérifier visuellement son travail. Lorsque `export_image` est activé, il peut capturer une image après avoir créé ou modifié des designs et comparer le résultat à la demande initiale. Cela permet de repérer les problèmes de disposition, les éléments manquants et les écarts de couleur qu’une réponse purement textuelle laisserait passer. `diff_visual`, activé par défaut, compare un objet modifié à une copie de référence et renvoie les pixels et la zone modifiés ; l’assistant peut ainsi confirmer qu’une modification est restée dans sa cible.
+L’assistant peut vérifier visuellement son travail. Lorsque `export_image` est activé, il peut capturer une image après avoir créé ou modifié des designs et comparer le résultat à la demande initiale. Cela permet de repérer les problèmes de disposition, les éléments manquants et les écarts de couleur qu’une réponse purement textuelle laisserait passer. `diff_pixels`, activé par défaut, compare un objet modifié à une copie de référence et renvoie les pixels et la zone modifiés ; l’assistant peut ainsi confirmer qu’une modification est restée dans sa cible.
 
 ## Conseils
 

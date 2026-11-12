@@ -6,7 +6,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 import { cloudShareOpen } from '@/app/cloud/sharing/dialog'
 import { cloudShareTarget } from '@/app/cloud/sharing/document'
 import { useEditorStore } from '@/app/editor/active-store'
-import { shareButton } from '@/theme/collaboration/share-button'
+import { shareButton } from '@/components/collab-panel/ui'
 
 /** Opens the Cloud document's share dialog, which `CloudShareHost` shows for the app. */
 const store = useEditorStore()

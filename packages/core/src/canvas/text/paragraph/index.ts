@@ -1,22 +1,19 @@
 import type {
   CanvasKit,
   FontStyle,
-  FontWeight,
   Paint,
   Paragraph,
   ParagraphBuilder,
   TextFontFeatures,
-  TextFontVariations,
-  TextHeightBehavior
-} from 'canvaskit-wasm'
-
+  TextFontVariations
+} from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
-import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { faceStyleKey, type NamedFace } from '@open-pencil/scene-graph/font-style'
+import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
+import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
-import { loadedFace, resolveParagraphFontFamilies } from '#core/canvas/text/font-families'
-import { laidOutText } from '#core/canvas/text/keycap'
 import {
   pushParagraphStyle,
   type ParagraphPaintStyle,
@@ -24,30 +21,34 @@ import {
 } from '#core/canvas/text/paint'
 import type { TextRenderer } from '#core/canvas/text/renderer'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
+import { autoWidthWrapWidth } from '#core/layout/text-measurement'
 import { shownTextSlice } from '#core/text/case'
 import { ELLIPSIS } from '#core/text/ellipsis'
-import { fontManager } from '#core/text/fonts'
+import { makeParagraphBuilder } from '#core/text/font/collection'
+import {
+  drawnFontVariations,
+  loadedFace,
+  resolveParagraphFontFamilies
+} from '#core/text/font/families'
+import { fontManager } from '#core/text/font/manager'
+import { laidOutText } from '#core/text/keycap'
 
 import type { ParagraphNode } from './inputs'
 
 export function resolveParagraphLayoutWidth(node: ParagraphNode, maxWidth?: number): number {
   if (maxWidth !== undefined) return maxWidth
-  if (node.textAutoResize === 'WIDTH_AND_HEIGHT') return 1e6
+  if (node.textAutoResize === 'WIDTH_AND_HEIGHT') {
+    return autoWidthWrapWidth(node) ?? 1e6
+  }
   return node.width || 1e6
 }
 
-export function buildTruncateOpts(
-  node: ParagraphNode,
-  baseFontSize: number
-): { maxLines?: number; ellipsis?: string } {
+export function buildTruncateOpts(node: ParagraphNode): { maxLines?: number; ellipsis?: string } {
   if (node.textTruncation !== 'ENDING') return {}
 
   const opts: { maxLines?: number; ellipsis: string } = { ellipsis: ELLIPSIS }
   if (node.maxLines != null && node.maxLines > 0) {
     opts.maxLines = node.maxLines
-  } else if (node.height > 0) {
-    const lineH = node.lineHeight || baseFontSize * 1.2
-    opts.maxLines = Math.max(1, Math.floor(node.height / lineH))
   }
   return opts
 }
@@ -93,43 +94,22 @@ export function textFontFeatures(
   }))
 }
 
-export function textHeightBehaviorValue<T>(
-  ck: { TextHeightBehavior: { DisableAll: T } },
-  leadingTrim: SceneNode['leadingTrim']
-): T | undefined {
-  return leadingTrim === 'CAP_HEIGHT' ? ck.TextHeightBehavior.DisableAll : undefined
-}
-
-/** Which edges of the text a paragraph is: leading trim only trims the text's own edges. */
-export interface ParagraphEdges {
-  first: boolean
-  last: boolean
-}
-
-function blockHeightBehavior(
-  ck: CanvasKit,
-  leadingTrim: SceneNode['leadingTrim'],
-  edges: ParagraphEdges | undefined
-): TextHeightBehavior | undefined {
-  if (!edges) return textHeightBehaviorValue(ck, leadingTrim)
-  const { first, last } = edges
-  if (leadingTrim !== 'CAP_HEIGHT') return undefined
-  if (first && last) return ck.TextHeightBehavior.DisableAll
-  if (first) return ck.TextHeightBehavior.DisableFirstAscent
-  if (last) return ck.TextHeightBehavior.DisableLastDescent
-  return ck.TextHeightBehavior.All
-}
-
 /**
  * The style a paragraph asks CanvasKit for: the face of the family that is loaded. Asked for a
  * face it lacks, CanvasKit slants and emboldens another, which neither Figma, a browser, nor a
  * native text stack draws the same, so a missing face is drawn as the face that exists and
  * reported missing, as Figma does. A family with no face loaded asks for the style as given.
  */
-function drawnFontStyle(ck: CanvasKit, family: string, weight: number, italic: boolean): FontStyle {
-  const face = loadedFace(family, weight, italic) ?? { weight, italic }
+function drawnFontStyle(
+  ck: CanvasKit,
+  family: string,
+  weight: number,
+  italic: boolean,
+  style: string
+): FontStyle {
+  const face = loadedFace(family, weight, italic, style) ?? { weight, italic }
   return {
-    weight: { value: face.weight } as FontWeight,
+    weight: { value: face.weight },
     slant: face.italic ? ck.FontSlant.Italic : ck.FontSlant.Upright
   }
 }
@@ -150,7 +130,7 @@ function styleRunLanguage(
   style: SceneNode['styleRuns'][number]['style'],
   node: Pick<ParagraphNode, 'textLanguage'>
 ): string | undefined {
-  return style.textLanguage ?? node.textLanguage ?? undefined
+  return (style.textLanguage !== undefined ? style.textLanguage : node.textLanguage) ?? undefined
 }
 
 function pushStyleRun(
@@ -160,30 +140,47 @@ function pushStyleRun(
   run: SceneNode['styleRuns'][number],
   baseColor: Float32Array,
   baseFontSize: number,
-  fontFamilies: (primary: string, weight: number, italic?: boolean) => string[],
+  fontFamilies: (primary: string, face: NamedFace) => string[],
   halfLeading: boolean,
   paintStyle?: ParagraphPaintStyle
 ): void {
   const ck = r.ck
   const style = run.style
-  const runLineHeight = style.lineHeight !== undefined ? style.lineHeight : node.lineHeight
   const runFontSize = style.fontSize ?? baseFontSize
+  // A percent follows the run's own font size, as in Figma.
+  const runLineHeight = lineHeightPixels(
+    style.lineHeight !== undefined ? style.lineHeight : node.lineHeight,
+    runFontSize
+  )
   const runFamily = style.fontFamily ?? (node.fontFamily || DEFAULT_FONT_FAMILY)
   const runWeight = style.fontWeight ?? node.fontWeight
   const runItalic = style.italic ?? node.italic
+  const runFace = {
+    fontWeight: runWeight,
+    italic: runItalic,
+    fontStyle: rangeFontStyle(node, style)
+  }
+  const runKey = faceStyleKey(runFace)
 
   const textStyle = new ck.TextStyle({
     color: styleRunColor(ck, style, baseColor),
-    fontFamilies: fontFamilies(runFamily, runWeight, runItalic),
+    fontFamilies: fontFamilies(runFamily, runFace),
     fontSize: runFontSize,
     locale: styleRunLanguage(style, node),
-    fontStyle: drawnFontStyle(ck, runFamily, runWeight, runItalic),
+    fontStyle: drawnFontStyle(ck, runFamily, runWeight, runItalic, runKey),
     fontVariations: textFontVariations(
-      style.fontVariations ?? node.fontVariations,
-      fontManager.namedInstanceVariations(runFamily, weightToStyle(runWeight, runItalic))
+      drawnFontVariations({
+        family: runFamily,
+        weight: runWeight,
+        italic: runItalic,
+        style: runKey,
+        fontSize: runFontSize,
+        variations: style.fontVariations ?? node.fontVariations,
+        opticalSizeFromFontSize: style.opticalSizeFromFontSize ?? node.opticalSizeFromFontSize
+      })
     ),
     fontFeatures: textFontFeatures(style.fontFeatures ?? node.fontFeatures),
-    letterSpacing: style.letterSpacing ?? (node.letterSpacing || 0),
+    letterSpacing: textLengthPixels(style.letterSpacing ?? node.letterSpacing, runFontSize),
     heightMultiplier: runLineHeight ? runLineHeight / runFontSize : undefined,
     halfLeading
   })
@@ -206,7 +203,7 @@ function addStyledRuns(
   node: ParagraphNode,
   baseColor: Float32Array,
   baseFontSize: number,
-  fontFamilies: (primary: string, weight: number, italic?: boolean) => string[],
+  fontFamilies: (primary: string, face: NamedFace) => string[],
   halfLeading: boolean,
   paintStyle?: ParagraphPaintStyle
 ): void {
@@ -240,7 +237,6 @@ export interface ParagraphBlockOptions {
   firstLineIndent?: number
   /** Truncation for this block in place of the node's. */
   truncation?: { maxLines?: number; ellipsis?: string }
-  edges?: ParagraphEdges
 }
 
 /** Room before a paragraph's first line, as an empty placeholder on its baseline. */
@@ -262,57 +258,59 @@ export function buildSkParagraph(
   const ck = r.ck
   const baseColor = color ?? ck.BLACK
   const baseFontSize = node.fontSize || DEFAULT_FONT_SIZE
+  const baseLineHeight = lineHeightPixels(node.lineHeight, baseFontSize)
   const cjkFallbacks = fontManager.getCJKFallbackFamilies()
   const arabicFallbacks = fontManager.getArabicFallbackFamilies()
   const textDirection = resolveNodeTextDirection(node)
 
-  const truncateOpts = block.truncation ?? buildTruncateOpts(node, baseFontSize)
+  const truncateOpts = block.truncation ?? buildTruncateOpts(node)
 
-  const fontFamilies = (primary: string, weight: number, italic = false) =>
+  const fontFamilies = (primary: string, face: NamedFace) =>
     resolveParagraphFontFamilies(
       primary,
-      weightToStyle(weight, italic),
+      { weight: face.fontWeight, italic: face.italic, style: faceStyleKey(face) },
       arabicFallbacks,
       cjkFallbacks
     )
+  const nodeKey = faceStyleKey(node)
 
   const baseTextStyle = {
     color: baseColor,
-    fontFamilies: fontFamilies(
-      node.fontFamily || DEFAULT_FONT_FAMILY,
-      node.fontWeight,
-      node.italic
-    ),
+    fontFamilies: fontFamilies(node.fontFamily || DEFAULT_FONT_FAMILY, node),
     fontSize: baseFontSize,
     locale: node.textLanguage ?? undefined,
     fontStyle: drawnFontStyle(
       ck,
       node.fontFamily || DEFAULT_FONT_FAMILY,
       node.fontWeight,
-      node.italic
+      node.italic,
+      nodeKey
     ),
     fontVariations: textFontVariations(
-      node.fontVariations,
-      fontManager.namedInstanceVariations(
-        node.fontFamily || DEFAULT_FONT_FAMILY,
-        weightToStyle(node.fontWeight, node.italic)
-      )
+      drawnFontVariations({
+        family: node.fontFamily || DEFAULT_FONT_FAMILY,
+        weight: node.fontWeight,
+        italic: node.italic,
+        style: nodeKey,
+        fontSize: baseFontSize,
+        variations: node.fontVariations,
+        opticalSizeFromFontSize: node.opticalSizeFromFontSize
+      })
     ),
     fontFeatures: textFontFeatures(node.fontFeatures),
-    letterSpacing: node.letterSpacing || 0,
-    heightMultiplier: node.lineHeight ? node.lineHeight / baseFontSize : undefined,
+    letterSpacing: textLengthPixels(node.letterSpacing, baseFontSize),
+    heightMultiplier: baseLineHeight ? baseLineHeight / baseFontSize : undefined,
     halfLeading
   }
   const paraStyle = new ck.ParagraphStyle({
     textAlign: getParagraphTextAlign(ck, node),
     textDirection: textDirection === 'RTL' ? ck.TextDirection.RTL : ck.TextDirection.LTR,
-    textHeightBehavior: blockHeightBehavior(ck, node.leadingTrim, block.edges),
     ...truncateOpts,
     textStyle: baseTextStyle
   })
 
   if (!r.fontProvider) throw new Error('Font provider not initialized')
-  const builder = ck.ParagraphBuilder.MakeFromFontProvider(paraStyle, r.fontProvider)
+  const builder = makeParagraphBuilder(ck, paraStyle, r.fontProvider)
 
   let background: Paint | undefined
   try {

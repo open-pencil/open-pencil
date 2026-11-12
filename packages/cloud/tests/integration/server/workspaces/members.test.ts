@@ -6,6 +6,7 @@ import { responseJSON } from '#cloud-tests/helpers/response'
 import {
   createCloudApp,
   createBetterAuthAdapter,
+  INVITATION_BUDGET,
   parseCloudServerConfig,
   type CloudActor
 } from '#cloud/server'
@@ -14,7 +15,6 @@ import * as v from 'valibot'
 const config = parseCloudServerConfig({
   deployment: 'self-hosted',
   publicURL: 'https://cloud.example.com',
-  appURL: 'https://app.example.com',
   trustedOrigins: ['https://app.example.com'],
   databaseURL: 'postgresql://test:test@localhost/test',
   authSecret: 'integration-test-secret-at-least-32-characters',
@@ -96,8 +96,8 @@ describe('workspace members', () => {
       )
       expect(invited.invitation).toMatchObject({ email: 'bob@example.com', role: 'editor' })
       const link = new URL(invited.acceptanceURL)
-      expect(link.origin).toBe('https://app.example.com')
-      expect(link.pathname).toBe(`/cloud/invitations/${invited.invitation.id}`)
+      expect(link.origin).toBe('https://cloud.example.com')
+      expect(link.pathname).toBe(`/invitations/${invited.invitation.id}`)
       const token = link.hash.slice(1)
 
       const listed = await responseJSON(
@@ -178,6 +178,91 @@ describe('workspace members', () => {
     }
   })
 
+  test('answers 429 past the recipient’s daily budget, which deleting the workspace keeps', async () => {
+    const { runtime, as } = await testApp()
+    try {
+      const create = async (name: string) =>
+        (
+          await responseJSON(
+            await as(people.alice)('/api/workspaces', { method: 'POST', json: { name } }),
+            v.object({ workspace: v.object({ id: v.string() }) })
+          )
+        ).workspace.id
+      const invite = (workspaceId: string) =>
+        as(people.alice)(`/api/workspaces/${workspaceId}/invitations`, {
+          method: 'POST',
+          json: { email: 'target@example.com', role: 'viewer' }
+        })
+      const first = await create('First')
+      for (let sent = 0; sent < INVITATION_BUDGET.perRecipient; sent++) {
+        expect((await invite(first)).status).toBe(201)
+      }
+      const refused = await invite(first)
+      expect(refused.status).toBe(429)
+      expect(await refused.json()).toEqual({ error: { code: 'rate_limited' } })
+
+      expect(
+        (await as(people.alice)(`/api/workspaces/${first}`, { method: 'DELETE' })).status
+      ).toBeLessThan(300)
+      expect((await invite(await create('Second'))).status).toBe(429)
+    } finally {
+      await runtime.close()
+    }
+  })
+
+  test('passes the workspace to the longest-standing other admin when its owner goes', async () => {
+    const { runtime, as } = await testApp()
+    try {
+      const created = await responseJSON(
+        await as(people.alice)('/api/workspaces', { method: 'POST', json: { name: 'Studio' } }),
+        v.object({ workspace: v.object({ id: v.string() }) })
+      )
+      const workspaceId = created.workspace.id
+      await runtime.database
+        .insertInto('workspaceMember')
+        .values([
+          {
+            workspaceId,
+            userId: people.carol.userId,
+            role: 'admin',
+            createdAt: new Date('2026-02-01T00:00:00Z')
+          },
+          {
+            workspaceId,
+            userId: people.bob.userId,
+            role: 'admin',
+            createdAt: new Date('2026-01-01T00:00:00Z')
+          }
+        ])
+        .execute()
+      const owner = async () =>
+        (
+          await runtime.database
+            .selectFrom('workspace')
+            .select('ownerId')
+            .where('id', '=', workspaceId)
+            .executeTakeFirstOrThrow()
+        ).ownerId
+      expect(await owner()).toBe(people.alice.userId)
+
+      const aliceLeaves = await as(people.alice)(
+        `/api/workspaces/${workspaceId}/members/${people.alice.userId}`,
+        { method: 'DELETE' }
+      )
+      expect(aliceLeaves.status).toBe(204)
+      expect(await owner()).toBe(people.bob.userId)
+
+      const bobSteppedDown = await as(people.carol)(
+        `/api/workspaces/${workspaceId}/members/${people.bob.userId}`,
+        { method: 'PATCH', json: { role: 'editor' } }
+      )
+      expect(bobSteppedDown.status).toBe(204)
+      expect(await owner()).toBe(people.carol.userId)
+    } finally {
+      await runtime.close()
+    }
+  })
+
   test('replaces an earlier invitation to the same address and lets an administrator withdraw it', async () => {
     const { runtime, as } = await testApp()
     try {
@@ -210,6 +295,70 @@ describe('workspace members', () => {
         membersSchema
       )
       expect(listed.invitations).toEqual([])
+    } finally {
+      await runtime.close()
+    }
+  })
+  test('resends a waiting invitation under a new link and names who sent it', async () => {
+    const { runtime, as } = await testApp()
+    try {
+      const created = await responseJSON(
+        await as(people.alice)('/api/workspaces', { method: 'POST', json: { name: 'Studio' } }),
+        v.object({ workspace: v.object({ id: v.string() }) })
+      )
+      const workspaceId = created.workspace.id
+      const first = await responseJSON(
+        await as(people.alice)(`/api/workspaces/${workspaceId}/invitations`, {
+          method: 'POST',
+          json: { email: 'bob@example.com', role: 'viewer' }
+        }),
+        createdSchema
+      )
+      const resent = await responseJSON(
+        await as(people.alice)(
+          `/api/workspaces/${workspaceId}/invitations/${first.invitation.id}/resend`,
+          { method: 'POST' }
+        ),
+        createdSchema
+      )
+      expect(resent.invitation).toMatchObject({ email: 'bob@example.com', role: 'viewer' })
+      expect(resent.invitation.id).not.toBe(first.invitation.id)
+      const listed = await responseJSON(
+        await as(people.alice)(`/api/workspaces/${workspaceId}/members`),
+        v.object({
+          invitations: v.array(
+            v.object({
+              id: v.string(),
+              invitedBy: v.object({ id: v.string(), name: v.nullable(v.string()) })
+            })
+          )
+        })
+      )
+      expect(listed.invitations).toEqual([
+        { id: resent.invitation.id, invitedBy: { id: people.alice.userId, name: 'Alice' } }
+      ])
+
+      const stale = await as(people.bob)(`/api/invitations/${first.invitation.id}/accept`, {
+        method: 'POST',
+        json: { token: new URL(first.acceptanceURL).hash.slice(1) }
+      })
+      expect(stale.status).toBe(404)
+      const accepted = await as(people.bob)(`/api/invitations/${resent.invitation.id}/accept`, {
+        method: 'POST',
+        json: { token: new URL(resent.acceptanceURL).hash.slice(1) }
+      })
+      expect(accepted.status).toBe(200)
+
+      const gone = await as(people.alice)(
+        `/api/workspaces/${workspaceId}/invitations/${resent.invitation.id}/resend`,
+        { method: 'POST' }
+      )
+      expect(gone.status).toBe(404)
+      const notAdmin = await as(people.bob)(
+        `/api/workspaces/${workspaceId}/invitations/${first.invitation.id}/resend`,
+        { method: 'POST' }
+      )
+      expect(notAdmin.status).toBe(403)
     } finally {
       await runtime.close()
     }

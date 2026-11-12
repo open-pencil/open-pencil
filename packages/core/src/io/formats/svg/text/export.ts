@@ -1,50 +1,65 @@
 import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
+import { textLengthPixels } from '@open-pencil/scene-graph/text'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
-import { formatColor, type SVGExportContext, type SVGFontAlias } from '#core/io/formats/svg/defs'
+import { formatColor, type SVGExportContext } from '#core/io/formats/svg/defs'
 import { svg, type SVGNode } from '#core/io/formats/svg/node'
 import { round } from '#core/io/formats/svg/paths'
-import { laidOutTextSpans } from '#core/io/formats/svg/text/lines'
-import { shownText, shownTextSlice } from '#core/text/case'
-import type { FontFaceRef } from '#core/text/face'
-import { textFontFace } from '#core/text/requirements'
+import {
+  explicitNewlineLines,
+  laidOutTextSpans,
+  textStyleSpans,
+  type SpanAttrs,
+  type SVGFallbackFace
+} from '#core/io/formats/svg/text/lines'
+import { shownText } from '#core/text/case'
 
 function styleOverrideToTspanAttrs(
   style: CharacterStyleOverride,
-  colorSpace: 'srgb' | 'display-p3'
+  colorSpace: 'srgb' | 'display-p3',
+  parentFillOpacity: number | undefined,
+  node: Pick<SceneNode, 'fontSize' | 'letterSpacing'>
 ): Record<string, string | number | undefined> {
   const attrs: Record<string, string | number | undefined> = {}
   if (style.fontFamily) attrs['font-family'] = style.fontFamily
   if (style.fontSize) attrs['font-size'] = style.fontSize
   if (style.fontWeight) attrs['font-weight'] = style.fontWeight
   if (style.italic) attrs['font-style'] = 'italic'
-  if (style.letterSpacing) attrs['letter-spacing'] = round(style.letterSpacing)
+  // A run's own spacing is written even at zero, or it would inherit the layer's. A percent the
+  // run inherits follows its own font size, so a larger or smaller run writes it again.
+  const inherited =
+    style.fontSize !== undefined &&
+    node.letterSpacing.unit === 'PERCENT' &&
+    node.letterSpacing.value !== 0
+      ? node.letterSpacing
+      : undefined
+  const spacing = style.letterSpacing ?? inherited
+  if (spacing) {
+    attrs['letter-spacing'] = round(textLengthPixels(spacing, style.fontSize ?? node.fontSize))
+  }
   if (style.textDecoration === 'UNDERLINE') attrs['text-decoration'] = 'underline'
   if (style.textDecoration === 'STRIKETHROUGH') attrs['text-decoration'] = 'line-through'
   if (style.fills) {
     const visibleFill = style.fills.find((f) => f.visible && f.type === 'SOLID')
     if (visibleFill) {
-      attrs.fill = formatColor(visibleFill.color, visibleFill.opacity, colorSpace)
+      // Paragraphs and saved glyphs draw a run at color.a * opacity. Shapes paint opacity alone.
+      const alpha = round(visibleFill.color.a * visibleFill.opacity)
+      if (colorSpace === 'display-p3') {
+        attrs.fill = formatColor({ ...visibleFill.color, a: 1 }, alpha, colorSpace)
+      } else {
+        attrs.fill = formatColor(visibleFill.color, 1, colorSpace)
+        if (alpha < 1) attrs['fill-opacity'] = alpha
+      }
+      // `fill-opacity` inherits, so an opaque run has to cover a translucent parent.
+      if (alpha >= 1 && parentFillOpacity !== undefined) attrs['fill-opacity'] = 1
     }
   }
   return attrs
 }
 
-/**
- * Font attributes naming a face's alias, such as the family a PDF embeds its file under, or else
- * the face itself, so text inside an aliased parent does not inherit the alias.
- */
-function aliasedFontAttrs(
-  face: FontFaceRef,
-  fontAlias: SVGFontAlias
-): Record<string, string | number> {
-  const alias = fontAlias(face.family, face.style)
-  if (alias) return { 'font-family': alias, 'font-weight': 'normal', 'font-style': 'normal' }
-  return {
-    'font-family': face.family,
-    'font-weight': face.weight,
-    'font-style': face.italic ? 'italic' : 'normal'
-  }
+/** The family of the fallback face that draws a span's characters, if any. */
+function spanFontAttrs(fallback: SVGFallbackFace | undefined): Record<string, string> {
+  return fallback ? { 'font-family': fallback.family } : {}
 }
 
 function isLogicalTextEnd(node: SceneNode, direction: 'LTR' | 'RTL'): boolean {
@@ -69,12 +84,43 @@ function textXForNode(node: SceneNode, direction: 'LTR' | 'RTL'): number {
   return 0
 }
 
+/** Text with no measured layout: explicit newlines on their own baselines, otherwise one line. */
+function renderUnmeasuredText(
+  node: SceneNode,
+  attrs: Record<string, string | number | undefined>,
+  spanAttrs: SpanAttrs,
+  direction: 'LTR' | 'RTL'
+): SVGNode {
+  const x = textXForNode(node, direction)
+  const y = node.fontSize || 14
+  // No measured wraps: an explicit newline still starts a line, on the same anchor as one line.
+  const newlineLines = explicitNewlineLines(node, x, y)
+  if (newlineLines) {
+    return svg(
+      'text',
+      { ...attrs, 'xml:space': 'preserve' },
+      ...laidOutTextSpans(node, newlineLines, spanAttrs)
+    )
+  }
+
+  if (node.styleRuns.length > 0) {
+    return svg(
+      'text',
+      { x, y, ...attrs, 'xml:space': 'preserve' },
+      ...textStyleSpans(node, spanAttrs)
+    )
+  }
+
+  return svg('text', { x, y, ...attrs }, shownText(node))
+}
+
 export function renderTextNode(
   node: SceneNode,
   fillAttr: string | null,
-  ctx: SVGExportContext
+  ctx: SVGExportContext,
+  fillOpacity?: number
 ): SVGNode {
-  const { colorSpace, textLayout, fontAlias } = ctx
+  const { colorSpace, textLayout } = ctx
   const direction = resolveNodeTextDirection(node)
   const lines = textLayout ? textLayout(node) : null
   const laidOut = lines && lines.length > 0 ? lines : null
@@ -82,6 +128,7 @@ export function renderTextNode(
   let textDecoration: 'underline' | 'line-through' | undefined
   if (node.textDecoration === 'UNDERLINE') textDecoration = 'underline'
   else if (node.textDecoration === 'STRIKETHROUGH') textDecoration = 'line-through'
+  const letterSpacing = textLengthPixels(node.letterSpacing, node.fontSize)
 
   const attrs: Record<string, string | number | undefined> = {
     'font-family': node.fontFamily || undefined,
@@ -89,16 +136,16 @@ export function renderTextNode(
     'font-weight': node.fontWeight !== 400 ? node.fontWeight : undefined,
     'font-style': node.italic ? 'italic' : undefined,
     fill: fillAttr ?? undefined,
+    'fill-opacity': fillOpacity,
     // Laid-out spans each start at their own left edge, so they take no direction or anchor.
     direction: direction === 'RTL' && !laidOut ? 'rtl' : undefined,
     'text-anchor': laidOut ? undefined : textAnchorForNode(node, direction),
     'text-decoration': textDecoration,
-    'letter-spacing': node.letterSpacing ? round(node.letterSpacing) : undefined,
-    ...(fontAlias ? aliasedFontAttrs(textFontFace(node), fontAlias) : {})
+    'letter-spacing': letterSpacing ? round(letterSpacing) : undefined
   }
-  const spanAttrs = (style: CharacterStyleOverride) => ({
-    ...styleOverrideToTspanAttrs(style, colorSpace),
-    ...(fontAlias ? aliasedFontAttrs(textFontFace(node, style), fontAlias) : {})
+  const spanAttrs = (style: CharacterStyleOverride, fallback?: SVGFallbackFace) => ({
+    ...styleOverrideToTspanAttrs(style, colorSpace, fillOpacity, node),
+    ...spanFontAttrs(fallback)
   })
 
   if (laidOut) {
@@ -110,20 +157,5 @@ export function renderTextNode(
     )
   }
 
-  const x = textXForNode(node, direction)
-  const y = node.fontSize || 14
-
-  if (node.styleRuns.length > 0) {
-    const spans: SVGNode[] = []
-    let pos = 0
-    for (const run of node.styleRuns) {
-      const text = shownTextSlice(node, pos, pos + run.length)
-      pos += run.length
-      spans.push(svg('tspan', spanAttrs(run.style), text))
-    }
-
-    return svg('text', { x, y, ...attrs }, ...spans)
-  }
-
-  return svg('text', { x, y, ...attrs }, shownText(node))
+  return renderUnmeasuredText(node, attrs, spanAttrs, direction)
 }

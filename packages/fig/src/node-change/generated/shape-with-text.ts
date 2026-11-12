@@ -77,6 +77,8 @@ function backgroundProps(
   return pick(props, [
     'fills',
     'strokes',
+    'strokeWeight',
+    'strokeAlign',
     'strokeCap',
     'strokeJoin',
     'dashPattern',

@@ -23,6 +23,19 @@ export function setStrokeAlign(graph: SceneGraph, node: SceneNode, align: Stroke
   recordInstanceOverride(graph, node.id, ['strokes', 'strokeAlign'])
 }
 
+/** Dashes the layer's strokes: the renderer reads each stroke's pattern, Figma the layer's. */
+export function setDashPattern(
+  graph: SceneGraph,
+  node: SceneNode,
+  pattern: readonly number[]
+): void {
+  graph.updateNode(node.id, {
+    dashPattern: [...pattern],
+    strokes: node.strokes.map((stroke) => ({ ...copyStroke(stroke), dashPattern: [...pattern] }))
+  })
+  recordInstanceOverride(graph, node.id, ['strokes', 'dashPattern'])
+}
+
 export function setIndependentStrokeWeight(
   graph: SceneGraph,
   nodeId: string,

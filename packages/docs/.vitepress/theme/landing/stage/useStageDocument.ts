@@ -42,10 +42,7 @@ export function useStageDocument(scene: SceneBuilder) {
       // As the app does when it opens a page: render, and finish once that frame is on screen,
       // so whatever stands in for the stage until now never gives way to an empty canvas.
       preparation.update({ phase: 'preparing-render' })
-      await store.preparationController.waitForPresentation(
-        preparation.id,
-        store.state.sceneVersion
-      )
+      await store.preparationController.waitForPresentation(preparation.id, store.state)
       preparation.complete()
       ready.value = true
     } catch (error) {

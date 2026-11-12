@@ -14,10 +14,21 @@ The SDK is headless by design: it provides logic and structure, while your app o
 ## Install
 
 ```bash
-bun add @open-pencil/vue @open-pencil/core @open-pencil/scene-graph canvaskit-wasm
+bun add @open-pencil/vue @open-pencil/core @open-pencil/scene-graph @open-pencil/canvaskit
 ```
 
-The current development version requires Vue `^3.5.41` and, when supplying the optional CanvasKit peer, `canvaskit-wasm >=0.41.1`. See [SDK Getting Started](https://openpencil.dev/programmable/sdk/getting-started) for migration guidance; older releases may have different peer requirements.
+The current development version requires Vue `^3.5.41` and, when supplying the optional CanvasKit peer, `@open-pencil/canvaskit` of the same version as `@open-pencil/core`. See [SDK Getting Started](https://openpencil.dev/programmable/sdk/getting-started) for migration guidance; older releases may have different peer requirements.
+
+With Vite, add the plugin that serves the engine's WebAssembly and fonts; other bundlers set Core's locators instead (see the guide):
+
+```ts
+// vite.config.ts
+import vue from '@vitejs/plugin-vue'
+import { defineConfig } from 'vite'
+import { openPencil } from '@open-pencil/core/node/vite'
+
+export default defineConfig({ plugins: [vue(), openPencil()] })
+```
 
 ## Quick start
 
@@ -36,25 +47,23 @@ if (!page) throw new Error('Expected an initial page')
 const editor = createEditor({
   graph,
   state: reactive(createDefaultEditorState(page.id)),
-  getViewportSize: () => ({ width: 1200, height: 800 }),
 })
 
 editor.createShape('RECTANGLE', 100, 100, 200, 150)
-editor.zoomToFit()
 
 provideEditor(editor)
 </script>
 
 <template>
   <div class="h-screen">
-    <CanvasRoot>
+    <CanvasRoot @ready="editor.zoomToFit()">
       <CanvasSurface class="size-full" />
     </CanvasRoot>
   </div>
 </template>
 ```
 
-The fixed viewport size above is illustrative; a resizable shell should return its actual canvas container dimensions from `getViewportSize`. Pass reactive state for Vue controls, while keeping the Scene Graph itself framework-neutral.
+`CanvasRoot` draws the page and takes pointer input and typing: selecting, dragging, drawing with the active tool, panning and zooming, editing paths and text. Pass `:input="false"` for a canvas that only draws. Pass reactive state for Vue controls, while keeping the Scene Graph itself framework-neutral.
 
 ## Entry points
 

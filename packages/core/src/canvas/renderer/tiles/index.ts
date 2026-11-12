@@ -1,6 +1,8 @@
 export {
+  MAX_TILE_LEVEL,
+  MIN_TILE_LEVEL,
   TILE_DEVICE_SIZE,
-  TILE_LEVEL_STEP,
+  TILE_LEVEL_STEPS_PER_OCTAVE,
   tileKeyString,
   tileKeysForWorldBounds,
   tileLevel,
@@ -17,11 +19,12 @@ export type { CachedTile } from './cache'
 export { TileScheduler } from './scheduler'
 export type {
   TileJob,
+  TileJobKind,
   TileJobPriority,
   TileJobResult,
   TileSchedulerMetrics,
   TileSchedulerOptions
 } from './scheduler'
 export { TileSurfacePool } from './surface-pool'
-export { deleteRenderedTile, renderTile, tileChunks } from './render'
+export { childTileKeys, deleteRenderedTile, downsampleTile, renderTile, tileChunks } from './render'
 export type { RenderedTile } from './render'

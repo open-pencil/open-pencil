@@ -8,7 +8,7 @@ describe('Cloud rate-limit cleanup', () => {
     const runtime = await createCloudTestDatabase()
     try {
       await runtime.database
-        .insertInto('cloudRateLimit')
+        .insertInto('apiRateLimit')
         .values([
           { keyHash: 'old', windowStartedAt: new Date('2025-01-01'), requestCount: 1 },
           { keyHash: 'active', windowStartedAt: new Date('2026-01-02'), requestCount: 1 }
@@ -17,9 +17,9 @@ describe('Cloud rate-limit cleanup', () => {
       expect(
         await createRateLimitCleanupService(runtime.database).cleanupExpired(new Date('2026-01-01'))
       ).toBe(1)
-      expect(
-        await runtime.database.selectFrom('cloudRateLimit').select('keyHash').execute()
-      ).toEqual([{ keyHash: 'active' }])
+      expect(await runtime.database.selectFrom('apiRateLimit').select('keyHash').execute()).toEqual(
+        [{ keyHash: 'active' }]
+      )
     } finally {
       await runtime.close()
     }

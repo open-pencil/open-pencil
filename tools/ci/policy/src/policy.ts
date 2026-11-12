@@ -48,6 +48,7 @@ export const CODE_JOBS = [
   'repository-quality',
   'storybook',
   'native-test-contracts',
+  'html-engine',
   'unit-tests',
   'feedback-tests'
 ] as const

@@ -2,16 +2,10 @@ import { useEventListener } from '@vueuse/core'
 import { ref, type Ref } from 'vue'
 
 import type { Editor } from '@open-pencil/core'
+import { IMPORTABLE_RASTER_TYPES, isSVGFile } from '@open-pencil/scene-graph/images'
 
 import { cycleSafeTarget, findMoveDropTarget } from '#vue/shared/input/drop-target'
 
-const RASTER_IMAGE_TYPES = new Set([
-  'image/png',
-  'image/jpeg',
-  'image/webp',
-  'image/gif',
-  'image/avif'
-])
 const COMPONENT_MIME = 'application/x-openpencil-component'
 
 function hasComponentData(e: DragEvent): boolean {
@@ -99,18 +93,14 @@ function hasFileData(e: DragEvent): boolean {
   return e.dataTransfer?.types.includes('Files') ?? false
 }
 
-function isSVGFile(file: File): boolean {
-  return (
-    file.type === 'image/svg+xml' || (file.type === '' && file.name.toLowerCase().endsWith('.svg'))
-  )
-}
-
 export function filterCanvasFiles(files: ArrayLike<File> | Iterable<File> | null): File[] {
   if (!files) return []
-  return Array.from(files).filter((file) => RASTER_IMAGE_TYPES.has(file.type) || isSVGFile(file))
+  return Array.from(files).filter(
+    (file) => IMPORTABLE_RASTER_TYPES.has(file.type) || isSVGFile(file)
+  )
 }
 
 export function extractImageFilesFromClipboard(e: ClipboardEvent): File[] {
   const files = e.clipboardData?.files
-  return files ? Array.from(files).filter((file) => RASTER_IMAGE_TYPES.has(file.type)) : []
+  return files ? Array.from(files).filter((file) => IMPORTABLE_RASTER_TYPES.has(file.type)) : []
 }

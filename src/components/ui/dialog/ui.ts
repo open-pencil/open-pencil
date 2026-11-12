@@ -1,22 +1,13 @@
 import { tv, type VariantProps } from 'tailwind-variants'
 
+import type { ComponentUI } from '@/components/ui/types'
 import dialogTheme from '@/theme/dialog/index'
 
 export const dialog = tv(dialogTheme)
 
 export type DialogVariants = VariantProps<typeof dialog>
 
-export interface DialogUI {
-  overlay?: string
-  content?: string
-  header?: string
-  heading?: string
-  title?: string
-  description?: string
-  close?: string
-  body?: string
-  footer?: string
-}
+export type DialogUI = ComponentUI<typeof dialogTheme>
 
 export function useDialogUI(ui?: DialogUI, variants?: DialogVariants) {
   const cls = dialog(variants)
@@ -29,6 +20,10 @@ export function useDialogUI(ui?: DialogUI, variants?: DialogVariants) {
     description: cls.description({ class: ui?.description }),
     close: cls.close({ class: ui?.close }),
     body: cls.body({ class: ui?.body }),
-    footer: cls.footer({ class: ui?.footer })
+    // Callers may restyle the footer but not move its actions: justify-end comes last, so it
+    // wins over any justify class they pass. A separate action goes in the footer's start slot.
+    footer: cls.footer({ class: [ui?.footer, 'justify-end'] }),
+    footerStart: cls.footerStart({ class: ui?.footerStart }),
+    pane: cls.pane({ class: ui?.pane })
   }
 }

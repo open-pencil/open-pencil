@@ -1,14 +1,19 @@
+import { filename } from 'pathe/utils'
+
 import { sceneNodeToJSX, selectionToJSX } from '@open-pencil/design-jsx'
-import { parsePenFile } from '@open-pencil/pen'
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import { isDrawIOExportFileName } from '@open-pencil/drawio'
+import type { DocumentKind, SceneGraph } from '@open-pencil/scene-graph'
 
 import { layoutAuthoredNodes } from '#core/layout'
+import { prepareGraphFonts } from '#core/text/prepare'
 
+import type { DrawIOExportTarget } from './formats/drawio/export'
 import { exportFigFile, parseFigFile } from './formats/fig'
+import { readPenDocument } from './formats/pen/read'
 import type { PPTXExportOptions } from './formats/pptx'
-import { headlessRenderNodes, renderNodesToImage, type RasterExportFormat } from './formats/raster'
-import { renderNodesToSVG } from './formats/svg'
-import { extractExportGraph, findPageId } from './subgraph'
+import { rasterFormat } from './formats/raster/adapter'
+import { extractExportGraph } from './subgraph'
+import { resolveExportNodes, singleExportNode, type ExportNodes } from './targets'
 import type {
   ExportRequest,
   ExportResult,
@@ -18,7 +23,6 @@ import type {
   IOFormatAdapter,
   IOFormatExportOptions,
   IOFormatSupport,
-  RasterExportOptions,
   SVGExportOptions
 } from './types'
 
@@ -38,119 +42,10 @@ function lowerExt(name: string): string {
   return match?.[1] ?? ''
 }
 
-function ensureSingleNode(target: ExportRequest['target']): string | null {
-  if (target.scope === 'node') return target.nodeId
-  if (target.scope === 'selection' && target.nodeIds.length === 1) return target.nodeIds[0]
-  return null
-}
-
-function resolveExportNodes(request: ExportRequest): { pageId: string; nodeIds: string[] } | null {
-  switch (request.target.scope) {
-    case 'document': {
-      const page = request.graph.getPages()[0]
-      return { pageId: page.id, nodeIds: page.childIds }
-    }
-    case 'page': {
-      const page = request.graph.getNode(request.target.pageId)
-      if (!page) return null
-      return { pageId: page.id, nodeIds: page.childIds }
-    }
-    case 'selection': {
-      const first = request.target.nodeIds[0]
-      if (!first) return null
-      const pageId = findPageId(request.graph, first)
-      if (!pageId) return null
-      if (!request.target.nodeIds.every((nodeId) => findPageId(request.graph, nodeId) === pageId)) {
-        throw new Error('Export selection must stay on a single page')
-      }
-      return { pageId, nodeIds: request.target.nodeIds }
-    }
-    case 'node':
-      return resolveExportNodes({
-        ...request,
-        target: { scope: 'selection', nodeIds: [request.target.nodeId] }
-      })
-    default:
-      return null
-  }
-}
-
-async function renderRaster(
-  request: ExportRequest,
-  options: RasterExportOptions,
-  context?: IOContext
-): Promise<Uint8Array | null> {
-  const target = resolveExportNodes(request)
-  if (!target) return null
-  const scale = options.scale ?? 1
-
-  if (context?.canvasKit && context.renderer) {
-    return renderNodesToImage(
-      context.canvasKit,
-      context.renderer,
-      request.graph,
-      target.pageId,
-      target.nodeIds,
-      {
-        scale,
-        format: options.format,
-        quality: options.quality,
-        trimTransparent: request.target.scope === 'page' || request.target.scope === 'document'
-      }
-    )
-  }
-
-  return headlessRenderNodes(request.graph, target.pageId, target.nodeIds, {
-    scale,
-    format: options.format,
-    quality: options.quality,
-    trimTransparent: request.target.scope === 'page' || request.target.scope === 'document'
-  })
-}
-
-function rasterFormat<F extends RasterExportFormat>(format: F): IOFormatAdapter<Lowercase<F>> {
-  const extension = format.toLowerCase() as Lowercase<F>
-  let mimeType = 'image/png'
-  if (format === 'JPG') mimeType = 'image/jpeg'
-  else if (format === 'WEBP') mimeType = 'image/webp'
-
-  return {
-    id: extension,
-    label: format,
-    role: 'derived-export',
-    category: 'raster',
-    extensions: [extension],
-    mimeTypes: [mimeType],
-    support: {
-      exportDocument: true,
-      exportPage: true,
-      exportSelection: true,
-      exportNode: true
-    },
-    exportOptions: {
-      scale: true,
-      quality: format !== 'PNG',
-      colorSpace: false
-    },
-    async exportContent(request, options?: RasterExportOptions, context?: IOContext) {
-      const data = await renderRaster(
-        request,
-        {
-          format,
-          scale: options?.scale,
-          quality: options?.quality
-        },
-        context
-      )
-      if (!data) throw new Error('Nothing to export')
-      return {
-        format: extension,
-        mimeType,
-        extension,
-        data
-      }
-    }
-  }
+/** The file a document saves as: Figma's `.fig` for a design, FigJam's `.jam` for a board. */
+export const DOCUMENT_EXTENSIONS: Readonly<Record<DocumentKind, 'fig' | 'jam'>> = {
+  design: 'fig',
+  board: 'jam'
 }
 
 export const figFormat: IOFormatAdapter<'fig'> = {
@@ -158,7 +53,7 @@ export const figFormat: IOFormatAdapter<'fig'> = {
   label: 'OpenPencil Document',
   role: 'native-document',
   category: 'document',
-  extensions: ['fig'],
+  extensions: ['fig', 'jam'],
   mimeTypes: ['application/octet-stream'],
   support: {
     readDocument: true,
@@ -170,7 +65,8 @@ export const figFormat: IOFormatAdapter<'fig'> = {
   },
   exportOptions: FIXED_SIZE_EXPORT,
   matchesFile(fileName) {
-    return lowerExt(fileName) === 'fig'
+    const ext = lowerExt(fileName)
+    return ext === 'fig' || ext === 'jam'
   },
   async readDocument(input) {
     const data = input.data.slice().buffer
@@ -208,9 +104,10 @@ async function writeFig(
     renderer: context?.renderer,
     pageId,
     renderHeadlessThumbnail: options?.renderThumbnail ?? false,
-    documentName: options?.documentName ?? fileName?.replace(/\.fig$/i, '')
+    documentName: options?.documentName ?? (fileName && filename(fileName))
   })
-  return { format: 'fig', mimeType: 'application/octet-stream', extension: 'fig', data }
+  const extension = DOCUMENT_EXTENSIONS[graph.documentKind]
+  return { format: 'fig', mimeType: 'application/octet-stream', extension, data }
 }
 
 export const penFormat: IOFormatAdapter<'pen'> = {
@@ -223,18 +120,113 @@ export const penFormat: IOFormatAdapter<'pen'> = {
   support: {
     readDocument: true
   },
+  laysOutOnRead: true,
   matchesFile(fileName, mimeType) {
     return lowerExt(fileName) === 'pen' || mimeType === 'application/json'
   },
+  async readDocument(input, context) {
+    return { graph: await readPenDocument(input, context), sourceFormat: 'pen' }
+  }
+}
+
+export const drawioFormat: IOFormatAdapter<'drawio'> = {
+  id: 'drawio',
+  label: 'draw.io Diagram',
+  role: 'interchange-document',
+  category: 'document',
+  extensions: ['drawio', 'dio'],
+  mimeTypes: ['application/vnd.jgraph.mxfile'],
+  support: {
+    readDocument: true,
+    writeDocument: true,
+    exportDocument: true,
+    exportPage: true,
+    exportSelection: true,
+    exportNode: true
+  },
+  exportOptions: FIXED_SIZE_EXPORT,
+  laysOutOnRead: true,
+  // A draw.io PNG or SVG export opens as its diagram when its name says it is one.
+  matchesFile(fileName, mimeType) {
+    const ext = lowerExt(fileName)
+    return (
+      ext === 'drawio' ||
+      ext === 'dio' ||
+      isDrawIOExportFileName(fileName) ||
+      mimeType === 'application/vnd.jgraph.mxfile'
+    )
+  },
   async readDocument(input) {
-    const text = new TextDecoder().decode(input.data)
-    const graph = parsePenFile(text)
-    // A .pen file stores its layout intent, not the sizes and positions it implies.
+    const { readDrawIOBytes } = await import('@open-pencil/drawio')
+    const { drawioToSceneGraph } = await import('./formats/drawio')
+    const file = readDrawIOBytes(input.data)
+    if (!file) throw new Error('This file holds no draw.io diagram')
+    if (file.unreadable.length > 0) {
+      throw new Error(`Could not read the draw.io pages ${file.unreadable.join(', ')}`)
+    }
+    const graph = drawioToSceneGraph(file)
+    await prepareGraphFonts(
+      graph,
+      graph.getPages().map((page) => page.id)
+    )
+    // draw.io stores label text, not the sizes it lays out to.
     layoutAuthoredNodes(
       graph,
       graph.getPages().map((page) => page.id)
     )
-    return { graph, sourceFormat: 'pen' }
+    return { graph, sourceFormat: 'drawio' }
+  },
+  async writeDocument(graph) {
+    const pageIds = graph.getPages().map((page) => page.id)
+    return writeDrawIO(graph, { pageIds })
+  },
+  // A page or a selection goes as a one-page diagram; the document, every page.
+  async exportContent(request) {
+    if (request.target.scope === 'document') {
+      const pageIds = request.graph.getPages().map((page) => page.id)
+      return writeDrawIO(request.graph, { pageIds })
+    }
+    const target = resolveExportNodes(request)
+    if (!target) throw new Error('Nothing to export')
+    return writeDrawIO(request.graph, target)
+  }
+}
+
+export const mermaidFormat: IOFormatAdapter<'mermaid'> = {
+  id: 'mermaid',
+  label: 'Mermaid Diagram',
+  role: 'interchange-document',
+  category: 'document',
+  extensions: ['mmd', 'mermaid'],
+  mimeTypes: ['text/vnd.mermaid'],
+  support: {
+    readDocument: true
+  },
+  laysOutOnRead: true,
+  matchesFile(fileName, mimeType) {
+    const ext = lowerExt(fileName)
+    return ext === 'mmd' || ext === 'mermaid' || mimeType === 'text/vnd.mermaid'
+  },
+  async readDocument(input) {
+    const { detectMermaidDiagram } = await import('@open-pencil/mermaid')
+    const text = new TextDecoder().decode(input.data)
+    if (!detectMermaidDiagram(text)) throw new Error('This file holds no Mermaid flowchart')
+    // Mermaid stores a diagram's structure, which reading lays out with its text measured.
+    const { mermaidToSceneGraph } = await import('./formats/mermaid')
+    return { graph: await mermaidToSceneGraph(text), sourceFormat: 'mermaid' }
+  }
+}
+
+/** Pages or layers as a draw.io file, loading the writer only when one is saved. */
+async function writeDrawIO(graph: SceneGraph, target: DrawIOExportTarget): Promise<ExportResult> {
+  const { writeDrawIOFile } = await import('@open-pencil/drawio')
+  const { sceneGraphToDrawIO } = await import('./formats/drawio')
+  return {
+    format: 'drawio',
+    mimeType: 'application/vnd.jgraph.mxfile',
+    extension: 'drawio',
+    data: writeDrawIOFile(sceneGraphToDrawIO(graph, target)),
+    encoding: 'utf8'
   }
 }
 
@@ -254,7 +246,13 @@ export const svgFormat: IOFormatAdapter<'svg'> = {
   async exportContent(request, options?: SVGExportOptions) {
     const target = resolveExportNodes(request)
     if (!target) throw new Error('Nothing to export')
-    const data = renderNodesToSVG(request.graph, target.pageId, target.nodeIds, options)
+    const { renderNodesToLaidOutSVG } = await import('./formats/svg/text/layout')
+    const data = await renderNodesToLaidOutSVG(
+      request.graph,
+      target.pageId,
+      target.nodeIds,
+      options
+    )
     if (!data) throw new Error('Nothing to export')
     return {
       format: 'svg',
@@ -275,11 +273,12 @@ export const pdfFormat: IOFormatAdapter<'pdf'> = {
   mimeTypes: ['application/pdf'],
   support: EXPORT_EVERY_TARGET,
   exportOptions: FIXED_SIZE_EXPORT,
-  async exportContent(request) {
+  async exportContent(request, _options, context?: IOContext) {
     const target = resolveExportNodes(request)
     if (!target) throw new Error('Nothing to export')
-    const { renderNodesToPDF } = await import('./formats/pdf')
-    const data = await renderNodesToPDF(request.graph, target.pageId, target.nodeIds)
+    const { exportPDFDocument } = await import('./formats/pdf/document')
+    const data = (await exportPDFDocument(request.graph, [target], { renderer: context?.renderer }))
+      ?.data
     if (!data) throw new Error('Nothing to export')
     return {
       format: 'pdf',
@@ -294,9 +293,7 @@ export const pdfFormat: IOFormatAdapter<'pdf'> = {
  * Every top-level frame becomes a slide, so a PPTX document export spans all
  * pages — the shared resolver only reaches the first one.
  */
-function resolvePPTXExportNodes(
-  request: ExportRequest
-): { pageId: string; nodeIds: string[] } | null {
+function resolvePPTXExportNodes(request: ExportRequest): ExportNodes | null {
   if (request.target.scope !== 'document') return resolveExportNodes(request)
   const pages = request.graph.getPages()
   if (!pages.length) return null
@@ -343,7 +340,7 @@ export const jsxFormat: IOFormatAdapter<'jsx'> = {
   },
   exportOptions: FIXED_SIZE_EXPORT,
   async exportContent(request): Promise<ExportResult> {
-    const nodeId = ensureSingleNode(request.target)
+    const nodeId = singleExportNode(request.target)
     let data = ''
     if (nodeId) {
       data = sceneNodeToJSX(nodeId, request.graph)
@@ -420,6 +417,8 @@ export const tailwindJSXFormat: IOFormatAdapter<'tailwind-jsx'> = {
 export const BUILTIN_IO_FORMATS = [
   figFormat,
   penFormat,
+  drawioFormat,
+  mermaidFormat,
   pngFormat,
   jpgFormat,
   webpFormat,

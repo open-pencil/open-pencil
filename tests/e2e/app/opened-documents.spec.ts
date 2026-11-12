@@ -4,7 +4,6 @@ import type * as AppTabs from '@/app/tabs'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { testPath } from '#tests/helpers/paths'
-
 async function openFixture(page: Page, fixture: string) {
   await page.route(`**/__fixtures/${fixture}`, (route) =>
     route.fulfill({ path: testPath('fixtures', fixture) })

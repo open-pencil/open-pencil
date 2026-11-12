@@ -1,4 +1,8 @@
+import { joinURL } from 'ufo'
 import { computed } from 'vue'
+
+import { openExternalLink } from '@/app/shell/ui'
+import { IS_CLOUD_SITE } from '@/constants'
 
 import { openCloudConnect } from './connect/flow'
 import { cloudServerHost } from './servers/address'
@@ -18,6 +22,10 @@ export function useHomeCloud() {
   )
   return {
     signedIn: computed(() => signedIn.value !== null),
+    // On a Cloud site the server's own connection is on its way before startup adds it.
+    checking: computed(() =>
+      connection.value ? connection.value.state === 'checking' : IS_CLOUD_SITE
+    ),
     account: computed(() => {
       const current = signedIn.value
       if (!current?.account) return null
@@ -27,6 +35,11 @@ export function useHomeCloud() {
     serverId: computed(() => signedIn.value?.server.id ?? null),
     // Signing back in goes straight to the server Home shows; without one, choose a server.
     connect: () => openCloudConnect({ serverId: homeCloudServer.value?.id }),
+    /** The server's own account pages, in the browser. */
+    openAccount: () => {
+      const server = signedIn.value?.server
+      if (server) void openExternalLink(joinURL(server.url, '/account'))
+    },
     newWorkspace: () => {
       const server = signedIn.value?.server
       if (server) openNewWorkspace(server.id)

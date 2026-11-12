@@ -4,18 +4,23 @@ description: What OpenPencil sends over the network, why it sends anonymous usag
 ---
 
 <script setup>
-import { describeBuildFields, describePingFields, describeUsageEvents } from '@open-pencil/feedback/contract'
+import {
+  describeBuildFields,
+  describePingFields,
+  describeReportFields,
+  describeUsageEvents
+} from '@open-pencil/feedback/contract'
 
 const columns = [
   { key: 'name', label: 'Field', kind: 'code' },
   { key: 'values', label: 'Values', kind: 'description' }
 ]
 
-function rows(fields) {
+function rows(fields, freeForm = 'A version number') {
   return fields.map((field) => ({
     name: field.name,
     description: field.description,
-    values: field.values.length > 0 ? field.values.join(', ') : 'A version number'
+    values: field.values.length > 0 ? field.values.join(', ') : freeForm
   }))
 }
 
@@ -24,11 +29,12 @@ const buildFields = describeBuildFields()
   .map((field) => field.name)
   .join(', ')
 const events = describeUsageEvents()
+const reportRows = rows(describeReportFields(), 'Free-form')
 </script>
 
 # Privacy and Usage Stats
 
-- Your designs, file names, layer names, text, prompts, and keys never leave your device unless you share or sync them yourself.
+- Your designs, file names, layer names, text, prompts, and keys never leave your device unless you share or sync them yourself, or attach a design to a report you send.
 - Official builds send one anonymous ping a day, with no ID. You can turn it off.
 - Detailed usage stats are sent only if you say yes when asked, and you can stop at any time.
 
@@ -43,12 +49,12 @@ Once a day, an official build sends this to `feedback.openpencil.dev`:
 ```http
 POST https://feedback.openpencil.dev/ping
 
-{ "version": "0.16.0", "platform": "macos", "arch": "arm64", "app": "desktop", "browser": "unknown", "usageStats": "denied" }
+{ "version": "0.17.0", "platform": "macos", "arch": "arm64", "app": "desktop", "browser": "unknown", "usageStats": "denied", "pingDays": "5-8", "enteredStep": false }
 ```
 
 <SdkDataTable :columns="columns" :rows="pingRows" />
 
-It carries no ID, so pings from the same install cannot be linked. The answer to the usage stats question is the only way we learn how many people decline, since declining means nothing else is ever sent. The app stores only the date of its last ping, so it pings once a day. The server adds one to a counter for that day and build, and keeps nothing else. It does not log addresses, and it rejects a ping that carries any other field.
+It carries no ID, so pings from the same install cannot be linked. The answer to the usage stats question is the only way we learn how many people decline, since declining means nothing else is ever sent. The app stores only the date of its last ping, so it pings once a day, and how many days it has pinged. Only the step that number falls in is sent: 1, 2, 3–4, 5–8, and so on, doubling, never the number itself. Every install passes through the steps in order, so the server can tell returning installs from copies of one saved state launched over and over, which repeat the same step, without telling installs apart. The server adds one to a counter for that day and build, and one to a counter for that day, app, and step. It also adds one to a counter for that day, the app and platform, and the network the ping came from: the network's number and operator name as Cloudflare reports them, such as a home internet provider, a university, or a cloud host. That tells real people apart from automated installs running in data centers, without anything that identifies a device. The server keeps nothing else. It does not log addresses, and it rejects a ping that carries any other field.
 
 The ping is on by default. Turn it off in **Settings → Privacy**.
 
@@ -68,6 +74,22 @@ These are all the events the app can send. The service at `feedback.openpencil.d
 
 Accepted events go to [PostHog](https://posthog.com), a product analytics service, on its EU cloud. The request comes from our server, not your device, so PostHog never sees your address. Events create no person profiles and skip location lookups. We keep usage stats for 12 months.
 
+## Error and problem reports
+
+When OpenPencil's own code throws an unexpected error, an official build adds **Report…** to the error notice; errors from browser extensions or without a stack trace get none. If OpenPencil closed unexpectedly after an error, or the desktop app hit an internal error, the next launch offers the same, once. **File → Report a problem…** is always there. Both open a form, and nothing is sent until you choose **Send report**. **What will be sent** shows the exact report before it goes. It has:
+
+- For an error: its type and message, scrubbed of keys, tokens, email addresses, and your user name in folder paths, and where in OpenPencil's code it happened. Errors from AI providers, which can quote your prompts, are sent without a message.
+- What you write, and an email address if you give one so we can reply.
+- The build fields above (<code>{{ buildFields }}</code>), and your install ID if you share usage stats.
+- If you leave **Include recent activity** on: the last 50 events from **Settings → Diagnostics**, such as errors, timings, and file formats. They never include chat messages or tool output.
+- If you turn on **Attach this document**: the open design as a `.fig` file.
+
+Besides the build fields, a report has these fields:
+
+<SdkDataTable :columns="columns" :rows="reportRows" />
+
+Reports go to `feedback.openpencil.dev`, which passes them to PostHog's error tracking on its EU cloud, without your address, a person profile, or a location lookup, and keeps nothing of them itself. An attached design is stored in Cloudflare R2 in the EU, only the OpenPencil team can open it, and it is deleted after 90 days.
+
 ## Turning it all off
 
 - **Settings → Privacy** has a switch for the ping and one for usage stats.
@@ -80,16 +102,16 @@ If you join the OpenPencil Cloud waitlist on this site, we store your email addr
 
 ## Other network requests
 
-OpenPencil is local-first, but some features reach the network. The desktop app checks for updates on its own; everything else below connects only when you use that feature, and only to the service named.
+OpenPencil is local-first, but some features reach the network. The desktop app checks for updates on startup unless you turn that off in **Settings → General**. **Check for Updates** in the menu still checks. Everything else below connects only when you use that feature, and only to the service named.
 
-| Feature | Where it connects |
-| --- | --- |
-| Update checks (desktop) | GitHub Releases, for the latest version number |
-| AI chat and image tools | The provider you configure, with your own key; the model list comes from models.dev |
-| Collaboration rooms | Other people in the room directly; public brokers introduce peers, and a TURN relay carries traffic when a direct connection is not possible |
-| Cloud storage | The storage provider you configure |
-| Fonts | Google Fonts, which can supply a font a document uses that is not installed |
-| Icons | The Iconify API, when you search or insert icons |
-| Stock images | Unsplash or Pexels, when you search them |
+| Feature                 | Where it connects                                                                                                                                                                                       |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Update checks (desktop) | GitHub Releases, for the latest version number                                                                                                                                                          |
+| AI chat and image tools | The provider you configure, with your own key; the model list comes from models.dev. With **OpenPencil Cloud** as the provider, the AI service your Cloud server names, with a token for your workspace |
+| Collaboration rooms     | Other people in the room directly; public brokers introduce peers, and a TURN relay carries traffic when a direct connection is not possible                                                            |
+| Cloud storage           | The storage provider you configure                                                                                                                                                                      |
+| Fonts                   | Google Fonts, which can supply a font a document uses that is not installed                                                                                                                             |
+| Icons                   | The Iconify API, when you search or insert icons                                                                                                                                                        |
+| Stock photos            | Unsplash or Pexels, with your own key, when you search them or place one of their photos                                                                                                                |
 
 The app, the feedback service, and this page are open source. The event list lives in [`packages/feedback/src/contract`](https://github.com/open-pencil/open-pencil/tree/master/packages/feedback/src/contract), and the tables above are generated from it.

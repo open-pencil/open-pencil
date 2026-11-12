@@ -1,14 +1,20 @@
 import { render } from '@vue-email/render'
+import { compact } from 'es-toolkit'
 
 import type {
   AdminEnrollmentNotificationPayload,
   AuthenticationEmailPayload,
   DocumentInvitationEmailPayload,
-  WorkspaceInvitationEmailPayload,
+  DocumentReportPayload,
+  EmailChangeRequestedPayload,
   EnrollmentEmailPayload,
+  NewSignInPayload,
   RenderedTransactionalEmail,
   TransactionalEmailContent,
-  TransactionalEmailKind
+  TransactionalEmailKind,
+  TwoStepChange,
+  TwoStepChangedPayload,
+  WorkspaceInvitationEmailPayload
 } from './schema'
 import { DocumentInvitationEmail } from './templates/document-invitation'
 import { EnrollmentEmail } from './templates/enrollment'
@@ -66,6 +72,10 @@ type EnrollmentMessageKind = Exclude<
   | 'email-verification'
   | 'password-reset'
   | 'password-changed'
+  | 'email-change-requested'
+  | 'new-sign-in'
+  | 'two-step-changed'
+  | 'document-report'
 >
 
 type EnrollmentCopy = {
@@ -133,19 +143,52 @@ async function renderAdminNotification(payload: AdminEnrollmentNotificationPaylo
   )
 }
 
+const REPORT_REASON_LABELS: Record<string, string> = {
+  'spam-phishing': 'spam or phishing',
+  illegal: 'illegal content',
+  copyright: 'copyright',
+  harassment: 'harassment',
+  other: 'something else'
+}
+
+async function renderDocumentReport(payload: DocumentReportPayload) {
+  const reason = REPORT_REASON_LABELS[payload.reason] ?? payload.reason
+  return rendered(
+    EnrollmentEmail,
+    {
+      heading: 'A shared document was reported',
+      preview: `“${payload.documentName}” was reported for ${reason}.`,
+      message: `Someone who opened “${payload.documentName}” from a share link reported it for ${reason}: ${payload.description}`,
+      actionLabel: 'Review report',
+      actionURL: payload.actionURL
+    },
+    'A shared OpenPencil Cloud document was reported'
+  )
+}
+
 async function renderAuthentication(
   kind: 'email-verification' | 'password-reset' | 'password-changed',
   payload: AuthenticationEmailPayload
 ) {
   const copy = {
-    'email-verification': {
-      subject: 'Confirm your OpenPencil Cloud email',
-      heading: 'Confirm your email',
-      preview: 'One click to finish creating your OpenPencil Cloud account.',
-      message: `Hi ${payload.name}, confirm this address to finish creating your OpenPencil Cloud account. Then go back to OpenPencil; it signs you in by itself.`,
-      actionLabel: 'Confirm email',
-      footer: 'Didn’t create an account? Ignore this email and nothing happens.'
-    },
+    'email-verification':
+      payload.purpose === 'change'
+        ? {
+            subject: 'Confirm your new OpenPencil Cloud email',
+            heading: 'Confirm your new email',
+            preview: 'One click to move your OpenPencil Cloud account to this address.',
+            message: `Hi ${payload.name}, confirm this address to make it your OpenPencil Cloud account’s email. Your old address stays until you do.`,
+            actionLabel: 'Confirm email',
+            footer: 'Didn’t ask for this? Ignore this email and nothing changes.'
+          }
+        : {
+            subject: 'Confirm your OpenPencil Cloud email',
+            heading: 'Confirm your email',
+            preview: 'One click to finish creating your OpenPencil Cloud account.',
+            message: `Hi ${payload.name}, confirm this address to finish creating your OpenPencil Cloud account. Then go back to OpenPencil; it signs you in by itself.`,
+            actionLabel: 'Confirm email',
+            footer: 'Didn’t create an account? Ignore this email and nothing happens.'
+          },
     'password-reset': {
       subject: 'Reset your OpenPencil Cloud password',
       heading: 'Reset your password',
@@ -165,6 +208,77 @@ async function renderAuthentication(
   return rendered(EnrollmentEmail, { ...copy, actionURL: payload.actionURL ?? '#' }, copy.subject)
 }
 
+async function renderEmailChangeRequested(payload: EmailChangeRequestedPayload) {
+  return rendered(
+    EnrollmentEmail,
+    {
+      heading: 'Your email is changing',
+      preview: `Your OpenPencil Cloud email is changing to ${payload.newEmail}.`,
+      message: `Hi ${payload.name}, someone signed in to your account asked to change its email to ${payload.newEmail}. It changes once that address confirms it. If this wasn’t you, change your password and sign out of your other sessions.`,
+      actionLabel: 'Review your account',
+      actionURL: payload.actionURL
+    },
+    'Your OpenPencil Cloud email is changing'
+  )
+}
+
+async function renderNewSignIn(payload: NewSignInPayload) {
+  const device = payload.desktop
+    ? 'the OpenPencil app'
+    : compact([payload.browser, payload.system]).join(' on ') || 'an unknown browser'
+  const place = payload.ipAddress ? ` from ${payload.ipAddress}` : ''
+  return rendered(
+    EnrollmentEmail,
+    {
+      heading: 'New sign-in to your account',
+      preview: `Your OpenPencil Cloud account was signed in to with ${device}.`,
+      message: `Hi ${payload.name}, your account was signed in to with ${device}${place} on ${new Date(payload.signedInAt).toUTCString()}. If this was you, there’s nothing to do. If it wasn’t, sign that session out and change your password.`,
+      actionLabel: 'Review sessions',
+      actionURL: payload.actionURL
+    },
+    'New sign-in to your OpenPencil Cloud account'
+  )
+}
+
+const TWO_STEP_COPY: Record<TwoStepChange, { heading: string; message: string }> = {
+  'authenticator-on': {
+    heading: 'Authenticator app turned on',
+    message: 'an authenticator app now confirms your sign-ins.'
+  },
+  'authenticator-off': {
+    heading: 'Authenticator app turned off',
+    message: 'your sign-ins no longer ask for a code from an authenticator app.'
+  },
+  'passkey-added': {
+    heading: 'Passkey added',
+    message: 'a passkey was added to your account.'
+  },
+  'passkey-removed': {
+    heading: 'Passkey removed',
+    message: 'a passkey was removed from your account.'
+  },
+  'reset-by-administrator': {
+    heading: 'Two-step sign-in was reset',
+    message:
+      'an administrator removed your authenticator app, recovery codes, and passkeys, so you can set them up again.'
+  }
+}
+
+async function renderTwoStepChanged(payload: TwoStepChangedPayload) {
+  const copy = TWO_STEP_COPY[payload.change]
+  return rendered(
+    EnrollmentEmail,
+    {
+      heading: copy.heading,
+      preview: `${copy.heading} on your OpenPencil Cloud account.`,
+      message: `Hi ${payload.name}, ${copy.message} If this wasn’t you, change your password and contact your administrator.`,
+      actionLabel: 'Review security',
+      actionURL: payload.actionURL
+    },
+    `${copy.heading} on your OpenPencil Cloud account`
+  )
+}
+
 export async function renderTransactionalEmail(
   content: TransactionalEmailContent
 ): Promise<RenderedTransactionalEmail> {
@@ -180,5 +294,9 @@ export async function renderTransactionalEmail(
   ) {
     return renderAuthentication(content.kind, content.payload)
   }
+  if (content.kind === 'email-change-requested') return renderEmailChangeRequested(content.payload)
+  if (content.kind === 'new-sign-in') return renderNewSignIn(content.payload)
+  if (content.kind === 'two-step-changed') return renderTwoStepChanged(content.payload)
+  if (content.kind === 'document-report') return renderDocumentReport(content.payload)
   return renderEnrollment(content.kind, content.payload)
 }

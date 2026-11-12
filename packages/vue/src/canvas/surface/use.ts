@@ -1,7 +1,7 @@
 import { useElementSize } from '@vueuse/core'
-import type { CanvasKit } from 'canvaskit-wasm'
 import type { Ref } from 'vue'
 
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import type { Editor } from '@open-pencil/core'
 
 import {
@@ -48,7 +48,8 @@ export function useCanvas(
     setCanvasKit: (value) => {
       ck = value
     },
-    onReady: options?.onReady
+    onReady: options?.onReady,
+    onFailed: options?.onFailed
   })
 
   // The scene surface plays shaders in preview; an overlay surface draws none.

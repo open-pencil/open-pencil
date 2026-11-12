@@ -1,11 +1,16 @@
 import { generateText } from 'ai'
 
+import { AI_PROVIDERS } from '@open-pencil/core/constants'
+
 import { isInsufficientCreditError, providerErrorStatus } from '@/app/ai/chat/failure'
 import {
   createLanguageModel,
   resolveLanguageModelID,
   type ModelConfig
 } from '@/app/ai/models/language-model'
+import { cloudCreditRefusal } from '@/app/ai/providers/openpencil/failure'
+import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
+import type { ModelProviderRuntime } from '@/app/ai/providers/types'
 import { isTauri } from '@/app/tauri/env'
 
 export type ProviderConnectionTestResult =
@@ -14,23 +19,34 @@ export type ProviderConnectionTestResult =
 
 export type ProviderConnectionTestFailureReason =
   | 'missing-api-key'
+  | 'missing-sign-in'
   | 'missing-base-url'
   | 'missing-model'
   | 'invalid-base-url'
   | 'auth'
+  | 'sign-in-expired'
+  | 'plan-forbidden'
   | 'insufficient-credit'
   | 'model-not-found'
   | 'api-type'
   | 'browser-network'
   | 'network'
+  | 'cloud-unavailable'
+  | 'cloud-credits-exhausted'
   | 'unknown'
 
 function isCompatibleProvider(providerID: ModelConfig['providerID']): boolean {
   return providerID === 'openai-compatible' || providerID === 'anthropic-compatible'
 }
 
+function isSignInOnly(providerID: ModelConfig['providerID']): boolean {
+  return AI_PROVIDERS.some((provider) => provider.id === providerID && provider.signInOnly)
+}
+
 function validateConfig(config: ModelConfig): ProviderConnectionTestFailureReason | null {
-  if (!config.apiKey.trim()) return 'missing-api-key'
+  if (!config.apiKey.trim()) {
+    return isSignInOnly(config.providerID) ? 'missing-sign-in' : 'missing-api-key'
+  }
   if (isCompatibleProvider(config.providerID)) {
     if (!config.customBaseURL.trim()) return 'missing-base-url'
     try {
@@ -87,27 +103,44 @@ function classifyMessage(text: string): ProviderConnectionTestFailureReason | nu
   return null
 }
 
-function classifyError(error: unknown): ProviderConnectionTestFailureReason {
+function classifyError(
+  error: unknown,
+  providerID: ModelConfig['providerID']
+): ProviderConnectionTestFailureReason {
+  // The workspace's plan holds Cloud's credits, not a provider account to top up.
+  if (providerID === OPENPENCIL_AI_PROVIDER && cloudCreditRefusal(error)) {
+    return 'cloud-credits-exhausted'
+  }
   if (isInsufficientCreditError(error)) return 'insufficient-credit'
   const text = errorText(error).toLowerCase()
   return classifyStatus(providerErrorStatus(error), text) ?? classifyMessage(text) ?? 'unknown'
 }
 
+/**
+ * Sends a one-token request. A test of a saved credential passes its store in `runtime`, so a
+ * sign-in the request refreshes keeps the new tokens instead of leaving a spent refresh token
+ * saved; a `runtime` with its own fetch, such as Cloud's AI service, is used instead of the default.
+ */
 export async function testProviderConnection(
-  config: ModelConfig
+  config: ModelConfig,
+  runtime?: ModelProviderRuntime
 ): Promise<ProviderConnectionTestResult> {
   const invalidReason = validateConfig(config)
   if (invalidReason) return { ok: false, reason: invalidReason }
 
   try {
     await generateText({
-      model: createLanguageModel(config),
+      model: await createLanguageModel(config, runtime),
       prompt: 'Reply with OK.',
       maxOutputTokens: 1,
       abortSignal: AbortSignal.timeout(15_000)
     })
     return { ok: true }
   } catch (error) {
-    return { ok: false, reason: classifyError(error) }
+    const reason = classifyError(error, config.providerID)
+    if (reason !== 'auth' || !isSignInOnly(config.providerID)) return { ok: false, reason }
+    // A provider signed in to has no key: a 403 is the plan, anything else the sign-in.
+    const planForbidden = providerErrorStatus(error) === 403
+    return { ok: false, reason: planForbidden ? 'plan-forbidden' : 'sign-in-expired' }
   }
 }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { useCloudMessages, useCommonMessages, useFileMessages } from '@open-pencil/vue/i18n'
 
 import { formatStorageBytes } from '@/app/storage/format-bytes'
 import DocumentEntry from '@/components/home/document/DocumentEntry.vue'
@@ -28,7 +28,8 @@ const {
   documents,
   usage = null,
   state = 'ready',
-  canCreate = false
+  canCreate = false,
+  canDelete = false
 } = defineProps<{
   heading: string
   subtitle?: string
@@ -39,11 +40,14 @@ const {
   state?: 'loading' | 'ready' | 'offline' | 'error'
   /** The person may create designs here. */
   canCreate?: boolean
+  /** The person may delete the designs listed here. */
+  canDelete?: boolean
 }>()
 
 const view = defineModel<'grid' | 'list'>('view', { default: 'grid' })
 const emit = defineEmits<{
   open: [document: CloudDocumentRow]
+  delete: [document: CloudDocumentRow]
   newDesign: []
   members: []
   refresh: []
@@ -52,6 +56,14 @@ const emit = defineEmits<{
 
 const t = useCloudMessages()
 const common = useCommonMessages()
+const files = useFileMessages()
+const menu = (document: CloudDocumentRow) =>
+  canDelete
+    ? {
+        actions: files.value.documentActions({ name: document.name }),
+        delete: files.value.deleteDocument
+      }
+    : undefined
 const conflicts = computed(() => documents.filter((document) => document.sync === 'conflict'))
 const usageLabel = computed(() => {
   if (!usage) return null
@@ -81,7 +93,7 @@ const metadata = (document: CloudDocumentRow) =>
           <template v-if="usage && usage.totalBytes !== null && usageLabel">
             <AppProgress
               :amount="{ value: usage.usedBytes, max: usage.totalBytes }"
-              :aria-label="t.homeWorkspaceStorage({ usage: usageLabel })"
+              :aria-label="t.homeOwnerStorage({ usage: usageLabel })"
               :ui="{ root: 'w-16' }"
             />
             <span>{{ usageLabel }}</span>
@@ -149,7 +161,7 @@ const metadata = (document: CloudDocumentRow) =>
 
     <div
       v-if="state === 'loading'"
-      class="grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(200px,1fr))]"
+      class="grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(12.5rem,1fr))]"
       :aria-label="t.homeLoadingFiles"
     >
       <div v-for="index in 4" :key="index" class="min-w-0 animate-pulse motion-reduce:animate-none">
@@ -180,7 +192,7 @@ const metadata = (document: CloudDocumentRow) =>
       v-else
       :class="
         view === 'grid'
-          ? 'grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(200px,1fr))]'
+          ? 'grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(12.5rem,1fr))]'
           : 'overflow-hidden rounded-lg border border-border'
       "
     >
@@ -189,9 +201,12 @@ const metadata = (document: CloudDocumentRow) =>
         :key="document.id"
         :view="view"
         :name="document.name"
+        :kind="document.kind"
         :metadata="metadata(document)"
         :previewURL="document.previewURL"
+        :menu="menu(document)"
         @open="emit('open', document)"
+        @delete="emit('delete', document)"
       >
         <template #status>
           <Tip v-if="document.permission === 'view'" :label="t.homeViewOnlyTip">

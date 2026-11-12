@@ -1,19 +1,18 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-import { FIXTURES } from '#core-tests/helpers/paths'
-import type { TypefaceFontProvider } from 'canvaskit-wasm'
-
 import type { ShapedText } from '@open-pencil/fig/node-change'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { pixelLength } from '@open-pencil/scene-graph/text'
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 
-import { withFigExportRuntime, withTextShaper } from '#core/canvas/text/shape'
 import { getCanvasKit } from '#core/canvaskit'
+import { withFigExportRuntime } from '#core/io/formats/fig/export/runtime'
 import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
-import { fontManager } from '#core/text/fonts'
-import { getGlyphOutlineMetricsSync } from '#core/text/opentype'
+import { getGlyphOutlineMetricsSync, glyphOutlineSourceSync } from '#core/text/font/glyphs'
+import { fontManager } from '#core/text/font/manager'
 
 const testFont = (name: string) => join(FIXTURES, 'fonts', name)
 
@@ -24,7 +23,7 @@ async function shape(props: Partial<SceneNode>): Promise<ShapedText | null> {
   const node = graph.createNode('TEXT', graph.getPages()[0].id, {
     fontFamily: 'Inter',
     fontSize: 13,
-    lineHeight: 16,
+    lineHeight: pixelLength(16),
     width: 230,
     height: 32,
     textAutoResize: 'HEIGHT',
@@ -35,15 +34,16 @@ async function shape(props: Partial<SceneNode>): Promise<ShapedText | null> {
   )
 }
 
-describe('text shaping for saved glyphs', () => {
-  beforeAll(async () => {
-    const inter = expectDefined(
-      await fontManager.fetchBundledFont('/Inter-Regular.ttf'),
-      'bundled Inter font'
-    )
-    fontManager.markLoaded('Inter', 'Regular', inter)
-  })
+// Every test here shapes Inter, in whatever order they run.
+beforeAll(async () => {
+  const inter = expectDefined(
+    await fontManager.fetchBundledFont('/InterVariable.ttf'),
+    'bundled Inter font'
+  )
+  await fontManager.markLoaded('Inter', 'Regular', inter)
+})
 
+describe('text shaping for saved glyphs', () => {
   /**
    * Figma saves every emoji as a 1 em square, a joined sequence or a flag as one: the layout
    * falls back to the emoji metrics font for them, which gives them that width.
@@ -53,7 +53,7 @@ describe('text shaping for saved glyphs', () => {
       await fontManager.fetchBundledFont('/OpenPencilEmojiMetrics-Regular.ttf'),
       'bundled emoji metrics font'
     )
-    fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
+    await fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
     const family = '👨‍👩‍👧‍👦'
     const shaped = expectDefined(
       await shape({ text: `a😀${family}🇺🇸b`, fontSize: 40, width: 400, textAutoResize: 'NONE' }),
@@ -74,7 +74,7 @@ describe('text shaping for saved glyphs', () => {
       await fontManager.fetchBundledFont('/OpenPencilEmojiMetrics-Regular.ttf'),
       'bundled emoji metrics font'
     )
-    fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
+    await fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
     const shaped = expectDefined(
       await shape({ text: 'a😀☺©', fontSize: 40, width: 400, textAutoResize: 'NONE' }),
       'shaped text'
@@ -151,7 +151,7 @@ describe('text shaping for saved glyphs', () => {
       await fontManager.fetchBundledFont('/OpenPencilEmojiMetrics-Regular.ttf'),
       'bundled emoji metrics font'
     )
-    fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
+    await fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
     const sequence = '\u{1f469}\u200d\u{1f9af}\u200d\u{1f4bb}'
     const shaped = expectDefined(
       await shape({ text: `x${sequence}x`, fontSize: 40, width: 400, textAutoResize: 'NONE' }),
@@ -173,7 +173,7 @@ describe('text shaping for saved glyphs', () => {
       await fontManager.fetchBundledFont('/OpenPencilEmojiMetrics-Regular.ttf'),
       'bundled emoji metrics font'
     )
-    fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
+    await fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
     const shaped = expectDefined(
       await shape({
         text: '\u05d0\u{1f600}\u05d1',
@@ -200,7 +200,7 @@ describe('text shaping for saved glyphs', () => {
       await fontManager.fetchBundledFont('/OpenPencilEmojiMetrics-Regular.ttf'),
       'bundled emoji metrics font'
     )
-    fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
+    await fontManager.markLoaded(EMOJI_METRICS_FAMILY, 'Regular', metrics)
     const scotland = '\u{1f3f4}\u{e0067}\u{e0062}\u{e0073}\u{e0063}\u{e0074}\u{e007f}'
     const shaped = expectDefined(
       await shape({
@@ -333,7 +333,7 @@ describe('text shaping for saved glyphs', () => {
     fallbackFamilies.length = 0
     try {
       const cjk = await Bun.file(testFont('NotoSansCJK-Test.otf')).arrayBuffer()
-      fontManager.markLoaded('Shape Test CJK', 'Regular', cjk)
+      await fontManager.markLoaded('Shape Test CJK', 'Regular', cjk)
       fontManager.setCJKFallbackFamily('Shape Test CJK')
       const shaped = expectDefined(await shape({ text: 'Hi 你好' }), 'shaped text')
       const ni = expectDefined(
@@ -353,7 +353,7 @@ describe('text shaping for saved glyphs', () => {
 
   test('outlines a variable font at the instance the text is set in', async () => {
     const variable = await Bun.file(testFont('InterVariable-Latin.ttf')).arrayBuffer()
-    fontManager.markLoaded('Shape Test Variable', 'Bold', variable)
+    await fontManager.markLoaded('Shape Test Variable', 'Bold', variable)
     const shaped = expectDefined(
       await shape({ text: 'l', fontFamily: 'Shape Test Variable', fontWeight: 700 }),
       'shaped text'
@@ -370,42 +370,33 @@ describe('text shaping for saved glyphs', () => {
     }
     expect(width(bold)).toBeGreaterThan(width(regular) * 1.2)
   })
-})
 
-test('overlapping shaping calls share their provider until the last one finishes', async () => {
-  const ck = await getCanvasKit()
-  // Providers other tests left attached are set aside, so the calls make one of their own.
-  const setAside: TypefaceFontProvider[] = []
-  for (
-    let provider = fontManager.providerFor(ck);
-    provider;
-    provider = fontManager.providerFor(ck)
-  ) {
-    setAside.push(provider)
-    fontManager.detachProvider(provider)
-  }
-  try {
-    const graph = new SceneGraph()
-    const node = graph.createNode('TEXT', graph.getPages()[0].id, {
-      text: 'Shaped',
-      fontFamily: 'Inter',
-      fontSize: 13
-    })
-    const firstHeld = Promise.withResolvers<undefined>()
-    const secondHeld = Promise.withResolvers<undefined>()
+  /**
+   * A style first drawn from a static file, such as a web font cached before variable families
+   * were fetched whole, and then from a variable file fetched for more characters. The static
+   * file declares the style's weight and the variable file its default, so the text must still
+   * be drawn, and outlined, from the file that replaced the static one.
+   */
+  test('outlines a style from the file that replaced its first, whatever weight each declares', async () => {
+    const family = 'Shape Test Replaced Static'
+    const semibold = expectDefined(await fontManager.fetchBundledFont('/Inter-SemiBold.ttf'))
+    const variable = expectDefined(await fontManager.fetchBundledFont('/InterVariable.ttf'))
+    await fontManager.markLoaded(family, 'SemiBold', semibold.slice(0))
+    await fontManager.markLoaded(family, 'SemiBold', variable.slice(0))
+    const text = 'Bat'
+    const shaped = expectDefined(
+      await shape({ text, fontFamily: family, fontWeight: 600 }),
+      'shaped text'
+    )
+    const replacement = expectDefined(
+      glyphOutlineSourceSync(family, 'SemiBold', [{ axis: 'wght', value: 600 }]),
+      'replacement outlines'
+    )
 
-    const first = withTextShaper(ck, () => firstHeld.promise)
-    const second = withTextShaper(ck, async (shape) => {
-      await secondHeld.promise
-      return shape(node)
-    })
-    firstHeld.resolve(undefined)
-    await first
-    secondHeld.resolve(undefined)
-
-    expect((await second)?.baselines).toHaveLength(1)
-    expect(fontManager.providerFor(ck)).toBeNull()
-  } finally {
-    for (const provider of setAside.toReversed()) fontManager.attachProvider(ck, provider)
-  }
+    // The files number `B` and `a` alike but not `t`, which the static file would turn into
+    // another letter.
+    expect(shaped.glyphs.map((glyph) => glyph.commands)).toEqual(
+      Array.from(text, (character) => replacement.outline(replacement.glyphOf(character), 13))
+    )
+  })
 })

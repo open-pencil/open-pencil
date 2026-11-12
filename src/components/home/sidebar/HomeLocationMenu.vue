@@ -5,18 +5,21 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from 'reka-ui'
+import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
 import { useCloudMessages } from '@open-pencil/vue/i18n'
 
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menu } from '@/components/ui/menu/menu'
-import { homeLocationMenu } from '@/theme/home/location-menu'
+import homeLocationMenuTheme from '@/theme/home/location-menu'
 
 import type { HomeCloudAccount, HomeLocation } from '../cloud/types'
+
+const homeLocationMenu = tv(homeLocationMenuTheme)
 
 /**
  * The home tab's locations on a phone, where the sidebar does not fit: the current one as a
@@ -51,6 +54,7 @@ const t = useCloudMessages()
 const current = computed(() => {
   if (active.kind === 'recent') return t.value.homeRecent
   if (active.kind === 'shared') return t.value.homeSharedWithYou
+  if (active.kind === 'trash') return t.value.homeTrash
   if (active.kind === 'storage') return storage?.label ?? t.value.homeStorage
   return workspaces.find((workspace) => workspace.id === active.id)?.name ?? t.value.workspace
 })
@@ -59,10 +63,11 @@ const isActive = (location: HomeLocation) =>
 </script>
 
 <template>
-  <DropdownMenuRoot>
+  <AppDropdownMenuRoot>
     <DropdownMenuTrigger :class="ui.trigger()">
       <icon-lucide-clock v-if="active.kind === 'recent'" :class="ui.icon()" />
       <icon-lucide-users v-else-if="active.kind === 'shared'" :class="ui.icon()" />
+      <icon-lucide-trash-2 v-else-if="active.kind === 'trash'" :class="ui.icon()" />
       <icon-lucide-database v-else-if="active.kind === 'storage'" :class="ui.icon()" />
       <icon-lucide-layers v-else :class="ui.icon()" />
       <span :class="ui.label()">{{ current }}</span>
@@ -127,6 +132,17 @@ const isActive = (location: HomeLocation) =>
             </DropdownMenuItem>
             <DropdownMenuItem
               :class="menuUI.item({ justify: 'start' })"
+              @select="emit('select', { kind: 'trash', id: 'trash' })"
+            >
+              <icon-lucide-trash-2 :class="menuUI.icon()" />
+              <span :class="ui.itemLabel()">{{ t.homeTrash }}</span>
+              <icon-lucide-check
+                v-if="isActive({ kind: 'trash', id: 'trash' })"
+                :class="ui.check()"
+              />
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              :class="menuUI.item({ justify: 'start' })"
               @select="emit('newWorkspace')"
             >
               <icon-lucide-plus :class="menuUI.icon()" />
@@ -160,5 +176,5 @@ const isActive = (location: HomeLocation) =>
         </template>
       </DropdownMenuContent>
     </DropdownMenuPortal>
-  </DropdownMenuRoot>
+  </AppDropdownMenuRoot>
 </template>

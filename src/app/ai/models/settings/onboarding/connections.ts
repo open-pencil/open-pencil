@@ -4,6 +4,7 @@ import { reactive } from 'vue'
 import {
   aiModelSettings,
   modelConnectionCredentialStatus,
+  modelConnectionCredentialStore,
   resolveModelConnectionAPIKey,
   type AIModelConnection
 } from '@/app/ai/models'
@@ -31,8 +32,13 @@ export interface OnboardingConnectionState {
   test: ConnectionTestStatus
   reason: ProviderConnectionTestFailureReason | null
   /** Set once a key from signing in has been checked with the provider. */
-  account: OpenRouterKeyInfo | null
+  account: OnboardingAccount | null
 }
+
+/** The account a sign-in connected, as setup shows it. */
+export type OnboardingAccount =
+  | ({ provider: 'openrouter' } & OpenRouterKeyInfo)
+  | { provider: 'chatgpt'; email?: string; plan?: string }
 
 /** Local servers with a well-known OpenAI-compatible address. */
 export const ONBOARDING_SERVER_PRESETS = [
@@ -174,14 +180,17 @@ export function useOnboardingConnections({ plannedModel }: OnboardingConnections
       const savedKey =
         !state.apiKey.trim() && saved ? await resolveModelConnectionAPIKey(saved.id) : null
       if (!current()) return
-      const result = await testProviderConnection({
-        providerID,
-        apiKey: state.apiKey.trim() || savedKey || '',
-        modelID: plannedModel(providerID)?.modelID ?? '',
-        customModelID: state.customModelID.trim(),
-        customBaseURL: state.customBaseURL.trim(),
-        customAPIType: saved?.customAPIType ?? 'completions'
-      })
+      const result = await testProviderConnection(
+        {
+          providerID,
+          apiKey: state.apiKey.trim() || savedKey || '',
+          modelID: plannedModel(providerID)?.modelID ?? '',
+          customModelID: state.customModelID.trim(),
+          customBaseURL: state.customBaseURL.trim(),
+          customAPIType: saved?.customAPIType ?? 'completions'
+        },
+        savedKey && saved ? { credentials: modelConnectionCredentialStore(saved.id) } : undefined
+      )
       if (!current()) return
       state.test = result.ok ? 'success' : 'error'
       state.reason = result.ok ? null : result.reason

@@ -23,7 +23,7 @@ export interface AppCollapsibleSlots {
 import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
 import { computed, normalizeClass, useAttrs } from 'vue'
 
-import { collapsible } from '@/theme/collapsible/collapsible'
+import { collapsible } from './collapsible'
 
 const { ui, class: className } = defineProps<AppCollapsibleProps>()
 defineSlots<AppCollapsibleSlots>()
@@ -48,6 +48,7 @@ const styles = computed(() => collapsible())
         data-slot="trigger"
       >
         <icon-lucide-chevron-right
+          data-direction="reading"
           :class="styles.icon({ class: ui?.icon })"
           data-slot="icon"
           aria-hidden="true"

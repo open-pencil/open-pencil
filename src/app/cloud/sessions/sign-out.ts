@@ -1,7 +1,10 @@
 import { signOutFromCloud } from '@open-pencil/cloud/client'
 import type { CloudDiscovery } from '@open-pencil/cloud/contract'
 
-import { rememberCloudAccount } from '../servers/store'
+import { leaveAfterSignOut } from '@/app/cloud-portal/site'
+import { IS_CLOUD_SITE } from '@/constants'
+
+import { isCloudSiteServer, rememberCloudAccount } from '../servers/store'
 import { cloudServerFetch, forgetCloudConnection } from './connection'
 import { clearCloudSessionToken } from './token'
 
@@ -17,7 +20,8 @@ const defaults: CloudSignOutDependencies = {
 
 /**
  * Ends the session on the server first, so a failed sign-out keeps the token to try again
- * rather than leaving a live session behind, then forgets it here.
+ * rather than leaving a live session behind, then forgets it here. Signing out of the server
+ * that serves this editor leaves it as a visit without an account would (`leaveAfterSignOut`).
  */
 export async function signOutOfCloud(
   serverId: string,
@@ -28,4 +32,5 @@ export async function signOutOfCloud(
   await dependencies.clear(serverId)
   rememberCloudAccount(serverId, null)
   forgetCloudConnection(serverId)
+  if (IS_CLOUD_SITE && isCloudSiteServer(serverId)) leaveAfterSignOut(discovery.localEditor)
 }

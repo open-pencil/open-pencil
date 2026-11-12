@@ -4,62 +4,58 @@ import {
   cloudDesktopLinkURL,
   cloudDocumentURL,
   cloudInvitationURL,
-  cloudShareURL
+  cloudShareURL,
+  parseCloudLinkPath
 } from '#cloud/contract'
 
-const appURL = 'https://editor.company.example'
+const server = 'https://company.example'
 
-test('sharing uses the owning public editor without requiring browser globals', () => {
-  const url = new URL(cloudShareURL(appURL, 'https://company.example', 'share-id', 'secret'))
-  expect(url.origin).toBe('https://editor.company.example')
-  expect(url.pathname).toBe('/cloud/share/share-id')
-  expect(url.searchParams.get('server')).toBe('https://company.example')
+test('a shared link is on the server itself and carries its secret in the fragment', () => {
+  const url = new URL(cloudShareURL(server, 'share-id', 'secret'))
+  expect(url.origin).toBe('https://company.example')
+  expect(url.pathname).toBe('/share/share-id')
+  expect(url.search).toBe('')
   expect(url.hash).toBe('#secret')
-  expect(url.search).not.toContain('secret')
 })
 
-test('sharing rejects absent or non-web editor URLs', () => {
-  expect(() => cloudShareURL(undefined, 'https://company.example', 'id', 'secret')).toThrow()
-  expect(() =>
-    cloudShareURL('tauri://localhost', 'https://company.example', 'id', 'secret')
-  ).toThrow()
+test('links refuse a server address that is not on the web', () => {
+  expect(() => cloudShareURL('tauri://localhost', 'id', 'secret')).toThrow()
 })
 
-test('a document or version address names its server and carries no secret', () => {
-  const document = new URL(cloudDocumentURL(appURL, 'https://company.example', 'doc-id'))
-  expect(document.origin).toBe('https://editor.company.example')
-  expect(document.pathname).toBe('/cloud/documents/doc-id')
-  expect(document.searchParams.get('server')).toBe('https://company.example')
-  expect(document.searchParams.has('version')).toBe(false)
+test('a document or version address carries no secret', () => {
+  const document = new URL(cloudDocumentURL(server, 'doc-id'))
+  expect(document.origin).toBe('https://company.example')
+  expect(document.pathname).toBe('/documents/doc-id')
+  expect(document.search).toBe('')
   expect(document.hash).toBe('')
 
-  const version = new URL(
-    cloudDocumentURL(appURL, 'https://company.example', 'doc-id', 'version-id')
-  )
+  const version = new URL(cloudDocumentURL(server, 'doc-id', 'version-id'))
   expect(version.searchParams.get('version')).toBe('version-id')
 
-  const anchored = 'https://editor.company.example/#welcome'
-  expect(new URL(cloudDocumentURL(anchored, 'https://company.example', 'doc-id')).hash).toBe('')
+  expect(new URL(cloudDocumentURL('https://company.example/#welcome', 'doc-id')).hash).toBe('')
 })
 
-test('an invitation names its server and carries its token in the fragment', () => {
-  const url = new URL(
-    cloudInvitationURL(appURL, 'https://company.example', 'invitation/id', 'token')
-  )
-  expect(url.origin).toBe('https://editor.company.example')
-  expect(url.pathname).toBe('/cloud/invitations/invitation%2Fid')
-  expect(url.searchParams.get('server')).toBe('https://company.example')
+test('an invitation carries its token in the fragment', () => {
+  const url = new URL(cloudInvitationURL(server, 'invitation/id', 'token'))
+  expect(url.origin).toBe('https://company.example')
+  expect(url.pathname).toBe('/invitations/invitation%2Fid')
+  expect(url.search).toBe('')
   expect(url.hash).toBe('#token')
-  expect(url.search).not.toContain('token')
 })
 
-test('desktop links keep the web link path, server, and secret under the app scheme', () => {
-  const url = new URL(
-    cloudDesktopLinkURL('invitations', 'invitation-id', 'https://company.example', 'secret')
-  )
+test('link paths name their kind and decoded ID', () => {
+  expect(parseCloudLinkPath('/share/s%201')).toEqual({ kind: 'share', id: 's 1' })
+  expect(parseCloudLinkPath('/invitations/abc')).toEqual({ kind: 'invitations', id: 'abc' })
+  expect(parseCloudLinkPath('/documents/abc')).toEqual({ kind: 'documents', id: 'abc' })
+  for (const path of ['/rooms/abc', '/share/abc/more', '/share/', '/share/%E0%A4', '/']) {
+    expect(parseCloudLinkPath(path)).toBeNull()
+  }
+})
+
+test('desktop links carry the web link under the app scheme, with the secret in the fragment', () => {
+  const url = new URL(cloudDesktopLinkURL('invitations', 'invitation-id', server, 'secret'))
   expect(url.protocol).toBe('openpencil:')
   expect(url.host).toBe('cloud')
-  expect(url.pathname).toBe('/invitations/invitation-id')
-  expect(url.searchParams.get('server')).toBe('https://company.example')
+  expect(url.searchParams.get('url')).toBe('https://company.example/invitations/invitation-id')
   expect(url.hash).toBe('#secret')
 })

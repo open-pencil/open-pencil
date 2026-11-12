@@ -1,5 +1,10 @@
 import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/documents'
-import { DocumentShareInvalidError, InvitationDeliveryError } from '#cloud/server/sharing/errors'
+import { InvitationLimitError } from '#cloud/server/invitations'
+import {
+  DocumentShareInvalidError,
+  DocumentShareSignInRequiredError,
+  InvitationDeliveryError
+} from '#cloud/server/sharing/errors'
 import { WorkspaceInvitationInvalidError } from '#cloud/server/workspaces/members'
 import type { Context } from 'hono'
 
@@ -11,8 +16,14 @@ export function sharingDomainError(context: Context, error: unknown): Response |
   ) {
     return context.json({ error: { code: 'not_found' as const } }, 404)
   }
+  if (error instanceof DocumentShareSignInRequiredError) {
+    return context.json({ error: { code: 'unauthorized' as const } }, 401)
+  }
   if (error instanceof InvitationDeliveryError) {
     return context.json({ error: { code: 'invitation_delivery_failed' as const } }, 502)
+  }
+  if (error instanceof InvitationLimitError) {
+    return context.json({ error: { code: 'rate_limited' as const } }, 429)
   }
   if (error instanceof DocumentForbiddenError) {
     return context.json({ error: { code: 'forbidden' as const } }, 403)

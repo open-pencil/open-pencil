@@ -1,20 +1,22 @@
-import type { Canvas } from 'canvaskit-wasm'
-
+import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { layerRotates } from '@open-pencil/scene-graph/generated'
-import { computeBounds, rotatedCorners } from '@open-pencil/scene-graph/geometry'
+import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { slotPropertyId } from '@open-pencil/scene-graph/slots'
 
+import { drawSelectionLabels } from '#core/canvas/labels/selection'
 import { drawConnectorHover, drawConnectorSelection } from '#core/canvas/overlays/connectors'
+import { drawConstraintIndicators } from '#core/canvas/overlays/constraints'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
+import { strokeNodeShape } from '#core/canvas/strokes'
 import {
   HANDLE_HALF_SIZE,
   ROTATION_HANDLE_DISTANCE,
   CODE_FOCUS_FILL_ALPHA,
-  SELECTION_DASH_ALPHA,
-  SECTION_HOVER_STROKE_WIDTH
+  PARENT_OUTLINE_ALPHA,
+  PARENT_OUTLINE_DASH,
+  SELECTION_DASH_ALPHA
 } from '#core/constants'
 import {
   createSceneGeometry,
@@ -28,7 +30,13 @@ import {
 } from '#core/geometry'
 import { pointAtArc, textPathStartArc } from '#core/text/path'
 
-import { inNodeSpace, outlineNode, withScreenStroke } from './outline'
+import {
+  inNodeSpace,
+  outlineHoveredNode,
+  outlineNode,
+  type ScreenStroke,
+  withScreenStroke
+} from './outline'
 
 /** The dash of faint selection bounds, in screen pixels. */
 const SELECTION_DASH = [4, 4] as const
@@ -42,17 +50,8 @@ export function drawHoverHighlight(
 ): void {
   const node = hoveredNodeId ? graph.getNode(hoveredNodeId) : undefined
   if (!node) return
-  if (node.type === 'CONNECTOR') {
-    drawConnectorHover(r, canvas, graph, node, preview)
-    return
-  }
-  r.auxStroke.setStrokeWidth((node.type === 'SECTION' ? SECTION_HOVER_STROKE_WIDTH : 1) / r.zoom)
-  r.auxStroke.setColor(r.outlineColor(node, graph))
-  r.auxStroke.setPathEffect(null)
-  canvas.save()
-  canvas.concat(createSceneGeometry(graph, preview).screenMatrix(node, r))
-  r.strokeNodeShape(canvas, node, r.auxStroke)
-  canvas.restore()
+  if (node.type === 'CONNECTOR') drawConnectorHover(r, canvas, graph, node, preview)
+  else outlineHoveredNode(r, canvas, graph, node, preview)
 }
 
 /**
@@ -73,21 +72,10 @@ export function drawCodeFocus(
     component ? r.compColor(CODE_FOCUS_FILL_ALPHA) : r.selColor(CODE_FOCUS_FILL_ALPHA)
   )
   const color = component ? r.compColor() : r.selColor()
-  inNodeSpace(r, canvas, createSceneGeometry(graph, preview), node, () => {
-    r.strokeNodeShape(canvas, node, r.auxFill)
-    withScreenStroke(r, { color }, (paint) => r.strokeNodeShape(canvas, node, paint))
+  inNodeSpace(r, canvas, r.sceneGeometry(graph, preview), node, () => {
+    strokeNodeShape(r, canvas, node, r.auxFill)
+    withScreenStroke(r, { color }, (paint) => strokeNodeShape(r, canvas, node, paint))
   })
-}
-
-export function drawEnteredContainer(
-  r: SkiaRenderer,
-  canvas: Canvas,
-  graph: SceneGraph,
-  enteredContainerId?: string | null,
-  preview?: RotationPreview | null
-): void {
-  const stroke = { color: r.selColor(SELECTION_DASH_ALPHA), dash: SELECTION_DASH }
-  outlineNode(r, canvas, graph, enteredContainerId, stroke, preview)
 }
 
 /** Single-node selection overlay: path-text curve/band for imported TEXT_PATH,
@@ -114,18 +102,22 @@ function drawSingleSelection(
   // outlines the lettering and draws the caret and selection along the path.
   if (editing && !isPathText) return
 
+  if (node.type !== 'CONNECTOR') drawConstraintIndicators(r, canvas, graph, node, preview)
+
   r.selectionPaint.setColor(r.outlineColor(node, graph))
   r.selectionPaint.setStrokeWidth(1 / r.zoom)
 
   const rotation = node.rotation
   if (node.type === 'CONNECTOR') {
-    drawConnectorSelection(r, canvas, graph, node, preview)
+    // While its label is typed into, FigJam shows only the label's box.
+    const label = overlays.editingTextId ? graph.getNode(overlays.editingTextId) : undefined
+    if (label?.parentId !== node.id) drawConnectorSelection(r, canvas, graph, node, preview)
   } else if (isPathText) {
     drawTextPathSelection(r, canvas, node, rotation, graph, editing, preview)
-    if (!editing) r.drawSelectionLabels(canvas, graph, selectedIds, overlays)
+    if (!editing) drawSelectionLabels(r, canvas, graph, selectedIds, overlays)
   } else {
-    r.drawNodeSelection(canvas, node, rotation, graph, preview)
-    r.drawSelectionLabels(canvas, graph, selectedIds, overlays)
+    drawNodeSelection(r, canvas, node, rotation, graph, preview, !overlays.scaleTool)
+    drawSelectionLabels(r, canvas, graph, selectedIds, overlays)
   }
   r.selectionPaint.setColor(r.selColor())
 }
@@ -141,7 +133,7 @@ export function drawSelection(
   const nodeEditId = overlays.nodeEditState?.nodeId ?? null
   const preview = overlays.rotationPreview
 
-  r.drawParentFrameOutlines(canvas, graph, selectedIds, preview)
+  drawParentFrameOutlines(r, canvas, graph, selectedIds, preview)
 
   if (selectedIds.size === 1) {
     const id = [...selectedIds][0]
@@ -158,7 +150,7 @@ export function drawSelection(
     r.selectionPaint.setStrokeWidth(1 / r.zoom)
 
     const rotation = node.rotation
-    r.drawNodeOutline(canvas, node, rotation, graph, preview)
+    drawNodeOutline(r, canvas, node, rotation, graph, preview)
   }
 
   r.selectionPaint.setColor(r.selColor())
@@ -169,9 +161,9 @@ export function drawSelection(
     .map((id) => graph.getNode(id))
     .filter((n): n is SceneNode => n !== undefined)
   if (nodes.length === 0) return
-  r.drawGroupBounds(canvas, nodes, graph, preview)
+  drawGroupBounds(r, canvas, nodes, graph, preview, !overlays.scaleTool)
 
-  r.drawSelectionLabels(canvas, graph, selectedIds, overlays)
+  drawSelectionLabels(r, canvas, graph, selectedIds, overlays)
 }
 
 function withNodeBounds(
@@ -216,7 +208,7 @@ function drawTextPathSelection(
 ): void {
   const pathGeometry = selectionPath(node)
   if (!pathGeometry) {
-    r.drawNodeSelection(canvas, node, rotation, graph, preview)
+    drawNodeSelection(r, canvas, node, rotation, graph, preview)
     return
   }
 
@@ -247,7 +239,7 @@ function drawTextPathSelection(
           box.y,
           box.x + box.width,
           box.y + box.height,
-          rotationHandleLayout(node, createSceneGeometry(graph, preview), r.zoom, {
+          rotationHandleLayout(node, r.sceneGeometry(graph, preview), r.zoom, {
             x: box.x,
             y: box.y,
             width: box.width,
@@ -290,7 +282,7 @@ function drawTextPathSelection(
 
 /**
  * Figma's corner handles and our rotation stalk, absent for a layer that does not turn; a layer
- * too small for handles, or in a read-only document, shows none.
+ * too small for handles, or on a canvas that offers none (`editHandles`), shows none.
  */
 function drawBoundsHandles(
   r: SkiaRenderer,
@@ -301,14 +293,14 @@ function drawBoundsHandles(
   maxY: number,
   stalk: RotationHandleLayout | null
 ): void {
-  if (r.readOnly || !hasTransformHandles((maxX - minX) * r.zoom, (maxY - minY) * r.zoom)) return
-  r.drawHandle(canvas, minX, minY)
-  r.drawHandle(canvas, maxX, minY)
-  r.drawHandle(canvas, minX, maxY)
-  r.drawHandle(canvas, maxX, maxY)
+  if (!r.editHandles || !hasTransformHandles((maxX - minX) * r.zoom, (maxY - minY) * r.zoom)) return
+  drawHandle(r, canvas, minX, minY)
+  drawHandle(r, canvas, maxX, minY)
+  drawHandle(r, canvas, minX, maxY)
+  drawHandle(r, canvas, maxX, maxY)
   if (!stalk) return
   canvas.drawLine(stalk.edge.x, stalk.edge.y, stalk.handle.x, stalk.handle.y, r.selectionPaint)
-  r.drawHandle(canvas, stalk.handle.x, stalk.handle.y)
+  drawHandle(r, canvas, stalk.handle.x, stalk.handle.y)
 }
 
 function drawSelectionRect(
@@ -340,7 +332,8 @@ export function drawNodeSelection(
   node: SceneNode,
   rotation: number,
   graph: SceneGraph,
-  preview?: RotationPreview | null
+  preview?: RotationPreview | null,
+  showRotation = true
 ): void {
   drawSelectionRect(
     r,
@@ -357,9 +350,9 @@ export function drawNodeSelection(
         x2,
         y2,
         // A generated frame such as a sticky note may stay upright, and a line turns by its ends.
-        !layerRotates(node) || isLineLike(node)
+        !showRotation || !layerRotates(node) || isLineLike(node)
           ? null
-          : rotationHandleLayout(node, createSceneGeometry(graph, preview), r.zoom, {
+          : rotationHandleLayout(node, r.sceneGeometry(graph, preview), r.zoom, {
               x: x1,
               y: y1,
               width: x2 - x1,
@@ -393,30 +386,15 @@ export function drawParentFrameOutlines(
     if (!grandparent || grandparent.type === 'CANVAS') continue
 
     drawn.add(parent.id)
+    outlineNode(r, canvas, graph, parent.id, parentOutline(r), preview)
+  }
+}
 
-    const m = createSceneGeometry(graph, preview).screenMatrix(parent, r)
-
-    const pts = Matrix.mapPoints(m, [
-      0,
-      0,
-      parent.width,
-      0,
-      parent.width,
-      parent.height,
-      0,
-      parent.height
-    ])
-
-    const path = new r.ck.PathBuilder()
-    path.moveTo(pts[0], pts[1])
-    path.lineTo(pts[2], pts[3])
-    path.lineTo(pts[4], pts[5])
-    path.lineTo(pts[6], pts[7])
-    path.close()
-
-    const immutablePath = path.detachAndDelete()
-    canvas.drawPath(immutablePath, r.parentOutlinePaint)
-    immutablePath.delete()
+/** The dashed outline of a selected layer's parent, in the selection colour, faded. */
+function parentOutline(r: SkiaRenderer): ScreenStroke {
+  return {
+    color: r.selColor(PARENT_OUTLINE_ALPHA),
+    dash: [PARENT_OUTLINE_DASH, PARENT_OUTLINE_DASH]
   }
 }
 
@@ -436,9 +414,10 @@ export function drawGroupBounds(
   canvas: Canvas,
   nodes: SceneNode[],
   graph: SceneGraph,
-  preview?: RotationPreview | null
+  preview?: RotationPreview | null,
+  showRotation = true
 ): void {
-  const geometry = createSceneGeometry(graph, preview)
+  const geometry = r.sceneGeometry(graph, preview)
   const bounds = computeBounds(nodes.map(geometry.bounds))
   const [minX, minY, maxX, maxY] = Matrix.mapPoints(viewportMatrix(r), [
     bounds.x,
@@ -450,15 +429,7 @@ export function drawGroupBounds(
   r.auxStroke.setColor(r.selColor(SELECTION_DASH_ALPHA))
   r.auxStroke.setPathEffect(null)
   canvas.drawRect(r.ck.LTRBRect(minX, minY, maxX, maxY), r.auxStroke)
-  drawBoundsHandlesScreenSpace(r, canvas, minX, minY, maxX, maxY)
-}
-
-export function getRotatedCorners(r: SkiaRenderer, n: SceneNode, abs: Vector): Vector[] {
-  const cx = (abs.x + n.width / 2) * r.zoom + r.panX
-  const cy = (abs.y + n.height / 2) * r.zoom + r.panY
-  const hw = (n.width / 2) * r.zoom
-  const hh = (n.height / 2) * r.zoom
-  return rotatedCorners(cx, cy, hw, hh, n.rotation)
+  drawBoundsHandlesScreenSpace(r, canvas, minX, minY, maxX, maxY, showRotation)
 }
 
 export function drawHandle(r: SkiaRenderer, canvas: Canvas, x: number, y: number): void {
@@ -487,13 +458,15 @@ function drawBoundsHandlesScreenSpace(
   minX: number,
   minY: number,
   maxX: number,
-  maxY: number
+  maxY: number,
+  showRotation = true
 ): void {
-  if (!hasTransformHandles(maxX - minX, maxY - minY)) return
+  if (!r.editHandles || !hasTransformHandles(maxX - minX, maxY - minY)) return
   drawHandleScreenSpace(r, canvas, minX, minY)
   drawHandleScreenSpace(r, canvas, maxX, minY)
   drawHandleScreenSpace(r, canvas, minX, maxY)
   drawHandleScreenSpace(r, canvas, maxX, maxY)
+  if (!showRotation) return
   const midX = (minX + maxX) / 2
   const rotationHandleY = minY - ROTATION_HANDLE_DISTANCE
   canvas.drawLine(midX, minY, midX, rotationHandleY, r.selectionPaint)

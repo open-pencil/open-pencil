@@ -1,8 +1,10 @@
 import { createHead } from '@unhead/vue/client'
 import { createApp } from 'vue'
+import { isNavigationFailure, NavigationFailureType } from 'vue-router'
 
 import '@/app.css'
 import { loadPortalContext, PORTAL_CONTEXT } from '@/app/cloud-portal/context'
+import { PORTAL_LEGAL } from '@/components/cloud-portal/layout/legal'
 import CloudPortalApp from '@/views/cloud/CloudPortalApp.vue'
 import CloudPortalUnavailableView from '@/views/cloud/CloudPortalUnavailableView.vue'
 
@@ -26,7 +28,22 @@ async function start(): Promise<void> {
     console.error(error)
   }
   app.provide(PORTAL_CONTEXT, context)
-  app.use(createCloudPortalRouter(context)).use(head).mount('#app')
+  // Every public page's footer links the server's own terms, privacy policy, and abuse address.
+  app.provide(PORTAL_LEGAL, context.discovery.legal)
+  const router = createCloudPortalRouter(context)
+  app.use(router).use(head)
+  // The splash stays until the first page can show, rather than a blank page between. A first
+  // navigation the guards stop leaves for the editor, so nothing mounts then; one that fails, as
+  // when a page's code does not load, says the pages are unavailable.
+  try {
+    await router.isReady()
+  } catch (error) {
+    if (isNavigationFailure(error, NavigationFailureType.aborted)) return
+    console.error(error)
+    createApp(CloudPortalUnavailableView).use(createHead()).mount('#app')
+    return
+  }
+  app.mount('#app')
 }
 
 void start()

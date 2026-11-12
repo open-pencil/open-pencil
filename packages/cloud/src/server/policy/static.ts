@@ -23,18 +23,18 @@ export function staticEntitlementsFromTOML(
     },
     storage: { maximumBytes: value.storage?.maximum_bytes },
     sharing: {
-      capabilityLinks: value.sharing?.capability_links,
-      anonymousView: value.sharing?.anonymous_view,
-      anonymousEdit: value.sharing?.anonymous_edit,
+      links: value.sharing?.links,
+      guestView: value.sharing?.guest_view,
+      guestEdit: value.sharing?.guest_edit,
       guestPresence: value.sharing?.guest_presence
     },
     collaboration: {
       enabled: value.collaboration?.enabled,
       maximumParticipants: value.collaboration?.maximum_participants
     },
-    ai: {
-      enabled: value.ai?.enabled,
-      monthlyCreditAllowance: value.ai?.monthly_credit_allowance
+    services: {
+      enabled: value.services?.enabled,
+      monthlyCreditAllowance: value.services?.monthly_credit_allowance
     }
   })
 }
@@ -49,14 +49,14 @@ export function staticEntitlementValues(input: unknown): Record<string, boolean 
     [CLOUD_FEATURE_KEYS.maximumFileBytes]: entitlements.documents.maximumFileBytes,
     [CLOUD_FEATURE_KEYS.revisionHistory]: entitlements.documents.revisionHistory,
     [CLOUD_FEATURE_KEYS.maximumStorageBytes]: entitlements.storage.maximumBytes,
-    [CLOUD_FEATURE_KEYS.capabilityLinks]: entitlements.sharing.capabilityLinks,
-    [CLOUD_FEATURE_KEYS.anonymousView]: entitlements.sharing.anonymousView,
-    [CLOUD_FEATURE_KEYS.anonymousEdit]: entitlements.sharing.anonymousEdit,
+    [CLOUD_FEATURE_KEYS.links]: entitlements.sharing.links,
+    [CLOUD_FEATURE_KEYS.guestView]: entitlements.sharing.guestView,
+    [CLOUD_FEATURE_KEYS.guestEdit]: entitlements.sharing.guestEdit,
     [CLOUD_FEATURE_KEYS.guestPresence]: entitlements.sharing.guestPresence,
     [CLOUD_FEATURE_KEYS.collaboration]: entitlements.collaboration.enabled,
     [CLOUD_FEATURE_KEYS.maximumParticipants]: entitlements.collaboration.maximumParticipants,
-    [CLOUD_FEATURE_KEYS.cloudAI]: entitlements.ai.enabled,
-    [CLOUD_FEATURE_KEYS.monthlyCreditAllowance]: entitlements.ai.monthlyCreditAllowance
+    [CLOUD_FEATURE_KEYS.cloudServices]: entitlements.services.enabled,
+    [CLOUD_FEATURE_KEYS.monthlyCreditAllowance]: entitlements.services.monthlyCreditAllowance
   }
   return pickBy(values, isNotNil) as Record<string, boolean | number>
 }

@@ -1,32 +1,41 @@
+import { invoke } from '@tauri-apps/api/core'
+import { homeDir } from '@tauri-apps/api/path'
+import { Command } from '@tauri-apps/plugin-shell'
 import { promiseTimeout } from '@vueuse/core'
 import { compact } from 'es-toolkit/array'
-import * as v from 'valibot'
 
 import { AUTOMATION_HTTP_PORT } from '@open-pencil/core/constants'
-import type { DiscoveryInfo } from '@open-pencil/mcp/discovery'
-import {
-  parseToolDescriptor,
-  serializeDisabledTools,
-  type ToolDescriptor
-} from '@open-pencil/mcp/tools'
+import { serializeDisabledTools } from '@open-pencil/mcp/tools'
 import { randomHex } from '@open-pencil/scene-graph/random'
 
-import { APP_VERSION } from '@/app/runtime/version'
 import { decodeTauriStderr } from '@/app/shell/ui'
+import { canRunHostProcesses } from '@/app/tauri/capabilities'
 import { resolvePlatformCommand } from '@/app/tauri/command'
 import { isTauri } from '@/app/tauri/env'
 
 import { DEV_MCP_RESTART_PATH, type DevMCPConfiguration } from './dev-control'
 import {
+  computeExpectedDiscoveryPath,
+  discoveryFileExists,
+  readDiscoveryToken,
+  resolveDiscoveryPath
+} from './discovery'
+import {
   classifySpawnFailure,
   mcpFailure,
   MCP_EXECUTABLE,
-  MCP_INSTALL_COMMAND,
   MCP_INSTALL_TARGET,
-  MCP_PACKAGE_NAME,
   MCPStartupError,
   type MCPFailure
 } from './failure'
+import {
+  assertCompatibleMCPVersion,
+  AUTOMATION_HTTP_URL,
+  pollHealth,
+  probeAutomationHealth,
+  waitForHealth,
+  type AutomationHealth
+} from './health'
 import {
   disabledMCPTools,
   mcpAuthenticationEnabled,
@@ -34,27 +43,14 @@ import {
   mcpScope
 } from './preferences'
 
-export interface AutomationHealth {
-  status: 'ok' | 'no_app'
-  version?: string
-  authRequired?: boolean
-  discoveryPath?: string
-  tools?: ToolDescriptor[]
-  /** The server tells the app when an agent opens a session, so a chat can wait for its agent. */
-  agentSessionEvents?: boolean
-}
-
 export interface AutomationServerHandle {
   disconnect: () => void | Promise<void>
   authToken: string | null
   managed: boolean
 }
 
-const DEV_AUTOMATION_HTTP_URL = import.meta.env.DEV
-  ? __OPENPENCIL_LOCAL_AUTOMATION_HTTP_URL__
-  : `http://127.0.0.1:${AUTOMATION_HTTP_PORT}`
 export function getMCPServerURL(): string {
-  return `${DEV_AUTOMATION_HTTP_URL}/mcp`
+  return `${AUTOMATION_HTTP_URL}/mcp`
 }
 
 const DEV_AUTOMATION_AUTH_TOKEN =
@@ -74,6 +70,10 @@ interface MCPLookup {
 // prevents a server that outlives a crashed/reloaded app from squatting the
 // port forever while still allowing brief renderer reloads (issue #488).
 const MCP_APP_ATTACH_TIMEOUT_MS = 30_000
+// A server started from a cold npm shim can take longer than a few seconds to answer (14.8 s on
+// a Windows VM, issue #1167). The app waits this long for it, leaving the rest of the attach
+// grace above for the app to connect once it does.
+const MCP_STARTUP_HEALTH_DEADLINE_MS = MCP_APP_ATTACH_TIMEOUT_MS - 10_000
 
 /** Delays used while a spawned server comes up; tests shorten them. */
 export interface MCPStartupTiming {
@@ -81,13 +81,14 @@ export interface MCPStartupTiming {
   earlyExitMs: number
   /** Delay before each of the health polls after spawning. */
   healthPollMs: number
+  /** How long to keep polling while the child runs before giving up on it. */
+  healthDeadlineMs?: number
 }
 const DEFAULT_STARTUP_TIMING: MCPStartupTiming = { earlyExitMs: 250, healthPollMs: 1000 }
 
 let runtimeAutomationAuthToken: string | null = DEV_AUTOMATION_AUTH_TOKEN
 let runtimeAutomationStartupError: Error | null = null
 let runtimeAutomationStartupFailure: MCPFailure | null = null
-let runtimeAutomationHealthFailure: MCPFailure | null = null
 
 /**
  * The startup failure recorded by the most recent spawn attempt. Settings uses
@@ -100,11 +101,6 @@ export function getAutomationStartupError(): Error | null {
 
 export function getAutomationStartupFailure(): MCPFailure | null {
   return runtimeAutomationStartupFailure
-}
-
-/** Why the most recent health probe failed. */
-export function getAutomationHealthFailure(): MCPFailure | null {
-  return runtimeAutomationHealthFailure
 }
 
 function toError(error: unknown): Error {
@@ -126,241 +122,29 @@ function rememberStartupError(error: unknown): null {
   return null
 }
 
-/** The one discovery-file field the app reads; the MCP package validates the whole file. */
-const discoveryTokenSchema = v.pipe(
-  v.string(),
-  v.parseJson(),
-  v.looseObject({ authToken: v.optional(v.nullable(v.string())) })
-) satisfies v.GenericSchema<string, Partial<Pick<DiscoveryInfo, 'authToken'>>>
-
-/**
- * Reads the auth token from the MCP discovery file via Tauri's FS plugin.
- * The discovery file path is computed locally (not from the /health endpoint)
- * to prevent an unauthenticated /health response from directing file reads
- * to an attacker-controlled path.
- */
-async function readDiscoveryToken(discoveryPath: string): Promise<string | null> {
-  try {
-    const { readTextFile } = await import('@tauri-apps/plugin-fs')
-    const info = v.safeParse(discoveryTokenSchema, await readTextFile(discoveryPath))
-    return info.success ? (info.output.authToken ?? null) : null
-  } catch {
-    return null
-  }
-}
-
-/** Check whether the discovery file exists on disk. */
-async function discoveryFileExists(discoveryPath: string): Promise<boolean> {
-  try {
-    const { exists } = await import('@tauri-apps/plugin-fs')
-    return await exists(discoveryPath)
-  } catch {
-    return false
-  }
-}
-
-/**
- * Computes the expected MCP discovery file path using the same platform
- * logic as the server's getDiscoveryPath(), but via Tauri APIs since we
- * run in the browser. This avoids trusting the unauthenticated /health
- * endpoint's discoveryPath field.
- */
-async function computeExpectedDiscoveryPath(): Promise<string> {
-  const { homeDir, join } = await import('@tauri-apps/api/path')
-  const home = await homeDir()
-  if (!home) throw new Error('homeDir() returned an empty string')
-
-  const isMac = navigator.platform.includes('Mac')
-  const isWindows = navigator.platform.includes('Win')
-  // Must match the server's getPlatformDir() in packages/mcp/src/transport/paths.ts.
-  // On Windows, LOCALAPPDATA usually equals <home>\AppData\Local, so this fallback
-  // matches the server's path in the common case. When it doesn't (custom
-  // LOCALAPPDATA), resolveDiscoveryPath() falls back to the /health endpoint.
-  if (isMac) {
-    return join(home, 'Library', 'Application Support', 'OpenPencil', 'mcp.json')
-  }
-  if (isWindows) {
-    return join(home, 'AppData', 'Local', 'OpenPencil', 'mcp.json')
-  }
-  // Linux: $XDG_RUNTIME_DIR/openpencil/mcp.json or ~/.openpencil/mcp.json.
-  // In Tauri we don't have direct env access, so we use the home-directory
-  // fallback. The server may use XDG_RUNTIME_DIR if set — when the paths
-  // differ, resolveDiscoveryPath() falls back to the /health endpoint.
-  return join(home, '.openpencil', 'mcp.json')
-}
-
-/**
- * Resolves the discovery path to use for reading the auth token.
- *
- * Prefers the locally-computed path from `computeExpectedDiscoveryPath()` for
- * security. When the server-reported `healthDiscoveryPath` (from the
- * unauthenticated `/health` endpoint) differs, logs a warning and falls back
- * to the server-reported path as a compatibility measure.
- *
- * Security tradeoff: the `/health` endpoint is unauthenticated, so a
- * compromised server could redirect us to a malicious path. This is mitigated
- * by the fact that the server is on localhost and was spawned by us. The
- * fallback exists because local computation can be wrong (e.g., XDG_RUNTIME_DIR
- * mismatches on Linux where the server uses `$XDG_RUNTIME_DIR/openpencil` but
- * the local computation falls back to `~/.openpencil`).
- */
-async function resolveDiscoveryPath(healthDiscoveryPath?: string): Promise<string> {
-  const expected = await computeExpectedDiscoveryPath()
-  if (healthDiscoveryPath && healthDiscoveryPath !== expected) {
-    const localExists = await discoveryFileExists(expected)
-    if (!localExists) {
-      // Validate the server-reported path before accepting it. The /health
-      // endpoint is unauthenticated, so we only accept paths within the
-      // user's home directory ending in mcp.json.
-      const { homeDir } = await import('@tauri-apps/api/path')
-      const home = await homeDir()
-      const sep = home.includes('\\') ? '\\' : '/'
-      const hasTraversal = healthDiscoveryPath.split(/[\\/]/).some((segment) => segment === '..')
-      const isSafe =
-        healthDiscoveryPath.endsWith('mcp.json') &&
-        !hasTraversal &&
-        healthDiscoveryPath.startsWith(home + sep)
-      if (isSafe) {
-        console.warn(
-          `[MCP] Server discovery path "${healthDiscoveryPath}" differs from expected "${expected}" ` +
-            'and local path does not exist. Using server-reported path (server is on localhost).'
-        )
-        return healthDiscoveryPath
-      }
-    }
-  }
-  return expected
-}
-
-interface AutomationHealthRecord {
-  status?: unknown
-  version?: unknown
-  installCommand?: unknown
-  authRequired?: unknown
-  discoveryPath?: unknown
-  tools?: unknown
-  agentSessionEvents?: unknown
-}
-
-function isAutomationHealthRecord(value: unknown): value is AutomationHealthRecord {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
-
-function optionalString(value: unknown): string | null | undefined {
-  if (value === undefined) return undefined
-  return typeof value === 'string' ? value : null
-}
-
-function optionalBoolean(value: unknown): boolean | null | undefined {
-  if (value === undefined) return undefined
-  return typeof value === 'boolean' ? value : null
-}
-
-function parseToolDescriptors(value: unknown): ToolDescriptor[] | null | undefined {
-  if (value === undefined) return undefined
-  if (!Array.isArray(value)) return null
-  const descriptors: ToolDescriptor[] = []
-  for (const candidate of value) {
-    const descriptor = parseToolDescriptor(candidate)
-    if (!descriptor) return null
-    descriptors.push(descriptor)
-  }
-  return descriptors
-}
-
-function parseAutomationHealth(value: unknown): AutomationHealth | null {
-  if (!isAutomationHealthRecord(value)) return null
-  if (value.status !== 'ok' && value.status !== 'no_app') return null
-  const version = optionalString(value.version)
-  const authRequired = optionalBoolean(value.authRequired)
-  const discoveryPath = optionalString(value.discoveryPath)
-  const tools = parseToolDescriptors(value.tools)
-  const agentSessionEvents = optionalBoolean(value.agentSessionEvents)
-  if (
-    version === null ||
-    authRequired === null ||
-    discoveryPath === null ||
-    tools === null ||
-    agentSessionEvents === null
-  ) {
-    return null
-  }
-  const health: AutomationHealth = { status: value.status }
-  if (version !== undefined) health.version = version
-  if (authRequired !== undefined) health.authRequired = authRequired
-  if (discoveryPath !== undefined) health.discoveryPath = discoveryPath
-  if (tools !== undefined) health.tools = tools
-  if (agentSessionEvents !== undefined) health.agentSessionEvents = agentSessionEvents
-  return health
-}
-
 export async function readAutomationHealth(
   authToken: string | null = runtimeAutomationAuthToken
 ): Promise<AutomationHealth | null> {
-  try {
-    const headers = authToken ? { Authorization: `Bearer ${authToken}` } : undefined
-    const res = await fetch(`${DEV_AUTOMATION_HTTP_URL}/health`, {
-      headers,
-      signal: AbortSignal.timeout(1000)
-    })
-    if (!res.ok) {
-      // A running server that refuses our token needs a new token; any other
-      // status means we are not talking to the server we expect.
-      const rejectsCredentials = res.status === 401 || res.status === 403
-      runtimeAutomationHealthFailure = rejectsCredentials
-        ? mcpFailure('rejected', `HTTP ${res.status}`)
-        : mcpFailure('malformed', `HTTP ${res.status}`)
-      return null
-    }
-    const health = parseAutomationHealth(await res.json())
-    if (!health) {
-      runtimeAutomationHealthFailure = mcpFailure('malformed', `HTTP ${res.status}`)
-      return null
-    }
-    runtimeAutomationHealthFailure = null
-    return health
-  } catch {
-    runtimeAutomationHealthFailure = mcpFailure('unreachable', DEV_AUTOMATION_HTTP_URL)
-    return null
-  }
+  return probeAutomationHealth(authToken)
 }
 
 /**
- * Returns the major.minor portion of a semver string (e.g. "0.5.1" → "0.5").
- * Returns null if the string is not parseable as semver.
+ * Checks that a running server is one this app can use and reads its auth token from the
+ * discovery file, failing when the server requires a token the file does not hold.
  */
-function parseMajorMinor(version: string): string | null {
-  const match = version.match(/^(\d+)\.(\d+)/)
-  return match ? `${match[1]}.${match[2]}` : null
-}
-
-function assertCompatibleMCPVersion(health: AutomationHealth): void {
-  const runningMajorMinor = health.version ? parseMajorMinor(health.version) : null
-  const oursMajorMinor = parseMajorMinor(APP_VERSION)
-  if (!oursMajorMinor) return
-  if (runningMajorMinor === oursMajorMinor) return
-  const runningVersion = health.version ? `v${health.version}` : 'an older version'
-  // The running server's own install command names its own version, so the fix always
-  // comes from this app's version.
-  throw new MCPStartupError(
-    `OpenPencil desktop v${APP_VERSION} requires ${MCP_PACKAGE_NAME} v${oursMajorMinor}.x ` +
-      `(major.minor compatibility), but the running MCP server is ${runningVersion}. ` +
-      `Run: ${MCP_INSTALL_COMMAND}, then restart the MCP server.`,
-    mcpFailure('outdated', health.version)
-  )
-}
-
-async function pollHealth(
-  attempts: number,
-  delayMs: number,
-  authToken: string | null = runtimeAutomationAuthToken
-): Promise<AutomationHealth | null> {
-  for (let attempt = 0; attempt < attempts; attempt++) {
-    await promiseTimeout(delayMs)
-    const health = await readAutomationHealth(authToken)
-    if (health) return health
+async function readRunningServerToken(
+  health: AutomationHealth
+): Promise<{ discoveryPath: string; token: string | null }> {
+  assertCompatibleMCPVersion(health)
+  const discoveryPath = await resolveDiscoveryPath(health.discoveryPath)
+  const token = await readDiscoveryToken(discoveryPath)
+  if (health.authRequired && !token) {
+    throw new Error(
+      'MCP server requires authentication but the discovery token could not be read. ' +
+        'Ensure the discovery file is accessible and contains an auth token.'
+    )
   }
-  return null
+  return { discoveryPath, token }
 }
 
 export async function getAutomationAuthToken(): Promise<string | null> {
@@ -372,15 +156,7 @@ export async function getAutomationAuthToken(): Promise<string | null> {
       'MCP server is not reachable. Ensure the desktop app is running and the MCP server has started.'
     )
   }
-  assertCompatibleMCPVersion(health)
-  const discoveryPath = await resolveDiscoveryPath(health.discoveryPath)
-  const token = await readDiscoveryToken(discoveryPath)
-  if (health.authRequired && !token) {
-    throw new Error(
-      'MCP server requires authentication but the discovery token could not be read. ' +
-        'Ensure the discovery file is accessible and contains an auth token.'
-    )
-  }
+  const { discoveryPath, token } = await readRunningServerToken(health)
   // When token is null and auth is not required, verify the discovery file
   // actually exists. A missing file means the server hasn't finished starting
   // (discovery file is written after listeners are up). Without this check,
@@ -405,15 +181,7 @@ async function readExistingServerHandle(): Promise<AutomationServerHandle | null
 
   const health = await readAutomationHealth()
   if (!health) return null
-  assertCompatibleMCPVersion(health)
-  const discoveryPath = await resolveDiscoveryPath(health.discoveryPath)
-  const token = await readDiscoveryToken(discoveryPath)
-  if (health.authRequired && !token) {
-    throw new Error(
-      'MCP server requires authentication but the discovery token could not be read. ' +
-        'Ensure the discovery file is accessible and contains an auth token.'
-    )
-  }
+  const { token } = await readRunningServerToken(health)
   runtimeAutomationAuthToken = token
   return { disconnect: noop, authToken: token, managed: false }
 }
@@ -445,10 +213,27 @@ async function configureDevMCP(): Promise<AutomationServerHandle> {
   if (!health)
     throw new MCPStartupError(
       'Development MCP server did not become healthy',
-      mcpFailure('timeout', `${DEV_AUTOMATION_HTTP_URL}/health`)
+      mcpFailure('timeout', `${AUTOMATION_HTTP_URL}/health`)
     )
   runtimeAutomationAuthToken = authToken
   return { disconnect: noop, authToken, managed: true }
+}
+
+function exitedStartupError(
+  message: string,
+  event: { code: number | null; signal: number | null },
+  stderr: string
+): MCPStartupError {
+  const details = stderr.trim()
+  return new MCPStartupError(
+    `${message} (code ${event.code ?? 'null'}, signal ${event.signal ?? 'null'})${details ? `: ${details}` : '.'}`,
+    mcpFailure(
+      'exited',
+      compact([`code=${event.code ?? 'null'}`, `signal=${event.signal ?? 'null'}`, details]).join(
+        ' '
+      )
+    )
+  )
 }
 
 async function startMCPIfNeeded(timing: MCPStartupTiming): Promise<AutomationServerHandle | null> {
@@ -461,18 +246,22 @@ async function startMCPIfNeeded(timing: MCPStartupTiming): Promise<AutomationSer
   if (existing) {
     return existing
   }
+  // A sandboxed package cannot start the server; one the user runs is still found by
+  // its health check, as in the browser.
+  if (!canRunHostProcesses()) return null
+  return launchMCPServer(timing)
+}
 
-  const { invoke } = await import('@tauri-apps/api/core')
+async function launchMCPServer(timing: MCPStartupTiming): Promise<AutomationServerHandle | null> {
   const lookup = await invoke<MCPLookup>('mcp_lookup')
   if (!lookup.available) return rememberStartupError(missingMCPError(lookup.searched))
 
   const authToken = mcpAuthenticationEnabled.value ? randomHex(32) : null
   // Cache only after MCP startup is confirmed healthy.
 
-  const { Command } = await import('@tauri-apps/plugin-shell')
   // Scope file tools to the configured root, defaulting to the user's home.
   // The app bundle directory (Tauri executableDir) is read-only and cannot be
-  // used as a safe fallback for open_file, save_file, or export tools.
+  // used as a safe fallback for open_document, save_document, or export tools.
   const mcpRoot = mcpRootDirectory.value.trim() || (await resolveTauriHomeDir())
   const resolved = resolvePlatformCommand(MCP_EXECUTABLE)
   const command = Command.create(resolved.command, resolved.args, {
@@ -483,6 +272,9 @@ async function startMCPIfNeeded(timing: MCPStartupTiming): Promise<AutomationSer
       OPENPENCIL_MCP_TCP: '1',
       OPENPENCIL_MCP_ROOT: mcpRoot,
       OPENPENCIL_MCP_APP_TIMEOUT_MS: String(MCP_APP_ATTACH_TIMEOUT_MS),
+      // Killing the shell wrapper on Windows leaves the server it started running; the app's end
+      // of the pipe closes with it, and the server exits on that.
+      OPENPENCIL_MCP_EXIT_ON_STDIN_CLOSE: '1',
       OPENPENCIL_MCP_DISABLED_TOOLS: serializeDisabledTools(disabledMCPTools.value),
       OPENPENCIL_MCP_SCOPE: mcpScope()
     }
@@ -518,22 +310,16 @@ async function startMCPIfNeeded(timing: MCPStartupTiming): Promise<AutomationSer
     promiseTimeout(timing.earlyExitMs).then(() => null)
   ])
   if (earlyExit) {
-    const details = startupStderr.trim()
     return rememberStartupError(
-      new MCPStartupError(
-        `MCP server exited before startup completed (code ${earlyExit.code ?? 'null'}, signal ${earlyExit.signal ?? 'null'})${details ? `: ${details}` : '.'}`,
-        mcpFailure(
-          'exited',
-          compact([
-            `code=${earlyExit.code ?? 'null'}`,
-            `signal=${earlyExit.signal ?? 'null'}`,
-            details
-          ]).join(' ')
-        )
-      )
+      exitedStartupError('MCP server exited before startup completed', earlyExit, startupStderr)
     )
   }
-  const health = await pollHealth(5, timing.healthPollMs, authToken)
+  const health = await waitForHealth(
+    timing.healthDeadlineMs ?? MCP_STARTUP_HEALTH_DEADLINE_MS,
+    timing.healthPollMs,
+    authToken,
+    childClosed
+  )
 
   if (health) {
     try {
@@ -564,10 +350,17 @@ async function startMCPIfNeeded(timing: MCPStartupTiming): Promise<AutomationSer
     }
   }
 
+  // A child that exited while the app waited for it is a crash, not a slow start.
+  const exitedWhileWaiting = await Promise.race([childClosed, Promise.resolve(null)])
   try {
     await child.kill().catch(() => undefined)
   } finally {
     runtimeAutomationAuthToken = null
+  }
+  if (exitedWhileWaiting) {
+    return rememberStartupError(
+      exitedStartupError('MCP server exited before it answered', exitedWhileWaiting, startupStderr)
+    )
   }
   return rememberStartupError(
     new MCPStartupError(
@@ -598,7 +391,6 @@ export async function spawnMCPIfNeeded(
  */
 async function resolveTauriHomeDir(): Promise<string> {
   try {
-    const { homeDir } = await import('@tauri-apps/api/path')
     const dir = await homeDir()
     if (!dir) {
       throw new Error('homeDir() returned an empty string')

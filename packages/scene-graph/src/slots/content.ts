@@ -3,6 +3,7 @@ import type { SceneGraph } from '../graph'
 import { getInstanceOverride, setInstanceOverride } from '../instances/overrides'
 import { cloneChildrenWithMapping } from '../instances/sync'
 import type { SceneNode } from '../types'
+import { applyBoundPaintColorsIn } from '../variables/paints'
 import { ownsSlotContent, slotPropertyId } from './frames'
 
 /**
@@ -68,6 +69,7 @@ export function claimSlotContent(
 ): void {
   const { frame, instance, propertyId } = scope
   if (ownsSlotContent(graph, frame, propertyId)) return
+  graph.willChangeNode(instance)
   const overrides = instance.instanceOverrides
   for (const node of descendants(graph, frame, false)) {
     overrides.descendants.delete(node.id)
@@ -76,6 +78,7 @@ export function claimSlotContent(
       continue
     }
     // A nested instance keeps the overrides its former owner applied inside it.
+    graph.willChangeNode(node)
     for (const inner of descendants(graph, node, true)) {
       const fields = overrides.descendants.get(inner.id)
       if (!fields) continue
@@ -114,7 +117,9 @@ export function resetSlotContent(
   Reflect.deleteProperty(assignments, propertyId)
   graph.updateNode(instance.id, { componentPropertyAssignments: assignments })
   const source = componentSource(instance, frame)
-  if (source && graph.nodes.has(source)) cloneChildrenWithMapping(graph, source, frame.id)
+  if (!source || !graph.nodes.has(source)) return
+  cloneChildrenWithMapping(graph, source, frame.id)
+  for (const childId of frame.childIds) applyBoundPaintColorsIn(graph, childId)
 }
 
 /** Remove everything from the slot; the instance keeps owning it, now empty. */

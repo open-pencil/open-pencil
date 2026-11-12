@@ -1,8 +1,7 @@
-import { pickBy } from 'es-toolkit'
-
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { TRANSFORM_FIELDS as NODE_TRANSFORM_FIELDS } from '@open-pencil/scene-graph/fields'
+import { visualBoundsToRect } from '@open-pencil/scene-graph/geometry'
 import { findInstanceAncestor, recordInstanceOverride } from '@open-pencil/scene-graph/instances'
 import { recapturedAspectRatio } from '@open-pencil/scene-graph/layout'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
@@ -11,6 +10,7 @@ import type { Rect } from '@open-pencil/scene-graph/primitives'
 import {
   computeConstrainedResizeChanges,
   createResizeSnapshot,
+  scaledGeometryChanges,
   type ResizeSnapshot
 } from '@open-pencil/scene-graph/resize'
 import { rescaleNodeTree } from '@open-pencil/scene-graph/scaling'
@@ -20,17 +20,18 @@ import { assertNodeEditable } from '#core/editor/capabilities'
 import {
   prepareFollowedFieldEdit,
   fitGroupsAround,
-  graph,
   hostFitOptions,
   nodeId,
   raw,
   updateNode,
   type NodeProxyInternals,
   type ProxyThis
-} from '#core/figma-api/accessor-utils'
-import { flushPendingLayout } from '#core/figma-api/pending-layout'
-import type { NodeProxyHost } from '#core/figma-api/proxy'
-import { computeAbsoluteRenderBounds } from '#core/figma-api/render-bounds'
+} from '#core/figma-api/accessors/utils'
+import { graphOf } from '#core/figma-api/graph'
+import type { FigmaNodeType } from '#core/figma-api/members'
+import { flushPendingLayout, flushPendingLayoutBefore } from '#core/figma-api/pending-layout'
+import type { FigmaNodeProxy, NodeProxyHost } from '#core/figma-api/proxy'
+import { atLeast } from '#core/figma-api/schema'
 import {
   containerTransform,
   setContainerTransform,
@@ -38,13 +39,17 @@ import {
   withOrigin
 } from '#core/figma-api/transform'
 import type { FigmaTransform } from '#core/figma-api/types'
+import { parseFigma } from '#core/figma-api/validation'
 import { syncVariantName } from '#core/figma-api/variants'
 import { figmaRotation } from '#core/geometry/figma'
+import { absoluteRenderBounds } from '#core/geometry/render-bounds'
+import { restoredHuggedSize } from '#core/layout/apply'
+import { computeAccurateBounds } from '#core/vector/curve-math'
 
 const TRANSFORM_FIELDS: ReadonlySet<string> = new Set(NODE_TRANSFORM_FIELDS)
 
 function assertEditable(target: ProxyThis, internals: NodeProxyInternals): void {
-  assertNodeEditable(graph(target, internals), nodeId(target, internals))
+  assertNodeEditable(graphOf(target), nodeId(target, internals))
 }
 
 function preservesRawTransform(node: SceneNode): boolean {
@@ -84,10 +89,19 @@ function setTransform(
   change: (matrix: Mat3) => Mat3
 ) {
   assertEditable(target, internals)
-  const scene = graph(target, internals)
+  const scene = graphOf(target)
   const node = raw(target, internals)
+  // Placed against its frame as the script's edits leave it, as Figma lays them out as it runs.
+  flushPendingLayoutBefore(scene, node)
   setContainerTransform(scene, node, change(containerTransform(node, scene)))
   fitGroupsAround(scene, node.parentId, hostFitOptions(target, internals))
+}
+
+/** A node's type as Figma's plugin API names it (`FigmaNodeType`). */
+export function figmaNodeType(graph: SceneGraph, node: SceneNode): FigmaNodeType {
+  if (node.id === graph.rootId) return 'DOCUMENT'
+  if (slotPropertyId(node)) return 'SLOT'
+  return node.type === 'CANVAS' ? 'PAGE' : node.type
 }
 
 export function installBasicNodeProxyAccessors(
@@ -101,9 +115,8 @@ export function installBasicNodeProxyAccessors(
       }
     },
     type: {
-      get(this: ProxyThis): SceneNode['type'] | 'SLOT' {
-        const node = raw(this, internals)
-        return slotPropertyId(node) ? 'SLOT' : node.type
+      get(this: ProxyThis): FigmaNodeType {
+        return figmaNodeType(graphOf(this), raw(this, internals))
       }
     },
     name: {
@@ -113,54 +126,44 @@ export function installBasicNodeProxyAccessors(
       set(this: ProxyThis, value: string) {
         updateNode(this, internals, { name: value })
         // A variant's name holds its values, which the set's value lists follow.
-        syncVariantName(graph(this, internals), raw(this, internals))
+        syncVariantName(graphOf(this), raw(this, internals))
       }
     },
     removed: {
       get(this: ProxyThis): boolean {
-        return !graph(this, internals).getNode(nodeId(this, internals))
+        return !graphOf(this).getNode(nodeId(this, internals))
       }
     },
     // Figma places a node by its top-left corner in its container, wherever rotation takes it.
     x: {
       get(this: ProxyThis): number {
-        flushPendingLayout(graph(this, internals))
-        return containerTransform(raw(this, internals), graph(this, internals))[2]
+        flushPendingLayout(graphOf(this))
+        return containerTransform(raw(this, internals), graphOf(this))[2]
       },
       set(this: ProxyThis, value: number) {
-        prepareFollowedFieldEdit(
-          graph(this, internals),
-          raw(this, internals),
-          'x',
-          'relative-transform'
-        )
+        prepareFollowedFieldEdit(graphOf(this), raw(this, internals), 'x', 'relative-transform')
         setTransform(this, internals, (matrix) => withOrigin(matrix, value, matrix[5]))
       }
     },
     y: {
       get(this: ProxyThis): number {
-        flushPendingLayout(graph(this, internals))
-        return containerTransform(raw(this, internals), graph(this, internals))[5]
+        flushPendingLayout(graphOf(this))
+        return containerTransform(raw(this, internals), graphOf(this))[5]
       },
       set(this: ProxyThis, value: number) {
-        prepareFollowedFieldEdit(
-          graph(this, internals),
-          raw(this, internals),
-          'y',
-          'relative-transform'
-        )
+        prepareFollowedFieldEdit(graphOf(this), raw(this, internals), 'y', 'relative-transform')
         setTransform(this, internals, (matrix) => withOrigin(matrix, matrix[2], value))
       }
     },
     width: {
       get(this: ProxyThis): number {
-        flushPendingLayout(graph(this, internals))
+        flushPendingLayout(graphOf(this))
         return raw(this, internals).width
       }
     },
     height: {
       get(this: ProxyThis): number {
-        flushPendingLayout(graph(this, internals))
+        flushPendingLayout(graphOf(this))
         return raw(this, internals).height
       }
     },
@@ -171,12 +174,12 @@ export function installBasicNodeProxyAccessors(
         if (sourceTransform && preservesRawTransform(node)) {
           return Math.atan2(-sourceTransform.m10, sourceTransform.m00) * (180 / Math.PI)
         }
-        return figmaRotation(containerTransform(node, graph(this, internals)))
+        return figmaRotation(containerTransform(node, graphOf(this)))
       },
       // Figma turns a node counterclockwise about its top-left corner.
       set(this: ProxyThis, value: number) {
         prepareFollowedFieldEdit(
-          graph(this, internals),
+          graphOf(this),
           raw(this, internals),
           'rotation',
           'relative-transform'
@@ -186,7 +189,7 @@ export function installBasicNodeProxyAccessors(
     },
     relativeTransform: {
       get(this: ProxyThis): FigmaTransform {
-        const scene = graph(this, internals)
+        const scene = graphOf(this)
         flushPendingLayout(scene)
         const node = raw(this, internals)
         // Children of groups report a transform into the container, as Figma does.
@@ -206,7 +209,7 @@ export function installBasicNodeProxyAccessors(
       },
       set(this: ProxyThis, value: FigmaTransform) {
         prepareFollowedFieldEdit(
-          graph(this, internals),
+          graphOf(this),
           raw(this, internals),
           'relativeTransform',
           'relative-transform'
@@ -217,20 +220,21 @@ export function installBasicNodeProxyAccessors(
     },
     absoluteTransform: {
       get(this: ProxyThis): FigmaTransform {
-        flushPendingLayout(graph(this, internals))
-        return figmaTransform(getWorldMatrix(raw(this, internals), graph(this, internals)))
+        flushPendingLayout(graphOf(this))
+        return figmaTransform(getWorldMatrix(raw(this, internals), graphOf(this)))
       }
     },
     absoluteBoundingBox: {
       get(this: ProxyThis): Rect {
-        flushPendingLayout(graph(this, internals))
-        return getAxisAlignedWorldBounds(raw(this, internals), graph(this, internals))
+        flushPendingLayout(graphOf(this))
+        return getAxisAlignedWorldBounds(raw(this, internals), graphOf(this))
       }
     },
     absoluteRenderBounds: {
       get(this: ProxyThis): Rect | null {
-        flushPendingLayout(graph(this, internals))
-        return computeAbsoluteRenderBounds(graph(this, internals), raw(this, internals))
+        flushPendingLayout(graphOf(this))
+        const bounds = absoluteRenderBounds(graphOf(this), raw(this, internals))
+        return bounds && visualBoundsToRect(bounds)
       }
     }
   })
@@ -246,18 +250,133 @@ export function installBasicNodeProxyAccessors(
     },
     rescale(this: ProxyThis, scale: number): void {
       assertEditable(this, internals)
-      const scene = graph(this, internals)
+      const scene = graphOf(this)
       const node = raw(this, internals)
+      flushPendingLayoutBefore(scene, node, { placesChildren: true })
       if (node.parentId && findInstanceAncestor(scene, node.parentId))
         throw new Error('This property cannot be overridden in an instance: size')
       rescaleNodeTree(scene, node.id, scale)
+      // Its Hug frames' constrained layers are scaled with them, so the next hug moves them from the
+      // scaled size, not again from the size they had before.
+      for (const scaled of [node, ...descendants(scene, node)]) {
+        const current = scene.getNode(scaled.id)
+        if (current) restoredHuggedSize(current)
+      }
+    },
+    getTopLevelFrame(this: ProxyThis): FigmaNodeProxy | undefined {
+      const top = topLevelFrame(graphOf(this), raw(this, internals))
+      return top ? (this[internals.api] as NodeProxyHost).wrapNode(top.id) : undefined
     }
+  })
+}
+
+/** The layers `getTopLevelFrame` can return; a shape or boolean is never one. */
+const TOP_LEVEL_FRAME_TYPES: ReadonlySet<SceneNode['type']> = new Set([
+  'FRAME',
+  'GROUP',
+  'SECTION',
+  'COMPONENT',
+  'COMPONENT_SET',
+  'INSTANCE'
+])
+
+/**
+ * The container a layer sits in at the top of its page or section: the nearest of the layer and
+ * its ancestors that is a frame, group, section, component, or instance directly under a page or
+ * section. A shape directly on a page has none (Figma desktop 126).
+ */
+function topLevelFrame(scene: SceneGraph, node: SceneNode): SceneNode | undefined {
+  return scene.closest(node.id, (current) => {
+    const parent = current.parentId ? scene.getNode(current.parentId) : undefined
+    const topLevel = parent?.type === 'CANVAS' || parent?.type === 'SECTION'
+    return topLevel && TOP_LEVEL_FRAME_TYPES.has(current.type)
   })
 }
 
 /** Every layer below a node, which a resize may place by its constraints. */
 function descendants(scene: SceneGraph, node: SceneNode): SceneNode[] {
   return scene.getChildren(node.id).flatMap((child) => [child, ...descendants(scene, child)])
+}
+
+/**
+ * A vector's path scaled to its new size, as Figma's resize does. The stroke keeps its weight: with
+ * a path to stroke, the saved stroke outline goes and the stroke draws from the scaled path, as
+ * when the path is set; without one, the outline is all that draws the stroke, so it scales.
+ */
+function resizedVectorGeometry(node: SceneNode, width: number, height: number): Partial<SceneNode> {
+  if (node.type !== 'VECTOR') return {}
+  // A side at zero keeps the path along it, as in Figma, so the next resize scales the path from
+  // its own extent and gets the shape back.
+  const bounds = node.vectorNetwork ? computeAccurateBounds(node.vectorNetwork) : null
+  const fromWidth = node.width > 0 ? node.width : (bounds?.width ?? 0)
+  const fromHeight = node.height > 0 ? node.height : (bounds?.height ?? 0)
+  return scaledGeometryChanges(
+    createResizeSnapshot(node),
+    fromWidth,
+    fromHeight,
+    width || fromWidth,
+    height || fromHeight
+  )
+}
+
+/** The least size Figma's `resize` gives a side; `resizeWithoutConstraints` allows zero. */
+const MIN_RESIZE = 0.0001
+
+/**
+ * The size a resize gives a node, as Figma's does: it refuses a side that is not a number or is
+ * negative, and a vector cannot become 0×0. `resize` keeps the sides above zero, except a line's
+ * height of zero, which is the height a line has.
+ */
+function resizedSize(
+  node: SceneNode,
+  width: number,
+  height: number,
+  constrained: boolean
+): { width: number; height: number } {
+  const method = constrained ? 'resize' : 'resizeWithoutConstraints'
+  for (const [property, value] of [
+    ['width', width],
+    ['height', height]
+  ] as const) {
+    parseFigma(atLeast(0), value, method, property)
+  }
+  if (node.type === 'VECTOR' && width === 0 && height === 0)
+    throw new Error('Cannot set width and height of vector node to zero')
+  if (!constrained) return { width, height }
+  return {
+    width: Math.max(width, MIN_RESIZE),
+    height: node.type === 'LINE' && height === 0 ? 0 : Math.max(height, MIN_RESIZE)
+  }
+}
+
+interface ChangedSides {
+  width: boolean
+  height: boolean
+}
+
+/** Auto layout given a new size on an axis stops hugging along it, as in Figma; the other keeps on. */
+function resizedLayoutSizing(node: SceneNode, changed: ChangedSides): Partial<SceneNode> {
+  if (node.layoutMode !== 'HORIZONTAL' && node.layoutMode !== 'VERTICAL') return {}
+  const row = node.layoutMode === 'HORIZONTAL'
+  const sizing: Partial<SceneNode> = {}
+  if ((row ? changed.width : changed.height) && node.primaryAxisSizing !== 'FIXED')
+    sizing.primaryAxisSizing = 'FIXED'
+  if ((row ? changed.height : changed.width) && node.counterAxisSizing !== 'FIXED')
+    sizing.counterAxisSizing = 'FIXED'
+  return sizing
+}
+
+/**
+ * How a text sizes itself after a resize, as in Figma: a new height fixes it, and a new width alone
+ * leaves auto-width text sizing only its height.
+ */
+function resizedTextSizing(node: SceneNode, changed: ChangedSides): Partial<SceneNode> {
+  if (node.type !== 'TEXT') return {}
+  const mode = node.textAutoResize
+  if (changed.height && (mode === 'HEIGHT' || mode === 'WIDTH_AND_HEIGHT'))
+    return { textAutoResize: 'NONE' }
+  if (changed.width && mode === 'WIDTH_AND_HEIGHT') return { textAutoResize: 'HEIGHT' }
+  return {}
 }
 
 /**
@@ -269,13 +388,18 @@ function descendants(scene: SceneGraph, node: SceneNode): SceneNode[] {
 function resizeNode(
   target: ProxyThis,
   internals: NodeProxyInternals,
-  width: number,
-  height: number,
+  requestedWidth: number,
+  requestedHeight: number,
   constrained: boolean
 ): void {
   assertEditable(target, internals)
-  const scene = graph(target, internals)
+  const scene = graphOf(target)
   const node = raw(target, internals)
+  // As for a move; a constrained resize also places the children from the node's own size.
+  flushPendingLayoutBefore(scene, node, { placesChildren: constrained })
+  const { width, height } = resizedSize(node, requestedWidth, requestedHeight, constrained)
+  // Figma has no size for a layer inside an instance: the resize does nothing, and records nothing.
+  if (node.parentId && findInstanceAncestor(scene, node.parentId)) return
   const before = containerTransform(node, scene)
   const size = { width: node.width, height: node.height }
   // An instance's layers follow its constraints however it is resized, as in Figma.
@@ -283,37 +407,22 @@ function resizeNode(
     constrained || node.type === 'INSTANCE'
       ? new Map(descendants(scene, node).map((child) => [child.id, createResizeSnapshot(child)]))
       : new Map<string, ResizeSnapshot>()
-  // Text given a size stops sizing itself to its content, as in Figma.
-  const fixesText =
-    node.type === 'TEXT' &&
-    (node.textAutoResize === 'WIDTH_AND_HEIGHT' || node.textAutoResize === 'HEIGHT')
+  const geometry = resizedVectorGeometry(node, width, height)
   // A locked ratio does not hold here; it takes the new size, as in Figma.
   const recaptured = recapturedAspectRatio(node, width, height)
-  // Auto layout given a size keeps it, as in Figma: hugging axes become fixed.
-  const fixed = node.layoutMode === 'HORIZONTAL' || node.layoutMode === 'VERTICAL'
-  const sizing = fixed
-    ? pickBy(
-        { primaryAxisSizing: 'FIXED' as const, counterAxisSizing: 'FIXED' as const },
-        (value, key) => node[key] !== value
-      )
-    : {}
-  scene.updateNode(node.id, {
-    width,
-    height,
-    ...recaptured,
-    ...sizing,
-    ...(fixesText ? { textAutoResize: 'NONE' as const } : {})
-  })
+  const changed = { width: width !== size.width, height: height !== size.height }
+  const sizing = { ...resizedLayoutSizing(node, changed), ...resizedTextSizing(node, changed) }
+  scene.updateNode(node.id, { width, height, ...geometry, ...recaptured, ...sizing })
   if (placed.size > 0 && size.width > 0 && size.height > 0) {
     const changes = computeConstrainedResizeChanges(scene, node.id, size, { width, height }, placed)
     for (const [id, change] of changes) scene.updateNode(id, change)
   }
+  // A size the layer already has records nothing, as in Figma; a new one records both sides.
   recordInstanceOverride(scene, node.id, [
-    'width',
-    'height',
+    ...(changed.width || changed.height ? ['width', 'height'] : []),
+    ...Object.keys(geometry),
     ...Object.keys(recaptured),
-    ...Object.keys(sizing),
-    ...(fixesText ? ['textAutoResize'] : [])
+    ...Object.keys(sizing)
   ])
   setTransform(target, internals, () => before)
 }

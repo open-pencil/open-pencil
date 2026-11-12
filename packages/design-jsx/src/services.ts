@@ -1,5 +1,5 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import type { SceneGraph, SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
+import type { Color, Rect, Size } from '@open-pencil/scene-graph/primitives'
 
 import type { TreeNode } from './tree'
 
@@ -25,10 +25,28 @@ export interface ArtworkPlacement {
 export interface DesignJSXServices<Artwork> {
   /** A named icon such as `lucide:heart` at `size`, or null when it does not exist. */
   icon(name: string, size: number): Promise<Artwork | null>
-  /** Inline SVG scaled to `size`, or null when it has no supported shapes. */
-  svg(source: SVGSource, size: number): Artwork | null
+  /** Inline SVG mapped into `box`, the layer's own size, or null when it has no supported shapes. */
+  svg(source: SVGSource, box: Size): Artwork | null
   /** Vector nodes for the artwork, created under the placement's parent. */
   createArtwork(graph: SceneGraph, artwork: Artwork, placement: ArtworkPlacement): SceneNode
-  /** Size and lay out the rendered roots once they are in place. */
+  /**
+   * Prepare the fonts the rendered roots' text uses, before they are laid out, so layout measures
+   * that text in its own fonts. An engine without fonts leaves it out.
+   */
+  prepareFonts?(graph: SceneGraph, rootIds: readonly string[]): Promise<unknown>
+  /** Size and lay out the rendered roots once they are in place and their fonts prepared. */
   layout(graph: SceneGraph, rootIds: readonly string[]): void
+  /** The tight bounds of a vector network, its curves included, which size a `<Vector>`. */
+  vectorBounds(network: VectorNetwork): Rect
+  /**
+   * `<Text markdown>`: Markdown as a text's characters, ranges, and paragraphs over `base`. An
+   * engine without it renders everything else and refuses only `<Text markdown>`.
+   */
+  markdown?: MarkdownService
 }
+
+/** Markdown as a text's characters, ranges, and paragraphs, relative to its own style. */
+export type MarkdownService = (
+  source: string,
+  base: Pick<SceneNode, 'fontSize' | 'fontWeight'>
+) => Pick<SceneNode, 'text' | 'styleRuns' | 'textParagraphs'>

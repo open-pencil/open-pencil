@@ -1,20 +1,27 @@
 import { tryOnScopeDispose } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
 
+import type { StockPhotoKeyCheck } from '@open-pencil/core/tools'
+
 import { vectorizeProviderID } from '@/app/editor/vectorize'
 import { useVectorizeSettings } from '@/app/editor/vectorize/settings/use'
+import { settingsErrorMessage } from '@/app/settings/credentials/errors'
 import {
+  checkMediaKey,
+  exaKeyStatus,
   pexelsKeyStatus,
+  setExaKey,
   setPexelsKey,
   unsplashKeyStatus,
   setUnsplashKey
 } from '@/app/settings/credentials/media'
 
-export type MediaSettingsService = 'pexels' | 'unsplash' | 'vectorize'
+export type MediaSettingsService = 'pexels' | 'unsplash' | 'exa' | 'vectorize'
 
 const stockServices = {
   pexels: { status: pexelsKeyStatus, set: setPexelsKey },
-  unsplash: { status: unsplashKeyStatus, set: setUnsplashKey }
+  unsplash: { status: unsplashKeyStatus, set: setUnsplashKey },
+  exa: { status: exaKeyStatus, set: setExaKey }
 }
 
 export function useMediaSettingsEditor(service: MediaSettingsService, services = stockServices) {
@@ -24,11 +31,16 @@ export function useMediaSettingsEditor(service: MediaSettingsService, services =
   const removeKey = ref(false)
   const busy = ref(false)
   const saveError = ref('')
+  const keyCheck = ref<StockPhotoKeyCheck | 'missing' | 'checking' | null>(null)
   const vector = service === 'vectorize' ? useVectorizeSettings(key, providerID) : null
   let disposed = false
   tryOnScopeDispose(() => {
     disposed = true
     key.value = ''
+  })
+  // A result says nothing about a key typed since.
+  watch(key, () => {
+    if (keyCheck.value !== 'checking') keyCheck.value = null
   })
   watch(
     providerID,
@@ -53,6 +65,15 @@ export function useMediaSettingsEditor(service: MediaSettingsService, services =
     if (busy.value) return
     key.value = ''
     removeKey.value = true
+    keyCheck.value = null
+  }
+
+  /** Tries the key typed, or the saved one, against the service; keyed services only. */
+  async function checkKey() {
+    if (service === 'vectorize' || keyCheck.value === 'checking') return
+    keyCheck.value = 'checking'
+    const result = await checkMediaKey(service, key.value, !removeKey.value)
+    if (!isDisposed()) keyCheck.value = result
   }
 
   function isDisposed() {
@@ -76,12 +97,24 @@ export function useMediaSettingsEditor(service: MediaSettingsService, services =
       }
       return !isDisposed()
     } catch (cause) {
-      if (!isDisposed()) saveError.value = cause instanceof Error ? cause.message : String(cause)
+      if (!isDisposed()) saveError.value = settingsErrorMessage(cause)
       return false
     } finally {
       busy.value = false
     }
   }
 
-  return { key, providerID, vector, keyStatus, error, dirty, busy, clearCredential, save }
+  return {
+    key,
+    providerID,
+    vector,
+    keyStatus,
+    keyCheck,
+    error,
+    dirty,
+    busy,
+    clearCredential,
+    checkKey,
+    save
+  }
 }

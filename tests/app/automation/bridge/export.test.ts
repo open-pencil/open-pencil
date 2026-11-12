@@ -4,11 +4,11 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { toUint8Array } from 'js-base64'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
-import { pngSize } from '@open-pencil/fig'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { imageSize } from '@open-pencil/scene-graph/images'
 
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
@@ -34,7 +34,7 @@ afterEach(() => {
 async function storeWithCanvas(graph?: SceneGraph): Promise<EditorStore> {
   const store = createEditorStore(graph)
   stores.push(store)
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const surface = ck.MakeSurface(1, 1)
   if (!surface) throw new Error('Failed to create CanvasKit surface')
   store.setCanvasKit(ck, new SkiaRenderer(ck, surface))
@@ -91,7 +91,7 @@ describe('automation export of a page that is not on screen', () => {
       args: { ids: [frame.id] }
     })
 
-    expect(pngSize(resultBytes(response))).toEqual({ width: 40, height: 30 })
+    expect(imageSize(resultBytes(response))).toEqual({ width: 40, height: 30 })
     expect(store.state.currentPageId).toBe(shown)
   })
 
@@ -106,7 +106,7 @@ describe('automation export of a page that is not on screen', () => {
       args: {}
     })
 
-    expect(pngSize(resultBytes(response))).toEqual({ width: 50, height: 20 })
+    expect(imageSize(resultBytes(response))).toEqual({ width: 50, height: 20 })
     expect(store.state.currentPageId).toBe(shown)
   })
 
@@ -123,7 +123,7 @@ describe('automation export of a page that is not on screen', () => {
       format: 'png'
     })
 
-    expect(pngSize(resultBytes(response))).toEqual({ width: 60, height: 25 })
+    expect(imageSize(resultBytes(response))).toEqual({ width: 60, height: 25 })
     expect(store.state.currentPageId).toBe(shown)
   })
 
@@ -133,7 +133,7 @@ describe('automation export of a page that is not on screen', () => {
 
     const response = await handleTargetCommand(target(store, pageId), 'export', { scope: 'page' })
 
-    expect(pngSize(resultBytes(response))).toEqual({ width: 70, height: 35 })
+    expect(imageSize(resultBytes(response))).toEqual({ width: 70, height: 35 })
     expect(store.state.currentPageId).toBe(shown)
   })
 
@@ -165,23 +165,40 @@ describe('automation export of a page that is not on screen', () => {
 
     const response = await handleTargetCommand(target(store, other), 'export', { scope: 'page' })
 
-    expect(pngSize(resultBytes(response))).toEqual({ width: 80, height: 20 })
+    expect(imageSize(resultBytes(response))).toEqual({ width: 80, height: 20 })
     expect(store.state.currentPageId).toBe(shown)
   })
 })
 
-describe('automation export without a canvas renderer', () => {
-  test('export_image says the document has no renderer', async () => {
+// A document in a background tab has no canvas, and so no canvas renderer (#1169).
+describe('automation export of a document whose canvas is not on screen', () => {
+  function storeWithoutCanvas(): EditorStore {
     const store = createEditorStore()
     stores.push(store)
+    expect(store.renderer).toBeNull()
+    return store
+  }
+
+  test('export_image renders nodes by ID', async () => {
+    const store = storeWithoutCanvas()
     const pageId = store.state.currentPageId
     const frame = store.graph.createNode('FRAME', pageId, { width: 40, height: 30, fills: [RED] })
 
-    const response = handleTargetCommand(target(store, pageId), 'tool', {
+    const response = await handleTargetCommand(target(store, pageId), 'tool', {
       name: 'export_image',
-      args: { ids: [frame.id] }
+      args: { ids: [frame.id], scale: 2 }
     })
 
-    await expect(response).rejects.toThrow('This document has no canvas renderer')
+    expect(imageSize(resultBytes(response))).toEqual({ width: 80, height: 60 })
+  })
+
+  test('a page export renders the layers of the page', async () => {
+    const store = storeWithoutCanvas()
+    const pageId = store.state.currentPageId
+    store.graph.createNode('FRAME', pageId, { width: 50, height: 20, fills: [RED] })
+
+    const response = await handleTargetCommand(target(store, pageId), 'export', { scope: 'page' })
+
+    expect(imageSize(resultBytes(response))).toEqual({ width: 50, height: 20 })
   })
 })

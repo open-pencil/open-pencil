@@ -1,5 +1,8 @@
+import { open } from '@tauri-apps/plugin-dialog'
+import { readFile } from '@tauri-apps/plugin-fs'
 import { useFileDialog } from '@vueuse/core'
 import { uniq } from 'es-toolkit/array'
+import { basename } from 'pathe'
 import { decode } from 'ufo'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
@@ -63,7 +66,7 @@ if (IS_BROWSER && 'window' in globalThis) {
  * escape stays as written.
  */
 function fileNameFromURL(url: URL): string {
-  return decode(url.pathname.split('/').pop() ?? '') || 'file.fig'
+  return decode(basename(url.pathname)) || 'file.fig'
 }
 
 /** Fetches a document over HTTP and opens it in a new tab. Browser builds only. */
@@ -122,13 +125,11 @@ export async function openDesignFileBatch<T>(
 
 export async function readTauriDesignFile(path: string): Promise<File> {
   assertSupportedDesignFile(path)
-  const { readFile } = await import('@tauri-apps/plugin-fs')
   const bytes = await readFile(path)
-  return new File([bytes], path.split('/').pop() ?? 'file.fig')
+  return new File([bytes], basename(path) || 'file.fig')
 }
 
 export async function chooseTauriOpenPaths(): Promise<string[]> {
-  const { open } = await import('@tauri-apps/plugin-dialog')
   const paths = await open({
     filters: [{ name: 'Design file', extensions: READABLE_DOCUMENT_EXTENSIONS }],
     multiple: true
@@ -140,8 +141,8 @@ export async function chooseTauriOpenPaths(): Promise<string[]> {
 export async function openFileFromPath(path: string) {
   if (!isTauri()) return
   const file = await readTauriDesignFile(path)
-  await openFileInNewTab(file, undefined, path)
-  rememberRecentFile(path)
+  const store = await openFileInNewTab(file, undefined, path)
+  rememberRecentFile(path, store.state.documentKind)
 }
 
 /**
@@ -161,7 +162,7 @@ export async function activateTabForPath(path: string): Promise<boolean> {
 export async function openFileDialog() {
   if (isTauri()) {
     const paths = await chooseTauriOpenPaths()
-    await openDesignFileBatch(paths, (path) => path.split(/[/\\]/).pop() ?? path, openFileFromPath)
+    await openDesignFileBatch(paths, (path) => basename(path) || path, openFileFromPath)
     return
   }
 
@@ -173,7 +174,7 @@ export async function openFileDialog() {
           {
             description: 'Design file',
             accept: {
-              'application/octet-stream': ['.fig'],
+              'application/octet-stream': ['.fig', '.jam'],
               'application/json': ['.pen'],
               'text/html': ['.html', '.htm'],
               'application/xhtml+xml': ['.xhtml'],

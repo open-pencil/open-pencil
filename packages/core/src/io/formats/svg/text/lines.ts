@@ -1,4 +1,6 @@
 import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
+import { lineHeightPixels } from '@open-pencil/scene-graph/text'
+import { containsRTLText, resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import { svg, type SVGNode } from '#core/io/formats/svg/node'
 import { round } from '#core/io/formats/svg/paths'
@@ -21,6 +23,21 @@ export interface SVGTextLine {
    * after the span before it, which a renderer measures in fonts of its own.
    */
   characters?: ReadonlyMap<number, SVGCharacterEdges>
+  /**
+   * The face that draws each character the editor draws from another file than its text's own,
+   * by index in `node.text`: a fallback font, such as for Chinese in a Latin family, or a shard of
+   * a font split by unicode-range. Spans then name that face, for a renderer that draws only the
+   * fonts it is given.
+   */
+  fallbacks?: ReadonlyMap<number, SVGFallbackFace>
+}
+
+/** A face, and which of its style's files, that draws characters their own file has no glyphs for. */
+export interface SVGFallbackFace {
+  family: string
+  style: string
+  /** 0 for the style's own file, then its shards. */
+  file: number
 }
 
 export interface SVGCharacterEdges {
@@ -28,10 +45,16 @@ export interface SVGCharacterEdges {
   right: number
 }
 
-/** The lines of a text node from the host's text layout, or null to keep the text on one line. */
+/**
+ * Measured lines of a text node, or null when this node has none. Export then keeps only the
+ * text's explicit newlines, each on its own baseline.
+ */
 export type SVGTextLayout = (node: SceneNode) => readonly SVGTextLine[] | null
 
-type SpanAttrs = (style: CharacterStyleOverride) => Record<string, string | number | undefined>
+export type SpanAttrs = (
+  style: CharacterStyleOverride,
+  fallback?: SVGFallbackFace
+) => Record<string, string | number | undefined>
 
 interface TextPiece {
   from: number
@@ -54,6 +77,17 @@ function textPieces(node: SceneNode): TextPiece[] {
   return pieces
 }
 
+/** One unpositioned span per style run, including uncovered text in the node's own style. */
+export function textStyleSpans(node: SceneNode, spanAttrs: SpanAttrs): SVGNode[] {
+  return textPieces(node).map((piece) =>
+    svg(
+      'tspan',
+      piece.style ? spanAttrs(piece.style) : {},
+      shownTextSlice(node, piece.from, piece.to)
+    )
+  )
+}
+
 /** The left and right edges of the characters from `from` to `to` that have glyphs. */
 function spanEdges(line: SVGTextLine, from: number, to: number): SVGCharacterEdges | null {
   let left = Infinity
@@ -67,29 +101,236 @@ function spanEdges(line: SVGTextLine, from: number, to: number): SVGCharacterEdg
   return left <= right ? { left, right } : null
 }
 
+interface FallbackSegment {
+  from: number
+  to: number
+  fallback?: SVGFallbackFace
+}
+
+const sameFace = (a?: SVGFallbackFace, b?: SVGFallbackFace) =>
+  a?.family === b?.family && a?.style === b?.style && a?.file === b?.file
+
+/** The characters from `from` to `to` cut where the face that draws them changes. */
+function fallbackSegments(line: SVGTextLine, from: number, to: number): FallbackSegment[] {
+  const { fallbacks, characters } = line
+  if (!fallbacks?.size) return [{ from, to }]
+  const segments: FallbackSegment[] = []
+  for (let index = from; index < to; index++) {
+    const last = segments.at(-1)
+    // A character with no glyph of its own, such as the second half of a surrogate pair, goes
+    // with the one before it.
+    const fallback =
+      fallbacks.get(index) ?? (characters && !characters.has(index) ? last?.fallback : undefined)
+    if (last && sameFace(last.fallback, fallback)) last.to = index + 1
+    else segments.push({ from: index, to: index + 1, fallback })
+  }
+  return segments
+}
+
+interface DirectionalPiece {
+  from: number
+  to: number
+  /** Punctuation the canvas draws right-to-left, mirrored where it has a mirror image. */
+  mirrored?: boolean
+}
+
+/** Marks a piece right-to-left for a renderer's bidi, which then mirrors brackets in it. */
+const RIGHT_TO_LEFT_MARK = '\u200F'
+const MIRRORED_CHARACTER = /\p{Bidi_M}/u
+const LETTER = /\p{L}/u
+const HIGH_SURROGATE = /[\uD800-\uDBFF]/
+const LOW_SURROGATE = /[\uDC00-\uDFFF]/
+
+/** The direction of the nearest letter from `index` on, stepping by `step` within the line. */
+function nearestLetterDirection(
+  text: string,
+  line: SVGTextLine,
+  index: number,
+  step: 1 | -1
+): 'LTR' | 'RTL' | null {
+  let at = index
+  while (at >= line.start && at < line.end) {
+    // Stepping back onto the second half of a surrogate pair, read the pair from its first half.
+    if (step < 0 && at > line.start && LOW_SURROGATE.test(text[at])) {
+      if (HIGH_SURROGATE.test(text[at - 1])) at -= 1
+    }
+    const character = String.fromCodePoint(text.codePointAt(at) ?? 0)
+    if (LETTER.test(character)) return containsRTLText(character) ? 'RTL' : 'LTR'
+    at += step > 0 ? character.length : -1
+  }
+  return null
+}
+
+/**
+ * Whether the canvas's bidi draws punctuation from `from` to `to` right-to-left: as the letters on
+ * both sides of it when they agree, otherwise as the paragraph.
+ */
+function isRightToLeftPunctuation(
+  node: SceneNode,
+  line: SVGTextLine,
+  from: number,
+  to: number
+): boolean {
+  const paragraph = resolveNodeTextDirection(node)
+  const before = nearestLetterDirection(node.text, line, from - 1, -1) ?? paragraph
+  const after = nearestLetterDirection(node.text, line, to, 1) ?? paragraph
+  return (before === after ? before : paragraph) === 'RTL'
+}
+
+/**
+ * The characters from `from` to `to` as the pieces a renderer must not reorder across: the whole
+ * stretch when it is left-to-right only, otherwise each word, each run of punctuation, and each
+ * run of spaces. A stretch that mixes directions is laid out by the canvas's bidi; placed piece
+ * by piece, each keeps the place the canvas gives it, and a renderer only orders the letters
+ * within a word. Brackets the canvas draws right-to-left are marked so a renderer mirrors them.
+ */
+function directionalPieces(
+  node: SceneNode,
+  line: SVGTextLine,
+  from: number,
+  to: number
+): DirectionalPiece[] {
+  const text = node.text.slice(from, to)
+  if (!line.characters || !containsRTLText(text)) return [{ from, to }]
+  return Array.from(text.matchAll(/\s+|[\p{L}\p{M}\p{N}]+|[^\s\p{L}\p{M}\p{N}]+/gu), (match) => {
+    const start = from + match.index
+    const end = start + match[0].length
+    const mirrored =
+      MIRRORED_CHARACTER.test(match[0]) &&
+      !LETTER.test(match[0]) &&
+      isRightToLeftPunctuation(node, line, start, end)
+    return mirrored ? { from: start, to: end, mirrored } : { from: start, to: end }
+  })
+}
+
 function lineSpans(
   node: SceneNode,
   pieces: readonly TextPiece[],
   line: SVGTextLine,
   spanAttrs: SpanAttrs
 ): SVGNode[] {
-  // The newline that ends a line is not drawn.
-  const end = node.text[line.end - 1] === '\n' ? line.end - 1 : line.end
+  // The newline that ends a line is not drawn. A CR is dropped only with that LF, so a
+  // literal trailing CR stays.
+  let end = line.end
+  if (end > line.start && node.text[end - 1] === '\n') {
+    end -= 1
+    if (end > line.start && node.text[end - 1] === '\r') end -= 1
+  }
   const y = round(line.y)
   const spans: SVGNode[] = []
   for (const piece of pieces) {
-    const from = Math.max(piece.from, line.start)
-    const to = Math.min(piece.to, end)
-    if (to <= from) continue
-    const attrs = piece.style ? spanAttrs(piece.style) : {}
-    // Every span starts at its left edge, in either direction, since renderers disagree on
-    // which side `text-anchor` and `direction` place. Without character edges the first span of
-    // a line starts at the line's left edge, and the rest follow on from it.
-    const left = spanEdges(line, from, to)?.left ?? (spans.length === 0 ? line.x : null)
-    const position = left === null ? {} : { x: round(left), y }
-    spans.push(svg('tspan', { ...position, ...attrs }, shownTextSlice(node, from, to)))
+    for (const segment of fallbackSegments(
+      line,
+      Math.max(piece.from, line.start),
+      Math.min(piece.to, end)
+    )) {
+      if (segment.to <= segment.from) continue
+      const { fallback } = segment
+      const attrs = piece.style || fallback ? spanAttrs(piece.style ?? {}, fallback) : {}
+      for (const { from, to, mirrored } of directionalPieces(
+        node,
+        line,
+        segment.from,
+        segment.to
+      )) {
+        // Every span starts at its left edge, in either direction, since renderers disagree on
+        // which side `text-anchor` and `direction` place. Without character edges the first
+        // span of a line starts at the line's left edge, and the rest follow on from it.
+        const left = spanEdges(line, from, to)?.left ?? (spans.length === 0 ? line.x : null)
+        const position = left === null ? {} : { x: round(left), y }
+        const shown = shownTextSlice(node, from, to)
+        const content = mirrored ? `${RIGHT_TO_LEFT_MARK}${shown}${RIGHT_TO_LEFT_MARK}` : shown
+        spans.push(svg('tspan', { ...position, ...attrs }, content))
+      }
+    }
   }
   return spans
+}
+
+/**
+ * Baseline-to-baseline distance with no measured layout. A line height is pixels — a percent is
+ * already that fraction of the font size — and automatic (`null` or `0`) is 1.2 times the font
+ * size, the estimate text layout uses when it has no font metrics.
+ */
+function resolvedLineHeight(fontSize: number, lineHeight: number | null): number {
+  return lineHeight || fontSize * 1.2
+}
+
+/** The line height a run contributes: its own when it sets one, otherwise the node's. */
+function runLineHeight(node: SceneNode, style: CharacterStyleOverride | null): number {
+  const fontSize = style?.fontSize ?? node.fontSize
+  const lineHeight = style?.lineHeight !== undefined ? style.lineHeight : node.lineHeight
+  return resolvedLineHeight(fontSize, lineHeightPixels(lineHeight, fontSize))
+}
+
+/**
+ * The characters that set a line's height. Text excludes the LF that ends the line and the CR
+ * of that CRLF, as the canvas does. An empty line is the newline that makes it.
+ */
+function lineHeightSpan(text: string, start: number, end: number): { from: number; to: number } {
+  if (end > start && text[end - 1] === '\n') {
+    let contentEnd = end - 1
+    if (contentEnd > start && text[contentEnd - 1] === '\r') contentEnd -= 1
+    if (contentEnd > start) return { from: start, to: contentEnd }
+    return { from: end - 1, to: end }
+  }
+  if (end > start) return { from: start, to: end }
+  // A trailing empty line has no characters of its own; the newline that opened it does.
+  return { from: Math.max(0, start - 1), to: start }
+}
+
+/**
+ * How far this line's baseline stands below the one before it. The line is as tall as the
+ * tallest line height on it, and an empty line is as tall as the newline that makes it.
+ */
+function explicitLineHeight(
+  node: SceneNode,
+  pieces: readonly TextPiece[],
+  start: number,
+  end: number
+): number {
+  const { from, to } = lineHeightSpan(node.text, start, end)
+  let height = 0
+  let covered = false
+  for (const piece of pieces) {
+    const pieceFrom = Math.max(piece.from, from)
+    const pieceTo = Math.min(piece.to, to)
+    if (pieceTo <= pieceFrom) continue
+    covered = true
+    height = Math.max(height, runLineHeight(node, piece.style))
+  }
+  return covered
+    ? height
+    : resolvedLineHeight(node.fontSize, lineHeightPixels(node.lineHeight, node.fontSize))
+}
+
+/**
+ * One line per explicit newline, for text exported without a measured layout. `x` is the
+ * alignment anchor and `firstBaseline` the first line's baseline, both as the single-line
+ * fallback computes them. Each later baseline stands the height of that line below the one
+ * before it, as the canvas lays lines out. `null` when the text has no newline, so a single
+ * line stays one `<text>`.
+ */
+export function explicitNewlineLines(
+  node: SceneNode,
+  x: number,
+  firstBaseline: number
+): SVGTextLine[] | null {
+  if (!node.text.includes('\n')) return null
+  const pieces = textPieces(node)
+  const parts = node.text.split('\n')
+  const lines: SVGTextLine[] = []
+  let start = 0
+  let y = firstBaseline
+  for (const [index, part] of parts.entries()) {
+    // The newline that ends a line stays inside the range, as a measured line's `end` does.
+    const endsWithBreak = index < parts.length - 1
+    const end = start + part.length + (endsWithBreak ? 1 : 0)
+    if (index > 0) y += explicitLineHeight(node, pieces, start, end)
+    lines.push({ start, end, x, y, width: node.width })
+    start = end
+  }
+  return lines
 }
 
 /**

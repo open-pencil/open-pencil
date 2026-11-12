@@ -28,24 +28,33 @@ function booleanCondition(arg: BooleanArg): ValueCondition {
   return (value) => {
     if (value === arg.off) return null
     if (arg.name === 'disabled') return { type: 'disabled' }
+    if (arg.name === 'invalid') return { type: 'invalid' }
     const state = DATA_STATE_ON[arg.name]
     return state ? { type: 'state', value: state } : { type: 'prop', name: arg.name, value }
   }
 }
 
-/** The interaction-state property's values: hover, pressed, focus, and disabled. */
+/** The interaction-state property's values: hover, pressed, focus, disabled, and invalid. */
 function interactionCondition(set: SceneNode, states: NonNullable<BehaviourArgs['states']>) {
   const behaviour = readBehaviour(set)
   const within = behaviour ? FOCUS_WITHIN.has(behaviour.kind) : false
+  // One value shows at a time: an invalid control shows invalid in focus and under the pointer,
+  // and a disabled one shows disabled whether or not it is valid.
+  const drawsInvalid = states.invalid !== undefined
+  const drawsDisabled = states.disabled !== undefined
   const byValue = new Map<string, StateCondition>()
   for (const state of INTERACTIONS) {
     const value = behaviour?.states?.[state]
-    if (value !== undefined && value !== states.rest)
-      byValue.set(value, {
-        type: 'interaction',
-        state,
-        ...(state === 'focus' && within ? { within } : {})
-      })
+    if (value === undefined || value === states.rest) continue
+    const condition: StateCondition = { type: 'interaction', state }
+    if (state === 'focus' && within) condition.within = true
+    if (drawsInvalid) condition.valid = true
+    byValue.set(value, condition)
+  }
+  if (states.invalid !== undefined) {
+    const condition: StateCondition = { type: 'invalid' }
+    if (drawsDisabled) condition.enabled = true
+    byValue.set(states.invalid, condition)
   }
   if (states.disabled !== undefined) byValue.set(states.disabled, { type: 'disabled' })
   const name = states.property

@@ -5,6 +5,9 @@
   "localFonts": "本地字体",
   "onlineFonts": "在线字体",
   "downloadedCache": "下载缓存",
+  "cachedFontCount": {
+    "many": "{count} 个字体"
+  },
   "systemFontAccess": "系统字体访问",
   "systemFontsAvailable": "系统字体可用。",
   "allowBrowserFontAccess": "缺少系统字体时，允许浏览器访问字体。",

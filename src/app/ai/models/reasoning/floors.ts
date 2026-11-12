@@ -3,25 +3,15 @@ import * as v from 'valibot'
 import { AI_PROVIDERS, REASONING_EFFORTS } from '@open-pencil/core/constants'
 import type { AIProviderID, ModelOption, ReasoningEffort } from '@open-pencil/core/constants'
 
+import { modelOptionsSchema } from '@/app/ai/models/catalog/schema'
+import { cachedChatGPTModels } from '@/app/ai/providers/chatgpt/catalog'
 import { cachedRemoteJSON } from '@/app/cache/remote'
-
-const cachedModelOptionsSchema = v.array(
-  v.object({
-    id: v.string(),
-    name: v.string(),
-    tag: v.optional(v.string()),
-    capabilities: v.optional(v.array(v.picklist(['tools', 'vision']))),
-    recommendedMaxOutputTokens: v.optional(v.number()),
-    releaseDate: v.optional(v.string()),
-    status: v.optional(v.picklist(['active', 'beta', 'deprecated'])),
-    minReasoningEffort: v.optional(v.picklist(REASONING_EFFORTS))
-  })
-) satisfies v.GenericSchema<unknown, ModelOption[]>
 
 const openRouterModelSchema = v.looseObject({
   id: v.optional(v.unknown()),
   name: v.optional(v.unknown()),
   supported_parameters: v.optional(v.unknown()),
+  context_length: v.optional(v.unknown()),
   architecture: v.nullish(v.looseObject({ input_modalities: v.optional(v.unknown()) })),
   top_provider: v.nullish(v.looseObject({ max_completion_tokens: v.optional(v.unknown()) })),
   reasoning: v.nullish(
@@ -85,6 +75,10 @@ export function normalizeOpenRouterModel(model: OpenRouterModel): ModelOption | 
   if (typeof maxOutputTokens === 'number' && Number.isFinite(maxOutputTokens)) {
     normalized.recommendedMaxOutputTokens = Math.min(128_000, Math.max(1024, maxOutputTokens))
   }
+  const context = model.context_length
+  if (typeof context === 'number' && Number.isFinite(context) && context > 0) {
+    normalized.contextWindow = context
+  }
   const minEffort = minReasoningEffort(model)
   if (minEffort) normalized.minReasoningEffort = minEffort
   return normalized
@@ -104,7 +98,7 @@ async function fetchOpenRouterModels(fetcher: typeof fetch): Promise<ModelOption
 
 const openRouterModels = cachedRemoteJSON<ModelOption[]>({
   key: OPENROUTER_MODELS_CACHE_KEY,
-  schema: cachedModelOptionsSchema,
+  schema: modelOptionsSchema,
   maxAgeMs: OPENROUTER_MODELS_CACHE_TTL_MS,
   load: async (fetcher) => {
     const models = await fetchOpenRouterModels(fetcher)
@@ -118,6 +112,10 @@ export async function listProviderModels(
 ): Promise<ModelOption[]> {
   if (providerID === 'openrouter') {
     return (await openRouterModels.get(fetcher)) ?? curatedOpenRouterModels
+  }
+  // The picker fetches the account's list; a runtime reads that copy instead of asking again.
+  if (providerID === 'chatgpt') {
+    return (await cachedChatGPTModels()) ?? curatedProviderModels(providerID)
   }
   return curatedProviderModels(providerID)
 }

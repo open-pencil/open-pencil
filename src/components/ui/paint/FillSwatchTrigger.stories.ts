@@ -22,7 +22,7 @@ const meta = {
     template: `
       <div class="flex items-center gap-4 bg-panel p-6">
         <FillSwatchTrigger v-bind="args" />
-        <FillSwatchTrigger v-bind="args" size="md" label="Page background" />
+        <FillSwatchTrigger v-bind="args" size="md" label="Large fill" />
         <FillSwatchTrigger v-bind="args" disabled label="Disabled fill" />
       </div>
     `

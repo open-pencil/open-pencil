@@ -1,5 +1,5 @@
 /* eslint-disable max-lines -- SceneGraph is the facade over the domain modules */
-import { omitBy } from 'es-toolkit/object'
+import { omitBy, pick } from 'es-toolkit/object'
 import { isUndefined } from 'es-toolkit/predicate'
 
 import { removeStaleBindings } from './bindings'
@@ -13,6 +13,7 @@ import {
 } from './coordinate'
 import { cloneNodeProps, type NodeCloneMode } from './copy'
 import { bindNodeEvents } from './events'
+import { TRANSFORM_FIELDS } from './fields/geometry'
 import { LAYOUT_AFFECTING_KEYS } from './fields/layout'
 import { withGeneratedFrameSize } from './generated'
 import * as HitTest from './hit-test'
@@ -23,11 +24,12 @@ import Matrix from './matrix'
 import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
 import { updateNodePreview, type NodePreviewObserver } from './preview'
 import type { Color, Rect, Vector } from './primitives'
-import { styleDetachmentChanges } from './shared-styles'
 import { markSourceFieldsEdited } from './source-metadata'
-import { invalidateTextCaches } from './text/picture'
+import { textCacheInvalidationChanges } from './text/picture'
+import { remapCopiedReferences } from './transfer/copied'
 import type {
   DocumentColorSpace,
+  DocumentKind,
   EnabledLibraryBinding,
   NodeChangeObserver,
   NodeType,
@@ -40,23 +42,28 @@ import type {
   VariableLiteral
 } from './types'
 import * as Variables from './variables'
-import type { VariableModeFallback } from './variables'
 import { normalizeVectorNetwork } from './vector-network'
 
 /** Scopes that graph methods check while a caller's callback runs; scopes nest. */
-type GraphScope = 'preview' | 'sourceMetadata' | 'importedState' | 'layout' | 'derivedLayout'
+type GraphScope =
+  | 'preview'
+  | 'sourceMetadata'
+  | 'importedState'
+  | 'layout'
+  | 'derivedLayout'
+  | 'componentDerived'
 
 export class SceneGraph {
   nodes = new Map<string, SceneNode>()
   images = new Map<string, Uint8Array>()
   variables = new Map<string, Variable>()
   variableCollections = new Map<string, VariableCollection>()
-  activeMode = new Map<string, string>()
   rootId: string
   figKiwiVersion: number | null = null
   /** Deflated kiwi schema bytes from the original .fig file, preserved for roundtrip fidelity. */
   figSchemaDeflated: Uint8Array | null = null
   documentColorSpace: DocumentColorSpace = 'srgb'
+  documentKind: DocumentKind = 'design'
   enabledLibraries = new Map<string, EnabledLibraryBinding>()
   readonly emitter = new BufferedSceneEmitter()
   private absPosCache = new Map<string, Vector>()
@@ -65,10 +72,14 @@ export class SceneGraph {
     sourceMetadata: 0,
     importedState: 0,
     layout: 0,
-    derivedLayout: 0
+    derivedLayout: 0,
+    componentDerived: 0
   }
   private previewObservers: NodePreviewObserver[] = []
   private readonly changeObservers = new Set<NodeChangeObserver>()
+  /** How many waits outside the edit each recorder is paused for. */
+  private readonly outsideWaits = new Map<NodeChangeObserver, number>()
+  private outsideWrites = 0
   private importedIdGenerator: (() => string) | undefined
   private layoutWrites: LayoutWrites | null = null
   positionPreviewVersion = 0
@@ -107,20 +118,94 @@ export class SceneGraph {
   }
 
   /**
-   * Tells `observer` about each node an edit adds and, before it changes, each node it is about
-   * to change, so a recorder can keep the node as it was. Unlike node events these are never
-   * buffered. Graph methods report the nodes they change; code that writes into a node directly
-   * reports it with `willChangeNode` first.
+   * Tells `observer` about each node an edit adds and, before it changes, each node, variable,
+   * and collection it is about to change, so a recorder can keep it as it was. Unlike node events
+   * these are never buffered. Graph methods report what they change; code that writes into a
+   * node, variable, or collection directly reports it with `willChangeNode`,
+   * `willChangeVariable`, or `willChangeCollection` first.
    */
   observeNodeChanges(observer: NodeChangeObserver): () => void {
     this.changeObservers.add(observer)
     return () => this.changeObservers.delete(observer)
   }
 
+  /**
+   * Waits for `promise`, such as a font or an image download an edit needs, outside the edit in
+   * progress: what changes meanwhile, such as the user's or a collaborator's edit, is not recorded
+   * as the waiting edit's. Only for code that writes nothing itself until the wait ends.
+   */
+  async waitOutsideEdit<T>(promise: Promise<T>): Promise<T> {
+    const resume = this.pauseOpenEdits()
+    try {
+      return await promise
+    } finally {
+      resume()
+    }
+  }
+
+  /**
+   * Runs `write`, a change someone else makes, such as a collaborator's arriving or an undo,
+   * outside every edit in progress, so none records it as its own.
+   */
+  runOutsideEdits<T>(write: () => T): T {
+    const resume = this.pauseOpenEdits()
+    this.outsideWrites++
+    try {
+      return write()
+    } finally {
+      this.outsideWrites--
+      resume()
+    }
+  }
+
+  /** Whether a write run with `runOutsideEdits`, such as a collaborator's change, is in progress. */
+  get isWritingOutsideEdits(): boolean {
+    return this.outsideWrites > 0
+  }
+
+  /**
+   * Pauses the recorders open now, and only those, until the returned function resumes them: a
+   * recorder that opens while an earlier pause is still pending, such as during a script's load
+   * left unawaited, pauses for its own waits and is not resumed by the earlier one.
+   */
+  private pauseOpenEdits(): () => void {
+    const paused = [...this.changeObservers]
+    for (const observer of paused) {
+      const waits = this.outsideWaits.get(observer) ?? 0
+      if (waits === 0) observer.pause?.()
+      this.outsideWaits.set(observer, waits + 1)
+    }
+    return () => {
+      for (const observer of paused) {
+        const waits = (this.outsideWaits.get(observer) ?? 1) - 1
+        if (waits > 0) {
+          this.outsideWaits.set(observer, waits)
+          continue
+        }
+        this.outsideWaits.delete(observer)
+        if (this.changeObservers.has(observer)) observer.resume?.()
+      }
+    }
+  }
+
   /** Tells `observeNodeChanges` observers that `node` is about to change. */
   willChangeNode(node: SceneNode | undefined): void {
     if (!node) return
     for (const observer of this.changeObservers) observer.before(node)
+  }
+
+  /**
+   * Tells `observeNodeChanges` observers that the variable `id` is about to change, be added, or
+   * be removed. Graph methods report the variables they change; code that writes into one
+   * directly reports it first.
+   */
+  willChangeVariable(id: string): void {
+    for (const observer of this.changeObservers) observer.beforeRecord?.('variable', id)
+  }
+
+  /** As `willChangeVariable`, for the collection `id`. */
+  willChangeCollection(id: string): void {
+    for (const observer of this.changeObservers) observer.beforeRecord?.('collection', id)
   }
 
   countDescendants(nodeId: string): number {
@@ -186,16 +271,8 @@ export class SceneGraph {
     Variables.removeCollection(this, id)
   }
 
-  getActiveModeId(collectionId: string): string {
-    return Variables.getActiveModeId(this, collectionId)
-  }
-
   getNodeVariableModeId(nodeId: string, collectionId: string): string {
     return Variables.getNodeVariableModeId(this, nodeId, collectionId)
-  }
-
-  setActiveMode(collectionId: string, modeId: string): void {
-    Variables.setActiveMode(this, collectionId, modeId)
   }
 
   addMode(collectionId: string, modeId: string, name: string, sourceMode?: string): void {
@@ -230,36 +307,20 @@ export class SceneGraph {
     return Variables.resolveNumberVariable(this, variableId)
   }
 
-  resolveColorVariableForNode(
-    nodeId: string,
-    variableId: string,
-    fallback?: VariableModeFallback
-  ): Color | undefined {
-    return Variables.resolveColorVariableForNode(this, nodeId, variableId, fallback)
+  resolveColorVariableForNode(nodeId: string, variableId: string): Color | undefined {
+    return Variables.resolveColorVariableForNode(this, nodeId, variableId)
   }
 
-  resolveNumberVariableForNode(
-    nodeId: string,
-    variableId: string,
-    fallback?: VariableModeFallback
-  ): number | undefined {
-    return Variables.resolveNumberVariableForNode(this, nodeId, variableId, fallback)
+  resolveNumberVariableForNode(nodeId: string, variableId: string): number | undefined {
+    return Variables.resolveNumberVariableForNode(this, nodeId, variableId)
   }
 
-  resolveVariableForNode(
-    nodeId: string,
-    variableId: string,
-    fallback?: VariableModeFallback
-  ): VariableLiteral | undefined {
-    return Variables.resolveVariableForNode(this, nodeId, variableId, fallback)
+  resolveVariableForNode(nodeId: string, variableId: string): VariableLiteral | undefined {
+    return Variables.resolveVariableForNode(this, nodeId, variableId)
   }
 
-  resolveStringVariableForNode(
-    nodeId: string,
-    variableId: string,
-    fallback?: VariableModeFallback
-  ): string | undefined {
-    return Variables.resolveStringVariableForNode(this, nodeId, variableId, fallback)
+  resolveStringVariableForNode(nodeId: string, variableId: string): string | undefined {
+    return Variables.resolveStringVariableForNode(this, nodeId, variableId)
   }
 
   getVariablesForCollection(collectionId: string): Variable[] {
@@ -471,13 +532,27 @@ export class SceneGraph {
     this.withScope('derivedLayout', fn)
   }
 
+  /**
+   * Runs `fn` as values a copy takes from its component, such as the bound paints of a layer an
+   * instance copies, refreshed for it. Source metadata is preserved, and a save leaves them to the
+   * component rather than writing them as edits of the copy.
+   */
+  applyComponentDerivedDuring(fn: () => void): void {
+    this.withScope('componentDerived', () => this.preserveSourceMetadataDuring(fn))
+  }
+
+  get isApplyingComponentDerived(): boolean {
+    return this.scopeDepths.componentDerived > 0
+  }
+
   get isApplyingDerivedLayout(): boolean {
     return this.scopeDepths.derivedLayout > 0
   }
 
   /**
    * Runs `fn` as layout. Its updates are published once the outermost layout ends, still as
-   * layout, and without values a pass changed and a later pass put back (`LayoutWrites`).
+   * layout, and without values a pass changed and a later pass put back (`LayoutWrites`). Outside
+   * derived layout, the positions and sizes it publishes count as edited, so formats save them.
    */
   withLayoutMutations(fn: () => void): void {
     const outermost = this.scopeDepths.layout === 0
@@ -498,8 +573,9 @@ export class SceneGraph {
     const writes = this.layoutWrites
     this.layoutWrites = null
     if (!writes) return
-    for (const [id, changes] of writes.updates((nodeId) => this.nodes.get(nodeId))) {
-      this.emitter.emit('node:updated', id, changes)
+    for (const [node, changes, edited] of writes.updates((nodeId) => this.nodes.get(nodeId))) {
+      markSourceFieldsEdited(node, edited)
+      this.emitter.emit('node:updated', node.id, changes)
     }
   }
   get isApplyingLayout(): boolean {
@@ -517,6 +593,10 @@ export class SceneGraph {
     if (appliedChanges) this.emitter.emit('node:previewUpdated', id, appliedChanges)
   }
 
+  /**
+   * Writes fields as given. Edits detach the shared styles whose fields they change before
+   * they get here (`styleDetachmentChanges`); resolving bindings or loading a file does not.
+   */
   updateNode(id: string, changes: Partial<SceneNode>): void {
     if (this.scopeDepths.preview > 0) {
       this.updateNodePreview(id, changes)
@@ -525,9 +605,7 @@ export class SceneGraph {
 
     const node = this.nodes.get(id)
     if (!node) return
-    const defined = omitBy(changes, isUndefined)
-    const detached = omitBy(styleDetachmentChanges(node, defined), isUndefined)
-    this.applyNodeChanges(node, this.sizedChanges(node, detached))
+    this.applyNodeChanges(node, this.sizedChanges(node, omitBy(changes, isUndefined)))
   }
 
   /** A size set from outside layout, with what it also sets on a generated frame. */
@@ -570,19 +648,44 @@ export class SceneGraph {
       if (node.componentId) this.unindexInstance(node.componentId, id)
       if (changes.componentId) this.indexInstance(changes.componentId, id)
     }
-    if (node.type === 'TEXT') invalidateTextCaches(node, changes)
-    if (this.scopeDepths.sourceMetadata === 0 && !this.isApplyingLayout) {
-      markSourceFieldsEdited(node, Object.keys(changes))
+    this.markEdited(node, Object.keys(changes))
+    // Cache resets that change the node travel with the change, under the caller's own values,
+    // so a layout put-back cannot drop their event.
+    if (node.type === 'TEXT') {
+      const resets = omitBy(textCacheInvalidationChanges(node, changes), (value, key) =>
+        Object.is(node[key], value)
+      )
+      changes = { ...resets, ...changes }
     }
     if (changes.vectorNetwork) {
       changes = { ...changes, vectorNetwork: normalizeVectorNetwork(changes.vectorNetwork) }
     }
-    this.layoutWrites?.record(node, changes)
+    this.layoutWrites?.record(
+      node,
+      changes,
+      this.scopeDepths.sourceMetadata === 0 && !this.isApplyingDerivedLayout
+    )
     Object.assign(node, changes)
-    if (changes.fills) removeStaleBindings(node, 'fills', changes)
-    if (changes.strokes) removeStaleBindings(node, 'strokes', changes)
+    this.followListBindings(node, changes)
     for (const key of absent) Reflect.deleteProperty(node, key)
     this.publishNodeUpdate(id, changes)
+  }
+
+  /** Bindings of paints and effects a write sets follow the lists it wrote. */
+  private followListBindings(node: SceneNode, changes: Partial<SceneNode>): void {
+    if (changes.fills) removeStaleBindings(node, 'fills', changes)
+    if (changes.strokes) removeStaleBindings(node, 'strokes', changes)
+    if (changes.effects) removeStaleBindings(node, 'effects', changes)
+    // A bound paint written keeps what it was given until its variable's color changes.
+    if ((changes.fills || changes.strokes) && !this.isApplyingImportedState)
+      Variables.recordWrittenBoundPaints(this, node, changes)
+  }
+
+  /** Marks fields an edit changed, unless metadata is being restored or layout is writing them. */
+  private markEdited(node: SceneNode, keys: string[]): void {
+    if (this.scopeDepths.sourceMetadata === 0 && !this.isApplyingLayout) {
+      markSourceFieldsEdited(node, keys)
+    }
   }
 
   /** Publishes an update now, or leaves it to the running layout, which publishes once it ends. */
@@ -616,6 +719,7 @@ export class SceneGraph {
     node.parentId = newParentId
     newParent.childIds.push(nodeId)
 
+    const before = pick(node, TRANSFORM_FIELDS)
     if (isTranslationOnly(oldParentWorld) && isTranslationOnly(newParentWorld)) {
       node.x += oldParentWorld[2] - newParentWorld[2]
       node.y += oldParentWorld[5] - newParentWorld[5]
@@ -624,8 +728,15 @@ export class SceneGraph {
       const local = localTransformFromWorld(node, world, newParentWorld)
       if (local) Object.assign(node, local)
     }
+    // The node keeps its place on the canvas by new coordinates, which a save must write.
+    this.markEdited(
+      node,
+      TRANSFORM_FIELDS.filter((key) => node[key] !== before[key])
+    )
 
     this.emitter.emit('node:reparented', nodeId, oldParentId, newParentId)
+    // Bound paints show their variables in the modes the layer now sits in.
+    Variables.refreshMovedBoundPaints(this, nodeId, oldParentId)
   }
 
   /**
@@ -651,6 +762,8 @@ export class SceneGraph {
     node.parentId = parentId
     this.absPosCache.clear()
     this.emitter.emit('node:reordered', childId, parentId, at, previousParentId)
+    if (previousParentId !== parentId)
+      Variables.refreshMovedBoundPaints(this, childId, previousParentId)
   }
 
   deleteNode(id: string): void {
@@ -690,17 +803,17 @@ export class SceneGraph {
     py: number,
     scopeId: string,
     selectedIds: ReadonlySet<string>,
-    pad = 0
+    options?: HitTest.SelectableHitOptions
   ): SceneNode | null {
-    return HitTest.hitTestSelectable(this, px, py, scopeId, selectedIds, pad)
+    return HitTest.hitTestSelectable(this, px, py, scopeId, selectedIds, options)
   }
 
   hitTestOpenContainer(px: number, py: number, scopeId: string): SceneNode | null {
     return HitTest.hitTestOpenContainer(this, px, py, scopeId)
   }
 
-  isOpenContainer(nodeId: string): boolean {
-    return HitTest.isOpenContainer(this, nodeId)
+  isOpenContainer(nodeId: string, framesOpen = true): boolean {
+    return HitTest.isOpenContainer(this, nodeId, framesOpen)
   }
 
   isPointInNode(nodeId: string, px: number, py: number): boolean {
@@ -722,6 +835,22 @@ export class SceneGraph {
     parentId: string,
     overrides: Partial<SceneNode> = {}
   ): SceneNode | null {
+    const ids = new Map<string, string>()
+    const clone = this.cloneSubtree(sourceId, parentId, overrides, ids)
+    // Copies point at one another, as a paste's do: an instance at a component cloned with it,
+    // as Figma's clone does (desktop 126), and its override records at its copies' new ids.
+    remapCopiedReferences(this, ids)
+    // A copy placed in other modes than its source shows its bound paints there, as a move does.
+    if (clone) Variables.refreshMovedBoundPaints(this, clone.id, this.nodes.get(sourceId)?.parentId)
+    return clone
+  }
+
+  private cloneSubtree(
+    sourceId: string,
+    parentId: string,
+    overrides: Partial<SceneNode>,
+    ids: Map<string, string>
+  ): SceneNode | null {
     const src = this.nodes.get(sourceId)
     if (!src) return null
 
@@ -731,10 +860,12 @@ export class SceneGraph {
     // A copy is a new design nobody has reviewed: Figma's duplicate and clone() drop the status.
     props.status = null
     const clone = this.createNode(src.type, parentId, { ...props, ...overrides })
+    Variables.copyAppliedBoundPaints(src, clone)
     if (src.status) markSourceFieldsEdited(clone, ['status'])
+    ids.set(src.id, clone.id)
 
     for (const childId of src.childIds) {
-      this.cloneTree(childId, clone.id)
+      this.cloneSubtree(childId, clone.id, {}, ids)
     }
 
     return clone
@@ -788,16 +919,33 @@ export class SceneGraph {
     return Instances.getInstances(this, componentId)
   }
 
+  /**
+   * The descendants of a layer in depth-first order with their depths. Each layer with children is
+   * walked once, so a cycle or repeated links in bad data cannot hang it or repeat its subtree.
+   */
   flattenTree(parentId?: string, depth = 0): Array<{ node: SceneNode; depth: number }> {
     const id = parentId ?? this.rootId
     const parent = this.nodes.get(id)
     if (!parent) return []
     const result: Array<{ node: SceneNode; depth: number }> = []
-    for (const childId of parent.childIds) {
-      const child = this.nodes.get(childId)
+    const pending = [{ node: parent, depth, index: 0 }]
+    const walked = new Set([parent])
+    while (pending.length > 0) {
+      const frame = pending.at(-1)
+      if (!frame) break
+      if (frame.index >= frame.node.childIds.length) {
+        pending.pop()
+        continue
+      }
+      const child = this.nodes.get(frame.node.childIds[frame.index++])
       if (!child) continue
-      result.push({ node: child, depth })
-      if (child.childIds.length > 0) result.push(...this.flattenTree(childId, depth + 1))
+      const container = child.childIds.length > 0
+      if (container && walked.has(child)) continue
+      result.push({ node: child, depth: frame.depth })
+      if (container) {
+        walked.add(child)
+        pending.push({ node: child, depth: frame.depth + 1, index: 0 })
+      }
     }
     return result
   }

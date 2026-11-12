@@ -3,13 +3,20 @@ import { FIGJAM_TYPEFACES, figJamTextSizeFields } from '../figjam/text'
 import type { SceneGraph } from '../index'
 import { shapeWithTextLabelBox } from '../shape-with-text/fit'
 import type { ShapeWithTextType } from '../shape-with-text/kinds'
+import { lineHeightPixels } from '../text/lengths'
 import type { Fill, SceneNode } from '../types'
 import type { GeneratedFrameKind } from './kind'
 
 /** FigJam makes a shape with text 176 px square, from its tool and from its plugin API. */
 export const SHAPE_WITH_TEXT_SIZE = 176
-/** FigJam rounds every corner of a shape by 6 px. */
+/** FigJam rounds every corner of a shape by 6 px, but a rounded rectangle's. */
 export const SHAPE_WITH_TEXT_CORNER_RADIUS = 6
+
+/**
+ * FigJam keeps a rounded rectangle's corner radius at 0.4 of its shorter side, through resizes,
+ * measured in FigJam; Figma draws the shape from that radius.
+ */
+const ROUNDED_RECTANGLE_RADIUS = 0.4
 
 const LABEL_FILL: Fill = { type: 'SOLID', color: { ...BLACK }, opacity: 0.8, visible: true }
 
@@ -41,7 +48,27 @@ export function shapeWithTextFrameFields(
     paddingRight: Math.max(0, width - box.x - box.width),
     paddingBottom: Math.max(0, height - box.y - box.height),
     paddingLeft: box.x,
-    clipsContent: false
+    clipsContent: false,
+    ...(kind === 'ROUNDED_RECTANGLE'
+      ? { cornerRadius: ROUNDED_RECTANGLE_RADIUS * Math.min(width, height) }
+      : {})
+  }
+}
+
+/**
+ * What turning a shape into `kind` changes, keeping its size, as FigJam's shape switcher does: the
+ * label area, and the corners a rounded rectangle leaves go back to FigJam's 6.
+ */
+export function shapeWithTextKindFields(
+  shape: Pick<SceneNode, 'shapeWithTextType' | 'width' | 'height'>,
+  kind: ShapeWithTextType
+): Partial<SceneNode> {
+  const leavesRounded =
+    shape.shapeWithTextType === 'ROUNDED_RECTANGLE' && kind !== shape.shapeWithTextType
+  return {
+    shapeWithTextType: kind,
+    ...(leavesRounded ? { cornerRadius: SHAPE_WITH_TEXT_CORNER_RADIUS } : {}),
+    ...shapeWithTextFrameFields(kind, shape.width, shape.height)
   }
 }
 
@@ -79,7 +106,6 @@ export const SHAPE_WITH_TEXT_KIND: GeneratedFrameKind = {
   text: (graph, frame) => shapeWithTextLabel(graph, frame) ?? undefined,
   rotates: true,
   resizes: true,
-  strokesAndEffects: true,
   namedByText: true,
   sized: ({ height }, shape) =>
     height === undefined || height === shape.height
@@ -100,7 +126,7 @@ export function buildShapeWithTextLabel(
     x: box.x,
     y: box.y,
     width: box.width,
-    height: fields.lineHeight ?? undefined,
+    height: lineHeightPixels(fields.lineHeight ?? null, fields.fontSize ?? 0) ?? undefined,
     text: '',
     ...props
   })

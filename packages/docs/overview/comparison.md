@@ -40,7 +40,7 @@ Open Pencil is **~11× smaller** — and that's the whole point. It's not a simp
 │  │  └────┬────────────────┘  │  │
 │  │       │                    │  │
 │  │  ┌────▼────┐ ┌──────────┐│  │
-│  │  │  Skia   │ │  Yoga    ││  │
+│  │  │  Skia   │ │  Taffy   ││  │
 │  │  │CanvasKit│ │  Layout  ││  │
 │  │  │  (WASM) │ │  (WASM)  ││  │
 │  │  └─────────┘ └──────────┘│  │
@@ -48,7 +48,7 @@ Open Pencil is **~11× smaller** — and that's the whole point. It's not a simp
 └─────────────────────────────────┘
 ```
 
-**Everything in one process.** No server, no database, no Docker. The scene graph is a flat `Map<string, SceneNode>` in TypeScript. Rendering calls Skia CanvasKit directly from TS. Layout is Yoga WASM called synchronously.
+**Everything in one process.** No server, no database, no Docker. The scene graph is a flat `Map<string, SceneNode>` in TypeScript. Rendering calls Skia CanvasKit directly from TS. Layout is Taffy WASM called synchronously.
 
 ### Penpot: Distributed Client-Server
 
@@ -171,18 +171,19 @@ Open Pencil reuses Figma's proven schema (194 Kiwi definitions) directly in Type
 
 ## 5. Layout Engine
 
-### Open Pencil: Yoga WASM (314 LOC)
+### Open Pencil: Taffy WASM
 
 ```typescript
-import Yoga from 'yoga-layout'
-// Direct mapping: Figma stack* fields → Yoga flex properties
-const root = Yoga.Node.create()
-root.setFlexDirection(FlexDirection.Row)
-root.calculateLayout()
-applyYogaLayout(graph, frame, yogaRoot)
+import { computeLayout } from '@open-pencil/taffy'
+// Direct mapping: Figma auto layout fields → CSS flex and grid styles
+const root = createLayoutNode() // new LayoutNode({ flexDirection: 'column', flexShrink: 0, ... })
+setFlexFlow(root, frame) // flexDirection: 'row', gaps, alignment
+root.append(item)
+computeLayout(root)
+applyComputedLayout(graph, frame, root, computeLayoutInternal)
 ```
 
-314 lines total. Synchronous, in-process.
+One call lays out the whole tree. Synchronous, in-process.
 
 ### Penpot: Dual Implementation
 
@@ -193,7 +194,7 @@ Penpot maintains **two independent layout engines** (CLJS and Rust) that must pr
 
 ### Verdict: Layout
 
-Open Pencil delegates to a battle-tested library (Yoga, used by React Native on billions of devices) in 314 lines. Penpot maintains ~3,000+ LOC of custom layout code duplicated across two languages.
+Open Pencil delegates flexbox and CSS Grid to an established library (Taffy, which also lays out Servo, Blitz, Bevy, Slint, and Zed) and maps Figma's fields onto CSS styles. Penpot maintains ~3,000+ LOC of custom layout code duplicated across two languages.
 
 ## 6. File Format & Figma Compatibility
 
@@ -263,12 +264,11 @@ Open Pencil's approach is simpler and lower overhead. Penpot's approach is more 
 ## 10. What Penpot Does Better
 
 1. **Server-side collaboration** — centralized multi-user editing with WebSockets, user accounts, and access control (Open Pencil uses P2P via Trystero + Yjs — no server, but also no access control or persistence beyond the session)
-2. **PDF export** — headless Chromium export service for PDF rendering (OpenPencil exports SVG but not PDF yet)
-3. **Plugin system** — full plugin API with sandboxed execution
-4. **Design tokens** — native design token support
-5. **CSS Grid layout** — custom implementation (Open Pencil uses Yoga fork with grid support)
-6. **Self-hosting** — Docker-based deployment for teams
-7. **Maturity** — years of production usage, battle-tested at scale
+2. **Plugin system** — full plugin API with sandboxed execution
+3. **Design tokens** — native design token support
+4. **CSS Grid layout** — custom implementation (Open Pencil uses Taffy's CSS Grid)
+5. **Self-hosting** — Docker-based deployment for teams
+6. **Maturity** — years of production usage, battle-tested at scale
 
 ## 11. Scripting & Extensibility
 
@@ -284,9 +284,9 @@ OpenPencil ships with an [`eval` command](/programmable/cli/scripting) that prov
 | **Figma compatibility** | Open Pencil | Native Kiwi codec vs no .fig support |
 | **Developer onboarding** | Open Pencil | TS/Vue vs Clojure/Rust/Docker |
 | **Desktop experience** | Open Pencil | Tauri native vs browser-only |
-| **Layout engine** | Open Pencil | Yoga (proven) vs custom dual implementation |
+| **Layout engine** | Open Pencil | Taffy (proven) vs custom dual implementation |
 | **Collaboration** | Tie | Penpot: server-based with access control; Open Pencil: P2P via Trystero + Yjs, zero hosting |
 | **Self-hosting** | Penpot | Docker-ready vs desktop-only |
 | **Ecosystem maturity** | Penpot | Years of production vs early stage |
 
-Open Pencil is architecturally leaner — a single-process CanvasKit renderer in ~26K LOC of TypeScript, Figma-compatible by design. Penpot is a full-stack platform with ~299K LOC across Clojure, ClojureScript, Rust, and SCSS, plus a Docker service fleet. Both now offer real-time collaboration (different architectures: P2P vs server). Penpot has a plugin ecosystem and server-side PDF export; Open Pencil has Figma-compatible headless scripting, **90 AI/MCP tools**, SVG export, and a native desktop app.
+Open Pencil is architecturally leaner — a single-process CanvasKit renderer in ~26K LOC of TypeScript, Figma-compatible by design. Penpot is a full-stack platform with ~299K LOC across Clojure, ClojureScript, Rust, and SCSS, plus a Docker service fleet. Both now offer real-time collaboration (different architectures: P2P vs server). Penpot has a plugin ecosystem; Open Pencil has Figma-compatible headless scripting, **90 AI/MCP tools**, SVG and PDF export, and a native desktop app.

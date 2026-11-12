@@ -4,7 +4,7 @@ import { computed, ref, watch } from 'vue'
 import type { LibraryAssetChange } from '@open-pencil/core/library'
 import {
   ensureLibraryAssetKeys,
-  publishableLibraryRoots,
+  publishableLibraryAssets,
   readSourceLibraryPublication
 } from '@open-pencil/core/library'
 import { useI18n } from '@open-pencil/vue/i18n'
@@ -12,13 +12,19 @@ import { useI18n } from '@open-pencil/vue/i18n'
 import { useEditorStore } from '@/app/editor/active-store'
 import { publishLibraryDialogOpen, useLibraryService } from '@/app/libraries'
 import AppButton from '@/components/ui/button/AppButton.vue'
-import { AppDialogFooter, AppDialogHeader, AppDialogRoot } from '@/components/ui/dialog'
+import {
+  AppDialogFooter,
+  AppDialogHeader,
+  AppDialogRoot,
+  useDialogUI
+} from '@/components/ui/dialog'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppTextarea from '@/components/ui/input/AppTextarea.vue'
 import AppCheckbox from '@/components/ui/toggle/AppCheckbox.vue'
 
 const editor = useEditorStore()
+const dialog = useDialogUI()
 const service = useLibraryService()
 const { panels } = useI18n()
 const libraryId = ref('')
@@ -63,21 +69,10 @@ watch(publishLibraryDialogOpen, async (open) => {
       const discovered = await service.discoverPublicationChanges(editor)
       changes.value = discovered.changes
     } else {
-      const roots = publishableLibraryRoots(editor.graph)
-      ensureLibraryAssetKeys(
-        editor.graph,
-        roots.map((node) => node.id)
-      )
-      changes.value = roots.map((node) => ({
+      ensureLibraryAssetKeys(editor.graph)
+      changes.value = publishableLibraryAssets(editor.graph).map((asset) => ({
         kind: 'added' as const,
-        asset: {
-          key: node.componentKey ?? node.id,
-          name: node.name,
-          description: '',
-          type: node.type,
-          sourceNodeId: node.id,
-          contentHash: ''
-        }
+        asset: { ...asset, contentHash: '' }
       }))
     }
     selectedKeys.value = new Set(changes.value.map((change) => change.asset.key))
@@ -130,7 +125,10 @@ async function publish() {
 <template>
   <AppDialogRoot v-model:open="publishLibraryDialogOpen" size="md" height="tall">
     <AppDialogHeader :heading="panels.publishLibrary" :description="panels.publishLibraryHelp" />
-    <form class="flex min-h-0 flex-1 flex-col gap-3 px-4 py-4" @submit.prevent="publish">
+    <form
+      :class="[dialog.pane, 'flex min-h-0 flex-1 flex-col gap-3 px-4 py-4']"
+      @submit.prevent="publish"
+    >
       <div class="grid grid-cols-2 gap-3">
         <label class="flex flex-col gap-1.5 text-xs text-muted">
           {{ panels.libraryId }}
@@ -167,7 +165,7 @@ async function publish() {
             @update:model-value="toggleAll"
           />
           <span>{{ panels.libraryChanges }}</span>
-          <span class="ml-auto text-muted">{{ selectedKeys.size }}/{{ changes.length }}</span>
+          <span class="ms-auto text-muted">{{ selectedKeys.size }}/{{ changes.length }}</span>
         </div>
         <div v-if="loading" class="px-3 py-6 text-center text-xs text-muted">
           {{ panels.loading }}
@@ -204,10 +202,15 @@ async function publish() {
                 v-if="change.asset.type === 'COMPONENT_SET'"
                 class="size-4"
               />
+              <icon-lucide-palette v-else-if="change.asset.type === 'STYLE'" class="size-4" />
+              <icon-lucide-braces
+                v-else-if="change.asset.type === 'VARIABLE_COLLECTION'"
+                class="size-4"
+              />
               <icon-lucide-component v-else class="size-4" />
             </div>
             <span class="min-w-0 flex-1 truncate text-xs">{{ change.asset.name }}</span>
-            <span class="text-[10px] text-muted">{{ changeLabels[change.kind] }}</span>
+            <span class="text-3xs text-muted">{{ changeLabels[change.kind] }}</span>
           </label>
         </div>
       </div>

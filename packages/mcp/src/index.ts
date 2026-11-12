@@ -40,7 +40,10 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
       `                               file after no app is attached for this many ms. The\n` +
       `                               grace period starts at startup and after disconnects.\n` +
       `                               Unset/0 disables it (default) — do not set this for\n` +
-      `                               manual/CLI use, since nothing may ever register.\n`
+      `                               manual/CLI use, since nothing may ever register.\n` +
+      `  OPENPENCIL_MCP_EXIT_ON_STDIN_CLOSE  Set to 1 to shut down when stdin closes, so a\n` +
+      `                               parent that starts the server through a shell wrapper\n` +
+      `                               can stop it by closing the pipe. Unset for manual/CLI use.\n`
   )
   process.exit(0)
 }
@@ -132,3 +135,18 @@ const shutdown = async () => {
 
 process.on('SIGINT', () => void shutdown().catch(() => process.exit(1)))
 process.on('SIGTERM', () => void shutdown().catch(() => process.exit(1)))
+
+// A parent that started this server through a shell wrapper cannot always kill it directly
+// (on Windows, ending `cmd /c` leaves the process it started running), but its end of the
+// stdin pipe closes with it.
+if (process.env.OPENPENCIL_MCP_EXIT_ON_STDIN_CLOSE === '1') {
+  let stdinClosed = false
+  const onStdinClosed = () => {
+    if (stdinClosed) return
+    stdinClosed = true
+    void shutdown().catch(() => process.exit(1))
+  }
+  process.stdin.on('end', onStdinClosed)
+  process.stdin.on('close', onStdinClosed)
+  process.stdin.resume()
+}

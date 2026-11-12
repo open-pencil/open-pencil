@@ -7,11 +7,11 @@ import {
   DEFAULT_STROKE_WEIGHT
 } from '@open-pencil/scene-graph/constants'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
-import { styleToWeight } from '@open-pencil/scene-graph/font-style'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
 import { OPEN_PENCIL_PLUGIN_DATA } from '@open-pencil/scene-graph/plugin-data'
 import { POINT_COUNT_RANGE } from '@open-pencil/scene-graph/polygon'
 import { isShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text'
+import { pixelLength } from '@open-pencil/scene-graph/text'
 import { parseVariantName } from '@open-pencil/scene-graph/variant-name'
 /* eslint-disable max-lines -- kiwi↔scene conversion helpers are tightly coupled */
 
@@ -24,6 +24,7 @@ import { expandPathTextLayoutBox } from './path/text-layout'
 import {
   extractBoundVariables,
   extractExportSettings,
+  extractLibraryLayerId,
   extractLibrarySource,
   extractTextPathBox,
   extractPluginData,
@@ -43,19 +44,25 @@ import {
 import {
   alignGeometryWindingRules,
   resolveGeometryPaths,
-  resolveVectorNetwork,
-  resolveVectorStyleOverrideFills
+  resolveVectorNetwork
 } from './vector/geometry'
 import { decodeVectorNetworkBlob, textPathStartSegment, type StyleOverride } from './vector/network'
 
 export { convertEffects, convertFills, convertStrokes, setVariableColorResolver } from './paint'
 export { importStyleRuns } from './style/runs'
-export { convertLetterSpacing, convertLineHeight, mapTextDecoration } from './text/values'
+export {
+  convertLetterSpacing,
+  convertLineHeight,
+  figmaLetterSpacing,
+  figmaLineHeight,
+  mapTextDecoration
+} from './text/values'
 export { resolveGeometryPaths } from './vector/geometry'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type {
   SceneNode,
+  TextLength,
   NodeType,
   Fill,
   StrokeCap,
@@ -83,17 +90,12 @@ import type {
 } from '@open-pencil/scene-graph'
 import type { Vector, GUID } from '@open-pencil/scene-graph/primitives'
 
+import { savedFace } from './font/style'
 import { numericVariableAssignmentScales, sourceVariableBindingScales } from './variable/bindings'
 export { VARIABLE_BINDING_FIELDS, VARIABLE_BINDING_FIELDS_INVERSE } from './variable/bindings'
+import type { FigVariableModeMap } from './variable/maps'
 
-interface FigVariableModeMap {
-  entries?: Array<{
-    variableSetID?: { guid?: GUID }
-    variableModeID?: GUID
-  }>
-}
-
-function extractVariableModes(nc: NodeChange): VariableModeMap {
+export function extractVariableModes(nc: NodeChange): VariableModeMap {
   const result: VariableModeMap = {}
   const modeMap = nc.variableModeBySetMap as FigVariableModeMap | undefined
   for (const entry of modeMap?.entries ?? []) {
@@ -324,19 +326,33 @@ function convertPolygonProps(
  * A text's line height. Figma writes auto as 100 percent, and OpenPencil once wrote none for
  * it; a text in auto lines up each line at its own font's height. Figma saves each line at the
  * larger of its line height and its tallest font's height, so a first line shorter than the
- * text's height in pixels was laid out at another one, which a style the text uses set.
+ * text's height in pixels was laid out at another one, which a style the text uses set. A first
+ * line with a range of its own line height was laid out at the range's, not the text's.
  */
-function importedTextLineHeight(nc: NodeChange): number | null {
+function importedTextLineHeight(nc: NodeChange): TextLength | null {
   if (!nc.lineHeight || isFigmaAutoLineHeight(nc.lineHeight)) return null
-  const derivedLineHeight = nc.derivedTextData?.baselines?.[0]?.lineHeight
+  const firstLine = nc.derivedTextData?.baselines?.[0]
   if (
     nc.lineHeight.units === 'PIXELS' &&
-    derivedLineHeight !== undefined &&
-    Number.isFinite(derivedLineHeight) &&
-    derivedLineHeight < nc.lineHeight.value
+    firstLine !== undefined &&
+    Number.isFinite(firstLine.lineHeight) &&
+    firstLine.lineHeight < nc.lineHeight.value &&
+    !rangeSetsLineHeight(nc, firstLine.firstCharacter, firstLine.endCharacter)
   )
-    return derivedLineHeight
-  return convertLineHeight(nc.lineHeight, nc.fontSize)
+    return pixelLength(firstLine.lineHeight)
+  return convertLineHeight(nc.lineHeight)
+}
+
+/** Whether a character from `start` up to `end` has a line height from its range's style. */
+function rangeSetsLineHeight(nc: NodeChange, start: number, end: number): boolean {
+  const ids = new Set(
+    (nc.textData?.styleOverrideTable ?? [])
+      .filter((style) => style.lineHeight)
+      .map((style) => style.styleID as number | undefined)
+  )
+  return (nc.textData?.characterStyleIDs ?? [])
+    .slice(start, end)
+    .some((id) => id !== 0 && ids.has(id))
 }
 
 type TextProps = Pick<
@@ -346,6 +362,7 @@ type TextProps = Pick<
   | 'fontFamily'
   | 'fontWeight'
   | 'italic'
+  | 'fontStyle'
   | 'textAlignHorizontal'
   | 'textAlignVertical'
   | 'textAutoResize'
@@ -365,6 +382,7 @@ type TextProps = Pick<
   | 'hangingList'
   | 'styleRuns'
   | 'fontVariations'
+  | 'opticalSizeFromFontSize'
   | 'fontFeatures'
   | 'textTruncation'
   | 'textDirection'
@@ -384,7 +402,7 @@ function convertTextDecorationProps(
   | 'textUnderlineOffset'
 > {
   return {
-    textDecoration: mapTextDecoration(nc.textDecoration as string),
+    textDecoration: mapTextDecoration(nc.textDecoration),
     textDecorationStyle: (nc.textDecorationStyle ?? 'SOLID') as SceneNode['textDecorationStyle'],
     textDecorationThickness: nc.textDecorationThickness?.value ?? null,
     textDecorationFills: convertFills(nc.textDecorationFillPaints),
@@ -430,12 +448,15 @@ function convertShapeWithTextProps(
 }
 
 function convertTextProps(nc: NodeChange, blobs: Uint8Array[]): TextProps {
+  const face = nc.fontName ? savedFace(nc, nc.fontName) : { fontWeight: 400, italic: false }
   return {
     text: nc.textData?.characters ?? '',
     fontSize: nc.fontSize ?? 14,
     fontFamily: nc.fontName?.family ?? DEFAULT_FONT_FAMILY,
-    fontWeight: styleToWeight(nc.fontName?.style ?? ''),
-    italic: nc.fontName?.style.toLowerCase().includes('italic') ?? false,
+    fontWeight: face.fontWeight,
+    italic: face.italic,
+    // Figma finds the face by this exact name, which the weight and slant cannot always name.
+    fontStyle: nc.fontName?.style || null,
     textAlignHorizontal: (nc.textAlignHorizontal ?? 'LEFT') as
       | 'LEFT'
       | 'CENTER'
@@ -447,11 +468,12 @@ function convertTextProps(nc: NodeChange, blobs: Uint8Array[]): TextProps {
     ...convertTextDecorationProps(nc),
     leadingTrim: (nc.leadingTrim ?? 'NONE') as SceneNode['leadingTrim'],
     lineHeight: importedTextLineHeight(nc),
-    letterSpacing: convertLetterSpacing(nc.letterSpacing, nc.fontSize),
+    letterSpacing: convertLetterSpacing(nc.letterSpacing),
     maxLines: (nc.maxLines ?? null) as number | null,
     ...convertParagraphProps(nc),
     styleRuns: importStyleRuns(nc),
     fontVariations: convertFontVariations(nc),
+    opticalSizeFromFontSize: nc.detachOpticalSizeFromFontSize !== true,
     fontFeatures: convertFontFeatures(nc),
     textTruncation: (nc.textTruncation as string) === 'ENDING' ? 'ENDING' : 'DISABLED',
     textDirection: readNodeChangePluginData(nc, OPEN_PENCIL_PLUGIN_DATA.textDirection) ?? 'AUTO',
@@ -462,16 +484,28 @@ function convertTextProps(nc: NodeChange, blobs: Uint8Array[]): TextProps {
 function convertDerivedText(
   nc: NodeChange,
   blobs: Uint8Array[]
-): Pick<SceneNode, 'derivedLayout' | 'derivedTextGlyphs'> {
+): Pick<SceneNode, 'derivedLayout' | 'derivedTextGlyphs' | 'derivedTextHeight'> {
   const layoutSize = nc.derivedTextData?.layoutSize
   return {
     derivedLayout: layoutSize ? { width: layoutSize.x, height: layoutSize.y } : null,
+    derivedTextHeight: savedLinesHeight(nc),
     derivedTextGlyphs: convertFigmaDerivedTextGlyphs(
       nc.derivedTextData,
       blobs,
       nc.textData?.characters ?? ''
     )
   }
+}
+
+/**
+ * How far the lines Figma saved reach: the bottom of the last one. Figma's layout size is the box
+ * of a fixed-size text even when its lines draw past it, so the lines themselves tell.
+ */
+function savedLinesHeight(nc: NodeChange): number | null {
+  const bottoms = (nc.derivedTextData?.baselines ?? []).map(
+    (line) => (line.lineY ?? line.position.y - line.lineAscent) + line.lineHeight
+  )
+  return bottoms.length > 0 ? Math.max(...bottoms) : null
 }
 
 function convertLayoutPadding(
@@ -640,7 +674,7 @@ function convertVectorAndStrokeProps(nc: NodeChange, blobs: Uint8Array[]) {
   const strokeCap = getVectorStrokeCap(nc)
   const strokeJoin = getVectorStrokeJoin(nc, vectorNetwork)
   const fillGeometry = alignGeometryWindingRules(
-    resolveGeometryPaths(nc.fillGeometry, blobs, resolveVectorStyleOverrideFills(nc)),
+    resolveGeometryPaths(nc.fillGeometry, blobs),
     vectorNetwork
   )
   return {
@@ -663,7 +697,7 @@ function convertVectorAndStrokeProps(nc: NodeChange, blobs: Uint8Array[]) {
 function resolveNodeType(nc: NodeChange): NodeType | 'DOCUMENT' | 'VARIABLE' {
   const nodeType = mapNodeType(nc.type)
   if (
-    (nodeType === 'FRAME' && isComponentSet(nc)) ||
+    (nodeType === 'FRAME' && isComponentSetRecord(nc)) ||
     readNodeChangePluginData(nc, OPEN_PENCIL_PLUGIN_DATA.nodeType) === 'COMPONENT_SET'
   ) {
     return 'COMPONENT_SET'
@@ -729,8 +763,8 @@ export function nodeChangeToProps(
     ...convertPolygonProps(nc),
     ...convertTextProps(nc, blobs),
     ...convertShapeWithTextProps(nc),
-    horizontalConstraint: mapConstraint(nc.horizontalConstraint as string),
-    verticalConstraint: mapConstraint(nc.verticalConstraint as string),
+    horizontalConstraint: mapConstraint(nc.horizontalConstraint),
+    verticalConstraint: mapConstraint(nc.verticalConstraint),
     ...convertLayoutProps(nc),
     ...vectorAndStrokeProps,
     minWidth: minimumSizeDimension(nc.minSize, 'x'),
@@ -739,7 +773,11 @@ export function nodeChangeToProps(
     maxHeight: maximumSizeDimension(nc.maxSize, 'y'),
     targetAspectRatio: targetAspectRatio(nc),
     isMask: nc.mask ?? false,
-    maskType: (nc.maskType ?? 'ALPHA') as 'ALPHA' | 'VECTOR' | 'LUMINANCE',
+    // A .fig file stores a vector mask as OUTLINE.
+    maskType: (nc.maskType === 'OUTLINE' ? 'VECTOR' : (nc.maskType ?? 'ALPHA')) as
+      | 'ALPHA'
+      | 'VECTOR'
+      | 'LUMINANCE',
     maskIsOutline: nc.maskIsOutline ?? false,
     expanded: true,
     autoRename: (nc.autoRename ?? true) as boolean,
@@ -751,6 +789,7 @@ export function nodeChangeToProps(
     status: extractNodeStatus(nc),
     pluginData: extractPluginData(nc),
     librarySource: extractLibrarySource(nc),
+    libraryLayerId: extractLibraryLayerId(nc),
     pluginRelaunchData: extractPluginRelaunchData(nc),
     clipsContent: nc.frameMaskDisabled === false && nc.resizeToFit !== true,
     componentId: extractSymbolId(nc),
@@ -871,12 +910,17 @@ function extractComponentPropertyDefs(nc: NodeChange): ComponentPropertyDefiniti
   for (const def of defs) {
     if (!def.id || !def.name) continue
     const propType = COMPONENT_PROP_TYPE_MAP[def.type ?? ''] ?? 'VARIANT'
+    // A set saved without its values keeps their order apart, which Figma reads them in.
+    const valueOrder = nc.stateGroupPropertyValueOrders?.find(
+      (order) => order.property === def.name
+    )?.values
     const definition: ComponentPropertyDefinition = {
       id: guidToString(def.id),
       name: def.name,
       type: propType,
       defaultValue: componentPropValueToString(def.initialValue),
-      variantOptions: propType === 'VARIANT' ? def.preferredValues?.stringValues : undefined,
+      variantOptions:
+        propType === 'VARIANT' ? (def.preferredValues?.stringValues ?? valueOrder) : undefined,
       preferredValues:
         propType === 'INSTANCE_SWAP' || propType === 'SLOT'
           ? def.preferredValues?.instanceSwapValues
@@ -1024,10 +1068,17 @@ function extractComponentMetadata(nc: NodeChange): ComponentMetadataProps {
   }
 }
 
-function isComponentSet(nc: NodeChange): boolean {
+/**
+ * Whether a record is a component set: typed as one, or a frame that defines a variant property
+ * or that OpenPencil marked one.
+ */
+export function isComponentSetRecord(nc: NodeChange): boolean {
+  if (mapNodeType(nc.type) === 'COMPONENT_SET') return true
   const defs = nc.componentPropDefs as Array<{ type?: string }> | undefined
-  if (!defs?.length) return false
-  return defs.some((d) => d.type === 'VARIANT')
+  return (
+    !!defs?.some((d) => d.type === 'VARIANT') ||
+    readNodeChangePluginData(nc, OPEN_PENCIL_PLUGIN_DATA.nodeType) === 'COMPONENT_SET'
+  )
 }
 
 function extractFigmaLayoutMetadata(nc: NodeChange): SceneNode['source']['fig']['layout'] {
@@ -1203,6 +1254,7 @@ export const FIGMA_RAW_NODE_FIELD_KEYS = [
   'textUserLayoutVersion',
   'textExplicitLayoutVersion',
   'fontVariations',
+  'detachOpticalSizeFromFontSize',
   'fontVariantCommonLigatures',
   'fontVariantContextualLigatures',
   'toggledOnOTFeatures',
@@ -1279,8 +1331,8 @@ function extractFigmaSymbolMetadata(
   }
 }
 
-function extractSymbolId(nc: NodeChange): string {
+function extractSymbolId(nc: NodeChange): string | null {
   const sd = nc.symbolData as { symbolID?: GUID } | undefined
-  if (!sd?.symbolID) return ''
+  if (!sd?.symbolID) return null
   return guidToString(sd.symbolID)
 }

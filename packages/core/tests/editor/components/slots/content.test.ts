@@ -1,10 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import { createEditor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { ownsSlotContent, slotPropertyId } from '@open-pencil/scene-graph/slots'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 /** A Card component whose `Body` slot holds `Default`, an instance of it, and a free layer. */
 function setup() {
@@ -117,6 +116,19 @@ describe('editing instance slots', () => {
     editor.groupSelected()
     editor.wrapInAutoLayout()
     expect(editor.graph.getNode(title.id)?.parentId).toBe(instance.id)
+  })
+
+  test('grouping slot content claims the slot in the same undo step', () => {
+    const { editor, instance, slot } = setup()
+    const before = structuredClone(editor.graph.getNode(instance.id)?.componentPropertyAssignments)
+    const [content] = editor.graph.getChildren(slot.id)
+    editor.select([content.id])
+    editor.groupSelected()
+    expect(names(editor, slot)).toEqual(['Group 1'])
+
+    editor.undo.undo()
+    expect(names(editor, slot)).toEqual(['Default'])
+    expect(editor.graph.getNode(instance.id)?.componentPropertyAssignments).toEqual(before)
   })
 
   test('undoing an added instance restores the selection', () => {

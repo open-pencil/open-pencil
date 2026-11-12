@@ -3,7 +3,10 @@ import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'tsdown'
 
 export default defineConfig({
-  entry: { server: './src/runtime/node/main.ts' },
+  entry: {
+    server: './src/runtime/node/main.ts',
+    services: './src/runtime/node/services/main.ts'
+  },
   platform: 'node',
   format: ['esm'],
   dts: false,

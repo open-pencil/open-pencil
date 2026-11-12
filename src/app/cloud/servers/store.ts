@@ -13,7 +13,9 @@ const CLOUD_SERVERS_KEY = 'open-pencil:cloud-servers'
 const cloudAccountSchema = v.object({
   id: v.string(),
   name: v.string(),
-  email: v.string()
+  email: v.string(),
+  /** The address of the account's picture on the server; unset shows initials. */
+  image: v.optional(v.nullable(v.string()))
 })
 
 const cloudServerSchema = v.object({
@@ -101,6 +103,36 @@ export async function addCloudServer(input: {
   const current = state.value
   write({ servers: [...current.servers, server], home: current.home ?? server.id })
   return server
+}
+
+/**
+ * On the editor a Cloud server serves on its own address, that server, which the server's own
+ * sign-in session reaches without a token. The first server goes on Home.
+ */
+export async function addCloudSiteServer(
+  origin = globalThis.location.origin
+): Promise<CloudServer> {
+  const official = normalizeCloudServerURL(OFFICIAL_CLOUD_URL)
+  return normalizeCloudServerURL(origin) === official
+    ? addCloudServer({ kind: 'official' })
+    : addCloudServer({ kind: 'self-hosted', url: origin })
+}
+
+/** Whether a server is the one that serves this editor on its own address. */
+export function isCloudSiteServer(id: string, origin = globalThis.location.origin): boolean {
+  return findCloudServer(id)?.url === normalizeCloudServerURL(origin)
+}
+
+/**
+ * The server a link names: one this app knows, or the official one, which a link may add. Null
+ * for any other, so a link alone never connects the app anywhere new.
+ */
+export async function cloudServerForLink(url: string): Promise<CloudServer | null> {
+  const known = state.value.servers.find((server) => server.url === url)
+  if (known) return known
+  return url === normalizeCloudServerURL(OFFICIAL_CLOUD_URL)
+    ? addCloudServer({ kind: 'official' })
+    : null
 }
 
 /** Forgets a server; Home moves to the next one. */

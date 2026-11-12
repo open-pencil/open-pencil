@@ -1,6 +1,10 @@
 import { SceneGraph } from '@open-pencil/scene-graph'
-import { styleRunReferences } from '@open-pencil/scene-graph/text'
-import { variableValueReferences } from '@open-pencil/scene-graph/variables'
+import { copyImages } from '@open-pencil/scene-graph/images'
+import {
+  copyVariableTables,
+  layerDependencies,
+  type LayerDependencies
+} from '@open-pencil/scene-graph/transfer'
 
 import type { ExportTarget } from './types'
 
@@ -20,29 +24,6 @@ export interface ExtractedGraph {
   nodeIds: string[]
 }
 
-function includeReferencedStyles(source: SceneGraph, ids: Set<string>): void {
-  const referencedStyleIds = new Set<string>()
-  for (const id of ids) {
-    const node = source.getNode(id)
-    if (!node) continue
-    for (const styleId of [
-      node.fillStyleId,
-      node.strokeStyleId,
-      node.textStyleId,
-      node.effectStyleId,
-      node.gridStyleId,
-      ...styleRunReferences(node.styleRuns).styles
-    ]) {
-      if (styleId) referencedStyleIds.add(styleId)
-    }
-  }
-  for (const node of source.getAllNodes()) {
-    if (node.sharedStyleType && node.source.id && referencedStyleIds.has(node.source.id)) {
-      ids.add(node.id)
-    }
-  }
-}
-
 function cloneIntoGraph(
   source: SceneGraph,
   ids: Set<string>,
@@ -54,12 +35,16 @@ function cloneIntoGraph(
   graph.images = new Map()
   graph.variables = new Map()
   graph.variableCollections = new Map()
-  graph.activeMode = new Map(source.activeMode)
   graph.figKiwiVersion = source.figKiwiVersion
   graph.figSchemaDeflated = source.figSchemaDeflated
   graph.documentColorSpace = source.documentColorSpace
+  graph.documentKind = source.documentKind
 
-  includeReferencedStyles(source, ids)
+  const dependencies = layerDependencies(
+    source,
+    [...ids].flatMap((id) => source.getNode(id) ?? [])
+  )
+  for (const style of dependencies.styles) ids.add(style.id)
 
   const sortedIds = [...ids].sort((a, b) => {
     if (a === source.rootId) return -1
@@ -105,62 +90,20 @@ function cloneIntoGraph(
     graph.images = source.images
     graph.variables = source.variables
     graph.variableCollections = source.variableCollections
-  } else copyReferencedTables(source, graph)
+  } else copyReferencedTables(source, graph, dependencies)
 
   graph.clearAbsPosCache()
   return graph
 }
 
 /** The images and variables the copied layers use, with their collections, copied in. */
-function copyReferencedTables(source: SceneGraph, graph: SceneGraph): void {
-  const { imageHashes, variableIds } = collectReferencedResources(source, graph)
-
-  for (const imageHash of imageHashes) {
-    const image = source.images.get(imageHash)
-    if (image) graph.images.set(imageHash, image)
-  }
-
-  for (const variableId of variableIds) {
-    const variable = source.variables.get(variableId)
-    if (!variable) continue
-    graph.variables.set(variableId, structuredClone(variable))
-    const collection = source.variableCollections.get(variable.collectionId)
-    if (!collection) continue
-    const existing = graph.variableCollections.get(collection.id)
-    if (!existing) {
-      graph.variableCollections.set(collection.id, {
-        ...structuredClone(collection),
-        variableIds: []
-      })
-    }
-    graph.variableCollections.get(collection.id)?.variableIds.push(variableId)
-  }
-}
-
-function collectReferencedResources(source: SceneGraph, graph: SceneGraph) {
-  const imageHashes = new Set<string>()
-  const variableIds = new Set<string>()
-  for (const node of graph.nodes.values()) {
-    for (const fill of node.fills) {
-      if (fill.type === 'IMAGE' && fill.imageHash) imageHashes.add(fill.imageHash)
-    }
-    const bound = [
-      ...Object.values(node.boundVariables),
-      ...styleRunReferences(node.styleRuns).variables
-    ]
-    for (const variableId of bound) collectVariableClosure(source, variableId, variableIds)
-  }
-  return { imageHashes, variableIds }
-}
-
-function collectVariableClosure(source: SceneGraph, variableId: string, out: Set<string>) {
-  if (out.has(variableId)) return
-  const variable = source.variables.get(variableId)
-  if (!variable) return
-  out.add(variableId)
-  for (const value of Object.values(variable.valuesByMode)) {
-    for (const id of variableValueReferences(value)) collectVariableClosure(source, id, out)
-  }
+function copyReferencedTables(
+  source: SceneGraph,
+  graph: SceneGraph,
+  { images, variables, collections }: LayerDependencies
+): void {
+  copyImages(source.images, graph.images, images)
+  copyVariableTables(graph, variables, collections, () => [source])
 }
 
 function depthOf(source: SceneGraph, node: ReturnType<SceneGraph['getNode']>): number {

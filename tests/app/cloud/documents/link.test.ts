@@ -7,23 +7,19 @@ const SERVER = 'https://cloud.example.com'
 const DOCUMENT = '1413785f-37aa-4935-8bfb-e2cd81a035cf'
 
 describe('Cloud document links', () => {
-  test('an address names the document, its server, and the version it shows', () => {
-    const base = `https://openpencil.dev/cloud/documents/${DOCUMENT}?server=${SERVER}`
+  test('an address names the document and the version it shows; its own address is the server', () => {
+    const base = `${SERVER}/documents/${DOCUMENT}`
     expect(readCloudDocumentLink(new URL(base))).toEqual({
       documentId: DOCUMENT,
       server: SERVER,
       versionId: null
     })
-    expect(readCloudDocumentLink(new URL(`${base}&version=v1`))?.versionId).toBe('v1')
+    expect(readCloudDocumentLink(new URL(`${base}?version=v1`))?.versionId).toBe('v1')
   })
 
-  test('an address without a server or with a broken escape is no link', () => {
-    expect(
-      readCloudDocumentLink(new URL(`https://openpencil.dev/cloud/documents/${DOCUMENT}`))
-    ).toBeNull()
-    expect(
-      readCloudDocumentLink(new URL(`https://openpencil.dev/cloud/documents/%E0?server=${SERVER}`))
-    ).toBeNull()
-    expect(readCloudDocumentLink(new URL(`https://openpencil.dev/?server=${SERVER}`))).toBeNull()
+  test('another address or a broken escape is no link', () => {
+    expect(readCloudDocumentLink(new URL(`${SERVER}/documents/%E0`))).toBeNull()
+    expect(readCloudDocumentLink(new URL(`${SERVER}/share/${DOCUMENT}`))).toBeNull()
+    expect(readCloudDocumentLink(new URL(`${SERVER}/`))).toBeNull()
   })
 })

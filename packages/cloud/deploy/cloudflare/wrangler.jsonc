@@ -1,20 +1,19 @@
 // OpenPencil Cloud on Cloudflare Workers. To deploy, copy this folder next to it (for example to
 // deploy/mine), add your deployment TOML as openpencil-cloud.toml, replace the values marked below,
-// and run `wrangler deploy` there. The self-hosting guide walks through it.
+// and run `wrangler deploy --assets "$(git rev-parse --show-toplevel)/dist-cloud"` there. The
+// self-hosting guide walks through it.
 {
-  "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "openpencil-cloud",
   "main": "worker.ts",
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
-  "tsconfig": "../../src/runtime/cloudflare/tsconfig.json",
   // The deployment TOML is bundled as text and parsed when the Worker starts.
   "rules": [{ "type": "Text", "globs": ["**/*.toml"], "fallthrough": false }],
   "observability": { "enabled": true },
-  // The Cloud portal from `bun run build:cloud-portal` at the repository root. The Worker always
-  // answers first: API routes win, portal pages get `cloud.html`, and only then files.
+  // The editor and the portal from `bun run build:cloud`, which `--assets` names. The Worker always
+  // answers first: API routes win, portal pages get `cloud.html`, then files, and any other page
+  // the editor's `index.html`.
   "assets": {
-    "directory": "../../../../dist-cloud-portal",
     "binding": "ASSETS",
     "html_handling": "none",
     "run_worker_first": true

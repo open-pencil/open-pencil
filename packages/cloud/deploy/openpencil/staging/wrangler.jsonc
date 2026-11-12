@@ -1,16 +1,14 @@
 // cloud-staging.openpencil.dev, deployed by the Deploy Cloud workflow with target `staging`: a
-// filled-in copy of ../../cloudflare. For a deployment of your own, copy that folder instead.
+// filled-in copy of deploy/cloudflare. For a deployment of your own, copy that folder instead.
 {
-  "$schema": "../../../node_modules/wrangler/config-schema.json",
   "name": "openpencil-cloud-staging",
   "main": "worker.ts",
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
-  "tsconfig": "../../../src/runtime/cloudflare/tsconfig.json",
   "rules": [{ "type": "Text", "globs": ["**/*.toml"], "fallthrough": false }],
   "observability": { "enabled": true },
+  // The site build comes from `--assets`.
   "assets": {
-    "directory": "../../../../../dist-cloud-portal",
     "binding": "ASSETS",
     "html_handling": "none",
     "run_worker_first": true
@@ -30,7 +28,9 @@
       "GOOGLE_CLIENT_ID",
       "GOOGLE_CLIENT_SECRET",
       "S3_ACCESS_KEY_ID",
-      "S3_SECRET_ACCESS_KEY"
+      "S3_SECRET_ACCESS_KEY",
+      "OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY",
+      "POSTHOG_PROJECT_API_KEY"
     ]
   }
 }

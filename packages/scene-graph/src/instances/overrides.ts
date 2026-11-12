@@ -5,6 +5,23 @@ export interface InstanceOverrideState {
   descendants: Map<string, Map<InstanceOverrideField, unknown>>
 }
 
+const BINDING_OVERRIDE_PREFIX = 'boundVariables/'
+
+/**
+ * The override field that claims a layer's binding of `field`, which keeps that binding, or its
+ * absence, through a sync. `boundVariables` alone claims every binding of the layer.
+ */
+export function bindingOverrideField(field: string): InstanceOverrideField {
+  return `${BINDING_OVERRIDE_PREFIX}${field}`
+}
+
+/** The binding field an override field claims, or null for an override of anything else. */
+export function overriddenBindingField(field: InstanceOverrideField): string | null {
+  return field.startsWith(BINDING_OVERRIDE_PREFIX)
+    ? field.slice(BINDING_OVERRIDE_PREFIX.length)
+    : null
+}
+
 export function createInstanceOverrideState(): InstanceOverrideState {
   return { self: new Map(), descendants: new Map() }
 }
@@ -92,6 +109,19 @@ export function cloneInstanceOverrideState(state: InstanceOverrideState): Instan
 export interface InstanceOverrideReferenceMapper {
   node: (id: string) => string
   variable: (id: string) => string
+  collection?: (id: string) => string | undefined
+}
+
+const VARIABLE_MODE_FIELD_PREFIX = 'variableModes/'
+
+export function variableModeOverrideField(collectionId: string): InstanceOverrideField {
+  return `${VARIABLE_MODE_FIELD_PREFIX}${collectionId}`
+}
+
+export function variableModeOverrideCollection(field: InstanceOverrideField): string | undefined {
+  return field.startsWith(VARIABLE_MODE_FIELD_PREFIX)
+    ? field.slice(VARIABLE_MODE_FIELD_PREFIX.length)
+    : undefined
 }
 
 /** Remap runtime identities only; ordinary strings and source-format payloads stay opaque. */
@@ -102,11 +132,24 @@ export function remapInstanceOverrideState(
   const remapValue = (field: string, value: unknown): unknown => {
     if (typeof value !== 'string') return structuredClone(value)
     if (field === 'componentId' || field === 'sourceComponentId') return references.node(value)
-    if (field.startsWith('boundVariables/')) return references.variable(value)
+    if (overriddenBindingField(field) !== null) return references.variable(value)
     return value
   }
+  const remapField = (field: string): string | undefined => {
+    const collection = variableModeOverrideCollection(field)
+    if (collection === undefined || !references.collection) {
+      return field
+    }
+    const mapped = references.collection(collection)
+    return mapped === undefined ? undefined : variableModeOverrideField(mapped)
+  }
   const fields = (entries: ReadonlyMap<string, unknown>) =>
-    new Map([...entries].map(([field, value]) => [field, remapValue(field, value)]))
+    new Map(
+      [...entries].flatMap(([field, value]) => {
+        const mapped = remapField(field)
+        return mapped === undefined ? [] : [[mapped, remapValue(field, value)] as const]
+      })
+    )
   const descendants = new Map<string, Map<string, unknown>>()
   for (const [id, entries] of state.descendants) {
     const mapped = references.node(id)
@@ -123,6 +166,19 @@ export function getInstanceOverride(
   field: InstanceOverrideField
 ): unknown {
   return nodeId === instanceId ? state.self.get(field) : state.descendants.get(nodeId)?.get(field)
+}
+
+/**
+ * The component layer a layer of an instance copies: the one its instance recorded for it, as
+ * a swapped nested instance keeps, or else the one it was cloned from.
+ */
+export function copiedComponentLayerId(
+  state: InstanceOverrideState,
+  instanceId: string,
+  node: { id: string; componentId: string | null }
+): string | undefined {
+  const recorded = getInstanceOverride(state, instanceId, node.id, 'sourceComponentId')
+  return typeof recorded === 'string' ? recorded : (node.componentId ?? undefined)
 }
 
 export function hasInstanceOverride(

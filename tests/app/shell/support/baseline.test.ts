@@ -3,6 +3,8 @@ import { readFile } from 'node:fs/promises'
 
 import * as v from 'valibot'
 
+import { repoPath } from '@open-pencil/test-support/paths'
+
 import {
   BASELINE_ECMASCRIPT_LIB,
   BROWSER_BASELINE,
@@ -12,9 +14,6 @@ import {
   viteBuildTarget,
   type BaselineBrowser
 } from '@/app/shell/support/baseline'
-
-import { repoPath } from '#tests/helpers/paths'
-
 const BROWSERS = Object.keys(BROWSER_BASELINE) as BaselineBrowser[]
 
 const oxlintSettingsSchema = v.object({

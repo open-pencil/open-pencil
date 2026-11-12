@@ -1,49 +1,127 @@
-import { readFile, writeFile } from 'node:fs/promises'
+import { readFile, realpath } from 'node:fs/promises'
+import { dirname, isAbsolute, relative, resolve, sep } from 'node:path'
 
-import { SkiaRenderer } from '@open-pencil/core/canvas'
+import type { SkiaRenderer } from '@open-pencil/core/canvas'
+import { flushPendingComponentSync } from '@open-pencil/core/figma-api'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { populateAllFigPages, populateFigPage } from '@open-pencil/core/io/formats/fig'
+import {
+  figThumbnailPageId,
+  pendingFigPageOfNode,
+  populateAllFigPages,
+  populateFigPage
+} from '@open-pencil/core/io/formats/fig'
 import { headlessHTMLReader } from '@open-pencil/core/io/formats/html/import'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
-import { computeAllLayouts, installTextMeasurer } from '@open-pencil/core/layout'
+import { headlessRenderer } from '@open-pencil/core/io/formats/raster'
+import {
+  computeAllLayouts,
+  installTextMeasurer,
+  sizeAutoResizingText
+} from '@open-pencil/core/layout'
+import { writeFileAtomic } from '@open-pencil/core/node/fs'
+import {
+  installTextInkMeasurer,
+  prepareGraphFonts,
+  type DocumentFontStatus
+} from '@open-pencil/core/text'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { collectSceneMutation } from '@open-pencil/scene-graph/mutation-impact'
 
+import type { RequestedPage } from '#cli/app/target'
 import { printError } from '#cli/format'
-
-export { initCanvasKit }
 
 /** The document formats the CLI reads and writes, with HTML read by the headless CSS runtime. */
 export const CLI_IO_FORMATS = [...BUILTIN_IO_FORMATS, headlessHTMLReader]
 
 const io = new IORegistry(CLI_IO_FORMATS)
 
+/**
+ * Reads a file a document names relative to itself, only from the document's folder: a path that
+ * leaves it, through `..` or a link, reads nothing.
+ */
+function documentAssetReader(filePath: string) {
+  return async (path: string): Promise<Uint8Array | null> => {
+    const folder = await realpath(dirname(filePath))
+    return readWithin(folder, resolve(folder, path))
+  }
+}
+
+/** Whether `path` lies inside the folder `root`, which may be the filesystem root. */
+function isInside(root: string, path: string): boolean {
+  const rel = relative(root, path)
+  return rel !== '' && rel !== '..' && !rel.startsWith(`..${sep}`) && !isAbsolute(rel)
+}
+
+/** The file at `path`, when it really lies inside `root`; null otherwise. */
+async function readWithin(root: string, path: string): Promise<Uint8Array | null> {
+  const target = await realpath(path).catch(() => null)
+  if (!target || !isInside(root, target)) return null
+  return new Uint8Array(await readFile(target))
+}
+
+/**
+ * Reads a document a document imports, such as a `.pen` library in a sibling folder, and the
+ * files it names. Imports may leave the document's folder, but not the working directory, which a
+ * repository's tooling runs from; a document outside the working directory imports only from its
+ * own folder.
+ */
+function documentImportReader(filePath: string) {
+  return async (path: string): Promise<Uint8Array | null> => {
+    const folder = await realpath(dirname(filePath))
+    const cwd = await realpath(process.cwd())
+    const root = folder === cwd || isInside(cwd, folder) ? cwd : folder
+    return readWithin(root, resolve(folder, path))
+  }
+}
+
 export async function loadDocument(filePath: string): Promise<SceneGraph> {
   const bytes = new Uint8Array(await readFile(filePath))
-  const { graph } = await io.readDocument({ name: filePath, data: bytes })
+  // A format laid out as it is read places its layers by their text's size, which is measured
+  // as an export draws it rather than estimated.
+  if (io.findReader(filePath)?.laysOutOnRead) await measureTextHeadlessly()
+  const { graph } = await io.readDocument({
+    name: filePath,
+    data: bytes,
+    readAsset: documentAssetReader(filePath),
+    readImport: documentImportReader(filePath)
+  })
   graph.applyDerivedLayoutDuring(() => computeAllLayouts(graph))
   return graph
 }
 
-let textMeasurer: Promise<void> | null = null
+let textMeasurer: Promise<SkiaRenderer> | null = null
 
 /**
  * Measure text a script or tool lays out with CanvasKit and the fonts it loads, as the app
  * does, instead of the estimate that knows neither line breaks nor wrapping. The document as
- * loaded keeps the layout its file gives it; only edits made afterwards are measured.
+ * loaded keeps the layout its file gives it; only edits made afterwards are measured. Resolves
+ * to the renderer that measures, which also measures geometry for the Figma API.
  */
-export function measureTextHeadlessly(): Promise<void> {
+export function measureTextHeadlessly(): Promise<SkiaRenderer> {
   textMeasurer ??= (async () => {
-    const ck = await initCanvasKit()
-    const surface = ck.MakeSurface(1, 1)
-    if (!surface) throw new Error('CanvasKit could not make a surface to measure text')
-    const renderer = new SkiaRenderer(ck, surface)
-    await renderer.loadFonts()
+    const renderer = await headlessRenderer()
     installTextMeasurer((node, maxWidth) => renderer.measureTextNode(node, maxWidth))
+    // Bounds take a text by its ink, as the app's do, for exports and absoluteRenderBounds.
+    installTextInkMeasurer((node) => renderer.measureTextInk(node))
+    return renderer
   })().catch((error: unknown) => {
     textMeasurer = null
     throw error
   })
   return textMeasurer
+}
+
+/**
+ * Measures the text an edit to `graph` lays out as `measureTextHeadlessly` does, in the fonts the
+ * document uses: a weight or family the measurer does not start with is otherwise measured in a
+ * stand-in, and the edited layer comes out taller or wider than the app draws it. Returns which
+ * of those fonts could not be loaded.
+ */
+export async function measureDocumentText(graph: SceneGraph): Promise<DocumentFontStatus> {
+  await measureTextHeadlessly()
+  return prepareGraphFonts(
+    graph,
+    graph.getPages(true).map((page) => page.id)
+  )
 }
 
 /** `--write` and `--output` for commands that change a headless document. */
@@ -52,10 +130,18 @@ export const documentWriteOptions = {
   output: { type: 'string', alias: 'o', description: 'Write to a different file', required: false }
 } as const
 
-/** Save a headless document as `.fig`, as `eval --write` and `diff apply --write` do. */
+/** Save a headless document as `.fig`, with the thumbnail `export --format fig` renders. */
 export async function writeFigDocument(graph: SceneGraph, filePath: string): Promise<void> {
-  const result = await io.writeDocument('fig', graph)
-  await writeFile(filePath, result.data as Uint8Array)
+  // The thumbnail draws the Cover page, which a script run on one page may not have loaded.
+  const cover = figThumbnailPageId(graph.getPages())
+  if (cover) await loadDocumentPage(graph, cover)
+  const result = await io.writeDocument('fig', graph, { renderThumbnail: true })
+  await writeFileAtomic(filePath, result.data, { symlink: 'follow' })
+}
+
+/** Loads a page not loaded yet with the fonts its text uses, as the editor prepares a page. */
+export async function loadDocumentPage(graph: SceneGraph, pageId: string): Promise<void> {
+  if (populateDocumentPage(graph, pageId)) await prepareGraphFonts(graph, [pageId])
 }
 
 export function populateDocumentPage(graph: SceneGraph, pageId: string): boolean {
@@ -70,6 +156,16 @@ export function populateWholeDocument(graph: SceneGraph): boolean {
   return changed
 }
 
+/**
+ * Loads the page holding the layer `nodeId`, which the archive finds by the layer's record, and
+ * every page for a layer with no record of its own, such as one inside an instance.
+ */
+export async function populateNodePage(graph: SceneGraph, nodeId: string): Promise<void> {
+  const pageId = await pendingFigPageOfNode(graph, nodeId)
+  if (pageId) populateDocumentPage(graph, pageId)
+  else if (!graph.getNode(nodeId)) populateWholeDocument(graph)
+}
+
 /** A string argument of an RPC command, such as its `page` or `format`. */
 function stringArg(args: unknown, key: string): string | undefined {
   if (!args || typeof args !== 'object' || Array.isArray(args)) return undefined
@@ -77,9 +173,22 @@ function stringArg(args: unknown, key: string): string | undefined {
   return typeof value === 'string' ? value : undefined
 }
 
-function populateRequestedPage(graph: SceneGraph, pageName?: string): void {
-  const pages = graph.getPages()
-  const page = pageName ? pages.find((candidate) => candidate.name === pageName) : pages[0]
+/** The page an RPC command's `page_id` or `page` names, as the command picks it. */
+function rpcPage(args: unknown): RequestedPage | undefined {
+  const id = stringArg(args, 'page_id')
+  if (id) return { id }
+  const name = stringArg(args, 'page')
+  return name ? { name } : undefined
+}
+
+function findPage(graph: SceneGraph, page: RequestedPage) {
+  return graph
+    .getPages()
+    .find((candidate) => ('id' in page ? candidate.id === page.id : candidate.name === page.name))
+}
+
+function populateRequestedPage(graph: SceneGraph, requested?: RequestedPage): void {
+  const page = requested ? findPage(graph, requested) : graph.getPages()[0]
   if (page) populateDocumentPage(graph, page.id)
 }
 
@@ -87,30 +196,54 @@ export function prepareDocumentForRPC(graph: SceneGraph, command: string, args?:
   if (command === 'pages' || command === 'variables') return
   // A stylesheet holds only variables, which load with the document; pages can take minutes.
   if (command === 'tokens' && stringArg(args, 'format') !== 'dtcg') return
-  if (command === 'tree') {
-    populateRequestedPage(graph, stringArg(args, 'page'))
+  if (command === 'tree' || command === 'analyze_overlaps') {
+    populateRequestedPage(graph, rpcPage(args))
     return
   }
   if (command === 'find' || command === 'query') {
-    const pageName = stringArg(args, 'page')
-    if (pageName) populateRequestedPage(graph, pageName)
+    const page = rpcPage(args)
+    if (page) populateRequestedPage(graph, page)
     else populateWholeDocument(graph)
     return
   }
   populateWholeDocument(graph)
 }
 
-export function requirePage(graph: SceneGraph, pageName?: string) {
+/** The page `--page` or `--page-id` names, or the first page without either. */
+export function requirePage(graph: SceneGraph, requested?: RequestedPage) {
   const pages = graph.getPages()
-  const page = pageName ? pages.find((p) => p.name === pageName) : pages[0]
+  const page = requested ? findPage(graph, requested) : pages[0]
   if (!page) {
-    const available = pages.map((p) => `"${p.name}"`).join(', ')
+    const label = requested && ('id' in requested ? requested.id : requested.name)
+    const available = pages
+      .map((p) => `"${requested && 'id' in requested ? p.id : p.name}"`)
+      .join(', ')
     printError(
-      pageName
-        ? `Page "${pageName}" not found. Available pages: ${available || 'none'}.`
+      label
+        ? `Page "${label}" not found. Available pages: ${available || 'none'}.`
         : 'Document has no pages.'
     )
     process.exit(1)
   }
   return page
+}
+
+/**
+ * Runs `edit` on `graph`, then loads the fonts the text it touched needs and sizes that text again
+ * in them. Text is sized as it is edited, before the fonts for new characters (Japanese in a
+ * Latin-only web font, say) can load, so without this it would save the size and glyphs of a
+ * stand-in.
+ */
+export async function editDocument<T>(graph: SceneGraph, edit: () => T | Promise<T>): Promise<T> {
+  // Instances follow the components the edit changed, as the editor syncs them after an edit.
+  const { result, impact } = await collectSceneMutation(graph, async () => {
+    const value = await edit()
+    flushPendingComponentSync(graph)
+    return value
+  })
+  const textIds = [...impact.changedNodeIds].filter((id) => graph.getNode(id)?.type === 'TEXT')
+  if (textIds.length === 0) return result
+  await prepareGraphFonts(graph, textIds)
+  for (const id of textIds) sizeAutoResizingText(graph, id)
+  return result
 }

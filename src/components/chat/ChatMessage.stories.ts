@@ -54,22 +54,22 @@ const partlyUndoneMessage: UIMessage = {
   metadata: {
     undo: {
       edits: [
-        { tool: 'node_resize', toolCallId: 'resize' },
-        { tool: 'set_opacity', toolCallId: 'fade' }
+        { tool: 'update_node', toolCallId: 'resize' },
+        { tool: 'update_node', toolCallId: 'fade' }
       ],
       undone: ['fade']
     }
   },
   parts: [
     {
-      type: 'tool-node_resize',
+      type: 'tool-update_node',
       toolCallId: 'resize',
       state: 'output-available',
       input: { id: '0:1', width: 200, height: 60 },
       output: { id: '0:1' }
     },
     {
-      type: 'tool-set_opacity',
+      type: 'tool-update_node',
       toolCallId: 'fade',
       state: 'output-available',
       input: { id: '0:1', value: 0.5 },
@@ -82,6 +82,7 @@ const partlyUndoneMessage: UIMessage = {
 type ChatMessageStoryArgs = {
   message: UIMessage
   streaming?: boolean
+  canRegenerate?: boolean
 }
 
 const meta = {
@@ -123,5 +124,35 @@ export const PartlyUndone: Story = {
       '[data-slot="chat-tool-call"][data-undone="true"]'
     )
     await expect(undone).toHaveLength(1)
+  }
+}
+
+/** A finished reply with the tokens it used, which the default setting shows on hover. */
+export const WithUsage: Story = {
+  args: {
+    message: {
+      id: 'usage-message',
+      role: 'assistant',
+      parts: [
+        {
+          type: 'text',
+          text: 'I added two more rectangles, green and magenta, each 160×120 with 8px corners. They sit in a second row under the first pair, and I zoomed the view to show all four rectangles.'
+        }
+      ],
+      metadata: {
+        usage: {
+          contextTokens: 29_300,
+          inputTokens: 28_700,
+          outputTokens: 609,
+          cacheReadTokens: null
+        }
+      }
+    },
+    canRegenerate: true
+  },
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement.querySelector('[data-slot="chat-reply-usage"]')).toHaveTextContent(
+      '28.7K in · 609 out'
+    )
   }
 }

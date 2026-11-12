@@ -11,7 +11,7 @@ import * as v from 'valibot'
 import type { AutomationDocumentSummary } from '@open-pencil/core/rpc'
 import { removeDiscoveryFile, writeDiscoveryFile } from '@open-pencil/mcp/discovery'
 
-import exportCommand from '#cli/commands/export'
+import exportCommand from '#cli/commands/export/index'
 
 const rpcRequestSchema = v.pipe(
   v.string(),

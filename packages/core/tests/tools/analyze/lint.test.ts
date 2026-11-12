@@ -1,10 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getNodeOrThrow } from '#core-tests/helpers/assert'
-
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 function tool(name: string) {
   const def = ALL_TOOLS.find((candidate) => candidate.name === name)

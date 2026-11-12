@@ -10,17 +10,17 @@ import {
 import { CLOUD_FEATURE_KEYS, type CloudPolicyContext } from './keys'
 
 const DEFAULT_FLAGS = {
-  [CLOUD_FEATURE_KEYS.capabilityLinks]: {
+  [CLOUD_FEATURE_KEYS.links]: {
     variants: { enabled: true, disabled: false },
     defaultVariant: 'enabled',
     disabled: false
   },
-  [CLOUD_FEATURE_KEYS.anonymousView]: {
+  [CLOUD_FEATURE_KEYS.guestView]: {
     variants: { enabled: true, disabled: false },
     defaultVariant: 'enabled',
     disabled: false
   },
-  [CLOUD_FEATURE_KEYS.anonymousEdit]: {
+  [CLOUD_FEATURE_KEYS.guestEdit]: {
     variants: { enabled: true, disabled: false },
     defaultVariant: 'enabled',
     disabled: false
@@ -57,6 +57,7 @@ function evaluationContext(context: CloudPolicyContext): EvaluationContext {
     targetingKey: context.targetingKey,
     deploymentMode: context.deploymentMode
   }
+  evaluation.subjectType = context.subjectType
   if (context.actorId) evaluation.actorId = context.actorId
   if (context.workspaceId) evaluation.workspaceId = context.workspaceId
   if (context.organizationId) evaluation.organizationId = context.organizationId

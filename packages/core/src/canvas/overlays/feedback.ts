@@ -1,11 +1,13 @@
-import type { Canvas } from 'canvaskit-wasm'
-
+import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { CONNECTOR_LABEL_PADDING, labelledConnector } from '@open-pencil/scene-graph/connectors'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 
+import { paintFills } from '#core/canvas/fills'
 import { drawNodeHighlightRect } from '#core/canvas/highlight-rect'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
+import { connectorLabelPlaceholderNode } from '#core/canvas/text/placeholder'
 import {
   DROP_HIGHLIGHT_ALPHA,
   DROP_HIGHLIGHT_STROKE,
@@ -22,6 +24,7 @@ import {
 import { createSceneGeometry, type RotationPreview } from '#core/geometry'
 
 import { inNodeSpace, outlineNode } from './outline'
+import { drawTextEditOverlay } from './text-edit'
 
 export function drawSnapGuides(r: SkiaRenderer, canvas: Canvas, guides?: SnapGuide[]): void {
   if (!guides || guides.length === 0) return
@@ -65,7 +68,7 @@ export function drawSnapMarks(r: SkiaRenderer, canvas: Canvas, guides?: SnapGuid
 function vertexSnapPaint(r: SkiaRenderer, alpha: number) {
   const { r: red, g, b } = VERTEX_SNAP_COLOR
   r.auxStroke.setStrokeWidth(1)
-  r.auxStroke.setColor(r.ck.Color4f(red, g, b, alpha))
+  r.auxStroke.setColorComponents(red, g, b, alpha)
   return r.auxStroke
 }
 
@@ -84,16 +87,16 @@ export function drawMarquee(r: SkiaRenderer, canvas: Canvas, marquee?: Rect | nu
 }
 
 export function drawFlashes(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph): void {
-  if (r._flashes.length === 0) return
+  if (r.feedback.flashes.length === 0) return
 
   const now = performance.now()
   const totalMs = FLASH_ATTACK_MS + FLASH_HOLD_MS + FLASH_RELEASE_MS
 
-  for (let i = r._flashes.length - 1; i >= 0; i--) {
-    const flash = r._flashes[i]
+  for (let i = r.feedback.flashes.length - 1; i >= 0; i--) {
+    const flash = r.feedback.flashes[i]
     const elapsed = now - flash.startTime
     if (elapsed > totalMs) {
-      r._flashes.splice(i, 1)
+      r.feedback.flashes.splice(i, 1)
       continue
     }
 
@@ -125,7 +128,7 @@ export function drawFlashes(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph):
         extraPad
       )
     ) {
-      r._flashes.splice(i, 1)
+      r.feedback.flashes.splice(i, 1)
     }
   }
 }
@@ -176,7 +179,21 @@ export function drawEditingText(
   const node = overlays.editingTextId ? graph.getNode(overlays.editingTextId) : undefined
   const editor = overlays.textEditor
   if (!node || !editor?.state?.paragraph) return
-  inNodeSpace(r, canvas, createSceneGeometry(graph, overlays.rotationPreview), node, () =>
-    r.drawTextEditOverlay(canvas, node, editor)
+  // A connector label is outlined by its plate, as FigJam outlines it, and shows its
+  // placeholder while it is empty.
+  const outset = labelledConnector(graph, node) ? CONNECTOR_LABEL_PADDING : 0
+  const placeholder = connectorLabelPlaceholderNode(
+    graph,
+    node,
+    r.connectorLabelPlaceholder,
+    node.id
   )
+  inNodeSpace(r, canvas, createSceneGeometry(graph, overlays.rotationPreview), node, () => {
+    if (placeholder) {
+      paintFills(r, placeholder.fills, placeholder, graph, (fill) =>
+        r.renderText(canvas, placeholder, fill)
+      )
+    }
+    drawTextEditOverlay(r, canvas, node, editor, outset)
+  })
 }

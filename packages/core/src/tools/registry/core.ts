@@ -12,11 +12,12 @@ import {
   setTextProperties,
   updateNode
 } from '#core/tools/modify'
-import { diffJSX, findNodes, getJSX, getNode, getSelection } from '#core/tools/read'
+import { findNodes, getJSX, getNode, getSelection } from '#core/tools/read'
 import type { ToolDef } from '#core/tools/schema'
 import { stockPhoto } from '#core/tools/stock-photo'
-import { batchUpdate, deleteNode, nodeResize, reparentNode } from '#core/tools/structure'
+import { batchUpdate, deleteNodes, reparentNode } from '#core/tools/structure'
 import { viewportZoomToFit } from '#core/tools/vector'
+import { webSearch } from '#core/tools/web-search'
 
 /**
  * Core tools registered by default in AI chat (26 tools, ~5K schema tokens).
@@ -40,17 +41,16 @@ export const CORE_TOOLS: ToolDef[] = [
   setText,
   setTextProperties,
   // Structure
-  deleteNode,
+  deleteNodes,
   reparentNode,
-  nodeResize,
   batchUpdate,
-  // Stock photos
+  // Stock photos and the web
   stockPhoto,
+  webSearch,
   // Inspect & utility
   describe,
   diffChanges,
   diffCreate,
-  diffJSX,
   diffVisual,
   calc,
   evalCode,

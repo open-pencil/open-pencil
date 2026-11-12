@@ -1,4 +1,4 @@
-export type OutboxJobType = 'putCanvas' | 'putThumb' | 'deleteCanvas'
+export type OutboxJobType = 'putCanvas' | 'deleteCanvas'
 
 export type OutboxJob = {
   id: string

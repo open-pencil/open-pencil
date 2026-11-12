@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
+import { PopoverContent, PopoverPortal, PopoverTrigger } from 'reka-ui'
+import { tv } from 'tailwind-variants'
 import { computed, useId } from 'vue'
 
 import { useCollaborationMessages } from '@open-pencil/vue/i18n'
@@ -10,12 +11,15 @@ import type { PresencePersonRow } from '@/components/presence/rows'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
-import { voiceCall } from '@/theme/collaboration/voice-call'
+import voiceCallTheme from '@/theme/collaboration/voice-call'
 
 import type { VoiceDeviceOption } from './useVoiceCallControl'
+
+const voiceCall = tv(voiceCallTheme)
 
 /**
  * A room's voice call beside the avatar stack: the button that starts or joins it, mute while in
@@ -119,7 +123,7 @@ function onOpenChange(open: boolean) {
       <icon-lucide-mic v-else class="size-3.5" />
     </IconButton>
 
-    <PopoverRoot @update:open="onOpenChange">
+    <AppPopoverRoot @update:open="onOpenChange">
       <PopoverTrigger as-child>
         <IconButton :label="triggerLabel" side="bottom" :class="ui.trigger()">
           <icon-lucide-chevron-down v-if="inCall" :class="ui.chevron()" />
@@ -199,6 +203,6 @@ function onOpenChange(open: boolean) {
           </AppButton>
         </PopoverContent>
       </PopoverPortal>
-    </PopoverRoot>
+    </AppPopoverRoot>
   </div>
 </template>

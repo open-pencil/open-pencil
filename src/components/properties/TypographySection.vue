@@ -6,14 +6,17 @@ import { useI18n } from '@open-pencil/vue/i18n'
 import { TypographyControlsRoot } from '@open-pencil/vue/primitives/TypographyControls'
 
 import { loadFont } from '@/app/editor/fonts'
+import { openSettingsDialog } from '@/app/settings/dialog'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import FontPicker from '@/components/font-picker/FontPicker.vue'
-import FontSettingsPopover from '@/components/font-settings/FontSettingsPopover.vue'
 import NumberField from '@/components/inputs/NumberField.vue'
 import SharedStyleField from '@/components/properties/shared-style/SharedStyleField.vue'
+import FontAxisField from '@/components/properties/typography/FontAxisField.vue'
+import LetterSpacingField from '@/components/properties/typography/LetterSpacingField.vue'
 import LineHeightField from '@/components/properties/typography/LineHeightField.vue'
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import LeftToRight from '@/components/ui/direction/LeftToRight.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
@@ -22,7 +25,7 @@ import AppSelect from '@/components/ui/select/AppSelect.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
-const { panels, menu } = useI18n()
+const { panels, menu, fonts } = useI18n()
 const fontLoader = { load: loadFont }
 const alignmentOptions = computed(() => [
   { value: 'LEFT', label: panels.value.alignLeft },
@@ -87,7 +90,15 @@ function picked<T>(value: MixedValue<T>): T | '' {
           :placeholder="panels.mixed"
           @select="ctx.actions.setFamily"
         />
-        <FontSettingsPopover />
+        <!-- Where fonts come from is an app preference; it lives in Settings. -->
+        <IconButton
+          :label="fonts.settingsTitle"
+          size="xs"
+          data-test-id="font-settings-trigger"
+          @click="openSettingsDialog('fonts')"
+        >
+          <icon-lucide-settings class="size-3.5" />
+        </IconButton>
         <Tip
           v-if="ctx.hasMissingFonts.value"
           :label="
@@ -114,10 +125,10 @@ function picked<T>(value: MixedValue<T>): T | '' {
         <PanelFieldGroup :label="panels.fontWeight">
           <AppSelect
             :label="panels.fontWeight"
-            :model-value="picked(ctx.merged('fontWeight'))"
-            :options="ctx.weights.value"
+            :model-value="picked(ctx.faceName.value)"
+            :options="ctx.faces.value"
             :placeholder="panels.mixed"
-            @update:model-value="ctx.actions.setWeight(+$event)"
+            @update:model-value="ctx.actions.setFace(String($event))"
           />
         </PanelFieldGroup>
         <PanelFieldGroup :label="panels.fontSize">
@@ -135,29 +146,40 @@ function picked<T>(value: MixedValue<T>): T | '' {
         </PanelFieldGroup>
       </PanelGrid>
 
+      <PanelGrid
+        v-if="ctx.axes.value.length > 0"
+        :columns="2"
+        class="mb-3"
+        data-property="variable-axes"
+      >
+        <PanelFieldGroup v-for="axis in ctx.axes.value" :key="axis.tag" :label="axis.name">
+          <FontAxisField
+            :axis="axis"
+            :optical-size-auto="ctx.opticalSizeAuto.value"
+            @preview="ctx.actions.previewAxis(axis.tag, $event)"
+            @commit="ctx.actions.setAxis(axis.tag, $event)"
+            @cancel="ctx.actions.cancelAxis()"
+            @update:optical-size-auto="ctx.actions.setOpticalSizeAuto($event)"
+          />
+        </PanelFieldGroup>
+      </PanelGrid>
+
       <PanelGrid :columns="2" class="mb-3">
         <PanelFieldGroup :label="panels.lineHeight">
           <LineHeightField
             :nodes="ctx.nodes.value"
             @update="ctx.actions.updateProp('lineHeight', $event)"
             @commit="(v, p) => ctx.actions.commitProp('lineHeight', v, p)"
+            @cancel="ctx.actions.cancelProp('lineHeight')"
           />
         </PanelFieldGroup>
         <PanelFieldGroup :label="panels.letterSpacing">
-          <VariableNumberField
-            suffix="px"
-            :model-value="ctx.merged('letterSpacing')"
-            :aria-label="panels.letterSpacing"
-            :node-id="ctx.node.value.id"
-            :node-ids="ctx.nodes.value.map((text) => text.id)"
-            binding-path="letterSpacing"
-            @update:model-value="ctx.actions.updateProp('letterSpacing', $event)"
-            @commit="(v: number, p: number) => ctx.actions.commitProp('letterSpacing', v, p)"
-          >
-            <template #icon>
-              <icon-lucide-a-large-small class="size-3" />
-            </template>
-          </VariableNumberField>
+          <LetterSpacingField
+            :nodes="ctx.nodes.value"
+            @update="ctx.actions.updateProp('letterSpacing', $event)"
+            @commit="(v, p) => ctx.actions.commitProp('letterSpacing', v, p)"
+            @cancel="ctx.actions.cancelProp('letterSpacing')"
+          />
         </PanelFieldGroup>
       </PanelGrid>
 
@@ -177,19 +199,21 @@ function picked<T>(value: MixedValue<T>): T | '' {
         </PanelFieldGroup>
 
         <PanelFieldGroup :label="panels.textAlignment" class="mb-3">
-          <SegmentedControl
-            :model-value="picked(ctx.merged('textAlignHorizontal'))"
-            :options="alignmentOptions"
-            :label="panels.textAlignment"
-            @change="ctx.actions.align($event as 'LEFT' | 'CENTER' | 'RIGHT' | 'JUSTIFIED')"
-          >
-            <template #option="{ option }">
-              <icon-lucide-align-left v-if="option.value === 'LEFT'" class="size-3.5" />
-              <icon-lucide-align-center v-else-if="option.value === 'CENTER'" class="size-3.5" />
-              <icon-lucide-align-right v-else-if="option.value === 'RIGHT'" class="size-3.5" />
-              <icon-lucide-align-justify v-else class="size-3.5" />
-            </template>
-          </SegmentedControl>
+          <LeftToRight>
+            <SegmentedControl
+              :model-value="picked(ctx.merged('textAlignHorizontal'))"
+              :options="alignmentOptions"
+              :label="panels.textAlignment"
+              @change="ctx.actions.align($event as 'LEFT' | 'CENTER' | 'RIGHT' | 'JUSTIFIED')"
+            >
+              <template #option="{ option }">
+                <icon-lucide-align-left v-if="option.value === 'LEFT'" class="size-3.5" />
+                <icon-lucide-align-center v-else-if="option.value === 'CENTER'" class="size-3.5" />
+                <icon-lucide-align-right v-else-if="option.value === 'RIGHT'" class="size-3.5" />
+                <icon-lucide-align-justify v-else class="size-3.5" />
+              </template>
+            </SegmentedControl>
+          </LeftToRight>
         </PanelFieldGroup>
 
         <PanelFieldGroup :label="panels.verticalTextAlignment" class="mb-3">
@@ -377,7 +401,7 @@ function picked<T>(value: MixedValue<T>): T | '' {
         <label
           v-for="feature in commonFeatures"
           :key="feature.tag"
-          class="flex items-center justify-between gap-1.5 text-[11px] text-muted"
+          class="flex items-center justify-between gap-1.5 text-2xs text-muted"
         >
           <span>{{ feature.label }}</span>
           <AppSwitch

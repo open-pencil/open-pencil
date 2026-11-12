@@ -32,6 +32,7 @@
   "noResults": "結果がありません",
   "save": "保存",
   "done": "完了",
+  "task": "タスク",
   "back": "戻る",
   "supported": "対応",
   "unsupported": "非対応",
@@ -40,5 +41,6 @@
   "dismiss": "閉じる",
   "browserSupport": "ブラウザーの対応状況を確認",
   "showPassword": "パスワードを表示",
-  "hidePassword": "パスワードを隠す"
+  "hidePassword": "パスワードを隠す",
+  "typeToConfirm": "確認のため「{text}」と入力してください。"
 }

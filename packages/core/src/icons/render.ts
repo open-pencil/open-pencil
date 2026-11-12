@@ -1,5 +1,4 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { parseColor } from '@open-pencil/scene-graph/color'
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import {
   iconGlyph,
@@ -9,21 +8,21 @@ import {
   readIconTint,
   withIcon,
   withIconTint,
+  type IconOptions,
   type IconPaint
 } from '@open-pencil/scene-graph/icons'
+import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import {
   createResizeSnapshot,
   scaledChildRect,
   scaledGeometryChanges
 } from '@open-pencil/scene-graph/resize'
+import { transformVectorNetwork } from '@open-pencil/scene-graph/vector-network'
 
-import { createPathStroke, pathStrokeLineStyle } from '#core/icons/path-style'
+import { createPlacedVector, vectorizedPathPaints } from '#core/vector/vectorize/placement'
 
 import type { IconData, IconPath } from './types'
-
-/** The paint an SVG uses for the icon's own color. */
-const CURRENT_COLOR = 'currentColor'
 
 export interface PlaceIconOptions {
   size: number
@@ -38,43 +37,26 @@ export interface PlaceIconOptions {
   identity?: boolean
 }
 
-function solid(color: Color) {
-  return [{ type: 'SOLID' as const, color, opacity: 1, visible: true }]
-}
-
-/** One path of an icon as a vector filling the icon's box, marked where the icon's color paints. */
-function addPath(graph: SceneGraph, frameId: string, path: IconPath, size: number, color: Color) {
-  const tint: IconPaint[] = []
-  const paint = (value: string, kind: IconPaint) => {
-    if (value !== CURRENT_COLOR) return parseColor(value)
-    tint.push(kind)
-    return color
-  }
-  const vector = graph.createNode('VECTOR', frameId, {
+/**
+ * One path of an icon as a vector at its own bounds, as SVG import places it, scaling with the
+ * frame. Its tinted paints take the icon's `color`, and the vector records which they are.
+ */
+function addPath(graph: SceneGraph, frameId: string, path: IconPath, color: Color) {
+  const tinted = (kind: IconPaint) => path.tint.includes(kind)
+  const vector = createPlacedVector(graph, frameId, path.vectorNetwork, {
     name: 'path',
-    x: 0,
-    y: 0,
-    width: size,
-    height: size,
-    vectorNetwork: path.vectorNetwork,
     // Resizing the icon resizes its glyph, as the frame is the icon.
     horizontalConstraint: 'SCALE',
     verticalConstraint: 'SCALE',
-    fills: path.fill ? solid(paint(path.fill, 'fill')) : []
-  })
-  if (path.stroke) {
-    const stroke = createPathStroke(
-      paint(path.stroke, 'stroke'),
-      path.strokeWidth,
-      path.strokeCap,
-      path.strokeJoin
-    )
-    graph.updateNode(vector.id, { strokes: [stroke], ...pathStrokeLineStyle(stroke) })
-  }
-  if (tint.length > 0)
-    graph.updateNode(vector.id, {
-      pluginData: withIconTint(graph.getNode(vector.id) ?? vector, tint)
+    ...vectorizedPathPaints({
+      fills: tinted('fill') ? path.fills.map((fill) => ({ ...fill, color })) : path.fills,
+      strokes: tinted('stroke')
+        ? path.strokes.map((stroke) => ({ ...stroke, color }))
+        : path.strokes
     })
+  })
+  if (vector && path.tint.length > 0)
+    graph.updateNode(vector.id, { pluginData: withIconTint(vector, path.tint) })
 }
 
 /**
@@ -95,17 +77,47 @@ export function placeIcon(
     fills: [],
     ...overrides
   })
-  for (const path of icon.paths) addPath(graph, frame.id, path, size, color)
-  if (identity) recordIcon(graph, frame.id, name)
+  for (const path of icon.paths) addPath(graph, frame.id, path, color)
+  if (identity) recordIcon(graph, frame.id, name, icon.options)
   return graph.getNode(frame.id) ?? frame
 }
 
-/** Writes the icon `name` on its frame with a fingerprint of the paths it draws now. */
-function recordIcon(graph: SceneGraph, frameId: string, name: string): void {
+/** An icon's paths, scaled from the size they were built at to `size`. */
+function scaledPaths(icon: IconData, size: number): IconPath[] {
+  const scale = size / Math.max(icon.width, icon.height)
+  if (scale === 1) return icon.paths
+  return icon.paths.map((path) => ({
+    ...path,
+    vectorNetwork: transformVectorNetwork(Matrix.scaled(scale, scale), path.vectorNetwork),
+    strokes: path.strokes.map((stroke) => ({ ...stroke, weight: stroke.weight * scale }))
+  }))
+}
+
+/**
+ * Draws an icon into a frame that already exists, `size` square at its origin, and records the
+ * icon on it, as for one placed with {@link placeIcon}. The icon may have been built at any size.
+ */
+export function drawIcon(
+  graph: SceneGraph,
+  frameId: string,
+  icon: IconData,
+  size: number,
+  color: Color
+): void {
+  for (const path of scaledPaths(icon, size)) addPath(graph, frameId, path, color)
+  recordIcon(graph, frameId, `${icon.prefix}:${icon.name}`, icon.options)
+}
+
+/**
+ * Writes the icon `name` on its frame with a fingerprint of the paths it draws now, and how a set
+ * we draw ourselves drew it.
+ */
+function recordIcon(graph: SceneGraph, frameId: string, name: string, options?: IconOptions): void {
   const frame = graph.getNode(frameId)
   if (!frame) return
   const glyph = iconGlyph(graph, frame)
-  graph.updateNode(frameId, { pluginData: withIcon(frame, { name, glyph }) })
+  const icon = options ? { name, glyph, options } : { name, glyph }
+  graph.updateNode(frameId, { pluginData: withIcon(frame, icon) })
 }
 
 /**
@@ -160,9 +172,9 @@ export function swapIcon(graph: SceneGraph, frameId: string, icon: IconData): vo
     // A layer still named after its icon takes the new icon's name; a name someone gave stays.
     name: previous && isPlacedIconName(frame.name, previous.name) ? iconLayerName(name) : frame.name
   })
-  for (const path of icon.paths) addPath(graph, frameId, path, size, color)
+  for (const path of icon.paths) addPath(graph, frameId, path, color)
   fitPaths(graph, frameId, size)
-  recordIcon(graph, frameId, name)
+  recordIcon(graph, frameId, name, icon.options)
 }
 
 /**

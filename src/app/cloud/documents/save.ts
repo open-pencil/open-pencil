@@ -8,7 +8,7 @@ import {
 import { openCloudConnect } from '../connect/flow'
 import { cloudServerHost } from '../servers/address'
 import { cloudServers, findCloudServer } from '../servers/store'
-import { cloudAPIClient, cloudConnection, refreshCloudConnection } from '../sessions/connection'
+import { cloudAPIClient, checkedCloudConnection, cloudConnection } from '../sessions/connection'
 import { CLOUD_STORAGE_PROVIDER_ID } from '../sessions/token'
 
 /**
@@ -16,10 +16,7 @@ import { CLOUD_STORAGE_PROVIDER_ID } from '../sessions/token'
  * being checked are waited for, so a fresh start does not look signed out.
  */
 export async function cloudSaveDestinations(): Promise<SaveDestination[]> {
-  const checking = cloudServers.value.filter(
-    (server) => cloudConnection(server.id).state === 'checking'
-  )
-  await Promise.all(checking.map((server) => refreshCloudConnection(server)))
+  await Promise.all(cloudServers.value.map((server) => checkedCloudConnection(server)))
   return cloudServers.value.flatMap((server) => {
     const connection = cloudConnection(server.id)
     if (connection.state !== 'signed-in') return []

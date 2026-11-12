@@ -13,7 +13,8 @@ export function setupPanZoom(
   drag: Ref<DragState | null>,
   onMouseDown: (e: MouseEvent) => void,
   onMouseMove: (e: MouseEvent) => void,
-  onMouseUp: () => void
+  onMouseUp: () => void,
+  zoomSpeed: () => number = () => 1
 ) {
   let activeTouches: Touch[] = []
   let pinchStartDist = 0
@@ -143,11 +144,11 @@ export function setupPanZoom(
     }
   }
 
-  setupWheelPanZoom(canvasRef, editor)
+  setupWheelPanZoom(canvasRef, editor, zoomSpeed)
   useEventListener(canvasRef, 'touchstart', onTouchStart, { passive: false })
   useEventListener(canvasRef, 'touchmove', onTouchMove, { passive: false })
   useEventListener(canvasRef, 'touchend', onTouchEnd, { passive: false })
   useEventListener(canvasRef, 'touchcancel', onTouchEnd, { passive: false })
 
-  setupSafariGestureZoom(canvasRef, editor)
+  setupSafariGestureZoom(canvasRef, editor, zoomSpeed)
 }

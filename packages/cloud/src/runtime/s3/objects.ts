@@ -3,6 +3,7 @@ import type { ObjectStore } from '#cloud/server/objects'
 import {
   AbortMultipartUploadCommand,
   CompleteMultipartUploadCommand,
+  CopyObjectCommand,
   CreateMultipartUploadCommand,
   DeleteObjectCommand,
   GetObjectCommand,
@@ -11,7 +12,7 @@ import {
   S3Client,
   UploadPartCommand
 } from '@aws-sdk/client-s3'
-// eslint-disable-next-line open-pencil/no-mixed-case-acronym-identifiers -- Upstream export spelling.
+// eslint-disable-next-line @open-pencil/structure/no-mixed-case-acronym-identifiers -- Upstream export spelling.
 import { getSignedUrl as getSignedURL } from '@aws-sdk/s3-request-presigner'
 
 const CHECKSUM_METADATA_KEY = 'openpencil-sha256'
@@ -68,6 +69,27 @@ export function createS3ObjectStore(config: CloudServerConfig): ObjectStore {
         ...(nativeSHA256 ? { ChecksumMode: 'ENABLED' as const } : {})
       })
     )
+  }
+
+  /**
+   * Copies a file under the deleted prefix before it goes, so it outlives the delete until the
+   * bucket's lifecycle rule expires it. A file already gone, as when a cleanup pass retries, has
+   * nothing to keep.
+   */
+  async function keepDeleted(key: string, prefix: string): Promise<void> {
+    try {
+      await client.send(
+        new CopyObjectCommand({
+          Bucket: config.s3Bucket,
+          Key: `${prefix}${key}`,
+          CopySource: `${config.s3Bucket}/${key.split('/').map(encodeURIComponent).join('/')}`,
+          MetadataDirective: 'COPY',
+          ...encryption(config)
+        })
+      )
+    } catch (error) {
+      if (!isNotFoundError(error)) throw error
+    }
   }
 
   return {
@@ -238,7 +260,34 @@ export function createS3ObjectStore(config: CloudServerConfig): ObjectStore {
     },
 
     async delete(key) {
+      if (config.s3DeletedPrefix) await keepDeleted(key, config.s3DeletedPrefix)
       await client.send(new DeleteObjectCommand({ Bucket: config.s3Bucket, Key: key }))
+    },
+
+    async write(input) {
+      await client.send(
+        new PutObjectCommand({
+          Bucket: config.s3Bucket,
+          Key: input.key,
+          Body: input.bytes,
+          ContentType: input.contentType,
+          ChecksumSHA256: nativeSHA256 ? input.checksum : undefined,
+          Metadata: { [CHECKSUM_METADATA_KEY]: input.checksum },
+          ...encryption(config)
+        })
+      )
+    },
+
+    async read(key) {
+      try {
+        const object = await client.send(
+          new GetObjectCommand({ Bucket: config.s3Bucket, Key: key })
+        )
+        return object.Body ? await object.Body.transformToByteArray() : null
+      } catch (error) {
+        if (isNotFoundError(error)) return null
+        throw error
+      }
     }
   }
 }

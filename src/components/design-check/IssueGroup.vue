@@ -3,7 +3,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuTrigger
 } from 'reka-ui'
 import { computed, ref } from 'vue'
@@ -13,15 +12,18 @@ import { useDesignCheckMessages } from '@open-pencil/vue/i18n'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppCollapsible from '@/components/ui/collapsible/AppCollapsible.vue'
+import { useInlineSide } from '@/components/ui/direction/inline-side'
 import SeverityIcon from '@/components/ui/feedback/SeverityIcon.vue'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
-import { designCheck } from '@/theme/design-check'
 
 import IssueRow from './IssueRow.vue'
 import type { IssueGroupView, IssueRowView } from './types'
+import { designCheck } from './ui'
 
+const startSide = useInlineSide('start')
 const { group } = defineProps<{ group: IssueGroupView }>()
 const open = defineModel<boolean>('open', { default: true })
 const emit = defineEmits<{
@@ -58,7 +60,7 @@ const hiddenCount = computed(() => group.count - group.rows.length)
   >
     <template #label>
       <SeverityIcon :severity="group.severity" />
-      <Tip :label="group.help ?? undefined" side="left">
+      <Tip :label="group.help ?? undefined" :side="startSide">
         <span :class="styles.groupTitle()">{{ group.title }}</span>
       </Tip>
       <span :class="styles.groupCount()">{{ group.count }}</span>
@@ -71,7 +73,7 @@ const hiddenCount = computed(() => group.count - group.rows.length)
             : messages.fixAll({ count: group.fixes.length })
         }}
       </AppButton>
-      <DropdownMenuRoot v-model:open="menuOpen" :modal="false">
+      <AppDropdownMenuRoot v-model:open="menuOpen" :modal="false">
         <DropdownMenuTrigger as-child>
           <IconButton size="xs" :label="messages.ruleActions">
             <icon-lucide-ellipsis class="size-3.5" />
@@ -87,7 +89,7 @@ const hiddenCount = computed(() => group.count - group.rows.length)
             </MenuScrollArea>
           </DropdownMenuContent>
         </DropdownMenuPortal>
-      </DropdownMenuRoot>
+      </AppDropdownMenuRoot>
     </template>
 
     <ul :class="styles.rows()">

@@ -14,7 +14,9 @@ import IconMinus from '~icons/lucide/minus'
 import IconMousePointer from '~icons/lucide/mouse-pointer'
 import IconPenTool from '~icons/lucide/pen-tool'
 import IconPencil from '~icons/lucide/pencil'
+import IconPipette from '~icons/lucide/pipette'
 import IconRows from '~icons/lucide/rows-3'
+import IconScaling from '~icons/lucide/scaling'
 import IconShapes from '~icons/lucide/shapes'
 import IconSmile from '~icons/lucide/smile'
 import IconSpline from '~icons/lucide/spline'
@@ -52,7 +54,9 @@ export const toolIcons: Record<Tool, Component> = {
   SHAPE_WITH_TEXT: IconShapes,
   CONNECTOR: IconSpline,
   HAND: IconHand,
-  COMMENT: IconMessageCircle
+  COMMENT: IconMessageCircle,
+  EYEDROPPER: IconPipette,
+  SCALE: IconScaling
 }
 
 export const NODE_ICONS: Partial<Record<string, typeof IconSquare>> = {

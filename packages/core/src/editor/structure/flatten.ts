@@ -1,49 +1,34 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 
-import { canMakeBooleanSourceNode, hasVisibleStrokeSourceNode } from '#core/canvas/boolean'
-import { flattenNodesToVectorProps, outlineStrokeNodesToVectorProps } from '#core/canvas/flatten'
+import { canMakeBooleanSourceNode } from '#core/canvas/boolean'
+import { flattenNodesToVectorProps } from '#core/canvas/flatten'
 import { restoreSubtree, snapshotSubtree } from '#core/editor/history/subtree'
 import type { EditorContext } from '#core/editor/types'
 
 import { selectedNodesInSharedParent } from './selection'
 
-type VectorPropsFactory = typeof flattenNodesToVectorProps
-
-type FlattenOptions = {
-  label?: string
-  canFlattenNode?: (node: SceneNode) => boolean
-  vectorPropsFactory?: VectorPropsFactory
-}
-
-export function flattenSelected(
-  ctx: EditorContext,
-  selectedNodes: SceneNode[],
-  options: FlattenOptions = {}
-) {
-  const label = options.label ?? 'Flatten'
-  const canFlattenNode =
-    options.canFlattenNode ?? ((node: SceneNode) => canMakeBooleanSourceNode(node, ctx.graph))
-  const vectorPropsFactory = options.vectorPropsFactory ?? flattenNodesToVectorProps
+/**
+ * Figma's Flatten: the selected layers, which share a parent, become one vector in the lowest
+ * one's place, named and styled as `flattenNodesToVectorProps` makes it. Undo puts them back.
+ */
+export function flattenSelected(ctx: EditorContext, selectedNodes: SceneNode[]) {
+  const label = 'Flatten'
   const renderer = ctx.getRenderer()
   if (!renderer) return null
 
   const selection = selectedNodesInSharedParent(ctx, selectedNodes)
   if (!selection) return null
   const { topLevel, parentId, parent } = selection
-  if (topLevel.some((node) => !canFlattenNode(node))) return null
+  if (topLevel.some((node) => !canMakeBooleanSourceNode(node, ctx.graph))) return null
 
   const childIds = topLevel.map((node) => node.id)
   const childSnapshots = childIds.map((id) => ({ id, subtree: snapshotSubtree(ctx.graph, id) }))
   const prevSelection = new Set(ctx.state.selectedIds)
   const firstIndex = Math.min(...childIds.map((id) => parent.childIds.indexOf(id)))
-  const vectorProps = vectorPropsFactory(renderer, ctx.graph, topLevel)
+  const vectorProps = flattenNodesToVectorProps(renderer, ctx.graph, topLevel)
   if (!vectorProps) return null
 
-  const vector = ctx.graph.createNode('VECTOR', parentId, {
-    ...vectorProps,
-    name: label,
-    strokes: []
-  })
+  const vector = ctx.graph.createNode('VECTOR', parentId, vectorProps)
   const vectorSnapshot = structuredClone(vector)
   ctx.graph.insertChildAt(vector.id, parentId, firstIndex)
   for (const id of childIds) ctx.graph.deleteNode(id)
@@ -71,13 +56,4 @@ export function flattenSelected(
   })
 
   return vector.id
-}
-
-export function outlineStrokeSelected(ctx: EditorContext, selectedNodes: SceneNode[]) {
-  return flattenSelected(ctx, selectedNodes, {
-    label: 'Outline stroke',
-    canFlattenNode: (node) =>
-      canMakeBooleanSourceNode(node, ctx.graph) && hasVisibleStrokeSourceNode(node, ctx.graph),
-    vectorPropsFactory: outlineStrokeNodesToVectorProps
-  })
 }

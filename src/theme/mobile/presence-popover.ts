@@ -1,12 +1,10 @@
-import { tv } from 'tailwind-variants'
-
 import { motionStyles } from '@/theme/motion/styles'
 import { floatingSurface } from '@/theme/overlay'
 
 /** The mobile HUD's room pill: the room's state, the people in it, and the list it opens. */
-export const presencePopover = tv({
+export default {
   slots: {
-    trigger: 'pl-3 pr-1.5',
+    trigger: 'ps-3 pe-1.5',
     summary: 'flex items-center gap-2',
     dot: [
       'block size-2 shrink-0 rounded-full bg-muted',
@@ -15,4 +13,4 @@ export const presencePopover = tv({
     ],
     content: ['z-50 w-60 p-3', floatingSurface, motionStyles.floating]
   }
-})
+} as const

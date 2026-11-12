@@ -1,22 +1,26 @@
 <script setup lang="ts">
 import { TabsContent, TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
-import { computed } from 'vue'
+import { tv } from 'tailwind-variants'
+import { computed, watchEffect } from 'vue'
 
+import { resolveEditorProfile } from '@open-pencil/core'
 import { useDesignCheckMessages, useI18n } from '@open-pencil/vue/i18n'
 
 import { useAIChat } from '@/app/ai/chat/use'
 import { isVersionHistoryOpen } from '@/app/cloud/integration'
 import { useEditorStore } from '@/app/editor/active-store'
 import { countIssues } from '@/app/editor/design-check/issues'
+import ChatPanel from '@/components/chat/ChatPanel.vue'
 import { CloudVersionHistory } from '@/components/cloud/integration'
-import { propertiesTabs } from '@/theme/panel/properties-tabs'
+import propertiesTabsTheme from '@/theme/panel/properties-tabs'
 
-import ChatPanel from './ChatPanel.vue'
 import CodePanel from './CodePanel.vue'
 import CommentsPanel from './comments/CommentsPanel.vue'
 import DesignCheckPanel from './design-check/DesignCheckPanel.vue'
 import DesignPanel from './DesignPanel.vue'
 import ZoomDropdown from './editor/ZoomDropdown.vue'
+
+const propertiesTabs = tv(propertiesTabsTheme)
 
 const { activeTab } = useAIChat()
 const { panels } = useI18n()
@@ -28,6 +32,13 @@ const tabStyles = propertiesTabs()
 const commenting = computed(() => store.state.activeTool === 'COMMENT')
 /** Version history takes the sidebar while it is open, for the document and a version alike. */
 const history = computed(() => isVersionHistoryOpen(store))
+
+/** Whether the document has design lint: a board has none, as FigJam has none. */
+const lints = computed(() => resolveEditorProfile(store.state).lint)
+// A board opened on the Lint tab shows Design instead.
+watchEffect(() => {
+  if (!lints.value && activeTab.value === 'lint') activeTab.value = 'design'
+})
 
 /** Errors and warnings on the current page; suggestions do not earn an indicator. */
 const problemCount = computed(() => {
@@ -41,7 +52,7 @@ const problemCount = computed(() => {
 <template>
   <aside
     data-test-id="properties-panel"
-    class="flex min-w-0 flex-1 flex-col overflow-hidden border-l border-border bg-panel"
+    class="flex min-w-0 flex-1 flex-col overflow-hidden border-s border-border bg-panel"
     style="contain: paint layout style"
   >
     <CloudVersionHistory v-if="history" />
@@ -68,6 +79,7 @@ const problemCount = computed(() => {
           <span :class="tabStyles.label()">{{ panels.ai }}</span>
         </TabsTrigger>
         <TabsTrigger
+          v-if="lints"
           value="lint"
           data-test-id="properties-tab-lint"
           :aria-label="

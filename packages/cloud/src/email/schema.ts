@@ -12,6 +12,10 @@ export type TransactionalEmailKind =
   | 'email-verification'
   | 'password-reset'
   | 'password-changed'
+  | 'email-change-requested'
+  | 'new-sign-in'
+  | 'two-step-changed'
+  | 'document-report'
 
 const documentInvitationEmailPayloadSchema = v.object({
   inviterName: v.string(),
@@ -41,9 +45,49 @@ const adminEnrollmentNotificationPayloadSchema = v.object({
   actionURL: v.string()
 })
 
+const documentReportPayloadSchema = v.object({
+  documentName: v.string(),
+  reason: v.string(),
+  description: v.string(),
+  actionURL: v.string()
+})
+
 const authenticationEmailPayloadSchema = v.object({
   name: v.string(),
-  actionURL: v.optional(v.string())
+  actionURL: v.optional(v.string()),
+  /** What a verification link confirms: a new account, or a new address for one. */
+  purpose: v.optional(v.picklist(['account', 'change']))
+})
+
+const emailChangeRequestedPayloadSchema = v.object({
+  name: v.string(),
+  newEmail: v.string(),
+  actionURL: v.string()
+})
+
+const newSignInPayloadSchema = v.object({
+  name: v.string(),
+  signedInAt: v.string(),
+  ipAddress: v.nullable(v.string()),
+  browser: v.nullable(v.string()),
+  system: v.nullable(v.string()),
+  desktop: v.boolean(),
+  actionURL: v.string()
+})
+
+/** What changed about how an account proves it is its owner's. */
+export const twoStepChangeSchema = v.picklist([
+  'authenticator-on',
+  'authenticator-off',
+  'passkey-added',
+  'passkey-removed',
+  'reset-by-administrator'
+])
+
+const twoStepChangedPayloadSchema = v.object({
+  name: v.string(),
+  change: twoStepChangeSchema,
+  actionURL: v.string()
 })
 
 function content<const Kind extends TransactionalEmailKind, Payload extends v.GenericSchema>(
@@ -63,7 +107,11 @@ export const transactionalEmailContentSchema = v.variant('kind', [
   content('enrollment-revoked', enrollmentEmailPayloadSchema),
   content('email-verification', authenticationEmailPayloadSchema),
   content('password-reset', authenticationEmailPayloadSchema),
-  content('password-changed', authenticationEmailPayloadSchema)
+  content('password-changed', authenticationEmailPayloadSchema),
+  content('email-change-requested', emailChangeRequestedPayloadSchema),
+  content('new-sign-in', newSignInPayloadSchema),
+  content('two-step-changed', twoStepChangedPayloadSchema),
+  content('document-report', documentReportPayloadSchema)
 ])
 
 /** A transactional email's kind with the payload that kind renders. */
@@ -80,6 +128,10 @@ export type AdminEnrollmentNotificationPayload = v.InferOutput<
   typeof adminEnrollmentNotificationPayloadSchema
 >
 export type AuthenticationEmailPayload = v.InferOutput<typeof authenticationEmailPayloadSchema>
+export type EmailChangeRequestedPayload = v.InferOutput<typeof emailChangeRequestedPayloadSchema>
+export type NewSignInPayload = v.InferOutput<typeof newSignInPayloadSchema>
+export type TwoStepChange = v.InferOutput<typeof twoStepChangeSchema>
+export type TwoStepChangedPayload = v.InferOutput<typeof twoStepChangedPayloadSchema>
 
 export type TransactionalEmailPayloadByKind = {
   [Kind in TransactionalEmailKind]: Extract<TransactionalEmailContent, { kind: Kind }>['payload']
@@ -99,3 +151,4 @@ export type RenderedTransactionalEmail = {
   html: string
   text: string
 }
+export type DocumentReportPayload = v.InferOutput<typeof documentReportPayloadSchema>

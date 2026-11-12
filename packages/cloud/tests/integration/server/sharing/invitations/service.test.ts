@@ -51,7 +51,6 @@ describe('document sharing invitations integration', () => {
       })
       const sharing = createDocumentSharingService(context.runtime.database, {
         publicURL: 'https://cloud.example.com',
-        appURL: 'https://app.example.com',
         delivery: {
           async sendDocumentInvitation(message) {
             delivered.push(message)
@@ -79,9 +78,9 @@ describe('document sharing invitations integration', () => {
         expiresAt: created.invitation.expiresAt,
         recipientHint: 'pe****@example.com'
       })
-      expect(deliveryURL.origin).toBe('https://app.example.com')
-      expect(deliveryURL.pathname).toBe(`/cloud/invitations/${created.invitation.id}`)
-      expect(deliveryURL.searchParams.get('server')).toBe('https://cloud.example.com')
+      expect(deliveryURL.origin).toBe('https://cloud.example.com')
+      expect(deliveryURL.pathname).toBe(`/invitations/${created.invitation.id}`)
+      expect(deliveryURL.search).toBe('')
       expect(deliveryURL.hash).toBe(`#${created.token}`)
       const stored = await context.runtime.database
         .selectFrom('documentInvitation')
@@ -108,7 +107,6 @@ describe('document sharing invitations integration', () => {
       })
       const sharing = createDocumentSharingService(context.runtime.database, {
         publicURL: 'https://cloud.example.com',
-        appURL: 'https://app.example.com',
         outbox: createInvitationOutbox(email)
       })
       const created = await sharing.createInvitation(OWNER_ID, context.documentId, {
@@ -178,7 +176,6 @@ describe('document sharing invitations integration', () => {
       })
       const sharing = createDocumentSharingService(context.runtime.database, {
         publicURL: 'https://cloud.example.com',
-        appURL: 'https://app.example.com',
         delivery: {
           async sendDocumentInvitation() {
             throw new Error('SMTP unavailable')

@@ -6,6 +6,7 @@ import {
   defaultRelayURL,
   MAX_COLLAB_MESSAGE_BYTES,
   RELAY_CLOSE,
+  RELAY_HEARTBEAT,
   RELAY_SERVER_PEER,
   relayClientMessages,
   type RelayClientFrame,
@@ -15,7 +16,7 @@ import { createPostgresCloudDatabase } from '#cloud/runtime/postgres/database'
 import { createCollaborationTicketService, createDocumentSharingService } from '#cloud/server'
 import * as Y from 'yjs'
 
-// Checks a running Cloud Worker (see run.ts): the API and portal answer, and the relay's
+// Checks a running Cloud Worker (see run.ts): the API, the editor, and the portal answer, and the relay's
 // Durable Object admits ticket holders, keeps the room, and saves it to PostgreSQL.
 const base = process.env.CLOUD_WORKER_URL ?? ''
 const databaseURL = process.env.DATABASE_URL ?? ''
@@ -119,7 +120,8 @@ async function seed(database: ReturnType<typeof createPostgresCloudDatabase>) {
       id: workspaceId,
       name: 'Workers',
       slug: `workers-${workspaceId}`,
-      createdBy: 'owner'
+      createdBy: 'owner',
+      ownerId: 'owner'
     })
     .execute()
   await database
@@ -140,15 +142,24 @@ for (const path of ['/health', '/ready', '/.well-known/openpencil']) {
   const response = await fetch(`${base}${path}`)
   check(response.ok, `${path} answered HTTP ${response.status}`)
 }
-const page = await fetch(`${base}/auth/sign-in`)
-check(
-  page.ok && (page.headers.get('content-type') ?? '').startsWith('text/html'),
-  `The portal page answered HTTP ${page.status}`
-)
-check(
-  page.headers.get('content-security-policy') === "frame-ancestors 'none'",
-  'The portal page is missing its headers'
-)
+for (const [path, title] of [
+  ['/auth/sign-in', 'OpenPencil Cloud'],
+  ['/', 'OpenPencil'],
+  ['/documents/missing', 'OpenPencil']
+]) {
+  const page = await fetch(`${base}${path}`, { headers: { Accept: 'text/html' } })
+  check(
+    page.ok && (page.headers.get('content-type') ?? '').startsWith('text/html'),
+    `The page at ${path} answered HTTP ${page.status}`
+  )
+  check(
+    (page.headers.get('content-security-policy') ?? '').includes("frame-ancestors 'none'") &&
+      (page.headers.get('content-security-policy') ?? '').includes("script-src 'self'") &&
+      page.headers.has('strict-transport-security'),
+    `The page at ${path} is missing its headers`
+  )
+  check((await page.text()).includes(`<title>${title}</title>`), `${path} is not the expected page`)
+}
 const missing = await fetch(`${base}/api/collaboration/relay`)
 check(missing.status === 426, `A plain request to the relay answered HTTP ${missing.status}`)
 
@@ -164,6 +175,22 @@ try {
   const documentId = await seed(database)
   const ticket = await tickets.issueUserTicket(user('owner'), documentId)
   const url = ticket.serverURL ?? ''
+
+  // The relay object answers the heartbeat through the runtime, without waking.
+  const heartbeat = new WebSocket(url)
+  const answer = new Promise<unknown>((resolve, reject) => {
+    heartbeat.addEventListener('message', (event: MessageEvent<unknown>) => resolve(event.data))
+    heartbeat.addEventListener('error', () => reject(new Error('The heartbeat socket failed')))
+    heartbeat.addEventListener('close', (event) =>
+      reject(new Error(`The relay closed the heartbeat socket: ${event.code} ${event.reason}`))
+    )
+  })
+  await new Promise<void>((resolve) => {
+    heartbeat.addEventListener('open', () => resolve(), { once: true })
+  })
+  heartbeat.send(RELAY_HEARTBEAT.ping)
+  check((await answer) === RELAY_HEARTBEAT.pong, 'The relay did not answer the heartbeat')
+  heartbeat.close()
 
   const editor = await join(url, ticket.token)
   check(
@@ -193,8 +220,8 @@ try {
   viewer.close()
   await until(async () => {
     const saved = await database
-      .selectFrom('documentCollaborationState')
-      .select('state')
+      .selectFrom('documentRoomSnapshot')
+      .select('snapshotObjectId')
       .where('documentId', '=', documentId)
       .executeTakeFirst()
     return saved !== undefined
