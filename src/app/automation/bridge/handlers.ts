@@ -97,10 +97,10 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?:
     if (command === 'get_settings') return handleGetSettings()
     if (command === 'update_settings') return handleUpdateSettings(args)
 
-    if (command === 'open_document') return handleOpenFile(args)
-    if (command === 'create_document') return handleNewDocument(args)
-
     const rawArgs = isUnknownRecord(args) ? args : {}
+    if (command === 'open_document') return handleOpenFile(rawArgs)
+    if (command === 'create_document') return handleNewDocument(rawArgs)
+
     // An ACP chat's agent works on the chat's document unless a call names another; once the
     // chat is gone, a late call must name one rather than land in whatever tab is in front.
     const chat = readAgentSession(rawArgs.agent)?.chat

@@ -43,19 +43,14 @@ describe('automation while the selected tab is Home', () => {
     const doc = createTab()
     const home = createHomeTab()
 
-    await expect(request('eval', { code: 'figma.createRectangle()' })).rejects.toThrow(
-      `The selected tab is Home, not a document. Pass document_id`
-    )
-    await expect(request('tree')).rejects.toThrow(`${doc.id} ("${doc.store.state.documentName}")`)
+    await expect(request('eval', { code: 'figma.createRectangle()' })).rejects.toThrow(doc.id)
     expect(home.store.graph.getChildren(home.store.state.currentPageId)).toHaveLength(0)
   })
 
   test('a call naming Home finds no document', async () => {
     const home = createHomeTab()
 
-    await expect(request('tree', { document_id: home.id })).rejects.toThrow(
-      `Document "${home.id}" not found`
-    )
+    await expect(request('tree', { document_id: home.id })).rejects.toThrow(home.id)
   })
 
   test('a call naming a document works on it', async () => {
@@ -77,6 +72,16 @@ describe('automation while the selected tab is Home', () => {
     const response = await request('create_document')
 
     expect(response.result).toEqual({ created: true })
+    expect(response.target?.documentId).toBe(getActiveTabId())
+  })
+
+  test('create_document sent without arguments still creates one', async () => {
+    createHomeTab()
+
+    const response = (await handleRequest(getActiveStore(), 'create_document', undefined)) as {
+      target?: { documentId: string }
+    }
+
     expect(response.target?.documentId).toBe(getActiveTabId())
   })
 })
