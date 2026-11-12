@@ -72,11 +72,25 @@ const provider: BindingProvider<Color> = {
         >
           <span class="absolute inset-0" :style="{ background: swatch.background }" />
         </FillSwatch>
-        <BindableValueRoot :provider="provider" :targets="target" :value="solid.color">
+        <BindableValueRoot
+          v-slot="binding"
+          :provider="provider"
+          :targets="target"
+          :value="solid.color"
+        >
+          <FillSwatch
+            v-slot="swatch"
+            v-bind="binding.stateAttrs"
+            :fill="{ ...solid, color: binding.resolvedValue ?? solid.color }"
+            label="Bound token fill"
+            class="relative size-10 overflow-hidden rounded-md border border-[var(--vp-c-divider)]"
+          >
+            <span class="absolute inset-0" :style="{ background: swatch.background }" />
+          </FillSwatch>
           <FillSwatch
             v-slot="swatch"
             :fill="solid"
-            label="Bound token fill"
+            label="Picker row fill"
             class="relative size-10 overflow-hidden rounded-md border border-[var(--vp-c-divider)]"
           >
             <span class="absolute inset-0" :style="{ background: swatch.background }" />

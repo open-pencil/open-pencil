@@ -3,9 +3,6 @@ import type { PrimitiveProps } from 'reka-ui'
 import type { Fill } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import type { BindingState } from '#vue/controls/binding-provider/types'
-import type { BindableValueStateAttrs } from '#vue/primitives/BindableValue/types'
-
 export type FillCategory = 'SOLID' | 'GRADIENT' | 'IMAGE'
 
 export interface FillActions {
@@ -39,8 +36,6 @@ export interface FillSwatchSlotProps {
   category: FillCategory
   background: string
   transparent: boolean
-  bindingState: BindingState | undefined
-  stateAttrs: BindableValueStateAttrs | undefined
 }
 
 export interface FillSwatchSlots {

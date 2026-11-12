@@ -1,6 +1,8 @@
 import { count, params } from '@nanostores/i18n'
 
 import { i18n } from '#vue/i18n/create'
+import { planPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/plan'
+import { accessTokenPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/tokens'
 
 /** Copy for the pages a Cloud server shows on its own address. */
 export const cloudPortalMessageDefaults = {
@@ -146,58 +148,8 @@ export const cloudPortalMessageDefaults = {
   securityDescription: params('How you sign in to {host}.'),
   sessions: 'Sessions',
   sessionsDescription: 'Where your account is signed in, and when it was.',
-  accessTokens: 'Access tokens',
-  accessTokensDescription: 'Tokens that let scripts and CI use your documents as you.',
-  accessTokensIntro:
-    'Send a token as {header}. It reads and saves documents as you, and can’t change how you sign in, make other tokens, or reach administration.',
-  newAccessToken: 'New token',
-  accessTokenNameHint: 'What uses it, such as Publish examples.',
-  accessTokenExpiry: 'Expires after',
-  accessTokenExpires30Days: '30 days',
-  accessTokenExpires90Days: '90 days',
-  accessTokenExpiresYear: '1 year',
-  createAccessToken: 'Create token',
-  accessTokenCreatedTitle: 'Copy your new token',
-  accessTokenCreatedDescription:
-    'Store it somewhere safe, such as a CI secret. It won’t be shown again.',
-  columnCreated: 'Created',
-  columnLastUsed: 'Last used',
-  columnExpires: 'Expires',
-  accessTokenNeverUsed: 'Never',
-  accessTokenExpired: 'Expired',
-  revokeAccessToken: 'Revoke',
-  revokeAccessTokenHeading: params('Revoke {name}?'),
-  revokeAccessTokenDescription: 'Anything using it stops working at once. This can’t be undone.',
-  noAccessTokens: 'No tokens yet',
-  plan: 'Plan',
-  planDescription: 'What your account includes, and what you pay for.',
-  planFree: 'Free',
-  planRenews: params('Renews on {date}.'),
-  planEnds: params('Ends on {date}. Your files stay, read-only beyond the free storage.'),
-  planPastDue: 'Your last payment didn’t go through',
-  planPastDueDescription:
-    'We’ll try again over the next two weeks. Update your card in Manage billing to keep your plan.',
-  planStorage: 'Storage',
-  planStorageOf: params('{used} of {total} used, across the workspaces you own'),
-  planStorageUsed: params('{used} used, across the workspaces you own'),
-  planStorageFull: 'Your files are read-only',
-  planStorageFullDescription:
-    'They use all the storage your plan includes. Delete files or get more storage to edit again.',
-  planMonthlyCredits: 'Credits each month',
-  planCredits: params('{credits} credits'),
-  planNoCredits: 'Not included',
-  planOffers: 'Plans',
-  planOffersDescription: 'Billed monthly in US dollars, plus tax where it applies. Cancel anytime.',
-  planOfferPrice: params('{price} a month'),
-  planOfferIncludes: params('{storage} of storage and {credits} credits every month'),
-  planSubscribe: params('Get {name}'),
-  manageBilling: 'Manage billing',
-  creditPacks: 'More credits',
-  creditPacksDescription: 'For AI and search beyond your monthly credits.',
-  creditPackDetail: params('{price}, valid for {days} days'),
-  creditPackBuy: 'Buy',
-  billingUnavailable: 'Plans and payments can’t be reached right now',
-  billingUnavailableDescription: 'Your plan still applies meanwhile.',
+  ...accessTokenPortalMessageDefaults,
+  ...planPortalMessageDefaults,
   overview: 'Overview',
   accessRequests: 'Access requests',
   accessRequestsDescription:

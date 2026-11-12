@@ -8,7 +8,7 @@ import {
   type DesignNode
 } from '@open-pencil/dom-css'
 
-import { browserImportedLayers, browserRuntimeComputeStyles } from '#tests/helpers/dom-css-browser'
+import { browserImportedLayers, browserRuntimeComputeStyles } from '#tests/helpers/dom-css/browser'
 import { testPath } from '#tests/helpers/paths'
 
 import { expect, test } from '../fixtures'

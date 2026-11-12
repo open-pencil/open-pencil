@@ -48,6 +48,26 @@ describe('wrap layout', () => {
     expect(children[1].y).toBe(50)
   })
 
+  test('rows follow the item spacing while the counter spacing is unset', () => {
+    const graph = new SceneGraph()
+    const frame = autoFrame(graph, pageId(graph), {
+      width: 200,
+      height: 300,
+      layoutWrap: 'WRAP',
+      counterAxisSizing: 'HUG',
+      itemSpacing: 8,
+      counterAxisSpacing: Number.NaN
+    })
+    const first = rect(graph, frame.id, 120, 40)
+    const second = rect(graph, frame.id, 120, 40)
+
+    computeLayout(graph, frame.id)
+
+    const secondRow = first.height + frame.itemSpacing
+    expect(graph.getNode(second.id)?.y).toBe(secondRow)
+    expect(graph.getNode(frame.id)?.height).toBe(secondRow + second.height)
+  })
+
   test('itemSpacing with wrap', () => {
     const graph = new SceneGraph()
     const frame = autoFrame(graph, pageId(graph), {

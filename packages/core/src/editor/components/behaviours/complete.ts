@@ -9,8 +9,8 @@ import { createComponentPropertyId } from '@open-pencil/scene-graph/components'
 import { createSlotProperty } from '@open-pencil/scene-graph/slots'
 
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'
-import { VARIANT_SET_PADDING, variantSetProps } from '#core/editor/components/variant-set'
 import type { createVariantActions } from '#core/editor/components/variants'
+import { VARIANT_SET_PADDING, variantSetProps } from '#core/editor/components/variants/set'
 import { wrapSelectionInContainer } from '#core/editor/structure/container-wrap'
 import type { EditorContext } from '#core/editor/types'
 

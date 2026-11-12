@@ -31,12 +31,12 @@ OpenPencil jest około jedenaście razy mniejszy. Wynika to przede wszystkim z i
 │  │  Vue 3 + TypeScript       │  │
 │  │  Editor + Kiwi codec      │  │
 │  │  SceneGraph in TypeScript │  │
-│  │  CanvasKit + Yoga WASM    │  │
+│  │  CanvasKit + Taffy WASM   │  │
 │  └───────────────────────────┘  │
 └─────────────────────────────────┘
 ```
 
-Edytor, SceneGraph, kodek plików i renderer działają w jednym procesie. Oddzielny serwer, baza danych i Docker nie są potrzebne. SceneGraph jest przechowywany jako `Map<string, SceneNode>`. TypeScript wywołuje CanvasKit bezpośrednio, a Yoga WASM synchronicznie oblicza układ.
+Edytor, SceneGraph, kodek plików i renderer działają w jednym procesie. Oddzielny serwer, baza danych i Docker nie są potrzebne. SceneGraph jest przechowywany jako `Map<string, SceneNode>`. TypeScript wywołuje CanvasKit bezpośrednio, a Taffy WASM synchronicznie oblicza układ.
 
 ### Penpot: platforma klient-serwer
 
@@ -105,15 +105,15 @@ Penpot utrzymuje własne definicje typów w Clojure/ClojureScript i Rust. Oddzie
 
 ## 5. Silnik układu
 
-OpenPencil synchronicznie korzysta z Yoga WASM:
+OpenPencil synchronicznie korzysta z Taffy WASM:
 
 ```typescript
-const root = Yoga.Node.create()
-root.setFlexDirection(FlexDirection.Row)
-root.calculateLayout()
+const root = createLayoutNode()
+setFlexFlow(root, frame)
+computeLayout(root)
 ```
 
-Penpot utrzymuje własne implementacje Flex i Grid w ClojureScript i Rust WASM. Oba silniki muszą zwracać ten sam wynik. OpenPencil używa Yoga, w tym odmiany z obsługą Grid; Penpot utrzymuje tysiące wierszy własnego kodu układu w dwóch językach.
+Penpot utrzymuje własne implementacje Flex i Grid w ClojureScript i Rust WASM. Oba silniki muszą zwracać ten sam wynik. OpenPencil używa do Flex i Grid biblioteki Taffy, z której korzystają też Servo, Blitz, Bevy i Zed; Penpot utrzymuje tysiące wierszy własnego kodu układu w dwóch językach.
 
 ## 6. Formaty i Figma
 
@@ -153,7 +153,7 @@ Penpot korzysta z Potok. `UpdateEvent` zmienia stan, `WatchEvent` wykonuje skutk
 1. **Współpraca przez serwer:** konta, kontrola dostępu i centralne przechowywanie.
 2. **System wtyczek:** wykonanie w izolacji i API wtyczek.
 3. **Tokeny projektu:** wbudowana obsługa.
-4. **CSS Grid:** własna implementacja; OpenPencil używa odmiany Yoga z Grid.
+4. **CSS Grid:** własna implementacja; OpenPencil używa CSS Grid z Taffy.
 5. **Samodzielne wdrożenie:** platforma zespołowa uruchamiana przez Docker.
 6. **Dojrzałość:** wiele lat użycia produkcyjnego.
 
@@ -173,7 +173,7 @@ Penpot oferuje wtyczki wykonywane w izolacji, ale nie ma porównywalnego API dla
 | Zgodność z Figmą | OpenPencil | Natywne Kiwi i `.fig` |
 | Programowanie | OpenPencil | TypeScript i Vue zamiast Clojure, Rust i Docker |
 | Aplikacja komputerowa | OpenPencil | Tauri |
-| Układ | OpenPencil | Yoga zamiast dwóch własnych implementacji |
+| Układ | OpenPencil | Taffy zamiast dwóch własnych implementacji |
 | Współpraca | Różne mocne strony | Penpot: serwer i kontrola dostępu; OpenPencil: P2P bez hostingu |
 | Samodzielne wdrożenie | Penpot | Docker |
 | Dojrzałość | Penpot | Wieloletnie użycie produkcyjne |
