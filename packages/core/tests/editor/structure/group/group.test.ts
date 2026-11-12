@@ -63,6 +63,27 @@ describe('groupSelected', () => {
   })
 })
 
+describe('groupSelected in an auto layout', () => {
+  test('places the group among the layers left beside it', () => {
+    const { editor, pageId, rect, names } = setup()
+    const row = editor.graph.createNode('FRAME', pageId, { name: 'Row', width: 400, height: 100 })
+    editor.graph.updateNode(row.id, { layoutMode: 'HORIZONTAL', itemSpacing: 10 })
+    const a = rect(row.id, 'A')
+    rect(row.id, 'B')
+    const c = rect(row.id, 'C')
+    rect(row.id, 'D')
+    editor.select([a.id, c.id])
+
+    editor.groupSelected()
+
+    // The group takes C's place and spans A and C as they were; B and D flow around it.
+    expect(names(row.id)).toEqual(['B', 'Group 1', 'D'])
+    const [b, group, d] = editor.graph.getChildren(row.id)
+    expect(group?.x).toBe((b?.x ?? 0) + (b?.width ?? 0) + 10)
+    expect(d?.x).toBe((group?.x ?? 0) + (group?.width ?? 0) + 10)
+  })
+})
+
 describe('frameSelection', () => {
   test('makes one frame per parent', () => {
     const { editor, pageId, rect, names, selected } = setup()

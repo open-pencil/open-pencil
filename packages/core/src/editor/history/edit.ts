@@ -59,7 +59,9 @@ function begin(ctx: EditorContext, options: RecordEditOptions) {
       (ctx.undo.peekUndo() !== options.joinStep || ctx.undo.isBatching)
     // A failed edit leaves nothing half done: what it changed goes back, and no step is left.
     if (failed || stale) {
-      if (!isEmptyDocumentChange(change)) restoreDocumentChange(ctx, change, 'before')
+      if (!isEmptyDocumentChange(change)) {
+        restoreDocumentChange(ctx, change, 'before', selectedBefore)
+      }
       options.onRecorded?.(emptyDocumentChange(pageId))
       return true
     }

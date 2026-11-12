@@ -183,23 +183,30 @@ export function wrapEachParent(
   )
   const byParent = groupBy(outermost, (node) => node.parentId ?? ctx.state.currentPageId)
   const parentIds = Object.keys(byParent).filter((id) => acceptsChildren(ctx, id))
-  if (parentIds.length === 0 || !prepareSlotEdits(ctx, parentIds)) return []
+  if (parentIds.length === 0) return []
 
   // Named before any is made, so each parent's new container is "Group 1" there, as in Figma.
   const names = new Map(
     parentIds.map((id) => [id, nextNumberedName(ctx.graph, id, CONTAINER_NAMES[containerType])])
   )
   const label = `Create ${containerType.toLowerCase()}`
-  return recordEdit(ctx, { label, restoresSelection: true }, () => {
-    const ids = parentIds.flatMap((parentId) => {
-      const parent = ctx.graph.getNode(parentId)
-      const nodes = byParent[parentId]
-      if (!parent) return []
-      const name = names.get(parentId) ?? CONTAINER_NAMES[containerType]
-      const index = canvasWrapIndex(parent, nodes)
-      return [wrapNodes(ctx.graph, containerType, nodes, parentId, index, { name }).id]
+  // Claiming an instance slot's content is part of the same undo step.
+  return ctx.undo.runBatch(label, () => {
+    if (!prepareSlotEdits(ctx, parentIds)) return []
+    return recordEdit(ctx, { label, restoresSelection: true }, () => {
+      const ids = parentIds.flatMap((parentId) => {
+        const parent = ctx.graph.getNode(parentId)
+        const nodes = byParent[parentId]
+        if (!parent) return []
+        const name = names.get(parentId) ?? CONTAINER_NAMES[containerType]
+        const index = canvasWrapIndex(parent, nodes)
+        const id = wrapNodes(ctx.graph, containerType, nodes, parentId, index, { name }).id
+        // An auto layout places the new container among the layers left beside it.
+        if (parent.layoutMode !== 'NONE') ctx.runLayoutForNode(parentId)
+        return [id]
+      })
+      ctx.setSelectedIds(new Set(ids))
+      return ids
     })
-    ctx.setSelectedIds(new Set(ids))
-    return ids
   })
 }

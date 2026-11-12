@@ -60,17 +60,20 @@ export function ungroupSelected(ctx: EditorContext, selectedNodes: SceneNode[]):
   const containers = selectedNodes.filter((node) => canUngroupNode(ctx, node))
   if (containers.length === 0) return []
   const parentIds = uniq(compact(containers.map((node) => node.parentId)))
-  if (!prepareSlotEdits(ctx, [...parentIds, ...containers.map((node) => node.id)])) return []
   const kept = selectedNodes.filter((node) => !containers.includes(node)).map((node) => node.id)
 
-  return recordEdit(ctx, { label: 'Ungroup', restoresSelection: true }, () => {
-    const freed = containers.flatMap((node) => ungroupNode(ctx.graph, node.id) ?? [])
-    // A group around the ungrouped layer spans its children now; an auto layout places them.
-    refitContainers(ctx, parentIds)
-    for (const parentId of parentIds) {
-      if (ctx.graph.getNode(parentId)?.layoutMode !== 'NONE') ctx.runLayoutForNode(parentId)
-    }
-    ctx.setSelectedIds(new Set([...freed, ...kept]))
-    return freed
+  // Claiming an instance slot's content is part of the same undo step.
+  return ctx.undo.runBatch('Ungroup', () => {
+    if (!prepareSlotEdits(ctx, [...parentIds, ...containers.map((node) => node.id)])) return []
+    return recordEdit(ctx, { label: 'Ungroup', restoresSelection: true }, () => {
+      const freed = containers.flatMap((node) => ungroupNode(ctx.graph, node.id) ?? [])
+      // A group around the ungrouped layer spans its children now; an auto layout places them.
+      refitContainers(ctx, parentIds)
+      for (const parentId of parentIds) {
+        if (ctx.graph.getNode(parentId)?.layoutMode !== 'NONE') ctx.runLayoutForNode(parentId)
+      }
+      ctx.setSelectedIds(new Set([...freed, ...kept]))
+      return freed
+    })
   })
 }
