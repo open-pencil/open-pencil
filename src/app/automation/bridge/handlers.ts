@@ -52,8 +52,6 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?:
     selection: handleSelection,
     save_document: handleSaveFile,
     close_document: handleCloseFile,
-    create_document: handleNewDocument,
-    open_document: handleOpenFile,
     activate_document: handleActivateDocument,
     undo: handleUndo,
     redo: handleRedo
@@ -99,12 +97,10 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?:
     if (command === 'get_settings') return handleGetSettings()
     if (command === 'update_settings') return handleUpdateSettings(args)
 
-    if (command === 'open_document' || command === 'create_document') {
-      const handler = commandHandlers[command]
-      if (handler) return handler(resolveAutomationTarget(store, undefined), args)
-    }
-
     const rawArgs = isUnknownRecord(args) ? args : {}
+    if (command === 'open_document') return handleOpenFile(rawArgs)
+    if (command === 'create_document') return handleNewDocument(rawArgs)
+
     // An ACP chat's agent works on the chat's document unless a call names another; once the
     // chat is gone, a late call must name one rather than land in whatever tab is in front.
     const chat = readAgentSession(rawArgs.agent)?.chat

@@ -3,7 +3,7 @@ import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { resolveAutomationTarget } from '@/app/automation/bridge/target'
 import { createAutomationToolHandler } from '@/app/automation/bridge/tool-handlers'
 import type { EditorStore } from '@/app/editor/active-store'
-import { getTabById } from '@/app/tabs'
+import { getTabById, getTabForStore } from '@/app/tabs'
 
 import { webmcpMode } from './preferences'
 import { createWebMCPRuntimeService } from './service'
@@ -18,10 +18,10 @@ export function startWebMCP(getStore: () => EditorStore): () => void {
     typeof document === 'undefined' ? undefined : document.modelContext,
     webmcpMode,
     () => {
-      const target = resolveAutomationTarget(getStore(), undefined)
-      if (getTabById(target.documentId)?.kind !== 'document') {
+      if (getTabForStore(getStore())?.kind !== 'document') {
         throw new Error('Open a document before using WebMCP tools')
       }
+      const target = resolveAutomationTarget(getStore(), undefined)
       return {
         execute: async (def, args, signal) => {
           signal.throwIfAborted()

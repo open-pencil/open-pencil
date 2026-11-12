@@ -6,7 +6,7 @@ Private tooling lives under `tools/<role>/<domain>/{src,tests}`; Steiger enforce
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | `checks/`   | Read the tree and exit non-zero; never write inside the repository                                                            | `architecture`, `lint`, `i18n`, `secret-scan`, `type-shapes`, `docs`, `package-quality`, `bundle-budget`, `workflows`, `dockerfiles` |
 | `generate/` | Write generated files or artifacts, idempotently                                                                              | `brand`, `demo`, `emoji-metrics`, `tauri-menu`, `authoring-reference`, `visual-oracles`, `landing-posters`                           |
-| `release/`  | Build, verify, and publish packages and native artifacts                                                                      | `package-artifacts`, `release-packages`                                                                                              |
+| `release/`  | Build, verify, and publish packages and native artifacts                                                                      | `package-artifacts`, `release-packages`, `fork-releases`                                                                                              |
 | `ci/`       | Consumed by workflows: path classification and gate policy, container images, the review-guidance bot, Cloud deployment steps | `policy`, `images`, `pr-review-guidance`, `cloud-deploy`                                                                             |
 | `dev/`      | Test running, benchmarks, and local services for humans                                                                       | `unit-tests`, `navigation-benchmark`, `dev-server`, `cloud`                                                                          |
 
@@ -49,6 +49,16 @@ Private tooling lives under `tools/<role>/<domain>/{src,tests}`; Steiger enforce
 - Official builds (`VITE_OPENPENCIL_FEEDBACK=on`) emit hidden source maps; `deploy-app.yml` and the `build.yml` frontend job inject PostHog chunk IDs, upload the maps to PostHog error tracking as release `openpencil@<version>`, and strip them from `dist`, and `build.yml` attaches them as `OpenPencil_<version>_sourcemaps.tar.gz`. Both need the `POSTHOG_CLI_API_KEY` secret, a personal key with error tracking write and organization read (`tools/release/release-packages/src/sourcemaps/publish.ts`).
 - Ensure Tauri and Apple signing/notarization secrets are configured. Verify the draft title, body, and artifacts, then publish. Release titles are exactly the tag (`vX.Y.Z`) without a product-name prefix.
 - Homebrew's `openpencil` cask is managed upstream: BrewTestBot proposes bumps and Homebrew merges them. Check the upstream cask PR after publication; do not push to the archived custom tap or add bump automation. Users install the app with `brew install --cask openpencil` and the CLI through npm or Bun.
+
+## Forks
+
+OpenPencil keeps forks of dependencies it builds into WebAssembly: Skia's CanvasKit (`open-pencil/skia`) and Taffy (`open-pencil/taffy`). They all work the same way, so a new one follows them.
+
+- A fork's patches are commits on a branch named `openpencil/<name>`, listed in the branch's `OPENPENCIL.md`, each one also proposed upstream; a workflow on that branch builds every push and releases it as `<name>-<commit>` with the built files, `THIRD-PARTY-NOTICES.md`, and `SHA256SUMS` (`.github/workflows/openpencil.yml` on `open-pencil/taffy`).
+- A fork's `openpencil/<name>` branch changes only through pull requests against it, reviewed as one here is, by CodeRabbit and then a maintainer, since every push to it is a release; a package pins only a release of a merged commit. Each fork's branch carries an `AGENTS.md` with its own build, test, and upstreaming rules (`open-pencil/taffy`, `open-pencil/skia`).
+- A package here ships a fork's build by pinning one release in `release.json` (repository, tag, and each file's SHA-256) and never builds it: `bun install`'s `postinstall` and the package's `build` fetch it into `dist/`, keeping files that match their pins, and CI caches those `dist/` folders by the pins (`tools/release/fork-releases/tests/fetch.test.ts`, `.github/actions/setup/workspace/action.yml`).
+- Moving a package to a new release is `bun run fork:pin packages/<name> <name>-<commit>`, which takes the files and hashes from the release's `SHA256SUMS`; moving Taffy also moves the `rev` of the `[patch]` in the root `Cargo.toml`, which patches its source into the Cargo workspace for Blitz, to the same commit, so HTML import and auto layout share one Taffy (`tools/release/fork-releases/tests/pin.test.ts`).
+- A fork's build is third-party code in the editor's bundle: its package's license and the fork's `THIRD-PARTY-NOTICES.md` go into the app's notices, though it is a workspace package (`forkNotices` in `vite/third-party-notices.ts`).
 
 ## Demo document
 

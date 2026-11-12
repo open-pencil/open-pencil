@@ -18,7 +18,7 @@ Renderer, layout, editor, Figma API, tools, clipboard, vector conversion, and do
 
 ## Layout
 
-- `@open-pencil/yoga-layout` supplies both flexbox and CSS Grid.
+- Auto layout and grid run on `@open-pencil/taffy`: Core builds a `LayoutNode` tree with CSS styles and lays it out with one `computeLayout` call. Auto layout's defaults that differ from CSS (column, no shrinking, no automatic minimum size, lines packed at the start) are set in `createLayoutNode`, and Figma's departures from CSS, such as a locked ratio over stretch or no negative space between wrapped lines, are mapped where the node is configured (`packages/core/src/layout/node.ts`, `packages/core/tests/layout/auto-layout/aspect-ratio.test.ts`).
 - Recompute layout after demo creation and for each materialized or imported page; scope computation to the affected page or subtree where possible.
 - The first Hug/Fill dimension mutation switches only that axis to Fixed; focus is non-destructive, and mode/value changes share one undo transaction.
 - Arranging layers runs through `packages/core/src/layout/arrange/`: `arrangeBoxes` runs an ELK layout (spread, compact, pack, flow, tree, radial, network), loaded on first use, `applyArrangement` moves the layers that draw it and joins their connectors, routing them when they flow, and `arrangeLayers` does both for layers already on a page, finding the connectors between them; importers and tools that arrange layers go through them, and connectors that pass through stored bend points use `bendConnectorThrough` (`packages/core/tests/layout/arrange/layers.test.ts`).

@@ -2,13 +2,12 @@ import { staticEntitlementsFromTOML } from '#cloud/server/policy/static'
 import { parse as parseTOML } from 'smol-toml'
 import * as v from 'valibot'
 
+import { parseCloudServerConfig, type CloudServerConfig } from './schema'
 import {
   cloudDeploymentConfigSchema,
-  parseCloudServerConfig,
   type CloudDeploymentConfig,
-  type CloudSecretReference,
-  type CloudServerConfig
-} from './schema'
+  type CloudSecretReference
+} from './toml/schema'
 
 export type CloudEnvironment = Readonly<Record<string, string | undefined>>
 

@@ -18,15 +18,17 @@ import {
   hasInstanceOverride as hasNodeInstanceOverride,
   setInstanceOverride
 } from './overrides'
-import { followComponentLayers } from './swap'
 import {
   bindingProtection,
-  cloneChildrenWithMapping,
-  copyProp,
   enclosingInstanceOverrideFields,
   isProtectedSyncField,
+  syncBindingFields
+} from './protection'
+import { followComponentLayers } from './swap'
+import {
+  cloneChildrenWithMapping,
+  copyProp,
   sourceInTargetCoordinates,
-  syncBindingFields,
   syncChildren,
   updateSyncedProps
 } from './sync'

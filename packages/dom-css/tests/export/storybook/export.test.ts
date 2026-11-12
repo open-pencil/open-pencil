@@ -3,7 +3,7 @@ import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { invalidCheckboxSet } from '#dom-css-tests/behaviours/fixtures'
+import { invalidCheckboxSet } from '#dom-css-tests/behaviours/fixtures/controls'
 import { BLUE_500, card, designSystem } from '#dom-css-tests/export/token-fixtures'
 import { exportStorybook } from '#dom-css/index'
 
