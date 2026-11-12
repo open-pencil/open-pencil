@@ -1,5 +1,3 @@
-import { promiseTimeout } from '@vueuse/core'
-
 import type { ACPAgentDef } from '@open-pencil/core/constants'
 
 import type { ACPProcess } from '@/app/ai/agents/acp/process'
@@ -7,6 +5,26 @@ import { createDeferred } from '@/app/runtime/deferred'
 
 /** How long each startup request may take; resuming starts the agent's CLI, which is slowest. */
 export const AGENT_START_TIMEOUT_MS = 60_000
+
+/**
+ * The request's answer, unless one of `also` fails first or it takes longer than `timeoutMs`,
+ * which rejects with `timedOut`. The timer is cleared once the race settles, so an answer that
+ * comes in time leaves nothing pending.
+ */
+export async function withinDeadline<T>(
+  request: Promise<T>,
+  timeoutMs: number,
+  timedOut: string,
+  ...also: Promise<never>[]
+): Promise<T> {
+  const deadline = createDeferred<never>()
+  const timer = setTimeout(() => deadline.reject(new Error(timedOut)), timeoutMs)
+  try {
+    return await Promise.race([request, ...also, deadline.promise])
+  } finally {
+    clearTimeout(timer)
+  }
+}
 
 interface AgentStartLimits {
   /** Stopping ends the start at any step, and whatever else waits on `stoppedByUser`. */
@@ -38,14 +56,13 @@ export function boundAgentStart(
 
   /** The request's answer, unless Stop or the deadline comes first, or one of `also` fails. */
   const bounded = <T>(request: Promise<T>, ...also: Promise<never>[]): Promise<T> =>
-    Promise.race([
+    withinDeadline(
       request,
+      timeoutMs,
+      `${agent.name} did not answer while starting.`,
       stoppedByUser,
-      ...also,
-      promiseTimeout(timeoutMs).then((): never => {
-        throw new Error(`${agent.name} did not answer while starting.`)
-      })
-    ])
+      ...also
+    )
 
   /** Finds the agent and starts it; a process that starts after the start gave up is killed. */
   async function launch<Found, Started extends ACPProcess>(
