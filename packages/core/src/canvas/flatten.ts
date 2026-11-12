@@ -16,7 +16,7 @@ import {
   windingRuleOf
 } from './boolean'
 import type { SkiaRenderer } from './renderer'
-import { textOutlinePieces } from './text/outlines/glyphs'
+import { textOutlinePieces, type PaintedPath } from './text/outlines/glyphs'
 
 /** The stroke a flattened vector takes from its topmost shape. */
 type StrokeFields =
@@ -35,12 +35,6 @@ export type VectorFlattenProps = Pick<
   SceneNode,
   'name' | 'x' | 'y' | 'width' | 'height' | 'fills' | 'vectorNetwork' | StrokeFields | LookFields
 >
-
-/** A part of a shape as Flatten draws it, in the paints it is drawn in. */
-interface FlattenPiece {
-  path: Path
-  fills: Fill[]
-}
 
 /** A shape Flatten takes, and where it sits in the flattened layers' parent. */
 interface FlattenLeaf {
@@ -88,7 +82,7 @@ function flattenPieces(
   renderer: SkiaRenderer,
   graph: SceneGraph,
   node: SceneNode
-): FlattenPiece[] | null {
+): PaintedPath[] | null {
   if (node.type === 'TEXT') return textOutlinePieces(renderer, node)
   const path = flattenSourcePath(renderer, node, graph)
   return path ? [{ path, fills: node.fills }] : null
@@ -106,7 +100,7 @@ export function flattenNodesToVectorProps(
   nodes: SceneNode[]
 ): VectorFlattenProps | null {
   const leaves = flattenLeaves(graph, inDrawOrder(graph, nodes))
-  const placed: FlattenPiece[] = []
+  const placed: PaintedPath[] = []
   try {
     for (const { node, matrix } of leaves) {
       const pieces = flattenPieces(renderer, graph, node)

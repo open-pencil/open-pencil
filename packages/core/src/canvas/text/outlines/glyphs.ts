@@ -53,8 +53,8 @@ export function textGlyphPaths(r: SkiaRenderer, node: SceneNode): Path[] | null 
   return glyphs.flatMap((glyph) => glyphPath(r, glyph.commands, glyph.x, glyph.y) ?? [])
 }
 
-/** A part of what a text draws, in the text's box, and the paints it is drawn in. */
-export interface TextOutlinePiece {
+/** A path and the paints it is drawn in, as Flatten and Outline stroke take layers apart. */
+export interface PaintedPath {
   path: Path
   fills: Fill[]
 }
@@ -64,7 +64,7 @@ export interface TextOutlinePiece {
  * glyph in the fills of the character it draws, list markers included, then each underline and
  * strikethrough. Text without a font to outline it from has none.
  */
-export function textOutlinePieces(r: SkiaRenderer, node: SceneNode): TextOutlinePiece[] | null {
+export function textOutlinePieces(r: SkiaRenderer, node: SceneNode): PaintedPath[] | null {
   const shaped = shapedOutlines(r, node)
   if (!shaped) {
     const glyphs = textNodeToOutlineLayout(node)?.glyphs

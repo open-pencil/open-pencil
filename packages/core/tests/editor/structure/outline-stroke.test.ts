@@ -267,6 +267,30 @@ describe('outlineStrokeSelected', () => {
     expect(colors.length).toBeGreaterThan(3)
   })
 
+  test('outlines text painted only by its characters’ fills', async () => {
+    const inter = await fontManager.fetchBundledFont('/InterVariable.ttf')
+    if (!inter) throw new Error('Expected the bundled Inter')
+    await fontManager.markLoaded('Inter', 'Regular', inter)
+    const editor = await createEditorWithRenderer({ fonts: true })
+    const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+      name: 'Hi',
+      text: 'Hi',
+      fontFamily: 'Inter',
+      fontSize: 40,
+      width: 60,
+      height: 50,
+      fills: [],
+      styleRuns: [{ start: 0, length: 2, style: { fills: [solid(RED)] } }]
+    })
+    editor.select([text.id])
+    editor.outlineStrokeSelected()
+
+    const [group] = [...editor.state.selectedIds].map((id) => editor.graph.getNode(id))
+    expect([group?.type, group?.name]).toEqual(['GROUP', 'Hi'])
+    const colors = editor.graph.getChildren(group?.id ?? '').map((glyph) => glyph.fills[0]?.color)
+    expect(colors).toEqual([RED, RED])
+  })
+
   test('outlines a boolean’s combined shape, not its box', async () => {
     const editor = await createEditorWithRenderer()
     const pageId = editor.state.currentPageId

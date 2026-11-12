@@ -19,7 +19,7 @@ import {
   windingRuleOf
 } from './boolean'
 import type { SkiaRenderer } from './renderer'
-import { textGlyphPaths, textOutlinePieces, type TextOutlinePiece } from './text/outlines/glyphs'
+import { textGlyphPaths, textOutlinePieces, type PaintedPath } from './text/outlines/glyphs'
 
 /**
  * A layer Outline stroke makes in place of another: a vector, or for text a group holding one
@@ -105,7 +105,7 @@ function placedLike(node: SceneNode, box: Box): Partial<SceneNode> {
 function pieceOf(
   r: SkiaRenderer,
   node: SceneNode,
-  parts: readonly TextOutlinePiece[],
+  parts: readonly PaintedPath[],
   name: string,
   childName: string
 ): OutlinePiece | null {
@@ -150,6 +150,15 @@ function sourcePaths(r: SkiaRenderer, node: SceneNode, graph: SceneGraph): Path[
   return path ? [path] : []
 }
 
+/** Whether a layer paints a fill: in its own fills, or for text in any character's. */
+function paintsFill(node: SceneNode): boolean {
+  if (nodeHasVisibleFill(node)) return true
+  return (
+    node.type === 'TEXT' &&
+    node.styleRuns.some((run) => run.style.fills?.some((fill) => fill.visible))
+  )
+}
+
 /**
  * Whether Outline stroke turns this layer itself into outlines: one with a stroke, or text with a
  * fill, which Figma outlines into its glyphs even without a stroke.
@@ -157,7 +166,7 @@ function sourcePaths(r: SkiaRenderer, node: SceneNode, graph: SceneGraph): Path[
 export function canOutlineStroke(node: SceneNode): boolean {
   return (
     canMakeBooleanSourcePath(node) &&
-    (nodeHasVisibleStroke(node) || (node.type === 'TEXT' && nodeHasVisibleFill(node)))
+    (nodeHasVisibleStroke(node) || (node.type === 'TEXT' && paintsFill(node)))
   )
 }
 
@@ -180,7 +189,7 @@ export function outlineStrokeLayer(
 ): OutlinedLayer | null {
   if (!canOutlineStroke(node)) return null
   const text = node.type === 'TEXT'
-  const filled = node.type !== 'LINE' && nodeHasVisibleFill(node)
+  const filled = node.type !== 'LINE' && paintsFill(node)
   const sources = sourcePaths(r, node, graph)
   const glyphs = text && filled ? (textOutlinePieces(r, node) ?? []) : []
   try {
