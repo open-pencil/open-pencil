@@ -1,7 +1,7 @@
 import { uniq } from 'es-toolkit'
 import { computed, reactive, ref, watch } from 'vue'
 
-import { acpAgentFor, IS_TAURI } from '@open-pencil/core/constants'
+import { acpAgentFor } from '@open-pencil/core/constants'
 
 import {
   codingAgentDetection,
@@ -17,6 +17,8 @@ import {
   setModelConnectionAPIKey
 } from '@/app/ai/models'
 import type { SettingsSaveResult } from '@/app/settings/save-result'
+import { canRunHostProcesses } from '@/app/tauri/capabilities'
+import { isTauri } from '@/app/tauri/env'
 
 import { applyOnboardingPlan } from './apply'
 import { existingOnboardingConnection, useOnboardingConnections } from './connections'
@@ -30,7 +32,8 @@ import {
   type OnboardingGoal,
   type OnboardingAnswers,
   type PlannedModel,
-  uncoveredGoals
+  uncoveredGoals,
+  usableCurrentModels
 } from './plan'
 import { useOnboardingRoles } from './roles'
 import { useOnboardingSignIn } from './sign-in'
@@ -52,13 +55,23 @@ function initialAnswers(): OnboardingAnswers {
 }
 
 interface AIOnboardingOptions {
-  /** Agents run as local processes, so only the desktop app offers them. */
+  /** Agents run as local processes, so only a desktop app that may spawn them offers them. */
   agentsAvailable?: boolean
+  /** Subscription sign-in needs the desktop app but no host process. */
+  subscriptionsAvailable?: boolean
 }
 
-export function useAIOnboarding({ agentsAvailable = IS_TAURI }: AIOnboardingOptions = {}) {
+export function useAIOnboarding({
+  agentsAvailable = canRunHostProcesses(),
+  subscriptionsAvailable = isTauri()
+}: AIOnboardingOptions = {}) {
   const answers = reactive<OnboardingAnswers>(initialAnswers())
-  const current = currentOnboardingModels(aiModelSettings.value)
+  // A configured model this app cannot run, such as an agent in a sandboxed package, does not
+  // count: chat would refuse it, so setup must not finish on it.
+  const current = usableCurrentModels(currentOnboardingModels(aiModelSettings.value), {
+    agentsAvailable,
+    subscriptionsAvailable
+  })
   const configured = [current.design, current.vision, current.review, current.fast].filter(
     (model): model is PlannedModel => model !== null && model !== 'design'
   )
@@ -66,11 +79,12 @@ export function useAIOnboarding({ agentsAvailable = IS_TAURI }: AIOnboardingOpti
   const busy = ref(false)
   const saveResult = ref<SettingsSaveResult | null>(null)
 
-  const recommended = computed(() => planOnboarding(answers, { agentsAvailable, current }))
+  const availability = { agentsAvailable, subscriptionsAvailable, current }
+  const recommended = computed(() => planOnboarding(answers, availability))
   const roles = useOnboardingRoles(recommended, configured)
   const { plan } = roles
   /** Requested goals nothing selected covers; setup offers OpenRouter for them. */
-  const gaps = computed(() => uncoveredGoals(answers, { agentsAvailable, current }))
+  const gaps = computed(() => uncoveredGoals(answers, availability))
   /** Setup can finish once there is a design model, planned or already configured. */
   const hasDesign = computed(() => recommended.value.design !== null || current.design !== null)
 
@@ -180,6 +194,7 @@ export function useAIOnboarding({ agentsAvailable = IS_TAURI }: AIOnboardingOpti
 
   return {
     agentsAvailable,
+    subscriptionsAvailable,
     answers,
     step,
     recommended,

@@ -44,7 +44,8 @@ export const CLOUD_RATE_LIMITS = {
   },
   uploadCreation: { namespace: 'upload-creation', windowMs: 60_000, limit: 120, actorLimit: 600 },
   authenticatedMutation: { namespace: 'authenticated-mutation', windowMs: 60_000, limit: 120 },
-  aiToken: { namespace: 'ai-token', windowMs: 60_000, limit: 30 },
+  servicesToken: { namespace: 'services-token', windowMs: 60_000, limit: 30 },
+  billingToken: { namespace: 'billing-token', windowMs: 60_000, limit: 30 },
   adminRead: { namespace: 'admin-read', windowMs: 60_000, limit: 300 },
   adminMutation: { namespace: 'admin-mutation', windowMs: 60_000, limit: 30 }
 } as const satisfies Record<string, RateLimitPolicy | ResourceRateLimitPolicy>
@@ -220,6 +221,6 @@ function setBudgetHeaders(context: Context, use: RateLimitUse, windowMs: number)
 export function routeParamResource(name: string) {
   return (context: Context): string =>
     // Lowercased as validation lowercases UUIDs, so one row's spellings share a budget.
-    // eslint-disable-next-line open-pencil/no-unvalidated-route-params -- a counter name, hashed, never queried.
+    // eslint-disable-next-line @open-pencil/security/no-unvalidated-route-params -- a counter name, hashed, never queried.
     context.req.param(name)?.toLowerCase() ?? 'unknown'
 }

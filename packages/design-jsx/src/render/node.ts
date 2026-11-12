@@ -98,7 +98,7 @@ async function renderIconNode<Artwork>(
   if (!iconName) throw new Error('<Icon> requires a name prop (e.g. name="lucide:heart")')
 
   const size = (props.size as number | undefined) ?? 24
-  const artwork = await services.icon(iconName, size)
+  const artwork = await graph.waitOutsideEdit(services.icon(iconName, size))
   if (!artwork) throw new Error(`Icon "${iconName}" not found`)
   return placeArtwork(services, graph, artwork, props, size, parentId)
 }
@@ -160,7 +160,12 @@ function renderSVGNode<Artwork>(
   const body =
     (typeof props.body === 'string' && props.body) ||
     tree.children.filter((c): c is string => typeof c === 'string').join('')
-  const artwork = services.svg({ body, elements: tree.children.filter(isTreeNode), props }, size)
+  // The viewBox maps into the layer's own box, which `w` and `h` set apart from the square `size`.
+  const box = {
+    width: explicitW > 0 ? explicitW : size,
+    height: explicitH > 0 ? explicitH : size
+  }
+  const artwork = services.svg({ body, elements: tree.children.filter(isTreeNode), props }, box)
   if (!artwork) {
     throw new Error('<svg> requires SVG markup, a body prop, or supported SVG shape children')
   }

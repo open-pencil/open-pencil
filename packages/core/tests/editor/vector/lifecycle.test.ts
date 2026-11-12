@@ -3,7 +3,6 @@ import { describe, expect, test } from 'bun:test'
 import { createEditor } from '@open-pencil/core'
 import { handleVisibleVertices } from '@open-pencil/core/vector'
 import { SceneGraph, type VectorNetwork } from '@open-pencil/scene-graph'
-
 import { expectDefined } from '@open-pencil/test-support/assert'
 const TRIANGLE: VectorNetwork = {
   vertices: [
@@ -66,8 +65,16 @@ test('closes the path when its layer is deleted or the document is replaced', ()
 test('commits the open path before opening another, and keeps it open when opened again', () => {
   const editor = createEditor()
   const pageId = editor.state.currentPageId
-  const first = editor.graph.createNode('VECTOR', pageId, { width: 100, height: 50, vectorNetwork: TRIANGLE })
-  const second = editor.graph.createNode('VECTOR', pageId, { width: 100, height: 50, vectorNetwork: TRIANGLE })
+  const first = editor.graph.createNode('VECTOR', pageId, {
+    width: 100,
+    height: 50,
+    vectorNetwork: TRIANGLE
+  })
+  const second = editor.graph.createNode('VECTOR', pageId, {
+    width: 100,
+    height: 50,
+    vectorNetwork: TRIANGLE
+  })
 
   editor.enterNodeEditMode(first.id)
   const session = expectDefined(editor.state.nodeEditState)
@@ -104,7 +111,11 @@ test('does not open a library layer, which changes in its library', () => {
 test('selecting another layer commits the open path and leaves edit mode', () => {
   const editor = createEditor()
   const pageId = editor.state.currentPageId
-  const path = editor.graph.createNode('VECTOR', pageId, { width: 100, height: 50, vectorNetwork: TRIANGLE })
+  const path = editor.graph.createNode('VECTOR', pageId, {
+    width: 100,
+    height: 50,
+    vectorNetwork: TRIANGLE
+  })
   const other = editor.graph.createNode('RECTANGLE', pageId, { x: 300, width: 50, height: 50 })
 
   editor.enterNodeEditMode(path.id)
@@ -146,13 +157,21 @@ test('picking a tool that does not edit paths leaves edit mode; holding one does
 test('a document opened over the path drops it, without writing into the new document', () => {
   const graph = new SceneGraph()
   const editor = createEditor({ graph })
-  const path = graph.createNode('VECTOR', editor.state.currentPageId, { width: 100, height: 50, vectorNetwork: TRIANGLE })
+  const path = graph.createNode('VECTOR', editor.state.currentPageId, {
+    width: 100,
+    height: 50,
+    vectorNetwork: TRIANGLE
+  })
   editor.enterNodeEditMode(path.id)
   expectDefined(editor.state.nodeEditState?.vertices[0]).x -= 20
 
   const next = new SceneGraph()
   const pageId = expectDefined(next.getPages()[0]).id
-  const twin = next.createNodeWithId(path.id, 'VECTOR', pageId, { width: 100, height: 50, vectorNetwork: TRIANGLE })
+  const twin = next.createNodeWithId(path.id, 'VECTOR', pageId, {
+    width: 100,
+    height: 50,
+    vectorNetwork: TRIANGLE
+  })
   editor.replaceGraph(next)
 
   expect(editor.state.nodeEditState).toBeNull()
@@ -162,7 +181,11 @@ test('a document opened over the path drops it, without writing into the new doc
 
 test('a tool the document does not offer leaves the path open', () => {
   const editor = createEditor()
-  const path = editor.graph.createNode('VECTOR', editor.state.currentPageId, { width: 100, height: 50, vectorNetwork: TRIANGLE })
+  const path = editor.graph.createNode('VECTOR', editor.state.currentPageId, {
+    width: 100,
+    height: 50,
+    vectorNetwork: TRIANGLE
+  })
   editor.setDocumentKind('board')
   editor.enterNodeEditMode(path.id)
 
@@ -202,7 +225,7 @@ describe('a path the host keeps open', () => {
     editor.nodeEditDeleteSelected()
     expect(editor.graph.getNode(vector.id)).toBeDefined()
     expect(editor.state.nodeEditState?.vertices).toHaveLength(3)
-    expect(editor.state.nodeEditState?.history).toEqual([])
+    expect(editor.undo.canUndo).toBe(false)
   })
 
   test('is not left for the pen', () => {
@@ -243,7 +266,7 @@ test('a host can show the handles of every point, not only near the selection', 
   editor.enterNodeEditMode(vector.id)
   expect(handleVisibleVertices(expectDefined(editor.state.nodeEditState))).toEqual(new Set())
   editor.exitNodeEditMode(true)
-  editor.enterNodeEditMode(vector.id, { handles: 'all' })
+  editor.enterNodeEditMode(vector.id, { showHandles: 'all' })
   expect(handleVisibleVertices(expectDefined(editor.state.nodeEditState))).toEqual(
     new Set([0, 1, 2])
   )

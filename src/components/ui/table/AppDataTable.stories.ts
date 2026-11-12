@@ -25,7 +25,7 @@ const layers: Layer[] = [
 const rowId = (layer: Layer) => layer.id
 
 const meta = {
-  title: 'Design System/Table/Data table',
+  title: 'Design System/Lists/Data Table',
   render: () => ({
     components: { AppDataTable, AppTablePagination },
     setup: () => ({ table: useTable({ features, columns, data: layers, getRowId: rowId }) }),

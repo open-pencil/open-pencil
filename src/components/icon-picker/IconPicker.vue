@@ -21,6 +21,7 @@ const {
   selected,
   set: initialSet,
   tooltip,
+  tooltipSide = 'top',
   side = 'left',
   align = 'start'
 } = defineProps<{
@@ -30,6 +31,8 @@ const {
   /** The set to open on, by prefix, such as the swapped icon's own; the last one chosen if unset. */
   set?: string
   tooltip?: string
+  /** Where the trigger's tooltip opens. */
+  tooltipSide?: 'left' | 'right' | 'top' | 'bottom'
   side?: 'left' | 'right' | 'top' | 'bottom'
   align?: 'start' | 'center' | 'end'
 }>()
@@ -166,6 +169,7 @@ function pick(name: string) {
     :items="items"
     :selected="selected"
     :tooltip="tooltip"
+    :tooltip-side="tooltipSide"
     :side="side"
     :align="align"
     :search-placeholder="panels.searchIcons"
@@ -191,7 +195,7 @@ function pick(name: string) {
         align="end"
         :ui="{
           trigger:
-            'mr-1 h-5 w-auto max-w-32 shrink-0 border-0 bg-transparent px-1.5 hover:bg-hover',
+            'me-1 h-5 w-auto max-w-32 shrink-0 border-0 bg-transparent px-1.5 hover:bg-hover',
           value: 'text-muted',
           content: 'w-64'
         }"

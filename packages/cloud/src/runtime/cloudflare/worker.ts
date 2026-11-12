@@ -5,6 +5,7 @@ import { createCloudServer } from '#cloud/runtime/site/server'
 import {
   cleanupPassOptions,
   cloudErrorHandler,
+  cloudRequestId,
   createCleanupServices,
   createCloudApp,
   createCloudAuthenticationRuntime,
@@ -25,7 +26,9 @@ import {
   type CloudflareCloudEnvironment,
   type PreparedCloudflareCloud
 } from './environment'
-import { createCloudflareRelayObject, relayFor, routeToRelay } from './relay'
+import { cloudflareRayId } from './logging'
+import { inMaintenance, maintenanceResponse } from './maintenance'
+import { createCloudflareRelayObject, relayFor, relayRoute } from './relay'
 import { assetSiteFiles } from './site'
 
 function emailTransport({ config }: PreparedCloudflareCloud, env: CloudflareCloudEnvironment) {
@@ -60,7 +63,11 @@ function cloudServices(
   const reporter = keptAlive(prepared.reportError, context)
   const reportError = (message: string, error: unknown, source: CloudErrorSource) =>
     reportCloudError(reporter, message, error, { source })
-  const database = createPostgresCloudDatabase({ connectionString: config.databaseURL })
+  // Hyperdrive keeps no session settings and ends queries past its own limit.
+  const database = createPostgresCloudDatabase({
+    connectionString: config.databaseURL,
+    statementTimeoutMs: null
+  })
   const objects = createS3ObjectStore(config)
   const transport = emailTransport(prepared, env)
   const queued = createTransactionalEmailService(database, {
@@ -81,7 +88,7 @@ function cloudServices(
   const background: Promise<unknown>[] = []
   const runInBackground = (task: Promise<unknown>) => {
     background.push(
-      task.catch((error: unknown) => reportError('Background work failed:', error, 'background'))
+      task.catch((error: unknown) => reportError('Background work failed', error, 'background'))
     )
   }
   const deliver = () =>
@@ -104,7 +111,7 @@ function cloudServices(
       context.waitUntil(
         Promise.allSettled(background)
           .then(() => (enqueued && transport ? deliver() : undefined))
-          .catch((error: unknown) => reportError('Sending email failed:', error, 'email'))
+          .catch((error: unknown) => reportError('Sending email failed', error, 'email'))
           .then(() => database.destroy())
       )
     }
@@ -123,7 +130,7 @@ async function runScheduled(
     if (config.cleanupEnabled) {
       const policy = createConfiguredCloudPolicy(config, database)
       await runCleanup(
-        createCleanupServices(config, database, objects, policy),
+        createCleanupServices(config, database, objects, policy, services.reporter),
         cleanupPassOptions(config)
       )
     }
@@ -138,13 +145,27 @@ async function runScheduled(
  * API, the editor, and the portal per request, a Durable Object per document runs its collaboration rooms, and a
  * Cron Trigger runs cleanup and retries email.
  */
-export function createCloudflareCloud(configSource: string) {
+export type CloudflareCloudOptions = {
+  /**
+   * Where collaboration rooms' Durable Objects run and keep their storage, such as `eu` for a
+   * deployment whose data stays in the EU; by default, near whoever opens the room first.
+   */
+  relayJurisdiction?: DurableObjectJurisdiction
+}
+
+export function createCloudflareCloud(
+  configSource: string,
+  { relayJurisdiction }: CloudflareCloudOptions = {}
+) {
   const { prepare, reporter } = cloudflareCloudSetup(configSource)
+  const relay = (env: CloudflareCloudEnvironment, documentId: string) =>
+    relayFor(env, documentId, relayJurisdiction)
 
   const router = new Hono<{ Bindings: CloudflareCloudEnvironment }>()
     // Setup, relay routing, and the runtime around the app; the app reports its own errors.
     .onError((error, c) => cloudErrorHandler(keptAlive(reporter(), c.executionCtx))(error, c))
-    .get(RELAY_PATH, routeToRelay)
+    .use('*', cloudRequestId(cloudflareRayId))
+    .get(RELAY_PATH, relayRoute(relayJurisdiction))
     .all('*', async (c) => {
       const prepared = await prepare(c.env)
       const services = cloudServices(prepared, c.env, c.executionCtx)
@@ -162,13 +183,16 @@ export function createCloudflareCloud(configSource: string) {
           invitationOutbox: transport ? createInvitationOutbox(email) : undefined,
           transactionalEmail: email,
           enrollment,
-          aiSigningKey: prepared.aiSigningKey,
+          servicesSigningKey: prepared.servicesSigningKey,
           relayURL: config.relayURL ?? defaultRelayURL(config.publicURL),
           onDocumentRestored: (documentId) =>
-            runInBackground(relayFor(c.env, documentId).startOver(documentId)),
+            runInBackground(relay(c.env, documentId).startOver(documentId)),
+          onDocumentTakenDown: (documentId) =>
+            runInBackground(relay(c.env, documentId).closeDocument(documentId)),
           onDocumentVersionsChanged: (documentId) =>
-            runInBackground(relayFor(c.env, documentId).announceVersions(documentId)),
-          reportError: services.reporter
+            runInBackground(relay(c.env, documentId).announceVersions(documentId)),
+          reportError: services.reporter,
+          forwardedRequestId: cloudflareRayId
         })
         return await createCloudServer(app, {
           site: assetSiteFiles(c.env.ASSETS),
@@ -181,13 +205,15 @@ export function createCloudflareCloud(configSource: string) {
     })
 
   const worker: ExportedHandler<CloudflareCloudEnvironment> = {
-    fetch: (request, env, context) => router.fetch(request, env, context),
+    fetch: (request, env, context) =>
+      inMaintenance(env) ? maintenanceResponse(request) : router.fetch(request, env, context),
 
     async scheduled(_controller, env, context) {
+      if (inMaintenance(env)) return
       try {
         await runScheduled(await prepare(env), env, context)
       } catch (error) {
-        await reportCloudError(reporter(), 'Scheduled run failed:', error, { source: 'scheduled' })
+        await reportCloudError(reporter(), 'Scheduled run failed', error, { source: 'scheduled' })
         throw error
       }
     }

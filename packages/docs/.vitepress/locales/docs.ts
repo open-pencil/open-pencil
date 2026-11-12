@@ -10,14 +10,15 @@ import {
   PL,
   PL_PROG,
   RU,
-  RU_PROG,
+  RU_PROG
 } from '#docs/labels.ts'
+
 import { localeThemeConfig } from './theme.ts'
 
 export const docsLocales = {
   root: {
     label: 'English',
-    lang: 'en',
+    lang: 'en'
   },
   de: {
     label: 'Deutsch',
@@ -32,11 +33,12 @@ export const docsLocales = {
         sdk: 'SDK',
         reference: 'Referenz',
         development: 'Entwicklung',
-        openApp: 'App öffnen',
+        cloud: 'Cloud',
+        openApp: 'App öffnen'
       },
       DE,
-      DE_PROG,
-    ),
+      DE_PROG
+    )
   },
   it: {
     label: 'Italiano',
@@ -51,11 +53,12 @@ export const docsLocales = {
         sdk: 'SDK',
         reference: 'Riferimento',
         development: 'Sviluppo',
-        openApp: 'Apri app',
+        cloud: 'Cloud',
+        openApp: 'Apri app'
       },
       IT,
-      IT_PROG,
-    ),
+      IT_PROG
+    )
   },
   fr: {
     label: 'Français',
@@ -70,11 +73,12 @@ export const docsLocales = {
         sdk: 'SDK',
         reference: 'Référence',
         development: 'Développement',
-        openApp: "Ouvrir l'app",
+        cloud: 'Cloud',
+        openApp: "Ouvrir l'app"
       },
       FR,
-      FR_PROG,
-    ),
+      FR_PROG
+    )
   },
   es: {
     label: 'Español',
@@ -89,11 +93,12 @@ export const docsLocales = {
         sdk: 'SDK',
         reference: 'Referencia',
         development: 'Desarrollo',
-        openApp: 'Abrir app',
+        cloud: 'Cloud',
+        openApp: 'Abrir app'
       },
       ES,
-      ES_PROG,
-    ),
+      ES_PROG
+    )
   },
   pl: {
     label: 'Polski',
@@ -108,11 +113,12 @@ export const docsLocales = {
         sdk: 'SDK',
         reference: 'Referencja',
         development: 'Rozwój',
-        openApp: 'Otwórz app',
+        cloud: 'Cloud',
+        openApp: 'Otwórz app'
       },
       PL,
-      PL_PROG,
-    ),
+      PL_PROG
+    )
   },
   ru: {
     label: 'Русский',
@@ -127,10 +133,11 @@ export const docsLocales = {
         sdk: 'SDK',
         reference: 'Справочник',
         development: 'Разработка',
-        openApp: 'Открыть приложение',
+        cloud: 'Cloud',
+        openApp: 'Открыть приложение'
       },
       RU,
-      RU_PROG,
-    ),
-  },
+      RU_PROG
+    )
+  }
 }

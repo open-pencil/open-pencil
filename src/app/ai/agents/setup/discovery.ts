@@ -1,11 +1,6 @@
 import { computed, ref, shallowRef } from 'vue'
 
-import {
-  ACP_AGENTS,
-  IS_TAURI,
-  type ACPAgentDef,
-  type ACPAgentID
-} from '@open-pencil/core/constants'
+import { ACP_AGENTS, type ACPAgentDef, type ACPAgentID } from '@open-pencil/core/constants'
 
 import {
   HARNESS_EXECUTABLE,
@@ -14,6 +9,7 @@ import {
 } from '@/app/ai/agents/pi/companion'
 import { MCP_EXECUTABLE, MCP_INSTALL_TARGET, MCP_PACKAGE_NAME } from '@/app/automation/mcp/failure'
 import { restartMCPRuntime } from '@/app/automation/mcp/runtime'
+import { canRunHostProcesses } from '@/app/tauri/capabilities'
 import { detectUserAgent } from '@/app/tauri/command'
 
 import {
@@ -39,6 +35,15 @@ export type DetectedAgent = {
 }
 
 /**
+ * The executable to start and the `PATH` it starts with. The lookup's `PATH` includes folders
+ * created after the app started, such as an installer's own; `null` keeps the app's `PATH`.
+ */
+export interface SpawnTarget {
+  command: string
+  searchPath: string | null
+}
+
+/**
  * The executable to spawn from a finished lookup. `null` means the lookup itself failed, so the
  * command is tried anyway. A lookup that did not find it refuses to start, so a missing agent is
  * reported as such rather than as a shell that exited.
@@ -51,12 +56,16 @@ export function spawnCommandFromLookup(
   return agent.command
 }
 
-export async function resolveSpawnCommand(agent: ACPAgentDef): Promise<string> {
+export async function resolveSpawnTarget(agent: ACPAgentDef): Promise<SpawnTarget> {
   try {
-    return spawnCommandFromLookup(agent, (await lookupAgents()).executables)
+    const lookup = await lookupAgents()
+    return {
+      command: spawnCommandFromLookup(agent, lookup.executables),
+      searchPath: lookup.searchPath
+    }
   } catch (error) {
     if (error instanceof AgentNotInstalledError) throw error
-    return agent.command
+    return { command: agent.command, searchPath: null }
   }
 }
 
@@ -303,7 +312,7 @@ export function createAgentDiscovery(options: {
 }
 
 export const agentDiscovery = createAgentDiscovery({
-  enabled: IS_TAURI,
+  enabled: canRunHostProcesses(),
   lookup: lookupAgents,
   install: installAgentAdapter,
   installBridge: installCanvasBridge,

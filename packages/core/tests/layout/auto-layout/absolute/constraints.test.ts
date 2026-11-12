@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '#core/editor'
-import { FigmaAPI } from '#core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
+import { createEditor } from '#core/editor'
+import { FigmaAPI } from '#core/figma-api'
+
 // Each case repeats a Figma desktop 126 plugin API script; the numbers are what Figma reported.
-// Figma lays out as a script edits, while ours lays out when geometry is read, so the cases read
-// a frame's size where Figma would already have laid it out.
+// Both lay out a script's edits before it reads or places a layer.
 
 function button(figma: FigmaAPI) {
   const frame = figma.createFrame()
@@ -36,8 +36,8 @@ const CASES = {
     shrunk: [52, 48, 76.5, -8.5, 16, 24]
   },
   'SCALE/SCALE': {
-    grown: [183.25, 64, 152.375, -11.3359375, 47.804348, 32],
-    shrunk: [52, 48, 43.2421875, -8.5, 13.565217, 24]
+    grown: [183.25, 64, 152.376359, -11.333333, 47.804348, 32],
+    shrunk: [52, 48, 43.23913, -8.5, 13.565217, 24]
   },
   'MIN/MAX': {
     grown: [183.25, 64, 76.5, 7.5, 24, 24],
@@ -222,4 +222,101 @@ test('a badge keeps its place through editing the label and undoing it', () => {
   editor.redoAction()
   expect([frame.width, badge.x]).toEqual([182, 174])
   editor.dispose()
+})
+
+test('undoing a previewed edit leaves the badge where the next layout finds it', () => {
+  const editor = createEditor()
+  const { graph } = editor
+  const frame = graph.createNode('FRAME', editor.state.currentPageId, {
+    layoutMode: 'HORIZONTAL',
+    primaryAxisSizing: 'HUG',
+    counterAxisSizing: 'HUG',
+    paddingLeft: 16,
+    paddingRight: 16,
+    paddingTop: 12,
+    paddingBottom: 12
+  })
+  const label = graph.createNode('RECTANGLE', frame.id, { width: 60, height: 24 })
+  editor.runLayoutForNode(frame.id)
+  const badge = graph.createNode('FRAME', frame.id, {
+    x: 76.5,
+    y: -8.5,
+    width: 24,
+    height: 24,
+    layoutPositioning: 'ABSOLUTE',
+    horizontalConstraint: 'SCALE',
+    verticalConstraint: 'SCALE'
+  })
+  // A typed or scrubbed panel value is a preview, committed as one step with the layout it made.
+  const preview = editor.beginNodePreview('Change width')
+  preview.update(label.id, { width: 151.25 })
+  preview.commit()
+  expect(frame.width).toBe(183.25)
+  editor.undoAction()
+  expect([frame.width, badge.x, badge.width]).toEqual([92, 76.5, 24])
+  // Laying the page out again, as any later edit does, must not move it from the undone size.
+  editor.runLayoutForNode(frame.id)
+  expect([frame.width, badge.x, badge.width]).toEqual([92, 76.5, 24])
+  editor.redoAction()
+  editor.runLayoutForNode(frame.id)
+  expect(frame.width).toBe(183.25)
+  expect(badge.x).toBeCloseTo(152.376359, 5)
+  editor.dispose()
+})
+
+// Figma desktop, 2026-11-08: two layers grouped and taken out of the flow of the Hug button, both
+// with the constraints of the case. A group owns no constraints, so its layers keep theirs.
+describe('a group that ignores auto layout', () => {
+  function badgeGroup(figma: FigmaAPI, horizontal: ConstraintName, vertical: ConstraintName) {
+    const { frame, label } = button(figma)
+    const a = figma.createRectangle()
+    a.resize(10, 10)
+    const b = figma.createRectangle()
+    b.resize(14, 14)
+    for (const layer of [a, b]) {
+      frame.appendChild(layer)
+      layer.layoutPositioning = 'ABSOLUTE'
+      layer.constraints = { horizontal, vertical }
+    }
+    a.x = 70
+    a.y = -6
+    b.x = 80
+    b.y = -2
+    const group = figma.group([a, b], frame)
+    group.layoutPositioning = 'ABSOLUTE'
+    group.x = 70
+    group.y = -6
+    const read = () => [group.x, group.y, group.width, group.height]
+    return { frame, label, read }
+  }
+
+  test('stays where it is as its Hug frame grows and shrinks', () => {
+    for (const name of ['MAX/MIN', 'CENTER/CENTER', 'STRETCH/STRETCH', 'SCALE/SCALE'] as const) {
+      const figma = new FigmaAPI(new SceneGraph())
+      const [horizontal, vertical] = name.split('/') as [ConstraintName, ConstraintName]
+      const { frame, label, read } = badgeGroup(figma, horizontal, vertical)
+      label.resize(151.25, 40)
+      expect([frame.width, frame.height, ...read()]).toEqual([183.25, 64, 70, -6, 24, 18])
+      label.resize(20, 24)
+      expect([frame.width, frame.height, ...read()]).toEqual([52, 48, 70, -6, 24, 18])
+    }
+  })
+
+  test('has its layers follow their constraints as its fixed frame is resized', () => {
+    const cases = {
+      'MAX/MIN': [170, -6, 24, 18],
+      'CENTER/CENTER': [120, 4, 24, 18],
+      'STRETCH/STRETCH': [70, -6, 124, 38],
+      'SCALE/SCALE': [146.08696, -8.5, 50.086945, 25.5]
+    } as const
+    for (const [name, expected] of Object.entries(cases)) {
+      const figma = new FigmaAPI(new SceneGraph())
+      const [horizontal, vertical] = name.split('/') as [ConstraintName, ConstraintName]
+      const { frame, read } = badgeGroup(figma, horizontal, vertical)
+      frame.layoutSizingHorizontal = 'FIXED'
+      frame.layoutSizingVertical = 'FIXED'
+      frame.resize(192, 68)
+      read().forEach((value, i) => expect(value).toBeCloseTo(expected[i], 4))
+    }
+  })
 })

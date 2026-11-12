@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { renderJSX } from '@open-pencil/core/design-jsx'
 import { sceneNodeToJSX, selectionToJSX } from '@open-pencil/design-jsx'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 const BUTTON = `<Frame name="Library">
   <Component name="Star" w={4} h={4} />
@@ -122,7 +122,9 @@ describe('component export', () => {
     expect(jsx).toContain('overrides={{ "Dot:opacity": 1 }}')
     const [copy] = await renderJSX(graph, jsx)
     const copiedDot = graph.getChildren(copy.id).find((child) => child.name === 'Dot')
-    const claimed = getNodeOrThrow(graph, copy.id).instanceOverrides.descendants.get(copiedDot?.id ?? '')
+    const claimed = getNodeOrThrow(graph, copy.id).instanceOverrides.descendants.get(
+      copiedDot?.id ?? ''
+    )
     expect(claimed?.has('opacity')).toBe(true)
   })
 
@@ -176,11 +178,16 @@ describe('component export', () => {
 
     // The target has a Button of its own, which the copy must not link to.
     const target = new SceneGraph()
-    await renderJSX(target, '<ComponentSet name="Button"><Component name="State=On" w={1} h={1} /></ComponentSet>')
+    await renderJSX(
+      target,
+      '<ComponentSet name="Button"><Component name="State=On" w={1} h={1} /></ComponentSet>'
+    )
     const [copiedLibrary, copiedInstance] = await renderJSX(target, jsx)
     const copiedSet = target.getChildren(copiedLibrary.id).find((child) => child.name === 'Button')
-    const variant = target.getChildren(copiedSet?.id ?? '').find((child) => child.name === 'State=On')
-    expect(getNodeOrThrow(target, copiedInstance.id).componentId).toBe(variant?.id ?? "missing")
+    const variant = target
+      .getChildren(copiedSet?.id ?? '')
+      .find((child) => child.name === 'State=On')
+    expect(getNodeOrThrow(target, copiedInstance.id).componentId).toBe(variant?.id ?? 'missing')
     expect(target.getChildren(copiedLibrary.id).length).toBe(3)
     const label = target.getChildren(copiedInstance.id).find((child) => child.name === 'Label')
     expect(label?.text).toBe('Go')
@@ -226,7 +233,10 @@ describe('component export', () => {
     expect(jsx).toContain('Icon={heart1}')
 
     const target = new SceneGraph()
-    await renderJSX(target, '<><Component name="Star" w={1} h={1} /><Component name="Heart" w={1} h={1} /></>')
+    await renderJSX(
+      target,
+      '<><Component name="Star" w={1} h={1} /><Component name="Heart" w={1} h={1} /></>'
+    )
     const [copiedLibrary, copiedInstance] = await renderJSX(target, jsx)
     const copied = (name: string) =>
       [...target.getAllNodes()].find(

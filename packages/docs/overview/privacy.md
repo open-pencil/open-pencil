@@ -49,12 +49,12 @@ Once a day, an official build sends this to `feedback.openpencil.dev`:
 ```http
 POST https://feedback.openpencil.dev/ping
 
-{ "version": "0.16.0", "platform": "macos", "arch": "arm64", "app": "desktop", "browser": "unknown", "usageStats": "denied" }
+{ "version": "0.17.0", "platform": "macos", "arch": "arm64", "app": "desktop", "browser": "unknown", "usageStats": "denied", "pingDays": "5-8", "enteredStep": false }
 ```
 
 <SdkDataTable :columns="columns" :rows="pingRows" />
 
-It carries no ID, so pings from the same install cannot be linked. The answer to the usage stats question is the only way we learn how many people decline, since declining means nothing else is ever sent. The app stores only the date of its last ping, so it pings once a day. The server adds one to a counter for that day and build. It also adds one to a counter for that day, the app and platform, and the network the ping came from: the network's number and operator name as Cloudflare reports them, such as a home internet provider, a university, or a cloud host. That tells real people apart from automated installs running in data centers, without anything that identifies a device. The server keeps nothing else. It does not log addresses, and it rejects a ping that carries any other field.
+It carries no ID, so pings from the same install cannot be linked. The answer to the usage stats question is the only way we learn how many people decline, since declining means nothing else is ever sent. The app stores only the date of its last ping, so it pings once a day, and how many days it has pinged. Only the step that number falls in is sent: 1, 2, 3–4, 5–8, and so on, doubling, never the number itself. Every install passes through the steps in order, so the server can tell returning installs from copies of one saved state launched over and over, which repeat the same step, without telling installs apart. The server adds one to a counter for that day and build, and one to a counter for that day, app, and step. It also adds one to a counter for that day, the app and platform, and the network the ping came from: the network's number and operator name as Cloudflare reports them, such as a home internet provider, a university, or a cloud host. That tells real people apart from automated installs running in data centers, without anything that identifies a device. The server keeps nothing else. It does not log addresses, and it rejects a ping that carries any other field.
 
 The ping is on by default. Turn it off in **Settings → Privacy**.
 
@@ -102,7 +102,7 @@ If you join the OpenPencil Cloud waitlist on this site, we store your email addr
 
 ## Other network requests
 
-OpenPencil is local-first, but some features reach the network. The desktop app checks for updates on its own; everything else below connects only when you use that feature, and only to the service named.
+OpenPencil is local-first, but some features reach the network. The desktop app checks for updates on startup unless you turn that off in **Settings → General**. **Check for Updates** in the menu still checks. Everything else below connects only when you use that feature, and only to the service named.
 
 | Feature                 | Where it connects                                                                                                                                                                                       |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

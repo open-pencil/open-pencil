@@ -1,6 +1,7 @@
 import type { CloudDatabase } from '#cloud/server/db'
 import { IMAGE_RELEASE_GRACE_MS, releaseUnusedImages } from '#cloud/server/documents/images'
 import { historyStart, LIMITED_HISTORY_DAYS } from '#cloud/server/documents/versions/history'
+import { reportCloudError, type CloudErrorReporter } from '#cloud/server/errors'
 import type { ObjectStore } from '#cloud/server/objects'
 import type { CloudPolicyContext } from '#cloud/server/policy/keys'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
@@ -47,9 +48,16 @@ export type RevisionCompactionService = {
 export function createRevisionCompactionService(
   database: Kysely<CloudDatabase>,
   objects: ObjectStore,
-  options: { policy?: CloudPolicy; deploymentMode?: CloudPolicyContext['deploymentMode'] } = {}
+  options: {
+    policy?: CloudPolicy
+    deploymentMode?: CloudPolicyContext['deploymentMode']
+    /** Where each step compaction couldn't finish is reported; a pass carries on with the rest. */
+    reportError?: CloudErrorReporter
+  } = {}
 ): RevisionCompactionService {
   const deploymentMode = options.deploymentMode ?? 'self-hosted'
+  const report = (message: string, error: unknown) =>
+    reportCloudError(options.reportError, message, error, { source: 'cleanup' })
   async function pruneVersions(now: Date, batchSize: number): Promise<number> {
     if (!options.policy) return 0
     const limitedBefore = new Date(now.getTime() - LIMITED_HISTORY_DAYS * 24 * 60 * 60_000)
@@ -62,7 +70,7 @@ export function createRevisionCompactionService(
       .execute()
     let pruned = 0
     for (const { workspaceId } of workspaces) {
-      const start = await historyStart(options.policy, deploymentMode, workspaceId, now)
+      const start = await historyStart(database, options.policy, deploymentMode, workspaceId, now)
       if (!start) continue
       const deleted = await database
         .deleteFrom('documentVersion')
@@ -181,8 +189,9 @@ export function createRevisionCompactionService(
           .where(unreferencedObject)
           .execute()
         result.objectsDeleted++
-      } catch {
+      } catch (error) {
         result.failed++
+        await report(`Deleting file ${object.id} failed`, error)
       }
     }
   }
@@ -214,8 +223,9 @@ export function createRevisionCompactionService(
           capacity -= compacted.revisions
           result.revisionsDeleted += compacted.revisions
           result.bytesReclaimed += compacted.bytes
-        } catch {
+        } catch (error) {
           result.failed++
+          await report(`Compacting document ${documentId} failed`, error)
         }
       }
       // Compaction just freed the images of the saves it deleted; the release lets their grace pass.
@@ -228,8 +238,9 @@ export function createRevisionCompactionService(
         )
         result.imagesReleased = images.released
         result.bytesReclaimed += images.bytes
-      } catch {
+      } catch (error) {
         result.failed++
+        await report('Releasing unused images failed', error)
       }
       await sweepObjects(now, input.batchSize, result)
       return result

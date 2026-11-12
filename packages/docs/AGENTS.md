@@ -2,7 +2,7 @@
 
 Published VitePress site. `bun run docs:dev`, `bun run docs:build` for fast checks, and `bun run docs:build:production` for deployment output. `bun run check:docs` runs the integrity checks in `tools/checks/docs/` plus `check:authoring-reference`.
 
-- Keep routes under `/getting-started`, `/overview/**`, `/user-guide/**`, `/programmable/**`, `/reference/**`, and `/development/**`, plus the top-level `/download`; do not recreate `/guide/**`. Preserve moves in `packages/docs/public/_redirects`.
+- Keep routes under `/getting-started`, `/overview/**`, `/user-guide/**`, `/programmable/**`, `/reference/**`, `/development/**`, and `/cloud/**` (OpenPencil Cloud: using it, self-hosting, and the hosted service's legal pages), plus the top-level `/download`; do not recreate `/guide/**`. Preserve moves in `packages/docs/public/_redirects`.
 - Link untranslated locale navigation to canonical English pages rather than adding placeholders.
 - `packages/docs/development/roadmap.md` tracks product direction, Figma compatibility gaps, raw metadata coverage, and the code map. `packages/docs/development/testing.md` is the canonical testing architecture. Explanations that would bloat an `AGENTS.md` belong under `packages/docs/development/`.
 - Component API data loaders share one `vue-component-meta` checker through `sharedChecker()` in `.vitepress/sdk/component-meta.ts`; VitePress evaluates each loader separately, so a checker per module meant one TypeScript program per page and about 7 GB of heap.

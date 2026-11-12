@@ -25,20 +25,21 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
-      - uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: tools/ci/images/native-contracts
           push: true
           tags: |
             ghcr.io/open-pencil/native-contracts-ci:ubuntu-24.04
             ghcr.io/open-pencil/native-contracts-ci:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # No layer cache: each build installs the packages current that day, which is how a rebuild
+          # brings their security updates.
+          no-cache: true

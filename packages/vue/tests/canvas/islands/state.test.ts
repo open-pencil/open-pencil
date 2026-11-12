@@ -19,7 +19,13 @@ function form(shown: string, { drawsDisabled = true } = {}) {
   const set = graph.createNode('COMPONENT_SET', pageId, {
     name: 'Checkbox',
     componentPropertyDefinitions: [
-      { id: 'state', name: 'State', type: 'VARIANT', defaultValue: 'Default', variantOptions: STATES }
+      {
+        id: 'state',
+        name: 'State',
+        type: 'VARIANT',
+        defaultValue: 'Default',
+        variantOptions: STATES
+      }
     ]
   })
   const variants = STATES.map((state) =>

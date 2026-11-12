@@ -5,7 +5,6 @@ import { computeHandleVisibleVertices, regenerateFillGeometry } from '@open-penc
 import { SceneGraph, type VectorNetwork } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
-
 import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 const NETWORK: VectorNetwork = {
   vertices: [
@@ -118,12 +117,14 @@ describe('vector edit graph ownership', () => {
     expect(editedBlob).not.toEqual(originalBlob)
     expect(editor.undo.canUndo).toBe(true)
 
+    // Undo opens the path again, then takes back its change; redo leaves it changed.
+    editor.undo.undo()
     editor.undo.undo()
     expect(
       expectDefined(getNodeOrThrow(editor.graph, vector.id).fillGeometry[0]).commandsBlob
     ).toEqual(originalBlob)
-    expect(editor.undo.canUndo).toBe(false)
 
+    editor.undo.redo()
     editor.undo.redo()
     expect(
       expectDefined(getNodeOrThrow(editor.graph, vector.id).fillGeometry[0]).commandsBlob
@@ -146,7 +147,7 @@ describe('vector edit with rotated ancestors', () => {
     }
   })
 
-  test('enter + commit without edits is a no-op', () => {
+  test('enter + commit without edits leaves the layer as it was', () => {
     const { graph, vector, editor, undoLabels } = setup(30, 20)
     const before = worldVertices(graph, vector.id)
 
@@ -165,8 +166,8 @@ describe('vector edit with rotated ancestors', () => {
       expect(a.x).toBeCloseTo(b.x, 6)
       expect(a.y).toBeCloseTo(b.y, 6)
     }
-    // no geometry change → no document undo entry
-    expect(undoLabels()).toEqual([])
+    // Entering and leaving are steps, as in Figma; the layer has none.
+    expect(undoLabels()).toEqual(['Enter path', 'Leave path'])
   })
 
   test('dragging a vertex commits without moving the rest of the shape', () => {
@@ -197,7 +198,7 @@ describe('vector edit with rotated ancestors', () => {
     expect(Math.min(...network.vertices.map((v) => v.x))).toBeCloseTo(0, 5)
     expect(Math.min(...network.vertices.map((v) => v.y))).toBeCloseTo(0, 5)
     // committing goes through the undo-aware update so Cmd+Z works
-    expect(undoLabels()).toEqual(['Edit vector'])
+    expect(undoLabels()).toEqual(['Enter path', 'Edit vector', 'Leave path'])
   })
 
   test('committing one drag rebases the active edit session for the next drag', () => {
@@ -210,14 +211,14 @@ describe('vector edit with rotated ancestors', () => {
 
     const committed = getNodeOrThrow(graph, vector.id)
     expect(editor.state.nodeEditState).toBe(first)
-    expect(undoLabels()).toEqual(['Edit vector'])
+    expect(undoLabels()).toEqual(['Enter path', 'Edit vector'])
     expect(expectDefined(first.origAbsNetwork.vertices[0]).x).toBeCloseTo(25, 5)
     expect(expectDefined(first.origAbsNetwork.vertices[0]).y).toBeCloseTo(10, 5)
     expect(committed).toBeDefined()
 
     first.vertices[0] = { ...expectDefined(first.vertices[0]), x: 40, y: 20 }
     editor.commitNodeEditChanges()
-    expect(undoLabels()).toEqual(['Edit vector', 'Edit vector'])
+    expect(undoLabels()).toEqual(['Enter path', 'Edit vector', 'Edit vector'])
     expect(expectDefined(first.origAbsNetwork.vertices[0]).x).toBeCloseTo(40, 5)
     expect(expectDefined(first.origAbsNetwork.vertices[0]).y).toBeCloseTo(20, 5)
   })
@@ -232,83 +233,105 @@ describe('vector edit with rotated ancestors', () => {
   })
 })
 
-describe('vector edit session undo/redo', () => {
+describe('vector edit undo and redo', () => {
   function editSession() {
-    const { vector, editor } = setup(0, 0)
+    const { vector, editor, undoLabels } = setup(0, 0)
     editor.enterNodeEditMode(vector.id)
-    return { editor, es: expectDefined(editor.state.nodeEditState, 'nodeEditState') }
+    const es = () => expectDefined(editor.state.nodeEditState, 'nodeEditState')
+    return { editor, vector, es, undoLabels, orig: { ...expectDefined(es().vertices[0]) } }
   }
 
-  test('undo restores geometry from before the mutation', () => {
-    const { es, editor } = editSession()
-    const orig = { ...expectDefined(es.vertices[0]) }
+  test('undo puts the path back as it was before the change', () => {
+    const { es, editor, orig } = editSession()
 
     editor.nodeEditPushHistory() // drag start
-    es.vertices[0] = { ...orig, x: orig.x + 50, y: orig.y - 20 }
-    editor.nodeEditUndo()
+    es().vertices[0] = { ...orig, x: orig.x + 50, y: orig.y - 20 }
+    editor.undoAction()
 
-    expect(expectDefined(es.vertices[0]).x).toBeCloseTo(orig.x, 6)
-    expect(expectDefined(es.vertices[0]).y).toBeCloseTo(orig.y, 6)
+    expect(expectDefined(es().vertices[0]).x).toBeCloseTo(orig.x, 6)
+    expect(expectDefined(es().vertices[0]).y).toBeCloseTo(orig.y, 6)
   })
 
-  test('redo reapplies the undone mutation', () => {
-    const { es, editor } = editSession()
-    const orig = { ...expectDefined(es.vertices[0]) }
-
-    editor.nodeEditPushHistory()
-    es.vertices[0] = { ...orig, x: orig.x + 50 }
-    editor.nodeEditUndo()
-    editor.nodeEditRedo()
-
-    expect(expectDefined(es.vertices[0]).x).toBeCloseTo(orig.x + 50, 6)
-  })
-
-  test('no-op drag snapshots are skipped', () => {
-    const { es, editor } = editSession()
-    const orig = { ...expectDefined(es.vertices[0]) }
-
-    editor.nodeEditPushHistory()
-    es.vertices[0] = { ...orig, x: orig.x + 50 }
-    editor.nodeEditPushHistory() // click without move → identical snapshot
-    editor.nodeEditPushHistory()
-    editor.nodeEditUndo()
-
-    expect(expectDefined(es.vertices[0]).x).toBeCloseTo(orig.x, 6)
-  })
-
-  test('undo with no history is a no-op', () => {
-    const { es, editor } = editSession()
-    const orig = { ...expectDefined(es.vertices[0]) }
-    editor.nodeEditUndo()
-    expect(expectDefined(es.vertices[0]).x).toBeCloseTo(orig.x, 6)
-  })
-
-  test('clicking without dragging after undo keeps redo', () => {
-    const { editor } = editSession()
-    const es = () => expectDefined(editor.state.nodeEditState, 'nodeEditState')
-    const orig = { ...expectDefined(es().vertices[0]) }
+  test('redo makes the change again', () => {
+    const { es, editor, orig } = editSession()
 
     editor.nodeEditPushHistory()
     es().vertices[0] = { ...orig, x: orig.x + 50 }
-    editor.nodeEditUndo()
+    editor.undoAction()
+    editor.redoAction()
+
+    expect(expectDefined(es().vertices[0]).x).toBeCloseTo(orig.x + 50, 6)
+  })
+
+  test('presses that change nothing are no steps', () => {
+    const { es, editor, orig, undoLabels } = editSession()
+
+    editor.nodeEditPushHistory()
+    es().vertices[0] = { ...orig, x: orig.x + 50 }
+    editor.nodeEditPushHistory() // click without move
+    editor.nodeEditPushHistory()
+    expect(undoLabels()).toEqual(['Enter path', 'Edit vector'])
+    editor.undoAction()
+
+    expect(expectDefined(es().vertices[0]).x).toBeCloseTo(orig.x, 6)
+  })
+
+  test('undo past the first change leaves the path, and redo opens it again', () => {
+    const { editor, vector } = editSession()
+    editor.undoAction()
+    expect(editor.state.nodeEditState).toBeNull()
+    editor.redoAction()
+    expect(editor.state.nodeEditState?.nodeId).toBe(vector.id)
+  })
+
+  test('clicking without dragging after undo keeps redo', () => {
+    const { es, editor, orig } = editSession()
+
+    editor.nodeEditPushHistory()
+    es().vertices[0] = { ...orig, x: orig.x + 50 }
+    editor.undoAction()
     editor.nodeEditPushHistory() // click a vertex without moving it
-    editor.nodeEditRedo()
+    editor.redoAction()
 
     expect(expectDefined(es().vertices[0]).x).toBeCloseTo(orig.x + 50, 6)
   })
 
   test('a real change after undo clears redo', () => {
-    const { editor } = editSession()
-    const es = () => expectDefined(editor.state.nodeEditState, 'nodeEditState')
-    const orig = { ...expectDefined(es().vertices[0]) }
+    const { es, editor, orig } = editSession()
 
     editor.nodeEditPushHistory()
     es().vertices[0] = { ...orig, x: orig.x + 50 }
-    editor.nodeEditUndo()
+    editor.undoAction()
     editor.nodeEditPushHistory()
     es().vertices[0] = { ...orig, x: orig.x - 30 } // new timeline
-    editor.nodeEditRedo() // stale redo must not restore +50
+    editor.redoAction() // stale redo must not restore +50
 
     expect(expectDefined(es().vertices[0]).x).toBeCloseTo(orig.x - 30, 6)
+  })
+
+  test('undo after leaving opens the path again and takes back its changes one by one', () => {
+    const { es, editor, orig, vector } = editSession()
+    for (const dx of [10, 20]) {
+      editor.nodeEditPushHistory()
+      es().vertices[0] = { ...orig, x: orig.x + dx }
+      editor.commitNodeEditChanges()
+    }
+    editor.exitNodeEditMode(true)
+    const edited = structuredClone(editor.graph.getNode(vector.id)?.vectorNetwork)
+    const x = () => expectDefined(editor.state.nodeEditState?.vertices[0]).x
+
+    editor.undoAction()
+    expect(editor.state.nodeEditState?.nodeId).toBe(vector.id)
+    expect(x()).toBeCloseTo(orig.x + 20, 6)
+    editor.undoAction()
+    expect(x()).toBeCloseTo(orig.x + 10, 6)
+    editor.undoAction()
+    expect(x()).toBeCloseTo(orig.x, 6)
+    editor.undoAction()
+    expect(editor.state.nodeEditState).toBeNull()
+
+    for (let i = 0; i < 4; i++) editor.redoAction()
+    expect(editor.state.nodeEditState).toBeNull()
+    expect(editor.graph.getNode(vector.id)?.vectorNetwork).toEqual(expectDefined(edited))
   })
 })

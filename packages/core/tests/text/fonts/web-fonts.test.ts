@@ -16,10 +16,12 @@ describe('web font coverage requests', () => {
     const resolver = new WebFontResolver()
     resolver.setEnabled({ google: true })
     const started = Promise.withResolvers<undefined>()
-    const blocked = Promise.withResolvers<Response>()
+    const blocked = Promise.withResolvers<undefined>()
     resolver.setRemoteFetch(async () => {
       started.resolve(undefined)
-      return blocked.promise
+      await blocked.promise
+      // A response of its own for each request, whose body nothing else reads.
+      return new Response('{}')
     })
     const first = resolver.listFamilies('google')
     await started.promise
@@ -29,7 +31,7 @@ describe('web font coverage requests', () => {
     abort.abort()
 
     await expect(queued).rejects.toHaveProperty('name', 'AbortError')
-    blocked.resolve(new Response('{}', { status: 200 }))
+    blocked.resolve(undefined)
     await first
   })
 
@@ -37,10 +39,12 @@ describe('web font coverage requests', () => {
     const resolver = new WebFontResolver()
     resolver.setEnabled({ google: true })
     const started = Promise.withResolvers<undefined>()
-    const blocked = Promise.withResolvers<Response>()
+    const blocked = Promise.withResolvers<undefined>()
     resolver.setRemoteFetch(async () => {
       started.resolve(undefined)
-      return blocked.promise
+      await blocked.promise
+      // A response of its own for each request, whose body nothing else reads.
+      return new Response('{}')
     })
     const abort = new AbortController()
     const loading = resolver.fetchFont(['Inter'], 'Regular', '', abort.signal)
@@ -49,19 +53,20 @@ describe('web font coverage requests', () => {
     abort.abort()
 
     await expect(loading).rejects.toHaveProperty('name', 'AbortError')
-    blocked.resolve(new Response('{}', { status: 200 }))
+    blocked.resolve(undefined)
   })
 
   test('proxies only font provider requests while a provider resolves', async () => {
     const resolver = new WebFontResolver()
     resolver.setEnabled({ google: true })
     const started = Promise.withResolvers<undefined>()
-    const blocked = Promise.withResolvers<Response>()
+    const blocked = Promise.withResolvers<undefined>()
     const proxied: string[] = []
     resolver.setRemoteFetch(async (url) => {
       proxied.push(url)
       started.resolve(undefined)
-      return blocked.promise
+      await blocked.promise
+      return new Response('{}')
     })
     const originalFetch = globalThis.fetch
     const direct: string[] = []
@@ -78,7 +83,7 @@ describe('web font coverage requests', () => {
       await fetch('https://cloud.example.com/api/session')
       expect(direct).toEqual(['https://cloud.example.com/api/session'])
       expect(proxied).not.toContain('https://cloud.example.com/api/session')
-      blocked.resolve(new Response('{}', { status: 200 }))
+      blocked.resolve(undefined)
       await loading
     } finally {
       globalThis.fetch = originalFetch

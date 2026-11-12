@@ -202,7 +202,7 @@ describe('MCP tool execution', () => {
     expect(parentNode.children).toBeArray()
   })
 
-  test('delete_node removes node', () => {
+  test('delete_nodes removes node', () => {
     const { api } = setup()
     const frame = findTool('create_shape').execute(api, {
       type: 'RECTANGLE',
@@ -212,7 +212,7 @@ describe('MCP tool execution', () => {
       height: 100
     }) as { id: string }
 
-    findTool('delete_node').execute(api, { id: frame.id })
+    findTool('delete_nodes').execute(api, { ids: [frame.id] })
     expect(api.getNodeById(frame.id)).toBeNull()
   })
 
@@ -247,7 +247,7 @@ describe('MCP tool execution', () => {
     expect(result.count).toBe(2)
   })
 
-  test('clone_node duplicates a node', () => {
+  test('clone_nodes duplicates a node', () => {
     const { api } = setup()
     const frame = findTool('create_shape').execute(api, {
       type: 'RECTANGLE',
@@ -257,7 +257,9 @@ describe('MCP tool execution', () => {
       height: 50
     }) as { id: string }
 
-    const clone = findTool('clone_node').execute(api, { id: frame.id }) as { id: string }
+    const {
+      clones: [clone]
+    } = findTool('clone_nodes').execute(api, { ids: [frame.id] }) as { clones: { id: string }[] }
     expect(clone.id).not.toBe(frame.id)
     const clonedNode = expectDefined(api.getNodeById(clone.id), 'cloned node')
     expect(clonedNode.width).toBe(100)

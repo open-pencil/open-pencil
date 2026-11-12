@@ -1,0 +1,2 @@
+- Undo history keeps only the fields of created and deleted layers that differ from a new layer's, so long agent sessions that render and delete many screens hold about a quarter of the memory (#2037).
+- Saving a document, and keeping its recovery copy, no longer hashes every image again, and a recovery copy draws its cover again only once the cover page changes (#2037).

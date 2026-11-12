@@ -11,6 +11,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
+import { useInlineSide } from '@/components/ui/direction/inline-side'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
@@ -20,6 +21,7 @@ import PropertyBindings from './PropertyBindings.vue'
 import PropertyTypeIcon from './PropertyTypeIcon.vue'
 import PropertyValueField from './PropertyValueField.vue'
 
+const startSide = useInlineSide('start')
 /** One property of a main component: a single row that opens its settings. */
 const {
   name,
@@ -80,7 +82,7 @@ const shownValue = computed(() => {
     <PopoverTrigger as-child>
       <button
         type="button"
-        class="group/row flex h-7 w-full min-w-0 items-center gap-1.5 rounded px-1.5 text-left text-xs hover:bg-hover data-[state=open]:bg-hover"
+        class="group/row flex h-7 w-full min-w-0 items-center gap-1.5 rounded px-1.5 text-start text-xs hover:bg-hover data-[state=open]:bg-hover"
         :data-property-row="name"
       >
         <PropertyTypeIcon :kind="kind" />
@@ -90,7 +92,7 @@ const shownValue = computed(() => {
     </PopoverTrigger>
     <PopoverPortal v-if="portalActive">
       <PopoverContent
-        side="left"
+        :side="startSide"
         align="start"
         :side-offset="8"
         :aria-label="name"
@@ -101,7 +103,7 @@ const shownValue = computed(() => {
           <PropertyTypeIcon :kind="kind" />
           <h3 class="truncate text-xs font-semibold text-surface">{{ name }}</h3>
           <PopoverClose as-child>
-            <AppButton :aria-label="common.close" class="ml-auto">
+            <AppButton :aria-label="common.close" class="ms-auto">
               <icon-lucide-x class="size-3.5" />
             </AppButton>
           </PopoverClose>

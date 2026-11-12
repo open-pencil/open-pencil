@@ -24,6 +24,20 @@ describe('browser locale matching', () => {
     expect(resolveBrowserLocale(['zh-Hant'])).toBe('en')
   })
 
+  test('matches Brazilian and European Portuguese to pt-BR', () => {
+    expect(resolveBrowserLocale(['pt-BR', 'en-US'])).toBe('pt-BR')
+    expect(resolveBrowserLocale(['pt-PT'])).toBe('pt-BR')
+    expect(resolveBrowserLocale(['pt'])).toBe('pt-BR')
+    expect(resolveBrowserLocale(['en-US', 'pt-BR'])).toBe('en')
+    expect(resolveBrowserLocale(['fr-CA', 'pt-PT'])).toBe('fr')
+  })
+
+  test('matches regional Arabic to ar', () => {
+    expect(resolveBrowserLocale(['ar-EG', 'en-US'])).toBe('ar')
+    expect(resolveBrowserLocale(['ar-SA'])).toBe('ar')
+    expect(resolveBrowserLocale(['en-US', 'ar'])).toBe('en')
+  })
+
   test('falls back to English when no locale matches', () => {
     expect(resolveBrowserLocale(['ko-KR'])).toBe('en')
   })

@@ -109,12 +109,13 @@ export function updateHoverCursor(
 
   // As a press does: a line's ends, a connector's line handles, then resizing, then a label, then
   // rotation; a read-only document has none.
-  const cursor = !resolveEditorProfile(editor.state).edits
-    ? null
-    : ((lineEndAt(editor, cx, cy) ? MOVE_CURSOR : null) ??
-      connectorLineCursor(editor, cx, cy) ??
-      getResizeCursorForSelection(cx, cy, editor) ??
-      (hitTestLabel(cx, cy, fns) ? null : getRotationCursorForSelection(cx, cy, editor)))
+  const cursor =
+    resolveEditorProfile(editor.state).layerEdits !== 'all'
+      ? null
+      : ((lineEndAt(editor, cx, cy) ? MOVE_CURSOR : null) ??
+        connectorLineCursor(editor, cx, cy) ??
+        getResizeCursorForSelection(cx, cy, editor) ??
+        (hitTestLabel(cx, cy, fns) ? null : getRotationCursorForSelection(cx, cy, editor)))
   updateHoveredNode(cx, cy, editor, fns, deep)
   return cursor
 }

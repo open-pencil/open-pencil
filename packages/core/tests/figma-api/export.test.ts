@@ -1,10 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createAPI } from '#core-tests/helpers/figma-api'
+
+import { getCanvasKit } from '#core/canvaskit'
+import { graphOf } from '#core/figma-api/graph'
 import {
   createCanvasKitRasterCodec,
   headlessRenderNodes,
-  initCanvasKit,
   MAX_RASTER_PIXELS
 } from '#core/io/formats/raster'
 
@@ -63,7 +65,7 @@ describe('exportSettings', () => {
       },
       { format: 'PDF', suffix: '', contentsOnly: true, colorProfile: 'DOCUMENT' }
     ])
-    expect(figma.graph.getNode(rect.id)?.exportSettings[2]).toEqual({
+    expect(graphOf(figma).getNode(rect.id)?.exportSettings[2]).toEqual({
       scale: 1,
       format: 'jpg',
       size: { type: 'HEIGHT', value: 30 },
@@ -93,7 +95,7 @@ describe('exportSettings', () => {
   test('leaves out exports in formats Figma has no setting for', () => {
     const figma = createAPI()
     const rect = figma.createRectangle()
-    figma.graph.updateNode(rect.id, {
+    graphOf(figma).updateNode(rect.id, {
       exportSettings: [
         { scale: 1, format: 'webp' },
         { scale: 1, format: 'png' }
@@ -204,7 +206,7 @@ describe('exportAsync', () => {
   test('sizes images by scale, width, or height, around what the layer draws', async () => {
     const figma = createAPI()
     figma.exportImage = (ids, options) =>
-      headlessRenderNodes(figma.graph, options.pageId ?? figma.currentPageId, ids, options)
+      headlessRenderNodes(graphOf(figma), options.pageId ?? figma.currentPageId, ids, options)
     const rect = figma.createRectangle()
     rect.resize(20, 10)
     rect.strokes = [{ type: 'SOLID', color: { r: 0, g: 0, b: 0 } }]
@@ -229,10 +231,10 @@ describe('exportAsync', () => {
 
   test('exports a layer that draws nothing as one blank pixel, and refuses it as a vector', async () => {
     const figma = createAPI()
-    const codec = createCanvasKitRasterCodec(await initCanvasKit())
+    const codec = createCanvasKitRasterCodec(await getCanvasKit())
     figma.rasterCodec = codec
     figma.exportImage = (ids, options) =>
-      headlessRenderNodes(figma.graph, options.pageId ?? figma.currentPageId, ids, options)
+      headlessRenderNodes(graphOf(figma), options.pageId ?? figma.currentPageId, ids, options)
     const rect = figma.createRectangle()
     rect.fills = []
     const scaled = { format: 'PNG', constraint: { type: 'SCALE', value: 3 } } as const
@@ -328,7 +330,7 @@ describe('exportAsync', () => {
     expect(drawn).toBe(0)
     // The renderer refuses it as well, for callers that skip exportAsync.
     await expect(
-      headlessRenderNodes(figma.graph, figma.currentPageId, [rect.id], {
+      headlessRenderNodes(graphOf(figma), figma.currentPageId, [rect.id], {
         scale: 1024,
         format: 'PNG'
       })

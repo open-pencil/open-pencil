@@ -1,4 +1,4 @@
-import type { Canvas, FilterMode } from 'canvaskit-wasm'
+import type { Canvas, FilterMode } from '@open-pencil/canvaskit'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 

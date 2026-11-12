@@ -23,6 +23,7 @@ describe('canvas view profiles', () => {
       edits: true,
       tools: null,
       pathEdits: 'all',
+      layerEdits: 'all',
       toolKeys: TOOL_SHORTCUTS,
       snapGrid: 1,
       dotGrid: null,
@@ -48,6 +49,7 @@ describe('canvas view profiles', () => {
       edits: true,
       tools: null,
       pathEdits: 'all',
+      layerEdits: 'all',
       toolKeys: TOOL_SHORTCUTS,
       snapGrid: 1,
       dotGrid: null,
@@ -202,7 +204,7 @@ describe('document kinds', () => {
     expect(editor.state.activeTool).toBe('SELECT')
     editor.setTool('RECTANGLE')
     expect(editor.state.activeTool).toBe('SELECT')
-    expect(resolveEditorProfile(editor.state).toolKeys).toEqual({ KeyV: 'SELECT', KeyH: 'HAND' })
+    expect(resolveEditorProfile(editor.state).toolKeys).toEqual({ V: 'SELECT', H: 'HAND' })
   })
 
   test('a pen path in progress is kept when the host stops offering the pen', () => {

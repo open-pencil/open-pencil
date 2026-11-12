@@ -1,0 +1,40 @@
+{
+  "name": "@open-pencil/canvaskit",
+  "version": "0.17.0-beta.4",
+  "description": "CanvasKit (Skia in WebAssembly) as OpenPencil builds it: CanvasKit 0.41.1's full build with Skia's PDF backend",
+  "license": "BSD-3-Clause",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/open-pencil/open-pencil.git",
+    "directory": "packages/canvaskit"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "type": "module",
+  "main": "./dist/canvaskit.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/canvaskit.js"
+    },
+    "./dist/*": "./dist/*",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "fork-release fetch ."
+  },
+  "dependencies": {
+    "@webgpu/types": "0.1.21"
+  },
+  "devDependencies": {
+    "@open-pencil/fork-releases-tools": "workspace:*"
+  }
+}

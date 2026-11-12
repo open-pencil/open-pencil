@@ -3,7 +3,8 @@ import { describe, expect, test } from 'bun:test'
 import { CLOUD_FEATURE_KEYS, createDefaultCloudPolicy } from '#cloud/server'
 
 const context = {
-  targetingKey: 'workspace-1',
+  targetingKey: 'owner-1',
+  subjectType: 'user' as const,
   workspaceId: 'workspace-1',
   deploymentMode: 'self-hosted' as const
 }

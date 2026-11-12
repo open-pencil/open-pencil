@@ -105,6 +105,39 @@ describe('createCloudAPIClient', () => {
     await expect(client.listSharedDocuments()).rejects.toThrow()
   })
 
+  test('lists Trash, restores, and deletes for good', async () => {
+    const trashed = {
+      id: documentId,
+      workspaceId,
+      workspaceName: 'Client work',
+      name: 'Homepage',
+      kind: 'board' as const,
+      deletedAt: '2026-01-02T00:00:00.000Z',
+      deletedBy: { name: 'Alice' },
+      purgeAt: '2026-02-01T00:00:00.000Z',
+      canPurge: false
+    }
+    const requests: string[] = []
+    const client = createCloudAPIClient('https://cloud.example.com/api', {
+      fetch: async (input, init) => {
+        const request = new Request(input, init)
+        requests.push(`${request.method} ${new URL(request.url).pathname}`)
+        return request.method === 'GET'
+          ? Response.json({ documents: [trashed] })
+          : new Response(null, { status: 204 })
+      }
+    })
+
+    expect(await client.listTrash()).toEqual([trashed])
+    await client.restoreDocument(documentId)
+    await client.purgeDocument(documentId)
+    expect(requests).toEqual([
+      'GET /api/trash',
+      `POST /api/trash/${documentId}/restore`,
+      `DELETE /api/trash/${documentId}`
+    ])
+  })
+
   test('creates upload sessions and commits revisions', async () => {
     const requests: Request[] = []
     const client = createCloudAPIClient('https://cloud.example.com/api/', {
@@ -144,7 +177,7 @@ describe('createCloudAPIClient', () => {
     expect(requests.every((request) => request.method === 'POST')).toBe(true)
   })
 
-  test('looks up authorized user profiles and accepts invitations', async () => {
+  test('previews and accepts invitations', async () => {
     const invitationId = '44444444-4444-4444-8444-444444444444'
     const grant = {
       id: '55555555-5555-4555-8555-555555555555',
@@ -160,16 +193,6 @@ describe('createCloudAPIClient', () => {
       fetch: async (input, init) => {
         const request = new Request(input, init)
         requests.push(request)
-        if (request.url.endsWith('/users/lookup')) {
-          return Response.json({
-            user: {
-              id: 'recipient-user',
-              name: 'Recipient',
-              email: 'recipient@example.com',
-              image: null
-            }
-          })
-        }
         if (request.url.endsWith('/preview')) {
           return Response.json({
             invitation: {
@@ -186,12 +209,6 @@ describe('createCloudAPIClient', () => {
       }
     })
 
-    expect(await client.lookupUser(documentId, { email: 'recipient@example.com' })).toEqual({
-      id: 'recipient-user',
-      name: 'Recipient',
-      email: 'recipient@example.com',
-      image: null
-    })
     expect(await client.previewInvitation(invitationId, { token: 't'.repeat(32) })).toMatchObject({
       documentName: 'Homepage',
       recipientHint: 're*******@example.com'
@@ -201,7 +218,6 @@ describe('createCloudAPIClient', () => {
       grant
     })
     expect(requests.map((request) => request.url)).toEqual([
-      `https://cloud.example.com/api/documents/${documentId}/users/lookup`,
       `https://cloud.example.com/api/invitations/${invitationId}/preview`,
       `https://cloud.example.com/api/invitations/${invitationId}/accept`
     ])

@@ -4,22 +4,6 @@ import type { FigmaComponentNode, FigmaNodeProxy } from '#core/figma-api'
 import { OpenPencilAPI } from '#core/openpencil-api'
 import { toolNumber, defineTool, nodeSummary, requireNodes } from '#core/tools/schema'
 
-export const createComponent = defineTool({
-  name: 'create_component',
-
-  description: 'Convert a frame/group into a component.',
-  execution: { kind: 'sync', mutation: 'document' },
-  input: v.strictObject({
-    id: v.pipe(v.string(), v.description('Node ID to convert'))
-  }),
-  execute: (figma, { id }) => {
-    const node = figma.getNodeById(id)
-    if (!node) return { error: `Node "${id}" not found` }
-    const component = figma.createComponentFromNode(node)
-    return nodeSummary(component)
-  }
-})
-
 export const createInstance = defineTool({
   name: 'create_instance',
 

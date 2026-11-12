@@ -6,8 +6,7 @@ import type {
   ParagraphBuilder,
   TextFontFeatures,
   TextFontVariations
-} from 'canvaskit-wasm'
-
+} from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
 import { faceStyleKey, type NamedFace } from '@open-pencil/scene-graph/font-style'
@@ -25,6 +24,7 @@ import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
 import { autoWidthWrapWidth } from '#core/layout/text-measurement'
 import { shownTextSlice } from '#core/text/case'
 import { ELLIPSIS } from '#core/text/ellipsis'
+import { makeParagraphBuilder } from '#core/text/font/collection'
 import {
   drawnFontVariations,
   loadedFace,
@@ -310,7 +310,7 @@ export function buildSkParagraph(
   })
 
   if (!r.fontProvider) throw new Error('Font provider not initialized')
-  const builder = ck.ParagraphBuilder.MakeFromFontProvider(paraStyle, r.fontProvider)
+  const builder = makeParagraphBuilder(ck, paraStyle, r.fontProvider)
 
   let background: Paint | undefined
   try {

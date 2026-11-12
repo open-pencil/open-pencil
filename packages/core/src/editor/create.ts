@@ -1,11 +1,6 @@
-import type { CanvasKit } from 'canvaskit-wasm'
-import { createNanoEvents } from 'nanoevents'
-import type { Emitter } from 'nanoevents'
-
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { UndoManager } from '@open-pencil/scene-graph/undo'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
 import { prefetchFigmaSchema } from '#core/clipboard'
 import { IS_BROWSER } from '#core/constants'
 import {
@@ -16,12 +11,8 @@ import {
 import { defaultIcons } from '#core/icons'
 import { releaseFigPopulationWorker } from '#core/kiwi/fig/population/client'
 import { releaseOriginalFigArchive } from '#core/kiwi/fig/session/original-archive'
-import { installTextMeasurer } from '#core/layout'
 import { createLayoutRunner } from '#core/layout/mutations'
-import { emitNavigationTrace } from '#core/profiler'
-import { TextEditor } from '#core/text/editor'
 import { fontManager } from '#core/text/font/manager'
-import { installTextInkMeasurer } from '#core/text/ink'
 import { prepareTextFonts } from '#core/text/prepare'
 import { fontResolver } from '#core/text/resolver'
 
@@ -51,15 +42,18 @@ import { createGuideActions } from './guides'
 import { createIconActions } from './icons'
 import { createDesignIssueActions } from './issues'
 import { createLineEndActions } from './line-ends'
+import { createMovePolicy } from './move-policy'
 import { createNodeActions } from './nodes/actions'
 import { createPageActions } from './pages'
-import { createReadOnlyActions, guardReadOnly, guardUndo } from './read-only'
+import { createReadOnlyActions, guardEdits, guardUndo } from './read-only'
+import { createCanvasRenderers } from './renderers'
 import { createSelectionActions } from './selection'
 import { createShaderActions } from './shaders/actions'
 import { createShaderFrames } from './shaders/frames'
 import { createShapeActions } from './shapes'
 import { createPenResumeActions } from './shapes/pen/resume'
 import { createShapeWithTextActions } from './shapes/with-text'
+import { createEditorSignals } from './signals'
 import { createDefaultEditorState } from './state'
 import { createStatusActions } from './statuses'
 import { createStickyActions } from './stickies'
@@ -68,48 +62,54 @@ import { createTextActions } from './text'
 import { createPendingTextLayout } from './text/pending-layout'
 import { createTextSelectionStyle } from './text/selection-style'
 import { createFigJamTextActions } from './text/typeface'
-import type {
-  EditorContext,
-  EditorEventName,
-  EditorEvents,
-  EditorOptions,
-  EditorState,
-  RenderVersions,
-  Tool
-} from './types'
+import type { EditorContext, EditorOptions, EditorState, Tool } from './types'
 import { createUndoActions } from './undo'
 import { createVariableActions } from './variables/actions'
 import { createVectorEditActions } from './vector/create'
 import { createVectorizeActions } from './vectorize'
 import { createViewportActions } from './viewport'
-import { createCanvasViewActions, offeredTool, resolveEditorProfile } from './views'
+import { createViewportSize } from './viewport/size'
+import { createCanvasViewActions, offeredTool } from './views'
 
 export { createDefaultEditorState } from './state'
 
 export function createEditor(options?: EditorOptions) {
   let _graph = options?.graph ?? new SceneGraph()
   const skipInitialGraphSetup = options?.skipInitialGraphSetup ?? false
-  const undo = new UndoManager({ onChange: () => emitEditorEvent('history:changed') })
+  const state: EditorState = options?.state ?? createDefaultEditorState(_graph.getPages()[0].id)
+  state.documentKind = _graph.documentKind
+  state.activeTool = offeredTool(state, state.activeTool)
+  const signals = createEditorSignals(state)
+  const {
+    emitEditorEvent,
+    onEditorEvent,
+    requestRender,
+    requestRefresh,
+    requestRepaint,
+    beginInteractiveEdit,
+    setNavigationPhase,
+    setSelectedIds,
+    setActiveTool
+  } = signals
+  const undo = new UndoManager({
+    onChange: (change, step) => emitEditorEvent('history:changed', change, step),
+    onDiscard: () => emitEditorEvent('edit:discarded'),
+    runReplay: (replay) => _graph.runOutsideEdits(replay)
+  })
   const _loadFont = options?.loadFont ?? fontManager.loadFont.bind(fontManager)
-  const _getViewportSize =
-    options?.getViewportSize ??
-    (() => {
-      if (IS_BROWSER) return { width: window.innerWidth, height: window.innerHeight }
-      return { width: 800, height: 600 }
-    })
-  let _ck: CanvasKit | null = null
-  let _renderer: SkiaRenderer | null = null
-  const _renderers = new Set<SkiaRenderer>()
-  let uninstallTextMeasurer: (() => void) | null = null
-  let uninstallTextInkMeasurer: (() => void) | null = null
-  const interactiveEdits = new Set<symbol>()
-  let _textEditor: TextEditor | null = null
-  const events: Emitter<EditorEvents> = createNanoEvents()
+  const { currentViewportChrome, ...viewportSize } = createViewportSize(
+    options?.getViewportSize,
+    () => (IS_BROWSER ? { width: window.innerWidth, height: window.innerHeight } : null)
+  )
+  const canvas = createCanvasRenderers((renderer, node, maxWidth) =>
+    pendingTextLayout.measure(renderer, node, maxWidth)
+  )
+  const _renderers = canvas.renderers
   const stopFontResolutionEvents = fontResolver.subscribe((event, snapshot) =>
-    events.emit('font:resolution-changed', event, snapshot)
+    emitEditorEvent('font:resolution-changed', event, snapshot)
   )
   const stopFontLoadEvents = fontManager.onFaceLoaded((family, style) =>
-    events.emit('font:loaded', family, style)
+    emitEditorEvent('font:loaded', family, style)
   )
   // Text blocked while its fonts were prepared is missing from the tiles drawn meanwhile.
   const stopUnblockEvents = fontManager.onNodesUnblocked((graph, nodeIds) => {
@@ -120,137 +120,18 @@ export function createEditor(options?: EditorOptions) {
 
   void prefetchFigmaSchema()
 
-  const state: EditorState = options?.state ?? createDefaultEditorState(_graph.getPages()[0].id)
-  state.documentKind = _graph.documentKind
-  state.activeTool = offeredTool(state, state.activeTool)
-
-  function emitEditorEvent<K extends EditorEventName>(
-    event: K,
-    ...args: Parameters<EditorEvents[K]>
-  ) {
-    events.emit(event, ...args)
-  }
-
-  function onEditorEvent<K extends EditorEventName>(event: K, handler: EditorEvents[K]) {
-    return events.on(event, handler)
-  }
-
-  function requestRender() {
-    state.renderVersion++
-    state.sceneVersion++
-    state.canvasVersion++
-    emitNavigationTrace('render:requested', {
-      kind: 'render',
-      renderVersion: state.renderVersion,
-      sceneVersion: state.sceneVersion
-    })
-    emitEditorEvent('render:requested', {
-      renderVersion: state.renderVersion,
-      sceneVersion: state.sceneVersion
-    })
-  }
-
-  /**
-   * The caret or selection of the edited text moved: the canvas repaints its overlay and the
-   * views that follow the selection update, without the document counting as changed.
-   */
-  function textSelectionChanged() {
-    state.textSelectionVersion++
-    requestRepaint()
-  }
-
-  function requestRefresh() {
-    state.sceneVersion++
-  }
-
-  /** A canvas showed a frame of `versions` with nothing left to fill in. */
-  function reportPresented(versions: RenderVersions) {
-    emitEditorEvent('render:presented', versions)
-  }
-
-  function requestRepaint() {
-    state.renderVersion++
-    emitNavigationTrace('render:requested', {
-      kind: 'repaint',
-      renderVersion: state.renderVersion,
-      sceneVersion: state.sceneVersion
-    })
-    emitEditorEvent('repaint:requested', {
-      renderVersion: state.renderVersion,
-      sceneVersion: state.sceneVersion
-    })
-  }
-
-  /** Track an actual live edit independently of history batching. Release is idempotent. */
-  function beginInteractiveEdit() {
-    const token = Symbol('interactive-edit')
-    interactiveEdits.add(token)
-    requestRepaint()
-    return () => {
-      if (interactiveEdits.delete(token)) requestRepaint()
-    }
-  }
-
-  function setNavigationPhase(phase: EditorState['navigation']['phase'], inputAt = 0) {
-    const previous = { ...state.navigation }
-    const active = phase === 'pan' || phase === 'zoom' || phase === 'momentum'
-    const wasActive =
-      previous.phase === 'pan' || previous.phase === 'zoom' || previous.phase === 'momentum'
-    state.navigation = {
-      phase,
-      generation: active && !wasActive ? previous.generation + 1 : previous.generation,
-      lastInputAt: inputAt || previous.lastInputAt
-    }
-    if (
-      state.navigation.phase !== previous.phase ||
-      state.navigation.generation !== previous.generation ||
-      state.navigation.lastInputAt !== previous.lastInputAt
-    ) {
-      emitNavigationTrace('navigation:phase', {
-        phase: state.navigation.phase,
-        previousPhase: previous.phase,
-        generation: state.navigation.generation,
-        lastInputAt: state.navigation.lastInputAt
-      })
-      emitEditorEvent('navigation:changed', state.navigation, previous)
-    }
-  }
-
-  function setSelectedIds(ids: Set<string>) {
-    const previous = [...state.selectedIds]
-    state.selectedIds = ids
-    if (ids.size === 0) state.measurementMode = 'off'
-    const selected = [...ids]
-    if (
-      previous.length !== selected.length ||
-      previous.some((id, index) => id !== selected[index])
-    ) {
-      emitEditorEvent('selection:changed', selected, previous)
-    }
-  }
-
-  function setActiveTool(tool: EditorState['activeTool']) {
-    if (offeredTool(state, tool) !== tool) return
-    const previous = state.activeTool
-    state.activeTool = tool
-    if (tool !== 'SELECT') state.measurementMode = 'off'
-    if (previous === tool) return
-    // Guides the pen showed for its next point do not belong to the next tool.
-    if (previous === 'PEN') state.snapGuides = []
-    emitEditorEvent('tool:changed', tool, previous)
-  }
-
   const graphReads = createGraphReadActions(() => _graph)
   const { runLayoutForNode, runMutationWithLayout } = createLayoutRunner(() => _graph)
   const pendingTextLayout = createPendingTextLayout({
     getGraph: () => _graph,
-    getRenderer: () => _renderer,
+    getRenderer: canvas.getRenderer,
     prepareFonts: (texts) => prepareTextFonts(texts, { loadFont: _loadFont }),
     runLayoutForNode,
     requestRender,
     onEditorEvent
   })
-  const { scheduleComponentSync } = createComponentSyncScheduler(() => _graph, requestRender)
+  const { scheduleComponentSync, flushComponentSync, isSyncingComponents } =
+    createComponentSyncScheduler(() => _graph, requestRender)
 
   const { subscribeToGraph, unsubscribeFromGraph } = createGraphEventSubscription({
     getGraph: () => _graph,
@@ -272,6 +153,7 @@ export function createEditor(options?: EditorOptions) {
   }
 
   // Build the shared context
+  const movePolicy = createMovePolicy(undo)
   const ctx: EditorContext = {
     get graph() {
       return _graph
@@ -283,14 +165,16 @@ export function createEditor(options?: EditorOptions) {
     state,
     loadFont: _loadFont,
     resolveFigmaClipboardImages: options?.resolveFigmaClipboardImages ?? null,
-    getViewportSize: _getViewportSize,
+    getViewportSize: viewportSize.getViewportSize,
+    getViewportChrome: currentViewportChrome,
     getUserName: () => options?.getUserName?.() ?? '',
     icons: options?.icons ?? defaultIcons,
-    getCk: () => _ck,
-    getRenderer: () => _renderer,
+    getCk: canvas.getCk,
+    getRenderer: canvas.getRenderer,
     getRenderers: () => _renderers,
-    getTextEditor: () => _textEditor,
+    getTextEditor: canvas.getTextEditor,
     requestRender,
+    constrainMove: movePolicy.constrainMove,
     requestRefresh,
     requestRepaint,
     beginInteractiveEdit,
@@ -355,27 +239,43 @@ export function createEditor(options?: EditorOptions) {
   const undoBridge = createUndoBridge(undoActions, selection, nodes.flushNudge)
   const lintFixBridge = createLintFixBridge(ctx, nodes, structure, clipboard)
   const textSelectionStyle = createTextSelectionStyle(ctx, text.runTextEditStep)
-  /** Whether the editor refuses edits: its profile offers none, as for a read-only document. */
-  const readsOnly = () => !resolveEditorProfile(state).edits
   const vectorEdit = createVectorEditActions(ctx, {
     updateNodeWithUndo: nodes.updateNodeWithUndo,
     select: selection.select,
     deleteSelected: clipboard.deleteSelected,
     penCommit: shapes.penCommit
   })
+  const { cancelPenGesture, ...shapeActions } = shapes
+  const { cancelNodeEditChange, ...vectorEditActions } = vectorEdit
+  /**
+   * Takes back the gesture in progress, such as a press of the pen or a drag in vector edit mode,
+   * leaving no undo step or redo, and tells the canvas to drop it (`gesture:cancelled`). A host
+   * refuses what the person is doing so, from the gesture's own events, such as `pen:pressed`.
+   */
+  function cancelGesture() {
+    if (!cancelPenGesture()) cancelNodeEditChange()
+    emitEditorEvent('gesture:cancelled')
+  }
   const penResume = createPenResumeActions(ctx, {
     penCommit: shapes.penCommit,
+    penPushHistory: shapes.penPushHistory,
     exitNodeEditMode: vectorEdit.exitNodeEditMode
   })
-  const readOnly = createReadOnlyActions(ctx, {
+  function endLayerEdits() {
+    nodes.flushNudge()
+    nodes.cancelNodePreviews()
+    if (state.editingTextId) text.commitTextEdit()
+  }
+  const readOnly = createReadOnlyActions(ctx, movePolicy, {
+    endLayerEdits,
+    flushPendingStep: nodes.flushNudge,
     endEdits: () => {
-      nodes.flushNudge()
-      nodes.cancelNodePreviews()
-      if (state.editingTextId) text.commitTextEdit()
+      endLayerEdits()
       vectorEdit.exitNodeEditMode(true, { release: true })
       shapes.penCancel()
       shapes.pencilCancel()
       state.gradientEdit = null
+      state.blurRampEdit = null
     },
     endPathContinuation: () => {
       if (state.penState?.resumingNodeId) shapes.penCommit(false)
@@ -388,45 +288,10 @@ export function createEditor(options?: EditorOptions) {
   const invalidateEditedText = (id: string) => {
     if (id !== state.editingTextId) return
     const node = _graph.getNode(id)
-    if (node) _textEditor?.invalidateParagraph(node)
+    if (node) canvas.getTextEditor()?.invalidateParagraph(node)
   }
   onEditorEvent('node:updated', invalidateEditedText)
   onEditorEvent('node:previewUpdated', invalidateEditedText)
-
-  function setCanvasKit(ck: CanvasKit, renderer: SkiaRenderer) {
-    _ck = ck
-    _renderer = renderer
-    _renderers.add(renderer)
-    _textEditor ??= new TextEditor(ck)
-    uninstallTextMeasurer?.()
-    // Measures with the editor's current renderer, which removing this one falls back from.
-    uninstallTextMeasurer =
-      typeof renderer.measureTextNode === 'function'
-        ? installTextMeasurer((node, maxWidth) =>
-            _renderer ? pendingTextLayout.measure(_renderer, node, maxWidth) : null
-          )
-        : null
-    uninstallTextInkMeasurer?.()
-    uninstallTextInkMeasurer =
-      typeof renderer.measureTextInk === 'function'
-        ? installTextInkMeasurer((node) => _renderer?.measureTextInk(node))
-        : null
-  }
-
-  function releaseTextMeasurer() {
-    uninstallTextMeasurer?.()
-    uninstallTextMeasurer = null
-    uninstallTextInkMeasurer?.()
-    uninstallTextInkMeasurer = null
-  }
-
-  function removeCanvasRenderer(renderer: SkiaRenderer) {
-    _renderers.delete(renderer)
-    if (_renderer === renderer) {
-      _renderer = _renderers.values().next().value ?? null
-    }
-    if (_renderers.size === 0) releaseTextMeasurer()
-  }
 
   function replaceGraph(newGraph: SceneGraph) {
     nodes.cancelNodePreviews()
@@ -445,6 +310,8 @@ export function createEditor(options?: EditorOptions) {
     state.transforming = false
     state.measurementMode = 'off'
     state.snapGuides = []
+    // Snap targets are points on the document's pages, which are gone.
+    state.snapTargets = { points: [] }
     state.guides = { preview: null, hovered: null, selected: null, redline: null }
     state.layoutInsertIndicator = null
     state.dropTargetId = null
@@ -458,18 +325,19 @@ export function createEditor(options?: EditorOptions) {
   }
 
   function dispose() {
-    releaseTextMeasurer()
+    canvas.releaseTextMeasurer()
     nodes.cancelNodePreviews()
-    interactiveEdits.clear()
+    signals.clearInteractiveEdits()
     stopFontResolutionEvents()
     stopFontLoadEvents()
     stopUnblockEvents()
     unsubscribeFromGraph()
   }
 
-  function releaseGraphResources() {
-    releaseFigPopulationWorker(_graph)
-    releaseOriginalFigArchive(_graph)
+  /** Releases what a document opened from a `.fig` holds: the editor's own, or one it replaced. */
+  function releaseGraphResources(graph: SceneGraph = _graph) {
+    releaseFigPopulationWorker(graph)
+    releaseOriginalFigArchive(graph)
   }
 
   const editor = {
@@ -477,15 +345,15 @@ export function createEditor(options?: EditorOptions) {
       return _graph
     },
     get renderer() {
-      return _renderer
+      return canvas.getRenderer()
     },
     get canvasRenderers() {
       return [..._renderers]
     },
     get textEditor() {
-      return _textEditor
+      return canvas.getTextEditor()
     },
-    undo: guardUndo(undo, readsOnly),
+    undo: guardUndo(undo, readOnly.historyRefusal),
     state,
 
     // Graph reads
@@ -495,16 +363,18 @@ export function createEditor(options?: EditorOptions) {
 
     // Lifecycle
     beginInteractiveEdit,
-    isInteractiveEditing: () => interactiveEdits.size > 0,
+    isInteractiveEditing: signals.isInteractiveEditing,
+    isSyncingComponents,
+    flushComponentSync,
     requestRender,
     requestRefresh,
-    textSelectionChanged,
+    textSelectionChanged: signals.textSelectionChanged,
     requestRepaint,
-    reportPresented,
+    reportPresented: signals.reportPresented,
     onEditorEvent,
-    setCanvasKit,
+    setCanvasKit: canvas.setCanvasKit,
     setNavigationPhase,
-    removeCanvasRenderer,
+    removeCanvasRenderer: canvas.removeCanvasRenderer,
     replaceGraph,
     subscribeToGraph,
     dispose,
@@ -516,18 +386,19 @@ export function createEditor(options?: EditorOptions) {
     // Pages
     ...pages,
 
-    /** The size of the canvas the editor draws into, in screen pixels. */
-    getViewportSize: _getViewportSize,
+    // The canvas's size and the floating UI over its edges, as the host reports them
+    ...viewportSize,
 
     // Canvas and frame guides
     ...guides,
     ...designIssues,
 
     // Shapes & tools
-    ...shapes,
+    ...shapeActions,
 
     // Vector edit mode: a path edited point by point, and the pen continuing a path
-    ...vectorEdit,
+    ...vectorEditActions,
+    cancelGesture,
     ...penResume,
     /**
      * Picks a tool. Only Move and the pen work on a path being edited, so picking another, such as
@@ -627,9 +498,9 @@ export function createEditor(options?: EditorOptions) {
     ...lintFixBridge,
 
     // Read-only documents, which refuse every action above that changes them
-    ...readOnly
+    ...readOnly.actions
   }
-  return guardReadOnly(editor, readsOnly)
+  return guardEdits(editor, readOnly.refusal)
 }
 
 /**

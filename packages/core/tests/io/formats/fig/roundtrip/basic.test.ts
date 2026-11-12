@@ -1,10 +1,10 @@
 import { beforeAll, describe, expect, setDefaultTimeout, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
-import { collectAllNodes, countByType } from '@open-pencil/test-support/fig/traversal'
 import { exportFigFile, parseFigFile, populateFigPage } from '@open-pencil/core/io/formats/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { collectAllNodes, countByType } from '@open-pencil/test-support/fig/traversal'
 
 setDefaultTimeout(60_000)
 
@@ -129,6 +129,23 @@ describe('roundtrip: export → re-import', () => {
           visible: true,
           blendMode: 'NORMAL'
         }
+      ],
+      effects: [
+        {
+          type: 'GLASS',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          offset: { x: 0, y: 0 },
+          radius: 6,
+          spread: 0,
+          visible: true,
+          glass: {
+            refraction: 0.75,
+            depth: 22,
+            lightAngle: 33,
+            lightIntensity: 0.5,
+            dispersion: 0.25
+          }
+        }
       ]
     })
 
@@ -137,7 +154,22 @@ describe('roundtrip: export → re-import', () => {
       x: 50,
       y: 50,
       width: 100,
-      height: 100
+      height: 100,
+      effects: [
+        {
+          type: 'BACKGROUND_BLUR',
+          color: { r: 0, g: 0, b: 0, a: 0 },
+          offset: { x: 0, y: 0 },
+          radius: 12,
+          spread: 0,
+          visible: true,
+          progressive: {
+            startRadius: 3,
+            startOffset: { x: 0.1, y: 0.2 },
+            endOffset: { x: 0.7, y: 0.9 }
+          }
+        }
+      ]
     })
 
     const figBytes = await exportFigFile(graph)
@@ -351,6 +383,32 @@ describe('roundtrip: export → re-import', () => {
     expect(headerBg.effects[0].type).toBe('DROP_SHADOW')
     expect(headerBg.effects[0].radius).toBe(8)
     expect(headerBg.effects[0].offset.y).toBe(4)
+  })
+
+  test('preserves a glass effect', () => {
+    const circle = expectDefined(reImportedNodes.find((n) => n.name === 'Circle'))
+    expect(circle.effects).toHaveLength(1)
+    expect(circle.effects[0]).toMatchObject({
+      type: 'GLASS',
+      radius: 6,
+      visible: true,
+      glass: { refraction: 0.75, depth: 22, lightAngle: 33, lightIntensity: 0.5, dispersion: 0.25 }
+    })
+  })
+
+  test('preserves a progressive blur', () => {
+    const faded = expectDefined(reImportedNodes.find((n) => n.name === 'Page2 Rect'))
+    expect(faded.effects).toHaveLength(1)
+    expect(faded.effects[0]).toMatchObject({
+      type: 'BACKGROUND_BLUR',
+      radius: 12,
+      progressive: { startRadius: 3 }
+    })
+    const { startOffset, endOffset } = expectDefined(faded.effects[0].progressive)
+    expect(startOffset.x).toBeCloseTo(0.1, 6)
+    expect(startOffset.y).toBeCloseTo(0.2, 6)
+    expect(endOffset.x).toBeCloseTo(0.7, 6)
+    expect(endOffset.y).toBeCloseTo(0.9, 6)
   })
 
   test('preserves dimensions', () => {

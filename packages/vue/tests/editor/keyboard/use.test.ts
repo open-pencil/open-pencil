@@ -1,11 +1,11 @@
 import { afterAll, afterEach, beforeAll, describe, expect, test } from 'bun:test'
 
+import { detectPlatform } from '@tanstack/hotkeys'
 import { Window } from 'happy-dom'
 import { defineComponent, h } from 'vue'
 
 import { createEditor, type Editor } from '@open-pencil/core'
 import type { VectorNetwork } from '@open-pencil/scene-graph'
-
 import { createTestRenderer, hostNode } from '@open-pencil/test-support/vue/renderer'
 
 import { provideEditor } from '#vue/editor/context'
@@ -24,10 +24,10 @@ const DOM_GLOBALS = [
   'HTMLButtonElement',
   'HTMLCanvasElement'
 ] as const
-/** tinykeys' `$mod`, from the platform it read when it loaded: Meta on Apple, Control elsewhere. */
-const MOD = /Mac|iPod|iPhone|iPad/.test(globalThis.navigator?.platform ?? '')
-  ? { metaKey: true }
-  : { ctrlKey: true }
+/** `Mod` on the platform the keyboard detects in the test window: Meta on Apple, Control elsewhere. */
+function mod() {
+  return detectPlatform() === 'mac' ? { metaKey: true } : { ctrlKey: true }
+}
 const saved = new Map<string, PropertyDescriptor | undefined>()
 let dom: Window
 
@@ -92,7 +92,7 @@ function press(
 ): boolean {
   const event = new dom.KeyboardEvent(type, {
     code,
-    key: init.key ?? code.replace(/^Key/, '').toLowerCase(),
+    key: init.key ?? (code.startsWith('Key') ? code.slice(3).toLowerCase() : code),
     bubbles: true,
     cancelable: true,
     ...init
@@ -140,8 +140,33 @@ describe('useEditorKeyboard', () => {
     editor.createShape('RECTANGLE', 0, 0, 40, 40)
     const drawn = () => editor.graph.getChildren(editor.state.currentPageId).length
     expect(drawn()).toBe(1)
-    expect(press('KeyZ', MOD)).toBe(true)
+    expect(press('KeyZ', mod())).toBe(true)
     expect(drawn()).toBe(0)
+  })
+
+  test('takes Mod+Z from a layout whose Z key types no Latin letter, and the Z AZERTY prints', () => {
+    const editor = mountKeyboard()
+    const drawn = () => editor.graph.getChildren(editor.state.currentPageId).length
+    editor.createShape('RECTANGLE', 0, 0, 40, 40)
+    press('KeyZ', { key: 'я', ...mod() })
+    expect(drawn()).toBe(0)
+    editor.createShape('RECTANGLE', 0, 0, 40, 40)
+    // AZERTY prints Z where QWERTY has W.
+    press('KeyW', { key: 'z', ...mod() })
+    expect(drawn()).toBe(0)
+  })
+
+  test('reads the digit row by position where it types symbols, as on AZERTY', () => {
+    const editor = mountKeyboard()
+    const id = editor.createShape('RECTANGLE', 0, 0, 40, 40)
+    editor.select([id])
+    press('Digit5', { key: '(' })
+    expect(editor.graph.getNode(id)?.opacity).toBe(0.5)
+    const zoom = editor.state.zoom
+    // Shift types the digit itself there; Shift+1 still zooms to fit rather than setting opacity.
+    press('Digit1', { key: '1', shiftKey: true })
+    expect(editor.graph.getNode(id)?.opacity).toBe(0.5)
+    expect(editor.state.zoom).not.toBe(zoom)
   })
 
   test('Enter and Escape open and leave a path, and leave a kept-open one open', () => {
@@ -163,21 +188,75 @@ describe('useEditorKeyboard', () => {
     expect(editor.state.nodeEditState?.nodeId).toBe(vector.id)
   })
 
-  test("runs the host's keys and its Escape first", () => {
+  test("runs the host's keys, and its key on an editor key before the editor's", () => {
     const ran: string[] = []
     const editor = mountKeyboard({
-      shortcuts: [{ id: 'save', keys: '$mod+KeyS', run: () => ran.push('save') }],
-      onEscape: () => {
-        ran.push('escape')
-        return true
-      }
+      shortcuts: [
+        { id: 'save', keys: 'Mod+S', run: () => ran.push('save') },
+        { id: 'host-escape', keys: 'Escape', run: () => ran.push('escape') }
+      ]
     })
     const rect = editor.createShape('RECTANGLE', 0, 0, 40, 40)
     editor.select([rect])
-    press('KeyS', MOD)
+    press('KeyS', mod())
     press('Escape')
     expect(ran).toEqual(['save', 'escape'])
     expect(editor.state.selectedIds.has(rect)).toBe(true)
+  })
+
+  test("a host key that declines leaves the key to the editor's", () => {
+    let popoverOpen = true
+    const editor = mountKeyboard({
+      shortcuts: [
+        {
+          id: 'close-popover',
+          keys: 'Escape',
+          run: () => {
+            if (!popoverOpen) return false
+            popoverOpen = false
+          }
+        }
+      ]
+    })
+    const rect = editor.createShape('RECTANGLE', 0, 0, 40, 40)
+    editor.select([rect])
+    press('Escape')
+    expect([popoverOpen, editor.state.selectedIds.has(rect)]).toEqual([false, true])
+    press('Escape')
+    expect(editor.state.selectedIds.size).toBe(0)
+  })
+
+  test('a host Escape goes before the pen, which keeps its points when it declines', () => {
+    let drawing = true
+    const editor = mountKeyboard({
+      shortcuts: [
+        {
+          id: 'start-over',
+          keys: 'Escape',
+          run: () => {
+            if (!drawing) return false
+            editor.penCancel()
+          }
+        }
+      ]
+    })
+    editor.setTool('PEN')
+    editor.penAddVertex(0, 0)
+    editor.penAddVertex(40, 0)
+    press('Escape')
+    expect([
+      editor.state.penState,
+      editor.graph.getChildren(editor.state.currentPageId).length
+    ]).toEqual([null, 0])
+    drawing = false
+    editor.setTool('PEN')
+    editor.penAddVertex(0, 0)
+    editor.penAddVertex(40, 0)
+    press('Escape')
+    expect([
+      editor.state.penState,
+      editor.graph.getChildren(editor.state.currentPageId).length
+    ]).toEqual([null, 1])
   })
 
   test('leaves keys typed into a text field to the field', () => {
@@ -192,14 +271,68 @@ describe('useEditorKeyboard', () => {
     input.remove()
   })
 
-  test('a host key that replaces an editor key carries its own view and history rules', () => {
+  test('leaves keys pressed in an open menu to the menu, and takes them once it is closing', () => {
+    const editor = mountKeyboard()
+    const menu = dom.document.createElement('div')
+    menu.setAttribute('role', 'menu')
+    menu.setAttribute('data-state', 'open')
+    menu.tabIndex = -1
+    dom.document.body.appendChild(menu)
+    const pressInMenu = () =>
+      menu.dispatchEvent(
+        new dom.KeyboardEvent('keydown', {
+          code: 'KeyR',
+          key: 'r',
+          bubbles: true,
+          cancelable: true
+        })
+      )
+
+    pressInMenu()
+    expect(editor.state.activeTool).toBe('SELECT')
+
+    menu.setAttribute('data-state', 'closed')
+    pressInMenu()
+    expect(editor.state.activeTool).toBe('RECTANGLE')
+    menu.remove()
+  })
+
+  test('keeps a key it takes from the item of a closing menu, which would act on it too', () => {
+    const editor = mountKeyboard()
+    const menu = dom.document.createElement('div')
+    menu.setAttribute('role', 'menu')
+    menu.setAttribute('data-state', 'closed')
+    const item = dom.document.createElement('div')
+    item.setAttribute('role', 'menuitem')
+    menu.appendChild(item)
+    dom.document.body.appendChild(menu)
+    const itemKeys: string[] = []
+    item.addEventListener('keydown', (event) => {
+      if (event instanceof dom.KeyboardEvent) itemKeys.push(event.key)
+    })
+    const pressInItem = (code: string, key: string) =>
+      item.dispatchEvent(
+        new dom.KeyboardEvent('keydown', { code, key, bubbles: true, cancelable: true })
+      )
+
+    pressInItem('KeyR', 'r')
+    pressInItem('KeyQ', 'q')
+    // X arms a connector only on a board; in a design file it is the menu's.
+    pressInItem('KeyX', 'x')
+
+    expect(editor.state.activeTool).toBe('RECTANGLE')
+    expect(itemKeys).toEqual(['q', 'x'])
+    menu.remove()
+  })
+
+  test("a host key on an editor key carries its own view rules, and the editor's runs where it can't", () => {
     const ran: string[] = []
     const editor = mountKeyboard({
       shortcuts: [{ id: 'host-escape', keys: 'Escape', run: () => ran.push('escape') }]
     })
     editor.startPlay()
     press('Escape')
-    expect(ran).toEqual([])
+    expect([ran, editor.state.canvasView.id]).toEqual([[], 'edit'])
   })
 
   test('keeps still while the host says another editor has the keys', () => {
@@ -221,14 +354,16 @@ describe('useEditorKeyboard', () => {
     const editor = mountKeyboard()
     editor.setReadOnly(true)
     const before = editor.state.zoom
-    press('Equal', { key: '=', ...MOD })
+    press('Equal', { key: '=', ...mod() })
     expect(editor.state.zoom).toBeGreaterThan(before)
   })
 
   test('a global host key replaces the editor key of the same name', () => {
     const ran: string[] = []
     const editor = mountKeyboard({
-      shortcuts: [{ id: 'host-delete', keys: 'Delete', run: () => ran.push('delete'), global: true }]
+      shortcuts: [
+        { id: 'host-delete', keys: 'Delete', run: () => ran.push('delete'), global: true }
+      ]
     })
     const rect = editor.createShape('RECTANGLE', 0, 0, 40, 40)
     editor.select([rect])
@@ -255,11 +390,54 @@ describe('useEditorKeyboard', () => {
     expect(editor.graph.getNode(rect)?.x).toBe(0)
   })
 
+  test('leaves layers the host keeps as they are, and still undoes a path edit', () => {
+    const editor = mountKeyboard()
+    const vector = editor.graph.createNode('VECTOR', editor.state.currentPageId, {
+      width: 100,
+      height: 50,
+      vectorNetwork: structuredClone(TRIANGLE)
+    })
+    editor.select([vector.id])
+    editor.setHostRestrictions({ layerEdits: 'none' })
+    editor.enterNodeEditMode(vector.id, { keepOpen: true })
+    editor.nodeEditPushHistory()
+    editor.nodeEditSetHandle(0, 'tangentStart', { x: 20, y: 20 })
+
+    for (const [code, init] of [
+      ['Delete', { key: 'Delete' }],
+      ['Backspace', { key: 'Backspace' }],
+      ['KeyA', { shiftKey: true }],
+      ['KeyD', mod()],
+      ['Digit5', { key: '5' }],
+      ['ArrowRight', { key: 'ArrowRight' }]
+    ] as const) {
+      press(code, init)
+    }
+    const node = editor.graph.getNode(vector.id)
+    expect(node).toMatchObject({ parentId: editor.state.currentPageId, x: 0, opacity: 1 })
+    expect(editor.graph.getChildren(editor.state.currentPageId)).toHaveLength(1)
+    expect(editor.state.nodeEditState?.nodeId).toBe(vector.id)
+
+    press('KeyZ', mod())
+    expect(editor.state.nodeEditState?.segments[0]?.tangentStart).toEqual({ x: 0, y: 0 })
+  })
+
+  test("a global host key runs while text is edited and stops the browser's own action", () => {
+    const ran: string[] = []
+    const editor = mountKeyboard({
+      shortcuts: [{ id: 'host-save', keys: 'Mod+S', run: () => ran.push('save'), global: true }]
+    })
+    const text = editor.createShape('TEXT', 0, 0, 100, 20)
+    editor.state.editingTextId = text
+    expect(press('KeyS', mod())).toBe(true)
+    expect(ran).toEqual(['save'])
+  })
+
   test("a preview leaves Space to its controls and still stops the browser's own Save", () => {
     const editor = mountKeyboard()
     editor.startPlay()
     expect(press('Space', { key: ' ' })).toBe(false)
     expect(editor.state.activeTool).toBe('SELECT')
-    expect(press('KeyS', MOD)).toBe(true)
+    expect(press('KeyS', mod())).toBe(true)
   })
 })

@@ -171,5 +171,9 @@ function open(row: CloudDocumentRow) {
     @new-design="createStoredDocument(location)"
     @review-conflicts="reviewConflicts"
   />
-  <DocumentDeleteDialog v-model:document="deleting" :location="location" />
+  <DocumentDeleteDialog
+    v-model:document="deleting"
+    :location="location"
+    :description="t.homeTrashMoveDescription"
+  />
 </template>

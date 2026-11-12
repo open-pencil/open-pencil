@@ -1,9 +1,9 @@
 import { expect, test } from 'bun:test'
 
-import { guid } from '@open-pencil/test-support/fig/guid'
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
 import { initCodec, type NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { guid } from '@open-pencil/test-support/fig/guid'
 
 test('retained implicit layout survives import but does not override an explicit sizing edit', async () => {
   await initCodec()
