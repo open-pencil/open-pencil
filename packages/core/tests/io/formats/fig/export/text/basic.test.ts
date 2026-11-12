@@ -68,6 +68,23 @@ describe('text node export', () => {
     expect(textNode?.fontFeatures).toContainEqual({ tag: 'LIGA', enabled: false })
   })
 
+  test('writes TRUNCATE auto-resize as a fixed box that truncates', async () => {
+    await initCodec()
+
+    const graph = new SceneGraph()
+    graph.createNode('TEXT', graph.getPages()[0].id, {
+      name: 'Truncated',
+      text: 'A long label',
+      width: 40,
+      height: 16,
+      textAutoResize: 'TRUNCATE'
+    })
+
+    const reimported = await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)
+    const textNode = [...reimported.getAllNodes()].find((node) => node.name === 'Truncated')
+    expect(textNode).toMatchObject({ textAutoResize: 'NONE', textTruncation: 'ENDING' })
+  })
+
   test('keeps OpenPencil text language hints out of the .fig schema', async () => {
     await initCodec()
 

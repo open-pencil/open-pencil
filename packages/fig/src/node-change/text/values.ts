@@ -1,4 +1,4 @@
-import type { TextDecoration, TextLength } from '@open-pencil/scene-graph'
+import type { TextAutoResize, TextDecoration, TextLength } from '@open-pencil/scene-graph'
 import { NO_LETTER_SPACING, percentLength, pixelLength } from '@open-pencil/scene-graph/text'
 
 export function mapTextDecoration(d?: string): TextDecoration {
@@ -43,6 +43,14 @@ export function figmaLineHeight(lineHeight: TextLength | null): { value: number;
   return lineHeight.unit === 'PIXELS'
     ? { value: lineHeight.value, units: 'PIXELS' }
     : { value: lineHeight.value / 100, units: 'RAW' }
+}
+
+/**
+ * An auto-resize mode as the `.fig` schema writes it: the schema has no `TRUNCATE`, which Figma
+ * stores as a fixed box with `textTruncation: ENDING`.
+ */
+export function figmaTextAutoResize(mode: TextAutoResize): Exclude<TextAutoResize, 'TRUNCATE'> {
+  return mode === 'TRUNCATE' ? 'NONE' : mode
 }
 
 /** A letter spacing as Figma writes it. */

@@ -17,6 +17,7 @@ import { ownsSlotContent } from '@open-pencil/scene-graph/slots'
 import { paintBindingTarget } from '@open-pencil/scene-graph/variables'
 
 import { instanceExportAddress } from '../instance/geometry'
+import { figmaTextAutoResize } from '../text/values'
 import { mergeVariableConsumptionMaps, overrideVariableBindingEntry } from '../variable/bindings'
 import { mergeVariableModeClaims } from '../variable/maps'
 import { nestedPropertyAssignments } from './assignments/nested'
@@ -90,6 +91,9 @@ function layoutModeClaim(
   if (raw === 'stackPrimarySizing' || raw === 'stackCounterSizing') {
     const hugs = value === 'HUG' && !fillsOwnSizingAxis(graph, target, raw)
     return { [raw]: hugs ? 'RESIZE_TO_FIT_WITH_IMPLICIT_SIZE' : 'FIXED' }
+  }
+  if (raw === 'textAutoResize' && target.type === 'TEXT') {
+    return { [raw]: figmaTextAutoResize(target.textAutoResize) }
   }
   return { [raw]: value }
 }
