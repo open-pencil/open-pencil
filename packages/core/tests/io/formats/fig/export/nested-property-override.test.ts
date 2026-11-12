@@ -1,12 +1,11 @@
 import { expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import { FigmaAPI, type FigmaInstanceNode } from '@open-pencil/core/figma-api'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { applyComponentPropertyValue } from '@open-pencil/scene-graph/components'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 function dialogWithCaption() {
   const graph = new SceneGraph()

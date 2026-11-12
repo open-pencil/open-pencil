@@ -1,7 +1,9 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { TEXT_METRIC_FIELDS } from '@open-pencil/scene-graph/fields'
 
-import { measureTextForLayout } from './text-measurement'
+import { autoWidthWrapWidth, measureAutoWidthText, measureTextForLayout } from './text-measurement'
+
+const WRAP_WIDTH_KEYS = ['minWidth', 'maxWidth'] as const satisfies readonly (keyof SceneNode)[]
 
 /** Case and direction change what the lines hold, so how wide they are and where they break. */
 const TEXT_CONTENT_FIELDS = ['textCase', 'textDirection'] as const
@@ -9,8 +11,10 @@ const TEXT_CONTENT_FIELDS = ['textCase', 'textDirection'] as const
 export const TEXT_AUTO_RESIZE_KEYS = new Set<keyof SceneNode>([
   ...TEXT_METRIC_FIELDS,
   ...TEXT_CONTENT_FIELDS,
+  ...WRAP_WIDTH_KEYS,
   'lineHeight',
   'textAutoResize',
+  'textTruncation',
   'width',
   'maxLines'
 ])
@@ -18,7 +22,10 @@ export const TEXT_AUTO_RESIZE_KEYS = new Set<keyof SceneNode>([
 const TEXT_AUTO_WIDTH_KEYS = new Set<keyof SceneNode>([
   ...TEXT_METRIC_FIELDS,
   ...TEXT_CONTENT_FIELDS,
-  'textAutoResize'
+  ...WRAP_WIDTH_KEYS,
+  'textAutoResize',
+  'textTruncation',
+  'maxLines'
 ])
 
 export function hasTextAutoResizeChange(changes: Partial<SceneNode>): boolean {
@@ -52,8 +59,10 @@ export function textAutoResizeChanges(
   if (mode !== 'HEIGHT' && mode !== 'WIDTH_AND_HEIGHT')
     return { derivedTextHeight: measureTextForLayout(next, next.width).height || null }
 
-  const maxWidth = mode === 'HEIGHT' ? next.width : undefined
-  const measured = measureTextForLayout(next, maxWidth)
+  const measured =
+    mode === 'HEIGHT'
+      ? measureTextForLayout(next, next.width)
+      : measureAutoWidthText(next, autoWidthWrapWidth(next))
   const resized: TextSizeChanges = {
     derivedLayout: null,
     derivedTextGlyphs: null,
@@ -62,7 +71,8 @@ export function textAutoResizeChanges(
 
   if (mode === 'WIDTH_AND_HEIGHT' && hasTextAutoWidthChange(changes) && measured.width > 0)
     resized.width = measured.width
-  if (measured.height > 0) resized.height = measured.height
+  // A line height of zero makes text 0 px tall, as in Figma.
+  if (measured.height >= 0) resized.height = measured.height
 
   return resized
 }
@@ -82,7 +92,7 @@ export function sizeAutoResizingText(
   for (let id = stack.pop(); id !== undefined; id = stack.pop()) {
     const node = graph.getNode(id)
     if (!node) continue
-    stack.push(...node.childIds)
+    for (const childId of node.childIds) stack.push(childId)
     if (node.type !== 'TEXT' || (wrappingOnly && node.textAutoResize !== 'HEIGHT')) continue
     // Wrapping text the source gave no width wraps at the width its content takes.
     const unsized = node.textAutoResize === 'HEIGHT' && node.width <= 0

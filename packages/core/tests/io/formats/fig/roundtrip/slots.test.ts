@@ -1,7 +1,5 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { FIXTURES } from '#core-tests/helpers/fig/fixtures'
-
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer } from '@open-pencil/fig'
 import type { GUID } from '@open-pencil/kiwi/fig'
@@ -9,6 +7,7 @@ import { initCodec, type NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { slotPropertyId } from '@open-pencil/scene-graph/slots'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import { releaseFigPopulationWorker } from '#core/kiwi/fig/population/client'
 
@@ -57,6 +56,31 @@ describe('slots round trip', () => {
     const before = slotContents(original)
     expect(before['A filled']).toEqual(['Added text', 'Added rectangle'])
     expect(slotContents(reopened)).toEqual(before)
+  })
+
+  test('a component position edit keeps saved sibling order', async () => {
+    const graph = await parseFigFile(await Bun.file(`${FIXTURES}/slots.fig`).arrayBuffer())
+    const page = graph.getPages().find((candidate) => candidate.name === 'Slots fixture')
+    if (!page) throw new Error('Missing slots fixture page')
+    const target = graph.getChildren(page.id).find((node) => node.name === 'Card default content')
+    if (!target) throw new Error('Missing edited component')
+    // By ID as well as name: swapping two layers of the same name keeps the names in order.
+    const layers = (of: SceneGraph, pageId: string) =>
+      of.getChildren(pageId).map((node) => `${node.id} ${node.name}`)
+    const before = layers(graph, page.id)
+    graph.updateNode(target.id, { x: target.x + 37 })
+    releaseFigPopulationWorker(graph)
+    const exported = await exportFigFile(graph)
+    const reopened = await parseFigFile(exported.slice().buffer)
+    const reopenedPage = reopened.getPages().find((candidate) => candidate.name === 'Slots fixture')
+    if (!reopenedPage) throw new Error('Missing reopened slots fixture page')
+    expect(layers(reopened, reopenedPage.id)).toEqual(before)
+    const positions = reopened
+      .getChildren(reopenedPage.id)
+      .map((node) => node.source.orderKey ?? '')
+    expect(positions).toEqual([...positions].sort())
+    expect(new Set(positions).size).toBe(positions.length)
+    expect(reopened.getNode(target.id)?.x).toBe(357)
   })
 
   test('slot properties are written as SLOT definitions with their settings', () => {

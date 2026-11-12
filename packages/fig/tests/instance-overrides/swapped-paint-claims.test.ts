@@ -1,11 +1,11 @@
 import { expect, test } from 'bun:test'
 
 import { expectPathError } from '#fig-tests/helpers/errors'
-import { guid } from '#fig-tests/helpers/guid'
 import { interpretInstance } from '#fig/instance-overrides/interpret'
 import { symbolDataOf } from '#fig/instance-overrides/types'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { guid } from '@open-pencil/test-support/fig/guid'
 
 test('a root swap takes the replacement paint but keeps explicit root paint claims', () => {
   const paint = (r: number, g: number): NonNullable<NodeChange['fillPaints']> => [

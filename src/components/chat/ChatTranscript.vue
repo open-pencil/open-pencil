@@ -179,7 +179,7 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
 
         <div v-if="sending !== null" class="flex justify-end" data-test-id="chat-sending-message">
           <div
-            class="max-w-[85%] rounded-xl rounded-br-md bg-accent px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap text-on-accent"
+            class="max-w-[85%] rounded-xl rounded-ee-md bg-accent px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap text-on-accent"
           >
             <ChatReferenceText :text="sending" />
           </div>
@@ -243,7 +243,7 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
     <IconButton
       v-if="messages.length && !arrivedState.bottom"
       :label="ai.jumpToLatest"
-      class="absolute right-3 bottom-3 border border-border bg-panel shadow-sm"
+      class="absolute inset-e-3 bottom-3 border border-border bg-panel shadow-sm"
       @click="resumeFollowing"
       ><icon-lucide-arrow-down class="size-4"
     /></IconButton>

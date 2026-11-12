@@ -1,94 +1,36 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { getNodeLocalMatrix, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import {
-  effectOverflow,
-  geometryBlobBounds,
-  strokeOverflow,
-  textDecorationOverflow,
+  blurSigma,
   unionVisualBounds,
-  type VisualBounds
+  type VisualBounds,
+  widestBlurRadius
 } from '@open-pencil/scene-graph/geometry'
-import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
-import { textLinesOverflow } from '@open-pencil/scene-graph/text'
+import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 
-import { projectedNode, type RotationPreview } from '#core/geometry'
+import { glassSampleRadius } from '#core/canvas/glass/shader'
+import type { RotationPreview } from '#core/geometry'
+import {
+  localRenderBounds,
+  mapVisualBounds,
+  subtreeRenderBounds
+} from '#core/geometry/render-bounds'
 
-/** The axis-aligned box around `bounds` once `matrix` maps it. */
-export function mapVisualBounds(matrix: Mat3, bounds: VisualBounds): VisualBounds {
-  const points = Matrix.mapPoints(matrix, [
-    bounds.minX,
-    bounds.minY,
-    bounds.maxX,
-    bounds.minY,
-    bounds.maxX,
-    bounds.maxY,
-    bounds.minX,
-    bounds.maxY
-  ])
-  const xs = [points[0], points[2], points[4], points[6]]
-  const ys = [points[1], points[3], points[5], points[7]]
-  return {
-    minX: Math.min(...xs),
-    minY: Math.min(...ys),
-    maxX: Math.max(...xs),
-    maxY: Math.max(...ys)
-  }
+/** Where a node that draws nothing stands: its origin, as a box of no size. */
+function origin(matrix: Mat3): VisualBounds {
+  return mapVisualBounds(matrix, { minX: 0, minY: 0, maxX: 0, maxY: 0 })
 }
 
+/** What a node draws itself on the page, as far as the canvas draws its effects. */
 export function worldNodeVisualBounds(graph: SceneGraph, node: SceneNode): VisualBounds {
-  const stroke = strokeOverflow(node.strokes, node.strokeCap, node.vectorNetwork, node)
-  const effects = effectOverflow(node.effects)
-  return mapVisualBounds(getWorldMatrix(node, graph), {
-    minX: -stroke - effects.left,
-    minY: -stroke - effects.top,
-    maxX: node.width + stroke + effects.right,
-    maxY: node.height + textLinesOverflow(node) + stroke + effects.bottom
-  })
-}
-
-/**
- * What a node draws itself, in its own axes before position, rotation, and flips: the box grown
- * by strokes and effects, its path geometry, and text lines and decoration. Children are not
- * included.
- */
-function localVisualBounds(node: SceneNode): VisualBounds {
-  const stroke = strokeOverflow(node.strokes, node.strokeCap, node.vectorNetwork, node)
-  const effects = effectOverflow(node.effects)
-  const box: VisualBounds = {
-    minX: -stroke - effects.left,
-    minY: -stroke - effects.top,
-    maxX: node.width + stroke + effects.right,
-    maxY:
-      node.height + textLinesOverflow(node) + stroke + effects.bottom + textDecorationOverflow(node)
-  }
-  const hasNonInsideStroke = node.strokes.some(
-    (stroke) => stroke.visible && stroke.align !== 'INSIDE'
-  )
-  const geometry = geometryBlobBounds([
-    ...node.fillGeometry,
-    ...(hasNonInsideStroke ? node.strokeGeometry : [])
-  ])
-  if (!geometry) return box
-  return {
-    minX: Math.min(box.minX, geometry.x),
-    minY: Math.min(box.minY, geometry.y),
-    maxX: Math.max(box.maxX, geometry.x + geometry.width),
-    maxY: Math.max(box.maxY, geometry.y + geometry.height)
-  }
-}
-
-function clipsChildren(node: SceneNode): boolean {
-  return (
-    node.clipsContent &&
-    (node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE')
-  )
+  const matrix = getWorldMatrix(node, graph)
+  const local = localRenderBounds(node, 'drawn')
+  return local ? mapVisualBounds(matrix, local) : origin(matrix)
 }
 
 /**
  * What a node and its visible descendants draw, in the frame `toFrame` maps the node's own axes
- * into. One pass down the subtree composes each child's local matrix, so no node walks its
- * ancestors. A container that clips its content ends the walk: its children draw inside its box,
- * which its own bounds already hold.
+ * into, as far as the canvas draws their effects (`subtreeRenderBounds`).
  */
 export function subtreeVisualBounds(
   graph: SceneGraph,
@@ -96,27 +38,12 @@ export function subtreeVisualBounds(
   toFrame: Mat3,
   preview?: RotationPreview | null
 ): VisualBounds {
-  let bounds = mapVisualBounds(toFrame, localVisualBounds(node))
-  const pending = [{ node, matrix: toFrame }]
-  for (let entry = pending.pop(); entry; entry = pending.pop()) {
-    if (clipsChildren(entry.node)) continue
-    for (const childId of entry.node.childIds) {
-      const child = graph.getNode(childId)
-      if (!child?.visible) continue
-      const local = getNodeLocalMatrix(projectedNode(child, preview))
-      const matrix = Matrix.multiply(entry.matrix, local)
-      bounds =
-        unionVisualBounds(bounds, mapVisualBounds(matrix, localVisualBounds(child))) ?? bounds
-      pending.push({ node: child, matrix })
-    }
-  }
-  return bounds
+  return subtreeRenderBounds(graph, node, toFrame, { reach: 'drawn', preview }) ?? origin(toFrame)
 }
 
 /**
- * What the layers and their visible descendants draw, in page coordinates; null when none is
- * visible. Each layer's world matrix places it, so a turned, flipped, or turned-parent layer gets
- * the box it draws.
+ * What the layers and their visible descendants draw, in page coordinates, as far as the canvas
+ * draws their effects; null when none is visible.
  */
 export function computeContentBounds(
   graph: SceneGraph,
@@ -132,4 +59,39 @@ export function computeContentBounds(
     )
   }
   return bounds
+}
+
+/**
+ * How far past what a node draws its effects read the canvas behind it, in page units: glass
+ * refraction and background blur sample the backdrop around each point they draw. 0 for none.
+ */
+function nodeBackdropReach(graph: SceneGraph, node: SceneNode): number {
+  let reach = 0
+  for (const effect of node.effects) {
+    if (!effect.visible) continue
+    if (effect.type === 'GLASS') reach = Math.max(reach, glassSampleRadius(node, effect))
+    if (effect.type === 'BACKGROUND_BLUR') {
+      reach = Math.max(reach, 3 * blurSigma(widestBlurRadius(effect)) + 1)
+    }
+  }
+  if (reach === 0) return 0
+  const matrix = getWorldMatrix(node, graph)
+  return reach * Math.max(Math.hypot(matrix[0], matrix[3]), Math.hypot(matrix[1], matrix[4]))
+}
+
+/** The farthest backdrop reach of a node, or with `subtree` of it and its visible descendants. */
+export function backdropReach(graph: SceneGraph, node: SceneNode, subtree: boolean): number {
+  if (!subtree) return nodeBackdropReach(graph, node)
+  let reach = 0
+  const stack = [node]
+  while (stack.length > 0) {
+    const current = stack.pop()
+    if (!current?.visible) continue
+    reach = Math.max(reach, nodeBackdropReach(graph, current))
+    for (const childId of current.childIds) {
+      const child = graph.getNode(childId)
+      if (child) stack.push(child)
+    }
+  }
+  return reach
 }

@@ -3,13 +3,13 @@ import type { ExportSettings } from '@figma/plugin-typings/plugin-api-standalone
 import { OPEN_PENCIL_PLUGIN_DATA, withPluginData } from '@open-pencil/scene-graph/plugin-data'
 
 import {
-  graph,
   nodeId,
   raw,
   updateNode,
   type NodeProxyInternals,
   type ProxyThis
-} from '#core/figma-api/accessor-utils'
+} from '#core/figma-api/accessors/utils'
+import { graphOf } from '#core/figma-api/graph'
 import type { NodeProxyHost } from '#core/figma-api/proxy'
 
 import { exportLayer } from './render'
@@ -39,14 +39,14 @@ export function installExportAccessors(target: object, internals: NodeProxyInter
   Object.defineProperty(target, 'exportAsync', {
     async value(this: ProxyThis, settings?: unknown): Promise<Uint8Array | string> {
       const request = parseExportRequest(settings)
-      const node = graph(this, internals).getNode(nodeId(this, internals))
+      const node = graphOf(this).getNode(nodeId(this, internals))
       if (!node) {
         throw new Error(
           `in exportAsync: The node with id "${nodeId(this, internals)}" does not exist`
         )
       }
       const host = this[internals.api] as NodeProxyHost
-      return exportLayer(host, graph(this, internals), node, request)
+      return exportLayer(host, graphOf(this), node, request)
     }
   })
 }

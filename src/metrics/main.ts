@@ -1,5 +1,8 @@
 import { createApp } from 'vue'
 
+import { createOpenOverlaysPlugin } from '@open-pencil/vue/lifecycle/overlays'
+import { createRetainedScopePlugin } from '@open-pencil/vue/lifecycle/retention'
+
 import '@/app.css'
 import { utcToday } from '@/app/metrics/days'
 import { fetchMetricsSnapshot } from '@/app/metrics/load'
@@ -16,6 +19,8 @@ async function start(): Promise<void> {
     return undefined
   })
   const app = createApp(MetricsView, { initialRange, initialSnapshot })
+  // What the editor needs from the app, for the read-only viewer of a report's document.
+  app.use(createRetainedScopePlugin()).use(createOpenOverlaysPlugin())
   app.config.errorHandler = (error) => {
     console.error(error)
   }

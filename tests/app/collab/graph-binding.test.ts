@@ -3,10 +3,10 @@ import { describe, expect, test } from 'bun:test'
 import type * as Y from 'yjs'
 
 import { bindCollabGraphEvents } from '@open-pencil/collab'
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 import { collabEditor } from '@/app/collab/editor'
 
-import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 import { settleGraphSync, withSyncedStores } from '#tests/helpers/collab/synced-stores'
 
 describe('collab graph binding', () => {

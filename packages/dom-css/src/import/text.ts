@@ -8,9 +8,10 @@ import type {
   StyleRun,
   TextParagraphStyle
 } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import {
   parseCSSColor,
-  parseCSSFontFamily,
+  resolveCSSFontFamily,
   parseCSSLetterSpacing,
   parseCSSLineHeight,
   parseCSSNumber
@@ -111,7 +112,7 @@ export function characterStyleFromCSS(
   base: CSSCharacterStyle
 ): CSSCharacterStyle {
   const fills = colorToFillFromCSS(pickStyle(style, 'color'))
-  const family = parseCSSFontFamily(pickStyle(style, 'font-family'))
+  const family = resolveCSSFontFamily(pickStyle(style, 'font-family'))
   const decorationColor = pickStyle(style, 'text-decoration-color')
   const decorationFills = parseCSSColor(decorationColor) ? colorToFillFromCSS(decorationColor) : []
   const line = pickStyle(style, 'text-decoration-line')
@@ -263,7 +264,10 @@ function preservesWhitespace(style: DesignStyleDeclaration): boolean {
 function appendCharacters(collector: Collector, text: string, style: CharacterOfText): void {
   const styled = collector.link ? { ...style, hyperlink: collector.link } : style
   collector.text += text
-  collector.styles.push(...Array.from({ length: text.length }, () => styled))
+  appendAll(
+    collector.styles,
+    Array.from({ length: text.length }, () => styled)
+  )
 }
 
 /** Where a link element goes, for an `<a>` with an `href`. */

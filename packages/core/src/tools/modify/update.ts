@@ -1,10 +1,12 @@
 import * as v from 'valibot'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { styleDetachmentChanges } from '@open-pencil/scene-graph/shared-styles'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import type { FigmaNodeProxy } from '#core/figma-api'
+import { graphOf } from '#core/figma-api/graph'
 import { toolNumber, nodeIdInputSchema, defineTool, nodeNotFound } from '#core/tools/schema'
 
 /** The size of a layer and how auto layout or its text sizes it, which a resize may change. */
@@ -36,7 +38,7 @@ export const updateNode = defineTool({
   name: 'update_node',
 
   description:
-    'Update properties of an existing node: position, size, opacity, corner radius, visibility, text, font.',
+    'Update properties of an existing node: position, size, rotation, opacity, corner radius, visibility, lock, name, text, font.',
   execution: { kind: 'sync', mutation: 'properties' },
   input: v.strictObject({
     id: nodeIdInputSchema,
@@ -44,6 +46,7 @@ export const updateNode = defineTool({
     y: v.optional(toolNumber(v.pipe(v.number(), v.description('Y position')))),
     width: v.optional(toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Width')))),
     height: v.optional(toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Height')))),
+    rotation: v.optional(toolNumber(v.pipe(v.number(), v.description('Rotation in degrees')))),
     opacity: v.optional(
       toolNumber(v.pipe(v.number(), v.minValue(0), v.maxValue(1), v.description('Opacity (0-1)')))
     ),
@@ -51,6 +54,7 @@ export const updateNode = defineTool({
       toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Corner radius')))
     ),
     visible: v.optional(v.pipe(v.boolean(), v.description('Visibility'))),
+    locked: v.optional(v.pipe(v.boolean(), v.description('Locked'))),
     text: v.optional(v.pipe(v.string(), v.description('Text content (TEXT nodes)'))),
     text_direction: v.optional(
       v.pipe(v.picklist(['AUTO', 'LTR', 'RTL']), v.description('Text direction for TEXT nodes'))
@@ -74,12 +78,12 @@ export const updateNode = defineTool({
   execute: (figma, args) => {
     const node = figma.getNodeById(args.id)
     if (!node) return nodeNotFound(args.id)
-    assertNodeEditable(figma.graph, args.id)
+    assertNodeEditable(graphOf(figma), args.id)
     // Written to the layer directly, since the plugin setters need a loaded font; an edit to a
     // text style's field leaves the style, as the editor's updates do.
     const editTypography = (changes: Partial<SceneNode>) => {
-      const scene = figma.graph.getNode(args.id)
-      if (scene) figma.graph.updateNode(args.id, styleDetachmentChanges(scene, changes))
+      const scene = graphOf(figma).getNode(args.id)
+      if (scene) graphOf(figma).updateNode(args.id, styleDetachmentChanges(scene, changes))
     }
     const updated: string[] = []
     if (args.x !== undefined) {
@@ -91,7 +95,11 @@ export const updateNode = defineTool({
       updated.push('y')
     }
     if (args.width !== undefined || args.height !== undefined)
-      updated.push(...resized(node, args.width, args.height))
+      appendAll(updated, resized(node, args.width, args.height))
+    if (args.rotation !== undefined) {
+      node.rotation = args.rotation
+      updated.push('rotation')
+    }
     if (args.opacity !== undefined) {
       node.opacity = args.opacity
       updated.push('opacity')
@@ -104,22 +112,26 @@ export const updateNode = defineTool({
       node.visible = args.visible
       updated.push('visible')
     }
+    if (args.locked !== undefined) {
+      node.locked = args.locked
+      updated.push('locked')
+    }
     if (args.name !== undefined) {
       node.name = args.name
       updated.push('name')
     }
     if (args.text !== undefined) {
-      figma.graph.updateNode(node.id, { text: args.text })
+      graphOf(figma).updateNode(node.id, { text: args.text })
       updated.push('text')
     }
     if (args.text_direction !== undefined) {
-      figma.graph.updateNode(node.id, {
+      graphOf(figma).updateNode(node.id, {
         textDirection: args.text_direction
       })
       updated.push('textDirection')
     }
     if (args.flow_direction !== undefined) {
-      figma.graph.updateNode(node.id, {
+      graphOf(figma).updateNode(node.id, {
         layoutDirection: args.flow_direction
       })
       updated.push('layoutDirection')

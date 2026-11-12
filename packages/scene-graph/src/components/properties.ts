@@ -15,6 +15,15 @@ export interface ComponentPropertyTarget {
   source: SceneNode
 }
 
+/**
+ * The component that defines a main component's properties: its set when it is a variant,
+ * since variants own no properties of their own (desktop 126), else the component itself.
+ */
+export function propertyOwner(graph: SceneGraph, component: SceneNode): SceneNode {
+  const parent = component.parentId ? graph.getNode(component.parentId) : undefined
+  return component.type === 'COMPONENT' && parent?.type === 'COMPONENT_SET' ? parent : component
+}
+
 export function componentPropertyOwners(graph: SceneGraph, instance: SceneNode): SceneNode[] {
   if (instance.type !== 'INSTANCE') return []
   const component = instanceMainComponent(graph, instance)

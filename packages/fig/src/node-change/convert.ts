@@ -24,6 +24,7 @@ import { expandPathTextLayoutBox } from './path/text-layout'
 import {
   extractBoundVariables,
   extractExportSettings,
+  extractLibraryLayerId,
   extractLibrarySource,
   extractTextPathBox,
   extractPluginData,
@@ -92,6 +93,8 @@ import type { Vector, GUID } from '@open-pencil/scene-graph/primitives'
 import { savedFace } from './font/style'
 import { numericVariableAssignmentScales, sourceVariableBindingScales } from './variable/bindings'
 export { VARIABLE_BINDING_FIELDS, VARIABLE_BINDING_FIELDS_INVERSE } from './variable/bindings'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
+
 import type { FigVariableModeMap } from './variable/maps'
 
 export function extractVariableModes(nc: NodeChange): VariableModeMap {
@@ -504,7 +507,7 @@ function savedLinesHeight(nc: NodeChange): number | null {
   const bottoms = (nc.derivedTextData?.baselines ?? []).map(
     (line) => (line.lineY ?? line.position.y - line.lineAscent) + line.lineHeight
   )
-  return bottoms.length > 0 ? Math.max(...bottoms) : null
+  return bottoms.length > 0 ? maxOf(bottoms) : null
 }
 
 function convertLayoutPadding(
@@ -696,7 +699,7 @@ function convertVectorAndStrokeProps(nc: NodeChange, blobs: Uint8Array[]) {
 function resolveNodeType(nc: NodeChange): NodeType | 'DOCUMENT' | 'VARIABLE' {
   const nodeType = mapNodeType(nc.type)
   if (
-    (nodeType === 'FRAME' && isComponentSet(nc)) ||
+    (nodeType === 'FRAME' && isComponentSetRecord(nc)) ||
     readNodeChangePluginData(nc, OPEN_PENCIL_PLUGIN_DATA.nodeType) === 'COMPONENT_SET'
   ) {
     return 'COMPONENT_SET'
@@ -788,6 +791,7 @@ export function nodeChangeToProps(
     status: extractNodeStatus(nc),
     pluginData: extractPluginData(nc),
     librarySource: extractLibrarySource(nc),
+    libraryLayerId: extractLibraryLayerId(nc),
     pluginRelaunchData: extractPluginRelaunchData(nc),
     clipsContent: nc.frameMaskDisabled === false && nc.resizeToFit !== true,
     componentId: extractSymbolId(nc),
@@ -1066,10 +1070,17 @@ function extractComponentMetadata(nc: NodeChange): ComponentMetadataProps {
   }
 }
 
-function isComponentSet(nc: NodeChange): boolean {
+/**
+ * Whether a record is a component set: typed as one, or a frame that defines a variant property
+ * or that OpenPencil marked one.
+ */
+export function isComponentSetRecord(nc: NodeChange): boolean {
+  if (mapNodeType(nc.type) === 'COMPONENT_SET') return true
   const defs = nc.componentPropDefs as Array<{ type?: string }> | undefined
-  if (!defs?.length) return false
-  return defs.some((d) => d.type === 'VARIANT')
+  return (
+    !!defs?.some((d) => d.type === 'VARIANT') ||
+    readNodeChangePluginData(nc, OPEN_PENCIL_PLUGIN_DATA.nodeType) === 'COMPONENT_SET'
+  )
 }
 
 function extractFigmaLayoutMetadata(nc: NodeChange): SceneNode['source']['fig']['layout'] {
@@ -1322,8 +1333,8 @@ function extractFigmaSymbolMetadata(
   }
 }
 
-function extractSymbolId(nc: NodeChange): string {
+function extractSymbolId(nc: NodeChange): string | null {
   const sd = nc.symbolData as { symbolID?: GUID } | undefined
-  if (!sd?.symbolID) return ''
+  if (!sd?.symbolID) return null
   return guidToString(sd.symbolID)
 }

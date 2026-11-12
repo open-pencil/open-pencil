@@ -16,13 +16,13 @@ import {
 } from '@open-pencil/scene-graph/vector-network'
 
 import {
-  graph,
   prepareFollowedFieldEdit,
   raw,
   updateNode,
   type NodeProxyInternals,
   type ProxyThis
-} from '#core/figma-api/accessor-utils'
+} from '#core/figma-api/accessors/utils'
+import { graphOf } from '#core/figma-api/graph'
 import { parseFigmaPaints, toFigmaPaint, type FigmaPaint } from '#core/figma-api/paints'
 import { geometryBlobToSVGPath } from '#core/io/formats/svg/paths'
 import { computeAccurateBounds } from '#core/vector/curve-math'
@@ -146,7 +146,7 @@ function prepareVectorDataEdit(
   internals: NodeProxyInternals,
   setter: string | null
 ): void {
-  prepareFollowedFieldEdit(graph(target, internals), raw(target, internals), setter, 'vector-data')
+  prepareFollowedFieldEdit(graphOf(target), raw(target, internals), setter, 'vector-data')
 }
 
 /** Checks the network before readying the edit, so a rejected one leaves a slot unclaimed. */
@@ -279,12 +279,7 @@ export function installVectorNodeProxyAccessors(
           throw new TypeError(`Invalid handleMirroring: ${String(value)}`)
         }
         const node = raw(this, internals)
-        prepareFollowedFieldEdit(
-          graph(this, internals),
-          node,
-          'handleMirroring',
-          'handle-mirroring'
-        )
+        prepareFollowedFieldEdit(graphOf(this), node, 'handleMirroring', 'handle-mirroring')
         updateNode(this, internals, {
           handleMirroring: value,
           vectorNetwork: node.vectorNetwork

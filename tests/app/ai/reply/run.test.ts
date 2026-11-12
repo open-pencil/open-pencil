@@ -6,6 +6,7 @@ import { MockLanguageModelV4 } from 'ai/test'
 import { toRaw } from 'vue'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { markRunWork, runUndoEntries } from '@/app/ai/reply/run'
 import { currentRun, endRun, markRunPreview, runPageId, startRun } from '@/app/ai/tools'
@@ -16,7 +17,6 @@ import { createEditorStore } from '@/app/editor/session/create'
 import { presenceOf } from '@/app/presence/registry'
 import { appPreferences } from '@/app/settings/preferences/store'
 
-import { expectDefined } from '#tests/helpers/assert'
 import { MOCK_USAGE } from '#tests/helpers/chat/usage'
 
 type EditorStore = ReturnType<typeof createEditorStore>
@@ -126,13 +126,13 @@ const rectangle = {
 
 test("an edit that changes nothing adds no undo step and does not claim an earlier reply's", async () => {
   await withStore(async (store, { a }) => {
-    aiToolOverrides.value = { ...aiToolOverrides.value, delete_node: true }
+    aiToolOverrides.value = { ...aiToolOverrides.value, delete_nodes: true }
     const node = store.graph.createNode('RECTANGLE', a, { name: 'Card' })
-    await runMessage(store, [{ toolName: 'delete_node', input: { id: node.id } }])
+    await runMessage(store, [{ toolName: 'delete_nodes', input: { ids: [node.id] } }])
     const deleted = expectDefined(store.undo.peekUndo(), 'delete entry')
     expect(runUndoEntries(store)).toEqual([deleted])
 
-    await runMessage(store, [{ toolName: 'delete_node', input: { id: 'missing' } }])
+    await runMessage(store, [{ toolName: 'delete_nodes', input: { ids: ['missing'] } }])
     expect(store.undo.peekUndo()).toBe(deleted)
     expect(runUndoEntries(store)).toEqual([])
   })

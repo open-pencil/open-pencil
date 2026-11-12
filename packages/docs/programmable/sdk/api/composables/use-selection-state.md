@@ -54,6 +54,7 @@ Useful values include:
 - `isInstance`
 - `isComponent`
 - `isGroup`
+- `canUngroup` — whether Ungroup takes any selected layer apart
 - `canCreateComponentSet`
 
 ## Practical examples

@@ -91,7 +91,7 @@ export const aiMessageDefaults = {
   attachImages: 'Attach images',
   removeImageAttachment: params('Remove image {name}'),
   dropImagesToAttach: 'Drop images to attach',
-  queueMessage: 'Steer the agent… Alt+Enter waits until it is done',
+  queueMessage: params('Steer the agent… {shortcut} waits until it is done'),
   queuedSteer: 'Sends after the current step',
   queuedFollowUp: 'Sends when the agent is done',
   removeQueuedMessage: 'Remove waiting message',
@@ -124,6 +124,8 @@ export const aiMessageDefaults = {
   toolInput: 'Input',
   toolOutput: 'Output',
   toolDetails: 'Tool call details',
+  webSearchSources: 'Sources',
+  webSearchNothingFound: 'The search found nothing.',
   toolSteps: params('Earlier steps: {count}'),
   toolStepsFailed: params('failed: {count}'),
   showNodeOnCanvas: params('Show {name} on canvas'),
@@ -276,6 +278,7 @@ export const aiMessageDefaults = {
   aiSetupWelcomeTourDescription:
     'A short file that walks through components and slots, working controls, modes, shaders, code, and lint, with a card on each that says what to try.',
   aiSetupTakeTour: 'Open the tour',
+  aiSetupTourFailed: 'The tour could not be opened. Try again, or open it later from the menu.',
   aiSetupStart: 'Set up AI',
   aiSetupSkip: 'Start designing',
   aiSetupProgress: params('Step {current} of {total}'),
@@ -293,6 +296,8 @@ export const aiMessageDefaults = {
   aiSetupAccessAgentsDescription:
     'Use your existing subscription. The agent chooses its own model.',
   aiSetupAccessAgentsDesktop: 'Coding agents are available in the OpenPencil desktop app.',
+  aiSetupAccessAgentsSandboxed:
+    'This install of OpenPencil can’t start coding agents. The download from GitHub can.',
   modelProviderSetUp: 'Set up',
   aiSetupAccessAPI: 'API accounts',
   aiSetupAccessServer: 'Local model or company server',
@@ -375,6 +380,7 @@ export const aiMessageDefaults = {
   aiSetupPiSignIn:
     'To sign in to a provider or pick a default model, run pi in a terminal and type /login or /model.',
   aiSetupGetDesktop: 'Get the desktop app',
+  aiSetupGetDownload: 'Download from GitHub',
   aiSetupMeteredNote:
     'OpenRouter gives you models from several vendors with one account and one key.',
   aiSetupSkillsTitle: 'Skills from your coding agents',

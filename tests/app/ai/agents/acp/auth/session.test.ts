@@ -10,6 +10,7 @@ import {
 } from '@agentclientprotocol/sdk'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import {
   checkAgentAuth,
@@ -20,9 +21,6 @@ import {
 import { AUTH_STATUS_UPDATE_METHOD, type AgentAuthStatus } from '@/app/ai/agents/acp/auth/status'
 import type { OwnToolsOutcome } from '@/app/ai/agents/acp/tools'
 import { createDeferred } from '@/app/runtime/deferred'
-
-import { expectDefined } from '#tests/helpers/assert'
-
 const codex = expectDefined(
   ACP_AGENTS.find((agent) => agent.id === 'codex'),
   'Codex'

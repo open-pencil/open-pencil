@@ -1,7 +1,7 @@
 import { createEventHook } from '@vueuse/core'
 
 import type { Editor, EditorState } from '@open-pencil/core'
-import { exportFigFile } from '@open-pencil/core/io/formats/fig'
+import { exportFigFile, exportFigFileStream } from '@open-pencil/core/io/formats/fig'
 
 import { createAutosave } from '@/app/document/autosave'
 import { createDocumentChanges } from '@/app/document/io/changes'
@@ -16,6 +16,7 @@ import { createSaveActions } from '@/app/document/io/save/actions'
 import { createDocumentSourceState } from '@/app/document/io/source/state'
 import type { DocumentSourceAccess } from '@/app/document/io/types'
 import { createDocumentRecovery } from '@/app/document/recovery'
+import { createRecoveryCover } from '@/app/document/recovery/cover'
 import { recoveryEnabled } from '@/app/document/recovery/preferences'
 import { storageLocationOf } from '@/app/integrations/storage/location'
 import type { StorageDocumentBinding, StorageLocation } from '@/app/integrations/storage/types'
@@ -27,6 +28,7 @@ import { trackDocumentFormat } from '@/app/telemetry'
 type DocumentSourceState = EditorState & {
   documentName: string
   autosaveEnabled: boolean
+  roomKeepsEdits: boolean
 }
 
 export { createDocumentSourceState }
@@ -68,14 +70,18 @@ export function createDocumentSourceActions({
     return saved
   }
 
-  function buildFigFile() {
+  function figExportOptions() {
     const renderer = getRenderer()
-    return exportFigFile(editor.graph, {
+    return {
       ck: renderer?.ck,
       renderer: renderer ?? undefined,
       pageId: state.currentPageId,
       documentName: state.documentName
-    })
+    }
+  }
+
+  function buildFigStream() {
+    return exportFigFileStream(editor.graph, figExportOptions())
   }
 
   /**
@@ -105,17 +111,17 @@ export function createDocumentSourceActions({
     version: changes.capture,
     isEnabled: () => recoveryEnabled.value,
     buildFigFile: buildRecoveryFigFile,
-    buildCover: () => {
+    buildCover: createRecoveryCover(editor, () => {
       const renderer = getRenderer()
       return renderer ? drawHomeCardCover(editor.graph, renderer) : null
-    },
-    hasWritableSource
+    }),
+    autosaves: () => hasWritableSource() && state.autosaveEnabled
   })
 
   const { saveFigFile, saveFigFileAs, writeFile } = createSaveActions({
     state,
     version: changes.capture,
-    buildFigFile,
+    buildFigStream,
     getFilePath,
     setFilePath,
     getFileHandle,
@@ -145,8 +151,7 @@ export function createDocumentSourceActions({
     hasWritableSource,
     saveCurrentDocument: async (version) => {
       const revision = changes.capture()
-      const data = await buildFigFile()
-      if (await writeFile(data, version)) changes.markSaved(revision)
+      if (await writeFile(await buildFigStream(), version)) changes.markSaved(revision)
     }
   })
 
@@ -262,7 +267,7 @@ export function createDocumentSourceActions({
    */
   async function saveFigFileCopy(write: (data: Uint8Array) => Promise<void>): Promise<boolean> {
     const version = changes.capture()
-    await write(await buildFigFile())
+    await write(await exportFigFile(editor.graph, figExportOptions()))
     await recovery.markProtectedVersion(version)
     return true
   }

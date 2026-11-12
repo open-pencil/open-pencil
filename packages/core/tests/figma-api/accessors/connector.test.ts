@@ -1,13 +1,13 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { getNodeOrThrow } from '#core-tests/helpers/assert'
-import { registerTestFont } from '#core-tests/helpers/figma-api'
 import type { ConnectorStrokeCap } from '@figma/plugin-typings/plugin-api-standalone'
 import { pick } from 'es-toolkit'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { connectorSublayers } from '@open-pencil/scene-graph/connectors'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 
 beforeAll(async () => {
   await registerTestFont()

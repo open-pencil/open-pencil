@@ -15,6 +15,11 @@ export function createSelectionHitTestActions(
    * their ancestors, so an entered container never limits where a click lands, as in Figma.
    */
   function hitTestAtPoint(cx: number, cy: number, deep = false): SceneNode | null {
+    return hitAt(cx, cy, deep, false)
+  }
+
+  /** As `hitTestAtPoint`, with locked layers hit (`locked`), as a right-click hits them. */
+  function hitAt(cx: number, cy: number, deep: boolean, locked: boolean): SceneNode | null {
     const renderer = ctx.getRenderer()
     if (!renderer) return null
     const pad = LAYER_HIT_PAD / ctx.state.zoom
@@ -27,18 +32,19 @@ export function createSelectionHitTestActions(
       : ctx.graph.hitTestSelectable(cx, cy, scope, ctx.state.selectedIds, {
           pad,
           framesOpen: resolveEditorProfile(ctx.state).framesOpen,
-          enteredId: ctx.state.enteredContainerId
+          enteredId: ctx.state.enteredContainerId,
+          locked
         })
   }
 
   /**
-   * Selects what a right-click is over, as Figma does: the layer a click would select, or else the
-   * frame or section whose empty area is under the point, which a click leaves for a marquee. The
-   * entered container follows the selection, as it does after a press.
+   * Selects what a right-click is over, as Figma does: the layer a click would select, a locked
+   * one included, or else the frame or section whose empty area is under the point, which a click
+   * leaves for a marquee. The entered container follows the selection, as it does after a press.
    */
   function selectAtPoint(cx: number, cy: number) {
     const hit =
-      hitTestAtPoint(cx, cy) ?? ctx.graph.hitTestOpenContainer(cx, cy, ctx.state.currentPageId)
+      hitAt(cx, cy, false, true) ?? ctx.graph.hitTestOpenContainer(cx, cy, ctx.state.currentPageId)
     if (hit) {
       if (!ctx.state.selectedIds.has(hit.id)) {
         select([hit.id])

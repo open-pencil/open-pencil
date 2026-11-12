@@ -18,54 +18,18 @@ function booleanOf(
   }
 }
 
-export const booleanUnion = defineTool({
-  name: 'boolean_union',
+export const booleanOperation = defineTool({
+  name: 'boolean',
 
-  description: 'Union (combine) multiple nodes.',
+  description:
+    'Combine two or more nodes into a boolean group: union, subtract (the first minus the rest), intersect, or exclude.',
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
-    ids: v.pipe(v.array(v.string()), v.minLength(2), v.description('Node IDs to union'))
+    op: v.pipe(
+      v.picklist(['union', 'subtract', 'intersect', 'exclude']),
+      v.description('Boolean operation')
+    ),
+    ids: v.pipe(v.array(v.string()), v.minLength(2), v.description('Node IDs, first one on top'))
   }),
-  execute: (figma, { ids }) => {
-    return booleanOf(figma, ids, 'union')
-  }
-})
-
-export const booleanSubtract = defineTool({
-  name: 'boolean_subtract',
-
-  description: 'Subtract the second node from the first.',
-  execution: { kind: 'sync', mutation: 'document' },
-  input: v.strictObject({
-    ids: v.pipe(v.array(v.string()), v.minLength(2), v.description('Node IDs (first minus rest)'))
-  }),
-  execute: (figma, { ids }) => {
-    return booleanOf(figma, ids, 'subtract')
-  }
-})
-
-export const booleanIntersect = defineTool({
-  name: 'boolean_intersect',
-
-  description: 'Intersect multiple nodes.',
-  execution: { kind: 'sync', mutation: 'document' },
-  input: v.strictObject({
-    ids: v.pipe(v.array(v.string()), v.minLength(2), v.description('Node IDs to intersect'))
-  }),
-  execute: (figma, { ids }) => {
-    return booleanOf(figma, ids, 'intersect')
-  }
-})
-
-export const booleanExclude = defineTool({
-  name: 'boolean_exclude',
-
-  description: 'Exclude (XOR) multiple nodes.',
-  execution: { kind: 'sync', mutation: 'document' },
-  input: v.strictObject({
-    ids: v.pipe(v.array(v.string()), v.minLength(2), v.description('Node IDs to exclude'))
-  }),
-  execute: (figma, { ids }) => {
-    return booleanOf(figma, ids, 'exclude')
-  }
+  execute: (figma, { op, ids }) => booleanOf(figma, ids, op)
 })

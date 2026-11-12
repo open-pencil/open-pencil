@@ -1,8 +1,8 @@
 import { isCanvasTextInput } from '@open-pencil/vue/canvas/text-edit'
 import type { EditorCommandId } from '@open-pencil/vue/editor/commands'
+import { isInputElement } from '@open-pencil/vue/editor/keyboard'
 
 import type { EditorStore } from '@/app/editor/active-store'
-import { isInputElement } from '@/app/shell/keyboard/focus'
 
 /**
  * Commands a focused text field carries out itself. As in VS Code's

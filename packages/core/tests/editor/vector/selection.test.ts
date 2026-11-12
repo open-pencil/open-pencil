@@ -2,9 +2,7 @@ import { expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core'
 import { SceneGraph, type VectorNetwork } from '@open-pencil/scene-graph'
-
-import { expectDefined } from '#core-tests/helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 const zero = { x: 0, y: 0 }
 
 /** An open path through four points: 0 → 1 → 2 → 3. */
@@ -63,7 +61,7 @@ test('undo inside the path forgets the selected segments', () => {
   es.selectedSegmentIndices = new Set([0])
   editor.nodeEditDeleteSelected()
   expectDefined(editor.state.nodeEditState).selectedSegmentIndices = new Set([0])
-  editor.nodeEditUndo()
+  editor.undoAction()
   expect(expectDefined(editor.state.nodeEditState).segments).toHaveLength(3)
   expect(expectDefined(editor.state.nodeEditState).selectedSegmentIndices.size).toBe(0)
 })

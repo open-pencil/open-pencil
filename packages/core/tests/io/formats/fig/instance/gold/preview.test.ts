@@ -1,7 +1,5 @@
 import { beforeAll, expect, test } from 'bun:test'
 
-import { readFixtureArrayBuffer } from '#core-tests/helpers/fig/fixtures'
-
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer } from '@open-pencil/fig'
@@ -15,9 +13,8 @@ import {
 } from '@open-pencil/fig/instance-overrides'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { registerTestFont } from '#core-tests/helpers/figma-api'
-
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
+import { readFixtureArrayBuffer } from '@open-pencil/test-support/paths'
 beforeAll(async () => {
   await registerTestFont()
   await new FigmaAPI(new SceneGraph()).loadFontAsync({ family: 'Inter', style: 'Medium' })

@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { PopoverContent, PopoverPortal, PopoverRoot } from 'reka-ui'
+import { PopoverContent, PopoverPortal } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
 import { figJamToolbarKind } from '@open-pencil/core'
 import type { ViewportTransform } from '@open-pencil/core/geometry'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { useCanvasVirtualReference } from '@open-pencil/vue/canvas/overlays'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import theme from '@/theme/figjam/toolbar'
 import { motionStyles } from '@/theme/motion/styles'
 import { floatingSurface } from '@/theme/overlay'
@@ -46,9 +48,9 @@ const anchor = computed(() => {
   const ids = [...store.state.selectedIds]
   if (ids.length === 0 || ids.some((id) => !store.graph.getNode(id))) return null
   const bounds = ids.map((id) => store.graph.getAbsoluteBounds(id))
-  const left = Math.min(...bounds.map((b) => b.x))
-  const right = Math.max(...bounds.map((b) => b.x + b.width))
-  return { x: (left + right) / 2, y: Math.min(...bounds.map((b) => b.y)) }
+  const left = minOf(bounds.map((b) => b.x))
+  const right = maxOf(bounds.map((b) => b.x + b.width))
+  return { x: (left + right) / 2, y: minOf(bounds.map((b) => b.y)) }
 })
 const reference = useCanvasVirtualReference(
   computed(() => canvas),
@@ -78,7 +80,7 @@ const open = computed(
 </script>
 
 <template>
-  <PopoverRoot :open="open">
+  <AppPopoverRoot :open="open" :holds-keys="false">
     <PopoverPortal>
       <PopoverContent
         v-if="open && reference"
@@ -121,5 +123,5 @@ const open = computed(
         </template>
       </PopoverContent>
     </PopoverPortal>
-  </PopoverRoot>
+  </AppPopoverRoot>
 </template>

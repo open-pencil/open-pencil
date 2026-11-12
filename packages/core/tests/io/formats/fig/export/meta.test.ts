@@ -1,6 +1,5 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
 import { omit } from 'es-toolkit'
 import { unzipSync } from 'fflate'
 import * as v from 'valibot'
@@ -10,6 +9,7 @@ import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer, readFigArchiveMeta } from '@open-pencil/fig'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { imageSize } from '@open-pencil/scene-graph/images'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 setDefaultTimeout(60_000)
 

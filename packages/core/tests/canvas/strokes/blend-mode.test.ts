@@ -1,14 +1,13 @@
 import { afterAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph, type BlendMode, type SceneNode } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 const SIZE = 120
 
-const ck = await initCanvasKit()
+const ck = await getCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(SIZE, SIZE), 'surface'))
 afterAll(() => renderer.destroy())
 

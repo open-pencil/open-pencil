@@ -179,3 +179,94 @@ test('steps lines by a fractional line height as Figma does', async () => {
     'fractional-line-heights.png'
   )
 })
+
+test('sets lines on one baseline at a line height of zero, as Figma does', async () => {
+  const heights = await editor.page.evaluate(async () => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('Missing editor')
+    // Figma desktop 126 sets every line on one baseline at 0 px and at 2% of 14 px, which rounds
+    // to none, and makes the text 0 px tall; at 0.3 px it steps them by 0.3 px and 1 px tall.
+    const samples = [
+      { x: 40, lineHeight: { value: 0, unit: 'PIXELS' as const } },
+      { x: 160, lineHeight: { value: 2, unit: 'PERCENT' as const } },
+      { x: 280, lineHeight: { value: 0.3, unit: 'PIXELS' as const } }
+    ]
+    // Each text sits in a white card, which draws its lines though the text has no height.
+    const card = store.graph.createNode('FRAME', store.state.currentPageId, {
+      name: 'Card',
+      x: 20,
+      y: 20,
+      width: 380,
+      height: 80,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, visible: true, opacity: 1 }]
+    })
+    const texts: string[] = []
+    for (const sample of samples) {
+      const node = store.graph.createNode('TEXT', card.id, {
+        x: sample.x,
+        y: 40,
+        width: 100,
+        height: 40,
+        text: 'Line one\nLine two\nLine three',
+        fontFamily: 'Inter',
+        fontSize: 14,
+        lineHeight: sample.lineHeight,
+        textAutoResize: 'HEIGHT'
+      })
+      texts.push(node.id)
+    }
+    await store.loadFontsForNodes(texts)
+    for (const id of texts) store.updateNode(id, { textAutoResize: 'HEIGHT' })
+    store.requestRender()
+    return texts.map((id) => store.graph.getNode(id)?.height)
+  })
+  expect(heights).toEqual([0, 0, 1])
+  await editor.page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+      })
+  )
+  expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot('zero-line-heights.png')
+})
+
+test('draws a text 0 px tall placed on the page, by its glyphs', async () => {
+  const heights = await editor.page.evaluate(async () => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('Missing editor')
+    // With nothing around it, the text's own bounds decide what the canvas draws: its glyphs
+    // reach past its box, which has no height.
+    const texts: string[] = []
+    for (const [x, text] of [
+      [40, 'Line one\nLine two\nLine three'],
+      [160, 'Hgy']
+    ] as const) {
+      const node = store.graph.createNode('TEXT', store.state.currentPageId, {
+        x,
+        y: 60,
+        width: 100,
+        height: 40,
+        text,
+        fontFamily: 'Inter',
+        fontSize: 14,
+        lineHeight: { value: 0, unit: 'PIXELS' },
+        textAutoResize: 'HEIGHT'
+      })
+      texts.push(node.id)
+    }
+    await store.loadFontsForNodes(texts)
+    for (const id of texts) store.updateNode(id, { textAutoResize: 'HEIGHT' })
+    store.requestRender()
+    return texts.map((id) => store.graph.getNode(id)?.height)
+  })
+  expect(heights).toEqual([0, 0])
+  await editor.page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+      })
+  )
+  expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot(
+    'zero-height-text-on-page.png'
+  )
+})

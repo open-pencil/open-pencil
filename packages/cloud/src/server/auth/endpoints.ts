@@ -15,12 +15,14 @@ type CorePaths<Names extends keyof typeof BetterAuthEndpoints> = {
 
 /**
  * The core endpoints whose paths Better Auth's own options need before it is built: rate limits,
- * captcha, and the hooks that record sign-ins. Plugin endpoints come from the plugin objects and
+ * captcha, disabled paths, and the hooks that record sign-ins. Plugin endpoints come from the plugin objects and
  * the rest from `auth.api`; these few are written out, and the type check holds each to the path
  * the library declares, so a renamed endpoint fails to compile.
  */
 export const CORE_AUTH_PATHS: CorePaths<
   | 'callbackOAuth'
+  | 'deleteUser'
+  | 'deleteUserCallback'
   | 'requestPasswordReset'
   | 'sendVerificationEmail'
   | 'signInEmail'
@@ -28,6 +30,8 @@ export const CORE_AUTH_PATHS: CorePaths<
   | 'verifyEmail'
 > = {
   callbackOAuth: '/callback/:id',
+  deleteUser: '/delete-user',
+  deleteUserCallback: '/delete-user/callback',
   requestPasswordReset: '/request-password-reset',
   sendVerificationEmail: '/send-verification-email',
   signInEmail: '/sign-in/email',

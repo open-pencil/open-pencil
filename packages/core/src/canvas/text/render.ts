@@ -1,5 +1,4 @@
-import type { Canvas } from 'canvaskit-wasm'
-
+import type { Canvas } from '@open-pencil/canvaskit'
 import type { Fill, SceneNode } from '@open-pencil/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
@@ -100,6 +99,11 @@ function drawsSaved(r: SkiaRenderer, node: SceneNode): boolean {
   if (readiness === 'pending') return true
   if (r.editingTextId === node.id) return false
   return node.textPathData !== null || readiness !== 'ready'
+}
+
+/** Whether every fill of the text draws its saved glyphs, on its path or for want of its fonts. */
+export function drawsOnlySavedGlyphs(r: SkiaRenderer, node: SceneNode): boolean {
+  return (node.derivedTextGlyphs?.length ?? 0) > 0 && drawsSaved(r, node) && drawsSavedText(node)
 }
 
 function drawSavedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: Fill): boolean {

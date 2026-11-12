@@ -1,5 +1,4 @@
-import type { Canvas, Paint } from 'canvaskit-wasm'
-
+import type { Canvas, Paint } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { connectorSublayers } from '@open-pencil/scene-graph/connectors'
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'

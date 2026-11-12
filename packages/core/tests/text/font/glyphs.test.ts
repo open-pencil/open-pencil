@@ -1,9 +1,11 @@
 import { expect, test } from 'bun:test'
 import { join } from 'node:path'
 
-import { corePackagePath, FIXTURES } from '#core-tests/helpers/paths'
+import { corePackagePath } from '#core-tests/helpers/paths'
 
 import { fontManager } from '@open-pencil/core/text'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import {
   getGlyphOutlineMetricsSync,
@@ -69,9 +71,11 @@ test('outlines a shaped mark where shaping places it on its base letter', async 
     await Bun.file(corePackagePath('assets', 'InterVariable.ttf')).arrayBuffer()
   )
   const [base, mark] = getGlyphOutlineMetricsSync(family, 'Regular', 'q́', 100) ?? []
-  const xs = (mark?.commands ?? []).flatMap((command) => (command.x === undefined ? [] : [command.x]))
+  const xs = (mark?.commands ?? []).flatMap((command) =>
+    command.x === undefined ? [] : [command.x]
+  )
   expect(xs.length).toBeGreaterThan(0)
   // The acute's pen is past the q; its outline reaches back over the q.
   expect(mark?.x).toBe(base?.advance)
-  expect(Math.max(...xs)).toBeLessThan(0)
+  expect(maxOf(xs)).toBeLessThan(0)
 })

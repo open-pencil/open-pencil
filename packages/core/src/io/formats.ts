@@ -1,27 +1,19 @@
-import { groupBy } from 'es-toolkit'
 import { filename } from 'pathe/utils'
 
 import { sceneNodeToJSX, selectionToJSX } from '@open-pencil/design-jsx'
 import { isDrawIOExportFileName } from '@open-pencil/drawio'
-import {
-  buildPenGraph,
-  isDataURL,
-  parsePenDocument,
-  penAssets,
-  type PenIconRequest,
-  type PenIconSource
-} from '@open-pencil/pen'
 import type { DocumentKind, SceneGraph } from '@open-pencil/scene-graph'
 
-import { defaultIcons, drawIcon, type IconData, type IconProvider } from '#core/icons'
 import { layoutAuthoredNodes } from '#core/layout'
 import { prepareGraphFonts } from '#core/text/prepare'
 
 import type { DrawIOExportTarget } from './formats/drawio/export'
 import { exportFigFile, parseFigFile } from './formats/fig'
+import { readPenDocument } from './formats/pen/read'
 import type { PPTXExportOptions } from './formats/pptx'
-import { headlessRenderNodes, renderNodesToImage, type RasterExportFormat } from './formats/raster'
-import { extractExportGraph, findPageId } from './subgraph'
+import { rasterFormat } from './formats/raster/adapter'
+import { extractExportGraph } from './subgraph'
+import { resolveExportNodes, singleExportNode, type ExportNodes } from './targets'
 import type {
   ExportRequest,
   ExportResult,
@@ -31,8 +23,6 @@ import type {
   IOFormatAdapter,
   IOFormatExportOptions,
   IOFormatSupport,
-  RasterExportOptions,
-  ReadDocumentInput,
   SVGExportOptions
 } from './types'
 
@@ -50,121 +40,6 @@ const FIXED_SIZE_EXPORT: IOFormatExportOptions = { scale: false, quality: false 
 function lowerExt(name: string): string {
   const match = /\.([^.]+)$/.exec(name.toLowerCase())
   return match?.[1] ?? ''
-}
-
-function ensureSingleNode(target: ExportRequest['target']): string | null {
-  if (target.scope === 'node') return target.nodeId
-  if (target.scope === 'selection' && target.nodeIds.length === 1) return target.nodeIds[0]
-  return null
-}
-
-function resolveExportNodes(request: ExportRequest): { pageId: string; nodeIds: string[] } | null {
-  switch (request.target.scope) {
-    case 'document': {
-      const page = request.graph.getPages()[0]
-      return { pageId: page.id, nodeIds: page.childIds }
-    }
-    case 'page': {
-      const page = request.graph.getNode(request.target.pageId)
-      if (!page) return null
-      return { pageId: page.id, nodeIds: page.childIds }
-    }
-    case 'selection': {
-      const first = request.target.nodeIds[0]
-      if (!first) return null
-      const pageId = findPageId(request.graph, first)
-      if (!pageId) return null
-      if (!request.target.nodeIds.every((nodeId) => findPageId(request.graph, nodeId) === pageId)) {
-        throw new Error('Export selection must stay on a single page')
-      }
-      return { pageId, nodeIds: request.target.nodeIds }
-    }
-    case 'node':
-      return resolveExportNodes({
-        ...request,
-        target: { scope: 'selection', nodeIds: [request.target.nodeId] }
-      })
-    default:
-      return null
-  }
-}
-
-async function renderRaster(
-  request: ExportRequest,
-  options: RasterExportOptions,
-  context?: IOContext
-): Promise<Uint8Array | null> {
-  const target = resolveExportNodes(request)
-  if (!target) return null
-  const scale = options.scale ?? 1
-
-  if (context?.canvasKit && context.renderer) {
-    return renderNodesToImage(
-      context.canvasKit,
-      context.renderer,
-      request.graph,
-      target.pageId,
-      target.nodeIds,
-      {
-        scale,
-        format: options.format,
-        quality: options.quality,
-        trimTransparent: request.target.scope === 'page' || request.target.scope === 'document'
-      }
-    )
-  }
-
-  return headlessRenderNodes(request.graph, target.pageId, target.nodeIds, {
-    scale,
-    format: options.format,
-    quality: options.quality,
-    trimTransparent: request.target.scope === 'page' || request.target.scope === 'document'
-  })
-}
-
-function rasterFormat<F extends RasterExportFormat>(format: F): IOFormatAdapter<Lowercase<F>> {
-  const extension = format.toLowerCase() as Lowercase<F>
-  let mimeType = 'image/png'
-  if (format === 'JPG') mimeType = 'image/jpeg'
-  else if (format === 'WEBP') mimeType = 'image/webp'
-
-  return {
-    id: extension,
-    label: format,
-    role: 'derived-export',
-    category: 'raster',
-    extensions: [extension],
-    mimeTypes: [mimeType],
-    support: {
-      exportDocument: true,
-      exportPage: true,
-      exportSelection: true,
-      exportNode: true
-    },
-    exportOptions: {
-      scale: true,
-      quality: format !== 'PNG',
-      colorSpace: false
-    },
-    async exportContent(request, options?: RasterExportOptions, context?: IOContext) {
-      const data = await renderRaster(
-        request,
-        {
-          format,
-          scale: options?.scale,
-          quality: options?.quality
-        },
-        context
-      )
-      if (!data) throw new Error('Nothing to export')
-      return {
-        format: extension,
-        mimeType,
-        extension,
-        data
-      }
-    }
-  }
 }
 
 /** The file a document saves as: Figma's `.fig` for a design, FigJam's `.jam` for a board. */
@@ -235,71 +110,6 @@ async function writeFig(
   return { format: 'fig', mimeType: 'application/octet-stream', extension, data }
 }
 
-/** The size icons are fetched at; each is scaled to the box it is drawn in. */
-const PEN_ICON_SIZE = 24
-
-/**
- * An image's bytes: a data URL decoded by the platform's own URL handling, a file through the
- * host; null when either fails.
- */
-async function loadPenImage(url: string, input: ReadDocumentInput): Promise<Uint8Array | null> {
-  try {
-    if (!isDataURL(url)) return (await input.readAsset?.(url)) ?? null
-    // Through `URL`, which lowercases the scheme for runtimes that only fetch `data:`.
-    return new Uint8Array(await (await fetch(new URL(url))).arrayBuffer())
-  } catch {
-    return null
-  }
-}
-
-async function loadPenImages(
-  urls: readonly string[],
-  input: ReadDocumentInput
-): Promise<Map<string, Uint8Array>> {
-  const images = new Map<string, Uint8Array>()
-  await Promise.all(
-    urls.map(async (url) => {
-      const bytes = await loadPenImage(url, input)
-      if (bytes) images.set(url, bytes)
-    })
-  )
-  return images
-}
-
-/** Icons from `provider`; a document whose icons cannot be fetched opens with empty icons. */
-/** A request's options as a key, so requests drawn the same way share a fetch. */
-const optionsKey = (options: Record<string, number> | undefined) => JSON.stringify(options ?? null)
-
-/**
- * Icons from `provider`, fetched once for each way they are drawn; a document whose icons cannot
- * be fetched opens with empty icons.
- */
-async function loadPenIcons(
-  requests: readonly PenIconRequest[],
-  provider: IconProvider
-): Promise<PenIconSource> {
-  const glyphs = new Map<string, IconData>()
-  const byOptions = groupBy(requests, (request) => optionsKey(request.options))
-  await Promise.all(
-    Object.values(byOptions).map(async (group) => {
-      const names = group.map((request) => request.name)
-      const found = await provider
-        .icons(names, PEN_ICON_SIZE, group[0]?.options)
-        .catch(() => new Map<string, IconData>())
-      for (const [name, icon] of found)
-        glyphs.set(`${name}\0${optionsKey(group[0]?.options)}`, icon)
-    })
-  )
-  return {
-    draw(graph, frameId, name, size, color, options) {
-      const icon = glyphs.get(`${name}\0${optionsKey(options)}`)
-      if (!icon) return false
-      drawIcon(graph, frameId, icon, size, color)
-      return true
-    }
-  }
-}
-
 export const penFormat: IOFormatAdapter<'pen'> = {
   id: 'pen',
   label: 'Pencil Document',
@@ -315,30 +125,7 @@ export const penFormat: IOFormatAdapter<'pen'> = {
     return lowerExt(fileName) === 'pen' || mimeType === 'application/json'
   },
   async readDocument(input, context) {
-    const doc = parsePenDocument(new TextDecoder().decode(input.data))
-    const assets = penAssets(doc)
-    const [images, icons] = await Promise.all([
-      loadPenImages(assets.images, input),
-      loadPenIcons(assets.icons, context?.icons ?? defaultIcons)
-    ])
-    // Its text takes fonts from variables and components too, so the fonts it uses are read
-    // from a build without layout and prepared before the build that lays it out.
-    const unlaid = buildPenGraph(doc, { images, icons })
-    await prepareGraphFonts(
-      unlaid,
-      unlaid.getPages(true).map((page) => page.id)
-    )
-    // A .pen file stores its layout intent, not the sizes and positions it implies.
-    const graph = buildPenGraph(doc, {
-      images,
-      icons,
-      layout: (target) =>
-        layoutAuthoredNodes(
-          target,
-          target.getPages().map((page) => page.id)
-        )
-    })
-    return { graph, sourceFormat: 'pen' }
+    return { graph: await readPenDocument(input, context), sourceFormat: 'pen' }
   }
 }
 
@@ -486,12 +273,12 @@ export const pdfFormat: IOFormatAdapter<'pdf'> = {
   mimeTypes: ['application/pdf'],
   support: EXPORT_EVERY_TARGET,
   exportOptions: FIXED_SIZE_EXPORT,
-  async exportContent(request) {
+  async exportContent(request, _options, context?: IOContext) {
     const target = resolveExportNodes(request)
     if (!target) throw new Error('Nothing to export')
-    // Embedded, as Figma embeds every face its PDFs draw.
     const { exportPDFDocument } = await import('./formats/pdf/document')
-    const data = (await exportPDFDocument(request.graph, [target], { embedFonts: true }))?.data
+    const data = (await exportPDFDocument(request.graph, [target], { renderer: context?.renderer }))
+      ?.data
     if (!data) throw new Error('Nothing to export')
     return {
       format: 'pdf',
@@ -506,9 +293,7 @@ export const pdfFormat: IOFormatAdapter<'pdf'> = {
  * Every top-level frame becomes a slide, so a PPTX document export spans all
  * pages — the shared resolver only reaches the first one.
  */
-function resolvePPTXExportNodes(
-  request: ExportRequest
-): { pageId: string; nodeIds: string[] } | null {
+function resolvePPTXExportNodes(request: ExportRequest): ExportNodes | null {
   if (request.target.scope !== 'document') return resolveExportNodes(request)
   const pages = request.graph.getPages()
   if (!pages.length) return null
@@ -555,7 +340,7 @@ export const jsxFormat: IOFormatAdapter<'jsx'> = {
   },
   exportOptions: FIXED_SIZE_EXPORT,
   async exportContent(request): Promise<ExportResult> {
-    const nodeId = ensureSingleNode(request.target)
+    const nodeId = singleExportNode(request.target)
     let data = ''
     if (nodeId) {
       data = sceneNodeToJSX(nodeId, request.graph)

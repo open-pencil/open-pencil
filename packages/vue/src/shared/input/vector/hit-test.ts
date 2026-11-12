@@ -1,5 +1,9 @@
 import type { Editor } from '@open-pencil/core'
-import { nearestPointOnNetwork, regionAtPoint, vectorHandleParts } from '@open-pencil/core/vector'
+import {
+  handleVisibleVertices,
+  nearestPointOnNetwork,
+  regionAtPoint
+} from '@open-pencil/core/vector'
 import type { VectorSegment } from '@open-pencil/scene-graph'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
@@ -69,24 +73,6 @@ export function editVerticesInRect(editor: Editor, rect: Rect): number[] {
   )
 }
 
-function getHandleVisibleVertices(editor: Editor): Set<number> {
-  const es = editor.getNodeEditState()
-  if (!es) return new Set()
-  const seed = new Set(es.selectedVertexIndices)
-  for (const handleId of es.selectedHandles) {
-    const handle = vectorHandleParts(handleId)
-    if (!handle || handle.segmentIndex >= es.segments.length) continue
-    const seg = es.segments[handle.segmentIndex]
-    seed.add(handle.tangentField === 'tangentStart' ? seg.start : seg.end)
-  }
-  const visible = new Set(seed)
-  for (const seg of es.segments) {
-    if (seed.has(seg.start)) visible.add(seg.end)
-    if (seed.has(seg.end)) visible.add(seg.start)
-  }
-  return visible
-}
-
 export function hitTestEditHandle(
   editor: Editor,
   cx: number,
@@ -99,7 +85,7 @@ export function hitTestEditHandle(
   const es = editor.getNodeEditState()
   if (!es) return null
   const iz = 1 / editor.state.zoom
-  const visible = getHandleVisibleVertices(editor)
+  const visible = handleVisibleVertices(es)
 
   for (let si = 0; si < es.segments.length; si++) {
     const seg = es.segments[si]

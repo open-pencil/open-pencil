@@ -1,6 +1,8 @@
 import { describe, expect, test, mock } from 'bun:test'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
+import { expectDefined } from '@open-pencil/test-support/assert'
+// Installed companions report the version of the app under test, as matching ones do.
 
 import {
   createAgentDiscovery,
@@ -10,10 +12,6 @@ import {
 import type { AgentLookup } from '@/app/ai/agents/setup/native'
 import { AgentNotInstalledError } from '@/app/ai/agents/setup/readiness'
 import { createDeferred } from '@/app/runtime/deferred'
-
-import { expectDefined } from '#tests/helpers/assert'
-
-// Installed companions report the version of the app under test, as matching ones do.
 const COMPANION_PACKAGES: Record<string, string> = {
   'openpencil-mcp-http': '@open-pencil/mcp',
   'openpencil-harness': '@open-pencil/harness'
@@ -153,6 +151,7 @@ describe('local agent discovery', () => {
       ['claude-code', 'needs-adapter'],
       ['codex', 'available'],
       ['gemini-cli', 'not-installed'],
+      ['antigravity', 'not-installed'],
       ['cursor', 'not-installed'],
       ['grok-build', 'not-installed']
     ])
@@ -164,6 +163,7 @@ describe('local agent discovery', () => {
       ['claude-code', 'needs-adapter'],
       ['codex', 'needs-adapter'],
       ['gemini-cli', 'not-installed'],
+      ['antigravity', 'not-installed'],
       ['cursor', 'not-installed'],
       ['grok-build', 'not-installed']
     ])

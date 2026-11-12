@@ -155,7 +155,12 @@ describe('editor arrange actions', () => {
     await editor.arrangeNodes(ids, { layout: 'spread' })
     const [a, b, c] = ids.map((id) => editor.graph.getNode(id))
     const overlaps = (p = a, q = b) =>
-      !!p && !!q && p.x < q.x + q.width && q.x < p.x + p.width && p.y < q.y + q.height && q.y < p.y + p.height
+      !!p &&
+      !!q &&
+      p.x < q.x + q.width &&
+      q.x < p.x + p.width &&
+      p.y < q.y + q.height &&
+      q.y < p.y + p.height
     expect([overlaps(a, b), overlaps(b, c), overlaps(a, c)]).toEqual([false, false, false])
 
     editor.undo.undo()

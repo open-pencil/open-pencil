@@ -1,8 +1,9 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
 import type { GroupFitOptions } from '@open-pencil/scene-graph/group-bounds'
 import { internalCanvas, newSharedStyleId } from '@open-pencil/scene-graph/shared-styles'
 
-import { applyLayerChanges } from '#core/figma-api/accessor-utils'
+import { applyLayerChanges } from '#core/figma-api/accessors/utils'
+import { graphOf } from '#core/figma-api/graph'
 import type { FigmaNodeProxy } from '#core/figma-api/proxy'
 
 import {
@@ -18,7 +19,6 @@ import {
 
 /** What the style methods need from `figma`. */
 interface StyleOwner {
-  readonly graph: SceneGraph
   readonly groupFitOptions: GroupFitOptions
   wrapNode(id: string): FigmaNodeProxy
 }
@@ -51,10 +51,10 @@ function handles(owner: StyleOwner): Map<string, FigmaBaseStyle> {
 
 function host(owner: StyleOwner): StyleHost {
   return {
-    graph: owner.graph,
+    graph: graphOf(owner),
     wrapNode: (id) => owner.wrapNode(id),
     updateLayer: (node, changes, inInstance) =>
-      applyLayerChanges(owner.graph, node.id, changes, owner.groupFitOptions, !inInstance),
+      applyLayerChanges(graphOf(owner), node.id, changes, owner.groupFitOptions, !inInstance),
     forgetStyle: (id) => handles(owner).delete(id)
   }
 }
@@ -75,7 +75,7 @@ function typeOf(node: SceneNode): FigmaStyleType | null {
 
 /** A new style of `type`, empty and unnamed, kept on the document's internal page as Figma's. */
 function createStyle<T extends FigmaStyleType>(owner: StyleOwner, type: T): StyleClasses[T] {
-  const { graph } = owner
+  const graph = graphOf(owner)
   const node = graph.createNode(type === 'TEXT' ? 'TEXT' : 'RECTANGLE', internalCanvas(graph).id, {
     name: '',
     sharedStyleType: STYLE_TYPES[type],
@@ -93,7 +93,7 @@ function createStyle<T extends FigmaStyleType>(owner: StyleOwner, type: T): Styl
 /** The document's own styles of `type`, in the order they were made, as Figma lists them. */
 function localStyles<T extends FigmaStyleType>(owner: StyleOwner, type: T): StyleClasses[T][] {
   const styles: StyleClasses[T][] = []
-  for (const node of owner.graph.getAllNodes()) {
+  for (const node of graphOf(owner).getAllNodes()) {
     if (node.sharedStyleType === STYLE_TYPES[type] && node.source.id)
       styles.push(handle(owner, type, node.source.id))
   }
@@ -102,7 +102,7 @@ function localStyles<T extends FigmaStyleType>(owner: StyleOwner, type: T): Styl
 
 function styleById(owner: StyleOwner, id: unknown): FigmaBaseStyle | null {
   if (typeof id !== 'string' || !id) return null
-  for (const node of owner.graph.getAllNodes()) {
+  for (const node of graphOf(owner).getAllNodes()) {
     const type = typeOf(node)
     if (type && node.source.id === id) return handle(owner, type, id)
   }

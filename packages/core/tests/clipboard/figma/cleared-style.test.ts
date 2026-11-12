@@ -1,9 +1,6 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-import { FIXTURES } from '#core-tests/helpers/paths'
-
 import { importClipboardNodes } from '@open-pencil/core/clipboard'
 import { exportFigFile, parseFigFile, populateAllFigPages } from '@open-pencil/core/io/formats/fig'
 import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
@@ -11,6 +8,8 @@ import { symbolOverridesOf } from '@open-pencil/fig/instance-overrides'
 import { initCodec, type NodeChange, type StyleReference } from '@open-pencil/kiwi/fig/codec'
 import { isUnsetGuid } from '@open-pencil/kiwi/fig/guid'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 
 /**
  * Outer instances of Middle, as Figma copies them. Middle holds an instance of Inner and styles

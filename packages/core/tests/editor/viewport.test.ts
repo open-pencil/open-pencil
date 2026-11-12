@@ -101,12 +101,35 @@ describe('zoomToFit', () => {
   test('leaves hidden layers and children outside an unclipped frame out of the fit', () => {
     const { editor } = withRect({ x: 100, y: 200, width: 300, height: 180 })
     const page = editor.state.currentPageId
-    editor.graph.createNode('RECTANGLE', page, { x: 3000, y: 3000, width: 100, height: 100, visible: false })
-    const frame = editor.graph.createNode('FRAME', page, { x: 100, y: 200, width: 300, height: 180, clipsContent: false })
+    editor.graph.createNode('RECTANGLE', page, {
+      x: 3000,
+      y: 3000,
+      width: 100,
+      height: 100,
+      visible: false
+    })
+    const frame = editor.graph.createNode('FRAME', page, {
+      x: 100,
+      y: 200,
+      width: 300,
+      height: 180,
+      clipsContent: false
+    })
     editor.graph.createNode('RECTANGLE', frame.id, { x: 400, y: 0, width: 100, height: 100 })
 
     editor.zoomToFit()
     expect(editor.state.zoom).toBeCloseTo(730 / 300, 6)
+  })
+
+  test('keeps the toolbar allowance on the edge the host reports its toolbar on', () => {
+    const { editor } = withRect({ x: 0, y: 0, width: 100, height: 100 })
+    editor.setViewportChrome({ left: 50, right: 0, top: 0, bottom: 0 })
+
+    editor.zoomToFit()
+
+    // 800 − 95 − 25 by 600 − 45 − 35: the 680 × 520 area fits the square by its height.
+    expect(editor.state.zoom).toBeCloseTo(520 / 100, 6)
+    expect(screenOf(editor, 50, 50)).toEqual({ x: 95 + 680 / 2, y: 45 + 520 / 2 })
   })
 
   test('shows the origin at the centre at 100% on an empty page', () => {
@@ -156,5 +179,15 @@ describe('zoomToSelection', () => {
     // The 120 × 90 layer fits the 700 × 440 area by its height.
     expect(editor.state.zoom).toBeCloseTo(440 / 90, 6)
     expect(screenOf(editor, 760, 545)).toEqual({ x: 60 + 700 / 2, y: 60 + 440 / 2 })
+  })
+})
+
+describe('setViewportSize', () => {
+  test('centres on the size the canvas reported', () => {
+    const editor = createEditor()
+    editor.setViewportSize(VIEWPORT.width, VIEWPORT.height)
+    editor.centerOn(300, 200, 2)
+    expect(editor.getViewportSize()).toEqual(VIEWPORT)
+    expect(center(editor)).toEqual({ x: 300, y: 200 })
   })
 })

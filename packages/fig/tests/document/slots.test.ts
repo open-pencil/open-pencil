@@ -1,13 +1,13 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { readFixtureArrayBuffer } from '#fig-tests/helpers/fig-fixtures'
-import { guid } from '#fig-tests/helpers/guid'
 import { materializeDocument, materializeFigArchive } from '#fig/document/materialize'
 import { DEFAULT_SLOT_CONTENT } from '#fig/instance-overrides/types'
 
 import type { GUID } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { guid } from '@open-pencil/test-support/fig/guid'
+import { readFixtureArrayBuffer } from '@open-pencil/test-support/paths'
 
 /**
  * `slots.fig` was built with Figma's plugin API (`createSlot`, `appendChild`, `resetSlot`,

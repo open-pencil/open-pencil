@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
 import { createAPI } from '#core-tests/helpers/figma-api'
 
+import { expectDefined } from '@open-pencil/test-support/assert'
 describe('tree operations', () => {
   test('appendChild reparents', () => {
     const api = createAPI()

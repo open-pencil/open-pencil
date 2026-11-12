@@ -29,7 +29,15 @@ function scaledEffects(effects: readonly Effect[], scale: number): Effect[] {
     ...structuredClone(effect),
     offset: { x: effect.offset.x * scale, y: effect.offset.y * scale },
     radius: effect.radius * scale,
-    spread: effect.spread * scale
+    spread: effect.spread * scale,
+    ...(effect.progressive
+      ? {
+          progressive: {
+            ...structuredClone(effect.progressive),
+            startRadius: effect.progressive.startRadius * scale
+          }
+        }
+      : {})
   }))
 }
 

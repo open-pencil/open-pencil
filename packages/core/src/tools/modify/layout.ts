@@ -1,5 +1,6 @@
 import * as v from 'valibot'
 
+import { graphOf } from '#core/figma-api/graph'
 import { OpenPencilAPI } from '#core/openpencil-api'
 import { toolNumber, nodeIdInputSchema, defineTool, nodeNotFound } from '#core/tools/schema'
 
@@ -63,7 +64,7 @@ export const setLayout = defineTool({
     const node = figma.getNodeById(args.id)
     if (!node) return nodeNotFound(args.id)
 
-    const raw = figma.graph.getNode(args.id)
+    const raw = graphOf(figma).getNode(args.id)
     if (!args.direction && raw?.layoutMode === 'NONE') {
       return {
         error: 'Frame has no auto-layout. Pass direction ("HORIZONTAL" or "VERTICAL") to enable it.'

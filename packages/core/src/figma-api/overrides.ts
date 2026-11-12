@@ -10,8 +10,10 @@ import type {
 import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
 import type { InstanceOverrideState } from '@open-pencil/scene-graph/instances/overrides'
 
-import type { NodeProxyInternals, ProxyThis } from './accessor-utils'
-import { assertProxyEditable, graph, raw } from './accessor-utils'
+import { graphOf } from '#core/figma-api/graph'
+
+import type { NodeProxyInternals, ProxyThis } from './accessors/utils'
+import { assertProxyEditable, raw } from './accessors/utils'
 import { flushPendingLayout } from './pending-layout'
 
 /** One layer of an instance and the fields an edit changed on it, as Figma's `overrides`. */
@@ -260,7 +262,7 @@ export function installInstanceOverrideAccessors(
     value(this: ProxyThis) {
       const node = instance(this, method)
       assertProxyEditable(this, internals)
-      resetInstanceOverrides(graph(this, internals), node)
+      resetInstanceOverrides(graphOf(this), node)
     }
   })
   Object.defineProperties(target, {
@@ -269,8 +271,8 @@ export function installInstanceOverrideAccessors(
         const node = raw(this, internals)
         if (node.type !== 'INSTANCE') return undefined
         // Figma lists the size its layout gives the instance.
-        flushPendingLayout(graph(this, internals))
-        return instanceOverrides(graph(this, internals), node)
+        flushPendingLayout(graphOf(this))
+        return instanceOverrides(graphOf(this), node)
       }
     },
     resetOverrides: removal('resetOverrides'),

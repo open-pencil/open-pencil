@@ -22,7 +22,7 @@ async function savedLayout(page: Page) {
   return (
     state.origins
       .find((entry) => entry.origin === new URL(page.url()).origin)
-      // eslint-disable-next-line open-pencil/no-direct-storage-access -- Playwright storage snapshot, not browser storage access.
+      // eslint-disable-next-line @open-pencil/runtime/no-direct-storage-access -- Playwright storage snapshot, not browser storage access.
       ?.localStorage.find((entry) => entry.name === 'open-pencil:editor-layout')?.value
   )
 }

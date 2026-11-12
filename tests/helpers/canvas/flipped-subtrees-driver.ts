@@ -1,7 +1,8 @@
 import type { Page } from '@playwright/test'
 import { fromUint8Array } from 'js-base64'
 
-import { expectDefined } from '#tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
+
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 export interface TiledSubmission {
@@ -133,7 +134,10 @@ export function flippedSubtreesDriver(page: () => Page) {
           .filter(({ detail }) => detail.layer === 'tiled-scheduler' && detail.remaining === 0)
           .map(({ detail }) => detail.presentedTileCount)
           .filter((count) => typeof count === 'number')
-        return { sceneRenderer: recording.sceneRenderer, presentedTiles: Math.max(0, ...presented) }
+        return {
+          sceneRenderer: recording.sceneRenderer,
+          presentedTiles: presented.reduce((max, count) => Math.max(max, count), 0)
+        }
       })
       return { pixels, submission }
     },

@@ -242,12 +242,14 @@ function restoreInputFocus(event: Event) {
   field.value?.setSelectionRange(caret, caret)
   selection.value = { start: caret, end: caret }
 }
-/** The variable button sits at the field's end, or beside the control, as in the properties panel. */
+/** The variable button sits at the end of the value's field, or beside a switch. */
 const picker = computed(() => ({
   items: pickerItems.value,
   selected: alias.value,
   state: alias.value ? ('bound' as const) : ('unbound' as const),
-  triggerLabel: variables.value.useVariable,
+  // One of several modes names its mode, as the inspector's own picker does.
+  triggerLabel:
+    heading === 'mode' ? `${label}: ${variables.value.useVariable}` : variables.value.useVariable,
   searchPlaceholder: variables.value.searchVariables,
   emptyLabel: variables.value.noMatchingVariables,
   detachLabel: variables.value.detachVariable,
@@ -297,9 +299,9 @@ function detach() {
         :label="label"
         @update:model-value="emit('apply', $event)"
       />
-      <!-- Text and colors edit in the inspector's own field and color picker. -->
-      <slot v-else name="control" />
-      <VariablePicker v-bind="picker" />
+      <VariablePicker v-if="variable.type === 'BOOLEAN'" v-bind="picker" />
+      <!-- Text and colors edit in the inspector's own field, with the variable button at its end. -->
+      <slot v-else name="control" :picker="picker" />
     </div>
     <TokenFormulaField
       v-else

@@ -1,9 +1,18 @@
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
-import { normalizedFilename, staticPropertyName } from '#lint/support/context.ts'
+import { normalizedFilename } from '#lint/support/context.ts'
 import { createProgramFilenameRule } from '#lint/support/factories.ts'
 import type { RuleDefinition } from '#lint/support/types.ts'
+import type {
+  ArrayExpression,
+  ArrayExpressionElement,
+  Program,
+  PropertyKey
+} from '@oxc-project/types'
 import type { TSESTree } from '@typescript-eslint/utils'
+import { compact, once } from 'es-toolkit'
+import { Visitor, parseSync } from 'oxc-parser'
 
 function isPascalCaseName(name: string): boolean {
   return /^[A-Z][A-Za-z0-9]*$/.test(name)
@@ -160,73 +169,6 @@ const noComponentRootSiblingFolder = {
   }
 } satisfies RuleDefinition
 
-const noDirectOpenPencilBrowserStore = {
-  meta: {
-    docs: {
-      description: 'Disallow direct window.openPencil.store access'
-    }
-  },
-  create(context) {
-    function isOpenPencilMember(node: TSESTree.Expression): boolean {
-      return (
-        node?.type === 'MemberExpression' &&
-        staticPropertyName(node.property) === 'openPencil' &&
-        ((node.object?.type === 'Identifier' && node.object.name === 'window') ||
-          (node.object?.type === 'Identifier' && node.object.name === 'globalThis'))
-      )
-    }
-
-    return {
-      MemberExpression(node) {
-        if (staticPropertyName(node.property) !== 'store') return
-        if (!isOpenPencilMember(node.object)) return
-        context.report({
-          node,
-          message:
-            'Use window.openPencil.getStore() instead of accessing window.openPencil.store directly.'
-        })
-      }
-    }
-  }
-} satisfies RuleDefinition
-
-const noDirectOpenPencilWindowInternals = {
-  meta: {
-    docs: {
-      description: 'Disallow direct access to private OpenPencil window internals'
-    }
-  },
-  create(context) {
-    return {
-      MemberExpression(node) {
-        const name = staticPropertyName(node.property)
-        if (!name?.startsWith('__OPEN_PENCIL')) return
-        context.report({
-          node,
-          message:
-            'Do not access window.__OPEN_PENCIL* directly. Use src/app/browser-bridge.ts or tests/helpers/store.ts instead.'
-        })
-      }
-    }
-  }
-} satisfies RuleDefinition
-
-const noBunGlobalsInCli = {
-  meta: { docs: { description: 'Disallow Bun globals in Node-compatible CLI source' } },
-  create(context) {
-    const file = normalizedFilename(context)
-    if (!file.includes('/packages/cli/src/')) return {}
-    return {
-      MemberExpression(node) {
-        if (node.object?.type !== 'Identifier' || node.object.name !== 'Bun') return
-        context.report({
-          node,
-          message: 'Use Node-compatible APIs in CLI source instead of Bun globals.'
-        })
-      }
-    }
-  }
-} satisfies RuleDefinition
 const noTopLevelPrefixedTestFiles = createProgramFilenameRule({
   description: 'Disallow top-level test files that encode domains as filename prefixes',
   check(file) {
@@ -236,13 +178,152 @@ const noTopLevelPrefixedTestFiles = createProgramFilenameRule({
   }
 })
 
+const noFlatKiwiModules = createProgramFilenameRule({
+  description: 'Disallow flat top-level Kiwi modules — group code under Kiwi subdomains',
+  check(file) {
+    const marker = '/packages/core/src/kiwi/'
+    const start = file.indexOf(marker)
+    if (start === -1) return false
+
+    const relativePath = file.slice(start + marker.length)
+    if (relativePath.includes('/') || relativePath === 'index.ts') return false
+
+    return 'Move Kiwi modules under binary/, fig/, node-change/, instance-overrides/, or kiwi-schema/ instead of adding flat top-level files.'
+  }
+})
+
+function isNamed(key: PropertyKey, name: string): boolean {
+  return key.type === 'Identifier' && key.name === name
+}
+
+/** The `order` list of the `storySort` parameter, wherever the preview sets it. */
+function storySortOrder(program: Program): ArrayExpression | null {
+  let order: ArrayExpression | null = null
+  new Visitor({
+    Property(property) {
+      if (!isNamed(property.key, 'storySort') || property.value.type !== 'ObjectExpression') return
+      for (const entry of property.value.properties) {
+        if (entry.type !== 'Property' || !isNamed(entry.key, 'order')) continue
+        if (entry.value.type === 'ArrayExpression') order = entry.value
+      }
+    }
+  }).visit(program)
+  return order
+}
+
+const stringValue = (node: ArrayExpressionElement | null): string | null =>
+  node?.type === 'Literal' && typeof node.value === 'string' ? node.value : null
+
+/**
+ * The Storybook sections whose stories group under named areas, each with its areas, read from
+ * the sidebar order in `.storybook/preview.ts`: a section's name, then the list of its areas. Read
+ * once per lint run; a run outside the repository root has no preview and leaves titles alone.
+ */
+const sidebarAreas = once((): Map<string, Set<string>> => {
+  const areas = new Map<string, Set<string>>()
+  const path = resolve('.storybook/preview.ts')
+  if (!existsSync(path)) return areas
+  const { program, errors } = parseSync('preview.ts', readFileSync(path, 'utf8'))
+  const order = errors.length === 0 ? storySortOrder(program) : null
+  order?.elements.forEach((element, index) => {
+    const section = stringValue(element)
+    const next = order.elements[index + 1]
+    if (section === null || next?.type !== 'ArrayExpression') return
+    areas.set(section, new Set(compact(next.elements.map(stringValue))))
+  })
+  return areas
+})
+
+/** Short words Title Case leaves lowercase inside a name, as in "Report a Shared File". */
+const TITLE_CASE_MINOR_WORDS = new Set([
+  'a',
+  'an',
+  'and',
+  'as',
+  'at',
+  'for',
+  'in',
+  'of',
+  'on',
+  'or',
+  'the',
+  'to',
+  'with'
+])
+
+function isTitleCase(segment: string): boolean {
+  return segment
+    .split(' ')
+    .every(
+      (word, index) => /^[A-Z0-9]/.test(word) || (index > 0 && TITLE_CASE_MINOR_WORDS.has(word))
+    )
+}
+
+const storyTitles = {
+  meta: {
+    docs: {
+      description:
+        'Require Design System and App story titles to name a listed family or area, then the component, in Title Case'
+    }
+  },
+  create(context) {
+    const file = normalizedFilename(context)
+    if (!file.endsWith('.stories.ts')) return {}
+    const sections = sidebarAreas()
+
+    /** The CSF metadata: the object a story file exports by default, directly or by its name. */
+    const metadata = new Map<string, TSESTree.ObjectExpression>()
+    let exported: TSESTree.ObjectExpression | string | null = null
+    const unwrap = (node: TSESTree.Node): TSESTree.Node =>
+      node.type === 'TSSatisfiesExpression' || node.type === 'TSAsExpression'
+        ? unwrap(node.expression)
+        : node
+
+    function check(object: TSESTree.ObjectExpression) {
+      for (const node of object.properties) {
+        if (node.type !== 'Property' || node.key.type !== 'Identifier') continue
+        if (node.key.name !== 'title') continue
+        if (node.value.type !== 'Literal' || typeof node.value.value !== 'string') continue
+        const [section = '', area, ...rest] = node.value.value.split('/')
+        const areas = sections.get(section)
+        if (!areas) continue
+        let message: string | null = null
+        if (area === undefined || rest.length === 0) {
+          message = `'${node.value.value}' needs an area and a component: '${section}/<Area>/<Component>'.`
+        } else if (!areas.has(area)) {
+          message = `'${area}' is not one of the ${section} areas listed in the sidebar: use one of ${[...areas].join(', ')}, or add it to the sidebar order in .storybook/preview.ts.`
+        } else if (!node.value.value.split('/').every(isTitleCase)) {
+          message = `'${node.value.value}' must be in Title Case.`
+        }
+        if (message) context.report({ node: node.value, message })
+      }
+    }
+
+    return {
+      VariableDeclarator(node) {
+        if (node.id.type !== 'Identifier' || !node.init) return
+        const init = unwrap(node.init)
+        if (init.type === 'ObjectExpression') metadata.set(node.id.name, init)
+      },
+      ExportDefaultDeclaration(node) {
+        const declaration = unwrap(node.declaration)
+        if (declaration.type === 'Identifier') exported = declaration.name
+        else if (declaration.type === 'ObjectExpression') exported = declaration
+      },
+      'Program:exit'() {
+        const object = typeof exported === 'string' ? metadata.get(exported) : exported
+        if (object) check(object)
+      }
+    }
+  }
+} satisfies RuleDefinition
+
 export {
   vueComponentFilePascalCase,
   componentNamespaceCasing,
   nonComponentSourceDirectoriesKebabCase,
   noComponentRootSiblingFolder,
-  noDirectOpenPencilBrowserStore,
-  noDirectOpenPencilWindowInternals,
-  noBunGlobalsInCli,
-  noTopLevelPrefixedTestFiles
+  noTopLevelPrefixedTestFiles,
+  noFlatKiwiModules,
+  storyTitles
 }

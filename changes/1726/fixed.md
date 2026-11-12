@@ -1,1 +1,0 @@
-- Text typed at the edge of a styled range, after Enter, at the start, over a selection, through an input method or pasted while editing, keeps that range's colour, font and variable bindings, and so does text typed after deleting everything.

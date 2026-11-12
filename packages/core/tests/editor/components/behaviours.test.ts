@@ -1,7 +1,5 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import { createEditor } from '@open-pencil/core'
 import {
   emptyBehaviour,
@@ -9,6 +7,7 @@ import {
   readBehaviour,
   type Behaviour
 } from '@open-pencil/scene-graph/behaviours'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 describe('setBehaviour', () => {
   test('adds, edits, and removes as single undo steps', () => {

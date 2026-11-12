@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import {
   arrangeBoxes,
@@ -28,13 +28,13 @@ function overlapping(rects: Rect[]): boolean {
 }
 
 function bounds(rects: Rect[]): Rect {
-  const x = Math.min(...rects.map((rect) => rect.x))
-  const y = Math.min(...rects.map((rect) => rect.y))
+  const x = minOf(rects.map((rect) => rect.x))
+  const y = minOf(rects.map((rect) => rect.y))
   return {
     x,
     y,
-    width: Math.max(...rects.map((rect) => rect.x + rect.width)) - x,
-    height: Math.max(...rects.map((rect) => rect.y + rect.height)) - y
+    width: maxOf(rects.map((rect) => rect.x + rect.width)) - x,
+    height: maxOf(rects.map((rect) => rect.y + rect.height)) - y
   }
 }
 

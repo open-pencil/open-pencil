@@ -1,16 +1,16 @@
 import { expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-import { capturedFigRecordsSchema, readFixture } from '#core-tests/helpers/fig/fixtures'
-
 import { createEditor } from '@open-pencil/core'
-import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'
+import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
 import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
 import { symbolDataOf } from '@open-pencil/fig/instance-overrides'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { readFixture } from '@open-pencil/test-support/fig/fixtures'
+import { capturedFigRecordsSchema } from '@open-pencil/test-support/fig/schema'
 
 const fixture = readFixture('nested-binding-ownership-records.json', capturedFigRecordsSchema)
 
@@ -86,7 +86,10 @@ for (const scale of [0.5, 2]) {
       expect(restored.componentScale).toBe(scale * 0.5)
       expect(child.variableBindingScales.paddingLeft).toBe(scale * 0.5)
       const variable = expectDefined(reopened.variables.get(child.boundVariables.paddingLeft))
-      expectDefined(new FigmaAPI(reopened).variables.getVariableById(variable.id)).setValueForMode(reopened.getNodeVariableModeId(child.id, variable.collectionId), 16)
+      expectDefined(new FigmaAPI(reopened).variables.getVariableById(variable.id)).setValueForMode(
+        reopened.getNodeVariableModeId(child.id, variable.collectionId),
+        16
+      )
       expect(child.paddingLeft).toBe(8 * scale)
       expect(restored.width).toBe((literalClaim ? 41 : 39) * scale)
     })

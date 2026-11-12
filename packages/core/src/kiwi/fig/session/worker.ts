@@ -2,6 +2,7 @@ import { loadFigDataDecompressor } from '@open-pencil/kiwi/fig/container'
 
 import { serializeSceneGraph } from '#core/kiwi/fig/parse/transfer'
 import { createFigArchiveOperations } from '#core/kiwi/fig/session/archive/access'
+import { sendStream } from '#core/kiwi/fig/session/port-stream'
 import type {
   FigSessionOpenRequest,
   FigSessionRequest,
@@ -61,8 +62,8 @@ async function answerArchiveRequest(request: ArchiveRequest): Promise<void> {
       const pageIds = archive.recordPages(request.recordIds)
       respond({ type: 'record-pages-result', requestId, pageIds })
     } else {
-      const bytes = await archive.patch(request.patch, request.input)
-      port?.postMessage({ type: 'patch-archive-result', requestId, bytes }, [bytes.buffer])
+      sendStream(await archive.patch(request.patch, request.input), request.port)
+      respond({ type: 'patch-archive-result', requestId })
     }
   } catch (error) {
     respond({

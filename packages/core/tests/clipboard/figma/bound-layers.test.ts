@@ -1,11 +1,11 @@
 import { expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import { buildFigmaClipboardHTML } from '@open-pencil/core/clipboard'
-import { createEditor } from '@open-pencil/core/editor'
 import { FigmaAPI, type FigmaRectangleNode } from '@open-pencil/core/figma-api'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { expectDefined } from '@open-pencil/test-support/assert'
+
+import { createEditor } from '#core/editor'
 
 /** A Size set whose variants show a dot bound to its Show dot boolean. */
 async function dotSet() {

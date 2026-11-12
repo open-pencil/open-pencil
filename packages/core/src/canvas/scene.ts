@@ -1,24 +1,25 @@
-import type { Canvas } from 'canvaskit-wasm'
-
+import type { Canvas } from '@open-pencil/canvaskit'
 import { type SceneNode, type SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
-import { blurSigma, drawnBlurRadius } from '@open-pencil/scene-graph/geometry'
+import { drawnBlurRadius, widestBlurRadius } from '@open-pencil/scene-graph/geometry'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import { textLinesOverflow } from '@open-pencil/scene-graph/text'
 
 import { drawIndividualSideStrokes } from '#core/canvas/strokes/sides'
 import { nodeOrientationMatrix, projectedNode } from '#core/geometry'
+import { mapVisualBounds } from '#core/geometry/render-bounds'
 import { fontManager } from '#core/text/font/manager'
 
 import { needsIsolatedBlendLayer, setPaintBlendMode } from './blend'
+import { blurLayerBounds, blurredContent, layerBlurFilter, viewportLayerBounds } from './blur/layer'
 import { renderBooleanOperation } from './boolean'
 import { drawVectorMultiStyleFills, paintFills } from './fills'
 import { drawLayoutGrids } from './layout-grids'
 import { renderMaskedChildIds } from './masks'
 import type { SkiaRenderer, RenderOverlays } from './renderer'
 import { drawShapeThroughNodePicture } from './renderer/node-pictures'
-import { mapVisualBounds, subtreeVisualBounds } from './renderer/visual-bounds'
+import { subtreeVisualBounds } from './renderer/visual-bounds'
 import { isolatesInnerShadows, renderLayerShadows } from './shadows'
 import {
   configureStrokePaint,
@@ -166,13 +167,19 @@ function renderMaskNodeContent(
   )
   const layered = node.opacity < 1 || blur !== undefined
   if (layered) {
-    const padding = drawnBlurRadius(blur?.radius ?? 0) * 2
+    const blurRadius = drawnBlurRadius(blur ? widestBlurRadius(blur) : 0)
     r.opacityPaint.setAlphaf(node.opacity)
     r.opacityPaint.setBlendMode(r.ck.BlendMode.SrcOver)
-    r.opacityPaint.setImageFilter(blur ? r.getCachedBlur(blurSigma(blur.radius)) : null)
+    const content = blurredContent(graph, node, overlays)
+    r.opacityPaint.setImageFilter(blur ? layerBlurFilter(r, node, blur, overlays, content) : null)
     canvas.saveLayer(
       r.opacityPaint,
-      r.ck.LTRBRect(-padding, -padding, node.width + padding, node.height + padding)
+      blurLayerBounds(
+        r,
+        worldMatrixIn(frame, node, absX, absY, overlays.rotationPreview),
+        blurRadius,
+        content
+      )
     )
     r.opacityPaint.setImageFilter(null)
   }
@@ -279,25 +286,6 @@ export function renderNodeSelf(
   canvas.restore()
 }
 
-function viewportLayerBounds(r: SkiaRenderer, world: Mat3, padding: number): Float32Array | null {
-  if (!r.boundEffectLayersToViewport) return null
-  const inverse = Matrix.invert(world)
-  if (!inverse) return null
-  const viewport = r.worldViewport
-  const bounds = mapVisualBounds(inverse, {
-    minX: viewport.x,
-    minY: viewport.y,
-    maxX: viewport.x + viewport.w,
-    maxY: viewport.y + viewport.h
-  })
-  return r.ck.LTRBRect(
-    bounds.minX - padding,
-    bounds.minY - padding,
-    bounds.maxX + padding,
-    bounds.maxY + padding
-  )
-}
-
 /**
  * The layer opens after the node's x/y translation and before its rotation and flips, so the
  * subtree is measured through its orientation matrix.
@@ -380,18 +368,10 @@ export function renderNode(
     r.effectLayerPaint.setColorFilter(null)
     r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
 
-    r.effectLayerPaint.setImageFilter(r.getCachedBlur(blurSigma(layerBlur.radius)))
-    const blurPadding = drawnBlurRadius(layerBlur.radius) * 2
-    canvas.saveLayer(
-      r.effectLayerPaint,
-      viewportLayerBounds(r, world(), blurPadding) ??
-        r.ck.LTRBRect(
-          -blurPadding,
-          -blurPadding,
-          node.width + blurPadding,
-          node.height + blurPadding
-        )
-    )
+    const content = blurredContent(graph, node, overlays)
+    r.effectLayerPaint.setImageFilter(layerBlurFilter(r, node, layerBlur, overlays, content))
+    const blurRadius = drawnBlurRadius(widestBlurRadius(layerBlur))
+    canvas.saveLayer(r.effectLayerPaint, blurLayerBounds(r, world(), blurRadius, content))
   }
 
   applyNodeTransforms(canvas, node, overlays)

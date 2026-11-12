@@ -65,6 +65,7 @@ const TEXT_PROPERTIES = [
   'text-decoration-line',
   'text-shadow',
   'text-transform',
+  'text-wrap-mode',
   'white-space'
 ]
 
@@ -203,17 +204,35 @@ function hasDefiniteWidth(graph: SceneGraph, node: SceneNode): boolean {
   return layoutSizing(graph, node, 'HORIZONTAL') !== 'HUG'
 }
 
+/** White space values that break lines only where the text does, never to fit a width. */
+const UNWRAPPED_WHITE_SPACE = new Set(['nowrap', 'pre'])
+
+/** Whether CSS keeps text's lines as the text breaks them, however narrow its box. */
+function keepsLines(style: DesignStyleDeclaration): boolean {
+  const whiteSpace = pickStyle(style, 'white-space')
+  return (
+    (whiteSpace !== undefined && UNWRAPPED_WHITE_SPACE.has(whiteSpace)) ||
+    pickStyle(style, 'text-wrap-mode') === 'nowrap'
+  )
+}
+
 /**
  * Text wraps where its width is fixed or fills a parent with a width of its own, and hugs its
- * content otherwise. It is measured when the document is laid out.
+ * content otherwise, as text that CSS does not wrap always does. It is measured when the
+ * document is laid out.
  */
-function applyTextSizing(graph: SceneGraph, node: SceneNode, size: BoxSize): void {
+function applyTextSizing(
+  graph: SceneGraph,
+  node: SceneNode,
+  style: DesignStyleDeclaration,
+  size: BoxSize
+): void {
   const parent = node.parentId ? graph.getNode(node.parentId) : undefined
   const fillsWidth =
     parent !== undefined &&
     hasDefiniteWidth(graph, parent) &&
     layoutSizing(graph, node, 'HORIZONTAL') === 'FILL'
-  const wraps = size.fixedWidth || fillsWidth
+  const wraps = (size.fixedWidth || fillsWidth) && !keepsLines(style)
   node.textAutoResize = wraps ? textAutoResizeFor(false, !size.fixedHeight) : 'WIDTH_AND_HEIGHT'
   // Wrapping text starts at its content's width.
   if (!size.fixedWidth) node.width = 0
@@ -244,5 +263,5 @@ export function applyFlowSizing(
     )
   }
   applyParentFill(graph, node, style, display, parentFlow, size)
-  if (node.type === 'TEXT') applyTextSizing(graph, node, size)
+  if (node.type === 'TEXT') applyTextSizing(graph, node, style, size)
 }

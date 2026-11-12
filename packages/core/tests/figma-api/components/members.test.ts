@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createAPI } from '#core-tests/helpers/figma-api'
+import { createAPI } from '#core-tests/helpers/figma-api' // Measured with the same scripts in Figma's plugin API (Figma desktop 126).
 
-// Measured with the same scripts in Figma's plugin API (Figma desktop 126).
+import { graphOf } from '#core/figma-api/graph'
 
 describe('component and component set members', () => {
   test('a description, on components and sets alone', () => {
@@ -11,7 +11,7 @@ describe('component and component set members', () => {
     expect(component.description).toBe('')
     component.description = 'Primary action'
     expect(component.description).toBe('Primary action')
-    expect(figma.graph.getNode(component.id)?.symbolDescription).toBe('Primary action')
+    expect(graphOf(figma).getNode(component.id)?.symbolDescription).toBe('Primary action')
     expect(() => (component.description = 3 as never)).toThrow(
       'in set_description: Property "description" failed validation: Expected string, received number'
     )
@@ -50,9 +50,9 @@ describe('component and component set members', () => {
     const set = figma.combineAsVariants([small, large], figma.currentPage)
     // Small stays the top-left, default variant while coming second in layer order.
     set.insertChild(0, large)
-    const node = figma.graph.getNode(set.id)
+    const node = graphOf(figma).getNode(set.id)
     if (!node) throw new Error('Expected the set')
-    figma.graph.updateNode(set.id, {
+    graphOf(figma).updateNode(set.id, {
       componentPropertyDefinitions: node.componentPropertyDefinitions.map(
         ({ variantOptions: _options, ...definition }) => ({ ...definition, defaultValue: '' })
       )

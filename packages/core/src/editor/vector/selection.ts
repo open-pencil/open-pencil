@@ -1,14 +1,16 @@
 import type { EditorContext } from '#core/editor/types'
 import { breakAtVertex, deleteVectorParts, vectorHandleParts } from '#core/vector'
 
-import { pushNodeEditHistory } from './history'
+import type { VectorEditHistory } from './history'
+import { editsHandlesOnly } from './limits'
 import { getLiveNetwork, setNodeEditNetwork } from './network'
-import type { VectorEditActionDeps } from './types'
+import type { NodeEditExitOptions, VectorEditActionDeps } from './types'
 
 export function createVectorEditSelectionActions(
   ctx: EditorContext,
   actions: VectorEditActionDeps,
-  exitNodeEditMode: (commit: boolean) => void
+  exitNodeEditMode: (commit: boolean, options?: NodeEditExitOptions) => void,
+  history: VectorEditHistory
 ) {
   function getNodeEditState() {
     return ctx.state.nodeEditState
@@ -32,8 +34,8 @@ export function createVectorEditSelectionActions(
 
   function nodeEditAlignVertices(axis: 'horizontal' | 'vertical', align: 'min' | 'center' | 'max') {
     const es = getNodeEditState()
-    if (!es || es.selectedVertexIndices.size < 2) return
-    pushNodeEditHistory(es)
+    if (!es || es.selectedVertexIndices.size < 2 || editsHandlesOnly(ctx.state)) return
+    history.begin(es)
 
     const indices = [...es.selectedVertexIndices]
     const prop = axis === 'horizontal' ? 'x' : 'y'
@@ -58,13 +60,14 @@ export function createVectorEditSelectionActions(
   function nodeEditDeleteSelected() {
     const es = getNodeEditState()
     if (!es) return
+    // When only handles may change, Delete retracts the selected handles and keeps every point.
+    const handlesOnly = editsHandlesOnly(ctx.state)
     if (
       es.selectedHandles.size === 0 &&
-      es.selectedVertexIndices.size === 0 &&
-      es.selectedSegmentIndices.size === 0
+      (handlesOnly || (es.selectedVertexIndices.size === 0 && es.selectedSegmentIndices.size === 0))
     )
       return
-    pushNodeEditHistory(es)
+    history.begin(es)
     let live = getLiveNetwork(es)
 
     for (const handleId of es.selectedHandles) {
@@ -75,10 +78,14 @@ export function createVectorEditSelectionActions(
       else seg.tangentEnd = { x: 0, y: 0 }
     }
 
-    live = deleteVectorParts(live, es.selectedSegmentIndices, es.selectedVertexIndices)
+    if (!handlesOnly) {
+      live = deleteVectorParts(live, es.selectedSegmentIndices, es.selectedVertexIndices)
+    }
     // As in Figma, deleting every point deletes the layer. The edits made before it are committed
     // first, so undoing the delete brings back the path as it was just before.
     if (live.vertices.length === 0) {
+      // The layer of a path the host keeps open stays, so its last points do too.
+      if (es.keepOpen) return
       const { nodeId } = es
       exitNodeEditMode(true)
       actions.select([nodeId])
@@ -87,17 +94,20 @@ export function createVectorEditSelectionActions(
     }
 
     setNodeEditNetwork(es, live)
-    es.selectedVertexIndices = new Set()
-    es.selectedSegmentIndices = new Set()
-    es.selectedRegions = new Set()
+    // Points that stay keep their selection, so their handles stay in view.
+    if (!handlesOnly) {
+      es.selectedVertexIndices = new Set()
+      es.selectedSegmentIndices = new Set()
+      es.selectedRegions = new Set()
+    }
     es.selectedHandles = new Set()
     ctx.requestRender()
   }
 
   function nodeEditBreakAtVertex() {
     const es = getNodeEditState()
-    if (!es || es.selectedVertexIndices.size === 0) return
-    pushNodeEditHistory(es)
+    if (!es || es.selectedVertexIndices.size === 0 || editsHandlesOnly(ctx.state)) return
+    history.begin(es)
     const [vertexIndex] = es.selectedVertexIndices
     const live = getLiveNetwork(es)
     const next = breakAtVertex(live, vertexIndex)

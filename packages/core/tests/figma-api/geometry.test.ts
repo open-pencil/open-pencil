@@ -1,9 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { attachTestRenderer, createAPI, registerTestFont } from '#core-tests/helpers/figma-api'
+import { attachTestRenderer, createAPI } from '#core-tests/helpers/figma-api'
 
 import type { SkiaRenderer } from '@open-pencil/core/canvas'
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 
 // Figma's answers measured in Figma desktop 126.
 

@@ -1,11 +1,11 @@
 import { expect, test } from 'bun:test'
 
-import { guid } from '#fig-tests/helpers/guid'
 import { applyDocumentLayoutBindings } from '#fig/document/bindings/layout'
 import { materializeDocument } from '#fig/document/materialize'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { guid } from '@open-pencil/test-support/fig/guid'
 
 test('saved occurrence dimensions win over unscaled bindings without blocking spacing', () => {
   const graph = new SceneGraph()

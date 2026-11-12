@@ -31,7 +31,18 @@ describe('fallback scripts', () => {
   })
 
   test('read a language tag by the script its language is written in', () => {
-    const scripts = ['zh', 'zh-TW', 'zh-Hans-HK', 'zh_HK', 'zh-Hani-TW', 'yue', 'ja', 'ko-KR', 'en', 'not a tag']
+    const scripts = [
+      'zh',
+      'zh-TW',
+      'zh-Hans-HK',
+      'zh_HK',
+      'zh-Hani-TW',
+      'yue',
+      'ja',
+      'ko-KR',
+      'en',
+      'not a tag'
+    ]
     expect(scripts.map((language) => fontFallbackScriptForCharacter('中', language))).toEqual([
       'cjk-sc',
       'cjk-tc',

@@ -2,6 +2,230 @@
 
 ## Unreleased
 
+## 0.17.0-beta.4 — 2026-11-11
+
+This is a pre-release that lists changes since 0.17.0-beta.2: npm packages are published under the `next` tag, and installed apps on the stable release do not update to it. Linux package managers see `0.17.0-beta.4` as newer than `0.17.0`, so `.deb` and `.rpm` users should remove the beta before installing the final 0.17.0. 0.17.0-beta.3 was not released because of a problem in the release pipeline; this pre-release includes all of its changes.
+
+### Breaking changes
+
+- `EditorRestrictions` also has `tools` and `pathEdits`; build one from `NO_HOST_RESTRICTIONS`. `computeHandleVisibleVertices` moved to `@open-pencil/core/vector` (#1787).
+- `isConstraintEligible` moves from `@open-pencil/vue/controls/constraints` to `@open-pencil/scene-graph/constraints` (#1835).
+- `CanvasRoot` now takes pointer input and typing itself; a host that also calls `useCanvasInput` or `useTextEdit` on its canvas drops those calls, or passes `:input="false"` to keep its own (#1838).
+- Cloud's AI service is now OpenPencil services, which will also cover image generation and search, all paid from the same credits. To upgrade:
+  - In the Cloud TOML, rename `[ai]` to `[services]` and `[entitlements.ai]` to `[entitlements.services]`, and rename the `OPENPENCIL_CLOUD_AI_SIGNING_KEY` secret to `OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY`.
+  - Anything that writes entitlements over the internal API sends `values.services`; `values.ai` is ignored.
+  - A service now accepts tokens with the audience `openpencil-services`, and editors request them from `POST /api/services/token`. Upgrade the services server together with Cloud: an older one refuses the new tokens.
+  - Editors from earlier betas look for the old discovery field and lose the OpenPencil AI provider against an upgraded Cloud until they update.
+- SDK shortcuts are TanStack Hotkeys chords such as `Mod+S` instead of tokens such as `MOD+S`: `useEditorKeyboard` shortcut `keys`, `EditorCommandMetadata.shortcut` and `aliases` (which replace `keybinding`; `EDITOR_COMMAND_METADATA` may hold a `{ mac, other }` pair that `editorCommandMetadata` resolves per platform), `MenuActionNode.paletteShortcut`, and `TOOL_SHORTCUTS` and editor profile `toolKeys` (keyed by chords such as `Shift+S` instead of key codes) all hold chords. `formatShortcut` and `formatShortcutKeys` take a `HotkeyChord` and a TanStack `HotkeyPlatform`; `shortcutPlatform`, `ShortcutPlatform`, `shortcutCode`, and `shortcutEvent` are removed, in favour of TanStack's `detectPlatform` and `matchesKeyboardEvent` (#1844).
+- Scripts run through `eval` no longer reach the scene graph or raw layers through `figma`, `openpencil`, nodes, or styles. SDK code that read `figma.graph` calls `graphOf(figma)` from `@open-pencil/core/figma-api` (#1860).
+- Code that writes into a variable or collection directly, rather than through graph methods, calls `SceneGraph.willChangeVariable` or `willChangeCollection` first, as it calls `willChangeNode` for a layer, so undo records the change. `recordEdit` and `recordEditAsync` roll back an edit that throws instead of keeping it as an undo step, and no longer take `layerId` (#1866).
+- Libraries use schema version 2: libraries published by earlier versions are left out of the library list until they are published again. In `@open-pencil/core/library`, `PublishLibraryInput.assetNodeIds` is now `assetIds` and `LibraryAssetDescriptor.sourceNodeId` is now `sourceId` (#1867).
+- `@open-pencil/core/clipboard` no longer exports `buildOpenPencilClipboardHTML`, `parseOpenPencilClipboard`, `OpenPencilClipboardData`, or `TextPictureBuilder`, and paste no longer reads the `<!--(openpencil)-->` HTML format, which OpenPencil stopped writing in March 2026; copy and paste use the Figma clipboard format (#1867).
+- The reference AI relay is now the services server, finishing the rename OpenPencil services started: its command is `openpencil-services` (`node services.mjs` in the image and `dist-standalone`), it reads `OPENPENCIL_SERVICES_CONFIG` and `OPENPENCIL_SERVICES_UPSTREAM_KEY` instead of `OPENPENCIL_AI_RELAY_*`, and the example configuration is `openpencil-services.example.toml`.
+- Billing and operators set Cloud entitlements per account: `PUT /api/internal/accounts/:userId/entitlements` replaces `PUT /api/internal/workspaces/:workspaceId/entitlements`, and the `entitlements` command takes `--account <user id>` instead of `--workspace <id>`.
+- In `@open-pencil/core`, vector edit mode no longer has a history of its own: `nodeEditUndo` and `nodeEditRedo` are removed, as are `NodeEditState.history`, `future`, and `futureBaseline`; use `undoAction` and `redoAction`. Entering and leaving a path are now undo steps. The new `penPushHistory` starts a pen press and `penCancelPress` takes one back (#1894).
+- `@open-pencil/cloud/server` renames `workspaceAccessControl` to `accessControl` and `workspaceStatements` to `accessStatements`, and adds `documentRoles` with `documentRoleCan` and `workspaceRoleCan` for the owner, direct-grant, and workspace permission tables (#1898).
+- `usePosition()` from `@open-pencil/vue/controls/position` no longer returns `x`, `y`, `width`, `height`, and `rotation`; read each with `panelProp('x')` and the like, which gives the value the panel shows, to two decimals, or `MIXED` (#1905).
+- Variable modes come only from pages and layers, as in Figma, so the canvas, exports, and other tools resolve a layer the same way: the document-wide shown mode (`SceneGraph.activeMode`, `getActiveModeId`, `setActiveMode`, the `VariableModeFallback` parameter), the Vue SDK's `setActiveMode`, and `activeModeId` in `get_collection` output are removed.
+- `resolvedPaintBindings` (`@open-pencil/scene-graph/variables`) and `outlineColorInMode` (`@open-pencil/core/canvas`) are removed: bound paints hold their colors, so read `fills` and `strokes` directly.
+- `IconPath` from `@open-pencil/core/icons` carries `fills`, `strokes`, and `tint` (the paints drawn in the icon's color) in place of `fill`, `fillOpacity`, `stroke`, `strokeWidth`, `strokeCap`, and `strokeJoin` strings; providers that build icon paths for a path filled in the icon's color can use `tintedIconPath`.
+- OpenPencil Cloud starts its database from six migrations, one per domain, and its services server from one, with keys, checks, and indexes named one way. Databases created by pre-release versions cannot be upgraded: recreate them, along with the bucket's documents.
+- `enterNodeEditMode`'s `handles` option, which picks the points that show their handles, is now `showHandles`, and its type `NodeEditHandles` is now `ShownHandles`, so it no longer shares a word with the `pathEdits: 'handles'` restriction (#1920).
+- `penCancelPress` and `nodeEditCancelDrag` are replaced by `cancelGesture`, which takes back whichever gesture is in progress (#1922).
+- CanvasKit is `@open-pencil/canvaskit`, OpenPencil's build of CanvasKit 0.41.1 with Skia's PDF backend: SDK hosts install it in place of `canvaskit-wasm` and serve `@open-pencil/canvaskit/dist/canvaskit.wasm` (#1926).
+- `exportPDFDocument(graph, specs, { renderer, title })` draws with a renderer, the process's headless one when none is given; the `export_pdf` tool drops `embed_fonts` and its font report, since fonts are always embedded; `setHarfBuzzSubsetLocator` and SVG export's `fontAlias` are removed (#1926).
+- `initCanvasKit` is gone from `@open-pencil/core/io/formats/raster`; headless code loads CanvasKit with `getCanvasKit` from `@open-pencil/core/canvaskit`, the one instance Core and the canvas use (#1926).
+- `@open-pencil/core/io/formats/fig` replaces `setFigArchiveAssembler` with `setFigCanvasCompressor`, which compresses only the document data while the archive is written around it, removes `compressFigData`, and adds `exportFigFileStream`. In `@open-pencil/fig`, `patchFigArchive` and `renameFigArchive` return a `ReadableStream`, `streamFigArchive` writes an archive as one, and `compressFigDataSync` is removed in favor of `writeFigArchive`.
+- `@open-pencil/oxlint-plugin` publishes one plugin per domain, loaded from `@open-pencil/oxlint-plugin/<domain>` (`data`, `types`, `runtime`, `security`, `imports`, `structure`), in place of the single `open-pencil` plugin. Rules are named `@open-pencil/<domain>/<rule>`, and some lost words their domain now carries: `no-broad-unknown-type-assertions` is `@open-pencil/types/no-broad-unknown-assertions`, `no-duplicate-type-shapes` is `@open-pencil/types/no-duplicate-shapes`, `no-ts-suppression-comments` is `@open-pencil/types/no-suppression-comments`, and `no-function-alias-imports` is `@open-pencil/imports/no-function-aliases`.
+- Cloud's `[error_tracking]` reports go to PostHog's EU Cloud, `https://eu.i.posthog.com`, unless `host` names another; set `host = "https://us.i.posthog.com"` to keep a US project.
+- MCP tools that duplicated another tool are merged, and every tool is named verb first: `update_node` takes rotation and lock, `boolean { op }` and `transform_path` replace their families, and `delete_nodes`, `clone_nodes`, and `ungroup_nodes` take `ids`. Tool access settings name tools, so a tool disabled under its old name is enabled again; check Settings › Tool access after updating.
+- `useEditorKeyboard` runs a host's shortcut before the editor's on the same key, and a shortcut that returns `false` leaves the key to the editor's; `onEscape` is removed in favour of an Escape shortcut that declines when the host has nothing to close (#1964).
+- The `selection.setOpacity` command, its `canSetOpacity` capability, and `useEditorCommands().setOpacityTarget` are removed; call `editor.setOpacity(value)` instead (#1964).
+- The Vue SDK's `panels.toggleExportPreview` message is removed in every locale; the export Preview toggle now uses its visible label (#1980).
+
+### Added
+
+- With several layers selected, the handles on their selection box resize them all together and its rotation handle turns them about its center, as in Figma: the box snaps to other layers, Shift keeps its proportions or snaps the angle, dragging past the opposite edge mirrors the selection, and one undo puts the whole change back. A rotated layer stretched unevenly takes the angle and size Figma reports for it, and with Snap to pixel grid on the box and its layers get whole-pixel sides (#1919).
+- Updating a library redraws the document's copies of its components in place, so instances keep their overrides, also on layers the library renamed: each layer is matched to the library layer it copies, which published revisions now record.
+- The CLI reads the `.pen` libraries a `.pen` document imports, so instances of their components and their variables draw as in pen.dev instead of missing or black.
+- SDK hosts can narrow the editor through `setHostRestrictions`: offer only some tools, and let paths change only by their handles, so points keep their places and connections. `enterNodeEditMode` keeps a path open until the host ends it and can show every point's handles (#1787).
+- OpenPencil is now available in Brazilian Portuguese (pt-BR), selectable from the Language menu and picked automatically for Portuguese browsers.
+- SDK hosts bind the editor's keyboard with `useEditorKeyboard` from `@open-pencil/vue/editor/keyboard`: command shortcuts, tool keys the editor offers, the held Space hand, nudging, Delete, Enter, Escape, and zoom, with the host's own keys added beside them. `Editor.getViewportSize()` is public (#1809).
+- <kbd>⇧</kbd><kbd>⌘</kbd><kbd>\\</kbd> (<kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>\\</kbd>) splits the canvas view to the right.
+- The desktop app carries the licenses of the npm packages and Rust crates it is built from, under `licenses/` in its bundle, and the web app serves those of its npm packages at `/THIRD-PARTY-NOTICES.md`.
+- The toolbar docks to any edge of the canvas, at either end or centered, from its right-click menu or Settings > Toolbar, and zoom to fit keeps layers clear of it; bottom center stays the default (#1825).
+- MCP `set_image_fill` fills a layer from `image_path`, a file inside the MCP root, so a photo no longer goes through the call as Base64 a client can cut short; `image_data` also takes a data URL (#1830).
+- A single selected layer inside a frame, component, or instance shows its constraints on the canvas as Figma does: dashed lines from its pinned sides to its parent's edges, and a line across the middle of the layer on a centred axis (#1835).
+- `CanvasRoot` takes pointer input and typing on its canvas, so `<CanvasRoot><CanvasSurface /></CanvasRoot>` is a working editor canvas; `:input="false"` keeps one that only draws, and the editor learns the canvas size without a `getViewportSize` option (#1838).
+- Hosts can keep layers as they are with `setHostRestrictions({ layerEdits: 'none' })`: the canvas, keys, and editor actions change no layer, while vector edit mode still reshapes paths (#1839).
+- The command palette and menus include New Board, Toggle AI chat, Copy and Paste properties, and Wrap in new section (#1852).
+- Settings → General can turn off the desktop app's update check at startup. The check stays on unless you turn it off, and Check for Updates in the menu still checks.
+- The AI agent and agents using OpenPencil's tools can search the web for current facts, references, and real copy with `search_web`: with an OpenPencil Cloud model whose workspace's services offer search, paid for with its credits, or in the desktop app with an Exa key under Settings › Integrations. The pages found show as sources in the chat.
+- Published libraries carry the file's styles and variable collections beside its components, and a thumbnail for each component. Inserting or updating a library component brings the styles and variables it uses into the document as read-only library copies, so its tokens keep working (#1471, #1867).
+- Save on a Cloud server's own editor without an account offers signing up or in to keep the file in Cloud, or saving it to this computer; after signing up, the file opens and saves to Cloud, even when an email confirmation opens another tab.
+- SDK hosts report UI floating over the canvas edges with `setViewportChrome`, which zoom to fit, zoom to selection, and a page's first view keep layers clear of; it defaults to 50 px at the bottom for a Figma-style toolbar (#1889).
+- People who open a Cloud document from a share link can report it to the server's administrators, who can take a document down for everyone until they restore it, revoke its link, or suspend its owner from the console's new Reports and Documents sections.
+- Undo steps through a pen path point by point while it is drawn, and after it ends brings it back to draw on, as in Figma. In vector edit mode each change is its own step of the document's history, and undo after leaving a path opens it again and takes its changes back one at a time (#1894).
+- Hosts can let layers only move with `setHostRestrictions({ layerEdits: 'move' })`: drags keep layers in their parents, and resizing, rotating, deleting, duplicating, and every other change are refused with a `MoveOnlyLayersError` (#1909).
+- `editor.asHost(run)` runs a host's own edit past its restrictions, which narrow what the person does; a read-only document still refuses it (#1909).
+- `recordEdit({ joinStep: step })` adds a host's response to the undo step it answers, such as snapping a dropped layer into place, so one undo takes back both; `history:changed` says whether a step was recorded, joined, undone, redone, or cleared, and passes the recorded step (#1909).
+- Figma Glass effects render on the canvas and in exports, and can be added and edited in the Effects panel: refraction, depth, light angle and intensity, dispersion, and frost. They keep these settings through `.fig` files, the plugin API, and design JSX (`glass()`) (#1921, #1942).
+- Hosts follow and refuse the pen as it is used: `pen:pressed` and `pen:released` tell what each press does, in page coordinates, before it commits, and `editor.cancelGesture()` refuses it, or a drag on the canvas, with no undo step (#1922).
+- Hosts add points that the pen and vector edit mode snap to with `setSnapTargets({ points })` (#1922).
+- OpenPencil Cloud accounts can be deleted from the account page, after saving the files they would lose as one zip; an account that is the only admin of a workspace other people use hands it on first.
+- Hosts decide where the person's moves put layers with `editor.setMovePolicy`, which sees each drag while it previews as well as the move it lands, nudges, and X and Y typed in the position panel (#1930).
+- Deleted OpenPencil Cloud documents go to Trash on Home, which shows who deleted each one and how long it stays; restore it, or, as its owner or a workspace admin, delete it forever. A document deleted forever leaves your storage at once; the server keeps it out of sight for `purge_grace_days` (7 by default), when its administrators can still restore it from the console.
+- The desktop app can use Antigravity CLI (`agy`) as its design agent, with guided setup and saved chats that continue its session.
+- Drop shadows have a Show behind transparent areas option in the Effects panel (#1942).
+- OpenPencil is now available in Arabic (ar), selectable from the Language menu and picked automatically for Arabic browsers. The interface reads right to left: panels swap sides and menus, lists, and dialogs mirror, while the canvas, numbers, colors, alignment, and code stay left to right. Mirror the interface in General settings turns it off.
+- The Scale tool (K), also offered beside Move, resizes layers with their text, strokes, effects, radii, spacing, and vector geometry in proportion, as in Figma, and its panel section takes a factor and an anchor.
+- Cloud answers every HTTP request with an `X-Request-Id` (Cloudflare's ray ID behind Cloudflare) and logs errors as structured lines carrying it, as its PostHog reports do.
+- On Cloudflare, `createCloudflareCloud(config, { relayJurisdiction: 'eu' })` runs collaboration rooms' Durable Objects in the EU; their updates and snapshots stay where the database and bucket are, so keeping data in the EU needs both there too.
+- Cloud's `[object_storage] deleted_prefix` keeps each file cleanup deletes under that prefix until a lifecycle rule expires it, so after restoring the database to an earlier time its missing files can be copied back, on buckets without versioning such as R2.
+- Figma's progressive blurs render on the canvas and in exports, keep their settings through `.fig` files, the plugin API, and design JSX, and can be switched on and edited in the Effects panel, with start and end handles on the canvas (#1965).
+- A host can turn off the width × height label under a selection with `editor.state.showSizeLabels = false`, and vector edit mode's points and handles follow `selectionTheme` (#1971).
+- Cloud servers can link their own terms, privacy policy, abuse address, and minimum age through a `[legal]` table, shown at sign-up and in the portal's footer; with `require_acceptance`, each account accepts the current `terms_version` before using the server, and again when it changes.
+
+### Changed
+
+- HTML imported from the CLI lands where a browser lays it out at 1440×900, as it does in the app: media queries, the page's linked stylesheets, and its own margins apply, and text is set in the page's own `@font-face` fonts or the first family of its font list that is installed or downloadable.
+- The web app offers a new version in a notification with a Reload button instead of reloading under you; a tab in the background with nothing unsaved updates on its own.
+- Toasts float on the same surface as menus, with an icon only for progress, warnings, and errors, and their actions as regular buttons (#1823).
+- The daily ping also reports how many days the install has pinged, as a doubling step (1, 2, 3–4, 5–8, and so on) rather than the number itself, so returning installs can be told apart from copies of one saved state.
+- Dragging a straight segment in vector edit mode bends it at a new point where it was pressed, as in Figma; a curved segment still moves whole (#1848).
+- A guest following an edit link on a Cloud server that lets guests view but not edit sees the file read-only with Sign in to edit, instead of being sent to sign in first. Shipped Cloud configurations turn guest editing off.
+- Cloud refuses API requests larger than 8 MiB; the editor commits a save's images in batches that fit.
+- A Node Cloud server cancels database queries that run past 30 seconds.
+- OpenPencil Cloud plans belong to accounts: every workspace takes its owner's storage, OpenPencil services credits, and features, so creating more workspaces adds no allowance. Ownership passes to the longest-standing admin when the owner leaves.
+- The Effects panel labels every shadow and blur setting: Position, Blur, Spread, and Color (#1942).
+- Shadow colors use the same color field as fills and strokes (#1942).
+- Each effect type has its own icon in the Effects panel (#1942).
+- Blurs no longer offer a blend mode, which they do not have in Figma (#1942).
+- A coding agent's tool calls in an app chat, including undo, save, and close, go to the chat's document unless they name another, instead of the tab in front.
+- Menus inside panel fields, such as a size's Hug, a line height's Auto, and an export's scale, sit beside the variable button in one compact group and show hover, focus, and open states in both themes (#1970).
+- Colour previews across the properties panel are the same 16 px swatch, show transparency on a checkerboard, and show keyboard focus; colour rows such as an effect's, a layout grid's, and an icon's sit in the same field frame as fills (#1976).
+- Units such as % and px follow the number directly in panel fields, also while typing, instead of sitting at the field's far end (#1976).
+- In the variables inspector, colour, text, and aliased values sit in the same bordered field as number values, with the variable button inside at its end (#1976).
+- Buttons that open a menu or popover in the panel stay highlighted while it is open, the boolean operations button matches the buttons beside it, and the export Preview toggle is a standard collapsible that keyboard and screen-reader users can operate (#1980).
+- Keyboard focus looks the same across the app: fields show it on their border and every other control with a thin ring in the focus colour, instead of the soft accent halo some buttons, lists, and collapsibles drew (#1983).
+
+### Fixed
+
+- Resizing a layer inside a group or boolean operation fits the group to its children, as moving one does, in the same undo step.
+- Rotated and flipped groups fit their children after a layer inside them moves, resizes, or leaves, keeping their angle, where they kept their old bounds.
+- A rotated layer, or a layer inside a rotated frame, resizes along its own axes with the opposite edge kept in place, and a handle dragged past the opposite edge mirrors the layer, as in Figma.
+- Pressing a resize handle without moving it, or dragging back to the starting size, leaves a vector imported from a `.fig` file as it was, where it lost its imported geometry or kept the stretched one.
+- Arrow keys no longer also nudge the selected layer while a list, menu, or dialog is open.
+- Hiding and showing the editor UI keeps the canvas as it is instead of starting it again, and keeps split views on screen while the UI is hidden.
+- Layers pinned by constraints inside a Hug auto layout frame move once when the frame resizes, instead of drifting.
+- Negative item spacing in auto layout overlaps siblings, and Hug frames shrink by the overlap, as in Figma.
+- Text that sizes its own width wraps and truncates at its max width, as in Figma, also after it is edited or laid out again.
+- Documents with thousands of texts in a variable font with many glyphs, such as Noto Sans SC, open instead of running out of memory: every paragraph drawn in the font kept about 64 KB, and a `.pen` file of 24,000 Chinese texts aborted while it opened (#1761).
+- `.pen` files keep a frame's bottom and left padding when they write it as four values; the bottom took the top's value and the left the right's, so a title with a bottom inset sat low (#1762).
+- Frames that include their strokes in layout leave room for inside strokes, as in Figma.
+- Imported HTML draws closer to the browser: borders take room inside their boxes, generic font families such as `sans-serif`, `system-ui`, `serif`, and `monospace` use real fonts, CSS transforms turn, mirror, and move layers, and `white-space: nowrap` text stays on one line.
+- Text with a line height of zero, or a percent one under half a pixel, sets its lines on one baseline and is 0 px tall, as in Figma, and a single line at a fractional line height in pixels takes Figma's height.
+- A file opened in a browser tab in the background is read right away instead of waiting until the tab is shown, and a page switch drawn there no longer fails with "The operation was timed out".
+- Raster text exports, `absoluteRenderBounds`, and the canvas take a text by the ink of its glyphs, as Figma does, so text without a shadow or blur, once its fonts are loaded, exports at Figma's size, to a pixel in width, and a text 0 px tall draws on the canvas.
+- Text centred or bottom-aligned in its box draws its baseline on the pixel Figma draws it on.
+- Regular 20px text drawn from the glyph outlines saved in a `.fig` file (while its font loads, when the font is not installed, and for text on a path) has smooth edges instead of stair-stepped ones (#1799).
+- Saving from MCP or the CLI to a path that is not a `.fig` file, or a `.jam` file for a board, now fails before writing and names the `.fig` or `.jam` path to save to instead. Before, it wrote a Figma archive that could not be opened again.
+- A text drawn from its saved glyphs, because its font is missing or still loading or because it is set on a path, keeps the accents, round tops, and descenders it draws past its box at an opacity below 100% or with a blend mode, as does upper-cased text whose case changes its length and right-to-left text such as Arabic. Text on a path exports and reports `absoluteRenderBounds` by its glyphs, as in Figma, and `.fig` files saved from right-to-left text keep the glyphs of its last character (#1805).
+- Exports take a layer at the size Figma exports it: a shadow grows by its radius and spread, a negative spread shrinks it, and a layer in a frame that clips it exports as much as the frame shows.
+- `absoluteRenderBounds` takes in what a frame that does not clip lets its children draw past it, as in Figma.
+- Each split view's header shows that view's current zoom, and clicking it opens the zoom menu for that view.
+- In split view, a previewing view's header shows that it is previewing, with Reset and Stop, and the Play button toggles preview.
+- CLI exports and `absoluteRenderBounds` in headless runs size text by its glyphs, as the app does, and `exportAsync` on a layer that draws nothing returns a blank pixel for PNG and JPG and rejects SVG and PDF, as Figma does (#1812).
+- `figma.listAvailableFontsAsync()` lists every style of installed and bundled families, and of online families once a font of theirs is loaded, instead of only Regular; in the CLI and the MCP server it lists the bundled and online families instead of none.
+- Canvas shortcuts and arrow-key nudging keep working while a tooltip or hover card is showing (#1818).
+- Canvas shortcuts, arrow-key nudging, and `⌘\` keep working while the selection toolbar shows with the UI hidden, as on boards (#1820).
+- Each mode's "Use a variable" button in the Variables dialog names its mode for screen readers (#1820).
+- Text whose fonts were still loading no longer stays missing from the canvas after they load, as it could when its box or saved glyphs kept its size (#1821).
+- Undoing an edit inside a component back to the last save marks the document saved again (#1822).
+- Resizing a frame or group no longer rounds the layers inside it to whole pixels; constraints move them by the rounded change in the frame's size, as in Figma (#1816).
+- A `.pen` file keeps image fills whose paths are percent-encoded, such as assets beside a document whose name has spaces.
+- AI chat shows the Option key in the follow-up shortcut hint on macOS.
+- A canvas started on a document that is already read-only draws instead of failing on its first frame, and a host can lift restrictions it set (#1839).
+- A `.pen` document with many theme axes opens instead of hanging: each axis gets its own variable collection unless a variable combines it with others (#1829).
+- Preview and HTML and Tailwind export keep each layer's constraints, so a layer set to Right, Center, Left and right, or Scale follows its frame as it resizes, such as a slider's range following the thumb.
+- Opacity and zoom digit shortcuts work on layouts such as AZERTY, where the digit row types symbols (#1844).
+- The command palette shows the shortcuts of editor commands such as Duplicate and Tidy Up, writes Control as ⌃, and lists modifiers in macOS order, as menus do (#1844).
+- On Windows and Linux, Distribute Spacing and Tidy Up use Figma's keys, Alt+Shift+H, Alt+Shift+V, and Ctrl+Alt+Shift+T, so Ctrl+Alt+V only pastes properties instead of also distributing (#1844).
+- Saved Claude Code and Codex conversations stay resumable after the app reloads or a resume fails temporarily, and the error offers to try again or start a new chat.
+- A `.pen` document's bundled fonts are read, so its text draws in them instead of being substituted, and `.fig` exports name the real family and style, such as Geist SemiBold (#1759).
+- Layers scaled by their constraints in Hug frames and resized instances keep the exact ratio instead of snapping to 1/128 px, as in Figma.
+- Typing a width or height for a frame, group, or instance places the layers inside by their constraints, as dragging its edge does.
+- Undoing an edit no longer lets a later edit move layers pinned inside a Hug frame from the size it had before the undo.
+- ⌘J opens the AI chat while the panels are hidden, as on a board (#1852).
+- Inline SVG in design JSX and Iconify icons place their artwork as pasted SVG does: a viewBox that does not start at zero no longer offsets or clips the artwork, and a viewBox of another aspect ratio is centered in the icon box, following `preserveAspectRatio`, instead of being stretched.
+- Pasted and imported SVG, and inline SVG in design JSX, apply a transform on the root `<svg>` about the center of its box after the viewBox, as browsers draw it.
+- Pasted and imported SVG scale stroke weights by the transforms of the elements they are drawn in, so a stroke inside a scaled group keeps its drawn thickness.
+- The pen keeps the last point's handle when it closes a path, closes along the mirror of a drag on the closing press, closes a path of two points, lets a drag bring a handle back to its point, and drags the last point's handle out again when that point is pressed, as in Figma (#1861).
+- `.pen` rows that hug their children with `space_between` keep their `gap`, as in pen.dev (#1402).
+- Curved vector paths export to SVG with their control points on the right side when a path runs through a segment end to start.
+- The contrast lint keeps running on text with very many style runs, and holds text to the base style's threshold when style runs only appear to cover it.
+- Each split pane shows its own shader frames in preview instead of the other pane's.
+- A tour that fails to load says so instead of leaving a blank tab, the welcome dialog stays open to try again, and the tour's tips show both macOS and Windows/Linux shortcuts.
+- An agent's undo step holds only its own changes: edits you, a collaborator, or another agent make while its call runs stay out of it, undoing a step that created a frame keeps layers someone else put into it, and `eval` scripts take turns with tool calls. A script's own `fetch` calls and timers are not covered (#1866, #1900).
+- A tool call or `eval` script that fails part way is rolled back and leaves no undo step, and an MCP call that times out is cancelled in the app instead of editing later. The unsaved dot no longer stays on after an edit is rolled back or a drag is cancelled (#1866).
+- HTML import keeps an SVG `<img>` data URL as the image source instead of an empty image fill, and HTML bundle export keeps SVG images inline instead of writing `.svg` files that could run script when opened from the site, and writes AVIF images to `.avif` files instead of `.png` (#1869).
+- In the browser, Object → Insert Icon… keeps the icon picker open instead of closing it at once.
+- Saving a `.fig` document after editing a component no longer moves the component above the other layers on its page, and loading pages no longer reorders the layers on the pages they read components from.
+- Cloud collaboration rooms refuse an edit that would grow the document past 256 MiB, or 32 MiB on Cloudflare, instead of crashing the room; the editor then saves on its own.
+- An outer instance's literal fill on a layer inside a nested instance stays literal when the instance syncs, instead of taking back the main component's color variable.
+- Auto layout frames with negative padding place their children past the frame's edge as Figma does, instead of treating the padding as zero (#1884).
+- A canvas shortcut pressed right after closing a menu, such as Escape then R, works instead of doing nothing while the menu fades out (#1889).
+- Mod+S saves while editing text on the canvas or typing in a field, instead of the browser offering to save the page.
+- AI setup asks again for a design model when a coding agent was chosen where this install cannot run agents, instead of finishing setup on a model chat refuses.
+- Undoing the removal of a variable collection, or of the mode it showed, shows that mode again instead of the default (#1900).
+- OpenPencil is listed under Graphics in Linux app menus.
+- Plugin API scripts see instances follow a component edit at once, as in Figma, and a CLI edit saves instances synced with the components it changed.
+- Overriding the fill of a layer inside a nested instance no longer stops its other paint and effect bindings from following the component.
+- Iconify icons draw in their set's own box: icons from sets without a size, such as Bootstrap Icons, fill the icon instead of two thirds of it, Jam icons are no longer offset, and aliases that flip or turn another icon, as in Font Awesome 4 and Fluent Emoji, draw flipped or turned.
+- SVG `currentColor` takes the CSS `color` an element sets, in pasted and imported SVG, icons, and design JSX `<svg>`, and matches in any letter case, so `currentcolor` in an icon follows the icon color instead of drawing black.
+- Design panel fields and the canvas size label show fractional values to two decimals, as in Figma, instead of rounding them to whole numbers (#1905).
+- Resizing a layer by its handles with Snap to pixel grid on rounds its size to whole pixels and keeps the edges the handle leaves, as in Figma, instead of moving the dragged edge onto the grid; pressing a handle without moving leaves the layer as it was (#1905).
+- Text links inside a library component point at the component's own layers after it is published, inserted, or updated, instead of at layers of the library file (#1906).
+- A page's variable mode is saved in `.fig` files, and so is clearing it, where saving dropped it.
+- Saving an opened `.fig` after changing a page's or frame's variable mode, or moving layers into another mode, writes the values the bound layers below it now show, where their records kept the previous mode's.
+- Paste to replace from Figma keeps the pasted layer as it was drawn when the replaced layer sits in a rotated or flipped frame, instead of turning it with the frame (#1908).
+- Undoing a nudge back to the saved state clears the unsaved indicator, and a collaborator's change that arrives during an edit keeps the document unsaved after undoing back (#1910).
+- A paint bound to a color variable keeps a color or opacity written over it until the variable's color for that layer changes, the canvas and the Plugin API show it as stored, and instances keep their own bound paints, as in Figma.
+- Layers in a group or boolean keep their own constraints against the frame or instance around it, as in Figma: resizing moves them and the group fits them, the Design panel shows and sets a group's constraints from its layers, and the canvas draws their indicators (#1914).
+- Icons and design JSX `<svg>` draw gradient fills and strokes as gradients instead of solid black, as in Noto, Fluent Color, Logos, and Meteocons icons, and icons whose SVG uses `xlink:href` draw instead of coming out empty. Their paths are placed at their own bounds, as pasted SVG places them, and design JSX `<svg>` children take paint and text props in camelCase, such as `stopColor`, `fillOpacity`, and `textAnchor`.
+- Pasted and imported SVG draw gradient strokes as gradients, follow gradients that take their stops from another through `href`, and leave a shape with `fill="none"` and no stroke unpainted instead of filling it black.
+- Resizing a frame keeps the paths inside it in shape: a straight line that scales with the frame, such as a pasted SVG line, stretches along its length, and a path dragged back to its starting size within one drag returns to its own shape instead of keeping the stretched one.
+- SVG export clips a rounded frame's children to its rounded or smoothed corners instead of a square box, and fills smoothed rectangles and frames with their smoothed outline (#1916).
+- The rulers label a selection's edges to three decimals, as in Figma, instead of rounding them to whole numbers (#1923).
+- A size, padding, or gap field bound to a variable shows its value to two decimals, as unbound fields do, instead of the raw value a `.fig` file stores, such as 100.4000015258789 (#1923).
+- Saving an API key or token while the system credential store is locked or unreachable explains how to unlock or connect it, including the Snap package's `snap connect` command, instead of showing an untranslated error (#1925).
+- PDF exports draw what the canvas draws: Arabic and other shaped text keeps every letter, its order, and its spaces, in embedded fonts that stay searchable, and blurs, shadows, images, and shader fills come out as on the canvas instead of clipped or missing (#1862, #1926).
+- SVG exports place right-to-left words where the canvas draws them, so a line that mixes Arabic or Hebrew with Latin in one font no longer reads reversed (#1862, #1926).
+- Exports from the CLI and MCP server running at the same time no longer draw one document's shapes in another's, which happened to documents read from files whose layers share ids (#1926).
+- A script that places a right-pinned or stretched layer in a new Hug frame without reading it first, through MCP tools, `eval`, or the AI tools, keeps the layer where it put it, as in Figma, instead of the frame's later hug moving it (#1932).
+- Saving a large `.fig` writes the archive to its file, download, or Cloud as it is produced, so a desktop save of a document of several hundred megabytes no longer runs out of memory.
+- A desktop save that fails partway leaves the previous file in place, and a save that cannot finish stays visible with a retry instead of stopping silently.
+- Clicks and hover pass through locked layers on the canvas, as in Figma: a click reaches the layer underneath and a drag starts a marquee, while a right-click still selects a locked layer to unlock it (#1941).
+- Text in a font that loads after it is first drawn, such as a plugin's or a collaborator's text in a weight not used before, now appears once the font arrives instead of staying blank (#1947).
+- Reloading a large document after its file changed on disk no longer crashes the tab, and a document with unsaved edits keeps them, offering a reload that discards them.
+- Switching the app theme with the demo tour open now repaints the whole canvas background instead of leaving the old one around the sections (#1958).
+- A layer blur on a rotated layer no longer cuts off the corners the rotation moves past the layer's box (#1965).
+- A dashed vector with several closed contours, such as a ring or a letter with a counter, dashes every contour instead of drawing all but the first solid (#1973).
+- Zooming in fast no longer leaves gaps of canvas colour at the edges of the view while tiles render.
+
+### Performance
+
+- In a shared Cloud document, the tab that saves for the room uploads a checkpoint a minute after edits pause, and at least once a minute while editing goes on, instead of after every pause. Closing it no longer warns about unsaved changes while the room holds the edits.
+- Switching to a page in a large `.fig` loads the component sets its instances use rather than every page holding them, so a page with a few kit instances opens in a fraction of the time and memory.
+- The editor no longer downloads AI provider code at startup, and the web app's offline cache is about 9 MiB smaller.
+- The desktop app binary is about a third smaller on macOS arm64.
+- Recording an edit copies only what it changes rather than its page and every variable, so an edit on a large page records in a few milliseconds instead of up to a hundred or more (#1866).
+- Saving a large document on desktop hands its bytes to the native file writer as binary chunks, so the save no longer spends minutes encoding them as JSON.
+
+### Security
+
+- Cloud no longer looks people up by email or adds documents to someone's files without an accepted invitation, caps invitations at 100 sent and 5 received per address a day, stops share links of banned people, ends a document maker's access once they leave its workspace, and asks for the desktop sign-in code to be typed before approving.
+
 ## 0.17.0-beta.2 — 2026-11-04
 
 This is a pre-release that lists changes since 0.17.0-beta.1: npm packages are published under the `next` tag, and installed apps on the stable release do not update to it. Linux package managers see `0.17.0-beta.2` as newer than `0.17.0`, so `.deb` and `.rpm` users should remove the beta before installing the final 0.17.0.
@@ -13,6 +237,8 @@ This is a pre-release that lists changes since 0.17.0-beta.1: npm packages are p
 - Plugin API nodes read Figma's node types: a page's `type` is `PAGE` instead of `CANVAS`, and `figma.root.type` is `DOCUMENT` instead of `FRAME`, in `node.type` and `toJSON()`. Scripts that compared against `CANVAS` should compare against `PAGE`.
 - Cloud keeps each collaboration room's snapshot in object storage beside the documents' files instead of in PostgreSQL. Upgrading starts every document's live room over from its last saved version, so edits a room held that no saved version has yet are dropped.
 - `useCanvas` from `@open-pencil/vue/canvas/surface` no longer takes `onPresented`; listen for the editor's `render:presented` event with `editor.onEditorEvent('render:presented', …)`, which fires once a frame shows the whole visible scene (#1753).
+- `@open-pencil/core/text` no longer exports `adjustRunsForInsert`. Use `runsAfterTyping`, which moves the runs for typed text and gives it the style of the text it continues.
+- `@open-pencil/scene-graph/geometry` no longer exports `computeVisualBounds`, `nodeVisualBounds`, `computeDescendantVisualBounds` or the `VisualBoundsNode` type; use `computeContentBounds` from `@open-pencil/core/io/formats/raster`, which bounds layers by their world matrix. `textDecorationOverflow` now takes a text node's `type`, `fontSize`, `textDecoration`, `textUnderlineOffset` and `textDecorationThickness`, with `fontSize` and `textDecoration` required (#1778).
 
 ### Added
 
@@ -68,7 +294,8 @@ This is a pre-release that lists changes since 0.17.0-beta.1: npm packages are p
 - Pasting a layer copied out of a component, while it is bound to one of the component's properties, pastes it unbound instead of failing.
 - Text is always laid out in its own fonts: text whose font, script fallback, or emoji font is still loading or not available is laid out again once it arrives, instead of keeping the size of another face, which left titles, sticky notes, and imported text narrower or wider than they drew.
 - Text with its leading trimmed to cap height, such as badge digits, sits where Figma puts it once its font is loaded, instead of several pixels too low.
-- Text with a fractional line height in pixels, such as 22.5 px, steps its lines and takes its height as Figma does, instead of drifting a pixel every line or two.
+- Text keeps the baselines Figma saves and draws each on the whole pixel Figma draws it on, and a fractional line height in pixels, such as 22.5 px, steps its lines and takes its height as Figma does, so 16 px Inter and lines at a fractional line height or paragraph spacing no longer sit a pixel or half a pixel off or drift, and glyph positions saved to `.fig` match Figma's.
+- Text typed at the edge of a styled range, after Enter, at the start, over a selection, through an input method or pasted while editing, keeps that range's colour, font and variable bindings, and so does text typed after deleting everything.
 - The first Chinese, Japanese, or Korean text in the desktop app loads one system font per script instead of every listed one and keeps a single copy of each, using hundreds of megabytes less memory, and draws in about 70 ms instead of 2 s per render while its fonts load (#1684).
 - On Windows, page text in an installed font, such as interactive component previews on the canvas, draws in its bold, italic, and light faces instead of the regular one.
 - A text that sizes itself outside auto layout resizes when a variable bound to its size, such as its font size, changes.
@@ -82,6 +309,8 @@ This is a pre-release that lists changes since 0.17.0-beta.1: npm packages are p
 - Spread and Compact arrange a pile of layers the same way every time, rather than differently on each run.
 - New stars have Figma's inner radius.
 - A rotated frame draws its whole fill, and exports of rotated layers are no longer cropped to a shifted box (#1767).
+- SVG and PDF export turn a rotated and flipped layer the way the canvas does, and a rotated line about its start (#1778).
+- The canvas draws sharp at any panel width, instead of slightly soft when the panels leave it a fraction of a pixel wide (#1774).
 - Opening a document keeps the loader up until its page is fully drawn where it opens, instead of showing the canvas while it still fills in (#1753).
 - HTML export draws linear, radial, and angular gradient fills and every stacked fill with its blend mode, writes the colour a variable-bound paint draws, and standalone pages define the tokens their layers use. Diamond gradients are still left out.
 - HTML export, Tailwind JSX, canvas islands, and `getCSSAsync()` blur layers and shadows as the canvas draws them, and text keeps its shadows; layer and background blurs were 2.3 times as strong, and text shadows were dropped. Imported CSS shadows draw as the browser draws them.
@@ -105,6 +334,7 @@ This is a pre-release that lists changes since 0.17.0-beta.1: npm packages are p
 - On Linux, Backspace and keys such as `[`, `]` and `N` type into comments and other text fields again instead of running menu commands, so Backspace no longer deletes the selected layer while you type.
 - The Linux desktop app no longer exits at startup on Wayland with the NVIDIA driver when its WebKitGTK is older than 2.54.2.
 - On Windows and Linux, the Software Update window no longer shows the editor menu bar (#1230).
+- A Cloud document left by navigating away in the same browser tab leaves its collaboration room at once, instead of staying in it until the browser discards the page.
 - Cloud answers a malformed document, workspace, version, share, invitation, or upload ID in an API request with not found instead of a server error.
 
 ### Performance

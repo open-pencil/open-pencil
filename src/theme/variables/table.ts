@@ -10,19 +10,28 @@ const COLUMNS =
 export default {
   slots: {
     root: '@container/tokens-list flex min-w-0 flex-1 flex-col overflow-auto',
-    header: `sticky top-0 z-10 grid min-w-min items-center gap-3 border-b border-border bg-panel px-4 py-2 text-2xs font-medium text-muted ${COLUMNS}`,
+    header: [
+      'sticky top-0 z-10 grid min-w-min items-center gap-3 border-b border-border bg-panel px-4 py-2 text-2xs font-medium text-muted',
+      COLUMNS
+    ],
     group: 'px-4 pt-3 pb-1 text-2xs font-semibold text-muted',
-    row: `${COLUMNS} grid min-w-min cursor-pointer items-center gap-3 px-4 py-1.5 text-xs text-surface outline-none transition-colors duration-100 hover:bg-hover data-[highlighted]:bg-hover data-[state=checked]:bg-hover data-[state=checked]:ring-1 data-[state=checked]:ring-accent/40 data-[state=checked]:ring-inset data-[dragging]:opacity-50 data-[drop=after]:shadow-[inset_0_-2px_0_var(--color-accent)] data-[drop=before]:shadow-[inset_0_2px_0_var(--color-accent)] motion-reduce:transition-none`,
+    row: [
+      COLUMNS,
+      'grid min-w-min cursor-pointer items-center gap-3 px-4 py-1.5 text-xs text-surface outline-none transition-colors duration-100 hover:bg-hover data-[highlighted]:bg-hover data-[state=checked]:bg-hover data-[state=checked]:ring-1 data-[state=checked]:ring-accent/40 data-[state=checked]:ring-inset data-[dragging]:opacity-50 data-[drop=after]:shadow-[inset_0_-2px_0_var(--color-accent)] data-[drop=before]:shadow-[inset_0_2px_0_var(--color-accent)] motion-reduce:transition-none'
+    ],
     name: 'flex min-w-0 flex-col truncate',
     nameLine: 'flex min-w-0 items-center gap-1.5',
     /** A token's type, or that a formula gives its value. */
     icon: 'size-3 shrink-0 text-muted',
     /** The CSS name as its own column, from 42rem of list width. */
-    cssColumn: 'hidden truncate font-mono text-2xs text-muted @2xl/tokens-list:block',
+    // CSS names read left to right, `--color-primary`, aligned with the column in either direction.
+    cssColumn:
+      'hidden truncate font-mono text-2xs text-muted rtl:[direction:ltr] rtl:text-end @2xl/tokens-list:block',
     /** The CSS name column's title, in the header's own font like the others. */
     headerCssColumn: 'hidden @2xl/tokens-list:block',
     /** The CSS name under the token name, below 42rem of list width. */
-    cssStacked: 'truncate font-mono text-2xs text-muted @2xl/tokens-list:hidden',
+    cssStacked:
+      'truncate font-mono text-2xs text-muted rtl:[direction:ltr] rtl:text-end @2xl/tokens-list:hidden',
     value:
       'flex min-w-0 animate-in items-center gap-1.5 truncate font-mono text-2xs fade-in duration-150 motion-reduce:animate-none',
     /** An alias: its target's name, as wide as the name, and what it gives. */

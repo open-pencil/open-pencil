@@ -66,3 +66,10 @@
 /ru/programmable/sdk/api/composables/use-variables-editor /ru/programmable/sdk/api/advanced/use-variables 301
 /ru/programmable/sdk/api/advanced/use-variables-dialog-state /ru/programmable/sdk/api/advanced/use-variables 301
 /ru/programmable/sdk/api/advanced/use-variables-table /ru/programmable/sdk/api/advanced/use-variables 301
+
+# OpenPencil Cloud moved to its own section
+/user-guide/openpencil-cloud /cloud/ 301
+/reference/self-hosting-cloud /cloud/self-hosting/ 301
+/overview/legal/terms /cloud/legal/terms 301
+/overview/legal/privacy /cloud/legal/privacy 301
+/overview/legal/subprocessors /cloud/legal/subprocessors 301

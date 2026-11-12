@@ -1,3 +1,5 @@
+import { isEqual } from 'es-toolkit/predicate'
+
 import {
   figCheckpointRecords,
   type FigArchiveRecordInfo,
@@ -10,25 +12,35 @@ import {
 } from '@open-pencil/fig/node-change'
 import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
 import { computeImageHash } from '@open-pencil/scene-graph/images'
 import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 import { ownsSlotContent } from '@open-pencil/scene-graph/slots'
-import { layersUsingVariables } from '@open-pencil/scene-graph/variables'
+import {
+  collectionsBoundIn,
+  getNodeVariableModeId,
+  layersResolvingCollections,
+  layersUsingVariables
+} from '@open-pencil/scene-graph/variables'
 
 import { figCompressionLevel } from '#core/io/formats/fig/compression'
 import {
   figExportRecordOptions,
-  figFileExtras,
-  prepareFigExport,
-  type FigFileExtrasOptions,
   type FigExportSetup,
-  type KiwiNodeChange
+  figFileExtras,
+  type FigFileExtrasOptions,
+  type KiwiNodeChange,
+  prepareFigExport
 } from '#core/io/formats/fig/export/setup'
 import { appendVariableNodeChanges } from '#core/io/formats/fig/export/variables'
 import { figArchive, type FigArchiveAccess } from '#core/kiwi/fig/session/archive/access'
-import { archiveChanges, type ArchiveChangeSummary } from '#core/kiwi/fig/session/archive/changes'
+import {
+  archiveBaseline,
+  archiveChanges,
+  type ArchiveChangeSummary
+} from '#core/kiwi/fig/session/archive/changes'
 import {
   isReaderPagePending,
   populateFigPage,
@@ -92,15 +104,29 @@ function archiveRecords(graph: SceneGraph): ArchiveRecords | null {
 
 /**
  * A set's variants write their copies of its boolean, text, swap, and slot properties from the
- * set's, so an edited set writes its variants too; only the fields that differ are patched.
+ * set's, so an edited set writes its variants too; only the fields that differ are patched. A
+ * variant defining a property itself, as an older OpenPencil saved one, writes it as its set's,
+ * which the set's saved record lacks, so an edited one writes its set and siblings as well.
  */
 function addSetVariants(
   graph: SceneGraph,
   changes: ArchiveChangeSummary,
   add: (id: string) => unknown
 ): void {
+  const sets = new Set<string>()
   for (const id of changes.touched) {
-    if (graph.getNode(id)?.type !== 'COMPONENT_SET') continue
+    const node = graph.getNode(id)
+    if (node?.type === 'COMPONENT_SET') sets.add(id)
+    const parent = node?.parentId ? graph.getNode(node.parentId) : undefined
+    if (
+      node?.type === 'COMPONENT' &&
+      parent?.type === 'COMPONENT_SET' &&
+      node.componentPropertyDefinitions.some((definition) => definition.type !== 'VARIANT')
+    )
+      sets.add(parent.id)
+  }
+  for (const id of sets) {
+    add(id)
     for (const child of graph.getChildren(id)) if (child.type === 'COMPONENT') add(child.id)
   }
 }
@@ -137,6 +163,58 @@ function addVariableUsers(
   if (!changes.collectionsChanged) return
   for (const node of graph.nodes.values())
     if (Object.keys(node.variableModes).length > 0) add(node.id)
+  // A new default mode changes what layers with no mode of their own resolve.
+  const saved = new Map(archiveBaseline(graph)?.collections)
+  const defaultsChanged = new Set(
+    [...graph.variableCollections.values()]
+      .filter((collection) => {
+        const before = saved.get(collection.id)
+        return before !== undefined && before.defaultModeId !== collection.defaultModeId
+      })
+      .map((collection) => collection.id)
+  )
+  if (defaultsChanged.size === 0) return
+  const pages = graph.getPages(true).map((page) => page.id)
+  for (const layer of layersResolvingCollections(graph, pages, defaultsChanged)) add(layer.id)
+}
+
+/**
+ * A layer whose mode for a collection changed, set on it or met where it moved to, changes the
+ * values its layers resolve from that collection, and their records carry those values.
+ */
+function addModeChangeUsers(graph: SceneGraph, add: (id: string) => unknown): void {
+  const baseline = archiveBaseline(graph)
+  if (!baseline) return
+  for (const [id, before] of baseline.before) {
+    const node = graph.getNode(id)
+    if (!node) continue
+    if (before.parentId === node.parentId && isEqual(before.variableModes, node.variableModes))
+      continue
+    const changed = new Set(
+      [...collectionsBoundIn(graph, [id])].filter(
+        (collectionId) =>
+          savedModeId(graph, baseline.before, before, collectionId) !==
+          getNodeVariableModeId(graph, id, collectionId)
+      )
+    )
+    if (changed.size === 0) continue
+    for (const layer of layersResolvingCollections(graph, [id], changed)) add(layer.id)
+  }
+}
+
+/** The mode a layer had when the archive was saved, read up the ancestors it had then. */
+function savedModeId(
+  graph: SceneGraph,
+  saved: ReadonlyMap<string, SceneNode>,
+  layer: SceneNode,
+  collectionId: string
+): string | undefined {
+  for (let node: SceneNode | undefined = layer; node;) {
+    const modeId = node.variableModes[collectionId]
+    if (modeId) return modeId
+    node = node.parentId ? (saved.get(node.parentId) ?? graph.getNode(node.parentId)) : undefined
+  }
+  return graph.variableCollections.get(collectionId)?.defaultModeId
 }
 
 /** Siblings keep the positions the archive saved; one that cannot moves, and so is written. */
@@ -194,6 +272,7 @@ function planRecords(
   }
   for (const id of changes.touched) add(id)
   addSetVariants(graph, changes, add)
+  addModeChangeUsers(graph, add)
   addComponentInstances(graph, records, add)
   const replaceVariables = changes.changedVariables.size > 0 || changes.collectionsChanged
   if (replaceVariables) addVariableUsers(graph, changes, add)
@@ -269,8 +348,9 @@ function writeRecords(setup: FigExportSetup, plan: RecordPlan): KiwiNodeChange[]
       if (!internal) return null
       if (!internal.page.id && !internalWritten) written.push(internal.canvasNc)
       internalWritten = true
-      written.push(
-        ...sceneNodeToKiwi(
+      appendAll(
+        written,
+        sceneNodeToKiwi(
           node,
           internal.canvasGuid,
           0,
@@ -295,8 +375,9 @@ function writeRecords(setup: FigExportSetup, plan: RecordPlan): KiwiNodeChange[]
         : setup.nodeIdToGuid.get(parent.id)
     if (!parentGuid) return null
     const index = graph.getChildren(parent.id).findIndex((child) => child.id === node.id)
-    written.push(
-      ...sceneNodeToKiwi(node, parentGuid, index, setup.localIdCounter, graph, setup.blobs, options)
+    appendAll(
+      written,
+      sceneNodeToKiwi(node, parentGuid, index, setup.localIdCounter, graph, setup.blobs, options)
     )
   }
   // Instance slot content is written as records of its own on the internal canvas.
@@ -420,13 +501,14 @@ export function archiveImagesNamedForFigma(graph: SceneGraph): Promise<boolean> 
  * Write a document opened from a `.fig` as that archive with only its changed records
  * rewritten. The main thread serializes what changed; merging and compressing the rest happen
  * where the archive is held, the reader's worker in the browser. Null when the document did
- * not come from an archive, or changed in a way this path does not write.
+ * not come from an archive, or changed in a way this path does not write. The archive streams
+ * from where it is held, its unchanged images never copied into the page.
  */
 export async function writePatchedFigFile(
   source: SceneGraph,
   runtime: FigNodeChangeExportRuntime,
   options: FigFileExtrasOptions = {}
-): Promise<Uint8Array | null> {
+): Promise<ReadableStream<Uint8Array> | null> {
   const archive = figArchive(source)
   const changes = archiveChanges(source)
   const loaded = archiveRecords(source)

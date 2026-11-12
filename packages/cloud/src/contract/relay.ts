@@ -109,6 +109,12 @@ export const RELAY_CLOSE = {
   restored: 4410
 } as const
 
+/**
+ * The text a peer sends to learn whether the relay still hears it, and the relay's answer. Relay
+ * frames are binary, so neither is taken for one, and a Durable Object answers without waking.
+ */
+export const RELAY_HEARTBEAT = { ping: 'ping', pong: 'pong' } as const
+
 const CLIENT_AUTH = 0
 const CLIENT_MESSAGE = 1
 const CLIENT_FRAGMENT = 2
