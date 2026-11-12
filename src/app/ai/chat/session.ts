@@ -199,7 +199,12 @@ export function createChatSessionManager({
     return transport as ChatTransport<UIMessage>
   }
 
-  async function createActiveHarnessTransport(sessionId: string, context: AIDiagnosticContext) {
+  /** `provider` is the one the chat chose, as for ACP: a change while Pi works keeps its usage there. */
+  async function createActiveHarnessTransport(
+    sessionId: string,
+    context: AIDiagnosticContext,
+    provider: AIProviderID
+  ) {
     await destroyAgentTransports()
     const runtime = await createAIModelRuntime('design')
     if (runtime?.kind !== 'harness') throw new Error('The Design agent is not configured for Pi')
@@ -234,7 +239,7 @@ export function createChatSessionManager({
         ? { OPENPENCIL_HARNESS_API_KEY: apiKey }
         : { OPENPENCIL_HARNESS_AGENT_DIR: account?.agentDir ?? '' },
       undefined,
-      (usage) => recordModelStepCompleted({ provider: providerID.value, model, ...usage }, context),
+      (usage) => recordModelStepCompleted({ provider, model, ...usage }, context),
       hasSteeringMessage
     )
     harnessTransportInstance = transport
@@ -302,7 +307,7 @@ export function createChatSessionManager({
         )
       } else if (isHarnessProvider.value) {
         agentKind = 'harness'
-        transport = await createActiveHarnessTransport(sessionId, diagnosticContext)
+        transport = await createActiveHarnessTransport(sessionId, diagnosticContext, chatProviderID)
       } else {
         transport = await createTransport(store, diagnosticContext)
       }
