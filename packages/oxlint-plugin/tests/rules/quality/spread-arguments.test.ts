@@ -14,7 +14,9 @@ describe('@open-pencil/data/no-spread-arguments', () => {
     'Math.max(...values)',
     'Math.min(0, ...nodes.map((node) => node.x))',
     'String.fromCharCode(...bytes)',
-    'String.fromCodePoint(...codes)'
+    'String.fromCodePoint(...codes)',
+    'list.push(...[...items])',
+    'Math.max(...[0, ...values])'
   ])('rejects %s', async (source) => {
     expect(ruleDiagnostics(await lint(`${source}\n`, rules), rule)).toHaveLength(1)
   })
