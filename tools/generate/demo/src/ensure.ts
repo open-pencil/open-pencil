@@ -8,6 +8,7 @@ import { promisify } from 'node:util'
 import { lock } from 'proper-lockfile'
 
 import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools/workspace'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 
 /** Where the app serves the demo from, relative to the repository root. */
 const DEMO_OUTPUT = 'public/demo.fig'
@@ -30,7 +31,7 @@ async function filesIn(root: string, directory: string): Promise<string[]> {
   const result: string[] = []
   for (const item of await readdir(join(root, directory), { withFileTypes: true })) {
     const path = join(directory, item.name)
-    if (item.isDirectory()) result.push(...(await filesIn(root, path)))
+    if (item.isDirectory()) appendAll(result, await filesIn(root, path))
     else if (item.isFile()) result.push(path)
   }
   return result

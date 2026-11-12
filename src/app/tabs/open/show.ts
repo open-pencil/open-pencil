@@ -91,7 +91,9 @@ export async function showImportedGraph(
   load?: DocumentLoadSession
 ): Promise<void> {
   load?.update({ phase: 'materializing', detail: store.state.documentName })
-  await applyImportedDocument(store, graph, load)
+  // The page this tab will show is prepared by switchPage below. Preparing the first page in a
+  // staging editor would load its fonts twice, and an inactive Cover page stays lazy until used.
+  await applyImportedDocument(store, graph, load, { prepare: false })
   void documentReplaced.trigger(store)
   load?.signal.throwIfAborted()
   await prepare?.()

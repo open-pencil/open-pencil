@@ -97,6 +97,31 @@ describe('flattenSelected', () => {
     path?.delete()
   })
 
+  test('keeps rounded corners and ellipses as one curve each, as Figma does', async () => {
+    // Recorded in Figma desktop 126: a rectangle with a 40 px radius flattens to 8 vertices with 4
+    // curved segments, an ellipse to 4 curves; Skia's own SVG text would give 32 quads a corner.
+    const { editor } = await createEditorWithRenderer()
+    const pageId = editor.state.currentPageId
+    const counts = (node: SceneNode) => {
+      editor.select([node.id])
+      editor.flattenSelected()
+      const network = editor.graph.getNode([...editor.state.selectedIds][0] ?? '')?.vectorNetwork
+      const curved = network?.segments.filter(
+        ({ tangentStart, tangentEnd }) =>
+          tangentStart.x || tangentStart.y || tangentEnd.x || tangentEnd.y
+      )
+      return [network?.vertices.length, curved?.length]
+    }
+    const rect = editor.graph.createNode('RECTANGLE', pageId, {
+      width: 200,
+      height: 120,
+      cornerRadius: 40
+    })
+    const ellipse = editor.graph.createNode('ELLIPSE', pageId, { x: 300, width: 120, height: 80 })
+    expect(counts(rect)).toEqual([8, 4])
+    expect(counts(ellipse)).toEqual([4, 4])
+  })
+
   test('names a vector made of several shapes "Vector"', async () => {
     const { editor } = await createEditorWithRenderer()
     const pageId = editor.state.currentPageId

@@ -6,11 +6,15 @@ export interface SVGNode {
   children: (SVGNode | string)[]
 }
 
-export function svg(
-  tag: string,
-  attrs: Record<string, string | number | undefined | null>,
-  ...children: (SVGNode | string | null | undefined | false)[]
-): SVGNode {
+type SVGAttrs = Record<string, string | number | undefined | null>
+type SVGChild = SVGNode | string | null | undefined | false
+
+export function svg(tag: string, attrs: SVGAttrs, ...children: SVGChild[]): SVGNode {
+  return svgElement(tag, attrs, children)
+}
+
+/** `svg` with its children as one list, which may be as long as a layer's children. */
+export function svgElement(tag: string, attrs: SVGAttrs, children: readonly SVGChild[]): SVGNode {
   const cleaned: Record<string, string | number> = {}
   for (const [k, v] of Object.entries(attrs)) {
     if (v != null) cleaned[k] = v

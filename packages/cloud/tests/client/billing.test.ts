@@ -1,6 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { CloudBillingError, createCloudAPIClient, createCloudBillingClient } from '#cloud/client'
+import {
+  CloudBillingError,
+  CloudServiceInsecureEndpointError,
+  createCloudAPIClient,
+  createCloudBillingClient
+} from '#cloud/client'
 import { CLOUD_BILLING_API_PATHS } from '#cloud/contract'
 
 const invalidated: string[] = []
@@ -90,6 +95,43 @@ describe('Cloud billing client', () => {
       'http://checkout.example.com/session'
     ]) {
       await expect(billing(() => Response.json({ url })).client.portal()).rejects.toThrow()
+    }
+  })
+
+  test('sends a token only over HTTPS, or in the clear only to a loopback address', async () => {
+    // A name such as localhost is whatever the resolver answers, so only loopback addresses count.
+    for (const endpoint of [
+      'http://billing.example.com',
+      'http://10.0.0.5:8787',
+      'http://localhost:8787',
+      'http://billing.localhost:8787'
+    ]) {
+      let signed = 0
+      let sent = 0
+      const client = createCloudBillingClient({
+        endpoint,
+        tokens: {
+          async token() {
+            signed++
+            return 'billing-token'
+          },
+          invalidate: tokens.invalidate
+        },
+        fetch: async () => {
+          sent++
+          return Response.json({ url: 'https://billing.stripe.com/session' })
+        }
+      })
+      await expect(client.portal()).rejects.toBeInstanceOf(CloudServiceInsecureEndpointError)
+      expect({ signed, sent }).toEqual({ signed: 0, sent: 0 })
+    }
+    for (const endpoint of ['http://127.0.0.1:8787', 'http://[::1]:8787']) {
+      const client = createCloudBillingClient({
+        endpoint,
+        tokens,
+        fetch: async () => Response.json({ url: 'https://billing.stripe.com/session' })
+      })
+      expect(await client.portal()).toBe('https://billing.stripe.com/session')
     }
   })
 })

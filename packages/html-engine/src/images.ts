@@ -7,7 +7,7 @@
 type Size = [width: number, height: number]
 
 function ascii(bytes: Uint8Array, at: number, length: number): string {
-  return String.fromCharCode(...bytes.subarray(at, at + length))
+  return Array.from(bytes.subarray(at, at + length), (code) => String.fromCharCode(code)).join('')
 }
 
 function webpSize(bytes: Uint8Array, view: DataView): Size | null {

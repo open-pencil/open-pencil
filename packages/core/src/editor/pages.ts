@@ -269,6 +269,18 @@ export function createPageActions(ctx: EditorContext, drawing?: PageDrawing) {
     return preparation
   }
 
+  /**
+   * Lays out the page on screen again when what sized its text has changed since, as for a page
+   * shown before any canvas could measure text, which preparing it leaves to the canvas.
+   */
+  function layOutStaleCurrentPage(): void {
+    const pageId = ctx.state.currentPageId
+    if (ctx.graph.getNode(pageId)?.type !== 'CANVAS' || pageLayouts.isCurrent(pageId)) return
+    ctx.graph.applyDerivedLayoutDuring(() => computeAllLayouts(ctx.graph, pageId))
+    pageLayouts.record(pageId)
+    ctx.requestRender()
+  }
+
   async function switchPage(pageId: string, options: SwitchPageOptions = {}): Promise<void> {
     const prepared = await preparePage(pageId, options)
     if (prepared) commitPageSwitch(prepared)
@@ -351,6 +363,7 @@ export function createPageActions(ctx: EditorContext, drawing?: PageDrawing) {
     preparePage,
     commitPageSwitch,
     switchPage,
+    layOutStaleCurrentPage,
     switchToNextPage: () => switchToAdjacentPage(1),
     switchToPreviousPage: () => switchToAdjacentPage(-1),
     addPage,

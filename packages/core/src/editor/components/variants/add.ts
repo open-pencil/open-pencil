@@ -1,4 +1,5 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { createComponentPropertyId } from '@open-pencil/scene-graph/components'
 import { buildVariantName } from '@open-pencil/scene-graph/variant-name'
 
@@ -118,7 +119,7 @@ export function appendVariant(
   if (!set || (nextValue && !definition)) return undefined
   assertNodeEditable(ctx.graph, source.id)
   const variants = getComponentSetVariants(ctx.graph, setId)
-  const bottom = Math.max(...variants.map((variant) => variant.y + variant.height))
+  const bottom = maxOf(variants.map((variant) => variant.y + variant.height))
   const value =
     definition && nextValue
       ? nextVariantValue(getVariantOptions(ctx.graph, setId, definition.id))

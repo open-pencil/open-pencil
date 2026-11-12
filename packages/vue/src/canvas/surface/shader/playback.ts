@@ -9,6 +9,7 @@ import {
   type EditorState
 } from '@open-pencil/core'
 import type { SkiaRenderer } from '@open-pencil/core/canvas'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 import {
   readShaderPaints,
@@ -142,8 +143,8 @@ export function useShaderPlayback(options: {
   /** How many pixels a shader painted over `bounds` covers on screen, at most. */
   function screenSize(bounds: Rect[]): { width: number; height: number } {
     const scale = getView().zoom * (window.devicePixelRatio || 1)
-    const width = Math.max(...bounds.map((rect) => rect.width)) * scale
-    const height = Math.max(...bounds.map((rect) => rect.height)) * scale
+    const width = maxOf(bounds.map((rect) => rect.width)) * scale
+    const height = maxOf(bounds.map((rect) => rect.height)) * scale
     const fit = Math.min(1, MAX_PLAY_EDGE / Math.max(width, height, 1))
     return {
       width: Math.max(1, Math.round(width * fit)),
