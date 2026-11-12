@@ -1,5 +1,6 @@
 import { expect, test } from '#tests/e2e/fixtures'
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { showView } from '#tests/helpers/canvas/page-scene'
 import {
   createFallbackText,
   createWrappedText,
@@ -35,6 +36,7 @@ test('fallback text with an unloaded primary keeps its weight after saving and r
   await saveCopyAndReopenFallbackText(page)
 
   expect(await readFallbackText(page, sampleId)).toEqual({ text: 'Missing', glyphs: 7 })
+  await showView(page, { zoom: 2, panX: 40, panY: 40 })
   await canvas.waitForRender()
   canvas.assertNoErrors()
   // Text fills too little of the canvas for the default percentage tolerance to catch bad outlines.

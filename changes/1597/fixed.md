@@ -1,1 +1,1 @@
-- Saved text keeps the weight and outlines of fallback fonts, including characters supplied by a coverage shard.
+- Text in a font that is not available draws its fallback at the text's weight instead of an emboldened regular face, and saves the same outlines.

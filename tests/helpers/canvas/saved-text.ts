@@ -107,8 +107,6 @@ export async function saveCopyAndReopenFallbackText(page: Page) {
     })
     if (!saved) throw new Error('Save did not produce a file')
     await store.openFigFile(new File([new Uint8Array(saved)], 'Fallback.fig'))
-    store.centerOn(160, 50, 1)
-    store.requestRender()
   })
 }
 

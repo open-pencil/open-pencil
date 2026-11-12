@@ -11,7 +11,11 @@ import { FIXTURES } from '@open-pencil/test-support/paths'
 import { getCanvasKit } from '#core/canvaskit'
 import { withFigExportRuntime } from '#core/io/formats/fig/export/runtime'
 import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
-import { getGlyphOutlineMetricsSync, glyphOutlineSourceSync } from '#core/text/font/glyphs'
+import {
+  getGlyphOutlineMetricsSync,
+  glyphOutlineSourceSync,
+  shapedAdvancesSync
+} from '#core/text/font/glyphs'
 import { fontManager } from '#core/text/font/manager'
 
 const testFont = (name: string) => join(FIXTURES, 'fonts', name)
@@ -403,18 +407,20 @@ describe('text shaping for saved glyphs', () => {
 
 describe('saved outlines use the same font file as the paragraph', () => {
   test.each([400, 700])(
-    'keeps an unloaded primary font’s fallback weight at %s',
+    'draws and outlines an unloaded primary font’s fallback at weight %s',
     async (weight) => {
       const text = 'Missing'
-      const expected = expectDefined(
-        glyphOutlineSourceSync('Inter', 'Regular', [{ axis: 'wght', value: weight }])
-      )
+      const variations = [{ axis: 'wght', value: weight }]
+      const expected = expectDefined(glyphOutlineSourceSync('Inter', 'Regular', variations))
+      const advances = expectDefined(shapedAdvancesSync('Inter', 'Regular', text, 13, variations))
       const shaped = expectDefined(
         await shape({ text, fontFamily: 'Unloaded Outline Primary', fontWeight: weight })
       )
       expect(shaped.glyphs).toHaveLength(text.length)
-      for (const glyph of shaped.glyphs) {
+      for (const [position, glyph] of shaped.glyphs.entries()) {
         const index = expectDefined(glyph.firstCharacter)
+        // The paragraph lays the fallback out at that instance, not an emboldened default one.
+        expect(glyph.advance).toBeCloseTo(advances[position].advance, 2)
         expect(glyph.commands).toEqual(expected.outline(expected.glyphOf(text[index]), 13))
       }
     }
