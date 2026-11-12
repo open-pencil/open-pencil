@@ -34,6 +34,7 @@ import { useAIChat } from '@/app/ai/chat/use'
 import { useEditorStore } from '@/app/editor/active-store'
 import { useCanvasCollaborationAwareness } from '@/app/editor/canvas/collaboration-awareness'
 import { createCanvasContextSelection } from '@/app/editor/canvas/context-selection'
+import { keepDrawingStillAsCanvasMoves } from '@/app/editor/canvas/layout-shift'
 import { canvasOverlayObstacles } from '@/app/editor/canvas/obstacles'
 import { useFollowView } from '@/app/presence/follow-view'
 import { appRuntimeConfig } from '@/app/runtime/config'
@@ -83,6 +84,8 @@ const onViewportResize = (width: number, height: number) => {
   if (paneId) store.resizePane(paneId, width, height)
   if (isActivePane.value) store.setViewportSize(width, height)
 }
+const onViewportMove = (dx: number, dy: number) =>
+  keepDrawingStillAsCanvasMoves(store, paneId, dx, dy)
 
 const { updateCursor } = useCanvasCollaborationAwareness(store)
 
@@ -119,6 +122,7 @@ useCanvas(sceneCanvasRef, store, {
   showRulers: false,
   getRenderState,
   onViewportResize,
+  onViewportMove,
   onPresentation: (colorSpace) => {
     store.state.canvasPresentation = colorSpace
   }

@@ -1,3 +1,4 @@
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
@@ -83,6 +84,49 @@ test('Cmd+Backslash shows panels again and keeps the canvas', async () => {
 
   await expect(editor.page.getByTestId('layers-panel')).toBeVisible()
   expect(await keptCanvases()).toEqual({ total: hidden, kept: hidden })
+  editor.canvas.assertNoErrors()
+})
+
+async function screenPositionOf(point: Vector) {
+  const box = expectDefined(
+    await editor.page.getByTestId('scene-canvas-element').boundingBox(),
+    'scene canvas bounds'
+  )
+  const view = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) {
+      throw new Error('OpenPencil store not initialized')
+    }
+    const { panX, panY, zoom } = store.state
+    return { panX, panY, zoom }
+  })
+  return {
+    x: Math.round(box.x + view.panX + point.x * view.zoom),
+    y: Math.round(box.y + view.panY + point.y * view.zoom)
+  }
+}
+
+test('hiding and showing the panels keeps the drawing where it is on screen', async () => {
+  const layer = { x: 120, y: 140 }
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) {
+      throw new Error('OpenPencil store not initialized')
+    }
+    Object.assign(store.state, { panX: 57, panY: -23, zoom: 1.75 })
+    store.requestRepaint()
+  })
+  await editor.canvas.waitForRender()
+  await expect(editor.page.getByTestId('layers-panel')).toBeVisible()
+  const shown = await screenPositionOf(layer)
+
+  await editor.page.keyboard.press('ControlOrMeta+\\')
+  await expect(editor.page.getByTestId('layers-panel')).not.toBeVisible()
+  await expect.poll(() => screenPositionOf(layer)).toEqual(shown)
+
+  await editor.page.keyboard.press('ControlOrMeta+\\')
+  await expect(editor.page.getByTestId('layers-panel')).toBeVisible()
+  await expect.poll(() => screenPositionOf(layer)).toEqual(shown)
   editor.canvas.assertNoErrors()
 })
 
