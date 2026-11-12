@@ -74,6 +74,12 @@ export interface FigmaAPIOptions {
    */
   flushComponentSync?: () => void
   /**
+   * The renderer that measures for the API, for a host that already tells its renderers about
+   * edits, as the editor does. The API reads it on each use and does not listen to the graph,
+   * so an API made for one call holds nothing once the call ends. `setRenderer` replaces it.
+   */
+  renderer?: () => SkiaRenderer | null
+  /**
    * The view of a host that shows the document, which `figma.viewport` reads and moves. Without
    * one the API keeps a view of its own, sized as a 1280 × 720 window.
    */
@@ -140,7 +146,7 @@ export class FigmaAPI extends FigmaStructureMethods implements NodeProxyHost {
   #nodeCache = new Map<string, FigmaNodeProxy>()
   #nodeTypes = new Map<string, string | undefined>()
   #pageProxies = new WeakSet<FigmaNodeProxy>()
-  #renderer: SkiaRenderer | null = null
+  #renderer: () => SkiaRenderer | null = () => null
   #unbindRendererEvents: (() => void) | null = null
   /** The interface theme new sections take their fill from, as in Figma. */
   theme: InterfaceTheme = 'light'
@@ -164,6 +170,7 @@ export class FigmaAPI extends FigmaStructureMethods implements NodeProxyHost {
     this.#fetch = options.fetch ?? ((input, init) => fetch(input, init))
     if (options.signal) cancelScriptWaits(this, options.signal)
     this.#prepareFontList = options.prepareFontList
+    if (options.renderer) this.#renderer = options.renderer
     if (options.loadPage)
       setPageHost(this, { load: options.loadPage, pageOfNode: options.pageOfNode })
     this.variables = new FigmaVariablesAPI(graph)
@@ -174,18 +181,19 @@ export class FigmaAPI extends FigmaStructureMethods implements NodeProxyHost {
   }
 
   get renderer(): SkiaRenderer | null {
-    return this.#renderer
+    return this.#renderer()
   }
 
   /**
    * The renderer that measures for the API: geometry, boolean results, and flattened vectors. It
    * keeps paths between readings, so the API tells it when a layer's shape changes or a change
-   * lands inside a boolean operation, as the editor does for its renderers.
+   * lands inside a boolean operation, as the editor does for its renderers. A host whose
+   * renderers it already tells passes `FigmaAPIOptions.renderer` instead.
    */
   setRenderer(renderer: SkiaRenderer | null): void {
     this.#unbindRendererEvents?.()
     this.#unbindRendererEvents = null
-    this.#renderer = renderer
+    this.#renderer = () => renderer
     if (!renderer) return
     const graph = this.#graph
     const invalidate = (id: string | null | undefined) =>
@@ -213,7 +221,7 @@ export class FigmaAPI extends FigmaStructureMethods implements NodeProxyHost {
   }
 
   get groupFitOptions(): GroupFitOptions {
-    return groupFitOptions(this.#renderer, this.#graph)
+    return groupFitOptions(this.#renderer(), this.#graph)
   }
 
   get currentPageId(): string {
