@@ -21,9 +21,7 @@ import {
   solidFillOpacity,
   SVG_STROKE_CAP,
   SVG_STROKE_JOIN,
-  SVG_BLEND_MODE,
   type SVGExportContext,
-  type SVGFontAlias,
   type SVGExportWarning
 } from './defs'
 import {
