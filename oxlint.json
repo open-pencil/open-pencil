@@ -191,6 +191,7 @@
     "@open-pencil/structure/non-component-directories-kebab-case": "error",
     "@open-pencil/structure/no-component-root-sibling-folder": "error",
     "@open-pencil/structure/no-flat-kiwi-modules": "error",
+    "@open-pencil/structure/story-titles": "error",
     "@open-pencil/runtime/no-bun-globals-in-cli": "error",
     "@open-pencil/structure/no-top-level-prefixed-test-files": "error",
     "@open-pencil/editor/no-profile-inputs": "error",
