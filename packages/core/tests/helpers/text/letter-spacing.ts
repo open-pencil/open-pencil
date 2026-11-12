@@ -1,7 +1,6 @@
 import { expect } from 'bun:test'
 
 import type { CanvasKit, ShapedLine, TypefaceFontProvider } from '@open-pencil/canvaskit'
-
 import { SceneGraph, type SceneNode, type TextLength } from '@open-pencil/scene-graph'
 import { textLengthPixels } from '@open-pencil/scene-graph/text'
 import { expectDefined } from '@open-pencil/test-support/assert'
@@ -72,7 +71,11 @@ export function spacingAt(props: Props, index: number): number {
 }
 
 function casedText(props: Props): Pick<SceneNode, 'text' | 'textCase' | 'styleRuns'> {
-  return { text: props.text, textCase: props.textCase ?? 'ORIGINAL', styleRuns: props.styleRuns ?? [] }
+  return {
+    text: props.text,
+    textCase: props.textCase ?? 'ORIGINAL',
+    styleRuns: props.styleRuns ?? []
+  }
 }
 
 function sourceIndex(props: Props, shownIndex: number): number {

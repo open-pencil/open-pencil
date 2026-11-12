@@ -85,7 +85,9 @@ describe('paragraphs laid out apart fit their lines apart', () => {
   test('a paragraph whose last word has no spacing wraps no other paragraph sooner', () => {
     const heading = 'Mixed spacing heading words'
     const body = 'Second paragraph with wide letter spacing here'
-    const styleRuns = [{ start: heading.indexOf('words'), length: 5, style: { letterSpacing: pixels(0) } }]
+    const styleRuns = [
+      { start: heading.indexOf('words'), length: 5, style: { letterSpacing: pixels(0) } }
+    ]
     const spaced = { textAutoResize: 'HEIGHT' as const, letterSpacing: pixels(4) }
     const lineCount = (props: Props) => {
       const layout = laidOut(props)
