@@ -1,12 +1,12 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 import { createEditor, executeAtomicTool, type DocumentChange } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
 import { ALL_TOOLS, type ToolDef } from '@open-pencil/core/tools'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { captureGraphCheckpoint } from '@open-pencil/scene-graph/checkpoint'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 
 import { diffFields } from '#core/editor/history/diff'
 import { isAtomicTool } from '#core/tools/schema'
@@ -108,11 +108,9 @@ const ARGS: Record<string, (t: Targets, f: Fixture) => Record<string, unknown>> 
     variable_id: f.variables.size
   }),
   set_variable: (_t, f) => ({ id: f.variables.color, mode: f.variables.mode, value: '#00ff00' }),
-  unbind_variable: (t) => ({ node_id: t.rect, field: 'opacity' }),
   set_text: (t) => ({ id: t.text, text: 'Changed text' }),
   set_font: (t) => ({ id: t.text, family: 'Inter', style: 'Regular', size: 20 }),
-  set_font_range: (t) => ({ id: t.text, start: 0, end: 5, size: 22, color: '#ff0000' }),
-  set_text_resize: (t) => ({ id: t.text, mode: 'HEIGHT' }),
+  set_text_range: (t) => ({ id: t.text, start: 0, end: 5, size: 22, color: '#ff0000' }),
   set_text_properties: (t) => ({
     id: t.text,
     align_horizontal: 'CENTER',
@@ -121,14 +119,15 @@ const ARGS: Record<string, (t: Targets, f: Fixture) => Record<string, unknown>> 
     direction: 'RTL',
     text_decoration: 'UNDERLINE'
   }),
-  set_rotation: (t) => ({ id: t.placed, angle: 30 }),
-  set_opacity: (t) => ({ id: t.rect, value: 0.5 }),
   set_radius: (t) => ({ id: t.rect, radius: 6, top_left: 2 }),
-  set_minmax: (t) => ({ id: t.rect, min_width: 10, max_width: 90, min_height: 5, max_height: 80 }),
-  set_visible: (t) => ({ id: t.rect, value: false }),
-  set_blend: (t) => ({ id: t.rect, mode: 'MULTIPLY' }),
-  set_locked: (t) => ({ id: t.rect, value: true }),
-  set_stroke_align: (t) => ({ id: t.rect, align: 'OUTSIDE' }),
+  set_size_limits: (t) => ({
+    id: t.rect,
+    min_width: 10,
+    max_width: 90,
+    min_height: 5,
+    max_height: 80
+  }),
+  set_blend_mode: (t) => ({ id: t.rect, mode: 'MULTIPLY' }),
   set_fill: (t) => ({ id: t.rect, color: '#00ff00' }),
   set_stroke: (t) => ({ id: t.rect, color: '#112233', weight: 2, align: 'CENTER' }),
   set_layout: (t) => ({
@@ -159,9 +158,11 @@ const ARGS: Record<string, (t: Targets, f: Fixture) => Record<string, unknown>> 
     y: 6,
     width: 60,
     height: 30,
+    rotation: 30,
     opacity: 0.4,
     corner_radius: 3,
     visible: false,
+    locked: true,
     name: 'Renamed'
   }),
   set_effects: (t) => ({ id: t.rect, type: 'DROP_SHADOW', color: '#000000', radius: 6 })

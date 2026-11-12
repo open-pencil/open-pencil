@@ -34,5 +34,9 @@
   "designTokensLeftOut": "Exclus des design tokens : {names}.",
   "designTokensAmbiguous": "Ces styles renvoient à une variable dont une autre collection a aussi le chemin ; d’autres outils risquent de lire la mauvaise : {names}.",
   "designTokensImported": "{count} design tokens importés.",
-  "unsupportedVariableExpressions": "OpenPencil ne sait pas encore évaluer ces variables ; les calques gardent les valeurs enregistrées dans le fichier : {names}."
+  "unsupportedVariableExpressions": "OpenPencil ne sait pas encore évaluer ces variables ; les calques gardent les valeurs enregistrées dans le fichier : {names}.",
+  "savingDocument": "Enregistrement du document…",
+  "saveFailedRetry": "Réessayer l’enregistrement",
+  "fileChangedOnDisk": "« {name} » a été modifié sur le disque. Vos modifications non enregistrées sont conservées ; l’enregistrement remplacera le fichier.",
+  "reloadDiscardingChanges": "Recharger"
 }

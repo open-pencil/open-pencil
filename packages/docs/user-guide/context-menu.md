@@ -67,8 +67,8 @@ Moves the selected node to the top or bottom of its parent's child list.
 | Ungroup | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>G</kbd> | <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>G</kbd> |
 | Add auto layout | <kbd>⇧</kbd><kbd>A</kbd> | <kbd>Shift</kbd> + <kbd>A</kbd> |
 
-- **Group** requires 2 or more selected nodes
-- **Ungroup** appears when a group is selected — children are reparented to the group's parent
+- **Group** wraps one or more layers; layers in different parents get a group in each
+- **Ungroup** takes apart groups, frames, boolean operations, and sections, keeping their children where they are; the container's own fill, stroke, and effects go with it. Components and instances stay whole
 - **Add auto layout** wraps the selection in a new [auto layout](./auto-layout) frame
 
 ## Component Actions

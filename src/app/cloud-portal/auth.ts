@@ -102,8 +102,10 @@ export function createPortalAuth(discovery: CloudDiscovery, options: { captcha?:
         : done(undefined)
     },
 
-    async signOut(): Promise<void> {
-      await auth.signOut()
+    /** Ends this browser's session; a failure leaves it signed in, to try again. */
+    async signOut(): Promise<CloudAuthResult> {
+      const result = await auth.signOut()
+      return result.error ? cloudAuthFailure(result.error) : done(undefined)
     }
   }
 }

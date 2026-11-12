@@ -145,11 +145,7 @@ function onOpenChange(open: boolean): void {
     data-test-id="app-settings-dialog"
     @update:open="onOpenChange"
   >
-    <AppDialogHeader
-      :heading="settings.title"
-      :description="settings.description"
-      :close-label="common.close"
-    >
+    <AppDialogHeader :heading="settings.title" :description="settings.description">
       <!-- An open editor turns the title into the path back to where it was opened from. On a
            phone the section picker below already names the section, so the path starts at the
            list. -->

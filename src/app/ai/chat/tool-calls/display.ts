@@ -81,11 +81,11 @@ export function toolNodeIds(part: ToolCallPart): string[] {
   }
   if (part.state === 'output-available' && isRecord(part.output)) {
     const { output } = part
-    if (typeof output.deleted !== 'string') {
-      for (const key of ['id', 'ids', 'selection', 'results', 'created']) {
-        for (const id of stringIds(output[key])) ids.add(id)
-      }
+    for (const key of ['id', 'ids', 'selection', 'results', 'created', 'clones']) {
+      for (const id of stringIds(output[key])) ids.add(id)
     }
+    // A deleted node has nothing left to bring into view.
+    for (const id of stringIds(output.deleted)) ids.delete(id)
   }
   return [...ids]
 }
@@ -117,9 +117,9 @@ const searchOutputSchema = v.union([
   )
 ])
 
-/** The pages a `web_search` call found, to show as sources rather than JSON. */
+/** The pages a `search_web` call found, to show as sources rather than JSON. */
 export function toolWebResults(part: ToolCallPart): SearchResult[] | null {
-  if (part.state !== 'output-available' || toolName(part) !== 'web_search') return null
+  if (part.state !== 'output-available' || toolName(part) !== 'search_web') return null
   const found = v.safeParse(searchOutputSchema, part.output)
   return found.success ? found.output.results : null
 }

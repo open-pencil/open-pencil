@@ -7,6 +7,7 @@ import {
   defineAppDatabase,
   type AppDatabase,
   readStoredBinary,
+  storedBinary,
   type StoredBinary
 } from '@/app/storage/idb'
 import {
@@ -78,6 +79,7 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
 
     async writeCanvas(input: LocalCanvasWriteInput) {
       const storeBinary = await binaryStorage()
+      const fig = await storedBinary(input.figBytes)
       const transaction = (await database.open()).transaction(['meta', 'fig', 'thumb'], 'readwrite')
       const figStore = transaction.objectStore('fig')
       const thumbStore = transaction.objectStore('thumb')
@@ -85,7 +87,7 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
       const existing = (await metaStore.get(input.id)) ?? null
 
       let hasThumb = existing?.hasThumb ?? false
-      await figStore.put(storeBinary(input.figBytes), input.id)
+      await figStore.put(fig, input.id)
 
       if (input.thumbBytes != null) {
         if (input.thumbBytes.byteLength > 0) {

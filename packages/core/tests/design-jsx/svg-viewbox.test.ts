@@ -2,11 +2,11 @@ import { describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { renderJSX } from '@open-pencil/core/design-jsx'
 import {
   comparePNGs,
   createCanvasKitRasterCodec,
-  initCanvasKit,
   renderNodesToImage
 } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
@@ -145,7 +145,7 @@ describe('inline SVG viewBox origin', () => {
     const graph = new SceneGraph()
     const [frame] = await renderJSX(graph, jsx)
     const page = expectDefined(graph.getPages()[0], 'page')
-    const ck = await initCanvasKit()
+    const ck = await getCanvasKit()
     const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1), 'surface'))
     try {
       const png = expectDefined(

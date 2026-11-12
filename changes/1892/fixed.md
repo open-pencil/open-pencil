@@ -1,1 +1,0 @@
-- Save with Mod+S while editing text on the canvas or typing in a field, instead of the browser offering to save the page.

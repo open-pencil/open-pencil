@@ -99,6 +99,7 @@
   "reportNotePlaceholder": "Ce que vous avez fait, ce qui s’est passé et ce que vous attendiez à la place.",
   "reportEmail": "E-mail (facultatif)",
   "reportEmailHint": "Seulement si vous souhaitez que nous vous recontactions.",
+  "reportEmailInvalid": "Saisissez une adresse e-mail, ou laissez vide.",
   "reportActivity": "Inclure l’activité récente",
   "reportActivityDescription": "Les 50 derniers événements des Diagnostics, comme les erreurs et les durées. Jamais les messages du chat ni les sorties d’outils.",
   "reportDocument": "Joindre ce document",

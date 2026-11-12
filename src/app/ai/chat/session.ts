@@ -57,7 +57,8 @@ export async function createACPTransport(
   providerID: AIProviderID,
   store?: EditorStore,
   onUsage?: (usage: AgentTurnUsage) => void,
-  agentSession?: AgentSessionLink
+  agentSession?: AgentSessionLink,
+  onAgentError?: (error: unknown) => void
 ) {
   const agentDef = acpAgentFor(providerID)
   if (!agentDef) throw new Error(`Unknown ACP agent: ${providerID}`)
@@ -71,7 +72,9 @@ export async function createACPTransport(
     onUsage,
     resume: agentSession?.resume ?? null,
     onSession:
-      agentSession && ((id) => agentSession.record(id === null ? null : { agent: agentDef.id, id }))
+      agentSession &&
+      ((id) => agentSession.record(id === null ? null : { agent: agentDef.id, id })),
+    onAgentError
   })
 }
 
@@ -122,6 +125,13 @@ export function createChatSessionManager({
     activeProviderError ??= error
   }
 
+  // What an agent answered, for diagnostics only: the chat shows the agent's text, which can
+  // quote the conversation, while a raw agent error keeps just its code.
+  let activeAgentError: unknown = null
+  function captureAgentError(error: unknown): void {
+    activeAgentError ??= error
+  }
+
   function handleChatFinish(
     context: AIDiagnosticContext,
     {
@@ -145,6 +155,7 @@ export function createChatSessionManager({
 
   function clearFailure(): void {
     activeProviderError = null
+    activeAgentError = null
     failure.value = null
   }
 
@@ -179,7 +190,8 @@ export function createChatSessionManager({
       store,
       ({ model, ...tokens }) =>
         recordModelStepCompleted({ provider, model: model ?? provider, ...tokens }, context),
-      agentSession
+      agentSession,
+      captureAgentError
     )
     acpTransportInstance = transport
     return transport as ChatTransport<UIMessage>
@@ -302,7 +314,9 @@ export function createChatSessionManager({
         messages,
         onError: (error) => {
           const reportedError = activeProviderError ?? error
+          const diagnosedError = activeAgentError ?? reportedError
           activeProviderError = null
+          activeAgentError = null
           const signInOnly = AI_PROVIDERS.some(
             (provider) => provider.id === chatProviderID && provider.signInOnly
           )
@@ -316,7 +330,7 @@ export function createChatSessionManager({
                 resetsAt: refusal.resetsAt ?? undefined
               }
             : classified
-          const { errorName, errorCode, message, stack } = diagnosticErrorDetails(reportedError)
+          const { errorName, errorCode, message, stack } = diagnosticErrorDetails(diagnosedError)
           recordChatFailed({ errorName, errorCode, message, stack }, diagnosticContext)
         },
         onFinish: (event) => {

@@ -1,7 +1,7 @@
 // Child cloning and property synchronization shared by instance creation, swap, and sync.
 import { uniq } from 'es-toolkit/array'
 import { pick } from 'es-toolkit/object'
-import { isEmptyObject, isEqual } from 'es-toolkit/predicate'
+import { isEqual } from 'es-toolkit/predicate'
 
 import { cloneNodeProps, copyEffects, copyFills, copyStrokes, copyStyleRuns } from '../copy'
 import type { NodeCloneMode } from '../copy'
@@ -10,11 +10,12 @@ import { scaleNodeChanges } from '../scaling/node'
 import { ownsSlotContent, slotPropertyId } from '../slots/frames'
 import type { SceneNode } from '../types'
 import { resolvedNumericBindings } from '../variables/bindings'
+import { isNumericVariableBindingField } from '../variables/fields'
 import {
-  effectBindingTarget,
-  isNumericVariableBindingField,
-  paintBindingTarget
-} from '../variables/fields'
+  applyBoundPaintColorsIn,
+  copyAppliedBoundPaints,
+  keepCopyBoundPaints
+} from '../variables/paints'
 import { scaleVariableBindingUnits } from '../variables/units'
 import { applyEnclosingAssignments, assignedFieldValues, propertyDrivenFields } from './assignments'
 import { keepOwnContentSize, remeasureChangedText, type SyncedPlacement } from './content-size'
@@ -26,16 +27,20 @@ import {
   type InstanceSyncContext
 } from './copies'
 import { INSTANCE_SYNC_FIELD_OWNERS, INSTANCE_SYNC_FIELDS } from './fields'
-import { ownsSelfFillField, sourceWithEffectiveFill } from './main-component'
+import { sourceWithEffectiveFill } from './main-component'
+import { matchFallbackChildren, matchLinkedChildren } from './matching'
 import {
-  bindingOverrideField,
   copiedComponentLayerId,
   hasInstanceOverride as hasNodeInstanceOverride,
-  overriddenBindingField,
-  setInstanceOverride,
   type InstanceOverrideState
 } from './overrides'
 import { fitCopiedGroup, PLACEMENT_FIELDS, placedByConstraints } from './placement'
+import {
+  childBindingProtection,
+  isProtectedSyncField,
+  NOTHING_PROTECTED,
+  syncBindingFields
+} from './protection'
 import { followVectorGeometry } from './vector-geometry'
 
 function setSceneProp<K extends keyof SceneNode>(
@@ -78,67 +83,6 @@ export function copyProp(
   }
 }
 
-export function bindingProtection(scopes: ReadonlySet<string>[]): (field: string) => boolean {
-  const fields = new Set<string>()
-  for (const scope of scopes) {
-    const perField = [...scope].some((field) => overriddenBindingField(field) !== null)
-    for (const field of scope) {
-      if (field !== 'boundVariables' || !perField) fields.add(field)
-    }
-  }
-  return (field) => {
-    if (fields.has(field)) return true
-    // Paints and effects an instance set itself own their bindings too, bound or not.
-    const binding = overriddenBindingField(field)
-    if (binding === null) return false
-    const paint = paintBindingTarget(binding)
-    if (paint) return fields.has(paint.list)
-    return fields.has('effects') && effectBindingTarget(binding) !== null
-  }
-}
-
-function isUnbound(node: SceneNode): boolean {
-  return isEmptyObject(node.boundVariables) && isEmptyObject(node.variableBindingScales)
-}
-
-export function syncBindingFields(
-  target: SceneNode,
-  source: SceneNode,
-  updates: Partial<SceneNode>,
-  protectedField: (field: string) => boolean
-): void {
-  if (protectedField('boundVariables') || (isUnbound(source) && isUnbound(target))) {
-    return
-  }
-  const bindings = { ...source.boundVariables }
-  const scales = { ...source.variableBindingScales }
-  for (const field of new Set([
-    ...Object.keys(source.boundVariables),
-    ...Object.keys(target.boundVariables),
-    ...Object.keys(target.variableBindingScales)
-  ])) {
-    if (!protectedField(bindingOverrideField(field))) continue
-    if (!Object.hasOwn(target.boundVariables, field)) Reflect.deleteProperty(bindings, field)
-    else bindings[field] = target.boundVariables[field]
-    if (target.variableBindingScales[field] === undefined) Reflect.deleteProperty(scales, field)
-    else scales[field] = target.variableBindingScales[field]
-  }
-  updates.boundVariables = bindings
-  updates.variableBindingScales = scales
-}
-
-export function isProtectedSyncField(
-  node: SceneNode,
-  key: string,
-  protectedField: (field: string) => boolean
-): boolean {
-  return (
-    protectedField(key) ||
-    (key in node.boundVariables &&
-      (protectedField('boundVariables') || protectedField(bindingOverrideField(key))))
-  )
-}
-
 export function sourceInTargetCoordinates(source: SceneNode, targetScale: number): SceneNode {
   const factor = targetScale / source.componentScale
   if (!Number.isFinite(factor) || factor <= 0) throw new Error('Invalid component coordinate scale')
@@ -156,8 +100,6 @@ const SYNCED_FIELDS = INSTANCE_SYNC_FIELDS.filter((key) => key !== 'boundVariabl
   placement: PLACEMENT_FIELDS.has(key),
   position: key === 'x' || key === 'y'
 }))
-
-export const NOTHING_PROTECTED = (_field: string): boolean => false
 
 interface SyncedFieldsInput {
   compParent: SceneNode
@@ -208,6 +150,10 @@ export function updateSyncedProps(
   kept: (field: string) => boolean = () => false
 ): void {
   resolveBoundNumbersInPlace(graph, target, updates, kept)
+  if (updates.fills || updates.strokes || updates.boundVariables) {
+    applySyncedModes(graph, target, updates)
+    keepCopyBoundPaints(graph, target, updates)
+  }
   let changed: Partial<SceneNode> | undefined
   for (const key of Object.keys(updates)) {
     const current = target[key as keyof SceneNode]
@@ -248,11 +194,15 @@ function resolveBoundNumbersInPlace(
     (field) => isNumericVariableBindingField(field) && bound[field] && !kept(field)
   )
   if (synced.length === 0) return
-  // The modes the copy takes in this sync decide what its bindings resolve to.
-  if (updates.variableModes && !isEqual(updates.variableModes, target.variableModes))
-    graph.updateNode(target.id, { variableModes: updates.variableModes })
+  applySyncedModes(graph, target, updates)
   const resolved = resolvedNumericBindings(graph, { ...target, ...updates })
   Object.assign(updates, pick(resolved, synced as (keyof SceneNode)[]))
+}
+
+/** The modes the copy takes in this sync decide what its bindings resolve to. */
+function applySyncedModes(graph: SceneGraph, target: SceneNode, updates: Partial<SceneNode>): void {
+  if (updates.variableModes && !isEqual(updates.variableModes, target.variableModes))
+    graph.updateNode(target.id, { variableModes: updates.variableModes })
 }
 
 export function cloneChildInCoordinates(
@@ -264,10 +214,12 @@ export function cloneChildInCoordinates(
 ): SceneNode {
   const componentScale =
     (src.componentScale * targetParent.componentScale) / sourceParent.componentScale
-  return graph.createNode(src.type, targetParent.id, {
+  const clone = graph.createNode(src.type, targetParent.id, {
     ...cloneNodeProps(sourceInTargetCoordinates(src, componentScale), src.id, mode),
     componentScale
   })
+  copyAppliedBoundPaints(src, clone)
+  return clone
 }
 
 export function cloneChildrenWithMapping(
@@ -292,95 +244,6 @@ export function cloneChildrenWithMapping(
     if (src.childIds.length > 0) {
       cloneChildrenWithMapping(graph, childId, clone.id, mode)
     }
-  }
-}
-
-export function enclosingInstanceOverrideFields(graph: SceneGraph, node: SceneNode): Set<string>[] {
-  const fields: Set<string>[] = []
-  let parent = node.parentId ? graph.nodes.get(node.parentId) : undefined
-  while (parent) {
-    if (parent.type === 'INSTANCE') {
-      fields.push(new Set(parent.instanceOverrides.descendants.get(node.id)?.keys()))
-    }
-    parent = parent.parentId ? graph.nodes.get(parent.parentId) : undefined
-  }
-  return fields
-}
-
-function childBindingProtection(
-  graph: SceneGraph,
-  child: SceneNode,
-  overrides: InstanceOverrideState
-) {
-  const fields = enclosingInstanceOverrideFields(graph, child)
-  fields.push(new Set(overrides.descendants.get(child.id)?.keys()))
-  if (child.instanceOverrides.self.size === 0 && fields.every((scope) => scope.size === 0)) {
-    return NOTHING_PROTECTED
-  }
-  const protectedField = bindingProtection(fields)
-  return (field: string) => protectedField(field) || ownsSelfFillField(child, field)
-}
-
-function linkMatchedChild(
-  overrides: InstanceOverrideState,
-  instParentId: string,
-  instChild: SceneNode,
-  compChildId: string
-): void {
-  if (instChild.type === 'INSTANCE') {
-    setInstanceOverride(overrides, instParentId, instChild.id, 'sourceComponentId', compChildId)
-  } else {
-    instChild.componentId = compChildId
-  }
-}
-
-function matchFallbackChildren(
-  graph: SceneGraph,
-  compParent: SceneNode,
-  instParent: SceneNode,
-  instParentId: string,
-  overrides: InstanceOverrideState,
-  instChildMap: Map<string, SceneNode>,
-  usedInstChildIds: Set<string>
-): void {
-  const fallbackByType = new Map<SceneNode['type'], Map<string, SceneNode[]>>()
-  const remainingCandidateCount = new Map<SceneNode['type'], number>()
-  const unmatchedComponentCount = new Map<SceneNode['type'], number>()
-  for (const compChildId of compParent.childIds) {
-    if (instChildMap.has(compChildId)) continue
-    const child = graph.nodes.get(compChildId)
-    if (child) {
-      unmatchedComponentCount.set(child.type, (unmatchedComponentCount.get(child.type) ?? 0) + 1)
-    }
-  }
-  for (const childId of instParent.childIds) {
-    const child = graph.nodes.get(childId)
-    if (!child || usedInstChildIds.has(child.id)) continue
-    remainingCandidateCount.set(child.type, (remainingCandidateCount.get(child.type) ?? 0) + 1)
-    let byName = fallbackByType.get(child.type)
-    if (!byName) {
-      byName = new Map()
-      fallbackByType.set(child.type, byName)
-    }
-    const queue = byName.get(child.name)
-    if (queue) queue.push(child)
-    else byName.set(child.name, [child])
-  }
-
-  // Match by name and type with FIFO queues to preserve sibling order in linear time.
-  for (const compChildId of compParent.childIds) {
-    if (instChildMap.has(compChildId)) continue
-    const compChild = graph.nodes.get(compChildId)
-    if (!compChild) continue
-    const candidatesByName = fallbackByType.get(compChild.type)
-    const candidateCount = remainingCandidateCount.get(compChild.type) ?? 0
-    if (candidateCount > (unmatchedComponentCount.get(compChild.type) ?? 0)) continue
-    const match = candidatesByName?.get(compChild.name)?.shift()
-    if (!match) continue
-    remainingCandidateCount.set(compChild.type, candidateCount - 1)
-    instChildMap.set(compChildId, match)
-    usedInstChildIds.add(match.id)
-    linkMatchedChild(overrides, instParentId, match, compChildId)
   }
 }
 
@@ -463,27 +326,6 @@ function isCyclicSync(graph: SceneGraph, compParentId: string, instParentId: str
   return compParentId === instParentId || graph.isDescendant(instParentId, compParentId)
 }
 
-/** Children already linked to a component child by sourceComponentId or componentId. */
-function matchLinkedChildren(
-  graph: SceneGraph,
-  instParent: SceneNode,
-  instParentId: string,
-  overrides: InstanceOverrideState,
-  compChildIdSet: ReadonlySet<string>,
-  instChildMap: Map<string, SceneNode>,
-  usedInstChildIds: Set<string>
-): void {
-  for (const childId of instParent.childIds) {
-    const child = graph.nodes.get(childId)
-    if (!child) continue
-    const mappedComponentId = copiedComponentLayerId(overrides, instParentId, child)
-    if (mappedComponentId && compChildIdSet.has(mappedComponentId)) {
-      instChildMap.set(mappedComponentId, child)
-      usedInstChildIds.add(child.id)
-    }
-  }
-}
-
 /**
  * Pass 3 of a sync: bring along the copy of a layer moved here inside the component, bring back
  * one the sync removed when its layer returns, or clone a layer the instance has no copy of. A
@@ -519,6 +361,7 @@ function placeMissingChildren(
       cloneChildrenWithMapping(graph, compChildId, clone.id)
     }
     applyEnclosingAssignments(graph, clone)
+    applyBoundPaintColorsIn(graph, clone.id)
     instChildMap.set(compChildId, clone)
     usedInstChildIds.add(clone.id)
     context.matched.add(clone.id)

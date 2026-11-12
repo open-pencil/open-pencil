@@ -33,12 +33,15 @@ import type {
 } from '@/app/editor/tokens/model'
 import { SCOPES_BY_TYPE } from '@/app/editor/tokens/scopes'
 import ColorInput from '@/components/ColorPicker/ColorInput.vue'
+import PaintField from '@/components/inputs/PaintField.vue'
 import { BindingPill, VariablePicker } from '@/components/ui/binding'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import { useInlineSide } from '@/components/ui/direction/inline-side'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppTextarea from '@/components/ui/input/AppTextarea.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
+import { solidFill } from '@/components/ui/paint/swatch-trigger'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import AppCheckbox from '@/components/ui/toggle/AppCheckbox.vue'
@@ -298,6 +301,27 @@ function aliasId(modeId: string): string | undefined {
   return typeof value === 'object' && 'aliasId' in value ? value.aliasId : undefined
 }
 
+/** The variable button at the end of a mode's value field, which points the value at a variable. */
+const startSide = useInlineSide('start')
+
+function aliasPicker(modeId: string, modeName: string) {
+  return {
+    items: aliasCandidates,
+    selected: aliasId(modeId),
+    state: aliasId(modeId) ? ('bound' as const) : ('unbound' as const),
+    triggerLabel: singleMode.value
+      ? variables.value.useVariable
+      : `${modeName}: ${variables.value.useVariable}`,
+    searchPlaceholder: variables.value.searchVariables,
+    emptyLabel: variables.value.noMatchingVariables,
+    detachLabel: variables.value.detachVariable,
+    side: startSide.value,
+    'data-test-id': 'variables-use-variable',
+    onSelect: (id: string) => emit('alias', modeId, id),
+    onDetach: () => emit('detach', modeId)
+  }
+}
+
 /**
  * The modes whose color picker is open, each with the key its drag shares, so one picker session
  * is one undo step however many colors it passes through.
@@ -342,21 +366,24 @@ function cssNameDone(event: KeyboardEvent) {
       </PanelFieldGroup>
       <PanelFieldGroup :label="variables.cssName" :for="cssNameId">
         <Tip :label="variables.cssNameHint">
-          <AppInput
-            :id="cssNameId"
-            v-model="draft.cssName"
-            size="sm"
-            :placeholder="row.cssName"
-            :state="cssNameInvalid ? 'invalid' : 'idle'"
-            :aria-invalid="cssNameInvalid"
-            :aria-describedby="cssNameInvalid ? cssNameErrorId : cssNameHintId"
-            :ui="{ input: 'font-mono pl-7' }"
-            data-test-id="variables-css-name"
-            @change="commitCSSName"
-            @enter="cssNameDone"
-          >
-            <template #leading><span :class="ui.prefix()">--</span></template>
-          </AppInput>
+          <!-- A CSS name is code: --brand, prefix first, in either direction. -->
+          <div dir="ltr">
+            <AppInput
+              :id="cssNameId"
+              v-model="draft.cssName"
+              size="sm"
+              :placeholder="row.cssName"
+              :state="cssNameInvalid ? 'invalid' : 'idle'"
+              :aria-invalid="cssNameInvalid"
+              :aria-describedby="cssNameInvalid ? cssNameErrorId : cssNameHintId"
+              :ui="{ input: 'font-mono ps-7' }"
+              data-test-id="variables-css-name"
+              @change="commitCSSName"
+              @enter="cssNameDone"
+            >
+              <template #leading><span :class="ui.prefix()">--</span></template>
+            </AppInput>
+          </div>
         </Tip>
         <p v-if="cssNameInvalid" :id="cssNameErrorId" :class="ui.error()" role="alert">
           {{ variables.cssNameInvalid }}
@@ -399,22 +426,28 @@ function cssNameDone(event: KeyboardEvent) {
           @add-expression="addExpression(mode.modeId)"
           @remove-expression="clearExpression(mode.modeId)"
         >
-          <template #control>
+          <template #control="{ picker }">
             <ColorInput
               v-if="color(mode.modeId)"
               :color="color(mode.modeId) ?? { r: 0, g: 0, b: 0, a: 1 }"
+              tone="form"
               editable
               @update="emit('updateValue', mode.modeId, $event, colorGesture(mode.modeId))"
               @open-change="setPickerOpen(mode.modeId, $event)"
-            />
+            >
+              <template #binding><VariablePicker v-bind="picker" /></template>
+            </ColorInput>
             <AppInput
               v-else
               v-model="draft.values[mode.modeId]"
+              class="min-w-0 flex-1"
               :aria-label="singleMode ? variables.value : mode.name"
               size="sm"
               @change="commitValue(mode.modeId)"
               @enter="done"
-            />
+            >
+              <template #trailing><VariablePicker v-bind="picker" /></template>
+            </AppInput>
           </template>
           <template #below>
             <TokenCSSExpression
@@ -431,26 +464,33 @@ function cssNameDone(event: KeyboardEvent) {
           </template>
         </TokenValueEditor>
         <div v-else :class="ui.valueRow()">
-          <div v-if="alias(mode.modeId)" :class="ui.valueControl()">
-            <FillSwatch
-              v-if="aliasColor(mode.modeId)"
-              :fill="{
-                type: 'SOLID',
-                visible: true,
-                opacity: aliasColor(mode.modeId)?.a ?? 1,
-                color: aliasColor(mode.modeId) ?? { r: 0, g: 0, b: 0, a: 1 }
-              }"
-              :ui="{ root: 'size-5 shrink-0' }"
-            />
-            <BindingPill class="min-w-0 flex-1" :label="alias(mode.modeId) ?? ''" />
-          </div>
+          <PaintField v-if="alias(mode.modeId)" tone="form">
+            <template #preview>
+              <FillSwatch
+                v-if="aliasColor(mode.modeId)"
+                :fill="solidFill(aliasColor(mode.modeId) ?? { r: 0, g: 0, b: 0, a: 1 })"
+                :ui="{ root: 'size-4 rounded-sm' }"
+              />
+            </template>
+            <template #value>
+              <BindingPill class="min-w-0 flex-1" :label="alias(mode.modeId) ?? ''" />
+            </template>
+            <template #binding>
+              <VariablePicker v-bind="aliasPicker(mode.modeId, mode.name)" />
+            </template>
+          </PaintField>
           <ColorInput
             v-else-if="color(mode.modeId)"
             :color="color(mode.modeId) ?? { r: 0, g: 0, b: 0, a: 1 }"
+            tone="form"
             editable
             @update="emit('updateValue', mode.modeId, $event, colorGesture(mode.modeId))"
             @open-change="setPickerOpen(mode.modeId, $event)"
-          />
+          >
+            <template #binding>
+              <VariablePicker v-bind="aliasPicker(mode.modeId, mode.name)" />
+            </template>
+          </ColorInput>
           <AppCheckbox
             v-else-if="variable.type === 'BOOLEAN'"
             :model-value="variable.valuesByMode[mode.modeId] === true"
@@ -465,24 +505,17 @@ function cssNameDone(event: KeyboardEvent) {
             @change="commitValue(mode.modeId)"
             @enter="done"
           >
-            <template v-if="variable.type === 'FLOAT' && numberUnit !== 'none'" #trailing>
-              <span :class="ui.hint()">{{ numberUnit }}</span>
+            <template #trailing>
+              <span v-if="variable.type === 'FLOAT' && numberUnit !== 'none'" :class="ui.hint()">{{
+                numberUnit
+              }}</span>
+              <VariablePicker v-bind="aliasPicker(mode.modeId, mode.name)" />
             </template>
           </AppInput>
+          <!-- A checkbox has no field to hold the button, so it sits beside it. -->
           <VariablePicker
-            :items="aliasCandidates"
-            :selected="aliasId(mode.modeId)"
-            :state="aliasId(mode.modeId) ? 'bound' : 'unbound'"
-            :trigger-label="
-              singleMode ? variables.useVariable : `${mode.name}: ${variables.useVariable}`
-            "
-            :search-placeholder="variables.searchVariables"
-            :empty-label="variables.noMatchingVariables"
-            :detach-label="variables.detachVariable"
-            side="left"
-            data-test-id="variables-use-variable"
-            @select="emit('alias', mode.modeId, $event)"
-            @detach="emit('detach', mode.modeId)"
+            v-if="!alias(mode.modeId) && !color(mode.modeId) && variable.type === 'BOOLEAN'"
+            v-bind="aliasPicker(mode.modeId, mode.name)"
           />
         </div>
       </div>

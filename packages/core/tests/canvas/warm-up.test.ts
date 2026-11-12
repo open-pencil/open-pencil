@@ -1,0 +1,149 @@
+import { afterAll, describe, expect, test } from 'bun:test'
+
+import type { Surface } from '@open-pencil/canvaskit'
+import { SkiaRenderer } from '@open-pencil/core/canvas'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
+import { SceneGraph, type Effect } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
+
+import { GLASS_GEOMETRY_MAP } from '#core/canvas/glass/shader'
+import { warmUpEffectPrograms } from '#core/canvas/warm-up'
+
+const ck = await getCanvasKit()
+const renderers: SkiaRenderer[] = []
+afterAll(() => {
+  for (const renderer of renderers) renderer.destroy()
+})
+
+/**
+ * A renderer at rest on `pageId`, counting the 8-bit offscreen surfaces it makes: the warm-up's
+ * own, not the half-float geometry maps the glass it draws makes.
+ */
+function settledRenderer(pageId: string, makesSurfaces = true) {
+  const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(64, 64), 'surface'))
+  renderers.push(renderer)
+  renderer.pageId = pageId
+  renderer.navigationPhase = 'idle'
+  renderer.tiledSceneBackgroundPending = false
+  const made = { count: 0 }
+  const make = renderer.surface.makeSurface.bind(renderer.surface)
+  renderer.surface.makeSurface = (info) => {
+    if (info.colorType === ck.ColorType.RGBA_8888) made.count++
+    // Typed as always made; a canvas that cannot allocate one makes none.
+    return (makesSurfaces ? make(info) : null) as Surface
+  }
+  return { renderer, made }
+}
+
+const progressive: Effect = {
+  type: 'BACKGROUND_BLUR',
+  color: { r: 0, g: 0, b: 0, a: 0 },
+  offset: { x: 0, y: 0 },
+  radius: 20,
+  spread: 0,
+  visible: true,
+  progressive: { startRadius: 0, startOffset: { x: 0.5, y: 0 }, endOffset: { x: 0.5, y: 1 } }
+}
+const glass: Effect = {
+  ...progressive,
+  type: 'GLASS',
+  progressive: undefined,
+  glass: { refraction: 0.5, depth: 10, lightAngle: -45, lightIntensity: 0.5, dispersion: 0 }
+}
+
+function pageWith(effects: Effect[]) {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0]
+  const frame = graph.createNode('FRAME', page.id, { width: 200, height: 200 })
+  graph.createNode('RECTANGLE', frame.id, { width: 100, height: 100, effects })
+  return { graph, pageId: page.id }
+}
+
+describe('effect program warm-up', () => {
+  test('draws once a page with a progressive blur settles on a scene canvas', () => {
+    const { graph, pageId } = pageWith([progressive])
+    const { renderer, made } = settledRenderer(pageId)
+    renderer.navigationPhase = 'zoom'
+    warmUpEffectPrograms(renderer, graph, 'scene', 0)
+    renderer.navigationPhase = 'idle'
+    warmUpEffectPrograms(renderer, graph, 'overlays', 0)
+    // Not while an edit is under way either.
+    warmUpEffectPrograms(renderer, graph, 'scene', 0, true)
+    expect(made.count).toBe(0)
+    warmUpEffectPrograms(renderer, graph, 'scene', 0)
+    expect(renderer.effectProgramsWarm).toBe(true)
+    expect(made.count).toBe(1)
+    // Glass over an ellipse draws its geometry map, so that program is built too.
+    expect(renderer.shaders.programs.has(GLASS_GEOMETRY_MAP)).toBe(true)
+    expect(renderer.glassMaps.size).toBeGreaterThan(0)
+    // Warm, it never draws again, on this page or another.
+    warmUpEffectPrograms(renderer, graph, 'scene', 0)
+    const other = pageWith([glass])
+    renderer.pageId = other.pageId
+    warmUpEffectPrograms(renderer, other.graph, 'full', 0)
+    expect(made.count).toBe(1)
+  })
+
+  test('skips pages without such effects or with them hidden, then warms on one with glass', () => {
+    const plain = pageWith([{ ...progressive, progressive: undefined }])
+    const hidden = pageWith([{ ...glass, visible: false }])
+    const { renderer, made } = settledRenderer(plain.pageId)
+    warmUpEffectPrograms(renderer, plain.graph, 'full', 0)
+    renderer.pageId = hidden.pageId
+    warmUpEffectPrograms(renderer, hidden.graph, 'full', 0)
+    expect(made.count).toBe(0)
+    expect(renderer.effectProgramsWarm).toBe(false)
+    const shiny = pageWith([glass])
+    renderer.pageId = shiny.pageId
+    warmUpEffectPrograms(renderer, shiny.graph, 'full', 0)
+    expect(made.count).toBe(1)
+    expect(renderer.effectProgramsWarm).toBe(true)
+  })
+
+  test('scans a page found without such effects again once the document changes', () => {
+    const { graph, pageId } = pageWith([])
+    const { renderer, made } = settledRenderer(pageId)
+    warmUpEffectPrograms(renderer, graph, 'scene', 1)
+    const layer = expectDefined(graph.getChildren(graph.getChildren(pageId)[0].id)[0], 'layer')
+    graph.updateNode(layer.id, { effects: [glass] })
+    // Until the document's version moves on, the page counts as scanned.
+    warmUpEffectPrograms(renderer, graph, 'scene', 1)
+    expect(made.count).toBe(0)
+    warmUpEffectPrograms(renderer, graph, 'scene', 2)
+    expect(made.count).toBe(1)
+    expect(renderer.effectProgramsWarm).toBe(true)
+  })
+
+  test('stays cold when no surface can be made, and tries again on the next page', () => {
+    const first = pageWith([progressive])
+    const { renderer, made } = settledRenderer(first.pageId, false)
+    warmUpEffectPrograms(renderer, first.graph, 'scene', 0)
+    warmUpEffectPrograms(renderer, first.graph, 'scene', 0)
+    expect(made.count).toBe(1)
+    expect(renderer.effectProgramsWarm).toBe(false)
+    const second = pageWith([glass])
+    renderer.pageId = second.pageId
+    warmUpEffectPrograms(renderer, second.graph, 'scene', 0)
+    expect(made.count).toBe(2)
+  })
+
+  test('keeps a failed draw from the frame and does not retry it on that page', () => {
+    const { graph, pageId } = pageWith([progressive])
+    const { renderer, made } = settledRenderer(pageId)
+    const cleared: unknown[] = []
+    const setImageFilter = renderer.effectLayerPaint.setImageFilter.bind(renderer.effectLayerPaint)
+    renderer.effectLayerPaint.setImageFilter = (filter) => {
+      cleared.push(filter)
+      setImageFilter(filter)
+    }
+    renderer.getCachedLayerBlur = () => {
+      throw new Error('cannot make the blur')
+    }
+    expect(() => warmUpEffectPrograms(renderer, graph, 'scene', 0)).not.toThrow()
+    expect(renderer.effectProgramsWarm).toBe(false)
+    expect(cleared.at(-1)).toBeNull()
+    // A failed page stays failed, even once the document changes.
+    warmUpEffectPrograms(renderer, graph, 'scene', 1)
+    expect(made.count).toBe(1)
+  })
+})

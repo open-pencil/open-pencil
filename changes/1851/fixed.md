@@ -1,3 +1,0 @@
-- Layers scaled by their constraints in Hug frames and resized instances keep the exact ratio instead of snapping to 1/128 px, as in Figma.
-- Typing a width or height for a frame, group, or instance places the layers inside by their constraints, as dragging its edge does.
-- Undoing an edit no longer lets a later edit move layers pinned inside a Hug frame from the size it had before the undo.

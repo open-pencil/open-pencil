@@ -1,6 +1,9 @@
+import { omit } from 'es-toolkit'
+
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
 
-import { agentSessionOpened, endAgentSession } from '@/app/automation/agents'
+import { agentChatStore } from '@/app/ai/reply/run'
+import { agentSessionOpened, endAgentSession, readAgentSession } from '@/app/automation/agents'
 import {
   handleActivateDocument,
   handleGetSettings,
@@ -47,10 +50,8 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?:
     export: handleExport,
     export_jsx: handleExportJSX,
     selection: handleSelection,
-    save_file: handleSaveFile,
-    close_file: handleCloseFile,
-    new_document: handleNewDocument,
-    open_file: handleOpenFile,
+    save_document: handleSaveFile,
+    close_document: handleCloseFile,
     activate_document: handleActivateDocument,
     undo: handleUndo,
     redo: handleRedo
@@ -83,7 +84,7 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?:
     if (command === 'list_documents') {
       return { ok: true, result: { documents: listAutomationDocuments(store) } }
     }
-    if (command === 'list_recent_files') return handleListRecentFiles()
+    if (command === 'list_recent_documents') return handleListRecentFiles()
     if (command === 'agent_session_opened') {
       agentSessionOpened(args)
       return { ok: true, result: null }
@@ -96,14 +97,26 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?:
     if (command === 'get_settings') return handleGetSettings()
     if (command === 'update_settings') return handleUpdateSettings(args)
 
-    if (command === 'open_file' || command === 'new_document') {
-      const handler = commandHandlers[command]
-      if (handler) return handler(resolveAutomationTarget(store, undefined), args)
-    }
-
     const rawArgs = isUnknownRecord(args) ? args : {}
-    const target = resolveAutomationTarget(store, rawArgs)
-    return handleTargetCommand(target, command, stripAutomationTargetArgs(rawArgs), signal)
+    if (command === 'open_document') return handleOpenFile(rawArgs)
+    if (command === 'create_document') return handleNewDocument(rawArgs)
+
+    // An ACP chat's agent works on the chat's document unless a call names another; once the
+    // chat is gone, a late call must name one rather than land in whatever tab is in front.
+    const chat = readAgentSession(rawArgs.agent)?.chat
+    const chatStore = agentChatStore(chat)
+    const namesDocument = typeof rawArgs.document_id === 'string' && rawArgs.document_id.length > 0
+    if (chat !== undefined && !chatStore && !namesDocument) {
+      throw new Error(
+        'The chat this agent works for is closed. Pass document_id from list_documents to work on an open document.'
+      )
+    }
+    const target = resolveAutomationTarget(chatStore ?? store, rawArgs)
+    // A graph command such as `tree` reads the page it was asked for from its own arguments.
+    const commandArgs = commandHandlers[command]
+      ? stripAutomationTargetArgs(rawArgs)
+      : omit(rawArgs, ['document_id'])
+    return handleTargetCommand(target, command, commandArgs, signal)
   }
 
   return { handleRequest, handleTargetCommand }

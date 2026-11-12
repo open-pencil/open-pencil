@@ -2,12 +2,9 @@ import { expect, test } from 'bun:test'
 
 import { SceneGraph, type Stroke } from '@open-pencil/scene-graph'
 import { colorToFill } from '@open-pencil/scene-graph/color'
-import type { Color } from '@open-pencil/scene-graph/primitives'
 import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
-import {
-  reconcileVariableBindings,
-  resolvedPaintBindings
-} from '@open-pencil/scene-graph/variables'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+import { reconcileVariableBindings } from '@open-pencil/scene-graph/variables'
 
 function must<T>(value: T | null | undefined, what: string): T {
   if (value === null || value === undefined) throw new Error(`Missing ${what}`)
@@ -55,7 +52,10 @@ test('syncing an edited component keeps a bound number in the mode its copy sits
 test('syncing a component that rebinds a number resolves its copies by the new binding', () => {
   const { graph, chip, card, nested } = chipInLargeCard()
   const collection = must([...graph.variableCollections.values()][0], 'collection')
-  const large = must(collection.modes.find((mode) => mode.name === 'L'), 'mode').modeId
+  const large = must(
+    collection.modes.find((mode) => mode.name === 'L'),
+    'mode'
+  ).modeId
   // 100 in either mode, so the copy in the card shows the component's own width.
   const flat = graph.createVariable('Flat', 'FLOAT', collection.id, 100)
   flat.valuesByMode[large] = 100
@@ -191,7 +191,6 @@ test.each(['fills', 'strokes'] as const)(
     graph.syncInstance(placed.id)
 
     expect(nested().boundVariables).toEqual({})
-    expect(resolvedPaintBindings(graph, nested())[list]).toBeUndefined()
     expect(nested()[list][0].color).toEqual(literal[0].color)
   }
 )

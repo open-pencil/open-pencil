@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { afterEach, beforeEach, expect, spyOn, test } from 'bun:test'
+import { afterEach, beforeEach, expect, mock, spyOn, test } from 'bun:test'
 
 import type { IconData } from '@open-pencil/core/icons'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
@@ -23,6 +23,8 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  // A spy on a module export, such as ensureGraphFonts, outlives the file otherwise.
+  mock.restore()
   store.dispose()
   Reflect.deleteProperty(globalThis, 'window')
 })
@@ -142,9 +144,9 @@ test('undoing an asynchronous tool call returns the document to saved', async ()
 })
 
 test("a reply's property edit is recorded once, as one undo entry", async () => {
-  const setOpacity = expectDefined(
-    ALL_TOOLS.find((tool) => tool.name === 'set_opacity'),
-    'set_opacity'
+  const updateNode = expectDefined(
+    ALL_TOOLS.find((tool) => tool.name === 'update_node'),
+    'update_node'
   )
   const pageId = store.state.currentPageId
   const figma = makeFigmaFromStore(store, pageId)
@@ -157,15 +159,15 @@ test("a reply's property edit is recorded once, as one undo entry", async () => 
   await runEditorTool({
     store,
     figma,
-    def: setOpacity,
-    args: { id: rect.id, value: 0.5 },
+    def: updateNode,
+    args: { id: rect.id, opacity: 0.5 },
     reply: { run, toolCallId: 'call-1' }
   })
 
   expect(store.graph.getNode(rect.id)?.opacity).toBe(0.5)
   expect(recordEdit).not.toHaveBeenCalled()
   expect(recordEditAsync).not.toHaveBeenCalled()
-  expect(store.undo.peekUndo()?.label).toBe('AI: set_opacity')
+  expect(store.undo.peekUndo()?.label).toBe('AI: update_node')
   expect(run.undoCalls.map(({ toolCallId }) => toolCallId)).toEqual(['call-1'])
   expect(run.changedCalls.has('call-1')).toBe(true)
   expect(readToolChange('call-1')).not.toBeNull()

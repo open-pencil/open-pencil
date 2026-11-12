@@ -32,15 +32,20 @@ addresses = []
 [authentication.providers.google]
 client_id = { from_env = "GOOGLE_CLIENT_ID" }
 
+# An R2 bucket placed in eastern North America, near the database. Its CORS rules allow GET, PUT,
+# and HEAD from public_url; S3_* are an R2 API token's keys for this bucket alone.
 [object_storage]
-endpoint = "https://br-lucky-forest-aeigmjr4.storage.c-2.us-east-2.aws.neon.tech"
-region = "us-east-2"
+endpoint = "https://ca633c52af8f8351ed72fb5d12b423f0.r2.cloudflarestorage.com"
+region = "auto"
 bucket = "openpencil-cloud-staging"
-force_path_style = true
+force_path_style = false
 checksum_verification = "metadata"
+# Kept until the bucket's expire-deleted rule removes them after 7 days.
+deleted_prefix = "deleted/"
 
 [documents]
 retention_days = 30
+purge_grace_days = 7
 
 # OpenPencil services' staging Worker, which trusts this Cloud's tokens.
 [services]
@@ -74,6 +79,16 @@ maximum_participants = 100
 [entitlements.services]
 enabled = true
 monthly_credit_allowance = 10_000
+
+# The hosted service's own terms and privacy policy; each account accepts terms_version once before
+# using the server, and again when it changes.
+[legal]
+terms_url = "https://openpencil.dev/cloud/legal/terms"
+privacy_url = "https://openpencil.dev/cloud/legal/privacy"
+terms_version = "2026-11-15"
+require_acceptance = true
+abuse_email = "abuse@openpencil.dev"
+minimum_age = 16
 
 # Server errors go to the OpenPencil PostHog project; the key is the POSTHOG_PROJECT_API_KEY secret.
 [error_tracking]

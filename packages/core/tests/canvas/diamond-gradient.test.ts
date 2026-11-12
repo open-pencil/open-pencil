@@ -1,13 +1,13 @@
 import { expect, test } from 'bun:test'
 
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import type { Fill } from '@open-pencil/scene-graph'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { SkiaRenderer } from '#core/canvas/renderer'
 test('diamond contours use Manhattan distance and dispose their retained program', async () => {
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const surface = expectDefined(ck.MakeSurface(101, 101), 'surface')
   const renderer = new SkiaRenderer(ck, surface)
   const graph = new SceneGraph()
@@ -24,7 +24,8 @@ test('diamond contours use Manhattan distance and dispose their retained program
     gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
   }
   const node = graph.createNode('RECTANGLE', page.id, { width: 101, height: 101, fills: [fill] })
-  let effect = renderer.shaders.diamondGradient
+  const effects = () => [...renderer.shaders.programs.values()].map(({ effect }) => effect)
+  let compiled = effects()
   try {
     const draw = () => {
       const canvas = surface.getCanvas()
@@ -33,9 +34,10 @@ test('diamond contours use Manhattan distance and dispose their retained program
       surface.flush()
     }
     draw()
-    effect = renderer.shaders.diamondGradient
+    compiled = effects()
+    expect(compiled).toHaveLength(1)
     draw()
-    expect(renderer.shaders.diamondGradient).toBe(effect)
+    expect(effects()[0]).toBe(expectDefined(compiled[0], 'compiled program'))
     const image = surface.makeImageSnapshot()
     try {
       const pixels = expectDefined(
@@ -53,19 +55,18 @@ test('diamond contours use Manhattan distance and dispose their retained program
       expect(red(75, 75)).toBe(red(100, 50))
       expect(red(75, 75)).toBeGreaterThan(245)
       expect(red(0, 0)).toBe(255)
-      effect = expectDefined(effect, 'compiled effect')
     } finally {
       image.delete()
     }
   } finally {
     renderer.destroy()
   }
-  expect(effect?.isDeleted()).toBe(true)
-  expect(renderer.shaders.diamondGradient).toBeNull()
+  expect(compiled.every((effect) => effect.isDeleted())).toBe(true)
+  expect(renderer.shaders.programs.size).toBe(0)
 })
 
 test('diamond gradients preserve transformed contours and intermediate stops', async () => {
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(100, 100), 'surface'))
   const graph = new SceneGraph()
   const page = expectDefined(graph.getPages()[0], 'page')

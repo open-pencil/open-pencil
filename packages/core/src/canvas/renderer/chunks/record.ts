@@ -1,5 +1,4 @@
-import type { Canvas, SkPicture } from 'canvaskit-wasm'
-
+import type { Canvas, SkPicture } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'

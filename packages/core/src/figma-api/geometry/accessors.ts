@@ -90,12 +90,12 @@ export function installGeometryAccessors(
       const scene = graphOf(this)
       flushPendingLayout(scene)
       const node = raw(this, internals)
-      const outlined = outlineStrokeLayer(r, node, scene)
+      const stroke = outlineStrokeLayer(r, node, scene)?.stroke
       const pageId = findPageId(scene, node.id)
-      if (!outlined || !pageId) return null
+      // A layer without a stroke, such as text the editor outlines into glyphs, gives null.
+      if (!stroke || !pageId) return null
       // Figma adds the outline to the end of the page at the layer's own position in its parent,
       // and keeps the layer.
-      const { stroke } = outlined
       const made = scene.createNode(stroke.type, pageId, stroke.props)
       for (const child of stroke.children) scene.createNode('VECTOR', made.id, child)
       return host(this, internals).wrapNode(made.id)

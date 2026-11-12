@@ -49,7 +49,8 @@ describe('PostHog error reporter', () => {
     await report?.(new TypeError('row missing'), {
       source: 'request',
       method: 'POST',
-      route: '/api/documents/:id'
+      route: '/api/documents/:id',
+      requestId: '8f1e2d3c4b5a6978-FRA'
     })
 
     expect(sent).toHaveLength(1)
@@ -68,7 +69,8 @@ describe('PostHog error reporter', () => {
             cloud_host: 'cloud.example.com',
             cloud_source: 'request',
             http_method: 'POST',
-            http_route: '/api/documents/:id'
+            http_route: '/api/documents/:id',
+            request_id: '8f1e2d3c4b5a6978-FRA'
           }
         }
       ]

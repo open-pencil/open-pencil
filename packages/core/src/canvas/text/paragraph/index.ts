@@ -6,8 +6,7 @@ import type {
   ParagraphBuilder,
   TextFontFeatures,
   TextFontVariations
-} from 'canvaskit-wasm'
-
+} from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
 import { faceStyleKey, type NamedFace } from '@open-pencil/scene-graph/font-style'

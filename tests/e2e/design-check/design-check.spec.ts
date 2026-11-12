@@ -3,6 +3,8 @@ import type { Page } from '@playwright/test'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
+import { setDesignIssuesOnCanvas } from '#tests/helpers/design-check'
+import { openAppMenu } from '#tests/helpers/menu'
 
 const editor = useEditorSetupWithClear('/?test&no-rulers')
 
@@ -139,6 +141,33 @@ function selectedIds(page: Page) {
 
 test.afterEach(async () => {
   await editor.page.getByRole('tab', { name: 'Design' }).click()
+  // The editor page is shared, so each test starts from a fresh profile's markers-off default.
+  await setDesignIssuesOnCanvas(editor.page, false)
+})
+
+test('a fresh profile opens with canvas markers and page badges off', async () => {
+  await buildScene(editor.page)
+  await expect
+    .poll(() =>
+      editor.page.evaluate(() => window.openPencil?.getStore?.().designCheck.enabled.value ?? null)
+    )
+    .toBe(false)
+  await expect
+    .poll(() =>
+      editor.page.evaluate(
+        () => window.openPencil?.getStore?.().state.designIssues?.markers.length ?? 0
+      )
+    )
+    .toBe(0)
+  await expect(editor.page.locator('[data-issue-severity]')).toHaveCount(0)
+
+  const view = await openAppMenu(editor.page, 'View')
+  await expect(view.getByRole('menuitemcheckbox', { name: 'Design issues' })).toHaveAttribute(
+    'aria-checked',
+    'false'
+  )
+  await editor.page.keyboard.press('Escape')
+  await expect(view).toBeHidden()
 })
 
 test('Lint lists issues by rule and connects rows to the canvas', async () => {
@@ -247,6 +276,7 @@ test('A rule can be turned off from its group and turned back on from the rules 
 
 test('Canvas markers explain themselves on hover and open Lint on click', async () => {
   const scene = await buildScene(editor.page)
+  await setDesignIssuesOnCanvas(editor.page, true)
   await waitForMarkers(editor.page)
 
   await hoverMarker(CLOSE_MARKER)
@@ -301,6 +331,7 @@ function edgePinCenter(width: number, height: number, target: Vector): Vector {
 
 test('Issues off screen are pinned to the canvas edge and lead to the nearest most severe one', async () => {
   const scene = await buildScene(editor.page)
+  await setDesignIssuesOnCanvas(editor.page, true)
   await openLint(editor.page)
   const canvas = await editor.canvas.canvas.boundingBox()
   if (!canvas) throw new Error('Canvas has no bounding box')
@@ -336,6 +367,7 @@ test('Issues off screen are pinned to the canvas edge and lead to the nearest mo
 })
 
 test('Other pages are checked for the page list and the Document scope', async () => {
+  await setDesignIssuesOnCanvas(editor.page, true)
   await buildScene(editor.page)
   const cartCaptionId = await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
@@ -388,6 +420,7 @@ test('Other pages are checked for the page list and the Document scope', async (
 
 test('Canvas markers and Layers panel marks can be turned off from the View menu', async () => {
   await buildScene(editor.page)
+  await setDesignIssuesOnCanvas(editor.page, true)
   await waitForMarkers(editor.page)
   // The card is collapsed in the Layers panel, so it shows the error inside it as a dot.
   const cardMark = editor.page
@@ -445,6 +478,7 @@ function addNotes(page: Page): Promise<string[]> {
 
 test('A marker opens an issue past the rows its group shows at first', async () => {
   const lastNoteId = (await addNotes(editor.page)).at(-1)
+  await setDesignIssuesOnCanvas(editor.page, true)
   await waitForMarkers(editor.page)
 
   // The sixtieth note's row is past the fifty its group lists at first.

@@ -1,10 +1,10 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
-
-import { runCLI } from '#cli-tests/helpers/run'
 import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+import { writeFourPageFig } from '#cli-tests/helpers/fig'
+import { runCLI } from '#cli-tests/helpers/run'
 import * as v from 'valibot'
 
 import { FIXTURES } from '@open-pencil/test-support/paths'
@@ -57,6 +57,21 @@ describe('tool CLI', () => {
       v.looseObject({ pages: v.array(v.looseObject({ name: v.string() })) })
     )
     expect(result.pages.map((page) => page.name)).toContain('From CLI')
+  })
+
+  test('runs a tool on the page --page-id names in a file', async () => {
+    const { path, pageIds } = await writeFourPageFig()
+    const page = await runCLI([
+      'tool',
+      'call',
+      'get_current_page',
+      path,
+      '--page-id',
+      pageIds[2],
+      '--json'
+    ])
+    expect(page.exitCode).toBe(0)
+    expect(JSON.parse(page.stdout)).toEqual({ id: pageIds[2], name: 'Page 3' })
   })
 
   test('rejects unknown tools and non-object arguments', async () => {

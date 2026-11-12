@@ -366,21 +366,4 @@ describe('recordEditAsync', () => {
     expect(editor.undo.undo()).toBe('Add note')
     expect(editor.graph.getNode(note.id)).toBeUndefined()
   })
-
-  test('undoing it brings back the mode a collection it removed was showing', () => {
-    const { editor } = setup()
-    const collection = editor.graph.createCollection('Theme')
-    const dark = editor.graph.createMode(collection.id, 'Dark')
-    if (!dark) throw new Error('No Dark mode')
-    editor.graph.setActiveMode(collection.id, dark)
-
-    editor.recordEdit({ label: 'Agent: remove' }, () =>
-      editor.graph.removeCollection(collection.id)
-    )
-    expect(editor.undo.undo()).toBe('Agent: remove')
-    expect(editor.graph.activeMode.get(collection.id)).toBe(dark)
-
-    editor.undo.redo()
-    expect(editor.graph.activeMode.has(collection.id)).toBe(false)
-  })
 })

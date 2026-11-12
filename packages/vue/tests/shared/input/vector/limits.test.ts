@@ -56,7 +56,7 @@ describe('editing a path whose points the host keeps', () => {
     expect(editor.getNodeEditState()?.selectedSegmentIndices.size).toBe(0)
   })
 
-  test("a press on a handle of a point that is not selected drags the handle", () => {
+  test('a press on a handle of a point that is not selected drags the handle', () => {
     setup()
     expect(press(30, -40)?.type).toBe('edit-handle')
   })

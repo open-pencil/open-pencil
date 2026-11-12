@@ -42,18 +42,22 @@ import type {
   VariableLiteral
 } from './types'
 import * as Variables from './variables'
-import type { VariableModeFallback } from './variables'
 import { normalizeVectorNetwork } from './vector-network'
 
 /** Scopes that graph methods check while a caller's callback runs; scopes nest. */
-type GraphScope = 'preview' | 'sourceMetadata' | 'importedState' | 'layout' | 'derivedLayout'
+type GraphScope =
+  | 'preview'
+  | 'sourceMetadata'
+  | 'importedState'
+  | 'layout'
+  | 'derivedLayout'
+  | 'componentDerived'
 
 export class SceneGraph {
   nodes = new Map<string, SceneNode>()
   images = new Map<string, Uint8Array>()
   variables = new Map<string, Variable>()
   variableCollections = new Map<string, VariableCollection>()
-  activeMode = new Map<string, string>()
   rootId: string
   figKiwiVersion: number | null = null
   /** Deflated kiwi schema bytes from the original .fig file, preserved for roundtrip fidelity. */
@@ -68,7 +72,8 @@ export class SceneGraph {
     sourceMetadata: 0,
     importedState: 0,
     layout: 0,
-    derivedLayout: 0
+    derivedLayout: 0,
+    componentDerived: 0
   }
   private previewObservers: NodePreviewObserver[] = []
   private readonly changeObservers = new Set<NodeChangeObserver>()
@@ -266,16 +271,8 @@ export class SceneGraph {
     Variables.removeCollection(this, id)
   }
 
-  getActiveModeId(collectionId: string): string {
-    return Variables.getActiveModeId(this, collectionId)
-  }
-
   getNodeVariableModeId(nodeId: string, collectionId: string): string {
     return Variables.getNodeVariableModeId(this, nodeId, collectionId)
-  }
-
-  setActiveMode(collectionId: string, modeId: string): void {
-    Variables.setActiveMode(this, collectionId, modeId)
   }
 
   addMode(collectionId: string, modeId: string, name: string, sourceMode?: string): void {
@@ -310,36 +307,20 @@ export class SceneGraph {
     return Variables.resolveNumberVariable(this, variableId)
   }
 
-  resolveColorVariableForNode(
-    nodeId: string,
-    variableId: string,
-    fallback?: VariableModeFallback
-  ): Color | undefined {
-    return Variables.resolveColorVariableForNode(this, nodeId, variableId, fallback)
+  resolveColorVariableForNode(nodeId: string, variableId: string): Color | undefined {
+    return Variables.resolveColorVariableForNode(this, nodeId, variableId)
   }
 
-  resolveNumberVariableForNode(
-    nodeId: string,
-    variableId: string,
-    fallback?: VariableModeFallback
-  ): number | undefined {
-    return Variables.resolveNumberVariableForNode(this, nodeId, variableId, fallback)
+  resolveNumberVariableForNode(nodeId: string, variableId: string): number | undefined {
+    return Variables.resolveNumberVariableForNode(this, nodeId, variableId)
   }
 
-  resolveVariableForNode(
-    nodeId: string,
-    variableId: string,
-    fallback?: VariableModeFallback
-  ): VariableLiteral | undefined {
-    return Variables.resolveVariableForNode(this, nodeId, variableId, fallback)
+  resolveVariableForNode(nodeId: string, variableId: string): VariableLiteral | undefined {
+    return Variables.resolveVariableForNode(this, nodeId, variableId)
   }
 
-  resolveStringVariableForNode(
-    nodeId: string,
-    variableId: string,
-    fallback?: VariableModeFallback
-  ): string | undefined {
-    return Variables.resolveStringVariableForNode(this, nodeId, variableId, fallback)
+  resolveStringVariableForNode(nodeId: string, variableId: string): string | undefined {
+    return Variables.resolveStringVariableForNode(this, nodeId, variableId)
   }
 
   getVariablesForCollection(collectionId: string): Variable[] {
@@ -551,6 +532,19 @@ export class SceneGraph {
     this.withScope('derivedLayout', fn)
   }
 
+  /**
+   * Runs `fn` as values a copy takes from its component, such as the bound paints of a layer an
+   * instance copies, refreshed for it. Source metadata is preserved, and a save leaves them to the
+   * component rather than writing them as edits of the copy.
+   */
+  applyComponentDerivedDuring(fn: () => void): void {
+    this.withScope('componentDerived', () => this.preserveSourceMetadataDuring(fn))
+  }
+
+  get isApplyingComponentDerived(): boolean {
+    return this.scopeDepths.componentDerived > 0
+  }
+
   get isApplyingDerivedLayout(): boolean {
     return this.scopeDepths.derivedLayout > 0
   }
@@ -672,11 +666,19 @@ export class SceneGraph {
       this.scopeDepths.sourceMetadata === 0 && !this.isApplyingDerivedLayout
     )
     Object.assign(node, changes)
+    this.followListBindings(node, changes)
+    for (const key of absent) Reflect.deleteProperty(node, key)
+    this.publishNodeUpdate(id, changes)
+  }
+
+  /** Bindings of paints and effects a write sets follow the lists it wrote. */
+  private followListBindings(node: SceneNode, changes: Partial<SceneNode>): void {
     if (changes.fills) removeStaleBindings(node, 'fills', changes)
     if (changes.strokes) removeStaleBindings(node, 'strokes', changes)
     if (changes.effects) removeStaleBindings(node, 'effects', changes)
-    for (const key of absent) Reflect.deleteProperty(node, key)
-    this.publishNodeUpdate(id, changes)
+    // A bound paint written keeps what it was given until its variable's color changes.
+    if ((changes.fills || changes.strokes) && !this.isApplyingImportedState)
+      Variables.recordWrittenBoundPaints(this, node, changes)
   }
 
   /** Marks fields an edit changed, unless metadata is being restored or layout is writing them. */
@@ -733,6 +735,8 @@ export class SceneGraph {
     )
 
     this.emitter.emit('node:reparented', nodeId, oldParentId, newParentId)
+    // Bound paints show their variables in the modes the layer now sits in.
+    Variables.refreshMovedBoundPaints(this, nodeId, oldParentId)
   }
 
   /**
@@ -758,6 +762,8 @@ export class SceneGraph {
     node.parentId = parentId
     this.absPosCache.clear()
     this.emitter.emit('node:reordered', childId, parentId, at, previousParentId)
+    if (previousParentId !== parentId)
+      Variables.refreshMovedBoundPaints(this, childId, previousParentId)
   }
 
   deleteNode(id: string): void {
@@ -834,6 +840,8 @@ export class SceneGraph {
     // Copies point at one another, as a paste's do: an instance at a component cloned with it,
     // as Figma's clone does (desktop 126), and its override records at its copies' new ids.
     remapCopiedReferences(this, ids)
+    // A copy placed in other modes than its source shows its bound paints there, as a move does.
+    if (clone) Variables.refreshMovedBoundPaints(this, clone.id, this.nodes.get(sourceId)?.parentId)
     return clone
   }
 
@@ -852,6 +860,7 @@ export class SceneGraph {
     // A copy is a new design nobody has reviewed: Figma's duplicate and clone() drop the status.
     props.status = null
     const clone = this.createNode(src.type, parentId, { ...props, ...overrides })
+    Variables.copyAppliedBoundPaints(src, clone)
     if (src.status) markSourceFieldsEdited(clone, ['status'])
     ids.set(src.id, clone.id)
 
@@ -910,16 +919,33 @@ export class SceneGraph {
     return Instances.getInstances(this, componentId)
   }
 
+  /**
+   * The descendants of a layer in depth-first order with their depths. Each layer with children is
+   * walked once, so a cycle or repeated links in bad data cannot hang it or repeat its subtree.
+   */
   flattenTree(parentId?: string, depth = 0): Array<{ node: SceneNode; depth: number }> {
     const id = parentId ?? this.rootId
     const parent = this.nodes.get(id)
     if (!parent) return []
     const result: Array<{ node: SceneNode; depth: number }> = []
-    for (const childId of parent.childIds) {
-      const child = this.nodes.get(childId)
+    const pending = [{ node: parent, depth, index: 0 }]
+    const walked = new Set([parent])
+    while (pending.length > 0) {
+      const frame = pending.at(-1)
+      if (!frame) break
+      if (frame.index >= frame.node.childIds.length) {
+        pending.pop()
+        continue
+      }
+      const child = this.nodes.get(frame.node.childIds[frame.index++])
       if (!child) continue
-      result.push({ node: child, depth })
-      if (child.childIds.length > 0) result.push(...this.flattenTree(childId, depth + 1))
+      const container = child.childIds.length > 0
+      if (container && walked.has(child)) continue
+      result.push({ node: child, depth: frame.depth })
+      if (container) {
+        walked.add(child)
+        pending.push({ node: child, depth: frame.depth + 1, index: 0 })
+      }
     }
     return result
   }

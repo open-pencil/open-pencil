@@ -70,11 +70,11 @@ export const runtimeScenarios: RuntimeScenario[] = [
   },
   {
     name: 'Oxlint plugin',
-    code: "const { default: plugin } = await import('@open-pencil/oxlint-plugin'); if (plugin.meta.name !== 'open-pencil' || Object.keys(plugin.rules).length < 28 || !plugin.rules['no-unvalidated-json-parse']?.meta) throw new Error('Oxlint plugin smoke failed')"
+    code: "const domains = ['data', 'imports', 'runtime', 'security', 'structure', 'types']; const plugins = await Promise.all(domains.map(async (domain) => (await import('@open-pencil/oxlint-plugin/' + domain)).default)); if (plugins.some((plugin, index) => plugin.meta.name !== '@open-pencil/' + domains[index] || Object.keys(plugin.rules).length === 0) || plugins.reduce((count, plugin) => count + Object.keys(plugin.rules).length, 0) < 30 || !plugins[0].rules['no-unvalidated-json-parse']?.meta) throw new Error('Oxlint plugin smoke failed')"
   },
   {
     name: 'Oxlint recommended configuration',
-    code: "const { default: preset } = await import('@open-pencil/oxlint-plugin/recommended'); if (preset.rules['open-pencil/no-silent-catch'] !== 'error' || !preset.plugins.includes('typescript')) throw new Error('Oxlint recommended configuration smoke failed')"
+    code: "const { default: preset } = await import('@open-pencil/oxlint-plugin/recommended'); if (preset.rules['@open-pencil/runtime/no-silent-catch'] !== 'error' || !preset.plugins.includes('typescript')) throw new Error('Oxlint recommended configuration smoke failed')"
   },
   {
     name: 'Cloud contract',

@@ -44,7 +44,7 @@ const webResults = computed(() => toolWebResults(part))
 const nodeIds = computed(() => (state.value === 'pending' ? [] : toolNodeIds(part)))
 const hasInput = computed(() => toolHasInput(part))
 const output = computed(() => displayedToolOutput(part))
-// Error results such as `diff_apply`'s mismatch report stay inspectable next to the alert.
+// Error results such as `apply_patch`'s mismatch report stay inspectable next to the alert.
 const hasOutput = computed(() => output.value !== undefined)
 // Streaming source is worth watching; other pending calls have nothing to show yet.
 const expandable = computed(() => state.value !== 'pending' || source.value !== null)

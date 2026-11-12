@@ -123,6 +123,18 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     runs-on: ${{ matrix.platform }}
+    permissions:
+      contents: read
+      # Pulls the private release image the Linux build runs in.
+      packages: read
+    # The Linux build runs in the release image, which carries its libraries and Rust toolchain;
+    # the others run on their runners (an empty image means none).
+    container:
+      # Pinned by digest in native/catalog.ts, which tests/native/context.test.ts holds to it.
+      image: ${{ matrix.container }} # zizmor: ignore[unpinned-images]
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     timeout-minutes: 40
     env:
       RELEASE_TAG: ${{ needs.plan.outputs.tag }}
@@ -145,6 +157,8 @@ jobs:
           package-manager-cache: false
       # rustup installs the toolchain rust-toolchain.toml pins; this adds the release target to it.
       - name: Add the Rust target
+        # The release image carries the Linux toolchain and target already.
+        if: matrix.container == ''
         # Bash on every runner: Windows' default PowerShell does not read $TARGET.
         shell: bash
         env:
@@ -157,9 +171,9 @@ jobs:
         with:
           workspaces: . -> target
           key: ${{ matrix.target }}
-      - name: Install native dependencies on Linux
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      # Packages come from kernel.org's Ubuntu mirror first, a domain apart from ubuntu.com, so an
+      # outage resolving it does not stop a release; apt verifies them against Ubuntu's key either
+      # way, and the runner's own mirrors remain the fallback.
       - uses: ./.pipeline/.github/actions/setup/workspace
         with:
           cache-scope: desktop
@@ -189,7 +203,10 @@ jobs:
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
-          tauriScript: node node_modules/@tauri-apps/cli/tauri.js
+          # The action searches projectPath for tauri.conf.json; from the checkout root that search also
+          # walks the tooling checked out in .pipeline and runs out of memory. The script runs in desktop.
+          projectPath: desktop
+          tauriScript: node ../node_modules/@tauri-apps/cli/tauri.js
           args: --target ${{ matrix.target }} --config "${{ github.workspace }}/release-build-config.json" --verbose
           retryAttempts: 0
       - name: Collect only reported bundles and signatures
@@ -248,8 +265,6 @@ jobs:
         with:
           pattern: native-*
           path: native-artifacts
-      - name: Install signature verifier
-        run: sudo apt-get update && sudo apt-get install -y minisign
       - name: Resume npm versions this tag already published
         run: bun .pipeline/tools/release/release-packages/src/cli.ts resume
       - name: Verify all targets, digests and updater signatures

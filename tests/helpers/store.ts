@@ -61,6 +61,7 @@ export function getSelectedNode(page: Page) {
       fontFamily: n.fontFamily,
       fontWeight: n.fontWeight,
       italic: n.italic,
+      strokeWeight: n.strokeWeight,
       textAutoResize: n.textAutoResize
     }
   })
@@ -111,6 +112,8 @@ export function getNodeById(page: Page, id: string) {
       itemSpacing: n.itemSpacing,
       counterAxisSpacing: n.counterAxisSpacing,
       layoutWrap: n.layoutWrap,
+      fontSize: n.fontSize,
+      strokeWeight: n.strokeWeight,
       paddingTop: n.paddingTop,
       paddingRight: n.paddingRight,
       paddingBottom: n.paddingBottom,

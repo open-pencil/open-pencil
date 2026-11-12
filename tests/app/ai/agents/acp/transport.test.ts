@@ -108,6 +108,18 @@ function grokDone(id: string, output: { OkayOutput: string } | { Error: string }
   }
 }
 
+/** Antigravity CLI titles an MCP call `Run mcp_<server>_<tool>` and adds a summary to its input. */
+function antigravityCall(id: string, name: string, args: Record<string, unknown>): SessionUpdate {
+  return {
+    sessionUpdate: 'tool_call',
+    toolCallId: id,
+    title: `Run ${name}`,
+    kind: 'other',
+    status: 'in_progress',
+    rawInput: { ...args, toolSummary: 'Inspect the node' }
+  }
+}
+
 function mcpText(value: unknown, isError?: boolean) {
   return {
     content: [{ type: 'text', text: JSON.stringify(value) }],
@@ -285,6 +297,33 @@ describe('an ACP turn in the chat', () => {
     })
   })
 
+  test('Antigravity CLI’s calls to OpenPencil’s tools show by name, without its summary', async () => {
+    const [own, other] = await transcript([
+      antigravityCall('agy-1', 'mcp_open-pencil_get_node', { id: '1:2' }),
+      { sessionUpdate: 'tool_call_update', toolCallId: 'agy-1', status: 'completed' },
+      antigravityCall('agy-2', 'mcp_github_create_issue', { title: 'Bug' })
+    ])
+    const call = shown(expectDefined(own, 'tool part'))
+    expect(call?.type).toBe('tool-get_node')
+    expect(call?.input).toEqual({ id: '1:2' })
+    expect(shown(expectDefined(other, 'tool part'))).toMatchObject({
+      type: 'tool-Run mcp_github_create_issue'
+    })
+  })
+
+  test('Antigravity CLI’s calls through call_mcp_tool show as the tool they ran', async () => {
+    const [call] = await transcript([
+      antigravityCall('agy-1', 'mcp_open-pencil_call_mcp_tool', {
+        toolName: 'create_shape',
+        arguments: { type: 'FRAME', width: 200, height: 100 }
+      })
+    ])
+    expect(shown(expectDefined(call, 'tool part'))).toMatchObject({
+      type: 'tool-create_shape',
+      input: { type: 'FRAME', width: 200, height: 100 }
+    })
+  })
+
   test('an agent’s own tools keep its title and output', async () => {
     const [call] = await transcript([
       {
@@ -424,6 +463,11 @@ describe('formatConnectionError', () => {
   test('other errors pass through', () => {
     const msg = formatConnectionError(new Error('Something unexpected'))
     expect(msg).toBe('Something unexpected')
+  })
+
+  test('decoded ACP errors keep the agent message', () => {
+    const error = { code: -32600, message: 'Session in use' }
+    expect(formatConnectionError(error)).toBe(error.message)
   })
 
   test('non-Error values converted to string', () => {

@@ -1,13 +1,11 @@
 import {
   COLLAB_ACTIONS,
-  encodeSyncReply,
-  decodeRoomUpdate,
   MAX_COLLAB_MESSAGE_BYTES,
   RELAY_CLOSE,
   RELAY_SERVER_PEER,
-  relayServerMessages,
   type RelayServerFrame
 } from '#cloud/contract'
+import { logCloud, loggedError } from '#cloud/server/logging'
 import * as Y from 'yjs'
 
 import type { RelayAuthorization } from './authorize'
@@ -20,9 +18,20 @@ import {
   type RelayRoomFrame,
   type RelaySocket
 } from './connection'
-import { openRoomLog, type RoomLog } from './log'
+import { openRoomLog } from './log'
 import type { CollaborationStateStore } from './persistence'
 import type { RelayPeerState } from './resume'
+import {
+  answerAsServer,
+  applyToRoom,
+  needsDocument,
+  newRoom,
+  send,
+  sendAll,
+  updatesDocument,
+  type Room,
+  type RoomContent
+} from './room'
 
 export type { RelayConnection, RelaySocket } from './connection'
 
@@ -70,42 +79,7 @@ export type CollaborationRelayOptions = {
 /** Messages a viewer may send; their document writes never leave the relay. */
 const VIEWER_ACTIONS = new Set<string>([COLLAB_ACTIONS.syncStep1, COLLAB_ACTIONS.awareness])
 
-type Peer = RelayPeer
-
-/**
- * A room's document and the log its saves go to, loaded when a message first needs them, with an
- * upper bound on the document's size: what was saved plus every update since. The bound is
- * measured again only once it reaches `maximumRoomBytes` after something was deleted, since only
- * a deletion can leave the document smaller than the bound.
- */
-type RoomContent = { document: Y.Doc; log: RoomLog; bytes: number; deletedSinceMeasure: boolean }
-
-type Room = {
-  id: string
-  identity: { documentId: string; roomEpoch: number }
-  peers: Map<string, Peer>
-  persistTimer: ReturnType<typeof setTimeout> | null
-  /**
-   * Null until a message needs the document: peers resumed after the runtime woke the relay
-   * exchange presence without it, so a wake for presence alone loads nothing from the store.
-   */
-  content: RoomContent | null
-  loading: Promise<RoomContent> | null
-}
-
 export type CollaborationRelay = ReturnType<typeof createCollaborationRelay>
-
-/** Whether `update` adds nothing and deletes only content `document` already holds. */
-function deletesOnlyKnown(document: Y.Doc, update: Uint8Array): boolean {
-  const { from, to } = Y.parseUpdateMetaV2(update)
-  if (![...to].every(([client, clock]) => from.get(client) === clock)) return false
-  const { ds } = Y.decodeUpdateV2(update)
-  for (const [client, deletions] of ds.clients) {
-    const held = Y.getState(document.store, client)
-    if (deletions.some((deletion) => deletion.clock + deletion.len > held)) return false
-  }
-  return true
-}
 
 /**
  * A runtime-neutral relay for collaboration rooms. It forwards room messages between peers and
@@ -130,16 +104,9 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     MAX_COLLAB_MESSAGE_BYTES
   )
   const authTimeoutMs = options.authTimeoutMs ?? 10_000
-  const report = options.onError ?? ((message, error) => console.error(`[Cloud] ${message}`, error))
-
-  function send(socket: RelaySocket, frame: RelayServerFrame) {
-    for (const message of relayServerMessages(frame)) socket.send(message)
-  }
-
-  function sendAll(sockets: Iterable<RelaySocket>, frame: RelayServerFrame) {
-    const messages = relayServerMessages(frame)
-    for (const socket of sockets) for (const message of messages) socket.send(message)
-  }
+  const report =
+    options.onError ??
+    ((message, error) => logCloud('error', message, { source: 'relay', error: loggedError(error) }))
 
   async function openRoom(authorization: RelayAuthorization): Promise<Room> {
     const existing = rooms.get(authorization.roomId)
@@ -164,10 +131,6 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     } finally {
       opening.delete(authorization.roomId)
     }
-  }
-
-  function newRoom(id: string, identity: Room['identity']): Room {
-    return { id, identity, peers: new Map(), persistTimer: null, content: null, loading: null }
   }
 
   /** The room's document and log, loaded from the store the first time something needs them. */
@@ -205,7 +168,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
       await log.save({ closing })
       return true
     } catch (error) {
-      report('Saving a collaboration room failed:', error)
+      report('Saving a collaboration room failed', error)
       // The room holds edits the store doesn't have; save again without waiting for another edit.
       // A closing room retries through `saveAndClose`.
       if (!closing && rooms.get(room.id) === room) {
@@ -219,38 +182,9 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     room.persistTimer ??= setTimeout(() => void persist(room), persistDelayMs)
   }
 
-  /**
-   * Applies a peer's V2 update to the room, inflated first for a sync reply. Rooms are saved as
-   * V1 updates; only what peers exchange is V2.
-   */
-  function applyToRoom(
-    content: RoomContent,
-    peer: Peer,
-    namespace: string,
-    payload: Uint8Array
-  ): boolean {
-    const { document } = content
-    try {
-      const update = decodeRoomUpdate(payload, {
-        limit: maximumRoomBytes,
-        compressed: namespace === COLLAB_ACTIONS.syncReply
-      })
-      if (!update || !fits(content, update)) {
-        peer.socket.close(RELAY_CLOSE.messageTooLarge, 'Collaboration update is too large')
-        return false
-      }
-      Y.applyUpdateV2(document, update, peer.id)
-      content.bytes += update.byteLength
-      return true
-    } catch {
-      peer.socket.close(RELAY_CLOSE.protocol, 'Malformed document update')
-      return false
-    }
-  }
-
   function forward(
     room: Room,
-    from: Peer,
+    from: RelayPeer,
     namespace: string,
     target: string | null,
     payload: Uint8Array
@@ -262,58 +196,10 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     sendAll(deliverable(recipients.flatMap((peer) => (peer ? [peer] : []))), frame)
   }
 
-  /**
-   * Whether the room's document stays within its limit after `update`. An update that only
-   * deletes what the room holds shrinks it, so it always fits; one that deletes what the room has
-   * not received waits in the document, so it counts like any other. Otherwise the bound grows by
-   * the update; past the limit, the document is measured only if a deletion may have shrunk it
-   * since the last measure, so edits near the limit never encode the whole document each time.
-   */
-  function fits(content: RoomContent, update: Uint8Array): boolean {
-    if (deletesOnlyKnown(content.document, update)) return true
-    if (content.bytes + update.byteLength <= maximumRoomBytes) return true
-    if (!content.deletedSinceMeasure) return false
-    content.bytes = Y.encodeStateAsUpdateV2(content.document).byteLength
-    content.deletedSinceMeasure = false
-    return content.bytes + update.byteLength <= maximumRoomBytes
-  }
-
-  function handleServerMessage(
-    content: RoomContent,
-    peer: Peer,
-    namespace: string,
-    payload: Uint8Array
-  ) {
-    if (namespace === COLLAB_ACTIONS.syncStep1) {
-      let reply: Uint8Array
-      try {
-        reply = encodeSyncReply(content.document, payload)
-      } catch {
-        peer.socket.close(RELAY_CLOSE.protocol, 'Malformed state vector')
-        return
-      }
-      send(peer.socket, {
-        type: 'message',
-        namespace: COLLAB_ACTIONS.syncReply,
-        from: RELAY_SERVER_PEER,
-        payload: reply
-      })
-    } else if (namespace === COLLAB_ACTIONS.syncReply) {
-      applyToRoom(content, peer, namespace, payload)
-    }
-  }
-
-  /** Whether handling a message reads or writes the room's document. */
-  function needsDocument(namespace: string, target: string | null): boolean {
-    if (namespace === COLLAB_ACTIONS.yjsUpdate || namespace === COLLAB_ACTIONS.syncReply)
-      return true
-    return target === RELAY_SERVER_PEER && namespace === COLLAB_ACTIONS.syncStep1
-  }
-
   function handleMessage(
     room: Room,
     content: RoomContent | null,
-    peer: Peer,
+    peer: RelayPeer,
     namespace: string,
     target: string | null,
     payload: Uint8Array
@@ -338,12 +224,12 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     }
 
     if (target === RELAY_SERVER_PEER) {
-      if (content) handleServerMessage(content, peer, namespace, payload)
+      if (content) answerAsServer(content, peer, namespace, payload, maximumRoomBytes)
       return
     }
     if (
-      (namespace === COLLAB_ACTIONS.yjsUpdate || namespace === COLLAB_ACTIONS.syncReply) &&
-      !(content && applyToRoom(content, peer, namespace, payload))
+      updatesDocument(namespace) &&
+      !(content && applyToRoom(content, peer, namespace, payload, maximumRoomBytes))
     ) {
       return
     }
@@ -355,18 +241,18 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
    * the relay hears from the peer and before it sends the peer anything, never by a timer, so a
    * runtime can set an idle relay aside while sockets stay open.
    */
-  function current(peer: Peer): boolean {
+  function current(peer: RelayPeer): boolean {
     if (Date.now() < peer.authorization.expiresAt) return true
     peer.socket.close(RELAY_CLOSE.expired, 'Collaboration ticket expired')
     return false
   }
 
   /** The sockets of peers whose tickets still hold. */
-  function deliverable(peers: Iterable<Peer>): RelaySocket[] {
+  function deliverable(peers: Iterable<RelayPeer>): RelaySocket[] {
     return [...peers].filter(current).map((peer) => peer.socket)
   }
 
-  function remember(peer: Peer) {
+  function remember(peer: RelayPeer) {
     peer.socket.remember?.({
       peerId: peer.id,
       authorization: peer.authorization,
@@ -375,7 +261,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
   }
 
   /** Handles a room message from an admitted peer; a promise while the room's document loads. */
-  function deliver(peer: Peer, frame: RelayRoomFrame): Promise<void> | undefined {
+  function deliver(peer: RelayPeer, frame: RelayRoomFrame): Promise<void> | undefined {
     const room = rooms.get(peer.authorization.roomId)
     if (!room) {
       peer.socket.close(RELAY_CLOSE.unauthorized, 'Expected a collaboration ticket')
@@ -395,7 +281,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
         return undefined
       },
       (error: unknown) => {
-        report('Loading a collaboration room failed:', error)
+        report('Loading a collaboration room failed', error)
         peer.socket.close(RELAY_CLOSE.protocol, 'Could not open the collaboration room')
       }
     )
@@ -404,7 +290,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
   async function admit(
     socket: RelaySocket,
     authorization: RelayAuthorization
-  ): Promise<Peer | null> {
+  ): Promise<RelayPeer | null> {
     let room: Room
     let limit: number | null | undefined
     let epoch: number | null | undefined
@@ -427,7 +313,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
       if (room.peers.size === 0) await leaveRoom(room)
       return null
     }
-    const peer: Peer = {
+    const peer: RelayPeer = {
       id: crypto.randomUUID(),
       socket,
       authorization,
@@ -479,7 +365,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
     }
   }
 
-  function depart(peer: Peer) {
+  function depart(peer: RelayPeer) {
     const room = rooms.get(peer.authorization.roomId)
     if (!room?.peers.delete(peer.id)) return
     sendAll(deliverable(room.peers.values()), { type: 'leave', peerId: peer.id })
@@ -521,7 +407,7 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
         room = newRoom(authorization.roomId, identity)
         rooms.set(room.id, room)
       }
-      const peer: Peer = {
+      const peer: RelayPeer = {
         id: saved.peerId,
         socket,
         authorization,

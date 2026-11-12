@@ -82,7 +82,7 @@ export function bindStylePaints(
   if ((kind !== 'fill' && kind !== 'stroke') || !styleId) return
   const style = findSharedStyle(graph, styleId, 'FILL')
   if (!style) return
-  setPaintBindings(graph, node, kind === 'fill' ? 'fills' : 'strokes', figmaFills(graph, style))
+  setPaintBindings(graph, node, kind === 'fill' ? 'fills' : 'strokes', figmaFills(style))
 }
 
 /**

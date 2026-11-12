@@ -51,6 +51,7 @@ maximum_connections_per_room = 1000
 
 [documents]
 retention_days = 30
+purge_grace_days = 7
 
 [email]
 transport = "smtp"

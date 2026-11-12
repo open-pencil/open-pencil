@@ -2,8 +2,9 @@ import { beforeAll, expect, setDefaultTimeout, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { renderNodesToImage, initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
@@ -17,10 +18,10 @@ setDefaultTimeout(HEAVY_TEST_TIMEOUT_MS)
 
 let graph: SceneGraph
 let movingNodeId: string
-let ck: Awaited<ReturnType<typeof initCanvasKit>>
+let ck: Awaited<ReturnType<typeof getCanvasKit>>
 
 beforeAll(async () => {
-  ck = await initCanvasKit()
+  ck = await getCanvasKit()
   await initCodec()
   const buf = readFileSync(repoPath('tests/fixtures/gold-preview.fig'))
   graph = await parseFigFile(buf.buffer as ArrayBuffer)

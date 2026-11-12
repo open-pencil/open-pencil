@@ -1,6 +1,6 @@
-import type { Canvas, Paint, Path } from 'canvaskit-wasm'
 import { fromUint8Array } from 'js-base64'
 
+import type { Canvas, Paint, Path } from '@open-pencil/canvaskit'
 import type { Fill, DerivedTextGlyph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { isGradientFill } from '@open-pencil/scene-graph/gradient'
 import type { Color } from '@open-pencil/scene-graph/primitives'

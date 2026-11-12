@@ -1,1 +1,0 @@
-- `figma.listAvailableFontsAsync()` lists every style of installed and bundled families, and of online families once a font of theirs is loaded, instead of only Regular; in the CLI and the MCP server it lists the bundled and online families instead of none.

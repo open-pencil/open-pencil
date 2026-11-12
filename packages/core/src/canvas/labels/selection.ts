@@ -1,5 +1,4 @@
-import type { Canvas } from 'canvaskit-wasm'
-
+import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneNode, SceneGraph } from '@open-pencil/scene-graph'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 
@@ -123,6 +122,7 @@ export function drawSelectionLabels(
   const sizeFont = r.chromeFonts.size
   if (!labelFont || !sizeFont) return
   const activeOverlays = overlays ?? {}
+  if (activeOverlays.showSizeLabels === false) return
   const { nodes, minX, minY, maxX, maxY } = accumulateSelectionBounds(
     graph,
     selectedIds,

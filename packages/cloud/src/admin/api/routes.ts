@@ -276,6 +276,10 @@ export function createCloudAdminRoutes(
       await services.documents.enable(context.get('actor').userId, context.req.valid('param').id)
       return context.json({ ok: true as const })
     })
+    .post('/documents/:id/undelete', idParams, async (context) => {
+      await services.documents.undelete(context.get('actor').userId, context.req.valid('param').id)
+      return context.json({ ok: true as const })
+    })
     .post('/shares/:id/revoke', idParams, async (context) => {
       await services.documents.revokeShare(
         context.get('actor').userId,
