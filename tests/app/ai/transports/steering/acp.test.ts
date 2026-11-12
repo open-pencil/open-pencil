@@ -146,6 +146,27 @@ test('the agent carries on in its session with the steering message', async () =
   await chat.destroy()
 })
 
+test("a finished reply's Stop never cancels the next reply in the session", async () => {
+  const agents = fakeAgents({ turn: 'held' })
+  const { transport: chat } = transport(agents)
+  const stop = new AbortController()
+  const first = sending(chat, 'first', [], stop.signal)
+  await agents.promptTaken
+  agents.endTurn('end_turn')
+  await first.ended
+
+  const second = sending(chat, 'second', [message('user', 'first'), message('assistant', 'Done')])
+  await agents.promptsTaken(2)
+  stop.abort()
+  await tick()
+  expect(agents.cancels).toEqual([])
+
+  agents.endTurn('end_turn')
+  await second.ended
+  expect(second.chunks.at(-1)).toEqual({ type: 'finish', finishReason: 'stop' })
+  await chat.destroy()
+})
+
 test('a steering message written after the reply ended cancels nothing', async () => {
   const agents = fakeAgents()
   const { transport: chat } = transport(agents, { yieldWhen: hasSteeringMessage })

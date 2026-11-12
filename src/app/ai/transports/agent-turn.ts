@@ -81,11 +81,18 @@ export function streamAgentTurn({
   /** The reply's stream while someone reads it; once it ended or its reader left, null. */
   let reading: ReadableStreamDefaultController<UIMessageChunk> | null = null
 
+  function stopTurn() {
+    cancelTurn()
+    finish('stop')
+  }
+
   /** Ends the reply, once, and hands back its stream if someone still reads it. */
   function release() {
     const controller = reading
     reading = null
     steering.stop()
+    // The signal can outlive the reply, and its abort then would cancel the session's next turn.
+    abortSignal?.removeEventListener('abort', stopTurn)
     if (controller) {
       if (store && run) endRun(store, run)
       session.onUpdate = null
@@ -116,10 +123,7 @@ export function streamAgentTurn({
         steering.check()
       }
 
-      abortSignal?.addEventListener('abort', () => {
-        cancelTurn()
-        finish('stop')
-      })
+      abortSignal?.addEventListener('abort', stopTurn)
 
       controller.enqueue({ type: 'start' })
       controller.enqueue({ type: 'start-step' })
