@@ -16,6 +16,7 @@ import {
 } from '@/app/settings/preferences/store'
 import { DEFAULT_THEME } from '@/app/settings/theme'
 import { DEFAULT_ACCENT } from '@/app/shell/accent/palette'
+import { isRightToLeftLocale, mirrorInterfacePreference } from '@/app/shell/direction'
 import { interfaceScalePreference } from '@/app/shell/interface-scale'
 import { animationPreference } from '@/app/shell/motion'
 import { useAppTheme } from '@/app/shell/theme'
@@ -63,6 +64,7 @@ const preserveUnsavedWork = computed({
   set: setRecoveryEnabled
 })
 const defaultInterfaceScale = DEFAULT_APP_PREFERENCES.appearance.interfaceScale
+const defaultMirror = DEFAULT_APP_PREFERENCES.appearance.mirrorInterface
 const interfaceScaleOptions = computed(() => {
   const format = new Intl.NumberFormat(locale.value, { style: 'percent' })
   return INTERFACE_SCALES.map((value) => ({ value, label: format.format(value / 100) }))
@@ -82,6 +84,20 @@ const interfaceScaleOptions = computed(() => {
             :options="languageOptions"
             :ui="selectUI"
             data-test-id="settings-language"
+          />
+        </SettingsRow>
+        <SettingsRow
+          v-if="isRightToLeftLocale(locale)"
+          as="label"
+          :label="settings.mirrorInterface"
+          :description="settings.mirrorInterfaceDescription"
+          :modified="mirrorInterfacePreference !== defaultMirror"
+          @reset="mirrorInterfacePreference = defaultMirror"
+        >
+          <AppSwitch
+            v-model="mirrorInterfacePreference"
+            :label="settings.mirrorInterface"
+            data-test-id="settings-mirror-interface"
           />
         </SettingsRow>
       </SettingsGroup>

@@ -4,7 +4,7 @@ import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph, type NodeType } from '@open-pencil/scene-graph'
 import { copyFills } from '@open-pencil/scene-graph/copy'
 
-import { applyPhoto } from '#core/tools/stock-photo/apply'
+import { applyPhotos } from '#core/tools/stock-photo/apply'
 import type { StockPhotoProvider, StockPhotoSearchOptions } from '#core/tools/stock-photo/providers'
 
 const PNG_BYTES = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
@@ -65,7 +65,7 @@ const UNSUITABLE_TARGET_TYPES = [
   'SHAPE_WITH_TEXT'
 ] as const satisfies readonly NodeType[]
 
-describe('applyPhoto', () => {
+describe('applyPhotos', () => {
   for (const type of AREA_TARGET_TYPES) {
     test(`applies a photo to an empty ${type}`, async () => {
       const { graph, page, figma } = setup()
@@ -78,23 +78,36 @@ describe('applyPhoto', () => {
       })
       const calls: ProviderCall[] = []
 
-      const result = await applyPhoto(figma, createProvider(calls), {
-        id: node.id,
-        query: 'mountain sunset',
-        orientation: 'landscape'
-      })
+      const [result] = await applyPhotos(figma, createProvider(calls), [
+        {
+          id: node.id,
+          query: 'mountain sunset',
+          orientation: 'landscape'
+        }
+      ])
 
       expect(result.error).toBeUndefined()
-      expect(result.photo).toMatchObject({ sourceId: 'photo-1', provider: 'test' })
+      expect(result.photo).toMatchObject({
+        sourceId: 'photo-1',
+        provider: 'test'
+      })
       expect(calls).toEqual([
         {
           query: 'mountain sunset',
           options: { perPage: 3, orientation: 'landscape', targetDim: 320 }
         }
       ])
-      expect(node.fills[0]).toMatchObject({ type: 'IMAGE', imageScaleMode: 'FILL' })
+      expect(node.fills[0]).toMatchObject({
+        type: 'IMAGE',
+        imageScaleMode: 'FILL'
+      })
       expect(graph.images.size).toBe(1)
-      expect({ x: node.x, y: node.y, width: node.width, height: node.height }).toEqual({
+      expect({
+        x: node.x,
+        y: node.y,
+        width: node.width,
+        height: node.height
+      }).toEqual({
         x: 12,
         y: 24,
         width: 320,
@@ -117,24 +130,49 @@ describe('applyPhoto', () => {
           { x: 0, y: 100 }
         ],
         segments: [
-          { start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
-          { start: 1, end: 2, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
-          { start: 2, end: 3, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
-          { start: 3, end: 0, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
+          {
+            start: 0,
+            end: 1,
+            tangentStart: { x: 0, y: 0 },
+            tangentEnd: { x: 0, y: 0 }
+          },
+          {
+            start: 1,
+            end: 2,
+            tangentStart: { x: 0, y: 0 },
+            tangentEnd: { x: 0, y: 0 }
+          },
+          {
+            start: 2,
+            end: 3,
+            tangentStart: { x: 0, y: 0 },
+            tangentEnd: { x: 0, y: 0 }
+          },
+          {
+            start: 3,
+            end: 0,
+            tangentStart: { x: 0, y: 0 },
+            tangentEnd: { x: 0, y: 0 }
+          }
         ],
         regions: [{ windingRule: 'NONZERO', loops: [[0, 1, 2, 3]] }]
       }
     })
     const calls: ProviderCall[] = []
 
-    const result = await applyPhoto(figma, createProvider(calls), {
-      id: vector.id,
-      query: 'marble texture'
-    })
+    const [result] = await applyPhotos(figma, createProvider(calls), [
+      {
+        id: vector.id,
+        query: 'marble texture'
+      }
+    ])
 
     expect(result.error).toBeUndefined()
     expect(calls).toHaveLength(1)
-    expect(vector.fills[0]).toMatchObject({ type: 'IMAGE', imageScaleMode: 'FILL' })
+    expect(vector.fills[0]).toMatchObject({
+      type: 'IMAGE',
+      imageScaleMode: 'FILL'
+    })
   })
 
   test('rejects open vector geometry before searching', async () => {
@@ -146,17 +184,26 @@ describe('applyPhoto', () => {
           { x: 0, y: 0 },
           { x: 100, y: 100 }
         ],
-        segments: [{ start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }],
+        segments: [
+          {
+            start: 0,
+            end: 1,
+            tangentStart: { x: 0, y: 0 },
+            tangentEnd: { x: 0, y: 0 }
+          }
+        ],
         regions: []
       }
     })
     const originalFills = copyFills(vector.fills)
     const calls: ProviderCall[] = []
 
-    const result = await applyPhoto(figma, createProvider(calls), {
-      id: vector.id,
-      query: 'should not run'
-    })
+    const [result] = await applyPhotos(figma, createProvider(calls), [
+      {
+        id: vector.id,
+        query: 'should not run'
+      }
+    ])
 
     expect(result.error).toBe(
       `"${vector.name}" has no closed vector regions — use closed area geometry`
@@ -177,14 +224,19 @@ describe('applyPhoto', () => {
     graph.createNode('ELLIPSE', operation.id)
     const calls: ProviderCall[] = []
 
-    const result = await applyPhoto(figma, createProvider(calls), {
-      id: operation.id,
-      query: 'abstract texture'
-    })
+    const [result] = await applyPhotos(figma, createProvider(calls), [
+      {
+        id: operation.id,
+        query: 'abstract texture'
+      }
+    ])
 
     expect(result.error).toBeUndefined()
     expect(calls).toHaveLength(1)
-    expect(operation.fills[0]).toMatchObject({ type: 'IMAGE', imageScaleMode: 'FILL' })
+    expect(operation.fills[0]).toMatchObject({
+      type: 'IMAGE',
+      imageScaleMode: 'FILL'
+    })
   })
 
   for (const type of UNSUITABLE_TARGET_TYPES) {
@@ -207,10 +259,12 @@ describe('applyPhoto', () => {
       const originalFills = copyFills(node.fills)
       const calls: ProviderCall[] = []
 
-      const result = await applyPhoto(figma, createProvider(calls), {
-        id: node.id,
-        query: 'should not run'
-      })
+      const [result] = await applyPhotos(figma, createProvider(calls), [
+        {
+          id: node.id,
+          query: 'should not run'
+        }
+      ])
 
       // A page reads as Figma's PAGE, the type the error names.
       const named = type === 'CANVAS' ? 'PAGE' : type
@@ -239,10 +293,12 @@ describe('applyPhoto', () => {
       const originalFills = copyFills(container.fills)
       const calls: ProviderCall[] = []
 
-      const result = await applyPhoto(figma, createProvider(calls), {
-        id: container.id,
-        query: 'should not run'
-      })
+      const [result] = await applyPhotos(figma, createProvider(calls), [
+        {
+          id: container.id,
+          query: 'should not run'
+        }
+      ])
 
       expect(result.error).toBe(`"${container.name}" has children — use a leaf image placeholder`)
       expect(calls).toHaveLength(0)
@@ -251,4 +307,28 @@ describe('applyPhoto', () => {
       expect(graph.images.size).toBe(0)
     })
   }
+})
+
+test('leaves a target that gained children during the download, and fills the rest', async () => {
+  const { graph, page, figma } = setup()
+  const placeholder = graph.createNode('RECTANGLE', page.id, { width: 100, height: 100 })
+  const filled = graph.createNode('FRAME', page.id, { width: 100, height: 100 })
+  const provider = createProvider([])
+  const search = provider.search.bind(provider)
+  provider.search = async (query, options) => {
+    const results = await search(query, options)
+    // Someone fills the frame with content while the photos download.
+    if (query === 'frame') graph.createNode('RECTANGLE', filled.id)
+    return results
+  }
+
+  const [photo, refused] = await applyPhotos(figma, provider, [
+    { id: placeholder.id, query: 'rectangle' },
+    { id: filled.id, query: 'frame' }
+  ])
+
+  expect(photo.error).toBeUndefined()
+  expect(graph.getNode(placeholder.id)?.fills[0]?.type).toBe('IMAGE')
+  expect(refused.error).toBe(`"${filled.name}" has children — use a leaf image placeholder`)
+  expect(graph.getNode(filled.id)?.fills.some((fill) => fill.type === 'IMAGE')).toBe(false)
 })

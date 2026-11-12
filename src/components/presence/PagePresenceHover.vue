@@ -9,12 +9,14 @@ import { DEFAULT_COLLAB_STATE, useCollabInjected } from '@/app/collab/use'
 import { useActiveEditorStoreRef } from '@/app/editor/active-store'
 import { follow, presenceOf } from '@/app/presence/registry'
 import type { FollowTarget } from '@/app/presence/types'
+import { useInlineSide } from '@/components/ui/direction/inline-side'
 import pagePresenceTheme from '@/theme/collaboration/page-presence'
 
 import AvatarStack from './AvatarStack.vue'
 import PresenceList from './PresenceList.vue'
 import { pagePresenceRows } from './rows'
 
+const endSide = useInlineSide('end')
 const pagePresence = tv(pagePresenceTheme)
 
 /**
@@ -57,7 +59,7 @@ function followTarget(target: FollowTarget | null) {
       <HoverCardContent
         data-test-id="page-presence-card"
         :class="ui.card()"
-        side="right"
+        :side="endSide"
         align="start"
         :side-offset="8"
       >

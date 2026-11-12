@@ -46,8 +46,8 @@ function downloadCodes() {
       </ul>
       <p v-if="!saved" class="mt-2 text-2xs text-muted">{{ messages.recoveryCodesSaveFirst }}</p>
     </AppDialogBody>
-    <AppDialogFooter :ui="{ footer: 'justify-between' }">
-      <div class="flex items-center gap-1">
+    <AppDialogFooter>
+      <template #start>
         <AppCopyButton
           :value="codes.join('\n')"
           :label="messages.copyCodes"
@@ -59,7 +59,7 @@ function downloadCodes() {
           <template #leading><icon-lucide-download class="size-3.5" /></template>
           {{ messages.downloadCodes }}
         </AppButton>
-      </div>
+      </template>
       <AppButton color="primary" variant="solid" :disabled="!saved" @click="open = false">
         {{ messages.done }}
       </AppButton>

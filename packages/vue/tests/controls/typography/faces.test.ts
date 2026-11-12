@@ -4,7 +4,7 @@ import { computed, effectScope, nextTick, shallowRef } from 'vue'
 
 import { createEditor } from '@open-pencil/core'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { facesFromStyles, fontManager, WEB_FONT_PROVIDER_IDS } from '@open-pencil/core/text'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
@@ -271,7 +271,12 @@ async function variableText(fontSize = 24) {
     fontSize
   })
   const scope = effectScope()
-  const axes = scope.run(() => createTypographyAxes(editor, computed(() => [text])))
+  const axes = scope.run(() =>
+    createTypographyAxes(
+      editor,
+      computed(() => [text])
+    )
+  )
   if (!axes) throw new Error('Expected the axes')
   return { editor, text, axes, stop: () => scope.stop() }
 }
@@ -346,7 +351,7 @@ test('a cancelled axis edit puts back the axes it previewed', async () => {
 
 test('an axis set while text is edited styles the selected characters, and undoes', async () => {
   await fontManager.loadFont('Inter', 'Regular')
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const surface = ck.MakeSurface(200, 200)
   if (!surface) throw new Error('Expected a surface')
   const renderer = new SkiaRenderer(ck, surface)
@@ -365,7 +370,12 @@ test('an axis set while text is edited styles the selected characters, and undoe
   state.selectionAnchor = 6
   state.cursor = 11
   const scope = effectScope()
-  const axes = scope.run(() => createTypographyAxes(editor, computed(() => [text])))
+  const axes = scope.run(() =>
+    createTypographyAxes(
+      editor,
+      computed(() => [text])
+    )
+  )
   if (!axes) throw new Error('Expected the axes')
   const node = () => editor.graph.getNode(text.id)
   try {
@@ -451,7 +461,7 @@ test('a cancelled size on a layer a range sized puts the range back', () => {
 
 test('a cancelled axis edit on selected characters puts back their own axes', async () => {
   await fontManager.loadFont('Inter', 'Regular')
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const surface = ck.MakeSurface(200, 200)
   if (!surface) throw new Error('Expected a surface')
   const renderer = new SkiaRenderer(ck, surface)
@@ -472,7 +482,12 @@ test('a cancelled axis edit on selected characters puts back their own axes', as
   state.selectionAnchor = 6
   state.cursor = 11
   const scope = effectScope()
-  const axes = scope.run(() => createTypographyAxes(editor, computed(() => [text])))
+  const axes = scope.run(() =>
+    createTypographyAxes(
+      editor,
+      computed(() => [text])
+    )
+  )
   if (!axes) throw new Error('Expected the axes')
   try {
     axes.previewAxis('wght', 500)
@@ -493,7 +508,12 @@ test('an axis set on a whole text keeps the other axes a range sets', () => {
     styleRuns: [width]
   })
   const scope = effectScope()
-  const axes = scope.run(() => createTypographyAxes(editor, computed(() => [text])))
+  const axes = scope.run(() =>
+    createTypographyAxes(
+      editor,
+      computed(() => [text])
+    )
+  )
   if (!axes) throw new Error('Expected the axes')
   const node = () => editor.graph.getNode(text.id)
   try {
@@ -522,7 +542,7 @@ test('an axis set on a whole text keeps the other axes a range sets', () => {
 
 test('a cancelled axis preview that outlived text editing puts back the layer and its ranges', async () => {
   await fontManager.loadFont('Inter', 'Regular')
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const surface = ck.MakeSurface(200, 200)
   if (!surface) throw new Error('Expected a surface')
   const renderer = new SkiaRenderer(ck, surface)
@@ -543,7 +563,12 @@ test('a cancelled axis preview that outlived text editing puts back the layer an
   state.selectionAnchor = 6
   state.cursor = 11
   const scope = effectScope()
-  const axes = scope.run(() => createTypographyAxes(editor, computed(() => [text])))
+  const axes = scope.run(() =>
+    createTypographyAxes(
+      editor,
+      computed(() => [text])
+    )
+  )
   if (!axes) throw new Error('Expected the axes')
   const node = () => editor.graph.getNode(text.id)
   try {

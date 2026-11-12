@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, test } from 'bun:test'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import {
   type DerivedTextGlyph,
   type Effect,
@@ -9,6 +9,7 @@ import {
   type SceneNode
 } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
+import { repoPath } from '@open-pencil/test-support/paths'
 
 import { buildParagraph, textVerticalOffset } from '#core/canvas/text'
 import { savedTextInk } from '#core/canvas/text/ink'
@@ -16,7 +17,6 @@ import { laidOutGlyphs } from '#core/canvas/text/placed'
 import { shownText } from '#core/text/case'
 import { fontManager } from '#core/text/font/manager'
 import { withTextInkMeasurer } from '#core/text/ink'
-import { repoPath } from '@open-pencil/test-support/paths'
 
 const SIZE = 128
 const FONT_SIZE = 20
@@ -31,7 +31,7 @@ const ARABIC_FAMILY = 'Noto Naskh Arabic'
 const ARABIC_WORD = '\u0628\u062C'
 const SHORT_LINE = { value: 50, unit: 'PERCENT' as const }
 
-const ck = await initCanvasKit()
+const ck = await getCanvasKit()
 const loading = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(SIZE, SIZE), 'surface'))
 const loaded = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(SIZE, SIZE), 'surface'))
 await loaded.loadFonts()
@@ -76,7 +76,12 @@ function savedGlyph(placement: Partial<DerivedTextGlyph> = {}): DerivedTextGlyph
   }
 }
 
-const black = { type: 'SOLID' as const, color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }
+const black = {
+  type: 'SOLID' as const,
+  color: { r: 0, g: 0, b: 0, a: 1 },
+  opacity: 1,
+  visible: true
+}
 
 const trimmedWithoutItsFont: Partial<SceneNode> = {
   text: 'A',

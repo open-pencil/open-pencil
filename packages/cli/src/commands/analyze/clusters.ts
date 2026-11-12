@@ -3,6 +3,7 @@ import { mean, sumBy } from 'es-toolkit'
 
 import type { AnalyzeClustersResult } from '@open-pencil/core/rpc'
 import { calcClusterConfidence } from '@open-pencil/core/tools'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 
 import { appTargetOptions } from '#cli/app/target'
 import { bold, fmtList, fmtSummary } from '#cli/format'
@@ -71,8 +72,8 @@ export default defineCommand({
 
       const widths = c.nodes.map((n) => n.width)
       const heights = c.nodes.map((n) => n.height)
-      const wRange = Math.max(...widths) - Math.min(...widths)
-      const hRange = Math.max(...heights) - Math.min(...heights)
+      const wRange = maxOf(widths) - minOf(widths)
+      const hRange = maxOf(heights) - minOf(heights)
       const avgW = Math.round(mean(widths))
       const avgH = Math.round(mean(heights))
 

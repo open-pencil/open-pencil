@@ -29,6 +29,7 @@ export interface AutomationSettings {
     theme: AppTheme
     language: Locale
     animations: AppPreferences['appearance']['animations']
+    mirrorInterface: boolean
     accent: AppPreferences['appearance']['accent']
   }
   editing: AppPreferences['editing']
@@ -45,6 +46,7 @@ const automationSettingsPatchSchema = v.strictObject({
       theme: v.optional(v.picklist(APP_THEMES)),
       language: v.optional(v.picklist(AVAILABLE_LOCALES)),
       animations: v.optional(v.picklist(ANIMATION_PREFERENCES)),
+      mirrorInterface: optionalBooleanSchema,
       accent: v.optional(accentPreferenceSchema)
     })
   ),
@@ -86,6 +88,7 @@ export function readAutomationSettings(): AutomationSettings {
       theme: getAppTheme(),
       language: locale.get(),
       animations: preferences.appearance.animations,
+      mirrorInterface: preferences.appearance.mirrorInterface,
       accent: { ...preferences.appearance.accent }
     },
     editing: { snapping: { ...preferences.editing.snapping } },

@@ -73,6 +73,8 @@ export function createNudgeActions(ctx: EditorContext) {
   let nudgeOriginals: Map<string, Vector> | null = null
   let reorderOriginals: Map<string, string[]> | null = null
   let nudgeCommitTimer: ReturnType<typeof setTimeout> | null = null
+  /** Open from the first key press until the nudge records its step, which waits for a pause. */
+  let closeNudgeEdit: (() => void) | null = null
 
   function applyOrder(parentId: string, order: readonly string[]) {
     order.forEach((id, index) => ctx.graph.insertChildAt(id, parentId, index))
@@ -100,7 +102,18 @@ export function createNudgeActions(ctx: EditorContext) {
 
   function commitNudge() {
     nudgeCommitTimer = null
-    commitReorder()
+    const before = ctx.undo.peekUndo()
+    try {
+      commitReorder()
+      commitMove()
+    } finally {
+      closeNudgeEdit?.()
+      closeNudgeEdit = null
+      if (ctx.undo.peekUndo() === before) ctx.undo.discardEdit()
+    }
+  }
+
+  function commitMove() {
     if (!nudgeOriginals) return
     const originals = nudgeOriginals
     nudgeOriginals = null
@@ -161,6 +174,7 @@ export function createNudgeActions(ctx: EditorContext) {
     }
     if (movable.length === 0) return
 
+    closeNudgeEdit ??= ctx.undo.openEdit()
     const reordered = reorderInFlows(movable, dx, dy)
     const nudged = movable.filter((id) => !reordered.has(id))
 
@@ -175,7 +189,7 @@ export function createNudgeActions(ctx: EditorContext) {
     for (const id of nudged) {
       const node = ctx.graph.getNode(id)
       if (!node) continue
-      ctx.graph.updateNode(id, { x: node.x + dx, y: node.y + dy })
+      ctx.graph.updateNode(id, ctx.constrainMove(node, { x: node.x + dx, y: node.y + dy }))
       ctx.runLayoutForNode(id)
     }
 

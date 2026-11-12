@@ -5,10 +5,12 @@ import type {
   AdminEnrollmentNotificationPayload,
   AuthenticationEmailPayload,
   DocumentInvitationEmailPayload,
+  DocumentReportPayload,
   EmailChangeRequestedPayload,
   EnrollmentEmailPayload,
   NewSignInPayload,
   RenderedTransactionalEmail,
+  StorageLimitReachedPayload,
   TransactionalEmailContent,
   TransactionalEmailKind,
   TwoStepChange,
@@ -74,6 +76,8 @@ type EnrollmentMessageKind = Exclude<
   | 'email-change-requested'
   | 'new-sign-in'
   | 'two-step-changed'
+  | 'document-report'
+  | 'storage-limit-reached'
 >
 
 type EnrollmentCopy = {
@@ -138,6 +142,29 @@ async function renderAdminNotification(payload: AdminEnrollmentNotificationPaylo
       actionURL: payload.actionURL
     },
     'New OpenPencil Cloud access request'
+  )
+}
+
+const REPORT_REASON_LABELS: Record<string, string> = {
+  'spam-phishing': 'spam or phishing',
+  illegal: 'illegal content',
+  copyright: 'copyright',
+  harassment: 'harassment',
+  other: 'something else'
+}
+
+async function renderDocumentReport(payload: DocumentReportPayload) {
+  const reason = REPORT_REASON_LABELS[payload.reason] ?? payload.reason
+  return rendered(
+    EnrollmentEmail,
+    {
+      heading: 'A shared document was reported',
+      preview: `“${payload.documentName}” was reported for ${reason}.`,
+      message: `Someone who opened “${payload.documentName}” from a share link reported it for ${reason}: ${payload.description}`,
+      actionLabel: 'Review report',
+      actionURL: payload.actionURL
+    },
+    'A shared OpenPencil Cloud document was reported'
   )
 }
 
@@ -254,6 +281,45 @@ async function renderTwoStepChanged(payload: TwoStepChangedPayload) {
   )
 }
 
+const STORAGE_UNITS = [
+  { unit: 'gigabyte', bytes: 1024 ** 3 },
+  { unit: 'megabyte', bytes: 1024 ** 2 },
+  { unit: 'kilobyte', bytes: 1024 }
+] as const
+
+/** Bytes as the portal shows them, in binary units: 300 MB, 10 GB. */
+function storageAmount(bytes: number): string {
+  const { unit, bytes: size } = STORAGE_UNITS.find((step) => bytes >= step.bytes) ?? {
+    unit: 'byte',
+    bytes: 1
+  }
+  return new Intl.NumberFormat('en', {
+    style: 'unit',
+    unit,
+    unitDisplay: 'short',
+    maximumFractionDigits: 1
+  }).format(bytes / size)
+}
+
+async function renderStorageLimitReached(payload: StorageLimitReachedPayload) {
+  const used = storageAmount(payload.usedBytes)
+  const limit = storageAmount(payload.limitBytes)
+  const remedy = payload.upgradable
+    ? 'Get more storage, or delete documents and empty the trash, to edit again.'
+    : 'Delete documents and empty the trash to edit again.'
+  return rendered(
+    EnrollmentEmail,
+    {
+      heading: 'Your storage is full',
+      preview: `Your OpenPencil Cloud files use ${used} of ${limit}, so they are read-only.`,
+      message: `Hi ${payload.name}, your workspaces hold ${used}, and your plan includes ${limit}. Until they hold less, your documents open and download but take no edits or new files. ${remedy}`,
+      actionLabel: payload.upgradable ? 'Get more storage' : 'Open OpenPencil Cloud',
+      actionURL: payload.actionURL
+    },
+    'Your OpenPencil Cloud files are read-only'
+  )
+}
+
 export async function renderTransactionalEmail(
   content: TransactionalEmailContent
 ): Promise<RenderedTransactionalEmail> {
@@ -272,5 +338,7 @@ export async function renderTransactionalEmail(
   if (content.kind === 'email-change-requested') return renderEmailChangeRequested(content.payload)
   if (content.kind === 'new-sign-in') return renderNewSignIn(content.payload)
   if (content.kind === 'two-step-changed') return renderTwoStepChanged(content.payload)
+  if (content.kind === 'document-report') return renderDocumentReport(content.payload)
+  if (content.kind === 'storage-limit-reached') return renderStorageLimitReached(content.payload)
   return renderEnrollment(content.kind, content.payload)
 }

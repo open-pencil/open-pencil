@@ -1,24 +1,27 @@
 import { expect, test, mock } from 'bun:test'
+
+import type { Font, Paint, Surface } from '@open-pencil/canvaskit'
 import { expectDefined } from '@open-pencil/test-support/assert'
+
 import { SkiaRenderer } from '#core/canvas'
-import { initCanvasKit } from '#core/io/formats/raster/headless'
-import { fontManager } from '#core/text/font/manager'
-import type { Font, Paint, Surface } from 'canvaskit-wasm'
 import { createImageFilterCache, createMaskFilterCache } from '#core/canvas/effects'
+import { createGlassMapCache } from '#core/canvas/glass/map'
 import { createRendererImages } from '#core/canvas/images/state'
 import { IssueMarkerStage } from '#core/canvas/issues/stage'
 import type { NodeEditPaints } from '#core/canvas/node-edit-overlay'
 import { createDashEffectCache } from '#core/canvas/overlays/outline'
 import { NodePathCaches } from '#core/canvas/paths/cache'
-
 import { destroyRenderer } from '#core/canvas/renderer/lifecycle'
 import { createCompiledShaders } from '#core/canvas/renderer/shaders'
 import { createWholeScenePicture } from '#core/canvas/renderer/state'
 import { createTextCaches } from '#core/canvas/text/caches'
 import { TextPreparationCache } from '#core/canvas/text/preparation/cache'
+import { getCanvasKit } from '#core/canvaskit'
+import { fontManager } from '#core/text/font/manager'
+
 import { asDouble, asRenderer } from '../helpers'
 
-const ck = await initCanvasKit()
+const ck = await getCanvasKit()
 
 const renderer = () => new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1), 'surface'))
 
@@ -77,6 +80,7 @@ function createRenderer() {
     penVertexFill: deletable<Paint>(),
     penVertexStroke: deletable<Paint>(),
     imageFilterCache: createImageFilterCache(),
+    glassMaps: createGlassMapCache(),
     dashEffects: createDashEffectCache(),
     shaders: createCompiledShaders(),
     maskFilterCache: createMaskFilterCache(),

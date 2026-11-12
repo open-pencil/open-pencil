@@ -15,6 +15,8 @@ export type TransactionalEmailKind =
   | 'email-change-requested'
   | 'new-sign-in'
   | 'two-step-changed'
+  | 'document-report'
+  | 'storage-limit-reached'
 
 const documentInvitationEmailPayloadSchema = v.object({
   inviterName: v.string(),
@@ -41,6 +43,22 @@ const adminEnrollmentNotificationPayloadSchema = v.object({
   requesterEmail: v.string(),
   requesterName: v.string(),
   reason: v.string(),
+  actionURL: v.string()
+})
+
+const documentReportPayloadSchema = v.object({
+  documentName: v.string(),
+  reason: v.string(),
+  description: v.string(),
+  actionURL: v.string()
+})
+
+const storageLimitReachedPayloadSchema = v.object({
+  name: v.string(),
+  usedBytes: v.number(),
+  limitBytes: v.number(),
+  /** Whether the server sells plans, so the account can get more storage rather than only free it. */
+  upgradable: v.boolean(),
   actionURL: v.string()
 })
 
@@ -102,7 +120,9 @@ export const transactionalEmailContentSchema = v.variant('kind', [
   content('password-changed', authenticationEmailPayloadSchema),
   content('email-change-requested', emailChangeRequestedPayloadSchema),
   content('new-sign-in', newSignInPayloadSchema),
-  content('two-step-changed', twoStepChangedPayloadSchema)
+  content('two-step-changed', twoStepChangedPayloadSchema),
+  content('document-report', documentReportPayloadSchema),
+  content('storage-limit-reached', storageLimitReachedPayloadSchema)
 ])
 
 /** A transactional email's kind with the payload that kind renders. */
@@ -142,3 +162,5 @@ export type RenderedTransactionalEmail = {
   html: string
   text: string
 }
+export type DocumentReportPayload = v.InferOutput<typeof documentReportPayloadSchema>
+export type StorageLimitReachedPayload = v.InferOutput<typeof storageLimitReachedPayloadSchema>

@@ -1,5 +1,4 @@
 import { pick } from 'es-toolkit'
-import { isValid, toUint8Array } from 'js-base64'
 
 import {
   SceneGraph,
@@ -7,10 +6,11 @@ import {
   type ImageScaleMode,
   type SceneNode
 } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { TRANSPARENT } from '@open-pencil/scene-graph/constants'
 import { parseCSSAlignSelf, parseCSSNumber, parseCSSShadows } from '@open-pencil/scene-graph/css'
 import { blurRadiusForSigma } from '@open-pencil/scene-graph/geometry'
-import { computeImageHash } from '@open-pencil/scene-graph/images'
+import { computeImageHash, imageHeader, parseDataURL } from '@open-pencil/scene-graph/images'
 
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
 import {
@@ -105,15 +105,13 @@ function imageScaleModeFromObjectFit(value: string | undefined): ImageScaleMode 
   return null
 }
 
-function bytesFromDataURL(value: string | undefined): Uint8Array | null {
-  if (!value?.startsWith('data:')) return null
-  const commaIndex = value.indexOf(',')
-  if (commaIndex === -1) return null
-  const metadata = value.slice(0, commaIndex)
-  const body = value.slice(commaIndex + 1)
-  // Invalid Base64 in imported HTML drops that image instead of the whole import.
-  if (!metadata.endsWith(';base64') || !isValid(body)) return null
-  return toUint8Array(body)
+/**
+ * The raster image a data URL carries. Anything else, such as an SVG or Base64 that does not
+ * decode, stays the element's source URL rather than an image fill nothing could draw.
+ */
+function imageFromDataURL(value: string | undefined): Uint8Array | null {
+  const bytes = value ? parseDataURL(value)?.bytes : undefined
+  return bytes && imageHeader(bytes) ? bytes : null
 }
 
 function applyImageFill(
@@ -124,7 +122,7 @@ function applyImageFill(
 ): void {
   if (element.tagName.toLowerCase() !== 'img') return
   const source = element.attrs.src
-  const bytes = bytesFromDataURL(source)
+  const bytes = imageFromDataURL(source)
   if (!bytes) {
     if (source) {
       node.pluginData.push({
@@ -422,8 +420,8 @@ function createDesignNode(
 function fitPageToChildren(page: SceneNode, graph: SceneGraph): void {
   const children = graph.getChildren(page.id)
   if (children.length === 0) return
-  page.width = Math.max(...children.map((child) => child.x + child.width))
-  page.height = Math.max(...children.map((child) => child.y + child.height))
+  page.width = maxOf(children.map((child) => child.x + child.width))
+  page.height = maxOf(children.map((child) => child.y + child.height))
 }
 
 /** Layers built from a styled document, with the boxes its layout was captured at. */

@@ -16,11 +16,19 @@ function isRetryableError(error: unknown): boolean | null {
 }
 
 export function describeDiagnosticError(error: unknown): DiagnosticErrorInfo {
-  if (!(error instanceof Error)) {
+  if (typeof error !== 'object' || error === null) {
     return { errorName: 'UnknownError', errorCode: null, retryable: null }
   }
-  const code = 'code' in error && typeof error.code === 'string' ? error.code : null
-  return { errorName: error.name || 'Error', errorCode: code, retryable: isRetryableError(error) }
+  const value = 'code' in error ? error.code : null
+  const code =
+    typeof value === 'string' || (typeof value === 'number' && Number.isFinite(value))
+      ? String(value)
+      : null
+  return {
+    errorName: error instanceof Error ? error.name || 'Error' : 'UnknownError',
+    errorCode: code,
+    retryable: isRetryableError(error)
+  }
 }
 
 export type DiagnosticErrorDetails = DiagnosticErrorInfo & {

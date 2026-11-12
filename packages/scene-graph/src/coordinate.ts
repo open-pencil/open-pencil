@@ -342,6 +342,31 @@ export interface ResizedBoundsOptions {
   keepRatio?: boolean
   /** Adjusts a locked layer's sizes, such as to whole pixels. */
   round?: (size: number) => number
+  /**
+   * Lands an upright layer's edges on whole pixels from the box's top-left corner, as Figma places
+   * the layers of a selection a handle resizes while Snap to pixel grid is on.
+   */
+  wholeEdges?: boolean
+}
+
+/** Within floating-point noise of each other. */
+const sameEdge = (a: number, b: number) => Math.abs(a - b) < 1e-6
+
+/**
+ * `from`..`to` on the canvas with both ends a whole number of pixels from the box's `start`. An end
+ * on the box's own edge stays there, so a box that snapped to a fractional guide keeps its layers on
+ * it; a span of no length, such as a level line's height, stays at none.
+ */
+function wholeSpan(
+  box: { start: number; end: number },
+  from: number,
+  to: number
+): { start: number; size: number } {
+  const land = (edge: number) =>
+    sameEdge(edge, box.end) ? box.end : box.start + Math.round(edge - box.start)
+  const start = land(from)
+  if (sameEdge(from, to)) return { start, size: 0 }
+  return { start, size: Math.max(1, land(to) - start) }
 }
 
 /** Where a layer sits in its parent and how large it is, with its angle and flips. */
@@ -362,7 +387,11 @@ export function placeInResizedBounds(
   placement: SelectionPlacement,
   from: Rect,
   to: Rect,
-  { keepRatio = false, round = (size: number) => size }: ResizedBoundsOptions = {}
+  {
+    keepRatio = false,
+    round = (size: number) => size,
+    wholeEdges = false
+  }: ResizedBoundsOptions = {}
 ): LayerPlacement {
   const { node, world, parentWorld } = placement
   const scaleX = from.width > 0 ? to.width / from.width : 1
@@ -377,16 +406,36 @@ export function placeInResizedBounds(
   const yLength = Math.hypot(b, d)
   // A layer locked to its ratio scales evenly, by the mean of the box's scales, as in Figma.
   const even = Math.sqrt(Math.abs(scaleX * scaleY))
-  const width = keepRatio ? round(node.width * even) : node.width * xLength
-  const height = keepRatio ? round(node.height * even) : node.height * yLength
+  let width = keepRatio ? round(node.width * even) : node.width * xLength
+  let height = keepRatio ? round(node.height * even) : node.height * yLength
   const ux = xLength > 0 ? a / xLength : 1
   const uy = xLength > 0 ? c / xLength : 0
   const mirrored = a * d - b * c < 0 ? -1 : 1
-  const squared: Mat3 = [ux, -uy * mirrored, tx, uy, ux * mirrored, ty, 0, 0, 1]
+  let [left, top] = [tx, ty]
+  const upright = Math.abs(uy) < 1e-9 && ux > 0 && mirrored > 0
+  if (wholeEdges && !keepRatio && upright) {
+    const across = wholeSpan({ start: to.x, end: to.x + to.width }, tx, tx + width)
+    const down = wholeSpan({ start: to.y, end: to.y + to.height }, ty, ty + height)
+    ;[left, width, top, height] = [across.start, across.size, down.start, down.size]
+  }
+  const squared: Mat3 = [ux, -uy * mirrored, left, uy, ux * mirrored, top, 0, 0, 1]
   const sized = { ...node, width, height }
   const { x, y, rotation, flipX, flipY } =
     localTransformFromWorld(sized, squared, parentWorld) ?? node
   return { x, y, width, height, rotation, flipX, flipY }
+}
+
+/**
+ * Where a layer lands, in its parent's space, when it scales evenly by `scale` about a canvas
+ * point, as Figma's Scale tool scales it: its angle and flips stay, and the point stays put.
+ */
+export function placeScaledAbout(
+  placement: SelectionPlacement,
+  anchor: Vector,
+  scale: number
+): LayerPlacement {
+  const from = { x: anchor.x, y: anchor.y, width: 1, height: 1 }
+  return placeInResizedBounds(placement, from, { ...from, width: scale, height: scale })
 }
 
 /** A canvas pointer movement along the layer's own axes, as its handles measure it. */

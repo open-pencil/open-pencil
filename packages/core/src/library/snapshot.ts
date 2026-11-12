@@ -51,7 +51,7 @@ function collectNodeClosure(graph: SceneGraph, rootIds: string[]): Set<string> {
     const node = graph.getNode(id)
     if (!node) continue
     ids.add(id)
-    pending.push(...node.childIds)
+    for (const childId of node.childIds) pending.push(childId)
     if (node.componentId) pending.push(node.componentId)
   }
   return ids
@@ -156,7 +156,7 @@ export function extractLibrarySnapshot(
     addSnapshotNode(source, snapshot, root.id, page.id, mappedIds, identify)
   for (const [sourceId, targetId] of mappedIds)
     if (sourceId === targetId) throw new Error('Snapshot IDs must be remapped')
-  remapCopiedReferences(snapshot, mappedIds)
+  remapCopiedReferences(snapshot, mappedIds, { followTextLinks: true })
 
   // A published collection brings all its variables, and they the variables they alias.
   const published = variableDependencies(

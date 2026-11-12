@@ -1,6 +1,8 @@
 import { CLOUD_PROTOCOL_MAX_UPLOAD_BYTES } from '#cloud/server/config'
 import {
   DefaultLogger,
+  ErrorCode,
+  OpenFeatureError,
   TypedInMemoryProvider,
   type EvaluationContext,
   type Provider,
@@ -57,6 +59,7 @@ function evaluationContext(context: CloudPolicyContext): EvaluationContext {
     targetingKey: context.targetingKey,
     deploymentMode: context.deploymentMode
   }
+  evaluation.subjectType = context.subjectType
   if (context.actorId) evaluation.actorId = context.actorId
   if (context.workspaceId) evaluation.workspaceId = context.workspaceId
   if (context.organizationId) evaluation.organizationId = context.organizationId
@@ -68,11 +71,24 @@ const logger = new DefaultLogger()
 
 /** A flag's value, or the default when the provider failed or reported an error, as a client does. */
 async function resolved<T>(evaluation: () => Promise<ResolutionDetails<T>>, defaultValue: T) {
+  return (await resolution(evaluation, defaultValue)).value
+}
+
+/**
+ * A flag's value, and whether the provider failed to answer. A flag it doesn't know is no failure:
+ * the default stands for it, as for a plan that sets no value.
+ */
+async function resolution<T>(
+  evaluation: () => Promise<ResolutionDetails<T>>,
+  defaultValue: T
+): Promise<{ value: T; failed: boolean }> {
   try {
     const details = await evaluation()
-    return details.errorCode ? defaultValue : details.value
-  } catch {
-    return defaultValue
+    if (!details.errorCode) return { value: details.value, failed: false }
+    return { value: defaultValue, failed: details.errorCode !== ErrorCode.FLAG_NOT_FOUND }
+  } catch (error) {
+    const unknown = error instanceof OpenFeatureError && error.code === ErrorCode.FLAG_NOT_FOUND
+    return { value: defaultValue, failed: !unknown }
   }
 }
 
@@ -99,15 +115,27 @@ export class CloudPolicy {
   }
 
   number(key: string, defaultValue: number, context: CloudPolicyContext): Promise<number> {
-    return resolved(
-      () =>
-        this.provider.resolveNumberEvaluation(
-          key,
-          defaultValue,
-          evaluationContext(context),
-          logger
-        ),
-      defaultValue
+    return resolved(() => this.evaluateNumber(key, defaultValue, context), defaultValue)
+  }
+
+  /**
+   * Like `number`, and says whether the provider failed to answer, for a caller that must not
+   * take the default for an answer, such as one that undoes something when a limit is gone.
+   */
+  numberResolution(
+    key: string,
+    defaultValue: number,
+    context: CloudPolicyContext
+  ): Promise<{ value: number; failed: boolean }> {
+    return resolution(() => this.evaluateNumber(key, defaultValue, context), defaultValue)
+  }
+
+  private evaluateNumber(key: string, defaultValue: number, context: CloudPolicyContext) {
+    return this.provider.resolveNumberEvaluation(
+      key,
+      defaultValue,
+      evaluationContext(context),
+      logger
     )
   }
 }

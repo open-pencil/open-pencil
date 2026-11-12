@@ -7,12 +7,11 @@ import {
 import { mapVariableValueReferences } from '@open-pencil/scene-graph/variables'
 
 export interface ClipboardVariables {
-  activeModes: Array<[string, string]>
   variables: Variable[]
   collections: VariableCollection[]
 }
 
-/** The variables and collections a copy depends on, with the modes its source shows them in. */
+/** The variables and collections a copy depends on. */
 export function captureClipboardVariables(
   graph: SceneGraph,
   dependencies: LayerDependencies
@@ -25,11 +24,7 @@ export function captureClipboardVariables(
     const collection = graph.variableCollections.get(id)
     return collection ? [structuredClone(collection)] : []
   })
-  const activeModes = collections.flatMap((collection): Array<[string, string]> => {
-    const modeId = graph.activeMode.get(collection.id)
-    return modeId ? [[collection.id, modeId]] : []
-  })
-  return { activeModes, variables, collections }
+  return { variables, collections }
 }
 
 export function importClipboardVariables(graph: SceneGraph, dependencies: ClipboardVariables) {
@@ -75,11 +70,6 @@ export function importClipboardVariables(graph: SceneGraph, dependencies: Clipbo
   function apply() {
     for (const collection of collections) graph.addCollection(structuredClone(collection))
     for (const variable of variables) graph.addVariable(structuredClone(variable))
-    for (const [collectionId, modeId] of dependencies.activeModes) {
-      const nextCollectionId = collectionIds.get(collectionId)
-      const nextModeId = modeIds.get(modeId)
-      if (nextCollectionId && nextModeId) graph.activeMode.set(nextCollectionId, nextModeId)
-    }
   }
   function revert() {
     for (const collection of collections) graph.removeCollection(collection.id)

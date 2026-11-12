@@ -9,6 +9,12 @@ const ORDER_KEY_MAX = 126 // '~'
 const ORDER_KEY_MID = 'O'
 const INDEX_KEY_BASE = ORDER_KEY_MAX - ORDER_KEY_MIN + 1
 
+/** Sorts order keys as Figma does: by plain string comparison. */
+export function compareOrderKeys(a: string, b: string): number {
+  if (a === b) return 0
+  return a < b ? -1 : 1
+}
+
 /** The order key for position `index` of a freshly numbered sibling list. */
 export function fractionalPosition(index: number): string {
   const numTildes = Math.floor(index / INDEX_KEY_BASE)

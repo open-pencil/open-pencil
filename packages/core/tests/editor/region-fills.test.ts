@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { createEditor } from '@open-pencil/core'
 import type { Fill } from '@open-pencil/scene-graph'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 const solid = (r: number, g: number, b: number): Fill => ({
   type: 'SOLID',
@@ -16,7 +16,12 @@ describe("setting a vector's fills", () => {
   test('makes every region draw them, and undo brings the regions back', () => {
     const editor = createEditor()
     const zero = { x: 0, y: 0 }
-    const line = (start: number, end: number) => ({ start, end, tangentStart: zero, tangentEnd: zero })
+    const line = (start: number, end: number) => ({
+      start,
+      end,
+      tangentStart: zero,
+      tangentEnd: zero
+    })
     const vector = editor.graph.createNode('VECTOR', editor.graph.getPages()[0].id, {
       width: 10,
       height: 10,
@@ -29,7 +34,12 @@ describe("setting a vector's fills", () => {
         ],
         segments: [line(0, 1), line(1, 2), line(2, 0)],
         regions: [
-          { windingRule: 'NONZERO', loops: [[0, 1, 2]], fills: [solid(1, 0, 0)], fillStyleId: 'style:red' }
+          {
+            windingRule: 'NONZERO',
+            loops: [[0, 1, 2]],
+            fills: [solid(1, 0, 0)],
+            fillStyleId: 'style:red'
+          }
         ]
       }
     })

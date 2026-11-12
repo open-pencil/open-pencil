@@ -15,9 +15,10 @@ function close(actual: number[] | null, expected: number[]) {
 
 describe('parseCSSTransform', () => {
   test('reads a computed matrix', () => {
-    close(parseCSSTransform('matrix(0.5, 0.866, -0.866, 0.5, 10, 20)', BOX), [
-      0.5, -0.866, 10, 0.866, 0.5, 20, 0, 0, 1
-    ])
+    close(
+      parseCSSTransform('matrix(0.5, 0.866, -0.866, 0.5, 10, 20)', BOX),
+      [0.5, -0.866, 10, 0.866, 0.5, 20, 0, 0, 1]
+    )
   })
 
   test('composes functions left to right, as CSS does', () => {

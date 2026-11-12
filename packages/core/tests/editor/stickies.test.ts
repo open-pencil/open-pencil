@@ -5,10 +5,9 @@ import { setTextMeasurer } from '@open-pencil/core/layout'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { STICKY_COLORS, stickySublayers } from '@open-pencil/scene-graph/generated'
 import { lineHeightPixels, percentLength } from '@open-pencil/scene-graph/text'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { applyGeneratedTextNameEdit } from '#core/editor/text/name'
-
-import { expectDefined } from '@open-pencil/test-support/assert'
 function setup() {
   const editor = createEditor({ getUserName: () => 'Ada Lovelace' })
   return { editor, pageId: editor.state.currentPageId }

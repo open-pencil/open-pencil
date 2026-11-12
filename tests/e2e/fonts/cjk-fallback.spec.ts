@@ -161,7 +161,7 @@ test('CJK text waits for fallback fonts and repaints after they load', async ({ 
       }
     } finally {
       cjkFallbackFamilies.length = 0
-      cjkFallbackFamilies.push(...originalFamilies)
+      for (const family of originalFamilies) cjkFallbackFamilies.push(family)
       fontManager.ensureFallbackPack = originalEnsureFallbackPack
       renderer.renderFromEditorState = originalRender
     }

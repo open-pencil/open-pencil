@@ -18,7 +18,7 @@ import {
   RU_PROG
 } from '#docs-config/labels'
 import type { ProgrammableLabels, SidebarLabels } from '#docs-config/labels'
-import { sdkSidebar } from '#docs-config/sdk-sidebar'
+import { sdkSidebar } from '#docs-config/sdk/sidebar'
 import {
   developmentSidebar,
   guideSidebar,
@@ -28,6 +28,7 @@ import {
 } from '#docs-config/sidebars'
 
 import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 
 import { checkGuideMap } from './guides'
 import { checkDocsIntegrity } from './integrity'
@@ -84,7 +85,7 @@ const result = checkDocsIntegrity({
 const missingCounts = Object.values(result.localeMissingPages).map((pages) => pages.length)
 const translationCounts = missingCounts.map((missing) => result.canonicalPageCount - missing)
 console.log(
-  `Localized page presence: ${Math.min(...translationCounts)}–${Math.max(...translationCounts)} of ${result.canonicalPageCount} canonical routes per locale; content quality is audited separately.`
+  `Localized page presence: ${minOf(translationCounts)}–${maxOf(translationCounts)} of ${result.canonicalPageCount} canonical routes per locale; content quality is audited separately.`
 )
 
 const guides = checkGuideMap({ repoRoot })

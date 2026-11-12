@@ -1,108 +1,34 @@
 import * as v from 'valibot'
 
-import {
-  toolNumber,
-  nodeIdInputSchema,
-  nodeInputSchema,
-  defineTool,
-  nodeNotFound,
-  nodeSummary
-} from '#core/tools/schema'
+import { defineTool, nodeSummary, requireNodes } from '#core/tools/schema'
 
-export const deleteNode = defineTool({
-  name: 'delete_node',
+const nodeIdsSchema = (action: string) =>
+  v.pipe(v.array(v.string()), v.minLength(1), v.description(`Node IDs to ${action}`))
 
-  description: 'Delete a node by ID.',
+export const deleteNodes = defineTool({
+  name: 'delete_nodes',
+
+  description: 'Delete nodes by ID. Nothing is deleted unless every node exists.',
   execution: { kind: 'sync', mutation: 'document' },
-  input: v.strictObject({
-    id: v.pipe(v.string(), v.description('Node ID to delete'))
-  }),
-  execute: (figma, { id }) => {
-    const node = figma.getNodeById(id)
-    if (!node) return { error: `Node "${id}" not found` }
-    node.remove()
-    return { deleted: id }
+  input: v.strictObject({ ids: nodeIdsSchema('delete') }),
+  execute: (figma, { ids }) => {
+    const nodes = requireNodes(figma, ids)
+    if (!nodes) return { error: 'One or more node IDs were not found' }
+    // A node inside another one deleted earlier went with it.
+    for (const node of nodes) if (figma.getNodeById(node.id)) node.remove()
+    return { deleted: ids }
   }
 })
 
-export const cloneNode = defineTool({
-  name: 'clone_node',
+export const cloneNodes = defineTool({
+  name: 'clone_nodes',
 
-  description: 'Clone (duplicate) a node.',
+  description: 'Clone (duplicate) nodes, each beside its original.',
   execution: { kind: 'sync', mutation: 'document' },
-  input: v.strictObject({
-    id: v.pipe(v.string(), v.description('Node ID to clone'))
-  }),
-  execute: (figma, { id }) => {
-    const node = figma.getNodeById(id)
-    if (!node) return { error: `Node "${id}" not found` }
-    const clone = node.clone()
-    return nodeSummary(clone)
-  }
-})
-
-export const renameNode = defineTool({
-  name: 'rename_node',
-
-  description: 'Rename a node in the layers panel.',
-  execution: { kind: 'sync', mutation: 'document' },
-  input: v.strictObject({
-    id: nodeIdInputSchema,
-    name: v.pipe(v.string(), v.description('New name'))
-  }),
-  execute: (figma, { id, name }) => {
-    const node = figma.getNodeById(id)
-    if (!node) return { error: `Node "${id}" not found` }
-    node.name = name
-    return { id, name }
-  }
-})
-
-export const nodeBounds = defineTool({
-  name: 'node_bounds',
-  description: 'Get absolute bounding box of a node.',
-  execution: { kind: 'sync', mutation: 'none' },
-  exposure: { webmcp: false },
-  input: nodeInputSchema,
-  execute: (figma, { id }) => {
-    const node = figma.getNodeById(id)
-    return node ? { id, bounds: node.absoluteBoundingBox } : nodeNotFound(id)
-  }
-})
-
-export const nodeMove = defineTool({
-  name: 'node_move',
-
-  description: 'Move a node to new coordinates.',
-  execution: { kind: 'sync', mutation: 'document' },
-  input: v.strictObject({
-    id: nodeIdInputSchema,
-    x: toolNumber(v.pipe(v.number(), v.description('X position'))),
-    y: toolNumber(v.pipe(v.number(), v.description('Y position')))
-  }),
-  execute: (figma, { id, x, y }) => {
-    const node = figma.getNodeById(id)
-    if (!node) return nodeNotFound(id)
-    node.x = x
-    node.y = y
-    return { id, x, y }
-  }
-})
-
-export const nodeResize = defineTool({
-  name: 'node_resize',
-
-  description: 'Resize a node.',
-  execution: { kind: 'sync', mutation: 'document' },
-  input: v.strictObject({
-    id: nodeIdInputSchema,
-    width: toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Width'))),
-    height: toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Height')))
-  }),
-  execute: (figma, { id, width, height }) => {
-    const node = figma.getNodeById(id)
-    if (!node) return nodeNotFound(id)
-    node.resize(width, height)
-    return { id, width, height }
+  input: v.strictObject({ ids: nodeIdsSchema('clone') }),
+  execute: (figma, { ids }) => {
+    const nodes = requireNodes(figma, ids)
+    if (!nodes) return { error: 'One or more node IDs were not found' }
+    return { clones: nodes.map((node) => nodeSummary(node.clone())) }
   }
 })

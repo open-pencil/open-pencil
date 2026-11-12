@@ -1,19 +1,24 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
+import { defineComponent, h } from 'vue'
+
+import { createEditor, type Editor } from '@open-pencil/core'
 import type { ConstraintType } from '@open-pencil/scene-graph'
 import {
   collectResizeDescendants,
   constrainedChildRect,
   type ResizeSnapshot
 } from '@open-pencil/scene-graph/resize'
-import { createRect, firstPageId, makeSceneGraph } from '@open-pencil/test-support/scene'
+import { firstPageId, makeSceneGraph } from '@open-pencil/test-support/scene'
+import { createTestRenderer, hostNode } from '@open-pencil/test-support/vue/renderer'
 import {
   constraintPins,
-  isConstraintEligible,
-  toggleConstraintPin
+  toggleConstraintPin,
+  useConstraints
 } from '@open-pencil/vue/controls/constraints'
 
+import { MIXED } from '#vue/controls/node-props/use'
+import { provideEditor } from '#vue/editor/context'
 import { applyResize } from '#vue/shared/input/resize'
 import type { DragResize } from '#vue/shared/input/types'
 function original(node: {
@@ -43,23 +48,6 @@ function original(node: {
 }
 
 describe('constraint control model', () => {
-  test('limits constraints to eligible frame children', () => {
-    const graph = makeSceneGraph()
-    const pageId = firstPageId(graph)
-    const topLevel = createRect(graph, pageId)
-    const frame = graph.createNode('FRAME', pageId, { layoutMode: 'NONE' })
-    const child = createRect(graph, frame.id)
-    const group = graph.createNode('GROUP', frame.id)
-    expect(isConstraintEligible(graph, topLevel)).toBe(false)
-    expect(isConstraintEligible(graph, child)).toBe(true)
-    expect(isConstraintEligible(graph, group)).toBe(false)
-
-    graph.updateNode(frame.id, { layoutMode: 'HORIZONTAL' })
-    expect(isConstraintEligible(graph, child)).toBe(false)
-    graph.updateNode(child.id, { layoutPositioning: 'ABSOLUTE' })
-    expect(isConstraintEligible(graph, child)).toBe(true)
-  })
-
   test('maps edge pins and additive pin toggles', () => {
     expect(constraintPins('STRETCH')).toMatchObject({ leading: true, trailing: true })
     expect(toggleConstraintPin('MAX', 'leading', false)).toBe('MIN')
@@ -199,5 +187,71 @@ describe('constraint resize geometry', () => {
 
     expect(graph.getNode(nested.id)?.width).toBe(200)
     expect(graph.getNode(grandchild.id)?.x).toBe(180)
+  })
+})
+
+/** The constraints control as the Design panel mounts it, for the editor's selection. */
+function mountConstraints(editor: Editor) {
+  let control: ReturnType<typeof useConstraints> | undefined
+  const Control = defineComponent({
+    setup() {
+      control = useConstraints()
+      return () => h('div')
+    }
+  })
+  const app = createTestRenderer().createApp(
+    defineComponent({
+      setup() {
+        provideEditor(editor)
+        return () => h(Control)
+      }
+    })
+  )
+  app.mount(hostNode())
+  if (!control) throw new Error('Expected the constraints control')
+  return { control, unmount: () => app.unmount() }
+}
+
+// Figma (desktop, 2026-11-08): a group owns no constraints; the panel shows its layers', Mixed
+// where they differ, and a choice sets every layer in it, through nested groups.
+describe("a group's constraints in the panel", () => {
+  test("are its layers', and setting one sets them all in one step", () => {
+    const editor = createEditor()
+    const frame = editor.graph.createNode('FRAME', editor.state.currentPageId)
+    const group = editor.graph.createNode('GROUP', frame.id)
+    const a = editor.graph.createNode('RECTANGLE', group.id, { horizontalConstraint: 'MAX' })
+    const inner = editor.graph.createNode('GROUP', group.id)
+    const b = editor.graph.createNode('RECTANGLE', inner.id)
+    editor.select([group.id])
+    const { control, unmount } = mountConstraints(editor)
+    try {
+      expect(control.active.value).toBe(true)
+      expect(control.horizontal.value).toBe(MIXED)
+      expect(control.vertical.value).toBe('MIN')
+
+      control.setAxis('horizontal', 'CENTER')
+      const horizontal = () => [a, b].map((n) => editor.graph.getNode(n.id)?.horizontalConstraint)
+      expect(horizontal()).toEqual(['CENTER', 'CENTER'])
+      expect(control.horizontal.value).toBe('CENTER')
+      editor.undo.undo()
+      expect(horizontal()).toEqual(['MAX', 'MIN'])
+    } finally {
+      unmount()
+    }
+  })
+
+  test('a layer in a group shows its own', () => {
+    const editor = createEditor()
+    const frame = editor.graph.createNode('FRAME', editor.state.currentPageId)
+    const group = editor.graph.createNode('GROUP', frame.id)
+    const a = editor.graph.createNode('RECTANGLE', group.id, { verticalConstraint: 'SCALE' })
+    editor.select([a.id])
+    const { control, unmount } = mountConstraints(editor)
+    try {
+      expect(control.active.value).toBe(true)
+      expect(control.vertical.value).toBe('SCALE')
+    } finally {
+      unmount()
+    }
   })
 })

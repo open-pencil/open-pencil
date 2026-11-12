@@ -4,7 +4,7 @@ import type {
   ParagraphBuilder,
   ParagraphStyle,
   TypefaceFontProvider
-} from 'canvaskit-wasm'
+} from '@open-pencil/canvaskit'
 
 /**
  * The font collection each provider's paragraphs are built with, made once and again only when

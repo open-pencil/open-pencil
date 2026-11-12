@@ -266,6 +266,11 @@ fn build_recent_files_submenu<R: tauri::Runtime>(
     builder.build()
 }
 
+/// The schema's last menu (`APP_MENU_SCHEMA` in `src/app/shell/menu/schema`), which macOS
+/// gives its menu search.
+#[cfg(target_os = "macos")]
+const HELP_MENU_LABEL: &str = "Help";
+
 fn schema_groups() -> serde_json::Result<Vec<MenuGroup>> {
     serde_json::from_str(include_str!("../../generated/menu.json"))
 }
@@ -415,12 +420,8 @@ pub fn install_app_menu<R: tauri::Runtime>(
     };
     #[cfg(target_os = "macos")]
     let app_menu = {
+        use tauri::Manager;
         let items = app_menu_file()?;
-        let mut check_updates =
-            MenuItemBuilder::new(&items.check_updates.label).id("check-updates");
-        if let Some(accelerator) = &items.check_updates.accelerator {
-            check_updates = check_updates.accelerator(accelerator);
-        }
         let mut settings = MenuItemBuilder::new(&items.settings.label).id("settings");
         if let Some(accelerator) = &items.settings.accelerator {
             settings = settings.accelerator(accelerator);
@@ -429,13 +430,22 @@ pub fn install_app_menu<R: tauri::Runtime>(
         if let Some(accelerator) = &items.quit.accelerator {
             quit = quit.accelerator(accelerator);
         }
-        SubmenuBuilder::new(app, tauri::Manager::package_info(app).name.clone())
-            .item(&PredefinedMenuItem::about(
-                app,
-                Some(&items.about.label),
-                None,
-            )?)
-            .item(&check_updates.build(app)?)
+        let mut app_menu = SubmenuBuilder::new(app, app.package_info().name.clone()).item(
+            &PredefinedMenuItem::about(app, Some(&items.about.label), None)?,
+        );
+        // A package that delivers its own updates has no updater for this item to open.
+        if app
+            .state::<crate::capabilities::DesktopCapabilities>()
+            .self_update
+        {
+            let mut check_updates =
+                MenuItemBuilder::new(&items.check_updates.label).id("check-updates");
+            if let Some(accelerator) = &items.check_updates.accelerator {
+                check_updates = check_updates.accelerator(accelerator);
+            }
+            app_menu = app_menu.item(&check_updates.build(app)?);
+        }
+        app_menu
             .separator()
             .item(&settings.build(app)?)
             .separator()
@@ -465,7 +475,16 @@ pub fn install_app_menu<R: tauri::Runtime>(
     // On Windows and Linux an app-wide menu is attached to every window without its own,
     // including the Software Update window, so it goes on the editor window alone there.
     #[cfg(target_os = "macos")]
-    app.set_menu(menu)?;
+    {
+        app.set_menu(menu)?;
+        // macOS puts its search field, which finds any menu item, in the menu named as Help.
+        if let Some(help) = schema_menus
+            .iter()
+            .find(|menu| menu.text().is_ok_and(|text| text == HELP_MENU_LABEL))
+        {
+            help.set_as_help_menu_for_nsapp()?;
+        }
+    }
     #[cfg(not(target_os = "macos"))]
     if let Some(window) = tauri::Manager::get_webview_window(app, "main") {
         window.set_menu(menu)?;

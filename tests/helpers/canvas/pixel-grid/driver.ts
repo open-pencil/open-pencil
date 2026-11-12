@@ -9,8 +9,9 @@ export function pixelGridDriver(page: () => Page) {
   return {
     /** The probe rectangle 40 screen pixels in from the canvas corner at `zoom`. */
     async showAtZoom(zoom: number) {
-      await scenes.build('createPixelGridScene')
+      // Zoomed first, the scene's tiles are drawn at this zoom, not enlarged from another.
       await showView(page(), { zoom, panX: 40, panY: 40 })
+      await scenes.build('createPixelGridScene')
     },
 
     devicePixelRatio() {

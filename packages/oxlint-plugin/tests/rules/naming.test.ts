@@ -2,11 +2,11 @@ import { describe, expect, test } from 'bun:test'
 
 import { lint, ruleDiagnostics } from '#oxlint-plugin-tests/helpers/lint'
 
-const rule = 'no-mixed-case-acronym-identifiers'
+const rule = '@open-pencil/structure/no-mixed-case-acronym-identifiers'
 
 async function count(source: string, options?: Record<string, unknown>): Promise<number> {
   const config = options ? ['error', options] : 'error'
-  return ruleDiagnostics(await lint(source, { [`open-pencil/${rule}`]: config }), rule).length
+  return ruleDiagnostics(await lint(source, { [rule]: config }), rule).length
 }
 
 describe(rule, () => {

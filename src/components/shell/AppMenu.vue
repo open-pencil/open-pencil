@@ -40,7 +40,7 @@ import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import { animationsEnabled } from '@/app/shell/motion'
 import { resolvedAppTheme } from '@/app/shell/theme'
 import BrandMark from '@/components/brand/BrandMark.vue'
-import { CloudDocumentStatusHost } from '@/components/cloud/integration'
+import { CloudDocumentStatusHost, CloudReportButton } from '@/components/cloud/integration'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { useScrollOverflow } from '@/components/ui/list/useScrollOverflow'
 import AppMenubarRoot from '@/components/ui/menu/AppMenubarRoot.vue'
@@ -115,6 +115,7 @@ function runChosenAction() {
         >{{ store.state.documentName }}</span
       >
       <CloudDocumentStatusHost />
+      <CloudReportButton />
       <IconButton
         :label="settings.title"
         data-test-id="app-settings-trigger"
@@ -133,7 +134,7 @@ function runChosenAction() {
     <div v-if="!IS_TAURI" class="flex items-center px-1 pb-1">
       <div
         ref="menubar"
-        class="scrollbar-none min-w-0 flex-1 overflow-x-auto data-overflow-end:mask-r-from-[calc(100%-2rem)] data-overflow-start:mask-l-from-[calc(100%-2rem)]"
+        class="scrollbar-none min-w-0 flex-1 overflow-x-auto ltr:data-overflow-end:mask-r-from-[calc(100%-2rem)] ltr:data-overflow-start:mask-l-from-[calc(100%-2rem)] rtl:data-overflow-end:mask-l-from-[calc(100%-2rem)] rtl:data-overflow-start:mask-r-from-[calc(100%-2rem)]"
         :data-overflow-start="overflowStart || undefined"
         :data-overflow-end="overflowEnd || undefined"
       >
@@ -159,7 +160,7 @@ function runChosenAction() {
                     <MenubarSub v-else-if="hasMenuSubItems(item)">
                       <MenubarSubTrigger :class="menuCls.item" :disabled="menuDisabled(item)">
                         <span class="flex-1">{{ menuLabel(item) }}</span>
-                        <IconChevronRight class="size-3 text-muted" />
+                        <IconChevronRight data-direction="reading" class="size-3 text-muted" />
                       </MenubarSubTrigger>
                       <MenubarPortal>
                         <MenubarSubContent :side-offset="4" :class="subMenuCls.content">
@@ -237,8 +238,8 @@ function runChosenAction() {
         :data-start="!overflowEnd || undefined"
         @click="scrollTowardHidden"
       >
-        <icon-lucide-chevron-right v-if="overflowEnd" class="size-3.5" />
-        <icon-lucide-chevron-left v-else class="size-3.5" />
+        <icon-lucide-chevron-right data-direction="reading" v-if="overflowEnd" class="size-3.5" />
+        <icon-lucide-chevron-left data-direction="reading" v-else class="size-3.5" />
       </button>
     </div>
   </div>

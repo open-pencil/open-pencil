@@ -2,13 +2,12 @@ import { staticEntitlementsFromTOML } from '#cloud/server/policy/static'
 import { parse as parseTOML } from 'smol-toml'
 import * as v from 'valibot'
 
+import { parseCloudServerConfig, type CloudServerConfig } from './schema'
 import {
   cloudDeploymentConfigSchema,
-  parseCloudServerConfig,
   type CloudDeploymentConfig,
-  type CloudSecretReference,
-  type CloudServerConfig
-} from './schema'
+  type CloudSecretReference
+} from './toml/schema'
 
 export type CloudEnvironment = Readonly<Record<string, string | undefined>>
 
@@ -38,6 +37,11 @@ function optionalSecret(
 
 function staticEntitlements(config: CloudDeploymentConfig) {
   if (config.entitlements?.source !== 'static') return undefined
+  return staticEntitlementsFromTOML(config.entitlements)
+}
+
+function defaultEntitlements(config: CloudDeploymentConfig) {
+  if (config.entitlements?.source !== 'database') return undefined
   return staticEntitlementsFromTOML(config.entitlements)
 }
 
@@ -83,7 +87,8 @@ function workerConfig(config: CloudDeploymentConfig) {
     cleanupBatchSize: cleanup?.batch_size,
     cleanupIntervalMs: cleanup?.interval_ms,
     cleanupLeaseDurationMs: cleanup?.lease_ms,
-    documentRetentionMs: config.documents.retention_days * 86_400_000
+    documentRetentionMs: config.documents.retention_days * 86_400_000,
+    documentPurgeGraceMs: config.documents.purge_grace_days * 86_400_000
   }
 }
 
@@ -96,10 +101,23 @@ function serviceConfig(config: CloudDeploymentConfig, environment: CloudEnvironm
     servicesTokenLifetimeSeconds: config.services
       ? config.services.token_lifetime_minutes * 60
       : undefined,
-    billingPortalURL: config.billing?.portal_url,
+    billingEndpoint: config.billing?.endpoint,
     internalServiceToken: config.internal_api
       ? requiredSecret(environment, config.internal_api.service_token)
       : undefined
+  }
+}
+
+function legalConfig(config: CloudDeploymentConfig) {
+  const legal = config.legal
+  if (!legal) return undefined
+  return {
+    termsURL: legal.terms_url,
+    privacyURL: legal.privacy_url,
+    termsVersion: legal.terms_version,
+    requireAcceptance: legal.require_acceptance,
+    abuseEmail: legal.abuse_email,
+    minimumAge: legal.minimum_age
   }
 }
 
@@ -175,11 +193,14 @@ export function parseCloudDeploymentConfig(
     s3ChecksumVerification: config.object_storage.checksum_verification,
     s3ServerSideEncryption: config.object_storage.server_side_encryption,
     s3KmsKeyId: config.object_storage.kms_key_id,
+    s3DeletedPrefix: config.object_storage.deleted_prefix,
     relayURL: config.collaboration.relay_url,
     staticEntitlements: staticEntitlements(config),
+    defaultEntitlements: defaultEntitlements(config),
     ...emailConfig(config, environment),
     ...workerConfig(config),
     ...serviceConfig(config, environment),
+    legal: legalConfig(config),
     errorTracking: errorTrackingConfig(config, environment),
     technicalLimits: technicalLimits(config)
   })
