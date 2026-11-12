@@ -2,10 +2,10 @@ import { describe, expect, test } from 'bun:test'
 
 import { lint, ruleDiagnostics } from '#oxlint-plugin-tests/helpers/lint'
 
-const rule = 'no-hand-rolled-base64'
-const rules = { [`open-pencil/${rule}`]: 'error' }
+const rule = '@open-pencil/data/no-hand-rolled-base64'
+const rules = { [rule]: 'error' }
 
-describe('no-hand-rolled-base64', () => {
+describe('@open-pencil/data/no-hand-rolled-base64', () => {
   test.each([
     "atob('AA==')",
     "btoa('a')",

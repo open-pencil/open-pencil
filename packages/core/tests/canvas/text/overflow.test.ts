@@ -1,7 +1,7 @@
 import { beforeAll, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { SkiaRenderer } from '#core/canvas/renderer'
 import { getCanvasKit } from '#core/canvaskit'

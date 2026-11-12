@@ -21,5 +21,10 @@
   "installFailed": "无法安装更新：{error}",
   "restartFailed": "无法重新启动 OpenPencil：{error}",
   "unavailable": "更新暂不可用。请先发布包含 latest.json 的已签名版本。",
-  "checkFailed": "无法检查更新：{error}"
+  "checkFailed": "无法检查更新：{error}",
+  "webUpdateReady": "OpenPencil 新版本已就绪",
+  "reload": "重新加载",
+  "settingsSection": "更新",
+  "checkOnStartup": "启动时检查更新",
+  "checkOnStartupDescription": "桌面应用打开几秒后查找新版本。关闭此项后，菜单中的「检查更新」仍然可用。"
 }

@@ -4,14 +4,14 @@ import type { ArcData, SceneNode } from '@open-pencil/scene-graph'
 import { fitEnclosingGroups } from '@open-pencil/scene-graph/group-bounds'
 
 import {
-  graph,
   hostFitOptions,
   nodeId,
   raw,
   updateNode,
   type NodeProxyInternals,
   type ProxyThis
-} from '#core/figma-api/accessor-utils'
+} from '#core/figma-api/accessors/utils'
+import { graphOf } from '#core/figma-api/graph'
 import { finiteNumberSchema, unitIntervalSchema } from '#core/figma-api/schema'
 import { parseFigma } from '#core/figma-api/validation'
 
@@ -97,7 +97,7 @@ export function installShapeNodeProxyAccessors(
         updateNode(this, internals, { booleanOperation })
         // The result's bounds change with the operation, and the groups around it follow.
         fitEnclosingGroups(
-          graph(this, internals),
+          graphOf(this),
           [nodeId(this, internals)],
           hostFitOptions(this, internals)
         )

@@ -114,6 +114,7 @@ export const diagnosticsMessageDefaults = {
   reportNotePlaceholder: 'What you did, what happened, and what you expected instead.',
   reportEmail: 'Email (optional)',
   reportEmailHint: 'Only if you want us to follow up.',
+  reportEmailInvalid: 'Enter an email address, or leave it empty.',
   reportActivity: 'Include recent activity',
   reportActivityDescription:
     'The last 50 events from Diagnostics, such as errors and timings. Never chat messages or tool output.',

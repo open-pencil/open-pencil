@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import type { LanguageModel } from 'ai'
 
-import { createCloudAIClient } from '@open-pencil/cloud/client'
+import { createCloudServicesClient } from '@open-pencil/cloud/client'
 
 import { createLanguageModel } from '@/app/ai/models/language-model'
 import { cloudCatalogModels } from '@/app/ai/providers/openpencil/catalog'
@@ -16,7 +16,7 @@ function languageModelInstance(model: LanguageModel): Exclude<LanguageModel, str
 describe('OpenPencil Cloud models', () => {
   test('send chat completions to the service with the Cloud token, not a key', async () => {
     const requests: Request[] = []
-    const client = createCloudAIClient({
+    const client = createCloudServicesClient({
       endpoint: 'https://ai.example.com',
       tokens: { token: async () => 'cloud-token', invalidate: () => undefined },
       fetch: async (input, init) => {

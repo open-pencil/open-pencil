@@ -1,16 +1,12 @@
 import { beforeAll, expect, it } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
-import {
-  buildFigmaClipboardHTML,
-  buildOpenPencilClipboardHTML,
-  importClipboardNodes,
-  parseOpenPencilClipboard
-} from '@open-pencil/core/clipboard'
+import { buildFigmaClipboardHTML, importClipboardNodes } from '@open-pencil/core/clipboard'
 import { readFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { type SceneNode, SceneGraph } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { heavy, HEAVY_TEST_TIMEOUT_MS } from '@open-pencil/test-support/heavy'
 import { repoPath } from '@open-pencil/test-support/paths'
@@ -23,7 +19,7 @@ heavy('gold-preview.fig clipboard roundtrip', () => {
     const res: SceneNode[] = []
     for (const c of g.getChildren(parentId)) {
       res.push(c)
-      res.push(...flatten(g, c.id))
+      appendAll(res, flatten(g, c.id))
     }
     return res
   }
@@ -40,45 +36,6 @@ heavy('gold-preview.fig clipboard roundtrip', () => {
     },
     { timeout: HEAVY_TEST_TIMEOUT_MS }
   )
-
-  it('OpenPencil format: zero property differences', () => {
-    const html = buildOpenPencilClipboardHTML(topLevelNodes, graph)
-    const parsed = parseOpenPencilClipboard(html)
-    const clipboard = expectDefined(parsed, 'OpenPencil clipboard')
-
-    const origAll = flatten(graph, pageId)
-
-    function flattenClipboard(nodes: Array<SceneNode & { children?: SceneNode[] }>): SceneNode[] {
-      const res: SceneNode[] = []
-      for (const n of nodes) {
-        res.push(n)
-        if (n.children) res.push(...flattenClipboard(n.children))
-      }
-      return res
-    }
-    const pastedAll = flattenClipboard(
-      clipboard.nodes as Array<SceneNode & { children?: SceneNode[] }>
-    )
-
-    expect(pastedAll.length).toBe(origAll.length)
-
-    const SKIP = new Set(['id', 'parentId', 'childIds', 'children', 'textPicture'])
-    let diffs = 0
-    for (let i = 0; i < origAll.length; i++) {
-      const o = origAll[i]
-      const p = pastedAll[i]
-      for (const k of Object.keys(o) as (keyof SceneNode)[]) {
-        if (SKIP.has(k)) continue
-        if (JSON.stringify(o[k]) !== JSON.stringify(p[k])) diffs++
-      }
-    }
-    expect(diffs).toBe(0)
-  })
-
-  it('OpenPencil format: compressed data is under 1MB', () => {
-    const html = buildOpenPencilClipboardHTML(topLevelNodes, graph)
-    expect(html.length).toBeLessThan(5 * 1024 * 1024)
-  })
 
   it('Figma format: preserves clipsContent, constraints, arcData, layoutAlignSelf for matched nodes', async () => {
     const html = await buildFigmaClipboardHTML(topLevelNodes, graph)

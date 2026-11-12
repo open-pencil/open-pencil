@@ -5,6 +5,7 @@ import { parseColor } from '@open-pencil/scene-graph/color'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 import { transformVectorNetwork } from '@open-pencil/scene-graph/vector-network'
 
+import { graphOf } from '#core/figma-api/graph'
 import { prepareSlotInsertion } from '#core/figma-api/slots'
 import { defineTool, nodeSummary, positionInputs, toolNumber } from '#core/tools/schema'
 import { parseVectorNetworkJSON } from '#core/tools/vector/network'
@@ -70,7 +71,7 @@ export const createVector = defineTool({
       parsedPath = parsed
     }
     const parent = args.parent_id ? figma.getNodeById(args.parent_id) : null
-    if (parent) prepareSlotInsertion(figma.graph, parent.id, 'create_vector')
+    if (parent) prepareSlotInsertion(graphOf(figma), parent.id, 'create_vector')
 
     const node = figma.createVector()
     node.x = args.x
@@ -78,13 +79,13 @@ export const createVector = defineTool({
     if (args.name) node.name = args.name
     if (parsedPath) {
       if (parsedPath.size) node.resize(parsedPath.size.width, parsedPath.size.height)
-      figma.graph.updateNode(node.id, { vectorNetwork: parsedPath.network })
+      graphOf(figma).updateNode(node.id, { vectorNetwork: parsedPath.network })
     }
     if (args.fill) {
       node.fills = [{ type: 'SOLID', color: parseColor(args.fill) }]
     }
     if (args.stroke) {
-      figma.graph.updateNode(node.id, {
+      graphOf(figma).updateNode(node.id, {
         strokes: [
           {
             type: 'SOLID',

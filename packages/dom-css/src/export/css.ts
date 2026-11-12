@@ -1,4 +1,4 @@
-import type { Effect, Fill, Stroke, TextLength } from '@open-pencil/scene-graph'
+import type { Effect, Fill, SceneNode, Stroke, TextLength } from '@open-pencil/scene-graph'
 import { colorToCSS, colorToHex } from '@open-pencil/scene-graph/color'
 import { blurSigma } from '@open-pencil/scene-graph/geometry'
 import { gradientPoint } from '@open-pencil/scene-graph/gradient'
@@ -14,6 +14,26 @@ export function cssColor(color: Color): string {
 export function fillToCSS(fill: Fill | undefined): string | undefined {
   if (fill?.type !== 'SOLID' || !fill.visible) return undefined
   return cssColor({ ...fill.color, a: fill.opacity })
+}
+
+export type BorderSide = 'top' | 'right' | 'bottom' | 'left'
+
+/**
+ * The width of each side of the border a layer's first stroke projects as, zero without one. A
+ * border insets the box its absolutely positioned children are placed in, where a stroke does not.
+ */
+export function borderWidths(node: SceneNode): Record<BorderSide, number> {
+  if (!strokeColorToCSS(node.strokes.at(0))) return { top: 0, right: 0, bottom: 0, left: 0 }
+  if (!node.independentStrokeWeights) {
+    const weight = node.strokes[0]?.weight ?? 0
+    return { top: weight, right: weight, bottom: weight, left: weight }
+  }
+  return {
+    top: node.borderTopWeight,
+    right: node.borderRightWeight,
+    bottom: node.borderBottomWeight,
+    left: node.borderLeftWeight
+  }
 }
 
 export function strokeColorToCSS(stroke: Stroke | undefined): string | undefined {

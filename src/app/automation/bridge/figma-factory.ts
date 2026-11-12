@@ -3,7 +3,7 @@ import { createCanvasKitRasterCodec } from '@open-pencil/core/io/formats/raster'
 
 import { renderAutomationImage } from '@/app/automation/bridge/export-handlers'
 import type { EditorStore } from '@/app/editor/active-store'
-import { listFamilies, listFonts } from '@/app/editor/fonts'
+import { listFonts } from '@/app/editor/fonts'
 import { createTauriFetch } from '@/app/tauri/http'
 import { IS_TAURI } from '@/constants'
 
@@ -15,19 +15,29 @@ const imageFetch = IS_TAURI
 
 export function makeFigmaFromStore(
   store: EditorStore,
-  pageId = store.state.currentPageId
+  pageId = store.state.currentPageId,
+  signal?: AbortSignal
 ): FigmaAPI {
   const api = new FigmaAPI(store.graph, {
     fetch: imageFetch,
+    signal,
     // A page not yet visited has no layers until the editor prepares it, as it does a page it
     // switches to: with its fonts and layout.
     loadPage: async (id) => {
       if (!(await store.preparePageNodes(id)))
         throw new Error(`Page "${id}" was closed before it finished loading`)
     },
-    pageOfNode: (id) => store.pageHoldingNode(id)
+    pageOfNode: (id) => store.pageHoldingNode(id),
+    // The font manager lists the installed families once the host has read them.
+    prepareFontList: async () => {
+      await listFonts()
+    },
+    // The editor syncs instances after edits; a script's reads sync them at once, as in Figma.
+    flushComponentSync: () => store.flushComponentSync(),
+    // The editor tells its renderers about edits itself; an API made per call that listened too
+    // would stay on the graph after the call, one more listener for every call.
+    renderer: () => store.renderer ?? null
   })
-  api.setRenderer(store.renderer ?? null)
   api.icons = store.iconProvider
   api.theme = store.state.theme ?? 'light'
   api.currentPage = api.wrapNode(pageId)
@@ -48,16 +58,5 @@ export function makeFigmaFromStore(
   api.exportImage = async (nodeIds, opts) =>
     renderAutomationImage(store, nodeIds, { ...opts, pageId: opts.pageId ?? pageId })
   if (store.renderer) api.rasterCodec = createCanvasKitRasterCodec(store.renderer.ck)
-  api.listAvailableFontsAsync = async () => {
-    const [systemFonts, familyOptions] = await Promise.all([listFonts(), listFamilies()])
-    const fonts = systemFonts.flatMap(({ family, faces }) =>
-      faces.map(({ style }) => ({ fontName: { family, style } }))
-    )
-    const seenFamilies = new Set(systemFonts.map(({ family }) => family))
-    for (const { family } of familyOptions) {
-      if (!seenFamilies.has(family)) fonts.push({ fontName: { family, style: 'Regular' } })
-    }
-    return fonts
-  }
   return api
 }

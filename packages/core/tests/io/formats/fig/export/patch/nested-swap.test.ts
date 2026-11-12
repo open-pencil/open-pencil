@@ -1,12 +1,12 @@
 import { beforeAll, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer } from '@open-pencil/fig'
 import { symbolOverridesOf } from '@open-pencil/fig/instance-overrides'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 beforeAll(initCodec)
 
@@ -21,7 +21,7 @@ function layerIn(graph: SceneGraph, root: SceneNode, name: string): SceneNode {
     if (node.name === name) {
       return node
     }
-    pending.push(...node.childIds)
+    for (const childId of node.childIds) pending.push(childId)
   }
   throw new Error(`Missing layer ${name}`)
 }

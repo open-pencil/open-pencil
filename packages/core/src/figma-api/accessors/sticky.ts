@@ -9,12 +9,12 @@ import {
 } from '@open-pencil/scene-graph/generated'
 
 import {
-  graph,
   raw,
   updateNode,
   type NodeProxyInternals,
   type ProxyThis
-} from '#core/figma-api/accessor-utils'
+} from '#core/figma-api/accessors/utils'
+import { graphOf } from '#core/figma-api/graph'
 import type { FigmaNodeProxy, NodeProxyHost } from '#core/figma-api/proxy'
 
 /**
@@ -30,7 +30,7 @@ export function pluginChildren(sceneGraph: SceneGraph, id: string): SceneNode[] 
 
 function sublayers(target: ProxyThis, internals: NodeProxyInternals) {
   const node = raw(target, internals)
-  return node.type === 'STICKY' ? stickySublayers(graph(target, internals), node) : null
+  return node.type === 'STICKY' ? stickySublayers(graphOf(target), node) : null
 }
 
 function wrap(target: ProxyThis, internals: NodeProxyInternals, id: string): FigmaNodeProxy {
@@ -49,7 +49,7 @@ export function installStickyNodeProxyAccessors(
     // A sticky note's body and a connector's label are both what Figma calls `text`.
     text: {
       get(this: ProxyThis): FigmaNodeProxy | undefined {
-        const text = generatedFrameText(graph(this, internals), raw(this, internals))
+        const text = generatedFrameText(graphOf(this), raw(this, internals))
         return text ? wrap(this, internals, text.id) : undefined
       }
     },
@@ -70,7 +70,7 @@ export function installStickyNodeProxyAccessors(
     isWideWidth: {
       get(this: ProxyThis): boolean | undefined {
         const node = raw(this, internals)
-        return node.type === 'STICKY' ? isWideSticky(graph(this, internals), node) : undefined
+        return node.type === 'STICKY' ? isWideSticky(graphOf(this), node) : undefined
       },
       set(this: ProxyThis, value: boolean) {
         const layers = sublayers(this, internals)

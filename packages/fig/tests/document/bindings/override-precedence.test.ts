@@ -26,7 +26,7 @@ function firstText(graph: SceneGraph, instance: SceneNode): string | undefined {
     const node = graph.getNode(stack.pop() as string)
     if (!node) continue
     if (node.type === 'TEXT') return node.text
-    stack.push(...node.childIds)
+    for (const childId of node.childIds) stack.push(childId)
   }
   return undefined
 }

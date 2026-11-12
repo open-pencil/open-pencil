@@ -1,12 +1,12 @@
 import * as v from 'valibot'
 
 import {
-  graph,
   raw,
   updateNode,
   type NodeProxyInternals,
   type ProxyThis
-} from '#core/figma-api/accessor-utils'
+} from '#core/figma-api/accessors/utils'
+import { graphOf } from '#core/figma-api/graph'
 import { STYLE_NOT_FOUND } from '#core/figma-api/styles/apply'
 import { setRangeParagraphSpacing } from '#core/figma-api/text'
 import {
@@ -48,7 +48,7 @@ export function installTextReferenceMethods(
       const node = raw(this, internals)
       const id = parseFigma(v.string(), styleId, method, 'styleId')
       assertTextRange(method, node, start, end)
-      const patch = rangeSharedStylePatch(graph(this, internals), kind, id)
+      const patch = rangeSharedStylePatch(graphOf(this), kind, id)
       if (!patch) throw new Error(async ? STYLE_NOT_FOUND : `in ${method}: ${STYLE_NOT_FOUND}`)
       updateNode(this, internals, { styleRuns: styleRunsWithPatch(node, start, end, patch) })
     }
@@ -74,7 +74,7 @@ export function installTextReferenceMethods(
       const node = raw(this, internals)
       const bindable = assertTextBindableField(method, field)
       assertTextRange(method, node, start, end)
-      const g = graph(this, internals)
+      const g = graphOf(this)
       const changes = rangeBindingChanges(g, node, start, end, bindable, variable)
       updateNode(this, internals, { styleRuns: changes.styleRuns })
       if (

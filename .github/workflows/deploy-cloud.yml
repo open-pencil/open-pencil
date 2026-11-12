@@ -1,14 +1,22 @@
 name: Deploy Cloud
 
 # Deploys an official OpenPencil Cloud deployment: packages/cloud/deploy/openpencil/<target>, with
-# the secrets and reviewers of the cloud-<target> GitHub environment.
+# the secrets and reviewers of the cloud-<target> GitHub environment. Run it from master or a
+# release tag for staging, and from a release tag for production (tools/ci/cloud-deploy/src/ref.ts).
+# The runbook is packages/cloud/deploy/openpencil/README.md.
 on:
   workflow_dispatch:
     inputs:
       target:
         description: Deployment
         type: choice
-        options: [staging]
+        options: [staging, production]
+      maintenance:
+        description: Off the air (every request 503, no cleanup), for a database restore
+        type: boolean
+        default: false
+
+run-name: Deploy Cloud ${{ inputs.target }} from ${{ github.ref_name }}${{ inputs.maintenance && ' in maintenance' || '' }}
 
 concurrency:
   group: cloud-${{ inputs.target }}
@@ -27,13 +35,20 @@ jobs:
     env:
       DEPLOYMENT: packages/cloud/deploy/openpencil/${{ inputs.target }}
     steps:
+      # Master's history, to check the commit is on it.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
 
       - uses: ./.github/actions/setup/workspace
         with:
           packages: 'true'
+
+      - name: Check the ref may deploy to this target
+        env:
+          TARGET: ${{ inputs.target }}
+        run: bun tools/ci/cloud-deploy/src/ref.ts "$TARGET"
 
       # The editor's demo document draws its shader fills at build time in a headless Chromium.
       - uses: ./.github/actions/setup/playwright
@@ -63,7 +78,9 @@ jobs:
 
       # Migrations run before the new code, over the direct connection rather than Hyperdrive. The
       # config reads every secret it names, so only this step and the next one see them.
+      # Under maintenance the database may be mid-restore; the deploy that ends it migrates.
       - name: Migrate the database
+        if: ${{ !inputs.maintenance }}
         env:
           OPENPENCIL_CLOUD_CONFIG: ${{ github.workspace }}/${{ env.DEPLOYMENT }}/openpencil-cloud.toml
           DATABASE_URL: ${{ secrets.NEON_MIGRATOR_DATABASE_URL }}
@@ -73,6 +90,7 @@ jobs:
           S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
           S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
           POSTHOG_PROJECT_API_KEY: ${{ secrets.POSTHOG_PROJECT_API_KEY }}
+          OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY: ${{ secrets.OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY }}
         run: bun --filter @open-pencil/cloud migrate
 
       - name: Collect the Worker's secrets
@@ -83,10 +101,11 @@ jobs:
           S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
           S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
           POSTHOG_PROJECT_API_KEY: ${{ secrets.POSTHOG_PROJECT_API_KEY }}
+          OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY: ${{ secrets.OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY }}
         run: >-
           bun tools/ci/cloud-deploy/src/secrets.ts "$RUNNER_TEMP/cloud-secrets.json"
           BETTER_AUTH_SECRET GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET S3_ACCESS_KEY_ID
-          S3_SECRET_ACCESS_KEY POSTHOG_PROJECT_API_KEY
+          S3_SECRET_ACCESS_KEY POSTHOG_PROJECT_API_KEY OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY
 
       - uses: cloudflare/wrangler-action@953926a2e2182532811c01a25e53647d93bf07c0 # v4.1.3
         with:
@@ -98,8 +117,10 @@ jobs:
             deploy ${{ runner.temp }}/worker/worker.js --config wrangler.jsonc --no-bundle
             --assets ${{ github.workspace }}/dist-cloud
             --secrets-file ${{ runner.temp }}/cloud-secrets.json
+            ${{ inputs.maintenance && '--var OPENPENCIL_CLOUD_MAINTENANCE:on' || '' }}
 
       - name: Check the deployment
+        if: ${{ !inputs.maintenance }}
         env:
           CLOUD_URL: ${{ vars.CLOUD_URL }}
         # Only a 200 counts, and pages are asked for as a browser does (tools/ci/cloud-deploy/src/health.ts).

@@ -5,12 +5,12 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import { defaultVariant, variantOptions } from '@open-pencil/scene-graph/components'
 
 import {
-  graph,
   raw,
   updateNode,
   type NodeProxyInternals,
   type ProxyThis
-} from '#core/figma-api/accessor-utils'
+} from '#core/figma-api/accessors/utils'
+import { graphOf } from '#core/figma-api/graph'
 import type { FigmaNodeProxy, NodeProxyHost } from '#core/figma-api/proxy'
 import { parseFigma } from '#core/figma-api/validation'
 
@@ -20,7 +20,7 @@ function wrap(target: ProxyThis, internals: NodeProxyInternals, id: string): Fig
 
 function instancesOf(target: ProxyThis, internals: NodeProxyInternals): FigmaNodeProxy[] {
   const id = raw(target, internals).id
-  return graph(target, internals)
+  return graphOf(target)
     .getInstances(id)
     .map((instance) => wrap(target, internals, instance.id))
 }
@@ -64,7 +64,7 @@ export function installComponentNodeAccessors(
   Object.defineProperties(target, {
     defaultVariant: {
       get(this: ProxyThis): FigmaNodeProxy | null {
-        const variant = defaultVariant(graph(this, internals), raw(this, internals))
+        const variant = defaultVariant(graphOf(this), raw(this, internals))
         return variant ? wrap(this, internals, variant.id) : null
       }
     },
@@ -77,7 +77,7 @@ export function installComponentNodeAccessors(
             .filter((definition) => definition.type === 'VARIANT')
             .map((definition) => [
               definition.name,
-              { values: variantOptions(graph(this, internals), set, definition) }
+              { values: variantOptions(graphOf(this), set, definition) }
             ])
         )
       }

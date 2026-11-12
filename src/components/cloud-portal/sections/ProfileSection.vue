@@ -8,6 +8,7 @@ import { CloudPortalAPIError } from '@open-pencil/cloud/client'
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
+import { usePortalAccountDeletion } from '@/app/cloud-portal/deletion'
 import { usePortalFailureMessages } from '@/app/cloud-portal/failure'
 import { portalURL } from '@/app/cloud-portal/navigation'
 import { usePortalAction, usePortalLoad } from '@/app/cloud-portal/state'
@@ -15,6 +16,7 @@ import { portalToast } from '@/app/cloud-portal/toast'
 import { useDateFormat } from '@/app/i18n/date'
 import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
 
+import PortalDeleteAccountDialog from '../account/PortalDeleteAccountDialog.vue'
 import PortalFieldDialog from '../account/PortalFieldDialog.vue'
 import PortalPasswordDialog from '../account/PortalPasswordDialog.vue'
 import PortalPictureDialog from '../account/PortalPictureDialog.vue'
@@ -136,11 +138,16 @@ const changeEmail = usePortalAction(async (email: string) => {
     if (!stale || !loaded.data.value?.hasPassword) throw error
     pendingEmail = email
     emailOpen.value = false
+    passwordFor.value = 'email'
     passwordOpen.value = true
   }
 })
 
 const confirmPassword = usePortalAction(async (password: string) => {
+  if (passwordFor.value === 'delete') {
+    await deletion.finish(password)
+    return
+  }
   const email = portal.account.value?.user.email ?? ''
   const signedIn = await portal.auth.withEmail({ email, password })
   if (!signedIn.ok) {
@@ -154,8 +161,29 @@ const confirmPassword = usePortalAction(async (password: string) => {
   await requestEmail(pendingEmail)
 })
 
+/** Whether the password dialog confirms deleting the account rather than an email change. */
+const passwordFor = ref<'email' | 'delete'>('email')
+
+const deletion = usePortalAccountDeletion({
+  async onDeleted() {
+    passwordOpen.value = false
+    portalToast.info(messages.value.accountDeleted)
+    await router.replace({ name: 'welcome' })
+  },
+  onArchiveFailed: (message) => portalToast.error(message),
+  confirmPassword() {
+    if (!loaded.data.value?.hasPassword) return false
+    passwordFor.value = 'delete'
+    confirmPassword.clear()
+    passwordOpen.value = true
+    return true
+  }
+})
+const deleteAccount = deletion.remove
+
 const busy = computed(
   () =>
+    deleteAccount.busy.value ||
     rename.busy.value ||
     savePicture.busy.value ||
     removePicture.busy.value ||
@@ -193,6 +221,7 @@ onMounted(async () => {
       @change-email="openEmail"
       @choose-picture="choosePicture"
       @remove-picture="removeOpen = true"
+      @delete-account="deletion.show"
     />
     <PortalPageSkeleton v-else-if="loaded.status.value === 'loading'" avatar :groups="[2, 1]" />
     <AppConfirmationDialog
@@ -200,7 +229,6 @@ onMounted(async () => {
       tone="danger"
       :heading="messages.removePictureHeading"
       :description="messages.removePictureDescription"
-      :cancel-label="messages.cancel"
       :confirm-label="messages.removePictureConfirm"
       :confirm-loading="removePicture.busy.value"
       @confirm="removePicture.run()"
@@ -241,6 +269,18 @@ onMounted(async () => {
       :error="changeEmail.error.value"
       :saving="busy"
       @submit="changeEmail.run"
+    />
+    <PortalDeleteAccountDialog
+      v-if="profile"
+      v-model:open="deletion.open.value"
+      :email="profile.email"
+      :deletion="deletion.deletion.value"
+      :load-error="deletion.loadError.value"
+      :archive="deletion.archive.value"
+      :error="deleteAccount.error.value"
+      :deleting="deletion.deleting.value"
+      @download-all="deletion.downloadAll"
+      @confirm="deleteAccount.run()"
     />
     <PortalPasswordDialog
       :open="passwordOpen"

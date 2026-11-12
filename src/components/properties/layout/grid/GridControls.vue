@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { panelNumber } from '@open-pencil/core/geometry'
 import type { GridTrackSizing } from '@open-pencil/scene-graph'
 import { useI18n } from '@open-pencil/vue/i18n'
 import { useLayoutControlsContext } from '@open-pencil/vue/primitives/LayoutControls'
@@ -72,7 +73,7 @@ function defaultTrackValue(sizing: GridTrackSizing): number {
 
   <div class="mt-2 grid grid-cols-2 gap-1.5">
     <NumberField
-      :model-value="Math.round(ctx.node.gridColumnGap)"
+      :model-value="panelNumber(ctx.node.gridColumnGap)"
       :min="0"
       @update:model-value="ctx.updateProp('gridColumnGap', $event)"
       @commit="(v: number, p: number) => ctx.commitProp('gridColumnGap', v, p)"
@@ -83,7 +84,7 @@ function defaultTrackValue(sizing: GridTrackSizing): number {
       </template>
     </NumberField>
     <NumberField
-      :model-value="Math.round(ctx.node.gridRowGap)"
+      :model-value="panelNumber(ctx.node.gridRowGap)"
       :min="0"
       @update:model-value="ctx.updateProp('gridRowGap', $event)"
       @commit="(v: number, p: number) => ctx.commitProp('gridRowGap', v, p)"

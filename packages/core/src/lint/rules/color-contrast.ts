@@ -27,7 +27,10 @@ function requiredContrast(node: {
   textStyles?: { fontSize: number; fontWeight: number }[]
 }): number {
   const styles = node.textStyles ?? [{ fontSize: node.fontSize, fontWeight: 0 }]
-  return Math.max(...styles.map(minContrast))
+  // A loop, not `Math.max(...)`: a text with a run per character can exceed the argument limit.
+  let required = 0
+  for (const style of styles) required = Math.max(required, minContrast(style))
+  return required
 }
 
 type SolidPaint = LintNode['fills'][number] & {

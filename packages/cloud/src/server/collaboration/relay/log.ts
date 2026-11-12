@@ -22,7 +22,7 @@ export async function openRoomLog(
   store: CollaborationStateStore,
   room: CollaborationRoomIdentity,
   limits: RoomLogLimits
-): Promise<{ document: Y.Doc; log: RoomLog }> {
+): Promise<{ document: Y.Doc; log: RoomLog; savedBytes: number }> {
   const saved = await store.load(room)
   const document = new Y.Doc()
   if (saved.snapshot) Y.applyUpdate(document, saved.snapshot)
@@ -72,5 +72,8 @@ export async function openRoomLog(
       return run
     }
   }
-  return { document, log }
+  const savedBytes =
+    (saved.snapshot?.byteLength ?? 0) +
+    saved.updates.reduce((total, update) => total + update.byteLength, 0)
+  return { document, log, savedBytes }
 }

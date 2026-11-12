@@ -12,10 +12,12 @@ import { EditorSelection, EditorState, Prec } from '@codemirror/state'
 import { drawSelection, EditorView, keymap, placeholder, tooltips } from '@codemirror/view'
 import { getCurrentInstance, h, render, shallowRef, type Component, type ShallowRef } from 'vue'
 
+import { codeMirrorKey } from '@/components/code-editor/keys'
 import { useCodeMirror } from '@/components/code-editor/useCodeMirror'
 import { chatComposerTheme } from '@/theme/chat/composer'
 
 import { isComposerCompletion } from './complete'
+import { CHAT_COMPOSER_KEYS } from './keys'
 import { composerAppContext, referenceChips } from './references'
 
 /**
@@ -93,7 +95,7 @@ export function useChatEditor(
       Prec.highest(
         keymap.of([
           {
-            key: 'Enter',
+            key: codeMirrorKey(CHAT_COMPOSER_KEYS.send),
             run: (editor) => {
               if (completionStatus(editor.state) === 'active') return acceptCompletion(editor)
               options.onSubmit(false)
@@ -112,13 +114,13 @@ export function useChatEditor(
             }
           },
           {
-            key: 'Alt-Enter',
+            key: codeMirrorKey(CHAT_COMPOSER_KEYS.followUp),
             run: () => {
               options.onSubmit(true)
               return true
             }
           },
-          { key: 'Shift-Enter', run: insertNewline },
+          { key: codeMirrorKey(CHAT_COMPOSER_KEYS.newline), run: insertNewline },
           {
             key: 'ArrowUp',
             run: (editor) => {

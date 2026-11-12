@@ -1,5 +1,4 @@
-import type { Canvas, Path } from 'canvaskit-wasm'
-
+import type { Canvas, Path } from '@open-pencil/canvaskit'
 import type { BlendMode, Effect, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { blurSigma, drawnBlurRadius } from '@open-pencil/scene-graph/geometry'
 

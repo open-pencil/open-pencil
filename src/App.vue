@@ -2,7 +2,7 @@
 import { useHead } from '@unhead/vue'
 import { useEventListener } from '@vueuse/core'
 import { MotionConfig } from 'motion-v'
-import { TooltipProvider } from 'reka-ui'
+import { ConfigProvider, TooltipProvider } from 'reka-ui'
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
@@ -14,12 +14,15 @@ import { useDocumentCloseProtection } from '@/app/document/close/use'
 import { endRecoverySession, startRecoverySession } from '@/app/document/recovery/session'
 import { useFollowingEditorStore } from '@/app/editor/active-store'
 import { offerCrashReports } from '@/app/reports/crash'
+import { useInterfaceDirection } from '@/app/shell/direction'
 import { interfaceScalePreference } from '@/app/shell/interface-scale'
 import { animationsEnabled } from '@/app/shell/motion'
 import { useAppTheme } from '@/app/shell/theme'
 import { toast } from '@/app/shell/ui'
 import { useRestartApprovals } from '@/app/shell/updater/approvals'
 import { scheduleStartupUpdateCheck } from '@/app/shell/updater/check'
+import { useWebUpdates } from '@/app/shell/updater/web'
+import { openSaveTo } from '@/app/storage/save-to/session'
 import { kickSyncEngine } from '@/app/storage/sync'
 import { prepareForReload } from '@/app/tabs'
 import { CloudHosts } from '@/components/cloud/integration'
@@ -38,11 +41,13 @@ import VoiceCallAudio from '@/components/voice-call/VoiceCallAudio.vue'
 
 const { updates, locale } = useI18n()
 const router = useRouter()
+const dir = useInterfaceDirection()
 
 useHead({
   titleTemplate: (title) => (title ? `${title} — OpenPencil` : 'OpenPencil'),
   htmlAttrs: {
     lang: locale,
+    dir,
     'data-interface-scale': interfaceScalePreference,
     'data-motion': computed(() => (animationsEnabled.value ? 'full' : 'off'))
   }
@@ -52,6 +57,7 @@ provideEditor(useFollowingEditorStore())
 useAppTheme()
 useDocumentCloseProtection()
 useRestartApprovals()
+useWebUpdates()
 startRecoverySession()
 useEventListener(window, 'pagehide', () => {
   void prepareForReload()
@@ -65,32 +71,37 @@ useEventListener(window, 'pageshow', (event) => {
 onMounted(() => {
   toast.setupGlobalErrorHandler()
   void offerCrashReports()
-  scheduleStartupUpdateCheck(updates)
+  void scheduleStartupUpdateCheck(updates)
   void kickSyncEngine()
   onUnmounted(
-    startCloud({ leaveLinkAddress: () => router.isReady().then(() => router.replace('/')) })
+    startCloud({
+      leaveLinkAddress: () => router.isReady().then(() => router.replace('/')),
+      saveTo: (store, serverId) => openSaveTo(store, { profileId: serverId })
+    })
   )
 })
 </script>
 
 <template>
   <MotionConfig :reduced-motion="animationsEnabled ? 'never' : 'always'">
-    <TooltipProvider :delay-duration="400">
-      <AppShell>
-        <RouterView />
-      </AppShell>
-      <SettingsDialog />
-      <AISetupDialog />
-      <SaveToHost />
-      <CloudHosts />
-      <UnsavedChangesDialog />
-      <PublishLibraryDialog />
-      <LibraryUpdateReviewDialog />
-      <UsageStatsPrompt />
-      <DonationPrompt />
-      <ReportDialogHost />
-      <AppToaster />
-      <VoiceCallAudio />
-    </TooltipProvider>
+    <ConfigProvider :dir="dir">
+      <TooltipProvider :delay-duration="400">
+        <AppShell>
+          <RouterView />
+        </AppShell>
+        <SettingsDialog />
+        <AISetupDialog />
+        <SaveToHost />
+        <CloudHosts />
+        <UnsavedChangesDialog />
+        <PublishLibraryDialog />
+        <LibraryUpdateReviewDialog />
+        <UsageStatsPrompt />
+        <DonationPrompt />
+        <ReportDialogHost />
+        <AppToaster />
+        <VoiceCallAudio />
+      </TooltipProvider>
+    </ConfigProvider>
   </MotionConfig>
 </template>

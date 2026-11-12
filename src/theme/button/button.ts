@@ -1,8 +1,11 @@
+import { focusStyles } from '../focus/styles'
+
 export default {
   slots: {
     base: [
-      'inline-flex items-center justify-center gap-1.5 font-medium whitespace-nowrap select-none transition-colors',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50',
+      'inline-flex cursor-pointer items-center justify-center gap-1.5 font-medium whitespace-nowrap select-none transition-colors',
+      '',
+      focusStyles.ring,
       'disabled:cursor-not-allowed disabled:opacity-50'
     ],
     icon: 'size-3.5 shrink-0'

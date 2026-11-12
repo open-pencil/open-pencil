@@ -1,0 +1,1 @@
+- Screen readers no longer announce an untranslated "solid fill" for color swatches in the variable picker, Variables table and inspector, effect previews, and swatch buttons (#2049).

@@ -55,7 +55,7 @@ export function registerFigPopulationWorker(
       worker.terminate()
       return
     }
-    populationWorkers.set(graph, createRetiredWorker(worker, port, !!stopWorker))
+    populationWorkers.set(graph, createRetiredWorker(worker, port, stopWorker))
     return
   }
   const client = createPopulationWorkerClient(graph, worker, port, stopWorker)
@@ -106,6 +106,16 @@ export async function requestOriginalArchive(graph: SceneGraph): Promise<Uint8Ar
     : null
 }
 
+/**
+ * Stops the reader worker a document opened with, as an abandoned page load does: the document
+ * then loads its pages and writes its archive on this thread, from the copy it keeps. A reload
+ * calls this before reading the file again, since a large document does not fit in a page twice.
+ */
+export function stopFigReaderWorker(graph: SceneGraph): void {
+  populationWorkers.get(graph)?.stop()
+  populationWorkers.delete(graph)
+}
+
 export function releaseFigPopulationWorker(graph: SceneGraph): void {
   releaseReaderRecovery(graph)
   populationWorkers.get(graph)?.terminate()
@@ -122,26 +132,32 @@ export interface FigPopulationWorker {
    * archive until the document closes, which releases it with the archive.
    */
   terminate: () => void
+  /** Stop the worker itself: the archive carries on from this thread's copy. */
+  stop: () => void
 }
 
 /** A worker too large to load pages through; one nothing else holds is disposed with it. */
 function createRetiredWorker(
   worker: Worker,
   port: MessagePort,
-  sharedWorker: boolean
+  stopWorker?: () => void
 ): FigPopulationWorker {
+  const sharedWorker = !!stopWorker
   if (sharedWorker) port.postMessage({ type: 'retire' })
   let disposed = false
+  const terminate = () => {
+    if (disposed || sharedWorker) return
+    disposed = true
+    emitTelemetry({ event: 'terminated' })
+    port.postMessage({ type: 'dispose' })
+    port.close()
+    worker.terminate()
+  }
   return {
     populate: () => Promise.resolve(null),
-    terminate() {
-      if (disposed || sharedWorker) return
-      disposed = true
-      emitTelemetry({ event: 'terminated' })
-      port.postMessage({ type: 'dispose' })
-      port.close()
-      worker.terminate()
-    }
+    // A worker that also serves the archive stops through the archive, which carries on without it.
+    stop: () => (stopWorker ? stopWorker() : terminate()),
+    terminate
   }
 }
 
@@ -296,6 +312,12 @@ export function createPopulationWorkerClient(
         if (port) port.postMessage({ type: 'populate', requestId, baseRevision, pageId })
         else worker.postMessage({ type: 'populate', requestId, baseRevision, pageId }, [])
       })
+    },
+    stop() {
+      if (disposed) return
+      disposed = true
+      emitTelemetry({ event: 'terminated' })
+      fail(false, true)
     },
     terminate() {
       if (disposed) return

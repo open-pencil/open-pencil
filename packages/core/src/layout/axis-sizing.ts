@@ -1,7 +1,6 @@
-import { Align, type Node as YogaNode } from 'yoga-layout'
-
 import type { LayoutSizing, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { layoutSizing } from '@open-pencil/scene-graph/layout'
+import type { LayoutNode } from '@open-pencil/taffy'
 
 type Axis = 'width' | 'height'
 
@@ -101,36 +100,36 @@ export function ownAxisSizing(child: SceneNode, axis: Axis): SceneNode['primaryA
 }
 
 export function setMainAxisSizing(
-  yogaNode: YogaNode,
+  layoutNode: LayoutNode,
   axis: Axis,
   sizing: LayoutSizing,
   fixedValue: number,
   grow: number
 ): void {
   if (grow > 0) {
-    yogaNode.setFlexGrow(grow)
-    yogaNode.setFlexShrink(1)
-    yogaNode.setFlexBasis(0)
+    layoutNode.style.flexGrow = grow
+    layoutNode.style.flexShrink = 1
+    layoutNode.style.flexBasis = 0
     return
   }
 
   switch (sizing) {
     case 'FIXED':
-      if (axis === 'width') yogaNode.setWidth(fixedValue)
-      else yogaNode.setHeight(fixedValue)
+      if (axis === 'width') layoutNode.style.width = fixedValue
+      else layoutNode.style.height = fixedValue
       break
     case 'HUG':
       break
     case 'FILL':
-      yogaNode.setFlexGrow(1)
-      yogaNode.setFlexShrink(1)
-      yogaNode.setFlexBasis(0)
+      layoutNode.style.flexGrow = 1
+      layoutNode.style.flexShrink = 1
+      layoutNode.style.flexBasis = 0
       break
   }
 }
 
 export function setCrossAxisSizing(
-  yogaNode: YogaNode,
+  layoutNode: LayoutNode,
   axis: Axis,
   sizing: LayoutSizing,
   fixedValue: number,
@@ -138,16 +137,16 @@ export function setCrossAxisSizing(
 ): void {
   switch (sizing) {
     case 'FIXED':
-      if (axis === 'width') yogaNode.setWidth(fixedValue)
-      else yogaNode.setHeight(fixedValue)
+      if (axis === 'width') layoutNode.style.width = fixedValue
+      else layoutNode.style.height = fixedValue
       break
     case 'HUG':
       break
     case 'FILL':
-      yogaNode.setAlignSelf(Align.Stretch)
+      layoutNode.style.alignSelf = 'stretch'
       if (fillKeepsSize) {
-        if (axis === 'width') yogaNode.setMinWidth(fixedValue)
-        else yogaNode.setMinHeight(fixedValue)
+        if (axis === 'width') layoutNode.style.minWidth = fixedValue
+        else layoutNode.style.minHeight = fixedValue
       }
       break
   }

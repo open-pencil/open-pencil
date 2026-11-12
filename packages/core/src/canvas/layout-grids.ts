@@ -1,5 +1,4 @@
-import type { Canvas } from 'canvaskit-wasm'
-
+import type { Canvas } from '@open-pencil/canvaskit'
 import { readEffectiveFigmaRawField } from '@open-pencil/fig'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { layoutGridCount, layoutGuideSections } from '@open-pencil/scene-graph/layout'

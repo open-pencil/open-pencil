@@ -1025,7 +1025,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d045de693cb712d0b22c6a64be5b953f67b3ce00ab5ad3dd5d8b441886ab8e1a"
 dependencies = [
  "quote",
- "syn 3.0.9",
+ "syn 2.0.119",
 ]
 
 [[package]]
@@ -3764,7 +3764,7 @@ dependencies = [
 
 [[package]]
 name = "open_pencil"
-version = "0.17.0-beta.2"
+version = "0.17.0-beta.4"
 dependencies = [
  "fix-path-env",
  "fontique 0.11.1",
@@ -3798,7 +3798,6 @@ dependencies = [
  "webkit2gtk-sys",
  "which",
  "write-fonts",
- "zip 2.4.2",
  "zstd",
 ]
 
@@ -5753,7 +5752,7 @@ dependencies = [
 [[package]]
 name = "taffy"
 version = "0.15.0"
-source = "git+https://github.com/DioxusLabs/taffy?rev=affd437f20432c253b88c39374ef83017b263d81#affd437f20432c253b88c39374ef83017b263d81"
+source = "git+https://github.com/open-pencil/taffy?rev=f0c51f71f3a1a6f40bb78be49e08716d34ca57e9#f0c51f71f3a1a6f40bb78be49e08716d34ca57e9"
 dependencies = [
  "serde",
  "slotmap",
@@ -6181,7 +6180,7 @@ dependencies = [
  "tokio",
  "url",
  "windows-sys 0.61.2",
- "zip 4.6.1",
+ "zip",
 ]
 
 [[package]]
@@ -8228,21 +8227,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 3.0.9",
-]
-
-[[package]]
-name = "zip"
-version = "2.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fabe6324e908f85a1c52063ce7aa26b68dcb7eb6dbc83a2d148403c9bc3eba50"
-dependencies = [
- "arbitrary",
- "crc32fast",
- "crossbeam-utils",
- "displaydoc",
- "indexmap 2.14.2",
- "memchr",
- "thiserror 2.0.20",
 ]
 
 [[package]]

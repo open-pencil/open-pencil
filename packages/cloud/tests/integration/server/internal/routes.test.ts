@@ -29,10 +29,10 @@ const config = parseCloudServerConfig({
 
 async function testApp() {
   const runtime = await createCloudTestDatabase()
-  const workspaceId = crypto.randomUUID()
+  const userId = crypto.randomUUID()
   await runtime.database
-    .insertInto('workspace')
-    .values({ id: workspaceId, name: 'W', slug: `w-${workspaceId}`, createdBy: 'owner' })
+    .insertInto('user')
+    .values({ id: userId, name: 'Owner', email: 'owner@example.com', emailVerified: true })
     .execute()
   const app = createCloudApp({
     config,
@@ -42,17 +42,17 @@ async function testApp() {
     resolveSession: async () => null
   })
   const put = (id: string, body: unknown, token = SERVICE_TOKEN) =>
-    app.request(`/api/internal/workspaces/${id}/entitlements`, {
+    app.request(`/api/internal/accounts/${id}/entitlements`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify(body)
     })
   const enabled = () =>
     new DatabaseEntitlementSource(runtime.database).boolean(
-      { type: 'workspace', id: workspaceId },
-      CLOUD_FEATURE_KEYS.cloudAI
+      { type: 'user', id: userId },
+      CLOUD_FEATURE_KEYS.cloudServices
     )
-  return { runtime, workspaceId, put, enabled }
+  return { runtime, userId, put, enabled }
 }
 
 const appliedSchema = v.object({ applied: v.boolean() })
@@ -62,20 +62,20 @@ describe('internal entitlements API', () => {
     const context = await testApp()
     try {
       const plan = (enabled: boolean, externalVersion: number) => ({
-        values: { ai: { enabled } },
+        values: { services: { enabled } },
         source: 'billing',
         externalVersion
       })
-      const newer = await context.put(context.workspaceId, plan(true, 20))
+      const newer = await context.put(context.userId, plan(true, 20))
       expect(await responseJSON(newer, appliedSchema)).toEqual({ applied: true })
 
-      const late = await context.put(context.workspaceId, plan(false, 10))
+      const late = await context.put(context.userId, plan(false, 10))
       expect(await responseJSON(late, appliedSchema)).toEqual({ applied: false })
-      const redelivered = await context.put(context.workspaceId, plan(true, 20))
+      const redelivered = await context.put(context.userId, plan(true, 20))
       expect(await responseJSON(redelivered, appliedSchema)).toEqual({ applied: false })
       expect(await context.enabled()).toBe(true)
 
-      const canceled = await context.put(context.workspaceId, plan(false, 30))
+      const canceled = await context.put(context.userId, plan(false, 30))
       expect(await responseJSON(canceled, appliedSchema)).toEqual({ applied: true })
       expect(await context.enabled()).toBe(false)
     } finally {
@@ -86,23 +86,25 @@ describe('internal entitlements API', () => {
   test('refuses callers without the service token', async () => {
     const context = await testApp()
     try {
-      const body = { values: { ai: { enabled: true } }, source: 'billing', externalVersion: 1 }
-      expect((await context.put(context.workspaceId, body, 'x'.repeat(48))).status).toBe(401)
+      const body = {
+        values: { services: { enabled: true } },
+        source: 'billing',
+        externalVersion: 1
+      }
+      expect((await context.put(context.userId, body, 'x'.repeat(48))).status).toBe(401)
       expect(await context.enabled()).toBeNull()
     } finally {
       await context.runtime.close()
     }
   })
 
-  test('answers not found for unknown workspaces and invalid bodies with 400', async () => {
+  test('answers not found for unknown accounts and invalid bodies with 400', async () => {
     const context = await testApp()
     try {
       const body = { values: {}, source: 'billing', externalVersion: 1 }
       expect((await context.put(crypto.randomUUID(), body)).status).toBe(404)
       expect((await context.put('not-a-uuid', body)).status).toBe(404)
-      expect(
-        (await context.put(context.workspaceId, { ...body, externalVersion: -1 })).status
-      ).toBe(400)
+      expect((await context.put(context.userId, { ...body, externalVersion: -1 })).status).toBe(400)
     } finally {
       await context.runtime.close()
     }

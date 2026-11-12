@@ -9,8 +9,6 @@ import { resolveCommand } from 'package-manager-detector/commands'
 import { detect, getUserAgent } from 'package-manager-detector/detect'
 import { WebSocketServer, type WebSocket } from 'ws'
 
-import { MCP_AGENT_HEADER, MCP_CHAT_HEADER } from '@open-pencil/core/constants'
-
 import { bearerToken, isAuthorized, mcpRequestToken } from '#mcp/auth'
 import { createBrowserRPCBridge } from '#mcp/browser-rpc'
 import { MCP_CORS_HEADERS, MCP_CORS_METHODS, MCP_EXPOSED_HEADERS } from '#mcp/http-options'
@@ -242,7 +240,7 @@ function createHonoApp(options: {
     }
     const transport = await mcpSessions.resolveTransport(
       undefined,
-      sessionOpener(c.req.header(MCP_AGENT_HEADER), c.req.header(MCP_CHAT_HEADER))
+      sessionOpener((name) => c.req.header(name))
     )
     if ('error' in transport) {
       if (transport.error === 'closed') {

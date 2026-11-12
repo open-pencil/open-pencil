@@ -12,9 +12,11 @@ import type {
 import type { SelectionPlacement } from '@open-pencil/scene-graph/coordinate'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { ResizeSnapshot } from '@open-pencil/scene-graph/resize'
+import type { ScaleSnapshot } from '@open-pencil/scene-graph/scaling'
 
 import type { FlowDrag } from '#vue/shared/input/flow-reorder'
 import type { LayerSizing } from '#vue/shared/input/resize/sizing'
+import type { ScalePreview } from '#vue/shared/input/scale'
 
 export interface DragDraw {
   type: 'draw'
@@ -140,6 +142,32 @@ export interface DragPan {
   startPanY: number
 }
 
+/** A Scale-tool drag: the selection scales evenly from a handle, text and strokes included. */
+export interface DragScale {
+  type: 'scale'
+  handle: HandlePosition
+  startX: number
+  startY: number
+  /**
+   * The box the handle scales: a single layer's own, in its parent's axes, or a multi-selection's
+   * on the canvas.
+   */
+  origRect: Rect
+  /** The single layer that scales in its own frame, as it was when the drag began. */
+  layer: { nodeId: string; origPlacement: SelectionPlacement } | null
+  /** The layers the drag scales, as it found them. */
+  snapshot: ScaleSnapshot
+  /** The scale shown so far, recorded on commit. */
+  preview: ScalePreview
+  /** The scale the latest step reached. */
+  scale: number
+  /** The point the drag keeps in place: as fractions of the box, and on the canvas. */
+  anchorFraction: Vector
+  anchor: Vector
+  commit: () => void
+  cancel: () => void
+}
+
 export interface DragResize {
   type: 'resize'
   handle: HandlePosition
@@ -228,6 +256,16 @@ export interface DragPen {
   type: 'pen-drag'
   startX: number
   startY: number
+  /** Where the pointer went down, which the drag threshold is measured from. */
+  pressX: number
+  pressY: number
+  /**
+   * The handle into the point that the drag keeps: set when the press went back to the last point,
+   * whose outgoing handle alone the drag sets again (Figma). Null when the drag mirrors into it.
+   */
+  incoming: Vector | null
+  /** Past the drag threshold: from then on the handle follows the pointer, back to zero too. */
+  moved: boolean
   modifierMode: 'default' | 'continuous' | 'independent'
   frozenOppositeTangent: Vector | null
   spaceDown: boolean
@@ -257,6 +295,11 @@ export interface DragEditNode {
    * with Shift takes it out of the selection.
    */
   click?: { part: 'segment' | 'region'; index: number; deselect: boolean }
+  /**
+   * A straight segment pressed on its own, and where: once the drag starts, a point goes there and
+   * the drag moves it instead, bending the segment, as in Figma.
+   */
+  insert?: { segment: number; x: number; y: number }
 }
 
 export interface DragEditHandle {
@@ -316,6 +359,15 @@ export interface DragGradient {
   cancel: () => void
 }
 
+/** Dragging the start or end of a progressive blur whose settings are open. */
+export interface DragBlurRamp {
+  type: 'blur-ramp'
+  /** Moves the dragged point to a screen point. */
+  update: (screenX: number, screenY: number) => void
+  commit: () => void
+  cancel: () => void
+}
+
 /** Dragging a radius, point count, or ratio handle of the selected rectangle, polygon, or star. */
 export interface DragShapeHandle {
   type: 'shape-handle'
@@ -327,6 +379,7 @@ export interface DragShapeHandle {
 
 export type DragState =
   | DragShapeHandle
+  | DragBlurRamp
   | DragDraw
   | DragStickyDraw
   | DragConnectorDraw
@@ -338,6 +391,7 @@ export type DragState =
   | DragPan
   | DragResize
   | DragResizeSelection
+  | DragScale
   | DragStickyScale
   | DragMarquee
   | DragRotate
