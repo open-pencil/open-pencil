@@ -40,6 +40,11 @@ function staticEntitlements(config: CloudDeploymentConfig) {
   return staticEntitlementsFromTOML(config.entitlements)
 }
 
+function defaultEntitlements(config: CloudDeploymentConfig) {
+  if (config.entitlements?.source !== 'database') return undefined
+  return staticEntitlementsFromTOML(config.entitlements)
+}
+
 function emailConfig(config: CloudDeploymentConfig, environment: CloudEnvironment) {
   if (config.email.transport === 'none') return { emailTransport: 'none' as const }
   if (config.email.transport === 'cloudflare') {
@@ -191,6 +196,7 @@ export function parseCloudDeploymentConfig(
     s3DeletedPrefix: config.object_storage.deleted_prefix,
     relayURL: config.collaboration.relay_url,
     staticEntitlements: staticEntitlements(config),
+    defaultEntitlements: defaultEntitlements(config),
     ...emailConfig(config, environment),
     ...workerConfig(config),
     ...serviceConfig(config, environment),

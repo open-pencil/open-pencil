@@ -110,6 +110,22 @@ describe('activate_document', () => {
   })
 })
 
+describe('graph commands', () => {
+  test('read the page page_id names rather than the first page', async () => {
+    const { store } = createTab()
+    const pageId = store.graph.addPage('Second').id
+    store.graph.createNode('FRAME', pageId, { name: 'On Second' })
+
+    const response = await settle(request('tree', { page_id: pageId }))
+
+    expect(response.result).toMatchObject({
+      page: { id: pageId, name: 'Second' },
+      children: [{ name: 'On Second' }]
+    })
+    expect(response.target).toMatchObject({ pageId })
+  })
+})
+
 describe("an ACP chat's tool calls", () => {
   const chat = '0123456789abcdef0123456789abcdef'
   afterEach(() => forgetAgentChat(chat))

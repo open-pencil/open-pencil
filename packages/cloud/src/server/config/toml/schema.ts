@@ -238,7 +238,8 @@ export const cloudDeploymentConfigSchema = v.strictObject({
   entitlements: v.optional(
     v.variant('source', [
       v.strictObject({ source: v.literal('static'), ...staticEntitlementsTOMLSchema.entries }),
-      v.strictObject({ source: v.literal('database') })
+      // The values every account takes until billing or an operator stores its own: the free plan.
+      v.strictObject({ source: v.literal('database'), ...staticEntitlementsTOMLSchema.entries })
     ])
   ),
   services: v.optional(

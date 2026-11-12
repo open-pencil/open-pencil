@@ -68,6 +68,8 @@ const rawCloudServerConfigSchema = v.object({
     }
   ),
   staticEntitlements: v.optional(staticEntitlementsSchema),
+  /** With database entitlements, what an account without stored ones takes, value by value. */
+  defaultEntitlements: v.optional(staticEntitlementsSchema),
   databaseURL: v.pipe(v.string(), v.url()),
   authSecret: v.pipe(v.string(), v.minLength(32)),
   trustedOrigins: v.optional(v.array(httpURLSchema), []),

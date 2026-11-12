@@ -1,7 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
-import { createAccountEntitlementRepository, DatabaseEntitlementSource } from '#cloud/server'
+import {
+  createAccountEntitlementRepository,
+  DatabaseEntitlementSource,
+  staticEntitlementValues
+} from '#cloud/server'
 
 async function seed() {
   const runtime = await createCloudTestDatabase()
@@ -47,6 +51,31 @@ describe('database entitlement source', () => {
       expect(await source.number(subject, 'cloud.documents.maximum-file-bytes')).toBe(200)
       expect(await source.boolean(subject, 'cloud.sharing.guest-edit')).toBe(true)
       expect(await source.boolean(subject, 'unknown')).toBeNull()
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
+  test('gives an account without stored entitlements the defaults, and a stored plan over them', async () => {
+    const context = await seed()
+    try {
+      const free = staticEntitlementValues({
+        storage: { maximumBytes: 300 },
+        services: { enabled: false }
+      })
+      const source = new DatabaseEntitlementSource(context.runtime.database, free)
+      const subject = { type: 'user' as const, id: context.ownerId }
+      expect(await source.number(subject, 'cloud.storage.maximum-bytes')).toBe(300)
+      expect(await source.boolean(subject, 'cloud.services.enabled')).toBe(false)
+
+      await createAccountEntitlementRepository(context.runtime.database).set(
+        context.ownerId,
+        { storage: { maximumBytes: 10_000 } },
+        'billing'
+      )
+      expect(await source.number(subject, 'cloud.storage.maximum-bytes')).toBe(10_000)
+      // A value the stored plan leaves out is still the default's.
+      expect(await source.boolean(subject, 'cloud.services.enabled')).toBe(false)
     } finally {
       await context.runtime.close()
     }
