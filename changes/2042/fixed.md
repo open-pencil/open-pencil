@@ -1,0 +1,3 @@
+- Outline stroke turns shapes with only a fill into a vector of their fill, alone or inside groups, frames, and components, as in Figma.
+- Underlines and strikethroughs across characters of different colours are drawn as Figma draws them: one line broken only around descenders, each piece in one character's colour.
+- Layers with more than about 100,000 direct children no longer fail to draw, lay out, or import in Chrome.
