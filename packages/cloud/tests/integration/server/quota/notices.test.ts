@@ -7,6 +7,7 @@ import {
   createTransactionalEmailService,
   EntitlementOpenFeatureProvider,
   StaticEntitlementSource,
+  type EntitlementSource,
   staticEntitlementValues
 } from '#cloud/server'
 
@@ -15,6 +16,19 @@ const OWNER_ID = crypto.randomUUID()
 
 /** An owner on a plan of `MAXIMUM_BYTES` with one workspace, and the notices for their storage. */
 async function seed(options: { upgradable: boolean } = { upgradable: true }) {
+  const plan = new StaticEntitlementSource(
+    staticEntitlementValues({ storage: { maximumBytes: MAXIMUM_BYTES } })
+  )
+  let reachable = true
+  // The plan, unless a test has made the policy fail to read it.
+  const plans: EntitlementSource = {
+    boolean: (subject, key) => plan.boolean(subject, key),
+    async number(subject, key) {
+      if (!reachable) throw new Error('Plans can’t be read')
+      return plan.number(subject, key)
+    },
+    string: (subject, key) => plan.string(subject, key)
+  }
   const runtime = await createCloudTestDatabase()
   const { database } = runtime
   const workspaceId = crypto.randomUUID()
@@ -45,13 +59,7 @@ async function seed(options: { upgradable: boolean } = { upgradable: true }) {
     .values({ workspaceId, committedBytes: 0 })
     .execute()
   const notices = createStorageLimitNoticeService(database, {
-    policy: createDefaultCloudPolicy(
-      new EntitlementOpenFeatureProvider(
-        new StaticEntitlementSource(
-          staticEntitlementValues({ storage: { maximumBytes: MAXIMUM_BYTES } })
-        )
-      )
-    ),
+    policy: createDefaultCloudPolicy(new EntitlementOpenFeatureProvider(plans)),
     email: createTransactionalEmailService(database, {
       encryptionSecret: 'storage-notice-test-secret-at-least-32-characters',
       from: 'cloud@example.com'
@@ -63,6 +71,9 @@ async function seed(options: { upgradable: boolean } = { upgradable: true }) {
   return {
     runtime,
     notices,
+    failPlans(failing: boolean) {
+      reachable = !failing
+    },
     async hold(bytes: number) {
       await database
         .updateTable('workspaceStorageUsage')
@@ -105,6 +116,21 @@ describe('storage limit notices', () => {
       await hold(MAXIMUM_BYTES + 1)
       expect(await notices.notifyStorageLimits()).toEqual({ notified: 1, cleared: 0 })
       expect(await sent()).toHaveLength(2)
+    } finally {
+      await runtime.close()
+    }
+  })
+
+  test('keep a notice while the plan can’t be read, so the owner isn’t told twice', async () => {
+    const { runtime, notices, hold, sent, failPlans } = await seed()
+    try {
+      await hold(MAXIMUM_BYTES)
+      await notices.notifyStorageLimits()
+      failPlans(true)
+      expect(await notices.notifyStorageLimits()).toEqual({ notified: 0, cleared: 0 })
+      failPlans(false)
+      expect(await notices.notifyStorageLimits()).toEqual({ notified: 0, cleared: 0 })
+      expect(await sent()).toHaveLength(1)
     } finally {
       await runtime.close()
     }

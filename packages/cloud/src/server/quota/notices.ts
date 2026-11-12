@@ -31,14 +31,18 @@ export function createStorageLimitNoticeService(
   database: Kysely<CloudDatabase>,
   options: StorageLimitNoticeOptions
 ) {
-  /** Each account's limit, or null when its plan sets none. */
-  async function limit(userId: string): Promise<number | null> {
-    const maximum = await options.policy.number(
+  /**
+   * Each account's limit: a number, null when its plan sets none, or undefined when the policy
+   * failed to answer, which decides nothing either way until a pass where it answers.
+   */
+  async function limit(userId: string): Promise<number | null | undefined> {
+    const maximum = await options.policy.numberResolution(
       CLOUD_FEATURE_KEYS.maximumStorageBytes,
       Number.MAX_SAFE_INTEGER,
       { targetingKey: userId, subjectType: 'user', deploymentMode: options.deploymentMode }
     )
-    return maximum === Number.MAX_SAFE_INTEGER ? null : maximum
+    if (maximum.failed) return undefined
+    return maximum.value === Number.MAX_SAFE_INTEGER ? null : maximum.value
   }
 
   async function notify(userId: string, usedBytes: number, limitBytes: number): Promise<boolean> {
@@ -96,7 +100,7 @@ export function createStorageLimitNoticeService(
       const result: StorageLimitNoticeResult = { notified: 0, cleared: 0 }
       for (const [userId, usedBytes] of usage) {
         const limitBytes = await limit(userId)
-        if (limitBytes !== null && usedBytes >= limitBytes) {
+        if (typeof limitBytes === 'number' && usedBytes >= limitBytes) {
           if (await notify(userId, usedBytes, limitBytes)) result.notified++
         }
       }
@@ -104,6 +108,7 @@ export function createStorageLimitNoticeService(
       for (const { userId } of notices) {
         const usedBytes = usage.get(userId) ?? 0
         const limitBytes = await limit(userId)
+        if (limitBytes === undefined) continue
         if (limitBytes !== null && usedBytes >= limitBytes) continue
         await database.deleteFrom('storageLimitNotice').where('userId', '=', userId).execute()
         result.cleared++
