@@ -93,6 +93,8 @@ import type { Vector, GUID } from '@open-pencil/scene-graph/primitives'
 import { savedFace } from './font/style'
 import { numericVariableAssignmentScales, sourceVariableBindingScales } from './variable/bindings'
 export { VARIABLE_BINDING_FIELDS, VARIABLE_BINDING_FIELDS_INVERSE } from './variable/bindings'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
+
 import type { FigVariableModeMap } from './variable/maps'
 
 export function extractVariableModes(nc: NodeChange): VariableModeMap {
@@ -514,7 +516,7 @@ function savedLinesHeight(nc: NodeChange): number | null {
   }
   const tops = baselines.map((line) => line.lineY ?? line.position.y - line.lineAscent)
   const bottoms = baselines.map((line, index) => tops[index] + line.lineHeight)
-  return Math.max(...bottoms) - Math.min(...tops)
+  return maxOf(bottoms) - minOf(tops)
 }
 
 function convertLayoutPadding(

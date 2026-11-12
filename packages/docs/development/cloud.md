@@ -28,6 +28,7 @@ flowchart LR
 | `@open-pencil/cloud/contract`     | Valibot schemas and types shared by every side of the network              |
 | `@open-pencil/cloud/client`       | Discovery, authentication, device authorization, and the typed Hono client |
 | `@open-pencil/cloud/email`        | Vue Email rendering for transactional mail                                 |
+| `@open-pencil/cloud/errors`       | The PostHog error reporter, for services beside Cloud; only `posthog-node` |
 | `@open-pencil/cloud/server`       | Hono routes and services; every dependency is injected                     |
 | `@open-pencil/cloud/runtime/node` | PostgreSQL, S3, SMTP, the HTTP listener, workers, and operator commands    |
 
@@ -396,8 +397,10 @@ in and opens the link again. A guest who may view but not edit opens an edit lin
 resolution names the link's own permission as well, so the editor offers signing in to edit. Its provider reads one entitlement
 source, chosen by `[entitlements] source`: the static table in the deployment TOML, which applies to
 every account, or per-account rows in the database that the `entitlements` command and the internal
-API set. The two are alternatives, not layers. Technical limits cap the file size and participant
-limits the source reports.
+API set. The two are alternatives, not layers. With `source = "database"`, the same table under
+`[entitlements]` holds the defaults: what an account without a row takes, which is the free plan
+when billing writes rows only for paid accounts, and what a row leaves out. Technical limits cap the
+file size and participant limits the source reports.
 
 Plans belong to accounts, not workspaces. Every workspace has an owner, its creator at first, and
 every question about a workspace or its documents is asked of the owner's plan
@@ -411,6 +414,14 @@ requested bytes, and commits the verified size when the upload finishes. Usage i
 workspace, and the entitlements endpoint reports the owner's total. Cleanup releases reservations
 from abandoned uploads.
 
+An owner who holds their whole storage allowance or more is read-only (`storageLimitReached`):
+their documents open, download, and can be deleted, but take no saves or uploads, and no new
+documents. Collaboration tickets for them carry `view` and `readOnly: "storage-limit"`, so the
+editor opens the file view-only and says why, with the server's plan page when it bills.
+A plan that shrinks below what the account holds, as when billing moves a lapsed subscription to
+the free plan, reaches this the same way as filling it; nothing is deleted. Freeing space or a
+bigger plan lifts it at the next ticket.
+
 ## Services and billing
 
 Cloud does not proxy models or other paid capabilities, and keeps no credit balances. A
@@ -419,12 +430,19 @@ a short-lived ES256 token for a workspace member when the workspace owner's plan
 `services.enabled` entitlement. The token names the user, the workspace, the account whose credits it
 spends (`accountId`, the owner), and that plan's `services.monthly_credit_allowance`;
 the service verifies it against the keys at `/.well-known/jwks.json`, so it never reads Cloud's
-database. A token from a Cloud before account plans names no account, and the services server charges it to
-the workspace's own allowance, so the services server can upgrade first; usage recorded before it
-kept accounts still counts this month for requests from its workspace. The contract editors and services share, including the service's catalog, wallet, and
+database. A service refuses a token that names no account. The contract editors and services share, including the service's catalog, wallet, and
 error codes, is `src/contract/services.ts`; it has its own version so a service can change without
 a Cloud release. AI models are the first capability; image generation and search join the same
-contract and the same credits. A `[billing]` table only advertises where people manage their plan.
+contract and the same credits.
+
+A `[billing]` table advertises a billing service by its `endpoint`, which needs the services'
+signing key and the internal API. `POST /api/billing/token` signs a short-lived token for the
+signed-in person's own account, with the services' key but the `openpencil-billing` audience, so it
+spends no credits. The billing service verifies it against the same published keys, sells the plans
+and credit packs of its catalog, sends the person to its payment provider's checkout or portal, and
+sets the account's plan through the internal API as it is paid. The contract is
+`src/contract/billing.ts`. Editors link to the server's plan page, `CLOUD_ACCOUNT_PLAN_PATH`, whenever
+it advertises billing.
 
 A service answers below its endpoint at the paths in `CLOUD_SERVICES_API_PATHS`: model requests
 follow the OpenAI chat completions API, so editors reach it with an OpenAI-compatible client, and the

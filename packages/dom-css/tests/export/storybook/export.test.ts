@@ -3,12 +3,13 @@ import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { invalidCheckboxSet } from '#dom-css-tests/behaviours/fixtures'
+import { invalidCheckboxSet } from '#dom-css-tests/behaviours/fixtures/controls'
 import { BLUE_500, card, designSystem } from '#dom-css-tests/export/token-fixtures'
 import { exportStorybook } from '#dom-css/index'
 
 import { es } from '@open-pencil/emit'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { emptyBehaviour, withBehaviour } from '@open-pencil/scene-graph/behaviours'
 
 function buttonGraph() {
@@ -180,7 +181,7 @@ describe('exportStorybook', () => {
       framework: 'html',
       document: 'Kit',
       fonts: (fonts, folder) => {
-        requested.push(...fonts)
+        appendAll(requested, fonts)
         return Promise.resolve(
           fonts.map((font) => ({
             ...font,

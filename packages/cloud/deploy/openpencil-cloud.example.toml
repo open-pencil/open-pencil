@@ -108,9 +108,11 @@ transport = "none"
 # endpoint = "https://ai.example.com"
 # token_lifetime_minutes = 10
 
-# Where people manage their plan; editors link to it. Leave it out when the deployment does not bill.
+# The billing service that sells plans and credits; editors link to the plan page whenever it is
+# set. Needs the [services] signing key, which signs its tokens, and the [internal_api], through
+# which it sets the plans it sells. Leave it out when the deployment does not bill.
 # [billing]
-# portal_url = "https://billing.example.com"
+# endpoint = "https://billing.example.com"
 
 # Add this table to let services such as billing set an account's entitlements, which every
 # workspace it owns takes, over HTTP at PUT /api/internal/accounts/<user id>/entitlements. The

@@ -2,12 +2,14 @@ export { materializeFigFragment, type FragmentMaterializationOptions } from './d
 export {
   materializeDocument,
   materializeFigArchive,
+  type DocumentAssemblyOptions
+} from './document/materialize'
+export {
   figCheckpointRecords,
   type FigSessionCheckpoint,
   type FigSessionResume,
-  createFigDocumentSession,
-  type DocumentAssemblyOptions
-} from './document/materialize'
+  createFigDocumentSession
+} from './document/session'
 export { figArchiveMetaSchema, type FigArchiveMetaJSON } from './schema'
 export {
   figArchiveKind,

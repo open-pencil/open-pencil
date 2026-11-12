@@ -1,5 +1,6 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { strokeOverflow as strokeReach } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
@@ -240,9 +241,9 @@ function childBox(graph: SceneGraph, childId: string): Rect | null {
   ])
   const xs = [points[0], points[2], points[4], points[6]]
   const ys = [points[1], points[3], points[5], points[7]]
-  const x = Math.min(...xs)
-  const y = Math.min(...ys)
-  return { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y }
+  const x = minOf(xs)
+  const y = minOf(ys)
+  return { x, y, width: maxOf(xs) - x, height: maxOf(ys) - y }
 }
 
 function childrenBounds(graph: SceneGraph, node: SceneNode): Rect | null {

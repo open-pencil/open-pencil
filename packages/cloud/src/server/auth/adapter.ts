@@ -1,4 +1,9 @@
-import type { CloudAccountSession, CloudSignIn } from '#cloud/contract'
+import type {
+  CloudAccessToken,
+  CloudAccessTokenCreate,
+  CloudAccountSession,
+  CloudSignIn
+} from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth/session'
 
 export type CloudMFAStatus = {
@@ -43,6 +48,18 @@ export interface CloudAuthAdapter {
    * terms: enough to leave, by downloading its documents and deleting the account.
    */
   resolveAccountSession(headers: Headers): Promise<CloudActor | null>
+  /**
+   * The account a personal access token stands for, from `Authorization: Bearer`, once it is held
+   * to what a session would be. Only the document API reads tokens.
+   */
+  resolveAccessToken(headers: Headers): Promise<CloudActor | null>
+  listAccessTokens(headers: Headers): Promise<CloudAccessToken[] | null>
+  /** Makes a token for the signed-in account; answers the whole token, shown this once. */
+  createAccessToken(
+    headers: Headers,
+    input: CloudAccessTokenCreate
+  ): Promise<{ token: string; accessToken: CloudAccessToken }>
+  revokeAccessToken(headers: Headers, id: string): Promise<void>
   listAuthenticationMethods(headers: Headers): Promise<CloudAuthenticationMethodRecord[]>
   changePassword(
     headers: Headers,
