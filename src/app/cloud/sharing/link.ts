@@ -17,7 +17,7 @@ import {
 } from '@/app/tabs'
 import { IS_BROWSER } from '@/constants'
 
-import { rememberShareLinkTab } from '../reports/tabs'
+import { cloudShareLinkTabs, rememberShareLinkTab } from '../reports/tabs'
 import { sharedCloudRoomImages } from '../rooms/images'
 import {
   cloudRelayTransport,
@@ -137,10 +137,14 @@ export async function openCloudShareLink(link: CloudShareLink): Promise<'opened'
   return 'opened'
 }
 
+/** Each link tab's latest room join; one that a newer join or another document replaced is stale. */
+const shareJoins = new WeakMap<EditorStore, symbol>()
+
 /**
  * Puts a link's tab into the document's room with the access its ticket grants. The tab joins
  * again when that access changes, as when the owner fills or frees their storage, or when the
- * document is restored to a version and moves to a new room.
+ * document is restored to a version and moves to a new room. A join that a newer one, or another
+ * document in the tab, overtook while its ticket was on the way does nothing.
  */
 async function joinShareRoom(
   store: EditorStore,
@@ -148,9 +152,23 @@ async function joinShareRoom(
   client: Awaited<ReturnType<typeof shareLinkClient>>['client'],
   input: { secret: string; guestName: string; guestId: string }
 ): Promise<void> {
-  const first = await client.getSharedCollaborationTicket(link.shareId, input)
-  // The tab may have closed while the ticket was on its way.
-  if (first.provider !== 'relay' || !first.serverURL || !getTabForStore(store)) return
+  const join = Symbol('share room join')
+  shareJoins.set(store, join)
+  const current = () =>
+    shareJoins.get(store) === join &&
+    getTabForStore(store) !== undefined &&
+    cloudShareLinkTabs.value.get(store) === link
+  let first: Awaited<ReturnType<typeof client.getSharedCollaborationTicket>>
+  try {
+    first = await client.getSharedCollaborationTicket(link.shareId, input)
+  } catch (error) {
+    if (!current()) return
+    // The tab stays read-only and says it is not live, rather than take edits nobody receives.
+    console.warn('[Cloud] Joining the shared document’s room failed:', error)
+    leaveRefusedRoom(store, { permission: 'view', canSave: false })
+    return
+  }
+  if (!current() || first.provider !== 'relay' || !first.serverURL) return
   const room = openCloudDocumentRoom(store, {
     roomId: first.roomId,
     transport: cloudRelayTransport(
@@ -159,7 +177,11 @@ async function joinShareRoom(
       () => client.getSharedCollaborationTicket(link.shareId, input),
       {
         onRestored: () => {
-          room.stop()
+          if (!current()) return
+          // The old session ends before the next ticket is asked for, and the tab takes no
+          // edits until the new room says what it may do.
+          leaveCloudRoom(store)
+          store.setReadOnly(true)
           void joinShareRoom(store, link, client, input)
         },
         // A guest has no account to save with, so leaving is all a refusal changes.
