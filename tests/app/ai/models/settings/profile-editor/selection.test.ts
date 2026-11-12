@@ -107,6 +107,20 @@ describe('a coding agent’s capabilities in the profile editor', () => {
     expect(saved.draft.capabilities).toEqual(['tools'])
   })
 
+  test('cannot gain image input the agent said it lacks, but may before it has said', async () => {
+    const waiting = editor()
+    await waiting.choose('acp:claude-code')
+    waiting.selection.visionEnabled.value = true
+    expect(waiting.draft.capabilities).toEqual(['tools', 'vision'])
+
+    const blind = editor()
+    await blind.choose('acp:claude-code')
+    await blind.answer({ ...claudeCode, imageInput: false })
+    blind.selection.visionEnabled.value = true
+    expect(blind.draft.capabilities).toEqual(['tools'])
+    expect(blind.selection.visionEnabled.value).toBe(false)
+  })
+
   test('are tools alone for Pi, whatever the provider before it could do', async () => {
     const pi = editor({ providerID: 'anthropic', capabilities: ['tools', 'vision'] })
     await pi.choose('harness:pi')

@@ -116,6 +116,9 @@ export function useProfileModelSelection(
   const visionEnabled = computed({
     get: () => visionSwitch.value,
     set: (enabled: boolean) => {
+      // An agent that reported no image input would fail every image sent to it, so Vision cannot
+      // be turned on; until it has reported, the choice stays open.
+      if (enabled && agent.imageInput.value === false) return
       followImageInput = false
       visionSwitch.value = enabled
     }
