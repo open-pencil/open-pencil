@@ -1,1 +1,1 @@
-- `export_image` and other image exports work for a document in a background tab instead of failing (#1169).
+- `export_image` and other image exports work for a document whose canvas is not on screen, such as the one MCP edits while the app shows Home or one in a background tab, instead of failing with "No visible nodes to export" (#1169).
