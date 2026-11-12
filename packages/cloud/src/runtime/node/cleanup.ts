@@ -1,10 +1,13 @@
 import { createPostgresCloudDatabase } from '#cloud/runtime/postgres/database'
+import { createCloudErrorReporter } from '#cloud/runtime/posthog/errors'
 import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import {
   cleanupPassOptions,
   createCleanupServices,
   createConfiguredCloudPolicy,
-  runCleanup
+  createLoggingErrorReporter,
+  runCleanup,
+  writeJSONLine
 } from '#cloud/server'
 
 import { loadNodeCloudServerConfig } from './config'
@@ -19,7 +22,13 @@ const objects = createS3ObjectStore(config)
 try {
   const policy = createConfiguredCloudPolicy(config, database)
   const result = await runCleanup(
-    createCleanupServices(config, database, objects, policy),
+    createCleanupServices(
+      config,
+      database,
+      objects,
+      policy,
+      createLoggingErrorReporter(writeJSONLine, createCloudErrorReporter(config, 'node'))
+    ),
     cleanupPassOptions(config)
   )
   console.log(JSON.stringify(result))

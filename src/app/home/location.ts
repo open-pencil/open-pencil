@@ -8,6 +8,8 @@ const homeLocationSchema = v.variant('kind', [
   v.object({ kind: v.literal('recent') }),
   v.object({ kind: v.literal('storage') }),
   v.object({ kind: v.literal('shared') }),
+  /** Documents deleted from the workspaces of the server Home shows, while they can be restored. */
+  v.object({ kind: v.literal('trash') }),
   /** A workspace of the server Home shows. */
   v.object({ kind: v.literal('workspace'), id: v.string() })
 ])

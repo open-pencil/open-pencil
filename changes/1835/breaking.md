@@ -1,1 +1,0 @@
-- `isConstraintEligible` moves from `@open-pencil/vue/controls/constraints` to `@open-pencil/scene-graph/constraints` (#1835).

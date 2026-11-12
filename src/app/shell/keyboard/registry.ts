@@ -21,7 +21,7 @@ import { appMenuShortcut } from '@/app/shell/menu/shortcut'
 export function appShortcuts(options: KeyboardShortcutOptions): EditorShortcut[] {
   const { store, actions } = options
   // The menus' save actions, which commit a field being typed in before writing the file.
-  const saving = createSaveMenuActions(store)
+  const saving = createSaveMenuActions()
   const menuKeys = (id: string) => {
     const shortcut = appMenuShortcut(id)
     if (!shortcut) throw new Error(`Menu item '${id}' has no shortcut`)
@@ -130,14 +130,13 @@ export function appShortcuts(options: KeyboardShortcutOptions): EditorShortcut[]
       run: saving.save,
       global: true
     },
-    { id: 'open-file', keys: menuKeys('open'), run: options.openFileDialog }
+    { id: 'open-file', keys: menuKeys('open'), run: options.openFileDialog },
+    // An open comment card takes Escape first; with none open the editor's Escape runs.
+    { id: 'close-comment-card', keys: 'Escape', run: () => useComments().closeCard() }
   ]
 }
 
-/** The editor's keyboard from the SDK, with the app's own keys and Escape steps added. */
+/** The editor's keyboard from the SDK, with the app's own keys added. */
 export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
-  useEditorKeyboard({
-    shortcuts: appShortcuts(options),
-    onEscape: () => useComments().closeCard()
-  })
+  useEditorKeyboard({ shortcuts: appShortcuts(options) })
 }

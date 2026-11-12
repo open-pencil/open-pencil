@@ -1,21 +1,19 @@
-import { copyFile, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { copyFile, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import { readReleaseNotes } from '#release/release-notes'
 import { sourceMapsAssetName } from '#release/sourcemaps/bundle'
 import { isEqual } from 'es-toolkit'
-import { decode, toUint8Array } from 'js-base64'
+import { decode } from 'js-base64'
 import * as v from 'valibot'
 
 import { desktopAssets } from './catalog.ts'
-import { releaseCommands } from './commands.ts'
 import { createReleaseContext } from './context.ts'
 import { digestFile, validateTargetManifests } from './manifest.ts'
+import { minisignPublicKey, verifyMinisign } from './minisign.ts'
 import { assertSignedVersion } from './signature.ts'
 
 const { identity, repository, version, paths } = createReleaseContext()
-const { verifySignature } = releaseCommands(paths.root)
 
 const directories = (await readdir(paths.nativeArtifacts)).sort()
 const manifests = validateTargetManifests(
@@ -35,60 +33,52 @@ const config = v.parse(
   JSON.parse(await readFile(paths.tauriConfig, 'utf8'))
 )
 
-const temporary = await mkdtemp(join(tmpdir(), 'open-pencil-signatures-'))
 const output = paths.output
 await rm(output, { recursive: true, force: true })
 await mkdir(output, { recursive: true })
 
 const platforms: Record<string, { signature: string; url: string }> = {}
 
-try {
-  const publicKey = join(temporary, 'key.pub')
-  await writeFile(publicKey, toUint8Array(config.plugins.updater.pubkey))
+const publicKey = minisignPublicKey(decode(config.plugins.updater.pubkey))
 
-  for (const [index, manifest] of manifests.entries()) {
-    const directory = directories[index]
-    if (!directory) throw new Error('Missing artifact directory')
+for (const [index, manifest] of manifests.entries()) {
+  const directory = directories[index]
+  if (!directory) throw new Error('Missing artifact directory')
 
-    const source = join(paths.nativeArtifacts, directory)
-    const actualNames = (await readdir(source)).filter((name) => name !== 'manifest.json').sort()
-    const expectedNames = manifest.files.map((file) => file.name).sort()
+  const source = join(paths.nativeArtifacts, directory)
+  const actualNames = (await readdir(source)).filter((name) => name !== 'manifest.json').sort()
+  const expectedNames = manifest.files.map((file) => file.name).sort()
 
-    if (!isEqual(actualNames, expectedNames)) {
-      throw new Error(`Unexpected files in ${directory}`)
+  if (!isEqual(actualNames, expectedNames)) {
+    throw new Error(`Unexpected files in ${directory}`)
+  }
+
+  for (const file of manifest.files) {
+    const path = join(source, file.name)
+    const actual = await digestFile(path)
+
+    if (actual.sha256 !== file.sha256 || actual.size !== file.size) {
+      throw new Error(`Corrupt artifact: ${file.name}`)
     }
 
-    for (const file of manifest.files) {
-      const path = join(source, file.name)
-      const actual = await digestFile(path)
+    await copyFile(path, join(output, file.name))
+  }
 
-      if (actual.sha256 !== file.sha256 || actual.size !== file.size) {
-        throw new Error(`Corrupt artifact: ${file.name}`)
-      }
+  for (const asset of desktopAssets(manifest.target, version)) {
+    if (!asset.signed) continue
 
-      await copyFile(path, join(output, file.name))
-    }
+    const signature = (await readFile(join(source, `${asset.name}.sig`), 'utf8')).trim()
+    const trusted = await verifyMinisign(join(source, asset.name), publicKey, decode(signature))
+    assertSignedVersion(trusted, version, asset.name)
 
-    for (const asset of desktopAssets(manifest.target, version)) {
-      if (!asset.signed) continue
-
-      const signature = (await readFile(join(source, `${asset.name}.sig`), 'utf8')).trim()
-      const decoded = join(temporary, `${asset.name}.minisig`)
-      await writeFile(decoded, toUint8Array(signature))
-      await verifySignature(join(source, asset.name), publicKey, decoded)
-      assertSignedVersion(decode(signature), version, asset.name)
-
-      for (const platform of asset.updaterKeys) {
-        if (platforms[platform]) throw new Error(`Duplicate updater platform: ${platform}`)
-        platforms[platform] = {
-          signature,
-          url: `https://github.com/${repository}/releases/download/${identity.tag}/${asset.name}`
-        }
+    for (const platform of asset.updaterKeys) {
+      if (platforms[platform]) throw new Error(`Duplicate updater platform: ${platform}`)
+      platforms[platform] = {
+        signature,
+        url: `https://github.com/${repository}/releases/download/${identity.tag}/${asset.name}`
       }
     }
   }
-} finally {
-  await rm(temporary, { recursive: true, force: true })
 }
 
 // The frontend job archived the source maps PostHog symbolicates error reports with.

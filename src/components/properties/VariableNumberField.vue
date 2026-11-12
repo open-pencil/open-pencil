@@ -120,22 +120,20 @@ defineOptions({ inheritAttrs: false })
       <template #suffix>
         <!-- A field's own control, such as Hug or a mode menu, sits beside its value; the variable
              button ends every field, so it lines up down the panel. -->
-        <slot name="after-variable" />
-        <span class="flex items-center pr-1">
-          <VariableBindingPicker
-            :trigger-label="panels.applyVariable"
-            :search-placeholder="common.search"
-            :empty-label="panels.noVariablesFound"
-            :detach-label="panels.detachVariable"
-            :create-label="
-              panels.createNumberVariable({
-                value: typeof modelValue === 'number' ? modelValue : 0
-              })
-            "
-            :create-name-placeholder="panels.variableName"
-            :create-submit-label="panels.create"
-          />
-        </span>
+        <slot name="menu" />
+        <VariableBindingPicker
+          :trigger-label="panels.applyVariable"
+          :search-placeholder="common.search"
+          :empty-label="panels.noVariablesFound"
+          :detach-label="panels.detachVariable"
+          :create-label="
+            panels.createNumberVariable({
+              value: typeof modelValue === 'number' ? modelValue : 0
+            })
+          "
+          :create-name-placeholder="panels.variableName"
+          :create-submit-label="panels.create"
+        />
       </template>
     </NumberField>
   </BindableValueRoot>

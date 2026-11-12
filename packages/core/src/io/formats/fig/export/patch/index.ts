@@ -498,13 +498,14 @@ export function archiveImagesNamedForFigma(graph: SceneGraph): Promise<boolean> 
  * Write a document opened from a `.fig` as that archive with only its changed records
  * rewritten. The main thread serializes what changed; merging and compressing the rest happen
  * where the archive is held, the reader's worker in the browser. Null when the document did
- * not come from an archive, or changed in a way this path does not write.
+ * not come from an archive, or changed in a way this path does not write. The archive streams
+ * from where it is held, its unchanged images never copied into the page.
  */
 export async function writePatchedFigFile(
   source: SceneGraph,
   runtime: FigNodeChangeExportRuntime,
   options: FigFileExtrasOptions = {}
-): Promise<Uint8Array | null> {
+): Promise<ReadableStream<Uint8Array> | null> {
   const archive = figArchive(source)
   const changes = archiveChanges(source)
   const loaded = archiveRecords(source)

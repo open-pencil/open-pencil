@@ -90,6 +90,16 @@ export interface DocumentTable {
   createdAt: TimestampColumn
   updatedAt: TimestampColumn
   deletedAt: TimestampColumn | null
+  /** Who moved the document to Trash; empty when its account's deletion did. */
+  deletedBy: string | null
+  /**
+   * When it was deleted forever, and by whom (empty for an account's deletion): out of everyone's
+   * sight, its files wait out the deployment's grace before cleanup destroys them.
+   */
+  purgedAt: TimestampColumn | null
+  purgedBy: string | null
+  /** Storage taken off its workspace's usage when it was deleted forever; see migration 007. */
+  purgedBytes: Generated<number>
   cleanupClaimId: Generated<string | null>
   cleanupClaimedAt: TimestampColumn | null
   /** Set while a deployment administrator has taken the document down; see migration 032. */
@@ -200,6 +210,17 @@ export interface AuthUserTable {
   updatedAt: TimestampColumn
 }
 
+/** Better Auth's API keys, which are Cloud's personal access tokens; the plugin owns the rest. */
+export interface AccessTokenTable {
+  id: string
+  referenceId: string
+  name: string | null
+  start: string | null
+  expiresAt: TimestampColumn | null
+  lastRequest: TimestampColumn | null
+  createdAt: TimestampColumn
+}
+
 export interface TwoFactorTable {
   id: string
   secret: string
@@ -283,6 +304,13 @@ export interface InvitationContinuationTable {
   expiresAt: TimestampColumn
   consumedAt: TimestampColumn | null
   createdAt: TimestampColumn
+}
+
+/** Which version of the server's terms an account accepted, and when; one row per version. */
+export interface TermsAcceptanceTable {
+  userId: string
+  version: string
+  acceptedAt: TimestampColumn
 }
 
 export interface AccountEntitlementTable {
@@ -389,6 +417,7 @@ export interface CloudDatabase {
   signIn: SignInTable
   userPicture: UserPictureTable
   user: AuthUserTable
+  apikey: AccessTokenTable
   authSchemaVersion: AuthSchemaVersionTable
   enrollment: EnrollmentTable
   apiRateLimit: APIRateLimitTable
@@ -409,6 +438,7 @@ export interface CloudDatabase {
   documentRoomUpdate: DocumentRoomUpdateTable
   invitationContinuation: InvitationContinuationTable
   accountEntitlement: AccountEntitlementTable
+  termsAcceptance: TermsAcceptanceTable
   workspaceStorageUsage: WorkspaceStorageUsageTable
   transactionalEmail: TransactionalEmailTable
   uploadStorageReservation: UploadStorageReservationTable

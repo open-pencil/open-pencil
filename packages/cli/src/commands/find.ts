@@ -2,7 +2,7 @@ import { defineCommand } from 'citty'
 
 import type { FindNodeResult } from '@open-pencil/core/rpc'
 
-import { appTargetOptions } from '#cli/app/target'
+import { pageOptions } from '#cli/app/target'
 import { printNodeResults } from '#cli/format'
 import { loadRPCData } from '#cli/rpc-data'
 
@@ -16,9 +16,8 @@ export default defineCommand({
     },
     name: { type: 'string', description: 'Node name (partial match, case-insensitive)' },
     type: { type: 'string', description: 'Node type: FRAME, TEXT, RECTANGLE, INSTANCE, etc.' },
-    page: { type: 'string', description: 'Page name (default: all pages)' },
     limit: { type: 'string', description: 'Max results (default: 100)', default: '100' },
-    ...appTargetOptions,
+    ...pageOptions('all pages'),
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
@@ -28,7 +27,6 @@ export default defineCommand({
       {
         name: args.name,
         type: args.type,
-        page: args.page,
         limit: args.limit ? Number(args.limit) : undefined
       },
       args

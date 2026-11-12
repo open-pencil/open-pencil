@@ -9,8 +9,10 @@
     "test": "bun test tests"
   },
   "dependencies": {
+    "@oxc-project/types": "0.137.0",
     "@tailwindcss/node": "^4.3.3",
     "es-toolkit": "^1.52.0",
+    "oxc-parser": "^0.137.0",
     "valibot": "^1.5.0"
   },
   "devDependencies": {

@@ -14,6 +14,7 @@ import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/doc
 import { copyRevisionImages, revisionImageDownloads } from '#cloud/server/documents/images'
 import { findDocument, insertDocument, workspaceRole } from '#cloud/server/documents/repository'
 import { documentSummary, getDocumentSummaryRow } from '#cloud/server/documents/summary'
+import { logCloud, loggedError } from '#cloud/server/logging'
 import type { ObjectStore } from '#cloud/server/objects'
 import type { CloudPolicyContext } from '#cloud/server/policy/keys'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
@@ -337,7 +338,9 @@ export function createDocumentVersionService(
       try {
         options.onRestored?.(documentId)
       } catch (error) {
-        console.error('[Cloud] Ending the rooms of a restored document failed:', error)
+        logCloud('error', 'Ending the rooms of a restored document failed', {
+          error: loggedError(error)
+        })
       }
       const document = await findDocument(database, userId, documentId)
       if (!document) throw new DocumentNotFoundError()

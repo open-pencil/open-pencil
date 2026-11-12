@@ -1,1 +1,0 @@
-- An outer instance's literal fill on a layer inside a nested instance stays literal when the instance syncs, instead of taking back the main component's color variable.

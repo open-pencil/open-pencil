@@ -77,6 +77,13 @@ describe('Cloud connections', () => {
     expect((await refreshCloudConnection(await server())).state).toBe('pending')
   })
 
+  test('tell an account with new terms to accept from one whose access was closed', async () => {
+    answers['/api/account/status'] = { status: 200, body: { user, state: 'terms' } }
+    expect((await refreshCloudConnection(await server())).state).toBe('terms')
+    answers['/api/account/status'] = { status: 200, body: { user, state: 'revoked' } }
+    expect((await refreshCloudConnection(await server())).state).toBe('closed')
+  })
+
   test('send the device-code token and drop it once the server stops accepting it', async () => {
     const target = await server()
     await saveCloudSessionToken(target.id, 'device-token')

@@ -1,1 +1,0 @@
-- People who open a Cloud document from a share link can report it to the server's administrators, who can take a document down for everyone until they restore it, revoke its link, or suspend its owner from the console's new Reports and Documents sections.

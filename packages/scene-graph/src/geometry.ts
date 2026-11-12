@@ -228,6 +228,14 @@ export function drawnBlurRadius(radius: number): number {
   return Math.max(0, radius)
 }
 
+/**
+ * The widest radius an effect blurs by: its radius, or the larger end of a progressive blur,
+ * which can start wider than it ends. Bounds and padding that must hold the whole blur use it.
+ */
+export function widestBlurRadius(effect: Pick<Effect, 'radius' | 'progressive'>): number {
+  return Math.max(effect.radius, effect.progressive?.startRadius ?? effect.radius)
+}
+
 const BLUR_SIGMA_PER_RADIUS = 0.43
 
 /**
@@ -259,7 +267,7 @@ export function effectOverflow(effects?: Effect[]) {
     ) {
       continue
     }
-    const blurSpread = drawnBlurRadius(effect.radius) + effect.spread
+    const blurSpread = drawnBlurRadius(widestBlurRadius(effect)) + effect.spread
     left = Math.max(left, blurSpread + Math.max(0, -effect.offset.x))
     right = Math.max(right, blurSpread + Math.max(0, effect.offset.x))
     top = Math.max(top, blurSpread + Math.max(0, -effect.offset.y))

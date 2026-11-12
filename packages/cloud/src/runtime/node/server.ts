@@ -5,6 +5,7 @@ import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import { createCloudServer, type SiteFiles } from '#cloud/runtime/site/server'
 import {
   createCloudApp,
+  createLoggingErrorReporter,
   loadServicesSigningKey,
   createCloudAuthenticationRuntime,
   createCollaborationRelay,
@@ -16,6 +17,7 @@ import {
   reportCloudError,
   startCleanupWorker,
   startTransactionalEmailWorker,
+  writeJSONLine,
   type CloudErrorReporter,
   type CloudServerConfig
 } from '#cloud/server'
@@ -25,6 +27,7 @@ import { loadNodeCloudServerConfig } from './config'
 import { createNodeTransactionalEmailRuntime } from './email/runtime'
 import { listen } from './listen'
 import { attachCollaborationRelay } from './relay'
+import { proxyRequestId } from './request-id'
 import { developmentSiteFiles, nodeSiteFiles } from './site'
 
 export type NodeCloudServerOptions = {
@@ -54,11 +57,14 @@ function siteFiles(
 export async function startNodeCloudServer(options: NodeCloudServerOptions = {}) {
   const environment = options.environment ?? process.env
   const config = await loadNodeCloudServerConfig(environment)
-  const reportError = createCloudErrorReporter(config, 'node')
+  const reportError = createLoggingErrorReporter(
+    writeJSONLine,
+    createCloudErrorReporter(config, 'node')
+  )
   try {
     return await startConfiguredServer(config, environment, options, reportError)
   } catch (error) {
-    await reportCloudError(reportError, 'Starting the server failed:', error, { source: 'setup' })
+    await reportCloudError(reportError, 'Starting the server failed', error, { source: 'setup' })
     throw error
   }
 }
@@ -92,12 +98,17 @@ async function startConfiguredServer(
       })
     : undefined
   const cleanup = cleanupDatabase
-    ? startCleanupWorker(createCleanupServices(config, cleanupDatabase, objects, policy), {
-        ...cleanupPassOptions(config),
-        intervalMs: config.cleanupIntervalMs,
-        onError: (error) =>
-          void reportCloudError(reportError, 'Cleanup worker failed:', error, { source: 'cleanup' })
-      })
+    ? startCleanupWorker(
+        createCleanupServices(config, cleanupDatabase, objects, policy, reportError),
+        {
+          ...cleanupPassOptions(config),
+          intervalMs: config.cleanupIntervalMs,
+          onError: (error) =>
+            void reportCloudError(reportError, 'Cleanup worker failed', error, {
+              source: 'cleanup'
+            })
+        }
+      )
     : undefined
   const relay = createCollaborationRelay({
     authSecret: config.authSecret,
@@ -121,7 +132,8 @@ async function startConfiguredServer(
     onDocumentRestored: (documentId) => relay.startOver(documentId),
     onDocumentTakenDown: (documentId) => relay.closeDocument(documentId),
     onDocumentVersionsChanged: (documentId) => relay.announceVersions(documentId),
-    reportError
+    reportError,
+    forwardedRequestId: proxyRequestId
   })
   const emailWorker = emailTransport
     ? startTransactionalEmailWorker(email, {
@@ -130,13 +142,14 @@ async function startConfiguredServer(
         leaseDurationMs: config.emailLeaseDurationMs,
         maximumAttempts: config.emailMaximumAttempts,
         onError: (error) =>
-          void reportCloudError(reportError, 'Email worker failed:', error, { source: 'email' })
+          void reportCloudError(reportError, 'Email worker failed', error, { source: 'email' })
       })
     : undefined
   const cloudServer = createCloudServer(app, {
     site: siteFiles(environment),
     indexingPolicy: config.indexingPolicy,
-    reportError
+    reportError,
+    forwardedRequestId: proxyRequestId
   })
   const server = await listen(
     async (request) => cloudServer.fetch(request),

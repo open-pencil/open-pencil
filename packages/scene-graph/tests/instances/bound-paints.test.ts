@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test'
 
 import { SceneGraph, type Fill, type SceneNode } from '@open-pencil/scene-graph'
-import type { Color } from '@open-pencil/scene-graph/primitives'
 import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 const RED: Color = { r: 1, g: 0, b: 0, a: 1 }
 const BLUE: Color = { r: 0, g: 0, b: 1, a: 1 }
@@ -69,8 +69,10 @@ test("an instance's own edit sticks through component edits until its variable's
 test('a component paint rebound to another variable gives its copies that variable in their context', () => {
   const { graph, component, shape, holder, copyOf, read } = setup()
   const instance = must(graph.createInstance(component.id, holder.id), 'instance')
-  const collectionId = must(graph.variables.get(shape.boundVariables['fills/0/color']), 'tone')
-    .collectionId
+  const collectionId = must(
+    graph.variables.get(shape.boundVariables['fills/0/color']),
+    'tone'
+  ).collectionId
   const accent = graph.createVariable('Accent', 'COLOR', collectionId, BLUE)
   const darkMode = must(holder.variableModes[collectionId], 'dark mode')
   accent.valuesByMode[darkMode] = { r: 0, g: 1, b: 0, a: 1 }

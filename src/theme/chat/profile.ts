@@ -20,7 +20,7 @@ export default {
     metadata: 'block truncate text-4xs leading-3 text-muted',
     capability: 'size-3 shrink-0 text-muted',
     footer:
-      'mt-1 flex w-full cursor-pointer items-center gap-1.5 border-t border-border px-2 py-1.5 text-left text-3xs text-muted hover:bg-hover hover:text-surface',
+      'mt-1 flex w-full cursor-pointer items-center gap-1.5 border-t border-border px-2 py-1.5 text-start text-3xs text-muted hover:bg-hover hover:text-surface',
     footerIcon: 'size-3 shrink-0'
   }
 } as const

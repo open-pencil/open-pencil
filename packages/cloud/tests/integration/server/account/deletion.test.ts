@@ -103,6 +103,9 @@ describe('account deletion', () => {
       const soloDocument = await document(fixture, solo, 'Sketch', alice.userId)
       await document(fixture, solo, 'Old', alice.userId, new Date())
       const sharedDocument = await document(fixture, shared, 'Plan', alice.userId)
+      // In the workspace that blocks deleting until someone else administers it.
+      const teamDocument = await document(fixture, team, 'Roadmap', alice.userId)
+      await document(fixture, team, 'Backlog', bob.userId)
       const bobsDocument = await document(fixture, shared, 'Notes', bob.userId)
       await fixture.database
         .insertInto('documentGrant')
@@ -113,6 +116,30 @@ describe('account deletion', () => {
           permission: 'edit',
           createdBy: bob.userId
         })
+        .execute()
+      // A workspace Alice left, where a document she made is still hers through a grant.
+      const elsewhere = await workspace(fixture, 'Elsewhere', bob.userId, [[bob.userId, 'admin']])
+      const grantedDocument = await document(fixture, elsewhere, 'Brief', alice.userId)
+      const revokedDocument = await document(fixture, elsewhere, 'Draft', alice.userId)
+      await fixture.database
+        .insertInto('documentGrant')
+        .values([
+          {
+            id: crypto.randomUUID(),
+            documentId: grantedDocument,
+            userId: alice.userId,
+            permission: 'view',
+            createdBy: bob.userId
+          },
+          {
+            id: crypto.randomUUID(),
+            documentId: revokedDocument,
+            userId: alice.userId,
+            permission: 'view',
+            createdBy: bob.userId,
+            revokedAt: new Date()
+          }
+        ])
         .execute()
       const invitation = crypto.randomUUID()
       await fixture.database
@@ -141,8 +168,10 @@ describe('account deletion', () => {
         ],
         leaves: [{ id: shared, name: 'Shared' }],
         documents: [
+          { id: grantedDocument, name: 'Brief', workspaceName: 'Elsewhere' },
           { id: sharedDocument, name: 'Plan', workspaceName: 'Shared' },
-          { id: soloDocument, name: 'Sketch', workspaceName: 'Solo' }
+          { id: soloDocument, name: 'Sketch', workspaceName: 'Solo' },
+          { id: teamDocument, name: 'Roadmap', workspaceName: 'Team' }
         ]
       })
       const blocked = await remove(fixture, alice.sessionCookie)
@@ -187,14 +216,18 @@ describe('account deletion', () => {
           [team, bob.userId]
         ])
       )
-      expect(
-        await database
-          .selectFrom('document')
-          .select('id')
-          .where('workspaceId', '=', solo)
-          .where('deletedAt', 'is', null)
-          .execute()
-      ).toEqual([])
+      // Nobody is left to restore them, so they are deleted forever, waiting out the grace.
+      const soloDocuments = await database
+        .selectFrom('document')
+        .select(['deletedAt', 'purgedAt', 'purgedBy'])
+        .where('workspaceId', '=', solo)
+        .execute()
+      expect(soloDocuments.length).toBeGreaterThan(0)
+      for (const document of soloDocuments) {
+        expect(document.deletedAt).not.toBeNull()
+        expect(document.purgedAt).not.toBeNull()
+        expect(document.purgedBy).toBeNull()
+      }
       expect(
         await database
           .selectFrom('document')
@@ -241,12 +274,13 @@ describe('account deletion', () => {
         'carol@example.com'
       ])
 
-      // The cleanup worker purges its documents after retention, then the workspace with them.
+      // The cleanup worker destroys its documents after the grace, then the workspace with them.
       const cleanup = createDocumentCleanupService(database, createMemoryObjectStore().store)
       await cleanup.cleanupDeletedDocuments({
         batchSize: 10,
         leaseDurationMs: 60_000,
         retentionMs: 0,
+        purgeGraceMs: 0,
         now: new Date(Date.now() + 1000)
       })
       expect(

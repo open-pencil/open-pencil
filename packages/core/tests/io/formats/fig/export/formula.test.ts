@@ -1,12 +1,12 @@
 import { expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
+import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
+import { parseFigBuffer } from '@open-pencil/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
-import { parseFigBuffer } from '@open-pencil/fig'
-import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { parseVariableFormula } from '@open-pencil/scene-graph/variables'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 test('numeric, Boolean and comparison formulas survive fresh and patched .fig saves', async () => {
   await initCodec()
@@ -52,8 +52,10 @@ test('numeric, Boolean and comparison formulas survive fresh and patched .fig sa
     const api = new FigmaAPI(current)
     for (const variable of current.variables.values()) {
       const mode = current.variableCollections.get(variable.collectionId)?.defaultModeId ?? ''
-      if (variable.name === base.name) expectDefined(api.variables.getVariableById(variable.id)).setValueForMode(mode, 10)
-      if (variable.name === enabled.name) expectDefined(api.variables.getVariableById(variable.id)).setValueForMode(mode, false)
+      if (variable.name === base.name)
+        expectDefined(api.variables.getVariableById(variable.id)).setValueForMode(mode, 10)
+      if (variable.name === enabled.name)
+        expectDefined(api.variables.getVariableById(variable.id)).setValueForMode(mode, false)
     }
   }
 })
@@ -62,15 +64,20 @@ test.each([
   { operator: 'add', operands: [true, 1] },
   { operator: 'and', operands: [1, false] },
   { operator: 'negate', operands: [1, 2] }
-] as const)('FIG export rejects invalid formula operands instead of coercing them: %j', async (value) => {
-  await initCodec()
-  const graph = new SceneGraph()
-  const collection = graph.createCollection('Tokens')
-  graph.createVariable('invalid', 'FLOAT', collection.id, {
-    expression: 'FORMULA', type: 'FLOAT', value: { ...value, operands: [...value.operands] }
-  })
-  await expect(exportFigFile(graph)).rejects.toThrow()
-})
+] as const)(
+  'FIG export rejects invalid formula operands instead of coercing them: %j',
+  async (value) => {
+    await initCodec()
+    const graph = new SceneGraph()
+    const collection = graph.createCollection('Tokens')
+    graph.createVariable('invalid', 'FLOAT', collection.id, {
+      expression: 'FORMULA',
+      type: 'FLOAT',
+      value: { ...value, operands: [...value.operands] }
+    })
+    await expect(exportFigFile(graph)).rejects.toThrow()
+  }
+)
 
 test('text, truthiness and if() formulas survive a .fig save, written with the functions Figma uses', async () => {
   await initCodec()

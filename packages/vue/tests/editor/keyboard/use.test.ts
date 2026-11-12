@@ -188,14 +188,13 @@ describe('useEditorKeyboard', () => {
     expect(editor.state.nodeEditState?.nodeId).toBe(vector.id)
   })
 
-  test("runs the host's keys and its Escape first", () => {
+  test("runs the host's keys, and its key on an editor key before the editor's", () => {
     const ran: string[] = []
     const editor = mountKeyboard({
-      shortcuts: [{ id: 'save', keys: 'Mod+S', run: () => ran.push('save') }],
-      onEscape: () => {
-        ran.push('escape')
-        return true
-      }
+      shortcuts: [
+        { id: 'save', keys: 'Mod+S', run: () => ran.push('save') },
+        { id: 'host-escape', keys: 'Escape', run: () => ran.push('escape') }
+      ]
     })
     const rect = editor.createShape('RECTANGLE', 0, 0, 40, 40)
     editor.select([rect])
@@ -203,6 +202,61 @@ describe('useEditorKeyboard', () => {
     press('Escape')
     expect(ran).toEqual(['save', 'escape'])
     expect(editor.state.selectedIds.has(rect)).toBe(true)
+  })
+
+  test("a host key that declines leaves the key to the editor's", () => {
+    let popoverOpen = true
+    const editor = mountKeyboard({
+      shortcuts: [
+        {
+          id: 'close-popover',
+          keys: 'Escape',
+          run: () => {
+            if (!popoverOpen) return false
+            popoverOpen = false
+          }
+        }
+      ]
+    })
+    const rect = editor.createShape('RECTANGLE', 0, 0, 40, 40)
+    editor.select([rect])
+    press('Escape')
+    expect([popoverOpen, editor.state.selectedIds.has(rect)]).toEqual([false, true])
+    press('Escape')
+    expect(editor.state.selectedIds.size).toBe(0)
+  })
+
+  test('a host Escape goes before the pen, which keeps its points when it declines', () => {
+    let drawing = true
+    const editor = mountKeyboard({
+      shortcuts: [
+        {
+          id: 'start-over',
+          keys: 'Escape',
+          run: () => {
+            if (!drawing) return false
+            editor.penCancel()
+          }
+        }
+      ]
+    })
+    editor.setTool('PEN')
+    editor.penAddVertex(0, 0)
+    editor.penAddVertex(40, 0)
+    press('Escape')
+    expect([
+      editor.state.penState,
+      editor.graph.getChildren(editor.state.currentPageId).length
+    ]).toEqual([null, 0])
+    drawing = false
+    editor.setTool('PEN')
+    editor.penAddVertex(0, 0)
+    editor.penAddVertex(40, 0)
+    press('Escape')
+    expect([
+      editor.state.penState,
+      editor.graph.getChildren(editor.state.currentPageId).length
+    ]).toEqual([null, 1])
   })
 
   test('leaves keys typed into a text field to the field', () => {
@@ -271,14 +325,14 @@ describe('useEditorKeyboard', () => {
     menu.remove()
   })
 
-  test('a host key that replaces an editor key carries its own view and history rules', () => {
+  test("a host key on an editor key carries its own view rules, and the editor's runs where it can't", () => {
     const ran: string[] = []
     const editor = mountKeyboard({
       shortcuts: [{ id: 'host-escape', keys: 'Escape', run: () => ran.push('escape') }]
     })
     editor.startPlay()
     press('Escape')
-    expect(ran).toEqual([])
+    expect([ran, editor.state.canvasView.id]).toEqual([[], 'edit'])
   })
 
   test('keeps still while the host says another editor has the keys', () => {

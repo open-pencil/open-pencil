@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
+import { asCanvas } from '#core-tests/canvas/helpers'
+
 import { renderEffects } from '#core/canvas/shadows'
 
-import { asCanvas } from '#core-tests/canvas/helpers'
 import {
   createMockCanvas,
   createMockRenderer,

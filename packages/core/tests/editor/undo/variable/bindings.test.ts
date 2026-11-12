@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { createEditor } from '@open-pencil/core'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 function pageId(editor: ReturnType<typeof createEditor>): string {
   return editor.graph.getPages()[0].id

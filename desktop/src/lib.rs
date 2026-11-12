@@ -72,6 +72,12 @@ pub fn run() {
 
     builder = builder.plugin(tauri_plugin_deep_link::init());
 
+    #[cfg(target_os = "macos")]
+    {
+        builder = builder
+            .on_web_content_process_terminate(system::window::reload_after_page_process_ended);
+    }
+
     builder
         .manage(capabilities)
         .manage(launch::PendingOpen::default())
@@ -83,7 +89,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             agents::lookup::agent_lookup,
             agents::lookup::agent_workspace,
-            files::fig::build_fig_file,
+            files::fig::compress_fig_canvas,
             network::oauth::chatgpt_oauth_listen,
             network::oauth::chatgpt_oauth_wait,
             network::oauth::chatgpt_oauth_cancel,

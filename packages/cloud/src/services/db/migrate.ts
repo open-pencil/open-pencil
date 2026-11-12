@@ -1,16 +1,22 @@
-import { migrateToLatest } from '#cloud/server/db/migrate'
+import { migrateToLatest, type CloudMigration } from '#cloud/server/db/migrate'
 import type { Kysely } from 'kysely'
-import { Migrator, type Migration, type MigrationProvider } from 'kysely/migration'
+import { Migrator, type MigrationProvider } from 'kysely/migration'
 
 import * as baseline from './migrations/001_baseline'
 import type { ServicesDatabase } from './schema'
 
-const migrations: Record<string, Migration> = {
+/** Expand-only, as Cloud's are (see `CloudMigration`). */
+const migrations: Record<string, CloudMigration> = {
   '001_baseline': baseline
 }
 
-class ServicesMigrationProvider implements MigrationProvider {
-  async getMigrations(): Promise<Record<string, Migration>> {
+export const SERVICES_MIGRATION_TABLES = {
+  migrationTableName: 'services_migration',
+  migrationLockTableName: 'services_migration_lock'
+} as const
+
+export class ServicesMigrationProvider implements MigrationProvider {
+  async getMigrations(): Promise<Record<string, CloudMigration>> {
     return migrations
   }
 }
@@ -24,8 +30,7 @@ export async function migrateServicesDatabase(database: Kysely<ServicesDatabase>
     new Migrator({
       db: database,
       provider: new ServicesMigrationProvider(),
-      migrationTableName: 'services_migration',
-      migrationLockTableName: 'services_migration_lock'
+      ...SERVICES_MIGRATION_TABLES
     }),
     'OpenPencil services database migration failed'
   )

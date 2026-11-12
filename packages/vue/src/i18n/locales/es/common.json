@@ -41,5 +41,6 @@
   "dismiss": "Descartar",
   "browserSupport": "Consultar compatibilidad",
   "showPassword": "Mostrar contraseña",
-  "hidePassword": "Ocultar contraseña"
+  "hidePassword": "Ocultar contraseña",
+  "typeToConfirm": "Para confirmar, escribe «{text}»."
 }

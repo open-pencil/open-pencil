@@ -47,11 +47,14 @@ export function usePortalFailureMessages() {
       self_admin_action_forbidden: value.errorSelfAction,
       mfa_required: value.errorTwoStepRequired,
       invalid_enrollment_transition: value.errorAlreadyDecided,
+      document_not_restorable: value.errorDocumentNotRestorable,
+      workspace_gone: value.errorWorkspaceGone,
       rate_limited: value.failureRateLimited,
       email_unchanged: value.errorEmailUnchanged,
       email_change_unavailable: value.emailChangeUnavailable,
       current_session: value.errorCurrentSession,
-      picture_invalid: value.errorPictureInvalid
+      picture_invalid: value.errorPictureInvalid,
+      terms_changed: value.termsChanged
     }
     return (error.code && words[error.code]) ?? value.failureUnavailable
   }

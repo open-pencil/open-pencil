@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
-import { parseFigBuffer, patchFigArchive } from '@open-pencil/fig'
+import { parseFigBuffer, patchFigArchive, readStreamBytes } from '@open-pencil/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -28,15 +28,17 @@ test('color expressions survive fresh export, import, editing and patched export
   if (!record) throw new Error('Missing exported expression')
   // Fields retained by Figma but not represented in the editable variable model.
   const archivedRecord = { ...record, sortPosition: 'preserved-order', isSoftDeleted: false }
-  const annotated = patchFigArchive(
-    Uint8Array.from(exported).buffer,
-    {
-      records: [archivedRecord],
-      blobs: [],
-      removed: [],
-      replaceVariables: false
-    },
-    { thumbnailPNG: new Uint8Array(), metaJSON: '{}', images: [] }
+  const annotated = await readStreamBytes(
+    patchFigArchive(
+      Uint8Array.from(exported).buffer,
+      {
+        records: [archivedRecord],
+        blobs: [],
+        removed: [],
+        replaceVariables: false
+      },
+      { thumbnailPNG: new Uint8Array(), metaJSON: '{}', images: [] }
+    )
   )
   const imported = await parseFigFile(Uint8Array.from(annotated).buffer)
   const importedBase = [...imported.variables.values()].find((v) => v.name === 'Base')

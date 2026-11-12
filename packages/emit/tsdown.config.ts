@@ -6,6 +6,6 @@ export default defineConfig(
   libraryConfig({
     entry: {
       index: './src/index.ts'
-    },
+    }
   })
 )
