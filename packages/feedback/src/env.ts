@@ -62,7 +62,11 @@ export interface FeedbackBindings {
   POSTHOG_PERSONAL_KEY: string
 }
 
-export type FeedbackEnv = { Bindings: FeedbackBindings }
+export type FeedbackEnv = {
+  Bindings: FeedbackBindings
+  /** Set by `requireAccess` on admin requests: the Access email of who is signed in. */
+  Variables: { adminEmail?: string }
+}
 
 /** What the service reaches outside its bindings, injectable for tests. */
 export interface FeedbackServices {

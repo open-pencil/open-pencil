@@ -118,6 +118,19 @@ describe('editing instance slots', () => {
     expect(editor.graph.getNode(title.id)?.parentId).toBe(instance.id)
   })
 
+  test('grouping slot content claims the slot in the same undo step', () => {
+    const { editor, instance, slot } = setup()
+    const before = structuredClone(editor.graph.getNode(instance.id)?.componentPropertyAssignments)
+    const [content] = editor.graph.getChildren(slot.id)
+    editor.select([content.id])
+    editor.groupSelected()
+    expect(names(editor, slot)).toEqual(['Group 1'])
+
+    editor.undo.undo()
+    expect(names(editor, slot)).toEqual(['Default'])
+    expect(editor.graph.getNode(instance.id)?.componentPropertyAssignments).toEqual(before)
+  })
+
   test('undoing an added instance restores the selection', () => {
     const { editor, item, slot, free } = setup()
     editor.select([free.id])

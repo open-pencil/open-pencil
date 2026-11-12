@@ -10,9 +10,8 @@ OpenPencil has a shared path-conversion pipeline for commands that turn scene no
 ## Commands
 
 - **Boolean operations** keep a live `BOOLEAN_OPERATION` container and render it with CanvasKit path operations.
-- **Flatten** replaces selected supported nodes with one persistent `VECTOR` node, as Figma's does: each shape keeps its own geometry (a line its segment, text its glyphs) and fills its own regions with its fills, stacked in layer order, and the vector takes the topmost shape's stroke. Strokes stay strokes rather than becoming shape.
-- **Outline text** replaces selected supported text nodes with vector outlines.
-- **Outline stroke** replaces selected supported stroked nodes with vector stroke outlines.
+- **Flatten** replaces selected supported nodes with one persistent `VECTOR` node, as Figma's does: each shape keeps its own geometry (a line its segment, text its glyphs with their underlines and strikethroughs) and fills its own regions with its fills, a text glyph with its character's, stacked in layer order. The vector takes the topmost shape's stroke, opacity, blend mode, and effects, and its name when it is the only shape, "Vector" otherwise. Strokes stay strokes rather than becoming shape.
+- **Outline stroke** replaces selected supported stroked nodes with vector stroke outlines. Text becomes a group of glyph vectors, as in Figma, even without a stroke; Figma has no separate Outline text command.
 
 The editor, renderer-backed Figma API, and menu command enablement all use the same source-path checks so unsupported nodes fail safely instead of being silently dropped.
 

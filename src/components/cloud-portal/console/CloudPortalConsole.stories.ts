@@ -290,7 +290,7 @@ const components = {
 }
 
 const meta = {
-  title: 'App/Cloud Portal/Console',
+  title: 'App/Cloud/Portal/Console',
   tags: ['autodocs'],
   parameters: { layout: 'fullscreen' }
 } satisfies Meta

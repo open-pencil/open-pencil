@@ -31,7 +31,7 @@ const deletion: CloudAccountDeletion = {
 }
 
 const meta = {
-  title: 'App/Cloud Portal/Delete Account',
+  title: 'App/Cloud/Portal/Delete Account',
   args: { deletion, archive: null, error: null, onConfirm: fn(), onDownloadAll: fn() },
   render: (args) => ({
     components: { PortalDeleteAccountDialog },
