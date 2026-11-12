@@ -17,6 +17,15 @@ import * as v from 'valibot'
 
 import { queryPostHog } from './posthog'
 
+/** How long a triage save waits on PostHog before the inbox shows it as failed, to retry. */
+const CAPTURE_TIMEOUT_MS = 10_000
+
+/**
+ * PostHog's capture answer. A project over its quota still answers 200, naming what it dropped in
+ * `quota_limited`, so the status alone does not mean the event was kept.
+ */
+const captureAnswerSchema = v.object({ quota_limited: v.optional(v.array(v.string())) })
+
 /** The event the dashboard records triage with; the latest one for a report is where it stands. */
 export const REPORT_TRIAGED_EVENT = 'report_triaged'
 /** Who PostHog files triage under: the team, never a person's profile. */
@@ -390,7 +399,8 @@ LIMIT 1`,
  * Records a change to where the team stands with a report as a `report_triaged` event in PostHog,
  * carrying only the fields that changed, which the inbox reads the latest of each; answers what
  * was saved. PostHog accepting it is enough: the inbox shows the change at once and finds it in
- * the next load once PostHog has taken it in.
+ * the next load once PostHog has taken it in. A refusal, a dropped event, or no answer in time
+ * fails the save, so the inbox keeps the change to retry.
  */
 export async function saveReportTriage(
   env: FeedbackBindings,
@@ -406,6 +416,7 @@ export async function saveReportTriage(
   const response = await services.fetch(`${env.POSTHOG_HOST}/batch/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    signal: AbortSignal.timeout(CAPTURE_TIMEOUT_MS),
     body: JSON.stringify({
       api_key: env.POSTHOG_KEY,
       batch: [
@@ -427,5 +438,9 @@ export async function saveReportTriage(
     })
   })
   if (!response.ok) throw new Error(`PostHog refused the triage (${response.status})`)
+  const answer = v.safeParse(captureAnswerSchema, await response.json().catch(() => null))
+  if (answer.success && answer.output.quota_limited?.includes('events')) {
+    throw new Error('PostHog dropped the triage: the project is over its event quota')
+  }
   return { status: triage.status, triageNote: note, handledBy, handledAt }
 }

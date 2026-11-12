@@ -323,6 +323,13 @@ describe('report triage', () => {
     expect(cleared.properties).not.toHaveProperty('status')
   })
 
+  test('fails the save when PostHog drops the triage over its quota', async () => {
+    // PostHog answers 200 over quota, naming what it dropped, so the status alone is not enough.
+    service.respond(POSTHOG_CAPTURE, () => Response.json({ status: 1, quota_limited: ['events'] }))
+
+    expect((await triage(PROBLEM, { status: 'closed' })).ok).toBe(false)
+  })
+
   test('refuses triage without Access, with an unknown status, empty, or for a malformed ID', async () => {
     expect((await triage(PROBLEM, { status: 'closed' }, false)).status).toBe(403)
     expect((await triage(PROBLEM, { status: 'done' })).status).toBe(400)

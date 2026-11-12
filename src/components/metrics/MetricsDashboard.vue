@@ -251,7 +251,7 @@ const sharingNote = computed(() => {
       <SegmentedControl v-model="tabValue" :options="tabs" label="Dashboard" />
       <span :class="ui.barHost()">{{ host }}</span>
       <div :class="ui.barEnd()">
-        <!-- The inbox spans all time, so the range belongs to the numbers alone. -->
+        <!-- The inbox spans everything PostHog keeps, so the range belongs to the numbers alone. -->
         <template v-if="tab === 'metrics'">
           <span :class="ui.barMeta()">Updated {{ formatTime(snapshot.asOf) }}</span>
           <MetricsRangePicker

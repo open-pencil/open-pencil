@@ -70,7 +70,7 @@ export function adminRoutes(services: FeedbackServices) {
         if (!png) return c.notFound()
         return c.body(png.slice().buffer, 200, {
           'Content-Type': 'image/png',
-          'Cache-Control': 'private, max-age=3600'
+          'Cache-Control': 'private, no-store'
         })
       })
       // A file attached to a report, linked from its PostHog event; always a download, never rendered.
