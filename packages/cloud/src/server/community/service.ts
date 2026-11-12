@@ -31,7 +31,7 @@ export function createCommunityService(
   database: Kysely<CloudDatabase>,
   objects: ObjectStore,
   documents: Pick<DocumentService, 'downloadShared' | 'imageLinksShared'>,
-  versions: Pick<DocumentVersionService, 'namedShared' | 'downloadNamedShared'>,
+  versions: Pick<DocumentVersionService, 'namedSharedIn' | 'downloadNamedShared'>,
   workspaceId: string | null
 ) {
   function published() {
@@ -89,24 +89,22 @@ export function createCommunityService(
     /** The gallery's documents, most recently changed first, each with its named versions. */
     async list(): Promise<CommunityDocument[]> {
       if (!workspaceId) return []
-      const rows = await published().orderBy('document.updatedAt', 'desc').execute()
-      return Promise.all(
-        rows.flatMap((row) => {
-          const { revisionId } = row
-          if (!revisionId) return []
-          return [
-            versions.namedShared(row.id).then((named) => ({
-              id: row.id,
-              name: row.name,
-              kind: row.kind,
-              updatedAt: new Date(row.updatedAt).toISOString(),
-              revisionId,
-              thumbnailPath: communityThumbnailPath(row.id, revisionId),
-              versions: named.map(communityVersion)
-            }))
-          ]
-        })
+      const rows = (await published().orderBy('document.updatedAt', 'desc').execute()).flatMap(
+        ({ revisionId, ...row }) => (revisionId ? [{ ...row, revisionId }] : [])
       )
+      const named = await versions.namedSharedIn(
+        workspaceId,
+        rows.map((row) => ({ id: row.id, currentRevisionId: row.revisionId }))
+      )
+      return rows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        kind: row.kind,
+        updatedAt: new Date(row.updatedAt).toISOString(),
+        revisionId: row.revisionId,
+        thumbnailPath: communityThumbnailPath(row.id, row.revisionId),
+        versions: (named.get(row.id) ?? []).map(communityVersion)
+      }))
     },
 
     /** A gallery document as it is now, or one of its named versions, with where to download it. */

@@ -281,17 +281,34 @@ export function createDocumentVersionService(
     },
 
     /**
-     * The named versions of a document, newest first, for a caller that already let the reader
-     * in, such as the community gallery; the workspace's history limit still applies.
+     * The named versions of several documents of one workspace, newest first, each list keyed by
+     * its document, for a caller that already let the reader in, such as the community gallery;
+     * the workspace's history limit still applies, and one query reads them all.
      */
-    async namedShared(documentId: string): Promise<DocumentVersion[]> {
-      const { document, start } = await sharedHistory(documentId)
+    async namedSharedIn(
+      workspaceId: string,
+      documents: { id: string; currentRevisionId: string | null }[]
+    ): Promise<Map<string, DocumentVersion[]>> {
+      const named = new Map(documents.map((document) => [document.id, [] as DocumentVersion[]]))
+      if (documents.length === 0) return named
+      const start = await historyStart(
+        database,
+        options.policy,
+        deploymentMode,
+        workspaceId,
+        new Date()
+      )
       let query = versions()
-        .where('documentVersion.documentId', '=', documentId)
+        .select('documentVersion.documentId')
+        .where('documentVersion.documentId', 'in', [...named.keys()])
         .where('documentVersion.kind', '=', 'named')
       if (start) query = query.where('documentVersion.createdAt', '>=', start)
       const rows = await query.orderBy('documentVersion.createdAt', 'desc').execute()
-      return rows.map((row) => versionOf(row, document.currentRevisionId))
+      const current = new Map(documents.map((document) => [document.id, document.currentRevisionId]))
+      for (const row of rows) {
+        named.get(row.documentId)?.push(versionOf(row, current.get(row.documentId) ?? null))
+      }
+      return named
     },
 
     /** A named version with where to download it, for a caller that already let the reader in. */

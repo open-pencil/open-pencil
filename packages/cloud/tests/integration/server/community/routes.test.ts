@@ -162,6 +162,24 @@ describe('community gallery', () => {
       .execute()
     const secret = await server.document(server.workspace.studio, 'Secret')
     await server.save(secret, null, 'secret')
+    // Made by an account that is banned now: gone from the gallery while the ban lasts.
+    const spam = await server.document(server.workspace.community, 'Spam')
+    await server.save(spam, null, 'spam')
+    const spammer = crypto.randomUUID()
+    await server.runtime.database
+      .insertInto('user')
+      .values({ id: spammer, name: 'Spammer', email: 'spam@example.com', emailVerified: true })
+      .execute()
+    await server.runtime.database
+      .updateTable('user')
+      .set({ banned: true, banExpires: new Date(Date.now() + 60_000) })
+      .where('id', '=', spammer)
+      .execute()
+    await server.runtime.database
+      .updateTable('document')
+      .set({ createdBy: spammer })
+      .where('id', '=', spam)
+      .execute()
 
     const listed = await responseJSON(
       await server.visitor('/api/community'),
@@ -186,6 +204,7 @@ describe('community gallery', () => {
         ]
       }
     ])
+    expect((await server.visitor(`/api/community/${spam}/document`)).status).toBe(404)
     expect((await server.withoutGallery('/api/community')).status).toBe(404)
   })
 

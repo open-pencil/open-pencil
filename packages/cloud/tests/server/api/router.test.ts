@@ -68,7 +68,7 @@ function services() {
       save: notUsed,
       update: notUsed,
       download: notUsed,
-      namedShared: notUsed,
+      namedSharedIn: notUsed,
       downloadNamedShared: notUsed,
       restore: notUsed,
       duplicate: notUsed
