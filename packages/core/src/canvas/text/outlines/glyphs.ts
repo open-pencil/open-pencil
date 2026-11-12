@@ -19,16 +19,11 @@ import { appendOutlineCommand } from './commands'
  * The glyphs the canvas draws, list markers included, when every one has an outline; text set
  * partly in a fallback or variable font has none and keeps the outline layout's own glyphs.
  */
-interface ShapedOutline extends TextOutlineGlyph {
-  firstCharacter?: number
-  advance: number
-}
-
-function shapedOutlines(r: SkiaRenderer, node: SceneNode): ShapedOutline[] | null {
+function shapedOutlines(r: SkiaRenderer, node: SceneNode): TextOutlineGlyph[] | null {
   if (!r.fontProvider || !getTextOutlineSupport(node).supported) return null
   const shaped = shapeText(r.ck, r.fontProvider, node)
   if (!shaped) return null
-  const outlines: ShapedOutline[] = []
+  const outlines: TextOutlineGlyph[] = []
   for (const glyph of shaped.glyphs) {
     if (!glyph.commands) return null
     outlines.push({ ...glyph, commands: glyph.commands })
@@ -65,22 +60,15 @@ export interface PaintedPath {
  * strikethrough. Text without a font to outline it from has none.
  */
 export function textOutlinePieces(r: SkiaRenderer, node: SceneNode): PaintedPath[] | null {
-  const shaped = shapedOutlines(r, node)
-  if (!shaped) {
-    const glyphs = textNodeToOutlineLayout(node)?.glyphs
-    if (!glyphs) return null
-    return glyphs.flatMap((glyph) => {
-      const path = glyphPath(r, glyph.commands, glyph.x, glyph.y)
-      return path ? [{ path, fills: node.fills }] : []
-    })
-  }
+  const glyphs = shapedOutlines(r, node) ?? textNodeToOutlineLayout(node)?.glyphs
+  if (!glyphs) return null
   const styles = characterStyles(node, 0, node.text.length)
-  const glyphs = shaped.flatMap((glyph) => {
+  const outlines = glyphs.flatMap((glyph) => {
     const path = glyphPath(r, glyph.commands, glyph.x, glyph.y)
     const style = glyph.firstCharacter === undefined ? undefined : styles[glyph.firstCharacter]
     return path ? [{ path, fills: style?.fills ?? node.fills }] : []
   })
-  const decorated = shaped.map((glyph) => ({
+  const decorated = glyphs.map((glyph) => ({
     ...glyph,
     ink: (top: number, bottom: number) => outlineInk(glyph.commands, glyph.x, glyph.y, top, bottom)
   }))
@@ -89,7 +77,7 @@ export function textOutlinePieces(r: SkiaRenderer, node: SceneNode): PaintedPath
     path.addRect(r.ck.XYWHRect(rect.x, rect.y, rect.width, rect.height))
     return { path: path.detachAndDelete(), fills: rect.fills }
   })
-  return [...glyphs, ...decorations]
+  return [...outlines, ...decorations]
 }
 
 export function textNodeToOutlinePath(r: SkiaRenderer, node: SceneNode): Path | null {
