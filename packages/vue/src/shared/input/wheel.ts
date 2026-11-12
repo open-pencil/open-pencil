@@ -4,6 +4,7 @@ import { onScopeDispose, type Ref } from 'vue'
 import type { Editor } from '@open-pencil/core'
 import { emitNavigationTrace } from '@open-pencil/core/profiler'
 
+import { createNavigationSettle } from '#vue/shared/input/navigation-settle'
 import { createRafScheduler } from '#vue/shared/input/raf-scheduler'
 
 const WHEEL_DELTA_LINE = 1
@@ -163,8 +164,6 @@ export function createWheelSteps(
   }
 }
 
-const NAVIGATION_SETTLE_DELAY_MS = 120
-
 /**
  * Wheel and pinch zoom on the canvas. `zoomSpeed` scales how far each event zooms: 1 keeps
  * Figma's rate, 0.5 zooms half as far.
@@ -184,17 +183,7 @@ export function setupWheelPanZoom(
   }
 
   const wheelStep = createWheelSteps(currentWheelPlatform(), zoomSpeed)
-  let settleTimer: ReturnType<typeof setTimeout> | null = null
-
-  function scheduleSettle() {
-    if (settleTimer !== null) clearTimeout(settleTimer)
-    editor.setNavigationPhase('settling')
-    settleTimer = setTimeout(() => {
-      settleTimer = null
-      editor.setNavigationPhase('idle')
-      editor.requestRepaint()
-    }, NAVIGATION_SETTLE_DELAY_MS)
-  }
+  const navigationSettle = createNavigationSettle(editor)
 
   function flushWheel() {
     emitNavigationTrace('wheel:flush', {
@@ -217,7 +206,7 @@ export function setupWheelPanZoom(
     wheelAccum.deltaY = 0
     wheelAccum.zoomScale = 1
     wheelAccum.hasZoom = false
-    scheduleSettle()
+    navigationSettle.settle()
   }
 
   const wheelScheduler = createRafScheduler(flushWheel)
@@ -239,6 +228,7 @@ export function setupWheelPanZoom(
     })
 
     const step = wheelStep(event)
+    navigationSettle.cancel()
     editor.setNavigationPhase(step.kind, performance.now())
 
     if (step.kind === 'zoom') {
@@ -265,6 +255,6 @@ export function setupWheelPanZoom(
   )
 
   onScopeDispose(() => {
-    if (settleTimer !== null) clearTimeout(settleTimer)
+    navigationSettle.dispose()
   })
 }

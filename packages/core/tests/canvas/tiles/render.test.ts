@@ -285,7 +285,9 @@ describe('tile rendering', () => {
       const navigating = controller.renderFrame(renderer, surface.getCanvas(), graph, 1, 1)
       expect(navigating.metrics.cancelledJobs).toBeGreaterThan(0)
       expect(navigating.metrics.interruptibleCompleted).toBe(0)
-      expect(navigating.metrics.skippedWithFallback).toBeGreaterThan(0)
+      // A pan presents visible tiles as they land. The one completed exact tile has no
+      // lower-level stand-in here, so nothing is skipped with a fallback.
+      expect(navigating.metrics.skippedWithFallback).toBe(0)
       expect(navigating.pending).toBe(true)
 
       renderer.navigationPhase = 'idle'

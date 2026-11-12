@@ -23,6 +23,16 @@ export interface TilePlanOptions {
   estimateCost: (key: TileKey) => number
   globalFallbackAvailable?: boolean
   /**
+   * Whether another cached level has a tile that can stand in for this visible key. A pan asks
+   * per tile, because skipping a dear tile with no stand-in would leave the viewport blank.
+   */
+  visibleFallback?: (key: TileKey) => boolean
+  /**
+   * The dearest optional background job to plan, in milliseconds. The controller ties it to the
+   * idle frame budget; tests and other callers may set their own.
+   */
+  maxBackgroundCostMs?: number
+  /**
    * A coarser level rendered around the viewport once the visible level and its overscan are
    * complete, so zooming out has scaled tiles to show where the visible level has none.
    */
@@ -42,6 +52,16 @@ export interface TilePlanOptions {
 
 /** The whole page is kept at a level where its longer side spans this many tiles. */
 const PAGE_BACKDROP_TILES = 4
+/**
+ * A background stage is optional: the visible tiles and the pyramid already stand in for it. A
+ * tile estimated dearer than a few idle frames would land as one long, uninterruptible draw, so
+ * the plan leaves it out instead.
+ */
+export const BACKGROUND_MAX_ESTIMATED_MS = 32
+
+function affordableBackgroundJobs(jobs: TileJob[], maxCostMs: number): TileJob[] {
+  return jobs.filter((job) => job.estimatedCost <= maxCostMs)
+}
 
 /**
  * The whole page at a level coarse enough to fit PAGE_BACKDROP_TILES along its longer side, or
@@ -135,12 +155,16 @@ function planVisibleJobs(options: TilePlanOptions, visible: TilePlan['visible'])
   const jobs: TileJob[] = []
   for (const { key, tile } of visible) {
     if (tile?.contentGeneration === options.contentGeneration) continue
+    const fallback =
+      tile !== null ||
+      options.globalFallbackAvailable === true ||
+      options.visibleFallback?.(key) === true
     jobs.push({
       key,
       navigationGeneration: options.navigationGeneration,
       contentGeneration: options.contentGeneration,
-      priority: tile || options.globalFallbackAvailable ? 'visible' : 'mandatory',
-      fallbackAvailable: tile !== null || options.globalFallbackAvailable === true,
+      priority: fallback ? 'visible' : 'mandatory',
+      fallbackAvailable: fallback,
       estimatedCost: options.estimateCost(key)
     })
   }
@@ -220,34 +244,44 @@ export function planTiles(
   cachedOnly = false
 ): TilePlan {
   if (cachedOnly) return planCachedVisibleTiles(cache, options)
+  const maxBackgroundCostMs = options.maxBackgroundCostMs ?? BACKGROUND_MAX_ESTIMATED_MS
   const visibleKeys = tileKeysForWorldBounds(options.pageId, options.level, options.viewport)
   const visible = visibleKeys.map((key) => ({ key, tile: cache.get(key) }))
   let jobs = planVisibleJobs(options, visible)
   if (jobs.length === 0 && options.pageBackdrop) {
-    jobs = planAreaJobs(cache, options, options.pageBackdrop.level, options.pageBackdrop.bounds)
+    jobs = affordableBackgroundJobs(
+      planAreaJobs(cache, options, options.pageBackdrop.level, options.pageBackdrop.bounds),
+      maxBackgroundCostMs
+    )
   }
   if (jobs.length === 0) {
     const visibleIds = new Set(visibleKeys.map(tileKeyString))
-    jobs = planRingJobs(
-      cache,
-      options,
-      options.level,
-      options.overscanTiles,
-      visibleIds,
-      (tile) => tile !== null
+    jobs = affordableBackgroundJobs(
+      planRingJobs(
+        cache,
+        options,
+        options.level,
+        options.overscanTiles,
+        visibleIds,
+        (tile) => tile !== null
+      ),
+      maxBackgroundCostMs
     )
   }
   if (jobs.length === 0 && options.pyramid) {
     planPyramid(cache, options, options.pyramid.levels, jobs)
   }
   if (jobs.length === 0 && options.backdrop) {
-    jobs = planRingJobs(
-      cache,
-      options,
-      options.backdrop.level,
-      options.backdrop.overscanTiles,
-      new Set(),
-      () => true
+    jobs = affordableBackgroundJobs(
+      planRingJobs(
+        cache,
+        options,
+        options.backdrop.level,
+        options.backdrop.overscanTiles,
+        new Set(),
+        () => true
+      ),
+      maxBackgroundCostMs
     )
   }
   return { jobs, visible }

@@ -228,6 +228,8 @@ export interface DragMarquee {
   containerId?: string
   /** Whether a press without a drag selects the section it started in: only from no selection. */
   selectsSection: boolean
+  /** The rectangle last drawn, so a release selects from this drag and not a cancelled one. */
+  rect?: Rect
 }
 
 export interface DragRotate {

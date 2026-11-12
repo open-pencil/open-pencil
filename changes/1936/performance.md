@@ -1,0 +1,4 @@
+- Panning with the middle mouse button or Space renders the frames it reveals instead of leaving them blank until the gesture ends, and settles to idle after the gesture so tiles for the view left behind are not rendered.
+- Large documents leave out optional page-copy, overscan, and backdrop tiles estimated to take longer than an idle frame; the visible tiles still render while panning.
+- Image previews decode at the size they are shown where the browser supports it, so opening a large photo no longer decodes every pixel for a thumbnail; a photo with a rotation in its Exif data keeps the orientation it is shown at.
+- Dragging a marquee draws the selection box without rebuilding the selection and properties on every pointer move; the selection applies on release, and editing one of several selected layers no longer rebuilds the whole property panel.

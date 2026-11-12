@@ -43,6 +43,7 @@ function startMarquee(cx: number, cy: number, editor: Editor, setDrag: (d: DragS
   const selectsSection = editor.state.selectedIds.size === 0
   editor.exitContainers()
   editor.clearSelection()
+  if (editor.state.marquee) editor.setMarquee(null)
   const container = editor.graph.hitTestOpenContainer(cx, cy, editor.state.currentPageId)
   setDrag({ type: 'marquee', startX: cx, startY: cy, containerId: container?.id, selectsSection })
 }
