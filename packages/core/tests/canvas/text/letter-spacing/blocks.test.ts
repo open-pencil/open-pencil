@@ -9,6 +9,7 @@ import {
   UNBOUNDED,
   type Props
 } from '#core-tests/helpers/text/letter-spacing'
+import { range } from 'es-toolkit'
 
 import type { TextLayout } from '#core/canvas/text/layout'
 
@@ -60,6 +61,51 @@ describe('a long joined text laid out in blocks', () => {
     blocks.delete()
     one.delete()
   })
+
+  test.each([
+    ['one blank line', '\n\n', 5],
+    ['two blank lines', '\n\n\n', 7]
+  ] as const)(
+    'paragraphs split by %s split into blocks laid out as one paragraph',
+    (_, separator, expectedBlocks) => {
+      const text = Array.from({ length: 260 }, (_, index) => `Paragraph ${index} ${WRAPPING}`).join(
+        separator
+      )
+      const props = { ...CENTRED, text }
+      const blocks = laidOut(props)
+      const one = laidOut(asOneParagraph(props))
+      const lines = (layout: TextLayout) =>
+        layout
+          .getLineMetrics()
+          .map((line) => [line.startIndex, line.endIndex, line.left, line.baseline, line.height])
+      const nearSeams = blocks.blocks.slice(1).flatMap(({ start }) => range(start - 40, start + 40))
+      const caretBoxes = (layout: TextLayout) =>
+        nearSeams.map((index) => {
+          const caret = layout.getCaretRect(index, false)
+          return caret ? [caret.x, caret.top, caret.bottom] : []
+        })
+      const blockCount = blocks.blocks.length
+      const [blockLines, oneLines] = [lines(blocks), lines(one)]
+      const [blockCarets, oneCarets] = [caretBoxes(blocks), caretBoxes(one)]
+      blocks.delete()
+      one.delete()
+      expect(blockCount).toBe(expectedBlocks)
+      expect(blockLines).toHaveLength(oneLines.length)
+      for (const [index, line] of oneLines.entries()) {
+        expect(blockLines[index][0]).toBe(line[0])
+        expect(blockLines[index][1]).toBe(line[1])
+        for (const field of [2, 3, 4]) {
+          expect(blockLines[index][field]).toBeCloseTo(line[field], 1)
+        }
+      }
+      for (const [index, caret] of oneCarets.entries()) {
+        expect(blockCarets[index]).toHaveLength(caret.length)
+        for (const [field, value] of caret.entries()) {
+          expect(blockCarets[index][field]).toBeCloseTo(value, 1)
+        }
+      }
+    }
+  )
 
   test('a text built before its width is known joins in blocks once it wraps', () => {
     const text = paragraphs(300, (index) => `Paragraph ${index} ${WRAPPING}`)

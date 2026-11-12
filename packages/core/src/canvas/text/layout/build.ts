@@ -371,8 +371,8 @@ function spannedRange(
 }
 
 /**
- * Paragraphs `size` at a time, never split beside an empty paragraph or after a carriage
- * return, whose box and caret a native paragraph's end would move.
+ * Paragraphs `size` at a time, a group ending only in a paragraph with text and no carriage
+ * return: a native paragraph ending in an empty line or a `\r` moves that line's box and caret.
  */
 function paragraphGroups(
   text: string,
@@ -382,14 +382,14 @@ function paragraphGroups(
   if (size === 1) {
     return ranges.map((_, index) => ({ first: index, last: index }))
   }
-  const splitsBetween = (range: TextParagraphRange, next: TextParagraphRange) =>
-    range.end > range.start && next.end > next.start && text[range.end - 1] !== CARRIAGE_RETURN
+  const endsGroup = (range: TextParagraphRange) =>
+    range.end > range.start && text[range.end - 1] !== CARRIAGE_RETURN
   const groups: ParagraphGroup[] = []
   let first = 0
   for (const [index, range] of ranges.entries()) {
     const next = ranges.at(index + 1)
     const full = index + 1 - first >= size
-    if (!next || (full && splitsBetween(range, next))) {
+    if (!next || (full && endsGroup(range))) {
       groups.push({ first, last: index })
       first = index + 1
     }
