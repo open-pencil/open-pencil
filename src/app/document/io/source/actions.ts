@@ -114,7 +114,7 @@ export function createDocumentSourceActions({
       const renderer = getRenderer()
       return renderer ? drawHomeCardCover(editor.graph, renderer) : null
     },
-    hasWritableSource
+    autosaves: () => hasWritableSource() && state.autosaveEnabled
   })
 
   const { saveFigFile, saveFigFileAs, writeFile } = createSaveActions({

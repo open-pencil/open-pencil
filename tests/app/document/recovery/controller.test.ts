@@ -48,14 +48,14 @@ function setup(
   const state = reactive({ documentName: 'Agent draft' })
   const version = ref(0)
   const store = injectedStore ?? createMemoryRecoveryStore()
-  let writable = false
+  let autosaving = false
   const enabled = ref(initialEnabled)
   const recovery = createDocumentRecovery({
     state,
     version: () => version.value,
     store,
     recoveryId: 'recovery-1',
-    hasWritableSource: () => writable,
+    autosaves: () => autosaving,
     isEnabled: () => enabled.value,
     buildFigFile: buildFigFile ?? (async () => new Uint8Array([version.value]))
   })
@@ -63,7 +63,7 @@ function setup(
     version,
     store,
     recovery,
-    setWritable: (value: boolean) => (writable = value),
+    setAutosaves: (value: boolean) => (autosaving = value),
     setEnabled: (value: boolean) => (enabled.value = value)
   }
 }
@@ -134,9 +134,9 @@ describe('document recovery controller', () => {
     recovery.disposeRecovery()
   })
 
-  test('does not persist documents with writable sources', async () => {
-    const { version, store, recovery, setWritable } = setup()
-    setWritable(true)
+  test('does not persist documents autosave writes to their source', async () => {
+    const { version, store, recovery, setAutosaves } = setup()
+    setAutosaves(true)
     version.value = 1
     await recovery.persistNow()
     expect(await store.list()).toEqual([])
@@ -189,7 +189,7 @@ describe('document recovery controller', () => {
       version: () => version.value,
       store,
       recoveryId: 'recovery-1',
-      hasWritableSource: () => false,
+      autosaves: () => false,
       buildFigFile: () => new Uint8Array([version.value])
     })
     version.value = 1
@@ -221,7 +221,7 @@ describe('document recovery controller', () => {
       version: () => version.value,
       store: deferred.store,
       recoveryId: 'recovery-1',
-      hasWritableSource: () => false,
+      autosaves: () => false,
       buildFigFile: () => new Uint8Array([1])
     })
     version.value = 1
@@ -244,7 +244,7 @@ describe('document recovery controller', () => {
       version: () => version.value,
       store: deferred.store,
       recoveryId: 'recovery-1',
-      hasWritableSource: () => false,
+      autosaves: () => false,
       buildFigFile: () => new Uint8Array([1])
     })
     version.value = 1
@@ -267,7 +267,7 @@ describe('document recovery controller', () => {
       version: () => version.value,
       store: deferred.store,
       recoveryId: 'previous',
-      hasWritableSource: () => false,
+      autosaves: () => false,
       buildFigFile: () => new Uint8Array([1])
     })
     version.value = 1
@@ -302,7 +302,7 @@ describe('document recovery controller', () => {
       version: changes.capture,
       store,
       recoveryId: 'recovery-1',
-      hasWritableSource: () => false,
+      autosaves: () => false,
       buildFigFile: () => new Uint8Array([changes.capture()])
     })
     try {

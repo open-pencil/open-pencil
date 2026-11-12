@@ -13,7 +13,11 @@ interface DocumentRecoveryOptions {
   buildFigFile: () => Promise<Uint8Array> | Uint8Array
   /** The copy's Home card cover, drawn with the document as `buildFigFile` writes it. */
   buildCover?: () => Uint8Array | null
-  hasWritableSource: () => boolean
+  /**
+   * Whether autosave writes the document's edits to its own source, which then keeps them; a file
+   * saved only by hand still needs a recovery copy of what is unsaved.
+   */
+  autosaves: () => boolean
   isEnabled?: () => boolean
   store?: RecoveryStore
   recoveryId?: string
@@ -33,7 +37,7 @@ export function createDocumentRecovery({
   version: currentVersion,
   buildFigFile,
   buildCover,
-  hasWritableSource,
+  autosaves,
   isEnabled = () => true,
   store = getRecoveryStore(),
   recoveryId = createCanvasId()
@@ -59,11 +63,11 @@ export function createDocumentRecovery({
 
   async function runWrites(generation: number): Promise<void> {
     if (disposed || generation !== lifecycleGeneration || !isEnabled()) return
-    if (hasWritableSource() || requestedVersion === protectedVersion) return
+    if (autosaves() || requestedVersion === protectedVersion) return
     const version = requestedVersion
     const cover = drawCover()
     const bytes = await buildFigFile()
-    if (generation !== lifecycleGeneration || hasWritableSource() || !isEnabled()) return
+    if (generation !== lifecycleGeneration || autosaves() || !isEnabled()) return
     await store.write({
       id,
       sessionId: recoverySessionId,
@@ -79,7 +83,7 @@ export function createDocumentRecovery({
 
   async function persistNow(): Promise<void> {
     await cleanup
-    if (disposed || hasWritableSource() || !isEnabled()) return
+    if (disposed || autosaves() || !isEnabled()) return
     requestedVersion = currentVersion()
     if (requestedVersion === protectedVersion) return
     if (!writing) {
