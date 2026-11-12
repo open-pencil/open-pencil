@@ -1,0 +1,1 @@
+- When Claude Code hands work to subagents, each subagent that works on the canvas shows as its own agent, with its own cursor and callsign, and leaves when it finishes (#2033).
