@@ -1,6 +1,3 @@
-import { omit } from 'es-toolkit'
-
-import { nodeChangeToProps } from '@open-pencil/fig/node-change'
 import type { GradientTransform, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import {
   DEFAULT_GRADIENT_TRANSFORM,
@@ -58,33 +55,27 @@ export function createSideStrokesScene(graph: SceneGraph, pageId: string): void 
 }
 
 /**
- * List rows read from `.fig` records whose stroke weight was saved as NaN or an infinity, with
- * only their bottom side stroked, beside a rectangle with a stroke of its own: read as saved, the
- * rows' bounds poison the page's tile index and nothing on the page draws.
+ * List rows whose stroke weight is NaN or an infinity, with only their bottom side stroked, beside
+ * a rectangle with a stroke of its own: indexed as is, the rows' bounds would leave nothing on the
+ * page drawable.
  */
-export function createNonFiniteSavedStrokeScene(graph: SceneGraph, pageId: string): void {
-  const saved = [Number.NaN, Number.POSITIVE_INFINITY, Number.NaN]
-  for (const [row, strokeWeight] of saved.entries()) {
-    const props = nodeChangeToProps(
-      {
-        type: 'FRAME',
-        size: { x: 324, y: 64 },
-        strokeWeight,
-        borderStrokeWeightsIndependent: true,
-        borderTopWeight: 0,
-        borderRightWeight: 0,
-        borderBottomWeight: 4,
-        borderLeftWeight: 0,
-        fillPaints: [{ type: 'SOLID', color: { r: 0.07, g: 0.08, b: 0.11, a: 1 }, visible: true }],
-        strokePaints: [{ type: 'SOLID', color: { r: 0.2, g: 0.8, b: 0.55, a: 1 }, visible: true }]
-      },
-      []
-    )
+export function createNonFiniteStrokeScene(graph: SceneGraph, pageId: string): void {
+  const weights = [Number.NaN, Number.POSITIVE_INFINITY, Number.NaN]
+  for (const [row, weight] of weights.entries()) {
     graph.createNode('FRAME', pageId, {
-      ...omit(props, ['nodeType']),
       name: `Row ${row + 1}`,
       x: 60,
-      y: 60 + row * 110
+      y: 60 + row * 110,
+      width: 324,
+      height: 64,
+      fills: [solid(0.07, 0.08, 0.11)],
+      strokes: [{ ...solid(0.2, 0.8, 0.55), weight, align: 'CENTER' }],
+      strokeWeight: weight,
+      independentStrokeWeights: true,
+      borderTopWeight: 0,
+      borderRightWeight: 0,
+      borderBottomWeight: 4,
+      borderLeftWeight: 0
     })
   }
   graph.createNode('RECTANGLE', pageId, {

@@ -106,8 +106,17 @@ export class RenderChunkIndex {
     if (graph) this.indexDependencies(graph, chunk)
   }
 
-  private unregister(chunk: RenderChunk): void {
+  /** A chunk whose box is not finite stays out of the tree: one such box makes every search miss. */
+  private insertIntoTree(chunk: RenderChunk): void {
+    if (hasFiniteBounds(chunk)) this.tree.insert(chunk)
+  }
+
+  private removeFromTree(chunk: RenderChunk): void {
     if (hasFiniteBounds(chunk)) this.tree.remove(chunk)
+  }
+
+  private unregister(chunk: RenderChunk): void {
+    this.removeFromTree(chunk)
     this.chunks.delete(chunk.id)
     this.chunkIdsByNode.get(chunk.nodeId)?.delete(chunk.id)
     this.chunkIdsByTop.get(chunk.topId)?.delete(chunk.id)
@@ -143,7 +152,7 @@ export class RenderChunkIndex {
         ? buildChunks(graph, topId, topId, topIndex, countDescendants(graph, [topId]).counts)
         : []
     for (const chunk of added) {
-      if (hasFiniteBounds(chunk)) this.tree.insert(chunk)
+      this.insertIntoTree(chunk)
       this.register(chunk, graph)
     }
     if (removed.length > 0 || added.length > 0) this.cachedBounds = undefined
@@ -321,7 +330,7 @@ export class RenderChunkIndex {
     for (const [position, chunk] of built.entries()) {
       chunk.painterOrder = start + step * (position + 1)
       chunk.localOrder = chunk.painterOrder - topIndex * PAINTER_ORDER_SPAN
-      if (hasFiniteBounds(chunk)) this.tree.insert(chunk)
+      this.insertIntoTree(chunk)
       this.register(chunk, graph)
     }
     this.cachedBounds = undefined
@@ -445,11 +454,11 @@ export class RenderChunkIndex {
     for (const id of ids) {
       const chunk = this.chunks.get(id)
       if (!chunk) continue
-      if (hasFiniteBounds(chunk)) this.tree.remove(chunk)
+      this.removeFromTree(chunk)
       const bounds =
         chunk.kind === 'self' ? worldNodeVisualBounds(graph, node) : subtreeBounds(graph, nodeId)
       if (!bounds) {
-        if (hasFiniteBounds(chunk)) this.tree.insert(chunk)
+        this.insertIntoTree(chunk)
         continue
       }
       Object.assign(chunk, bounds, {
@@ -457,7 +466,7 @@ export class RenderChunkIndex {
         backdropReach: backdropReach(graph, node, chunk.kind === 'subtree')
       })
       this.maxBackdropReach = Math.max(this.maxBackdropReach, chunk.backdropReach)
-      if (hasFiniteBounds(chunk)) this.tree.insert(chunk)
+      this.insertIntoTree(chunk)
       this.cachedBounds = undefined
       updated++
     }

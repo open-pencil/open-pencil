@@ -3,7 +3,7 @@ import { strokeSceneDriver } from '#tests/helpers/canvas/strokes/driver'
 
 const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
 const scene = strokeSceneDriver(() => editor.page, 'createSideStrokesScene')
-const nonFinite = strokeSceneDriver(() => editor.page, 'createNonFiniteSavedStrokeScene')
+const nonFinite = strokeSceneDriver(() => editor.page, 'createNonFiniteStrokeScene')
 
 // The ring, corner radii, and dashes are checked against Figma in packages/core/tests/canvas/strokes/sides.test.ts.
 test('strokes with sides of their own weights', async () => {
@@ -18,13 +18,13 @@ test('strokes with sides of their own weights', async () => {
   })
 })
 
-// Non-finite rows stay out of the spatial index, so their finite neighbour still draws.
-test('a neighbour draws beside layers with non-finite saved stroke weights', async () => {
+// Rows with non-finite bounds stay out of the spatial index, so their finite neighbour still draws.
+test('a neighbour draws beside layers with non-finite stroke weights', async () => {
   await nonFinite.show()
   await editor.canvas.waitForRender()
   editor.canvas.assertNoErrors()
-  expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot(
-    'non-finite-saved-stroke.png',
-    { maxDiffPixels: 24, threshold: 0.05 }
-  )
+  expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot('non-finite-stroke.png', {
+    maxDiffPixels: 24,
+    threshold: 0.05
+  })
 })
