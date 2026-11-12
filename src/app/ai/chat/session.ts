@@ -15,6 +15,7 @@ import { hasSteeringMessage } from '@/app/ai/chat/queue'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 import { chatThinkingLevel } from '@/app/ai/chat/thinking'
 import { createAIModelRuntime, resolveModelConnectionAPIKey } from '@/app/ai/models'
+import { agentModelID } from '@/app/ai/models/agent'
 import { resolveLanguageModelID } from '@/app/ai/models/language-model'
 import { cloudCreditRefusal } from '@/app/ai/providers/openpencil/failure'
 import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
@@ -58,7 +59,8 @@ export async function createACPTransport(
   store?: EditorStore,
   onUsage?: (usage: AgentTurnUsage) => void,
   agentSession?: AgentSessionLink,
-  onAgentError?: (error: unknown) => void
+  onAgentError?: (error: unknown) => void,
+  model?: string
 ) {
   const agentDef = acpAgentFor(providerID)
   if (!agentDef) throw new Error(`Unknown ACP agent: ${providerID}`)
@@ -74,7 +76,8 @@ export async function createACPTransport(
     onSession:
       agentSession &&
       ((id) => agentSession.record(id === null ? null : { agent: agentDef.id, id })),
-    onAgentError
+    onAgentError,
+    model
   })
 }
 
@@ -184,6 +187,12 @@ export function createChatSessionManager({
   ) {
     await destroyAgentTransports()
     await assertAgentReady('acp')
+    // The profile the chat started on names the model, unless it has since moved to another agent.
+    const runtime = await createAIModelRuntime('design')
+    const profileModel =
+      runtime?.kind === 'acp' && runtime.role.connection.providerID === provider
+        ? agentModelID(runtime.role.profile)
+        : ''
     // An agent's turn counts as one step of the model it names, or of the agent itself.
     const transport = await createACPTransport(
       provider,
@@ -191,7 +200,8 @@ export function createChatSessionManager({
       ({ model, ...tokens }) =>
         recordModelStepCompleted({ provider, model: model ?? provider, ...tokens }, context),
       agentSession,
-      captureAgentError
+      captureAgentError,
+      profileModel
     )
     acpTransportInstance = transport
     return transport as ChatTransport<UIMessage>
@@ -205,11 +215,7 @@ export function createChatSessionManager({
     // A saved key is an AI Gateway key; without one, Pi uses the CLI's own sign-in.
     const apiKey = await resolveModelConnectionAPIKey(runtime.role.connection.id)
     const account = apiKey ? null : await readPiAccount()
-    const model =
-      runtime.role.profile.customModelID ||
-      runtime.role.profile.modelID ||
-      account?.defaultModel ||
-      ''
+    const model = agentModelID(runtime.role.profile) || account?.defaultModel || ''
     if (!apiKey && !account?.signedIn) throw new AgentSetupError('pi-sign-in')
     if (!model) throw new AgentSetupError('pi-model')
     const transport = new HarnessChatTransport(

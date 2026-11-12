@@ -21,6 +21,7 @@ const {
   capabilities,
   outputTokens,
   thinking = false,
+  acp = false,
   harness = false
 } = defineProps<{
   /** The catalog knows the model, so `capabilities` are its and not editable. */
@@ -29,7 +30,12 @@ const {
   outputTokens: number
   /** The provider takes a thinking level. */
   thinking?: boolean
-  /** The model runs through the Pi companion, which asks which tools it may use. */
+  /** The model runs through an ACP coding agent, which always has tools and sets its own limits. */
+  acp?: boolean
+  /**
+   * The model runs through the Pi companion, which asks which tools it may use. Its turn is text
+   * alone, so it has no image input to declare.
+   */
   harness?: boolean
 }>()
 const tools = defineModel<boolean>('tools', { required: true })
@@ -51,19 +57,31 @@ const support = (capability: AIModelCapability) =>
 <template>
   <SettingsSection>
     <template #title>{{ ai.modelCapabilities }}</template>
-    <template #description>{{
-      detected ? ai.modelCapabilitiesDetected : ai.modelCapabilitiesManual
+    <template v-if="!harness" #description>{{
+      acp
+        ? ai.agentImageInputHint
+        : detected
+          ? ai.modelCapabilitiesDetected
+          : ai.modelCapabilitiesManual
     }}</template>
     <SettingsGroup>
-      <SettingsRow :as="detected ? 'div' : 'label'" :label="ai.modelCapabilityTools">
+      <SettingsRow
+        v-if="!acp && !harness"
+        :as="detected ? 'div' : 'label'"
+        :label="ai.modelCapabilityTools"
+      >
         <span v-if="detected" class="text-xs text-surface">{{ support('tools') }}</span>
         <AppSwitch v-else v-model="tools" :label="ai.modelCapabilityTools" />
       </SettingsRow>
-      <SettingsRow :as="detected ? 'div' : 'label'" :label="ai.modelCapabilityVision">
+      <SettingsRow
+        v-if="!harness"
+        :as="detected ? 'div' : 'label'"
+        :label="ai.modelCapabilityVision"
+      >
         <span v-if="detected" class="text-xs text-surface">{{ support('vision') }}</span>
         <AppSwitch v-else v-model="vision" :label="ai.modelCapabilityVision" />
       </SettingsRow>
-      <SettingsRow :label="ai.outputLimit" :description="ai.outputLimitAutomatic">
+      <SettingsRow v-if="!acp" :label="ai.outputLimit" :description="ai.outputLimitAutomatic">
         <span class="text-xs text-surface tabular-nums"
           >{{ outputTokens.toLocaleString() }} {{ common.tokens }}</span
         >

@@ -1,8 +1,8 @@
 # Coding agents
 
-The OpenPencil desktop app can use a coding agent you already have — Claude Code, Codex, [Antigravity CLI](#antigravity), Gemini CLI, [Cursor](#cursor), [Grok Build](#grok-build), or [Pi](#pi) — as its design agent. The agent runs on your computer with your own subscription and chooses its own model; OpenPencil starts it when you send a message, through the [Agent Client Protocol](https://agentclientprotocol.com/) or, for Pi, its Harness companion, and gives it the canvas tools through OpenPencil's local [MCP server](./mcp-server).
+The OpenPencil desktop app can use a coding agent you already have — Claude Code, Codex, [Antigravity CLI](#antigravity), Gemini CLI, [Cursor](#cursor), [Grok Build](#grok-build), or [Pi](#pi) — as its design agent. The agent runs on your computer with your own subscription, and you can leave the choice of model to it or pick one of the models it offers; OpenPencil starts it when you send a message, through the [Agent Client Protocol](https://agentclientprotocol.com/) or, for Pi, its Harness companion, and gives it the canvas tools through OpenPencil's local [MCP server](./mcp-server).
 
-Coding agents need the desktop app; the browser cannot start programs on your computer. They take only the **Design agent** role. Visual review, plan reviews, and fast background work need an API model, which guided setup can add for you.
+Coding agents need the desktop app; the browser cannot start programs on your computer. Each agent can take any role its capabilities allow, as [Models and roles](#models-and-roles) describes.
 
 ## What you need
 
@@ -21,6 +21,12 @@ Then open **Settings → Models → Run guided setup**, choose the agent under *
 ### Let your agent set itself up
 
 If you already use one of these agents in a terminal, guided setup can do the typing for you: press **Copy setup prompt** on the agent's card and paste the prompt into the agent. It asks the agent to install its ACP program and the MCP server, confirm both are on your `PATH`, and make sure you are signed in.
+
+## Models and roles
+
+An agent is a model profile like any other (**Settings → Models**), so it can take any role under **Assignments**: **Design agent**, **Review**, **Fast tasks**, or **Vision**. A profile for an ACP agent can leave the choice of model to the agent (**Agent default**) or pick one of the models the agent offers. Opening the profile starts the agent once to read that list; every session the profile starts afterwards, from the chat or for another role, is put on the model you picked. When the list cannot be read, choose **Custom model…** and enter a model ID, or press **Retry**. A Pi profile names a Pi model such as `provider/model`, or leaves it empty for Pi's own default.
+
+What a profile can do belongs to the profile, so two profiles of one agent can differ. Every agent profile has tools. **Image input** starts as the agent reports it; turn it off when the model you picked cannot read images. Only a profile with image input can take the **Vision** role. Pi's Harness companion takes its prompt as text alone, so Pi has no image input and cannot take Vision.
 
 ## Claude Code
 

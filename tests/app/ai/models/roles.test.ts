@@ -16,6 +16,9 @@ import {
   saveModelProfileDraft,
   setModelConnectionAPIKey,
   setModelRoleAssignment,
+  type AIModelCapability,
+  type AIModelProfile,
+  type AIModelProfileId,
   type AIModelSettings
 } from '@/app/ai/models'
 import { appCredentialRefs } from '@/app/settings/credentials/persistence'
@@ -177,36 +180,116 @@ describe('AI model profiles and role assignments', () => {
     expect(savedSecond.harnessPermissionMode).toBe('allow-reads')
   })
 
-  test('keeps ACP agents exclusive to the Design role', () => {
-    const settings = modelSettingsSnapshot()
-    settings.connections.push({
-      id: 'connection-acp',
-      providerID: 'acp:claude-code',
-      customBaseURL: '',
-      customAPIType: 'completions',
-      credentialProfileId: 'connection-acp'
-    })
-    settings.models.push({
-      id: 'model-acp',
-      name: 'Claude Code',
-      connectionId: 'connection-acp',
-      modelID: '',
-      customModelID: '',
-      maxOutputTokens: 16_384,
-      thinkingLevel: 'default',
-      capabilities: ['tools']
-    })
-    replaceAIModelSettings(settings)
+  describe('coding agents', () => {
+    function agentProfile(
+      id: AIModelProfileId,
+      connectionId: string,
+      capabilities: AIModelCapability[],
+      modelID = ''
+    ): AIModelProfile {
+      return {
+        id,
+        name: id,
+        connectionId,
+        modelID,
+        customModelID: '',
+        maxOutputTokens: 16_384,
+        thinkingLevel: 'default',
+        capabilities
+      }
+    }
 
-    setModelRoleAssignment('review', null)
-    setModelRoleAssignment('review', 'model-acp')
-    expect(resolveAIModelRole('review')).toBeNull()
+    beforeEach(() => {
+      const settings = modelSettingsSnapshot()
+      for (const [id, providerID] of [
+        ['connection-acp', 'acp:claude-code'],
+        ['connection-pi', 'harness:pi']
+      ] as const) {
+        settings.connections.push({
+          id,
+          providerID,
+          customBaseURL: '',
+          customAPIType: 'completions',
+          credentialProfileId: id
+        })
+      }
+      settings.models.push(
+        agentProfile('model-acp', 'connection-acp', ['tools']),
+        agentProfile('model-acp-vision', 'connection-acp', ['tools', 'vision'], 'sonnet'),
+        agentProfile('model-pi', 'connection-pi', ['tools'])
+      )
+      settings.assignments.vision = null
+      replaceAIModelSettings(settings)
+    })
 
-    setModelRoleAssignment('design', 'model-acp')
-    expect(resolveAIModelRole('design')?.profile.id).toBe('model-acp')
-    setModelRoleAssignment('fast', null)
-    setModelRoleAssignment('fast', 'design')
-    expect(resolveAIModelRole('fast')).toBeNull()
+    test('take every role their capabilities allow', () => {
+      setModelRoleAssignment('design', 'model-acp')
+      expect(resolveAIModelRole('design')?.profile.id).toBe('model-acp')
+      for (const role of ['review', 'fast'] as const) {
+        setModelRoleAssignment(role, 'model-acp')
+        expect(resolveAIModelRole(role)?.profile.id).toBe('model-acp')
+      }
+      setModelRoleAssignment('review', 'model-pi')
+      expect(resolveAIModelRole('review')?.connection.providerID).toBe('harness:pi')
+
+      setModelRoleAssignment('vision', 'model-acp')
+      expect(resolveAIModelRole('vision')).toBeNull()
+      setModelRoleAssignment('vision', 'model-acp-vision')
+      expect(resolveAIModelRole('vision')?.profile.id).toBe('model-acp-vision')
+    })
+
+    test('are followed by the roles that use the Design model', () => {
+      setModelRoleAssignment('design', 'model-acp')
+      setModelRoleAssignment('review', 'design')
+      expect(resolveAIModelRole('review')?.profile.id).toBe('model-acp')
+      setModelRoleAssignment('vision', 'design')
+      expect(resolveAIModelRole('vision')).toBeNull()
+
+      setModelRoleAssignment('design', 'model-acp-vision')
+      setModelRoleAssignment('vision', 'design')
+      expect(resolveAIModelRole('vision')?.profile.id).toBe('model-acp-vision')
+    })
+
+    test('get a runtime of their own kind in any role', async () => {
+      setModelRoleAssignment('review', 'model-acp')
+      setModelRoleAssignment('fast', 'model-pi')
+      setModelRoleAssignment('vision', 'model-acp-vision')
+      expect(await createAIModelRuntime('review')).toMatchObject({
+        kind: 'acp',
+        role: { profile: { id: 'model-acp' } }
+      })
+      expect(await createAIModelRuntime('fast')).toMatchObject({
+        kind: 'harness',
+        role: { profile: { id: 'model-pi' } }
+      })
+      expect(await createAIModelRuntime('vision')).toMatchObject({
+        kind: 'acp',
+        role: { profile: { id: 'model-acp-vision', modelID: 'sonnet' } }
+      })
+    })
+
+    test('keep the model and capabilities they are saved with', () => {
+      const draft = createModelProfileDraft('model-acp-vision')
+      expect(draft).toMatchObject({ modelID: 'sonnet', capabilities: ['tools', 'vision'] })
+      setModelRoleAssignment('vision', 'model-acp-vision')
+      draft.modelID = 'opus'
+      draft.capabilities = ['tools']
+      const saved = saveModelProfileDraft(draft)
+      expect(saved).toMatchObject({ modelID: 'opus', capabilities: ['tools'] })
+      expect(resolveAIModelRole('vision')).toBeNull()
+    })
+
+    test('always have tools, and only an ACP agent can have image input', () => {
+      const acp = createModelProfileDraft('model-acp')
+      acp.capabilities = ['vision']
+      expect(saveModelProfileDraft(acp).capabilities).toEqual(['tools', 'vision'])
+
+      const pi = createModelProfileDraft('model-pi')
+      pi.capabilities = ['vision']
+      expect(saveModelProfileDraft(pi).capabilities).toEqual(['tools'])
+      setModelRoleAssignment('vision', 'model-pi')
+      expect(resolveAIModelRole('vision')).toBeNull()
+    })
   })
 
   test('normalizes invalid output limits before persistence', () => {

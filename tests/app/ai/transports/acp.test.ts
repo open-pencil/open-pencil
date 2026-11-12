@@ -7,7 +7,8 @@ import {
   RequestError,
   type Agent,
   type NewSessionRequest,
-  type ResumeSessionRequest
+  type ResumeSessionRequest,
+  type SessionConfigOption
 } from '@agentclientprotocol/sdk'
 import type { UIMessage, UIMessageChunk } from 'ai'
 
@@ -19,6 +20,9 @@ import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 import { ACPChatTransport, type ACPStartup } from '@/app/ai/transports/acp'
 import { diagnosticErrorDetails, diagnostics } from '@/app/diagnostics'
 import { createDeferred } from '@/app/runtime/deferred'
+
+import { MODEL_OPTIONS } from '#tests/helpers/ai/fake-acp-agent'
+
 const resuming = expectDefined(
   ACP_AGENTS.find((agent) => agent.resumesSessions),
   'an agent that resumes sessions'
@@ -46,6 +50,8 @@ interface FakeAgentOptions {
   turn?: 'answered' | 'refused' | 'cut-off'
   /** True for a command lookup that waits until `finishLookup`, as a slow PATH search does. */
   lookupWaits?: boolean
+  /** What the agent offers for choosing its model; none when absent. */
+  configOptions?: SessionConfigOption[]
 }
 
 /** In-memory ACP agents, one per start, that record what the transport asks of them. */
@@ -56,10 +62,13 @@ function fakeAgents({
   resumeBusy = false,
   tokenHangs = false,
   turn = 'answered',
-  lookupWaits = false
+  lookupWaits = false,
+  configOptions
 }: FakeAgentOptions = {}) {
   const lookup = createDeferred<undefined>()
   const prompts: string[] = []
+  /** Startup requests and prompts in the order the agent got them. */
+  const calls: string[] = []
   const created: NewSessionRequest[] = []
   const resumed: ResumeSessionRequest[] = []
   const sessionRequested = createDeferred<undefined>()
@@ -88,7 +97,7 @@ function fakeAgents({
         created.push(params)
         sessionRequested.resolve(undefined)
         if (!answersSessions) return createDeferred<never>().promise
-        return { sessionId: `session-${created.length}` }
+        return { sessionId: `session-${created.length}`, configOptions }
       },
       async unstable_resumeSession(params) {
         resumed.push(params)
@@ -100,6 +109,7 @@ function fakeAgents({
       },
       async prompt(params) {
         const [part] = params.prompt
+        calls.push('prompt')
         prompts.push(part?.type === 'text' ? part.text : '')
         const { sessionId } = params
         await connection.sessionUpdate({
@@ -121,6 +131,10 @@ function fakeAgents({
       },
       async authenticate() {
         return {}
+      },
+      async setSessionConfigOption(params) {
+        calls.push(`model ${params.value}`)
+        return { configOptions: [] }
       },
       cancel: async () => undefined
     }
@@ -174,6 +188,7 @@ function fakeAgents({
   return {
     startup,
     prompts,
+    calls,
     created,
     resumed,
     sessionRequested: sessionRequested.promise,
@@ -213,7 +228,13 @@ async function send(
 
 function transport(
   agents: ReturnType<typeof fakeAgents>,
-  options: { resume?: string; startTimeoutMs?: number; agentDef?: ACPAgentDef; cwd?: string } = {}
+  options: {
+    resume?: string
+    startTimeoutMs?: number
+    agentDef?: ACPAgentDef
+    cwd?: string
+    model?: string
+  } = {}
 ) {
   const sessions: (string | null)[] = []
   const agentErrors: unknown[] = []
@@ -222,6 +243,7 @@ function transport(
     cwd: options.cwd,
     startup: agents.startup,
     resume: options.resume,
+    model: options.model,
     startTimeoutMs: options.startTimeoutMs ?? 1_000,
     onSession: (id) => sessions.push(id),
     onAgentError: (error) => agentErrors.push(error)
@@ -450,4 +472,12 @@ test('a startup step outside the agent connection is bounded by the deadline too
   await expect(send(chat, 'first')).rejects.toBeInstanceOf(Error)
   await agents.killed
   expect(agents.prompts).toEqual([])
+})
+
+test('the agent is put on the profile’s model before it gets the first prompt', async () => {
+  const agents = fakeAgents({ configOptions: MODEL_OPTIONS })
+  const { transport: chat } = transport(agents, { model: 'opus' })
+  await send(chat, 'first')
+  expect(agents.calls).toEqual(['model opus', 'prompt'])
+  await chat.destroy()
 })

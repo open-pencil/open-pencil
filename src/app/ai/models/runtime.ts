@@ -110,18 +110,8 @@ export async function createAIModelRuntime(role: AIModelRole): Promise<AIModelRu
   if (role === 'vision' && !resolved.profile.capabilities.includes('vision')) {
     throw new Error('The Vision model must support image input')
   }
-  if (resolved.connection.providerID === 'harness:pi') {
-    if (role !== 'design') {
-      throw new Error('Harness agents can only be assigned to the Design agent role')
-    }
-    return { kind: 'harness', role: resolved }
-  }
-  if (resolved.connection.providerID.startsWith('acp:')) {
-    if (role !== 'design') {
-      throw new Error('ACP agents can only be assigned to the Design agent role')
-    }
-    return { kind: 'acp', role: resolved }
-  }
+  if (resolved.connection.providerID === 'harness:pi') return { kind: 'harness', role: resolved }
+  if (resolved.connection.providerID.startsWith('acp:')) return { kind: 'acp', role: resolved }
 
   if (resolved.connection.providerID === OPENPENCIL_AI_PROVIDER) {
     return { kind: 'direct', role: resolved, model: await openPencilLanguageModel(resolved) }

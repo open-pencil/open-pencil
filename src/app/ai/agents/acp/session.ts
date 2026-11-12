@@ -1,9 +1,15 @@
-import type { ClientSideConnection, InitializeResponse, McpServer } from '@agentclientprotocol/sdk'
+import type {
+  ClientSideConnection,
+  InitializeResponse,
+  McpServer,
+  ResumeSessionResponse
+} from '@agentclientprotocol/sdk'
 import * as v from 'valibot'
 
 import { acpAgentFor } from '@open-pencil/core/constants'
 import type { ACPAgentDef, ACPAgentID, AIProviderID } from '@open-pencil/core/constants'
 
+import { chooseAgentModel, type OfferedModels } from './models'
 import type { OwnToolsLink } from './tools'
 
 /** What an agent session needs to open, whether it starts or continues a saved one. */
@@ -13,6 +19,8 @@ export interface AgentSessionRequest {
   meta: OwnToolsLink['meta']
   /** The session a saved chat ran in, which the agent continues instead of starting anew. */
   resume: string | null
+  /** The model the chat's profile names, which the session switches to; empty keeps the agent's. */
+  model: string
 }
 
 export interface OpenedAgentSession {
@@ -22,7 +30,10 @@ export interface OpenedAgentSession {
   resumed: boolean
 }
 
-type SessionConnection = Pick<ClientSideConnection, 'newSession' | 'unstable_resumeSession'>
+type SessionConnection = Pick<
+  ClientSideConnection,
+  'newSession' | 'unstable_resumeSession' | 'setSessionConfigOption' | 'unstable_setSessionModel'
+>
 
 /** A JSON-RPC error, which ACP can reject with as a decoded object instead of an `Error`. */
 const acpErrorSchema = v.object({ code: v.number(), message: v.string() })
@@ -95,37 +106,59 @@ export class AgentSessionRetryError extends Error {
 }
 
 /**
+ * The model a session runs on: the one the chat's profile names, which the session is switched
+ * to, or else the agent's own.
+ */
+async function startingModel(
+  connection: SessionConnection,
+  agentDef: ACPAgentDef,
+  sessionId: string,
+  offered: OfferedModels,
+  wanted: string
+): Promise<string | null> {
+  if (!wanted) return offered.models?.currentModelId ?? null
+  await chooseAgentModel(connection, agentDef, sessionId, offered, wanted)
+  return wanted
+}
+
+/**
  * Starts the agent's session, or continues the saved one through `session/resume`, which keeps
- * the agent's context without replaying the transcript the chat already shows.
+ * the agent's context without replaying the transcript the chat already shows. Either way the
+ * session then moves to the model the chat's profile names.
  */
 export async function openAgentSession(
   connection: SessionConnection,
   agentDef: ACPAgentDef,
   initialized: InitializeResponse,
-  { cwd, mcpServers, meta, resume }: AgentSessionRequest
+  { cwd, mcpServers, meta, resume, model }: AgentSessionRequest
 ): Promise<OpenedAgentSession> {
   if (resume === null) {
     const result = await connection.newSession({ cwd, mcpServers, _meta: meta })
     return {
       sessionId: result.sessionId,
-      model: result.models?.currentModelId ?? null,
+      model: await startingModel(connection, agentDef, result.sessionId, result, model),
       resumed: false
     }
   }
   // The agent no longer offers resume, as after a downgrade: a new session would lose the context.
   if (!canResume(agentDef, initialized)) throw new AgentSessionResumeError(agentDef)
+  let result: ResumeSessionResponse
   try {
-    const result = await connection.unstable_resumeSession({
+    result = await connection.unstable_resumeSession({
       sessionId: resume,
       cwd,
       mcpServers,
       _meta: meta
     })
-    return { sessionId: resume, model: result.models?.currentModelId ?? null, resumed: true }
   } catch (e) {
     // Retire confirmed missing sessions; sign-in keeps its own error, and anything else may pass.
     if (isMissingSession(e, agentDef.id)) throw new AgentSessionResumeError(agentDef, e)
     if (isAuthRequiredError(e)) throw e
     throw new AgentSessionRetryError(agentDef, e)
+  }
+  return {
+    sessionId: resume,
+    model: await startingModel(connection, agentDef, resume, result, model),
+    resumed: true
   }
 }

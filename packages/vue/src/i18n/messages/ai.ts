@@ -217,6 +217,11 @@ export const aiMessageDefaults = {
   customModelID: 'Custom model ID',
   customModel: 'Custom model…',
   customModelGroup: 'Custom model',
+  agentDefaultModel: 'Agent default',
+  agentModelsLoading: 'Reading the models this agent offers…',
+  agentModelsFailed: 'Couldn’t read the models this agent offers. Retry, or choose a custom model.',
+  agentImageInputHint:
+    'Starts as the agent reports it. Turn it off if the model you chose can’t read images.',
   outputLimit: 'Output limit',
   outputLimitAutomatic: 'Automatic recommendation',
   maxOutputTokens: 'Max output tokens',

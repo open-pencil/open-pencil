@@ -8,7 +8,6 @@ import type {
   RequestPermissionResponse,
   Usage
 } from '@agentclientprotocol/sdk'
-import { promiseTimeout } from '@vueuse/core'
 import type { ChatTransport, UIMessage, UIMessageChunk } from 'ai'
 import * as v from 'valibot'
 
@@ -26,6 +25,7 @@ import {
   isAuthRequiredError,
   openAgentSession
 } from '@/app/ai/agents/acp/session'
+import { boundAgentStart } from '@/app/ai/agents/acp/startup'
 import { createOwnToolApproval, linkOwnTools, type OwnToolsLink } from '@/app/ai/agents/acp/tools'
 import { agentAccounts } from '@/app/ai/agents/setup/accounts'
 import { resolveSpawnTarget } from '@/app/ai/agents/setup/discovery'
@@ -67,9 +67,6 @@ const TURN_UPDATES: ReadonlySet<SessionUpdate['sessionUpdate']> = new Set([
   'tool_call_update',
   'plan'
 ])
-
-/** How long each startup request may take; resuming starts the agent's CLI, which is slowest. */
-const AGENT_START_TIMEOUT_MS = 60_000
 
 interface ACPSession {
   connection: ClientSideConnection
@@ -206,8 +203,9 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
   private resume: string | null
   private onSession: ((sessionId: string | null) => void) | null
   private onAgentError: ((error: unknown) => void) | null
+  private model: string
   private startup: ACPStartup
-  private startTimeoutMs: number
+  private startTimeoutMs: number | undefined
 
   constructor(options: {
     agentDef: ACPAgentDef
@@ -227,6 +225,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
      * text, which can quote the conversation, so diagnostics record this instead.
      */
     onAgentError?: (error: unknown) => void
+    /** The model the chat's profile names, which each session switches to; empty keeps its own. */
+    model?: string
     startup?: ACPStartup
     startTimeoutMs?: number
   }) {
@@ -237,8 +237,9 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     this.resume = options.resume ?? null
     this.onSession = options.onSession ?? null
     this.onAgentError = options.onAgentError ?? null
+    this.model = options.model ?? ''
     this.startup = options.startup ?? DEFAULT_STARTUP
-    this.startTimeoutMs = options.startTimeoutMs ?? AGENT_START_TIMEOUT_MS
+    this.startTimeoutMs = options.startTimeoutMs
   }
 
   async sendMessages({
@@ -371,52 +372,31 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
    * within the deadline; either way the agent stops and never gets the message.
    */
   private async spawnAgent(abortSignal?: AbortSignal): Promise<ACPSession> {
-    const stoppedByUser = new Promise<never>((_, reject) => {
-      const stop = () => reject(new Error('The reply was stopped while the agent was starting.'))
-      if (abortSignal?.aborted) stop()
-      else abortSignal?.addEventListener('abort', stop, { once: true })
+    const { bounded, launch } = boundAgentStart(this.agentDef, {
+      signal: abortSignal,
+      timeoutMs: this.startTimeoutMs,
+      stopMessage: 'The reply was stopped while the agent was starting.'
     })
-    stoppedByUser.catch(() => undefined)
-    const startTimeoutMs = this.startTimeoutMs
-    const agentName = this.agentDef.name
-    const bounded = <T>(request: Promise<T>, ...also: Promise<never>[]): Promise<T> =>
-      Promise.race([
-        request,
-        stoppedByUser,
-        ...also,
-        promiseTimeout(startTimeoutMs).then((): never => {
-          throw new Error(`${agentName} did not answer while starting.`)
-        })
-      ])
-
-    // Aborted once the startup gave up, by Stop or the deadline, so a lookup still running launches nothing.
-    const gaveUp = new AbortController()
-    const spawning = (async () => {
-      const { command, searchPath } = await this.startup.resolveTarget(this.agentDef)
-      if (gaveUp.signal.aborted || abortSignal?.aborted) {
-        throw new Error('The reply was stopped before the agent started.')
-      }
-      return this.startup.spawn({
-        command,
-        args: this.agentDef.args,
-        logId: this.agentDef.id,
-        searchPath,
-        cwd: this.cwd,
-        destroying: () => this.destroying,
-        onUnexpectedClose: () => {
-          if (!this.session) return
-          this.session.dead = true
-          this.session = null
-        }
-      })
-    })()
     let process: ACPProcess
     try {
-      process = await bounded(spawning)
+      process = await launch(
+        () => this.startup.resolveTarget(this.agentDef),
+        ({ command, searchPath }) =>
+          this.startup.spawn({
+            command,
+            args: this.agentDef.args,
+            logId: this.agentDef.id,
+            searchPath,
+            cwd: this.cwd,
+            destroying: () => this.destroying,
+            onUnexpectedClose: () => {
+              if (!this.session) return
+              this.session.dead = true
+              this.session = null
+            }
+          })
+      )
     } catch (e) {
-      gaveUp.abort()
-      // A process that starts after the startup gave up must not keep running.
-      void spawning.then((late) => late.child.kill()).catch(() => undefined)
       recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(e) })
       if (e instanceof AgentNotInstalledError) throw e
       const message = acpErrorMessage(e)
@@ -511,7 +491,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         cwd: this.cwd,
         mcpServers: tools.mcpServers,
         meta: tools.meta,
-        resume: this.resume
+        resume: this.resume,
+        model: this.model
       }),
       (e) => {
         // The saved conversation goes back to read-only; this chat keeps failing, never starting anew.

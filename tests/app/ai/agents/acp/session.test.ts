@@ -4,12 +4,15 @@ import {
   RequestError,
   type InitializeResponse,
   type NewSessionRequest,
-  type ResumeSessionRequest
+  type ResumeSessionRequest,
+  type SetSessionConfigOptionRequest,
+  type SetSessionModelRequest
 } from '@agentclientprotocol/sdk'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
+import type { OfferedModels } from '@/app/ai/agents/acp/models'
 import {
   AgentSessionResumeError,
   AgentSessionRetryError,
@@ -17,6 +20,9 @@ import {
   resumingAgent
 } from '@/app/ai/agents/acp/session'
 import { OWN_TOOLS_ALLOWED } from '@/app/ai/agents/acp/tools'
+
+import { MODEL_OPTIONS } from '#tests/helpers/ai/fake-acp-agent'
+
 const resuming = expectDefined(
   ACP_AGENTS.find((agent) => agent.resumesSessions),
   'an agent that resumes sessions'
@@ -38,26 +44,43 @@ const resumes: InitializeResponse = {
   protocolVersion: 1,
   agentCapabilities: { sessionCapabilities: { resume: {} } }
 }
-const request = { cwd: '/workspace', mcpServers: [], meta: OWN_TOOLS_ALLOWED }
+const request = { cwd: '/workspace', mcpServers: [], meta: OWN_TOOLS_ALLOWED, model: '' }
 
 interface FakeConnectionOptions {
   resumeError?: unknown
+  offered?: OfferedModels
 }
 
-function connection({ resumeError }: FakeConnectionOptions = {}) {
+function connection({ resumeError, offered }: FakeConnectionOptions = {}) {
   const created: NewSessionRequest[] = []
   const resumed: ResumeSessionRequest[] = []
+  const configured: SetSessionConfigOptionRequest[] = []
+  const switched: SetSessionModelRequest[] = []
   return {
     created,
     resumed,
+    configured,
+    switched,
     async newSession(params: NewSessionRequest) {
       created.push(params)
-      return { sessionId: 'new-session', models: { currentModelId: 'opus', availableModels: [] } }
+      return {
+        sessionId: 'new-session',
+        models: { currentModelId: 'opus', availableModels: [] },
+        ...offered
+      }
     },
     async unstable_resumeSession(params: ResumeSessionRequest) {
       resumed.push(params)
       if (resumeError !== undefined) throw resumeError
-      return { models: { currentModelId: 'sonnet', availableModels: [] } }
+      return { models: { currentModelId: 'sonnet', availableModels: [] }, ...offered }
+    },
+    async setSessionConfigOption(params: SetSessionConfigOptionRequest) {
+      configured.push(params)
+      return { configOptions: [] }
+    },
+    async unstable_setSessionModel(params: SetSessionModelRequest) {
+      switched.push(params)
+      return {}
     }
   }
 }
@@ -86,6 +109,62 @@ test('a saved session resumes with the same folder and OpenPencil tools', async 
     { sessionId: 'saved', cwd: '/workspace', mcpServers: [], _meta: OWN_TOOLS_ALLOWED }
   ])
   expect(fake.created).toEqual([])
+})
+
+test('a new session switches to the profile’s model through the agent’s model option', async () => {
+  const fake = connection({ offered: { configOptions: MODEL_OPTIONS } })
+  const opened = await openAgentSession(fake, claude, resumes, {
+    ...request,
+    model: 'opus',
+    resume: null
+  })
+  expect(fake.configured).toEqual([{ sessionId: 'new-session', configId: 'model', value: 'opus' }])
+  expect(opened).toMatchObject({ sessionId: 'new-session', model: 'opus' })
+})
+
+test('a session keeps the agent’s own model when the profile names none or the same', async () => {
+  const fake = connection({ offered: { configOptions: MODEL_OPTIONS } })
+  await openAgentSession(fake, claude, resumes, { ...request, resume: null })
+  await openAgentSession(fake, claude, resumes, { ...request, model: 'default', resume: null })
+  expect(fake.configured).toEqual([])
+  expect(fake.switched).toEqual([])
+})
+
+test('an agent that lists only session models is switched through them', async () => {
+  const fake = connection({
+    offered: {
+      configOptions: null,
+      models: {
+        currentModelId: 'fast',
+        availableModels: [
+          { modelId: 'fast', name: 'Fast' },
+          { modelId: 'deep', name: 'Deep' }
+        ]
+      }
+    }
+  })
+  const opened = await openAgentSession(fake, claude, resumes, {
+    ...request,
+    model: 'deep',
+    resume: null
+  })
+  expect(fake.switched).toEqual([{ sessionId: 'new-session', modelId: 'deep' }])
+  expect(fake.configured).toEqual([])
+  expect(opened.model).toBe('deep')
+})
+
+test('a saved session is switched to the profile’s model as well', async () => {
+  const fake = connection({ offered: { configOptions: MODEL_OPTIONS } })
+  await openAgentSession(fake, resuming, resumes, { ...request, model: 'opus', resume: 'saved' })
+  expect(fake.configured).toEqual([{ sessionId: 'saved', configId: 'model', value: 'opus' }])
+})
+
+test('an agent that offers no choice of model refuses a profile that names one', async () => {
+  const fake = connection({ offered: { configOptions: null, models: null } })
+  await expect(
+    openAgentSession(fake, claude, resumes, { ...request, model: 'opus', resume: null })
+  ).rejects.toThrow(claude.name)
+  expect(fake.configured).toEqual([])
 })
 
 test('a saved session never silently becomes a new one', async () => {
