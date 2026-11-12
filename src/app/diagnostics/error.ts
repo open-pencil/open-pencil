@@ -1,3 +1,5 @@
+import { RequestError } from '@agentclientprotocol/sdk/unstable'
+
 import { REDACTED, scrubDiagnosticText } from './scrub'
 
 export type DiagnosticErrorInfo = {
@@ -62,11 +64,12 @@ export function isInternalError(error: unknown): error is Error {
  * The metadata of `describeDiagnosticError`, plus the message and stack of a runtime failure,
  * scrubbed by `scrubDiagnosticText` and bounded in length.
  * A provider error keeps its stack but not its message, which can quote user content; V8 and
- * Bun repeat the message on the stack's first line, so it is removed there too.
+ * Bun repeat the message on the stack's first line, so it is removed there too. An ACP agent's
+ * error answer keeps neither: its message is the agent's text, and its stack only the SDK's.
  */
 export function diagnosticErrorDetails(error: unknown): DiagnosticErrorDetails {
   const info = describeDiagnosticError(error)
-  if (!(error instanceof Error)) {
+  if (!(error instanceof Error) || error instanceof RequestError) {
     return {
       ...info,
       message: typeof error === 'string' ? storedMessage(error) : null,

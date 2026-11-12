@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { SessionUpdate, ToolCallUpdate } from '@agentclientprotocol/sdk'
+import type { SessionUpdate, ToolCallUpdate } from '@agentclientprotocol/sdk/unstable'
 import { readUIMessageStream, type UIMessage, type UIMessageChunk } from 'ai'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'

@@ -1,4 +1,4 @@
-import type { SessionUpdate } from '@agentclientprotocol/sdk'
+import type { SessionUpdate } from '@agentclientprotocol/sdk/unstable'
 import type { UIMessageChunk } from 'ai'
 import { isEmptyObject, omit } from 'es-toolkit'
 import * as v from 'valibot'
