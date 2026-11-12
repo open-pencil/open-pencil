@@ -1,5 +1,6 @@
 import { omit } from 'es-toolkit'
 
+import { maxOf, minOf } from '../arrays'
 import type { Fill, SceneNode, Stroke, VectorNetwork } from '../types'
 import { readIcon, readIconTint } from './model'
 
@@ -25,10 +26,10 @@ function shape(network: VectorNetwork | null | undefined) {
   const f = Math.fround
   const xs = network.vertices.map((vertex) => f(vertex.x))
   const ys = network.vertices.map((vertex) => f(vertex.y))
-  const minX = Math.min(...xs)
-  const minY = Math.min(...ys)
-  const sx = 1 / (Math.max(...xs) - minX || 1)
-  const sy = 1 / (Math.max(...ys) - minY || 1)
+  const minX = minOf(xs)
+  const minY = minOf(ys)
+  const sx = 1 / (maxOf(xs) - minX || 1)
+  const sy = 1 / (maxOf(ys) - minY || 1)
   return {
     vertices: network.vertices.map((vertex) => [
       round((f(vertex.x) - minX) * sx),

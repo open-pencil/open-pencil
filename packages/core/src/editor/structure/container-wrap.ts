@@ -1,6 +1,7 @@
 import { groupBy } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
 import { groupBounds } from '@open-pencil/scene-graph/group-bounds'
 
@@ -110,7 +111,7 @@ export function inStackOrder(
  * counted among the children left once they move into it.
  */
 export function canvasWrapIndex(parent: SceneNode, nodes: readonly SceneNode[]): number {
-  return Math.max(...nodes.map((node) => parent.childIds.indexOf(node.id))) - (nodes.length - 1)
+  return maxOf(nodes.map((node) => parent.childIds.indexOf(node.id))) - (nodes.length - 1)
 }
 
 export function wrapSelectionInContainer(

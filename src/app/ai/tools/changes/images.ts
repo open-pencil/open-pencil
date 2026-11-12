@@ -7,6 +7,7 @@ import {
   renderRegionToImage
 } from '@open-pencil/core/io/formats/raster'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import { boundedImageScale } from '@/app/ai/tools/vision/inspect'
@@ -42,10 +43,10 @@ function unionRegion(regions: (VisualBounds | null)[]): VisualBounds | null {
   const known = regions.filter((region) => region !== null)
   if (known.length === 0) return null
   return {
-    minX: Math.min(...known.map((region) => region.minX)) - REGION_MARGIN,
-    minY: Math.min(...known.map((region) => region.minY)) - REGION_MARGIN,
-    maxX: Math.max(...known.map((region) => region.maxX)) + REGION_MARGIN,
-    maxY: Math.max(...known.map((region) => region.maxY)) + REGION_MARGIN
+    minX: minOf(known.map((region) => region.minX)) - REGION_MARGIN,
+    minY: minOf(known.map((region) => region.minY)) - REGION_MARGIN,
+    maxX: maxOf(known.map((region) => region.maxX)) + REGION_MARGIN,
+    maxY: maxOf(known.map((region) => region.maxY)) + REGION_MARGIN
   }
 }
 

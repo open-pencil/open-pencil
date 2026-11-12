@@ -1,6 +1,7 @@
 import { DEFAULT_SLOT_CONTENT } from '#fig/instance-overrides/types'
 
 import type { ComponentPropertyDefinition, SceneNode } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 import { ownsSlotContent, slotPropertyId } from '@open-pencil/scene-graph/slots'
 
@@ -80,7 +81,7 @@ export function slotContentAssignment(
   const root = records.at(0)
   if (!root?.guid) return null
   markSlotContent(root)
-  sink.push(...records)
+  appendAll(sink, records)
   return { defID, varValue: slotContentValue(root.guid) }
 }
 

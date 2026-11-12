@@ -1,4 +1,5 @@
 import type { VectorRegion, VectorSegment } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 
 /**
  * Region loops renumbered after segments were removed or merged. A loop that lost a segment is
@@ -50,7 +51,7 @@ export function reindexRegionLoops(
         }
 
         if (!segments || newSegIndices.length < 2) {
-          result.push(...newSegIndices)
+          appendAll(result, newSegIndices)
           continue
         }
 
@@ -60,9 +61,9 @@ export function reindexRegionLoops(
         const endConnectsToNext = origSeg.end === nextSeg.start || origSeg.end === nextSeg.end
 
         if (endConnectsToNext) {
-          result.push(...newSegIndices)
+          appendAll(result, newSegIndices)
         } else {
-          result.push(...[...newSegIndices].reverse())
+          appendAll(result, [...newSegIndices].reverse())
         }
       }
       return result

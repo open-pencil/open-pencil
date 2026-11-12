@@ -2,7 +2,6 @@ import type { ComponentPropertyDefinition, SceneGraph, SceneNode } from '@open-p
 import { parseVariantName } from '@open-pencil/scene-graph/variant-name'
 
 import { reapplyInstanceComponentProperties } from '#core/editor/components/properties'
-import { applyVariantProperties, variantSetProps } from '#core/editor/components/variant-set'
 import {
   appendPropertyDefinition,
   renameProperty
@@ -14,6 +13,7 @@ import {
   getVariantDefinitions,
   variantValues
 } from '#core/editor/components/variants/model'
+import { applyVariantProperties, variantSetProps } from '#core/editor/components/variants/set'
 import { wrapNodes } from '#core/editor/structure/container-wrap'
 
 // Variant edits through the Plugin API run the panel's own edits, with Figma's messages. Figma

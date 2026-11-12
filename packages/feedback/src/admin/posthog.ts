@@ -3,6 +3,8 @@ import type { FeedbackBindings, FeedbackServices } from '#feedback/env'
 import { groupBy, orderBy } from 'es-toolkit'
 import * as v from 'valibot'
 
+import { maxOf } from '@open-pencil/scene-graph/arrays'
+
 const QUERY_TIMEOUT_MS = 20_000
 
 const usageRowSchema = v.tuple([v.string(), v.string(), v.number()])
@@ -104,7 +106,7 @@ export async function fetchUsage(
       .toSorted(([a], [b]) => a.localeCompare(b))
       .map(([cohort, rows]) => {
         const counts = new Map(rows.map(([, day, installs]) => [day, installs]))
-        const last = Math.max(...counts.keys())
+        const last = maxOf(counts.keys())
         return {
           cohort,
           values: Array.from({ length: last + 1 }, (_, day) => counts.get(day) ?? 0)

@@ -6,6 +6,7 @@ import {
   type ImageScaleMode,
   type SceneNode
 } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { TRANSPARENT } from '@open-pencil/scene-graph/constants'
 import { parseCSSAlignSelf, parseCSSNumber, parseCSSShadows } from '@open-pencil/scene-graph/css'
 import { blurRadiusForSigma } from '@open-pencil/scene-graph/geometry'
@@ -425,8 +426,8 @@ function createDesignNode(
 function fitPageToChildren(page: SceneNode, graph: SceneGraph): void {
   const children = graph.getChildren(page.id)
   if (children.length === 0) return
-  page.width = Math.max(...children.map((child) => child.x + child.width))
-  page.height = Math.max(...children.map((child) => child.y + child.height))
+  page.width = maxOf(children.map((child) => child.x + child.width))
+  page.height = maxOf(children.map((child) => child.y + child.height))
 }
 
 /** Layers built from a styled document, with the boxes its layout was captured at. */

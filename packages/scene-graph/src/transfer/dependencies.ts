@@ -1,3 +1,4 @@
+import { appendAll } from '../arrays'
 import type { SceneGraph } from '../graph'
 import { imagePaintHashes } from '../images'
 import { overriddenBindingField } from '../instances/overrides'
@@ -70,7 +71,7 @@ export function layerDependencies(
     (styleLayers ??= sharedStyleLayers(graph)).get(id)
   const visit = (node: SceneNode): void => {
     for (const hash of layerImageHashes(node)) images.add(hash)
-    pending.push(...layerVariableIds(node))
+    appendAll(pending, layerVariableIds(node))
     for (const id of Object.keys(node.variableModes))
       if (graph.variableCollections.has(id)) collections.add(id)
     for (const id of referencedStyleIds(node)) {
@@ -113,7 +114,7 @@ export function variableDependencies(
     variables.add(id)
     collections.add(variable.collectionId)
     for (const value of Object.values(variable.valuesByMode)) {
-      pending.push(...variableValueReferences(value))
+      appendAll(pending, variableValueReferences(value))
       // A kept expression can name a mode of a collection none of its aliases reach.
       if (!isUnsupportedVariableValue(value)) continue
       for (const modeId of value.modes) {

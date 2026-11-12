@@ -11,6 +11,7 @@ import {
   type DesignStyleDeclaration,
   type DesignViewport
 } from '@open-pencil/dom-css'
+import { insertAll, maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
@@ -151,7 +152,7 @@ function pairElements(
       while (node !== undefined && !sameTag(capture.nodes[node].tag, element.tagName)) {
         const tag = capture.nodes[node].tag
         if (tag === undefined || !IMPLIED_WRAPPERS.has(tag)) return
-        queue.unshift(...(children.get(node) ?? []))
+        insertAll(queue, 0, children.get(node) ?? [])
         node = queue.shift()
       }
       if (node === undefined) return
@@ -198,8 +199,8 @@ function textLine(line: HTMLEngineLine, keepsSpaces: boolean): Rect | null {
   const texts = line.runs.filter((run) => 'text' in run && run.text.length > 0)
   const words = keepsSpaces ? texts : texts.filter((run) => 'text' in run && run.text.trim() !== '')
   if (words.length === 0) return null
-  const left = Math.min(...words.map((run) => run.x))
-  const right = Math.max(...words.map((run) => run.x + run.width))
+  const left = minOf(words.map((run) => run.x))
+  const right = maxOf(words.map((run) => run.x + run.width))
   return { x: left, y: line.y, width: right - left, height: line.height }
 }
 

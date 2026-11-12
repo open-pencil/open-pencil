@@ -1,3 +1,5 @@
+import { appendAll } from '@open-pencil/scene-graph/arrays'
+
 import type { EditorCommandId } from '#vue/editor/commands/types'
 import type { useEditorCommands } from '#vue/editor/commands/use'
 import type { MenuActionNode, MenuEntry, MenuSeparatorNode } from '#vue/editor/menu-model/types'
@@ -149,7 +151,7 @@ export function buildCanvasContextMenu(options: CanvasMenuOptions): MenuEntry[] 
     const groupEntries = group.flatMap((command) => conditionalCommand(command, options))
     if (groupEntries.length === 0) continue
     if (entries.length > 0) entries.push(separator())
-    entries.push(...groupEntries)
+    appendAll(entries, groupEntries)
   }
   return entries
 }
