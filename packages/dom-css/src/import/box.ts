@@ -1,4 +1,5 @@
 import type { Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { parseCSSNumber, splitCSSValue } from '@open-pencil/scene-graph/css'
 
 import type { DesignStyleDeclaration } from '../types'
@@ -101,7 +102,7 @@ export function strokeWeightFromStyle(style: DesignStyleDeclaration) {
     firstCSSNumber(style, 'border-left-width')
   ].filter((weight): weight is number => weight !== null)
   if (sideWeights.length === 0) return null
-  return Math.max(...sideWeights)
+  return maxOf(sideWeights)
 }
 
 /**

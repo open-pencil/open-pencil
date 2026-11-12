@@ -285,9 +285,13 @@ export {
   type StaticEntitlementsInput
 } from './policy'
 export {
+  createStorageLimitNoticeService,
   createStorageQuotaService,
   createStorageReconciliationService,
   StorageQuotaExceededError,
+  type StorageLimitNoticeOptions,
+  type StorageLimitNoticeResult,
+  type StorageLimitNoticeService,
   type StorageQuotaService,
   type StorageQuotaSnapshot,
   type StorageReconciliation

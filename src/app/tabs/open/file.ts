@@ -5,6 +5,7 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import { nextFrame } from '@open-pencil/vue/shared/frame'
 
 import { documentAssetReader } from '@/app/document/io/assets'
+import { readFigDocument } from '@/app/document/io/fig'
 import { isFigArchiveName } from '@/app/document/io/names'
 import type { DocumentSourceIdentity } from '@/app/document/io/types'
 import { appIcons } from '@/app/editor/icons/provider'
@@ -12,7 +13,6 @@ import type { EditorStore } from '@/app/editor/session'
 import { createDeferred } from '@/app/runtime/deferred'
 import { createFileOpenCoordinator } from '@/app/tabs/open/coordinator'
 import { refreshOpenedFigCover, watchOpenedFigCover } from '@/app/tabs/open/cover'
-import { readFigForTab } from '@/app/tabs/open/fig'
 import { findTabByFileIdentity } from '@/app/tabs/open/identity'
 import {
   failPreparation,
@@ -97,7 +97,7 @@ export async function openFileInNewTab(
     let sourceFormat: string
     if (isFig) {
       load.update({ phase: 'decoding', detail: file.name })
-      imported = await readFigForTab(file, load.signal)
+      imported = await readFigDocument(file, load.signal)
       sourceFormat = 'fig'
     } else {
       const result = await io.readDocument(

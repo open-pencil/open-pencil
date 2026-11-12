@@ -4,6 +4,7 @@ import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph, type Effect, type SceneNode } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 const ck = await getCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
@@ -140,7 +141,7 @@ function expectFigmaEdge(row: number[], figma: number[], from = 60) {
     60 + index < from ? [] : [Math.abs(value - figma[index])]
   )
   const rms = Math.sqrt(differences.reduce((sum, d) => sum + d * d, 0) / differences.length)
-  expect(Math.max(...differences)).toBeLessThanOrEqual(6)
+  expect(maxOf(differences)).toBeLessThanOrEqual(6)
   expect(rms).toBeLessThanOrEqual(2)
 }
 
@@ -268,7 +269,7 @@ describe('shadows of a transparent fill', () => {
     )
 
   test('a fill at 0% opacity casts no shadow', () => {
-    expect(Math.max(...shadowRow(0))).toBe(0)
+    expect(maxOf(shadowRow(0))).toBe(0)
   })
 
   test('a fill at 1% opacity casts a full one', () => {
@@ -276,7 +277,7 @@ describe('shadows of a transparent fill', () => {
   })
 
   test('a fill at 0% opacity casts none when the shadow shows behind the node', () => {
-    expect(Math.max(...shadowRow(0, true))).toBe(0)
+    expect(maxOf(shadowRow(0, true))).toBe(0)
   })
 
   test('a fill at 0% opacity takes no inner shadow', () => {
@@ -288,7 +289,7 @@ describe('shadows of a transparent fill', () => {
         }),
       3
     )
-    expect(Math.max(...row)).toBe(0)
+    expect(maxOf(row)).toBe(0)
   })
 
   test('a frame with a fill at 0% opacity casts only its child shadow', () => {
@@ -310,7 +311,7 @@ describe('shadows of a transparent fill', () => {
         fills: [solid(0, 0, 1)]
       })
     }, 3)
-    expect(Math.max(...row.slice(0, 41))).toBe(0)
+    expect(maxOf(row.slice(0, 41))).toBe(0)
     expect(row[79]).toBeGreaterThan(0)
   })
 })

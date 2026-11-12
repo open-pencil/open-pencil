@@ -33,9 +33,11 @@ export function makeFigmaFromStore(
       await listFonts()
     },
     // The editor syncs instances after edits; a script's reads sync them at once, as in Figma.
-    flushComponentSync: () => store.flushComponentSync()
+    flushComponentSync: () => store.flushComponentSync(),
+    // The editor tells its renderers about edits itself; an API made per call that listened too
+    // would stay on the graph after the call, one more listener for every call.
+    renderer: () => store.renderer ?? null
   })
-  api.setRenderer(store.renderer ?? null)
   api.icons = store.iconProvider
   api.theme = store.state.theme ?? 'light'
   api.currentPage = api.wrapNode(pageId)
