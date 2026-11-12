@@ -143,7 +143,7 @@ export const metricsReportTheme = {
     propertyValue: 'min-w-0 break-words text-surface',
     mono: 'font-mono',
     links: 'flex flex-col gap-1.5 text-2xs',
-    link: 'inline-flex w-fit items-center gap-1 text-accent underline-offset-2 hover:underline',
+    link: 'inline-flex w-fit items-center gap-1 text-primary underline-offset-2 hover:underline',
     document: 'flex items-center gap-4 rounded-md border border-border p-3',
     thumbnail: 'h-20 w-32 shrink-0 rounded border border-border bg-canvas object-contain',
     documentText: 'flex min-w-0 flex-1 flex-col gap-0.5 text-xs',
