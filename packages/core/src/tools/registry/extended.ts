@@ -74,9 +74,11 @@ import {
   deleteVariable,
   getCollection,
   getVariable,
+  getVariableModes,
   listCollections,
   listVariables,
-  setVariable
+  setVariable,
+  setVariableMode
 } from '#core/tools/variables'
 import {
   booleanOperation,
@@ -157,6 +159,8 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   setVariable,
   deleteVariable,
   bindVariable,
+  setVariableMode,
+  getVariableModes,
   getCollection,
   createCollection,
   deleteCollection,

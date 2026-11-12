@@ -17,7 +17,6 @@ import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 import VariableBoundRow from './binding/VariableBoundRow.vue'
 import PropertyBoundField from './component-properties/PropertyBoundField.vue'
-import VariableModeMenu from './variable-modes/VariableModeMenu.vue'
 import VariableModeRows from './variable-modes/VariableModeRows.vue'
 import VisibilityControl from './visibility/VisibilityControl.vue'
 
@@ -62,7 +61,6 @@ function blendModeGroups(value: BlendMode | typeof MIXED) {
   >
     <PanelSection v-if="active" :label="panels.appearance">
       <template #actions>
-        <VariableModeMenu :choices="variableModes.choices.value" @set="variableModes.setMode" />
         <VisibilityControl
           :node-id="node && !isMulti ? node.id : undefined"
           :visibility="visibilityState"
@@ -283,7 +281,7 @@ function blendModeGroups(value: BlendMode | typeof MIXED) {
         </PanelFieldGroup>
       </PanelGrid>
 
-      <VariableModeRows :choices="variableModes.applied.value" @set="variableModes.setMode" />
+      <VariableModeRows :choices="variableModes.choices.value" @set="variableModes.setMode" />
     </PanelSection>
   </AppearanceControlsRoot>
 </template>
