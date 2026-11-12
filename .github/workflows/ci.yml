@@ -345,6 +345,10 @@ jobs:
 
       - uses: ./.github/actions/setup/workspace
 
+      # The Worker reads a reported document's thumbnail with it; Bun runs its source, tsc reads its types.
+      - name: Build the .fig reader the Worker uses
+        run: bun --filter @open-pencil/fig build
+
       - name: Typecheck and test the feedback Worker against a local D1
         run: bun run test:feedback
 
