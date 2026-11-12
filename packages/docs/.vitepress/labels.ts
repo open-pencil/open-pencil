@@ -18,7 +18,6 @@ export interface SidebarLabels {
   components: string
   variables: string
   checkingDesigns: string
-  openPencilCloud: string
   cloudStorage: string
   overview: string
   gettingStarted: string
@@ -27,10 +26,6 @@ export interface SidebarLabels {
   techStack: string
   comparison: string
   privacy: string
-  cloudLegal: string
-  cloudTerms: string
-  cloudPrivacy: string
-  subprocessors: string
   figmaMatrix: string
 }
 
@@ -56,6 +51,7 @@ export interface NavLabels {
   sdk: string
   reference: string
   development: string
+  cloud: string
   openApp: string
 }
 
@@ -176,7 +172,6 @@ export const EN: SidebarLabels = {
   components: 'Components',
   variables: 'Variables',
   checkingDesigns: 'Checking Designs',
-  openPencilCloud: 'OpenPencil Cloud',
   cloudStorage: 'Cloud Storage',
   icons: 'Icons',
   photos: 'Photos',
@@ -187,10 +182,6 @@ export const EN: SidebarLabels = {
   techStack: 'Tech Stack',
   comparison: 'Comparison',
   privacy: 'Privacy',
-  cloudLegal: 'OpenPencil Cloud legal',
-  cloudTerms: 'Terms of Service',
-  cloudPrivacy: 'Privacy Policy',
-  subprocessors: 'Subprocessors',
   figmaMatrix: 'Figma Feature Matrix'
 }
 export const DE: SidebarLabels = {
@@ -211,7 +202,6 @@ export const DE: SidebarLabels = {
   components: 'Komponenten',
   variables: 'Variablen',
   checkingDesigns: 'Designs prüfen',
-  openPencilCloud: 'OpenPencil Cloud',
   cloudStorage: 'Cloud-Speicher',
   icons: 'Symbole',
   photos: 'Fotos',
@@ -222,10 +212,6 @@ export const DE: SidebarLabels = {
   techStack: 'Tech-Stack',
   comparison: 'Vergleich',
   privacy: 'Datenschutz',
-  cloudLegal: 'OpenPencil Cloud – Rechtliches',
-  cloudTerms: 'Nutzungsbedingungen',
-  cloudPrivacy: 'Datenschutzerklärung',
-  subprocessors: 'Unterauftragsverarbeiter',
   figmaMatrix: 'Figma-Funktionsmatrix'
 }
 export const IT: SidebarLabels = {
@@ -246,7 +232,6 @@ export const IT: SidebarLabels = {
   components: 'Componenti',
   variables: 'Variabili',
   checkingDesigns: 'Verificare i design',
-  openPencilCloud: 'OpenPencil Cloud',
   cloudStorage: 'Archiviazione cloud',
   icons: 'Icone',
   photos: 'Foto',
@@ -257,10 +242,6 @@ export const IT: SidebarLabels = {
   techStack: 'Stack tecnologico',
   comparison: 'Confronto',
   privacy: 'Privacy',
-  cloudLegal: 'OpenPencil Cloud – Note legali',
-  cloudTerms: 'Termini di servizio',
-  cloudPrivacy: 'Informativa sulla privacy',
-  subprocessors: 'Sub-responsabili',
   figmaMatrix: 'Matrice funzionalità Figma'
 }
 export const FR: SidebarLabels = {
@@ -281,7 +262,6 @@ export const FR: SidebarLabels = {
   components: 'Composants',
   variables: 'Variables',
   checkingDesigns: 'Vérifier les designs',
-  openPencilCloud: 'OpenPencil Cloud',
   cloudStorage: 'Stockage cloud',
   icons: 'Icônes',
   photos: 'Photos',
@@ -292,10 +272,6 @@ export const FR: SidebarLabels = {
   techStack: 'Stack technique',
   comparison: 'Comparaison',
   privacy: 'Confidentialité',
-  cloudLegal: 'OpenPencil Cloud – Mentions légales',
-  cloudTerms: 'Conditions d’utilisation',
-  cloudPrivacy: 'Politique de confidentialité',
-  subprocessors: 'Sous-traitants',
   figmaMatrix: 'Matrice des fonctionnalités Figma'
 }
 export const ES: SidebarLabels = {
@@ -316,7 +292,6 @@ export const ES: SidebarLabels = {
   components: 'Componentes',
   variables: 'Variables',
   checkingDesigns: 'Revisar diseños',
-  openPencilCloud: 'OpenPencil Cloud',
   cloudStorage: 'Almacenamiento en la nube',
   icons: 'Iconos',
   photos: 'Fotos',
@@ -327,10 +302,6 @@ export const ES: SidebarLabels = {
   techStack: 'Stack tecnológico',
   comparison: 'Comparación',
   privacy: 'Privacidad',
-  cloudLegal: 'OpenPencil Cloud – Aviso legal',
-  cloudTerms: 'Términos del servicio',
-  cloudPrivacy: 'Política de privacidad',
-  subprocessors: 'Subencargados',
   figmaMatrix: 'Matriz de funcionalidades Figma'
 }
 export const PL: SidebarLabels = {
@@ -351,7 +322,6 @@ export const PL: SidebarLabels = {
   components: 'Komponenty',
   variables: 'Zmienne',
   checkingDesigns: 'Sprawdzanie projektów',
-  openPencilCloud: 'OpenPencil Cloud',
   cloudStorage: 'Przechowywanie w chmurze',
   icons: 'Ikony',
   photos: 'Zdjęcia',
@@ -362,10 +332,6 @@ export const PL: SidebarLabels = {
   techStack: 'Stack technologiczny',
   comparison: 'Porównanie',
   privacy: 'Prywatność',
-  cloudLegal: 'OpenPencil Cloud – Informacje prawne',
-  cloudTerms: 'Warunki korzystania',
-  cloudPrivacy: 'Polityka prywatności',
-  subprocessors: 'Podmioty przetwarzające',
   figmaMatrix: 'Matryca funkcji Figma'
 }
 export const RU: SidebarLabels = {
@@ -386,7 +352,6 @@ export const RU: SidebarLabels = {
   components: 'Компоненты',
   variables: 'Переменные',
   checkingDesigns: 'Проверка дизайна',
-  openPencilCloud: 'OpenPencil Cloud',
   cloudStorage: 'Облачное хранилище',
   icons: 'Иконки',
   photos: 'Фото',
@@ -397,9 +362,5 @@ export const RU: SidebarLabels = {
   techStack: 'Технологии',
   comparison: 'Сравнение',
   privacy: 'Конфиденциальность',
-  cloudLegal: 'OpenPencil Cloud — правовая информация',
-  cloudTerms: 'Условия использования',
-  cloudPrivacy: 'Политика конфиденциальности',
-  subprocessors: 'Субобработчики',
   figmaMatrix: 'Матрица функций Figma'
 }
