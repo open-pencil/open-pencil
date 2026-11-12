@@ -136,11 +136,13 @@ describe('viewport tools', () => {
 
     const result: unknown = await getViewport.execute(figma, {})
 
-    expect(JSON.parse(JSON.stringify(result))).toEqual({
-      center: { x: 0, y: 0 },
-      zoom: 0.5,
-      bounds: { x: 0, y: 0, width: 100, height: 50 }
-    })
+    expect(JSON.stringify(result)).toBe(
+      JSON.stringify({
+        center: { x: 0, y: 0 },
+        zoom: 0.5,
+        bounds: { x: 0, y: 0, width: 100, height: 50 }
+      })
+    )
   })
 
   test('set_viewport moves the view and answers with where it settled', async () => {
