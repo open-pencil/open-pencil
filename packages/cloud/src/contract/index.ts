@@ -243,6 +243,8 @@ export {
   cloudInvitationURL,
   cloudShareURL,
   parseCloudLinkPath,
+  cloudCommunityPath,
+  cloudCommunityURL,
   type CloudLinkKind,
   type CloudLinkPathKind
 } from './links'

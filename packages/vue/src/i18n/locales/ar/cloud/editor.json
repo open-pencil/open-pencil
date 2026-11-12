@@ -343,6 +343,7 @@
   "syncConflict": "عُدّل في مكان آخر أيضًا — اختر النسخة التي تريد الاحتفاظ بها",
   "syncError": "تعذّر رفع التغييرات",
   "shareLinkFailed": "هذا الرابط لا يفتح مستندًا. اطلب رابطًا جديدًا.",
+  "communityLinkFailed": "لم يعد هذا المستند في المعرض.",
   "documentLinkFailed": "تعذّر فتح هذا المستند. اطلب الوصول من مالكه.",
   "documentLinkUnknownServer": "سجّل الدخول إلى {host} أولًا لفتح هذا الرابط.",
   "shareOpenedInBrowser": "فُتح في المتصفح",

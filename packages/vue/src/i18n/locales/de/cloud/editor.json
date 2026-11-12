@@ -255,6 +255,7 @@
   "syncConflict": "Auch anderswo bearbeitet – wähle, welche Version du behalten möchtest",
   "syncError": "Änderungen konnten nicht hochgeladen werden",
   "shareLinkFailed": "Dieser Link öffnet kein Dokument. Bitte um einen neuen.",
+  "communityLinkFailed": "Dieses Dokument ist nicht mehr in der Galerie.",
   "documentLinkFailed": "Dieses Dokument konnte nicht geöffnet werden. Bitte die Person, der es gehört, um Zugriff.",
   "documentLinkUnknownServer": "Melde dich zuerst bei {host} an, um diesen Link zu öffnen.",
   "connectServerHeading": "Server deines Teams verbinden",

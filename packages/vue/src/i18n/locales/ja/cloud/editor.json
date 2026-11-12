@@ -251,6 +251,7 @@
   "syncConflict": "他の場所でも編集されました。残すバージョンを選んでください",
   "syncError": "変更をアップロードできませんでした",
   "shareLinkFailed": "このリンクではドキュメントを開けません。新しいリンクを依頼してください。",
+  "communityLinkFailed": "このドキュメントはもうギャラリーにありません。",
   "documentLinkFailed": "このドキュメントを開けませんでした。オーナーにアクセス権を依頼してください。",
   "documentLinkUnknownServer": "このリンクを開くには、先に {host} にサインインしてください。",
   "connectServerHeading": "チームのサーバーに接続",

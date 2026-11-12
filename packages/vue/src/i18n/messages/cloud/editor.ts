@@ -388,6 +388,7 @@ export const cloudMessageDefaults = {
   syncConflict: 'Edited elsewhere too — choose which version to keep',
   syncError: 'Could not upload changes',
   shareLinkFailed: 'This link doesn’t open a document. Ask for a new one.',
+  communityLinkFailed: 'This document isn’t in the gallery any more.',
   documentLinkFailed: 'Couldn’t open this document. Ask its owner for access.',
   documentLinkUnknownServer: params('Sign in to {host} first to open this link.'),
   shareOpenedInBrowser: 'Opened in the browser',

@@ -255,6 +255,7 @@
   "syncConflict": "Modifié ailleurs aussi — choisissez la version à conserver",
   "syncError": "Impossible d’envoyer les modifications",
   "shareLinkFailed": "Ce lien n’ouvre aucun document. Demandez-en un nouveau.",
+  "communityLinkFailed": "Ce document n’est plus dans la galerie.",
   "documentLinkFailed": "Impossible d’ouvrir ce document. Demandez l’accès à son propriétaire.",
   "documentLinkUnknownServer": "Connectez-vous d’abord à {host} pour ouvrir ce lien.",
   "connectServerHeading": "Connecter le serveur de votre équipe",
