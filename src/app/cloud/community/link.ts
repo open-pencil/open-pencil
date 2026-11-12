@@ -10,14 +10,16 @@ import { storageFetch } from '@/app/integrations/storage/s3/fetch'
 import { toast } from '@/app/shell/ui'
 import { allTabs, getTabForStore, onTabDocumentReplaced, openFileInNewTab } from '@/app/tabs'
 
+import type { CloudDocumentLink } from '../documents/link'
 import { normalizeCloudServerURL } from '../servers/address'
 import { cloudFetch, discoverCloudServer } from '../sessions/connection'
 
 /**
  * A document of a server's community gallery, `/community/:id` on that server, with `?version=…`
- * for one of its named versions. Anyone opens it, without signing in or a secret.
+ * for one of its named versions. Anyone opens it, without signing in or a secret; it names a
+ * document as a member's link does.
  */
-export type CloudCommunityLink = { documentId: string; server: string; versionId: string | null }
+export type CloudCommunityLink = CloudDocumentLink
 
 /** Tabs showing a gallery document, by the link they opened, for the banner and the address. */
 export const cloudCommunityTabs = shallowRef<ReadonlyMap<EditorStore, CloudCommunityLink>>(
