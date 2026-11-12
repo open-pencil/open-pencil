@@ -13,7 +13,7 @@ const meta = {
     template: `
       <div class="w-72 bg-panel p-3 text-surface">
         <AppRangeCalendar v-model="range" label="Days" min="2026-09-22" max="2026-10-20" />
-        <p class="mt-2 text-xs text-muted" data-testid="range">{{ range?.start }} – {{ range?.end }}</p>
+        <p dir="ltr" class="mt-2 text-xs text-muted" data-testid="range">{{ range?.start }} – {{ range?.end }}</p>
       </div>`
   })
 } satisfies Meta

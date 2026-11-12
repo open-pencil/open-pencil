@@ -62,10 +62,21 @@ describe('parseAppPreferences', () => {
       designCheck: { preset: 'strict', disabledRules: ['contrast', 7, 'contrast', 'spacing'] }
     })
     expect(designCheck).toEqual({
-      showOnCanvas: true,
+      showOnCanvas: false,
       preset: 'strict',
       disabledRules: ['contrast', 'spacing']
     })
+  })
+
+  test('keeps a stored canvas marker choice and leaves markers off when none is stored', () => {
+    expect(DEFAULT_APP_PREFERENCES.designCheck.showOnCanvas).toBe(false)
+    expect(parseAppPreferences({}).designCheck.showOnCanvas).toBe(false)
+    expect(
+      parseAppPreferences({ designCheck: { showOnCanvas: true } }).designCheck.showOnCanvas
+    ).toBe(true)
+    expect(
+      parseAppPreferences({ designCheck: { showOnCanvas: false, preset: 'strict' } }).designCheck
+    ).toEqual({ showOnCanvas: false, preset: 'strict', disabledRules: [] })
   })
 
   test('keeps a preset or a custom accent and falls back to blue for anything else', () => {
@@ -99,6 +110,20 @@ describe('parseAppPreferences', () => {
     expect(parseAppPreferences({ navigation: { zoomSpeed: 0.25 } }).navigation.zoomSpeed).toBe(0.25)
     for (const zoomSpeed of [undefined, '0.5', 0, 0.3, 5, Number.NaN]) {
       expect(parseAppPreferences({ navigation: { zoomSpeed } }).navigation.zoomSpeed).toBe(1)
+    }
+  })
+
+  test('checks for updates on startup unless that switch is stored off', () => {
+    expect(DEFAULT_APP_PREFERENCES.updates).toEqual({ checkOnStartup: true })
+    expect(parseAppPreferences({}).updates.checkOnStartup).toBe(true)
+    const storedOff = parseAppPreferences({
+      updates: { checkOnStartup: false },
+      recovery: { enabled: false }
+    })
+    expect(storedOff.updates.checkOnStartup).toBe(false)
+    expect(storedOff.recovery.enabled).toBe(false)
+    for (const checkOnStartup of [undefined, null, 'false', 0, 1]) {
+      expect(parseAppPreferences({ updates: { checkOnStartup } }).updates.checkOnStartup).toBe(true)
     }
   })
 

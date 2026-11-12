@@ -21,8 +21,16 @@ import type { createEditorKeyActions } from './actions'
 export interface EditorShortcut {
   id: string
   keys: HotkeyChord | readonly HotkeyChord[]
-  run: (event: KeyboardEvent) => void
-  /** Whether the browser's own action for the key is stopped; by default always. */
+  /**
+   * Runs the key's action. Returning `false` declines the key, so the shortcut it goes before on
+   * the same chord runs instead: a host's Escape that closes its popover only while one is open.
+   */
+  run: (event: KeyboardEvent) => unknown
+  /**
+   * Whether the key was the editor's, so the browser's own action is stopped and a closing menu
+   * that still has focus does not act on it too; by default always. Return false when the key
+   * did nothing, as an unbound tool key does.
+   */
   preventDefault?: (event: KeyboardEvent) => boolean
   /** Runs wherever focus is, in a text field or with a dialog open, as app-wide keys do. */
   global?: boolean

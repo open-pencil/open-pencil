@@ -12,7 +12,7 @@ graph TB
             UI["Vue 3 UI<br/>Toolbar · Panels · Properties<br/>Layers · Color Picker"]
             Skia["Skia CanvasKit (WASM, 7MB)<br/>Vector rendering · Text shaping<br/>Effects · Export"]
             subgraph Core["Core Engine (TS)"]
-                SG[SceneGraph] --- Layout[Layout - Yoga]
+                SG[SceneGraph] --- Layout[Layout - Taffy]
                 SG --- Selection
                 Undo[Undo/Redo] --- Constraints
                 Constraints --- HitTest[Hit Testing]
@@ -60,18 +60,32 @@ Formula trees name operators in OpenPencil's own terms (`add`, `truthy`, `if`) w
 
 A formula in `valuesByMode` is live document behavior. `expressions[modeId].css` is separate, target-specific CSS that replaces the value in CSS alone, edited in its own field. The token stylesheet writes number formulas as `calc()` over `var()` references, checking that units add and multiply as CSS allows, and declares a formula again in each mode scope that changes a variable it uses. Design-token files hold each mode's result with the formula in `$extensions`. Design JSX preserves node bindings through `designVar`, but does not yet bundle the referenced formula definitions; formulas that give Booleans, text or colors, or use `if()`, have no CSS form.
 
-### Layout Engine (Yoga WASM)
+### Layout Engine (Taffy WASM)
 
-Meta's Yoga provides CSS flexbox and grid layout computation via a [fork](https://github.com/open-pencil/yoga/tree/grid) with CSS Grid support. A thin adapter maps Figma property names to Yoga equivalents:
+[Taffy](https://github.com/DioxusLabs/taffy), a Rust implementation of CSS flexbox and CSS Grid, computes auto layout. It ships as `@open-pencil/taffy`, built to WebAssembly from OpenPencil's [fork](https://github.com/open-pencil/taffy/tree/openpencil/taffy); the same Taffy lays out HTML import through Blitz. Core builds a tree of `LayoutNode`s with CSS-named styles and lays it out with one `computeLayout(root)` call, measuring text leaves through a `measure` callback. `createLayoutNode()` sets auto layout's defaults where they differ from CSS: column direction, `flexShrink: 0`, `alignContent: flex-start`, and minimum sizes of 0. Boxes are border-box and not rounded to pixels.
 
-| Figma Property | Yoga Equivalent |
+The adapter in `packages/core/src/layout/` maps Figma properties to CSS styles:
+
+| Figma Property | CSS Style |
 |---|---|
-| `stackMode: HORIZONTAL` | `flexDirection: row` |
-| `stackMode: VERTICAL` | `flexDirection: column` |
-| `stackSpacing` | `gap` |
-| `stackPadding` | `padding` |
-| `stackJustify` | `justifyContent` |
-| `stackChildPrimaryGrow` | `flexGrow` |
+| `layoutMode: HORIZONTAL` / `VERTICAL` | `flexDirection: row` / `column` |
+| `layoutMode: GRID` | `display: grid` |
+| `layoutWrap: WRAP` | `flexWrap: wrap` |
+| `itemSpacing`, `counterAxisSpacing` | `columnGap`, `rowGap` |
+| `paddingTop/Right/Bottom/Left` (+ included inside strokes) | `padding` |
+| `primaryAxisAlign: MIN/CENTER/MAX/SPACE_BETWEEN` | `justifyContent` |
+| `counterAxisAlign` | `alignItems` |
+| `counterAxisAlignContent: SPACE_BETWEEN` | `alignContent: space-between` |
+| `layoutGrow` | `flexGrow` |
+| `layoutAlignSelf` | `alignSelf` |
+| Sizing `FIXED` / `HUG` / `FILL` | `width`/`height` / auto / `flexGrow: 1` on the main axis, `alignSelf: stretch` across it |
+| `minWidth`, `maxWidth`, `minHeight`, `maxHeight` | `minWidth`, `maxWidth`, `minHeight`, `maxHeight` |
+| `layoutPositioning: ABSOLUTE` | `position: absolute` |
+| `layoutDirection` | `direction: ltr` / `rtl` |
+| `clipsContent` | `overflow: hidden` |
+| `gridTemplateColumns`, `gridTemplateRows` | `gridTemplateColumns`, `gridTemplateRows` (fixed, `fr`, `auto`) |
+| `gridColumnGap`, `gridRowGap` | `columnGap`, `rowGap` |
+| `gridPosition` | `gridColumn`, `gridRow` (start and span) |
 
 ### File Format (Kiwi Binary)
 
@@ -87,7 +101,7 @@ Tools are defined once in `packages/core/src/tools/`, split by domain: read, cre
 - **MCP server** — zod schemas, stdio + HTTP transports
 - **CLI** — available via the `eval` command, whose scripts get the `figma` Plugin API and the `openpencil` API
 
-90+ core tools + 3 MCP file management tools. Includes XPath query (`query_nodes`), JSX inspection (`get_jsx`, `diff_jsx`), semantic description (`describe`), and vision-based verification (`export_image` returns images to the model).
+90+ core tools + 3 MCP file management tools. Includes XPath query (`query_nodes`), JSX inspection (`get_jsx`, `diff_nodes`), semantic description (`describe`), and vision-based verification (`export_image` returns images to the model).
 
 ### Behaviours and Preview
 

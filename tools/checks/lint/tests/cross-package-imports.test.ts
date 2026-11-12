@@ -2,8 +2,8 @@ import { expect, test } from 'bun:test'
 
 import { lintFiles, ruleDiagnostics } from './helpers/lint.ts'
 
-test("no-cross-package-source-imports rejects subpaths a workspace package's exports do not declare", async () => {
-  const rule = 'no-cross-package-source-imports'
+test("no-cross-package-source rejects subpaths a workspace package's exports do not declare", async () => {
+  const rule = '@open-pencil/imports/no-cross-package-source'
   const cases = {
     'internal.ts': ["import { a } from '@open-pencil/core/canvas/overlays'", 1],
     'internal-export.ts': ["export { a } from '@open-pencil/core/editor'", 1],
@@ -18,7 +18,7 @@ test("no-cross-package-source-imports rejects subpaths a workspace package's exp
   const diagnostics = ruleDiagnostics(
     await lintFiles(
       Object.fromEntries(Object.entries(cases).map(([path, [source]]) => [path, source])),
-      { [`open-pencil/${rule}`]: 'error' }
+      { [rule]: 'error' }
     ),
     rule
   )

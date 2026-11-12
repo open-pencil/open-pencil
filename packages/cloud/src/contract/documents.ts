@@ -13,6 +13,14 @@ export function isCloudChecksum(value: string): boolean {
 export const CLOUD_MAX_DOCUMENT_IMAGES = 10_000
 
 /**
+ * The most a Cloud API request body may hold; a server refuses anything past it before reading
+ * it. Files go to the object store, never through the API, so only lists grow large: a save's
+ * images fit with room to spare, and a client commits image uploads, whose part lists can run
+ * long, in batches under half of it.
+ */
+export const CLOUD_API_MAX_BODY_BYTES = 8 * 1024 * 1024
+
+/**
  * An image's name inside a `.fig` file that Cloud stores apart from it: the SHA-1 Figma names it
  * by, or an older plain name. A client leaves images under other names inside the file.
  */
@@ -88,6 +96,25 @@ export const sharedDocumentSchema = v.object({
   sharedAt: v.string()
 })
 export type SharedDocument = v.InferOutput<typeof sharedDocumentSchema>
+
+/**
+ * A document in Trash the person may restore: who deleted it and when, and when it goes for good.
+ * `canPurge` says whether they may also delete it for good before then.
+ */
+export const trashedDocumentSchema = v.object({
+  id: v.pipe(v.string(), v.uuid()),
+  workspaceId: v.pipe(v.string(), v.uuid()),
+  workspaceName: v.string(),
+  name: v.string(),
+  kind: v.optional(documentKindSchema, 'design'),
+  deletedAt: v.string(),
+  deletedBy: v.nullable(v.object({ name: v.string() })),
+  purgeAt: v.string(),
+  canPurge: v.boolean()
+})
+export type TrashedDocument = v.InferOutput<typeof trashedDocumentSchema>
+
+export const trashSchema = v.object({ documents: v.array(trashedDocumentSchema) })
 
 export const documentDownloadSchema = v.object({
   document: documentSummarySchema,

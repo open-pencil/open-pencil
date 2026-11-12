@@ -122,6 +122,22 @@ describe('library definition updates', () => {
     expect(layer(saved, direct?.id ?? '', 'Caption').text).toBe('Save')
   })
 
+  test("points a text link the revision adds at the document's copy of its layer", async () => {
+    const source = await reopened(library().graph)
+    const graph = new SceneGraph()
+    const { componentId } = materializeLibraryAsset(graph, await revisionOf(source), 'button')
+    const button = [...source.getAllNodes()].find((node) => node.componentKey === 'button')
+    const target = source.createNode('RECTANGLE', button?.id ?? '', { name: 'Target' })
+    source.updateNode(layer(source, button?.id ?? '', 'Label').id, {
+      styleRuns: [{ start: 0, length: 6, style: { hyperlink: { type: 'NODE', value: target.id } } }]
+    })
+    updateLibraryDefinitions(graph, await revisionOf(source))
+
+    const link = layer(graph, componentId, 'Label').styleRuns[0]?.style.hyperlink
+    const linked = link?.type === 'NODE' ? link.value : ''
+    expect(linked).toBe(layer(graph, componentId, 'Target').id)
+  })
+
   test('redraws a definition in place, keeping every instance and copy with its overrides', async () => {
     const source = library()
     const doc = await document(source.graph)
@@ -268,8 +284,7 @@ describe('library definition updates', () => {
           .map((node) => node.id)
       const [icon] = icons()
       const drawn = () =>
-        doc.graph.getChildren(doc.componentId).find((node) => node.type === 'INSTANCE')
-          ?.componentId
+        doc.graph.getChildren(doc.componentId).find((node) => node.type === 'INSTANCE')?.componentId
 
       for (const assetKey of [first, then]) {
         updateLibraryDefinitions(doc.graph, revision, { assetKeys: new Set([assetKey]) })

@@ -29,11 +29,16 @@ describe('editor hit testing', () => {
     expect(editor.hitTestAtPoint(130, 130)?.id).toBe(child.id)
   })
 
-  test("selectAtPoint on a board selects the frame over its child", () => {
+  test('selectAtPoint on a board selects the frame over its child', () => {
     const editor = createEditor()
     editor.setDocumentKind('board')
     const pageId = editor.state.currentPageId
-    const frame = editor.graph.createNode('FRAME', pageId, { x: 100, y: 100, width: 200, height: 200 })
+    const frame = editor.graph.createNode('FRAME', pageId, {
+      x: 100,
+      y: 100,
+      width: 200,
+      height: 200
+    })
     editor.graph.createNode('RECTANGLE', frame.id, {
       x: 20,
       y: 20,
@@ -50,11 +55,16 @@ describe('editor hit testing', () => {
     expect([...editor.state.selectedIds]).toEqual([frame.id])
   })
 
-  test("selectAtPoint inside an entered board frame selects its child", () => {
+  test('selectAtPoint inside an entered board frame selects its child', () => {
     const editor = createEditor()
     editor.setDocumentKind('board')
     const pageId = editor.state.currentPageId
-    const frame = editor.graph.createNode('FRAME', pageId, { x: 100, y: 100, width: 200, height: 200 })
+    const frame = editor.graph.createNode('FRAME', pageId, {
+      x: 100,
+      y: 100,
+      width: 200,
+      height: 200
+    })
     const child = editor.graph.createNode('RECTANGLE', frame.id, {
       x: 20,
       y: 20,
@@ -74,5 +84,38 @@ describe('editor hit testing', () => {
     expect(editor.state.enteredContainerId).toBe(frame.id)
     editor.selectAtPoint(500, 500)
     expect([...editor.state.selectedIds]).toEqual([])
+  })
+
+  // Live in Figma: a press passes through a locked layer to the one under it, and a right-click
+  // selects the locked layer, whose menu offers Unlock.
+  test('a press passes through a locked layer and a right-click selects it', () => {
+    const editor = createEditor()
+    const pageId = editor.state.currentPageId
+    const fill = [
+      { type: 'SOLID' as const, color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }
+    ]
+    const under = editor.graph.createNode('RECTANGLE', pageId, {
+      x: 0,
+      y: 0,
+      width: 200,
+      height: 200,
+      fills: fill
+    })
+    const locked = editor.graph.createNode('RECTANGLE', pageId, {
+      x: 50,
+      y: 50,
+      width: 100,
+      height: 100,
+      fills: fill,
+      locked: true
+    })
+    editor.setCanvasKit(
+      {} as Parameters<typeof editor.setCanvasKit>[0],
+      {} as Parameters<typeof editor.setCanvasKit>[1]
+    )
+
+    expect(editor.hitTestAtPoint(100, 100)?.id).toBe(under.id)
+    editor.selectAtPoint(100, 100)
+    expect([...editor.state.selectedIds]).toEqual([locked.id])
   })
 })

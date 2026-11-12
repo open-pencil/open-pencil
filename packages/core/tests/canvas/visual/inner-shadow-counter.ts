@@ -1,16 +1,16 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
+import { repoPath } from '@open-pencil/test-support/paths'
 
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { SkiaRenderer } from '#core/canvas'
 import { fontManager } from '#core/text'
-import { repoPath } from '@open-pencil/test-support/paths'
 async function main() {
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
 
   // Initialize font service
   const fontProvider = ck.TypefaceFontProvider.Make()

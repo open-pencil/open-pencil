@@ -2,7 +2,6 @@ import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
-
 import { SOLID_FILL } from '@open-pencil/test-support/scene'
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id
@@ -125,33 +124,66 @@ describe('hitTest — nested groups', () => {
   })
 })
 
-describe('hitTest — locked nodes', () => {
-  test('locked container blocks enter (returns container, not child)', () => {
+// Live in Figma: a click on a locked layer falls through to what lies under it, or selects nothing.
+describe('hitTest — locked layers', () => {
+  function setup(locked: 'frame' | 'over') {
     const graph = new SceneGraph()
     const page = pageId(graph)
-    const frame = graph.createNode('FRAME', page, {
-      name: 'LockedFrame',
+    const under = graph.createNode('RECTANGLE', page, {
+      fills: [SOLID_FILL],
+      name: 'Under',
       x: 0,
       y: 0,
+      width: 300,
+      height: 300
+    })
+    const frame = graph.createNode('FRAME', page, {
+      fills: [SOLID_FILL],
+      name: 'Frame',
+      x: 50,
+      y: 50,
       width: 200,
       height: 200,
-      locked: true
+      locked: locked === 'frame'
     })
-    graph.createNode('RECTANGLE', frame.id, {
+    const child = graph.createNode('RECTANGLE', frame.id, {
       fills: [SOLID_FILL],
       name: 'Child',
       x: 10,
       y: 10,
       width: 50,
-      height: 50
+      height: 50,
+      locked: locked === 'over'
     })
+    return { graph, page, under, frame, child }
+  }
 
-    const hit = graph.hitTestDeep(10, 10, page)
-    expect(hit).not.toBeNull()
-    expect(expectDefined(hit, 'hit node').name).toBe('LockedFrame')
+  test('a click on a locked layer reaches the layer under it', () => {
+    const { graph, page } = setup('over')
+    // The top-level frame under it is looked into and its empty area selects nothing.
+    expect(graph.hitTestSelectable(70, 70, page, new Set())).toBeNull()
+    expect(graph.hitTestDeep(70, 70, page)?.name).toBe('Frame')
   })
 
-  test('locked leaf node is still clickable', () => {
+  test('a locked frame passes clicks on it and its layers through', () => {
+    const { graph, page } = setup('frame')
+    expect(graph.hitTestSelectable(70, 70, page, new Set())?.name).toBe('Under')
+    expect(graph.hitTestDeep(70, 70, page)?.name).toBe('Under')
+    expect(graph.hitTest(70, 70, page)?.name).toBe('Under')
+  })
+
+  test('a right-click hits a locked layer over others, standing in for its layers', () => {
+    const over = setup('over')
+    expect(over.graph.hitTestSelectable(70, 70, over.page, new Set(), { locked: true })?.name).toBe(
+      'Child'
+    )
+    const frame = setup('frame')
+    expect(
+      frame.graph.hitTestSelectable(70, 70, frame.page, new Set(), { locked: true })?.name
+    ).toBe('Frame')
+  })
+
+  test('a locked layer over nothing else selects nothing', () => {
     const graph = new SceneGraph()
     const page = pageId(graph)
     graph.createNode('RECTANGLE', page, {
@@ -163,10 +195,8 @@ describe('hitTest — locked nodes', () => {
       height: 50,
       locked: true
     })
-
-    const hit = graph.hitTest(25, 25, page)
-    expect(hit).not.toBeNull()
-    expect(expectDefined(hit, 'hit node').name).toBe('LockedRect')
+    expect(graph.hitTest(25, 25, page)).toBeNull()
+    expect(graph.hitTestSelectable(25, 25, page, new Set())).toBeNull()
   })
 })
 

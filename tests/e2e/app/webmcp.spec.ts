@@ -58,7 +58,7 @@ test('native WebMCP discovery, editing, validation and undo', async ({ page, bro
     await page.getByTestId('app-settings-done').click()
     await expect.poll(() => frames.has('update_node')).toBe(true)
     expect(frames.has('eval')).toBe(false)
-    expect(frames.has('save_file')).toBe(false)
+    expect(frames.has('save_document')).toBe(false)
     const current = await invoke('get_current_page')
     expect(current.status).toBe('Completed')
     const original = v.parse(pageResultSchema, current.output).result

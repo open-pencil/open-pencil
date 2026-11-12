@@ -69,7 +69,7 @@ function assetNames(output: Output): string[] {
 async function expectEngineFiles(output: Output): Promise<void> {
   const assets = assetNames(output)
   const fonts = (await readdir(CORE_ASSETS)).filter((file) => /\.(?:ttf|woff2)$/.test(file))
-  for (const file of ['canvaskit', 'harfbuzz-subset', ...fonts.map((f) => f.replace(/\..*$/, ''))])
+  for (const file of ['canvaskit', ...fonts.map((f) => f.replace(/\..*$/, ''))])
     expect(assets.some((name) => new RegExp(`^assets/${file}-[\\w-]+\\.\\w+$`).test(name))).toBe(
       true
     )
@@ -88,8 +88,11 @@ describe('openPencil Vite plugin', () => {
   }, 60_000)
 
   test('leaves the page alone without injection, and the app imports the module itself', async () => {
+    // CanvasKit emits its own wasm, which it finds beside its module; the install module adds the
+    // fonts and points Core at every file.
     const alone = await buildPage({ inject: false })
-    expect(assetNames(alone).some((name) => name.includes('canvaskit'))).toBe(false)
+    expect(assetNames(alone).some((name) => name.includes('InterVariable'))).toBe(false)
+    expect(code(alone)).not.toContain('setBundledFontLocator')
 
     const imported = await buildPage(
       { inject: false },

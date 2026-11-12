@@ -18,24 +18,23 @@ import {
   type StructuralLayer
 } from './layers'
 import { applyDerivedBounds, applyPropertyClaims, createClaimContext } from './occurrence/claims'
-import { createOccurrence, type RootResolution, type Subtree } from './occurrence/create'
+import { createOccurrence, type Subtree } from './occurrence/create'
 import { createModeScopes, type ModeScope } from './occurrence/modes'
 import { isRootGuid, pathError, SegmentError } from './occurrence/path'
+import { resolveRoot, type RootResolution } from './occurrence/root'
 import type { InstanceOccurrence, InterpretInstanceOptions } from './occurrence/types'
 import { applyPlacedConstraints } from './resize'
 import { applyInstanceLayoutScale } from './scale/layout'
 import {
-  componentKeys,
   createInterpreterIndex,
   findStaticSegment,
   idOf,
   recordMatches,
   resolvesInSourceComponent,
-  sameGuid,
   terminalComponent,
   type InterpreterIndex
 } from './source-index'
-import { assignedSlotContent, type ComponentPropAssignment } from './types'
+import { assignedSlotContent } from './types'
 
 /**
  * Figma's instance model reduces to three things: an instance expands its component's
@@ -140,61 +139,6 @@ function interpretRoot(
     return routed
   }
 
-  /** Components an occurrence would have expanded before outer bindings replaced them. */
-  const bindingHistory = (
-    raw: NodeChange,
-    effective: GUID | undefined,
-    superseded: readonly GUID[]
-  ): GUID[] => {
-    const original = raw.symbolData?.symbolID
-    if (!effective) return []
-    return [...(original ? [original] : []), ...superseded].filter(
-      (component) => !sameGuid(component, effective)
-    )
-  }
-
-  /**
-   * Root layers select the effective component and the complete assignment list, in
-   * inner-to-outer order so later entries win. Everything else addresses a descendant.
-   */
-  const resolveRoot = (
-    raw: NodeChange,
-    source: NodeChange,
-    superseded: readonly GUID[],
-    structural: readonly StructuralLayer[],
-    rank: number
-  ): RootResolution => {
-    let effective = source.symbolData?.symbolID
-    const replaced = bindingHistory(raw, effective, superseded)
-    const keys = [
-      ...componentKeys(index, raw.symbolData?.symbolID),
-      ...componentKeys(index, effective)
-    ]
-    const isKey = (guid: GUID): boolean => keys.some((key) => sameGuid(key, guid))
-    const groups: AssignmentGroup[] = [
-      { assignments: (source.componentPropAssignments ?? []) as ComponentPropAssignment[], rank }
-    ]
-    const descendant: StructuralLayer[] = []
-    const swapRoot = (swap: GUID): void => {
-      if (!effective) throw new Error('Swap target is not an instance')
-      if (!sameGuid(effective, swap)) replaced.push(effective)
-      effective = swap
-      // Later layers may address the root through the replacement's identity.
-      for (const key of componentKeys(index, effective)) if (!isKey(key)) keys.push(key)
-    }
-    for (const layer of structural) {
-      const addressesRoot = layer.path.length === 0 || isKey(layer.path[0])
-      if (!addressesRoot || layer.path.length > 1) {
-        descendant.push(addressesRoot ? { ...layer, path: layer.path.slice(1) } : layer)
-        continue
-      }
-      if (layer.swap) swapRoot(layer.swap)
-      if (layer.assignments.length)
-        groups.push({ assignments: layer.assignments, rank: layer.owner.rank })
-    }
-    return { effective, replaced, groups, descendant }
-  }
-
   /** Bind the record's fields from the enclosing component scope, recording provenance. */
   const bindRecord = (
     raw: NodeChange,
@@ -255,7 +199,7 @@ function interpretRoot(
       const owner: Owner = { id, rank, mainComponentId: null, unresolved: [] }
       const own = ownLayers(source, owner)
       const structural = [...own.structural, ...layers].sort((a, b) => b.owner.rank - a.owner.rank)
-      const root = resolveRoot(raw, source, record.superseded, structural, rank)
+      const root = resolveRoot(sources, raw, source, record.superseded, structural, rank)
       const modes = modeScopes.enter(inherited, raw, root.effective, own.claims)
       let subtree: Subtree
       if (root.effective) {
@@ -265,7 +209,7 @@ function interpretRoot(
       } else {
         subtree = expandChildren(id, source, bindings, root.groups, root.descendant, rank, modes)
       }
-      const occurrence = createOccurrence(index, id, raw, source, root, subtree, record.claims)
+      const occurrence = createOccurrence(sources, id, raw, source, root, subtree, record.claims)
       if (record.slotContent) occurrence.slotContentId = record.slotContent
       claimContext.assignedFields.set(occurrence, record.bound)
       if (subtree.base && root.replaced.length) {
@@ -337,13 +281,7 @@ function interpretRoot(
             componentBindings(source)
           )
         : bindings
-    const routed = routeToChildren(id, descendant)
-    const expanded = (children.get(id) ?? []).map((child) => {
-      if (!child.guid) throw new Error('Indexed child has no GUID')
-      const childId = guidToString(child.guid)
-      return expand(childId, scoped, routed.get(childId) ?? [], rank + 1, modes)
-    })
-    return { base: null, children: expanded }
+    return expandIndexedChildren(id, scoped, descendant, rank, modes)
   }
 
   /**
@@ -355,12 +293,21 @@ function interpretRoot(
     descendant: readonly StructuralLayer[],
     rank: number,
     modes: ModeScope
+  ): Subtree => expandIndexedChildren(contentId, [], descendant, rank, modes)
+
+  /** Expand a record's indexed children, each with the structural layers routed to it. */
+  const expandIndexedChildren = (
+    parentId: string,
+    bindings: readonly PropertyBinding[],
+    descendant: readonly StructuralLayer[],
+    rank: number,
+    modes: ModeScope
   ): Subtree => {
-    const routed = routeToChildren(contentId, descendant)
-    const expanded = (children.get(contentId) ?? []).map((child) => {
+    const routed = routeToChildren(parentId, descendant)
+    const expanded = (children.get(parentId) ?? []).map((child) => {
       if (!child.guid) throw new Error('Indexed child has no GUID')
       const childId = guidToString(child.guid)
-      return expand(childId, [], routed.get(childId) ?? [], rank + 1, modes)
+      return expand(childId, bindings, routed.get(childId) ?? [], rank + 1, modes)
     })
     return { base: null, children: expanded }
   }

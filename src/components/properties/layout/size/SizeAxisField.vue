@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { SelectSeparator, SelectTrigger } from 'reka-ui'
+import { SelectSeparator } from 'reka-ui'
 
+import { panelNumber } from '@open-pencil/core/geometry'
 import type { LayoutSizing } from '@open-pencil/scene-graph'
 import type { SizeLimitProp } from '@open-pencil/vue/controls/layout'
 import { useI18n } from '@open-pencil/vue/i18n'
@@ -14,6 +15,7 @@ import AppSelectContent from '@/components/ui/select/AppSelectContent.vue'
 import AppSelectItem from '@/components/ui/select/AppSelectItem.vue'
 import AppSelectRoot from '@/components/ui/select/AppSelectRoot.vue'
 import { useSelectUI } from '@/components/ui/select/select'
+import SelectFieldTrigger from '@/components/ui/select/SelectFieldTrigger.vue'
 
 type SizeSelectValue = LayoutSizing | `add-${SizeLimitProp}` | `remove-${SizeLimitProp}`
 
@@ -73,9 +75,10 @@ function handleSelect(value: SizeSelectValue) {
 <template>
   <Tip :label="label">
     <VariableNumberField
+      :round="panelNumber"
       :icon="icon"
       :aria-label="label"
-      :model-value="Math.round(ctx.node[axis])"
+      :model-value="panelNumber(ctx.node[axis])"
       :min="0"
       :node-id="ctx.node.id"
       :binding-path="axis"
@@ -83,21 +86,13 @@ function handleSelect(value: SizeSelectValue) {
       @commit="(value: number, previous: number) => ctx.commitAxisSize(axis, value, previous)"
       @cancel="ctx.cancelPreview"
     >
-      <template #after-variable>
+      <template #menu>
         <AppSelectRoot
           v-model:open="popupOpen"
           :model-value="sizing()"
           @update:model-value="handleSelect($event as SizeSelectValue)"
         >
-          <SelectTrigger
-            data-slot="sizing-trigger"
-            :aria-label="label"
-            class="flex shrink-0 cursor-pointer items-center gap-0.5 self-stretch border-none bg-transparent px-1.5 text-3xs text-muted outline-none data-[state=open]:text-surface"
-            @pointerdown.stop
-          >
-            <span v-if="sizingLabel()">{{ sizingLabel() }}</span>
-            <icon-lucide-chevron-down class="size-3" />
-          </SelectTrigger>
+          <SelectFieldTrigger data-slot="sizing-trigger" :label="label" :text="sizingLabel()" />
           <AppSelectContent v-if="portalActive" align="end">
             <AppSelectItem
               v-for="option in sizingOptions()"

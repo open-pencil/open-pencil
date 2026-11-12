@@ -1,7 +1,9 @@
 import { expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph, type Stroke } from '@open-pencil/scene-graph'
+import { colorToFill } from '@open-pencil/scene-graph/color'
 import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 import { reconcileVariableBindings } from '@open-pencil/scene-graph/variables'
 
 function must<T>(value: T | null | undefined, what: string): T {
@@ -50,7 +52,10 @@ test('syncing an edited component keeps a bound number in the mode its copy sits
 test('syncing a component that rebinds a number resolves its copies by the new binding', () => {
   const { graph, chip, card, nested } = chipInLargeCard()
   const collection = must([...graph.variableCollections.values()][0], 'collection')
-  const large = must(collection.modes.find((mode) => mode.name === 'L'), 'mode').modeId
+  const large = must(
+    collection.modes.find((mode) => mode.name === 'L'),
+    'mode'
+  ).modeId
   // 100 in either mode, so the copy in the card shows the component's own width.
   const flat = graph.createVariable('Flat', 'FLOAT', collection.id, 100)
   flat.valuesByMode[large] = 100
@@ -158,4 +163,105 @@ test('syncing a component keeps a bound number its instance overrides', () => {
   const synced = must(graph.getNode(instance.id), 'synced instance')
   expect(synced.width).toBe(60)
   expect(synced.opacity).toBe(0.3)
+})
+
+const paint = (color: Color): Stroke => ({ ...colorToFill(color), weight: 1, align: 'INSIDE' })
+
+test.each(['fills', 'strokes'] as const)(
+  'syncing an outer instance keeps the literal %s it sets on a nested layer unbound',
+  (list) => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    const collection = graph.createCollection('Theme')
+    const gray = { r: 0.5, g: 0.5, b: 0.5, a: 1 }
+    const tone = graph.createVariable('Gray', 'COLOR', collection.id, gray)
+    const inner = graph.createNode('COMPONENT', page, { name: 'Inner' })
+    const shape = graph.createNode('RECTANGLE', inner.id, { name: 'Shape', [list]: [paint(gray)] })
+    graph.bindVariable(shape.id, `${list}/0/color`, tone.id)
+    const outer = graph.createNode('COMPONENT', page, { name: 'Outer' })
+    must(graph.createInstance(inner.id, outer.id), 'inner in outer')
+    const placed = must(graph.createInstance(outer.id, page), 'placed outer')
+    const nested = () =>
+      must(graph.getChildren(must(graph.getChildren(placed.id)[0], 'nested inner').id)[0], 'shape')
+    const literal = [paint({ r: 0.1, g: 0.2, b: 0.3, a: 1 })]
+    // The outer instance claims the shape's paints; the shape itself binds nothing.
+    graph.updateNode(nested().id, { [list]: literal, boundVariables: {} })
+    setInstanceOverride(placed.instanceOverrides, placed.id, nested().id, list, literal)
+
+    graph.syncInstance(placed.id)
+
+    expect(nested().boundVariables).toEqual({})
+    expect(nested()[list][0].color).toEqual(literal[0].color)
+  }
+)
+
+// Figma (desktop, 2026-11-07): a copy in an instance resized to 113.3×57.1, then synced after its
+// component's layer changes, scales by the exact ratio; one Left & right stretched past zero in a
+// 70-wide instance stays turned over.
+test('syncing places copies by their constraints, exactly, and keeps them turned over', () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0].id
+  const box = graph.createNode('COMPONENT', page, { name: 'Box', width: 100, height: 50 })
+  const dot = graph.createNode('RECTANGLE', box.id, {
+    x: 0.7,
+    y: 3.75,
+    width: 22.6,
+    height: 16.5,
+    horizontalConstraint: 'SCALE',
+    verticalConstraint: 'SCALE'
+  })
+  const bar = graph.createNode('RECTANGLE', box.id, {
+    x: 10,
+    y: 30,
+    width: 20,
+    height: 10,
+    horizontalConstraint: 'STRETCH'
+  })
+  const resized = (width: number, height: number) => {
+    const instance = must(graph.createInstance(box.id, page), 'instance')
+    for (const field of ['width', 'height'])
+      setInstanceOverride(instance.instanceOverrides, instance.id, instance.id, field)
+    graph.updateNode(instance.id, { width, height })
+    return instance
+  }
+  const scaled = resized(113.3, 57.1)
+  const narrow = resized(70, 57.1)
+
+  graph.updateNode(dot.id, { x: 1.3, width: 22.9 })
+  graph.updateNode(bar.id, { y: 31 })
+  graph.syncInstances(box.id)
+
+  const round = (value: number) => Math.round(value * 1e4) / 1e4
+  const dotCopy = must(graph.getChildren(scaled.id)[0], 'dot copy')
+  expect([dotCopy.x, dotCopy.y, dotCopy.width, dotCopy.height].map(round)).toEqual([
+    1.4729, 4.2825, 25.9457, 18.843
+  ])
+  const barCopy = must(graph.getChildren(narrow.id)[1], 'bar copy')
+  expect(barCopy).toMatchObject({ x: 0, y: 31, width: 10, height: 10, flipX: true })
+})
+
+test('a boolean in a resized instance keeps its box when its constraints keep its operands', () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0].id
+  const card = graph.createNode('COMPONENT', page, { name: 'Card', width: 300, height: 220 })
+  // A subtraction whose result is smaller than its operands' bounds, which only the renderer knows.
+  const boolean = graph.createNode('BOOLEAN_OPERATION', card.id, {
+    x: 40,
+    y: 40,
+    width: 30,
+    height: 60,
+    booleanOperation: 'SUBTRACT'
+  })
+  graph.createNode('RECTANGLE', boolean.id, { width: 60, height: 60 })
+  graph.createNode('RECTANGLE', boolean.id, { x: 30, width: 30, height: 60 })
+  const instance = must(graph.createInstance(card.id, page), 'instance')
+  for (const field of ['width', 'height'])
+    setInstanceOverride(instance.instanceOverrides, instance.id, instance.id, field)
+  graph.updateNode(instance.id, { width: 400, height: 300 })
+
+  graph.updateNode(card.id, { opacity: 0.9 })
+  graph.syncInstances(card.id)
+
+  const copy = must(graph.getChildren(instance.id)[0], 'boolean copy')
+  expect([copy.x, copy.y, copy.width, copy.height]).toEqual([40, 40, 30, 60])
 })

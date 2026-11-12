@@ -1,5 +1,4 @@
-import type { Canvas, CanvasKit } from 'canvaskit-wasm'
-
+import type { Canvas, CanvasKit } from '@open-pencil/canvaskit'
 import type { SceneNode, SceneGraph } from '@open-pencil/scene-graph'
 import { computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
 
@@ -160,40 +159,26 @@ export function drawRulers(
     canvas.drawRect(r.ck.LTRBRect(Math.max(R, selBounds.sx1), 0, selBounds.sx2, R), r.rulerHlPaint)
     canvas.drawRect(r.ck.LTRBRect(0, Math.max(R, selBounds.sy1), R, selBounds.sy2), r.rulerHlPaint)
 
-    drawRulerBadge(
+    drawEdgeBadges(
       r,
       canvas,
       font,
-      Math.round((selBounds.sx1 - r.panX) / r.zoom).toString(),
-      Math.max(R, selBounds.sx1),
-      0,
+      [
+        rulerEdgeLabel((selBounds.sx1 - r.panX) / r.zoom),
+        rulerEdgeLabel((selBounds.sx2 - r.panX) / r.zoom)
+      ],
+      [Math.max(R, selBounds.sx1), selBounds.sx2],
       'horizontal'
     )
-    drawRulerBadge(
+    drawEdgeBadges(
       r,
       canvas,
       font,
-      Math.round((selBounds.sx2 - r.panX) / r.zoom).toString(),
-      selBounds.sx2,
-      0,
-      'horizontal'
-    )
-    drawRulerBadge(
-      r,
-      canvas,
-      font,
-      Math.round((selBounds.sy1 - r.panY) / r.zoom).toString(),
-      0,
-      Math.max(R, selBounds.sy1),
-      'vertical'
-    )
-    drawRulerBadge(
-      r,
-      canvas,
-      font,
-      Math.round((selBounds.sy2 - r.panY) / r.zoom).toString(),
-      0,
-      selBounds.sy2,
+      [
+        rulerEdgeLabel((selBounds.sy1 - r.panY) / r.zoom),
+        rulerEdgeLabel((selBounds.sy2 - r.panY) / r.zoom)
+      ],
+      [Math.max(R, selBounds.sy1), selBounds.sy2],
       'vertical'
     )
   }
@@ -293,6 +278,40 @@ function drawGuideRulerPositions(
   }
 }
 
+/** The space kept between a selection's two edge badges on one ruler. */
+const EDGE_BADGE_GAP = 2
+
+/**
+ * Where a selection's two edge badges sit along a ruler, centered on their edges unless they would
+ * overlap, as they do on a narrow selection: then they part evenly about the space between them.
+ */
+export function separatedBadgeCenters(
+  edges: readonly [number, number],
+  widths: readonly [number, number]
+): [number, number] {
+  const [near, far] = edges
+  const overlap = near + widths[0] / 2 + EDGE_BADGE_GAP - (far - widths[1] / 2)
+  if (overlap <= 0) return [near, far]
+  return [near - overlap / 2, far + overlap / 2]
+}
+
+/** A selection's two edge badges on one ruler, kept apart when the selection is narrow. */
+function drawEdgeBadges(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  font: InstanceType<CanvasKit['Font']>,
+  labels: readonly [string, string],
+  edges: readonly [number, number],
+  axis: 'horizontal' | 'vertical'
+): void {
+  const width = (label: string) => cachedGlyphWidth(r, font, label) + RULER_BADGE_PADDING * 2
+  const [near, far] = separatedBadgeCenters(edges, [width(labels[0]), width(labels[1])])
+  const at = (center: number): [number, number] =>
+    axis === 'horizontal' ? [center, 0] : [0, center]
+  drawRulerBadge(r, canvas, font, labels[0], ...at(near), axis)
+  drawRulerBadge(r, canvas, font, labels[1], ...at(far), axis)
+}
+
 export function drawRulerBadge(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -356,4 +375,9 @@ export function rulerStep(r: SkiaRenderer): number {
 
 export function rulerLabel(value: number): string {
   return Math.round(value).toString()
+}
+
+/** A selection edge on the ruler, to three decimals at any zoom, as Figma labels it (8000.375). */
+export function rulerEdgeLabel(value: number): string {
+  return String(Math.round(value * 1000) / 1000 + 0)
 }

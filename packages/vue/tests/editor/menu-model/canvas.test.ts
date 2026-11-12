@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'bun:test'
+
 import { ref, computed } from 'vue'
+
 import type { EditorCommandId } from '@open-pencil/vue/editor/commands'
+
 import { buildCanvasContextMenu, type CanvasMenuOptions } from '#vue/editor/menu-model/canvas'
 
 /** The canvas menu's command ids for a selection that is an icon or not. */
@@ -17,6 +20,7 @@ function menuIds(isIcon: boolean) {
       isIcon: ref(isIcon),
       canCreateComponentSet: ref(false),
       canCreateSlot: ref(false),
+      canUngroup: ref(false),
       canAutoArrange: ref(false)
     } as CanvasMenuOptions['selection'],
     t: { moveToPage: 'Move to page', autoArrange: 'Auto arrange' }
@@ -40,6 +44,7 @@ function selection(overrides: Partial<CanvasMenuOptions['selection']> = {}) {
     isIcon: ref(false),
     canCreateComponentSet: ref(false),
     canCreateSlot: ref(false),
+    canUngroup: ref(false),
     canAutoArrange: ref(false),
     ...overrides
   } as CanvasMenuOptions['selection']
@@ -63,6 +68,17 @@ function itemIds(menu: ReturnType<typeof buildCanvasContextMenu>) {
 }
 
 describe('buildCanvasContextMenu', () => {
+  test('offers Ungroup only for a selection Ungroup takes apart', () => {
+    const ids = (canUngroup: boolean) =>
+      itemIds(
+        buildCanvasContextMenu(
+          options({ selection: selection({ canUngroup: computed(() => canUngroup) }) })
+        )
+      )
+    expect(ids(true)).toContain('selection.ungroup')
+    expect(ids(false)).not.toContain('selection.ungroup')
+  })
+
   test('keeps the default selection menu in semantic groups', () => {
     expect(itemIds(buildCanvasContextMenu(options()))).toEqual([
       'selection.duplicate',
@@ -78,7 +94,6 @@ describe('buildCanvasContextMenu', () => {
       'selection.wrapInAutoLayout',
       'selection.toggleMask',
       'selection.flatten',
-      'selection.outlineText',
       'selection.outlineStroke',
       '---',
       'selection.createComponent',

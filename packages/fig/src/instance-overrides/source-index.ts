@@ -3,6 +3,7 @@ import { createDocumentVariables, type DocumentVariables } from '#fig/document/v
 import type { GUID } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, isUnsetGuid } from '@open-pencil/kiwi/fig/guid'
+import { compareOrderKeys } from '@open-pencil/scene-graph/order-keys'
 
 import { findWithinBoundary, type TreeShape } from './tree'
 
@@ -37,10 +38,7 @@ export function indexRecords(changes: readonly NodeChange[]): Map<string, NodeCh
 
 /** Saved sibling order: the fractional position string, compared as text. */
 export function bySavedPosition(a: NodeChange, b: NodeChange): number {
-  const left = a.parentIndex?.position ?? ''
-  const right = b.parentIndex?.position ?? ''
-  if (left === right) return 0
-  return left < right ? -1 : 1
+  return compareOrderKeys(a.parentIndex?.position ?? '', b.parentIndex?.position ?? '')
 }
 
 export function createSourceIndex(changes: readonly NodeChange[]): SourceIndex {
@@ -76,15 +74,6 @@ export function readOverrideKey(value: unknown): GUID | undefined {
   const key = { sessionID: value.sessionID, localID: value.localID }
   // Layers without an override key share the unset GUID, so it identifies none of them.
   return isUnsetGuid(key) ? undefined : key
-}
-
-/** A component and its override key both address the root of an instance's expansion. */
-export function componentKeys(index: SourceIndex, guid: GUID | undefined): GUID[] {
-  if (!guid) {
-    return []
-  }
-  const key = readOverrideKey(index.sources.get(guidToString(guid))?.overrideKey)
-  return key ? [guid, key] : [guid]
 }
 
 /** A path segment addresses a record by GUID or by its stable override key. */

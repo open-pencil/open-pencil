@@ -107,7 +107,7 @@ function slugForPath(path: string): string {
     .replace(/\/$/, '')
 }
 
-function localizedUrl(slug: string, prefix: string): string {
+function localizedURL(slug: string, prefix: string): string {
   if (slug) return `${BASE}${prefix}/${slug}`
   return `${BASE}${prefix || ''}`
 }
@@ -144,14 +144,14 @@ export function applyPageSeo(pageData: PageDataLike): void {
   const localeKey = localeKeyForPath(pageData.relativePath)
   const locale = LOCALES[localeKey]
   const slug = slugForPath(pageData.relativePath)
-  const pageUrl = localizedUrl(slug, locale.prefix)
+  const pageURL = localizedURL(slug, locale.prefix)
   const enSlug = slug ? `${BASE}/${slug}` : BASE
 
   pageData.frontmatter.head ??= []
   const head = pageData.frontmatter.head
 
-  head.push(['link', { rel: 'canonical', href: pageUrl }])
-  head.push(['meta', { property: 'og:url', content: pageUrl }])
+  head.push(['link', { rel: 'canonical', href: pageURL }])
+  head.push(['meta', { property: 'og:url', content: pageURL }])
   head.push(['meta', { property: 'og:locale', content: locale.ogLocale }])
   if (pageData.relativePath === 'index.md') {
     head.push(['script', { type: 'application/ld+json' }, JSON.stringify(SOFTWARE_APPLICATION)])
@@ -167,7 +167,7 @@ export function applyPageSeo(pageData: PageDataLike): void {
       {
         rel: 'alternate',
         hreflang: localeOption.hreflang,
-        href: localizedUrl(slug, localeOption.prefix)
+        href: localizedURL(slug, localeOption.prefix)
       }
     ])
   }

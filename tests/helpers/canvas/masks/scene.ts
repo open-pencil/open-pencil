@@ -1,6 +1,6 @@
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
-import { solid } from '../paints'
+import { linearGradient, solid } from '../paints'
 
 /** Pattern fills drawn from a hidden source node. */
 export function createPatternFillScene(graph: SceneGraph, pageId: string): void {
@@ -126,17 +126,10 @@ export async function createLuminanceMaskScene(
     isMask: true,
     maskType: 'LUMINANCE',
     fills: [
-      {
-        type: 'GRADIENT_LINEAR',
-        color: { r: 0, g: 0, b: 0, a: 1 },
-        visible: true,
-        opacity: 1,
-        gradientStops: [
-          { color: { r: 0, g: 0, b: 0, a: 1 }, position: 0 },
-          { color: { r: 1, g: 1, b: 1, a: 1 }, position: 1 }
-        ],
-        gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
-      }
+      linearGradient([
+        { r: 0, g: 0, b: 0, a: 1 },
+        { r: 1, g: 1, b: 1, a: 1 }
+      ])
     ]
   })
   for (let index = 0; index < 5; index++) {
@@ -197,18 +190,11 @@ export async function createLuminanceMaskScene(
     width: 184,
     height: 98,
     fills: [
-      {
-        type: 'GRADIENT_LINEAR',
-        color: { r: 0, g: 0, b: 0, a: 1 },
-        visible: true,
-        opacity: 1,
-        gradientStops: [
-          { color: { r: 0.96, g: 0.35, b: 0.35, a: 1 }, position: 0 },
-          { color: { r: 0.08, g: 0.73, b: 0.73, a: 1 }, position: 0.5 },
-          { color: { r: 0.58, g: 0.27, b: 0.95, a: 1 }, position: 1 }
-        ],
-        gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
-      }
+      linearGradient([
+        { r: 0.96, g: 0.35, b: 0.35, a: 1 },
+        { r: 0.08, g: 0.73, b: 0.73, a: 1 },
+        { r: 0.58, g: 0.27, b: 0.95, a: 1 }
+      ])
     ]
   })
 }

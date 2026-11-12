@@ -1,16 +1,14 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import {
   preprocessForVectorize,
   resolveVectorFramePlacement,
   svgToVectorPaths
 } from '@open-pencil/core/vector'
 import { expectDefined } from '@open-pencil/test-support/assert'
-
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
-
 import { repoPath } from '@open-pencil/test-support/paths'
-let ck: Awaited<ReturnType<typeof initCanvasKit>>
+let ck: Awaited<ReturnType<typeof getCanvasKit>>
 
 const VECTORIZE_FIXTURES = repoPath('tests/fixtures/vectorize')
 
@@ -69,7 +67,7 @@ function createPNG(width: number, height: number, alpha = 255): Uint8Array {
 }
 
 beforeAll(async () => {
-  ck = await initCanvasKit()
+  ck = await getCanvasKit()
 })
 
 describe('preprocessForVectorize', () => {

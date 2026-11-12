@@ -1,42 +1,34 @@
 import { mergeVariableConsumptionMaps } from '#fig/node-change/variable/bindings'
 import { omit } from 'es-toolkit/object'
 
-import type { GUID } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 
 import type { BoundPropertyClaim } from '../bindings/properties'
 import { UNINHERITED_COMPONENT_FIELDS } from '../fields'
-import { ownerAssignedProperties, type AssignmentGroup, type StructuralLayer } from '../layers'
-import { componentKeys, readOverrideKey, sameGuid, type SourceIndex } from '../source-index'
+import { ownerAssignedProperties } from '../layers'
+import { readOverrideKey, sameGuid, type InterpreterIndex } from '../source-index'
 import { assignedSlotContent, type ComponentPropAssignment } from '../types'
+import { componentKeys, type RootResolution } from './root'
 import type { InstanceOccurrence } from './types'
 
-type Sources = SourceIndex['sources']
+type Sources = InterpreterIndex['sources']
 
-export interface RootResolution {
-  effective: GUID | undefined
-  /** Components superseded on the way to `effective`, innermost decision first. */
-  replaced: GUID[]
-  groups: AssignmentGroup[]
-  descendant: StructuralLayer[]
+/** The name an instance of this occurrence takes by default: its variant set's, for a variant. */
+function defaultInstanceName(sources: Sources, occurrence: InstanceOccurrence): string | undefined {
+  const source = sources.get(occurrence.sourceId)
+  if (source?.type === 'INSTANCE') return occurrence.properties.name
+  const parentGuid = source?.parentIndex?.guid
+  const parent = parentGuid ? sources.get(guidToString(parentGuid)) : undefined
+  return parent?.isStateGroup === true ? parent.name : occurrence.properties.name
 }
 
+/** What an occurrence expanded into: its component's root, or its own children. */
 export interface Subtree {
   base: InstanceOccurrence | null
   children: InstanceOccurrence[]
   /** The component is gone; only the record itself remains addressable. */
   dangling?: true
-}
-
-function defaultInstanceName(sources: Sources, occurrence: InstanceOccurrence): string | undefined {
-  const source = sources.get(occurrence.sourceId)
-  if (source?.type === 'INSTANCE') {
-    return occurrence.properties.name
-  }
-  const parentGuid = source?.parentIndex?.guid
-  const parent = parentGuid ? sources.get(guidToString(parentGuid)) : undefined
-  return parent?.isStateGroup === true ? parent.name : occurrence.properties.name
 }
 
 function namesMissingSlotContent(sources: Sources, assignment: ComponentPropAssignment): boolean {
@@ -74,8 +66,9 @@ function inheritedFromBase(
   }
 }
 
+/** The occurrence a record places: its own fields over the subtree it expanded. */
 export function createOccurrence(
-  index: SourceIndex,
+  sources: Sources,
   id: string,
   raw: NodeChange,
   source: NodeChange,
@@ -83,9 +76,8 @@ export function createOccurrence(
   { base, children: expanded }: Subtree,
   bindingClaims: BoundPropertyClaim[]
 ): InstanceOccurrence {
-  const { sources } = index
   const original = raw.symbolData?.symbolID
-  const [, sourceComponentOverrideKey] = componentKeys(index, original)
+  const [, sourceComponentOverrideKey] = componentKeys(sources, original)
   // A swapped root draws the replacement's paint, so the old paint's style link goes with it.
   const placed =
     base && effective && !sameGuid(original, effective) && source.type === 'INSTANCE'
@@ -111,18 +103,18 @@ export function createOccurrence(
     children: expanded
   }
   if (source.type === 'INSTANCE') {
-    const keepsSlotContent = (assignment: ComponentPropAssignment): boolean =>
-      !namesMissingSlotContent(sources, assignment)
     occurrence.properties.componentPropAssignments = groups
       .flatMap((g) => g.assignments)
       // A slot whose content frame is gone falls back to its component's content.
-      .filter(keepsSlotContent)
-    occurrence.ownerAssignedProperties = ownerAssignedProperties(groups, keepsSlotContent)
+      .filter((assignment) => !namesMissingSlotContent(sources, assignment))
+    occurrence.ownerAssignedProperties = ownerAssignedProperties(
+      groups,
+      (assignment) => !namesMissingSlotContent(sources, assignment)
+    )
   }
   // A swapped instance without a name of its own takes the replacement's default name.
-  if (base && replaced.length && !occurrence.hasOwnName) {
+  if (base && replaced.length && !occurrence.hasOwnName)
     occurrence.properties.name = base.defaultInstanceName ?? base.properties.name
-  }
   occurrence.defaultInstanceName = defaultInstanceName(sources, occurrence)
   return occurrence
 }

@@ -47,8 +47,8 @@ describe('WebMCP registration', () => {
     for (const name of [
       'eval',
       'render',
-      'save_file',
-      'delete_node',
+      'save_document',
+      'delete_nodes',
       'create_variable',
       'set_image_fill'
     ]) {

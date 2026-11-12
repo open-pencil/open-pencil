@@ -25,7 +25,11 @@ const styles = tv(theme)()
       >
         {{ step }}
       </button>
-      <icon-lucide-chevron-right :class="styles.separator()" aria-hidden="true" />
+      <icon-lucide-chevron-right
+        data-direction="reading"
+        :class="styles.separator()"
+        aria-hidden="true"
+      />
     </template>
     <span :class="styles.current()" aria-current="page">{{ current }}</span>
   </span>

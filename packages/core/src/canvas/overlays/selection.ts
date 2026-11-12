@@ -1,5 +1,4 @@
-import type { Canvas } from 'canvaskit-wasm'
-
+import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { layerRotates } from '@open-pencil/scene-graph/generated'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
@@ -8,6 +7,7 @@ import { slotPropertyId } from '@open-pencil/scene-graph/slots'
 
 import { drawSelectionLabels } from '#core/canvas/labels/selection'
 import { drawConnectorHover, drawConnectorSelection } from '#core/canvas/overlays/connectors'
+import { drawConstraintIndicators } from '#core/canvas/overlays/constraints'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import { strokeNodeShape } from '#core/canvas/strokes'
 import {
@@ -102,6 +102,8 @@ function drawSingleSelection(
   // outlines the lettering and draws the caret and selection along the path.
   if (editing && !isPathText) return
 
+  if (node.type !== 'CONNECTOR') drawConstraintIndicators(r, canvas, graph, node, preview)
+
   r.selectionPaint.setColor(r.outlineColor(node, graph))
   r.selectionPaint.setStrokeWidth(1 / r.zoom)
 
@@ -114,7 +116,7 @@ function drawSingleSelection(
     drawTextPathSelection(r, canvas, node, rotation, graph, editing, preview)
     if (!editing) drawSelectionLabels(r, canvas, graph, selectedIds, overlays)
   } else {
-    drawNodeSelection(r, canvas, node, rotation, graph, preview)
+    drawNodeSelection(r, canvas, node, rotation, graph, preview, !overlays.scaleTool)
     drawSelectionLabels(r, canvas, graph, selectedIds, overlays)
   }
   r.selectionPaint.setColor(r.selColor())
@@ -159,7 +161,7 @@ export function drawSelection(
     .map((id) => graph.getNode(id))
     .filter((n): n is SceneNode => n !== undefined)
   if (nodes.length === 0) return
-  drawGroupBounds(r, canvas, nodes, graph, preview)
+  drawGroupBounds(r, canvas, nodes, graph, preview, !overlays.scaleTool)
 
   drawSelectionLabels(r, canvas, graph, selectedIds, overlays)
 }
@@ -280,7 +282,7 @@ function drawTextPathSelection(
 
 /**
  * Figma's corner handles and our rotation stalk, absent for a layer that does not turn; a layer
- * too small for handles, or in a read-only document, shows none.
+ * too small for handles, or on a canvas that offers none (`editHandles`), shows none.
  */
 function drawBoundsHandles(
   r: SkiaRenderer,
@@ -330,7 +332,8 @@ export function drawNodeSelection(
   node: SceneNode,
   rotation: number,
   graph: SceneGraph,
-  preview?: RotationPreview | null
+  preview?: RotationPreview | null,
+  showRotation = true
 ): void {
   drawSelectionRect(
     r,
@@ -347,7 +350,7 @@ export function drawNodeSelection(
         x2,
         y2,
         // A generated frame such as a sticky note may stay upright, and a line turns by its ends.
-        !layerRotates(node) || isLineLike(node)
+        !showRotation || !layerRotates(node) || isLineLike(node)
           ? null
           : rotationHandleLayout(node, r.sceneGeometry(graph, preview), r.zoom, {
               x: x1,
@@ -411,7 +414,8 @@ export function drawGroupBounds(
   canvas: Canvas,
   nodes: SceneNode[],
   graph: SceneGraph,
-  preview?: RotationPreview | null
+  preview?: RotationPreview | null,
+  showRotation = true
 ): void {
   const geometry = r.sceneGeometry(graph, preview)
   const bounds = computeBounds(nodes.map(geometry.bounds))
@@ -425,7 +429,7 @@ export function drawGroupBounds(
   r.auxStroke.setColor(r.selColor(SELECTION_DASH_ALPHA))
   r.auxStroke.setPathEffect(null)
   canvas.drawRect(r.ck.LTRBRect(minX, minY, maxX, maxY), r.auxStroke)
-  drawBoundsHandlesScreenSpace(r, canvas, minX, minY, maxX, maxY)
+  drawBoundsHandlesScreenSpace(r, canvas, minX, minY, maxX, maxY, showRotation)
 }
 
 export function drawHandle(r: SkiaRenderer, canvas: Canvas, x: number, y: number): void {
@@ -454,13 +458,15 @@ function drawBoundsHandlesScreenSpace(
   minX: number,
   minY: number,
   maxX: number,
-  maxY: number
+  maxY: number,
+  showRotation = true
 ): void {
-  if (!hasTransformHandles(maxX - minX, maxY - minY)) return
+  if (!r.editHandles || !hasTransformHandles(maxX - minX, maxY - minY)) return
   drawHandleScreenSpace(r, canvas, minX, minY)
   drawHandleScreenSpace(r, canvas, maxX, minY)
   drawHandleScreenSpace(r, canvas, minX, maxY)
   drawHandleScreenSpace(r, canvas, maxX, maxY)
+  if (!showRotation) return
   const midX = (minX + maxX) / 2
   const rotationHandleY = minY - ROTATION_HANDLE_DISTANCE
   canvas.drawLine(midX, minY, midX, rotationHandleY, r.selectionPaint)

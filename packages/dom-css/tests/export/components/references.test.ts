@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { componentSet, COLORS } from '#dom-css-tests/behaviours/fixtures'
+import { COLORS, componentSet } from '#dom-css-tests/behaviours/fixtures/sets'
 import { componentModel } from '#dom-css/export/components/model'
 import { referenceValues } from '#dom-css/export/components/references'
 

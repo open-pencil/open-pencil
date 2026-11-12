@@ -62,6 +62,18 @@ async function testApp(initialActor: CloudActor = actor) {
   }
 }
 
+/** What accepting an invitation leaves: the grant the API then changes. */
+async function invitationGrant(
+  context: Awaited<ReturnType<typeof testApp>>,
+  documentId: string,
+  userId: string
+) {
+  await context.runtime.database
+    .insertInto('documentGrant')
+    .values({ id: crypto.randomUUID(), documentId, userId, permission: 'view', createdBy: 'alice' })
+    .execute()
+}
+
 describe('Cloud document routes', () => {
   test('creates and lists document metadata', async () => {
     const context = await testApp()
@@ -115,6 +127,7 @@ describe('Cloud document routes', () => {
           v.object({ document: v.object({ id: v.string() }) })
         )
         if (directGrant) {
+          await invitationGrant(context, document.document.id, 'bob')
           const grant = await context.app.request(
             `/api/documents/${document.document.id}/grants/bob`,
             {
@@ -380,6 +393,7 @@ describe('documents shared with a person', () => {
         v.object({ document: v.object({ id: v.string() }) })
       )
       const documentId = created.document.id
+      await invitationGrant(context, documentId, 'bob')
       const grant = await context.app.request(`/api/documents/${documentId}/grants/bob`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },

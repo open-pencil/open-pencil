@@ -1,10 +1,11 @@
 import { expect, test } from 'bun:test'
 import { join } from 'node:path'
 
-import { FIXTURES } from '@open-pencil/test-support/paths'
+import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { getTextMeasurer } from '@open-pencil/core/layout'
 import { fontManager } from '@open-pencil/core/text'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import { editDocument, measureTextHeadlessly } from '#cli/headless'
 
@@ -39,4 +40,21 @@ test('sizes the text an edit writes in the fonts its characters load after it', 
   } finally {
     fontManager.setHostFontLoader(null)
   }
+})
+
+test('brings instances in line with the components an edit changes, without a read', async () => {
+  const graph = new SceneGraph()
+  const figma = new FigmaAPI(graph)
+  const component = figma.createComponent()
+  const shape = figma.createRectangle()
+  component.appendChild(shape)
+  const instance = component.createInstance()
+  const copyId = graph.getNode(instance.id)?.childIds[0] ?? ''
+  const green = { r: 0, g: 1, b: 0, a: 1 }
+
+  await editDocument(graph, () => {
+    shape.fills = [{ type: 'SOLID', color: { r: 0, g: 1, b: 0 } }]
+  })
+
+  expect(graph.getNode(copyId)?.fills[0].color).toEqual(green)
 })

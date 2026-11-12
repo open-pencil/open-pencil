@@ -1,5 +1,4 @@
-import type { Canvas, Color, Paint, PathEffect } from 'canvaskit-wasm'
-
+import type { Canvas, Color, Paint, PathEffect } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { ResourceCache } from '#core/cache/resource'

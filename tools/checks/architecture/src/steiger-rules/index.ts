@@ -315,16 +315,20 @@ const CLOUD_PORTAL_SOURCES = [
   'src/theme/metrics/'
 ]
 const EDITOR_ONLY_MODULES = ['src/app/editor/', 'src/app/shell/']
+// The read-only document viewer brings the editor with it, so these pages load it lazily, through
+// `defineAsyncComponent(() => import(...))`, and never import it statically.
+const LAZY_EDITOR_MODULES = ['src/components/document-viewer/', 'src/app/document-viewer/']
 
 const noEditorImportsInCloudPortal = createImportRule(
   'open-pencil/no-editor-imports-in-cloud-portal',
   (sourceRel, specifier, resolved) => {
     if (!CLOUD_PORTAL_SOURCES.some((prefix) => sourceRel.startsWith(prefix))) return null
     const editorOnly =
-      specifier.startsWith('canvaskit-wasm') ||
-      EDITOR_ONLY_MODULES.some((prefix) => resolved?.startsWith(prefix))
+      specifier.startsWith('@open-pencil/canvaskit') ||
+      EDITOR_ONLY_MODULES.some((prefix) => resolved?.startsWith(prefix)) ||
+      LAZY_EDITOR_MODULES.some((prefix) => resolved?.startsWith(prefix))
     if (!editorOnly) return null
-    return 'The Cloud portal and the metrics dashboard must not import editor sessions, CanvasKit, or the app shell, so their standalone builds stay small.'
+    return 'The Cloud portal and the metrics dashboard must not import editor sessions, CanvasKit, or the app shell, so their standalone builds stay small; open the document viewer lazily with defineAsyncComponent.'
   }
 )
 

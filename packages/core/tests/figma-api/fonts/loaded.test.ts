@@ -1,9 +1,10 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { asTextNode, solidFill } from '#core-tests/helpers/figma-api'
-import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
+
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 
 // Measured in live Figma (2026-10-27) on text whose font no script had loaded.
 const UNLOADED = 'Unloaded Sans'

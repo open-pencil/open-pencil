@@ -23,7 +23,7 @@ function spiedEditor() {
 
 /** A tool that runs `execute` as an atomic property edit. */
 function edit(execute: () => void): ToolDef {
-  return { ...tool('set_opacity'), execute }
+  return { ...tool('update_node'), execute }
 }
 
 describe('atomic agent tool layout', () => {
@@ -33,8 +33,8 @@ describe('atomic agent tool layout', () => {
     executeAtomicTool(
       editor,
       figma,
-      tool('set_opacity'),
-      { id: rect.id, value: 0.5 },
+      tool('update_node'),
+      { id: rect.id, opacity: 0.5 },
       { onRecorded }
     )
     expect(rect.opacity).toBe(0.5)
@@ -143,7 +143,7 @@ describe('atomic agent tool layout', () => {
       throw new Error('Layout failed')
     }
     expect(() =>
-      executeAtomicTool(editor, figma, tool('set_opacity'), { id: rectangle.id, value: 0.5 })
+      executeAtomicTool(editor, figma, tool('update_node'), { id: rectangle.id, opacity: 0.5 })
     ).toThrow('Layout failed')
     expect(rectangle.opacity).toBe(1)
     expect(other.x).toBe(0)

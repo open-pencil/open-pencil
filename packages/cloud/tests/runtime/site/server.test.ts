@@ -1,6 +1,10 @@
 import { describe, expect, spyOn, test } from 'bun:test'
 
-import { createCloudServer, type SiteFiles } from '#cloud/runtime/site/server'
+import {
+  createCloudServer,
+  SITE_CONTENT_SECURITY_POLICY,
+  type SiteFiles
+} from '#cloud/runtime/site/server'
 import type { CloudErrorContext } from '#cloud/server'
 
 const files: Record<string, string> = {
@@ -36,7 +40,8 @@ describe('Cloud server', () => {
   test('serves the portal at portal paths, never framed and never cached', async () => {
     const page = await request('/auth/device?user_code=ABCD')
     expect(await page.text()).toContain('Portal')
-    expect(page.headers.get('Content-Security-Policy')).toBe("frame-ancestors 'none'")
+    expect(page.headers.get('Content-Security-Policy')).toBe(SITE_CONTENT_SECURITY_POLICY)
+    expect(page.headers.get('Strict-Transport-Security')).toBe('max-age=31536000')
     expect(page.headers.get('Cache-Control')).toBe('no-cache')
     expect((await request('/account')).status).toBe(200)
     expect(await (await request('/welcome')).text()).toContain('Portal')
@@ -46,7 +51,7 @@ describe('Cloud server', () => {
     for (const path of ['/', '/demo', '/documents/abc', '/share/abc']) {
       const page = await navigate(path)
       expect(await page.text()).toContain('Editor')
-      expect(page.headers.get('Content-Security-Policy')).toBe("frame-ancestors 'none'")
+      expect(page.headers.get('Content-Security-Policy')).toBe(SITE_CONTENT_SECURITY_POLICY)
       expect(page.headers.get('Cache-Control')).toBe('no-cache')
     }
   })
@@ -100,10 +105,30 @@ describe('Cloud server', () => {
       const response = await failing.request(new Request('https://cloud.example/favicon.svg'))
       expect(response.status).toBe(500)
       expect(reported).toEqual([
-        { error: failure, context: { source: 'request', method: 'GET', route: '/*' } }
+        {
+          error: failure,
+          context: {
+            source: 'request',
+            method: 'GET',
+            route: '/*',
+            message: 'Request failed',
+            requestId: expect.any(String)
+          }
+        }
       ])
     } finally {
       logged.mockRestore()
     }
+  })
+
+  test('lets only the site’s own scripts run, never frames or plugins', () => {
+    const directives = SITE_CONTENT_SECURITY_POLICY.split('; ')
+    expect(directives).toContain(
+      "script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://challenges.cloudflare.com"
+    )
+    expect(directives).toContain("worker-src 'self' blob:")
+    expect(directives).toContain("object-src 'none'")
+    expect(directives).toContain("base-uri 'self'")
+    expect(directives).toContain("frame-ancestors 'none'")
   })
 })

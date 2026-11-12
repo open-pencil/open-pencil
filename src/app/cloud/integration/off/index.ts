@@ -6,6 +6,7 @@ import type { WorkspaceSummary } from '@open-pencil/cloud/contract'
 
 import type { CloudAIWorkspace } from '@/app/cloud/ai/access'
 import type { CloudAccount } from '@/app/cloud/servers/store'
+import type { EditorStore } from '@/app/editor/session'
 import type { SaveDestination, SaveFailure } from '@/app/storage/save-to/model'
 
 /**
@@ -41,6 +42,11 @@ export function startCloud(): () => void {
 
 export function isCloudBinding(): boolean {
   return false
+}
+
+/** Save, as it is without Cloud. */
+export function saveDocument(store: EditorStore): Promise<unknown> {
+  return store.saveFigFile()
 }
 
 export function cloudDocumentAddress(): { path: string; query: Record<string, string> } | null {

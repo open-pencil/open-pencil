@@ -12,5 +12,5 @@ const cls = computed(() => twMerge('text-2xs text-muted', ui?.base))
 </script>
 
 <template>
-  <span :class="cls"><slot /></span>
+  <span dir="ltr" :class="cls"><slot /></span>
 </template>
