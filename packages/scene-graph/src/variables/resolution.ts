@@ -17,13 +17,24 @@ export function getNodeVariableModeId(
   nodeId: string,
   collectionId: string
 ): string {
+  return (
+    getNodeExplicitVariableModeId(graph, nodeId, collectionId) ?? defaultModeId(graph, collectionId)
+  )
+}
+
+/** The nearest mode set on a node or an ancestor for a collection, or null where none is. */
+export function getNodeExplicitVariableModeId(
+  graph: SceneGraph,
+  nodeId: string,
+  collectionId: string
+): string | null {
   let node = graph.nodes.get(nodeId)
   while (node) {
     const modeId = node.variableModes[collectionId]
     if (modeId) return modeId
     node = node.parentId ? graph.nodes.get(node.parentId) : undefined
   }
-  return defaultModeId(graph, collectionId)
+  return null
 }
 
 /**
