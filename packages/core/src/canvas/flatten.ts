@@ -15,6 +15,7 @@ import {
   placedPath,
   windingRuleOf
 } from './boolean'
+import { curvePathData } from './paths/svg-data'
 import type { SkiaRenderer } from './renderer'
 import { textOutlinePieces, type PaintedPath } from './text/outlines/glyphs'
 
@@ -173,7 +174,7 @@ function boundsOf(paths: Path[]): Rect | null {
 
 function networkIn(renderer: SkiaRenderer, path: Path, box: Vector): VectorNetwork {
   const moved = placedPath(renderer, path, renderer.ck.Matrix.translated(-box.x, -box.y))
-  const network = parseSVGPath(moved.toSVGString(), windingRuleOf(renderer, moved))
+  const network = parseSVGPath(curvePathData(renderer.ck, moved), windingRuleOf(renderer, moved))
   moved.delete()
   return network
 }
