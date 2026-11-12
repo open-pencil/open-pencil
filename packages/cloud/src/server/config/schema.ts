@@ -166,7 +166,8 @@ const rawCloudServerConfigSchema = v.object({
     v.pipe(v.number(), v.integer(), v.minValue(60), v.maxValue(60 * 60)),
     10 * 60
   ),
-  billingPortalURL: v.optional(httpURLSchema),
+  /** The billing service accounts buy plans and credits from, which discovery advertises. */
+  billingEndpoint: v.optional(httpURLSchema),
   /** The bearer token services such as billing present to the internal API. */
   internalServiceToken: v.optional(v.pipe(v.string(), v.minLength(32))),
   /**
@@ -271,6 +272,14 @@ function validateEmailConfig(config: CloudServerConfig): void {
 
 function validateServiceConfig(config: CloudServerConfig): void {
   requireTogether(config, 'Services', ['servicesEndpoint', 'servicesSigningKey'])
+  // Billing tokens are signed with the services' key, and billing sets plans through the
+  // internal API, which static entitlements would hide.
+  if (config.billingEndpoint && !config.servicesSigningKey) {
+    throw new CloudConfigError('Billing needs the services signing key to sign its tokens')
+  }
+  if (config.billingEndpoint && !config.internalServiceToken) {
+    throw new CloudConfigError('Billing needs the internal API to set the plans it sells')
+  }
   if (config.internalServiceToken && config.staticEntitlements) {
     throw new CloudConfigError(
       'The internal API writes database entitlements, which static entitlements would hide'
@@ -567,7 +576,7 @@ export const cloudDeploymentConfigSchema = v.strictObject({
       )
     })
   ),
-  billing: v.optional(v.strictObject({ portal_url: urlSchema })),
+  billing: v.optional(v.strictObject({ endpoint: urlSchema })),
   internal_api: v.optional(
     v.strictObject({ service_token: defaultReference(DEFAULT_SECRET_NAMES.internalServiceToken) })
   ),

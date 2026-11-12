@@ -1,5 +1,6 @@
 import type { CloudAPIEnvironment } from '#cloud/server/api/types'
 import type { CloudSessionResolver } from '#cloud/server/auth'
+import { createBillingRoutes, type BillingTokenService } from '#cloud/server/billing'
 import type { CollaborationTicketService } from '#cloud/server/collaboration'
 import {
   createCollaborationRoutes,
@@ -40,6 +41,8 @@ export type CloudAPIServices = {
   entitlements?: EntitlementService
   /** Signs service tokens; without it the deployment offers no services. */
   servicesTokens?: ServicesTokenService
+  /** Signs billing tokens; without it the deployment sells nothing. */
+  billingTokens?: BillingTokenService
   workspaces: WorkspaceService
   workspaceMembers: WorkspaceMemberService
 }
@@ -73,6 +76,15 @@ export function createCloudAPIRouter(services: CloudAPIServices) {
       '/',
       createServicesRoutes(
         services.servicesTokens,
+        services.database && services.rateLimitSecret
+          ? { database: services.database, secret: services.rateLimitSecret }
+          : undefined
+      )
+    )
+    .route(
+      '/',
+      createBillingRoutes(
+        services.billingTokens,
         services.database && services.rateLimitSecret
           ? { database: services.database, secret: services.rateLimitSecret }
           : undefined

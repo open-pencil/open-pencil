@@ -31,6 +31,7 @@
     "#cloud/server": "./src/server/index.ts",
     "#cloud/server/api": "./src/server/api/index.ts",
     "#cloud/server/auth": "./src/server/auth/index.ts",
+    "#cloud/server/billing": "./src/server/billing/index.ts",
     "#cloud/server/cleanup": "./src/server/cleanup/index.ts",
     "#cloud/server/collaboration": "./src/server/collaboration/index.ts",
     "#cloud/server/config": "./src/server/config/index.ts",

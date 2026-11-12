@@ -102,7 +102,7 @@ function serviceConfig(config: CloudDeploymentConfig, environment: CloudEnvironm
     servicesTokenLifetimeSeconds: config.services
       ? config.services.token_lifetime_minutes * 60
       : undefined,
-    billingPortalURL: config.billing?.portal_url,
+    billingEndpoint: config.billing?.endpoint,
     internalServiceToken: config.internal_api
       ? requiredSecret(environment, config.internal_api.service_token)
       : undefined
