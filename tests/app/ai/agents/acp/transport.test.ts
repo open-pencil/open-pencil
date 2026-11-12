@@ -4,6 +4,7 @@ import type { SessionUpdate, ToolCallUpdate } from '@agentclientprotocol/sdk'
 import { readUIMessageStream, type UIMessage, type UIMessageChunk } from 'ai'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { createUpdateMapper } from '@/app/ai/agents/acp/events'
@@ -15,8 +16,12 @@ const TEXT_ID = 'text-1'
 async function transcript(updates: SessionUpdate[]): Promise<UIMessage['parts']> {
   const mapper = createUpdateMapper('turn')
   const chunks: UIMessageChunk[] = [{ type: 'start' }, { type: 'start-step' }]
-  for (const update of updates) chunks.push(...mapper.map(update))
-  chunks.push(...mapper.end(), { type: 'finish-step' }, { type: 'finish', finishReason: 'stop' })
+  for (const update of updates) appendAll(chunks, mapper.map(update))
+  appendAll(chunks, [
+    ...mapper.end(),
+    { type: 'finish-step' },
+    { type: 'finish', finishReason: 'stop' }
+  ])
   const stream = new ReadableStream<UIMessageChunk>({
     start(controller) {
       for (const chunk of chunks) controller.enqueue(chunk)

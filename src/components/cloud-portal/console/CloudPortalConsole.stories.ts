@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 
 import PortalAccountSecurity from '../account/PortalAccountSecurity.vue'
+import PortalPlan from '../account/PortalPlan.vue'
 import PortalProfile from '../account/PortalProfile.vue'
 import PortalSessions from '../account/PortalSessions.vue'
 import PortalConsoleLayout from '../layout/PortalConsoleLayout.vue'
@@ -10,7 +11,10 @@ import type {
   PortalActivityEntry,
   PortalEmail,
   PortalPerson,
+  PortalCreditPack,
   PortalPersonDetail,
+  PortalPlan as PortalPlanType,
+  PortalPlanOffer,
   PortalSection,
   PortalSession,
   PortalSignIn
@@ -25,6 +29,7 @@ import PortalStatus from './PortalStatus.vue'
 const account = { id: 'user-ana', name: 'Ana Duarte', email: 'ana@studio.example' }
 const sections: PortalSection[] = [
   { id: 'profile', icon: PORTAL_SECTION_ICONS.profile, label: 'Profile', group: 'Your account' },
+  { id: 'plan', icon: PORTAL_SECTION_ICONS.plan, label: 'Plan', group: 'Your account' },
   {
     id: 'security',
     icon: PORTAL_SECTION_ICONS.security,
@@ -276,10 +281,37 @@ const person: PortalPersonDetail = {
   sessions: sessions.slice(2),
   signIns: signIns.slice(2)
 }
+const MB = 1024 * 1024
+const freePlan: PortalPlanType = {
+  known: true,
+  name: null,
+  status: null,
+  periodEnd: null,
+  cancels: false,
+  storage: { usedBytes: 212 * MB, totalBytes: 300 * MB },
+  monthlyCredits: null
+}
+const paidPlan: PortalPlanType = {
+  known: true,
+  name: 'Pro',
+  status: 'active',
+  periodEnd: 'Dec 12, 2026',
+  cancels: false,
+  storage: { usedBytes: 3482 * MB, totalBytes: 10240 * MB },
+  monthlyCredits: 3000
+}
+const planOffers: PortalPlanOffer[] = [
+  { id: 'pro', name: 'Pro', price: '$10.00', storage: '10 GB', credits: '3,000' }
+]
+const creditPacks: PortalCreditPack[] = [
+  { id: 'credits-5k', credits: '5,000', price: '$5.00', validDays: 365 },
+  { id: 'credits-20k', credits: '20,000', price: '$20.00', validDays: 365 }
+]
 const components = {
   PortalConsoleLayout,
   PortalAccountSecurity,
   PortalProfile,
+  PortalPlan,
   PortalSessions,
   PortalPerson: PortalPersonPage,
   PortalAccessRequests,
@@ -318,6 +350,10 @@ const story = (
       loadNoRequests,
       loadEmails,
       loadActivity,
+      freePlan,
+      paidPlan,
+      planOffers,
+      creditPacks,
       ...extra
     }),
     template: `
@@ -334,6 +370,18 @@ export const Profile = story(
   'Profile',
   'How you appear to people on cloud.studio.example.',
   `<PortalProfile :profile="{ id: 'user-ana', name: 'Ana Duarte', email: 'ana@studio.example', image: null, memberSince: 'Mar 3, 2026' }" />`
+)
+export const PlanFree = story(
+  'plan',
+  'Plan',
+  'What your account includes, and what you pay for.',
+  `<PortalPlan :plan="freePlan" :offers="planOffers" />`
+)
+export const PlanPaid = story(
+  'plan',
+  'Plan',
+  'What your account includes, and what you pay for.',
+  `<PortalPlan :plan="paidPlan" :offers="planOffers" :credit-packs="creditPacks" />`
 )
 export const Sessions = story(
   'sessions',

@@ -7,6 +7,7 @@ import {
   RELAY_SERVER_PEER,
   type CollaborationTicket
 } from '@open-pencil/cloud/contract'
+import { minOf } from '@open-pencil/scene-graph/arrays'
 
 import type { RoomImageStore } from '@/app/collab/images'
 import { leaveRoom, openDocumentRoom, roomForStore } from '@/app/collab/rooms'
@@ -74,7 +75,7 @@ export function electCloudSaver(
       return cloud.success && cloud.output.permission === 'edit' && cloud.output.kind === 'user'
     })
     .map(([clientId]) => clientId)
-  return editors.length ? Math.min(...editors) : null
+  return editors.length ? minOf(editors) : null
 }
 
 /** Building on the server's latest revision: the room already holds every edit in it. */

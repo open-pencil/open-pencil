@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { styleDetachmentChanges } from '@open-pencil/scene-graph/shared-styles'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
@@ -94,7 +95,7 @@ export const updateNode = defineTool({
       updated.push('y')
     }
     if (args.width !== undefined || args.height !== undefined)
-      updated.push(...resized(node, args.width, args.height))
+      appendAll(updated, resized(node, args.width, args.height))
     if (args.rotation !== undefined) {
       node.rotation = args.rotation
       updated.push('rotation')

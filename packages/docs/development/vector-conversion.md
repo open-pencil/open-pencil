@@ -11,7 +11,7 @@ OpenPencil has a shared path-conversion pipeline for commands that turn scene no
 
 - **Boolean operations** keep a live `BOOLEAN_OPERATION` container and render it with CanvasKit path operations.
 - **Flatten** replaces selected supported nodes with one persistent `VECTOR` node, as Figma's does: each shape keeps its own geometry (a line its segment, text its glyphs with their underlines and strikethroughs) and fills its own regions with its fills, a text glyph with its character's, stacked in layer order. The vector takes the topmost shape's stroke, opacity, blend mode, and effects, and its name when it is the only shape, "Vector" otherwise. Strokes stay strokes rather than becoming shape.
-- **Outline stroke** replaces selected supported stroked nodes with vector stroke outlines. Text becomes a group of glyph vectors, as in Figma, even without a stroke; Figma has no separate Outline text command.
+- **Outline stroke** replaces each selected layer that has a stroke or a fill, and each such layer inside a selected group, frame, or component, with its fill as a vector under its stroke as one, as Figma does; a shape with only a fill becomes a vector of its fill. Text becomes a group of glyph vectors. Figma has no separate Outline text command.
 
 The editor, renderer-backed Figma API, and menu command enablement all use the same source-path checks so unsupported nodes fail safely instead of being silently dropped.
 
@@ -34,4 +34,4 @@ Complex-script text stays unsupported until we can extract exact shaped glyph ru
 
 ## Figma API flatten
 
-`FigmaAPI.flatten()` produces real vector geometry when a `SkiaRenderer` is attached with `api.setRenderer(renderer)`. In headless compatibility mode without a renderer, it keeps the historical placeholder behavior: the source nodes are replaced by a vector-sized placeholder without `vectorNetwork` geometry.
+`FigmaAPI.flatten()` produces real vector geometry when a `SkiaRenderer` is attached: `api.setRenderer(renderer)` in a headless host, or the `renderer` option in a host that already invalidates its renderers on edits, as the editor does. In headless compatibility mode without a renderer, it keeps the historical placeholder behavior: the source nodes are replaced by a vector-sized placeholder without `vectorNetwork` geometry.
