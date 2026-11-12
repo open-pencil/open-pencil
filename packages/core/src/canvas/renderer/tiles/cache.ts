@@ -24,14 +24,24 @@ export interface CachedTile {
 }
 
 const DEFAULT_MAX_TILE_BYTES = 128 * 1024 * 1024
-const MAXIMUM_TILE_CACHE_BYTES = 384 * 1024 * 1024
+const MAXIMUM_TILE_CACHE_BYTES = 768 * 1024 * 1024
 const TILE_BYTES = TILE_DEVICE_SIZE * TILE_DEVICE_SIZE * 4
 /**
- * The budget holds the visible level with its overscan ring and enough nearby fallback tiles for
- * navigation. Background stages stop when that working set does not fit instead of retaining a
- * full five-viewport pyramid on large high-DPI windows.
+ * The budget holds this many viewports' worth of tiles: the visible level with its overscan
+ * ring, the level a zoom just left, the pyramid, the backdrop ring, and the page copy, so idle
+ * work never evicts what the next frame draws.
  */
-const TILE_CACHE_VIEWPORTS = 3
+const TILE_CACHE_VIEWPORTS = 5
+/** The share of a device's memory the tiles may hold, on a device that reports its memory. */
+const DEVICE_MEMORY_SHARE = 1 / 16
+
+/** What the host knows about the memory the tiles share. */
+export interface TileMemory {
+  /** The device's memory in bytes, where the host can tell. */
+  deviceBytes?: number
+  /** The canvas is not on screen: only the tiles it showed last are kept, to show it again. */
+  hidden?: boolean
+}
 
 /** The bytes of the tiles a viewport of this many device pixels can touch. */
 export function viewportTileBytes(widthPx: number, heightPx: number): number {
@@ -42,12 +52,19 @@ export function viewportTileBytes(widthPx: number, heightPx: number): number {
   )
 }
 
-/** The cache's byte budget for a viewport whose tiles weigh `viewportBytes`. */
-export function viewportTileCacheBudget(viewportBytes: number): number {
-  return Math.min(
-    MAXIMUM_TILE_CACHE_BYTES,
-    Math.max(DEFAULT_MAX_TILE_BYTES, viewportBytes * TILE_CACHE_VIEWPORTS)
-  )
+/**
+ * The cache's byte budget for a viewport whose tiles weigh `viewportBytes`: as many viewports as
+ * the background stages use, within a share of the device's memory where it is known. The
+ * visible tiles always fit, or the view could never finish drawing.
+ */
+export function viewportTileCacheBudget(viewportBytes: number, memory: TileMemory = {}): number {
+  if (memory.hidden) return viewportBytes
+  const ceiling =
+    memory.deviceBytes === undefined
+      ? MAXIMUM_TILE_CACHE_BYTES
+      : Math.min(MAXIMUM_TILE_CACHE_BYTES, memory.deviceBytes * DEVICE_MEMORY_SHARE)
+  const wanted = Math.max(DEFAULT_MAX_TILE_BYTES, viewportBytes * TILE_CACHE_VIEWPORTS)
+  return Math.max(viewportBytes, Math.min(ceiling, wanted))
 }
 
 /** Levels are compared by zoom distance; a finer level wins a tie, as it stays sharp scaled down. */
