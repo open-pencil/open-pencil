@@ -36,6 +36,7 @@ import {
 } from '#cloud/server/auth'
 import { createBillingTokenService } from '#cloud/server/billing'
 import { createCollaborationTicketService } from '#cloud/server/collaboration'
+import { createCommunityService, createCommunityThumbnailRoutes } from '#cloud/server/community'
 import {
   CloudConfigError,
   cloudDiscoveryFromConfig,
@@ -250,6 +251,13 @@ export function createCloudApp(services: CloudServices) {
     onRestored: services.onDocumentRestored,
     onVersionsChanged: services.onDocumentVersionsChanged
   })
+  const community = createCommunityService(
+    services.database,
+    services.objects,
+    documents,
+    versions,
+    services.config.community?.workspaceId ?? null
+  )
   const entitlements = createEntitlementService(
     services.database,
     policy,
@@ -356,6 +364,13 @@ export function createCloudApp(services: CloudServices) {
     (context) => context.json({ error: { code: 'not_found' as const } }, 404),
     { resource: (context) => context.req.path, route: true }
   )
+  const communityLimiter = createTrustedIPRateLimiter(
+    services.database,
+    services.config.authSecret,
+    CLOUD_RATE_LIMITS.communityRead,
+    { trustedHeaders: services.config.authTrustedIPHeaders },
+    (context) => context.json({ error: { code: 'not_found' as const } }, 404)
+  )
   const authenticatedMutationLimiter = createActorRateLimiter(
     services.database,
     services.config.authSecret,
@@ -391,6 +406,7 @@ export function createCloudApp(services: CloudServices) {
     rateLimitSecret: services.config.authSecret,
     documents,
     versions,
+    community,
     entitlements,
     servicesTokens,
     billingTokens,
@@ -404,6 +420,7 @@ export function createCloudApp(services: CloudServices) {
     collaboration,
     documents,
     versions,
+    community,
     entitlements,
     sharing,
     reports,
@@ -493,6 +510,8 @@ export function createCloudApp(services: CloudServices) {
     .use('/api/public/*', publicRateLimiter)
     .use('/api/shares/*', publicRateLimiter)
     .use('/api/invitations/*', publicRateLimiter)
+    .use('/api/community/*', communityLimiter, publicRateLimiter)
+    .route('/', createCommunityThumbnailRoutes(community))
     .route('/api', publicCloudAPI)
     .route('/api/internal', internalAPI)
     .use('/api/documents/:documentId', allowLeavingRead)
