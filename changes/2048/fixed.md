@@ -1,1 +1,1 @@
-- A reply's token usage, shown on hover, stays on one line in a narrow chat instead of spilling over the reply's text, and its fade runs the right way in right-to-left interfaces (#2048).
+- A reply's token usage, shown on hover, stays on one line in a narrow chat instead of spilling over the reply's text: it drops its cached tokens, then the rest, whole rather than cutting a number short, and its fade runs the right way in right-to-left interfaces (#2048).

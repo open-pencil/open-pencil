@@ -10,17 +10,30 @@ export default {
     corner: [
       'absolute inset-e-1 bottom-1 text-2xs text-muted opacity-0 group-focus-within/response:opacity-100 group-hover/response:opacity-100',
       motionStyles.reveal
-    ]
+    ],
+    parts: '',
+    part: 'flex h-6 items-center px-1',
+    copy: ''
   },
   variants: {
     // Over the bubble's own colour, fading out the end of a full last line beneath it, toward
-    // the line's end in either direction. It stays on one line inside the bubble: a narrow
-    // reply fades over less of the line, and one too narrow even then cuts the usage short.
+    // the line's end in either direction. A narrow reply fades over less of the line.
     usage: {
       true: {
         corner:
-          'flex h-6 max-w-[calc(100%-0.5rem)] items-center gap-1 rounded-ee-xl bg-[linear-gradient(to_right,transparent,var(--color-hover)_var(--fade))] ps-(--fade) whitespace-nowrap [--fade:2rem] @max-[16rem]/reply:[--fade:0.75rem] rtl:bg-[linear-gradient(to_left,transparent,var(--color-hover)_var(--fade))]'
+          'flex h-6 max-w-[calc(100%-0.5rem)] items-center whitespace-nowrap [--fade:2rem] @max-[16rem]/reply:[--fade:0.75rem]',
+        // One line of whole parts: a part that does not fit wraps onto a line nobody sees, and
+        // the empty item before them lets even the first one go.
+        parts: 'flex h-6 min-w-0 flex-1 flex-wrap justify-end overflow-hidden',
+        copy: 'rounded-ee-xl bg-hover'
       }
+    },
+    // The first part shown carries the fade; the line shows again where a dropped part was.
+    lead: {
+      true: {
+        part: 'bg-[linear-gradient(to_right,transparent,var(--color-hover)_var(--fade))] ps-(--fade) rtl:bg-[linear-gradient(to_left,transparent,var(--color-hover)_var(--fade))]'
+      },
+      false: { part: 'bg-hover' }
     }
   }
 } as const

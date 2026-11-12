@@ -98,10 +98,11 @@ const undo = computed(() => undoOf(message))
 const usage = computed(() => usageOf(message))
 /** With usage shown on hover, the reply's last text shows it on hover, beside the copy button. */
 const usageOnHover = computed(() =>
-  usage.value && tokenUsageDisplay.value === 'hover'
-    ? usageParts(ai.value, usage.value).join(' · ')
-    : undefined
+  usage.value && tokenUsageDisplay.value === 'hover' ? usageParts(ai.value, usage.value) : undefined
 )
+/** Whether the text part at `index` shows the usage in its corner. */
+const showsUsage = (index: number) =>
+  usageOnHover.value !== undefined && index === lastAssistantTextPartIndex.value
 const undoneCalls = computed(() => new Set(undo.value?.undone))
 const reverted = computed(
   () =>
@@ -184,27 +185,30 @@ function groupKey(group: MessagePartGroup): string {
               <ChatMarkdown :content="group.part.text" :mode="markdownMode" />
               <!-- With usage shown on hover, the usage and the copy button appear in the last
                    text's corner over the bubble's own colour, fading the line's end out under
-                   them, so they take no room at rest; otherwise the button sits there alone. -->
+                   them, so they take no room at rest; otherwise the button sits there alone.
+                   The usage shows the parts that fit whole, so a narrow reply drops its last. -->
               <div
-                v-if="
-                  (usageOnHover && group.index === lastAssistantTextPartIndex) ||
-                  group.index === copyPartIndex
-                "
-                :class="
-                  ui.corner({
-                    usage: !!usageOnHover && group.index === lastAssistantTextPartIndex
-                  })
-                "
+                v-if="showsUsage(group.index) || group.index === copyPartIndex"
+                :class="ui.corner({ usage: showsUsage(group.index) })"
               >
                 <span
-                  v-if="usageOnHover && group.index === lastAssistantTextPartIndex"
-                  class="min-w-0 truncate px-1"
+                  v-if="usageOnHover && showsUsage(group.index)"
+                  :class="ui.parts({ usage: true })"
                   data-slot="chat-reply-usage"
                 >
-                  {{ usageOnHover }}
+                  <span class="h-6" aria-hidden="true" />
+                  <span
+                    v-for="(part, index) in usageOnHover"
+                    :key="index"
+                    :class="ui.part({ lead: index === 0 })"
+                    data-slot="chat-reply-usage-part"
+                  >
+                    {{ index === 0 ? part : `· ${part}` }}
+                  </span>
                 </span>
                 <AppCopyButton
                   v-if="group.index === copyPartIndex"
+                  :class="ui.copy({ usage: showsUsage(group.index) })"
                   icon
                   :value="assistantText"
                   :label="ai.copyResponse"
