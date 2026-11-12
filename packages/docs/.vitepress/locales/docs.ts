@@ -33,6 +33,7 @@ export const docsLocales = {
         sdk: 'SDK',
         reference: 'Referenz',
         development: 'Entwicklung',
+        cloud: 'Cloud',
         openApp: 'App öffnen'
       },
       DE,
@@ -52,6 +53,7 @@ export const docsLocales = {
         sdk: 'SDK',
         reference: 'Riferimento',
         development: 'Sviluppo',
+        cloud: 'Cloud',
         openApp: 'Apri app'
       },
       IT,
@@ -71,6 +73,7 @@ export const docsLocales = {
         sdk: 'SDK',
         reference: 'Référence',
         development: 'Développement',
+        cloud: 'Cloud',
         openApp: "Ouvrir l'app"
       },
       FR,
@@ -90,6 +93,7 @@ export const docsLocales = {
         sdk: 'SDK',
         reference: 'Referencia',
         development: 'Desarrollo',
+        cloud: 'Cloud',
         openApp: 'Abrir app'
       },
       ES,
@@ -109,6 +113,7 @@ export const docsLocales = {
         sdk: 'SDK',
         reference: 'Referencja',
         development: 'Rozwój',
+        cloud: 'Cloud',
         openApp: 'Otwórz app'
       },
       PL,
@@ -128,6 +133,7 @@ export const docsLocales = {
         sdk: 'SDK',
         reference: 'Справочник',
         development: 'Разработка',
+        cloud: 'Cloud',
         openApp: 'Открыть приложение'
       },
       RU,

@@ -12,15 +12,6 @@ export const guideSidebar = (prefix: string, labels: SidebarLabels): DefaultThem
       // English only until translated; locales link to the canonical page.
       { text: labels.privacy, link: '/overview/privacy' }
     ]
-  },
-  {
-    // The hosted service's own documents, in English: a Cloud server someone else runs has its own.
-    text: labels.cloudLegal,
-    items: [
-      { text: labels.cloudTerms, link: '/overview/legal/terms' },
-      { text: labels.cloudPrivacy, link: '/overview/legal/privacy' },
-      { text: labels.subprocessors, link: '/overview/legal/subprocessors' }
-    ]
   }
 ]
 
@@ -54,7 +45,6 @@ export const userGuideSidebar = (
       { text: labels.layers, link: `${prefix}/user-guide/layers-and-pages` },
       { text: labels.exporting, link: `${prefix}/user-guide/exporting` },
       // English only until translated; locales link to the canonical page.
-      { text: labels.openPencilCloud, link: '/user-guide/openpencil-cloud' },
       { text: labels.cloudStorage, link: '/user-guide/cloud-storage' }
     ]
   },
@@ -118,8 +108,7 @@ export const referenceSidebar = (
       { text: 'Scene Graph', link: '/reference/scene-graph' },
       { text: labels.figmaMatrix, link: `${prefix}/reference/figma-compatibility` },
       ...(!prefix ? [{ text: 'DOM/CSS Mapping', link: '/reference/dom-css-mapping' }] : []),
-      { text: 'File Format', link: '/reference/file-format' },
-      { text: 'Self-hosting Cloud', link: '/reference/self-hosting-cloud' }
+      { text: 'File Format', link: '/reference/file-format' }
     ]
   }
 ]
@@ -150,6 +139,40 @@ export const developmentSidebar = (
             { text: 'Vector Conversion', link: '/development/vector-conversion' }
           ]
         : [])
+    ]
+  }
+]
+
+/** OpenPencil Cloud, in English only: using it, running a server, and the hosted service's legal documents. */
+export const cloudSidebar = (): DefaultTheme.SidebarItem[] => [
+  {
+    text: 'Using Cloud',
+    items: [
+      { text: 'Overview', link: '/cloud/' },
+      { text: 'Your Account', link: '/cloud/account' },
+      { text: 'Documents', link: '/cloud/documents' },
+      { text: 'Sharing and Teams', link: '/cloud/sharing' },
+      { text: 'AI on Cloud', link: '/cloud/ai' },
+      { text: 'Support', link: '/cloud/support' }
+    ]
+  },
+  {
+    text: 'Self-hosting',
+    items: [
+      { text: 'Install and Configure', link: '/cloud/self-hosting/' },
+      { text: 'Cloudflare Workers', link: '/cloud/self-hosting/cloudflare' },
+      { text: 'Storage and Email', link: '/cloud/self-hosting/storage-and-email' },
+      { text: 'AI Services', link: '/cloud/self-hosting/ai-services' },
+      { text: 'Operations', link: '/cloud/self-hosting/operations' }
+    ]
+  },
+  {
+    // The hosted service's own documents: a Cloud server someone else runs has its own.
+    text: 'Hosted Service Legal',
+    items: [
+      { text: 'Terms of Service', link: '/cloud/legal/terms' },
+      { text: 'Privacy Policy', link: '/cloud/legal/privacy' },
+      { text: 'Subprocessors', link: '/cloud/legal/subprocessors' }
     ]
   }
 ]

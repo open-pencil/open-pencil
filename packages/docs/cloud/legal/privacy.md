@@ -11,7 +11,7 @@ This is a draft awaiting legal review. It is not in force, and it changes before
 
 Version: 2026-11-15
 
-This policy covers OpenPencil Cloud at `cloud.openpencil.dev` (the "Service"), run by Alena Poyarkova, a sole trader registered in Mexico, [address], the controller of your personal data. What the OpenPencil app itself sends, with or without the Service, is described in [Privacy and Usage Stats](../privacy). A Cloud server someone else runs has its own operator and policy.
+This policy covers OpenPencil Cloud at `cloud.openpencil.dev` (the "Service"), run by Alena Poyarkova, a sole trader registered in Mexico, [address], the controller of your personal data. What the OpenPencil app itself sends, with or without the Service, is described in [Privacy and Usage Stats](/overview/privacy). A Cloud server someone else runs has its own operator and policy.
 
 ## Where your data is
 
