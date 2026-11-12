@@ -11,6 +11,7 @@ import { createCloudTokenCache } from '@/app/cloud/tokens'
 import { useDateFormat } from '@/app/i18n/date'
 import { formatNumber, formatPrice } from '@/app/i18n/number'
 import { formatStorageBytes } from '@/app/storage/format-bytes'
+import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 
 import PortalPlan from '../account/PortalPlan.vue'
@@ -57,6 +58,7 @@ const plan = computed<Plan | null>(() => {
       subscription.planId)
     : null
   return {
+    known: sold.data.value !== null,
     name,
     status: subscription?.status ?? null,
     periodEnd: subscription ? dates.format(subscription.currentPeriodEnd, 'date') : null,
@@ -104,7 +106,18 @@ const open = usePortalAction(async (page: () => Promise<string>) => {
       tone="warning"
       :heading="messages.billingUnavailable"
       :description="messages.billingUnavailableDescription"
-    />
+    >
+      <template #actions>
+        <AppButton
+          size="sm"
+          variant="outline"
+          :disabled="sold.loading.value"
+          @click="sold.reload()"
+        >
+          {{ messages.tryAgain }}
+        </AppButton>
+      </template>
+    </AppAlert>
     <AppAlert
       v-if="open.error.value"
       tone="error"

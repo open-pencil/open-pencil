@@ -16,8 +16,8 @@ import type { PortalCreditPack, PortalPlan, PortalPlanOffer } from '../types'
 
 /**
  * The account's plan: what it includes, the storage its workspaces use against it, and where to
- * subscribe, buy credits, or manage payment. Offers show only to an account without a plan, and
- * credit packs only to one with a plan.
+ * subscribe, buy credits, or manage payment. Offers show only to an account billing says has no
+ * plan, and credit packs only to one with a plan.
  */
 const {
   plan,
@@ -35,6 +35,11 @@ const emit = defineEmits<{ subscribe: [id: string]; buy: [id: string]; manage: [
 const messages = useCloudPortalMessages()
 
 const subscribed = computed(() => plan.status !== null)
+// A paid account is never called Free while billing can't be asked.
+const title = computed(() => {
+  if (!plan.known) return messages.value.plan
+  return plan.name ?? messages.value.planFree
+})
 const standing = computed(() => {
   if (!plan.periodEnd) return undefined
   return plan.cancels
@@ -73,7 +78,7 @@ const credits = computed(() =>
     />
 
     <SettingsSection>
-      <template #title>{{ plan.name ?? messages.planFree }}</template>
+      <template #title>{{ title }}</template>
       <template v-if="standing" #description>{{ standing }}</template>
       <template v-if="subscribed" #actions>
         <AppButton size="sm" variant="outline" :disabled="busy" @click="emit('manage')">
@@ -93,7 +98,7 @@ const credits = computed(() =>
       </SettingsGroup>
     </SettingsSection>
 
-    <SettingsSection v-if="!subscribed && offers.length > 0">
+    <SettingsSection v-if="plan.known && !subscribed && offers.length > 0">
       <template #title>{{ messages.planOffers }}</template>
       <template #description>{{ messages.planOffersDescription }}</template>
       <SettingsGroup>

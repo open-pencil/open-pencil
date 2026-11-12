@@ -158,7 +158,7 @@
   "creditPackDetail": "{price}, valable {days} jours",
   "creditPackBuy": "Acheter",
   "billingUnavailable": "Impossible d’accéder aux forfaits et aux paiements pour le moment",
-  "billingUnavailableDescription": "Votre forfait reste en vigueur. Réessayez dans quelques minutes.",
+  "billingUnavailableDescription": "Votre forfait reste en vigueur en attendant.",
   "overview": "Vue d’ensemble",
   "accessRequests": "Demandes d’accès",
   "accessRequestsDescription": "Personnes qui demandent à rejoindre le serveur. Une approbation leur permet de se connecter ; chacune reçoit un e-mail dans tous les cas.",

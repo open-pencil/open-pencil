@@ -158,7 +158,7 @@
   "creditPackDetail": "{price}，有效期 {days} 天",
   "creditPackBuy": "购买",
   "billingUnavailable": "暂时无法访问方案和付款",
-  "billingUnavailableDescription": "您的方案仍然有效。请几分钟后重试。",
+  "billingUnavailableDescription": "在此期间，您的方案仍然有效。",
   "overview": "概览",
   "accessRequests": "访问申请",
   "accessRequestsDescription": "申请加入的人。批准后即可登录；无论结果如何，对方都会收到邮件。",

@@ -158,7 +158,7 @@
   "creditPackDetail": "{price}, действуют {days} дн.",
   "creditPackBuy": "Купить",
   "billingUnavailable": "Тарифы и оплата сейчас недоступны",
-  "billingUnavailableDescription": "Ваш тариф продолжает действовать. Повторите попытку через несколько минут.",
+  "billingUnavailableDescription": "Ваш тариф пока продолжает действовать.",
   "overview": "Обзор",
   "accessRequests": "Заявки на доступ",
   "accessRequestsDescription": "Люди, которые хотят присоединиться. После одобрения они смогут войти; в любом случае каждый получит письмо.",

@@ -158,7 +158,7 @@
   "creditPackDetail": "{price}, {days} Tage gültig",
   "creditPackBuy": "Kaufen",
   "billingUnavailable": "Tarife und Zahlungen sind gerade nicht erreichbar",
-  "billingUnavailableDescription": "Dein Tarif gilt weiterhin. Versuche es in ein paar Minuten erneut.",
+  "billingUnavailableDescription": "Dein Tarif gilt weiterhin.",
   "overview": "Übersicht",
   "accessRequests": "Zugangsanfragen",
   "accessRequestsDescription": "Personen, die beitreten möchten. Nach der Genehmigung können sie sich anmelden; in jedem Fall erhalten sie eine E-Mail.",

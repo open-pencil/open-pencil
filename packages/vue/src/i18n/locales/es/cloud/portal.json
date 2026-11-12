@@ -158,7 +158,7 @@
   "creditPackDetail": "{price}, válido durante {days} días",
   "creditPackBuy": "Comprar",
   "billingUnavailable": "No se puede acceder a los planes y pagos en este momento",
-  "billingUnavailableDescription": "Tu plan sigue vigente. Inténtalo de nuevo en unos minutos.",
+  "billingUnavailableDescription": "Tu plan sigue vigente mientras tanto.",
   "overview": "Resumen",
   "accessRequests": "Solicitudes de acceso",
   "accessRequestsDescription": "Personas que piden unirse. Al aprobarlas podrán iniciar sesión; en ambos casos reciben un correo.",

@@ -187,6 +187,8 @@ export type PortalContentAction =
 
 /** The account's plan as the Plan section shows it. */
 export type PortalPlan = {
+  /** Whether billing has said what the account subscribes to; until then no plan is named. */
+  known: boolean
   /** The plan's name, or null on the server's free allowance. */
   name: string | null
   /** `past_due` while a failed payment is retried. */

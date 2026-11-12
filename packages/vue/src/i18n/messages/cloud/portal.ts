@@ -197,7 +197,7 @@ export const cloudPortalMessageDefaults = {
   creditPackDetail: params('{price}, valid for {days} days'),
   creditPackBuy: 'Buy',
   billingUnavailable: 'Plans and payments can’t be reached right now',
-  billingUnavailableDescription: 'Your plan still applies. Try again in a few minutes.',
+  billingUnavailableDescription: 'Your plan still applies meanwhile.',
   overview: 'Overview',
   accessRequests: 'Access requests',
   accessRequestsDescription:

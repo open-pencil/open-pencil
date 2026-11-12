@@ -158,7 +158,7 @@
   "creditPackDetail": "{price}、有効期間 {days} 日",
   "creditPackBuy": "購入",
   "billingUnavailable": "プランとお支払いに接続できません",
-  "billingUnavailableDescription": "プランは引き続き有効です。数分後にもう一度お試しください。",
+  "billingUnavailableDescription": "その間もプランは有効です。",
   "overview": "概要",
   "accessRequests": "アクセスリクエスト",
   "accessRequestsDescription": "参加を希望している人です。承認するとサインインできるようになります。どちらの場合も本人にメールが届きます。",

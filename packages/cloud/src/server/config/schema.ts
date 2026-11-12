@@ -1,7 +1,8 @@
 import {
   CLOUD_PROTOCOL_MAX_UPLOAD_BYTES,
   cloudEditorVersionSchema,
-  RELAY_MINIMUM_MESSAGE_BYTES
+  RELAY_MINIMUM_MESSAGE_BYTES,
+  sendsTokenSafely
 } from '#cloud/contract'
 import { staticEntitlementsSchema, staticEntitlementsTOMLSchema } from '#cloud/server/policy/schema'
 import * as v from 'valibot'
@@ -290,8 +291,10 @@ function validateServiceConfig(config: CloudServerConfig): void {
     ['services', config.servicesEndpoint],
     ['billing', config.billingEndpoint]
   ] as const) {
-    if (config.deployment === 'official' && endpoint && new URL(endpoint).protocol !== 'https:') {
-      throw new CloudConfigError(`Official ${name} endpoint must use HTTPS`)
+    if (endpoint && !sendsTokenSafely(endpoint)) {
+      throw new CloudConfigError(
+        `The ${name} endpoint must use HTTPS, or HTTP only to this machine for development`
+      )
     }
   }
 }

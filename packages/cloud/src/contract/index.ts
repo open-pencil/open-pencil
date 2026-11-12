@@ -46,7 +46,8 @@ export {
   type CloudServicesDiscovery,
   type CreateServicesTokenInput,
   type CloudServicesAPI,
-  type CloudServicesSchema
+  type CloudServicesSchema,
+  sendsTokenSafely
 } from './services'
 export {
   BILLING_ERROR_STATUS,

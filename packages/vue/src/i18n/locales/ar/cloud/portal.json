@@ -167,7 +167,7 @@
   "creditPackDetail": "{price}، صالح لمدة {days} يومًا",
   "creditPackBuy": "شراء",
   "billingUnavailable": "تعذّر الوصول إلى الخطط والمدفوعات حاليًا",
-  "billingUnavailableDescription": "خطتك سارية. حاول مرة أخرى بعد بضع دقائق.",
+  "billingUnavailableDescription": "خطتك سارية في الأثناء.",
   "overview": "نظرة عامة",
   "accessRequests": "طلبات الوصول",
   "accessRequestsDescription": "أشخاص يطلبون الانضمام. الموافقة تتيح لهم تسجيل الدخول؛ ويتلقى كل منهم بريدًا إلكترونيًا في الحالتين.",
