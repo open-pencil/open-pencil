@@ -58,7 +58,7 @@ The project migrated from React to Vue 3 early in development. Vue's reactivity 
 
 ### Why not custom layout engine?
 
-Taffy implements the CSS flexbox and CSS Grid specs and is shared by Servo, Blitz, Bevy, and Zed; the same build also lays out HTML import, through Blitz. It replaced Yoga: on Figma's Material 3 kit (78k layers) Taffy places 171 layers where Figma does that Yoga misplaced, mostly Fill items in rows, and none the other way round. Building a custom engine would be months of work to reach the same correctness level.
+Taffy implements the CSS flexbox and CSS Grid specs and is shared by Servo, Blitz, Bevy, and Zed; the same build also lays out HTML import, through Blitz. It replaced Yoga: on Figma's Material 3 kit (78k layers) Taffy places 432 more layers where Figma saved them than Yoga did, mostly Fill items in rows, and none the other way round. Building a custom engine would be months of work to reach the same correctness level.
 
 ## Additional Technologies
 
