@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import DocumentViewer from './DocumentViewer.vue'
 
 const meta = {
-  title: 'App/Document Viewer',
+  title: 'App/Metrics/Document Viewer',
   parameters: { layout: 'fullscreen' }
 } satisfies Meta
 

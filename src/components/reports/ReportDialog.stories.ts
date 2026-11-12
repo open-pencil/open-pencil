@@ -52,7 +52,7 @@ const errorPreview = JSON.stringify(
 )
 
 const meta = {
-  title: 'App/Reports/Dialog',
+  title: 'App/Shell/Report a Problem',
   tags: ['autodocs'],
   args: {
     kind: 'error',
