@@ -151,14 +151,11 @@ function sourcePaths(r: SkiaRenderer, node: SceneNode, graph: SceneGraph): Path[
 }
 
 /**
- * Whether Outline stroke turns this layer itself into outlines: one with a stroke, or text with a
- * fill, which Figma outlines into its glyphs even without a stroke.
+ * Whether Outline stroke turns this layer itself into outlines: one with a stroke, or one with a
+ * fill, which Figma turns into a vector of its fill even without a stroke (Figma desktop 126).
  */
 export function canOutlineStroke(node: SceneNode): boolean {
-  return (
-    canMakeBooleanSourcePath(node) &&
-    (nodeHasVisibleStroke(node) || (node.type === 'TEXT' && nodeHasVisibleFill(node)))
-  )
+  return canMakeBooleanSourcePath(node) && (nodeHasVisibleStroke(node) || nodeHasVisibleFill(node))
 }
 
 /** Where a layer's stroke is drawn, one path per source; a line's shape is already its stroke. */
@@ -189,7 +186,8 @@ export function outlineStrokeLayer(
     const strokeParts = strokes.map((path) => ({ path, fills: paints }))
     const stroke = pieceOf(r, node, strokeParts, `${node.name} (Stroke)`, 'Stroke')
     for (const path of strokes) path.delete()
-    if (!stroke && !text) return null
+    // A shape whose stroke covers nothing is left alone; a fill alone is still outlined.
+    if (!stroke && nodeHasVisibleStroke(node) && !text) return null
     const fillParts = text ? glyphs : sources.map((path) => ({ path, fills: node.fills }))
     const fill = filled ? pieceOf(r, node, fillParts, node.name, 'Vector') : null
     return fill || stroke ? { fill, stroke } : null
@@ -200,9 +198,9 @@ export function outlineStrokeLayer(
 }
 
 /**
- * The layers Outline stroke turns into outlines: each selected layer with a stroke, and inside a
- * selected group or frame every stroked layer it holds, the frame keeping its own stroke, as in
- * Figma. An instance's layers belong to its component and are left alone.
+ * The layers Outline stroke turns into outlines: each selected layer with a fill or stroke, and
+ * inside a selected group, frame, or component every such layer it shows, the container keeping
+ * its own paints, as in Figma. An instance's layers belong to its component and are left alone.
  */
 export function layersToOutline(
   selected: readonly SceneNode[],
