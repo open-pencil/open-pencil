@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { countBy } from 'es-toolkit'
 import { computed, ref, shallowRef } from 'vue'
 
 import type {
@@ -244,7 +245,18 @@ const story = (first: InboxReport | undefined): Story => ({
         filter,
         query,
         detail,
-        counts: { open: 2, replied: 1, closed: 0, all: 3 },
+        counts: computed(() => {
+          const byStatus: Partial<Record<ReportStatus, number>> = countBy(
+            reports.value,
+            (report) => report.status
+          )
+          return {
+            open: byStatus.open ?? 0,
+            replied: byStatus.replied ?? 0,
+            closed: byStatus.closed ?? 0,
+            all: reports.value.length
+          }
+        }),
         saveState,
         select: (report: InboxReport) => {
           selected.value = report

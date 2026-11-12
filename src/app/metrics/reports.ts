@@ -68,7 +68,8 @@ export async function saveReportTriage(
 
 /**
  * The inbox as the team works through it: one filter and search at a time, page after page as the
- * list scrolls, across all time. A newer filter or search wins over a load still in flight.
+ * list scrolls, as far back as PostHog keeps reports. A newer filter or search wins over a load
+ * still in flight.
  * Triage saved here shows at once and stays over later loads, since PostHog takes a moment to
  * have it; the counts follow it.
  */
@@ -90,13 +91,27 @@ export function useReportInbox() {
   /** Triage saved in this page, which a load that read PostHog before it took it in would undo. */
   const saves = new Map<string, ReportTriageRecord>()
 
+  /** A save PostHog had not taken in when it answered this report, if there is one. */
+  const newerSave = (report: InboxReport) => {
+    const save = saves.get(report.id)
+    return save && (!report.handledAt || report.handledAt < save.handledAt) ? save : null
+  }
   const withSaves = (page: InboxReport[]) =>
     page.map((report) => {
-      const save = saves.get(report.id)
-      return save && (!report.handledAt || report.handledAt < save.handledAt)
-        ? { ...report, ...save }
-        : report
+      const save = newerSave(report)
+      return save ? { ...report, ...save } : report
     })
+  /** The counts as they stand with those saves, which moved their reports' status already. */
+  function countsWithSaves(pageCounts: Record<ReportInboxFilter, number>, page: InboxReport[]) {
+    const adjusted = { ...pageCounts }
+    for (const report of page) {
+      const status = newerSave(report)?.status
+      if (!status || status === report.status) continue
+      adjusted[report.status] = Math.max(0, adjusted[report.status] - 1)
+      adjusted[status] += 1
+    }
+    return adjusted
+  }
 
   async function load() {
     const request = ++latest
@@ -105,7 +120,7 @@ export function useReportInbox() {
       const page = await fetchReportInbox({ filter: filter.value, search: search.value.trim() })
       if (request !== latest) return
       reports.value = withSaves(page.reports)
-      counts.value = page.counts
+      counts.value = page.counts && countsWithSaves(page.counts, page.reports)
       next.value = page.next
       loaded.value = true
       failed.value = false
@@ -135,10 +150,9 @@ export function useReportInbox() {
       })
       if (request !== latest) return
       const shown = new Set(reports.value.map((report) => report.id))
-      reports.value = [
-        ...reports.value,
-        ...withSaves(page.reports.filter((report) => !shown.has(report.id)))
-      ]
+      const added = page.reports.filter((report) => !shown.has(report.id))
+      reports.value = [...reports.value, ...withSaves(added)]
+      if (counts.value) counts.value = countsWithSaves(counts.value, added)
       next.value = page.next
     } catch (error) {
       if (request !== latest) return
@@ -149,7 +163,6 @@ export function useReportInbox() {
     }
   }
 
-  /** Saves triage and shows it, with who saved it, in place; returns the report as it now is. */
   /** Saves a triage change and shows it in the list at once; answers what was saved. */
   async function update(reportId: string, triage: ReportTriage): Promise<ReportTriageRecord> {
     // Only the fields this change saved, so merging it leaves the others as they were.
@@ -192,7 +205,12 @@ export function useReportInbox() {
   }
 }
 
-/** Where the last triage change on the report open stands: none yet, on its way, saved, or failed. */
+const TRIAGE_FIELDS = ['status', 'note'] as const satisfies (keyof ReportTriage)[]
+
+/**
+ * Where triage changes on the report open stand: none yet, on their way, saved, or one that failed
+ * and has not been saved since.
+ */
 export type ReportSaveState = 'idle' | 'saving' | 'saved' | 'failed'
 
 /**
@@ -205,13 +223,26 @@ export function useReportTriage(inbox: Pick<ReturnType<typeof useReportInbox>, '
   const detailFailed = ref(false)
   const saveState = ref<ReportSaveState>('idle')
 
-  /** Counts each opening, so only the latest one's steps are shown, even for the same report. */
+  /** Counts each opening, so only the latest one's steps and saves are shown, even for the same report. */
   let opening = 0
+  /** Changes to the open report still on their way. */
+  let pending = 0
+  /**
+   * Fields of the open report whose last save failed: a later save of the other field leaves the
+   * warning up, and saving the field again clears it.
+   */
+  const failedFields = new Set<keyof ReportTriage>()
+  const settle = () => {
+    if (failedFields.size > 0) saveState.value = 'failed'
+    else saveState.value = pending > 0 ? 'saving' : 'saved'
+  }
 
   async function open(report: InboxReport) {
     const request = ++opening
     selected.value = report
     saveState.value = 'idle'
+    pending = 0
+    failedFields.clear()
     detail.value = null
     detailFailed.value = false
     try {
@@ -229,20 +260,32 @@ export function useReportTriage(inbox: Pick<ReturnType<typeof useReportInbox>, '
    */
   let queue: Promise<unknown> = Promise.resolve()
   function apply(report: InboxReport, change: ReportTriage): Promise<boolean> {
-    const shown = () => selected.value?.id === report.id
+    const opened = selected.value?.id === report.id ? opening : null
+    const shown = () => opened === opening
+    const fields = TRIAGE_FIELDS.filter((field) => change[field] !== undefined)
     // Saving shows from the moment of the change, even while an earlier one is still on its way.
-    if (shown()) saveState.value = 'saving'
+    if (shown()) {
+      pending += 1
+      settle()
+    }
+    const finish = (ok: boolean) => {
+      if (!shown()) return
+      pending -= 1
+      for (const field of fields) {
+        if (ok) failedFields.delete(field)
+        else failedFields.add(field)
+      }
+      settle()
+    }
     const run = async () => {
       try {
         const saved = await inbox.update(report.id, change)
-        if (selected.value && shown()) {
-          selected.value = { ...selected.value, ...saved }
-          saveState.value = 'saved'
-        }
+        if (selected.value && shown()) selected.value = { ...selected.value, ...saved }
+        finish(true)
         return true
       } catch (error) {
         console.warn('The report could not be saved', error)
-        if (shown()) saveState.value = 'failed'
+        finish(false)
         return false
       }
     }

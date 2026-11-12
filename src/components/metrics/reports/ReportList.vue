@@ -87,6 +87,8 @@ watch(
   }
 )
 /** Up and down move to the report before or after the one chosen. */
+/** Whether the report open is in this list; one from before a filter changed may not be. */
+const selectedListed = computed(() => reports.some((report) => report.id === selectedId))
 function move(step: number) {
   const index = reports.findIndex((report) => report.id === selectedId)
   const next = reports[Math.min(Math.max(index + step, 0), reports.length - 1)]
@@ -135,7 +137,7 @@ watch(
     role="listbox"
     aria-label="Reports"
     tabindex="0"
-    :aria-activedescendant="selectedId ? `report-${selectedId}` : undefined"
+    :aria-activedescendant="selectedListed ? `report-${selectedId}` : undefined"
     :class="ui.list()"
     @keydown.down.prevent="move(1)"
     @keydown.up.prevent="move(-1)"

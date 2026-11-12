@@ -65,10 +65,14 @@ function choose(report: InboxReport) {
   emit('select', report)
 }
 
-/** The report a step away from the one open, if there is one. */
+/**
+ * The report a step away from the one open, if there is one. One open from before a filter
+ * changed is not in the list, so a step forward enters it at the first and back at the last.
+ */
 function neighbour(step: number): InboxReport | undefined {
   const index = reports.findIndex((report) => report.id === selected?.id)
-  return index === -1 ? undefined : reports[index + step]
+  if (index === -1) return step > 0 ? reports[0] : reports.at(-1)
+  return reports[index + step]
 }
 function move(step: number) {
   const next = neighbour(step)

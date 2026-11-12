@@ -73,13 +73,27 @@ const status = computed({
 
 // The note follows the report shown, and saves once the field is left with something changed.
 const note = ref(report.triageNote ?? '')
+const differs = (text: string, saved: string | null) => (text.trim() || null) !== (saved ?? null)
+/** Notes not saved yet, such as after a failed save, by report, kept while another is shown. */
+const drafts = new Map<string, string>()
 watch(
-  () => [report.id, report.triageNote],
-  () => {
-    note.value = report.triageNote ?? ''
+  () => report,
+  (next, previous) => {
+    if (next.id !== previous.id) {
+      if (differs(note.value, previous.triageNote)) drafts.set(previous.id, note.value)
+      else drafts.delete(previous.id)
+      note.value = drafts.get(next.id) ?? next.triageNote ?? ''
+      drafts.delete(next.id)
+      return
+    }
+    // The saved note changed, by this save or a teammate's: follow it unless the field holds
+    // writing beyond what was saved before.
+    if (next.triageNote !== previous.triageNote && !differs(note.value, previous.triageNote)) {
+      note.value = next.triageNote ?? ''
+    }
   }
 )
-const noteChanged = () => (note.value.trim() || null) !== (report.triageNote ?? null)
+const noteChanged = () => differs(note.value, report.triageNote)
 function saveNote() {
   if (noteChanged()) emit('note', note.value.trim() || null)
 }

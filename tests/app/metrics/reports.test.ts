@@ -133,6 +133,8 @@ describe('report inbox state', () => {
     await refreshing
 
     expect(inbox.reports.value[0]).toMatchObject({ status: 'closed', handledBy: 'dan@example.com' })
+    // The counts that load read before the save too, and agree with the list.
+    expect(inbox.counts.value).toEqual({ open: 1, replied: 0, closed: 1, all: 2 })
   })
 
   test('appends the next page once, and starts over for another filter', async () => {
@@ -247,5 +249,19 @@ describe('report inbox state', () => {
     expect(triage.saveState.value).toBe('failed')
     void triage.open(report(B, 'open'))
     expect(triage.saveState.value).toBe('idle')
+  })
+
+  test('keeps a failed change in view when a later change to the other field saves', async () => {
+    const triage = useReportTriage({
+      update: async (_reportId, change) => {
+        if (change.note !== undefined) throw new Error('PostHog did not answer')
+        return { ...SAVED_RECORD, status: change.status }
+      }
+    })
+    const opened = report(A, 'open')
+    void triage.open(opened)
+    expect(await triage.setNote(opened, 'Asked for the file')).toBe(false)
+    expect(await triage.setStatus(opened, 'replied')).toBe(true)
+    expect(triage.saveState.value).toBe('failed')
   })
 })
