@@ -1,0 +1,1 @@
+- Cloud servers open a community gallery document read-only at `/community/<id>`, or one of its named versions with `?version=`, for anyone with or without an account (#2051).
