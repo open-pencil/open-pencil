@@ -89,7 +89,13 @@ export {
   type CollaborationTicket
 } from './collaboration'
 export * from './relay'
-export { workspaceEntitlementsSchema, type WorkspaceEntitlements } from './entitlements'
+export {
+  accountEntitlementsResponseSchema,
+  accountEntitlementsSchema,
+  workspaceEntitlementsSchema,
+  type AccountEntitlements,
+  type WorkspaceEntitlements
+} from './entitlements'
 export {
   CLOUD_DISCOVERY_PATH,
   CLOUD_PROTOCOL_VERSION,

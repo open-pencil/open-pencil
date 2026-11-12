@@ -184,3 +184,34 @@ export type PortalContentAction =
   | 'suspend-owner'
   | 'dismiss'
   | 'mark-handled'
+
+/** The account's plan as the Plan section shows it. */
+export type PortalPlan = {
+  /** The plan's name, or null on the server's free allowance. */
+  name: string | null
+  /** `past_due` while a failed payment is retried. */
+  status: 'active' | 'past_due' | null
+  /** When it renews, or ends when `cancels`. */
+  periodEnd: string | null
+  cancels: boolean
+  storage: { usedBytes: number; totalBytes: number | null }
+  /** Credits granted each month, or null when the plan includes no services. */
+  monthlyCredits: number | null
+}
+
+/** A plan the account can subscribe to. */
+export type PortalPlanOffer = {
+  id: string
+  name: string
+  price: string
+  storage: string
+  credits: string
+}
+
+/** Credits an account on a plan can buy once. */
+export type PortalCreditPack = {
+  id: string
+  credits: string
+  price: string
+  validDays: number
+}
