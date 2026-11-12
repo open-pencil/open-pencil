@@ -8,11 +8,12 @@ import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas'
 import { groupFitOptions } from '#core/canvas/boolean'
-import { IS_BROWSER, type InterfaceTheme } from '#core/constants'
+import type { InterfaceTheme } from '#core/constants'
 import {
   invalidateBooleanAncestors,
   rendererInvalidationForChanges
 } from '#core/editor/graph-events'
+import { fitViewport, SELECTION_INSETS } from '#core/editor/viewport'
 import { defaultIcons, type IconProvider } from '#core/icons'
 import type { RasterCodec } from '#core/io/formats/raster'
 import { fontManager } from '#core/text/font/manager'
@@ -43,6 +44,9 @@ import { cancelScriptWaits, waitOutsideScript } from './waits'
 
 const noop = () => undefined
 
+/** The window a view without a host's is fitted into. */
+const HEADLESS_VIEWPORT = { width: 1280, height: 720 }
+
 /** What a host passes to `FigmaAPI` beyond the document. */
 export interface FigmaAPIOptions {
   /** Fetches the HTTP(S) URLs `figma.createImageAsync` loads; the global `fetch` by default. */
@@ -68,6 +72,21 @@ export interface FigmaAPIOptions {
    * records edits and syncs their instances itself.
    */
   flushComponentSync?: () => void
+  /**
+   * The view of a host that shows the document, which `figma.viewport` reads and moves. Without
+   * one the API keeps a view of its own, sized as a 1280 × 720 window.
+   */
+  viewport?: FigmaViewportHost
+}
+
+/** A host's view of the canvas, for `figma.viewport`. */
+export interface FigmaViewportHost {
+  /** The world point at the middle of the view, and the zoom. */
+  get(): { center: Vector; zoom: number }
+  /** Centres the view on `center` at `zoom` on the page `pageId`. */
+  set(pageId: string, center: Vector, zoom: number): void
+  /** Scrolls and zooms the page `pageId` so the world rectangle fills the view. */
+  fit(pageId: string, bounds: Rect): void
 }
 
 export { FigmaNodeProxy } from './proxy'
@@ -134,10 +153,12 @@ export class FigmaAPI extends FigmaStructureMethods implements NodeProxyHost {
   /** How `createImageAsync` fetches HTTP(S) URLs; a host passes one that gets past CORS. */
   readonly #fetch: images.ImageFetch
   readonly #prepareFontList: (() => Promise<void>) | undefined
+  readonly #viewportHost: FigmaViewportHost | undefined
 
   constructor(graph: SceneGraph, options: FigmaAPIOptions = {}) {
     super()
     this.#graph = graph
+    this.#viewportHost = options.viewport
     bindGraph(this, graph)
     this.#fetch = options.fetch ?? ((input, init) => fetch(input, init))
     if (options.signal) cancelScriptWaits(this, options.signal)
@@ -280,33 +301,36 @@ export class FigmaAPI extends FigmaStructureMethods implements NodeProxyHost {
 
   // --- Viewport ---
 
-  #viewport = { x: 0, y: 0, zoom: 1 }
+  /** The view the API keeps when no host shows the document. */
+  #viewport = { center: { x: 0, y: 0 }, zoom: 1 }
 
   get viewport(): {
     center: Vector
     zoom: number
     scrollAndZoomIntoView: (nodes: readonly { absoluteBoundingBox: Rect }[]) => void
   } {
+    const { center, zoom } = this.#viewportHost?.get() ?? this.#viewport
     return {
-      center: { x: this.#viewport.x, y: this.#viewport.y },
-      zoom: this.#viewport.zoom,
+      center: { ...center },
+      zoom,
       scrollAndZoomIntoView: (nodes) => {
-        const b = computeBounds(nodes.map((n) => n.absoluteBoundingBox))
-        if (b.width === 0 && b.height === 0 && nodes.length === 0) return
-
-        const padding = 80
-        const contentW = b.width + padding * 2
-        const contentH = b.height + padding * 2
-        const viewW = IS_BROWSER ? window.innerWidth : 1280
-        const viewH = IS_BROWSER ? window.innerHeight : 720
-        const zoom = Math.min(viewW / contentW, viewH / contentH, 1)
-        this.#viewport = { x: b.x + b.width / 2, y: b.y + b.height / 2, zoom }
+        if (nodes.length === 0) return
+        const bounds = computeBounds(nodes.map((n) => n.absoluteBoundingBox))
+        if (this.#viewportHost) {
+          this.#viewportHost.fit(this.#currentPageId, bounds)
+          return
+        }
+        this.#viewport = {
+          center: { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 },
+          zoom: fitViewport(bounds, HEADLESS_VIEWPORT, SELECTION_INSETS).zoom
+        }
       }
     }
   }
 
   set viewport(v: { center: Vector; zoom: number }) {
-    this.#viewport = { x: v.center.x, y: v.center.y, zoom: v.zoom }
+    if (this.#viewportHost) this.#viewportHost.set(this.#currentPageId, v.center, v.zoom)
+    else this.#viewport = { center: { ...v.center }, zoom: v.zoom }
   }
 
   createImage(data: Uint8Array): Image {
