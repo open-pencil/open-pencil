@@ -44,7 +44,7 @@ type Args = {
 }
 
 const meta = {
-  title: 'App/Cloud Portal/Plan',
+  title: 'App/Cloud/Portal/Plan',
   parameters: { layout: 'padded' }
 } satisfies Meta<Args>
 
@@ -64,7 +64,7 @@ export const Free: Story = {
     // The only action is subscribing to the one plan offered; nothing to manage yet.
     await expect(buttons).toHaveLength(1)
     const [subscribe] = buttons
-    if (subscribe) await userEvent.click(subscribe)
+    await userEvent.click(subscribe)
     await expect(args.onSubscribe).toHaveBeenCalledWith('pro')
     await expect(args.onManage).not.toHaveBeenCalled()
   }
@@ -83,9 +83,9 @@ export const Paid: Story = {
     const [manage, ...buy] = within(canvasElement).getAllByRole('button')
     await expect(buy).toHaveLength(PACKS.length)
     const [, larger] = buy
-    if (larger) await userEvent.click(larger)
+    await userEvent.click(larger)
     await expect(args.onBuy).toHaveBeenCalledWith('credits-20k')
-    if (manage) await userEvent.click(manage)
+    await userEvent.click(manage)
     await expect(args.onManage).toHaveBeenCalledOnce()
     await expect(args.onSubscribe).not.toHaveBeenCalled()
   }
