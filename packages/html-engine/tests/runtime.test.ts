@@ -50,6 +50,28 @@ describe('the HTML engine runtime', () => {
     expect(a.layout?.box).toEqual({ x: 8, y: 8, width: 100, height: 50 })
   })
 
+  test('gives sizes as the page set them, and the box layout gave them in layout', async () => {
+    const document = await styled(
+      `<style>.half { width: 50%; min-height: 20px; flex-basis: 30px }</style>
+      <div id="auto">Text</div><div id="half" class="half"></div><div id="fixed" style="width:120px;max-width:none"></div>`
+    )
+    const sizes = (id: string) => {
+      const style = elementById(document, id).computedStyle ?? {}
+      return [
+        style.width,
+        style.height,
+        style['min-height'],
+        style['max-width'],
+        style['flex-basis']
+      ]
+    }
+
+    expect(sizes('auto')).toEqual(['auto', 'auto', 'auto', 'none', 'auto'])
+    expect(sizes('half')).toEqual(['50%', 'auto', '20px', 'none', '30px'])
+    expect(sizes('fixed')).toEqual(['120px', 'auto', 'auto', 'none', 'auto'])
+    expect(elementById(document, 'half').layout?.box.width).toBe(392)
+  })
+
   test('applies media queries for the viewport it lays out in', async () => {
     const document = await styled(
       `<style>@media (max-width: 700px) { #nav { display: none } }</style><nav id="nav">Menu</nav>`

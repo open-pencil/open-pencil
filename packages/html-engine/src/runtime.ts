@@ -247,8 +247,10 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
       })
       const styled = structuredClone(document)
       for (const [element, node] of pairElements(styled, capture)) {
-        // Every captured property's computed value, so none falls back to a stale inline one.
-        element.computedStyle = withShorthands({ ...capture.initial, ...node.style })
+        // Every captured property's computed value, so none falls back to a stale inline one, with
+        // sizes as the page set them rather than as layout resolved them, so the importer tells a
+        // size the page fixed from one that fills or hugs; the boxes layout gave stay in `layout`.
+        element.computedStyle = withShorthands({ ...capture.initial, ...node.style, ...node.sizes })
         if (compute.layout) element.layout = layoutOf(node)
       }
       return styled
