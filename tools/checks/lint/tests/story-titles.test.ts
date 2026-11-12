@@ -16,7 +16,10 @@ test('places Design System and App stories under a listed family or area, in Tit
         'src/Other.ts': story('App/Nowhere'),
         'src/Leaf.stories.ts': story('App/Document Viewer'),
         'src/Unlisted.stories.ts': story('App/Save To/Dialog'),
-        'src/Lowercase.stories.ts': story('Design System/Lists/Data table')
+        'src/Lowercase.stories.ts': story('Design System/Lists/Data table'),
+        // CSF metadata named and exported, as most stories do; a nested `title` is not a story's.
+        'src/Named.stories.ts': `const meta = { title: 'App/Settings', args: { title: 'App/Settings' } } satisfies object\nexport default meta\n`,
+        'src/Nested.stories.ts': `export default { title: 'App/Cloud/Portal', args: { title: 'App/Settings' } }\n`
       },
       { [rule]: 'error' }
     ),
@@ -27,6 +30,7 @@ test('places Design System and App stories under a listed family or area, in Tit
   ).toEqual([
     "Leaf.stories.ts: 'App/Document Viewer' needs an area and a component: 'App/<Area>/<Component>'.",
     "Lowercase.stories.ts: 'Design System/Lists/Data table' must be in Title Case.",
+    "Named.stories.ts: 'App/Settings' needs an area and a component: 'App/<Area>/<Component>'.",
     expect.stringMatching(/^Unlisted.stories.ts: 'Save To' is not one of the App areas/)
   ])
 })

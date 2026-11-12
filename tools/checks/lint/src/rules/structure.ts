@@ -10,6 +10,7 @@ import type {
   Program,
   PropertyKey
 } from '@oxc-project/types'
+import type { TSESTree } from '@typescript-eslint/utils'
 import { compact, once } from 'es-toolkit'
 import { Visitor, parseSync } from 'oxc-parser'
 
@@ -270,13 +271,22 @@ const storyTitles = {
     if (!file.endsWith('.stories.ts')) return {}
     const sections = sidebarAreas()
 
-    return {
-      Property(node) {
-        if (node.key.type !== 'Identifier' || node.key.name !== 'title') return
-        if (node.value.type !== 'Literal' || typeof node.value.value !== 'string') return
+    /** The CSF metadata: the object a story file exports by default, directly or by its name. */
+    const metadata = new Map<string, TSESTree.ObjectExpression>()
+    let exported: TSESTree.ObjectExpression | string | null = null
+    const unwrap = (node: TSESTree.Node): TSESTree.Node =>
+      node.type === 'TSSatisfiesExpression' || node.type === 'TSAsExpression'
+        ? unwrap(node.expression)
+        : node
+
+    function check(object: TSESTree.ObjectExpression) {
+      for (const node of object.properties) {
+        if (node.type !== 'Property' || node.key.type !== 'Identifier') continue
+        if (node.key.name !== 'title') continue
+        if (node.value.type !== 'Literal' || typeof node.value.value !== 'string') continue
         const [section = '', area, ...rest] = node.value.value.split('/')
         const areas = sections.get(section)
-        if (!areas) return
+        if (!areas) continue
         let message: string | null = null
         if (area === undefined || rest.length === 0) {
           message = `'${node.value.value}' needs an area and a component: '${section}/<Area>/<Component>'.`
@@ -286,6 +296,23 @@ const storyTitles = {
           message = `'${node.value.value}' must be in Title Case.`
         }
         if (message) context.report({ node: node.value, message })
+      }
+    }
+
+    return {
+      VariableDeclarator(node) {
+        if (node.id.type !== 'Identifier' || !node.init) return
+        const init = unwrap(node.init)
+        if (init.type === 'ObjectExpression') metadata.set(node.id.name, init)
+      },
+      ExportDefaultDeclaration(node) {
+        const declaration = unwrap(node.declaration)
+        if (declaration.type === 'Identifier') exported = declaration.name
+        else if (declaration.type === 'ObjectExpression') exported = declaration
+      },
+      'Program:exit'() {
+        const object = typeof exported === 'string' ? metadata.get(exported) : exported
+        if (object) check(object)
       }
     }
   }
