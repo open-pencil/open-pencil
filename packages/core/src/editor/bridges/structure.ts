@@ -18,7 +18,6 @@ export function createStructureBridge(structure: StructureActions, selection: Se
     booleanOperationSelected: (operation: 'UNION' | 'SUBTRACT' | 'INTERSECT' | 'EXCLUDE') =>
       structure.booleanOperationSelected(selection.getSelectedNodes(), operation),
     flattenSelected: () => structure.flattenSelected(selection.getSelectedNodes()),
-    outlineTextSelected: () => structure.outlineTextSelected(selection.getSelectedNodes()),
     outlineStrokeSelected: () => structure.outlineStrokeSelected(selection.getSelectedNodes()),
     /** Scales the selection evenly about a canvas point, as Figma's Scale tool does. */
     scaleSelected: (scale: number, anchor: Vector) =>

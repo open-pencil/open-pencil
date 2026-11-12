@@ -131,12 +131,6 @@ export function createStructureActions(ctx: EditorContext) {
     return flattenSelectedImpl(ctx, selectedNodes)
   }
 
-  function outlineTextSelected(selectedNodes: SceneNode[]) {
-    if (selectedNodes.length === 0 || selectedNodes.some((node) => node.type !== 'TEXT'))
-      return null
-    return flattenSelectedImpl(ctx, selectedNodes, { label: 'Outline text' })
-  }
-
   function outlineStrokeSelected(selectedNodes: SceneNode[]) {
     return outlineStrokeSelectedImpl(ctx, selectedNodes)
   }
@@ -242,7 +236,6 @@ export function createStructureActions(ctx: EditorContext) {
     ungroupSelected,
     canUngroup,
     flattenSelected,
-    outlineTextSelected,
     outlineStrokeSelected,
     ...stateActions,
     moveToPage,

@@ -405,11 +405,6 @@ export const APP_MENU_SCHEMA = [
         command: 'selection.flatten'
       },
       {
-        id: 'selection.outlineText',
-        label: 'Outline text',
-        command: 'selection.outlineText'
-      },
-      {
         id: 'selection.outlineStroke',
         label: 'Outline stroke',
         command: 'selection.outlineStroke'
