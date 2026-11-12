@@ -112,6 +112,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1149.0",
     "@aws-sdk/s3-request-presigner": "^3.1149.0",
+    "@better-auth/api-key": "1.7.7",
     "@better-auth/core": "1.7.7",
     "@better-auth/passkey": "1.7.7",
     "@better-auth/utils": "0.4.2",

@@ -3,6 +3,7 @@ import IconFileText from '~icons/lucide/file-text'
 import IconFlag from '~icons/lucide/flag'
 import IconGauge from '~icons/lucide/gauge'
 import IconHistory from '~icons/lucide/history'
+import IconKeyRound from '~icons/lucide/key-round'
 import IconMail from '~icons/lucide/mail'
 import IconMonitorSmartphone from '~icons/lucide/monitor-smartphone'
 import IconShieldCheck from '~icons/lucide/shield-check'
@@ -15,6 +16,7 @@ export const PORTAL_SECTION_ICONS = {
   profile: IconUserRound,
   security: IconShieldCheck,
   sessions: IconMonitorSmartphone,
+  tokens: IconKeyRound,
   overview: IconGauge,
   requests: IconUserPlus,
   reports: IconFlag,
