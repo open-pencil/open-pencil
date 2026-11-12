@@ -156,7 +156,7 @@ export function createFileHandlers(files?: AutomationFiles) {
     return { ok: true, result: { closed: getTabById(target.documentId) === undefined } }
   }
 
-  // Creating and opening work with no document in front, as when the app shows Home.
+  // Creating and opening work while the selected tab is Home or a New file tab.
   async function handleNewDocument(args: unknown): Promise<unknown> {
     const { path } = parseToolArgs('create_document', saveArgsSchema, args)
     const tab = createTab()

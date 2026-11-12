@@ -69,9 +69,9 @@ const NON_DOCUMENT_TAB_NAMES: Partial<Record<Tab['kind'], string>> = {
 }
 
 /** Why a call that names no document has none to work on, and what to call instead. */
-function noDocumentInFrontError(front: Tab | undefined): Error {
-  const shown = front && NON_DOCUMENT_TAB_NAMES[front.kind]
-  const reason = shown ? `OpenPencil shows ${shown}, not a document` : 'No document is open'
+function selectedTabNotDocumentError(selected: Tab | undefined): Error {
+  const shown = selected && NON_DOCUMENT_TAB_NAMES[selected.kind]
+  const reason = shown ? `The selected tab is ${shown}, not a document` : 'No document is open'
   const open = documentTabs().map((tab) => `${tab.id} ("${tab.store.state.documentName}")`)
   const next =
     open.length > 0
@@ -107,12 +107,12 @@ export function resolveAutomationTarget(
   args: AutomationTargetArgs | undefined
 ): AutomationTarget {
   const requestedDocumentId = readString(args?.document_id)
-  const front = getTabForStore(activeStore)
-  const tab = documentTab(requestedDocumentId ? getTabById(requestedDocumentId) : front)
+  const selected = getTabForStore(activeStore)
+  const tab = documentTab(requestedDocumentId ? getTabById(requestedDocumentId) : selected)
   if (!tab) {
     throw requestedDocumentId
       ? new Error(`Document "${requestedDocumentId}" not found`)
-      : noDocumentInFrontError(front)
+      : selectedTabNotDocumentError(selected)
   }
 
   const requestedPageId = readString(args?.page_id)

@@ -26,7 +26,7 @@ afterEach(() => {
 
 // Home carries an empty editor the window never shows as a design: an agent's edits there were
 // reported as done and could never be seen.
-describe('automation while Home is in front', () => {
+describe('automation while the selected tab is Home', () => {
   test('lists only the documents', async () => {
     const doc = createTab()
     const home = createHomeTab()
@@ -44,7 +44,7 @@ describe('automation while Home is in front', () => {
     const home = createHomeTab()
 
     await expect(request('eval', { code: 'figma.createRectangle()' })).rejects.toThrow(
-      `OpenPencil shows Home, not a document. Pass document_id`
+      `The selected tab is Home, not a document. Pass document_id`
     )
     await expect(request('tree')).rejects.toThrow(`${doc.id} ("${doc.store.state.documentName}")`)
     expect(home.store.graph.getChildren(home.store.state.currentPageId)).toHaveLength(0)
