@@ -8,6 +8,8 @@ import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
 import { createReplyStream, type ReplyToolCall } from '@/app/ai/reply/stream'
 
+import { ompOwnTool } from './omp'
+
 type ToolCallReport = Extract<SessionUpdate, { sessionUpdate: 'tool_call' | 'tool_call_update' }>
 
 /**
@@ -27,8 +29,6 @@ interface ToolIdentity {
 const OWN_PREFIX = `mcp__${OPEN_PENCIL_MCP_SERVER}__`
 const GROK_OWN_PREFIX = `${OPEN_PENCIL_MCP_SERVER}__`
 const ANTIGRAVITY_OWN_TITLE = `Run mcp_${OPEN_PENCIL_MCP_SERVER}_`
-/** Oh My Pi names a server `open_pencil` where it is `open-pencil`, which a device name cannot hold. */
-const OMP_OWN_DEVICE = `xd://mcp__${OPEN_PENCIL_MCP_SERVER.replaceAll('-', '_')}_`
 const OMP_ERROR_PREFIX = /^Error: /
 /** The tool OpenPencil's MCP server gives agents that defer tools; see `ACPAgentDef.defersMCPTools`. */
 const CALL_TOOL = 'call_mcp_tool'
@@ -148,18 +148,15 @@ function antigravityIdentity(update: ToolCallReport): ToolIdentity | null {
 
 /**
  * Oh My Pi mounts MCP tools as devices and calls one by writing its arguments, as JSON, to
- * `xd://mcp__<server>_<tool>`. The name joins server and tool with single underscores, so only
- * OpenPencil's server, whose name is known, splits off; another server's calls keep the title.
+ * `xd://mcp__<server>_<tool>`. Only a device that is exactly one of OpenPencil's tools shows as
+ * its own; another server's calls keep the title.
  */
 function ompIdentity(update: ToolCallReport): ToolIdentity | null {
   const input = v.safeParse(ompDeviceInputSchema, update.rawInput)
-  if (!input.success || !input.output.path.startsWith(OMP_OWN_DEVICE)) return null
+  const tool = input.success ? ompOwnTool(input.output.path) : null
+  if (!input.success || tool === null) return null
   const args = v.safeParse(jsonObjectSchema, input.output.content)
-  return {
-    name: input.output.path.slice(OMP_OWN_DEVICE.length),
-    kind: 'own',
-    input: args.success ? args.output : {}
-  }
+  return { name: tool, kind: 'own', input: args.success ? args.output : {} }
 }
 
 function identify(update: ToolCallReport): ToolIdentity {

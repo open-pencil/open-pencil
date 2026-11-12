@@ -223,6 +223,20 @@ describe('permission for OpenPencil’s own tools', () => {
     })
   })
 
+  test('Oh My Pi’s calls to a server whose name starts like OpenPencil’s are left to the person', () => {
+    const approval = createOwnToolApproval()
+    // A server `open-pencil-extra` with a tool `delete`, and one tool OpenPencil does not have.
+    for (const device of ['mcp__open_pencil_extra_delete', 'mcp__open_pencil_get_node_x']) {
+      approval.noteUpdate({
+        sessionUpdate: 'tool_call',
+        toolCallId: 'tc-1',
+        title: 'Calling an MCP tool',
+        rawInput: { path: `xd://${device}`, content: '{}' }
+      })
+      expect(approval.answer(makeRequest())).toBeNull()
+    }
+  })
+
   test('another server’s calls and the agent’s own tools are left to the person', () => {
     const approval = createOwnToolApproval()
     approval.noteUpdate({

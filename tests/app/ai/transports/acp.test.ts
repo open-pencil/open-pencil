@@ -68,6 +68,7 @@ function fakeAgents({
   let spawns = 0
   const searchPaths: (string | null | undefined)[] = []
   const defersTools: boolean[] = []
+  const joinsNames: boolean[] = []
   const cwds: (string | undefined)[] = []
   let crashLatest: (() => void) | null = null
 
@@ -161,6 +162,7 @@ function fakeAgents({
     authToken: async () => (tokenHangs ? createDeferred<never>().promise : null),
     linkTools: async (_token, linkOptions) => {
       defersTools.push(linkOptions?.defersTools ?? false)
+      joinsNames.push(linkOptions?.joinsNames ?? false)
       return {
         chat: 'chat',
         mcpServers: [],
@@ -183,6 +185,7 @@ function fakeAgents({
     searchPaths,
     cwds,
     defersTools,
+    joinsNames,
     finishLookup: () => lookup.resolve(undefined),
     crash: () => expectDefined(crashLatest, 'a started agent')()
   }
@@ -265,6 +268,21 @@ test('an agent that defers MCP tools gets the server’s call_mcp_tool, others d
   await send(plain, 'first')
   await plain.destroy()
   expect(agents.defersTools).toEqual([true, false])
+})
+
+test('an agent that joins server and tool names has outside servers that could shadow OpenPencil’s left out', async () => {
+  const omp = expectDefined(
+    ACP_AGENTS.find((agent) => agent.joinsMCPNames),
+    'an agent that joins MCP names'
+  )
+  const agents = fakeAgents()
+  const { transport: joining } = transport(agents, { agentDef: omp })
+  await send(joining, 'first')
+  await joining.destroy()
+  const { transport: plain } = transport(agents)
+  await send(plain, 'first')
+  await plain.destroy()
+  expect(agents.joinsNames).toEqual([true, false])
 })
 
 test('a saved session resumes without the instructions or the transcript', async () => {
