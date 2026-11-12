@@ -48,14 +48,14 @@ function setup(
   const state = reactive({ documentName: 'Agent draft' })
   const version = ref(0)
   const store = injectedStore ?? createMemoryRecoveryStore()
-  let autosaving = false
+  const autosaving = ref(false)
   const enabled = ref(initialEnabled)
   const recovery = createDocumentRecovery({
     state,
     version: () => version.value,
     store,
     recoveryId: 'recovery-1',
-    autosaves: () => autosaving,
+    autosaves: () => autosaving.value,
     isEnabled: () => enabled.value,
     buildFigFile: buildFigFile ?? (async () => new Uint8Array([version.value]))
   })
@@ -63,7 +63,7 @@ function setup(
     version,
     store,
     recovery,
-    setAutosaves: (value: boolean) => (autosaving = value),
+    setAutosaves: (value: boolean) => (autosaving.value = value),
     setEnabled: (value: boolean) => (enabled.value = value)
   }
 }
@@ -140,6 +140,20 @@ describe('document recovery controller', () => {
     version.value = 1
     await recovery.persistNow()
     expect(await store.list()).toEqual([])
+    recovery.disposeRecovery()
+  })
+
+  test('keeps a copy of unwritten edits once autosave stops', async () => {
+    const { version, store, recovery, setAutosaves } = setup()
+    setAutosaves(true)
+    version.value = 1
+    await recovery.persistNow()
+    expect(await store.list()).toEqual([])
+
+    // No further edit: stopping autosave alone writes the copy, long before the edit debounce.
+    setAutosaves(false)
+    await Bun.sleep(0)
+    expect((await store.list()).map((copy) => copy.id)).toEqual(['recovery-1'])
     recovery.disposeRecovery()
   })
 
