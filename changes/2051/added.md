@@ -1,1 +1,1 @@
-- Cloud servers open a community gallery document read-only at `/community/<id>`, or one of its named versions with `?version=`, for anyone with or without an account (#2051).
+- Cloud servers open a community gallery document read-only at `/community/<id>`, or one of its named versions with `?version=`, for anyone with or without an account, with a banner to save a copy of it; Save to and Home mark the gallery workspace as public and never pick it on their own (#2051).
