@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { expect, userEvent, within } from 'storybook/test'
+import { provide } from 'vue'
 import IconCheck from '~icons/lucide/check'
 import IconClock from '~icons/lucide/clock'
 import IconMailCheck from '~icons/lucide/mail-check'
@@ -6,10 +8,12 @@ import IconMonitorX from '~icons/lucide/monitor-x'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 
+import { PORTAL_LEGAL } from '../layout/legal'
 import PortalDeviceApproval from './PortalDeviceApproval.vue'
 import PortalNotice from './PortalNotice.vue'
 import PortalResetPassword from './PortalResetPassword.vue'
 import PortalSignIn from './PortalSignIn.vue'
+import PortalTerms from './PortalTerms.vue'
 import PortalTwoFactor from './PortalTwoFactor.vue'
 
 const host = 'cloud.studio.example'
@@ -19,6 +23,7 @@ const components = {
   PortalNotice,
   PortalResetPassword,
   PortalSignIn,
+  PortalTerms,
   PortalTwoFactor,
   AppButton,
   IconCheck,
@@ -28,7 +33,7 @@ const components = {
 }
 
 const meta = {
-  title: 'App/Cloud Portal/Public Pages',
+  title: 'App/Cloud/Portal/Public Pages',
   tags: ['autodocs'],
   parameters: { layout: 'fullscreen' }
 } satisfies Meta
@@ -38,6 +43,26 @@ type Story = StoryObj<typeof meta>
 
 const story = (template: string): Story => ({
   render: () => ({ components, setup: () => ({ host }), template: frame(template) })
+})
+
+/** A server with its own terms, privacy policy, abuse address, and minimum age, as `[legal]` sets. */
+const legal = {
+  termsURL: 'https://studio.example/terms',
+  privacyURL: 'https://studio.example/privacy',
+  termsVersion: '2026-11-15',
+  requireAcceptance: true,
+  abuseEmail: 'abuse@studio.example',
+  minimumAge: 16
+}
+const legalStory = (template: string): Story => ({
+  render: () => ({
+    components,
+    setup: () => {
+      provide(PORTAL_LEGAL, legal)
+      return { host, legal }
+    },
+    template: frame(template)
+  })
 })
 
 export const SignIn = story(
@@ -51,6 +76,13 @@ export const SignInWithAnError = story(
 )
 export const SignUpWithApproval = story(
   `<PortalSignIn :host="host" mode="sign-up" :providers="['google']" :email-password="{ signUp: true, minimumPasswordLength: 8 }" approval-required />`
+)
+export const SignUpWithTerms = legalStory(
+  `<PortalSignIn :host="host" mode="sign-up" :providers="['google']" :email-password="{ signUp: true, minimumPasswordLength: 8 }" :legal="legal" />`
+)
+export const AcceptTerms = legalStory(`<PortalTerms :host="host" :legal="legal" />`)
+export const TermsChangedWhileReading = legalStory(
+  `<PortalTerms :host="host" :legal="legal" error="The terms changed while this page was open. Reload it to read the current version." />`
 )
 export const CheckYourEmail = story(`
   <PortalNotice :host="host" heading="Check your email" description="We sent a link to ana@studio.example. Open it on this device to finish creating your account.">
@@ -71,9 +103,21 @@ export const TwoStepRecoveryCode = story(
 )
 export const ForgotPassword = story(`<PortalResetPassword :host="host" step="request" />`)
 export const ChooseNewPassword = story(`<PortalResetPassword :host="host" step="choose" />`)
-export const ApproveDesktopSignIn = story(
-  `<PortalDeviceApproval :host="host" code="WDJB-MJHT" email="ana@studio.example" />`
-)
+export const ApproveDesktopSignIn: Story = {
+  ...story(`<PortalDeviceApproval :host="host" code="WDJB-MJHT" email="ana@studio.example" />`),
+  /** Approve waits for the code the app shows; another one, or none, leaves it off. */
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const field = canvas.getByRole('textbox', { name: 'Enter the code the app shows' })
+    const approve = canvas.getByRole('button', { name: 'Approve' })
+    await expect(approve).toBeDisabled()
+    await userEvent.type(field, 'ABCD-EFGH')
+    await expect(approve).toBeDisabled()
+    await userEvent.clear(field)
+    await userEvent.type(field, 'wdjb mjht')
+    await expect(approve).toBeEnabled()
+  }
+}
 export const DesktopSignInApproved = story(`
   <PortalNotice :host="host" tone="success" heading="You’re signed in" description="Go back to the OpenPencil app; it has already picked this up. You can close this tab.">
     <template #icon><IconCheck class="size-5" /></template>

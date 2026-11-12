@@ -14,6 +14,9 @@ const baseConfig = {
   s3SecretAccessKey: 'secret-key'
 }
 
+/** What every official deployment sets: administrators confirm a second step. */
+const officialMFA = { deployment: 'official', deploymentAdminMFARequired: true, totpEnabled: true }
+
 describe('Cloud server configuration', () => {
   test('accepts a self-hosted configuration without social providers', () => {
     expect(parseCloudServerConfig(baseConfig)).toMatchObject({
@@ -29,6 +32,18 @@ describe('Cloud server configuration', () => {
     ).toThrow('requires TOTP or passkeys')
   })
 
+  test('requires administrator MFA on an official deployment', () => {
+    for (const config of [
+      { deployment: 'official' },
+      { deployment: 'official', totpEnabled: true }
+    ]) {
+      expect(() => parseCloudServerConfig({ ...baseConfig, ...config })).toThrow(
+        'requires MFA for deployment administrators'
+      )
+    }
+    expect(parseCloudServerConfig({ ...baseConfig, ...officialMFA }).deployment).toBe('official')
+  })
+
   test('requires email delivery when enabling email and password', () => {
     expect(() => parseCloudServerConfig({ ...baseConfig, emailPasswordEnabled: true })).toThrow(
       'requires transactional email delivery'
@@ -39,7 +54,7 @@ describe('Cloud server configuration', () => {
     expect(() =>
       parseCloudServerConfig({
         ...baseConfig,
-        deployment: 'official',
+        ...officialMFA,
         emailPasswordEnabled: true,
         emailTransport: 'cloudflare',
         emailFrom: 'cloud@example.com'
@@ -112,20 +127,39 @@ describe('Cloud server configuration', () => {
     )
   })
 
-  test('requires HTTPS for the official AI service endpoint, whatever the scheme case', () => {
+  test('requires HTTPS for the official services endpoint, whatever the scheme case', () => {
     const official = {
       ...baseConfig,
-      deployment: 'official',
-      aiSigningKey: 'signing-key-pem'
+      ...officialMFA,
+      servicesSigningKey: 'signing-key-pem'
     }
-    for (const aiEndpoint of ['http://ai.example.com', 'HTTP://ai.example.com']) {
-      expect(() => parseCloudServerConfig({ ...official, aiEndpoint })).toThrow(
-        'Official AI service endpoint must use HTTPS'
+    for (const servicesEndpoint of ['http://ai.example.com', 'HTTP://ai.example.com']) {
+      expect(() => parseCloudServerConfig({ ...official, servicesEndpoint })).toThrow(
+        'Official services endpoint must use HTTPS'
       )
     }
     expect(
-      parseCloudServerConfig({ ...official, aiEndpoint: 'HTTPS://ai.example.com' }).aiEndpoint
+      parseCloudServerConfig({ ...official, servicesEndpoint: 'HTTPS://ai.example.com' })
+        .servicesEndpoint
     ).toBe('HTTPS://ai.example.com')
+  })
+  test('requires HTTPS for the official billing endpoint, which editors send a token', () => {
+    const official = {
+      ...baseConfig,
+      ...officialMFA,
+      servicesSigningKey: 'signing-key-pem',
+      servicesEndpoint: 'https://ai.example.com',
+      internalServiceToken: 'service-token-with-at-least-32-characters'
+    }
+    for (const billingEndpoint of ['http://billing.example.com', 'HTTP://billing.example.com']) {
+      expect(() => parseCloudServerConfig({ ...official, billingEndpoint })).toThrow(
+        'Official billing endpoint must use HTTPS'
+      )
+    }
+    expect(
+      parseCloudServerConfig({ ...official, billingEndpoint: 'https://billing.example.com' })
+        .billingEndpoint
+    ).toBe('https://billing.example.com')
   })
 
   test('rejects short auth secrets', () => {

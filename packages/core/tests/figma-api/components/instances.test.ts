@@ -1,9 +1,12 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-import { asTextNode, createAPI, registerTestFont } from '#core-tests/helpers/figma-api'
+import { asTextNode, createAPI } from '#core-tests/helpers/figma-api'
 
 import { hasInstanceOverride } from '@open-pencil/scene-graph/instances'
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
+
+import { graphOf } from '#core/figma-api/graph'
 
 beforeAll(() => registerTestFont())
 
@@ -162,12 +165,12 @@ describe('instance child edits record overrides', () => {
     instanceChild.name = 'renamed'
     instanceChild.resize(32, 32)
 
-    expect(hasInstanceOverride(api.graph, instanceChild.id, 'name')).toBe(true)
-    expect(hasInstanceOverride(api.graph, instanceChild.id, 'width')).toBe(false)
+    expect(hasInstanceOverride(graphOf(api), instanceChild.id, 'name')).toBe(true)
+    expect(hasInstanceOverride(graphOf(api), instanceChild.id, 'width')).toBe(false)
     expect(instanceChild.width).toBe(24)
     child.resize(40, 40)
     child.name = 'component child'
-    api.graph.syncInstances(component.id)
+    graphOf(api).syncInstances(component.id)
     expect(instanceChild.name).toBe('renamed')
     expect(instanceChild.width).toBe(40)
   })
@@ -176,7 +179,7 @@ describe('instance child edits record overrides', () => {
 describe('applied shared styles on instance children', () => {
   test('a text style applied inside an instance is an override and follows the component otherwise', () => {
     const api = createAPI()
-    const graph = api.graph
+    const graph = graphOf(api)
     const page = graph.getPages()[0]
     const heading = graph.createNode('TEXT', page.id, {
       name: 'Heading',

@@ -1,5 +1,4 @@
-import type { Canvas } from 'canvaskit-wasm'
-
+import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { CONNECTOR_LABEL_PADDING, labelledConnector } from '@open-pencil/scene-graph/connectors'
 import type { Rect } from '@open-pencil/scene-graph/primitives'

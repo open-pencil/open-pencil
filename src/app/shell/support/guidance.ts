@@ -67,6 +67,9 @@ const DESKTOP_ISSUE_PLATFORMS: Partial<Record<SupportEnvironment['os'], string>>
   linux: 'Linux (Tauri)'
 }
 
+/** The form's option for a browser that loaded the editor elsewhere than the web app. */
+const SELF_HOSTED_WEB_PLATFORM = 'Web (self-hosted or other address)'
+
 function issuePlatform(env: SupportEnvironment): string {
   if (env.host === 'browser') return 'Web (app.openpencil.dev)'
   return DESKTOP_ISSUE_PLATFORMS[env.os] ?? 'Not sure'
@@ -75,18 +78,44 @@ function issuePlatform(env: SupportEnvironment): string {
 function issueLink(
   env: SupportEnvironment,
   title: string,
-  details: readonly string[]
+  details: readonly string[],
+  platform = issuePlatform(env)
 ): SupportLink {
   const params = new URLSearchParams({
     template: 'bug_report.yml',
     title,
-    platform: issuePlatform(env),
+    platform,
     'affected-area': 'App UI',
     version: typeof __OPENPENCIL_APP_VERSION__ === 'string' ? __OPENPENCIL_APP_VERSION__ : '',
     browser: env.userAgent,
     logs: details.join('\n')
   })
   return { label: 'Report a problem', url: `${ISSUE_URL}?${params.toString()}` }
+}
+
+/**
+ * Where a browser loaded the editor: the official web app, a Cloud server's own address, or
+ * somewhere else, such as a build from source.
+ */
+export type EditorSite = 'web-app' | 'cloud' | 'other'
+
+const EDITOR_SITE_DETAILS: Record<Exclude<EditorSite, 'web-app'>, string> = {
+  cloud: 'Editor: served by a Cloud server',
+  other: 'Editor: another address'
+}
+
+/**
+ * A new GitHub issue on the bug report form, filled in with the app's version and platform: where
+ * a build that sends no reports of their own, such as a self-hosted Cloud's editor, points people.
+ * A browser elsewhere than the web app is named as such, never by its address, which the public
+ * issue would show.
+ */
+export function problemReportIssueURL(env: SupportEnvironment, site: EditorSite): string {
+  const elsewhere = env.host === 'browser' && site !== 'web-app'
+  const details = elsewhere
+    ? [EDITOR_SITE_DETAILS[site], ...environmentDetails(env)]
+    : environmentDetails(env)
+  return issueLink(env, 'bug: ', details, elsewhere ? SELF_HOSTED_WEB_PLATFORM : undefined).url
 }
 
 function requirementsLink(): SupportLink {

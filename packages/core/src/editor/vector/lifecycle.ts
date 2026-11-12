@@ -11,8 +11,14 @@ import { getNodeEditCapability } from '#core/editor/capabilities'
 import type { EditorContext } from '#core/editor/types'
 import { vectorChangesFromPagePath } from '#core/vector'
 
-import { getLiveNetwork } from './network'
-import type { VectorEditActionDeps } from './types'
+import { createVectorEditHistory } from './history'
+import { getLiveNetwork, setNodeEditNetwork } from './network'
+import type {
+  NodeEditExitOptions,
+  NodeEditOptions,
+  NodeEditState,
+  VectorEditActionDeps
+} from './types'
 
 // Always read ctx.graph at call time: opening a file swaps the graph
 // instance (editor.replaceGraph), so a captured reference goes stale.
@@ -47,10 +53,28 @@ export function createVectorEditLifecycle(ctx: EditorContext, actions: VectorEdi
     if (!es || selectedIds.includes(es.nodeId)) return
     // Replacing the document clears the selection before it says so: drop the path, not commit it.
     if (ctx.graph !== sessionGraph) close()
-    else exitNodeEditMode(true)
+    // A path the host keeps open keeps its layer selected while its page is shown; switching to
+    // another page ends it, as the layer is no longer on the canvas.
+    else if (es.keepOpen && ctx.graph.pageOf(es.nodeId) === ctx.state.currentPageId)
+      actions.select([es.nodeId])
+    else exitNodeEditMode(true, { release: true })
   })
 
-  function commitNodeEditChanges(es: NonNullable<typeof ctx.state.nodeEditState>) {
+  /** Takes the layer's path as the one committed, which the next change starts from. */
+  function takeLayerAsCommitted(es: NodeEditState): boolean {
+    const layer = ctx.graph.getNode(es.nodeId)
+    if (layer?.type !== 'VECTOR' || !layer.vectorNetwork) return false
+    es.origNetwork = cloneVectorNetwork(layer.vectorNetwork)
+    es.origBounds = { x: layer.x, y: layer.y, width: layer.width, height: layer.height }
+    es.origAbsNetwork = transformVectorNetwork(
+      getWorldMatrix(layer, ctx.graph),
+      layer.vectorNetwork
+    )
+    return true
+  }
+
+  function commitNodeEditChanges(es: NodeEditState) {
+    es.changeStart = null
     const node = ctx.graph.getNode(es.nodeId)
     if (node?.type !== 'VECTOR') return
 
@@ -61,40 +85,66 @@ export function createVectorEditLifecycle(ctx: EditorContext, actions: VectorEdi
     const changes = vectorChangesFromPagePath(ctx.graph, node, getLiveNetwork(es))
     if (!changes) return
     actions.updateNodeWithUndo(node.id, changes, 'Edit vector')
-    const committed = ctx.graph.getNode(es.nodeId)
-    if (committed?.type === 'VECTOR' && committed.vectorNetwork) {
-      const committedWorld = getWorldMatrix(committed, ctx.graph)
-      es.origNetwork = cloneVectorNetwork(committed.vectorNetwork)
-      es.origBounds = {
-        x: committed.x,
-        y: committed.y,
-        width: committed.width,
-        height: committed.height
-      }
-      es.origAbsNetwork = cloneVectorNetwork(
-        transformVectorNetwork(committedWorld, committed.vectorNetwork)
-      )
-    }
+    takeLayerAsCommitted(es)
     ctx.requestRender()
   }
 
-  function enterNodeEditMode(nodeId: string) {
+  const history = createVectorEditHistory(ctx, commitNodeEditChanges)
+
+  // Undo and redo change the layer, and the path open on it shows what they made of it. Indices
+  // may no longer exist there, so nothing stays selected in it.
+  ctx.onEditorEvent('node:updated', (id, changes) => {
+    const es = ctx.state.nodeEditState
+    if (es?.nodeId !== id || !ctx.undo.isReplaying || !('vectorNetwork' in changes)) return
+    if (!takeLayerAsCommitted(es)) return
+    setNodeEditNetwork(es, es.origAbsNetwork)
+    es.selectedVertexIndices = new Set()
+    es.selectedSegmentIndices = new Set()
+    es.selectedRegions = new Set()
+    es.selectedHandles = new Set()
+    es.hoveredHandleInfo = null
+    ctx.requestRender()
+  })
+
+  /**
+   * Opening and leaving a path are undo steps, as in Figma: undo past a session's first change
+   * leaves it, and undo after leaving opens the path again. A path the host keeps open is the
+   * host's to open and end, so it records neither.
+   */
+  function recordSession(label: string, nodeId: string, opens: boolean, options: NodeEditOptions) {
+    if (options.keepOpen || ctx.undo.isReplaying) return
+    const open = () => {
+      if (ctx.state.nodeEditState?.nodeId !== nodeId) openSession(nodeId, options)
+    }
+    const leave = () => {
+      if (ctx.state.nodeEditState?.nodeId === nodeId) close()
+    }
+    ctx.undo.push({ label, forward: opens ? open : leave, inverse: opens ? leave : open })
+  }
+
+  function enterNodeEditMode(nodeId: string, options: NodeEditOptions = {}) {
+    if (openSession(nodeId, options)) recordSession('Enter path', nodeId, true, options)
+  }
+
+  function openSession(nodeId: string, options: NodeEditOptions): boolean {
     const node = ctx.graph.getNode(nodeId)
-    if (node?.type !== 'VECTOR' || !node.vectorNetwork) return
+    if (node?.type !== 'VECTOR' || !node.vectorNetwork) return false
     // A vector inside an instance draws its component's path, so Figma does not open it.
-    if (node.parentId && slotScope(ctx.graph, node.parentId).kind === 'locked') return
+    if (node.parentId && slotScope(ctx.graph, node.parentId).kind === 'locked') return false
     // A library's own layers change in the library, not in a document that uses them.
-    if (!getNodeEditCapability(ctx.graph, nodeId).editable) return
+    if (!getNodeEditCapability(ctx.graph, nodeId).editable) return false
     // The path already open stays as edited; another one is committed before this one opens.
     const open = ctx.state.nodeEditState
-    if (open?.nodeId === nodeId) return
+    if (open?.nodeId === nodeId) return false
+    // A path the host keeps open stays the one being edited until the host releases it.
+    if (open?.keepOpen) return false
     if (open) exitNodeEditMode(true)
     // A pen path in progress, maybe continuing this very layer, is committed before the session
     // takes the layer's geometry as its starting point.
     if (ctx.state.penState) actions.penCommit(false)
     // The layer as it stands now, with what the pen just committed.
     const layer = ctx.graph.getNode(nodeId)
-    if (layer?.type !== 'VECTOR' || !layer.vectorNetwork) return
+    if (layer?.type !== 'VECTOR' || !layer.vectorNetwork) return false
 
     const world = getWorldMatrix(layer, ctx.graph)
     const absNetwork = transformVectorNetwork(world, layer.vectorNetwork)
@@ -103,14 +153,15 @@ export function createVectorEditLifecycle(ctx: EditorContext, actions: VectorEdi
     sessionGraph = ctx.graph
     ctx.state.nodeEditState = {
       nodeId,
+      keepOpen: options.keepOpen ?? false,
+      showHandles: options.showHandles ?? 'near-selection',
       origNetwork: cloneVectorNetwork(layer.vectorNetwork),
       origBounds: { x: layer.x, y: layer.y, width: layer.width, height: layer.height },
       origAbsNetwork: cloneVectorNetwork(absNetwork),
       vertices: absNetwork.vertices,
       segments: absNetwork.segments,
       regions: absNetwork.regions,
-      history: [],
-      future: [],
+      changeStart: null,
       selectedVertexIndices: new Set(),
       selectedSegmentIndices: new Set(),
       draggedHandleInfo: null,
@@ -122,11 +173,16 @@ export function createVectorEditLifecycle(ctx: EditorContext, actions: VectorEdi
 
     actions.select([nodeId])
     ctx.requestRender()
+    return true
   }
 
-  function exitNodeEditMode(commit: boolean) {
+  /**
+   * Leaves vector edit mode, keeping the edit or putting the path back. A path the host keeps open
+   * stays open unless `release` is given.
+   */
+  function exitNodeEditMode(commit: boolean, options: NodeEditExitOptions = {}) {
     const es = getNodeEditState()
-    if (!es) return
+    if (!es || (es.keepOpen && !options.release)) return
     ctx.state.snapGuides = []
     ctx.requestRender()
 
@@ -138,9 +194,11 @@ export function createVectorEditLifecycle(ctx: EditorContext, actions: VectorEdi
       return
     }
 
-    if (commit) {
+    // Undo and redo leave the layer as their step had it, with nothing to commit or put back.
+    const replaying = ctx.undo.isReplaying
+    if (commit && !replaying) {
       commitNodeEditChanges(es)
-    } else {
+    } else if (!replaying) {
       ctx.graph.updateNode(es.nodeId, {
         x: es.origBounds.x,
         y: es.origBounds.y,
@@ -153,7 +211,14 @@ export function createVectorEditLifecycle(ctx: EditorContext, actions: VectorEdi
 
     ctx.state.nodeEditState = null
     sessionGraph = null
+    recordSession('Leave path', es.nodeId, false, es)
   }
 
-  return { getNodeEditState, commitNodeEditChanges, enterNodeEditMode, exitNodeEditMode }
+  return {
+    getNodeEditState,
+    commitNodeEditChanges,
+    enterNodeEditMode,
+    exitNodeEditMode,
+    history
+  }
 }

@@ -1,6 +1,10 @@
+import { existsSync, readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+
 import { inlineImportSource, normalizedFilename } from '#lint/support/context.ts'
 import { createImportSourceRule } from '#lint/support/factories.ts'
 import type { RuleContext, RuleDefinition } from '#lint/support/types.ts'
+import * as v from 'valibot'
 
 function isPackageOrSubpath(source: string, packageName: string): boolean {
   return source === packageName || source.startsWith(`${packageName}/`)
@@ -14,14 +18,95 @@ const noVueSelfPackageImports = createImportSourceRule({
     `Use #vue/* for internal Vue SDK imports instead of self-package import '${source}'.`
 })
 
+const manifestSchema = v.object({
+  name: v.optional(v.string()),
+  workspaces: v.optional(v.array(v.string())),
+  exports: v.optional(v.unknown())
+})
+
+function readManifest(path: string) {
+  const parsed = v.safeParse(
+    v.pipe(v.string(), v.parseJson(), manifestSchema),
+    readFileSync(path, 'utf8')
+  )
+  return parsed.success ? parsed.output : null
+}
+
+/** The repository the rule runs in, found by its lockfile from this file. */
+function repositoryRoot(): string | null {
+  for (let dir = import.meta.dirname; ; dir = dirname(dir)) {
+    if (existsSync(join(dir, 'bun.lock'))) return dir
+    if (dirname(dir) === dir) return null
+  }
+}
+
+/** The subpaths an `exports` field declares: `.` for a bare target or conditions alone. */
+function declaredSubpaths(exports: unknown): string[] {
+  if (exports === undefined) return []
+  if (typeof exports !== 'object' || exports === null) return ['.']
+  const keys = Object.keys(exports)
+  return keys.some((key) => key.startsWith('.')) ? keys : ['.']
+}
+
+let workspaceExports: ReadonlyMap<string, readonly string[]> | undefined
+
+/** Each workspace package that declares `exports`, by name, with its subpaths; read once. */
+function exportsByPackage(): ReadonlyMap<string, readonly string[]> {
+  if (workspaceExports) return workspaceExports
+  const packages = new Map<string, readonly string[]>()
+  const root = repositoryRoot()
+  for (const workspace of (root && readManifest(join(root, 'package.json'))?.workspaces) || []) {
+    const manifest = root ? readManifest(join(root, workspace, 'package.json')) : null
+    if (manifest?.name && manifest.exports !== undefined) {
+      packages.set(manifest.name, declaredSubpaths(manifest.exports))
+    }
+  }
+  workspaceExports = packages
+  return packages
+}
+
+/** Whether `subpath` is one an `exports` key declares, `*` patterns included. */
+function isDeclared(subpath: string, keys: readonly string[]): boolean {
+  return keys.some((key) => {
+    const star = key.indexOf('*')
+    if (star === -1) return key === subpath
+    const [prefix, suffix] = [key.slice(0, star), key.slice(star + 1)]
+    return (
+      subpath.length > prefix.length + suffix.length &&
+      subpath.startsWith(prefix) &&
+      subpath.endsWith(suffix)
+    )
+  })
+}
+
+/**
+ * The message for a workspace package specifier whose subpath its package does not export. The
+ * repository's TypeScript paths map every subpath to source, so such an import type-checks and
+ * runs here and fails only for a consumer that resolves through `exports`.
+ */
+function undeclaredSubpath(source: string): string | false {
+  const match = /^(@[^/]+\/[^/]+|[^@/][^/]*)(\/.+)?$/.exec(source)
+  if (!match) return false
+  const [, name, rest] = match
+  const keys = exportsByPackage().get(name)
+  if (!keys) return false
+  const subpath = rest ? `.${rest}` : '.'
+  return (
+    !isDeclared(subpath, keys) &&
+    `'${source}' is not in ${name}'s package.json exports, so it resolves only inside this repository. Import a subpath the package exports, or add one.`
+  )
+}
+
 const noCrossPackageSourceImports = createImportSourceRule({
   description:
-    'Disallow imports that reach into another workspace package source tree — use package exports or package-local aliases',
+    "Disallow imports that reach into another workspace package's source tree or a subpath its exports do not declare — use package exports or package-local aliases",
+  includeExports: true,
   check: (source) =>
-    (source.includes('/packages/') ||
+    ((source.includes('/packages/') ||
       /^(?:\.\.\/){2,}packages\//.test(source) ||
       /^(?:\.\.\/)+(?:core|vue|cli|mcp)\/src\//.test(source)) &&
-    `Use workspace package exports or package-local aliases instead of cross-package source import '${source}'.`
+      `Use workspace package exports or package-local aliases instead of cross-package source import '${source}'.`) ||
+    undeclaredSubpath(source)
 })
 
 const noCoreSelfPackageImports = createImportSourceRule({
@@ -31,28 +116,6 @@ const noCoreSelfPackageImports = createImportSourceRule({
     isPackageOrSubpath(source, '@open-pencil/core') &&
     'Core internals must import local modules directly instead of importing the @open-pencil/core public package entrypoints.'
 })
-
-const noInlinePromptConstants = {
-  meta: {
-    docs: {
-      description: 'Disallow inline prompt/context template literals — use markdown prompt files'
-    }
-  },
-  create(context) {
-    return {
-      VariableDeclarator(node) {
-        if (node.id?.type !== 'Identifier') return
-        if (!/(?:PROMPT|CONTEXT)/.test(node.id.name)) return
-        if (node.init?.type !== 'TemplateLiteral') return
-        context.report({
-          node,
-          message:
-            'Move prompt/context text to a dedicated markdown file and import it instead of using an inline template literal.'
-        })
-      }
-    }
-  }
-} satisfies RuleDefinition
 
 const noAppImportsInPackages = createImportSourceRule({
   description: 'Disallow app-shell imports from workspace packages',
@@ -102,45 +165,10 @@ const noInlineTauriImports: RuleDefinition = {
   }
 }
 
-/**
- * An edit records what it changed through `recordEdit` or `recordEditAsync`, which push its undo
- * step when the document's unsaved state expects it; capturing a change by hand elsewhere is how
- * an edit's step came to land after an await and left undone documents unsaved.
- */
-const noDocumentChangeCapture: RuleDefinition = {
-  meta: {
-    type: 'problem',
-    docs: {
-      description:
-        'Disallow captureDocumentChange outside core editor history — record edits with recordEdit or recordEditAsync'
-    },
-    schema: []
-  },
-  create(context: RuleContext) {
-    const file = normalizedFilename(context)
-    // The history module owns the capture, and its tests exercise it directly.
-    if (!file.includes('/src/') || file.includes('/packages/core/src/editor/history/')) return {}
-    return {
-      ImportSpecifier(node) {
-        const imported =
-          node.imported.type === 'Identifier' ? node.imported.name : node.imported.value
-        if (imported !== 'captureDocumentChange') return
-        context.report({
-          node,
-          message:
-            'Record the edit with recordEdit or recordEditAsync instead of capturing a document change by hand.'
-        })
-      }
-    }
-  }
-}
-
 export {
-  noDocumentChangeCapture,
   noVueSelfPackageImports,
   noCrossPackageSourceImports,
   noCoreSelfPackageImports,
-  noInlinePromptConstants,
   noAppImportsInPackages,
   noCoreFrameworkImports,
   noInlineTauriImports

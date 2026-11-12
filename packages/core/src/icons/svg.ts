@@ -1,11 +1,7 @@
-import { iconToSVG } from '@iconify/utils'
 import { DOMImplementation, type Document as XMLDocument, type Element } from '@xmldom/xmldom'
-import svgpath from 'svgpath'
-
-import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { parseSVGFragment } from '#core/io/formats/svg/document'
+import { parseSVGGradients, type SVGGradients } from '#core/vector/vectorize/svg/gradients'
 
 import {
   combinedTransform,
@@ -19,14 +15,7 @@ import {
 } from './svg/presentation'
 import { elementLayer, type Scope, type Traversal } from './svg/scope'
 import { textInfo } from './svg/text'
-import type {
-  IconData,
-  IconifyIconEntry,
-  IconPathInfo,
-  SVGClipPathRegion,
-  SVGElementLayer,
-  SVGTextInfo
-} from './types'
+import type { IconPathInfo, SVGClipPathRegion, SVGElementLayer, SVGTextInfo } from './types'
 
 interface SVGElementInput {
   type: string
@@ -35,12 +24,25 @@ interface SVGElementInput {
 }
 
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
+/** The SVG attributes behind the camelCase props JSX spells them with, for each one SVG import reads. */
 const JSX_ATTRIBUTE_NAMES: Readonly<Record<string, string>> = {
   className: 'class',
+  clipPath: 'clip-path',
+  fillOpacity: 'fill-opacity',
   fillRule: 'fill-rule',
+  fontFamily: 'font-family',
+  fontSize: 'font-size',
+  fontStyle: 'font-style',
+  fontWeight: 'font-weight',
+  letterSpacing: 'letter-spacing',
+  stopColor: 'stop-color',
+  stopOpacity: 'stop-opacity',
   strokeLinecap: 'stroke-linecap',
   strokeLinejoin: 'stroke-linejoin',
+  strokeOpacity: 'stroke-opacity',
   strokeWidth: 'stroke-width',
+  textAnchor: 'text-anchor',
+  textDecoration: 'text-decoration',
   xlinkHref: 'xlink:href'
 }
 
@@ -129,8 +131,8 @@ function appendShapePath(
   const strokeWidth = Number.parseFloat(presentation.strokeWidth)
   result.push({
     d: pathData,
-    fill: normalizeSVGPaint(presentation.fill),
-    stroke: normalizeSVGPaint(presentation.stroke),
+    fill: normalizeSVGPaint(presentation.fill, presentation.color),
+    stroke: normalizeSVGPaint(presentation.stroke, presentation.color),
     strokeWidth: Number.isFinite(strokeWidth) ? strokeWidth : 1,
     strokeCap: presentation.strokeCap,
     strokeJoin: presentation.strokeJoin,
@@ -214,7 +216,10 @@ function collectPaths(
   const tagName = element.localName || element.tagName
   if (NON_RENDERED_CONTAINERS.has(tagName) && !inherited.referenced) return
 
-  const transform = combinedTransform(inherited.transform, element)
+  const transform =
+    element === traversal.viewport
+      ? inherited.transform
+      : combinedTransform(inherited.transform, element)
   const ownClipPath = collectClipPath(element.getAttribute('clip-path'), transform, traversal)
   const clipPaths = ownClipPath ? [...inherited.clipPaths, ownClipPath] : inherited.clipPaths
   const clip = ownClipPath ? clipPaths.length - 1 : null
@@ -274,10 +279,21 @@ function appendSVGElement(svgDocument: XMLDocument, parent: Element, input: SVGE
   parent.appendChild(element)
 }
 
-/** The shapes and text an SVG draws, in drawing order. */
+/** The shapes and text an SVG draws, in drawing order, and the gradients they paint with. */
 export interface SVGContent {
   paths: IconPathInfo[]
   texts: SVGTextInfo[]
+  gradients: SVGGradients
+}
+
+const NO_CONTENT: SVGContent = { paths: [], texts: [], gradients: new Map() }
+
+/** The one `<svg>` inside the wrapper root, which is the artwork's own outermost `<svg>`. */
+function outermostSVG(root: Element): Element | null {
+  const children = Array.from(root.childNodes).filter(isElement)
+  if (children.length !== 1) return null
+  const [only] = children
+  return (only.localName || only.tagName) === 'svg' ? only : null
 }
 
 function collectDocument(root: Element): SVGContent {
@@ -287,7 +303,13 @@ function collectDocument(root: Element): SVGContent {
     if (id) elementsById.set(id, element)
   }
   const paths: IconPathInfo[] = []
-  const traversal: Traversal = { root, elementsById, nextKey: 0, texts: [] }
+  const traversal: Traversal = {
+    root,
+    viewport: outermostSVG(root),
+    elementsById,
+    nextKey: 0,
+    texts: []
+  }
   collectPaths(
     root,
     {
@@ -301,23 +323,25 @@ function collectDocument(root: Element): SVGContent {
     traversal,
     paths
   )
-  return { paths, texts: traversal.texts }
+  return { paths, texts: traversal.texts, gradients: parseSVGGradients(root) }
 }
 
-export function extractPathsFromElements(
+/** The content of SVG shapes given as parsed elements, such as design JSX `<svg>` children. */
+export function extractSVGContentFromElements(
   elements: readonly SVGElementInput[],
   rootProps: Readonly<Record<string, unknown>> = {}
-): IconPathInfo[] {
+): SVGContent {
   const svgDocument = new DOMImplementation().createDocument(SVG_NAMESPACE, 'svg')
   const root = svgDocument.documentElement
-  if (!root) return []
+  if (!root) return NO_CONTENT
   appendSVGElement(svgDocument, root, { type: 'svg', props: rootProps, children: elements })
-  return collectDocument(root).paths.filter(isSVGPathShown)
+  return collectDocument(root)
 }
 
+/** The content of SVG markup, a whole `<svg>` or the shapes inside one. */
 export function extractSVGContent(svgBody: string): SVGContent {
   const root = parseSVGFragment(svgBody)?.documentElement
-  return root ? collectDocument(root) : { paths: [], texts: [] }
+  return root ? collectDocument(root) : NO_CONTENT
 }
 
 /** Whether a shape shows: a hidden element hides everything in it, as a hidden layer does. */
@@ -328,83 +352,4 @@ export function isSVGPathShown(path: Pick<IconPathInfo, 'elements'>): boolean {
 /** The shapes an SVG shows, for drawing it as one icon rather than importing its layers. */
 export function extractPaths(svgBody: string): IconPathInfo[] {
   return extractSVGContent(svgBody).paths.filter(isSVGPathShown)
-}
-
-export function buildIconData(
-  iconEntry: IconifyIconEntry,
-  prefix: string,
-  iconName: string,
-  defaultW: number,
-  defaultH: number,
-  size: number
-): IconData {
-  const rendered = iconToSVG({
-    body: iconEntry.body,
-    width: iconEntry.width ?? defaultW,
-    height: iconEntry.height ?? defaultH
-  })
-  const [, , viewBoxWidth, viewBoxHeight] = rendered.viewBox
-  const scaleX = size / viewBoxWidth
-  const scaleY = size / viewBoxHeight
-
-  const pathInfos = extractPaths(rendered.body)
-
-  return {
-    prefix,
-    name: iconName,
-    width: size,
-    height: size,
-    paths: scalePathInfos(pathInfos, scaleX, scaleY)
-  }
-}
-
-function transformStrokeScale(transform: string | null | undefined): number {
-  if (!transform || transform === 'none') return 1
-
-  const points: Vector[] = []
-  svgpath('M0 0 L1 0 M0 0 L0 1')
-    .transform(transform)
-    .abs()
-    .iterate((segment) => {
-      if (segment[0] === 'M' || segment[0] === 'L') {
-        points.push({ x: segment[1], y: segment[2] })
-      }
-    })
-  if (points.length < 4) return 1
-
-  const xScale = Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y)
-  const yScale = Math.hypot(points[3].x - points[2].x, points[3].y - points[2].y)
-  return Math.min(xScale, yScale)
-}
-
-/** Scale extracted SVG path info into IconData paths (shared by buildIconData and design-jsx <svg>). */
-export function scalePathInfos(
-  pathInfos: IconPathInfo[],
-  scaleX: number,
-  scaleY: number
-): IconData['paths'] {
-  return pathInfos.map((path) => {
-    let transformedPath = svgpath(path.d)
-    if (path.transform && path.transform !== 'none') {
-      transformedPath = transformedPath.transform(path.transform)
-    }
-    if (scaleX !== 1 || scaleY !== 1) transformedPath = transformedPath.scale(scaleX, scaleY)
-    // Arcs become curves before rounding, as the path parser would turn them anyway: rounding an
-    // arc's own end can put it on its start, and a degenerate arc draws nothing.
-    const scaledD = transformedPath.abs().unshort().unarc().round(2).toString()
-    const fill = normalizeSVGPaint(path.fill)
-    const stroke = normalizeSVGPaint(path.stroke)
-    return {
-      // A stroke would also trace the closing edge of an open subpath in the fill region.
-      vectorNetwork: parseSVGPath(scaledD, path.fillRule, {
-        includeOpenRegions: fill !== null && stroke === null
-      }),
-      fill,
-      stroke,
-      strokeWidth:
-        path.strokeWidth * transformStrokeScale(path.transform) * Math.min(scaleX, scaleY),
-      strokeCap: path.strokeCap,
-      strokeJoin: path.strokeJoin
-    }
-  })
 }

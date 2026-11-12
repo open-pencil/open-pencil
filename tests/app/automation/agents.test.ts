@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, jest, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import {
   MCP_AGENT_GONE_MS,
@@ -17,9 +18,6 @@ import {
 } from '@/app/automation/agents'
 import { createEditorStore, type EditorStore } from '@/app/editor/session'
 import { presenceOf } from '@/app/presence/registry'
-
-import { expectDefined } from '#tests/helpers/assert'
-
 const claude: AgentSession = { session: 'session-1', kind: 'mcp', client: 'claude-code' }
 const pi: AgentSession = { session: 'session-pi', kind: 'harness', client: 'pi' }
 

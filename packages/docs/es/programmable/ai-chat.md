@@ -9,7 +9,7 @@ Pulsa <kbd>⌘</kbd><kbd>J</kbd> o <kbd>Ctrl</kbd><kbd>J</kbd>. El asistente pue
 
 ## Configurar modelos
 
-La primera vez que abres OpenPencil, la configuración guiada pregunta en qué debe ayudarte la IA y qué usas ya: un agente de programación como Claude Code, Codex, Gemini CLI, Cursor o Grok Build en la aplicación de escritorio, una cuenta de API o un servidor local o de la empresa. Conecta ese acceso y lo asigna a los roles **Design agent** y **Vision**, sin tocar lo que configuraste a mano. Con OpenRouter puedes iniciar sesión en lugar de pegar una clave de API. Puedes omitirla y volver a ejecutarla desde **Ajustes → IA y agentes → Iniciar la configuración guiada**. Para configurar los modelos a mano:
+La primera vez que abres OpenPencil, la configuración guiada pregunta en qué debe ayudarte la IA y qué usas ya: un agente de programación como Claude Code, Codex, Antigravity CLI, Gemini CLI, Cursor o Grok Build en la aplicación de escritorio, una cuenta de API o un servidor local o de la empresa. Conecta ese acceso y lo asigna a los roles **Design agent** y **Vision**, sin tocar lo que configuraste a mano. Con OpenRouter puedes iniciar sesión en lugar de pegar una clave de API. Puedes omitirla y volver a ejecutarla desde **Ajustes → IA y agentes → Iniciar la configuración guiada**. Para configurar los modelos a mano:
 
 1. Abre el chat.
 2. Selecciona el icono de ajustes.
@@ -41,9 +41,9 @@ En **Ajustes → Habilidades** sube una habilidad como ZIP de su carpeta o como 
 
 ## Verificación visual
 
-El asistente puede comprobar su trabajo visualmente. Con `export_image` activada, captura una imagen tras crear o modificar diseños y la compara con lo que se pidió. `diff_visual`, activada por defecto, compara un objeto editado con una copia de referencia y devuelve los píxeles y la región que cambiaron, de modo que el asistente puede confirmar que la edición se limitó a su objetivo.
+El asistente puede comprobar su trabajo visualmente. Con `export_image` activada, captura una imagen tras crear o modificar diseños y la compara con lo que se pidió. `diff_pixels`, activada por defecto, compara un objeto editado con una copia de referencia y devuelve los píxeles y la región que cambiaron, de modo que el asistente puede confirmar que la edición se limitó a su objetivo.
 
-Las herramientas de inspección incluyen `get_jsx`, `diff_create` y `diff_jsx` para diferencias estructurales, `diff_visual` para diferencias de píxeles y `describe` para el rol semántico y la detección de problemas de diseño.
+Las herramientas de inspección incluyen `get_jsx`, `diff_nodes` para diferencias estructurales, `diff_pixels` para diferencias de píxeles y `describe` para el rol semántico y la detección de problemas de diseño.
 
 ## Consejos
 

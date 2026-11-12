@@ -2,12 +2,13 @@ import { describe, expect, test } from 'bun:test'
 
 import { createAPI } from '#core-tests/helpers/figma-api'
 
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 
 import { SkiaRenderer } from '#core/canvas'
+import { graphOf } from '#core/figma-api/graph'
 
 async function createRenderer() {
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const surface = ck.MakeSurface(200, 200)
   if (!surface) throw new Error('Could not create CanvasKit surface')
   return { renderer: new SkiaRenderer(ck, surface), surface }
@@ -20,7 +21,7 @@ describe('FigmaAPI renderer-backed flatten', () => {
     rect.resize(50, 40)
 
     const vector = api.flatten([rect], api.currentPage)
-    const raw = api.graph.getNode(vector.id)
+    const raw = graphOf(api).getNode(vector.id)
 
     expect(raw?.type).toBe('VECTOR')
     expect(raw?.width).toBe(50)
@@ -41,7 +42,7 @@ describe('FigmaAPI renderer-backed flatten', () => {
     second.y = 10
 
     const vector = api.flatten([first, second], api.currentPage)
-    const raw = api.graph.getNode(vector.id)
+    const raw = graphOf(api).getNode(vector.id)
 
     expect(raw?.type).toBe('VECTOR')
     expect(raw?.x).toBe(0)
@@ -68,7 +69,7 @@ describe('FigmaAPI renderer-backed flatten', () => {
     onPage.fills = [solid(0, 1)]
 
     const vector = api.flatten([inFrame, onPage], api.currentPage)
-    const regions = api.graph.getNode(vector.id)?.vectorNetwork?.regions
+    const regions = graphOf(api).getNode(vector.id)?.vectorNetwork?.regions
     expect(regions?.map((region) => region.fills?.[0]?.color)).toEqual([
       { r: 1, g: 0, b: 0, a: 1 },
       { r: 0, g: 0, b: 1, a: 1 }

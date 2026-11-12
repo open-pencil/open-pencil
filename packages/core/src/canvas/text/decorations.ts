@@ -1,7 +1,7 @@
-import type { Canvas, CanvasKit, Paint } from 'canvaskit-wasm'
-
+import type { Canvas, CanvasKit, Paint } from '@open-pencil/canvaskit'
 import type { Fill, SceneNode } from '@open-pencil/scene-graph'
 import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
+import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import type { TextLayout } from '#core/canvas/text/layout'
 import { drawnBaseline } from '#core/canvas/text/layout/lines'
@@ -41,7 +41,7 @@ function solidColor(fills: Fill[]): Fill | undefined {
 /** Dots one diameter apart, drawn as one run of round points so a line is one call. */
 function drawDots(ck: CanvasKit, canvas: Canvas, rect: TextDecorationRect, paint: Paint) {
   // A line of no thickness has no dots; stepping by it would never end.
-  if (rect.height <= 0) return
+  if (!hasDots(rect)) return
   const radius = rect.height / 2
   const y = rect.y + radius
   const points: number[] = []
@@ -53,6 +53,30 @@ function drawDots(ck: CanvasKit, canvas: Canvas, rect: TextDecorationRect, paint
   paint.setStrokeCap(ck.StrokeCap.Round)
   paint.setStrokeWidth(rect.height)
   canvas.drawPoints(ck.PointMode.Points, points, paint)
+}
+
+/** A wavy line's stroke, as a share of its rect's height. */
+const WAVE_STROKE = 2 / 3
+
+/** Whether a dotted line has room for a dot, which `drawDots` paints one line height apart. */
+function hasDots(rect: TextDecorationRect): boolean {
+  return rect.height > 0 && rect.width >= rect.height
+}
+
+/**
+ * Where a decoration draws ink: its rect, which a dotted line's dots and a straight line fill,
+ * and a wavy line's stroke reaching past its crests and troughs; `null` for a dotted line too
+ * short for a dot.
+ */
+export function decorationInk(rect: TextDecorationRect): VisualBounds | null {
+  if (rect.style === 'DOTTED' && !hasDots(rect)) return null
+  const reach = rect.style === 'WAVY' ? (rect.height * WAVE_STROKE) / 2 : 0
+  return {
+    minX: rect.x - reach,
+    minY: rect.y - reach,
+    maxX: rect.x + rect.width + reach,
+    maxY: rect.y + rect.height + reach
+  }
 }
 
 function drawWave(ck: CanvasKit, canvas: Canvas, rect: TextDecorationRect, paint: Paint) {
@@ -70,7 +94,7 @@ function drawWave(ck: CanvasKit, canvas: Canvas, rect: TextDecorationRect, paint
   path.lineTo(end, y + amplitude * Math.cos(((end - rect.x) / period) * Math.PI * 2))
   const wave = path.detachAndDelete()
   paint.setStyle(ck.PaintStyle.Stroke)
-  paint.setStrokeWidth((rect.height * 2) / 3)
+  paint.setStrokeWidth(rect.height * WAVE_STROKE)
   canvas.drawPath(wave, paint)
   wave.delete()
 }
@@ -136,7 +160,7 @@ function drawKeycapFrames(
       )
       runPaint.setColor(run ? styleRunColor(ck, run.style, paint.getColor()) : paint.getColor())
       // On the whole pixel its character is drawn on.
-      drawKeycapFrame(ck, canvas, glyph.x, drawnBaseline(glyph.y, y), glyph.fontSize, runPaint)
+      drawKeycapFrame(ck, canvas, glyph.x, drawnBaseline(glyph.y), glyph.fontSize, runPaint)
     }
   } finally {
     runPaint.delete()

@@ -1,40 +1,17 @@
 import { defineConfig } from 'tsdown'
 
-export default defineConfig({
-  entry: {
-    index: './src/index.ts',
-    recommended: './src/recommended.ts'
-  },
-  platform: 'neutral',
-  format: ['esm'],
-  dts: true,
-  sourcemap: true,
-  hash: false,
-  clean: true,
-  outDir: './dist',
-  treeshake: {
-    moduleSideEffects: false
-  },
-  deps: {
-    neverBundle: [/^node:/],
-    onlyBundle: false
-  },
-  outputOptions: {
-    minifyInternalExports: false,
-    codeSplitting: {
-      groups: [
-        {
-          test: /(?<!\.d\.c?ts)$/,
-          name: (id) => {
-            const cleanId = id.split('?')[0]
-            const parts = cleanId.split(/[\\/]/g)
-            const srcIndex = parts.lastIndexOf('src')
-            const file =
-              srcIndex >= 0 ? parts.slice(srcIndex + 1).join('/') : (parts.at(-1) ?? 'chunk')
-            return `chunks/${file.replace(/\.(ts|tsx)$/, '')}`
-          }
-        }
-      ]
+import { libraryConfig } from '@open-pencil/package-artifacts-tools/tsdown'
+
+export default defineConfig(
+  libraryConfig({
+    entry: {
+      'plugins/data': './src/plugins/data.ts',
+      'plugins/imports': './src/plugins/imports.ts',
+      'plugins/runtime': './src/plugins/runtime.ts',
+      'plugins/security': './src/plugins/security.ts',
+      'plugins/structure': './src/plugins/structure.ts',
+      'plugins/types': './src/plugins/types.ts',
+      recommended: './src/recommended.ts'
     }
-  }
-})
+  })
+)

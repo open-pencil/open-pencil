@@ -1,10 +1,13 @@
 import * as v from 'valibot'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import type { FontFamilyStyle } from '@open-pencil/scene-graph/font-style'
+import { internalCanvas } from '@open-pencil/scene-graph/shared-styles'
 
 import { pathNetwork } from './geometry'
 import { removeUnusedIconComponents } from './icons'
 import { createImageStore } from './images'
+import { importedComponentsInUse, withImports, type PenImports } from './imports'
 import { inAncestorThemes, populateInstances } from './instances'
 import { spreadAround } from './layout'
 import { createSceneNode, redrawIconAtLaidOutSize, type Build, type PenIconSource } from './nodes'
@@ -23,6 +26,19 @@ export interface PenReadOptions {
   images?: ReadonlyMap<string, Uint8Array>
   /** Where icon glyphs come from; icons are empty frames without it. */
   icons?: PenIconSource
+  /**
+   * The family and style each bundled font file names itself with, by its `name` in the
+   * document's `fonts`. pen.dev registers a bundled file under that name, such as
+   * `Geist-SemiBold`, and its text uses it as the family; the text takes the file's own names.
+   */
+  fonts?: ReadonlyMap<string, FontFamilyStyle>
+  /**
+   * The documents the document imports, by alias, as `importedDocument` gives them. Their
+   * components and variables are the document's under `<alias>:`. The components it uses go on
+   * the internal page, as a `.fig` file keeps the library components it uses; the rest of their
+   * layers are left out.
+   */
+  imports?: PenImports
 }
 
 function collectComponents(nodes: PenNode[], components: Map<string, PenNode>): void {
@@ -84,11 +100,13 @@ export function buildPenGraph(doc: PenDocument, options: PenReadOptions = {}): S
     graph.deleteNode(page.id)
   }
 
+  const imports = options.imports ?? new Map<string, PenDocument>()
   const build: Build = {
     graph,
-    ctx: buildVarContext(graph, doc),
+    ctx: buildVarContext(graph, withImports(doc, imports)),
     images: createImageStore(graph, options.images),
     icons: options.icons,
+    fonts: options.fonts ?? new Map(),
     components: new Map(),
     effective: new Map(),
     instances: new Map(),
@@ -99,10 +117,21 @@ export function buildPenGraph(doc: PenDocument, options: PenReadOptions = {}): S
     iconPageId: null,
     replaced: new Set()
   }
+  const importedComponents = new Map<string, PenNode>()
+  for (const imported of imports.values()) collectComponents(imported.children, importedComponents)
   collectComponents(doc.children, build.components)
+  for (const [id, component] of importedComponents) build.components.set(id, component)
 
   const page = graph.addPage(doc.children[0]?.name ?? 'Page 1')
   for (const child of doc.children) createSceneNode(child, page.id, build)
+  const used = importedComponentsInUse(doc, importedComponents)
+  if (used.length > 0) {
+    const internal = internalCanvas(graph)
+    // In document order, so a component defined inside another comes with it, not on its own.
+    for (const component of used) {
+      if (!graph.getNode(component.id)) createSceneNode(component, internal.id, build)
+    }
+  }
   populateInstances(build)
 
   options.layout?.(graph)

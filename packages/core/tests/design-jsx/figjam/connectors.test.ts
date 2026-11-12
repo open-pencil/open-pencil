@@ -1,7 +1,5 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getNodeOrThrow } from '#core-tests/helpers/assert'
-
 import { renderJSX } from '@open-pencil/core/design-jsx'
 import {
   designJSXElement,
@@ -11,6 +9,7 @@ import {
 } from '@open-pencil/design-jsx'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { connectorRouteEnds, connectorSublayers } from '@open-pencil/scene-graph/connectors'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 const FLOW = `
   <Frame name="Flow" w={800} h={400}>

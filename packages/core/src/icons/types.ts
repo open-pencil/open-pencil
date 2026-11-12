@@ -1,15 +1,13 @@
-import type { VectorNetwork, WindingRule } from '@open-pencil/scene-graph'
-import type { IconOptions } from '@open-pencil/scene-graph/icons'
+import type { Fill, Stroke, VectorNetwork, WindingRule } from '@open-pencil/scene-graph'
+import type { IconOptions, IconPaint } from '@open-pencil/scene-graph/icons'
 
+/** One path of an icon, in the icon's box, with the paints SVG import gives it. */
 export interface IconPath {
   vectorNetwork: VectorNetwork
-  fill: string | null
-  /** How opaque the fill is, as for a symbol's secondary layers; opaque when left out. */
-  fillOpacity?: number
-  stroke: string | null
-  strokeWidth: number
-  strokeCap: string
-  strokeJoin: string
+  fills: Fill[]
+  strokes: Stroke[]
+  /** The paints drawn in `currentColor`, which take the icon's color when it is placed. */
+  tint: IconPaint[]
 }
 
 export interface IconData {
@@ -26,20 +24,6 @@ export interface IconData {
 export type IconOption =
   | { key: string; name: string; min: number; max: number; default: number; step: number }
   | { key: string; name: string; values: readonly string[]; default: string }
-
-export interface IconifyIconEntry {
-  body: string
-  width?: number
-  height?: number
-}
-
-export interface IconifyResponse {
-  prefix: string
-  width?: number
-  height?: number
-  icons: { [key: string]: IconifyIconEntry | undefined }
-  aliases?: { [key: string]: { parent: string } | undefined }
-}
 
 export interface IconSearchResult {
   icons: string[]

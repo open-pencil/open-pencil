@@ -1,7 +1,5 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import { computeContentBounds } from '@open-pencil/core/io/formats/raster'
 import {
   SceneGraph,
@@ -13,6 +11,7 @@ import {
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 function close(
   actual: unknown,

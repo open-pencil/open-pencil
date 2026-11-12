@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs'
 
 import { expect, test, type Page } from '@playwright/test'
 
+import { repoPath } from '@open-pencil/test-support/paths'
+
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { openAppMenu } from '#tests/helpers/menu'
 
@@ -53,7 +55,7 @@ async function memoryBucket(page: Page): Promise<Map<string, Buffer>> {
 test('configured storage lists previews through ranges before opening the document', async ({
   page
 }) => {
-  const fixture = readFileSync('tests/fixtures/gold-preview.fig')
+  const fixture = readFileSync(repoPath('tests/fixtures/gold-preview.fig'))
   let fullDocumentGets = 0
   let rangeGets = 0
   await page.route('https://s3.example.com/**', async (route) => {
@@ -206,9 +208,11 @@ test('Save to storage uploads the open document and lists it in the workspace', 
   // An exported .fig is a zip archive holding the document and its thumbnail.
   expect(uploaded?.subarray(0, 4)).toEqual(Buffer.from([0x50, 0x4b, 0x03, 0x04]))
 
+  // A new tab opens Home, which lists the bucket's documents once the bucket is chosen.
   file = await openAppMenu(page, 'File')
-  await file.getByRole('menuitem', { name: 'Open storage workspace…' }).click()
+  await file.getByRole('menuitem', { name: /^New tab/ }).click()
   await expect(page.getByTestId('recent-files-home')).toBeVisible()
+  await page.getByRole('button', { name: /^designs/ }).click()
   await expect(page.getByRole('button', { name: /^Untitled/ }).first()).toBeVisible()
 })
 
@@ -222,7 +226,7 @@ test('Delete removes a stored document from the bucket, and a document deleted e
   ]) {
     objects.set(
       `open_pencil_storage/canvases/${id}.fig`,
-      readFileSync('tests/fixtures/gold-preview.fig')
+      readFileSync(repoPath('tests/fixtures/gold-preview.fig'))
     )
     objects.set(
       `open_pencil_storage/canvases/${id}.meta.json`,

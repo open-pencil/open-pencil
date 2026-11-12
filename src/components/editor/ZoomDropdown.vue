@@ -3,11 +3,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from 'reka-ui'
-import { nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 
 import { useEditorCommands } from '@open-pencil/vue/editor/commands'
 import { useI18n } from '@open-pencil/vue/i18n'
@@ -20,9 +19,13 @@ import {
 } from '@/app/settings/preferences/apply'
 import { appPreferences } from '@/app/settings/preferences/store'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
+
+/** A split view's header passes its pane, which opening the menu makes active, by pointer or key. */
+const { paneId } = defineProps<{ paneId?: string }>()
 
 const store = useEditorStore()
 const { getCommand } = useEditorCommands()
@@ -36,8 +39,12 @@ const inputValue = ref('')
 const menuCls = useMenuUI({ content: 'min-w-52' })
 const itemCls = menuItem({ justify: 'start', class: 'relative pl-7' })
 
+const zoom = computed(
+  () => (paneId ? store.getPaneView(paneId)?.zoom : undefined) ?? store.state.zoom
+)
+
 function zoomPercent() {
-  return Math.round(store.state.zoom * 100)
+  return Math.round(zoom.value * 100)
 }
 
 function startEditing() {
@@ -98,16 +105,18 @@ function isActivePreset(level: number) {
 }
 
 watch(open, (v) => {
+  if (v && paneId) store.setActivePane(paneId)
   if (!v) editing.value = false
 })
 </script>
 
 <template>
-  <DropdownMenuRoot v-model:open="open">
+  <AppDropdownMenuRoot v-model:open="open">
     <DropdownMenuTrigger as-child>
       <button
         data-test-id="zoom-dropdown-trigger"
-        class="ml-auto cursor-pointer rounded px-1.5 py-0.5 text-2xs text-muted hover:bg-hover"
+        class="cursor-pointer rounded px-1.5 py-0.5 text-2xs text-muted tabular-nums hover:bg-hover"
+        :class="paneId ? 'shrink-0' : 'ms-auto'"
       >
         {{ zoomPercent() }}%
       </button>
@@ -136,7 +145,7 @@ watch(open, (v) => {
             <button
               v-else
               data-test-id="zoom-input-trigger"
-              class="w-full cursor-pointer rounded border border-border bg-input px-2 py-1 text-left text-xs text-surface hover:border-muted"
+              class="w-full cursor-pointer rounded border border-border bg-input px-2 py-1 text-start text-xs text-surface hover:border-muted"
               @click="startEditing"
             >
               {{ zoomPercent() }}%
@@ -165,7 +174,7 @@ watch(open, (v) => {
           >
             <icon-lucide-check
               v-if="isActivePreset(preset.level)"
-              class="absolute left-2 size-3.5"
+              class="absolute inset-s-2 size-3.5"
             />
             <span class="flex-1">{{ preset.label() }}</span>
             <AppShortcutText v-if="preset.shortcut">{{ preset.shortcut }}</AppShortcutText>
@@ -176,7 +185,7 @@ watch(open, (v) => {
           <DropdownMenuItem :class="itemCls" @select.prevent="togglePixelGrid">
             <icon-lucide-check
               v-if="store.state.showPixelGrid !== false"
-              class="absolute left-2 size-3.5"
+              class="absolute inset-s-2 size-3.5"
             />
             <span class="flex-1">{{ menuText.pixelGrid }}</span>
             <AppShortcutText>{{ appMenuShortcutLabel('view-pixel-grid') }}</AppShortcutText>
@@ -189,20 +198,20 @@ watch(open, (v) => {
           >
             <icon-lucide-check
               v-if="store.state.snappingPreferences.pixelGrid"
-              class="absolute left-2 size-3.5"
+              class="absolute inset-s-2 size-3.5"
             />
             <span class="flex-1">{{ menuText.snapToPixelGrid }}</span>
             <AppShortcutText>{{ appMenuShortcutLabel('snap-pixel-grid') }}</AppShortcutText>
           </DropdownMenuItem>
           <DropdownMenuItem :class="itemCls" @select.prevent="toggleRulers">
-            <icon-lucide-check v-if="store.state.showRulers" class="absolute left-2 size-3.5" />
+            <icon-lucide-check v-if="store.state.showRulers" class="absolute inset-s-2 size-3.5" />
             <span class="flex-1">{{ panels.rulers }}</span>
             <AppShortcutText>{{ appMenuShortcutLabel('view-rulers') }}</AppShortcutText>
           </DropdownMenuItem>
           <DropdownMenuItem :class="itemCls" @select.prevent="toggleRemoteCursors">
             <icon-lucide-check
               v-if="store.state.showRemoteCursors"
-              class="absolute left-2 size-3.5"
+              class="absolute inset-s-2 size-3.5"
             />
             <span class="flex-1">{{ panels.multiplayerCursors }}</span>
             <AppShortcutText>{{
@@ -215,7 +224,7 @@ watch(open, (v) => {
           >
             <icon-lucide-check
               v-if="appPreferences.designCheck.showOnCanvas"
-              class="absolute left-2 size-3.5"
+              class="absolute inset-s-2 size-3.5"
             />
             <span class="flex-1">{{ menuText.designIssues }}</span>
           </DropdownMenuItem>
@@ -225,7 +234,7 @@ watch(open, (v) => {
           >
             <icon-lucide-check
               v-if="appPreferences.comments.showOnCanvas"
-              class="absolute left-2 size-3.5"
+              class="absolute inset-s-2 size-3.5"
             />
             <span class="flex-1">{{ menuText.comments }}</span>
             <AppShortcutText>{{ appMenuShortcutLabel('view-comments') }}</AppShortcutText>
@@ -233,5 +242,5 @@ watch(open, (v) => {
         </MenuScrollArea>
       </DropdownMenuContent>
     </DropdownMenuPortal>
-  </DropdownMenuRoot>
+  </AppDropdownMenuRoot>
 </template>

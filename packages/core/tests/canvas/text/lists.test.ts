@@ -1,15 +1,16 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import type { ShapedText, ShapedTextGlyph } from '@open-pencil/fig/node-change'
 import { SceneGraph, type SceneNode, type TextParagraphStyle } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { buildParagraph } from '#core/canvas/text/layout/build'
 import { getCanvasKit } from '#core/canvaskit'
 import { withFigExportRuntime } from '#core/io/formats/fig/export/runtime'
 import { glyphAdvanceSync } from '#core/text/font/glyphs'
 import { fontManager } from '#core/text/font/manager'
+
+import { attachFontProvider } from '../helpers'
 
 const ul = (indentation = 1): TextParagraphStyle => ({ listType: 'UNORDERED', indentation })
 const ol = (indentation = 1): TextParagraphStyle => ({ listType: 'ORDERED', indentation })
@@ -177,8 +178,7 @@ describe('text lists', () => {
 
   test('gives a truncated item back its lines when a wider layout has room', async () => {
     const ck = await getCanvasKit()
-    const fontProvider = ck.TypefaceFontProvider.Make()
-    fontManager.attachProvider(ck, fontProvider)
+    const fontProvider = attachFontProvider(ck)
     const graph = new SceneGraph()
     const node = graph.createNode('TEXT', graph.getPages()[0].id, {
       fontFamily: 'Inter',
@@ -198,8 +198,6 @@ describe('text lists', () => {
       expect(layout.getLineMetrics()).toHaveLength(wide)
     } finally {
       layout.delete()
-      fontManager.detachProvider(fontProvider)
-      fontProvider.delete()
     }
   })
 })

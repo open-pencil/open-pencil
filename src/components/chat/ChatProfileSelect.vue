@@ -8,7 +8,6 @@ import {
   SelectItemText,
   SelectLabel,
   SelectPortal,
-  SelectRoot,
   SelectTrigger,
   SelectViewport
 } from 'reka-ui'
@@ -27,6 +26,7 @@ import type { AIModelProfile, AIModelProfileId } from '@/app/ai/models'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import ChatProfileItem from '@/components/chat/ChatProfileItem.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import AppSelectRoot from '@/components/ui/select/AppSelectRoot.vue'
 import { useSelectUI } from '@/components/ui/select/select'
 
 import { chatProfileTheme } from './ui'
@@ -63,7 +63,7 @@ function manageModels(): void {
 </script>
 
 <template>
-  <SelectRoot v-model="selectedProfileId" v-model:open="open">
+  <AppSelectRoot v-model="selectedProfileId" v-model:open="open">
     <SelectTrigger
       data-test-id="chat-profile-selector"
       :aria-label="ai.selectDesignModel"
@@ -111,5 +111,5 @@ function manageModels(): void {
         </SelectViewport>
       </SelectContent>
     </SelectPortal>
-  </SelectRoot>
+  </AppSelectRoot>
 </template>

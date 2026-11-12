@@ -1,10 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import { createEditor, graphFromDocumentChange, isEmptyDocumentChange } from '@open-pencil/core'
 import type { CommentThread } from '@open-pencil/scene-graph'
 import { readComments, writeComments } from '@open-pencil/scene-graph/comments'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { captureDocumentChange } from '#core/editor/history/document-change'
 
@@ -95,6 +94,20 @@ describe('document changes', () => {
       editor.graph.reparentNode(card.id, wrapper.id)
       editor.graph.reparentNode(other.id, wrapper.id)
     })
+  })
+
+  test('keeps only the fields a deleted layer does not start with, and restores it whole', () => {
+    const { editor, card, title } = setup()
+    const change = roundTrip(editor, () => editor.graph.deleteNode(card.id))
+
+    const stored = expectDefined(
+      change.deleted.find((layer) => layer.id === title.id),
+      'stored title'
+    )
+    expect(stored).toMatchObject({ name: 'Title', text: 'Hello', type: 'TEXT' })
+    // Defaults such as opacity and an empty effect list come back from `createNode`.
+    expect(stored).not.toHaveProperty('opacity')
+    expect(stored).not.toHaveProperty('effects')
   })
 
   test('keeps copies of only the layers the edit touched', () => {
@@ -222,6 +235,7 @@ describe('document changes', () => {
     })
     roundTrip(editor, () => {
       const faded = editor.graph.createVariable('Faded', 'FLOAT', collection.id, 0.5)
+      editor.graph.willChangeVariable(brand.id)
       brand.name = 'Primary'
       editor.graph.bindVariable(title.id, 'opacity', faded.id)
     })

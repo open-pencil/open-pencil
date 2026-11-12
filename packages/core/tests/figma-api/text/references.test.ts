@@ -1,10 +1,11 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { registerTestFont } from '#core-tests/helpers/figma-api'
-
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
+
+import { graphOf } from '#core/figma-api/graph'
 
 beforeAll(async () => {
   await registerTestFont()
@@ -24,8 +25,8 @@ const RED: Color = { r: 1, g: 0, b: 0, a: 1 }
 const LINK = { type: 'URL' as const, value: 'https://openpencil.dev' }
 
 function textStyle(api: FigmaAPI, id: string, fields: Record<string, unknown>) {
-  const page = api.graph.getPages()[0]
-  const style = api.graph.createNode('TEXT', page.id, {
+  const page = graphOf(api).getPages()[0]
+  const style = graphOf(api).createNode('TEXT', page.id, {
     name: 'Heading',
     sharedStyleType: 'TEXT',
     internalOnly: true,
@@ -36,8 +37,8 @@ function textStyle(api: FigmaAPI, id: string, fields: Record<string, unknown>) {
 }
 
 function fillStyle(api: FigmaAPI, id: string) {
-  const page = api.graph.getPages()[0]
-  const style = api.graph.createNode('RECTANGLE', page.id, {
+  const page = graphOf(api).getPages()[0]
+  const style = graphOf(api).createNode('RECTANGLE', page.id, {
     name: 'Brand/Red',
     sharedStyleType: 'FILL',
     internalOnly: true,

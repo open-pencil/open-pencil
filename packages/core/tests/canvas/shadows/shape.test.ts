@@ -1,15 +1,15 @@
 import { afterAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
 import { expectFigmaRow, renderRow, type FigmaRowScene } from '#core-tests/helpers/figma-rows'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { isolatesInnerShadows } from '#core/canvas/shadows'
 
-const ck = await initCanvasKit()
+const ck = await getCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
 afterAll(() => renderer.destroy())
 
@@ -81,7 +81,12 @@ describe('fills and inner shadows take a layer of their own', () => {
 // whose own fill list is empty: two 40px squares, the left one empty, shadow 30px below.
 describe('a drop shadow of a vector with region fills', () => {
   const zero = { x: 0, y: 0 }
-  const line = (start: number, end: number) => ({ start, end, tangentStart: zero, tangentEnd: zero })
+  const line = (start: number, end: number) => ({
+    start,
+    end,
+    tangentStart: zero,
+    tangentEnd: zero
+  })
   const squares =
     (leftFills: Fill[] | undefined): FigmaRowScene =>
     (graph, hostId) =>
@@ -100,7 +105,15 @@ describe('a drop shadow of a vector with region fills', () => {
             { x: 80, y: 0 },
             { x: 80, y: 40 }
           ],
-          segments: [line(0, 1), line(1, 2), line(2, 3), line(3, 0), line(1, 4), line(4, 5), line(5, 2)],
+          segments: [
+            line(0, 1),
+            line(1, 2),
+            line(2, 3),
+            line(3, 0),
+            line(1, 4),
+            line(4, 5),
+            line(5, 2)
+          ],
           regions: [
             { windingRule: 'NONZERO', loops: [[0, 1, 2, 3]], fills: leftFills },
             { windingRule: 'NONZERO', loops: [[4, 5, 6, 1]], fills: [{ ...RED, opacity: 1 }] }
@@ -122,8 +135,12 @@ describe('a drop shadow of a vector with region fills', () => {
 
   // Row 165 is below both squares, where only their shadows reach: x 110–130 under the left one.
   test('casts none from a region with no paint', () => {
-    expect(renderRow(ck, renderer, squares([]), 165, 110, 130)).toEqual(Array.from({ length: 11 }, () => 0))
-    expect(renderRow(ck, renderer, squares([]), 165, 150, 170)).toEqual(Array.from({ length: 11 }, () => 255))
+    expect(renderRow(ck, renderer, squares([]), 165, 110, 130)).toEqual(
+      Array.from({ length: 11 }, () => 0)
+    )
+    expect(renderRow(ck, renderer, squares([]), 165, 150, 170)).toEqual(
+      Array.from({ length: 11 }, () => 255)
+    )
   })
 
   test('casts none from a region whose only paint is hidden', () => {
@@ -134,6 +151,8 @@ describe('a drop shadow of a vector with region fills', () => {
   })
 
   test("casts from a region that takes the layer's fill", () => {
-    expect(renderRow(ck, renderer, squares(undefined), 165, 110, 130)).toEqual(Array.from({ length: 11 }, () => 255))
+    expect(renderRow(ck, renderer, squares(undefined), 165, 110, 130)).toEqual(
+      Array.from({ length: 11 }, () => 255)
+    )
   })
 })

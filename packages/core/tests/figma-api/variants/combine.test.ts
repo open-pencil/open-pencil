@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { asComponentNode, createAPI } from '#core-tests/helpers/figma-api'
 
+import { graphOf } from '#core/figma-api/graph'
 describe('combineAsVariants', () => {
   test('wraps components into a COMPONENT_SET', () => {
     const api = createAPI()
@@ -30,7 +31,7 @@ describe('combineAsVariants', () => {
     b.resize(100, 40)
 
     const set = api.combineAsVariants([a, b], api.currentPage)
-    const raw = api.graph.getNode(set.id)
+    const raw = graphOf(api).getNode(set.id)
 
     expect(raw?.componentPropertyDefinitions?.length).toBe(1)
     expect(raw?.componentPropertyDefinitions?.[0].name).toBe('Variant')
@@ -100,7 +101,7 @@ describe('combineAsVariants with Property=Value names', () => {
     })
 
     const set = api.combineAsVariants(components, api.currentPage)
-    const raw = api.graph.getNode(set.id)
+    const raw = graphOf(api).getNode(set.id)
 
     expect(
       raw?.componentPropertyDefinitions.map((item) => [item.name, item.variantOptions])
@@ -108,7 +109,7 @@ describe('combineAsVariants with Property=Value names', () => {
       ['State', ['Off', 'On']],
       ['Size', ['Small', 'Large']]
     ])
-    expect(api.graph.getNode(components[2].id)?.componentPropertyValues).toEqual({
+    expect(graphOf(api).getNode(components[2].id)?.componentPropertyValues).toEqual({
       State: 'On',
       Size: 'Large'
     })

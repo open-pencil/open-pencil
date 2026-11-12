@@ -2,18 +2,21 @@ import type { Page, Locator } from '@playwright/test'
 
 import { OFFICIAL_CLOUD_URL } from '@/constants'
 
+import { CanvasPointer } from './canvas/pointer'
+
 /**
  * The app asks the official Cloud server whether Cloud is open yet and carries on without an
  * answer, so a request to it that fails is the network's, not the app's.
  */
 const OFFICIAL_CLOUD_ORIGIN = new URL(OFFICIAL_CLOUD_URL).origin
 
-export class CanvasHelper {
+export class CanvasHelper extends CanvasPointer {
   readonly page: Page
   readonly canvas: Locator
   readonly errors: string[] = []
 
   constructor(page: Page) {
+    super()
     this.page = page
     this.canvas = page.getByTestId('canvas-area')
     page.on('pageerror', (err) => this.errors.push(err.message))
@@ -112,29 +115,6 @@ export class CanvasHelper {
     })
   }
 
-  private async canvasBounds() {
-    const b = await this.canvas.boundingBox()
-    if (!b) throw new Error('Canvas has no bounding box — is it visible?')
-    return b
-  }
-
-  async click(canvasX: number, canvasY: number) {
-    const box = await this.canvasBounds()
-    await this.page.mouse.click(box.x + canvasX, box.y + canvasY)
-  }
-
-  async drag(fromX: number, fromY: number, toX: number, toY: number, steps = 10) {
-    const box = await this.canvasBounds()
-    await this.page.mouse.move(box.x + fromX, box.y + fromY)
-    await this.page.mouse.down()
-    await this.page.mouse.move(box.x + toX, box.y + toY, { steps })
-    await this.page.mouse.up()
-  }
-
-  async pressKey(key: string) {
-    await this.page.keyboard.press(key)
-  }
-
   async drawRect(x: number, y: number, width: number, height: number) {
     await this.pressKey('r')
     await this.drag(x, y, x + width, y + height)
@@ -194,11 +174,7 @@ export class CanvasHelper {
   }
 
   async marquee(x1: number, y1: number, x2: number, y2: number, steps = 10) {
-    const box = await this.canvasBounds()
-    await this.page.mouse.move(box.x + x1, box.y + y1)
-    await this.page.mouse.down()
-    await this.page.mouse.move(box.x + x2, box.y + y2, { steps })
-    await this.page.mouse.up()
+    await this.drag(x1, y1, x2, y2, steps)
     await this.waitForRender()
   }
 
@@ -223,24 +199,12 @@ export class CanvasHelper {
   }
 
   async altDrag(fromX: number, fromY: number, toX: number, toY: number) {
-    const box = await this.canvasBounds()
-    await this.page.keyboard.down('Alt')
-    await this.page.mouse.move(box.x + fromX, box.y + fromY)
-    await this.page.mouse.down()
-    await this.page.mouse.move(box.x + toX, box.y + toY, { steps: 10 })
-    await this.page.mouse.up()
-    await this.page.keyboard.up('Alt')
+    await this.dragWith('Alt', fromX, fromY, toX, toY)
     await this.waitForRender()
   }
 
   async shiftDrag(fromX: number, fromY: number, toX: number, toY: number) {
-    const box = await this.canvasBounds()
-    await this.page.keyboard.down('Shift')
-    await this.page.mouse.move(box.x + fromX, box.y + fromY)
-    await this.page.mouse.down()
-    await this.page.mouse.move(box.x + toX, box.y + toY, { steps: 10 })
-    await this.page.mouse.up()
-    await this.page.keyboard.up('Shift')
+    await this.dragWith('Shift', fromX, fromY, toX, toY)
     await this.waitForRender()
   }
 

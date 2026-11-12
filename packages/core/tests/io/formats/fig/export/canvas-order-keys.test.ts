@@ -66,15 +66,17 @@ test('every child of a canvas is exported with its own order key', async () => {
 
 /** The pages a saved file lists, in the order Figma sorts them: by their order keys. */
 function savedPageOrder(bytes: Uint8Array): string[] {
-  return parseFigBuffer(bytes.slice().buffer as ArrayBuffer)
-    .nodeChanges.filter((change: NodeChange) => change.type === 'CANVAS' && !change.internalOnly)
-    .map((change) => ({
-      name: change.name ?? '',
-      position: (change.parentIndex as { position?: string } | undefined)?.position ?? ''
-    }))
-    // Keys are unique and compare by code point, as Figma sorts them.
-    .sort((a, b) => (a.position < b.position ? -1 : 1))
-    .map((page) => page.name)
+  return (
+    parseFigBuffer(bytes.slice().buffer as ArrayBuffer)
+      .nodeChanges.filter((change: NodeChange) => change.type === 'CANVAS' && !change.internalOnly)
+      .map((change) => ({
+        name: change.name ?? '',
+        position: (change.parentIndex as { position?: string } | undefined)?.position ?? ''
+      }))
+      // Keys are unique and compare by code point, as Figma sorts them.
+      .sort((a, b) => (a.position < b.position ? -1 : 1))
+      .map((page) => page.name)
+  )
 }
 
 // The shadcn/ui kit numbers its pages `!`, `~#`, `~#7`…; a page added after them was saved as

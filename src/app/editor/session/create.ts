@@ -39,7 +39,7 @@ import {
 import { notificationMessages } from '@/app/i18n/notifications'
 import { createDeferred } from '@/app/runtime/deferred'
 import { toast } from '@/app/shell/ui'
-import { IS_BROWSER, IS_TAURI } from '@/constants'
+import { IS_TAURI } from '@/constants'
 
 export { EDITOR_TOOLS as TOOLS, TOOL_SHORTCUTS } from '@open-pencil/core'
 export type { EditorToolDef as ToolDef, Tool } from '@open-pencil/core'
@@ -49,7 +49,6 @@ function buildEditorStore(initialGraph?: SceneGraph) {
 
   const state = shallowReactive<AppEditorState>(createInitialAppEditorState(graph.getPages()[0].id))
 
-  const viewportSize = { width: 0, height: 0 }
   const editor = createEditor({
     graph,
     state,
@@ -58,14 +57,7 @@ function buildEditorStore(initialGraph?: SceneGraph) {
     shaderRasterizer: createShaderRasterizer(),
     resolveFigmaClipboardImages: IS_TAURI ? resolveFigmaClipboardImages : undefined,
     skipInitialGraphSetup: !!initialGraph,
-    getUserName: () => useCollabIdentity().name.value,
-    getViewportSize: () =>
-      viewportSize.width > 0 && viewportSize.height > 0
-        ? viewportSize
-        : {
-            width: IS_BROWSER ? window.innerWidth : 1920,
-            height: IS_BROWSER ? window.innerHeight : 1080
-          }
+    getUserName: () => useCollabIdentity().name.value
   })
   const canvasReadiness = createDeferred<undefined>()
   const io = new IORegistry(BUILTIN_IO_FORMATS)
@@ -140,7 +132,7 @@ function buildEditorStore(initialGraph?: SceneGraph) {
   const preparationController = createEditorPreparationController(state, preparationEvents, {
     editor
   })
-  const modules = createEditorStoreModules(editor, state, io, viewportSize, preparationController)
+  const modules = createEditorStoreModules(editor, state, io, preparationController)
 
   // ─── Public API ───────────────────────────────────────────────
   // Spread all core Editor methods, then override getters and add app-specific.
@@ -228,6 +220,7 @@ function buildEditorStore(initialGraph?: SceneGraph) {
     activePaneId: panes.activePaneId,
     visiblePaneCount: panes.visiblePaneCount,
     getPaneRenderState: panes.getPaneRenderState,
+    getPaneView: panes.getPaneView,
     setActivePane: panes.setActivePane,
     switchPage,
     recentPages: recentPages.ids,

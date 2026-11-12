@@ -1,13 +1,13 @@
 import { expect, test } from 'bun:test'
 
-import { expectDefined } from '#fig-tests/helpers/assert'
-import { guid } from '#fig-tests/helpers/guid'
 import { interpretComponent, interpretInstance } from '#fig/instance-overrides/interpret'
 import { materializeInstance } from '#fig/instance-overrides/materialize-instance'
 import type { MissingComponentDiagnostic } from '#fig/instance-overrides/occurrence/types'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { guid } from '@open-pencil/test-support/fig/guid'
 
 import fixture from './fixtures/accordion-source-closure.json'
 

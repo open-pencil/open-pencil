@@ -6,6 +6,7 @@ import {
   defaultRelayURL,
   MAX_COLLAB_MESSAGE_BYTES,
   RELAY_CLOSE,
+  RELAY_HEARTBEAT,
   RELAY_SERVER_PEER,
   relayClientMessages,
   type RelayClientFrame,
@@ -119,7 +120,8 @@ async function seed(database: ReturnType<typeof createPostgresCloudDatabase>) {
       id: workspaceId,
       name: 'Workers',
       slug: `workers-${workspaceId}`,
-      createdBy: 'owner'
+      createdBy: 'owner',
+      ownerId: 'owner'
     })
     .execute()
   await database
@@ -151,7 +153,9 @@ for (const [path, title] of [
     `The page at ${path} answered HTTP ${page.status}`
   )
   check(
-    page.headers.get('content-security-policy') === "frame-ancestors 'none'",
+    (page.headers.get('content-security-policy') ?? '').includes("frame-ancestors 'none'") &&
+      (page.headers.get('content-security-policy') ?? '').includes("script-src 'self'") &&
+      page.headers.has('strict-transport-security'),
     `The page at ${path} is missing its headers`
   )
   check((await page.text()).includes(`<title>${title}</title>`), `${path} is not the expected page`)
@@ -171,6 +175,22 @@ try {
   const documentId = await seed(database)
   const ticket = await tickets.issueUserTicket(user('owner'), documentId)
   const url = ticket.serverURL ?? ''
+
+  // The relay object answers the heartbeat through the runtime, without waking.
+  const heartbeat = new WebSocket(url)
+  const answer = new Promise<unknown>((resolve, reject) => {
+    heartbeat.addEventListener('message', (event: MessageEvent<unknown>) => resolve(event.data))
+    heartbeat.addEventListener('error', () => reject(new Error('The heartbeat socket failed')))
+    heartbeat.addEventListener('close', (event) =>
+      reject(new Error(`The relay closed the heartbeat socket: ${event.code} ${event.reason}`))
+    )
+  })
+  await new Promise<void>((resolve) => {
+    heartbeat.addEventListener('open', () => resolve(), { once: true })
+  })
+  heartbeat.send(RELAY_HEARTBEAT.ping)
+  check((await answer) === RELAY_HEARTBEAT.pong, 'The relay did not answer the heartbeat')
+  heartbeat.close()
 
   const editor = await join(url, ticket.token)
   check(

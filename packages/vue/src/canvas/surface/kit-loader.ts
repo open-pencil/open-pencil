@@ -1,9 +1,11 @@
 import { whenever } from '@vueuse/core'
-import type { CanvasKit } from 'canvaskit-wasm'
 import { onScopeDispose } from 'vue'
 import type { Ref } from 'vue'
 
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
+
+import { nextFrame } from '#vue/shared/frame'
 
 type CanvasKitLoaderOptions = {
   canvasRef: Ref<HTMLCanvasElement | null>
@@ -36,9 +38,7 @@ export function useCanvasKitLoader({
     setCanvasKit(await getCanvasKit())
     if (isDestroyed()) return
 
-    await new Promise((resolve) => {
-      requestAnimationFrame(resolve)
-    })
+    await nextFrame()
     if (!createSurface(canvas)) throw new Error('WebGL is unavailable, so the canvas cannot draw')
     await loadFonts()
     if (isDestroyed()) return

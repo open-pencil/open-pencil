@@ -1,5 +1,4 @@
-import type { CanvasKit, SkPicture } from 'canvaskit-wasm'
-
+import type { CanvasKit, SkPicture } from '@open-pencil/canvaskit'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import { SkiaRenderer } from '#core/canvas/renderer'

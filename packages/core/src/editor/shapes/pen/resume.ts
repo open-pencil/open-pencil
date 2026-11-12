@@ -12,6 +12,7 @@ import { transformVectorNetwork } from '@open-pencil/scene-graph/vector-network'
 
 import { getNodeEditCapability } from '#core/editor/capabilities'
 import type { EditorContext, EditorState, ResumedPath } from '#core/editor/types'
+import { editsHandlesOnly } from '#core/editor/vector/limits'
 import { offeredTool } from '#core/editor/views'
 
 type PenStateInit = NonNullable<EditorState['penState']>
@@ -108,6 +109,7 @@ export function chainEndingAt(network: VectorNetwork, end: number): PenChain {
 /** What ends the edits a resumed pen takes over from. */
 export interface PenResumeDeps {
   penCommit: (closed: boolean) => void
+  penPushHistory: () => void
   exitNodeEditMode: (commit: boolean) => void
 }
 
@@ -122,6 +124,8 @@ export function createPenResumeActions(ctx: EditorContext, deps: PenResumeDeps) 
     // A vector inside an instance draws its component's path, so it is not continued there.
     if (node.parentId && slotScope(ctx.graph, node.parentId).kind === 'locked') return false
     if (!getNodeEditCapability(ctx.graph, nodeId).editable) return false
+    // Continuing a path adds points to it, and leaves the path open for editing.
+    if (editsHandlesOnly(ctx.state) || ctx.state.nodeEditState?.keepOpen) return false
     return offeredTool(ctx.state, 'PEN') === 'PEN'
   }
 
@@ -138,6 +142,8 @@ export function createPenResumeActions(ctx: EditorContext, deps: PenResumeDeps) 
     const node = ctx.graph.getNode(nodeId)
     if (node?.type !== 'VECTOR' || !node.vectorNetwork) return
     const absNetwork = transformVectorNetwork(getWorldMatrix(node, ctx.graph), node.vectorNetwork)
+    // Picking the path up is a step of its own, as in Figma, which undo puts down again.
+    deps.penPushHistory()
     ctx.state.penState = createResumedPenState(node, pick(absNetwork))
     ctx.setSelectedIds(new Set())
     ctx.setActiveTool('PEN')

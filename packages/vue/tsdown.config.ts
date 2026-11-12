@@ -7,7 +7,9 @@ import vue from 'unplugin-vue/rolldown'
 
 const require = createRequire(import.meta.url)
 
-const packageJSON = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as {
+const packageJSON = JSON.parse(
+  readFileSync(new URL('./package.json', import.meta.url), 'utf8')
+) as {
   dependencies?: Record<string, string>
   peerDependencies?: Record<string, string>
 }
@@ -87,6 +89,7 @@ export default defineConfig({
     'controls/position/index': './src/controls/position/index.ts',
     'controls/prop-scrub/index': './src/controls/prop-scrub/index.ts',
     'controls/property-list/index': './src/controls/property-list/index.ts',
+    'controls/scale/index': './src/controls/scale/index.ts',
     'controls/selection-colors/index': './src/controls/selection-colors/index.ts',
     'controls/selection-layout/index': './src/controls/selection-layout/index.ts',
     'controls/shader/index': './src/controls/shader/index.ts',
@@ -104,6 +107,7 @@ export default defineConfig({
     'editor/commands/index': './src/editor/commands/index.ts',
     'editor/events/index': './src/editor/events/index.ts',
     'editor/inline-rename/index': './src/editor/inline-rename/index.ts',
+    'editor/keyboard/index': './src/editor/keyboard/index.ts',
     'editor/menu-model/index': './src/editor/menu-model/index.ts',
     'editor/selection-capabilities/index': './src/editor/selection-capabilities/index.ts',
     'editor/selection-state/index': './src/editor/selection-state/index.ts',
@@ -135,6 +139,7 @@ export default defineConfig({
     'shared/dom-events': './src/shared/dom-events.ts',
     'shared/drag/index': './src/shared/drag/index.ts',
     'shared/font-status/index': './src/shared/font-status/index.ts',
+    'shared/frame': './src/shared/frame.ts',
     'shared/input/index': './src/shared/input/index.ts',
     'shared/search/index': './src/shared/search/index.ts',
     'testing/index': './src/testing/index.ts',
@@ -158,7 +163,7 @@ export default defineConfig({
   },
   deps: {
     alwaysBundle: BUNDLED.flatMap((name) => [name, new RegExp(`^${name.replaceAll('/', '\\/')}/`)]),
-    neverBundle: [...external, /^node:/    ],
+    neverBundle: [...external, /^node:/],
     onlyBundle: false
   },
   plugins: [atlaskitSubpathResolver(), raw(), vue()],

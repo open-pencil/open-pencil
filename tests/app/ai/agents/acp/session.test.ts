@@ -1,22 +1,22 @@
 import { expect, test } from 'bun:test'
 
-import type {
-  InitializeResponse,
-  NewSessionRequest,
-  ResumeSessionRequest
+import {
+  RequestError,
+  type InitializeResponse,
+  type NewSessionRequest,
+  type ResumeSessionRequest
 } from '@agentclientprotocol/sdk'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import {
   AgentSessionResumeError,
+  AgentSessionRetryError,
   openAgentSession,
   resumingAgent
 } from '@/app/ai/agents/acp/session'
 import { OWN_TOOLS_ALLOWED } from '@/app/ai/agents/acp/tools'
-
-import { expectDefined } from '#tests/helpers/assert'
-
 const resuming = expectDefined(
   ACP_AGENTS.find((agent) => agent.resumesSessions),
   'an agent that resumes sessions'
@@ -24,6 +24,14 @@ const resuming = expectDefined(
 const notResuming = expectDefined(
   ACP_AGENTS.find((agent) => !agent.resumesSessions),
   'an agent that does not resume sessions'
+)
+const codex = expectDefined(
+  ACP_AGENTS.find((agent) => agent.id === 'codex'),
+  'Codex agent'
+)
+const claude = expectDefined(
+  ACP_AGENTS.find((agent) => agent.id === 'claude-code'),
+  'Claude agent'
 )
 
 const resumes: InitializeResponse = {
@@ -33,7 +41,7 @@ const resumes: InitializeResponse = {
 const request = { cwd: '/workspace', mcpServers: [], meta: OWN_TOOLS_ALLOWED }
 
 interface FakeConnectionOptions {
-  resumeError?: Error
+  resumeError?: unknown
 }
 
 function connection({ resumeError }: FakeConnectionOptions = {}) {
@@ -48,7 +56,7 @@ function connection({ resumeError }: FakeConnectionOptions = {}) {
     },
     async unstable_resumeSession(params: ResumeSessionRequest) {
       resumed.push(params)
-      if (resumeError) throw resumeError
+      if (resumeError !== undefined) throw resumeError
       return { models: { currentModelId: 'sonnet', availableModels: [] } }
     }
   }
@@ -92,7 +100,7 @@ test('a saved session never silently becomes a new one', async () => {
   expect(withoutCapability.created).toEqual([])
   expect(withoutCapability.resumed).toEqual([])
 
-  const unknownSession = new Error('No conversation found')
+  const unknownSession = RequestError.resourceNotFound('s')
   const missing = connection({ resumeError: unknownSession })
   const failure = await openAgentSession(missing, resuming, resumes, {
     ...request,
@@ -111,3 +119,62 @@ test('a resume that needs sign-in keeps the sign-in error', async () => {
     authRequired
   )
 })
+
+test.each([
+  RequestError.internalError({ details: 'no rollout found for thread id saved' }),
+  { code: -32603, message: 'no rollout found for thread id saved' },
+  {
+    code: -32603,
+    message: 'Internal error',
+    data: { details: 'no rollout found for thread id saved' }
+  }
+])('a missing Codex rollout retires the saved session: %j', async (resumeError) => {
+  const fake = connection({ resumeError })
+  const failure = await openAgentSession(fake, codex, resumes, {
+    ...request,
+    resume: 'saved'
+  }).catch((cause: unknown) => cause)
+  expect(failure).toBeInstanceOf(AgentSessionResumeError)
+  expect(failure instanceof Error && failure.cause).toBe(resumeError)
+  expect(fake.created).toEqual([])
+})
+
+test.each([
+  RequestError.internalError(),
+  RequestError.internalError({ details: 'thread saved already has an active writer' }),
+  RequestError.internalError({ details: 'thread not loaded: saved' }),
+  RequestError.internalError({ details: ['no rollout found for thread id saved'] }),
+  RequestError.invalidRequest({ reason: 'thread_active_writer' }, 'Session in use'),
+  { code: '-32603', message: 'no rollout found for thread id saved' }
+])('other Codex resume errors remain retryable: %j', async (error) => {
+  const fake = connection({ resumeError: error })
+  await expectRetry(openAgentSession(fake, codex, resumes, { ...request, resume: 'saved' }), error)
+  expect(fake.created).toEqual([])
+})
+
+test('Codex error wording does not classify another agent’s internal error', async () => {
+  const error = RequestError.internalError({ details: 'no rollout found for thread id saved' })
+  const fake = connection({ resumeError: error })
+  await expectRetry(openAgentSession(fake, claude, resumes, { ...request, resume: 'saved' }), error)
+})
+
+test.each([
+  RequestError.invalidRequest({ reason: 'thread_active_writer' }, 'Session in use'),
+  RequestError.internalError(),
+  new Error('Connection closed')
+])(
+  'an unconfirmed resume failure offers a retry and keeps the agent’s error: %s',
+  async (error) => {
+    const fake = connection({ resumeError: error })
+    await expectRetry(openAgentSession(fake, resuming, resumes, { ...request, resume: 's' }), error)
+    expect(fake.created).toEqual([])
+  }
+)
+
+/** A failure the conversation can retry, which names both ways on and keeps what the agent said. */
+async function expectRetry(opening: Promise<unknown>, error: unknown) {
+  const failure = await opening.catch((cause: unknown) => cause)
+  expect(failure).toBeInstanceOf(AgentSessionRetryError)
+  expect(failure instanceof Error && failure.cause).toBe(error)
+  expect(failure instanceof Error && failure.message).toContain('Try again, or start a new chat.')
+}

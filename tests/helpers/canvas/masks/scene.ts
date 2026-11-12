@@ -1,5 +1,7 @@
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
+import { linearGradient, solid } from '../paints'
+
 /** Pattern fills drawn from a hidden source node. */
 export function createPatternFillScene(graph: SceneGraph, pageId: string): void {
   const source = graph.createNode('ELLIPSE', pageId, {
@@ -9,9 +11,7 @@ export function createPatternFillScene(graph: SceneGraph, pageId: string): void 
     width: 18,
     height: 18,
     visible: false,
-    fills: [
-      { type: 'SOLID', color: { r: 0.96, g: 0.35, b: 0.12, a: 1 }, visible: true, opacity: 1 }
-    ]
+    fills: [solid(0.96, 0.35, 0.12)]
   })
 
   graph.createNode('RECTANGLE', pageId, {
@@ -115,7 +115,7 @@ export async function createLuminanceMaskScene(
     width: 240,
     height: 130,
     cornerRadius: 18,
-    fills: [{ type: 'SOLID', color: { r: 0.08, g: 0.1, b: 0.18, a: 1 }, visible: true, opacity: 1 }]
+    fills: [solid(0.08, 0.1, 0.18)]
   })
   graph.createNode('RECTANGLE', frame.id, {
     name: 'Luminance mask gradient',
@@ -126,17 +126,10 @@ export async function createLuminanceMaskScene(
     isMask: true,
     maskType: 'LUMINANCE',
     fills: [
-      {
-        type: 'GRADIENT_LINEAR',
-        color: { r: 0, g: 0, b: 0, a: 1 },
-        visible: true,
-        opacity: 1,
-        gradientStops: [
-          { color: { r: 0, g: 0, b: 0, a: 1 }, position: 0 },
-          { color: { r: 1, g: 1, b: 1, a: 1 }, position: 1 }
-        ],
-        gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
-      }
+      linearGradient([
+        { r: 0, g: 0, b: 0, a: 1 },
+        { r: 1, g: 1, b: 1, a: 1 }
+      ])
     ]
   })
   for (let index = 0; index < 5; index++) {
@@ -170,7 +163,7 @@ export async function createLuminanceMaskScene(
     width: 220,
     height: 130,
     cornerRadius: 18,
-    fills: [{ type: 'SOLID', color: { r: 0.08, g: 0.1, b: 0.18, a: 1 }, visible: true, opacity: 1 }]
+    fills: [solid(0.08, 0.1, 0.18)]
   })
   graph.createNode('ELLIPSE', multiMaskFrame.id, {
     name: 'First combined mask',
@@ -179,7 +172,7 @@ export async function createLuminanceMaskScene(
     width: 112,
     height: 98,
     isMask: true,
-    fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, visible: true, opacity: 1 }]
+    fills: [solid(1, 1, 1)]
   })
   graph.createNode('ELLIPSE', multiMaskFrame.id, {
     name: 'Second combined mask',
@@ -188,7 +181,7 @@ export async function createLuminanceMaskScene(
     width: 112,
     height: 98,
     isMask: true,
-    fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, visible: true, opacity: 1 }]
+    fills: [solid(1, 1, 1)]
   })
   graph.createNode('RECTANGLE', multiMaskFrame.id, {
     name: 'Consecutively masked content',
@@ -197,30 +190,17 @@ export async function createLuminanceMaskScene(
     width: 184,
     height: 98,
     fills: [
-      {
-        type: 'GRADIENT_LINEAR',
-        color: { r: 0, g: 0, b: 0, a: 1 },
-        visible: true,
-        opacity: 1,
-        gradientStops: [
-          { color: { r: 0.96, g: 0.35, b: 0.35, a: 1 }, position: 0 },
-          { color: { r: 0.08, g: 0.73, b: 0.73, a: 1 }, position: 0.5 },
-          { color: { r: 0.58, g: 0.27, b: 0.95, a: 1 }, position: 1 }
-        ],
-        gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
-      }
+      linearGradient([
+        { r: 0.96, g: 0.35, b: 0.35, a: 1 },
+        { r: 0.08, g: 0.73, b: 0.73, a: 1 },
+        { r: 0.58, g: 0.27, b: 0.95, a: 1 }
+      ])
     ]
   })
 }
 
 /** Masks with opacity, a translucent outline fill, luminance at half opacity, and a layer blur. */
 export function createMaskEffectsScene(graph: SceneGraph, pageId: string): void {
-  const solid = (r: number, g: number, b: number, opacity = 1) => ({
-    type: 'SOLID' as const,
-    color: { r, g, b, a: 1 },
-    opacity,
-    visible: true
-  })
   const variants = [
     { maskType: 'ALPHA' as const, mask: { opacity: 0.5 } },
     { maskType: 'VECTOR' as const, mask: { fills: [solid(0, 0, 0, 0.3)] } },

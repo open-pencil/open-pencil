@@ -57,7 +57,8 @@ export async function createACPTransport(
   providerID: AIProviderID,
   store?: EditorStore,
   onUsage?: (usage: AgentTurnUsage) => void,
-  agentSession?: AgentSessionLink
+  agentSession?: AgentSessionLink,
+  onAgentError?: (error: unknown) => void
 ) {
   const agentDef = acpAgentFor(providerID)
   if (!agentDef) throw new Error(`Unknown ACP agent: ${providerID}`)
@@ -71,7 +72,9 @@ export async function createACPTransport(
     onUsage,
     resume: agentSession?.resume ?? null,
     onSession:
-      agentSession && ((id) => agentSession.record(id === null ? null : { agent: agentDef.id, id }))
+      agentSession &&
+      ((id) => agentSession.record(id === null ? null : { agent: agentDef.id, id })),
+    onAgentError
   })
 }
 
@@ -106,7 +109,9 @@ export function createChatSessionManager({
   getActiveEditorStore
 }: ChatSessionOptions) {
   const failure = ref<AIChatFailure | null>(null)
-  let transportDirty = false
+  // Bumped by anything that changes the transport; a chat keeps the revision it was built from.
+  let transportRevision = 0
+  let chatTransportRevision = 0
   let currentChatStore: EditorStore | null = null
   const currentChatMessages = new WeakMap<EditorStore, UIMessage[]>()
   let chat: Chat<UIMessage> | null = null
@@ -118,6 +123,13 @@ export function createChatSessionManager({
 
   function captureProviderError(error: unknown): void {
     activeProviderError ??= error
+  }
+
+  // What an agent answered, for diagnostics only: the chat shows the agent's text, which can
+  // quote the conversation, while a raw agent error keeps just its code.
+  let activeAgentError: unknown = null
+  function captureAgentError(error: unknown): void {
+    activeAgentError ??= error
   }
 
   function handleChatFinish(
@@ -143,11 +155,12 @@ export function createChatSessionManager({
 
   function clearFailure(): void {
     activeProviderError = null
+    activeAgentError = null
     failure.value = null
   }
 
   function markTransportDirty() {
-    transportDirty = true
+    transportRevision++
   }
 
   async function destroyAgentTransports(): Promise<void> {
@@ -177,7 +190,8 @@ export function createChatSessionManager({
       store,
       ({ model, ...tokens }) =>
         recordModelStepCompleted({ provider, model: model ?? provider, ...tokens }, context),
-      agentSession
+      agentSession,
+      captureAgentError
     )
     acpTransportInstance = transport
     return transport as ChatTransport<UIMessage>
@@ -265,7 +279,9 @@ export function createChatSessionManager({
       currentChatMessages.set(currentChatStore, chat.messages)
     }
 
-    if (!chat || transportDirty || currentChatStore !== store) {
+    if (!chat || chatTransportRevision !== transportRevision || currentChatStore !== store) {
+      // Read before building: a change while the transport loads leaves this chat out of date.
+      const revision = transportRevision
       const messages = initialMessages ?? currentChatMessages.get(store)
       const diagnosticContext: AIDiagnosticContext = { sessionId, runId: crypto.randomUUID() }
       // Failures belong to the provider this chat was created for, even if the profile changes.
@@ -298,7 +314,9 @@ export function createChatSessionManager({
         messages,
         onError: (error) => {
           const reportedError = activeProviderError ?? error
+          const diagnosedError = activeAgentError ?? reportedError
           activeProviderError = null
+          activeAgentError = null
           const signInOnly = AI_PROVIDERS.some(
             (provider) => provider.id === chatProviderID && provider.signInOnly
           )
@@ -312,7 +330,7 @@ export function createChatSessionManager({
                 resetsAt: refusal.resetsAt ?? undefined
               }
             : classified
-          const { errorName, errorCode, message, stack } = diagnosticErrorDetails(reportedError)
+          const { errorName, errorCode, message, stack } = diagnosticErrorDetails(diagnosedError)
           recordChatFailed({ errorName, errorCode, message, stack }, diagnosticContext)
         },
         onFinish: (event) => {
@@ -333,7 +351,7 @@ export function createChatSessionManager({
       })
       chat = created
       currentChatStore = store
-      transportDirty = false
+      chatTransportRevision = revision
     }
     return chat
   }
@@ -344,7 +362,7 @@ export function createChatSessionManager({
     failure.value = null
     chat = null
     currentChatStore = null
-    transportDirty = false
+    chatTransportRevision = transportRevision
   }
 
   function setOverrideTransport(factory: (() => ChatTransport<UIMessage>) | null) {

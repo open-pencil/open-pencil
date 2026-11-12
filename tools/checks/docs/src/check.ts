@@ -18,7 +18,7 @@ import {
   RU_PROG
 } from '#docs-config/labels'
 import type { ProgrammableLabels, SidebarLabels } from '#docs-config/labels'
-import { sdkSidebar } from '#docs-config/sdk-sidebar'
+import { sdkSidebar } from '#docs-config/sdk/sidebar'
 import {
   developmentSidebar,
   guideSidebar,

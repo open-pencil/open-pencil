@@ -13,7 +13,7 @@ import {
   messageDefaults
 } from '@open-pencil/vue/i18n'
 
-import { hasMixedLatinAndCjk, placeholders } from './quality'
+import { hasMixedLatinAndCjk, hasShortcutText, placeholders } from './quality'
 
 const LOCALES_DIR = 'packages/vue/src/i18n/locales'
 /**
@@ -99,6 +99,15 @@ const observedMixedScript = new Set<string>()
 
 let hasErrors = false
 
+for (const [namespace, messages] of Object.entries(messageDefaults)) {
+  for (const [key, value] of Object.entries(messages)) {
+    const source = sourceMessage(value)
+    if (source !== null && hasShortcutText(source)) {
+      report(`${namespace}.${key}: pass the shortcut in as a formatShortcut placeholder`)
+    }
+  }
+}
+
 const mappingLocales = Object.keys(LOCALE_DIR_NAMES)
 const localeMappingDiff = sameMembers(mappingLocales, TRANSLATED_LOCALES)
 for (const locale of localeMappingDiff.missing) {
@@ -173,6 +182,9 @@ for (const [locale, dir] of expectedLocaleDirs) {
         report(
           `${id}: placeholders differ from source (${placeholders(source).join(', ')} != ${placeholders(localized).join(', ')})`
         )
+      }
+      if (hasShortcutText(localized)) {
+        report(`${id}: pass the shortcut in as a formatShortcut placeholder`)
       }
       if ((locale === 'ja' || locale === 'zh-CN') && hasMixedLatinAndCjk(localized)) {
         observedMixedScript.add(id)

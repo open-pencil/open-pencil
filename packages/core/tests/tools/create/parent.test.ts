@@ -5,6 +5,8 @@ import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { ALL_TOOLS, type ToolDef } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
+import { graphOf } from '#core/figma-api/graph'
+
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 
 /** Mutating tools that build or move layers under a `parent_id`. */
@@ -95,7 +97,7 @@ describe('tools that take a parent', () => {
     '%s refuses a parent inside an instance and leaves the document as it was',
     async (_name: string, def: ToolDef, args: ArgsFor) => {
       const fixture = build()
-      const { graph } = fixture.figma
+      const graph = graphOf(fixture.figma)
       const before = [...graph.nodes.keys()]
       const { error } = await run(def, fixture.figma, args(fixture.locked, fixture))
       expect(error).toContain('New parent is an instance or is inside of an instance')
@@ -110,7 +112,7 @@ describe('tools that take a parent', () => {
     '%s adds to a slot of an instance, which stays saveable',
     async (_name: string, def: ToolDef, args: ArgsFor) => {
       const fixture = build()
-      const { graph } = fixture.figma
+      const graph = graphOf(fixture.figma)
       const { error } = await run(def, fixture.figma, args(fixture.slot, fixture))
       expect(error).toBeNull()
       expect(graph.getNode(fixture.slot)?.childIds.length).toBeGreaterThan(0)

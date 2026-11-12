@@ -1,16 +1,15 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-import { FIXTURES } from '#core-tests/helpers/paths'
-
 import type { ShapedText } from '@open-pencil/fig/node-change'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { pixelLength } from '@open-pencil/scene-graph/text'
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 
-import { withFigExportRuntime } from '#core/io/formats/fig/export/runtime'
 import { getCanvasKit } from '#core/canvaskit'
+import { withFigExportRuntime } from '#core/io/formats/fig/export/runtime'
 import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
 import { getGlyphOutlineMetricsSync, glyphOutlineSourceSync } from '#core/text/font/glyphs'
 import { fontManager } from '#core/text/font/manager'

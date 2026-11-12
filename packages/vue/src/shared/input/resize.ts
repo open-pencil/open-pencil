@@ -8,6 +8,13 @@ import { computeAllLayouts } from '@open-pencil/core/layout'
 import { calibratePathTextLayout, reflowPathTextGlyphs } from '@open-pencil/core/text'
 import type { SceneNode, DerivedTextGlyph, TextPathData } from '@open-pencil/scene-graph'
 import {
+  canvasDeltaInLayer,
+  placeInResizedFrame,
+  selectionPlacement,
+  type LayerPlacement,
+  type SelectionPlacement
+} from '@open-pencil/scene-graph/coordinate'
+import {
   cloneVectorNetwork,
   copyDerivedGlyphs,
   copyGeometryPaths,
@@ -19,6 +26,7 @@ import {
   type InstanceOverrideState
 } from '@open-pencil/scene-graph/instances/overrides'
 import { recapturedAspectRatio } from '@open-pencil/scene-graph/layout'
+import { FITTED_CONTAINER_TYPES } from '@open-pencil/scene-graph/node-defaults'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 import {
   computeConstrainedResizeChanges,
@@ -27,9 +35,8 @@ import {
 } from '@open-pencil/scene-graph/resize'
 import { markSourceFieldsEdited } from '@open-pencil/scene-graph/source-metadata'
 
-import { calculateResizeRect } from '#vue/shared/input/resize/rect'
 import { draggedSizing, layerSizing } from '#vue/shared/input/resize/sizing'
-import { applyResizeSnap, proportionalResizeRect } from '#vue/shared/input/resize/snap'
+import { layerSnapSource, resizedRect } from '#vue/shared/input/resize/snap'
 import { optionalEditorState } from '#vue/shared/input/snap'
 import type { DragResize } from '#vue/shared/input/types'
 
@@ -93,27 +100,77 @@ function keptAspectRatio(d: DragResize, shiftKey: boolean, ctrlKey: boolean): nu
   return shiftKey && width > 0 && height > 0 ? width / height : null
 }
 
-function resizeChanges(
+/**
+ * The layer's new box and transform for a pointer at (`cx`, `cy`). The handle works along the
+ * layer's own axes, keeping the edges it leaves where they are on the canvas, as in Figma. Dragged
+ * past the opposite edge, the layer comes out mirrored and lands where the pointer puts it;
+ * otherwise its moving edges snap.
+ */
+function resizedPlacement(
   d: DragResize,
-  type: SceneNode['type'],
+  placement: SelectionPlacement,
   cx: number,
   cy: number,
   shiftKey: boolean,
   editor: Editor,
   ctrlKey: boolean
-) {
+): LayerPlacement {
   const { origRect } = d
   const aspect = keptAspectRatio(d, shiftKey, ctrlKey)
   // Control sets a lock aside even when Shift keeps the same ratio; the commit stores the size.
   d.freesLock = d.lockedAspectRatio !== null && ctrlKey
-  const dx = cx - d.startX
-  const dy = cy - d.startY
-  const newRect =
-    aspect !== null
-      ? proportionalResizeRect(d, origRect, dx, dy, aspect, editor, ctrlKey)
-      : applyResizeSnap(d, calculateResizeRect(d.handle, origRect, dx, dy, null), editor, ctrlKey)
+  const delta = canvasDeltaInLayer(placement, cx - d.startX, cy - d.startY)
+  const rect = resizedRect(
+    d.handle,
+    origRect,
+    delta,
+    aspect,
+    layerSnapSource(d, editor),
+    editor,
+    ctrlKey
+  )
+  return placeInResizedFrame(placement, origRect, rect)
+}
 
-  const changes: Partial<SceneNode> = {
+/** The angle and flips a layer had when the drag started. */
+function startingTurn(d: DragResize): Turn | undefined {
+  const node = d.origPlacement?.node
+  return node && turnOf(node)
+}
+
+type Turn = Pick<SceneNode, 'rotation' | 'flipX' | 'flipY'>
+
+function turnOf(node: Turn): Turn {
+  return { rotation: node.rotation, flipX: node.flipX, flipY: node.flipY }
+}
+
+function changedNothing(d: DragResize, node: SceneNode | undefined): boolean {
+  return (!d.appliedRect || sameRect(d.appliedRect, d.origRect)) && !turnDuring(d, node)
+}
+
+/** The angle and flips the drag changed on the layer, from and to, or null when it kept them. */
+function turnDuring(
+  d: DragResize,
+  node: SceneNode | undefined
+): { start: Turn; turn: Turn } | null {
+  const start = startingTurn(d)
+  if (!start || !node) return null
+  const turn = turnOf(node)
+  return isEqual(start, turn) ? null : { start, turn }
+}
+
+/** The layer's box and its own geometry scaled from the drag's start to `newRect`. */
+export function scaledChanges(
+  d: DragResize,
+  type: SceneNode['type'],
+  newRect: Rect
+): Partial<SceneNode> {
+  // Back at its starting size, the layer takes back the geometry it started with, which an
+  // earlier step of the drag scaled.
+  if (newRect.width === d.origRect.width && newRect.height === d.origRect.height) {
+    return { ...newRect, ...startingGeometry(d) }
+  }
+  return {
     ...newRect,
     ...scaledGeometryChanges(
       {
@@ -126,13 +183,12 @@ function resizeChanges(
         textPathData: d.origTextPathData,
         textPathBox: d.origTextPathBox
       },
-      origRect.width,
-      origRect.height,
+      d.origRect.width,
+      d.origRect.height,
       newRect.width,
       newRect.height
     )
   }
-  return { changes, newRect }
 }
 
 /**
@@ -172,6 +228,19 @@ function applyConstrainedChildren(
   }
 }
 
+/** The layer's own geometry as the drag found it. */
+function startingGeometry(d: DragResize): Partial<SceneNode> {
+  return {
+    vectorNetwork: d.origVectorNetwork,
+    fillGeometry: d.origFillGeometry,
+    strokeGeometry: d.origStrokeGeometry,
+    derivedTextGlyphs: d.origDerivedTextGlyphs,
+    strokes: d.origStrokes,
+    textPathData: d.origTextPathData,
+    textPathBox: d.origTextPathBox
+  }
+}
+
 /** Control both frees a locked ratio and turns snapping off, as in Figma. */
 export function applyResize(
   dragState: DragResize,
@@ -188,7 +257,32 @@ export function applyResize(
   const d = toRaw(dragState)
   const node = editor.graph.getNode(d.nodeId)
   if (!node) return
-  const { changes, newRect } = resizeChanges(d, node.type, cx, cy, shiftKey, editor, ctrlKey)
+  d.origPlacement ??= selectionPlacement(node, editor.graph)
+  const { rotation, flipX, flipY, ...newRect } = resizedPlacement(
+    d,
+    d.origPlacement,
+    cx,
+    cy,
+    shiftKey,
+    editor,
+    ctrlKey
+  )
+  const changes = { ...scaledChanges(d, node.type, newRect), rotation, flipX, flipY }
+  applyResizedRect(d, node, newRect, changes, editor)
+  editor.requestRepaint()
+}
+
+/**
+ * Previews a layer resized to `newRect`: its box and geometry (`changes`), its sizing, path text
+ * and constrained children, laid out around it. The caller requests the repaint.
+ */
+export function applyResizedRect(
+  d: DragResize,
+  node: SceneNode,
+  newRect: Rect,
+  changes: Partial<SceneNode>,
+  editor: Editor
+) {
   d.appliedRect = { ...newRect }
   d.origSizing ??= layerSizing(node)
   d.appliedSizing = draggedSizing(editor.graph, node, d.origSizing, d.origRect, newRect)
@@ -213,13 +307,12 @@ export function applyResize(
     editor.renderer?.invalidateVectorPath(d.nodeId)
   }
 
-  // Two passes around the layout run: the first sizes children so Yoga can
+  // Two passes around the layout run: the first sizes children so layout can
   // resolve HUG/FILL, the second re-applies against the settled boxes.
   applyConstrainedChildren(d, newRect, editor)
   editor.graph.runPreviewUpdates(() => computeAllLayouts(editor.graph, d.nodeId))
   applyConstrainedChildren(d, newRect, editor)
   editor.graph.runPreviewUpdates(() => computeAllLayouts(editor.graph, d.nodeId))
-  editor.requestRepaint()
 }
 
 /**
@@ -307,6 +400,8 @@ function restoreResizePreview(d: DragResize, editor: Editor) {
       y: orig.y,
       width: orig.width,
       height: orig.height,
+      flipX: orig.flipX,
+      flipY: orig.flipY,
       vectorNetwork: orig.vectorNetwork,
       fillGeometry: orig.fillGeometry,
       strokeGeometry: orig.strokeGeometry,
@@ -324,26 +419,34 @@ export function cancelResizePreview(dragState: DragResize, editor: Editor) {
   optionalEditorState(editor)?.snapGuides.splice(0)
   restoreResizePreview(d, editor)
   // The preview scaled the layer's own geometry too, which a commit would have replaced.
-  editor.graph.updateNodePreview(d.nodeId, {
-    vectorNetwork: d.origVectorNetwork,
-    fillGeometry: d.origFillGeometry,
-    strokeGeometry: d.origStrokeGeometry,
-    derivedTextGlyphs: d.origDerivedTextGlyphs,
-    strokes: d.origStrokes,
-    textPathData: d.origTextPathData,
-    textPathBox: d.origTextPathBox
-  })
+  editor.graph.updateNodePreview(d.nodeId, startingGeometry(d))
   if (d.origSizing) editor.graph.updateNodePreview(d.nodeId, d.origSizing)
+  const turn = startingTurn(d)
+  if (turn) editor.graph.updateNodePreview(d.nodeId, turn)
   editor.renderer?.invalidateVectorPath(d.nodeId)
   restoreEditedFields(d, editor)
   editor.graph.runPreviewUpdates(() => computeAllLayouts(editor.graph, d.nodeId))
   editor.requestRender()
 }
 
-export function commitResizePreview(dragState: DragResize, editor: Editor) {
+/**
+ * Commits a resize as one undo step. Groups and booleans around the layer fit their children
+ * again, as after a move, unless `fitGroups` is false because the caller fits them itself.
+ */
+export function commitResizePreview(
+  dragState: DragResize,
+  editor: Editor,
+  { fitGroups = true }: { fitGroups?: boolean } = {}
+) {
   // See applyResize — reactive drag state must not leak into graph writes.
   const d = toRaw(dragState)
   const node = editor.graph.getNode(d.nodeId)
+  // A press that left the layer as it was records nothing, and leaves its imported geometry be.
+  if (changedNothing(d, node)) {
+    cancelResizePreview(d, editor)
+    return
+  }
+  const parentId = node?.parentId
   // A section resized over layers takes in the ones it now covers, a lock that Control set aside
   // takes the new size, and an axis that stopped hugging or filling stays fixed, in one undo step.
   const adoptsLayers = node?.type === 'SECTION'
@@ -352,7 +455,12 @@ export function commitResizePreview(dragState: DragResize, editor: Editor) {
     d.origSizing !== undefined &&
     d.appliedSizing !== undefined &&
     !isEqual(d.origSizing, d.appliedSizing)
-  if (!adoptsLayers && !recaptured.targetAspectRatio && !fixesSizing) {
+  // Only a layer inside a group or boolean has bounds around it to fit again.
+  const parent = parentId ? editor.graph.getNode(parentId) : undefined
+  const fitsGroups = fitGroups && parent !== undefined && FITTED_CONTAINER_TYPES.has(parent.type)
+  // A layer dragged through itself comes out mirrored: its new angle and flips are their own step.
+  const turned = turnDuring(d, node)
+  if (!adoptsLayers && !recaptured.targetAspectRatio && !fixesSizing && !fitsGroups && !turned) {
     commitResizeGeometry(d, editor)
     return
   }
@@ -363,8 +471,13 @@ export function commitResizePreview(dragState: DragResize, editor: Editor) {
       editor.updateNodeWithUndo(d.nodeId, d.appliedSizing, 'Resize')
     }
     commitResizeGeometry(d, editor)
+    if (turned) {
+      editor.graph.updateNodePreview(d.nodeId, turned.start)
+      editor.updateNodeWithUndo(d.nodeId, turned.turn, 'Resize')
+    }
     if (recaptured.targetAspectRatio) editor.updateNodeWithUndo(d.nodeId, recaptured, 'Resize')
     if (adoptsLayers) editor.adoptCoveredLayers(d.nodeId)
+    if (fitsGroups && parentId) editor.fitEnclosingGroups([parentId])
   })
 }
 
@@ -403,7 +516,12 @@ function commitResizeGeometry(d: DragResize, editor: Editor) {
     for (const [childId, original] of d.origChildren) {
       const child = editor.graph.getNode(childId)
       if (!child) continue
-      finalChildren.set(childId, snapshotResizeFinal(child, original.strokeGeometry.length > 0))
+      // Constraints turn a layer over when its frame shrinks it past zero.
+      finalChildren.set(childId, {
+        ...snapshotResizeFinal(child, original.strokeGeometry.length > 0),
+        flipX: child.flipX,
+        flipY: child.flipY
+      })
     }
     restoreResizePreview(d, editor)
     // Resize is geometric — the raw Figma import payload (vectorData,

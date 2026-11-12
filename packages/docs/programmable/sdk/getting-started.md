@@ -8,10 +8,10 @@ description: Set up @open-pencil/vue with createEditor, provideEditor, and a can
 ## Installation
 
 ```bash
-bun add @open-pencil/core @open-pencil/scene-graph @open-pencil/vue canvaskit-wasm
+bun add @open-pencil/core @open-pencil/scene-graph @open-pencil/vue @open-pencil/canvaskit
 ```
 
-The SDK lives in the monorepo and is published as `@open-pencil/vue`. The current development version requires Vue `^3.5.41` and, when using its optional CanvasKit peer, `canvaskit-wasm >=0.41.1`. Check the installed package's peer requirements when using an older release.
+The SDK lives in the monorepo and is published as `@open-pencil/vue`. The current development version requires Vue `^3.5.41` and, when using its optional CanvasKit peer, `@open-pencil/canvaskit` of the same version as `@open-pencil/core`. Check the installed package's peer requirements when using an older release.
 
 ```ts
 import { createEditor } from '@open-pencil/core'
@@ -21,7 +21,7 @@ import { useCanvas } from '@open-pencil/vue/canvas/surface'
 
 ## Serve the engine's files
 
-The canvas loads files at run time: CanvasKit's WebAssembly, the bundled fonts, and HarfBuzz's subsetter for PDF export. With Vite, add the `openPencil()` plugin and they are served in development and emitted with the build:
+The canvas loads files at run time: CanvasKit's WebAssembly and the bundled fonts. With Vite, add the `openPencil()` plugin and they are served in development and emitted with the build:
 
 ```ts
 // vite.config.ts
@@ -40,9 +40,8 @@ With another bundler, serve these files and point Core at them before the canvas
 
 | File | Comes from | Point Core at it with |
 | --- | --- | --- |
-| `canvaskit.wasm` | `canvaskit-wasm/bin/full/` | `setCanvasKitLocator` from `@open-pencil/core/canvaskit` |
+| `canvaskit.wasm` | `@open-pencil/canvaskit/dist/` | `setCanvasKitLocator` from `@open-pencil/core/canvaskit` |
 | Bundled fonts (`*.ttf`, `*.woff2`) | `@open-pencil/core/assets/` | `fontManager.setBundledFontLocator` from `@open-pencil/core/text` |
-| `harfbuzz-subset.wasm` | `harfbuzzjs/dist/` | `setHarfBuzzSubsetLocator` from `@open-pencil/core/text` |
 
 Without a locator, Core requests each file from the site root, such as `/canvaskit.wasm`. When a file is missing there, the error names it and the locator to set.
 
@@ -73,11 +72,10 @@ if (!page) throw new Error('Expected an initial page')
 const editor = createEditor({
   graph,
   state: reactive(createDefaultEditorState(page.id)),
-  getViewportSize: () => ({ width: 1200, height: 800 }),
 })
 ```
 
-Core state is framework-neutral; passing reactive state lets Vue controls observe editor changes. For a resizable editor, have `getViewportSize` return the current canvas container dimensions. `width` and `height` are not `EditorOptions` properties.
+Core state is framework-neutral; passing reactive state lets Vue controls observe editor changes. The canvas tells the editor its size as it draws, which zooming to fit and centring use; an editor with no canvas, such as one in a script, can pass `getViewportSize` instead.
 
 Icons come from Iconify by default. To serve them from elsewhere, such as a bundled or self-hosted set, pass an `IconProvider` from `@open-pencil/core/icons` as `icons`; the editor's commands, its icon picker, and its AI tools all use it.
 

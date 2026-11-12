@@ -4,7 +4,6 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from 'reka-ui'
@@ -15,6 +14,7 @@ import { useCloudMessages } from '@open-pencil/vue/i18n'
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { sideList } from '@/components/ui/list/side-list'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menu } from '@/components/ui/menu/menu'
 import Tip from '@/components/ui/overlay/Tip.vue'
 
@@ -22,7 +22,7 @@ import type { HomeCloudAccount, HomeLocation } from '../cloud/types'
 
 /**
  * Where the home tab can show documents from: recent files, each Cloud workspace of the signed-in
- * account, documents shared with that account, and the configured storage bucket.
+ * account, documents shared with that account, its Trash, and the configured storage bucket.
  */
 const {
   active,
@@ -86,7 +86,7 @@ const workspaceLocations = computed(() =>
           <IconButton :label="t.homeNewWorkspace" @click="emit('newWorkspace')">
             <icon-lucide-plus class="size-3.5" />
           </IconButton>
-          <DropdownMenuRoot :modal="false">
+          <AppDropdownMenuRoot :modal="false">
             <DropdownMenuTrigger as-child>
               <IconButton :label="t.homeAccount({ email: account.email })">
                 <icon-lucide-ellipsis class="size-3.5" />
@@ -132,7 +132,7 @@ const workspaceLocations = computed(() =>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenuPortal>
-          </DropdownMenuRoot>
+          </AppDropdownMenuRoot>
         </div>
       </div>
       <div :class="ui.items()">
@@ -167,6 +167,15 @@ const workspaceLocations = computed(() =>
             <icon-lucide-users :class="ui.icon()" />
             <span :class="ui.label()">{{ t.homeSharedWithYou }}</span>
             <span v-if="sharedCount" :class="ui.trailing()">{{ sharedCount }}</span>
+          </button>
+          <button
+            type="button"
+            :class="ui.item()"
+            :data-active="isActive({ kind: 'trash', id: 'trash' })"
+            @click="emit('select', { kind: 'trash', id: 'trash' })"
+          >
+            <icon-lucide-trash-2 :class="ui.icon()" />
+            <span :class="ui.label()">{{ t.homeTrash }}</span>
           </button>
         </template>
         <button v-else type="button" :class="ui.item()" @click="emit('connect')">

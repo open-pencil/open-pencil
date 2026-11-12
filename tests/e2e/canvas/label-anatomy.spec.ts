@@ -1,9 +1,10 @@
 import { readFileSync } from 'node:fs'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { repoPath } from '@open-pencil/test-support/paths'
 
 import { expect, test } from '#tests/e2e/fixtures'
-import { expectDefined } from '#tests/helpers/assert'
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { mockFontsource } from '#tests/helpers/fonts/fontsource'
 
@@ -16,12 +17,12 @@ test('reused Unicode section labels match fresh paragraphs across zoom reversals
     {
       family: 'Noto Naskh Arabic',
       subset: 'arabic',
-      data: readFileSync('packages/core/assets/NotoNaskhArabic-Regular.ttf')
+      data: readFileSync(repoPath('packages/core/assets/NotoNaskhArabic-Regular.ttf'))
     },
     {
       family: 'Noto Sans SC',
       subset: 'chinese-simplified',
-      data: readFileSync('tests/fixtures/fonts/NotoSansCJK-Test.otf'),
+      data: readFileSync(repoPath('tests/fixtures/fonts/NotoSansCJK-Test.otf')),
       format: 'otf'
     }
   ])

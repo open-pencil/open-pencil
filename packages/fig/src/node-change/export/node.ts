@@ -646,7 +646,13 @@ function applyPropertyDefinitions(
   const componentPropDefs = definitions.map((def) =>
     propertyDefinitionRecord(context, def, undefined, localIdCounter)
   )
-  if (shouldSerializeRawBackedField(node, 'componentPropDefs', componentPropDefs.length > 0))
+  // The saved definitions lack the ones a set's variants added since, which their copies link
+  // to, so the set writes them all.
+  const variantsAdded = definitions.length > node.componentPropertyDefinitions.length
+  if (
+    variantsAdded ||
+    shouldSerializeRawBackedField(node, 'componentPropDefs', componentPropDefs.length > 0)
+  )
     nc.componentPropDefs = componentPropDefs
 }
 
@@ -790,7 +796,8 @@ const SUPPORTED_NORMALIZED_EFFECT_TYPES = new Set([
   'INNER_SHADOW',
   'LAYER_BLUR',
   'BACKGROUND_BLUR',
-  'FOREGROUND_BLUR'
+  'FOREGROUND_BLUR',
+  'GLASS'
 ])
 
 function hasRawUnsupportedEffects(node: SceneNode): boolean {

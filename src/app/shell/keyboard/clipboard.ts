@@ -1,6 +1,7 @@
 import { useEventListener } from '@vueuse/core'
 
 import { extractImageFilesFromClipboard } from '@open-pencil/vue/canvas/drop'
+import { hasDocumentTextSelection, isEditing } from '@open-pencil/vue/editor/keyboard'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { isDesignClipboardHTML } from '@/app/editor/clipboard/html'
@@ -15,7 +16,6 @@ import { pasteWebClipboard } from '@/app/editor/clipboard/paste/web'
 import { browserSystemClipboard } from '@/app/editor/clipboard/system/browser'
 import { tauriSystemClipboard } from '@/app/editor/clipboard/system/tauri'
 import type { SystemClipboard } from '@/app/editor/clipboard/system/types'
-import { hasDocumentTextSelection, isEditing } from '@/app/shell/keyboard/focus'
 import { isTauri } from '@/app/tauri/env'
 
 function cursorPosition(store: EditorStore) {

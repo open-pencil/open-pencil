@@ -20,7 +20,14 @@ test('an HTML label reads as a browser shows it, with runs where its tags change
   expect(label.text).toBe('Line one\nBold and red\nlast & big')
   expect(label.runs).toEqual([
     { start: 9, length: 4, style: { fontWeight: 700 } },
-    { start: 18, length: 3, style: { italic: true, fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }] } },
+    {
+      start: 18,
+      length: 3,
+      style: {
+        italic: true,
+        fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+      }
+    },
     { start: 29, length: 3, style: { fontSize: 20 } }
   ])
 })

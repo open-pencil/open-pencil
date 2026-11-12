@@ -314,6 +314,38 @@ describe('parsePenFile — space around', () => {
   })
 })
 
+describe('parsePenFile — space between (#1402)', () => {
+  const row = (fields: Partial<PenNode>): PenNode => ({
+    id: 'row',
+    type: 'frame',
+    layout: 'horizontal',
+    justifyContent: 'space_between',
+    gap: 20,
+    ...fields,
+    children: ['a', 'b'].map((id) => ({ id, type: 'rectangle', width: 10, height: 10 }))
+  })
+
+  test('keeps the gap between the children of a hugging frame', () => {
+    const graph = parseLayoutDocument([row({})])
+    expect(graph.getNode('row')?.width).toBe(40)
+    expect(graph.getNode('b')?.x).toBe(30)
+  })
+
+  test('spreads the children of a fixed frame', () => {
+    const graph = parseLayoutDocument([row({ width: 200 })])
+    expect(graph.getNode('b')?.x).toBe(190)
+  })
+
+  test('spreads the children of an instance given a width of its own', () => {
+    const graph = parseLayoutDocument([
+      row({ reusable: true }),
+      { id: 'wide', type: 'ref', ref: 'row', width: 200 }
+    ])
+    const wide = graph.getChildren('wide')
+    expect(wide.map((child) => child.x)).toEqual([0, 190])
+  })
+})
+
 describe('parsePenFile — paths sized by layout', () => {
   test('draws a filling path at its laid-out size in a component and a resized instance', () => {
     const graph = parseLayoutDocument([

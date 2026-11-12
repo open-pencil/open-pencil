@@ -8,6 +8,10 @@
         "accelerator": "CmdOrCtrl+N"
       },
       {
+        "id": "new-board",
+        "label": "New Board"
+      },
+      {
         "id": "new-tab",
         "label": "New Tab",
         "accelerator": "CmdOrCtrl+T"
@@ -20,24 +24,6 @@
       {
         "id": "open-recent",
         "label": "Open Recent"
-      },
-      {
-        "id": "open-tour",
-        "label": "Open the Tour"
-      },
-      {
-        "id": "diagnostics",
-        "label": "Diagnostics…"
-      },
-      {
-        "id": "report-problem",
-        "label": "Report a Problem…",
-        "feature": "reports"
-      },
-      {
-        "id": "support-openpencil",
-        "label": "Support OpenPencil…",
-        "feature": "donation"
       },
       {
         "type": "separator"
@@ -62,7 +48,7 @@
       {
         "id": "save-version",
         "label": "Save to Version History…",
-        "accelerator": "Alt+CmdOrCtrl+S",
+        "accelerator": "CmdOrCtrl+Alt+S",
         "feature": "cloud-document"
       },
       {
@@ -181,6 +167,18 @@
         "feature": "document"
       },
       {
+        "id": "copy-properties",
+        "label": "Copy Properties",
+        "accelerator": "CmdOrCtrl+Alt+C",
+        "feature": "document"
+      },
+      {
+        "id": "paste-properties",
+        "label": "Paste Properties",
+        "accelerator": "CmdOrCtrl+Alt+V",
+        "feature": "document"
+      },
+      {
         "id": "selection.duplicate",
         "label": "Duplicate",
         "accelerator": "CmdOrCtrl+D",
@@ -281,6 +279,7 @@
       {
         "id": "view-split-right",
         "label": "Split Right",
+        "accelerator": "CmdOrCtrl+Shift+\\",
         "feature": "document"
       },
       {
@@ -316,7 +315,7 @@
       {
         "id": "view-multiplayer-cursors",
         "label": "Multiplayer Cursors",
-        "accelerator": "Alt+CmdOrCtrl+\\",
+        "accelerator": "CmdOrCtrl+Alt+\\",
         "checkbox": true,
         "feature": "document"
       },
@@ -392,6 +391,12 @@
         "feature": "document"
       },
       {
+        "id": "toggle-ai",
+        "label": "Toggle AI Chat",
+        "accelerator": "CmdOrCtrl+J",
+        "feature": "document"
+      },
+      {
         "id": "toggle-preview",
         "label": "Preview",
         "accelerator": "CmdOrCtrl+Alt+Enter",
@@ -420,6 +425,10 @@
         "id": "selection.frameSelection",
         "label": "Frame Selection",
         "accelerator": "CmdOrCtrl+Alt+G"
+      },
+      {
+        "id": "selection.wrapInSection",
+        "label": "Wrap in New Section"
       },
       {
         "id": "selection.ungroup",
@@ -491,10 +500,6 @@
         "id": "selection.flatten",
         "label": "Flatten",
         "accelerator": "Alt+Shift+F"
-      },
-      {
-        "id": "selection.outlineText",
-        "label": "Outline text"
       },
       {
         "id": "selection.outlineStroke",
@@ -631,12 +636,14 @@
       {
         "id": "selection.distributeHorizontal",
         "label": "Distribute Horizontal Spacing",
-        "accelerator": "Ctrl+Alt+H"
+        "accelerator": "Alt+Shift+H",
+        "macAccelerator": "Ctrl+Alt+H"
       },
       {
         "id": "selection.distributeVertical",
         "label": "Distribute Vertical Spacing",
-        "accelerator": "Ctrl+Alt+V"
+        "accelerator": "Alt+Shift+V",
+        "macAccelerator": "Ctrl+Alt+V"
       },
       {
         "type": "separator"
@@ -644,7 +651,8 @@
       {
         "id": "selection.tidyUp",
         "label": "Tidy Up",
-        "accelerator": "Ctrl+Alt+T"
+        "accelerator": "Ctrl+Alt+Shift+T",
+        "macAccelerator": "Ctrl+Alt+T"
       },
       {
         "id": "selection.packHorizontal",
@@ -698,6 +706,54 @@
             "label": "Network"
           }
         ]
+      }
+    ]
+  },
+  {
+    "label": "Help",
+    "items": [
+      {
+        "id": "help-docs",
+        "label": "OpenPencil Documentation"
+      },
+      {
+        "id": "help-shortcuts",
+        "label": "Keyboard Shortcuts"
+      },
+      {
+        "id": "help-whats-new",
+        "label": "What’s New"
+      },
+      {
+        "id": "open-tour",
+        "label": "Open the Tour"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "id": "report-problem",
+        "label": "Report a Problem…"
+      },
+      {
+        "id": "diagnostics",
+        "label": "Diagnostics…"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "id": "help-community",
+        "label": "Community on Discord"
+      },
+      {
+        "id": "help-github",
+        "label": "OpenPencil on GitHub"
+      },
+      {
+        "id": "support-openpencil",
+        "label": "Support OpenPencil…",
+        "feature": "donation"
       }
     ]
   }

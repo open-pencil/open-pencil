@@ -4,7 +4,7 @@ import {
   Container,
   Head,
   Heading,
-  // eslint-disable-next-line open-pencil/no-mixed-case-acronym-identifiers -- Upstream export spelling.
+  // eslint-disable-next-line @open-pencil/structure/no-mixed-case-acronym-identifiers -- Upstream export spelling.
   Html as HTML,
   Img,
   Link,

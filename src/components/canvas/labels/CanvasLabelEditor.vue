@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ReferenceElement } from 'reka-ui'
-import { PopoverContent, PopoverPortal, PopoverRoot } from 'reka-ui'
+import { PopoverContent, PopoverPortal } from 'reka-ui'
 import { computed } from 'vue'
 
 import {
@@ -20,6 +20,7 @@ import type { CanvasLabelPresentation } from '@/components/canvas/labels/present
 import InlineLabelEditor, {
   type InlineLabelMetrics
 } from '@/components/ui/input/InlineLabelEditor.vue'
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 
 const { edit, presentation, reference } = defineProps<{
   edit: CanvasLabelEdit | null
@@ -83,7 +84,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <PopoverRoot :open="!!edit">
+  <AppPopoverRoot :open="!!edit">
     <PopoverPortal>
       <PopoverContent
         v-if="edit && reference"
@@ -112,5 +113,5 @@ const emit = defineEmits<{
         />
       </PopoverContent>
     </PopoverPortal>
-  </PopoverRoot>
+  </AppPopoverRoot>
 </template>

@@ -94,12 +94,21 @@ function options(schema: Schema): readonly Schema[] {
   return listProperty(base(schema), 'options').filter(isSchema)
 }
 
-/** The option of a variant that `input`'s discriminator picks. */
+/**
+ * The object option of a variant that `input`'s discriminators pick, through a variant nested as
+ * an option, such as blurs told apart by `blurType` among effects told apart by `type`.
+ */
 function variantOption(schema: Schema, input: unknown): Schema | undefined {
   const key = property(base(schema), 'key')
   if (typeof key !== 'string') return undefined
   const value = property(input, key)
-  return options(schema).find((option) => v.is(entries(option)[key] ?? v.never(), value))
+  for (const option of options(schema)) {
+    if (base(option).type === 'variant') {
+      const nested = variantOption(option, input)
+      if (nested && v.is(entries(nested)[key] ?? v.never(), value)) return nested
+    } else if (v.is(entries(option)[key] ?? v.never(), value)) return option
+  }
+  return undefined
 }
 
 /** The schema a step down `item` leads to from `schema`. */

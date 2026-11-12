@@ -61,6 +61,7 @@ export function destroyRenderer(r: SkiaRenderer): void {
   r.penVertexFill.delete()
   r.penVertexStroke.delete()
   r.effectLayerPaint.delete()
+  r.glassMaps.clear()
   r.imageFilterCache.clear()
   r.maskFilterCache.clear()
   r.dashEffects.clear()

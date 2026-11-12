@@ -1,9 +1,11 @@
 import type { FontVariation } from '@open-pencil/scene-graph'
+import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import { fontManager } from '#core/text/font/manager'
 
 import {
   fontInstance,
+  glyphBox,
   glyphCommands,
   harfBuzzFont,
   harfBuzzTable,
@@ -218,6 +220,8 @@ export interface GlyphOutlineMetrics {
   commands: OutlineCommand[]
   x: number
   advance: number
+  /** The UTF-16 index in the shaped text the glyph starts at. */
+  cluster: number
 }
 
 export type FontGlyphCoverage = 'has' | 'missing' | 'unknown'
@@ -260,7 +264,8 @@ export function getGlyphOutlineMetricsSync(
     const metrics = {
       commands: glyphCommands(parsed, instance, glyph.codepoint, fontSize, baseline, offsetX),
       x: pen,
-      advance: (glyph.xAdvance ?? 0) * scale
+      advance: (glyph.xAdvance ?? 0) * scale,
+      cluster: glyph.cluster
     }
     pen += metrics.advance
     return metrics
@@ -310,6 +315,11 @@ export interface GlyphOutlineSource {
   /** The glyphs HarfBuzz shapes `text` into in this font, at its axes and as `shaping` asks. */
   shape(text: string, shaping: RunShaping): ShapedGlyph[]
   outline(glyphId: number, fontSize: number): OutlineCommand[] | null
+  /**
+   * The box around `glyphId`'s outline at `fontSize`, y down from the baseline, as the font
+   * measures it at its axes; `null` for a glyph that draws nothing.
+   */
+  extents(glyphId: number, fontSize: number): VisualBounds | null
   /** The cap height at the font's axes, in ems; HarfBuzz measures `H` when no table declares it. */
   capHeight(): number
 }
@@ -361,6 +371,8 @@ function outlineSource(
       })),
     outline: (glyphId, fontSize) =>
       glyphId < parsed.glyphCount ? glyphCommands(parsed, instance, glyphId, fontSize) : null,
+    extents: (glyphId, fontSize) =>
+      glyphId < parsed.glyphCount ? glyphBox(parsed, instance, glyphId, fontSize) : null,
     capHeight: () => instanceCapHeight(parsed, instance)
   }
 }

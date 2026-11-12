@@ -95,15 +95,18 @@ function includeRect(bounds: BoundsAccumulator, rect: Rect): void {
   includePoint(bounds, rect.x + rect.width, rect.y + rect.height)
 }
 
+/** `bounds` as a rect at its top-left corner. */
+export function visualBoundsToRect(bounds: VisualBounds): Rect {
+  return {
+    x: bounds.minX,
+    y: bounds.minY,
+    width: bounds.maxX - bounds.minX,
+    height: bounds.maxY - bounds.minY
+  }
+}
+
 function boundsToRect(bounds: BoundsAccumulator): Rect {
-  return bounds.minX === Infinity
-    ? { x: 0, y: 0, width: 0, height: 0 }
-    : {
-        x: bounds.minX,
-        y: bounds.minY,
-        width: bounds.maxX - bounds.minX,
-        height: bounds.maxY - bounds.minY
-      }
+  return bounds.minX === Infinity ? { x: 0, y: 0, width: 0, height: 0 } : visualBoundsToRect(bounds)
 }
 
 export function computeBounds(items: Iterable<Rect>): Rect {
@@ -225,6 +228,14 @@ export function drawnBlurRadius(radius: number): number {
   return Math.max(0, radius)
 }
 
+/**
+ * The widest radius an effect blurs by: its radius, or the larger end of a progressive blur,
+ * which can start wider than it ends. Bounds and padding that must hold the whole blur use it.
+ */
+export function widestBlurRadius(effect: Pick<Effect, 'radius' | 'progressive'>): number {
+  return Math.max(effect.radius, effect.progressive?.startRadius ?? effect.radius)
+}
+
 const BLUR_SIGMA_PER_RADIUS = 0.43
 
 /**
@@ -256,7 +267,7 @@ export function effectOverflow(effects?: Effect[]) {
     ) {
       continue
     }
-    const blurSpread = drawnBlurRadius(effect.radius) + effect.spread
+    const blurSpread = drawnBlurRadius(widestBlurRadius(effect)) + effect.spread
     left = Math.max(left, blurSpread + Math.max(0, -effect.offset.x))
     right = Math.max(right, blurSpread + Math.max(0, effect.offset.x))
     top = Math.max(top, blurSpread + Math.max(0, -effect.offset.y))

@@ -1,5 +1,6 @@
+import { expectDefined } from '@open-pencil/test-support/assert'
+
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
-import { expectDefined } from '#tests/helpers/assert'
 import { propertyField, propertyItems, propertySection } from '#tests/helpers/properties'
 import { getPageChildren, getSelectedNode } from '#tests/helpers/store'
 
@@ -38,8 +39,10 @@ test('appearance fields share control height and show variable actions', async (
   await expect(applyVariable).toHaveCSS('width', '20px')
   await expect(applyVariable).toHaveCSS('height', '20px')
 
-  await applyVariable.hover()
+  // Hover tints the button like the field's menu button beside it, with no fade.
   await expect(applyVariable).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+  await applyVariable.hover()
+  await expect(applyVariable).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
 
   // The shared picker opens beside the panel, to the left of its trigger, like Figma's.
   await applyVariable.click()

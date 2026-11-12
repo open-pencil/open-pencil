@@ -1,6 +1,6 @@
-import type { Path } from 'canvaskit-wasm'
 import { omit, pick } from 'es-toolkit/object'
 
+import type { Path } from '@open-pencil/canvaskit'
 import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix, localTransformFromWorld } from '@open-pencil/scene-graph/coordinate'
 import { copyFills } from '@open-pencil/scene-graph/copy'
@@ -19,7 +19,7 @@ import {
   windingRuleOf
 } from './boolean'
 import type { SkiaRenderer } from './renderer'
-import { textGlyphPaths } from './text/outlines'
+import { textGlyphPaths, textOutlinePieces, type PaintedPath } from './text/outlines/glyphs'
 
 /**
  * A layer Outline stroke makes in place of another: a vector, or for text a group holding one
@@ -31,10 +31,13 @@ export interface OutlinePiece {
   children: Partial<SceneNode>[]
 }
 
-/** What a layer becomes: its fill as a shape of its own, if it has one, under its stroke. */
+/**
+ * What a layer becomes: its fill as a shape of its own, if it has one, under its stroke, if it
+ * has one; text without a stroke becomes its glyphs alone.
+ */
 export interface OutlinedLayer {
   fill: OutlinePiece | null
-  stroke: OutlinePiece
+  stroke: OutlinePiece | null
 }
 
 /** What the outlines keep of the layer they replace, as Figma's do. */
@@ -96,29 +99,29 @@ function placedLike(node: SceneNode, box: Box): Partial<SceneNode> {
 }
 
 /**
- * Paths in the layer's own axes as what replaces it: one vector, or for text a group of glyph
- * vectors named `childName`. Null when the paths cover nothing.
+ * Paths in the layer's own axes as what replaces it: one vector, or for text a group of vectors
+ * named `childName`, one per glyph or decoration in its own paints. Null when they cover nothing.
  */
 function pieceOf(
   r: SkiaRenderer,
   node: SceneNode,
-  paths: readonly Path[],
+  parts: readonly PaintedPath[],
   name: string,
-  childName: string,
-  fills: Fill[]
+  childName: string
 ): OutlinePiece | null {
-  const box = boundsOf(paths)
-  if (!box) return null
+  const box = boundsOf(parts.map(({ path }) => path))
+  const first = parts.at(0)
+  if (!box || !first) return null
   const props = { ...structuredClone(pick(node, KEPT_FIELDS)), ...placedLike(node, box), name }
   if (node.type !== 'TEXT') {
-    const [path] = paths
+    const vectorNetwork = networkIn(r, first.path, box)
     return {
       type: 'VECTOR',
-      props: { ...props, fills: copyFills(fills), vectorNetwork: networkIn(r, path, box) },
+      props: { ...props, fills: copyFills(first.fills), vectorNetwork },
       children: []
     }
   }
-  const children = paths.flatMap((path) => {
+  const children = parts.flatMap(({ path, fills }) => {
     const own = boundsOf([path])
     if (!own) return []
     return [
@@ -147,15 +150,28 @@ function sourcePaths(r: SkiaRenderer, node: SceneNode, graph: SceneGraph): Path[
   return path ? [path] : []
 }
 
-/** Whether Outline stroke turns this layer itself into outlines. */
+/**
+ * Whether Outline stroke turns this layer itself into outlines: one with a stroke, or text with a
+ * fill, which Figma outlines into its glyphs even without a stroke.
+ */
 export function canOutlineStroke(node: SceneNode): boolean {
-  return canMakeBooleanSourcePath(node) && nodeHasVisibleStroke(node)
+  return (
+    canMakeBooleanSourcePath(node) &&
+    (nodeHasVisibleStroke(node) || (node.type === 'TEXT' && nodeHasVisibleFill(node)))
+  )
+}
+
+/** Where a layer's stroke is drawn, one path per source; a line's shape is already its stroke. */
+function strokeOutlines(r: SkiaRenderer, node: SceneNode, sources: readonly Path[]): Path[] {
+  if (node.type === 'LINE') return sources.map((path) => path.copy())
+  return sources.flatMap((path) => strokeAreaPath(r, path, node) ?? [])
 }
 
 /**
  * A layer's stroke as Figma's Outline stroke leaves it: "<name> (Stroke)", filled with the
- * stroke's paints where the stroke is drawn, over "<name>", its fill, when it has one. Both keep
- * the layer's turn, opacity, and effects. Null when the stroke covers nothing.
+ * stroke's paints where the stroke is drawn, over "<name>", its fill, when it has one; text's fill
+ * is its glyphs, each in its character's fills, with its underlines and strikethroughs. Both keep
+ * the layer's turn, opacity, and effects. Null when a shape's stroke covers nothing.
  */
 export function outlineStrokeLayer(
   r: SkiaRenderer,
@@ -163,23 +179,23 @@ export function outlineStrokeLayer(
   graph: SceneGraph
 ): OutlinedLayer | null {
   if (!canOutlineStroke(node)) return null
+  const text = node.type === 'TEXT'
+  const filled = node.type !== 'LINE' && nodeHasVisibleFill(node)
   const sources = sourcePaths(r, node, graph)
+  const glyphs = text && filled ? (textOutlinePieces(r, node) ?? []) : []
   try {
-    // A line's shape is already its stroke.
-    const strokes =
-      node.type === 'LINE'
-        ? sources.map((path) => path.copy())
-        : sources.flatMap((path) => strokeAreaPath(r, path, node) ?? [])
-    const stroke = pieceOf(r, node, strokes, `${node.name} (Stroke)`, 'Stroke', strokePaints(node))
+    const strokes = nodeHasVisibleStroke(node) ? strokeOutlines(r, node, sources) : []
+    const paints = strokePaints(node)
+    const strokeParts = strokes.map((path) => ({ path, fills: paints }))
+    const stroke = pieceOf(r, node, strokeParts, `${node.name} (Stroke)`, 'Stroke')
     for (const path of strokes) path.delete()
-    if (!stroke) return null
-    const fill =
-      node.type !== 'LINE' && nodeHasVisibleFill(node)
-        ? pieceOf(r, node, sources, node.name, 'Vector', node.fills)
-        : null
-    return { fill, stroke }
+    if (!stroke && !text) return null
+    const fillParts = text ? glyphs : sources.map((path) => ({ path, fills: node.fills }))
+    const fill = filled ? pieceOf(r, node, fillParts, node.name, 'Vector') : null
+    return fill || stroke ? { fill, stroke } : null
   } finally {
     for (const path of sources) path.delete()
+    for (const { path } of glyphs) path.delete()
   }
 }
 

@@ -1,10 +1,12 @@
 import { defaultRelayURL } from '#cloud/contract'
-import { createPostHogErrorReporter } from '#cloud/runtime/posthog/errors'
+import { createPostgresCloudDatabase } from '#cloud/runtime/postgres/database'
+import { createCloudErrorReporter } from '#cloud/runtime/posthog/errors'
 import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import { createCloudServer, type SiteFiles } from '#cloud/runtime/site/server'
 import {
   createCloudApp,
-  loadAISigningKey,
+  createLoggingErrorReporter,
+  loadServicesSigningKey,
   createCloudAuthenticationRuntime,
   createCollaborationRelay,
   createCollaborationStateStore,
@@ -15,6 +17,7 @@ import {
   reportCloudError,
   startCleanupWorker,
   startTransactionalEmailWorker,
+  writeJSONLine,
   type CloudErrorReporter,
   type CloudServerConfig
 } from '#cloud/server'
@@ -24,6 +27,7 @@ import { loadNodeCloudServerConfig } from './config'
 import { createNodeTransactionalEmailRuntime } from './email/runtime'
 import { listen } from './listen'
 import { attachCollaborationRelay } from './relay'
+import { proxyRequestId } from './request-id'
 import { developmentSiteFiles, nodeSiteFiles } from './site'
 
 export type NodeCloudServerOptions = {
@@ -53,11 +57,14 @@ function siteFiles(
 export async function startNodeCloudServer(options: NodeCloudServerOptions = {}) {
   const environment = options.environment ?? process.env
   const config = await loadNodeCloudServerConfig(environment)
-  const reportError = createPostHogErrorReporter(config, 'node')
+  const reportError = createLoggingErrorReporter(
+    writeJSONLine,
+    createCloudErrorReporter(config, 'node')
+  )
   try {
     return await startConfiguredServer(config, environment, options, reportError)
   } catch (error) {
-    await reportCloudError(reportError, 'Starting the server failed:', error, { source: 'setup' })
+    await reportCloudError(reportError, 'Starting the server failed', error, { source: 'setup' })
     throw error
   }
 }
@@ -70,7 +77,7 @@ async function startConfiguredServer(
 ) {
   const { database } = await migratedNodeCloudDatabase(config)
   // Before any worker starts, so a key that cannot sign leaves nothing running.
-  const aiSigningKey = await loadAISigningKey(config).catch(async (error: unknown) => {
+  const servicesSigningKey = await loadServicesSigningKey(config).catch(async (error: unknown) => {
     await database.destroy()
     throw error
   })
@@ -82,13 +89,26 @@ async function startConfiguredServer(
   } = createNodeTransactionalEmailRuntime(config, database)
   const { auth, enrollment } = createCloudAuthenticationRuntime(config, database, email)
   const policy = createConfiguredCloudPolicy(config, database)
-  const cleanup = config.cleanupEnabled
-    ? startCleanupWorker(createCleanupServices(config, database, objects, policy), {
-        ...cleanupPassOptions(config),
-        intervalMs: config.cleanupIntervalMs,
-        onError: (error) =>
-          void reportCloudError(reportError, 'Cleanup worker failed:', error, { source: 'cleanup' })
+  // Cleanup sweeps may run longer than a request should, so they have a connection of their own
+  // without the statement timeout.
+  const cleanupDatabase = config.cleanupEnabled
+    ? createPostgresCloudDatabase({
+        connectionString: config.databaseURL,
+        statementTimeoutMs: null
       })
+    : undefined
+  const cleanup = cleanupDatabase
+    ? startCleanupWorker(
+        createCleanupServices(config, cleanupDatabase, objects, policy, reportError),
+        {
+          ...cleanupPassOptions(config),
+          intervalMs: config.cleanupIntervalMs,
+          onError: (error) =>
+            void reportCloudError(reportError, 'Cleanup worker failed', error, {
+              source: 'cleanup'
+            })
+        }
+      )
     : undefined
   const relay = createCollaborationRelay({
     authSecret: config.authSecret,
@@ -107,11 +127,13 @@ async function startConfiguredServer(
     invitationOutbox,
     transactionalEmail: email,
     enrollment,
-    aiSigningKey,
+    servicesSigningKey,
     relayURL: config.relayURL ?? defaultRelayURL(config.publicURL),
     onDocumentRestored: (documentId) => relay.startOver(documentId),
+    onDocumentTakenDown: (documentId) => relay.closeDocument(documentId),
     onDocumentVersionsChanged: (documentId) => relay.announceVersions(documentId),
-    reportError
+    reportError,
+    forwardedRequestId: proxyRequestId
   })
   const emailWorker = emailTransport
     ? startTransactionalEmailWorker(email, {
@@ -120,13 +142,14 @@ async function startConfiguredServer(
         leaseDurationMs: config.emailLeaseDurationMs,
         maximumAttempts: config.emailMaximumAttempts,
         onError: (error) =>
-          void reportCloudError(reportError, 'Email worker failed:', error, { source: 'email' })
+          void reportCloudError(reportError, 'Email worker failed', error, { source: 'email' })
       })
     : undefined
   const cloudServer = createCloudServer(app, {
     site: siteFiles(environment),
     indexingPolicy: config.indexingPolicy,
-    reportError
+    reportError,
+    forwardedRequestId: proxyRequestId
   })
   const server = await listen(
     async (request) => cloudServer.fetch(request),
@@ -146,6 +169,7 @@ async function startConfiguredServer(
       await relayListener.close()
       await server.close()
       await cleanup?.stop()
+      await cleanupDatabase?.destroy()
       await emailWorker?.stop()
       await database.destroy()
     }

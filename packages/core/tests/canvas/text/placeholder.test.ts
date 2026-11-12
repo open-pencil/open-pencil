@@ -1,11 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import { SceneGraph } from '@open-pencil/scene-graph'
-import { percentLength } from '@open-pencil/scene-graph/text'
-import { createConnector, connectorSublayers, freeEndpoint } from '@open-pencil/scene-graph/connectors'
+import {
+  createConnector,
+  connectorSublayers,
+  freeEndpoint
+} from '@open-pencil/scene-graph/connectors'
 import { createSticky, stickySublayers } from '@open-pencil/scene-graph/generated'
+import { percentLength } from '@open-pencil/scene-graph/text'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { connectorLabelPlaceholderNode, stickyPlaceholderNode } from '#core/canvas/text/placeholder'
 
@@ -19,7 +22,11 @@ describe('sticky note placeholder', () => {
   test("an empty body shows the canvas's placeholder, in the body's style at 30% black", () => {
     const { graph, body } = emptyNote()
     const drawn = expectDefined(stickyPlaceholderNode(graph, body, 'Пишите что угодно'))
-    expect(drawn).toMatchObject({ text: 'Пишите что угодно', fontSize: 16, lineHeight: percentLength(150) })
+    expect(drawn).toMatchObject({
+      text: 'Пишите что угодно',
+      fontSize: 16,
+      lineHeight: percentLength(150)
+    })
     expect(drawn.fills[0]).toMatchObject({ opacity: 0.3, color: { r: 0, g: 0, b: 0 } })
     expect(body.text).toBe('')
   })

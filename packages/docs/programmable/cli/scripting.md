@@ -87,6 +87,14 @@ openpencil eval design.fig -c "figma.currentPage.name = 'Updated'" -o updated.fi
 cat transform.js | openpencil eval design.fig --stdin --write
 ```
 
+## One page of a large file
+
+A `.fig` script loads every page before it runs, which takes a while for a file with tens of pages. `--page` with a page name, or `--page-id` with an ID from `openpencil pages design.fig`, loads only that page, besides the first page every file opens on, and runs the script on it as `figma.currentPage`. Other pages have no layers until the script loads them, as in Figma's dynamic-page mode: `page.loadAsync()`, `figma.setCurrentPageAsync(page)`, `figma.getNodeByIdAsync(id)` and `figma.loadAllPagesAsync()` load them. `figma.getNodeById(id)`, and tools that take layer IDs, find layers on loaded pages only, and `getNodeByIdAsync` cannot find a layer inside an instance on a page not loaded yet. `--write` and `--output` save every page, loaded or not. Removing a variable or collection unbinds only the layers on loaded pages, so call `figma.loadAllPagesAsync()` first. `openpencil tool call` takes the same options.
+
+```sh
+openpencil eval design.fig --page "Components" -c "return figma.currentPage.children.length"
+```
+
 ## Live app mode
 
 Omit the file path to run against the currently open document in the desktop app:
@@ -289,7 +297,7 @@ Common node properties are readable/writable through the proxy, including:
 - As in Figma, an edit that lays text out again throws `Cannot write to node with unloaded font` until every font the text uses is loaded: `characters`, `insertCharacters`, `deleteCharacters`, `fontSize`, spacing, case, decoration, alignment, `textAutoResize`, truncation, and the matching `setRange…` methods. A new `fontName` has to be loaded too, but it replaces the text's own, so text in a missing font can take a loaded one. Paints, links, size, and transforms need no font
 - `figma.getFontFamilyVariationAxes(family)` lists a variable family's axis tags, or `null` for a static one; unlike Figma, the family has to be loaded first
 - A font set with `variationSettings` and no style, through `fontName` or `setRangeFontName`, takes the nearest named style, and an axis the family lacks throws Figma's error
-- `figma.listAvailableFontsAsync()` returns host-provided fonts when available
+- `figma.listAvailableFontsAsync()` lists every style of installed and bundled families, and of online families once a font of theirs is loaded; an online family not looked up yet is listed as `Regular`
 - `figma.getNodeByIdAsync(id)` and `instance.getMainComponentAsync()` resolve to the same nodes as `figma.getNodeById(id)` and `instance.mainComponent`, for scripts written for Figma's dynamic-page mode
 - `figma.setCurrentPageAsync(page)` switches pages as setting `figma.currentPage` does, and `page.loadAsync()` resolves at once because every page is already loaded, for scripts written for Figma's dynamic-page mode
 - `figma.notify(message)` logs a warning in headless mode

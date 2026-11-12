@@ -15,15 +15,14 @@ export {
   splitSegmentAt
 } from './bezier'
 
-import type { CanvasKit, Path } from 'canvaskit-wasm'
-
+import type { CanvasKit, Path } from '@open-pencil/canvaskit'
 import type { VectorNetwork, WindingRule } from '@open-pencil/scene-graph'
 import { GeometryCommand, readGeometryBlob } from '@open-pencil/scene-graph/geometry'
 
 import { addLoopToPath, addOpenSegmentsToPath } from './path-helpers'
 export { vectorNetworkToCenterlinePath, fitCircleArc, isClosedThinCrescent } from './centerline'
 export { regenerateFillGeometry } from './fill-geometry'
-export { regionAtPoint, regionHatchPeriod, regionVertexIndices } from './region-hit'
+export { regionAtPoint, regionHatchPeriod, regionVertexIndices } from './regions/hit'
 export { addStrokeRunToPath, strokeRuns, type StrokeRun } from './path-helpers'
 export { vectorChangesFromPagePath, type VectorPathChanges } from './placement'
 

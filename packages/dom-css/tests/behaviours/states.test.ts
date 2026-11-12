@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test'
 
-import { cssRules } from '#dom-css-tests/helpers'
 import {
   stateStyles,
   stateStylesToCSS,
@@ -17,17 +16,18 @@ import { sortBy } from 'es-toolkit/array'
 import { isEqual } from 'es-toolkit/predicate'
 
 import { emptyBehaviour } from '@open-pencil/scene-graph/behaviours'
+import { cssRules } from '@open-pencil/test-support/dom-css'
 
 import {
   buttonSet,
   checkboxSet,
-  componentSet,
   invalidCheckboxSet,
   switchSet,
-  tabsComponent,
-  textFieldSet,
   toggleSet
-} from './fixtures'
+} from './fixtures/controls'
+import { textFieldSet } from './fixtures/fields'
+import { tabsComponent } from './fixtures/groups'
+import { componentSet } from './fixtures/sets'
 
 function styles(fixture: ReturnType<typeof switchSet>): StateStyles {
   const result = stateStyles(fixture.graph, fixture.set)

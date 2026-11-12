@@ -1,12 +1,11 @@
 import { afterAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph, type Stroke } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
-const ck = await initCanvasKit()
+const ck = await getCanvasKit()
 const WIDTH = 200
 const HEIGHT = 120
 

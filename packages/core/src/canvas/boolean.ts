@@ -1,5 +1,4 @@
-import type { Canvas, Path, PathOp } from 'canvaskit-wasm'
-
+import type { Canvas, Path, PathOp } from '@open-pencil/canvaskit'
 import type { Fill, SceneGraph, SceneNode, Stroke, WindingRule } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import type { GroupFitOptions } from '@open-pencil/scene-graph/group-bounds'
@@ -19,7 +18,7 @@ import {
   withStrokeDash
 } from './strokes'
 import { makeLineSegmentPath, makeLineStrokeOutline } from './strokes/line'
-import { textNodeToOutlinePath } from './text/outlines'
+import { textNodeToOutlinePath } from './text/outlines/glyphs'
 
 const BOOLEAN_PATH_OP: Record<
   NonNullable<SceneNode['booleanOperation']>,
