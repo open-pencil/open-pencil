@@ -26,6 +26,7 @@ import {
   isAuthRequiredError,
   openAgentSession
 } from '@/app/ai/agents/acp/session'
+import { noteSubagents } from '@/app/ai/agents/acp/subagents'
 import { createOwnToolApproval, linkOwnTools, type OwnToolsLink } from '@/app/ai/agents/acp/tools'
 import { agentAccounts } from '@/app/ai/agents/setup/accounts'
 import { resolveSpawnTarget } from '@/app/ai/agents/setup/discovery'
@@ -456,6 +457,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         if (update.sessionUpdate === 'available_commands_update') {
           setAgentCommands(agentId, update.availableCommands)
         }
+        // The agent's MCP calls name only their own id; its reports say which subagent made them.
+        if (sessionRef) noteSubagents(sessionRef.chat, update)
         onUpdate?.(params)
       },
 

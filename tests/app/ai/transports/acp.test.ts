@@ -7,7 +7,8 @@ import {
   RequestError,
   type Agent,
   type NewSessionRequest,
-  type ResumeSessionRequest
+  type ResumeSessionRequest,
+  type SessionUpdate
 } from '@agentclientprotocol/sdk'
 import type { UIMessage, UIMessageChunk } from 'ai'
 
@@ -17,6 +18,7 @@ import { expectDefined } from '@open-pencil/test-support/assert'
 import { OWN_TOOLS_ALLOWED } from '@/app/ai/agents/acp/tools'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 import { ACPChatTransport, type ACPStartup } from '@/app/ai/transports/acp'
+import { restAgents, withSubagent } from '@/app/automation/agents'
 import { diagnosticErrorDetails, diagnostics } from '@/app/diagnostics'
 import { createDeferred } from '@/app/runtime/deferred'
 const resuming = expectDefined(
@@ -46,6 +48,8 @@ interface FakeAgentOptions {
   turn?: 'answered' | 'refused' | 'cut-off'
   /** True for a command lookup that waits until `finishLookup`, as a slow PATH search does. */
   lookupWaits?: boolean
+  /** What the agent reports while it takes a turn, after its command list. */
+  updates?: SessionUpdate[]
 }
 
 /** In-memory ACP agents, one per start, that record what the transport asks of them. */
@@ -56,7 +60,8 @@ function fakeAgents({
   resumeBusy = false,
   tokenHangs = false,
   turn = 'answered',
-  lookupWaits = false
+  lookupWaits = false,
+  updates = []
 }: FakeAgentOptions = {}) {
   const lookup = createDeferred<undefined>()
   const prompts: string[] = []
@@ -107,6 +112,7 @@ function fakeAgents({
           update: { sessionUpdate: 'available_commands_update', availableCommands: [] }
         })
         if (turn === 'refused') throw new Error('The prompt never reached the model')
+        for (const update of updates) await connection.sessionUpdate({ sessionId, update })
         if (turn === 'cut-off') {
           await connection.sessionUpdate({
             sessionId,
@@ -450,4 +456,33 @@ test('a startup step outside the agent connection is bounded by the deadline too
   await expect(send(chat, 'first')).rejects.toBeInstanceOf(Error)
   await agents.killed
   expect(agents.prompts).toEqual([])
+})
+
+test('a call the agent reports as a subagent’s is known as that subagent’s while its reply goes on', async () => {
+  const agents = fakeAgents({
+    updates: [
+      {
+        sessionUpdate: 'tool_call',
+        toolCallId: 'toolu_inner',
+        title: 'mcp__open-pencil__create_shape',
+        status: 'pending',
+        _meta: { claudeCode: { parentToolUseId: 'toolu_task' } }
+      }
+    ]
+  })
+  const { transport: chat } = transport(agents)
+  try {
+    await send(chat, 'go')
+    // `linkTools` above names the chat 'chat', which the agent's MCP calls carry.
+    const call = withSubagent({
+      session: 'session-1',
+      kind: 'acp',
+      chat: 'chat',
+      call: 'toolu_inner'
+    })
+    expect(call.subagent).toBe('toolu_task')
+  } finally {
+    restAgents('acp')
+    await chat.destroy()
+  }
 })
