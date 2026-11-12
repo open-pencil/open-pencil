@@ -1,4 +1,4 @@
-import type { GridPosition, GridTrack } from '../types'
+import type { GridTrack } from '../types'
 
 /**
  * Bounds for the numbers layout computes with and for the values it writes back.
@@ -49,18 +49,6 @@ export function clampLayoutPosition(value: number, max = MAX_LAYOUT_LENGTH): num
   return Math.min(max, Math.max(-max, value))
 }
 
-/** A whole grid line, as `column` and `row` carry it; 0 leaves placement to auto-flow. */
-export function clampGridLine(value: number): number {
-  if (!Number.isFinite(value)) return 0
-  return Math.min(MAX_GRID_LINE, Math.max(0, Math.trunc(value)))
-}
-
-/** A whole number of tracks a grid item spans, which layout requires to be at least 1. */
-export function clampGridSpan(value: number): number {
-  if (!Number.isFinite(value)) return 1
-  return Math.min(MAX_GRID_SPAN, Math.max(1, Math.trunc(value)))
-}
-
 /** A font size in pixels, at least one and at most `MAX_FONT_SIZE`; fractions are kept. */
 export function clampFontSize(value: number): number {
   if (!Number.isFinite(value)) return 1
@@ -73,14 +61,4 @@ export function clampGridTracks(tracks: readonly GridTrack[]): GridTrack[] {
     ...track,
     value: clampLayoutLength(track.value)
   }))
-}
-
-/** A grid item's placement, clamped to the lines and spans layout can place. */
-export function clampGridPosition(position: GridPosition): GridPosition {
-  return {
-    column: clampGridLine(position.column),
-    row: clampGridLine(position.row),
-    columnSpan: clampGridSpan(position.columnSpan),
-    rowSpan: clampGridSpan(position.rowSpan)
-  }
 }

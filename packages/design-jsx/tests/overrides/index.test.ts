@@ -1,10 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
 import { designJSXProp } from '#design-jsx/index'
-import { propsToOverrides } from '#design-jsx/overrides/index'
+import { propsToOverrides, shapeOverrides } from '#design-jsx/overrides/index'
 
 import { DEFAULT_GRADIENT_TRANSFORM } from '@open-pencil/scene-graph/gradient'
-import { MAX_GRID_TRACKS, MAX_LAYOUT_LENGTH } from '@open-pencil/scene-graph/layout'
+import {
+  MAX_GRID_TRACKS,
+  MAX_LAYOUT_LENGTH,
+  MAX_LAYOUT_SPACING
+} from '@open-pencil/scene-graph/layout'
 
 describe('property names', () => {
   test('reads the first name of a property that is set', () => {
@@ -79,6 +83,29 @@ describe('grid placement', () => {
 
   test('keeps a size within what layout can draw', () => {
     expect(propsToOverrides({ w: 1_000_000_000 }, false, 'NONE').width).toBe(MAX_LAYOUT_LENGTH)
+  })
+})
+
+describe('layout bounds', () => {
+  test('keeps a negative gap and padding, which overlap children', () => {
+    expect(propsToOverrides({ flex: 'row', gap: -8, p: -4 }, false, 'NONE')).toMatchObject({
+      itemSpacing: -8,
+      paddingTop: -4
+    })
+    expect(propsToOverrides({ grid: true, gap: -1e9 }, false, 'NONE').gridColumnGap).toBe(
+      -MAX_LAYOUT_SPACING
+    )
+  })
+
+  test('leaves a layer in the flow when its position is not a number layout can use', () => {
+    const overrides = propsToOverrides({ x: Number.POSITIVE_INFINITY }, false, 'HORIZONTAL')
+    expect(overrides.x).toBeUndefined()
+    expect(overrides.layoutPositioning).toBeUndefined()
+    expect(propsToOverrides({ x: 10 }, false, 'HORIZONTAL').layoutPositioning).toBe('ABSOLUTE')
+  })
+
+  test('draws a polygon with at least three points', () => {
+    expect(shapeOverrides('POLYGON', { points: 1 }).pointCount).toBe(3)
   })
 })
 

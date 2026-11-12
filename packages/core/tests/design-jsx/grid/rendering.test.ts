@@ -152,6 +152,20 @@ describe('grid layout rendering', () => {
     })
   })
 
+  it('reports a start given by its short name that layout cannot use', async () => {
+    const g = makeSceneGraph()
+    const jsx = `
+      <Frame name="Grid" w={300} h={200} grid columns="1fr 1fr">
+        <Rectangle name="A" w={50} h={50} col={1.5} />
+      </Frame>
+    `
+    const [result] = await renderJSX(g, jsx)
+
+    expect(result.warnings).toEqual([
+      'Invalid col 1.5 on <rectangle> is ignored; expected a whole number.'
+    ])
+  })
+
   it('reports a track count layout would allocate one entry per track for', async () => {
     const g = makeSceneGraph()
     const jsx = `<Frame name="Grid" w={300} h={200} grid columns={1000000000} />`

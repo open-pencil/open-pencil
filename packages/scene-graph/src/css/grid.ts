@@ -1,5 +1,6 @@
 import valueParser, { type FunctionNode, type Node } from 'postcss-value-parser'
 
+import { MAX_GRID_TRACKS } from '../layout/limits'
 import type { GridTrack } from '../types'
 import { parseCSSNumber } from './values'
 
@@ -44,7 +45,14 @@ function functionTracks(node: FunctionNode): GridTrack[] {
       // `auto-fill` and `auto-fit` depend on the container, which a track list cannot know.
       if (!Number.isInteger(count) || count < 1) return [autoTrack()]
       const tracks = tracksOf([second, ...rest].flat())
-      return Array.from({ length: Math.min(count, MAX_REPEATED_TRACKS) }, () =>
+      if (tracks.length === 0) return []
+      // Nested repeats multiply, so the count is bounded by the tracks a template may hold too.
+      const repeats = Math.min(
+        count,
+        MAX_REPEATED_TRACKS,
+        Math.floor(MAX_GRID_TRACKS / tracks.length)
+      )
+      return Array.from({ length: Math.max(1, repeats) }, () =>
         tracks.map((track) => ({ ...track }))
       ).flat()
     }
@@ -57,14 +65,19 @@ function functionTracks(node: FunctionNode): GridTrack[] {
 }
 
 function tracksOf(nodes: Node[]): GridTrack[] {
-  return nodes.flatMap((node) => {
-    if (node.type === 'word') return [wordTrack(node.value)]
-    if (node.type === 'function') return functionTracks(node)
-    return []
-  })
+  const tracks: GridTrack[] = []
+  for (const node of nodes) {
+    if (tracks.length >= MAX_GRID_TRACKS) break
+    if (node.type === 'word') tracks.push(wordTrack(node.value))
+    else if (node.type === 'function') tracks.push(...functionTracks(node))
+  }
+  return tracks.slice(0, MAX_GRID_TRACKS)
 }
 
-/** The tracks of a CSS track list, such as `repeat(3, minmax(0, 1fr)) 120px auto`. */
+/**
+ * The tracks of a CSS track list, such as `repeat(3, minmax(0, 1fr)) 120px auto`, at most
+ * `MAX_GRID_TRACKS` of them however the list nests `repeat()`.
+ */
 export function parseCSSGridTracks(value: string): GridTrack[] {
   return tracksOf(valueParser(value).nodes)
 }

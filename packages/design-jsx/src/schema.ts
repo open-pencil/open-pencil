@@ -91,6 +91,9 @@ export const gridPropsSchema = v.object({
   rows: v.optional(gridTracksOrCountSchema),
   colStart: v.optional(gridLineValueSchema),
   rowStart: v.optional(gridLineValueSchema),
+  // `col` and `row` are the short names `designJSXProp` reads for the starts.
+  col: v.optional(gridLineValueSchema),
+  row: v.optional(gridLineValueSchema),
   colSpan: v.optional(gridSpanValueSchema),
   rowSpan: v.optional(gridSpanValueSchema)
 })

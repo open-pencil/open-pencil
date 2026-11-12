@@ -43,37 +43,41 @@ const WEIGHT_MAP: Record<string, number> = {
   bold: 700
 }
 
-/** The most points a polygon or star may be drawn with, as the layer stores it. */
+/** A polygon or star needs three points; more than this cannot be told apart from a circle. */
+const MIN_POINT_COUNT = 3
 const MAX_POINT_COUNT = 1_000
 
-/** A size, radius, or growth as an element may set it: finite, non-negative, and bounded. */
-function layoutLengthProp(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value) ? clampLayoutLength(value) : undefined
+function numberProp(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined
 }
 
-/** A gap or padding, which layout computes with directly. */
+/** A size or radius as an element may set it: non-negative and bounded. */
+function layoutLengthProp(value: unknown): number | undefined {
+  const length = numberProp(value)
+  return length === undefined ? undefined : clampLayoutLength(length)
+}
+
+/** A gap or padding, which layout overlaps children with when it is negative. */
 function layoutSpacingProp(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value)
-    ? clampLayoutLength(value, MAX_LAYOUT_SPACING)
-    : undefined
+  const spacing = numberProp(value)
+  return spacing === undefined ? undefined : clampLayoutPosition(spacing, MAX_LAYOUT_SPACING)
 }
 
 /** A unitless share, such as how much free space a growing layer takes. */
 function layoutFactorProp(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value)
-    ? clampLayoutLength(value, MAX_LAYOUT_FACTOR)
-    : undefined
+  const factor = numberProp(value)
+  return factor === undefined ? undefined : clampLayoutLength(factor, MAX_LAYOUT_FACTOR)
 }
 
 /** A position that may lie outside its parent, such as an absolutely placed layer. */
 function layoutPositionProp(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value)
-    ? clampLayoutPosition(value)
-    : undefined
+  const position = numberProp(value)
+  return position === undefined ? undefined : clampLayoutPosition(position)
 }
 
 function fontSizeProp(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value) ? clampFontSize(value) : undefined
+  const size = numberProp(value)
+  return size === undefined ? undefined : clampFontSize(size)
 }
 
 /** What `schema` reads from `value`; undefined when it does not fit, as the warning reports. */
@@ -87,9 +91,8 @@ function propValue<S extends v.GenericSchema>(
 
 /** A share of a shape, such as a star's inner radius or an arc's hole, from none to all of it. */
 function shareOfShape(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value)
-    ? Math.min(1, Math.max(0, value))
-    : undefined
+  const share = numberProp(value)
+  return share === undefined ? undefined : Math.min(1, Math.max(0, share))
 }
 
 function parseDirection(value: unknown): SceneNode['textDirection'] | undefined {
@@ -142,11 +145,8 @@ export function applySizeOverrides(
   if (left !== undefined) o.x = left
 
   if (props.position === 'absolute') o.layoutPositioning = 'ABSOLUTE'
-  const hasExplicitPosition =
-    props.x !== undefined ||
-    props.y !== undefined ||
-    props.top !== undefined ||
-    props.left !== undefined
+  // A coordinate that was dropped places nothing, so it leaves the layer in the flow.
+  const hasExplicitPosition = [x, y, top, left].some((value) => value !== undefined)
   if (hasExplicitPosition && parentLayout !== 'NONE') {
     o.layoutPositioning = 'ABSOLUTE'
   }
@@ -500,10 +500,6 @@ function applyTextOverrides(
 
 const FULL_TURN_DEGREES = 360
 
-function numberProp(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined
-}
-
 /**
  * An `<Ellipse>`'s arc from its props: angles in degrees, clockwise from three o'clock, as the
  * canvas draws arcs, and the hole as a share of the ellipse. Null when none is set.
@@ -529,8 +525,9 @@ export function shapeOverrides(
   const o: Partial<SceneNode> = {}
   if (nodeType === 'STAR' || nodeType === 'POLYGON') {
     const points = numberProp(props.pointCount) ?? numberProp(props.points)
-    if (points !== undefined)
-      o.pointCount = Math.min(MAX_POINT_COUNT, Math.max(1, Math.trunc(points)))
+    if (points !== undefined) {
+      o.pointCount = Math.min(MAX_POINT_COUNT, Math.max(MIN_POINT_COUNT, Math.trunc(points)))
+    }
   }
   if (nodeType === 'STAR') {
     const innerRadius = shareOfShape(props.innerRadius)
