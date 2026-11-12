@@ -28,6 +28,10 @@ export function idOf(record: NodeChange): string | undefined {
   return record.guid ? guidToString(record.guid) : undefined
 }
 
+export function isActiveRecord(record: NodeChange): boolean {
+  return record.phase !== 'REMOVED'
+}
+
 export function parentIdOf(record: NodeChange): string | undefined {
   return record.parentIndex?.guid ? guidToString(record.parentIndex.guid) : undefined
 }
@@ -66,11 +70,11 @@ export function createSourceIndex(changes: readonly NodeChange[]): SourceIndex {
 }
 
 export function createInterpreterIndex(changes: readonly NodeChange[]): InterpreterIndex {
-  const index = createSourceIndex(changes)
+  const activeRecords = changes.filter(isActiveRecord)
   return {
-    ...index,
+    ...createSourceIndex(changes),
     variables: createDocumentVariables(changes),
-    textStyle: createTextStyleLookup(index.sources, assetIdsByKey(changes))
+    textStyle: createTextStyleLookup(indexRecords(activeRecords), assetIdsByKey(activeRecords))
   }
 }
 
