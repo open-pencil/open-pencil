@@ -75,12 +75,17 @@ useIntersectionObserver(end, ([entry]) => {
   if (entry?.isIntersecting && hasMore && !loadingMore) emit('more')
 })
 
-function choose(report: InboxReport) {
-  emit('select', report)
-  void nextTick(() => {
-    list.value?.querySelector(`[data-id="${report.id}"]`)?.scrollIntoView({ block: 'nearest' })
-  })
-}
+const choose = (report: InboxReport) => emit('select', report)
+// The report chosen stays in view, however it was chosen: a click, the arrows, or a shortcut.
+watch(
+  () => selectedId,
+  (id) => {
+    if (!id) return
+    void nextTick(() => {
+      list.value?.querySelector(`[data-id="${id}"]`)?.scrollIntoView({ block: 'nearest' })
+    })
+  }
+)
 /** Up and down move to the report before or after the one chosen. */
 function move(step: number) {
   const index = reports.findIndex((report) => report.id === selectedId)

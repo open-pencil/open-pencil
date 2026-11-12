@@ -287,10 +287,47 @@ describe('report triage', () => {
     })
   })
 
-  test('refuses triage without Access, with an unknown status, or for a malformed ID', async () => {
-    expect((await triage(PROBLEM, { status: 'closed', note: null }, false)).status).toBe(403)
-    expect((await triage(PROBLEM, { status: 'done', note: null })).status).toBe(400)
-    expect((await triage('not-a-report', { status: 'closed', note: null })).status).toBe(404)
+  test('records only the field that changed, so a teammate’s other field stands', async () => {
+    service.respond(POSTHOG_CAPTURE, () => Response.json({ status: 1 }))
+    const captured = async (change: unknown) => {
+      service.fetchCalls.length = 0
+      const saved = await triage(PROBLEM, change)
+      const capture = service.fetchCalls.find((call) => call.url === POSTHOG_CAPTURE)
+      const body = v.parse(
+        v.pipe(
+          v.string(),
+          v.parseJson(),
+          v.object({ batch: v.array(v.object({ properties: v.record(v.string(), v.unknown()) })) })
+        ),
+        String(capture?.init?.body)
+      )
+      return { saved: await saved.json(), properties: body.batch[0]?.properties ?? {} }
+    }
+
+    const status = await captured({ status: 'replied' })
+    expect(status.saved).toEqual({
+      status: 'replied',
+      handledBy: 'dan@example.com',
+      handledAt: NOW.toISOString()
+    })
+    expect(status.properties).not.toHaveProperty('triage_note')
+
+    // A cleared note goes as the empty string, which the inbox's query reads back as no note.
+    const cleared = await captured({ note: null })
+    expect(cleared.saved).toEqual({
+      triageNote: null,
+      handledBy: 'dan@example.com',
+      handledAt: NOW.toISOString()
+    })
+    expect(cleared.properties).toMatchObject({ triage_note: '' })
+    expect(cleared.properties).not.toHaveProperty('status')
+  })
+
+  test('refuses triage without Access, with an unknown status, empty, or for a malformed ID', async () => {
+    expect((await triage(PROBLEM, { status: 'closed' }, false)).status).toBe(403)
+    expect((await triage(PROBLEM, { status: 'done' })).status).toBe(400)
+    expect((await triage(PROBLEM, {})).status).toBe(400)
+    expect((await triage('not-a-report', { status: 'closed' })).status).toBe(404)
   })
 })
 

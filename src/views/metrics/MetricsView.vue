@@ -43,8 +43,7 @@ const {
 } = inbox
 const openReports = computed(() => counts.value?.open)
 const triage = useReportTriage(inbox)
-const { selected, detail, detailFailed } = triage
-const saveFailed = ref(false)
+const { selected, detail, detailFailed, saveState } = triage
 /** The document open read-only, by the address it downloads from. */
 const previewing = ref<string | null>(null)
 
@@ -63,20 +62,13 @@ const inboxPanel = computed(() => ({
   selected: selected.value,
   detail: detail.value,
   detailFailed: detailFailed.value,
-  saveFailed: saveFailed.value
+  saveState: saveState.value
 }))
-/** Saves a status or note change, and says so when one doesn't go through. */
-async function saved(change: Promise<boolean>) {
-  saveFailed.value = !(await change)
-}
 const inboxPanelEvents = {
-  select: (report: Parameters<typeof triage.open>[0]) => {
-    saveFailed.value = false
-    void triage.open(report)
-  },
+  select: (report: Parameters<typeof triage.open>[0]) => void triage.open(report),
   more: () => void inbox.loadMore(),
-  status: (...args: Parameters<typeof triage.setStatus>) => saved(triage.setStatus(...args)),
-  note: (...args: Parameters<typeof triage.setNote>) => saved(triage.setNote(...args)),
+  status: (...args: Parameters<typeof triage.setStatus>) => void triage.setStatus(...args),
+  note: (...args: Parameters<typeof triage.setNote>) => void triage.setNote(...args),
   preview: (url: string) => {
     previewing.value = url
   },

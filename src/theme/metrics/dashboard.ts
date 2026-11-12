@@ -115,6 +115,9 @@ export const metricsInboxTheme = {
     statusDot:
       'size-1.5 shrink-0 rounded-full data-[status=open]:bg-warning data-[status=replied]:bg-success data-[status=closed]:bg-muted',
     listEmpty: 'flex flex-1 items-center justify-center p-6',
+    shortcuts: 'hidden gap-3 border-t border-border px-3 py-2 text-2xs text-muted md:flex',
+    shortcut: 'flex items-center gap-1',
+    key: 'rounded border border-border px-1 font-sans text-2xs text-surface',
     detailPane: 'flex min-h-0 flex-col data-[hidden=true]:max-md:hidden'
   }
 } as const
@@ -131,6 +134,7 @@ export const metricsReportTheme = {
     title: 'line-clamp-2 text-sm font-semibold text-surface',
     subtitle: 'text-2xs text-muted',
     actions: 'flex shrink-0 items-center gap-1',
+    saveState: 'text-2xs text-muted',
     body: 'min-h-0 flex-1 overflow-y-auto',
     columns: 'grid gap-0 lg:grid-cols-[1fr_15rem]',
     main: 'flex min-w-0 flex-col gap-6 px-5 py-5',

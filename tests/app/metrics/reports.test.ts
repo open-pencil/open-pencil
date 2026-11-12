@@ -1,8 +1,9 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
 
-import { nextTick, shallowRef } from 'vue'
+import { omitBy } from 'es-toolkit'
+import { nextTick } from 'vue'
 
-import type { InboxReport, ReportStatus } from '@open-pencil/feedback/contract'
+import type { InboxReport, ReportStatus, ReportTriage } from '@open-pencil/feedback/contract'
 
 import { useReportInbox, useReportTriage } from '@/app/metrics/reports'
 
@@ -112,6 +113,7 @@ const SAVED = {
   handledBy: 'dan@example.com',
   handledAt: '2026-11-11T10:00:00.000Z'
 }
+const SAVED_RECORD = { handledBy: 'dan@example.com', handledAt: '2026-11-11T10:00:00.000Z' }
 
 describe('report inbox state', () => {
   test('keeps saved triage over a load that read PostHog before it took the triage in', async () => {
@@ -177,7 +179,7 @@ describe('report inbox state', () => {
   })
 
   test('shows the steps of the latest opening when the same report is reopened', async () => {
-    const triage = useReportTriage({ update: async () => null, reports: shallowRef([]) })
+    const triage = useReportTriage({ update: async () => SAVED_RECORD })
     const opened = report(A, 'open')
     const older = triage.open(opened)
     const newer = triage.open(opened)
@@ -202,30 +204,48 @@ describe('report inbox state', () => {
     expect(triage.detailFailed.value).toBe(false)
   })
 
-  test('keeps a note being saved when a status is picked before it lands', async () => {
-    const reports = shallowRef([report(A, 'open')])
-    const sent: { status: string; note: string | null }[] = []
+  test('sends each change alone, in the order made, and shows both on the report open', async () => {
+    const sent: ReportTriage[] = []
     const triage = useReportTriage({
-      reports,
-      update: async (reportId, change) => {
+      update: async (_reportId, change) => {
         sent.push(change)
         await new Promise((resolve) => {
           setTimeout(resolve, 5)
         })
-        reports.value = reports.value.map((each) =>
-          each.id === reportId ? { ...each, status: change.status, triageNote: change.note } : each
-        )
-        return reports.value.find((each) => each.id === reportId) ?? null
+        return {
+          ...SAVED_RECORD,
+          ...omitBy(
+            { status: change.status, triageNote: change.note },
+            (value) => value === undefined
+          )
+        }
       }
     })
     const opened = report(A, 'open')
+    void triage.open(opened)
     const note = triage.setNote(opened, 'Asked for the file')
     const status = triage.setStatus(opened, 'replied')
+    expect(triage.saveState.value).toBe('saving')
     await Promise.all([note, status])
 
-    expect(sent).toEqual([
-      { status: 'open', note: 'Asked for the file' },
-      { status: 'replied', note: 'Asked for the file' }
-    ])
+    expect(sent).toEqual([{ note: 'Asked for the file' }, { status: 'replied' }])
+    expect(triage.selected.value).toMatchObject({
+      status: 'replied',
+      triageNote: 'Asked for the file'
+    })
+    expect(triage.saveState.value).toBe('saved')
+  })
+
+  test('says a change did not save, and starts over for the next report', async () => {
+    const triage = useReportTriage({
+      update: async () => {
+        throw new Error('Access session ended')
+      }
+    })
+    void triage.open(report(A, 'open'))
+    expect(await triage.setStatus(report(A, 'open'), 'closed')).toBe(false)
+    expect(triage.saveState.value).toBe('failed')
+    void triage.open(report(B, 'open'))
+    expect(triage.saveState.value).toBe('idle')
   })
 })

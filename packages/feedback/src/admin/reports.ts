@@ -72,14 +72,15 @@ type ReportRow = v.InferOutput<typeof reportRowSchema>
 const detailRowSchema = v.tuple([...reportRowSchema.items, listSchema, textSchema])
 
 /**
- * Reports with the latest triage each has. A report with none, or none PostHog has finished
- * taking in yet, is open; the join's empty side is the empty string as often as null.
+ * Reports with the latest triage each has, field by field: a change carries only the field it
+ * changed, and a cleared note is the empty string. A report with none, or none PostHog has
+ * finished taking in yet, is open; the join's empty side is the empty string as often as null.
  */
 const REPORTS_WITH_TRIAGE = `FROM events AS e
 LEFT JOIN (
   SELECT properties.report_id AS report_id,
-    argMax(properties.status, timestamp) AS status,
-    argMax(properties.triage_note, timestamp) AS note,
+    argMaxIf(properties.status, timestamp, isNotNull(properties.status)) AS status,
+    argMaxIf(properties.triage_note, timestamp, isNotNull(properties.triage_note)) AS note,
     argMax(properties.handled_by, timestamp) AS handled_by,
     max(timestamp) AS handled_at
   FROM events
@@ -386,9 +387,10 @@ LIMIT 1`,
 }
 
 /**
- * Records where the team stands with a report as a `report_triaged` event in PostHog, which the
- * inbox reads the latest of; answers what was saved. PostHog accepting it is enough: the inbox
- * shows the change at once and finds it in the next load once PostHog has taken it in.
+ * Records a change to where the team stands with a report as a `report_triaged` event in PostHog,
+ * carrying only the fields that changed, which the inbox reads the latest of each; answers what
+ * was saved. PostHog accepting it is enough: the inbox shows the change at once and finds it in
+ * the next load once PostHog has taken it in.
  */
 export async function saveReportTriage(
   env: FeedbackBindings,
@@ -398,7 +400,9 @@ export async function saveReportTriage(
   handledBy: string
 ): Promise<ReportTriageRecord> {
   const handledAt = services.now().toISOString()
-  const note = triage.note || null
+  // Fields left undefined stay out of the event and the answer. A cleared note goes to PostHog
+  // as the empty string, which a change that left the note alone never carries.
+  const note = triage.note === undefined ? undefined : triage.note || null
   const response = await services.fetch(`${env.POSTHOG_HOST}/batch/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -412,7 +416,7 @@ export async function saveReportTriage(
           properties: {
             report_id: reportId,
             status: triage.status,
-            triage_note: note,
+            triage_note: note === null ? '' : note,
             handled_by: handledBy,
             $lib: 'openpencil-feedback',
             $process_person_profile: false,

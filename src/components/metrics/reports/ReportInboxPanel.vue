@@ -6,6 +6,7 @@ import type {
   ReportStatus
 } from '@open-pencil/feedback/contract'
 
+import type { ReportSaveState } from '@/app/metrics/reports'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppSkeleton from '@/components/ui/feedback/AppSkeleton.vue'
@@ -26,7 +27,7 @@ const {
   selected = null,
   detail = null,
   detailFailed = false,
-  saveFailed = false
+  saveState = 'idle'
 } = defineProps<{
   reports: InboxReport[]
   loaded?: boolean
@@ -37,8 +38,8 @@ const {
   selected?: InboxReport | null
   detail?: ReportDetail | null
   detailFailed?: boolean
-  /** The last status or note change did not save. */
-  saveFailed?: boolean
+  /** Where the last status or note change on the report open stands. */
+  saveState?: ReportSaveState
 }>()
 const filter = defineModel<ReportInboxFilter>('filter', { required: true })
 const query = defineModel<string>('query', { required: true })
@@ -78,7 +79,7 @@ const emit = defineEmits<{
     :selected="selected"
     :detail="detail"
     :detail-failed="detailFailed"
-    :save-failed="saveFailed"
+    :save-state="saveState"
     @select="(report) => emit('select', report)"
     @more="emit('more')"
     @status="(report, status) => emit('status', report, status)"

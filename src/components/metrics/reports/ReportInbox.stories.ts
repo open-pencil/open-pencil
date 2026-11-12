@@ -230,11 +230,13 @@ const story = (first: InboxReport | undefined): Story => ({
       const filter = ref<ReportInboxFilter>('all')
       const query = ref('')
       const detail = computed(() => detailOf(selected.value))
+      const saveState = ref('idle')
       function update(report: InboxReport, change: Partial<InboxReport>) {
         reports.value = reports.value.map((each) =>
           each.id === report.id ? { ...each, ...change } : each
         )
         selected.value = reports.value.find((each) => each.id === report.id) ?? null
+        saveState.value = 'saved'
       }
       return {
         reports,
@@ -243,7 +245,11 @@ const story = (first: InboxReport | undefined): Story => ({
         query,
         detail,
         counts: { open: 2, replied: 1, closed: 0, all: 3 },
-        select: (report: InboxReport) => (selected.value = report),
+        saveState,
+        select: (report: InboxReport) => {
+          selected.value = report
+          saveState.value = 'idle'
+        },
         setStatus: (report: InboxReport, status: ReportStatus) => update(report, { status }),
         setNote: (report: InboxReport, note: string | null) => update(report, { triageNote: note })
       }
@@ -257,6 +263,7 @@ const story = (first: InboxReport | undefined): Story => ({
           :counts="counts"
           :selected="selected"
           :detail="detail"
+          :save-state="saveState"
           @select="select"
           @status="setStatus"
           @note="setNote"

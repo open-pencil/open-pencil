@@ -1,4 +1,5 @@
 import { refDebounced } from '@vueuse/core'
+import { omitBy } from 'es-toolkit'
 import * as v from 'valibot'
 import { ref, shallowRef, watch } from 'vue'
 
@@ -149,24 +150,29 @@ export function useReportInbox() {
   }
 
   /** Saves triage and shows it, with who saved it, in place; returns the report as it now is. */
-  async function update(reportId: string, triage: ReportTriage): Promise<InboxReport | null> {
-    const saved = await saveReportTriage(reportId, triage)
-    saves.set(reportId, saved)
-    let updated: InboxReport | null = null
+  /** Saves a triage change and shows it in the list at once; answers what was saved. */
+  async function update(reportId: string, triage: ReportTriage): Promise<ReportTriageRecord> {
+    // Only the fields this change saved, so merging it leaves the others as they were.
+    const { handledBy, handledAt, ...changed } = await saveReportTriage(reportId, triage)
+    const saved: ReportTriageRecord = {
+      handledBy,
+      handledAt,
+      ...omitBy(changed, (value) => value === undefined)
+    }
+    saves.set(reportId, { ...saves.get(reportId), ...saved })
     reports.value = reports.value.map((report) => {
       if (report.id !== reportId) return report
       // The counts follow a status that moved; the report stays where it is until the next load.
-      if (counts.value && report.status !== saved.status) {
+      if (counts.value && saved.status && report.status !== saved.status) {
         counts.value = {
           ...counts.value,
           [report.status]: Math.max(0, counts.value[report.status] - 1),
           [saved.status]: counts.value[saved.status] + 1
         }
       }
-      updated = { ...report, ...saved }
-      return updated
+      return { ...report, ...saved }
     })
-    return updated
+    return saved
   }
 
   watch([filter, search], () => void load())
@@ -186,17 +192,18 @@ export function useReportInbox() {
   }
 }
 
+/** Where the last triage change on the report open stands: none yet, on its way, saved, or failed. */
+export type ReportSaveState = 'idle' | 'saving' | 'saved' | 'failed'
+
 /**
  * The report the team has open in the inbox, its steps as they load, and saving its status and
  * note where it is read. Saving returns whether it went through.
  */
-export function useReportTriage(
-  inbox: Pick<ReturnType<typeof useReportInbox>, 'update' | 'reports'>
-) {
+export function useReportTriage(inbox: Pick<ReturnType<typeof useReportInbox>, 'update'>) {
   const selected = shallowRef<InboxReport | null>(null)
   const detail = shallowRef<ReportDetail | null>(null)
   const detailFailed = ref(false)
-  const saving = ref(false)
+  const saveState = ref<ReportSaveState>('idle')
 
   /** Counts each opening, so only the latest one's steps are shown, even for the same report. */
   let opening = 0
@@ -204,6 +211,7 @@ export function useReportTriage(
   async function open(report: InboxReport) {
     const request = ++opening
     selected.value = report
+    saveState.value = 'idle'
     detail.value = null
     detailFailed.value = false
     try {
@@ -216,30 +224,26 @@ export function useReportTriage(
   }
 
   /**
-   * Saves one change to a report's triage. Changes run one after another, each built from the
-   * report as the last save left it, so a status picked while a note saves keeps that note.
+   * Saves one change to a report's triage: only the field that changed, so a teammate's change to
+   * the other one stands. Changes run one after another, so they land in the order made.
    */
   let queue: Promise<unknown> = Promise.resolve()
-  function apply(report: InboxReport, change: Partial<ReportTriage>): Promise<boolean> {
-    const reportId = report.id
+  function apply(report: InboxReport, change: ReportTriage): Promise<boolean> {
+    const shown = () => selected.value?.id === report.id
+    // Saving shows from the moment of the change, even while an earlier one is still on its way.
+    if (shown()) saveState.value = 'saving'
     const run = async () => {
-      // As the last save left it: in the list, or open here after another filter took it away.
-      const current =
-        inbox.reports.value.find((each) => each.id === reportId) ??
-        (selected.value?.id === reportId ? selected.value : report)
-      saving.value = true
       try {
-        const updated = await inbox.update(reportId, {
-          status: change.status ?? current.status,
-          note: change.note === undefined ? current.triageNote : change.note
-        })
-        if (updated && selected.value?.id === reportId) selected.value = updated
+        const saved = await inbox.update(report.id, change)
+        if (selected.value && shown()) {
+          selected.value = { ...selected.value, ...saved }
+          saveState.value = 'saved'
+        }
         return true
       } catch (error) {
         console.warn('The report could not be saved', error)
+        if (shown()) saveState.value = 'failed'
         return false
-      } finally {
-        saving.value = false
       }
     }
     const result = queue.then(run)
@@ -247,10 +251,10 @@ export function useReportTriage(
     return result
   }
 
-  /** Moves a report to another status, keeping its note. */
+  /** Moves a report to another status; its note stays as anyone last left it. */
   const setStatus = (report: InboxReport, status: ReportStatus) => apply(report, { status })
-  /** Saves the team's note on a report, keeping its status. */
+  /** Saves the team's note on a report; its status stays as anyone last left it. */
   const setNote = (report: InboxReport, note: string | null) => apply(report, { note })
 
-  return { selected, detail, detailFailed, saving, open, setStatus, setNote }
+  return { selected, detail, detailFailed, saveState, open, setStatus, setNote }
 }

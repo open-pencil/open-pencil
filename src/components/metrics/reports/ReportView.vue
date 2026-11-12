@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useEventListener } from '@vueuse/core'
 import { tv } from 'tailwind-variants'
 import { computed, ref, watch } from 'vue'
 import IconBug from '~icons/lucide/bug'
@@ -15,6 +16,7 @@ import {
 
 import { useDateFormat } from '@/app/i18n/date'
 import { formatTime } from '@/app/metrics/format'
+import type { ReportSaveState } from '@/app/metrics/reports'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppCopyButton from '@/components/ui/button/AppCopyButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
@@ -33,20 +35,21 @@ const metricsReport = tv(metricsReportTheme)
  * One report as an issue tracker shows one. The header says what it is and holds its status and
  * reply; the main column leads with what the sender wrote and, for an error, its exceptions, then
  * the document they attached and what the app recorded before; facts about the sender and their
- * build sit in a properties column. Status applies on pick; the team's note saves when left.
+ * build sit in a properties column. Status applies on pick; the team's note saves when left or
+ * on ⌘Enter, and the page asks before closing over a note not saved yet.
  */
 const {
   report,
   detail = null,
   detailFailed = false,
-  saveFailed = false
+  saveState = 'idle'
 } = defineProps<{
   report: InboxReport
   /** The steps and exceptions, once they have loaded. */
   detail?: ReportDetail | null
   detailFailed?: boolean
-  /** The last status or note change did not save. */
-  saveFailed?: boolean
+  /** Where the last status or note change stands. */
+  saveState?: ReportSaveState
 }>()
 const emit = defineEmits<{
   status: [status: ReportStatus]
@@ -76,9 +79,18 @@ watch(
     note.value = report.triageNote ?? ''
   }
 )
+const noteChanged = () => (note.value.trim() || null) !== (report.triageNote ?? null)
 function saveNote() {
-  const next = note.value.trim() || null
-  if (next !== (report.triageNote ?? null)) emit('note', next)
+  if (noteChanged()) emit('note', note.value.trim() || null)
+}
+useEventListener(globalThis, 'beforeunload', (event: BeforeUnloadEvent) => {
+  if (noteChanged()) event.preventDefault()
+})
+const SAVE_STATE_LABELS: Record<ReportSaveState, string> = {
+  idle: '',
+  saving: 'Saving…',
+  saved: 'Saved',
+  failed: ''
 }
 
 /** What the report is about, in a line: the sender's words, else the error. */
@@ -123,6 +135,7 @@ const download = (url: string) => globalThis.location.assign(url)
       </p>
     </div>
     <div :class="ui.actions()">
+      <span :class="ui.saveState()" role="status">{{ SAVE_STATE_LABELS[saveState] }}</span>
       <AppSelect
         v-model="status"
         label="Status"
@@ -130,7 +143,13 @@ const download = (url: string) => globalThis.location.assign(url)
         size="sm"
         :ui="{ trigger: 'w-28' }"
       />
-      <AppButton v-if="report.email" size="sm" variant="outline" @click="reply">
+      <AppButton
+        v-if="report.email"
+        size="sm"
+        variant="outline"
+        aria-keyshortcuts="R"
+        @click="reply"
+      >
         <template #leading><icon-lucide-reply class="size-3.5" /></template>
         Reply
       </AppButton>
@@ -139,7 +158,7 @@ const download = (url: string) => globalThis.location.assign(url)
 
   <div :class="ui.body()">
     <AppAlert
-      v-if="saveFailed"
+      v-if="saveState === 'failed'"
       :class="ui.alert()"
       tone="warning"
       heading="The change could not be saved"
@@ -221,11 +240,14 @@ const download = (url: string) => globalThis.location.assign(url)
             :maxlength="REPORT_TRIAGE_NOTE_MAX_LENGTH"
             placeholder="What was found, or what happens next. Only the team sees this."
             aria-label="Team note"
+            aria-keyshortcuts="Meta+Enter Control+Enter"
             @blur="saveNote"
+            @keydown.meta.enter.prevent="saveNote"
+            @keydown.ctrl.enter.prevent="saveNote"
           />
           <p v-if="report.handledBy" :class="ui.note()">
             Last changed by {{ report.handledBy }}
-            <template v-if="report.handledAt">{{ dates.relative(report.handledAt) }}</template>
+            <template v-if="report.handledAt">· {{ dates.relative(report.handledAt) }}</template>
           </p>
         </section>
       </div>
