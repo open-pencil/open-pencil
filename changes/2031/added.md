@@ -1,0 +1,1 @@
+- Oh My Pi (`omp`) can be the coding agent in the AI chat, beside Claude Code, Codex, Gemini CLI, Antigravity CLI, Cursor, and Grok Build (#2031).
