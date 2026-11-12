@@ -9,6 +9,7 @@ import {
 } from '@open-pencil/scene-graph/coordinate'
 import { cycleSafeParent } from '@open-pencil/scene-graph/instances'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import { keepPastedBoundPaints } from '@open-pencil/scene-graph/variables'
 
 import { prepareClipboardImport } from '#core/clipboard/fig-import'
 import { computeAllLayouts } from '#core/layout'
@@ -281,6 +282,7 @@ export function createClipboardActions(ctx: EditorContext) {
       }
       ctx.graph.updateNode(id, { componentId: componentId ?? node.componentId, instanceOverrides })
     }
+    keepPastedBoundPaints(ctx.graph, copiedIds)
     if (dependencyRootIds.length > 0) {
       const snapshots = collectSubtrees(ctx.graph, dependencyRootIds)
       ctx.undo.push({
