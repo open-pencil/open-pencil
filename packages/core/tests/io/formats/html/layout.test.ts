@@ -60,6 +60,50 @@ describe('laying out HTML from its captured layout', () => {
     expect(second).toMatchObject({ x: 70, width: 60 })
   })
 
+  test('fixes the size of a child auto layout sizes otherwise, keeping its parent auto layout', async () => {
+    // Boxes left to layout that it hugs to nothing, though the page gave them a size: fixing
+    // their sizes lands them where the page did, so the column keeps stacking them.
+    const auto = { width: 'auto', height: 'auto' }
+    const column = element(
+      { display: 'block', width: '200px', height: 'auto' },
+      { box: rect(0, 0, 200, 100) },
+      [
+        element({ display: 'block', ...auto }, { box: rect(0, 0, 200, 40) }),
+        element({ display: 'block', ...auto }, { box: rect(0, 40, 200, 60) })
+      ]
+    )
+    const graph = await sceneGraphFromStyledHTML({ type: 'document', children: [column] })
+    const columnLayer = graph.getChildren(graph.getPages()[0].id)[0]
+    const [first, second] = graph.getChildren(columnLayer.id)
+
+    expect(columnLayer.layoutMode).toBe('VERTICAL')
+    expect(first).toMatchObject({ y: 0, height: 40 })
+    expect(second).toMatchObject({ y: 40, height: 60 })
+  })
+
+  test('sets the text of an inline element on its line, sized to its words', async () => {
+    // A flex item of inline text: its words are on its one fragment.
+    const span: DesignElement = {
+      type: 'element',
+      tagName: 'span',
+      attrs: {},
+      children: [{ type: 'text', text: 'Vue.js' }],
+      computedStyle: { display: 'inline', width: 'auto', height: 'auto', 'font-size': '16px' },
+      layout: { box: rect(10, 8, 47, 24), fragments: [rect(10, 8, 47, 24)] }
+    }
+    const nav = element(
+      { display: 'flex', width: '300px', height: '40px' },
+      { box: rect(0, 0, 300, 40) },
+      [span]
+    )
+    const graph = await sceneGraphFromStyledHTML({ type: 'document', children: [nav] })
+    const navLayer = graph.getChildren(graph.getPages()[0].id)[0]
+    const [text] = graph.getChildren(navLayer.id)
+
+    expect(text).toMatchObject({ type: 'TEXT', textAutoResize: 'WIDTH_AND_HEIGHT', y: 8 })
+    expect(text.width).toBeGreaterThan(0)
+  })
+
   test('puts top-level elements where the page stacked them', async () => {
     const graph = await sceneGraphFromStyledHTML({
       type: 'document',

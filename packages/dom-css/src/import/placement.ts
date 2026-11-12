@@ -38,13 +38,17 @@ const SIZE_FIELDS = [
   'counterAxisSizing'
 ] as const satisfies readonly (keyof SceneNode)[]
 
+/** The fields that say how a layer sizes, as opposed to the size it has. */
+const SIZING_MODE_FIELDS = SIZE_FIELDS.filter((field) => field !== 'width' && field !== 'height')
+
 const PAGE_ORIGIN: Rect = { x: 0, y: 0, width: 0, height: 0 }
 
 /** The element's own box, when its layout was recorded, and the extent of its words. */
 export function capturedBox(element: DesignElement): CapturedBox | undefined {
   const layout = element.layout
   if (!layout) return undefined
-  const lines = layout.lines ?? []
+  // An inline element's text runs along its fragments, one on each line it spans.
+  const lines = layout.lines ?? layout.fragments ?? []
   return lines.length > 0
     ? { box: layout.box, lines: lines.length, extent: computeBounds(lines) }
     : { box: layout.box }
@@ -79,10 +83,14 @@ function isSingleLine(node: SceneNode, captured: CapturedBox): boolean {
 
 /**
  * Prepares a text layer for its captured lines: text the page set on one line sizes to its
- * words, so a fallback font a little wider than the page's does not wrap it.
+ * words, so a fallback font a little wider than the page's does not wrap it. It hugs them rather
+ * than filling its parent, which would make it wrapping text of the parent's width again.
  */
 export function applyCapturedLines(node: SceneNode, captured: CapturedBox): void {
-  if (isSingleLine(node, captured)) node.textAutoResize = 'WIDTH_AND_HEIGHT'
+  if (!isSingleLine(node, captured)) return
+  node.textAutoResize = 'WIDTH_AND_HEIGHT'
+  node.layoutGrow = 0
+  if (node.layoutAlignSelf === 'STRETCH') node.layoutAlignSelf = 'AUTO'
 }
 
 function offset(rect: Rect, origin: Rect): Rect {
@@ -177,25 +185,37 @@ function placeChildren(graph: SceneGraph, node: SceneNode, own: CapturedBox, box
 /**
  * Compares laid-out layers with where the page laid their elements out, and keeps auto layout
  * only where it reproduces them: a layer of the wrong size takes its captured size, and a
- * container whose children land elsewhere places them at their captured boxes instead. Returns
- * how many layers changed, so the caller lays out again until none do.
+ * container whose children land elsewhere places them at their captured boxes instead. Sizes come
+ * first: a child a little too large moves the siblings after it, and fixing its size keeps its
+ * parent's auto layout, so children are placed only once no layer's size changes. Returns how
+ * many layers changed, so the caller lays out again until none do.
  */
 export function placeLayersFromLayout(graph: SceneGraph, boxes: CapturedBoxes): number {
+  const layers = graph
+    .getPages()
+    .flatMap((page) => graph.flattenTree(page.id).map(({ node }) => node))
+    .filter((node) => node.type !== 'CANVAS' && boxes.has(node.id))
   let changed = 0
-  for (const page of graph.getPages()) {
-    for (const { node } of graph.flattenTree(page.id)) {
-      const own = boxes.get(node.id)
-      if (!own || node.type === 'CANVAS') continue
-      if (!sizeMatches(node, own) && fixSize(node, own)) changed++
-      if (!hasAutoLayout(node)) continue
-      const misplaced = graph.getChildren(node.id).some((child) => {
-        const captured = boxes.get(child.id)
-        return captured !== undefined && !matches(child, captured, own.box)
-      })
-      if (misplaced) {
-        placeChildren(graph, node, own, boxes)
-        changed++
-      }
+  for (const node of layers) {
+    const own = boxes.get(node.id)
+    if (!own || sizeMatches(node, own)) continue
+    // A layer that sizes itself stops doing so; one already fixed that layout still sizes
+    // elsewhere is its parent's doing, which placing the parent's children settles below.
+    const sizing = pick(node, SIZING_MODE_FIELDS)
+    fixSize(node, own)
+    if (!isEqual(pick(node, SIZING_MODE_FIELDS), sizing)) changed++
+  }
+  if (changed > 0) return changed
+  for (const node of layers) {
+    const own = boxes.get(node.id)
+    if (!own || !hasAutoLayout(node)) continue
+    const misplaced = graph.getChildren(node.id).some((child) => {
+      const captured = boxes.get(child.id)
+      return captured !== undefined && !matches(child, captured, own.box)
+    })
+    if (misplaced) {
+      placeChildren(graph, node, own, boxes)
+      changed++
     }
   }
   return changed
