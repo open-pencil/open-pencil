@@ -14,6 +14,7 @@ import {
   type Props
 } from '#core-tests/helpers/text/letter-spacing'
 
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import type { TextLayout } from '#core/canvas/text/layout'
@@ -116,7 +117,7 @@ function lineIndices(layout: TextLayout) {
 
 function lastGlyphEnd(layout: TextLayout): number {
   const runs = layout.getShapedLines().findLast((line) => line.runs.length > 0)?.runs ?? []
-  return Math.max(...runs.map((run) => run.positions[2 * run.glyphs.length]))
+  return maxOf(runs.map((run) => run.positions[2 * run.glyphs.length]))
 }
 
 describe('joiners that align hard line ends stay out of everything the text answers', () => {
@@ -164,7 +165,7 @@ describe('joiners that align hard line ends stay out of everything the text answ
     for (const { rect } of rects) {
       expect(rect[2]).toBeGreaterThanOrEqual(rect[0])
     }
-    const right = Math.max(...rects.map(({ rect }) => rect[2]))
+    const right = maxOf(rects.map(({ rect }) => rect[2]))
     expect(right).toBeGreaterThanOrEqual(lastGlyphEnd(layout) - 0.01)
     layout.delete()
   })

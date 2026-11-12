@@ -1,6 +1,7 @@
 import { sumBy } from 'es-toolkit'
 
 import type { CharacterStyleOverride, StyleRun, TextLength } from '@open-pencil/scene-graph'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { textLengthPixels } from '@open-pencil/scene-graph/text'
 
 import type { StyledRange } from '#core/canvas/text/paragraph/runs'
@@ -81,7 +82,7 @@ export function lineSpacing(spaced: SpacedText): LineSpacing {
   const spacingAt = spacingBySourceIndex(spaced.sourceLength, base, runs)
   const styled = (index: number) => spacingAt[spaced.sourceIndex(index)] ?? base
   if (!UNSPACED_SCRIPT.test(spaced.text)) {
-    return { after: styled, least: Math.min(...used), most: Math.max(...used) }
+    return { after: styled, least: minOf(used), most: maxOf(used) }
   }
   const unspaced = unspacedRuns(spaced.text)
   const after = (index: number) => (unspaced[index] === 1 ? 0 : styled(index))

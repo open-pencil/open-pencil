@@ -16,6 +16,7 @@ import {
 
 import { TextEditor } from '@open-pencil/core/text'
 import type { SceneNode, TextLength } from '@open-pencil/scene-graph'
+import { minOf } from '@open-pencil/scene-graph/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { asDouble } from '@open-pencil/test-support/doubles'
 
@@ -73,7 +74,7 @@ function charRects(layout: TextLayout, length: number): { left: number; width: n
       ck.RectHeightStyle.Tight,
       ck.RectWidthStyle.Tight
     )
-    const left = Math.min(...rects.map(({ rect }) => rect[0]))
+    const left = minOf(rects.map(({ rect }) => rect[0]))
     const width = rects.reduce((sum, { rect }) => sum + rect[2] - rect[0], 0)
     return { left, width }
   })

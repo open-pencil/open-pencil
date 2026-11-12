@@ -22,6 +22,7 @@ import {
 } from '#core-tests/helpers/text/letter-spacing'
 
 import type { StyleRun, TextLength } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { measureTextAsDrawn } from '#core/canvas/text'
@@ -122,7 +123,7 @@ describe('mixed runs over several lines', () => {
         expect(line.end).toBeLessThanOrEqual(width + EPSILON)
       }
       if (textAlignHorizontal === 'LEFT') {
-        expect(width).toBe(Math.ceil(Math.max(...drawn.map((line) => line.end)) - EPSILON))
+        expect(width).toBe(Math.ceil(maxOf(drawn.map((line) => line.end)) - EPSILON))
       }
     }
   )

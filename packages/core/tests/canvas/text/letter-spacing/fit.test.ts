@@ -24,6 +24,7 @@ import {
 } from '#core-tests/helpers/text/letter-spacing'
 
 import type { CharacterStyleOverride, StyleRun, TextLength } from '@open-pencil/scene-graph'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { measureTextAsDrawn } from '#core/canvas/text'
@@ -326,8 +327,8 @@ describe('a script Skia sets without letter spacing', () => {
         for (const [index, x] of drawn.entries()) {
           expect(x).toBeCloseTo(expected[index], 2)
         }
-        expect(Math.min(...drawn)).toBeGreaterThanOrEqual(-EPSILON)
-        expect(Math.max(...drawn)).toBeLessThanOrEqual(width + EPSILON)
+        expect(minOf(drawn)).toBeGreaterThanOrEqual(-EPSILON)
+        expect(maxOf(drawn)).toBeLessThanOrEqual(width + EPSILON)
       }
     }
   )

@@ -17,6 +17,7 @@ import {
 } from '#core-tests/helpers/text/letter-spacing'
 
 import type { Canvas, ShapedLine } from '@open-pencil/canvaskit'
+import { minOf } from '@open-pencil/scene-graph/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { asDouble } from '@open-pencil/test-support/doubles'
 
@@ -204,7 +205,7 @@ describe('every line is drawn once, where Figma aligns it', () => {
       const metrics = layout.getLineMetrics()
       for (const [index, line] of lines.entries()) {
         const start = metrics[index].startIndex
-        const firstGlyph = Math.min(...line.runs.map((run) => run.positions[0]))
+        const firstGlyph = minOf(line.runs.map((run) => run.positions[0]))
         const caret = expectDefined(layout.getCaretRect(start, false), 'caret')
         const hit = layout.getGlyphPositionAtCoordinate(firstGlyph + 1, line.baseline)
         expect(caret.x).toBeCloseTo(firstGlyph, 2)

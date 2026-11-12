@@ -12,6 +12,7 @@ import {
   type Props
 } from '#core-tests/helpers/text/letter-spacing'
 
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import type { TextLayout } from '#core/canvas/text/layout'
@@ -103,8 +104,8 @@ describe('right-to-left text', () => {
       const xs = line.runs.flatMap((run) =>
         Array.from(run.positions).filter((_, index) => index % 2 === 0)
       )
-      expect(Math.min(...xs)).toBeGreaterThanOrEqual(-EPSILON)
-      expect(Math.max(...xs) - spacing).toBeLessThanOrEqual(box + EPSILON)
+      expect(minOf(xs)).toBeGreaterThanOrEqual(-EPSILON)
+      expect(maxOf(xs) - spacing).toBeLessThanOrEqual(box + EPSILON)
       layout.delete()
     }
   )

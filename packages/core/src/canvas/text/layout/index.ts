@@ -9,6 +9,7 @@ import type {
   RectWithDirection,
   ShapedLine
 } from '@open-pencil/canvaskit'
+import { insertAll } from '@open-pencil/scene-graph/arrays'
 
 import { lineBands, lineBoxBands } from '#core/canvas/text/layout/apart'
 import {
@@ -169,7 +170,9 @@ export class TextLayout {
     const joinedBlock = join(this.caps.get(block) ?? this.maxLines)
     block.paragraph.delete()
     if ('blocks' in joinedBlock) {
-      this.blocks.splice(this.blocks.indexOf(block), 1, ...joinedBlock.blocks)
+      const at = this.blocks.indexOf(block)
+      this.blocks.splice(at, 1)
+      insertAll(this.blocks, at, joinedBlock.blocks)
       return
     }
     Object.assign(block, joinedBlock)

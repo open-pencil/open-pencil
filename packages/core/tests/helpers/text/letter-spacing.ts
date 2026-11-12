@@ -2,6 +2,7 @@ import { expect } from 'bun:test'
 
 import type { CanvasKit, ShapedLine, TypefaceFontProvider } from '@open-pencil/canvaskit'
 import { SceneGraph, type SceneNode, type TextLength } from '@open-pencil/scene-graph'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { textLengthPixels } from '@open-pencil/scene-graph/text'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
@@ -107,7 +108,7 @@ export function glyphSpan(props: Props, line: ShapedLine): { start: number; end:
 /** Where a truncated line draws, its ellipsis set without letter spacing included. */
 export function truncatedSpan(line: ShapedLine): { start: number; end: number } {
   const xs = line.runs.flatMap((run) => [...run.positions].filter((_, index) => index % 2 === 0))
-  return { start: Math.min(...xs), end: Math.max(...xs) }
+  return { start: minOf(xs), end: maxOf(xs) }
 }
 
 export function spans(props: Props, layout: TextLayout) {
