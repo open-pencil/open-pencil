@@ -194,10 +194,19 @@ describe('joiners that align hard line ends stay out of everything the text answ
 
 describe('a truncated hard line ending in a fallback glyph', () => {
   const box = 140
-  const ends = ['👍', '本', 'ok', 'שלום']
-  test.each(ALIGNED.flatMap((align) => ends.map((end) => [align, end] as const)))(
-    '%s, ending in %s: its glyphs and caret end where the unjoined text has them',
-    (align, end) => {
+  const centredEnds = [
+    ['👍', 118.688],
+    ['本', 115.938],
+    ['ok', 120.273],
+    ['שלום', 132.648]
+  ] as const
+  const endRows = centredEnds.flatMap(([end, centred]) => [
+    ['CENTER', end, centred] as const,
+    ['RIGHT', end, box] as const
+  ])
+  test.each(endRows)(
+    '%s, ending in %s: its glyphs and caret end where Figma aligns them',
+    (align, end, expectedEnd) => {
       const props: Props = {
         text: `Thanks for the great job ${end}\nsecond line hidden`,
         letterSpacing: percent(6),
@@ -208,17 +217,18 @@ describe('a truncated hard line ending in a fallback glyph', () => {
         textAlignHorizontal: align
       }
       const joined = laidOut({ ...props, width: 0.5 })
-      const plain = laidOut({ ...props, width: UNBOUNDED })
       joined.layout(box)
-      plain.layout(box)
-      const lastLine = (layout: TextLayout) => expectDefined(layout.getLineMetrics().at(-1), 'line')
-      const caretAtEnd = (layout: TextLayout) =>
-        expectDefined(layout.getCaretRect(lastLine(layout).endIndex, false), 'caret').x
-      expect(lastGlyphEnd(joined)).toBeCloseTo(lastGlyphEnd(plain), 2)
-      expect(lastGlyphEnd(joined)).toBeLessThanOrEqual(box + 0.01)
-      expect(caretAtEnd(joined)).toBeCloseTo(caretAtEnd(plain), 2)
+      const lines = joined.getLineMetrics()
+      const caret = expectDefined(
+        joined.getCaretRect(expectDefined(lines.at(-1), 'line').endIndex, false),
+        'caret'
+      )
+      const glyphEnd = lastGlyphEnd(joined)
       joined.delete()
-      plain.delete()
+      expect(lines).toHaveLength(2)
+      expect(glyphEnd).toBeCloseTo(expectedEnd, 2)
+      expect(glyphEnd).toBeLessThanOrEqual(box + 0.01)
+      expect(caret.x).toBeCloseTo(expectedEnd, 2)
     }
   )
 })
