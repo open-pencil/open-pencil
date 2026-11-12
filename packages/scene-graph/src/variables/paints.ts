@@ -113,7 +113,10 @@ export function copyAppliedBoundPaints(source: SceneNode, copy: SceneNode): void
  * variables give it now as applied, as a loaded document does. `copies` maps each source layer's
  * id to its copy's.
  */
-export function keepPastedBoundPaints(graph: SceneGraph, copies: ReadonlyMap<string, string>): void {
+export function keepPastedBoundPaints(
+  graph: SceneGraph,
+  copies: ReadonlyMap<string, string>
+): void {
   for (const [sourceId, copyId] of copies) {
     const copy = graph.nodes.get(copyId)
     if (!copy || !hasBoundPaints(copy)) continue
