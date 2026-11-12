@@ -49,7 +49,13 @@ describe('issue marker stage', () => {
     expect(moved).not.toBe(first)
     expect(placeIssueMarkers(moved, { view: view(0), measureText })[0].anchor.x).toBe(500)
 
-    const suppressed = stage.update(graph, markers, { pageId, suppressedIds: new Set([card.id]) }, 2, 0)
+    const suppressed = stage.update(
+      graph,
+      markers,
+      { pageId, suppressedIds: new Set([card.id]) },
+      2,
+      0
+    )
     expect(suppressed).toEqual([])
     const replaced = stage.update(graph, [...markers], { pageId }, 2, 0)
     expect(replaced).not.toBe(moved)

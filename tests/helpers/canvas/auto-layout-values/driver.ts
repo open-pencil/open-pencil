@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test'
 
 import type * as ValueScene from '#tests/helpers/canvas/auto-layout-values/scene'
-import { pageScene, showView } from '#tests/helpers/canvas/page-scene'
+import { pageScene, showView, waitForSettledScene } from '#tests/helpers/canvas/page-scene'
 
 /** The view the scene is shown in: canvas points are scene points times the zoom plus the pan. */
 const VIEW = { zoom: 2, pan: 100 }
@@ -14,6 +14,7 @@ export function autoLayoutValuesDriver(page: () => Page) {
   )
   return {
     async build() {
+      await showView(page(), { zoom: VIEW.zoom, panX: VIEW.pan, panY: VIEW.pan })
       const row = await scenes.build('createAutoLayoutValueScene')
       await page().evaluate((id) => {
         const store = window.openPencil?.getStore?.()
@@ -21,7 +22,7 @@ export function autoLayoutValuesDriver(page: () => Page) {
         store.runLayoutForNode(id)
         store.select([id])
       }, row)
-      await showView(page(), { zoom: VIEW.zoom, panX: VIEW.pan, panY: VIEW.pan })
+      await waitForSettledScene(page())
     },
 
     /** The canvas point over a scene point. */

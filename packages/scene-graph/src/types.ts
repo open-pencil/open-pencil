@@ -271,6 +271,17 @@ export interface GlassEffectParams {
   dispersion: number
 }
 
+/**
+ * A progressive blur's ramp, in Figma's plugin terms: the blur grows from `startRadius` at
+ * `startOffset` to the effect's `radius` at `endOffset`, both points fractions of the layer's
+ * size, and holds each end's radius beyond it.
+ */
+export interface ProgressiveBlur {
+  startRadius: number
+  startOffset: Vector
+  endOffset: Vector
+}
+
 export interface Effect {
   type:
     | 'DROP_SHADOW'
@@ -288,6 +299,8 @@ export interface Effect {
   showShadowBehindNode?: boolean
   /** Set on a `GLASS` effect, and only there. */
   glass?: GlassEffectParams
+  /** Set on a layer or background blur that is progressive, and only there. */
+  progressive?: ProgressiveBlur
 }
 
 export type ConstraintType = 'MIN' | 'CENTER' | 'MAX' | 'STRETCH' | 'SCALE'
@@ -685,7 +698,7 @@ export interface SceneNode {
   height: number
   rotation: number
   source: SourceMetadata
-  /** Materialized layout hint imported or generated outside the live Yoga layout pass. */
+  /** Materialized layout hint imported or generated outside the live layout pass. */
   derivedLayout: Partial<Rect> | null
 
   fills: Fill[]

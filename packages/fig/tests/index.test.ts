@@ -7,6 +7,7 @@ import {
   parseFigBuffer,
   readFigArchiveMeta,
   readFigContainer,
+  readStreamBytes,
   renameFigArchive,
   writeFigArchive,
   writeFigContainer
@@ -108,7 +109,7 @@ describe('@open-pencil/fig package API', () => {
     expect(readFigArchiveMeta('{"version":1,"app":"OpenPencil"}').success).toBe(false)
   })
 
-  it('renames an archive in its meta.json and keeps keys it does not know', () => {
+  it('renames an archive in its meta.json and keeps keys it does not know', async () => {
     const archive = (metaJSON: string) =>
       writeFigArchive({
         schemaDeflated: deflateSync(getSchemaBytes()),
@@ -122,15 +123,15 @@ describe('@open-pencil/fig package API', () => {
         images: [{ name: 'images/hash', data: new Uint8Array([9, 8, 7]) }]
       })
     const bytes = archive('{"client_meta":{"later_field":1},"file_name":"Old","extra":true}')
-    const renamed = parseFigBuffer(
-      expectDefined(renameFigArchive(bytes, 'New'), 'renamed archive').slice().buffer
-    )
+    const read = async (name: string) =>
+      readStreamBytes(expectDefined(renameFigArchive(bytes, name), 'renamed archive'))
+    const renamed = parseFigBuffer((await read('New')).slice().buffer)
 
     expect(renamed.metaJSON).toBe(
       '{"client_meta":{"later_field":1},"file_name":"New","extra":true}'
     )
     expect(renamed.images).toEqual([['hash', new Uint8Array([9, 8, 7])]])
-    expect(renameFigArchive(bytes, 'Old')).toBe(bytes)
+    expect([...(await read('Old'))]).toEqual([...bytes])
     expect(renameFigArchive(archive('{"version":1,"app":"OpenPencil"}'), 'New')).toBeNull()
   })
 

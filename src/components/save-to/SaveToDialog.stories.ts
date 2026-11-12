@@ -46,7 +46,7 @@ const bucket: SaveDestination = {
 }
 
 const meta = {
-  title: 'App/Save To/Dialog',
+  title: 'App/Cloud/Save To Dialog',
   tags: ['autodocs'],
   args: {
     destinations: official,

@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
+import { autoFrame, fixed, fr, gridFrame, pageId, rect } from '#core-tests/helpers/layout'
+
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { computeLayout, computeAllLayouts } from '@open-pencil/core/layout'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
-
-import { autoFrame, fixed, fr, gridFrame, pageId, rect } from '#core-tests/helpers/layout'
 
 describe('Grid Layout', () => {
   describe('basic grid', () => {
@@ -156,7 +156,7 @@ describe('Grid Layout', () => {
     test('gridPosition places child at specific cell', () => {
       const graph = new SceneGraph()
       const frame = gridFrame(graph, pageId(graph), [fr(), fr(), fr()], [fr(), fr()])
-      // Place in column 2, row 1 (0-indexed internally, but yoga uses 1-indexed)
+      // Place in column 2, row 1 (0-indexed internally, but grid lines are 1-indexed)
       rect(graph, frame.id, 50, 50, {
         gridPosition: { column: 2, row: 1, columnSpan: 1, rowSpan: 1 }
       })

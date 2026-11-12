@@ -45,3 +45,12 @@ export function resolveScopedCommand(
   }
   return { command: scope, args }
 }
+
+/**
+ * Environment for a program started through `cmd /c`. `cmd` looks in its own folder before
+ * `PATH`, so a `.cmd` or `.exe` left in an agent's workspace would run in place of the agent;
+ * `NoDefaultCurrentDirectoryInExePath` is Windows' switch that turns that lookup off.
+ */
+export function platformCommandEnv(userAgent: string = detectUserAgent()): Record<string, string> {
+  return userAgent.includes('Windows') ? { NoDefaultCurrentDirectoryInExePath: '1' } : {}
+}

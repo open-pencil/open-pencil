@@ -1,13 +1,13 @@
 import { writeFile } from 'node:fs/promises'
 
+import { asPageNode, createAPI } from '#core-tests/helpers/figma-api'
+
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SkiaRenderer } from '#core/canvas'
-
-import { asPageNode, createAPI } from '#core-tests/helpers/figma-api'
 import { graphOf } from '#core/figma-api/graph'
 
 const CELL_W = 180

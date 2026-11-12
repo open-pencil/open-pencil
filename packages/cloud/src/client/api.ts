@@ -2,6 +2,7 @@ import type { CloudFetch } from '#cloud/client/discovery'
 import {
   acceptedInvitationSchema,
   servicesTokenSchema,
+  billingTokenSchema,
   cloudSessionSchema,
   cloudUserProfileSchema,
   collaborationTicketSchema,
@@ -18,11 +19,13 @@ import {
   documentVersionsSchema,
   restoredDocumentSchema,
   sharedDocumentSchema,
+  trashSchema,
   invitationContinuationSchema,
   invitationPreviewSchema,
   resolvedDocumentShareSchema,
   type AcceptDocumentInvitationInput,
   type ServicesToken,
+  type BillingToken,
   type CloudSession,
   type CloudUserProfile,
   type CollaborationTicket,
@@ -46,6 +49,7 @@ import {
   type SaveDocumentVersionInput,
   type UpdateDocumentVersionInput,
   type SharedDocument,
+  type TrashedDocument,
   type InvitationPreview,
   type PutDocumentGrantInput,
   type ResolveDocumentShareInput,
@@ -146,6 +150,10 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
         options.onDiagnostic
       )
     },
+    /** A short-lived token for the deployment's billing, for the signed-in person's own account. */
+    async requestBillingToken(): Promise<BillingToken> {
+      return parseResponse(client.billing.token.$post(), billingTokenSchema, options.onDiagnostic)
+    },
     async getUserProfile(documentId: string, userId: string): Promise<CloudUserProfile | null> {
       const response = await parseResponse(
         client.documents[':documentId'].users[':userId'].$get({
@@ -190,6 +198,24 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
         options.onDiagnostic
       )
       return response.document
+    },
+    /** Documents in Trash the person may restore, across their workspaces, newest first. */
+    async listTrash(): Promise<TrashedDocument[]> {
+      const response = await parseResponse(client.trash.$get(), trashSchema, options.onDiagnostic)
+      return response.documents
+    },
+    async restoreDocument(documentId: string): Promise<void> {
+      await responseBody(
+        await client.trash[':documentId'].restore.$post({ param: { documentId } }),
+        options.onDiagnostic
+      )
+    },
+    /** Deletes a document in Trash for good. */
+    async purgeDocument(documentId: string): Promise<void> {
+      await responseBody(
+        await client.trash[':documentId'].$delete({ param: { documentId } }),
+        options.onDiagnostic
+      )
     },
     async deleteDocument(documentId: string): Promise<void> {
       await responseBody(

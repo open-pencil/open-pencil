@@ -35,6 +35,11 @@ import { onceOnServer, shareRoomUploads, uploadStoredDocument } from './upload'
 
 /** Each Cloud tab's permission in its room, for the status beside the name. */
 export const cloudRoomPermissions = shallowRef<ReadonlyMap<EditorStore, 'edit' | 'view'>>(new Map())
+/**
+ * Tabs that view their room only because the document's owner holds their whole storage
+ * allowance, for the status beside the name to say so and how to get editing back.
+ */
+export const cloudRoomsAtStorageLimit = shallowRef<ReadonlySet<EditorStore>>(new Set())
 /** Tabs the relay turned away for good, for the status beside the name; they do not rejoin on their own. */
 export const cloudRoomsRefused = shallowRef<ReadonlySet<EditorStore>>(new Set())
 const starting = new WeakSet<EditorStore>()
@@ -44,6 +49,13 @@ function setPermission(store: EditorStore, permission: 'edit' | 'view' | null) {
   if (permission) next.set(store, permission)
   else next.delete(store)
   cloudRoomPermissions.value = next
+}
+
+function setAtStorageLimit(store: EditorStore, atLimit: boolean) {
+  const next = new Set(cloudRoomsAtStorageLimit.value)
+  if (atLimit) next.add(store)
+  else next.delete(store)
+  cloudRoomsAtStorageLimit.value = next
 }
 
 /**
@@ -202,6 +214,8 @@ export function openCloudDocumentRoom(
     roomId: string
     transport: JoinCollabRoom
     permission: 'edit' | 'view'
+    /** Why a tab that could edit only views: its owner holds their whole storage allowance. */
+    readOnly?: 'storage-limit'
     /** A guest from a link edits but has no account to save with. */
     guest?: boolean
     /**
@@ -231,11 +245,13 @@ export function openCloudDocumentRoom(
   const scope = effectScope(true)
   const uploads = scope.run(() => {
     setPermission(store, options.permission)
+    setAtStorageLimit(store, options.readOnly === 'storage-limit')
     // A viewer sees the room's edits and makes none, as Figma's view-only files do.
     store.setReadOnly(!canEdit)
     if (!canSave) store.state.autosaveEnabled = false
     onScopeDispose(() => {
       setPermission(store, null)
+      setAtStorageLimit(store, false)
       store.setReadOnly(false)
     })
     followRelay(store, session)
@@ -282,6 +298,22 @@ export function openCloudDocumentRoom(
  * The relay connection for a room, presenting the ticket just issued first and a fresh one from
  * `next` before each expires.
  */
+/**
+ * Whether a refreshed ticket keeps the tab in the room it joined as it joined it. A restore
+ * moves the document to a new room, and access that changed, as when the owner fills or frees
+ * their storage, needs the room joined again with it; either ends this one.
+ */
+export function keepsRoom(
+  first: Pick<CollaborationTicket, 'roomId' | 'permission' | 'readOnly'>,
+  next: Pick<CollaborationTicket, 'roomId' | 'permission' | 'readOnly'>
+): boolean {
+  return (
+    next.roomId === first.roomId &&
+    next.permission === first.permission &&
+    next.readOnly === first.readOnly
+  )
+}
+
 export function cloudRelayTransport(
   url: string,
   first: CollaborationTicket,
@@ -294,8 +326,7 @@ export function cloudRelayTransport(
     async ticket() {
       const ticket = unused ?? (await next())
       unused = null
-      // A restore moves the document to a new room; this one has nothing left to join.
-      if (ticket.roomId !== first.roomId) return null
+      if (!keepsRoom(first, ticket)) return null
       return { token: ticket.token, expiresAt: ticket.expiresAt }
     },
     onRestored: events.onRestored,
@@ -430,6 +461,7 @@ export async function startCloudRoom(store: EditorStore): Promise<void> {
         onRefused: () => leaveRefusedRoom(store, { permission: first.permission, canSave: true })
       }),
       permission: first.permission,
+      readOnly: first.readOnly,
       images: cloudRoomImages(target.client, binding.documentId, first.permission === 'edit'),
       roomIsCurrent: async () => (await nextTicket()).roomId === first.roomId,
       onRestored: restart
@@ -477,8 +509,11 @@ async function rejoinCloudRoom(store: EditorStore): Promise<void> {
   }
 }
 
-/** Sessions that ended for good, unlike a check in progress or a server out of reach for now. */
-const ENDED: ReadonlySet<CloudSessionState> = new Set(['signed-out', 'expired', 'closed'])
+/**
+ * Sessions that ended for good, unlike a check in progress or a server out of reach for now; one
+ * whose terms changed ends until they are accepted, and its rooms with it.
+ */
+const ENDED: ReadonlySet<CloudSessionState> = new Set(['signed-out', 'expired', 'closed', 'terms'])
 
 /**
  * Whether the tab's room was joined as someone the server no longer has signed in here: a session

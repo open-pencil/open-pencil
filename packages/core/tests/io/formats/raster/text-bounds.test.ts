@@ -1,8 +1,11 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { createCanvasKitRasterCodec, headlessRenderNodes } from '@open-pencil/core/io/formats/raster'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
+import { FigmaAPI } from '@open-pencil/core/figma-api'
+import {
+  createCanvasKitRasterCodec,
+  headlessRenderNodes
+} from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
@@ -28,10 +31,7 @@ async function exported(setUp: (text: Text) => void): Promise<number[]> {
     await headlessRenderNodes(graph, graph.getPages()[0].id, [text.id]),
     'export'
   )
-  const image = expectDefined(
-    createCanvasKitRasterCodec(await getCanvasKit()).decode(png),
-    'image'
-  )
+  const image = expectDefined(createCanvasKitRasterCodec(await getCanvasKit()).decode(png), 'image')
   let painted = 0
   for (let index = 3; index < image.data.length; index += 4) if (image.data[index] > 0) painted++
   return [image.width, image.height, painted]

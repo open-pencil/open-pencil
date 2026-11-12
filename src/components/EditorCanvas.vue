@@ -301,6 +301,7 @@ const cursor = computed(() =>
     <ContextMenuTrigger as-child @contextmenu.capture="selectAtContextPoint">
       <div
         ref="area"
+        dir="ltr"
         data-test-id="canvas-area"
         :data-pane-id="paneId"
         :data-active-pane="isActivePane ? 'true' : 'false'"

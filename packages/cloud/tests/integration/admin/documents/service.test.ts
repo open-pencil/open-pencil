@@ -160,7 +160,7 @@ describe('document takedown', () => {
       expect(listed.documents.map((document) => [document.name, document.openReports])).toEqual([
         ['Homepage', 2]
       ])
-      expect(listed.counts).toEqual({ all: 1, reported: 1, disabled: 0 })
+      expect(listed.counts).toEqual({ all: 1, reported: 1, disabled: 0, purged: 0 })
       expect((await documents.list({ search: 'nothing-like-it' })).total).toBe(0)
 
       const open = await reportsAdmin.list()

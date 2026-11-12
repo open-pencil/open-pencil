@@ -7,7 +7,7 @@
   "webSearchDescription": "使用你自己的 Exa 密钥，AI 代理以及使用 OpenPencil 工具的代理可以通过任何模型搜索网页，费用由 Exa 直接向你收取，而不是使用 Cloud 额度。",
   "pexelsAPIKey": "Pexels API 密钥（图库照片）",
   "unsplashAccessKey": "Unsplash 访问密钥",
-  "stockPhotoToolOptional": "可选，用于 stock_photo 工具",
+  "stockPhotoToolOptional": "可选，用于 search_stock_photos 工具",
   "pexelsAlternativeOptional": "可选，作为 Pexels 的替代",
   "getPexelsAPIKey": "获取免费 Pexels API 密钥 →",
   "getUnsplashAccessKey": "获取免费的 Unsplash 访问密钥 →",

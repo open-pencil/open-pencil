@@ -29,6 +29,8 @@ export interface Toast {
   progress?: ProgressAmount
   /** Measurement text beside the progress bar, formatted by the producing domain. */
   progressLabel?: string
+  /** Keeps the toast until the person dismisses it, for a failure they must act on. */
+  sticky?: boolean
 }
 
 export interface ToastPatch {
@@ -58,7 +60,12 @@ let nextId = 0
 let errorHandlersInitialized = false
 
 /** Returns the toast's ID, which `remove` takes, also when it merged into a visible one. */
-function push(message: string, variant: ToastVariant, action?: ToastAction): number {
+function push(
+  message: string,
+  variant: ToastVariant,
+  action?: ToastAction,
+  sticky = false
+): number {
   // Dedupe: if the same message+variant is already visible, increment
   // its repeat count instead of stacking a duplicate. Prevents the
   // cascade-on-every-frame failure mode where a single unhealthy
@@ -69,24 +76,29 @@ function push(message: string, variant: ToastVariant, action?: ToastAction): num
   )
   if (existing) {
     existing.count += 1
-    existing.action = action
+    if (action || !existing.sticky) existing.action = action
+    if (sticky) existing.sticky = true
     return existing.id
   }
   const id = ++nextId
-  toasts.value.push({ id, message, variant, count: 1, action })
+  toasts.value.push({ id, message, variant, count: 1, action, sticky })
   trim()
   return id
 }
 
 function trim() {
-  if (toasts.value.length > TOAST_STACK_LIMIT) {
-    toasts.value.splice(0, toasts.value.length - TOAST_STACK_LIMIT)
+  // A failure the person must act on stays until they dismiss it, even when newer messages
+  // arrive; ordinary messages give way first.
+  while (toasts.value.length > TOAST_STACK_LIMIT) {
+    const index = toasts.value.findIndex((entry) => !entry.sticky)
+    if (index === -1) return
+    toasts.value.splice(index, 1)
   }
 }
 
 /** Toast-driven work keeps its toast open until progress clears or the work ends. */
 export function toastDuration(entry: Toast): number {
-  if (entry.progress) return 0
+  if (entry.progress || entry.sticky) return 0
   // A toast that offers an action stays long enough to reach it.
   return entry.variant === 'error' || entry.action ? ERROR_TOAST_DURATION : TOAST_DURATION
 }
@@ -125,12 +137,12 @@ function info(message: string, action?: ToastAction) {
   push(message, 'default', action)
 }
 
-function warning(message: string) {
-  push(message, 'warning')
+function warning(message: string, action?: ToastAction, options?: { sticky?: boolean }): number {
+  return push(message, 'warning', action, options?.sticky)
 }
 
-function error(message: string, action?: ToastAction): number {
-  return push(message, 'error', action)
+function error(message: string, action?: ToastAction, options?: { sticky?: boolean }): number {
+  return push(message, 'error', action, options?.sticky)
 }
 
 function remove(id: number) {

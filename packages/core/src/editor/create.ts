@@ -245,6 +245,8 @@ export function createEditor(options?: EditorOptions) {
     state.activeTool = tool
     if (tool !== 'SELECT') state.measurementMode = 'off'
     if (previous === tool) return
+    // The Scale tool starts from the center of the box, as Figma's does.
+    if (tool === 'SCALE') state.scaleAnchor = { x: 0.5, y: 0.5 }
     // Guides the pen showed for its next point do not belong to the next tool.
     if (previous === 'PEN') state.snapGuides = []
     emitEditorEvent('tool:changed', tool, previous)
@@ -405,6 +407,7 @@ export function createEditor(options?: EditorOptions) {
       shapes.penCancel()
       shapes.pencilCancel()
       state.gradientEdit = null
+      state.blurRampEdit = null
     },
     endPathContinuation: () => {
       if (state.penState?.resumingNodeId) shapes.penCommit(false)
@@ -498,9 +501,10 @@ export function createEditor(options?: EditorOptions) {
     unsubscribeFromGraph()
   }
 
-  function releaseGraphResources() {
-    releaseFigPopulationWorker(_graph)
-    releaseOriginalFigArchive(_graph)
+  /** Releases what a document opened from a `.fig` holds: the editor's own, or one it replaced. */
+  function releaseGraphResources(graph: SceneGraph = _graph) {
+    releaseFigPopulationWorker(graph)
+    releaseOriginalFigArchive(graph)
   }
 
   const editor = {

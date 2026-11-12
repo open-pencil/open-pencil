@@ -12,13 +12,19 @@ import { useI18n } from '@open-pencil/vue/i18n'
 import { useEditorStore } from '@/app/editor/active-store'
 import { publishLibraryDialogOpen, useLibraryService } from '@/app/libraries'
 import AppButton from '@/components/ui/button/AppButton.vue'
-import { AppDialogFooter, AppDialogHeader, AppDialogRoot } from '@/components/ui/dialog'
+import {
+  AppDialogFooter,
+  AppDialogHeader,
+  AppDialogRoot,
+  useDialogUI
+} from '@/components/ui/dialog'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppTextarea from '@/components/ui/input/AppTextarea.vue'
 import AppCheckbox from '@/components/ui/toggle/AppCheckbox.vue'
 
 const editor = useEditorStore()
+const dialog = useDialogUI()
 const service = useLibraryService()
 const { panels } = useI18n()
 const libraryId = ref('')
@@ -119,7 +125,10 @@ async function publish() {
 <template>
   <AppDialogRoot v-model:open="publishLibraryDialogOpen" size="md" height="tall">
     <AppDialogHeader :heading="panels.publishLibrary" :description="panels.publishLibraryHelp" />
-    <form class="flex min-h-0 flex-1 flex-col gap-3 px-4 py-4" @submit.prevent="publish">
+    <form
+      :class="[dialog.pane, 'flex min-h-0 flex-1 flex-col gap-3 px-4 py-4']"
+      @submit.prevent="publish"
+    >
       <div class="grid grid-cols-2 gap-3">
         <label class="flex flex-col gap-1.5 text-xs text-muted">
           {{ panels.libraryId }}
@@ -156,7 +165,7 @@ async function publish() {
             @update:model-value="toggleAll"
           />
           <span>{{ panels.libraryChanges }}</span>
-          <span class="ml-auto text-muted">{{ selectedKeys.size }}/{{ changes.length }}</span>
+          <span class="ms-auto text-muted">{{ selectedKeys.size }}/{{ changes.length }}</span>
         </div>
         <div v-if="loading" class="px-3 py-6 text-center text-xs text-muted">
           {{ panels.loading }}

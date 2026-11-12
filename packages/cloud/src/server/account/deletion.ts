@@ -1,6 +1,7 @@
 import { normalizeEnrollmentEmail } from '#cloud/admin/enrollment/service'
 import type { CloudAccountDeletion } from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
+import { markPurged } from '#cloud/server/documents/purge'
 import { handOverOwnership } from '#cloud/server/workspaces'
 import { APIError } from 'better-auth'
 import type { Kysely, Transaction } from 'kysely'
@@ -99,8 +100,8 @@ const workspaceSummary = (membership: Membership) => ({
 /**
  * Deleting an account: what it takes, and the Cloud side of taking it. Better Auth removes the
  * user with their sessions, sign-in methods, passkeys, and two-step secrets; this removes what
- * Cloud keeps about them. Workspaces only they belong to go with their documents, which the
- * cleanup worker purges after its retention like any deleted document; in workspaces others keep
+ * Cloud keeps about them. Workspaces only they belong to go with their documents, deleted
+ * forever, which cleanup destroys once the deployment's grace passes; in workspaces others keep
  * they drop out, handing ownership, and so the plan the workspace draws on, to the
  * longest-standing other admin.
  */
@@ -110,34 +111,40 @@ export function createAccountDeletionService(database: Kysely<CloudDatabase>) {
       const { deletes, blockedBy, leaves } = classify(await memberships(database, userId))
       const deleted = deletes.map((membership) => membership.workspaceId)
       const left = leaves.map((membership) => membership.workspaceId)
-      const documents =
-        deleted.length + left.length === 0
-          ? []
-          : await database
-              .selectFrom('document')
-              .innerJoin('workspace', 'workspace.id', 'document.workspaceId')
-              .select(['document.id', 'document.name', 'workspace.name as workspaceName'])
-              .where('document.deletedAt', 'is', null)
-              .where('document.disabledAt', 'is', null)
-              .where((expression) =>
-                expression.or([
-                  ...(deleted.length > 0
-                    ? [expression('document.workspaceId', 'in', deleted)]
-                    : []),
-                  ...(left.length > 0
-                    ? [
-                        expression.and([
-                          expression('document.workspaceId', 'in', left),
-                          expression('document.createdBy', '=', userId)
-                        ])
-                      ]
-                    : [])
-                ])
-              )
-              .orderBy('workspace.name')
-              .orderBy('document.name')
-              .orderBy('document.id')
-              .execute()
+      const blocked = blockedBy.map((membership) => membership.workspaceId)
+      // What the account can still download: everything in workspaces that go with it, and what
+      // it created in workspaces it leaves, keeps an admin role in, or reaches only by a grant.
+      const documents = await database
+        .selectFrom('document')
+        .innerJoin('workspace', 'workspace.id', 'document.workspaceId')
+        .select(['document.id', 'document.name', 'workspace.name as workspaceName'])
+        .where('document.deletedAt', 'is', null)
+        .where('document.disabledAt', 'is', null)
+        .where((expression) =>
+          expression.or([
+            ...(deleted.length > 0 ? [expression('document.workspaceId', 'in', deleted)] : []),
+            expression.and([
+              expression('document.createdBy', '=', userId),
+              expression.or([
+                ...(left.length > 0 ? [expression('document.workspaceId', 'in', left)] : []),
+                ...(blocked.length > 0 ? [expression('document.workspaceId', 'in', blocked)] : []),
+                expression(
+                  'document.id',
+                  'in',
+                  expression
+                    .selectFrom('documentGrant')
+                    .select('documentGrant.documentId')
+                    .where('documentGrant.userId', '=', userId)
+                    .where('documentGrant.revokedAt', 'is', null)
+                )
+              ])
+            ])
+          ])
+        )
+        .orderBy('workspace.name')
+        .orderBy('document.name')
+        .orderBy('document.id')
+        .execute()
       return {
         lastAdministrator: await lastAdministrator(database, userId, false),
         blockedBy: blockedBy.map(workspaceSummary),
@@ -183,6 +190,20 @@ export function createAccountDeletionService(database: Kysely<CloudDatabase>) {
             .where('workspaceId', '=', workspaceId)
             .where('deletedAt', 'is', null)
             .execute()
+          // Nobody is left to restore them, so they are deleted forever, Trash included: out of
+          // sight now, and destroyed by cleanup once the deployment's grace passes.
+          const documents = await transaction
+            .selectFrom('document')
+            .select('id')
+            .where('workspaceId', '=', workspaceId)
+            .where('purgedAt', 'is', null)
+            .execute()
+          await markPurged(
+            transaction,
+            documents.map((document) => document.id),
+            null,
+            now
+          )
           await transaction
             .updateTable('workspaceInvitation')
             .set({ revokedAt: now })
@@ -232,12 +253,15 @@ export function createAccountDeletionService(database: Kysely<CloudDatabase>) {
         await transaction.deleteFrom('invitationSend').where('senderId', '=', user.id).execute()
         for (const table of [
           'accountEntitlement',
+          'termsAcceptance',
           'userPicture',
           'signIn',
           'mfaAssurance'
         ] as const) {
           await transaction.deleteFrom(table).where('userId', '=', user.id).execute()
         }
+        // Personal access tokens have no key to cascade from, since Cloud builds their table.
+        await transaction.deleteFrom('apikey').where('referenceId', '=', user.id).execute()
         await transaction
           .deleteFrom('enrollment')
           .where('emailNormalized', '=', normalizeEnrollmentEmail(user.email))

@@ -19,6 +19,7 @@ const {
 }>()
 
 const emit = defineEmits<{
+  openAutoFocus: [event: Event]
   escapeKeyDown: [event: KeyboardEvent]
   pointerDownOutside: [event: Event]
   interactOutside: [event: Event]
@@ -38,6 +39,7 @@ const cls = computed(() => useDialogUI(ui, { size, height }))
         v-bind="attrs"
         data-slot="dialog-content"
         :class="cls.content"
+        @open-auto-focus="emit('openAutoFocus', $event)"
         @escape-key-down="emit('escapeKeyDown', $event)"
         @pointer-down-outside="emit('pointerDownOutside', $event)"
         @interact-outside="emit('interactOutside', $event)"

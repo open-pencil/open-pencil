@@ -1,20 +1,13 @@
-export {
-  cloneNode,
-  deleteNode,
-  nodeBounds,
-  nodeMove,
-  nodeResize,
-  renameNode
-} from './structure/basic'
+export { cloneNodes, deleteNodes } from './structure/basic'
 export {
   flattenNodes,
   groupNodes,
   nodeToComponent,
   reparentNode,
-  ungroupNode
+  ungroupNodes
 } from './structure/hierarchy'
 
-export { nodeAncestors, nodeBindings, nodeChildren, nodeTree } from './structure/tree'
+export { nodeAncestors, nodeBindings } from './structure/tree'
 
 export { nodeReplaceWith } from './structure/replace'
 

@@ -9,6 +9,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'acceptingParent',
   'acceptsChildren',
   'canDistributeNodes',
+  'canUngroupSelection',
   'canWrapSelectionInSection',
   'collectVariantOptions',
   'findVariantByValues',
@@ -79,6 +80,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'setMarquee',
   'setMeasurementMode',
   'setTool',
+  'setScaleAnchor',
   'validateEnteredContainer',
 
   // Canvas overlays that show without changing anything

@@ -1,6 +1,8 @@
-import type { Hono, TypedResponse } from 'hono'
-import type { BlankEnv, BlankInput, ToSchema } from 'hono/types'
+import type { Hono } from 'hono'
+import type { BlankEnv, BlankInput } from 'hono/types'
 import * as v from 'valibot'
+
+import type { JSONRoute } from './routes'
 
 /**
  * The contract between editors, Cloud, and the services Cloud advertises: AI models today, and
@@ -37,9 +39,6 @@ export const cloudServicesDiscoverySchema = v.object({
 })
 export type CloudServicesDiscovery = v.InferOutput<typeof cloudServicesDiscoverySchema>
 
-export const cloudBillingDiscoverySchema = v.object({ portalURL: urlSchema })
-export type CloudBillingDiscovery = v.InferOutput<typeof cloudBillingDiscoverySchema>
-
 export const createServicesTokenSchema = v.object({ workspaceId: v.pipe(v.string(), v.uuid()) })
 export type CreateServicesTokenInput = v.InferOutput<typeof createServicesTokenSchema>
 
@@ -61,10 +60,9 @@ export const servicesTokenClaimsSchema = v.object({
   workspaceId: v.pipe(v.string(), v.uuid()),
   /**
    * The account whose credits the request spends: the workspace's owner, whose allowance every
-   * workspace they own shares. Absent from tokens a Cloud from before account plans issued, which
-   * a relay takes as the workspace's own allowance, as such a Cloud meant.
+   * workspace they own shares.
    */
-  accountId: v.optional(v.pipe(v.string(), v.minLength(1))),
+  accountId: v.pipe(v.string(), v.minLength(1)),
   /** Credits the owner's plan grants each month; `null` when Cloud sets no allowance. */
   monthlyCreditAllowance: v.nullable(creditsSchema),
   iat: v.pipe(v.number(), v.integer()),
@@ -201,14 +199,6 @@ export const SERVICE_ERROR_STATUS = {
   capability_unavailable: 404,
   rate_limited: 429
 } as const satisfies Record<ServiceErrorCode, number>
-
-/** A route's input, and the JSON it answers with a 200. */
-type JSONRoute<
-  Method extends string,
-  Path extends string,
-  Input extends BlankInput,
-  Output
-> = ToSchema<Method, Path, Input, TypedResponse<Output, 200, 'json'>>
 
 /**
  * Every route a service answers besides chat completions, which OpenAI-compatible clients call

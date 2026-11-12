@@ -1,5 +1,6 @@
 import type {
   BlurEffectNormal,
+  BlurEffectProgressive,
   DropShadowEffect,
   Effect as PluginEffect,
   GlassEffect,
@@ -55,6 +56,13 @@ const glassDepthSchema = v.pipe(
   v.transform((depth) => Math.min(Math.max(depth, GLASS_DEPTH.min), GLASS_DEPTH.max))
 )
 
+// Figma keeps a progressive blur's start radius above 100 at 100; its end radius has no limit.
+const MAX_START_RADIUS = 100
+const startRadiusSchema = v.pipe(
+  nonNegativeSchema,
+  v.transform((radius) => Math.min(radius, MAX_START_RADIUS))
+)
+
 const colorSchema = v.strictObject({ r: unitSchema, g: unitSchema, b: unitSchema, a: unitSchema })
 const vectorSchema = v.strictObject({ x: finiteSchema, y: finiteSchema })
 const aliasSchema = v.strictObject({ type: v.literal('VARIABLE_ALIAS'), id: v.string() })
@@ -79,6 +87,13 @@ const shadowEntries = {
   boundVariables: shadowBindingsSchema
 }
 
+const blurEntries = {
+  type: v.picklist(['LAYER_BLUR', 'BACKGROUND_BLUR']),
+  radius: nonNegativeSchema,
+  visible: v.boolean(),
+  boundVariables: blurBindingsSchema
+}
+
 const effectSchema = v.variant('type', [
   v.strictObject({
     type: v.literal('DROP_SHADOW'),
@@ -86,13 +101,16 @@ const effectSchema = v.variant('type', [
     showShadowBehindNode: v.optional(v.boolean())
   }),
   v.strictObject({ type: v.literal('INNER_SHADOW'), ...shadowEntries }),
-  v.strictObject({
-    type: v.picklist(['LAYER_BLUR', 'BACKGROUND_BLUR']),
-    radius: nonNegativeSchema,
-    visible: v.boolean(),
-    blurType: v.optional(v.literal('NORMAL'), 'NORMAL'),
-    boundVariables: blurBindingsSchema
-  }),
+  v.variant('blurType', [
+    v.strictObject({ ...blurEntries, blurType: v.optional(v.literal('NORMAL'), 'NORMAL') }),
+    v.strictObject({
+      ...blurEntries,
+      blurType: v.literal('PROGRESSIVE'),
+      startRadius: startRadiusSchema,
+      startOffset: vectorSchema,
+      endOffset: vectorSchema
+    })
+  ]),
   v.strictObject({
     type: v.literal('GLASS'),
     visible: v.boolean(),
@@ -117,9 +135,6 @@ function unsupportedEffectReason(effect: unknown): { message: string; field: str
   if (typeof type === 'string' && UNSUPPORTED_EFFECT_TYPES.has(type)) {
     return { message: `${type} effects are not supported`, field: 'type' }
   }
-  if (v.is(v.object({ blurType: v.literal('PROGRESSIVE') }), effect)) {
-    return { message: 'Progressive blur is not supported', field: 'blurType' }
-  }
   return null
 }
 
@@ -133,7 +148,12 @@ function unsupportedEffect(value: unknown): string | null {
 }
 
 /** The effects OpenPencil models, in the shapes Figma's plugin typings give them. */
-type ModelledPluginEffect = DropShadowEffect | InnerShadowEffect | BlurEffectNormal | GlassEffect
+type ModelledPluginEffect =
+  | DropShadowEffect
+  | InnerShadowEffect
+  | BlurEffectNormal
+  | BlurEffectProgressive
+  | GlassEffect
 
 function isPluginShadow(
   effect: ModelledPluginEffect
@@ -142,11 +162,14 @@ function isPluginShadow(
 }
 
 function modelledPluginEffect(method: string, effect: PluginEffect): ModelledPluginEffect {
-  if (effect.type === 'DROP_SHADOW' || effect.type === 'INNER_SHADOW' || effect.type === 'GLASS') {
+  if (
+    effect.type === 'DROP_SHADOW' ||
+    effect.type === 'INNER_SHADOW' ||
+    effect.type === 'GLASS' ||
+    effect.type === 'LAYER_BLUR' ||
+    effect.type === 'BACKGROUND_BLUR'
+  ) {
     return effect
-  }
-  if (effect.type === 'LAYER_BLUR' || effect.type === 'BACKGROUND_BLUR') {
-    if (effect.blurType !== 'PROGRESSIVE') return effect
   }
   const reason = unsupportedEffectReason(effect)
   throw new Error(`in ${method}: ${reason?.message ?? `${effect.type} effects are not supported`}`)
@@ -180,6 +203,18 @@ export function boundEffectCopy(
     }
   }
   if (!isPluginShadow(modelled)) {
+    if (modelled.blurType === 'PROGRESSIVE') {
+      return {
+        type: modelled.type,
+        visible,
+        radius,
+        boundVariables,
+        blurType: 'PROGRESSIVE',
+        startRadius: modelled.startRadius,
+        startOffset: { ...modelled.startOffset },
+        endOffset: { ...modelled.endOffset }
+      }
+    }
     return { type: modelled.type, visible, radius, boundVariables, blurType: 'NORMAL' }
   }
   const shadow = {
@@ -271,7 +306,16 @@ function toSceneEffect(effect: FigmaEffect): Effect {
     offset: { x: 0, y: 0 },
     radius: effect.radius,
     spread: 0,
-    visible: effect.visible
+    visible: effect.visible,
+    ...(effect.blurType === 'PROGRESSIVE'
+      ? {
+          progressive: {
+            startRadius: effect.startRadius,
+            startOffset: { ...effect.startOffset },
+            endOffset: { ...effect.endOffset }
+          }
+        }
+      : {})
   }
 }
 
@@ -302,13 +346,22 @@ export function toFigmaEffect(effect: Effect, bindings: FigmaEffectBindings = {}
     effect.type === 'FOREGROUND_BLUR' ||
     effect.type === 'BACKGROUND_BLUR'
   ) {
-    return {
+    const blur = {
       // `.fig` files call a layer blur FOREGROUND_BLUR; the plugin API calls it LAYER_BLUR.
-      type: effect.type === 'BACKGROUND_BLUR' ? 'BACKGROUND_BLUR' : 'LAYER_BLUR',
+      type:
+        effect.type === 'BACKGROUND_BLUR' ? ('BACKGROUND_BLUR' as const) : ('LAYER_BLUR' as const),
       visible: effect.visible,
       radius: effect.radius,
-      boundVariables: bindings.radius ? { radius: bindings.radius } : {},
-      blurType: 'NORMAL'
+      boundVariables: bindings.radius ? { radius: bindings.radius } : {}
+    }
+    if (!effect.progressive) return { ...blur, blurType: 'NORMAL' }
+    const { startRadius, startOffset, endOffset } = effect.progressive
+    return {
+      ...blur,
+      blurType: 'PROGRESSIVE',
+      startRadius,
+      startOffset: { ...startOffset },
+      endOffset: { ...endOffset }
     }
   }
   const shadow = {

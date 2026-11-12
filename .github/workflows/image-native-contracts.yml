@@ -40,5 +40,6 @@ jobs:
           tags: |
             ghcr.io/open-pencil/native-contracts-ci:ubuntu-24.04
             ghcr.io/open-pencil/native-contracts-ci:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # No layer cache: each build installs the packages current that day, which is how a rebuild
+          # brings their security updates.
+          no-cache: true

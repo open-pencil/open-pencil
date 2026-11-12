@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import type { GradientTransform } from '@open-pencil/scene-graph'
 import {
   DEFAULT_GRADIENT_TRANSFORM,
   IDENTITY_GRADIENT_TRANSFORM,
@@ -9,7 +10,6 @@ import {
   invertGradientTransform,
   linearGradientTransform
 } from '@open-pencil/scene-graph/gradient'
-import type { GradientTransform } from '@open-pencil/scene-graph'
 
 function values(t: GradientTransform) {
   return [t.m00, t.m01, t.m02, t.m10, t.m11, t.m12].map((v) => +v.toFixed(6) + 0)
@@ -26,7 +26,10 @@ describe('gradient paints in Figma convention', () => {
     expect(values(linearGradientTransform({ x: 0.5, y: 0 }, { x: 0.5, y: 1 }))).toEqual(
       values(DEFAULT_GRADIENT_TRANSFORM)
     )
-    expect(gradientPoint(DEFAULT_GRADIENT_TRANSFORM, { x: 0.5, y: 0.5 })).toEqual({ x: 0.5, y: 0.5 })
+    expect(gradientPoint(DEFAULT_GRADIENT_TRANSFORM, { x: 0.5, y: 0.5 })).toEqual({
+      x: 0.5,
+      y: 0.5
+    })
   })
 
   test('a transform and its inverse undo each other', () => {
@@ -36,7 +39,11 @@ describe('gradient paints in Figma convention', () => {
   })
 
   test('an elliptical gradient is centred where its centre was given', () => {
-    const t = ellipticalGradientTransform({ x: 0.35, y: 0.4 }, { x: 0.6, y: 0.4 }, { x: 0.35, y: 0.73 })
+    const t = ellipticalGradientTransform(
+      { x: 0.35, y: 0.4 },
+      { x: 0.6, y: 0.4 },
+      { x: 0.35, y: 0.73 }
+    )
     const center = gradientPoint(t, { x: 0.5, y: 0.5 })
     expect(center.x).toBeCloseTo(0.35, 6)
     expect(center.y).toBeCloseTo(0.4, 6)

@@ -55,7 +55,7 @@ test('a value edit leaves layers bound to other variables as saved', () => {
   expect(avatar.width).toBe(24)
 })
 
-test('setting a page\'s mode resolves every layer on it bound to the collection', () => {
+test("setting a page's mode resolves every layer on it bound to the collection", () => {
   const { editor, collection, avatar } = drifted()
 
   editor.updateNodeWithUndo(editor.graph.getPages()[0].id, {

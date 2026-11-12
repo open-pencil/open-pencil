@@ -9,6 +9,7 @@ import {
   type SceneNode
 } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
+import { repoPath } from '@open-pencil/test-support/paths'
 
 import { buildParagraph, textVerticalOffset } from '#core/canvas/text'
 import { savedTextInk } from '#core/canvas/text/ink'
@@ -16,7 +17,6 @@ import { laidOutGlyphs } from '#core/canvas/text/placed'
 import { shownText } from '#core/text/case'
 import { fontManager } from '#core/text/font/manager'
 import { withTextInkMeasurer } from '#core/text/ink'
-import { repoPath } from '@open-pencil/test-support/paths'
 
 const SIZE = 128
 const FONT_SIZE = 20
@@ -76,7 +76,12 @@ function savedGlyph(placement: Partial<DerivedTextGlyph> = {}): DerivedTextGlyph
   }
 }
 
-const black = { type: 'SOLID' as const, color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }
+const black = {
+  type: 'SOLID' as const,
+  color: { r: 0, g: 0, b: 0, a: 1 },
+  opacity: 1,
+  visible: true
+}
 
 const trimmedWithoutItsFont: Partial<SceneNode> = {
   text: 'A',

@@ -1,0 +1,1 @@
+- OpenPencil Cloud accounts can make personal access tokens under Access tokens in their account pages, for scripts and CI: sent as `Authorization: Bearer <token>`, a token reads and saves documents as its account but never changes how it signs in, makes other tokens, or reaches administration (#2014).

@@ -7,16 +7,33 @@ export type StorageReconciliation = {
   localIdsToPurge: string[]
 }
 
-/** Merge a successful remote listing with pending local work without reviving tombstones. */
+/**
+ * Merge a successful remote listing with pending local work without reviving tombstones, except
+ * for a document restored on the server since this device deleted it.
+ */
 export function reconcileStorageDocuments(
   local: LocalCanvasMeta[],
   remote: StorageDocument[]
 ): StorageReconciliation {
   const localById = new Map(local.map((metadata) => [metadata.id, metadata]))
+  const remoteById = new Map(remote.map((document) => [document.id, document]))
+  const remoteIds = new Set(remoteById.keys())
+  // Restoring a deleted document, from Trash or by an administrator, marks it changed after this
+  // device deleted it; a listing fetched before the deletion went through still shows it older.
+  const restored = (metadata: LocalCanvasMeta) => {
+    const listed = remoteById.get(metadata.id)
+    return (
+      metadata.tombstoned &&
+      metadata.syncStatus === 'synced' &&
+      listed !== undefined &&
+      listed.updatedAt > metadata.updatedAt
+    )
+  }
   const tombstonedIds = new Set(
-    local.filter((metadata) => metadata.tombstoned).map((metadata) => metadata.id)
+    local
+      .filter((metadata) => metadata.tombstoned && !restored(metadata))
+      .map((metadata) => metadata.id)
   )
-  const remoteIds = new Set(remote.map((document) => document.id))
   const merged = new Map(
     remote
       .filter((document) => !tombstonedIds.has(document.id))
@@ -47,7 +64,9 @@ export function reconcileStorageDocuments(
     localIdsToPurge: local
       .filter(
         (metadata) =>
-          (metadata.tombstoned && !remoteIds.has(metadata.id)) || deletedRemotely(metadata)
+          (metadata.tombstoned && !remoteIds.has(metadata.id)) ||
+          restored(metadata) ||
+          deletedRemotely(metadata)
       )
       .map((metadata) => metadata.id)
   }

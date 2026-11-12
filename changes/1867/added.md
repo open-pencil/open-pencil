@@ -1,1 +1,0 @@
-- Published libraries carry the file's styles and variable collections beside its components, and a thumbnail for each component. Inserting or updating a library component brings the styles and variables it uses into the document as read-only library copies, so its tokens keep working (#1471, #1867).

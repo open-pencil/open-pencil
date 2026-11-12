@@ -38,11 +38,18 @@ import {
   workspaceRole
 } from '#cloud/server/documents/repository'
 import { documentSummary, getDocumentSummaryRow } from '#cloud/server/documents/summary'
+import {
+  createDocumentTrash,
+  DEFAULT_TRASH_OPTIONS,
+  type DocumentTrashOptions
+} from '#cloud/server/documents/trash'
 import type { CreateDocumentUploadResult } from '#cloud/server/documents/types'
 import { announceVersions, recordCheckpoint } from '#cloud/server/documents/versions/checkpoint'
+import type { CloudErrorReporter } from '#cloud/server/errors'
 import type { ObjectStore, StoredObject } from '#cloud/server/objects'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
-import { createStorageQuotaService } from '#cloud/server/quota'
+import { storageLimitReached } from '#cloud/server/policy/storage'
+import { createStorageQuotaService, StorageQuotaExceededError } from '#cloud/server/quota'
 import { isUndefined, limitAsync, omitBy, uniq, uniqBy } from 'es-toolkit'
 import type { Kysely, Transaction } from 'kysely'
 
@@ -56,6 +63,10 @@ export type DocumentServiceOptions = {
   technicalMaximumUploadBytes?: number
   /** Called once a save adds a checkpoint to the document's history. */
   onVersionsChanged?: (documentId: string) => void
+  /** How long Trash keeps documents, the grace of one deleted forever, and the cleanup lease. */
+  trash?: DocumentTrashOptions
+  /** Where cleanup the service runs itself, such as of expired uploads, reports a failure. */
+  reportError?: CloudErrorReporter
 }
 
 /** Whether the stored object is the file the upload declared, which the commit names again. */
@@ -75,9 +86,21 @@ export function createDocumentService(
   objects: ObjectStore,
   options: DocumentServiceOptions = {}
 ) {
-  const cleanup = createUploadCleanupService(database, objects)
+  const cleanup = createUploadCleanupService(database, objects, options.reportError)
   const quota = createStorageQuotaService(database)
   const images = createDocumentImages(database, objects, quota)
+  const trash = createDocumentTrash(database, objects, options.trash ?? DEFAULT_TRASH_OPTIONS)
+
+  /**
+   * Refuses to land an upload once its document's owner holds their whole storage allowance, as
+   * when their plan shrank after the upload was offered; an upload already landed is not landed
+   * again, so retrying one stays as it was.
+   */
+  async function refuseAtStorageLimit(documentId: string): Promise<void> {
+    if (await storageLimitReached(database, options.policy, { documentId })) {
+      throw new StorageQuotaExceededError('The owner holds their whole storage allowance')
+    }
+  }
 
   /**
    * Makes a committed upload the document's current revision, unless it already was, and records
@@ -316,6 +339,7 @@ export function createDocumentService(
     if (!canEditDocument(access)) throw new DocumentForbiddenError()
     if (input.checksum !== upload.checksum) throw new UploadInvalidError()
     if (upload.status !== 'committed') {
+      await refuseAtStorageLimit(upload.documentId)
       const checkpointed =
         upload.kind === 'image'
           ? await finalizeUpload(upload, input.multipart, (stored) =>
@@ -361,6 +385,9 @@ export function createDocumentService(
     listShared(userId: string): Promise<SharedDocument[]> {
       return listSharedDocuments(database, userId)
     },
+
+    /** Trash: list what the person may restore, restore it, or delete it for good. */
+    trash,
 
     async usage(userId: string, workspaceId: string) {
       const role = await workspaceRole(database, userId, workspaceId)
@@ -423,7 +450,7 @@ export function createDocumentService(
       }
       await database
         .updateTable('document')
-        .set({ deletedAt: new Date() })
+        .set({ deletedAt: new Date(), deletedBy: userId })
         .where('id', '=', documentId)
         .where('deletedAt', 'is', null)
         .execute()
@@ -437,6 +464,9 @@ export function createDocumentService(
       const role = await workspaceRole(database, userId, workspaceId)
       if (!role) throw new DocumentNotFoundError()
       if (!workspaceRoleCan(role, { document: ['create'] })) throw new DocumentForbiddenError()
+      if (await storageLimitReached(database, options.policy, { workspaceId })) {
+        throw new StorageQuotaExceededError('The owner holds their whole storage allowance')
+      }
       const documentId = input.id ?? crypto.randomUUID()
       await insertDocument(database, {
         id: documentId,
@@ -575,6 +605,9 @@ export function createDocumentService(
       }
       for (const commit of uploads) {
         if (rows.get(commit.uploadId)?.checksum !== commit.checksum) throw new UploadInvalidError()
+      }
+      if ([...rows.values()].some((row) => row.status !== 'committed')) {
+        await refuseAtStorageLimit(documentId)
       }
       // Each image is its own object, so a few are checked and landed at once, each once however
       // often the request names it.

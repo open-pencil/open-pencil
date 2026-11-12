@@ -9,6 +9,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { asDouble } from '@open-pencil/test-support/doubles'
 
+import { forgetAgentChat, startAgentRun } from '@/app/ai/reply/run'
 import { runEditorTool } from '@/app/ai/tools/runner'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
@@ -37,7 +38,9 @@ function setupGlobals() {
     removeEventListener: vi.fn()
   })
   globalThis.document = asDouble<Document>({
-    fonts: { add: vi.fn(), ready: Promise.resolve() }
+    fonts: { add: vi.fn(), ready: Promise.resolve() },
+    // An agent's cursor looks for the canvas it follows; nothing renders here.
+    querySelector: () => null
   })
   globalThis.requestAnimationFrame = window.requestAnimationFrame
   globalThis.cancelAnimationFrame = window.cancelAnimationFrame
@@ -107,6 +110,65 @@ describe('activate_document', () => {
   })
 })
 
+describe('graph commands', () => {
+  test('read the page page_id names rather than the first page', async () => {
+    const { store } = createTab()
+    const pageId = store.graph.addPage('Second').id
+    store.graph.createNode('FRAME', pageId, { name: 'On Second' })
+
+    const response = await settle(request('tree', { page_id: pageId }))
+
+    expect(response.result).toMatchObject({
+      page: { id: pageId, name: 'Second' },
+      children: [{ name: 'On Second' }]
+    })
+    expect(response.target).toMatchObject({ pageId })
+  })
+})
+
+describe("an ACP chat's tool calls", () => {
+  const chat = '0123456789abcdef0123456789abcdef'
+  afterEach(() => forgetAgentChat(chat))
+
+  test("go to the chat's document unless they name another", async () => {
+    // The agent's cursor glides over frames; here only where the calls land matters.
+    globalThis.requestAnimationFrame = () => 0
+    const chatTab = createTab()
+    startAgentRun(chatTab.store, chat)
+    const other = createTab()
+    expect(getActiveTabId()).toBe(other.id)
+    const shape = { type: 'RECTANGLE', x: 0, y: 0, width: 40, height: 20 }
+    const agent = { session: 'session-1', kind: 'acp', chat }
+
+    const inChat = await request('tool', { name: 'create_shape', args: shape, agent })
+    const named = await request('tool', {
+      document_id: other.id,
+      name: 'create_shape',
+      args: shape,
+      agent
+    })
+
+    expect(inChat.target?.documentId).toBe(chatTab.id)
+    expect(named.target?.documentId).toBe(other.id)
+    expect((await request('undo', { agent })).target?.documentId).toBe(chatTab.id)
+  })
+
+  test('fail once the chat is gone, unless they name a document', async () => {
+    const tab = createTab()
+    startAgentRun(tab.store, chat)
+    forgetAgentChat(chat)
+    const agent = { session: 'session-1', kind: 'acp', chat }
+
+    for (const named of [{}, { document_id: '' }]) {
+      await expect(
+        request('close_document', { ...named, agent, unsaved: 'discard' })
+      ).rejects.toThrow('The chat this agent works for is closed')
+    }
+    expect(getTabById(tab.id)).toBeDefined()
+    expect((await request('undo', { agent, document_id: tab.id })).target?.documentId).toBe(tab.id)
+  })
+})
+
 describe('undo and redo', () => {
   test('step through automation changes and report their labels', async () => {
     const tab = createTab()
@@ -114,16 +176,16 @@ describe('undo and redo', () => {
     const node = store.createShape('RECTANGLE', 0, 0, 100, 100)
     await request('tool', {
       document_id: tab.id,
-      name: 'set_opacity',
-      args: { id: node, value: 0.5 }
+      name: 'update_node',
+      args: { id: node, opacity: 0.5 }
     })
 
     const undone = await request('undo', { document_id: tab.id })
-    expect(undone.result).toEqual({ applied: true, label: 'Agent: set_opacity' })
+    expect(undone.result).toEqual({ applied: true, label: 'Agent: update_node' })
     expect(store.graph.getNode(node)?.opacity).toBe(1)
 
     const redone = await request('redo', { document_id: tab.id })
-    expect(redone.result).toEqual({ applied: true, label: 'Agent: set_opacity' })
+    expect(redone.result).toEqual({ applied: true, label: 'Agent: update_node' })
     expect(store.graph.getNode(node)?.opacity).toBe(0.5)
   })
 
@@ -151,8 +213,8 @@ describe('undo and redo', () => {
     const node = store.createShape('RECTANGLE', 0, 0, 100, 100)
     await request('tool', {
       document_id: tab.id,
-      name: 'set_opacity',
-      args: { id: node, value: 0.5 }
+      name: 'update_node',
+      args: { id: node, opacity: 0.5 }
     })
     store.setTool('PEN')
     store.penAddVertex(0, 0)
@@ -194,7 +256,7 @@ describe('undo and redo', () => {
     const keptNode = graph.getNode(kept)
     const pageId = tab.store.state.currentPageId
     const order = [...(graph.getNode(pageId)?.childIds ?? [])]
-    await request('tool', { document_id: tab.id, name: 'delete_node', args: { id: deleted } })
+    await request('tool', { document_id: tab.id, name: 'delete_nodes', args: { ids: [deleted] } })
 
     await request('undo', { document_id: tab.id })
     expect(graph.getNode(deleted)?.x).toBe(60)
@@ -510,7 +572,7 @@ describe('render JSX', () => {
   })
 })
 
-describe('close_file and save_file never prompt', () => {
+describe('close_document and save_document never prompt', () => {
   function dirtyTab() {
     const tab = createTab()
     tab.store.createShape('RECTANGLE', 0, 0, 10, 10)
@@ -520,24 +582,24 @@ describe('close_file and save_file never prompt', () => {
 
   test('closing unsaved changes fails unless the caller chooses', async () => {
     const tab = dirtyTab()
-    await expect(request('close_file', { document_id: tab.id })).rejects.toThrow(
+    await expect(request('close_document', { document_id: tab.id })).rejects.toThrow(
       'has unsaved changes'
     )
     expect(getTabById(tab.id)).toBeDefined()
 
-    const closed = await request('close_file', { document_id: tab.id, unsaved: 'discard' })
+    const closed = await request('close_document', { document_id: tab.id, unsaved: 'discard' })
     expect(closed.result).toEqual({ closed: true })
     expect(getTabById(tab.id)).toBeUndefined()
   })
 
   test('saving a document that has no file asks for a path instead of a dialog', async () => {
     const tab = dirtyTab()
-    await expect(request('save_file', { document_id: tab.id })).rejects.toThrow(
+    await expect(request('save_document', { document_id: tab.id })).rejects.toThrow(
       'has not been saved to a file yet'
     )
-    await expect(request('close_file', { document_id: tab.id, unsaved: 'save' })).rejects.toThrow(
-      'has not been saved to a file yet'
-    )
+    await expect(
+      request('close_document', { document_id: tab.id, unsaved: 'save' })
+    ).rejects.toThrow('has not been saved to a file yet')
     expect(getTabById(tab.id)).toBeDefined()
   })
 
@@ -545,7 +607,7 @@ describe('close_file and save_file never prompt', () => {
     const tab = dirtyTab()
     // Outside Tauri a path cannot be written, so the save fails.
     await expect(
-      request('save_file', { document_id: tab.id, path: '/tmp/never-written.fig' })
+      request('save_document', { document_id: tab.id, path: '/tmp/never-written.fig' })
     ).rejects.toThrow('Could not save')
     expect(tab.store.state.documentName).toBe('Untitled')
     expect(tab.store.getDocumentFilePath()).toBeNull()
@@ -576,7 +638,7 @@ describe('close_file and save_file never prompt', () => {
     const commands = recordNativeFs()
     const tab = dirtyTab()
     await expect(
-      request('save_file', { document_id: tab.id, path: '/tmp/nested/never-written.pen' })
+      request('save_document', { document_id: tab.id, path: '/tmp/nested/never-written.pen' })
     ).rejects.toThrow('"/tmp/nested/never-written.fig"')
     expect(fsWrites(commands)).toEqual([])
     expect(tab.store.getDocumentFilePath()).toBeNull()
@@ -586,7 +648,7 @@ describe('close_file and save_file never prompt', () => {
   test('a native save to a .fig path creates the directory and writes the file', async () => {
     const commands = recordNativeFs()
     const tab = dirtyTab()
-    await request('save_file', { document_id: tab.id, path: '/tmp/nested/saved.fig' })
+    await request('save_document', { document_id: tab.id, path: '/tmp/nested/saved.fig' })
     expect(fsWrites(commands)).toEqual(['plugin:fs|mkdir', 'plugin:fs|write_file'])
     expect(tab.store.hasUnsavedChanges()).toBe(false)
   })
@@ -596,7 +658,9 @@ describe('close_file and save_file never prompt', () => {
     const tab = dirtyTab()
     tab.store.setPlannedFilePath('/tmp/notes.pen')
     expect(tab.store.hasWritableSource()).toBe(true)
-    await expect(request('save_file', { document_id: tab.id })).rejects.toThrow('"/tmp/notes.fig"')
+    await expect(request('save_document', { document_id: tab.id })).rejects.toThrow(
+      '"/tmp/notes.fig"'
+    )
     expect(fsWrites(commands)).toEqual([])
     expect(tab.store.getDocumentFilePath()).toBe('/tmp/notes.pen')
     expect(tab.store.hasUnsavedChanges()).toBe(true)
@@ -606,9 +670,9 @@ describe('close_file and save_file never prompt', () => {
     const commands = recordNativeFs()
     const tab = dirtyTab()
     tab.store.setPlannedFilePath('/tmp/notes')
-    await expect(request('close_file', { document_id: tab.id, unsaved: 'save' })).rejects.toThrow(
-      '"/tmp/notes.fig"'
-    )
+    await expect(
+      request('close_document', { document_id: tab.id, unsaved: 'save' })
+    ).rejects.toThrow('"/tmp/notes.fig"')
     expect(fsWrites(commands)).toEqual([])
     expect(getTabById(tab.id)).toBeDefined()
     expect(tab.store.hasUnsavedChanges()).toBe(true)
@@ -620,11 +684,11 @@ describe('close_file and save_file never prompt', () => {
     tab.store.setDocumentSource('notes.pen', 'pen', undefined, '/tmp/designs/notes.pen')
     tab.store.createShape('RECTANGLE', 0, 0, 10, 10)
     expect(tab.store.hasWritableSource()).toBe(false)
-    await expect(request('save_file', { document_id: tab.id })).rejects.toThrow(
+    await expect(request('save_document', { document_id: tab.id })).rejects.toThrow(
       '"/tmp/designs/notes.fig"'
     )
     expect(fsWrites(commands)).toEqual([])
-    await request('save_file', { document_id: tab.id, path: '/tmp/designs/notes.fig' })
+    await request('save_document', { document_id: tab.id, path: '/tmp/designs/notes.fig' })
     expect(tab.store.hasUnsavedChanges()).toBe(false)
   })
 
@@ -635,10 +699,7 @@ describe('close_file and save_file never prompt', () => {
       getFile: async () => asDouble<File>({ lastModified: 0 }),
       createWritable: async () => {
         opened.count += 1
-        return asDouble<FileSystemWritableFileStream>({
-          write: async () => undefined,
-          close: async () => undefined
-        })
+        return asDouble<FileSystemWritableFileStream>(new WritableStream<Uint8Array>())
       }
     })
     const tab = createTab()
@@ -651,14 +712,16 @@ describe('close_file and save_file never prompt', () => {
     const { tab, opened } = tabWithHandle('notes.pen')
     expect(tab.store.getDocumentFilePath()).toBeNull()
     expect(tab.store.hasWritableSource()).toBe(true)
-    await expect(request('save_file', { document_id: tab.id })).rejects.toThrow()
+    await expect(request('save_document', { document_id: tab.id })).rejects.toThrow()
     expect(opened.count).toBe(0)
     expect(tab.store.hasUnsavedChanges()).toBe(true)
   })
 
   test('closing with save over a .pen browser handle does not open it for writing', async () => {
     const { tab, opened } = tabWithHandle('notes.pen')
-    await expect(request('close_file', { document_id: tab.id, unsaved: 'save' })).rejects.toThrow()
+    await expect(
+      request('close_document', { document_id: tab.id, unsaved: 'save' })
+    ).rejects.toThrow()
     expect(opened.count).toBe(0)
     expect(getTabById(tab.id)).toBeDefined()
     expect(tab.store.hasUnsavedChanges()).toBe(true)
@@ -666,14 +729,14 @@ describe('close_file and save_file never prompt', () => {
 
   test('saving over a .fig browser handle still writes', async () => {
     const { tab, opened } = tabWithHandle('notes.fig')
-    await request('save_file', { document_id: tab.id })
+    await request('save_document', { document_id: tab.id })
     expect(opened.count).toBe(1)
     expect(tab.store.hasUnsavedChanges()).toBe(false)
   })
 
   /** Save As installs this handle, then the first open fails and later opens write. */
   function pickedHandle(name: string) {
-    const calls = { createWritable: 0, write: 0 }
+    const calls = { createWritable: 0, written: 0 }
     let fail = true
     const handle = asDouble<FileSystemFileHandle>({
       kind: 'file',
@@ -685,12 +748,13 @@ describe('close_file and save_file never prompt', () => {
           fail = false
           throw new Error('disk full')
         }
-        return asDouble<FileSystemWritableFileStream>({
-          write: async () => {
-            calls.write += 1
-          },
-          close: async () => undefined
-        })
+        return asDouble<FileSystemWritableFileStream>(
+          new WritableStream<Uint8Array>({
+            close: () => {
+              calls.written += 1
+            }
+          })
+        )
       }
     })
     return { handle, calls }
@@ -714,8 +778,8 @@ describe('close_file and save_file never prompt', () => {
     tab.store.createShape('RECTANGLE', 0, 0, 10, 10)
     const picked = await failSaveAs(tab, 'copy.fig')
     expect(tab.store.getSourceIdentity().handle?.name).toBe('notes.pen')
-    await request('save_file', { document_id: tab.id })
-    expect(picked.calls).toEqual({ createWritable: 2, write: 1 })
+    await request('save_document', { document_id: tab.id })
+    expect(picked.calls).toEqual({ createWritable: 2, written: 1 })
     expect(tab.store.hasUnsavedChanges()).toBe(false)
   })
 
@@ -730,8 +794,8 @@ describe('close_file and save_file never prompt', () => {
     tab.store.createShape('RECTANGLE', 0, 0, 10, 10)
     const picked = await failSaveAs(tab, 'notes.pen')
     expect(tab.store.getSourceIdentity().handle?.name).toBe('notes.fig')
-    await expect(request('save_file', { document_id: tab.id })).rejects.toThrow()
-    expect(picked.calls).toEqual({ createWritable: 1, write: 0 })
+    await expect(request('save_document', { document_id: tab.id })).rejects.toThrow()
+    expect(picked.calls).toEqual({ createWritable: 1, written: 0 })
     expect(tab.store.hasUnsavedChanges()).toBe(true)
   })
 })
@@ -753,7 +817,7 @@ describe('file paths in a browser go through the MCP server', () => {
   test('saving to a path hands the server a copy, saved as a download is', async () => {
     const tab = dirtyTab()
     const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}'))
-    await requestThroughServer('save_file', { document_id: tab.id, path: '/root/copy.fig' })
+    await requestThroughServer('save_document', { document_id: tab.id, path: '/root/copy.fig' })
 
     const [url, init] = fetch.mock.calls[0]
     expect(String(url)).toBe('http://mcp.test/files//root/copy.fig')
@@ -768,7 +832,7 @@ describe('file paths in a browser go through the MCP server', () => {
     const tab = dirtyTab()
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('outside', { status: 400 }))
     await expect(
-      requestThroughServer('save_file', { document_id: tab.id, path: '/elsewhere/copy.fig' })
+      requestThroughServer('save_document', { document_id: tab.id, path: '/elsewhere/copy.fig' })
     ).rejects.toThrow('Could not write /elsewhere/copy.fig: outside')
     expect(tab.store.hasUnsavedChanges()).toBe(true)
   })
@@ -777,7 +841,7 @@ describe('file paths in a browser go through the MCP server', () => {
     const tab = dirtyTab()
     const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}'))
     await expect(
-      requestThroughServer('save_file', {
+      requestThroughServer('save_document', {
         document_id: tab.id,
         path: '/root/kuan-2d-framework.pen'
       })
@@ -791,13 +855,13 @@ describe('file paths in a browser go through the MCP server', () => {
     const pen = dirtyTab()
     const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}'))
     await expect(
-      requestThroughServer('save_file', { document_id: pen.id, path: '/root/copy.PEN' })
+      requestThroughServer('save_document', { document_id: pen.id, path: '/root/copy.PEN' })
     ).rejects.toThrow('"/root/copy.fig"')
     expect(fetch).not.toHaveBeenCalled()
     expect(pen.store.hasUnsavedChanges()).toBe(true)
 
     const fig = dirtyTab()
-    await requestThroughServer('save_file', { document_id: fig.id, path: '/root/copy.FIG' })
+    await requestThroughServer('save_document', { document_id: fig.id, path: '/root/copy.FIG' })
     expect(String(fetch.mock.calls[0]?.[0])).toBe('http://mcp.test/files//root/copy.FIG')
     expect(fig.store.hasUnsavedChanges()).toBe(false)
   })
@@ -806,13 +870,13 @@ describe('file paths in a browser go through the MCP server', () => {
     const board = dirtyTab()
     board.store.setDocumentKind('board')
     const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}'))
-    await requestThroughServer('save_file', { document_id: board.id, path: '/root/board.jam' })
+    await requestThroughServer('save_document', { document_id: board.id, path: '/root/board.jam' })
     expect(String(fetch.mock.calls[0]?.[0])).toBe('http://mcp.test/files//root/board.jam')
     expect(board.store.hasUnsavedChanges()).toBe(false)
 
     const design = dirtyTab()
     await expect(
-      requestThroughServer('save_file', { document_id: design.id, path: '/root/design.jam' })
+      requestThroughServer('save_document', { document_id: design.id, path: '/root/design.jam' })
     ).rejects.toThrow('"/root/design.fig"')
     expect(fetch.mock.calls).toHaveLength(1)
     expect(design.store.hasUnsavedChanges()).toBe(true)
@@ -822,7 +886,7 @@ describe('file paths in a browser go through the MCP server', () => {
     const tab = dirtyTab()
     const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}'))
     await expect(
-      requestThroughServer('close_file', {
+      requestThroughServer('close_document', {
         document_id: tab.id,
         unsaved: 'save',
         path: '/root/copy.pen'
@@ -837,7 +901,7 @@ describe('file paths in a browser go through the MCP server', () => {
     const before = getTabsSnapshot().map((tab) => tab.id)
     const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}'))
     await expect(
-      requestThroughServer('new_document', { path: '/root/fresh.pen' })
+      requestThroughServer('create_document', { path: '/root/fresh.pen' })
     ).rejects.toThrow()
     expect(fetch).not.toHaveBeenCalled()
     expect(getTabsSnapshot().map((tab) => tab.id)).toEqual(before)
@@ -846,7 +910,7 @@ describe('file paths in a browser go through the MCP server', () => {
   test('opening a path fetches it from the server with the token', async () => {
     const bytes = new Uint8Array(await Bun.file(testPath('fixtures', 'slots.fig')).arrayBuffer())
     const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(bytes))
-    await settle(requestThroughServer('open_file', { path: '/root/my #1 slots.fig' }))
+    await settle(requestThroughServer('open_document', { path: '/root/my #1 slots.fig' }))
 
     const [url, init] = fetch.mock.calls[0]
     // A reserved character stays in the path rather than starting a fragment.
@@ -856,7 +920,7 @@ describe('file paths in a browser go through the MCP server', () => {
   })
 })
 
-describe('list_recent_files', () => {
+describe('list_recent_documents', () => {
   let previousPreferences: typeof appPreferences.value
 
   beforeEach(() => {
@@ -885,7 +949,7 @@ describe('list_recent_files', () => {
     ]
     recentFilesLimit.value = 3
 
-    const response = await request('list_recent_files')
+    const response = await request('list_recent_documents')
 
     expect(response.result).toEqual({
       files: [

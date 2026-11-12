@@ -20,6 +20,13 @@ export {
   type EnrollmentStatus
 } from '#cloud/admin'
 export {
+  createBillingRoutes,
+  createBillingTokenService,
+  type BillingRouteEnvironment,
+  type BillingTokenService,
+  type BillingTokenServiceOptions
+} from '#cloud/server/billing'
+export {
   ServicesNotEntitledError,
   createServicesRoutes,
   createServicesTokenService,
@@ -193,15 +200,21 @@ export {
 export {
   CLOUD_ERROR_SOURCES,
   cloudErrorHandler,
+  createLoggingErrorReporter,
   reportCloudError,
   type CloudErrorContext,
   type CloudErrorReporter,
-  type CloudErrorSource,
-  createPostHogErrorReporter,
-  type ErrorReportContext,
-  type ErrorReporter,
-  type PostHogErrorReporterOptions
+  type CloudErrorSource
 } from './errors'
+export {
+  cloudRequestId,
+  logCloud,
+  loggedError,
+  writeJSONLine,
+  type CloudLogLine,
+  type CloudLogWriter,
+  type ForwardedRequestId
+} from './logging'
 export {
   createInternalRoutes,
   createInternalService,

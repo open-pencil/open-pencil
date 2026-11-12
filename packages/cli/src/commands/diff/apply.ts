@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 
-import { appTargetOptions } from '#cli/app/target'
+import { pageOptions } from '#cli/app/target'
 import { dim, entity, fail, fmtList, ok, printError, warn } from '#cli/format'
 import { documentWriteOptions, writeFigDocument } from '#cli/headless'
 import { readTextSource } from '#cli/input'
@@ -59,14 +59,14 @@ export default defineCommand({
     'dry-run': { type: 'boolean', description: 'Validate and list changes without applying' },
     force: { type: 'boolean', description: 'Apply even when current values differ from the patch' },
     ...documentWriteOptions,
-    ...appTargetOptions,
+    ...pageOptions('current page'),
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
     const dryRun = !!args['dry-run']
     const { result, graph } = await runToolData(
       args.file,
-      'diff_apply',
+      'apply_patch',
       { patch: await readTextSource(args.patch), dryRun, force: !!args.force },
       args
     )

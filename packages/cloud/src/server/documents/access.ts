@@ -15,11 +15,15 @@ type DocumentAccessGrant = {
   can: (request: AccessRequest) => boolean
 }
 
-/** Everything that gives a user access to a document, each checked against its role table. */
+/**
+ * Everything that gives a user access to a document, each checked against its role table: a live
+ * document, or one in Trash.
+ */
 async function documentAccessGrants(
   database: AccessDatabase,
   userId: string,
-  documentId: string
+  documentId: string,
+  place: 'live' | 'trash' = 'live'
 ): Promise<DocumentAccessGrant[]> {
   const document = await database
     .selectFrom('document')
@@ -40,7 +44,7 @@ async function documentAccessGrants(
       'documentGrant.permission as grantPermission'
     ])
     .where('document.id', '=', documentId)
-    .where('document.deletedAt', 'is', null)
+    .where('document.deletedAt', place === 'live' ? 'is' : 'is not', null)
     // A document an administrator took down is out of reach for everyone, its owner included.
     .where('document.disabledAt', 'is', null)
     .executeTakeFirst()
@@ -96,4 +100,15 @@ export async function canDeleteDocument(
 ): Promise<boolean> {
   const grants = await documentAccessGrants(database, userId, documentId)
   return grantsAllow(grants, { document: ['delete'] })
+}
+
+/** Whether the user may restore the document from Trash, or delete it there for good. */
+export async function trashedDocumentAllows(
+  database: AccessDatabase,
+  userId: string,
+  documentId: string,
+  action: 'delete' | 'purge'
+): Promise<boolean> {
+  const grants = await documentAccessGrants(database, userId, documentId, 'trash')
+  return grantsAllow(grants, { document: [action] })
 }
