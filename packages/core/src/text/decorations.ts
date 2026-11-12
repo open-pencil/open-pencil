@@ -73,6 +73,7 @@ function sameDecoration(a: CharacterStyle, b: CharacterStyle): boolean {
   return (
     a.textDecoration === b.textDecoration &&
     a.textDecorationStyle === b.textDecorationStyle &&
+    a.textDecorationSkipInk === b.textDecorationSkipInk &&
     a.textDecorationThickness === b.textDecorationThickness &&
     a.textUnderlineOffset === b.textUnderlineOffset &&
     a.fontFamily === b.fontFamily &&

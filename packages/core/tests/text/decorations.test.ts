@@ -136,7 +136,7 @@ describe('decoration paints', () => {
   /** "Hey yo" at 10px a glyph, the two y's reaching below the baseline. */
   function decorated(
     textDecoration: 'UNDERLINE' | 'STRIKETHROUGH',
-    runs: [number, number, typeof red][]
+    runs: [number, number, typeof red, boolean?][]
   ) {
     const graph = new SceneGraph()
     const node = graph.createNode('TEXT', graph.getPages()[0].id, {
@@ -145,7 +145,11 @@ describe('decoration paints', () => {
       fontSize: 20,
       textDecoration,
       fills: [green],
-      styleRuns: runs.map(([start, length, fill]) => ({ start, length, style: { fills: [fill] } }))
+      styleRuns: runs.map(([start, length, fill, skipInk]) => ({
+        start,
+        length,
+        style: { fills: [fill], textDecorationSkipInk: skipInk }
+      }))
     })
     const glyphs: DecoratedGlyph[] = [...node.text].map((character, index) => ({
       x: index * 10,
@@ -184,5 +188,15 @@ describe('decoration paints', () => {
         [1, 5, blue]
       ])
     ).toEqual([blue.color])
+  })
+
+  test('keeps runs that skip ink differently apart, each breaking as it says', () => {
+    // "Hey" crosses no descender; " yo" breaks around its y.
+    expect(
+      decorated('UNDERLINE', [
+        [0, 3, red, false],
+        [3, 3, blue, true]
+      ])
+    ).toEqual([red.color, blue.color, blue.color])
   })
 })
