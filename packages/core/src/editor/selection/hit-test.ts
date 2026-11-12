@@ -1,5 +1,6 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 
+import type { SkiaRenderer } from '#core/canvas/renderer'
 import { LAYER_HIT_PAD } from '#core/constants'
 import type { EditorContext } from '#core/editor/types'
 import { resolveEditorProfile } from '#core/editor/views'
@@ -38,13 +39,45 @@ export function createSelectionHitTestActions(
   }
 
   /**
+   * A name drawn on one canvas. The scene canvas does not paint names, so each canvas is asked;
+   * the one that paints them is the one that hits. Names come before bodies, in draw order.
+   */
+  function labelOnRenderer(renderer: SkiaRenderer, cx: number, cy: number): SceneNode | null {
+    const preview = ctx.state.rotationPreview
+    const graph = ctx.graph
+    if (typeof renderer.hitTestComponentLabel === 'function') {
+      const component = renderer.hitTestComponentLabel(graph, cx, cy, preview)
+      if (component) return component
+    }
+    if (typeof renderer.hitTestSectionTitle === 'function') {
+      const section = renderer.hitTestSectionTitle(graph, cx, cy, preview)
+      if (section) return section
+    }
+    return typeof renderer.hitTestFrameTitle === 'function'
+      ? renderer.hitTestFrameTitle(graph, cx, cy, preview)
+      : null
+  }
+
+  /** A name above a frame, section, or component, which a click selects and a right-click must too. */
+  function labelAt(cx: number, cy: number): SceneNode | null {
+    for (const renderer of ctx.getRenderers()) {
+      const hit = labelOnRenderer(renderer, cx, cy)
+      if (hit) return hit
+    }
+    return null
+  }
+
+  /**
    * Selects what a right-click is over, as Figma does: the layer a click would select, a locked
    * one included, or else the frame or section whose empty area is under the point, which a click
-   * leaves for a marquee. The entered container follows the selection, as it does after a press.
+   * leaves for a marquee. A name above a frame, section, or component is part of that layer. The
+   * entered container follows the selection, as it does after a press.
    */
   function selectAtPoint(cx: number, cy: number) {
     const hit =
-      hitAt(cx, cy, false, true) ?? ctx.graph.hitTestOpenContainer(cx, cy, ctx.state.currentPageId)
+      labelAt(cx, cy) ??
+      hitAt(cx, cy, false, true) ??
+      ctx.graph.hitTestOpenContainer(cx, cy, ctx.state.currentPageId)
     if (hit) {
       if (!ctx.state.selectedIds.has(hit.id)) {
         select([hit.id])

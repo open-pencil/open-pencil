@@ -1,6 +1,49 @@
 import { describe, expect, test } from 'bun:test'
 
+import type { Font } from '@open-pencil/canvaskit'
 import { createEditor } from '@open-pencil/core'
+import type { RotationPreview } from '@open-pencil/core/geometry'
+import type { SceneGraph } from '@open-pencil/scene-graph'
+
+import {
+  hitTestComponentLabel,
+  hitTestFrameTitle,
+  hitTestSectionTitle
+} from '#core/canvas/labels/hit-test'
+
+/** Glyphs of a fixed width, enough for a name's hit box without loading a font. */
+const labelFont = {
+  getGlyphIDs(text: string) {
+    return Uint16Array.from([...text].map((_, index) => index))
+  },
+  getGlyphWidths(ids: Uint16Array) {
+    return new Float32Array(ids.length).fill(8)
+  }
+} as Font
+
+/**
+ * The canvas the editor hit-tests names through: the real label hit tests, at the editor's zoom.
+ * A stand-in CanvasKit is enough, because a right-click reads names from the renderer.
+ */
+function installLabelHits(editor: ReturnType<typeof createEditor>) {
+  const pageId = editor.state.currentPageId
+  const hit = (
+    testAt: typeof hitTestFrameTitle,
+    graph: SceneGraph,
+    x: number,
+    y: number,
+    preview?: RotationPreview | null
+  ) => testAt(graph, x, y, editor.state.zoom, pageId, labelFont, undefined, { preview })
+  editor.setCanvasKit(
+    {} as Parameters<typeof editor.setCanvasKit>[0],
+    {
+      hitTestFrameTitle: (graph, x, y, preview) => hit(hitTestFrameTitle, graph, x, y, preview),
+      hitTestSectionTitle: (graph, x, y, preview) => hit(hitTestSectionTitle, graph, x, y, preview),
+      hitTestComponentLabel: (graph, x, y, preview) =>
+        hit(hitTestComponentLabel, graph, x, y, preview)
+    } as Parameters<typeof editor.setCanvasKit>[1]
+  )
+}
 
 describe('editor hit testing', () => {
   test('finds layers from the page whatever container is entered', () => {
@@ -117,5 +160,51 @@ describe('editor hit testing', () => {
     expect(editor.hitTestAtPoint(100, 100)?.id).toBe(under.id)
     editor.selectAtPoint(100, 100)
     expect([...editor.state.selectedIds]).toEqual([locked.id])
+  })
+
+  // A name sits above its layer, outside the body a graph hit test sees. A click selects the
+  // layer; a right-click has to as well, or the context menu opens with nothing selected.
+  test('selectAtPoint on a frame, section, or component name selects that layer', () => {
+    const editor = createEditor()
+    const pageId = editor.state.currentPageId
+    const frame = editor.graph.createNode('FRAME', pageId, {
+      name: 'Frame',
+      x: 100,
+      y: 100,
+      width: 200,
+      height: 120
+    })
+    const section = editor.graph.createNode('SECTION', pageId, {
+      name: 'Section',
+      x: 400,
+      y: 100,
+      width: 200,
+      height: 160
+    })
+    const component = editor.graph.createNode('COMPONENT', pageId, {
+      name: 'Button',
+      x: 100,
+      y: 360,
+      width: 120,
+      height: 40
+    })
+    installLabelHits(editor)
+
+    editor.select([frame.id])
+    editor.selectAtPoint(108, 86)
+    expect([...editor.state.selectedIds]).toEqual([frame.id])
+
+    editor.clearSelection()
+    editor.selectAtPoint(108, 86)
+    expect([...editor.state.selectedIds]).toEqual([frame.id])
+
+    editor.selectAtPoint(410, 80)
+    expect([...editor.state.selectedIds]).toEqual([section.id])
+
+    editor.selectAtPoint(108, 348)
+    expect([...editor.state.selectedIds]).toEqual([component.id])
+
+    editor.selectAtPoint(800, 800)
+    expect([...editor.state.selectedIds]).toEqual([])
   })
 })

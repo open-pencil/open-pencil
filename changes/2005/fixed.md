@@ -1,0 +1,1 @@
+- Right-clicking a frame, section, or component name on the canvas selects that layer, so the context menu applies to it.
