@@ -75,6 +75,12 @@ export function createDocumentIOActions(
     fitCurrentPageToViewport,
     getDocumentFilePath: sourceState.getFilePath,
     getDocumentFileHandle: sourceState.getFileHandle,
+    /**
+     * Reads the file again, as when git replaced it under an open document. The promise is handed
+     * back: a caller that just replaced the file waits for the document to hold it again, rather
+     * than for the read to be somewhere in flight while it reports the work done.
+     */
+    reloadDocumentFromDisk: () => reloadFromDisk(),
     getSourceIdentity: sourceState.getSourceIdentity,
     getStorageBinding: sourceState.getStorageBinding,
     hasWritableSource: sourceState.hasWritableSource,

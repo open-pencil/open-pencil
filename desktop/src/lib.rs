@@ -1,13 +1,18 @@
 mod agents;
 mod capabilities;
+mod capture;
 mod credentials;
+mod exec;
 mod explicit_sync;
 mod files;
 mod fonts;
+mod git;
 mod icons;
 mod launch;
 mod menu;
 mod network;
+mod process;
+mod runner;
 mod system;
 
 use capabilities::DesktopCapabilities;
@@ -111,6 +116,14 @@ pub fn run() {
             proxy_http_request,
             cancel_http_request,
             files::recent::set_recent_files,
+            git::git_run,
+            git::git_version,
+            git::git_repository_root,
+            exec::run_program,
+            capture::capture_page,
+            runner::project_start,
+            runner::project_stop,
+            runner::project_run,
             set_native_menu_features,
             set_native_menu_disabled,
             native_menu_checked,
@@ -136,6 +149,8 @@ pub fn run() {
         .setup(move |app| {
             // Before the main window exists, so its first script can already spawn.
             capabilities.grant(app.handle())?;
+
+            app.manage(runner::RunnerState::default());
 
             // Panics from here on are kept for the next launch to offer as a report.
             if let Ok(directory) = app.path().app_data_dir() {
@@ -226,6 +241,9 @@ pub fn run() {
                 has_visible_windows: false,
                 ..
             } => show_main_window(_app),
+            // A dev server a project started is a child process: leaving it behind would hold
+            // its port until the machine is restarted.
+            tauri::RunEvent::Exit => runner::stop_all(_app),
             _ => {}
         });
 }

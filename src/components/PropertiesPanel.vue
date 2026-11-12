@@ -10,6 +10,7 @@ import { useAIChat } from '@/app/ai/chat/use'
 import { isVersionHistoryOpen } from '@/app/cloud/integration'
 import { useEditorStore } from '@/app/editor/active-store'
 import { countIssues } from '@/app/editor/design-check/issues'
+import { canRunHostProcesses } from '@/app/tauri/capabilities'
 import ChatPanel from '@/components/chat/ChatPanel.vue'
 import { CloudVersionHistory } from '@/components/cloud/integration'
 import propertiesTabsTheme from '@/theme/panel/properties-tabs'
@@ -19,6 +20,7 @@ import CommentsPanel from './comments/CommentsPanel.vue'
 import DesignCheckPanel from './design-check/DesignCheckPanel.vue'
 import DesignPanel from './DesignPanel.vue'
 import ZoomDropdown from './editor/ZoomDropdown.vue'
+import DocumentGitTab from './source-control/DocumentGitTab.vue'
 
 const propertiesTabs = tv(propertiesTabsTheme)
 
@@ -38,6 +40,15 @@ const lints = computed(() => resolveEditorProfile(store.state).lint)
 // A board opened on the Lint tab shows Design instead.
 watchEffect(() => {
   if (!lints.value && activeTab.value === 'lint') activeTab.value = 'design'
+})
+
+/**
+ * Versioning needs the host process the desktop app starts: a browser build has no repository to
+ * read, so the tab would only tell the person to save a file git cannot see.
+ */
+const git = computed(() => canRunHostProcesses())
+watchEffect(() => {
+  if (!git.value && activeTab.value === 'git') activeTab.value = 'design'
 })
 
 /** Errors and warnings on the current page; suggestions do not earn an indicator. */
@@ -73,6 +84,15 @@ const problemCount = computed(() => {
         <TabsTrigger value="code" data-test-id="properties-tab-code" :class="tabStyles.trigger()">
           <icon-lucide-code :class="tabStyles.icon()" aria-hidden="true" />
           <span :class="tabStyles.label()">{{ panels.code }}</span>
+        </TabsTrigger>
+        <TabsTrigger
+          v-if="git"
+          value="git"
+          data-test-id="properties-tab-git"
+          :class="tabStyles.trigger()"
+        >
+          <icon-lucide-git-branch :class="tabStyles.icon()" aria-hidden="true" />
+          <span :class="tabStyles.label()">{{ panels.git }}</span>
         </TabsTrigger>
         <TabsTrigger value="ai" data-test-id="properties-tab-ai" :class="tabStyles.trigger()">
           <icon-lucide-sparkles :class="tabStyles.icon()" aria-hidden="true" />
@@ -116,6 +136,16 @@ const problemCount = computed(() => {
         :hidden="activeTab !== 'code'"
       >
         <CodePanel :active="activeTab === 'code'" />
+      </TabsContent>
+
+      <TabsContent
+        v-if="git"
+        value="git"
+        class="flex min-h-0 flex-1 flex-col"
+        :force-mount="true"
+        :hidden="activeTab !== 'git'"
+      >
+        <DocumentGitTab :active="activeTab === 'git'" />
       </TabsContent>
 
       <TabsContent

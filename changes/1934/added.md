@@ -1,0 +1,7 @@
+- A project's folder is added from Home, its repository and application are detected from the folder itself, and the application is started and stopped from the project screen with its output and address (#1934).
+- The source control panel reads the branch, the changed files and the diff of the open document, and commits, pulls, pushes, stashes, and restores one version of one file without taking the rest of the tree with it (#1934).
+- A pull request is opened from the same panel between the branch on screen and the branch it lands in, with the project's page baselines committed first (#1934).
+- A live page exports as a Vue single-file component, its markup and stylesheet split the way a Nuxt project reads them (#1934).
+- A frame shows a page of the project's running application, opens every route that application serves, and says which file an element picked in the page comes from (#1934).
+- A frame keeps the page's picture as a baseline, and comparing says whether the page still looks the way it did when the picture was taken (#1934).
+- A project keeps those pictures in `.opencanvas/drift.json`, reads them back into a document that lost them, and commits them with the pull request the panel opens (#1934).

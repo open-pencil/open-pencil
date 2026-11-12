@@ -16,14 +16,17 @@ import editor from './editor.json'
 import figjam from './figjam.json'
 import files from './files.json'
 import fonts from './fonts.json'
+import livePages from './livePages.json'
 import media from './media.json'
 import menu from './menu.json'
 import pages from './pages.json'
 import panels from './panels.json'
+import projects from './projects.json'
 import recovery from './recovery.json'
 import rename from './rename.json'
 import settings from './settings.json'
 import shapes from './shapes.json'
+import sourceControl from './sourceControl.json'
 import statuses from './statuses.json'
 import storage from './storage.json'
 import tools from './tools.json'
@@ -48,14 +51,17 @@ export default {
   figjam,
   files,
   fonts,
+  livePages,
   media,
   menu,
   pages,
   panels,
+  projects,
   recovery,
   rename,
   settings,
   shapes,
+  sourceControl,
   statuses,
   storage,
   tools,

@@ -118,3 +118,14 @@ test('size fields follow resizing before the pointer is released', async () => {
     await editor.page.mouse.up()
   }
 })
+test('a page address the app cannot open says so, and says why', async () => {
+  const field = editor.page.getByRole('textbox', { name: 'Page address' })
+
+  await field.fill('ftp://example.com/pricing')
+
+  await expect(field).toHaveAttribute('aria-invalid', 'true')
+  await expect(editor.page.getByTestId('live-page-url-error')).toHaveText(
+    'The app cannot open this page address.'
+  )
+  await expect(field).toHaveAttribute('aria-describedby', 'live-page-url-error')
+})

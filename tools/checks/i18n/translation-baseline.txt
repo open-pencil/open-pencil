@@ -266,6 +266,8 @@ ja:code.stylingTailwind
 ja:diagnostics.categoryAI
 ja:diagnostics.categoryMCP
 ja:diagnostics.durationMs
+ja:livePages.routeParamsPlaceholder
+ja:livePages.urlPlaceholder
 ja:panels.ai
 ja:panels.colorFormatHsb
 ja:panels.colorFormatHsl
@@ -316,6 +318,7 @@ pl:storage.providerAmazonS3
 pl:storage.providerBackblaze
 pl:storage.providerR2
 pl:storage.region
+pt-br:sourceControl.branches
 ru:ai.completions
 ru:ai.responses
 ru:ai.notifyTitle
@@ -352,6 +355,8 @@ zh-cn:code.stylingCSS
 zh-cn:code.stylingTailwind
 zh-cn:diagnostics.categoryAI
 zh-cn:diagnostics.categoryMCP
+zh-cn:livePages.routeParamsPlaceholder
+zh-cn:livePages.urlPlaceholder
 zh-cn:panels.ai
 zh-cn:panels.colorFormatHsb
 zh-cn:panels.colorFormatHsl
@@ -547,6 +552,7 @@ pl:shapes.engFolder
 ru:cloud.productName
 ru:cloud.homeCloudOnHost
 ru:cloud.inviteEmailPlaceholder
+ru:panels.git
 de:settings.skills
 de:ai.chatReferenceSkills
 de:ai.notifyTitle
@@ -555,15 +561,25 @@ fr:ai.notifyTitle
 de:settings.groupApp
 de:settings.editor
 es:settings.editor
+es:panels.git
 it:settings.groupApp
 it:settings.editor
 ja:settings.groupAI
 ja:ai.notifyTitle
+ja:panels.git
 pl:settings.groupAI
+pl:panels.git
 zh-cn:settings.groupAI
+zh-cn:panels.git
 de:settings.cloud
+de:panels.git
+de:sourceControl.branches
 fr:settings.cloud
+fr:projects.application
+fr:panels.git
+fr:sourceControl.branches
 it:settings.cloud
+it:panels.git
 pt-br:ai.aiSetupPiCompanion
 pt-br:ai.chatReferenceSkills
 pt-br:ai.chatSettings
@@ -634,6 +650,7 @@ pt-br:storage.providerAmazonS3
 pt-br:storage.providerBackblaze
 pt-br:storage.providerR2
 pt-br:tools.frame
+pt-br:panels.git
 ar:ai.notifyTitle
 ar:ai.completions
 ar:ai.responses
@@ -669,3 +686,4 @@ ar:cloudPortal.providerApple
 ar:cloudPortal.deploymentOfficial
 ar:cloudPortal.emailTransportSMTP
 ar:cloudPortal.emailTransportCloudflare
+ar:panels.git

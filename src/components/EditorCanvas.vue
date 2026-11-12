@@ -42,6 +42,7 @@ import CanvasEyedropperLoupe from '@/components/canvas/CanvasEyedropperLoupe.vue
 import CommentsLayer from '@/components/comments/CommentsLayer.vue'
 import IssueMarkerTooltip from '@/components/design-check/IssueMarkerTooltip.vue'
 import SelectionToolbar from '@/components/figjam/SelectionToolbar.vue'
+import LivePageLayer from '@/components/live-pages/LivePageLayer.vue'
 import PreparationOverlay from '@/components/preparation/canvas/PreparationOverlay.vue'
 import FollowFrame from '@/components/presence/FollowFrame.vue'
 import StatusLabelMenu from '@/components/statuses/StatusLabelMenu.vue'
@@ -327,6 +328,7 @@ const cursor = computed(() =>
           class="absolute inset-0 block size-full touch-none outline-none"
         />
         <PlayIslands :view="paneView" :drawn="drawnView" :canvas="canvasRef" />
+        <LivePageLayer :view="paneView" :drawn="drawnView" :canvas="canvasRef" />
         <AppDropOverlay :visible="isDraggingOver" />
         <IssueMarkerTooltip :marker="hoveredIssueMarker" :canvas="canvasRef" />
         <CanvasEyedropperLoupe :loupe="eyedropperLoupe" />

@@ -38,6 +38,7 @@ import {
   type StorageDocumentBinding,
   type StorageLocation
 } from '@/app/integrations/storage'
+import type { Project } from '@/app/projects/schema'
 import {
   cacheRecentFileCover,
   loadCachedRecentFileThumbnail,
@@ -51,17 +52,21 @@ import { toast } from '@/app/shell/ui'
 import { createFileOpenCoordinator } from '@/app/tabs/open/coordinator'
 import { findTabByFileIdentity } from '@/app/tabs/open/identity'
 import { readStorageDocument } from '@/app/tabs/open/storage'
+import { findProjectTab } from '@/app/tabs/project'
 
 /**
  * Home, pinned first; a New file tab, which offers what to create and the recent files, as
- * Figma's ⌘T and + do, and becomes the document picked there; or a document.
+ * Figma's ⌘T and + do, and becomes the document picked there; a project, which is a repository
+ * opened as its own screen; or a document.
  */
-export type TabKind = 'home' | 'new-file' | 'document'
+export type TabKind = 'home' | 'new-file' | 'document' | 'project'
 
 export interface Tab {
   id: string
   store: EditorStore
   kind: TabKind
+  /** The project a project tab shows; the other kinds carry none. */
+  project?: Project
 }
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
@@ -87,9 +92,10 @@ export function showsDocument(): boolean {
 export const allTabs = computed(() =>
   tabsRef.value.map((t) => ({
     id: t.id,
-    name: t.store.state.documentName,
+    name: t.kind === 'project' ? (t.project?.name ?? '') : t.store.state.documentName,
     isHome: t.kind === 'home',
     isNewFile: t.kind === 'new-file',
+    isProject: t.kind === 'project',
     isDirty: t.kind === 'document' && holdsUnkeptEdits(t.store),
     // What kind of file the tab holds, for its icon, as Home marks its files.
     fileKind: t.kind === 'document' ? t.store.state.documentKind : undefined,
@@ -172,6 +178,43 @@ export function showNewTab(): void {
   createHomeTab()
 }
 
+/**
+ * Opens a project as its own screen: the repository it belongs to, with the source control of
+ * that repository. Asking for a project that is already open brings its tab forward, and takes
+ * the record as it is now, so a renamed project shows its new name.
+ */
+export function openProjectTab(project: Project): Tab {
+  const existing = findProjectTab(tabsRef.value, project.id)
+  if (existing) {
+    existing.project = project
+    activateTab(existing)
+    return existing
+  }
+  const tab: Tab = { id: generateTabId(), store: createEditorStore(), kind: 'project', project }
+  tabsRef.value = [...tabsRef.value, tab]
+  activateTab(tab)
+  return tab
+}
+
+/**
+ * Home's list is the record a project tab shows, so a rename reaches the tab already open for
+ * that project instead of waiting for it to be opened again.
+ */
+export function syncProjectTab(project: Project): void {
+  const existing = findProjectTab(tabsRef.value, project.id)
+  if (!existing) return
+  existing.project = project
+  // `tabsRef` is shallow, so a field changed in place is invisible to the tab's name until the
+  // list itself is told: a rename would wait for the next tab change to reach the open screen.
+  triggerRef(tabsRef)
+}
+
+/** A project removed from Home has nothing left to show, so its screen closes with it. */
+export function closeProjectTab(projectId: string): Promise<void> {
+  const existing = findProjectTab(tabsRef.value, projectId)
+  return existing ? closeTab(existing.id) : Promise.resolve()
+}
+
 /** `tabs` with Home first: as they are when it is, with their Home moved there, or `home()` added. */
 export function withHomePinned(tabs: readonly Tab[], home: () => Tab): readonly Tab[] {
   if (tabs[0]?.kind === 'home') return tabs
@@ -236,8 +279,8 @@ export async function closeTab(tabId: string, unsaved?: 'save' | 'discard'): Pro
 
   const closingTab = tabsRef.value[idx]
   if (closingTab.kind === 'home') return
-  // A New file tab holds no document to save or recover.
-  if (closingTab.kind === 'new-file') {
+  // A New file tab and a project hold no document to save or recover.
+  if (closingTab.kind === 'new-file' || closingTab.kind === 'project') {
     removeTab(closingTab)
     return
   }
@@ -747,6 +790,9 @@ export function useTabsStore() {
     activeTabId,
     createHomeTab,
     createTab,
+    openProjectTab,
+    syncProjectTab,
+    closeProjectTab,
     switchTab,
     closeTab,
     getActiveTabId,

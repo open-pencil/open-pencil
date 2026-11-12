@@ -4,8 +4,15 @@ import * as v from 'valibot'
  * What the router loads statically, gzipped: the bulk of startup, not all of it, as the boot code
  * before the router and any dynamic import at startup are left out. Raise it only for a deliberate
  * cost.
+ *
+ * 2870 → 2900 for live pages: a frame that shows a route of the running application, the project
+ * record that names the application, and the source-control panel that proposes the change. Their
+ * code shares one static graph with the editor, so deferring the panels only moves the same bytes
+ * into chunks the router still loads, and costs gzip density: measured, four deferred screens took
+ * the startup set from 2878 KiB to 2883 KiB. The cost is taken here instead, and the graph stays as
+ * the rest of the editor's.
  */
-export const STARTUP_BUDGET_KIB = 2870
+export const STARTUP_BUDGET_KIB = 2900
 export const STARTUP_ENTRY = 'src/router.ts'
 
 const manifestSchema = v.record(

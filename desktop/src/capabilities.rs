@@ -15,6 +15,9 @@ const HOST_PROCESSES_ENV: &str = "OPENPENCIL_HOST_PROCESSES";
 /// Shell spawn permissions, left out of `app.security.capabilities` and granted at startup.
 const HOST_PROCESSES_CAPABILITY: &str = include_str!("../capabilities/host-processes.json");
 
+/// What a command that starts a program answers when the build switched host processes off.
+const HOST_PROCESSES_OFF: &str = "this build of the app does not run other programs";
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DesktopCapabilities {
@@ -27,6 +30,17 @@ impl DesktopCapabilities {
         Self {
             self_update: env_flag(SELF_UPDATE_ENV),
             host_processes: env_flag(HOST_PROCESSES_ENV),
+        }
+    }
+
+    /// Refuse a command that starts a host program in a build that may not start any. The webview
+    /// loses its shell scope with the switch, but the app's own commands are reachable all the
+    /// same, and each of them checks here rather than trusting that scope to be the only way in.
+    pub fn require_host_processes(&self) -> Result<(), String> {
+        if self.host_processes {
+            Ok(())
+        } else {
+            Err(HOST_PROCESSES_OFF.to_owned())
         }
     }
 
@@ -116,5 +130,23 @@ mod tests {
         };
         assert_eq!(capability.identifier, "host-processes");
         assert_eq!(capability.windows, ["main"]);
+    }
+
+    #[test]
+    fn a_build_without_host_processes_refuses_what_starts_one() {
+        let off = DesktopCapabilities {
+            self_update: true,
+            host_processes: false,
+        };
+        assert_eq!(
+            off.require_host_processes(),
+            Err("this build of the app does not run other programs".to_owned())
+        );
+
+        let on = DesktopCapabilities {
+            self_update: false,
+            host_processes: true,
+        };
+        assert!(on.require_host_processes().is_ok());
     }
 }

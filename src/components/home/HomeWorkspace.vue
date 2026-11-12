@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { useLocalStorage } from '@vueuse/core'
-import { computed, ref, shallowRef } from 'vue'
+import { computed, ref, shallowRef, watch } from 'vue'
 
 import type { DocumentKind } from '@open-pencil/scene-graph'
 import { useDocumentWorkspace } from '@open-pencil/vue/document/workspace'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useI18n, useProjectMessages } from '@open-pencil/vue/i18n'
 
 import { CLOUD_INCLUDED, CLOUD_STORAGE_PROVIDER_ID } from '@/app/cloud/integration'
 import { useHomeLocations } from '@/app/home/locations'
@@ -17,6 +17,11 @@ import {
   type StorageDocument,
   type StorageLocation
 } from '@/app/integrations/storage'
+import { desktopProjectImport } from '@/app/projects/pick'
+import { stopProjectRun } from '@/app/projects/runner'
+import type { Project } from '@/app/projects/schema'
+import { useProjectStatuses } from '@/app/projects/status'
+import { useProjectImport } from '@/app/projects/use'
 import { recentDocumentKind, type RecentDocument } from '@/app/recent-files'
 import {
   matchingRecentFiles,
@@ -27,7 +32,13 @@ import { useCredentialSettings } from '@/app/settings/credentials/preferences/us
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { createStoredDocument } from '@/app/storage/workspace/create'
 import { activeStorageLocation, createStorageWorkspaceSource } from '@/app/storage/workspace/source'
-import { openStorageDocumentInNewTab } from '@/app/tabs'
+import {
+  activeTab,
+  closeProjectTab,
+  openProjectTab,
+  openStorageDocumentInNewTab,
+  syncProjectTab
+} from '@/app/tabs'
 import { recoverable } from '@/app/tabs/recovery'
 import {
   CloudSharedSection,
@@ -38,6 +49,8 @@ import DocumentDeleteDialog from '@/components/home/document/DocumentDeleteDialo
 import DocumentEntry from '@/components/home/document/DocumentEntry.vue'
 import { ofKind, type DocumentKindFilter } from '@/components/home/document/filter'
 import HomeLayout from '@/components/home/HomeLayout.vue'
+import ProjectDeleteDialog from '@/components/home/projects/ProjectDeleteDialog.vue'
+import ProjectsSection from '@/components/home/projects/ProjectsSection.vue'
 import RecentFilesSection from '@/components/home/recent/RecentFilesSection.vue'
 import RecoverySection from '@/components/home/recovery/RecoverySection.vue'
 import HomeSearchActions from '@/components/home/search/HomeSearchActions.vue'
@@ -45,6 +58,7 @@ import HomeLocationMenu from '@/components/home/sidebar/HomeLocationMenu.vue'
 import HomeSidebar from '@/components/home/sidebar/HomeSidebar.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import { IS_TAURI } from '@/constants'
 
 const emit = defineEmits<{ 'new-document': [kind: DocumentKind] }>()
 const { locale, storage, files, common, settings, credentials } = useI18n()
@@ -55,6 +69,48 @@ const query = ref('')
 const openError = ref<string | null>(null)
 const storageConfigured = ref(storagePreferencesComplete(activeStorageProviderID.value))
 const places = useHomeLocations()
+/** Projects are repositories on this machine, so only the desktop build lists them. */
+const projectLabels = useProjectMessages()
+const {
+  projects: projectList,
+  add: addProject,
+  remove: removeStoredProject,
+  rename: renameStoredProject,
+  busy: addingProject,
+  failure: projectFailure
+} = useProjectImport(desktopProjectImport)
+const { statuses: projectStatus, refresh: refreshProjectStatus } = useProjectStatuses(projectList)
+
+/** A project opens its own screen, where the source control of its repository lives. */
+function openProject(project: Project): void {
+  openProjectTab(project)
+}
+
+/** Renaming reaches the tab already open for the project; removing takes that tab with it. */
+function renameProject(id: string, name: string): void {
+  renameStoredProject(id, name)
+  const renamed = projectList.value.find((entry) => entry.id === id)
+  if (renamed) syncProjectTab(renamed)
+}
+
+function removeProject(id: string): void {
+  // A project that is gone from the list takes its application with it: nothing else would
+  // ever ask for that run to stop.
+  void stopProjectRun(id)
+  removeStoredProject(id)
+  void closeProjectTab(id)
+}
+
+/** Removing asks first: the list forgets the repository, which stays where it is on disk. */
+const deletingProject = shallowRef<Project | null>(null)
+
+// Coming back to Home is when a commit made on a project's screen shows up in its row.
+watch(
+  () => activeTab.value?.kind,
+  (kind) => {
+    if (kind === 'home') void refreshProjectStatus()
+  }
+)
 
 /** A new document lands in the place Home shows: a Cloud workspace, the bucket, or a local file. */
 function newDocument(kind: DocumentKind) {
@@ -273,6 +329,20 @@ function formattedDate(updatedAt: string): string {
       :query="normalizedQuery"
     />
     <template v-else>
+      <ProjectsSection
+        v-if="IS_TAURI && !normalizedQuery"
+        class="mb-6"
+        :projects="projectList"
+        :statuses="projectStatus"
+        :busy="addingProject"
+        :failure="projectFailure"
+        @add="addProject(projectLabels.add)"
+        @open="openProject"
+        @remove="deletingProject = $event"
+        @rename="renameProject"
+      />
+      <ProjectDeleteDialog v-model:project="deletingProject" @confirm="removeProject" />
+
       <p
         v-if="noSearchMatches"
         class="rounded-lg border border-dashed border-border px-4 py-8 text-center text-xs text-muted"

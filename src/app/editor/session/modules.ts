@@ -90,6 +90,8 @@ export function createEditorStoreModules(
     saveFigFileAs: documentIO.saveFigFileAs,
     getDocumentFilePath: documentIO.getDocumentFilePath,
     getDocumentFileHandle: documentIO.getDocumentFileHandle,
+    /** Reads the file again, as when git replaced it under an open document. */
+    reloadDocumentFromDisk: documentIO.reloadDocumentFromDisk,
     hasWritableSource: documentIO.hasWritableSource,
     getSourceIdentity: documentIO.getSourceIdentity,
     getStorageBinding: documentIO.getStorageBinding,
