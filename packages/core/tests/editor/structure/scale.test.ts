@@ -93,7 +93,10 @@ describe('scaleSelected', () => {
       fontSize: 64,
       textPathData,
       textPathBox: { width: 800, height: 320 },
-      derivedTextGlyphs: [{ x: 60, y: 180, fontSize: 64 }, { x: 100, y: 164, fontSize: 64 }]
+      derivedTextGlyphs: [
+        { x: 60, y: 180, fontSize: 64 },
+        { x: 100, y: 164, fontSize: 64 }
+      ]
     })
     editor.undo.undo()
     expect(current(text.id)).toMatchObject({

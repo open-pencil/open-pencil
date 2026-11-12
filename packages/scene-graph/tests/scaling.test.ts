@@ -39,7 +39,9 @@ describe('scaling text on a path', () => {
         { x: 0, y: 100 },
         { x: 400, y: 100 }
       ],
-      segments: [{ start: 0, end: 1, tangentStart: { x: 100, y: -80 }, tangentEnd: { x: -100, y: -80 } }],
+      segments: [
+        { start: 0, end: 1, tangentStart: { x: 100, y: -80 }, tangentEnd: { x: -100, y: -80 } }
+      ],
       regions: []
     },
     normalizedSize: { x: 400, y: 160 },
@@ -56,7 +58,14 @@ describe('scaling text on a path', () => {
       textPathData: structuredClone(curve),
       textPathBox: { x: 10, y: 20, width: 400, height: 160 },
       derivedTextGlyphs: [
-        { commandsBlob: new Uint8Array(4), x: 30, y: 90, fontSize: 32, rotation: -0.4, advance: 18 },
+        {
+          commandsBlob: new Uint8Array(4),
+          x: 30,
+          y: 90,
+          fontSize: 32,
+          rotation: -0.4,
+          advance: 18
+        },
         { commandsBlob: new Uint8Array(4), x: 50, y: 82, fontSize: 32, rotation: -0.3 }
       ]
     })
