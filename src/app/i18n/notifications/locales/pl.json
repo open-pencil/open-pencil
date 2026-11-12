@@ -36,5 +36,7 @@
   "designTokensImported": "Zaimportowano tokeny projektowe: {count}.",
   "unsupportedVariableExpressions": "OpenPencil nie potrafi jeszcze obliczyć tych zmiennych, więc warstwy zachowują wartości zapisane w pliku: {names}.",
   "savingDocument": "Zapisywanie dokumentu…",
-  "saveFailedRetry": "Ponów zapis"
+  "saveFailedRetry": "Ponów zapis",
+  "fileChangedOnDisk": "Plik „{name}” zmienił się na dysku. Niezapisane zmiany zostają zachowane; zapisanie zastąpi plik.",
+  "reloadDiscardingChanges": "Wczytaj ponownie"
 }

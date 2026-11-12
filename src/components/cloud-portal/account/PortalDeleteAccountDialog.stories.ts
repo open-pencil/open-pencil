@@ -3,7 +3,7 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 
 import type { CloudAccountDeletion } from '@open-pencil/cloud/contract'
 
-import type { PortalAccountArchive } from '@/components/cloud-portal/types'
+import type { PortalAccountArchive } from '@/app/cloud-portal/archive'
 
 import PortalDeleteAccountDialog from './PortalDeleteAccountDialog.vue'
 
@@ -31,7 +31,7 @@ const deletion: CloudAccountDeletion = {
 }
 
 const meta = {
-  title: 'App/Cloud Portal/Delete Account',
+  title: 'App/Cloud/Portal/Delete Account',
   args: { deletion, archive: null, error: null, onConfirm: fn(), onDownloadAll: fn() },
   render: (args) => ({
     components: { PortalDeleteAccountDialog },

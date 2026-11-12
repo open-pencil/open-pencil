@@ -10,6 +10,7 @@ const {
   active = false,
   disabled = false,
   label,
+  menu = false,
   side = 'top',
   size = 'xs',
   toggle = false,
@@ -19,6 +20,11 @@ const {
   disabled?: boolean
   /** Accessible name and tooltip; every icon-only button needs one. */
   label: string
+  /**
+   * Opens a menu: a chevron follows the icon. Its slot is `menu-button`, so rows that square their
+   * icon buttons leave it its width.
+   */
+  menu?: boolean
   side?: 'top' | 'bottom' | 'left' | 'right'
   size?: ControlSize
   /** A toggle button: `aria-pressed` says whether it is on, off included. */
@@ -38,7 +44,7 @@ const buttonAttrs = computed(() => {
 })
 
 const cls = computed(() =>
-  tv(theme)({ size, active, disabled, class: normalizeClass(attrs.class) })
+  tv(theme)({ size, menu, active, disabled, class: normalizeClass(attrs.class) })
 )
 </script>
 
@@ -47,7 +53,7 @@ const cls = computed(() =>
     <button
       ref="button"
       v-bind="buttonAttrs"
-      data-slot="icon-button"
+      :data-slot="menu ? 'menu-button' : 'icon-button'"
       :type="type"
       :disabled="disabled"
       :aria-label="label"
@@ -56,6 +62,7 @@ const cls = computed(() =>
       :class="cls"
     >
       <slot />
+      <icon-lucide-chevron-down v-if="menu" class="size-3 shrink-0" />
     </button>
   </Tip>
 </template>

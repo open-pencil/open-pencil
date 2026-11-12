@@ -1,6 +1,8 @@
 {
   "interfaceScale": "Tamaño de la interfaz",
   "interfaceScaleDescription": "Ajusta el tamaño de los paneles, el texto y los controles sin cambiar el zoom del lienzo.",
+  "mirrorInterface": "Reflejar la interfaz",
+  "mirrorInterfaceDescription": "Organiza los paneles, los menús y los controles de derecha a izquierda, como se lee el idioma. El lienzo, las coordenadas y el código siguen de izquierda a derecha.",
   "recentFiles": "Archivos recientes",
   "recentFilesDescription": "Elige cuántos archivos conservar en la lista de recientes y en el menú Abrir recientes.",
   "recentFilesLimit": "Número de archivos recientes",

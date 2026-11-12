@@ -12,11 +12,10 @@ import { applyEnclosingAssignments } from './assignments'
 import { keepOverrides, restoreOverrides, type OverrideScope } from './kept-overrides'
 import { ownsSelfFillField } from './main-component'
 import { hasInstanceOverride, overriddenBindingField, setInstanceOverride } from './overrides'
+import { bindingProtection, NOTHING_PROTECTED } from './protection'
 import {
-  bindingProtection,
   cloneChildInCoordinates,
   cloneChildrenWithMapping,
-  NOTHING_PROTECTED,
   syncCopy,
   type MatchedCopy
 } from './sync'

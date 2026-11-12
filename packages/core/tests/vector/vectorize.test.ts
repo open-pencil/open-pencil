@@ -1,14 +1,12 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import {
   preprocessForVectorize,
   resolveVectorFramePlacement,
   svgToVectorPaths
 } from '@open-pencil/core/vector'
 import { expectDefined } from '@open-pencil/test-support/assert'
-
-import { getCanvasKit } from '@open-pencil/core/canvaskit'
-
 import { repoPath } from '@open-pencil/test-support/paths'
 let ck: Awaited<ReturnType<typeof getCanvasKit>>
 

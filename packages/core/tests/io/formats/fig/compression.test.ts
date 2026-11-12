@@ -4,10 +4,10 @@ import { unzipSync } from 'fflate'
 
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
-import { SceneGraph } from '@open-pencil/scene-graph'
 import { parseFigKiwiChunks } from '@open-pencil/kiwi/fig/container'
-import { OPEN_PENCIL_PLUGIN_DATA, withPluginData } from '@open-pencil/scene-graph/plugin-data'
+import { SceneGraph } from '@open-pencil/scene-graph'
 import type { FigCompression } from '@open-pencil/scene-graph/fig-compression'
+import { OPEN_PENCIL_PLUGIN_DATA, withPluginData } from '@open-pencil/scene-graph/plugin-data'
 
 import { figCompressionOf } from '#core/io/formats/fig/compression'
 import { hasPendingReaderPages } from '#core/kiwi/fig/session/document-state'

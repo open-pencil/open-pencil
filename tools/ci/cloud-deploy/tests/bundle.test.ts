@@ -10,6 +10,7 @@ const root = await resolveWorkspaceRoot(import.meta.dir)
 test('bundles each official deployment around the built Cloud site', async () => {
   const deployments = await officialDeployments(root)
   expect(deployments).toContain(join(root, 'packages/cloud/deploy/openpencil/staging'))
+  expect(deployments).toContain(join(root, 'packages/cloud/deploy/openpencil/production'))
   const requests: CommandRequest[] = []
   await bundleOfficialWorkers(root, async (request) => {
     requests.push(request)

@@ -24,6 +24,7 @@ body:
       label: Platform
       options:
         - Web (app.openpencil.dev)
+        - Web (self-hosted or other address)
         - macOS (Tauri)
         - Windows (Tauri)
         - Linux (Tauri)

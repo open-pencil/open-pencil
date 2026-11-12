@@ -4,12 +4,15 @@ import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/doc
 import type { DocumentServiceOptions } from '#cloud/server/documents/service'
 import { documentSummary, getDocumentSummaryRow } from '#cloud/server/documents/summary'
 import { CLOUD_FEATURE_KEYS } from '#cloud/server/policy/keys'
+import { storageLimitReached } from '#cloud/server/policy/storage'
 import { workspacePolicyContext } from '#cloud/server/policy/workspace'
+import { StorageQuotaExceededError } from '#cloud/server/quota'
 import type { Kysely } from 'kysely'
 
 /**
  * The document `userId` may write to, and how large one file and its owner's storage may be for
- * this save: technical limits, tightened by the owner's plan.
+ * this save: technical limits, tightened by the owner's plan. An owner who holds their whole
+ * storage allowance or more is read-only, so nothing of theirs takes a save, however small.
  */
 export async function writableDocument(
   database: Kysely<CloudDatabase>,
@@ -30,6 +33,9 @@ export async function writableDocument(
     { actorId: userId, deploymentMode: 'self-hosted' }
   )
   if (!policyContext) throw new DocumentNotFoundError()
+  if (await storageLimitReached(database, options.policy, { documentId })) {
+    throw new StorageQuotaExceededError('The owner holds their whole storage allowance')
+  }
   const technicalMaximum = options.technicalMaximumUploadBytes ?? Number.MAX_SAFE_INTEGER
   const maximumFileBytes = Math.min(
     technicalMaximum,

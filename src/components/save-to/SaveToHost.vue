@@ -24,6 +24,5 @@ const state = useHeldContent(
     :state="state ?? saveToSession.state"
     @update:open="(open) => !open && closeSaveTo()"
     @save="confirmSaveTo"
-    @cancel="closeSaveTo"
   />
 </template>

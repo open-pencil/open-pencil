@@ -36,5 +36,7 @@
   "designTokensImported": "Se importaron {count} design tokens.",
   "unsupportedVariableExpressions": "OpenPencil aún no puede evaluar estas variables, así que las capas conservan los valores guardados en el archivo: {names}.",
   "savingDocument": "Guardando el documento…",
-  "saveFailedRetry": "Reintentar guardado"
+  "saveFailedRetry": "Reintentar guardado",
+  "fileChangedOnDisk": "«{name}» cambió en el disco. Tus cambios sin guardar se conservan; al guardar se reemplaza el archivo.",
+  "reloadDiscardingChanges": "Volver a cargar"
 }

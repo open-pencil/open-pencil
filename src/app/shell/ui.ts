@@ -137,8 +137,8 @@ function info(message: string, action?: ToastAction) {
   push(message, 'default', action)
 }
 
-function warning(message: string) {
-  push(message, 'warning')
+function warning(message: string, action?: ToastAction, options?: { sticky?: boolean }): number {
+  return push(message, 'warning', action, options?.sticky)
 }
 
 function error(message: string, action?: ToastAction, options?: { sticky?: boolean }): number {

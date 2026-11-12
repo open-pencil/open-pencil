@@ -139,7 +139,7 @@ Comparación entre las funciones de Figma Design y el estado actual de OpenPenci
 
 | Función | Estado | Notas |
 |---------|--------|-------|
-| Flujo horizontal y vertical | ✅ | Yoga WASM Flexbox |
+| Flujo horizontal y vertical | ✅ | Taffy WASM Flexbox |
 | Activar | ✅ | <kbd>⇧</kbd><kbd>A</kbd> en marco o selección |
 | Separación | ✅ | Configurable |
 | Relleno | ✅ | Común o por lado |
@@ -147,7 +147,7 @@ Comparación entre las funciones de Figma Design y el estado actual de OpenPenci
 | Alineación | ✅ | Inicio, centro, final y estirar |
 | Tamaño de elementos | ✅ | Fijo, Rellenar y Ajustar |
 | Salto de línea | ✅ | Flex wrap |
-| Grid | ✅ | CSS Grid mediante una variante de Yoga con pistas, espacios y celdas combinadas |
+| Grid | ✅ | CSS Grid mediante Taffy con pistas, espacios y celdas combinadas |
 | Flujos anidados | ✅ | Marcos con direcciones distintas |
 | Reordenación por arrastre | ✅ | Indicador de inserción visible |
 | Dimensiones mín./máx. | ✅ | Anchura y altura mínimas y máximas en Disposición, vinculables a variables numéricas |

@@ -1,6 +1,7 @@
 export { executeRPCCommand, ALL_RPC_COMMANDS } from './commands'
 export type {
   InfoResult,
+  PageArgs,
   PageItem,
   TreeArgs,
   TreeResult,

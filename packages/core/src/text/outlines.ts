@@ -27,6 +27,10 @@ export interface TextOutlineGlyph {
   commands: OutlineCommand[]
   x: number
   y: number
+  /** The character in the text the glyph starts at, left out for a list marker. */
+  firstCharacter?: number
+  /** Horizontal advance in pixels, spacing included, where the shaping source gave one. */
+  advance?: number
 }
 
 export interface TextOutlineLayout {
@@ -292,8 +296,15 @@ function lineGlyphs(
     if (!metrics) return null
 
     for (const glyph of metrics) {
-      glyphs.push({ commands: glyph.commands, x: cursorX, y: baseline })
-      cursorX += glyph.advance + textLengthPixels(style.letterSpacing, style.fontSize)
+      const advance = glyph.advance + textLengthPixels(style.letterSpacing, style.fontSize)
+      glyphs.push({
+        commands: glyph.commands,
+        x: cursorX,
+        y: baseline,
+        firstCharacter: line.start + start + glyph.cluster,
+        advance
+      })
+      cursorX += advance
     }
   }
 

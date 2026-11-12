@@ -1,6 +1,8 @@
 {
   "interfaceScale": "界面大小",
   "interfaceScaleDescription": "调整面板、文本和控件的大小，不改变画布缩放。",
+  "mirrorInterface": "镜像界面",
+  "mirrorInterfaceDescription": "按语言的阅读方向，从右到左排列面板、菜单和控件。画布、坐标和代码保持从左到右。",
   "recentFiles": "最近的文件",
   "recentFilesDescription": "选择在最近文件列表和“打开最近的文件”菜单中保留的文件数量。",
   "recentFilesLimit": "最近文件数量",

@@ -6,7 +6,6 @@ import {
   copiedComponentLayerId,
   setInstanceOverride
 } from '@open-pencil/scene-graph/instances/overrides'
-
 import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 describe('SceneGraph.cloneTree', () => {
   test('clone clears source.id from the clone', () => {

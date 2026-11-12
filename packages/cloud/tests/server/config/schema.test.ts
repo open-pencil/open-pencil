@@ -143,6 +143,24 @@ describe('Cloud server configuration', () => {
         .servicesEndpoint
     ).toBe('HTTPS://ai.example.com')
   })
+  test('requires HTTPS for the official billing endpoint, which editors send a token', () => {
+    const official = {
+      ...baseConfig,
+      ...officialMFA,
+      servicesSigningKey: 'signing-key-pem',
+      servicesEndpoint: 'https://ai.example.com',
+      internalServiceToken: 'service-token-with-at-least-32-characters'
+    }
+    for (const billingEndpoint of ['http://billing.example.com', 'HTTP://billing.example.com']) {
+      expect(() => parseCloudServerConfig({ ...official, billingEndpoint })).toThrow(
+        'Official billing endpoint must use HTTPS'
+      )
+    }
+    expect(
+      parseCloudServerConfig({ ...official, billingEndpoint: 'https://billing.example.com' })
+        .billingEndpoint
+    ).toBe('https://billing.example.com')
+  })
 
   test('rejects short auth secrets', () => {
     expect(() => parseCloudServerConfig({ ...baseConfig, authSecret: 'short' })).toThrow()

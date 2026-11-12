@@ -2,43 +2,28 @@ import { inflateSync } from 'fflate'
 
 import type { GUID } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import {
   ByteBuffer,
   compileSchema,
   decodeBinarySchema,
   type CompiledDefinition,
-  type RuntimeCodec,
-  type RuntimeMessage
+  type RuntimeCodec
 } from '@open-pencil/kiwi/schema-runtime'
 
-export function key(guid: GUID | undefined): string | undefined {
-  return guid ? guidToString(guid) : undefined
-}
-
-/**
- * A record as merging sees it: its identity, place and type, with its contents either the bytes
- * the archive holds or a record to encode.
- */
-export interface RecordEntry<Value> {
-  id: string | undefined
-  parent: string | undefined
-  type: string | undefined
-  parentIndex: NodeChange['parentIndex']
-  value: Value
-}
+import { readFigArchiveParts } from '../archive'
+import { guidKey, type RecordEntry } from './entry'
 
 type RecordHead = Omit<RecordEntry<Uint8Array>, 'value'> & {
   guid?: GUID
   /** Read only when asked for: what an instance shows, for finding where components are used. */
   symbolData?: unknown
 }
-type EncodedPart =
+export type EncodedPart =
   | { kind: 'bytes'; bytes: Uint8Array }
   | { kind: 'records' | 'blobs'; fieldId: number; type: string }
 
 /** The encoded message's fields in order, with its records and blobs located by byte range. */
-interface ScannedMessage {
+export interface ScannedMessage {
   parts: EncodedPart[]
   records: Array<RecordHead & { value: Uint8Array }>
   blobs: Uint8Array[]
@@ -65,11 +50,11 @@ function scanRecord(
     const name = field.isArray ? '' : field.name
     if (name === 'guid') {
       head.guid = schema.read(field, bb) as GUID
-      head.id = key(head.guid)
+      head.id = guidKey(head.guid)
     } else if (name === 'parentIndex') {
       const parentIndex = schema.read(field, bb) as NodeChange['parentIndex']
       head.parentIndex = parentIndex
-      head.parent = key(parentIndex?.guid)
+      head.parent = guidKey(parentIndex?.guid)
     } else if (name === 'type') {
       head.type = field.definition?.names[bb.readVarUint()]
     } else if (name === 'symbolData' && readSymbolData) head.symbolData = schema.read(field, bb)
@@ -78,6 +63,7 @@ function scanRecord(
   return head
 }
 
+/** Locate an encoded message's records and blobs; `readSymbolData` also reads what instances show. */
 export function scanMessage(
   codec: RuntimeCodec,
   data: Uint8Array,
@@ -121,30 +107,23 @@ export function scanMessage(
   return scanned
 }
 
+/** The runtime codec of an archive's own schema. */
 export function archiveCodec(schemaDeflated: Uint8Array): RuntimeCodec {
   return compileSchema(decodeBinarySchema(new ByteBuffer(inflateSync(schemaDeflated))))
 }
 
-export function varUint(value: number): Uint8Array {
-  const bb = new ByteBuffer()
-  bb.writeVarUint(value)
-  return bb.toUint8Array().slice()
-}
-
-export function encoded(codec: RuntimeCodec, type: string, value: unknown): Uint8Array {
-  const bb = new ByteBuffer()
-  codec.schema.encode(codec.schema.definition(type), value as RuntimeMessage, bb)
-  return bb.toUint8Array().slice()
-}
-
-export function concat(chunks: readonly Uint8Array[]): Uint8Array {
-  let length = 0
-  for (const chunk of chunks) length += chunk.byteLength
-  const result = new Uint8Array(length)
-  let offset = 0
-  for (const chunk of chunks) {
-    result.set(chunk, offset)
-    offset += chunk.byteLength
-  }
-  return result
+/** An encoded archive's records with only the fields the page lookups read. */
+export function scannedRecords(bytes: ArrayBuffer): NodeChange[] {
+  const parts = readFigArchiveParts(bytes)
+  const codec = archiveCodec(parts.schemaDeflated)
+  const scanned = scanMessage(codec, parts.dataRaw, true)
+  return scanned.records.map(
+    (entry) =>
+      ({
+        guid: entry.guid,
+        parentIndex: entry.parentIndex,
+        type: entry.type,
+        symbolData: entry.symbolData
+      }) as NodeChange
+  )
 }

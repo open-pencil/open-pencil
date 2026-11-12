@@ -94,7 +94,7 @@ const node = { id: '0:1', name: 'Vector', type: 'VECTOR' }
 
 describe('MCP tool file output', () => {
   test("a tool's own path data is never taken for a file", async () => {
-    const { root, call } = await server({ create_vector: node, path_set: node })
+    const { root, call } = await server({ create_vector: node, set_path: node })
     const created = await call('create_vector', { x: 0, y: 0, path: zigzag })
     expect(created.isError).toBeFalsy()
     expect(created.content[0].text).toContain('"VECTOR"')
@@ -102,7 +102,7 @@ describe('MCP tool file output', () => {
       vertices: Array.from({ length: 40 }, (_, i) => ({ x: i, y: i % 2 })),
       segments: Array.from({ length: 39 }, (_, i) => ({ start: i, end: i + 1 }))
     })
-    expect((await call('path_set', { id: '0:1', path: network })).isError).toBeFalsy()
+    expect((await call('set_path', { id: '0:1', path: network })).isError).toBeFalsy()
     expect(await readdir(root)).toEqual([])
   })
 

@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
-import { FIXTURES } from '@open-pencil/test-support/paths'
-import { isVariableFont, isWOFF2, WebFontResolver } from '@open-pencil/core/text'
-
 import { fakeGoogleFonts } from '#core-tests/helpers/google-fonts'
+
+import { isVariableFont, isWOFF2, WebFontResolver } from '@open-pencil/core/text'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 
 const FONT_URL = 'https://fonts.gstatic.com/s/test/faces.woff2'
 
@@ -57,7 +57,9 @@ async function fontsourceResolver(family: string) {
         }
       ])
     if (url === `https://api.fontsource.org/v1/variable/${id}`)
-      return Response.json({ axes: { wght: { default: '400', min: '100', max: '900', step: '1' } } })
+      return Response.json({
+        axes: { wght: { default: '400', min: '100', max: '900', step: '1' } }
+      })
     if (url === `https://api.fontsource.org/v1/fonts/${id}`)
       return Response.json({
         unicodeRange: { '[0]': 'U+4e00-4fff', '[1]': 'U+3000-30ff', latin: 'U+0000-00ff' },

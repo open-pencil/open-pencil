@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
 import * as v from 'valibot'
+
 import { repoPath } from '@open-pencil/test-support/paths'
 
 const oracleVectorSchema = v.object({ x: v.number(), y: v.number() })

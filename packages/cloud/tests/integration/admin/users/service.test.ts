@@ -37,6 +37,21 @@ function authAdapter() {
     async resolveSession() {
       return null
     },
+    async resolveAccountSession() {
+      return null
+    },
+    async resolveAccessToken() {
+      return null
+    },
+    async listAccessTokens() {
+      return []
+    },
+    async createAccessToken() {
+      throw new Error('Access tokens are not used here')
+    },
+    async revokeAccessToken() {
+      throw new Error('Access tokens are not used here')
+    },
     async listAuthenticationMethods() {
       return []
     },

@@ -1,8 +1,8 @@
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
-import { readFigArchiveParts } from '../archive'
 import { symbolDataOf, symbolOverridesOf } from '../instance-overrides/types'
-import { archiveCodec, key, scanMessage } from './scan'
+import { guidKey } from './entry'
+import { scannedRecords } from './scan'
 
 /** The id of the nearest record of `type` from `id` up through its parents, itself included. */
 function nearestOfType(
@@ -12,11 +12,11 @@ function nearestOfType(
 ): string | undefined {
   const seen = new Set<string>()
   for (let current = byId.get(id); current;) {
-    const currentId = key(current.guid)
+    const currentId = guidKey(current.guid)
     if (!currentId || seen.has(currentId)) return undefined
     seen.add(currentId)
     if (current.type === type) return currentId
-    const parent = key(current.parentIndex?.guid)
+    const parent = guidKey(current.parentIndex?.guid)
     current = parent ? byId.get(parent) : undefined
   }
   return undefined
@@ -25,7 +25,7 @@ function nearestOfType(
 function recordsById(records: readonly NodeChange[]): Map<string, NodeChange> {
   const byId = new Map<string, NodeChange>()
   for (const record of records) {
-    const id = key(record.guid)
+    const id = guidKey(record.guid)
     if (id) byId.set(id, record)
   }
   return byId
@@ -57,10 +57,10 @@ export function figComponentUsePages(
     instancesOf.set(componentId, instances)
   }
   for (const record of records) {
-    const id = key(record.guid)
+    const id = guidKey(record.guid)
     if (!id || record.type !== 'INSTANCE') continue
-    use(key(symbolDataOf(record)?.symbolID), id)
-    for (const override of symbolOverridesOf(record)) use(key(override.overriddenSymbolID), id)
+    use(guidKey(symbolDataOf(record)?.symbolID), id)
+    for (const override of symbolOverridesOf(record)) use(guidKey(override.overriddenSymbolID), id)
   }
   const nearest = (id: string, type: string) => nearestOfType(byId, id, type)
   const pages = new Set<string>()
@@ -77,22 +77,6 @@ export function figComponentUsePages(
     }
   }
   return [...pages]
-}
-
-/** An encoded archive's records with only the fields the page lookups read. */
-function scannedRecords(bytes: ArrayBuffer): NodeChange[] {
-  const parts = readFigArchiveParts(bytes)
-  const codec = archiveCodec(parts.schemaDeflated)
-  const scanned = scanMessage(codec, parts.dataRaw, true)
-  return scanned.records.map(
-    (entry) =>
-      ({
-        guid: entry.guid,
-        parentIndex: entry.parentIndex,
-        type: entry.type,
-        symbolData: entry.symbolData
-      }) as NodeChange
-  )
 }
 
 /** `figComponentUsePages` over an encoded archive, reading only what it needs of each record. */
