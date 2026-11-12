@@ -26,12 +26,13 @@ import {
 
 import { figCompressionLevel } from '#core/io/formats/fig/compression'
 import {
+  appendRecords,
   figExportRecordOptions,
-  figFileExtras,
-  prepareFigExport,
-  type FigFileExtrasOptions,
   type FigExportSetup,
-  type KiwiNodeChange
+  figFileExtras,
+  type FigFileExtrasOptions,
+  type KiwiNodeChange,
+  prepareFigExport
 } from '#core/io/formats/fig/export/setup'
 import { appendVariableNodeChanges } from '#core/io/formats/fig/export/variables'
 import { figArchive, type FigArchiveAccess } from '#core/kiwi/fig/session/archive/access'
@@ -347,8 +348,9 @@ function writeRecords(setup: FigExportSetup, plan: RecordPlan): KiwiNodeChange[]
       if (!internal) return null
       if (!internal.page.id && !internalWritten) written.push(internal.canvasNc)
       internalWritten = true
-      written.push(
-        ...sceneNodeToKiwi(
+      appendRecords(
+        written,
+        sceneNodeToKiwi(
           node,
           internal.canvasGuid,
           0,
@@ -373,8 +375,9 @@ function writeRecords(setup: FigExportSetup, plan: RecordPlan): KiwiNodeChange[]
         : setup.nodeIdToGuid.get(parent.id)
     if (!parentGuid) return null
     const index = graph.getChildren(parent.id).findIndex((child) => child.id === node.id)
-    written.push(
-      ...sceneNodeToKiwi(node, parentGuid, index, setup.localIdCounter, graph, setup.blobs, options)
+    appendRecords(
+      written,
+      sceneNodeToKiwi(node, parentGuid, index, setup.localIdCounter, graph, setup.blobs, options)
     )
   }
   // Instance slot content is written as records of its own on the internal canvas.

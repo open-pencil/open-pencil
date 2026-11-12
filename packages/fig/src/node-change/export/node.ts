@@ -1062,7 +1062,9 @@ export function sceneNodeToKiwiWithContext(
   const result: KiwiNodeChange[] = [generatedFrameRecord(context, node, nc) ?? nc]
   const children = exportedChildren(node, context)
   for (let i = 0; i < children.length; i++) {
-    result.push(...context.sceneNodeToKiwi(children[i], guid, i, localIdCounter, context))
+    // A child's subtree can hold more records than an engine takes arguments.
+    for (const record of context.sceneNodeToKiwi(children[i], guid, i, localIdCounter, context))
+      result.push(record)
   }
   return result
 }

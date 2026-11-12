@@ -458,9 +458,11 @@ function mergeSavedOrder(
     ids.sort((a, b) => compareOrderKeys(keyOf(a) ?? '', keyOf(b) ?? ''))
   const merged: string[] = []
   for (const id of held) {
-    merged.push(...byKey(before.get(id) ?? []), id, ...byKey(after.get(id) ?? []))
+    for (const placed of byKey(before.get(id) ?? [])) merged.push(placed)
+    merged.push(id)
+    for (const placed of byKey(after.get(id) ?? [])) merged.push(placed)
   }
-  merged.push(...unplaced)
+  for (const id of unplaced) merged.push(id)
   for (const id of current) if (!heldIds.has(id) && !savedIds.has(id)) merged.push(id)
   return merged
 }

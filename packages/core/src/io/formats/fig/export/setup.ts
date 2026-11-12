@@ -47,6 +47,14 @@ const THUMBNAIL_1X1 = toUint8Array(
 )
 
 export type KiwiNodeChange = NodeChange & Record<string, unknown>
+
+/**
+ * Appends `records` to `target` one by one: a layer's subtree can hold more records than an
+ * engine takes arguments, so they are never spread into `push`.
+ */
+export function appendRecords(target: KiwiNodeChange[], records: Iterable<KiwiNodeChange>): void {
+  for (const record of records) target.push(record)
+}
 export type FigExportPage = ReturnType<SceneGraph['getPages']>[number]
 
 export interface CanvasExportEntry {
