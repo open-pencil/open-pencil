@@ -1,1 +1,1 @@
-- MCP's zoom-to-fit command now fits oversized selections to the viewport instead of leaving them clipped at 100%.
+- `zoom_to_fit`, `set_viewport`, and `figma.viewport` in scripts move the canvas in the app, and `zoom_to_fit` zooms in or out to fit the layers instead of setting 100% (#1390).
