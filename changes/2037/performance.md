@@ -1,0 +1,1 @@
+- Undo history keeps only the fields of created and deleted layers that differ from a new layer's, so long agent sessions that render and delete many screens hold about a quarter of the memory (#2037).
