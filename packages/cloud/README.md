@@ -9,6 +9,7 @@ local-first and works without it.
 - `@open-pencil/cloud/contract` — Valibot network contracts and public types.
 - `@open-pencil/cloud/client` — discovery, authentication, device authorization, and the typed client.
 - `@open-pencil/cloud/email` — Vue Email rendering.
+- `@open-pencil/cloud/errors` — the PostHog error reporter Cloud uses, for services beside it; depends only on `posthog-node`.
 - `@open-pencil/cloud/server` — runtime-neutral Hono routes and services with injected dependencies.
 - `@open-pencil/cloud/runtime/node` — PostgreSQL, S3, SMTP, the HTTP listener, and workers.
 

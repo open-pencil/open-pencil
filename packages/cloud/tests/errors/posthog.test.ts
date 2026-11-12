@@ -1,7 +1,7 @@
 import { describe, expect, mock, spyOn, test } from 'bun:test'
 import { gunzipSync } from 'node:zlib'
 
-import { createPostHogErrorReporter } from '#cloud/server/errors'
+import { createPostHogErrorReporter } from '#cloud/errors'
 import * as v from 'valibot'
 
 /** A PostHog that accepts every batch, recording what it was sent. */
