@@ -6,7 +6,7 @@ import { computeLayout } from '@open-pencil/core/layout'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
-describe('absolute children in Yoga tree', () => {
+describe('absolute children in the layout tree', () => {
   test('absolute children do not affect auto-layout flow', () => {
     const graph = new SceneGraph()
     const frame = autoFrame(graph, pageId(graph), {

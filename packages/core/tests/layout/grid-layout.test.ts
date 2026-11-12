@@ -156,7 +156,7 @@ describe('Grid Layout', () => {
     test('gridPosition places child at specific cell', () => {
       const graph = new SceneGraph()
       const frame = gridFrame(graph, pageId(graph), [fr(), fr(), fr()], [fr(), fr()])
-      // Place in column 2, row 1 (0-indexed internally, but yoga uses 1-indexed)
+      // Place in column 2, row 1 (0-indexed internally, but grid lines are 1-indexed)
       rect(graph, frame.id, 50, 50, {
         gridPosition: { column: 2, row: 1, columnSpan: 1, rowSpan: 1 }
       })

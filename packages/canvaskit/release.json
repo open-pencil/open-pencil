@@ -1,5 +1,6 @@
 {
-  "skia": "1b658c75d39ecf88f979275fde7d47c6a3eb9cb8",
+  "repository": "open-pencil/skia",
+  "tag": "canvaskit-1b658c75d39ecf88f979275fde7d47c6a3eb9cb8",
   "files": {
     "THIRD-PARTY-NOTICES.md": "885ec03e9feafe74d061056775fee670a8859389317fa60ee91d6bb678822128",
     "canvaskit.js": "23ac4e3d8272a1aec16f0c75fbf8b255db415ac911565c2bca8c99142ae17b69",
