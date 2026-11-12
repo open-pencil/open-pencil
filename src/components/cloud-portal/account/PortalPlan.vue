@@ -105,7 +105,13 @@ const credits = computed(() =>
             messages.planOfferIncludes({ storage: offer.storage, credits: offer.credits })
           "
         >
-          <AppButton size="sm" :disabled="busy" @click="emit('subscribe', offer.id)">
+          <AppButton
+            size="sm"
+            color="primary"
+            variant="solid"
+            :disabled="busy"
+            @click="emit('subscribe', offer.id)"
+          >
             {{ messages.planSubscribe({ name: offer.name }) }}
           </AppButton>
         </SettingsRow>
