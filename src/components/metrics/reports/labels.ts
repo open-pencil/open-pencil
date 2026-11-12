@@ -73,7 +73,6 @@ export function beforeReport(timestamp: string | null, receivedAt: string): stri
   return minutes ? `−${minutes}m ${seconds % 60}s` : `−${seconds}s`
 }
 
-/** Where a frame points: its file, shortened to the path within the app, with line and column. */
 /** Where a frame points, split so its file name can stand out of the folders before it. */
 export function frameLocation(frame: InboxFrame): {
   folder: string
