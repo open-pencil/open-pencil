@@ -212,11 +212,13 @@ describe("lines break and align as Figma's saved layouts of the mixed-spacing fi
           maxLines
         }
         const layout = laidOut(box)
+        const lineCount = layout.getLineMetrics().length
         const lines = figmaLines(box, layout)
         const ellipsis = truncatedSpan(expectDefined(layout.getShapedLines().at(-1), 'line'))
         const truncated = layout.didExceedMaxLines()
         layout.delete()
         expect(truncated).toBe(true)
+        expect(lineCount).toBe(maxLines)
         expectFigmaLines(textAlignHorizontal, lines.slice(0, -1), width)
         expectEllipsisLine(textAlignHorizontal, ellipsis, width)
       }
