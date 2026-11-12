@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { resolvedValueBindings } from '@open-pencil/scene-graph/variables'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { resolvedValueBindings } from '@open-pencil/scene-graph/variables'
 
 describe('Variables', () => {
   function pageId(graph: SceneGraph): string {
@@ -84,7 +84,7 @@ describe('Variables', () => {
     expect(graph.resolveColorVariable('v2')).toEqual({ r: 0, g: 0, b: 1, a: 1 })
   })
 
-  test('mode switching changes resolved value', () => {
+  test('a page mode switches what its layers resolve to', () => {
     const graph = new SceneGraph()
     graph.addCollection({
       id: 'col1',
@@ -109,9 +109,13 @@ describe('Variables', () => {
       hiddenFromPublishing: false
     })
 
+    const page = graph.getPages()[0]
+    const rect = graph.createNode('RECTANGLE', page.id)
+    expect(graph.resolveColorVariableForNode(rect.id, 'v1')).toEqual({ r: 1, g: 1, b: 1, a: 1 })
+    graph.updateNode(page.id, { variableModes: { col1: 'dark' } })
+    expect(graph.resolveColorVariableForNode(rect.id, 'v1')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
+    // Without a node, a variable resolves in its collection's default mode.
     expect(graph.resolveColorVariable('v1')).toEqual({ r: 1, g: 1, b: 1, a: 1 })
-    graph.setActiveMode('col1', 'dark')
-    expect(graph.resolveColorVariable('v1')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
   })
 
   test('node variable modes inherit from the nearest ancestor', () => {
@@ -160,7 +164,7 @@ describe('Variables', () => {
     })
   })
 
-  test('missing active mode falls back to default value', () => {
+  test('a mode without a value falls back to the default value', () => {
     const graph = new SceneGraph()
     graph.addCollection({
       id: 'col1',
@@ -182,8 +186,10 @@ describe('Variables', () => {
       hiddenFromPublishing: false
     })
 
-    graph.setActiveMode('col1', 'dark')
-    expect(graph.resolveColorVariable('v1')).toEqual({ r: 1, g: 1, b: 1, a: 1 })
+    const frame = graph.createNode('FRAME', graph.getPages()[0].id, {
+      variableModes: { col1: 'dark' }
+    })
+    expect(graph.resolveColorVariableForNode(frame.id, 'v1')).toEqual({ r: 1, g: 1, b: 1, a: 1 })
   })
 
   test('explicit alias resolution preserves source mode', () => {

@@ -1,6 +1,6 @@
-import type { Canvas } from 'canvaskit-wasm'
-
+import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { minOf } from '@open-pencil/scene-graph/arrays'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { nodeHasSmoothCorners } from '#core/canvas/shapes'
@@ -68,7 +68,7 @@ export function sideStrokeRRects(
   const out = (radius: number, a: number, aWeight: number, b: number, bWeight: number) => {
     if (radius <= 0) return 0
     const stroked = [aWeight > 0 ? a : null, bWeight > 0 ? b : null].filter((side) => side !== null)
-    return Math.max(0, radius + (stroked.length > 0 ? Math.min(...stroked) : grow))
+    return Math.max(0, radius + (stroked.length > 0 ? minOf(stroked) : grow))
   }
   const into = (radius: number, side: number) => Math.max(0, radius - side)
   const tlOut = out(tl, top, tWeight, left, lWeight)

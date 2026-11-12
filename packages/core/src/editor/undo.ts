@@ -16,6 +16,7 @@ import {
 import {
   recordEdit as recordEditIn,
   recordEditAsync as recordEditAsyncIn,
+  type AsyncRecordEditOptions,
   type RecordEditOptions
 } from './history/edit'
 import { collectNodePositions, pushPositionUndo } from './history/position'
@@ -266,7 +267,7 @@ export function createUndoActions(ctx: EditorContext) {
   }
 
   /** Runs an edit that awaits before it finishes as one undo step, open until it ends. */
-  function recordEditAsync<T>(options: RecordEditOptions, run: () => Promise<T>): Promise<T> {
+  function recordEditAsync<T>(options: AsyncRecordEditOptions, run: () => Promise<T>): Promise<T> {
     return recordEditAsyncIn(ctx, options, run)
   }
 

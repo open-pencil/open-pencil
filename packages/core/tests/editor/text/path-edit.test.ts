@@ -3,7 +3,6 @@ import { describe, expect, test } from 'bun:test'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { pixelLength } from '@open-pencil/scene-graph/text'
 import { expectDefined } from '@open-pencil/test-support/assert'
-
 /** Straight horizontal line, in 400x100 normalized space (zero tangents = no curve). */
 
 import { pathTextEditChanges, resizedPathTextGlyphs } from '#core/editor/text/path-edit'

@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
+import { autoFrame, pageId, rect } from '#core-tests/helpers/layout'
+
 import { computeLayout } from '@open-pencil/core/layout'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { autoFrame, pageId, rect } from '#core-tests/helpers/layout'
 
 describe('wrap layout', () => {
   test('wraps children in horizontal layout', () => {
@@ -46,6 +46,26 @@ describe('wrap layout', () => {
     const children = graph.getChildren(frame.id)
     expect(children[0].y).toBe(0)
     expect(children[1].y).toBe(50)
+  })
+
+  test('rows follow the item spacing while the counter spacing is unset', () => {
+    const graph = new SceneGraph()
+    const frame = autoFrame(graph, pageId(graph), {
+      width: 200,
+      height: 300,
+      layoutWrap: 'WRAP',
+      counterAxisSizing: 'HUG',
+      itemSpacing: 8,
+      counterAxisSpacing: Number.NaN
+    })
+    const first = rect(graph, frame.id, 120, 40)
+    const second = rect(graph, frame.id, 120, 40)
+
+    computeLayout(graph, frame.id)
+
+    const secondRow = first.height + frame.itemSpacing
+    expect(graph.getNode(second.id)?.y).toBe(secondRow)
+    expect(graph.getNode(frame.id)?.height).toBe(secondRow + second.height)
   })
 
   test('itemSpacing with wrap', () => {

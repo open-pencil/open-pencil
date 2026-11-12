@@ -6,6 +6,7 @@ export default defineConfig(
   libraryConfig({
     entry: {
       index: './src/index.ts',
+      arrays: './src/arrays.ts',
       'arrow-caps': './src/arrow-caps.ts',
       'asset-keys': './src/asset-keys.ts',
       'behaviours/index': './src/behaviours/index.ts',
@@ -17,6 +18,7 @@ export default defineConfig(
       constants: './src/constants.ts',
       coordinate: './src/coordinate.ts',
       copy: './src/copy.ts',
+      constraints: './src/constraints.ts',
       'css/index': './src/css/index.ts',
       'export-format': './src/export-format.ts',
       'export-scale': './src/export-scale.ts',

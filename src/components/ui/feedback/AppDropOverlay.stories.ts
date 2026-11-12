@@ -4,7 +4,7 @@ import AppDropOverlay from './AppDropOverlay.vue'
 import type { DropOverlayProps } from './drop-overlay'
 
 const meta = {
-  title: 'Design System/Drop Overlay',
+  title: 'Design System/Feedback/Drop Overlay',
   component: AppDropOverlay,
   parameters: { layout: 'centered' }
 } satisfies Meta<DropOverlayProps>

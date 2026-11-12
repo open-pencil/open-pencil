@@ -36,7 +36,13 @@ const actions = computed<Record<string, string>>(() => ({
   'user.admin-revoked': messages.value.activityRemovedAdmin,
   'email.regenerated': messages.value.activityEmailRetried,
   'user.two-step-reset': messages.value.activityTwoStepReset,
-  'user.picture-removed': messages.value.activityPictureRemoved
+  'user.picture-removed': messages.value.activityPictureRemoved,
+  'document.disabled': messages.value.activityTookDown,
+  'document.enabled': messages.value.activityRestoredDocument,
+  'document.undeleted': messages.value.activityUndeletedDocument,
+  'document-share.revoked': messages.value.activityRevokedLink,
+  'document-report.dismissed': messages.value.activityDismissedReport,
+  'document-report.actioned': messages.value.activityActionedReport
 }))
 
 const column = createColumnHelper<PortalTableFeatures, PortalActivityEntry>()
@@ -77,7 +83,8 @@ const filters = computed(() => [
   { value: 'all' as const, label: messages.value.filterAll },
   { value: 'accounts' as const, label: messages.value.filterAccounts },
   { value: 'requests' as const, label: messages.value.filterRequests },
-  { value: 'email' as const, label: messages.value.filterEmail }
+  { value: 'email' as const, label: messages.value.filterEmail },
+  { value: 'documents' as const, label: messages.value.filterDocuments }
 ])
 </script>
 

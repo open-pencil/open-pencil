@@ -7,12 +7,23 @@ import {
 
 import { loadNodeCloudServerConfig } from './config'
 
-/** The deployment's database, migrated to this version before anything uses it. */
+/**
+ * The deployment's database, migrated to this version before anything uses it. Migrations run
+ * on a connection of their own without the statement timeout, since one may rewrite a large table.
+ */
 export async function migratedNodeCloudDatabase(config: CloudServerConfig) {
+  const migrating = createPostgresCloudDatabase({
+    connectionString: config.databaseURL,
+    statementTimeoutMs: null
+  })
+  try {
+    const auth = createBetterAuthAdapter(config, migrating)
+    await migrateCloudDatabase(migrating, { run: auth.migrate, schemaVersion: auth.schemaVersion })
+  } finally {
+    await migrating.destroy()
+  }
   const database = createPostgresCloudDatabase({ connectionString: config.databaseURL })
-  const auth = createBetterAuthAdapter(config, database)
-  await migrateCloudDatabase(database, { run: auth.migrate, schemaVersion: auth.schemaVersion })
-  return { database, auth }
+  return { database, auth: createBetterAuthAdapter(config, database) }
 }
 
 export async function createMigratedNodeCloudDatabase(

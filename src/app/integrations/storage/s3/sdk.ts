@@ -1,5 +1,6 @@
 import { S3Client } from '@aws-sdk/client-s3'
 import { FetchHttpHandler } from '@smithy/fetch-http-handler'
+import { hasProtocol } from 'ufo'
 
 import { inferS3Region } from '@/app/integrations/storage/s3/region'
 import type { S3CompatibleConfig } from '@/app/integrations/storage/s3/types'
@@ -22,8 +23,7 @@ function resolveS3Region(config: S3CompatibleConfig): string {
 function normalizeEndpoint(endpoint: string): string {
   const trimmed = endpoint.trim().replace(/\/+$/, '')
   if (!trimmed) throw new Error('S3 endpoint is required')
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed
-  return `https://${trimmed}`
+  return hasProtocol(trimmed, { strict: true }) ? trimmed : `https://${trimmed}`
 }
 
 export function createS3Client(config: S3CompatibleConfig, customFetch: typeof fetch): S3Client {

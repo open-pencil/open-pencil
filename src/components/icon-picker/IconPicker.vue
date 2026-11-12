@@ -195,7 +195,7 @@ function pick(name: string) {
         align="end"
         :ui="{
           trigger:
-            'mr-1 h-5 w-auto max-w-32 shrink-0 border-0 bg-transparent px-1.5 hover:bg-hover',
+            'me-1 h-5 w-auto max-w-32 shrink-0 border-0 bg-transparent px-1.5 hover:bg-hover',
           value: 'text-muted',
           content: 'w-64'
         }"

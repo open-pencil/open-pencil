@@ -32,7 +32,7 @@ function setup() {
     }
   })
   editor.setHostRestrictions({ pathEdits: 'handles' })
-  editor.enterNodeEditMode(path.id, { handles: 'all' })
+  editor.enterNodeEditMode(path.id, { showHandles: 'all' })
 }
 
 function press(cx: number, cy: number) {
@@ -56,7 +56,7 @@ describe('editing a path whose points the host keeps', () => {
     expect(editor.getNodeEditState()?.selectedSegmentIndices.size).toBe(0)
   })
 
-  test("a press on a handle of a point that is not selected drags the handle", () => {
+  test('a press on a handle of a point that is not selected drags the handle', () => {
     setup()
     expect(press(30, -40)?.type).toBe('edit-handle')
   })

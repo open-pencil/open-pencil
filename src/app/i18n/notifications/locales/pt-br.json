@@ -16,6 +16,7 @@
   "xPaths": "XPaths",
   "pngClipboardUnavailable": "A exportação de PNG para a área de transferência não está disponível neste navegador.",
   "openFileFailed": "Não foi possível abrir “{name}”: {error}",
+  "openTourFailed": "Não foi possível abrir o tour: {error}",
   "viewDiagnostics": "Ver diagnóstico",
   "importedDOMCSS": "Documento DOM/CSS importado.",
   "importDOMCSSFailed": "Não foi possível importar DOM/CSS: {error}",
@@ -33,5 +34,9 @@
   "deepLinkPickerDismissed": "Link cancelado: nenhum arquivo foi escolhido.",
   "deepLinkCancelled": "Link cancelado: era esperado um arquivo terminado em “{file}”.",
   "deepLinkNodeNotFound": "O nó “{node}” não foi encontrado em “{file}”.",
-  "openQueuedFilesFailed": "Não foi possível abrir os arquivos entregues ao OpenPencil: {error}"
+  "openQueuedFilesFailed": "Não foi possível abrir os arquivos entregues ao OpenPencil: {error}",
+  "saveFailedRetry": "Tentar salvar novamente",
+  "savingDocument": "Salvando o documento…",
+  "fileChangedOnDisk": "“{name}” foi alterado no disco. Suas alterações não salvas são mantidas; salvar substitui o arquivo.",
+  "reloadDiscardingChanges": "Recarregar"
 }

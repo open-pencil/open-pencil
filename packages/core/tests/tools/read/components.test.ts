@@ -5,12 +5,12 @@ import { ALL_TOOLS } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 function getComponentsTool() {
-  const tool = ALL_TOOLS.find((item) => item.name === 'get_components')
-  if (!tool) throw new Error('Missing get_components tool')
+  const tool = ALL_TOOLS.find((item) => item.name === 'list_components')
+  if (!tool) throw new Error('Missing list_components tool')
   return tool
 }
 
-test('get_components includes component property definitions', async () => {
+test('list_components includes component property definitions', async () => {
   const figma = new FigmaAPI(new SceneGraph())
   const component = figma.createComponent()
   component.name = 'Note'

@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { styleDetachmentChanges } from '@open-pencil/scene-graph/shared-styles'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
@@ -37,7 +38,7 @@ export const updateNode = defineTool({
   name: 'update_node',
 
   description:
-    'Update properties of an existing node: position, size, opacity, corner radius, visibility, text, font.',
+    'Update properties of an existing node: position, size, rotation, opacity, corner radius, visibility, lock, name, text, font.',
   execution: { kind: 'sync', mutation: 'properties' },
   input: v.strictObject({
     id: nodeIdInputSchema,
@@ -45,6 +46,7 @@ export const updateNode = defineTool({
     y: v.optional(toolNumber(v.pipe(v.number(), v.description('Y position')))),
     width: v.optional(toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Width')))),
     height: v.optional(toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Height')))),
+    rotation: v.optional(toolNumber(v.pipe(v.number(), v.description('Rotation in degrees')))),
     opacity: v.optional(
       toolNumber(v.pipe(v.number(), v.minValue(0), v.maxValue(1), v.description('Opacity (0-1)')))
     ),
@@ -52,6 +54,7 @@ export const updateNode = defineTool({
       toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Corner radius')))
     ),
     visible: v.optional(v.pipe(v.boolean(), v.description('Visibility'))),
+    locked: v.optional(v.pipe(v.boolean(), v.description('Locked'))),
     text: v.optional(v.pipe(v.string(), v.description('Text content (TEXT nodes)'))),
     text_direction: v.optional(
       v.pipe(v.picklist(['AUTO', 'LTR', 'RTL']), v.description('Text direction for TEXT nodes'))
@@ -92,7 +95,11 @@ export const updateNode = defineTool({
       updated.push('y')
     }
     if (args.width !== undefined || args.height !== undefined)
-      updated.push(...resized(node, args.width, args.height))
+      appendAll(updated, resized(node, args.width, args.height))
+    if (args.rotation !== undefined) {
+      node.rotation = args.rotation
+      updated.push('rotation')
+    }
     if (args.opacity !== undefined) {
       node.opacity = args.opacity
       updated.push('opacity')
@@ -104,6 +111,10 @@ export const updateNode = defineTool({
     if (args.visible !== undefined) {
       node.visible = args.visible
       updated.push('visible')
+    }
+    if (args.locked !== undefined) {
+      node.locked = args.locked
+      updated.push('locked')
     }
     if (args.name !== undefined) {
       node.name = args.name

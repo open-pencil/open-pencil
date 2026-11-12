@@ -1,6 +1,8 @@
 import { withThemeByDataAttribute } from '@storybook/addon-themes'
 import type { Preview, Renderer } from '@storybook/vue3-vite'
-import { watch } from 'vue'
+import { useTextDirection } from '@vueuse/core'
+import { ConfigProvider } from 'reka-ui'
+import { computed, watch, watchEffect } from 'vue'
 
 // Points Core at the engine files the openPencil() Vite plugin serves.
 import '@/app/editor/canvas/canvaskit'
@@ -11,7 +13,33 @@ import '@/app.css'
 registerInterfaceFont()
 
 const preview: Preview = {
+  globalTypes: {
+    direction: {
+      description: 'Interface direction, as Arabic mirrors it',
+      toolbar: {
+        title: 'Direction',
+        icon: 'transfer',
+        items: [
+          { value: 'ltr', title: 'Left to right' },
+          { value: 'rtl', title: 'Right to left' }
+        ],
+        dynamicTitle: true
+      }
+    }
+  },
+  initialGlobals: { direction: 'ltr' },
   decorators: [
+    // As App.vue does: the document's direction for CSS, and Reka's for its components.
+    (story, context) => ({
+      components: { story, ConfigProvider },
+      setup() {
+        const dir = computed(() => (context.globals.direction === 'rtl' ? 'rtl' : 'ltr'))
+        const documentDirection = useTextDirection()
+        watchEffect(() => (documentDirection.value = dir.value))
+        return { dir }
+      },
+      template: '<ConfigProvider :dir="dir"><story /></ConfigProvider>'
+    }),
     withThemeByDataAttribute<Renderer>({
       themes: {
         dark: 'dark',
@@ -39,6 +67,8 @@ const preview: Preview = {
     options: {
       storySort: {
         // Design System follows the families under src/components/ui; App follows product areas.
+        // Every story sits under one of them (`@open-pencil/structure/story-titles`). Storybook reads
+        // this list without running the file, so it stays a literal here.
         order: [
           'Design System',
           [
@@ -59,9 +89,11 @@ const preview: Preview = {
             'Chat',
             ['Markdown', 'Message', 'Attachments'],
             'Collaboration',
-            'Settings',
+            'Cloud',
             'Home',
+            'Settings',
             'Shell',
+            'Metrics',
             'Brand'
           ],
           'Vue SDK',

@@ -1,3 +1,5 @@
+import type { StorageLimitNoticeResult, StorageLimitNoticeService } from '#cloud/server/quota'
+
 import { startPeriodicWorker } from '../worker/periodic'
 import type { DocumentCleanupResult, DocumentCleanupService } from './documents'
 import {
@@ -10,6 +12,8 @@ import type { UploadCleanupResult, UploadCleanupService } from './uploads'
 export type CleanupWorkerOptions = {
   batchSize: number
   documentRetentionMs: number
+  /** How long a document deleted forever keeps its files; 0 destroys it at once. */
+  documentPurgeGraceMs: number
   intervalMs: number
   leaseDurationMs: number
   signal?: AbortSignal
@@ -21,6 +25,7 @@ export type CleanupResult = {
   documents: DocumentCleanupResult
   revisions: RevisionCompactionResult | null
   rateLimits: number
+  storageLimits: StorageLimitNoticeResult | null
 }
 
 export type CleanupServices = {
@@ -28,6 +33,8 @@ export type CleanupServices = {
   uploads: UploadCleanupService
   revisions?: RevisionCompactionService
   rateLimits?: { cleanupExpired(before: Date): Promise<number> }
+  /** Emails accounts whose storage became full; only where the server sends email. */
+  storageLimits?: Pick<StorageLimitNoticeService, 'notifyStorageLimits'>
 }
 
 export type CleanupWorker = {
@@ -37,7 +44,7 @@ export type CleanupWorker = {
 
 export type CleanupPassOptions = Pick<
   CleanupWorkerOptions,
-  'batchSize' | 'documentRetentionMs' | 'leaseDurationMs'
+  'batchSize' | 'documentRetentionMs' | 'documentPurgeGraceMs' | 'leaseDurationMs'
 >
 
 /** One cleanup pass, for runtimes that schedule passes themselves. */
@@ -52,7 +59,8 @@ export async function runCleanup(
   const documents = await cleanup.documents.cleanupDeletedDocuments({
     batchSize: options.batchSize,
     leaseDurationMs: options.leaseDurationMs,
-    retentionMs: options.documentRetentionMs
+    retentionMs: options.documentRetentionMs,
+    purgeGraceMs: options.documentPurgeGraceMs
   })
   const revisions = cleanup.revisions
     ? await cleanup.revisions.compactRevisions({
@@ -63,7 +71,11 @@ export async function runCleanup(
   const rateLimits = cleanup.rateLimits
     ? await cleanup.rateLimits.cleanupExpired(new Date(Date.now() - 24 * 60 * 60_000))
     : 0
-  return { uploads, documents, revisions, rateLimits }
+  // After documents, so storage they freed counts before anyone is told theirs is full.
+  const storageLimits = cleanup.storageLimits
+    ? await cleanup.storageLimits.notifyStorageLimits()
+    : null
+  return { uploads, documents, revisions, rateLimits, storageLimits }
 }
 
 export function startCleanupWorker(

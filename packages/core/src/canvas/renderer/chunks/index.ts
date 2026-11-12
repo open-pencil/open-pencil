@@ -1,8 +1,9 @@
 import RBush from 'rbush'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { appendAll, maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 
-import { worldNodeVisualBounds } from '#core/canvas/renderer/visual-bounds'
+import { backdropReach, worldNodeVisualBounds } from '#core/canvas/renderer/visual-bounds'
 
 import {
   buildChunks,
@@ -33,6 +34,8 @@ export class RenderChunkIndex {
   private readonly chunkIdsByTop = new Map<string, Set<string>>()
   /** The bounds of every chunk, computed when asked and dropped when the chunks change. */
   private cachedBounds: Pick<RenderChunk, 'minX' | 'minY' | 'maxX' | 'maxY'> | null | undefined
+  /** At least the largest backdrop reach of any chunk: it only grows until the index is reset. */
+  private maxBackdropReach = 0
 
   static build(
     graph: SceneGraph,
@@ -83,6 +86,7 @@ export class RenderChunkIndex {
 
   private register(chunk: RenderChunk, graph?: SceneGraph): void {
     this.chunks.set(chunk.id, chunk)
+    this.maxBackdropReach = Math.max(this.maxBackdropReach, chunk.backdropReach)
     const ids = this.chunkIdsByNode.get(chunk.nodeId) ?? new Set<string>()
     ids.add(chunk.id)
     this.chunkIdsByNode.set(chunk.nodeId, ids)
@@ -274,8 +278,8 @@ export class RenderChunkIndex {
     for (const rootId of stale) {
       const rebuilt = this.replaceSubtree(graph, pageId, ownerChunk.topId, owner.id, rootId)
       if (rebuilt) {
-        removed.push(...rebuilt.removed)
-        added.push(...rebuilt.added)
+        appendAll(removed, rebuilt.removed)
+        appendAll(added, rebuilt.added)
       }
     }
     if (removed.length > 0) this.cachedBounds = undefined
@@ -330,10 +334,9 @@ export class RenderChunkIndex {
     // Replaced chunks draw first in their window, so the lower bound is just before them.
     const first =
       removed.length > 0
-        ? this.orderBefore(topId, Math.min(...removed.map((chunk) => chunk.painterOrder)))
+        ? this.orderBefore(topId, minOf(removed.map((chunk) => chunk.painterOrder)))
         : this.orderBeforeSibling(graph, ownerId, rootId)
-    const last =
-      removed.length > 0 ? Math.max(...removed.map((chunk) => chunk.painterOrder)) : first
+    const last = removed.length > 0 ? maxOf(removed.map((chunk) => chunk.painterOrder)) : first
     let end = painterOrderOf(topIndex + 1, 0)
     for (const id of this.chunkIdsByTop.get(topId) ?? []) {
       const chunk = this.chunks.get(id)
@@ -401,6 +404,27 @@ export class RenderChunkIndex {
     return this.tree.search(bounds).sort((a, b) => a.painterOrder - b.painterOrder)
   }
 
+  /** The chunks whose glass or background blur reads some of `bounds` from the canvas. */
+  backdropsReaching(bounds: Pick<RenderChunk, 'minX' | 'minY' | 'maxX' | 'maxY'>): RenderChunk[] {
+    const reach = this.maxBackdropReach
+    if (reach === 0) return []
+    return this.tree
+      .search({
+        minX: bounds.minX - reach,
+        minY: bounds.minY - reach,
+        maxX: bounds.maxX + reach,
+        maxY: bounds.maxY + reach
+      })
+      .filter(
+        (chunk) =>
+          chunk.backdropReach > 0 &&
+          chunk.minX - chunk.backdropReach < bounds.maxX &&
+          chunk.minY - chunk.backdropReach < bounds.maxY &&
+          chunk.maxX + chunk.backdropReach > bounds.minX &&
+          chunk.maxY + chunk.backdropReach > bounds.minY
+      )
+  }
+
   updateNode(graph: SceneGraph, nodeId: string): number {
     const ids = this.chunkIdsByNode.get(nodeId)
     const node = graph.getNode(nodeId)
@@ -416,7 +440,11 @@ export class RenderChunkIndex {
         this.tree.insert(chunk)
         continue
       }
-      Object.assign(chunk, bounds, { context: chunkContext(graph, node) })
+      Object.assign(chunk, bounds, {
+        context: chunkContext(graph, node),
+        backdropReach: backdropReach(graph, node, chunk.kind === 'subtree')
+      })
+      this.maxBackdropReach = Math.max(this.maxBackdropReach, chunk.backdropReach)
       this.tree.insert(chunk)
       this.cachedBounds = undefined
       updated++
@@ -454,7 +482,7 @@ export class RenderChunkIndex {
         visited.add(id)
         dependencies.add(id)
         const node = graph.getNode(id)
-        if (node) pending.push(...node.childIds)
+        if (node) for (const childId of node.childIds) pending.push(childId)
       }
     }
     for (const dependencyId of dependencies) {
@@ -477,6 +505,7 @@ export class RenderChunkIndex {
     this.dependenciesByChunk.clear()
     this.chunkIdsByTop.clear()
     this.cachedBounds = undefined
+    this.maxBackdropReach = 0
   }
 }
 

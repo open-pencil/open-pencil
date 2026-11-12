@@ -31,12 +31,12 @@ OpenPencil es unas once veces más pequeño. La diferencia se debe sobre todo a 
 │  │  Vue 3 + TypeScript       │  │
 │  │  Editor + Kiwi codec      │  │
 │  │  SceneGraph in TypeScript │  │
-│  │  CanvasKit + Yoga WASM    │  │
+│  │  CanvasKit + Taffy WASM   │  │
 │  └───────────────────────────┘  │
 └─────────────────────────────────┘
 ```
 
-Editor, SceneGraph, códec de archivos y renderizador se ejecutan en el mismo proceso. No se necesita servidor, base de datos ni Docker. SceneGraph se almacena como `Map<string, SceneNode>`. TypeScript llama directamente a CanvasKit y Yoga WASM calcula la disposición de forma síncrona.
+Editor, SceneGraph, códec de archivos y renderizador se ejecutan en el mismo proceso. No se necesita servidor, base de datos ni Docker. SceneGraph se almacena como `Map<string, SceneNode>`. TypeScript llama directamente a CanvasKit y Taffy WASM calcula la disposición de forma síncrona.
 
 ### Penpot: plataforma Client-Server
 
@@ -117,19 +117,19 @@ OpenPencil utiliza directamente el esquema Kiwi. Penpot debe mantener sincroniza
 
 ## 5. Motor de disposición
 
-OpenPencil usa Yoga WASM de forma síncrona:
+OpenPencil usa Taffy WASM de forma síncrona:
 
 ```typescript
-import Yoga from 'yoga-layout'
-const root = Yoga.Node.create()
-root.setFlexDirection(FlexDirection.Row)
-root.calculateLayout()
-applyYogaLayout(graph, frame, yogaRoot)
+import { computeLayout } from '@open-pencil/taffy'
+const root = createLayoutNode()
+setFlexFlow(root, frame)
+computeLayout(root)
+applyComputedLayout(graph, frame, root, computeLayoutInternal)
 ```
 
 Penpot mantiene implementaciones propias de Flex y Grid en ClojureScript y Rust WASM. Ambos motores deben producir el mismo resultado.
 
-OpenPencil utiliza Yoga, incluida una variante con Grid. Penpot mantiene varios miles de líneas de código propio de disposición en dos lenguajes.
+OpenPencil utiliza para Flexbox y CSS Grid la biblioteca establecida Taffy, que también usan Servo, Blitz, Bevy y Zed. Penpot mantiene varios miles de líneas de código propio de disposición en dos lenguajes.
 
 ## 6. Formatos y Figma
 
@@ -183,7 +183,7 @@ Los cambios serializables encajan con la colaboración basada en servidor, pero 
 1. **Colaboración mediante servidor:** cuentas, control de acceso y almacenamiento central a través de WebSockets.
 2. **Sistema de plugins:** ejecución aislada y API de plugins.
 3. **Variables de diseño:** compatibilidad integrada.
-4. **CSS Grid:** implementación propia; OpenPencil usa una variante de Yoga con Grid.
+4. **CSS Grid:** implementación propia; OpenPencil usa el CSS Grid de Taffy.
 5. **Alojamiento propio:** despliegue de una plataforma de equipo mediante Docker.
 6. **Madurez:** varios años de uso en producción.
 
@@ -203,7 +203,7 @@ Penpot ofrece plugins aislados, pero no una API equivalente para scripting sin i
 | Compatibilidad con Figma | OpenPencil | Kiwi y `.fig` nativos |
 | Desarrollo | OpenPencil | TypeScript y Vue frente a Clojure, Rust y Docker |
 | Aplicación de escritorio | OpenPencil | Tauri nativo |
-| Disposición | OpenPencil | Yoga frente a dos implementaciones propias |
+| Disposición | OpenPencil | Taffy frente a dos implementaciones propias |
 | Colaboración | Ventajas distintas | Penpot: servidor y control de acceso; OpenPencil: P2P sin alojamiento |
 | Alojamiento propio | Penpot | Despliegue con Docker |
 | Madurez del ecosistema | Penpot | Años de uso en producción |

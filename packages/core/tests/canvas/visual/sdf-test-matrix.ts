@@ -1,12 +1,12 @@
 import { mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { SkiaRenderer } from '#core/canvas'
 import { renderNodesToImage } from '#core/io/formats/raster'
 import { fontManager } from '#core/text'
@@ -142,7 +142,7 @@ function slugify(tc: TestCase, index: number): string {
 }
 
 async function main() {
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
 
   const fontProvider = ck.TypefaceFontProvider.Make()
   fontManager.attachProvider(ck, fontProvider)

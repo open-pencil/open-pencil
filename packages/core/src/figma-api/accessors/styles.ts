@@ -10,7 +10,7 @@ import {
   updateNode,
   type NodeProxyInternals,
   type ProxyThis
-} from '#core/figma-api/accessor-utils'
+} from '#core/figma-api/accessors/utils'
 import { graphOf } from '#core/figma-api/graph'
 import { bindStyleVariables, STYLE_NOT_FOUND, styleChanges } from '#core/figma-api/styles/apply'
 import { getTextStyle } from '#core/figma-api/text/style'

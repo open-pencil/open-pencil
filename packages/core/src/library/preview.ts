@@ -3,6 +3,7 @@ import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 
 import { reapplyInstanceComponentProperties } from '#core/editor/components/properties'
 
+import { isLibraryComponentAsset } from './asset-keys'
 import { libraryDependencyRoots } from './materialize'
 import type { ComponentLibraryRevision } from './types'
 import { libraryAssetKeyForComponent } from './update/instances'
@@ -49,7 +50,7 @@ function consumerDependencyRoots(graph: SceneGraph, component: SceneNode): Scene
     visited.add(id)
     const node = graph.getNode(id)
     if (!node) continue
-    pending.push(...node.childIds)
+    for (const childId of node.childIds) pending.push(childId)
     if (!node.componentId) continue
     const dependency = graph.getNode(node.componentId)
     if (!dependency) continue
@@ -98,16 +99,16 @@ export function createLibraryUpdatePreview(
   const assetKey = libraryAssetKeyForComponent(consumer, currentComponent.id)
   if (!assetKey) throw new Error('Linked library asset not found')
   const descriptor = latest.manifest.assets.find((asset) => asset.key === assetKey)
-  const root = descriptor ? latest.graph.getNode(descriptor.sourceNodeId) : undefined
+  const root = descriptor ? latest.graph.getNode(descriptor.sourceId) : undefined
   const target = root ? assetComponent(latest.graph, root, currentComponent) : undefined
   if (!target) throw new Error('Updated library component not found')
   const updatedComponent = target.component
 
   const graph = new SceneGraph()
   const page = graph.getPages()[0]
-  const latestRoots = latest.manifest.assets.flatMap((descriptor) =>
-    libraryDependencyRoots(latest, descriptor)
-  )
+  const latestRoots = latest.manifest.assets
+    .filter(isLibraryComponentAsset)
+    .flatMap((descriptor) => libraryDependencyRoots(latest, descriptor))
   const currentRoots = consumerDependencyRoots(consumer, currentComponent)
   const currentMapped = copyPreviewDefinitions(consumer, graph, currentRoots, page.id)
   const currentComponentId = currentMapped.get(currentComponent.id)

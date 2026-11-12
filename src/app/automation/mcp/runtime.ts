@@ -5,12 +5,11 @@ import type { EditorStore } from '@/app/editor/active-store'
 import { isTauri } from '@/app/tauri/env'
 
 import { mcpFailure, type MCPFailure } from './failure'
+import { getAutomationHealthFailure, type AutomationHealth } from './health'
 import { setMCPToolDescriptors } from './preferences'
 import {
-  type AutomationHealth,
   type AutomationServerHandle,
   readAutomationHealth,
-  getAutomationHealthFailure,
   getAutomationStartupFailure,
   getMCPServerURL,
   spawnMCPIfNeeded

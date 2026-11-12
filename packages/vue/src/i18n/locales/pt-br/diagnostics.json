@@ -99,6 +99,7 @@
   "reportNotePlaceholder": "O que você fez, o que aconteceu e o que esperava que acontecesse.",
   "reportEmail": "E-mail (opcional)",
   "reportEmailHint": "Somente se quiser que entremos em contato.",
+  "reportEmailInvalid": "Digite um e-mail ou deixe em branco.",
   "reportActivity": "Incluir atividade recente",
   "reportActivityDescription": "Os últimos 50 eventos do Diagnóstico, como erros e tempos. Nunca mensagens de chat nem resultados de ferramentas.",
   "reportDocument": "Anexar este documento",

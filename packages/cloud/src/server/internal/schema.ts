@@ -1,7 +1,7 @@
 import { staticEntitlementsSchema } from '#cloud/server/policy/schema'
 import * as v from 'valibot'
 
-export const setWorkspaceEntitlementsSchema = v.object({
+export const setAccountEntitlementsSchema = v.object({
   values: staticEntitlementsSchema,
   /** Who decided these values, such as `billing`; stored as the row's source. */
   source: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(64)),

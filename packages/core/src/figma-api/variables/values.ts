@@ -5,6 +5,7 @@ import type {
   VariableType,
   VariableValue
 } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { variableValueReferences } from '@open-pencil/scene-graph/variables'
 
@@ -104,7 +105,7 @@ function readsVariable(graph: SceneGraph, from: string, id: string): boolean {
     const variable = graph.variables.get(next)
     if (!variable) continue
     for (const value of Object.values(variable.valuesByMode)) {
-      pending.push(...variableValueReferences(value))
+      appendAll(pending, variableValueReferences(value))
     }
   }
   return false

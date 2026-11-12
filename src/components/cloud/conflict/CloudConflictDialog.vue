@@ -3,7 +3,7 @@ import { RadioGroupItem, RadioGroupRoot } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
+import { useCloudMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppDialogBody from '@/components/ui/dialog/AppDialogBody.vue'
@@ -32,7 +32,6 @@ const emit = defineEmits<{ confirm: [choice: ConflictChoice]; later: [] }>()
 
 const ui = cloudConflict()
 const t = useCloudMessages()
-const common = useCommonMessages()
 const options = computed(() => [
   {
     value: 'keep-both' as const,
@@ -70,7 +69,6 @@ const confirmLabel = computed(
     <AppDialogHeader
       :heading="t.changedInTwoPlaces({ name: documentName })"
       :description="t.conflictDescription"
-      :close-label="common.close"
     />
     <AppDialogBody>
       <div :class="ui.versions()">

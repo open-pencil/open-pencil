@@ -41,5 +41,6 @@
   "tokens": "tokens",
   "clear": "Limpar",
   "dismiss": "Dispensar",
-  "browserSupport": "Verificar compatibilidade do navegador"
+  "browserSupport": "Verificar compatibilidade do navegador",
+  "typeToConfirm": "Para confirmar, digite “{text}”."
 }

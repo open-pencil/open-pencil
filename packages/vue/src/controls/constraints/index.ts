@@ -1,9 +1,5 @@
 export { useConstraints } from '#vue/controls/constraints/use'
-export {
-  constraintPins,
-  isConstraintEligible,
-  toggleConstraintPin
-} from '#vue/controls/constraints/model'
+export { constraintPins, toggleConstraintPin } from '#vue/controls/constraints/model'
 export type {
   ConstraintAxis,
   ConstraintEdge,

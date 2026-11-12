@@ -1,7 +1,9 @@
 import type { CloudFetch } from '#cloud/client/discovery'
 import {
+  accountEntitlementsResponseSchema,
   acceptedInvitationSchema,
   servicesTokenSchema,
+  billingTokenSchema,
   cloudSessionSchema,
   cloudUserProfileSchema,
   collaborationTicketSchema,
@@ -18,11 +20,14 @@ import {
   documentVersionsSchema,
   restoredDocumentSchema,
   sharedDocumentSchema,
+  trashSchema,
   invitationContinuationSchema,
   invitationPreviewSchema,
   resolvedDocumentShareSchema,
+  type AccountEntitlements,
   type AcceptDocumentInvitationInput,
   type ServicesToken,
+  type BillingToken,
   type CloudSession,
   type CloudUserProfile,
   type CollaborationTicket,
@@ -46,10 +51,12 @@ import {
   type SaveDocumentVersionInput,
   type UpdateDocumentVersionInput,
   type SharedDocument,
+  type TrashedDocument,
   type InvitationPreview,
-  type LookupCloudUserInput,
   type PutDocumentGrantInput,
   type ResolveDocumentShareInput,
+  fileDocumentReportResponseSchema,
+  type FileDocumentReportInput,
   type UpdateDocumentShareInput,
   type AcceptedInvitation
 } from '#cloud/contract'
@@ -145,19 +152,18 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
         options.onDiagnostic
       )
     },
-    async lookupUser(
-      documentId: string,
-      input: LookupCloudUserInput
-    ): Promise<CloudUserProfile | null> {
+    /** A short-lived token for the deployment's billing, for the signed-in person's own account. */
+    async requestBillingToken(): Promise<BillingToken> {
+      return parseResponse(client.billing.token.$post(), billingTokenSchema, options.onDiagnostic)
+    },
+    /** The signed-in account's plan, and the storage its workspaces hold together. */
+    async getAccountEntitlements(): Promise<AccountEntitlements> {
       const response = await parseResponse(
-        client.documents[':documentId'].users.lookup.$post({
-          param: { documentId },
-          json: input
-        }),
-        userLookupResponseSchema,
+        client.account.entitlements.$get(),
+        accountEntitlementsResponseSchema,
         options.onDiagnostic
       )
-      return response.user
+      return response.entitlements
     },
     async getUserProfile(documentId: string, userId: string): Promise<CloudUserProfile | null> {
       const response = await parseResponse(
@@ -203,6 +209,24 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
         options.onDiagnostic
       )
       return response.document
+    },
+    /** Documents in Trash the person may restore, across their workspaces, newest first. */
+    async listTrash(): Promise<TrashedDocument[]> {
+      const response = await parseResponse(client.trash.$get(), trashSchema, options.onDiagnostic)
+      return response.documents
+    },
+    async restoreDocument(documentId: string): Promise<void> {
+      await responseBody(
+        await client.trash[':documentId'].restore.$post({ param: { documentId } }),
+        options.onDiagnostic
+      )
+    },
+    /** Deletes a document in Trash for good. */
+    async purgeDocument(documentId: string): Promise<void> {
+      await responseBody(
+        await client.trash[':documentId'].$delete({ param: { documentId } }),
+        options.onDiagnostic
+      )
     },
     async deleteDocument(documentId: string): Promise<void> {
       await responseBody(
@@ -377,6 +401,14 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
         await client.documents[':documentId'].invitations[':invitationId'].$delete({
           param: { documentId, invitationId }
         }),
+        options.onDiagnostic
+      )
+    },
+    /** Reports the document a share link opens to the server's administrators. */
+    async fileDocumentReport(shareId: string, input: FileDocumentReportInput): Promise<void> {
+      await parseResponse(
+        publicClient.shares[':shareId'].reports.$post({ param: { shareId }, json: input }),
+        fileDocumentReportResponseSchema,
         options.onDiagnostic
       )
     },

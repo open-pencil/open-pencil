@@ -5,6 +5,7 @@ import { DocumentNotFoundError } from '#cloud/server/documents/errors'
 import { workspaceRole } from '#cloud/server/documents/repository'
 import { CLOUD_FEATURE_KEYS } from '#cloud/server/policy/keys'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
+import { workspacePolicyContext } from '#cloud/server/policy/workspace'
 import { SignJWT } from 'jose'
 import type { Kysely } from 'kysely'
 
@@ -26,20 +27,20 @@ export function createServicesTokenService(options: ServicesTokenServiceOptions)
 
   return {
     /**
-     * Signs a token that lets a workspace member reach the services on the workspace's behalf.
-     * Entitlements are read for every token, so a plan change reaches the service within one
+     * Signs a token that lets a workspace member reach the services on the workspace's behalf,
+     * spending its owner's credits. Entitlements are read for every token, so a plan change reaches the service within one
      * token lifetime.
      */
     async issue(actor: CloudActor, workspaceId: string): Promise<ServicesToken> {
       if (!(await workspaceRole(options.database, actor.userId, workspaceId))) {
         throw new DocumentNotFoundError()
       }
-      const context = {
-        targetingKey: workspaceId,
-        actorId: actor.userId,
-        workspaceId,
-        deploymentMode: options.deploymentMode
-      }
+      const context = await workspacePolicyContext(
+        options.database,
+        { workspaceId },
+        { actorId: actor.userId, deploymentMode: options.deploymentMode }
+      )
+      if (!context) throw new DocumentNotFoundError()
       const [enabled, allowance] = await Promise.all([
         options.policy.boolean(CLOUD_FEATURE_KEYS.cloudServices, false, context),
         options.policy.number(CLOUD_FEATURE_KEYS.monthlyCreditAllowance, -1, context)
@@ -49,6 +50,8 @@ export function createServicesTokenService(options: ServicesTokenServiceOptions)
       const expiresAt = issuedAt + options.lifetimeSeconds
       const token = await new SignJWT({
         workspaceId,
+        // Credits are the owner's, shared by every workspace they own.
+        accountId: context.targetingKey,
         monthlyCreditAllowance: allowance < 0 ? null : allowance
       })
         .setProtectedHeader({ alg: SERVICES_SIGNING_ALGORITHM, kid: publicJWK.kid, typ: 'JWT' })

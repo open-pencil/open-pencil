@@ -1,5 +1,4 @@
-import type { Canvas, CanvasKit, Path, PathBuilder } from 'canvaskit-wasm'
-
+import type { Canvas, CanvasKit, Path, PathBuilder } from '@open-pencil/canvaskit'
 import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 

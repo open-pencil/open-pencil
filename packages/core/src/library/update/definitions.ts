@@ -1,22 +1,21 @@
 import { countBy, groupBy } from 'es-toolkit/array'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
 import { instanceSwapPropertyIds, resolvedReferences } from '@open-pencil/scene-graph/transfer'
 
 import { componentSyncOrder } from '#core/editor/components/sync'
 import {
-  copyImages,
   copyLibraryTree,
   getInternalLibraryPage,
   libraryDefinitionSource
 } from '#core/library/materialize'
+import { applyLibraryResources } from '#core/library/resources'
 import type { ComponentLibraryRevision } from '#core/library/types'
 
 export interface LibraryDefinitionUpdateOptions {
-  /** The document's variable for a variable of the revision; the revision's own by default. */
-  variable?: (id: string) => string
   /** The assets whose definitions to redraw; every definition of the library by default. */
   assetKeys?: ReadonlySet<string>
 }
@@ -41,11 +40,17 @@ interface DefinitionPair {
 }
 
 function definitionRoots(graph: SceneGraph, libraryId: string): SceneNode[] {
-  return graph
-    .getPages(true)
-    .filter((page) => page.internalOnly)
-    .flatMap((page) => graph.getChildren(page.id))
-    .filter((node) => node.librarySource?.identity.libraryId === libraryId)
+  return (
+    graph
+      .getPages(true)
+      .filter((page) => page.internalOnly)
+      .flatMap((page) => graph.getChildren(page.id))
+      // The library's styles sit beside its definitions and follow the components that use them.
+      .filter(
+        (node) =>
+          node.sharedStyleType === null && node.librarySource?.identity.libraryId === libraryId
+      )
+  )
 }
 
 /** The revision layer a definition draws: its asset's, or the layer it was copied from. */
@@ -55,7 +60,7 @@ function revisionRoot(revision: ComponentLibraryRevision, root: SceneNode): Scen
   const descriptor = revision.manifest.assets.find(
     (asset) => asset.key === source.identity.assetKey
   )
-  const id = descriptor?.sourceNodeId ?? source.sourceNodeId
+  const id = descriptor?.sourceId ?? source.sourceNodeId
   return id ? revision.graph.getNode(id) : undefined
 }
 
@@ -155,7 +160,7 @@ function pairLayers(
   for (const [child, pair] of matchChildren(graph, revision, source, target)) {
     if (pair) {
       paired.add(pair)
-      removed.push(...pairLayers(graph, revision, child, pair, tree, pairs))
+      appendAll(removed, pairLayers(graph, revision, child, pair, tree, pairs))
     } else copyTree(graph, revision, child.id, target.id, tree, pairs)
   }
   for (const layer of layers) if (!paired.has(layer)) removed.push(layer.id)
@@ -197,7 +202,7 @@ function pairDefinitions(
     } else if (source.type !== root.type) {
       result.replaced.push(key)
     } else {
-      removed.push(...pairLayers(graph, revision, source, root, new Map(), pairs))
+      appendAll(removed, pairLayers(graph, revision, source, root, new Map(), pairs))
       result.updated.push(key)
     }
   }
@@ -218,7 +223,7 @@ function pairDefinitions(
 export function updateLibraryDefinitions(
   graph: SceneGraph,
   revision: ComponentLibraryRevision,
-  { variable = (id) => id, assetKeys }: LibraryDefinitionUpdateOptions = {}
+  { assetKeys }: LibraryDefinitionUpdateOptions = {}
 ): LibraryDefinitionUpdate {
   const { libraryId, revisionId } = revision.manifest
   const pairs: DefinitionPair[] = []
@@ -286,14 +291,14 @@ export function updateLibraryDefinitions(
           layer: (id, component) => tree.get(id) ?? copyOf(id, null, component),
           // A connector inside a definition follows the layers of its own tree.
           endpoint: (id) => tree.get(id) ?? id,
-          variable
+          // So does a text link, since the document lacks the revision's layers.
+          link: (id) => tree.get(id) ?? id,
+          // Variables are the revision's until the resources below are brought in.
+          variable: (id) => id
         },
         swapProperties
       ),
       locked: true,
-      boundVariables: Object.fromEntries(
-        Object.entries(source.boundVariables).map(([field, id]) => [field, variable(id)])
-      ),
       librarySource: libraryDefinitionSource(revision, source.id) ?? target.librarySource
     })
   }
@@ -309,10 +314,11 @@ export function updateLibraryDefinitions(
     })
   }
 
-  copyImages(
-    revision.graph,
+  applyLibraryResources(
     graph,
-    new Map(pairs.map(({ source, target }) => [source.id, target.id]))
+    pairs.map(({ target }) => target.id),
+    revision,
+    pairs.map(({ source }) => source)
   )
   // The document uses the revision once no definition it holds is left behind.
   if (result.behind.length === 0 && result.replaced.length === 0)

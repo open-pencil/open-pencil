@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { SelectTrigger } from 'reka-ui'
 import { computed } from 'vue'
 
 import type { MixedValue } from '@open-pencil/vue/controls/node-props'
@@ -11,6 +10,7 @@ import NumberField from '@/components/inputs/NumberField.vue'
 import AppSelectContent from '@/components/ui/select/AppSelectContent.vue'
 import AppSelectItem from '@/components/ui/select/AppSelectItem.vue'
 import AppSelectRoot from '@/components/ui/select/AppSelectRoot.vue'
+import SelectFieldTrigger from '@/components/ui/select/SelectFieldTrigger.vue'
 
 /**
  * One axis of a variable font. Optical size reads Auto while it follows the font size, as line
@@ -63,14 +63,7 @@ const tagIcon = computed(() =>
         :model-value="automatic ? 'AUTO' : 'FIXED'"
         @update:model-value="emit('update:opticalSizeAuto', $event === 'AUTO')"
       >
-        <SelectTrigger
-          :aria-label="panels.opticalSizeMode"
-          class="flex shrink-0 items-center self-stretch px-1 text-muted"
-          data-property="optical-size-mode"
-          @pointerdown.stop
-          @keydown.stop
-          ><icon-lucide-chevron-down class="size-3"
-        /></SelectTrigger>
+        <SelectFieldTrigger :label="panels.opticalSizeMode" data-property="optical-size-mode" />
         <AppSelectContent v-if="portalActive" align="end">
           <AppSelectItem value="AUTO">{{ panels.auto }}</AppSelectItem>
           <AppSelectItem value="FIXED">{{ panels.sizingFixed }}</AppSelectItem>

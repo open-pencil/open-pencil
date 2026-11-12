@@ -73,7 +73,8 @@ export async function insertWorkspace(
       id: input.id,
       name: input.name,
       slug: input.slug,
-      createdBy: actorId
+      createdBy: actorId,
+      ownerId: actorId
     })
     .onConflict((conflict) => conflict.column('slug').doNothing())
     .returning('id')

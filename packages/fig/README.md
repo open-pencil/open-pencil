@@ -9,7 +9,7 @@ SceneGraph conversion policy. Production SceneGraph read/write remains available
 Current ownership:
 
 - Complete `.fig` archive parsing through `parseFigBuffer()`
-- `.fig` archive assembly through `writeFigArchive()`
+- `.fig` archive assembly through `writeFigArchive()`, or as a stream through `streamFigArchive()`
 - Canvas payload and image resource handling
 - `readFigContainer()` / `writeFigContainer()` helpers for raw `fig-kiwi` payloads
 - `.fig` source and archive result types

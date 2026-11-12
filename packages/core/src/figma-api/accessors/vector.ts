@@ -21,7 +21,7 @@ import {
   updateNode,
   type NodeProxyInternals,
   type ProxyThis
-} from '#core/figma-api/accessor-utils'
+} from '#core/figma-api/accessors/utils'
 import { graphOf } from '#core/figma-api/graph'
 import { parseFigmaPaints, toFigmaPaint, type FigmaPaint } from '#core/figma-api/paints'
 import { geometryBlobToSVGPath } from '#core/io/formats/svg/paths'

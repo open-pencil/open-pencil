@@ -55,6 +55,7 @@ export const HEAVY_UNIT_TEST_PATTERNS = [
   'packages/core/tests/io/formats/fig/heavy/',
   'packages/core/tests/io/formats/fig/roundtrip/exhaustive.test.ts',
   'packages/core/tests/io/formats/fig/roundtrip/glyph-blob.test.ts',
+  'packages/core/tests/io/formats/fig/roundtrip/instance-size.test.ts',
   'packages/core/tests/io/formats/fig/roundtrip/variables.test.ts',
   'packages/core/tests/io/formats/fig/import/stale-overrides.test.ts',
   'packages/core/tests/io/formats/fig/export/text/basic.test.ts',
