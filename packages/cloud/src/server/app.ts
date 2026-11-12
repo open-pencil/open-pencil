@@ -500,7 +500,6 @@ export function createCloudApp(services: CloudServices) {
     .use('/api/public/*', publicRateLimiter)
     .use('/api/shares/*', publicRateLimiter)
     .use('/api/invitations/*', publicRateLimiter)
-    .use('/api/community', communityLimiter, publicRateLimiter)
     .use('/api/community/*', communityLimiter, publicRateLimiter)
     .route('/', createCommunityThumbnailRoutes(community))
     .route('/api', publicCloudAPI)
