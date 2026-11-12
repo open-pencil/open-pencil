@@ -293,7 +293,7 @@ function validateServiceConfig(config: CloudServerConfig): void {
   ] as const) {
     if (endpoint && !sendsTokenSafely(endpoint)) {
       throw new CloudConfigError(
-        `The ${name} endpoint must use HTTPS, or HTTP only to this machine for development`
+        `The ${name} endpoint must use HTTPS, or HTTP only to 127.0.0.1 or [::1] for development`
       )
     }
   }

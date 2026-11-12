@@ -223,17 +223,13 @@ export type CloudServicesSchema = JSONRoute<
 export type CloudServicesAPI = Hono<BlankEnv, CloudServicesSchema>
 
 /**
- * Whether a bearer token may travel to `url`: over HTTPS, or in the clear only to this machine,
- * for local development. Services and billing tokens act as the account until they expire.
+ * Whether a bearer token may travel to `url`: over HTTPS, or in the clear only to a loopback
+ * address, for development. Only literal addresses count, since a name such as `localhost` is
+ * whatever the resolver answers. Services and billing tokens act as the account until they expire.
  */
 export function sendsTokenSafely(url: string | URL): boolean {
   const { protocol, hostname } = new URL(url)
   if (protocol === 'https:') return true
   if (protocol !== 'http:') return false
-  return (
-    hostname === 'localhost' ||
-    hostname.endsWith('.localhost') ||
-    hostname === '[::1]' ||
-    /^127(\.\d{1,3}){3}$/.test(hostname)
-  )
+  return hostname === '[::1]' || /^127(\.\d{1,3}){3}$/.test(hostname)
 }

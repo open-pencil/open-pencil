@@ -140,8 +140,12 @@ describe('Cloud server configuration', () => {
           .servicesEndpoint
       ).toBe('HTTPS://ai.example.com')
     }
-    // A service running beside the server, for development, is reached in the clear.
-    for (const servicesEndpoint of ['http://localhost:8787', 'http://127.0.0.1:8787']) {
+    // A service running beside the server, for development, is reached in the clear, but only
+    // at a loopback address: a name is whatever the resolver answers.
+    expect(() =>
+      parseCloudServerConfig({ ...configured, servicesEndpoint: 'http://localhost:8787' })
+    ).toThrow('The services endpoint must use HTTPS')
+    for (const servicesEndpoint of ['http://127.0.0.1:8787', 'http://[::1]:8787']) {
       expect(parseCloudServerConfig({ ...configured, servicesEndpoint }).servicesEndpoint).toBe(
         servicesEndpoint
       )

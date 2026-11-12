@@ -98,8 +98,14 @@ describe('Cloud billing client', () => {
     }
   })
 
-  test('sends a token only over HTTPS, or in the clear only to this machine', async () => {
-    for (const endpoint of ['http://billing.example.com', 'http://10.0.0.5:8787']) {
+  test('sends a token only over HTTPS, or in the clear only to a loopback address', async () => {
+    // A name such as localhost is whatever the resolver answers, so only loopback addresses count.
+    for (const endpoint of [
+      'http://billing.example.com',
+      'http://10.0.0.5:8787',
+      'http://localhost:8787',
+      'http://billing.localhost:8787'
+    ]) {
       let signed = 0
       let sent = 0
       const client = createCloudBillingClient({
@@ -119,7 +125,7 @@ describe('Cloud billing client', () => {
       await expect(client.portal()).rejects.toBeInstanceOf(CloudServiceInsecureEndpointError)
       expect({ signed, sent }).toEqual({ signed: 0, sent: 0 })
     }
-    for (const endpoint of ['http://localhost:8787', 'http://127.0.0.1:8787']) {
+    for (const endpoint of ['http://127.0.0.1:8787', 'http://[::1]:8787']) {
       const client = createCloudBillingClient({
         endpoint,
         tokens,

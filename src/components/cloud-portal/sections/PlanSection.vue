@@ -16,6 +16,7 @@ import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 
 import PortalPlan from '../account/PortalPlan.vue'
 import PortalLoadAlert from '../layout/PortalLoadAlert.vue'
+import PortalPageSkeleton from '../layout/PortalPageSkeleton.vue'
 import type { PortalCreditPack, PortalPlan as Plan, PortalPlanOffer } from '../types'
 
 /**
@@ -35,14 +36,18 @@ const billing = createCloudBillingClient({
 })
 
 const entitlements = usePortalLoad(async () => (await portal.api.entitlements()).entitlements, null)
-/** What billing knows; the plan still shows from Cloud's side when billing can't be reached. */
-const sold = usePortalLoad(
-  async (): Promise<{ catalog: BillingCatalog; account: BillingAccount } | null> => {
-    const [catalog, account] = await Promise.all([billing.catalog(), billing.account()])
-    return { catalog, account }
-  },
+// What billing knows, read apart: the subscription keeps Manage billing reachable while the
+// catalog can't be read, and the plan still shows from Cloud's side when neither can.
+const subscription = usePortalLoad(
+  async (): Promise<BillingAccount | null> => billing.account(),
   null
 )
+const catalog = usePortalLoad(async (): Promise<BillingCatalog | null> => billing.catalog(), null)
+const billingError = computed(() => subscription.error.value ?? catalog.error.value)
+const billingLoading = computed(() => subscription.loading.value || catalog.loading.value)
+async function reloadBilling() {
+  await Promise.all([subscription.reload(), catalog.reload()])
+}
 
 /** Billing sells in US dollars. */
 function price(cents: number) {
@@ -52,17 +57,17 @@ function price(cents: number) {
 const plan = computed<Plan | null>(() => {
   const value = entitlements.data.value
   if (!value) return null
-  const subscription = sold.data.value?.account.subscription ?? null
-  const name = subscription
-    ? (sold.data.value?.catalog.plans.find((plan) => plan.id === subscription.planId)?.name ??
-      subscription.planId)
+  const account = subscription.data.value
+  const current = account?.subscription ?? null
+  const name = current
+    ? (catalog.data.value?.plans.find((plan) => plan.id === current.planId)?.name ?? current.planId)
     : null
   return {
-    known: sold.data.value !== null,
+    known: account !== null,
     name,
-    status: subscription?.status ?? null,
-    periodEnd: subscription ? dates.format(subscription.currentPeriodEnd, 'date') : null,
-    cancels: subscription?.cancelsAtPeriodEnd ?? false,
+    status: current?.status ?? null,
+    periodEnd: current ? dates.format(current.currentPeriodEnd, 'date') : null,
+    cancels: current?.cancelsAtPeriodEnd ?? false,
     storage: {
       usedBytes: value.usage.committedStorageBytes,
       totalBytes: value.limits.maximumStorageBytes
@@ -71,7 +76,7 @@ const plan = computed<Plan | null>(() => {
   }
 })
 const offers = computed<PortalPlanOffer[]>(() =>
-  (sold.data.value?.catalog.plans ?? []).map((offer) => ({
+  (catalog.data.value?.plans ?? []).map((offer) => ({
     id: offer.id,
     name: offer.name,
     price: price(offer.monthlyPriceCents),
@@ -80,7 +85,7 @@ const offers = computed<PortalPlanOffer[]>(() =>
   }))
 )
 const creditPacks = computed<PortalCreditPack[]>(() =>
-  (sold.data.value?.catalog.creditPacks ?? []).map((pack) => ({
+  (catalog.data.value?.creditPacks ?? []).map((pack) => ({
     id: pack.id,
     credits: formatNumber(pack.credits),
     price: price(pack.priceCents),
@@ -102,18 +107,13 @@ const open = usePortalAction(async (page: () => Promise<string>) => {
       @retry="entitlements.reload()"
     />
     <AppAlert
-      v-else-if="sold.error.value"
+      v-else-if="billingError"
       tone="warning"
       :heading="messages.billingUnavailable"
       :description="messages.billingUnavailableDescription"
     >
       <template #actions>
-        <AppButton
-          size="sm"
-          variant="outline"
-          :disabled="sold.loading.value"
-          @click="sold.reload()"
-        >
+        <AppButton size="sm" variant="outline" :disabled="billingLoading" @click="reloadBilling()">
           {{ messages.tryAgain }}
         </AppButton>
       </template>
@@ -124,8 +124,9 @@ const open = usePortalAction(async (page: () => Promise<string>) => {
       :heading="messages.errorTitle"
       :description="open.error.value"
     />
+    <PortalPageSkeleton v-if="entitlements.status.value === 'loading'" :groups="[2]" />
     <PortalPlan
-      v-if="plan"
+      v-else-if="plan"
       :plan="plan"
       :offers="offers"
       :credit-packs="creditPacks"
