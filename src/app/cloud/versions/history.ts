@@ -187,10 +187,14 @@ async function keepPlace(preview: EditorStore, document: EditorStore) {
   const { currentPageId, panX, panY, zoom } = document.state
   const index = document.graph.getPages().findIndex((page) => page.id === currentPageId)
   const page = index === -1 ? undefined : preview.graph.getPages().at(index)
-  if (!page) return
+  const shown = page ?? preview.graph.getPages().at(0)
+  if (!shown) return
   await preview.canvasReady
-  // Even the page the version opened on: reading it leaves fonts and layout to the page shown.
-  await preview.switchPage(page.id)
+  // Reading a version leaves fonts and layout to the page shown, so even the page it opened on
+  // is prepared, and without the document's page the version shows its first page as it is.
+  await preview.switchPage(shown.id)
+  // Another page switch meanwhile keeps its own view.
+  if (shown !== page || preview.state.currentPageId !== page.id) return
   Object.assign(preview.state, { panX, panY, zoom })
   preview.requestRepaint()
 }
