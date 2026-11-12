@@ -1,4 +1,5 @@
 import type { CloudFetch } from '#cloud/client/discovery'
+import { serviceJSON } from '#cloud/client/response'
 import { cloudServicesFetch, type CloudServicesTokenSource } from '#cloud/client/services'
 import {
   billingAccountSchema,
@@ -28,19 +29,9 @@ export class CloudBillingError extends Error {
 
 const errorBodySchema = v.pipe(v.string(), v.parseJson(), billingErrorSchema)
 
-async function parsed<TSchema extends v.GenericSchema>(
-  response: Pick<Response, 'ok' | 'status' | 'text'>,
-  schema: TSchema
-): Promise<v.InferOutput<TSchema>> {
-  const text = await response.text()
-  if (!response.ok) {
-    const error = v.safeParse(errorBodySchema, text)
-    throw new CloudBillingError(
-      response.status,
-      error.success ? error.output.error.code : undefined
-    )
-  }
-  return v.parse(v.pipe(v.string(), v.parseJson(), schema), text)
+function refused(status: number, body: string): CloudBillingError {
+  const error = v.safeParse(errorBodySchema, body)
+  return new CloudBillingError(status, error.success ? error.output.error.code : undefined)
 }
 
 export type CloudBillingClientOptions = {
@@ -64,18 +55,24 @@ export function createCloudBillingClient(options: CloudBillingClientOptions) {
   })
   return {
     async catalog(): Promise<BillingCatalog> {
-      return parsed(await v1.catalog.$get(), billingCatalogSchema)
+      return serviceJSON(await v1.catalog.$get(), billingCatalogSchema, refused)
     },
     async account(): Promise<BillingAccount> {
-      return parsed(await v1.account.$get(), billingAccountSchema)
+      return serviceJSON(await v1.account.$get(), billingAccountSchema, refused)
     },
     /** The checkout page that buys `request` for the account. */
     async checkout(request: CheckoutRequest): Promise<string> {
-      return (await parsed(await v1.checkout.$post({ json: request }), billingRedirectSchema)).url
+      return (
+        await serviceJSON(
+          await v1.checkout.$post({ json: request }),
+          billingRedirectSchema,
+          refused
+        )
+      ).url
     },
     /** The page where the account cancels, changes its card, and reads its invoices. */
     async portal(): Promise<string> {
-      return (await parsed(await v1.portal.$post(), billingRedirectSchema)).url
+      return (await serviceJSON(await v1.portal.$post(), billingRedirectSchema, refused)).url
     }
   }
 }

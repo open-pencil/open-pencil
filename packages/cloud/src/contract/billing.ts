@@ -119,7 +119,10 @@ export const checkoutRequestSchema = v.union([
 export type CheckoutRequest = v.InferOutput<typeof checkoutRequestSchema>
 
 /** Where to send the person: the payment provider's checkout or account portal. */
-export const billingRedirectSchema = v.object({ url: urlSchema })
+export const billingRedirectSchema = v.object({
+  // Only the payment provider's own pages, never a scheme a browser would run.
+  url: v.pipe(urlSchema, v.regex(/^https:\/\//i, 'Billing sends people to an HTTPS page'))
+})
 export type BillingRedirect = v.InferOutput<typeof billingRedirectSchema>
 
 export const billingErrorCodeSchema = v.picklist([

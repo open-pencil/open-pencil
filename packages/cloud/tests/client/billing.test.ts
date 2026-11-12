@@ -67,5 +67,9 @@ describe('Cloud billing client', () => {
 
     const garbled = billing(() => Response.json({ url: 'not a URL' })).client
     await expect(garbled.portal()).rejects.toThrow()
+    // Only an HTTPS page is opened, never a scheme a browser would run.
+    for (const url of ['javascript:alert(1)', 'http://checkout.example.com/session']) {
+      await expect(billing(() => Response.json({ url })).client.portal()).rejects.toThrow()
+    }
   })
 })

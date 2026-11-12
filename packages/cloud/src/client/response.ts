@@ -49,3 +49,17 @@ export async function parseResponse<
 ): Promise<v.InferOutput<TSchema>> {
   return v.parse(schema, await responseBody(await request, onDiagnostic))
 }
+
+/**
+ * The JSON a service deployed apart from Cloud answered, parsed with `schema` rather than trusted;
+ * a refusal throws what `refused` makes of its status and body.
+ */
+export async function serviceJSON<TSchema extends v.GenericSchema>(
+  response: Pick<Response, 'ok' | 'status' | 'text'>,
+  schema: TSchema,
+  refused: (status: number, body: string) => Error
+): Promise<v.InferOutput<TSchema>> {
+  const text = await response.text()
+  if (!response.ok) throw refused(response.status, text)
+  return v.parse(v.pipe(v.string(), v.parseJson(), schema), text)
+}

@@ -1,4 +1,5 @@
 import type { CloudFetch } from '#cloud/client/discovery'
+import { serviceJSON } from '#cloud/client/response'
 import {
   serviceCatalogSchema,
   serviceErrorSchema,
@@ -66,19 +67,9 @@ export function cloudServicesFetch(
 
 const errorBodySchema = v.pipe(v.string(), v.parseJson(), serviceErrorSchema)
 
-async function parsed<TSchema extends v.GenericSchema>(
-  response: Pick<Response, 'ok' | 'status' | 'text'>,
-  schema: TSchema
-): Promise<v.InferOutput<TSchema>> {
-  const text = await response.text()
-  if (!response.ok) {
-    const error = v.safeParse(errorBodySchema, text)
-    throw new CloudServiceError(
-      response.status,
-      error.success ? error.output.error.code : undefined
-    )
-  }
-  return v.parse(v.pipe(v.string(), v.parseJson(), schema), text)
+function refused(status: number, body: string): CloudServiceError {
+  const error = v.safeParse(errorBodySchema, body)
+  return new CloudServiceError(status, error.success ? error.output.error.code : undefined)
 }
 
 export type CloudServicesClientOptions = {
@@ -99,14 +90,14 @@ export function createCloudServicesClient(options: CloudServicesClientOptions) {
     modelBaseURL: joinURL(endpoint, CLOUD_SERVICES_API_PATHS.base),
     fetch,
     async catalog(): Promise<ServiceCatalog> {
-      return parsed(await v1.catalog.$get(), serviceCatalogSchema)
+      return serviceJSON(await v1.catalog.$get(), serviceCatalogSchema, refused)
     },
     async wallet(): Promise<CreditWallet> {
-      return parsed(await v1.wallet.$get(), creditWalletSchema)
+      return serviceJSON(await v1.wallet.$get(), creditWalletSchema, refused)
     },
     /** A web search, charged to the workspace; only when the catalog lists `search`. */
     async search(input: SearchRequestInput): Promise<SearchResponse> {
-      return parsed(await v1.search.$post({ json: input }), searchResponseSchema)
+      return serviceJSON(await v1.search.$post({ json: input }), searchResponseSchema, refused)
     }
   }
 }

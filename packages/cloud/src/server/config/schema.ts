@@ -285,12 +285,14 @@ function validateServiceConfig(config: CloudServerConfig): void {
       'The internal API writes database entitlements, which static entitlements would hide'
     )
   }
-  if (
-    config.deployment === 'official' &&
-    config.servicesEndpoint &&
-    new URL(config.servicesEndpoint).protocol !== 'https:'
-  ) {
-    throw new CloudConfigError('Official services endpoint must use HTTPS')
+  // Editors send these endpoints a bearer token, which must not cross the network in the clear.
+  for (const [name, endpoint] of [
+    ['services', config.servicesEndpoint],
+    ['billing', config.billingEndpoint]
+  ] as const) {
+    if (config.deployment === 'official' && endpoint && new URL(endpoint).protocol !== 'https:') {
+      throw new CloudConfigError(`Official ${name} endpoint must use HTTPS`)
+    }
   }
 }
 
