@@ -105,6 +105,14 @@ export function createCloudPortalRouter(context: PortalContext) {
         meta: { account: true }
       },
       {
+        path: '/account/plan',
+        name: 'plan',
+        component: () => import('@/views/cloud/ConsoleView.vue'),
+        meta: { account: true },
+        // Only a server that sells plans has one to show; editors link here only then.
+        beforeEnter: () => (context.discovery.billing ? true : { name: 'profile' })
+      },
+      {
         path: '/account/tokens',
         name: 'tokens',
         component: () => import('@/views/cloud/ConsoleView.vue'),

@@ -184,3 +184,5 @@ export type PortalContentAction =
   | 'suspend-owner'
   | 'dismiss'
   | 'mark-handled'
+
+export type { PortalCreditPack, PortalPlan, PortalPlanOffer } from '@/app/cloud-portal/plan'
