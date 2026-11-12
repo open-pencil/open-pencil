@@ -1,0 +1,1 @@
+- Opening `.fig` documents uses less memory by preparing only the active page, and the canvas tile cache stays within a share of the device's memory where the browser reports it and shrinks to the last view while the window is hidden (#1856).

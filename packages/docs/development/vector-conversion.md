@@ -34,4 +34,4 @@ Complex-script text stays unsupported until we can extract exact shaped glyph ru
 
 ## Figma API flatten
 
-`FigmaAPI.flatten()` produces real vector geometry when a `SkiaRenderer` is attached with `api.setRenderer(renderer)`. In headless compatibility mode without a renderer, it keeps the historical placeholder behavior: the source nodes are replaced by a vector-sized placeholder without `vectorNetwork` geometry.
+`FigmaAPI.flatten()` produces real vector geometry when a `SkiaRenderer` is attached: `api.setRenderer(renderer)` in a headless host, or the `renderer` option in a host that already invalidates its renderers on edits, as the editor does. In headless compatibility mode without a renderer, it keeps the historical placeholder behavior: the source nodes are replaced by a vector-sized placeholder without `vectorNetwork` geometry.
