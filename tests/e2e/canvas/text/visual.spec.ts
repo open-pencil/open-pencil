@@ -1,4 +1,5 @@
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
+import { textDecorationDriver } from '#tests/helpers/canvas/text-decoration/driver'
 
 const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
 
@@ -167,79 +168,11 @@ test('text decoration styles and OpenType features', async () => {
   await expectCanvas('text-decoration-styles-and-opentype-features')
 })
 
-test('decoration pieces take the colour of the last character they cover', async () => {
+test('decoration pieces take the colour of the character that ends them', async () => {
   // Recorded in Figma desktop 126 (scratch/pr-oracle/grouping/underline-canvas.png): an underline
-  // breaks only around descenders, a strikethrough never, and each piece is painted as its last
-  // character, not split where the fills change.
-  await editor.page.evaluate(async () => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    const pageId = store.state.currentPageId
-    const solid = (r: number, g: number, b: number) => ({
-      type: 'SOLID' as const,
-      color: { r, g, b, a: 1 },
-      visible: true,
-      opacity: 1
-    })
-    const [red, green, blue, orange] = [
-      solid(0.9, 0.2, 0.15),
-      solid(0.25, 0.6, 0.2),
-      solid(0.1, 0.2, 0.95),
-      solid(0.95, 0.55, 0.2)
-    ]
-    const rows = [
-      {
-        y: 60,
-        decoration: 'UNDERLINE' as const,
-        runs: [
-          [0, 1, blue],
-          [1, 5, red]
-        ] as const
-      },
-      {
-        y: 150,
-        decoration: 'UNDERLINE' as const,
-        runs: [
-          [0, 1, red],
-          [1, 1, green],
-          [2, 3, blue],
-          [5, 1, orange]
-        ] as const
-      },
-      {
-        y: 240,
-        decoration: 'STRIKETHROUGH' as const,
-        runs: [
-          [0, 1, red],
-          [1, 5, blue]
-        ] as const
-      }
-    ]
-    for (const row of rows) {
-      store.graph.createNode('TEXT', pageId, {
-        name: `Hey yo ${row.decoration} ${row.y}`,
-        x: 80,
-        y: row.y,
-        width: 320,
-        height: 72,
-        text: 'Hey yo',
-        fontSize: 56,
-        textAutoResize: 'HEIGHT',
-        textDecoration: row.decoration,
-        fills: [solid(0.08, 0.1, 0.18)],
-        styleRuns: row.runs.map(([start, length, fill]) => ({
-          start,
-          length,
-          style: { fills: [fill] }
-        }))
-      })
-    }
-
-    store.clearSelection()
-    await store.loadFontsForNodes(store.graph.getPages().flatMap((page) => page.childIds))
-    store.requestRender()
-  })
-  await editor.canvas.waitForRender()
+  // breaks only around descenders, a strikethrough never, and a piece takes the colour of the
+  // character whose descender ends it, or of the line's last character, wherever fills change.
+  await textDecorationDriver(() => editor.page).showColours()
   await expectCanvas('text-decoration-colours')
 })
 
