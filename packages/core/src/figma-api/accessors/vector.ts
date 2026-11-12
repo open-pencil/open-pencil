@@ -23,7 +23,7 @@ import {
   updateNode,
   type NodeProxyInternals,
   type ProxyThis
-} from '#core/figma-api/accessor-utils'
+} from '#core/figma-api/accessors/utils'
 import { graphOf } from '#core/figma-api/graph'
 import {
   keepVideoPosters,

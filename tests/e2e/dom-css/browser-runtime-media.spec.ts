@@ -2,7 +2,7 @@ import {
   computedStyleProperties,
   publicBrowserImageNode,
   setStyledContent
-} from '#tests/helpers/dom-css-browser'
+} from '#tests/helpers/dom-css/browser'
 
 import { expect, test } from '../fixtures'
 
