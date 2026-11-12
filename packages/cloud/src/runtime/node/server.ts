@@ -99,7 +99,14 @@ async function startConfiguredServer(
     : undefined
   const cleanup = cleanupDatabase
     ? startCleanupWorker(
-        createCleanupServices(config, cleanupDatabase, objects, policy, reportError),
+        createCleanupServices(
+          config,
+          cleanupDatabase,
+          objects,
+          policy,
+          reportError,
+          emailTransport ? email : undefined
+        ),
         {
           ...cleanupPassOptions(config),
           intervalMs: config.cleanupIntervalMs,

@@ -11,7 +11,7 @@ import { CLOUD_ACCOUNT_PLAN_PATH, type WorkspaceSummary } from '@open-pencil/clo
 
 import { homeCloudServer } from '../servers/store'
 import { cloudAPIClient, cloudConnection, cloudFetch } from '../sessions/connection'
-import { createCloudAITokens } from './tokens'
+import { createCloudTokenCache } from '../tokens'
 
 export type CloudAIWorkspace = Pick<WorkspaceSummary, 'id' | 'name'>
 
@@ -50,7 +50,7 @@ export function cloudAIClient(workspaceId: string): CloudServicesClient | null {
   let tokens = tokenSources.get(key)
   if (!tokens) {
     const api = cloudAPIClient(home.server, home.discovery)
-    tokens = createCloudAITokens(() => api.requestServicesToken(workspaceId))
+    tokens = createCloudTokenCache(() => api.requestServicesToken(workspaceId))
     tokenSources.set(key, tokens)
   }
   return createCloudServicesClient({ endpoint: home.endpoint, tokens, fetch: cloudFetch })

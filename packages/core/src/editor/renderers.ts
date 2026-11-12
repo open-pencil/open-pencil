@@ -17,8 +17,13 @@ type RendererTextMeasurer = (
  * The canvases drawing an editor's document: the CanvasKit they share, each canvas's renderer,
  * the one the editor measures with, and the text editor built on CanvasKit. While a renderer is
  * attached, layout measures text and text ink with the current one through `measureText`.
+ * `onFirstCanvas` runs once the editor's first renderer measures text, as a page shown before
+ * then needs laying out.
  */
-export function createCanvasRenderers(measureText: RendererTextMeasurer) {
+export function createCanvasRenderers(
+  measureText: RendererTextMeasurer,
+  onFirstCanvas: () => void = () => undefined
+) {
   let ck: CanvasKit | null = null
   let current: SkiaRenderer | null = null
   const renderers = new Set<SkiaRenderer>()
@@ -29,6 +34,7 @@ export function createCanvasRenderers(measureText: RendererTextMeasurer) {
   function setCanvasKit(canvasKit: CanvasKit, renderer: SkiaRenderer) {
     ck = canvasKit
     current = renderer
+    const first = renderers.size === 0
     renderers.add(renderer)
     textEditor ??= new TextEditor(canvasKit)
     uninstallTextMeasurer?.()
@@ -44,6 +50,7 @@ export function createCanvasRenderers(measureText: RendererTextMeasurer) {
       typeof renderer.measureTextInk === 'function'
         ? installTextInkMeasurer((node) => current?.measureTextInk(node))
         : null
+    if (first) onFirstCanvas()
   }
 
   function releaseTextMeasurer() {

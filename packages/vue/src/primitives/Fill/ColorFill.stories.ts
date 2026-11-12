@@ -11,7 +11,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Fill state, binding-aware swatches, and the temporary scalar channel slider for OkHCL controls.'
+          'Fill state, swatches for plain and bound values, and the temporary scalar channel slider for OkHCL controls.'
       }
     }
   }
@@ -26,9 +26,23 @@ export const StateMatrix: Story = {
     await expect(canvas.getByRole('img', { name: 'Transparent fill' })).toHaveAttribute(
       'data-transparent'
     )
+    const background = (name: string) =>
+      canvas
+        .getByRole('img', { name })
+        .style.getPropertyValue('--open-pencil-fill-swatch-background')
     await expect(canvas.getByRole('img', { name: 'Bound token fill' })).toHaveAttribute(
       'data-bound'
     )
+    await expect(background('Bound token fill')).not.toBe(background('Solid fill'))
+    // A swatch inside a bound field, such as a variable picker's row, shows the fill it is given.
+    await expect(canvas.getByRole('img', { name: 'Picker row fill' })).not.toHaveAttribute(
+      'data-bound'
+    )
+    await expect(background('Picker row fill')).toBe(background('Solid fill'))
+    // Without a label the swatch is decorative: the text beside it names the color.
+    const decorative = canvasElement.querySelector('[data-slot="swatch"]:not([aria-label])')
+    await expect(decorative).toHaveAttribute('aria-hidden', 'true')
+    await expect(decorative).not.toHaveAttribute('role')
 
     await userEvent.click(canvas.getByRole('button', { name: 'Gradient' }))
     await expect(canvas.getByRole('img', { name: 'Editable fill' })).toHaveAttribute(

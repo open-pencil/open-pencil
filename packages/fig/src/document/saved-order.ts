@@ -1,4 +1,5 @@
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { compareOrderKeys } from '@open-pencil/scene-graph/order-keys'
 
 function pushTo(groups: Map<string, string[]>, key: string, id: string): void {
@@ -57,9 +58,11 @@ export function mergeSavedOrder(
     ids.sort((a, b) => compareOrderKeys(keyOf(a) ?? '', keyOf(b) ?? ''))
   const merged: string[] = []
   for (const id of held) {
-    merged.push(...byKey(before.get(id) ?? []), id, ...byKey(after.get(id) ?? []))
+    appendAll(merged, byKey(before.get(id) ?? []))
+    merged.push(id)
+    appendAll(merged, byKey(after.get(id) ?? []))
   }
-  merged.push(...unplaced)
+  appendAll(merged, unplaced)
   for (const id of current) if (!heldIds.has(id) && !savedIds.has(id)) merged.push(id)
   return merged
 }

@@ -9,6 +9,7 @@ import { exportStorybook } from '#dom-css/index'
 
 import { es } from '@open-pencil/emit'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { emptyBehaviour, withBehaviour } from '@open-pencil/scene-graph/behaviours'
 
 function buttonGraph() {
@@ -180,7 +181,7 @@ describe('exportStorybook', () => {
       framework: 'html',
       document: 'Kit',
       fonts: (fonts, folder) => {
-        requested.push(...fonts)
+        appendAll(requested, fonts)
         return Promise.resolve(
           fonts.map((font) => ({
             ...font,

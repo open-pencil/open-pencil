@@ -1,4 +1,5 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { minOf } from '@open-pencil/scene-graph/arrays'
 
 import { canMakeBooleanSourceNode } from '#core/canvas/boolean'
 import { flattenNodesToVectorProps } from '#core/canvas/flatten'
@@ -24,7 +25,7 @@ export function flattenSelected(ctx: EditorContext, selectedNodes: SceneNode[]) 
   const childIds = topLevel.map((node) => node.id)
   const childSnapshots = childIds.map((id) => ({ id, subtree: snapshotSubtree(ctx.graph, id) }))
   const prevSelection = new Set(ctx.state.selectedIds)
-  const firstIndex = Math.min(...childIds.map((id) => parent.childIds.indexOf(id)))
+  const firstIndex = minOf(childIds.map((id) => parent.childIds.indexOf(id)))
   const vectorProps = flattenNodesToVectorProps(renderer, ctx.graph, topLevel)
   if (!vectorProps) return null
 

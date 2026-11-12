@@ -53,6 +53,18 @@ describe('background tile stages', () => {
       renderer.viewportHeight = 1600
       sized.renderFrame(renderer, surface.getCanvas(), graph, 1, 0)
       expect(sized.tileCacheBytes()).toBe(11 * 8 * tileBytes * 5)
+
+      // A device that reports 4 GB lends the tiles a sixteenth of it.
+      sized.setMemory({ deviceBytes: 4 * 1024 ** 3 })
+      expect(sized.tileCacheBytes()).toBe(256 * 1024 * 1024)
+      // A hidden canvas keeps one viewport of tiles, to show again, until it is back.
+      sized.setMemory({ deviceBytes: 4 * 1024 ** 3, hidden: true })
+      expect(sized.tileCacheBytes()).toBe(11 * 8 * tileBytes)
+      sized.setMemory({ deviceBytes: 4 * 1024 ** 3 })
+      expect(sized.tileCacheBytes()).toBe(256 * 1024 * 1024)
+      // However little the device has, the visible tiles fit, or the view would never finish.
+      sized.setMemory({ deviceBytes: 512 * 1024 ** 2 })
+      expect(sized.tileCacheBytes()).toBe(11 * 8 * tileBytes)
     } finally {
       sized.destroy()
     }

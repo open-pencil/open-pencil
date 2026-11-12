@@ -2,6 +2,8 @@ import { join } from 'node:path'
 
 import { readPackageJSON } from 'pkg-types'
 
+import { maxOf } from '@open-pencil/scene-graph/arrays'
+
 import { readPackageManifest } from '../manifest/read'
 import type { PackageManifest, WorkspacePackage } from '../manifest/types'
 import { parseWorkspace } from './schema'
@@ -69,7 +71,7 @@ export function groupPackagesByDependencyLevel(packages: WorkspacePackage[]): Wo
     const dependencyLevels = DEPENDENCY_FIELDS.flatMap((field) =>
       Object.keys(pkg.manifest[field] ?? {}).flatMap((name) => levelByName.get(name) ?? [])
     )
-    const level = dependencyLevels.length > 0 ? Math.max(...dependencyLevels) + 1 : 0
+    const level = dependencyLevels.length > 0 ? maxOf(dependencyLevels) + 1 : 0
     levelByName.set(pkg.manifest.name, level)
     ;(levels[level] ??= []).push(pkg)
   }
