@@ -1,7 +1,7 @@
 import type { AutomationDocumentSummary } from '@open-pencil/core/rpc'
 
 import type { EditorStore } from '@/app/editor/active-store'
-import { getTabById, getTabForStore, getTabsSnapshot } from '@/app/tabs'
+import { getTabById, getTabForStore, getTabsSnapshot, type Tab } from '@/app/tabs'
 
 export type UnknownRecord = { [key: string]: unknown }
 
@@ -51,9 +51,38 @@ export function responseWithTarget(
   return { ok: true, result: body, target: targetResult }
 }
 
+/**
+ * `tab` when it holds a document. Home and a New file tab carry an empty editor the window never
+ * shows as a design, so automation neither lists nor edits them.
+ */
+function documentTab(tab: Tab | undefined): Tab | undefined {
+  return tab?.kind === 'document' ? tab : undefined
+}
+
+function documentTabs(): Tab[] {
+  return getTabsSnapshot().filter((tab) => tab.kind === 'document')
+}
+
+const NON_DOCUMENT_TAB_NAMES: Partial<Record<Tab['kind'], string>> = {
+  home: 'Home',
+  'new-file': 'a New file tab'
+}
+
+/** Why a call that names no document has none to work on, and what to call instead. */
+function noDocumentInFrontError(front: Tab | undefined): Error {
+  const shown = front && NON_DOCUMENT_TAB_NAMES[front.kind]
+  const reason = shown ? `OpenPencil shows ${shown}, not a document` : 'No document is open'
+  const open = documentTabs().map((tab) => `${tab.id} ("${tab.store.state.documentName}")`)
+  const next =
+    open.length > 0
+      ? `Pass document_id to work on an open document: ${open.join(', ')}.`
+      : 'Create one with create_document or open a file with open_document.'
+  return new Error(`${reason}. ${next}`)
+}
+
 export function listAutomationDocuments(activeStore: EditorStore): AutomationDocumentSummary[] {
   const activeTab = getTabForStore(activeStore)
-  return getTabsSnapshot().map((tab) => {
+  return documentTabs().map((tab) => {
     const pages = tab.store.graph.getPages().map((page) => ({ id: page.id, name: page.name }))
     const currentPage = tab.store.graph.getNode(tab.store.state.currentPageId)
     const path = tab.store.getDocumentFilePath()
@@ -78,13 +107,12 @@ export function resolveAutomationTarget(
   args: AutomationTargetArgs | undefined
 ): AutomationTarget {
   const requestedDocumentId = readString(args?.document_id)
-  const tab = requestedDocumentId ? getTabById(requestedDocumentId) : getTabForStore(activeStore)
+  const front = getTabForStore(activeStore)
+  const tab = documentTab(requestedDocumentId ? getTabById(requestedDocumentId) : front)
   if (!tab) {
-    throw new Error(
-      requestedDocumentId
-        ? `Document "${requestedDocumentId}" not found`
-        : 'No active OpenPencil document'
-    )
+    throw requestedDocumentId
+      ? new Error(`Document "${requestedDocumentId}" not found`)
+      : noDocumentInFrontError(front)
   }
 
   const requestedPageId = readString(args?.page_id)
