@@ -105,7 +105,7 @@ export const metricsInboxTheme = {
     root: 'grid h-[calc(100dvh-9rem)] min-h-[28rem] overflow-hidden rounded-lg border border-border bg-panel md:grid-cols-[minmax(17rem,22rem)_1fr]',
     listPane: 'flex min-h-0 flex-col border-border md:border-e data-[hidden=true]:max-md:hidden',
     toolbar: 'flex flex-col gap-2 border-b border-border p-3',
-    list: 'min-h-0 flex-1 overflow-y-auto outline-none',
+    list: ['min-h-0 flex-1 overflow-y-auto', focusStyles.ringInset],
     item: 'flex w-full cursor-pointer items-start gap-3 border-b border-border px-3 py-2.5 text-start hover:bg-hover/50 data-[selected=true]:bg-hover data-[selected=true]:shadow-[inset_2px_0_0_var(--color-accent)]',
     itemIcon: 'mt-0.5 size-4 shrink-0 text-muted',
     itemBody: 'flex min-w-0 flex-1 flex-col gap-0.5',
@@ -148,9 +148,10 @@ export const metricsReportTheme = {
     mono: 'font-mono',
     links: 'flex flex-col gap-1.5 text-2xs',
     link: 'inline-flex w-fit items-center gap-1 text-primary underline-offset-2 hover:underline',
-    document: 'flex items-center gap-4 rounded-md border border-border p-3',
+    // Wraps by its own width: on a narrow pane the actions go below rather than out of the card.
+    document: 'flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border border-border p-3',
     thumbnail: 'h-20 w-32 shrink-0 rounded border border-border bg-canvas object-contain',
-    documentText: 'flex min-w-0 flex-1 flex-col gap-0.5 text-xs',
+    documentText: 'flex min-w-32 flex-1 flex-col gap-0.5 text-xs',
     documentActions: 'flex shrink-0 items-center gap-1',
     note: 'text-2xs text-muted',
     alert: 'mx-5 mt-4'
@@ -193,6 +194,7 @@ export const metricsStepsTheme = {
     row: 'grid w-full cursor-pointer grid-cols-[4.5rem_1rem_minmax(0,1fr)_auto] items-baseline gap-x-2 px-3 py-1.5 text-start font-mono text-2xs hover:bg-hover/50 disabled:cursor-default disabled:hover:bg-transparent',
     when: 'text-muted tabular-nums',
     level: 'text-muted data-[level=error]:text-error data-[level=warning]:text-warning',
+    levelIcon: 'size-3',
     name: 'truncate text-surface',
     category: 'font-sans text-3xs text-muted',
     attributes:

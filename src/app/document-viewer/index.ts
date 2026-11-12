@@ -41,22 +41,32 @@ export function useReadOnlyDocument(url: string, name: string) {
 
   const status = ref<'loading' | 'ready' | 'failed'>('loading')
   const pages = shallowRef<SceneNode[]>([])
+  // Closing the viewer stops a download still on its way, and nothing opens in the closed tab.
+  const disposal = new AbortController()
 
   async function open(): Promise<void> {
     try {
-      const [response] = await Promise.all([fetch(url), prepareEngine()])
+      const [response] = await Promise.all([
+        fetch(url, { signal: disposal.signal }),
+        prepareEngine()
+      ])
       if (!response.ok) throw new Error(`The document answered ${response.status}`)
-      await store.openFigFile(new File([await response.arrayBuffer()], name))
+      const bytes = await response.arrayBuffer()
+      if (disposal.signal.aborted) return
+      await store.openFigFile(new File([bytes], name))
+      if (disposal.signal.aborted) return
       store.setReadOnly(true)
       pages.value = store.graph.getPages()
       status.value = 'ready'
     } catch (error) {
+      if (disposal.signal.aborted) return
       console.warn('The document could not open', error)
       status.value = 'failed'
     }
   }
 
   onScopeDispose(() => {
+    disposal.abort()
     closeTab(tab.id, 'discard').catch((error: unknown) => {
       console.warn('The document viewer could not close its tab', error)
     })

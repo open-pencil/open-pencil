@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { tv } from 'tailwind-variants'
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, type Component } from 'vue'
+import IconCircleAlert from '~icons/lucide/circle-alert'
+import IconDot from '~icons/lucide/dot'
+import IconTriangleAlert from '~icons/lucide/triangle-alert'
 
 import type { InboxReportStep } from '@open-pencil/feedback/contract'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { metricsStepsTheme } from '@/theme/metrics/dashboard'
 
-import { beforeReport, stepLevel } from './labels'
+import { beforeReport } from './labels'
 
 const metricsSteps = tv(metricsStepsTheme)
 
@@ -18,6 +21,12 @@ const metricsSteps = tv(metricsStepsTheme)
 const { steps, receivedAt } = defineProps<{ steps: InboxReportStep[]; receivedAt: string }>()
 
 const ui = metricsSteps()
+/** A step's level as an icon: errors and warnings stand out, the rest stay quiet. */
+const LEVEL_ICONS: Record<string, Component> = {
+  error: IconCircleAlert,
+  warning: IconTriangleAlert
+}
+const levelIcon = (level: string | null) => (level && LEVEL_ICONS[level]) || IconDot
 const opened = reactive(new Set<number>())
 const onlyProblems = ref(false)
 const problems = computed(
@@ -62,7 +71,7 @@ const formatValue = (value: string | number | boolean | null) =>
         >
           <span :class="ui.when()">{{ beforeReport(step.timestamp, receivedAt) }}</span>
           <span :class="ui.level()" :data-level="step.level">
-            <span aria-hidden="true">{{ stepLevel(step.level) }}</span>
+            <component :is="levelIcon(step.level)" aria-hidden="true" :class="ui.levelIcon()" />
             <span v-if="step.level" class="sr-only">{{ step.level }}</span>
           </span>
           <span :class="ui.name()">{{ step.name }}</span>

@@ -101,9 +101,3 @@ export function exceptionText(exception: InboxException): string {
   })
   return [compact([exception.type, exception.message]).join(': '), ...frames].join('\n')
 }
-
-/** A step's level as a glyph: errors and warnings stand out, the rest stay quiet. */
-export function stepLevel(level: string | null): string {
-  if (level === 'error') return '●'
-  return level === 'warning' ? '▲' : '·'
-}
