@@ -1,9 +1,9 @@
 import { afterAll, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { renderFromEditorState } from '#core/canvas/renderer/pipeline'
 import { BLACK, SIZE_PILL_HEIGHT, SIZE_PILL_PADDING_Y } from '#core/constants'

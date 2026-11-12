@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { FIXTURES } from '@open-pencil/test-support/paths'
+
 import { createMaterialSymbolsProvider } from '#core/icons/material-symbols/provider'
 
 const FONT_URL = 'https://fonts.gstatic.com/s/test/material.ttf'
@@ -44,7 +46,7 @@ async function setup(failing: readonly string[] = []) {
 }
 
 function bounds(xs: number[]) {
-  return [Math.min(...xs), Math.max(...xs)]
+  return [minOf(xs), maxOf(xs)]
 }
 
 describe('Material Symbols', () => {
@@ -97,7 +99,10 @@ describe('Material Symbols', () => {
   test('keeps the icons of the fonts that loaded when another font of the set fails', async () => {
     // Past 150 names a set loads in several fonts; the second one fails here.
     const { provider } = await setup(['dark_mode'])
-    const extra = Array.from({ length: 149 }, (_, index) => `material-symbols-rounded:extra_${index}`)
+    const extra = Array.from(
+      { length: 149 },
+      (_, index) => `material-symbols-rounded:extra_${index}`
+    )
     const icons = await provider.icons(
       ['material-symbols-rounded:home', ...extra, 'material-symbols-rounded:dark_mode'],
       40

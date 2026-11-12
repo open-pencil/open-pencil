@@ -12,7 +12,9 @@ export const NOTO_COLOR_EMOJI_FAMILY = 'Noto Color Emoji'
 
 /** The characters a saved emoji glyph stands for. */
 export function emojiText(glyph: Pick<DerivedTextGlyph, 'emojiCodePoints'>): string {
-  return glyph.emojiCodePoints ? String.fromCodePoint(...glyph.emojiCodePoints) : ''
+  return glyph.emojiCodePoints
+    ? glyph.emojiCodePoints.map((code) => String.fromCodePoint(code)).join('')
+    : ''
 }
 
 /** Whether the platform draws emoji itself: a browser does, through its 2D canvas. */

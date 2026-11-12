@@ -17,15 +17,5 @@ export function releaseCommands(cwd: string, execute = runCommand) {
     return result.stdout
   }
 
-  async function verifySignature(artifact: string, publicKey: string, signature: string) {
-    await execute({
-      command: 'minisign',
-      args: ['-Vm', artifact, '-p', publicKey, '-x', signature],
-      cwd,
-      output: 'inherit',
-      timeoutMs: METADATA_TIMEOUT_MS
-    })
-  }
-
-  return { git, github, verifySignature }
+  return { git, github }
 }

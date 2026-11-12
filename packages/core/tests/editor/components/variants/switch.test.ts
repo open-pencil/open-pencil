@@ -1,10 +1,11 @@
 import { expect, test } from 'bun:test'
 
-import { createEditor } from '#core/editor'
 import { FigmaAPI, type FigmaInstanceNode } from '@open-pencil/core/figma-api'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { instanceMainComponent } from '@open-pencil/scene-graph/instances'
 import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
+
+import { createEditor } from '#core/editor'
 
 function must<T>(value: T | null | undefined): T {
   if (value === null || value === undefined) {
@@ -232,7 +233,9 @@ function chipDrawing(
     for (const layer of layers) {
       const node =
         layer.type === 'INSTANCE'
-          ? must(graph.createInstance(must(components[layer.of ?? '']), parentId, { name: layer.name }))
+          ? must(
+              graph.createInstance(must(components[layer.of ?? '']), parentId, { name: layer.name })
+            )
           : graph.createNode(layer.type, parentId, { name: layer.name, width: 10, height: 10 })
       if (layer.children) draw(node.id, layer.children)
     }
@@ -311,7 +314,9 @@ test('a layer drawn as another type keeps a binding its instance removed', () =>
   })
   const collection = graph.createCollection('Look')
   const faded = graph.createVariable('Faded', 'FLOAT', collection.id, 0.5)
-  for (const variant of graph.getChildren(must(chip.componentId && graph.getNode(chip.componentId)?.parentId)))
+  for (const variant of graph.getChildren(
+    must(chip.componentId && graph.getNode(chip.componentId)?.parentId)
+  ))
     graph.bindVariable(must(graph.getChildren(variant.id)[0]).id, 'opacity', faded.id)
   graph.syncInstances(must(chip.componentId))
   // Removing the variable claims the layer's bindings, as the panel records it.

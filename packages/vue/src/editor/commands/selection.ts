@@ -440,14 +440,6 @@ export function createSelectionCommands({
       enabled: capabilities.canFlatten,
       run: () => editor.flattenSelected()
     },
-    'selection.outlineText': {
-      id: 'selection.outlineText',
-      get label() {
-        return t.value.outlineText
-      },
-      enabled: capabilities.canOutlineText,
-      run: () => editor.outlineTextSelected()
-    },
     'selection.outlineStroke': {
       id: 'selection.outlineStroke',
       get label() {

@@ -1,0 +1,1 @@
+- Group wraps a single layer and gives layers in different parents a group in each, and Ungroup takes apart frames, boolean operations, and sections as well as groups, keeping their children in place, as in Figma (#2010, #2008, #2007).

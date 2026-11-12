@@ -1,0 +1,2 @@
+- Glass effects on rotated or skewed layers fill their edges instead of leaving a transparent band where they sample past the clip.
+- A variable font that forbids subsetting keeps its weight in PDF exports instead of falling back to its default weight.

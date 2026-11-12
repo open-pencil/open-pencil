@@ -444,7 +444,7 @@ function placeConstrained(
     ...flipChanges(original, child, flipsX, flipsY),
     ...constrainedGeometryChanges(original, child, box)
   })
-  // The final pass sees layout containers after Yoga has resolved HUG/FILL sizing.
+  // The final pass sees layout containers after layout has resolved HUG/FILL sizing.
   placeChildren(plan, child.id, original, child.layoutMode === 'NONE' ? box : child)
 }
 

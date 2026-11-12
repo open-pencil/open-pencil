@@ -698,7 +698,7 @@ export interface SceneNode {
   height: number
   rotation: number
   source: SourceMetadata
-  /** Materialized layout hint imported or generated outside the live Yoga layout pass. */
+  /** Materialized layout hint imported or generated outside the live layout pass. */
   derivedLayout: Partial<Rect> | null
 
   fills: Fill[]

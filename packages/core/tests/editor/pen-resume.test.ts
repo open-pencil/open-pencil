@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { createEditor, type Editor } from '@open-pencil/core'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 let editor: Editor
 

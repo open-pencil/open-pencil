@@ -2,9 +2,9 @@ import { afterEach, describe, expect, test, vi } from 'bun:test'
 
 import { fetchStub } from '@open-pencil/test-support/fetch'
 
+import { getAutomationHealthFailure } from '@/app/automation/mcp/health'
 import {
   getAutomationAuthToken,
-  getAutomationHealthFailure,
   getAutomationStartupFailure,
   readAutomationHealth,
   spawnMCPIfNeeded

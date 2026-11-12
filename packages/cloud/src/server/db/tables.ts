@@ -210,6 +210,17 @@ export interface AuthUserTable {
   updatedAt: TimestampColumn
 }
 
+/** Better Auth's API keys, which are Cloud's personal access tokens; the plugin owns the rest. */
+export interface AccessTokenTable {
+  id: string
+  referenceId: string
+  name: string | null
+  start: string | null
+  expiresAt: TimestampColumn | null
+  lastRequest: TimestampColumn | null
+  createdAt: TimestampColumn
+}
+
 export interface TwoFactorTable {
   id: string
   secret: string
@@ -312,6 +323,12 @@ export interface AccountEntitlementTable {
   updatedAt: TimestampColumn
 }
 
+/** An account told its storage is full; see `createStorageLimitNoticeService`. */
+export interface StorageLimitNoticeTable {
+  userId: string
+  notifiedAt: TimestampColumn
+}
+
 export interface WorkspaceStorageUsageTable {
   workspaceId: string
   committedBytes: number
@@ -406,6 +423,7 @@ export interface CloudDatabase {
   signIn: SignInTable
   userPicture: UserPictureTable
   user: AuthUserTable
+  apikey: AccessTokenTable
   authSchemaVersion: AuthSchemaVersionTable
   enrollment: EnrollmentTable
   apiRateLimit: APIRateLimitTable
@@ -428,6 +446,7 @@ export interface CloudDatabase {
   accountEntitlement: AccountEntitlementTable
   termsAcceptance: TermsAcceptanceTable
   workspaceStorageUsage: WorkspaceStorageUsageTable
+  storageLimitNotice: StorageLimitNoticeTable
   transactionalEmail: TransactionalEmailTable
   uploadStorageReservation: UploadStorageReservationTable
   upload: UploadTable

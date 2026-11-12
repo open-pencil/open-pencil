@@ -1,3 +1,4 @@
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import type { OutlineCommand } from './font/glyphs'
@@ -27,10 +28,10 @@ const KEYCAP_FRAME_BOX = (() => {
   const numbers = (values: Array<number | undefined>) =>
     values.filter((value): value is number => value !== undefined)
   return {
-    minX: Math.min(...numbers(xs)),
-    minY: Math.min(...numbers(ys)),
-    maxX: Math.max(...numbers(xs)),
-    maxY: Math.max(...numbers(ys))
+    minX: minOf(numbers(xs)),
+    minY: minOf(numbers(ys)),
+    maxX: maxOf(numbers(xs)),
+    maxY: maxOf(numbers(ys))
   }
 })()
 

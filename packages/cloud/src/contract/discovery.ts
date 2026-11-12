@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 
-import { cloudServicesDiscoverySchema, cloudBillingDiscoverySchema } from './services'
+import { cloudBillingDiscoverySchema } from './billing'
+import { cloudServicesDiscoverySchema } from './services'
 
 export const CLOUD_PROTOCOL_VERSION = '1' as const
 export const CLOUD_DISCOVERY_PATH = '/.well-known/openpencil' as const

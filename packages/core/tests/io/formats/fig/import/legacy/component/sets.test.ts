@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
+import { canvas, doc, node } from '#core-tests/io/formats/fig/import/legacy/helpers'
+
 import { materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-
-import { canvas, doc, node } from '#core-tests/io/formats/fig/import/legacy/helpers'
 
 describe('fig-import: component set detection', () => {
   test('FRAME with VARIANT componentPropDefs becomes COMPONENT_SET', () => {

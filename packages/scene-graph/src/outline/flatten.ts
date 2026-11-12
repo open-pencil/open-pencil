@@ -1,3 +1,4 @@
+import { appendAll } from '../arrays'
 import { cubicPoint } from '../cubic'
 import { GeometryCommand, readGeometryBlob } from '../geometry'
 import type { PolygonOutlineCommand } from '../polygon'
@@ -72,7 +73,7 @@ export function loopPoints(network: VectorNetwork, loop: number[], tolerance: nu
     const along = segmentPoints(network, index, tolerance)
     if (!segment || !along) continue
     const forward = segment.start === current
-    points.push(...(forward ? along : along.toReversed()))
+    appendAll(points, forward ? along : along.toReversed())
     current = forward ? segment.end : segment.start
   }
   return points
@@ -89,7 +90,7 @@ export function segmentRuns(network: VectorNetwork, tolerance: number): Vector[]
   for (const [index, segment] of network.segments.entries()) {
     const along = segmentPoints(network, index, tolerance)
     if (!along) continue
-    if (segment.start === end && run.length > 0) run.push(...along.slice(1))
+    if (segment.start === end && run.length > 0) appendAll(run, along.slice(1))
     else {
       if (run.length > 1) runs.push(run)
       run = along
@@ -124,9 +125,12 @@ export function blobContours(blob: Uint8Array, tolerance: number): Vector[][] {
       const q = { x: c[0], y: c[1] }
       const c1 = { x: last.x + (2 / 3) * (q.x - last.x), y: last.y + (2 / 3) * (q.y - last.y) }
       const c2 = { x: end.x + (2 / 3) * (q.x - end.x), y: end.y + (2 / 3) * (q.y - end.y) }
-      contour.push(...cubicPoints(last, c1, c2, end, tolerance))
+      appendAll(contour, cubicPoints(last, c1, c2, end, tolerance))
     } else {
-      contour.push(...cubicPoints(last, { x: c[0], y: c[1] }, { x: c[2], y: c[3] }, end, tolerance))
+      appendAll(
+        contour,
+        cubicPoints(last, { x: c[0], y: c[1] }, { x: c[2], y: c[3] }, end, tolerance)
+      )
     }
   })
   flush()
@@ -149,8 +153,9 @@ export function commandContours(
     const last = contour.at(-1) ?? { x: 0, y: 0 }
     if (command.type !== 'C') contour.push({ x: command.x, y: command.y })
     else
-      contour.push(
-        ...cubicPoints(
+      appendAll(
+        contour,
+        cubicPoints(
           last,
           { x: command.x1, y: command.y1 },
           { x: command.x2, y: command.y2 },

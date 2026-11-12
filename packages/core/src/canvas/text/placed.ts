@@ -3,6 +3,7 @@ import { isEqual } from 'es-toolkit/predicate'
 
 import type { Paragraph } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { appendAll, maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { textLengthPixels } from '@open-pencil/scene-graph/text'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
@@ -174,7 +175,7 @@ function runOutline(
   if (run.glyphs.length === 0) return null
   const offsets = Array.from(run.offsets, characterAt)
   const glyphOffsets = offsets.slice(0, run.glyphs.length)
-  const start = Math.min(...glyphOffsets)
+  const start = minOf(glyphOffsets)
   const end = runEnd(offsets, run.glyphs.length, indices.lineBoundaries)
   // A glyph covers the characters up to the next greater offset in the run, whatever its
   // direction; the sorted offsets give that once for every glyph.
@@ -283,7 +284,7 @@ function runEnd(
   glyphCount: number,
   lineBoundaries: readonly number[]
 ): number {
-  const lastStart = Math.max(...offsets.slice(0, glyphCount))
+  const lastStart = maxOf(offsets.slice(0, glyphCount))
   const trailing = offsets.at(glyphCount)
   if (trailing !== undefined && trailing > lastStart) {
     return trailing
@@ -298,7 +299,7 @@ function lineRunBoundaries(
   characterAt: (offset: number) => number
 ): number[] {
   const runStarts = line.runs.map((run) =>
-    Math.min(...Array.from(run.offsets.slice(0, run.glyphs.length), characterAt))
+    minOf(Array.from(run.offsets.slice(0, run.glyphs.length), characterAt))
   )
   return [...runStarts, lineEnd].sort((a, b) => a - b)
 }
@@ -429,7 +430,7 @@ export function laidOutGlyphs(
   const glyphs: LaidOutGlyph[] = []
   for (const [lineIndex, line] of lines.entries()) {
     const marker = markers.get(lineIndex)
-    if (marker) glyphs.push(...markerGlyphs(marker, offsetY))
+    if (marker) appendAll(glyphs, markerGlyphs(marker, offsetY))
     const { left, baseline, endIndex } = metrics[lineIndex]
     const lineBoundaries = lineRunBoundaries(line, endIndex, characterAt)
     const lastLine = lineIndex === lines.length - 1
@@ -444,7 +445,7 @@ export function laidOutGlyphs(
       // Run positions round the baseline to whole pixels; line metrics keep it exact.
       const y = baseline + offsetY
       if (outline?.glyphs && !sameClusters(run, outline, characterAt)) {
-        glyphs.push(...reshapedGlyphs(run, outline, left, y))
+        appendAll(glyphs, reshapedGlyphs(run, outline, left, y))
         continue
       }
       for (let index = 0; index < run.glyphs.length; index++) {

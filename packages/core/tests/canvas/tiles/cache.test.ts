@@ -1,10 +1,10 @@
 import { describe, expect, mock, test } from 'bun:test'
 
+import { asDouble } from '#core-tests/canvas/helpers'
+
 import type { Image as CKImage } from '@open-pencil/canvaskit'
 
 import { TileImageCache, type RenderedTile } from '#core/canvas/renderer/tiles'
-
-import { asDouble } from '#core-tests/canvas/helpers'
 
 function tile(x: number): RenderedTile {
   const image = asDouble<CKImage>({

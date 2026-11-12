@@ -2,9 +2,9 @@ import { describe, expect, test } from 'bun:test'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { getCanvasKit } from '@open-pencil/core/canvaskit'
-
 import { expectRgbaPixels } from '#core-tests/canvas/helpers'
+
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 
 const MATRIX_PATH = '/tmp/open-pencil-boolean-matrix.png'
 const CELL_W = 180

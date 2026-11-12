@@ -1,10 +1,12 @@
 import { beforeAll, describe, expect, mock, test } from 'bun:test'
 
+import { asDouble, expectRgbaPixels } from '#core-tests/canvas/helpers'
+
 import type { Image as CKImage } from '@open-pencil/canvaskit'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SkiaRenderer } from '#core/canvas'
 import { RenderChunkIndex, RenderChunkPictureCache } from '#core/canvas/renderer/chunks'
 import {
@@ -16,8 +18,6 @@ import {
   tileWorldBounds
 } from '#core/canvas/renderer/tiles'
 import { applyInvalidations } from '#core/canvas/renderer/tiles/structure'
-
-import { asDouble, expectRgbaPixels } from '#core-tests/canvas/helpers'
 
 let ck: Awaited<ReturnType<typeof getCanvasKit>>
 

@@ -100,6 +100,11 @@ export function usePortalAccountDeletion(options: PortalAccountDeletionOptions) 
           if (current) download.archive.value = { ...current, done, total }
         }
       })
+      // The person closed the save picker: nothing was saved, and nothing went wrong.
+      if (!result) {
+        download.archive.value = null
+        return
+      }
       download.archive.value = {
         done: documents.length,
         total: documents.length,
@@ -107,7 +112,7 @@ export function usePortalAccountDeletion(options: PortalAccountDeletionOptions) 
         failed: result.failed.map((document) => document.name)
       }
     } catch (error) {
-      // Zipping or saving failed as a whole, such as out of memory; nothing was saved.
+      // Zipping or saving failed as a whole (out of memory, a full disk): nothing was saved.
       download.archive.value = null
       options.onArchiveFailed(failures.api(error))
     } finally {

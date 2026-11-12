@@ -37,10 +37,10 @@ export function useSelectionCapabilities() {
     canDelete: computed(() => hasSelection.value),
     canDuplicate: computed(() => hasSelection.value),
     canExportSelection: computed(() => hasSelection.value),
-    canGroup: computed(() => selectedCount.value >= 2),
+    canGroup: computed(() => hasSelection.value),
     canFrameSelection: computed(() => hasSelection.value),
     canWrapInSection: useSceneComputed(() => editor.canWrapSelectionInSection()),
-    canUngroup: computed(() => selection.isGroup.value),
+    canUngroup: selection.canUngroup,
     canCreateComponent: computed(() => hasSelection.value),
     canCreateComponentSet: selection.canCreateComponentSet,
     canDetachInstance: computed(() => selection.isInstance.value),
@@ -59,13 +59,6 @@ export function useSelectionCapabilities() {
     ),
     canBooleanOperation: computed(() => selectedCount.value >= 2 && selectedNodesCanFlatten.value),
     canFlatten: computed(() => selectedNodesCanFlatten.value),
-    canOutlineText: useSceneComputed(() => {
-      const nodes = editor.getSelectedNodes()
-      return (
-        nodes.length > 0 &&
-        nodes.every((node) => node.type === 'TEXT' && canMakeBooleanSourceNode(node, editor.graph))
-      )
-    }),
     canOutlineStroke: useSceneComputed(
       () => layersToOutline(editor.getSelectedNodes(), editor.graph).length > 0
     ),

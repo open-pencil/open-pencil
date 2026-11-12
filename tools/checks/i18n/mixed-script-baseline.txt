@@ -198,6 +198,9 @@ ja:menu.exportSelectionAsDrawIO
 ja:menu.exportSelectionAsPPTX
 ja:menu.exportSelectionAsSVG
 ja:menu.supportOpenPencil
+ja:menu.community
+ja:menu.documentation
+ja:menu.github
 ja:menu.toggleAIChat
 ja:menu.toggleUI
 ja:panels.behaviourAddVariants
@@ -430,6 +433,9 @@ zh-cn:menu.exportSelectionAsDrawIO
 zh-cn:menu.exportSelectionAsPPTX
 zh-cn:menu.exportSelectionAsSVG
 zh-cn:menu.supportOpenPencil
+zh-cn:menu.community
+zh-cn:menu.documentation
+zh-cn:menu.github
 zh-cn:menu.toggleAIChat
 zh-cn:panels.behaviourAddVariants
 zh-cn:panels.colorHintHsb
@@ -545,6 +551,8 @@ ja:cloudPortal.desktopApp
 ja:cloudPortal.methodDesktop
 ja:cloudPortal.pictureUnreadable
 ja:cloudPortal.noDocumentsFoundDescription
+ja:cloudPortal.accessTokenCreatedDescription
+ja:cloudPortal.accessTokensDescription
 zh-cn:cloud.connectHeading
 zh-cn:cloud.connectServerDescription
 zh-cn:cloud.officialDescription
@@ -568,6 +576,8 @@ zh-cn:cloudPortal.desktopApp
 zh-cn:cloudPortal.methodDesktop
 zh-cn:cloudPortal.pictureUnreadable
 zh-cn:cloudPortal.noDocumentsFoundDescription
+zh-cn:cloudPortal.accessTokenCreatedDescription
+zh-cn:cloudPortal.accessTokensDescription
 ja:ai.cloudAIUnavailable
 ja:ai.cloudAINoWorkspace
 ja:ai.chatCloudCreditsExhausted
@@ -641,3 +651,5 @@ zh-cn:diagnostics.reportProblemDescription
 zh-cn:diagnostics.reportUnexpectedError
 zh-cn:diagnostics.supportDescription
 zh-cn:diagnostics.supportTitle
+ja:cloudPortal.creditPacksDescription
+zh-cn:cloudPortal.creditPacksDescription
