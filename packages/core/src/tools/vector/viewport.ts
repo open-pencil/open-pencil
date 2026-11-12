@@ -14,7 +14,9 @@ export const viewportGet = defineTool({
   exposure: { webmcp: false },
   input: v.strictObject({}),
   execute: (figma) => {
-    return figma.viewport
+    // `figma.viewport` keeps its members on the prototype, as Figma's does, so it serializes empty.
+    const { center, zoom, bounds } = figma.viewport
+    return { center, zoom, bounds }
   }
 })
 

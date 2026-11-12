@@ -1,1 +1,1 @@
-- `zoom_to_fit`, `set_viewport`, and `figma.viewport` in scripts move the canvas in the app. `zoom_to_fit` zooms out to fit large layers instead of setting 100%, and `figma.viewport` sets `center` and `zoom` and reads `bounds` as in Figma (#1390).
+- The `zoom_to_fit` and `set_viewport` tools and `figma.viewport` in scripts move the canvas in the app. `zoom_to_fit` zooms out to fit large layers instead of setting 100%, and `figma.viewport` sets `center` and `zoom` and reads `bounds` as in Figma (#1390).

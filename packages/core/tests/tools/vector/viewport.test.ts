@@ -13,6 +13,7 @@ function tool(name: string) {
 
 const zoomToFit = tool('zoom_to_fit')
 const setViewport = tool('set_viewport')
+const getViewport = tool('get_viewport')
 
 function setup(viewport?: FigmaViewportHost) {
   const graph = new SceneGraph()
@@ -126,6 +127,20 @@ describe('viewport tools', () => {
       error: `Layers not on page "Page 1": ${away}. Show their page with activate_document (page_id) first.`
     })
     expect(calls.fit).toEqual([])
+  })
+
+  test('get_viewport answers with the view as JSON', async () => {
+    const { host } = recordingHost()
+    const { figma } = setup(host)
+    figma.viewport.zoom = 0.5
+
+    const result: unknown = await getViewport.execute(figma, {})
+
+    expect(JSON.parse(JSON.stringify(result))).toEqual({
+      center: { x: 0, y: 0 },
+      zoom: 0.5,
+      bounds: { x: 0, y: 0, width: 100, height: 50 }
+    })
   })
 
   test('set_viewport moves the view and answers with where it settled', async () => {
