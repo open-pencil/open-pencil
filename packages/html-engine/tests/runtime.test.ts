@@ -3,6 +3,7 @@ import { join } from 'node:path'
 
 import { htmlToDesignDocument, type DesignDocument, type DesignElement } from '@open-pencil/dom-css'
 import { createHTMLEngineRuntime, loadHTMLEngine } from '@open-pencil/html-engine'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
 function elementById(document: DesignDocument, id: string): DesignElement {
@@ -80,10 +81,10 @@ describe('the HTML engine runtime', () => {
     const fragments = layout?.fragments ?? []
 
     expect(fragments.length).toBeGreaterThan(1)
-    const left = Math.min(...fragments.map((f) => f.x))
-    const right = Math.max(...fragments.map((f) => f.x + f.width))
-    const top = Math.min(...fragments.map((f) => f.y))
-    const bottom = Math.max(...fragments.map((f) => f.y + f.height))
+    const left = minOf(fragments.map((f) => f.x))
+    const right = maxOf(fragments.map((f) => f.x + f.width))
+    const top = minOf(fragments.map((f) => f.y))
+    const bottom = maxOf(fragments.map((f) => f.y + f.height))
     expect(layout?.box).toEqual({ x: left, y: top, width: right - left, height: bottom - top })
   })
 
