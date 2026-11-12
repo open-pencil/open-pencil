@@ -256,6 +256,7 @@
   "syncError": "No se pudieron subir los cambios",
   "shareLinkFailed": "Este enlace no abre ningún documento. Pide uno nuevo.",
   "communityLinkFailed": "Este documento ya no está en la galería.",
+  "communityBanner": "Un ejemplo de la comunidad, abierto en modo de solo lectura.",
   "documentLinkFailed": "No se pudo abrir este documento. Pide acceso a su propietario.",
   "documentLinkUnknownServer": "Inicia sesión en {host} para abrir este enlace.",
   "connectServerHeading": "Conecta el servidor de tu equipo",

@@ -260,6 +260,7 @@
   "syncError": "Nie udało się przesłać zmian",
   "shareLinkFailed": "Ten link nie otwiera dokumentu. Poproś o nowy.",
   "communityLinkFailed": "Tego dokumentu nie ma już w galerii.",
+  "communityBanner": "Przykład społeczności, otwarty tylko do odczytu.",
   "documentLinkFailed": "Nie udało się otworzyć tego dokumentu. Poproś właściciela o dostęp.",
   "documentLinkUnknownServer": "Najpierw zaloguj się do {host}, aby otworzyć ten link.",
   "connectServerHeading": "Połącz serwer zespołu",

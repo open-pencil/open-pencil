@@ -256,6 +256,7 @@
   "syncError": "Änderungen konnten nicht hochgeladen werden",
   "shareLinkFailed": "Dieser Link öffnet kein Dokument. Bitte um einen neuen.",
   "communityLinkFailed": "Dieses Dokument ist nicht mehr in der Galerie.",
+  "communityBanner": "Ein Community-Beispiel, schreibgeschützt geöffnet.",
   "documentLinkFailed": "Dieses Dokument konnte nicht geöffnet werden. Bitte die Person, der es gehört, um Zugriff.",
   "documentLinkUnknownServer": "Melde dich zuerst bei {host} an, um diesen Link zu öffnen.",
   "connectServerHeading": "Server deines Teams verbinden",

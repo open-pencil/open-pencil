@@ -328,6 +328,7 @@
   "syncError": "Não foi possível enviar as alterações",
   "shareLinkFailed": "Este link não abre um documento. Peça um novo.",
   "communityLinkFailed": "Este documento não está mais na galeria.",
+  "communityBanner": "Um exemplo da comunidade, aberto somente para leitura.",
   "documentLinkFailed": "Não foi possível abrir este documento. Peça acesso ao proprietário.",
   "documentLinkUnknownServer": "Entre em {host} primeiro para abrir este link.",
   "shareOpenedInBrowser": "Aberto no navegador",
