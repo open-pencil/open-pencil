@@ -68,8 +68,17 @@ function services() {
       save: notUsed,
       update: notUsed,
       download: notUsed,
+      namedShared: notUsed,
+      downloadNamedShared: notUsed,
       restore: notUsed,
       duplicate: notUsed
+    },
+    community: {
+      enabled: false,
+      list: notUsed,
+      download: notUsed,
+      imageLinks: notUsed,
+      thumbnail: notUsed
     },
     reports: { file: notUsed },
     sharing: {

@@ -35,6 +35,7 @@ import {
   type CloudSessionResolver
 } from '#cloud/server/auth'
 import { createCollaborationTicketService } from '#cloud/server/collaboration'
+import { createCommunityService, createCommunityThumbnailRoutes } from '#cloud/server/community'
 import {
   CloudConfigError,
   cloudDiscoveryFromConfig,
@@ -249,6 +250,13 @@ export function createCloudApp(services: CloudServices) {
     onRestored: services.onDocumentRestored,
     onVersionsChanged: services.onDocumentVersionsChanged
   })
+  const community = createCommunityService(
+    services.database,
+    services.objects,
+    documents,
+    versions,
+    services.config.community?.workspaceId ?? null
+  )
   const entitlements = createEntitlementService(
     services.database,
     policy,
@@ -382,6 +390,7 @@ export function createCloudApp(services: CloudServices) {
     rateLimitSecret: services.config.authSecret,
     documents,
     versions,
+    community,
     entitlements,
     servicesTokens,
     sharing,
@@ -394,6 +403,7 @@ export function createCloudApp(services: CloudServices) {
     collaboration,
     documents,
     versions,
+    community,
     entitlements,
     sharing,
     reports,
@@ -479,10 +489,13 @@ export function createCloudApp(services: CloudServices) {
       })
     )
     .route('/', createPictureRoutes(pictures))
+    .route('/', createCommunityThumbnailRoutes(community))
     .use('/api/shares/:shareId/collaboration-ticket', publicCollaborationLimiter)
     .use('/api/public/*', publicRateLimiter)
     .use('/api/shares/*', publicRateLimiter)
     .use('/api/invitations/*', publicRateLimiter)
+    .use('/api/community', publicRateLimiter)
+    .use('/api/community/*', publicRateLimiter)
     .route('/api', publicCloudAPI)
     .route('/api/internal', internalAPI)
     .use('/api/documents/:documentId', allowLeavingRead)

@@ -250,6 +250,8 @@
         "@hono/node-server": "^1.19.17",
         "@internationalized/date": "^3.12.3",
         "@noble/hashes": "^2.4.0",
+        "@open-pencil/fig": "workspace:*",
+        "@open-pencil/kiwi": "workspace:*",
         "@open-pencil/scene-graph": "workspace:*",
         "@openfeature/server-sdk": "^1.23.0",
         "@vue-email/components": "^0.0.21",
