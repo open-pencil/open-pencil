@@ -51,10 +51,11 @@ export function createCommunityService(
       .where('document.workspaceId', '=', workspaceId ?? '')
       .where('document.deletedAt', 'is', null)
       .where('document.disabledAt', 'is', null)
-      .where(({ not, exists, selectFrom }) =>
-        not(
-          exists(
-            selectFrom('user')
+      .where((expression) =>
+        expression.not(
+          expression.exists(
+            expression
+              .selectFrom('user')
               .select('user.id')
               .whereRef(
                 (expression) => expression.cast(expression.ref('user.id'), 'text'),
