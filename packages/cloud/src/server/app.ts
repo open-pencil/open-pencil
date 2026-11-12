@@ -19,6 +19,7 @@ import {
 import { createAccountDeletionService } from '#cloud/server/account/deletion'
 import { createAccountRoutes } from '#cloud/server/account/routes'
 import { createTermsService } from '#cloud/server/account/terms'
+import { createAccessTokenRoutes } from '#cloud/server/account/tokens'
 import {
   createCloudAPIRouter,
   createPublicCloudAPIRouter,
@@ -72,6 +73,23 @@ import { bodyLimit } from 'hono/body-limit'
 import { cors } from 'hono/cors'
 import type { Kysely } from 'kysely'
 
+/** Where administration is mounted. */
+const ADMIN_API_PATH = '/api/admin'
+/**
+ * The routes a personal access token reaches: workspaces and their documents, uploads, versions,
+ * sharing, and Trash, and who it signs in as. Anything else, such as services tokens that spend
+ * credits or administration, takes a session, including routes added later.
+ */
+const ACCESS_TOKEN_API_PATHS = [
+  '/api/session',
+  '/api/workspaces',
+  '/api/documents',
+  '/api/uploads',
+  '/api/shared-documents',
+  '/api/trash'
+]
+const acceptsAccessToken = (path: string) =>
+  ACCESS_TOKEN_API_PATHS.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))
 export type CloudServices = {
   config: CloudServerConfig
   database: Kysely<CloudDatabase>
@@ -277,6 +295,21 @@ export function createCloudApp(services: CloudServices) {
     return next()
   }
   /**
+   * The API's caller: a session, or else a personal access token on the routes that take one
+   * (`ACCESS_TOKEN_API_PATHS`); account routes never get here.
+   */
+  const requireActiveActor = async (context: Context, next: () => Promise<void>) => {
+    if (context.get('actor')) return next()
+    const actor =
+      (await resolveSession(context.req.raw)) ??
+      (acceptsAccessToken(context.req.path)
+        ? await services.auth.resolveAccessToken(context.req.raw.headers)
+        : null)
+    if (!actor) return context.json({ error: { code: 'unauthorized' as const } }, 401)
+    context.set('actor', actor)
+    return next()
+  }
+  /**
    * An account that may leave: one that has terms to accept can still download its documents and
    * delete itself, which nothing else lets it do until it accepts.
    */
@@ -436,6 +469,15 @@ export function createCloudApp(services: CloudServices) {
     )
     .on(['GET', 'POST'], `${AUTH_BASE_PATH}/*`, (context) => services.auth.handler(context.req.raw))
     .route('/', accountRoutes)
+    .route(
+      '/',
+      createAccessTokenRoutes({
+        auth: services.auth,
+        resolveSession,
+        requireActiveSession,
+        authenticatedMutationLimiter
+      })
+    )
     .route('/', createPictureRoutes(pictures))
     .use('/api/shares/:shareId/collaboration-ticket', publicCollaborationLimiter)
     .use('/api/public/*', publicRateLimiter)
@@ -444,8 +486,8 @@ export function createCloudApp(services: CloudServices) {
     .route('/api', publicCloudAPI)
     .route('/api/internal', internalAPI)
     .use('/api/documents/:documentId', allowLeavingRead)
-    .use('/api/*', requireActiveSession)
-    .route('/api/admin', admin)
+    .use('/api/*', requireActiveActor)
+    .route(ADMIN_API_PATH, admin)
     .use('/api/*', authenticatedMutationLimiter)
     .route('/api', cloudAPI)
 }

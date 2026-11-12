@@ -25,7 +25,7 @@ bun --filter @open-pencil/cloud build:standalone && bun --filter @open-pencil/cl
 ```
 
 The server migrates the database before it accepts requests. The
-[self-hosting guide](https://openpencil.dev/reference/self-hosting-cloud) covers building with the
+[self-hosting guide](https://openpencil.dev/cloud/self-hosting/) covers building with the
 portal, configuration, the editor address, operator commands, and upgrades;
 [`deploy/README.md`](./deploy/README.md) covers local development and end-to-end tests, and
 [`deploy/security.md`](./deploy/security.md) covers hardening. The design is described in

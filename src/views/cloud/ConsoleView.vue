@@ -7,6 +7,7 @@ import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 import { usePortal } from '@/app/cloud-portal/context'
 import PortalConsoleLayout from '@/components/cloud-portal/layout/PortalConsoleLayout.vue'
 import { PORTAL_SECTION_ICONS } from '@/components/cloud-portal/layout/sections'
+import AccessTokensSection from '@/components/cloud-portal/sections/AccessTokensSection.vue'
 import AdminActivitySection from '@/components/cloud-portal/sections/AdminActivitySection.vue'
 import AdminDocumentsSection from '@/components/cloud-portal/sections/AdminDocumentsSection.vue'
 import AdminEmailSection from '@/components/cloud-portal/sections/AdminEmailSection.vue'
@@ -20,7 +21,7 @@ import SecuritySection from '@/components/cloud-portal/sections/SecuritySection.
 import SessionsSection from '@/components/cloud-portal/sections/SessionsSection.vue'
 import type { PortalSection } from '@/components/cloud-portal/types'
 
-const ACCOUNT_SECTIONS = ['profile', 'security', 'sessions'] as const
+const ACCOUNT_SECTIONS = ['profile', 'security', 'sessions', 'tokens'] as const
 /** Every section, and a few people's pages, stay loaded while others are shown. */
 const SECTIONS_KEPT = 12
 const ADMIN_SECTIONS = [
@@ -84,6 +85,12 @@ const sections = computed<PortalSection[]>(() => {
       icon: PORTAL_SECTION_ICONS.sessions,
       label: value.sessions,
       group: value.sectionAccount
+    },
+    {
+      id: 'tokens',
+      icon: PORTAL_SECTION_ICONS.tokens,
+      label: value.accessTokens,
+      group: value.sectionAccount
     }
   ]
   if (!admin.value) return account
@@ -146,6 +153,7 @@ const description = computed(() => {
     profile: value.profileDescription({ host: portal.host }),
     security: value.securityDescription({ host: portal.host }),
     sessions: value.sessionsDescription,
+    tokens: value.accessTokensDescription,
     overview: portal.host,
     requests: value.accessRequestsDescription,
     reports: value.reportsDescription,
@@ -206,6 +214,7 @@ onMounted(() => void refreshWaiting())
       <ProfileSection v-if="active === 'profile'" />
       <SecuritySection v-else-if="active === 'security'" />
       <SessionsSection v-else-if="active === 'sessions'" />
+      <AccessTokensSection v-else-if="active === 'tokens'" />
       <AdminOverviewSection v-else-if="active === 'overview'" @open="select" />
       <AdminRequestsSection v-else-if="active === 'requests'" @changed="refreshWaiting" />
       <AdminReportsSection v-else-if="active === 'reports'" @changed="refreshWaiting" />
