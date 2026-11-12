@@ -1,4 +1,4 @@
-import { isEqual, omit } from 'es-toolkit'
+import { isEqual, omit, pickBy } from 'es-toolkit'
 
 import type {
   FigmaSourcePayload,
@@ -15,6 +15,7 @@ import {
   createSceneMutationImpact,
   recordSceneMutations
 } from '@open-pencil/scene-graph/mutation-impact'
+import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
 import type { EditorContext } from '#core/editor/types'
 import { computeAllLayouts } from '#core/layout'
@@ -43,6 +44,14 @@ interface LayerUpdate {
   fig: FieldChanges<FigmaSourcePayload> | null
 }
 
+/**
+ * A layer an edit created or deleted, as its step keeps it: the fields that differ from a new
+ * layer of its type, which `SceneGraph.createNode` fills back in. A layer has some 170 fields and
+ * most hold their defaults, so a step costs what its layers hold rather than every field of each.
+ */
+export type StoredLayer = Partial<SceneNode> &
+  Pick<SceneNode, 'id' | 'type' | 'parentId' | 'childIds'>
+
 /** A parent's children in one state, listed parents first. */
 interface ChildList {
   id: string
@@ -61,9 +70,9 @@ export interface DocumentChange {
   /** Pages whose layers the edit changed, laid out again when it is undone or redone. */
   pageIds: string[]
   /** Layers as the edit left them, parents first. */
-  created: SceneNode[]
+  created: StoredLayer[]
   /** Layers as they were before the edit removed them, parents first. */
-  deleted: SceneNode[]
+  deleted: StoredLayer[]
   /** Fields the edit changed on layers that exist in both states, children aside. */
   updated: LayerUpdate[]
   /** Child lists that differ between the states, each side's parents first. */
@@ -151,6 +160,14 @@ function captureNode(node: SceneNode): SceneNode {
   }
 }
 
+/** A copy of `node` that leaves out the fields a new layer of its type starts with. */
+function storeLayer(node: SceneNode): StoredLayer {
+  const defaults = createDefaultNode(() => node.id, node.type)
+  const fields = pickBy(node, (value, key) => !isEqual(value, defaults[key]))
+  const { id, type, parentId, childIds } = node
+  return structuredClone({ ...fields, id, type, parentId, childIds })
+}
+
 /**
  * A layer and its ancestors, nearest first. Like `SceneGraph.closest`, the walk visits at most as
  * many layers as there are, so a parent cycle in bad data cannot hang it.
@@ -188,9 +205,9 @@ function recordLayer(
     change.children.after.push({ id, childIds: [...current.childIds] })
   }
   if (!previous) {
-    if (current) change.created.push(structuredClone(current))
+    if (current) change.created.push(storeLayer(current))
   } else if (!current) {
-    change.deleted.push(structuredClone(previous))
+    change.deleted.push(storeLayer(previous))
   } else {
     const update = diffLayer(id, previous, current)
     if (update) change.updated.push(update)
@@ -427,7 +444,7 @@ export function isEmptyDocumentChange(change: DocumentChange): boolean {
  * there, to the nearest parent that stays, where the outermost removed layer was, keeping their
  * place on the canvas.
  */
-function keepOthersLayers(graph: SceneGraph, removed: readonly SceneNode[]): void {
+function keepOthersLayers(graph: SceneGraph, removed: readonly StoredLayer[]): void {
   const removedIds = new Set(removed.map((node) => node.id))
   for (const { id } of removed) {
     const live = graph.getNode(id)
