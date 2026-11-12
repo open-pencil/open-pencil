@@ -2,7 +2,7 @@ import { isEqual, pick } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
-import { autoLayoutSizingFields } from '@open-pencil/scene-graph/layout'
+import { autoLayoutSizingFields, layoutSizingUpdates } from '@open-pencil/scene-graph/layout'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import type { DesignElement } from '../types'
@@ -83,14 +83,21 @@ function isSingleLine(node: SceneNode, captured: CapturedBox): boolean {
 
 /**
  * Prepares a text layer for its captured lines: text the page set on one line sizes to its
- * words, so a fallback font a little wider than the page's does not wrap it. It hugs them rather
- * than filling its parent, which would make it wrapping text of the parent's width again.
+ * words, so a fallback font a little wider than the page's does not wrap it. It hugs them on
+ * both axes, opting out of a stretch its parent gives its children, rather than filling its
+ * parent, which would make it wrapping text of the parent's width again.
  */
-export function applyCapturedLines(node: SceneNode, captured: CapturedBox): void {
+export function applyCapturedLines(
+  graph: SceneGraph,
+  node: SceneNode,
+  captured: CapturedBox
+): void {
   if (!isSingleLine(node, captured)) return
+  for (const axis of ['HORIZONTAL', 'VERTICAL'] as const) {
+    Object.assign(node, layoutSizingUpdates(graph, node, axis, 'HUG'))
+  }
+  // Each axis's update reads the other's sizing as it was, so the text's own resizing is set last.
   node.textAutoResize = 'WIDTH_AND_HEIGHT'
-  node.layoutGrow = 0
-  if (node.layoutAlignSelf === 'STRETCH') node.layoutAlignSelf = 'AUTO'
 }
 
 function offset(rect: Rect, origin: Rect): Rect {
@@ -183,27 +190,45 @@ function placeChildren(graph: SceneGraph, node: SceneNode, own: CapturedBox, box
 }
 
 /**
+ * The layers each import has corrected the size of without changing how they size, so a second
+ * such correction is known to be layout imposing the size: a parent sizing its child, which
+ * placing the parent's children settles. Kept per import by its captured boxes.
+ */
+const resizedLayers = new WeakMap<CapturedBoxes, Set<string>>()
+
+/**
  * Compares laid-out layers with where the page laid their elements out, and keeps auto layout
  * only where it reproduces them: a layer of the wrong size takes its captured size, and a
  * container whose children land elsewhere places them at their captured boxes instead. Sizes come
  * first: a child a little too large moves the siblings after it, and fixing its size keeps its
- * parent's auto layout, so children are placed only once no layer's size changes. Returns how
- * many layers changed, so the caller lays out again until none do.
+ * parent's auto layout, so children are placed only once no layer changes how it sizes. Returns
+ * how many layers changed, so the caller lays out again until none do.
  */
 export function placeLayersFromLayout(graph: SceneGraph, boxes: CapturedBoxes): number {
   const layers = graph
     .getPages()
     .flatMap((page) => graph.flattenTree(page.id).map(({ node }) => node))
     .filter((node) => node.type !== 'CANVAS' && boxes.has(node.id))
+  const resizedBefore = resizedLayers.get(boxes) ?? new Set<string>()
+  resizedLayers.set(boxes, resizedBefore)
+  const imposed = new Set<string>()
   let changed = 0
+  let resized = 0
   for (const node of layers) {
     const own = boxes.get(node.id)
     if (!own || sizeMatches(node, own)) continue
-    // A layer that sizes itself stops doing so; one already fixed that layout still sizes
-    // elsewhere is its parent's doing, which placing the parent's children settles below.
     const sizing = pick(node, SIZING_MODE_FIELDS)
-    fixSize(node, own)
-    if (!isEqual(pick(node, SIZING_MODE_FIELDS), sizing)) changed++
+    const changedSize = fixSize(node, own)
+    if (!isEqual(pick(node, SIZING_MODE_FIELDS), sizing)) {
+      // A layer that sized itself stops doing so.
+      changed++
+    } else if (changedSize) {
+      // Laid out once more at its corrected size, as wrapped text measures its height at a new
+      // width; corrected again, its parent imposes the size, and places it below instead.
+      if (resizedBefore.has(node.id)) imposed.add(node.id)
+      else resizedBefore.add(node.id)
+      resized++
+    }
   }
   if (changed > 0) return changed
   for (const node of layers) {
@@ -211,12 +236,12 @@ export function placeLayersFromLayout(graph: SceneGraph, boxes: CapturedBoxes): 
     if (!own || !hasAutoLayout(node)) continue
     const misplaced = graph.getChildren(node.id).some((child) => {
       const captured = boxes.get(child.id)
-      return captured !== undefined && !matches(child, captured, own.box)
+      return captured !== undefined && (imposed.has(child.id) || !matches(child, captured, own.box))
     })
     if (misplaced) {
       placeChildren(graph, node, own, boxes)
       changed++
     }
   }
-  return changed
+  return changed + resized - imposed.size
 }

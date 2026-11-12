@@ -7,6 +7,7 @@ import type {
   DesignNode,
   DesignStyleDeclaration
 } from '@open-pencil/dom-css'
+import { layoutSizing } from '@open-pencil/scene-graph/layout'
 
 function element(
   computedStyle: DesignStyleDeclaration,
@@ -102,6 +103,30 @@ describe('laying out HTML from its captured layout', () => {
 
     expect(text).toMatchObject({ type: 'TEXT', textAutoResize: 'WIDTH_AND_HEIGHT', y: 8 })
     expect(text.width).toBeGreaterThan(0)
+  })
+
+  test('a single line hugs its words in a column that stretches its children', async () => {
+    const label: DesignElement = {
+      type: 'element',
+      tagName: 'span',
+      attrs: {},
+      children: [{ type: 'text', text: 'Docs' }],
+      computedStyle: { display: 'inline', width: 'auto', height: 'auto', 'font-size': '16px' },
+      layout: { box: rect(0, 0, 36, 24), fragments: [rect(0, 0, 36, 24)] }
+    }
+    // A flex column without align-items stretches its children across.
+    const column = element(
+      { display: 'flex', 'flex-direction': 'column', width: '300px', height: 'auto' },
+      { box: rect(0, 0, 300, 24) },
+      [label]
+    )
+    const graph = await sceneGraphFromStyledHTML({ type: 'document', children: [column] })
+    const columnLayer = graph.getChildren(graph.getPages()[0].id)[0]
+    const [text] = graph.getChildren(columnLayer.id)
+
+    expect(text.type).toBe('TEXT')
+    expect(layoutSizing(graph, text, 'HORIZONTAL')).toBe('HUG')
+    expect(text.width).toBeLessThan(300)
   })
 
   test('puts top-level elements where the page stacked them', async () => {
