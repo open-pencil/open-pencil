@@ -1,6 +1,6 @@
 ---
 title: FillSwatch
-description: Binding-aware semantic preview for solid, gradient, and image fills.
+description: Semantic preview for solid, gradient, and image fills.
 ---
 
 <script setup lang="ts">
@@ -10,12 +10,12 @@ import { data } from './fill-swatch.data'
 # FillSwatch
 
 `FillSwatch` exposes a semantic preview for a fill without imposing application styling. Its slot
-provides the effective fill, preview background, category, and transparency state. The root also
-publishes `data-fill-type`, `data-fill-category`, and `data-transparent` for styling and tests.
+provides the fill, preview background, category, and transparency state. The root also publishes
+`data-fill-type`, `data-fill-category`, and `data-transparent` for styling and tests.
 
-When nested in `BindableValueRoot<Color>`, a bound solid fill previews the provider's resolved color
-and forwards the binding state attributes. Reading or focusing a swatch never detaches the binding.
-Consumers can place a checkerboard below the slot's `background` value for transparent paints.
+A swatch shows the fill it is given, also inside `BindableValueRoot`, so a variable picker's rows
+keep their own colors. To preview a bound value, pass the root's `resolvedValue` as the fill's color
+and bind its `stateAttrs` on the swatch. Consumers can place a checkerboard below the slot's `background` value for transparent paints.
 
 ```vue twoslash
 <script setup lang="ts">
