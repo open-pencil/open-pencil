@@ -1,0 +1,1 @@
+- Documents with text set to truncate save as `.fig` instead of failing with an invalid enum value.
