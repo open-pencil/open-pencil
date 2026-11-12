@@ -33,6 +33,7 @@
     "#cloud/server/auth": "./src/server/auth/index.ts",
     "#cloud/server/cleanup": "./src/server/cleanup/index.ts",
     "#cloud/server/collaboration": "./src/server/collaboration/index.ts",
+    "#cloud/server/community": "./src/server/community/index.ts",
     "#cloud/server/config": "./src/server/config/index.ts",
     "#cloud/server/db": "./src/server/db/index.ts",
     "#cloud/server/documents": "./src/server/documents/index.ts",
