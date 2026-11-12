@@ -502,10 +502,6 @@
         "accelerator": "Alt+Shift+F"
       },
       {
-        "id": "selection.outlineText",
-        "label": "Outline text"
-      },
-      {
         "id": "selection.outlineStroke",
         "label": "Outline stroke"
       },

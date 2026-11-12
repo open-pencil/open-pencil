@@ -74,6 +74,19 @@ export type PortalSession = PortalDevice & {
   signedInOn: string
 }
 
+/** A personal access token as the portal lists it, with its dates in words. */
+export type PortalAccessToken = {
+  id: string
+  name: string
+  /** Its first characters, prefix included. */
+  start: string | null
+  created: string
+  /** When it was last used, or null when never. */
+  lastUsed: string | null
+  expires: string
+  expired: boolean
+}
+
 export type PortalSignIn = PortalDevice & {
   id: string
   when: string
@@ -171,3 +184,5 @@ export type PortalContentAction =
   | 'suspend-owner'
   | 'dismiss'
   | 'mark-handled'
+
+export type { PortalCreditPack, PortalPlan, PortalPlanOffer } from '@/app/cloud-portal/plan'

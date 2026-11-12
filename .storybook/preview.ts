@@ -67,6 +67,8 @@ const preview: Preview = {
     options: {
       storySort: {
         // Design System follows the families under src/components/ui; App follows product areas.
+        // Every story sits under one of them (`@open-pencil/structure/story-titles`). Storybook reads
+        // this list without running the file, so it stays a literal here.
         order: [
           'Design System',
           [
@@ -87,9 +89,11 @@ const preview: Preview = {
             'Chat',
             ['Markdown', 'Message', 'Attachments'],
             'Collaboration',
-            'Settings',
+            'Cloud',
             'Home',
+            'Settings',
             'Shell',
+            'Metrics',
             'Brand'
           ],
           'Vue SDK',

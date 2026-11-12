@@ -307,7 +307,7 @@ export function applyResizedRect(
     editor.renderer?.invalidateVectorPath(d.nodeId)
   }
 
-  // Two passes around the layout run: the first sizes children so Yoga can
+  // Two passes around the layout run: the first sizes children so layout can
   // resolve HUG/FILL, the second re-applies against the settled boxes.
   applyConstrainedChildren(d, newRect, editor)
   editor.graph.runPreviewUpdates(() => computeAllLayouts(editor.graph, d.nodeId))

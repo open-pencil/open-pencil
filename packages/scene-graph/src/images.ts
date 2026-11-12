@@ -6,13 +6,21 @@ import { fromUint8Array, isValid, toUint8Array } from 'js-base64'
 import type { Matrix, Size } from './primitives'
 import type { Fill } from './types'
 
+/** Hashes already computed, by the bytes hashed: a save would otherwise hash every image again. */
+const imageHashes = new WeakMap<Uint8Array, string>()
+
 /**
  * The name an image's bytes are stored under: the hex SHA-1 of the bytes, as Figma names images,
  * so `.fig` files and the Figma clipboard can carry the name as it is. Documents saved before may
- * hold images under other names; anything that hands images to Figma still checks.
+ * hold images under other names; anything that hands images to Figma still checks. Each array is
+ * hashed once, as image bytes are never written into once read or stored.
  */
 export function computeImageHash(data: Uint8Array): string {
-  return bytesToHex(sha1(data))
+  const known = imageHashes.get(data)
+  if (known) return known
+  const hash = bytesToHex(sha1(data))
+  imageHashes.set(data, hash)
+  return hash
 }
 
 export type ImageMimeType = 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp' | 'image/avif'
