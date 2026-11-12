@@ -482,7 +482,7 @@ export class RenderChunkIndex {
         visited.add(id)
         dependencies.add(id)
         const node = graph.getNode(id)
-        if (node) pending.push(...node.childIds)
+        if (node) for (const childId of node.childIds) pending.push(childId)
       }
     }
     for (const dependencyId of dependencies) {

@@ -105,6 +105,7 @@
       }
     ],
     "@open-pencil/editor/no-structuredclone-scene-arrays": "error",
+    "@open-pencil/editor/no-spread-layer-children": "error",
     "@open-pencil/vue/icon-direction": "error",
     "@open-pencil/vue/no-style-blocks": "error",
     "@open-pencil/vue/no-native-title-attributes": "error",
