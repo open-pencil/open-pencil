@@ -3,7 +3,6 @@ import { describe, expect, test } from 'bun:test'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { FigmaAPI } from '#core/figma-api'
-import type { FigmaTransform } from '#core/figma-api/types'
 
 // Messages measured with the same assignments in Figma desktop 126's plugin API.
 const message = (property: string, value: number, method = `set_${property}`) =>
@@ -47,9 +46,9 @@ describe('a number a layer takes', () => {
     for (const property of PROPERTIES) {
       test(`refuses ${value} for ${property} and keeps the layer as it was`, () => {
         const { graph, frame } = stroked()
-        const before = JSON.stringify(graph.getNode(frame.id))
+        const before = structuredClone(graph.getNode(frame.id))
         expect(() => Reflect.set(frame, property, value)).toThrow(message(property, value))
-        expect(JSON.stringify(graph.getNode(frame.id))).toBe(before)
+        expect(graph.getNode(frame.id)).toEqual(before)
       })
     }
 
@@ -82,7 +81,7 @@ describe('a number a layer takes', () => {
 
   test('takes a transform row as an object keyed by index, and clears a size limit with null', () => {
     const { frame } = stroked()
-    frame.relativeTransform = [{ 0: 1, 1: 0, 2: 7 }, [0, 1, 3]] as unknown as FigmaTransform
+    Reflect.set(frame, 'relativeTransform', [{ 0: 1, 1: 0, 2: 7 }, [0, 1, 3]])
     expect(frame.relativeTransform).toEqual([
       [1, 0, 7],
       [0, 1, 3]
