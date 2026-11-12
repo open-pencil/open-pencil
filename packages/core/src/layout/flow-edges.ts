@@ -2,7 +2,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import type { Edges, LayoutNode } from '@open-pencil/taffy'
 
-import { primaryAxisGap, siblingOverlap } from './item-spacing'
+import { counterAxisGap, primaryAxisGap, siblingOverlap } from './item-spacing'
 import { createLayoutNode, layoutPadding, mapAlign, mapJustify } from './node'
 
 type Side = 'top' | 'right' | 'bottom' | 'left'
@@ -24,8 +24,7 @@ export function setFlexFlow(layoutNode: LayoutNode, frame: SceneNode): void {
     layoutNode.style.alignContent = 'space-between'
   }
   const primaryGap = primaryAxisGap(frame)
-  // Wrapped lines never overlap: Figma lays a negative spacing between them out as none.
-  const counterGap = Math.max(0, frame.counterAxisSpacing)
+  const counterGap = counterAxisGap(frame)
   layoutNode.style.columnGap = horizontal ? primaryGap : counterGap
   layoutNode.style.rowGap = horizontal ? counterGap : primaryGap
 }

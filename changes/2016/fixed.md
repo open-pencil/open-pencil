@@ -1,0 +1,1 @@
+- Wrapped auto layout from `.fig` files whose spacing between rows follows the item spacing lays its rows out that far apart, where they touched before.
