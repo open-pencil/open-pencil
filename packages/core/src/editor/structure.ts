@@ -17,10 +17,11 @@ import {
 } from './structure/boolean'
 import {
   sharedParentId,
+  wrapEachParent,
   wrapSelectionInContainer as wrapSelectionInContainerImpl
 } from './structure/container-wrap'
 import { flattenSelected as flattenSelectedImpl } from './structure/flatten'
-import { ungroupSelected as ungroupImpl } from './structure/group/ungroup'
+import { canUngroupNode, ungroupSelected as ungroupImpl } from './structure/group/ungroup'
 import { createLayerTypeActions } from './structure/layer-type'
 import { outlineStrokeSelected as outlineStrokeSelectedImpl } from './structure/outline-stroke'
 import {
@@ -81,12 +82,12 @@ export function createStructureActions(ctx: EditorContext) {
   }
 
   function groupSelected(selectedNodes: SceneNode[]) {
-    return wrapSelectionInContainer('GROUP', selectedNodes)
+    return wrapEachParent(ctx, 'GROUP', selectedNodes)
   }
 
   /** Figma frames a selection without a fill or clipping, unlike a drawn frame. */
   function frameSelection(selectedNodes: SceneNode[]) {
-    return wrapSelectionInContainer('FRAME', selectedNodes)
+    return wrapEachParent(ctx, 'FRAME', selectedNodes)
   }
 
   /**
@@ -117,8 +118,13 @@ export function createStructureActions(ctx: EditorContext) {
     return booleanOperationSelectedImpl(ctx, selectedNodes, operation)
   }
 
-  function ungroupSelected(selectedNode: SceneNode | undefined) {
-    ungroupImpl(ctx, selectedNode)
+  function ungroupSelected(selectedNodes: SceneNode[]) {
+    return ungroupImpl(ctx, selectedNodes)
+  }
+
+  /** Whether Ungroup takes any of these layers apart: a group, frame, boolean, or section. */
+  function canUngroup(selectedNodes: SceneNode[]) {
+    return selectedNodes.some((node) => canUngroupNode(ctx, node))
   }
 
   function flattenSelected(selectedNodes: SceneNode[]) {
@@ -234,6 +240,7 @@ export function createStructureActions(ctx: EditorContext) {
     ...layerTypeActions,
     booleanOperationSelected,
     ungroupSelected,
+    canUngroup,
     flattenSelected,
     outlineTextSelected,
     outlineStrokeSelected,

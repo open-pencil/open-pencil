@@ -17,6 +17,8 @@ export default defineConfig([
     name: 'neutral',
     entry: {
       contract: './src/contract/index.ts',
+      // The PostHog error reporter alone, for services that report as Cloud does without its server.
+      errors: './src/errors/index.ts',
       server: './src/server/index.ts'
     },
     platform: 'neutral',

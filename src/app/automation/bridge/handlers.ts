@@ -1,3 +1,5 @@
+import { omit } from 'es-toolkit'
+
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
 
 import { agentChatStore } from '@/app/ai/reply/run'
@@ -114,7 +116,11 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?:
       )
     }
     const target = resolveAutomationTarget(chatStore ?? store, rawArgs)
-    return handleTargetCommand(target, command, stripAutomationTargetArgs(rawArgs), signal)
+    // A graph command such as `tree` reads the page it was asked for from its own arguments.
+    const commandArgs = commandHandlers[command]
+      ? stripAutomationTargetArgs(rawArgs)
+      : omit(rawArgs, ['document_id'])
+    return handleTargetCommand(target, command, commandArgs, signal)
   }
 
   return { handleRequest, handleTargetCommand }
