@@ -1,0 +1,1 @@
+- Plugin API scripts and MCP tools can no longer set a layer's position, rotation, opacity, stroke weights, corner radii, auto layout spacing, size limits, dash pattern, or transform to NaN or Infinity; they get Figma's validation error instead of a layer that blanks its page.
