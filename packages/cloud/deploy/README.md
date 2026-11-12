@@ -30,8 +30,8 @@ are kept.
 
 Building, configuring, and running a server, the editor address, the first administrator, operator
 commands, email, storage, backups, and upgrades are covered in the
-[self-hosting guide](https://openpencil.dev/reference/self-hosting-cloud)
-(`packages/docs/reference/self-hosting-cloud.md`). The example files it refers to are here:
+[self-hosting guide](https://openpencil.dev/cloud/self-hosting/)
+(`packages/docs/cloud/self-hosting/`). The example files it refers to are here:
 [`openpencil-cloud.example.toml`](./openpencil-cloud.example.toml) and [`.env.example`](./.env.example).
 [`Dockerfile`](./Dockerfile) builds the published image, `ghcr.io/open-pencil/cloud`, from the
 repository root once the HTML engine's WebAssembly module is built there (`bun run --filter

@@ -1,0 +1,37 @@
+{
+  "name": "@open-pencil/taffy",
+  "version": "0.17.0-beta.4",
+  "description": "Taffy, the Rust flexbox and grid layout engine, in WebAssembly as OpenPencil builds it: a whole tree laid out in one call",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/open-pencil/open-pencil.git",
+    "directory": "packages/taffy"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/taffy.js",
+  "types": "./dist/taffy.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/taffy.d.ts",
+      "default": "./dist/taffy.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "fork-release fetch ."
+  },
+  "devDependencies": {
+    "@open-pencil/fork-releases-tools": "workspace:*"
+  }
+}

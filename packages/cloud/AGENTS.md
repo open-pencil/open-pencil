@@ -14,6 +14,8 @@ Optional, self-hostable backend; the design is in `packages/docs/development/clo
 
 ## Data and security
 
+- Personal access tokens are Better Auth API keys that never become sessions: only `requireActiveActor` reads them, for the document API, held to approval, terms, and bans; administration and account routes resolve sessions alone, and the plugin's own endpoints are disabled (`tests/integration/server/auth/access-tokens.test.ts`).
+- Their `apikey` table is Cloud's migration `009_access_tokens`, matching what the plugin would build, and Better Auth's migration leaves that plugin out: Better Auth's migration runs once and can't add to a schema it built, since it misreads the camel-cased columns (`createBetterAuthAdapter`).
 - Sign-ins are recorded by the `accountActivity` Better Auth plugin from the hook context's `newSession`, never by parsing tokens from responses (`src/server/auth/activity.ts`).
 - Code inside Better Auth's callbacks that run in its transaction, such as database hooks and `sendVerificationEmail`, must not query the database, which deadlocks on one connection; `user.deleteUser.beforeDelete` runs outside one, so account deletion queries there (`tests/integration/server/account/routes.test.ts`, `tests/integration/server/account/deletion.test.ts`).
 - Name a table for what it holds, without a `cloud_` prefix; only a name Better Auth already uses gets a qualifier, such as `api_rate_limit`. Name keys, checks, and indexes as PostgreSQL does: `<table>_pkey`, `<table>_<columns>_key`, `<table>_<columns>_fkey`, `<table>_<column>_check`, and `<table>_<columns>_idx` (`tests/integration/server/db/baseline.test.ts`).
@@ -59,6 +61,7 @@ Optional, self-hostable backend; the design is in `packages/docs/development/clo
 - Deployment settings live in the schema-versioned TOML parsed by `src/server/config/deployment.ts`; environment variables only resolve `{ from_env }` secret references and never override the file (`tests/runtime/node/config.test.ts`).
 - Technical limits are ceilings that policy can tighten but never raise (`src/server/config/limits.ts`, `src/server/policy/`).
 - Feature and limit decisions go through the OpenFeature policy keys in `src/server/policy/keys.ts`; never branch on a plan name.
+- A deployment's legal links and terms acceptance come only from its `[legal]` table, the same for official and self-hosted servers: never branch on `deployment` to show terms, and gate an account on the current `terms_version` in `resolveSession`, beside approval; `resolveAccountSession` lets one with terms to accept only read a document and delete its account, so it can leave with its data (`src/server/account/terms.ts`, `tests/integration/server/account/terms.test.ts`).
 - Plans belong to accounts: ask a workspace's or document's policy through `workspacePolicyContext`, which targets the workspace owner, never with the workspace as the target, so creating workspaces adds no allowance (`tests/integration/server/policy/service.test.ts`, `tests/integration/server/quota/storage.test.ts`).
 
 ## Tests

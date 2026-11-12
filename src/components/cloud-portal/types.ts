@@ -74,6 +74,19 @@ export type PortalSession = PortalDevice & {
   signedInOn: string
 }
 
+/** A personal access token as the portal lists it, with its dates in words. */
+export type PortalAccessToken = {
+  id: string
+  name: string
+  /** Its first characters, prefix included. */
+  start: string | null
+  created: string
+  /** When it was last used, or null when never. */
+  lastUsed: string | null
+  expires: string
+  expired: boolean
+}
+
 export type PortalSignIn = PortalDevice & {
   id: string
   when: string
@@ -172,11 +185,4 @@ export type PortalContentAction =
   | 'dismiss'
   | 'mark-handled'
 
-/** How far Download all got: files saved so far of all of them, and the names it couldn't get. */
-export type PortalAccountArchive = {
-  done: number
-  total: number
-  /** Set once it finished: how many it saved. */
-  saved: number | null
-  failed: string[]
-}
+export type { PortalCreditPack, PortalPlan, PortalPlanOffer } from '@/app/cloud-portal/plan'

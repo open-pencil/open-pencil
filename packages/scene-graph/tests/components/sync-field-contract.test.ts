@@ -3,7 +3,6 @@ import { expect, test } from 'bun:test'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
 import { pixelLength } from '@open-pencil/scene-graph/text'
-
 import { expectDefined } from '@open-pencil/test-support/assert'
 for (const protectedField of ['width', 'text'] as const) {
   test(`component synchronization preserves ${protectedField} without freezing other fields`, () => {

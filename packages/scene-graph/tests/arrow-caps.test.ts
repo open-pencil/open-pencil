@@ -1,8 +1,20 @@
 import { describe, expect, test } from 'bun:test'
-import { arrowCapOverflow, arrowLinesSegments, circleCapRadius, collectArrowEndpoints, diamondCapPoints, equilateralArrowPoints, isArrowCap, lineStrokeEnds, triangleCapPoints, trimArrowShafts } from '@open-pencil/scene-graph/arrow-caps'
-import { strokeOverflow } from '@open-pencil/scene-graph/geometry'
+
 import { SceneGraph, type Stroke, type VectorNetwork } from '@open-pencil/scene-graph'
+import {
+  arrowCapOverflow,
+  arrowLinesSegments,
+  circleCapRadius,
+  collectArrowEndpoints,
+  diamondCapPoints,
+  equilateralArrowPoints,
+  isArrowCap,
+  lineStrokeEnds,
+  triangleCapPoints,
+  trimArrowShafts
+} from '@open-pencil/scene-graph/arrow-caps'
 import type { ArrowEndpoint } from '@open-pencil/scene-graph/arrow-caps'
+import { strokeOverflow } from '@open-pencil/scene-graph/geometry'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 // From Figma 126 stroke geometry: a 300 px line with a 6 px stroke runs its stroke along y = -3,

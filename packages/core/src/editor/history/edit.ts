@@ -17,6 +17,11 @@ export interface RecordEditOptions {
   /** False for an edit that records its own steps, such as an atomic tool's. */
   push?: boolean
   /**
+   * Undo selects what was selected before the edit and redo what it left selected, as Figma does
+   * after Group or Ungroup, rather than clearing the selection.
+   */
+  restoresSelection?: boolean
+  /**
    * Records the step on its own, settling any batch first, rather than as part of an open batch.
    * An edit that finishes after an await needs this: a batch open by then belongs to another
    * edit, such as a picker drag. `recordEditAsync` always does.
@@ -42,6 +47,7 @@ export type AsyncRecordEditOptions = Omit<RecordEditOptions, 'joinStep'>
 
 function begin(ctx: EditorContext, options: RecordEditOptions) {
   const pageId = options.pageId ?? ctx.state.currentPageId
+  const selectedBefore = options.restoresSelection ? new Set(ctx.state.selectedIds) : undefined
   const finish = captureDocumentChange(ctx.graph, pageId)
   /** Ends the edit; true when it left no step, rolled back or changing nothing. */
   return (failed: boolean): boolean => {
@@ -53,7 +59,9 @@ function begin(ctx: EditorContext, options: RecordEditOptions) {
       (ctx.undo.peekUndo() !== options.joinStep || ctx.undo.isBatching)
     // A failed edit leaves nothing half done: what it changed goes back, and no step is left.
     if (failed || stale) {
-      if (!isEmptyDocumentChange(change)) restoreDocumentChange(ctx, change, 'before')
+      if (!isEmptyDocumentChange(change)) {
+        restoreDocumentChange(ctx, change, 'before', selectedBefore)
+      }
       options.onRecorded?.(emptyDocumentChange(pageId))
       return true
     }
@@ -64,10 +72,11 @@ function begin(ctx: EditorContext, options: RecordEditOptions) {
     }
     // An edit that changed nothing, such as a read-only script, leaves no empty step behind.
     if (!isEmptyDocumentChange(change)) {
+      const selectedAfter = selectedBefore && new Set(ctx.state.selectedIds)
       const entry = {
         label: options.label,
-        forward: () => restoreDocumentChange(ctx, change, 'after'),
-        inverse: () => restoreDocumentChange(ctx, change, 'before')
+        forward: () => restoreDocumentChange(ctx, change, 'after', selectedAfter),
+        inverse: () => restoreDocumentChange(ctx, change, 'before', selectedBefore)
       }
       if (options.joinStep) ctx.undo.extendLastStep(entry)
       else if (options.ownStep) ctx.undo.pushStep(entry)

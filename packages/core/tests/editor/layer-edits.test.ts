@@ -9,8 +9,8 @@ import {
   resolveEditorProfile
 } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 import { MOVE_ACTIONS, PATH_EDIT_ACTIONS, POSITION_ACTIONS } from '#core/editor/read-only/actions'
@@ -79,7 +79,10 @@ describe('layers the host keeps as they are', () => {
     const updateNode = ALL_TOOLS.find((tool) => tool.name === 'update_node')
     if (!updateNode) throw new Error('update_node is missing')
     expect(() =>
-      executeAtomicTool(editor, new FigmaAPI(editor.graph), updateNode, { id: path.id, opacity: 0.5 })
+      executeAtomicTool(editor, new FigmaAPI(editor.graph), updateNode, {
+        id: path.id,
+        opacity: 0.5
+      })
     ).toThrow(FixedLayersError)
   })
 

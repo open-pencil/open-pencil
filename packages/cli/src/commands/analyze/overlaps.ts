@@ -10,6 +10,7 @@ import {
   parseOverlapSeverity
 } from '@open-pencil/core/tools'
 
+import { pageOptions } from '#cli/app/target'
 import { bold, fail, fmtList, fmtSummary, kv } from '#cli/format'
 import { loadRPCData } from '#cli/rpc-data'
 
@@ -96,8 +97,6 @@ function buildRPCArgs(args: {
   'include-hidden'?: boolean
   'include-locked'?: boolean
   'include-absolute'?: boolean
-  page?: string
-  'page-id'?: string
   type?: string
 }): { rpcArgs: Record<string, unknown>; error?: string } {
   const error = collectValidationError(args)
@@ -118,8 +117,6 @@ function buildRPCArgs(args: {
   if (args['include-hidden']) rpcArgs.include_hidden = true
   if (args['include-locked']) rpcArgs.include_locked = true
   if (args['include-absolute']) rpcArgs.include_absolute = true
-  if (args.page) rpcArgs.page = args.page
-  if (args['page-id']) rpcArgs.page_id = args['page-id']
   if (args.type) rpcArgs.type = args.type
 
   return { rpcArgs }
@@ -168,19 +165,7 @@ export default defineCommand({
       type: 'boolean',
       description: 'Include absolutely-positioned nodes in the analysis'
     },
-    page: {
-      type: 'string',
-      description: 'Limit analysis to nodes on the named page'
-    },
-    'page-id': {
-      type: 'string',
-      description: 'Limit analysis to nodes on the page with this stable ID'
-    },
-    'document-id': {
-      type: 'string',
-      description: 'Target OpenPencil document/tab ID when connected to the running app',
-      required: false
-    },
+    ...pageOptions('first page'),
     type: {
       type: 'string',
       description: 'Comma-separated node types to analyze, e.g. FRAME,TEXT'

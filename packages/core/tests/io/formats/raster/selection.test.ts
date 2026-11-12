@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
+import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph, type Effect } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 

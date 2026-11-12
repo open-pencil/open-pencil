@@ -1,3 +1,5 @@
+import { appendAll } from '@open-pencil/scene-graph/arrays'
+
 import type { EditorCommandId } from '#vue/editor/commands/types'
 import type { useEditorCommands } from '#vue/editor/commands/use'
 import {
@@ -16,7 +18,10 @@ function commandGroupEntries(
   const entries: MenuEntry[] = []
   for (const [index, group] of groups.entries()) {
     if (index > 0) entries.push({ separator: true })
-    entries.push(...group.map((id) => commandMenuItem(id)))
+    appendAll(
+      entries,
+      group.map((id) => commandMenuItem(id))
+    )
   }
   return entries
 }

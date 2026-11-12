@@ -1,10 +1,10 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer, patchFigArchive, readStreamBytes } from '@open-pencil/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph, type Effect } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 const SHADOW: Effect = {
   type: 'DROP_SHADOW',
@@ -94,9 +94,9 @@ describe('Figma export of effect variable bindings', () => {
     }
     const patched = await readStreamBytes(
       patchFigArchive(
-      Uint8Array.from(exported).buffer,
-      { records: [saved], blobs: [], removed: [], replaceVariables: false },
-      { thumbnailPNG: new Uint8Array(), metaJSON: '{}', images: [] }
+        Uint8Array.from(exported).buffer,
+        { records: [saved], blobs: [], removed: [], replaceVariables: false },
+        { thumbnailPNG: new Uint8Array(), metaJSON: '{}', images: [] }
       )
     )
 

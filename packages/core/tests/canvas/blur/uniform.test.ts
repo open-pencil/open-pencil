@@ -1,10 +1,10 @@
 import { afterAll, describe, expect, test } from 'bun:test'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
+import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph, type Effect, type SceneNode } from '@open-pencil/scene-graph'
-
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 const ck = await getCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
@@ -141,7 +141,7 @@ function expectFigmaEdge(row: number[], figma: number[], from = 60) {
     60 + index < from ? [] : [Math.abs(value - figma[index])]
   )
   const rms = Math.sqrt(differences.reduce((sum, d) => sum + d * d, 0) / differences.length)
-  expect(Math.max(...differences)).toBeLessThanOrEqual(6)
+  expect(maxOf(differences)).toBeLessThanOrEqual(6)
   expect(rms).toBeLessThanOrEqual(2)
 }
 
@@ -232,19 +232,22 @@ describe('a negative blur, which only a bound variable gives', () => {
     test(`draws a ${type.toLowerCase()} cast from a boolean's silhouette as no blur`, () => {
       const inner = type === 'INNER_SHADOW'
       const row = (radius: number) =>
-        edgeRow((graph, frameId) => {
-          const union = graph.createNode('BOOLEAN_OPERATION', frameId, {
-            x: 100,
-            y: 100,
-            width: 200,
-            height: 200,
-            booleanOperation: 'UNION',
-            fills: [solid(1, 1, 1)],
-            effects: [{ ...effect(type, radius), offset: { x: inner ? 10 : -10, y: 0 } }]
-          })
-          graph.createNode('RECTANGLE', union.id, { width: 200, height: 120 })
-          graph.createNode('RECTANGLE', union.id, { y: 80, width: 200, height: 120 })
-        }, inner ? 0 : 3)
+        edgeRow(
+          (graph, frameId) => {
+            const union = graph.createNode('BOOLEAN_OPERATION', frameId, {
+              x: 100,
+              y: 100,
+              width: 200,
+              height: 200,
+              booleanOperation: 'UNION',
+              fills: [solid(1, 1, 1)],
+              effects: [{ ...effect(type, radius), offset: { x: inner ? 10 : -10, y: 0 } }]
+            })
+            graph.createNode('RECTANGLE', union.id, { width: 200, height: 120 })
+            graph.createNode('RECTANGLE', union.id, { y: 80, width: 200, height: 120 })
+          },
+          inner ? 0 : 3
+        )
       expect(row(-6)).toEqual(row(0))
     })
   }
@@ -266,7 +269,7 @@ describe('shadows of a transparent fill', () => {
     )
 
   test('a fill at 0% opacity casts no shadow', () => {
-    expect(Math.max(...shadowRow(0))).toBe(0)
+    expect(maxOf(shadowRow(0))).toBe(0)
   })
 
   test('a fill at 1% opacity casts a full one', () => {
@@ -274,7 +277,7 @@ describe('shadows of a transparent fill', () => {
   })
 
   test('a fill at 0% opacity casts none when the shadow shows behind the node', () => {
-    expect(Math.max(...shadowRow(0, true))).toBe(0)
+    expect(maxOf(shadowRow(0, true))).toBe(0)
   })
 
   test('a fill at 0% opacity takes no inner shadow', () => {
@@ -286,7 +289,7 @@ describe('shadows of a transparent fill', () => {
         }),
       3
     )
-    expect(Math.max(...row)).toBe(0)
+    expect(maxOf(row)).toBe(0)
   })
 
   test('a frame with a fill at 0% opacity casts only its child shadow', () => {
@@ -308,7 +311,7 @@ describe('shadows of a transparent fill', () => {
         fills: [solid(0, 0, 1)]
       })
     }, 3)
-    expect(Math.max(...row.slice(0, 41))).toBe(0)
+    expect(maxOf(row.slice(0, 41))).toBe(0)
     expect(row[79]).toBeGreaterThan(0)
   })
 })

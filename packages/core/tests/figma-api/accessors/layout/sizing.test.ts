@@ -1,8 +1,10 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { asTextNode, createAPI } from '#core-tests/helpers/figma-api'
+
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
+
 import { graphOf } from '#core/figma-api/graph'
 beforeAll(() => registerTestFont())
 

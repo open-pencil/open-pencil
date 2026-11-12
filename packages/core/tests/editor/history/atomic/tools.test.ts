@@ -1,13 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
 import { node, setup, withOtherPage } from '#core-tests/helpers/atomic-tool'
-import { HEAVY_TEST_TIMEOUT_MS } from '@open-pencil/test-support/heavy'
+
 import { createEditor, executeAtomicTool } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
 import { ALL_TOOLS, type ToolDef } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
+import { HEAVY_TEST_TIMEOUT_MS } from '@open-pencil/test-support/heavy'
 
 describe('atomic agent tools', () => {
   test('component edits and undo propagate through the editor synchronizer', async () => {
@@ -313,27 +314,31 @@ describe('atomic agent tools', () => {
     }
   )
 
-  test('a document far above 10000 layers takes a one-property edit', () => {
-    const { graph, figma, editor, undo, rectangle, tool, recorded, onRecorded } = setup()
-    for (const pageId of [figma.currentPage.id, graph.addPage('Second').id]) {
-      for (let f = 0; f < 2_600; f++) {
-        const frame = graph.createNode('FRAME', pageId)
-        for (let r = 0; r < 9; r++) graph.createNode('RECTANGLE', frame.id)
+  test(
+    'a document far above 10000 layers takes a one-property edit',
+    () => {
+      const { graph, figma, editor, undo, rectangle, tool, recorded, onRecorded } = setup()
+      for (const pageId of [figma.currentPage.id, graph.addPage('Second').id]) {
+        for (let f = 0; f < 2_600; f++) {
+          const frame = graph.createNode('FRAME', pageId)
+          for (let r = 0; r < 9; r++) graph.createNode('RECTANGLE', frame.id)
+        }
       }
-    }
-    expect(graph.nodes.size).toBeGreaterThan(50_000)
-    executeAtomicTool(
-      editor,
-      figma,
-      tool('update_node'),
-      { id: rectangle.id, opacity: 0.5 },
-      { onRecorded }
-    )
-    expect(rectangle.opacity).toBe(0.5)
-    expect(recorded[0].updated).toHaveLength(1)
-    undo.undo()
-    expect(rectangle.opacity).toBe(1)
-  }, HEAVY_TEST_TIMEOUT_MS)
+      expect(graph.nodes.size).toBeGreaterThan(50_000)
+      executeAtomicTool(
+        editor,
+        figma,
+        tool('update_node'),
+        { id: rectangle.id, opacity: 0.5 },
+        { onRecorded }
+      )
+      expect(rectangle.opacity).toBe(0.5)
+      expect(recorded[0].updated).toHaveLength(1)
+      undo.undo()
+      expect(rectangle.opacity).toBe(1)
+    },
+    HEAVY_TEST_TIMEOUT_MS
+  )
 
   test('a node event the graph was not told of beforehand fails and rolls back', () => {
     const { graph, figma, editor, undo, rectangle, tool } = setup()
@@ -404,40 +409,48 @@ describe('atomic agent tools', () => {
     expect(undo.canUndo).toBe(false)
   })
 
-  test('an edit may change at most 10000 layers', () => {
-    const { graph, figma, editor, undo, tool } = setup()
-    const ids = Array.from(
-      { length: 10_001 },
-      () => graph.createNode('RECTANGLE', figma.currentPage.id).id
-    )
-    const def: ToolDef = {
-      ...tool('update_node'),
-      execute: () => {
-        for (const id of ids) graph.updateNode(id, { opacity: 0.5 })
+  test(
+    'an edit may change at most 10000 layers',
+    () => {
+      const { graph, figma, editor, undo, tool } = setup()
+      const ids = Array.from(
+        { length: 10_001 },
+        () => graph.createNode('RECTANGLE', figma.currentPage.id).id
+      )
+      const def: ToolDef = {
+        ...tool('update_node'),
+        execute: () => {
+          for (const id of ids) graph.updateNode(id, { opacity: 0.5 })
+        }
       }
-    }
-    expect(() => executeAtomicTool(editor, figma, def, {})).toThrow(
-      'This edit changes 10001 layers; one atomic agent edit may change at most 10000. Change fewer layers per call.'
-    )
-    expect(ids.every((id) => node(graph, id).opacity === 1)).toBe(true)
-    expect(undo.canUndo).toBe(false)
-  }, HEAVY_TEST_TIMEOUT_MS)
+      expect(() => executeAtomicTool(editor, figma, def, {})).toThrow(
+        'This edit changes 10001 layers; one atomic agent edit may change at most 10000. Change fewer layers per call.'
+      )
+      expect(ids.every((id) => node(graph, id).opacity === 1)).toBe(true)
+      expect(undo.canUndo).toBe(false)
+    },
+    HEAVY_TEST_TIMEOUT_MS
+  )
 
-  test('writing the values layers already have does not count toward the limit', () => {
-    const { graph, figma, editor, undo, tool } = setup()
-    const ids = Array.from(
-      { length: 10_001 },
-      () => graph.createNode('RECTANGLE', figma.currentPage.id).id
-    )
-    const def: ToolDef = {
-      ...tool('update_node'),
-      execute: () => {
-        for (const id of ids) graph.updateNode(id, { opacity: 1 })
+  test(
+    'writing the values layers already have does not count toward the limit',
+    () => {
+      const { graph, figma, editor, undo, tool } = setup()
+      const ids = Array.from(
+        { length: 10_001 },
+        () => graph.createNode('RECTANGLE', figma.currentPage.id).id
+      )
+      const def: ToolDef = {
+        ...tool('update_node'),
+        execute: () => {
+          for (const id of ids) graph.updateNode(id, { opacity: 1 })
+        }
       }
-    }
-    expect(() => executeAtomicTool(editor, figma, def, {})).not.toThrow()
-    expect(undo.canUndo).toBe(false)
-  }, HEAVY_TEST_TIMEOUT_MS)
+      expect(() => executeAtomicTool(editor, figma, def, {})).not.toThrow()
+      expect(undo.canUndo).toBe(false)
+    },
+    HEAVY_TEST_TIMEOUT_MS
+  )
 
   test('binding a paint colour on a layer bound to the whole list keeps that binding on undo and rollback', () => {
     const { graph, figma, editor, undo, rectangle, tool } = setup()

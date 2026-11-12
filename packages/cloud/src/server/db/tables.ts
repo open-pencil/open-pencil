@@ -210,6 +210,17 @@ export interface AuthUserTable {
   updatedAt: TimestampColumn
 }
 
+/** Better Auth's API keys, which are Cloud's personal access tokens; the plugin owns the rest. */
+export interface AccessTokenTable {
+  id: string
+  referenceId: string
+  name: string | null
+  start: string | null
+  expiresAt: TimestampColumn | null
+  lastRequest: TimestampColumn | null
+  createdAt: TimestampColumn
+}
+
 export interface TwoFactorTable {
   id: string
   secret: string
@@ -295,6 +306,13 @@ export interface InvitationContinuationTable {
   createdAt: TimestampColumn
 }
 
+/** Which version of the server's terms an account accepted, and when; one row per version. */
+export interface TermsAcceptanceTable {
+  userId: string
+  version: string
+  acceptedAt: TimestampColumn
+}
+
 export interface AccountEntitlementTable {
   userId: string
   values: unknown
@@ -303,6 +321,12 @@ export interface AccountEntitlementTable {
   /** Set only by versioned writes; see `setVersioned`. */
   externalVersion: number | null
   updatedAt: TimestampColumn
+}
+
+/** An account told its storage is full; see `createStorageLimitNoticeService`. */
+export interface StorageLimitNoticeTable {
+  userId: string
+  notifiedAt: TimestampColumn
 }
 
 export interface WorkspaceStorageUsageTable {
@@ -399,6 +423,7 @@ export interface CloudDatabase {
   signIn: SignInTable
   userPicture: UserPictureTable
   user: AuthUserTable
+  apikey: AccessTokenTable
   authSchemaVersion: AuthSchemaVersionTable
   enrollment: EnrollmentTable
   apiRateLimit: APIRateLimitTable
@@ -419,7 +444,9 @@ export interface CloudDatabase {
   documentRoomUpdate: DocumentRoomUpdateTable
   invitationContinuation: InvitationContinuationTable
   accountEntitlement: AccountEntitlementTable
+  termsAcceptance: TermsAcceptanceTable
   workspaceStorageUsage: WorkspaceStorageUsageTable
+  storageLimitNotice: StorageLimitNoticeTable
   transactionalEmail: TransactionalEmailTable
   uploadStorageReservation: UploadStorageReservationTable
   upload: UploadTable

@@ -1,6 +1,7 @@
 import { uniq } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 
 import { REKA_ELEMENTS } from '../behaviours'
 import { componentPropNames } from '../components/instances'
@@ -56,7 +57,7 @@ function collectUnsupportedPropWarnings(
   const properties = componentPropNames(graph, tree.props, rendered.get(tree))
   const element = TEXT_CONTENT_NAMES[tree.type] ?? tree.type
   const schema = elementSchema(tree.type)
-  if (schema) warnings.push(...elementPropWarnings(schema, tree.props, element))
+  if (schema) appendAll(warnings, elementPropWarnings(schema, tree.props, element))
   for (const [key, value] of Object.entries(tree.props)) {
     if (!supported.has(key) && !properties.includes(key)) {
       warnings.push(`Unsupported prop "${key}" on <${element}> is ignored.`)

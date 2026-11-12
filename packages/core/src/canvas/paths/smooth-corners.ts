@@ -1,4 +1,5 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { minOf } from '@open-pencil/scene-graph/arrays'
 
 /** What a rectangle's smoothed corners are drawn from. */
 export type SmoothRectNode = Pick<
@@ -117,8 +118,8 @@ function smoothCornerRadii(
     (a, b) => radii[b] - radii[a]
   )) {
     const cornerRadius = radii[corner]
-    const budget = Math.min(
-      ...adjacentByCorner[corner].map((adjacent) => {
+    const budget = minOf(
+      adjacentByCorner[corner].map((adjacent) => {
         const adjacentRadius = radii[adjacent.corner]
         if (cornerRadius === 0 && adjacentRadius === 0) return 0
         if (budgets[adjacent.corner] >= 0) return adjacent.sideLength - budgets[adjacent.corner]

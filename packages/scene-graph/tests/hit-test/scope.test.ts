@@ -2,7 +2,6 @@ import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
-
 import { SOLID_FILL } from '@open-pencil/test-support/scene'
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id

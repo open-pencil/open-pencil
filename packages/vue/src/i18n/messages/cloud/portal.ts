@@ -1,6 +1,8 @@
 import { count, params } from '@nanostores/i18n'
 
 import { i18n } from '#vue/i18n/create'
+import { planPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/plan'
+import { accessTokenPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/tokens'
 
 /** Copy for the pages a Cloud server shows on its own address. */
 export const cloudPortalMessageDefaults = {
@@ -80,6 +82,25 @@ export const cloudPortalMessageDefaults = {
     'An administrator declined or removed your access. Ask them if you think this is a mistake.',
   signOut: 'Sign out',
 
+  termsTitle: 'Accept the terms to continue',
+  termsDescription: params('Read and accept the {terms} of {host} to continue.'),
+  termsOfService: 'Terms of Service',
+  privacyPolicy: 'Privacy Policy',
+  reportAbuse: 'Report abuse',
+  acceptTerms: 'Accept and continue',
+  declineTerms: 'Decline and sign out',
+  termsLeaveHint: 'Don’t want to accept?',
+  /** Opens deleting the account, whose dialog downloads every document first. */
+  termsLeave: 'Leave with your documents',
+  termsChanged:
+    'The terms changed while this page was open. Reload it to read the current version.',
+  consentTerms: params('By continuing, you agree to the {terms}.'),
+  consentTermsAndPrivacy: params(
+    'By continuing, you agree to the {terms} and acknowledge the {privacy}.'
+  ),
+  consentPrivacy: params('The {privacy} explains how this server handles your data.'),
+  minimumAge: params('You must be {age} or older.'),
+
   twoStepTitle: 'Confirm it’s you',
   twoStepAuthenticator: 'Enter the 6-digit code from your authenticator app.',
   twoStepRecovery: 'Enter one of the recovery codes you saved. Each works once.',
@@ -127,6 +148,8 @@ export const cloudPortalMessageDefaults = {
   securityDescription: params('How you sign in to {host}.'),
   sessions: 'Sessions',
   sessionsDescription: 'Where your account is signed in, and when it was.',
+  ...accessTokenPortalMessageDefaults,
+  ...planPortalMessageDefaults,
   overview: 'Overview',
   accessRequests: 'Access requests',
   accessRequestsDescription:
