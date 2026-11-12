@@ -52,9 +52,9 @@ export function useReadOnlyDocument(url: string, name: string) {
       ])
       if (!response.ok) throw new Error(`The document answered ${response.status}`)
       const bytes = await response.arrayBuffer()
-      if (disposal.signal.aborted) return
+      disposal.signal.throwIfAborted()
       await store.openFigFile(new File([bytes], name))
-      if (disposal.signal.aborted) return
+      disposal.signal.throwIfAborted()
       store.setReadOnly(true)
       pages.value = store.graph.getPages()
       status.value = 'ready'
