@@ -5,6 +5,7 @@ import type { LanguageModel } from 'ai'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { asDouble } from '@open-pencil/test-support/doubles'
 
+import type { AgentImageAnalysisOptions } from '@/app/ai/agents/acp/vision'
 import {
   analyzeAttachedImages,
   designMessageWithImageFindings,
@@ -104,6 +105,60 @@ describe('image attachment analysis', () => {
     ])
     expect(request.messages[0]?.content[1]?.data).toEqual(image.data)
     expect(request.messages[0]?.content[2]?.data).toEqual(secondImage.data)
+  })
+
+  describe('when a coding agent holds Vision', () => {
+    const agentRuntime = (providerID: string, kind: 'acp' | 'harness') => ({
+      createRuntime: async () =>
+        ({
+          kind,
+          role: {
+            requestedRole: 'vision',
+            profile: { modelID: '', customModelID: ' opus ', maxOutputTokens: 8000 },
+            connection: { providerID }
+          }
+        }) as never,
+      inspect: async () => {
+        throw new Error('A direct model is not in play.')
+      }
+    })
+
+    test('asks the agent about all images, the selection included, and returns its findings', async () => {
+      const graph = new SceneGraph()
+      const page = graph.getPages()[0]
+      const frame = graph.createNode('FRAME', page.id, { width: 2560, height: 1600 })
+      const store = asDouble<EditorStore>({
+        graph,
+        state: { currentPageId: page.id, selectedIds: new Set([frame.id]) },
+        renderExportImage: async () => new Uint8Array([1, 2, 3])
+      })
+      const asked: Array<{ id: string; options: AgentImageAnalysisOptions }> = []
+
+      const findings = await analyzeAttachedImages(store, 'Match this layout', [image], {
+        ...agentRuntime('acp:claude-code', 'acp'),
+        analyzeWithAgent: async ({ id }, options) => {
+          asked.push({ id, options })
+          return 'A tighter grid.'
+        }
+      })
+
+      expect(findings).toBe('A tighter grid.')
+      expect(asked).toHaveLength(1)
+      expect(asked[0]?.id).toBe('claude-code')
+      expect(asked[0]?.options.model).toBe('opus')
+      expect(asked[0]?.options.instruction).toContain('Match this layout')
+      expect(asked[0]?.options.images).toEqual([
+        { mediaType: 'image/png', data: image.data },
+        { mediaType: 'image/png', data: new Uint8Array([1, 2, 3]) }
+      ])
+    })
+
+    test('keeps Pi on the unavailable path', async () => {
+      const store = asDouble<EditorStore>({ state: { selectedIds: new Set() } })
+      await expect(
+        analyzeAttachedImages(store, 'Look', [image], agentRuntime('harness:pi', 'harness'))
+      ).rejects.toThrow('Configure a Vision model in Settings to attach images.')
+    })
   })
 
   test('passes textual findings rather than image data to Design', () => {
