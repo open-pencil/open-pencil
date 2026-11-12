@@ -6,6 +6,7 @@ import {
   creditWalletSchema,
   searchResponseSchema,
   CLOUD_SERVICES_API_PATHS,
+  sendsTokenSafely,
   type ServiceCatalog,
   type ServiceErrorCode,
   type CreditWallet,
@@ -35,6 +36,15 @@ export class CloudServiceError extends Error {
   }
 }
 
+/** A service endpoint a token would reach in the clear, which no request is sent to. */
+export class CloudServiceInsecureEndpointError extends Error {
+  override readonly name = 'CloudServiceInsecureEndpointError'
+
+  constructor(readonly url: string) {
+    super('OpenPencil services and billing are reached only over HTTPS')
+  }
+}
+
 /** Whether a request can be sent twice: a stream, in `init` or a `Request`, is read by the first. */
 function replayable(input: RequestInfo | URL, body: RequestInit['body']): boolean {
   if (input instanceof Request && input.body) return false
@@ -56,6 +66,9 @@ export function cloudServicesFetch(
     return fetch(input, { ...init, headers })
   }
   return async (input, init) => {
+    const url = input instanceof Request ? input.url : input
+    // Refused before a token is even signed, so none is sent where the network could read it.
+    if (!sendsTokenSafely(url)) throw new CloudServiceInsecureEndpointError(String(url))
     const token = await tokens.token()
     const response = await send(input, init, token)
     if (response.status !== 401) return response

@@ -51,7 +51,7 @@ function collectNodeClosure(graph: SceneGraph, rootIds: string[]): Set<string> {
     const node = graph.getNode(id)
     if (!node) continue
     ids.add(id)
-    pending.push(...node.childIds)
+    for (const childId of node.childIds) pending.push(childId)
     if (node.componentId) pending.push(node.componentId)
   }
   return ids

@@ -5,6 +5,7 @@ import { expectFigmaRow, renderRow } from '#core-tests/helpers/figma-rows'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
@@ -167,7 +168,7 @@ describe('strokes with sides of their own weights, as in Figma', () => {
       112,
       170
     )
-    expect(Math.max(...values)).toBe(0)
+    expect(maxOf(values)).toBe(0)
   })
 
   test('take Figma’s corner radii: inner by each side, outer by the narrower side', () => {

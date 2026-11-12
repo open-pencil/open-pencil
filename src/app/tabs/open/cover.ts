@@ -10,8 +10,10 @@ const coverThumbnailListeners = new WeakMap<EditorStore, () => void>()
 
 async function cacheOpenedFigCover(path: string, store: EditorStore): Promise<void> {
   if (await loadCachedRecentFileThumbnail(path)) return
-  // A document without a page has no cover, so it never waits for a renderer.
-  if (!figThumbnailPageId(store.graph.getPages())) return
+  // A document without a page has no cover, so it never waits for a renderer, and a cover page
+  // not shown is not loaded: showing it caches the cover then.
+  const thumbnailPageId = figThumbnailPageId(store.graph.getPages())
+  if (!thumbnailPageId || thumbnailPageId !== store.state.currentPageId) return
   for (let attempt = 0; attempt < 240 && !store.renderer; attempt++) {
     await promiseTimeout(250)
   }

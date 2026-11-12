@@ -350,7 +350,7 @@ function clipsOverflowingContent(graph: SceneGraph, node: SceneNode): boolean {
         corners[i + 1] < -CLIP_EPSILON_PX || corners[i + 1] > node.height + CLIP_EPSILON_PX
       if (outsideX || outsideY) return true
     }
-    pending.push(...child.childIds)
+    for (const childId of child.childIds) pending.push(childId)
   }
   return false
 }

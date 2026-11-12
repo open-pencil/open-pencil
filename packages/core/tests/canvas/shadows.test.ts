@@ -5,6 +5,7 @@ import { FIGMA_SHADOW_ROWS as FIGMA } from '#core-tests/canvas/shadows/figma'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph, type Effect, type SceneNode } from '@open-pencil/scene-graph'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { separateShadowChildren } from '#core/canvas/shadows/silhouette'
@@ -256,8 +257,8 @@ describe('arcs cast from the arc, not the whole ellipse', () => {
     // Outside the ellipse, right of it: under the missing top half, then beside the pie.
     const above = row(pie, square.y + 60, square.x + 162, square.x + 168)
     const beside = row(pie, square.y + 100, square.x + 162, square.x + 168)
-    expect(Math.max(...above)).toBeLessThanOrEqual(2)
-    expect(Math.min(...beside)).toBeGreaterThan(200)
+    expect(maxOf(above)).toBeLessThanOrEqual(2)
+    expect(minOf(beside)).toBeGreaterThan(200)
   })
 })
 
@@ -386,7 +387,7 @@ describe('inner shadows sit where Figma draws them', () => {
       0
     )
     // Opaque black covers the first 50px; past the blur the fill shows again.
-    expect(Math.max(...values.slice(0, 22))).toBeLessThanOrEqual(2)
+    expect(maxOf(values.slice(0, 22))).toBeLessThanOrEqual(2)
     expect(values.at(-1)).toBe(255)
   })
 })
