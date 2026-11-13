@@ -9,7 +9,7 @@ import {
   updateNode,
   type NodeProxyInternals,
   type ProxyThis
-} from '#core/figma-api/accessor-utils'
+} from '#core/figma-api/accessors/utils'
 import {
   fillsGainingGlass,
   parseFigmaEffects,
@@ -17,7 +17,12 @@ import {
   type FigmaEffect
 } from '#core/figma-api/effects'
 import { graphOf } from '#core/figma-api/graph'
-import { parseFigmaPaints, toFigmaPaint, type FigmaPaint } from '#core/figma-api/paints'
+import {
+  parseFigmaPaints,
+  toFigmaPaint,
+  withVideoPosters,
+  type FigmaPaint
+} from '#core/figma-api/paints'
 import { getTextStyle } from '#core/figma-api/text/style'
 import {
   effectBindings,
@@ -60,7 +65,7 @@ function setFills(
   method: string
 ): void {
   const node = raw(target, internals)
-  const fills = parseFigmaPaints(value, method)
+  const fills = withVideoPosters(parseFigmaPaints(value, method), graphOf(target), node.fills)
   updateNode(
     target,
     internals,
@@ -78,8 +83,13 @@ function setStrokes(
 ): void {
   const owner = strokeOwner(target, internals)
   const geometry = newStrokeGeometry(raw(owner, internals))
-  const { dashPattern } = raw(owner, internals)
-  const strokes = parseFigmaPaints(value, method, 'strokes').map((paint): Stroke => ({
+  const { dashPattern, strokes: previous } = raw(owner, internals)
+  const parsed = withVideoPosters(
+    parseFigmaPaints(value, method, 'strokes'),
+    graphOf(target),
+    previous
+  )
+  const strokes = parsed.map((paint): Stroke => ({
     ...paint,
     weight: geometry.weight,
     align: geometry.align,

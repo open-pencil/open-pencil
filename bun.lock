@@ -109,11 +109,10 @@
         "y-protocols": "^1.0.7",
         "yaml": "^2.9.0",
         "yjs": "^13.6.32",
-        "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.3",
         "zod": "^4.6.5",
       },
       "devDependencies": {
-        "@agentclientprotocol/sdk": "^0.14.1",
+        "@agentclientprotocol/sdk": "^2.6.0",
         "@arethetypeswrong/cli": "0.18.4",
         "@commitlint/cli": "^21.2.3",
         "@commitlint/config-conventional": "^21.2.3",
@@ -204,8 +203,7 @@
         "@webgpu/types": "0.1.21",
       },
       "devDependencies": {
-        "@types/bun": "^1.3.14",
-        "valibot": "^1.5.0",
+        "@open-pencil/fork-releases-tools": "workspace:*",
       },
     },
     "packages/cli": {
@@ -250,6 +248,8 @@
         "@hono/node-server": "^1.19.17",
         "@internationalized/date": "^3.12.3",
         "@noble/hashes": "^2.4.0",
+        "@open-pencil/fig": "workspace:*",
+        "@open-pencil/kiwi": "workspace:*",
         "@open-pencil/scene-graph": "workspace:*",
         "@openfeature/server-sdk": "^1.23.0",
         "@vue-email/components": "^0.0.21",
@@ -324,6 +324,7 @@
         "@open-pencil/mermaid": "workspace:*",
         "@open-pencil/pen": "workspace:*",
         "@open-pencil/scene-graph": "workspace:*",
+        "@open-pencil/taffy": "workspace:*",
         "@tauri-apps/api": "^2.12.1",
         "@valibot/to-json-schema": "^1.8.0",
         "@xmldom/xmldom": "^0.9.12",
@@ -359,7 +360,6 @@
         "unifont": "1.0.3",
         "valibot": "^1.5.0",
         "woff2-encoder": "2.0.0",
-        "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.3",
       },
       "devDependencies": {
         "@open-pencil/package-artifacts-tools": "workspace:*",
@@ -521,6 +521,7 @@
       "dependencies": {
         "@internationalized/date": "^3.12.3",
         "@open-pencil/cloud": "workspace:*",
+        "@open-pencil/fig": "workspace:*",
         "@open-pencil/scene-graph": "workspace:*",
         "@vue-email/components": "^0.0.21",
         "@vue-email/render": "^0.0.9",
@@ -709,6 +710,13 @@
         "typescript": "npm:@typescript/typescript6@^6.0.2",
       },
     },
+    "packages/taffy": {
+      "name": "@open-pencil/taffy",
+      "version": "0.17.0-beta.4",
+      "devDependencies": {
+        "@open-pencil/fork-releases-tools": "workspace:*",
+      },
+    },
     "packages/test-support": {
       "name": "@open-pencil/test-support",
       "version": "0.17.0-beta.1",
@@ -798,6 +806,14 @@
       "dependencies": {
         "@open-pencil/package-artifacts-tools": "workspace:*",
         "vite": "8.1.4",
+      },
+    },
+    "tools/checks/dockerfiles": {
+      "name": "@open-pencil/dockerfiles-tools",
+      "dependencies": {
+        "@open-pencil/package-artifacts-tools": "workspace:*",
+        "dockerfile-ast": "0.7.1",
+        "es-toolkit": "^1.52.0",
       },
     },
     "tools/checks/docs": {
@@ -992,6 +1008,18 @@
         "citty": "^0.1.6",
       },
     },
+    "tools/release/fork-releases": {
+      "name": "@open-pencil/fork-releases-tools",
+      "version": "0.0.0",
+      "bin": {
+        "fork-release": "./src/cli.ts",
+      },
+      "dependencies": {
+        "@open-pencil/package-artifacts-tools": "workspace:*",
+        "citty": "^0.1.6",
+        "valibot": "^1.5.0",
+      },
+    },
     "tools/release/package-artifacts": {
       "name": "@open-pencil/package-artifacts-tools",
       "version": "0.0.0",
@@ -1053,7 +1081,7 @@
 
     "@adobe/css-tools": ["@adobe/css-tools@4.5.0", "", {}, "sha512-6OzddxPio9UiWTCemp4N8cYLV2ZN1ncRnV1cVGtve7dhPOtRkleRyx32GQCYSwDYgaHU3USMm84tNsvKzRCa1Q=="],
 
-    "@agentclientprotocol/sdk": ["@agentclientprotocol/sdk@0.14.1", "", { "peerDependencies": { "zod": "^3.25.0 || ^4.0.0" } }, "sha512-b6r3PS3Nly+Wyw9U+0nOr47bV8tfS476EgyEMhoKvJCZLbgqoDFN7DJwkxL88RR0aiOqOYV1ZnESHqb+RmdH8w=="],
+    "@agentclientprotocol/sdk": ["@agentclientprotocol/sdk@2.6.0", "", { "peerDependencies": { "@modelcontextprotocol/server": "^2.4.0", "zod": "^3.25.76 || ^4.0.0" }, "optionalPeers": ["@modelcontextprotocol/server"] }, "sha512-3FtL6MkAV5F9qxg0FQV8wmBszIm2xuVPoDWOILIFSDQ+Vq3Twdh7Cw6Hk2GOPUbevgrTUpUAqZXQy7Geaj79mw=="],
 
     "@ai-sdk/anthropic": ["@ai-sdk/anthropic@4.0.71", "", { "dependencies": { "@ai-sdk/provider": "4.0.21", "@ai-sdk/provider-utils": "5.0.53" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-wiv3jhUH0RrvGzSolJMZfZ2cI9As45LhwYmcAoWvNivXjC7wzJ4W/Udq9/u7EGnGsT8lpmFKEKBrMXVeUO97Dg=="],
 
@@ -1855,6 +1883,8 @@
 
     "@open-pencil/dev-server-tools": ["@open-pencil/dev-server-tools@workspace:tools/dev/dev-server"],
 
+    "@open-pencil/dockerfiles-tools": ["@open-pencil/dockerfiles-tools@workspace:tools/checks/dockerfiles"],
+
     "@open-pencil/docs": ["@open-pencil/docs@workspace:packages/docs"],
 
     "@open-pencil/docs-tools": ["@open-pencil/docs-tools@workspace:tools/checks/docs"],
@@ -1870,6 +1900,8 @@
     "@open-pencil/feedback": ["@open-pencil/feedback@workspace:packages/feedback"],
 
     "@open-pencil/fig": ["@open-pencil/fig@workspace:packages/fig"],
+
+    "@open-pencil/fork-releases-tools": ["@open-pencil/fork-releases-tools@workspace:tools/release/fork-releases"],
 
     "@open-pencil/harness": ["@open-pencil/harness@workspace:packages/harness"],
 
@@ -1906,6 +1938,8 @@
     "@open-pencil/scene-graph": ["@open-pencil/scene-graph@workspace:packages/scene-graph"],
 
     "@open-pencil/secret-scan-tools": ["@open-pencil/secret-scan-tools@workspace:tools/checks/secret-scan"],
+
+    "@open-pencil/taffy": ["@open-pencil/taffy@workspace:packages/taffy"],
 
     "@open-pencil/tauri-menu-tools": ["@open-pencil/tauri-menu-tools@workspace:tools/generate/tauri-menu"],
 
@@ -3424,6 +3458,8 @@
     "diff": ["diff@8.0.4", "", {}, "sha512-DPi0FmjiSU5EvQV0++GFDOJ9ASQUVFh5kD+OzOnYdi7n3Wpm9hWWGfB/O2blfHcMVTL5WkQXSnRiK9makhrcnw=="],
 
     "dijkstrajs": ["dijkstrajs@1.0.3", "", {}, "sha512-qiSlmBq9+BCdCA/L46dw8Uy93mloxsPSbwnm5yrKn2vMPiy8KyAskTF6zuV/j5BMsmOGZDPs7KjU+mjb670kfA=="],
+
+    "dockerfile-ast": ["dockerfile-ast@0.7.1", "", { "dependencies": { "vscode-languageserver-textdocument": "^1.0.8", "vscode-languageserver-types": "^3.17.3" } }, "sha512-oX/A4I0EhSkGqrFv0YuvPkBUSYp1XiY8O8zAKc8Djglx8ocz+JfOr8gP0ryRMC2myqvDLagmnZaU9ot1vG2ijw=="],
 
     "doctypes": ["doctypes@1.1.0", "", {}, "sha512-LLBi6pEqS6Do3EKQ3J0NqHWV5hhb78Pi8vvESYwyOy2c31ZEZVdtitdzsQsKb7878PEERhzUk0ftqGhG6Mz+pQ=="],
 
@@ -5259,6 +5295,10 @@
 
     "void-elements": ["void-elements@3.1.0", "", {}, "sha512-Dhxzh5HZuiHQhbvTW9AMetFfBHDMYpo23Uo9btPXgdYP+3T5S+p+jgNy7spra+veYhBP2dCSgxR/i2Y02h5/6w=="],
 
+    "vscode-languageserver-textdocument": ["vscode-languageserver-textdocument@1.0.16", "", {}, "sha512-qeNEuOi9a3qkqRf7Gfez2WL2VwlBTLCNekHBGO9kxPVUp9XuY15yfTJ9jwvOwKI0I2MhUUfZq95NSp+LK1CLQg=="],
+
+    "vscode-languageserver-types": ["vscode-languageserver-types@3.18.5", "", {}, "sha512-kPd6+JQNz3HMJvjKlqUxERSlZHAntl/aGpsk7ImwIh0ewDKDcjgAEyVSYciPiOJD3ftbK9IrfiqUeTZLSbCizw=="],
+
     "vscode-uri": ["vscode-uri@3.1.0", "", {}, "sha512-/BpdSx+yCQGnCvecbyXdxHDkuk55/G3xwnC0GqY4gmQ3j+A+g8kzzgB4Nk/SINjqn6+waqw3EgbVF2QKExkRxQ=="],
 
     "vue": ["vue@3.5.43", "", { "dependencies": { "@vue/compiler-dom": "3.5.43", "@vue/compiler-sfc": "3.5.43", "@vue/runtime-dom": "3.5.43", "@vue/server-renderer": "3.5.43", "@vue/shared": "3.5.43" }, "peerDependencies": { "typescript": "*" }, "optionalPeers": ["typescript"] }, "sha512-o5qZoksdnjIKvW1srZ3ab7pcDNYAerBjRe54D0LBLfRdCYFrSgBHVXokMas35czQc0//lmx4/tuY4ZNQ+Rf2Ng=="],
@@ -5412,8 +5452,6 @@
     "yoctocolors": ["yoctocolors@2.2.0", "", {}, "sha512-xYqdZFUK/VYazNl/oCDYN+3WloWQwMfZxBoiNt6qNyk+xfOdi598muWE42rNZFp1kNOiqW936q5RhUdnpqElSg=="],
 
     "yoctocolors-cjs": ["yoctocolors-cjs@2.1.3", "", {}, "sha512-U/PBtDf35ff0D8X8D0jfdzHYEPFxAI7jJlxZXwCSez5M3190m+QobIfh+sWDWSHMCWWJN2AWamkegn6vr6YBTw=="],
-
-    "yoga-layout": ["@open-pencil/yoga-layout@3.3.0-grid.3", "", {}, "sha512-L1mWkFxQIGFYULih376hVel5lLU+E8UYIaX/5VR1cBbtk7oeF4HDpfGttZ5BSH9ofnOpxeOh2V5yv2ZgOKc5Yw=="],
 
     "youch": ["youch@4.1.0-beta.10", "", { "dependencies": { "@poppinss/colors": "^4.1.5", "@poppinss/dumper": "^0.6.4", "@speed-highlight/core": "^1.2.7", "cookie": "^1.0.2", "youch-core": "^0.3.3" } }, "sha512-rLfVLB4FgQneDr0dv1oddCVZmKjcJ6yX6mS4pU82Mq/Dt9a3cLZQ62pDBL4AUO+uVrCvtWz3ZFUL2HFAFJ/BXQ=="],
 

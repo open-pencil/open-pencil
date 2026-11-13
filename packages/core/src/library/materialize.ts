@@ -43,7 +43,7 @@ export function libraryDependencyRoots(
     visited.add(id)
     const node = revision.graph.getNode(id)
     if (!node) continue
-    pending.push(...node.childIds)
+    for (const childId of node.childIds) pending.push(childId)
     if (!node.componentId) continue
     const component = revision.graph.getNode(node.componentId)
     if (!component) continue

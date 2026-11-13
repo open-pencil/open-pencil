@@ -7,6 +7,8 @@ import {
   PostgresRateLimitStore
 } from '#cloud/server'
 
+import { maxOf } from '@open-pencil/scene-graph/arrays'
+
 describe('Cloud enrollment integration', () => {
   test('deduplicates requests and applies audited reviews', async () => {
     const runtime = await createCloudTestDatabase()
@@ -105,7 +107,7 @@ describe('Cloud enrollment integration', () => {
       const results = await Promise.all(
         Array.from({ length: 20 }, () => store.increment('person@example.com'))
       )
-      expect(Math.max(...results.map((result) => result.totalHits))).toBe(20)
+      expect(maxOf(results.map((result) => result.totalHits))).toBe(20)
       expect(
         await runtime.database
           .selectFrom('apiRateLimit')

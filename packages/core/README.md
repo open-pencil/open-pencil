@@ -1,6 +1,6 @@
 # @open-pencil/core
 
-Editor engine for [OpenPencil](https://openpencil.dev): the CanvasKit (Skia WASM) renderer, Yoga layout, the framework-agnostic editor with undo and selection, the Figma Plugin API compatibility layer, the AI/MCP tool definitions, clipboard and vector conversion, and format-neutral document I/O.
+Editor engine for [OpenPencil](https://openpencil.dev): the CanvasKit (Skia WASM) renderer, Taffy layout, the framework-agnostic editor with undo and selection, the Figma Plugin API compatibility layer, the AI/MCP tool definitions, clipboard and vector conversion, and format-neutral document I/O.
 
 It depends on `@open-pencil/scene-graph`, `@open-pencil/pen`, `@open-pencil/kiwi`, and `@open-pencil/fig`, and keeps browser DOM out so it runs in the app, the CLI, the MCP server, and headless scripts alike.
 

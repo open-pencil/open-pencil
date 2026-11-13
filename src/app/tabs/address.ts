@@ -9,7 +9,8 @@ import { activeRoom } from '@/app/collab/rooms'
 import { activeTab } from './index'
 
 export const ROOM_ROUTE_PREFIX = '/rooms/'
-const CLOUD_DOCUMENT_PREFIX = '/documents/'
+/** Addresses of Cloud documents: a member's, and one of the community gallery. */
+const CLOUD_DOCUMENT_PREFIXES = ['/documents/', '/community/']
 /** The query a Cloud document's address adds, and leaving it takes away. */
 const CLOUD_DOCUMENT_QUERY = ['version']
 
@@ -34,7 +35,8 @@ export function tabAddressFor(
   if (cloud) return { path: cloud.path, query: { ...query, ...cloud.query } }
   if (roomId && isRoomId(roomId)) return { path: roomRoutePath(roomId), query }
   if (current.path.startsWith(ROOM_ROUTE_PREFIX)) return { path: '/', query }
-  if (current.path.startsWith(CLOUD_DOCUMENT_PREFIX) && !opening) return { path: '/', query }
+  const onCloudDocument = CLOUD_DOCUMENT_PREFIXES.some((prefix) => current.path.startsWith(prefix))
+  if (onCloudDocument && !opening) return { path: '/', query }
   return current
 }
 

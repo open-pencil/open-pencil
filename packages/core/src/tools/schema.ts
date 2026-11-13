@@ -14,6 +14,13 @@ import {
 import * as v from 'valibot'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
+import {
+  MAX_FONT_SIZE,
+  MAX_LAYOUT_ANGLE,
+  MAX_LAYOUT_FACTOR,
+  MAX_LAYOUT_LENGTH,
+  MAX_LAYOUT_SPACING
+} from '@open-pencil/scene-graph/layout'
 
 import type { FigmaAPI, FigmaNodeProxy } from '#core/figma-api'
 import type { FigmaFontNameInput } from '#core/figma-api/fonts/names'
@@ -189,9 +196,58 @@ export function nodeTraversalInput(depthDescription: string) {
     depth: v.optional(toolNumber(v.pipe(v.number(), v.description(depthDescription))))
   })
 }
+
+/**
+ * A numeric argument bounded to `min`..`max`, with the range stated in its description so an
+ * agent reads the same bound the schema enforces.
+ */
+function boundedNumber(description: string, min: number, max: number) {
+  return toolNumber(
+    v.pipe(
+      v.number(),
+      v.minValue(min),
+      v.maxValue(max),
+      v.description(`${description} (${min} to ${max})`)
+    )
+  )
+}
+
+/**
+ * A position in layout pixels, which may lie outside its parent. Values beyond the bounds are
+ * refused rather than stored: layout, export, and rendering cannot use a coordinate that large.
+ */
+export function layoutPosition(description: string) {
+  return boundedNumber(description, -MAX_LAYOUT_LENGTH, MAX_LAYOUT_LENGTH)
+}
+
+/** A size or radius in layout pixels, at least `min` and at most `MAX_LAYOUT_LENGTH`. */
+export function layoutLength(description: string, min = 0) {
+  return boundedNumber(description, min, MAX_LAYOUT_LENGTH)
+}
+
+/** A gap or padding, which layout adds up directly. */
+export function layoutSpacing(description: string) {
+  return boundedNumber(description, 0, MAX_LAYOUT_SPACING)
+}
+
+/** A unitless ratio, such as a flex grow share, which layout multiplies sizes by. */
+export function layoutFactor(description: string) {
+  return boundedNumber(description, 0, MAX_LAYOUT_FACTOR)
+}
+
+/** A rotation in degrees, bounded so a typed value cannot overflow layout's arithmetic. */
+export function layoutAngle(description: string) {
+  return boundedNumber(description, -MAX_LAYOUT_ANGLE, MAX_LAYOUT_ANGLE)
+}
+
+/** A font size in pixels, which text layout shapes and measures at. */
+export function layoutFontSize(description: string) {
+  return boundedNumber(description, 1, MAX_FONT_SIZE)
+}
+
 export const positionInputs = {
-  x: toolNumber(v.pipe(v.number(), v.description('X position in the parent, or on the page'))),
-  y: toolNumber(v.pipe(v.number(), v.description('Y position in the parent, or on the page')))
+  x: layoutPosition('X position in the parent, or on the page'),
+  y: layoutPosition('Y position in the parent, or on the page')
 }
 
 /** Reuse a native number schema for both numeric and numeric-string agent inputs. */

@@ -10,6 +10,7 @@ import { addOpenSegmentsToPath } from '#core/vector/path-helpers'
 
 import { clearFillShader } from './fills'
 import { sharedPath } from './paths/shared'
+import { curvePathData } from './paths/svg-data'
 import type { SkiaRenderer } from './renderer'
 import {
   configureStrokePaint,
@@ -460,7 +461,7 @@ function combinedOperands(r: SkiaRenderer, node: SceneNode, operands: Path[]): P
 }
 
 function withRoundedCorners(r: SkiaRenderer, path: Path, radius: number): Path {
-  const { vertices, segments, regions } = parseSVGPath(path.toSVGString(), 'NONZERO', {
+  const { vertices, segments, regions } = parseSVGPath(curvePathData(r.ck, path), 'NONZERO', {
     includeOpenRegions: true
   })
   const rounded = new r.ck.PathBuilder()

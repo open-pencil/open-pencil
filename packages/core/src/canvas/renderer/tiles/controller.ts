@@ -2,22 +2,20 @@ import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
-import {
-  nodeRequiresAtomicChunk,
-  RenderChunkIndex,
-  RenderChunkPictureCache
-} from '#core/canvas/renderer/chunks'
+import { type RenderChunkIndex, RenderChunkPictureCache } from '#core/canvas/renderer/chunks'
 import { rendererNow } from '#core/canvas/renderer/clock'
 
 import {
   type CachedTile,
   TileImageCache,
   viewportTileBytes,
-  viewportTileCacheBudget
+  viewportTileCacheBudget,
+  type TileMemory
 } from './cache'
+import { TilePageContent } from './content'
 import { TileCostModel } from './cost'
 import { exactTileLevel, type TileKey, tileLevel, type TileWorldBounds } from './geometry'
-import { pageBackdropPlan, type TilePlan, planTiles, type TilePlanOptions } from './planner'
+import { type TilePlan, planTiles, type TilePlanOptions } from './planner'
 import { drawPresentation, resolveVisible, type VisiblePresentation } from './presentation'
 import {
   childTileKeys,
@@ -35,12 +33,11 @@ import {
   type TileSchedulerMetrics
 } from './scheduler'
 import {
-  applyInvalidations,
-  applyStructureChanges,
-  type PageTiles,
-  type PendingInvalidation,
-  type PendingStructureChange
-} from './structure'
+  addBackgroundStages,
+  dropBackgroundStages,
+  plannedTileLevels,
+  tileStageLevels
+} from './stages'
 import { TileSurfacePool } from './surface-pool'
 import { emitTileCoverageComplete, emitTileFrameTrace } from './telemetry'
 
@@ -51,11 +48,6 @@ const NAVIGATION_TILE_BUDGET_MS = 2
 const NAVIGATION_FIRST_TILE_LIMIT_MS = 4
 const MAXIMUM_TILE_JOBS_PER_FRAME = 128
 const TILE_OVERSCAN = 1
-/** The backdrop is this many times coarser than the visible level, and reaches this far out. */
-const BACKDROP_LEVEL_RATIO = 4
-const BACKDROP_OVERSCAN = 1
-/** How many halvings of the visible level the pyramid keeps: 2⁶ covers a 64× zoom out. */
-const PYRAMID_LEVELS = 6
 /**
  * How long after a content change the background stages wait: an edit in progress, such as
  * typing, invalidates the page copy and the backdrop under it at every keystroke, and a coarse
@@ -86,7 +78,7 @@ export interface TiledSceneControllerOptions {
   /** The clock the scheduler's deadline and the tile cost model share. */
   now?: () => number
   /** The tile cache's byte budget for a viewport whose tiles weigh `viewportBytes`. */
-  tileCacheBudget?: (viewportBytes: number) => number
+  tileCacheBudget?: (viewportBytes: number, memory: TileMemory) => number
 }
 
 export class TiledSceneController {
@@ -96,9 +88,6 @@ export class TiledSceneController {
    */
   visibleTilesRendered = 0
   private readonly now: () => number
-  private index: RenderChunkIndex | null = null
-  private pageId: string | null = null
-  private contentGeneration = -1
   /** The dot grid the cached tiles were painted with, which a document kind change replaces. */
   private dotGrid: number | null = null
   /** The page colour under the cached tiles, which a theme or page background change replaces. */
@@ -106,9 +95,6 @@ export class TiledSceneController {
   private navigationGeneration = -1
   private navigationActive = false
   private cancelledJobs = 0
-  private pendingInvalidations: PendingInvalidation[] = []
-  /** Layers added, removed, moved between parents, or changed in kind since the last frame. */
-  private pendingStructure: PendingStructureChange[] = []
   private lastCoveredGeneration = ''
   private lastLevel: number | null = null
   /**
@@ -123,16 +109,18 @@ export class TiledSceneController {
    * the plan, so the stages stop rather than render each other out until the view changes.
    */
   private backgroundSaturated = false
-  /** When the content last changed, so the background stages wait for a quiet spell. */
-  private lastContentChangeAt = Number.NEGATIVE_INFINITY
   /** The last frame withheld the background stages for the quiet spell: frames must go on. */
   private backgroundWaiting = false
-  private readonly tileCacheBudget: (viewportBytes: number) => number
+  private readonly tileCacheBudget: (viewportBytes: number, memory: TileMemory) => number
+  private memory: TileMemory = {}
+  /** The tile bytes of the last frame's viewport, which a change of memory resizes the cache to. */
+  private viewportBytes = 0
   private readonly pictureCache = new RenderChunkPictureCache()
   private readonly tileCache = new TileImageCache()
   private readonly surfacePool = new TileSurfacePool()
   private readonly scheduler: TileScheduler
   private readonly costs = new TileCostModel()
+  private readonly content: TilePageContent
 
   constructor(options: TiledSceneControllerOptions = {}) {
     this.now = options.now ?? rendererNow
@@ -142,24 +130,11 @@ export class TiledSceneController {
       budgetMs: TILE_FRAME_BUDGET_MS,
       maximumJobsPerFrame: MAXIMUM_TILE_JOBS_PER_FRAME
     })
+    this.content = new TilePageContent(this.now, this.pictureCache, this.tileCache)
   }
 
   invalidateNode(nodeId: string, graph?: SceneGraph): void {
-    const chunks = this.index?.getChunksDependingOnNode(nodeId) ?? []
-    const owningChunks = this.index?.getChunksForNode(nodeId) ?? []
-    const node = graph?.getNode(nodeId)
-    if (
-      graph &&
-      node &&
-      owningChunks.some((chunk) => chunk.interruptible === nodeRequiresAtomicChunk(graph, node))
-    ) {
-      this.invalidateStructure(nodeId, node.parentId)
-      return
-    }
-    this.pendingInvalidations.push({
-      nodeId,
-      previousBounds: chunks.map(({ minX, minY, maxX, maxY }) => ({ minX, minY, maxX, maxY }))
-    })
+    this.content.invalidateNode(nodeId, graph)
   }
 
   /**
@@ -173,8 +148,7 @@ export class TiledSceneController {
       this.invalidate()
       return
     }
-    if (!this.index) return
-    this.pendingStructure.push({ nodeId, parentId: parentId ?? null })
+    this.content.invalidateStructure(nodeId, parentId)
   }
 
   /**
@@ -183,7 +157,18 @@ export class TiledSceneController {
    * settlement means the visible tiles.
    */
   hasPendingWork(): boolean {
-    return this.pendingInvalidations.length > 0 || this.pendingStructure.length > 0
+    return this.content.hasPendingWork()
+  }
+
+  /**
+   * Tells the cache what the host knows of the memory its tiles share. A hidden canvas draws no
+   * frames, so the budget changes at once rather than at the next frame.
+   */
+  setMemory(memory: TileMemory): void {
+    this.memory = memory
+    if (this.viewportBytes > 0) {
+      this.tileCache.setBudget(this.tileCacheBudget(this.viewportBytes, memory))
+    }
   }
 
   /** The tile cache's current byte budget. */
@@ -225,7 +210,7 @@ export class TiledSceneController {
       maxX: (-renderer.panX + renderer.viewportWidth) / renderer.zoom,
       maxY: (-renderer.panY + renderer.viewportHeight) / renderer.zoom
     }
-    const index = this.index
+    const index = this.content.index
     if (!index || !renderer.pageId) return this.emptyResult()
 
     // A zoom in motion changes the exact level every frame, and a tile rendered at it is obsolete
@@ -239,14 +224,11 @@ export class TiledSceneController {
     const renderLevel = zooming ? tileLevel(scale) : level
     if (level !== this.lastLevel || this.navigationActive) this.backgroundSaturated = false
     this.lastLevel = level
-    this.tileCache.setBudget(
-      this.tileCacheBudget(
-        viewportTileBytes(
-          renderer.viewportWidth * renderer.dpr,
-          renderer.viewportHeight * renderer.dpr
-        )
-      )
+    this.viewportBytes = viewportTileBytes(
+      renderer.viewportWidth * renderer.dpr,
+      renderer.viewportHeight * renderer.dpr
     )
+    this.tileCache.setBudget(this.tileCacheBudget(this.viewportBytes, this.memory))
     const { planOptions, background } = this.planFrame(
       renderer,
       renderer.pageId,
@@ -268,10 +250,7 @@ export class TiledSceneController {
     // A background tile that evicted one of the plan's own levels would render in circles.
     if (background && this.backgroundSaturated) {
       this.cancelledJobs += this.scheduler.discard((job) => job.priority === 'overscan')
-      planOptions.overscanTiles = 0
-      delete planOptions.backdrop
-      delete planOptions.pageBackdrop
-      delete planOptions.pyramid
+      dropBackgroundStages(planOptions)
     }
     // A stage is planned only once the previous one is done, so the plan is taken again after
     // the frame's work to learn whether anything remains for the next frame, and to queue it.
@@ -364,17 +343,11 @@ export class TiledSceneController {
 
   invalidate(): void {
     this.cancelledJobs += this.scheduler.clear()
-    this.index?.dispose()
-    this.index = null
-    this.pageId = null
-    this.contentGeneration = -1
+    this.content.reset()
     this.lastCoveredGeneration = ''
     this.lastLevel = null
     this.committedLevel = null
-    this.lastContentChangeAt = Number.NEGATIVE_INFINITY
     this.backgroundWaiting = false
-    this.pendingInvalidations = []
-    this.pendingStructure = []
     this.costs.clear()
     this.pictureCache.clear()
     this.tileCache.clear()
@@ -404,69 +377,7 @@ export class TiledSceneController {
     navigationGeneration: number
   ): void {
     this.cancelledJobs += this.scheduler.setGeneration(navigationGeneration, contentGeneration)
-    // Node changes arrive through invalidateNode() and structural ones through
-    // invalidateStructure(), so a new content generation on its own is a redraw request (every
-    // requestRender() bumps it) and the rendered tiles stay valid. Invalidations also arrive
-    // without a new generation, as when an image preview decodes.
-    if (this.index && this.pageId === renderer.pageId && this.pendingStructure.length > 0) {
-      this.applyPendingStructure(graph, contentGeneration)
-    }
-    if (
-      this.index &&
-      this.pageId === renderer.pageId &&
-      (this.contentGeneration !== contentGeneration || this.pendingInvalidations.length > 0)
-    ) {
-      this.applyPendingInvalidations(graph, contentGeneration)
-    }
-    if (this.index && this.pageId !== renderer.pageId) this.invalidate()
-    // Without an index nothing can be shown, so a page that arrives mid-gesture builds its index
-    // at once; its tiles then fill in under the moving budget rather than after the gesture.
-    if (this.index === null && renderer.pageId) {
-      this.ensureIndex(graph, renderer.pageId, contentGeneration)
-    }
-  }
-
-  private applyPendingInvalidations(graph: SceneGraph, contentGeneration: number): void {
-    const page = this.pageTiles()
-    if (!page) return
-    applyInvalidations(page, graph, this.pendingInvalidations, contentGeneration)
-    if (this.pendingInvalidations.length > 0) this.lastContentChangeAt = this.now()
-    this.pendingInvalidations = []
-    this.contentGeneration = contentGeneration
-  }
-
-  private applyPendingStructure(graph: SceneGraph, contentGeneration: number): void {
-    const page = this.pageTiles()
-    if (!page) return
-    if (!applyStructureChanges(page, graph, this.pendingStructure, contentGeneration)) {
-      this.invalidate()
-      return
-    }
-    this.pendingStructure = []
-    this.contentGeneration = contentGeneration
-    this.lastContentChangeAt = this.now()
-  }
-
-  private pageTiles(): PageTiles | null {
-    if (!this.index || !this.pageId) return null
-    return {
-      index: this.index,
-      pageId: this.pageId,
-      pictureCache: this.pictureCache,
-      tileCache: this.tileCache
-    }
-  }
-
-  private ensureIndex(graph: SceneGraph, pageId: string | null, contentGeneration: number): void {
-    if (this.index && this.pageId === pageId && this.contentGeneration === contentGeneration) return
-    this.index?.dispose()
-    this.pictureCache.clear()
-    this.tileCache.markStale(contentGeneration)
-    this.pageId = pageId
-    this.contentGeneration = contentGeneration
-    // A fresh index already reflects every change recorded before it was built.
-    this.pendingInvalidations = []
-    this.index = pageId ? RenderChunkIndex.build(graph, pageId).index : null
+    this.content.sync(graph, renderer.pageId, contentGeneration, () => this.invalidate())
   }
 
   /**
@@ -494,8 +405,8 @@ export class TiledSceneController {
   ): { planOptions: TilePlanOptions; background: boolean } {
     // Jobs planned at another level draw nothing the viewport shows now; a downsample is cheap
     // and feeds the fallback at any level, so it stays.
-    const backdropLevel = tileLevel((level / BACKDROP_LEVEL_RATIO) * (1 - 1e-9))
-    const pageBackdrop = pageBackdropPlan(index.bounds(), level)
+    const stages = tileStageLevels(level, index.bounds())
+    const { pageBackdrop } = stages
     if (pageBackdrop) this.tileCache.touchLevel(pageId, pageBackdrop.level)
     // The last complete level is what a zoom stands on until the new one is whole: at a zoom
     // from fit there is no coarser page copy, and the levels a zoom passes through would
@@ -507,7 +418,7 @@ export class TiledSceneController {
       (job) =>
         job.kind !== 'downsample' &&
         job.key.level !== level &&
-        job.key.level !== backdropLevel &&
+        job.key.level !== stages.backdrop &&
         job.key.level !== pageBackdrop?.level
     )
     const planOptions: TilePlanOptions = {
@@ -531,18 +442,11 @@ export class TiledSceneController {
     // Background stages wait for idle, a moving frame having only its budget to give, and for
     // the content to have been still a while, so an edit in progress rebuilds the visible tiles
     // alone.
-    const quiet = this.now() - this.lastContentChangeAt >= BACKGROUND_QUIET_MS
+    const quiet = this.now() - this.content.lastChangeAt >= BACKGROUND_QUIET_MS
     const background = !this.navigationActive && !this.backgroundSaturated && quiet
     this.backgroundWaiting = !this.navigationActive && !this.backgroundSaturated && !quiet
-    if (background) {
-      planOptions.backdrop = { level: backdropLevel, overscanTiles: BACKDROP_OVERSCAN }
-      planOptions.pageBackdrop = pageBackdrop
-      planOptions.pyramid = { levels: PYRAMID_LEVELS }
-    }
-    const watched = new Set([level, backdropLevel])
-    if (pageBackdrop) watched.add(pageBackdrop.level)
-    for (let depth = 1; depth <= PYRAMID_LEVELS; depth++) watched.add(level / 2 ** depth)
-    this.tileCache.watchLevels(watched)
+    if (background) addBackgroundStages(planOptions, stages)
+    this.tileCache.watchLevels(plannedTileLevels(level, stages))
     return { planOptions, background }
   }
 
@@ -573,7 +477,7 @@ export class TiledSceneController {
     }
     if (
       job.navigationGeneration !== this.navigationGeneration ||
-      job.contentGeneration !== this.contentGeneration
+      job.contentGeneration !== this.content.generation
     ) {
       deleteRenderedTile(tile)
       return tileJobResult(tile, TILE_FRAME_BUDGET_MS)
@@ -600,7 +504,7 @@ export class TiledSceneController {
 
   /** Whether the cache holds a fresh tile for `key`. */
   isRendered(key: TileKey): boolean {
-    return this.tileCache.getIfPresent(key)?.contentGeneration === this.contentGeneration
+    return this.tileCache.getIfPresent(key)?.contentGeneration === this.content.generation
   }
 
   private emptyResult(): TiledSceneFrameResult {

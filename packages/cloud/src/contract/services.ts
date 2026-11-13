@@ -1,6 +1,8 @@
-import type { Hono, TypedResponse } from 'hono'
-import type { BlankEnv, BlankInput, ToSchema } from 'hono/types'
+import type { Hono } from 'hono'
+import type { BlankEnv, BlankInput } from 'hono/types'
 import * as v from 'valibot'
+
+import type { JSONRoute } from './routes'
 
 /**
  * The contract between editors, Cloud, and the services Cloud advertises: AI models today, and
@@ -36,9 +38,6 @@ export const cloudServicesDiscoverySchema = v.object({
   contractVersion: v.literal(CLOUD_SERVICES_CONTRACT_VERSION)
 })
 export type CloudServicesDiscovery = v.InferOutput<typeof cloudServicesDiscoverySchema>
-
-export const cloudBillingDiscoverySchema = v.object({ portalURL: urlSchema })
-export type CloudBillingDiscovery = v.InferOutput<typeof cloudBillingDiscoverySchema>
 
 export const createServicesTokenSchema = v.object({ workspaceId: v.pipe(v.string(), v.uuid()) })
 export type CreateServicesTokenInput = v.InferOutput<typeof createServicesTokenSchema>
@@ -201,14 +200,6 @@ export const SERVICE_ERROR_STATUS = {
   rate_limited: 429
 } as const satisfies Record<ServiceErrorCode, number>
 
-/** A route's input, and the JSON it answers with a 200. */
-type JSONRoute<
-  Method extends string,
-  Path extends string,
-  Input extends BlankInput,
-  Output
-> = ToSchema<Method, Path, Input, TypedResponse<Output, 200, 'json'>>
-
 /**
  * Every route a service answers besides chat completions, which OpenAI-compatible clients call
  * themselves. Editors build a typed client from it with Hono's `hc`; a service's own app must
@@ -230,3 +221,15 @@ export type CloudServicesSchema = JSONRoute<
   >
 
 export type CloudServicesAPI = Hono<BlankEnv, CloudServicesSchema>
+
+/**
+ * Whether a bearer token may travel to `url`: over HTTPS, or in the clear only to a loopback
+ * address, for development. Only literal addresses count, since a name such as `localhost` is
+ * whatever the resolver answers. Services and billing tokens act as the account until they expire.
+ */
+export function sendsTokenSafely(url: string | URL): boolean {
+  const { protocol, hostname } = new URL(url)
+  if (protocol === 'https:') return true
+  if (protocol !== 'http:') return false
+  return hostname === '[::1]' || /^127(\.\d{1,3}){3}$/.test(hostname)
+}

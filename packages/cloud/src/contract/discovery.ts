@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 
-import { cloudServicesDiscoverySchema, cloudBillingDiscoverySchema } from './services'
+import { cloudBillingDiscoverySchema } from './billing'
+import { cloudServicesDiscoverySchema } from './services'
 
 export const CLOUD_PROTOCOL_VERSION = '1' as const
 export const CLOUD_DISCOVERY_PATH = '/.well-known/openpencil' as const
@@ -71,6 +72,13 @@ export const cloudLegalDiscoverySchema = v.object({
 })
 export type CloudLegalDiscovery = v.InferOutput<typeof cloudLegalDiscoverySchema>
 
+/**
+ * The server's community gallery: the workspace whose documents anyone may open read-only.
+ * Saving to it publishes, so editors never choose it for anyone and say so when it is chosen.
+ */
+export const cloudCommunityDiscoverySchema = v.object({ workspaceId: v.pipe(v.string(), v.uuid()) })
+export type CloudCommunityDiscovery = v.InferOutput<typeof cloudCommunityDiscoverySchema>
+
 export const cloudDiscoverySchema = v.object({
   protocolVersion: v.literal(CLOUD_PROTOCOL_VERSION),
   deployment: cloudDeploymentSchema,
@@ -85,6 +93,8 @@ export const cloudDiscoverySchema = v.object({
   services: v.optional(cloudServicesDiscoverySchema),
   /** Where people manage their plan and buy credits; absent when the deployment does not bill. */
   billing: v.optional(cloudBillingDiscoverySchema),
+  /** The community gallery; absent when the deployment has none. */
+  community: v.optional(cloudCommunityDiscoverySchema),
   legal: v.optional(cloudLegalDiscoverySchema)
 })
 export type CloudDiscovery = v.InferOutput<typeof cloudDiscoverySchema>

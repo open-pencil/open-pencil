@@ -2,13 +2,12 @@ import { staticEntitlementsFromTOML } from '#cloud/server/policy/static'
 import { parse as parseTOML } from 'smol-toml'
 import * as v from 'valibot'
 
+import { parseCloudServerConfig, type CloudServerConfig } from './schema'
 import {
   cloudDeploymentConfigSchema,
-  parseCloudServerConfig,
   type CloudDeploymentConfig,
-  type CloudSecretReference,
-  type CloudServerConfig
-} from './schema'
+  type CloudSecretReference
+} from './toml/schema'
 
 export type CloudEnvironment = Readonly<Record<string, string | undefined>>
 
@@ -102,7 +101,7 @@ function serviceConfig(config: CloudDeploymentConfig, environment: CloudEnvironm
     servicesTokenLifetimeSeconds: config.services
       ? config.services.token_lifetime_minutes * 60
       : undefined,
-    billingPortalURL: config.billing?.portal_url,
+    billingEndpoint: config.billing?.endpoint,
     internalServiceToken: config.internal_api
       ? requiredSecret(environment, config.internal_api.service_token)
       : undefined
@@ -202,6 +201,7 @@ export function parseCloudDeploymentConfig(
     ...workerConfig(config),
     ...serviceConfig(config, environment),
     legal: legalConfig(config),
+    community: config.community ? { workspaceId: config.community.workspace } : undefined,
     errorTracking: errorTrackingConfig(config, environment),
     technicalLimits: technicalLimits(config)
   })
