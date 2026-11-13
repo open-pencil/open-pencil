@@ -18,7 +18,9 @@ test('undoing a detach gives the instances it held back the overrides they had',
   if (!instance) throw new Error('No instance')
   const [tagCopy] = editor.graph.getChildren(instance.id)
   const [label] = editor.graph.getChildren(tagCopy.id)
-  const overriddenLayers = () => [...(editor.graph.getNode(tagCopy.id)?.instanceOverrides.descendants.keys() ?? [])]
+  const overriddenLayers = () => [
+    ...(editor.graph.getNode(tagCopy.id)?.instanceOverrides.descendants.keys() ?? [])
+  ]
   const copied = overriddenLayers()
 
   editor.select([instance.id])

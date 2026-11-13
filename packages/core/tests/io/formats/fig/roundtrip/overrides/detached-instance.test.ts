@@ -15,7 +15,12 @@ function cardWithTag() {
   const page = graph.getPages()[0].id
   const tag = graph.createNode('COMPONENT', page, { name: 'Tag', width: 80, height: 24 })
   graph.createNode('TEXT', tag.id, { name: 'Label', text: 'Tag', fontSize: 12 })
-  const card = graph.createNode('COMPONENT', page, { name: 'Card', width: 200, height: 100, y: 200 })
+  const card = graph.createNode('COMPONENT', page, {
+    name: 'Card',
+    width: 200,
+    height: 100,
+    y: 200
+  })
   const nested = expectDefined(graph.createInstance(tag.id, card.id))
   const [nestedLabel] = graph.getChildren(nested.id)
   graph.updateNode(nestedLabel.id, { text: 'Práctica guiada' })
