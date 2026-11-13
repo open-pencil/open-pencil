@@ -276,9 +276,15 @@ export const cloudDeploymentConfigSchema = v.strictObject({
   ),
   /**
    * Optional: a workspace whose documents anyone may open read-only, without signing in or a
-   * link, as the deployment's community gallery. Everything saved there is public.
+   * link, as the deployment's community gallery. Everything saved there is public. `tour` names
+   * the gallery document the editor opens as its tour, and the docs landing shows.
    */
-  community: v.optional(v.strictObject({ workspace: v.pipe(v.string(), v.uuid()) })),
+  community: v.optional(
+    v.strictObject({
+      workspace: v.pipe(v.string(), v.uuid()),
+      tour: v.optional(v.pipe(v.string(), v.uuid()))
+    })
+  ),
   /** Optional: reports server errors to PostHog error tracking. Leave it out to send nothing. */
   error_tracking: v.optional(
     v.strictObject({

@@ -117,5 +117,7 @@ The gallery is served without signing in:
 
 Name a version for each state you want people to be able to open later, such as a release.
 
+Add `tour = "<document ID>"` to the table to name the gallery document editors open as their tour: Help → Open the Tour, the welcome dialog's tour, and `/demo` open it from the official server; an editor built to name your server as its official one opens yours. Any page may read the gallery and the server's discovery, so these addresses answer every origin, without cookies.
+
 These routes are limited per visitor by IP address, which the server only knows from a header your proxy sets. The proxy must overwrite that header or append the client's address to it; one it passes through unchanged is whatever the client sent. Name that header under `[authentication.trusted_proxies]` before you turn the gallery on, and let only the proxy reach the server: a request without the header has no IP to count, so nothing limits it.
 

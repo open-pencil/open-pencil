@@ -231,6 +231,22 @@ workspace = "${workspace}"
     ).toThrow()
   })
 
+  test('names the gallery document editors open as their tour, by its ID', () => {
+    const workspace = '0f6b1c1e-6a8e-4b8e-9a4f-3c2d1e0f9a8b'
+    const tour = '7c6939c0-dedc-4fbe-80b2-80919621de10'
+    const source = `${minimalSource}
+[community]
+workspace = "${workspace}"
+tour = "${tour}"
+`
+    const config = parseCloudDeploymentTOML(source, environment)
+    expect(cloudDiscoveryFromConfig(config).community).toEqual({
+      workspaceId: workspace,
+      tourDocumentId: tour
+    })
+    expect(() => parseCloudDeploymentTOML(source.replace(tour, 'tour'), environment)).toThrow()
+  })
+
   test('keeps deleted files under a prefix only when one is configured', () => {
     expect(parseCloudDeploymentTOML(minimalSource, environment).s3DeletedPrefix).toBeUndefined()
     const keeping = (prefix: string) =>
