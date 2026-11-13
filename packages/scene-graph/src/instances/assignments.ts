@@ -1,6 +1,7 @@
 // What enclosing instances assign the component properties that drive a copy's layers.
 import type { SceneGraph } from '../graph'
 import type { ComponentPropertyReferenceField, SceneNode } from '../types'
+import { assignmentOverrideField } from './overrides'
 
 /** SLOT_CONTENT is absent because it drives children, which `ownsSlotContent` keeps instead. */
 const PROPERTY_REFERENCE_FIELDS: Partial<Record<ComponentPropertyReferenceField, string>> = {
@@ -30,27 +31,82 @@ function definesProperty(graph: SceneGraph, instance: SceneNode, propertyId: str
     .some((definition) => definition.id === propertyId)
 }
 
+interface Assignment {
+  /** The instance whose assignment it is. */
+  instance: SceneNode
+  value: string
+}
+
 /**
  * What the nearest enclosing instance assigns `propertyId`, if any does. An instance assigns its
  * children, not itself, so the walk starts at the parent. A property id belongs to the component
  * that defines it, so the walk stops at an instance of that component even when it assigns
  * nothing; otherwise an outer instance's unrelated property of the same id wins.
  */
-function enclosingAssignment(
+function findEnclosingAssignment(
   graph: SceneGraph,
   node: SceneNode,
   propertyId: string
-): string | undefined {
+): Assignment | undefined {
   let current = node.parentId ? graph.nodes.get(node.parentId) : undefined
   while (current) {
     if (current.type === 'INSTANCE') {
       if (Object.hasOwn(current.componentPropertyAssignments, propertyId))
-        return current.componentPropertyAssignments[propertyId]
+        return { instance: current, value: current.componentPropertyAssignments[propertyId] }
       if (definesProperty(graph, current, propertyId)) return undefined
     }
     current = current.parentId ? graph.nodes.get(current.parentId) : undefined
   }
   return undefined
+}
+
+function enclosingAssignment(
+  graph: SceneGraph,
+  node: SceneNode,
+  propertyId: string
+): string | undefined {
+  return findEnclosingAssignment(graph, node, propertyId)?.value
+}
+
+/** The instances around `node`, nearest first. */
+function enclosingInstances(graph: SceneGraph, node: SceneNode): SceneNode[] {
+  const instances: SceneNode[] = []
+  if (node.parentId)
+    graph.closest(node.parentId, (ancestor) => {
+      if (ancestor.type === 'INSTANCE') instances.push(ancestor)
+      return false
+    })
+  return instances
+}
+
+/** The outermost of `instances` that records `field` as an edit of `node`, or -1. */
+function outermostEdit(instances: SceneNode[], node: SceneNode, field: string): number {
+  return instances.findLastIndex((instance) =>
+    instance.instanceOverrides.descendants.get(node.id)?.has(field)
+  )
+}
+
+/**
+ * Whether a text edit of `layer` outranks the assignment that drives it. As in Figma, the edit
+ * made in the outer instance wins, and at the same level the assignment does. An assignment is
+ * made where an override of it is recorded, or else by the instance that holds it.
+ */
+function textEditOutranks(
+  graph: SceneGraph,
+  layer: SceneNode,
+  propertyId: string,
+  assignment: Assignment
+): boolean {
+  const instances = enclosingInstances(graph, layer)
+  const textLevel = outermostEdit(instances, layer, 'text')
+  if (textLevel < 0) return false
+  const overridden = outermostEdit(
+    instances,
+    assignment.instance,
+    assignmentOverrideField(propertyId)
+  )
+  const assignmentLevel = overridden < 0 ? instances.indexOf(assignment.instance) : overridden
+  return textLevel > assignmentLevel
 }
 
 function hasEnclosingAssignment(graph: SceneGraph, node: SceneNode, propertyId: string): boolean {
@@ -107,10 +163,12 @@ export function assignedFieldValues(
 ): Partial<SceneNode> {
   const values: Partial<SceneNode> = {}
   for (const reference of compChild.componentPropertyReferences) {
-    const value = enclosingAssignment(graph, instChild, reference.propertyId)
-    if (value === undefined) continue
-    if (reference.field === 'TEXT' && instChild.type === 'TEXT') values.text = value
-    else if (reference.field === 'VISIBLE') values.visible = value === 'true'
+    const assignment = findEnclosingAssignment(graph, instChild, reference.propertyId)
+    if (!assignment) continue
+    if (reference.field === 'TEXT' && instChild.type === 'TEXT') {
+      if (!textEditOutranks(graph, instChild, reference.propertyId, assignment))
+        values.text = assignment.value
+    } else if (reference.field === 'VISIBLE') values.visible = assignment.value === 'true'
   }
   return values
 }
