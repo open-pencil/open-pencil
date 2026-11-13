@@ -605,5 +605,14 @@
   "communityOpenNote": "Pliki otwierają się tylko do odczytu. Zapisz kopię, aby edytować.",
   "communityNotFoundTitle": "Tego pliku już tu nie ma",
   "communityNotFoundDescription": "Mógł zostać usunięty. Zobacz, co jeszcze jest w społeczności.",
-  "communityMore": "Więcej ze społeczności"
+  "communityMore": "Więcej ze społeczności",
+  "communityLatestVersion": "{name} · Najnowsza",
+  "siteTagline": "Otwartoźródłowy edytor projektów. Otwieraj pliki Figmy, a Twoja praca należy do Ciebie.",
+  "siteProduct": "Produkt",
+  "siteResources": "Zasoby",
+  "siteLegal": "Informacje prawne",
+  "siteDocs": "Dokumentacja",
+  "siteCloudDocs": "Dokumentacja Cloud",
+  "siteDownload": "Pobierz",
+  "siteLicense": "Udostępniono na licencji MIT."
 }

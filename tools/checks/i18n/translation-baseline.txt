@@ -674,3 +674,4 @@ pl:cloudPortal.plan
 fr:cloud.savePublicLabel
 de:cloudPortal.communityTitle
 it:cloudPortal.communityTitle
+es:cloudPortal.siteLegal

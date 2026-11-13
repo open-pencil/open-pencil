@@ -635,5 +635,14 @@
   "communityOpenNote": "تُفتح الملفات للقراءة فقط. احفظ نسخة لتعدّلها.",
   "communityNotFoundTitle": "لم يعد هذا الملف هنا",
   "communityNotFoundDescription": "ربما أُزيل. اطّلع على ما يتوفر أيضًا في المجتمع.",
-  "communityMore": "المزيد من المجتمع"
+  "communityMore": "المزيد من المجتمع",
+  "communityLatestVersion": "{name} · الأحدث",
+  "siteTagline": "محرر التصميم مفتوح المصدر. افتح ملفات Figma وامتلك عملك.",
+  "siteProduct": "المنتج",
+  "siteResources": "الموارد",
+  "siteLegal": "القانونية",
+  "siteDocs": "التوثيق",
+  "siteCloudDocs": "توثيق Cloud",
+  "siteDownload": "تنزيل",
+  "siteLicense": "صدر بموجب ترخيص MIT."
 }

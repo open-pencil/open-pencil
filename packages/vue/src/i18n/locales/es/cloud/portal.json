@@ -595,5 +595,14 @@
   "communityOpenNote": "Los archivos se abren en solo lectura. Guarda una copia para editarlos.",
   "communityNotFoundTitle": "Este archivo ya no está aquí",
   "communityNotFoundDescription": "Puede que se haya retirado. Mira qué más hay en la comunidad.",
-  "communityMore": "Más de la comunidad"
+  "communityMore": "Más de la comunidad",
+  "communityLatestVersion": "{name} · Más reciente",
+  "siteTagline": "El editor de diseño de código abierto. Abre tus archivos de Figma y sé dueño de tu trabajo.",
+  "siteProduct": "Producto",
+  "siteResources": "Recursos",
+  "siteLegal": "Legal",
+  "siteDocs": "Documentación",
+  "siteCloudDocs": "Documentación de Cloud",
+  "siteDownload": "Descargar",
+  "siteLicense": "Publicado bajo la licencia MIT."
 }

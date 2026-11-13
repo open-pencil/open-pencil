@@ -585,5 +585,14 @@
   "communityOpenNote": "文件以只读方式打开。保存副本即可编辑。",
   "communityNotFoundTitle": "此文件已不在这里",
   "communityNotFoundDescription": "它可能已被移除。看看社区里还有什么。",
-  "communityMore": "更多社区文件"
+  "communityMore": "更多社区文件",
+  "communityLatestVersion": "{name} · 最新",
+  "siteTagline": "开源设计编辑器。打开你的 Figma 文件，作品归你所有。",
+  "siteProduct": "产品",
+  "siteResources": "资源",
+  "siteLegal": "法律",
+  "siteDocs": "文档",
+  "siteCloudDocs": "Cloud 文档",
+  "siteDownload": "下载",
+  "siteLicense": "基于 MIT 许可证发布。"
 }

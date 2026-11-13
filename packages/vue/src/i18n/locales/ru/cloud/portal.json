@@ -605,5 +605,14 @@
   "communityOpenNote": "Файлы открываются только для чтения. Сохраните копию, чтобы редактировать.",
   "communityNotFoundTitle": "Этого файла здесь больше нет",
   "communityNotFoundDescription": "Возможно, его удалили. Посмотрите, что ещё есть в сообществе.",
-  "communityMore": "Ещё из сообщества"
+  "communityMore": "Ещё из сообщества",
+  "communityLatestVersion": "{name} · Последняя",
+  "siteTagline": "Редактор дизайна с открытым кодом. Открывайте файлы Figma, ваша работа остаётся вашей.",
+  "siteProduct": "Продукт",
+  "siteResources": "Ресурсы",
+  "siteLegal": "Правовая информация",
+  "siteDocs": "Документация",
+  "siteCloudDocs": "Документация Cloud",
+  "siteDownload": "Скачать",
+  "siteLicense": "Распространяется по лицензии MIT."
 }
