@@ -473,7 +473,9 @@ describe('saved outlines use the same font file as the paragraph', () => {
         expect(glyph.commands).toEqual(expected.outline(expected.glyphOf(text[index]), 13))
       }
     } finally {
-      fallbacks.forEach((families, index) => families.push(...previous[index]))
+      for (const [index, families] of fallbacks.entries()) {
+        for (const fallback of previous[index]) families.push(fallback)
+      }
     }
   })
 })
