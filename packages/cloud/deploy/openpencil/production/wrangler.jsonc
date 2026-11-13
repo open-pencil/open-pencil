@@ -16,8 +16,9 @@
   },
   "routes": [{ "pattern": "cloud.openpencil.dev", "custom_domain": true }],
   "workers_dev": false,
-  // The production Hyperdrive, over the EU Neon database with query caching off.
-  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "your-production-hyperdrive-id" }],
+  // The production Hyperdrive, `openpencil-cloud`, over the EU Neon database with query caching
+  // off.
+  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "cfff8bfebf7b4b35b1e43f4b9424d0d5" }],
   "durable_objects": {
     "bindings": [{ "name": "RELAY", "class_name": "CollaborationRelayObject" }]
   },
