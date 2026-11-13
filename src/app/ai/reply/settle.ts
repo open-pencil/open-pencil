@@ -39,7 +39,8 @@ function settleParts(
     }
     // A subagent still at work when the reply ended stopped with it, and so did its calls.
     const subagent = subagentTranscript(part)
-    if (subagent && (subagent.state === 'running' || subagent.state === 'requires_action')) {
+    // One the agent never reported done, as on ACP's older subagent draft, has no state at all.
+    if (subagent && subagent.state !== 'idle' && subagent.state !== 'unknown') {
       const settled: SubagentTranscript = {
         ...subagent,
         state: 'unknown',

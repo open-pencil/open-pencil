@@ -100,10 +100,12 @@ test('a subagent at work when the reply ended stops with it, and so do its calls
     parts: [call('inner', 'input-available')]
   }
   const done = { session: 'right', state: 'idle', parts: [] }
-  const [first, second] = settleMessage(
+  const unreported = { session: 'quiet', parts: [] }
+  const [first, second, third] = settleMessage(
     reply([
       { type: SUBAGENT_PART, id: 'left', data: working },
-      { type: SUBAGENT_PART, id: 'right', data: done }
+      { type: SUBAGENT_PART, id: 'right', data: done },
+      { type: SUBAGENT_PART, id: 'quiet', data: unreported }
     ]),
     { stopped: true }
   ).parts
@@ -111,4 +113,5 @@ test('a subagent at work when the reply ended stops with it, and so do its calls
   expect(left?.state).toBe('unknown')
   expect(left?.parts[0]).toMatchObject({ toolCallId: 'inner', state: 'output-error' })
   expect(second ? subagentTranscript(second)?.state : null).toBe('idle')
+  expect(third ? subagentTranscript(third)?.state : null).toBe('unknown')
 })
