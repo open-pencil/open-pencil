@@ -50,7 +50,10 @@ interface SessionAgent {
   subagent: string | undefined
   handle: AgentHandle
   kind: AgentSession['kind']
-  /** Counts the times its chat's replies ended; a tool call from an earlier reply is ignored. */
+  /**
+   * Which reply its tool calls belong to, drawn from `replyTokens` and renewed when its chat's reply
+   * ends, so a call from an earlier reply, or from an agent this one replaced, is ignored.
+   */
   replies: number
   idleTimer?: ReturnType<typeof setTimeout>
   goneTimer?: ReturnType<typeof setTimeout>
@@ -64,6 +67,9 @@ const sessionAgents = new Set<SessionAgent>()
 
 /** For each app chat, the subagent's ACP session that made each tool call its agent reported. */
 const subagentCalls = new Map<string, Map<string, string>>()
+
+/** Counts every agent's replies together, so no two agents, nor two replies, share a token. */
+let replyTokens = 0
 
 function findAgent(store: EditorStore, session: AgentSession): SessionAgent | undefined {
   for (const agent of sessionAgents) {
@@ -88,7 +94,7 @@ function sessionAgent(store: EditorStore, session: AgentSession): SessionAgent {
       subagent: session.subagent,
       handle: addAgent(store, session.kind, session.client || undefined),
       kind: session.kind,
-      replies: 0
+      replies: ++replyTokens
     }
     sessionAgents.add(agent)
   }
@@ -199,7 +205,7 @@ export function restAgents(kind: Exclude<AgentSession['kind'], 'mcp'>, chat?: st
       continue
     }
     clearTimeout(agent.idleTimer)
-    agent.replies++
+    agent.replies = ++replyTokens
     rest(agent)
   }
   // What the reply's updates said about its subagents ends with it.

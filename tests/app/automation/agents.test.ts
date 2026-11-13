@@ -266,6 +266,22 @@ describe("a coding agent's subagents", () => {
     expect(agents()).toEqual([])
   })
 
+  test('a call still running when its subagent finished leaves the subagent’s next agent alone', () => {
+    reported('toolu_a1', 'subagent-a')
+    const late = withSubagent({ ...acp, call: 'toolu_a1' })
+    const reply = agentStarted(store, late, pageId())
+    subagentFinished(CHAT, 'subagent-a')
+    // The subagent comes back with more work before its earlier call reports back.
+    reported('toolu_a2', 'subagent-a')
+    const next = work('toolu_a2')
+    const before = next.selection
+
+    const node = store.graph.createNode('RECTANGLE', pageId(), {})
+    agentFinished(store, late, { pageId: pageId(), nodeIds: [node.id], edited: true, reply })
+
+    expect(agents().find((agent) => agent.id === next.id)?.selection).toEqual(before)
+  })
+
   test('the view moves on to another agent at work when the followed subagent finishes', () => {
     reported('toolu_a1', 'subagent-a')
     reported('toolu_b1', 'subagent-b')
