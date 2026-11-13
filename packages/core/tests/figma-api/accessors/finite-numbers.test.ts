@@ -83,10 +83,11 @@ describe('a number a layer takes', () => {
     const { frame } = stroked()
     frame.layoutWrap = 'WRAP'
     frame.itemSpacing = 12
+    const spacing = () => frame.counterAxisSpacing
     frame.counterAxisSpacing = null
-    expect(frame.counterAxisSpacing).toBe(12)
+    expect(spacing()).toBe(12)
     frame.itemSpacing = 20
-    expect(frame.counterAxisSpacing).toBe(20)
+    expect(spacing()).toBe(20)
   })
 
   test('takes a transform row as an object keyed by index, and clears a size limit with null', () => {
