@@ -71,19 +71,16 @@
     },
     "./email": {
       "types": "./dist/email.d.ts",
-      "bun": "./src/email/index.ts",
       "import": "./dist/email.js",
       "default": "./dist/email.js"
     },
     "./runtime/cloudflare": {
       "types": "./dist/runtime-cloudflare.d.ts",
-      "bun": "./src/runtime/cloudflare/index.ts",
       "import": "./dist/runtime-cloudflare.js",
       "default": "./dist/runtime-cloudflare.js"
     },
     "./runtime/node": {
       "types": "./dist/runtime-node.d.mts",
-      "bun": "./src/runtime/node/index.ts",
       "import": "./dist/runtime-node.mjs",
       "default": "./dist/runtime-node.mjs"
     },
@@ -95,7 +92,6 @@
     },
     "./server": {
       "types": "./dist/server.d.ts",
-      "bun": "./src/server/index.ts",
       "import": "./dist/server.js",
       "default": "./dist/server.js"
     }

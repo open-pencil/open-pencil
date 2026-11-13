@@ -17,6 +17,7 @@ Optional, self-hostable backend; the design is in `packages/docs/development/clo
 - Each email is a Vue single-file component in `src/email/templates/` on the `BrandEmail` layout, reading its language through `useEmailLocalization`; `render.ts` maps each kind to its component and subject line (`tests/email/locales.test.ts`).
 - Its words live in `src/email/messages.ts` and `src/email/locales/<language>.json`, and the languages Cloud writes in are exactly those files: a language tag from the app is matched to the nearest, else English (`emailLocale`, `bun run check:i18n`).
 - `.vue` files build through `unplugin-vue` in both tsdown configs and load under Bun through `@open-pencil/test-support/vue/sfc`, preloaded by `bunfig.toml` and the `dev` script; Wrangler can't compile them, so a Worker imports the built package (`deploy/cloudflare/worker.ts`, `packages/feedback/tsconfig.worker.json`).
+- The exports whose code reaches the emails (`email`, `server`, `runtime/node`, `runtime/cloudflare`) have no `bun` condition, so a Bun consumer gets the build rather than `.vue` sources; the repository reads them from source through tsconfig `paths` (the `Cloud email` scenario in `tools/checks/package-quality/src/smoke/scenarios.ts`).
 
 ## Data and security
 
