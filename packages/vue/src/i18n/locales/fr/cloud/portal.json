@@ -601,5 +601,19 @@
   "communityLatest": "Plus récente",
   "communityLatestDescription": "Le fichier tel qu’il est maintenant.",
   "communityNotFoundTitle": "Ce fichier n’est plus ici",
-  "communityNotFoundDescription": "Il a peut-être été retiré. Découvrez le reste de la communauté."
+  "communityNotFoundDescription": "Il a peut-être été retiré. Découvrez le reste de la communauté.",
+  "communityFileCount": {
+    "one": "{count} fichier",
+    "many": "{count} fichiers"
+  },
+  "communityFilterAll": "Tous",
+  "communityKindDesigns": "Fichiers de design",
+  "communityKindBoards": "Tableaux",
+  "communitySearch": "Rechercher des fichiers",
+  "communityNoMatches": "Aucun fichier ne correspond à « {query} ».",
+  "communityCopyLink": "Copier le lien",
+  "communityLinkCopied": "Lien copié",
+  "communityDetailType": "Type",
+  "communityDetailUpdated": "Dernière mise à jour",
+  "communityMore": "Plus de la communauté"
 }

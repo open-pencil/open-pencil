@@ -641,5 +641,19 @@
   "communityLatest": "الأحدث",
   "communityLatestDescription": "الملف كما هو الآن.",
   "communityNotFoundTitle": "لم يعد هذا الملف هنا",
-  "communityNotFoundDescription": "ربما أُزيل. اطّلع على ما يتوفر أيضًا في المجتمع."
+  "communityNotFoundDescription": "ربما أُزيل. اطّلع على ما يتوفر أيضًا في المجتمع.",
+  "communityFileCount": {
+    "one": "{count} ملف",
+    "many": "{count} ملفات"
+  },
+  "communityFilterAll": "الكل",
+  "communityKindDesigns": "ملفات التصميم",
+  "communityKindBoards": "اللوحات",
+  "communitySearch": "ابحث في الملفات",
+  "communityNoMatches": "لا توجد ملفات تطابق «{query}».",
+  "communityCopyLink": "نسخ الرابط",
+  "communityLinkCopied": "نُسخ الرابط",
+  "communityDetailType": "النوع",
+  "communityDetailUpdated": "آخر تحديث",
+  "communityMore": "المزيد من المجتمع"
 }

@@ -601,5 +601,19 @@
   "communityLatest": "Neueste",
   "communityLatestDescription": "Die Datei, wie sie jetzt ist.",
   "communityNotFoundTitle": "Diese Datei ist nicht mehr hier",
-  "communityNotFoundDescription": "Sie wurde vielleicht entfernt. Sieh dir an, was es sonst in der Community gibt."
+  "communityNotFoundDescription": "Sie wurde vielleicht entfernt. Sieh dir an, was es sonst in der Community gibt.",
+  "communityFileCount": {
+    "one": "{count} Datei",
+    "many": "{count} Dateien"
+  },
+  "communityFilterAll": "Alle",
+  "communityKindDesigns": "Designdateien",
+  "communityKindBoards": "Boards",
+  "communitySearch": "Dateien durchsuchen",
+  "communityNoMatches": "Keine Dateien passen zu „{query}“.",
+  "communityCopyLink": "Link kopieren",
+  "communityLinkCopied": "Link kopiert",
+  "communityDetailType": "Typ",
+  "communityDetailUpdated": "Zuletzt aktualisiert",
+  "communityMore": "Mehr aus der Community"
 }

@@ -28,3 +28,11 @@ export function useCommunityDocuments(discovery: CloudDiscovery) {
   void reload()
   return { state, reload }
 }
+
+/**
+ * Who the gallery's files are from: the official server's are OpenPencil's own, and any other
+ * server's are its operator's, named by its address.
+ */
+export function communityPublisher(discovery: CloudDiscovery, host: string): string {
+  return discovery.deployment === 'official' ? 'OpenPencil' : host
+}

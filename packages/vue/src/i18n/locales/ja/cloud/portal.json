@@ -591,5 +591,19 @@
   "communityLatest": "最新",
   "communityLatestDescription": "現在のファイル。",
   "communityNotFoundTitle": "このファイルはもうありません",
-  "communityNotFoundDescription": "削除された可能性があります。コミュニティのほかのファイルをご覧ください。"
+  "communityNotFoundDescription": "削除された可能性があります。コミュニティのほかのファイルをご覧ください。",
+  "communityFileCount": {
+    "one": "{count} 件のファイル",
+    "many": "{count} 件のファイル"
+  },
+  "communityFilterAll": "すべて",
+  "communityKindDesigns": "デザインファイル",
+  "communityKindBoards": "ボード",
+  "communitySearch": "ファイルを検索",
+  "communityNoMatches": "「{query}」に一致するファイルはありません。",
+  "communityCopyLink": "リンクをコピー",
+  "communityLinkCopied": "リンクをコピーしました",
+  "communityDetailType": "種類",
+  "communityDetailUpdated": "最終更新",
+  "communityMore": "コミュニティのほかのファイル"
 }

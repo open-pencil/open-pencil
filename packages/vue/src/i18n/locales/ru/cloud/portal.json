@@ -611,5 +611,20 @@
   "communityLatest": "Последняя",
   "communityLatestDescription": "Файл в текущем виде.",
   "communityNotFoundTitle": "Этого файла здесь больше нет",
-  "communityNotFoundDescription": "Возможно, его удалили. Посмотрите, что ещё есть в сообществе."
+  "communityNotFoundDescription": "Возможно, его удалили. Посмотрите, что ещё есть в сообществе.",
+  "communityFileCount": {
+    "one": "{count} файл",
+    "few": "{count} файла",
+    "many": "{count} файлов"
+  },
+  "communityFilterAll": "Все",
+  "communityKindDesigns": "Файлы дизайна",
+  "communityKindBoards": "Доски",
+  "communitySearch": "Поиск файлов",
+  "communityNoMatches": "Нет файлов по запросу «{query}».",
+  "communityCopyLink": "Скопировать ссылку",
+  "communityLinkCopied": "Ссылка скопирована",
+  "communityDetailType": "Тип",
+  "communityDetailUpdated": "Обновлено",
+  "communityMore": "Ещё из сообщества"
 }
