@@ -1,6 +1,7 @@
 import type { Canvas, Image, Paint, Shader } from '@open-pencil/canvaskit'
 import type { SceneNode, SceneGraph, Fill } from '@open-pencil/scene-graph'
 import { invertGradientTransform } from '@open-pencil/scene-graph/gradient'
+import { drawnImageHash } from '@open-pencil/scene-graph/images'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import { fillGeometryMatchesRegions, hasRegionFills } from '@open-pencil/scene-graph/vector-network'
@@ -116,7 +117,7 @@ export function applyFill(
     return applyGradientFill(r, fill, node, graph)
   }
 
-  if (fill.type === 'IMAGE' && fill.imageHash) {
+  if (drawnImageHash(fill)) {
     return applyImageFill(r, fill, node, graph)
   }
 
@@ -458,7 +459,7 @@ export function applyImageFill(
   graph: SceneGraph,
   paint: Paint = r.fillPaint
 ): boolean {
-  const hash = fill.imageHash
+  const hash = drawnImageHash(fill)
   if (!hash) return false
   const live = r.images.live.get(hash)
   if (live?.surface === r.surface) return setImageShader(r, fill, node, live.image, paint)

@@ -44,7 +44,7 @@ const cloudLinkSchema = v.object({
 export function readCloudLink(url: URL): CloudLink | null {
   const path = parseCloudLinkPath(url.pathname)
   const secret = url.hash.slice(1)
-  if (!path || path.kind === 'documents' || !secret) return null
+  if (!path || path.kind === 'documents' || path.kind === 'community' || !secret) return null
   return { kind: path.kind, id: path.id, server: url.origin, secret }
 }
 

@@ -2,14 +2,11 @@
 import { omit } from 'es-toolkit/object'
 import { isEqual } from 'es-toolkit/predicate'
 
-import {
-  overriddenAssignmentId,
-  reapplyComponentPropertyAssignments
-} from '../components/properties'
+import { reapplyComponentPropertyAssignments } from '../components/properties'
 import type { SceneGraph } from '../graph'
 import type { SceneNode } from '../types'
 import { instanceMainComponent } from './main-component'
-import { overriddenBindingField } from './overrides'
+import { overriddenAssignmentId, overriddenBindingField } from './overrides'
 
 /** Where a switch runs: the switched instance and the instances enclosing the layers it changes. */
 export interface OverrideScope {

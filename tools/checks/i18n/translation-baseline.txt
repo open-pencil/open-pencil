@@ -671,3 +671,4 @@ ar:cloudPortal.emailTransportSMTP
 ar:cloudPortal.emailTransportCloudflare
 es:cloudPortal.plan
 pl:cloudPortal.plan
+fr:cloud.savePublicLabel

@@ -4,8 +4,9 @@ import {
   RequestError,
   type InitializeResponse,
   type NewSessionRequest,
-  type ResumeSessionRequest
-} from '@agentclientprotocol/sdk'
+  type ResumeSessionRequest,
+  type ResumeSessionResponse
+} from '@agentclientprotocol/sdk/unstable'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
 import { expectDefined } from '@open-pencil/test-support/assert'
@@ -54,10 +55,22 @@ function connection({ resumeError }: FakeConnectionOptions = {}) {
       created.push(params)
       return { sessionId: 'new-session', models: { currentModelId: 'opus', availableModels: [] } }
     },
-    async unstable_resumeSession(params: ResumeSessionRequest) {
+    // It names its model the legacy way when it starts, and among its options when it resumes.
+    async resumeSession(params: ResumeSessionRequest): Promise<ResumeSessionResponse> {
       resumed.push(params)
       if (resumeError !== undefined) throw resumeError
-      return { models: { currentModelId: 'sonnet', availableModels: [] } }
+      return {
+        configOptions: [
+          {
+            id: 'model',
+            name: 'Model',
+            category: 'model',
+            type: 'select',
+            currentValue: 'sonnet',
+            options: [{ value: 'sonnet', name: 'Sonnet' }]
+          }
+        ]
+      }
     }
   }
 }
