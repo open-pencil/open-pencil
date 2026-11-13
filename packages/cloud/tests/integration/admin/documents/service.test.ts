@@ -180,4 +180,60 @@ describe('document takedown', () => {
       await context.runtime.close()
     }
   })
+
+  test('tells the workspace’s owner when a document is blocked, why, and when it is back', async () => {
+    const context = await seedSharing()
+    const sent: Array<{ kind: string; recipientEmail: string; payload: unknown }> = []
+    const documents = createAdminDocumentService(context.runtime.database, {
+      email: {
+        async enqueue(input) {
+          sent.push(input)
+          return crypto.randomUUID()
+        },
+        async deliverPending() {
+          return { claimed: 0, accepted: 0, retrying: 0, failed: 0, suppressed: 0 }
+        }
+      },
+      publicURL: 'https://cloud.example.com',
+      contactEmail: 'abuse@example.com'
+    })
+    try {
+      const ownerId = crypto.randomUUID()
+      await context.runtime.database
+        .insertInto('user')
+        .values({ id: ownerId, name: 'Owner', email: 'owner@example.com', emailVerified: true })
+        .execute()
+      await context.runtime.database
+        .updateTable('workspace')
+        .set({ ownerId })
+        .where('ownerId', '=', 'owner')
+        .execute()
+
+      await documents.disable(ADMIN, context.documentId, 'Phishing')
+      // Blocking it again tells nobody twice.
+      await documents.disable(ADMIN, context.documentId, 'Phishing')
+      await documents.enable(ADMIN, context.documentId)
+
+      expect(sent).toMatchObject([
+        {
+          kind: 'document-blocked',
+          recipientEmail: 'owner@example.com',
+          payload: {
+            name: 'Owner',
+            documentName: 'Homepage',
+            reason: 'Phishing',
+            contactEmail: 'abuse@example.com',
+            actionURL: 'https://cloud.example.com'
+          }
+        },
+        {
+          kind: 'document-restored',
+          recipientEmail: 'owner@example.com',
+          payload: { name: 'Owner', documentName: 'Homepage' }
+        }
+      ])
+    } finally {
+      await context.runtime.close()
+    }
+  })
 })
