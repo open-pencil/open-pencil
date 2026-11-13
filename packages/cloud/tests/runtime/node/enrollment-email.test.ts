@@ -12,10 +12,13 @@ const enrollmentKinds = [
 describe('enrollment email rendering', () => {
   for (const kind of enrollmentKinds) {
     test(`renders HTML and text for ${kind}`, async () => {
-      const rendered = await renderTransactionalEmail({
-        kind,
-        payload: { name: 'Person', actionURL: 'https://cloud.example.com/auth/sign-in' }
-      })
+      const rendered = await renderTransactionalEmail(
+        {
+          kind,
+          payload: { name: 'Person', actionURL: 'https://cloud.example.com/auth/sign-in' }
+        },
+        'en'
+      )
       expect(rendered.subject).toBeString()
       expect(rendered.html).toContain('https://cloud.example.com/auth/sign-in')
       expect(rendered.text).toContain('https://cloud.example.com/auth/sign-in')
@@ -23,15 +26,18 @@ describe('enrollment email rendering', () => {
     })
   }
   test('renders administrator notification without an approval token', async () => {
-    const rendered = await renderTransactionalEmail({
-      kind: 'admin-enrollment-notification',
-      payload: {
-        requesterEmail: 'person@example.com',
-        requesterName: 'Person',
-        reason: 'Design',
-        actionURL: 'https://cloud.example.com/admin/requests'
-      }
-    })
+    const rendered = await renderTransactionalEmail(
+      {
+        kind: 'admin-enrollment-notification',
+        payload: {
+          requesterEmail: 'person@example.com',
+          requesterName: 'Person',
+          reason: 'Design',
+          actionURL: 'https://cloud.example.com/admin/requests'
+        }
+      },
+      'en'
+    )
     expect(rendered.html).toContain('person@example.com')
     expect(rendered.html).toContain('/admin/requests')
     expect(rendered.html).not.toContain('token=')

@@ -10,7 +10,7 @@ import type {
 import { cloudInvitationURL } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
 import { workspaceRoleCan, type AccessRequest } from '#cloud/server/auth/access-control'
-import type { CloudDatabase } from '#cloud/server/db'
+import { userIdText, type CloudDatabase } from '#cloud/server/db'
 import type { TransactionalEmailService } from '#cloud/server/email/types'
 import { spendInvitationBudget } from '#cloud/server/invitations'
 import { lockStorageAllowance } from '#cloud/server/quota/storage'
@@ -199,15 +199,7 @@ export function createWorkspaceMemberService(
   function memberUsers(workspaceId: string) {
     return database
       .selectFrom('workspaceMember')
-      .innerJoin('user', (join) =>
-        join.on((expression) =>
-          expression(
-            expression.cast(expression.ref('user.id'), 'text'),
-            '=',
-            expression.ref('workspaceMember.userId')
-          )
-        )
-      )
+      .innerJoin('user', (join) => join.onRef(userIdText, '=', 'workspaceMember.userId'))
       .where('workspaceMember.workspaceId', '=', workspaceId)
   }
 
@@ -231,7 +223,7 @@ export function createWorkspaceMemberService(
     if (existing) throw new WorkspaceAlreadyMemberError()
     const inviter = await database
       .selectFrom('user')
-      .select('name')
+      .select(['name', 'locale'])
       .where('id', '=', userId)
       .executeTakeFirst()
     const id = crypto.randomUUID()
@@ -268,8 +260,10 @@ export function createWorkspaceMemberService(
           idempotencyKey: `workspace-invitation/${id}`,
           kind: 'workspace-invitation',
           recipientEmail: input.email,
+          // Someone without an account yet reads the inviter's language.
+          fallbackLocale: inviter?.locale,
           payload: {
-            inviterName: inviter?.name ?? 'An OpenPencil user',
+            inviterName: inviter?.name ?? null,
             workspaceName: workspace.name,
             role: input.role,
             expiresAt: expiresAt.toISOString(),
@@ -314,13 +308,7 @@ export function createWorkspaceMemberService(
         ? await database
             .selectFrom('workspaceInvitation')
             .leftJoin('user', (join) =>
-              join.on((expression) =>
-                expression(
-                  expression.cast(expression.ref('user.id'), 'text'),
-                  '=',
-                  expression.ref('workspaceInvitation.invitedBy')
-                )
-              )
+              join.onRef(userIdText, '=', 'workspaceInvitation.invitedBy')
             )
             .select([
               'workspaceInvitation.id',

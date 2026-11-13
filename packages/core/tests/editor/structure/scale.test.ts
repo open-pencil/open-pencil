@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
 import { createEditor, EDITOR_TOOLS, TOOL_SHORTCUTS, type Editor } from '@open-pencil/core'
+import { setTextMeasurer } from '@open-pencil/core/layout'
 import type { TextPathData } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
@@ -147,6 +148,179 @@ describe('scaleSelected', () => {
       fontSize: 32,
       textPathData,
       textPathBox: { width: 400, height: 160 }
+    })
+  })
+
+  test('scales how far the lines of a fixed-size text reach past it, and undo puts it back', () => {
+    editor = createEditor()
+    const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+      width: 100,
+      height: 20,
+      fontSize: 20,
+      textAutoResize: 'NONE',
+      derivedTextHeight: 60
+    })
+    editor.select([text.id])
+
+    editor.scaleSelected(2, { x: 0, y: 0 })
+
+    expect(current(text.id)).toMatchObject({ height: 40, fontSize: 40, derivedTextHeight: 120 })
+    editor.undo.undo()
+    expect(current(text.id)).toMatchObject({ height: 20, fontSize: 20, derivedTextHeight: 60 })
+  })
+
+  test('undo with no fonts rescales the reach someone else set since the scale', () => {
+    editor = createEditor()
+    const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+      width: 100,
+      height: 20,
+      fontSize: 20,
+      textAutoResize: 'NONE',
+      derivedTextHeight: 36
+    })
+    editor.select([text.id])
+    editor.scaleSelected(1.37, { x: 0, y: 0 })
+    editor.undo.undo()
+    expect(current(text.id).derivedTextHeight).toBe(36)
+    editor.undo.redo()
+
+    editor.graph.updateNode(text.id, { text: 'longer', derivedTextHeight: 137 })
+    editor.undo.undo()
+    expect(current(text.id).derivedTextHeight).toBeCloseTo(100)
+    editor.graph.updateNode(text.id, { derivedTextHeight: 50 })
+    editor.undo.redo()
+    expect(current(text.id).derivedTextHeight).toBeCloseTo(68.5)
+  })
+
+  describe('with fonts to measure the lines in', () => {
+    afterEach(() => setTextMeasurer(null))
+
+    function measureLinesRoundedToPixels() {
+      setTextMeasurer((node) => ({
+        width: node.width,
+        height: node.text.split('\n').length * Math.round(node.fontSize * 1.24)
+      }))
+    }
+
+    function fixedText(text: string, derivedTextHeight: number) {
+      const node = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+        width: 100,
+        height: 20,
+        fontSize: 10,
+        text,
+        textAutoResize: 'NONE',
+        derivedTextHeight
+      })
+      editor.select([node.id])
+      return node
+    }
+
+    test('measures the reach again, as lines rounded to whole pixels do not scale evenly', () => {
+      editor = createEditor()
+      measureLinesRoundedToPixels()
+      const text = fixedText('a\nb\nc', 36)
+
+      editor.scaleSelected(1.37, { x: 0, y: 0 })
+
+      expect(current(text.id).derivedTextHeight).toBe(51)
+    })
+
+    test('undo measures the text as it is now, edited by someone else since the scale', () => {
+      editor = createEditor()
+      measureLinesRoundedToPixels()
+      const text = fixedText('a\nb\nc', 36)
+      editor.scaleSelected(2, { x: 0, y: 0 })
+
+      editor.graph.updateNode(text.id, { text: 'a\nb\nc\nd\ne', derivedTextHeight: 125 })
+      editor.undo.undo()
+      expect(current(text.id)).toMatchObject({ fontSize: 10, derivedTextHeight: 60 })
+      editor.undo.redo()
+      expect(current(text.id)).toMatchObject({ fontSize: 20, derivedTextHeight: 125 })
+    })
+
+    test('keeps the scaled reach while the fonts cannot be measured', () => {
+      editor = createEditor()
+      setTextMeasurer(() => null)
+      const text = fixedText('a\nb\nc', 36)
+
+      editor.scaleSelected(1.5, { x: 0, y: 0 })
+
+      expect(current(text.id).derivedTextHeight).toBe(54)
+    })
+
+    test('undo with no fonts puts back the reach the scale measured, not one the measure left', () => {
+      editor = createEditor()
+      measureLinesRoundedToPixels()
+      const unmeasured = fixedText('a\nb\nc', 0)
+      editor.graph.updateNode(unmeasured.id, { derivedTextHeight: null })
+      const measured = fixedText('a\nb\nc', 36)
+      editor.select([unmeasured.id, measured.id])
+      editor.scaleSelected(0.6, { x: 0, y: 0 })
+      expect(current(unmeasured.id).derivedTextHeight).toBe(21)
+
+      setTextMeasurer(null)
+      editor.undo.undo()
+      expect(current(unmeasured.id)).toMatchObject({ fontSize: 10, derivedTextHeight: null })
+      expect(current(measured.id)).toMatchObject({ fontSize: 10, derivedTextHeight: 36 })
+      editor.undo.redo()
+      expect(current(unmeasured.id).derivedTextHeight).toBe(21)
+      expect(current(measured.id).derivedTextHeight).toBe(21)
+    })
+
+    test('undo with no fonts keeps a reach the scale measured back to where it was', () => {
+      editor = createEditor()
+      setTextMeasurer((node) => ({ width: node.width, height: 36 }))
+      const text = fixedText('a\nb\nc', 36)
+      editor.scaleSelected(2, { x: 0, y: 0 })
+      expect(current(text.id).derivedTextHeight).toBe(36)
+
+      setTextMeasurer(null)
+      editor.undo.undo()
+      expect(current(text.id)).toMatchObject({ fontSize: 10, derivedTextHeight: 36 })
+    })
+
+    test('measures the reach at the width auto layout stretches the text to', () => {
+      editor = createEditor()
+      setTextMeasurer((node) => ({
+        width: node.width,
+        height: Math.ceil((node.text.length * node.fontSize) / node.width) * node.fontSize
+      }))
+      const frame = editor.graph.createNode('FRAME', editor.state.currentPageId, {
+        width: 100,
+        height: 200,
+        layoutMode: 'VERTICAL'
+      })
+      const text = editor.graph.createNode('TEXT', frame.id, {
+        width: 100,
+        height: 10,
+        fontSize: 10,
+        text: 'abcdefghijklmnopqrst',
+        textAutoResize: 'NONE',
+        layoutAlignSelf: 'STRETCH',
+        derivedTextHeight: 20
+      })
+      editor.select([text.id])
+
+      editor.scaleSelected(2, { x: 0, y: 0 })
+
+      expect(current(text.id)).toMatchObject({ width: 100, fontSize: 20, derivedTextHeight: 80 })
+    })
+
+    test('leaves a text that sizes itself without a reach', () => {
+      editor = createEditor()
+      measureLinesRoundedToPixels()
+      const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+        width: 100,
+        height: 36,
+        fontSize: 10,
+        text: 'a\nb\nc',
+        textAutoResize: 'HEIGHT'
+      })
+      editor.select([text.id])
+
+      editor.scaleSelected(2, { x: 0, y: 0 })
+
+      expect(current(text.id).derivedTextHeight).toBeNull()
     })
   })
 

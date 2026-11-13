@@ -3,7 +3,7 @@ import * as v from 'valibot'
 import { finishRenderPlacement, resolveRenderPlacement } from '#core/design-jsx/placement'
 import { graphOf } from '#core/figma-api/graph'
 import { prepareSlotInsertion } from '#core/figma-api/slots'
-import { toolNumber, defineTool } from '#core/tools/schema'
+import { layoutPosition, toolNumber, defineTool } from '#core/tools/schema'
 
 export const render = defineTool({
   name: 'render',
@@ -29,8 +29,8 @@ export const render = defineTool({
         )
       )
     ),
-    x: v.optional(toolNumber(v.pipe(v.number(), v.description('X position of the root node')))),
-    y: v.optional(toolNumber(v.pipe(v.number(), v.description('Y position of the root node')))),
+    x: v.optional(layoutPosition('X position of the root node')),
+    y: v.optional(layoutPosition('Y position of the root node')),
     jsx: v.pipe(v.string(), v.description('JSX string to render'))
   }),
   execute: async (figma, args) => {

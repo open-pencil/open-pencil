@@ -1,5 +1,6 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
 
+import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { decompressFigKiwiDataAsync } from '@open-pencil/kiwi/fig/container'
@@ -66,6 +67,22 @@ describe('text node export', () => {
       maxLines: 2
     })
     expect(textNode?.fontFeatures).toContainEqual({ tag: 'LIGA', enabled: false })
+  })
+
+  test('a text the plugin API sets to truncate saves and reopens truncating', async () => {
+    await initCodec()
+
+    const graph = new SceneGraph()
+    const api = new FigmaAPI(graph)
+    const text = api.createText()
+    text.name = 'Truncated'
+    text.characters = 'A long label'
+    text.resize(40, 16)
+    text.textAutoResize = 'TRUNCATE'
+
+    const reimported = await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)
+    const textNode = [...reimported.getAllNodes()].find((node) => node.name === 'Truncated')
+    expect(textNode).toMatchObject({ textAutoResize: 'NONE', textTruncation: 'ENDING' })
   })
 
   test('keeps OpenPencil text language hints out of the .fig schema', async () => {

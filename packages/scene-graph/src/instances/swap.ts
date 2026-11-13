@@ -1,10 +1,7 @@
 import { isEqual } from 'es-toolkit/predicate'
 
 import { appendAll } from '../arrays'
-import {
-  overriddenAssignmentId,
-  reapplyComponentPropertyAssignments
-} from '../components/properties'
+import { reapplyComponentPropertyAssignments } from '../components/properties'
 import type { SceneGraph } from '../graph'
 import { ownsSlotContent, slotPropertyId } from '../slots/frames'
 import type { SceneNode } from '../types'
@@ -12,7 +9,12 @@ import { applyBoundPaintColorsIn, refreshBoundPaintsIn } from '../variables/pain
 import { applyEnclosingAssignments } from './assignments'
 import { keepOverrides, restoreOverrides, type OverrideScope } from './kept-overrides'
 import { ownsSelfFillField } from './main-component'
-import { hasInstanceOverride, overriddenBindingField, setInstanceOverride } from './overrides'
+import {
+  hasInstanceOverride,
+  overriddenAssignmentId,
+  overriddenBindingField,
+  setInstanceOverride
+} from './overrides'
 import { bindingProtection, NOTHING_PROTECTED } from './protection'
 import {
   cloneChildInCoordinates,

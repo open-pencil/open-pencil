@@ -1,20 +1,20 @@
-import { ClientSideConnection, ndJsonStream, PROTOCOL_VERSION } from '@agentclientprotocol/sdk'
-import type {
-  Client,
-  Agent,
-  SessionNotification,
-  SessionUpdate,
-  RequestPermissionRequest,
-  RequestPermissionResponse,
-  Usage
-} from '@agentclientprotocol/sdk'
+import {
+  client,
+  methods,
+  ndJsonStream,
+  PROTOCOL_VERSION,
+  type ClientConnection,
+  type SessionNotification,
+  type SessionUpdate,
+  type Usage
+} from '@agentclientprotocol/sdk/unstable'
 import { promiseTimeout } from '@vueuse/core'
 import type { ChatTransport, UIMessage, UIMessageChunk } from 'ai'
 import * as v from 'valibot'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
 
-import { parseAuthStatusUpdate } from '@/app/ai/agents/acp/auth/status'
+import { AUTH_STATUS_UPDATE_METHOD, parseAuthStatusUpdate } from '@/app/ai/agents/acp/auth/status'
 import { setAgentCommands } from '@/app/ai/agents/acp/commands'
 import { createUpdateMapper } from '@/app/ai/agents/acp/events'
 import { requestPermissionFromUser } from '@/app/ai/agents/acp/permission'
@@ -24,8 +24,10 @@ import {
   AgentSessionRetryError,
   acpErrorMessage,
   isAuthRequiredError,
-  openAgentSession
+  openAgentSession,
+  sessionRequests
 } from '@/app/ai/agents/acp/session'
+import { noteSubagents } from '@/app/ai/agents/acp/subagents'
 import { createOwnToolApproval, linkOwnTools, type OwnToolsLink } from '@/app/ai/agents/acp/tools'
 import { agentAccounts } from '@/app/ai/agents/setup/accounts'
 import { resolveSpawnTarget } from '@/app/ai/agents/setup/discovery'
@@ -72,7 +74,7 @@ const TURN_UPDATES: ReadonlySet<SessionUpdate['sessionUpdate']> = new Set([
 const AGENT_START_TIMEOUT_MS = 60_000
 
 interface ACPSession {
-  connection: ClientSideConnection
+  connection: ClientConnection
   sessionId: string
   /** The id the agent's tool calls carry, which ties them to this chat's replies. */
   chat: string
@@ -304,7 +306,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         }
 
         abortSignal?.addEventListener('abort', () => {
-          void connection.cancel({ sessionId })
+          void connection.agent.notify(methods.agent.session.cancel, { sessionId })
           finish('stop')
         })
 
@@ -319,8 +321,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           return
         }
 
-        connection
-          .prompt({
+        connection.agent
+          .request(methods.agent.session.prompt, {
             sessionId,
             prompt: [{ type: 'text', text: promptText }]
           })
@@ -352,6 +354,11 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
 
   async reconnectToStream(): Promise<ReadableStream<UIMessageChunk> | null> {
     return null
+  }
+
+  /** The id this chat's agent's MCP session and tool calls carry; null before the agent starts. */
+  get agentChat(): string | null {
+    return this.session?.chat ?? null
   }
 
   async destroy(): Promise<void> {
@@ -432,10 +439,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     const { agentDef, store } = this
     const ownToolApproval = createOwnToolApproval()
 
-    const clientImpl: Client = {
-      async requestPermission(
-        params: RequestPermissionRequest
-      ): Promise<RequestPermissionResponse> {
+    const connection = client({ name: 'OpenPencil' })
+      .onRequest(methods.client.session.requestPermission, ({ params }) => {
         const allowed = ownToolApproval.answer(params)
         if (allowed) return allowed
         const title = params.toolCall.title ?? ''
@@ -443,12 +448,15 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           params,
           store ? () => notifyPermissionWaiting(store, agentDef.name, title) : undefined
         )
-      },
-
-      async sessionUpdate(params: SessionNotification): Promise<void> {
-        // Claude's adapter names its model only in its usage updates.
+      })
+      .onNotification(methods.client.session.update, ({ params }) => {
         const { update } = params
         ownToolApproval.noteUpdate(update)
+        // The agent's MCP calls name only their own id; its updates say which subagent made them.
+        if (sessionRef) noteSubagents(sessionRef.chat, sessionRef.sessionId, params)
+        // A subagent works in a session of its own, which the chat does not show.
+        if (sessionRef && params.sessionId !== sessionRef.sessionId) return
+        // Claude's adapter names its model only in its usage updates.
         if (update.sessionUpdate === 'usage_update') {
           const meta = v.safeParse(usageMetaSchema, update._meta)
           if (meta.success && sessionRef) sessionRef.model = meta.output['_claude/model']
@@ -457,18 +465,13 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           setAgentCommands(agentId, update.availableCommands)
         }
         onUpdate?.(params)
-      },
-
-      extNotification: async (method, params) => {
-        const status = parseAuthStatusUpdate(method, params)
-        if (!status) return
-        agentAccounts.report(this.agentDef.id, status)
-      }
-    }
-
-    const connection = new ClientSideConnection((_agent: Agent) => clientImpl, stream)
+      })
+      .onNotification(AUTH_STATUS_UPDATE_METHOD, parseAuthStatusUpdate, ({ params }) => {
+        if (params) agentAccounts.report(agentId, params)
+      })
+      .connect(stream)
     this.starting = child
-    // The SDK leaves requests pending when the agent exits, so each startup request races it.
+    // Each startup request races the connection, so one the agent never answers ends when it exits.
     const stopped = connection.closed.then((): never => {
       throw new Error('The agent stopped while it was starting.')
     })
@@ -493,7 +496,11 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
 
     const automationAuthToken = await step(this.startup.authToken())
     const initialized = await step(
-      connection.initialize({ protocolVersion: PROTOCOL_VERSION, clientCapabilities: {} })
+      connection.agent.request(methods.agent.initialize, {
+        protocolVersion: PROTOCOL_VERSION,
+        // Agents that run subagents then report each one's work in a session of its own.
+        clientCapabilities: { subagents: {} }
+      })
     )
 
     // The agent must reach OpenPencil's tools before it gets a prompt. An outside MCP connection
@@ -507,7 +514,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     onUpdate = ({ update }) => tools.noteUpdate(update)
 
     const opened = await step(
-      openAgentSession(connection, this.agentDef, initialized, {
+      openAgentSession(sessionRequests(connection.agent), this.agentDef, initialized, {
         cwd: this.cwd,
         mcpServers: tools.mcpServers,
         meta: tools.meta,

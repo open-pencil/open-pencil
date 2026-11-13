@@ -23,11 +23,20 @@ export type CloudAuthClient = Pick<
   | 'getSession'
   | 'signIn'
   | 'signOut'
-  | 'signUp'
   | 'sendVerificationEmail'
   | 'requestPasswordReset'
   | 'resetPassword'
 > & {
+  signUp: {
+    /** Also takes the language the server writes to the account in, a field Cloud adds. */
+    email(input: {
+      name: string
+      email: string
+      password: string
+      locale: string
+      callbackURL?: string
+    }): Promise<{ data: unknown; error: { code?: string; status: number } | null }>
+  }
   signIn: ReturnType<typeof createAuthClient>['signIn'] & {
     passkey(): Promise<{
       data: unknown
@@ -157,10 +166,19 @@ export async function signInToCloudWithEmail(
   return { ok: true, value: { status: 'signed-in', token: result.data.token } }
 }
 
-/** Creates an account; the server emails a link that opens `verifiedURL` once it is confirmed. */
+/**
+ * Creates an account; the server emails a link that opens `verifiedURL` once it is confirmed,
+ * written in `locale`, the app's language.
+ */
 export async function signUpToCloudWithEmail(
   discovery: CloudDiscovery,
-  input: { name: string; email: string; password: string; verifiedURL: string },
+  input: {
+    name: string
+    email: string
+    password: string
+    verifiedURL: string
+    locale: string
+  },
   options: CloudEmailAuthOptions = {}
 ): Promise<CloudAuthResult> {
   const result = await createCloudAuthClient(discovery, options)
@@ -168,6 +186,7 @@ export async function signUpToCloudWithEmail(
       name: input.name,
       email: input.email,
       password: input.password,
+      locale: input.locale,
       callbackURL: input.verifiedURL
     })
     .catch(() => null)

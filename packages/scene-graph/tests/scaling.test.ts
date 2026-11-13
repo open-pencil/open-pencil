@@ -119,3 +119,28 @@ describe('scaling text on a path', () => {
     expect(scaleNodeChanges(text, 2, false)).not.toHaveProperty('derivedTextGlyphs')
   })
 })
+
+describe('scaling a text', () => {
+  test('scales how far its lines reach with them', () => {
+    const graph = new SceneGraph()
+    const text = graph.createNode('TEXT', graph.getPages()[0].id, {
+      width: 100,
+      height: 20,
+      fontSize: 20,
+      textAutoResize: 'NONE',
+      derivedTextHeight: 60
+    })
+    expect(scaleNodeChanges(text, 2, false)).toMatchObject({ height: 40, derivedTextHeight: 120 })
+  })
+
+  test('leaves an auto-height text without a measured reach', () => {
+    const graph = new SceneGraph()
+    const text = graph.createNode('TEXT', graph.getPages()[0].id, {
+      width: 100,
+      height: 20,
+      fontSize: 20,
+      textAutoResize: 'HEIGHT'
+    })
+    expect(scaleNodeChanges(text, 2, false)).toMatchObject({ height: 40, derivedTextHeight: null })
+  })
+})

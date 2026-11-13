@@ -4,13 +4,20 @@ Optional, self-hostable backend; the design is in `packages/docs/development/clo
 
 ## Boundaries
 
-- Consumers import the `contract`, `client`, `email`, `server`, and `runtime/node` subpaths; browser code imports only `contract` and `client`, which stay on the browser baseline (`tests/app/shell/support/baseline.test.ts`, `compat/compat` in `oxlint.json`).
+- Consumers import the `contract`, `client`, `email`, `server`, `runtime/node`, and `runtime/cloudflare` subpaths; browser code imports only `contract` and `client`, which stay on the browser baseline (`tests/app/shell/support/baseline.test.ts`, `compat/compat` in `oxlint.json`).
 - `src/server` receives its database, object store, auth adapter, and delivery through injection and never imports `pg`, opens listeners, runs migrations, or starts timers; runtimes under `src/runtime/` own those (`src/runtime/node/server.ts`).
 - The package is published to npm; a directory imported as `#cloud/<dir>` is listed in `imports` in `package.json`, since the wildcard there names `.ts` files (`bun run check:packages`).
 - `@better-auth/core` is pinned to the `better-auth` version though nothing imports it: `@better-auth/passkey` accepts any later core, whose exact `@better-fetch/fetch` differs from its own, and npm then never finishes installing the package (`bun run test:packages`).
 - Errors no route handled, and failures of work a runtime owns, go through `reportCloudError` with the injected `CloudErrorReporter`; only runtimes create one, from the optional `[error_tracking]` table, so a deployment without it sends nothing (`src/runtime/posthog/errors.ts`, `tests/server/errors/handler.test.ts`).
 - Runtimes own how logs are written and which request IDs they trust: each builds its reporter with `createLoggingErrorReporter` and its `CloudLogWriter`, and passes `forwardedRequestId` to the app and site server (`cf-ray` in `src/runtime/cloudflare/logging.ts`, `X-Request-Id` in `src/runtime/node/request-id.ts`); `src/server` only names the request and writes JSON lines through `logCloud` by default (`tests/server/errors/handler.test.ts`).
 - Runtime code runs on Node 22 and Bun alike: serve HTTP through `@hono/node-server`, not `Bun.serve` or other `Bun.*` APIs (`tsdown.standalone.config.ts` targets `node22`).
+
+## Email
+
+- Each email is a Vue single-file component in `src/email/templates/` on the `BrandEmail` layout, reading its language through `useEmailLocalization`; `render.ts` maps each kind to its component and subject line (`tests/email/locales.test.ts`).
+- Its words live in `src/email/messages.ts` and `src/email/locales/<language>.json`, and the languages Cloud writes in are exactly those files: a language tag from the app is matched to the nearest, else English (`emailLocale`, `bun run check:i18n`).
+- `.vue` files build through `unplugin-vue` in both tsdown configs and load under Bun through `@open-pencil/test-support/vue/sfc`, preloaded by `bunfig.toml` and the `dev` script; Wrangler can't compile them, so a Worker imports the built package (`deploy/cloudflare/worker.ts`, `packages/feedback/tsconfig.worker.json`).
+- The exports whose code reaches the emails (`email`, `server`, `runtime/node`, `runtime/cloudflare`) have no `bun` condition, so a Bun consumer gets the build rather than `.vue` sources; the repository reads them from source through tsconfig `paths` (the `Cloud email` scenario in `tools/checks/package-quality/src/smoke/scenarios.ts`).
 
 ## Data and security
 

@@ -1,6 +1,8 @@
 import { joinURL } from 'ufo'
 import { computed } from 'vue'
 
+import type { WorkspaceSummary } from '@open-pencil/cloud/contract'
+
 import { openExternalLink } from '@/app/shell/ui'
 import { IS_CLOUD_SITE } from '@/constants'
 
@@ -10,6 +12,9 @@ import { homeCloudServer } from './servers/store'
 import { cloudConnection } from './sessions/connection'
 import { signOutOfCloud } from './sessions/sign-out'
 import { openNewWorkspace } from './workspaces/manage'
+
+/** A workspace Home lists, and whether anyone may open what is in it: the server's gallery. */
+export type HomeCloudWorkspace = WorkspaceSummary & { public: boolean }
 
 /** The server Home shows: who is signed in to it, and its workspaces. */
 export function useHomeCloud() {
@@ -31,7 +36,14 @@ export function useHomeCloud() {
       if (!current?.account) return null
       return { ...current.account, host: cloudServerHost(current.server.url) }
     }),
-    workspaces: computed(() => signedIn.value?.workspaces ?? []),
+    workspaces: computed((): HomeCloudWorkspace[] => {
+      const current = signedIn.value
+      const gallery = current?.discovery?.community?.workspaceId
+      return (current?.workspaces ?? []).map((workspace) => ({
+        ...workspace,
+        public: workspace.id === gallery
+      }))
+    }),
     serverId: computed(() => signedIn.value?.server.id ?? null),
     // Signing back in goes straight to the server Home shows; without one, choose a server.
     connect: () => openCloudConnect({ serverId: homeCloudServer.value?.id }),
