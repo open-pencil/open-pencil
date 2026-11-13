@@ -1,4 +1,5 @@
 export * from './account'
+export * from './locale'
 export {
   SERVICE_ERROR_STATUS,
   serviceCatalogSchema,
