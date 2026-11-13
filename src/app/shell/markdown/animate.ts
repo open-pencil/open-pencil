@@ -10,6 +10,9 @@ const WHOLE_TEXT_TAGS: ReadonlySet<string> = new Set(['pre', 'code'])
 
 const WORDS = /(\s+)/
 
+/** Each element `animateWords` rebuilt, to the element as parsed. */
+const parsedElements = new WeakMap<ElementNode, ElementNode>()
+
 function wordNodes(text: string): Node[] {
   const nodes: Node[] = []
   for (const part of text.split(WORDS)) {
@@ -25,6 +28,7 @@ function animateNode(node: Node): Node[] {
   if (tag === null || WHOLE_TEXT_TAGS.has(tag)) return [node]
   const element: ElementNode = [tag, attributes]
   for (const child of children) appendAll(element, animateNode(child))
+  parsedElements.set(element, node)
   return [element]
 }
 
@@ -36,4 +40,9 @@ function animateNode(node: Node): Node[] {
  */
 export function animateWords(nodes: readonly Node[]): Node[] {
   return nodes.flatMap(animateNode)
+}
+
+/** The element as parsed, without the word elements a streaming reply renders it with. */
+export function parsedElement(element: ElementNode): ElementNode {
+  return parsedElements.get(element) ?? element
 }

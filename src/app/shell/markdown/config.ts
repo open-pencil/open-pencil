@@ -7,6 +7,9 @@ import { autoCloseMarkdown, createSerializedMarkdownParser, type ComarkPlugin } 
 
 import { IS_BROWSER } from '@open-pencil/core/constants'
 
+/** The origin rendered Markdown counts as the app's own. */
+export const MARKDOWN_ORIGIN = IS_BROWSER ? window.location.origin : 'http://localhost/'
+
 /**
  * What Markdown from a model or a person may link and embed: links to the web and mail, and
  * images only from the app's own origin, so text cannot make the app fetch from elsewhere.
@@ -23,6 +26,23 @@ export function createMarkdownSecurityOptions(origin: string) {
 }
 
 /**
+ * Whether an image may load from `src`: one from the app's own origin, never a data URL. The
+ * image component checks it again on the rendered value, since Comark resolves a bound
+ * `:src="props…"` after the security plugin has run.
+ */
+export function isAllowedImageSource(src: string, origin: string): boolean {
+  const { allowedImagePrefixes } = createMarkdownSecurityOptions(origin)
+  try {
+    const url = new URL(src, origin)
+    return (
+      url.protocol !== 'data:' && allowedImagePrefixes.some((prefix) => url.href.startsWith(prefix))
+    )
+  } catch {
+    return false
+  }
+}
+
+/**
  * Plain Markdown with task lists and inline components such as chat references. Raw HTML stays
  * text: Comark's `html`, frontmatter, and alert defaults are left out.
  */
@@ -31,7 +51,7 @@ const plugins: ComarkPlugin[] = [
   attributes(),
   taskList(),
   linkify(),
-  security(createMarkdownSecurityOptions(IS_BROWSER ? window.location.origin : 'http://localhost/'))
+  security(createMarkdownSecurityOptions(MARKDOWN_ORIGIN))
 ]
 
 /**
@@ -48,11 +68,21 @@ function autoClose(markdown: string, streaming?: boolean): string {
   })
 }
 
-let highlighting: Promise<ComarkPlugin> | undefined
+let highlighting: Promise<ComarkPlugin | null> | undefined
 
-/** Shiki loads with the first renderer that highlights code, not with the app. */
-function highlightPlugin(): Promise<ComarkPlugin> {
-  highlighting ??= import('./highlight').then((module) => module.highlightPlugin)
+/**
+ * Shiki loads with the first renderer that highlights code, not with the app. When its chunk
+ * fails to load, as offline, that renderer shows plain code and the next one tries again.
+ */
+function highlightPlugin(): Promise<ComarkPlugin | null> {
+  highlighting ??= import('./highlight').then(
+    (module) => module.highlightPlugin,
+    (error: unknown) => {
+      highlighting = undefined
+      console.warn('[markdown] Code highlighting failed to load', error)
+      return null
+    }
+  )
   return highlighting
 }
 
@@ -60,9 +90,10 @@ function highlightPlugin(): Promise<ComarkPlugin> {
 export type MarkdownParser = ReturnType<typeof createSerializedMarkdownParser>
 
 export async function createMarkdownParser(highlightCode: boolean): Promise<MarkdownParser> {
+  const highlight = highlightCode ? await highlightPlugin() : null
   return createSerializedMarkdownParser({
     registerDefaultPlugins: false,
     autoClose,
-    plugins: highlightCode ? [...plugins, await highlightPlugin()] : plugins
+    plugins: highlight ? [...plugins, highlight] : plugins
   })
 }
