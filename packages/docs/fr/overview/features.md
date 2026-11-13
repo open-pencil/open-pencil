@@ -12,7 +12,7 @@ OpenPencil ouvre et enregistre directement les fichiers `.fig`. L’import et l�
 - **Plume :** réseaux vectoriels, courbes de Bézier et poignées tangentes.
 - **Texte :** édition directe sur le canevas et prise en charge des IME.
 - **Texte enrichi :** gras, italique, souligné et barré sur des plages de caractères.
-- **Disposition automatique :** Flexbox et CSS Grid via Yoga WASM, avec direction, espacement, marges internes, distribution, alignement, dimensionnement et pistes de grille.
+- **Disposition automatique :** Flexbox et CSS Grid via Taffy WASM, avec direction, espacement, marges internes, distribution, alignement, dimensionnement et pistes de grille.
 - **Composants :** création de composants et d’ensembles, instances, substitutions et synchronisation.
 - **Variables :** jetons de design organisés en collections et modes, avec les types Color, Float, String et Boolean et des liaisons.
 - **Sections :** conteneurs d’organisation qui intègrent automatiquement les objets superposés.

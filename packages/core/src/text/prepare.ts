@@ -2,6 +2,7 @@ import { uniq, uniqBy } from 'es-toolkit'
 import { limitAsync } from 'es-toolkit/promise'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import {
@@ -10,11 +11,13 @@ import {
   NOTO_COLOR_EMOJI_FAMILY,
   savedEmojiCharacters
 } from '#core/text/emoji'
+import { loadedFace } from '#core/text/font/families'
 import { fontGlyphCoverageSync } from '#core/text/font/glyphs'
 import { fontManager } from '#core/text/font/manager'
 import {
   collectFontRequirements,
   collectGraphFontRequirements,
+  collectNodeFontFaceRefs,
   collectNodeFontFaces
 } from '#core/text/requirements/collect'
 import { missingGraphFontScripts } from '#core/text/requirements/resolved'
@@ -111,7 +114,7 @@ export async function prepareTextFonts(
       }
     : collected
   const faces = uniqBy(
-    requirements.nodes.flatMap(collectNodeFontFaces),
+    requirements.nodes.flatMap(collectNodeFontFaceRefs),
     ({ family, style }) => `${family}\u0000${style}`
   )
   const generationBefore = fontManager.generation()
@@ -129,9 +132,25 @@ export async function prepareTextFonts(
       total: faces.length
     })
   }
-  await Promise.all(
-    faces.map(options.concurrency ? limitAsync(loadFace, options.concurrency) : loadFace)
+  const limited = <Item>(run: (item: Item) => Promise<unknown>) =>
+    options.concurrency ? limitAsync(run, options.concurrency) : run
+  await Promise.all(faces.map(limited(loadFace)))
+  // A family found nowhere draws in the default family, and CanvasKit slants the default family's
+  // upright face for an italic it lacks. Its face of the same weight and slant is loaded instead,
+  // so the canvas draws a real italic and the saved outlines read that face.
+  const defaultStyles = uniq(
+    faces.flatMap(({ family, style, weight, italic }) =>
+      family === DEFAULT_FONT_FAMILY || loadedFace(family, weight, italic, style)
+        ? []
+        : [faceLoadKey(weight, italic)]
+    )
   )
+  await Promise.all(
+    defaultStyles.map(
+      limited((style: string) => load(DEFAULT_FONT_FAMILY, style, requirements.characters, signal))
+    )
+  )
+  signal?.throwIfAborted()
   const scripts = missingGraphFontScripts(requirements, {
     treatUnknownCoverageAsMissing: options.treatUnknownCoverageAsMissing
   })

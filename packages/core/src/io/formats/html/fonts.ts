@@ -3,6 +3,7 @@ import { uniqBy } from 'es-toolkit'
 import type { DesignDocument, DesignElement } from '@open-pencil/dom-css'
 import type { HTMLEngine, HTMLEngineFontFace } from '@open-pencil/html-engine'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import {
   CSS_GENERIC_FONT_FAMILIES,
   cssFontFamilyName,
@@ -105,7 +106,7 @@ export async function registerLayerFonts(engine: HTMLEngine, graph: SceneGraph):
   let reset = false
   if (await standInResolved(fonts, characters)) {
     // Every face looked for so far, so earlier documents keep laying out in theirs.
-    wanted.push(...[...fonts.faces].map(faceOfKey))
+    appendAll(wanted, [...fonts.faces].map(faceOfKey))
     engine.resetFonts()
     engineFonts.delete(engine)
     fonts = fontsOf(engine)

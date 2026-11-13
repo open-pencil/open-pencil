@@ -1,4 +1,5 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { figmaTextAutoResize } from '@open-pencil/scene-graph/text'
 
 import { figmaNodeType } from './accessors/basic'
 import { pluginChildren } from './accessors/sticky'
@@ -27,7 +28,7 @@ function appendTextProps(obj: Record<string, unknown>, n: SceneNode): void {
   obj.italic = n.italic
   obj.textAlignHorizontal = n.textAlignHorizontal
   obj.textAlignVertical = n.textAlignVertical
-  obj.textAutoResize = n.textAutoResize
+  obj.textAutoResize = figmaTextAutoResize(n)
   obj.textDirection = n.textDirection
   if (n.lineHeight != null) obj.lineHeight = n.lineHeight
   if (n.letterSpacing.value !== 0) obj.letterSpacing = n.letterSpacing

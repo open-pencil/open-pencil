@@ -1,15 +1,18 @@
-import type {
-  ClientSideConnection,
-  InitializeResponse,
-  McpServer,
-  ResumeSessionResponse
-} from '@agentclientprotocol/sdk'
+import {
+  methods,
+  type ClientContext,
+  type InitializeResponse,
+  type McpServer,
+  type NewSessionRequest,
+  type NewSessionResponse,
+  type ResumeSessionRequest,
+  type ResumeSessionResponse
+} from '@agentclientprotocol/sdk/unstable'
 import * as v from 'valibot'
 
 import { acpAgentFor } from '@open-pencil/core/constants'
 import type { ACPAgentDef, ACPAgentID, AIProviderID } from '@open-pencil/core/constants'
 
-import { chooseAgentModel, type OfferedModels } from './models'
 import type { OwnToolsLink } from './tools'
 
 /** What an agent session needs to open, whether it starts or continues a saved one. */
@@ -19,8 +22,6 @@ export interface AgentSessionRequest {
   meta: OwnToolsLink['meta']
   /** The session a saved chat ran in, which the agent continues instead of starting anew. */
   resume: string | null
-  /** The model the chat's profile names, which the session switches to; empty keeps the agent's. */
-  model: string
 }
 
 export interface OpenedAgentSession {
@@ -30,10 +31,33 @@ export interface OpenedAgentSession {
   resumed: boolean
 }
 
-type SessionConnection = Pick<
-  ClientSideConnection,
-  'newSession' | 'unstable_resumeSession' | 'setSessionConfigOption' | 'unstable_setSessionModel'
->
+/** The agent requests that open a session, which tests make without a connection. */
+export interface SessionRequests {
+  newSession(params: NewSessionRequest): Promise<NewSessionResponse>
+  resumeSession(params: ResumeSessionRequest): Promise<ResumeSessionResponse>
+}
+
+/** The session requests of a connection to the agent. */
+export function sessionRequests(agent: ClientContext): SessionRequests {
+  return {
+    newSession: (params) => agent.request(methods.agent.session.new, params),
+    resumeSession: (params) => agent.request(methods.agent.session.resume, params)
+  }
+}
+
+/**
+ * The `models` that ACP dropped from its schema and agents may still send; the SDK passes a
+ * response through as the agent sent it.
+ */
+const legacyModelSchema = v.object({ models: v.object({ currentModelId: v.string() }) })
+
+/** The model a session starts with: the legacy `models` as before, else its model option. */
+function sessionModel(response: NewSessionResponse | ResumeSessionResponse): string | null {
+  const legacy = v.safeParse(legacyModelSchema, response)
+  if (legacy.success) return legacy.output.models.currentModelId
+  const option = response.configOptions?.find(({ category }) => category === 'model')
+  return option?.type === 'select' ? option.currentValue : null
+}
 
 /** A JSON-RPC error, which ACP can reject with as a decoded object instead of an `Error`. */
 const acpErrorSchema = v.object({ code: v.number(), message: v.string() })
@@ -106,59 +130,33 @@ export class AgentSessionRetryError extends Error {
 }
 
 /**
- * The model a session runs on: the one the chat's profile names, which the session is switched
- * to, or else the agent's own.
- */
-async function startingModel(
-  connection: SessionConnection,
-  agentDef: ACPAgentDef,
-  sessionId: string,
-  offered: OfferedModels,
-  wanted: string
-): Promise<string | null> {
-  if (!wanted) return offered.models?.currentModelId ?? null
-  await chooseAgentModel(connection, agentDef, sessionId, offered, wanted)
-  return wanted
-}
-
-/**
  * Starts the agent's session, or continues the saved one through `session/resume`, which keeps
- * the agent's context without replaying the transcript the chat already shows. Either way the
- * session then moves to the model the chat's profile names.
+ * the agent's context without replaying the transcript the chat already shows.
  */
 export async function openAgentSession(
-  connection: SessionConnection,
+  connection: SessionRequests,
   agentDef: ACPAgentDef,
   initialized: InitializeResponse,
-  { cwd, mcpServers, meta, resume, model }: AgentSessionRequest
+  { cwd, mcpServers, meta, resume }: AgentSessionRequest
 ): Promise<OpenedAgentSession> {
   if (resume === null) {
     const result = await connection.newSession({ cwd, mcpServers, _meta: meta })
-    return {
-      sessionId: result.sessionId,
-      model: await startingModel(connection, agentDef, result.sessionId, result, model),
-      resumed: false
-    }
+    return { sessionId: result.sessionId, model: sessionModel(result), resumed: false }
   }
   // The agent no longer offers resume, as after a downgrade: a new session would lose the context.
   if (!canResume(agentDef, initialized)) throw new AgentSessionResumeError(agentDef)
-  let result: ResumeSessionResponse
   try {
-    result = await connection.unstable_resumeSession({
+    const result = await connection.resumeSession({
       sessionId: resume,
       cwd,
       mcpServers,
       _meta: meta
     })
+    return { sessionId: resume, model: sessionModel(result), resumed: true }
   } catch (e) {
     // Retire confirmed missing sessions; sign-in keeps its own error, and anything else may pass.
     if (isMissingSession(e, agentDef.id)) throw new AgentSessionResumeError(agentDef, e)
     if (isAuthRequiredError(e)) throw e
     throw new AgentSessionRetryError(agentDef, e)
-  }
-  return {
-    sessionId: resume,
-    model: await startingModel(connection, agentDef, resume, result, model),
-    resumed: true
   }
 }

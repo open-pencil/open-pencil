@@ -1,19 +1,20 @@
-import { ClientSideConnection, ndJsonStream, PROTOCOL_VERSION } from '@agentclientprotocol/sdk'
-import type {
-  Client,
-  Agent,
-  SessionNotification,
-  SessionUpdate,
-  RequestPermissionRequest,
-  RequestPermissionResponse,
-  Usage
-} from '@agentclientprotocol/sdk'
+import {
+  client,
+  methods,
+  ndJsonStream,
+  PROTOCOL_VERSION,
+  type ClientConnection,
+  type SessionNotification,
+  type SessionUpdate,
+  type Usage
+} from '@agentclientprotocol/sdk/unstable'
+import { promiseTimeout } from '@vueuse/core'
 import type { ChatTransport, UIMessage, UIMessageChunk } from 'ai'
 import * as v from 'valibot'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
 
-import { parseAuthStatusUpdate } from '@/app/ai/agents/acp/auth/status'
+import { AUTH_STATUS_UPDATE_METHOD, parseAuthStatusUpdate } from '@/app/ai/agents/acp/auth/status'
 import { setAgentCommands } from '@/app/ai/agents/acp/commands'
 import { createUpdateMapper } from '@/app/ai/agents/acp/events'
 import { requestPermissionFromUser } from '@/app/ai/agents/acp/permission'
@@ -23,16 +24,19 @@ import {
   AgentSessionRetryError,
   acpErrorMessage,
   isAuthRequiredError,
-  openAgentSession
+  openAgentSession,
+  sessionRequests
 } from '@/app/ai/agents/acp/session'
-import { boundAgentStart } from '@/app/ai/agents/acp/startup'
+import { noteSubagents } from '@/app/ai/agents/acp/subagents'
 import { createOwnToolApproval, linkOwnTools, type OwnToolsLink } from '@/app/ai/agents/acp/tools'
+import { createSubagentTranscripts } from '@/app/ai/agents/acp/transcripts'
 import { agentAccounts } from '@/app/ai/agents/setup/accounts'
 import { resolveSpawnTarget } from '@/app/ai/agents/setup/discovery'
 import { AgentNotInstalledError } from '@/app/ai/agents/setup/readiness'
 import { notifyPermissionWaiting } from '@/app/ai/chat/notifications'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 import { endRun, forgetAgentChat, startAgentRun } from '@/app/ai/reply/run'
+import { subagentAgent } from '@/app/automation/agents'
 import { getAutomationAuthToken } from '@/app/automation/mcp/spawn'
 import { describeDiagnosticError, recordACPTransportFailure } from '@/app/diagnostics'
 import type { EditorStore } from '@/app/editor/active-store'
@@ -68,8 +72,11 @@ const TURN_UPDATES: ReadonlySet<SessionUpdate['sessionUpdate']> = new Set([
   'plan'
 ])
 
+/** How long each startup request may take; resuming starts the agent's CLI, which is slowest. */
+const AGENT_START_TIMEOUT_MS = 60_000
+
 interface ACPSession {
-  connection: ClientSideConnection
+  connection: ClientConnection
   sessionId: string
   /** The id the agent's tool calls carry, which ties them to this chat's replies. */
   chat: string
@@ -203,9 +210,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
   private resume: string | null
   private onSession: ((sessionId: string | null) => void) | null
   private onAgentError: ((error: unknown) => void) | null
-  private model: string
   private startup: ACPStartup
-  private startTimeoutMs: number | undefined
+  private startTimeoutMs: number
 
   constructor(options: {
     agentDef: ACPAgentDef
@@ -225,8 +231,6 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
      * text, which can quote the conversation, so diagnostics record this instead.
      */
     onAgentError?: (error: unknown) => void
-    /** The model the chat's profile names, which each session switches to; empty keeps its own. */
-    model?: string
     startup?: ACPStartup
     startTimeoutMs?: number
   }) {
@@ -237,9 +241,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     this.resume = options.resume ?? null
     this.onSession = options.onSession ?? null
     this.onAgentError = options.onAgentError ?? null
-    this.model = options.model ?? ''
     this.startup = options.startup ?? DEFAULT_STARTUP
-    this.startTimeoutMs = options.startTimeoutMs
+    this.startTimeoutMs = options.startTimeoutMs ?? AGENT_START_TIMEOUT_MS
   }
 
   async sendMessages({
@@ -281,6 +284,11 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     return new ReadableStream<UIMessageChunk>({
       start: (controller) => {
         const mapper = createUpdateMapper(`turn-${Date.now()}`)
+        const subagents = createSubagentTranscripts(
+          (chunk) => controller.enqueue(chunk),
+          // The agent each subagent shows as in this chat's document.
+          (subagent) => (this.store ? subagentAgent(this.store, subagent) : null)
+        )
         let closed = false
         // The reply's run collects the edits the agent's calls make in the chat's document.
         const store = this.store
@@ -289,23 +297,33 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         function finish(reason: 'stop' | 'other' | 'error', errorText?: string) {
           if (closed) return
           closed = true
-          if (store && run) endRun(store, run)
-          if (errorText) controller.enqueue({ type: 'error', errorText })
-          for (const chunk of mapper.end()) controller.enqueue(chunk)
-          controller.enqueue({ type: 'finish-step' })
-          controller.enqueue({ type: 'finish', finishReason: reason })
           session.onUpdate = null
-          controller.close()
+          if (store && run) endRun(store, run)
+          // The subagents' transcripts reach the chat in full before the reply closes.
+          void subagents.end().finally(() => {
+            if (errorText) controller.enqueue({ type: 'error', errorText })
+            for (const chunk of mapper.end()) controller.enqueue(chunk)
+            controller.enqueue({ type: 'finish-step' })
+            controller.enqueue({ type: 'finish', finishReason: reason })
+            controller.close()
+          })
         }
 
         session.onUpdate = (params) => {
           if (closed) return
-          if (TURN_UPDATES.has(params.update.sessionUpdate)) this.recordSession(sessionId)
-          for (const chunk of mapper.map(params.update)) controller.enqueue(chunk)
+          const { update } = params
+          // A subagent's own subagents are described on its session, as the agent's are on the chat's.
+          if (update.sessionUpdate === 'subagent_update') subagents.describe(update)
+          if (params.sessionId !== sessionId) {
+            subagents.update(params.sessionId, update)
+            return
+          }
+          if (TURN_UPDATES.has(update.sessionUpdate)) this.recordSession(sessionId)
+          for (const chunk of mapper.map(update)) controller.enqueue(chunk)
         }
 
         abortSignal?.addEventListener('abort', () => {
-          void connection.cancel({ sessionId })
+          void connection.agent.notify(methods.agent.session.cancel, { sessionId })
           finish('stop')
         })
 
@@ -320,8 +338,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           return
         }
 
-        connection
-          .prompt({
+        connection.agent
+          .request(methods.agent.session.prompt, {
             sessionId,
             prompt: [{ type: 'text', text: promptText }]
           })
@@ -355,6 +373,11 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     return null
   }
 
+  /** The id this chat's agent's MCP session and tool calls carry; null before the agent starts. */
+  get agentChat(): string | null {
+    return this.session?.chat ?? null
+  }
+
   async destroy(): Promise<void> {
     this.destroying = true
     const starting = this.starting
@@ -372,31 +395,52 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
    * within the deadline; either way the agent stops and never gets the message.
    */
   private async spawnAgent(abortSignal?: AbortSignal): Promise<ACPSession> {
-    const { bounded, launch } = boundAgentStart(this.agentDef, {
-      signal: abortSignal,
-      timeoutMs: this.startTimeoutMs,
-      stopMessage: 'The reply was stopped while the agent was starting.'
+    const stoppedByUser = new Promise<never>((_, reject) => {
+      const stop = () => reject(new Error('The reply was stopped while the agent was starting.'))
+      if (abortSignal?.aborted) stop()
+      else abortSignal?.addEventListener('abort', stop, { once: true })
     })
+    stoppedByUser.catch(() => undefined)
+    const startTimeoutMs = this.startTimeoutMs
+    const agentName = this.agentDef.name
+    const bounded = <T>(request: Promise<T>, ...also: Promise<never>[]): Promise<T> =>
+      Promise.race([
+        request,
+        stoppedByUser,
+        ...also,
+        promiseTimeout(startTimeoutMs).then((): never => {
+          throw new Error(`${agentName} did not answer while starting.`)
+        })
+      ])
+
+    // Aborted once the startup gave up, by Stop or the deadline, so a lookup still running launches nothing.
+    const gaveUp = new AbortController()
+    const spawning = (async () => {
+      const { command, searchPath } = await this.startup.resolveTarget(this.agentDef)
+      if (gaveUp.signal.aborted || abortSignal?.aborted) {
+        throw new Error('The reply was stopped before the agent started.')
+      }
+      return this.startup.spawn({
+        command,
+        args: this.agentDef.args,
+        logId: this.agentDef.id,
+        searchPath,
+        cwd: this.cwd,
+        destroying: () => this.destroying,
+        onUnexpectedClose: () => {
+          if (!this.session) return
+          this.session.dead = true
+          this.session = null
+        }
+      })
+    })()
     let process: ACPProcess
     try {
-      process = await launch(
-        () => this.startup.resolveTarget(this.agentDef),
-        ({ command, searchPath }) =>
-          this.startup.spawn({
-            command,
-            args: this.agentDef.args,
-            logId: this.agentDef.id,
-            searchPath,
-            cwd: this.cwd,
-            destroying: () => this.destroying,
-            onUnexpectedClose: () => {
-              if (!this.session) return
-              this.session.dead = true
-              this.session = null
-            }
-          })
-      )
+      process = await bounded(spawning)
     } catch (e) {
+      gaveUp.abort()
+      // A process that starts after the startup gave up must not keep running.
+      void spawning.then((late) => late.child.kill()).catch(() => undefined)
       recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(e) })
       if (e instanceof AgentNotInstalledError) throw e
       const message = acpErrorMessage(e)
@@ -412,10 +456,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     const { agentDef, store } = this
     const ownToolApproval = createOwnToolApproval()
 
-    const clientImpl: Client = {
-      async requestPermission(
-        params: RequestPermissionRequest
-      ): Promise<RequestPermissionResponse> {
+    const connection = client({ name: 'OpenPencil' })
+      .onRequest(methods.client.session.requestPermission, ({ params }) => {
         const allowed = ownToolApproval.answer(params)
         if (allowed) return allowed
         const title = params.toolCall.title ?? ''
@@ -423,12 +465,18 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           params,
           store ? () => notifyPermissionWaiting(store, agentDef.name, title) : undefined
         )
-      },
-
-      async sessionUpdate(params: SessionNotification): Promise<void> {
-        // Claude's adapter names its model only in its usage updates.
+      })
+      .onNotification(methods.client.session.update, ({ params }) => {
         const { update } = params
         ownToolApproval.noteUpdate(update)
+        // The agent's MCP calls name only their own id; its updates say which subagent made them.
+        if (sessionRef) noteSubagents(sessionRef.chat, sessionRef.sessionId, params)
+        // A subagent works in a session of its own: the reply keeps it as the subagent's transcript.
+        if (sessionRef && params.sessionId !== sessionRef.sessionId) {
+          onUpdate?.(params)
+          return
+        }
+        // Claude's adapter names its model only in its usage updates.
         if (update.sessionUpdate === 'usage_update') {
           const meta = v.safeParse(usageMetaSchema, update._meta)
           if (meta.success && sessionRef) sessionRef.model = meta.output['_claude/model']
@@ -437,18 +485,13 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           setAgentCommands(agentId, update.availableCommands)
         }
         onUpdate?.(params)
-      },
-
-      extNotification: async (method, params) => {
-        const status = parseAuthStatusUpdate(method, params)
-        if (!status) return
-        agentAccounts.report(this.agentDef.id, status)
-      }
-    }
-
-    const connection = new ClientSideConnection((_agent: Agent) => clientImpl, stream)
+      })
+      .onNotification(AUTH_STATUS_UPDATE_METHOD, parseAuthStatusUpdate, ({ params }) => {
+        if (params) agentAccounts.report(agentId, params)
+      })
+      .connect(stream)
     this.starting = child
-    // The SDK leaves requests pending when the agent exits, so each startup request races it.
+    // Each startup request races the connection, so one the agent never answers ends when it exits.
     const stopped = connection.closed.then((): never => {
       throw new Error('The agent stopped while it was starting.')
     })
@@ -473,7 +516,11 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
 
     const automationAuthToken = await step(this.startup.authToken())
     const initialized = await step(
-      connection.initialize({ protocolVersion: PROTOCOL_VERSION, clientCapabilities: {} })
+      connection.agent.request(methods.agent.initialize, {
+        protocolVersion: PROTOCOL_VERSION,
+        // Agents that run subagents then report each one's work in a session of its own.
+        clientCapabilities: { subagents: {} }
+      })
     )
 
     // The agent must reach OpenPencil's tools before it gets a prompt. An outside MCP connection
@@ -487,12 +534,11 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     onUpdate = ({ update }) => tools.noteUpdate(update)
 
     const opened = await step(
-      openAgentSession(connection, this.agentDef, initialized, {
+      openAgentSession(sessionRequests(connection.agent), this.agentDef, initialized, {
         cwd: this.cwd,
         mcpServers: tools.mcpServers,
         meta: tools.meta,
-        resume: this.resume,
-        model: this.model
+        resume: this.resume
       }),
       (e) => {
         // The saved conversation goes back to read-only; this chat keeps failing, never starting anew.

@@ -25,7 +25,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -40,5 +40,6 @@ jobs:
           tags: |
             ghcr.io/open-pencil/native-contracts-ci:ubuntu-24.04
             ghcr.io/open-pencil/native-contracts-ci:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # No layer cache: each build installs the packages current that day, which is how a rebuild
+          # brings their security updates.
+          no-cache: true

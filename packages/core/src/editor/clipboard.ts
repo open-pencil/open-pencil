@@ -9,6 +9,7 @@ import {
 } from '@open-pencil/scene-graph/coordinate'
 import { cycleSafeParent } from '@open-pencil/scene-graph/instances'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import { layerImageHashes } from '@open-pencil/scene-graph/transfer'
 
 import { prepareClipboardImport } from '#core/clipboard/fig-import'
 import { computeAllLayouts } from '#core/layout'
@@ -310,9 +311,9 @@ export function createClipboardActions(ctx: EditorContext) {
   function missingImageHashes(nodeIds: string[]) {
     const hashes = new Set<string>()
     for (const node of collectSubtrees(ctx.graph, nodeIds)) {
-      for (const fill of node.fills) {
-        if (fill.type === 'IMAGE' && fill.imageHash && !ctx.graph.images.has(fill.imageHash)) {
-          hashes.add(fill.imageHash)
+      for (const imageHash of layerImageHashes(node)) {
+        if (!ctx.graph.images.has(imageHash)) {
+          hashes.add(imageHash)
         }
       }
     }

@@ -1,4 +1,8 @@
-import { documentPermissionSchema, workspaceRoleSchema } from '#cloud/contract'
+import {
+  documentPermissionSchema,
+  documentReportReasonSchema,
+  workspaceRoleSchema
+} from '#cloud/contract'
 import * as v from 'valibot'
 
 export type TransactionalEmailKind =
@@ -16,9 +20,11 @@ export type TransactionalEmailKind =
   | 'new-sign-in'
   | 'two-step-changed'
   | 'document-report'
+  | 'storage-limit-reached'
 
 const documentInvitationEmailPayloadSchema = v.object({
-  inviterName: v.string(),
+  /** Null when the inviter's account is gone, so the email says someone invited you. */
+  inviterName: v.nullable(v.string()),
   documentName: v.string(),
   permission: documentPermissionSchema,
   expiresAt: v.string(),
@@ -26,7 +32,8 @@ const documentInvitationEmailPayloadSchema = v.object({
 })
 
 const workspaceInvitationEmailPayloadSchema = v.object({
-  inviterName: v.string(),
+  /** Null when the inviter's account is gone, so the email says someone invited you. */
+  inviterName: v.nullable(v.string()),
   workspaceName: v.string(),
   role: workspaceRoleSchema,
   expiresAt: v.string(),
@@ -34,7 +41,8 @@ const workspaceInvitationEmailPayloadSchema = v.object({
 })
 
 const enrollmentEmailPayloadSchema = v.object({
-  name: v.string(),
+  /** Null when the request named no one, so the email greets no one by name. */
+  name: v.nullable(v.string()),
   actionURL: v.string()
 })
 
@@ -47,8 +55,17 @@ const adminEnrollmentNotificationPayloadSchema = v.object({
 
 const documentReportPayloadSchema = v.object({
   documentName: v.string(),
-  reason: v.string(),
+  reason: documentReportReasonSchema,
   description: v.string(),
+  actionURL: v.string()
+})
+
+const storageLimitReachedPayloadSchema = v.object({
+  name: v.string(),
+  usedBytes: v.number(),
+  limitBytes: v.number(),
+  /** Whether the server sells plans, so the account can get more storage rather than only free it. */
+  upgradable: v.boolean(),
   actionURL: v.string()
 })
 
@@ -111,7 +128,8 @@ export const transactionalEmailContentSchema = v.variant('kind', [
   content('email-change-requested', emailChangeRequestedPayloadSchema),
   content('new-sign-in', newSignInPayloadSchema),
   content('two-step-changed', twoStepChangedPayloadSchema),
-  content('document-report', documentReportPayloadSchema)
+  content('document-report', documentReportPayloadSchema),
+  content('storage-limit-reached', storageLimitReachedPayloadSchema)
 ])
 
 /** A transactional email's kind with the payload that kind renders. */
@@ -152,3 +170,4 @@ export type RenderedTransactionalEmail = {
   text: string
 }
 export type DocumentReportPayload = v.InferOutput<typeof documentReportPayloadSchema>
+export type StorageLimitReachedPayload = v.InferOutput<typeof storageLimitReachedPayloadSchema>

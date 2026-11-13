@@ -96,6 +96,20 @@ describe('document changes', () => {
     })
   })
 
+  test('keeps only the fields a deleted layer does not start with, and restores it whole', () => {
+    const { editor, card, title } = setup()
+    const change = roundTrip(editor, () => editor.graph.deleteNode(card.id))
+
+    const stored = expectDefined(
+      change.deleted.find((layer) => layer.id === title.id),
+      'stored title'
+    )
+    expect(stored).toMatchObject({ name: 'Title', text: 'Hello', type: 'TEXT' })
+    // Defaults such as opacity and an empty effect list come back from `createNode`.
+    expect(stored).not.toHaveProperty('opacity')
+    expect(stored).not.toHaveProperty('effects')
+  })
+
   test('keeps copies of only the layers the edit touched', () => {
     const { editor, pageId, card, title, badge, other } = setup()
     const finish = captureDocumentChange(editor.graph, pageId)

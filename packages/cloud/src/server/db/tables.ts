@@ -1,6 +1,10 @@
 import type { EnrollmentStatus } from '#cloud/admin/enrollment/service'
 import type { CloudSignInMethod, DocumentPermission, WorkspaceRole } from '#cloud/contract'
-import type { TransactionalEmailKind, TransactionalEmailPayloadByKind } from '#cloud/email'
+import type {
+  EmailLocale,
+  TransactionalEmailKind,
+  TransactionalEmailPayloadByKind
+} from '#cloud/email'
 import type { Account, Session } from 'better-auth'
 import type { ColumnType, Generated, Insertable, Selectable, Updateable } from 'kysely'
 
@@ -206,8 +210,21 @@ export interface AuthUserTable {
   banExpires: TimestampColumn | null
   /** Unset on accounts that never turned two-step sign-in on. */
   twoFactorEnabled: Generated<boolean | null>
+  /** The language Cloud writes to the account in; unset is English. */
+  locale: Generated<EmailLocale | null>
   createdAt: TimestampColumn
   updatedAt: TimestampColumn
+}
+
+/** Better Auth's API keys, which are Cloud's personal access tokens; the plugin owns the rest. */
+export interface AccessTokenTable {
+  id: string
+  referenceId: string
+  name: string | null
+  start: string | null
+  expiresAt: TimestampColumn | null
+  lastRequest: TimestampColumn | null
+  createdAt: TimestampColumn
 }
 
 export interface TwoFactorTable {
@@ -312,6 +329,12 @@ export interface AccountEntitlementTable {
   updatedAt: TimestampColumn
 }
 
+/** An account told its storage is full; see `createStorageLimitNoticeService`. */
+export interface StorageLimitNoticeTable {
+  userId: string
+  notifiedAt: TimestampColumn
+}
+
 export interface WorkspaceStorageUsageTable {
   workspaceId: string
   committedBytes: number
@@ -337,6 +360,8 @@ export interface TransactionalEmailTable {
   kind: TransactionalEmailKind
   recipientEmailNormalized: string
   payloadEncrypted: string | null
+  /** The language the email is written in. */
+  locale: Generated<EmailLocale>
   status: TransactionalEmailStatus
   attemptCount: Generated<number>
   nextAttemptAt: TimestampColumn
@@ -406,6 +431,7 @@ export interface CloudDatabase {
   signIn: SignInTable
   userPicture: UserPictureTable
   user: AuthUserTable
+  apikey: AccessTokenTable
   authSchemaVersion: AuthSchemaVersionTable
   enrollment: EnrollmentTable
   apiRateLimit: APIRateLimitTable
@@ -428,6 +454,7 @@ export interface CloudDatabase {
   accountEntitlement: AccountEntitlementTable
   termsAcceptance: TermsAcceptanceTable
   workspaceStorageUsage: WorkspaceStorageUsageTable
+  storageLimitNotice: StorageLimitNoticeTable
   transactionalEmail: TransactionalEmailTable
   uploadStorageReservation: UploadStorageReservationTable
   upload: UploadTable

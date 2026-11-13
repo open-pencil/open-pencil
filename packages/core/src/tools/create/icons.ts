@@ -5,7 +5,7 @@ import { parseColor } from '@open-pencil/scene-graph/color'
 import { graphOf } from '#core/figma-api/graph'
 import { prepareSlotInsertion } from '#core/figma-api/slots'
 import { placeIcon } from '#core/icons'
-import { toolNumber, defineTool } from '#core/tools/schema'
+import { layoutLength, toolNumber, defineTool } from '#core/tools/schema'
 
 export const fetchIconsTool = defineTool({
   name: 'get_icons',
@@ -20,9 +20,7 @@ export const fetchIconsTool = defineTool({
       v.minLength(1),
       v.description('Icon names as prefix:name (e.g. ["lucide:heart", "lucide:home", "mdi:star"])')
     ),
-    size: v.optional(
-      toolNumber(v.pipe(v.number(), v.description('Icon size in pixels (default: 24)')))
-    )
+    size: v.optional(layoutLength('Icon size in pixels (default: 24)', 1))
   }),
   execute: async (figma, args) => {
     const size = args.size ?? 24
@@ -59,9 +57,7 @@ export const insertIcon = defineTool({
     name: v.optional(
       v.pipe(v.string(), v.description('Single icon name (shorthand for names with one icon)'))
     ),
-    size: v.optional(
-      toolNumber(v.pipe(v.number(), v.description('Icon size in pixels (default: 24)')))
-    ),
+    size: v.optional(layoutLength('Icon size in pixels (default: 24)', 1)),
     color: v.optional(
       v.pipe(v.string(), v.description('Icon color hex (replaces currentColor). Default: #000000'))
     ),
@@ -121,7 +117,14 @@ export const searchIconsTool = defineTool({
       v.description('Search keywords (e.g. ["heart", "arrow", "settings"])')
     ),
     limit: v.optional(
-      toolNumber(v.pipe(v.number(), v.description('Max results per query (default: 5)')))
+      toolNumber(
+        v.pipe(
+          v.number(),
+          v.minValue(1),
+          v.maxValue(100),
+          v.description('Max results per query (default: 5)')
+        )
+      )
     ),
     prefix: v.optional(
       v.pipe(v.string(), v.description('Filter by icon set prefix (e.g. "lucide", "mdi")'))

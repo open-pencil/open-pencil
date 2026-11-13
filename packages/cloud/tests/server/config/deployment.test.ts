@@ -213,6 +213,24 @@ minimum_age = 16
     ).toThrow('terms_version')
   })
 
+  test('names a community workspace only when one is configured, and advertises it', () => {
+    const plain = parseCloudDeploymentTOML(minimalSource, environment)
+    expect(plain.community).toBeUndefined()
+    expect(cloudDiscoveryFromConfig(plain).community).toBeUndefined()
+    const workspace = '0f6b1c1e-6a8e-4b8e-9a4f-3c2d1e0f9a8b'
+    const source = `${minimalSource}
+[community]
+workspace = "${workspace}"
+`
+    const config = parseCloudDeploymentTOML(source, environment)
+    expect(config.community).toEqual({ workspaceId: workspace })
+    // Editors read it to keep the gallery out of where they save on their own.
+    expect(cloudDiscoveryFromConfig(config).community).toEqual({ workspaceId: workspace })
+    expect(() =>
+      parseCloudDeploymentTOML(source.replace(workspace, 'community'), environment)
+    ).toThrow()
+  })
+
   test('keeps deleted files under a prefix only when one is configured', () => {
     expect(parseCloudDeploymentTOML(minimalSource, environment).s3DeletedPrefix).toBeUndefined()
     const keeping = (prefix: string) =>
@@ -249,7 +267,7 @@ provider = "posthog"
     })
   })
 
-  test('advertises services and a billing portal only when configured', () => {
+  test('advertises services and billing only when configured', () => {
     const plain = cloudDiscoveryFromConfig(parseCloudDeploymentTOML(minimalSource, environment))
     expect(plain.services).toBeUndefined()
     expect(plain.billing).toBeUndefined()
@@ -260,7 +278,7 @@ endpoint = "https://services.example.com"
 token_lifetime_minutes = 5
 
 [billing]
-portal_url = "https://billing.example.com"
+endpoint = "https://billing.example.com"
 
 [internal_api]
 `
@@ -274,7 +292,7 @@ portal_url = "https://billing.example.com"
       servicesEndpoint: 'https://services.example.com',
       servicesSigningKey: 'signing-key-pem',
       servicesTokenLifetimeSeconds: 300,
-      billingPortalURL: 'https://billing.example.com',
+      billingEndpoint: 'https://billing.example.com',
       internalServiceToken: 'service-token-with-at-least-32-characters'
     })
     const discovery = cloudDiscoveryFromConfig(config)
@@ -282,7 +300,10 @@ portal_url = "https://billing.example.com"
       endpoint: 'https://services.example.com',
       contractVersion: '1'
     })
-    expect(discovery.billing).toEqual({ portalURL: 'https://billing.example.com' })
+    expect(discovery.billing).toEqual({
+      endpoint: 'https://billing.example.com',
+      contractVersion: '1'
+    })
 
     expect(() => parseCloudDeploymentTOML(source, environment)).toThrow(
       'OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY'
@@ -290,6 +311,9 @@ portal_url = "https://billing.example.com"
     expect(() =>
       parseCloudDeploymentTOML(`${source}\n[entitlements]\nsource = "static"\n`, withSecrets)
     ).toThrow('static entitlements')
+    // Billing signs with the services' key and sets plans through the internal API.
+    const billingOnly = `${minimalSource}\n[billing]\nendpoint = "https://billing.example.com"\n`
+    expect(() => parseCloudDeploymentTOML(billingOnly, withSecrets)).toThrow('signing key')
   })
 
   test('reads a relay URL override and requires a WebSocket scheme', () => {

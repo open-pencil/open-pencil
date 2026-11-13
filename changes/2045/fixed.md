@@ -1,0 +1,1 @@
+- HTML imported in the CLI, MCP server, and other headless hosts keeps boxes that fill their parent or hug their content as Fill and Hug, instead of fixing every size, and every layer lands where the page laid out its element.

@@ -260,6 +260,8 @@ export function createAccountDeletionService(database: Kysely<CloudDatabase>) {
         ] as const) {
           await transaction.deleteFrom(table).where('userId', '=', user.id).execute()
         }
+        // Personal access tokens have no key to cascade from, since Cloud builds their table.
+        await transaction.deleteFrom('apikey').where('referenceId', '=', user.id).execute()
         await transaction
           .deleteFrom('enrollment')
           .where('emailNormalized', '=', normalizeEnrollmentEmail(user.email))

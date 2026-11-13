@@ -18,12 +18,29 @@ const config: StorybookConfig = {
     options: { docgen: false }
   },
   viteFinal(config) {
-    const excludedPluginPrefixes = ['open-pencil-automation', 'vite-plugin-pwa']
+    // Storybook's template plugin aliases `vue` as a prefix, which sends `vue/server-renderer`,
+    // what email previews render with, to the compiling build too; the alias below replaces it.
+    const excludedPluginPrefixes = [
+      'open-pencil-automation',
+      'vite-plugin-pwa',
+      'storybook:vue-template-compilation'
+    ]
 
     config.plugins = flattenPlugins(config.plugins ?? []).filter((plugin) => {
       if (!plugin || typeof plugin !== 'object' || !('name' in plugin)) return true
       return !excludedPluginPrefixes.some((prefix) => plugin.name.startsWith(prefix))
     })
+    const aliases = config.resolve?.alias ?? []
+    config.resolve = {
+      ...config.resolve,
+      alias: [
+        // Stories' templates compile in the browser, so `vue` itself is the compiling build.
+        { find: /^vue$/, replacement: 'vue/dist/vue.esm-bundler.js' },
+        ...(Array.isArray(aliases)
+          ? aliases
+          : Object.entries(aliases).map(([find, replacement]) => ({ find, replacement })))
+      ]
+    }
     return config
   }
 }

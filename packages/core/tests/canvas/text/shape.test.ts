@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import type { ShapedText } from '@open-pencil/fig/node-change'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { appendAll, maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { pixelLength } from '@open-pencil/scene-graph/text'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { FIXTURES } from '@open-pencil/test-support/paths'
@@ -11,7 +12,11 @@ import { FIXTURES } from '@open-pencil/test-support/paths'
 import { getCanvasKit } from '#core/canvaskit'
 import { withFigExportRuntime } from '#core/io/formats/fig/export/runtime'
 import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
-import { getGlyphOutlineMetricsSync, glyphOutlineSourceSync } from '#core/text/font/glyphs'
+import {
+  getGlyphOutlineMetricsSync,
+  glyphOutlineSourceSync,
+  shapedAdvancesSync
+} from '#core/text/font/glyphs'
 import { fontManager } from '#core/text/font/manager'
 
 const testFont = (name: string) => join(FIXTURES, 'fonts', name)
@@ -137,7 +142,7 @@ describe('text shaping for saved glyphs', () => {
       const values = (frame.commands ?? []).flatMap((command) =>
         command[axis] === undefined ? [] : [command[axis]]
       )
-      return [Math.min(...values), Math.max(...values)].map((value) => Number(value.toFixed(2)))
+      return [minOf(values), maxOf(values)].map((value) => Number(value.toFixed(2)))
     }
     expect(frame.advance).toBe(0)
     expect(frame.x).toBeCloseTo(digit.x + digit.advance, 3)
@@ -347,7 +352,8 @@ describe('text shaping for saved glyphs', () => {
           .commands
       )
     } finally {
-      fallbackFamilies.splice(0, fallbackFamilies.length, ...originalFallbacks)
+      fallbackFamilies.length = 0
+      appendAll(fallbackFamilies, originalFallbacks)
     }
   })
 
@@ -366,7 +372,7 @@ describe('text shaping for saved glyphs', () => {
     // The default instance is the regular weight; the bold stem is wider.
     const width = (commands: readonly { x?: number }[]) => {
       const xs = commands.flatMap((command) => (command.x === undefined ? [] : [command.x]))
-      return Math.max(...xs) - Math.min(...xs)
+      return maxOf(xs) - minOf(xs)
     }
     expect(width(bold)).toBeGreaterThan(width(regular) * 1.2)
   })
@@ -398,5 +404,78 @@ describe('text shaping for saved glyphs', () => {
     expect(shaped.glyphs.map((glyph) => glyph.commands)).toEqual(
       Array.from(text, (character) => replacement.outline(replacement.glyphOf(character), 13))
     )
+  })
+})
+
+describe('saved outlines use the same font file as the paragraph', () => {
+  test.each([400, 700])(
+    'draws and outlines an unloaded primary font’s fallback at weight %s',
+    async (weight) => {
+      const text = 'Missing'
+      const variations = [{ axis: 'wght', value: weight }]
+      const expected = expectDefined(glyphOutlineSourceSync('Inter', 'Regular', variations))
+      const advances = expectDefined(shapedAdvancesSync('Inter', 'Regular', text, 13, variations))
+      const shaped = expectDefined(
+        await shape({ text, fontFamily: 'Unloaded Outline Primary', fontWeight: weight })
+      )
+      expect(shaped.glyphs).toHaveLength(text.length)
+      for (const [position, glyph] of shaped.glyphs.entries()) {
+        const index = expectDefined(glyph.firstCharacter)
+        // The paragraph lays the fallback out at that instance, not an emboldened default one.
+        expect(glyph.advance).toBeCloseTo(advances[position].advance, 2)
+        expect(glyph.commands).toEqual(expected.outline(expected.glyphOf(text[index]), 13))
+      }
+    }
+  )
+
+  test('keeps an explicit fallback weight when the unloaded primary requests another weight', async () => {
+    const text = 'Missing'
+    const expected = expectDefined(
+      glyphOutlineSourceSync('Inter', 'Regular', [{ axis: 'wght', value: 500 }])
+    )
+    const overridden = expectDefined(
+      glyphOutlineSourceSync('Inter', 'Regular', [{ axis: 'wght', value: 700 }])
+    )
+    const shaped = expectDefined(
+      await shape({
+        text,
+        fontFamily: 'Unloaded Outline Primary',
+        fontWeight: 700,
+        fontVariations: [{ axis: 'wght', value: 500 }]
+      })
+    )
+    expect(shaped.glyphs).toHaveLength(text.length)
+    for (const glyph of shaped.glyphs) {
+      const index = expectDefined(glyph.firstCharacter)
+      expect(glyph.commands).toEqual(expected.outline(expected.glyphOf(text[index]), 13))
+      expect(glyph.commands).not.toEqual(overridden.outline(overridden.glyphOf(text[index]), 13))
+    }
+  })
+
+  test('outlines characters supplied by a supplemental file', async () => {
+    const family = 'Outline Coverage Shards'
+    const cjk = await Bun.file(testFont('NotoSansCJK-Test.otf')).arrayBuffer()
+    const latin = expectDefined(await fontManager.fetchBundledFont('/InterVariable.ttf'))
+    await fontManager.markLoaded(family, 'Regular', cjk)
+    const expected = expectDefined(glyphOutlineSourceSync(family, 'Regular'))
+    await fontManager.markLoaded(family, 'Regular', latin)
+    const fallbacks = [
+      fontManager.getCJKFallbackFamilies(),
+      fontManager.getArabicFallbackFamilies()
+    ]
+    const previous = fallbacks.map((families) => families.splice(0))
+    try {
+      const text = '你好'
+      const shaped = expectDefined(await shape({ text, fontFamily: family }))
+      expect(shaped.glyphs).toHaveLength(text.length)
+      for (const glyph of shaped.glyphs) {
+        const index = expectDefined(glyph.firstCharacter)
+        expect(glyph.commands).toEqual(expected.outline(expected.glyphOf(text[index]), 13))
+      }
+    } finally {
+      for (const [index, families] of fallbacks.entries()) {
+        for (const fallback of previous[index]) families.push(fallback)
+      }
+    }
   })
 })

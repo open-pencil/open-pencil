@@ -4,7 +4,7 @@ Optional, self-hostable backend; the design is in `packages/docs/development/clo
 
 ## Boundaries
 
-- Consumers import the `contract`, `client`, `email`, `server`, and `runtime/node` subpaths; browser code imports only `contract` and `client`, which stay on the browser baseline (`tests/app/shell/support/baseline.test.ts`, `compat/compat` in `oxlint.json`).
+- Consumers import the `contract`, `client`, `email`, `server`, `runtime/node`, and `runtime/cloudflare` subpaths; browser code imports only `contract` and `client`, which stay on the browser baseline (`tests/app/shell/support/baseline.test.ts`, `compat/compat` in `oxlint.json`).
 - `src/server` receives its database, object store, auth adapter, and delivery through injection and never imports `pg`, opens listeners, runs migrations, or starts timers; runtimes under `src/runtime/` own those (`src/runtime/node/server.ts`).
 - The package is published to npm; a directory imported as `#cloud/<dir>` is listed in `imports` in `package.json`, since the wildcard there names `.ts` files (`bun run check:packages`).
 - `@better-auth/core` is pinned to the `better-auth` version though nothing imports it: `@better-auth/passkey` accepts any later core, whose exact `@better-fetch/fetch` differs from its own, and npm then never finishes installing the package (`bun run test:packages`).
@@ -12,8 +12,17 @@ Optional, self-hostable backend; the design is in `packages/docs/development/clo
 - Runtimes own how logs are written and which request IDs they trust: each builds its reporter with `createLoggingErrorReporter` and its `CloudLogWriter`, and passes `forwardedRequestId` to the app and site server (`cf-ray` in `src/runtime/cloudflare/logging.ts`, `X-Request-Id` in `src/runtime/node/request-id.ts`); `src/server` only names the request and writes JSON lines through `logCloud` by default (`tests/server/errors/handler.test.ts`).
 - Runtime code runs on Node 22 and Bun alike: serve HTTP through `@hono/node-server`, not `Bun.serve` or other `Bun.*` APIs (`tsdown.standalone.config.ts` targets `node22`).
 
+## Email
+
+- Each email is a Vue single-file component in `src/email/templates/` on the `BrandEmail` layout, reading its language through `useEmailLocalization`; `render.ts` maps each kind to its component and subject line (`tests/email/locales.test.ts`).
+- Its words live in `src/email/messages.ts` and `src/email/locales/<language>.json`, and the languages Cloud writes in are exactly those files: a language tag from the app is matched to the nearest, else English (`emailLocale`, `bun run check:i18n`).
+- `.vue` files build through `unplugin-vue` in both tsdown configs and load under Bun through `@open-pencil/test-support/vue/sfc`, preloaded by `bunfig.toml` and the `dev` script; Wrangler can't compile them, so a Worker imports the built package (`deploy/cloudflare/worker.ts`, `packages/feedback/tsconfig.worker.json`).
+- The exports whose code reaches the emails (`email`, `server`, `runtime/node`, `runtime/cloudflare`) have no `bun` condition, so a Bun consumer gets the build rather than `.vue` sources; the repository reads them from source through tsconfig `paths` (the `Cloud email` scenario in `tools/checks/package-quality/src/smoke/scenarios.ts`).
+
 ## Data and security
 
+- Personal access tokens are Better Auth API keys that never become sessions: only `requireActiveActor` reads them, for the document API, held to approval, terms, and bans; administration and account routes resolve sessions alone, and the plugin's own endpoints are disabled (`tests/integration/server/auth/access-tokens.test.ts`).
+- Their `apikey` table is Cloud's migration `009_access_tokens`, matching what the plugin would build, and Better Auth's migration leaves that plugin out: Better Auth's migration runs once and can't add to a schema it built, since it misreads the camel-cased columns (`createBetterAuthAdapter`).
 - Sign-ins are recorded by the `accountActivity` Better Auth plugin from the hook context's `newSession`, never by parsing tokens from responses (`src/server/auth/activity.ts`).
 - Code inside Better Auth's callbacks that run in its transaction, such as database hooks and `sendVerificationEmail`, must not query the database, which deadlocks on one connection; `user.deleteUser.beforeDelete` runs outside one, so account deletion queries there (`tests/integration/server/account/routes.test.ts`, `tests/integration/server/account/deletion.test.ts`).
 - Name a table for what it holds, without a `cloud_` prefix; only a name Better Auth already uses gets a qualifier, such as `api_rate_limit`. Name keys, checks, and indexes as PostgreSQL does: `<table>_pkey`, `<table>_<columns>_key`, `<table>_<columns>_fkey`, `<table>_<column>_check`, and `<table>_<columns>_idx` (`tests/integration/server/db/baseline.test.ts`).

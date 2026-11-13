@@ -5,10 +5,12 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { endRun, forgetAgentChat, startAgentRun } from '@/app/ai/reply/run'
 import { readToolChange } from '@/app/ai/tools/changes/store'
+import { endAgentSession, noteToolCall, restAgents } from '@/app/automation/agents'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
 import type { AutomationTarget } from '@/app/automation/bridge/target'
 import { createEditorStore, type EditorStore } from '@/app/editor/session/create'
+import { presenceOf } from '@/app/presence/registry'
 
 const { handleTargetCommand } = createAutomationCommandHandlers(makeFigmaFromStore)
 const CHAT = '0123456789abcdef0123456789abcdef'
@@ -23,6 +25,8 @@ afterEach(() => {
   for (const store of stores) store.dispose()
   stores = []
   forgetAgentChat(CHAT)
+  endAgentSession('session-1')
+  restAgents('acp')
   Reflect.deleteProperty(globalThis, 'window')
 })
 
@@ -107,5 +111,30 @@ describe("an ACP chat's edits during its reply", () => {
       null
     ])
     expect(store.undo.peekUndo()?.label).toStartWith('Agent')
+  })
+})
+
+describe("an ACP chat's subagents calling tools", () => {
+  const subagentCall = { kind: 'acp', chat: CHAT, call: 'toolu_inner' }
+
+  /** The created layer's id, from the tool's response. */
+  async function made(target: AutomationTarget, agent: Record<string, unknown>) {
+    const response = (await createRectangle(target, agent)) as { result: { id: string } }
+    return response.result.id
+  }
+
+  test('show as an agent of their own, and their edits still join the reply', async () => {
+    const { store, target } = document()
+    const run = startAgentRun(store, CHAT)
+    noteToolCall(CHAT, { id: 'toolu_inner', subagent: 'subagent-1', ended: false })
+
+    const own = await made(target, { kind: 'acp', chat: CHAT, call: 'toolu_own' })
+    const sub = await made(target, subagentCall)
+
+    const agents = presenceOf(store).agents.value
+    expect(agents).toHaveLength(2)
+    expect(agents.find((agent) => agent.selection?.includes(own))).toBeDefined()
+    expect(agents.find((agent) => agent.selection?.includes(sub))).toBeDefined()
+    expect(run.undoCalls.map(({ toolCallId }) => toolCallId)).toEqual(['toolu_own', 'toolu_inner'])
   })
 })

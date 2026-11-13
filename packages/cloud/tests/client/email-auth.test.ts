@@ -75,12 +75,17 @@ describe('signing in to Cloud with an email and password', () => {
 })
 
 describe('joining Cloud with an email and password', () => {
-  test('sends the verification link to the page it names', async () => {
+  test('sends the verification link to the page it names, in the app’s language', async () => {
     const { fetch, requests } = answering({ token: null, user: {} })
 
     const result = await signUpToCloudWithEmail(
       discovery,
-      { ...CREDENTIALS, name: 'Ada', verifiedURL: 'https://cloud.example.com/auth/verified' },
+      {
+        ...CREDENTIALS,
+        name: 'Ada',
+        verifiedURL: 'https://cloud.example.com/auth/verified',
+        locale: 'de'
+      },
       { fetch }
     )
 
@@ -88,6 +93,7 @@ describe('joining Cloud with an email and password', () => {
     expect(await requests[0]?.json()).toMatchObject({
       name: 'Ada',
       email: 'ada@example.com',
+      locale: 'de',
       callbackURL: 'https://cloud.example.com/auth/verified'
     })
   })

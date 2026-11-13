@@ -1,0 +1,1 @@
+- `@open-pencil/cloud/errors` publishes the PostHog error reporter Cloud uses, `createPostHogErrorReporter`, for services beside Cloud that report errors as it does; it depends only on `posthog-node`, so importing it leaves the rest of the Cloud server out of a service's bundle (#2013).

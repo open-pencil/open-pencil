@@ -1,104 +1,28 @@
 import type { CloudFetch } from '#cloud/client/discovery'
 import {
-  acceptedInvitationSchema,
+  accountEntitlementsResponseSchema,
   servicesTokenSchema,
+  billingTokenSchema,
   cloudSessionSchema,
-  cloudUserProfileSchema,
-  collaborationTicketSchema,
-  createInvitationContinuationSchema,
-  documentAccessSchema,
-  documentDownloadSchema,
-  objectUploadSchema,
-  documentGrantSchema,
-  documentInvitationSchema,
-  documentShareSchema,
-  documentSummarySchema,
-  documentVersionDownloadSchema,
-  documentVersionResponseSchema,
-  documentVersionsSchema,
-  restoredDocumentSchema,
-  sharedDocumentSchema,
-  trashSchema,
-  invitationContinuationSchema,
-  invitationPreviewSchema,
-  resolvedDocumentShareSchema,
-  type AcceptDocumentInvitationInput,
+  type AccountEntitlements,
   type ServicesToken,
-  type CloudSession,
-  type CloudUserProfile,
-  type CollaborationTicket,
-  type CreateInvitationContinuationInput,
-  type InvitationContinuation,
-  type CommitUploadRequest,
-  type CreateDocumentRequest,
-  type CreateDocumentInvitationInput,
-  type CreateDocumentShareInput,
-  type CreateUploadInput,
-  type DocumentAccess,
-  type DocumentDownload,
-  type DocumentGrant,
-  type DocumentInvitation,
-  type DocumentShare,
-  type DocumentSummary,
-  type DocumentVersion,
-  type DocumentVersionDownload,
-  type DocumentVersions,
-  type DuplicateDocumentVersionInput,
-  type SaveDocumentVersionInput,
-  type UpdateDocumentVersionInput,
-  type SharedDocument,
-  type TrashedDocument,
-  type InvitationPreview,
-  type PutDocumentGrantInput,
-  type ResolveDocumentShareInput,
-  fileDocumentReportResponseSchema,
-  type FileDocumentReportInput,
-  type UpdateDocumentShareInput,
-  type AcceptedInvitation
+  type BillingToken,
+  type CloudSession
 } from '#cloud/contract'
 import type { CloudAPI, PublicCloudAPI } from '#cloud/server/api'
-import { pickBy } from 'es-toolkit/object'
 import { hc } from 'hono/client'
 import * as v from 'valibot'
 
+import { createCommunityRequests } from './community'
+import { createDocumentRequests } from './documents'
 import { createImageRequests } from './images'
 import { CloudAPIError, parseResponse, responseBody, type CloudClientDiagnostic } from './response'
+import { createSharingRequests } from './sharing'
+import { createVersionRequests } from './versions'
 import { createWorkspaceRequests } from './workspaces'
 
 export { CloudAPIError, type CloudClientDiagnostic } from './response'
-
-const documentsResponseSchema = v.object({ documents: v.array(documentSummarySchema) })
-const sharedDocumentsResponseSchema = v.object({ documents: v.array(sharedDocumentSchema) })
-const documentResponseSchema = v.object({ document: documentSummarySchema })
-const downloadResponseSchema = v.object({ document: documentDownloadSchema })
-const accessResponseSchema = v.object({ access: documentAccessSchema })
-const sharesResponseSchema = v.object({ shares: v.array(documentShareSchema) })
-const shareResponseSchema = v.object({ share: documentShareSchema })
-const shareCapabilityResponseSchema = v.object({
-  share: documentShareSchema,
-  secret: v.string(),
-  path: v.string()
-})
-const grantsResponseSchema = v.object({ grants: v.array(documentGrantSchema) })
-const grantResponseSchema = v.object({ grant: documentGrantSchema })
-const acceptedResponseSchema = v.object({ accepted: acceptedInvitationSchema })
-const invitationPreviewResponseSchema = v.object({ invitation: invitationPreviewSchema })
-const invitationsResponseSchema = v.object({ invitations: v.array(documentInvitationSchema) })
-const invitationCapabilityResponseSchema = v.object({
-  invitation: documentInvitationSchema,
-  token: v.string()
-})
-const collaborationTicketResponseSchema = v.object({ ticket: collaborationTicketSchema })
-const resolvedShareResponseSchema = v.object({ resolution: resolvedDocumentShareSchema })
-const sharedDocumentResponseSchema = v.object({
-  resolution: resolvedDocumentShareSchema,
-  document: documentDownloadSchema
-})
-const userLookupResponseSchema = v.object({ user: v.nullable(cloudUserProfileSchema) })
-const uploadResponseSchema = v.object({
-  id: v.pipe(v.string(), v.uuid()),
-  upload: objectUploadSchema
-})
+export type { CloudUpload } from './documents'
 
 export type CloudRequestOptions = {
   fetch?: CloudFetch
@@ -106,8 +30,6 @@ export type CloudRequestOptions = {
   accessToken?: string
   onDiagnostic?: CloudClientDiagnostic
 }
-
-export type CloudUpload = v.InferOutput<typeof uploadResponseSchema>
 
 function apiURL(baseURL: string): string {
   const url = new URL(baseURL)
@@ -148,395 +70,25 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
         options.onDiagnostic
       )
     },
-    async getUserProfile(documentId: string, userId: string): Promise<CloudUserProfile | null> {
+    /** A short-lived token for the deployment's billing, for the signed-in person's own account. */
+    async requestBillingToken(): Promise<BillingToken> {
+      return parseResponse(client.billing.token.$post(), billingTokenSchema, options.onDiagnostic)
+    },
+    /** The signed-in account's plan, and the storage its workspaces hold together. */
+    async getAccountEntitlements(): Promise<AccountEntitlements> {
       const response = await parseResponse(
-        client.documents[':documentId'].users[':userId'].$get({
-          param: { documentId, userId }
-        }),
-        userLookupResponseSchema,
+        client.account.entitlements.$get(),
+        accountEntitlementsResponseSchema,
         options.onDiagnostic
       )
-      return response.user
+      return response.entitlements
     },
     ...createWorkspaceRequests(client, options.onDiagnostic),
     ...createImageRequests(client, publicClient, options.onDiagnostic),
-    /** Documents shared with the person directly, outside their workspaces. */
-    async listSharedDocuments(): Promise<SharedDocument[]> {
-      const response = await parseResponse(
-        client['shared-documents'].$get(),
-        sharedDocumentsResponseSchema,
-        options.onDiagnostic
-      )
-      return response.documents
-    },
-    async listDocuments(workspaceId: string): Promise<DocumentSummary[]> {
-      const response = await parseResponse(
-        client.workspaces[':workspaceId'].documents.$get({
-          param: { workspaceId }
-        }),
-        documentsResponseSchema,
-        options.onDiagnostic
-      )
-      return response.documents
-    },
-    async createDocument(
-      workspaceId: string,
-      input: CreateDocumentRequest
-    ): Promise<DocumentSummary> {
-      const response = await parseResponse(
-        client.workspaces[':workspaceId'].documents.$post({
-          param: { workspaceId },
-          json: { ...input, kind: input.kind ?? 'design' }
-        }),
-        documentResponseSchema,
-        options.onDiagnostic
-      )
-      return response.document
-    },
-    /** Documents in Trash the person may restore, across their workspaces, newest first. */
-    async listTrash(): Promise<TrashedDocument[]> {
-      const response = await parseResponse(client.trash.$get(), trashSchema, options.onDiagnostic)
-      return response.documents
-    },
-    async restoreDocument(documentId: string): Promise<void> {
-      await responseBody(
-        await client.trash[':documentId'].restore.$post({ param: { documentId } }),
-        options.onDiagnostic
-      )
-    },
-    /** Deletes a document in Trash for good. */
-    async purgeDocument(documentId: string): Promise<void> {
-      await responseBody(
-        await client.trash[':documentId'].$delete({ param: { documentId } }),
-        options.onDiagnostic
-      )
-    },
-    async deleteDocument(documentId: string): Promise<void> {
-      await responseBody(
-        await client.documents[':documentId'].$delete({ param: { documentId } }),
-        options.onDiagnostic
-      )
-    },
-    async getDocument(documentId: string): Promise<DocumentDownload> {
-      const response = await parseResponse(
-        client.documents[':documentId'].$get({ param: { documentId } }),
-        downloadResponseSchema,
-        options.onDiagnostic
-      )
-      return response.document
-    },
-    async getDocumentAccess(documentId: string): Promise<DocumentAccess> {
-      const response = await parseResponse(
-        client.documents[':documentId'].access.$get({ param: { documentId } }),
-        accessResponseSchema,
-        options.onDiagnostic
-      )
-      return response.access
-    },
-    async listDocumentShares(documentId: string): Promise<DocumentShare[]> {
-      const response = await parseResponse(
-        client.documents[':documentId'].shares.$get({ param: { documentId } }),
-        sharesResponseSchema,
-        options.onDiagnostic
-      )
-      return response.shares
-    },
-    async createDocumentShare(documentId: string, input: CreateDocumentShareInput) {
-      return parseResponse(
-        client.documents[':documentId'].shares.$post({
-          param: { documentId },
-          json: input
-        }),
-        shareCapabilityResponseSchema,
-        options.onDiagnostic
-      )
-    },
-    async updateDocumentShare(
-      documentId: string,
-      shareId: string,
-      input: UpdateDocumentShareInput
-    ): Promise<DocumentShare> {
-      const response = await parseResponse(
-        client.documents[':documentId'].shares[':shareId'].$patch({
-          param: { documentId, shareId },
-          json: input
-        }),
-        shareResponseSchema,
-        options.onDiagnostic
-      )
-      return response.share
-    },
-    async rotateDocumentShare(documentId: string, shareId: string) {
-      return parseResponse(
-        client.documents[':documentId'].shares[':shareId'].rotate.$post({
-          param: { documentId, shareId }
-        }),
-        shareCapabilityResponseSchema,
-        options.onDiagnostic
-      )
-    },
-    async revokeDocumentShare(documentId: string, shareId: string): Promise<void> {
-      await responseBody(
-        await client.documents[':documentId'].shares[':shareId'].$delete({
-          param: { documentId, shareId }
-        }),
-        options.onDiagnostic
-      )
-    },
-    async listDocumentGrants(documentId: string): Promise<DocumentGrant[]> {
-      const response = await parseResponse(
-        client.documents[':documentId'].grants.$get({ param: { documentId } }),
-        grantsResponseSchema,
-        options.onDiagnostic
-      )
-      return response.grants
-    },
-    async putDocumentGrant(
-      documentId: string,
-      userId: string,
-      input: PutDocumentGrantInput
-    ): Promise<DocumentGrant> {
-      const response = await parseResponse(
-        client.documents[':documentId'].grants[':userId'].$put({
-          param: { documentId, userId },
-          json: input
-        }),
-        grantResponseSchema,
-        options.onDiagnostic
-      )
-      return response.grant
-    },
-    async revokeDocumentGrant(documentId: string, userId: string): Promise<void> {
-      await responseBody(
-        await client.documents[':documentId'].grants[':userId'].$delete({
-          param: { documentId, userId }
-        }),
-        options.onDiagnostic
-      )
-    },
-    async listDocumentInvitations(documentId: string): Promise<DocumentInvitation[]> {
-      const response = await parseResponse(
-        client.documents[':documentId'].invitations.$get({ param: { documentId } }),
-        invitationsResponseSchema,
-        options.onDiagnostic
-      )
-      return response.invitations
-    },
-    async createDocumentInvitation(documentId: string, input: CreateDocumentInvitationInput) {
-      return parseResponse(
-        client.documents[':documentId'].invitations.$post({
-          param: { documentId },
-          json: input
-        }),
-        invitationCapabilityResponseSchema,
-        options.onDiagnostic
-      )
-    },
-    async createInvitationContinuation(
-      input: CreateInvitationContinuationInput
-    ): Promise<InvitationContinuation> {
-      return parseResponse(
-        publicClient.invitations.continuations.$post({ json: input }),
-        invitationContinuationSchema,
-        options.onDiagnostic
-      )
-    },
-    async consumeInvitationContinuation(id: string): Promise<CreateInvitationContinuationInput> {
-      return parseResponse(
-        publicClient.invitations.continuations[':continuationId'].consume.$post({
-          param: { continuationId: id }
-        }),
-        createInvitationContinuationSchema,
-        options.onDiagnostic
-      )
-    },
-    async previewInvitation(
-      invitationId: string,
-      input: AcceptDocumentInvitationInput
-    ): Promise<InvitationPreview> {
-      const response = await parseResponse(
-        publicClient.invitations[':invitationId'].preview.$post({
-          param: { invitationId },
-          json: input
-        }),
-        invitationPreviewResponseSchema,
-        options.onDiagnostic
-      )
-      return response.invitation
-    },
-    /** Accepts a document or workspace invitation, and says which it was. */
-    async acceptInvitation(
-      invitationId: string,
-      input: AcceptDocumentInvitationInput
-    ): Promise<AcceptedInvitation> {
-      const response = await parseResponse(
-        client.invitations[':invitationId'].accept.$post({
-          param: { invitationId },
-          json: input
-        }),
-        acceptedResponseSchema,
-        options.onDiagnostic
-      )
-      return response.accepted
-    },
-    async revokeDocumentInvitation(documentId: string, invitationId: string): Promise<void> {
-      await responseBody(
-        await client.documents[':documentId'].invitations[':invitationId'].$delete({
-          param: { documentId, invitationId }
-        }),
-        options.onDiagnostic
-      )
-    },
-    /** Reports the document a share link opens to the server's administrators. */
-    async fileDocumentReport(shareId: string, input: FileDocumentReportInput): Promise<void> {
-      await parseResponse(
-        publicClient.shares[':shareId'].reports.$post({ param: { shareId }, json: input }),
-        fileDocumentReportResponseSchema,
-        options.onDiagnostic
-      )
-    },
-    async resolveDocumentShare(shareId: string, input: ResolveDocumentShareInput) {
-      const response = await parseResponse(
-        publicClient.shares[':shareId'].resolve.$post({
-          param: { shareId },
-          json: input
-        }),
-        resolvedShareResponseSchema,
-        options.onDiagnostic
-      )
-      return response.resolution
-    },
-    async getSharedDocument(shareId: string, input: ResolveDocumentShareInput) {
-      return parseResponse(
-        publicClient.shares[':shareId'].document.$post({
-          param: { shareId },
-          json: input
-        }),
-        sharedDocumentResponseSchema,
-        options.onDiagnostic
-      )
-    },
-    async getSharedCollaborationTicket(
-      shareId: string,
-      input: ResolveDocumentShareInput
-    ): Promise<CollaborationTicket> {
-      const response = await parseResponse(
-        publicClient.shares[':shareId']['collaboration-ticket'].$post({
-          param: { shareId },
-          json: input
-        }),
-        collaborationTicketResponseSchema,
-        options.onDiagnostic
-      )
-      return response.ticket
-    },
-    async getCollaborationTicket(documentId: string): Promise<CollaborationTicket> {
-      const response = await parseResponse(
-        client.documents[':documentId']['collaboration-ticket'].$post({
-          param: { documentId }
-        }),
-        collaborationTicketResponseSchema,
-        options.onDiagnostic
-      )
-      return response.ticket
-    },
-    async createUpload(documentId: string, input: CreateUploadInput): Promise<CloudUpload> {
-      return parseResponse(
-        client.documents[':documentId'].uploads.$post({
-          param: { documentId },
-          json: input
-        }),
-        uploadResponseSchema,
-        options.onDiagnostic
-      )
-    },
-    async commitUpload(uploadId: string, input: CommitUploadRequest): Promise<DocumentSummary> {
-      const response = await parseResponse(
-        client.uploads[':uploadId'].commit.$post({
-          param: { uploadId },
-          json: { ...input, images: input.images ?? [] }
-        }),
-        documentResponseSchema,
-        options.onDiagnostic
-      )
-      return response.document
-    },
-    /** A page of the document's version history, newest first. */
-    async listDocumentVersions(
-      documentId: string,
-      page: { before?: string; limit?: number } = {}
-    ): Promise<DocumentVersions> {
-      return parseResponse(
-        client.documents[':documentId'].versions.$get({
-          param: { documentId },
-          query: pickBy(page, (value) => value !== undefined)
-        }),
-        documentVersionsSchema,
-        options.onDiagnostic
-      )
-    },
-    async saveDocumentVersion(
-      documentId: string,
-      input: SaveDocumentVersionInput
-    ): Promise<DocumentVersion> {
-      const response = await parseResponse(
-        client.documents[':documentId'].versions.$post({ param: { documentId }, json: input }),
-        documentVersionResponseSchema,
-        options.onDiagnostic
-      )
-      return response.version
-    },
-    async updateDocumentVersion(
-      documentId: string,
-      versionId: string,
-      input: UpdateDocumentVersionInput
-    ): Promise<DocumentVersion> {
-      const response = await parseResponse(
-        client.documents[':documentId'].versions[':versionId'].$patch({
-          param: { documentId, versionId },
-          json: input
-        }),
-        documentVersionResponseSchema,
-        options.onDiagnostic
-      )
-      return response.version
-    },
-    async getDocumentVersion(
-      documentId: string,
-      versionId: string
-    ): Promise<DocumentVersionDownload> {
-      return parseResponse(
-        client.documents[':documentId'].versions[':versionId'].$get({
-          param: { documentId, versionId }
-        }),
-        documentVersionDownloadSchema,
-        options.onDiagnostic
-      )
-    },
-    async restoreDocumentVersion(documentId: string, versionId: string) {
-      return parseResponse(
-        client.documents[':documentId'].versions[':versionId'].restore.$post({
-          param: { documentId, versionId }
-        }),
-        restoredDocumentSchema,
-        options.onDiagnostic
-      )
-    },
-    async duplicateDocumentVersion(
-      documentId: string,
-      versionId: string,
-      input: DuplicateDocumentVersionInput
-    ): Promise<DocumentSummary> {
-      const response = await parseResponse(
-        client.documents[':documentId'].versions[':versionId'].duplicate.$post({
-          param: { documentId, versionId },
-          json: input
-        }),
-        documentResponseSchema,
-        options.onDiagnostic
-      )
-      return response.document
-    }
+    ...createDocumentRequests(client, options.onDiagnostic),
+    ...createVersionRequests(client, options.onDiagnostic),
+    ...createSharingRequests(client, publicClient, options.onDiagnostic),
+    ...createCommunityRequests(publicClient, options.onDiagnostic)
   }
 }
 

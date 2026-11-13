@@ -1,6 +1,6 @@
 # OpenPencil
 
-Vue 3 + CanvasKit (Skia WASM) + Yoga WASM design editor. Tauri v2 desktop, also runs in browser. Bun workspace monorepo.
+Vue 3 + CanvasKit (Skia WASM) + Taffy WASM design editor. Tauri v2 desktop, also runs in browser. Bun workspace monorepo.
 
 This file holds the repository map and the rules that apply everywhere. Rules for one folder live in that folder's `AGENTS.md`. **Before changing files under a mapped path, read this file and that path's guide.** Paths in every guide are repository-relative. Process for humans (setup, PRs, commits) is in `CONTRIBUTING.md`; product direction and Figma gaps are in `packages/docs/development/roadmap.md`.
 
@@ -9,7 +9,8 @@ This file holds the repository map and the rules that apply everywhere. Rules fo
 | Path                   | Owns                                                                                                                                                                                                                 | Guide                             |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
 | `packages/scene-graph` | Framework-neutral graph, node types, geometry, copy/snap/undo, variables, instances, hit testing, plus the shared primitives formats need: color conversion and management, CSS value parsing, text/layout direction | `packages/scene-graph/AGENTS.md`  |
-| `packages/canvaskit`   | CanvasKit as OpenPencil ships it: pins a release of the `open-pencil/skia` fork (PDF backend and other patches) by commit and SHA-256, fetched on install; never built here | —                                 |
+| `packages/canvaskit`   | CanvasKit as OpenPencil ships it: pins a release of the `open-pencil/skia` fork (PDF backend and other patches) by tag and SHA-256, fetched on install; never built here | —                                 |
+| `packages/taffy`       | Taffy, the flexbox and grid engine auto layout runs on, as OpenPencil ships it: pins a release of the `open-pencil/taffy` fork (a batched WebAssembly host and fixes waiting on upstream) by tag and SHA-256, fetched on install; never built here | —                                 |
 | `packages/pen`         | Pencil.dev `.pen` model, parser, SceneGraph adapter                                                                                                                                                                  | —                                 |
 | `packages/collab`      | How a collaboration room's Yjs document maps to and from a SceneGraph: layers, the shared layer tree, variables, document data; depends on scene-graph and yjs, no Vue or app code, and takes the editor as `CollabEditor`          | `packages/collab/AGENTS.md`       |
 | `packages/drawio`      | draw.io model, reader and writer for `.drawio`/`.dio` files and the diagrams draw.io PNG and SVG exports embed; no SceneGraph                                                                                        | —                                 |
@@ -45,7 +46,7 @@ This file holds the repository map and the rules that apply everywhere. Rules fo
 - `bun run tauri dev` — desktop app with hot reload.
 - A fresh worktree needs `bun install` and `bun run build:packages` before docs, Storybook, or any workflow that resolves workspace subpath exports; without the package builds those resolve to missing `packages/*/dist` targets.
 - `bun run check` — complete build, lint, type, architecture, docs, package, dependency, security, tooling, and duplication gate.
-- `bun run format` — format and sort imports across the repository; `.oxfmtrc.jsonc` names what it leaves alone and why. `bun run lint` runs Oxlint over the repository, skipping only the `lint/` plugin shims (which load the plugin's source on purpose), Wrangler's generated types, and the Vue SDK's standalone example (styled with its own CSS), then its type-aware rules over `src` and `packages/*/src`; tests and `test-support` are type-checked by `check:test-types`.
+- `bun run format` — format and sort imports across the repository; `.oxfmtrc.jsonc` names what it leaves alone and why. `bun run lint` runs Oxlint over the repository except what `oxlint.json`'s `ignorePatterns` name, such as configuration files, upstream Mermaid, the `lint/` plugin shims (which load the plugin's source on purpose), Wrangler's generated types, and the Vue SDK's standalone example (styled with its own CSS), then its type-aware rules over `src` and `packages/*/src`; tests and `test-support` are type-checked by `check:test-types`.
 - `bun run test:unit` / `bun run test` / `bun run test:storybook` — engine/unit, app Playwright, and Storybook Playwright suites. See `tests/AGENTS.md` for server selection and worktree ports.
 - `bun open-pencil --help` — current CLI command list.
 

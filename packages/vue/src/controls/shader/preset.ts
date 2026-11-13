@@ -29,7 +29,8 @@ export function moveShaderEffect(preset: ShaderPreset, from: number, to: number)
   const last = preset.components.length - 1
   if (from < 0 || from > last || to < 0 || to > last) return preset
   const components = [...preset.components]
-  components.splice(to, 0, ...components.splice(from, 1))
+  const moved = components.splice(from, 1).at(0)
+  if (moved !== undefined) components.splice(to, 0, moved)
   return { ...preset, components }
 }
 

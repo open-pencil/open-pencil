@@ -1,0 +1,1 @@
+- Italic text in a font that is not available draws in the default font's italic instead of a slanted upright face, and saves the same outlines.
