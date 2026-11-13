@@ -273,6 +273,7 @@ export {
   EntitlementOpenFeatureProvider,
   createDefaultCloudPolicy,
   createEntitlementService,
+  deploymentFreeEntitlements,
   StaticEntitlementSource,
   parseStaticEntitlementsTOML,
   staticEntitlementValues,
@@ -280,6 +281,7 @@ export {
   type CloudPolicyContext,
   type EntitlementSource,
   type EntitlementService,
+  type PlanEntitlements,
   type EntitlementSubject,
   type StaticEntitlements,
   type StaticEntitlementsInput

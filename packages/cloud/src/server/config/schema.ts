@@ -42,32 +42,35 @@ export const deletedPrefixSchema = v.pipe(
   v.check((prefix) => prefix !== 'documents/', 'deleted_prefix cannot be documents/')
 )
 
+/** Ceilings the server never exceeds, whatever an entitlement allows. */
+export const technicalLimitsSchema = v.optional(
+  v.object({
+    maximumUploadBytes: v.optional(
+      v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(CLOUD_PROTOCOL_MAX_UPLOAD_BYTES)),
+      CLOUD_PROTOCOL_MAX_UPLOAD_BYTES
+    ),
+    maximumCollaborationMessageBytes: v.optional(
+      v.pipe(v.number(), v.integer(), v.minValue(RELAY_MINIMUM_MESSAGE_BYTES)),
+      CLOUD_DEFAULT_MAX_COLLABORATION_MESSAGE_BYTES
+    ),
+    maximumConnectionsPerRoom: v.optional(
+      v.pipe(v.number(), v.integer(), v.minValue(1)),
+      CLOUD_DEFAULT_MAX_CONNECTIONS_PER_ROOM
+    )
+  }),
+  {
+    maximumUploadBytes: CLOUD_PROTOCOL_MAX_UPLOAD_BYTES,
+    maximumCollaborationMessageBytes: CLOUD_DEFAULT_MAX_COLLABORATION_MESSAGE_BYTES,
+    maximumConnectionsPerRoom: CLOUD_DEFAULT_MAX_CONNECTIONS_PER_ROOM
+  }
+)
+
 const rawCloudServerConfigSchema = v.object({
   deployment: v.picklist(['official', 'self-hosted']),
   publicURL: httpURLSchema,
   listingMinimumEditorVersion: v.optional(cloudEditorVersionSchema),
   relayURL: v.optional(websocketURLSchema),
-  technicalLimits: v.optional(
-    v.object({
-      maximumUploadBytes: v.optional(
-        v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(CLOUD_PROTOCOL_MAX_UPLOAD_BYTES)),
-        CLOUD_PROTOCOL_MAX_UPLOAD_BYTES
-      ),
-      maximumCollaborationMessageBytes: v.optional(
-        v.pipe(v.number(), v.integer(), v.minValue(RELAY_MINIMUM_MESSAGE_BYTES)),
-        CLOUD_DEFAULT_MAX_COLLABORATION_MESSAGE_BYTES
-      ),
-      maximumConnectionsPerRoom: v.optional(
-        v.pipe(v.number(), v.integer(), v.minValue(1)),
-        CLOUD_DEFAULT_MAX_CONNECTIONS_PER_ROOM
-      )
-    }),
-    {
-      maximumUploadBytes: CLOUD_PROTOCOL_MAX_UPLOAD_BYTES,
-      maximumCollaborationMessageBytes: CLOUD_DEFAULT_MAX_COLLABORATION_MESSAGE_BYTES,
-      maximumConnectionsPerRoom: CLOUD_DEFAULT_MAX_CONNECTIONS_PER_ROOM
-    }
-  ),
+  technicalLimits: technicalLimitsSchema,
   staticEntitlements: v.optional(staticEntitlementsSchema),
   /** With database entitlements, what an account without stored ones takes, value by value. */
   defaultEntitlements: v.optional(staticEntitlementsSchema),

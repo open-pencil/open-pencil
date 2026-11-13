@@ -15,4 +15,10 @@ export {
 export { createConfiguredCloudPolicy } from './configured'
 export { staticEntitlementsSchema, type StaticEntitlements } from './schema'
 export { CloudPolicy, createDefaultCloudPolicy } from './policy'
-export { createEntitlementService, type EntitlementService } from './service'
+export { deploymentFreeEntitlements } from './free'
+export {
+  createEntitlementService,
+  resolveEntitlements,
+  type EntitlementService,
+  type PlanEntitlements
+} from './service'
