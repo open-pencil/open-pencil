@@ -8,6 +8,7 @@ import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 import { usePortal } from '@/app/cloud-portal/context'
 import BrandMark from '@/components/brand/BrandMark.vue'
 import { usePortalLegal } from '@/components/cloud-portal/layout/legal'
+import PortalLanguageSelect from '@/components/cloud-portal/layout/PortalLanguageSelect.vue'
 import {
   CLOUD_DOCS_URL,
   COMMUNITY_URL,
@@ -110,7 +111,10 @@ const operatorLinks = computed<FooterLink[]>(() => [
       </nav>
       <div :class="ui.footerBottom()">
         <span>{{ messages.siteCopyright({ year }) }}</span>
-        <span>{{ messages.siteLicense }}</span>
+        <span class="flex items-center gap-4 whitespace-nowrap">
+          {{ messages.siteLicense }}
+          <PortalLanguageSelect />
+        </span>
       </div>
     </div>
   </footer>
@@ -140,6 +144,7 @@ const operatorLinks = computed<FooterLink[]>(() => [
         <a :href="REPOSITORY_URL" target="_blank" rel="noreferrer" :class="ui.footerLink()">
           {{ messages.siteSourceCode }}
         </a>
+        <PortalLanguageSelect />
       </nav>
     </div>
   </footer>
