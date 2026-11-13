@@ -131,9 +131,9 @@ export async function prepareTextFonts(
       total: faces.length
     })
   }
-  await Promise.all(
-    faces.map(options.concurrency ? limitAsync(loadFace, options.concurrency) : loadFace)
-  )
+  const limited = <Item>(run: (item: Item) => Promise<unknown>) =>
+    options.concurrency ? limitAsync(run, options.concurrency) : run
+  await Promise.all(faces.map(limited(loadFace)))
   // A family found nowhere draws in the default family, and CanvasKit slants the default family's
   // upright face for an italic it lacks. Its face of the same weight and slant is loaded instead,
   // so the canvas draws a real italic and the saved outlines read that face.
@@ -146,7 +146,9 @@ export async function prepareTextFonts(
     })
   )
   await Promise.all(
-    defaultStyles.map((style) => load(DEFAULT_FONT_FAMILY, style, requirements.characters, signal))
+    defaultStyles.map(
+      limited((style: string) => load(DEFAULT_FONT_FAMILY, style, requirements.characters, signal))
+    )
   )
   signal?.throwIfAborted()
   const scripts = missingGraphFontScripts(requirements, {
