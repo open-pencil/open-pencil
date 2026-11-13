@@ -1,8 +1,7 @@
-import type { CloudLocale } from '#cloud/contract'
 import { render } from '@vue-email/render'
 import { defineComponent, type PropType } from 'vue'
 
-import { emailLocalization, type EmailLocalization } from './i18n'
+import { emailLocalization, type EmailLocale, type EmailLocalization } from './i18n'
 import type {
   RenderedTransactionalEmail,
   TransactionalEmailContent,
@@ -78,7 +77,7 @@ const BrandEmail = defineComponent({
 export async function renderEmail<Payload>(
   template: EmailTemplate<Payload>,
   payload: Payload,
-  locale: CloudLocale
+  locale: EmailLocale
 ): Promise<RenderedTransactionalEmail> {
   const localization = emailLocalization(locale)
   const content = template(payload, localization)
@@ -93,14 +92,14 @@ export async function renderEmail<Payload>(
 function renderKind<Kind extends TransactionalEmailKind>(
   kind: Kind,
   payload: TransactionalEmailPayloadByKind[Kind],
-  locale: CloudLocale
+  locale: EmailLocale
 ) {
   return renderEmail(TEMPLATES[kind], payload, locale)
 }
 
 export async function renderTransactionalEmail(
   content: TransactionalEmailContent,
-  locale: CloudLocale
+  locale: EmailLocale
 ): Promise<RenderedTransactionalEmail> {
   return renderKind(content.kind, content.payload, locale)
 }

@@ -103,15 +103,20 @@ describe('account profile', () => {
             method: 'PUT'
           })
         )
-      expect((await setLocale('de', account.sessionCookie)).status).toBe(200)
-      expect(
-        await fixture.database
-          .selectFrom('user')
-          .select('locale')
-          .where('id', '=', account.userId)
-          .executeTakeFirstOrThrow()
-      ).toEqual({ locale: 'de' })
-      expect((await setLocale('klingon', account.sessionCookie)).status).toBe(400)
+      const stored = async () =>
+        (
+          await fixture.database
+            .selectFrom('user')
+            .select('locale')
+            .where('id', '=', account.userId)
+            .executeTakeFirstOrThrow()
+        ).locale
+      // The nearest language Cloud writes in is kept, or none for one it doesn't have.
+      expect((await setLocale('de-AT', account.sessionCookie)).status).toBe(200)
+      expect(await stored()).toBe('de')
+      expect((await setLocale('tlh', account.sessionCookie)).status).toBe(200)
+      expect(await stored()).toBeNull()
+      expect((await setLocale('not a tag', account.sessionCookie)).status).toBe(400)
       expect((await setLocale('de')).status).toBe(401)
     } finally {
       await fixture.close()

@@ -5,11 +5,9 @@ import { join, relative, sep } from 'node:path'
 import { compact } from 'es-toolkit/array'
 import * as v from 'valibot'
 
-import { CLOUD_LOCALES } from '@open-pencil/cloud/contract'
 import { emailMessageDefaults } from '@open-pencil/cloud/email'
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 import {
-  AVAILABLE_LOCALES,
   LOCALE_DIR_NAMES,
   TRANSLATED_LOCALES,
   type TranslatedLocale,
@@ -250,11 +248,6 @@ for (const [locale, dir] of expectedLocaleDirs) {
     for (const key of extra.sort()) console.error(`  extra:   ${key}`)
   }
 }
-
-const cloudLocaleDiff = sameMembers(CLOUD_LOCALES, AVAILABLE_LOCALES)
-for (const locale of cloudLocaleDiff.missing) report(`CLOUD_LOCALES is missing locale '${locale}'.`)
-for (const locale of cloudLocaleDiff.extra)
-  report(`CLOUD_LOCALES contains unknown locale '${locale}'.`)
 
 const emailFiles = readdirSync(EMAIL_LOCALES_DIR).sort()
 const emailFileDiff = sameMembers(

@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { CLOUD_LOCALES } from '#cloud/contract'
 import {
   acceptedLocale,
+  EMAIL_LOCALES,
   EMAIL_SAMPLE_URL,
   EMAIL_SAMPLES,
   renderEmail,
@@ -12,7 +12,7 @@ import {
 } from '#cloud/email'
 
 describe('localised email', () => {
-  test.each([...CLOUD_LOCALES])('every kind renders whole in %s', async (locale) => {
+  test.each([...EMAIL_LOCALES])('every kind renders whole in %s', async (locale) => {
     for (const email of EMAIL_SAMPLES) {
       const rendered = await renderTransactionalEmail(email, locale)
       expect(rendered.html).toContain(`lang="${locale}"`)

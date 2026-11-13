@@ -1,4 +1,3 @@
-import { matchCloudLocale, type CloudLocale } from '#cloud/contract'
 import { createI18n, type Components, type Messages } from '@nanostores/i18n'
 import { mapValues } from 'es-toolkit'
 import { parseAccept } from 'hono/utils/accept'
@@ -16,10 +15,11 @@ import ru from './locales/ru.json'
 import zhCN from './locales/zh-cn.json'
 import { emailMessageDefaults } from './messages'
 
-type TranslatedLocale = Exclude<CloudLocale, 'en'>
-
-/** Each locale's translations of `emailMessageDefaults`, bundled so a Worker reads no files. */
-const TRANSLATIONS: Record<TranslatedLocale, Record<string, string>> = {
+/**
+ * Each language's translations of `emailMessageDefaults`, bundled so a Worker reads no files. They
+ * are what Cloud writes in: a language is supported once its file is here.
+ */
+const TRANSLATIONS = {
   ar,
   de,
   es,
@@ -30,10 +30,48 @@ const TRANSLATIONS: Record<TranslatedLocale, Record<string, string>> = {
   'pt-BR': ptBR,
   ru,
   'zh-CN': zhCN
+} satisfies Record<string, Record<string, string>>
+
+/** A language Cloud writes email in: English, or one it has translations for. */
+export type EmailLocale = 'en' | keyof typeof TRANSLATIONS
+
+/** Every language Cloud writes email in, English first. */
+export const EMAIL_LOCALES: readonly EmailLocale[] = ['en', ...typedKeys(TRANSLATIONS)]
+
+function typedKeys<Value extends object>(value: Value): Array<keyof Value & string> {
+  return Object.keys(value).filter((key): key is keyof Value & string => key in value)
+}
+
+export function isEmailLocale(value: unknown): value is EmailLocale {
+  return EMAIL_LOCALES.some((code) => code === value)
+}
+
+/** A tag's language and script, as Unicode's likely subtags fill them in: `zh-TW` is `zh-Hant`. */
+function languageScript(tag: string): string | null {
+  try {
+    const { language, script } = new Intl.Locale(tag).maximize()
+    return `${language}-${script ?? ''}`
+  } catch {
+    return null
+  }
+}
+
+/**
+ * The first of someone's languages Cloud writes in: the same tag, or the same language in the same
+ * script, so `de-AT` reads German and `zh-TW`, written in Traditional, doesn't read Simplified.
+ */
+export function emailLocale(languages: readonly string[]): EmailLocale | null {
+  const byTag = new Map(EMAIL_LOCALES.map((code) => [code.toLowerCase(), code]))
+  const byScript = new Map(EMAIL_LOCALES.map((code) => [languageScript(code), code]))
+  for (const language of languages) {
+    const match = byTag.get(language.toLowerCase()) ?? byScript.get(languageScript(language))
+    if (match) return match
+  }
+  return null
 }
 
 /** Locales written right to left. */
-const RIGHT_TO_LEFT: ReadonlySet<CloudLocale> = new Set<CloudLocale>(['ar'])
+const RIGHT_TO_LEFT: ReadonlySet<EmailLocale> = new Set<EmailLocale>(['ar'])
 
 const RIGHT_TO_LEFT_MARK = String.fromCodePoint(0x200f)
 const FIRST_STRONG_ISOLATE = String.fromCodePoint(0x2068)
@@ -58,7 +96,7 @@ export type EmailMessages = StoreValue<Messages<typeof emailMessageDefaults>>
 
 /** The words, formats, and direction of email written in one locale. */
 export type EmailLocalization = {
-  locale: CloudLocale
+  locale: EmailLocale
   dir: 'ltr' | 'rtl'
   t: EmailMessages
   /** A moment in UTC, as Cloud doesn't know the reader's time zone: 13 November 2026, 10:00 UTC. */
@@ -73,7 +111,7 @@ const STORAGE_UNITS = [
   { unit: 'kilobyte', bytes: 1024 }
 ] as const
 
-function messages(locale: CloudLocale): EmailMessages {
+function messages(locale: EmailLocale): EmailMessages {
   const translations: Record<string, Components> =
     locale === 'en'
       ? {}
@@ -91,9 +129,9 @@ function messages(locale: CloudLocale): EmailMessages {
   return i18n('email', emailMessageDefaults).get()
 }
 
-const localizations = new Map<CloudLocale, EmailLocalization>()
+const localizations = new Map<EmailLocale, EmailLocalization>()
 
-export function emailLocalization(locale: CloudLocale): EmailLocalization {
+export function emailLocalization(locale: EmailLocale): EmailLocalization {
   const cached = localizations.get(locale)
   if (cached) return cached
   const dateTime = new Intl.DateTimeFormat(locale, {
@@ -128,9 +166,9 @@ export function emailLocalization(locale: CloudLocale): EmailLocalization {
 }
 
 /** The language an `Accept-Language` header prefers among Cloud's, or null when it names none. */
-export function acceptedLocale(header: string | null | undefined): CloudLocale | null {
+export function acceptedLocale(header: string | null | undefined): EmailLocale | null {
   const languages = parseAccept(header ?? '')
     .filter((language) => language.q > 0)
     .map((language) => language.type)
-  return matchCloudLocale(languages)
+  return emailLocale(languages)
 }

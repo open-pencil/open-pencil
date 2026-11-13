@@ -1,6 +1,5 @@
-import type { CloudLocale } from '#cloud/contract'
 import { renderTransactionalEmail } from '#cloud/email'
-import type { TransactionalEmailKind } from '#cloud/email'
+import type { EmailLocale, TransactionalEmailKind } from '#cloud/email'
 import type { CloudDatabase, TransactionalEmailStatus } from '#cloud/server/db'
 import type { Kysely, Transaction } from 'kysely'
 
@@ -41,7 +40,7 @@ type ClaimedTransactionalEmail = {
   kind: TransactionalEmailKind
   recipientEmailNormalized: string
   payloadEncrypted: string
-  locale: CloudLocale
+  locale: EmailLocale
   attemptCount: number
 }
 

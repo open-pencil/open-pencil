@@ -1,6 +1,10 @@
 export {
   acceptedLocale,
+  EMAIL_LOCALES,
+  emailLocale,
   emailLocalization,
+  isEmailLocale,
+  type EmailLocale,
   type EmailLocalization,
   type EmailMessages
 } from './i18n'

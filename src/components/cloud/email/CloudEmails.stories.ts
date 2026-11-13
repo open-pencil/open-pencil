@@ -1,23 +1,24 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 
-import { CLOUD_LOCALES, type CloudLocale } from '@open-pencil/cloud/contract'
 import {
+  EMAIL_LOCALES,
   EMAIL_SAMPLE_URL,
   EMAIL_SAMPLES,
   renderEmail,
   renderTransactionalEmail,
   waitlistConfirmation,
+  type EmailLocale,
   type TransactionalEmailKind
 } from '@open-pencil/cloud/email'
 
 import EmailPreview from './examples/EmailPreview.vue'
 
-type Args = { locale: CloudLocale }
+type Args = { locale: EmailLocale }
 
 const meta = {
   title: 'App/Cloud/Email',
   args: { locale: 'en' },
-  argTypes: { locale: { control: 'select', options: [...CLOUD_LOCALES] } }
+  argTypes: { locale: { control: 'select', options: [...EMAIL_LOCALES] } }
 } satisfies Meta<Args>
 
 export default meta

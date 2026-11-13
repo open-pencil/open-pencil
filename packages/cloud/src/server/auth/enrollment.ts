@@ -1,6 +1,6 @@
 import type { EnrollmentService } from '#cloud/admin/enrollment/service'
-import { cloudLocaleSchema, isCloudLocale, type CloudLocale } from '#cloud/contract'
-import { acceptedLocale } from '#cloud/email'
+import { cloudLanguageTagSchema } from '#cloud/contract'
+import { acceptedLocale, emailLocale, isEmailLocale, type EmailLocale } from '#cloud/email'
 import { accountDeletionOptions } from '#cloud/server/account/deletion'
 import type { CloudServerConfig } from '#cloud/server/config'
 import type { CloudDatabase } from '#cloud/server/db'
@@ -10,9 +10,14 @@ import * as v from 'valibot'
 
 import type { AuthenticationEmailService } from './email'
 
-/** The language an account being made chose, which Better Auth's types don't know it has. */
-function accountLocale(user: object): CloudLocale | null {
-  return 'locale' in user && isCloudLocale(user.locale) ? user.locale : null
+/** The language an account writes in, which Better Auth's types don't know it has. */
+function accountLocale(user: object): EmailLocale | null {
+  return 'locale' in user && isEmailLocale(user.locale) ? user.locale : null
+}
+
+/** The language tag the app sent, if any, before it's matched to one Cloud writes in. */
+function languageTag(user: object): string | null {
+  return 'locale' in user && typeof user.locale === 'string' ? user.locale : null
 }
 
 /**
@@ -64,12 +69,12 @@ export function enrollmentOptions(
     user: {
       additionalFields: {
         // The language Cloud writes to the account in: the app's, sent when signing up and
-        // whenever the person changes it.
+        // whenever the person changes it, as the nearest language Cloud has (the hooks below).
         locale: {
           type: 'string' as const,
           required: false,
           input: true,
-          validator: { input: v.nullish(cloudLocaleSchema) }
+          validator: { input: v.nullish(cloudLanguageTagSchema) }
         }
       },
       changeEmail: { enabled: emailChangeAvailable },
@@ -84,15 +89,25 @@ export function enrollmentOptions(
     databaseHooks: {
       user: {
         create: {
-          // An account the app didn't name a language for, as one made through Google or Apple,
-          // takes the browser's.
+          // The app's language, or for an account it didn't name one for, as one made through
+          // Google or Apple, the browser's.
           before: async (user, context) => {
-            if (accountLocale(user)) return undefined
-            const locale = acceptedLocale(context?.headers?.get('accept-language'))
-            return locale ? { data: { ...user, locale } } : undefined
+            const tag = languageTag(user)
+            const locale =
+              emailLocale(tag ? [tag] : []) ??
+              acceptedLocale(context?.headers?.get('accept-language'))
+            return { data: { ...user, locale } }
           },
           after: async (user) => {
             if (user.emailVerified) await enroll(user)
+          }
+        },
+        update: {
+          // Whoever changes it, Cloud keeps the nearest language it writes in, or English.
+          before: async (user) => {
+            if (!('locale' in user)) return undefined
+            const tag = languageTag(user)
+            return { data: { ...user, locale: emailLocale(tag ? [tag] : []) } }
           }
         }
       }
