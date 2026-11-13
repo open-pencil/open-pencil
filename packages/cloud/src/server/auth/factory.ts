@@ -503,6 +503,9 @@ export function createBetterAuthAdapter(
     async updateProfile(headers, input) {
       await auth.api.updateUser({ headers, body: { name: input.name } })
     },
+    async setLocale(headers, locale) {
+      await auth.api.updateUser({ headers, body: { locale } })
+    },
     async changeEmail(headers, input) {
       const session = await freshSession(headers)
       if (session.user.email === input.newEmail) {

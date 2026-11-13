@@ -5,6 +5,11 @@ import type {
   TextCase,
   TextParagraphSpacingField
 } from '@open-pencil/scene-graph'
+import {
+  figmaTextAutoResize,
+  textAutoResizeFields,
+  type FigmaTextAutoResize
+} from '@open-pencil/scene-graph/text'
 
 import {
   raw,
@@ -138,7 +143,16 @@ export function installTextNodeProxyAccessors(
     }),
     textAlignHorizontal: field(internals, 'textAlignHorizontal'),
     textAlignVertical: field(internals, 'textAlignVertical'),
-    textAutoResize: field(internals, 'textAutoResize'),
+    // Figma reads and writes a fixed box that truncates as TRUNCATE; other modes stop truncating.
+    textAutoResize: {
+      get(this: ProxyThis): FigmaTextAutoResize {
+        return figmaTextAutoResize(raw(this, internals))
+      },
+      set(this: ProxyThis, value: FigmaTextAutoResize) {
+        assertTextFontsLoaded('set_textAutoResize', raw(this, internals))
+        updateNode(this, internals, textAutoResizeFields(value))
+      }
+    },
     // Figma's plugin API reads and writes these as { unit, value }; a bare object stored on the
     // node instead of pixels would leave the text unmeasurable.
     letterSpacing: characterStyle<FigmaLetterSpacing | number>(

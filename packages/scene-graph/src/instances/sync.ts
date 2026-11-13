@@ -406,7 +406,7 @@ export function syncChildren(
     compParent,
     instParent,
     instParentId,
-    overrides,
+    context,
     instChildMap,
     usedInstChildIds
   )

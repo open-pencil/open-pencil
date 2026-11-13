@@ -25,22 +25,27 @@ test('wrapped text keeps its lines after a .fig is saved and reopened (#914)', a
   expect(await canvas.screenshotCanvasRegion()).toMatchSnapshot('reopened-wrapped-text.png')
 })
 
-test('fallback text with an unloaded primary keeps its weight after saving and reopening', async ({
-  page
-}) => {
-  await mockFontsource(page, [])
-  await page.goto('/?test&no-chrome&no-rulers')
-  const canvas = new CanvasHelper(page)
-  await canvas.waitForInit()
-  const sampleId = await createFallbackText(page)
-  await saveCopyAndReopenFallbackText(page)
+const FALLBACK_STYLES = [
+  { style: 'weight', italic: false, snapshot: 'fallback-file-after-reopen.png' },
+  { style: 'weight and slant', italic: true, snapshot: 'fallback-italic-after-reopen.png' }
+]
 
-  expect(await readFallbackText(page, sampleId)).toEqual({ text: 'Missing', glyphs: 7 })
-  await showView(page, { zoom: 2, panX: 40, panY: 40 })
-  await canvas.waitForRender()
-  canvas.assertNoErrors()
-  // Text fills too little of the canvas for the default percentage tolerance to catch bad outlines.
-  expect(await canvas.screenshotCanvasRegion()).toMatchSnapshot('fallback-file-after-reopen.png', {
-    maxDiffPixels: 20
+for (const { style, italic, snapshot } of FALLBACK_STYLES) {
+  test(`fallback text with an unloaded primary keeps its ${style} after saving and reopening`, async ({
+    page
+  }) => {
+    await mockFontsource(page, [])
+    await page.goto('/?test&no-chrome&no-rulers')
+    const canvas = new CanvasHelper(page)
+    await canvas.waitForInit()
+    const sampleId = await createFallbackText(page, { italic })
+    await saveCopyAndReopenFallbackText(page)
+
+    expect(await readFallbackText(page, sampleId)).toEqual({ text: 'Missing', glyphs: 7 })
+    await showView(page, { zoom: 2, panX: 40, panY: 40 })
+    await canvas.waitForRender()
+    canvas.assertNoErrors()
+    // Text fills too little of the canvas for the default percentage tolerance to catch bad outlines.
+    expect(await canvas.screenshotCanvasRegion()).toMatchSnapshot(snapshot, { maxDiffPixels: 20 })
   })
-})
+}

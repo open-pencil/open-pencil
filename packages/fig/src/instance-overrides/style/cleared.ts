@@ -1,11 +1,11 @@
+import type { STYLE_REFERENCE_FIELDS } from '#fig/document/style-dependencies'
 import { isPlainObject } from 'es-toolkit'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { UNSET_GUID } from '@open-pencil/kiwi/fig/guid'
 
-import type { STYLE_REFERENCE_FIELDS } from '../document/style-dependencies'
-import { OVERRIDE_FIELDS } from './fields'
-import type { InstanceOccurrence } from './occurrence/types'
+import { OVERRIDE_FIELDS } from '../fields'
+import type { InstanceOccurrence } from '../occurrence/types'
 
 /** The raw fields each style reference gives the layer, with those the record keeps beside them. */
 export const STYLE_GOVERNED_FIELDS = {

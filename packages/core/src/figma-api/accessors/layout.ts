@@ -3,6 +3,7 @@ import * as v from 'valibot'
 import type { LayoutGrid, LayoutMode, LayoutSizing, SceneNode } from '@open-pencil/scene-graph'
 import {
   aspectRatioLockEditable,
+  counterAxisSpacingOf,
   layoutSizing,
   layoutSizingError,
   layoutSizingUpdates,
@@ -23,7 +24,7 @@ import {
   type ProxyThis
 } from '#core/figma-api/accessors/utils'
 import { graphOf } from '#core/figma-api/graph'
-import { atLeast } from '#core/figma-api/schema'
+import { atLeast, finiteNumberSchema } from '#core/figma-api/schema'
 import { parseFigma } from '#core/figma-api/validation'
 
 /** A guide in Figma's plugin shape, whether it was set that way or read from a file. */
@@ -88,8 +89,22 @@ export function installLayoutNodeProxyAccessors(
     },
     primaryAxisAlignItems: mappedAccessor(internals, 'primaryAxisAlign'),
     counterAxisAlignItems: mappedAccessor(internals, 'counterAxisAlign'),
-    itemSpacing: simpleAccessor(internals, 'itemSpacing'),
-    counterAxisSpacing: simpleAccessor(internals, 'counterAxisSpacing'),
+    itemSpacing: numberAccessor(internals, 'itemSpacing', finiteNumberSchema),
+    // null follows the item spacing, and reads back as it (Figma desktop 126).
+    counterAxisSpacing: {
+      get(this: ProxyThis): number {
+        return counterAxisSpacingOf(raw(this, internals))
+      },
+      set(this: ProxyThis, value: unknown) {
+        const counterAxisSpacing = parseFigma(
+          v.nullable(finiteNumberSchema),
+          value,
+          'set_counterAxisSpacing',
+          'counterAxisSpacing'
+        )
+        updateNode(this, internals, { counterAxisSpacing })
+      }
+    },
     paddingTop: padding(internals, 'paddingTop', ['paddingTop']),
     paddingRight: padding(internals, 'paddingRight', ['paddingRight']),
     paddingBottom: padding(internals, 'paddingBottom', ['paddingBottom']),
@@ -117,7 +132,7 @@ export function installLayoutNodeProxyAccessors(
     itemReverseZIndex: simpleAccessor(internals, 'itemReverseZIndex'),
     strokesIncludedInLayout: simpleAccessor(internals, 'strokesIncludedInLayout'),
     layoutPositioning: mappedAccessor(internals, 'layoutPositioning'),
-    layoutGrow: simpleAccessor(internals, 'layoutGrow'),
+    layoutGrow: numberAccessor(internals, 'layoutGrow', layoutGrowSchema),
     layoutAlign: {
       get(this: ProxyThis): string {
         const node = raw(this, internals)
@@ -148,10 +163,10 @@ export function installLayoutNodeProxyAccessors(
         })
       }
     },
-    minWidth: simpleAccessor(internals, 'minWidth'),
-    maxWidth: simpleAccessor(internals, 'maxWidth'),
-    minHeight: simpleAccessor(internals, 'minHeight'),
-    maxHeight: simpleAccessor(internals, 'maxHeight'),
+    minWidth: numberAccessor(internals, 'minWidth', sizeLimitSchema),
+    maxWidth: numberAccessor(internals, 'maxWidth', sizeLimitSchema),
+    minHeight: numberAccessor(internals, 'minHeight', sizeLimitSchema),
+    maxHeight: numberAccessor(internals, 'maxHeight', sizeLimitSchema),
     targetAspectRatio: {
       get(this: ProxyThis): Vector | null {
         const target = raw(this, internals).targetAspectRatio
@@ -247,6 +262,36 @@ function padding(
     set(this: ProxyThis, value: unknown) {
       const amount = parseFigma(atLeast(0), value, `set_${property}`, property)
       updateNode(this, internals, Object.fromEntries(sides.map((side) => [side, amount])))
+    }
+  }
+}
+
+/** Figma grows a layer to fill its auto layout with 1, and keeps its size with 0. */
+const layoutGrowSchema = v.union([v.literal(0), v.literal(1)])
+
+/** A minimum or maximum size, or none. */
+const sizeLimitSchema = v.nullable(finiteNumberSchema)
+
+type NumberField =
+  | 'itemSpacing'
+  | 'layoutGrow'
+  | 'minWidth'
+  | 'maxWidth'
+  | 'minHeight'
+  | 'maxHeight'
+
+/** A number field set as Figma's schema for it takes the value. */
+function numberAccessor(
+  internals: NodeProxyInternals,
+  field: NumberField,
+  schema: v.GenericSchema<unknown, number | null>
+): PropertyDescriptor {
+  return {
+    get(this: ProxyThis): unknown {
+      return raw(this, internals)[field]
+    },
+    set(this: ProxyThis, value: unknown) {
+      updateNode(this, internals, { [field]: parseFigma(schema, value, `set_${field}`, field) })
     }
   }
 }

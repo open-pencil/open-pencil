@@ -106,7 +106,9 @@ describe('rescale', () => {
     const { api } = setup()
     const rect = api.createRectangle()
     expect(() => rect.rescale(0.009)).toThrow('Scale must be at least 0.01')
-    expect(() => rect.rescale(Number.POSITIVE_INFINITY)).toThrow('Scale must be a finite number')
+    expect(() => rect.rescale(Number.POSITIVE_INFINITY)).toThrow(
+      'in rescale: Property "scale" failed validation: Expected number, received Infinity'
+    )
     expect(() => api.currentPage.rescale(2)).toThrow('rescale() is not supported on this node')
     const section = api.createSection()
     expect(() => section.rescale(2)).toThrow('rescale() is not supported on this node')
