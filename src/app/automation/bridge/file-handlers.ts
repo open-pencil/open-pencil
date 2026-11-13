@@ -14,9 +14,10 @@ import {
 } from '@/app/automation/bridge/target'
 import { resolveBrowserFileURL } from '@/app/document/io/browser'
 import { documentPathFor } from '@/app/document/io/names'
+import type { EditorStore } from '@/app/editor/active-store'
 import { openBrowserFileFromURL } from '@/app/shell/menu/files'
 import { openFileFromPath } from '@/app/shell/menu/use'
-import { closeTab, createTab, getActiveStore, getTabById } from '@/app/tabs'
+import { closeTab, createTab, getTabById } from '@/app/tabs'
 import { isTauri } from '@/app/tauri/env'
 
 /** Where a browser app reads and writes the paths the file tools name: the MCP server's `/files/`. */
@@ -176,16 +177,20 @@ export function createFileHandlers(files?: AutomationFiles) {
   async function handleOpenFile(args: unknown): Promise<TargetResponse> {
     const path = (args as { path?: string }).path
     if (!path) throw new Error('Missing "path" in args')
+    // The opened tab's own store, not the active one: another tab can come to the front while
+    // the file is read and decoded.
+    let store: EditorStore | undefined
     if (isTauri()) {
-      await openFileFromPath(path)
+      store = await openFileFromPath(path)
     } else if (files) {
       // The browser cannot read the path, so it fetches it from the MCP server, with the same
       // cap and format check as every other browser open.
-      await openBrowserFileFromURL(files.url(path), { headers: files.headers })
+      store = await openBrowserFileFromURL(files.url(path), { headers: files.headers })
     } else {
-      await openBrowserFileFromURL(resolveBrowserFileURL(path))
+      store = await openBrowserFileFromURL(resolveBrowserFileURL(path))
     }
-    const target = resolveAutomationTarget(getActiveStore(), undefined)
+    if (!store) throw new Error(`Could not open "${path}"`)
+    const target = resolveAutomationTarget(store, undefined)
     return responseWithTarget({ ok: true, result: { opened: true } }, target)
   }
 

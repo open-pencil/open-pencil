@@ -4,7 +4,7 @@ import { describe, expect, test, vi } from 'bun:test'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
 import { automationFiles } from '@/app/automation/bridge/server'
-import { createTab, getActiveStore, getTabById, getTabsSnapshot } from '@/app/tabs'
+import { createTab, getActiveStore, getTabById, getTabsSnapshot, switchTab } from '@/app/tabs'
 
 import { settle, useAutomationHandlerGlobals } from '#tests/helpers/automation/handlers'
 import { testPath } from '#tests/helpers/paths'
@@ -128,5 +128,25 @@ describe('file paths in a browser go through the MCP server', () => {
     expect(String(url)).toBe('http://mcp.test/files//root/my%20%231%20slots.fig')
     expect(new Headers(init?.headers).get('authorization')).toBe('Bearer token')
     expect(getActiveStore().state.documentName).toBe('my #1 slots')
+  })
+
+  test('opening answers with the opened document even if another tab comes to the front meanwhile', async () => {
+    const other = dirtyTab()
+    const bytes = new Uint8Array(await Bun.file(testPath('fixtures', 'slots.fig')).arrayBuffer())
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(bytes))
+    // The person switches tabs while the file is read.
+    globalThis.requestAnimationFrame = (callback) => {
+      switchTab(other.id)
+      callback(0)
+      return 0
+    }
+
+    const response = await settle(
+      requestThroughServer('open_document', { path: '/root/slots.fig' })
+    )
+
+    expect(getActiveStore()).toBe(other.store)
+    expect(response.target?.documentId).not.toBe(other.id)
+    expect(getTabById(String(response.target?.documentId))?.store.state.documentName).toBe('slots')
   })
 })

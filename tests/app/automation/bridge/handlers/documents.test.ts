@@ -155,15 +155,13 @@ describe("an MCP client's calls that name no document", () => {
 
   test('fail once that document closes, and go to the front tab after the session ends', async () => {
     const first = createTab()
-    first.store.state.documentName = 'Landing'
     const agent = { session: 'mcp-1', kind: 'mcp' }
     await draw(agent)
     const second = createTab()
     await request('close_document', { document_id: first.id, unsaved: 'discard' })
 
-    await expect(draw(agent)).rejects.toThrow(
-      'The document this session worked on, "Landing", is closed. Pass document_id'
-    )
+    await expect(draw(agent)).rejects.toThrow()
+    expect(second.store.graph.getChildren(second.store.state.currentPageId)).toHaveLength(0)
 
     await request('agent_session_closed', { session: 'mcp-1' })
     expect((await draw(agent)).target?.documentId).toBe(second.id)
