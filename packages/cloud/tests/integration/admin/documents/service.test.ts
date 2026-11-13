@@ -215,7 +215,8 @@ describe('document takedown', () => {
       const queued = await context.runtime.database
         .selectFrom('transactionalEmail')
         .select(['id', 'kind', 'recipientEmailNormalized', 'payloadEncrypted'])
-        .orderBy('createdAt')
+        // Ordered by what they are, never by when, which two writes can share.
+        .orderBy('kind')
         .execute()
       expect(
         queued.map(({ kind, recipientEmailNormalized }) => [kind, recipientEmailNormalized])
