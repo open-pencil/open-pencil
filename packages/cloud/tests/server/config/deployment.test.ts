@@ -213,16 +213,19 @@ minimum_age = 16
     ).toThrow('terms_version')
   })
 
-  test('names a community workspace only when one is configured, by its ID', () => {
-    expect(parseCloudDeploymentTOML(minimalSource, environment).community).toBeUndefined()
+  test('names a community workspace only when one is configured, and advertises it', () => {
+    const plain = parseCloudDeploymentTOML(minimalSource, environment)
+    expect(plain.community).toBeUndefined()
+    expect(cloudDiscoveryFromConfig(plain).community).toBeUndefined()
     const workspace = '0f6b1c1e-6a8e-4b8e-9a4f-3c2d1e0f9a8b'
     const source = `${minimalSource}
 [community]
 workspace = "${workspace}"
 `
-    expect(parseCloudDeploymentTOML(source, environment).community).toEqual({
-      workspaceId: workspace
-    })
+    const config = parseCloudDeploymentTOML(source, environment)
+    expect(config.community).toEqual({ workspaceId: workspace })
+    // Editors read it to keep the gallery out of where they save on their own.
+    expect(cloudDiscoveryFromConfig(config).community).toEqual({ workspaceId: workspace })
     expect(() =>
       parseCloudDeploymentTOML(source.replace(workspace, 'community'), environment)
     ).toThrow()

@@ -24,7 +24,7 @@ const SIGN_IN_PATH = '/auth/sign-in'
  */
 export function isSecretCloudLink(url: URL): boolean {
   const path = parseCloudLinkPath(url.pathname)
-  return path !== null && path.kind !== 'documents' && url.hash.length > 1
+  return (path?.kind === 'invitations' || path?.kind === 'share') && url.hash.length > 1
 }
 
 /** Whether this browser chose to use the server's editor without an account. */
@@ -47,7 +47,8 @@ export type SiteAccount = CloudAccountStatus | null | 'unreachable'
  * Where a visit to an editor page belongs: null for the editor, or the welcome page, which sends
  * an account waiting for review on to its standing page. An account that may use the server
  * gets the editor, and so does an unreachable server, since the editor works without it.
- * A document's link needs an account: signed out, it goes to sign in and comes back after.
+ * A document's link needs an account: signed out, it goes to sign in and comes back after; a
+ * document of the community gallery needs none.
  * Without an account, the root asks first unless this browser chose the local editor, and every
  * page does where the server does not allow it.
  */
@@ -61,7 +62,10 @@ export function siteDestination(visit: {
 }): string | null {
   const { path, account } = visit
   if (account === 'unreachable' || account?.state === 'active') return null
-  if (parseCloudLinkPath(path)?.kind === 'documents') {
+  const link = parseCloudLinkPath(path)?.kind
+  // The community gallery is for everyone, with an account or without.
+  if (link === 'community') return null
+  if (link === 'documents') {
     if (account) return WELCOME_PATH
     const redirect = path + (visit.search ?? '')
     return `${SIGN_IN_PATH}?${new URLSearchParams({ redirect })}`

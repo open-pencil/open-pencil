@@ -369,7 +369,9 @@ export function createCloudApp(services: CloudServices) {
     services.config.authSecret,
     CLOUD_RATE_LIMITS.communityRead,
     { trustedHeaders: services.config.authTrustedIPHeaders },
-    (context) => context.json({ error: { code: 'not_found' as const } }, 404)
+    (context) => context.json({ error: { code: 'not_found' as const } }, 404),
+    // The gallery's own budget, across its paths, in place of the per-path public one.
+    { route: true }
   )
   const authenticatedMutationLimiter = createActorRateLimiter(
     services.database,

@@ -69,8 +69,9 @@ export function createCommunityRoutes(community: CommunityService) {
 }
 
 /**
- * Gallery thumbnails, for pages and apps on any origin: each address names the revision it shows,
- * so a copy never goes stale and caches may keep it.
+ * Gallery thumbnails, for pages and apps on any origin. Each address names the revision it shows,
+ * so a copy never goes stale, but it is cached only as long as the listing is: a document taken
+ * down or out of the gallery stops showing everywhere within minutes.
  */
 export function createCommunityThumbnailRoutes(community: CommunityService) {
   return new Hono().get(
@@ -81,7 +82,7 @@ export function createCommunityThumbnailRoutes(community: CommunityService) {
         const { documentId, revisionId } = context.req.valid('param')
         const thumbnail = await community.thumbnail(documentId, revisionId)
         if (!thumbnail) return notFound(context)
-        context.header('Cache-Control', 'public, max-age=31536000, immutable')
+        context.header('Cache-Control', 'public, max-age=300')
         context.header('Content-Type', 'image/png')
         context.header('X-Content-Type-Options', 'nosniff')
         context.header('Content-Security-Policy', "default-src 'none'; sandbox")
