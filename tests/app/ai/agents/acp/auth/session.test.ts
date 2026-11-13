@@ -1,13 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
 import {
-  AgentSideConnection,
+  agent as acpAgent,
+  methods,
   ndJsonStream,
   PROTOCOL_VERSION,
-  type Agent,
   type InitializeRequest,
+  type InitializeResponse,
   type NewSessionRequest
-} from '@agentclientprotocol/sdk'
+} from '@agentclientprotocol/sdk/unstable'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
 import { expectDefined } from '@open-pencil/test-support/assert'
@@ -50,17 +51,15 @@ function fakeAgent(options: {
   const sessions: NewSessionRequest[] = []
   const closed = createDeferred<undefined>()
   const authenticating = createDeferred<undefined>()
-  let connection: AgentSideConnection | null = null
-  const push = (status: AgentAuthStatus) =>
-    void connection?.extNotification(AUTH_STATUS_UPDATE_METHOD, { authStatus: status })
-  const agent: Agent = {
-    async initialize(params) {
+  const connection = acpAgent()
+    .onRequest(methods.agent.initialize, ({ params }) => {
       initialized.push(params)
       if (options.answersInitialize === false) return createDeferred<never>().promise
       if (options.status) {
         const status = options.status
         setTimeout(() => push(status), 5)
       }
+      // The last method has no id, which the client must skip.
       return {
         protocolVersion: PROTOCOL_VERSION,
         agentInfo: { name: '@agentclientprotocol/codex-acp', version: '2.2.2' },
@@ -69,14 +68,14 @@ function fakeAgent(options: {
           { id: 'claude-ai-login', name: 'Claude Subscription', type: 'terminal', args: ['login'] },
           { name: 'Missing id' }
         ]
-      } as Awaited<ReturnType<Agent['initialize']>>
-    },
-    async newSession(params) {
+      } as InitializeResponse
+    })
+    .onRequest(methods.agent.session.new, ({ params }) => {
       if (!options.startsSessions) throw new Error('Not used')
       sessions.push(params)
       return { sessionId: `session-${sessions.length}` }
-    },
-    async authenticate() {
+    })
+    .onRequest(methods.agent.authenticate, () => {
       authenticating.resolve(undefined)
       // Without a login to report, the sign-in waits as an unfinished browser login does.
       if (!options.afterSignIn) return createDeferred<never>().promise
@@ -84,16 +83,11 @@ function fakeAgent(options: {
       const status = options.afterSignIn
       setTimeout(() => push(status), 5)
       return {}
-    },
-    async prompt() {
-      throw new Error('Not used')
-    },
-    cancel: async () => undefined
+    })
+    .connect(ndJsonStream(toClient.writable, toAgent.readable))
+  function push(status: AgentAuthStatus) {
+    void connection.client.notify(AUTH_STATUS_UPDATE_METHOD, { authStatus: status })
   }
-  connection = new AgentSideConnection(
-    () => agent,
-    ndJsonStream(toClient.writable, toAgent.readable)
-  )
   // Ending the pipe ends what the client reads, as a killed process does.
   const output = new TransformStream<Uint8Array, Uint8Array>()
   const stop = new AbortController()

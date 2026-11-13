@@ -9,6 +9,7 @@ import {
   agentStarted,
   readAgentSession,
   touchedNodeIds,
+  withSubagent,
   type AgentSession
 } from '@/app/automation/agents'
 import { limitToSelection } from '@/app/automation/bridge/selection-scope'
@@ -36,8 +37,10 @@ export function createAutomationToolHandler(makeFigma: FigmaFactory) {
         ? limitToSelection(target.store, toolName, requestedArgs)
         : requestedArgs
 
-    // A call from an MCP session shows as that session's agent, working where the call works.
-    const session = readAgentSession((args as { agent?: unknown }).agent)
+    // A call from an MCP session shows as that session's agent, or for a call of a coding agent's
+    // subagent as the subagent's, working where the call works.
+    const read = readAgentSession((args as { agent?: unknown }).agent)
+    const session = read && withSubagent(read)
     const reply = session ? agentStarted(target.store, session, target.pageId) : 0
     const response = await runTool(target, toolName, toolArgs, session, signal)
     if (session) {

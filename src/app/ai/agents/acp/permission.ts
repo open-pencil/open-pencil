@@ -1,4 +1,7 @@
-import type { RequestPermissionRequest, RequestPermissionResponse } from '@agentclientprotocol/sdk'
+import type {
+  RequestPermissionRequest,
+  RequestPermissionResponse
+} from '@agentclientprotocol/sdk/unstable'
 import { computed, shallowRef } from 'vue'
 
 import { ACP_PERMISSION_TIMEOUT_MS, AGENT_INPUT_NOTIFY_DELAY_MS } from '@/constants'
