@@ -29,7 +29,10 @@ export interface DrawnFontAxes {
 /**
  * The axis values text is drawn at, as Figma draws a variable font: its style's named instance,
  * then the axes it sets. While the optical size follows the font size, `opsz` is the font size and
- * a stored `opsz` is ignored. Fonts without an axis ignore its value.
+ * a stored `opsz` is ignored. A family with no face loaded is drawn in its fallbacks, and a
+ * variable fallback takes the text's weight on its `wght` axis unless the text sets one, so the
+ * canvas draws that instance instead of emboldening the default one. Fonts without an axis ignore
+ * its value.
  */
 export function drawnFontVariations(font: DrawnFontAxes): FontVariation[] {
   // A face named apart from its weight ("Condensed Bold") is the instance of that name.
@@ -45,6 +48,9 @@ export function drawnFontVariations(font: DrawnFontAxes): FontVariation[] {
       ]
     : font.variations
   const axes = new Map([...named, ...set].map(({ axis, value }) => [axis, value]))
+  if (!axes.has('wght') && !loadedFace(font.family, font.weight, font.italic, font.style)) {
+    axes.set('wght', font.weight)
+  }
   return [...axes].map(([axis, value]) => ({ axis, value }))
 }
 
