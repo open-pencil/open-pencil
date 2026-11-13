@@ -58,7 +58,7 @@ export const runtimeScenarios: RuntimeScenario[] = [
   },
   {
     name: 'DOM/CSS conversion',
-    code: "const { htmlToSceneGraph } = await import('@open-pencil/dom-css'); const graph = await htmlToSceneGraph('<div class=card>OpenPencil</div>', { cssText: '.card { width: 320px; }' }); if (graph.getPages()[0].width !== 320) throw new Error('DOM/CSS scene graph failed')"
+    code: "const { htmlToSceneGraph } = await import('@open-pencil/dom-css'); const { createHTMLEngineRuntime } = await import('@open-pencil/html-engine'); const graph = await htmlToSceneGraph('<div class=card>OpenPencil</div>', { cssText: '.card { width: 320px; }', runtime: createHTMLEngineRuntime() }); if (graph.getPages()[0].width !== 320) throw new Error('DOM/CSS scene graph failed')"
   },
   {
     name: 'DOM/CSS browser API',
