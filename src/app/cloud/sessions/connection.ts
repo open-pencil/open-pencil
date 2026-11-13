@@ -135,14 +135,26 @@ async function signedInConnection(
     image: status.user.image ?? null
   }
   rememberCloudAccount(server.id, account)
-  // Waiting for approval or for terms, the account is still written to.
-  void tellCloudLocale({ server: server.id, account: account.id }, portal)
   if (status.state !== 'active') {
     const state = status.state === 'pending' || status.state === 'terms' ? status.state : 'closed'
     return { ...INITIAL, state, discovery, account }
   }
   const { workspaces } = await cloudAPIClient(server, discovery).listWorkspaces()
   return { state: 'signed-in', discovery, account, workspaces, failure: null }
+}
+
+/** States in which a server has an account to write to, waiting for approval or terms too. */
+const WRITTEN_TO = new Set<CloudSessionState>(['signed-in', 'pending', 'terms'])
+
+/** Tells a server the app's language for the account signed in there, if one is. */
+export function tellCloudConnectionLocale(server: CloudServer): void {
+  const { state, discovery, account } = cloudConnection(server.id)
+  if (discovery && account && WRITTEN_TO.has(state)) {
+    void tellCloudLocale(
+      { server: server.id, account: account.id },
+      cloudPortalClient(server, discovery)
+    )
+  }
 }
 
 /** Asks the server where this app stands and publishes the answer. */
@@ -197,7 +209,11 @@ async function askServer(server: CloudServer, generation: number): Promise<Cloud
       failure: error instanceof CloudClientError ? error.reason : 'unreachable'
     }
   }
-  if (generations.get(server.id) === generation) publish(server.id, next)
+  if (generations.get(server.id) === generation) {
+    publish(server.id, next)
+    // Once the answer is out, so a language picked while the check ran is the one it reports.
+    tellCloudConnectionLocale(server)
+  }
   return next
 }
 

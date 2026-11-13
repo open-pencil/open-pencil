@@ -23,8 +23,8 @@ import {
   resumeCloudLink
 } from '../links'
 import { addCloudSiteServer, cloudServers, findCloudServer } from '../servers/store'
-import { cloudConnection, cloudPortalClient, refreshCloudConnection } from './connection'
-import { onCloudLocaleChange, tellCloudLocale } from './locale'
+import { cloudConnection, refreshCloudConnection, tellCloudConnectionLocale } from './connection'
+import { onCloudLocaleChange } from './locale'
 import { leftForCloudSignIn, takePendingCloudSignIn } from './sign-in'
 
 /**
@@ -45,21 +45,10 @@ function opensWithCloudDocument(): boolean {
   )
 }
 
-/** States in which a server has an account to write to. */
-const WRITTEN_TO = new Set(['signed-in', 'pending', 'terms'])
-
 /** Tells every server the app is signed in to the language the person picks. */
 function followCloudLocale(): void {
   onCloudLocaleChange(() => {
-    for (const server of cloudServers.value) {
-      const { state, discovery, account } = cloudConnection(server.id)
-      if (discovery && account && WRITTEN_TO.has(state)) {
-        void tellCloudLocale(
-          { server: server.id, account: account.id },
-          cloudPortalClient(server, discovery)
-        )
-      }
-    }
+    for (const server of cloudServers.value) tellCloudConnectionLocale(server)
   })
 }
 
