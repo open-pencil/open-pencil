@@ -45,15 +45,20 @@ type TextSizeChanges = Partial<
   Pick<SceneNode, 'width' | 'height' | 'derivedLayout' | 'derivedTextGlyphs' | 'derivedTextHeight'>
 >
 
-function sizesItself(node: Pick<SceneNode, 'textAutoResize'>): boolean {
-  return node.textAutoResize === 'HEIGHT' || node.textAutoResize === 'WIDTH_AND_HEIGHT'
+/** Whether a text keeps its box's size, so its lines are measured at its width and may draw past it. */
+export function isFixedSizeText(node: SceneNode): boolean {
+  return (
+    node.type === 'TEXT' &&
+    !node.textPathData &&
+    node.textAutoResize !== 'HEIGHT' &&
+    node.textAutoResize !== 'WIDTH_AND_HEIGHT'
+  )
 }
 
-export function measuredFixedTextReach(node: SceneNode): number | null {
-  if (node.type !== 'TEXT' || node.textPathData || sizesItself(node)) {
-    return null
-  }
-  return getTextMeasurer()?.(node, node.width)?.height || null
+/** How far a fixed-size text's lines reach in its fonts; undefined while they cannot be measured. */
+export function measuredFixedTextReach(node: SceneNode): number | null | undefined {
+  const measured = isFixedSizeText(node) ? getTextMeasurer()?.(node, node.width) : null
+  return measured ? measured.height || null : undefined
 }
 
 export function textAutoResizeChanges(
@@ -72,7 +77,7 @@ export function textAutoResizeChanges(
   const next = { ...node, ...changes }
   const mode = next.textAutoResize
   // A fixed-size box keeps its size; its lines are measured at its width, since they draw past it.
-  if (!sizesItself(next)) {
+  if (isFixedSizeText(next)) {
     return { derivedTextHeight: measureTextForLayout(next, next.width).height || null }
   }
 
