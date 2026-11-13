@@ -6,7 +6,7 @@ import type {
   UpdateDocumentShareInput
 } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
-import type { CloudDatabase } from '#cloud/server/db'
+import { isBannedNow, type CloudDatabase } from '#cloud/server/db'
 import { DocumentNotFoundError } from '#cloud/server/documents/errors'
 import { CLOUD_FEATURE_KEYS } from '#cloud/server/policy/keys'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
@@ -39,8 +39,7 @@ async function anyBanned(database: Kysely<CloudDatabase>, userIds: string[]): Pr
     .selectFrom('user')
     .select('id')
     .where('id', 'in', accounts)
-    .where('banned', '=', true)
-    .where((user) => user.or([user('banExpires', 'is', null), user('banExpires', '>', new Date())]))
+    .where(isBannedNow)
     .executeTakeFirst()
   return banned !== undefined
 }

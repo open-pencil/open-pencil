@@ -8,7 +8,7 @@ import {
 } from '#cloud/admin/list'
 import { isUUID } from '#cloud/admin/schema'
 import { cloudAdminAuditFilterSchema, type CloudAdminAuditFilter } from '#cloud/contract'
-import type { CloudDatabase } from '#cloud/server/db'
+import { userIdText, type CloudDatabase } from '#cloud/server/db'
 import { uniq } from 'es-toolkit'
 import type { ExpressionBuilder, Kysely } from 'kysely'
 
@@ -36,7 +36,7 @@ function searchCondition(pattern: string) {
         expression
           .selectFrom('user')
           .select('user.id')
-          .where((inner) => inner(inner.cast('user.id', 'text'), '=', inner.ref(column)))
+          .whereRef(userIdText, '=', column)
           .where((inner) =>
             inner.or([inner('user.name', 'ilike', pattern), inner('user.email', 'ilike', pattern)])
           )

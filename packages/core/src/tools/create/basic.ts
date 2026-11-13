@@ -3,7 +3,7 @@ import * as v from 'valibot'
 import type { FigmaNodeProxy } from '#core/figma-api'
 import { graphOf } from '#core/figma-api/graph'
 import { prepareSlotInsertion } from '#core/figma-api/slots'
-import { toolNumber, positionInputs, defineTool, nodeSummary } from '#core/tools/schema'
+import { layoutLength, positionInputs, defineTool, nodeSummary } from '#core/tools/schema'
 
 export const createShape = defineTool({
   name: 'create_shape',
@@ -17,8 +17,8 @@ export const createShape = defineTool({
       v.description('Node type')
     ),
     ...positionInputs,
-    width: toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Width in pixels'))),
-    height: toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Height in pixels'))),
+    width: layoutLength('Width in pixels', 1),
+    height: layoutLength('Height in pixels', 1),
     name: v.optional(v.pipe(v.string(), v.description('Node name shown in layers panel'))),
     parent_id: v.optional(v.pipe(v.string(), v.description('Parent node ID to nest inside')))
   }),
@@ -69,8 +69,8 @@ export const createSlice = defineTool({
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
     ...positionInputs,
-    width: toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Width'))),
-    height: toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Height'))),
+    width: layoutLength('Width', 1),
+    height: layoutLength('Height', 1),
     name: v.optional(v.pipe(v.string(), v.description('Slice name'))),
     parent_id: v.optional(v.pipe(v.string(), v.description('Parent node ID')))
   }),
