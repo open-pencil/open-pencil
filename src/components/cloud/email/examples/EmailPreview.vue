@@ -26,7 +26,11 @@ const view = ref('html')
       </AppTabsList>
       <AppTabsContent value="html">
         <!-- A frame keeps the page's styles out, so the email shows only its own, as a mail client does. -->
-        <iframe :srcdoc="email.html" aria-label="Email" class="h-200 w-full rounded-b-lg bg-white" />
+        <iframe
+          :srcdoc="email.html"
+          aria-label="Email"
+          class="h-200 w-full rounded-b-lg bg-white"
+        />
       </AppTabsContent>
       <AppTabsContent value="text">
         <pre class="p-4 text-sm whitespace-pre-wrap">{{ email.text }}</pre>

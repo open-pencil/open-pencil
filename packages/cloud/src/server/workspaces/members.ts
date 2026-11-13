@@ -261,7 +261,7 @@ export function createWorkspaceMemberService(
           kind: 'workspace-invitation',
           recipientEmail: input.email,
           // Someone without an account yet reads the inviter's language.
-          locale: inviter?.locale,
+          fallbackLocale: inviter?.locale,
           payload: {
             inviterName: inviter?.name ?? null,
             workspaceName: workspace.name,

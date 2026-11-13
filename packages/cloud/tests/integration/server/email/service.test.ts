@@ -90,7 +90,7 @@ describe('transactional email outbox', () => {
     }
   })
 
-  test('writes in the recipient account’s language, then the sender’s, then English', async () => {
+  test('writes in the recipient’s language, as given or as their account says, then the sender’s, then English', async () => {
     const runtime = await createCloudTestDatabase()
     const sent: Array<{ to: string; subject: string; html: string }> = []
     try {
@@ -124,18 +124,28 @@ describe('transactional email outbox', () => {
           idempotencyKey: `document-invitation/${recipientEmail}`,
           kind: 'document-invitation',
           recipientEmail,
-          locale,
+          fallbackLocale: locale,
           payload: invitation
         })
       await enqueue('reader@example.com', 'fr')
       await enqueue('guest@example.com', 'fr')
       await enqueue('stranger@example.com')
+      // A sender with the account at hand, as signing up is, gives its language; none is English.
+      await email.enqueue({
+        idempotencyKey: 'email-verification/signing-up',
+        kind: 'email-verification',
+        recipientEmail: 'signing-up@example.com',
+        recipientLocale: 'ja',
+        fallbackLocale: 'fr',
+        payload: { name: 'Ada', actionURL: 'https://cloud.example.com/verify' }
+      })
       await email.deliverPending({ batchSize: 10, leaseDurationMs: 60_000 })
       const language = (to: string) =>
         /<html[^>]* lang="([^"]+)"/.exec(sent.find((message) => message.to === to)?.html ?? '')?.[1]
       expect(language('reader@example.com')).toBe('de')
       expect(language('guest@example.com')).toBe('fr')
       expect(language('stranger@example.com')).toBe('en')
+      expect(language('signing-up@example.com')).toBe('ja')
     } finally {
       await runtime.close()
     }

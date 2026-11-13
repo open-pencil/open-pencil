@@ -244,8 +244,13 @@ export function createAccountRoutes(services: AccountRouteDependencies) {
       .use('/api/account/delete', services.requireAccountSession)
       .use('/api/account/delete', authenticatedMutationLimiter)
       .use('/api/account/profile', authenticatedMutationLimiter)
-      // An account awaiting approval is written to as well, so it can say its language too.
-      .use('/api/account/locale', services.requireAccountSession)
+      // An account awaiting approval or the terms is written to too, so any signed-in one may.
+      .use('/api/account/locale', async (context, next) => {
+        const actor = await resolveIdentity(context.req.raw)
+        if (!actor) return context.json({ error: { code: 'unauthorized' as const } }, 401)
+        context.set('actor', actor)
+        return next()
+      })
       .use('/api/account/locale', authenticatedMutationLimiter)
       .use('/api/account/profile/*', authenticatedMutationLimiter)
       .use('/api/account/sessions/*', authenticatedMutationLimiter)

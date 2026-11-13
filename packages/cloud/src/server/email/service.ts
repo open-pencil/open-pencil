@@ -96,18 +96,23 @@ export function createTransactionalEmailService(
       )
       const executor = transaction ?? database
       const recipientEmailNormalized = normalizedEmail(input.recipientEmail)
-      // An account writes in the language it chose, whoever sends to it.
-      const recipient = await executor
-        .selectFrom('user')
-        .select('locale')
-        .where((expression) =>
-          expression(
-            expression.fn('lower', [expression.ref('email')]),
-            '=',
-            recipientEmailNormalized
-          )
-        )
-        .executeTakeFirst()
+      // An account is written to in the language it chose, whoever sends to it.
+      const recipientLocale =
+        input.recipientLocale !== undefined
+          ? input.recipientLocale
+          : (
+              await executor
+                .selectFrom('user')
+                .select('locale')
+                .where((expression) =>
+                  expression(
+                    expression.fn('lower', [expression.ref('email')]),
+                    '=',
+                    recipientEmailNormalized
+                  )
+                )
+                .executeTakeFirst()
+            )?.locale
       const row = await executor
         .insertInto('transactionalEmail')
         .values({
@@ -116,7 +121,7 @@ export function createTransactionalEmailService(
           kind: input.kind,
           recipientEmailNormalized,
           payloadEncrypted,
-          locale: recipient?.locale ?? input.locale ?? 'en',
+          locale: recipientLocale ?? input.fallbackLocale ?? 'en',
           status: 'pending',
           nextAttemptAt: new Date(),
           claimId: null,

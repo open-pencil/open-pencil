@@ -52,7 +52,7 @@ export function enrollmentOptions(
                 url,
                 token,
                 purpose: user.emailVerified ? 'change' : 'account',
-                // A new account isn't saved yet, so its language comes with it.
+                // The account carries its language, so nothing is looked up in the transaction.
                 locale: accountLocale(user)
               }),
             afterEmailVerification: async (user) => {

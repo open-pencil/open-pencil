@@ -15,7 +15,7 @@ export function createInvitationOutbox(email: TransactionalEmailService): Invita
           idempotencyKey: `document-invitation/${message.deliveryId}`,
           kind: 'document-invitation',
           recipientEmail: message.recipientEmail,
-          locale: message.locale,
+          fallbackLocale: message.locale,
           payload: {
             inviterName: message.inviterName,
             documentName: message.documentName,

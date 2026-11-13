@@ -135,9 +135,13 @@ function checkMessages(
     }
     const source = sourceMessage(defaults[key])
     const localized = data[key]
-    if (source === null || typeof localized !== 'string') continue
-    total++
+    if (source === null) continue
     const id = `${baselineLocaleId(locale)}:${namespace}.${key}`
+    if (typeof localized !== 'string') {
+      report(`${id}: translation is not a string`)
+      continue
+    }
+    total++
     if (placeholders(source).join(',') !== placeholders(localized).join(',')) {
       report(
         `${id}: placeholders differ from source (${placeholders(source).join(', ')} != ${placeholders(localized).join(', ')})`

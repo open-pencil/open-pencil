@@ -11,7 +11,7 @@ export type AuthenticationEmailService = {
     url: string
     token: string
     purpose?: 'account' | 'change'
-    /** The account's language while it's being made, before Cloud can look it up. */
+    /** The account's own language, or null for none; nothing is looked up, as sign-up needs. */
     locale?: CloudLocale | null
   }): Promise<void>
   sendPasswordReset(input: {
@@ -65,7 +65,7 @@ export function createAuthenticationEmailService(
         idempotencyKey: `email-verification/${input.email.toLowerCase()}/${tokenHash(input.token)}`,
         kind: 'email-verification',
         recipientEmail: input.email,
-        locale: input.locale,
+        recipientLocale: input.locale ?? null,
         payload: { name: input.name, actionURL: input.url, purpose: input.purpose }
       })
     },

@@ -30,10 +30,16 @@ export type EnqueueTransactionalEmailInput<Kind extends TransactionalEmailKind> 
   recipientEmail: string
   payload: TransactionalEmailPayloadByKind[Kind]
   /**
-   * The language to write in when the recipient has no account that chose one: the inviter's for
-   * an invitation, or the account's own while signing up, before it's saved. English otherwise.
+   * The recipient account's own language, when the sender has the account: the email is then
+   * written in it, or in English when it has none, without looking the account up. Signing up
+   * needs this, since its callbacks run inside its transaction and must not query the database.
    */
-  locale?: CloudLocale | null
+  recipientLocale?: CloudLocale | null
+  /**
+   * The language to write in when the recipient has no account that chose one: the inviter's for
+   * an invitation. English otherwise.
+   */
+  fallbackLocale?: CloudLocale | null
 }
 
 export type TransactionalEmailDeliveryOptions = {
