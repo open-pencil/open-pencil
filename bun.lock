@@ -225,6 +225,7 @@
         "valibot": "^1.5.0",
       },
       "devDependencies": {
+        "@open-pencil/emit": "workspace:*",
         "@open-pencil/fig": "workspace:*",
         "@open-pencil/package-artifacts-tools": "workspace:*",
         "@open-pencil/test-support": "workspace:*",
@@ -457,6 +458,7 @@
         "postcss-value-parser": "^4.2.0",
         "tailwindcss": "^4.3.3",
         "twirlwind": "^0.4.1",
+        "valibot": "^1.5.0",
       },
       "devDependencies": {
         "@iconify/react": "^6.0.2",

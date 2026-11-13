@@ -21,6 +21,8 @@ import { useJoinRoom } from '@/app/collab/join'
 import { bindDesktopRoomLinks } from '@/app/collab/room/links'
 import { COLLAB_KEY, useCollab } from '@/app/collab/use'
 import { openDemoDocument } from '@/app/demo/document'
+import type { DeepLinkActions } from '@/app/document/io/deep-link'
+import { focusLinkedNode } from '@/app/document/io/linked-node'
 import type { PendingOpenFile } from '@/app/document/io/pending-open'
 import { openPendingFiles } from '@/app/document/io/pending-open'
 import { openWebLinkFromLocation, withoutWebLinkParams } from '@/app/document/io/web-link'
@@ -231,11 +233,17 @@ async function selectNodeByName(name: string): Promise<boolean> {
   return (await focusNodesByName(getActiveStore(), name)) !== 'missing'
 }
 
+const selectNodeById: DeepLinkActions['selectById'] = async (target) => {
+  const store = getActiveStore()
+  return focusLinkedNode(store, target, () => getActiveStore() === store)
+}
+
 async function openPendingAssociatedFiles(): Promise<void> {
   const files = await invoke<PendingOpenFile[]>('take_pending_open')
   await openPendingFiles(files, {
     openPaths: openDocumentPaths,
     selectByName: selectNodeByName,
+    selectById: selectNodeById,
     notify: toast.info
   })
 }
@@ -283,6 +291,7 @@ onMounted(async () => {
     try {
       await openWebLinkFromLocation(window.location.search, stripWebLinkParams, {
         selectByName: selectNodeByName,
+        selectById: selectNodeById,
         notify: (message, level) => (level === 'error' ? toast.error : toast.info)(message)
       })
     } catch (error) {
