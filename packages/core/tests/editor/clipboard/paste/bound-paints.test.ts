@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core'
+import { createEditor, type ClipboardSnapshot } from '@open-pencil/core'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 /** A frame with a rectangle whose bound fill had its opacity edited, and a frame set to Dark. */
@@ -35,14 +35,24 @@ function setup() {
   }
   // A value changing only in Dark refreshes nothing that resolves Light.
   const touchDark = () => editor.updateVariableValue(tone.id, dark, { r: 0, g: 1, b: 1, a: 1 })
-  return { editor, frame, darkFrame, rect, read, touchDark }
+  return { editor, collection, light, dark, tone, frame, darkFrame, rect, read, touchDark }
 }
 
-async function paste(editor: ReturnType<typeof setup>['editor'], sourceId: string, into: string) {
+type Editor = ReturnType<typeof setup>['editor']
+
+async function copy(editor: Editor, sourceId: string) {
   editor.select([sourceId])
   const { snapshot } = await editor.prepareCopy()
+  return expectDefined(snapshot, 'snapshot')
+}
+
+async function paste(editor: Editor, sourceId: string, into: string) {
+  return pasteInto(editor, await copy(editor, sourceId), into)
+}
+
+async function pasteInto(editor: Editor, snapshot: ClipboardSnapshot, into: string) {
   editor.select([into])
-  await editor.pasteSnapshot(expectDefined(snapshot, 'snapshot'))
+  await editor.pasteSnapshot(snapshot)
   // Paste selects what it created.
   const [pasted] = editor.state.selectedIds
   return expectDefined(pasted, 'pasted layer')
@@ -62,4 +72,24 @@ test('a bound paint pasted into a frame set to another mode takes its color ther
   const { editor, darkFrame, rect, read } = setup()
   const pasted = await paste(editor, rect.id, darkFrame.id)
   expect(read(pasted)).toBe('0,0,1,1')
+})
+
+// The clipboard holds the layer as copied, so what its source does after the copy cannot reach a
+// paste of it.
+test('a pasted bound paint keeps its edit when its source changed mode after the copy', async () => {
+  const { editor, collection, dark, frame, rect, read } = setup()
+  const snapshot = await copy(editor, rect.id)
+  editor.updateNodeWithUndo(frame.id, { variableModes: { [collection.id]: dark } }, 'Set mode')
+  expect(read(rect.id)).toBe('0,0,1,1')
+  const page = editor.graph.getPages()[0].id
+  const pasted = await pasteInto(editor, snapshot, page)
+  expect(read(pasted)).toBe('1,0,0,0.4')
+})
+
+test('a bound paint pasted after its variable changed takes the new color', async () => {
+  const { editor, light, tone, frame, rect, read } = setup()
+  const snapshot = await copy(editor, rect.id)
+  editor.updateVariableValue(tone.id, light, { r: 0, g: 1, b: 0, a: 1 })
+  const pasted = await pasteInto(editor, snapshot, frame.id)
+  expect(read(pasted)).toBe('0,1,0,1')
 })

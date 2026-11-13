@@ -18,7 +18,7 @@ import { subtreeNodes } from './subtree'
  * without an entry, such as one just restored, counts its paint's own color as the last one
  * applied, in the modes it has now.
  */
-interface AppliedColor {
+export interface AppliedColor {
   readonly variableId: string
   readonly color: Color
   /** The mode set for the layer, or null, in each collection the variable resolves through. */
@@ -106,25 +106,48 @@ export function copyAppliedBoundPaints(source: SceneNode, copy: SceneNode): void
   if (entries) appliedColors.set(copy, new Map(entries))
 }
 
+/** The colors copied layers' bindings last applied, by layer id, as a copy captured them. */
+export type AppliedBoundPaints = ReadonlyMap<string, ReadonlyMap<string, AppliedColor>>
+
 /**
- * Pasted layers keep their paints, edits included, as Figma's copies do. One pasted from a layer
- * still in the document takes the colors that layer's bindings last applied, so a paste into
- * another mode refreshes them as a move there would; one from elsewhere counts the colors its
- * variables give it now as applied, as a loaded document does. `copies` maps each source layer's
- * id to its copy's.
+ * The colors the bindings of the layers `nodeIds` names last applied, captured when they are
+ * copied, so a paste counts what the copied paints were applied from, not what the source has now.
+ */
+export function captureAppliedBoundPaints(
+  graph: SceneGraph,
+  nodeIds: Iterable<string>
+): AppliedBoundPaints {
+  const captured = new Map<string, ReadonlyMap<string, AppliedColor>>()
+  for (const id of nodeIds) {
+    const node = graph.nodes.get(id)
+    const entries = node && appliedColors.get(node)
+    if (entries) captured.set(id, new Map(entries))
+  }
+  return captured
+}
+
+/**
+ * Pasted layers keep their paints, edits included, as Figma's copies do. One copied in this
+ * document takes the colors its source's bindings had last applied when it was copied, so a paste
+ * into another mode refreshes them as a move there would; one from elsewhere counts the colors
+ * its variables give it now as applied, as a loaded document does. `copies` maps each copied
+ * layer's id to its copy's.
  */
 export function keepPastedBoundPaints(
   graph: SceneGraph,
-  copies: ReadonlyMap<string, string>
+  copies: ReadonlyMap<string, string>,
+  applied: AppliedBoundPaints
 ): void {
   for (const [sourceId, copyId] of copies) {
     const copy = graph.nodes.get(copyId)
     if (!copy || !hasBoundPaints(copy)) continue
-    const source = graph.nodes.get(sourceId)
-    if (source && source !== copy) {
-      copyAppliedBoundPaints(source, copy)
-      refresh(graph, copy, NONE_FORCED)
-    } else recordWrittenBoundPaints(graph, copy, { fills: copy.fills, strokes: copy.strokes })
+    const entries = applied.get(sourceId)
+    if (!entries) {
+      recordWrittenBoundPaints(graph, copy, { fills: copy.fills, strokes: copy.strokes })
+      continue
+    }
+    appliedColors.set(copy, new Map(entries))
+    refresh(graph, copy, NONE_FORCED)
   }
 }
 
