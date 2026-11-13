@@ -5,7 +5,7 @@ import {
   type CommunityVersion,
   type DocumentVersion
 } from '#cloud/contract'
-import type { CloudDatabase } from '#cloud/server/db'
+import { isBannedNow, userIdText, type CloudDatabase } from '#cloud/server/db'
 import { DocumentNotFoundError, type DocumentService } from '#cloud/server/documents'
 import type { DocumentVersionService } from '#cloud/server/documents/versions'
 import type { ObjectStore } from '#cloud/server/objects'
@@ -57,18 +57,8 @@ export function createCommunityService(
             expression
               .selectFrom('user')
               .select('user.id')
-              .whereRef(
-                (expression) => expression.cast(expression.ref('user.id'), 'text'),
-                '=',
-                'document.createdBy'
-              )
-              .where('user.banned', '=', true)
-              .where((user) =>
-                user.or([
-                  user('user.banExpires', 'is', null),
-                  user('user.banExpires', '>', new Date())
-                ])
-              )
+              .whereRef(userIdText, '=', 'document.createdBy')
+              .where(isBannedNow)
           )
         )
       )
