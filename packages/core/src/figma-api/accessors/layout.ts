@@ -3,6 +3,7 @@ import * as v from 'valibot'
 import type { LayoutGrid, LayoutMode, LayoutSizing, SceneNode } from '@open-pencil/scene-graph'
 import {
   aspectRatioLockEditable,
+  counterAxisSpacingOf,
   layoutSizing,
   layoutSizingError,
   layoutSizingUpdates,
@@ -89,7 +90,21 @@ export function installLayoutNodeProxyAccessors(
     primaryAxisAlignItems: mappedAccessor(internals, 'primaryAxisAlign'),
     counterAxisAlignItems: mappedAccessor(internals, 'counterAxisAlign'),
     itemSpacing: numberAccessor(internals, 'itemSpacing', finiteNumberSchema),
-    counterAxisSpacing: numberAccessor(internals, 'counterAxisSpacing', finiteNumberSchema),
+    // null follows the item spacing, and reads back as it (Figma desktop 126).
+    counterAxisSpacing: {
+      get(this: ProxyThis): number {
+        return counterAxisSpacingOf(raw(this, internals))
+      },
+      set(this: ProxyThis, value: unknown) {
+        const counterAxisSpacing = parseFigma(
+          v.nullable(finiteNumberSchema),
+          value,
+          'set_counterAxisSpacing',
+          'counterAxisSpacing'
+        )
+        updateNode(this, internals, { counterAxisSpacing })
+      }
+    },
     paddingTop: padding(internals, 'paddingTop', ['paddingTop']),
     paddingRight: padding(internals, 'paddingRight', ['paddingRight']),
     paddingBottom: padding(internals, 'paddingBottom', ['paddingBottom']),
@@ -259,7 +274,6 @@ const sizeLimitSchema = v.nullable(finiteNumberSchema)
 
 type NumberField =
   | 'itemSpacing'
-  | 'counterAxisSpacing'
   | 'layoutGrow'
   | 'minWidth'
   | 'maxWidth'

@@ -79,6 +79,16 @@ describe('a number a layer takes', () => {
     )
   })
 
+  test('spaces wrapped lines as the items while the counter spacing is null', () => {
+    const { frame } = stroked()
+    frame.layoutWrap = 'WRAP'
+    frame.itemSpacing = 12
+    frame.counterAxisSpacing = null
+    expect(frame.counterAxisSpacing).toBe(12)
+    frame.itemSpacing = 20
+    expect(frame.counterAxisSpacing).toBe(20)
+  })
+
   test('takes a transform row as an object keyed by index, and clears a size limit with null', () => {
     const { frame } = stroked()
     Reflect.set(frame, 'relativeTransform', [{ 0: 1, 1: 0, 2: 7 }, [0, 1, 3]])

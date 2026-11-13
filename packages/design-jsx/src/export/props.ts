@@ -2,7 +2,7 @@ import { isEqual, omitBy, pick } from 'es-toolkit'
 
 import type { ArcData, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { DEFAULT_FONT_FAMILY } from '@open-pencil/scene-graph/constants'
-import { layoutSizing } from '@open-pencil/scene-graph/layout'
+import { counterAxisSpacingOf, layoutSizing } from '@open-pencil/scene-graph/layout'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 import { vectorNetworkPaths } from '@open-pencil/scene-graph/vector-network'
@@ -68,7 +68,8 @@ function collectFlexAlignmentProps(node: SceneNode, props: JSXProp[]): void {
 
   if (node.layoutWrap === 'WRAP') {
     props.push(['wrap', true])
-    if (node.counterAxisSpacing > 0) props.push(['rowGap', node.counterAxisSpacing])
+    const rowGap = counterAxisSpacingOf(node)
+    if (rowGap > 0) props.push(['rowGap', rowGap])
   }
 
   if (node.primaryAxisAlign === 'CENTER') props.push(['justify', 'center'])
