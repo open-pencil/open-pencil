@@ -7,6 +7,7 @@ import {
   cloudSessionSchema,
   cloudUserProfileSchema,
   collaborationTicketSchema,
+  communityDownloadSchema,
   createInvitationContinuationSchema,
   documentAccessSchema,
   documentDownloadSchema,
@@ -31,6 +32,7 @@ import {
   type CloudSession,
   type CloudUserProfile,
   type CollaborationTicket,
+  type CommunityDownload,
   type CreateInvitationContinuationInput,
   type InvitationContinuation,
   type CommitUploadRequest,
@@ -422,6 +424,23 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
         options.onDiagnostic
       )
       return response.resolution
+    },
+    /**
+     * A document of the server's community gallery as it is now, or one of its named versions,
+     * which anyone may open without signing in.
+     */
+    async getCommunityDocument(
+      documentId: string,
+      versionId: string | null = null
+    ): Promise<CommunityDownload> {
+      return parseResponse(
+        publicClient.community[':documentId'].document.$get({
+          param: { documentId },
+          query: versionId ? { version: versionId } : {}
+        }),
+        communityDownloadSchema,
+        options.onDiagnostic
+      )
     },
     async getSharedDocument(shareId: string, input: ResolveDocumentShareInput) {
       return parseResponse(

@@ -7,6 +7,7 @@ import type {
   DesignNode,
   DesignStyleDeclaration
 } from '@open-pencil/dom-css'
+import { layoutSizing } from '@open-pencil/scene-graph/layout'
 
 function element(
   computedStyle: DesignStyleDeclaration,
@@ -58,6 +59,93 @@ describe('laying out HTML from its captured layout', () => {
     expect(rowLayer.itemSpacing).toBe(20)
     expect(first).toMatchObject({ x: 10, width: 40 })
     expect(second).toMatchObject({ x: 70, width: 60 })
+  })
+
+  test('fixes the size of a child auto layout sizes otherwise, keeping its parent auto layout', async () => {
+    // Boxes left to layout that it hugs to nothing, though the page gave them a size: fixing
+    // their sizes lands them where the page did, so the column keeps stacking them.
+    const auto = { width: 'auto', height: 'auto' }
+    const column = element(
+      { display: 'block', width: '200px', height: 'auto' },
+      { box: rect(0, 0, 200, 100) },
+      [
+        element({ display: 'block', ...auto }, { box: rect(0, 0, 200, 40) }),
+        element({ display: 'block', ...auto }, { box: rect(0, 40, 200, 60) })
+      ]
+    )
+    const graph = await sceneGraphFromStyledHTML({ type: 'document', children: [column] })
+    const columnLayer = graph.getChildren(graph.getPages()[0].id)[0]
+    const [first, second] = graph.getChildren(columnLayer.id)
+
+    expect(columnLayer.layoutMode).toBe('VERTICAL')
+    expect(first).toMatchObject({ y: 0, height: 40 })
+    expect(second).toMatchObject({ y: 40, height: 60 })
+  })
+
+  test('lays out again after correcting a fixed size, so its siblings follow and auto layout stays', async () => {
+    // The page sized the first box 30px though its style says 20px, as a min-height would.
+    const column = element(
+      { display: 'block', width: '200px', height: '70px' },
+      { box: rect(0, 0, 200, 70) },
+      [
+        element({ display: 'block', width: '200px', height: '20px' }, { box: rect(0, 0, 200, 30) }),
+        element({ display: 'block', width: '200px', height: '40px' }, { box: rect(0, 30, 200, 40) })
+      ]
+    )
+    const graph = await sceneGraphFromStyledHTML({ type: 'document', children: [column] })
+    const columnLayer = graph.getChildren(graph.getPages()[0].id)[0]
+    const [first, second] = graph.getChildren(columnLayer.id)
+
+    expect(columnLayer.layoutMode).toBe('VERTICAL')
+    expect(first).toMatchObject({ y: 0, height: 30 })
+    expect(second).toMatchObject({ y: 30, height: 40 })
+  })
+
+  test('sets the text of an inline element on its line, sized to its words', async () => {
+    // A flex item of inline text: its words are on its one fragment.
+    const span: DesignElement = {
+      type: 'element',
+      tagName: 'span',
+      attrs: {},
+      children: [{ type: 'text', text: 'Vue.js' }],
+      computedStyle: { display: 'inline', width: 'auto', height: 'auto', 'font-size': '16px' },
+      layout: { box: rect(10, 8, 47, 24), fragments: [rect(10, 8, 47, 24)] }
+    }
+    const nav = element(
+      { display: 'flex', width: '300px', height: '40px' },
+      { box: rect(0, 0, 300, 40) },
+      [span]
+    )
+    const graph = await sceneGraphFromStyledHTML({ type: 'document', children: [nav] })
+    const navLayer = graph.getChildren(graph.getPages()[0].id)[0]
+    const [text] = graph.getChildren(navLayer.id)
+
+    expect(text).toMatchObject({ type: 'TEXT', textAutoResize: 'WIDTH_AND_HEIGHT', y: 8 })
+    expect(text.width).toBeGreaterThan(0)
+  })
+
+  test('a single line hugs its words in a column that stretches its children', async () => {
+    const label: DesignElement = {
+      type: 'element',
+      tagName: 'span',
+      attrs: {},
+      children: [{ type: 'text', text: 'Docs' }],
+      computedStyle: { display: 'inline', width: 'auto', height: 'auto', 'font-size': '16px' },
+      layout: { box: rect(0, 0, 36, 24), fragments: [rect(0, 0, 36, 24)] }
+    }
+    // A flex column without align-items stretches its children across.
+    const column = element(
+      { display: 'flex', 'flex-direction': 'column', width: '300px', height: 'auto' },
+      { box: rect(0, 0, 300, 24) },
+      [label]
+    )
+    const graph = await sceneGraphFromStyledHTML({ type: 'document', children: [column] })
+    const columnLayer = graph.getChildren(graph.getPages()[0].id)[0]
+    const [text] = graph.getChildren(columnLayer.id)
+
+    expect(text.type).toBe('TEXT')
+    expect(layoutSizing(graph, text, 'HORIZONTAL')).toBe('HUG')
+    expect(text.width).toBeLessThan(300)
   })
 
   test('puts top-level elements where the page stacked them', async () => {

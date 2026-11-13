@@ -145,6 +145,41 @@ export function createDocumentVersionService(
     return stored
   }
 
+  /** A document's history for a caller that already let the reader in, and where it starts. */
+  async function sharedHistory(documentId: string) {
+    const document = await getDocumentSummaryRow(database, documentId)
+    if (!document) throw new DocumentNotFoundError()
+    const start = await historyStart(
+      database,
+      options.policy,
+      deploymentMode,
+      document.workspaceId,
+      new Date()
+    )
+    return { document, start }
+  }
+
+  /** A version's stored file, with where to download it and the images it names. */
+  async function downloadVersion(
+    document: Awaited<ReturnType<typeof sharedHistory>>['document'],
+    version: VersionRow
+  ): Promise<DocumentVersionDownload> {
+    const stored = await storedRevision(database, version.revisionId)
+    const expiresAt = new Date(Date.now() + DOWNLOAD_LIFETIME_MS)
+    return {
+      document: {
+        document: documentSummary(document),
+        revisionId: version.revisionId,
+        byteSize: Number(stored.byteSize),
+        checksum: stored.checksum,
+        contentType: stored.contentType,
+        download: await objects.createDownload({ key: stored.objectKey, expiresAt }),
+        images: await revisionImageDownloads(database, objects, version.revisionId, expiresAt)
+      },
+      version: versionOf(version, document.currentRevisionId)
+    }
+  }
+
   return {
     async list(
       userId: string,
@@ -242,21 +277,51 @@ export function createDocumentVersionService(
       versionId: string
     ): Promise<DocumentVersionDownload> {
       const { document, start } = await openHistory(userId, documentId, false)
-      const version = await findVersion(documentId, versionId, start)
-      const stored = await storedRevision(database, version.revisionId)
-      const expiresAt = new Date(Date.now() + DOWNLOAD_LIFETIME_MS)
-      return {
-        document: {
-          document: documentSummary(document),
-          revisionId: version.revisionId,
-          byteSize: Number(stored.byteSize),
-          checksum: stored.checksum,
-          contentType: stored.contentType,
-          download: await objects.createDownload({ key: stored.objectKey, expiresAt }),
-          images: await revisionImageDownloads(database, objects, version.revisionId, expiresAt)
-        },
-        version: versionOf(version, document.currentRevisionId)
+      return downloadVersion(document, await findVersion(documentId, versionId, start))
+    },
+
+    /**
+     * The named versions of several documents of one workspace, newest first, each list keyed by
+     * its document, for a caller that already let the reader in, such as the community gallery;
+     * the workspace's history limit still applies, and one query reads them all.
+     */
+    async namedSharedIn(
+      workspaceId: string,
+      documents: { id: string; currentRevisionId: string | null }[]
+    ): Promise<Map<string, DocumentVersion[]>> {
+      const named = new Map(documents.map((document) => [document.id, [] as DocumentVersion[]]))
+      if (documents.length === 0) return named
+      const start = await historyStart(
+        database,
+        options.policy,
+        deploymentMode,
+        workspaceId,
+        new Date()
+      )
+      let query = versions()
+        .select('documentVersion.documentId')
+        .where('documentVersion.documentId', 'in', [...named.keys()])
+        .where('documentVersion.kind', '=', 'named')
+      if (start) query = query.where('documentVersion.createdAt', '>=', start)
+      const rows = await query.orderBy('documentVersion.createdAt', 'desc').execute()
+      const current = new Map(
+        documents.map((document) => [document.id, document.currentRevisionId])
+      )
+      for (const row of rows) {
+        named.get(row.documentId)?.push(versionOf(row, current.get(row.documentId) ?? null))
       }
+      return named
+    },
+
+    /** A named version with where to download it, for a caller that already let the reader in. */
+    async downloadNamedShared(
+      documentId: string,
+      versionId: string
+    ): Promise<DocumentVersionDownload> {
+      const { document, start } = await sharedHistory(documentId)
+      const version = await findVersion(documentId, versionId, start)
+      if (version.kind !== 'named') throw new DocumentNotFoundError()
+      return downloadVersion(document, version)
     },
 
     /**

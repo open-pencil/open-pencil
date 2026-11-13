@@ -1,3 +1,4 @@
+import { appendAll } from '../arrays'
 import type { SceneGraph } from '../graph'
 import type { Color } from '../primitives'
 import type { Variable, VariableLiteral, VariableValue } from '../types'
@@ -44,7 +45,7 @@ export function collectionsResolving(
     if (!variable) continue
     collections.add(variable.collectionId)
     for (const value of Object.values(variable.valuesByMode))
-      pending.push(...variableValueReferences(value))
+      appendAll(pending, variableValueReferences(value))
   }
   return collections
 }

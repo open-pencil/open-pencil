@@ -30,6 +30,7 @@ import type {
   ComponentCatalogInsertInput,
   ComponentCatalogLibraryAsset
 } from '@open-pencil/core/tools'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 
 import { getActiveEditorStoreOrNull } from '@/app/editor/active-store'
 import type { EditorStore } from '@/app/editor/session'
@@ -135,8 +136,9 @@ export class LibraryService implements ComponentCatalog {
       const revision = await this.#getRevision(summary.libraryId, summary.latestRevisionId)
       const binding = this.#activeEditor?.graph.enabledLibraries.get(summary.libraryId)
       if (input.enabledOnly && !binding?.enabled) continue
-      assets.push(
-        ...revision.manifest.assets
+      appendAll(
+        assets,
+        revision.manifest.assets
           .filter(isLibraryComponentAsset)
           .filter((asset) => !normalizedName || asset.name.toLowerCase().includes(normalizedName))
           .map((asset) => ({
@@ -192,8 +194,9 @@ export class LibraryService implements ComponentCatalog {
     for (const binding of editor.graph.enabledLibraries.values()) {
       if (!binding.enabled) continue
       const revision = await this.#getRevision(binding.libraryId, binding.revisionId)
-      assets.push(
-        ...revision.manifest.assets.filter(isLibraryComponentAsset).map((asset) => ({
+      appendAll(
+        assets,
+        revision.manifest.assets.filter(isLibraryComponentAsset).map((asset) => ({
           libraryId: binding.libraryId,
           libraryName: revision.manifest.name,
           revisionId: binding.revisionId,

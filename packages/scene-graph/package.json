@@ -26,6 +26,12 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./arrays": {
+      "types": "./dist/arrays.d.ts",
+      "bun": "./src/arrays.ts",
+      "import": "./dist/arrays.js",
+      "default": "./dist/arrays.js"
+    },
     "./arrow-caps": {
       "types": "./dist/arrow-caps.d.ts",
       "bun": "./src/arrow-caps.ts",

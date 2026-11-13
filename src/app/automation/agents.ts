@@ -27,8 +27,14 @@ const agentSessionSchema = v.object({
   call: v.fallback(v.optional(v.pipe(v.string(), v.minLength(1), v.maxLength(128))), undefined)
 })
 
-/** The MCP session a tool call came from, as the MCP server forwards it. */
-export type AgentSession = v.InferOutput<typeof agentSessionSchema>
+/**
+ * The MCP session a tool call came from, as the MCP server forwards it, and for a call made by a
+ * subagent of an app chat's agent, that subagent (`withSubagent`).
+ */
+export type AgentSession = v.InferOutput<typeof agentSessionSchema> & {
+  /** The ACP session of the subagent that made the call; the MCP server never sends it. */
+  subagent?: string
+}
 
 export function readAgentSession(value: unknown): AgentSession | null {
   const result = v.safeParse(agentSessionSchema, value)
@@ -36,53 +42,87 @@ export function readAgentSession(value: unknown): AgentSession | null {
 }
 
 interface SessionAgent {
+  session: string
+  /** The app chat whose agent this shows, when it is an ACP chat's; see `restAgents`. */
+  chat: string | undefined
+  store: EditorStore
+  /** The ACP session of the subagent this agent shows, or undefined for the session's own agent. */
+  subagent: string | undefined
   handle: AgentHandle
   kind: AgentSession['kind']
-  /** Counts the times its chat's replies ended; a tool call from an earlier reply is ignored. */
+  /**
+   * Which reply its tool calls belong to, drawn from `replyTokens` and renewed when its chat's reply
+   * ends, so a call from an earlier reply, or from an agent this one replaced, is ignored.
+   */
   replies: number
   idleTimer?: ReturnType<typeof setTimeout>
   goneTimer?: ReturnType<typeof setTimeout>
 }
 
-/** Each session's agent in every document it works in; tool calls name their document. */
-const sessions = new Map<string, Map<EditorStore, SessionAgent>>()
+/**
+ * Each session's agents: its own in every document it works in, and one for each of its
+ * subagents in every document they work in; tool calls name their document.
+ */
+const sessionAgents = new Set<SessionAgent>()
+
+/** For each app chat, the subagent's ACP session that made each tool call its agent reported. */
+const subagentCalls = new Map<string, Map<string, string>>()
+
+/** Counts every agent's replies together, so no two agents, nor two replies, share a token. */
+let replyTokens = 0
+
+function findAgent(store: EditorStore, session: AgentSession): SessionAgent | undefined {
+  for (const agent of sessionAgents) {
+    if (
+      agent.session === session.session &&
+      agent.store === store &&
+      agent.subagent === session.subagent
+    ) {
+      return agent
+    }
+  }
+  return undefined
+}
 
 function sessionAgent(store: EditorStore, session: AgentSession): SessionAgent {
-  let agents = sessions.get(session.session)
-  if (!agents) {
-    agents = new Map()
-    sessions.set(session.session, agents)
-  }
-  let agent = agents.get(store)
+  let agent = findAgent(store, session)
   if (!agent) {
     agent = {
+      session: session.session,
+      chat: session.chat,
+      store,
+      subagent: session.subagent,
       handle: addAgent(store, session.kind, session.client || undefined),
       kind: session.kind,
-      replies: 0
+      replies: ++replyTokens
     }
-    agents.set(store, agent)
+    sessionAgents.add(agent)
   }
   return agent
 }
 
-function remove(sessionId: string, store: EditorStore): void {
-  const agents = sessions.get(sessionId)
-  const agent = agents?.get(store)
-  if (!agents || !agent) return
+function remove(agent: SessionAgent): void {
   clearTimeout(agent.idleTimer)
   clearTimeout(agent.goneTimer)
   agent.handle.remove()
-  agents.delete(store)
-  if (agents.size === 0) sessions.delete(sessionId)
+  sessionAgents.delete(agent)
 }
 
-function restartTimers(store: EditorStore, sessionId: string, agent: SessionAgent): void {
+function rest(agent: SessionAgent): void {
+  agent.handle.update({ status: 'idle', cursor: undefined, selection: undefined })
+}
+
+/** A subagent is done: its agent rests, so following moves on to one still at work, and leaves. */
+function leave(agent: SessionAgent): void {
+  rest(agent)
+  remove(agent)
+}
+
+function restartTimers(agent: SessionAgent): void {
   clearTimeout(agent.idleTimer)
   clearTimeout(agent.goneTimer)
-  agent.idleTimer = setTimeout(() => {
-    agent.handle.update({ status: 'idle', cursor: undefined, selection: undefined })
-  }, MCP_AGENT_IDLE_MS)
-  agent.goneTimer = setTimeout(() => remove(sessionId, store), MCP_AGENT_GONE_MS)
+  agent.idleTimer = setTimeout(() => rest(agent), MCP_AGENT_IDLE_MS)
+  agent.goneTimer = setTimeout(() => remove(agent), MCP_AGENT_GONE_MS)
 }
 
 function collectIds(value: unknown, ids: Set<string>): void {
@@ -123,7 +163,7 @@ export function touchedNodeIds(store: EditorStore, args: unknown, result: unknow
 export function agentStarted(store: EditorStore, session: AgentSession, pageId: string): number {
   const agent = sessionAgent(store, session)
   agent.handle.update({ status: 'thinking', pageId })
-  restartTimers(store, session.session, agent)
+  restartTimers(agent)
   return agent.replies
 }
 
@@ -136,33 +176,84 @@ export function agentFinished(
   session: AgentSession,
   work: { pageId: string; nodeIds: readonly string[]; edited: boolean; reply: number }
 ): void {
-  const agent = sessionAgent(store, session)
+  const agent = findAgent(store, session)
   // A call that was running when its chat's reply ended lands without bringing the agent back
-  // or moving it away from what a later reply works on.
-  if (work.reply !== agent.replies) return
+  // or moving it away from what a later reply works on, and one whose subagent finished has no
+  // agent left to show it.
+  if (!agent || work.reply !== agent.replies) return
   const placement = agentPlacement(store, work.nodeIds, work.pageId)
   agent.handle.update({
     status: work.edited ? 'editing' : 'thinking',
     pageId: work.pageId,
     ...placement
   })
-  restartTimers(store, session.session, agent)
+  restartTimers(agent)
 }
 
 /**
- * The app's own ACP or Pi chat ended a reply, finished, stopped, or failed: that chat's agents
- * rest now rather than when their idle timer runs out. Only the app's chats send these kinds
- * (`src/app/integrations/mcp`), so no outside MCP client is touched.
+ * The app's own ACP or Pi chat ended a reply, finished, stopped, or failed: that chat's agent
+ * rests now rather than when its idle timer runs out, and its subagents leave. Only the app's
+ * chats send these kinds (`src/app/integrations/mcp`), so no outside MCP client is touched.
+ * An ACP chat names itself with `chat`, so a reply ending leaves other chats' agents at work;
+ * a Pi chat carries no chat id, so without one every agent of the kind rests.
  */
-export function restAgents(kind: Exclude<AgentSession['kind'], 'mcp'>): void {
-  for (const agents of sessions.values()) {
-    for (const agent of agents.values()) {
-      if (agent.kind !== kind) continue
-      clearTimeout(agent.idleTimer)
-      agent.replies++
-      agent.handle.update({ status: 'idle', cursor: undefined, selection: undefined })
+export function restAgents(kind: Exclude<AgentSession['kind'], 'mcp'>, chat?: string): void {
+  for (const agent of sessionAgents) {
+    if (agent.kind !== kind || (chat !== undefined && agent.chat !== chat)) continue
+    if (agent.subagent) {
+      leave(agent)
+      continue
     }
+    clearTimeout(agent.idleTimer)
+    agent.replies = ++replyTokens
+    rest(agent)
   }
+  // What the reply's updates said about its subagents ends with it.
+  if (kind !== 'acp') return
+  if (chat === undefined) subagentCalls.clear()
+  else subagentCalls.delete(chat)
+}
+
+/**
+ * An app chat's agent reported a tool call over ACP: the session of the subagent that made it, if
+ * one did, and whether it ended (`src/app/ai/agents/acp/subagents.ts`). An ended call is forgotten.
+ */
+export function noteToolCall(
+  chat: string,
+  call: { id: string; subagent?: string; ended: boolean }
+): void {
+  if (call.ended) {
+    subagentCalls.get(chat)?.delete(call.id)
+  } else if (call.subagent) {
+    const calls = subagentCalls.get(chat) ?? new Map<string, string>()
+    calls.set(call.id, call.subagent)
+    subagentCalls.set(chat, calls)
+  }
+}
+
+/**
+ * An app chat's agent says its subagent `subagent`, an ACP session, finished its work: the
+ * subagent's agent leaves and the calls it made are forgotten, so a late one shows as the chat's
+ * own agent. Given more work, the subagent comes back as a new agent with its next call.
+ */
+export function subagentFinished(chat: string, subagent: string): void {
+  const calls = subagentCalls.get(chat)
+  // Deleting entries while iterating a Map is safe: visited ones stay visited.
+  if (calls) for (const [id, owner] of calls) if (owner === subagent) calls.delete(id)
+  for (const agent of sessionAgents) {
+    if (agent.chat === chat && agent.subagent === subagent) leave(agent)
+  }
+}
+
+/**
+ * `session` with the subagent that made its call, when its chat's ACP updates already named it.
+ * A call that reaches OpenPencil before its update stays with the session's own agent: a tool
+ * call never waits for the update.
+ */
+export function withSubagent(session: AgentSession): AgentSession {
+  const subagent =
+    session.chat && session.call ? subagentCalls.get(session.chat)?.get(session.call) : undefined
+  return subagent ? { ...session, subagent } : session
 }
 
 /** App chats waiting for their agent to open its MCP session, by chat id. */
@@ -189,6 +280,6 @@ export function agentSessionOpened(args: unknown): void {
 
 /** The MCP server says a session ended: its agents leave every document. */
 export function endAgentSession(sessionId: string): void {
-  // Removing entries while iterating a Map is safe: visited ones stay visited.
-  for (const store of sessions.get(sessionId)?.keys() ?? []) remove(sessionId, store)
+  // Removing entries while iterating a Set is safe: visited ones stay visited.
+  for (const agent of sessionAgents) if (agent.session === sessionId) remove(agent)
 }

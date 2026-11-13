@@ -1,6 +1,7 @@
 import { uniq } from 'es-toolkit'
 
 import { AI_PROVIDERS, type AIProviderID, type ModelOption } from '@open-pencil/core/constants'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 
 import { modelProviderName } from '@/app/ai/models/provider-name'
 import type { AIModelCapability, AIModelProfileId, AIModelRole } from '@/app/ai/models/types'
@@ -390,8 +391,9 @@ export function roleOptions(
           plannedModel(providerID)
       )
     } else {
-      candidates.push(
-        ...catalogModels(providerID)
+      appendAll(
+        candidates,
+        catalogModels(providerID)
           .filter((model) => model.capabilities)
           .map((model) => fromCatalog(providerID, model))
       )

@@ -346,15 +346,109 @@ describe('outlineStrokeSelected', () => {
     expect(box()).toEqual([46, 46, 108, 108])
   })
 
-  test('leaves fill-only shapes alone', async () => {
+  test('turns a fill-only shape into a vector of its fill, keeping its name and look', async () => {
+    // Recorded in Figma desktop 126 (scratch/pr-oracle/grouping): a rectangle with a fill and no
+    // stroke becomes a vector "R" of its fill, keeping its opacity and effects.
     const editor = await createEditorWithRenderer()
     const rect = editor.graph.createNode('RECTANGLE', editor.state.currentPageId, {
+      name: 'R',
+      x: 20,
+      y: 20,
+      width: 100,
+      height: 60,
       fills: [solid(BLUE)],
-      strokes: []
+      strokes: [],
+      opacity: 0.5
     })
     editor.select([rect.id])
+    editor.outlineStrokeSelected()
+
+    expect(selected(editor)).toEqual([
+      { name: 'R', type: 'VECTOR', parent: 'CANVAS', box: [20, 20, 100, 60], fills: [BLUE] }
+    ])
+    const [vector] = [...editor.state.selectedIds].map((id) => editor.graph.getNode(id))
+    expect(vector?.opacity).toBe(0.5)
+  })
+
+  test('outlines the fill-only layers of a group and the children of a frame', async () => {
+    const editor = await createEditorWithRenderer()
+    const pageId = editor.state.currentPageId
+    const group = editor.graph.createNode('GROUP', pageId, { name: 'G' })
+    editor.graph.createNode('RECTANGLE', group.id, {
+      name: 'A',
+      width: 40,
+      height: 30,
+      fills: [solid(RED)]
+    })
+    const frame = editor.graph.createNode('FRAME', pageId, {
+      name: 'F',
+      x: 100,
+      width: 200,
+      height: 100,
+      fills: [solid(BLUE)]
+    })
+    editor.graph.createNode('RECTANGLE', frame.id, {
+      name: 'B',
+      width: 40,
+      height: 30,
+      fills: [solid(RED)]
+    })
+    editor.select([group.id, frame.id])
+    editor.outlineStrokeSelected()
+
+    expect(selected(editor).map(({ name, type, parent }) => [name, type, parent])).toEqual([
+      ['A', 'VECTOR', 'GROUP'],
+      ['B', 'VECTOR', 'FRAME']
+    ])
+    // The frame keeps its own fill rather than becoming a vector.
+    expect(editor.graph.getNode(frame.id)?.type).toBe('FRAME')
+  })
+
+  test('keeps Fill sizing in auto layout on each outline, but not on text’s group', async () => {
+    // Recorded in Figma desktop 126 (scratch/pr-oracle/grouping/layout-sizing.ts): a layer that
+    // fills its row on both axes leaves outlines that fill it too; text's glyph group is fixed.
+    const editor = await createEditorWithRenderer({ fonts: true })
+    const row = editor.graph.createNode('FRAME', editor.state.currentPageId, {
+      layoutMode: 'HORIZONTAL',
+      width: 400,
+      height: 120
+    })
+    const fill = { layoutGrow: 1, layoutAlignSelf: 'STRETCH' } as const
+    const shape = editor.graph.createNode('RECTANGLE', row.id, {
+      name: 'R',
+      fills: [solid(BLUE)],
+      strokes: [stroke('CENTER')],
+      ...fill
+    })
+    const text = editor.graph.createNode('TEXT', row.id, {
+      name: 'T',
+      text: 'Hey',
+      fontSize: 32,
+      fills: [solid(BLUE)],
+      ...fill
+    })
+    editor.select([shape.id, text.id])
+    editor.outlineStrokeSelected()
+
+    const sizing = editor.graph
+      .getChildren(row.id)
+      .map((node) => [node.name, node.type, node.layoutGrow, node.layoutAlignSelf])
+    expect(sizing).toEqual([
+      ['R', 'VECTOR', 1, 'STRETCH'],
+      ['R (Stroke)', 'VECTOR', 1, 'STRETCH'],
+      ['T', 'GROUP', 0, 'AUTO']
+    ])
+  })
+
+  test('leaves a shape with neither fill nor stroke, and a frame on its own, alone', async () => {
+    const editor = await createEditorWithRenderer()
+    const pageId = editor.state.currentPageId
+    const bare = editor.graph.createNode('RECTANGLE', pageId, { fills: [], strokes: [] })
+    const frame = editor.graph.createNode('FRAME', pageId, { fills: [solid(BLUE)] })
+    editor.select([bare.id, frame.id])
     expect(editor.outlineStrokeSelected()).toBeNull()
-    expect(editor.graph.getNode(rect.id)?.type).toBe('RECTANGLE')
+    expect(editor.graph.getNode(bare.id)?.type).toBe('RECTANGLE')
+    expect(editor.graph.getNode(frame.id)?.type).toBe('FRAME')
   })
 
   test('undo puts the layers back and redo outlines them again', async () => {

@@ -92,7 +92,7 @@ export function sizeAutoResizingText(
   for (let id = stack.pop(); id !== undefined; id = stack.pop()) {
     const node = graph.getNode(id)
     if (!node) continue
-    stack.push(...node.childIds)
+    for (const childId of node.childIds) stack.push(childId)
     if (node.type !== 'TEXT' || (wrappingOnly && node.textAutoResize !== 'HEIGHT')) continue
     // Wrapping text the source gave no width wraps at the width its content takes.
     const unsized = node.textAutoResize === 'HEIGHT' && node.width <= 0

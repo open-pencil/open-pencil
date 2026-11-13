@@ -186,6 +186,11 @@ const rawCloudServerConfigSchema = v.object({
       minimumAge: v.optional(v.pipe(v.number(), v.integer(), v.minValue(13), v.maxValue(21)))
     })
   ),
+  /**
+   * The workspace whose documents anyone may open read-only, without signing in or a link: the
+   * deployment's community gallery. Without it the server has none.
+   */
+  community: v.optional(v.object({ workspaceId: v.pipe(v.string(), v.uuid()) })),
   /** Where server errors are reported; without it the server reports nothing. */
   errorTracking: v.optional(
     v.object({

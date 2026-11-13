@@ -2,9 +2,9 @@ import { noop } from 'es-toolkit'
 import { computed } from 'vue'
 
 import type { CloudServicesClient } from '@open-pencil/cloud/client'
-import type { WorkspaceSummary } from '@open-pencil/cloud/contract'
 
 import type { CloudAIWorkspace } from '@/app/cloud/ai/access'
+import type { HomeCloudWorkspace } from '@/app/cloud/home'
 import type { CloudAccount } from '@/app/cloud/servers/store'
 import type { EditorStore } from '@/app/editor/session'
 import type { SaveDestination, SaveFailure } from '@/app/storage/save-to/model'
@@ -88,7 +88,7 @@ export function useHomeCloud() {
     signedIn: computed(() => false),
     checking: computed(() => false),
     account: computed<(CloudAccount & { host: string }) | null>(() => null),
-    workspaces: computed<WorkspaceSummary[]>(() => []),
+    workspaces: computed<HomeCloudWorkspace[]>(() => []),
     serverId: computed<string | null>(() => null),
     connect: noop,
     openAccount: noop,
