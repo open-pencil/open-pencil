@@ -1,20 +1,52 @@
 import { afterEach, expect, test } from 'bun:test'
 
+import { ref } from 'vue'
+
 import { ALL_TOOLS, CORE_TOOLS, isToolExposed } from '@open-pencil/core/tools'
 
 import { configurableAITools, enabledAIToolDefinitions } from '@/app/ai/tools/catalog'
 import { aiToolOverrides, disabledAITools } from '@/app/ai/tools/preferences'
 import { configurableMCPTools, disabledMCPTools } from '@/app/automation/mcp/preferences'
+import { useToolAccess } from '@/app/automation/tool-access/settings/list'
 import { useToolAccessSettings } from '@/app/automation/tool-access/settings/use'
+import type { ToolAccessEntry } from '@/app/automation/tool-access/types'
+import { recordToolUse, toolUsage } from '@/app/automation/tool-access/usage'
 
+const originalUsage = toolUsage.value
 const originalAI = aiToolOverrides.value
 const originalMCP = disabledMCPTools.value
 const originalCatalog = configurableMCPTools.value
 
 afterEach(() => {
+  toolUsage.value = originalUsage
   aiToolOverrides.value = originalAI
   disabledMCPTools.value = originalMCP
   configurableMCPTools.value = originalCatalog
+})
+
+test('sorting updates as calls arrive while preserving the MCP catalog order', () => {
+  toolUsage.value = { startedAt: null, counts: {} }
+  const tools = ref<ToolAccessEntry[]>([
+    { name: 'zeta', description: 'Z', effect: 'read' },
+    { name: 'alpha', description: 'A', effect: 'read' },
+    { name: 'beta', description: 'B', effect: 'read' }
+  ])
+  const access = useToolAccess(tools, ref<string[]>([]))
+  const mcp = useToolAccess(tools, ref<string[]>([]), 'default')
+  const names = () => access.visibleTools.value.map((item) => item.name)
+  expect(names()).toEqual(['alpha', 'beta', 'zeta'])
+  expect(mcp.visibleTools.value.map((item) => item.name)).toEqual(['zeta', 'alpha', 'beta'])
+
+  access.sort.value = 'most-used'
+  recordToolUse('zeta')
+  expect(names()).toEqual(['zeta', 'alpha', 'beta'])
+  recordToolUse('beta')
+  recordToolUse('beta')
+  expect(names()).toEqual(['beta', 'zeta', 'alpha'])
+  access.sort.value = 'least-used'
+  expect(names()).toEqual(['alpha', 'zeta', 'beta'])
+  access.search.value = 'z'
+  expect(names()).toEqual(['zeta'])
 })
 
 test('AI catalog includes exposed extended tools while preserving compact defaults', () => {

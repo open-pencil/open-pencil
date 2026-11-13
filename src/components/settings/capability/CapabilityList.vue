@@ -134,6 +134,9 @@ function isOpen(group: CapabilityGroup) {
                     >{{ item.description }}</span
                   >
                 </Tip>
+                <span v-if="item.usage" class="shrink-0 text-2xs text-muted tabular-nums">{{
+                  item.usage
+                }}</span>
                 <span v-if="item.note" class="shrink-0 text-2xs text-warning">{{ item.note }}</span>
                 <icon-lucide-chevron-right
                   data-direction="reading"

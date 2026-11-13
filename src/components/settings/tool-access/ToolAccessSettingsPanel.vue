@@ -8,6 +8,7 @@ import { useMCPSettings } from '@/app/automation/mcp/settings/use'
 import { useToolAccess } from '@/app/automation/tool-access/settings/list'
 import { useToolAccessSettings } from '@/app/automation/tool-access/settings/use'
 import type { ToolAccessEntry, ToolAccessTarget } from '@/app/automation/tool-access/types'
+import { toolUsage, toolUseCount } from '@/app/automation/tool-access/usage'
 import CapabilityList from '@/components/settings/capability/CapabilityList.vue'
 import CapabilityPage from '@/components/settings/capability/CapabilityPage.vue'
 import { filterCapabilities } from '@/components/settings/capability/filter'
@@ -15,6 +16,7 @@ import type { CapabilityFilter, CapabilityGroup } from '@/components/settings/ca
 import SettingsResetButton from '@/components/settings/layout/SettingsResetButton.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 /**
  * The tools one kind of agent can call: the built-in AI's on Tool access, the local MCP server's
@@ -24,12 +26,21 @@ const { target } = defineProps<{ target: ToolAccessTarget }>()
 
 const automation = useAutomationMessages()
 const { tools, disabled, modified, reset } = useToolAccessSettings(target)
-const { search, groups, expanded, setGroupEnabled, isEnabled, setToolEnabled } = useToolAccess(
-  tools,
-  disabled
-)
+const { search, sort, groups, expanded, setGroupEnabled, isEnabled, setToolEnabled } =
+  useToolAccess(tools, disabled, target === 'ai' ? 'name' : 'default')
 const { restart } = useMCPSettings()
 const show = ref<CapabilityFilter>('all')
+const sortOptions = computed(() => [
+  { value: 'name' as const, label: automation.value.toolSortName },
+  { value: 'most-used' as const, label: automation.value.toolSortMostUsed },
+  { value: 'least-used' as const, label: automation.value.toolSortLeastUsed }
+])
+const usageNotice = computed(() => {
+  const since = toolUsage.value.startedAt
+  return since
+    ? automation.value.toolUsageSince({ date: new Date(since).toLocaleDateString() })
+    : automation.value.toolUsageEmpty
+})
 
 const listGroups = computed<CapabilityGroup[]>(() =>
   filterCapabilities(
@@ -43,6 +54,10 @@ const listGroups = computed<CapabilityGroup[]>(() =>
         key: tool.name,
         name: tool.name,
         description: tool.description,
+        usage:
+          target === 'ai'
+            ? automation.value.toolUsageCount({ count: toolUseCount(tool.name) })
+            : undefined,
         enabled: isEnabled(tool)
       }))
     })),
@@ -70,9 +85,18 @@ function setExpanded(key: string, open: boolean) {
     <template #description>{{
       target === 'ai' ? automation.aiToolAccessDescription : automation.mcpToolAccessDescription
     }}</template>
-    <template v-if="modified" #tools>
-      <SettingsResetButton @reset="reset" />
+    <template #tools>
+      <AppSelect
+        v-if="target === 'ai'"
+        v-model="sort"
+        :options="sortOptions"
+        :label="automation.toolSort"
+        size="sm"
+        :ui="{ trigger: 'w-auto' }"
+      />
+      <SettingsResetButton v-if="modified" @reset="reset" />
     </template>
+    <p v-if="target === 'ai'" class="text-2xs leading-relaxed text-muted">{{ usageNotice }}</p>
     <AppPlaceholder
       v-if="!hasMatches"
       size="compact"

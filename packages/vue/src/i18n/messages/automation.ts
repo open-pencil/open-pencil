@@ -96,6 +96,16 @@ export const automationMessageDefaults = {
   toolsEnabled: params('{enabled} of {total} enabled'),
   enableAllTools: 'Enable all',
   searchTools: 'Search tools',
+  toolSort: 'Sort tools',
+  toolSortName: 'Name (A–Z)',
+  toolSortMostUsed: 'Most used',
+  toolSortLeastUsed: 'Least used',
+  toolUsageCount: params('Calls: {count}'),
+  toolUsageEmpty:
+    'Calls reaching this editor are counted locally, including failed or cancelled attempts. No calls recorded yet.',
+  toolUsageSince: params(
+    'Calls reaching this editor since {date}, including failed or cancelled attempts. Counts are local and combine AI, MCP and WebMCP.'
+  ),
   readOnlyTools: 'Read-only tools',
   sideEffectTools: 'Tools with side effects',
   toolsRestartNotice:
