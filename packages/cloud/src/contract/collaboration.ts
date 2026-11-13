@@ -38,6 +38,11 @@ export const collaborationTicketSchema = v.object({
   roomKey: v.pipe(v.string(), v.minLength(43), v.maxLength(128)),
   principal: collaborationPrincipalSchema,
   permission: documentPermissionSchema,
+  /**
+   * Why a peer whose access would let them edit may only view: `storage-limit` when the document's
+   * owner holds their whole storage allowance, until they free space or their plan grows.
+   */
+  readOnly: v.optional(v.picklist(['storage-limit'])),
   roomEpoch: v.pipe(v.number(), v.integer(), v.minValue(0)),
   expiresAt: v.string(),
   serverEnforcedWrites: v.boolean(),

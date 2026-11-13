@@ -1,4 +1,4 @@
-import { createNodeEditPaints } from '#core/canvas/node-edit-overlay'
+import { colorNodeEditPaints, createNodeEditPaints } from '#core/canvas/node-edit-overlay'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import {
   DEFAULT_FONT_SIZE,
@@ -113,6 +113,7 @@ export function initializeSelectionPaintColors(r: SkiaRenderer): void {
   r.selectionPaint.setColor(r.selColor())
   r.penHandlePaint.setColor(r.selColor(PARENT_OUTLINE_ALPHA))
   r.penVertexStroke.setColor(r.selColor())
+  colorNodeEditPaints(r.ck, r.nodeEditPaints, r.selectionTheme.color)
 }
 
 /** Colours the ruler paints from the ruler theme, or the defaults without one. */

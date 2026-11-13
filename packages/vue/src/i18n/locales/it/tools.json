@@ -16,5 +16,6 @@
   "hand": "Mano",
   "comment": "Commento",
   "eyedropper": "Contagocce",
-  "eyedropperSample": "Preleva un colore dalla tela"
+  "eyedropperSample": "Preleva un colore dalla tela",
+  "scale": "Scala"
 }

@@ -1,5 +1,6 @@
 import type { ToolCapability, ToolDef } from '@open-pencil/core/tools'
 import { ALL_TOOLS, toolChangesDocument, isToolExposed } from '@open-pencil/core/tools'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 
 import type { ToolAvailability, ToolDescriptor, ToolEffect } from '#mcp/tool/metadata'
 
@@ -32,7 +33,7 @@ export function getMCPToolDefinitions() {
 
 export function createToolDescriptors(filesystemEnabled: boolean): ToolDescriptor[] {
   const descriptors = getMCPToolDefinitions().map(coreToolDescriptor)
-  descriptors.push(
+  appendAll(descriptors, [
     {
       name: 'list_documents',
       description:
@@ -43,7 +44,7 @@ export function createToolDescriptors(filesystemEnabled: boolean): ToolDescripto
       enabled: true
     },
     {
-      name: 'save_file',
+      name: 'save_document',
       description:
         'Save the current document to a .fig file, or a .jam file for a board. An optional path must stay inside the configured MCP root.',
       effect: 'write',
@@ -54,7 +55,7 @@ export function createToolDescriptors(filesystemEnabled: boolean): ToolDescripto
     ...(filesystemEnabled
       ? [
           {
-            name: 'open_file',
+            name: 'open_document',
             description: 'Open a .fig or .pen file from inside the configured MCP root.',
             effect: 'read',
             availability: 'filesystem',
@@ -62,16 +63,16 @@ export function createToolDescriptors(filesystemEnabled: boolean): ToolDescripto
             enabled: true
           } satisfies ToolDescriptor,
           {
-            name: 'list_recent_files',
+            name: 'list_recent_documents',
             description:
-              'List recently opened design files inside the configured MCP root, newest first, with their paths, names, and when they were last opened. Reopen one with open_file.',
+              'List recently opened design files inside the configured MCP root, newest first, with their paths, names, and when they were last opened. Reopen one with open_document.',
             effect: 'read',
             availability: 'filesystem',
             capabilities: ['filesystem:read'],
             enabled: true
           } satisfies ToolDescriptor,
           {
-            name: 'new_document',
+            name: 'create_document',
             description:
               'Create a new empty document with an optional save path inside the configured MCP root.',
             effect: 'write',
@@ -82,7 +83,7 @@ export function createToolDescriptors(filesystemEnabled: boolean): ToolDescripto
         ]
       : []),
     {
-      name: 'close_file',
+      name: 'close_document',
       description:
         'Close an open document tab. With unsaved changes it fails unless unsaved is "save" or "discard"; it never prompts in the app.',
       effect: 'write',
@@ -144,6 +145,6 @@ export function createToolDescriptors(filesystemEnabled: boolean): ToolDescripto
       capabilities: [],
       enabled: true
     }
-  )
+  ])
   return descriptors
 }

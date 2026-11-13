@@ -1,2 +1,0 @@
-- Exports take a layer at the size Figma exports it: a shadow grows by its radius and spread, a negative spread shrinks it, and a layer in a frame that clips it exports as much as the frame shows.
-- `absoluteRenderBounds` takes in what a frame that does not clip lets its children draw past it, as in Figma.

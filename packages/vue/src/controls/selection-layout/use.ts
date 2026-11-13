@@ -1,5 +1,6 @@
 import { computed } from 'vue'
 
+import { panelNumber } from '@open-pencil/core/geometry'
 import type { LayoutMode, NodeType, SceneNode } from '@open-pencil/scene-graph'
 
 import { MIXED, useNodeProps, type MixedValue } from '#vue/controls/node-props/use'
@@ -66,7 +67,7 @@ export function useSelectionLayout() {
   const spacingAxis = computed(() => rowSpacing.value?.axis)
   /** The gap between neighbours, MIXED when they differ. */
   const spacing = computed<MixedValue<number>>(() => {
-    const gaps = rowSpacing.value?.gaps.map((gap) => Math.round(gap * 100) / 100) ?? []
+    const gaps = rowSpacing.value?.gaps.map(panelNumber) ?? []
     return shared(gaps) ?? MIXED
   })
 

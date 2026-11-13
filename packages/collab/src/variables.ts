@@ -84,7 +84,9 @@ export function bindVariableSync({ editor, ydoc, yvariables, ycollections }: Var
         .filter((variable) => variable.collectionId === id && !listed.has(variable.id))
         .map((variable) => variable.id)
         .toSorted()
-      if (missing.length > 0) collection.variableIds = [...collection.variableIds, ...missing]
+      if (missing.length === 0) continue
+      graph().willChangeCollection(id)
+      collection.variableIds = [...collection.variableIds, ...missing]
     }
   }
 
@@ -93,11 +95,13 @@ export function bindVariableSync({ editor, ydoc, yvariables, ycollections }: Var
     records: YRecords,
     target: Map<string, T>,
     isValid: (value: unknown) => value is T,
-    events: Y.YEvent<Y.Map<unknown>>[]
+    events: Y.YEvent<Y.Map<unknown>>[],
+    willChange: (id: string) => void
   ): Set<string> {
     const ids = changedIds(records, events)
     for (const id of ids) {
       const value: unknown = records.get(id)?.toJSON()
+      willChange(id)
       if (value === undefined) target.delete(id)
       else if (isValid(value)) applyRecord(target, id, value)
     }
@@ -138,19 +142,30 @@ export function bindVariableSync({ editor, ydoc, yvariables, ycollections }: Var
   // This peer's own writes are already in its graph.
   function onVariables(events: Y.YEvent<Y.Map<unknown>>[], transaction: Y.Transaction) {
     if (transaction.local) return
-    const ids = receive(yvariables, graph().variables, isVariable, events)
-    if (ids.size > 0) settle(ids, new Set())
+    // A collaborator's change is never an edit in progress here, such as an agent's.
+    graph().runOutsideEdits(() => {
+      const ids = receive(yvariables, graph().variables, isVariable, events, (id) =>
+        graph().willChangeVariable(id)
+      )
+      if (ids.size > 0) settle(ids, new Set())
+    })
   }
 
   function onCollections(events: Y.YEvent<Y.Map<unknown>>[], transaction: Y.Transaction) {
     if (transaction.local) return
-    const ids = receive(ycollections, graph().variableCollections, isCollection, events)
-    if (ids.size > 0) settle(new Set(), ids)
+    graph().runOutsideEdits(() => {
+      const ids = receive(ycollections, graph().variableCollections, isCollection, events, (id) =>
+        graph().willChangeCollection(id)
+      )
+      if (ids.size > 0) settle(new Set(), ids)
+    })
   }
 
   yvariables.observeDeep(onVariables)
   ycollections.observeDeep(onCollections)
   const stopHistory = editor.onEditorEvent('history:changed', send)
+  // An edit rolled back may have sent its values with an earlier change; send what it restored.
+  const stopDiscard = editor.onEditorEvent('edit:discarded', send)
 
   return {
     share,
@@ -158,6 +173,7 @@ export function bindVariableSync({ editor, ydoc, yvariables, ycollections }: Var
       // An edit made just before leaving still reaches the room.
       send()
       stopHistory()
+      stopDiscard()
       yvariables.unobserveDeep(onVariables)
       ycollections.unobserveDeep(onCollections)
     }

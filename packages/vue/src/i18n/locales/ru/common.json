@@ -41,5 +41,6 @@
   "dismiss": "Закрыть",
   "browserSupport": "Проверить поддержку в браузерах",
   "showPassword": "Показать пароль",
-  "hidePassword": "Скрыть пароль"
+  "hidePassword": "Скрыть пароль",
+  "typeToConfirm": "Для подтверждения введите «{text}»."
 }

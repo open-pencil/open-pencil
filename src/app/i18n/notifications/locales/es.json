@@ -7,6 +7,7 @@
   "copiedProperties": "Propiedades copiadas.",
   "pngClipboardUnavailable": "La exportación PNG al portapapeles no está disponible en este navegador.",
   "openFileFailed": "No se pudo abrir «{name}»: {error}",
+  "openTourFailed": "No se pudo abrir el recorrido: {error}",
   "viewDiagnostics": "Ver diagnóstico",
   "importedDOMCSS": "Documento DOM/CSS importado.",
   "importDOMCSSFailed": "No se pudo importar DOM/CSS: {error}",
@@ -33,5 +34,9 @@
   "designTokensLeftOut": "No incluidos en los design tokens: {names}.",
   "designTokensAmbiguous": "Estos estilos remiten a una variable cuya ruta también tiene otra colección, así que otras herramientas pueden leer la equivocada: {names}.",
   "designTokensImported": "Se importaron {count} design tokens.",
-  "unsupportedVariableExpressions": "OpenPencil aún no puede evaluar estas variables, así que las capas conservan los valores guardados en el archivo: {names}."
+  "unsupportedVariableExpressions": "OpenPencil aún no puede evaluar estas variables, así que las capas conservan los valores guardados en el archivo: {names}.",
+  "savingDocument": "Guardando el documento…",
+  "saveFailedRetry": "Reintentar guardado",
+  "fileChangedOnDisk": "«{name}» cambió en el disco. Tus cambios sin guardar se conservan; al guardar se reemplaza el archivo.",
+  "reloadDiscardingChanges": "Volver a cargar"
 }

@@ -381,7 +381,7 @@ describe('editing a path: dragging a straight segment', () => {
     if (drag?.type !== 'edit-node') throw new Error('expected a point drag')
     handleNodeEditMove(drag, 30, -20, editor, false, false, false, true)
     release(drag)
-    editor.nodeEditUndo()
+    editor.undoAction()
     expect(points()).toEqual([
       [0, 0],
       [100, 0],

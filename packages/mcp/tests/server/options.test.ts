@@ -7,8 +7,13 @@ import { join } from 'node:path'
 
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client'
 
-import { MCP_AGENT_HEADER, MCP_CHAT_HEADER } from '@open-pencil/core/constants'
+import {
+  MCP_AGENT_HEADER,
+  MCP_DEFERS_TOOLS_HEADER,
+  MCP_CHAT_HEADER
+} from '@open-pencil/core/constants'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { MAX_LAYOUT_SPACING } from '@open-pencil/scene-graph/layout'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { startServer, type ServerHandle } from '#mcp/server'
@@ -183,20 +188,51 @@ describe('MCP server', () => {
     expect(tools.map((tool) => tool.name).sort()).toEqual(expectedNames)
   })
 
+  test('describes tool inputs without what tells a client nothing', async () => {
+    const { tools } = await client.listTools()
+    const schemas = JSON.stringify(tools.map((tool) => tool.inputSchema))
+    expect(schemas).not.toContain('$schema')
+    expect(schemas).not.toContain('"additionalProperties":false')
+    expect(schemas).not.toContain('"required":[]')
+    expect(tools.find((tool) => tool.name === 'get_node')?.inputSchema.properties).toHaveProperty(
+      'document_id'
+    )
+    const layout = tools.find((tool) => tool.name === 'set_layout')
+    expect(layout?.inputSchema.properties?.spacing).toEqual({
+      type: 'number',
+      description: expect.any(String),
+      minimum: 0,
+      maximum: MAX_LAYOUT_SPACING
+    })
+  })
+
+  test('still takes a number written as a string', async () => {
+    const created = await client.callTool({
+      name: 'create_shape',
+      arguments: { type: 'RECTANGLE', x: 0, y: 0, width: '40', height: 20 }
+    })
+    expect(created.isError).toBeFalsy()
+    const rectangle = [...graph.getAllNodes()].find((node) => node.type === 'RECTANGLE')
+    expect(rectangle?.width).toBe(40)
+  })
+
   test('describes effects, capabilities, and runtime availability independently', () => {
     const descriptors = createToolDescriptors(true)
     const byName = new Map(descriptors.map((tool) => [tool.name, tool] as const))
     expect(byName.get('get_page_tree')?.effect).toBe('read')
     expect(byName.get('switch_page')?.effect).toBe('read')
-    expect(byName.get('viewport_set')?.effect).toBe('read')
+    expect(byName.get('set_viewport')?.effect).toBe('read')
     expect(byName.get('export_image')?.effect).toBe('read')
-    expect(byName.get('save_file')?.effect).toBe('write')
-    expect(byName.get('open_file')?.effect).toBe('read')
-    expect(byName.get('open_file')?.capabilities).toEqual(['filesystem:read', 'document:read'])
-    expect(byName.get('list_recent_files')?.capabilities).toEqual(['filesystem:read'])
-    expect(byName.get('close_file')?.effect).toBe('write')
+    expect(byName.get('save_document')?.effect).toBe('write')
+    expect(byName.get('open_document')?.effect).toBe('read')
+    expect(byName.get('open_document')?.capabilities).toEqual(['filesystem:read', 'document:read'])
+    expect(byName.get('list_recent_documents')?.capabilities).toEqual(['filesystem:read'])
+    expect(byName.get('close_document')?.effect).toBe('write')
     expect(byName.get('update_node')?.effect).toBe('write')
-    expect(byName.get('new_document')?.capabilities).toEqual(['document:write', 'filesystem:write'])
+    expect(byName.get('create_document')?.capabilities).toEqual([
+      'document:write',
+      'filesystem:write'
+    ])
     expect(byName.get('activate_document')?.effect).toBe('read')
     expect(byName.get('undo')?.capabilities).toEqual(['document:write'])
     expect(byName.get('redo')?.effect).toBe('write')
@@ -303,14 +339,14 @@ describe('MCP server', () => {
     expect(data.children.some((c) => c.name === 'F1')).toBe(true)
   })
 
-  test('delete_node removes a node', async () => {
+  test('delete_nodes removes a node', async () => {
     const create = await client.callTool({
       name: 'create_shape',
       arguments: { type: 'RECTANGLE', x: 0, y: 0, width: 50, height: 50 }
     })
     const { id } = parseResult(create) as { id: string }
 
-    await client.callTool({ name: 'delete_node', arguments: { id } })
+    await client.callTool({ name: 'delete_nodes', arguments: { ids: [id] } })
 
     const get = await client.callTool({ name: 'get_node', arguments: { id } })
     const data = parseResult(get) as { error?: string }
@@ -403,7 +439,7 @@ describe('MCP server sharing only the selection', () => {
       ok: false
     })
     expect(
-      await rpc({ command: 'tool', args: { name: 'delete_node', args: { id: '0:1' } } })
+      await rpc({ command: 'tool', args: { name: 'delete_nodes', args: { ids: ['0:1'] } } })
     ).toMatchObject({ ok: false })
     expect(browser.requests.map((request) => request.command)).not.toContain('update_settings')
 
@@ -528,29 +564,29 @@ describe('MCP server with mcpRoot', () => {
     })
   })
 
-  test('registers open_file and new_document tools when mcpRoot is set', async () => {
+  test('registers open_document and create_document tools when mcpRoot is set', async () => {
     await withMCPRootServer(TEST_MCP_ROOT, async (client) => {
       const { tools } = await client.listTools()
       const byName = new Map(tools.map((tool) => [tool.name, tool] as const))
-      expect(byName.has('open_file')).toBe(true)
-      expect(byName.get('open_file')?.annotations?.readOnlyHint).toBe(true)
-      expect(byName.has('new_document')).toBe(true)
+      expect(byName.has('open_document')).toBe(true)
+      expect(byName.get('open_document')?.annotations?.readOnlyHint).toBe(true)
+      expect(byName.has('create_document')).toBe(true)
     })
   })
 
-  test('list_recent_files keeps only recent files inside mcpRoot', async () => {
+  test('list_recent_documents keeps only recent files inside mcpRoot', async () => {
     await withMCPRootServer(TEST_MCP_ROOT, async (client, browser) => {
       const inside = join(TEST_MCP_ROOT, 'recent.fig')
       const outside = join(TEST_MCP_ROOT, '..', 'outside.fig')
       const updatedAt = '2026-01-01T00:00:00.000Z'
-      browser.results.set('list_recent_files', {
+      browser.results.set('list_recent_documents', {
         files: [
           { path: inside, name: 'recent.fig', updated_at: updatedAt },
           { path: outside, name: 'outside.fig', updated_at: updatedAt }
         ]
       })
 
-      const result = await client.callTool({ name: 'list_recent_files', arguments: {} })
+      const result = await client.callTool({ name: 'list_recent_documents', arguments: {} })
       expect(result.isError).not.toBe(true)
       expect(parseResult(result)).toEqual({
         files: [{ path: inside, name: 'recent.fig', updated_at: updatedAt }]
@@ -558,32 +594,34 @@ describe('MCP server with mcpRoot', () => {
     })
   })
 
-  test('registers close_file as destructive and forwards its unsaved choice and target', async () => {
+  test('registers close_document as destructive and forwards its unsaved choice and target', async () => {
     await withMCPRootServer(TEST_MCP_ROOT, async (client, browser) => {
       const { tools } = await client.listTools()
-      const closeFile = tools.find((tool) => tool.name === 'close_file')
+      const closeFile = tools.find((tool) => tool.name === 'close_document')
       expect(closeFile?.annotations?.destructiveHint).toBe(true)
 
       const result = await client.callTool({
-        name: 'close_file',
+        name: 'close_document',
         arguments: { document_id: 'doc-1', unsaved: 'discard' }
       })
       expect(result.isError).not.toBe(true)
-      expect(browser.requests.find((item) => item.command === 'close_file')?.args).toEqual({
+      expect(
+        browser.requests.find((item) => item.command === 'close_document')?.args
+      ).toMatchObject({
         document_id: 'doc-1',
         unsaved: 'discard'
       })
     })
   })
 
-  test('close_file keeps a save path inside mcpRoot', async () => {
+  test('close_document keeps a save path inside mcpRoot', async () => {
     await withMCPRootServer(TEST_MCP_ROOT, async (client, browser) => {
       const outside = await client.callTool({
-        name: 'close_file',
+        name: 'close_document',
         arguments: { unsaved: 'save', path: '/etc/escape.fig' }
       })
       expect(outside.isError).toBe(true)
-      expect(browser.requests.some((item) => item.command === 'close_file')).toBe(false)
+      expect(browser.requests.some((item) => item.command === 'close_document')).toBe(false)
     })
   })
 
@@ -602,7 +640,7 @@ describe('MCP server with mcpRoot', () => {
       const undone = await client.callTool({ name: 'undo', arguments: { document_id: 'doc-2' } })
       expect(undone.isError).not.toBe(true)
       expect(JSON.stringify(undone.content)).toContain('Agent: mock')
-      expect(browser.requests.find((item) => item.command === 'undo')?.args).toEqual({
+      expect(browser.requests.find((item) => item.command === 'undo')?.args).toMatchObject({
         document_id: 'doc-2'
       })
     })
@@ -620,45 +658,45 @@ describe('MCP server with mcpRoot', () => {
     })
   })
 
-  test('save_file accepts an explicit path inside mcpRoot', async () => {
+  test('save_document accepts an explicit path inside mcpRoot', async () => {
     await withMCPRootServer(TEST_MCP_ROOT, async (client, browser) => {
       await mkdir(join(TEST_MCP_ROOT, 'unicode'), { recursive: true })
       const savePath = join(TEST_MCP_ROOT, 'unicode', 'пример.fig')
       const result = await client.callTool({
-        name: 'save_file',
+        name: 'save_document',
         arguments: { path: savePath }
       })
 
       expect(result.isError).not.toBe(true)
-      const request = browser.requests.find((item) => item.command === 'save_file')
+      const request = browser.requests.find((item) => item.command === 'save_document')
       // The server sends the canonical (realpath-resolved) path to the browser
       // to prevent TOCTOU races. On macOS, /var -> /private/var.
       const { realpath } = await import('node:fs/promises')
       const { dirname, basename } = await import('node:path')
       const canonicalPath = join(await realpath(dirname(savePath)), basename(savePath))
-      expect(request?.args).toEqual({ path: canonicalPath })
+      expect(request?.args).toMatchObject({ path: canonicalPath })
     })
   })
 
-  test('save_file rejects paths outside mcpRoot', async () => {
+  test('save_document rejects paths outside mcpRoot', async () => {
     await withMCPRootServer(TEST_MCP_ROOT, async (client, browser) => {
       const result = await client.callTool({
-        name: 'save_file',
+        name: 'save_document',
         arguments: { path: join(join(TEST_MCP_ROOT, '..'), 'outside.fig') }
       })
 
       expect(result.isError).toBe(true)
-      expect(browser.requests.some((item) => item.command === 'save_file')).toBe(false)
+      expect(browser.requests.some((item) => item.command === 'save_document')).toBe(false)
     })
   })
 
-  test('does not register open_file when mcpRoot is null', async () => {
+  test('does not register open_document when mcpRoot is null', async () => {
     await withMCPRootServer(null, async (client) => {
       const { tools } = await client.listTools()
       const names = tools.map((t) => t.name)
-      expect(names).not.toContain('open_file')
-      expect(names).not.toContain('list_recent_files')
-      expect(names).not.toContain('new_document')
+      expect(names).not.toContain('open_document')
+      expect(names).not.toContain('list_recent_documents')
+      expect(names).not.toContain('create_document')
     })
   })
 })
@@ -977,6 +1015,58 @@ describe('MCP sessions as agents', () => {
     )
   })
 
+  function toolRequests(browser: MockBrowser): unknown[] {
+    return browser.requests
+      .filter((item) => item.command === 'tool')
+      .map((item) => (item.args as { name?: unknown }).name)
+  }
+
+  test('a session asking for call_mcp_tool runs tools through it, checking their arguments', async () => {
+    await withAgentClient(
+      { [MCP_AGENT_HEADER]: 'acp', [MCP_DEFERS_TOOLS_HEADER]: '1' },
+      async (client, browser) => {
+        const { tools } = await client.listTools()
+        expect(tools.map((tool) => tool.name)).toContain('call_mcp_tool')
+        const call = (toolName: string, args: Record<string, unknown>) =>
+          client.callTool({ name: 'call_mcp_tool', arguments: { toolName, arguments: args } })
+
+        const created = await call('create_shape', {
+          type: 'FRAME',
+          x: 0,
+          y: 0,
+          width: 200,
+          height: 100
+        })
+        expect(created.isError).toBeFalsy()
+        expect((await call('create_shape', { type: 'FRAME', width: 'wide' })).isError).toBe(true)
+        // eval is off on this server, so it is not a tool the session can reach.
+        expect((await call('eval', { code: '1' })).isError).toBe(true)
+        expect(toolRequests(browser)).toEqual(['create_shape'])
+      }
+    )
+  })
+
+  test('a session whose client defers tools sees no target fields, and calls still take them', async () => {
+    await withAgentClient(
+      { [MCP_AGENT_HEADER]: 'acp', [MCP_DEFERS_TOOLS_HEADER]: '1' },
+      async (client, browser) => {
+        const { tools } = await client.listTools()
+        const getNode = tools.find((tool) => tool.name === 'get_node')
+        expect(Object.keys(getNode?.inputSchema.properties ?? {})).toEqual(['id', 'depth'])
+        await client.callTool({ name: 'get_page_tree', arguments: { document_id: 'doc-2' } })
+        const request = browser.requests.find((item) => item.command === 'tool')
+        expect(request?.args).toMatchObject({ document_id: 'doc-2', name: 'get_page_tree' })
+      }
+    )
+  })
+
+  test('other sessions do not get call_mcp_tool', async () => {
+    await withAgentClient({ [MCP_AGENT_HEADER]: 'acp' }, async (client) => {
+      const { tools } = await client.listTools()
+      expect(tools.map((tool) => tool.name)).not.toContain('call_mcp_tool')
+    })
+  })
+
   test("an ACP chat's tool call names the chat and the call's id in it", async () => {
     const chat = '0123456789abcdef0123456789abcdef'
     await withAgentClient(
@@ -999,6 +1089,26 @@ describe('MCP sessions as agents', () => {
         expect(agents).toMatchObject([
           { kind: 'acp', chat, call: 'exec-1' },
           { kind: 'acp', chat, call: 'toolu_1' }
+        ])
+      }
+    )
+  })
+
+  test("an ACP chat's document commands name the chat, so they reach its document", async () => {
+    const chat = '0123456789abcdef0123456789abcdef'
+    await withAgentClient(
+      { [MCP_AGENT_HEADER]: 'acp', [MCP_CHAT_HEADER]: chat },
+      async (client, browser) => {
+        await client.callTool({ name: 'undo', arguments: {} })
+        await client.callTool({ name: 'save_document', arguments: {} })
+        await client.callTool({ name: 'close_document', arguments: { unsaved: 'discard' } })
+        const commands = browser.requests.filter((item) =>
+          ['undo', 'save_document', 'close_document'].includes(item.command)
+        )
+        expect(commands.map((item) => item.args)).toMatchObject([
+          { agent: { kind: 'acp', chat } },
+          { agent: { kind: 'acp', chat } },
+          { agent: { kind: 'acp', chat }, unsaved: 'discard' }
         ])
       }
     )

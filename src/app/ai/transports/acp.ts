@@ -1,32 +1,36 @@
-import { ClientSideConnection, ndJsonStream, PROTOCOL_VERSION } from '@agentclientprotocol/sdk'
-import type {
-  Client,
-  Agent,
-  SessionNotification,
-  SessionUpdate,
-  RequestPermissionRequest,
-  RequestPermissionResponse,
-  Usage
-} from '@agentclientprotocol/sdk'
+import {
+  client,
+  methods,
+  ndJsonStream,
+  PROTOCOL_VERSION,
+  type ClientConnection,
+  type SessionNotification,
+  type SessionUpdate,
+  type Usage
+} from '@agentclientprotocol/sdk/unstable'
 import { promiseTimeout } from '@vueuse/core'
 import type { ChatTransport, UIMessage, UIMessageChunk } from 'ai'
 import * as v from 'valibot'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
 
-import { parseAuthStatusUpdate } from '@/app/ai/agents/acp/auth/status'
+import { AUTH_STATUS_UPDATE_METHOD, parseAuthStatusUpdate } from '@/app/ai/agents/acp/auth/status'
 import { setAgentCommands } from '@/app/ai/agents/acp/commands'
 import { createUpdateMapper } from '@/app/ai/agents/acp/events'
 import { requestPermissionFromUser } from '@/app/ai/agents/acp/permission'
 import { spawnACPProcess, type ACPProcess } from '@/app/ai/agents/acp/process'
 import {
   AgentSessionResumeError,
+  AgentSessionRetryError,
+  acpErrorMessage,
   isAuthRequiredError,
-  openAgentSession
+  openAgentSession,
+  sessionRequests
 } from '@/app/ai/agents/acp/session'
+import { noteSubagents } from '@/app/ai/agents/acp/subagents'
 import { createOwnToolApproval, linkOwnTools, type OwnToolsLink } from '@/app/ai/agents/acp/tools'
 import { agentAccounts } from '@/app/ai/agents/setup/accounts'
-import { resolveSpawnCommand } from '@/app/ai/agents/setup/discovery'
+import { resolveSpawnTarget } from '@/app/ai/agents/setup/discovery'
 import { AgentNotInstalledError } from '@/app/ai/agents/setup/readiness'
 import { notifyPermissionWaiting } from '@/app/ai/chat/notifications'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
@@ -39,14 +43,14 @@ type TauriChild = ACPProcess['child']
 
 /** What starting an agent reaches outside the transport, which tests replace. */
 export interface ACPStartup {
-  resolveCommand: typeof resolveSpawnCommand
+  resolveTarget: typeof resolveSpawnTarget
   spawn: typeof spawnACPProcess
   authToken: typeof getAutomationAuthToken
   linkTools: typeof linkOwnTools
 }
 
 const DEFAULT_STARTUP: ACPStartup = {
-  resolveCommand: resolveSpawnCommand,
+  resolveTarget: resolveSpawnTarget,
   spawn: spawnACPProcess,
   authToken: getAutomationAuthToken,
   linkTools: linkOwnTools
@@ -70,7 +74,7 @@ const TURN_UPDATES: ReadonlySet<SessionUpdate['sessionUpdate']> = new Set([
 const AGENT_START_TIMEOUT_MS = 60_000
 
 interface ACPSession {
-  connection: ClientSideConnection
+  connection: ClientConnection
   sessionId: string
   /** The id the agent's tool calls carry, which ties them to this chat's replies. */
   chat: string
@@ -125,7 +129,7 @@ function missingCommandMessage(agentDef?: ACPAgentDef): string {
 }
 
 export function formatConnectionError(e: unknown, agentDef?: ACPAgentDef): string {
-  const msg = e instanceof Error ? e.message : String(e)
+  const msg = acpErrorMessage(e)
   if (
     msg.includes('ECONNREFUSED') ||
     msg.includes('fetch failed') ||
@@ -158,9 +162,20 @@ function stopWhenLinked(linking: Promise<OwnToolsLink>): void {
   linking.then((late) => late.stop()).catch(() => undefined)
 }
 
-function startupError(error: unknown, agentDef: ACPAgentDef): Error {
-  recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(error) })
-  return new Error(formatConnectionError(error, agentDef))
+function startupError(
+  error: unknown,
+  agentDef: ACPAgentDef,
+  onAgentError: ((error: unknown) => void) | null
+): Error {
+  // Diagnostics record what the agent answered, not the conversation's reading of it.
+  const original =
+    (error instanceof AgentSessionResumeError || error instanceof AgentSessionRetryError) &&
+    error.cause !== undefined
+      ? error.cause
+      : error
+  recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(original) })
+  onAgentError?.(original)
+  return new Error(formatConnectionError(error, agentDef), { cause: error })
 }
 
 export function buildCrashChunks(
@@ -192,6 +207,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
   /** The agent session the next start continues: a saved chat's, then the one a turn ran in. */
   private resume: string | null
   private onSession: ((sessionId: string | null) => void) | null
+  private onAgentError: ((error: unknown) => void) | null
   private startup: ACPStartup
   private startTimeoutMs: number
 
@@ -208,6 +224,11 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
      * and null when the saved session can no longer be continued.
      */
     onSession?: (sessionId: string | null) => void
+    /**
+     * Told what the agent answered when its start or a prompt failed. The chat shows the agent's
+     * text, which can quote the conversation, so diagnostics record this instead.
+     */
+    onAgentError?: (error: unknown) => void
     startup?: ACPStartup
     startTimeoutMs?: number
   }) {
@@ -217,6 +238,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     this.onUsage = options.onUsage ?? null
     this.resume = options.resume ?? null
     this.onSession = options.onSession ?? null
+    this.onAgentError = options.onAgentError ?? null
     this.startup = options.startup ?? DEFAULT_STARTUP
     this.startTimeoutMs = options.startTimeoutMs ?? AGENT_START_TIMEOUT_MS
   }
@@ -284,7 +306,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         }
 
         abortSignal?.addEventListener('abort', () => {
-          void connection.cancel({ sessionId })
+          void connection.agent.notify(methods.agent.session.cancel, { sessionId })
           finish('stop')
         })
 
@@ -299,8 +321,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           return
         }
 
-        connection
-          .prompt({
+        connection.agent
+          .request(methods.agent.session.prompt, {
             sessionId,
             prompt: [{ type: 'text', text: promptText }]
           })
@@ -316,6 +338,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
               operation: 'message',
               ...describeDiagnosticError(e)
             })
+            this.onAgentError?.(e)
             finish('error', formatConnectionError(e, this.agentDef))
           })
       }
@@ -331,6 +354,11 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
 
   async reconnectToStream(): Promise<ReadableStream<UIMessageChunk> | null> {
     return null
+  }
+
+  /** The id this chat's agent's MCP session and tool calls carry; null before the agent starts. */
+  get agentChat(): string | null {
+    return this.session?.chat ?? null
   }
 
   async destroy(): Promise<void> {
@@ -371,7 +399,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     // Aborted once the startup gave up, by Stop or the deadline, so a lookup still running launches nothing.
     const gaveUp = new AbortController()
     const spawning = (async () => {
-      const command = await this.startup.resolveCommand(this.agentDef)
+      const { command, searchPath } = await this.startup.resolveTarget(this.agentDef)
       if (gaveUp.signal.aborted || abortSignal?.aborted) {
         throw new Error('The reply was stopped before the agent started.')
       }
@@ -379,6 +407,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         command,
         args: this.agentDef.args,
         logId: this.agentDef.id,
+        searchPath,
+        cwd: this.cwd,
         destroying: () => this.destroying,
         onUnexpectedClose: () => {
           if (!this.session) return
@@ -396,9 +426,9 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       void spawning.then((late) => late.child.kill()).catch(() => undefined)
       recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(e) })
       if (e instanceof AgentNotInstalledError) throw e
-      const message = e instanceof Error ? e.message : String(e)
+      const message = acpErrorMessage(e)
       if (isMissingCommandError(message)) throw new AgentNotInstalledError(this.agentDef)
-      throw new Error(formatConnectionError(e, this.agentDef))
+      throw new Error(formatConnectionError(e, this.agentDef), { cause: e })
     }
     const { child, input, output } = process
     const stream = ndJsonStream(input, output)
@@ -409,10 +439,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     const { agentDef, store } = this
     const ownToolApproval = createOwnToolApproval()
 
-    const clientImpl: Client = {
-      async requestPermission(
-        params: RequestPermissionRequest
-      ): Promise<RequestPermissionResponse> {
+    const connection = client({ name: 'OpenPencil' })
+      .onRequest(methods.client.session.requestPermission, ({ params }) => {
         const allowed = ownToolApproval.answer(params)
         if (allowed) return allowed
         const title = params.toolCall.title ?? ''
@@ -420,12 +448,15 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           params,
           store ? () => notifyPermissionWaiting(store, agentDef.name, title) : undefined
         )
-      },
-
-      async sessionUpdate(params: SessionNotification): Promise<void> {
-        // Claude's adapter names its model only in its usage updates.
+      })
+      .onNotification(methods.client.session.update, ({ params }) => {
         const { update } = params
         ownToolApproval.noteUpdate(update)
+        // The agent's MCP calls name only their own id; its updates say which subagent made them.
+        if (sessionRef) noteSubagents(sessionRef.chat, sessionRef.sessionId, params)
+        // A subagent works in a session of its own, which the chat does not show.
+        if (sessionRef && params.sessionId !== sessionRef.sessionId) return
+        // Claude's adapter names its model only in its usage updates.
         if (update.sessionUpdate === 'usage_update') {
           const meta = v.safeParse(usageMetaSchema, update._meta)
           if (meta.success && sessionRef) sessionRef.model = meta.output['_claude/model']
@@ -434,18 +465,13 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           setAgentCommands(agentId, update.availableCommands)
         }
         onUpdate?.(params)
-      },
-
-      extNotification: async (method, params) => {
-        const status = parseAuthStatusUpdate(method, params)
-        if (!status) return
-        agentAccounts.report(this.agentDef.id, status)
-      }
-    }
-
-    const connection = new ClientSideConnection((_agent: Agent) => clientImpl, stream)
+      })
+      .onNotification(AUTH_STATUS_UPDATE_METHOD, parseAuthStatusUpdate, ({ params }) => {
+        if (params) agentAccounts.report(agentId, params)
+      })
+      .connect(stream)
     this.starting = child
-    // The SDK leaves requests pending when the agent exits, so each startup request races it.
+    // Each startup request races the connection, so one the agent never answers ends when it exits.
     const stopped = connection.closed.then((): never => {
       throw new Error('The agent stopped while it was starting.')
     })
@@ -464,25 +490,31 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         return await untilStopped(request)
       } catch (e) {
         failed?.(e)
-        return abandon(startupError(e, this.agentDef))
+        return abandon(startupError(e, this.agentDef, this.onAgentError))
       }
     }
 
     const automationAuthToken = await step(this.startup.authToken())
     const initialized = await step(
-      connection.initialize({ protocolVersion: PROTOCOL_VERSION, clientCapabilities: {} })
+      connection.agent.request(methods.agent.initialize, {
+        protocolVersion: PROTOCOL_VERSION,
+        // Agents that run subagents then report each one's work in a session of its own.
+        clientCapabilities: { subagents: {} }
+      })
     )
 
     // The agent must reach OpenPencil's tools before it gets a prompt. An outside MCP connection
     // whose credential cannot be read fails here.
-    const linking = this.startup.linkTools(automationAuthToken)
+    const linking = this.startup.linkTools(automationAuthToken, {
+      defersTools: this.agentDef.defersMCPTools === true
+    })
     release = () => stopWhenLinked(linking)
     const tools = await step(linking)
     release = () => tools.stop()
     onUpdate = ({ update }) => tools.noteUpdate(update)
 
     const opened = await step(
-      openAgentSession(connection, this.agentDef, initialized, {
+      openAgentSession(sessionRequests(connection.agent), this.agentDef, initialized, {
         cwd: this.cwd,
         mcpServers: tools.mcpServers,
         meta: tools.meta,

@@ -32,9 +32,9 @@ export async function startChromiumTrace(
     : TRACE_CATEGORIES
   const session = await page.context().newCDPSession(page)
   const chunks: string[] = []
-  session.on('Tracing.dataCollected', ({ value }) =>
-    chunks.push(...value.map((entry) => JSON.stringify(entry)))
-  )
+  session.on('Tracing.dataCollected', ({ value }) => {
+    for (const entry of value) chunks.push(JSON.stringify(entry))
+  })
   await session.send('Tracing.start', {
     categories: categories.join(','),
     transferMode: 'ReportEvents',

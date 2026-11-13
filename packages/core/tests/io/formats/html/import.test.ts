@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
+import { layoutSizing } from '@open-pencil/scene-graph/layout'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import { readHTMLDocument } from '#core/io/formats/html/import'
@@ -46,6 +47,25 @@ describe('reading HTML', () => {
     // Centered where the engine set the line; Core measures the same font within a pixel of it.
     const label = node(button.childIds[0])
     expect(Math.abs(label.x * 2 + label.width - 390)).toBeLessThanOrEqual(1)
+  })
+
+  test('keeps sizes the page left to layout as fill and hug, and fixes those it set', async () => {
+    const { graph } = await readHTMLDocument(DEMO)
+    const node = (id: string | undefined) => {
+      const found = id === undefined ? undefined : graph.getNode(id)
+      if (!found) throw new Error(`Missing layer ${id}`)
+      return found
+    }
+    const sizing = (id: string | undefined) => {
+      const layer = node(id)
+      return [layoutSizing(graph, layer, 'HORIZONTAL'), layoutSizing(graph, layer, 'VERTICAL')]
+    }
+    const column = node(graph.getPages()[0]?.childIds[0])
+    const [, card] = column.childIds
+
+    // The column sets its width and height; the card stretches across and hugs its text.
+    expect(sizing(column.id)).toEqual(['FIXED', 'FIXED'])
+    expect(sizing(card)).toEqual(['FILL', 'HUG'])
   })
 
   test('a border takes room inside the box, as in a browser', async () => {
@@ -206,7 +226,9 @@ describe('reading HTML', () => {
           if (path !== 'once.css') return null
           reads++
           // A second read would lose the rule, as a network that fails the second time does.
-          return reads === 1 ? new TextEncoder().encode('.box { width: 300px; height: 10px }') : null
+          return reads === 1
+            ? new TextEncoder().encode('.box { width: 300px; height: 10px }')
+            : null
         }
       }
     )
@@ -251,4 +273,3 @@ describe('reading HTML', () => {
     expect(families).toEqual([TEST_FAMILY, 'Inter', 'Inter'])
   })
 })
-

@@ -10,6 +10,7 @@ import {
 import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
 import { cloudMessages } from '@open-pencil/vue/i18n'
 
+import type { EditorStore } from '@/app/editor/session'
 import { toast } from '@/app/shell/ui'
 import { isTauri } from '@/app/tauri/env'
 import { bindDesktopLinkQueue } from '@/app/tauri/link-queue'
@@ -19,7 +20,7 @@ import { cloudSignedIn, signInToOpen } from './connect/flow'
 import { beginCloudInvitation } from './invitations/flow'
 import { cloudServerHost, normalizeCloudServerURL } from './servers/address'
 import { cloudServerForLink, findCloudServer } from './servers/store'
-import { openCloudShareLink } from './sharing/link'
+import { cloudGuestLinkTabs, openCloudShareLink } from './sharing/link'
 
 /**
  * An invitation, `/invitations/:id#token`, or a document shared by link, `/share/:id#secret`, on
@@ -43,7 +44,7 @@ const cloudLinkSchema = v.object({
 export function readCloudLink(url: URL): CloudLink | null {
   const path = parseCloudLinkPath(url.pathname)
   const secret = url.hash.slice(1)
-  if (!path || path.kind === 'documents' || !secret) return null
+  if (!path || path.kind === 'documents' || path.kind === 'community' || !secret) return null
   return { kind: path.kind, id: path.id, server: url.origin, secret }
 }
 
@@ -81,6 +82,17 @@ async function signInForLink(link: CloudLink): Promise<void> {
   }
   signingIn.value = JSON.stringify(link satisfies CloudLink)
   await signInToOpen(server.id)
+}
+
+/**
+ * Signs in to the server of a link a guest is viewing, then opens the link again with the
+ * account, whose tab replaces the guest's.
+ */
+export async function signInToEditCloudShare(store: EditorStore): Promise<void> {
+  const tab = cloudGuestLinkTabs.value.get(store)
+  if (!tab) return
+  const { shareId, server, secret } = tab.link
+  await signInForLink({ kind: 'share', id: shareId, server, secret })
 }
 
 /** Opens an invitation's dialog, or a shared document. */

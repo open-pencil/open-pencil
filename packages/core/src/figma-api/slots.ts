@@ -16,8 +16,8 @@ import {
 
 import { graphOf } from '#core/figma-api/graph'
 
-import type { NodeProxyInternals, ProxyThis } from './accessor-utils'
-import { assertProxyEditable, nodeId, raw } from './accessor-utils'
+import type { NodeProxyInternals, ProxyThis } from './accessors/utils'
+import { assertProxyEditable, nodeId, raw } from './accessors/utils'
 import type { NodeProxyHost } from './proxy'
 
 /** Figma's slot limits, where an unset count reads as null. */

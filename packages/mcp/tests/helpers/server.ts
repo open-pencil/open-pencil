@@ -210,10 +210,10 @@ export function socketRequest(
 
 // App commands whose mock result does not depend on the graph or arguments.
 const FIXED_MOCK_RESULTS: Partial<Record<string, object>> = {
-  save_file: {},
-  new_document: {},
-  open_file: {},
-  close_file: { closed: true },
+  save_document: {},
+  create_document: {},
+  open_document: {},
+  close_document: { closed: true },
   activate_document: { activated: true },
   undo: { applied: true, label: 'Agent: mock' },
   redo: { applied: true, label: 'Agent: mock' }

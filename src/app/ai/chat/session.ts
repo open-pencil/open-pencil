@@ -57,7 +57,8 @@ export async function createACPTransport(
   providerID: AIProviderID,
   store?: EditorStore,
   onUsage?: (usage: AgentTurnUsage) => void,
-  agentSession?: AgentSessionLink
+  agentSession?: AgentSessionLink,
+  onAgentError?: (error: unknown) => void
 ) {
   const agentDef = acpAgentFor(providerID)
   if (!agentDef) throw new Error(`Unknown ACP agent: ${providerID}`)
@@ -71,7 +72,9 @@ export async function createACPTransport(
     onUsage,
     resume: agentSession?.resume ?? null,
     onSession:
-      agentSession && ((id) => agentSession.record(id === null ? null : { agent: agentDef.id, id }))
+      agentSession &&
+      ((id) => agentSession.record(id === null ? null : { agent: agentDef.id, id })),
+    onAgentError
   })
 }
 
@@ -122,6 +125,13 @@ export function createChatSessionManager({
     activeProviderError ??= error
   }
 
+  // What an agent answered, for diagnostics only: the chat shows the agent's text, which can
+  // quote the conversation, while a raw agent error keeps just its code.
+  let activeAgentError: unknown = null
+  function captureAgentError(error: unknown): void {
+    activeAgentError ??= error
+  }
+
   function handleChatFinish(
     context: AIDiagnosticContext,
     {
@@ -145,6 +155,7 @@ export function createChatSessionManager({
 
   function clearFailure(): void {
     activeProviderError = null
+    activeAgentError = null
     failure.value = null
   }
 
@@ -179,10 +190,11 @@ export function createChatSessionManager({
       store,
       ({ model, ...tokens }) =>
         recordModelStepCompleted({ provider, model: model ?? provider, ...tokens }, context),
-      agentSession
+      agentSession,
+      captureAgentError
     )
     acpTransportInstance = transport
-    return transport as ChatTransport<UIMessage>
+    return transport
   }
 
   async function createActiveHarnessTransport(sessionId: string, context: AIDiagnosticContext) {
@@ -275,18 +287,23 @@ export function createChatSessionManager({
       // Failures belong to the provider this chat was created for, even if the profile changes.
       const chatProviderID = providerID.value
       let transport: ChatTransport<UIMessage>
-      // An ACP or Pi chat's tool calls show as an agent of that kind (`src/app/automation/agents.ts`).
-      let agentKind: 'acp' | 'harness' | null = null
+      // An ACP or Pi chat's tool calls show as an agent of that kind (`src/app/automation/agents.ts`);
+      // when a reply ends, that chat's agents rest, and an ACP chat's alone.
+      let restAgentsOnFinish: (() => void) | null = null
       if (isACPProvider.value) {
-        agentKind = 'acp'
-        transport = await createActiveACPTransport(
+        const acp = await createActiveACPTransport(
           store,
           diagnosticContext,
           chatProviderID,
           agentSession
         )
+        transport = acp
+        restAgentsOnFinish = () => {
+          const chatId = acp.agentChat
+          if (chatId) restAgents('acp', chatId)
+        }
       } else if (isHarnessProvider.value) {
-        agentKind = 'harness'
+        restAgentsOnFinish = () => restAgents('harness')
         transport = await createActiveHarnessTransport(sessionId, diagnosticContext)
       } else {
         transport = await createTransport(store, diagnosticContext)
@@ -302,7 +319,9 @@ export function createChatSessionManager({
         messages,
         onError: (error) => {
           const reportedError = activeProviderError ?? error
+          const diagnosedError = activeAgentError ?? reportedError
           activeProviderError = null
+          activeAgentError = null
           const signInOnly = AI_PROVIDERS.some(
             (provider) => provider.id === chatProviderID && provider.signInOnly
           )
@@ -316,13 +335,13 @@ export function createChatSessionManager({
                 resetsAt: refusal.resetsAt ?? undefined
               }
             : classified
-          const { errorName, errorCode, message, stack } = diagnosticErrorDetails(reportedError)
+          const { errorName, errorCode, message, stack } = diagnosticErrorDetails(diagnosedError)
           recordChatFailed({ errorName, errorCode, message, stack }, diagnosticContext)
         },
         onFinish: (event) => {
           handleChatFinish(diagnosticContext, event)
           // The reply is over, however it ended; its agent rests instead of waiting it out.
-          if (agentKind) restAgents(agentKind)
+          restAgentsOnFinish?.()
           if (event.isAbort || event.isDisconnect || event.isError) {
             void settleEndedReply(created, store, event.message.id, event.isAbort)
           }

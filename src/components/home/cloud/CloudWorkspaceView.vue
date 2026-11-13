@@ -93,7 +93,7 @@ const metadata = (document: CloudDocumentRow) =>
           <template v-if="usage && usage.totalBytes !== null && usageLabel">
             <AppProgress
               :amount="{ value: usage.usedBytes, max: usage.totalBytes }"
-              :aria-label="t.homeWorkspaceStorage({ usage: usageLabel })"
+              :aria-label="t.homeOwnerStorage({ usage: usageLabel })"
               :ui="{ root: 'w-16' }"
             />
             <span>{{ usageLabel }}</span>

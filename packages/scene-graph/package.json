@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/scene-graph",
-  "version": "0.17.0-beta.2",
+  "version": "0.17.0-beta.4",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -25,6 +25,12 @@
       "bun": "./src/index.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./arrays": {
+      "types": "./dist/arrays.d.ts",
+      "bun": "./src/arrays.ts",
+      "import": "./dist/arrays.js",
+      "default": "./dist/arrays.js"
     },
     "./arrow-caps": {
       "types": "./dist/arrow-caps.d.ts",
@@ -79,6 +85,12 @@
       "bun": "./src/constants.ts",
       "import": "./dist/constants.js",
       "default": "./dist/constants.js"
+    },
+    "./constraints": {
+      "types": "./dist/constraints.d.ts",
+      "bun": "./src/constraints.ts",
+      "import": "./dist/constraints.js",
+      "default": "./dist/constraints.js"
     },
     "./coordinate": {
       "types": "./dist/coordinate.d.ts",
@@ -407,7 +419,6 @@
     "nanoevents": "^9.1.0",
     "postcss-value-parser": "^4.2.0",
     "svgpath": "^2.6.0",
-    "ufo": "^1.6.4",
     "valibot": "^1.5.0"
   },
   "devDependencies": {

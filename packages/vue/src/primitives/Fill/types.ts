@@ -3,9 +3,6 @@ import type { PrimitiveProps } from 'reka-ui'
 import type { Fill } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import type { BindingState } from '#vue/controls/binding-provider/types'
-import type { BindableValueStateAttrs } from '#vue/primitives/BindableValue/types'
-
 export type FillCategory = 'SOLID' | 'GRADIENT' | 'IMAGE'
 
 export interface FillActions {
@@ -29,7 +26,10 @@ export interface FillRootSlots {
 export interface FillSwatchProps extends PrimitiveProps {
   /** Fill represented by the swatch. */
   fill: Fill
-  /** Accessible name for the preview. */
+  /**
+   * Accessible name for the preview. Without one the swatch is decorative and hidden from
+   * assistive technology, as when a button or row around it already names the color.
+   */
   label?: string
 }
 
@@ -39,8 +39,6 @@ export interface FillSwatchSlotProps {
   category: FillCategory
   background: string
   transparent: boolean
-  bindingState: BindingState | undefined
-  stateAttrs: BindableValueStateAttrs | undefined
 }
 
 export interface FillSwatchSlots {

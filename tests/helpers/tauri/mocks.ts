@@ -24,3 +24,12 @@ export async function clearTauriMocks() {
   Reflect.deleteProperty(window, '__TAURI_EVENT_PLUGIN_INTERNALS__')
   Reflect.deleteProperty(globalThis, 'window')
 }
+
+/** An event plugin-shell sends a spawned process's listeners, such as `Stdout` or `Terminated`. */
+export type ShellEvent = { event: string; payload: unknown }
+
+/** Delivers events to the process a mocked `plugin:shell|spawn` call started. */
+export function shellEvents(spawnArgs: unknown): (event: ShellEvent) => void {
+  const { onEvent } = spawnArgs as { onEvent: { onmessage: (event: ShellEvent) => void } }
+  return (event) => onEvent.onmessage(event)
+}

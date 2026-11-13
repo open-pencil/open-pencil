@@ -14,36 +14,55 @@ import type { Context } from 'hono'
 import * as v from 'valibot'
 
 import type { CloudflareCloudEnvironment, PreparedCloudflareCloud } from '../environment'
+import { inMaintenance, MAINTENANCE_CLOSE_CODE, maintenanceResponse } from '../maintenance'
 import { createRelaySockets } from './sockets'
 
 /** What the Worker calls on a document's relay object. */
 export interface CollaborationRelayRPC extends DurableObject<CloudflareCloudEnvironment> {
   /** Ends the document's live rooms after a restore, without saving them. */
   startOver(documentId: string): Promise<void>
+  /** Ends a taken-down document's live rooms, saving them. */
+  closeDocument(documentId: string): Promise<void>
   /** Tells the document's live rooms its version history changed. */
   announceVersions(documentId: string): Promise<void>
 }
 
 const documentIdSchema = v.pipe(v.string(), v.uuid())
 
-/** The document's relay object. */
-export function relayFor(env: CloudflareCloudEnvironment, documentId: string) {
-  return env.RELAY.get(env.RELAY.idFromName(documentId))
+/**
+ * The most a room's document may hold on Cloudflare. A Durable Object has 128 MB of memory for
+ * the document, the update joining it, and the snapshot written from it, so a room past this is
+ * turned away and its editors save without one.
+ */
+export const CLOUDFLARE_MAXIMUM_ROOM_BYTES = 32 * 1024 * 1024
+
+/**
+ * The document's relay object. With a jurisdiction, objects are created and keep their storage
+ * only inside it; an object named outside one is a different object, so a deployment never
+ * changes its jurisdiction while rooms are live.
+ */
+export function relayFor(
+  env: CloudflareCloudEnvironment,
+  documentId: string,
+  jurisdiction?: DurableObjectJurisdiction
+) {
+  const namespace = jurisdiction ? env.RELAY.jurisdiction(jurisdiction) : env.RELAY
+  return namespace.get(namespace.idFromName(documentId))
 }
 
 /**
  * Sends a relay socket to its document's relay object. The ticket's URL names the document; the
  * object refuses tickets for any other.
  */
-export async function routeToRelay(
-  c: Context<{ Bindings: CloudflareCloudEnvironment }>
-): Promise<Response> {
-  if (c.req.header('Upgrade')?.toLowerCase() !== 'websocket') {
-    return c.text('Expected a WebSocket upgrade', 426)
+export function relayRoute(jurisdiction?: DurableObjectJurisdiction) {
+  return async (c: Context<{ Bindings: CloudflareCloudEnvironment }>): Promise<Response> => {
+    if (c.req.header('Upgrade')?.toLowerCase() !== 'websocket') {
+      return c.text('Expected a WebSocket upgrade', 426)
+    }
+    const documentId = c.req.query(RELAY_DOCUMENT_PARAM)
+    if (!v.is(documentIdSchema, documentId)) return c.text('Missing document', 400)
+    return relayFor(c.env, documentId, jurisdiction).fetch(c.req.raw)
   }
-  const documentId = c.req.query(RELAY_DOCUMENT_PARAM)
-  if (!v.is(documentIdSchema, documentId)) return c.text('Missing document', 400)
-  return relayFor(c.env, documentId).fetch(c.req.raw)
 }
 
 /** The relay over the deployment's PostgreSQL and object store. */
@@ -52,12 +71,17 @@ function configuredRelay(
   documentId: string,
   onError: (message: string, error: unknown) => void
 ): CollaborationRelay {
-  const database = createPostgresCloudDatabase({ connectionString: config.databaseURL })
+  // Hyperdrive keeps no session settings and ends queries past its own limit.
+  const database = createPostgresCloudDatabase({
+    connectionString: config.databaseURL,
+    statementTimeoutMs: null
+  })
   return createCollaborationRelay({
     authSecret: config.authSecret,
     documentId,
     store: createCollaborationStateStore(database, createS3ObjectStore(config)),
     maximumMessageBytes: config.technicalLimits.maximumCollaborationMessageBytes,
+    maximumRoomBytes: CLOUDFLARE_MAXIMUM_ROOM_BYTES,
     maximumConnectionsPerRoom: config.technicalLimits.maximumConnectionsPerRoom,
     onError,
     ...relayDocumentLookups(
@@ -100,8 +124,9 @@ export function createCloudflareRelayObject(
       }
     })
 
-    /** Accepts a socket that `routeToRelay` sent here. */
+    /** Accepts a socket that `relayRoute` sent here. */
     override async fetch(request: Request): Promise<Response> {
+      if (inMaintenance(this.env)) return maintenanceResponse(request)
       const documentId = new URL(request.url).searchParams.get(RELAY_DOCUMENT_PARAM)
       if (!v.is(documentIdSchema, documentId)) return new Response(null, { status: 400 })
       const relay = await this.#sockets.open(documentId)
@@ -112,20 +137,35 @@ export function createCloudflareRelayObject(
     }
 
     override async webSocketMessage(socket: WebSocket, message: string | ArrayBuffer) {
+      // A socket from before maintenance began reaches the room no more: its editor reconnects
+      // once maintenance ends, and nothing it sends meanwhile is written.
+      if (inMaintenance(this.env)) {
+        socket.close(MAINTENANCE_CLOSE_CODE, 'Down for maintenance')
+        return
+      }
       await this.#sockets.message(socket, message)
     }
 
+    // Under maintenance a closing socket leaves its room as it is: closing the room would save
+    // its state into a database that may be mid-restore.
     override async webSocketClose(socket: WebSocket) {
+      if (inMaintenance(this.env)) return
       await this.#sockets.closed(socket)
     }
 
     override async webSocketError(socket: WebSocket) {
+      if (inMaintenance(this.env)) return
       await this.#sockets.closed(socket)
     }
 
     async startOver(documentId: string) {
       if (!this.#sockets.active) return
       ;(await this.#sockets.open(documentId)).startOver(documentId)
+    }
+
+    async closeDocument(documentId: string) {
+      if (!this.#sockets.active) return
+      ;(await this.#sockets.open(documentId)).closeDocument(documentId)
     }
 
     async announceVersions(documentId: string) {

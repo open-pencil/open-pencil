@@ -2,7 +2,8 @@ import { expect, test } from 'bun:test'
 
 import { figArchiveOf } from '#fig-tests/helpers/fig-fixtures'
 import { checkpointComponent } from '#fig/document/component/checkpoint'
-import { createFigDocumentSession, materializeDocument } from '#fig/document/materialize'
+import { materializeDocument } from '#fig/document/materialize'
+import { createFigDocumentSession } from '#fig/document/session'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guid } from '@open-pencil/test-support/fig/guid'

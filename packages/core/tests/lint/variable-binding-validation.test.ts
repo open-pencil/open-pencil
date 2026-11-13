@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import noHardcodedColors from '#core/lint/rules/no-hardcoded-colors'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
+
+import noHardcodedColors from '#core/lint/rules/no-hardcoded-colors'
 function pageId(graph: SceneGraph): string {
   return graph.getPages()[0].id
 }

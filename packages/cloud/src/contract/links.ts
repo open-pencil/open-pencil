@@ -3,10 +3,13 @@ import { encodeParam, parseURL, withFragment, withQuery } from 'ufo'
 /** The two kinds of Cloud link that carry a secret: invitations and documents shared by link. */
 export type CloudLinkKind = 'invitations' | 'share'
 
-/** Every kind of Cloud link: those that carry a secret, and a document's address for members. */
-export type CloudLinkPathKind = CloudLinkKind | 'documents'
+/**
+ * Every kind of Cloud link: those that carry a secret, a document's address for members, and a
+ * document of the server's community gallery, which anyone may open.
+ */
+export type CloudLinkPathKind = CloudLinkKind | 'documents' | 'community'
 
-const CLOUD_LINK_PATH = /^\/(invitations|share|documents)\/([^/]+)$/
+const CLOUD_LINK_PATH = /^\/(invitations|share|documents|community)\/([^/]+)$/
 
 /**
  * A link on the server's own editor. The server is the link's own address, so the link needs
@@ -56,6 +59,24 @@ export function cloudDocumentPath(documentId: string): string {
 }
 
 /**
+ * A document of the server's community gallery, `/community/:id`, or one of its named versions
+ * with `?version=…`, which anyone opens read-only without signing in.
+ */
+export function cloudCommunityURL(
+  serverURL: string,
+  documentId: string,
+  versionId: string | null = null
+): string {
+  return serverLink(serverURL, cloudCommunityPath(documentId), {
+    version: versionId ?? undefined
+  })
+}
+
+export function cloudCommunityPath(documentId: string): string {
+  return `/community/${encodeParam(documentId)}`
+}
+
+/**
  * The kind and ID of a Cloud link's path, or null for any other path. The ID is decoded; a broken
  * escape such as `%E0` is no link.
  */
@@ -63,7 +84,12 @@ export function parseCloudLinkPath(
   pathname: string
 ): { kind: CloudLinkPathKind; id: string } | null {
   const [, kind, id] = pathname.match(CLOUD_LINK_PATH) ?? []
-  if ((kind !== 'invitations' && kind !== 'share' && kind !== 'documents') || !id) return null
+  if (
+    (kind !== 'invitations' && kind !== 'share' && kind !== 'documents' && kind !== 'community') ||
+    !id
+  ) {
+    return null
+  }
   try {
     return { kind, id: decodeURIComponent(id) }
   } catch {

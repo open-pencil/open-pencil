@@ -1,28 +1,39 @@
 <script setup lang="ts">
 import { useObjectUrl } from '@vueuse/core'
 import { isEqual } from 'es-toolkit'
+import { joinURL } from 'ufo'
 import { computed, ref, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
 
+import { CLOUD_ACCOUNT_PLAN_PATH } from '@open-pencil/cloud/contract'
 import { useCloudMessages } from '@open-pencil/vue/i18n'
 
 import { openCloudConnect } from '@/app/cloud/connect/flow'
 import { resolveCloudConflict, type CloudConflictChoice } from '@/app/cloud/documents/conflict'
 import { useCloudDocumentStatus } from '@/app/cloud/documents/status'
-import { cloudRoomPermissions, cloudRoomsRefused, rejoinRefusedRoom } from '@/app/cloud/rooms/live'
+import { signInToEditCloudShare } from '@/app/cloud/links'
+import {
+  cloudRoomPermissions,
+  cloudRoomsAtStorageLimit,
+  cloudRoomsRefused,
+  rejoinRefusedRoom
+} from '@/app/cloud/rooms/live'
 import { showCloudServerOnHome } from '@/app/cloud/servers/store'
 import { cloudConnection } from '@/app/cloud/sessions/connection'
 import { cloudShareOpen } from '@/app/cloud/sharing/dialog'
+import { cloudShareTarget } from '@/app/cloud/sharing/document'
+import { cloudGuestLinkTabs } from '@/app/cloud/sharing/link'
 import { useEditorStore } from '@/app/editor/active-store'
 import { useDateFormat } from '@/app/i18n/date'
 import { createStorageAdapter } from '@/app/integrations/storage'
 import { openHomeLocation } from '@/app/shell/menu/navigation'
-import { toast } from '@/app/shell/ui'
+import { openExternalLink, toast } from '@/app/shell/ui'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { resumeStorageSync } from '@/app/storage/sync'
 import CloudConflictDialog from '@/components/cloud/conflict/CloudConflictDialog.vue'
 
 import CloudDocumentStatus from './CloudDocumentStatus.vue'
+import CloudGuestStatus from './CloudGuestStatus.vue'
 
 /** The open document's Cloud status beside its name, and the choice when it conflicts. */
 const store = useEditorStore()
@@ -34,7 +45,16 @@ const { state, location, meta } = useCloudDocumentStatus(() => store.getStorageB
 const ago = (iso: string | null | undefined) => (iso ? dates.relative(iso) : '')
 const savedAgo = computed(() => ago(meta.value?.lastSyncedAt) || null)
 const viewOnly = computed(() => cloudRoomPermissions.value.get(store) === 'view')
+const atStorageLimit = computed(() => cloudRoomsAtStorageLimit.value.has(store))
+/** The plan page of the server the document lives on, where a bigger plan is chosen. */
+const billingURL = computed(() => {
+  const binding = store.getStorageBinding()
+  const target = binding && cloudShareTarget(binding)
+  return target?.discovery.billing ? joinURL(target.server.url, CLOUD_ACCOUNT_PLAN_PATH) : null
+})
 const notLive = computed(() => cloudRoomsRefused.value.has(store))
+/** A tab opened from a link without an account has no Cloud file of its own to report on. */
+const guestLink = computed(() => cloudGuestLinkTabs.value.get(store) ?? null)
 /** Rejoining shows the document as the server holds it, so it waits for this tab's edits. */
 const canRejoin = computed(() => state.value === 'synced' && !store.hasUnsavedChanges())
 /**
@@ -98,6 +118,11 @@ function openWorkspace() {
   openHomeLocation(router, { kind: 'workspace', id: binding.containerId })
 }
 
+/** The server's billing portal, where the owner can choose a plan with more storage. */
+function managePlan() {
+  if (billingURL.value) void openExternalLink(billingURL.value)
+}
+
 function retry() {
   const serverId = location.value?.serverId
   if (serverId && cloudConnection(serverId).state !== 'signed-in') {
@@ -117,6 +142,8 @@ function retry() {
       :host="location.host"
       :saved-ago="savedAgo"
       :view-only="viewOnly"
+      :at-storage-limit="atStorageLimit"
+      :can-manage-plan="billingURL !== null"
       :not-live="notLive"
       :can-rejoin="canRejoin"
       @resolve="openConflict"
@@ -124,6 +151,7 @@ function retry() {
       @share="cloudShareOpen = true"
       @retry="retry"
       @open-workspace="openWorkspace"
+      @manage-plan="managePlan"
     />
     <CloudConflictDialog
       v-model:open="resolving"
@@ -139,4 +167,11 @@ function retry() {
       @later="resolving = false"
     />
   </template>
+  <!-- A link's copy has no Cloud file of its own; it reports a guest's view or a full owner. -->
+  <CloudGuestStatus
+    v-else-if="guestLink || atStorageLimit"
+    :can-edit-signed-in="guestLink?.canEditSignedIn ?? false"
+    :at-storage-limit="atStorageLimit"
+    @sign-in="signInToEditCloudShare(store)"
+  />
 </template>

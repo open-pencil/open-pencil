@@ -1,20 +1,27 @@
+import { compact } from 'es-toolkit'
 import * as v from 'valibot'
 
+import { computeBounds } from '@open-pencil/scene-graph/geometry'
+
+import { graphOf } from '#core/figma-api/graph'
+import { findPageId } from '#core/io/subgraph'
 import { toolNumber, defineTool } from '#core/tools/schema'
 
 export const viewportGet = defineTool({
-  name: 'viewport_get',
+  name: 'get_viewport',
   description: 'Get current viewport position and zoom level.',
   execution: { kind: 'sync', mutation: 'none' },
   exposure: { webmcp: false },
   input: v.strictObject({}),
   execute: (figma) => {
-    return figma.viewport
+    // `figma.viewport` keeps its members on the prototype, as Figma's does, so it serializes empty.
+    const { center, zoom, bounds } = figma.viewport
+    return { center, zoom, bounds }
   }
 })
 
 export const viewportSet = defineTool({
-  name: 'viewport_set',
+  name: 'set_viewport',
 
   description: 'Set viewport position and zoom.',
   execution: { kind: 'sync', mutation: 'view' },
@@ -24,40 +31,37 @@ export const viewportSet = defineTool({
     zoom: toolNumber(v.pipe(v.number(), v.minValue(0.01), v.description('Zoom level')))
   }),
   execute: (figma, { x, y, zoom }) => {
-    figma.viewport = { center: { x, y }, zoom }
-    return { x, y, zoom }
+    figma.viewport.zoom = zoom
+    figma.viewport.center = { x, y }
+    // The view the host settled on, whose zoom it may have clamped.
+    const { center, zoom: applied } = figma.viewport
+    return { x: center.x, y: center.y, zoom: applied }
   }
 })
 
 export const viewportZoomToFit = defineTool({
-  name: 'viewport_zoom_to_fit',
+  name: 'zoom_to_fit',
 
-  description: 'Zoom viewport to fit specified nodes.',
+  description:
+    'Scroll and zoom the view so the given layers fit in it, zooming in no further than 100%. The layers must be on the current page.',
   execution: { kind: 'sync', mutation: 'view' },
   input: v.strictObject({
     ids: v.pipe(v.array(v.string()), v.minLength(1), v.description('Node IDs to fit in view'))
   }),
   execute: (figma, { ids }) => {
-    let minX = Infinity
-    let minY = Infinity
-    let maxX = -Infinity
-    let maxY = -Infinity
-    for (const id of ids) {
-      const node = figma.getNodeById(id)
-      if (!node) continue
-      const bounds = node.absoluteBoundingBox
-      minX = Math.min(minX, bounds.x)
-      minY = Math.min(minY, bounds.y)
-      maxX = Math.max(maxX, bounds.x + bounds.width)
-      maxY = Math.max(maxY, bounds.y + bounds.height)
-    }
-    if (minX === Infinity) return { error: 'No valid nodes found' }
-    const centerX = (minX + maxX) / 2
-    const centerY = (minY + maxY) / 2
-    figma.viewport = { center: { x: centerX, y: centerY }, zoom: 1 }
-    return {
-      center: { x: centerX, y: centerY },
-      bounds: { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
-    }
+    const nodes = compact(ids.map((id) => figma.getNodeById(id)))
+    if (nodes.length === 0) return { error: 'No valid nodes found' }
+    // Figma fits layers from another page by their coordinates on this one, where they are not.
+    const graph = graphOf(figma)
+    const elsewhere = nodes.filter((node) => findPageId(graph, node.id) !== figma.currentPage.id)
+    if (elsewhere.length > 0)
+      return {
+        error:
+          `Layers not on page "${figma.currentPage.name}": ${elsewhere.map((node) => node.id).join(', ')}. ` +
+          'Show their page with activate_document (page_id) first.'
+      }
+    figma.viewport.scrollAndZoomIntoView(nodes)
+    const { center, zoom } = figma.viewport
+    return { center, zoom, bounds: computeBounds(nodes.map((node) => node.absoluteBoundingBox)) }
   }
 })

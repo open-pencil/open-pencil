@@ -107,6 +107,7 @@ Or run from source without installing:
   }
 }
 ```
+
 ```json [Node.js]
 {
   "mcpServers": {
@@ -136,7 +137,7 @@ Security defaults:
 - Authentication is enabled by default with a generated token stored in the private discovery file.
 - `eval` is disabled.
 - File operations are limited to `OPENPENCIL_MCP_ROOT` (defaults to the current working directory) and reject symlink escapes.
-- The browser app reaches those files through the server: `open_file` reads one, and `save_file` or `new_document` with a path writes a copy, so a document opened in the browser keeps saving where it did before.
+- The browser app reaches those files through the server: `open_document` reads one, and `save_document` or `create_document` with a path writes a copy, so a document opened in the browser keeps saving where it did before.
 - Only the desktop app's own origin (`tauri://localhost` and its `http(s)://tauri.localhost` variants) is allowed by default, so a server you start yourself works from the app without extra configuration. Set `OPENPENCIL_MCP_CORS_ORIGIN` to a comma-separated list to allow other origins, such as a worktree dev server.
 
 Set `PORT=0` to disable TCP on macOS and Linux. Windows requires TCP. Set `OPENPENCIL_MCP_SOCKET` to override the Unix socket path, or `OPENPENCIL_MCP_DISCOVERY_PATH` to override the discovery file location. To provide a stable token, set `OPENPENCIL_MCP_AUTH_TOKEN`; an explicitly empty value disables authentication and should only be used with a trusted local socket.
@@ -150,19 +151,19 @@ Endpoints are available over both active transports:
 ## Workflow
 
 1. **Discover targets** — call `list_documents` first when more than one document or page may be open. It returns stable `document_id` and page IDs.
-2. **Open** — `open_file` to load an existing `.fig`, or `new_document` for a blank canvas. `list_recent_files` lists recently opened files inside the MCP root to reopen. These return target metadata for the opened or created document.
+2. **Open** — `open_document` to load an existing `.fig`, or `create_document` for a blank canvas. `list_recent_documents` lists recently opened files inside the MCP root to reopen. These return target metadata for the opened or created document.
 3. **Read** — `get_page_tree`, `find_nodes`, `get_node`, `list_pages`
 4. **Create** — `create_shape`, `render` (JSX)
 5. **Modify** — `set_fill`, `set_stroke`, `set_layout`, `update_node`, `set_effects`
-6. **Structure** — `reparent_node`, `group_nodes`, `clone_node`, `delete_node`
-7. **Save** — `save_file` to write back to `.fig`
-8. **Close** — `close_file` to close an open document tab. With unsaved changes it fails unless `unsaved` is `"save"` or `"discard"`; it never prompts in the app.
+6. **Structure** — `reparent_node`, `group_nodes`, `clone_nodes`, `delete_nodes`
+7. **Save** — `save_document` to write back to `.fig`
+8. **Close** — `close_document` to close an open document tab. With unsaved changes it fails unless `unsaved` is `"save"` or `"discard"`; it never prompts in the app.
 
 `undo` and `redo` step back through the agent's own changes, and `activate_document` brings a tab to the front when the user should see it.
 
 Each MCP session shows in the app as an agent with a callsign, like the built-in chat: its cursor and outline sit on the layers each tool reads or changes, it rests after a quiet spell and leaves when the session ends, and people can follow it from their avatar. Collaborators in a shared room see it too.
 
-Most tools accept optional `document_id` and `page_id` fields. Pass them explicitly for agent workflows instead of relying on the visible active tab/page. `create_page` only creates a page; call `switch_page` separately when the workflow should change the active page.
+Most tools accept optional `document_id` and `page_id` fields. Pass them explicitly for agent workflows instead of relying on the visible active tab/page. An app chat's agent works on the chat's document unless a call names another. `create_page` only creates a page; call `switch_page` separately when the workflow should change the active page.
 
 ## AI Agent Skill
 
@@ -180,207 +181,186 @@ OpenPencil currently registers 100+ shared design tools, plus MCP-only document 
 
 ### Document
 
-| Tool | Description |
-|------|-------------|
-| `open_file` | Open a `.fig` file for editing |
-| `close_file` | Close an open document tab; `unsaved: "save"` or `"discard"` decides what happens to unsaved changes |
-| `save_file` | Save the current document to a `.fig` file |
-| `new_document` | Create a new empty document |
-| `list_documents` | List open app documents/tabs and their pages |
-| `list_recent_files` | List recently opened files inside the MCP root, newest first, up to the app's recent files limit |
-| `activate_document` | Bring a document tab to the front, optionally on a given page |
+| Tool                    | Description                                                                                          |
+| ----------------------- | ---------------------------------------------------------------------------------------------------- |
+| `open_document`         | Open a `.fig` file for editing                                                                       |
+| `close_document`        | Close an open document tab; `unsaved: "save"` or `"discard"` decides what happens to unsaved changes |
+| `save_document`         | Save the current document to a `.fig` file                                                           |
+| `create_document`       | Create a new empty document                                                                          |
+| `list_documents`        | List open app documents/tabs and their pages                                                         |
+| `list_recent_documents` | List recently opened files inside the MCP root, newest first, up to the app's recent files limit     |
+| `activate_document`     | Bring a document tab to the front, optionally on a given page                                        |
 
 ### History
 
-| Tool | Description |
-|------|-------------|
-| `undo` | Undo the newest change made through MCP or the CLI |
+| Tool   | Description                                          |
+| ------ | ---------------------------------------------------- |
+| `undo` | Undo the newest change made through MCP or the CLI   |
 | `redo` | Redo the newest change undone through MCP or the CLI |
 
-The history is shared with the person in the editor. `undo` and `redo` refuse when the newest step was made in the editor, so an agent never reverts the user's work. Each editing tool call is one undo step. An `eval` script is recorded against its target page, so edits it makes after switching `figma.currentPage` are not undoable.
+The history is shared with the person in the editor. `undo` and `redo` refuse when the newest step was made in the editor, so an agent never reverts the user's work. Each editing tool call, and each `eval` script, is one undo step of everything it changed, on any page. Collaborators' edits and undo or redo in the editor never join a call's step. Edits made in the editor stay out of it too while the call waits on a download, such as a font, image, or page load; an edit made in the editor while an `eval` script waits on its own `fetch` or timer joins the script's step. Undoing a step that created a frame keeps layers someone else put into it: they move out to the frame's parent and keep their place on the canvas. A call the app has not answered after 20 seconds fails with a timeout and is cancelled in the app: one still waiting for its turn at the document never runs, and a script stops at the next font, image, or page load it waits on. A call that fails or is cancelled is rolled back: the document is left as it was, and no undo step is recorded.
 
 ### Settings
 
-| Tool | Description |
-|------|-------------|
-| `get_settings` | Read editor settings: appearance, snapping, canvas rendering, recovery, AI chat, and design check preferences |
+| Tool              | Description                                                                                                   |
+| ----------------- | ------------------------------------------------------------------------------------------------------------- |
+| `get_settings`    | Read editor settings: appearance, snapping, canvas rendering, recovery, AI chat, and design check preferences |
 | `update_settings` | Change settings with a partial object shaped like `get_settings` output; invalid keys and values are rejected |
 
 Settings tools never expose credentials, AI models, MCP connections, storage, or tool access. The available keys are listed in [Controlling the App](/programmable/cli/app-control#settings).
 
 ### Read
 
-| Tool | Description |
-|------|-------------|
-| `get_selection` | Get the selected nodes, with their direct children by default; `depth` sets how many levels |
-| `get_page_tree` | Get the full node tree of the current page |
-| `get_current_page` | Get the current page name and ID |
-| `get_node` | Get detailed properties of a node by ID |
-| `find_nodes` | Find nodes by name pattern and/or type |
-| `get_components` | List all components in the document |
-| `list_pages` | List all pages |
-| `list_variables` | List design variables |
-| `list_collections` | List variable collections |
-| `list_fonts` | List fonts used in the current page |
-| `list_available_fonts` | List font families the current host can render |
-| `get_font_status` | Report requested faces, loaded sources, active substitutions, why an installed face could not be loaded, and affected nodes |
-| `page_bounds` | Get bounding box of all objects on the current page |
-| `node_bounds` | Get bounding box of a node |
-| `node_ancestors` | Get ancestor chain of a node |
-| `node_children` | Get direct children of a node |
-| `node_tree` | Get the subtree rooted at a node |
-| `node_bindings` | Get variable bindings on a node |
+| Tool                   | Description                                                                                                                                                      |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `get_selection`        | Get the selected nodes, with their direct children by default; `depth` sets how many levels                                                                      |
+| `get_page_tree`        | Get the full node tree of the current page                                                                                                                       |
+| `get_current_page`     | Get the current page name and ID                                                                                                                                 |
+| `get_node`             | Get detailed properties of a node by ID                                                                                                                          |
+| `find_nodes`           | Find nodes by name pattern and/or type                                                                                                                           |
+| `list_components`      | List all components in the document                                                                                                                              |
+| `list_pages`           | List all pages                                                                                                                                                   |
+| `list_variables`       | List design variables, optionally by name or type                                                                                                                |
+| `list_collections`     | List variable collections                                                                                                                                        |
+| `list_available_fonts` | List font families the current host can render                                                                                                                   |
+| `get_font_status`      | Report the faces used on the page, optionally of one family: loaded sources, active substitutions, why an installed face could not be loaded, and affected nodes |
+| `get_bounds`           | Get the bounding box of a node, or of everything on the current page                                                                                             |
+| `get_ancestors`        | Get ancestor chain of a node                                                                                                                                     |
+| `get_bindings`         | Get variable bindings on a node                                                                                                                                  |
 
 ### Create
 
-| Tool | Description |
-|------|-------------|
-| `create_shape` | Create a shape (`FRAME`, `RECTANGLE`, `ELLIPSE`, `TEXT`, `LINE`, `STAR`, `POLYGON`, `SECTION`) |
-| `create_vector` | Create a vector node from a path string |
-| `create_slice` | Create an export slice |
-| `create_connector` | Join two layers, or a layer and a point, with a connector that follows them |
-| `create_page` | Create a new page |
-| `render` | Render JSX to design nodes — create entire component trees in one call |
-| `create_component` | Convert a frame/group into a component |
-| `create_instance` | Create an instance of a component |
-| `create_slot` | Make a frame inside a main component a slot |
-| `set_behaviour` | Make a component behave as a Reka UI control, by its property and slot names; `null` removes it |
-| `get_behaviour` | Read a component's behaviour and what it still misses; without an ID, list every kind |
-| `node_to_component` | Convert an existing node into a component in-place |
+| Tool                    | Description                                                                                     |
+| ----------------------- | ----------------------------------------------------------------------------------------------- |
+| `create_shape`          | Create a shape (`FRAME`, `RECTANGLE`, `ELLIPSE`, `TEXT`, `LINE`, `STAR`, `POLYGON`, `SECTION`)  |
+| `create_vector`         | Create a vector node from a path string                                                         |
+| `create_slice`          | Create an export slice                                                                          |
+| `create_connector`      | Join two layers, or a layer and a point, with a connector that follows them                     |
+| `create_page`           | Create a new page                                                                               |
+| `render`                | Render JSX to design nodes — create entire component trees in one call                          |
+| `create_instance`       | Create an instance of a component                                                               |
+| `create_slot`           | Make a frame inside a main component a slot                                                     |
+| `set_behaviour`         | Make a component behave as a Reka UI control, by its property and slot names; `null` removes it |
+| `get_behaviour`         | Read a component's behaviour and what it still misses; without an ID, list every kind           |
+| `convert_to_components` | Convert an existing node into a component in-place                                              |
 
 ### Modify
 
-| Tool | Description |
-|------|-------------|
-| `set_fill` | Set fill color (hex) |
-| `set_image_fill` | Set an image fill from `image_data` (Base64 or a data URL), or from `image_path`, a file inside the MCP root |
-| `set_stroke` | Set stroke color, weight, alignment |
-| `set_effects` | Add shadow or blur effects |
-| `update_node` | Update position, size, opacity, corner radius, text, font |
-| `set_layout` | Set auto-layout (flexbox) — direction, spacing, padding, alignment |
-| `set_constraints` | Set resize constraints |
-| `set_rotation` | Set rotation angle in degrees |
-| `set_opacity` | Set opacity (0–1) |
-| `set_radius` | Set corner radius (uniform or per-corner) |
-| `set_minmax` | Set min/max width and height constraints |
-| `set_text` | Set text content of a `TEXT` node |
-| `set_font` | Set font family and weight |
-| `set_font_range` | Set font properties on a character range |
-| `set_text_resize` | Set text auto-resize mode (fixed/auto-width/auto-height) |
-| `set_visible` | Show or hide a node |
-| `set_blend` | Set blend mode |
-| `set_locked` | Lock or unlock a node |
-| `set_stroke_align` | Set stroke alignment (inside/center/outside) |
-| `set_text_properties` | Set text layout: alignment, auto-resize, text case, decoration, truncation |
-| `set_layout_child` | Configure auto-layout child: sizing, grow, alignment, absolute positioning |
-| `node_move` | Move a node to a new position |
-| `node_resize` | Resize a node |
-| `node_replace_with` | Replace a node with another node |
-| `arrange` | Spread overlapping layers apart, pack them, place them in a grid, row, or column, or lay them out along their connectors as a flow, tree, radial map, or network |
+| Tool                  | Description                                                                                                                                                      |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `set_fill`            | Set fill color (hex)                                                                                                                                             |
+| `set_image_fill`      | Set an image fill from `image_data` (Base64 or a data URL), or from `image_path`, a file inside the MCP root                                                     |
+| `set_stroke`          | Set stroke color, weight, alignment                                                                                                                              |
+| `set_effects`         | Add shadow or blur effects                                                                                                                                       |
+| `update_node`         | Update position, size, rotation, opacity, corner radius, visibility, lock, name, text, font                                                                      |
+| `set_layout`          | Set auto-layout (flexbox) — direction, spacing, padding, alignment                                                                                               |
+| `set_constraints`     | Set resize constraints                                                                                                                                           |
+| `set_radius`          | Set corner radius (uniform or per-corner)                                                                                                                        |
+| `set_size_limits`     | Set min/max width and height constraints                                                                                                                         |
+| `set_text`            | Set text content of a `TEXT` node                                                                                                                                |
+| `set_font`            | Set font family and weight                                                                                                                                       |
+| `set_text_range`      | Set font properties on a character range                                                                                                                         |
+| `set_blend_mode`      | Set blend mode                                                                                                                                                   |
+| `set_text_properties` | Set text layout: alignment, auto-resize, text case, decoration, truncation                                                                                       |
+| `set_layout_child`    | Configure auto-layout child: sizing, grow, alignment, absolute positioning                                                                                       |
+| `replace_node`        | Replace a node with another node                                                                                                                                 |
+| `arrange`             | Spread overlapping layers apart, pack them, place them in a grid, row, or column, or lay them out along their connectors as a flow, tree, radial map, or network |
 
 ### Structure
 
-| Tool | Description |
-|------|-------------|
-| `delete_node` | Delete a node |
-| `clone_node` | Duplicate a node |
-| `rename_node` | Rename a node |
-| `reparent_node` | Move a node into a different parent |
-| `select_nodes` | Select nodes by ID |
-| `group_nodes` | Group nodes |
-| `ungroup_node` | Ungroup a group |
-| `flatten_nodes` | Flatten nodes into a single vector |
-| `boolean_union` | Boolean union of two or more nodes |
-| `boolean_subtract` | Boolean subtraction |
-| `boolean_intersect` | Boolean intersection |
-| `boolean_exclude` | Boolean exclusion |
+| Tool            | Description                                                       |
+| --------------- | ----------------------------------------------------------------- |
+| `delete_nodes`  | Delete nodes                                                      |
+| `clone_nodes`   | Duplicate nodes                                                   |
+| `reparent_node` | Move a node into a different parent                               |
+| `set_selection` | Select nodes by ID                                                |
+| `group_nodes`   | Group nodes                                                       |
+| `ungroup_nodes` | Ungroup groups                                                    |
+| `flatten_nodes` | Flatten nodes into a single vector                                |
+| `boolean`       | Combine two or more nodes: union, subtract, intersect, or exclude |
 
 ### Vector Path
 
-| Tool | Description |
-|------|-------------|
-| `path_get` | Get the path data of a vector node |
-| `path_set` | Set the path data of a vector node |
-| `path_scale` | Scale a vector path |
-| `path_flip` | Flip a vector path horizontally or vertically |
-| `path_move` | Translate a vector path |
+| Tool             | Description                                      |
+| ---------------- | ------------------------------------------------ |
+| `get_path`       | Get the path data of a vector node               |
+| `set_path`       | Set the path data of a vector node               |
+| `transform_path` | Scale, flip, or move the points of a vector path |
 
 ### Export
 
-| Tool | Description |
-|------|-------------|
+| Tool           | Description                                                          |
+| -------------- | -------------------------------------------------------------------- |
 | `export_image` | Export nodes as PNG, JPG, or WEBP. Returns base64-encoded image data |
-| `export_svg` | Export nodes as SVG markup |
+| `export_svg`   | Export nodes as SVG markup                                           |
 
 ### Viewport
 
-| Tool | Description |
-|------|-------------|
-| `viewport_get` | Get current viewport position and zoom level |
-| `viewport_set` | Set viewport position and zoom |
-| `viewport_zoom_to_fit` | Zoom viewport to fit specified nodes |
+| Tool           | Description                                                                  |
+| -------------- | ---------------------------------------------------------------------------- |
+| `get_viewport` | Get current viewport position and zoom level                                 |
+| `set_viewport` | Set viewport position and zoom                                               |
+| `zoom_to_fit`  | Scroll and zoom the view to fit layers on the current page, up to 100%       |
 
 ### Variables
 
-| Tool | Description |
-|------|-------------|
-| `get_variable` | Get a variable by ID or name |
-| `find_variables` | Find variables by name pattern or type |
-| `create_variable` | Create a new variable in a collection |
-| `set_variable` | Set a variable value in a mode |
-| `delete_variable` | Delete a variable |
-| `bind_variable` | Bind a variable to a node property |
-| `get_collection` | Get a variable collection by ID or name |
-| `create_collection` | Create a new variable collection |
-| `delete_collection` | Delete a variable collection |
+| Tool                | Description                                                                |
+| ------------------- | -------------------------------------------------------------------------- |
+| `get_variable`      | Get a variable by ID or name                                               |
+| `create_variable`   | Create a new variable in a collection                                      |
+| `set_variable`      | Set a variable value in a mode                                             |
+| `delete_variable`   | Delete a variable                                                          |
+| `bind_variable`     | Bind a variable to a node property, or unbind it with a null `variable_id` |
+| `get_collection`    | Get a variable collection by ID or name                                    |
+| `create_collection` | Create a new variable collection                                           |
+| `delete_collection` | Delete a variable collection                                               |
 
 ### Analyze
 
-| Tool | Description |
-|------|-------------|
-| `analyze_colors` | Analyze color palette usage across the document |
-| `analyze_typography` | Analyze font/size/weight distribution |
-| `analyze_spacing` | Analyze gap and padding values |
-| `analyze_clusters` | Detect repeated patterns (potential components) |
-| `lint` | Check accessibility and consistency issues, with fixes and suggestions |
-| `lint_fix` | Apply safe lint fixes, and optionally the first suggestion of each finding |
+| Tool                 | Description                                                                |
+| -------------------- | -------------------------------------------------------------------------- |
+| `analyze_colors`     | Analyze color palette usage across the document                            |
+| `analyze_typography` | Analyze font/size/weight distribution                                      |
+| `analyze_spacing`    | Analyze gap and padding values                                             |
+| `analyze_clusters`   | Detect repeated patterns (potential components)                            |
+| `lint`               | Check accessibility and consistency issues, with fixes and suggestions     |
+| `lint_fix`           | Apply safe lint fixes, and optionally the first suggestion of each finding |
 
 ### Diff
 
-| Tool | Description |
-|------|-------------|
-| `diff_create` | Patch that turns one node tree into another, as JSX attribute changes |
-| `diff_jsx` | Structural diff between two nodes as design JSX |
-| `diff_show` | Preview the patch that setting JSX attributes on a node would produce |
-| `diff_apply` | Apply a patch after checking the nodes still match its old values |
-| `diff_visual` | Pixel diff between two rendered nodes, returned as an image |
+| Tool            | Description                                                           |
+| --------------- | --------------------------------------------------------------------- |
+| `diff_nodes`    | Patch that turns one node tree into another, as JSX attribute changes |
+| `preview_patch` | Preview the patch that setting JSX attributes on a node would produce |
+| `apply_patch`   | Apply a patch after checking the nodes still match its old values     |
+| `diff_pixels`   | Pixel diff between two rendered nodes, returned as an image           |
 
 ### Comments
 
-| Tool | Description |
-|------|-------------|
-| `get_comments` | Read the comments left on the canvas, open ones unless asked for resolved too, with their layer, page, and replies |
-| `add_comment` | Pin a comment on a layer or at a point of a page, in Markdown |
-| `reply_to_comment` | Answer a thread, which reopens it if it was resolved |
-| `resolve_comment` | Resolve a thread once its feedback is addressed, or reopen it |
+| Tool               | Description                                                                                                        |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `list_comments`    | Read the comments left on the canvas, open ones unless asked for resolved too, with their layer, page, and replies |
+| `add_comment`      | Pin a comment on a layer or at a point of a page, in Markdown                                                      |
+| `reply_to_comment` | Answer a thread, which reopens it if it was resolved                                                               |
+| `resolve_comment`  | Resolve a thread once its feedback is addressed, or reopen it                                                      |
 
 ### Statuses
 
-| Tool | Description |
-|------|-------------|
-| `get_statuses` | List the document's statuses and the sections, frames, components, and instances that show one, optionally only one status |
-| `set_status` | Give a layer one of the document's statuses by name, or clear it |
+| Tool            | Description                                                                                                                |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `list_statuses` | List the document's statuses and the sections, frames, components, and instances that show one, optionally only one status |
+| `set_status`    | Give a layer one of the document's statuses by name, or clear it                                                           |
 
 ### Navigation
 
-| Tool | Description |
-|------|-------------|
+| Tool          | Description                    |
+| ------------- | ------------------------------ |
 | `switch_page` | Switch to a page by name or ID |
 
 ### Escape Hatch
 
-| Tool | Description |
-|------|-------------|
+| Tool   | Description                                          |
+| ------ | ---------------------------------------------------- |
 | `eval` | Execute JavaScript with full Figma Plugin API access |
 
 Note: `eval` is available over stdio, but disabled in HTTP mode for security.

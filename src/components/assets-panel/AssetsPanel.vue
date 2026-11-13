@@ -34,6 +34,7 @@ import { useHeldContent } from '@/components/ui/overlay/held'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import { ASSET_GRID_THUMBNAIL_SIZE, ASSET_LIST_THUMBNAIL_SIZE } from '@/constants'
+import { focusStyles } from '@/theme/focus/styles'
 
 type AssetView = 'grid' | 'list'
 
@@ -46,6 +47,8 @@ type LocalAsset = {
   variantCount: number
   hasConflicts: boolean
   sourceLibraryKey: string | null
+  /** The thumbnail a library revision carries for the asset. */
+  thumbnail: Uint8Array | null
   description: string
   docsURL: string | null
   libraryId: string | null
@@ -147,6 +150,7 @@ const assets = computed<LocalAsset[]>(() => {
         variantCount: node.type === 'COMPONENT_SET' ? node.childIds.length : 0,
         hasConflicts: conflicts.length > 0,
         sourceLibraryKey: node.sourceLibraryKey,
+        thumbnail: null,
         description: node.symbolDescription,
         docsURL: node.symbolLinks[0]?.uri ?? null,
         libraryId: null,
@@ -161,7 +165,7 @@ const assets = computed<LocalAsset[]>(() => {
   const remote = remoteAssets.value.map(({ libraryId, libraryName, revisionId, asset }) => ({
     id: `${libraryId}:${asset.key}`,
     name: asset.name,
-    node: createDefaultNode(() => asset.sourceNodeId, asset.type, {
+    node: createDefaultNode(() => asset.sourceId, asset.type, {
       name: asset.name,
       symbolDescription: asset.description,
       sourceLibraryKey: asset.key
@@ -171,6 +175,7 @@ const assets = computed<LocalAsset[]>(() => {
     variantCount: 0,
     hasConflicts: false,
     sourceLibraryKey: asset.key,
+    thumbnail: asset.thumbnail ?? null,
     description: asset.description,
     docsURL: null,
     libraryId,
@@ -362,7 +367,7 @@ async function insertSelectedAsset() {
         <icon-lucide-library class="size-3.5" />
         <span
           v-if="libraryUpdateCount > 0"
-          class="absolute top-0.5 right-0.5 min-w-2.5 rounded-full bg-accent px-0.5 text-center text-5xs leading-2.5 text-on-accent"
+          class="absolute top-0.5 inset-e-0.5 min-w-2.5 rounded-full bg-accent px-0.5 text-center text-5xs leading-2.5 text-on-accent"
         >
           {{ libraryUpdateCount }}
         </span>
@@ -381,7 +386,7 @@ async function insertSelectedAsset() {
       </SegmentedControl>
     </div>
 
-    <div class="scrollbar-thin flex min-h-0 flex-1 flex-col overflow-y-auto px-2 pb-2">
+    <div class="flex min-h-0 flex-1 flex-col overflow-y-auto px-2 pb-2">
       <section v-for="group in assetGroups" :key="group.pageId" class="mb-3">
         <h2 class="mb-1 px-1 text-2xs font-semibold text-muted">
           {{ group.pageName }}
@@ -397,7 +402,8 @@ async function insertSelectedAsset() {
                 :draggable="!!asset.componentId"
                 :aria-busy="insertingAssetId === asset.id"
                 :class="[
-                  'group/asset rounded text-left text-xs text-surface outline-none hover:bg-hover focus-visible:ring-1 focus-visible:ring-panel-focus',
+                  'group/asset rounded text-start text-xs text-surface hover:bg-hover',
+                  focusStyles.ring,
                   assetView === 'grid'
                     ? 'flex min-w-0 flex-col items-center gap-1 p-1.5'
                     : 'flex w-full items-center gap-2 px-1.5 py-1'
@@ -409,6 +415,14 @@ async function insertSelectedAsset() {
                 <AssetThumbnail
                   v-if="asset.componentId"
                   :node-id="asset.componentId"
+                  :alt="`${asset.name} preview`"
+                  :size="
+                    assetView === 'grid' ? ASSET_GRID_THUMBNAIL_SIZE : ASSET_LIST_THUMBNAIL_SIZE
+                  "
+                />
+                <AssetThumbnail
+                  v-else-if="asset.thumbnail"
+                  :png="asset.thumbnail"
                   :alt="`${asset.name} preview`"
                   :size="
                     assetView === 'grid' ? ASSET_GRID_THUMBNAIL_SIZE : ASSET_LIST_THUMBNAIL_SIZE
@@ -552,7 +566,7 @@ async function insertSelectedAsset() {
       </div>
 
       <div class="grid min-h-0 grid-cols-[16.25rem_1fr] gap-0">
-        <div class="border-r border-border p-4">
+        <div class="border-e border-border p-4">
           <div
             data-test-id="asset-details-preview"
             class="flex h-36 items-center justify-center overflow-hidden rounded-lg border border-border bg-canvas/60"

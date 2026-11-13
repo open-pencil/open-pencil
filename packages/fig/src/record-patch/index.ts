@@ -1,22 +1,21 @@
-import { inflateSync } from 'fflate'
-
 import type { GUID } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import type { FigDataCompressor, FigFileKind } from '@open-pencil/kiwi/fig/container'
+import {
+  buildFigKiwi,
+  type FigDataCompressor,
+  type FigFileKind
+} from '@open-pencil/kiwi/fig/container'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import {
   ByteBuffer,
-  compileSchema,
-  decodeBinarySchema,
-  type CompiledDefinition,
   type RuntimeCodec,
   type RuntimeMessage
 } from '@open-pencil/kiwi/schema-runtime'
-import { orderKeyBetween } from '@open-pencil/scene-graph/order-keys'
 
-import { readFigArchiveParts, writeFigArchive, type FigImageEntry } from '../archive'
-import { symbolDataOf, symbolOverridesOf } from '../instance-overrides/types'
-import { patchedRecord, type FigRecordFieldPatch } from './fields'
+import { readFigArchiveParts, streamFigArchive, type FigImageEntry } from '../archive'
+import { guidKey } from './entry'
+import { mergeRecords, type FigRecordPatch } from './merge'
+import { archiveCodec, scanMessage } from './scan'
 
 export {
   entryPathKey,
@@ -24,23 +23,13 @@ export {
   type FigEntryPatch,
   type FigRecordFieldPatch
 } from './fields'
-
-/**
- * What an edited document changes in the archive it was opened from: the records to write, by
- * GUID, and the records to drop. Records nobody touched stay as the archive saved them.
- */
-export interface FigRecordPatch {
-  /** Written in place of the archive's record with the same GUID, or added after the rest. */
-  records: NodeChange[]
-  /** Changed fields of records the archive holds, merged into them. */
-  fields?: FigRecordFieldPatch[]
-  /** Blobs the records add; their indices continue after the archive's. */
-  blobs: Uint8Array[]
-  /** Dropped together with every record below them. */
-  removed: GUID[]
-  /** The records hold every variable and collection, so the archive's are dropped. */
-  replaceVariables: boolean
-}
+export { patchFigRecords, type FigRecordPatch } from './merge'
+export {
+  figArchiveComponentUsePages,
+  figArchiveRecordPages,
+  figComponentUsePages,
+  figRecordPages
+} from './pages'
 
 /** Archive facts a patch is built against: where new blob indices and new GUIDs start. */
 export interface FigArchiveRecordInfo {
@@ -63,12 +52,6 @@ export interface FigPatchedArchiveInput {
   compressionLevel?: number
   /** A design file or a FigJam board; the archive's own kind when omitted. */
   kind?: FigFileKind
-}
-
-const VARIABLE_TYPES = new Set(['VARIABLE', 'VARIABLE_SET'])
-
-function key(guid: GUID | undefined): string | undefined {
-  return guid ? guidToString(guid) : undefined
 }
 
 function isGuidLike(value: object): value is GUID {
@@ -109,289 +92,8 @@ export function figArchiveRecordInfo(archive: {
     blobCount: archive.blobCount,
     nextLocalId: highestLocalId(archive.records) + 1,
     imageHashes: [...archive.imageHashes],
-    documentId: key(archive.records.find((record) => record.type === 'DOCUMENT')?.guid) ?? null
+    documentId: guidKey(archive.records.find((record) => record.type === 'DOCUMENT')?.guid) ?? null
   }
-}
-
-/**
- * A record as merging sees it: its identity, place and type, with its contents either the bytes
- * the archive holds or a record to encode.
- */
-interface RecordEntry<Value> {
-  id: string | undefined
-  parent: string | undefined
-  type: string | undefined
-  parentIndex: NodeChange['parentIndex']
-  value: Value
-}
-
-function entryOf(record: NodeChange): RecordEntry<NodeChange> {
-  return {
-    id: key(record.guid),
-    parent: key(record.parentIndex?.guid),
-    type: record.type,
-    parentIndex: record.parentIndex,
-    value: record
-  }
-}
-
-const isVariable = (entry: { type: string | undefined }) =>
-  !!entry.type && VARIABLE_TYPES.has(entry.type)
-
-/** The removed records and those below them, except records the patch writes elsewhere. */
-function removedRecords(
-  records: ReadonlyArray<RecordEntry<unknown>>,
-  roots: readonly GUID[],
-  written: ReadonlySet<string>
-): Set<string> {
-  const children = new Map<string, string[]>()
-  for (const record of records) {
-    if (!record.id || !record.parent) continue
-    const siblings = children.get(record.parent) ?? []
-    siblings.push(record.id)
-    children.set(record.parent, siblings)
-  }
-  const removed = new Set<string>()
-  const pending = roots.map(guidToString)
-  for (let id = pending.pop(); id !== undefined; id = pending.pop()) {
-    if (removed.has(id) || written.has(id)) continue
-    removed.add(id)
-    for (const child of children.get(id) ?? []) pending.push(child)
-  }
-  return removed
-}
-
-/** Writes records in order, holding back one whose new parent has not been written yet. */
-function createRecordWriter<Value>(
-  written: ReadonlyMap<string, unknown>,
-  archiveIds: ReadonlySet<string>
-) {
-  const result: Array<RecordEntry<Value>> = []
-  const emitted = new Set<string>()
-  const waiting = new Map<string, Array<RecordEntry<Value>>>()
-  const isPending = (parent: string | undefined): parent is string =>
-    !!parent && !emitted.has(parent) && written.has(parent) && !archiveIds.has(parent)
-  const emit = (entry: RecordEntry<Value>): void => {
-    if (isPending(entry.parent)) {
-      waiting.set(entry.parent, [...(waiting.get(entry.parent) ?? []), entry])
-      return
-    }
-    result.push(entry)
-    if (!entry.id) return
-    emitted.add(entry.id)
-    const children = waiting.get(entry.id) ?? []
-    waiting.delete(entry.id)
-    for (const child of children) emit(child)
-  }
-  return {
-    emit,
-    emitted: (id: string) => emitted.has(id),
-    finish(): Array<RecordEntry<Value>> {
-      for (const children of waiting.values()) for (const child of children) result.push(child)
-      return result
-    }
-  }
-}
-
-/** The last position under each parent among records that keep the position they have. */
-function lastPositions(
-  entries: ReadonlyArray<RecordEntry<unknown>>,
-  archivePositions: ReadonlyMap<string, NodeChange['parentIndex']>
-): Map<string, string> {
-  const last = new Map<string, string>()
-  for (const entry of entries) {
-    const position = entry.parentIndex?.position
-    const moves = isVariable(entry) && !(entry.id && archivePositions.has(entry.id))
-    if (!entry.parent || !position || moves) continue
-    if (position > (last.get(entry.parent) ?? '')) last.set(entry.parent, position)
-  }
-  return last
-}
-
-/**
- * Variables return to the places they had; new ones go after their canvas's last child, so no
- * position is shared with the styles and variables the archive keeps there.
- */
-function placeVariableRecords(
-  entries: ReadonlyArray<RecordEntry<unknown>>,
-  archivePositions: ReadonlyMap<string, NodeChange['parentIndex']>
-): void {
-  const last = lastPositions(entries, archivePositions)
-  for (const entry of entries) {
-    if (!isVariable(entry) || entry.value instanceof Uint8Array) continue
-    const record = entry.value as NodeChange
-    const kept = entry.id ? archivePositions.get(entry.id) : undefined
-    if (kept) record.parentIndex = structuredClone(kept)
-    else if (entry.parent && record.parentIndex) {
-      const position = orderKeyBetween(last.get(entry.parent) ?? null, null)
-      record.parentIndex = { ...record.parentIndex, position }
-      last.set(entry.parent, position)
-    }
-  }
-}
-
-/**
- * Add the archive records whose fields the patch changes to `written`, merged, and return the
- * records removed. A record an edit moved has left a removed parent; one it left in place goes
- * with it.
- */
-function writeFieldPatches<Value>(
-  archive: ReadonlyArray<RecordEntry<Value>>,
-  patch: Pick<FigRecordPatch, 'fields' | 'removed'>,
-  written: Map<string, RecordEntry<NodeChange>>,
-  decode: (value: Value) => NodeChange
-): Set<string> {
-  const fields = new Map((patch.fields ?? []).map((entry) => [guidToString(entry.guid), entry]))
-  const moved = [...fields].flatMap(([id, entry]) => ('parentIndex' in entry.set ? [id] : []))
-  const removed = removedRecords(archive, patch.removed, new Set([...written.keys(), ...moved]))
-  for (const entry of archive) {
-    if (!entry.id || written.has(entry.id) || removed.has(entry.id)) continue
-    const changed = fields.get(entry.id)
-    if (changed) written.set(entry.id, entryOf(patchedRecord(decode(entry.value), changed)))
-  }
-  return removed
-}
-
-/**
- * Merge a patch into the archive's records. Untouched records keep their place; a written
- * record takes its archive record's, and one whose parent is new follows that parent.
- */
-function mergeRecords<Value>(
-  archive: ReadonlyArray<RecordEntry<Value>>,
-  patch: Pick<FigRecordPatch, 'records' | 'fields' | 'removed' | 'replaceVariables'>,
-  decode: (value: Value) => NodeChange
-): Array<RecordEntry<Value | NodeChange>> {
-  const written = new Map<string, RecordEntry<NodeChange>>()
-  for (const record of patch.records) {
-    const entry = entryOf(record)
-    if (entry.id) written.set(entry.id, entry)
-  }
-  const removed = writeFieldPatches(archive, patch, written, decode)
-  const archiveIds = new Set(archive.flatMap((entry) => entry.id ?? []))
-  const archivePositions = new Map<string, NodeChange['parentIndex']>()
-  const writer = createRecordWriter<Value | NodeChange>(written, archiveIds)
-
-  for (const entry of archive) {
-    if (entry.id && removed.has(entry.id)) continue
-    const replacement = entry.id ? written.get(entry.id) : undefined
-    if (patch.replaceVariables && isVariable(entry)) {
-      // A variable the records still hold takes its old place; one they dropped is gone.
-      if (entry.id) archivePositions.set(entry.id, entry.parentIndex)
-      if (replacement) writer.emit(replacement)
-      continue
-    }
-    writer.emit(replacement ?? entry)
-  }
-  for (const entry of written.values())
-    if (entry.id && !writer.emitted(entry.id) && !archiveIds.has(entry.id)) writer.emit(entry)
-  const result = writer.finish()
-  if (patch.replaceVariables) placeVariableRecords(result, archivePositions)
-  return result
-}
-
-/** Merge a patch into decoded archive records. */
-export function patchFigRecords(
-  archive: readonly NodeChange[],
-  patch: Pick<FigRecordPatch, 'records' | 'fields' | 'removed' | 'replaceVariables'>
-): NodeChange[] {
-  return mergeRecords(archive.map(entryOf), patch, (record) => record).map((entry) => entry.value)
-}
-
-type RecordHead = Omit<RecordEntry<Uint8Array>, 'value'> & {
-  guid?: GUID
-  /** Read only when asked for: what an instance shows, for finding where components are used. */
-  symbolData?: unknown
-}
-type EncodedPart =
-  | { kind: 'bytes'; bytes: Uint8Array }
-  | { kind: 'records' | 'blobs'; fieldId: number; type: string }
-
-/** The encoded message's fields in order, with its records and blobs located by byte range. */
-interface ScannedMessage {
-  parts: EncodedPart[]
-  records: Array<RecordHead & { value: Uint8Array }>
-  blobs: Uint8Array[]
-  hasBlobs: boolean
-}
-
-/** Reads a record's identity, place and type, and moves past everything else in it. */
-function scanRecord(
-  codec: RuntimeCodec,
-  record: CompiledDefinition,
-  bb: ByteBuffer,
-  readSymbolData: boolean
-): RecordHead {
-  const { schema } = codec
-  const head: RecordHead = {
-    id: undefined,
-    parent: undefined,
-    type: undefined,
-    parentIndex: undefined
-  }
-  for (let id = bb.readVarUint(); id !== 0; id = bb.readVarUint()) {
-    const field = record.byId[id]
-    if (!field) throw new Error('Attempted to parse invalid message')
-    const name = field.isArray ? '' : field.name
-    if (name === 'guid') {
-      head.guid = schema.read(field, bb) as GUID
-      head.id = key(head.guid)
-    } else if (name === 'parentIndex') {
-      const parentIndex = schema.read(field, bb) as NodeChange['parentIndex']
-      head.parentIndex = parentIndex
-      head.parent = key(parentIndex?.guid)
-    } else if (name === 'type') {
-      head.type = field.definition?.names[bb.readVarUint()]
-    } else if (name === 'symbolData' && readSymbolData) head.symbolData = schema.read(field, bb)
-    else schema.skip(field, bb)
-  }
-  return head
-}
-
-function scanMessage(
-  codec: RuntimeCodec,
-  data: Uint8Array,
-  readSymbolData = false
-): ScannedMessage {
-  const { schema } = codec
-  const fields = schema.definition('Message').byId
-  const bb = new ByteBuffer(data)
-  const scanned: ScannedMessage = { parts: [], records: [], blobs: [], hasBlobs: false }
-  for (;;) {
-    const start = bb.offset
-    const id = bb.readVarUint()
-    if (id === 0) break
-    const field = fields[id]
-    if (!field) throw new Error('Attempted to parse invalid message')
-    const isRecords = field.name === 'nodeChanges' && field.isArray
-    const isBlobs = field.name === 'blobs' && field.isArray
-    if (!isRecords && !isBlobs) {
-      schema.skip(field, bb)
-      scanned.parts.push({ kind: 'bytes', bytes: data.subarray(start, bb.offset) })
-      continue
-    }
-    const definition = field.definition
-    if (!definition) throw new Error(`Kiwi ${field.name} holds no messages`)
-    const type = definition.name
-    const element = { ...field, isArray: false }
-    for (let count = bb.readVarUint(); count > 0; count--) {
-      const begin = bb.offset
-      if (isRecords) {
-        const head = scanRecord(codec, definition, bb, readSymbolData)
-        scanned.records.push({ ...head, value: data.subarray(begin, bb.offset) })
-      } else {
-        schema.skip(element, bb)
-        scanned.blobs.push(data.subarray(begin, bb.offset))
-      }
-    }
-    scanned.hasBlobs ||= isBlobs
-    scanned.parts.push({ kind: isRecords ? 'records' : 'blobs', fieldId: id, type })
-  }
-  if (scanned.records.length === 0) throw new Error('No nodes found in .fig file')
-  return scanned
-}
-
-function archiveCodec(schemaDeflated: Uint8Array): RuntimeCodec {
-  return compileSchema(decodeBinarySchema(new ByteBuffer(inflateSync(schemaDeflated))))
 }
 
 function varUint(value: number): Uint8Array {
@@ -467,143 +169,34 @@ export function patchFigMessage(
   return concat(chunks)
 }
 
-/** Write the archive with the patch applied, in the archive's own schema. */
+/**
+ * The archive with the patch applied, in the archive's own schema, written as its reader asks for
+ * it. The document is patched and compressed before this returns; the archive's images then pass
+ * through as views of `bytes`, so a save holds them once.
+ */
 export function patchFigArchive(
   bytes: ArrayBuffer,
   patch: FigRecordPatch,
   input: FigPatchedArchiveInput,
   compress?: FigDataCompressor
-): Uint8Array {
+): ReadableStream<Uint8Array> {
   const parts = readFigArchiveParts(bytes)
   const kiwiData = patchFigMessage(parts.schemaDeflated, parts.dataRaw, patch)
   const archiveImages = new Set(parts.images.map(([hash]) => hash))
-  return writeFigArchive({
-    schemaDeflated: parts.schemaDeflated,
-    kiwiData,
+  return streamFigArchive({
+    canvasFig: buildFigKiwi(
+      parts.schemaDeflated,
+      kiwiData,
+      parts.figKiwiVersion,
+      compress,
+      input.kind ?? parts.kind
+    ),
     thumbnailPNG: input.thumbnailPNG,
     metaJSON: input.metaJSON,
     images: [
       ...parts.images.map(([name, data]) => ({ name: `images/${name}`, data })),
+      ...parts.videos.map(([name, data]) => ({ name: `videos/${name}`, data })),
       ...input.images.filter((image) => !archiveImages.has(image.name.replace(/^images\//, '')))
-    ],
-    figKiwiVersion: parts.figKiwiVersion,
-    compress,
-    kind: input.kind ?? parts.kind
+    ]
   })
-}
-
-/** The id of the nearest record of `type` from `id` up through its parents, itself included. */
-function nearestOfType(
-  byId: ReadonlyMap<string, NodeChange>,
-  id: string,
-  type: string
-): string | undefined {
-  const seen = new Set<string>()
-  for (let current = byId.get(id); current;) {
-    const currentId = key(current.guid)
-    if (!currentId || seen.has(currentId)) return undefined
-    seen.add(currentId)
-    if (current.type === type) return currentId
-    const parent = key(current.parentIndex?.guid)
-    current = parent ? byId.get(parent) : undefined
-  }
-  return undefined
-}
-
-function recordsById(records: readonly NodeChange[]): Map<string, NodeChange> {
-  const byId = new Map<string, NodeChange>()
-  for (const record of records) {
-    const id = key(record.guid)
-    if (id) byId.set(id, record)
-  }
-  return byId
-}
-
-/** The page each record is on, by its GUID, through its parents; undefined off every page. */
-export function figRecordPages(
-  records: readonly NodeChange[],
-  ids: readonly string[]
-): (string | undefined)[] {
-  const byId = recordsById(records)
-  return ids.map((id) => nearestOfType(byId, id, 'CANVAS'))
-}
-
-/**
- * The pages whose instances use these components, directly or through a component that nests
- * one of them. Their records carry overrides and sizes derived from the components.
- */
-export function figComponentUsePages(
-  records: readonly NodeChange[],
-  componentIds: readonly string[]
-): string[] {
-  const byId = recordsById(records)
-  const instancesOf = new Map<string, string[]>()
-  const use = (componentId: string | undefined, instanceId: string) => {
-    if (!componentId) return
-    const instances = instancesOf.get(componentId) ?? []
-    instances.push(instanceId)
-    instancesOf.set(componentId, instances)
-  }
-  for (const record of records) {
-    const id = key(record.guid)
-    if (!id || record.type !== 'INSTANCE') continue
-    use(key(symbolDataOf(record)?.symbolID), id)
-    for (const override of symbolOverridesOf(record)) use(key(override.overriddenSymbolID), id)
-  }
-  const nearest = (id: string, type: string) => nearestOfType(byId, id, type)
-  const pages = new Set<string>()
-  const visited = new Set<string>()
-  const pending = [...componentIds]
-  for (let componentId = pending.pop(); componentId !== undefined; componentId = pending.pop()) {
-    if (visited.has(componentId)) continue
-    visited.add(componentId)
-    for (const instanceId of instancesOf.get(componentId) ?? []) {
-      const page = nearest(instanceId, 'CANVAS')
-      if (page) pages.add(page)
-      const owner = nearest(instanceId, 'SYMBOL')
-      if (owner) pending.push(owner)
-    }
-  }
-  return [...pages]
-}
-
-/** An encoded archive's records with only the fields the page lookups read. */
-function scannedRecords(bytes: ArrayBuffer): NodeChange[] {
-  const parts = readFigArchiveParts(bytes)
-  const codec = archiveCodec(parts.schemaDeflated)
-  const scanned = scanMessage(codec, parts.dataRaw, true)
-  return scanned.records.map(
-    (entry) =>
-      ({
-        guid: entry.guid,
-        parentIndex: entry.parentIndex,
-        type: entry.type,
-        symbolData: entry.symbolData
-      }) as NodeChange
-  )
-}
-
-/** `figComponentUsePages` over an encoded archive, reading only what it needs of each record. */
-export function figArchiveComponentUsePages(
-  bytes: ArrayBuffer,
-  componentIds: readonly string[]
-): string[] {
-  return figComponentUsePages(scannedRecords(bytes), componentIds)
-}
-
-/** Each archive's records by GUID, scanned once: an archive's bytes are never written to. */
-const archiveRecordIndexes = new WeakMap<ArrayBuffer, Map<string, NodeChange>>()
-
-/** `figRecordPages` over an encoded archive, reading only what it needs of each record. */
-export function figArchiveRecordPages(
-  bytes: ArrayBuffer,
-  ids: readonly string[]
-): (string | undefined)[] {
-  let byId = archiveRecordIndexes.get(bytes)
-  if (!byId) {
-    byId = recordsById(scannedRecords(bytes))
-    archiveRecordIndexes.set(bytes, byId)
-  }
-  const index = byId
-  return ids.map((id) => nearestOfType(index, id, 'CANVAS'))
 }

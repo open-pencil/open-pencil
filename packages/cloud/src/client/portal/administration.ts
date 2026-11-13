@@ -3,12 +3,16 @@ import {
   adminEmailResponseSchema,
   adminMutationResponseSchema,
   adminOperationsResponseSchema,
+  cloudAdminDocumentsResponseSchema,
+  cloudAdminReportsResponseSchema,
   cloudAdminSessionResponseSchema,
   cloudAdminUserDetailSchema,
   cloudAdminUsersResponseSchema,
   enrollmentReviewResponseSchema,
   enrollmentsResponseSchema,
   type CloudAdminAuditFilter,
+  type CloudAdminDocumentFilter,
+  type CloudAdminReportFilter,
   type CloudAdminEmailFilter,
   type CloudAdminUserFilter,
   type EnrollmentStatus
@@ -116,6 +120,58 @@ export function createAdministrationAPI(call: CloudCall, { admin, api }: PortalR
       return call(
         (options) => admin.audit.$get(listQuery(request), options),
         adminAuditResponseSchema,
+        signal
+      )
+    },
+    reports(request: AdminListRequest<CloudAdminReportFilter>, signal?: AbortSignal) {
+      return call(
+        (options) => admin.reports.$get(listQuery(request), options),
+        cloudAdminReportsResponseSchema,
+        signal
+      )
+    },
+    /** Closes a report: dismissed, or acted on outside a takedown. */
+    resolveReport(id: string, action: 'dismiss' | 'action', signal?: AbortSignal) {
+      return call(
+        (options) => admin.reports[':id'][action].$post({ param: { id } }, options),
+        adminMutationResponseSchema,
+        signal
+      )
+    },
+    documents(request: AdminListRequest<CloudAdminDocumentFilter>, signal?: AbortSignal) {
+      return call(
+        (options) => admin.documents.$get(listQuery(request), options),
+        cloudAdminDocumentsResponseSchema,
+        signal
+      )
+    },
+    /** Takes a document down, or puts it back. */
+    documentAction(
+      id: string,
+      action: 'disable' | 'enable' | 'undelete',
+      reason?: string,
+      signal?: AbortSignal
+    ) {
+      return call(
+        (options) => {
+          if (action === 'disable') {
+            return admin.documents[':id'].disable.$post(
+              { param: { id }, json: { reason } },
+              options
+            )
+          }
+          return action === 'enable'
+            ? admin.documents[':id'].enable.$post({ param: { id } }, options)
+            : admin.documents[':id'].undelete.$post({ param: { id } }, options)
+        },
+        adminMutationResponseSchema,
+        signal
+      )
+    },
+    revokeShare(id: string, signal?: AbortSignal) {
+      return call(
+        (options) => admin.shares[':id'].revoke.$post({ param: { id } }, options),
+        adminMutationResponseSchema,
         signal
       )
     },

@@ -56,7 +56,7 @@ async function listLibraryComponents(
 }
 
 export const getComponents = defineTool({
-  name: 'get_components',
+  name: 'list_components',
   description:
     'List reusable components from the document and enabled component libraries, optionally filtered by name.',
   execution: { kind: 'async', mutation: 'none' },

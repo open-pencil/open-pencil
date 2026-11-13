@@ -1,11 +1,34 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { VectorNetwork, VectorSegment } from '@open-pencil/scene-graph'
+import type { Fill, VectorNetwork, VectorSegment } from '@open-pencil/scene-graph'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
+import { gradientPoint } from '@open-pencil/scene-graph/gradient'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { extractPaths, extractPathsFromElements, scalePathInfos } from '#core/icons/svg'
+import { buildIconData } from '#core/icons/artwork'
+import { extractPaths, extractSVGContent, extractSVGContentFromElements } from '#core/icons/svg'
 import { parseSVGSize, parseSVGViewBox } from '#core/io/formats/svg/metadata'
+import { vectorizeSVGContent } from '#core/vector/vectorize/svg/to-vectors'
+import {
+  resolveSVGViewportMapping,
+  type SVGViewportMapping
+} from '#core/vector/vectorize/svg/transform'
+
+/** A viewport that scales user units by `scaleX` and `scaleY` from the origin. */
+function scaling(scaleX: number, scaleY = scaleX) {
+  return resolveSVGViewportMapping(
+    { x: 0, y: 0, width: 1, height: 1 },
+    { width: scaleX, height: scaleY },
+    { preserveAspectRatio: 'none' }
+  )
+}
+
+/** SVG markup placed through `viewport`, as pasted SVG and icons both place it. */
+function vectorized(svgBody: string, viewport: SVGViewportMapping) {
+  return vectorizeSVGContent(extractSVGContent(svgBody), viewport).paths
+}
+
 describe('SVG XML parsing', () => {
   test('reads quoted root metadata through the XML parser', () => {
     const svg = `<svg width='120' height="80" viewBox='10 20 300 200'><path d='M0 0'/></svg>`
@@ -36,7 +59,7 @@ describe('SVG XML parsing', () => {
   })
 
   test('converts parsed element primitives through the shared SVG pipeline', () => {
-    const paths = extractPathsFromElements(
+    const { paths } = extractSVGContentFromElements(
       [
         {
           type: 'g',
@@ -65,23 +88,35 @@ describe('SVG XML parsing', () => {
   })
 
   test('scales transformed strokes with the conservative non-uniform axis', () => {
-    const [uniform] = scalePathInfos(
-      extractPaths(
-        '<line x1="0" y1="0" x2="4" y2="0" stroke="black" stroke-width="3" transform="scale(2)" />'
-      ),
-      1,
-      1
+    const [uniform] = vectorized(
+      '<line x1="0" y1="0" x2="4" y2="0" stroke="black" stroke-width="3" transform="scale(2)" />',
+      scaling(1)
     )
-    const [nonUniform] = scalePathInfos(
-      extractPaths(
-        '<line x1="0" y1="0" x2="4" y2="0" stroke="black" stroke-width="3" transform="scale(4 2)" />'
-      ),
-      1,
-      1
+    const [nonUniform] = vectorized(
+      '<line x1="0" y1="0" x2="4" y2="0" stroke="black" stroke-width="3" transform="scale(4 2)" />',
+      scaling(1)
     )
 
-    expect(uniform?.strokeWidth).toBe(6)
-    expect(nonUniform?.strokeWidth).toBe(6)
+    expect(uniform?.strokes[0]?.weight).toBe(6)
+    expect(nonUniform?.strokes[0]?.weight).toBe(6)
+  })
+
+  test('reads currentColor in any case as the tint an icon color fills', () => {
+    const [path] = extractPaths('<path fill="currentcolor" stroke="CurrentColor" d="M0 0h4v4H0z"/>')
+
+    expect(path).toMatchObject({ fill: 'currentColor', stroke: 'currentColor' })
+  })
+
+  test('paints currentColor in the color an element sets or inherits, as browsers do', () => {
+    const paths = extractPaths(
+      '<g color="#f00"><path fill="currentColor" d="M0 0h1v1H0z"/>' +
+        '<g style="color: #00f" fill="currentColor"><path d="M0 0h1v1H0z"/></g>' +
+        '<path d="M0 0h1v1H0z"/></g>'
+    )
+
+    // The second fill is inherited as currentColor and takes its own element's color; a path
+    // with no fill keeps the host's color, as SVG's initial fill is not currentColor.
+    expect(paths.map((path) => path.fill)).toEqual(['#f00', '#00f', 'currentColor'])
   })
 
   test('does not interpret attribute-like path text as markup', () => {
@@ -89,6 +124,12 @@ describe('SVG XML parsing', () => {
 
     expect(paths).toHaveLength(1)
     expect(paths[0]).toMatchObject({ fill: 'currentColor', stroke: null })
+  })
+
+  test('reads xlink:href in a body whose wrapping svg declares xlink, as an icon body does', () => {
+    expect(
+      extractPaths('<defs><path id="p" d="M0 0h4v4H0z"/></defs><use xlink:href="#p"/>')
+    ).toHaveLength(1)
   })
 
   test('rejects malformed SVG documents', () => {
@@ -105,10 +146,9 @@ const straight = { x: 0, y: 0 }
  */
 function scaledNetwork(d: string, scaleX = 12 / 24, scaleY = scaleX): VectorNetwork {
   const path = expectDefined(
-    scalePathInfos(
-      extractPaths(`<path d="${d}" fill="none" stroke="#000" stroke-width="2.5"/>`),
-      scaleX,
-      scaleY
+    vectorized(
+      `<path d="${d}" fill="none" stroke="#000" stroke-width="2.5"/>`,
+      scaling(scaleX, scaleY)
     )[0],
     'scaled path'
   )
@@ -116,7 +156,7 @@ function scaledNetwork(d: string, scaleX = 12 / 24, scaleY = scaleX): VectorNetw
 }
 
 function span(values: number[]): number {
-  return Math.max(...values) - Math.min(...values)
+  return maxOf(values) - minOf(values)
 }
 
 function segmentBetween(
@@ -131,7 +171,7 @@ function segmentBetween(
   })
 }
 
-/** A handle at the two-decimal precision scalePathInfos rounds to. */
+/** A handle at the two-decimal precision placed SVG paths round to. */
 function roundedHandle(
   network: VectorNetwork,
   segment: VectorSegment,
@@ -148,7 +188,93 @@ function roundedHandle(
   }
 }
 
-describe('scalePathInfos', () => {
+/** Where a gradient's axis starts and ends in its vector's unit box, read across the middle. */
+function gradientAxis(fill: Fill | undefined) {
+  const transform = expectDefined(fill?.gradientTransform, 'gradient transform')
+  return [gradientPoint(transform, { x: 0, y: 0.5 }), gradientPoint(transform, { x: 1, y: 0.5 })]
+}
+
+const RED_TO_BLUE = '<stop offset="0" stop-color="#f00"/><stop offset="1" stop-color="#00f"/>'
+
+describe('icon gradients', () => {
+  test('places a user-space gradient across the icon box', () => {
+    const icon = buildIconData(
+      {
+        body: `<defs><linearGradient id="a" gradientUnits="userSpaceOnUse" x1="0" x2="16">${RED_TO_BLUE}</linearGradient></defs><path fill="url(#a)" d="M0 8h16v8H0z"/>`,
+        width: 16,
+        height: 16
+      },
+      'test',
+      'gradient',
+      16
+    )
+    const fill = icon.paths[0]?.fills[0]
+    const [start, end] = gradientAxis(fill)
+
+    expect(fill?.gradientStops?.map((stop) => stop.position)).toEqual([0, 1])
+    expect(start?.x).toBeCloseTo(0)
+    expect(end?.x).toBeCloseTo(1)
+  })
+
+  test('spans an objectBoundingBox gradient over its own shape', () => {
+    const icon = buildIconData(
+      {
+        body: `<defs><linearGradient id="a">${RED_TO_BLUE}</linearGradient></defs><path fill="url(#a)" d="M8 0h8v16H8z"/>`,
+        width: 16,
+        height: 16
+      },
+      'test',
+      'gradient',
+      16
+    )
+    const [start, end] = gradientAxis(icon.paths[0]?.fills[0])
+
+    // The path is placed at its own bounds, which the gradient spans.
+    expect(start?.x).toBeCloseTo(0)
+    expect(end?.x).toBeCloseTo(1)
+  })
+
+  test('takes the stops and attributes a gradient leaves out from the one its href names', () => {
+    const icon = buildIconData(
+      {
+        body:
+          `<defs><linearGradient id="stops" gradientUnits="userSpaceOnUse">${RED_TO_BLUE}</linearGradient>` +
+          '<linearGradient id="a" xlink:href="#stops" x1="0" x2="16"/></defs><path fill="url(#a)" d="M0 0h16v16H0z"/>',
+        width: 16,
+        height: 16
+      },
+      'test',
+      'gradient',
+      16
+    )
+    const fill = icon.paths[0]?.fills[0]
+    const [start, end] = gradientAxis(fill)
+
+    expect(fill?.gradientStops).toHaveLength(2)
+    expect(start?.x).toBeCloseTo(0)
+    expect(end?.x).toBeCloseTo(1)
+  })
+})
+
+describe('buildIconData', () => {
+  test('fits an icon of another aspect ratio centered, as the browser draws its SVG', () => {
+    const icon = buildIconData(
+      { body: '<path d="M0 0H32V16H0Z"/>', width: 32, height: 16 },
+      'test',
+      'wide',
+      16
+    )
+    const vertices = icon.paths[0]?.vectorNetwork.vertices.map(({ x, y }) => ({ x, y }))
+    expect(vertices).toEqual([
+      { x: 0, y: 4 },
+      { x: 16, y: 4 },
+      { x: 16, y: 12 },
+      { x: 0, y: 12 }
+    ])
+  })
+})
+
+describe('SVG path placement', () => {
   test('keeps a nearly closed arc when scaling rounds its end onto its start', () => {
     const network = scaledNetwork('M12 3A9 9 0 1 1 11.99 3Z')
 

@@ -12,7 +12,7 @@ OpenPencil otwiera i zapisuje pliki `.fig` bez wcześniejszej konwersji. Import 
 - **Pióro:** sieci wektorowe, krzywe Béziera i uchwyty stycznych.
 - **Tekst:** edycja bezpośrednio na obszarze roboczym i obsługa IME.
 - **Formatowanie tekstu:** pogrubienie, kursywa, podkreślenie i przekreślenie wybranych zakresów.
-- **Automatyczny układ:** Flexbox i CSS Grid przez Yoga WASM; kierunek, odstępy, wypełnienie, wyrównanie, rozmiary i ścieżki siatki.
+- **Automatyczny układ:** Flexbox i CSS Grid przez Taffy WASM; kierunek, odstępy, wypełnienie, wyrównanie, rozmiary i ścieżki siatki.
 - **Komponenty:** tworzenie komponentów i zestawów, egzemplarze, nadpisania oraz automatyczna synchronizacja.
 - **Zmienne:** tokeny projektu z kolekcjami, trybami Light i Dark, typami Color, Float, String i Boolean oraz powiązaniami.
 - **Sekcje:** kontenery najwyższego poziomu przejmujące przecinające się obiekty.

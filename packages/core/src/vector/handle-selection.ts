@@ -21,7 +21,7 @@ export function vectorHandleParts(
  * Which points of a path being edited show their handles: those near the selection, as Figma
  * shows them, or every point.
  */
-export type NodeEditHandles = 'near-selection' | 'all'
+export type ShownHandles = 'near-selection' | 'all'
 
 /** What decides which handles of a path being edited show. */
 export interface HandleVisibilityState {
@@ -29,7 +29,7 @@ export interface HandleVisibilityState {
   segments: readonly VectorSegment[]
   selectedVertexIndices: ReadonlySet<number>
   selectedHandles?: ReadonlySet<number>
-  handles?: NodeEditHandles
+  showHandles?: ShownHandles
 }
 
 export function computeHandleVisibleVertices(
@@ -60,7 +60,7 @@ export function computeHandleVisibleVertices(
  * so a handle that shows is one a press can pick up.
  */
 export function handleVisibleVertices(state: HandleVisibilityState): Set<number> {
-  if (state.handles === 'all') return new Set(state.vertices.keys())
+  if (state.showHandles === 'all') return new Set(state.vertices.keys())
   return computeHandleVisibleVertices(
     state.selectedVertexIndices,
     state.selectedHandles ?? new Set(),

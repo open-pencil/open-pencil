@@ -1,4 +1,5 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { getNodeLocalMatrix, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import {
   effectOverflow,
@@ -7,7 +8,8 @@ import {
   strokeOverflow,
   textDecorationOverflow,
   unionVisualBounds,
-  type VisualBounds
+  type VisualBounds,
+  widestBlurRadius
 } from '@open-pencil/scene-graph/geometry'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { textLinesOverflow } from '@open-pencil/scene-graph/text'
@@ -47,10 +49,10 @@ export function mapVisualBounds(matrix: Mat3, bounds: VisualBounds): VisualBound
   const xs = [points[0], points[2], points[4], points[6]]
   const ys = [points[1], points[3], points[5], points[7]]
   return {
-    minX: Math.min(...xs),
-    minY: Math.min(...ys),
-    maxX: Math.max(...xs),
-    maxY: Math.max(...ys)
+    minX: minOf(xs),
+    minY: minOf(ys),
+    maxX: maxOf(xs),
+    maxY: maxOf(ys)
   }
 }
 
@@ -172,7 +174,7 @@ function withEffects(
       })
       bounds = unionVisualBounds(bounds, shadow) ?? bounds
     } else if (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR') {
-      const by = effect.radius
+      const by = widestBlurRadius(effect)
       bounds = swept(bounds, matrix, { minX: -by, minY: -by, maxX: by, maxY: by })
     }
   }

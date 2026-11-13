@@ -1,32 +1,15 @@
-import type { CanvasKit } from 'canvaskit-wasm'
-
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { SkiaRenderer } from '#core/canvas'
+import { getCanvasKit } from '#core/canvaskit'
 import { withTextInkMeasurer } from '#core/text/ink'
 
 import { renderNodesToImage, renderThumbnail, type ExportFormat } from './render'
 
-let cachedCk: Promise<CanvasKit> | null = null
 let cachedRenderer: Promise<SkiaRenderer> | null = null
-
-/**
- * The process's one CanvasKit, started once even when callers arrive together: objects made by
- * one instance must never meet another instance's memory.
- */
-export function initCanvasKit(): Promise<CanvasKit> {
-  cachedCk ??= loadCanvasKit().catch((error: unknown) => {
-    cachedCk = null
-    throw error
-  })
-  return cachedCk
-}
-
-async function loadCanvasKit(): Promise<CanvasKit> {
-  const CanvasKitInit = (await import('canvaskit-wasm/full')).default
-  const ckURL = import.meta.resolve('canvaskit-wasm/full')
-  return CanvasKitInit({ locateFile: (file: string) => new URL(file, ckURL).href })
-}
+/** The headless export holding the renderer, which the next one waits for. */
+let exporting: Promise<unknown> = Promise.resolve()
 
 /**
  * The one headless renderer a process keeps, fonts loaded: every renderer registers its own font
@@ -40,7 +23,7 @@ export async function headlessRenderer(): Promise<SkiaRenderer> {
 }
 
 async function getRenderer(): Promise<{ ck: CanvasKit; renderer: SkiaRenderer }> {
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   // Callers that arrive together share one renderer rather than each making their own.
   cachedRenderer ??= createRenderer(ck).catch((error: unknown) => {
     cachedRenderer = null
@@ -60,6 +43,25 @@ async function createRenderer(ck: CanvasKit): Promise<SkiaRenderer> {
   return renderer
 }
 
+/**
+ * Runs `job` with the headless renderer to itself, after the exports before it finish, and clear
+ * of what they drew: the renderer keeps paths and pictures by layer id, which layers of another
+ * document can share, such as two copies read from one file. An export that prepared or drew
+ * while another one did could draw that one's shapes.
+ */
+export function withHeadlessExport<T>(
+  job: (renderer: SkiaRenderer, ck: CanvasKit) => Promise<T>
+): Promise<T> {
+  const run = exporting.then(async () => {
+    const { ck, renderer } = await getRenderer()
+    renderer.nodePaths.clear()
+    renderer.invalidateAllPictures()
+    return job(renderer, ck)
+  })
+  exporting = run.catch(() => undefined)
+  return run
+}
+
 export async function headlessRenderNodes(
   graph: SceneGraph,
   pageId: string,
@@ -71,24 +73,22 @@ export async function headlessRenderNodes(
     trimTransparent?: boolean
     useAbsoluteBounds?: boolean
   } = {}
-): Promise<Uint8Array | null> {
-  const { ck, renderer } = await getRenderer()
-  // One renderer serves every document: paths keyed by layer id must not outlive theirs.
-  renderer.nodePaths.clear()
-  renderer.invalidateAllPictures()
-  await renderer.prepareForExport(graph, pageId, nodeIds)
-  // An export takes a text by its ink, as Figma's do.
-  return withTextInkMeasurer(
-    (node) => renderer.measureTextInk(node),
-    () =>
-      renderNodesToImage(ck, renderer, graph, pageId, nodeIds, {
-        scale: options.scale ?? 1,
-        format: options.format ?? 'PNG',
-        quality: options.quality,
-        trimTransparent: options.trimTransparent,
-        useAbsoluteBounds: options.useAbsoluteBounds
-      })
-  )
+): Promise<Uint8Array<ArrayBuffer> | null> {
+  return withHeadlessExport(async (renderer, ck) => {
+    await renderer.prepareForExport(graph, pageId, nodeIds)
+    // An export takes a text by its ink, as Figma's do.
+    return withTextInkMeasurer(
+      (node) => renderer.measureTextInk(node),
+      () =>
+        renderNodesToImage(ck, renderer, graph, pageId, nodeIds, {
+          scale: options.scale ?? 1,
+          format: options.format ?? 'PNG',
+          quality: options.quality,
+          trimTransparent: options.trimTransparent,
+          useAbsoluteBounds: options.useAbsoluteBounds
+        })
+    )
+  })
 }
 
 export async function headlessRenderThumbnail(
@@ -97,13 +97,11 @@ export async function headlessRenderThumbnail(
   width: number,
   height: number
 ): Promise<Uint8Array | null> {
-  const { ck, renderer } = await getRenderer()
-  // One renderer serves every document: paths keyed by layer id must not outlive theirs.
-  renderer.nodePaths.clear()
-  renderer.invalidateAllPictures()
-  await renderer.prepareForExport(graph, pageId, graph.getNode(pageId)?.childIds ?? [])
-  return withTextInkMeasurer(
-    (node) => renderer.measureTextInk(node),
-    () => renderThumbnail(ck, renderer, graph, pageId, width, height)
-  )
+  return withHeadlessExport(async (renderer, ck) => {
+    await renderer.prepareForExport(graph, pageId, graph.getNode(pageId)?.childIds ?? [])
+    return withTextInkMeasurer(
+      (node) => renderer.measureTextInk(node),
+      () => renderThumbnail(ck, renderer, graph, pageId, width, height)
+    )
+  })
 }

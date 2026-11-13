@@ -6,10 +6,13 @@ function absent(name: string) {
 }
 
 export const CloudSharedSection = absent('CloudSharedSection')
+export const CloudTrashSection = absent('CloudTrashSection')
 export const CloudWorkspaceSection = absent('CloudWorkspaceSection')
 export const CloudSettingsSection = absent('CloudSettingsSection')
 export const CloudHosts = absent('CloudHosts')
+export const CloudCommunityBanner = absent('CloudCommunityBanner')
 export const CloudShareButton = absent('CloudShareButton')
 export const CloudDocumentStatusHost = absent('CloudDocumentStatusHost')
+export const CloudReportButton = absent('CloudReportButton')
 export const CloudVersionDialog = absent('CloudVersionDialog')
 export const CloudVersionHistory = absent('CloudVersionHistory')

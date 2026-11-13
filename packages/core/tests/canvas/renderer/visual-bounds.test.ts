@@ -1,7 +1,5 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
-
 import { computeContentBounds } from '@open-pencil/core/io/formats/raster'
 import {
   SceneGraph,
@@ -10,9 +8,11 @@ import {
   type SceneNode,
   type Stroke
 } from '@open-pencil/scene-graph'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 function close(
   actual: unknown,
@@ -100,14 +100,14 @@ describe('content bounds', () => {
     const ys = corners.filter((_, index) => index % 2 === 1)
 
     close(computeContentBounds(graph, [child.id]), {
-      minX: Math.min(...xs),
-      minY: Math.min(...ys),
-      maxX: Math.max(...xs),
-      maxY: Math.max(...ys)
+      minX: minOf(xs),
+      minY: minOf(ys),
+      maxX: maxOf(xs),
+      maxY: maxOf(ys)
     })
     const both = computeContentBounds(graph, [parent.id])
-    expect(both?.minX).toBeCloseTo(Math.min(100, ...xs), 6)
-    expect(both?.maxY).toBeCloseTo(Math.max(200, ...ys), 6)
+    expect(both?.minX).toBeCloseTo(minOf([100, ...xs]), 6)
+    expect(both?.maxY).toBeCloseTo(maxOf([200, ...ys]), 6)
   })
 
   test('leave out hidden layers', () => {

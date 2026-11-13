@@ -1,5 +1,5 @@
 import type { SceneGraph, SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
-import type { Color, Rect } from '@open-pencil/scene-graph/primitives'
+import type { Color, Rect, Size } from '@open-pencil/scene-graph/primitives'
 
 import type { TreeNode } from './tree'
 
@@ -25,8 +25,8 @@ export interface ArtworkPlacement {
 export interface DesignJSXServices<Artwork> {
   /** A named icon such as `lucide:heart` at `size`, or null when it does not exist. */
   icon(name: string, size: number): Promise<Artwork | null>
-  /** Inline SVG scaled to `size`, or null when it has no supported shapes. */
-  svg(source: SVGSource, size: number): Artwork | null
+  /** Inline SVG mapped into `box`, the layer's own size, or null when it has no supported shapes. */
+  svg(source: SVGSource, box: Size): Artwork | null
   /** Vector nodes for the artwork, created under the placement's parent. */
   createArtwork(graph: SceneGraph, artwork: Artwork, placement: ArtworkPlacement): SceneNode
   /**

@@ -1,4 +1,5 @@
 import type { LayoutMode, SceneNode } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 
 import type { NodePreview } from './nodes/preview'
 import type { EditorContext } from './types'
@@ -89,8 +90,8 @@ function applyGridDefaults(
   updates.primaryAxisSizing = 'FIXED'
   updates.counterAxisSizing = 'FIXED'
   if (node.primaryAxisSizing === 'HUG' || node.counterAxisSizing === 'HUG') {
-    const maxChildW = Math.max(...children.map((child) => child.width), 100)
-    const maxChildH = Math.max(...children.map((child) => child.height), 100)
+    const maxChildW = maxOf([...children.map((child) => child.width), 100])
+    const maxChildH = maxOf([...children.map((child) => child.height), 100])
     updates.width = maxChildW * cols
     updates.height = maxChildH * rows
   }

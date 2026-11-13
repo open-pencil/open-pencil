@@ -12,14 +12,20 @@ export {
   usagePageSchema,
   usageQuerySchema,
   creditWalletSchema,
+  searchPricingSchema,
+  searchRequestSchema,
+  searchResultSchema,
+  searchResponseSchema,
+  MAX_SEARCH_RESULTS,
+  MAX_SEARCH_QUERY_LENGTH,
   CLOUD_SERVICES_API_PATHS,
   CLOUD_SERVICES_CONTRACT_VERSION,
   CLOUD_SERVICES_JWKS_PATH,
   CLOUD_SERVICES_TOKEN_AUDIENCE,
   cloudServicesDiscoverySchema,
-  cloudBillingDiscoverySchema,
   createServicesTokenSchema,
   parseUsageQuery,
+  parseSearchRequest,
   parseCreateServicesToken,
   type ServiceCatalog,
   type CreditBucket,
@@ -32,10 +38,48 @@ export {
   type UsagePage,
   type UsageQuery,
   type CreditWallet,
+  type SearchPricing,
+  type SearchRequest,
+  type SearchRequestInput,
+  type SearchResult,
+  type SearchResponse,
   type CloudServicesDiscovery,
-  type CloudBillingDiscovery,
-  type CreateServicesTokenInput
+  type CreateServicesTokenInput,
+  type CloudServicesAPI,
+  type CloudServicesSchema,
+  sendsTokenSafely
 } from './services'
+export {
+  BILLING_ERROR_STATUS,
+  CLOUD_ACCOUNT_PLAN_PATH,
+  CLOUD_BILLING_API_PATHS,
+  CLOUD_BILLING_CONTRACT_VERSION,
+  CLOUD_BILLING_TOKEN_AUDIENCE,
+  billingAccountSchema,
+  billingCatalogSchema,
+  billingErrorCodeSchema,
+  billingErrorSchema,
+  billingPlanSchema,
+  billingRedirectSchema,
+  billingTokenClaimsSchema,
+  billingTokenSchema,
+  checkoutRequestSchema,
+  cloudBillingDiscoverySchema,
+  creditPackSchema,
+  type BillingAccount,
+  type BillingCatalog,
+  type BillingError,
+  type BillingErrorCode,
+  type BillingPlan,
+  type BillingRedirect,
+  type BillingToken,
+  type BillingTokenClaims,
+  type CheckoutRequest,
+  type CloudBillingAPI,
+  type CloudBillingDiscovery,
+  type CloudBillingSchema,
+  type CreditPack
+} from './billing'
 export * from './admin'
 export {
   cloudPresenceSchema,
@@ -46,27 +90,38 @@ export {
   type CollaborationTicket
 } from './collaboration'
 export * from './relay'
-export { workspaceEntitlementsSchema, type WorkspaceEntitlements } from './entitlements'
+export {
+  accountEntitlementsResponseSchema,
+  accountEntitlementsSchema,
+  workspaceEntitlementsSchema,
+  type AccountEntitlements,
+  type WorkspaceEntitlements
+} from './entitlements'
 export {
   CLOUD_DISCOVERY_PATH,
   CLOUD_PROTOCOL_VERSION,
   cloudAuthenticationSchema,
   cloudCapabilitiesSchema,
   cloudDeploymentSchema,
+  cloudCommunityDiscoverySchema,
   cloudDiscoverySchema,
   cloudEditorVersionSchema,
+  cloudLegalDiscoverySchema,
   cloudListingSchema,
   cloudServerOrigin,
   parseCloudDiscovery,
   type CloudAuthentication,
   type CloudCapabilities,
   type CloudDeployment,
+  type CloudCommunityDiscovery,
   type CloudDiscovery,
+  type CloudLegalDiscovery,
   type CloudListing
 } from './discovery'
 export {
   CLOUD_DOCUMENT_NAME_MAX_LENGTH,
   CLOUD_IMAGE_NAME_PATTERN,
+  CLOUD_API_MAX_BODY_BYTES,
   CLOUD_MAX_DOCUMENT_IMAGES,
   CLOUD_PROTOCOL_MAX_UPLOAD_BYTES,
   cloudActorSchema,
@@ -86,6 +141,9 @@ export {
   documentSummarySchema,
   sharedDocumentSchema,
   type SharedDocument,
+  trashSchema,
+  trashedDocumentSchema,
+  type TrashedDocument,
   workspaceUsageSchema,
   isCloudChecksum,
   parseCommitImageUploads,
@@ -129,12 +187,10 @@ export {
   documentShareSchema,
   invitationContinuationSchema,
   invitationPreviewSchema,
-  lookupCloudUserSchema,
   parseAcceptDocumentInvitation,
   parseCreateInvitationContinuation,
   parseCreateDocumentInvitation,
   parseCreateDocumentShare,
-  parseLookupCloudUser,
   parsePutDocumentGrant,
   parseRequestSharedImageLinks,
   parseResolveDocumentShare,
@@ -155,7 +211,6 @@ export {
   type DocumentShare,
   type InvitationContinuation,
   type InvitationPreview,
-  type LookupCloudUserInput,
   type PutDocumentGrantInput,
   type RequestSharedImageLinksInput,
   type ResolveDocumentShareInput,
@@ -197,8 +252,20 @@ export {
   cloudInvitationURL,
   cloudShareURL,
   parseCloudLinkPath,
+  cloudCommunityPath,
+  cloudCommunityURL,
   type CloudLinkKind,
   type CloudLinkPathKind
 } from './links'
 export { CLOUD_PORTAL_PAGE_ROOTS, isCloudPortalPage } from './portal'
 export * from './versions'
+export * from './community'
+export {
+  DOCUMENT_REPORT_DESCRIPTION_MAX,
+  documentReportReasonSchema,
+  fileDocumentReportResponseSchema,
+  fileDocumentReportSchema,
+  parseFileDocumentReport,
+  type DocumentReportReason,
+  type FileDocumentReportInput
+} from './reports'

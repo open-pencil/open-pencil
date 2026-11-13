@@ -25,10 +25,7 @@ import type {
   CommandPaletteItem
 } from '@open-pencil/vue/primitives/CommandPalette'
 
-import { openTour } from '@/app/demo/document'
-import { donate } from '@/app/donation'
 import { useEditorStore } from '@/app/editor/active-store'
-import { openReportDialog } from '@/app/reports/state'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import {
   setCommentsOnCanvas,
@@ -38,8 +35,10 @@ import {
 import { appPreferences } from '@/app/settings/preferences/store'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/actions/editor'
 import { createSelectionMenuActions } from '@/app/shell/menu/actions/selection'
+import { createTabMenuActions } from '@/app/shell/menu/actions/tabs'
 import { visibleMenuEntries } from '@/app/shell/menu/entry'
 import { menuFeatureAvailable } from '@/app/shell/menu/features'
+import { createHelpMenuActions } from '@/app/shell/menu/help'
 import { createSaveMenuActions } from '@/app/shell/menu/save-actions'
 import type {
   AppMenuActionItem,
@@ -50,16 +49,7 @@ import type {
 } from '@/app/shell/menu/schema'
 import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
 import { appMenuShortcut, appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
-import { openFileDialog } from '@/app/shell/menu/use'
 import { useAppTheme } from '@/app/shell/theme'
-import {
-  closeTab,
-  activeTab,
-  createDocumentTab,
-  createTab,
-  openNewFileTab,
-  switchAdjacentTab
-} from '@/app/tabs'
 
 export interface AppMenuGroup {
   label: string
@@ -113,6 +103,11 @@ export function useAppMenu() {
     diagnostics: 'diagnostics',
     'report-problem': 'reportProblem',
     'support-openpencil': 'supportOpenPencil',
+    'help-docs': 'documentation',
+    'help-shortcuts': 'keyboardShortcuts',
+    'help-whats-new': 'whatsNew',
+    'help-community': 'community',
+    'help-github': 'github',
     save: 'save',
     'save-as': 'saveAs',
     'save-to': 'saveTo',
@@ -184,25 +179,12 @@ export function useAppMenu() {
   }
 
   const actions: Partial<Record<string, () => void>> = {
-    new: () => createTab(),
-    'new-board': () => createDocumentTab('board'),
-    'new-tab': () => openNewFileTab(),
-    open: () => void openFileDialog(),
-    'open-tour': () => {
-      openTour().catch((error: unknown) => console.error('[Tour] Could not open the tour:', error))
-    },
-    ...createSaveMenuActions(store),
+    ...createTabMenuActions(),
+    ...createSaveMenuActions(),
     'export-selection': () => exportSelection('png'),
     ...createSelectionMenuActions(store),
-    close: () => {
-      if (activeTab.value) void closeTab(activeTab.value.id)
-    },
-    'previous-tab': () => switchAdjacentTab(-1),
-    'next-tab': () => switchAdjacentTab(1),
     settings: openSettingsDialog,
-    diagnostics: () => openSettingsDialog('diagnostics'),
-    'report-problem': () => openReportDialog(),
-    'support-openpencil': () => donate('menu'),
+    ...createHelpMenuActions(),
     'export-png': () => exportSelection('png'),
     'export-svg': () => exportSelection('svg'),
     'export-pptx': () => exportSelection('pptx'),
