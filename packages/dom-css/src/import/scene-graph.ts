@@ -30,6 +30,7 @@ import {
 import { hasBoxStyle } from './boxes'
 import { colorToStrokeFromCSS, mergedStyle, pickStyle } from './css-values'
 import {
+  alignBlockLines,
   applyContainerLayout,
   applyFlowSizing,
   elementDisplay,
@@ -372,6 +373,7 @@ function createElementNode(
   applyFlowSizing(graph, node, style, display, parentFlow)
 
   createChildLayers(graph, node, element, style, flow, recorded)
+  if (flow === 'block') alignBlockLines(graph, node)
   return node
 }
 

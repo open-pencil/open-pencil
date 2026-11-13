@@ -176,18 +176,18 @@ describe('laying out HTML from its captured layout', () => {
     expect(text).toMatchObject({ type: 'TEXT', textAutoResize: 'WIDTH_AND_HEIGHT' })
   })
 
-  test('moves a centered line to where its words were', async () => {
-    // Block flow keeps a line at the left edge; the page centred it.
+  test('centers a line its block centers, keeping auto layout', async () => {
     const label = element(
       { 'text-align': 'center', ...box(300, 20) },
-      { box: rect(0, 0, 300, 20), lines: [rect(130, 2, 40, 16)] },
+      { box: rect(0, 0, 300, 20), lines: [rect(130, 0, 40, 20)] },
       [{ type: 'text', text: 'Docs' }]
     )
     const graph = await sceneGraphFromStyledHTML({ type: 'document', children: [label] })
     const labelLayer = graph.getChildren(graph.getPages()[0].id)[0]
     const text = graph.getChildren(labelLayer.id)[0]
 
-    expect(text.x).toBe(130)
+    expect(labelLayer).toMatchObject({ layoutMode: 'VERTICAL', counterAxisAlign: 'CENTER' })
+    expect(text.x + text.width / 2).toBeCloseTo(150)
   })
 
   test('keeps auto layout for a line that starts where its words did', async () => {
