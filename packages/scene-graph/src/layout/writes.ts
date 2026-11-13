@@ -83,16 +83,22 @@ export class LayoutWrites {
         node.type !== 'TEXT' &&
         (['width', 'height'] as const).some((key) => edited.has(key) && key in changes)
       if (keptSize) {
-        // The box's saved outlines only. A vector network layout just wrote, such as a connector's
-        // route, is already in this box and must not be scaled again.
+        // Saved outlines scale with the box. A vector network this layout replaced, such as a
+        // connector's route, is already in the box. One it left still describes the old box, and
+        // the renderer rebuilds an inside, centered, or outside stroke from it.
         const geometry = keptSizeGeometry(node, before)
         const outlines: Partial<SceneNode> = {}
         if ('fillGeometry' in geometry) outlines.fillGeometry = geometry.fillGeometry
         if ('strokeGeometry' in geometry) outlines.strokeGeometry = geometry.strokeGeometry
+        const replacedNetwork =
+          changed.has('vectorNetwork') && !Object.is(node.vectorNetwork, before.vectorNetwork)
+        if (!replacedNetwork && 'vectorNetwork' in geometry) {
+          outlines.vectorNetwork = geometry.vectorNetwork
+        }
         Object.assign(node, outlines)
         Object.assign(changes, outlines)
         for (const key of Object.keys(outlines) as (keyof SceneNode)[]) {
-          if (EDITED_GEOMETRY_FIELDS.has(key)) edited.add(key)
+          if (EDITED_GEOMETRY_FIELDS.has(key) || key === 'vectorNetwork') edited.add(key)
         }
       }
       const keys = Object.keys(changes) as (keyof SceneNode)[]
