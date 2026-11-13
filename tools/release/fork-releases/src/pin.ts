@@ -24,20 +24,17 @@ export interface PinOptions extends FetchOptions {
 const commitOf = (tag: string) => tag.slice(-40)
 
 /**
- * Moves each dependency or patch in a Cargo manifest that takes `repository` at commit `from` to
+ * A Cargo manifest with each dependency or patch that takes `repository` at commit `from` moved to
  * commit `to`, so Rust built in the workspace uses the commit a package pins.
  */
-async function moveCargoRevs(manifest: string, repository: string, from: string, to: string) {
-  if (!existsSync(manifest)) return
+function movedCargoRevs(text: string, repository: string, from: string, to: string): string {
   const source = `git = "https://github.com/${repository}"`
-  const text = await readFile(manifest, 'utf8')
-  const moved = text
+  return text
     .split('\n')
     .map((line) =>
       line.includes(source) ? line.replaceAll(`rev = "${from}"`, `rev = "${to}"`) : line
     )
     .join('\n')
-  if (moved !== text) await writeFile(manifest, moved)
 }
 
 /**
@@ -54,9 +51,13 @@ export async function pinRelease(
   const { repository, tag: before } = await readRelease(packageDir)
   const release = { repository, tag, files: parseChecksums(await checksums({ repository, tag })) }
   await fetchFiles(packageDir, release, fetchOptions)
-  await writeRelease(packageDir, release)
-  if (cargoManifest) {
-    await moveCargoRevs(cargoManifest, repository, commitOf(before), commitOf(tag))
+  const manifest =
+    cargoManifest && existsSync(cargoManifest) ? await readFile(cargoManifest, 'utf8') : null
+  // The manifest moves first: a retry after `release.json` failed finds it moved and writes the pin.
+  if (cargoManifest && manifest !== null) {
+    const moved = movedCargoRevs(manifest, repository, commitOf(before), commitOf(tag))
+    if (moved !== manifest) await writeFile(cargoManifest, moved)
   }
+  await writeRelease(packageDir, release)
   return readRelease(packageDir)
 }

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -78,5 +78,16 @@ describe('pinRelease', () => {
     expect(await readFile(manifest, 'utf8')).toBe(
       `[patch."https://github.com/upstream/example"]\nexample = { git = "https://github.com/open-pencil/example", rev = "${'b'.repeat(40)}" }\n${other}\n`
     )
+  })
+
+  test('keeps the old pin when the Cargo manifest cannot be read', async () => {
+    const before = await readRelease(dir)
+    const manifest = join(dir, 'Cargo.toml')
+    await mkdir(manifest)
+    const sums = `${sha256(bytes('next'))}  module.js\n`
+    await expect(
+      pinRelease(dir, NEXT_TAG, { checksums: async () => sums, download, cargoManifest: manifest })
+    ).rejects.toThrow()
+    expect(await readRelease(dir)).toEqual(before)
   })
 })
