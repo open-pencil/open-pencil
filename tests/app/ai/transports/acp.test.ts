@@ -17,6 +17,7 @@ import { ACP_AGENTS, type ACPAgentDef } from '@open-pencil/core/constants'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { OWN_TOOLS_ALLOWED } from '@/app/ai/agents/acp/tools'
+import { SUBAGENT_PART, subagentTranscript } from '@/app/ai/chat/subagents'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 import { ACPChatTransport, type ACPStartup } from '@/app/ai/transports/acp'
 import { restAgents, withSubagent } from '@/app/automation/agents'
@@ -455,7 +456,7 @@ test('a startup step outside the agent connection is bounded by the deadline too
   expect(agents.prompts).toEqual([])
 })
 
-test('a subagent’s work is known by its session and stays out of the chat', async () => {
+test('a subagent’s work is known by its session and kept in its own transcript', async () => {
   const toolCall = (toolCallId: string): SessionUpdate => ({
     sessionUpdate: 'tool_call',
     toolCallId,
@@ -483,9 +484,19 @@ test('a subagent’s work is known by its session and stays out of the chat', as
     expect(agents.capabilities).toMatchObject([{ subagents: {} }])
     expect(subagentOf('call-inner')).toBe('subagent-1')
     expect(subagentOf('call-own')).toBeUndefined()
-    const shown = JSON.stringify(chunks)
-    expect(shown).toContain('Ours')
-    expect(shown).not.toContain('Mine')
+    // The reply's own text is the agent's; the subagent's is its transcript's.
+    const text = chunks.flatMap((chunk) => (chunk.type === 'text-delta' ? [chunk.delta] : []))
+    expect(text.join('')).toBe('Ours')
+    const transcript = chunks.findLast((chunk) => chunk.type === SUBAGENT_PART)
+    expect(
+      transcript && 'data' in transcript
+        ? subagentTranscript({ type: SUBAGENT_PART, data: transcript.data })
+        : null
+    ).toMatchObject({
+      session: 'subagent-1',
+      title: 'Layout',
+      parts: expect.arrayContaining([expect.objectContaining({ type: 'text', text: 'Mine' })])
+    })
   } finally {
     restAgents('acp')
     await chat.destroy()

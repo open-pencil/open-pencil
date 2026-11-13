@@ -29,6 +29,7 @@ import {
 } from '@/app/ai/agents/acp/session'
 import { noteSubagents } from '@/app/ai/agents/acp/subagents'
 import { createOwnToolApproval, linkOwnTools, type OwnToolsLink } from '@/app/ai/agents/acp/tools'
+import { createSubagentTranscripts } from '@/app/ai/agents/acp/transcripts'
 import { agentAccounts } from '@/app/ai/agents/setup/accounts'
 import { resolveSpawnTarget } from '@/app/ai/agents/setup/discovery'
 import { AgentNotInstalledError } from '@/app/ai/agents/setup/readiness'
@@ -282,6 +283,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     return new ReadableStream<UIMessageChunk>({
       start: (controller) => {
         const mapper = createUpdateMapper(`turn-${Date.now()}`)
+        const subagents = createSubagentTranscripts((chunk) => controller.enqueue(chunk))
         let closed = false
         // The reply's run collects the edits the agent's calls make in the chat's document.
         const store = this.store
@@ -290,19 +292,28 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         function finish(reason: 'stop' | 'other' | 'error', errorText?: string) {
           if (closed) return
           closed = true
-          if (store && run) endRun(store, run)
-          if (errorText) controller.enqueue({ type: 'error', errorText })
-          for (const chunk of mapper.end()) controller.enqueue(chunk)
-          controller.enqueue({ type: 'finish-step' })
-          controller.enqueue({ type: 'finish', finishReason: reason })
           session.onUpdate = null
-          controller.close()
+          if (store && run) endRun(store, run)
+          // The subagents' transcripts reach the chat in full before the reply closes.
+          void subagents.end().finally(() => {
+            if (errorText) controller.enqueue({ type: 'error', errorText })
+            for (const chunk of mapper.end()) controller.enqueue(chunk)
+            controller.enqueue({ type: 'finish-step' })
+            controller.enqueue({ type: 'finish', finishReason: reason })
+            controller.close()
+          })
         }
 
         session.onUpdate = (params) => {
           if (closed) return
-          if (TURN_UPDATES.has(params.update.sessionUpdate)) this.recordSession(sessionId)
-          for (const chunk of mapper.map(params.update)) controller.enqueue(chunk)
+          const { update } = params
+          if (params.sessionId !== sessionId) {
+            subagents.update(params.sessionId, update)
+            return
+          }
+          if (update.sessionUpdate === 'subagent_update') subagents.describe(update)
+          if (TURN_UPDATES.has(update.sessionUpdate)) this.recordSession(sessionId)
+          for (const chunk of mapper.map(update)) controller.enqueue(chunk)
         }
 
         abortSignal?.addEventListener('abort', () => {
@@ -454,8 +465,11 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         ownToolApproval.noteUpdate(update)
         // The agent's MCP calls name only their own id; its updates say which subagent made them.
         if (sessionRef) noteSubagents(sessionRef.chat, sessionRef.sessionId, params)
-        // A subagent works in a session of its own, which the chat does not show.
-        if (sessionRef && params.sessionId !== sessionRef.sessionId) return
+        // A subagent works in a session of its own: the reply keeps it as the subagent's transcript.
+        if (sessionRef && params.sessionId !== sessionRef.sessionId) {
+          onUpdate?.(params)
+          return
+        }
         // Claude's adapter names its model only in its usage updates.
         if (update.sessionUpdate === 'usage_update') {
           const meta = v.safeParse(usageMetaSchema, update._meta)

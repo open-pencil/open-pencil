@@ -41,9 +41,12 @@ import ChatPermissionDialog from '@/components/chat/ChatPermissionDialog.vue'
 import ChatProviderSetup from '@/components/chat/ChatProviderSetup.vue'
 import ChatRunLocation from '@/components/chat/ChatRunLocation.vue'
 import ChatTranscript from '@/components/chat/ChatTranscript.vue'
+import ChatSubagentThread from '@/components/chat/subagent/ChatSubagentThread.vue'
+import { useSubagentThread } from '@/components/chat/subagent/useSubagentThread'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { useImageDrop } from '@/components/ui/drop/useImageDrop'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
+import PanelDrillIn from '@/components/ui/panel/PanelDrillIn.vue'
 
 const {
   isConfigured,
@@ -54,7 +57,7 @@ const {
   clearChatFailure,
   providerID
 } = useAIChat()
-const { ai } = useI18n()
+const { ai, common } = useI18n()
 const dates = useDateFormat()
 const runLocation = useChatRunLocation()
 
@@ -126,6 +129,7 @@ void history.initialize().catch(() => {
 })
 
 const messages = computed(() => chat.value?.messages ?? history.messages.value)
+const subagentThread = useSubagentThread(messages, () => history.current.value?.id)
 const context = useChatContext(messages)
 /** Past this share of its window, a bar over the message field offers to compact. */
 const CONTEXT_WARNING = 0.7
@@ -419,30 +423,43 @@ function handleStop() {
       >
         {{ ai.chatInterrupted }}
       </p>
-      <ChatTranscript
-        :messages="messages"
-        :status="status"
-        :show-continue="showContinue"
-        :queued="queuedMessages"
-        :steers="!providerID.startsWith('acp:') && providerID !== 'harness:pi'"
-        :sending="submission.sending.value?.displayText ?? null"
-        :compacting="compaction.compacting.value"
-        @remove-queued="removeQueuedMessage"
-        :nodes-live="!history.readOnly.value"
-        :interactive="chat !== null && !submission.busy.value && !compaction.compacting.value"
-        @regenerate="submission.regenerate()"
-        @revert="(messageId) => submission.revert(messageId)"
-        @restore="(messageId) => submission.restore(messageId)"
-        @edit="(messageId, text) => submission.resend(messageId, text)"
-        @continue="
-          submission.submit({
-            modelText: 'Continue where you left off',
-            displayText: 'Continue where you left off',
-            images: [],
-            nodes: []
-          })
-        "
-      />
+      <PanelDrillIn
+        :open="subagentThread.open.value"
+        :back="common.back"
+        :parent="ai.subagentBack"
+        @back="subagentThread.close"
+      >
+        <template #detail>
+          <ChatSubagentThread
+            v-if="subagentThread.transcript.value"
+            :transcript="subagentThread.transcript.value"
+          />
+        </template>
+        <ChatTranscript
+          :messages="messages"
+          :status="status"
+          :show-continue="showContinue"
+          :queued="queuedMessages"
+          :steers="!providerID.startsWith('acp:') && providerID !== 'harness:pi'"
+          :sending="submission.sending.value?.displayText ?? null"
+          :compacting="compaction.compacting.value"
+          @remove-queued="removeQueuedMessage"
+          :nodes-live="!history.readOnly.value"
+          :interactive="chat !== null && !submission.busy.value && !compaction.compacting.value"
+          @regenerate="submission.regenerate()"
+          @revert="(messageId) => submission.revert(messageId)"
+          @restore="(messageId) => submission.restore(messageId)"
+          @edit="(messageId, text) => submission.resend(messageId, text)"
+          @continue="
+            submission.submit({
+              modelText: 'Continue where you left off',
+              displayText: 'Continue where you left off',
+              images: [],
+              nodes: []
+            })
+          "
+        />
+      </PanelDrillIn>
 
       <p v-if="agentHistoryReadOnly" role="status" class="px-3 py-2 text-xs text-muted">
         {{ ai.chatAgentReadOnly }}
