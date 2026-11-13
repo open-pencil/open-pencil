@@ -22,6 +22,32 @@ export function radToDeg(radians: number): number {
 
 const FULL_TURN = 2 * Math.PI
 
+/** Layers whose shadows Figma never spreads: a text, boolean, star, polygon or vector. */
+const UNSPREAD_TYPES: ReadonlySet<SceneNode['type']> = new Set<SceneNode['type']>([
+  'TEXT',
+  'BOOLEAN_OPERATION',
+  'STAR',
+  'POLYGON',
+  'VECTOR'
+])
+
+/**
+ * Whether a layer's shadows take their spread. Figma spreads those of boxes and ellipses, arcs
+ * among them, and frames, and counts it in their render bounds; a text, boolean, star, polygon or
+ * vector never spreads (Figma desktop, live).
+ */
+export function shadowSpreads(node: Pick<SceneNode, 'type'>): boolean {
+  return !UNSPREAD_TYPES.has(node.type)
+}
+
+/** The spread a shadow on `node` takes: its own, or none on a layer Figma never spreads. */
+export function shadowSpreadOf(
+  node: Pick<SceneNode, 'type'>,
+  effect: Pick<Effect, 'spread'>
+): number {
+  return shadowSpreads(node) ? effect.spread : 0
+}
+
 /**
  * Whether a sweep from `start` to `end` is a whole turn: less than 0.001 rad short of one draws the
  * whole ellipse in Figma (desktop, live: 0.00095 short is whole, 0.001 short an arc).

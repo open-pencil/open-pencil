@@ -413,3 +413,39 @@ describe('render bounds of a stroke with sides of their own weights', () => {
     expect(box(exportBounds(graph, [sided('INSIDE', 22000).id]))).toEqual([22000, 0, 100, 100])
   })
 })
+
+// Figma desktop (2026-11-14): a drop shadow's spread grows the render bounds of a rectangle, an
+// ellipse or a frame, clipped or not, and not those of a star, polygon, vector, text or boolean.
+describe('render bounds of a spread shadow by layer type', () => {
+  const graph = new SceneGraph()
+  const figma = new FigmaAPI(graph)
+  const spread = [shadow(0, 10, { x: 0, y: 0 })]
+  const growth = (make: () => { id: string; effects: unknown }, x: number) => {
+    const plain = make() as Rectangle
+    plain.x = x
+    const shadowed = make() as Rectangle
+    shadowed.x = x + 500
+    shadowed.effects = spread
+    const a = exportBounds(graph, [plain.id])
+    const b = exportBounds(graph, [shadowed.id])
+    return a && b ? b.maxX - b.minX - (a.maxX - a.minX) : null
+  }
+  const filled = <T extends { fills: unknown }>(node: T) => {
+    node.fills = solid(1, 0, 0)
+    return node
+  }
+
+  test('a rectangle, an ellipse and a frame spread; a star, polygon, vector and text do not', () => {
+    expect(growth(() => filled(figma.createRectangle()), 30000)).toBe(20)
+    expect(growth(() => filled(figma.createEllipse()), 31000)).toBe(20)
+    expect(
+      growth(() => {
+        const frame = filled(figma.createFrame())
+        frame.clipsContent = false
+        return frame
+      }, 32000)
+    ).toBe(20)
+    expect(growth(() => filled(figma.createStar()), 33000)).toBe(0)
+    expect(growth(() => filled(figma.createPolygon()), 34000)).toBe(0)
+  })
+})

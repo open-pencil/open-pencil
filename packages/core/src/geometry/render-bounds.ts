@@ -5,6 +5,7 @@ import {
   blurReach,
   geometryBlobBounds,
   shadowReach,
+  shadowSpreadOf,
   intersectVisualBounds,
   strokeOverflow,
   strokeSideReach,
@@ -215,7 +216,8 @@ function withEffects(
   for (const effect of node.effects) {
     if (!effect.visible) continue
     if (effect.type === 'DROP_SHADOW') {
-      const shadow = shadowOf(content, matrix, effect.offset, effect.radius + effect.spread)
+      const by = effect.radius + shadowSpreadOf(node, effect)
+      const shadow = shadowOf(content, matrix, effect.offset, by)
       bounds = unionVisualBounds(bounds, shadow) ?? bounds
     } else if (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR') {
       const by = widestBlurRadius(effect)
@@ -245,7 +247,7 @@ function withDrawnShadows(node: SceneNode, content: VisualBounds, matrix: Mat3):
   let bounds = content
   for (const effect of node.effects) {
     if (effect.visible && effect.type === 'DROP_SHADOW') {
-      const by = shadowReach(effect.radius, effect.color.a) + effect.spread
+      const by = shadowReach(effect.radius, effect.color.a) + shadowSpreadOf(node, effect)
       bounds = unionVisualBounds(bounds, shadowOf(content, matrix, effect.offset, by)) ?? bounds
     }
   }

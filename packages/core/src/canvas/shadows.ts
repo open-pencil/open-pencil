@@ -1,8 +1,8 @@
 import type { Canvas, ImageFilter } from '@open-pencil/canvaskit'
 import type { BlendMode, Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { blurSigma, drawnBlurRadius } from '@open-pencil/scene-graph/geometry'
+import { blurSigma, drawnBlurRadius, shadowSpreadOf } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
-import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
+import { clipsChildren, isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import { regionFills } from '@open-pencil/scene-graph/vector-network'
 
 import { nodeOrientationMatrix } from '#core/geometry'
@@ -45,27 +45,13 @@ function resetEffectLayerPaint(r: SkiaRenderer): void {
 export type EffectPass = 'behind' | 'inner' | 'front'
 
 /**
- * Layers whose shadows Figma 126 never spreads: only boxes and ellipses, arcs among them, take a
- * spread, for drop and inner shadows alike.
+ * The spread a drop shadow draws with. Figma draws it only where the shadow follows the layer's
+ * own outline: a shape whose type spreads, or a filled frame that clips. An unclipped or empty
+ * frame casts its children's silhouette unspread, though its render bounds count the spread.
  */
-const UNSPREAD_TYPES: ReadonlySet<SceneNode['type']> = new Set<SceneNode['type']>([
-  'TEXT',
-  'BOOLEAN_OPERATION',
-  'STAR',
-  'POLYGON',
-  'VECTOR'
-])
-
-/** Figma spreads a shadow only where it follows the layer's own outline: shapes and filled frames that clip. */
 function shadowSpread(node: SceneNode, effect: Effect): number {
-  if (UNSPREAD_TYPES.has(node.type)) return 0
-  if (!isLayerContainer(node)) return effect.spread
-  return node.clipsContent && fillsCastShadow(node) ? effect.spread : 0
-}
-
-/** The spread an inner shadow takes, inside any layer whose type Figma spreads. */
-function innerShadowSpread(node: SceneNode, effect: Effect): number {
-  return UNSPREAD_TYPES.has(node.type) ? 0 : effect.spread
+  if (!isLayerContainer(node)) return shadowSpreadOf(node, effect)
+  return clipsChildren(node) && fillsCastShadow(node) ? effect.spread : 0
 }
 
 function shadowLayerBounds(
@@ -358,13 +344,13 @@ function renderInnerShadow(
   if (children?.every(castsFromOwnShape)) {
     for (const child of children) {
       withChildCoordinates(canvas, child, effect, (local) =>
-        drawShapeInnerShadow(r, canvas, child, local, innerShadowSpread(child, local))
+        drawShapeInnerShadow(r, canvas, child, local, shadowSpreadOf(child, local))
       )
     }
     return
   }
   if (!includeChildren && castsFromOwnShape(node)) {
-    const spread = innerShadowSpread(node, effect)
+    const spread = shadowSpreadOf(node, effect)
     drawShapeInnerShadow(r, canvas, node, effect, spread, isolatesInnerShadows(node))
     return
   }
