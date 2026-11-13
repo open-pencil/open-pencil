@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/scene-graph",
-  "version": "0.16.0",
+  "version": "0.17.0-beta.4",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -25,6 +25,12 @@
       "bun": "./src/index.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./arrays": {
+      "types": "./dist/arrays.d.ts",
+      "bun": "./src/arrays.ts",
+      "import": "./dist/arrays.js",
+      "default": "./dist/arrays.js"
     },
     "./arrow-caps": {
       "types": "./dist/arrow-caps.d.ts",
@@ -79,6 +85,12 @@
       "bun": "./src/constants.ts",
       "import": "./dist/constants.js",
       "default": "./dist/constants.js"
+    },
+    "./constraints": {
+      "types": "./dist/constraints.d.ts",
+      "bun": "./src/constraints.ts",
+      "import": "./dist/constraints.js",
+      "default": "./dist/constraints.js"
     },
     "./coordinate": {
       "types": "./dist/coordinate.d.ts",
@@ -224,6 +236,12 @@
       "import": "./dist/order-keys.js",
       "default": "./dist/order-keys.js"
     },
+    "./outline": {
+      "types": "./dist/outline/index.d.ts",
+      "bun": "./src/outline/index.ts",
+      "import": "./dist/outline/index.js",
+      "default": "./dist/outline/index.js"
+    },
     "./paints": {
       "types": "./dist/paints/index.d.ts",
       "bun": "./src/paints/index.ts",
@@ -241,6 +259,12 @@
       "bun": "./src/plugin-data/index.ts",
       "import": "./dist/plugin-data/index.js",
       "default": "./dist/plugin-data/index.js"
+    },
+    "./clipping": {
+      "types": "./dist/clipping.d.ts",
+      "bun": "./src/clipping.ts",
+      "import": "./dist/clipping.js",
+      "default": "./dist/clipping.js"
     },
     "./polygon": {
       "types": "./dist/polygon.d.ts",
@@ -391,15 +415,18 @@
     "culori": "^4.0.2",
     "es-toolkit": "^1.52.0",
     "image-size": "^2.0.4",
+    "js-base64": "^3.9.3",
     "nanoevents": "^9.1.0",
     "postcss-value-parser": "^4.2.0",
     "svgpath": "^2.6.0",
     "valibot": "^1.5.0"
   },
   "devDependencies": {
+    "@open-pencil/package-artifacts-tools": "workspace:*",
+    "@open-pencil/test-support": "workspace:*",
     "@types/bun": "^1.3.14",
     "@types/culori": "^4.0.1",
     "tsdown": "^0.22.14",
-    "typescript": "~5.8.3"
+    "typescript": "npm:@typescript/typescript6@^6.0.2"
   }
 }

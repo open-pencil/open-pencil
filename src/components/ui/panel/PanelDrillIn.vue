@@ -28,9 +28,9 @@ const emit = defineEmits<{ back: []; closed: []; openAutoFocus: [event: Event] }
 
 const styles = tv(drillInTheme)()
 /**
- * The list shows under the detail while it slides, then hides once covered. It is inert from the
- * moment the detail opens, and a closing detail is inert while it slides away, so the two never
- * share the tab order.
+ * The list stays under the detail's background while its content slides in, then hides. It is
+ * inert from the moment the detail opens, and a closing detail is inert while it slides away, so
+ * the two never share the tab order.
  */
 const covered = ref(false)
 
@@ -55,8 +55,10 @@ function uncover(element: Element) {
         @mount-auto-focus="emit('openAutoFocus', $event)"
       >
         <div v-if="parent" data-slot="header" :class="styles.header({ class: ui?.header })">
-          <AppButton variant="ghost" size="sm" data-slot="back" @click="emit('back')">
-            <template #leading><icon-lucide-chevron-left class="size-4" /></template>
+          <AppButton variant="ghost" size="sm" @click="emit('back')">
+            <template #leading
+              ><icon-lucide-chevron-left data-direction="reading" class="size-4"
+            /></template>
             <span class="sr-only">{{ back }}:</span>
             {{ parent }}
           </AppButton>

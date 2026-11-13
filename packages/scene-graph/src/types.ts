@@ -34,15 +34,32 @@ export type SceneGraphEventHandlers = Partial<{
   ) => void
 }>
 
+/** The document's records besides its nodes, which edits report changing as they do nodes. */
+export type DocumentRecordKind = 'variable' | 'collection'
+
 /** Hears about nodes as an edit adds and changes them, synchronously and before each change. */
 export interface NodeChangeObserver {
   /** A node is about to change and is still as it was. */
   before: (node: SceneNode) => void
   /** A node was just added. */
   created: (node: SceneNode) => void
+  /**
+   * A variable or collection is about to change, be added, or be removed, and is still as it
+   * was: absent, for one about to be added.
+   */
+  beforeRecord?: (kind: DocumentRecordKind, id: string) => void
+  /**
+   * The edit being observed waits on something outside it (`SceneGraph.waitOutsideEdit`): until
+   * `resume`, nodes change for someone else's edit, not this one.
+   */
+  pause?: () => void
+  resume?: () => void
 }
 
 export type DocumentColorSpace = 'srgb' | 'display-p3'
+
+/** What a document is for, as Figma keeps design files and FigJam boards apart. */
+export type DocumentKind = 'design' | 'board'
 
 export interface FigmaSourcePayload {
   rawSize: Vector | null
@@ -86,6 +103,10 @@ export interface VectorSegment {
 export interface VectorRegion {
   windingRule: WindingRule
   loops: number[][]
+  /** The region's own paints. Without them it draws the layer's fills, as in Figma. */
+  fills?: Fill[]
+  /** The shared fill style the region's paints come from. */
+  fillStyleId?: string
 }
 
 export interface VectorNetwork {
@@ -97,10 +118,6 @@ export interface VectorNetwork {
 export interface GeometryPath {
   windingRule: WindingRule
   commandsBlob: Uint8Array
-  /** Resolved paints for geometry using a format-specific style override. */
-  fills?: Fill[]
-  /** Shared fill style attached to this geometry region, when available. */
-  fillStyleId?: string
 }
 
 export type NodeType =
@@ -139,9 +156,11 @@ export type BlendMode =
   | 'NORMAL'
   | 'DARKEN'
   | 'MULTIPLY'
+  | 'LINEAR_BURN'
   | 'COLOR_BURN'
   | 'LIGHTEN'
   | 'SCREEN'
+  | 'LINEAR_DODGE'
   | 'COLOR_DODGE'
   | 'OVERLAY'
   | 'SOFT_LIGHT'
@@ -238,8 +257,39 @@ export interface Stroke extends Fill {
   dashPattern?: number[]
 }
 
+/**
+ * A Glass effect's lens, in Figma's plugin terms: how far in from the edge it bends what is
+ * behind the layer (`depth`, 1 to 100 px) and how strongly (`refraction`, 0 to 1), the light it
+ * catches (`lightAngle` in degrees, 0 lighting the top edge, and `lightIntensity`, 0 to 1), and how
+ * far the colours split (`dispersion`, 0 to 1). The effect's `radius` frosts the glass.
+ */
+export interface GlassEffectParams {
+  refraction: number
+  depth: number
+  lightAngle: number
+  lightIntensity: number
+  dispersion: number
+}
+
+/**
+ * A progressive blur's ramp, in Figma's plugin terms: the blur grows from `startRadius` at
+ * `startOffset` to the effect's `radius` at `endOffset`, both points fractions of the layer's
+ * size, and holds each end's radius beyond it.
+ */
+export interface ProgressiveBlur {
+  startRadius: number
+  startOffset: Vector
+  endOffset: Vector
+}
+
 export interface Effect {
-  type: 'DROP_SHADOW' | 'INNER_SHADOW' | 'LAYER_BLUR' | 'BACKGROUND_BLUR' | 'FOREGROUND_BLUR'
+  type:
+    | 'DROP_SHADOW'
+    | 'INNER_SHADOW'
+    | 'LAYER_BLUR'
+    | 'BACKGROUND_BLUR'
+    | 'FOREGROUND_BLUR'
+    | 'GLASS'
   color: Color
   offset: Vector
   radius: number
@@ -247,6 +297,10 @@ export interface Effect {
   visible: boolean
   blendMode?: BlendMode
   showShadowBehindNode?: boolean
+  /** Set on a `GLASS` effect, and only there. */
+  glass?: GlassEffectParams
+  /** Set on a layer or background blur that is progressive, and only there. */
+  progressive?: ProgressiveBlur
 }
 
 export type ConstraintType = 'MIN' | 'CENTER' | 'MAX' | 'STRETCH' | 'SCALE'
@@ -366,6 +420,8 @@ export interface TextLength {
 export interface CharacterStyleOverride {
   fontWeight?: number
   italic?: boolean
+  /** The characters' face by its font's own name for it; `null` is the face their weight picks. */
+  fontStyle?: string | null
   textDecoration?: TextDecoration
   textDecorationStyle?: TextDecorationStyle
   textDecorationThickness?: number | null
@@ -436,9 +492,37 @@ export interface PluginDataEntry {
   value: string
 }
 
+/** A fixed width or height in pixels an export is scaled to, instead of a multiplier. */
+export interface ExportSize {
+  type: 'WIDTH' | 'HEIGHT'
+  value: number
+}
+
+/** The colour profile an export is written in; the document's own unless set. */
+export type ExportColorProfile = 'DOCUMENT' | 'SRGB' | 'DISPLAY_P3_V4'
+
+/**
+ * One export a layer keeps. The options past `scale` and `format` are Figma's and read as Figma's
+ * defaults when left out.
+ */
 export interface ExportSetting {
   scale: number
   format: ExportFormatId
+  /** Appended to the file name. */
+  suffix?: string
+  /** A size that replaces `scale`. */
+  size?: ExportSize
+  /** Only the layer, without what overlaps it (default true). */
+  contentsOnly?: boolean
+  /** The layer's box rather than everything it draws, for text (default false). */
+  useAbsoluteBounds?: boolean
+  colorProfile?: ExportColorProfile
+  /** SVG: text as outlines rather than `<text>` (default true). */
+  svgOutlineText?: boolean
+  /** SVG: every layer's name as its element's `id` (default false). */
+  svgIdAttribute?: boolean
+  /** SVG: strokes as strokes where possible rather than masked outlines (default true). */
+  svgSimplifyStroke?: boolean
 }
 
 export interface PluginRelaunchDataEntry {
@@ -614,7 +698,7 @@ export interface SceneNode {
   height: number
   rotation: number
   source: SourceMetadata
-  /** Materialized layout hint imported or generated outside the live Yoga layout pass. */
+  /** Materialized layout hint imported or generated outside the live layout pass. */
   derivedLayout: Partial<Rect> | null
 
   fills: Fill[]
@@ -649,6 +733,11 @@ export interface SceneNode {
   fontFamily: string
   fontWeight: number
   italic: boolean
+  /**
+   * The face by the name its font gives it ("Semi Bold", "Book", "Condensed Bold"), which Figma
+   * finds a font's face by; `null` is the face the weight and slant pick in the family.
+   */
+  fontStyle: string | null
   textAlignHorizontal: 'LEFT' | 'CENTER' | 'RIGHT' | 'JUSTIFIED'
   textDirection: TextDirection
   textLanguage: string | null
@@ -810,6 +899,11 @@ export interface SceneNode {
   sharedSymbolVersion: string | null
   publishedVersion: string | null
   librarySource: LibraryAssetSource | null
+  /**
+   * The layer of a library's source document that a library definition's layer copies, which pairs
+   * it with the same layer in the library's next revision whatever that layer is called by then.
+   */
+  libraryLayerId: string | null
   isPublishable: boolean
   isSymbolPublishable: boolean
   /**
@@ -847,6 +941,12 @@ export interface SceneNode {
 
   textPicture: Uint8Array | null
   derivedTextGlyphs: DerivedTextGlyph[] | null
+  /**
+   * How far a text's lines reach down from its top: measured at its width when its text or width
+   * changes, or read from the lines a file saved, and never saved itself. A fixed-size box does not
+   * clip them, as in Figma, so its visual bounds reach this far. Null when not known.
+   */
+  derivedTextHeight: number | null
   /** Format-neutral layout path for text-on-path nodes. */
   textPathData: TextPathData | null
   /** Node-local box that maps textPathData into the node coordinate space. */

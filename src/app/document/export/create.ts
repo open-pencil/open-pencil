@@ -2,7 +2,6 @@ import type { Editor, EditorState } from '@open-pencil/core'
 import type { BuiltinIOFormatId, ExportRequest, IORegistry } from '@open-pencil/core/io'
 
 import {
-  bundleExportFiles,
   createExportTargetActions,
   getExportBaseName,
   getExportBytes,
@@ -12,6 +11,7 @@ import {
   type ExportedFile
 } from '@/app/document/export/files'
 import type { ExportOptions } from '@/app/document/export/types'
+import { bundleExportFiles } from '@/app/document/export/zip'
 import { trackDocumentFormat } from '@/app/telemetry'
 
 type DownloadBlob = (data: Uint8Array, filename: string, mime: string) => void

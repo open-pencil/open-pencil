@@ -4,14 +4,15 @@
  * Consumes native tool input schemas and wraps execution with FigmaAPI instantiation.
  */
 
-// eslint-disable-next-line open-pencil/no-mixed-case-acronym-identifiers -- Upstream export spelling.
-import { toStandardJsonSchema as toStandardJSONSchema } from '@valibot/to-json-schema'
 import type { JSONValue, ToolResultPart, ToolSet, tool as createTool } from 'ai'
 import { isEmptyObject } from 'es-toolkit'
 
-import type { FigmaAPI } from '#core/figma-api'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 
-import { isToolExposed, type ToolDef } from './schema'
+import type { FigmaAPI } from '#core/figma-api'
+import { graphOf } from '#core/figma-api/graph'
+
+import { isToolExposed, toolStandardJSONSchema, type ToolDef } from './schema'
 
 export interface ToolLogEntry {
   tool: string
@@ -61,6 +62,17 @@ export interface AIAdapterOptions {
   onFlashNodes?: (nodeIds: string[]) => void
   onToolLog?: (entry: ToolLogEntry) => void
   getStepBudget?: () => StepBudget
+  /**
+   * Encodes a tool's image again for the model, such as a PNG as WebP for a provider that takes
+   * it. The result keeps the tool's own image, so another connection can still be sent that one.
+   */
+  encodeModelImage?: (image: ModelImage) => Promise<ModelImage>
+}
+
+export interface ModelImage {
+  /** Base64. */
+  data: string
+  mediaType: string
 }
 
 const STEP_WARNING_THRESHOLD = 5
@@ -91,9 +103,9 @@ function extractNodeIds(result: unknown): string[] {
   const ids: string[] = []
   if ('id' in result && typeof result.id === 'string') ids.push(result.id)
   if ('selection' in result && Array.isArray(result.selection))
-    ids.push(...extractIdsFromArray(result.selection))
+    appendAll(ids, extractIdsFromArray(result.selection))
   if ('results' in result && Array.isArray(result.results))
-    ids.push(...extractIdsFromArray(result.results))
+    appendAll(ids, extractIdsFromArray(result.results))
   return ids
 }
 
@@ -103,7 +115,7 @@ function captureNodeSnapshot(
 ): Record<string, unknown> | undefined {
   const targetId = args.id as string | undefined
   if (!targetId) return undefined
-  const raw = figma.graph.getNode(targetId)
+  const raw = graphOf(figma).getNode(targetId)
   if (!raw) return undefined
   return Object.fromEntries(Object.entries(structuredClone(raw)))
 }
@@ -174,12 +186,27 @@ export function toolsToAI(
 ): ToolSet {
   const { tool } = deps
   const result: ToolSet = {}
+  // Every request sends the whole conversation, so each image is encoded once, not per request.
+  const encodedImages = new Map<string, Promise<ModelImage>>()
+  const modelImage = (toolCallId: string, image: ModelImage): Promise<ModelImage> => {
+    const { encodeModelImage } = options
+    if (!encodeModelImage) return Promise.resolve(image)
+    let encoded = encodedImages.get(toolCallId)
+    if (!encoded) {
+      encoded = encodeModelImage(image).catch((error: unknown) => {
+        console.warn('[AI] Sending a tool image as the tool returned it:', error)
+        return image
+      })
+      encodedImages.set(toolCallId, encoded)
+    }
+    return encoded
+  }
 
   for (const def of tools) {
     if (!isToolExposed(def, 'ai')) continue
     const toolOpts: Record<string, unknown> = {
       description: def.description,
-      inputSchema: toStandardJSONSchema(def.input),
+      inputSchema: toolStandardJSONSchema(def.input),
       execute: async (args: Record<string, unknown>, { toolCallId }: { toolCallId: string }) => {
         const startTime = Date.now()
         const figma = options.getFigma()
@@ -190,7 +217,7 @@ export function toolsToAI(
         try {
           let execResult = options.executeTool
             ? await options.executeTool(def, figma, args, { toolCallId })
-            : await def.execute(figma, args)
+            : await def.loadFonts(figma, args).then(() => def.execute(figma, args))
           if (def.mutates && options.onFlashNodes) {
             const ids = extractNodeIds(execResult)
             if (ids.length > 0) options.onFlashNodes(ids)
@@ -225,13 +252,23 @@ export function toolsToAI(
 
     // Image results reach the model as files, with their metadata as text. Typed against the
     // SDK, because a shape it does not know fails the next step's prompt validation.
-    toolOpts.toModelOutput = ({ output }: { output: unknown }): ToolResultPart['output'] => {
+    toolOpts.toModelOutput = async ({
+      toolCallId,
+      output
+    }: {
+      toolCallId: string
+      output: unknown
+    }): Promise<ToolResultPart['output']> => {
       if (isImageOutput(output)) {
         const { base64, mimeType, ...metadata } = output
+        const { data, mediaType } = await modelImage(toolCallId, {
+          data: base64,
+          mediaType: mimeType
+        })
         const image = {
           type: 'file' as const,
-          mediaType: mimeType,
-          data: { type: 'data' as const, data: base64 }
+          mediaType,
+          data: { type: 'data' as const, data }
         }
         return !isEmptyObject(metadata)
           ? {

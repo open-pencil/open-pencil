@@ -31,12 +31,12 @@ jobs:
       source: ${{ steps.release.outputs.source }}
       matrix: ${{ steps.release.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.workflow_sha }}
           fetch-depth: 0
           persist-credentials: false
-      - uses: ./.github/actions/setup-bun
+      - uses: ./.github/actions/setup/workspace
       - id: release
         name: Resolve immutable source and native matrix
         env:
@@ -50,53 +50,66 @@ jobs:
     outputs:
       sha256: ${{ steps.frontend.outputs.sha256 }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.plan.outputs.source }}
           persist-credentials: false
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.workflow_sha }}
           path: .pipeline
           persist-credentials: false
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 26.x
-      - uses: ./.pipeline/.github/actions/setup-bun
+          package-manager-cache: false
+      - uses: ./.pipeline/.github/actions/setup/workspace
         with:
           cache-scope: desktop
       - name: Install pinned workflow tooling
         run: bun install --cwd .pipeline --frozen-lockfile
+      - name: Generate desktop icons
+        run: bun run generate:icons --target desktop
+      - name: Generate the native menu
+        run: bun run generate:tauri-menu
       - name: Build shared desktop frontend and package outputs
         env:
           # Official releases only: lets the app send its daily ping and, with consent, usage stats.
           VITE_OPENPENCIL_FEEDBACK: "on"
-        run: |
-          bun run generate:icons --target desktop
-          bun run generate:tauri-menu
-          bun run build
-      - name: Prepare and validate npm tarballs
-        run: |
-          bun .pipeline/tools/release/release-packages/src/cli.ts prepare
-          bun .pipeline/tools/release/release-packages/src/cli.ts pack
+        run: bun run build
+      - name: Upload source maps for error reports
+        env:
+          POSTHOG_CLI_API_KEY: ${{ secrets.POSTHOG_CLI_API_KEY }}
+          POSTHOG_CLI_PROJECT_ID: "267806"
+          POSTHOG_CLI_HOST: https://eu.posthog.com
+        run: bun .pipeline/tools/release/release-packages/src/sourcemaps/publish.ts --archive
+      # The licenses of the Rust crates compiled into shipped binaries, which their packages carry.
+      - uses: taiki-e/install-action@c509219cf42fba86913069efd0ade2458c59337b # v2.90.1
+        with:
+          tool: cargo-about@0.9.3
+      - name: Write third-party notices
+        run: bun .pipeline/tools/release/release-packages/src/cli.ts notices
+      - name: Prepare npm packages
+        run: bun .pipeline/tools/release/release-packages/src/cli.ts prepare
+      - name: Pack and validate npm tarballs
+        run: bun .pipeline/tools/release/release-packages/src/cli.ts pack
       - name: Extract exact release notes
         env:
           RELEASE_VERSION: ${{ needs.plan.outputs.version }}
         run: bun .pipeline/tools/release/release-packages/src/extract-release-notes.ts "$RELEASE_VERSION" release-notes.md
       - name: Archive platform-independent native inputs
         id: frontend
-        run: |
-          tar -cf frontend.tar dist desktop/icons desktop/generated
-          echo "sha256=$(sha256sum frontend.tar | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
-      - uses: actions/upload-artifact@v7
+        run: bun .pipeline/tools/release/release-packages/src/native/frontend.ts archive
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-frontend
           path: |
             frontend.tar
             release-notes.md
+            OpenPencil_*_sourcemaps.tar.gz
           if-no-files-found: error
           compression-level: 0
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-npm
           path: .npm-packages/*.tgz
@@ -110,6 +123,18 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     runs-on: ${{ matrix.platform }}
+    permissions:
+      contents: read
+      # Pulls the private release image the Linux build runs in.
+      packages: read
+    # The Linux build runs in the release image, which carries its libraries and Rust toolchain;
+    # the others run on their runners (an empty image means none).
+    container:
+      # Pinned by digest in native/catalog.ts, which tests/native/context.test.ts holds to it.
+      image: ${{ matrix.container }} # zizmor: ignore[unpinned-images]
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     timeout-minutes: 40
     env:
       RELEASE_TAG: ${{ needs.plan.outputs.tag }}
@@ -117,37 +142,45 @@ jobs:
       FRONTEND_SHA256: ${{ needs.frontend.outputs.sha256 }}
       RELEASE_TARGET: ${{ matrix.target }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.plan.outputs.source }}
           persist-credentials: false
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.workflow_sha }}
           path: .pipeline
           persist-credentials: false
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 26.x
-      - uses: dtolnay/rust-toolchain@stable
+          package-manager-cache: false
+      # rustup installs the toolchain rust-toolchain.toml pins; this adds the release target to it.
+      - name: Add the Rust target
+        # The release image carries the Linux toolchain and target already.
+        if: matrix.container == ''
+        # Bash on every runner: Windows' default PowerShell does not read $TARGET.
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: rustup target add "$TARGET"
+      # A tag restores only its own caches or the default branch's, which only pushes to master
+      # write, never pull requests (.github/actions/setup/workspace/README.md, Limits).
+      - name: Cache Rust builds # zizmor: ignore[cache-poisoning]
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
-          targets: ${{ matrix.target }}
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: desktop -> target
+          workspaces: . -> target
           key: ${{ matrix.target }}
-      - name: Install native dependencies on Linux
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-      - uses: ./.pipeline/.github/actions/setup-bun
+      # Packages come from kernel.org's Ubuntu mirror first, a domain apart from ubuntu.com, so an
+      # outage resolving it does not stop a release; apt verifies them against Ubuntu's key either
+      # way, and the runner's own mirrors remain the fallback.
+      - uses: ./.pipeline/.github/actions/setup/workspace
         with:
           cache-scope: desktop
           cache-save: ${{ matrix.saveBunCache && runner.os != 'Linux' }}
       - name: Install pinned workflow tooling
         run: bun install --cwd .pipeline --frozen-lockfile
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-frontend
       - name: Verify shared inputs and disable only the redundant build hook
@@ -156,13 +189,11 @@ jobs:
         run: tar -xf frontend.tar
       - name: Verify Node and Tauri startup
         timeout-minutes: 1
-        run: |
-          node --version
-          node node_modules/@tauri-apps/cli/tauri.js --version
+        run: node --version && node node_modules/@tauri-apps/cli/tauri.js --version
       - name: Build and sign native bundles (no release uploads)
         id: tauri
         timeout-minutes: 30
-        uses: tauri-apps/tauri-action@v0
+        uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # v1.0.0
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD || '' }}
@@ -172,14 +203,17 @@ jobs:
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
-          tauriScript: node node_modules/@tauri-apps/cli/tauri.js
+          # The action searches projectPath for tauri.conf.json; from the checkout root that search also
+          # walks the tooling checked out in .pipeline and runs out of memory. The script runs in desktop.
+          projectPath: desktop
+          tauriScript: node ../node_modules/@tauri-apps/cli/tauri.js
           args: --target ${{ matrix.target }} --config "${{ github.workspace }}/release-build-config.json" --verbose
           retryAttempts: 0
       - name: Collect only reported bundles and signatures
         env:
           TAURI_ARTIFACT_PATHS: ${{ steps.tauri.outputs.artifactPaths }}
         run: bun .pipeline/tools/release/release-packages/src/native/collect.ts
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: native-${{ matrix.target }}
           path: native-output/*
@@ -200,57 +234,52 @@ jobs:
       FRONTEND_SHA256: ${{ needs.frontend.outputs.sha256 }}
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.plan.outputs.source }}
           persist-credentials: false
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.workflow_sha }}
           path: .pipeline
           persist-credentials: false
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 26.x
+          package-manager-cache: false
           registry-url: https://registry.npmjs.org/
-      - uses: ./.pipeline/.github/actions/setup-bun
+      - uses: ./.pipeline/.github/actions/setup/workspace
         with:
           cache-scope: desktop
           cache-save: 'false'
       - name: Install pinned workflow tooling
         run: bun install --cwd .pipeline --frozen-lockfile
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-frontend
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-npm
           path: .npm-packages
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: native-*
           path: native-artifacts
-      - name: Install signature verifier
-        run: sudo apt-get update && sudo apt-get install -y minisign
+      - name: Resume npm versions this tag already published
+        run: bun .pipeline/tools/release/release-packages/src/cli.ts resume
       - name: Verify all targets, digests and updater signatures
         run: bun .pipeline/tools/release/release-packages/src/native/assemble.ts
       - name: Refuse published releases or moved tags
         run: bun .pipeline/tools/release/release-packages/src/native/publish.ts check
       - name: Attest the complete binary set and source/workflow manifest
         id: provenance
-        uses: actions/attest@v4
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: release-output/*
       - name: Verify attestations against the pinned workflow
         env:
           ATTESTATION_BUNDLE: ${{ steps.provenance.outputs.bundle-path }}
-        run: |
-          for artifact in release-output/*; do
-            gh attestation verify "$artifact" --bundle "$ATTESTATION_BUNDLE" \
-              --repo "$GITHUB_REPOSITORY" \
-              --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/build.yml" \
-              --signer-digest "$WORKFLOW_COMMIT" --deny-self-hosted-runners
-          done
+        run: bun .pipeline/tools/release/release-packages/src/native/attestations.ts
       - name: Publish verified npm artifacts with provenance
         run: bun .pipeline/tools/release/release-packages/src/cli.ts publish
       - name: Replace and verify the entire draft asset set

@@ -1,7 +1,8 @@
-import type { CanvasKit } from 'canvaskit-wasm'
-import { onScopeDispose } from 'vue'
+import { useDocumentVisibility } from '@vueuse/core'
+import { onScopeDispose, watch } from 'vue'
 import type { Ref } from 'vue'
 
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import type { Editor } from '@open-pencil/core'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 
@@ -23,6 +24,17 @@ import { useCanvasResizeObserver } from '#vue/canvas/surface/resize-observer'
 import { createShaderRasterizer } from '#vue/canvas/surface/shader/rasterizer'
 import type { UseCanvasOptions } from '#vue/canvas/surface/types'
 import { editorMessages } from '#vue/i18n/messages/editor'
+
+/**
+ * The device's memory in bytes where the browser reports it. Browsers round it and stop at 8 GB,
+ * which means at least that much, so a device at the cap is treated as unknown.
+ */
+function reportedDeviceMemory(): number | undefined {
+  // Chromium's Device Memory API; WebKit and Firefox leave it out.
+  const gigabytes: unknown = Reflect.get(navigator, 'deviceMemory')
+  if (typeof gigabytes !== 'number' || gigabytes >= 8) return undefined
+  return gigabytes * 1024 ** 3
+}
 
 type SurfaceManagerState = {
   renderer: SkiaRenderer | null
@@ -55,7 +67,6 @@ export function createCanvasSurfaceManager({
     glCanvas: null,
     presentation: null
   }
-  let sceneBackingRenderTimer: ReturnType<typeof setTimeout> | null = null
 
   // The scene of an editing canvas shows an empty sticky note's placeholder, and every layer an
   // empty connector label's while it is typed into, as the overlays draw the text being edited,
@@ -81,10 +92,15 @@ export function createCanvasSurfaceManager({
     if (showsStickyPlaceholder) renderer.stickyPlaceholder = stickyPlaceholder
   }
 
-  function clearSceneBackingRenderTimer() {
-    if (sceneBackingRenderTimer === null) return
-    clearTimeout(sceneBackingRenderTimer)
-    sceneBackingRenderTimer = null
+  /**
+   * Tells the renderer's tiles what memory they share: a share of the device's where the browser
+   * reports it, and only what the canvas showed last while the page is hidden.
+   */
+  function applyTileMemory() {
+    state.renderer?.tiledScene.setMemory({
+      deviceBytes: reportedDeviceMemory(),
+      hidden: document.visibilityState === 'hidden'
+    })
   }
 
   /** Releases the Skia context and the WebGL context CanvasKit registered for this canvas. */
@@ -131,12 +147,12 @@ export function createCanvasSurfaceManager({
 
     const glCtx = canvas.getContext('webgl2') ?? null
     state.renderer = new SkiaRenderer(ck, surface, glCtx)
-    state.renderer.onImagePreviewReady = () => renderLoop.markDirty()
-    state.renderer.imagePreviews.setDecoder(createImagePreviewDecoder())
+    state.renderer.images.onPreviewReady = () => renderLoop.markDirty()
+    state.renderer.images.previews.setDecoder(createImagePreviewDecoder())
     state.renderer.presentationColorSpace = result.presentation ?? 'srgb'
     state.renderer.tracksSceneSettlement = options?.layer !== 'overlays'
-    state.renderer.tiledSceneEnabled = options?.sceneRenderer === 'tiled'
     showPlaceholders(state.renderer)
+    applyTileMemory()
     editor.setCanvasKit(ck, state.renderer)
     // The scene surface draws shader frames; an overlay surface has none to draw.
     if (options?.layer !== 'overlays' && !editor.hasShaderRasterizer())
@@ -155,9 +171,18 @@ export function createCanvasSurfaceManager({
     return true
   }
 
-  function acknowledgePresentation() {
+  /**
+   * Reports the frame as shown once the whole visible scene is on it. A scene frame with tiles
+   * still to draw is not: a loader waiting on it would give way to a canvas that then fills in.
+   * Only a canvas drawing the editor's own state reports, since the versions are the editor's:
+   * a split pane showing another view, perhaps another page, says nothing about this one.
+   */
+  function reportPresented(renderer: SkiaRenderer) {
+    const layer = options?.layer ?? 'full'
+    if (layer === 'overlays' || (layer === 'scene' && !renderer.tiledSceneCovered)) return
     const renderedState = options?.getRenderState?.() ?? editor.state
-    options?.onPresented?.({
+    if (renderedState !== editor.state) return
+    editor.reportPresented({
       renderVersion: renderedState.renderVersion,
       sceneVersion: renderedState.sceneVersion
     })
@@ -166,6 +191,11 @@ export function createCanvasSurfaceManager({
   /** UI floating over the canvas this frame, which edge-pinned overlays avoid. */
   function overlayObstacles() {
     return options?.getOverlayObstacles?.() ?? []
+  }
+
+  /** Tiles still to render, visible or in the background: the next frame continues them. */
+  function tileWorkPending(renderer: SkiaRenderer): boolean {
+    return renderer.tiledScenePending || renderer.tiledSceneBackgroundPending
   }
 
   function renderNow() {
@@ -184,14 +214,9 @@ export function createCanvasSurfaceManager({
     )
     renderLoop.markRendered()
     options?.onFrame?.({ panX: view.panX, panY: view.panY, zoom: view.zoom })
-    acknowledgePresentation()
-    clearSceneBackingRenderTimer()
-    if (options?.layer === 'scene' && state.renderer.tiledScenePending) {
+    reportPresented(state.renderer)
+    if (options?.layer === 'scene' && tileWorkPending(state.renderer)) {
       renderLoop.markDirty()
-    }
-    if (options?.layer === 'scene' && state.renderer.sceneBackingNeedsCrispRender) {
-      const delay = Math.max(0, state.renderer.sceneBackingPreviewUntil - performance.now())
-      sceneBackingRenderTimer = setTimeout(() => renderLoop.markDirty(), delay)
     }
   }
 
@@ -226,8 +251,13 @@ export function createCanvasSurfaceManager({
       createSurface(canvas, { reloadFonts: true })
       return
     }
-    state.renderer.presentationColorSpace = result.presentation ?? 'srgb'
-    state.renderer.replaceSurface(surface)
+    // Tiles keep the colours they were recorded in, so a resize that changes the presentation
+    // color space starts them over like a new context.
+    const presentation = result.presentation ?? 'srgb'
+    const sameContext =
+      result.glHandle === null && state.renderer.presentationColorSpace === presentation
+    state.renderer.presentationColorSpace = presentation
+    state.renderer.replaceSurface(surface, { sameContext })
     renderNow()
   }
 
@@ -253,7 +283,6 @@ export function createCanvasSurfaceManager({
     stopPlaceholders()
     stopPresentationRefresh()
     stopColorSpaceRefresh()
-    clearSceneBackingRenderTimer()
     renderLoop.pause()
     if (state.renderer) editor.removeCanvasRenderer(state.renderer)
     state.renderer?.destroy()
@@ -266,6 +295,7 @@ export function createCanvasSurfaceManager({
     renderNow,
     destroy,
     markDirty: () => renderLoop.markDirty(),
+    applyTileMemory,
     getRenderer: () => state.renderer,
     getPresentation: () => state.presentation
   }
@@ -304,6 +334,9 @@ export function useCanvasSurfaceLifecycle({
     getCanvasKitValue,
     resizeCanvas: surface.resizeCanvas
   })
+
+  // A hidden page draws nothing, so its tiles shrink to what it showed last until it is back.
+  watch(useDocumentVisibility(), () => surface.applyTileMemory())
 
   onScopeDispose(() => {
     lifecycle.destroyed = true

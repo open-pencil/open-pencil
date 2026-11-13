@@ -4,7 +4,6 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuPortal,
-  ContextMenuRoot,
   ContextMenuTrigger,
   DialogClose,
   DialogTitle
@@ -28,12 +27,14 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 import { AppDialogRoot, useDialogUI } from '@/components/ui/dialog'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
+import AppContextMenuRoot from '@/components/ui/menu/AppContextMenuRoot.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 import { useHeldContent } from '@/components/ui/overlay/held'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import { ASSET_GRID_THUMBNAIL_SIZE, ASSET_LIST_THUMBNAIL_SIZE } from '@/constants'
+import { focusStyles } from '@/theme/focus/styles'
 
 type AssetView = 'grid' | 'list'
 
@@ -46,6 +47,8 @@ type LocalAsset = {
   variantCount: number
   hasConflicts: boolean
   sourceLibraryKey: string | null
+  /** The thumbnail a library revision carries for the asset. */
+  thumbnail: Uint8Array | null
   description: string
   docsURL: string | null
   libraryId: string | null
@@ -147,6 +150,7 @@ const assets = computed<LocalAsset[]>(() => {
         variantCount: node.type === 'COMPONENT_SET' ? node.childIds.length : 0,
         hasConflicts: conflicts.length > 0,
         sourceLibraryKey: node.sourceLibraryKey,
+        thumbnail: null,
         description: node.symbolDescription,
         docsURL: node.symbolLinks[0]?.uri ?? null,
         libraryId: null,
@@ -161,7 +165,7 @@ const assets = computed<LocalAsset[]>(() => {
   const remote = remoteAssets.value.map(({ libraryId, libraryName, revisionId, asset }) => ({
     id: `${libraryId}:${asset.key}`,
     name: asset.name,
-    node: createDefaultNode(() => asset.sourceNodeId, asset.type, {
+    node: createDefaultNode(() => asset.sourceId, asset.type, {
       name: asset.name,
       symbolDescription: asset.description,
       sourceLibraryKey: asset.key
@@ -171,6 +175,7 @@ const assets = computed<LocalAsset[]>(() => {
     variantCount: 0,
     hasConflicts: false,
     sourceLibraryKey: asset.key,
+    thumbnail: asset.thumbnail ?? null,
     description: asset.description,
     docsURL: null,
     libraryId,
@@ -362,7 +367,7 @@ async function insertSelectedAsset() {
         <icon-lucide-library class="size-3.5" />
         <span
           v-if="libraryUpdateCount > 0"
-          class="absolute top-0.5 right-0.5 min-w-2.5 rounded-full bg-accent px-0.5 text-center text-[8px] leading-2.5 text-on-accent"
+          class="absolute top-0.5 inset-e-0.5 min-w-2.5 rounded-full bg-accent px-0.5 text-center text-5xs leading-2.5 text-on-accent"
         >
           {{ libraryUpdateCount }}
         </span>
@@ -381,13 +386,13 @@ async function insertSelectedAsset() {
       </SegmentedControl>
     </div>
 
-    <div class="scrollbar-thin flex min-h-0 flex-1 flex-col overflow-y-auto px-2 pb-2">
+    <div class="flex min-h-0 flex-1 flex-col overflow-y-auto px-2 pb-2">
       <section v-for="group in assetGroups" :key="group.pageId" class="mb-3">
-        <h2 class="mb-1 px-1 text-[10px] font-medium tracking-wide text-muted uppercase">
+        <h2 class="mb-1 px-1 text-2xs font-semibold text-muted">
           {{ group.pageName }}
         </h2>
         <div :class="assetView === 'grid' ? 'grid grid-cols-2 gap-2' : 'flex flex-col gap-0.5'">
-          <ContextMenuRoot v-for="asset in group.assets" :key="asset.id">
+          <AppContextMenuRoot v-for="asset in group.assets" :key="asset.id">
             <ContextMenuTrigger as-child>
               <div
                 role="button"
@@ -397,7 +402,8 @@ async function insertSelectedAsset() {
                 :draggable="!!asset.componentId"
                 :aria-busy="insertingAssetId === asset.id"
                 :class="[
-                  'group/asset rounded text-left text-xs text-surface outline-none hover:bg-hover focus-visible:ring-1 focus-visible:ring-panel-focus',
+                  'group/asset rounded text-start text-xs text-surface hover:bg-hover',
+                  focusStyles.ring,
                   assetView === 'grid'
                     ? 'flex min-w-0 flex-col items-center gap-1 p-1.5'
                     : 'flex w-full items-center gap-2 px-1.5 py-1'
@@ -409,6 +415,14 @@ async function insertSelectedAsset() {
                 <AssetThumbnail
                   v-if="asset.componentId"
                   :node-id="asset.componentId"
+                  :alt="`${asset.name} preview`"
+                  :size="
+                    assetView === 'grid' ? ASSET_GRID_THUMBNAIL_SIZE : ASSET_LIST_THUMBNAIL_SIZE
+                  "
+                />
+                <AssetThumbnail
+                  v-else-if="asset.thumbnail"
+                  :png="asset.thumbnail"
                   :alt="`${asset.name} preview`"
                   :size="
                     assetView === 'grid' ? ASSET_GRID_THUMBNAIL_SIZE : ASSET_LIST_THUMBNAIL_SIZE
@@ -426,7 +440,7 @@ async function insertSelectedAsset() {
                     <span
                       v-if="asset.sourceLibraryKey"
                       data-test-id="asset-library-badge"
-                      class="shrink-0 rounded bg-component/15 px-1 py-px text-[9px] font-medium text-component uppercase"
+                      class="shrink-0 rounded bg-component/15 px-1 py-px text-4xs font-medium text-component uppercase"
                     >
                       {{ panels.assetLibraryBadge }}
                     </span>
@@ -434,7 +448,7 @@ async function insertSelectedAsset() {
                   <span
                     v-if="assetView === 'list' && asset.variants.length > 0"
                     data-test-id="asset-variant-summary"
-                    class="mt-0.5 block truncate text-[10px] text-muted"
+                    class="mt-0.5 block truncate text-3xs text-muted"
                   >
                     {{
                       panels.assetVariantSummary({
@@ -446,14 +460,14 @@ async function insertSelectedAsset() {
                   <span
                     v-if="assetView === 'list' && asset.description"
                     data-test-id="asset-description"
-                    class="mt-0.5 block truncate text-[10px] text-muted"
+                    class="mt-0.5 block truncate text-3xs text-muted"
                   >
                     {{ asset.description }}
                   </span>
                   <span
                     v-if="assetView === 'list' && asset.hasConflicts"
                     data-test-id="asset-variant-conflict"
-                    class="mt-0.5 block truncate text-[10px] text-warning"
+                    class="mt-0.5 block truncate text-3xs text-warning"
                   >
                     {{ panels.duplicateVariantValues }}
                   </span>
@@ -504,7 +518,7 @@ async function insertSelectedAsset() {
                 </MenuScrollArea>
               </ContextMenuContent>
             </ContextMenuPortal>
-          </ContextMenuRoot>
+          </AppContextMenuRoot>
         </div>
       </section>
 
@@ -533,7 +547,7 @@ async function insertSelectedAsset() {
           <component :is="nodeIcon(shownAsset.node)" class="size-4 shrink-0 text-component" />
           <div class="min-w-0">
             <DialogTitle :class="dialog.title" class="truncate">{{ shownAsset.name }}</DialogTitle>
-            <p class="mt-0.5 text-[11px] text-muted">
+            <p class="mt-0.5 text-2xs text-muted">
               {{
                 shownAsset.node.type === 'COMPONENT_SET' ? panels.componentSet : panels.component
               }}
@@ -551,8 +565,8 @@ async function insertSelectedAsset() {
         </DialogClose>
       </div>
 
-      <div class="grid min-h-0 grid-cols-[260px_1fr] gap-0">
-        <div class="border-r border-border p-4">
+      <div class="grid min-h-0 grid-cols-[16.25rem_1fr] gap-0">
+        <div class="border-e border-border p-4">
           <div
             data-test-id="asset-details-preview"
             class="flex h-36 items-center justify-center overflow-hidden rounded-lg border border-border bg-canvas/60"
@@ -562,7 +576,7 @@ async function insertSelectedAsset() {
               data-test-id="asset-details-preview-image"
               :src="previewURL"
               :alt="`${shownAsset.name} preview`"
-              class="max-h-[120px] max-w-[210px] object-contain"
+              class="max-h-30 max-w-52.5 object-contain"
             />
             <div v-else class="text-center">
               <icon-lucide-loader-2
@@ -591,7 +605,7 @@ async function insertSelectedAsset() {
 
         <div class="min-w-0 p-4">
           <section v-if="shownAsset.description" class="mb-4">
-            <h3 class="text-[11px] font-medium tracking-wider text-muted uppercase">
+            <h3 class="text-2xs font-semibold text-muted">
               {{ panels.description }}
             </h3>
             <p data-test-id="asset-details-description" class="mt-1 text-xs leading-5 text-surface">
@@ -600,7 +614,7 @@ async function insertSelectedAsset() {
           </section>
 
           <section v-if="shownAsset.sourceLibraryKey" class="mb-4">
-            <h3 class="text-[11px] font-medium tracking-wider text-muted uppercase">
+            <h3 class="text-2xs font-semibold text-muted">
               {{ panels.assetLibraryBadge }}
             </h3>
             <p data-test-id="asset-details-library" class="mt-1 break-all text-xs text-muted">
@@ -609,7 +623,7 @@ async function insertSelectedAsset() {
           </section>
 
           <section v-if="shownAsset.docsURL" class="mb-4">
-            <h3 class="text-[11px] font-medium tracking-wider text-muted uppercase">
+            <h3 class="text-2xs font-semibold text-muted">
               {{ panels.documentation }}
             </h3>
             <AppButton
@@ -626,7 +640,7 @@ async function insertSelectedAsset() {
           </section>
 
           <section v-if="shownAsset.variants.length > 0">
-            <h3 class="text-[11px] font-medium tracking-wider text-muted uppercase">
+            <h3 class="text-2xs font-semibold text-muted">
               {{ panels.properties }}
             </h3>
             <div class="mt-2 flex flex-col gap-2">
@@ -637,7 +651,7 @@ async function insertSelectedAsset() {
                 class="rounded border border-border bg-input/40 px-2 py-1.5"
               >
                 <div class="text-xs font-medium text-surface">{{ variant.name }}</div>
-                <div class="mt-1 text-[11px] text-muted">{{ variant.values.join(', ') }}</div>
+                <div class="mt-1 text-2xs text-muted">{{ variant.values.join(', ') }}</div>
               </div>
             </div>
           </section>

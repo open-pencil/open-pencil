@@ -3,13 +3,25 @@ import type { DesignElement, DesignStyleDeclaration, DesignText } from '#dom-css
 /**
  * What must hold on a control's root for a variant to show. Reka and Radix set `data-state`
  * and `data-disabled` themselves; the browser sets the interactions; a generated component
- * sets `data-*` from its props for every other variant property.
+ * sets `data-invalid` from its `invalid` prop, and `data-*` from its props for every other
+ * variant property.
  */
 export type StateCondition =
   | { type: 'state'; value: string }
   | { type: 'disabled' }
-  /** `within` when focus lands on a layer inside the control, such as a field's input. */
-  | { type: 'interaction'; state: 'hover' | 'pressed' | 'focus'; within?: boolean }
+  /** `enabled` when the property that draws invalid draws disabled too, which wins over it. */
+  | { type: 'invalid'; enabled?: boolean }
+  | {
+      type: 'interaction'
+      state: 'hover' | 'pressed' | 'focus'
+      /** When focus lands on a layer inside the control, such as a field's input. */
+      within?: boolean
+      /**
+       * When the property that draws the interaction draws invalid too: one value shows at a
+       * time, and an invalid control keeps its invalid look under the pointer and in focus.
+       */
+      valid?: boolean
+    }
   /** A field whose input holds text. */
   | { type: 'filled' }
   | { type: 'prop'; name: string; value: string }

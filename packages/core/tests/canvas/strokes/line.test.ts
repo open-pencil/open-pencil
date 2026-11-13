@@ -1,17 +1,15 @@
 import { afterAll, describe, expect, test } from 'bun:test'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph, type SceneNode, type Stroke } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { silhouetteBounds } from '#core/canvas/shadows/silhouette'
 import { makeLineStrokeOutline } from '#core/canvas/strokes/line'
-
-import { expectDefined } from '#core-tests/helpers/assert'
-
 const SIZE = 400
 
-const ck = await initCanvasKit()
+const ck = await getCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(SIZE, SIZE), 'surface'))
 afterAll(() => renderer.destroy())
 
@@ -115,7 +113,7 @@ describe('a line stroke', () => {
   })
 })
 
-// Booleans and flattening take a line as its stroke outline: Figma's stroke geometry for a 300 px
+// Booleans take a line as its stroke outline (Flatten keeps its segment): Figma's stroke geometry for a 300 px
 // line with a 6 px stroke and triangle heads spans x 3 to 297 and y -20.32 to 14.32.
 describe('a line taken as a boolean operand', () => {
   test('keeps its heads and the shaft between them', () => {

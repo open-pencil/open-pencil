@@ -1,4 +1,5 @@
 import type { ComponentPropertyDefinition, SceneNode } from '@open-pencil/scene-graph'
+import { propertyOwner } from '@open-pencil/scene-graph/components'
 import {
   canCreateSlot,
   slotOwner,
@@ -38,7 +39,8 @@ export function useSlotAuthoring() {
     const nodes = editor.getSelectedNodes()
     if (nodes.length !== 1) return undefined
     const [node] = nodes
-    if (node.type === 'COMPONENT') return { owner: node, frame: undefined, propertyId: undefined }
+    if (node.type === 'COMPONENT')
+      return { owner: propertyOwner(editor.graph, node), frame: undefined, propertyId: undefined }
     const owner = slotOwner(editor.graph, node)
     if (!owner) return undefined
     const propertyId = slotPropertyId(node)

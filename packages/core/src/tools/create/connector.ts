@@ -1,5 +1,8 @@
 import * as v from 'valibot'
 
+import { CONNECTOR_LABEL_FONT } from '@open-pencil/scene-graph/connectors'
+import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
+
 import { toolNumber, defineTool, nodeSummary } from '#core/tools/schema'
 
 const MAGNETS = ['AUTO', 'TOP', 'RIGHT', 'BOTTOM', 'LEFT', 'CENTER'] as const
@@ -19,7 +22,7 @@ const endInput = (label: string) =>
       magnet: v.optional(
         v.pipe(
           v.picklist(MAGNETS),
-          v.description('Side it attaches by; AUTO picks the nearest. Straight lines use CENTER')
+          v.description('AUTO picks the nearest side; straight lines use CENTER')
         )
       ),
       x: v.optional(toolNumber(v.pipe(v.number(), v.description('Page X of a free end')))),
@@ -32,7 +35,7 @@ export const createConnectorTool = defineTool({
   name: 'create_connector',
 
   description:
-    'Create a FigJam-style connector between two layers, or from or to a point on the page. A connector follows the layers it joins as they move and is deleted with them. Give each end a node id (and optionally a magnet side), or x/y for a free end.',
+    'Create a FigJam-style connector between two layers, or from or to a point on the page; it follows the layers it joins and is deleted with them. Give each end a node id (and optionally a magnet), or x/y for a free end.',
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
     start: endInput('start'),
@@ -47,6 +50,15 @@ export const createConnectorTool = defineTool({
     label: v.optional(v.pipe(v.string(), v.description('Text on the line'))),
     name: v.optional(v.pipe(v.string(), v.description('Layer name')))
   }),
+  fonts: (_figma, args) =>
+    args.label
+      ? [
+          {
+            family: CONNECTOR_LABEL_FONT.family,
+            style: faceLoadKey(CONNECTOR_LABEL_FONT.weight)
+          }
+        ]
+      : [],
   execute: (figma, args) => {
     const connector = figma.createConnector()
     const straight = args.line_type === 'STRAIGHT'

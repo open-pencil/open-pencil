@@ -17,6 +17,11 @@ export type VueAttribute =
   | { type: 'model'; argument?: string; expression: SyntaxNode }
   /** `v-if="expression"`: the element renders only while the expression holds. */
   | { type: 'if'; expression: SyntaxNode }
+  /**
+   * `v-bind="expression"`: every attribute of an object, such as `$attrs`. Attributes after it
+   * override its own of the same name, as Vue merges them in order.
+   */
+  | { type: 'spread'; expression: SyntaxNode }
 
 export interface VueElement {
   type: 'element'
@@ -58,6 +63,8 @@ export const model = (expression: SyntaxNode, argument?: string): VueAttribute =
 
 export const renderIf = (expression: SyntaxNode): VueAttribute => ({ type: 'if', expression })
 
+export const spread = (expression: SyntaxNode): VueAttribute => ({ type: 'spread', expression })
+
 export const element = (
   tag: string,
   attributes: VueAttribute[] = [],
@@ -76,6 +83,7 @@ function printAttribute(item: VueAttribute): string {
   const value = escapeAttribute(printExpression(item.expression))
   if (item.type === 'bound') return `:${item.name}="${value}"`
   if (item.type === 'if') return `v-if="${value}"`
+  if (item.type === 'spread') return `v-bind="${value}"`
   return `${item.argument ? `v-model:${item.argument}` : 'v-model'}="${value}"`
 }
 

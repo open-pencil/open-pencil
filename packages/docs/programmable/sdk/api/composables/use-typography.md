@@ -12,7 +12,7 @@ of them in one undo step, so a selection of text and other layers edits only the
 It exposes:
 
 - font family
-- font weight, and `weights`: the weights the selected layers' families have, read from installed fonts and web font providers, every weight while a family's faces are unknown
+- font style: `faces`, the faces of the selected layers' family by the names their fonts give them (Avenir's Book and Roman apart), read from installed fonts and web font providers, every standard weight while a family's faces are unknown; `faceName`, the face the layers share or `MIXED`; and `setFace(style)`, which sets a face by its name
 - font size
 - formatting state
 - missing-font status
@@ -22,7 +22,7 @@ It exposes:
 - OpenType feature toggles
 - variable font axes (`axes`, `opticalSizeAuto`)
 - list style (`listType`, `null` when the paragraphs differ) and hanging lists
-- helpers for changing family, weight, alignment, and decorations
+- helpers for changing family, face, weight, alignment, and decorations
 - `merged(key)` and `fontFeature(tag)`, which return the shared value or `MIXED`
 
 ## Usage
@@ -42,6 +42,7 @@ const {
   fontSize,
   activeFormatting,
   setFamily,
+  setFace,
   setWeight,
   setAlign,
   setVerticalAlign,

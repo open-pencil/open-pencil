@@ -2,8 +2,14 @@ import { useRafFn, watchThrottled } from '@vueuse/core'
 import type { createRendererFromJSON } from 'shaders/core'
 import { onScopeDispose, watch } from 'vue'
 
-import type { Editor, EditorState } from '@open-pencil/core'
+import {
+  resolveEditorProfile,
+  type Editor,
+  type EditorProfileInputs,
+  type EditorState
+} from '@open-pencil/core'
 import type { SkiaRenderer } from '@open-pencil/core/canvas'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 import {
   readShaderPaints,
@@ -11,7 +17,7 @@ import {
   type ShaderPreset
 } from '@open-pencil/scene-graph/shaders'
 
-import { shaderFrames } from '#vue/canvas/surface/shader/frames'
+import { provideShaderFrames } from '#vue/canvas/surface/shader/frames'
 import { canDrawShaders } from '#vue/canvas/surface/shader/rasterizer'
 
 /** The longest side a playing shader is drawn at, however large it is on screen. */
@@ -85,12 +91,12 @@ export function useShaderPlayback(options: {
   editor: Editor
   getRenderer: () => SkiaRenderer | null
   /** The view this canvas draws: its pan, zoom, page, and whether it previews. */
-  getView: () => Pick<EditorState, 'panX' | 'panY' | 'zoom' | 'currentPageId' | 'play'>
+  getView: () => Pick<EditorState, 'panX' | 'panY' | 'zoom' | 'currentPageId'> & EditorProfileInputs
   getViewport: () => { width: number; height: number }
   markDirty: () => void
 }) {
   const { editor, getRenderer, getView, getViewport, markDirty } = options
-  const frames = shaderFrames(editor)
+  const frames = provideShaderFrames(editor)
   const players = new Map<string, Player>()
   /** Players starting at a new size beside the ones they replace, by image. */
   const replacing = new Map<string, Player>()
@@ -137,8 +143,8 @@ export function useShaderPlayback(options: {
   /** How many pixels a shader painted over `bounds` covers on screen, at most. */
   function screenSize(bounds: Rect[]): { width: number; height: number } {
     const scale = getView().zoom * (window.devicePixelRatio || 1)
-    const width = Math.max(...bounds.map((rect) => rect.width)) * scale
-    const height = Math.max(...bounds.map((rect) => rect.height)) * scale
+    const width = maxOf(bounds.map((rect) => rect.width)) * scale
+    const height = maxOf(bounds.map((rect) => rect.height)) * scale
     const fit = Math.min(1, MAX_PLAY_EDGE / Math.max(width, height, 1))
     return {
       width: Math.max(1, Math.round(width * fit)),
@@ -259,7 +265,7 @@ export function useShaderPlayback(options: {
 
   function sync() {
     const view = getView()
-    const playing = view.play !== null && canDrawShaders()
+    const playing = resolveEditorProfile(view).live !== null && canDrawShaders()
     const wanted = playing ? shadersOnPage(editor, view.currentPageId) : new Map()
     for (const [hash, player] of players) {
       const shader = wanted.get(hash)
@@ -361,9 +367,17 @@ export function useShaderPlayback(options: {
     }
   }
 
-  watch(() => [getView().play !== null, getView().currentPageId, editor.state.sceneVersion], sync, {
-    immediate: true
-  })
+  watch(
+    () => [
+      resolveEditorProfile(getView()).live !== null,
+      getView().currentPageId,
+      editor.state.sceneVersion
+    ],
+    sync,
+    {
+      immediate: true
+    }
+  )
   // The view moving or the canvas resizing, as it does when preview hides the panels, changes
   // what is on screen.
   watchThrottled(

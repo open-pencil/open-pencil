@@ -4,6 +4,7 @@ import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
 import {
+  CLOUD_RATE_LIMITS,
   createCloudApp,
   createBetterAuthAdapter,
   parseCloudServerConfig,
@@ -195,6 +196,61 @@ describe('Cloud workspace routes', () => {
       })
       expect(duplicate.status).toBe(409)
       expect(await duplicate.json()).toEqual({ error: { code: 'slug_conflict' } })
+    } finally {
+      await runtime.close()
+    }
+  })
+
+  test("counts a workspace's invitations and resends on one budget, and caps the actor across workspaces", async () => {
+    const { app, runtime } = await testApp(alice)
+    try {
+      const createWorkspace = async (slug: string) => {
+        const created = await responseJSON(
+          await app.request('/api/workspaces', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: slug, slug })
+          }),
+          v.object({ workspace: v.object({ id: v.string() }) })
+        )
+        return created.workspace.id
+      }
+      const first = await createWorkspace('first-team')
+      const second = await createWorkspace('second-team')
+      const third = await createWorkspace('third-team')
+      // Bodies the routes refuse still count: the budget is spent before the route answers.
+      const invite = async (workspaceId: string) =>
+        (
+          await app.request(`/api/workspaces/${workspaceId}/invitations`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: '{}'
+          })
+        ).status
+      const resend = async (workspaceId: string) =>
+        (
+          await app.request(
+            `/api/workspaces/${workspaceId}/invitations/${crypto.randomUUID()}/resend`,
+            { method: 'POST' }
+          )
+        ).status
+
+      const { limit } = CLOUD_RATE_LIMITS.invitationMutation
+      for (let sent = 0; sent < limit; sent++) {
+        // A resend names a new invitation each time, as a chain of resends does.
+        const status = sent % 2 === 0 ? await invite(first) : await resend(first)
+        expect(status).not.toBe(429)
+      }
+      expect(await resend(first)).toBe(429)
+      expect(await invite(first)).toBe(429)
+      expect(await invite(second)).not.toBe(429)
+
+      // Spread over workspaces, each under its own budget, requests still meet the actor's.
+      const { actorLimit } = CLOUD_RATE_LIMITS.invitationMutation
+      for (let sent = limit + 1; sent < actorLimit; sent++) {
+        expect(await invite(second)).not.toBe(429)
+      }
+      expect(await invite(third)).toBe(429)
     } finally {
       await runtime.close()
     }

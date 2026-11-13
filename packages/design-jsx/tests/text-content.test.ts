@@ -14,6 +14,9 @@ const renderer = createDesignJSXRenderer<never>({
   },
   layout: () => {
     // Text content does not depend on layout.
+  },
+  vectorBounds: () => {
+    throw new Error('No vectors in these tests')
   }
 })
 

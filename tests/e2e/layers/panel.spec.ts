@@ -57,8 +57,9 @@ const NUMBERED_GROUP = /^Group \d+$/
 
 test('demo layers visible in panel', async () => {
   const names = await getLayerNames()
-  expect(names).toContain('Announcement system')
-  expect(names).toContain('Components')
+  const sections = (await getSceneTree()).children.map((child) => child.name)
+  expect(sections.length).toBeGreaterThan(0)
+  for (const name of sections) expect(names).toContain(name)
 })
 
 test('clicking a node inside a frame does not reparent it', async () => {
@@ -66,9 +67,9 @@ test('clicking a node inside a frame does not reparent it', async () => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const nodes = [...store.graph.nodes.values()]
-    const root = nodes.find((node) => node.name === 'Announcement system')
-    const nested = nodes.find((node) => node.name === 'Source components')
-    if (!root || !nested?.parentId) throw new Error('Demo announcement structure not found')
+    const root = nodes.find((node) => node.name === '1 · Hello')
+    const nested = nodes.find((node) => node.name === 'Hero' && node.parentId === root?.id)
+    if (!root || !nested?.parentId) throw new Error('Demo Hello chapter not found')
     const origin = store.graph.getAbsolutePosition(nested.id)
     return {
       id: nested.id,
@@ -247,7 +248,7 @@ test('clearing a layer name keeps the name it had', async () => {
 test('double-click does not toggle tree expand', async () => {
   const rowCountBefore = await layerRows().count()
 
-  const containerRow = layerRows().filter({ hasText: 'Components' }).first()
+  const containerRow = layerRows().filter({ hasText: '8 · Yours' }).first()
   await containerRow.dblclick()
   await editor.canvas.waitForRender()
 

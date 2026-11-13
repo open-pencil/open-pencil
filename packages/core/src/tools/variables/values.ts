@@ -5,6 +5,7 @@ import { parseColor } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { FigmaVariableValue } from '#core/figma-api'
+import { graphOf } from '#core/figma-api/graph'
 import { defineTool } from '#core/tools/schema'
 
 /** A parsed value as `setValueForMode` takes it; a colour gets a copy of its own. */
@@ -38,7 +39,7 @@ export const createVariable = defineTool({
     )
   }),
   execute: (figma, args) => {
-    const type = args.type as VariableType
+    const type = args.type
     // The value is checked first, so a value the variable cannot hold creates nothing.
     const value = args.value === undefined ? undefined : parseVariableValue(type, args.value)
     if (typeof value === 'number' && !Number.isFinite(value))
@@ -48,7 +49,7 @@ export const createVariable = defineTool({
       for (const modeId of Object.keys(variable.valuesByMode))
         variable.setValueForMode(modeId, figmaValue(value))
     }
-    return figma.graph.variables.get(variable.id)
+    return graphOf(figma).variables.get(variable.id)
   }
 })
 

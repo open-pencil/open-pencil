@@ -1,10 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectFills } from '#core-tests/helpers/assert'
-
 import { createEditor } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectFills } from '@open-pencil/test-support/assert'
+
+import { graphOf } from '#core/figma-api/graph'
 
 // Recorded with the same script in Figma desktop 126: new layers from the plugin API and from the
 // drawing tools start alike.
@@ -79,6 +80,9 @@ describe('new layer defaults', () => {
     // Figma fills a section #444444 in its dark theme.
     figma.theme = 'dark'
     expect(solid(expectFills(figma.createSection().fills))).toEqual([[0.27, 0.27, 0.27]])
+    // A board is light under either theme.
+    graphOf(figma).documentKind = 'board'
+    expect(solid(expectFills(figma.createSection().fills))).toEqual([WHITE])
   })
 
   test('each layer gets its own copy of the default paints', () => {

@@ -1,15 +1,17 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { userEvent, within } from 'storybook/test'
 import IconSettings from '~icons/lucide/settings'
 
 import type { CloudSyncState } from '@/components/home/cloud/types'
 import IconButton from '@/components/ui/button/IconButton.vue'
 
 import CloudDocumentStatus from './CloudDocumentStatus.vue'
+import { openStatusPopover, statusToolbarTemplate } from './examples/toolbar'
 
 type Args = {
   state: CloudSyncState
   viewOnly: boolean
+  atStorageLimit: boolean
+  canManagePlan: boolean
   savedAgo: string | null
   notLive: boolean
   canRejoin: boolean
@@ -21,6 +23,8 @@ const meta = {
   args: {
     state: 'synced',
     viewOnly: false,
+    atStorageLimit: false,
+    canManagePlan: false,
     savedAgo: 'just now',
     notLive: false,
     canRejoin: false
@@ -28,21 +32,13 @@ const meta = {
   render: (args) => ({
     components: { CloudDocumentStatus, IconButton, IconSettings },
     setup: () => ({ args }),
-    template: `
-      <div class="h-[320px]">
-        <div class="flex w-64 items-center gap-1 border-b border-border bg-panel px-2 py-2">
-          <span class="flex size-6 items-center justify-center rounded bg-accent text-[11px] font-bold text-on-accent">P</span>
-          <span class="min-w-0 flex-1 truncate px-1 text-xs text-surface">Homepage redesign</span>
-          <CloudDocumentStatus :state="args.state" :view-only="args.viewOnly" :not-live="args.notLive" :can-rejoin="args.canRejoin" :saved-ago="args.savedAgo" workspace="Design team" host="cloud.openpencil.dev" />
-          <IconButton label="Settings"><IconSettings class="size-3.5" /></IconButton>
-        </div>
-      </div>`
+    template: statusToolbarTemplate(
+      `<CloudDocumentStatus :state="args.state" :view-only="args.viewOnly" :at-storage-limit="args.atStorageLimit" :can-manage-plan="args.canManagePlan" :not-live="args.notLive" :can-rejoin="args.canRejoin" :saved-ago="args.savedAgo" workspace="Design team" host="cloud.openpencil.dev" />
+          <IconButton label="Settings"><IconSettings class="size-3.5" /></IconButton>`,
+      'h-80'
+    )
   }),
-  play: async ({ canvasElement }) => {
-    const trigger = canvasElement.querySelector<HTMLElement>('[data-state-sync]')
-    if (trigger) await userEvent.click(trigger)
-    await within(document.body).findByRole('dialog')
-  }
+  play: openStatusPopover
 } satisfies Meta<Args>
 
 export default meta
@@ -54,4 +50,7 @@ export const Offline: Story = { args: { state: 'offline' } }
 export const NeedsAChoice: Story = { args: { state: 'conflict' } }
 export const CouldNotSave: Story = { args: { state: 'error' } }
 export const ViewOnly: Story = { args: { viewOnly: true } }
+export const StorageFull: Story = {
+  args: { viewOnly: true, atStorageLimit: true, canManagePlan: true }
+}
 export const NotLive: Story = { args: { notLive: true, canRejoin: true } }

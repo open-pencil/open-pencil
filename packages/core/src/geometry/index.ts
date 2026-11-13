@@ -1,5 +1,6 @@
 export {
   figmaRotation,
+  panelNumber,
   panelPosition,
   panelPositionChange,
   panelRotation,

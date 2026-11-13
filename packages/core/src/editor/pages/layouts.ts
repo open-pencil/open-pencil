@@ -1,6 +1,6 @@
 import type { EditorContext } from '#core/editor/types'
 import { getTextMeasurer, type TextMeasurer } from '#core/layout/text-measurement'
-import { fontManager } from '#core/text/fonts'
+import { fontManager } from '#core/text/font/manager'
 
 /** What sized a page's text when it was laid out. */
 interface TextBasis {

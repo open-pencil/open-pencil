@@ -62,6 +62,18 @@ async function testApp(initialActor: CloudActor = actor) {
   }
 }
 
+/** What accepting an invitation leaves: the grant the API then changes. */
+async function invitationGrant(
+  context: Awaited<ReturnType<typeof testApp>>,
+  documentId: string,
+  userId: string
+) {
+  await context.runtime.database
+    .insertInto('documentGrant')
+    .values({ id: crypto.randomUUID(), documentId, userId, permission: 'view', createdBy: 'alice' })
+    .execute()
+}
+
 describe('Cloud document routes', () => {
   test('creates and lists document metadata', async () => {
     const context = await testApp()
@@ -81,8 +93,17 @@ describe('Cloud document routes', () => {
       const list = await context.app.request(`/api/workspaces/${context.workspaceId}/documents`)
       expect(list.status).toBe(200)
       expect(await list.json()).toMatchObject({
-        documents: [{ id: created.document.id, name: 'Homepage', currentRevisionId: null }]
+        documents: [
+          { id: created.document.id, name: 'Homepage', kind: 'design', currentRevisionId: null }
+        ]
       })
+
+      const board = await context.app.request(`/api/workspaces/${context.workspaceId}/documents`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'Retro', kind: 'board' })
+      })
+      expect(await board.json()).toMatchObject({ document: { name: 'Retro', kind: 'board' } })
     } finally {
       await context.runtime.close()
     }
@@ -106,6 +127,7 @@ describe('Cloud document routes', () => {
           v.object({ document: v.object({ id: v.string() }) })
         )
         if (directGrant) {
+          await invitationGrant(context, document.document.id, 'bob')
           const grant = await context.app.request(
             `/api/documents/${document.document.id}/grants/bob`,
             {
@@ -162,24 +184,34 @@ describe('Cloud document routes', () => {
         const commit = await context.app.request(`/api/uploads/${upload.id}/commit`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ checksum })
+          body: JSON.stringify({ checksum, name: 'Updated homepage', kind: 'board' })
         })
         expect(commit.status).toBe(200)
         const committed = await responseJSON(
           commit,
-          v.object({ document: v.object({ currentRevisionId: v.string(), version: v.number() }) })
+          v.object({
+            document: v.object({
+              currentRevisionId: v.string(),
+              version: v.number(),
+              name: v.string(),
+              kind: v.string()
+            })
+          })
         )
         expect(committed.document.currentRevisionId).toBeString()
         expect(committed.document.version).toBe(1)
+        expect(committed.document.name).toBe('Updated homepage')
+        expect(committed.document.kind).toBe('board')
 
         const repeatedCommit = await context.app.request(`/api/uploads/${upload.id}/commit`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ checksum })
+          body: JSON.stringify({ checksum, name: 'Stale retry' })
         })
         expect(repeatedCommit.status).toBe(200)
         expect(await repeatedCommit.json()).toMatchObject({
           document: {
+            name: 'Updated homepage',
             currentRevisionId: committed.document.currentRevisionId,
             version: 1
           }
@@ -198,7 +230,7 @@ describe('Cloud document routes', () => {
         expect(downloadResponse.status).toBe(200)
         expect(await downloadResponse.json()).toMatchObject({
           document: {
-            document: { id: document.document.id, version: 1 },
+            document: { id: document.document.id, version: 1, name: 'Updated homepage' },
             revisionId: committed.document.currentRevisionId,
             byteSize: 128,
             checksum,
@@ -325,6 +357,7 @@ describe('documents shared with a person', () => {
       v.object({
         id: v.string(),
         name: v.string(),
+        kind: v.string(),
         workspaceName: v.string(),
         permission: v.string(),
         sharedBy: v.nullable(v.object({ name: v.string() }))
@@ -332,7 +365,7 @@ describe('documents shared with a person', () => {
     )
   })
 
-  test('lists direct grants outside the person’s workspaces until they are revoked', async () => {
+  test('lists direct grants outside the person’s workspaces, with their kind, until they are revoked', async () => {
     const aliceAccount = crypto.randomUUID()
     const context = await testApp({ ...actor, userId: aliceAccount })
     try {
@@ -353,13 +386,14 @@ describe('documents shared with a person', () => {
       const create = await context.app.request(`/api/workspaces/${context.workspaceId}/documents`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'Brief' })
+        body: JSON.stringify({ name: 'Brief', kind: 'board' })
       })
       const created = await responseJSON(
         create,
         v.object({ document: v.object({ id: v.string() }) })
       )
       const documentId = created.document.id
+      await invitationGrant(context, documentId, 'bob')
       const grant = await context.app.request(`/api/documents/${documentId}/grants/bob`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -376,6 +410,7 @@ describe('documents shared with a person', () => {
         {
           id: documentId,
           name: 'Brief',
+          kind: 'board',
           workspaceName: 'Documents',
           permission: 'view',
           sharedBy: { name: 'Alice' }

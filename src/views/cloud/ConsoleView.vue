@@ -7,21 +7,33 @@ import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 import { usePortal } from '@/app/cloud-portal/context'
 import PortalConsoleLayout from '@/components/cloud-portal/layout/PortalConsoleLayout.vue'
 import { PORTAL_SECTION_ICONS } from '@/components/cloud-portal/layout/sections'
+import AccessTokensSection from '@/components/cloud-portal/sections/AccessTokensSection.vue'
 import AdminActivitySection from '@/components/cloud-portal/sections/AdminActivitySection.vue'
+import AdminDocumentsSection from '@/components/cloud-portal/sections/AdminDocumentsSection.vue'
 import AdminEmailSection from '@/components/cloud-portal/sections/AdminEmailSection.vue'
 import AdminOverviewSection from '@/components/cloud-portal/sections/AdminOverviewSection.vue'
 import AdminPeopleSection from '@/components/cloud-portal/sections/AdminPeopleSection.vue'
 import AdminPersonSection from '@/components/cloud-portal/sections/AdminPersonSection.vue'
+import AdminReportsSection from '@/components/cloud-portal/sections/AdminReportsSection.vue'
 import AdminRequestsSection from '@/components/cloud-portal/sections/AdminRequestsSection.vue'
+import PlanSection from '@/components/cloud-portal/sections/PlanSection.vue'
 import ProfileSection from '@/components/cloud-portal/sections/ProfileSection.vue'
 import SecuritySection from '@/components/cloud-portal/sections/SecuritySection.vue'
 import SessionsSection from '@/components/cloud-portal/sections/SessionsSection.vue'
 import type { PortalSection } from '@/components/cloud-portal/types'
 
-const ACCOUNT_SECTIONS = ['profile', 'security', 'sessions'] as const
+const ACCOUNT_SECTIONS = ['profile', 'plan', 'security', 'sessions', 'tokens'] as const
 /** Every section, and a few people's pages, stay loaded while others are shown. */
 const SECTIONS_KEPT = 12
-const ADMIN_SECTIONS = ['overview', 'requests', 'people', 'email', 'activity'] as const
+const ADMIN_SECTIONS = [
+  'overview',
+  'requests',
+  'reports',
+  'documents',
+  'people',
+  'email',
+  'activity'
+] as const
 type AccountSectionId = (typeof ACCOUNT_SECTIONS)[number]
 type AdminSectionId = (typeof ADMIN_SECTIONS)[number]
 type SectionId = AccountSectionId | AdminSectionId
@@ -39,6 +51,7 @@ const route = useRoute()
 const router = useRouter()
 const messages = useCloudPortalMessages()
 const waiting = ref(0)
+const openReports = ref(0)
 const peopleTotal = ref<number | null>(null)
 
 const admin = computed(() => portal.account.value?.user.deploymentRole === 'admin')
@@ -62,6 +75,17 @@ const sections = computed<PortalSection[]>(() => {
       label: value.profile,
       group: value.sectionAccount
     },
+    // Only a server that sells plans has one to show.
+    ...(portal.discovery.billing
+      ? [
+          {
+            id: 'plan',
+            icon: PORTAL_SECTION_ICONS.plan,
+            label: value.plan,
+            group: value.sectionAccount
+          }
+        ]
+      : []),
     {
       id: 'security',
       icon: PORTAL_SECTION_ICONS.security,
@@ -72,6 +96,12 @@ const sections = computed<PortalSection[]>(() => {
       id: 'sessions',
       icon: PORTAL_SECTION_ICONS.sessions,
       label: value.sessions,
+      group: value.sectionAccount
+    },
+    {
+      id: 'tokens',
+      icon: PORTAL_SECTION_ICONS.tokens,
+      label: value.accessTokens,
       group: value.sectionAccount
     }
   ]
@@ -90,6 +120,19 @@ const sections = computed<PortalSection[]>(() => {
       label: value.accessRequests,
       group: value.sectionServer,
       count: waiting.value || undefined
+    },
+    {
+      id: 'reports',
+      icon: PORTAL_SECTION_ICONS.reports,
+      label: value.reports,
+      group: value.sectionServer,
+      count: openReports.value || undefined
+    },
+    {
+      id: 'documents',
+      icon: PORTAL_SECTION_ICONS.documents,
+      label: value.documents,
+      group: value.sectionServer
     },
     {
       id: 'people',
@@ -120,10 +163,14 @@ const description = computed(() => {
   const value = messages.value
   const descriptions: Record<SectionId, string | null> = {
     profile: value.profileDescription({ host: portal.host }),
+    plan: value.planDescription,
     security: value.securityDescription({ host: portal.host }),
     sessions: value.sessionsDescription,
+    tokens: value.accessTokensDescription,
     overview: portal.host,
     requests: value.accessRequestsDescription,
+    reports: value.reportsDescription,
+    documents: value.documentsDescription,
     people: peopleTotal.value === null ? null : value.peopleDescription(peopleTotal.value),
     email: value.emailDeliveryDescription,
     activity: value.activityDescription
@@ -131,11 +178,13 @@ const description = computed(() => {
   return descriptions[active.value]
 })
 
-/** The waiting-requests badge; when it can't be read, it keeps its last count. */
+/** The waiting-requests and open-reports badges; when they can't be read, they keep their counts. */
 async function refreshWaiting() {
   if (!admin.value) return
   const operations = await portal.api.operations().catch(() => null)
-  if (operations) waiting.value = operations.pendingEnrollment
+  if (!operations) return
+  waiting.value = operations.pendingEnrollment
+  openReports.value = operations.openReports
 }
 
 function select(id: string) {
@@ -176,10 +225,14 @@ onMounted(() => void refreshWaiting())
     <!-- Sections keep what they loaded while another is shown, and load again on return. -->
     <KeepAlive :max="SECTIONS_KEPT">
       <ProfileSection v-if="active === 'profile'" />
+      <PlanSection v-else-if="active === 'plan'" />
       <SecuritySection v-else-if="active === 'security'" />
       <SessionsSection v-else-if="active === 'sessions'" />
+      <AccessTokensSection v-else-if="active === 'tokens'" />
       <AdminOverviewSection v-else-if="active === 'overview'" @open="select" />
       <AdminRequestsSection v-else-if="active === 'requests'" @changed="refreshWaiting" />
+      <AdminReportsSection v-else-if="active === 'reports'" @changed="refreshWaiting" />
+      <AdminDocumentsSection v-else-if="active === 'documents'" @changed="refreshWaiting" />
       <AdminPersonSection
         v-else-if="personId"
         :key="personId"

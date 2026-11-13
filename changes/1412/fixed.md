@@ -1,1 +1,0 @@
-- `.pen` text keeps its font weight, italic, fixed-size wrapping, and justified or middle alignment, and `.pen` auto layout keeps space-between, space-around, and absolutely positioned layers.

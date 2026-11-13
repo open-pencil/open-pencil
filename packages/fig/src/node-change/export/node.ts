@@ -1,16 +1,19 @@
+import { variantSet } from '#fig/document/component/links'
 import type { DerivedSymbolOverride } from '#fig/instance-overrides/types'
 import { effectiveFigmaRawNodeFields, effectiveFigmaSourcePayload } from '#fig/source-metadata'
 import { compact } from 'es-toolkit/array'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type {
   ComponentPropertyDefinition,
   ComponentPropertyReferenceField,
   LayoutGrid,
   SceneGraph,
-  SceneNode
+  SceneNode,
+  VariantPropSpec
 } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { variantOptions } from '@open-pencil/scene-graph/components'
 import {
   DEFAULT_STROKE_MITER_LIMIT,
   DEFAULT_STROKE_WEIGHT
@@ -24,7 +27,7 @@ import type { GUID, Matrix, Vector } from '@open-pencil/scene-graph/primitives'
 /* eslint-disable max-lines */
 import { bytesToHex } from '../bytes'
 import { exportCanvasGuides } from '../canvas-guides'
-import { snapshotInstanceGeometry } from '../instance/geometry'
+import { instanceExportAddress, snapshotInstanceGeometry } from '../instance/geometry'
 import {
   applyExportSettingsPluginData,
   applyLibrarySourcePluginData,
@@ -40,6 +43,8 @@ import {
 } from './assignments/values'
 import {
   applyColorVariableBinding,
+  bindKiwiEffects,
+  createEffects,
   createFillPaints,
   createStrokePaints,
   getOrCreateNodeGuid,
@@ -53,10 +58,13 @@ import {
   type SceneNodeToKiwiContext
 } from './context'
 import { generatedFrameRecord, writesGeneratedFrame } from './generated'
+import { writeOwnInstanceName } from './instance-name'
 import { mergeOverrides, serializeRuntimePropertyOverrides } from './override-claims'
+import { boundPropertyGuid, variantPropertyCopies, writtenSetProperties } from './property-copies'
 import { exportedNode } from './resolved-bindings'
 import { slotDefinitionFields } from './slots'
 import { serializeText } from './text'
+import { applyVariableModes } from './variable-modes'
 
 export type { KiwiNodeChange, SceneNodeToKiwiContext } from './context'
 
@@ -104,47 +112,9 @@ function toKiwiBooleanOperation(operation: SceneNode['booleanOperation']): KiwiB
   return operation === 'EXCLUDE' ? 'XOR' : (operation ?? 'UNION')
 }
 
-/** Resolve effect variable asset refs when the Kiwi effect schema requires GUID aliases. */
-export function buildAssetRefToVarGuidMap(
-  graph: SceneGraph,
-  varIdToGuid: Map<string, GUID>
-): Map<string, GUID> {
-  const map = new Map<string, GUID>()
-  for (const [varId, variable] of graph.variables) {
-    if (!variable.key) continue
-    const guid = varIdToGuid.get(varId) ?? stringToGuid(varId)
-    map.set(variable.key, guid)
-    if (variable.version) map.set(`${variable.key}@${variable.version}`, guid)
-  }
-  return map
-}
-
 function componentPropertyTypeForKiwi(type: string) {
   if (type === 'BOOLEAN') return 'BOOL'
   return type
-}
-
-function serializeVariableModes(
-  node: SceneNode,
-  variableIdToGuid?: Map<string, GUID>,
-  modeIdToGuid?: Map<string, GUID>
-): NonNullable<KiwiNodeChange['variableModeBySetMap']> | undefined {
-  const entries = Object.entries(node.variableModes).flatMap(([collectionId, modeId]) => {
-    const collectionGuid = variableIdToGuid?.get(collectionId) ?? parseGuidOrNull(collectionId)
-    const modeGuid = modeIdToGuid?.get(modeId) ?? parseGuidOrNull(modeId)
-    if (!collectionGuid || !modeGuid) return []
-    return [{ variableSetID: { guid: collectionGuid }, variableModeID: modeGuid }]
-  })
-  return entries.length > 0 ? { entries } : undefined
-}
-
-function applyVariableModes(
-  context: SceneNodeToKiwiContext,
-  node: SceneNode,
-  record: KiwiNodeChange
-): void {
-  const modes = serializeVariableModes(node, context.varIdToGuid, context.modeIdToGuid)
-  if (modes) record.variableModeBySetMap = modes
 }
 
 const FIGMA_PAYLOAD_VARIABLE_MAP_FIELDS = new Set([
@@ -170,17 +140,6 @@ interface FigmaPayloadVariableMap {
 
 interface FigmaPayloadVariableMapEntry {
   variableData?: { dataType?: string; value?: { propRefValue?: unknown } }
-}
-
-interface ColorVarCarrier {
-  colorVar?: {
-    value?: {
-      alias?: {
-        guid?: GUID
-        assetRef?: { key: string; version?: string }
-      }
-    }
-  }
 }
 
 function isFigmaPayloadVariableMap(value: unknown): value is FigmaPayloadVariableMap {
@@ -365,12 +324,17 @@ function isEditedPathText(node: SceneNode): boolean {
   )
 }
 
-function applyRawFigmaNodeFields(
+/** The raw fields a node writes, without the ones it writes from its current state instead. */
+function writableRawFields(
   context: SceneNodeToKiwiContext,
-  node: SceneNode,
-  nc: KiwiNodeChange
-): void {
+  node: SceneNode
+): Record<string, unknown> {
   let rawFields = effectiveFigmaRawNodeFields(node)
+  // A variant writes its copies of its set's properties from the set (`variantPropertyCopies`).
+  if (variantSet(context.graph, node) && 'componentPropDefs' in rawFields) {
+    rawFields = { ...rawFields }
+    delete rawFields.componentPropDefs
+  }
   if (isReflowedStrokedPathText(node) || isEditedPathText(node)) {
     // Strip before materializing so the stale blobs never enter the file:
     // silhouettes are re-derived from glyphs by Figma/reimport, and
@@ -380,6 +344,15 @@ function applyRawFigmaNodeFields(
     delete rawFields.strokeGeometry
     delete rawFields.derivedTextData
   }
+  return rawFields
+}
+
+function applyRawFigmaNodeFields(
+  context: SceneNodeToKiwiContext,
+  node: SceneNode,
+  nc: KiwiNodeChange
+): void {
+  const rawFields = writableRawFields(context, node)
   const materialized = materializeFigmaPayload(rawFields, context.blobs, {
     blobIndexByHex: context.blobIndexByHex,
     includePaintVariables: true,
@@ -406,13 +379,9 @@ function applyRawFigmaNodeFields(
       })
       continue
     }
-    if (
-      key === 'effects' &&
-      node.source.id &&
-      context.assetRefToVarGuid &&
-      context.assetRefToVarGuid.size > 0
-    ) {
-      nc[key] = convertColorVarAssetRefs(materialized[key], context.assetRefToVarGuid)
+    // Imported effects keep what OpenPencil does not model, and take the node's bindings.
+    if (key === 'effects' && node.source.id && materialized.effects) {
+      nc.effects = bindKiwiEffects(context, node, materialized.effects, true)
       continue
     }
     if (key === 'derivedTextData' && node.source.id) {
@@ -427,28 +396,6 @@ function applyRawFigmaNodeFields(
     if (key in nc) continue
     nc[key] = materialized[key]
   }
-}
-
-/** Convert asset refs only for payloads whose Kiwi schema rejects asset-ref aliases. */
-function convertColorVarAssetRefs<T>(values: T, assetRefToVarGuid: Map<string, GUID>): T {
-  if (!Array.isArray(values)) return values
-  const converted = values.map((value: ColorVarCarrier) => {
-    const colorVar = value.colorVar
-    const alias = colorVar?.value?.alias
-    if (!colorVar || !alias || alias.guid || !alias.assetRef?.key) return value
-    const assetRef = alias.assetRef
-    const lookupKey = assetRef.version ? `${assetRef.key}@${assetRef.version}` : assetRef.key
-    const guid = assetRefToVarGuid.get(lookupKey) ?? assetRefToVarGuid.get(assetRef.key)
-    if (!guid) return value
-    return {
-      ...value,
-      colorVar: {
-        ...colorVar,
-        value: { ...colorVar.value, alias: { guid } }
-      }
-    }
-  })
-  return converted.some((value, index) => value !== values[index]) ? (converted as T) : values
 }
 
 function applyInstancePayload(
@@ -467,12 +414,13 @@ function applyInstancePayload(
     const symbolData: Record<string, unknown> = { symbolID }
     const symbolOverrides: KiwiSymbolOverridePayload[] = []
     if (node.source.fig.symbolOverrides.length > 0) {
-      symbolOverrides.push(
-        ...(materializeFigmaPayload(node.source.fig.symbolOverrides, context.blobs, {
+      appendAll(
+        symbolOverrides,
+        materializeFigmaPayload(node.source.fig.symbolOverrides, context.blobs, {
           blobIndexByHex: context.blobIndexByHex,
           includePaintVariables: true,
           includeVariableMaps: true
-        }) as KiwiSymbolOverridePayload[])
+        }) as KiwiSymbolOverridePayload[]
       )
     }
     mergeOverrides(
@@ -481,6 +429,13 @@ function applyInstancePayload(
         overridableNodeFields(context, target)
       )
     )
+    const ownPath = instanceExportAddress(
+      context.graph,
+      node,
+      node,
+      instanceGuidResolver(context, localIdCounter)
+    )
+    if (ownPath) writeOwnInstanceName(context.graph, node, ownPath, symbolOverrides)
     if (symbolOverrides.length > 0) symbolData.symbolOverrides = symbolOverrides
     if (!Number.isFinite(node.componentScale) || node.componentScale <= 0)
       throw new Error('Invalid instance uniform scale')
@@ -587,9 +542,7 @@ interface ExportedParameterEntry {
   }
 }
 function mergeParameterBindings(nc: KiwiNodeChange): void {
-  const parameters = nc.parameterConsumptionMap as
-    | { entries?: Array<{ variableField?: string }> }
-    | undefined
+  const parameters = nc.parameterConsumptionMap
   const entries = parameters?.entries ?? []
   const fields = new Set(entries.map((entry) => entry.variableField))
   const variables = nc.variableConsumptionMap?.entries ?? []
@@ -597,6 +550,44 @@ function mergeParameterBindings(nc: KiwiNodeChange): void {
   nc.parameterConsumptionMap = {
     entries: [...variables.filter((entry) => !fields.has(entry.variableField)), ...entries]
   }
+}
+
+/**
+ * What makes Figma read a frame as a component set (desktop 126 reads one without the flag as a
+ * plain frame of loose components), and the order it lists each variant property's values in,
+ * which it takes from here rather than from the properties' preferred values.
+ */
+function applyStateGroup(context: SceneNodeToKiwiContext, set: SceneNode, nc: KiwiNodeChange) {
+  nc.isStateGroup = true
+  const orders = set.componentPropertyDefinitions.flatMap((definition) =>
+    definition.type === 'VARIANT'
+      ? [{ property: definition.name, values: variantOptions(context.graph, set, definition) }]
+      : []
+  )
+  if (shouldSerializeRawBackedField(set, 'stateGroupPropertyValueOrders', orders.length > 0))
+    nc.stateGroupPropertyValueOrders = orders
+}
+
+/**
+ * A variant's values as Figma saves them, by its set's variant properties: the values the
+ * variant has now, which renaming it or its set's properties changes. Specs it was read with
+ * that still say the same are kept in their order, as Figma saved them.
+ */
+function variantSpecs(context: SceneNodeToKiwiContext, node: SceneNode): VariantPropSpec[] {
+  const set = node.parentId ? context.graph.getNode(node.parentId) : undefined
+  if (node.type !== 'COMPONENT' || set?.type !== 'COMPONENT_SET') return node.variantPropSpecs
+  const current = set.componentPropertyDefinitions.flatMap((definition) =>
+    definition.type === 'VARIANT' && Object.hasOwn(node.componentPropertyValues, definition.name)
+      ? [{ propDefId: definition.id, value: node.componentPropertyValues[definition.name] }]
+      : []
+  )
+  const stored = node.variantPropSpecs
+  const unchanged =
+    stored.length === current.length &&
+    current.every((spec) =>
+      stored.some((saved) => saved.propDefId === spec.propDefId && saved.value === spec.value)
+    )
+  return unchanged ? stored : current
 }
 
 function applyParameterReferences(nc: KiwiNodeChange, refs: ExportedPropertyReference[]): void {
@@ -624,6 +615,92 @@ function applyParameterReferences(nc: KiwiNodeChange, refs: ExportedPropertyRefe
   nc.parameterConsumptionMap = { entries }
 }
 
+/**
+ * A component's or set's own property definitions, and a variant's copies of its set's, which
+ * it writes from them whatever the file saved.
+ */
+function applyPropertyDefinitions(
+  context: SceneNodeToKiwiContext,
+  node: SceneNode,
+  nc: KiwiNodeChange,
+  localIdCounter: { value: number }
+): void {
+  const copies = variantPropertyCopies(context, node, localIdCounter)
+  const set = copies && variantSet(context.graph, node)
+  if (copies && set && writtenInSet(context, set, nc)) {
+    if (copies.length > 0) nc.componentPropDefs = copies
+    return
+  }
+  if (copies && set) {
+    // A variant written outside its set, as a copied variant is, defines its set's properties
+    // itself under its copies' GUIDs, which its layers name, as Figma copies one (desktop 126).
+    const copied = writtenSetProperties(context, set).filter((def) => def.type !== 'VARIANT')
+    nc.componentPropDefs = copied.map((def, index) =>
+      propertyDefinitionRecord(context, def, copies[index]?.id, localIdCounter)
+    )
+    return
+  }
+  // A set also writes the properties its variants define themselves; see `writtenSetProperties`.
+  const definitions =
+    node.type === 'COMPONENT_SET'
+      ? writtenSetProperties(context, node)
+      : node.componentPropertyDefinitions
+  const componentPropDefs = definitions.map((def) =>
+    propertyDefinitionRecord(context, def, undefined, localIdCounter)
+  )
+  // The saved definitions lack the ones a set's variants added since, which their copies link
+  // to, so the set writes them all.
+  const variantsAdded = definitions.length > node.componentPropertyDefinitions.length
+  if (
+    variantsAdded ||
+    shouldSerializeRawBackedField(node, 'componentPropDefs', componentPropDefs.length > 0)
+  )
+    nc.componentPropDefs = componentPropDefs
+}
+
+/** Whether a variant's record goes beneath its set's, which defines what its copies link to. */
+function writtenInSet(context: SceneNodeToKiwiContext, set: SceneNode, nc: KiwiNodeChange) {
+  const setGuid = context.nodeIdToGuid?.get(set.id)
+  const parent = nc.parentIndex?.guid
+  return (
+    !!setGuid &&
+    !!parent &&
+    setGuid.sessionID === parent.sessionID &&
+    setGuid.localID === parent.localID
+  )
+}
+
+function propertyDefinitionRecord(
+  context: SceneNodeToKiwiContext,
+  def: ComponentPropertyDefinition,
+  id: GUID | undefined,
+  localIdCounter: { value: number }
+): Record<string, unknown> {
+  const record: Record<string, unknown> = {
+    id: id ?? getOrCreatePropertyGuid(context, def.id, localIdCounter),
+    name: def.name,
+    type: componentPropertyTypeForKiwi(def.type),
+    preferredValues: componentPropertyPreferredValues(def, context)
+  }
+  if (def.type === 'SLOT') Object.assign(record, slotDefinitionFields(def))
+  else {
+    record.initialValue = componentPropertyValue(
+      def.type,
+      def.defaultValue,
+      context,
+      localIdCounter
+    )
+    record.varValue = componentPropertyVariableValue(
+      def.type,
+      def.defaultValue,
+      context,
+      localIdCounter
+    )
+  }
+  if (def.description) record.description = def.description
+  return record
+}
+
 function applyComponentMetadata(
   context: SceneNodeToKiwiContext,
   node: SceneNode,
@@ -645,37 +722,10 @@ function applyComponentMetadata(
   if (node.isExposedInstance) nc.propsAreBubbled = true
   if (node.symbolDescription) nc.symbolDescription = node.symbolDescription
   if (node.symbolLinks.length > 0) nc.symbolLinks = structuredClone(node.symbolLinks)
-  const componentPropDefs = node.componentPropertyDefinitions.map((def) => {
-    const record: Record<string, unknown> = {
-      id: getOrCreatePropertyGuid(context, def.id, localIdCounter),
-      name: def.name,
-      type: componentPropertyTypeForKiwi(def.type),
-      preferredValues: componentPropertyPreferredValues(def, context)
-    }
-    if (def.type === 'SLOT') Object.assign(record, slotDefinitionFields(def))
-    else {
-      record.initialValue = componentPropertyValue(
-        def.type,
-        def.defaultValue,
-        context,
-        localIdCounter
-      )
-      record.varValue = componentPropertyVariableValue(
-        def.type,
-        def.defaultValue,
-        context,
-        localIdCounter
-      )
-    }
-    if (def.description) record.description = def.description
-    return record
-  })
-  if (shouldSerializeRawBackedField(node, 'componentPropDefs', componentPropDefs.length > 0)) {
-    nc.componentPropDefs = componentPropDefs
-  }
+  applyPropertyDefinitions(context, node, nc, localIdCounter)
 
   const parameterRefs = node.componentPropertyReferences.map((ref) => ({
-    defID: getOrCreatePropertyGuid(context, ref.propertyId, localIdCounter),
+    defID: boundPropertyGuid(context, node, ref.propertyId, localIdCounter),
     componentPropNodeField: componentPropertyNodeField(ref.field)
   }))
   // Figma binds a slot frame only through its parameter map, never a legacy property ref.
@@ -703,7 +753,7 @@ function applyComponentMetadata(
     nc.componentPropAssignments = componentPropAssignments
   }
 
-  const variantPropSpecs = node.variantPropSpecs.map((spec) => ({
+  const variantPropSpecs = variantSpecs(context, node).map((spec) => ({
     propDefId: getOrCreatePropertyGuid(context, spec.propDefId, localIdCounter),
     value: spec.value
   }))
@@ -748,7 +798,8 @@ const SUPPORTED_NORMALIZED_EFFECT_TYPES = new Set([
   'INNER_SHADOW',
   'LAYER_BLUR',
   'BACKGROUND_BLUR',
-  'FOREGROUND_BLUR'
+  'FOREGROUND_BLUR',
+  'GLASS'
 ])
 
 function hasRawUnsupportedEffects(node: SceneNode): boolean {
@@ -831,16 +882,7 @@ function applyNodeVisualProps(
   if (node.type === 'STAR') nc.starInnerScale = node.starInnerRadius
 
   if (node.effects.length > 0 && !hasRawUnsupportedEffects(node)) {
-    nc.effects = node.effects.map((effect) => ({
-      type: effect.type === 'LAYER_BLUR' ? 'FOREGROUND_BLUR' : effect.type,
-      color: context.safeColor(effect.color),
-      offset: effect.offset,
-      radius: effect.radius,
-      spread: effect.spread,
-      visible: effect.visible,
-      blendMode: effect.blendMode ?? 'NORMAL',
-      showShadowBehindNode: effect.showShadowBehindNode
-    }))
+    nc.effects = createEffects(context, node)
   }
 
   if (node.type === 'TEXT') serializeText(context, node, nc)
@@ -851,9 +893,9 @@ function applyNodeVisualProps(
   if (node.verticalConstraint !== 'MIN') nc.verticalConstraint = node.verticalConstraint
   if (node.strokeCap !== 'NONE') nc.strokeCap = node.strokeCap
   const rawNodeFields = effectiveFigmaRawNodeFields(node)
-  if (node.strokeJoin !== 'MITER' || 'strokeJoin' in rawNodeFields) {
-    nc.strokeJoin = node.strokeJoin
-  }
+  // Figma writes the join on every layer, MITER too: a vector's points without a join of their own
+  // take it, and without it they have none, which Figma's own network writes reject.
+  nc.strokeJoin = node.strokeJoin
   if (node.strokeMiterLimit !== DEFAULT_STROKE_MITER_LIMIT || 'miterLimit' in rawNodeFields) {
     nc.miterLimit = node.strokeMiterLimit
   }
@@ -991,15 +1033,19 @@ export function sceneNodeToKiwiWithContext(
   applyNodeVisualProps(context, node, nc)
   applyComponentMetadata(context, node, nc, localIdCounter)
   applyInstancePayload(context, node, nc, localIdCounter)
-  if (node.type === 'COMPONENT_SET')
+  if (node.type === 'COMPONENT_SET') {
     node.pluginData = withPluginData(node.pluginData, OPEN_PENCIL_PLUGIN_DATA.nodeType, node.type)
+    applyStateGroup(context, node, nc)
+  }
   if (nc.type === 'CANVAS') nc.pageType = 'DESIGN'
   if (node.type === 'BOOLEAN_OPERATION')
     nc.booleanOperation = toKiwiBooleanOperation(node.booleanOperation)
   if (strokePaints.length > 0) nc.strokePaints = strokePaints
 
   context.serializeLayoutProps(node, nc)
-  context.serializeGeometry(nodeForGeometryExport(node), nc, context.blobs)
+  context.serializeGeometry(nodeForGeometryExport(node), nc, context.blobs, (id) =>
+    exportedStyleReference(context, id)
+  )
   context.serializeVariableBindings(node, nc, context.graph, context.varIdToGuid)
   mergeParameterBindings(nc)
   applyRawFigmaNodeFields(context, node, nc)
@@ -1018,7 +1064,9 @@ export function sceneNodeToKiwiWithContext(
   const result: KiwiNodeChange[] = [generatedFrameRecord(context, node, nc) ?? nc]
   const children = exportedChildren(node, context)
   for (let i = 0; i < children.length; i++) {
-    result.push(...context.sceneNodeToKiwi(children[i], guid, i, localIdCounter, context))
+    // A child's subtree can hold more records than an engine takes arguments.
+    for (const record of context.sceneNodeToKiwi(children[i], guid, i, localIdCounter, context))
+      result.push(record)
   }
   return result
 }

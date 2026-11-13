@@ -1,9 +1,12 @@
 import { expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core'
+import { SkiaRenderer } from '@open-pencil/core/canvas'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { exportFigFile, parseFigFile, populateFigPage } from '@open-pencil/core/io/formats/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import type { PageSwitchProgress } from '#core/editor/pages'
 
@@ -264,7 +267,9 @@ test("loading a page's layers from the opened file asks for one render", async (
   editor.dispose()
 })
 
-test('preparing a page loads the pages holding the component sets its instances use', async () => {
+// Switching a variant needs the rest of its set; the set's page, whose other layers the page
+// does not use, stays unloaded.
+test('preparing a page loads the component sets its instances use, not their pages', async () => {
   await initCodec()
   const source = new SceneGraph()
   const [design] = source.getPages()
@@ -284,6 +289,10 @@ test('preparing a page loads the pages holding the component sets its instances 
   const toggle = set('Library', 'Switch')
   source.createInstance(knob.off.id, toggle.on.id)
   source.createInstance(toggle.off.id, design.id)
+  const library = source.getPages().find((page) => page.name === 'Library')
+  if (!library) throw new Error('No library page')
+  const examples = source.createNode('FRAME', library.id, { name: 'Examples' })
+  source.createInstance(toggle.on.id, examples.id)
   const bytes = await exportFigFile(source)
   const graph = await parseFigFile(bytes.slice().buffer, { populate: 'none' })
   const editor = createEditor({ graph, skipInitialGraphSetup: true })
@@ -299,5 +308,32 @@ test('preparing a page loads the pages holding the component sets its instances 
 
   expect(variants('Switch')).toEqual(['State=Off', 'State=On'])
   expect(variants('Knob')).toEqual(['State=Off', 'State=On'])
+  expect([...graph.getAllNodes()].some((node) => node.name === 'Examples')).toBe(false)
+  editor.dispose()
+})
+
+test('a page shown before the editor had a canvas is laid out once its first canvas arrives', async () => {
+  const editor = createEditor()
+  const pageId = editor.state.currentPageId
+  const row = editor.graph.createNode('FRAME', pageId, {
+    layoutMode: 'HORIZONTAL',
+    itemSpacing: 10,
+    primaryAxisSizing: 'HUG',
+    counterAxisSizing: 'HUG'
+  })
+  editor.graph.createNode('RECTANGLE', row.id, { width: 40, height: 40 })
+  const second = editor.graph.createNode('RECTANGLE', row.id, { width: 40, height: 40 })
+  // Without a canvas, preparing a page it already holds leaves its layout to the canvas.
+  await editor.switchPage(pageId)
+  expect(editor.graph.getNode(second.id)?.x).toBe(0)
+
+  const ck = await getCanvasKit()
+  const surface = expectDefined(ck.MakeSurface(64, 64), 'canvas surface')
+  const renderer = new SkiaRenderer(ck, surface)
+  editor.setCanvasKit(ck, renderer)
+
+  expect(editor.graph.getNode(second.id)?.x).toBe(50)
+  editor.removeCanvasRenderer(renderer)
+  renderer.destroy()
   editor.dispose()
 })

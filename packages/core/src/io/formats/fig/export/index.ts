@@ -1,4 +1,4 @@
-import { compressFigDataSync, renameFigArchive } from '@open-pencil/fig'
+import { bytesStream, readStreamBytes, renameFigArchive, streamFigArchive } from '@open-pencil/fig'
 import {
   nameImagesForFigma,
   placeSlotContent,
@@ -7,13 +7,11 @@ import {
 } from '@open-pencil/fig/node-change'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { loadFigDataCompressor } from '@open-pencil/kiwi/fig/container'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 
-import { withFigExportRuntime } from '#core/canvas/text/shape'
-import { IS_BROWSER, IS_TAURI } from '#core/constants'
 import { figCompressionLevel } from '#core/io/formats/fig/compression'
 import { cloneSceneGraphForFigExport } from '#core/kiwi/fig/parse/transfer'
 import {
@@ -23,18 +21,19 @@ import {
 } from '#core/kiwi/fig/session/document-state'
 import { originalFigArchive } from '#core/kiwi/fig/session/original-archive'
 
+import { compressFigCanvas } from './compress'
 import { archiveImagesNamedForFigma, writePatchedFigFile } from './patch'
+import { withFigExportRuntime } from './runtime'
 import {
   exportSchema,
   figExportRecordOptions,
+  type FigExportSetup,
   figFileExtras,
   type FigFileExtrasOptions,
-  prepareFigExport,
-  type FigExportSetup,
-  type KiwiNodeChange
+  type KiwiNodeChange,
+  prepareFigExport
 } from './setup'
 import { appendVariableNodeChanges, sequentialPositions, assignSharedStyleGuids } from './variables'
-import type { CompressResult } from './worker'
 
 type InternalResourceContext = FigExportSetup & { nodeChanges: KiwiNodeChange[] }
 
@@ -64,8 +63,9 @@ function appendInternalResources(context: InternalResourceContext): void {
     context.assignedGuidValues
   )
   for (let index = 0; index < sharedStyleNodes.length; index++) {
-    nodeChanges.push(
-      ...sceneNodeToKiwi(
+    appendAll(
+      nodeChanges,
+      sceneNodeToKiwi(
         sharedStyleNodes[index],
         internalCanvasGuid,
         written + index,
@@ -82,6 +82,7 @@ function appendInternalResources(context: InternalResourceContext): void {
           componentPropertyDefinitionsById: context.componentPropertyDefinitionsById,
           modeIdToGuid: context.modeIdToGuid,
           propertyIdToGuid: context.propertyIdToGuid,
+          propertyCopyGuids: context.propertyCopyGuids,
           pluginDataOverrides: context.pluginDataOverrides,
           runtime: context.runtime
         }
@@ -101,21 +102,25 @@ function appendInternalResources(context: InternalResourceContext): void {
 }
 
 /**
- * Write `sourceGraph` as a `.fig`. A document opened from an archive and left unchanged is that
- * archive, with only its `meta.json` renamed when `documentName` differs from the name it records.
+ * `sourceGraph` as a `.fig`, written as the stream's reader asks for it. A document opened from an
+ * archive and left unchanged is that archive, with only its `meta.json` renamed when
+ * `documentName` differs from the name it records; a changed one is that archive with its changed
+ * records patched in. The document data is encoded and compressed before this returns, and the
+ * images then pass through as views, so the archive is never held whole.
  */
-export async function exportFigFile(
+export async function exportFigFileStream(
   sourceGraph: SceneGraph,
   options: FigFileExtrasOptions = {}
-): Promise<Uint8Array> {
+): Promise<ReadableStream<Uint8Array>> {
   // An archive whose images Figma cannot read is written whole rather than reused.
   const reuseArchive = await archiveImagesNamedForFigma(sourceGraph)
   const originalArchive = reuseArchive ? await originalFigArchive(sourceGraph) : null
-  const reused =
-    originalArchive && options.documentName
+  if (originalArchive) {
+    const reused = options.documentName
       ? renameFigArchive(originalArchive, options.documentName)
-      : originalArchive
-  if (reused) return reused === originalArchive ? reused.slice() : reused
+      : bytesStream(originalArchive)
+    if (reused) return reused
+  }
   return withFigExportRuntime(
     sourceGraph,
     options.ck,
@@ -125,11 +130,19 @@ export async function exportFigFile(
   )
 }
 
+/** `exportFigFileStream` read into one buffer, for callers that need the whole file. */
+export async function exportFigFile(
+  sourceGraph: SceneGraph,
+  options: FigFileExtrasOptions = {}
+): Promise<Uint8Array> {
+  return readStreamBytes(await exportFigFileStream(sourceGraph, options))
+}
+
 async function writeFigFile(
   sourceGraph: SceneGraph,
   runtime: FigNodeChangeExportRuntime,
   options: FigFileExtrasOptions
-): Promise<Uint8Array> {
+): Promise<ReadableStream<Uint8Array>> {
   await initCodec()
   populateFigInternalPages(sourceGraph)
   // The export reads the document itself and writes nothing to it. Only pages still in the
@@ -159,8 +172,9 @@ async function writeFigFile(
       .filter((child) => !child.internalOnly && child.sharedStyleType === null)
     const base = countCanvasChildren(nodeChanges, canvasGuid)
     for (let i = 0; i < children.length; i++) {
-      nodeChanges.push(
-        ...sceneNodeToKiwi(
+      appendAll(
+        nodeChanges,
+        sceneNodeToKiwi(
           children[i],
           canvasGuid,
           base + i,
@@ -175,7 +189,7 @@ async function writeFigFile(
   if (internalCanvasGuid) {
     const first = countCanvasChildren(nodeChanges, internalCanvasGuid)
     placeSlotContent(slotContentRecords, internalCanvasGuid, first, fractionalPosition)
-    nodeChanges.push(...slotContentRecords)
+    appendAll(nodeChanges, slotContentRecords)
   }
 
   const msg: Record<string, unknown> = {
@@ -193,109 +207,19 @@ async function writeFigFile(
   const kiwiData = compiled.encodeMessage(msg)
   const extras = await figFileExtras(graph, imageNames, options)
 
-  const version = graph.figKiwiVersion ?? undefined
-  const compressionLevel = figCompressionLevel(sourceGraph)
-
-  if (IS_TAURI) {
-    const { invoke } = await import('@tauri-apps/api/core')
-    return new Uint8Array(
-      await invoke<ArrayBuffer>('build_fig_file', {
-        schemaDeflated: Array.from(schemaDeflated),
-        kiwiData: Array.from(kiwiData),
-        thumbnailPng: Array.from(extras.thumbnailPNG),
-        metaJson: extras.metaJSON,
-        images: extras.images.map((e) => ({ name: e.name, data: Array.from(e.data) })),
-        figKiwiVersion: version,
-        compressionLevel
-      })
-    )
-  }
-
-  return compressFigData(
+  const canvasFig = await compressFigCanvas({
     schemaDeflated,
     kiwiData,
-    extras.thumbnailPNG,
-    extras.metaJSON,
-    extras.images,
-    version,
-    compressionLevel
-  )
-}
-
-export type { FigFileExtrasOptions }
-
-function canUseWorker(): boolean {
-  return typeof Worker !== 'undefined' && IS_BROWSER
-}
-
-function compressViaWorker(
-  schemaDeflated: Uint8Array,
-  kiwiData: Uint8Array,
-  thumbnailPNG: Uint8Array,
-  metaJSON: string,
-  imageEntries: Array<{ name: string; data: Uint8Array }>,
-  figKiwiVersion?: number,
-  compressionLevel?: number
-): Promise<Uint8Array> {
-  return new Promise((resolve, reject) => {
-    const worker = new Worker(new URL('./worker.js', import.meta.url), {
-      type: 'module'
-    })
-
-    worker.onmessage = (e: MessageEvent<CompressResult>) => {
-      if (e.data instanceof Uint8Array) resolve(e.data)
-      else reject(new Error(e.data.error))
-      worker.terminate()
-    }
-    worker.onerror = (err) => {
-      reject(new Error(err.message))
-      worker.terminate()
-    }
-
-    // Do NOT use transferables here. toUint8Array() in ByteBuffer returns a view of the
-    // internal buffer, so transferring kiwiData.buffer or schemaDeflated.buffer detaches
-    // buffers that may be shared with other views, causing "already detached" errors on
-    // subsequent saves. Structured clone (the default) copies the data safely.
-    worker.postMessage({
-      schemaDeflated,
-      kiwiData,
-      thumbnailPNG,
-      metaJSON,
-      images: imageEntries,
-      figKiwiVersion,
-      compressionLevel
-    })
+    figKiwiVersion: graph.figKiwiVersion ?? undefined,
+    compressionLevel: figCompressionLevel(sourceGraph),
+    kind: graph.documentKind
+  })
+  return streamFigArchive({
+    canvasFig,
+    thumbnailPNG: extras.thumbnailPNG,
+    metaJSON: extras.metaJSON,
+    images: extras.images
   })
 }
 
-/** Assemble a `.fig` archive with its document data compressed at `compressionLevel` (zstd). */
-export async function compressFigData(
-  schemaDeflated: Uint8Array,
-  kiwiData: Uint8Array,
-  thumbnailPNG: Uint8Array,
-  metaJSON: string,
-  imageEntries: Array<{ name: string; data: Uint8Array }>,
-  figKiwiVersion?: number,
-  compressionLevel?: number
-): Promise<Uint8Array> {
-  if (canUseWorker()) {
-    return compressViaWorker(
-      schemaDeflated,
-      kiwiData,
-      thumbnailPNG,
-      metaJSON,
-      imageEntries,
-      figKiwiVersion,
-      compressionLevel
-    )
-  }
-  return compressFigDataSync(
-    schemaDeflated,
-    kiwiData,
-    thumbnailPNG,
-    metaJSON,
-    imageEntries,
-    figKiwiVersion,
-    await loadFigDataCompressor(compressionLevel)
-  )
-}
+export type { FigFileExtrasOptions }

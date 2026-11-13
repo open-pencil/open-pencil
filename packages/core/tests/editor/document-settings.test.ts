@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { createEditor, type Editor } from '@open-pencil/core/editor'
+import { createEditor, type Editor } from '#core/editor'
 
 let editor: Editor
 
@@ -23,7 +23,9 @@ describe('document settings in the editor', () => {
     editor = createEditor()
     editor.setReadOnly(true)
     const colorSpaces: string[] = []
-    editor.onEditorEvent('document:color-space-changed', (colorSpace) => colorSpaces.push(colorSpace))
+    editor.onEditorEvent('document:color-space-changed', (colorSpace) =>
+      colorSpaces.push(colorSpace)
+    )
     editor.graph.documentColorSpace = 'display-p3'
     editor.refreshDocumentSettings()
     expect(colorSpaces).toEqual(['display-p3'])

@@ -28,7 +28,7 @@ jobs:
     outputs:
       scope: ${{ steps.classify.outputs.scope }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # A pull request's merge commit and its parents; the first parent is the base it merges into.
           fetch-depth: 2
@@ -56,20 +56,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: ./.github/actions/setup-bun
+      - uses: ./.github/actions/setup/workspace
       - name: Validate PR commit messages
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
-        run: |
-          if ! bun run check:commits --from "$BASE_SHA" --to "$HEAD_SHA" --verbose; then
-            echo '::error title=Commit messages::Check the messages listed above. Use type(scope): description, for example fix: preserve selection. See CONTRIBUTING.md#commit-messages.'
-            exit 1
-          fi
+        run: bun run check:commits --from "$BASE_SHA" --to "$HEAD_SHA" --verbose
 
   documentation:
     name: Documentation
@@ -78,14 +74,14 @@ jobs:
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: ./.github/actions/setup-bun
+      - uses: ./.github/actions/setup/workspace
+        with:
+          packages: 'true'
       - name: Validate the changelog and its fragments
         run: bun run check:changelog
-      - name: Build documentation type dependencies
-        run: bun run build:packages
       - name: Validate documentation and generated references
         run: bun run check:docs
       - name: Build documentation and check examples
@@ -98,14 +94,13 @@ jobs:
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-bun
-
-      - name: Generate package declarations
-        run: bun run build:packages
+      - uses: ./.github/actions/setup/workspace
+        with:
+          packages: 'true'
 
       - name: Verify formatting
         run: bun run format:check
@@ -119,11 +114,38 @@ jobs:
       - name: Typecheck test suites
         run: bun run check:test-types
 
+      - name: Typecheck repository tools
+        run: bun run check:tools
+
       - name: Enforce architecture and type-shape boundaries
-        run: bun run check:arch && bun run check:test-homes && bun run test:type-shapes
+        run: bun run check:arch && bun run test:type-shapes
 
       - name: Build the editor without Cloud
         run: bun run check:cloud-off
+
+      - name: Keep workflow steps to one line of shell
+        run: bun run check:workflows
+
+      - name: Keep Dockerfiles to one style
+        run: bun run check:dockerfiles
+
+      # hadolint's own image, which parses and lints every tracked Dockerfile (.hadolint.yaml).
+      - name: Lint Dockerfiles
+        run: git ls-files -z '*Dockerfile' | xargs -0 docker run --rm -v "$PWD:/repo" --workdir /repo hadolint/hadolint:v2.15.1@sha256:32dac94127fd60b7b7e3fbfc65e1383b9b5e25c9bfd7b8536de7a539fe68a12d hadolint
+
+      # actionlint's own image, which also runs ShellCheck over every step's shell.
+      - name: Lint workflows and actions
+        run: docker run --rm -v "$PWD:/repo" --workdir /repo rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667 -color
+
+      - uses: taiki-e/install-action@c509219cf42fba86913069efd0ade2458c59337b # v2.90.1
+        with:
+          tool: zizmor@1.32.0
+
+      # Online audits also check that pinned commits belong to their actions and have no advisories.
+      - name: Audit workflows and actions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: zizmor --format github .github
 
   package-quality:
     name: Package integrity
@@ -132,21 +154,20 @@ jobs:
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-bun
+      - uses: ./.github/actions/setup/workspace
+        with:
+          packages: 'true'
 
       - name: Cache npm consumer downloads
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.npm
           key: npm-consumers-${{ runner.os }}-${{ hashFiles('bun.lock') }}
           restore-keys: npm-consumers-${{ runner.os }}-
-
-      - name: Build publishable packages
-        run: bun run build:packages
 
       - name: Validate installed package artifacts with Node and Bun
         run: bun run test:packages
@@ -164,11 +185,11 @@ jobs:
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-bun
+      - uses: ./.github/actions/setup/workspace
 
       - name: Validate generated brand assets
         run: bun run check:icons
@@ -191,8 +212,8 @@ jobs:
       - name: Test repository tooling
         run: bun run test:tools
 
-      - name: Detect duplicated product code
-        run: bun run test:dupes
+      - name: Detect duplicated product code and test helpers
+        run: bun run test:dupes && bun run test:dupes:helpers
 
   storybook:
     name: Component workshop
@@ -201,14 +222,13 @@ jobs:
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-bun
-
-      - name: Build component dependencies
-        run: bun run build:packages
+      - uses: ./.github/actions/setup/workspace
+        with:
+          packages: 'true'
 
       - name: Build static Storybook
         run: bun run build-storybook
@@ -225,18 +245,23 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: dtolnay/rust-toolchain@stable
+      # The image has no Rust: rustup alone, which installs the toolchain rust-toolchain.toml pins.
+      - name: Install rustup
+        run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none && echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
 
-      - uses: Swatinem/rust-cache@v2
+      - name: Install the pinned Rust toolchain
+        run: rustup toolchain install
+
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
-          workspaces: desktop -> target
+          workspaces: . -> target
           key: native-test
 
-      - uses: ./.github/actions/setup-bun
+      - uses: ./.github/actions/setup/workspace
 
       - name: Typecheck native interaction tests
         run: bun run check:native-test
@@ -247,6 +272,45 @@ jobs:
       - name: Compile native-test Tauri feature
         run: cargo check --manifest-path desktop/Cargo.toml --features native-test
 
+  html-engine:
+    name: Rust crates
+    needs: changes
+    if: needs.changes.outputs.scope == 'code' || needs.changes.outputs.scope == 'cloud'
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/html-engine
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup/workspace
+
+      # The runner's rustup installs the toolchain rust-toolchain.toml pins.
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: . -> target
+          key: html-engine
+
+      - uses: taiki-e/install-action@c509219cf42fba86913069efd0ade2458c59337b # v2.90.1
+        with:
+          tool: cargo-deny@0.20.2
+
+      - name: Check Rust formatting and lints
+        run: bun run check:rust
+
+      - name: Check the HTML engine's dependency licenses
+        run: bun run check:licenses
+
+      - name: Check the desktop app's dependency licenses
+        working-directory: .
+        run: bun run check:licenses:desktop
+
+      - name: Build the WebAssembly module
+        run: bun run build:wasm
+
   unit-tests:
     needs: changes
     if: needs.changes.outputs.scope == 'code' || needs.changes.outputs.scope == 'cloud'
@@ -256,16 +320,17 @@ jobs:
       fail-fast: true
       matrix:
         group: [app, cli, core, dom, fig, mcp, render, scene-graph, vue]
-    name: Unit tests — ${{ matrix.group }}
+    # GitHub appends the group, and a skipped job shows the bare name.
+    name: Unit tests
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-bun
+      - uses: ./.github/actions/setup/workspace
         with:
           lfs: 'true'
-          # Quick shards read only the small fixtures; heavy-tests.yml pulls the large .fig corpora.
+          # Quick shards read only the small fixtures; ci-heavy.yml pulls the large .fig corpora.
           lfs-include: tests/fixtures/gold-preview.fig,tests/fixtures/circle-text.fig,tests/fixtures/slots.fig,tests/fixtures/variable-override-precedence.fig,tests/fixtures/fonts/*
 
       - name: Build shared Core test dependency
@@ -281,11 +346,15 @@ jobs:
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-bun
+      - uses: ./.github/actions/setup/workspace
+
+      # The Worker reads a reported document's thumbnail with it; Bun runs its source, tsc reads its types.
+      - name: Build the .fig reader the Worker uses
+        run: bun --filter @open-pencil/fig build
 
       - name: Typecheck and test the feedback Worker against a local D1
         run: bun run test:feedback
@@ -297,20 +366,20 @@ jobs:
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-bun
-
-      - name: Generate package declarations
-        run: bun run build:packages
+      - uses: ./.github/actions/setup/workspace
+        with:
+          packages: 'true'
 
       - name: Typecheck and run Cloud unit and integration tests
         run: bun run test:cloud
 
   cloud-storage:
-    name: Cloud storage — ${{ matrix.store }}
+    # No matrix value in the name: GitHub appends it, and a skipped job shows the bare name.
+    name: Cloud storage
     needs: changes
     if: needs.changes.outputs.scope == 'cloud'
     timeout-minutes: 15
@@ -318,51 +387,44 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          # PostgreSQL and SeaweedFS: object-store checks, then the full revision flow.
-          - store: SeaweedFS
-            script: test:e2e
-          # Garage's S3 compatibility for the object-store checks.
-          - store: Garage
-            script: test:e2e:garage
-          # The Cloudflare Worker under wrangler dev, with its relay Durable Object, against
-          # PostgreSQL and SeaweedFS.
-          - store: Cloudflare Workers
-            script: test:e2e:cloudflare
-            worker: true
+        # SeaweedFS: PostgreSQL and SeaweedFS, object-store checks, then the full revision flow.
+        # Garage: Garage's S3 compatibility for the object-store checks.
+        # Cloudflare Workers: the Worker under wrangler dev, with its relay Durable Object, against
+        # PostgreSQL and SeaweedFS.
+        store: [SeaweedFS, Garage, Cloudflare Workers]
+    env:
+      CLOUD_E2E_SCRIPT: ${{ fromJSON('{"SeaweedFS":"test:e2e","Garage":"test:e2e:garage","Cloudflare Workers":"test:e2e:cloudflare"}')[matrix.store] }}
+      # Only the Workers run serves the built Cloud site.
+      WORKER: ${{ matrix.store == 'Cloudflare Workers' }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: ./.github/actions/setup-bun
-
-      - name: Generate package declarations
-        run: bun run build:packages
+      - uses: ./.github/actions/setup/workspace
+        with:
+          packages: 'true'
 
       # The editor's demo document draws its shader fills at build time in a headless Chromium.
       - name: Install Chromium for the demo document
-        if: matrix.worker
-        uses: ./.github/actions/setup-playwright
+        if: env.WORKER == 'true'
+        uses: ./.github/actions/setup/playwright
 
       # The Worker serves the editor and the portal as static assets, and every official
       # deployment bundles them.
-      - name: Build the Cloud site and bundle the official Workers
-        if: matrix.worker
-        run: |
-          bun run build:cloud
-          for deployment in packages/cloud/deploy/openpencil/*/; do
-            (cd "$deployment" && bunx wrangler deploy --dry-run --assets "$GITHUB_WORKSPACE/dist-cloud")
-          done
+      - name: Build the Cloud site
+        if: env.WORKER == 'true'
+        run: bun run build:cloud
+      - name: Bundle the official Workers
+        if: env.WORKER == 'true'
+        run: bun tools/ci/cloud-deploy/src/bundle.ts
 
       - name: Run Cloud end-to-end tests against ${{ matrix.store }}
-        env:
-          CLOUD_E2E_SCRIPT: ${{ matrix.script }}
         run: bun --filter @open-pencil/cloud "$CLOUD_E2E_SCRIPT"
 
   result:
     name: CI result
-    needs: [changes, commit-messages, documentation, source-quality, package-quality, repository-quality, storybook, native-test-contracts, unit-tests, feedback-tests, cloud-tests, cloud-storage]
+    needs: [changes, commit-messages, documentation, source-quality, package-quality, repository-quality, storybook, native-test-contracts, html-engine, unit-tests, feedback-tests, cloud-tests, cloud-storage]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 3
@@ -371,7 +433,7 @@ jobs:
       contents: read
       statuses: write
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0

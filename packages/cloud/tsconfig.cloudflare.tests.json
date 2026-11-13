@@ -1,0 +1,12 @@
+{
+  "extends": "./src/runtime/cloudflare/tsconfig.json",
+  "compilerOptions": {
+    "types": ["@cloudflare/workers-types", "bun"],
+    "paths": {
+      "#cloud/*": ["./src/*"],
+      "#cloud-tests/*": ["./tests/*"]
+    }
+  },
+  "include": ["tests/runtime/cloudflare/relay/**/*.ts"],
+  "exclude": []
+}

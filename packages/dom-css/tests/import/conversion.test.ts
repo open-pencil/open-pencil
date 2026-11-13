@@ -9,9 +9,13 @@ import { createHeadlessCSSRuntime, htmlToDesignDocument, htmlToSceneGraph } from
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { pixelLength } from '@open-pencil/scene-graph/text'
-
-import { TEST_COLORS, cardCSS, cardHTML, fixtureCSS, fixtureHTML } from '../helpers'
-
+import {
+  DOM_CSS_COLORS,
+  cardCSS,
+  cardHTML,
+  fixtureCSS,
+  fixtureHTML
+} from '@open-pencil/test-support/dom-css'
 const TRANSPARENT_PIXEL_DATA_URL =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADElEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
 
@@ -52,14 +56,14 @@ function createStyleRoundTripGraph() {
           height: '120px',
           'padding-block': '8px',
           'padding-inline': '12px',
-          'border-color': TEST_COLORS.slate200,
+          'border-color': DOM_CSS_COLORS.slate200,
           'border-style': 'dashed',
           'border-top-width': '0px',
           'border-right-width': '2px',
           'border-bottom-width': '0px',
           'border-left-width': '4px',
           opacity: '0.75',
-          'box-shadow': `0px 8px 24px 0px ${TEST_COLORS.slateShadow}, 0 0 2px ${TEST_COLORS.slate200}`
+          'box-shadow': `0px 8px 24px 0px ${DOM_CSS_COLORS.dialogShadow}, 0 0 2px ${DOM_CSS_COLORS.slate200}`
         },
         children: [
           {
@@ -67,7 +71,7 @@ function createStyleRoundTripGraph() {
             tagName: 'h1',
             attrs: {},
             computedStyle: {
-              color: TEST_COLORS.slate950,
+              color: DOM_CSS_COLORS.slate950,
               'font-family': 'Inter, sans-serif',
               'font-size': '18px',
               'font-weight': '700',
@@ -77,7 +81,7 @@ function createStyleRoundTripGraph() {
               'text-transform': 'uppercase',
               'white-space': 'nowrap',
               opacity: '0.5',
-              'text-shadow': `0px 1px 2px 0px ${TEST_COLORS.slateShadow}`
+              'text-shadow': `0px 1px 2px 0px ${DOM_CSS_COLORS.dialogShadow}`
             },
             children: [{ type: 'text', text: 'Round trip' }]
           }
@@ -328,6 +332,35 @@ describe('@open-pencil/dom-css conversion', () => {
     if (roundTripImage?.type !== 'element') throw new Error('Expected image element')
     expect(roundTripImage.tagName).toBe('img')
     expect(roundTripImage.attrs.src).toBe('https://example.com/hero.png')
+  })
+
+  it('keeps an SVG data URL as the source rather than an image fill', () => {
+    for (const src of [
+      'data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%2F%3E',
+      'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciLz4='
+    ]) {
+      const graph = designDocumentToSceneGraph({
+        type: 'document',
+        children: [
+          {
+            type: 'element',
+            tagName: 'img',
+            attrs: { src },
+            computedStyle: { width: '32px', height: '32px' },
+            children: []
+          }
+        ]
+      })
+      const page = graph.getPages()[0]
+      const image = expectFrame(page ? graph.getChildren(page.id)[0] : undefined)
+      expect(image.fills[0]).toBeUndefined()
+      expect(image.pluginData).toContainEqual({
+        pluginId: 'open-pencil-dom-css',
+        key: 'image-source-url',
+        value: src
+      })
+      expect(graph.images.size).toBe(0)
+    }
   })
 
   it('maps data URL images, object fit, and aspect ratio', () => {

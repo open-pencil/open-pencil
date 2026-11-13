@@ -3,6 +3,7 @@ import { createMaterialSymbolsProvider } from './material-symbols/provider'
 import { createIconifyProvider, type IconProvider } from './provider'
 import { createIconSetsProvider, type IconSetSource } from './sets'
 
+export { tintedIconPath } from './artwork'
 export {
   createIconifyProvider,
   parseIconName,

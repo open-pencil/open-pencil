@@ -38,7 +38,7 @@ const tabIndex = computed(
 function navigate(event: KeyboardEvent, index: number) {
   const row = Math.floor(index / 3)
   const column = index % 3
-  let next = index
+  let next: number
   switch (event.code) {
     case 'ArrowLeft':
       next = row * 3 + Math.max(0, column - 1)
@@ -72,6 +72,7 @@ function navigate(event: KeyboardEvent, index: number) {
 <template>
   <div
     role="group"
+    dir="ltr"
     :aria-label="label"
     data-slot="alignment"
     :class="styles.grid({ class: [ui?.grid, normalizeClass(className)] })"

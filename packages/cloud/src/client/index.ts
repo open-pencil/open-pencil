@@ -1,11 +1,18 @@
 export {
-  CloudAIError,
-  cloudAIFetch,
-  createCloudAIClient,
-  type CloudAIClient,
-  type CloudAIClientOptions,
-  type CloudAITokenSource
-} from './ai'
+  CloudServiceError,
+  CloudServiceInsecureEndpointError,
+  cloudServicesFetch,
+  createCloudServicesClient,
+  type CloudServicesClient,
+  type CloudServicesClientOptions,
+  type CloudServicesTokenSource
+} from './services'
+export {
+  CloudBillingError,
+  createCloudBillingClient,
+  type CloudBillingClient,
+  type CloudBillingClientOptions
+} from './billing'
 export { cloudEditorReturnURL, cloudRedirectPath, cloudSignInURL } from './auth/navigation'
 export {
   CloudAPIError,

@@ -1,9 +1,14 @@
-import { describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
 import { asTextNode, createAPI } from '#core-tests/helpers/figma-api'
 
 import { hasInstanceOverride } from '@open-pencil/scene-graph/instances'
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
+
+import { graphOf } from '#core/figma-api/graph'
+
+beforeAll(() => registerTestFont())
 
 describe('components', () => {
   test('exposes component property accessors and applies instance properties', () => {
@@ -149,7 +154,7 @@ describe('components', () => {
 })
 
 describe('instance child edits record overrides', () => {
-  test('renaming and resizing an instance child survives component sync and export', () => {
+  test('renaming an instance child survives component sync; resizing it does nothing, as in Figma', () => {
     const api = createAPI()
     const component = api.createComponent()
     const child = api.createRectangle()
@@ -160,20 +165,21 @@ describe('instance child edits record overrides', () => {
     instanceChild.name = 'renamed'
     instanceChild.resize(32, 32)
 
-    expect(hasInstanceOverride(api.graph, instanceChild.id, 'name')).toBe(true)
-    expect(hasInstanceOverride(api.graph, instanceChild.id, 'width')).toBe(true)
+    expect(hasInstanceOverride(graphOf(api), instanceChild.id, 'name')).toBe(true)
+    expect(hasInstanceOverride(graphOf(api), instanceChild.id, 'width')).toBe(false)
+    expect(instanceChild.width).toBe(24)
     child.resize(40, 40)
     child.name = 'component child'
-    api.graph.syncInstances(component.id)
+    graphOf(api).syncInstances(component.id)
     expect(instanceChild.name).toBe('renamed')
-    expect(instanceChild.width).toBe(32)
+    expect(instanceChild.width).toBe(40)
   })
 })
 
 describe('applied shared styles on instance children', () => {
   test('a text style applied inside an instance is an override and follows the component otherwise', () => {
     const api = createAPI()
-    const graph = api.graph
+    const graph = graphOf(api)
     const page = graph.getPages()[0]
     const heading = graph.createNode('TEXT', page.id, {
       name: 'Heading',
@@ -185,17 +191,19 @@ describe('applied shared styles on instance children', () => {
       sharedStyleType: 'TEXT',
       text: 'Ag'
     })
+    heading.source.id = 'S:heading,'
+    body.source.id = 'S:body,'
     const component = graph.createNode('COMPONENT', page.id, { name: 'Card' })
     const title = graph.createNode('TEXT', component.id, { name: 'title', text: 'Title' })
     const first = expectDefined(graph.createInstance(component.id, page.id), 'first instance')
     const second = expectDefined(graph.createInstance(component.id, page.id), 'second instance')
     const firstTitle = expectDefined(graph.getChildren(first.id)[0], 'first title')
-    asTextNode(api.wrapNode(firstTitle.id)).textStyleId = heading.id
+    asTextNode(api.wrapNode(firstTitle.id)).textStyleId = 'S:heading,'
     expect(hasInstanceOverride(graph, firstTitle.id, 'textStyleId')).toBe(true)
 
-    graph.updateNode(title.id, { textStyleId: body.id })
+    graph.updateNode(title.id, { textStyleId: 'S:body,' })
     graph.syncInstances(component.id)
-    expect(graph.getNode(firstTitle.id)?.textStyleId).toBe(heading.id)
-    expect(graph.getChildren(second.id)[0]?.textStyleId).toBe(body.id)
+    expect(graph.getNode(firstTitle.id)?.textStyleId).toBe('S:heading,')
+    expect(graph.getChildren(second.id)[0]?.textStyleId).toBe('S:body,')
   })
 })

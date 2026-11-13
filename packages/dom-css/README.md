@@ -30,7 +30,7 @@ Package scripts:
 - `bun run build` — builds the distributable `dist` entrypoint
 - `bun run check` — runs typecheck, tests, and build in sequence
 
-The repository also keeps integration/oracle coverage under `tests/engine/dom-css` and `tests/e2e/dom-css`. The package-local suite focuses on the library's public API, while the repo-level E2E suite verifies browser `getComputedStyle()` parity through Playwright.
+The repository also keeps integration/oracle coverage under `packages/core/tests` and `tests/e2e/dom-css`. The package-local suite focuses on the library's public API, while the repo-level E2E suite verifies browser `getComputedStyle()` parity through Playwright.
 
 ## Runtime model
 

@@ -1,8 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import { parseDrawIOFile } from '@open-pencil/drawio'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import {
@@ -14,6 +12,7 @@ import {
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { createShapeWithText } from '@open-pencil/scene-graph/generated'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '#core/io'
 import type { ExportTarget } from '#core/io'

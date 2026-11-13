@@ -4,6 +4,7 @@ import { computed, onMounted, ref } from 'vue'
 
 import {
   ACP_AGENTS,
+  acpAgentFor,
   AI_PROVIDERS,
   AUTOMATION_HTTP_PORT,
   IS_TAURI,
@@ -13,6 +14,7 @@ import { useAIMessages } from '@open-pencil/vue/i18n'
 
 import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
 import { cloudAIAvailable } from '@/app/cloud/integration'
+import { canRunHostProcesses } from '@/app/tauri/capabilities'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import type { AppSelectGroup } from '@/components/ui/select/select'
 
@@ -54,13 +56,18 @@ interface ProviderSelectProps {
 
 const { allowAgents = true, ui } = defineProps<ProviderSelectProps>()
 
-if (IS_TAURI) {
+// Agents run as local processes, and they reach the canvas through the MCP server.
+const agentsAvailable = canRunHostProcesses()
+
+if (agentsAvailable) {
   onMounted(() => {
     void checkMCPHealth()
   })
 }
 
-const acpAgents = computed(() => (allowAgents && IS_TAURI && mcpAvailable.value ? ACP_AGENTS : []))
+const acpAgents = computed(() =>
+  allowAgents && agentsAvailable && mcpAvailable.value ? ACP_AGENTS : []
+)
 
 const providerID = defineModel<AIProviderID>({ required: true })
 const providerDef = computed(
@@ -69,10 +76,8 @@ const providerDef = computed(
 
 const displayName = computed(() => {
   if (providerID.value === 'harness:pi') return 'Pi'
-  if (providerID.value.startsWith('acp:')) {
-    const agentId = providerID.value.replace('acp:', '')
-    return ACP_AGENTS.find((agent) => agent.id === agentId)?.name ?? providerID.value
-  }
+  if (providerID.value.startsWith('acp:'))
+    return acpAgentFor(providerID.value)?.name ?? providerID.value
   return providerDef.value.name
 })
 

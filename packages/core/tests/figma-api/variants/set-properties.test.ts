@@ -1,7 +1,9 @@
-import { expect, test } from 'bun:test'
+import { beforeAll, expect, test } from 'bun:test'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
+beforeAll(() => registerTestFont())
 
 // Recorded with the same script in Figma desktop 126.
 
@@ -70,4 +72,32 @@ test('setProperties changes nothing when an instance swap value is no component'
     instance.setProperties({ Size: 'Large', [text]: 'Lost', [swap]: 'missing' })
   ).toThrow('Unable to apply component property: Icon')
   expect(state()).toEqual(before)
+})
+
+// Recorded in Figma desktop 126: a variant's properties are its set's.
+test('a property added to a variant is refused, and combining moves a component’s to the set', () => {
+  const figma = new FigmaAPI(new SceneGraph())
+  const small = figma.createComponent()
+  small.name = 'Size=Small'
+  const large = figma.createComponent()
+  large.name = 'Size=Large'
+  figma.combineAsVariants([small, large], figma.currentPage)
+  expect(() => large.addComponentProperty('Own', 'BOOLEAN', true)).toThrow(
+    'in addComponentProperty: Can only set component property definitions on a product component'
+  )
+
+  const huge = figma.createComponent()
+  huge.name = 'Size=Huge'
+  const dot = figma.createFrame()
+  huge.appendChild(dot)
+  const show = huge.addComponentProperty('Show', 'BOOLEAN', true)
+  dot.componentPropertyReferences = { visible: show }
+  const tiny = figma.createComponent()
+  tiny.name = 'Size=Tiny'
+  const set = figma.combineAsVariants([huge, tiny], figma.currentPage)
+  expect(Object.keys(set.componentPropertyDefinitions).sort()).toEqual([show, 'Size'].sort())
+  expect(dot.componentPropertyReferences).toEqual({ visible: show })
+  const instance = huge.createInstance()
+  instance.setProperties({ [show]: false })
+  expect(instance.componentProperties[show]?.value).toBe(false)
 })

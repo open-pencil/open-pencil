@@ -1,0 +1,2 @@
+- A document reloaded from disk returns to the page it showed with that page's layers, where the page showed empty.
+- Opening a `.fig` file in the macOS app no longer reloads it from disk seconds later.

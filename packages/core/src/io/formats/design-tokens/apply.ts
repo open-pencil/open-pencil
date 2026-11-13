@@ -16,6 +16,7 @@ import type {
 import { copyEffects } from '@open-pencil/scene-graph/copy'
 import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
 import { randomHex } from '@open-pencil/scene-graph/random'
+import { effectBindingTarget } from '@open-pencil/scene-graph/variables'
 
 import { reconcileVariableLayouts } from '#core/layout/variables'
 
@@ -50,6 +51,7 @@ export interface TokenImportTarget {
   addStyle(style: PlannedStyle, fields: Partial<SceneNode>): SceneNode
   updateNode(nodeId: string, changes: Partial<SceneNode>): void
   bindVariable(nodeId: string, field: string, variableId: string): void
+  unbindVariable(nodeId: string, field: string): void
 }
 
 export interface TokenImportResult {
@@ -207,6 +209,12 @@ function applyStyles(
     const node = existing ?? target.addStyle(style, { ...style.fields, name: style.name })
     const own = existing && changedFields(existing, style.fields)
     if (own) target.updateNode(node.id, own)
+    // An effect field the token now writes as a literal lets its variable go.
+    if (existing && style.kind === 'EFFECT') {
+      for (const field of Object.keys(node.boundVariables))
+        if (effectBindingTarget(field) && !Object.hasOwn(style.bindings, field))
+          target.unbindVariable(node.id, field)
+    }
     for (const [field, alias] of Object.entries(style.bindings)) {
       const variableId = aliasId(alias, created)
       if (variableId && node.boundVariables[field] !== variableId)
@@ -270,9 +278,13 @@ function graphTokenImportTarget(
     setDefaultMode: (collectionId, modeId) => graph.setDefaultMode(collectionId, modeId),
     setModeCondition: (collectionId, modeId, condition) => {
       const mode = collection(collectionId)?.modes.find((entry) => entry.modeId === modeId)
-      if (mode) mode.condition = condition
+      if (!mode) return
+      graph.willChangeCollection(collectionId)
+      mode.condition = condition
     },
     setModeAttribute: (collectionId, name) => {
+      if (!collection(collectionId)) return
+      graph.willChangeCollection(collectionId)
       const found = collection(collectionId)
       if (found) found.modeAttribute = name
     },
@@ -281,12 +293,14 @@ function graphTokenImportTarget(
     setValue: (variableId, modeId, value) => {
       const variable = graph.variables.get(variableId)
       if (!variable) return
+      graph.willChangeVariable(variableId)
       variable.valuesByMode[modeId] = structuredClone(value)
       changed.add(variableId)
     },
     setTokenFields: (variableId, fields) => {
       const variable = graph.variables.get(variableId)
       if (!variable) return
+      graph.willChangeVariable(variableId)
       for (const [key, value] of Object.entries(fields))
         if (value === undefined) Reflect.deleteProperty(variable, key)
         else Object.assign(variable, { [key]: structuredClone(value) })
@@ -297,7 +311,8 @@ function graphTokenImportTarget(
       return node
     },
     updateNode: (nodeId, changes) => graph.updateNode(nodeId, changes),
-    bindVariable: (nodeId, field, variableId) => graph.bindVariable(nodeId, field, variableId)
+    bindVariable: (nodeId, field, variableId) => graph.bindVariable(nodeId, field, variableId),
+    unbindVariable: (nodeId, field) => graph.unbindVariable(nodeId, field)
   }
 }
 

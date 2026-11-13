@@ -2,8 +2,29 @@ import type { Page } from '@playwright/test'
 
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
+/** A frame to add: its size and layout, and the rectangles inside it. */
+interface FrameSetup {
+  name: string
+  layoutMode?: 'HORIZONTAL' | 'VERTICAL'
+  width: number
+  height: number
+  children: { name: string; x?: number; y?: number; width?: number; height?: number }[]
+}
+
 /** Probes and drivers for layers on the current page. */
 export function layerDriver(page: () => Page) {
+  /** Adds a frame with rectangles inside to the current page; returns their ids. */
+  function addFrame(setup: FrameSetup): Promise<{ frame: string; children: string[] }> {
+    return page().evaluate(({ children, ...frameProps }) => {
+      const store = window.openPencil?.getStore?.()
+      if (!store) throw new Error('OpenPencil store not initialized')
+      const frame = store.graph.createNode('FRAME', store.state.currentPageId, frameProps)
+      const ids = children.map((child) => store.graph.createNode('RECTANGLE', frame.id, child).id)
+      store.requestRender()
+      return { frame: frame.id, children: ids }
+    }, setup)
+  }
+
   return {
     /** Where the centre of the named layer shows on the canvas, in canvas-element pixels. */
     screenCenter(name: string): Promise<Vector> {
@@ -23,62 +44,53 @@ export function layerDriver(page: () => Page) {
     },
 
     /**
+     * Where the bottom-right handle of the one selected, upright layer shows on the canvas, in
+     * canvas-element pixels.
+     */
+    selectedCorner(): Promise<Vector> {
+      return page().evaluate(() => {
+        const store = window.openPencil?.getStore?.()
+        if (!store) throw new Error('OpenPencil store not initialized')
+        const [id] = store.state.selectedIds
+        const layer = id ? store.graph.getNode(id) : undefined
+        if (!layer) throw new Error('No layer selected')
+        const position = store.graph.getAbsolutePosition(id)
+        const { zoom, panX, panY } = store.state
+        return {
+          x: (position.x + layer.width) * zoom + panX,
+          y: (position.y + layer.height) * zoom + panY
+        }
+      })
+    },
+
+    /**
      * Driver: an auto layout frame on the current page with a rectangle per name in its flow,
      * expanded in the layers panel by selecting its first item.
      */
-    autoLayoutWithItems(
+    async autoLayoutWithItems(
       name: string,
       layoutMode: 'HORIZONTAL' | 'VERTICAL',
       itemNames: readonly string[]
     ): Promise<{ frame: string; items: string[] }> {
-      return page().evaluate(
-        ({ frameName, mode, names }) => {
-          const store = window.openPencil?.getStore?.()
-          if (!store) throw new Error('OpenPencil store not initialized')
-          const frame = store.graph.createNode('FRAME', store.state.currentPageId, {
-            name: frameName,
-            layoutMode: mode,
-            width: 400,
-            height: 120
-          })
-          const items = names.map(
-            (itemName) =>
-              store.graph.createNode('RECTANGLE', frame.id, {
-                name: itemName,
-                width: 80,
-                height: 80
-              }).id
-          )
-          store.select([items[0]])
-          store.requestRender()
-          return { frame: frame.id, items }
-        },
-        { frameName: name, mode: layoutMode, names: itemNames }
-      )
+      const { frame, children: items } = await addFrame({
+        name,
+        layoutMode,
+        width: 400,
+        height: 120,
+        children: itemNames.map((itemName) => ({ name: itemName, width: 80, height: 80 }))
+      })
+      await page().evaluate((first) => window.openPencil?.getStore?.().select([first]), items[0])
+      return { frame, items }
     },
 
     /** Driver: a frame on the current page with `count` rectangles named `Child 1` and on. */
     frameWithChildren(name: string, count: number): Promise<{ frame: string; children: string[] }> {
-      return page().evaluate(
-        ({ frameName, childCount }) => {
-          const store = window.openPencil?.getStore?.()
-          if (!store) throw new Error('OpenPencil store not initialized')
-          const frame = store.graph.createNode('FRAME', store.state.currentPageId, {
-            name: frameName,
-            width: 400,
-            height: 400
-          })
-          const children = Array.from(
-            { length: childCount },
-            (_, i) =>
-              store.graph.createNode('RECTANGLE', frame.id, { name: `Child ${i + 1}`, x: i, y: i })
-                .id
-          )
-          store.requestRender()
-          return { frame: frame.id, children }
-        },
-        { frameName: name, childCount: count }
-      )
+      return addFrame({
+        name,
+        width: 400,
+        height: 400,
+        children: Array.from({ length: count }, (_, i) => ({ name: `Child ${i + 1}`, x: i, y: i }))
+      })
     },
 
     /** Driver: selects layers by id, as a click on the canvas does, revealing them in the panel. */

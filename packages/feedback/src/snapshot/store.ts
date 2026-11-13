@@ -1,4 +1,4 @@
-import type { FeedbackDatabase } from '#feedback/db'
+import { runBatch, type FeedbackDatabase } from '#feedback/db'
 import type { D1Database } from '@cloudflare/workers-types/index'
 import type { CalendarDate } from '@internationalized/date'
 import { chunk } from 'es-toolkit'
@@ -59,11 +59,6 @@ export async function replaceDays<T extends SnapshotTable>(
       statements.push(db.insertInto(table).values(batch).compile())
   }
   await runBatch(d1, statements)
-}
-
-async function runBatch(d1: D1Database, statements: CompiledQuery[]): Promise<void> {
-  if (!statements.length) return
-  await d1.batch(statements.map((query) => d1.prepare(query.sql).bind(...query.parameters)))
 }
 
 /** Adds issues and pull requests, or updates the ones already mirrored, in one batch. */

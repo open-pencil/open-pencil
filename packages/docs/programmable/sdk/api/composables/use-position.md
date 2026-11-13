@@ -7,15 +7,9 @@ description: Read and update selected node position, size, rotation, alignment, 
 
 `usePosition()` is a control composable for position-related UI.
 
-It exposes selected-node values like:
+`panelProp(key)` gives the value a field shows for `'x'`, `'y'`, `'width'`, `'height'`, or `'rotation'`: rounded to two decimals, as Figma's panel shows it, or `MIXED` when the selected layers show different values. The layers keep their exact values.
 
-- `x`
-- `y`
-- `width`
-- `height`
-- `rotation`
-
-`x`, `y`, and `rotation` read as Figma's properties panel shows them: the top-left of the turned layer's box on the canvas, measured from its frame or page, and its counterclockwise angle. `updateProp('x' | 'y' | 'rotation', value)` moves or turns each selected node so it shows that value, turning about its center. `panelProp(key)` gives the shared value across a multi-selection, or `MIXED`.
+`x`, `y`, and `rotation` read as Figma's properties panel shows them: the top-left of the turned layer's box on the canvas, measured from its frame or page, and its counterclockwise angle. `updateProp('x' | 'y' | 'rotation', value)` moves or turns each selected node so it shows that value, turning about its center.
 
 and actions like:
 
@@ -35,7 +29,9 @@ const position = usePosition()
 ## Basic example
 
 ```ts
-const { x, y, width, height, rotation, updateProp, commitProp } = usePosition()
+const { panelProp, updateProp, commitProp } = usePosition()
+const x = panelProp('x')
+const width = panelProp('width')
 ```
 
 ## Practical examples

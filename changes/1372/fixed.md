@@ -1,1 +1,0 @@
-- An image stroke draws once its image is ready, instead of drawing black while it loads.

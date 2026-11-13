@@ -1,10 +1,9 @@
 import { expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-
 import { createEditor } from '@open-pencil/core'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { setInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 function boundText() {
   const graph = new SceneGraph()
@@ -32,10 +31,14 @@ test('text bound to a variable follows an edited value and its undo', () => {
   expect(text.text).toBe('Save')
 })
 
-test('bound text and visibility follow the mode the collection shows', () => {
+test('bound text and visibility follow a mode set on the page', () => {
   const { editor, copy, french, text } = boundText()
 
-  editor.setActiveMode(copy.id, french)
+  editor.updateNodeWithUndo(
+    editor.graph.getPages()[0].id,
+    { variableModes: { [copy.id]: french } },
+    'Set mode'
+  )
 
   expect(text.text).toBe('Enregistrer')
   expect(text.visible).toBe(false)

@@ -22,7 +22,7 @@ test('storage settings keep secrets behind the credential manager', async ({ pag
   await expect(secret).toHaveAttribute('placeholder', /Key saved/)
   expect(
     await page.evaluate(() => {
-      // oxlint-disable-next-line open-pencil/no-direct-storage-access -- Inspect persisted bytes to detect plaintext credential leaks.
+      // oxlint-disable-next-line @open-pencil/runtime/no-direct-storage-access -- Inspect persisted bytes to detect plaintext credential leaks.
       return Object.values(localStorage).some((value) => value.includes('storage-secret'))
     })
   ).toBe(false)
@@ -149,7 +149,7 @@ test('MCP automation settings filter and persist tool availability', async ({ pa
   await page.getByTestId('settings-mcp-tool-access').click()
   await expect(createShape).toHaveAttribute('data-state', 'unchecked')
 
-  await page.getByRole('button', { name: 'Restore defaults' }).click()
+  await page.getByRole('button', { name: 'Reset to default' }).click()
   await expect(createShape).toHaveAttribute('data-state', 'checked')
 })
 
@@ -161,17 +161,18 @@ test('model library keeps reusable profiles and role assignments', async ({ page
   await page.getByTestId('app-settings-trigger').click()
   await page.getByTestId('settings-section-ai').click()
   await page.getByTestId('settings-add-model').click()
+  await page.locator('[data-provider="google"]').click()
   await page.getByLabel('Name').fill('Fast model')
-  await page.getByTestId('settings-model-provider').click()
-  await page.getByRole('option', { name: 'Google AI' }).click()
   await page.getByLabel('Model ID').click()
   await page.getByRole('option').first().click()
   await page.getByRole('button', { name: 'Save model' }).click()
 
   await page.getByTestId('settings-add-model').click()
+  // The chooser marks the provider the saved model runs on.
+  await expect(page.locator('[data-provider="google"]')).toHaveAttribute('data-set-up')
+  await expect(page.locator('[data-provider="openrouter"]')).not.toHaveAttribute('data-set-up')
+  await page.locator('[data-provider="openrouter"]').click()
   await page.getByLabel('Name').fill('Vision model')
-  await page.getByTestId('settings-model-provider').click()
-  await page.getByRole('option', { name: 'OpenRouter' }).click()
   await page.getByLabel('Model ID').first().click()
   await page.getByRole('option').first().click()
   await page.getByRole('button', { name: 'Save model' }).click()

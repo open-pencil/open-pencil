@@ -1,9 +1,11 @@
-import type { Canvas } from 'canvaskit-wasm'
-
-import type { Fill, NodeType, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { Canvas } from '@open-pencil/canvaskit'
+import type { Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { strokeOverflow as strokeReach } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
+import { regionFills } from '@open-pencil/scene-graph/vector-network'
 
 import { paintBooleanOperation } from '#core/canvas/boolean'
 import { renderMaskedChildIds } from '#core/canvas/masks'
@@ -28,15 +30,6 @@ const SILHOUETTE_PAINT: Fill = {
   visible: true
 }
 
-const LAYER_CONTAINER_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
-  'FRAME',
-  'GROUP',
-  'SECTION',
-  'COMPONENT',
-  'COMPONENT_SET',
-  'INSTANCE'
-])
-
 /**
  * Figma casts a full-strength shadow from any paint above 0% opacity and none from a paint at
  * 0% or a gradient whose stops are all transparent, so such a paint counts as no paint at all.
@@ -47,15 +40,8 @@ export function paintCastsShadow(paint: Fill): boolean {
 }
 
 /** Frames, groups, and the like, whose shadows Figma casts from their children as well. */
-export function isLayerContainer(node: SceneNode): boolean {
-  return LAYER_CONTAINER_TYPES.has(node.type)
-}
-
 export function fillsCastShadow(node: SceneNode): boolean {
-  return (
-    node.fills.some(paintCastsShadow) ||
-    node.fillGeometry.some((geometry) => geometry.fills?.some(paintCastsShadow) ?? false)
-  )
+  return node.fills.some(paintCastsShadow) || regionFills(node.vectorNetwork).some(paintCastsShadow)
 }
 
 export function paintsCastShadow(node: SceneNode): boolean {
@@ -96,14 +82,17 @@ function silhouetteProxy(node: SceneNode, mode: SilhouetteMode): SceneNode | nul
     ...node,
     fills,
     strokes,
-    fillGeometry: node.fillGeometry.map((geometry) =>
-      geometry.fills
-        ? {
-            ...geometry,
-            fills: coversArea || geometry.fills.some(paintCastsShadow) ? [SILHOUETTE_PAINT] : []
-          }
-        : geometry
-    ),
+    vectorNetwork: node.vectorNetwork && {
+      ...node.vectorNetwork,
+      regions: node.vectorNetwork.regions.map((region) =>
+        region.fills
+          ? {
+              ...region,
+              fills: coversArea || region.fills.some(paintCastsShadow) ? [SILHOUETTE_PAINT] : []
+            }
+          : region
+      )
+    },
     effects: [],
     boundVariables: {}
   }
@@ -251,9 +240,9 @@ function childBox(graph: SceneGraph, childId: string): Rect | null {
   ])
   const xs = [points[0], points[2], points[4], points[6]]
   const ys = [points[1], points[3], points[5], points[7]]
-  const x = Math.min(...xs)
-  const y = Math.min(...ys)
-  return { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y }
+  const x = minOf(xs)
+  const y = minOf(ys)
+  return { x, y, width: maxOf(xs) - x, height: maxOf(ys) - y }
 }
 
 function childrenBounds(graph: SceneGraph, node: SceneNode): Rect | null {

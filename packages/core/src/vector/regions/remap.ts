@@ -1,0 +1,72 @@
+import type { VectorRegion, VectorSegment } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
+
+/**
+ * Region loops renumbered after segments were removed or merged. A loop that lost a segment is
+ * no longer closed and is dropped, as in `deleteVectorParts`; merged segments collapse into one.
+ */
+export function remapRegions(
+  regions: VectorRegion[],
+  indexMap: Map<number, number | null>
+): VectorRegion[] {
+  const result: VectorRegion[] = []
+
+  for (const region of regions) {
+    const newLoops: number[][] = []
+    for (const loop of region.loops) {
+      const mapped = loop.map((idx) => indexMap.get(idx))
+      if (!mapped.every((idx): idx is number => idx != null)) continue
+      const newLoop: number[] = []
+      for (const idx of mapped) {
+        if (newLoop.length > 0 && newLoop[newLoop.length - 1] === idx) continue
+        newLoop.push(idx)
+      }
+      if (newLoop.length > 1 && newLoop[0] === newLoop[newLoop.length - 1]) {
+        newLoop.pop()
+      }
+      if (newLoop.length >= 2) newLoops.push(newLoop)
+    }
+    if (newLoops.length > 0) {
+      result.push({ ...region, loops: newLoops })
+    }
+  }
+
+  return result
+}
+
+export function reindexRegionLoops(
+  regions: VectorRegion[],
+  oldSegIndex: number,
+  newSegIndices: number[],
+  segments?: VectorSegment[]
+): VectorRegion[] {
+  return regions.map((region) => ({
+    ...region,
+    loops: region.loops.map((loop) => {
+      const result: number[] = []
+      for (let i = 0; i < loop.length; i++) {
+        if (loop[i] !== oldSegIndex) {
+          result.push(loop[i])
+          continue
+        }
+
+        if (!segments || newSegIndices.length < 2) {
+          appendAll(result, newSegIndices)
+          continue
+        }
+
+        const origSeg = segments[oldSegIndex]
+        const nextIdx = loop[(i + 1) % loop.length]
+        const nextSeg = segments[nextIdx]
+        const endConnectsToNext = origSeg.end === nextSeg.start || origSeg.end === nextSeg.end
+
+        if (endConnectsToNext) {
+          appendAll(result, newSegIndices)
+        } else {
+          appendAll(result, [...newSegIndices].reverse())
+        }
+      }
+      return result
+    })
+  }))
+}

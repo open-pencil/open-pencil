@@ -71,7 +71,7 @@ export function localCloudDeployment(endpoints: LocalCloudEndpoints): CloudDeplo
       sharing: {
         links: true,
         guest_view: true,
-        guest_edit: true,
+        guest_edit: false,
         guest_presence: true
       },
       collaboration: { enabled: true, maximum_participants: 100 }

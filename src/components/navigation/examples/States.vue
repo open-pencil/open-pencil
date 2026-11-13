@@ -3,7 +3,7 @@ import { tv } from 'tailwind-variants'
 
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import pageListTheme from '@/theme/page-list'
-import tabBarTheme from '@/theme/tab-bar'
+import tabBarTheme from '@/theme/tabs/bar'
 
 const pageStyles = tv(pageListTheme)
 const tabStyles = tv(tabBarTheme)
@@ -24,7 +24,7 @@ const pageStates = [
 <template>
   <div class="grid max-w-3xl grid-cols-2 gap-6">
     <section class="rounded-lg border border-border bg-panel p-3 shadow-lg">
-      <h2 class="mb-3 text-[11px] font-semibold tracking-wider text-muted uppercase">
+      <h2 class="mb-3 text-2xs font-semibold tracking-wider text-muted uppercase">
         Page and panel states
       </h2>
       <SegmentedControl
@@ -66,7 +66,7 @@ const pageStates = [
     </section>
 
     <section class="rounded-lg border border-border bg-canvas p-3 shadow-lg">
-      <h2 class="mb-3 text-[11px] font-semibold tracking-wider text-muted uppercase">Tab states</h2>
+      <h2 class="mb-3 text-2xs font-semibold tracking-wider text-muted uppercase">Tab states</h2>
       <div :class="tabStyles().root()">
         <div :class="tabStyles().list()">
           <button

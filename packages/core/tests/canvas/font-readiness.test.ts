@@ -1,0 +1,25 @@
+import { describe, expect, test } from 'bun:test'
+
+import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
+
+import { isNodeFontLoaded } from '#core/canvas/text'
+import { fontManager } from '#core/text/font/manager'
+
+describe('canvas text font readiness', () => {
+  test('requires the exact requested font weight before rendering text', async () => {
+    const family = `ExactWeight_${Date.now()}`
+    const node = createDefaultNode(() => 'text', 'TEXT', {
+      text: 'Bold title',
+      fontFamily: family,
+      fontWeight: 700,
+      italic: false,
+      styleRuns: []
+    })
+
+    await fontManager.markLoaded(family, 'Regular', new ArrayBuffer(8))
+    expect(isNodeFontLoaded({} as Parameters<typeof isNodeFontLoaded>[0], node)).toBe(false)
+
+    await fontManager.markLoaded(family, 'Bold', new ArrayBuffer(8))
+    expect(isNodeFontLoaded({} as Parameters<typeof isNodeFontLoaded>[0], node)).toBe(true)
+  })
+})

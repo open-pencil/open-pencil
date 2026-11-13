@@ -1,6 +1,7 @@
 import type { CloudDatabase } from '#cloud/server/db'
 import { IMAGE_RELEASE_GRACE_MS, releaseUnusedImages } from '#cloud/server/documents/images'
 import { historyStart, LIMITED_HISTORY_DAYS } from '#cloud/server/documents/versions/history'
+import { reportCloudError, type CloudErrorReporter } from '#cloud/server/errors'
 import type { ObjectStore } from '#cloud/server/objects'
 import type { CloudPolicyContext } from '#cloud/server/policy/keys'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
@@ -11,6 +12,11 @@ import { unreferencedObject } from './objects'
 
 /** How long a save between versions is kept before compaction may delete it. */
 export const REVISION_COMPACTION_GRACE_MS = 24 * 60 * 60_000
+/**
+ * How long a stored file nothing refers to is left alone: a collaboration room records its next
+ * snapshot's file before writing it and points the room at it moments later.
+ */
+export const OBJECT_SWEEP_GRACE_MS = 15 * 60_000
 
 export type RevisionCompactionOptions = {
   batchSize: number
@@ -42,9 +48,16 @@ export type RevisionCompactionService = {
 export function createRevisionCompactionService(
   database: Kysely<CloudDatabase>,
   objects: ObjectStore,
-  options: { policy?: CloudPolicy; deploymentMode?: CloudPolicyContext['deploymentMode'] } = {}
+  options: {
+    policy?: CloudPolicy
+    deploymentMode?: CloudPolicyContext['deploymentMode']
+    /** Where each step compaction couldn't finish is reported; a pass carries on with the rest. */
+    reportError?: CloudErrorReporter
+  } = {}
 ): RevisionCompactionService {
   const deploymentMode = options.deploymentMode ?? 'self-hosted'
+  const report = (message: string, error: unknown) =>
+    reportCloudError(options.reportError, message, error, { source: 'cleanup' })
   async function pruneVersions(now: Date, batchSize: number): Promise<number> {
     if (!options.policy) return 0
     const limitedBefore = new Date(now.getTime() - LIMITED_HISTORY_DAYS * 24 * 60 * 60_000)
@@ -57,7 +70,7 @@ export function createRevisionCompactionService(
       .execute()
     let pruned = 0
     for (const { workspaceId } of workspaces) {
-      const start = await historyStart(options.policy, deploymentMode, workspaceId, now)
+      const start = await historyStart(database, options.policy, deploymentMode, workspaceId, now)
       if (!start) continue
       const deleted = await database
         .deleteFrom('documentVersion')
@@ -161,9 +174,10 @@ export function createRevisionCompactionService(
   }
 
   /** Deletes freed files from the object store, then their rows; a failure stays for next time. */
-  async function sweepObjects(batchSize: number, result: RevisionCompactionResult) {
+  async function sweepObjects(now: Date, batchSize: number, result: RevisionCompactionResult) {
     const freed = await unreferencedObjects(database)
       .select(['id', 'objectKey'])
+      .where('createdAt', '<', new Date(now.getTime() - OBJECT_SWEEP_GRACE_MS))
       .limit(batchSize)
       .execute()
     for (const object of freed) {
@@ -175,8 +189,9 @@ export function createRevisionCompactionService(
           .where(unreferencedObject)
           .execute()
         result.objectsDeleted++
-      } catch {
+      } catch (error) {
         result.failed++
+        await report(`Deleting file ${object.id} failed`, error)
       }
     }
   }
@@ -208,8 +223,9 @@ export function createRevisionCompactionService(
           capacity -= compacted.revisions
           result.revisionsDeleted += compacted.revisions
           result.bytesReclaimed += compacted.bytes
-        } catch {
+        } catch (error) {
           result.failed++
+          await report(`Compacting document ${documentId} failed`, error)
         }
       }
       // Compaction just freed the images of the saves it deleted; the release lets their grace pass.
@@ -222,10 +238,11 @@ export function createRevisionCompactionService(
         )
         result.imagesReleased = images.released
         result.bytesReclaimed += images.bytes
-      } catch {
+      } catch (error) {
         result.failed++
+        await report('Releasing unused images failed', error)
       }
-      await sweepObjects(input.batchSize, result)
+      await sweepObjects(now, input.batchSize, result)
       return result
     }
   }

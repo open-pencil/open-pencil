@@ -8,6 +8,7 @@ export interface IconButtonUI {
 
 export function useIconButtonUI(options?: {
   size?: keyof typeof theme.variants.size
+  menu?: boolean
   active?: boolean
   disabled?: boolean
   ui?: IconButtonUI
@@ -16,6 +17,7 @@ export function useIconButtonUI(options?: {
   return {
     base: iconButton({
       size: options?.size,
+      menu: options?.menu,
       active: options?.active,
       disabled: options?.disabled,
       class: options?.ui?.base

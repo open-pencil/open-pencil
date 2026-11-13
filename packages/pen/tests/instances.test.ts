@@ -3,8 +3,8 @@ import { describe, expect, test } from 'bun:test'
 import type { PenNode } from '@open-pencil/pen'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { hasInstanceOverride, syncInstance } from '@open-pencil/scene-graph/instances'
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
-import { expectDefined, getNodeOrThrow } from './helpers/assert'
 import { parseDocument } from './helpers/document'
 
 const button: PenNode = {
@@ -38,7 +38,7 @@ function layers(graph: SceneGraph, id: string): SceneNode[] {
   const queue = [...graph.getChildren(id)]
   for (const node of queue) {
     found.push(node)
-    queue.push(...graph.getChildren(node.id))
+    for (const child of graph.getChildren(node.id)) queue.push(child)
   }
   return found
 }

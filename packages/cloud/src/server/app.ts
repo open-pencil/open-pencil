@@ -1,20 +1,25 @@
 import {
   createAdminAuditService,
+  createAdminDocumentService,
   createAdminEmailService,
   createAdminOperationsService,
+  createAdminReportService,
   createAdminUserService,
   createCloudAdminRoutes,
   createEnrollmentService,
   type EnrollmentService
 } from '#cloud/admin'
 import {
-  CLOUD_AI_JWKS_PATH,
+  CLOUD_API_MAX_BODY_BYTES,
+  CLOUD_SERVICES_JWKS_PATH,
   CLOUD_DISCOVERY_PATH,
   CLOUD_PROTOCOL_VERSION,
   type CloudDiscovery
 } from '#cloud/contract'
+import { createAccountDeletionService } from '#cloud/server/account/deletion'
 import { createAccountRoutes } from '#cloud/server/account/routes'
-import { createAITokenService, type AISigningKey } from '#cloud/server/ai'
+import { createTermsService } from '#cloud/server/account/terms'
+import { createAccessTokenRoutes } from '#cloud/server/account/tokens'
 import {
   createCloudAPIRouter,
   createPublicCloudAPIRouter,
@@ -29,7 +34,9 @@ import {
   type CloudIdentityResolver,
   type CloudSessionResolver
 } from '#cloud/server/auth'
+import { createBillingTokenService } from '#cloud/server/billing'
 import { createCollaborationTicketService } from '#cloud/server/collaboration'
+import { createCommunityService, createCommunityThumbnailRoutes } from '#cloud/server/community'
 import {
   CloudConfigError,
   cloudDiscoveryFromConfig,
@@ -39,8 +46,10 @@ import type { CloudDatabase } from '#cloud/server/db'
 import { createDocumentService } from '#cloud/server/documents'
 import { createDocumentVersionService } from '#cloud/server/documents/versions'
 import type { TransactionalEmailService } from '#cloud/server/email'
+import { cloudErrorHandler, type CloudErrorReporter } from '#cloud/server/errors'
 import { createInternalRoutes, createInternalService } from '#cloud/server/internal'
 import type { InvitationDelivery, InvitationOutbox } from '#cloud/server/invitations'
+import { cloudRequestId, type ForwardedRequestId } from '#cloud/server/logging'
 import type { ObjectStore } from '#cloud/server/objects'
 import { createPictureRoutes, createUserPictures } from '#cloud/server/pictures'
 import {
@@ -57,12 +66,32 @@ import {
   createTrustedIPRateLimiter,
   routeHasOwnBudget
 } from '#cloud/server/rate-limit'
+import { createDocumentReportService } from '#cloud/server/reports'
+import { createServicesTokenService, type ServicesSigningKey } from '#cloud/server/services'
 import { createDocumentSharingService } from '#cloud/server/sharing'
 import { createWorkspaceMemberService, createWorkspaceService } from '#cloud/server/workspaces'
 import { Hono, type Context } from 'hono'
+import { bodyLimit } from 'hono/body-limit'
 import { cors } from 'hono/cors'
 import type { Kysely } from 'kysely'
 
+/** Where administration is mounted. */
+const ADMIN_API_PATH = '/api/admin'
+/**
+ * The routes a personal access token reaches: workspaces and their documents, uploads, versions,
+ * sharing, and Trash, and who it signs in as. Anything else, such as services tokens that spend
+ * credits or administration, takes a session, including routes added later.
+ */
+const ACCESS_TOKEN_API_PATHS = [
+  '/api/session',
+  '/api/workspaces',
+  '/api/documents',
+  '/api/uploads',
+  '/api/shared-documents',
+  '/api/trash'
+]
+const acceptsAccessToken = (path: string) =>
+  ACCESS_TOKEN_API_PATHS.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))
 export type CloudServices = {
   config: CloudServerConfig
   database: Kysely<CloudDatabase>
@@ -70,14 +99,19 @@ export type CloudServices = {
   objects: ObjectStore
   resolveIdentity?: CloudIdentityResolver
   resolveSession?: CloudSessionResolver
+  /**
+   * An approved account even before it accepted the current terms, for leaving: reading its
+   * documents and deleting the account. Defaults to `resolveSession` when that is given.
+   */
+  resolveAccountSession?: CloudSessionResolver
   invitationDelivery?: InvitationDelivery
   invitationOutbox?: InvitationOutbox
   transactionalEmail?: TransactionalEmailService
   enrollment?: EnrollmentService
   entitlementSource?: EntitlementSource
   policy?: CloudPolicy
-  /** The imported `aiSigningKey`, required when the config names one. See `loadAISigningKey`. */
-  aiSigningKey?: AISigningKey
+  /** The imported `servicesSigningKey`, required when the config names one. See `loadServicesSigningKey`. */
+  servicesSigningKey?: ServicesSigningKey
   /**
    * Where clients reach this runtime's collaboration relay. Without one, Cloud rooms fall back to
    * peer-to-peer and writes are not enforced by the server.
@@ -85,8 +119,14 @@ export type CloudServices = {
   relayURL?: string
   /** Ends a restored document's live rooms, on the relay this runtime runs, if any. */
   onDocumentRestored?: (documentId: string) => void
+  /** Ends a taken-down document's live rooms, saving them for when it is restored. */
+  onDocumentTakenDown?: (documentId: string) => void
   /** Tells a document's live rooms its version history changed, on the relay this runtime runs. */
   onDocumentVersionsChanged?: (documentId: string) => void
+  /** Logs errors no route handled, and reports them when the deployment configures error tracking. */
+  reportError?: CloudErrorReporter
+  /** The request ID this runtime trusts from what stands in front of it, such as `cf-ray`. */
+  forwardedRequestId?: ForwardedRequestId
 }
 
 type CloudEnvironment = CloudAPIEnvironment
@@ -129,6 +169,11 @@ export function createCloudApp(services: CloudServices) {
   const discovery = discoveryFromServices(services)
   const resolveIdentity = services.resolveIdentity ?? createCloudIdentityResolver(services.auth)
   const resolveSession = services.resolveSession ?? createCloudSessionResolver(services.auth)
+  const resolveAccountSession =
+    services.resolveAccountSession ??
+    (services.resolveSession
+      ? services.resolveSession
+      : (request: Request) => services.auth.resolveAccountSession(request.headers))
   const allowedOrigins = new Set(
     [services.config.publicURL, ...services.config.trustedOrigins].map(
       (origin) => new URL(origin).origin
@@ -168,7 +213,12 @@ export function createCloudApp(services: CloudServices) {
           : undefined
       }),
       audit: createAdminAuditService(services.database),
-      operations: createAdminOperationsService(services.database, services.config)
+      operations: createAdminOperationsService(services.database, services.config),
+      documents: createAdminDocumentService(services.database, {
+        closeRooms: services.onDocumentTakenDown,
+        purgeGraceMs: services.config.documentPurgeGraceMs
+      }),
+      reports: createAdminReportService(services.database)
     },
     allowedOrigins,
     {
@@ -186,7 +236,14 @@ export function createCloudApp(services: CloudServices) {
   const documents = createDocumentService(services.database, services.objects, {
     policy,
     technicalMaximumUploadBytes: services.config.technicalLimits.maximumUploadBytes,
-    onVersionsChanged: services.onDocumentVersionsChanged
+    onVersionsChanged: services.onDocumentVersionsChanged,
+    trash: {
+      retentionMs: services.config.documentRetentionMs,
+      purgeGraceMs: services.config.documentPurgeGraceMs,
+      leaseDurationMs: services.config.cleanupLeaseDurationMs,
+      reportError: services.reportError
+    },
+    reportError: services.reportError
   })
   const versions = createDocumentVersionService(services.database, services.objects, {
     policy,
@@ -194,6 +251,13 @@ export function createCloudApp(services: CloudServices) {
     onRestored: services.onDocumentRestored,
     onVersionsChanged: services.onDocumentVersionsChanged
   })
+  const community = createCommunityService(
+    services.database,
+    services.objects,
+    documents,
+    versions,
+    services.config.community?.workspaceId ?? null
+  )
   const entitlements = createEntitlementService(
     services.database,
     policy,
@@ -217,24 +281,67 @@ export function createCloudApp(services: CloudServices) {
     policy,
     deploymentMode: services.config.deployment
   })
-  if (services.config.aiSigningKey && !services.aiSigningKey) {
-    throw new CloudConfigError('The AI service needs the signing key imported by loadAISigningKey')
+  if (services.config.servicesSigningKey && !services.servicesSigningKey) {
+    throw new CloudConfigError('Services need the signing key imported by loadServicesSigningKey')
   }
-  const aiTokens = services.aiSigningKey
-    ? createAITokenService({
+  const servicesTokens = services.servicesSigningKey
+    ? createServicesTokenService({
         database: services.database,
         policy,
         deploymentMode: services.config.deployment,
         issuer: new URL(services.config.publicURL).origin,
-        signingKey: services.aiSigningKey,
-        lifetimeSeconds: services.config.aiTokenLifetimeSeconds
+        signingKey: services.servicesSigningKey,
+        lifetimeSeconds: services.config.servicesTokenLifetimeSeconds
       })
     : undefined
+  const billingTokens =
+    services.servicesSigningKey && services.config.billingEndpoint
+      ? createBillingTokenService({
+          issuer: new URL(services.config.publicURL).origin,
+          signingKey: services.servicesSigningKey,
+          lifetimeSeconds: services.config.servicesTokenLifetimeSeconds
+        })
+      : undefined
 
   const requireActiveSession = async (context: Context, next: () => Promise<void>) => {
+    // A route that lets an account leave before accepting the terms named it already.
+    if (context.get('actor')) return next()
     const actor = await resolveSession(context.req.raw)
     if (!actor) return context.json({ error: { code: 'unauthorized' as const } }, 401)
     context.set('actor', actor)
+    return next()
+  }
+  /**
+   * The API's caller: a session, or else a personal access token on the routes that take one
+   * (`ACCESS_TOKEN_API_PATHS`); account routes never get here.
+   */
+  const requireActiveActor = async (context: Context, next: () => Promise<void>) => {
+    if (context.get('actor')) return next()
+    const actor =
+      (await resolveSession(context.req.raw)) ??
+      (acceptsAccessToken(context.req.path)
+        ? await services.auth.resolveAccessToken(context.req.raw.headers)
+        : null)
+    if (!actor) return context.json({ error: { code: 'unauthorized' as const } }, 401)
+    context.set('actor', actor)
+    return next()
+  }
+  /**
+   * An account that may leave: one that has terms to accept can still download its documents and
+   * delete itself, which nothing else lets it do until it accepts.
+   */
+  const requireAccountSession = async (context: Context, next: () => Promise<void>) => {
+    const actor = await resolveAccountSession(context.req.raw)
+    if (!actor) return context.json({ error: { code: 'unauthorized' as const } }, 401)
+    context.set('actor', actor)
+    return next()
+  }
+  /** Reading one document, which downloading everything before leaving needs, without the terms. */
+  const allowLeavingRead = async (context: Context, next: () => Promise<void>) => {
+    if (context.req.method === 'GET') {
+      const actor = await resolveAccountSession(context.req.raw)
+      if (actor) context.set('actor', actor)
+    }
     return next()
   }
   const publicRateLimiter = createTrustedIPRateLimiter(
@@ -257,6 +364,13 @@ export function createCloudApp(services: CloudServices) {
     (context) => context.json({ error: { code: 'not_found' as const } }, 404),
     { resource: (context) => context.req.path, route: true }
   )
+  const communityLimiter = createTrustedIPRateLimiter(
+    services.database,
+    services.config.authSecret,
+    CLOUD_RATE_LIMITS.communityRead,
+    { trustedHeaders: services.config.authTrustedIPHeaders },
+    (context) => context.json({ error: { code: 'not_found' as const } }, 404)
+  )
   const authenticatedMutationLimiter = createActorRateLimiter(
     services.database,
     services.config.authSecret,
@@ -268,14 +382,23 @@ export function createCloudApp(services: CloudServices) {
 
   const accountRoutes = createAccountRoutes({
     auth: services.auth,
+    terms: createTermsService(services.database, services.config),
     pictures,
     config: services.config,
     enrollment,
     workspaces,
+    deletion: createAccountDeletionService(services.database),
     resolveIdentity,
     resolveSession,
     requireActiveSession,
+    requireAccountSession,
     authenticatedMutationLimiter
+  })
+  const reports = createDocumentReportService(services.database, {
+    sharing,
+    email: services.transactionalEmail,
+    adminRecipients: services.config.enrollmentAdminNotificationEmails,
+    publicURL: services.config.publicURL
   })
   const cloudAPI = createCloudAPIRouter({
     collaboration,
@@ -283,9 +406,12 @@ export function createCloudApp(services: CloudServices) {
     rateLimitSecret: services.config.authSecret,
     documents,
     versions,
+    community,
     entitlements,
-    aiTokens,
+    servicesTokens,
+    billingTokens,
     sharing,
+    reports,
     workspaces,
     workspaceMembers,
     resolveSession
@@ -294,8 +420,10 @@ export function createCloudApp(services: CloudServices) {
     collaboration,
     documents,
     versions,
+    community,
     entitlements,
     sharing,
+    reports,
     workspaces,
     workspaceMembers,
     resolveSession
@@ -310,8 +438,17 @@ export function createCloudApp(services: CloudServices) {
     : new Hono()
 
   return new Hono<CloudEnvironment>()
+    .onError(cloudErrorHandler(services.reportError))
+    .use('*', cloudRequestId(services.forwardedRequestId))
     .use(CLOUD_DISCOVERY_PATH, cloudCORS)
     .use('/api/*', cloudCORS)
+    .use(
+      '/api/*',
+      bodyLimit({
+        maxSize: CLOUD_API_MAX_BODY_BYTES,
+        onError: (context) => context.json({ error: { code: 'invalid_request' as const } }, 413)
+      })
+    )
     .use('*', async (context, next) => {
       await next()
       if (shouldPreventIndexing(context.req.path, services.config.indexingPolicy)) {
@@ -354,20 +491,32 @@ export function createCloudApp(services: CloudServices) {
       }
     })
     .get(CLOUD_DISCOVERY_PATH, (context) => context.json(discovery))
-    .get(CLOUD_AI_JWKS_PATH, async (context) =>
-      aiTokens ? context.json(aiTokens.jwks()) : context.notFound()
+    .get(CLOUD_SERVICES_JWKS_PATH, async (context) =>
+      servicesTokens ? context.json(servicesTokens.jwks()) : context.notFound()
     )
     .on(['GET', 'POST'], `${AUTH_BASE_PATH}/*`, (context) => services.auth.handler(context.req.raw))
     .route('/', accountRoutes)
+    .route(
+      '/',
+      createAccessTokenRoutes({
+        auth: services.auth,
+        resolveSession,
+        requireActiveSession,
+        authenticatedMutationLimiter
+      })
+    )
     .route('/', createPictureRoutes(pictures))
     .use('/api/shares/:shareId/collaboration-ticket', publicCollaborationLimiter)
     .use('/api/public/*', publicRateLimiter)
     .use('/api/shares/*', publicRateLimiter)
     .use('/api/invitations/*', publicRateLimiter)
+    .use('/api/community/*', communityLimiter, publicRateLimiter)
+    .route('/', createCommunityThumbnailRoutes(community))
     .route('/api', publicCloudAPI)
     .route('/api/internal', internalAPI)
-    .use('/api/*', requireActiveSession)
-    .route('/api/admin', admin)
+    .use('/api/documents/:documentId', allowLeavingRead)
+    .use('/api/*', requireActiveActor)
+    .route(ADMIN_API_PATH, admin)
     .use('/api/*', authenticatedMutationLimiter)
     .route('/api', cloudAPI)
 }

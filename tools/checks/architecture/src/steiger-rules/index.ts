@@ -1,6 +1,6 @@
-import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
+import { multiWordComponentNames, uniqueComponentNames } from './component-names.ts'
 import { noCrossPackageReexportShims } from './cross-package-reexport-shims.ts'
 import {
   noDynamicTailwindStateClasses,
@@ -9,7 +9,6 @@ import {
 import { noGraphBuildersInFrontEnds } from './graph-builders.ts'
 import { noNativeTitleAttributesInVue } from './native-titles.ts'
 import {
-  collectFiles,
   collectFolders,
   createFileRule,
   createImportRule,
@@ -26,29 +25,69 @@ import {
   type Rule
 } from './support.ts'
 
+/**
+ * The longest sibling folder a file's name starts with, as `folder-` or, for a plural folder, its
+ * singular: `cloud-portal-settings.ts` belongs in `cloud-portal/` even beside `cloud/`.
+ */
+function domainFolderFor(stem: string, folders: Set<string>) {
+  let best: { folder: string; prefix: string } | undefined
+  for (const folder of folders) {
+    for (const prefix of folder.endsWith('s') ? [folder, folder.slice(0, -1)] : [folder]) {
+      if (!stem.startsWith(`${prefix}-`)) continue
+      if (!best || prefix.length > best.prefix.length) best = { folder, prefix }
+    }
+  }
+  return best
+}
+
 const preferDomainFoldersOverFilenamePrefixes: Rule = {
   name: 'open-pencil/prefer-domain-folders-over-filename-prefixes',
   check(root) {
     const diagnostics: Diagnostic[] = []
     for (const folder of collectFolders(root)) {
       const folderRel = relativePath(root.path, folder.path)
+      const children = folder.children ?? []
+      // A folder names a domain its prefixed sibling files belong in, but is not one of them:
+      // `cloud-portal/` beside `cloud/` is a domain of its own already.
+      const folders = new Set(
+        children
+          .filter((child) => child.type === 'folder')
+          .map((child) => path.basename(child.path))
+      )
       const groups = new Map<string, string[]>()
+      const misplaced = new Map<string, string>()
       const names = new Set<string>()
-      for (const child of folder.children ?? []) {
-        if (child.type !== 'file' || !TEXT_EXTENSIONS.has(path.extname(child.path))) continue
-        names.add(fileStem(child.path))
+      for (const child of children) {
+        if (child.type === 'folder' || !TEXT_EXTENSIONS.has(path.extname(child.path))) continue
+        const stem = fileStem(child.path)
+        names.add(stem)
         const prefix = filePrefix(child.path)
-        if (!prefix) continue
+        if (!prefix || FILE_PREFIX_GROUP_ALLOWLIST.has(`${folderRel}::${prefix}`)) continue
+        // `variants/` beside `variant-set.ts` already is the domain folder the file belongs in.
+        const domain = domainFolderFor(stem, folders)
+        if (domain) {
+          misplaced.set(domain.prefix, domain.folder)
+          continue
+        }
         const files = groups.get(prefix) ?? []
         files.push(child.path)
         groups.set(prefix, files)
       }
-      for (const [prefix, files] of groups) {
-        // `email.ts` beside `email-runtime.ts` is a domain as much as three `email-*` files are.
-        if (files.length < 3 && !names.has(prefix)) continue
-        if (FILE_PREFIX_GROUP_ALLOWLIST.has(`${folderRel}::${prefix}`)) continue
+      for (const [prefix, folderName] of misplaced) {
         diagnostics.push({
-          message: `Use a ${prefix}/ domain folder instead of sibling files named ${prefix} and ${prefix}-*.`,
+          message: `Move the ${prefix}-* files into the ${folderName}/ folder beside them.`,
+          location: { path: folder.path }
+        })
+      }
+      for (const [prefix, files] of groups) {
+        // `email.ts` beside `email-runtime.ts` is a domain as much as three `email-*` files are, and
+        // so is `handles.ts` beside `handle-actions.ts`: a plural names the same domain.
+        const fileName = [prefix, `${prefix}s`].find((name) => names.has(name))
+        if (files.length < 3 && !fileName) continue
+        diagnostics.push({
+          message: fileName
+            ? `Make ${prefix}/ a domain folder for ${fileName} and the ${prefix}-* files beside it.`
+            : `Group the sibling ${prefix}-* files in a ${prefix}/ domain folder.`,
           location: { path: folder.path }
         })
       }
@@ -110,12 +149,6 @@ const strictTestFilePlacement = createFileRule(
         ? null
         : 'Figma Playwright tests must live under tests/figma/** and use *.spec.ts.'
     }
-    if (sourceRel.startsWith('tests/engine/')) {
-      if (sourceRel.endsWith('.test.ts')) return null
-      if (sourceRel.endsWith('/helpers.ts') || sourceRel.endsWith('.bench.ts')) return null
-      if (/\/visual\/[^/]+\.ts$/.test(sourceRel)) return null
-      return 'Engine/unit tests must live under tests/engine/** and use *.test.ts; helpers.ts, *.bench.ts, and domain visual support scripts are allowed.'
-    }
     // Canonical unit-test homes from packages/docs/development/testing.md.
     if (sourceRel.startsWith('tests/app/') || sourceRel.startsWith('tests/integration/')) {
       return sourceRel.endsWith('.test.ts')
@@ -123,96 +156,36 @@ const strictTestFilePlacement = createFileRule(
         : 'App and integration unit tests must use *.test.ts under tests/app/** or tests/integration/**.'
     }
     if (sourceRel.startsWith('tests/helpers/')) return null
-    return 'Tests must live under tests/e2e/** (*.spec.ts), tests/app/**, tests/integration/**, tests/engine/** (*.test.ts), or tests/helpers/**.'
+    return 'Tests must live under tests/e2e/** (*.spec.ts), tests/figma/**, tests/app/** or tests/integration/** (*.test.ts), or tests/helpers/**; package unit tests live under packages/<owner>/tests.'
   }
 )
 
-const ENGINE_TEST_DOMAIN_REDIRECTS: Array<{
-  from: string
-  to: string
-  source: string
-}> = [
-  {
-    from: 'tests/engine/fig/',
-    to: 'tests/engine/io/fig/',
-    source: 'packages/core/src/io/formats/fig/'
-  },
-  {
-    from: 'tests/engine/svg/',
-    to: 'tests/engine/io/svg/',
-    source: 'packages/core/src/io/formats/svg/'
-  },
-  {
-    from: 'tests/engine/fonts/',
-    to: 'tests/engine/text/fonts/',
-    source: 'packages/core/src/text/fonts.ts'
-  },
-  {
-    from: 'tests/engine/figma-api/',
-    to: 'packages/core/tests/figma-api/',
-    source: 'packages/core/src/figma-api/'
-  },
-  {
-    from: 'tests/engine/figma/',
-    to: 'packages/core/tests/figma-api/',
-    source: 'packages/core/src/figma-api/'
-  }
-]
-
-const noMisplacedEngineTestDomainPaths = createFileRule(
-  'open-pencil/no-misplaced-engine-test-domain-paths',
-  (sourceRel) => {
-    const redirect = ENGINE_TEST_DOMAIN_REDIRECTS.find(({ from }) => sourceRel.startsWith(from))
-    if (redirect) {
-      return `Move tests from ${redirect.from} under ${redirect.to} to mirror ${redirect.source}.`
-    }
-    if (/^tests\/engine\/[^/]+\.test\.ts$/.test(sourceRel)) {
-      return 'Move root-level engine tests under a domain folder that mirrors the source module under test.'
-    }
-    return null
-  }
-)
-
-const noKitchenSinkEngineBasicTests: Rule = {
-  name: 'open-pencil/no-kitchen-sink-engine-basic-tests',
-  check(root) {
-    const diagnostics: Diagnostic[] = []
-    for (const file of collectFiles(root)) {
-      const sourceRel = relativePath(root.path, file)
-      if (!sourceRel.startsWith('tests/engine/') || !sourceRel.endsWith('/basic.test.ts')) continue
-
-      const content = readFileSync(file, 'utf8')
-      const lineCount = content.split('\n').length
-      const describeCount = content.match(/\bdescribe\s*\(/g)?.length ?? 0
-      if (lineCount <= 250 || describeCount < 4) continue
-
-      diagnostics.push({
-        message:
-          'Split broad engine basic.test.ts files into focused domain/module tests, or add a deliberate narrow redirect/allowlist.',
-        location: { path: file }
-      })
-    }
-    return { diagnostics }
-  }
+/** Where unit tests live (packages/docs/development/testing.md), as opposed to E2E specs. */
+function isUnitTestPath(sourceRel: string) {
+  return (
+    sourceRel.startsWith('tests/app/') ||
+    sourceRel.startsWith('tests/integration/') ||
+    /^packages\/[^/]+\/tests\//.test(sourceRel)
+  )
 }
 
-const noEngineOnlyAssertionsInE2E = createImportRule(
-  'open-pencil/no-engine-only-assertions-in-e2e',
+const noUnitAssertionsInE2E = createImportRule(
+  'open-pencil/no-unit-assertions-in-e2e',
   (sourceRel, specifier, resolved) => {
     if (!sourceRel.startsWith('tests/e2e/')) return null
-    if (specifier === 'bun:test' || resolved?.startsWith('tests/engine/')) {
-      return 'E2E tests must drive the UI and visible behavior. Put engine/internal-state assertions in tests/engine/**.'
+    if (specifier === 'bun:test' || (resolved && isUnitTestPath(resolved))) {
+      return 'E2E tests must drive the UI and visible behavior. Put internal-state assertions in unit tests: packages/<owner>/tests or tests/app/**.'
     }
     return null
   }
 )
 
-const noE2EImportsInEngineTests = createImportRule(
-  'open-pencil/no-e2e-imports-in-engine-tests',
+const noE2EImportsInUnitTests = createImportRule(
+  'open-pencil/no-e2e-imports-in-unit-tests',
   (sourceRel, _specifier, resolved) => {
-    if (!sourceRel.startsWith('tests/engine/')) return null
+    if (!isUnitTestPath(sourceRel)) return null
     if (resolved?.startsWith('tests/e2e/')) {
-      return 'Engine/unit tests must not import E2E tests or fixtures.'
+      return 'Unit tests must not import E2E tests or fixtures.'
     }
     return null
   }
@@ -377,16 +350,20 @@ const CLOUD_PORTAL_SOURCES = [
   'src/theme/metrics/'
 ]
 const EDITOR_ONLY_MODULES = ['src/app/editor/', 'src/app/shell/']
+// The read-only document viewer brings the editor with it, so these pages load it lazily, through
+// `defineAsyncComponent(() => import(...))`, and never import it statically.
+const LAZY_EDITOR_MODULES = ['src/components/document-viewer/', 'src/app/document-viewer/']
 
 const noEditorImportsInCloudPortal = createImportRule(
   'open-pencil/no-editor-imports-in-cloud-portal',
   (sourceRel, specifier, resolved) => {
     if (!CLOUD_PORTAL_SOURCES.some((prefix) => sourceRel.startsWith(prefix))) return null
     const editorOnly =
-      specifier.startsWith('canvaskit-wasm') ||
-      EDITOR_ONLY_MODULES.some((prefix) => resolved?.startsWith(prefix))
+      specifier.startsWith('@open-pencil/canvaskit') ||
+      EDITOR_ONLY_MODULES.some((prefix) => resolved?.startsWith(prefix)) ||
+      LAZY_EDITOR_MODULES.some((prefix) => resolved?.startsWith(prefix))
     if (!editorOnly) return null
-    return 'The Cloud portal and the metrics dashboard must not import editor sessions, CanvasKit, or the app shell, so their standalone builds stay small.'
+    return 'The Cloud portal and the metrics dashboard must not import editor sessions, CanvasKit, or the app shell, so their standalone builds stay small; open the document viewer lazily with defineAsyncComponent.'
   }
 )
 
@@ -526,10 +503,8 @@ export const openPencilArchitecturePlugin = {
     scriptsAreEntrypointShims,
     strictToolsLayout,
     strictTestFilePlacement,
-    noMisplacedEngineTestDomainPaths,
-    noKitchenSinkEngineBasicTests,
-    noEngineOnlyAssertionsInE2E,
-    noE2EImportsInEngineTests,
+    noUnitAssertionsInE2E,
+    noE2EImportsInUnitTests,
     noRootMarkdownClutter,
     noPrototypeOrGeneratedImports,
     noPropertyPanelImportsInCanvas,
@@ -550,6 +525,8 @@ export const openPencilArchitecturePlugin = {
     noNativeTitleAttributesInVue,
     noShortcutTextInLabels,
     noHardcodedMacOSShortcutGlyphs,
-    noUIImportsInCore
+    noUIImportsInCore,
+    uniqueComponentNames,
+    multiWordComponentNames
   ]
 }

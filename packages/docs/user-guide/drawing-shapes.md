@@ -27,7 +27,7 @@ Polygon and Star have no keyboard shortcut — access them from the shapes flyou
 
 ## Customizing the Toolbar
 
-Right-click the toolbar and choose **Customize toolbar…**, or open **Settings → Toolbar**, to change it:
+Right-click the toolbar and choose **Customize toolbar…**, or open **Settings → Editor**, to change it:
 
 - Turn a tool's switch off to hide it. Hidden tools keep their keyboard shortcuts. **Move** is always shown.
 - Drag a tool to reorder it. Dropped inside a box it joins that flyout; dropped in the gap between boxes it becomes a button of its own; dropped onto another tool, the two share a flyout.

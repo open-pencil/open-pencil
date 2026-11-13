@@ -1,13 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createCloudAIClient } from '@open-pencil/cloud/client'
+import { createCloudServicesClient } from '@open-pencil/cloud/client'
 
 import { testProviderConnection } from '@/app/ai/models/connection-test'
 import { cloudModelConfig } from '@/app/ai/providers/openpencil/model'
 
 /** Tests a Cloud model whose service answers every request with `status` and `body`. */
 function testCloudModel(status: number, body: unknown) {
-  const client = createCloudAIClient({
+  const client = createCloudServicesClient({
     endpoint: 'https://ai.example.com',
     tokens: { token: async () => 'cloud-token', invalidate: () => undefined },
     fetch: async () => Response.json(body, { status })

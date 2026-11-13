@@ -32,7 +32,6 @@ export function serializeLibraryRevision(
         id,
         structuredClone(collection)
       ]),
-      activeMode: [...revision.graph.activeMode],
       documentColorSpace: revision.graph.documentColorSpace
     }
   }
@@ -114,7 +113,6 @@ export function deserializeLibraryRevision(
   )
   graph.variables = new Map(revision.graph.variables)
   graph.variableCollections = new Map(revision.graph.variableCollections)
-  graph.activeMode = new Map(revision.graph.activeMode)
   graph.documentColorSpace = revision.graph.documentColorSpace
   graph.instanceIndex = new Map()
   for (const node of graph.getAllNodes()) {

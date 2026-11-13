@@ -1,28 +1,27 @@
-import { readFigFile } from '@open-pencil/core/io/formats/fig'
+import { readFile as tauriRead } from '@tauri-apps/plugin-fs'
+
+import { parseFigFile, readFigFile } from '@open-pencil/core/io/formats/fig'
 
 import { isTauri } from '@/app/tauri/env'
 
 export type ReloadSourceOptions = {
-  documentName: string
   filePath: string | null
   fileHandle: FileSystemFileHandle | null
   signal?: AbortSignal
 }
 
-export async function readReloadSource({
-  documentName,
-  filePath,
-  fileHandle,
-  signal
-}: ReloadSourceOptions) {
+export async function readReloadSource({ filePath, fileHandle, signal }: ReloadSourceOptions) {
   signal?.throwIfAborted()
   if (filePath && isTauri()) {
-    const { readFile: tauriRead } = await import('@tauri-apps/plugin-fs')
     const bytes = await tauriRead(filePath)
     signal?.throwIfAborted()
-    const blob = new Blob([bytes])
-    const file = new File([blob], `${documentName}.fig`)
-    return readFigFile(file, { populate: 'first-page', signal })
+    // Parsed from the bytes as read: copying them into a Blob and a File first held the file
+    // three more times while the open document was still in memory.
+    const buffer =
+      bytes.buffer instanceof ArrayBuffer && bytes.byteLength === bytes.buffer.byteLength
+        ? bytes.buffer
+        : bytes.slice().buffer
+    return parseFigFile(buffer, { populate: 'first-page', signal })
   }
 
   if (fileHandle) {

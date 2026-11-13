@@ -104,13 +104,13 @@ Las propiedades habituales se leen y modifican mediante el objeto correspondient
 
 - `figma.mixed`
 - `figma.createImage(data)`
-- `figma.loadFontAsync(fontName)` — no bloquea la edición de texto;
-- `figma.listAvailableFontsAsync()` — devuelve las fuentes del sistema;
+- `figma.loadFontAsync(fontName)` — carga la fuente; como en Figma, cambiar el texto, su tamaño o su fuente exige cargar antes las fuentes que usa;
+- `figma.listAvailableFontsAsync()` — devuelve cada estilo de las familias instaladas e incluidas, y de las familias en línea una vez cargada una de sus fuentes; una familia en línea aún no consultada aparece solo como `Regular`;
 - `figma.notify(message)` — escribe un aviso cuando no hay interfaz;
 - `figma.viewport`.
 
 ## Limitaciones
 
-Aún no hay equivalentes completos para `node.exportAsync()`, las variables de bibliotecas, estilos de pintura/texto y todas las operaciones booleanas vectoriales.
+Aún no hay equivalentes completos para las variables de bibliotecas y todas las operaciones booleanas vectoriales.
 
 Según la tarea, pueden usarse el comando de exportación, las herramientas del núcleo o las operaciones directas de SceneGraph.

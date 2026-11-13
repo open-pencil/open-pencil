@@ -1,97 +1,106 @@
+import { detectPlatform, type HotkeyChord, type HotkeyPlatform } from '@tanstack/hotkeys'
+
 import type { EditorCommandId } from './types'
 
+/** A shortcut Figma gives a different key on macOS than on Windows and Linux. */
+export interface PlatformShortcut {
+  mac: HotkeyChord
+  other: HotkeyChord
+}
+
 export interface EditorCommandMetadata {
-  shortcut?: string
-  keybinding?: string | string[]
+  /** The command's shortcut on this platform (`formatShortcut`), shown in menus and bound. */
+  shortcut?: HotkeyChord
+  /** More shortcuts that run the command, never shown. */
+  aliases?: HotkeyChord[]
   contextTestId?: string
 }
 
+interface EditorCommandEntry extends Omit<EditorCommandMetadata, 'shortcut'> {
+  shortcut?: HotkeyChord | PlatformShortcut
+}
+
 export const EDITOR_COMMAND_METADATA = {
-  'edit.undo': { shortcut: 'MOD+Z', keybinding: '$mod+KeyZ' },
-  'edit.redo': { shortcut: 'MOD+SHIFT+Z', keybinding: ['$mod+Shift+KeyZ', '$mod+KeyY'] },
-  'selection.selectAll': { shortcut: 'MOD+A', keybinding: '$mod+KeyA' },
-  'selection.selectInverse': { shortcut: 'MOD+SHIFT+A', keybinding: '$mod+Shift+KeyA' },
+  'edit.undo': { shortcut: 'Mod+Z' },
+  'edit.redo': { shortcut: 'Mod+Shift+Z', aliases: ['Mod+Y'] },
+  'selection.selectAll': { shortcut: 'Mod+A' },
+  'selection.selectInverse': { shortcut: 'Mod+Shift+A' },
   // Enter also opens a vector's path or a text layer, so the app binds it with that.
-  'selection.selectChildren': { shortcut: '↵' },
+  'selection.selectChildren': { shortcut: 'Enter' },
   'selection.selectParent': {
-    shortcut: 'SHIFT+↵',
-    keybinding: ['Shift+Enter', 'Backslash']
+    shortcut: 'Shift+Enter',
+    aliases: ['\\']
   },
-  'selection.selectNextSibling': { shortcut: '⇥', keybinding: 'Tab' },
-  'selection.selectPreviousSibling': { shortcut: 'SHIFT+⇥', keybinding: 'Shift+Tab' },
+  'selection.selectNextSibling': { shortcut: 'Tab' },
+  'selection.selectPreviousSibling': { shortcut: 'Shift+Tab' },
   'selection.duplicate': {
-    shortcut: 'MOD+D',
-    keybinding: '$mod+KeyD',
+    shortcut: 'Mod+D',
     contextTestId: 'context-duplicate'
   },
-  'selection.delete': { shortcut: '⌫', contextTestId: 'context-delete' },
-  'selection.group': { shortcut: 'MOD+G', keybinding: '$mod+KeyG', contextTestId: 'context-group' },
+  'selection.delete': { shortcut: 'Backspace', contextTestId: 'context-delete' },
+  'selection.group': { shortcut: 'Mod+G', contextTestId: 'context-group' },
   'selection.frameSelection': {
-    shortcut: 'MOD+ALT+G',
-    keybinding: '$mod+Alt+KeyG',
+    shortcut: 'Mod+Alt+G',
     contextTestId: 'context-frame-selection'
   },
-  'selection.ungroup': { shortcut: 'MOD+SHIFT+G', keybinding: '$mod+Shift+KeyG' },
+  'selection.wrapInSection': {},
+  'selection.ungroup': { shortcut: 'Mod+Shift+G' },
   'selection.createComponent': {
-    shortcut: 'MOD+ALT+K',
-    keybinding: '$mod+Alt+KeyK',
+    shortcut: 'Mod+Alt+K',
     contextTestId: 'context-create-component'
   },
-  'selection.createComponentSet': { shortcut: 'MOD+SHIFT+K', keybinding: '$mod+Shift+KeyK' },
-  'selection.detachInstance': { shortcut: 'MOD+ALT+B', keybinding: '$mod+Alt+KeyB' },
+  'selection.createComponentSet': { shortcut: 'Mod+Shift+K' },
+  'selection.detachInstance': { shortcut: 'Mod+Alt+B' },
   'selection.detachIcon': {},
   'selection.goToMainComponent': {},
   'selection.createInstance': {},
   'selection.createSlot': { contextTestId: 'context-create-slot' },
-  'selection.wrapInAutoLayout': { shortcut: 'SHIFT+A', keybinding: 'Shift+KeyA' },
+  'selection.wrapInAutoLayout': { shortcut: 'Shift+A' },
   'selection.toggleMask': {
-    shortcut: 'MOD+ALT+M',
-    keybinding: ['Control+Meta+KeyM', '$mod+Alt+KeyM'],
+    shortcut: 'Mod+Alt+M',
+    aliases: ['Control+Meta+M'],
     contextTestId: 'context-toggle-mask'
   },
   'selection.bringForward': {
-    shortcut: 'MOD+]',
-    keybinding: '$mod+BracketRight',
+    shortcut: 'Mod+]',
     contextTestId: 'context-bring-forward'
   },
   'selection.bringToFront': {
     shortcut: ']',
-    keybinding: 'BracketRight',
     contextTestId: 'context-bring-to-front'
   },
   'selection.sendBackward': {
-    shortcut: 'MOD+[',
-    keybinding: '$mod+BracketLeft',
+    shortcut: 'Mod+[',
     contextTestId: 'context-send-backward'
   },
   'selection.sendToBack': {
     shortcut: '[',
-    keybinding: 'BracketLeft',
     contextTestId: 'context-send-to-back'
   },
   'selection.toggleVisibility': {
-    shortcut: 'MOD+SHIFT+H',
-    keybinding: '$mod+Shift+KeyH',
+    shortcut: 'Mod+Shift+H',
     contextTestId: 'context-toggle-visibility'
   },
   'selection.toggleLock': {
-    shortcut: 'MOD+SHIFT+L',
-    keybinding: '$mod+Shift+KeyL',
+    shortcut: 'Mod+Shift+L',
     contextTestId: 'context-toggle-lock'
   },
   'selection.flipHorizontal': {
-    shortcut: 'SHIFT+H',
-    keybinding: 'Shift+KeyH',
+    shortcut: 'Shift+H',
     contextTestId: 'context-flip-horizontal'
   },
   'selection.flipVertical': {
-    shortcut: 'SHIFT+V',
-    keybinding: 'Shift+KeyV',
+    shortcut: 'Shift+V',
     contextTestId: 'context-flip-vertical'
   },
-  'selection.distributeHorizontal': { shortcut: 'CTRL+ALT+H', keybinding: 'Control+Alt+KeyH' },
-  'selection.distributeVertical': { shortcut: 'CTRL+ALT+V', keybinding: 'Control+Alt+KeyV' },
-  'selection.tidyUp': { shortcut: 'CTRL+ALT+T', keybinding: 'Control+Alt+KeyT' },
+  // Figma's keys; elsewhere Ctrl+Alt+V pastes properties.
+  'selection.distributeHorizontal': {
+    shortcut: { mac: 'Control+Alt+H', other: 'Alt+Shift+H' }
+  },
+  'selection.distributeVertical': {
+    shortcut: { mac: 'Control+Alt+V', other: 'Alt+Shift+V' }
+  },
+  'selection.tidyUp': { shortcut: { mac: 'Control+Alt+T', other: 'Control+Alt+Shift+T' } },
   'selection.packHorizontal': {},
   'selection.packVertical': {},
   'selection.arrangeSpread': {},
@@ -104,43 +113,52 @@ export const EDITOR_COMMAND_METADATA = {
   'selection.arrangeRadial': {},
   'selection.arrangeNetwork': {},
   'selection.booleanUnion': {
-    shortcut: 'ALT+SHIFT+U',
-    keybinding: 'Alt+Shift+KeyU',
+    shortcut: 'Alt+Shift+U',
     contextTestId: 'context-boolean-union'
   },
   'selection.booleanSubtract': {
-    shortcut: 'ALT+SHIFT+S',
-    keybinding: 'Alt+Shift+KeyS',
+    shortcut: 'Alt+Shift+S',
     contextTestId: 'context-boolean-subtract'
   },
   'selection.booleanIntersect': {
-    shortcut: 'ALT+SHIFT+I',
-    keybinding: 'Alt+Shift+KeyI',
+    shortcut: 'Alt+Shift+I',
     contextTestId: 'context-boolean-intersect'
   },
   'selection.booleanExclude': {
-    shortcut: 'ALT+SHIFT+E',
-    keybinding: 'Alt+Shift+KeyE',
+    shortcut: 'Alt+Shift+E',
     contextTestId: 'context-boolean-exclude'
   },
   'selection.flatten': {
-    shortcut: 'ALT+SHIFT+F',
-    keybinding: 'Alt+Shift+KeyF',
+    shortcut: 'Alt+Shift+F',
     contextTestId: 'context-flatten'
   },
-  'selection.outlineText': { contextTestId: 'context-outline-text' },
   'selection.outlineStroke': { contextTestId: 'context-outline-stroke' },
   'selection.moveToPage': {},
-  'selection.setOpacity': { shortcut: '1-9, 0' },
-  'view.zoom100': { shortcut: 'MOD+0', keybinding: ['$mod+Digit0', 'Shift+Digit0'] },
-  'view.zoomFit': { shortcut: 'SHIFT+1', keybinding: ['$mod+Digit1', 'Shift+Digit1'] },
-  'view.zoomSelection': { shortcut: 'SHIFT+2', keybinding: ['$mod+Digit2', 'Shift+Digit2'] },
-  'view.zoomNextFrame': { shortcut: 'N', keybinding: 'KeyN' },
-  'view.zoomPreviousFrame': { shortcut: 'SHIFT+N', keybinding: 'Shift+KeyN' },
-  'view.nextPage': { shortcut: '⇟', keybinding: 'PageDown' },
-  'view.previousPage': { shortcut: '⇞', keybinding: 'PageUp' }
-} satisfies Record<EditorCommandId, EditorCommandMetadata>
+  'view.zoom100': { shortcut: 'Mod+0', aliases: ['Shift+0'] },
+  'view.zoomFit': { shortcut: 'Shift+1', aliases: ['Mod+1'] },
+  'view.zoomSelection': { shortcut: 'Shift+2', aliases: ['Mod+2'] },
+  'view.zoomNextFrame': { shortcut: 'N' },
+  'view.zoomPreviousFrame': { shortcut: 'Shift+N' },
+  'view.nextPage': { shortcut: 'PageDown' },
+  'view.previousPage': { shortcut: 'PageUp' }
+} satisfies Record<EditorCommandId, EditorCommandEntry>
 
-export function editorCommandMetadata(id: EditorCommandId): EditorCommandMetadata {
-  return EDITOR_COMMAND_METADATA[id]
+/** A command's metadata, its shortcut picked for `platform`. */
+export function editorCommandMetadata(
+  id: EditorCommandId,
+  platform: HotkeyPlatform = detectPlatform()
+): EditorCommandMetadata {
+  const entry: EditorCommandEntry = EDITOR_COMMAND_METADATA[id]
+  const { shortcut } = entry
+  if (shortcut === undefined || typeof shortcut === 'string') return { ...entry, shortcut }
+  return { ...entry, shortcut: platform === 'mac' ? shortcut.mac : shortcut.other }
+}
+
+/** Every shortcut a command's key answers to on `platform`: its shortcut, then its aliases. */
+export function editorCommandShortcuts(
+  id: EditorCommandId,
+  platform: HotkeyPlatform = detectPlatform()
+): HotkeyChord[] {
+  const { shortcut, aliases = [] } = editorCommandMetadata(id, platform)
+  return shortcut ? [shortcut, ...aliases] : aliases
 }

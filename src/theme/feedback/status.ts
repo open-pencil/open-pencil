@@ -1,6 +1,6 @@
 const statusTheme = {
   slots: {
-    text: 'text-[10px] leading-snug',
+    text: 'text-3xs leading-snug',
     /** A state as a coloured dot and its label, as room status shows it. */
     indicator: 'inline-flex items-center gap-1.5 text-xs',
     dot: 'size-2 shrink-0 rounded-full'

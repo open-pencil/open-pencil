@@ -77,8 +77,9 @@ watch(
 <template>
   <div
     ref="host"
+    dir="ltr"
     data-slot="code-viewer"
     :data-fill="fill || undefined"
-    class="max-h-64 overflow-hidden rounded border border-border data-[fill]:max-h-none [&_.cm-scroller]:scrollbar-thin"
+    class="max-h-64 overflow-hidden rounded border border-border data-[fill]:max-h-none"
   />
 </template>

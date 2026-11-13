@@ -1,4 +1,5 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import {
   autoLayoutInsertIndex,
@@ -15,6 +16,7 @@ export { duplicateAndDrag } from '#vue/shared/input/duplicate-drag'
 import type { Editor } from '@open-pencil/core'
 
 import { flowBlockBounds, flowOrder, flowSlot, type FlowDrag } from '#vue/shared/input/flow-reorder'
+import { landingOf, previewMove } from '#vue/shared/input/move/policy'
 import { applyMoveSnap } from '#vue/shared/input/move/snap'
 import type { DragMove } from '#vue/shared/input/types'
 
@@ -215,7 +217,7 @@ export function handleMoveMove(
       const previewX = Math.round(orig.x + dx)
       const previewY = Math.round(orig.y + dy)
       firstApplied ??= { dx: previewX - orig.x, dy: previewY - orig.y }
-      editor.graph.updateNodePositionPreview(id, previewX, previewY)
+      previewMove(editor, id, { x: previewX, y: previewY }, orig)
     }
     if (firstApplied) {
       d.appliedDx = firstApplied.dx
@@ -234,7 +236,7 @@ export function handleMoveMove(
   d.appliedDy = dy
 
   for (const [id, orig] of d.originals) {
-    editor.graph.updateNodePositionPreview(id, orig.x + dx, orig.y + dy)
+    previewMove(editor, id, { x: orig.x + dx, y: orig.y + dy }, orig)
   }
 
   editor.setDropTarget(dropTarget?.id ?? null)
@@ -266,9 +268,23 @@ function isLeavingAutoLayout(d: DragMove, id: string, editor: Editor) {
   return (editor.state.dropTargetId ?? editor.state.currentPageId) !== parent.id
 }
 
-function applyFinalPositions(d: DragMove, editor: Editor) {
+/** Where the host's move policy lands each dragged layer, asked once; null for a refused one. */
+type Landings = Map<string, Partial<Vector> | null>
+
+function landingsOf(d: DragMove, editor: Editor): Landings {
+  return new Map(
+    [...d.originals].map(([id, orig]) => [
+      id,
+      landingOf(editor, id, { x: orig.x + d.appliedDx, y: orig.y + d.appliedDy })
+    ])
+  )
+}
+
+function applyFinalPositions(d: DragMove, editor: Editor, landings: Landings) {
   for (const [id, orig] of d.originals) {
-    const position = { x: orig.x + d.appliedDx, y: orig.y + d.appliedDy }
+    // A refused landing, or an axis the policy leaves out, stays where it was.
+    const landing = landings.get(id)
+    const position = { x: landing?.x ?? orig.x, y: landing?.y ?? orig.y }
     // Laying out now would snap the layer back into its slot before it leaves the frame.
     if (isLeavingAutoLayout(d, id, editor)) editor.graph.updateNode(id, position)
     else editor.updateNode(id, position)
@@ -342,8 +358,24 @@ export function handleMoveUp(d: DragMove, editor: Editor) {
     editor.setLayoutInsertIndicator(null)
     editor.setSnapGuides([])
     editor.setDropTarget(null)
-    if (d.selectOnClick) editor.select([d.selectOnClick])
     return
+  }
+
+  // A move the host refuses changes nothing: not where the layers are, their parents, or order.
+  const landings = landingsOf(d, editor)
+  if ([...landings.values()].every((landing) => landing === null)) {
+    editor.setLayoutInsertIndicator(null)
+    editor.setSnapGuides([])
+    cancelMove(d, editor)
+    return
+  }
+  // One it refuses among several: the drop changes no parent or order, so the layers it allows
+  // move within their parents and the one it refuses stays where it was.
+  if ([...landings.values()].some((landing) => landing === null)) {
+    d.keepParents = true
+    d.flows = undefined
+    editor.setLayoutInsertIndicator(null)
+    editor.setDropTarget(null)
   }
 
   const indicator = editor.state.layoutInsertIndicator
@@ -372,7 +404,13 @@ export function handleMoveUp(d: DragMove, editor: Editor) {
     return
   }
 
-  const moved = hasMoved(d, editor)
+  // A landing the policy moves counts even where it kept every preview at the start.
+  const moved =
+    hasMoved(d, editor) ||
+    [...d.originals].some(([id, orig]) => {
+      const landing = landings.get(id)
+      return !!landing && ((landing.x ?? orig.x) !== orig.x || (landing.y ?? orig.y) !== orig.y)
+    })
 
   if (d.duplicated && !moved) {
     const previousSelection = d.duplicatedPreviousSelection ?? new Set<string>()
@@ -388,7 +426,7 @@ export function handleMoveUp(d: DragMove, editor: Editor) {
     if (moved) {
       ignoreTargetAutoLayout(d, editor)
       restoreOriginalPositions(d, editor)
-      applyFinalPositions(d, editor)
+      applyFinalPositions(d, editor, landings)
       if (!d.keepParents) dropMovedNodes(d, editor)
       layOutOriginalParents(d, editor)
     }
@@ -397,6 +435,9 @@ export function handleMoveUp(d: DragMove, editor: Editor) {
         [...d.originals.keys()],
         d.duplicatedPreviousSelection ?? new Set<string>()
       )
+    } else if (moved && d.keepParents) {
+      // Parents and order stay, so the step records positions alone.
+      editor.commitMove(new Map([...d.originals].map(([id, { x, y }]) => [id, { x, y }])))
     } else if (moved) {
       editor.commitMoveWithReparent(d.originals)
     }

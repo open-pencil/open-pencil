@@ -101,13 +101,13 @@ Najczęściej używane właściwości można odczytywać i zapisywać przez poś
 
 - `figma.mixed`
 - `figma.createImage(data)`
-- `figma.loadFontAsync(fontName)` niczego nie wykonuje, ponieważ OpenPencil nie blokuje zmiany tekstu do czasu załadowania czcionki przez wtyczkę
-- `figma.listAvailableFontsAsync()` zwraca dostępne czcionki systemowe
+- `figma.loadFontAsync(fontName)` wczytuje czcionkę; jak w Figmie, zmiana tekstu, jego rozmiaru lub czcionki wymaga wcześniejszego wczytania używanych czcionek
+- `figma.listAvailableFontsAsync()` zwraca wszystkie style rodzin zainstalowanych i wbudowanych, a rodzin online po wczytaniu jednej z ich czcionek; rodzina online, o którą jeszcze nie pytano, jest podana tylko jako `Regular`
 - `figma.notify(message)` zapisuje ostrzeżenie w trybie bez interfejsu
 - `figma.viewport`
 
 ## Brak pełnej zgodności z Figmą
 
-Nie są jeszcze dostępne między innymi `node.exportAsync()`, zmienne z bibliotek i API stylów Figmy.
+Nie są jeszcze dostępne między innymi zmienne z bibliotek.
 
 Zamiast nich używaj poleceń eksportu CLI, narzędzi głównego pakietu albo bezpośrednich funkcji pomocniczych SceneGraph.
