@@ -4,10 +4,11 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { toRaw } from 'vue'
 
 import { forgetAgentChat, startAgentRun } from '@/app/ai/reply/run'
+import { endAgentSession } from '@/app/automation/agents'
 import { recentDocuments } from '@/app/recent-files'
 import { recentFilesLimit } from '@/app/recent-files/preferences'
 import { appPreferences } from '@/app/settings/preferences/store'
-import { createTab, getActiveTabId, getTabById } from '@/app/tabs'
+import { createTab, getActiveTabId, getTabById, switchTab } from '@/app/tabs'
 
 import { request, settle, useAutomationHandlerGlobals } from '#tests/helpers/automation/handlers'
 
@@ -94,6 +95,89 @@ describe("an ACP chat's tool calls", () => {
     }
     expect(getTabById(tab.id)).toBeDefined()
     expect((await request('undo', { agent, document_id: tab.id })).target?.documentId).toBe(tab.id)
+  })
+})
+
+describe("an MCP client's calls that name no document", () => {
+  const shape = { type: 'RECTANGLE', x: 0, y: 0, width: 40, height: 20 }
+  const draw = (agent: object, named: object = {}) =>
+    request('tool', { ...named, name: 'create_shape', args: shape, agent })
+
+  beforeEach(() => {
+    // The agent's cursor glides over frames; here only where the calls land matters.
+    globalThis.requestAnimationFrame = () => 0
+  })
+  afterEach(async () => {
+    for (const session of ['mcp-1', 'mcp-2']) await request('agent_session_closed', { session })
+  })
+
+  test('stay on the document the session last worked on when another tab comes to the front', async () => {
+    const first = createTab()
+    const agent = { session: 'mcp-1', kind: 'mcp' }
+    expect((await draw(agent)).target?.documentId).toBe(first.id)
+
+    const second = createTab()
+    expect(getActiveTabId()).toBe(second.id)
+
+    expect((await draw(agent)).target?.documentId).toBe(first.id)
+    expect((await request('undo', { agent })).target?.documentId).toBe(first.id)
+  })
+
+  test('follow the document the session last named, activated, or created', async () => {
+    const first = createTab()
+    const second = createTab()
+    const agent = { session: 'mcp-1', kind: 'mcp' }
+
+    await draw(agent, { document_id: first.id })
+    expect((await draw(agent)).target?.documentId).toBe(first.id)
+
+    await request('activate_document', { document_id: second.id, agent })
+    switchTab(first.id)
+    expect((await draw(agent)).target?.documentId).toBe(second.id)
+
+    const created = await request('create_document', { agent })
+    switchTab(first.id)
+    expect((await draw(agent)).target?.documentId).toBe(created.target?.documentId)
+  })
+
+  test('keep each session on its own document', async () => {
+    const first = createTab()
+    const one = { session: 'mcp-1', kind: 'mcp' }
+    const two = { session: 'mcp-2', kind: 'mcp' }
+    await draw(one)
+    const second = createTab()
+    await draw(two)
+
+    switchTab(first.id)
+    expect((await draw(two)).target?.documentId).toBe(second.id)
+    switchTab(second.id)
+    expect((await draw(one)).target?.documentId).toBe(first.id)
+  })
+
+  test('stay on that document when the connection to the MCP server drops and comes back', async () => {
+    const first = createTab()
+    const agent = { session: 'mcp-1', kind: 'mcp' }
+    await draw(agent)
+    createTab()
+
+    // What the bridge does for each session its closed connection carried.
+    endAgentSession('mcp-1')
+
+    expect((await draw(agent)).target?.documentId).toBe(first.id)
+  })
+
+  test('fail once that document closes, and go to the front tab after the session ends', async () => {
+    const first = createTab()
+    const agent = { session: 'mcp-1', kind: 'mcp' }
+    await draw(agent)
+    const second = createTab()
+    await request('close_document', { document_id: first.id, unsaved: 'discard' })
+
+    await expect(draw(agent)).rejects.toThrow()
+    expect(second.store.graph.getChildren(second.store.state.currentPageId)).toHaveLength(0)
+
+    await request('agent_session_closed', { session: 'mcp-1' })
+    expect((await draw(agent)).target?.documentId).toBe(second.id)
   })
 })
 

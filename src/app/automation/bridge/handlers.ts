@@ -18,13 +18,16 @@ import { createFileHandlers, type AutomationFiles } from '@/app/automation/bridg
 import { handleRPCFallback } from '@/app/automation/bridge/rpc-handler'
 import { handleSelection } from '@/app/automation/bridge/selection-handler'
 import {
+  forgetSessionDocument,
   isUnknownRecord,
   listAutomationDocuments,
+  rememberSessionDocument,
   resolveAutomationTarget,
   responseWithTarget,
   stripAutomationTargetArgs,
   type AutomationTarget,
-  type UnknownRecord
+  type UnknownRecord,
+  withSessionDocument
 } from '@/app/automation/bridge/target'
 import { createAutomationToolHandler } from '@/app/automation/bridge/tool-handlers'
 import type { EditorStore } from '@/app/editor/active-store'
@@ -91,27 +94,29 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?:
     }
     if (command === 'agent_session_closed') {
       const session = isUnknownRecord(args) ? args.session : undefined
-      if (typeof session === 'string') endAgentSession(session)
+      if (typeof session === 'string') {
+        // Only the server's word ends the session's document: a dropped connection may come
+        // back with the same session, which must keep working where it did.
+        forgetSessionDocument(session)
+        endAgentSession(session)
+      }
       return { ok: true, result: null }
     }
     if (command === 'get_settings') return handleGetSettings()
     if (command === 'update_settings') return handleUpdateSettings(args)
 
     const rawArgs = isUnknownRecord(args) ? args : {}
-    if (command === 'open_document') return handleOpenFile(rawArgs)
-    if (command === 'create_document') return handleNewDocument(rawArgs)
-
-    // An ACP chat's agent works on the chat's document unless a call names another; once the
-    // chat is gone, a late call must name one rather than land in whatever tab is in front.
-    const chat = readAgentSession(rawArgs.agent)?.chat
-    const chatStore = agentChatStore(chat)
-    const namesDocument = typeof rawArgs.document_id === 'string' && rawArgs.document_id.length > 0
-    if (chat !== undefined && !chatStore && !namesDocument) {
-      throw new Error(
-        'The chat this agent works for is closed. Pass document_id from list_documents to work on an open document.'
-      )
+    const session = sessionOf(rawArgs)
+    if (command === 'open_document' || command === 'create_document') {
+      const response =
+        command === 'open_document'
+          ? await handleOpenFile(rawArgs)
+          : await handleNewDocument(rawArgs)
+      rememberSessionDocument(session, response.target)
+      return response
     }
-    const target = resolveAutomationTarget(chatStore ?? store, rawArgs)
+
+    const target = resolveAgentTarget(store, rawArgs)
     // A graph command such as `tree` reads the page it was asked for from its own arguments.
     const commandArgs = commandHandlers[command]
       ? stripAutomationTargetArgs(rawArgs)
@@ -120,4 +125,35 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?:
   }
 
   return { handleRequest, handleTargetCommand }
+}
+
+/**
+ * The session whose last document a call that names none goes to: any but an app chat's agent,
+ * which has its chat's document instead.
+ */
+function sessionOf(args: UnknownRecord): string | undefined {
+  const agent = readAgentSession(args.agent)
+  return agent?.chat === undefined ? agent?.session : undefined
+}
+
+/**
+ * The document and page a call works on: the one it names; else an app chat's document for the
+ * chat's agent, or the document any other session last worked on, so it stays there when
+ * another tab comes to the front; else the active one.
+ */
+function resolveAgentTarget(store: EditorStore, args: UnknownRecord): AutomationTarget {
+  // Once an app chat is gone, a late call from its agent must name a document rather than land
+  // in whatever tab is in front.
+  const chat = readAgentSession(args.agent)?.chat
+  const chatStore = agentChatStore(chat)
+  const namesDocument = typeof args.document_id === 'string' && args.document_id.length > 0
+  if (chat !== undefined && !chatStore && !namesDocument) {
+    throw new Error(
+      'The chat this agent works for is closed. Pass document_id from list_documents to work on an open document.'
+    )
+  }
+  const session = sessionOf(args)
+  const target = resolveAutomationTarget(chatStore ?? store, withSessionDocument(session, args))
+  rememberSessionDocument(session, target)
+  return target
 }

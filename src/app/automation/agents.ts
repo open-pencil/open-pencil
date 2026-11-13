@@ -278,7 +278,7 @@ export function agentSessionOpened(args: unknown): void {
   waitingChats.delete(chat)
 }
 
-/** The MCP server says a session ended: its agents leave every document. */
+/** A session ended or lost its connection: its agents leave every document. */
 export function endAgentSession(sessionId: string): void {
   // Removing entries while iterating a Set is safe: visited ones stay visited.
   for (const agent of sessionAgents) if (agent.session === sessionId) remove(agent)

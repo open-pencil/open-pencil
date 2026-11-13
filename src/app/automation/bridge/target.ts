@@ -40,10 +40,9 @@ export function targetToResult(target: AutomationTarget): AutomationTargetResult
   }
 }
 
-export function responseWithTarget(
-  body: unknown,
-  target: AutomationTarget
-): Record<string, unknown> {
+export type TargetResponse = Record<string, unknown> & { target: AutomationTargetResult }
+
+export function responseWithTarget(body: unknown, target: AutomationTarget): TargetResponse {
   const targetResult = targetToResult(target)
   if (isUnknownRecord(body)) {
     return { ...body, target: targetResult }
@@ -131,4 +130,42 @@ export function resolveAutomationTarget(
     pageId,
     pageName: page.name
   }
+}
+
+/**
+ * The document each agent session last worked on, by session id, with its name for when it
+ * closes. A call that names no document stays there, rather than following whichever tab the
+ * person or another agent brings to the front. An app chat's agent has its chat's document
+ * instead.
+ */
+const sessionDocuments = new Map<string, { id: string; name: string }>()
+
+/** `args` with the document the session `session` last worked on, when they name none. */
+export function withSessionDocument(
+  session: string | undefined,
+  args: UnknownRecord
+): UnknownRecord {
+  if (session === undefined || readString(args.document_id)) return args
+  const remembered = sessionDocuments.get(session)
+  if (!remembered) return args
+  if (!documentTab(getTabById(remembered.id))) {
+    throw new Error(
+      `The document this session worked on, "${remembered.name}", is closed. ` +
+        'Pass document_id from list_documents to work on an open document.'
+    )
+  }
+  return { ...args, document_id: remembered.id }
+}
+
+/** Remembers that the session `session` worked on `target`'s document. */
+export function rememberSessionDocument(
+  session: string | undefined,
+  target: Pick<AutomationTargetResult, 'documentId' | 'documentName'>
+): void {
+  if (session === undefined) return
+  sessionDocuments.set(session, { id: target.documentId, name: target.documentName })
+}
+
+export function forgetSessionDocument(session: string): void {
+  sessionDocuments.delete(session)
 }

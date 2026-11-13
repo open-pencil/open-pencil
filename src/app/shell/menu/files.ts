@@ -13,6 +13,7 @@ import {
   MAX_REMOTE_DOCUMENT_BYTES,
   readBoundedBody
 } from '@/app/document/io/browser'
+import type { EditorStore } from '@/app/editor/active-store'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { rememberRecentFile } from '@/app/recent-files'
 import { toast } from '@/app/shell/ui'
@@ -70,7 +71,8 @@ function fileNameFromURL(url: URL): string {
 }
 
 /** Fetches a document over HTTP and opens it in a new tab. Browser builds only. */
-export async function openBrowserFileFromURL(url: URL, init?: RequestInit): Promise<void> {
+/** Opens the design file at `url` in a new tab, and resolves with that tab's store. */
+export async function openBrowserFileFromURL(url: URL, init?: RequestInit): Promise<EditorStore> {
   // The cap needs a controller of its own, so a caller's signal is combined with it
   // rather than replaced: dropping it would leave the caller unable to cancel.
   const controller = new AbortController()
@@ -89,7 +91,7 @@ export async function openBrowserFileFromURL(url: URL, init?: RequestInit): Prom
   const name = fileNameFromURL(url)
   assertSupportedDesignFile(name)
   const file = new File([bytes], name, { type: 'application/octet-stream' })
-  await openFileInNewTab(file, undefined, url.href)
+  return openFileInNewTab(file, undefined, url.href)
 }
 
 function isSupportedDesignFile(fileName: string): boolean {
@@ -109,7 +111,7 @@ function assertSupportedDesignFile(fileName: string): void {
 export async function openDesignFileBatch<T>(
   items: Iterable<T>,
   displayName: (item: T) => string,
-  openItem: (item: T) => Promise<void>
+  openItem: (item: T) => Promise<unknown>
 ): Promise<void> {
   for (const item of items) {
     try {
@@ -138,11 +140,13 @@ export async function chooseTauriOpenPaths(): Promise<string[]> {
   return typeof paths === 'string' ? [paths] : paths
 }
 
-export async function openFileFromPath(path: string) {
-  if (!isTauri()) return
+/** Opens the design file at `path` on desktop, and resolves with its tab's store. */
+export async function openFileFromPath(path: string): Promise<EditorStore | undefined> {
+  if (!isTauri()) return undefined
   const file = await readTauriDesignFile(path)
   const store = await openFileInNewTab(file, undefined, path)
   rememberRecentFile(path, store.state.documentKind)
+  return store
 }
 
 /**
