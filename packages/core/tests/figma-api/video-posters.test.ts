@@ -13,12 +13,6 @@ function api() {
   return { graph, figma: new FigmaAPI(graph) }
 }
 
-function otherPosterOfClip(graph: SceneGraph) {
-  graph.createNode('RECTANGLE', graph.getPages()[0].id, {
-    fills: [{ type: 'VIDEO', ...SCENE_PAINT, imageHash: '9'.repeat(40), videoHash: HASH }]
-  })
-}
-
 describe('a video paint poster frame', () => {
   test('names the clip, apart from the poster frame a .fig video draws', () => {
     const { graph, figma } = api()
@@ -79,53 +73,26 @@ describe('a video paint poster frame', () => {
     expect(graph.getNode(rectangle.id)?.fills[0].imageHash).toBeUndefined()
   })
 
-  describe('two paints sharing a clip with posters of their own', () => {
-    const posters = ['d'.repeat(40), 'e'.repeat(40)]
-    const solid: Fill = { type: 'SOLID', ...SCENE_PAINT }
-    const halfVideo = {
-      type: 'VIDEO' as const,
-      videoHash: HASH,
-      scaleMode: 'FILL' as const,
-      opacity: 0.5
-    }
-    const red = { type: 'SOLID' as const, color: { r: 1, g: 0, b: 0 } }
-
-    function layerWithSharedClip(leading: Fill[] = []) {
-      const { graph, figma } = api()
-      const rectangle = figma.createRectangle()
-      graph.updateNode(rectangle.id, {
-        fills: [
-          ...leading,
-          ...posters.map((imageHash): Fill => ({
-            type: 'VIDEO',
-            ...SCENE_PAINT,
-            imageHash,
-            videoHash: HASH
-          }))
-        ]
-      })
-      const writtenPosters = () =>
-        graph.getNode(rectangle.id)?.fills.map((paint) => paint.imageHash)
-      return { rectangle, writtenPosters }
-    }
-
-    test('keep them when written back', () => {
-      const { rectangle, writtenPosters } = layerWithSharedClip()
-      rectangle.fills = [halfVideo, halfVideo]
-      expect(writtenPosters()).toEqual(posters)
+  // Live Figma: every paint of a clip draws that clip's one poster, and a pasted paint naming
+  // another poster loses it, so a paint never keeps a poster of its own.
+  test('gives every paint of a clip the poster that clip has', () => {
+    const { graph, figma } = api()
+    const poster = 'd'.repeat(40)
+    const source = figma.createRectangle()
+    graph.updateNode(source.id, {
+      fills: [{ type: 'VIDEO', ...SCENE_PAINT, imageHash: poster, videoHash: HASH }]
     })
+    const target = figma.createEllipse()
 
-    test('keep them when a paint is inserted before them', () => {
-      const { rectangle, writtenPosters } = layerWithSharedClip()
-      rectangle.fills = [red, halfVideo, halfVideo]
-      expect(writtenPosters()).toEqual([undefined, ...posters])
-    })
+    const video = { type: 'VIDEO' as const, videoHash: HASH, scaleMode: 'FILL' as const }
+    target.fills = [
+      { type: 'SOLID', color: { r: 1, g: 0, b: 0 } },
+      video,
+      { ...video, opacity: 0.5 }
+    ]
 
-    test('keep them when the paint before them is removed', () => {
-      const { rectangle, writtenPosters } = layerWithSharedClip([solid])
-      rectangle.fills = [halfVideo, halfVideo]
-      expect(writtenPosters()).toEqual(posters)
-    })
+    const posters = graph.getNode(target.id)?.fills.map((paint) => paint.imageHash)
+    expect(posters).toEqual([undefined, poster, poster])
   })
 
   test('finds a poster only a vector region holds', () => {
@@ -175,7 +142,6 @@ describe('a video paint poster frame', () => {
   test('keeps the poster when a script writes a text range back', () => {
     const { graph, figma } = api()
     const poster = 'c3'.repeat(20)
-    otherPosterOfClip(graph)
     const node = graph.createNode('TEXT', graph.getPages()[0].id, {
       text: 'clip',
       styleRuns: [
@@ -193,50 +159,6 @@ describe('a video paint poster frame', () => {
 
     const [run] = graph.getNode(node.id)?.styleRuns ?? []
     expect(run?.style.fills?.[0]).toMatchObject({ imageHash: poster, opacity: 0.5 })
-  })
-
-  test('keeps each run its own poster when a script writes a range over runs sharing a clip', () => {
-    const { graph, figma } = api()
-    const posters = ['c4'.repeat(20), 'c5'.repeat(20)]
-    const node = graph.createNode('TEXT', graph.getPages()[0].id, {
-      text: 'clip',
-      styleRuns: posters.map((imageHash, index) => ({
-        start: index * 2,
-        length: 2,
-        style: { fills: [{ type: 'VIDEO', ...SCENE_PAINT, imageHash, videoHash: HASH }] }
-      }))
-    })
-
-    figma
-      .getNodeById(node.id)
-      ?.setRangeFills(0, 4, [{ type: 'VIDEO', videoHash: HASH, scaleMode: 'FILL', opacity: 0.5 }])
-
-    const runs = graph.getNode(node.id)?.styleRuns ?? []
-    expect(runs.map((run) => run.style.fills?.[0]?.imageHash)).toEqual(posters)
-    expect(runs.map((run) => run.style.fills?.[0]?.opacity)).toEqual([0.5, 0.5])
-  })
-
-  test('gives a run without the clip the poster another run of the range holds', () => {
-    const { graph, figma } = api()
-    const poster = 'c6'.repeat(20)
-    otherPosterOfClip(graph)
-    const node = graph.createNode('TEXT', graph.getPages()[0].id, {
-      text: 'clip',
-      styleRuns: [
-        {
-          start: 2,
-          length: 2,
-          style: { fills: [{ type: 'VIDEO', ...SCENE_PAINT, imageHash: poster, videoHash: HASH }] }
-        }
-      ]
-    })
-
-    figma
-      .getNodeById(node.id)
-      ?.setRangeFills(0, 4, [{ type: 'VIDEO', videoHash: HASH, scaleMode: 'FILL' }])
-
-    const runs = graph.getNode(node.id)?.styleRuns ?? []
-    expect(runs.map((run) => run.style.fills?.[0]?.imageHash)).toEqual([poster])
   })
 
   test('finds a poster for a text range only another layer holds', () => {
@@ -259,7 +181,6 @@ describe('a video paint poster frame', () => {
   test('keeps the poster when a script writes a vector region back', () => {
     const { graph, figma } = api()
     const poster = 'e5'.repeat(20)
-    otherPosterOfClip(graph)
     const vector = figma.createVector()
     vector.vectorPaths = [{ windingRule: 'NONZERO', data: 'M 0 0 L 20 0 L 20 20 Z' }]
     const network = graph.getNode(vector.id)?.vectorNetwork
@@ -283,28 +204,6 @@ describe('a video paint poster frame', () => {
 
     const [region] = graph.getNode(vector.id)?.vectorNetwork?.regions ?? []
     expect(region?.fills?.[0]).toMatchObject({ imageHash: poster, opacity: 0.5 })
-  })
-
-  test('gives a region without its own fills the poster of the layer it drew with', () => {
-    const { graph, figma } = api()
-    const poster = 'a7'.repeat(20)
-    otherPosterOfClip(graph)
-    const vector = figma.createVector()
-    vector.vectorPaths = [{ windingRule: 'NONZERO', data: 'M 0 0 L 20 0 L 20 20 Z' }]
-    graph.updateNode(vector.id, {
-      fills: [{ type: 'VIDEO', ...SCENE_PAINT, imageHash: poster, videoHash: HASH }]
-    })
-
-    vector.vectorNetwork = {
-      ...vector.vectorNetwork,
-      regions: vector.vectorNetwork.regions?.map((region) => ({
-        ...region,
-        fills: [{ type: 'VIDEO', videoHash: HASH, scaleMode: 'FILL' }]
-      }))
-    }
-
-    const [region] = graph.getNode(vector.id)?.vectorNetwork?.regions ?? []
-    expect(region?.fills?.[0]?.imageHash).toBe(poster)
   })
 
   test('keeps the poster when a script writes a paint style back', () => {

@@ -18,9 +18,9 @@ import {
 } from '#core/figma-api/effects'
 import { graphOf } from '#core/figma-api/graph'
 import {
-  keepVideoPosters,
   parseFigmaPaints,
   toFigmaPaint,
+  withVideoPosters,
   type FigmaPaint
 } from '#core/figma-api/paints'
 import { getTextStyle } from '#core/figma-api/text/style'
@@ -65,7 +65,7 @@ function setFills(
   method: string
 ): void {
   const node = raw(target, internals)
-  const fills = keepVideoPosters(parseFigmaPaints(value, method), node.fills, graphOf(target))
+  const fills = withVideoPosters(parseFigmaPaints(value, method), graphOf(target), node.fills)
   updateNode(
     target,
     internals,
@@ -84,10 +84,10 @@ function setStrokes(
   const owner = strokeOwner(target, internals)
   const geometry = newStrokeGeometry(raw(owner, internals))
   const { dashPattern, strokes: previous } = raw(owner, internals)
-  const parsed = keepVideoPosters(
+  const parsed = withVideoPosters(
     parseFigmaPaints(value, method, 'strokes'),
-    previous,
-    graphOf(target)
+    graphOf(target),
+    previous
   )
   const strokes = parsed.map((paint): Stroke => ({
     ...paint,

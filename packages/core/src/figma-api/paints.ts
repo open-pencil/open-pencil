@@ -346,41 +346,25 @@ function figmaMediaPaint(paint: Fill, type: 'IMAGE' | 'VIDEO', base: ReadBase): 
     : { type, ...media, videoTransform: transform, videoHash: paint.videoHash ?? null }
 }
 
-function* knownPaints(previous: readonly Fill[], sceneGraph: SceneGraph): Generator<Fill> {
-  yield* previous
+function videoClip(paint: Fill): string | undefined {
+  return paint.type === 'VIDEO' ? paint.videoHash : undefined
+}
+
+function* knownPaints(nearby: readonly Fill[], sceneGraph: SceneGraph): Generator<Fill> {
+  yield* nearby
   for (const node of sceneGraph.nodes.values()) {
     yield* node.fills
     yield* node.strokes
     yield* regionFills(node.vectorNetwork)
-  }
-  for (const node of sceneGraph.nodes.values()) {
-    for (const run of node.styleRuns) {
-      yield* run.style.fills ?? []
-    }
+    for (const run of node.styleRuns) yield* run.style.fills ?? []
   }
 }
 
-function videoClip(paint: Fill | undefined): string | undefined {
-  return paint?.type === 'VIDEO' ? paint.videoHash : undefined
-}
-
-function postersByClip(paints: readonly Fill[]): Map<string, string[]> {
-  const posters = new Map<string, string[]>()
-  for (const paint of paints) {
-    const clip = videoClip(paint)
-    if (clip && paint.imageHash) {
-      posters.set(clip, [...(posters.get(clip) ?? []), paint.imageHash])
-    }
-  }
-  return posters
-}
-
-function postersOf(clips: Set<string>, paints: Iterable<Fill>): Map<string, string> {
+/** The poster of each of `clips`, from the first paint of that clip that has one. */
+function clipPosters(clips: Set<string>, paints: Iterable<Fill>): Map<string, string> {
   const posters = new Map<string, string>()
   for (const paint of paints) {
-    if (posters.size === clips.size) {
-      break
-    }
+    if (posters.size === clips.size) break
     const clip = videoClip(paint)
     if (clip && paint.imageHash && clips.has(clip) && !posters.has(clip)) {
       posters.set(clip, paint.imageHash)
@@ -390,30 +374,21 @@ function postersOf(clips: Set<string>, paints: Iterable<Fill>): Map<string, stri
 }
 
 /**
- * Figma's plugin API names only a video's clip, so a video paint written to any layer takes the
- * poster that clip already has: the layer's posters of that clip in order first, else the layer's
- * first, else any other layer's.
+ * Figma's plugin API names only a video's clip, and Figma draws every paint of a clip with that
+ * clip's one poster frame, so each video paint written takes the poster its clip already has:
+ * found in `nearby` paints first (usually the ones being replaced), else anywhere in the document.
  */
-export function keepVideoPosters<T extends Fill>(
+export function withVideoPosters<T extends Fill>(
   paints: T[],
-  previous: readonly Fill[],
-  sceneGraph: SceneGraph
+  sceneGraph: SceneGraph,
+  nearby: readonly Fill[] = []
 ): T[] {
-  const previousPosters = postersByClip(previous)
-  const inOrder = paints.map((paint) => {
+  const clips = new Set(paints.flatMap((paint) => videoClip(paint) ?? []))
+  if (clips.size === 0) return paints
+  const posters = clipPosters(clips, knownPaints(nearby, sceneGraph))
+  return paints.map((paint) => {
     const clip = videoClip(paint)
-    return clip ? previousPosters.get(clip)?.shift() : undefined
-  })
-  const clips = new Set(
-    paints.flatMap((paint, index) => (inOrder[index] ? [] : (videoClip(paint) ?? [])))
-  )
-  const posters =
-    clips.size === 0
-      ? new Map<string, string>()
-      : postersOf(clips, knownPaints(previous, sceneGraph))
-  return paints.map((paint, index) => {
-    const clip = videoClip(paint)
-    const poster = inOrder[index] ?? (clip && posters.get(clip))
+    const poster = clip && posters.get(clip)
     return poster ? { ...paint, imageHash: poster } : paint
   })
 }
