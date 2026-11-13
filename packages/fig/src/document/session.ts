@@ -8,7 +8,12 @@ import {
   type ComponentCheckpoint
 } from './component/checkpoint'
 import { loadPageTransaction } from './load-transaction'
-import { materializeReader, type AssemblyState, type DocumentAssemblyOptions } from './materialize'
+import {
+  materializeReader,
+  withArchiveImages,
+  type AssemblyState,
+  type DocumentAssemblyOptions
+} from './materialize'
 import { createArchiveDocumentReader, type createDocumentReader } from './read'
 
 export interface FigSessionCheckpoint {
@@ -78,7 +83,7 @@ export function createFigDocumentSession(
   resume?: FigSessionResume
 ) {
   const archive = createArchiveDocumentReader(bytes, new Set())
-  const sessionOptions = { ...options, images: options.images ?? new Map(archive.images) }
+  const sessionOptions = withArchiveImages(options, archive.images)
   const state: AssemblyState = resume
     ? restoreAssemblyState(resume, archive.reader, sessionOptions)
     : materializeReader(archive.reader, archive.blobs, sessionOptions)
