@@ -149,6 +149,7 @@ export const cloudSidebar = (): DefaultTheme.SidebarItem[] => [
     text: 'Using Cloud',
     items: [
       { text: 'Overview', link: '/cloud/' },
+      { text: 'Plans and Pricing', link: '/cloud/pricing' },
       { text: 'Your Account', link: '/cloud/account' },
       { text: 'Documents', link: '/cloud/documents' },
       { text: 'Sharing and Teams', link: '/cloud/sharing' },
