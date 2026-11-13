@@ -124,6 +124,11 @@ export function createServicesApp(services: ServicesAppDependencies) {
     services.onBackgroundError ??
     ((error: unknown) => console.error('[Services] Metering failed:', error))
 
+  /**
+   * Every route under `/v1` but the catalog, which is registered before it and answers without a
+   * token: what the service charges is public, and a site can show it, as openpencil.dev's pricing
+   * page does when it builds.
+   */
   const requireToken = async (context: Context<ServicesEnvironment>, next: () => Promise<void>) => {
     const header = context.req.header('Authorization')
     const token = header?.startsWith('Bearer ') ? header.slice('Bearer '.length) : undefined
@@ -151,8 +156,8 @@ export function createServicesApp(services: ServicesAppDependencies) {
         maxAge: 600
       })
     )
-    .use(`${CLOUD_SERVICES_API_PATHS.base}/*`, requireToken)
     .get(CLOUD_SERVICES_API_PATHS.catalog, (context) => context.json(config.catalog))
+    .use(`${CLOUD_SERVICES_API_PATHS.base}/*`, requireToken)
     .get(CLOUD_SERVICES_API_PATHS.wallet, async (context) => {
       const claims = context.get('claims')
       return context.json(await usage.wallet(spender(claims), claims.monthlyCreditAllowance, now()))

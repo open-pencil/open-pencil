@@ -1,6 +1,5 @@
 ---
 layout: page
-landing: true
 sidebar: false
 aside: false
 title: Plans and Pricing
