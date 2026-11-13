@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 
+import { counterAxisSpacingOf } from '@open-pencil/scene-graph/layout'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
@@ -121,12 +122,12 @@ test('wrap mode exposes cross-axis gap control', async () => {
   await canvas.waitForRender()
 
   const before = await getNodeById(page, frameId)
-  const initialSpacing = expectDefined(before, 'before').counterAxisSpacing
+  const initialSpacing = counterAxisSpacingOf(expectDefined(before, 'before'))
   await canvas.dragNumberField(page.getByTestId('layout-cross-gap-input'), 40)
 
   const after = await getNodeById(page, frameId)
   expect(expectDefined(after, 'after').layoutWrap).toBe('WRAP')
-  expect(expectDefined(after, 'after').counterAxisSpacing).toBeGreaterThan(initialSpacing + 5)
+  expect(counterAxisSpacingOf(expectDefined(after, 'after'))).toBeGreaterThan(initialSpacing + 5)
   canvas.assertNoErrors()
 })
 

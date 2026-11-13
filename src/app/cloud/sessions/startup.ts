@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { IS_BROWSER, IS_CLOUD_SITE } from '@/constants'
 
 import { checkCloudAvailability } from '../availability'
+import { openCloudCommunityLink, readCloudCommunityLink } from '../community/link'
 import { cloudSignedIn } from '../connect/flow'
 import {
   forgetCloudDocumentLink,
@@ -37,6 +38,7 @@ function opensWithCloudDocument(): boolean {
   const address = new URL(globalThis.location.href)
   return (
     readCloudDocumentLink(address) !== null ||
+    readCloudCommunityLink(address) !== null ||
     readCloudLink(address)?.kind === 'share' ||
     leftForCloudSignIn()
   )
@@ -45,8 +47,8 @@ function opensWithCloudDocument(): boolean {
 /**
  * Adds the server that serves this editor, if one does, checks every known server once the app
  * starts, finishes a sign-in this tab left for the server's pages to do, and opens an invitation,
- * a shared link, or a document link the tab was opened with, or the desktop app was sent. A
- * link's secret is taken out of the address at once.
+ * a shared link, a document link, or a community gallery document the tab was opened with, or
+ * the desktop app was sent. A link's secret is taken out of the address at once.
  */
 export async function startCloudSessions(options: {
   /** Leaves a Cloud link's address, so its secret is not kept in history. */
@@ -62,6 +64,7 @@ export async function startCloudSessions(options: {
     const address = new URL(globalThis.location.href)
     const link = readCloudLink(address)
     const documentLink = readCloudDocumentLink(address)
+    const communityLink = readCloudCommunityLink(address)
     // The link the tab opens with is the one to open, not one kept from an earlier sign-in.
     if (documentLink || link) {
       forgetCloudDocumentLink()
@@ -86,6 +89,7 @@ export async function startCloudSessions(options: {
     if (link?.kind !== 'invitations') resumeCloudInvitation()
     if (link) await openCloudLink(link)
     if (documentLink) await openCloudDocumentLink(documentLink)
+    if (communityLink) await openCloudCommunityLink(communityLink)
   } finally {
     // A link that needs a sign-in leaves for the server's page, so nothing shows before it goes.
     openingCloudLink.value = leftForCloudSignIn()

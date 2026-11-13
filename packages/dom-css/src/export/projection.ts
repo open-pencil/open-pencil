@@ -205,14 +205,15 @@ function addPadding(style: DesignStyleDeclaration, node: SceneNode, css: FieldCS
 }
 
 function addFlexGap(style: DesignStyleDeclaration, node: SceneNode, css: FieldCSS): void {
-  if (node.itemSpacing <= 0 && node.counterAxisSpacing <= 0) return
+  const counterAxisSpacing = node.counterAxisSpacing ?? 0
+  if (node.itemSpacing <= 0 && counterAxisSpacing <= 0) return
   const item = css('itemSpacing', px(node.itemSpacing))
-  if (node.counterAxisSpacing <= 0) {
+  if (counterAxisSpacing <= 0) {
     style.gap = item
     return
   }
 
-  const counter = css('counterAxisSpacing', px(node.counterAxisSpacing))
+  const counter = css('counterAxisSpacing', px(counterAxisSpacing))
   if (node.layoutMode === 'HORIZONTAL') {
     if (node.itemSpacing > 0) style['column-gap'] = item
     style['row-gap'] = counter

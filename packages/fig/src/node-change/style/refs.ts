@@ -37,7 +37,7 @@ function referencedStyle(
   return id ? changeMap.get(id) : undefined
 }
 
-function applyPaintStyleRefs(
+export function applyFillStyleRef(
   changeMap: StyleChangeMap,
   fields: StyleRefFields,
   assetRefs?: ReadonlyMap<string, string>
@@ -46,6 +46,13 @@ function applyPaintStyleRefs(
   if (fillStyle?.styleType === 'FILL' && fillStyle.fillPaints) {
     fields.fillPaints = fillStyle.fillPaints
   }
+}
+
+function applyStrokeStyleRef(
+  changeMap: StyleChangeMap,
+  fields: StyleRefFields,
+  assetRefs?: ReadonlyMap<string, string>
+): void {
   const strokeStyle = referencedStyle(changeMap, fields.styleIdForStrokeFill, assetRefs)
   if (strokeStyle?.styleType === 'FILL' && strokeStyle.fillPaints) {
     fields.strokePaints = strokeStyle.fillPaints
@@ -84,7 +91,8 @@ export function applyStyleRefsToFields(
   fields: StyleRefFields,
   assetRefs?: ReadonlyMap<string, string>
 ): void {
-  applyPaintStyleRefs(changeMap, fields, assetRefs)
+  applyFillStyleRef(changeMap, fields, assetRefs)
+  applyStrokeStyleRef(changeMap, fields, assetRefs)
   applyEffectAndGridStyleRefs(changeMap, fields, assetRefs)
   applyTextStyleRef(changeMap, fields, assetRefs)
 }

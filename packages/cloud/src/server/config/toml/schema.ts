@@ -274,6 +274,11 @@ export const cloudDeploymentConfigSchema = v.strictObject({
       minimum_age: v.optional(v.pipe(v.number(), v.integer(), v.minValue(13), v.maxValue(21)))
     })
   ),
+  /**
+   * Optional: a workspace whose documents anyone may open read-only, without signing in or a
+   * link, as the deployment's community gallery. Everything saved there is public.
+   */
+  community: v.optional(v.strictObject({ workspace: v.pipe(v.string(), v.uuid()) })),
   /** Optional: reports server errors to PostHog error tracking. Leave it out to send nothing. */
   error_tracking: v.optional(
     v.strictObject({
