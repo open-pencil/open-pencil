@@ -429,12 +429,16 @@ export function blurSigma(radius: number): number {
 const KERNEL_SIGMAS = 3
 
 /**
- * How far past what it blurs a blur of `radius` leaves ink on screen: where Skia's kernel ends,
- * and one more pixel holds its rounding.
+ * How far past what it blurs a Gaussian of `sigma` leaves ink on screen: where Skia's kernel
+ * ends, and one more pixel holds its rounding.
  */
-export function blurReach(radius: number): number {
-  const sigma = blurSigma(radius)
+export function kernelReach(sigma: number): number {
   return sigma > 0 ? Math.ceil(KERNEL_SIGMAS * sigma) + 1 : 0
+}
+
+/** How far past what it blurs a Figma blur of `radius` leaves ink on screen (`kernelReach`). */
+export function blurReach(radius: number): number {
+  return kernelReach(blurSigma(radius))
 }
 
 /**
@@ -481,6 +485,11 @@ export function blurRadiusForSigma(sigma: number): number {
   return Math.max(0, sigma) / BLUR_SIGMA_PER_RADIUS
 }
 
+/**
+ * How far a layer's shadows and blurs reach past each side as Figma's render bounds count them:
+ * a blur by its radius, a shadow by its radius and spread, moved by its offset. Ink on screen
+ * reaches further, to `blurReach`.
+ */
 export function effectOverflow(effects?: Effect[]) {
   let left = 0
   let right = 0

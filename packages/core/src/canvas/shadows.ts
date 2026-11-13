@@ -1,6 +1,11 @@
 import type { Canvas, ImageFilter } from '@open-pencil/canvaskit'
 import type { BlendMode, Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { blurSigma, drawnBlurRadius, shadowSpreadOf } from '@open-pencil/scene-graph/geometry'
+import {
+  blurSigma,
+  drawnBlurRadius,
+  shadowSpreadOf,
+  blurReach
+} from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import { clipsChildren, isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import { regionFills } from '@open-pencil/scene-graph/vector-network'
@@ -176,7 +181,7 @@ function drawOwnShapeDropShadow(
  * another child: the blur's reach from both, any spread, and the offset.
  */
 function shadowGap(effect: Effect, spread: number): number {
-  const reach = 3 * blurSigma(effect.radius) + Math.abs(spread) + 1
+  const reach = blurReach(effect.radius) + Math.abs(spread)
   return 2 * reach + Math.hypot(effect.offset.x, effect.offset.y)
 }
 
