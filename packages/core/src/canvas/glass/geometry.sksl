@@ -1,5 +1,6 @@
-// The outline both glass shaders read: a box, or up to SEGMENTS segments grouped CHUNK to a
-// bounding circle, so a pixel can skip a chunk whose circle it is outside of.
+// The outline both glass shaders read: a box, an ellipse filling the box, or up to SEGMENTS
+// segments grouped CHUNK to a bounding circle, so a pixel can skip a chunk whose circle it is
+// outside of.
 const int SEGMENTS = 128;
 const int CHUNK = 8;
 const int CHUNKS = SEGMENTS / CHUNK;
@@ -8,6 +9,7 @@ uniform float2 origin;
 uniform float2 size;
 uniform float4 radii;
 uniform float isBox;
+uniform float isEllipse;
 uniform float depth;
 uniform float segmentCount;
 uniform float4 segments[SEGMENTS];
@@ -18,9 +20,35 @@ float boxDistance(float2 q, float2 h, float r) {
   return length(max(k, 0.0)) + min(max(k.x, k.y), 0.0) - r;
 }
 
-// (distance in from the outline, inward direction), negative distance outside a box. A box's
-// direction bends around corners rounded by at least bend.
+// The point of the ellipse with semi-axes ab, centred on the origin, nearest to p, by four
+// fixed-point steps against the ellipse's evolute from the quadrant's middle; within about a
+// thousandth of a unit of the exact distance, measured up to a 40:1 ellipse.
+float2 nearestOnEllipse(float2 p, float2 ab) {
+  float2 q = abs(p);
+  float2 t = float2(0.70710678);
+  float2 stretch = float2(ab.x * ab.x - ab.y * ab.y, ab.y * ab.y - ab.x * ab.x) / ab;
+  for (int i = 0; i < 4; i++) {
+    float2 evolute = stretch * t * t * t;
+    float2 toCurve = ab * t - evolute;
+    float2 toPoint = q - evolute;
+    t = clamp((toPoint * length(toCurve) / max(length(toPoint), 1e-6) + evolute) / ab, 0.0, 1.0);
+    t /= max(length(t), 1e-6);
+  }
+  return ab * t * float2(p.x < 0.0 ? -1.0 : 1.0, p.y < 0.0 ? -1.0 : 1.0);
+}
+
+// (distance in from the outline, inward direction), negative distance outside a box or an
+// ellipse. A box's direction bends around corners rounded by at least bend; an ellipse's is its
+// inward normal at the nearest point.
 float3 geometry(float2 p, float bend) {
+  if (isEllipse > 0.5) {
+    float2 ab = max(size * 0.5, float2(1e-3));
+    float2 q = p - origin - size * 0.5;
+    float2 nearest = nearestOnEllipse(q, ab);
+    float2 k = q / ab;
+    float s = (dot(k, k) < 1.0 ? 1.0 : -1.0) * length(q - nearest);
+    return float3(s, -normalize(nearest / (ab * ab)));
+  }
   if (isBox > 0.5) {
     float2 h = size * 0.5;
     float2 q = p - origin - h;

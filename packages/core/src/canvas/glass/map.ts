@@ -75,7 +75,7 @@ export function glassGeometryMap(
   outline: GlassOutline,
   depth: number
 ): GlassGeometryMap | null {
-  if (outline.isBox) return null
+  if (outline.kind !== 'segments') return null
   const width = node.width + 2 * MAP_MARGIN
   const height = node.height + 2 * MAP_MARGIN
   // A power of two at or above the device scale, so a zoom keeps its map until the next step.
