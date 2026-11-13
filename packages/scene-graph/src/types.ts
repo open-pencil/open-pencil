@@ -43,6 +43,8 @@ export interface NodeChangeObserver {
   before: (node: SceneNode) => void
   /** A node was just added. */
   created: (node: SceneNode) => void
+  /** A node is about to take a preview's changes, which no history keeps. */
+  previewed?: (node: SceneNode) => void
   /**
    * A variable or collection is about to change, be added, or be removed, and is still as it
    * was: absent, for one about to be added.

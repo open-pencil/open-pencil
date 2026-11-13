@@ -2,11 +2,7 @@ import { isEqual, noop } from 'es-toolkit'
 
 import type { Effect, SceneNode, SceneGraph, Fill, Stroke } from '@open-pencil/scene-graph'
 import type { RenderColorSpace, ResolvedRenderColor } from '@open-pencil/scene-graph/color'
-import {
-  drawnBlurRadius,
-  type VisualBounds,
-  widestBlurRadius
-} from '@open-pencil/scene-graph/geometry'
+import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import { slotPropertyId } from '@open-pencil/scene-graph/slots'
@@ -84,6 +80,7 @@ import type { NodeEditPaints } from './node-edit-overlay'
 import { TiledSceneController } from './renderer/tiles'
 import type { TransientCanvasPreview } from './renderer/transient-previews'
 import type { RenderOverlays, RulerTheme, SelectionTheme } from './renderer/types'
+import { RenderedBoundsCache } from './renderer/visual-bounds'
 import * as Scene from './scene'
 import { type EffectPass, renderEffects as renderShadowEffects } from './shadows'
 import * as Shapes from './shapes'
@@ -200,6 +197,8 @@ export class SkiaRenderer {
   nodePaths = new NodePathCaches()
   /** Each node's picture of itself with its effects, good for the font generation it was recorded at. */
   readonly nodePictures = new Map<string, NodePictureEntry>()
+  /** What each node and its subtree put on screen, which the layers it opens are bounded by. */
+  readonly renderedBounds = new RenderedBoundsCache()
   /** The one picture of the whole page a single-canvas consumer draws from. */
   readonly wholeScene = createWholeScenePicture()
   readonly tiledScene = new TiledSceneController()
@@ -364,19 +363,6 @@ export class SkiaRenderer {
       type === 'SECTION' ||
       type === 'GROUP'
     )
-  }
-
-  effectOverflow(node: SceneNode): number {
-    let expand = 0
-    for (const e of node.effects) {
-      if (!e.visible) continue
-      const blur = drawnBlurRadius(widestBlurRadius(e))
-      const spread = e.spread
-      const ox = Math.abs(e.offset.x)
-      const oy = Math.abs(e.offset.y)
-      expand = Math.max(expand, blur + spread + ox, blur + spread + oy)
-    }
-    return expand
   }
 
   constructor(ck: CanvasKit, surface: Surface, gl?: WebGL2RenderingContext | null) {
