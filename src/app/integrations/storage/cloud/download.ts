@@ -1,17 +1,13 @@
 import { limitAsync, sumBy } from 'es-toolkit'
-import { fromUint8Array } from 'js-base64'
 
+import {
+  assembleCloudDocument,
+  cloudChecksum,
+  type CloudObjectFetch as ObjectFetch
+} from '@open-pencil/cloud/client'
 import type { DocumentDownload, DocumentImageLink } from '@open-pencil/cloud/contract'
 
 import type { StorageTransferProgress } from '../types'
-import { assembleCloudDocument } from './images'
-
-export async function cloudChecksum(bytes: Uint8Array): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', Uint8Array.from(bytes))
-  return fromUint8Array(new Uint8Array(digest))
-}
-
-type ObjectFetch = (input: string, init: RequestInit) => Promise<Response>
 const IMAGE_DOWNLOAD_CONCURRENCY = 6
 
 /** An object's bytes from the store, checked against the size and checksum the server recorded. */
