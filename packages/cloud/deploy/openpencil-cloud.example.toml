@@ -130,6 +130,13 @@ transport = "none"
 # abuse_email = "abuse@example.com"
 # minimum_age = 16
 
+# Optional: a workspace whose documents anyone may open read-only, without signing in or a share
+# link, as a public gallery. Everything saved there is public. Leave the table out to have none.
+# Set [authentication.trusted_proxies] headers first and let only the proxy reach the server: the
+# gallery is rate-limited by client IP, and a request without the header has none.
+# [community]
+# workspace = "0f6b1c1e-6a8e-4b8e-9a4f-3c2d1e0f9a8b"
+
 # Optional: reports server errors to PostHog error tracking. Leave it out to send nothing. The host
 # defaults to https://eu.i.posthog.com and the project API key to POSTHOG_PROJECT_API_KEY.
 # [error_tracking]

@@ -1,6 +1,7 @@
 import type { CSSFontFaceRule } from '@acemir/cssom'
 import { parseFragment, serialize, type DefaultTreeAdapterTypes } from 'parse5'
 
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { normalizeFontFamily } from '@open-pencil/scene-graph/font-style'
 import { parseDataURL } from '@open-pencil/scene-graph/images'
 
@@ -129,10 +130,10 @@ function standaloneSize(document: DesignDocument): StandaloneBounds {
   const bounds = document.children
     .map(nodeBounds)
     .filter((value): value is NonNullable<typeof value> => value !== undefined)
-  const minX = bounds.length > 0 ? Math.min(...bounds.map((bound) => bound.minX)) : 0
-  const minY = bounds.length > 0 ? Math.min(...bounds.map((bound) => bound.minY)) : 0
-  const maxX = bounds.length > 0 ? Math.max(...bounds.map((bound) => bound.minX + bound.width)) : 1
-  const maxY = bounds.length > 0 ? Math.max(...bounds.map((bound) => bound.minY + bound.height)) : 1
+  const minX = bounds.length > 0 ? minOf(bounds.map((bound) => bound.minX)) : 0
+  const minY = bounds.length > 0 ? minOf(bounds.map((bound) => bound.minY)) : 0
+  const maxX = bounds.length > 0 ? maxOf(bounds.map((bound) => bound.minX + bound.width)) : 1
+  const maxY = bounds.length > 0 ? maxOf(bounds.map((bound) => bound.minY + bound.height)) : 1
   return { minX, minY, width: Math.max(1, maxX - minX), height: Math.max(1, maxY - minY) }
 }
 

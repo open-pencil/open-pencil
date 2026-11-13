@@ -1,0 +1,1 @@
+- Self-hosted Cloud can open one workspace to everyone as a community gallery: `[community] workspace` lets anyone open its documents and their named versions read-only, without signing in or a share link, and lists them with thumbnails at `/api/community`.

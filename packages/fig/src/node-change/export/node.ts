@@ -12,6 +12,7 @@ import type {
   SceneNode,
   VariantPropSpec
 } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { variantOptions } from '@open-pencil/scene-graph/components'
 import {
   DEFAULT_STROKE_MITER_LIMIT,
@@ -413,12 +414,13 @@ function applyInstancePayload(
     const symbolData: Record<string, unknown> = { symbolID }
     const symbolOverrides: KiwiSymbolOverridePayload[] = []
     if (node.source.fig.symbolOverrides.length > 0) {
-      symbolOverrides.push(
-        ...(materializeFigmaPayload(node.source.fig.symbolOverrides, context.blobs, {
+      appendAll(
+        symbolOverrides,
+        materializeFigmaPayload(node.source.fig.symbolOverrides, context.blobs, {
           blobIndexByHex: context.blobIndexByHex,
           includePaintVariables: true,
           includeVariableMaps: true
-        }) as KiwiSymbolOverridePayload[])
+        }) as KiwiSymbolOverridePayload[]
       )
     }
     mergeOverrides(
@@ -1062,7 +1064,9 @@ export function sceneNodeToKiwiWithContext(
   const result: KiwiNodeChange[] = [generatedFrameRecord(context, node, nc) ?? nc]
   const children = exportedChildren(node, context)
   for (let i = 0; i < children.length; i++) {
-    result.push(...context.sceneNodeToKiwi(children[i], guid, i, localIdCounter, context))
+    // A child's subtree can hold more records than an engine takes arguments.
+    for (const record of context.sceneNodeToKiwi(children[i], guid, i, localIdCounter, context))
+      result.push(record)
   }
   return result
 }

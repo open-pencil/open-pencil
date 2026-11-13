@@ -142,11 +142,14 @@ export function coverImageTransform(
   return { m00, m01: 0, m02: (1 - m00) / 2, m10: 0, m11, m12: (1 - m11) / 2 }
 }
 
-/** The images `paints` show, by their hashes. */
+/** The image a paint draws: an IMAGE paint's own, or the poster frame of a VIDEO paint. */
+export function drawnImageHash(paint: Pick<Fill, 'type' | 'imageHash'>): string | undefined {
+  return paint.type === 'IMAGE' || paint.type === 'VIDEO' ? paint.imageHash : undefined
+}
+
+/** The images `paints` show, by their hashes: a VIDEO paint shows its poster frame. */
 export function imagePaintHashes(paints: Iterable<Fill>): string[] {
-  return [...paints].flatMap((paint) =>
-    paint.type === 'IMAGE' && paint.imageHash ? [paint.imageHash] : []
-  )
+  return [...paints].flatMap((paint) => drawnImageHash(paint) ?? [])
 }
 
 /**

@@ -9,7 +9,8 @@ import {
   type CachedTile,
   TileImageCache,
   viewportTileBytes,
-  viewportTileCacheBudget
+  viewportTileCacheBudget,
+  type TileMemory
 } from './cache'
 import { TilePageContent } from './content'
 import { TileCostModel } from './cost'
@@ -77,7 +78,7 @@ export interface TiledSceneControllerOptions {
   /** The clock the scheduler's deadline and the tile cost model share. */
   now?: () => number
   /** The tile cache's byte budget for a viewport whose tiles weigh `viewportBytes`. */
-  tileCacheBudget?: (viewportBytes: number) => number
+  tileCacheBudget?: (viewportBytes: number, memory: TileMemory) => number
 }
 
 export class TiledSceneController {
@@ -110,7 +111,10 @@ export class TiledSceneController {
   private backgroundSaturated = false
   /** The last frame withheld the background stages for the quiet spell: frames must go on. */
   private backgroundWaiting = false
-  private readonly tileCacheBudget: (viewportBytes: number) => number
+  private readonly tileCacheBudget: (viewportBytes: number, memory: TileMemory) => number
+  private memory: TileMemory = {}
+  /** The tile bytes of the last frame's viewport, which a change of memory resizes the cache to. */
+  private viewportBytes = 0
   private readonly pictureCache = new RenderChunkPictureCache()
   private readonly tileCache = new TileImageCache()
   private readonly surfacePool = new TileSurfacePool()
@@ -154,6 +158,17 @@ export class TiledSceneController {
    */
   hasPendingWork(): boolean {
     return this.content.hasPendingWork()
+  }
+
+  /**
+   * Tells the cache what the host knows of the memory its tiles share. A hidden canvas draws no
+   * frames, so the budget changes at once rather than at the next frame.
+   */
+  setMemory(memory: TileMemory): void {
+    this.memory = memory
+    if (this.viewportBytes > 0) {
+      this.tileCache.setBudget(this.tileCacheBudget(this.viewportBytes, memory))
+    }
   }
 
   /** The tile cache's current byte budget. */
@@ -209,14 +224,11 @@ export class TiledSceneController {
     const renderLevel = zooming ? tileLevel(scale) : level
     if (level !== this.lastLevel || this.navigationActive) this.backgroundSaturated = false
     this.lastLevel = level
-    this.tileCache.setBudget(
-      this.tileCacheBudget(
-        viewportTileBytes(
-          renderer.viewportWidth * renderer.dpr,
-          renderer.viewportHeight * renderer.dpr
-        )
-      )
+    this.viewportBytes = viewportTileBytes(
+      renderer.viewportWidth * renderer.dpr,
+      renderer.viewportHeight * renderer.dpr
     )
+    this.tileCache.setBudget(this.tileCacheBudget(this.viewportBytes, this.memory))
     const { planOptions, background } = this.planFrame(
       renderer,
       renderer.pageId,

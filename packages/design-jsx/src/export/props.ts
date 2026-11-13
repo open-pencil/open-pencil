@@ -1,6 +1,7 @@
 import { isEqual, omitBy, pick } from 'es-toolkit'
 
 import type { ArcData, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { DEFAULT_FONT_FAMILY } from '@open-pencil/scene-graph/constants'
 import { counterAxisSpacingOf, layoutSizing } from '@open-pencil/scene-graph/layout'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
@@ -85,8 +86,9 @@ function collectFlexAlignmentProps(node: SceneNode, props: JSXProp[]): void {
 function collectAutoLayoutPaddingProps(node: SceneNode, props: JSXProp[]): void {
   const pad = collectPadding(node)
   if (!pad) return
-  props.push(
-    ...emitPadding(
+  appendAll(
+    props,
+    emitPadding(
       pad,
       (v) => ['p', v] as JSXProp,
       (y, x) =>
