@@ -2,7 +2,7 @@ import { uniq, uniqBy } from 'es-toolkit'
 import { limitAsync } from 'es-toolkit/promise'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { faceLoadKey, parseFontStyle } from '@open-pencil/scene-graph/font-style'
+import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import {
@@ -17,6 +17,7 @@ import { fontManager } from '#core/text/font/manager'
 import {
   collectFontRequirements,
   collectGraphFontRequirements,
+  collectNodeFontFaceRefs,
   collectNodeFontFaces
 } from '#core/text/requirements/collect'
 import { missingGraphFontScripts } from '#core/text/requirements/resolved'
@@ -113,7 +114,7 @@ export async function prepareTextFonts(
       }
     : collected
   const faces = uniqBy(
-    requirements.nodes.flatMap(collectNodeFontFaces),
+    requirements.nodes.flatMap(collectNodeFontFaceRefs),
     ({ family, style }) => `${family}\u0000${style}`
   )
   const generationBefore = fontManager.generation()
@@ -138,12 +139,11 @@ export async function prepareTextFonts(
   // upright face for an italic it lacks. Its face of the same weight and slant is loaded instead,
   // so the canvas draws a real italic and the saved outlines read that face.
   const defaultStyles = uniq(
-    faces.flatMap(({ family, style }) => {
-      const { weight, italic } = parseFontStyle(style)
-      return family === DEFAULT_FONT_FAMILY || loadedFace(family, weight, italic, style)
+    faces.flatMap(({ family, style, weight, italic }) =>
+      family === DEFAULT_FONT_FAMILY || loadedFace(family, weight, italic, style)
         ? []
         : [faceLoadKey(weight, italic)]
-    })
+    )
   )
   await Promise.all(
     defaultStyles.map(
