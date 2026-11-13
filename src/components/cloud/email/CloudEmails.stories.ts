@@ -4,9 +4,8 @@ import {
   EMAIL_LOCALES,
   EMAIL_SAMPLE_URL,
   EMAIL_SAMPLES,
-  renderEmail,
   renderTransactionalEmail,
-  waitlistConfirmation,
+  renderWaitlistConfirmation,
   type EmailLocale,
   type TransactionalEmailKind
 } from '@open-pencil/cloud/email'
@@ -58,8 +57,7 @@ export const WaitlistConfirmation: Story = {
     components: { EmailPreview },
     setup: () => ({
       render: () =>
-        renderEmail(
-          waitlistConfirmation,
+        renderWaitlistConfirmation(
           { confirmURL: EMAIL_SAMPLE_URL, leaveURL: 'https://openpencil.dev/waitlist/leave' },
           args.locale
         )

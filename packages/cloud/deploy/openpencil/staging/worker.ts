@@ -1,4 +1,4 @@
-import { createCloudflareCloud } from '#cloud/runtime/cloudflare'
+import { createCloudflareCloud } from '@open-pencil/cloud/runtime/cloudflare'
 
 import config from './openpencil-cloud.toml'
 

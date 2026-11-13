@@ -22,7 +22,8 @@
     "./heavy": "./src/heavy.ts",
     "./paths": "./src/paths.ts",
     "./scene": "./src/scene.ts",
-    "./vue/renderer": "./src/vue/renderer.ts"
+    "./vue/renderer": "./src/vue/renderer.ts",
+    "./vue/sfc": "./src/vue/sfc.ts"
   },
   "devDependencies": {
     "@types/bun": "^1.3.14",

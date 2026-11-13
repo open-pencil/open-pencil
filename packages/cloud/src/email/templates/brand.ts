@@ -1,22 +1,8 @@
-import {
-  Body,
-  Button,
-  Container,
-  Head,
-  Heading,
-  // eslint-disable-next-line @open-pencil/structure/no-mixed-case-acronym-identifiers -- Upstream export spelling.
-  Html as HTML,
-  Img,
-  Link,
-  Preview,
-  Section,
-  Text
-} from '@vue-email/components'
-import { h, type VNode } from 'vue'
+/** The brand every OpenPencil email shares, from the waitlist to Cloud: its colors and type. */
 
 /** The ivory app-icon tile, served as PNG because mail clients do not draw SVG. */
-const LOGO_URL = 'https://openpencil.dev/brand/app-icon-1024.png'
-const SITE_URL = 'https://openpencil.dev'
+export const LOGO_URL = 'https://openpencil.dev/brand/app-icon-1024.png'
+export const SITE_URL = 'https://openpencil.dev'
 
 const FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
 const INK = '#171717'
@@ -24,7 +10,8 @@ const MUTED = '#6B6B6B'
 /** Deep teal from the mark; white text on it passes WCAG AA. */
 const TEAL = '#0A6C65'
 
-const styles = {
+/** Inline styles, since mail clients drop most stylesheets. */
+export const styles = {
   body: { backgroundColor: '#F5F5EF', fontFamily: FONT, margin: '0', padding: '40px 16px' },
   card: {
     maxWidth: '480px',
@@ -61,51 +48,6 @@ const styles = {
     lineHeight: '1.6',
     textAlign: 'center' as const,
     margin: '24px 0 0'
-  }
-}
-
-export type EmailLayoutProps = {
-  lang: string
-  dir: 'ltr' | 'rtl'
-  /** The line mail clients show beside the subject. */
-  preview: string
-  heading: string
-  paragraphs: readonly string[]
-  actionLabel: string
-  actionURL: string
-  /** Small print under the button; a `{link}` in its text shows the link there. */
-  note?: { text: string; link?: { label: string; url: string } }
-  /** What OpenPencil is, under the card. */
-  tagline: string
-}
-
-function noteContent(note: NonNullable<EmailLayoutProps['note']>) {
-  if (!note.link) return note.text
-  const { label, url } = note.link
-  const [before = '', after = ''] = note.text.split('{link}')
-  return [before, h(Link, { href: url, style: styles.link }, () => label), after]
-}
-
-/** The branded email every OpenPencil service sends: the waitlist and Cloud alike. */
-export function emailLayout(props: EmailLayoutProps): VNode {
-  const { note } = props
-  return h(HTML, { lang: props.lang, dir: props.dir }, () => [
-    h(Head),
-    h(Preview, () => props.preview),
-    h(Body, { style: styles.body }, () => [
-      h(Container, { style: styles.card }, () => [
-        h(Img, { src: LOGO_URL, width: 44, height: 44, alt: 'OpenPencil', style: styles.logo }),
-        h(Heading, { as: 'h1', style: styles.heading }, () => props.heading),
-        ...props.paragraphs.map((paragraph) => h(Text, { style: styles.text }, () => paragraph)),
-        h(Section, { style: styles.action }, () =>
-          h(Button, { href: props.actionURL, style: styles.button }, () => props.actionLabel)
-        ),
-        note ? h(Text, { style: styles.note }, () => noteContent(note)) : null
-      ]),
-      h(Text, { style: styles.footer }, () => [
-        `${props.tagline} · `,
-        h(Link, { href: SITE_URL, style: { color: MUTED } }, () => 'openpencil.dev')
-      ])
-    ])
-  ])
+  },
+  footerLink: { color: MUTED }
 }
