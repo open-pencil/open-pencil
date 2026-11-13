@@ -1,5 +1,10 @@
 import { defineConfig, type PlaywrightTestConfig } from '@playwright/test'
 
+import { registerRawImports } from './tests/helpers/runner/raw-imports'
+
+// Specs that import workspace source in Node meet `?raw` imports, which only bundlers read.
+registerRawImports()
+
 const appPort = process.env.OPENPENCIL_TEST_PORT ?? '1420'
 const mcpPort = process.env.OPENPENCIL_TEST_MCP_PORT ?? '7600'
 for (const port of [appPort, mcpPort]) {
