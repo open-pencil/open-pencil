@@ -15,7 +15,6 @@ import { hasSteeringMessage } from '@/app/ai/chat/queue'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 import { chatThinkingLevel } from '@/app/ai/chat/thinking'
 import { createAIModelRuntime, resolveModelConnectionAPIKey } from '@/app/ai/models'
-import { agentModelID } from '@/app/ai/models/agent'
 import { resolveLanguageModelID } from '@/app/ai/models/language-model'
 import { cloudCreditRefusal } from '@/app/ai/providers/openpencil/failure'
 import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
@@ -191,7 +190,7 @@ export function createChatSessionManager({
     const runtime = await createAIModelRuntime('design')
     const profileModel =
       runtime?.kind === 'acp' && runtime.role.connection.providerID === provider
-        ? agentModelID(runtime.role.profile)
+        ? runtime.model
         : ''
     // An agent's turn counts as one step of the model it names, or of the agent itself.
     const transport = await createACPTransport(
@@ -215,7 +214,7 @@ export function createChatSessionManager({
     // A saved key is an AI Gateway key; without one, Pi uses the CLI's own sign-in.
     const apiKey = await resolveModelConnectionAPIKey(runtime.role.connection.id)
     const account = apiKey ? null : await readPiAccount()
-    const model = agentModelID(runtime.role.profile) || account?.defaultModel || ''
+    const model = runtime.model || account?.defaultModel || ''
     if (!apiKey && !account?.signedIn) throw new AgentSetupError('pi-sign-in')
     if (!model) throw new AgentSetupError('pi-model')
     const transport = new HarnessChatTransport(

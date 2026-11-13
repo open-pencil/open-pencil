@@ -1,24 +1,25 @@
 import {
-  client,
   methods,
-  ndJsonStream,
   PROTOCOL_VERSION,
-  type ClientConnection,
   type SessionNotification,
   type SessionUpdate,
   type Usage
 } from '@agentclientprotocol/sdk/unstable'
-import { promiseTimeout } from '@vueuse/core'
 import type { ChatTransport, UIMessage, UIMessageChunk } from 'ai'
 import * as v from 'valibot'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
 
-import { AUTH_STATUS_UPDATE_METHOD, parseAuthStatusUpdate } from '@/app/ai/agents/acp/auth/status'
 import { setAgentCommands } from '@/app/ai/agents/acp/commands'
+import {
+  connectAgent,
+  HOST_AGENT_LAUNCH,
+  type AgentConnection,
+  type AgentLaunch
+} from '@/app/ai/agents/acp/connection'
 import { createUpdateMapper } from '@/app/ai/agents/acp/events'
 import { requestPermissionFromUser } from '@/app/ai/agents/acp/permission'
-import { spawnACPProcess, type ACPProcess } from '@/app/ai/agents/acp/process'
+import type { ACPProcess } from '@/app/ai/agents/acp/process'
 import {
   AgentSessionResumeError,
   AgentSessionRetryError,
@@ -31,7 +32,6 @@ import { noteSubagents } from '@/app/ai/agents/acp/subagents'
 import { createOwnToolApproval, linkOwnTools, type OwnToolsLink } from '@/app/ai/agents/acp/tools'
 import { createSubagentTranscripts } from '@/app/ai/agents/acp/transcripts'
 import { agentAccounts } from '@/app/ai/agents/setup/accounts'
-import { resolveSpawnTarget } from '@/app/ai/agents/setup/discovery'
 import { AgentNotInstalledError } from '@/app/ai/agents/setup/readiness'
 import { notifyPermissionWaiting } from '@/app/ai/chat/notifications'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
@@ -44,16 +44,13 @@ import type { EditorStore } from '@/app/editor/active-store'
 type TauriChild = ACPProcess['child']
 
 /** What starting an agent reaches outside the transport, which tests replace. */
-export interface ACPStartup {
-  resolveTarget: typeof resolveSpawnTarget
-  spawn: typeof spawnACPProcess
+export interface ACPStartup extends AgentLaunch {
   authToken: typeof getAutomationAuthToken
   linkTools: typeof linkOwnTools
 }
 
 const DEFAULT_STARTUP: ACPStartup = {
-  resolveTarget: resolveSpawnTarget,
-  spawn: spawnACPProcess,
+  ...HOST_AGENT_LAUNCH,
   authToken: getAutomationAuthToken,
   linkTools: linkOwnTools
 }
@@ -72,11 +69,8 @@ const TURN_UPDATES: ReadonlySet<SessionUpdate['sessionUpdate']> = new Set([
   'plan'
 ])
 
-/** How long each startup request may take; resuming starts the agent's CLI, which is slowest. */
-const AGENT_START_TIMEOUT_MS = 60_000
-
 interface ACPSession {
-  connection: ClientConnection
+  connection: AgentConnection
   sessionId: string
   /** The id the agent's tool calls carry, which ties them to this chat's replies. */
   chat: string
@@ -211,7 +205,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
   private onSession: ((sessionId: string | null) => void) | null
   private onAgentError: ((error: unknown) => void) | null
   private startup: ACPStartup
-  private startTimeoutMs: number
+  private model: string
+  private startTimeoutMs: number | undefined
 
   constructor(options: {
     agentDef: ACPAgentDef
@@ -231,6 +226,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
      * text, which can quote the conversation, so diagnostics record this instead.
      */
     onAgentError?: (error: unknown) => void
+    /** The model the chat's profile names, which each session is put on; empty keeps the agent's. */
+    model?: string
     startup?: ACPStartup
     startTimeoutMs?: number
   }) {
@@ -242,7 +239,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     this.onSession = options.onSession ?? null
     this.onAgentError = options.onAgentError ?? null
     this.startup = options.startup ?? DEFAULT_STARTUP
-    this.startTimeoutMs = options.startTimeoutMs ?? AGENT_START_TIMEOUT_MS
+    this.model = options.model ?? ''
+    this.startTimeoutMs = options.startTimeoutMs
   }
 
   async sendMessages({
@@ -395,108 +393,71 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
    * within the deadline; either way the agent stops and never gets the message.
    */
   private async spawnAgent(abortSignal?: AbortSignal): Promise<ACPSession> {
-    const stoppedByUser = new Promise<never>((_, reject) => {
-      const stop = () => reject(new Error('The reply was stopped while the agent was starting.'))
-      if (abortSignal?.aborted) stop()
-      else abortSignal?.addEventListener('abort', stop, { once: true })
-    })
-    stoppedByUser.catch(() => undefined)
-    const startTimeoutMs = this.startTimeoutMs
-    const agentName = this.agentDef.name
-    const bounded = <T>(request: Promise<T>, ...also: Promise<never>[]): Promise<T> =>
-      Promise.race([
-        request,
-        stoppedByUser,
-        ...also,
-        promiseTimeout(startTimeoutMs).then((): never => {
-          throw new Error(`${agentName} did not answer while starting.`)
-        })
-      ])
-
-    // Aborted once the startup gave up, by Stop or the deadline, so a lookup still running launches nothing.
-    const gaveUp = new AbortController()
-    const spawning = (async () => {
-      const { command, searchPath } = await this.startup.resolveTarget(this.agentDef)
-      if (gaveUp.signal.aborted || abortSignal?.aborted) {
-        throw new Error('The reply was stopped before the agent started.')
-      }
-      return this.startup.spawn({
-        command,
-        args: this.agentDef.args,
-        logId: this.agentDef.id,
-        searchPath,
-        cwd: this.cwd,
-        destroying: () => this.destroying,
-        onUnexpectedClose: () => {
-          if (!this.session) return
-          this.session.dead = true
-          this.session = null
-        }
-      })
-    })()
-    let process: ACPProcess
-    try {
-      process = await bounded(spawning)
-    } catch (e) {
-      gaveUp.abort()
-      // A process that starts after the startup gave up must not keep running.
-      void spawning.then((late) => late.child.kill()).catch(() => undefined)
-      recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(e) })
-      if (e instanceof AgentNotInstalledError) throw e
-      const message = acpErrorMessage(e)
-      if (isMissingCommandError(message)) throw new AgentNotInstalledError(this.agentDef)
-      throw new Error(formatConnectionError(e, this.agentDef), { cause: e })
-    }
-    const { child, input, output } = process
-    const stream = ndJsonStream(input, output)
     let onUpdate: ACPSession['onUpdate'] = null
     // Set once the session exists; the client reads it to record the model the agent names.
     let sessionRef: ACPSession | null = null
     const agentId = this.agentDef.id
     const { agentDef, store } = this
     const ownToolApproval = createOwnToolApproval()
-
-    const connection = client({ name: 'OpenPencil' })
-      .onRequest(methods.client.session.requestPermission, ({ params }) => {
-        const allowed = ownToolApproval.answer(params)
-        if (allowed) return allowed
-        const title = params.toolCall.title ?? ''
-        return requestPermissionFromUser(
-          params,
-          store ? () => notifyPermissionWaiting(store, agentDef.name, title) : undefined
-        )
-      })
-      .onNotification(methods.client.session.update, ({ params }) => {
-        const { update } = params
-        ownToolApproval.noteUpdate(update)
-        // The agent's MCP calls name only their own id; its updates say which subagent made them.
-        if (sessionRef) noteSubagents(sessionRef.chat, sessionRef.sessionId, params)
-        // A subagent works in a session of its own: the reply keeps it as the subagent's transcript.
-        if (sessionRef && params.sessionId !== sessionRef.sessionId) {
+    let connection: AgentConnection
+    try {
+      connection = await connectAgent(agentDef, {
+        cwd: this.cwd,
+        signal: abortSignal,
+        timeoutMs: this.startTimeoutMs,
+        stopMessage: 'The reply was stopped while the agent was starting.',
+        launch: this.startup,
+        stopping: () => this.destroying,
+        onExit: () => {
+          if (!this.session) return
+          this.session.dead = true
+          this.session = null
+        },
+        // Kept until the agent becomes the session, so destroying can stop it while it starts.
+        onProcess: (process) => {
+          this.starting = process
+        },
+        requestPermission: (params) => {
+          const allowed = ownToolApproval.answer(params)
+          if (allowed) return allowed
+          const title = params.toolCall.title ?? ''
+          return requestPermissionFromUser(
+            params,
+            store ? () => notifyPermissionWaiting(store, agentDef.name, title) : undefined
+          )
+        },
+        onSessionUpdate: (params) => {
+          const { update } = params
+          ownToolApproval.noteUpdate(update)
+          // The agent's MCP calls name only their own id; its updates say which subagent made them.
+          if (sessionRef) noteSubagents(sessionRef.chat, sessionRef.sessionId, params)
+          // A subagent works in a session of its own: the reply keeps it as the subagent's transcript.
+          if (sessionRef && params.sessionId !== sessionRef.sessionId) {
+            onUpdate?.(params)
+            return
+          }
+          // Claude's adapter names its model only in its usage updates.
+          if (update.sessionUpdate === 'usage_update') {
+            const meta = v.safeParse(usageMetaSchema, update._meta)
+            if (meta.success && sessionRef) sessionRef.model = meta.output['_claude/model']
+          }
+          if (update.sessionUpdate === 'available_commands_update') {
+            setAgentCommands(agentId, update.availableCommands)
+          }
           onUpdate?.(params)
-          return
-        }
-        // Claude's adapter names its model only in its usage updates.
-        if (update.sessionUpdate === 'usage_update') {
-          const meta = v.safeParse(usageMetaSchema, update._meta)
-          if (meta.success && sessionRef) sessionRef.model = meta.output['_claude/model']
-        }
-        if (update.sessionUpdate === 'available_commands_update') {
-          setAgentCommands(agentId, update.availableCommands)
-        }
-        onUpdate?.(params)
+        },
+        onAuthStatus: (status) => agentAccounts.report(agentId, status)
       })
-      .onNotification(AUTH_STATUS_UPDATE_METHOD, parseAuthStatusUpdate, ({ params }) => {
-        if (params) agentAccounts.report(agentId, params)
-      })
-      .connect(stream)
-    this.starting = child
-    // Each startup request races the connection, so one the agent never answers ends when it exits.
-    const stopped = connection.closed.then((): never => {
-      throw new Error('The agent stopped while it was starting.')
-    })
-    stopped.catch(() => undefined)
-    const untilStopped = <T>(request: Promise<T>): Promise<T> => bounded(request, stopped)
+    } catch (e) {
+      recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(e) })
+      if (e instanceof AgentNotInstalledError) throw e
+      const message = acpErrorMessage(e)
+      if (isMissingCommandError(message)) throw new AgentNotInstalledError(this.agentDef)
+      throw new Error(formatConnectionError(e, this.agentDef), { cause: e })
+    }
+    const { child } = connection
+    // Each startup request must answer within the deadline, and ends when the agent exits.
+    const untilStopped = <T>(request: Promise<T>): Promise<T> => connection.bounded(request)
     // What startup opened so far, which a failed step closes along with the agent.
     let release: (() => void) | null = null
     const abandon = async (reason: Error): Promise<never> => {
@@ -538,7 +499,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         cwd: this.cwd,
         mcpServers: tools.mcpServers,
         meta: tools.meta,
-        resume: this.resume
+        resume: this.resume,
+        model: this.model
       }),
       (e) => {
         // The saved conversation goes back to read-only; this chat keeps failing, never starting anew.

@@ -1,15 +1,16 @@
 import {
-  AgentSideConnection,
+  agent as acpAgent,
+  methods,
   ndJsonStream,
   PROTOCOL_VERSION,
-  type Agent,
   type ContentBlock,
   type NewSessionRequest,
   type SessionConfigOption,
+  type SessionOptionsRequest,
   type SetSessionConfigOptionRequest
-} from '@agentclientprotocol/sdk'
+} from '@agentclientprotocol/sdk/unstable'
 
-import type { OneOffStartup } from '@/app/ai/agents/acp/oneoff'
+import type { AgentLaunch } from '@/app/ai/agents/acp/connection'
 import { createDeferred } from '@/app/runtime/deferred'
 
 export const WORKSPACE = '/agent-workspace'
@@ -34,6 +35,8 @@ interface FakeAgentOptions {
   imageInput?: boolean
   /** What the agent offers for choosing its model; none when absent. */
   configOptions?: SessionConfigOption[]
+  /** Whether the agent answers `session/options`, so its options are read without a session. */
+  answersOptions?: boolean
   /** The text the agent answers a prompt with, sent as one message chunk each. */
   answer?: string[]
   /** A request the agent never answers: its process exits, or it just hangs. */
@@ -44,10 +47,12 @@ interface FakeAgentOptions {
 export function fakeOneOffAgent({
   imageInput = true,
   configOptions,
+  answersOptions = false,
   answer = [],
   stalls
 }: FakeAgentOptions = {}) {
   const created: NewSessionRequest[] = []
+  const optionsRead: SessionOptionsRequest[] = []
   const configured: SetSessionConfigOptionRequest[] = []
   const prompts: ContentBlock[][] = []
   const cwds: (string | undefined)[] = []
@@ -56,9 +61,8 @@ export function fakeOneOffAgent({
   let kills = 0
   let spawns = 0
 
-  const startup: OneOffStartup = {
+  const launch: AgentLaunch = {
     resolveTarget: async (agent) => ({ command: agent.command, searchPath: '/lookup/bin' }),
-    workspace: async () => WORKSPACE,
     spawn: async (options) => {
       spawns++
       cwds.push(options.cwd)
@@ -75,45 +79,45 @@ export function fakeOneOffAgent({
         if (stalls.as === 'exits') stop.abort()
         await createDeferred<never>().promise
       }
-      const agent: Agent = {
-        async initialize() {
+      acpAgent()
+        .onRequest(methods.agent.initialize, async () => {
           await stall('initialize')
           return {
             protocolVersion: PROTOCOL_VERSION,
-            agentCapabilities: { promptCapabilities: { image: imageInput } }
+            agentCapabilities: {
+              promptCapabilities: { image: imageInput },
+              sessionCapabilities: answersOptions ? { options: {} } : {}
+            }
           }
-        },
-        async newSession(params) {
+        })
+        .onRequest(methods.agent.session.options, ({ params }) => {
+          optionsRead.push(params)
+          return { configOptions }
+        })
+        .onRequest(methods.agent.session.new, async ({ params }) => {
           created.push(params)
           sessionRequested.resolve(undefined)
           await stall('newSession')
           return { sessionId: 'session-1', configOptions }
-        },
-        async setSessionConfigOption(params) {
+        })
+        .onRequest(methods.agent.session.setConfigOption, ({ params }) => {
           configured.push(params)
           return { configOptions: [] }
-        },
-        async prompt(params) {
+        })
+        .onRequest(methods.agent.session.prompt, async ({ params, client }) => {
           prompts.push(params.prompt)
           promptRequested.resolve(undefined)
           await stall('prompt')
           for (const text of answer) {
-            await connection.sessionUpdate({
+            await client.notify(methods.client.session.update, {
               sessionId: params.sessionId,
               update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text } }
             })
           }
           return { stopReason: 'end_turn' }
-        },
-        async authenticate() {
-          return {}
-        },
-        cancel: async () => undefined
-      }
-      const connection = new AgentSideConnection(
-        () => agent,
-        ndJsonStream(toClient.writable, toAgent.readable)
-      )
+        })
+        .onNotification(methods.agent.session.cancel, () => undefined)
+        .connect(ndJsonStream(toClient.writable, toAgent.readable))
       return {
         child: {
           write: async () => undefined,
@@ -129,8 +133,10 @@ export function fakeOneOffAgent({
   }
 
   return {
-    startup,
+    /** What a one-off job starts the agent with. */
+    startup: { launch, workspace: async () => WORKSPACE },
     created,
+    optionsRead,
     configured,
     prompts,
     cwds,

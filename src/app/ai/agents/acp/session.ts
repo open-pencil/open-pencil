@@ -13,6 +13,13 @@ import * as v from 'valibot'
 import { acpAgentFor } from '@open-pencil/core/constants'
 import type { ACPAgentDef, ACPAgentID, AIProviderID } from '@open-pencil/core/constants'
 
+import {
+  chooseSessionOption,
+  sessionChoice,
+  sessionOptionRequests,
+  type OfferedSessionOptions,
+  type SessionOptionRequests
+} from './options'
 import type { OwnToolsLink } from './tools'
 
 /** What an agent session needs to open, whether it starts or continues a saved one. */
@@ -22,6 +29,8 @@ export interface AgentSessionRequest {
   meta: OwnToolsLink['meta']
   /** The session a saved chat ran in, which the agent continues instead of starting anew. */
   resume: string | null
+  /** The model the chat's profile names, which the session is put on; empty keeps the agent's. */
+  model?: string
 }
 
 export interface OpenedAgentSession {
@@ -32,7 +41,7 @@ export interface OpenedAgentSession {
 }
 
 /** The agent requests that open a session, which tests make without a connection. */
-export interface SessionRequests {
+export interface SessionRequests extends SessionOptionRequests {
   newSession(params: NewSessionRequest): Promise<NewSessionResponse>
   resumeSession(params: ResumeSessionRequest): Promise<ResumeSessionResponse>
 }
@@ -41,7 +50,8 @@ export interface SessionRequests {
 export function sessionRequests(agent: ClientContext): SessionRequests {
   return {
     newSession: (params) => agent.request(methods.agent.session.new, params),
-    resumeSession: (params) => agent.request(methods.agent.session.resume, params)
+    resumeSession: (params) => agent.request(methods.agent.session.resume, params),
+    ...sessionOptionRequests(agent)
   }
 }
 
@@ -52,11 +62,37 @@ export function sessionRequests(agent: ClientContext): SessionRequests {
 const legacyModelSchema = v.object({ models: v.object({ currentModelId: v.string() }) })
 
 /** The model a session starts with: the legacy `models` as before, else its model option. */
-function sessionModel(response: NewSessionResponse | ResumeSessionResponse): string | null {
+function sessionModel(response: OfferedSessionOptions): string | null {
   const legacy = v.safeParse(legacyModelSchema, response)
   if (legacy.success) return legacy.output.models.currentModelId
-  const option = response.configOptions?.find(({ category }) => category === 'model')
-  return option?.type === 'select' ? option.currentValue : null
+  return sessionChoice(response, 'model')?.current ?? null
+}
+
+/** The agent offers no choice of model, so a session cannot run the one a profile names. */
+export class AgentModelChoiceError extends Error {
+  constructor(agentDef: ACPAgentDef) {
+    super(`${agentDef.name} does not let OpenPencil choose its model.`)
+    this.name = 'AgentModelChoiceError'
+  }
+}
+
+/**
+ * The model a session runs on: the one the chat's profile names, which the session is put on, or
+ * else the agent's own. A resumed session starts on the agent's default again, whatever it ran
+ * before, so the profile's model is set each time. An agent that offers no choice fails the start
+ * rather than answer on a model the profile did not name.
+ */
+async function startingModel(
+  connection: SessionRequests,
+  agentDef: ACPAgentDef,
+  sessionId: string,
+  offered: OfferedSessionOptions,
+  wanted: string
+): Promise<string | null> {
+  if (!wanted) return sessionModel(offered)
+  const chosen = await chooseSessionOption(connection, sessionId, offered, 'model', wanted)
+  if (!chosen) throw new AgentModelChoiceError(agentDef)
+  return wanted
 }
 
 /** A JSON-RPC error, which ACP can reject with as a decoded object instead of an `Error`. */
@@ -131,32 +167,37 @@ export class AgentSessionRetryError extends Error {
 
 /**
  * Starts the agent's session, or continues the saved one through `session/resume`, which keeps
- * the agent's context without replaying the transcript the chat already shows.
+ * the agent's context without replaying the transcript the chat already shows. Either way the
+ * session is then put on the model the chat's profile names.
  */
 export async function openAgentSession(
   connection: SessionRequests,
   agentDef: ACPAgentDef,
   initialized: InitializeResponse,
-  { cwd, mcpServers, meta, resume }: AgentSessionRequest
+  { cwd, mcpServers, meta, resume, model = '' }: AgentSessionRequest
 ): Promise<OpenedAgentSession> {
   if (resume === null) {
     const result = await connection.newSession({ cwd, mcpServers, _meta: meta })
-    return { sessionId: result.sessionId, model: sessionModel(result), resumed: false }
+    return {
+      sessionId: result.sessionId,
+      model: await startingModel(connection, agentDef, result.sessionId, result, model),
+      resumed: false
+    }
   }
   // The agent no longer offers resume, as after a downgrade: a new session would lose the context.
   if (!canResume(agentDef, initialized)) throw new AgentSessionResumeError(agentDef)
+  let result: ResumeSessionResponse
   try {
-    const result = await connection.resumeSession({
-      sessionId: resume,
-      cwd,
-      mcpServers,
-      _meta: meta
-    })
-    return { sessionId: resume, model: sessionModel(result), resumed: true }
+    result = await connection.resumeSession({ sessionId: resume, cwd, mcpServers, _meta: meta })
   } catch (e) {
     // Retire confirmed missing sessions; sign-in keeps its own error, and anything else may pass.
     if (isMissingSession(e, agentDef.id)) throw new AgentSessionResumeError(agentDef, e)
     if (isAuthRequiredError(e)) throw e
     throw new AgentSessionRetryError(agentDef, e)
+  }
+  return {
+    sessionId: resume,
+    model: await startingModel(connection, agentDef, resume, result, model),
+    resumed: true
   }
 }

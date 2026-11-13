@@ -2,10 +2,12 @@ import { describe, expect, test } from 'bun:test'
 
 import type { LanguageModel } from 'ai'
 
+import { ACP_AGENTS } from '@open-pencil/core/constants'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { asDouble } from '@open-pencil/test-support/doubles'
 
-import type { AgentImageAnalysisOptions } from '@/app/ai/agents/acp/vision'
+import type { AgentQuestion } from '@/app/ai/agents/acp/oneoff'
 import {
   analyzeAttachedImages,
   designMessageWithImageFindings,
@@ -19,6 +21,11 @@ import {
 import type { PreparedImageAttachment } from '@/app/ai/attachment/image/types'
 import type { AIModelRuntime } from '@/app/ai/models/runtime'
 import type { EditorStore } from '@/app/editor/session/create'
+
+const claude = expectDefined(
+  ACP_AGENTS.find((agent) => agent.id === 'claude-code'),
+  'Claude agent'
+)
 const image: PreparedImageAttachment = {
   data: new Uint8Array([4, 5, 6]),
   blob: new Blob(),
@@ -110,15 +117,13 @@ describe('image attachment analysis', () => {
   })
 
   describe('when a coding agent holds Vision', () => {
-    const agentRuntime = (providerID: string, kind: 'acp' | 'harness') => ({
+    const agentRuntime = (kind: 'acp' | 'harness') => ({
       createRuntime: async () =>
         asDouble<AIModelRuntime>({
           kind,
-          role: {
-            requestedRole: 'vision',
-            profile: { modelID: '', customModelID: ' opus ', maxOutputTokens: 8000 },
-            connection: { providerID }
-          }
+          agent: claude,
+          model: 'opus',
+          role: { requestedRole: 'vision', profile: { maxOutputTokens: 8000 } }
         }),
       inspect: async () => {
         throw new Error('A direct model is not in play.')
@@ -134,12 +139,12 @@ describe('image attachment analysis', () => {
         state: { currentPageId: page.id, selectedIds: new Set([frame.id]) },
         renderExportImage: async () => new Uint8Array([1, 2, 3])
       })
-      const asked: Array<{ id: string; options: AgentImageAnalysisOptions }> = []
+      const asked: Array<{ id: string; question: AgentQuestion }> = []
 
       const findings = await analyzeAttachedImages(store, 'Match this layout', [image], {
-        ...agentRuntime('acp:claude-code', 'acp'),
-        analyzeWithAgent: async ({ id }, options) => {
-          asked.push({ id, options })
+        ...agentRuntime('acp'),
+        askAgent: async ({ id }, question) => {
+          asked.push({ id, question })
           return 'A tighter grid.'
         }
       })
@@ -147,9 +152,9 @@ describe('image attachment analysis', () => {
       expect(findings).toBe('A tighter grid.')
       expect(asked).toHaveLength(1)
       expect(asked[0]?.id).toBe('claude-code')
-      expect(asked[0]?.options.model).toBe('opus')
-      expect(asked[0]?.options.instruction).toContain('Match this layout')
-      expect(asked[0]?.options.images).toEqual([
+      expect(asked[0]?.question.model).toBe('opus')
+      expect(asked[0]?.question.text).toContain('Match this layout')
+      expect(asked[0]?.question.images).toEqual([
         { mediaType: 'image/png', data: image.data },
         { mediaType: 'image/png', data: new Uint8Array([1, 2, 3]) }
       ])
@@ -158,7 +163,7 @@ describe('image attachment analysis', () => {
     test('keeps Pi on the unavailable path', async () => {
       const store = asDouble<EditorStore>({ state: { selectedIds: new Set() } })
       await expect(
-        analyzeAttachedImages(store, 'Look', [image], agentRuntime('harness:pi', 'harness'))
+        analyzeAttachedImages(store, 'Look', [image], agentRuntime('harness'))
       ).rejects.toBeInstanceOf(VisionModelUnavailableError)
     })
   })

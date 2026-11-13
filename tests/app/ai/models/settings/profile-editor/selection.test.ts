@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 
 import { effectScope, nextTick, reactive, ref, type EffectScope } from 'vue'
 
-import type { AgentModelList } from '@/app/ai/agents/acp/oneoff'
+import type { AgentOffer } from '@/app/ai/agents/acp/oneoff'
 import type { AIModelProfileDraft } from '@/app/ai/models'
 import type { AgentModelSource } from '@/app/ai/models/settings/profile-editor/agent'
 import { useProfileModelSelection } from '@/app/ai/models/settings/profile-editor/selection'
@@ -19,16 +19,13 @@ const labels = ref({
   agentDefaultModel: 'Agent default'
 })
 
-const claudeCode: AgentModelList = {
+const claudeCode: AgentOffer = {
   imageInput: true,
-  models: {
-    current: 'default',
-    options: [
-      { id: 'default', name: 'Default' },
-      { id: 'opus', name: 'Opus' },
-      { id: 'sonnet', name: 'Sonnet' }
-    ]
-  }
+  models: [
+    { id: 'default', name: 'Default' },
+    { id: 'opus', name: 'Opus' },
+    { id: 'sonnet', name: 'Sonnet' }
+  ]
 }
 
 const scopes: EffectScope[] = []
@@ -38,11 +35,11 @@ afterEach(() => {
 
 /** A profile editor's model selection, over an agent that answers when the test says so. */
 function editor(overrides: Partial<AIModelProfileDraft> = {}) {
-  const answers: Deferred<AgentModelList>[] = []
+  const answers: Deferred<AgentOffer>[] = []
   const source: AgentModelSource = {
     available: () => true,
     read: () => {
-      const next = createDeferred<AgentModelList>()
+      const next = createDeferred<AgentOffer>()
       answers.push(next)
       return next.promise
     }
@@ -61,7 +58,7 @@ function editor(overrides: Partial<AIModelProfileDraft> = {}) {
       await nextTick()
     },
     /** Answers the latest read and lets the editor react. */
-    async answer(list: AgentModelList) {
+    async answer(list: AgentOffer) {
       answers.at(-1)?.resolve(list)
       await nextTick()
       await nextTick()

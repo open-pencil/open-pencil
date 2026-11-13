@@ -1,40 +1,20 @@
 import {
-  client,
   methods,
-  ndJsonStream,
   PROTOCOL_VERSION,
   type InitializeResponse,
   type SessionUpdate
 } from '@agentclientprotocol/sdk/unstable'
-import { promiseTimeout } from '@vueuse/core'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
 
-import { spawnACPProcess } from '@/app/ai/agents/acp/process'
+import { connectAgent, type AgentLaunch } from '@/app/ai/agents/acp/connection'
 import type { OwnToolsLink, OwnToolsOutcome } from '@/app/ai/agents/acp/tools'
-import { resolveSpawnTarget } from '@/app/ai/agents/setup/discovery'
 import { createDeferred, type Deferred } from '@/app/runtime/deferred'
 
-import {
-  AUTH_STATUS_UPDATE_METHOD,
-  isSignedIn,
-  parseAuthMethods,
-  parseAuthStatusUpdate,
-  type AgentAuthMethod,
-  type AgentAuthStatus
-} from './status'
-
-/** An agent process's stdio and the way to stop it. */
-export interface AgentStreams {
-  input: WritableStream<Uint8Array>
-  output: ReadableStream<Uint8Array>
-  close(): Promise<void>
-}
-
-export type SpawnAgent = (agent: ACPAgentDef) => Promise<AgentStreams>
+import { isSignedIn, parseAuthMethods, type AgentAuthMethod, type AgentAuthStatus } from './status'
 
 export interface AuthSessionOptions {
-  spawn?: SpawnAgent
+  launch?: AgentLaunch
   /** How long to wait for a login report; adapters read their CLI's with a 5 s limit. */
   statusTimeoutMs?: number
   /** How long an agent may take to answer `initialize` before it counts as stuck. */
@@ -62,27 +42,6 @@ export interface AgentAuthCheck {
   adapter: { name: string; version: string } | null
   /** Whether a session reached OpenPencil's tools; null when not checked or not signed in. */
   tools: OwnToolsOutcome | null
-}
-
-export async function spawnAgentStreams(agent: ACPAgentDef): Promise<AgentStreams> {
-  let closing = false
-  const target = await resolveSpawnTarget(agent)
-  const { child, input, output } = await spawnACPProcess({
-    command: target.command,
-    args: agent.args,
-    logId: `${agent.id} sign-in`,
-    searchPath: target.searchPath,
-    destroying: () => closing,
-    onUnexpectedClose: () => undefined
-  })
-  return {
-    input,
-    output,
-    async close() {
-      closing = true
-      await child.kill().catch(() => undefined)
-    }
-  }
 }
 
 /** Login reports in arrival order, so a caller can wait for one newer than it has seen. */
@@ -115,56 +74,41 @@ function createStatusLog() {
 
 async function openAuthSession(
   agent: ACPAgentDef,
-  { spawn = spawnAgentStreams, initializeTimeoutMs = INITIALIZE_TIMEOUT_MS }: AuthSessionOptions
+  { launch, initializeTimeoutMs = INITIALIZE_TIMEOUT_MS }: AuthSessionOptions
 ) {
-  const streams = await spawn(agent)
   const log = createStatusLog()
   let onUpdate: ((update: SessionUpdate) => void) | null = null
-  const connection = client({ name: 'OpenPencil' })
-    // Nothing runs in this connection, so nothing may ask for permission.
-    .onRequest(methods.client.session.requestPermission, () => ({
-      outcome: { outcome: 'cancelled' }
-    }))
-    .onNotification(methods.client.session.update, ({ params }) => onUpdate?.(params.update))
-    .onNotification(AUTH_STATUS_UPDATE_METHOD, parseAuthStatusUpdate, ({ params }) => {
-      if (params) log.push(params)
-    })
-    .connect(ndJsonStream(streams.input, streams.output))
-  // Each request races the connection, so one the agent never answers ends when it exits.
-  const stopped = connection.closed.then(() => {
-    throw new Error('The agent stopped.')
+  // Nothing runs in this connection, so every permission request is refused.
+  const connection = await connectAgent(agent, {
+    logId: `${agent.id} sign-in`,
+    timeoutMs: initializeTimeoutMs,
+    launch,
+    onSessionUpdate: ({ update }) => onUpdate?.(update),
+    onAuthStatus: (status) => log.push(status)
   })
-  stopped.catch(() => undefined)
-  function untilStopped<T>(request: Promise<T>): Promise<T> {
-    return Promise.race([request, stopped])
-  }
   let init: InitializeResponse
   try {
-    init = await untilStopped(
-      Promise.race([
-        connection.agent.request(methods.agent.initialize, {
-          protocolVersion: PROTOCOL_VERSION,
-          // Without it, Claude's adapter offers no sign-in methods.
-          clientCapabilities: { _meta: { 'terminal-auth': true } }
-        }),
-        promiseTimeout(initializeTimeoutMs).then((): never => {
-          throw new Error('The agent did not start.')
-        })
-      ])
+    init = await connection.bounded(
+      connection.agent.request(methods.agent.initialize, {
+        protocolVersion: PROTOCOL_VERSION,
+        // Without it, Claude's adapter offers no sign-in methods.
+        clientCapabilities: { _meta: { 'terminal-auth': true } }
+      })
     )
   } catch (error) {
-    await streams.close()
+    await connection.close()
     throw error
   }
   return {
     connection,
     init,
     log,
-    untilStopped,
+    // A sign-in waits on the browser, so only the agent's exit ends these requests.
+    untilStopped: <T>(request: Promise<T>) => connection.untilStopped(request),
     set onUpdate(listener: ((update: SessionUpdate) => void) | null) {
       onUpdate = listener
     },
-    close: () => streams.close()
+    close: () => connection.close()
   }
 }
 

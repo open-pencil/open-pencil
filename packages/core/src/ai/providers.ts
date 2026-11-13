@@ -127,6 +127,15 @@ export type AIProviderID =
   | 'harness:pi'
   | `acp:${ACPAgentID}`
 
+/** How OpenPencil reaches a provider's models: its API, an ACP coding agent, or the Harness companion. */
+export type AIProviderKind = 'api' | 'acp' | 'harness'
+
+/** The kind of a provider, which its ID's prefix names. */
+export function providerKind(providerID: string): AIProviderKind {
+  if (providerID.startsWith('acp:')) return 'acp'
+  return providerID.startsWith('harness:') ? 'harness' : 'api'
+}
+
 export const REASONING_EFFORTS = ['minimal', 'low', 'medium', 'high', 'xhigh'] as const
 export type ReasoningEffort = (typeof REASONING_EFFORTS)[number]
 

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 
 import { effectScope, nextTick, reactive, type EffectScope } from 'vue'
 
-import type { AgentModelList } from '@/app/ai/agents/acp/oneoff'
+import type { AgentOffer } from '@/app/ai/agents/acp/oneoff'
 import type { AIModelProfileDraft } from '@/app/ai/models'
 import {
   useAgentModelSelection,
@@ -14,26 +14,23 @@ import { createDeferred, type Deferred } from '@/app/runtime/deferred'
 const CLAUDE = 'acp:claude-code'
 const CODEX = 'acp:codex'
 
-const claudeModels: AgentModelList = {
+const claudeModels: AgentOffer = {
   imageInput: true,
-  models: {
-    current: 'default',
-    options: [
-      { id: 'default', name: 'Default' },
-      { id: 'opus', name: 'Opus' }
-    ]
-  }
+  models: [
+    { id: 'default', name: 'Default' },
+    { id: 'opus', name: 'Opus' }
+  ]
 }
 
 /** Agents that answer when the test says so, and the agents each read asked about. */
 function agents(available = true) {
-  const answers: Deferred<AgentModelList>[] = []
+  const answers: Deferred<AgentOffer>[] = []
   const asked: string[] = []
   const source: AgentModelSource = {
     available: () => available,
     read: (agent) => {
       asked.push(agent.id)
-      const next = createDeferred<AgentModelList>()
+      const next = createDeferred<AgentOffer>()
       answers.push(next)
       return next.promise
     }
@@ -104,7 +101,7 @@ describe('the models of the agent a draft uses', () => {
     const { draft, selection } = selectionFor(CLAUDE, source)
     draft.providerID = CODEX
     await nextTick()
-    answers[1]?.resolve({ imageInput: false, models: null })
+    answers[1]?.resolve({ imageInput: false, models: [] })
     answers[0]?.resolve(claudeModels)
     await nextTick()
     await nextTick()

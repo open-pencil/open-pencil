@@ -1,8 +1,10 @@
 import type { LanguageModel } from 'ai'
 import { ref } from 'vue'
 
-import type { ReasoningEffort } from '@open-pencil/core/constants'
+import { acpAgentFor, providerKind } from '@open-pencil/core/constants'
+import type { ACPAgentDef, ReasoningEffort } from '@open-pencil/core/constants'
 
+import { agentModelID } from '@/app/ai/models/agent'
 import { createLanguageModel, resolveLanguageModelID } from '@/app/ai/models/language-model'
 import { resolveProviderModel } from '@/app/ai/models/reasoning/floors'
 import { modelConnection, resolveAIModelRole } from '@/app/ai/models/store'
@@ -28,11 +30,16 @@ export type DirectAIModelRuntime = {
 export type ACPModelRuntime = {
   kind: 'acp'
   role: ResolvedAIModelRole
+  agent: ACPAgentDef
+  /** The model the profile names, which the agent's sessions are put on; empty keeps its own. */
+  model: string
 }
 
 export type HarnessModelRuntime = {
   kind: 'harness'
   role: ResolvedAIModelRole
+  /** The model the profile names; empty leaves it to the companion's agent. */
+  model: string
 }
 
 export type AIModelRuntime = DirectAIModelRuntime | ACPModelRuntime | HarnessModelRuntime
@@ -110,8 +117,15 @@ export async function createAIModelRuntime(role: AIModelRole): Promise<AIModelRu
   if (role === 'vision' && !resolved.profile.capabilities.includes('vision')) {
     throw new Error('The Vision model must support image input')
   }
-  if (resolved.connection.providerID === 'harness:pi') return { kind: 'harness', role: resolved }
-  if (resolved.connection.providerID.startsWith('acp:')) return { kind: 'acp', role: resolved }
+  const kind = providerKind(resolved.connection.providerID)
+  if (kind === 'harness') {
+    return { kind, role: resolved, model: agentModelID(resolved.profile) }
+  }
+  if (kind === 'acp') {
+    const agent = acpAgentFor(resolved.connection.providerID)
+    if (!agent) throw new Error(`Unknown ACP agent: ${resolved.connection.providerID}`)
+    return { kind, role: resolved, agent, model: agentModelID(resolved.profile) }
+  }
 
   if (resolved.connection.providerID === OPENPENCIL_AI_PROVIDER) {
     return { kind: 'direct', role: resolved, model: await openPencilLanguageModel(resolved) }

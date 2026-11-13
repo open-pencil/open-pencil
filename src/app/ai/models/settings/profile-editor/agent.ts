@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 
 import { acpAgentFor, type ACPAgentDef, type ModelOption } from '@open-pencil/core/constants'
 
-import { readAgentModels, type AgentModelList } from '@/app/ai/agents/acp/oneoff'
+import { readAgentOffer, type AgentOffer } from '@/app/ai/agents/acp/oneoff'
 import type { AIModelProfileDraft } from '@/app/ai/models'
 import { canRunHostProcesses } from '@/app/tauri/capabilities'
 
@@ -14,12 +14,12 @@ export type AgentModelSelectionState = 'idle' | 'loading' | 'ready' | 'failed'
 export interface AgentModelSource {
   /** Agents run as processes of the desktop app only. */
   available: () => boolean
-  read: (agent: ACPAgentDef) => Promise<AgentModelList>
+  read: (agent: ACPAgentDef) => Promise<AgentOffer>
 }
 
 export const HOST_AGENT_MODELS: AgentModelSource = {
   available: canRunHostProcesses,
-  read: readAgentModels
+  read: readAgentOffer
 }
 
 /**
@@ -50,10 +50,10 @@ export function useAgentModelSelection(
     }
     state.value = 'loading'
     try {
-      const list = await source.read(current)
+      const offer = await source.read(current)
       if (request !== reading) return
-      models.value = list.models?.options ?? []
-      imageInput.value = list.imageInput
+      models.value = offer.models
+      imageInput.value = offer.imageInput
       state.value = 'ready'
     } catch {
       if (request === reading) state.value = 'failed'
