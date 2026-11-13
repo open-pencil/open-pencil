@@ -307,7 +307,7 @@ export interface Effect {
 }
 
 export type ConstraintType = 'MIN' | 'CENTER' | 'MAX' | 'STRETCH' | 'SCALE'
-export type TextAutoResize = 'NONE' | 'HEIGHT' | 'WIDTH_AND_HEIGHT' | 'TRUNCATE'
+export type TextAutoResize = 'NONE' | 'HEIGHT' | 'WIDTH_AND_HEIGHT'
 
 /** Where a connector end attaches to a layer: a side, the side Figma picks, or a fixed point. */
 export type ConnectorMagnet =
