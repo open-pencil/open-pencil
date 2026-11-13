@@ -191,7 +191,7 @@ describe('laying out HTML from its captured layout', () => {
   })
 
   test('keeps auto layout for a line that starts where its words did', async () => {
-    const label = element(box(300, 20), { box: rect(0, 0, 300, 20), lines: [rect(0, 2, 40, 16)] }, [
+    const label = element(box(300, 20), { box: rect(0, 0, 300, 20), lines: [rect(0, 0, 40, 20)] }, [
       { type: 'text', text: 'Docs' }
     ])
     const graph = await sceneGraphFromStyledHTML({ type: 'document', children: [label] })
