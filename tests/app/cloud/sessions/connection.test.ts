@@ -31,20 +31,20 @@ let statusRequests = 0
 /** The languages the app told the server, in order. */
 let locales: string[] = []
 /** Runs while the server answers for its workspaces, as a check is under way. */
-let duringCheck = () => {}
+let duringCheck: (() => void) | undefined
 
 beforeEach(() => {
   answers = {}
   authorization = []
   statusRequests = 0
   locales = []
-  duringCheck = () => {}
+  duringCheck = undefined
   spyOn(globalThis, 'fetch').mockImplementation(
     fetchStub(async (input, init) => {
       const url = new URL(input instanceof Request ? input.url : String(input))
       authorization.push(new Headers(init?.headers).get('Authorization'))
       if (url.pathname === '/api/account/status') statusRequests += 1
-      if (url.pathname === '/api/workspaces') duringCheck()
+      if (url.pathname === '/api/workspaces') duringCheck?.()
       if (url.pathname === '/api/account/locale') {
         locales.push((JSON.parse(String(init?.body)) as { locale: string }).locale)
         return Response.json({ ok: true })
