@@ -1,4 +1,4 @@
-import { nodeCornerRadii } from '../geometry'
+import { borderWeights, nodeCornerRadii } from '../geometry'
 import { polygonOutline } from '../polygon'
 import type { Vector } from '../primitives'
 import type { SceneNode, WindingRule } from '../types'
@@ -82,12 +82,7 @@ function rectangleSides(
       [...arc(w - br, h - br, br, quarter), ...arc(bl, h - bl, bl, 2 * quarter)],
       [...arc(bl, h - bl, bl, 3 * quarter), ...arc(tl, tl, tl, 4 * quarter)]
     ],
-    lineWeights: [
-      node.borderTopWeight,
-      node.borderRightWeight,
-      node.borderBottomWeight,
-      node.borderLeftWeight
-    ]
+    lineWeights: [...borderWeights(node)]
   }
 }
 

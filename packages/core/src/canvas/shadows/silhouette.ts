@@ -1,7 +1,12 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
-import { nodeCornerRadii, strokeOverflow as strokeReach } from '@open-pencil/scene-graph/geometry'
+import {
+  nodeCornerRadii,
+  strokeOverflow as strokeReach,
+  strokeAlignShare,
+  strokeWeightOf
+} from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import { clipsChildren, isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
@@ -11,7 +16,6 @@ import { paintBooleanOperation } from '#core/canvas/boolean'
 import { renderMaskedChildIds } from '#core/canvas/masks'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { nodeHasRadius, nodeHasSmoothCorners } from '#core/canvas/shapes'
-import { strokeAlignShare } from '#core/canvas/strokes/sides'
 import { nodeOrientationMatrix } from '#core/geometry'
 
 /**
@@ -147,9 +151,9 @@ function drawChildSilhouettes(
   }
 }
 
-/** How far a stroke reaches past the shape it outlines. */
-export function strokeOutset(stroke: Stroke): number {
-  return stroke.weight * strokeAlignShare(stroke.align)
+/** How far a stroke reaches past the shape it outlines, by its widest side. */
+function strokeOutset(node: SceneNode, stroke: Stroke): number {
+  return strokeWeightOf(node, stroke) * strokeAlignShare(stroke.align)
 }
 
 function strokeOverflow(node: SceneNode): number {
@@ -160,7 +164,7 @@ function strokeOverflow(node: SceneNode): number {
     const reach =
       node.type === 'LINE'
         ? strokeReach([stroke], node.strokeCap, null, node)
-        : strokeOutset(stroke)
+        : strokeOutset(node, stroke)
     overflow = Math.max(overflow, reach)
   }
   return overflow

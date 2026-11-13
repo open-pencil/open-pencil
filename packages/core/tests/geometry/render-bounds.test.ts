@@ -384,3 +384,32 @@ describe('render bounds of containers that clip', () => {
     expect(box(exportBounds(graph, [section.id]))?.[2]).toBe(150)
   })
 })
+
+// Figma desktop (2026-11-14): a 100×100 rectangle with a 1px stroke and a 20px right side is
+// bounded by each side's own weight: 121×102 outside, 110.5×101 centred, its box inside.
+describe('render bounds of a stroke with sides of their own weights', () => {
+  const graph = new SceneGraph()
+  const figma = new FigmaAPI(graph)
+  const box = (bounds: ReturnType<typeof exportBounds>) =>
+    bounds && [bounds.minX, bounds.minY, bounds.maxX - bounds.minX, bounds.maxY - bounds.minY]
+  const sided = (align: 'OUTSIDE' | 'CENTER' | 'INSIDE', x: number) => {
+    const rect = figma.createRectangle()
+    rect.x = x
+    rect.y = 0
+    rect.resize(100, 100)
+    rect.fills = solid(1, 0, 0)
+    rect.strokes = solid(0, 0, 1)
+    rect.strokeAlign = align
+    rect.strokeWeight = 1
+    rect.strokeRightWeight = 20
+    return rect
+  }
+
+  test('each side reaches by its own weight', () => {
+    expect(box(exportBounds(graph, [sided('OUTSIDE', 20000).id]))).toEqual([19999, -1, 121, 102])
+    expect(box(exportBounds(graph, [sided('CENTER', 21000).id]))).toEqual([
+      20999.5, -0.5, 110.5, 101
+    ])
+    expect(box(exportBounds(graph, [sided('INSIDE', 22000).id]))).toEqual([22000, 0, 100, 100])
+  })
+})

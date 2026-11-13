@@ -7,6 +7,8 @@ import {
   shadowReach,
   intersectVisualBounds,
   strokeOverflow,
+  strokeSideReach,
+  type SideWeights,
   textDecorationOverflow,
   unionVisualBounds,
   type VisualBounds,
@@ -80,6 +82,16 @@ function grown(bounds: VisualBounds, by: number): VisualBounds {
   }
 }
 
+/** `bounds` grown by a reach of its own on each side: top, right, bottom, left. */
+function grownBySides(bounds: VisualBounds, [top, right, bottom, left]: SideWeights): VisualBounds {
+  return {
+    minX: bounds.minX - left,
+    minY: bounds.minY - top,
+    maxX: bounds.maxX + right,
+    maxY: bounds.maxY + bottom
+  }
+}
+
 /**
  * Whether a node paints anything of its own, as Figma's render bounds count it: a text paints
  * with a visible fill or stroke, or an emoji, which draws apart from its fills. A container's box
@@ -128,7 +140,9 @@ function ownPaint(node: SceneNode, reach: EffectReach): VisualBounds | null {
   const shape = ownShape(node)
   if (!shape) return null
   const stroke = strokeOverflow(node.strokes, node.strokeCap, node.vectorNetwork, node)
-  const drawn = grown(shape, stroke)
+  const drawn = node.independentStrokeWeights
+    ? grownBySides(shape, strokeSideReach(node))
+    : grown(shape, stroke)
   const outside = node.strokes.some((stroke) => stroke.visible && stroke.align !== 'INSIDE')
   const geometry = geometryBlobBounds([
     ...node.fillGeometry,

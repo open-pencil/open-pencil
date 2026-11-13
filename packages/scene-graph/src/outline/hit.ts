@@ -2,6 +2,7 @@ import { compact } from 'es-toolkit'
 
 import { arrowCapOverflow, isArrowCap, lineStrokeEnds } from '../arrow-caps'
 import { getWorldMatrix } from '../coordinate'
+import { strokeWeightOf } from '../geometry'
 import type { SceneGraph } from '../graph'
 import Matrix from '../matrix'
 import type { Vector } from '../primitives'
@@ -32,17 +33,10 @@ function insideArea(area: OutlineArea, point: Vector): boolean {
   return containsByWinding(area.contours, area.windingRule, point)
 }
 
-/** A stroke's weight; with independent borders the widest side, for layers without per-side lines. */
-function strokeWeightOf(node: SceneNode, stroke: Stroke): number {
-  if (node.independentStrokeWeights) {
-    return Math.max(
-      node.borderTopWeight,
-      node.borderRightWeight,
-      node.borderBottomWeight,
-      node.borderLeftWeight
-    )
-  }
-  return Number.isFinite(stroke.weight) ? stroke.weight : node.strokeWeight
+/** A stroke's weight, the widest side with sides of their own, for layers without per-side lines. */
+function hitWeight(node: SceneNode, stroke: Stroke): number {
+  const weight = strokeWeightOf(node, stroke)
+  return Number.isFinite(weight) ? weight : node.strokeWeight
 }
 
 /** The farthest a layer's clickable strokes reach outside its box, in its own units. */
@@ -50,7 +44,7 @@ export function strokeReach(node: SceneNode): number {
   let reach = 0
   for (const stroke of node.strokes) {
     if (!isHitPaint(stroke)) continue
-    const weight = strokeWeightOf(node, stroke)
+    const weight = hitWeight(node, stroke)
     // A line's stroke lies a full weight to one side of it.
     const side = node.type === 'LINE' || stroke.align === 'OUTSIDE'
     reach = Math.max(reach, side ? weight : weight / 2)
@@ -306,7 +300,7 @@ function strokeHits(node: SceneNode, stroke: Stroke, probe: Probe, pad: number):
   if (probe.strokeAreaWithin) return probe.strokeAreaWithin(pad)
   const align = probe.closed && !probe.centered ? stroke.align : 'CENTER'
   if (probe.strokeOnEdge) {
-    const weight = strokeWeightOf(node, stroke)
+    const weight = hitWeight(node, stroke)
     return probe.edgeWithin(strokeReachAt(align, weight, probe.inside) + pad)
   }
   // A flat cap ends the stroke at the line's end; round and square caps paint past it.
@@ -321,7 +315,7 @@ function strokeHits(node: SceneNode, stroke: Stroke, probe: Probe, pad: number):
   }
   if (node.type === 'LINE' && probe.local) {
     // Figma strokes a line a full weight to one side, along the path the renderer draws.
-    const weight = strokeWeightOf(node, stroke)
+    const weight = hitWeight(node, stroke)
     if (!(weight > 0)) return false
     const { start, end } = lineStrokeEnds(node.width, node.height, weight, cap)
     if (reaches(measureLine([start, end], [true, true], probe.local), weight / 2)) return true
@@ -336,11 +330,11 @@ function strokeHits(node: SceneNode, stroke: Stroke, probe: Probe, pad: number):
   }
   const network = node.type === 'VECTOR' ? node.vectorNetwork : null
   if (network && probe.local) {
-    const weight = strokeWeightOf(node, stroke)
+    const weight = hitWeight(node, stroke)
     if (weight > 0 && hitsArrowHeads(network, cap, weight, probe.local, pad)) return true
   }
   return probe.lines.some((line, index) => {
-    const weight = probe.lineWeights?.[index] ?? strokeWeightOf(node, stroke)
+    const weight = probe.lineWeights?.[index] ?? hitWeight(node, stroke)
     // A side with no weight paints no border.
     if (!(weight > 0)) return false
     return reaches(line, strokeReachAt(align, weight, probe.inside))

@@ -1,11 +1,16 @@
 import type { Canvas, Path } from '@open-pencil/canvaskit'
 import type { BlendMode, Effect, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import { blurSigma, drawnBlurRadius } from '@open-pencil/scene-graph/geometry'
+import {
+  blurSigma,
+  drawnBlurRadius,
+  borderWeights,
+  strokeAlignShare
+} from '@open-pencil/scene-graph/geometry'
 
 import { setPaintBlendMode } from '#core/canvas/blend'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { drawOutline, makeNodeShapePath, nodeHasRadius, withNodeOutline } from '#core/canvas/shapes'
-import { sideStrokeRRects, strokeAlignShare } from '#core/canvas/strokes/sides'
+import { sideStrokeRRects } from '#core/canvas/strokes/sides'
 
 import { fillsCastShadow, paintCastsShadow } from './silhouette'
 
@@ -94,12 +99,7 @@ export function regularStrokeOutline(node: SceneNode, spread: number): StrokeOut
   if (strokes.length > 1 || stroke.dashPattern?.length) return null
   const sharp = node.type !== 'ELLIPSE' && !nodeHasRadius(node)
   if (node.independentStrokeWeights && node.type !== 'ELLIPSE') {
-    const sides: Sides = [
-      node.borderTopWeight,
-      node.borderRightWeight,
-      node.borderBottomWeight,
-      node.borderLeftWeight
-    ]
+    const sides: Sides = borderWeights(node)
     if (sides.every((weight) => weight === sides[0])) return evenOutline(sides[0], stroke.align)
     if (spread !== 0) return evenOutline(node.strokeWeight, stroke.align)
     return sideOutline(sides, stroke.align)

@@ -197,11 +197,85 @@ export function polygonVertices(node: {
   })
 }
 
+/** A rectangle's stroke weights, side by side: top, right, bottom, left. */
+export type SideWeights = readonly [top: number, right: number, bottom: number, left: number]
+
+type SideStrokeNode = Pick<
+  SceneNode,
+  | 'independentStrokeWeights'
+  | 'borderTopWeight'
+  | 'borderRightWeight'
+  | 'borderBottomWeight'
+  | 'borderLeftWeight'
+>
+
+/** The share of a stroke's weight that lies outside the shape it outlines. */
+export function strokeAlignShare(align: Stroke['align']): number {
+  if (align === 'OUTSIDE') return 1
+  if (align === 'CENTER') return 0.5
+  return 0
+}
+
+/** A layer's own side weights: top, right, bottom, left. */
+export function borderWeights(node: SideStrokeNode): SideWeights {
+  return [
+    node.borderTopWeight,
+    node.borderRightWeight,
+    node.borderBottomWeight,
+    node.borderLeftWeight
+  ]
+}
+
+/** The weight of each side of `node` under `stroke`, its own when its sides have their own. */
+export function strokeSideWeights(
+  node: SideStrokeNode,
+  stroke: Pick<Stroke, 'weight'>
+): SideWeights {
+  if (!node.independentStrokeWeights)
+    return [stroke.weight, stroke.weight, stroke.weight, stroke.weight]
+  return borderWeights(node)
+}
+
+/** A stroke's weight, or with sides of their own the widest side, for what is not drawn per side. */
+export function strokeWeightOf(
+  node: Partial<SideStrokeNode>,
+  stroke: Pick<Stroke, 'weight'>
+): number {
+  if (!node.independentStrokeWeights) return stroke.weight
+  return Math.max(
+    node.borderTopWeight ?? 0,
+    node.borderRightWeight ?? 0,
+    node.borderBottomWeight ?? 0,
+    node.borderLeftWeight ?? 0
+  )
+}
+
+/**
+ * How far a layer's visible strokes reach past each side of its box: top, right, bottom, left.
+ * With sides of their own each side reaches by its own weight (Figma desktop, live: a 1px outside
+ * stroke with a 20px right side bounds a 100 × 100 rectangle at 121 × 102).
+ */
+export function strokeSideReach(node: SideStrokeNode & Pick<SceneNode, 'strokes'>): SideWeights {
+  let reach: SideWeights = [0, 0, 0, 0]
+  for (const stroke of node.strokes) {
+    if (!stroke.visible) continue
+    const share = strokeAlignShare(stroke.align)
+    const sides = strokeSideWeights(node, stroke)
+    reach = [
+      Math.max(reach[0], sides[0] * share),
+      Math.max(reach[1], sides[1] * share),
+      Math.max(reach[2], sides[2] * share),
+      Math.max(reach[3], sides[3] * share)
+    ]
+  }
+  return reach
+}
+
 /**
  * What shapes how far a layer's stroke reaches past its box: its type, since a line is stroked to
  * one side, and its join and miter limit, for the tips mitered path corners reach.
  */
-export interface StrokeShape {
+export interface StrokeShape extends Partial<SideStrokeNode> {
   type?: string
   strokeJoin?: StrokeJoin
   strokeMiterLimit?: number
@@ -223,9 +297,10 @@ export function strokeOverflow(
   for (const stroke of strokes ?? []) {
     if (!stroke.visible) continue
     const align = sided ? stroke.align : 'CENTER'
-    let extra = open ? stroke.weight / 2 : 0
-    if (line || align === 'OUTSIDE') extra = stroke.weight
-    else if (align === 'CENTER') extra = stroke.weight / 2
+    const weight = strokeWeightOf(shape ?? {}, stroke)
+    let extra = open ? weight / 2 : 0
+    if (line || align === 'OUTSIDE') extra = weight
+    else if (align === 'CENTER') extra = weight / 2
     const miter = network
       ? miterRatio(network, stroke.join ?? shape?.strokeJoin, shape?.strokeMiterLimit)
       : 1
