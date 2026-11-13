@@ -160,3 +160,42 @@ describe('editing instance slots', () => {
     expect(editor.graph.getNode(instance.id)?.componentPropertyAssignments).toEqual({})
   })
 })
+
+test('reset slot content shows its bound paints in the instance’s mode', () => {
+  const editor = createEditor()
+  const { graph } = editor
+  const pageId = editor.state.currentPageId
+  const collection = graph.createCollection('Theme')
+  const dark = expectDefined(graph.createMode(collection.id, 'Dark'), 'dark mode')
+  const tone = graph.createVariable('Tone', 'COLOR', collection.id)
+  tone.valuesByMode[collection.defaultModeId] = { r: 1, g: 0, b: 0, a: 1 }
+  tone.valuesByMode[dark] = { r: 0, g: 0, b: 1, a: 1 }
+  const card = graph.createNode('COMPONENT', pageId, {
+    name: 'Card',
+    componentPropertyDefinitions: [
+      { id: 'card:body', name: 'Body', type: 'SLOT', defaultValue: '' }
+    ]
+  })
+  const body = graph.createNode('FRAME', card.id, {
+    name: 'Body',
+    componentPropertyReferences: [{ propertyId: 'card:body', field: 'SLOT_CONTENT' }]
+  })
+  const swatch = graph.createNode('RECTANGLE', body.id, {
+    name: 'Swatch',
+    fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+  })
+  editor.bindVariable(swatch.id, 'fills/0/color', tone.id)
+  const holder = graph.createNode('FRAME', pageId, {
+    name: 'Holder',
+    variableModes: { [collection.id]: dark }
+  })
+  const instance = expectDefined(graph.createInstance(card.id, holder.id), 'instance')
+  const slot = expectDefined(
+    graph.getChildren(instance.id).find((child) => slotPropertyId(child)),
+    'slot'
+  )
+  editor.createShape('RECTANGLE', 0, 0, 10, 10, slot.id, 'Drawn')
+  editor.resetSlot(slot.id)
+  const copy = expectDefined(graph.getChildren(slot.id).find((child) => child.name === 'Swatch'))
+  expect(copy.fills[0].color).toEqual({ r: 0, g: 0, b: 1, a: 1 })
+})
