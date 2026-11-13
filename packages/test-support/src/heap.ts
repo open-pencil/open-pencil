@@ -75,9 +75,8 @@ export function heldInstances(from: string, classes: readonly string[]): Set<str
 
   const held = new Set<string>()
   const seen = new Set(queue)
-  // Read by index: shifting from the front would cost the whole queue each time.
-  for (let read = 0; read < queue.length; read++) {
-    const next = queue[read] ?? 0
+  // An array's iterator reaches what is pushed while it runs, and never shifts the queue.
+  for (const next of queue) {
     const name = nameOf(next)
     if (name && typeOf(next) === 'object' && classes.includes(name)) held.add(name)
     const start = firstEdge.get(next) ?? 0
