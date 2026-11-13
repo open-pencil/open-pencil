@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { seedSharing } from '#cloud-tests/helpers/sharing'
+import { createAdminDocumentService, createAdminReportService } from '#cloud/admin'
 import {
   createDocumentReportService,
   DOCUMENT_REPORT_BUDGET,
@@ -109,6 +110,110 @@ describe('document reports', () => {
       await expect(report()).rejects.toBeInstanceOf(DocumentReportLimitError)
       // Someone else may still report it.
       await report({ guestId: 'another-guest-0123456789' })
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
+  test('tells a reporter who left an address that the report arrived, and what was decided', async () => {
+    const context = await seedSharing()
+    const sent: {
+      kind: string
+      recipientEmail: string
+      locale?: string | null
+      payload: unknown
+    }[] = []
+    const email: TransactionalEmailService = {
+      async enqueue(input) {
+        sent.push({
+          kind: input.kind,
+          recipientEmail: input.recipientEmail,
+          locale: input.fallbackLocale,
+          payload: input.payload
+        })
+        return crypto.randomUUID()
+      },
+      async deliverPending() {
+        return { claimed: 0, accepted: 0, retrying: 0, failed: 0, suppressed: 0 }
+      }
+    }
+    try {
+      const reports = createDocumentReportService(context.runtime.database, {
+        sharing: context.sharing,
+        email,
+        adminRecipients: [],
+        publicURL: 'https://cloud.example.com'
+      })
+      const capability = await context.sharing.createShare('owner', context.documentId, {
+        permission: 'view'
+      })
+      const file = (guestId: string, replyEmail: string) =>
+        reports.file(
+          capability.share.id,
+          {
+            secret: capability.secret,
+            guestId,
+            reason: 'spam-phishing',
+            description: 'A fake sign-in page',
+            replyEmail
+          },
+          undefined,
+          'de'
+        )
+      await file('guest-0123456789abcdef', 'first@example.com')
+      await file('guest-fedcba9876543210', 'second@example.com')
+      const [dismissed] = await context.runtime.database
+        .selectFrom('documentReport')
+        .select('id')
+        .where('replyEmail', '=', 'first@example.com')
+        .execute()
+      const replies = { email, contactEmail: 'abuse@example.com' }
+      // One report is dismissed; blocking the document then answers the other, still open.
+      await createAdminReportService(context.runtime.database, replies).resolve(
+        'admin-user',
+        dismissed?.id ?? '',
+        'dismissed'
+      )
+      await createAdminDocumentService(context.runtime.database, replies).disable(
+        'admin-user',
+        context.documentId,
+        undefined
+      )
+
+      expect(sent).toEqual([
+        {
+          kind: 'document-report-received',
+          recipientEmail: 'first@example.com',
+          locale: 'de',
+          payload: { documentName: 'Homepage' }
+        },
+        {
+          kind: 'document-report-received',
+          recipientEmail: 'second@example.com',
+          locale: 'de',
+          payload: { documentName: 'Homepage' }
+        },
+        {
+          kind: 'document-report-decided',
+          recipientEmail: 'first@example.com',
+          locale: 'de',
+          payload: {
+            documentName: 'Homepage',
+            outcome: 'dismissed',
+            contactEmail: 'abuse@example.com'
+          }
+        },
+        {
+          kind: 'document-report-decided',
+          recipientEmail: 'second@example.com',
+          locale: 'de',
+          payload: {
+            documentName: 'Homepage',
+            outcome: 'actioned',
+            contactEmail: 'abuse@example.com'
+          }
+        }
+      ])
     } finally {
       await context.runtime.close()
     }
