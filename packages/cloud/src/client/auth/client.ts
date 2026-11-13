@@ -1,4 +1,4 @@
-import type { CloudDiscovery, CloudLocale } from '#cloud/contract'
+import type { CloudDiscovery } from '#cloud/contract'
 import { passkeyClient } from '@better-auth/passkey/client'
 import { createAuthClient } from 'better-auth/client'
 import { deviceAuthorizationClient, twoFactorClient } from 'better-auth/client/plugins'
@@ -33,7 +33,7 @@ export type CloudAuthClient = Pick<
       name: string
       email: string
       password: string
-      locale: CloudLocale
+      locale: string
       callbackURL?: string
     }): Promise<{ data: unknown; error: { code?: string; status: number } | null }>
   }
@@ -177,7 +177,7 @@ export async function signUpToCloudWithEmail(
     email: string
     password: string
     verifiedURL: string
-    locale: CloudLocale
+    locale: string
   },
   options: CloudEmailAuthOptions = {}
 ): Promise<CloudAuthResult> {

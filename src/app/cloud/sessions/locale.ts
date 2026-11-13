@@ -1,11 +1,9 @@
 import type { CloudPortalClient } from '@open-pencil/cloud/client'
-import { isCloudLocale, type CloudLocale } from '@open-pencil/cloud/contract'
 import { locale } from '@open-pencil/vue/i18n'
 
-/** The app's language, which Cloud writes email in; every language the app has, Cloud has. */
-export function cloudLocale(): CloudLocale {
-  const current = locale.get()
-  return isCloudLocale(current) ? current : 'en'
+/** The app's language, as a tag; Cloud writes email in it, or the nearest language it has. */
+export function cloudLocale(): string {
+  return locale.get()
 }
 
 /** An account on a server, which is told its language apart from any other. */
@@ -14,7 +12,7 @@ export type CloudLocaleAccount = { server: string; account: string }
 const key = ({ server, account }: CloudLocaleAccount) => `${server}\n${account}`
 
 /** The language each account was last told while the app runs. */
-const told = new Map<string, CloudLocale>()
+const told = new Map<string, string>()
 /** Each account's report under way, which the next one waits for. */
 const reports = new Map<string, Promise<void>>()
 
