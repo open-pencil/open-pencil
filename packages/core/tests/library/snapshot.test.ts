@@ -113,6 +113,56 @@ test('a component that instances a variant publishes under the component set key
   })
 })
 
+test('publishing only the host keeps a keyless variant under its component set', async () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0].id
+  const set = graph.createNode('COMPONENT_SET', page, { name: 'Badge', componentKey: 'badge' })
+  graph.createNode('COMPONENT', set.id, {
+    name: 'Variant=default',
+    componentPropertyValues: { Variant: 'default' }
+  })
+  const outline = graph.createNode('COMPONENT', set.id, {
+    name: 'Variant=outline',
+    componentPropertyValues: { Variant: 'outline' }
+  })
+  const host = graph.createNode('COMPONENT', page, { name: 'Host', componentKey: 'host' })
+  const instance = graph.createInstance(outline.id, host.id)
+  if (!instance) throw new Error('Expected the badge instance')
+
+  const publishedAt = '2026-01-01T00:00:00.000Z'
+  const full = await createLibraryRevision({
+    libraryId: 'repro',
+    name: 'Repro',
+    graph,
+    publishedAt
+  })
+  const hostOnly = await createLibraryRevision({
+    libraryId: 'repro',
+    name: 'Repro',
+    graph,
+    assetIds: [host.id],
+    publishedAt
+  })
+
+  const published = [...hostOnly.graph.getAllNodes()].find((node) => node.name === 'Host')
+  const placed = published ? hostOnly.graph.getChildren(published.id)[0] : undefined
+  if (!placed) throw new Error('Expected the published badge instance')
+  const variant = placed.componentId ? hostOnly.graph.getNode(placed.componentId) : undefined
+  const parent = variant?.parentId ? hostOnly.graph.getNode(variant.parentId) : undefined
+
+  expect(parent?.type).toBe('COMPONENT_SET')
+  expect(parent?.componentKey).toBe('badge')
+  expect(canonicalLibraryNode(hostOnly.graph, placed)).toMatchObject({
+    componentKey: 'badge',
+    componentDependency: { componentPropertyValues: { Variant: 'outline' } }
+  })
+  const hostAsset = hostOnly.manifest.assets.find((asset) => asset.key === 'host')
+  const fullHost = full.manifest.assets.find((asset) => asset.key === 'host')
+  if (!hostAsset || !fullHost) throw new Error('Expected the host asset')
+  expect(hostOnly.manifest.assets.map((asset) => asset.key)).toEqual(['host'])
+  expect(hostAsset.contentHash).toBe(fullHost.contentHash)
+})
+
 test('an instance of a variant that already has an asset key keeps that key', async () => {
   const graph = new SceneGraph()
   const page = graph.getPages()[0].id
