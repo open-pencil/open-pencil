@@ -6,7 +6,11 @@ import { createAutomationCommandHandlers } from '@/app/automation/bridge/handler
 import { automationFiles } from '@/app/automation/bridge/server'
 import { createTab, getActiveStore, getTabById, getTabsSnapshot, switchTab } from '@/app/tabs'
 
-import { settle, useAutomationHandlerGlobals } from '#tests/helpers/automation/handlers'
+import {
+  settle,
+  useAutomationHandlerGlobals,
+  type AutomationResponse
+} from '#tests/helpers/automation/handlers'
 import { testPath } from '#tests/helpers/paths'
 
 useAutomationHandlerGlobals()
@@ -17,7 +21,7 @@ describe('file paths in a browser go through the MCP server', () => {
     automationFiles('ws://mcp.test', 'token')
   )
   const requestThroughServer = (command: string, args: Record<string, unknown>) =>
-    handleThroughServer(getActiveStore(), command, args)
+    handleThroughServer(getActiveStore(), command, args) as Promise<AutomationResponse>
 
   function dirtyTab() {
     const tab = createTab()
