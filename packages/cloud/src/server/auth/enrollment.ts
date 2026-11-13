@@ -90,12 +90,12 @@ export function enrollmentOptions(
       user: {
         create: {
           // The app's language, or for an account it didn't name one for, as one made through
-          // Google or Apple, the browser's.
+          // Google or Apple, the browser's. A language Cloud doesn't write in reads English.
           before: async (user, context) => {
             const tag = languageTag(user)
-            const locale =
-              emailLocale(tag ? [tag] : []) ??
-              acceptedLocale(context?.headers?.get('accept-language'))
+            const locale = tag
+              ? emailLocale([tag])
+              : acceptedLocale(context?.headers?.get('accept-language'))
             return { data: { ...user, locale } }
           },
           after: async (user) => {

@@ -142,7 +142,8 @@ describe('email and password authentication', () => {
       expect((await signUp('portugal@example.com', 'pt-PT')).status).toBe(200)
       // Without one from the app, as with Google or Apple, the browser's language.
       expect((await signUp('browser@example.com', undefined, 'nl, ja;q=0.8')).status).toBe(200)
-      expect((await signUp('klingon@example.com', 'tlh')).status).toBe(200)
+      // The app's language wins over the browser's even when Cloud doesn't write in it.
+      expect((await signUp('klingon@example.com', 'tlh', 'de')).status).toBe(200)
       const accounts = await app.database
         .selectFrom('user')
         .select(['email', 'locale'])
