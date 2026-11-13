@@ -1,5 +1,3 @@
-import { expect } from 'bun:test'
-
 import { parse, type CSSStyleRuleLike } from '@acemir/cssom'
 
 import type { DesignDocument, DesignElement, DesignNode } from '@open-pencil/dom-css'
@@ -430,17 +428,19 @@ export const tailwindNavClasses = [
   'px-4'
 ] as const
 
-/** Asserts `node` is a frame and narrows it. */
+/**
+ * Asserts `node` is a frame and narrows it. It throws rather than calling `bun:test`, so the
+ * Playwright specs that import these fixtures load under Node.
+ */
 export function expectFrame(node: SceneNode | undefined) {
-  expect(node?.type).toBe('FRAME')
-  if (node?.type !== 'FRAME') throw new Error('Expected frame node')
+  if (node?.type !== 'FRAME') throw new Error(`Expected a frame, got ${node?.type ?? 'nothing'}`)
   return node
 }
 
 /** Asserts `node` is an element and narrows it. */
 export function expectElement(node: DesignNode | undefined): DesignElement {
-  expect(node?.type).toBe('element')
-  if (node?.type !== 'element') throw new Error('Expected element')
+  if (node?.type !== 'element')
+    throw new Error(`Expected an element, got ${node?.type ?? 'nothing'}`)
   return node
 }
 
