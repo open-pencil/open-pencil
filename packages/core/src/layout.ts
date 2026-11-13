@@ -19,6 +19,16 @@ import { configureChildAsLeaf } from './layout/leaf'
 import { sizeAutoResizingText } from './layout/text-auto-resize'
 export { sizeAutoResizingText } from './layout/text-auto-resize'
 export {
+  flowChildren,
+  flowGaps,
+  PADDING_SIDES,
+  paddingOf,
+  paddingRect,
+  paddingTick,
+  type FlowGap,
+  type PaddingSide
+} from './layout/spacing-marks'
+export {
   estimateTextSize,
   getTextMeasurer,
   installTextMeasurer,

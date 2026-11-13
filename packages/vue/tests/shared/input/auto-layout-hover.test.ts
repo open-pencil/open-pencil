@@ -117,4 +117,15 @@ describe('auto-layout hover resolver', () => {
       index: 0
     })
   })
+
+  // Turned half a turn about its middle at 240,180, the frame's own point (lx, ly) lands at
+  // (380 - lx, 260 - ly): the first gap's tick, at 140,56 in the frame, is at 240,204.
+  test("finds and opens a turned frame's gap where its tick is on the canvas", () => {
+    const turned = editor({ rotation: 180 })
+    expect(autoLayoutValueAnchor(turned, 'frame', 'itemSpacing', 0)).toEqual({ x: 240, y: 204 })
+    expect(resolveAutoLayoutHover(240, 204, turned)).toMatchObject({
+      kind: 'spacing-value',
+      index: 0
+    })
+  })
 })

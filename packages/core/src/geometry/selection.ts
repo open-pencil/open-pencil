@@ -1,4 +1,5 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import type { Vector, Rect } from '@open-pencil/scene-graph/primitives'
 
 import { ROTATION_HANDLE_DISTANCE } from '#core/constants'
@@ -20,6 +21,14 @@ export function selectionPath(node: SceneNode) {
     node.textPathBox
   const sampled = data ? sampleTextPath(data, box) : null
   return data && sampled ? { data, box, sampled } : null
+}
+
+/**
+ * The canvas box around several layers, each turned layer by its axis-aligned bounds: the box a
+ * multiple selection draws and Figma's rulers mark (Figma desktop, live).
+ */
+export function selectionBounds(geometry: SceneGeometry, nodes: readonly SceneNode[]): Rect {
+  return computeBounds(nodes.map(geometry.bounds))
 }
 
 export function selectionHandleRect(node: SceneNode): Rect {

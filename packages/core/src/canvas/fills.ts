@@ -3,7 +3,7 @@ import type { SceneNode, SceneGraph, Fill } from '@open-pencil/scene-graph'
 import { invertGradientTransform } from '@open-pencil/scene-graph/gradient'
 import { drawnImageHash } from '@open-pencil/scene-graph/images'
 import Matrix from '@open-pencil/scene-graph/matrix'
-import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import { fillGeometryMatchesRegions, hasRegionFills } from '@open-pencil/scene-graph/vector-network'
 
 import { setPaintBlendMode } from './blend'
@@ -11,6 +11,7 @@ import { makeDiamondGradient } from './gradients/diamond'
 import { previewEdge } from './images/previews'
 import { drawOffOutputGrid, landsOnOutputPixels, makeImageShader } from './images/sampling'
 import type { SkiaRenderer } from './renderer'
+import { resolveGradientStopColor } from './renderer/colors'
 import { drawOutline, withNodeOutline } from './shapes'
 
 interface PaintFillsOptions {
@@ -277,9 +278,6 @@ function makeGradientLocalMatrix(
   ])
 }
 
-/** Resolves one gradient stop's color, so a stroke resolves its own bindings, not a fill's. */
-export type ResolveGradientStop = (color: Color, stopIndex: number) => Color
-
 /**
  * Sets `paint`'s shader to `fill`'s gradient on `node` and returns whether it did. CanvasKit
  * builds no shader when the local matrix cannot be inverted, as for a transform that holds no
@@ -290,20 +288,13 @@ export function applyGradientFill(
   fill: Fill,
   node: SceneNode,
   graph: SceneGraph,
-  paint: Paint = r.fillPaint,
-  resolveStop: ResolveGradientStop = (color, stopIndex) =>
-    r.resolveFillColorInfo(
-      { ...fill, type: 'SOLID', color, opacity: color.a, visible: true },
-      stopIndex,
-      node,
-      graph
-    ).color
+  paint: Paint = r.fillPaint
 ): boolean {
   const stops = fill.gradientStops
   const t = fill.gradientTransform
   if (!stops || !t) return false
-  const colors = stops.map((s, index) => {
-    const c = resolveStop(s.color, index)
+  const colors = stops.map((s) => {
+    const c = resolveGradientStopColor(s.color, graph, r.presentationColorSpace)
     return r.ck.Color4f(c.r, c.g, c.b, c.a)
   })
   const positions = stops.map((s) => s.position)
