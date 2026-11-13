@@ -17,6 +17,7 @@ import {
 } from '@open-pencil/scene-graph/geometry'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
+import { paintShows } from '@open-pencil/scene-graph/paints'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { textLinesOverflow } from '@open-pencil/scene-graph/text'
 
@@ -100,8 +101,7 @@ function grownBySides(bounds: VisualBounds, [top, right, bottom, left]: SideWeig
  */
 function paints(node: SceneNode): boolean {
   if (node.type === 'GROUP') return false
-  const painted =
-    node.fills.some((fill) => fill.visible) || node.strokes.some((stroke) => stroke.visible)
+  const painted = node.fills.some(paintShows) || node.strokes.some(paintShows)
   if (node.type === 'TEXT') return node.text.length > 0 && (painted || mayHoldEmoji(node.text))
   // A vector without a path draws nothing, whatever its paints.
   if (

@@ -9,6 +9,7 @@ import {
 } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import { clipsChildren, isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
+import { paintShows } from '@open-pencil/scene-graph/paints'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 import { regionFills } from '@open-pencil/scene-graph/vector-network'
 
@@ -34,22 +35,13 @@ const SILHOUETTE_PAINT: Fill = {
   visible: true
 }
 
-/**
- * Figma casts a full-strength shadow from any paint above 0% opacity and none from a paint at
- * 0% or a gradient whose stops are all transparent, so such a paint counts as no paint at all.
- */
-export function paintCastsShadow(paint: Fill): boolean {
-  if (!paint.visible || paint.opacity === 0) return false
-  return paint.gradientStops?.some((stop) => stop.color.a > 0) ?? true
-}
-
 /** Frames, groups, and the like, whose shadows Figma casts from their children as well. */
 export function fillsCastShadow(node: SceneNode): boolean {
-  return node.fills.some(paintCastsShadow) || regionFills(node.vectorNetwork).some(paintCastsShadow)
+  return node.fills.some(paintShows) || regionFills(node.vectorNetwork).some(paintShows)
 }
 
 export function paintsCastShadow(node: SceneNode): boolean {
-  return fillsCastShadow(node) || node.strokes.some(paintCastsShadow)
+  return fillsCastShadow(node) || node.strokes.some(paintShows)
 }
 
 function drawsSilhouette(node: SceneNode): boolean {
@@ -71,7 +63,7 @@ function silhouetteStroke(stroke: Stroke): Stroke {
 
 /** The node with its shadow-casting paints made opaque and no effects, or null when it draws none. */
 function silhouetteProxy(node: SceneNode, mode: SilhouetteMode): SceneNode | null {
-  const strokes = node.strokes.filter(paintCastsShadow).map(silhouetteStroke)
+  const strokes = node.strokes.filter(paintShows).map(silhouetteStroke)
   const castsFill = fillsCastShadow(node)
   const coversArea =
     mode === 'knockout' &&
@@ -88,7 +80,7 @@ function silhouetteProxy(node: SceneNode, mode: SilhouetteMode): SceneNode | nul
         region.fills
           ? {
               ...region,
-              fills: coversArea || region.fills.some(paintCastsShadow) ? [SILHOUETTE_PAINT] : []
+              fills: coversArea || region.fills.some(paintShows) ? [SILHOUETTE_PAINT] : []
             }
           : region
       )
@@ -159,7 +151,7 @@ function strokeOutset(node: SceneNode, stroke: Stroke): number {
 function strokeOverflow(node: SceneNode): number {
   let overflow = 0
   for (const stroke of node.strokes) {
-    if (!paintCastsShadow(stroke)) continue
+    if (!paintShows(stroke)) continue
     // A line's stroke lies wholly to one side of it, whatever its alignment, with its heads.
     const reach =
       node.type === 'LINE'
@@ -181,7 +173,7 @@ function isOpaquePaint(paint: Fill): boolean {
 }
 
 function paintsOverOwnKnockout(node: SceneNode): boolean {
-  const strokes = node.strokes.filter(paintCastsShadow)
+  const strokes = node.strokes.filter(paintShows)
   const coversArea =
     !isLayerContainer(node) || fillsCastShadow(node) || strokes.length > 0 || clipsChildren(node)
   if (coversArea && !node.fills.some(isOpaquePaint)) return false

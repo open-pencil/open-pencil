@@ -3,7 +3,8 @@ import { getWorldMatrix } from './coordinate'
 import type { SceneGraph } from './graph'
 import Matrix from './matrix'
 import { clipsChildren } from './node-defaults'
-import { hitsShape, isHitPaint, strokeReach } from './outline/hit'
+import { hitsShape, strokeReach } from './outline/hit'
+import { paintShows } from './paints/shows'
 import type { SceneNode, NodeType } from './types'
 
 const CONTAINER_TYPES = new Set<NodeType>([
@@ -17,9 +18,9 @@ const CONTAINER_TYPES = new Set<NodeType>([
 ])
 const OPAQUE_CONTAINER_TYPES = new Set<NodeType>(['COMPONENT', 'INSTANCE'])
 
-/** Whether a container's own paints show, so its empty area is drawn (see `isHitPaint`). */
+/** Whether a container's own paints show, so its empty area is drawn (`paintShows`). */
 function showsPaint(node: SceneNode): boolean {
-  return node.fills.some(isHitPaint) || node.strokes.some(isHitPaint)
+  return node.fills.some(paintShows) || node.strokes.some(paintShows)
 }
 
 function isTopLevel(graph: SceneGraph, node: SceneNode): boolean {

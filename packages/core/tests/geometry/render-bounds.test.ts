@@ -449,3 +449,14 @@ describe('render bounds of a spread shadow by layer type', () => {
     expect(growth(() => filled(figma.createPolygon()), 34000)).toBe(0)
   })
 })
+
+// Figma desktop (2026-11-14): a rectangle whose only fill is at 0% opacity has no render bounds,
+// its drop shadow included, as one with a hidden fill or none.
+test('a layer whose paints are all transparent has no render bounds', () => {
+  const graph = new SceneGraph()
+  const figma = new FigmaAPI(graph)
+  const clear = figma.createRectangle()
+  clear.fills = [{ type: 'SOLID', color: { r: 1, g: 0, b: 0 }, opacity: 0 }]
+  clear.effects = [shadow(4, 0, { x: 10, y: 10 })]
+  expect(exportBounds(graph, [clear.id])).toBeNull()
+})

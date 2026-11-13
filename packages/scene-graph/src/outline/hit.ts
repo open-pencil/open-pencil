@@ -5,8 +5,9 @@ import { getWorldMatrix } from '../coordinate'
 import { strokeWeightOf } from '../geometry'
 import type { SceneGraph } from '../graph'
 import Matrix from '../matrix'
+import { paintShows } from '../paints/shows'
 import type { Vector } from '../primitives'
-import type { Fill, SceneNode, Stroke } from '../types'
+import type { SceneNode, Stroke } from '../types'
 import { hitsArrowHeads } from './heads'
 import { containsByWinding, distanceToLines, distanceToSegment } from './point'
 import { shapeOutline, type OutlineArea, type ShapeOutline } from './shapes'
@@ -16,18 +17,6 @@ const EDGE_SAMPLES = 8
 
 /** How far a flattened curve may stray from the shape when nothing tighter is asked for. */
 const DEFAULT_TOLERANCE = 0.25
-
-/**
- * Whether a paint makes its layer clickable, as in Figma: a visible paint that shows something.
- * A paint at 0% opacity, or a gradient whose stops are all transparent, does not; 1% does, and
- * the layer's own opacity does not matter.
- */
-export function isHitPaint(paint: Fill): boolean {
-  if (!paint.visible || !(paint.opacity > 0)) return false
-  if (paint.gradientStops) return paint.gradientStops.some((stop) => stop.color.a > 0)
-  if (paint.type === 'SOLID') return paint.color.a > 0
-  return true
-}
 
 function insideArea(area: OutlineArea, point: Vector): boolean {
   return containsByWinding(area.contours, area.windingRule, point)
@@ -43,14 +32,14 @@ function hitWeight(node: SceneNode, stroke: Stroke): number {
 export function strokeReach(node: SceneNode): number {
   let reach = 0
   for (const stroke of node.strokes) {
-    if (!isHitPaint(stroke)) continue
+    if (!paintShows(stroke)) continue
     const weight = hitWeight(node, stroke)
     // A line's stroke lies a full weight to one side of it.
     const side = node.type === 'LINE' || stroke.align === 'OUTSIDE'
     reach = Math.max(reach, side ? weight : weight / 2)
   }
   // Arrow heads reach past the stroke.
-  const hitStrokes = node.strokes.filter(isHitPaint)
+  const hitStrokes = node.strokes.filter(paintShows)
   return Math.max(reach, arrowCapOverflow(hitStrokes, node.strokeCap, node.vectorNetwork))
 }
 
@@ -357,7 +346,7 @@ export function hitsShape(
   const tolerance = pad > 0 ? Math.min(DEFAULT_TOLERANCE, pad / 4) : DEFAULT_TOLERANCE
   const probe = probeNode(graph, node, px, py, tolerance)
   if (!probe) return null
-  const fills = node.fills.filter(isHitPaint)
+  const fills = node.fills.filter(paintShows)
   if (fills.length > 0 && probe.closed && (probe.inside || probe.edgeWithin(pad))) return true
-  return node.strokes.some((stroke) => isHitPaint(stroke) && strokeHits(node, stroke, probe, pad))
+  return node.strokes.some((stroke) => paintShows(stroke) && strokeHits(node, stroke, probe, pad))
 }
