@@ -8,6 +8,7 @@ description: OpenPencil Cloud's free plan, its paid plans and credit packs, and 
 
 <script setup>
 import PricingPage from '#docs/theme/landing/pricing/PricingPage.vue'
+import { en } from '#docs/theme/landing/content/messages/en'
 </script>
 
-<PricingPage />
+<PricingPage :messages="en" />

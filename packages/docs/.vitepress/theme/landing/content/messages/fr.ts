@@ -337,5 +337,45 @@ export const fr: LandingMessages = {
       ],
       notes: 'Nouveautés'
     }
+  },
+  pricing: {
+    badge: 'OpenPencil Cloud',
+    title: 'Offres et tarifs',
+    lede: 'L’éditeur est gratuit et open source, avec ou sans compte. Une offre Cloud conserve vos documents sur le service hébergé, les partage et paie l’IA dans l’éditeur.',
+    free: 'Gratuit',
+    perMonth: 'par mois',
+    storage: 'Stockage',
+    unlimitedStorage: 'Illimité',
+    credits: 'Crédits par mois',
+    noCredits: 'Non inclus',
+    maximumFile: 'Fichiers jusqu’à {size}',
+    collaboration: 'Collaboration en direct',
+    collaborationUpTo: 'Collaboration en direct jusqu’à {count} personnes',
+    shareLinks: 'Liens de partage',
+    guestsEdit: 'Les invités peuvent modifier',
+    guestsView: 'Les invités peuvent consulter',
+    revisionHistory: 'Historique des versions',
+    paidIncludes: ['Tout ce que comprend l’offre Gratuit', 'IA et recherche web dans l’éditeur'],
+    billed:
+      'Facturé chaque mois en dollars américains, plus les taxes applicables. Résiliable à tout moment ; vos fichiers restent, en lecture seule au-delà du stockage gratuit.',
+    paidSoon: 'Les offres payantes ouvrent avec OpenPencil Cloud.',
+    packs: {
+      title: 'Plus de crédits',
+      lede: 'Avec une offre payante, achetez des crédits une fois pour l’IA et la recherche au-delà de vos crédits mensuels. Ils restent quand une offre prend fin.',
+      credits: 'Crédits',
+      price: 'Prix',
+      validFor: 'Validité'
+    },
+    rates: {
+      title: 'Ce que paient les crédits',
+      lede: 'Une requête coûte les tokens qu’elle lit et écrit, au prix de son modèle.',
+      search: 'Une recherche web coûte {credits} crédits.',
+      model: 'Modèle',
+      input: 'Crédits par million de tokens en entrée',
+      output: 'Crédits par million de tokens en sortie'
+    },
+    selfHosting:
+      'Un serveur que votre équipe fait tourner elle-même fixe ses propres offres et limites ; consultez le {link}.',
+    selfHostingLink: 'guide d’auto-hébergement'
   }
 }

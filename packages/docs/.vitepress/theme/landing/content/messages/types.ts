@@ -162,4 +162,51 @@ export interface LandingMessages {
       notes: string
     }
   }
+  /** The Cloud pricing page, which shares the landing's look and catalog. */
+  pricing: {
+    badge: string
+    title: string
+    lede: string
+    free: string
+    /** Follows a plan's price. */
+    perMonth: string
+    storage: string
+    unlimitedStorage: string
+    credits: string
+    /** Stands for credits on a plan without services. */
+    noCredits: string
+    /** `{size}` is replaced. */
+    maximumFile: string
+    collaboration: string
+    /** `{count}` is replaced. */
+    collaborationUpTo: string
+    shareLinks: string
+    guestsEdit: string
+    guestsView: string
+    revisionHistory: string
+    /** What each paid plan adds to the free one. */
+    paidIncludes: string[]
+    billed: string
+    /** Shown instead of `billed` until billing sells plans. */
+    paidSoon: string
+    packs: {
+      title: string
+      lede: string
+      credits: string
+      price: string
+      validFor: string
+    }
+    rates: {
+      title: string
+      lede: string
+      /** `{credits}` is replaced. */
+      search: string
+      model: string
+      input: string
+      output: string
+    }
+    /** `{link}` is replaced by a link to the self-hosting guide, which reads `selfHostingLink`. */
+    selfHosting: string
+    selfHostingLink: string
+  }
 }

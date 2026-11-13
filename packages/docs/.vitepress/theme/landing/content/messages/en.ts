@@ -326,5 +326,44 @@ export const en: LandingMessages = {
       ],
       notes: 'What’s new'
     }
+  },
+  pricing: {
+    badge: 'OpenPencil Cloud',
+    title: 'Plans and pricing',
+    lede: 'The editor is free and open source, with or without an account. A Cloud plan keeps your documents on the hosted service, shares them, and pays for AI in the editor.',
+    free: 'Free',
+    perMonth: 'a month',
+    storage: 'Storage',
+    unlimitedStorage: 'Unlimited',
+    credits: 'Credits each month',
+    noCredits: 'Not included',
+    maximumFile: 'Files up to {size}',
+    collaboration: 'Live collaboration',
+    collaborationUpTo: 'Live collaboration with up to {count} people',
+    shareLinks: 'Share links',
+    guestsEdit: 'Guests can edit',
+    guestsView: 'Guests can view',
+    revisionHistory: 'Version history',
+    paidIncludes: ['Everything in Free', 'AI and web search in the editor'],
+    billed:
+      'Billed monthly in US dollars, plus tax where it applies. Cancel anytime; your files stay, read-only beyond the free storage.',
+    paidSoon: 'Paid plans open with OpenPencil Cloud.',
+    packs: {
+      title: 'More credits',
+      lede: 'On a paid plan, buy credits once for AI and search beyond your monthly credits. They stay when a plan ends.',
+      credits: 'Credits',
+      price: 'Price',
+      validFor: 'Valid for'
+    },
+    rates: {
+      title: 'What credits buy',
+      lede: 'A request costs the tokens it reads and writes, at its model’s price.',
+      search: 'A web search costs {credits} credits.',
+      model: 'Model',
+      input: 'Credits per million input tokens',
+      output: 'Credits per million output tokens'
+    },
+    selfHosting: 'A server your team runs itself sets its own plans and limits; see the {link}.',
+    selfHostingLink: 'self-hosting guide'
   }
 }

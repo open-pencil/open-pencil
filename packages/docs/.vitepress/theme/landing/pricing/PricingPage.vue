@@ -1,28 +1,35 @@
 <script setup lang="ts">
+import { useData } from 'vitepress'
 import IconCheck from '~icons/lucide/check'
 
-import { creditPackRows, modelRows, planCards, searchCredits } from './pricing'
+import { useLocalePath, type LandingMessages } from '../content/messages'
+import { creditPackRows, modelRows, planCards, searchPrice } from './pricing'
 import { data as pricing } from './pricing.data'
 
 import '../landing.css'
 
+/** The copy of the page's locale, imported by that locale's `cloud/pricing.md`. */
+const { messages } = defineProps<{ messages: LandingMessages }>()
+const { lang } = useData()
+const localePath = useLocalePath()
+
 // Every number comes from the hosted service's configuration when the site is built
 // (`pricing.data.ts`); the page itself sets none.
-const plans = planCards(pricing)
-const packs = creditPackRows(pricing.catalog)
-const models = modelRows(pricing.services)
-const search = searchCredits(pricing.services)
+const copy = messages.pricing
+const plans = planCards(pricing, copy, lang.value)
+const packs = creditPackRows(pricing.catalog, lang.value)
+const models = modelRows(pricing.services, lang.value)
+const search = searchPrice(pricing.services, copy, lang.value)
+// `{link}` becomes a link to the self-hosting guide, which exists only in English.
+const [selfHostingBefore, selfHostingAfter] = copy.selfHosting.split('{link}')
 </script>
 
 <template>
   <div class="landing pricing-page">
     <section class="landing-section hero">
-      <span class="landing-badge">OpenPencil Cloud</span>
-      <h1>Plans and pricing</h1>
-      <p class="lede">
-        The editor is free and open source, with or without an account. A Cloud plan keeps your
-        documents on the hosted service, shares them, and pays for AI in the editor.
-      </p>
+      <span class="landing-badge">{{ copy.badge }}</span>
+      <h1>{{ copy.title }}</h1>
+      <p class="lede">{{ copy.lede }}</p>
     </section>
 
     <section class="landing-section">
@@ -31,16 +38,16 @@ const search = searchCredits(pricing.services)
           <h2>{{ plan.name }}</h2>
           <p class="price">
             <span class="amount">{{ plan.price }}</span>
-            <span class="period">a month</span>
+            <span class="period">{{ copy.perMonth }}</span>
           </p>
           <dl class="limits">
             <div>
-              <dt>Storage</dt>
+              <dt>{{ copy.storage }}</dt>
               <dd>{{ plan.storage }}</dd>
             </div>
             <div>
-              <dt>Credits each month</dt>
-              <dd>{{ plan.credits ?? 'Not included' }}</dd>
+              <dt>{{ copy.credits }}</dt>
+              <dd>{{ plan.credits ?? copy.noCredits }}</dd>
             </div>
           </dl>
           <ul class="includes">
@@ -50,27 +57,20 @@ const search = searchCredits(pricing.services)
           </ul>
         </article>
       </div>
-      <p v-if="pricing.catalog" class="note">
-        Billed monthly in US dollars, plus tax where it applies. Cancel anytime; your files stay,
-        read-only beyond the free storage.
-      </p>
-      <p v-else class="note">Paid plans open with OpenPencil Cloud.</p>
+      <p class="note">{{ pricing.catalog ? copy.billed : copy.paidSoon }}</p>
     </section>
 
     <section v-if="packs.length > 0" class="landing-section">
       <header class="section-header">
-        <h2>More credits</h2>
+        <h2>{{ copy.packs.title }}</h2>
       </header>
-      <p class="section-lede">
-        On a paid plan, buy credits once for AI and search beyond your monthly credits. They stay
-        when a plan ends.
-      </p>
+      <p class="section-lede">{{ copy.packs.lede }}</p>
       <table class="rates">
         <thead>
           <tr>
-            <th scope="col">Credits</th>
-            <th scope="col">Price</th>
-            <th scope="col">Valid for</th>
+            <th scope="col">{{ copy.packs.credits }}</th>
+            <th scope="col">{{ copy.packs.price }}</th>
+            <th scope="col">{{ copy.packs.validFor }}</th>
           </tr>
         </thead>
         <tbody>
@@ -85,18 +85,18 @@ const search = searchCredits(pricing.services)
 
     <section v-if="models.length > 0" class="landing-section">
       <header class="section-header">
-        <h2>What credits buy</h2>
+        <h2>{{ copy.rates.title }}</h2>
       </header>
       <p class="section-lede">
-        A request costs the tokens it reads and writes, at its model's price.
-        <template v-if="search">A web search costs {{ search }} credits.</template>
+        {{ copy.rates.lede }}
+        <template v-if="search">{{ search }}</template>
       </p>
       <table class="rates">
         <thead>
           <tr>
-            <th scope="col">Model</th>
-            <th scope="col">Credits per million input tokens</th>
-            <th scope="col">Credits per million output tokens</th>
+            <th scope="col">{{ copy.rates.model }}</th>
+            <th scope="col">{{ copy.rates.input }}</th>
+            <th scope="col">{{ copy.rates.output }}</th>
           </tr>
         </thead>
         <tbody>
@@ -111,8 +111,11 @@ const search = searchCredits(pricing.services)
 
     <section class="landing-section">
       <p class="note">
-        A server your team runs itself sets its own plans and limits; see the
-        <a href="/cloud/self-hosting/">self-hosting guide</a>.
+        {{ selfHostingBefore
+        }}<a :href="localePath('/cloud/self-hosting/', { translated: false })">{{
+          copy.selfHostingLink
+        }}</a
+        >{{ selfHostingAfter }}
       </p>
     </section>
   </div>

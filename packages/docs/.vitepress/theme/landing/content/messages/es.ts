@@ -337,5 +337,45 @@ export const es: LandingMessages = {
       ],
       notes: 'Novedades'
     }
+  },
+  pricing: {
+    badge: 'OpenPencil Cloud',
+    title: 'Planes y precios',
+    lede: 'El editor es gratuito y de código abierto, con o sin cuenta. Un plan de Cloud guarda tus documentos en el servicio alojado, los comparte y paga la IA del editor.',
+    free: 'Gratis',
+    perMonth: 'al mes',
+    storage: 'Almacenamiento',
+    unlimitedStorage: 'Ilimitado',
+    credits: 'Créditos al mes',
+    noCredits: 'No incluidos',
+    maximumFile: 'Archivos de hasta {size}',
+    collaboration: 'Colaboración en directo',
+    collaborationUpTo: 'Colaboración en directo con hasta {count} personas',
+    shareLinks: 'Enlaces para compartir',
+    guestsEdit: 'Los invitados pueden editar',
+    guestsView: 'Los invitados pueden ver',
+    revisionHistory: 'Historial de versiones',
+    paidIncludes: ['Todo lo del plan Gratis', 'IA y búsqueda web en el editor'],
+    billed:
+      'Facturación mensual en dólares estadounidenses, más los impuestos que correspondan. Cancela cuando quieras; tus archivos se quedan, en solo lectura más allá del almacenamiento gratuito.',
+    paidSoon: 'Los planes de pago llegan con OpenPencil Cloud.',
+    packs: {
+      title: 'Más créditos',
+      lede: 'Con un plan de pago, compra créditos una sola vez para IA y búsqueda más allá de tus créditos mensuales. Se conservan cuando termina el plan.',
+      credits: 'Créditos',
+      price: 'Precio',
+      validFor: 'Validez'
+    },
+    rates: {
+      title: 'Lo que pagan los créditos',
+      lede: 'Una solicitud cuesta los tokens que lee y escribe, al precio de su modelo.',
+      search: 'Una búsqueda web cuesta {credits} créditos.',
+      model: 'Modelo',
+      input: 'Créditos por millón de tokens de entrada',
+      output: 'Créditos por millón de tokens de salida'
+    },
+    selfHosting:
+      'Un servidor que gestiona tu propio equipo fija sus propios planes y límites; consulta la {link}.',
+    selfHostingLink: 'guía de autoalojamiento'
   }
 }
