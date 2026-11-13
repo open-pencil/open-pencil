@@ -97,6 +97,8 @@
   "subagentEnded": "Arrêté",
   "subagentEmpty": "Rien à afficher pour l’instant.",
   "subagentBack": "Discussion",
+  "followSubagent": "Suivre {name}",
+  "stopFollowingSubagent": "Ne plus suivre {name}",
   "thoughtFor": "Réflexion : {seconds} s",
   "copyResponse": "Copier la réponse",
   "revertTurn": "Annuler les modifications",

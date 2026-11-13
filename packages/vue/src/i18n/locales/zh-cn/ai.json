@@ -97,6 +97,8 @@
   "subagentEnded": "已结束",
   "subagentEmpty": "暂无内容。",
   "subagentBack": "聊天",
+  "followSubagent": "跟随 {name}",
+  "stopFollowingSubagent": "停止跟随 {name}",
   "thoughtFor": "思考了 {seconds} 秒",
   "copyResponse": "复制回答",
   "revertTurn": "撤销更改",

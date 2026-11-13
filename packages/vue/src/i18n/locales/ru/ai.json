@@ -97,6 +97,8 @@
   "subagentEnded": "Завершён",
   "subagentEmpty": "Пока нечего показать.",
   "subagentBack": "Чат",
+  "followSubagent": "Следить за {name}",
+  "stopFollowingSubagent": "Перестать следить за {name}",
   "thoughtFor": "Рассуждал {seconds} с",
   "copyResponse": "Копировать ответ",
   "revertTurn": "Отменить изменения",

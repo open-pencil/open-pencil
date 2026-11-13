@@ -20,6 +20,11 @@ export interface SubagentTranscript {
   /** What its parent asked of it. */
   description?: string
   state?: SubagentState
+  /**
+   * The agent it shows as on the canvas, once it touched a document: its callsign and color, kept
+   * so a reopened conversation names it as it was, and its presence id while it works.
+   */
+  agent?: { id: string; name: string; color: string }
   parts: ChatMessagePart[]
 }
 
@@ -35,6 +40,9 @@ const transcriptSchema = v.object({
   title: v.optional(v.string()),
   description: v.optional(v.string()),
   state: v.optional(v.picklist(SUBAGENT_STATES)),
+  agent: v.optional(
+    v.object({ id: v.string(), name: v.string(), color: v.pipe(v.string(), v.hexColor()) })
+  ),
   parts: v.array(v.custom<ChatMessagePart>(isMessagePart))
 })
 

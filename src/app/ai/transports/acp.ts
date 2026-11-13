@@ -36,6 +36,7 @@ import { AgentNotInstalledError } from '@/app/ai/agents/setup/readiness'
 import { notifyPermissionWaiting } from '@/app/ai/chat/notifications'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 import { endRun, forgetAgentChat, startAgentRun } from '@/app/ai/reply/run'
+import { subagentAgent } from '@/app/automation/agents'
 import { getAutomationAuthToken } from '@/app/automation/mcp/spawn'
 import { describeDiagnosticError, recordACPTransportFailure } from '@/app/diagnostics'
 import type { EditorStore } from '@/app/editor/active-store'
@@ -283,7 +284,10 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     return new ReadableStream<UIMessageChunk>({
       start: (controller) => {
         const mapper = createUpdateMapper(`turn-${Date.now()}`)
-        const subagents = createSubagentTranscripts((chunk) => controller.enqueue(chunk))
+        const subagents = createSubagentTranscripts(
+          (chunk) => controller.enqueue(chunk),
+          subagentAgent
+        )
         let closed = false
         // The reply's run collects the edits the agent's calls make in the chat's document.
         const store = this.store

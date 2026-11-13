@@ -97,6 +97,8 @@
   "subagentEnded": "終了",
   "subagentEmpty": "まだ表示するものはありません。",
   "subagentBack": "チャット",
+  "followSubagent": "{name} をフォロー",
+  "stopFollowingSubagent": "{name} のフォローをやめる",
   "thoughtFor": "{seconds}秒間思考",
   "copyResponse": "回答をコピー",
   "revertTurn": "変更を元に戻す",

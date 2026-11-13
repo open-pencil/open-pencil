@@ -79,4 +79,27 @@ describe('a subagent’s transcript in the reply', () => {
     await transcripts.end()
     expect(latest(chunks).get('quiet')?.state).toBe('unknown')
   })
+
+  test('names the agent a subagent shows as on the canvas once it has one', async () => {
+    const chunks: UIMessageChunk[] = []
+    const agents = new Map<string, { id: string; name: string; color: string }>()
+    const transcripts = createSubagentTranscripts(
+      (chunk) => chunks.push(chunk),
+      (session) => agents.get(session) ?? null
+    )
+    agents.set('left', { id: 'agent-1', name: 'Pico', color: '#2563EB' })
+    transcripts.describe({ sessionId: 'left', state: { state: 'running' } })
+    transcripts.update('left', {
+      sessionUpdate: 'agent_message_chunk',
+      content: { type: 'text', text: 'Drawing.' }
+    })
+    // It keeps the name once its agent has left the canvas.
+    agents.delete('left')
+    await transcripts.end()
+    expect(latest(chunks).get('left')?.agent).toEqual({
+      id: 'agent-1',
+      name: 'Pico',
+      color: '#2563EB'
+    })
+  })
 })

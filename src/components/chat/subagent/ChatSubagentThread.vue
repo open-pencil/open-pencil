@@ -9,7 +9,10 @@ import type { SubagentTranscript } from '@/app/ai/chat/subagents'
 import ChatMessage from '@/components/chat/ChatMessage.vue'
 import { chatSubagentTheme } from '@/components/chat/ui'
 
-/** What a subagent was asked and what it did, as a reply of its own that cannot be answered. */
+/**
+ * What a subagent was asked and what it did, as a reply of its own that cannot be answered. The
+ * chat's header names it while the thread is open (`ChatSubagentHeader`).
+ */
 const { transcript } = defineProps<{ transcript: SubagentTranscript }>()
 
 const { ai } = useI18n()
@@ -24,12 +27,8 @@ const working = computed(() => transcript.state === undefined || transcript.stat
 </script>
 
 <template>
-  <div v-if="transcript.title || transcript.description" :class="ui.intro()">
-    <p v-if="transcript.title" :class="ui.introTitle()">{{ transcript.title }}</p>
-    <p v-if="transcript.description" :class="ui.introDescription()">
-      {{ transcript.description }}
-    </p>
-  </div>
+  <!-- The header names it; what its parent asked of it opens the thread. -->
+  <p v-if="transcript.description" :class="ui.intro()">{{ transcript.description }}</p>
   <ScrollAreaRoot class="relative min-h-0 flex-1">
     <ScrollAreaViewport class="h-full" data-test-id="chat-subagent-thread">
       <div v-if="transcript.parts.length" :class="ui.transcript()">

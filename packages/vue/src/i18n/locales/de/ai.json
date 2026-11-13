@@ -97,6 +97,8 @@
   "subagentEnded": "Beendet",
   "subagentEmpty": "Noch nichts zu zeigen.",
   "subagentBack": "Chat",
+  "followSubagent": "{name} folgen",
+  "stopFollowingSubagent": "{name} nicht mehr folgen",
   "thoughtFor": "Nachgedacht: {seconds} s",
   "copyResponse": "Antwort kopieren",
   "revertTurn": "Änderungen zurücknehmen",

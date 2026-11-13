@@ -110,6 +110,8 @@ export const aiMessageDefaults = {
   subagentEnded: 'Ended',
   subagentEmpty: 'Nothing to show yet.',
   subagentBack: 'Chat',
+  followSubagent: params('Follow {name}'),
+  stopFollowingSubagent: params('Stop following {name}'),
   thoughtFor: params('Thought for {seconds}s'),
   copyResponse: 'Copy response',
   revertTurn: 'Revert changes',

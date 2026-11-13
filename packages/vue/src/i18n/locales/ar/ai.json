@@ -97,6 +97,8 @@
   "subagentEnded": "انتهى",
   "subagentEmpty": "لا شيء لعرضه بعد.",
   "subagentBack": "الدردشة",
+  "followSubagent": "تتبّع {name}",
+  "stopFollowingSubagent": "إيقاف تتبّع {name}",
   "thoughtFor": "فكّر لمدة {seconds} ث",
   "copyResponse": "نسخ الرد",
   "revertTurn": "التراجع عن التغييرات",

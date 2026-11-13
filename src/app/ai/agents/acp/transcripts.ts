@@ -23,18 +23,26 @@ interface Subagent {
  * updates arrive under its ACP session; they become a reply of its own, assembled as the chat
  * assembles the agent's, and reach the chat as one part per subagent that updates in place.
  */
-export function createSubagentTranscripts(write: (chunk: UIMessageChunk) => void) {
+export function createSubagentTranscripts(
+  write: (chunk: UIMessageChunk) => void,
+  /** The agent a subagent shows as on the canvas, once it has one. */
+  agentOf: (session: string) => SubagentTranscript['agent'] | null = () => null
+) {
   const subagents = new Map<string, Subagent>()
+
+  /** The transcript as the chat gets it, naming the subagent's agent once it has one. */
+  function snapshot(transcript: SubagentTranscript): UIMessageChunk {
+    const agent = agentOf(transcript.session)
+    if (agent) transcript.agent = agent
+    return { type: SUBAGENT_PART, id: transcript.session, data: structuredClone(transcript) }
+  }
 
   function subagent(session: string): Subagent {
     const known = subagents.get(session)
     if (known) return known
     const { readable, writable } = new TransformStream<UIMessageChunk, UIMessageChunk>()
     const transcript: SubagentTranscript = { session, parts: [] }
-    const report = throttle(
-      () => write({ type: SUBAGENT_PART, id: session, data: structuredClone(transcript) }),
-      TRANSCRIPT_INTERVAL_MS
-    )
+    const report = throttle(() => write(snapshot(transcript)), TRANSCRIPT_INTERVAL_MS)
     const read = (async () => {
       for await (const message of readUIMessageStream({ stream: readable })) {
         transcript.parts = message.parts
@@ -90,7 +98,7 @@ export function createSubagentTranscripts(write: (chunk: UIMessageChunk) => void
           await read
           report.cancel()
           if (transcript.state !== 'idle') transcript.state = 'unknown'
-          write({ type: SUBAGENT_PART, id: transcript.session, data: structuredClone(transcript) })
+          write(snapshot(transcript))
         })
       )
     }

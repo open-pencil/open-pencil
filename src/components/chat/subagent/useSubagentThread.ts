@@ -2,13 +2,16 @@ import type { UIMessage } from 'ai'
 import { computed, provide, ref, watch, type Ref } from 'vue'
 
 import { subagentTranscript, type SubagentTranscript } from '@/app/ai/chat/subagents'
+import { appPreferences } from '@/app/settings/preferences/store'
 
 import { OPEN_SUBAGENT_THREAD } from './context'
+import { useSubagentFollow } from './useSubagentFollow'
 
 /**
  * The subagent thread the chat shows over its transcript, read from the chat's messages so it
  * follows a subagent still at work. Cards anywhere in the chat open it; another conversation
- * closes it.
+ * closes it. With Follow agents on, opening a working subagent's thread follows its cursor, since
+ * that is the one being watched; going back leaves following as it is.
  */
 export function useSubagentThread(
   messages: Readonly<Ref<UIMessage[]>>,
@@ -33,8 +36,10 @@ export function useSubagentThread(
     if (value) shown.value = value
   })
 
+  const follow = useSubagentFollow(() => transcript.value)
   provide(OPEN_SUBAGENT_THREAD, (id) => {
     session.value = id
+    if (appPreferences.value.chat.followAgents) follow.start()
   })
   watch(conversation, () => {
     session.value = null

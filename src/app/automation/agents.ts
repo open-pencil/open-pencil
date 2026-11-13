@@ -1,8 +1,15 @@
 import * as v from 'valibot'
 
+import { colorToHex } from '@open-pencil/scene-graph/color'
+
 import { isUnknownRecord } from '@/app/automation/bridge/target'
 import type { EditorStore } from '@/app/editor/active-store'
-import { addAgent, agentPlacement, type AgentHandle } from '@/app/presence/registry'
+import {
+  addAgent,
+  agentPlacement,
+  localAgentColor,
+  type AgentHandle
+} from '@/app/presence/registry'
 import { MAX_NAME_LENGTH } from '@/app/presence/schema'
 import { createDeferred } from '@/app/runtime/deferred'
 
@@ -243,6 +250,27 @@ export function subagentFinished(chat: string, subagent: string): void {
   for (const agent of sessionAgents) {
     if (agent.chat === chat && agent.subagent === subagent) leave(agent)
   }
+}
+
+/** The agent a subagent shows as on the canvas: its presence id, callsign, and color. */
+export interface SubagentAgent {
+  id: string
+  name: string
+  /** As a hex color, such as `#3B82F6`. */
+  color: string
+}
+
+/**
+ * The agent the subagent working in the ACP session `subagent` shows as, once one of its calls
+ * reached a document, or null: a subagent that never touches the canvas has none.
+ */
+export function subagentAgent(subagent: string): SubagentAgent | null {
+  for (const agent of sessionAgents) {
+    if (agent.subagent !== subagent) continue
+    const { id, name } = agent.handle
+    return { id, name, color: colorToHex(localAgentColor(agent.store, id)) }
+  }
+  return null
 }
 
 /**

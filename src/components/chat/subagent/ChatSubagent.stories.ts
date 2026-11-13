@@ -7,6 +7,7 @@ import type { ChatMessagePart } from '@/app/ai/chat/tool-calls/display'
 import PanelDrillIn from '@/components/ui/panel/PanelDrillIn.vue'
 
 import ChatSubagentCard from './ChatSubagentCard.vue'
+import ChatSubagentHeader from './ChatSubagentHeader.vue'
 import ChatSubagentThread from './ChatSubagentThread.vue'
 import { OPEN_SUBAGENT_THREAD } from './context'
 
@@ -15,6 +16,7 @@ const working: SubagentTranscript = {
   title: 'Left card',
   description: 'Build the left pricing card with a heading and three rows.',
   state: 'running',
+  agent: { id: 'agent-pico', name: 'Pico', color: '#2563EB' },
   parts: [
     { type: 'step-start' },
     { type: 'text', text: 'Building the card frame first.', state: 'done' },
@@ -32,6 +34,7 @@ const done: SubagentTranscript = {
   session: 'right',
   title: 'Right card',
   state: 'idle',
+  agent: { id: 'agent-tidal', name: 'Tidal', color: '#EA580C' },
   parts: [{ type: 'text', text: 'The right card is ready.', state: 'done' }]
 }
 
@@ -68,10 +71,10 @@ export const Cards: Story = {
   })
 }
 
-/** A card opens the subagent's thread over the chat; Back returns to it. */
+/** A card opens the subagent's thread over the chat, named in the header's place; Back returns. */
 export const Thread: Story = {
   render: () => ({
-    components: { ChatSubagentCard, ChatSubagentThread, PanelDrillIn },
+    components: { ChatSubagentCard, ChatSubagentHeader, ChatSubagentThread, PanelDrillIn },
     setup: () => {
       const open = ref(false)
       provide(OPEN_SUBAGENT_THREAD, () => {
@@ -80,7 +83,9 @@ export const Thread: Story = {
       return { open, part: part(working), transcript: working }
     },
     template: `<div class="flex h-96 w-80 flex-col bg-panel">
-      <PanelDrillIn :open="open" back="Back" parent="Chat" @back="open = false">
+      <ChatSubagentHeader v-if="open" :transcript="transcript" @back="open = false" />
+      <div v-else class="shrink-0 border-b border-border px-3 py-2 text-xs text-surface">Pricing cards</div>
+      <PanelDrillIn :open="open">
         <template #detail><ChatSubagentThread :transcript="transcript" /></template>
         <div class="p-3"><ChatSubagentCard :part="part" /></div>
       </PanelDrillIn>
@@ -88,10 +93,11 @@ export const Thread: Story = {
   }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(canvas.getByTestId('chat-subagent-card'))
+    await userEvent.click(canvas.getByRole('button', { name: /Pico/ }))
     await expect(await canvas.findByTestId('chat-subagent-thread')).toBeVisible()
+    await expect(canvas.getByTestId('chat-subagent-header')).toHaveTextContent('Pico')
     await expect(canvas.getByText('Building the card frame first.')).toBeVisible()
-    await userEvent.click(canvas.getByRole('button', { name: /Chat/ }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Back: Chat' }))
     // The thread slides away before it leaves.
     await waitFor(() => expect(canvas.queryByTestId('chat-subagent-thread')).toBeNull())
   }
