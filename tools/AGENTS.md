@@ -64,8 +64,8 @@ OpenPencil keeps forks of dependencies it builds into WebAssembly: Skia's Canvas
 
 How the `/demo` tour is structured and built: `packages/docs/development/demo-tour.md`.
 
-- The tour is built from `tools/generate/demo` into the ignored `public/demo.fig` and opened like any `.fig` file; never generate it in the browser (`tools/generate/demo/src/ensure.ts`).
-- A chapter that needs something new from the engine adds that package's `src` to the fingerprint `ensureDemoDocument` rebuilds on; `bun run generate:demo` forces a rebuild (`tools/generate/demo/src/ensure.ts`).
+- The tour lives only in the Cloud gallery: `buildDemoDocument` builds it for `tools/ci/cloud-examples` to publish, and the app and docs landing download it; never bundle it or generate it in the browser (`src/app/cloud/community/tour.ts`).
+- `bun run generate:demo <output.fig>` writes the tour to a file to check a chapter locally (`tools/generate/demo/src/cli.ts`).
 - Bind every color in the tour, icons included, to the Theme and App chrome collections, whose Dark and Light modes `src/app/demo/theme.ts` switches by name (`tools/generate/demo/src/document/theme.ts`).
 - Shader stills need the Playwright Chromium with WebGPU; without it the build skips them, and only an editor in a browser with WebGPU draws the frames when the demo opens (`tools/generate/demo/src/shaders/stills.ts`).
 

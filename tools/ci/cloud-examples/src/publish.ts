@@ -1,7 +1,6 @@
 import { parseArgs } from 'node:util'
 
 import { createCloudAPIClient, discoverCloud } from '@open-pencil/cloud/client'
-import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools/workspace'
 
 import { EXAMPLES } from './examples'
 import { describeOutcome, publishExample } from './gallery'
@@ -30,7 +29,6 @@ if (import.meta.main) {
   }
   const discovery = await discoverCloud(values.server)
   const cloud = createCloudAPIClient(discovery.apiURL, { accessToken: token })
-  const root = await resolveWorkspaceRoot(process.cwd())
   const release = values.version
     ? { name: values.version, description: values.description ?? '' }
     : undefined
@@ -39,7 +37,7 @@ if (import.meta.main) {
       cloud,
       workspaceId: values.workspace,
       name: example.name,
-      bytes: await example.build(root),
+      bytes: await example.build(),
       release,
       objectFetch: (input, init) => fetch(input, init)
     })

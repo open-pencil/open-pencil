@@ -12,7 +12,6 @@
     "@open-pencil/cloud": "workspace:*",
     "@open-pencil/demo-tools": "workspace:*",
     "@open-pencil/fig": "workspace:*",
-    "@open-pencil/package-artifacts-tools": "workspace:*",
     "es-toolkit": "^1.52.0",
     "fflate": "^0.8.3"
   }

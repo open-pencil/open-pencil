@@ -391,6 +391,13 @@ document) and saves it as the editor does, through `saveCloudDocument` in
 its file changed, and, given a version, has its current state named after the release once. A run
 with the same files and version changes nothing.
 
+`[community] tour` names the gallery document editors open as their tour: discovery advertises it as
+`community.tourDocumentId`, and the editor and the docs landing download it with `fetchCommunityTour`
+from `@open-pencil/cloud/client`, as the version named for their release when there is one. Set it to
+the Welcome tour's document ID once the workflow has published it. Discovery and the gallery's
+public reads answer any origin without credentials, so the docs site can fetch them; everything else
+keeps the server's trusted origins.
+
 ## Configuration
 
 Operators author one schema-versioned TOML file. It owns URLs, trusted origins and proxies,
