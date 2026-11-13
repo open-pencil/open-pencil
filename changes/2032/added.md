@@ -1,1 +1,1 @@
-- Coding agents can take any model role, not only the Design agent: an agent profile picks one of the models its agent offers or leaves the choice to the agent, and an agent that holds Vision analyzes attached images (#2032).
+- Coding agents can take any model role, not only the Design agent: an agent profile picks one of the models its agent offers or leaves the choice to the agent, and an agent that holds Vision analyzes attached images and inspects rendered designs (#2032).
