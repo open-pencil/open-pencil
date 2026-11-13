@@ -792,7 +792,8 @@ export interface SceneNode {
   primaryAxisSizing: AxisSizingMode
   counterAxisSizing: AxisSizingMode
   itemSpacing: number
-  counterAxisSpacing: number
+  /** Space between wrapped lines; null follows `itemSpacing`. Read it with `counterAxisSpacingOf`. */
+  counterAxisSpacing: number | null
   paddingTop: number
   paddingRight: number
   paddingBottom: number
@@ -1131,9 +1132,13 @@ export interface Variable {
   version?: string
 }
 
-/** Scalar numeric node fields accepted by numeric property controls. */
+/** Scalar numeric node fields accepted by numeric property controls; some may also be null. */
 export type NumericNodeProperty = {
-  [K in keyof SceneNode]-?: SceneNode[K] extends number ? K : never
+  [K in keyof SceneNode]-?: SceneNode[K] extends number | null
+    ? number extends SceneNode[K]
+      ? K
+      : never
+    : never
 }[keyof SceneNode]
 
 export interface VariableCollectionMode {
