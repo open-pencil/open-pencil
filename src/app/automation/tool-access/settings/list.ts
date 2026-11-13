@@ -9,10 +9,9 @@ export type ToolAccessSort = 'default' | 'name' | 'most-used' | 'least-used'
 export function useToolAccess(
   tools: Readonly<Ref<ToolAccessEntry[]>>,
   disabled: Ref<string[]>,
-  defaultSort: ToolAccessSort = 'name'
+  sort: Ref<ToolAccessSort> = ref<ToolAccessSort>('name')
 ) {
   const search = ref('')
-  const sort = ref<ToolAccessSort>(defaultSort)
   const disabledNames = computed(() => new Set(disabled.value))
   const enabledCount = computed(() => tools.value.filter(isEnabled).length)
   const visibleTools = computed(() => {

@@ -5,6 +5,7 @@ import { useAutomationMessages } from '@open-pencil/vue/i18n'
 
 import { mcpRuntime } from '@/app/automation/mcp/runtime'
 import { useMCPSettings } from '@/app/automation/mcp/settings/use'
+import { aiToolSort } from '@/app/automation/tool-access/preferences'
 import { useToolAccess } from '@/app/automation/tool-access/settings/list'
 import { useToolAccessSettings } from '@/app/automation/tool-access/settings/use'
 import type { ToolAccessEntry, ToolAccessTarget } from '@/app/automation/tool-access/types'
@@ -27,7 +28,7 @@ const { target } = defineProps<{ target: ToolAccessTarget }>()
 const automation = useAutomationMessages()
 const { tools, disabled, modified, reset } = useToolAccessSettings(target)
 const { search, sort, groups, expanded, setGroupEnabled, isEnabled, setToolEnabled } =
-  useToolAccess(tools, disabled, target === 'ai' ? 'name' : 'default')
+  useToolAccess(tools, disabled, target === 'ai' ? aiToolSort : ref('default'))
 const { restart } = useMCPSettings()
 const show = ref<CapabilityFilter>('all')
 const sortOptions = computed(() => [

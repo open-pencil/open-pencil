@@ -32,7 +32,7 @@ test('sorting updates as calls arrive while preserving the MCP catalog order', (
     { name: 'beta', description: 'B', effect: 'read' }
   ])
   const access = useToolAccess(tools, ref<string[]>([]))
-  const mcp = useToolAccess(tools, ref<string[]>([]), 'default')
+  const mcp = useToolAccess(tools, ref<string[]>([]), ref('default'))
   const names = () => access.visibleTools.value.map((item) => item.name)
   expect(names()).toEqual(['alpha', 'beta', 'zeta'])
   expect(mcp.visibleTools.value.map((item) => item.name)).toEqual(['zeta', 'alpha', 'beta'])
