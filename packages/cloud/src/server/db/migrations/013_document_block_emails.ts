@@ -29,9 +29,12 @@ export const DOCUMENT_BLOCK_EMAIL_KINDS = [...EMAIL_KINDS, 'document-blocked', '
  * documents, and that it is back, which the previous release never writes.
  */
 export async function up(database: Kysely<unknown>): Promise<void> {
-  await replaceChecks(database, [['transactional_email', 'kind', DOCUMENT_BLOCK_EMAIL_KINDS]])
+  await replaceChecks(database, 'widen', [
+    ['transactional_email', 'kind', DOCUMENT_BLOCK_EMAIL_KINDS]
+  ])
 }
 
+// Narrowing back checks every row, so a rollback refuses while any email of the new kinds is kept.
 export async function down(database: Kysely<unknown>): Promise<void> {
-  await replaceChecks(database, [['transactional_email', 'kind', EMAIL_KINDS]])
+  await replaceChecks(database, 'narrow', [['transactional_email', 'kind', EMAIL_KINDS]])
 }

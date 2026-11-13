@@ -1,5 +1,5 @@
 import { checkColumnIn, CURRENT_TIMESTAMP } from '#cloud/server/db/expressions'
-import type { ColumnDefinitionBuilder, CreateTableBuilder, Kysely } from 'kysely'
+import { sql, type ColumnDefinitionBuilder, type CreateTableBuilder, type Kysely } from 'kysely'
 
 /**
  * What Cloud's migrations build tables with. Names follow PostgreSQL's own: `<table>_pkey`,
@@ -46,17 +46,28 @@ export async function addChecks(
 }
 
 /**
- * Replaces the values a column may take, as `addChecks` named them, such as when a release adds
- * a kind the previous one never writes.
+ * Replaces the values a column may take, as `addChecks` named them. Widening them, as when a
+ * release adds a kind the previous one never writes, adds the check `NOT VALID`: rows already
+ * there passed the narrower one, so PostgreSQL skips scanning them while it holds the table, and
+ * checks every row written from then on. Narrowing them, as a rollback does, checks every row.
  */
 export async function replaceChecks(
   database: Kysely<unknown>,
+  change: 'widen' | 'narrow',
   checks: readonly (readonly [table: string, column: string, values: readonly string[]])[]
 ): Promise<void> {
-  for (const [table, column] of checks) {
-    await database.schema.alterTable(table).dropConstraint(`${table}_${column}_check`).execute()
+  for (const [table, column, values] of checks) {
+    const name = `${table}_${column}_check`
+    await database.schema.alterTable(table).dropConstraint(name).execute()
+    if (change === 'narrow') {
+      await addChecks(database, [[table, column, values]])
+      continue
+    }
+    // Kysely builds no `NOT VALID`, so this one statement is written out.
+    await sql`alter table ${sql.table(table)} add constraint ${sql.id(name)} check (${checkColumnIn(column, values)}) not valid`.execute(
+      database
+    )
   }
-  await addChecks(database, checks)
 }
 
 /** Lookups beyond primary keys and unique columns, as `[table, columns]`; `desc` sorts newest first. */
