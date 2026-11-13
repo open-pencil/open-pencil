@@ -6,13 +6,13 @@ import { archiveChanges, trackArchiveChanges } from '#core/kiwi/fig/session/arch
 import { updateReaderRecovery, releaseReaderRecovery } from '#core/kiwi/fig/session/document-state'
 import type { FigSessionRequest, FigSessionResponse } from '#core/kiwi/fig/session/protocol'
 
-import { applyFigPopulationDelta, type FigPopulationRebase } from './delta'
+import { beginFigPopulation, type FigPopulation, type FigPopulationRebase } from './delta'
 import { trackFigGraphEdits } from './edits'
 
 /** The responses this client acts on, taken from the session protocol itself. */
 type WorkerResult = Extract<
   FigSessionResponse,
-  { type: 'population-result' | 'population-error' | 'population-progress' }
+  { type: 'population-result' | 'population-chunk' | 'population-error' | 'population-progress' }
 >
 
 const MAX_FIG_POPULATION_WORKER_NODES = 200_000
@@ -188,6 +188,8 @@ export function createPopulationWorkerClient(
       revision: number
       startedAt: number
       timeout: ReturnType<typeof setTimeout>
+      /** The page's new layers applied so far, as their pieces arrived. */
+      population: FigPopulation
     }
   >()
   let stale = false
@@ -197,6 +199,8 @@ export function createPopulationWorkerClient(
     for (const request of pending.values()) {
       clearTimeout(request.timeout)
       request.abort?.()
+      // The page loads again on the main thread, from the start.
+      applyLoaded(() => request.population.rollback())
       request.resolve(null)
     }
     pending.clear()
@@ -216,6 +220,12 @@ export function createPopulationWorkerClient(
     for (const request of pending.values()) oldest = Math.min(oldest, request.revision)
     edits.forget(oldest)
   }
+  /**
+   * Applies what a page load brings, or takes back: it is the worker's own, so it is not sent
+   * back, and it arrives from outside any edit open now, such as a script's awaiting tool call,
+   * so no undo step takes it in.
+   */
+  const applyLoaded = <T>(apply: () => T): T => graph.runOutsideEdits(() => edits.ignoring(apply))
   const releaseSubscription = () => edits.stop()
   /**
    * Stop loading pages here. A load the worker reports failing only retires its session, so the
@@ -233,6 +243,18 @@ export function createPopulationWorkerClient(
   const watchForStall = () => setTimeout(() => fail(), FIG_POPULATION_WORKER_STALL_MS)
   const receive = (result: WorkerResult) => {
     if (result.type === 'population-error') return fail(true, false)
+    if (result.type === 'population-chunk') {
+      const request = pending.get(result.requestId)
+      if (!request) return
+      clearTimeout(request.timeout)
+      request.timeout = watchForStall()
+      try {
+        applyLoaded(() => request.population.add(result.created))
+      } catch {
+        fail()
+      }
+      return
+    }
     if (result.type === 'population-progress') {
       const request = pending.get(result.requestId)
       if (!request) return
@@ -247,6 +269,7 @@ export function createPopulationWorkerClient(
     if (stale || result.baseRevision !== request.revision) {
       pending.delete(result.requestId)
       emitTelemetry({ event: 'stale', reason: 'graph-mutation' })
+      applyLoaded(() => request.population.rollback())
       return request.resolve(null)
     }
     const applyStartedAt = performance.now()
@@ -257,14 +280,14 @@ export function createPopulationWorkerClient(
       edits.flush()
       const edited = edits.changedSince(request.revision)
       pending.delete(result.requestId)
-      // The page arrives from outside any edit open now, such as a script's awaiting tool call,
-      // so no undo step takes it in.
-      rebase = graph.runOutsideEdits(() =>
-        edits.ignoring(() => applyFigPopulationDelta(graph, result.delta, edited))
-      )
+      rebase = applyLoaded(() => {
+        request.population.add(result.delta.created.map(([, node]) => node))
+        return request.population.finish(result.delta, edited)
+      })
       if (result.checkpoint) updateReaderRecovery(graph, result.checkpoint)
     } catch {
       pending.delete(result.requestId)
+      applyLoaded(() => request.population.rollback())
       fail()
       return request.resolve(null)
     }
@@ -280,7 +303,7 @@ export function createPopulationWorkerClient(
       event: 'populate',
       durationMs: performance.now() - request.startedAt,
       applyMs: performance.now() - applyStartedAt,
-      created: result.delta.created.length,
+      created: request.population.created,
       updated: result.delta.updated.length,
       deleted: result.delta.deleted.length
     })
@@ -314,7 +337,8 @@ export function createPopulationWorkerClient(
           abort: () => signal?.removeEventListener('abort', abort),
           revision: baseRevision,
           startedAt: performance.now(),
-          timeout: watchForStall()
+          timeout: watchForStall(),
+          population: beginFigPopulation(graph)
         })
         post({ type: 'populate', requestId, baseRevision, pageId })
       })

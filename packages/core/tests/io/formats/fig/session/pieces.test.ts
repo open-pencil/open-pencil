@@ -1,0 +1,67 @@
+import { expect, test } from 'bun:test'
+
+import { populationPort } from '#core-tests/helpers/fig/population-worker'
+
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+
+import { createPopulationWorkerClient } from '#core/kiwi/fig/population/client'
+
+function pageWithLayers(count: number) {
+  const source = new SceneGraph()
+  const page = source.addPage('Loaded')
+  const layers = Array.from({ length: count }, (_, index) =>
+    structuredClone(source.createNode('RECTANGLE', page.id, { name: `Layer ${index}` }))
+  )
+  const graph = new SceneGraph()
+  const target = graph.addPage('Loaded')
+  const moved = layers.map((layer): SceneNode => ({ ...layer, parentId: target.id }))
+  return { graph, page: target, layers: moved }
+}
+
+test('a page that arrives in pieces gains each piece as it arrives', async () => {
+  const { graph, page, layers } = pageWithLayers(4)
+  const worker = populationPort()
+  const client = createPopulationWorkerClient(graph, worker.worker, worker.port)
+  try {
+    const pending = client.populate(page.id)
+    const { requestId, baseRevision } = worker.request()
+    worker.send({ type: 'population-chunk', requestId, created: layers.slice(0, 2) })
+    expect(graph.getChildren(page.id)).toHaveLength(2)
+    worker.send({ type: 'population-chunk', requestId, created: layers.slice(2) })
+    worker.send({
+      type: 'population-result',
+      requestId,
+      baseRevision,
+      populated: true,
+      delta: {
+        created: [],
+        updated: [[page.id, { childIds: layers.map((layer) => layer.id) }]],
+        deleted: [],
+        populatedRootIds: [page.id]
+      }
+    })
+    expect(await pending).toBe(true)
+    expect(graph.getChildren(page.id).map((node) => node.name)).toEqual(
+      layers.map((layer) => layer.name)
+    )
+  } finally {
+    client.terminate()
+  }
+})
+
+test('a page load that fails after some pieces leaves none of its layers', async () => {
+  const { graph, page, layers } = pageWithLayers(2)
+  const worker = populationPort()
+  const client = createPopulationWorkerClient(graph, worker.worker, worker.port)
+  try {
+    const pending = client.populate(page.id)
+    const { requestId } = worker.request()
+    worker.send({ type: 'population-chunk', requestId, created: layers.slice(0, 1) })
+    worker.send({ type: 'population-error', requestId, error: 'Worker failed' })
+    expect(await pending).toBeNull()
+    expect(graph.getChildren(page.id)).toEqual([])
+    expect(graph.getNode(layers[0].id)).toBeUndefined()
+  } finally {
+    client.terminate()
+  }
+})
