@@ -21,7 +21,7 @@ export const HTML_IMPORT_VIEWPORT: DesignViewport = { width: 1440, height: 900 }
 /**
  * The layers a styled DOM describes, with the sizes and positions its layout implies, laid out
  * once their text's fonts are prepared. Styling belongs to whoever has a CSS runtime, such as a
- * browser or the headless runtime; building and laying out the layers happens here for every
+ * browser or the HTML engine; building and laying out the layers happens here for every
  * caller. When the runtime recorded where it laid each element out, auto layout is kept only
  * where it reproduces those boxes, and the rest is placed at them. Transforms turn and move
  * the laid-out layers last, as CSS applies them. Safe to bundle for the browser.
