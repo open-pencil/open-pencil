@@ -121,13 +121,66 @@ export function buildFigPopulationDelta(
   }
 }
 
-export function applyFigPopulationDelta(graph: SceneGraph, delta: FigPopulationDelta): void {
+/** Where a page load applied over edits made while it loaded differs from what it brought. */
+export interface FigPopulationRebase {
+  /** Layers whose state here is not the loaded one: the worker takes this thread's state. */
+  diverged: string[]
+  /** New instances of components edited while the page loaded, built from them as they were. */
+  staleInstances: string[]
+}
+
+/** The components holding `ids`, or being them. */
+function componentsHolding(graph: SceneGraph, ids: Iterable<string>): Set<string> {
+  const components = new Set<string>()
+  for (const id of ids) {
+    let node = graph.getNode(id)
+    while (node) {
+      if (node.type === 'COMPONENT') components.add(node.id)
+      node = node.parentId ? graph.getNode(node.parentId) : undefined
+    }
+  }
+  return components
+}
+
+/**
+ * Applies a page load. `edited` holds the layers this thread changed after the load began; the
+ * load did not see those edits, so they win: fields of an edited layer stay as edited, a layer
+ * removed meanwhile keeps the new layers out, and the new layers still join an edited parent.
+ */
+export function applyFigPopulationDelta(
+  graph: SceneGraph,
+  delta: FigPopulationDelta,
+  edited: ReadonlySet<string> = new Set()
+): FigPopulationRebase {
+  const diverged: string[] = []
+  const createdIds = new Set<string>()
   graph.applyImportedStateDuring(() => {
     for (const [, node] of delta.created) {
+      if (graph.getNode(node.id) || (node.parentId && !graph.getNode(node.parentId))) {
+        diverged.push(node.id)
+        continue
+      }
       graph.createNodeWithId(node.id, node.type, node.parentId, node)
+      createdIds.add(node.id)
     }
-    for (const [id, changes] of delta.updated) graph.updateNode(id, changes)
-    for (const id of delta.deleted) graph.deleteNode(id)
+    for (const [id, changes] of delta.updated) {
+      if (!edited.has(id)) {
+        graph.updateNode(id, changes)
+        continue
+      }
+      diverged.push(id)
+      const node = graph.getNode(id)
+      const joining = changes.childIds?.filter(
+        (childId) => createdIds.has(childId) && !node?.childIds.includes(childId)
+      )
+      if (node && joining?.length) {
+        graph.updateNode(id, { childIds: [...node.childIds, ...joining] })
+      }
+    }
+    for (const id of delta.deleted) {
+      if (edited.has(id)) diverged.push(id)
+      else graph.deleteNode(id)
+    }
   })
   graph.instanceIndex.clear()
   for (const node of graph.getAllNodes()) {
@@ -136,4 +189,10 @@ export function applyFigPopulationDelta(graph: SceneGraph, delta: FigPopulationD
     ids.add(node.id)
     graph.instanceIndex.set(node.componentId, ids)
   }
+  const editedComponents = edited.size > 0 ? componentsHolding(graph, edited) : new Set<string>()
+  const staleInstances = [...createdIds].filter((id) => {
+    const node = graph.getNode(id)
+    return node?.type === 'INSTANCE' && !!node.componentId && editedComponents.has(node.componentId)
+  })
+  return { diverged, staleInstances }
 }
