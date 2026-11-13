@@ -25,9 +25,6 @@ test('code blocks follow light and dark themes', async ({ configuredChat: chat }
     themeModule.useAppTheme().setTheme('light')
   })
   await chat.page.waitForFunction(() => document.documentElement.dataset.theme === 'light')
-  await expect(
-    chat.page.locator('[data-slot="chat-markdown"] .markdown-content').last()
-  ).toHaveClass(/light/)
   await expect(code).toHaveCSS('background-color', 'rgb(255, 255, 255)')
 })
 
@@ -56,7 +53,7 @@ test('Markdown blocks unsafe links and cross-origin images', async ({ configured
   await expect(assistant.getByRole('img', { name: 'insecure' })).toHaveCount(0)
   await expect(assistant.getByRole('link', { name: 'safe' })).toHaveAttribute(
     'href',
-    'https://openpencil.dev/'
+    'https://openpencil.dev'
   )
 })
 
@@ -68,9 +65,9 @@ test('tables read as part of the reply, with copy as their only action', async (
   const cell = assistant.getByRole('cell', { name: 'Hover', exact: true })
   await expect(cell).toHaveCSS('font-weight', '400')
   await expect(cell).toHaveCSS('font-size', '11px')
-  const controls = assistant.locator('[data-stream-markdown="table-controls"] button')
+  const controls = assistant.locator('[data-markdown="table-controls"] button')
   await expect(controls).toHaveCount(1)
   // Links show no favicon: that would request `/favicon.ico` from every linked site.
   await expect(assistant.getByRole('link', { name: 'the guide' })).toBeVisible()
-  await expect(assistant.locator('[data-stream-markdown="link-favicon"]')).toHaveCount(0)
+  await expect(assistant.locator('a img')).toHaveCount(0)
 })

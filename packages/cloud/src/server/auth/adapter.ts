@@ -89,6 +89,9 @@ export interface CloudAuthAdapter {
   emailChangeAvailable: boolean
   profile(headers: Headers): Promise<CloudAccountProfile | null>
   updateProfile(headers: Headers, input: { name: string }): Promise<void>
+  /** The language Cloud writes to the account in, as the app says it uses. */
+  /** Takes the app's language tag; the server keeps the nearest language it writes in. */
+  setLocale(headers: Headers, locale: string): Promise<void>
   /** Sends the confirmation to the new address and tells the old one which address it is. */
   changeEmail(headers: Headers, input: { newEmail: string; callbackURL: string }): Promise<void>
   sessions(headers: Headers): Promise<CloudAccountSession[] | null>
