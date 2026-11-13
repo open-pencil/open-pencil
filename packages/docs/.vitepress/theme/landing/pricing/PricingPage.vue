@@ -20,6 +20,7 @@ const plans = planCards(pricing, copy, lang.value)
 const packs = creditPackRows(pricing.catalog, lang.value)
 const models = modelRows(pricing.services, lang.value)
 const search = searchPrice(pricing.services, copy, lang.value)
+const sellsPlans = (pricing.catalog?.plans.length ?? 0) > 0
 // `{link}` becomes a link to the self-hosting guide, which exists only in English.
 const [selfHostingBefore, selfHostingAfter] = copy.selfHosting.split('{link}')
 </script>
@@ -57,7 +58,7 @@ const [selfHostingBefore, selfHostingAfter] = copy.selfHosting.split('{link}')
           </ul>
         </article>
       </div>
-      <p class="note">{{ pricing.catalog ? copy.billed : copy.paidSoon }}</p>
+      <p class="note">{{ sellsPlans ? copy.billed : copy.paidSoon }}</p>
     </section>
 
     <section v-if="packs.length > 0" class="landing-section">
@@ -83,7 +84,7 @@ const [selfHostingBefore, selfHostingAfter] = copy.selfHosting.split('{link}')
       </table>
     </section>
 
-    <section v-if="models.length > 0" class="landing-section">
+    <section v-if="models.length > 0 || search" class="landing-section">
       <header class="section-header">
         <h2>{{ copy.rates.title }}</h2>
       </header>
@@ -91,7 +92,7 @@ const [selfHostingBefore, selfHostingAfter] = copy.selfHosting.split('{link}')
         {{ copy.rates.lede }}
         <template v-if="search">{{ search }}</template>
       </p>
-      <table class="rates">
+      <table v-if="models.length > 0" class="rates">
         <thead>
           <tr>
             <th scope="col">{{ copy.rates.model }}</th>
