@@ -1,4 +1,6 @@
 import shiki from '@comark/vue/plugins/shiki'
+
+export { resetHighlighter } from '@comark/vue/plugins/shiki'
 import css from '@shikijs/langs/css'
 import html from '@shikijs/langs/html'
 import markdown from '@shikijs/langs/markdown'

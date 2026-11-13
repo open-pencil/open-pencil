@@ -89,11 +89,32 @@ function highlightPlugin(): Promise<ComarkPlugin | null> {
 /** Parses one renderer's Markdown; calls finish in order, so a slow parse never lands last. */
 export type MarkdownParser = ReturnType<typeof createSerializedMarkdownParser>
 
+/**
+ * The parser for one renderer. A highlighting parse that fails, as when one of Shiki's grammars
+ * cannot load, resets Comark's highlighter, so the next reply with code tries again, and this one
+ * renders without highlighting rather than not at all.
+ */
 export async function createMarkdownParser(highlightCode: boolean): Promise<MarkdownParser> {
-  const highlight = highlightCode ? await highlightPlugin() : null
-  return createSerializedMarkdownParser({
+  const plain = createSerializedMarkdownParser({
     registerDefaultPlugins: false,
     autoClose,
-    plugins: highlight ? [...plugins, highlight] : plugins
+    plugins
   })
+  const highlight = highlightCode ? await highlightPlugin() : null
+  if (!highlight) return plain
+  const highlighted = createSerializedMarkdownParser({
+    registerDefaultPlugins: false,
+    autoClose,
+    plugins: [...plugins, highlight]
+  })
+  return async (markdown, options) => {
+    try {
+      return await highlighted(markdown, options)
+    } catch (error) {
+      console.warn('[markdown] Code highlighting failed', error)
+      const { resetHighlighter } = await import('./highlight')
+      resetHighlighter()
+      return plain(markdown, options)
+    }
+  }
 }
