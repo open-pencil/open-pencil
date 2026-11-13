@@ -64,6 +64,10 @@ const CHARACTER_PROPERTIES = [
   'text-decoration-skip-ink'
 ]
 
+const DECORATION_PROPERTIES = new Set(
+  CHARACTER_PROPERTIES.filter((property) => /^text-(decoration|underline)-/.test(property))
+)
+
 const TEXT_BLOCK_TAGS = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
 
 /** What browsers' default stylesheet gives inline formatting elements that CSS does not set. */
@@ -111,10 +115,14 @@ export function characterStyleFromCSS(
   style: DesignStyleDeclaration,
   base: CSSCharacterStyle
 ): CSSCharacterStyle {
-  const fills = colorToFillFromCSS(pickStyle(style, 'color'))
+  const color = pickStyle(style, 'color')
+  const fills = colorToFillFromCSS(color)
   const family = resolveCSSFontFamily(pickStyle(style, 'font-family'))
   const decorationColor = pickStyle(style, 'text-decoration-color')
-  const decorationFills = parseCSSColor(decorationColor) ? colorToFillFromCSS(decorationColor) : []
+  const decoration = parseCSSColor(decorationColor)
+  // A computed style gives `currentcolor` as the text's color, which is what no fills follow.
+  const followsText = decoration !== null && isEqual(decoration, parseCSSColor(color))
+  const decorationFills = decoration && !followsText ? colorToFillFromCSS(decorationColor) : []
   const line = pickStyle(style, 'text-decoration-line')
   const fontStyle = pickStyle(style, 'font-style')
   const lineHeight = pickStyle(style, 'line-height')
@@ -151,15 +159,26 @@ export function characterStyleFromCSS(
   }
 }
 
+function decorates(style: DesignStyleDeclaration): boolean {
+  const line = pickStyle(style, 'text-decoration-line')?.trim()
+  return line !== undefined && line !== 'none'
+}
+
 /** What the characters inside `element` take from it and the elements around it. */
 function characterDeclarations(
   element: DesignElement,
   around: DesignStyleDeclaration
 ): DesignStyleDeclaration {
   const own = { ...FORMATTING_DEFAULTS[element.tagName.toLowerCase()], ...mergedStyle(element) }
+  // An element that draws no decoration of its own, as a computed `none` says, shows the one
+  // around it, which CSS draws through it.
+  const showsAround = !decorates(own) && decorates(around)
   const inherited: DesignStyleDeclaration = {}
   for (const property of CHARACTER_PROPERTIES) {
-    const value = pickStyle(own, property) ?? pickStyle(around, property)
+    const value =
+      showsAround && DECORATION_PROPERTIES.has(property)
+        ? pickStyle(around, property)
+        : (pickStyle(own, property) ?? pickStyle(around, property))
     if (value !== undefined) inherited[property] = value
   }
   return inherited

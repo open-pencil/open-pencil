@@ -146,10 +146,16 @@ export function applyCornerRadii(node: SceneNode, style: DesignStyleDeclaration)
   const bottomRight = firstCSSNumber(style, 'border-bottom-right-radius')
   const bottomLeft = firstCSSNumber(style, 'border-bottom-left-radius')
 
-  if (cornerRadius !== null) node.cornerRadius = cornerRadius
-  if (topLeft === null && topRight === null && bottomRight === null && bottomLeft === null) return
+  const corners = [topLeft, topRight, bottomRight, bottomLeft]
+  // A runtime that reports only the longhands, as computed styles do, gives four equal corners
+  // for one radius.
+  const uniform =
+    cornerRadius ??
+    (corners.every((corner) => corner !== null && corner === topLeft) ? topLeft : null)
+  if (uniform !== null) node.cornerRadius = uniform
+  if (corners.every((corner) => corner === null)) return
 
-  const fallback = cornerRadius ?? 0
+  const fallback = uniform ?? 0
   node.topLeftRadius = topLeft ?? fallback
   node.topRightRadius = topRight ?? fallback
   node.bottomRightRadius = bottomRight ?? fallback

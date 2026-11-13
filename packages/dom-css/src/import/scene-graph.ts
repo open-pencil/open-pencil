@@ -343,7 +343,7 @@ function createElementNode(
   if (display === 'none') return null
   if (
     isTextLikeElement(element) &&
-    !hasBoxStyle(element, style) &&
+    !hasBoxStyle(element, style, parentFlow) &&
     element.children.every((child) => child.type === 'text')
   ) {
     const text = createTextNode(graph, parentId, textContent(element), style, display, parentFlow)
@@ -351,7 +351,7 @@ function createElementNode(
     recordElement(graph, recorded, text, element, style)
     return text
   }
-  if (!hasBoxStyle(element, style) && holdsRichText(element)) {
+  if (!hasBoxStyle(element, style, parentFlow) && holdsRichText(element)) {
     const text = createRichTextNode(graph, parentId, element, style, display, parentFlow)
     recordElement(graph, recorded, text, element, style)
     return text

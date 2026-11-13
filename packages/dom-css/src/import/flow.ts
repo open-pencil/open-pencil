@@ -90,6 +90,7 @@ export function elementDisplay(element: DesignElement, style: DesignStyleDeclara
   if (display) return display
   const tag = element.tagName.toLowerCase()
   if (INLINE_TAGS.has(tag)) return 'inline'
+  if (tag === 'li') return 'list-item'
   return INLINE_BLOCK_TAGS.has(tag) ? 'inline-block' : 'block'
 }
 
