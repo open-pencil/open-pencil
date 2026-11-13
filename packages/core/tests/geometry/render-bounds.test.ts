@@ -226,3 +226,119 @@ describe('render bounds as Figma measures them', () => {
     ).toEqual([3, -1, 18.66, 22.32])
   })
 })
+
+describe('render bounds under a mask', () => {
+  const graph = new SceneGraph()
+  const figma = new FigmaAPI(graph)
+  const rectangle = (x: number, y: number, width: number, height: number) => {
+    const rect = figma.createRectangle()
+    rect.x = x
+    rect.y = y
+    rect.resize(width, height)
+    rect.fills = solid(1, 0, 0)
+    return rect
+  }
+  const box = (bounds: ReturnType<typeof exportBounds>) =>
+    bounds && [bounds.minX, bounds.minY, bounds.maxX - bounds.minX, bounds.maxY - bounds.minY]
+  const masked = (layers: Rectangle[], maskIndexes: number[]) => {
+    for (const index of maskIndexes) {
+      layers[index].isMask = true
+    }
+    return figma.group(layers, figma.currentPage)
+  }
+
+  // Figma desktop, live: a masked run is bounded by its masks, whatever the masked layers reach.
+  test('a mask bounds the layers above it by its own box, wider or narrower than them', () => {
+    const scrolled = masked([rectangle(10, 10, 100, 50), rectangle(20, -5000, 60, 6000)], [0])
+    expect(box(exportBounds(graph, [scrolled.id]))).toEqual([10, 10, 100, 50])
+    const nothingAbove = masked([rectangle(5000, 0, 10, 10), rectangle(5000, 0, 100, 100)], [1])
+    expect(box(exportBounds(graph, [nothingAbove.id]))).toEqual([5000, 0, 100, 100])
+  })
+
+  test('a frame exports its own size when a mask clips the content scrolled past it', () => {
+    const screen = figma.createFrame()
+    screen.x = 500
+    screen.resize(200, 100)
+    screen.fills = solid(1, 1, 1)
+    screen.clipsContent = false
+    const list = masked([rectangle(10, 10, 100, 50), rectangle(20, -5000, 60, 6000)], [0])
+    screen.appendChild(list)
+    expect(box(exportBounds(graph, [screen.id]))).toEqual([500, 0, 200, 100])
+  })
+
+  test('layers below a mask stay whole and the next mask starts a new run', () => {
+    const below = rectangle(990, 0, 10, 10)
+    const firstMask = rectangle(1000, 0, 20, 20)
+    const firstMasked = rectangle(1000, 0, 400, 20)
+    const secondMask = rectangle(1100, 100, 20, 20)
+    const secondMasked = rectangle(1000, 100, 400, 400)
+    const group = masked([below, firstMask, firstMasked, secondMask, secondMasked], [1, 3])
+    expect(box(exportBounds(graph, [group.id]))).toEqual([990, 0, 130, 120])
+  })
+
+  test('a fully transparent mask still counts its box', () => {
+    const below = rectangle(2990, 0, 5, 5)
+    const transparentMask = rectangle(3000, 0, 200, 200)
+    const hidden = rectangle(3000, 0, 200, 200)
+    const alone = masked([below, transparentMask, hidden], [1])
+    transparentMask.opacity = 0
+    expect(box(exportBounds(graph, [alone.id]))).toEqual([2990, 0, 210, 200])
+
+    const clearMask = rectangle(3000, 1000, 200, 200)
+    const mask = rectangle(3000, 1000, 20, 20)
+    const held = masked([clearMask, mask, rectangle(3000, 1000, 200, 200)], [0, 1])
+    clearMask.opacity = 0
+    expect(box(exportBounds(graph, [held.id]))).toEqual([3000, 1000, 200, 200])
+  })
+
+  test('a shadow cast into a mask from layers outside it counts', () => {
+    const mask = rectangle(4000, 0, 100, 100)
+    const caster = figma.group([rectangle(4000, 200, 100, 100)], figma.currentPage)
+    caster.effects = [shadow(0, 0, { x: 0, y: -200 })]
+    const group = figma.group([mask, caster], figma.currentPage)
+    mask.isMask = true
+    expect(box(exportBounds(graph, [group.id]))).toEqual([4000, 0, 100, 100])
+  })
+
+  test('a shadowed group with a layer far outside a mask keeps to the mask', () => {
+    const mask = rectangle(6000, 0, 400, 400)
+    const caster = figma.group(
+      [rectangle(6010, 10, 8, 8), rectangle(9000, 3000, 8, 8)],
+      figma.currentPage
+    )
+    caster.effects = [shadow(4, 0, { x: 0, y: 0 })]
+    const group = figma.group([mask, caster], figma.currentPage)
+    mask.isMask = true
+    expect(box(exportBounds(graph, [group.id]))).toEqual([6000, 0, 400, 400])
+  })
+
+  test("a mask's own shadow reaches only as far as its box and the layers it masks", () => {
+    const narrow = rectangle(7000, 0, 100, 100)
+    narrow.effects = [shadow(10, 0, { x: 0, y: 20 })]
+    const tall = masked([narrow, rectangle(7025, -1000, 50, 2000)], [0])
+    expect(box(exportBounds(graph, [tall.id]))).toEqual([7000, 0, 100, 130])
+    const lone = rectangle(8000, 0, 100, 100)
+    lone.effects = [shadow(10, 0, { x: 0, y: 20 })]
+    const dot = masked([lone, rectangle(8040, 40, 1, 1)], [0])
+    expect(box(exportBounds(graph, [dot.id]))).toEqual([8000, 0, 100, 100])
+  })
+
+  test('a hidden layer after a mask ends its run, as on the canvas', () => {
+    const first = rectangle(9000, 0, 100, 100)
+    first.effects = [shadow(0, 0, { x: 0, y: -50 })]
+    const hidden = rectangle(9000, 0, 10, 10)
+    const group = masked(
+      [first, hidden, rectangle(9200, 200, 10, 10), rectangle(9200, -1000, 10, 2000)],
+      [0, 2]
+    )
+    hidden.visible = false
+    expect(box(exportBounds(graph, [group.id]))).toEqual([9000, 0, 210, 210])
+  })
+
+  test('a hidden mask masks nothing', () => {
+    const group = masked([rectangle(2000, 0, 10, 10), rectangle(2000, 0, 100, 100)], [0])
+    const [mask] = group.children
+    mask.visible = false
+    expect(box(exportBounds(graph, [group.id]))).toEqual([2000, 0, 100, 100])
+  })
+})

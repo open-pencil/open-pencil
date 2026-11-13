@@ -1,6 +1,7 @@
 import { countBy, groupBy } from 'es-toolkit/array'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
 import { instanceSwapPropertyIds, resolvedReferences } from '@open-pencil/scene-graph/transfer'
@@ -159,7 +160,7 @@ function pairLayers(
   for (const [child, pair] of matchChildren(graph, revision, source, target)) {
     if (pair) {
       paired.add(pair)
-      removed.push(...pairLayers(graph, revision, child, pair, tree, pairs))
+      appendAll(removed, pairLayers(graph, revision, child, pair, tree, pairs))
     } else copyTree(graph, revision, child.id, target.id, tree, pairs)
   }
   for (const layer of layers) if (!paired.has(layer)) removed.push(layer.id)
@@ -201,7 +202,7 @@ function pairDefinitions(
     } else if (source.type !== root.type) {
       result.replaced.push(key)
     } else {
-      removed.push(...pairLayers(graph, revision, source, root, new Map(), pairs))
+      appendAll(removed, pairLayers(graph, revision, source, root, new Map(), pairs))
       result.updated.push(key)
     }
   }

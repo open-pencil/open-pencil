@@ -1,4 +1,5 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { getNodeLocalMatrix, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import {
   effectOverflow,
@@ -48,10 +49,10 @@ export function mapVisualBounds(matrix: Mat3, bounds: VisualBounds): VisualBound
   const xs = [points[0], points[2], points[4], points[6]]
   const ys = [points[1], points[3], points[5], points[7]]
   return {
-    minX: Math.min(...xs),
-    minY: Math.min(...ys),
-    maxX: Math.max(...xs),
-    maxY: Math.max(...ys)
+    minX: minOf(xs),
+    minY: minOf(ys),
+    maxX: maxOf(xs),
+    maxY: maxOf(ys)
   }
 }
 
@@ -201,8 +202,107 @@ function draws(node: SceneNode, reach: EffectReach): boolean {
   return node.visible && (reach === 'drawn' || node.opacity > 0)
 }
 
+const POINT: VisualBounds = { minX: 0, minY: 0, maxX: 0, maxY: 0 }
+
+/** The region a node's layers can lie in and still cast a shadow or blur into `clip`. */
+function castingInto(
+  node: SceneNode,
+  clip: VisualBounds,
+  matrix: Mat3,
+  reach: EffectReach
+): VisualBounds {
+  const spread = withEffects(node, POINT, matrix, reach)
+  return {
+    minX: clip.minX - spread.maxX,
+    minY: clip.minY - spread.maxY,
+    maxX: clip.maxX - spread.minX,
+    maxY: clip.maxY - spread.minY
+  }
+}
+
 function clipped(bounds: VisualBounds | null, clip: VisualBounds | null): VisualBounds | null {
   return bounds && clip ? intersectVisualBounds(bounds, clip) : bounds
+}
+
+function isVisibleMask(node: SceneNode): boolean {
+  return node.visible && node.isMask
+}
+
+/** Whether a mask's effects can draw past what it draws without them, which `figma` reach trims. */
+function reachesPast(node: SceneNode, reach: EffectReach): boolean {
+  return reach !== 'drawn' && node.effects.some((effect) => effect.visible)
+}
+
+/** A run of masks and the siblings after them that they mask. */
+type MaskRun = {
+  /** What the masks draw, their effects included: nothing in the run reaches past it. */
+  masks: VisualBounds | null
+  /** The masks without their effects and what they mask, which Figma holds the masks' effects to. */
+  extent: VisualBounds | null
+  /** Whether a masked sibling came after the masks, so the next mask starts a new run. */
+  holds: boolean
+}
+
+/**
+ * Bounds of a mask run. Figma counts each mask whole, even transparent or with nothing to mask, its
+ * effects only as far as its own box and the masked layers reach, and the masked layers only inside
+ * the masks (Figma desktop, live). `drawn` reach keeps the masks' effects whole, as the canvas
+ * draws them.
+ */
+function maskRunBounds(run: MaskRun, reach: EffectReach): VisualBounds | null {
+  if (reach === 'drawn' || !run.masks || !run.extent) return run.masks
+  return intersectVisualBounds(run.masks, run.extent)
+}
+
+/**
+ * What a node's children draw, held to `clip`. A visible mask masks the siblings after it, as the
+ * canvas does (`renderMaskedChildIds`), and those siblings draw only inside it (`maskRunBounds`).
+ */
+function drawnChildren(
+  graph: SceneGraph,
+  node: SceneNode,
+  matrix: Mat3,
+  clip: VisualBounds | null,
+  options: RenderBoundsOptions
+): VisualBounds | null {
+  let content: VisualBounds | null = null
+  let run: MaskRun | null = null
+  const closeRun = () => {
+    if (run) content = unionVisualBounds(content, maskRunBounds(run, options.reach))
+    run = null
+  }
+  for (const childId of node.childIds) {
+    const child = graph.getNode(childId)
+    if (!child) {
+      continue
+    }
+    const mask = isVisibleMask(child)
+    // Any sibling after the masks ends their list, drawn or not, as on the canvas.
+    if (!mask && run) run.holds = true
+    if (!mask && !draws(child, options.reach)) {
+      continue
+    }
+    const childMatrix = Matrix.multiply(
+      matrix,
+      getNodeLocalMatrix(projectedNode(child, options.preview))
+    )
+    const drawn = drawnSubtree(graph, child, childMatrix, clip, options)
+    if (mask) {
+      if (run?.holds) closeRun()
+      const plain = reachesPast(child, options.reach)
+        ? drawnSubtree(graph, { ...child, effects: [] }, childMatrix, clip, options)
+        : drawn
+      run ??= { masks: null, extent: null, holds: false }
+      run.masks = unionVisualBounds(run.masks, drawn)
+      run.extent = unionVisualBounds(run.extent, plain)
+    } else if (run) {
+      run.extent = unionVisualBounds(run.extent, drawn)
+    } else if (drawn) {
+      content = unionVisualBounds(content, drawn)
+    }
+  }
+  closeRun()
+  return content
 }
 
 /**
@@ -210,7 +310,8 @@ function clipped(bounds: VisualBounds | null, clip: VisualBounds | null): Visual
  * `clip`; `null` when nothing does. A node's effects act on everything it draws, its children's
  * included, as Figma casts a group's shadow from its layers. A container that clips its content
  * holds its children to its box; with `drawn` reach its box, counted for every layer, already
- * holds them.
+ * holds them. A node with effects lets in the layers whose shadow or blur can still land inside
+ * `clip`.
  */
 function drawnSubtree(
   graph: SceneGraph,
@@ -219,22 +320,18 @@ function drawnSubtree(
   clip: VisualBounds | null,
   options: RenderBoundsOptions
 ): VisualBounds | null {
-  const { reach, preview } = options
+  const { reach } = options
   const own = ownPaint(node, reach)
   let content = own && mapVisualBounds(matrix, own)
   if (!(reach === 'drawn' && clipsChildren(node))) {
     const box = clipsChildren(node)
       ? mapVisualBounds(matrix, { minX: 0, minY: 0, maxX: node.width, maxY: node.height })
       : null
-    const childClip = box && clip ? intersectVisualBounds(box, clip) : (box ?? clip)
+    const outerClip =
+      clip && node.effects.length > 0 ? castingInto(node, clip, matrix, reach) : clip
+    const childClip = box && outerClip ? intersectVisualBounds(box, outerClip) : (box ?? outerClip)
     if (!(box && !childClip)) {
-      for (const childId of node.childIds) {
-        const child = graph.getNode(childId)
-        if (!child || !draws(child, reach)) continue
-        const local = getNodeLocalMatrix(projectedNode(child, preview))
-        const drawn = drawnSubtree(graph, child, Matrix.multiply(matrix, local), childClip, options)
-        if (drawn) content = unionVisualBounds(content, drawn)
-      }
+      content = unionVisualBounds(content, drawnChildren(graph, node, matrix, childClip, options))
     }
   }
   const drawn = content && withEffects(node, content, matrix, reach)

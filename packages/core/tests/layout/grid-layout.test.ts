@@ -5,6 +5,7 @@ import { autoFrame, fixed, fr, gridFrame, pageId, rect } from '#core-tests/helpe
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { computeLayout, computeAllLayouts } from '@open-pencil/core/layout'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 describe('Grid Layout', () => {
@@ -263,8 +264,8 @@ describe('Grid Layout', () => {
       const children = graph.getChildren(frame.id)
       const cols = Math.max(2, Math.ceil(Math.sqrt(children.length)))
       const rows = Math.max(1, Math.ceil(children.length / cols))
-      const maxChildW = Math.max(...children.map((c) => c.width))
-      const maxChildH = Math.max(...children.map((c) => c.height))
+      const maxChildW = maxOf(children.map((c) => c.width))
+      const maxChildH = maxOf(children.map((c) => c.height))
 
       graph.updateNode(frame.id, {
         layoutMode: 'GRID',

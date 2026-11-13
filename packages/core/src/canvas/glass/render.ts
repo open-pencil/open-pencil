@@ -1,5 +1,6 @@
 import type { Canvas, ImageFilter, Path, Shader } from '@open-pencil/canvaskit'
 import type { Effect, SceneNode } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 
 import { tracePath } from '#core/canvas/paths/verbs'
 import type { SkiaRenderer } from '#core/canvas/renderer'
@@ -112,7 +113,7 @@ function flattenedSegments(r: SkiaRenderer, path: Path): Float32Array {
   const segments: number[] = []
   for (const piece of pieces) {
     if (piece.length === 4) {
-      segments.push(...piece)
+      appendAll(segments, piece)
       continue
     }
     const steps = 1 + Math.floor(curveLength > 0 ? (spare * controlLength(piece)) / curveLength : 0)

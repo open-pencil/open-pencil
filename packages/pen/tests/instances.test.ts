@@ -38,7 +38,7 @@ function layers(graph: SceneGraph, id: string): SceneNode[] {
   const queue = [...graph.getChildren(id)]
   for (const node of queue) {
     found.push(node)
-    queue.push(...graph.getChildren(node.id))
+    for (const child of graph.getChildren(node.id)) queue.push(child)
   }
   return found
 }

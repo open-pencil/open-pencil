@@ -7,7 +7,7 @@ import { transformVectorNetwork } from '@open-pencil/scene-graph/vector-network'
 
 import { graphOf } from '#core/figma-api/graph'
 import { prepareSlotInsertion } from '#core/figma-api/slots'
-import { defineTool, nodeSummary, positionInputs, toolNumber } from '#core/tools/schema'
+import { layoutLength, defineTool, nodeSummary, positionInputs } from '#core/tools/schema'
 import { parseVectorNetworkJSON } from '#core/tools/vector/network'
 import { computeAccurateBounds } from '#core/vector/curve-math'
 
@@ -60,7 +60,7 @@ export const createVector = defineTool({
     ),
     fill: v.optional(v.pipe(v.string(), v.description('Fill color (hex)'))),
     stroke: v.optional(v.pipe(v.string(), v.description('Stroke color (hex)'))),
-    stroke_weight: v.optional(toolNumber(v.pipe(v.number(), v.description('Stroke weight')))),
+    stroke_weight: v.optional(layoutLength('Stroke weight', 0.1)),
     parent_id: v.optional(v.pipe(v.string(), v.description('Parent node ID')))
   }),
   execute: (figma, args) => {

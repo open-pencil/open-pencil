@@ -2,6 +2,7 @@ import { uniq } from 'es-toolkit'
 
 import type { CanvasKit, Image, ImageFilter, Shader, TileMode } from '@open-pencil/canvaskit'
 import type { ProgressiveBlur } from '@open-pencil/scene-graph'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { blurSigma, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
@@ -140,7 +141,7 @@ function levelBand(
       ? (sigma - ramp.startSigma) / (ramp.endSigma - ramp.startSigma)
       : Math.sign(sigma) * Math.sign(ramp.endSigma - ramp.startSigma) * Infinity
   const ends = [along(lower), along(above)]
-  return [Math.min(...ends), Math.max(...ends)]
+  return [minOf(ends), maxOf(ends)]
 }
 
 /** The corners of `polygon` on the side of a line where `side` is not negative. */
@@ -192,10 +193,10 @@ function bandBox(
   if (Number.isFinite(to)) polygon = clipPolygon(polygon, (point) => to + slack - along(point))
   if (polygon.length === 0) return null
   return {
-    minX: Math.min(...polygon.map((point) => point.x)),
-    minY: Math.min(...polygon.map((point) => point.y)),
-    maxX: Math.max(...polygon.map((point) => point.x)),
-    maxY: Math.max(...polygon.map((point) => point.y))
+    minX: minOf(polygon.map((point) => point.x)),
+    minY: minOf(polygon.map((point) => point.y)),
+    maxX: maxOf(polygon.map((point) => point.x)),
+    maxY: maxOf(polygon.map((point) => point.y))
   }
 }
 

@@ -203,6 +203,11 @@ function preserveTrailingPadding(
   return normalizedValue !== inheritedValue ? normalizedValue : undefined
 }
 
+/** Figma saves NaN while the space between wrapped lines follows the item spacing. */
+function figCounterAxisSpacing(node: SceneNode): number {
+  return node.counterAxisSpacing ?? Number.NaN
+}
+
 function serializeSizeConstraints(node: SceneNode, nc: KiwiNodeChange): void {
   if (node.targetAspectRatio) nc.targetAspectRatio = { value: { ...node.targetAspectRatio } }
   if (node.minWidth != null || node.minHeight != null) {
@@ -267,7 +272,7 @@ function applyEditedLayoutFields(node: SceneNode, nc: KiwiNodeChange): void {
     layoutAlignSelf: { stackChildAlignSelf: node.layoutAlignSelf },
     layoutPositioning: { stackPositioning: node.layoutPositioning },
     layoutWrap: { stackWrap: node.layoutWrap },
-    counterAxisSpacing: { stackCounterSpacing: node.counterAxisSpacing },
+    counterAxisSpacing: { stackCounterSpacing: figCounterAxisSpacing(node) },
     strokesIncludedInLayout: { bordersTakeSpace: node.strokesIncludedInLayout },
     itemReverseZIndex: { stackReverseZIndex: node.itemReverseZIndex }
   }
@@ -341,7 +346,8 @@ function serializeLayoutProps(node: SceneNode, nc: KiwiNodeChange, graph: SceneG
     nc.stackPrimaryAlignItems = normalizeStackJustify(node.primaryAxisAlign)
     nc.stackCounterAlignItems = normalizeStackCounterAlignItems(node.counterAxisAlign)
     if (node.layoutWrap === 'WRAP') nc.stackWrap = 'WRAP'
-    if (node.counterAxisSpacing > 0) nc.stackCounterSpacing = node.counterAxisSpacing
+    if (node.counterAxisSpacing === null || node.counterAxisSpacing > 0)
+      nc.stackCounterSpacing = figCounterAxisSpacing(node)
     nc.bordersTakeSpace = node.strokesIncludedInLayout
   }
   if (node.itemReverseZIndex) nc.stackReverseZIndex = true

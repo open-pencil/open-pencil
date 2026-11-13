@@ -192,7 +192,10 @@ export interface Fill {
   blendMode?: BlendMode
   gradientStops?: GradientStop[]
   gradientTransform?: GradientTransform
+  /** The image an IMAGE paint draws, or the poster frame a VIDEO paint draws in its clip's place. */
   imageHash?: string
+  /** A VIDEO paint's clip, which `imageHash`'s poster frame stands in for when drawn. */
+  videoHash?: string
   imageScaleMode?: ImageScaleMode
   /** A crop's image-space window; Fill, Fit and Tile ignore it. */
   imageTransform?: GradientTransform
@@ -789,7 +792,8 @@ export interface SceneNode {
   primaryAxisSizing: AxisSizingMode
   counterAxisSizing: AxisSizingMode
   itemSpacing: number
-  counterAxisSpacing: number
+  /** Space between wrapped lines; null follows `itemSpacing`. Read it with `counterAxisSpacingOf`. */
+  counterAxisSpacing: number | null
   paddingTop: number
   paddingRight: number
   paddingBottom: number
@@ -1128,9 +1132,13 @@ export interface Variable {
   version?: string
 }
 
-/** Scalar numeric node fields accepted by numeric property controls. */
+/** Scalar numeric node fields accepted by numeric property controls; some may also be null. */
 export type NumericNodeProperty = {
-  [K in keyof SceneNode]-?: SceneNode[K] extends number ? K : never
+  [K in keyof SceneNode]-?: SceneNode[K] extends number | null
+    ? number extends SceneNode[K]
+      ? K
+      : never
+    : never
 }[keyof SceneNode]
 
 export interface VariableCollectionMode {

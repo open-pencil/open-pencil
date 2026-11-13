@@ -13,6 +13,7 @@ import {
   MCP_CHAT_HEADER
 } from '@open-pencil/core/constants'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { MAX_LAYOUT_SPACING } from '@open-pencil/scene-graph/layout'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { startServer, type ServerHandle } from '#mcp/server'
@@ -200,7 +201,8 @@ describe('MCP server', () => {
     expect(layout?.inputSchema.properties?.spacing).toEqual({
       type: 'number',
       description: expect.any(String),
-      minimum: 0
+      minimum: 0,
+      maximum: MAX_LAYOUT_SPACING
     })
   })
 

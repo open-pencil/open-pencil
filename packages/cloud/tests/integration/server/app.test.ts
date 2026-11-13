@@ -105,6 +105,9 @@ function services() {
       },
       async read() {
         return null
+      },
+      async readRange() {
+        return null
       }
     }
   }

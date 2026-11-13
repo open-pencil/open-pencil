@@ -1,0 +1,3 @@
+- Plugin API scripts and MCP tools can no longer set a layer's position, rotation, opacity, stroke weights, corner radii, auto layout spacing, size limits, dash pattern, or transform to NaN or Infinity; they get Figma's validation error instead of a layer that blanks its page. `counterAxisSpacing` takes null, so wrapped rows follow the item spacing, as in Figma.
+- `.fig` files whose layers hold a NaN or Infinity, such as stroke weights saved by OpenPencil 0.16, open with those values at their defaults instead of a blank page.
+- CSS, HTML, and JSX exports of a Figma auto layout whose wrapped rows follow the item spacing write that spacing instead of an invalid `NaNpx` row gap or none.

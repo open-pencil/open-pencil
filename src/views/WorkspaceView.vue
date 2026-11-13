@@ -48,7 +48,7 @@ import { syncTabAddress } from '@/app/tabs/address'
 import { isTauri } from '@/app/tauri/env'
 import { offerUsageStatsPrompt, startSharing, usageStatsPrompt } from '@/app/telemetry'
 import ColorSpaceBanner from '@/components/canvas/ColorSpaceBanner.vue'
-import { CloudVersionDialog } from '@/components/cloud/integration'
+import { CloudCommunityBanner, CloudVersionDialog } from '@/components/cloud/integration'
 import CommandPalette from '@/components/commands/CommandPalette.vue'
 import EditorWorkspace from '@/components/editor/EditorWorkspace.vue'
 import FileApiBanner from '@/components/FileApiBanner.vue'
@@ -304,6 +304,7 @@ onUnmounted(() => {
     <FileApiBanner />
     <ColorSpaceBanner />
     <FontStatusBanner />
+    <CloudCommunityBanner />
     <RenameSelectionDialog />
     <CommandPalette />
     <TabBar />

@@ -2,6 +2,7 @@ import { groupBy } from 'es-toolkit/array'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { CharacterStyleOverride, DerivedTextGlyph, SceneNode } from '@open-pencil/scene-graph'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { faceStyleKey, normalizeFontFamily } from '@open-pencil/scene-graph/font-style'
 import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 import {
@@ -160,7 +161,7 @@ function savedGlyphCharacters(
  */
 function lineStart(node: SceneNode, line: SavedGlyph[], previousEnd: number | undefined): number {
   const characters = line.flatMap(({ character }) => (character === undefined ? [] : [character]))
-  if (characters.length > 0) return Math.min(...characters)
+  if (characters.length > 0) return minOf(characters)
   if (previousEnd === undefined) return 0
   const ranges = textParagraphRanges(node.text)
   return ranges[paragraphIndexAt(node.text, previousEnd) + 1]?.start ?? node.text.length
@@ -191,8 +192,8 @@ function savedGlyphLayout(
     // Markers stand before their item's text; a line starts where its characters do.
     const text = line.filter(({ character }) => character !== undefined)
     const startX = text.length
-      ? Math.min(...text.map(({ glyph }) => glyph.x))
-      : Math.max(...line.map(({ glyph }) => glyph.x + (glyph.advance ?? 0)))
+      ? minOf(text.map(({ glyph }) => glyph.x))
+      : maxOf(line.map(({ glyph }) => glyph.x + (glyph.advance ?? 0)))
     for (const { glyph, character } of text) {
       if (character !== undefined && character < offsets.length) {
         offsets[character] = glyph.x - startX

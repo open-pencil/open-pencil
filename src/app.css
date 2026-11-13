@@ -1,6 +1,5 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
-@import 'vue-stream-markdown/index.css' layer(components);
 @import './theme/markdown/markdown.css';
 
 @import './theme/tokens.css';

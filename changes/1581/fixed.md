@@ -1,0 +1,1 @@
+- A detached instance keeps the overrides of the instances it holds after saving and reopening, instead of showing them at their components' defaults.
