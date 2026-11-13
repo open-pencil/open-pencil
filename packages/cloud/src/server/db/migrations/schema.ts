@@ -45,6 +45,20 @@ export async function addChecks(
   }
 }
 
+/**
+ * Replaces the values a column may take, as `addChecks` named them, such as when a release adds
+ * a kind the previous one never writes.
+ */
+export async function replaceChecks(
+  database: Kysely<unknown>,
+  checks: readonly (readonly [table: string, column: string, values: readonly string[]])[]
+): Promise<void> {
+  for (const [table, column] of checks) {
+    await database.schema.alterTable(table).dropConstraint(`${table}_${column}_check`).execute()
+  }
+  await addChecks(database, checks)
+}
+
 /** Lookups beyond primary keys and unique columns, as `[table, columns]`; `desc` sorts newest first. */
 export async function addIndexes(
   database: Kysely<unknown>,

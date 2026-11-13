@@ -1,6 +1,6 @@
 import type { Kysely } from 'kysely'
 
-import { addChecks } from './schema'
+import { replaceChecks } from './schema'
 
 /** Every kind of transactional email before this migration. */
 const EMAIL_KINDS = [
@@ -21,24 +21,17 @@ const EMAIL_KINDS = [
   'storage-limit-reached'
 ]
 
+/** Every kind of transactional email once this migration has run. */
+export const DOCUMENT_BLOCK_EMAIL_KINDS = [...EMAIL_KINDS, 'document-blocked', 'document-restored']
+
 /**
  * Email gains the kinds that tell a workspace's owner an administrator blocked one of its
  * documents, and that it is back, which the previous release never writes.
  */
 export async function up(database: Kysely<unknown>): Promise<void> {
-  await database.schema
-    .alterTable('transactional_email')
-    .dropConstraint('transactional_email_kind_check')
-    .execute()
-  await addChecks(database, [
-    ['transactional_email', 'kind', [...EMAIL_KINDS, 'document-blocked', 'document-restored']]
-  ])
+  await replaceChecks(database, [['transactional_email', 'kind', DOCUMENT_BLOCK_EMAIL_KINDS]])
 }
 
 export async function down(database: Kysely<unknown>): Promise<void> {
-  await database.schema
-    .alterTable('transactional_email')
-    .dropConstraint('transactional_email_kind_check')
-    .execute()
-  await addChecks(database, [['transactional_email', 'kind', EMAIL_KINDS]])
+  await replaceChecks(database, [['transactional_email', 'kind', EMAIL_KINDS]])
 }
