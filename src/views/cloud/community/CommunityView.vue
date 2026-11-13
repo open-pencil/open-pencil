@@ -1,114 +1,160 @@
 <script setup lang="ts">
 import { useHead } from '@unhead/vue'
 import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { cloudCommunityPagePath, type CommunityDocument } from '@open-pencil/cloud/contract'
+import { useViewportKind } from '@open-pencil/vue/editor/viewport-kind'
+import { useCloudPortalMessages, useFileMessages, usePanelMessages } from '@open-pencil/vue/i18n'
 
-import { communityPublisher, useCommunityDocuments } from '@/app/cloud-portal/community'
+import { useCommunityDocuments } from '@/app/cloud-portal/community'
 import { usePortal } from '@/app/cloud-portal/context'
-import CommunityCard from '@/components/cloud-portal/community/CommunityCard.vue'
+import { useDateFormat } from '@/app/i18n/date'
 import CommunityLayout from '@/components/cloud-portal/community/CommunityLayout.vue'
 import PortalLoadAlert from '@/components/cloud-portal/layout/PortalLoadAlert.vue'
-import { portalCommunity } from '@/components/cloud-portal/ui'
-import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
+import DocumentEntry from '@/components/home/document/DocumentEntry.vue'
+import { ofKind, type DocumentKindFilter } from '@/components/home/document/filter'
 import AppSkeleton from '@/components/ui/feedback/AppSkeleton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
-import { AppTabsContent, AppTabsList, AppTabsRoot, AppTabsTrigger } from '@/components/ui/tabs'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
+import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 
 /**
- * The server's community gallery: every file in it, newest change first, narrowed by type and by
- * a search of their names.
+ * The server's community gallery, laid out as Home's files: a search, the file type and grid or
+ * list, and each file as Home shows one, newest change first.
  */
 const portal = usePortal()
+const router = useRouter()
 const messages = useCloudPortalMessages()
-const ui = portalCommunity()
+const files = useFileMessages()
+const panels = usePanelMessages()
+const dates = useDateFormat()
+const { isTouch } = useViewportKind()
 const { state, reload } = useCommunityDocuments(portal.discovery)
-const publisher = communityPublisher(portal.discovery, portal.host)
 
-type Filter = 'all' | 'design' | 'board'
-const filter = ref<Filter>('all')
 const query = ref('')
+const kind = ref<DocumentKindFilter>('all')
+const view = ref<'grid' | 'list'>('grid')
+const kindOptions = computed(() => [
+  { value: 'all', label: files.value.allFiles },
+  { value: 'design', label: files.value.createDesign },
+  { value: 'board', label: files.value.createBoard }
+])
 
 const documents = computed(() => (state.value.status === 'ready' ? state.value.documents : []))
-const counts = computed(() => ({
-  all: documents.value.length,
-  design: documents.value.filter((entry) => entry.kind === 'design').length,
-  board: documents.value.filter((entry) => entry.kind === 'board').length
-}))
 const shown = computed(() => {
   const words = query.value.trim().toLocaleLowerCase()
   return documents.value.filter(
     (entry) =>
-      (filter.value === 'all' || entry.kind === filter.value) &&
-      (!words || entry.name.toLocaleLowerCase().includes(words))
+      ofKind(entry.kind, kind.value) && (!words || entry.name.toLocaleLowerCase().includes(words))
   )
 })
-const filters = computed(() => [
-  { value: 'all' as const, label: messages.value.communityFilterAll },
-  { value: 'design' as const, label: messages.value.communityKindDesigns },
-  { value: 'board' as const, label: messages.value.communityKindBoards }
-])
+
+/** The newest named version, such as the release it was published for, and the last change. */
+function metadata(document: CommunityDocument): string {
+  const date = dates.format(document.updatedAt, 'date')
+  const version = document.versions[0]?.name
+  return version ? `${version} · ${date}` : date
+}
+
+function open(document: CommunityDocument) {
+  void router.push(cloudCommunityPagePath(document.id))
+}
 
 useHead(() => ({ title: `${messages.value.communityTitle} · ${portal.host}` }))
 </script>
 
 <template>
   <CommunityLayout>
-    <div :class="ui.hero()">
-      <h1 :class="ui.title()">{{ messages.communityTitle }}</h1>
-      <p :class="ui.description()">{{ messages.communityDescription }}</p>
-    </div>
-    <PortalLoadAlert v-if="state.status === 'failed'" :error="state.error" @retry="reload" />
-    <template v-else-if="state.status === 'loading'">
-      <span role="status" class="sr-only">{{ messages.loading }}</span>
-      <div :class="ui.grid()" aria-hidden="true">
-        <div v-for="index in 6" :key="index" class="flex flex-col gap-3">
-          <AppSkeleton class="aspect-[16/10] w-full rounded-xl" />
-          <AppSkeleton class="h-3 w-40" />
-          <AppSkeleton class="h-3 w-28" />
+    <AppInput
+      v-model="query"
+      type="search"
+      name="community-search"
+      autocomplete="off"
+      class="mb-4 md:mb-6"
+      size="md"
+      :density="isTouch ? 'comfortable' : 'compact'"
+      :placeholder="files.searchFiles"
+      :aria-label="files.searchFiles"
+    >
+      <template #leading><icon-lucide-search class="size-4" /></template>
+    </AppInput>
+
+    <section>
+      <div class="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2">
+        <div class="col-span-2 min-w-0 sm:col-span-1">
+          <h1 class="text-base font-semibold">{{ messages.communityTitle }}</h1>
+          <p class="mt-0.5 text-pretty text-xs text-muted">{{ messages.communityDescription }}</p>
+        </div>
+        <div class="col-span-2 flex items-center justify-end gap-1 sm:col-span-1">
+          <AppSelect v-model="kind" :label="files.fileKind" :options="kindOptions" class="w-28" />
+          <SegmentedControl
+            v-model="view"
+            required
+            :label="messages.communityTitle"
+            :size="isTouch ? 'touch' : 'md'"
+            :options="[
+              { value: 'grid', label: panels.gridView },
+              { value: 'list', label: panels.listView }
+            ]"
+          >
+            <template #option="{ option }">
+              <icon-lucide-layout-grid v-if="option.value === 'grid'" class="size-3.5" />
+              <icon-lucide-list v-else class="size-3.5" />
+            </template>
+          </SegmentedControl>
         </div>
       </div>
-    </template>
-    <AppPlaceholder
-      v-else-if="documents.length === 0"
-      :label="messages.communityEmpty"
-      :class="ui.empty()"
-    />
-    <AppTabsRoot v-else v-model="filter">
-      <div :class="ui.toolbar()">
-        <AppTabsList :label="messages.communityTitle">
-          <AppTabsTrigger v-for="entry in filters" :key="entry.value" :value="entry.value">
-            {{ entry.label }}
-            <template #trailing>
-              <span :class="ui.count()">{{ counts[entry.value] }}</span>
-            </template>
-          </AppTabsTrigger>
-        </AppTabsList>
-        <AppInput
-          v-model="query"
-          type="search"
-          size="sm"
-          :placeholder="messages.communitySearch"
-          :aria-label="messages.communitySearch"
-          :class="ui.search()"
-        >
-          <template #leading><icon-lucide-search class="size-3.5" /></template>
-        </AppInput>
+
+      <PortalLoadAlert v-if="state.status === 'failed'" :error="state.error" @retry="reload" />
+
+      <div
+        v-else-if="state.status === 'loading'"
+        class="grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(12.5rem,1fr))]"
+      >
+        <span role="status" class="sr-only">{{ messages.loading }}</span>
+        <div v-for="index in 6" :key="index" class="flex flex-col gap-2" aria-hidden="true">
+          <AppSkeleton class="aspect-[4/3] w-full rounded-lg" />
+          <AppSkeleton class="w-32" />
+          <AppSkeleton class="w-20" />
+        </div>
       </div>
-      <AppTabsContent v-for="entry in filters" :key="entry.value" :value="entry.value" class="pt-6">
-        <p v-if="shown.length === 0" :class="[ui.description(), 'pt-6']">
-          {{
-            query.trim()
-              ? messages.communityNoMatches({ query: query.trim() })
-              : messages.communityEmpty
-          }}
-        </p>
-        <ul v-else :class="ui.grid()">
-          <li v-for="document in shown" :key="document.id">
-            <CommunityCard :document="document" :publisher="publisher" />
-          </li>
-        </ul>
-      </AppTabsContent>
-    </AppTabsRoot>
+
+      <div
+        v-else-if="shown.length && view === 'grid'"
+        class="grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(12.5rem,1fr))]"
+      >
+        <DocumentEntry
+          v-for="document in shown"
+          :key="document.id"
+          :name="document.name"
+          :kind="document.kind"
+          :metadata="metadata(document)"
+          :previewURL="document.thumbnailPath"
+          @open="open(document)"
+        />
+      </div>
+
+      <div v-else-if="shown.length" class="overflow-hidden rounded-lg border border-border">
+        <DocumentEntry
+          v-for="document in shown"
+          :key="document.id"
+          view="list"
+          :name="document.name"
+          :kind="document.kind"
+          :metadata="metadata(document)"
+          @open="open(document)"
+        />
+      </div>
+
+      <p
+        v-else
+        class="rounded-lg border border-dashed border-border px-4 py-8 text-center text-xs text-muted"
+      >
+        {{
+          query.trim() ? files.noMatchingFiles({ query: query.trim() }) : messages.communityEmpty
+        }}
+      </p>
+    </section>
   </CommunityLayout>
 </template>

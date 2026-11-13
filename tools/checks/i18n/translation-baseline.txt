@@ -673,8 +673,4 @@ es:cloudPortal.plan
 pl:cloudPortal.plan
 fr:cloud.savePublicLabel
 de:cloudPortal.communityTitle
-de:cloudPortal.communityKindBoard
-fr:cloudPortal.communityVersions
 it:cloudPortal.communityTitle
-de:cloudPortal.communityKindBoards
-fr:cloudPortal.communityDetailType

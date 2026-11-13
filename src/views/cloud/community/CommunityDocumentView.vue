@@ -1,65 +1,72 @@
 <script setup lang="ts">
 import { useHead } from '@unhead/vue'
 import { useClipboard } from '@vueuse/core'
-import { RadioGroupItem, RadioGroupRoot } from 'reka-ui'
+import { tv } from 'tailwind-variants'
 import { computed, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import {
   cloudCommunityDesktopLinkURL,
   cloudCommunityPagePath,
   cloudCommunityURL,
-  CLOUD_COMMUNITY_PATH
+  CLOUD_COMMUNITY_PATH,
+  type CommunityDocument
 } from '@open-pencil/cloud/contract'
-import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
+import { useCloudMessages, useCloudPortalMessages, useFileMessages } from '@open-pencil/vue/i18n'
 
-import { communityPublisher, useCommunityDocuments } from '@/app/cloud-portal/community'
+import { useCommunityDocuments } from '@/app/cloud-portal/community'
 import { usePortal } from '@/app/cloud-portal/context'
-import { portalToast } from '@/app/cloud-portal/toast'
 import { useDateFormat } from '@/app/i18n/date'
-import BrandMark from '@/components/brand/BrandMark.vue'
-import CommunityCard from '@/components/cloud-portal/community/CommunityCard.vue'
-import CommunityImage from '@/components/cloud-portal/community/CommunityImage.vue'
 import CommunityLayout from '@/components/cloud-portal/community/CommunityLayout.vue'
 import PortalLoadAlert from '@/components/cloud-portal/layout/PortalLoadAlert.vue'
-import { portalCommunity } from '@/components/cloud-portal/ui'
+import CloudVersionListItem from '@/components/cloud/versions/CloudVersionListItem.vue'
+import { cloudVersions } from '@/components/cloud/versions/ui'
+import { DOCUMENT_KIND_ICONS } from '@/components/document/kinds'
+import DocumentEntry from '@/components/home/document/DocumentEntry.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import AppSkeleton from '@/components/ui/feedback/AppSkeleton.vue'
+import documentEntryTheme from '@/theme/home/document-entry'
 
 /**
- * A community file's page: its preview, what it is, its named versions, and the ways to open the
- * one picked, in this browser's editor or in the desktop app, both read-only; then more files.
+ * A community file's page: its preview in the frame Home shows files in, the ways to open the
+ * state picked, in this browser's editor or in the desktop app, both read-only, its link, and its
+ * history as the editor's version history lists it; then more files from the gallery.
  */
-const MORE_FILES = 3
-/** The radio value that stands for the file as it is now, rather than a named version's ID. */
-const LATEST = 'latest'
+const MORE_FILES = 4
 
+const documentEntry = tv(documentEntryTheme)
 const portal = usePortal()
 const route = useRoute()
+const router = useRouter()
 const messages = useCloudPortalMessages()
+const cloud = useCloudMessages()
+const files = useFileMessages()
 const dates = useDateFormat()
-const ui = portalCommunity()
-const { copy } = useClipboard({ legacy: true })
+const versions = cloudVersions()
 const { state, reload } = useCommunityDocuments(portal.discovery)
-const publisher = communityPublisher(portal.discovery, portal.host)
 const origin = globalThis.location.origin
+const { copy, copied } = useClipboard({ legacy: true })
 
 const documents = computed(() => (state.value.status === 'ready' ? state.value.documents : []))
 const document = computed(
   () => documents.value.find((entry) => entry.id === route.params.documentId) ?? null
 )
+const frame = computed(() => documentEntry({ view: 'grid', kind: document.value?.kind }))
 const more = computed(() =>
   documents.value.filter((entry) => entry.id !== document.value?.id).slice(0, MORE_FILES)
 )
+const pageURL = computed(() =>
+  document.value ? new URL(cloudCommunityPagePath(document.value.id), origin).href : ''
+)
 
-const choice = ref(LATEST)
-const versionId = computed(() => (choice.value === LATEST ? null : choice.value))
-// Another file's page starts from its latest state.
+/** The named version to open, or null for the file as it is now. */
+const versionId = ref<string | null>(null)
+// Another file's page starts from its current state.
 watch(
   () => route.params.documentId,
   () => {
-    choice.value = LATEST
+    versionId.value = null
   }
 )
 
@@ -71,9 +78,8 @@ function openInDesktop(id: string) {
   globalThis.location.assign(cloudCommunityDesktopLinkURL(id, origin, versionId.value))
 }
 
-async function copyLink(id: string) {
-  await copy(new URL(cloudCommunityPagePath(id), origin).href)
-  portalToast.info(messages.value.communityLinkCopied)
+function openPage(entry: CommunityDocument) {
+  void router.push(cloudCommunityPagePath(entry.id))
 }
 
 useHead(() => ({
@@ -83,128 +89,109 @@ useHead(() => ({
 
 <template>
   <CommunityLayout>
-    <nav :class="ui.crumbs()" :aria-label="messages.communityTitle">
-      <RouterLink :to="CLOUD_COMMUNITY_PATH" :class="ui.crumbLink()">
-        {{ messages.communityTitle }}
-      </RouterLink>
-      <template v-if="document">
-        <icon-lucide-chevron-right data-direction="reading" class="size-3.5 shrink-0" />
-        <span :class="ui.crumbCurrent()" aria-current="page">{{ document.name }}</span>
-      </template>
-    </nav>
     <PortalLoadAlert v-if="state.status === 'failed'" :error="state.error" @retry="reload" />
-    <template v-else-if="state.status === 'loading'">
-      <span role="status" class="sr-only">{{ messages.loading }}</span>
-      <div :class="ui.document()" aria-hidden="true">
-        <AppSkeleton class="aspect-[16/10] w-full rounded-2xl" />
-        <div :class="ui.aside()">
-          <AppSkeleton class="h-7 w-56" />
-          <AppSkeleton class="h-4 w-32" />
-          <AppSkeleton class="h-10 w-full" />
-          <AppSkeleton class="h-10 w-full" />
-        </div>
+    <div
+      v-else-if="state.status === 'loading'"
+      class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]"
+      aria-hidden="true"
+    >
+      <AppSkeleton class="aspect-video w-full rounded-lg" />
+      <div class="flex flex-col gap-3">
+        <AppSkeleton class="w-40" />
+        <AppSkeleton class="h-8 w-full" />
+        <AppSkeleton class="h-8 w-full" />
       </div>
-    </template>
+    </div>
     <AppPlaceholder
       v-else-if="!document"
       label-as="h1"
       :label="messages.communityNotFoundTitle"
       :description="messages.communityNotFoundDescription"
-      :class="ui.empty()"
-    />
+    >
+      <template #action>
+        <AppButton variant="outline" @click="router.push(CLOUD_COMMUNITY_PATH)">
+          {{ messages.communityAllFiles }}
+        </AppButton>
+      </template>
+    </AppPlaceholder>
     <template v-else>
-      <div :class="ui.document()">
-        <div :class="ui.preview()">
-          <CommunityImage
-            :key="document.thumbnailPath"
-            :src="document.thumbnailPath"
-            :alt="messages.communityPreview({ name: document.name })"
-            eager
-            :class="ui.previewImage()"
-          />
+      <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <div :class="frame.preview({ class: 'group-hover:border-border' })">
+          <img :src="document.thumbnailPath" alt="" :class="frame.image({ class: 'scale-100' })" />
         </div>
-        <div :class="ui.aside()">
-          <div :class="ui.heading()">
-            <h1 :class="ui.documentTitle()">{{ document.name }}</h1>
-            <span :class="ui.publisher()">
-              <BrandMark variant="app-icon" decorative :class="ui.publisherMark()" />
-              {{ publisher }}
-            </span>
+        <div class="flex flex-col gap-4">
+          <div class="min-w-0">
+            <h1 class="flex items-center gap-1.5 text-base font-semibold">
+              <component
+                :is="DOCUMENT_KIND_ICONS[document.kind]"
+                :class="frame.kind()"
+                aria-hidden="true"
+              />
+              <span class="truncate">{{ document.name }}</span>
+            </h1>
+            <p class="mt-0.5 text-xs text-muted">
+              {{ document.kind === 'board' ? files.createBoard : files.createDesign }} ·
+              {{ dates.format(document.updatedAt, 'date') }}
+            </p>
           </div>
-          <div :class="ui.actions()">
-            <AppButton
-              size="lg"
-              color="primary"
-              variant="solid"
-              @click="openInBrowser(document.id)"
-            >
-              <icon-lucide-pen-tool :class="ui.actionIcon()" />
+          <div class="flex flex-col gap-2">
+            <AppButton color="primary" variant="solid" @click="openInBrowser(document.id)">
               {{ messages.communityOpenInBrowser }}
             </AppButton>
-            <AppButton
-              size="lg"
-              variant="outline"
-              :class="ui.desktopAction()"
-              @click="openInDesktop(document.id)"
-            >
-              <icon-lucide-monitor :class="ui.actionIcon()" />
+            <AppButton variant="outline" class="max-sm:hidden" @click="openInDesktop(document.id)">
               {{ messages.communityOpenInDesktop }}
             </AppButton>
-            <AppButton size="lg" variant="ghost" @click="copyLink(document.id)">
-              <icon-lucide-link :class="ui.actionIcon()" />
-              {{ messages.communityCopyLink }}
+            <AppButton variant="outline" @click="copy(pageURL)">
+              <template #leading>
+                <icon-lucide-check v-if="copied" class="size-3.5" />
+                <icon-lucide-link v-else class="size-3.5" />
+              </template>
+              {{ copied ? cloud.shareLinkCopied : cloud.shareCopyLink }}
             </AppButton>
-            <p :class="ui.note()">{{ messages.communityOpenNote }}</p>
+            <p class="text-pretty text-xs text-muted">{{ messages.communityOpenNote }}</p>
           </div>
-          <dl :class="ui.details()">
-            <dt :class="ui.detailTerm()">{{ messages.communityDetailType }}</dt>
-            <dd :class="ui.detailValue()">
-              {{
-                document.kind === 'board'
-                  ? messages.communityKindBoard
-                  : messages.communityKindDesign
-              }}
-            </dd>
-            <dt :class="ui.detailTerm()">{{ messages.communityDetailUpdated }}</dt>
-            <dd :class="ui.detailValue()">{{ dates.format(document.updatedAt, 'date') }}</dd>
-          </dl>
-          <div v-if="document.versions.length > 0" :class="ui.versions()">
-            <h2 :class="ui.sectionTitle()">{{ messages.communityVersions }}</h2>
-            <RadioGroupRoot
-              v-model="choice"
-              :aria-label="messages.communityVersions"
-              :class="ui.versions()"
-            >
-              <RadioGroupItem :value="LATEST" :class="ui.version()">
-                <span :class="ui.versionDot()" aria-hidden="true" />
-                <span :class="ui.versionName()">{{ messages.communityLatest }}</span>
-                <span :class="ui.versionDate()">{{ dates.relative(document.updatedAt) }}</span>
-                <span :class="ui.versionNotes()">{{ messages.communityLatestDescription }}</span>
-              </RadioGroupItem>
-              <RadioGroupItem
-                v-for="version in document.versions"
+          <div
+            v-if="document.versions.length > 0"
+            class="overflow-hidden rounded-lg border border-border bg-panel"
+          >
+            <ul :class="versions.list()" :aria-label="cloud.versionHistory">
+              <CloudVersionListItem
+                :label="cloud.currentVersion"
+                current
+                :selected="versionId === null"
+                @select="versionId = null"
+              />
+              <CloudVersionListItem
+                v-for="(version, index) in document.versions"
                 :key="version.id"
-                :value="version.id"
-                :class="ui.version()"
-              >
-                <span :class="ui.versionDot()" aria-hidden="true" />
-                <span :class="ui.versionName()">{{ version.name }}</span>
-                <span :class="ui.versionDate()">{{ dates.format(version.createdAt, 'day') }}</span>
-                <span v-if="version.description" :class="ui.versionNotes()">
-                  {{ version.description }}
-                </span>
-              </RadioGroupItem>
-            </RadioGroupRoot>
+                :label="version.name"
+                :description="version.description"
+                :at="version.createdAt"
+                named
+                :selected="versionId === version.id"
+                :last="index === document.versions.length - 1"
+                @select="versionId = version.id"
+              />
+            </ul>
           </div>
         </div>
       </div>
-      <section v-if="more.length > 0" :class="ui.more()" aria-labelledby="community-more">
-        <h2 id="community-more" :class="ui.sectionTitle()">{{ messages.communityMore }}</h2>
-        <ul :class="ui.grid()">
-          <li v-for="entry in more" :key="entry.id">
-            <CommunityCard :document="entry" :publisher="publisher" />
-          </li>
-        </ul>
+
+      <section v-if="more.length > 0" class="mt-10">
+        <h2 class="mb-3 text-base font-semibold">{{ messages.communityMore }}</h2>
+        <div
+          class="grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(12.5rem,1fr))]"
+        >
+          <DocumentEntry
+            v-for="entry in more"
+            :key="entry.id"
+            :name="entry.name"
+            :kind="entry.kind"
+            :metadata="dates.format(entry.updatedAt, 'date')"
+            :previewURL="entry.thumbnailPath"
+            @open="openPage(entry)"
+          />
+        </div>
       </section>
     </template>
   </CommunityLayout>
