@@ -31,7 +31,7 @@ import { graphOf } from '#core/figma-api/graph'
 import type { FigmaNodeType } from '#core/figma-api/members'
 import { flushPendingLayout, flushPendingLayoutBefore } from '#core/figma-api/pending-layout'
 import type { FigmaNodeProxy, NodeProxyHost } from '#core/figma-api/proxy'
-import { atLeast } from '#core/figma-api/schema'
+import { atLeast, finiteNumber, transformSchema } from '#core/figma-api/schema'
 import {
   containerTransform,
   setContainerTransform,
@@ -140,9 +140,10 @@ export function installBasicNodeProxyAccessors(
         flushPendingLayout(graphOf(this))
         return containerTransform(raw(this, internals), graphOf(this))[2]
       },
-      set(this: ProxyThis, value: number) {
+      set(this: ProxyThis, value: unknown) {
+        const x = finiteNumber(value, 'x')
         prepareFollowedFieldEdit(graphOf(this), raw(this, internals), 'x', 'relative-transform')
-        setTransform(this, internals, (matrix) => withOrigin(matrix, value, matrix[5]))
+        setTransform(this, internals, (matrix) => withOrigin(matrix, x, matrix[5]))
       }
     },
     y: {
@@ -150,9 +151,10 @@ export function installBasicNodeProxyAccessors(
         flushPendingLayout(graphOf(this))
         return containerTransform(raw(this, internals), graphOf(this))[5]
       },
-      set(this: ProxyThis, value: number) {
+      set(this: ProxyThis, value: unknown) {
+        const y = finiteNumber(value, 'y')
         prepareFollowedFieldEdit(graphOf(this), raw(this, internals), 'y', 'relative-transform')
-        setTransform(this, internals, (matrix) => withOrigin(matrix, matrix[2], value))
+        setTransform(this, internals, (matrix) => withOrigin(matrix, matrix[2], y))
       }
     },
     width: {
@@ -177,14 +179,15 @@ export function installBasicNodeProxyAccessors(
         return figmaRotation(containerTransform(node, graphOf(this)))
       },
       // Figma turns a node counterclockwise about its top-left corner.
-      set(this: ProxyThis, value: number) {
+      set(this: ProxyThis, value: unknown) {
+        const rotation = finiteNumber(value, 'rotation')
         prepareFollowedFieldEdit(
           graphOf(this),
           raw(this, internals),
           'rotation',
           'relative-transform'
         )
-        setTransform(this, internals, (matrix) => withFigmaRotation(matrix, value))
+        setTransform(this, internals, (matrix) => withFigmaRotation(matrix, rotation))
       }
     },
     relativeTransform: {
@@ -207,15 +210,32 @@ export function installBasicNodeProxyAccessors(
         }
         return figmaTransform(containerTransform(node, scene))
       },
-      set(this: ProxyThis, value: FigmaTransform) {
+      set(this: ProxyThis, value: unknown) {
+        // Figma takes each row, and the pair, as an array or as an object keyed by index.
+        const rows = parseFigma(
+          transformSchema,
+          value,
+          'set_relativeTransform',
+          'relativeTransform'
+        )
         prepareFollowedFieldEdit(
           graphOf(this),
           raw(this, internals),
           'relativeTransform',
           'relative-transform'
         )
-        const [[a, b, x], [c, d, y]] = value
-        setTransform(this, internals, () => [a, b, x, c, d, y, 0, 0, 1])
+        const [first, second] = [rows[0], rows[1]]
+        setTransform(this, internals, () => [
+          first[0],
+          first[1],
+          first[2],
+          second[0],
+          second[1],
+          second[2],
+          0,
+          0,
+          1
+        ])
       }
     },
     absoluteTransform: {
@@ -248,7 +268,8 @@ export function installBasicNodeProxyAccessors(
     resizeWithoutConstraints(this: ProxyThis, width: number, height: number): void {
       resizeNode(this, internals, width, height, false)
     },
-    rescale(this: ProxyThis, scale: number): void {
+    rescale(this: ProxyThis, value: unknown): void {
+      const scale = finiteNumber(value, 'scale', 'rescale')
       assertEditable(this, internals)
       const scene = graphOf(this)
       const node = raw(this, internals)

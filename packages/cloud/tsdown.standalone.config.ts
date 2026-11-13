@@ -1,6 +1,7 @@
 import { fileURLToPath } from 'node:url'
 
 import { defineConfig } from 'tsdown'
+import vue from 'unplugin-vue/rolldown'
 
 export default defineConfig({
   entry: {
@@ -15,6 +16,7 @@ export default defineConfig({
   outDir: './dist-standalone',
   target: 'node22',
   deps: { alwaysBundle: [/.*/], neverBundle: [/^node:/] },
+  plugins: [vue()],
   inputOptions: {
     resolve: {
       alias: {

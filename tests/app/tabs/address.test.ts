@@ -6,6 +6,7 @@ const roomId = 'abcdefghijklmnopqrstuvwxyz012345'
 const cloudRoomId = 'cloud:1413785f-37aa-4935-8bfb-e2cd81a035cf:0'
 const home = { path: '/', query: {} }
 const document = { path: '/documents/1413785f-37aa-4935-8bfb-e2cd81a035cf', query: {} }
+const community = { path: '/community/1413785f-37aa-4935-8bfb-e2cd81a035cf', query: {} }
 
 describe('tab address', () => {
   test('shows a room as its link', () => {
@@ -41,11 +42,13 @@ describe('tab address', () => {
   test('leaves a room or a document for the home address when the tab has neither', () => {
     expect(tabAddressFor(null, null, { path: `/rooms/${roomId}`, query: {} }).path).toBe('/')
     expect(tabAddressFor(null, null, { path: document.path, query: document.query })).toEqual(home)
+    expect(tabAddressFor(null, null, { ...community, query: { version: 'v1' } })).toEqual(home)
     expect(tabAddressFor(null, null, { path: '/demo', query: {} }).path).toBe('/demo')
   })
 
   test('keeps the document address the app opened with, for startup to open', () => {
     const opened = { path: document.path, query: document.query }
     expect(tabAddressFor(null, null, opened, true)).toEqual(opened)
+    expect(tabAddressFor(null, null, community, true)).toEqual(community)
   })
 })

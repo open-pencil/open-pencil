@@ -2,9 +2,9 @@ import { isEqual } from 'es-toolkit/predicate'
 
 import type { Effect as KiwiEffect, NodeChange, Paint } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { assignmentOverrideField } from '@open-pencil/scene-graph/components'
 import { scaleGeometryPaths } from '@open-pencil/scene-graph/copy'
 import {
+  assignmentOverrideField,
   bindingOverrideField,
   setInstanceOverride,
   variableModeOverrideField
@@ -21,10 +21,10 @@ import {
   occurrenceAssignmentScales,
   occurrenceScale
 } from './bindings/variables'
-import { isClearedStyle } from './cleared-style'
 import { OVERRIDE_FIELDS, type OverrideField, type RawOverrideField } from './fields'
 import { resolveOccurrencePath } from './interpret'
 import type { InstanceOccurrence } from './occurrence/types'
+import { isClearedStyle } from './style/cleared'
 import { symbolDataOf } from './types'
 
 function occurrenceMetadata(

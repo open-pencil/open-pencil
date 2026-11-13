@@ -13,9 +13,9 @@ const payload = {
 
 describe('transactional email delivery', () => {
   test('renders matching HTML and plain-text invitations', async () => {
-    const rendered = await renderTransactionalEmail({ kind: 'document-invitation', payload })
-    expect(rendered.subject).toContain('Alice invited you to edit Homepage')
-    expect(rendered.html).toContain('OpenPencil invitation')
+    const rendered = await renderTransactionalEmail({ kind: 'document-invitation', payload }, 'en')
+    expect(rendered.subject).toBe('Alice invited you to edit “Homepage”')
+    expect(rendered.html).toContain('You’re invited to a document')
     expect(rendered.html).toContain(payload.acceptanceURL.replaceAll('&', '&amp;'))
     expect(rendered.text).toContain(payload.acceptanceURL)
   })

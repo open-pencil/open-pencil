@@ -1,25 +1,29 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import { type SceneNode, type SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
-import { drawnBlurRadius, widestBlurRadius } from '@open-pencil/scene-graph/geometry'
+import { intersectVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import { textLinesReach } from '@open-pencil/scene-graph/text'
 
 import { drawIndividualSideStrokes } from '#core/canvas/strokes/sides'
 import { nodeOrientationMatrix, projectedNode } from '#core/geometry'
-import { mapVisualBounds } from '#core/geometry/render-bounds'
+import { drawnLayerBlurReach, mapVisualBounds } from '#core/geometry/render-bounds'
 import { fontManager } from '#core/text/font/manager'
 
 import { needsIsolatedBlendLayer, setPaintBlendMode } from './blend'
-import { blurLayerBounds, blurredContent, layerBlurFilter, viewportLayerBounds } from './blur/layer'
+import { blurredContent, layerBlurFilter } from './blur/layer'
 import { renderBooleanOperation } from './boolean'
 import { drawVectorMultiStyleFills, paintFills } from './fills'
 import { drawLayoutGrids } from './layout-grids'
 import { renderMaskedChildIds } from './masks'
 import type { SkiaRenderer, RenderOverlays } from './renderer'
 import { drawShapeThroughNodePicture } from './renderer/node-pictures'
-import { subtreeVisualBounds } from './renderer/visual-bounds'
+import {
+  mapLayerBounds,
+  subtreeVisualRectInParent,
+  visibleLayerBlur
+} from './renderer/visual-bounds'
 import { isolatesInnerShadows, renderLayerShadows } from './shadows'
 import {
   configureStrokePaint,
@@ -164,25 +168,17 @@ function renderMaskNodeContent(
   canvas.save()
   canvas.translate(node.x, node.y)
   // As in Figma, a mask's opacity and layer blur reach what it masks; its blend mode does not.
-  const blur = node.effects.find(
-    (effect) =>
-      effect.visible && (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR')
-  )
+  const blur = visibleLayerBlur(node)
   const layered = node.opacity < 1 || blur !== undefined
   if (layered) {
-    const blurRadius = drawnBlurRadius(blur ? widestBlurRadius(blur) : 0)
+    const world = () => worldMatrixIn(frame, node, absX, absY, overlays.rotationPreview)
     r.opacityPaint.setAlphaf(node.opacity)
     r.opacityPaint.setBlendMode(r.ck.BlendMode.SrcOver)
     const content = blurredContent(graph, node, overlays)
     r.opacityPaint.setImageFilter(blur ? layerBlurFilter(r, node, blur, overlays, content) : null)
     canvas.saveLayer(
       r.opacityPaint,
-      blurLayerBounds(
-        r,
-        worldMatrixIn(frame, node, absX, absY, overlays.rotationPreview),
-        blurRadius,
-        content
-      )
+      nodeLayerBounds(r, graph, node, world, overlays.rotationPreview)
     )
     r.opacityPaint.setImageFilter(null)
   }
@@ -236,8 +232,9 @@ function renderChildIds(
     },
     (childId) => {
       const child = graph.getNode(childId)
-      if (!child) return null
-      return { x: child.x, y: child.y, width: child.width, height: child.height }
+      return child
+        ? subtreeVisualRectInParent(r.renderedBounds, graph, child, overlays.rotationPreview)
+        : null
     }
   )
 }
@@ -290,19 +287,56 @@ export function renderNodeSelf(
 }
 
 /**
- * The layer opens after the node's x/y translation and before its rotation and flips, so the
- * subtree is measured through its orientation matrix.
+ * The viewport in the axes a node's layers open in, `world` without its `orientation`, grown by
+ * `padding` so ink blurred in from past it stays.
  */
-function nodeIsolationLayerBounds(
+function viewportLayerBounds(
+  r: SkiaRenderer,
+  world: Mat3,
+  orientation: Mat3,
+  padding: number
+): VisualBounds | null {
+  const inverseOrientation = Matrix.invert(orientation)
+  const layerWorld = inverseOrientation ? Matrix.multiply(world, inverseOrientation) : world
+  const inverse = Matrix.invert(layerWorld)
+  if (!inverse) return null
+  const viewport = r.worldViewport
+  const bounds = mapVisualBounds(inverse, {
+    minX: viewport.x,
+    minY: viewport.y,
+    maxX: viewport.x + viewport.w,
+    maxY: viewport.y + viewport.h
+  })
+  return {
+    minX: bounds.minX - padding,
+    minY: bounds.minY - padding,
+    maxX: bounds.maxX + padding,
+    maxY: bounds.maxY + padding
+  }
+}
+
+const NOTHING: VisualBounds = { minX: 0, minY: 0, maxX: 0, maxY: 0 }
+
+/**
+ * The bounds every layer a node opens shares: what its subtree puts on screen, cut to the
+ * viewport when the renderer bounds layers to it. The layers open after the node's x/y
+ * translation and before its rotation and flips, so the subtree is measured through its
+ * orientation matrix, and the viewport through the world matrix without it.
+ */
+function nodeLayerBounds(
   r: SkiaRenderer,
   graph: SceneGraph,
   node: SceneNode,
-  world: Mat3,
-  preview?: RenderOverlays['rotationPreview']
+  world: () => Mat3,
+  preview: RenderOverlays['rotationPreview']
 ): Float32Array {
-  const viewportBounds = viewportLayerBounds(r, world, 0)
-  if (viewportBounds) return viewportBounds
-  const bounds = subtreeVisualBounds(graph, node, nodeOrientationMatrix(node, preview), preview)
+  const orientation = nodeOrientationMatrix(node, preview)
+  const subtree = mapLayerBounds(orientation, r.renderedBounds.ownAxes(graph, node, preview))
+  if (!r.boundEffectLayersToViewport) {
+    return r.ck.LTRBRect(subtree.minX, subtree.minY, subtree.maxX, subtree.maxY)
+  }
+  const viewport = viewportLayerBounds(r, world(), orientation, drawnLayerBlurReach(node))
+  const bounds = viewport ? (intersectVisualBounds(viewport, subtree) ?? NOTHING) : subtree
   return r.ck.LTRBRect(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY)
 }
 
@@ -353,18 +387,24 @@ export function renderNode(
   canvas.save()
   canvas.translate(node.x, node.y)
 
-  const world = () => worldMatrixIn(frame, node, parentAbsX, parentAbsY, overlays.rotationPreview)
   const needsNodeLayer = node.opacity < 1 || needsIsolatedBlendLayer(node.blendMode)
+  const layerBlur = visibleLayerBlur(node)
+  const layerBounds =
+    needsNodeLayer || layerBlur
+      ? nodeLayerBounds(
+          r,
+          graph,
+          node,
+          () => worldMatrixIn(frame, node, parentAbsX, parentAbsY, overlays.rotationPreview),
+          overlays.rotationPreview
+        )
+      : null
   if (needsNodeLayer) {
-    const layerBounds = nodeIsolationLayerBounds(r, graph, node, world(), overlays.rotationPreview)
     r.opacityPaint.setAlphaf(node.opacity)
     setPaintBlendMode(r, r.opacityPaint, node.blendMode)
     canvas.saveLayer(r.opacityPaint, layerBounds)
   }
 
-  const layerBlur = node.effects.find(
-    (e) => e.visible && (e.type === 'LAYER_BLUR' || e.type === 'FOREGROUND_BLUR')
-  )
   if (layerBlur) {
     // Entry guard: reset shared paint to known state
     r.effectLayerPaint.setImageFilter(null)
@@ -373,8 +413,7 @@ export function renderNode(
 
     const content = blurredContent(graph, node, overlays)
     r.effectLayerPaint.setImageFilter(layerBlurFilter(r, node, layerBlur, overlays, content))
-    const blurRadius = drawnBlurRadius(widestBlurRadius(layerBlur))
-    canvas.saveLayer(r.effectLayerPaint, blurLayerBounds(r, world(), blurRadius, content))
+    canvas.saveLayer(r.effectLayerPaint, layerBounds)
   }
 
   applyNodeTransforms(canvas, node, overlays)

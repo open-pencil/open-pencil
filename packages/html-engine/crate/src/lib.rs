@@ -14,6 +14,7 @@ use blitz_traits::shell::{ColorScheme, Viewport};
 use parley::fontique::{Blob, FontInfoOverride, GenericFamily};
 use parley::{FontContext, PositionedLayoutItem};
 use serde_json::{Map, Value, json};
+use style::properties::{LonghandId, PropertyDeclarationId};
 
 /// Computed properties the importer reads. Everything else is left out to keep captures small.
 /// Those in `default_styles` are reported only when they differ from their initial value; the
@@ -122,6 +123,19 @@ const PROPERTIES: &[&str] = &[
     "vertical-align",
     "list-style-type",
     "content",
+];
+
+/// Sizes reported as their computed values too, before layout resolves `auto` and percentages to
+/// used pixels as `style` reports them: the importer reads them to tell a size the page set from
+/// one it left to layout, as a fixed size from one that fills or hugs.
+const SIZE_PROPERTIES: &[LonghandId] = &[
+    LonghandId::Width,
+    LonghandId::Height,
+    LonghandId::MinWidth,
+    LonghandId::MaxWidth,
+    LonghandId::MinHeight,
+    LonghandId::MaxHeight,
+    LonghandId::FlexBasis,
 ];
 
 // ---------------------------------------------------------------------------------------------
@@ -286,6 +300,19 @@ pub fn fail(id: u32) {
 
 fn rect(x: f32, y: f32, w: f32, h: f32) -> Value {
     json!([x, y, w, h])
+}
+
+/// The computed values of `SIZE_PROPERTIES`, such as `auto`, `50%`, or `390px`.
+fn sizes(node: &Node) -> Option<Value> {
+    let styles = node.primary_styles()?;
+    let out: Map<String, Value> = SIZE_PROPERTIES
+        .iter()
+        .map(|id| {
+            let value = styles.computed_value_to_string(PropertyDeclarationId::Longhand(*id));
+            (id.name().to_owned(), value.into())
+        })
+        .collect();
+    Some(Value::Object(out))
 }
 
 fn styles(doc: &BaseDocument, node: &Node) -> Value {
@@ -495,6 +522,9 @@ fn capture_node(doc: &BaseDocument, node: &Node, out: &mut Vec<Value>, parent: O
         entry.insert("image".into(), kind.into());
     }
     entry.insert("style".into(), styles(doc, node));
+    if let Some(sizes) = sizes(node) {
+        entry.insert("sizes".into(), sizes);
+    }
 
     if let Some(fragments) = node.inline_fragment_boxes() {
         let root = node

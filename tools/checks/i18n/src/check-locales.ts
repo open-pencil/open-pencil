@@ -5,6 +5,7 @@ import { join, relative, sep } from 'node:path'
 import { compact } from 'es-toolkit/array'
 import * as v from 'valibot'
 
+import { emailMessageDefaults } from '@open-pencil/cloud/email'
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 import {
   LOCALE_DIR_NAMES,
@@ -16,6 +17,9 @@ import {
 import { hasMixedLatinAndCjk, hasShortcutText, placeholders } from './quality'
 
 const LOCALES_DIR = 'packages/vue/src/i18n/locales'
+/** Cloud's email, translated apart from the app because the server can't load the app's files. */
+const EMAIL_LOCALES_DIR = 'packages/cloud/src/email/locales'
+const EMAIL_NAMESPACE = 'email'
 /**
  * Where a namespace's translations live under each locale, when not at `<namespace>.json`.
  * Namespaces of one domain share a folder (`cloud/editor`, `cloud/portal`), not a file prefix.
@@ -108,6 +112,57 @@ for (const [namespace, messages] of Object.entries(messageDefaults)) {
   }
 }
 
+/**
+ * Checks one namespace's translations against its English source, reporting each message whose
+ * placeholders differ, whose shortcut is written out, or which is still English, and noting
+ * missing keys in `missing`. Returns how many of its messages are translated.
+ */
+function checkMessages(
+  locale: TranslatedLocale,
+  namespace: string,
+  defaults: Record<string, unknown>,
+  data: JSONObject,
+  missing: string[]
+) {
+  let translated = 0
+  let total = 0
+  for (const key of Object.keys(defaults)) {
+    if (!(key in data)) {
+      missing.push(`${namespace}.${key}`)
+      continue
+    }
+    const source = sourceMessage(defaults[key])
+    const localized = data[key]
+    if (source === null) continue
+    const id = `${baselineLocaleId(locale)}:${namespace}.${key}`
+    if (typeof localized !== 'string') {
+      report(`${id}: translation is not a string`)
+      continue
+    }
+    total++
+    if (placeholders(source).join(',') !== placeholders(localized).join(',')) {
+      report(
+        `${id}: placeholders differ from source (${placeholders(source).join(', ')} != ${placeholders(localized).join(', ')})`
+      )
+    }
+    if (hasShortcutText(localized)) {
+      report(`${id}: pass the shortcut in as a formatShortcut placeholder`)
+    }
+    if ((locale === 'ja' || locale === 'zh-CN') && hasMixedLatinAndCjk(localized)) {
+      observedMixedScript.add(id)
+      if (!mixedScriptBaseline.has(id)) report(`${id}: mixed Latin/CJK scripts require review`)
+    }
+    if (normalized(source) === normalized(localized)) {
+      observedIdentical.add(id)
+      if (!translationBaseline.has(id))
+        report(`${id}: translation is identical to the English source`)
+    } else {
+      translated++
+    }
+  }
+  return { translated, total }
+}
+
 const mappingLocales = Object.keys(LOCALE_DIR_NAMES)
 const localeMappingDiff = sameMembers(mappingLocales, TRANSLATED_LOCALES)
 for (const locale of localeMappingDiff.missing) {
@@ -168,36 +223,9 @@ for (const [locale, dir] of expectedLocaleDirs) {
 
     const data = readJSONObject(path)
     const defaults = messageDefaults[namespace as keyof typeof messageDefaults]
-    for (const key of expected) {
-      if (!(key in data)) {
-        missing.push(`${namespace}.${key}`)
-        continue
-      }
-      const source = sourceMessage(defaults[key as keyof typeof defaults])
-      const localized = data[key]
-      if (source === null || typeof localized !== 'string') continue
-      total++
-      const id = `${baselineLocaleId(locale)}:${namespace}.${key}`
-      if (placeholders(source).join(',') !== placeholders(localized).join(',')) {
-        report(
-          `${id}: placeholders differ from source (${placeholders(source).join(', ')} != ${placeholders(localized).join(', ')})`
-        )
-      }
-      if (hasShortcutText(localized)) {
-        report(`${id}: pass the shortcut in as a formatShortcut placeholder`)
-      }
-      if ((locale === 'ja' || locale === 'zh-CN') && hasMixedLatinAndCjk(localized)) {
-        observedMixedScript.add(id)
-        if (!mixedScriptBaseline.has(id)) report(`${id}: mixed Latin/CJK scripts require review`)
-      }
-      if (normalized(source) === normalized(localized)) {
-        observedIdentical.add(id)
-        if (!translationBaseline.has(id))
-          report(`${id}: translation is identical to the English source`)
-      } else {
-        translated++
-      }
-    }
+    const counts = checkMessages(locale, namespace, defaults, data, missing)
+    translated += counts.translated
+    total += counts.total
     for (const key of Object.keys(data)) {
       if (!expected.has(key)) extra.push(`${namespace}.${key}`)
     }
@@ -218,6 +246,38 @@ for (const [locale, dir] of expectedLocaleDirs) {
     console.error(`\n${locale}:`)
     for (const key of missing.sort()) console.error(`  missing: ${key}`)
     for (const key of extra.sort()) console.error(`  extra:   ${key}`)
+  }
+}
+
+const emailFiles = readdirSync(EMAIL_LOCALES_DIR).sort()
+const emailFileDiff = sameMembers(
+  emailFiles,
+  TRANSLATED_LOCALES.map((locale) => `${LOCALE_DIR_NAMES[locale]}.json`)
+)
+for (const file of emailFileDiff.missing) report(`Missing email locale file '${file}'.`)
+for (const file of emailFileDiff.extra) report(`Unexpected email locale file '${file}'.`)
+
+for (const locale of TRANSLATED_LOCALES) {
+  const path = join(EMAIL_LOCALES_DIR, `${LOCALE_DIR_NAMES[locale]}.json`)
+  if (!existsSync(path)) continue
+  const data = readJSONObject(path)
+  const missing: string[] = []
+  const { translated, total } = checkMessages(
+    locale,
+    EMAIL_NAMESPACE,
+    emailMessageDefaults,
+    data,
+    missing
+  )
+  const extra = Object.keys(data)
+    .filter((key) => !(key in emailMessageDefaults))
+    .map((key) => `${EMAIL_NAMESPACE}.${key}`)
+  console.log(`${locale} email: ${translated}/${total} translated`)
+  if (missing.length > 0 || extra.length > 0) {
+    hasErrors = true
+    console.error(`\n${locale} email:`)
+    for (const key of missing) console.error(`  missing: ${key}`)
+    for (const key of extra) console.error(`  extra:   ${key}`)
   }
 }
 

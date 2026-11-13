@@ -315,13 +315,13 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
           ...automationTargetSchema
         })
       },
-      async (args: { path: string; document_id?: string; page_id?: string }) => {
+      async (args: { path: string; document_id?: string; page_id?: string }, context) => {
         try {
           const safe = await resolveSafePath(args.path, resolvedRoot)
           const { target } = splitAutomationTarget(args)
           const result = await sendRPC({
             command: 'open_document',
-            args: { ...target, path: safe.realPath }
+            args: { ...target, path: safe.realPath, agent: agent(context.mcpReq._meta) }
           })
           const res = result as { ok?: boolean; result?: unknown; target?: unknown; error?: string }
           if (res.ok === false) return fail(new Error(res.error))
@@ -368,14 +368,14 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
           ...automationTargetSchema
         })
       },
-      async (args: { path?: string; document_id?: string; page_id?: string }) => {
+      async (args: { path?: string; document_id?: string; page_id?: string }, context) => {
         try {
           const safePath =
             args.path !== undefined ? await resolveSafePath(args.path, resolvedRoot) : undefined
           const { target } = splitAutomationTarget(args)
           const result = await sendRPC({
             command: 'create_document',
-            args: { ...target, path: safePath?.realPath }
+            args: { ...target, path: safePath?.realPath, agent: agent(context.mcpReq._meta) }
           })
           const res = result as { ok?: boolean; result?: unknown; target?: unknown; error?: string }
           if (res.ok === false) return fail(new Error(res.error))
@@ -455,10 +455,13 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
         page_id: automationTargetSchema.page_id
       })
     },
-    async (args: { document_id: string; page_id?: string }) => {
+    async (args: { document_id: string; page_id?: string }, context) => {
       try {
         const { target } = splitAutomationTarget(args)
-        const res = await sendCommand(sendRPC, 'activate_document', target)
+        const res = await sendCommand(sendRPC, 'activate_document', {
+          ...target,
+          agent: agent(context.mcpReq._meta)
+        })
         return ok(withTarget({ activated: true }, res))
       } catch (e) {
         return fail(e)

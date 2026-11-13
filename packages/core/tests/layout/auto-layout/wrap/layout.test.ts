@@ -56,7 +56,7 @@ describe('wrap layout', () => {
       layoutWrap: 'WRAP',
       counterAxisSizing: 'HUG',
       itemSpacing: 8,
-      counterAxisSpacing: Number.NaN
+      counterAxisSpacing: null
     })
     const first = rect(graph, frame.id, 120, 40)
     const second = rect(graph, frame.id, 120, 40)

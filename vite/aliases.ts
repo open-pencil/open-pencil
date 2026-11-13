@@ -66,7 +66,7 @@ export function createOpenPencilAliases(rootDir: string, options: { cloud?: bool
     { find: '@open-pencil/scene-graph', replacement: resolve(rootDir, 'packages/scene-graph/src') },
     { find: '#cloud', replacement: resolve(rootDir, 'packages/cloud/src') },
     {
-      find: /^@open-pencil\/cloud\/(contract|client)$/,
+      find: /^@open-pencil\/cloud\/(contract|client|email)$/,
       replacement: resolve(rootDir, 'packages/cloud/src/$1/index.ts')
     },
     { find: '#emit', replacement: resolve(rootDir, 'packages/emit/src') },

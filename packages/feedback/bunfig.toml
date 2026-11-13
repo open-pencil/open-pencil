@@ -1,0 +1,4 @@
+# Bun configuration for the feedback service's tests: Cloud's emails, which it sends, are Vue
+# single-file components.
+[test]
+preload = ["@open-pencil/test-support/vue/sfc"]

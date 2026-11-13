@@ -84,6 +84,7 @@ es:ai.completions
 es:ai.responses
 es:ai.toolError
 es:ai.notifyTitle
+es:ai.subagentBack
 es:automation.statusError
 es:code.editorDesignLabel
 es:code.sourceDesignJSX
@@ -214,6 +215,7 @@ it:ai.chatSettings
 it:ai.completions
 it:ai.responses
 it:ai.notifyTitle
+it:ai.subagentBack
 it:code.editorDesignLabel
 it:code.sourceDesignJSX
 it:code.sourceHTML
@@ -550,6 +552,8 @@ ru:cloud.inviteEmailPlaceholder
 de:settings.skills
 de:ai.chatReferenceSkills
 de:ai.notifyTitle
+de:ai.subagent
+de:ai.subagentBack
 fr:ai.chatReferencePages
 fr:ai.notifyTitle
 de:settings.groupApp
@@ -572,6 +576,7 @@ pt-br:ai.compactionTokens
 pt-br:ai.completions
 pt-br:ai.notifyTitle
 pt-br:ai.responses
+pt-br:ai.subagentBack
 pt-br:automation.bearerToken
 pt-br:automation.status
 pt-br:cloud.homeCloudOnHost
@@ -671,3 +676,4 @@ ar:cloudPortal.emailTransportSMTP
 ar:cloudPortal.emailTransportCloudflare
 es:cloudPortal.plan
 pl:cloudPortal.plan
+fr:cloud.savePublicLabel

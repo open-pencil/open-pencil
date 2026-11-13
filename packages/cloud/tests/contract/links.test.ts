@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 
 import {
+  cloudCommunityURL,
   cloudDesktopLinkURL,
   cloudDocumentURL,
   cloudInvitationURL,
@@ -35,6 +36,15 @@ test('a document or version address carries no secret', () => {
   expect(new URL(cloudDocumentURL('https://company.example/#welcome', 'doc-id')).hash).toBe('')
 })
 
+test('a community gallery document carries no secret, and names a version in the query', () => {
+  const document = new URL(cloudCommunityURL(server, 'doc/id'))
+  expect(document.origin).toBe('https://company.example')
+  expect(document.pathname).toBe('/community/doc%2Fid')
+  expect(document.search).toBe('')
+  expect(document.hash).toBe('')
+  expect(new URL(cloudCommunityURL(server, 'doc-id', 'v1')).searchParams.get('version')).toBe('v1')
+})
+
 test('an invitation carries its token in the fragment', () => {
   const url = new URL(cloudInvitationURL(server, 'invitation/id', 'token'))
   expect(url.origin).toBe('https://company.example')
@@ -47,6 +57,7 @@ test('link paths name their kind and decoded ID', () => {
   expect(parseCloudLinkPath('/share/s%201')).toEqual({ kind: 'share', id: 's 1' })
   expect(parseCloudLinkPath('/invitations/abc')).toEqual({ kind: 'invitations', id: 'abc' })
   expect(parseCloudLinkPath('/documents/abc')).toEqual({ kind: 'documents', id: 'abc' })
+  expect(parseCloudLinkPath('/community/abc')).toEqual({ kind: 'community', id: 'abc' })
   for (const path of ['/rooms/abc', '/share/abc/more', '/share/', '/share/%E0%A4', '/']) {
     expect(parseCloudLinkPath(path)).toBeNull()
   }

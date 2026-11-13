@@ -10,6 +10,9 @@ import * as operations from './migrations/006_operations'
 import * as trash from './migrations/007_trash'
 import * as terms from './migrations/008_terms'
 import * as accessTokens from './migrations/009_access_tokens'
+import * as storageLimitNotices from './migrations/010_storage_limit_notices'
+import * as accountIds from './migrations/011_account_ids'
+import * as emailLocales from './migrations/012_email_locales'
 import type { CloudDatabase } from './tables'
 
 /**
@@ -29,7 +32,10 @@ const migrations: Record<string, CloudMigration> = {
   '006_operations': operations,
   '007_trash': trash,
   '008_terms': terms,
-  '009_access_tokens': accessTokens
+  '009_access_tokens': accessTokens,
+  '010_storage_limit_notices': storageLimitNotices,
+  '011_account_ids': accountIds,
+  '012_email_locales': emailLocales
 }
 
 /** Cloud's migrations, in order. */

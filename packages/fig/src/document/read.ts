@@ -9,12 +9,18 @@ import type { InterpretInstanceOptions } from '../instance-overrides/occurrence/
 import {
   bySavedPosition,
   createSourceIndex,
+  isActiveRecord,
   parentIdOf,
   type InterpreterIndex,
   type SourceIndex
 } from '../instance-overrides/source-index'
 import { symbolOverridesOf } from '../instance-overrides/types'
-import { applyStyleRefsToFields } from '../node-change/style/refs'
+import {
+  assetIdsByKey,
+  createTextStyleLookup,
+  type TextStyleLookup
+} from '../node-change/style/lookup'
+import { applyFillStyleRef, applyStyleRefsToFields } from '../node-change/style/refs'
 import {
   createBindingNormalizer,
   resolveDocumentBindingReferences,
@@ -92,22 +98,12 @@ interface ReaderRecords {
   /** Indexes whole records, for the interpreter that reads components on demand. */
   interpreterIndex(): InterpreterIndex
   readonly variables: DocumentVariables
-}
-
-function assetIds(records: readonly NodeChange[]): Map<string, string> {
-  const assets = new Map<string, string>()
-  for (const node of records)
-    if (node.guid && typeof node.key === 'string') {
-      const id = guidToString(node.guid)
-      assets.set(node.key, id)
-      if (typeof node.version === 'string') assets.set(`${node.key}@${node.version}`, id)
-    }
-  return assets
+  readonly textStyle: TextStyleLookup
 }
 
 /**
- * Gives a record the fields of the styles it names, as do its overrides and its vector's regions,
- * whose style table entry may name a style without its paints.
+ * Gives a record the fields of the styles it names, as do its overrides, its text's ranges and its
+ * vector's regions, whose style table entry may name a style without its paints.
  */
 function resolveStyleFields(
   styles: Parameters<typeof applyStyleRefsToFields>[0],
@@ -115,8 +111,19 @@ function resolveStyleFields(
   assets: ReadonlyMap<string, string>
 ): void {
   applyStyleRefsToFields(styles, node, assets)
+  paintTextRangesFromFillStyles(styles, node, assets)
   for (const entry of vectorStyleTable(node)) applyStyleRefsToFields(styles, entry, assets)
   for (const override of symbolOverridesOf(node)) resolveStyleFields(styles, override, assets)
+}
+
+function paintTextRangesFromFillStyles(
+  styles: Parameters<typeof applyFillStyleRef>[0],
+  node: NodeChange,
+  assets: ReadonlyMap<string, string>
+): void {
+  for (const range of node.textData?.styleOverrideTable ?? []) {
+    applyFillStyleRef(styles, range, assets)
+  }
 }
 
 function isResource(record: NodeChange): boolean {
@@ -126,16 +133,16 @@ function isResource(record: NodeChange): boolean {
 /** Records decoded whole up front, as clipboard fragments and in-memory documents are. */
 function wholeRecords(source: readonly NodeChange[]): ReaderRecords {
   const bindingDiagnostics: BindingReferenceDiagnostic[] = []
-  const records = resolveDocumentBindingReferences(
-    source.filter((node) => node.phase !== 'REMOVED'),
-    (diagnostic) => bindingDiagnostics.push(diagnostic)
+  const records = resolveDocumentBindingReferences(source.filter(isActiveRecord), (diagnostic) =>
+    bindingDiagnostics.push(diagnostic)
   )
   const index = createSourceIndex(records)
   inheritComponentPropertyDefinitions(records, index.sources)
-  const assets = assetIds(records)
+  const assets = assetIdsByKey(records)
   for (const node of records) resolveStyleFields(index.sources, node, assets)
   const same: WholeRecord = (record) => record
   const variables = createDocumentVariables(records)
+  const textStyle = createTextStyleLookup(index.sources, assets)
   return {
     records,
     index,
@@ -144,9 +151,11 @@ function wholeRecords(source: readonly NodeChange[]): ReaderRecords {
     shared: same,
     interpreterIndex: () => ({
       ...createSourceIndex(records.filter((record) => !isResource(record))),
-      variables
+      variables,
+      textStyle
     }),
-    variables
+    variables,
+    textStyle
   }
 }
 
@@ -169,10 +178,10 @@ function decodeRecord(header: NodeChange): NodeChange {
  * inherited from its ancestors, and style references applied.
  */
 function archiveRecords(headers: readonly NodeChange[]): ReaderRecords {
-  const records = headers.filter((node) => node.phase !== 'REMOVED')
+  const records = headers.filter(isActiveRecord)
   const index = createSourceIndex(records)
   const normalize = createBindingNormalizer(records)
-  const assets = assetIds(records)
+  const assets = assetIdsByKey(records)
   const bindingDiagnostics: BindingReferenceDiagnostic[] = []
   for (const header of records)
     normalize(decodeRecord(header), (diagnostic) => bindingDiagnostics.push(diagnostic))
@@ -213,11 +222,13 @@ function archiveRecords(headers: readonly NodeChange[]): ReaderRecords {
     return record
   }
   const variables = createDocumentVariables(records, decodeRecord)
+  const textStyle = createTextStyleLookup(styles, assets)
   const interpreterIndex = (): InterpreterIndex => {
     const { sources, children } = createSourceIndex(records.filter((record) => !isResource(record)))
     const lists = new WeakMap<readonly NodeChange[], NodeChange[]>()
     return {
       variables,
+      textStyle,
       sources: new DecodedMap(sources, shared),
       children: new DecodedMap(children, (list) => {
         let whole = lists.get(list)
@@ -246,7 +257,8 @@ function archiveRecords(headers: readonly NodeChange[]): ReaderRecords {
     },
     shared,
     interpreterIndex,
-    variables
+    variables,
+    textStyle
   }
 }
 
@@ -296,7 +308,8 @@ function createScopedReader(
   const sourceInterpreter = shared.sourceInterpreter
   const interpreter = createIndexedOccurrenceInterpreter({
     ...createSourceIndex(sceneChanges),
-    variables: shared.records.variables
+    variables: shared.records.variables,
+    textStyle: shared.records.textStyle
   })
   const pages = changes
     .filter((change) => change.type === 'CANVAS')

@@ -1,302 +1,148 @@
 import { render } from '@vue-email/render'
-import { compact } from 'es-toolkit'
+import type { Component } from 'vue'
 
+import {
+  emailLocalization,
+  type EmailLocale,
+  type EmailLocalization,
+  type EmailMessages
+} from './i18n'
 import type {
-  AdminEnrollmentNotificationPayload,
-  AuthenticationEmailPayload,
   DocumentInvitationEmailPayload,
-  DocumentReportPayload,
-  EmailChangeRequestedPayload,
-  EnrollmentEmailPayload,
-  NewSignInPayload,
   RenderedTransactionalEmail,
   TransactionalEmailContent,
   TransactionalEmailKind,
-  TwoStepChange,
-  TwoStepChangedPayload,
-  WorkspaceInvitationEmailPayload
+  TransactionalEmailPayloadByKind
 } from './schema'
-import { DocumentInvitationEmail } from './templates/document-invitation'
-import { EnrollmentEmail } from './templates/enrollment'
+import DocumentInvitation from './templates/DocumentInvitation.vue'
+import DocumentReport from './templates/DocumentReport.vue'
+import EmailChangeRequested from './templates/EmailChangeRequested.vue'
+import EmailRoot from './templates/EmailRoot.vue'
+import EmailVerification from './templates/EmailVerification.vue'
+import EnrollmentNotification from './templates/EnrollmentNotification.vue'
+import EnrollmentUpdate from './templates/EnrollmentUpdate.vue'
+import NewSignIn from './templates/NewSignIn.vue'
+import PasswordChanged from './templates/PasswordChanged.vue'
+import PasswordReset from './templates/PasswordReset.vue'
+import StorageLimitReached from './templates/StorageLimitReached.vue'
+import TwoStepChanged from './templates/TwoStepChanged.vue'
+import WaitlistConfirmation from './templates/WaitlistConfirmation.vue'
+import WorkspaceInvitation from './templates/WorkspaceInvitation.vue'
 
-async function rendered(
-  component: Parameters<typeof render>[0],
-  props: Record<string, string | undefined>,
-  subject: string
+/** One kind of email: the component that draws it from its payload, and its subject line. */
+type EmailDefinition<Payload> = {
+  component: Component
+  /** What the component takes besides `payload`. */
+  props?: Record<string, unknown>
+  subject: (payload: Payload, t: EmailMessages) => string
+}
+
+function documentInvitationSubject(payload: DocumentInvitationEmailPayload, t: EmailMessages) {
+  const names = { inviter: payload.inviterName ?? t.someone, document: payload.documentName }
+  return payload.permission === 'edit'
+    ? t.documentInvitationEditSubject(names)
+    : t.documentInvitationViewSubject(names)
+}
+
+const EMAILS: {
+  [Kind in TransactionalEmailKind]: EmailDefinition<TransactionalEmailPayloadByKind[Kind]>
+} = {
+  'document-invitation': { component: DocumentInvitation, subject: documentInvitationSubject },
+  'workspace-invitation': {
+    component: WorkspaceInvitation,
+    subject: (payload, t) =>
+      t.workspaceInvitationSubject({
+        inviter: payload.inviterName ?? t.someone,
+        workspace: payload.workspaceName
+      })
+  },
+  'enrollment-requested': {
+    component: EnrollmentUpdate,
+    props: { kind: 'requested' },
+    subject: (_payload, t) => t.enrollmentRequestedSubject
+  },
+  'enrollment-approved': {
+    component: EnrollmentUpdate,
+    props: { kind: 'approved' },
+    subject: (_payload, t) => t.enrollmentApprovedSubject
+  },
+  'enrollment-rejected': {
+    component: EnrollmentUpdate,
+    props: { kind: 'rejected' },
+    subject: (_payload, t) => t.enrollmentRejectedSubject
+  },
+  'enrollment-revoked': {
+    component: EnrollmentUpdate,
+    props: { kind: 'revoked' },
+    subject: (_payload, t) => t.enrollmentRevokedSubject
+  },
+  'admin-enrollment-notification': {
+    component: EnrollmentNotification,
+    subject: (_payload, t) => t.enrollmentNotificationSubject
+  },
+  'email-verification': {
+    component: EmailVerification,
+    subject: (payload, t) =>
+      payload.purpose === 'change' ? t.verifyChangeSubject : t.verifyAccountSubject
+  },
+  'password-reset': { component: PasswordReset, subject: (_payload, t) => t.passwordResetSubject },
+  'password-changed': {
+    component: PasswordChanged,
+    subject: (_payload, t) => t.passwordChangedSubject
+  },
+  'email-change-requested': {
+    component: EmailChangeRequested,
+    subject: (_payload, t) => t.emailChangeSubject
+  },
+  'new-sign-in': { component: NewSignIn, subject: (_payload, t) => t.newSignInSubject },
+  'two-step-changed': { component: TwoStepChanged, subject: (_payload, t) => t.twoStepSubject },
+  'document-report': {
+    component: DocumentReport,
+    subject: (_payload, t) => t.documentReportSubject
+  },
+  'storage-limit-reached': {
+    component: StorageLimitReached,
+    subject: (_payload, t) => t.storageFullSubject
+  }
+}
+
+/** Renders an email component as HTML and as plain text, in its reader's language. */
+async function renderComponent(
+  email: Component,
+  props: Record<string, unknown>,
+  subject: string,
+  localization: EmailLocalization
 ): Promise<RenderedTransactionalEmail> {
+  const root = { email, props, localization }
   const [html, text] = await Promise.all([
-    render(component, props),
-    render(component, props, { plainText: true })
+    render(EmailRoot, root),
+    render(EmailRoot, root, { plainText: true })
   ])
   return { subject, html, text }
 }
 
-async function renderDocumentInvitation(payload: DocumentInvitationEmailPayload) {
-  const permissionLabel = payload.permission === 'edit' ? 'edit' : 'view'
-  return rendered(
-    DocumentInvitationEmail,
-    {
-      inviterName: payload.inviterName,
-      documentName: payload.documentName,
-      permissionLabel,
-      expiresAt: new Date(payload.expiresAt).toUTCString(),
-      acceptanceURL: payload.acceptanceURL
-    },
-    `${payload.inviterName} invited you to ${permissionLabel} ${payload.documentName}`
-  )
-}
-
-const WORKSPACE_ROLE_LABELS = { admin: 'manage', editor: 'edit in', viewer: 'view' } as const
-
-async function renderWorkspaceInvitation(payload: WorkspaceInvitationEmailPayload) {
-  const action = WORKSPACE_ROLE_LABELS[payload.role]
-  return rendered(
-    EnrollmentEmail,
-    {
-      heading: `Join ${payload.workspaceName}`,
-      preview: `${payload.inviterName} invited you to ${payload.workspaceName}`,
-      message: `${payload.inviterName} invited you to ${action} the workspace “${payload.workspaceName}” on OpenPencil Cloud. You will see its documents on Home once you join.`,
-      actionLabel: 'Join workspace',
-      actionURL: payload.acceptanceURL,
-      footer: `This invitation expires ${new Date(payload.expiresAt).toUTCString()}.`
-    },
-    `${payload.inviterName} invited you to ${payload.workspaceName}`
-  )
-}
-
-type EnrollmentMessageKind = Exclude<
-  TransactionalEmailKind,
-  | 'document-invitation'
-  | 'workspace-invitation'
-  | 'admin-enrollment-notification'
-  | 'email-verification'
-  | 'password-reset'
-  | 'password-changed'
-  | 'email-change-requested'
-  | 'new-sign-in'
-  | 'two-step-changed'
-  | 'document-report'
->
-
-type EnrollmentCopy = {
-  subject: string
-  heading: string
-  preview: string
-  message: string
-  actionLabel: string
-}
-
-const ENROLLMENT_COPY: Record<EnrollmentMessageKind, Omit<EnrollmentCopy, 'message'>> = {
-  'enrollment-requested': {
-    subject: 'We received your OpenPencil Cloud request',
-    heading: 'Request received',
-    preview: 'Your OpenPencil Cloud access request is awaiting review.',
-    actionLabel: 'Open OpenPencil Cloud'
-  },
-  'enrollment-approved': {
-    subject: 'Your OpenPencil Cloud access is ready',
-    heading: 'Access approved',
-    preview: 'You can now sign in to OpenPencil Cloud.',
-    actionLabel: 'Sign in'
-  },
-  'enrollment-rejected': {
-    subject: 'Your OpenPencil Cloud request was reviewed',
-    heading: 'Request reviewed',
-    preview: 'Your current access request was not approved.',
-    actionLabel: 'Request access again'
-  },
-  'enrollment-revoked': {
-    subject: 'Your OpenPencil Cloud access has changed',
-    heading: 'Access changed',
-    preview: 'Your OpenPencil Cloud access is no longer active.',
-    actionLabel: 'Open OpenPencil'
-  }
-}
-
-function enrollmentCopy(kind: EnrollmentMessageKind, name: string): EnrollmentCopy {
-  const copy = ENROLLMENT_COPY[kind]
-  const messages: Record<EnrollmentMessageKind, string> = {
-    'enrollment-requested': `Hi ${name}, your request is awaiting manual review.`,
-    'enrollment-approved': `Hi ${name}, your access request was approved.`,
-    'enrollment-rejected': `Hi ${name}, your current access request was not approved.`,
-    'enrollment-revoked': `Hi ${name}, your Cloud access is no longer active.`
-  }
-  return { ...copy, message: messages[kind] }
-}
-
-async function renderEnrollment(kind: EnrollmentMessageKind, payload: EnrollmentEmailPayload) {
-  const copy = enrollmentCopy(kind, payload.name)
-  return rendered(EnrollmentEmail, { ...copy, actionURL: payload.actionURL }, copy.subject)
-}
-
-async function renderAdminNotification(payload: AdminEnrollmentNotificationPayload) {
-  return rendered(
-    EnrollmentEmail,
-    {
-      heading: 'New Cloud access request',
-      preview: `${payload.requesterEmail} requested OpenPencil Cloud access.`,
-      message: `${payload.requesterName} (${payload.requesterEmail}) requested access. ${payload.reason}`,
-      actionLabel: 'Review request',
-      actionURL: payload.actionURL
-    },
-    'New OpenPencil Cloud access request'
-  )
-}
-
-const REPORT_REASON_LABELS: Record<string, string> = {
-  'spam-phishing': 'spam or phishing',
-  illegal: 'illegal content',
-  copyright: 'copyright',
-  harassment: 'harassment',
-  other: 'something else'
-}
-
-async function renderDocumentReport(payload: DocumentReportPayload) {
-  const reason = REPORT_REASON_LABELS[payload.reason] ?? payload.reason
-  return rendered(
-    EnrollmentEmail,
-    {
-      heading: 'A shared document was reported',
-      preview: `“${payload.documentName}” was reported for ${reason}.`,
-      message: `Someone who opened “${payload.documentName}” from a share link reported it for ${reason}: ${payload.description}`,
-      actionLabel: 'Review report',
-      actionURL: payload.actionURL
-    },
-    'A shared OpenPencil Cloud document was reported'
-  )
-}
-
-async function renderAuthentication(
-  kind: 'email-verification' | 'password-reset' | 'password-changed',
-  payload: AuthenticationEmailPayload
+function renderKind<Kind extends TransactionalEmailKind>(
+  kind: Kind,
+  payload: TransactionalEmailPayloadByKind[Kind],
+  localization: EmailLocalization
 ) {
-  const copy = {
-    'email-verification':
-      payload.purpose === 'change'
-        ? {
-            subject: 'Confirm your new OpenPencil Cloud email',
-            heading: 'Confirm your new email',
-            preview: 'One click to move your OpenPencil Cloud account to this address.',
-            message: `Hi ${payload.name}, confirm this address to make it your OpenPencil Cloud account’s email. Your old address stays until you do.`,
-            actionLabel: 'Confirm email',
-            footer: 'Didn’t ask for this? Ignore this email and nothing changes.'
-          }
-        : {
-            subject: 'Confirm your OpenPencil Cloud email',
-            heading: 'Confirm your email',
-            preview: 'One click to finish creating your OpenPencil Cloud account.',
-            message: `Hi ${payload.name}, confirm this address to finish creating your OpenPencil Cloud account. Then go back to OpenPencil; it signs you in by itself.`,
-            actionLabel: 'Confirm email',
-            footer: 'Didn’t create an account? Ignore this email and nothing happens.'
-          },
-    'password-reset': {
-      subject: 'Reset your OpenPencil Cloud password',
-      heading: 'Reset your password',
-      preview: 'Use this secure link to choose a new password.',
-      message: `Hi ${payload.name}, use the link below to choose a new password.`,
-      actionLabel: 'Reset password',
-      footer: 'Didn’t ask for this? Ignore this email and your password stays the same.'
-    },
-    'password-changed': {
-      subject: 'Your OpenPencil Cloud password changed',
-      heading: 'Password changed',
-      preview: 'Your OpenPencil Cloud password was changed.',
-      message: `Hi ${payload.name}, your password was changed. If this was not you, contact your administrator.`,
-      actionLabel: 'Open OpenPencil Cloud'
-    }
-  }[kind]
-  return rendered(EnrollmentEmail, { ...copy, actionURL: payload.actionURL ?? '#' }, copy.subject)
-}
-
-async function renderEmailChangeRequested(payload: EmailChangeRequestedPayload) {
-  return rendered(
-    EnrollmentEmail,
-    {
-      heading: 'Your email is changing',
-      preview: `Your OpenPencil Cloud email is changing to ${payload.newEmail}.`,
-      message: `Hi ${payload.name}, someone signed in to your account asked to change its email to ${payload.newEmail}. It changes once that address confirms it. If this wasn’t you, change your password and sign out of your other sessions.`,
-      actionLabel: 'Review your account',
-      actionURL: payload.actionURL
-    },
-    'Your OpenPencil Cloud email is changing'
-  )
-}
-
-async function renderNewSignIn(payload: NewSignInPayload) {
-  const device = payload.desktop
-    ? 'the OpenPencil app'
-    : compact([payload.browser, payload.system]).join(' on ') || 'an unknown browser'
-  const place = payload.ipAddress ? ` from ${payload.ipAddress}` : ''
-  return rendered(
-    EnrollmentEmail,
-    {
-      heading: 'New sign-in to your account',
-      preview: `Your OpenPencil Cloud account was signed in to with ${device}.`,
-      message: `Hi ${payload.name}, your account was signed in to with ${device}${place} on ${new Date(payload.signedInAt).toUTCString()}. If this was you, there’s nothing to do. If it wasn’t, sign that session out and change your password.`,
-      actionLabel: 'Review sessions',
-      actionURL: payload.actionURL
-    },
-    'New sign-in to your OpenPencil Cloud account'
-  )
-}
-
-const TWO_STEP_COPY: Record<TwoStepChange, { heading: string; message: string }> = {
-  'authenticator-on': {
-    heading: 'Authenticator app turned on',
-    message: 'an authenticator app now confirms your sign-ins.'
-  },
-  'authenticator-off': {
-    heading: 'Authenticator app turned off',
-    message: 'your sign-ins no longer ask for a code from an authenticator app.'
-  },
-  'passkey-added': {
-    heading: 'Passkey added',
-    message: 'a passkey was added to your account.'
-  },
-  'passkey-removed': {
-    heading: 'Passkey removed',
-    message: 'a passkey was removed from your account.'
-  },
-  'reset-by-administrator': {
-    heading: 'Two-step sign-in was reset',
-    message:
-      'an administrator removed your authenticator app, recovery codes, and passkeys, so you can set them up again.'
-  }
-}
-
-async function renderTwoStepChanged(payload: TwoStepChangedPayload) {
-  const copy = TWO_STEP_COPY[payload.change]
-  return rendered(
-    EnrollmentEmail,
-    {
-      heading: copy.heading,
-      preview: `${copy.heading} on your OpenPencil Cloud account.`,
-      message: `Hi ${payload.name}, ${copy.message} If this wasn’t you, change your password and contact your administrator.`,
-      actionLabel: 'Review security',
-      actionURL: payload.actionURL
-    },
-    `${copy.heading} on your OpenPencil Cloud account`
-  )
+  const { component, props, subject } = EMAILS[kind]
+  const content = { ...props, payload }
+  return renderComponent(component, content, subject(payload, localization.t), localization)
 }
 
 export async function renderTransactionalEmail(
-  content: TransactionalEmailContent
+  content: TransactionalEmailContent,
+  locale: EmailLocale
 ): Promise<RenderedTransactionalEmail> {
-  if (content.kind === 'document-invitation') return renderDocumentInvitation(content.payload)
-  if (content.kind === 'workspace-invitation') return renderWorkspaceInvitation(content.payload)
-  if (content.kind === 'admin-enrollment-notification') {
-    return renderAdminNotification(content.payload)
-  }
-  if (
-    content.kind === 'email-verification' ||
-    content.kind === 'password-reset' ||
-    content.kind === 'password-changed'
-  ) {
-    return renderAuthentication(content.kind, content.payload)
-  }
-  if (content.kind === 'email-change-requested') return renderEmailChangeRequested(content.payload)
-  if (content.kind === 'new-sign-in') return renderNewSignIn(content.payload)
-  if (content.kind === 'two-step-changed') return renderTwoStepChanged(content.payload)
-  if (content.kind === 'document-report') return renderDocumentReport(content.payload)
-  return renderEnrollment(content.kind, content.payload)
+  return renderKind(content.kind, content.payload, emailLocalization(locale))
+}
+
+/** The waitlist's confirmation email, which the feedback service sends rather than Cloud. */
+export async function renderWaitlistConfirmation(
+  links: { confirmURL: string; leaveURL: string },
+  locale: EmailLocale
+): Promise<RenderedTransactionalEmail> {
+  const localization = emailLocalization(locale)
+  return renderComponent(WaitlistConfirmation, links, localization.t.waitlistSubject, localization)
 }

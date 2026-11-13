@@ -1,4 +1,5 @@
 export * from './account'
+export * from './locale'
 export {
   SERVICE_ERROR_STATUS,
   serviceCatalogSchema,
@@ -103,6 +104,7 @@ export {
   cloudAuthenticationSchema,
   cloudCapabilitiesSchema,
   cloudDeploymentSchema,
+  cloudCommunityDiscoverySchema,
   cloudDiscoverySchema,
   cloudEditorVersionSchema,
   cloudLegalDiscoverySchema,
@@ -112,6 +114,7 @@ export {
   type CloudAuthentication,
   type CloudCapabilities,
   type CloudDeployment,
+  type CloudCommunityDiscovery,
   type CloudDiscovery,
   type CloudLegalDiscovery,
   type CloudListing
@@ -250,11 +253,14 @@ export {
   cloudInvitationURL,
   cloudShareURL,
   parseCloudLinkPath,
+  cloudCommunityPath,
+  cloudCommunityURL,
   type CloudLinkKind,
   type CloudLinkPathKind
 } from './links'
 export { CLOUD_PORTAL_PAGE_ROOTS, isCloudPortalPage } from './portal'
 export * from './versions'
+export * from './community'
 export {
   DOCUMENT_REPORT_DESCRIPTION_MAX,
   documentReportReasonSchema,

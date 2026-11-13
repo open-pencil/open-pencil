@@ -1,3 +1,5 @@
+import * as v from 'valibot'
+
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { newStrokeGeometry } from '@open-pencil/scene-graph/node-defaults'
 
@@ -11,12 +13,14 @@ import {
   type ProxyThis
 } from '#core/figma-api/accessors/utils'
 import { graphOf } from '#core/figma-api/graph'
+import { finiteNumber, finiteNumberSchema } from '#core/figma-api/schema'
 import {
   setDashPattern,
   setIndependentStrokeWeight,
   setStrokeAlign,
   setStrokeWeight
 } from '#core/figma-api/strokes'
+import { parseFigma } from '#core/figma-api/validation'
 
 type IndependentWeightField =
   | 'borderTopWeight'
@@ -24,14 +28,22 @@ type IndependentWeightField =
   | 'borderBottomWeight'
   | 'borderLeftWeight'
 
+const INDEPENDENT_WEIGHT_PROPERTIES = {
+  borderTopWeight: 'strokeTopWeight',
+  borderRightWeight: 'strokeRightWeight',
+  borderBottomWeight: 'strokeBottomWeight',
+  borderLeftWeight: 'strokeLeftWeight'
+} as const satisfies Record<IndependentWeightField, string>
+
 function independentWeight(internals: NodeProxyInternals, field: IndependentWeightField) {
   return {
     get(this: ProxyThis): number {
       return raw(this, internals)[field]
     },
-    set(this: ProxyThis, value: number) {
+    set(this: ProxyThis, value: unknown) {
+      const weight = finiteNumber(value, INDEPENDENT_WEIGHT_PROPERTIES[field])
       assertProxyEditable(this, internals)
-      setIndependentStrokeWeight(graphOf(this), nodeId(this, internals), field, value)
+      setIndependentStrokeWeight(graphOf(this), nodeId(this, internals), field, weight)
     }
   }
 }
@@ -46,9 +58,10 @@ export function installStrokeNodeProxyAccessors(
       get(this: ProxyThis): number {
         return newStrokeGeometry(raw(strokeOwner(this, internals), internals)).weight
       },
-      set(this: ProxyThis, value: number) {
+      set(this: ProxyThis, value: unknown) {
+        const weight = finiteNumber(value, 'strokeWeight')
         assertProxyEditable(strokeOwner(this, internals), internals)
-        setStrokeWeight(graphOf(this), raw(strokeOwner(this, internals), internals), value)
+        setStrokeWeight(graphOf(this), raw(strokeOwner(this, internals), internals), weight)
       }
     },
     strokeAlign: {
@@ -64,9 +77,15 @@ export function installStrokeNodeProxyAccessors(
       get(this: ProxyThis): readonly number[] {
         return Object.freeze([...raw(strokeOwner(this, internals), internals).dashPattern])
       },
-      set(this: ProxyThis, value: readonly number[]) {
+      set(this: ProxyThis, value: unknown) {
+        const pattern = parseFigma(
+          v.array(finiteNumberSchema),
+          value,
+          'set_dashPattern',
+          'dashPattern'
+        )
         assertProxyEditable(strokeOwner(this, internals), internals)
-        setDashPattern(graphOf(this), raw(strokeOwner(this, internals), internals), value)
+        setDashPattern(graphOf(this), raw(strokeOwner(this, internals), internals), pattern)
       }
     },
     strokeCap: {
@@ -100,8 +119,8 @@ export function installStrokeNodeProxyAccessors(
       get(this: ProxyThis): number {
         return raw(this, internals).strokeMiterLimit
       },
-      set(this: ProxyThis, value: number) {
-        updateNode(this, internals, { strokeMiterLimit: value })
+      set(this: ProxyThis, value: unknown) {
+        updateNode(this, internals, { strokeMiterLimit: finiteNumber(value, 'strokeMiterLimit') })
       }
     },
     strokeTopWeight: independentWeight(internals, 'borderTopWeight'),
