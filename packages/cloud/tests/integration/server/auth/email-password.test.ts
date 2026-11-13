@@ -57,10 +57,10 @@ async function runtime(authenticationEmail?: WatchedEmail) {
   return { ...databaseRuntime, auth, enrollment }
 }
 
-function authRequest(path: string, body: object): Request {
+function authRequest(path: string, body: object, headers: Record<string, string> = {}): Request {
   return new Request(new URL(`/api/auth${path}`, config.publicURL), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Origin: config.publicURL },
+    headers: { 'Content-Type': 'application/json', Origin: config.publicURL, ...headers },
     body: JSON.stringify(body)
   })
 }
@@ -116,6 +116,50 @@ describe('email and password authentication', () => {
       const verification = await app.auth.handler(new Request(verificationURL))
       expect(verification.status).toBe(302)
       expect(await app.enrollment.statusForEmail('person@example.com')).toBe('pending')
+    } finally {
+      await app.close()
+    }
+  })
+
+  test('keeps the nearest language Cloud writes in, and writes the first email in it', async () => {
+    const verifications = new Map<string, string | null | undefined>()
+    const app = await runtime({
+      async sendVerification(input) {
+        verifications.set(input.email, input.locale)
+      },
+      sendPasswordReset: ignoreAuthenticationEmail,
+      sendPasswordChanged: ignoreAuthenticationEmail
+    })
+    try {
+      const signUp = (email: string, locale: string | undefined, acceptLanguage?: string) =>
+        app.auth.handler(
+          authRequest(
+            '/sign-up/email',
+            { name: 'Person', email, password: 'a sufficiently long password', locale },
+            acceptLanguage ? { 'Accept-Language': acceptLanguage } : {}
+          )
+        )
+      expect((await signUp('portugal@example.com', 'pt-PT')).status).toBe(200)
+      // Without one from the app, as with Google or Apple, the browser's language.
+      expect((await signUp('browser@example.com', undefined, 'nl, ja;q=0.8')).status).toBe(200)
+      // The app's language wins over the browser's even when Cloud doesn't write in it.
+      expect((await signUp('klingon@example.com', 'tlh', 'de')).status).toBe(200)
+      const accounts = await app.database
+        .selectFrom('user')
+        .select(['email', 'locale'])
+        .orderBy('email')
+        .execute()
+      expect(accounts).toEqual([
+        { email: 'browser@example.com', locale: 'ja' },
+        { email: 'klingon@example.com', locale: null },
+        { email: 'portugal@example.com', locale: 'pt-BR' }
+      ])
+      // The verification email, queued inside sign-up's transaction, gets it from the account.
+      expect(Object.fromEntries(verifications)).toEqual({
+        'browser@example.com': 'ja',
+        'klingon@example.com': null,
+        'portugal@example.com': 'pt-BR'
+      })
     } finally {
       await app.close()
     }

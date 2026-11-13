@@ -71,7 +71,7 @@ describe('transactional email outbox', () => {
       expect(sent).toHaveLength(1)
       expect(sent[0]).toMatchObject({
         to: 'person@example.com',
-        subject: 'Alice invited you to view Homepage'
+        subject: 'Alice invited you to view “Homepage”'
       })
       expect(
         await runtime.database
@@ -85,6 +85,67 @@ describe('transactional email outbox', () => {
         transportMessageId: 'message-id',
         payloadEncrypted: null
       })
+    } finally {
+      await runtime.close()
+    }
+  })
+
+  test('writes in the recipient’s language, as given or as their account says, then the sender’s, then English', async () => {
+    const runtime = await createCloudTestDatabase()
+    const sent: Array<{ to: string; subject: string; html: string }> = []
+    try {
+      await runtime.database
+        .insertInto('user')
+        .values({
+          id: '22222222-2222-4222-8222-222222222222',
+          name: 'Reader',
+          email: 'Reader@Example.com',
+          emailVerified: true,
+          image: null,
+          locale: 'de'
+        })
+        .execute()
+      const email = createTransactionalEmailService(runtime.database, {
+        encryptionSecret: secret,
+        from: 'OpenPencil <cloud@example.com>',
+        transport: {
+          id: 'memory',
+          async send(message) {
+            sent.push(message)
+            return {
+              transportMessageId: message.deliveryId,
+              acceptedAt: '2026-01-01T00:00:00.000Z'
+            }
+          }
+        }
+      })
+      const enqueue = (recipientEmail: string, locale?: 'fr') =>
+        email.enqueue({
+          idempotencyKey: `document-invitation/${recipientEmail}`,
+          kind: 'document-invitation',
+          recipientEmail,
+          fallbackLocale: locale,
+          payload: invitation
+        })
+      await enqueue('reader@example.com', 'fr')
+      await enqueue('guest@example.com', 'fr')
+      await enqueue('stranger@example.com')
+      // A sender with the account at hand, as signing up is, gives its language; none is English.
+      await email.enqueue({
+        idempotencyKey: 'email-verification/signing-up',
+        kind: 'email-verification',
+        recipientEmail: 'signing-up@example.com',
+        recipientLocale: 'ja',
+        fallbackLocale: 'fr',
+        payload: { name: 'Ada', actionURL: 'https://cloud.example.com/verify' }
+      })
+      await email.deliverPending({ batchSize: 10, leaseDurationMs: 60_000 })
+      const language = (to: string) =>
+        /<html[^>]* lang="([^"]+)"/.exec(sent.find((message) => message.to === to)?.html ?? '')?.[1]
+      expect(language('reader@example.com')).toBe('de')
+      expect(language('guest@example.com')).toBe('fr')
+      expect(language('stranger@example.com')).toBe('en')
+      expect(language('signing-up@example.com')).toBe('ja')
     } finally {
       await runtime.close()
     }

@@ -1,7 +1,8 @@
 // OpenPencil Cloud on Cloudflare Workers. To deploy, copy this folder next to it (for example to
 // deploy/mine), add your deployment TOML as openpencil-cloud.toml, replace the values marked below,
-// and run `wrangler deploy --assets "$(git rev-parse --show-toplevel)/dist-cloud"` there. The
-// self-hosting guide walks through it.
+// and run `wrangler deploy --assets "$(git rev-parse --show-toplevel)/dist-cloud"` there, after
+// `bun run build:packages`: the Worker runs Cloud's build, whose emails are compiled Vue components.
+// The self-hosting guide walks through it.
 {
   "name": "openpencil-cloud",
   "main": "worker.ts",
