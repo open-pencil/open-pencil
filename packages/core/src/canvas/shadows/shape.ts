@@ -4,7 +4,8 @@ import {
   blurSigma,
   drawnBlurRadius,
   borderWeights,
-  strokeAlignShare
+  strokeAlignShare,
+  isWholeArc
 } from '@open-pencil/scene-graph/geometry'
 
 import { setPaintBlendMode } from '#core/canvas/blend'
@@ -58,7 +59,7 @@ const OUTLINE_SHAPE_TYPES: ReadonlySet<SceneNode['type']> = new Set<SceneNode['t
 function isPartialArc(node: SceneNode): boolean {
   const arc = node.type === 'ELLIPSE' ? node.arcData : null
   if (!arc) return false
-  return arc.innerRadius > 0 || Math.abs(arc.endingAngle - arc.startingAngle) < 2 * Math.PI - 1e-6
+  return arc.innerRadius > 0 || !isWholeArc(arc)
 }
 
 /** Distances from each side of a rectangle: top, right, bottom, left. */

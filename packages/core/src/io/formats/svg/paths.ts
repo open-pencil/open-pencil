@@ -5,7 +5,8 @@ import {
   GeometryCommand,
   polygonVertices,
   readGeometryBlob,
-  nodeCornerRadii
+  nodeCornerRadii,
+  sweepsWholeTurn
 } from '@open-pencil/scene-graph/geometry'
 import { outlineSVGPath, polygonOutline } from '@open-pencil/scene-graph/polygon'
 import { shapeWithTextGeometry } from '@open-pencil/scene-graph/shape-with-text'
@@ -93,7 +94,7 @@ export function arcPath(node: Pick<SceneNode, 'width' | 'height' | 'arcData'>): 
   const rx = node.width / 2
   const ry = node.height / 2
 
-  const fullCircle = Math.abs(endingAngle - startingAngle) >= Math.PI * 2 - 0.001
+  const fullCircle = sweepsWholeTurn(startingAngle, endingAngle)
   const ring = (rx: number, ry: number, sweep: 0 | 1) =>
     `M${round(cx - rx)} ${round(cy)}A${round(rx)} ${round(ry)} 0 1 ${sweep} ${round(cx + rx)} ${round(cy)}A${round(rx)} ${round(ry)} 0 1 ${sweep} ${round(cx - rx)} ${round(cy)}Z`
   // A whole ring has no ends to join: it is its outer edge and, for a donut, its hole, wound

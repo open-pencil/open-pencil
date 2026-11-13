@@ -1,4 +1,4 @@
-import { borderWeights, nodeCornerRadii } from '../geometry'
+import { borderWeights, nodeCornerRadii, sweepsWholeTurn } from '../geometry'
 import { polygonOutline } from '../polygon'
 import type { Vector } from '../primitives'
 import type { SceneNode, WindingRule } from '../types'
@@ -87,10 +87,6 @@ function rectangleSides(
 }
 
 const FULL_TURN = Math.PI * 2
-
-function sweepsWholeTurn(start: number, end: number): boolean {
-  return Math.abs(end - start) >= FULL_TURN - 1e-6
-}
 
 /** Whether a layer is an unbroken ellipse: an ELLIPSE whose arc, if any, is a whole turn with no hole. */
 export function isWholeEllipse(node: Pick<SceneNode, 'type' | 'arcData'>): boolean {

@@ -1,6 +1,14 @@
 import { arrowCapOverflow } from './arrow-caps'
 import type { Rect, Vector } from './primitives'
-import type { Effect, SceneNode, Stroke, StrokeCap, StrokeJoin, VectorNetwork } from './types'
+import type {
+  ArcData,
+  Effect,
+  SceneNode,
+  Stroke,
+  StrokeCap,
+  StrokeJoin,
+  VectorNetwork
+} from './types'
 
 export { cubicPoint } from './cubic'
 
@@ -10,6 +18,21 @@ export function degToRad(degrees: number): number {
 
 export function radToDeg(radians: number): number {
   return (radians * 180) / Math.PI
+}
+
+const FULL_TURN = 2 * Math.PI
+
+/**
+ * Whether a sweep from `start` to `end` is a whole turn: less than 0.001 rad short of one draws the
+ * whole ellipse in Figma (desktop, live: 0.00095 short is whole, 0.001 short an arc).
+ */
+export function sweepsWholeTurn(start: number, end: number): boolean {
+  return FULL_TURN - Math.abs(end - start) < 0.001
+}
+
+/** Whether an arc sweeps a whole turn, so it is drawn and edited as a whole ellipse or ring. */
+export function isWholeArc(arc: Pick<ArcData, 'startingAngle' | 'endingAngle'>): boolean {
+  return sweepsWholeTurn(arc.startingAngle, arc.endingAngle)
 }
 
 /** A rectangle's corner radii, clockwise from the top left. */
