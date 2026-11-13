@@ -38,7 +38,7 @@ test('synchronizing leaves a field the enclosing instance assigns alone', () => 
   expect(graph.getNode(clone.id)?.text).toBe('Assigned')
 })
 
-test('synchronizing preserves a direct text override over a property assignment', () => {
+test('a text edit yields to the assignment its own instance makes', () => {
   const { graph, component, label, instance } = graphWithAssignedLabel()
   const clone = graph.getChildren(instance.id)[0]
   graph.updateNode(instance.id, { componentPropertyAssignments: { '207:1': 'Assigned' } })
@@ -48,7 +48,8 @@ test('synchronizing preserves a direct text override over a property assignment'
 
   graph.syncInstances(component.id)
 
-  expect(clone.text).toBe('Local override')
+  // Figma shows the assignment over a text override made at the same level.
+  expect(clone.text).toBe('Assigned')
   expect(clone.opacity).toBe(0.5)
 })
 

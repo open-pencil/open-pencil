@@ -1,1 +1,1 @@
-- Component synchronization preserves text overridden on an instance instead of replacing it with the component property value.
+- Text an outer instance overrides on a layer driven by a nested instance's text property stays after component sync, as in Figma.

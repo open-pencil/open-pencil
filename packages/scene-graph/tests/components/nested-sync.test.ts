@@ -2,7 +2,11 @@ import { expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
-import { deleteInstanceOverride } from '@open-pencil/scene-graph/instances/overrides'
+import {
+  assignmentOverrideField,
+  deleteInstanceOverride,
+  setInstanceOverride
+} from '@open-pencil/scene-graph/instances/overrides'
 
 test('outer sync preserves a nested edit without blocking sibling or other-field inheritance', () => {
   const graph = new SceneGraph()
@@ -32,7 +36,8 @@ test('outer sync preserves a nested edit without blocking sibling or other-field
   expect(firstText.text).toBe('Component edit')
 })
 
-test('outer sync preserves a nested label override over its badge text assignment', () => {
+/** A card whose badge the card's component assigns "Multiplier", and two instances of the card. */
+function cardWithAssignedBadge() {
   const graph = new SceneGraph()
   const page = graph.getPages()[0]
   const badge = graph.createNode('COMPONENT', page.id, {
@@ -54,8 +59,14 @@ test('outer sync preserves a nested label override over its badge text assignmen
   const nested = graph.getChildren(instance.id)[0]
   const label = graph.getChildren(nested.id)[0]
   const siblingLabel = graph.getChildren(graph.getChildren(sibling.id)[0].id)[0]
+  // The card instance edits the label, as a Figma file records a text override on it.
   graph.updateNode(label.id, { text: 'Bonus amount' })
-  recordInstanceOverride(graph, label.id, ['text'])
+  setInstanceOverride(instance.instanceOverrides, instance.id, label.id, 'text')
+  return { graph, badge, card, instance, nested, label, siblingLabel }
+}
+
+test('a text edit in the outer instance outranks the assignment its component makes', () => {
+  const { graph, badge, card, instance, label, siblingLabel } = cardWithAssignedBadge()
   graph.updateNode(graph.getChildren(badge.id)[0].id, { opacity: 0.5 })
 
   for (const component of [card, badge, card]) {
@@ -64,7 +75,23 @@ test('outer sync preserves a nested label override over its badge text assignmen
     expect(siblingLabel.text).toBe('Multiplier')
   }
   expect(label.opacity).toBe(0.5)
-  deleteInstanceOverride(nested.instanceOverrides, nested.id, label.id, 'text')
+  deleteInstanceOverride(instance.instanceOverrides, instance.id, label.id, 'text')
   graph.syncInstances(card.id)
   expect(label.text).toBe('Multiplier')
+})
+
+test('an assignment the same instance overrides outranks its text edit', () => {
+  const { graph, card, instance, nested, label } = cardWithAssignedBadge()
+  graph.updateNode(nested.id, { componentPropertyAssignments: { 'badge-label': 'Assigned' } })
+  setInstanceOverride(
+    instance.instanceOverrides,
+    instance.id,
+    nested.id,
+    assignmentOverrideField('badge-label'),
+    'Assigned'
+  )
+
+  graph.syncInstances(card.id)
+
+  expect(label.text).toBe('Assigned')
 })
