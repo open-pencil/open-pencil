@@ -1,0 +1,1 @@
+- A component library publishes when one of its components contains an instance of a variant.

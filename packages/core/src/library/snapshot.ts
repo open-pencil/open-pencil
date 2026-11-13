@@ -16,6 +16,7 @@ import {
 } from '@open-pencil/scene-graph/transfer'
 
 import {
+  existingAssetKey,
   libraryAssetKey,
   libraryCollectionAsset,
   libraryLayerAsset,
@@ -233,6 +234,20 @@ function normalizedLibraryField(key: string, value: unknown): unknown {
   return value
 }
 
+/**
+ * The asset an instance of `component` depends on. A variant is not published on its own: the set
+ * is the asset a library lists and a consumer updates, so a variant with no key of its own takes
+ * the set's. One that already has a key keeps it, as does every component outside a set, so a
+ * library that already published under that key keeps the same content hash.
+ */
+function instanceDependencyKey(graph: SceneGraph, component: SceneNode): string {
+  if (!existingAssetKey(component)) {
+    const parent = component.parentId ? graph.getNode(component.parentId) : undefined
+    if (parent?.type === 'COMPONENT_SET') return libraryAssetKey(parent)
+  }
+  return libraryAssetKey(component)
+}
+
 export function canonicalLibraryNode(
   graph: SceneGraph,
   node: SceneNode,
@@ -253,7 +268,7 @@ export function canonicalLibraryNode(
   const component = node.componentId ? graph.getNode(node.componentId) : undefined
   const dependencyKey =
     component?.type === 'COMPONENT' || component?.type === 'COMPONENT_SET'
-      ? libraryAssetKey(component)
+      ? instanceDependencyKey(graph, component)
       : null
   const dependency =
     component && dependencyKey && !dependencyStack.has(component.id)
