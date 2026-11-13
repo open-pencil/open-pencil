@@ -70,8 +70,9 @@ export async function readWrappedTextLineCount(page: Page) {
   })
 }
 
-export async function createFallbackText(page: Page) {
-  return page.evaluate(() => {
+/** Text in a family found nowhere, which draws in the default family's face of its style. */
+export async function createFallbackText(page: Page, { italic = false } = {}) {
+  return page.evaluate(async (italic) => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('Editor unavailable')
     const frame = store.graph.createNode('FRAME', store.state.currentPageId, {
@@ -89,12 +90,16 @@ export async function createFallbackText(page: Page) {
       height: 60,
       fontFamily: 'Saved Text Primary',
       fontWeight: 700,
+      italic,
       fontSize: 40,
       textAutoResize: 'NONE',
       fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, visible: true, opacity: 1 }]
     })
+    // As an edit or an opened file would, so the text draws in the faces it is saved with.
+    await store.loadFontsForNodes([frame.id])
+    store.requestRender()
     return sample.id
-  })
+  }, italic)
 }
 
 export async function saveCopyAndReopenFallbackText(page: Page) {
