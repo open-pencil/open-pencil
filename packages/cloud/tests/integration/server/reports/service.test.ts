@@ -6,9 +6,11 @@ import {
   createDocumentReportService,
   DOCUMENT_REPORT_BUDGET,
   DocumentReportLimitError,
+  createTransactionalEmailService,
   DocumentShareInvalidError,
   type TransactionalEmailService
 } from '#cloud/server'
+import { decryptTransactionalEmailPayload } from '#cloud/server/email'
 
 type Context = Awaited<ReturnType<typeof seedSharing>>
 
@@ -117,26 +119,11 @@ describe('document reports', () => {
 
   test('tells a reporter who left an address that the report arrived, and what was decided', async () => {
     const context = await seedSharing()
-    const sent: {
-      kind: string
-      recipientEmail: string
-      locale?: string | null
-      payload: unknown
-    }[] = []
-    const email: TransactionalEmailService = {
-      async enqueue(input) {
-        sent.push({
-          kind: input.kind,
-          recipientEmail: input.recipientEmail,
-          locale: input.fallbackLocale,
-          payload: input.payload
-        })
-        return crypto.randomUUID()
-      },
-      async deliverPending() {
-        return { claimed: 0, accepted: 0, retrying: 0, failed: 0, suppressed: 0 }
-      }
-    }
+    // The real outbox, in each decision's own transaction, so a kind the table refuses fails here.
+    const email = createTransactionalEmailService(context.runtime.database, {
+      encryptionSecret: 'integration-test-secret-at-least-32-characters',
+      from: 'cloud@example.com'
+    })
     try {
       const reports = createDocumentReportService(context.runtime.database, {
         sharing: context.sharing,
@@ -180,39 +167,38 @@ describe('document reports', () => {
         undefined
       )
 
-      expect(sent).toEqual([
-        {
-          kind: 'document-report-received',
-          recipientEmail: 'first@example.com',
-          locale: 'de',
-          payload: { documentName: 'Homepage' }
-        },
-        {
-          kind: 'document-report-received',
-          recipientEmail: 'second@example.com',
-          locale: 'de',
-          payload: { documentName: 'Homepage' }
-        },
-        {
-          kind: 'document-report-decided',
-          recipientEmail: 'first@example.com',
-          locale: 'de',
-          payload: {
-            documentName: 'Homepage',
-            outcome: 'dismissed',
-            contactEmail: 'abuse@example.com'
-          }
-        },
-        {
-          kind: 'document-report-decided',
-          recipientEmail: 'second@example.com',
-          locale: 'de',
-          payload: {
-            documentName: 'Homepage',
-            outcome: 'actioned',
-            contactEmail: 'abuse@example.com'
-          }
-        }
+      const queued = await context.runtime.database
+        .selectFrom('transactionalEmail')
+        .select(['id', 'kind', 'recipientEmailNormalized', 'locale', 'payloadEncrypted'])
+        // Ordered by what they are, never by when, which two writes can share.
+        .orderBy('kind')
+        .orderBy('recipientEmailNormalized')
+        .execute()
+      expect(queued.map((row) => [row.kind, row.recipientEmailNormalized, row.locale])).toEqual([
+        ['document-report-decided', 'first@example.com', 'de'],
+        ['document-report-decided', 'second@example.com', 'de'],
+        ['document-report-received', 'first@example.com', 'de'],
+        ['document-report-received', 'second@example.com', 'de']
+      ])
+      // Read the sealed decisions back as delivery would.
+      const decisions = await Promise.all(
+        queued
+          .filter((row) => row.kind === 'document-report-decided')
+          .map(
+            async (row) =>
+              (
+                await decryptTransactionalEmailPayload(
+                  'integration-test-secret-at-least-32-characters',
+                  row.id,
+                  row.kind,
+                  row.payloadEncrypted ?? ''
+                )
+              ).payload
+          )
+      )
+      expect(decisions).toEqual([
+        { documentName: 'Homepage', outcome: 'dismissed', contactEmail: 'abuse@example.com' },
+        { documentName: 'Homepage', outcome: 'actioned', contactEmail: 'abuse@example.com' }
       ])
     } finally {
       await context.runtime.close()
