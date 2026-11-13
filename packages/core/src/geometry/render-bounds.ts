@@ -228,6 +228,11 @@ function isVisibleMask(node: SceneNode): boolean {
   return node.visible && node.isMask
 }
 
+/** Whether a mask's effects can draw past what it draws without them, which `figma` reach trims. */
+function reachesPast(node: SceneNode, reach: EffectReach): boolean {
+  return reach !== 'drawn' && node.effects.some((effect) => effect.visible)
+}
+
 /** A run of masks and the siblings after them that they mask. */
 type MaskRun = {
   /** What the masks draw, their effects included: nothing in the run reaches past it. */
@@ -272,6 +277,8 @@ function drawnChildren(
       continue
     }
     const mask = isVisibleMask(child)
+    // Any sibling after the masks ends their list, drawn or not, as on the canvas.
+    if (!mask && run) run.holds = true
     if (!mask && !draws(child, options.reach)) {
       continue
     }
@@ -282,12 +289,13 @@ function drawnChildren(
     const drawn = drawnSubtree(graph, child, childMatrix, clip, options)
     if (mask) {
       if (run?.holds) closeRun()
-      const plain = drawnSubtree(graph, { ...child, effects: [] }, childMatrix, clip, options)
+      const plain = reachesPast(child, options.reach)
+        ? drawnSubtree(graph, { ...child, effects: [] }, childMatrix, clip, options)
+        : drawn
       run ??= { masks: null, extent: null, holds: false }
       run.masks = unionVisualBounds(run.masks, drawn)
       run.extent = unionVisualBounds(run.extent, plain)
     } else if (run) {
-      run.holds = true
       run.extent = unionVisualBounds(run.extent, drawn)
     } else if (drawn) {
       content = unionVisualBounds(content, drawn)

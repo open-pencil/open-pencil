@@ -323,6 +323,18 @@ describe('render bounds under a mask', () => {
     expect(box(exportBounds(graph, [dot.id]))).toEqual([8000, 0, 100, 100])
   })
 
+  test('a hidden layer after a mask ends its run, as on the canvas', () => {
+    const first = rectangle(9000, 0, 100, 100)
+    first.effects = [shadow(0, 0, { x: 0, y: -50 })]
+    const hidden = rectangle(9000, 0, 10, 10)
+    const group = masked(
+      [first, hidden, rectangle(9200, 200, 10, 10), rectangle(9200, -1000, 10, 2000)],
+      [0, 2]
+    )
+    hidden.visible = false
+    expect(box(exportBounds(graph, [group.id]))).toEqual([9000, 0, 210, 210])
+  })
+
   test('a hidden mask masks nothing', () => {
     const group = masked([rectangle(2000, 0, 10, 10), rectangle(2000, 0, 100, 100)], [0])
     const [mask] = group.children
