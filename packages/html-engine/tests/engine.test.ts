@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'bun:test'
+import { join } from 'node:path'
 
 import { loadHTMLEngine, rasterImageSize, type HTMLEngineCapture } from '@open-pencil/html-engine'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 
 const VIEWPORT = { width: 800, height: 600 }
 
@@ -84,6 +86,9 @@ describe('the HTML engine', () => {
 
   test('applies the stylesheets and images the host fetches', async () => {
     const engine = await loadHTMLEngine()
+    // The engine sets no line without a font, inline images included.
+    engine.addFont(await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).bytes())
+    engine.setGenericFamily('sans-serif', ['Inter Variable'])
     const requested: string[] = []
     const capture = await engine.layout(
       '<link rel="stylesheet" href="site.css"><img id="photo" src="photo.png"><div id="box"></div>',

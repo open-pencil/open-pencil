@@ -169,6 +169,17 @@ describe('reading HTML', () => {
     expect(box).toMatchObject({ width: 120, height: 40 })
   })
 
+  test('lays an image out at its size on a page without text', async () => {
+    const png = await Bun.file(join(FIXTURES, 'absolute-constraint-figma.png')).bytes()
+    const view = new DataView(png.buffer, png.byteOffset)
+    const { graph } = await readHTMLDocument('<img src="photo.png">', {
+      readAsset: async (path) => (path === 'photo.png' ? png : null)
+    })
+    const [image] = graph.getChildren(graph.getPages()[0].id)
+
+    expect(image).toMatchObject({ width: view.getUint32(16), height: view.getUint32(20) })
+  })
+
   test('draws text in the font its page loads with @font-face', async () => {
     const family = 'OpenPencil Page Brand'
     const font = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).bytes()
