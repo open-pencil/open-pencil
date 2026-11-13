@@ -27,6 +27,35 @@ export interface FlowGap {
   readonly tick: Vector
 }
 
+/** The gap between the flowed layers at `index` and `index + 1`, however much room it has. */
+function gapBetween(
+  node: SceneNode,
+  children: readonly SceneNode[],
+  index: number
+): FlowGap | null {
+  const previous = children.at(index)
+  const next = children.at(index + 1)
+  if (!previous || !next || index < 0) return null
+  const isRow = node.layoutMode === 'HORIZONTAL'
+  const crossStart = isRow ? node.paddingTop : node.paddingLeft
+  const crossEnd = isRow ? node.height - node.paddingBottom : node.width - node.paddingRight
+  const crossMiddle = (crossStart + crossEnd) / 2
+  const start = isRow ? previous.x + previous.width : previous.y + previous.height
+  const end = isRow ? next.x : next.y
+  const middle = (start + end) / 2
+  return isRow
+    ? {
+        index,
+        rect: { x: start, y: crossStart, width: end - start, height: crossEnd - crossStart },
+        tick: { x: middle, y: crossMiddle }
+      }
+    : {
+        index,
+        rect: { x: crossStart, y: start, width: crossEnd - crossStart, height: end - start },
+        tick: { x: crossMiddle, y: middle }
+      }
+}
+
 /**
  * The gaps between flowed layers that have room between them. Across the flow a gap spans the
  * content box, inside the paddings, and its tick sits in the middle of it (Figma desktop, live).
@@ -34,33 +63,21 @@ export interface FlowGap {
 export function flowGaps(node: SceneNode, graph: SceneGraph): FlowGap[] {
   const children = flowChildren(node, graph)
   if (children.length < 2 || node.itemSpacing <= 0) return []
-  const isRow = node.layoutMode === 'HORIZONTAL'
-  const crossStart = isRow ? node.paddingTop : node.paddingLeft
-  const crossEnd = isRow ? node.height - node.paddingBottom : node.width - node.paddingRight
-  const crossMiddle = (crossStart + crossEnd) / 2
   const gaps: FlowGap[] = []
   for (let index = 0; index < children.length - 1; index++) {
-    const previous = children[index]
-    const next = children[index + 1]
-    const start = isRow ? previous.x + previous.width : previous.y + previous.height
-    const end = isRow ? next.x : next.y
-    if (end <= start) continue
-    const middle = (start + end) / 2
-    gaps.push(
-      isRow
-        ? {
-            index,
-            rect: { x: start, y: crossStart, width: end - start, height: crossEnd - crossStart },
-            tick: { x: middle, y: crossMiddle }
-          }
-        : {
-            index,
-            rect: { x: crossStart, y: start, width: crossEnd - crossStart, height: end - start },
-            tick: { x: crossMiddle, y: middle }
-          }
-    )
+    const gap = gapBetween(node, children, index)
+    const room = gap && (node.layoutMode === 'HORIZONTAL' ? gap.rect.width : gap.rect.height)
+    if (gap && room && room > 0) gaps.push(gap)
   }
   return gaps
+}
+
+/**
+ * Where the tick of the gap after the flowed layer at `index` sits, even with no room in it, as
+ * while its value is edited down to 0.
+ */
+export function gapTick(node: SceneNode, graph: SceneGraph, index: number): Vector | null {
+  return gapBetween(node, flowChildren(node, graph), index)?.tick ?? null
 }
 
 /** A padding's band along its whole side. */

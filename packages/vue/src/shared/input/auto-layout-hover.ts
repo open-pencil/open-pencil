@@ -10,6 +10,7 @@ import { createSceneGeometry } from '@open-pencil/core/geometry'
 import {
   flowChildren,
   flowGaps,
+  gapTick,
   paddingOf,
   paddingTick,
   type FlowGap,
@@ -165,6 +166,6 @@ export function autoLayoutValueAnchor(
   const geometry = createSceneGeometry(editor.graph, editor.state.rotationPreview)
   const side = field === 'itemSpacing' ? undefined : PADDING_SIDES_BY_FIELD[field]
   if (side) return geometry.toWorld(node, paddingTick(node, side))
-  const tick = flowGaps(node, editor.graph).find((candidate) => candidate.index === gap)?.tick
-  return geometry.toWorld(node, tick ?? { x: node.width / 2, y: node.height / 2 })
+  const tick = gapTick(node, editor.graph, gap) ?? { x: node.width / 2, y: node.height / 2 }
+  return geometry.toWorld(node, tick)
 }

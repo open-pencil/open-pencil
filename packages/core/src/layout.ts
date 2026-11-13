@@ -21,6 +21,7 @@ export { sizeAutoResizingText } from './layout/text-auto-resize'
 export {
   flowChildren,
   flowGaps,
+  gapTick,
   PADDING_SIDES,
   paddingOf,
   paddingRect,

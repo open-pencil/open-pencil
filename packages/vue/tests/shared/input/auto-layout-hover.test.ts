@@ -128,4 +128,10 @@ describe('auto-layout hover resolver', () => {
       index: 0
     })
   })
+
+  // While a gap's value is edited down to 0 its layers touch; the editor stays on the gap.
+  test("keeps a gap's editor on the gap while its value is 0", () => {
+    const closed = editor({ itemSpacing: 0 })
+    expect(autoLayoutValueAnchor(closed, 'frame', 'itemSpacing', 0)).toEqual({ x: 240, y: 156 })
+  })
 })
