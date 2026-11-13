@@ -63,10 +63,16 @@ export function createDocumentSourceActions({
 }: DocumentSourceOptions) {
   const changes = createDocumentChanges(editor)
 
+  /** Runs a save, marking the revision it started from saved if it succeeds, releasing it if not. */
   async function saveAndTrack(save: () => Promise<boolean>) {
     const revision = changes.capture()
-    const saved = await save()
-    if (saved) changes.markSaved(revision)
+    let saved = false
+    try {
+      saved = await save()
+    } finally {
+      if (saved) changes.markSaved(revision)
+      else changes.release(revision)
+    }
     return saved
   }
 
@@ -150,8 +156,7 @@ export function createDocumentSourceActions({
     getSavedVersion,
     hasWritableSource,
     saveCurrentDocument: async (version) => {
-      const revision = changes.capture()
-      if (await writeFile(await buildFigStream(), version)) changes.markSaved(revision)
+      await saveAndTrack(async () => writeFile(await buildFigStream(), version))
     }
   })
 
