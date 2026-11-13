@@ -45,6 +45,26 @@ function installLabelHits(editor: ReturnType<typeof createEditor>) {
   )
 }
 
+/**
+ * One pane's canvas. A name is hit with that pane's page and zoom, which the renderer stores
+ * apart from the editor's current view.
+ */
+function paneLabelRenderer(pageId: string, zoom: number) {
+  const hit = (
+    testAt: typeof hitTestFrameTitle,
+    graph: SceneGraph,
+    x: number,
+    y: number,
+    preview?: RotationPreview | null
+  ) => testAt(graph, x, y, zoom, pageId, labelFont, undefined, { preview })
+  return {
+    hitTestFrameTitle: (graph, x, y, preview) => hit(hitTestFrameTitle, graph, x, y, preview),
+    hitTestSectionTitle: (graph, x, y, preview) => hit(hitTestSectionTitle, graph, x, y, preview),
+    hitTestComponentLabel: (graph, x, y, preview) =>
+      hit(hitTestComponentLabel, graph, x, y, preview)
+  } as Parameters<ReturnType<typeof createEditor>['setCanvasKit']>[1]
+}
+
 describe('editor hit testing', () => {
   test('finds layers from the page whatever container is entered', () => {
     const editor = createEditor()
@@ -206,5 +226,65 @@ describe('editor hit testing', () => {
 
     editor.selectAtPoint(800, 800)
     expect([...editor.state.selectedIds]).toEqual([])
+  })
+
+  // Two panes can show different pages, at different zooms, with a frame name at the same canvas
+  // point. A right-click selects the name drawn on the pane that was clicked.
+  test('selectAtPoint on a frame name uses the pane that was clicked', () => {
+    const editor = createEditor()
+    const pageA = editor.state.currentPageId
+    const pageB = editor.graph.addPage('Other').id
+    const frameA = editor.graph.createNode('FRAME', pageA, {
+      name: 'Frame',
+      x: 100,
+      y: 100,
+      width: 200,
+      height: 120
+    })
+    const frameB = editor.graph.createNode('FRAME', pageB, {
+      name: 'Frame',
+      x: 100,
+      y: 100,
+      width: 200,
+      height: 120
+    })
+    const paneA = paneLabelRenderer(pageA, 1)
+    const paneB = paneLabelRenderer(pageB, 2)
+    const canvasKit = {} as Parameters<typeof editor.setCanvasKit>[0]
+    editor.setCanvasKit(canvasKit, paneA)
+    editor.setCanvasKit(canvasKit, paneB)
+
+    editor.state.currentPageId = pageB
+    editor.state.zoom = 2
+    editor.selectAtPoint(108, 91, paneB)
+    expect([...editor.state.selectedIds]).toEqual([frameB.id])
+
+    editor.state.currentPageId = pageA
+    editor.state.zoom = 1
+    editor.selectAtPoint(108, 91, paneA)
+    expect([...editor.state.selectedIds]).toEqual([frameA.id])
+  })
+
+  test('selectAtPoint on a frame name keeps a selection that already includes it', () => {
+    const editor = createEditor()
+    const pageId = editor.state.currentPageId
+    const frame = editor.graph.createNode('FRAME', pageId, {
+      name: 'Frame',
+      x: 100,
+      y: 100,
+      width: 200,
+      height: 120
+    })
+    const other = editor.graph.createNode('RECTANGLE', pageId, {
+      x: 400,
+      y: 100,
+      width: 80,
+      height: 40
+    })
+    installLabelHits(editor)
+    editor.select([other.id, frame.id])
+
+    editor.selectAtPoint(108, 86)
+    expect([...editor.state.selectedIds]).toEqual([other.id, frame.id])
   })
 })

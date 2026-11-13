@@ -39,8 +39,8 @@ export function createSelectionHitTestActions(
   }
 
   /**
-   * A name drawn on one canvas. The scene canvas does not paint names, so each canvas is asked;
-   * the one that paints them is the one that hits. Names come before bodies, in draw order.
+   * A name drawn on one canvas, in draw order: a component's label, then a section title, then a
+   * frame title. The scene canvas does not paint names; the overlay canvas of a pane does.
    */
   function labelOnRenderer(renderer: SkiaRenderer, cx: number, cy: number): SceneNode | null {
     const preview = ctx.state.rotationPreview
@@ -58,24 +58,24 @@ export function createSelectionHitTestActions(
       : null
   }
 
-  /** A name above a frame, section, or component, which a click selects and a right-click must too. */
-  function labelAt(cx: number, cy: number): SceneNode | null {
-    for (const renderer of ctx.getRenderers()) {
-      const hit = labelOnRenderer(renderer, cx, cy)
-      if (hit) return hit
-    }
-    return null
+  /**
+   * A name above a frame, section, or component on the canvas that was clicked. Each pane hit-tests
+   * with its own page, zoom, viewport, and label cache, so another pane's canvas is not asked.
+   */
+  function labelAt(renderer: SkiaRenderer | null, cx: number, cy: number): SceneNode | null {
+    return renderer ? labelOnRenderer(renderer, cx, cy) : null
   }
 
   /**
    * Selects what a right-click is over, as Figma does: the layer a click would select, a locked
    * one included, or else the frame or section whose empty area is under the point, which a click
-   * leaves for a marquee. A name above a frame, section, or component is part of that layer. The
+   * leaves for a marquee. A name above a frame, section, or component is part of that layer, read
+   * from `renderer` (the pane's overlay canvas; the editor's current canvas when omitted). The
    * entered container follows the selection, as it does after a press.
    */
-  function selectAtPoint(cx: number, cy: number) {
+  function selectAtPoint(cx: number, cy: number, renderer?: SkiaRenderer | null) {
     const hit =
-      labelAt(cx, cy) ??
+      labelAt(renderer === undefined ? ctx.getRenderer() : renderer, cx, cy) ??
       hitAt(cx, cy, false, true) ??
       ctx.graph.hitTestOpenContainer(cx, cy, ctx.state.currentPageId)
     if (hit) {
