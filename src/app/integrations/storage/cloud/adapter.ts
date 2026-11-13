@@ -2,7 +2,9 @@ import {
   CloudAPIError,
   prepareCloudDocument,
   saveCloudDocument,
-  type CloudAPIClient
+  type CloudAPIClient,
+  downloadCloudDocument,
+  readCloudRevisionRange
 } from '@open-pencil/cloud/client'
 import { CLOUD_DOCUMENT_NAME_MAX_LENGTH } from '@open-pencil/cloud/contract'
 import { extractFigThumbnailFromReader, figArchiveKind } from '@open-pencil/fig'
@@ -14,7 +16,6 @@ import { cloudAPIClient, recheckedCloudConnection } from '@/app/cloud/sessions/c
 import { StorageRevisionConflictError, StorageUnavailableError } from '../errors'
 import { storageFetch } from '../s3/fetch'
 import type { StorageAdapter, StorageProviderRuntime } from '../types'
-import { downloadCloudDocument, readCloudRevisionRange } from './download'
 
 function revisionConflict(error: unknown): boolean {
   return error instanceof CloudAPIError && error.code === 'revision_conflict'

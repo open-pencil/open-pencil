@@ -1,6 +1,11 @@
 import { groupBy, limitAsync } from 'es-toolkit'
 
-import { cloudChecksum, uploadCloudImages, type CloudAPIClient } from '@open-pencil/cloud/client'
+import {
+  cloudChecksum,
+  uploadCloudImages,
+  type CloudAPIClient,
+  downloadCloudImage
+} from '@open-pencil/cloud/client'
 import {
   isCloudChecksum,
   type DocumentImageLink,
@@ -8,7 +13,6 @@ import {
 } from '@open-pencil/cloud/contract'
 
 import type { RoomImageStore } from '@/app/collab/images'
-import { downloadCloudImage } from '@/app/integrations/storage/cloud/download'
 import { storageFetch } from '@/app/integrations/storage/s3/fetch'
 
 const IMAGE_LOAD_CONCURRENCY = 6

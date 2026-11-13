@@ -1,5 +1,6 @@
 export { assembleCloudDocument, splitCloudDocument, type CloudDocumentImage } from './archive'
 export { cloudChecksum } from './checksum'
+export { downloadCloudDocument, downloadCloudImage, readCloudRevisionRange } from './download'
 export { imageCommitBatches, uploadCloudImages } from './images'
 export {
   putCloudObject,

@@ -1,7 +1,7 @@
 import { downloadZip } from 'client-zip'
 import { limitAsync } from 'es-toolkit'
 
-import { createCloudAPIClient } from '@open-pencil/cloud/client'
+import { createCloudAPIClient, downloadCloudDocument } from '@open-pencil/cloud/client'
 import type { CloudAccountDeletion } from '@open-pencil/cloud/contract'
 import type { DocumentKind } from '@open-pencil/scene-graph'
 
@@ -12,7 +12,6 @@ import {
   pickBrowserSaveFile,
   supportsFileSystemAccess
 } from '@/app/document/io/capability'
-import { downloadCloudDocument } from '@/app/integrations/storage/cloud/download'
 
 type ArchiveDocument = CloudAccountDeletion['documents'][number]
 

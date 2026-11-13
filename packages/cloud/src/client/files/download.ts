@@ -1,13 +1,10 @@
+import type { DocumentDownload, DocumentImageLink } from '#cloud/contract'
 import { limitAsync, sumBy } from 'es-toolkit'
 
-import {
-  assembleCloudDocument,
-  cloudChecksum,
-  type CloudObjectFetch as ObjectFetch
-} from '@open-pencil/cloud/client'
-import type { DocumentDownload, DocumentImageLink } from '@open-pencil/cloud/contract'
+import { assembleCloudDocument } from './archive'
+import { cloudChecksum } from './checksum'
+import type { CloudObjectFetch as ObjectFetch, CloudTransferProgress } from './objects'
 
-import type { StorageTransferProgress } from '../types'
 const IMAGE_DOWNLOAD_CONCURRENCY = 6
 
 /** An object's bytes from the store, checked against the size and checksum the server recorded. */
@@ -46,7 +43,7 @@ export function downloadCloudImage(
 export async function downloadCloudDocument(
   download: DocumentDownload,
   objectFetch: ObjectFetch,
-  options: { signal?: AbortSignal; onProgress?: (progress: StorageTransferProgress) => void } = {}
+  options: { signal?: AbortSignal; onProgress?: (progress: CloudTransferProgress) => void } = {}
 ): Promise<Uint8Array> {
   const totalBytes = download.byteSize + sumBy(download.images, (image) => image.byteSize)
   let transferredBytes = 0
