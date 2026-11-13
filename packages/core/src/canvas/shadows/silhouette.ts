@@ -1,8 +1,8 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
+import { nodeCornerRadii } from '@open-pencil/scene-graph/corners'
 import {
-  nodeCornerRadii,
   strokeOverflow as strokeReach,
   strokeAlignShare,
   strokeWeightOf

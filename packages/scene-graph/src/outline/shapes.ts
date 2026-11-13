@@ -1,4 +1,5 @@
-import { borderWeights, nodeCornerRadii, sweepsWholeTurn } from '../geometry'
+import { nodeCornerRadii } from '../corners'
+import { borderWeights, sweepsWholeTurn } from '../geometry'
 import { polygonOutline } from '../polygon'
 import type { Vector } from '../primitives'
 import type { SceneNode, WindingRule } from '../types'

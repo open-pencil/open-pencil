@@ -12,7 +12,7 @@ import {
 test('a guide reads the same pattern, alignment and color everywhere', () => {
   expect(layoutGridPattern({ axis: 'Y' })).toBe('ROWS')
   expect(layoutGridPattern({ pattern: 'GRID' })).toBe('GRID')
-  expect(layoutGridAlignment({ pattern: 'COLUMNS' })).toBe('STRETCH')
+  expect(layoutGridAlignment({})).toBe('STRETCH')
   expect(layoutGridAlignment({ type: 'CENTER' })).toBe('CENTER')
   expect(layoutGridColor({})).toEqual(DEFAULT_LAYOUT_GRID_COLOR)
   expect(DEFAULT_LAYOUT_GRID_COLOR).toEqual({ r: 1, g: 0, b: 0, a: 0.1 })

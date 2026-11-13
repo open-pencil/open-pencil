@@ -2,8 +2,9 @@ import { expect, test } from 'bun:test'
 
 import { nodeChangeToProps } from '@open-pencil/fig/node-change'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { LayoutGrid } from '@open-pencil/scene-graph'
 
-const stripes = {
+const stripes: LayoutGrid = {
   type: 'STRETCH',
   axis: 'X',
   visible: true,

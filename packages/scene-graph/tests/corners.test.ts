@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { fittedCornerRadii } from '@open-pencil/scene-graph/geometry'
+import { fittedCornerRadii } from '@open-pencil/scene-graph/corners'
 
 // Figma desktop (2026-11-14), read from each rectangle's fillGeometry: a corner too big for its
 // box shrinks by the tighter of its two edges, each edge scaled by its length over the radii on it.

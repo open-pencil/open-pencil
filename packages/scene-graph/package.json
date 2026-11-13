@@ -98,6 +98,12 @@
       "import": "./dist/coordinate.js",
       "default": "./dist/coordinate.js"
     },
+    "./corners": {
+      "types": "./dist/corners.d.ts",
+      "bun": "./src/corners.ts",
+      "import": "./dist/corners.js",
+      "default": "./dist/corners.js"
+    },
     "./copy": {
       "types": "./dist/copy.d.ts",
       "bun": "./src/copy.ts",

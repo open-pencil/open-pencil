@@ -1,6 +1,7 @@
 import type { Canvas, EmbindEnumEntity, Paint, Path } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { isWholeArc, nodeCornerRadii } from '@open-pencil/scene-graph/geometry'
+import { nodeCornerRadii } from '@open-pencil/scene-graph/corners'
+import { isWholeArc } from '@open-pencil/scene-graph/geometry'
 import { polygonOutline, type PolygonOutlineCommand } from '@open-pencil/scene-graph/polygon'
 import { shapeWithTextGeometry } from '@open-pencil/scene-graph/shape-with-text'
 

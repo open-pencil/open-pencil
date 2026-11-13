@@ -1,11 +1,11 @@
 import { compact } from 'es-toolkit/array'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { nodeCornerRadii } from '@open-pencil/scene-graph/corners'
 import {
   GeometryCommand,
   polygonVertices,
   readGeometryBlob,
-  nodeCornerRadii,
   sweepsWholeTurn
 } from '@open-pencil/scene-graph/geometry'
 import { outlineSVGPath, polygonOutline } from '@open-pencil/scene-graph/polygon'

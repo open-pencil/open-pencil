@@ -4,7 +4,8 @@ import { guidToString, isUnsetGuid } from '@open-pencil/kiwi/fig/guid'
 import {
   DEFAULT_FONT_FAMILY,
   DEFAULT_STROKE_MITER_LIMIT,
-  DEFAULT_STROKE_WEIGHT
+  DEFAULT_STROKE_WEIGHT,
+  TRANSPARENT
 } from '@open-pencil/scene-graph/constants'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
@@ -642,7 +643,7 @@ function convertLayoutGrids(value: unknown): LayoutGrid[] {
   if (!Array.isArray(value)) return []
   return structuredClone(value as LayoutGrid[])
     .filter((grid) => grid.type !== undefined || grid.alignment !== undefined)
-    .map((grid) => ({ ...grid, color: grid.color ?? { r: 0, g: 0, b: 0, a: 0 } }))
+    .map((grid) => ({ ...grid, color: grid.color ?? { ...TRANSPARENT } }))
 }
 
 function convertTextPathData(nc: NodeChange, blobs: Uint8Array[]): SceneNode['textPathData'] {
