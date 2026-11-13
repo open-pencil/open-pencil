@@ -19,6 +19,7 @@
     "./fig/traversal": "./src/fig/traversal.ts",
     "./fonts/bundled": "./src/fonts/bundled.ts",
     "./geometry": "./src/geometry.ts",
+    "./heap": "./src/heap.ts",
     "./heavy": "./src/heavy.ts",
     "./paths": "./src/paths.ts",
     "./scene": "./src/scene.ts",
