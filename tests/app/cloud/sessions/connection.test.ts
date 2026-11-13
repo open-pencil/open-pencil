@@ -1,5 +1,8 @@
 import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
 
+import * as v from 'valibot'
+
+import { cloudLocaleUpdateSchema } from '@open-pencil/cloud/contract'
 import { fetchStub } from '@open-pencil/test-support/fetch'
 import { localeSetting } from '@open-pencil/vue/i18n'
 
@@ -46,7 +49,9 @@ beforeEach(() => {
       if (url.pathname === '/api/account/status') statusRequests += 1
       if (url.pathname === '/api/workspaces') duringCheck?.()
       if (url.pathname === '/api/account/locale') {
-        locales.push((JSON.parse(String(init?.body)) as { locale: string }).locale)
+        locales.push(
+          v.parse(v.pipe(v.string(), v.parseJson(), cloudLocaleUpdateSchema), init?.body).locale
+        )
         return Response.json({ ok: true })
       }
       if (url.pathname === '/.well-known/openpencil')
