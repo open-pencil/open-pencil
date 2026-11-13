@@ -38,8 +38,14 @@ export async function verifyPublicImports(
   execute: typeof runCommand = runCommand
 ): Promise<void> {
   // The stdio server starts on import; the runtime assets module imports `?url` assets, which
-  // only a Vite build resolves, and the plugin's Vite build test covers it instead.
-  const skipped = new Set(['@open-pencil/mcp/stdio', '@open-pencil/core/runtime-assets/install'])
+  // only a Vite build resolves, and the plugin's Vite build test covers it instead. Cloud's
+  // Cloudflare runtime imports `cloudflare:workers`, which only Workers resolve; CI bundles the
+  // official Workers with it (`tools/ci/cloud-deploy/src/bundle.ts`).
+  const skipped = new Set([
+    '@open-pencil/mcp/stdio',
+    '@open-pencil/core/runtime-assets/install',
+    '@open-pencil/cloud/runtime/cloudflare'
+  ])
   const specifiers = manifests
     .flatMap(concreteImportSpecifiers)
     .filter((specifier) => !skipped.has(specifier))
