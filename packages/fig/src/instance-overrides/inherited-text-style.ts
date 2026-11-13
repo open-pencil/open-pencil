@@ -3,23 +3,26 @@ import type { NodeChange, VariableConsumptionEntry } from '@open-pencil/kiwi/fig
 import {
   TEXT_STYLE_FIELDS,
   type StyleSource,
+  type TextStyleField,
   type TextStyleLookup
 } from '../node-change/style/lookup'
 import { variableConsumptionEntries } from '../node-change/variable/bindings'
 import { declareVariableBindingUnits } from './bindings/variables'
 import type { InstanceOccurrence } from './occurrence/types'
 
-/** In Figma a decoration override keeps the text style attached; every other style field detaches it. */
-const FIELDS_AN_OVERRIDE_DETACHES = TEXT_STYLE_FIELDS.filter((field) => field !== 'textDecoration')
-
-type DetachingField = (typeof FIELDS_AN_OVERRIDE_DETACHES)[number]
-
-const BINDINGS_OF_FIELD: Record<DetachingField, readonly string[]> = {
+const BINDINGS_OF_FIELD: Record<TextStyleField, readonly string[]> = {
   fontSize: ['FONT_SIZE'],
   fontName: ['FONT_FAMILY', 'FONT_STYLE'],
   lineHeight: ['LINE_HEIGHT'],
   letterSpacing: ['LETTER_SPACING'],
+  textDecoration: [],
   textCase: []
+}
+
+/** The values a text style record leaves out, as Figma omits a field at its default. */
+const STYLE_DEFAULTS: Partial<Pick<NodeChange, TextStyleField>> = {
+  textDecoration: 'NONE',
+  textCase: 'ORIGINAL'
 }
 
 const CONSUMPTION_MAPS = ['variableConsumptionMap', 'parameterConsumptionMap'] as const
@@ -34,7 +37,7 @@ function boundVariableFields(holder: ConsumptionHolder): Set<string> {
   )
 }
 
-function bindsField(bound: ReadonlySet<string>, field: DetachingField): boolean {
+function bindsField(bound: ReadonlySet<string>, field: TextStyleField): boolean {
   return BINDINGS_OF_FIELD[field].some((variableField) => bound.has(variableField))
 }
 
@@ -80,7 +83,11 @@ function adoptStyleBindings(
   declareVariableBindingUnits(target, { parameterConsumptionMap: { entries: adopted } })
 }
 
-/** Figma draws an inherited text style's values and bindings over those a claim saves beside it (saved glyphs and live probe, desktop 126). */
+/**
+ * Figma draws an inherited text style's values and bindings over those a claim saves beside it
+ * (saved glyphs and live probe, desktop 126). A decoration or case set after the style is saved in
+ * the text's runs, so one claimed here was set before the style and gives way too.
+ */
 export function yieldToInheritedTextStyle(
   target: InstanceOccurrence,
   claim: Partial<NodeChange>,
@@ -90,7 +97,7 @@ export function yieldToInheritedTextStyle(
     return
   }
   const claimBound = boundVariableFields(claim)
-  const touched = FIELDS_AN_OVERRIDE_DETACHES.filter(
+  const touched = TEXT_STYLE_FIELDS.filter(
     (field) => field in claim || bindsField(claimBound, field)
   )
   if (touched.length === 0) {
@@ -101,11 +108,12 @@ export function yieldToInheritedTextStyle(
     return
   }
   const styleBound = boundVariableFields(style)
+  const styleValueOf = (field: TextStyleField) => style[field] ?? STYLE_DEFAULTS[field]
   const yielded = touched.filter(
-    (field) => style[field] !== undefined || bindsField(styleBound, field)
+    (field) => styleValueOf(field) !== undefined || bindsField(styleBound, field)
   )
   for (const field of yielded) {
-    const styleValue = style[field]
+    const styleValue = styleValueOf(field)
     Reflect.deleteProperty(claim, field)
     if (styleValue !== undefined) {
       Object.assign(target.properties, { [field]: structuredClone(styleValue) })

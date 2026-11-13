@@ -140,7 +140,8 @@ const records: NodeChange[] = [
       fontSize: 20,
       letterSpacing: CLAIMED_LETTER_SPACING,
       lineHeight: CLAIMED_LINE_HEIGHT,
-      textDecoration: 'UNDERLINE'
+      textDecoration: 'UNDERLINE',
+      textCase: 'UPPER'
     }),
     claim([12], { fontSize: 12 })
   ]),
@@ -190,8 +191,10 @@ describe('an instance text that keeps its inherited text style', async () => {
       })
     })
 
-    test(`keeps a claimed decoration, which leaves the style attached (${reader})`, () => {
-      expect(textOf(graph, sources, '1:30', [0]).textDecoration).toBe('UNDERLINE')
+    test(`draws the default decoration and case a style leaves out over claimed ones (${reader})`, () => {
+      // Figma saves a decoration or case set after the style in the text's runs, not as a claim.
+      const text = textOf(graph, sources, '1:30', [0])
+      expect([text.textDecoration, text.textCase]).toEqual(['NONE', 'ORIGINAL'])
     })
 
     test(`draws the style's value over a claimed variable (${reader})`, () => {
