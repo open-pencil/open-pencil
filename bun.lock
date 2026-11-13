@@ -872,6 +872,17 @@
         "@open-pencil/package-artifacts-tools": "workspace:*",
       },
     },
+    "tools/ci/cloud-examples": {
+      "name": "@open-pencil/cloud-examples-tools",
+      "dependencies": {
+        "@open-pencil/cloud": "workspace:*",
+        "@open-pencil/demo-tools": "workspace:*",
+        "@open-pencil/fig": "workspace:*",
+        "@open-pencil/package-artifacts-tools": "workspace:*",
+        "es-toolkit": "^1.52.0",
+        "fflate": "^0.8.3",
+      },
+    },
     "tools/ci/images": {
       "name": "@open-pencil/ci-images-tools",
     },
@@ -1868,6 +1879,8 @@
     "@open-pencil/cloud": ["@open-pencil/cloud@workspace:packages/cloud"],
 
     "@open-pencil/cloud-deploy-tools": ["@open-pencil/cloud-deploy-tools@workspace:tools/ci/cloud-deploy"],
+
+    "@open-pencil/cloud-examples-tools": ["@open-pencil/cloud-examples-tools@workspace:tools/ci/cloud-examples"],
 
     "@open-pencil/cloud-off-tools": ["@open-pencil/cloud-off-tools@workspace:tools/checks/cloud-off"],
 

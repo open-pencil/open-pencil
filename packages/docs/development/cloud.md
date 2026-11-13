@@ -376,6 +376,21 @@ it opens the stored file, is no edit of its own. The saver saves whenever any cl
 than `saved` records, so a tab that becomes the saver also saves edits an earlier saver left, and
 opening a document nobody edited uploads nothing.
 
+## Community gallery examples
+
+A deployment's community gallery is the workspace its `openpencil-cloud.toml` names with
+`[community] workspace`. The gallery's examples are ordinary documents there, published from CI as
+an account that belongs to that workspace. The **Publish gallery examples** workflow runs
+`tools/ci/cloud-examples` with the `cloud-<target>` environment's `CLOUD_URL` and
+`CLOUD_COMMUNITY_WORKSPACE` variables and its `CLOUD_COMMUNITY_TOKEN` secret, a personal access
+token of that account.
+
+The tool builds each example in its manifest (`src/examples.ts`; the tour is the editor's demo
+document) and saves it as the editor does, through `saveCloudDocument` in
+`@open-pencil/cloud/client`: the document is created the first time, gets a new revision only when
+its file changed, and, given a version, has its current state named after the release once. A run
+with the same files and version changes nothing.
+
 ## Configuration
 
 Operators author one schema-versioned TOML file. It owns URLs, trusted origins and proxies,

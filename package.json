@@ -41,6 +41,7 @@
     "tools/checks/type-shapes",
     "tools/checks/workflows",
     "tools/ci/cloud-deploy",
+    "tools/ci/cloud-examples",
     "tools/ci/images",
     "tools/ci/policy",
     "tools/ci/pr-review-guidance",
