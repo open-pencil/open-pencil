@@ -201,6 +201,7 @@ export function parseCloudDeploymentConfig(
     ...workerConfig(config),
     ...serviceConfig(config, environment),
     legal: legalConfig(config),
+    community: config.community ? { workspaceId: config.community.workspace } : undefined,
     errorTracking: errorTrackingConfig(config, environment),
     technicalLimits: technicalLimits(config)
   })

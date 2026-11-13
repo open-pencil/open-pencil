@@ -12,6 +12,7 @@ import {
   type DesignViewport
 } from '@open-pencil/dom-css'
 import { insertAll, maxOf, minOf } from '@open-pencil/scene-graph/arrays'
+import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import type { HTMLEngine, HTMLEngineFetch, HTMLEngineResource } from './engine'
@@ -209,6 +210,8 @@ function layoutOf(node: HTMLEngineNode): DesignLayout | undefined {
   const fragments = node.fragments?.filter(hasArea)
   if (fragments && fragments.length > 0) {
     layout.fragments = fragments.map(rect)
+    // An inline element's box is the one around its fragments, as getBoundingClientRect gives.
+    layout.box = computeBounds(layout.fragments)
     return layout
   }
   const whiteSpace = node.style?.['white-space']
@@ -248,8 +251,10 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
       })
       const styled = structuredClone(document)
       for (const [element, node] of pairElements(styled, capture)) {
-        // Every captured property's computed value, so none falls back to a stale inline one.
-        element.computedStyle = withShorthands({ ...capture.initial, ...node.style })
+        // Every captured property's computed value, so none falls back to a stale inline one, with
+        // sizes as the page set them rather than as layout resolved them, so the importer tells a
+        // size the page fixed from one that fills or hugs; the boxes layout gave stay in `layout`.
+        element.computedStyle = withShorthands({ ...capture.initial, ...node.style, ...node.sizes })
         if (compute.layout) element.layout = layoutOf(node)
       }
       return styled

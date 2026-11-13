@@ -97,3 +97,25 @@ Deployment administrators manage enrollment and users in the server's administra
 ## Terms and privacy
 
 The server shows no terms or privacy policy of its own: you run it, so the documents are yours to write. Add a `[legal]` table to link them. `terms_url` and `privacy_url` appear under the sign-in buttons and in the footer of the server's pages, `abuse_email` as a Report abuse link there, and `minimum_age` as a line at sign-up; editors read them from discovery too. With `require_acceptance = true`, which needs both `terms_url` and `terms_version`, each account accepts that version on its first sign-in, and again whenever you change it, before it can use the server; declining signs out. Until it accepts, the account can still download its documents and delete itself from the terms page, and nothing else. The server records which version each account accepted and when, so give each version that needs accepting again a value never used before: going back to an earlier one asks nobody who accepted it.
+
+## Community gallery
+
+Add a `[community]` table with a workspace's ID to make that workspace a public gallery:
+
+```toml
+[community]
+workspace = "0f6b1c1e-6a8e-4b8e-9a4f-3c2d1e0f9a8b"
+```
+
+Anyone can then open its documents read-only, without signing in or a share link, and **everything saved there is public**: saving a document to the workspace publishes it, and moving it out or to Trash takes it down. Its members work in it as in any workspace. A document the members couldn't open either, because it is in Trash, an administrator blocked it, it was never saved, or its creator is banned, stays out of the gallery.
+
+The gallery is served without signing in:
+
+- `GET /api/community` lists its documents, most recently changed first, each with its named versions and the path of its thumbnail.
+- `GET /api/community/<document>/document` downloads a document as it is now, or with `?version=<version>` as one of its named versions; other history stays private.
+- `GET /api/community/thumbnails/<document>/<revision>` is the thumbnail the document's saved file carries. The address changes with each save, so it can be cached for good.
+
+Name a version for each state you want people to be able to open later, such as a release.
+
+These routes are limited per visitor by IP address, which the server only knows from a header your proxy sets. The proxy must overwrite that header or append the client's address to it; one it passes through unchanged is whatever the client sent. Name that header under `[authentication.trusted_proxies]` before you turn the gallery on, and let only the proxy reach the server: a request without the header has no IP to count, so nothing limits it.
+
