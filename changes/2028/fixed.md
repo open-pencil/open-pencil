@@ -1,1 +1,1 @@
-- Documents with text set to truncate save as `.fig` instead of failing with an invalid enum value.
+- Text set to truncate through the plugin API or tools truncates on the canvas and saves as `.fig` instead of failing with an invalid enum value; the plugin API reads it back as `TRUNCATE`, and setting another resizing mode stops truncating, as in Figma (#2028).

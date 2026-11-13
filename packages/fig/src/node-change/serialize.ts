@@ -26,7 +26,7 @@ import { applyFontFeaturesToKiwi } from './font/features'
 import { figmaStyleName } from './font/style'
 import { fillToKiwiPaint, safeColor } from './paint'
 import { exportTextData, fontVariationToKiwi } from './text/data-export'
-import { figmaLetterSpacing, figmaLineHeight, figmaTextAutoResize } from './text/values'
+import { figmaLetterSpacing, figmaLineHeight } from './text/values'
 import {
   exportedVariableConsumptionEntries,
   mergeVariableConsumptionMaps
@@ -101,7 +101,7 @@ function serializeTextProps(
     nc.fontVariations = node.fontVariations.map(fontVariationToKiwi)
   }
   if (!node.opticalSizeFromFontSize) nc.detachOpticalSizeFromFontSize = true
-  const autoResize = figmaTextAutoResize(node.textAutoResize)
+  const autoResize = node.textAutoResize
   const rawNodeFields = effectiveFigmaRawNodeFields(node)
   if (!node.source.id || autoResize !== 'NONE' || 'textAutoResize' in rawNodeFields) {
     nc.textAutoResize = autoResize
@@ -119,9 +119,7 @@ function serializeTextProps(
   // FigJam text draws Noto emoji; a file's own set is replayed from its raw fields.
   if (!('emojiImageSet' in rawNodeFields)) nc.emojiImageSet = 'APPLE'
   if (node.textCase !== 'ORIGINAL') nc.textCase = node.textCase
-  if (node.textTruncation === 'ENDING' || node.textAutoResize === 'TRUNCATE') {
-    nc.textTruncation = 'ENDING'
-  }
+  if (node.textTruncation === 'ENDING') nc.textTruncation = 'ENDING'
   if (node.maxLines != null) nc.maxLines = node.maxLines
   serializeParagraphProps(node, nc)
   if (fontDigestMap) {

@@ -1,5 +1,6 @@
 import { beforeAll, expect, test } from 'bun:test'
 
+import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
@@ -63,15 +64,21 @@ test('instance style overrides come back as overrides after saving and reopening
   expect([reopenedLabel.letterSpacing, reopenedLabel.textCase]).toEqual([pixelLength(2), 'UPPER'])
 })
 
-test('an instance text set to truncate keeps truncating after reopening', async () => {
+test('an instance text the plugin API sets to truncate keeps truncating after reopening', async () => {
   const graph = new SceneGraph()
   const page = graph.getPages()[0].id
   const card = graph.createNode('COMPONENT', page, { name: 'Card', width: 200, height: 100 })
   graph.createNode('TEXT', card.id, { name: 'Label', text: 'A long label', width: 40, height: 16 })
   const instance = expectDefined(graph.createInstance(card.id, page))
   const [label] = graph.getChildren(instance.id)
-  graph.updateNode(label.id, { textAutoResize: 'TRUNCATE' })
-  recordInstanceOverride(graph, label.id, ['textAutoResize'])
+  const api = new FigmaAPI(graph)
+  const proxy = expectDefined(api.getNodeById(label.id))
+  if (proxy.type !== 'TEXT') throw new Error('Expected the label')
+  proxy.textAutoResize = 'TRUNCATE'
+  // Figma records only the truncation: the box was already fixed.
+  expect(
+    ['textTruncation', 'textAutoResize'].map((field) => hasInstanceOverride(graph, label.id, field))
+  ).toEqual([true, false])
 
   const reopened = await parseFigFile((await exportFigFile(graph)).slice().buffer)
   const copy = expectDefined([...reopened.getAllNodes()].find((node) => node.type === 'INSTANCE'))
