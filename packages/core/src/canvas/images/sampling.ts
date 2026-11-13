@@ -1,5 +1,4 @@
-import type { Image, Shader } from 'canvaskit-wasm'
-
+import type { Image, Shader } from '@open-pencil/canvaskit'
 import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
