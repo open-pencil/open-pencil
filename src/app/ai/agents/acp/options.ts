@@ -7,6 +7,8 @@ import {
   type SetSessionConfigOptionResponse
 } from '@agentclientprotocol/sdk/unstable'
 
+import type { ModelOption } from '@open-pencil/core/constants'
+
 /**
  * What an agent says about a session's options: when it opens or resumes one, and after each
  * change.
@@ -15,11 +17,8 @@ export interface OfferedSessionOptions {
   configOptions?: SessionConfigOption[] | null
 }
 
-/** One value a session option can take. */
-export interface SessionOptionValue {
-  id: string
-  name: string
-}
+/** One value a session option can take, as a model option lists a model. */
+export type SessionOptionValue = Pick<ModelOption, 'id' | 'name'>
 
 /** A session option that takes one of several values, such as its model or its thinking effort. */
 export interface SessionChoice {
