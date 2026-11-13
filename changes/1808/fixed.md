@@ -1,2 +1,3 @@
-- A layer with a layer blur or opacity keeps its drop shadows and the children that reach past its box. A rotated or flipped layer with a layer blur, or a rotated, flipped or shadowed mask, is no longer cut to its unrotated box, and a shadow's faint edge is no longer cut at a tile's edge (#1808).
+- A rotated, flipped, shadowed or blurred mask, or a frame mask with a child past its box, masks everything it covers instead of only its unrotated box (#1808).
+- Drop shadows draw out to their faint edge instead of stopping at their blur radius or at the edge of a canvas tile, so a shadowed text whose lines run past its box no longer disappears below the box, and a rotated layer with a layer blur no longer goes missing from parts of the canvas (#1808).
 - draw.io images, page thumbnails and visual diffs hold a drop shadow or a layer blur as far as the canvas draws it, about 1.3 times its radius for an opaque shadow, where they cut it at its radius (#1808).
