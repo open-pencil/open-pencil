@@ -184,10 +184,14 @@ export function createChatSessionManager({
     provider: AIProviderID,
     agentSession?: AgentSessionLink
   ) {
+    // Read before anything is awaited, so the model is the profile's the chat chose `provider`
+    // from; a profile change while the agent starts moves neither.
+    const starting = createAIModelRuntime('design')
+    // Awaited below; a teardown that fails first must not leave its rejection unhandled.
+    starting.catch(() => undefined)
     await destroyAgentTransports()
     await assertAgentReady('acp')
-    // The profile the chat started on names the model, unless it has since moved to another agent.
-    const runtime = await createAIModelRuntime('design')
+    const runtime = await starting
     const profileModel =
       runtime?.kind === 'acp' && runtime.role.connection.providerID === provider
         ? runtime.model
