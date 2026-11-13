@@ -1,257 +1,210 @@
 @reference 'tailwindcss';
 
-/* The renderer's shadcn variables, mapped to app tokens on everything it draws: messages and the
-   tooltips and dialogs it teleports out of them. */
-.stream-markdown {
-  --accent: var(--color-hover);
-  --accent-foreground: var(--color-surface);
-  --background: var(--color-input);
-  --border: var(--color-border);
-  --foreground: var(--color-surface);
-  --muted: var(--color-hover);
-  --muted-foreground: var(--color-muted);
-  --popover: var(--color-panel);
-  --popover-foreground: var(--color-surface);
-  --primary: var(--color-accent);
-  --primary-foreground: white;
-}
-
-/* The confirmation before opening a link, sized like the app's dialogs. */
-[data-stream-markdown='alert'] {
-  @apply max-w-80 gap-3 rounded-lg bg-panel p-4 text-surface shadow-lg;
-}
-
-[data-stream-markdown='alert-title'] {
-  @apply mb-1 text-sm;
-}
-
-[data-stream-markdown='alert-description'] {
-  @apply text-xs;
-}
-
-[data-stream-markdown='alert'] [data-stream-markdown='link-url'] {
-  @apply bg-input p-2 text-2xs break-all text-surface;
-}
-
-/* Menus such as a table's copy formats, sized like the app's menus. The renderer sets the item
-   size inline, so these override it. */
-[data-stream-markdown='dropdown-overlay'] [data-stream-markdown='button'] {
-  @apply !min-w-24 !gap-2 rounded px-2 py-1 !text-xs !leading-4 text-surface;
-}
-
-[data-stream-markdown='alert-backdrop'] {
-  @apply bg-black/40 backdrop-blur-none;
-}
-
-.markdown-root [data-stream-markdown='code-block'],
-.markdown-root .shiki {
-  background-color: var(--color-input);
-}
-
-/* A code block's language and copy bar stays on the block; pinned, it covered the lines above. */
-.markdown-root [data-stream-markdown='code-block-header'].sticky {
-  position: static;
-}
-
+/* Markdown that Comark renders: messages, comments, skill instructions, and release notes.
+   Element rules use :where() so a component's own classes win over them. */
 .markdown-content {
-  --shiki-dark-bg: var(--color-input);
+  @apply break-words text-surface;
 
-  &[data-markdown-mode='streaming'] {
-    [data-stream-markdown='li'],
-    [data-stream-markdown='code-block'],
-    [data-stream-markdown='code-line'] {
-      @apply animate-in fade-in duration-200 motion-reduce:animate-none;
-    }
-  }
-}
-
-.markdown-content {
-  /* Tables read as part of the reply: regular weight, a light header, no fills on the rows. */
-  [data-stream-markdown='table-wrapper'] {
-    @apply items-stretch gap-1;
+  :where(h1, h2, h3, h4, h5, h6) {
+    @apply font-semibold;
   }
 
-  [data-stream-markdown='table'] {
-    @apply rounded-md;
+  :where(strong) {
+    @apply font-semibold;
   }
 
-  [data-stream-markdown='thead'] {
-    @apply bg-hover/60;
+  :where(em) {
+    @apply italic;
   }
 
-  [data-stream-markdown='th'] {
-    @apply text-left align-bottom font-medium text-muted;
+  :where(del) {
+    @apply line-through;
   }
 
-  [data-stream-markdown='tbody'] {
-    @apply border-y-0 bg-transparent font-normal;
+  :where(a) {
+    @apply cursor-pointer text-accent underline [overflow-wrap:anywhere];
   }
 
-  [data-stream-markdown='td'] {
-    @apply align-top;
+  :where(ul) {
+    @apply list-disc ps-5;
   }
 
-  [data-stream-markdown='table-controls'] [data-stream-markdown='button'] {
-    @apply size-5 p-0;
-
-    & svg {
-      @apply size-3;
-    }
+  :where(ol) {
+    @apply list-decimal ps-5;
   }
 
-  [data-stream-markdown='error-component'],
-  [data-stream-markdown='image-caption'] {
-    @apply text-2xs;
+  :where(li) > :where(p) {
+    @apply my-0;
   }
 
   /* A task item shows its checkbox in place of the bullet. */
-  [data-stream-markdown='li'].task-list-item {
-    @apply list-none;
+  :where(ul.contains-task-list) {
+    @apply list-none ps-1;
   }
 
-  [data-stream-markdown='input'][type='checkbox'] {
-    @apply mr-1.5 size-3 align-[-0.125em] accent-accent;
+  [data-markdown='task-checkbox'] {
+    @apply me-1.5 size-3 align-[-0.125em] accent-accent;
   }
 
-  [data-stream-markdown='footnote-definition-button'] {
-    @apply text-muted;
+  :where(blockquote) {
+    @apply border-s-4 border-muted/30 ps-3 text-muted italic;
+
+    & :where(p) {
+      @apply mb-0;
+    }
+  }
+
+  :where(hr) {
+    @apply border-t border-border;
+  }
+
+  :where(img) {
+    @apply h-auto max-w-full rounded-lg;
+  }
+
+  /* A code block: its language and copy button, then the code on the input color. */
+  [data-markdown='code-block'] {
+    @apply overflow-hidden rounded-md bg-input;
+  }
+
+  [data-markdown='code-block-header'] {
+    @apply flex items-center justify-between ps-2 text-muted;
+  }
+
+  [data-markdown='code-language'] {
+    @apply font-mono;
+  }
+
+  :where(pre) {
+    @apply overflow-x-auto font-mono;
+    background-color: var(--color-input) !important;
+  }
+
+  /* Tables read as part of the reply: regular weight, a light header, no fills on the rows. */
+  [data-markdown='table-wrapper'] {
+    @apply flex flex-col items-stretch gap-1;
+  }
+
+  [data-markdown='table-controls'] {
+    @apply flex justify-end;
+  }
+
+  [data-markdown='table-scroll'] {
+    @apply overflow-x-auto;
+  }
+
+  [data-markdown='table'] {
+    @apply w-full border-collapse overflow-hidden rounded-md border border-border;
+  }
+
+  :where(thead) {
+    @apply bg-hover/60;
+  }
+
+  :where(tr) {
+    @apply border-b border-border;
+  }
+
+  :where(th) {
+    @apply text-left align-bottom font-medium whitespace-nowrap text-muted;
+  }
+
+  :where(td) {
+    @apply align-top;
+  }
+}
+
+/* Shiki writes the block's and each token's dark color as --shiki-dark; the dark theme uses it. */
+:root[data-theme='dark'] .markdown-content :where(pre, pre span)[style*='--shiki-dark'] {
+  color: var(--shiki-dark) !important;
+}
+
+/* What arrives while a reply streams fades in: each new word, list item, code block, and line. */
+.markdown-content[data-markdown-mode='streaming'] {
+  .markdown-word,
+  :where(li),
+  [data-markdown='code-block'],
+  :where(pre .line) {
+    @apply animate-in fade-in duration-200 motion-reduce:animate-none;
   }
 }
 
 .markdown-content[data-markdown-density='compact'] {
-  [data-stream-markdown='table-wrapper'] {
-    @apply my-2;
-  }
-
-  [data-stream-markdown='th'],
-  [data-stream-markdown='td'] {
-    @apply px-2 py-1 text-2xs leading-4;
-  }
-
   @apply text-2xs leading-4;
 
-  [data-stream-markdown='blockquote'],
-  [data-stream-markdown='code-block'] {
-    @apply my-2;
-  }
-
-  [data-stream-markdown='code-block-header'] {
-    @apply h-6 px-1.5 py-0 text-4xs leading-3;
-  }
-
-  [data-stream-markdown='code-block-header'] [data-stream-markdown='actions'] {
-    @apply gap-0.5;
-  }
-
-  [data-stream-markdown='code-block-header'] [data-stream-markdown='button'] {
-    @apply size-4 p-0;
-  }
-
-  [data-stream-markdown='code-block-header'] [data-stream-markdown='button'] svg,
-  [data-stream-markdown='language-title'] svg {
-    @apply size-2.5;
-  }
-
-  [data-stream-markdown='code-line'] {
-    @apply min-h-4 text-2xs leading-4;
-
-    &::before {
-      @apply mr-2 text-4xs;
-    }
-  }
-
-  [data-stream-markdown='code-block'] [data-stream-markdown='code'] {
-    @apply p-1.5 text-2xs leading-4;
-  }
-
-  [data-stream-markdown='heading-1'] {
+  :where(h1) {
     @apply mt-2.5 mb-1 text-sm;
   }
 
-  [data-stream-markdown='heading-2'] {
+  :where(h2) {
     @apply mt-2.5 mb-1 text-xs;
   }
 
-  [data-stream-markdown='heading-3'],
-  [data-stream-markdown='heading-4'],
-  [data-stream-markdown='heading-5'],
-  [data-stream-markdown='heading-6'] {
+  :where(h3, h4, h5, h6) {
     @apply mt-2 mb-1 text-2xs;
   }
 
-  [data-stream-markdown='language-name'] {
-    @apply text-4xs leading-3;
-  }
-
-  [data-stream-markdown='language-title'] {
-    @apply gap-1;
-  }
-
-  [data-stream-markdown='li'] {
-    @apply py-0;
-  }
-
-  [data-stream-markdown='ol'],
-  [data-stream-markdown='ul'] {
-    @apply leading-4;
-  }
-
-  [data-stream-markdown='p'] {
+  :where(p) {
     @apply my-1.5;
   }
 
-  [data-stream-markdown='thematic-break'] {
+  :where(ul, ol) {
+    @apply leading-4;
+  }
+
+  :where(blockquote, hr, [data-markdown='code-block'], [data-markdown='table-wrapper']) {
     @apply my-2;
+  }
+
+  [data-markdown='code-block-header'] {
+    @apply h-6 text-4xs leading-3;
+  }
+
+  :where(pre) {
+    @apply p-1.5 pt-0 text-2xs leading-4;
+  }
+
+  :where(th, td) {
+    @apply px-2 py-1 text-2xs leading-4;
   }
 }
 
 .markdown-content[data-markdown-density='comfortable'] {
   @apply text-xs leading-5;
 
-  [data-stream-markdown='table-wrapper'] {
-    @apply my-3;
+  :where(h1) {
+    @apply mt-4 mb-1.5 text-base first:mt-0;
   }
 
-  [data-stream-markdown='th'],
-  [data-stream-markdown='td'] {
-    @apply px-2.5 py-1.5 text-xs leading-5;
+  :where(h2) {
+    @apply mt-4 mb-1.5 text-sm first:mt-0;
   }
 
-  [data-stream-markdown='heading-1'] {
-    @apply mt-4 mb-1.5 text-base font-semibold first:mt-0;
+  :where(h3, h4, h5, h6) {
+    @apply mt-3.5 mb-1 text-xs first:mt-0;
   }
 
-  [data-stream-markdown='heading-2'] {
-    @apply mt-4 mb-1.5 text-sm font-semibold first:mt-0;
-  }
-
-  [data-stream-markdown='heading-3'],
-  [data-stream-markdown='heading-4'],
-  [data-stream-markdown='heading-5'],
-  [data-stream-markdown='heading-6'] {
-    @apply mt-3.5 mb-1 text-xs font-semibold first:mt-0;
-  }
-
-  [data-stream-markdown='li'],
-  [data-stream-markdown='p'] {
-    @apply leading-5;
-  }
-
-  [data-stream-markdown='li'] {
-    @apply py-0.5;
-  }
-
-  [data-stream-markdown='p'] {
+  :where(p) {
     @apply my-2;
   }
 
-  [data-stream-markdown='li'] > [data-stream-markdown='p'] {
-    @apply my-0;
+  :where(li) {
+    @apply py-0.5 leading-5;
   }
 
-  [data-stream-markdown='blockquote'],
-  [data-stream-markdown='code-block'],
-  [data-stream-markdown='thematic-break'] {
+  :where(blockquote, hr, [data-markdown='code-block'], [data-markdown='table-wrapper']) {
     @apply my-3;
+  }
+
+  [data-markdown='code-block-header'] {
+    @apply h-7 text-3xs;
+  }
+
+  :where(pre) {
+    @apply p-2 pt-0 text-2xs leading-4;
+  }
+
+  :where(th, td) {
+    @apply px-2.5 py-1.5 text-xs leading-5;
   }
 }
