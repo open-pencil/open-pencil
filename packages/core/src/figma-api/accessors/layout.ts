@@ -11,7 +11,10 @@ import {
   type LayoutSizingAxis,
   AUTO_LAYOUT_GRID_COUNT,
   isAutoGridCount,
-  layoutGridCount
+  layoutGridAlignment,
+  layoutGridColor,
+  layoutGridCount,
+  layoutGridPattern
 } from '@open-pencil/scene-graph/layout'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
@@ -30,8 +33,9 @@ import { parseFigma } from '#core/figma-api/validation'
 /** A guide in Figma's plugin shape, whether it was set that way or read from a file. */
 function figmaLayoutGrid(grid: LayoutGrid): Readonly<LayoutGrid> {
   const visible = grid.visible ?? true
-  const color = { ...(grid.color ?? { r: 1, g: 0, b: 0, a: 0.1 }) }
-  if (grid.pattern === 'GRID')
+  const color = layoutGridColor(grid)
+  const pattern = layoutGridPattern(grid)
+  if (pattern === 'GRID')
     return Object.freeze({
       pattern: 'GRID',
       sectionSize: grid.sectionSize ?? 10,
@@ -39,10 +43,9 @@ function figmaLayoutGrid(grid: LayoutGrid): Readonly<LayoutGrid> {
       color,
       boundVariables: {}
     })
-  const rows = grid.pattern === 'ROWS' || (grid.pattern !== 'COLUMNS' && grid.axis === 'Y')
-  const alignment = grid.alignment ?? grid.type ?? 'STRETCH'
+  const alignment = layoutGridAlignment(grid)
   return Object.freeze({
-    pattern: rows ? 'ROWS' : 'COLUMNS',
+    pattern,
     alignment,
     gutterSize: grid.gutterSize ?? 0,
     count: layoutGridCount(grid) === AUTO_LAYOUT_GRID_COUNT ? null : layoutGridCount(grid),

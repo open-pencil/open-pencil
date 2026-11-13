@@ -1,3 +1,4 @@
+import type { Color } from '../primitives'
 import type { LayoutGrid, SceneNode } from '../types'
 
 export interface LayoutGuideLine {
@@ -5,7 +6,8 @@ export interface LayoutGuideLine {
   position: number
 }
 
-const MAX_LAYOUT_GUIDE_LINES = 10_000
+/** The most lines one guide draws or snaps to on an axis. */
+export const MAX_LAYOUT_GUIDE_LINES = 10_000
 
 /** Figma's Auto count, as its archive stores it: as many sections as fit. */
 export const AUTO_LAYOUT_GRID_COUNT = 2_147_483_647
@@ -24,17 +26,41 @@ export function layoutGridCount(grid: LayoutGrid): number {
   return isAutoGridCount(count) ? AUTO_LAYOUT_GRID_COUNT : (count ?? 1)
 }
 
-function pattern(grid: LayoutGrid): 'COLUMNS' | 'ROWS' | 'GRID' {
-  if (grid.pattern === 'GRID' || grid.pattern === 'ROWS') return grid.pattern
-  if (grid.axis === 'Y') return 'ROWS'
-  return 'COLUMNS'
+/** Figma's color for a new guide: red at 10%. */
+export const DEFAULT_LAYOUT_GRID_COLOR: Readonly<Color> = Object.freeze({
+  r: 1,
+  g: 0,
+  b: 0,
+  a: 0.1
+})
+
+/** A guide's pattern in Figma's plugin names, from either shape: the archive's `STRIPES` along an `axis`. */
+export function layoutGridPattern(
+  grid: Pick<LayoutGrid, 'pattern' | 'axis'>
+): 'COLUMNS' | 'ROWS' | 'GRID' {
+  if (grid.pattern === 'GRID' || grid.pattern === 'ROWS' || grid.pattern === 'COLUMNS') {
+    return grid.pattern
+  }
+  return grid.axis === 'Y' ? 'ROWS' : 'COLUMNS'
 }
 
-function alignment(grid: LayoutGrid): 'MIN' | 'CENTER' | 'MAX' | 'STRETCH' {
-  const value = grid.alignment ?? grid.type
-  if (value === 'CENTER' || value === 'MAX' || value === 'STRETCH') return value
-  return 'MIN'
+/**
+ * A guide's alignment, from either shape. One set without any stretches, as the plugin API and
+ * export have read it; a file's guide always has one, as Figma drops a guide without it.
+ */
+export function layoutGridAlignment(
+  grid: Pick<LayoutGrid, 'alignment' | 'type'>
+): 'MIN' | 'CENTER' | 'MAX' | 'STRETCH' {
+  return grid.alignment ?? grid.type ?? 'STRETCH'
 }
+
+/** A guide's color, Figma's new-guide red for one set without any. */
+export function layoutGridColor(grid: Pick<LayoutGrid, 'color'>): Color {
+  return { ...(grid.color ?? DEFAULT_LAYOUT_GRID_COLOR) }
+}
+
+const pattern = layoutGridPattern
+const alignment = layoutGridAlignment
 
 /**
  * How many sections a guide draws. Auto fits as many fixed sections as the frame holds, counting

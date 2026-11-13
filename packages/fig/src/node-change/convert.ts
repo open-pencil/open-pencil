@@ -634,8 +634,15 @@ function sharedStyleType(value: string | undefined): SharedStyleType | null {
   return null
 }
 
+/**
+ * A file's guides as Figma reads them: one without an alignment is dropped, and one without a
+ * color is transparent (Figma desktop, live, pasting records that lost either field).
+ */
 function convertLayoutGrids(value: unknown): LayoutGrid[] {
-  return Array.isArray(value) ? structuredClone(value as LayoutGrid[]) : []
+  if (!Array.isArray(value)) return []
+  return structuredClone(value as LayoutGrid[])
+    .filter((grid) => grid.type !== undefined || grid.alignment !== undefined)
+    .map((grid) => ({ ...grid, color: grid.color ?? { r: 0, g: 0, b: 0, a: 0 } }))
 }
 
 function convertTextPathData(nc: NodeChange, blobs: Uint8Array[]): SceneNode['textPathData'] {

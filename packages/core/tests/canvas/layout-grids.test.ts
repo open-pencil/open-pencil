@@ -108,4 +108,16 @@ describe('layout grid rendering', () => {
 
     expect(canvas.drawRect).not.toHaveBeenCalled()
   })
+
+  test('draws a square grid with no more lines than any other guide', () => {
+    const r = createMockRenderer()
+    const canvas = createMockCanvas()
+    const node = nodeWithLayoutGrids([
+      { pattern: 'GRID', visible: true, color: { r: 1, g: 0, b: 0, a: 0.1 }, sectionSize: 0.001 }
+    ])
+
+    drawLayoutGrids(r, asCanvas(canvas), node)
+
+    expect(mockCalls(canvas.drawRect).length).toBeLessThanOrEqual(20_000)
+  })
 })
