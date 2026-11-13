@@ -24,7 +24,8 @@ float boxDistance(float2 q, float2 h, float r) {
 // fixed-point steps against the ellipse's evolute from the quadrant's middle; within about a
 // thousandth of a unit of the exact distance, measured up to a 40:1 ellipse.
 float2 nearestOnEllipse(float2 p, float2 ab) {
-  float2 q = abs(p);
+  // Off the exact centre, where a circle's every direction is nearest and none can be chosen.
+  float2 q = max(abs(p), float2(1e-4));
   float2 t = float2(0.70710678);
   float2 stretch = float2(ab.x * ab.x - ab.y * ab.y, ab.y * ab.y - ab.x * ab.x) / ab;
   for (int i = 0; i < 4; i++) {
