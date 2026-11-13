@@ -1,9 +1,11 @@
+import type { BaseNode } from '@figma/plugin-typings/plugin-api-standalone'
 import * as v from 'valibot'
 
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { ZOOM_MAX, ZOOM_MIN } from '#core/constants'
+import type { FigmaNodeProxy } from '#core/figma-api/proxy'
 import { atLeast, finiteNumberSchema } from '#core/figma-api/schema'
 import { parseFigma } from '#core/figma-api/validation'
 
@@ -20,12 +22,15 @@ export interface FigmaViewportHost {
   fit(pageId: string, bounds: Rect): void
 }
 
-/** Figma's `figma.viewport`. */
+/** A node a script passes: one of the API's, typed as Figma's or as OpenPencil's proxy. */
+type ViewportNode = BaseNode | FigmaNodeProxy
+
+/** Figma's `figma.viewport`, checked against its `ViewportAPI` in `compatibility.ts`. */
 export interface FigmaViewport {
   center: Vector
   zoom: number
   readonly bounds: Rect
-  scrollAndZoomIntoView(nodes: readonly { absoluteBoundingBox: Rect }[]): void
+  scrollAndZoomIntoView(nodes: ReadonlyArray<ViewportNode>): void
 }
 
 const centerSchema = v.object({ x: finiteNumberSchema, y: finiteNumberSchema })
@@ -57,10 +62,16 @@ export function detachedViewport(): FigmaViewportHost {
 export class Viewport implements FigmaViewport {
   readonly #host: FigmaViewportHost
   readonly #currentPageId: () => string
+  readonly #boundingBox: (node: ViewportNode) => Rect
 
-  constructor(host: FigmaViewportHost, currentPageId: () => string) {
+  constructor(
+    host: FigmaViewportHost,
+    currentPageId: () => string,
+    boundingBox: (node: ViewportNode) => Rect
+  ) {
     this.#host = host
     this.#currentPageId = currentPageId
+    this.#boundingBox = boundingBox
   }
 
   get center(): Vector {
@@ -85,9 +96,9 @@ export class Viewport implements FigmaViewport {
     return { ...this.#host.get().bounds }
   }
 
-  scrollAndZoomIntoView(nodes: readonly { absoluteBoundingBox: Rect }[]): void {
+  scrollAndZoomIntoView(nodes: ReadonlyArray<ViewportNode>): void {
     if (nodes.length === 0) return
-    const bounds = computeBounds(nodes.map((node) => node.absoluteBoundingBox))
+    const bounds = computeBounds(nodes.map((node) => this.#boundingBox(node)))
     this.#host.fit(this.#currentPageId(), bounds)
   }
 }

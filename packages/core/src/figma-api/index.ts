@@ -151,7 +151,11 @@ export class FigmaAPI extends FigmaStructureMethods implements NodeProxyHost {
   constructor(graph: SceneGraph, options: FigmaAPIOptions = {}) {
     super()
     this.#graph = graph
-    this.#viewport = new Viewport(options.viewport ?? detachedViewport(), () => this.#currentPageId)
+    this.#viewport = new Viewport(
+      options.viewport ?? detachedViewport(),
+      () => this.#currentPageId,
+      (node) => this.wrapNode(nodeIdOf(node)).absoluteBoundingBox
+    )
     bindGraph(this, graph)
     this.#fetch = options.fetch ?? ((input, init) => fetch(input, init))
     if (options.signal) cancelScriptWaits(this, options.signal)

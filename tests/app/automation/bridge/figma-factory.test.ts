@@ -124,7 +124,7 @@ describe('figma.viewport in the app', () => {
     })
     const figma = makeFigmaFromStore(tab.store)
 
-    figma.viewport.scrollAndZoomIntoView([{ absoluteBoundingBox: frame }])
+    figma.viewport.scrollAndZoomIntoView([figma.wrapNode(frame.id)])
 
     const { panX, panY, zoom } = tab.store.state
     expect(frame.x * zoom + panX).toBeGreaterThanOrEqual(0)
@@ -157,7 +157,7 @@ describe('figma.viewport in the app', () => {
     const figma = makeFigmaFromStore(tab.store)
     figma.viewport.zoom = 0.3
 
-    figma.viewport.scrollAndZoomIntoView([{ absoluteBoundingBox: frame }])
+    figma.viewport.scrollAndZoomIntoView([figma.wrapNode(frame.id)])
 
     expect(tab.store.state.zoom).toBe(1)
   })
