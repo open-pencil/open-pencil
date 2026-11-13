@@ -1,11 +1,17 @@
+import { focusStyles } from '@/theme/focus/styles'
+
 const bannerTheme = {
   slots: {
     root: 'flex items-center gap-2 border-b border-warning-border bg-warning-bg px-3 py-1.5 text-xs text-warning',
     content: 'flex-1',
-    action:
+    action: [
       'shrink-0 rounded px-1.5 py-0.5 font-medium text-warning-action transition-colors hover:bg-warning/20',
-    dismiss:
-      'shrink-0 rounded px-1.5 py-0.5 font-medium text-warning-action transition-colors hover:bg-warning/20'
+      focusStyles.ring
+    ],
+    dismiss: [
+      'shrink-0 rounded px-1.5 py-0.5 font-medium text-warning-action transition-colors hover:bg-warning/20',
+      focusStyles.ring
+    ]
   }
 }
 

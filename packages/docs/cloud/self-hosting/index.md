@@ -113,7 +113,7 @@ The gallery is served without signing in:
 
 - `GET /api/community` lists its documents, most recently changed first, each with its named versions and the path of its thumbnail.
 - `GET /api/community/<document>/document` downloads a document as it is now, or with `?version=<version>` as one of its named versions; other history stays private.
-- `GET /api/community/thumbnails/<document>/<revision>` is the thumbnail the document's saved file carries. The address changes with each save, so it can be cached for good.
+- `GET /api/community/thumbnails/<document>/<revision>` is the thumbnail the document's saved file carries. The address changes with each save. It is cached for five minutes, like the list, so a document taken down or moved out of the gallery stops showing soon after.
 
 Name a version for each state you want people to be able to open later, such as a release.
 

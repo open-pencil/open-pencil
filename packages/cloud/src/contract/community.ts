@@ -4,7 +4,7 @@ import { documentDownloadSchema, documentKindSchema } from './documents'
 
 /**
  * Where a community document's thumbnail is served, by its document and revision: the address
- * changes with each save, so a copy stays good for as long as it is cached.
+ * changes with each save, so a cached copy never shows an older state.
  */
 export const COMMUNITY_THUMBNAIL_PATH = '/api/community/thumbnails'
 

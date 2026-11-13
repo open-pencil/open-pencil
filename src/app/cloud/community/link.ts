@@ -59,9 +59,11 @@ function setCommunityTab(store: EditorStore, link: CloudCommunityLink | null): v
   cloudCommunityTabs.value = next
 }
 
-// A tab that opens another file no longer shows the gallery document.
+// A tab that opens another file no longer shows the gallery document, nor keeps it read-only.
 onTabDocumentReplaced((store) => {
-  if (cloudCommunityTabs.value.has(store)) setCommunityTab(store, null)
+  if (!cloudCommunityTabs.value.has(store)) return
+  setCommunityTab(store, null)
+  store.setReadOnly(false)
 })
 
 /**
