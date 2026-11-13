@@ -5,6 +5,11 @@ import * as v from 'valibot'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS, defineTool } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import {
+  MAX_FONT_SIZE,
+  MAX_LAYOUT_LENGTH,
+  MAX_LAYOUT_SPACING
+} from '@open-pencil/scene-graph/layout'
 
 const tool = defineTool({
   name: 'place_box',
@@ -58,5 +63,74 @@ describe('tool arguments', () => {
     expect(() =>
       builtIn('set_font').execute(figma, { id: text.id, font: { family: 'Verdana' } })
     ).toThrow('Invalid arguments for set_font')
+  })
+
+  test('refuse a size, a gap, or a font size beyond what layout can use', () => {
+    const figma = new FigmaAPI(new SceneGraph())
+    const frame = figma.createFrame()
+    expect(() =>
+      builtIn('update_node').execute(figma, { id: frame.id, width: MAX_LAYOUT_LENGTH + 1 })
+    ).toThrow(`Expected <=${MAX_LAYOUT_LENGTH}`)
+    expect(() =>
+      builtIn('set_layout').execute(figma, { id: frame.id, spacing: MAX_LAYOUT_SPACING + 1 })
+    ).toThrow(`Expected <=${MAX_LAYOUT_SPACING}`)
+    expect(() =>
+      builtIn('set_font').execute(figma, { id: figma.createText().id, size: MAX_FONT_SIZE + 1 })
+    ).toThrow(`Expected <=${MAX_FONT_SIZE}`)
+  })
+
+  test('accept a size, a gap, or a font size at the largest value layout can use', () => {
+    expect(v.parse(builtIn('update_node').input, { id: 'x', width: MAX_LAYOUT_LENGTH })).toEqual({
+      id: 'x',
+      width: MAX_LAYOUT_LENGTH
+    })
+    expect(v.parse(builtIn('set_layout').input, { id: 'x', spacing: MAX_LAYOUT_SPACING })).toEqual({
+      id: 'x',
+      spacing: MAX_LAYOUT_SPACING
+    })
+    expect(v.parse(builtIn('set_font').input, { id: 'x', size: MAX_FONT_SIZE })).toEqual({
+      id: 'x',
+      size: MAX_FONT_SIZE
+    })
+  })
+
+  test('refuse a size, a gap, or a font size below what layout can use', () => {
+    const figma = new FigmaAPI(new SceneGraph())
+    const frame = figma.createFrame()
+    expect(() => builtIn('update_node').execute(figma, { id: frame.id, width: 0 })).toThrow(
+      'Expected >=1'
+    )
+    expect(() => builtIn('set_layout').execute(figma, { id: frame.id, spacing: -1 })).toThrow(
+      'Expected >=0'
+    )
+    expect(() =>
+      builtIn('set_font').execute(figma, { id: figma.createText().id, size: 0 })
+    ).toThrow('Expected >=1')
+    expect(() => builtIn('set_layout_child').execute(figma, { id: frame.id, grow: -1 })).toThrow(
+      'Expected >=0'
+    )
+  })
+
+  test('accept a size, a gap, or a font size at the smallest value layout can use', () => {
+    expect(v.parse(builtIn('update_node').input, { id: 'x', width: 1 })).toEqual({
+      id: 'x',
+      width: 1
+    })
+    expect(v.parse(builtIn('set_layout').input, { id: 'x', spacing: 0 })).toEqual({
+      id: 'x',
+      spacing: 0
+    })
+    expect(v.parse(builtIn('set_layout_child').input, { id: 'x', grow: 0 })).toEqual({
+      id: 'x',
+      grow: 0
+    })
+    expect(v.parse(builtIn('set_font').input, { id: 'x', size: 1 })).toEqual({ id: 'x', size: 1 })
+  })
+
+  test('read a numeric string as the number it names, within the bound', () => {
+    const figma = new FigmaAPI(new SceneGraph())
+    const frame = figma.createFrame()
+    builtIn('update_node').execute(figma, { id: frame.id, width: '1000' })
+    expect(figma.getNodeById(frame.id)?.width).toBe(1000)
   })
 })

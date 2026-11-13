@@ -3760,6 +3760,7 @@ dependencies = [
  "blitz-traits",
  "parley",
  "serde_json",
+ "stylo",
 ]
 
 [[package]]

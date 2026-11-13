@@ -13,7 +13,7 @@ import {
   type CloudAdminDocument,
   type CloudAdminDocumentFilter
 } from '#cloud/contract'
-import type { CloudDatabase } from '#cloud/server/db'
+import { userIdText, type CloudDatabase } from '#cloud/server/db'
 import { unmarkPurged } from '#cloud/server/documents/purge'
 import { dateString } from '#cloud/server/sharing/contracts'
 import { uniq } from 'es-toolkit'
@@ -67,9 +67,7 @@ function searchCondition(search: string) {
         expression
           .selectFrom('user')
           .select('user.id')
-          .where((inner) =>
-            inner(inner.cast('user.id', 'text'), '=', inner.ref('document.createdBy'))
-          )
+          .whereRef(userIdText, '=', 'document.createdBy')
           .where((inner) =>
             inner.or([inner('user.email', 'ilike', pattern), inner('user.name', 'ilike', pattern)])
           )
