@@ -2,6 +2,7 @@ import { expect, test } from 'bun:test'
 
 import { populationPort } from '#core-tests/helpers/fig/population-worker'
 
+import { createEditor } from '@open-pencil/core'
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
@@ -51,6 +52,67 @@ test('a copy that takes the edits a graph sends stays equal to it', async () => 
     expect(copy.documentColorSpace).toBe('display-p3')
   } finally {
     tracker.stop()
+  }
+})
+
+test('a layer moved out of nested layers removed in the same batch stays in the copy', () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0]
+  const outer = graph.createNode('FRAME', page.id, { name: 'Outer' })
+  const inner = graph.createNode('FRAME', outer.id, { name: 'Inner' })
+  const leaf = graph.createNode('RECTANGLE', inner.id, { name: 'Leaf' })
+  const copy = copyOf(graph)
+  const tracker = trackFigGraphEdits(graph, (edits) =>
+    applyFigGraphEdits(copy, structuredClone(edits))
+  )
+  try {
+    graph.updateNode(outer.id, { name: 'Outer renamed' })
+    graph.reparentNode(leaf.id, page.id)
+    graph.deleteNode(outer.id)
+    tracker.flush()
+    expect(copy.getNode(leaf.id)?.parentId).toBe(page.id)
+    expect(layers(copy)).toEqual(layers(graph))
+  } finally {
+    tracker.stop()
+  }
+})
+
+test('a page that arrives while an edit waits stays out of its undo step', async () => {
+  const graph = new SceneGraph()
+  const page = graph.addPage('Later')
+  const template = graph.createNode('RECTANGLE', graph.getPages()[0].id)
+  const editor = createEditor({ graph })
+  const worker = populationPort()
+  const client = createPopulationWorkerClient(graph, worker.worker, worker.port)
+  try {
+    const pending = client.populate(page.id)
+    const { promise: waiting, resolve: finishWaiting } = Promise.withResolvers<undefined>()
+    const edit = editor.recordEditAsync({ label: 'Agent' }, async () => {
+      graph.updateNode(template.id, { name: 'Edited' })
+      await waiting
+    })
+    worker.send({
+      type: 'population-result',
+      requestId: worker.request().requestId,
+      baseRevision: worker.request().baseRevision,
+      populated: true,
+      delta: {
+        created: [['loaded', { ...template, id: 'loaded', parentId: page.id, name: 'Loaded' }]],
+        updated: [[page.id, { childIds: ['loaded'] }]],
+        deleted: [],
+        instanceIndex: [],
+        populatedRootIds: [page.id]
+      }
+    })
+    expect(await pending).toBe(true)
+    finishWaiting(undefined)
+    await edit
+    editor.undoAction()
+    expect(graph.getNode(template.id)?.name).not.toBe('Edited')
+    expect(graph.getChildren(page.id).map((node) => node.name)).toEqual(['Loaded'])
+  } finally {
+    client.terminate()
+    editor.dispose()
   }
 })
 

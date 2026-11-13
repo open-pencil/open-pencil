@@ -36,7 +36,7 @@ interface ArchiveChanges {
 }
 
 /** The document's own settings, which its record holds rather than any layer. */
-interface SettingsSnapshot {
+export interface SettingsSnapshot {
   colorSpace: DocumentColorSpace
   kind: DocumentKind
   libraries: Array<[string, EnabledLibraryBinding]>
@@ -47,7 +47,7 @@ type CollectionsSnapshot = Array<[string, VariableCollection]>
 
 const changes = new WeakMap<SceneGraph, ArchiveChanges>()
 
-function settingsSnapshot(graph: SceneGraph): SettingsSnapshot {
+export function settingsSnapshot(graph: SceneGraph): SettingsSnapshot {
   return structuredClone({
     colorSpace: graph.documentColorSpace,
     kind: graph.documentKind,

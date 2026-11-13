@@ -1,21 +1,8 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import type {
-  DocumentColorSpace,
-  DocumentKind,
-  EnabledLibraryBinding,
-  SceneGraph,
-  SceneNode,
-  Variable,
-  VariableCollection
-} from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode, Variable, VariableCollection } from '@open-pencil/scene-graph'
 
-/** The document's own settings, which no layer or variable holds. */
-export interface FigGraphSettings {
-  colorSpace: DocumentColorSpace
-  kind: DocumentKind
-  libraries: Array<[string, EnabledLibraryBinding]>
-}
+import { settingsSnapshot, type SettingsSnapshot } from '#core/kiwi/fig/session/archive/changes'
 
 /**
  * What edits on the main thread changed since the last batch, as the main thread now has it, for
@@ -30,7 +17,7 @@ export interface FigGraphEdits {
   /** A variable or collection the main thread no longer has is null. */
   variables: Array<[string, Variable | null]>
   collections: Array<[string, VariableCollection | null]>
-  settings?: FigGraphSettings
+  settings?: SettingsSnapshot
 }
 
 export interface FigGraphEditTracker {
@@ -47,14 +34,6 @@ export interface FigGraphEditTracker {
   /** Sends the main thread's state of `ids` in the next batch, as an edit would. */
   send(ids: Iterable<string>): void
   stop(): void
-}
-
-function settingsOf(graph: SceneGraph): FigGraphSettings {
-  return {
-    colorSpace: graph.documentColorSpace,
-    kind: graph.documentKind,
-    libraries: [...graph.enabledLibraries]
-  }
 }
 
 /** The page under the document holds no override maps an edit writes into in place. */
@@ -95,7 +74,7 @@ export function trackFigGraphEdits(
   let revision = 0
   let ignored = 0
   let scheduled = false
-  let settings = settingsOf(graph)
+  let settings = settingsSnapshot(graph)
   const pendingNodes = new Set<string>()
   const pendingVariables = new Set<string>()
   const pendingCollections = new Set<string>()
@@ -110,7 +89,7 @@ export function trackFigGraphEdits(
 
   function flush() {
     scheduled = false
-    const nextSettings = settingsOf(graph)
+    const nextSettings = settingsSnapshot(graph)
     const settingsChanged = !isEqual(settings, nextSettings)
     if (
       pendingNodes.size === 0 &&
@@ -215,16 +194,17 @@ export function applyFigGraphEdits(graph: SceneGraph, edits: FigGraphEdits): voi
       const absent = (Object.keys(current) as (keyof SceneNode)[]).filter((key) => !(key in node))
       graph.restoreNodeProperties(node.id, node, absent)
     }
+    // A layer moved out of a removed one is already where the main thread has it; every removed
+    // layer drops such links before any is removed, since removing one removes what it holds.
     for (const id of edits.removed) {
       const node = graph.getNode(id)
       if (!node) continue
-      // A layer moved out before its parent was removed is already where the main thread has it.
       const stillInside = node.childIds.filter((childId) => graph.getNode(childId)?.parentId === id)
       if (stillInside.length !== node.childIds.length) {
         graph.restoreNodeProperties(id, { childIds: stillInside }, [])
       }
-      graph.deleteNode(id)
     }
+    for (const id of edits.removed) graph.deleteNode(id)
     for (const [id, variable] of edits.variables) {
       graph.willChangeVariable(id)
       if (variable) graph.variables.set(id, variable)

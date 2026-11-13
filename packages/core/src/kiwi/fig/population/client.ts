@@ -206,10 +206,13 @@ export function createPopulationWorkerClient(
     else worker.postMessage(message, [])
   }
   // Edits reach the worker's copy of the graph, so pages keep loading there once it is edited.
-  const edits = trackFigGraphEdits(graph, (batch) => post({ type: 'edits', edits: batch }))
-  /** Batches no load in flight was requested before are not needed to apply one. */
-  const forgetSettledEdits = () => {
-    let oldest = edits.revision
+  const edits = trackFigGraphEdits(graph, (batch) => {
+    post({ type: 'edits', edits: batch })
+    forgetSettledEdits(batch.revision)
+  })
+  /** Batches up to the oldest load in flight, or all of them with none, are not needed. */
+  const forgetSettledEdits = (newest: number) => {
+    let oldest = newest
     for (const request of pending.values()) oldest = Math.min(oldest, request.revision)
     edits.forget(oldest)
   }
@@ -252,17 +255,23 @@ export function createPopulationWorkerClient(
       // Edits not sent yet are among those the worker did not see.
       edits.flush()
       const edited = edits.changedSince(request.revision)
-      rebase = edits.ignoring(() => applyFigPopulationDelta(graph, result.delta, edited))
+      // The page arrives from outside any edit open now, such as a script's awaiting tool call,
+      // so no undo step takes it in.
+      rebase = graph.runOutsideEdits(() =>
+        edits.ignoring(() => applyFigPopulationDelta(graph, result.delta, edited))
+      )
       if (result.checkpoint) updateReaderRecovery(graph, result.checkpoint)
     } catch {
       fail()
       return request.resolve(null)
     }
-    forgetSettledEdits()
+    forgetSettledEdits(edits.revision)
     // The worker built what it sent without the edits made meanwhile; it takes this thread's
     // state where they met, and the instances it built from components edited since.
     edits.send(rebase.diverged)
-    for (const id of rebase.staleInstances) graph.syncInstance(id)
+    graph.runOutsideEdits(() => {
+      for (const id of rebase.staleInstances) graph.syncInstance(id)
+    })
     request.resolve(result.populated)
     emitTelemetry({
       event: 'populate',
