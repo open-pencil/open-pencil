@@ -12,6 +12,9 @@ local_editor = true
 # Editors read this only from the official OpenPencil Cloud: it shows Cloud in editors from this
 # version on. Self-hosted servers leave it out.
 # listing = { minimum_editor_version = "0.14.0" }
+# The oldest editor that may use the server. Older editors ask to be updated instead of connecting,
+# and requests from older desktop editors are refused with 426 Upgrade Required.
+# minimum_editor_version = "0.14.0"
 
 # Defaults to DATABASE_URL.
 [database]

@@ -2,11 +2,7 @@ import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 
 import { fetchStub } from '@open-pencil/test-support/fetch'
 
-import {
-  cloudOfficialListed,
-  checkCloudAvailability,
-  isVersionAtLeast
-} from '@/app/cloud/availability'
+import { cloudOfficialListed, checkCloudAvailability } from '@/app/cloud/availability'
 import { OFFICIAL_CLOUD_URL } from '@/constants'
 
 import { cloudDiscoveryFixture } from '#tests/helpers/cloud/discovery'
@@ -22,15 +18,6 @@ afterEach(async () => {
 })
 
 describe('Cloud availability', () => {
-  test('compares editor versions by number, not by text', () => {
-    expect(isVersionAtLeast('0.14.0', '0.14.0')).toBe(true)
-    expect(isVersionAtLeast('0.14.2', '0.14.0')).toBe(true)
-    expect(isVersionAtLeast('0.10.0', '0.9.5')).toBe(true)
-    expect(isVersionAtLeast('0.9.5', '0.10.0')).toBe(false)
-    expect(isVersionAtLeast('1.0.0-beta.1', '1.0.0')).toBe(true)
-    expect(isVersionAtLeast('next', '1.0.0')).toBe(false)
-  })
-
   test('stays hidden while the official server is unreachable or unlisted', async () => {
     officialServer(() => Response.error())
     await checkCloudAvailability(EDITOR)

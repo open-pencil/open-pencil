@@ -11,12 +11,22 @@ import {
   type CloudFetch,
   type CloudPortalClient
 } from '@open-pencil/cloud/client'
-import type { CloudDiscovery, WorkspaceSummary } from '@open-pencil/cloud/contract'
+import {
+  CLOUD_EDITOR_VERSION_HEADER,
+  type CloudDiscovery,
+  type WorkspaceSummary
+} from '@open-pencil/cloud/contract'
 
+import { APP_VERSION } from '@/app/runtime/version'
 import { tauriFetch } from '@/app/tauri/http'
 import { IS_TAURI } from '@/constants'
 
-import { rememberCloudAccount, type CloudAccount, type CloudServer } from '../servers/store'
+import {
+  findCloudServer,
+  rememberCloudAccount,
+  type CloudAccount,
+  type CloudServer
+} from '../servers/store'
 import { tellCloudLocale } from './locale'
 import { clearCloudSessionToken, readCloudSessionToken } from './token'
 
@@ -67,18 +77,41 @@ function publish(serverId: string, connection: CloudConnection): void {
   cloudConnections.value = { ...cloudConnections.value, [serverId]: connection }
 }
 
-/** Desktop requests skip the webview's CORS, since a server lists only its web editors. */
-export const cloudFetch: CloudFetch = (input, init) =>
-  IS_TAURI ? tauriFetch(input, init) : globalThis.fetch(input, init)
+/**
+ * Desktop requests skip the webview's CORS, since a server lists only its web editors, and name the
+ * editor's version so a server can refuse one older than it supports.
+ */
+export const cloudFetch: CloudFetch = (input, init) => {
+  if (!IS_TAURI) return globalThis.fetch(input, init)
+  const headers = new Headers(init?.headers)
+  headers.set(CLOUD_EDITOR_VERSION_HEADER, APP_VERSION)
+  return tauriFetch(input, { ...init, headers })
+}
+
+/**
+ * A server that refused this editor as too old raised its minimum since the app last asked: the
+ * kept discovery is stale, so the server is asked again and its answer says to update.
+ */
+function recheckRefusedEditor(serverId: string): void {
+  const server = findCloudServer(serverId)
+  if (!server) return
+  discoveries.delete(server.url)
+  void refreshCloudConnection(server)
+}
 
 /** Requests to one server, carrying its device-code token when this app has one. */
 export function cloudServerFetch(serverId: string): CloudFetch {
   return async (input, init) => {
     const token = await readCloudSessionToken(serverId)
-    if (!token) return cloudFetch(input, init)
-    const headers = new Headers(init?.headers)
-    headers.set('Authorization', `Bearer ${token}`)
-    return cloudFetch(input, { ...init, headers })
+    let request = init
+    if (token) {
+      const headers = new Headers(init?.headers)
+      headers.set('Authorization', `Bearer ${token}`)
+      request = { ...init, headers }
+    }
+    const response = await cloudFetch(input, request)
+    if (response.status === 426) recheckRefusedEditor(serverId)
+    return response
   }
 }
 
@@ -86,7 +119,7 @@ export function cloudServerFetch(serverId: string): CloudFetch {
 export function discoverCloudServer(url: string): Promise<CloudDiscovery> {
   const cached = discoveries.get(url)
   if (cached) return cached
-  const request = discoverCloud(url, { fetch: cloudFetch })
+  const request = discoverCloud(url, { fetch: cloudFetch, editorVersion: APP_VERSION })
   discoveries.set(url, request)
   request.catch(() => discoveries.delete(url))
   return request

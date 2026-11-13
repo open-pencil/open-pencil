@@ -536,7 +536,7 @@ ja:cloud.selfHostedDescription
 ja:cloud.errorInvalidAddressDescription
 ja:cloud.errorNotCloudHeading
 ja:cloud.errorNotCloudDescription
-ja:cloud.errorOutdatedDescription
+ja:cloud.errorServerOutdatedDescription
 ja:cloud.continueWithGoogle
 ja:cloud.continueWithApple
 ja:cloud.shareDescriptionInWorkspace
@@ -560,7 +560,7 @@ zh-cn:cloud.selfHostedDescription
 zh-cn:cloud.errorInvalidAddressDescription
 zh-cn:cloud.errorNotCloudHeading
 zh-cn:cloud.errorNotCloudDescription
-zh-cn:cloud.errorOutdatedDescription
+zh-cn:cloud.errorServerOutdatedDescription
 zh-cn:cloud.continueWithGoogle
 zh-cn:cloud.continueWithApple
 zh-cn:cloud.shareDescriptionInWorkspace
@@ -731,3 +731,11 @@ zh-cn:email.storageFullPreview
 zh-cn:email.waitlistSubject
 zh-cn:email.waitlistPreview
 zh-cn:email.waitlist
+ja:cloud.errorEditorOutdatedHeading
+ja:cloud.errorEditorOutdatedDescription
+ja:cloud.editorOutdatedBanner
+ja:cloud.updateOpenPencil
+zh-cn:cloud.errorEditorOutdatedHeading
+zh-cn:cloud.errorEditorOutdatedDescription
+zh-cn:cloud.editorOutdatedBanner
+zh-cn:cloud.updateOpenPencil

@@ -186,6 +186,18 @@ describe('Cloud TOML deployment configuration', () => {
     ).toThrow()
   })
 
+  test('advertises the oldest editor it works with, only when configured', () => {
+    const open = cloudDiscoveryFromConfig(parseCloudDeploymentTOML(minimalSource, environment))
+    expect(open.minimumEditorVersion).toBeUndefined()
+
+    const source = minimalSource.replace(
+      'trusted_origins = ["https://app.example.com"]',
+      'trusted_origins = ["https://app.example.com"]\nminimum_editor_version = "0.17.0"'
+    )
+    const gated = cloudDiscoveryFromConfig(parseCloudDeploymentTOML(source, environment))
+    expect(gated.minimumEditorVersion).toBe('0.17.0')
+  })
+
   test('reads the operator’s legal links and advertises them in discovery', () => {
     expect(parseCloudDeploymentTOML(minimalSource, environment).legal).toBeUndefined()
     const source = `${minimalSource}
