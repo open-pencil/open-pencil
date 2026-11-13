@@ -11,14 +11,15 @@ export type ReportReplies = {
 
 /**
  * Tells each reporter who left an address what the administrators decided about their report:
- * the document blocked, or left as it was. Each report is answered once, in the transaction that
+ * the document blocked, the report acted on some other way, or the document left as it was. Only
+ * a block says `blocked`, so a reporter is never told of one that didn't happen. Each report is answered once, in the transaction that
  * decides it, so a decision that rolls back tells nobody.
  */
 export async function tellReporters(
   transaction: Transaction<CloudDatabase>,
   replies: ReportReplies,
   reportIds: readonly string[],
-  outcome: 'actioned' | 'dismissed'
+  outcome: 'blocked' | 'actioned' | 'dismissed'
 ): Promise<void> {
   const { email } = replies
   if (!email || reportIds.length === 0) return

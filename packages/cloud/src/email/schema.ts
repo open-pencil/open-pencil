@@ -98,8 +98,8 @@ const documentReportReceivedPayloadSchema = v.object({ documentName: v.string() 
 /** To whoever reported a document: what the administrators decided. */
 const documentReportDecidedPayloadSchema = v.object({
   documentName: v.string(),
-  /** Blocked, or left as it was. */
-  outcome: v.picklist(['actioned', 'dismissed']),
+  /** The document blocked, the report acted on some other way, or the document left as it was. */
+  outcome: v.picklist(['blocked', 'actioned', 'dismissed']),
   /** Where to write to disagree: the deployment's abuse address, or null without one. */
   contactEmail: v.nullable(v.pipe(v.string(), v.email()))
 })

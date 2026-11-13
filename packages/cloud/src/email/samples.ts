@@ -110,6 +110,6 @@ export const EMAIL_SAMPLES: TransactionalEmailContent[] = [
   { kind: 'document-report-received', payload: { documentName: 'Homepage' } },
   {
     kind: 'document-report-decided',
-    payload: { documentName: 'Homepage', outcome: 'actioned', contactEmail: 'abuse@example.com' }
+    payload: { documentName: 'Homepage', outcome: 'blocked', contactEmail: 'abuse@example.com' }
   }
 ]

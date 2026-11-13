@@ -12,10 +12,11 @@ const { payload } = defineProps<{ payload: DocumentReportDecidedPayload }>()
 
 const { t } = useEmailLocalization()
 const document = { document: payload.documentName }
-const decision =
-  payload.outcome === 'actioned'
-    ? { heading: t.reportActionedHeading, message: t.reportActioned(document) }
-    : { heading: t.reportDismissedHeading, message: t.reportDismissed(document) }
+const decision = {
+  blocked: { heading: t.reportBlockedHeading, message: t.reportBlocked(document) },
+  actioned: { heading: t.reportActionedHeading, message: t.reportActioned(document) },
+  dismissed: { heading: t.reportDismissedHeading, message: t.reportDismissed(document) }
+}[payload.outcome]
 // The translation places the address inside its sentence, where `{email}` is.
 const [beforeEmail = '', afterEmail = ''] = t.reportDisagree({ email: '{email}' }).split('{email}')
 </script>

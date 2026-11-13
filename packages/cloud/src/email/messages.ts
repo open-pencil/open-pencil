@@ -170,9 +170,13 @@ export const emailMessageDefaults = {
     'Thanks for reporting “{document}”. The server’s administrators review every report and decide whether it breaks the rules. We’ll write again when they have.'
   ),
   reportDecidedSubject: params('Your report about “{document}”'),
-  reportActionedHeading: 'The document was blocked',
-  reportActioned: params(
+  reportBlockedHeading: 'The document was blocked',
+  reportBlocked: params(
     'The administrators reviewed your report and blocked “{document}”, so nobody can open it until it’s restored.'
+  ),
+  reportActionedHeading: 'Your report was acted on',
+  reportActioned: params(
+    'The administrators reviewed your report about “{document}” and took action on it.'
   ),
   reportDismissedHeading: 'The document stays',
   reportDismissed: params(

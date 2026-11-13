@@ -149,18 +149,21 @@ describe('document reports', () => {
         )
       await file('guest-0123456789abcdef', 'first@example.com')
       await file('guest-fedcba9876543210', 'second@example.com')
-      const [dismissed] = await context.runtime.database
-        .selectFrom('documentReport')
-        .select('id')
-        .where('replyEmail', '=', 'first@example.com')
-        .execute()
+      await file('guest-00112233445566aa', 'third@example.com')
+      const reportOf = async (replyEmail: string) =>
+        (
+          await context.runtime.database
+            .selectFrom('documentReport')
+            .select('id')
+            .where('replyEmail', '=', replyEmail)
+            .executeTakeFirstOrThrow()
+        ).id
       const replies = { email, contactEmail: 'abuse@example.com' }
-      // One report is dismissed; blocking the document then answers the other, still open.
-      await createAdminReportService(context.runtime.database, replies).resolve(
-        'admin-user',
-        dismissed?.id ?? '',
-        'dismissed'
-      )
+      const administration = createAdminReportService(context.runtime.database, replies)
+      // One report is dismissed and one acted on without a block; blocking the document then
+      // answers the last, still open, and only that one hears of a block.
+      await administration.resolve('admin-user', await reportOf('first@example.com'), 'dismissed')
+      await administration.resolve('admin-user', await reportOf('second@example.com'), 'actioned')
       await createAdminDocumentService(context.runtime.database, replies).disable(
         'admin-user',
         context.documentId,
@@ -177,8 +180,10 @@ describe('document reports', () => {
       expect(queued.map((row) => [row.kind, row.recipientEmailNormalized, row.locale])).toEqual([
         ['document-report-decided', 'first@example.com', 'de'],
         ['document-report-decided', 'second@example.com', 'de'],
+        ['document-report-decided', 'third@example.com', 'de'],
         ['document-report-received', 'first@example.com', 'de'],
-        ['document-report-received', 'second@example.com', 'de']
+        ['document-report-received', 'second@example.com', 'de'],
+        ['document-report-received', 'third@example.com', 'de']
       ])
       // Read the sealed decisions back as delivery would.
       const decisions = await Promise.all(
@@ -198,7 +203,8 @@ describe('document reports', () => {
       )
       expect(decisions).toEqual([
         { documentName: 'Homepage', outcome: 'dismissed', contactEmail: 'abuse@example.com' },
-        { documentName: 'Homepage', outcome: 'actioned', contactEmail: 'abuse@example.com' }
+        { documentName: 'Homepage', outcome: 'actioned', contactEmail: 'abuse@example.com' },
+        { documentName: 'Homepage', outcome: 'blocked', contactEmail: 'abuse@example.com' }
       ])
     } finally {
       await context.runtime.close()

@@ -279,7 +279,7 @@ export function createAdminDocumentService(
           transaction,
           { email, contactEmail: options.contactEmail },
           reports.map((report) => report.id),
-          'actioned'
+          'blocked'
         )
         await auditContentAction(
           transaction,
