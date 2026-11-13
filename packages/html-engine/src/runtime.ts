@@ -1,6 +1,6 @@
 import {
-  createHeadlessCSSRuntime,
   parseFontFaceRules,
+  parseHTMLDocument,
   parseStylesheetImports,
   type CSSFontFaceRule,
   type CSSComputeOptions,
@@ -11,6 +11,7 @@ import {
   type DesignStyleDeclaration,
   type DesignViewport
 } from '@open-pencil/dom-css'
+import { serializeHTML } from '@open-pencil/dom-css/export'
 import { insertAll, maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
@@ -232,19 +233,17 @@ function documentHTML(body: string, cssText: string): string {
 /**
  * A CSS runtime that styles and lays documents out with the HTML engine, as a browser would,
  * without one: computed styles and, when asked, the boxes, inline fragments, and text lines a
- * browser runtime records, before transforms. Documents are parsed and serialized as the headless
- * runtime does.
+ * browser runtime records, before transforms. Documents are parsed and serialized by dom-css.
  */
 export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}): CSSRuntime {
-  const markup = createHeadlessCSSRuntime()
   const engine = options.engine ?? loadHTMLEngine
   return {
     kind: 'headless',
-    parseHTML: (html) => markup.parseHTML(html),
-    serializeHTML: (document) => markup.serializeHTML(document),
+    parseHTML: parseHTMLDocument,
+    serializeHTML,
     async computeStyles(document, cssText = '', compute: CSSComputeOptions = {}) {
       const laidOut = await engine()
-      const capture = await laidOut.layout(documentHTML(markup.serializeHTML(document), cssText), {
+      const capture = await laidOut.layout(documentHTML(serializeHTML(document), cssText), {
         baseURL: options.baseURL,
         viewport: compute.viewport ?? DEFAULT_VIEWPORT,
         fetch: fontFaceFetch(laidOut, cssText, options)
