@@ -104,6 +104,11 @@ export function createDocumentChanges(editor: Editor) {
     editor.onEditorEvent('edit:discarded', editDiscarded)
   ]
 
+  /**
+   * The current revision with the history at it, for a save that marks it saved when it finishes.
+   * A check that only compares revisions uses `revision`: the step kept here stays alive until a
+   * save settles it, past the history limit.
+   */
   function capture() {
     capturedHistory.set(revision.value, editor.undo.peekUndo())
     return revision.value
@@ -111,6 +116,7 @@ export function createDocumentChanges(editor: Editor) {
 
   return {
     hasUnsavedChanges: () => dirty.value,
+    revision: () => revision.value,
     capture,
     markSaved: (version = capture()) => {
       savedHistory = capturedHistory.has(version) ? capturedHistory.get(version) : UNKNOWN_HISTORY

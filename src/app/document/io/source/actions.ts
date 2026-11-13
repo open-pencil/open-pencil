@@ -93,7 +93,7 @@ export function createDocumentSourceActions({
     const path = getFilePath()
     const renderer = getRenderer()
     if (!path || !renderer || !isFigArchiveName(path)) return
-    if (changes.capture() !== version) return
+    if (changes.revision() !== version) return
     void cacheRecentFileCover(path, editor.graph, renderer).catch((error: unknown) => {
       console.warn('[Recent files] Could not cache the preview after saving', error)
     })
@@ -108,7 +108,7 @@ export function createDocumentSourceActions({
 
   const recovery = createDocumentRecovery({
     state,
-    version: changes.capture,
+    version: changes.revision,
     isEnabled: () => recoveryEnabled.value,
     buildFigFile: buildRecoveryFigFile,
     buildCover: createRecoveryCover(editor, () => {
@@ -120,7 +120,7 @@ export function createDocumentSourceActions({
 
   const { saveFigFile, saveFigFileAs, writeFile } = createSaveActions({
     state,
-    version: changes.capture,
+    version: changes.revision,
     buildFigStream,
     getFilePath,
     setFilePath,
@@ -146,7 +146,7 @@ export function createDocumentSourceActions({
 
   const autosave = createAutosave({
     state,
-    version: changes.capture,
+    version: changes.revision,
     getSavedVersion,
     hasWritableSource,
     saveCurrentDocument: async (version) => {
@@ -157,7 +157,7 @@ export function createDocumentSourceActions({
 
   function markDocumentSaved() {
     changes.markSaved()
-    setSavedVersion(changes.capture())
+    setSavedVersion(changes.revision())
   }
 
   // Only names the person gives; a save's provisional name and the room's own are no rename.
@@ -186,7 +186,7 @@ export function createDocumentSourceActions({
     setDownloadName(figDownloadName(fileName, sourceFormat))
     setSourceIdentity({ handle: handle ?? null, path: path ?? null })
     markDocumentSaved()
-    void recovery.markProtectedVersion(changes.capture())
+    void recovery.markProtectedVersion(changes.revision())
     trackDocumentFormat('document_opened', sourceFormat)
     if (isFig && (handle || path)) {
       void startWatchingFile()
@@ -203,7 +203,7 @@ export function createDocumentSourceActions({
     state.documentName = documentName
     state.autosaveEnabled = true
     markDocumentSaved()
-    void recovery.markProtectedVersion(changes.capture())
+    void recovery.markProtectedVersion(changes.revision())
   }
 
   function setPlannedFilePath(path: string) {
@@ -266,7 +266,7 @@ export function createDocumentSourceActions({
    * reach, and count it saved as a download is. Where the document saves next does not change.
    */
   async function saveFigFileCopy(write: (data: Uint8Array) => Promise<void>): Promise<boolean> {
-    const version = changes.capture()
+    const version = changes.revision()
     await write(await exportFigFile(editor.graph, figExportOptions()))
     await recovery.markProtectedVersion(version)
     return true

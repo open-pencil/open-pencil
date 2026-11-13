@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createEditor, isEmptyDocumentChange, type DocumentChange } from '@open-pencil/core'
+import { DEFAULT_HISTORY_LIMIT } from '@open-pencil/scene-graph/undo'
 
 function setup() {
   const editor = createEditor()
@@ -365,5 +366,29 @@ describe('recordEditAsync', () => {
     expect(editor.graph.getNode(note.id)).toMatchObject({ parentId: pageId, x: 110, y: 70 })
     expect(editor.undo.undo()).toBe('Add note')
     expect(editor.graph.getNode(note.id)).toBeUndefined()
+  })
+
+  test('frees a step trimmed from history, though the options of the edit after it hold it', async () => {
+    const { editor, card } = setup()
+    const firstChange: { ref?: WeakRef<DocumentChange> } = {}
+
+    // An agent's call keeps the step on top when it started, as the app's tool runner does.
+    for (let edit = 0; edit <= DEFAULT_HISTORY_LIMIT; edit++) {
+      const stepBefore = editor.undo.peekUndo()
+      await editor.recordEditAsync(
+        {
+          label: 'Agent: move',
+          onRecorded: (change) => {
+            if (stepBefore === undefined) firstChange.ref = new WeakRef(change)
+          }
+        },
+        async () => editor.graph.updateNode(card.id, { x: edit + 1 })
+      )
+    }
+    await Bun.sleep(0)
+    Bun.gc(true)
+
+    expect(firstChange.ref).toBeDefined()
+    expect(firstChange.ref?.deref()).toBeUndefined()
   })
 })
