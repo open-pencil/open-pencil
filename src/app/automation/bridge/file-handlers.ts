@@ -9,7 +9,8 @@ import type { DocumentKind } from '@open-pencil/scene-graph'
 import {
   resolveAutomationTarget,
   responseWithTarget,
-  type AutomationTarget
+  type AutomationTarget,
+  type TargetResponse
 } from '@/app/automation/bridge/target'
 import { resolveBrowserFileURL } from '@/app/document/io/browser'
 import { documentPathFor } from '@/app/document/io/names'
@@ -157,7 +158,7 @@ export function createFileHandlers(files?: AutomationFiles) {
   }
 
   // Creating and opening work while the selected tab is Home or a New file tab.
-  async function handleNewDocument(args: unknown): Promise<unknown> {
+  async function handleNewDocument(args: unknown): Promise<TargetResponse> {
     const { path } = parseToolArgs('create_document', saveArgsSchema, args)
     const tab = createTab()
     if (path) {
@@ -172,7 +173,7 @@ export function createFileHandlers(files?: AutomationFiles) {
     return responseWithTarget({ ok: true, result: { created: true } }, target)
   }
 
-  async function handleOpenFile(args: unknown): Promise<unknown> {
+  async function handleOpenFile(args: unknown): Promise<TargetResponse> {
     const path = (args as { path?: string }).path
     if (!path) throw new Error('Missing "path" in args')
     if (isTauri()) {

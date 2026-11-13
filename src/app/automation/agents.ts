@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import { isUnknownRecord } from '@/app/automation/bridge/target'
+import { forgetSessionDocument, isUnknownRecord } from '@/app/automation/bridge/target'
 import type { EditorStore } from '@/app/editor/active-store'
 import { addAgent, agentPlacement, type AgentHandle } from '@/app/presence/registry'
 import { MAX_NAME_LENGTH } from '@/app/presence/schema'
@@ -278,8 +278,9 @@ export function agentSessionOpened(args: unknown): void {
   waitingChats.delete(chat)
 }
 
-/** The MCP server says a session ended: its agents leave every document. */
+/** The MCP server says a session ended: its agents leave every document, which it forgets. */
 export function endAgentSession(sessionId: string): void {
+  forgetSessionDocument(sessionId)
   // Removing entries while iterating a Set is safe: visited ones stay visited.
   for (const agent of sessionAgents) if (agent.session === sessionId) remove(agent)
 }
