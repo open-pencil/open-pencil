@@ -595,5 +595,21 @@
   "activityRevokedLink": "unieważnił(a) link:",
   "activityDismissedReport": "odrzucił(a) zgłoszenie:",
   "activityActionedReport": "zamknął(ęła) zgłoszenie:",
-  "emailKindDocumentReport": "Zgłoszono dokument (administratorzy)"
+  "emailKindDocumentReport": "Zgłoszono dokument (administratorzy)",
+  "communityTitle": "Społeczność",
+  "communityDescription": "Pliki do otwarcia, przejrzenia i skopiowania do własnego obszaru roboczego.",
+  "communityEmpty": "Nic tu jeszcze nie opublikowano.",
+  "communityAllFiles": "Wszystkie pliki",
+  "communityKindDesign": "Plik projektu",
+  "communityKindBoard": "Tablica",
+  "communityUpdated": "Zaktualizowano {date}",
+  "communityPreview": "Podgląd: {name}",
+  "communityOpenInBrowser": "Otwórz w przeglądarce",
+  "communityOpenInDesktop": "Otwórz w aplikacji na komputer",
+  "communityOpenNote": "Pliki otwierają się tylko do odczytu. Zapisz kopię, aby edytować.",
+  "communityVersions": "Wersje",
+  "communityLatest": "Najnowsza",
+  "communityLatestDescription": "Plik w obecnej postaci.",
+  "communityNotFoundTitle": "Tego pliku już tu nie ma",
+  "communityNotFoundDescription": "Mógł zostać usunięty. Zobacz, co jeszcze jest w społeczności."
 }

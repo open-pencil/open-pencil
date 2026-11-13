@@ -595,5 +595,21 @@
   "activityRevokedLink": "отозвал(а) ссылку:",
   "activityDismissedReport": "отклонил(а) жалобу:",
   "activityActionedReport": "закрыл(а) жалобу:",
-  "emailKindDocumentReport": "Жалоба на документ (администраторам)"
+  "emailKindDocumentReport": "Жалоба на документ (администраторам)",
+  "communityTitle": "Сообщество",
+  "communityDescription": "Файлы, которые можно открыть, изучить и скопировать в своё рабочее пространство.",
+  "communityEmpty": "Здесь пока ничего не опубликовано.",
+  "communityAllFiles": "Все файлы",
+  "communityKindDesign": "Файл дизайна",
+  "communityKindBoard": "Доска",
+  "communityUpdated": "Обновлено {date}",
+  "communityPreview": "Превью: {name}",
+  "communityOpenInBrowser": "Открыть в браузере",
+  "communityOpenInDesktop": "Открыть в приложении",
+  "communityOpenNote": "Файлы открываются только для чтения. Сохраните копию, чтобы редактировать.",
+  "communityVersions": "Версии",
+  "communityLatest": "Последняя",
+  "communityLatestDescription": "Файл в текущем виде.",
+  "communityNotFoundTitle": "Этого файла здесь больше нет",
+  "communityNotFoundDescription": "Возможно, его удалили. Посмотрите, что ещё есть в сообществе."
 }

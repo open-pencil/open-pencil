@@ -1,6 +1,7 @@
 import { count, params } from '@nanostores/i18n'
 
 import { i18n } from '#vue/i18n/create'
+import { communityPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/community'
 import { planPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/plan'
 import { accessTokenPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/tokens'
 
@@ -149,6 +150,7 @@ export const cloudPortalMessageDefaults = {
   sessions: 'Sessions',
   sessionsDescription: 'Where your account is signed in, and when it was.',
   ...accessTokenPortalMessageDefaults,
+  ...communityPortalMessageDefaults,
   ...planPortalMessageDefaults,
   overview: 'Overview',
   accessRequests: 'Access requests',

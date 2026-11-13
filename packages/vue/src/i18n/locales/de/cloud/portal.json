@@ -585,5 +585,21 @@
   "activityRevokedLink": "widerrief einen Link:",
   "activityDismissedReport": "wies eine Meldung ab:",
   "activityActionedReport": "schloss eine Meldung:",
-  "emailKindDocumentReport": "Dokument gemeldet (Administratoren)"
+  "emailKindDocumentReport": "Dokument gemeldet (Administratoren)",
+  "communityTitle": "Community",
+  "communityDescription": "Dateien zum Öffnen, Erkunden und Kopieren in deinen eigenen Arbeitsbereich.",
+  "communityEmpty": "Hier wurde noch nichts veröffentlicht.",
+  "communityAllFiles": "Alle Dateien",
+  "communityKindDesign": "Designdatei",
+  "communityKindBoard": "Board",
+  "communityUpdated": "Aktualisiert am {date}",
+  "communityPreview": "Vorschau von {name}",
+  "communityOpenInBrowser": "Im Browser öffnen",
+  "communityOpenInDesktop": "In der Desktop-App öffnen",
+  "communityOpenNote": "Dateien öffnen sich schreibgeschützt. Speichere eine Kopie, um sie zu bearbeiten.",
+  "communityVersions": "Versionen",
+  "communityLatest": "Neueste",
+  "communityLatestDescription": "Die Datei, wie sie jetzt ist.",
+  "communityNotFoundTitle": "Diese Datei ist nicht mehr hier",
+  "communityNotFoundDescription": "Sie wurde vielleicht entfernt. Sieh dir an, was es sonst in der Community gibt."
 }

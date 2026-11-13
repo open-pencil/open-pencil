@@ -625,5 +625,21 @@
   "errorEmailUnchanged": "هذا هو بريدك الإلكتروني بالفعل.",
   "errorCurrentSession": "سجّل الخروج لإنهاء الجلسة التي تستخدمها.",
   "errorPictureInvalid": "لا يمكن للخادم استخدام هذه الصورة. اختر صورة أخرى.",
-  "passwordResetSent": "أرسلنا إليك رابطًا لتعيين كلمة مرور."
+  "passwordResetSent": "أرسلنا إليك رابطًا لتعيين كلمة مرور.",
+  "communityTitle": "المجتمع",
+  "communityDescription": "ملفات يمكنك فتحها واستكشافها ونسخها إلى مساحة عملك.",
+  "communityEmpty": "لم يُنشر شيء هنا بعد.",
+  "communityAllFiles": "كل الملفات",
+  "communityKindDesign": "ملف تصميم",
+  "communityKindBoard": "لوحة",
+  "communityUpdated": "حُدّث في {date}",
+  "communityPreview": "معاينة {name}",
+  "communityOpenInBrowser": "فتح في المتصفح",
+  "communityOpenInDesktop": "فتح في تطبيق سطح المكتب",
+  "communityOpenNote": "تُفتح الملفات للقراءة فقط. احفظ نسخة لتعدّلها.",
+  "communityVersions": "الإصدارات",
+  "communityLatest": "الأحدث",
+  "communityLatestDescription": "الملف كما هو الآن.",
+  "communityNotFoundTitle": "لم يعد هذا الملف هنا",
+  "communityNotFoundDescription": "ربما أُزيل. اطّلع على ما يتوفر أيضًا في المجتمع."
 }

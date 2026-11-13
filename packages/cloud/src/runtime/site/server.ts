@@ -1,4 +1,4 @@
-import { CLOUD_PORTAL_PAGE_ROOTS } from '#cloud/contract'
+import { CLOUD_PORTAL_COMMUNITY_PAGES, CLOUD_PORTAL_PAGE_ROOTS } from '#cloud/contract'
 import {
   cloudErrorHandler,
   cloudRequestId,
@@ -7,6 +7,8 @@ import {
   type ForwardedRequestId
 } from '#cloud/server'
 import { Hono } from 'hono'
+
+import { communityPageMeta, withPageMeta } from './community'
 
 /** A file of the Cloud site (`bun run build:cloud`): the editor and the portal. */
 export type SiteFile = {
@@ -84,6 +86,17 @@ export function createCloudServer(
     server.on(['GET', 'HEAD'], pages, async (c) => {
       const page = await site(PORTAL_PAGE, c.req.raw)
       return page ? c.body(page.body, 200, PAGE_HEADERS) : c.notFound()
+    })
+    // The gallery's pages say what they show to link previews and search engines, which read the
+    // page as served rather than as its script draws it.
+    server.on(['GET', 'HEAD'], [...CLOUD_PORTAL_COMMUNITY_PAGES], async (c) => {
+      const page = await site(PORTAL_PAGE, c.req.raw)
+      if (!page) return c.notFound()
+      const meta = await communityPageMeta(api, c.req.raw, c.req.param('documentId'))
+      const html = await new Response(page.body).text()
+      return meta
+        ? c.body(withPageMeta(html, meta), 200, PAGE_HEADERS)
+        : c.body(html, 404, PAGE_HEADERS)
     })
     server.on(['GET', 'HEAD'], '*', async (c, next) => {
       await next()

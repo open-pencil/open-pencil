@@ -585,5 +585,21 @@
   "activityRevokedLink": "revogou um link:",
   "activityDismissedReport": "descartou uma denúncia:",
   "activityActionedReport": "encerrou uma denúncia:",
-  "emailKindDocumentReport": "Documento denunciado (administradores)"
+  "emailKindDocumentReport": "Documento denunciado (administradores)",
+  "communityTitle": "Comunidade",
+  "communityDescription": "Arquivos para abrir, explorar e copiar para o seu próprio espaço de trabalho.",
+  "communityEmpty": "Nada foi publicado aqui ainda.",
+  "communityAllFiles": "Todos os arquivos",
+  "communityKindDesign": "Arquivo de design",
+  "communityKindBoard": "Quadro",
+  "communityUpdated": "Atualizado em {date}",
+  "communityPreview": "Prévia de {name}",
+  "communityOpenInBrowser": "Abrir no navegador",
+  "communityOpenInDesktop": "Abrir no app para desktop",
+  "communityOpenNote": "Os arquivos abrem somente para leitura. Salve uma cópia para editar.",
+  "communityVersions": "Versões",
+  "communityLatest": "Mais recente",
+  "communityLatestDescription": "O arquivo como está agora.",
+  "communityNotFoundTitle": "Este arquivo não está mais aqui",
+  "communityNotFoundDescription": "Ele pode ter sido removido. Veja o que mais há na comunidade."
 }

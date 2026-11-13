@@ -6,7 +6,7 @@ const roomId = 'abcdefghijklmnopqrstuvwxyz012345'
 const cloudRoomId = 'cloud:1413785f-37aa-4935-8bfb-e2cd81a035cf:0'
 const home = { path: '/', query: {} }
 const document = { path: '/documents/1413785f-37aa-4935-8bfb-e2cd81a035cf', query: {} }
-const community = { path: '/community/1413785f-37aa-4935-8bfb-e2cd81a035cf', query: {} }
+const community = { path: '/community/1413785f-37aa-4935-8bfb-e2cd81a035cf/open', query: {} }
 
 describe('tab address', () => {
   test('shows a room as its link', () => {

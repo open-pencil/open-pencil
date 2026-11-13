@@ -585,5 +585,21 @@
   "activityRevokedLink": "a révoqué un lien :",
   "activityDismissedReport": "a rejeté un signalement :",
   "activityActionedReport": "a clos un signalement :",
-  "emailKindDocumentReport": "Document signalé (administrateurs)"
+  "emailKindDocumentReport": "Document signalé (administrateurs)",
+  "communityTitle": "Communauté",
+  "communityDescription": "Des fichiers à ouvrir, explorer et copier dans votre propre espace de travail.",
+  "communityEmpty": "Rien n’a encore été publié ici.",
+  "communityAllFiles": "Tous les fichiers",
+  "communityKindDesign": "Fichier de design",
+  "communityKindBoard": "Tableau",
+  "communityUpdated": "Mis à jour le {date}",
+  "communityPreview": "Aperçu de {name}",
+  "communityOpenInBrowser": "Ouvrir dans le navigateur",
+  "communityOpenInDesktop": "Ouvrir dans l’app de bureau",
+  "communityOpenNote": "Les fichiers s’ouvrent en lecture seule. Enregistrez une copie pour les modifier.",
+  "communityVersions": "Versions",
+  "communityLatest": "Plus récente",
+  "communityLatestDescription": "Le fichier tel qu’il est maintenant.",
+  "communityNotFoundTitle": "Ce fichier n’est plus ici",
+  "communityNotFoundDescription": "Il a peut-être été retiré. Découvrez le reste de la communauté."
 }
