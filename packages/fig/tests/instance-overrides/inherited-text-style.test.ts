@@ -76,3 +76,30 @@ test('raw records leave a removed child out of the instance, as the reader does'
   }
   expect(interpretInstance([...changes, removedChild], '1:4').children).toHaveLength(1)
 })
+
+// Figma desktop (2026-11-14): paragraph spacing, indent, list spacing and leading trim set on an
+// instance text before the component text takes a style all give way to the style.
+test('raw records draw the inherited style over paragraph and trim claims', () => {
+  const claims = { paragraphSpacing: 5, paragraphIndent: 3, listSpacing: 2, leadingTrim: 'NONE' }
+  const records = changes.map((change) => {
+    if (change.styleType === 'TEXT') {
+      return { ...change, paragraphSpacing: 20, leadingTrim: 'CAP_HEIGHT' }
+    }
+    if (change.type === 'INSTANCE') {
+      return {
+        ...change,
+        symbolData: {
+          symbolID: guid(2),
+          symbolOverrides: [{ guidPath: { guids: [guid(3)] }, ...claims }]
+        }
+      } as NodeChange
+    }
+    return change
+  })
+  expect(interpretInstance(records, '1:4').children[0].properties).toMatchObject({
+    paragraphSpacing: 20,
+    paragraphIndent: 0,
+    listSpacing: 0,
+    leadingTrim: 'CAP_HEIGHT'
+  })
+})

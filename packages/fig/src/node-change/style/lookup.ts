@@ -7,7 +7,11 @@ export const TEXT_STYLE_FIELDS = [
   'lineHeight',
   'letterSpacing',
   'textDecoration',
-  'textCase'
+  'textCase',
+  'paragraphSpacing',
+  'paragraphIndent',
+  'listSpacing',
+  'leadingTrim'
 ] as const
 
 export type TextStyleField = (typeof TEXT_STYLE_FIELDS)[number]

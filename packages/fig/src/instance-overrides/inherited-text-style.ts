@@ -16,13 +16,21 @@ const BINDINGS_OF_FIELD: Record<TextStyleField, readonly string[]> = {
   lineHeight: ['LINE_HEIGHT'],
   letterSpacing: ['LETTER_SPACING'],
   textDecoration: [],
-  textCase: []
+  textCase: [],
+  paragraphSpacing: ['PARAGRAPH_SPACING'],
+  paragraphIndent: ['PARAGRAPH_INDENT'],
+  listSpacing: [],
+  leadingTrim: []
 }
 
 /** The values a text style record leaves out, as Figma omits a field at its default. */
 const STYLE_DEFAULTS: Partial<Pick<NodeChange, TextStyleField>> = {
   textDecoration: 'NONE',
-  textCase: 'ORIGINAL'
+  textCase: 'ORIGINAL',
+  paragraphSpacing: 0,
+  paragraphIndent: 0,
+  listSpacing: 0,
+  leadingTrim: 'NONE'
 }
 
 const CONSUMPTION_MAPS = ['variableConsumptionMap', 'parameterConsumptionMap'] as const
