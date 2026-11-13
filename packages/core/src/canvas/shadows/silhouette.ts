@@ -1,10 +1,9 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
-import { strokeOverflow as strokeReach } from '@open-pencil/scene-graph/geometry'
+import { nodeCornerRadii, strokeOverflow as strokeReach } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
-import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
-import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
+import { clipsChildren, isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 import { regionFills } from '@open-pencil/scene-graph/vector-network'
 
@@ -282,10 +281,7 @@ function pointInShape(node: SceneNode, x: number, y: number): boolean {
   if (!nodeHasRadius(node)) return true
   const smoothing = nodeHasSmoothCorners(node) ? 1 + node.cornerSmoothing : 1
   const radius = (value: number) => Math.min(value * smoothing, node.width / 2, node.height / 2)
-  const corners = node.independentCorners
-    ? [node.topLeftRadius, node.topRightRadius, node.bottomRightRadius, node.bottomLeftRadius]
-    : [node.cornerRadius, node.cornerRadius, node.cornerRadius, node.cornerRadius]
-  const [topLeft, topRight, bottomRight, bottomLeft] = corners.map(radius)
+  const [topLeft, topRight, bottomRight, bottomLeft] = nodeCornerRadii(node).map(radius)
   const outsideCorner = (cx: number, cy: number, r: number, inCorner: boolean) =>
     inCorner && Math.hypot(x - cx, y - cy) > r + epsilon
   return !(

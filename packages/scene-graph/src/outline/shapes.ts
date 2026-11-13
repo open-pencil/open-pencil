@@ -1,3 +1,4 @@
+import { nodeCornerRadii } from '../geometry'
 import { polygonOutline } from '../polygon'
 import type { Vector } from '../primitives'
 import type { SceneNode, WindingRule } from '../types'
@@ -47,17 +48,9 @@ function fromContours(contours: Vector[][], windingRule: WindingRule = 'NONZERO'
   return { areas: [{ windingRule, contours }], lines: contours.map(closed) }
 }
 
-function cornerRadii(node: SceneNode): [number, number, number, number] {
-  const radii: [number, number, number, number] = node.independentCorners
-    ? [node.topLeftRadius, node.topRightRadius, node.bottomRightRadius, node.bottomLeftRadius]
-    : [node.cornerRadius, node.cornerRadius, node.cornerRadius, node.cornerRadius]
-  const limit = Math.min(node.width, node.height) / 2
-  return radii.map((radius) => Math.max(0, Math.min(radius, limit))) as typeof radii
-}
-
 function rectangleContour(node: SceneNode, tolerance: number): Vector[] {
   const { width: w, height: h } = node
-  const [tl, tr, br, bl] = cornerRadii(node)
+  const [tl, tr, br, bl] = nodeCornerRadii(node)
   const corner = (cx: number, cy: number, r: number, from: number): Vector[] =>
     r > 0 ? arcPoints(cx, cy, r, r, from, from + Math.PI / 2, tolerance) : [{ x: cx, y: cy }]
   return [
@@ -78,7 +71,7 @@ function rectangleSides(
   tolerance: number
 ): Pick<ShapeOutline, 'lines' | 'lineWeights'> {
   const { width: w, height: h } = node
-  const [tl, tr, br, bl] = cornerRadii(node)
+  const [tl, tr, br, bl] = nodeCornerRadii(node)
   const quarter = Math.PI / 4
   const arc = (cx: number, cy: number, r: number, from: number): Vector[] =>
     r > 0 ? arcPoints(cx, cy, r, r, from, from + quarter, tolerance) : [{ x: cx, y: cy }]

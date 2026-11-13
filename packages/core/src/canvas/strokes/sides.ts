@@ -1,6 +1,7 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { minOf } from '@open-pencil/scene-graph/arrays'
+import { nodeCornerRadii } from '@open-pencil/scene-graph/geometry'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { nodeHasSmoothCorners } from '#core/canvas/shapes'
@@ -34,13 +35,6 @@ export function strokeAlignShare(align: Stroke['align']): number {
   return 0
 }
 
-function cornerRadii(node: SceneNode): [number, number, number, number] {
-  if (!node.independentCorners) {
-    return [node.cornerRadius, node.cornerRadius, node.cornerRadius, node.cornerRadius]
-  }
-  return [node.topLeftRadius, node.topRightRadius, node.bottomRightRadius, node.bottomLeftRadius]
-}
-
 /**
  * The outer and inner edges of a frame's stroke with sides of their own weights, as rounded
  * rectangles in CanvasKit's layout. Figma 126 strokes them as one ring: each inner corner
@@ -64,7 +58,7 @@ export function sideStrokeRRects(
   const [top, right, bottom, left] = weights.map((weight) => weight * share + grow)
   const [topIn, rightIn, bottomIn, leftIn] = weights.map((weight) => weight * (1 - share) + grow)
   const [tWeight, rWeight, bWeight, lWeight] = weights
-  const [tl, tr, br, bl] = cornerRadii(node)
+  const [tl, tr, br, bl] = nodeCornerRadii(node)
   const out = (radius: number, a: number, aWeight: number, b: number, bWeight: number) => {
     if (radius <= 0) return 0
     const stroked = [aWeight > 0 ? a : null, bWeight > 0 ? b : null].filter((side) => side !== null)
@@ -368,7 +362,7 @@ function drawClippedCornerDashes(r: SkiaRenderer, canvas: Canvas, dashed: Dashed
 
 /** Corner radii as Skia draws them: scaled down together when two corners overflow a side. */
 function fittedCornerRadii(node: SceneNode): [number, number, number, number] {
-  const [tl, tr, br, bl] = cornerRadii(node)
+  const [tl, tr, br, bl] = nodeCornerRadii(node)
   const fit = (length: number, a: number, b: number) => (a + b > length ? length / (a + b) : 1)
   const scale = Math.min(
     fit(node.width, tl, tr),

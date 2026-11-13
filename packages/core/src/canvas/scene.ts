@@ -3,8 +3,7 @@ import { type SceneNode, type SceneGraph, type Fill } from '@open-pencil/scene-g
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import { intersectVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
-import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
-import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
+import { clipsChildren, isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import { textLinesOverflow } from '@open-pencil/scene-graph/text'
 
 import { drawIndividualSideStrokes } from '#core/canvas/strokes/sides'
