@@ -1,25 +1,24 @@
-import { expect, mock, test } from 'bun:test'
+import { expect, test } from 'bun:test'
 
 import { defineComarkPlugin } from 'comark'
 
-let resets = 0
-// A highlighter whose grammar fails to load, as Comark's does when a chunk cannot be fetched.
-await mock.module('@/app/shell/markdown/highlight', () => ({
-  highlightPlugin: defineComarkPlugin(() => ({
+import { createMarkdownParser } from '@/app/shell/markdown/config'
+
+test('a reply whose highlighting fails renders without it, and the next one tries again', async () => {
+  let resets = 0
+  // A highlighter whose grammar fails to load, as Comark's does when a chunk cannot be fetched.
+  const failing = defineComarkPlugin(() => ({
     name: 'failing-highlight',
     post() {
       throw new Error('grammar failed to load')
     }
-  }))(),
-  resetHighlighter: () => {
-    resets++
-  }
-}))
-
-const { createMarkdownParser } = await import('@/app/shell/markdown/config')
-
-test('a reply whose highlighting fails renders without it, and the next one tries again', async () => {
-  const parse = await createMarkdownParser(true)
+  }))()
+  const parse = await createMarkdownParser(true, async () => ({
+    plugin: failing,
+    reset: () => {
+      resets++
+    }
+  }))
   const warn = console.warn
   console.warn = () => undefined
   try {

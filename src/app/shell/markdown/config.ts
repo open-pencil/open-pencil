@@ -68,15 +68,21 @@ function autoClose(markdown: string, streaming?: boolean): string {
   })
 }
 
-let highlighting: Promise<ComarkPlugin | null> | undefined
+/** Code highlighting as a renderer uses it: the plugin, and a reset after a grammar fails. */
+export interface MarkdownHighlighting {
+  plugin: ComarkPlugin
+  reset: () => void
+}
+
+let highlighting: Promise<MarkdownHighlighting | null> | undefined
 
 /**
  * Shiki loads with the first renderer that highlights code, not with the app. When its chunk
  * fails to load, as offline, that renderer shows plain code and the next one tries again.
  */
-function highlightPlugin(): Promise<ComarkPlugin | null> {
+function loadHighlighting(): Promise<MarkdownHighlighting | null> {
   highlighting ??= import('./highlight').then(
-    (module) => module.highlightPlugin,
+    (module) => ({ plugin: module.highlightPlugin, reset: module.resetHighlighter }),
     (error: unknown) => {
       highlighting = undefined
       console.warn('[markdown] Code highlighting failed to load', error)
@@ -91,29 +97,31 @@ export type MarkdownParser = ReturnType<typeof createSerializedMarkdownParser>
 
 /**
  * The parser for one renderer. A highlighting parse that fails, as when one of Shiki's grammars
- * cannot load, resets Comark's highlighter, so the next reply with code tries again, and this one
+ * cannot load, resets the highlighter, so the next reply with code tries again, and this one
  * renders without highlighting rather than not at all.
  */
-export async function createMarkdownParser(highlightCode: boolean): Promise<MarkdownParser> {
+export async function createMarkdownParser(
+  highlightCode: boolean,
+  load: () => Promise<MarkdownHighlighting | null> = loadHighlighting
+): Promise<MarkdownParser> {
   const plain = createSerializedMarkdownParser({
     registerDefaultPlugins: false,
     autoClose,
     plugins
   })
-  const highlight = highlightCode ? await highlightPlugin() : null
+  const highlight = highlightCode ? await load() : null
   if (!highlight) return plain
   const highlighted = createSerializedMarkdownParser({
     registerDefaultPlugins: false,
     autoClose,
-    plugins: [...plugins, highlight]
+    plugins: [...plugins, highlight.plugin]
   })
   return async (markdown, options) => {
     try {
       return await highlighted(markdown, options)
     } catch (error) {
       console.warn('[markdown] Code highlighting failed', error)
-      const { resetHighlighter } = await import('./highlight')
-      resetHighlighter()
+      highlight.reset()
       return plain(markdown, options)
     }
   }
