@@ -16,6 +16,7 @@ import {
 
 import type { DesignElement, DesignStyleDeclaration } from '../types'
 import { pickStyle } from './css-values'
+import { isTableRow } from './table'
 
 /**
  * How CSS lays an element and its children out, mapped onto auto layout: block flow stacks
@@ -92,7 +93,7 @@ export function elementDisplay(element: DesignElement, style: DesignStyleDeclara
  * a block of its own, so only a plain `inline` element lays its children out in a line.
  */
 export function flowOf(display: string): FlowKind {
-  if (display === 'flex' || display === 'inline-flex') return 'flex'
+  if (display === 'flex' || display === 'inline-flex' || isTableRow(display)) return 'flex'
   return display === 'inline' ? 'inline' : 'block'
 }
 

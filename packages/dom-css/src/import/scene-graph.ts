@@ -47,6 +47,7 @@ import {
   type CapturedBox,
   type CapturedBoxes
 } from './placement'
+import { applyTableLayout, isTableColumn } from './table'
 import {
   blockRichText,
   characterStyleFromCSS,
@@ -341,7 +342,7 @@ function createElementNode(
 ): SceneNode | null {
   const style = mergedStyle(element)
   const display = elementDisplay(element, style)
-  if (display === 'none') return null
+  if (display === 'none' || isTableColumn(display)) return null
   if (
     isTextLikeElement(element) &&
     !hasBoxStyle(element, style, parentFlow) &&
@@ -369,6 +370,7 @@ function createElementNode(
   if (flow) {
     applyContainerLayout(node, element, style, flow)
     if (flow === 'flex') applyFlexGap(node, style)
+    applyTableLayout(node, style, display)
   }
   applyFlowSizing(graph, node, style, display, parentFlow)
 
