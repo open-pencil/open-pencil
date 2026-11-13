@@ -199,7 +199,9 @@ describe('community gallery', () => {
             id: release,
             name: '0.17.0',
             description: 'The release tour',
-            createdAt: expect.any(String)
+            createdAt: expect.any(String),
+            // Saved again since it was named, so the gallery holds a newer state.
+            current: false
           }
         ]
       }

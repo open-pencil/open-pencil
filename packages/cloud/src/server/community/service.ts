@@ -17,7 +17,8 @@ const communityVersion = (version: DocumentVersion): CommunityVersion => ({
   id: version.id,
   name: version.name ?? '',
   description: version.description || null,
-  createdAt: version.createdAt
+  createdAt: version.createdAt,
+  current: version.current
 })
 
 /**

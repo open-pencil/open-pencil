@@ -156,6 +156,7 @@ useHead(() => ({
           >
             <ul :class="versions.list()" :aria-label="cloud.versionHistory">
               <CloudVersionListItem
+                v-if="!document.versions[0]?.current"
                 :label="cloud.currentVersion"
                 current
                 :selected="versionId === null"
@@ -164,13 +165,17 @@ useHead(() => ({
               <CloudVersionListItem
                 v-for="(version, index) in document.versions"
                 :key="version.id"
-                :label="version.name"
+                :label="
+                  index === 0
+                    ? messages.communityLatestVersion({ name: version.name })
+                    : version.name
+                "
                 :description="version.description"
                 :at="version.createdAt"
                 named
-                :selected="versionId === version.id"
+                :selected="version.current ? versionId === null : versionId === version.id"
                 :last="index === document.versions.length - 1"
-                @select="versionId = version.id"
+                @select="versionId = version.current ? null : version.id"
               />
             </ul>
           </div>
