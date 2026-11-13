@@ -4,6 +4,7 @@ import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { strokeOverflow as strokeReach } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
+import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 import { regionFills } from '@open-pencil/scene-graph/vector-network'
 
@@ -46,10 +47,6 @@ export function fillsCastShadow(node: SceneNode): boolean {
 
 export function paintsCastShadow(node: SceneNode): boolean {
   return fillsCastShadow(node) || node.strokes.some(paintCastsShadow)
-}
-
-function clipsChildren(node: SceneNode): boolean {
-  return node.clipsContent && node.type !== 'GROUP'
 }
 
 function drawsSilhouette(node: SceneNode): boolean {

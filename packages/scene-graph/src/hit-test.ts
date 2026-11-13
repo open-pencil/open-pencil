@@ -2,6 +2,7 @@ import { hitsConnectorLine } from './connectors/hit'
 import { getWorldMatrix } from './coordinate'
 import type { SceneGraph } from './graph'
 import Matrix from './matrix'
+import { clipsChildren } from './node-defaults'
 import { hitsShape, isHitPaint, strokeReach } from './outline/hit'
 import type { SceneNode, NodeType } from './types'
 
@@ -157,7 +158,7 @@ function hitTestChildren(
   if (!parent) return null
   const { transformCache, pad } = walk
 
-  if (parent.clipsContent) {
+  if (clipsChildren(parent)) {
     if (!containsPoint(px, py, parent, graph, transformCache)) return null
   }
 
@@ -430,12 +431,7 @@ function dropTargetIn(
   transformCache: Map<string, boolean>
 ): SceneNode | null {
   // A clipped-away part of a child is not under the cursor.
-  if (
-    parent.type !== 'CANVAS' &&
-    parent.clipsContent &&
-    !containsPoint(px, py, parent, graph, transformCache)
-  )
-    return null
+  if (clipsChildren(parent) && !containsPoint(px, py, parent, graph, transformCache)) return null
 
   for (let i = parent.childIds.length - 1; i >= 0; i--) {
     const childId = parent.childIds[i]

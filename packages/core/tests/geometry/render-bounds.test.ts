@@ -342,3 +342,45 @@ describe('render bounds under a mask', () => {
     expect(box(exportBounds(graph, [group.id]))).toEqual([2000, 0, 100, 100])
   })
 })
+
+// Figma desktop (2026-11-14): a component set clips its variants as a frame does; a section never
+// clips, even one an import marked as clipping.
+describe('render bounds of containers that clip', () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0].id
+  const solidFill = {
+    type: 'SOLID' as const,
+    color: { r: 1, g: 0, b: 0, a: 1 },
+    opacity: 1,
+    visible: true
+  }
+  const overflowing = (type: 'COMPONENT_SET' | 'SECTION', x: number) => {
+    const container = graph.createNode(type, page, {
+      x,
+      y: 0,
+      width: 100,
+      height: 100,
+      clipsContent: true
+    })
+    graph.createNode('RECTANGLE', container.id, {
+      x: 50,
+      y: 0,
+      width: 100,
+      height: 50,
+      fills: [solidFill]
+    })
+    return container
+  }
+  const box = (bounds: ReturnType<typeof exportBounds>) =>
+    bounds && [bounds.minX, bounds.minY, bounds.maxX - bounds.minX, bounds.maxY - bounds.minY]
+
+  test('a component set clips a variant past its edge', () => {
+    const set = overflowing('COMPONENT_SET', 10000)
+    expect(box(exportBounds(graph, [set.id]))).toEqual([10000, 0, 100, 100])
+  })
+
+  test('a section shows a layer past its edge', () => {
+    const section = overflowing('SECTION', 11000)
+    expect(box(exportBounds(graph, [section.id]))?.[2]).toBe(150)
+  })
+})

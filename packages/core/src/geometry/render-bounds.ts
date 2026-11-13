@@ -13,6 +13,7 @@ import {
   widestBlurRadius
 } from '@open-pencil/scene-graph/geometry'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
+import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { textLinesOverflow } from '@open-pencil/scene-graph/text'
 
@@ -264,13 +265,6 @@ export function localPaintBounds(node: SceneNode, withShadows: boolean): VisualB
 export function localRenderBounds(node: SceneNode, reach: EffectReach): VisualBounds | null {
   const own = ownPaint(node, reach)
   return own && withEffects(node, own, Matrix.identity(), reach)
-}
-
-function clipsChildren(node: SceneNode): boolean {
-  return (
-    node.clipsContent &&
-    (node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE')
-  )
 }
 
 /** Whether a node draws at all: shown, and, as Figma counts it, not fully transparent. */
