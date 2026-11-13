@@ -1,4 +1,5 @@
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 
 import { idOf, parentIdOf, type SourceIndex } from '../instance-overrides/source-index'
 import { isComponentSetRecord } from '../node-change/convert'
@@ -111,7 +112,7 @@ export function collectSceneDependencies(
         (pageIds ? pageIds.has(idOf(node) ?? '') : node.internalOnly !== true)
     )
     .flatMap((node) => idOf(node) ?? [])
-  pending.push(...rootIds)
+  appendAll(pending, rootIds)
   while (pending.length) {
     const id = pending.pop()
     if (!id || contentIds.has(id)) continue
