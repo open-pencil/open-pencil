@@ -1,5 +1,7 @@
 import type { UIMessageChunk } from 'ai'
 
+import { appendAll } from '@open-pencil/scene-graph/arrays'
+
 /** A tool call as the chat shows it. */
 export interface ReplyToolCall {
   id: string
@@ -11,11 +13,14 @@ export interface ReplyToolCall {
 /**
  * Builds one reply's message chunks from what a coding agent reports. Consecutive text or
  * thought forms one part, which closes when anything else arrives, so text after a tool call
- * starts a new part and a run of thoughts shows as one.
+ * starts a new part and a run of thoughts shows as one. Text the agent says starts a new message
+ * also starts a new part, so two messages do not run together.
  */
 export function createReplyStream(idPrefix: string) {
   let parts = 0
   let text: string | null = null
+  /** The agent's id for the message the open text belongs to, when it gives one. */
+  let textMessage: string | undefined
   let reasoning: string | null = null
 
   function nextId(kind: string): string {
@@ -27,6 +32,7 @@ export function createReplyStream(idPrefix: string) {
     if (!text) return []
     const id = text
     text = null
+    textMessage = undefined
     return [{ type: 'text-end', id }]
   }
 
@@ -38,11 +44,16 @@ export function createReplyStream(idPrefix: string) {
   }
 
   return {
-    text(delta: string): UIMessageChunk[] {
+    /** Text of the agent's message `message`, when the agent names its messages. */
+    text(delta: string, message?: string): UIMessageChunk[] {
       if (!delta) return []
       const chunks = closeReasoning()
+      if (text && message !== undefined && textMessage !== undefined && message !== textMessage) {
+        appendAll(chunks, closeText())
+      }
       if (!text) {
         text = nextId('text')
+        textMessage = message
         chunks.push({ type: 'text-start', id: text })
       }
       chunks.push({ type: 'text-delta', id: text, delta })
