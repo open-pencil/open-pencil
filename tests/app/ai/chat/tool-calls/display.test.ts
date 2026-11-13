@@ -11,6 +11,7 @@ import {
   toolNodeIds,
   toolSource,
   toolSummary,
+  toolWebResults,
   type ChatMessagePart,
   type ToolCallPart
 } from '@/app/ai/chat/tool-calls/display'
@@ -73,13 +74,23 @@ describe('tool call display', () => {
     expect(
       toolNodeIds(
         call({
-          type: 'tool-delete_node',
+          type: 'tool-delete_nodes',
           state: 'output-available',
-          input: {},
-          output: { deleted: '1:5', id: '1:5' }
+          input: { ids: ['1:5'] },
+          output: { deleted: ['1:5'] }
         })
       )
     ).toEqual([])
+    expect(
+      toolNodeIds(
+        call({
+          type: 'tool-clone_nodes',
+          state: 'output-available',
+          input: {},
+          output: { clones: [{ id: '1:6' }, { id: '1:7' }] }
+        })
+      )
+    ).toEqual(['1:6', '1:7'])
   })
 
   test('reads errors from failed calls and from error outputs', () => {
@@ -115,6 +126,36 @@ describe('tool call display', () => {
         })
       )
     ).toBeNull()
+  })
+
+  test('shows the pages a web search found as sources, not its own output', () => {
+    const results = [
+      {
+        url: 'https://example.com/grids',
+        title: 'Grids',
+        publishedAt: null,
+        author: null,
+        text: 'Columns and gutters.'
+      }
+    ]
+    const found = call({ type: 'tool-search_web', state: 'output-available', output: { results } })
+    expect(toolWebResults(found)).toEqual(results)
+    const refused = call({
+      type: 'tool-search_web',
+      state: 'output-available',
+      output: { error: 'Out of credits' }
+    })
+    expect(toolWebResults(refused)).toBeNull()
+    expect(
+      toolWebResults(call({ type: 'tool-get_jsx', state: 'output-available', output: { results } }))
+    ).toBeNull()
+    // An agent such as Claude Code gets it from OpenPencil's MCP server as JSON text.
+    const throughMCP = call({
+      type: 'tool-mcp__open-pencil__search_web',
+      state: 'output-available',
+      output: { content: [{ type: 'text', text: JSON.stringify({ results }) }] }
+    })
+    expect(toolWebResults(throughMCP)).toEqual(results)
   })
 
   test('groups consecutive tool calls between other parts', () => {
@@ -237,7 +278,7 @@ describe('classifyToolState', () => {
 describe('toolCallState', () => {
   test('classifies a chat part by its tool name, state, and output', () => {
     const part = (fields: Partial<ToolCallPart>) =>
-      ({ type: 'tool-diff_apply', toolCallId: 'call', input: {}, ...fields }) as ToolCallPart
+      ({ type: 'tool-apply_patch', toolCallId: 'call', input: {}, ...fields }) as ToolCallPart
     expect(toolCallState(part({ state: 'input-streaming' }))).toBe('pending')
     expect(toolCallState(part({ state: 'output-available', output: { applied: 1 } }))).toBe('done')
     expect(

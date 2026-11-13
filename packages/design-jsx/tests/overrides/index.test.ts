@@ -1,9 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
 import { designJSXProp } from '#design-jsx/index'
-import { propsToOverrides } from '#design-jsx/overrides/index'
+import { propsToOverrides, shapeOverrides } from '#design-jsx/overrides/index'
 
 import { DEFAULT_GRADIENT_TRANSFORM } from '@open-pencil/scene-graph/gradient'
+import {
+  MAX_GRID_TRACKS,
+  MAX_LAYOUT_LENGTH,
+  MAX_LAYOUT_SPACING
+} from '@open-pencil/scene-graph/layout'
 
 describe('property names', () => {
   test('reads the first name of a property that is set', () => {
@@ -42,6 +47,76 @@ describe('stack alignment', () => {
     expect(propsToOverrides({ flex: 'row', items: 'baseline' }, false, 'NONE')).toMatchObject({
       counterAxisAlign: 'BASELINE'
     })
+  })
+})
+
+describe('grid placement', () => {
+  test('places a child by its start line, under either name', () => {
+    expect(propsToOverrides({ colStart: 2, rowStart: 3 }, false, 'GRID')).toMatchObject({
+      gridPosition: { column: 2, row: 3, columnSpan: 1, rowSpan: 1 }
+    })
+    expect(propsToOverrides({ col: 4, row: 5 }, false, 'GRID')).toMatchObject({
+      gridPosition: { column: 4, row: 5, columnSpan: 1, rowSpan: 1 }
+    })
+  })
+
+  test('spans the tracks a child names, and at least one', () => {
+    expect(propsToOverrides({ colStart: 1, colSpan: 3, rowSpan: 2 }, false, 'GRID')).toMatchObject({
+      gridPosition: { columnSpan: 3, rowSpan: 2 }
+    })
+    expect(propsToOverrides({ colStart: 1, colSpan: 0 }, false, 'GRID')).toMatchObject({
+      gridPosition: { columnSpan: 1 }
+    })
+  })
+
+  test('refuses a track count layout would allocate one entry per track for', () => {
+    expect(
+      propsToOverrides({ grid: true, columns: 1_000_000_000 }, false, 'NONE').gridTemplateColumns
+    ).toBeUndefined()
+  })
+
+  test('keeps a track list to the tracks layout can place', () => {
+    const columns = Array.from({ length: MAX_GRID_TRACKS + 5 }, () => '1fr').join(' ')
+    const overrides = propsToOverrides({ grid: true, columns }, false, 'NONE')
+    expect(overrides.gridTemplateColumns).toHaveLength(MAX_GRID_TRACKS)
+  })
+
+  test('keeps a size within what layout can draw', () => {
+    expect(propsToOverrides({ w: 1_000_000_000 }, false, 'NONE').width).toBe(MAX_LAYOUT_LENGTH)
+  })
+})
+
+describe('layout bounds', () => {
+  test('keeps a negative gap and padding, which overlap children', () => {
+    expect(propsToOverrides({ flex: 'row', gap: -8, p: -4 }, false, 'NONE')).toMatchObject({
+      itemSpacing: -8,
+      paddingTop: -4
+    })
+    expect(propsToOverrides({ grid: true, gap: -1e9 }, false, 'NONE').gridColumnGap).toBe(
+      -MAX_LAYOUT_SPACING
+    )
+  })
+
+  test('leaves a layer in the flow when its position is not a number layout can use', () => {
+    const overrides = propsToOverrides({ x: Number.POSITIVE_INFINITY }, false, 'HORIZONTAL')
+    expect(overrides.x).toBeUndefined()
+    expect(overrides.layoutPositioning).toBeUndefined()
+    expect(propsToOverrides({ x: 10 }, false, 'HORIZONTAL').layoutPositioning).toBe('ABSOLUTE')
+  })
+
+  test('sizes a layer as if a size layout cannot use were never given', () => {
+    const infinite = Number.POSITIVE_INFINITY
+    const frame = propsToOverrides({ flex: 'row', w: infinite, h: infinite }, false, 'NONE')
+    const hugging = propsToOverrides({ flex: 'row' }, false, 'NONE')
+    expect(frame.primaryAxisSizing).toBe(hugging.primaryAxisSizing)
+    expect(frame.counterAxisSizing).toBe(hugging.counterAxisSizing)
+    expect(propsToOverrides({ w: infinite }, true, 'NONE').textAutoResize).toBe(
+      propsToOverrides({}, true, 'NONE').textAutoResize
+    )
+  })
+
+  test('draws a polygon with at least three points', () => {
+    expect(shapeOverrides('POLYGON', { points: 1 }).pointCount).toBe(3)
   })
 })
 

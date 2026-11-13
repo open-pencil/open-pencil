@@ -1,1 +1,0 @@
-- OpenPencil is now available in Brazilian Portuguese (pt-BR), selectable from the Language menu and picked automatically for Portuguese browsers.

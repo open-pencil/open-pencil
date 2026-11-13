@@ -1,5 +1,4 @@
-import type { CanvasKit, Path } from 'canvaskit-wasm'
-
+import type { CanvasKit, Path } from '@open-pencil/canvaskit'
 import type { VectorNetwork } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 

@@ -64,7 +64,7 @@ export function buildWriteMeta(
     tombstoned: existing?.tombstoned ?? false,
     hasFig: true,
     hasThumb,
-    figSize: input.figBytes.byteLength,
+    figSize: input.figBytes instanceof Blob ? input.figBytes.size : input.figBytes.byteLength,
     lastOpenedAt: existing?.lastOpenedAt,
     ...writtenRevisions(input, existing)
   }

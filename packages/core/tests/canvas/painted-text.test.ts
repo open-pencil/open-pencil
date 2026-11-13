@@ -1,11 +1,11 @@
 import { beforeAll, expect, test } from 'bun:test'
 
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import type { Fill } from '@open-pencil/scene-graph'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { repoPath } from '@open-pencil/test-support/paths'
 
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
 import { SkiaRenderer } from '#core/canvas/renderer'
 import { withTextParagraph, type TextLayout } from '#core/canvas/text'
 import { fontManager } from '#core/text/font/manager'
@@ -29,7 +29,7 @@ const gradient: Fill = {
 }
 
 test('mutable foreground paints never enter the paragraph cache, including on errors', async () => {
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(100, 100), 'surface'))
   const graph = new SceneGraph()
   const page = expectDefined(graph.getPages()[0], 'page')
@@ -73,7 +73,7 @@ for (const textAlignVertical of ['TOP', 'CENTER', 'BOTTOM'] as const) {
     }
   ]) {
     test(`complex paint preserves paragraph coverage: ${textAlignVertical} ${fixture.text}`, async () => {
-      const ck = await initCanvasKit()
+      const ck = await getCanvasKit()
       const graph = new SceneGraph()
       const page = expectDefined(graph.getPages()[0], 'page')
       const node = graph.createNode('TEXT', page.id, {

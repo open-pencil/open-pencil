@@ -74,9 +74,12 @@ export function useCloudAccountForm(
     fields: { name, email, password, repeat },
     errors: form.errors,
     blur: (field: 'name' | 'email' | 'password' | 'repeat') => form.validateField(field),
-    submit: (send: (credentials: CloudAccountCredentials) => void) =>
-      form.handleSubmit((values) =>
-        send({ name: values.name.trim(), email: values.email.trim(), password: values.password })
+    /** Sends valid credentials; `invalid` runs instead when a field is wrong. */
+    submit: (send: (credentials: CloudAccountCredentials) => void, invalid?: () => void) =>
+      form.handleSubmit(
+        (values) =>
+          send({ name: values.name.trim(), email: values.email.trim(), password: values.password }),
+        () => invalid?.()
       ),
     /** Clears what was typed and every message, keeping the email for the other mode. */
     switchMode: () => form.resetForm({ values: { ...form.values, password: '', repeat: '' } })

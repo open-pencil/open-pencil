@@ -1,6 +1,7 @@
 import { Frame, Instance, shader } from '@open-pencil/design-jsx'
 import type { ShaderPreset } from '@open-pencil/scene-graph/shaders'
 
+import { TOUR_KEYS } from '../callout'
 import { previewButton } from '../chrome'
 import { layoutChapter, type Chapter, type ChapterContext } from './chapter'
 import { CHAPTERS } from './names'
@@ -53,7 +54,7 @@ export function createHelloChapter(context: ChapterContext, player: Player): Pro
       step: 1,
       title: 'Press preview',
       body: 'The background starts to move and the player becomes a real control: press play, drag the progress, toggle shuffle. Esc brings you back.',
-      keys: '⌥ ⌘ ↩',
+      keys: TOUR_KEYS.preview,
       where: previewButton(context.theme)
     }
   })

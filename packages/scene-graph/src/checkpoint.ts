@@ -37,7 +37,6 @@ export function captureGraphCheckpoint(graph: SceneGraph) {
     nodes: graph.nodes,
     variables: graph.variables,
     variableCollections: graph.variableCollections,
-    activeMode: graph.activeMode,
     instanceIndex: graph.instanceIndex,
     enabledLibraries: graph.enabledLibraries,
     rootId: graph.rootId,
@@ -75,7 +74,6 @@ export function captureGraphCheckpoint(graph: SceneGraph) {
   function assertDocumentUnchanged() {
     if (
       !isEqual(snapshot.variableCollections, graph.variableCollections) ||
-      !isEqual(snapshot.activeMode, graph.activeMode) ||
       !isEqual(snapshot.instanceIndex, graph.instanceIndex) ||
       !isEqual(snapshot.enabledLibraries, graph.enabledLibraries) ||
       images.size !== graph.images.size ||
@@ -94,7 +92,6 @@ export function captureGraphCheckpoint(graph: SceneGraph) {
     restoreObjects(graph.nodes, snapshot.nodes, nodeRefs)
     restoreObjects(graph.variables, snapshot.variables, variableRefs)
     restoreObjects(graph.variableCollections, snapshot.variableCollections, collectionRefs)
-    restoreMap(graph.activeMode, structuredClone(snapshot.activeMode))
     restoreMap(graph.instanceIndex, structuredClone(snapshot.instanceIndex))
     restoreMap(graph.enabledLibraries, structuredClone(snapshot.enabledLibraries))
     restoreMap(graph.images, images)
@@ -136,6 +133,40 @@ function restoreObjects<T extends object>(
   }
 }
 
+/** Copies `id`'s record the first time it is reported: `null` for one about to be added. */
+function copyRecord<T>(copies: Map<string, T | null>, live: ReadonlyMap<string, T>, id: string) {
+  if (!copies.has(id)) copies.set(id, structuredClone(live.get(id) ?? null))
+}
+
+/** Whether `target` holds exactly the objects `refs` held, in any order. */
+function sameEntries<T>(target: ReadonlyMap<string, T>, refs: ReadonlyMap<string, T>): boolean {
+  if (target.size !== refs.size) return false
+  for (const [id, ref] of refs) if (target.get(id) !== ref) return false
+  return true
+}
+
+/**
+ * Puts back the records `refs` held, in their order, with the copied ones rewritten in place to
+ * their copies, as views may hold them.
+ */
+function restoreCopied<T extends object>(
+  target: Map<string, T>,
+  copies: ReadonlyMap<string, T | null>,
+  refs: ReadonlyMap<string, T>
+) {
+  target.clear()
+  for (const [id, original] of refs) {
+    const saved = copies.get(id)
+    if (saved) {
+      for (const key of Object.keys(original) as (keyof T)[]) {
+        if (!(key in saved)) Reflect.deleteProperty(original, key)
+      }
+      Object.assign(original, structuredClone(saved))
+    }
+    target.set(id, original)
+  }
+}
+
 function restoreMap<K, V>(target: Map<K, V>, saved: Map<K, V>) {
   target.clear()
   for (const [key, value] of saved) target.set(key, value)
@@ -152,9 +183,9 @@ export interface TouchedCheckpoint {
   readonly nodes: ReadonlyMap<string, SceneNode>
   /** Nodes the graph reported changing or creating. */
   readonly reported: ReadonlySet<string>
-  /** Copies of every variable, as variables have no change report. */
-  readonly variables: ReadonlyMap<string, Variable>
-  readonly variableCollections: ReadonlyMap<string, VariableCollection>
+  /** Copies of the variables reported changing (`SceneGraph.willChangeVariable`), as they were. */
+  readonly variables: ReadonlyMap<string, Variable | null>
+  readonly variableCollections: ReadonlyMap<string, VariableCollection | null>
   /** Throws unless the edit only changed properties of existing nodes and variables. */
   assertPropertiesOnly(): void
   /** Stops observing and puts back everything the edit changed, keeping object identities. */
@@ -175,12 +206,15 @@ export function captureTouchedCheckpoint(graph: SceneGraph): TouchedCheckpoint {
   const variableRefs = new Map(graph.variables)
   const collectionRefs = new Map(graph.variableCollections)
   const saved = structuredClone({
-    variables: graph.variables,
-    variableCollections: graph.variableCollections,
-    activeMode: graph.activeMode,
-    instanceIndex: graph.instanceIndex,
     enabledLibraries: graph.enabledLibraries
   })
+  // Instances follow their nodes' components, which a property edit cannot change, so the sets
+  // are kept rather than their ids copied deeply.
+  const instanceIndex = new Map(
+    [...graph.instanceIndex].map(([id, instances]) => [id, new Set(instances)])
+  )
+  const variables = new Map<string, Variable | null>()
+  const variableCollections = new Map<string, VariableCollection | null>()
   // Property edits cannot edit assets. Retain existing buffers, not copies of every bitmap.
   const images = new Map(graph.images)
   const { rootId, figKiwiVersion, figSchemaDeflated, documentColorSpace } = graph
@@ -219,6 +253,10 @@ export function captureTouchedCheckpoint(graph: SceneGraph): TouchedCheckpoint {
     before: (node) => {
       reported.add(node.id)
       copyLineage(node)
+    },
+    beforeRecord: (kind, id) => {
+      if (kind === 'variable') copyRecord(variables, graph.variables, id)
+      else copyRecord(variableCollections, graph.variableCollections, id)
     }
   })
   const unbindEvents = recordSceneMutations(graph, impact)
@@ -271,11 +309,24 @@ export function captureTouchedCheckpoint(graph: SceneGraph): TouchedCheckpoint {
 
   function assertPropertiesOnly() {
     assertNodes()
-    assertVariableIdentity(graph, saved.variables, variableRefs)
+    if (!sameEntries(graph.variables, variableRefs)) throw new Error(VARIABLE_IDENTITY_ERROR)
+    for (const [id, before] of variables) {
+      const after = graph.variables.get(id)
+      if (
+        !before ||
+        !after ||
+        before.id !== after.id ||
+        before.collectionId !== after.collectionId ||
+        before.type !== after.type
+      )
+        throw new Error(VARIABLE_IDENTITY_ERROR)
+    }
     if (
-      !isEqual(saved.variableCollections, graph.variableCollections) ||
-      !isEqual(saved.activeMode, graph.activeMode) ||
-      !isEqual(saved.instanceIndex, graph.instanceIndex) ||
+      !sameEntries(graph.variableCollections, collectionRefs) ||
+      [...variableCollections].some(
+        ([id, before]) => !isEqual(before, graph.variableCollections.get(id) ?? null)
+      ) ||
+      !isEqual(instanceIndex, graph.instanceIndex) ||
       !isEqual(saved.enabledLibraries, graph.enabledLibraries) ||
       images.size !== graph.images.size ||
       [...images].some(([id, bytes]) => graph.images.get(id) !== bytes) ||
@@ -326,10 +377,12 @@ export function captureTouchedCheckpoint(graph: SceneGraph): TouchedCheckpoint {
       }
       Object.assign(original, structuredClone(copy))
     }
-    restoreObjects(graph.variables, saved.variables, variableRefs)
-    restoreObjects(graph.variableCollections, saved.variableCollections, collectionRefs)
-    restoreMap(graph.activeMode, structuredClone(saved.activeMode))
-    restoreMap(graph.instanceIndex, structuredClone(saved.instanceIndex))
+    restoreCopied(graph.variables, variables, variableRefs)
+    restoreCopied(graph.variableCollections, variableCollections, collectionRefs)
+    restoreMap(
+      graph.instanceIndex,
+      new Map([...instanceIndex].map(([id, instances]) => [id, new Set(instances)]))
+    )
     restoreMap(graph.enabledLibraries, structuredClone(saved.enabledLibraries))
     restoreMap(graph.images, images)
     graph.rootId = rootId
@@ -363,8 +416,8 @@ export function captureTouchedCheckpoint(graph: SceneGraph): TouchedCheckpoint {
   return {
     nodes,
     reported,
-    variables: saved.variables,
-    variableCollections: saved.variableCollections,
+    variables,
+    variableCollections,
     assertPropertiesOnly,
     restore,
     stop

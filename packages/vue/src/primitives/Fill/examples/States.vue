@@ -72,11 +72,35 @@ const provider: BindingProvider<Color> = {
         >
           <span class="absolute inset-0" :style="{ background: swatch.background }" />
         </FillSwatch>
-        <BindableValueRoot :provider="provider" :targets="target" :value="solid.color">
+        <span class="flex items-center gap-2 text-xs">
           <FillSwatch
             v-slot="swatch"
             :fill="solid"
+            class="relative size-4 overflow-hidden rounded-sm border border-[var(--vp-c-divider)]"
+          >
+            <span class="absolute inset-0" :style="{ background: swatch.background }" />
+          </FillSwatch>
+          Brand blue
+        </span>
+        <BindableValueRoot
+          v-slot="binding"
+          :provider="provider"
+          :targets="target"
+          :value="solid.color"
+        >
+          <FillSwatch
+            v-slot="swatch"
+            v-bind="binding.stateAttrs"
+            :fill="{ ...solid, color: binding.resolvedValue ?? solid.color }"
             label="Bound token fill"
+            class="relative size-10 overflow-hidden rounded-md border border-[var(--vp-c-divider)]"
+          >
+            <span class="absolute inset-0" :style="{ background: swatch.background }" />
+          </FillSwatch>
+          <FillSwatch
+            v-slot="swatch"
+            :fill="solid"
+            label="Picker row fill"
             class="relative size-10 overflow-hidden rounded-md border border-[var(--vp-c-divider)]"
           >
             <span class="absolute inset-0" :style="{ background: swatch.background }" />
@@ -128,7 +152,7 @@ const provider: BindingProvider<Color> = {
         <ChannelSliderThumb
           class="block size-4 rounded-full border-2 border-white bg-[var(--vp-c-brand-1)] shadow outline-none focus-visible:ring-2"
         />
-        <output class="ml-auto pl-4 text-xs tabular-nums"
+        <output class="ms-auto ps-4 text-xs tabular-nums"
           >{{ Math.round(slider.value * 100) }}%</output
         >
       </ChannelSliderRoot>

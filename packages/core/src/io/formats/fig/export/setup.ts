@@ -1,9 +1,10 @@
-import type { CanvasKit } from 'canvaskit-wasm'
 import { deflateSync, inflateSync } from 'fflate'
 import { toUint8Array } from 'js-base64'
 
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import { figArchiveMetaJSON } from '@open-pencil/fig'
 import {
+  applyVariableModes,
   buildComponentPropIndex,
   exportCanvasGuides,
   figImageEntries,
@@ -18,6 +19,7 @@ import { getCompiledSchema, getSchemaBytes, type NodeChange } from '@open-pencil
 import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import { decodeBinarySchema, compileSchema, ByteBuffer } from '@open-pencil/kiwi/schema-runtime'
 import type { PluginDataEntry, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import {
   readBehaviour,
   renameBehaviourProperties,
@@ -46,6 +48,7 @@ const THUMBNAIL_1X1 = toUint8Array(
 )
 
 export type KiwiNodeChange = NodeChange & Record<string, unknown>
+
 export type FigExportPage = ReturnType<SceneGraph['getPages']>[number]
 
 export interface CanvasExportEntry {
@@ -157,8 +160,8 @@ export function firstUnclaimedLocalId(graph: SceneGraph, propertyIds: readonly s
   const ids = [...propertyIds, ...savedPropertyCopyIds(graph)]
   for (const node of graph.nodes.values()) ids.push(node.source.id || node.id)
   for (const [collectionId, collection] of graph.variableCollections) {
-    ids.push(collectionId, ...collection.modes.map((mode) => mode.modeId))
-    ids.push(...collection.variableIds)
+    appendAll(ids, [collectionId, ...collection.modes.map((mode) => mode.modeId)])
+    appendAll(ids, collection.variableIds)
   }
   let last = 0
   for (const id of ids) {
@@ -492,6 +495,11 @@ export async function prepareFigExport(
     nodeSourceGuidValues,
     archived !== undefined
   )
+  // Pages set modes as layers do, through the collection and mode GUIDs just assigned.
+  for (const { page, canvasNc } of canvasEntries) {
+    const node = graph.getNode(page.id)
+    if (node) applyVariableModes({ graph, varIdToGuid, modeIdToGuid }, node, canvasNc)
+  }
   const pluginDataOverrides = renamedBehaviourPluginData(graph, propertyIdToGuid)
   assignOwnLayerGuids(graph, sourceOwners, nodeIdToGuid, assignedGuidValues)
 

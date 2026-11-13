@@ -24,7 +24,8 @@ async function desktopFacts(): Promise<DesktopFacts> {
   }
 }
 
-async function detectEnvironment(): Promise<SupportEnvironment> {
+/** The browser or desktop shell the app runs in, as support notices and bug reports name it. */
+export async function detectEnvironment(): Promise<SupportEnvironment> {
   const facts = { userAgent: navigator.userAgent, maxTouchPoints: navigator.maxTouchPoints }
   return describeEnvironment(facts, IS_TAURI ? await desktopFacts() : undefined)
 }

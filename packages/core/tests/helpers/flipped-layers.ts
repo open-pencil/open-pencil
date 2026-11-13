@@ -1,8 +1,8 @@
-import { expectDefined } from '@open-pencil/test-support/assert'
-
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 export function solid(r: number, g: number, b: number) {
   return [{ type: 'SOLID' as const, color: { r, g, b, a: 1 }, opacity: 1, visible: true }]
@@ -17,10 +17,10 @@ export function worldBox(graph: SceneGraph, node: SceneNode): VisualBounds {
 
 export function unionBoxes(boxes: readonly VisualBounds[]): VisualBounds {
   return {
-    minX: Math.min(...boxes.map((box) => box.minX)),
-    minY: Math.min(...boxes.map((box) => box.minY)),
-    maxX: Math.max(...boxes.map((box) => box.maxX)),
-    maxY: Math.max(...boxes.map((box) => box.maxY))
+    minX: minOf(boxes.map((box) => box.minX)),
+    minY: minOf(boxes.map((box) => box.minY)),
+    maxX: maxOf(boxes.map((box) => box.maxX)),
+    maxY: maxOf(boxes.map((box) => box.maxY))
   }
 }
 

@@ -22,7 +22,7 @@ import type { HomeCloudAccount, HomeLocation } from '../cloud/types'
 
 /**
  * Where the home tab can show documents from: recent files, each Cloud workspace of the signed-in
- * account, documents shared with that account, and the configured storage bucket.
+ * account, documents shared with that account, its Trash, and the configured storage bucket.
  */
 const {
   active,
@@ -36,7 +36,14 @@ const {
   /** The build has Cloud, so its sign-in and workspaces have a place. */
   cloud?: boolean
   account?: HomeCloudAccount | null
-  workspaces?: { id: string; name: string; documentCount?: number; attention?: boolean }[]
+  workspaces?: {
+    id: string
+    name: string
+    documentCount?: number
+    attention?: boolean
+    /** Anyone may open what is in it, as in the server's community gallery. */
+    public?: boolean
+  }[]
   sharedCount?: number
   /** The configured storage bucket, or null when no storage is set up. */
   storage?: { label: string; detail: string } | null
@@ -145,7 +152,10 @@ const workspaceLocations = computed(() =>
             :data-active="isActive(workspace.location)"
             @click="emit('select', workspace.location)"
           >
-            <icon-lucide-layers :class="ui.icon()" />
+            <Tip v-if="workspace.public" :label="t.savePublicHeading">
+              <icon-lucide-globe :class="ui.icon()" role="img" :aria-label="t.savePublicLabel" />
+            </Tip>
+            <icon-lucide-layers v-else :class="ui.icon()" />
             <span :class="ui.label()">{{ workspace.name }}</span>
             <span :class="ui.trailing()">
               <Tip v-if="workspace.attention" :label="t.homeAttentionTip">
@@ -167,6 +177,15 @@ const workspaceLocations = computed(() =>
             <icon-lucide-users :class="ui.icon()" />
             <span :class="ui.label()">{{ t.homeSharedWithYou }}</span>
             <span v-if="sharedCount" :class="ui.trailing()">{{ sharedCount }}</span>
+          </button>
+          <button
+            type="button"
+            :class="ui.item()"
+            :data-active="isActive({ kind: 'trash', id: 'trash' })"
+            @click="emit('select', { kind: 'trash', id: 'trash' })"
+          >
+            <icon-lucide-trash-2 :class="ui.icon()" />
+            <span :class="ui.label()">{{ t.homeTrash }}</span>
           </button>
         </template>
         <button v-else type="button" :class="ui.item()" @click="emit('connect')">

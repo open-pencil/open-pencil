@@ -2,10 +2,10 @@ import { describe, expect, test } from 'bun:test'
 
 import { lint, ruleDiagnostics } from '#oxlint-plugin-tests/helpers/lint'
 
-const rule = 'prefer-es-toolkit'
-const rules = { [`open-pencil/${rule}`]: 'error' }
+const rule = '@open-pencil/data/prefer-es-toolkit'
+const rules = { [rule]: 'error' }
 
-describe('prefer-es-toolkit', () => {
+describe('@open-pencil/data/prefer-es-toolkit', () => {
   test.each([
     '[...new Set(items.map((item) => item.id))]',
     '[...new Set([...items, extra])]',

@@ -6,11 +6,16 @@ import { join } from 'node:path'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { loadDocument, prepareDocumentForRPC } from '#cli/headless'
+import {
+  loadDocument,
+  populateNodePage,
+  populateWholeDocument,
+  prepareDocumentForRPC
+} from '#cli/headless'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 
-async function createLazyFixture() {
+async function writeLazyFixture() {
   const graph = new SceneGraph()
   const [page1] = graph.getPages()
   page1.name = 'Page 1'
@@ -31,18 +36,32 @@ async function createLazyFixture() {
     width: 100,
     height: 40
   })
-  graph.createNode('INSTANCE', page2.id, {
-    name: 'Button instance 2',
-    componentId: component.id,
-    width: 100,
-    height: 40
-  })
+  for (const [index, page] of [page2, graph.addPage('Page 3')].entries())
+    graph.createNode('INSTANCE', page.id, {
+      name: `Button instance ${index + 2}`,
+      componentId: component.id,
+      width: 100,
+      height: 40
+    })
 
   const dir = await mkdtemp(join(tmpdir(), 'open-pencil-headless-lazy-'))
   const path = join(dir, 'lazy.fig')
   const result = await io.writeDocument('fig', graph)
   await Bun.write(path, result.data as Uint8Array)
-  return loadDocument(path)
+  return path
+}
+
+async function createLazyFixture() {
+  return loadDocument(await writeLazyFixture())
+}
+
+/** The IDs of Page 3's instance and the layer inside it, as a load of every page names them. */
+async function page3LayerIds(path: string) {
+  const graph = await loadDocument(path)
+  populateWholeDocument(graph)
+  const instance = pageInstance(graph, 'Page 3')
+  if (!instance) throw new Error('The fixture has no instance on Page 3')
+  return { instance: instance.id, insideInstance: graph.getChildren(instance.id)[0].id }
 }
 
 function pageInstance(graph: SceneGraph, pageName: string) {
@@ -78,5 +97,26 @@ describe('headless CLI lazy .fig preparation', () => {
     const graph = await createLazyFixture()
     prepareDocumentForRPC(graph, 'pages')
     expect(pageInstance(graph, 'Page 2')).toBeUndefined()
+  })
+
+  test('loads only the page holding an exported node', async () => {
+    const path = await writeLazyFixture()
+    const { instance } = await page3LayerIds(path)
+    const graph = await loadDocument(path)
+
+    await populateNodePage(graph, instance)
+
+    expect(graph.getChildren(instance)).toHaveLength(1)
+    expect(pageInstance(graph, 'Page 2')).toBeUndefined()
+  })
+
+  test('loads every page for a layer inside an instance, which has no record of its own', async () => {
+    const path = await writeLazyFixture()
+    const { insideInstance } = await page3LayerIds(path)
+    const graph = await loadDocument(path)
+
+    await populateNodePage(graph, insideInstance)
+
+    expect(graph.getNode(insideInstance)?.name).toBe('Background')
   })
 })

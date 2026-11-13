@@ -26,10 +26,10 @@ import {
   updateNode,
   type NodeProxyInternals,
   type ProxyThis
-} from '#core/figma-api/accessor-utils'
+} from '#core/figma-api/accessors/utils'
 import { graphOf } from '#core/figma-api/graph'
 import type { FigmaNodeType } from '#core/figma-api/members'
-import { flushPendingLayout } from '#core/figma-api/pending-layout'
+import { flushPendingLayout, flushPendingLayoutBefore } from '#core/figma-api/pending-layout'
 import type { FigmaNodeProxy, NodeProxyHost } from '#core/figma-api/proxy'
 import { atLeast } from '#core/figma-api/schema'
 import {
@@ -43,6 +43,7 @@ import { parseFigma } from '#core/figma-api/validation'
 import { syncVariantName } from '#core/figma-api/variants'
 import { figmaRotation } from '#core/geometry/figma'
 import { absoluteRenderBounds } from '#core/geometry/render-bounds'
+import { restoredHuggedSize } from '#core/layout/apply'
 import { computeAccurateBounds } from '#core/vector/curve-math'
 
 const TRANSFORM_FIELDS: ReadonlySet<string> = new Set(NODE_TRANSFORM_FIELDS)
@@ -90,6 +91,8 @@ function setTransform(
   assertEditable(target, internals)
   const scene = graphOf(target)
   const node = raw(target, internals)
+  // Placed against its frame as the script's edits leave it, as Figma lays them out as it runs.
+  flushPendingLayoutBefore(scene, node)
   setContainerTransform(scene, node, change(containerTransform(node, scene)))
   fitGroupsAround(scene, node.parentId, hostFitOptions(target, internals))
 }
@@ -249,9 +252,16 @@ export function installBasicNodeProxyAccessors(
       assertEditable(this, internals)
       const scene = graphOf(this)
       const node = raw(this, internals)
+      flushPendingLayoutBefore(scene, node, { placesChildren: true })
       if (node.parentId && findInstanceAncestor(scene, node.parentId))
         throw new Error('This property cannot be overridden in an instance: size')
       rescaleNodeTree(scene, node.id, scale)
+      // Its Hug frames' constrained layers are scaled with them, so the next hug moves them from the
+      // scaled size, not again from the size they had before.
+      for (const scaled of [node, ...descendants(scene, node)]) {
+        const current = scene.getNode(scaled.id)
+        if (current) restoredHuggedSize(current)
+      }
     },
     getTopLevelFrame(this: ProxyThis): FigmaNodeProxy | undefined {
       const top = topLevelFrame(graphOf(this), raw(this, internals))
@@ -385,6 +395,8 @@ function resizeNode(
   assertEditable(target, internals)
   const scene = graphOf(target)
   const node = raw(target, internals)
+  // As for a move; a constrained resize also places the children from the node's own size.
+  flushPendingLayoutBefore(scene, node, { placesChildren: constrained })
   const { width, height } = resizedSize(node, requestedWidth, requestedHeight, constrained)
   // Figma has no size for a layer inside an instance: the resize does nothing, and records nothing.
   if (node.parentId && findInstanceAncestor(scene, node.parentId)) return

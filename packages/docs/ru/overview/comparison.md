@@ -31,12 +31,12 @@ OpenPencil примерно в 11 раз меньше. Это следствие
 │  │  Vue 3 + TypeScript       │  │
 │  │  Editor + Kiwi codec      │  │
 │  │  SceneGraph in TypeScript │  │
-│  │  CanvasKit + Yoga WASM    │  │
+│  │  CanvasKit + Taffy WASM   │  │
 │  └───────────────────────────┘  │
 └─────────────────────────────────┘
 ```
 
-Редактор, SceneGraph, кодек файлов и отрисовка работают в одном процессе. Отдельные сервер, база данных и Docker не нужны. SceneGraph хранится как `Map<string, SceneNode>`. TypeScript напрямую вызывает CanvasKit, а Yoga WASM синхронно рассчитывает компоновку.
+Редактор, SceneGraph, кодек файлов и отрисовка работают в одном процессе. Отдельные сервер, база данных и Docker не нужны. SceneGraph хранится как `Map<string, SceneNode>`. TypeScript напрямую вызывает CanvasKit, а Taffy WASM синхронно рассчитывает компоновку.
 
 ### Penpot: клиент-серверная платформа
 
@@ -105,15 +105,15 @@ Penpot поддерживает собственные определения т
 
 ## 5. Движок компоновки
 
-OpenPencil синхронно использует Yoga WASM:
+OpenPencil синхронно использует Taffy WASM:
 
 ```typescript
-const root = Yoga.Node.create()
-root.setFlexDirection(FlexDirection.Row)
-root.calculateLayout()
+const root = createLayoutNode()
+setFlexFlow(root, frame)
+computeLayout(root)
 ```
 
-Penpot поддерживает собственные реализации Flex и Grid в ClojureScript и Rust WASM. Оба движка должны выдавать одинаковый результат. OpenPencil использует Yoga, включая ответвление с поддержкой Grid; Penpot поддерживает несколько тысяч строк собственного кода компоновки на двух языках.
+Penpot поддерживает собственные реализации Flex и Grid в ClojureScript и Rust WASM. Оба движка должны выдавать одинаковый результат. OpenPencil использует для Flex и Grid библиотеку Taffy, на которой также работают Servo, Blitz, Bevy и Zed; Penpot поддерживает несколько тысяч строк собственного кода компоновки на двух языках.
 
 ## 6. Форматы и Figma
 
@@ -153,7 +153,7 @@ Penpot использует Potok. `UpdateEvent` меняет состояние
 1. **Серверная совместная работа:** учётные записи, контроль доступа и центральное хранение через WebSockets.
 2. **Система плагинов:** изолированное выполнение и API плагинов.
 3. **Токены дизайна:** встроенная поддержка.
-4. **CSS Grid:** собственная реализация; OpenPencil использует ответвление Yoga с Grid.
+4. **CSS Grid:** собственная реализация; OpenPencil использует CSS Grid из Taffy.
 5. **Самостоятельное размещение:** развёртывание для команды через Docker.
 6. **Зрелость:** несколько лет эксплуатации.
 
@@ -173,7 +173,7 @@ Penpot предлагает изолированные плагины, но не
 | Совместимость с Figma | OpenPencil | Нативные Kiwi и `.fig` |
 | Разработка | OpenPencil | TypeScript и Vue вместо Clojure, Rust и Docker |
 | Настольное приложение | OpenPencil | Tauri |
-| Компоновка | OpenPencil | Yoga вместо двух собственных реализаций |
+| Компоновка | OpenPencil | Taffy вместо двух собственных реализаций |
 | Совместная работа | Разные преимущества | Penpot: сервер и контроль доступа; OpenPencil: P2P без размещения |
 | Самостоятельное размещение | Penpot | Развёртывание Docker |
 | Зрелость | Penpot | Многолетняя эксплуатация |

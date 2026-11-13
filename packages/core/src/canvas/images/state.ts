@@ -1,5 +1,4 @@
-import type { Image, Surface } from 'canvaskit-wasm'
-
+import type { Image, Surface } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { createImageCache } from './cache'

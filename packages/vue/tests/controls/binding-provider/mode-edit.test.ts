@@ -1,5 +1,7 @@
 import { expect, test } from 'bun:test'
+
 import { createEditor } from '@open-pencil/core'
+
 import { prepareModeEdit } from '#vue/controls/binding-provider/mode-edit'
 import { createOpenPencilBindingProvider } from '#vue/controls/binding-provider/open-pencil'
 import { prepareBindingEdits } from '#vue/controls/binding-provider/prepare-edits'

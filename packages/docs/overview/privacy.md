@@ -102,7 +102,7 @@ If you join the OpenPencil Cloud waitlist on this site, we store your email addr
 
 ## Other network requests
 
-OpenPencil is local-first, but some features reach the network. The desktop app checks for updates on its own; everything else below connects only when you use that feature, and only to the service named.
+OpenPencil is local-first, but some features reach the network. The desktop app checks for updates on startup unless you turn that off in **Settings → General**. **Check for Updates** in the menu still checks. Everything else below connects only when you use that feature, and only to the service named.
 
 | Feature                 | Where it connects                                                                                                                                                                                       |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

@@ -11,6 +11,8 @@ import {
   type DesignStyleDeclaration,
   type DesignViewport
 } from '@open-pencil/dom-css'
+import { insertAll, maxOf, minOf } from '@open-pencil/scene-graph/arrays'
+import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import type { HTMLEngine, HTMLEngineFetch, HTMLEngineResource } from './engine'
@@ -150,7 +152,7 @@ function pairElements(
       while (node !== undefined && !sameTag(capture.nodes[node].tag, element.tagName)) {
         const tag = capture.nodes[node].tag
         if (tag === undefined || !IMPLIED_WRAPPERS.has(tag)) return
-        queue.unshift(...(children.get(node) ?? []))
+        insertAll(queue, 0, children.get(node) ?? [])
         node = queue.shift()
       }
       if (node === undefined) return
@@ -197,8 +199,8 @@ function textLine(line: HTMLEngineLine, keepsSpaces: boolean): Rect | null {
   const texts = line.runs.filter((run) => 'text' in run && run.text.length > 0)
   const words = keepsSpaces ? texts : texts.filter((run) => 'text' in run && run.text.trim() !== '')
   if (words.length === 0) return null
-  const left = Math.min(...words.map((run) => run.x))
-  const right = Math.max(...words.map((run) => run.x + run.width))
+  const left = minOf(words.map((run) => run.x))
+  const right = maxOf(words.map((run) => run.x + run.width))
   return { x: left, y: line.y, width: right - left, height: line.height }
 }
 
@@ -208,6 +210,8 @@ function layoutOf(node: HTMLEngineNode): DesignLayout | undefined {
   const fragments = node.fragments?.filter(hasArea)
   if (fragments && fragments.length > 0) {
     layout.fragments = fragments.map(rect)
+    // An inline element's box is the one around its fragments, as getBoundingClientRect gives.
+    layout.box = computeBounds(layout.fragments)
     return layout
   }
   const whiteSpace = node.style?.['white-space']
@@ -247,8 +251,10 @@ export function createHTMLEngineRuntime(options: HTMLEngineRuntimeOptions = {}):
       })
       const styled = structuredClone(document)
       for (const [element, node] of pairElements(styled, capture)) {
-        // Every captured property's computed value, so none falls back to a stale inline one.
-        element.computedStyle = withShorthands({ ...capture.initial, ...node.style })
+        // Every captured property's computed value, so none falls back to a stale inline one, with
+        // sizes as the page set them rather than as layout resolved them, so the importer tells a
+        // size the page fixed from one that fills or hugs; the boxes layout gave stay in `layout`.
+        element.computedStyle = withShorthands({ ...capture.initial, ...node.style, ...node.sizes })
         if (compute.layout) element.layout = layoutOf(node)
       }
       return styled

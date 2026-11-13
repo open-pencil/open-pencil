@@ -11,6 +11,7 @@ import type {
   StoredLibraryLatestManifest
 } from '@open-pencil/core/library'
 import {
+  COMPONENT_LIBRARY_SCHEMA_VERSION,
   createLibraryRevision,
   deserializeLibraryRevision,
   encodeStoredLibraryRevision,
@@ -100,7 +101,7 @@ export class FileSystemLibraryCatalog implements LibraryCatalog {
         assetCount: manifest.assets.length
       }
       await this.#writeJSON(`${manifest.libraryId}/manifest.json`, {
-        schemaVersion: 1,
+        schemaVersion: COMPONENT_LIBRARY_SCHEMA_VERSION,
         summary
       } satisfies StoredLibraryLatestManifest)
       const summaries = (await this.listLibraries()).filter(

@@ -1,5 +1,4 @@
-import type { Canvas } from 'canvaskit-wasm'
-
+import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { FLASH_PADDING, FLASH_RADIUS, FLASH_STROKE_WIDTH } from '#core/constants'

@@ -7,12 +7,14 @@ import type {
   SaveDocumentVersionInput,
   UpdateDocumentVersionInput
 } from '#cloud/contract'
-import type { CloudDatabase } from '#cloud/server/db'
+import { workspaceRoleCan } from '#cloud/server/auth/access-control'
+import { userIdText, type CloudDatabase } from '#cloud/server/db'
 import { canEditDocument, resolveDocumentAccess } from '#cloud/server/documents/access'
 import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/documents/errors'
 import { copyRevisionImages, revisionImageDownloads } from '#cloud/server/documents/images'
 import { findDocument, insertDocument, workspaceRole } from '#cloud/server/documents/repository'
 import { documentSummary, getDocumentSummaryRow } from '#cloud/server/documents/summary'
+import { logCloud, loggedError } from '#cloud/server/logging'
 import type { ObjectStore } from '#cloud/server/objects'
 import type { CloudPolicyContext } from '#cloud/server/policy/keys'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
@@ -24,7 +26,6 @@ import { historyStart } from './history'
 const DOWNLOAD_LIFETIME_MS = 5 * 60 * 1000
 const DEFAULT_PAGE_SIZE = 50
 const MAXIMUM_PAGE_SIZE = 100
-const WRITABLE_ROLES = new Set(['admin', 'editor'])
 
 type VersionRow = {
   id: string
@@ -72,15 +73,7 @@ export function createDocumentVersionService(
   function versions() {
     return database
       .selectFrom('documentVersion')
-      .leftJoin('user', (join) =>
-        join.on((expression) =>
-          expression(
-            expression.cast(expression.ref('user.id'), 'text'),
-            '=',
-            expression.ref('documentVersion.createdBy')
-          )
-        )
-      )
+      .leftJoin('user', (join) => join.onRef(userIdText, '=', 'documentVersion.createdBy'))
       .select([
         'documentVersion.id',
         'documentVersion.revisionId',
@@ -103,7 +96,13 @@ export function createDocumentVersionService(
     if (!document) throw new DocumentNotFoundError()
     return {
       document,
-      start: await historyStart(options.policy, deploymentMode, document.workspaceId, new Date())
+      start: await historyStart(
+        database,
+        options.policy,
+        deploymentMode,
+        document.workspaceId,
+        new Date()
+      )
     }
   }
 
@@ -136,6 +135,41 @@ export function createDocumentVersionService(
       .executeTakeFirst()
     if (!stored) throw new DocumentNotFoundError()
     return stored
+  }
+
+  /** A document's history for a caller that already let the reader in, and where it starts. */
+  async function sharedHistory(documentId: string) {
+    const document = await getDocumentSummaryRow(database, documentId)
+    if (!document) throw new DocumentNotFoundError()
+    const start = await historyStart(
+      database,
+      options.policy,
+      deploymentMode,
+      document.workspaceId,
+      new Date()
+    )
+    return { document, start }
+  }
+
+  /** A version's stored file, with where to download it and the images it names. */
+  async function downloadVersion(
+    document: Awaited<ReturnType<typeof sharedHistory>>['document'],
+    version: VersionRow
+  ): Promise<DocumentVersionDownload> {
+    const stored = await storedRevision(database, version.revisionId)
+    const expiresAt = new Date(Date.now() + DOWNLOAD_LIFETIME_MS)
+    return {
+      document: {
+        document: documentSummary(document),
+        revisionId: version.revisionId,
+        byteSize: Number(stored.byteSize),
+        checksum: stored.checksum,
+        contentType: stored.contentType,
+        download: await objects.createDownload({ key: stored.objectKey, expiresAt }),
+        images: await revisionImageDownloads(database, objects, version.revisionId, expiresAt)
+      },
+      version: versionOf(version, document.currentRevisionId)
+    }
   }
 
   return {
@@ -235,21 +269,51 @@ export function createDocumentVersionService(
       versionId: string
     ): Promise<DocumentVersionDownload> {
       const { document, start } = await openHistory(userId, documentId, false)
-      const version = await findVersion(documentId, versionId, start)
-      const stored = await storedRevision(database, version.revisionId)
-      const expiresAt = new Date(Date.now() + DOWNLOAD_LIFETIME_MS)
-      return {
-        document: {
-          document: documentSummary(document),
-          revisionId: version.revisionId,
-          byteSize: Number(stored.byteSize),
-          checksum: stored.checksum,
-          contentType: stored.contentType,
-          download: await objects.createDownload({ key: stored.objectKey, expiresAt }),
-          images: await revisionImageDownloads(database, objects, version.revisionId, expiresAt)
-        },
-        version: versionOf(version, document.currentRevisionId)
+      return downloadVersion(document, await findVersion(documentId, versionId, start))
+    },
+
+    /**
+     * The named versions of several documents of one workspace, newest first, each list keyed by
+     * its document, for a caller that already let the reader in, such as the community gallery;
+     * the workspace's history limit still applies, and one query reads them all.
+     */
+    async namedSharedIn(
+      workspaceId: string,
+      documents: { id: string; currentRevisionId: string | null }[]
+    ): Promise<Map<string, DocumentVersion[]>> {
+      const named = new Map(documents.map((document) => [document.id, [] as DocumentVersion[]]))
+      if (documents.length === 0) return named
+      const start = await historyStart(
+        database,
+        options.policy,
+        deploymentMode,
+        workspaceId,
+        new Date()
+      )
+      let query = versions()
+        .select('documentVersion.documentId')
+        .where('documentVersion.documentId', 'in', [...named.keys()])
+        .where('documentVersion.kind', '=', 'named')
+      if (start) query = query.where('documentVersion.createdAt', '>=', start)
+      const rows = await query.orderBy('documentVersion.createdAt', 'desc').execute()
+      const current = new Map(
+        documents.map((document) => [document.id, document.currentRevisionId])
+      )
+      for (const row of rows) {
+        named.get(row.documentId)?.push(versionOf(row, current.get(row.documentId) ?? null))
       }
+      return named
+    },
+
+    /** A named version with where to download it, for a caller that already let the reader in. */
+    async downloadNamedShared(
+      documentId: string,
+      versionId: string
+    ): Promise<DocumentVersionDownload> {
+      const { document, start } = await sharedHistory(documentId)
+      const version = await findVersion(documentId, versionId, start)
+      if (version.kind !== 'named') throw new DocumentNotFoundError()
+      return downloadVersion(document, version)
     },
 
     /**
@@ -331,7 +395,9 @@ export function createDocumentVersionService(
       try {
         options.onRestored?.(documentId)
       } catch (error) {
-        console.error('[Cloud] Ending the rooms of a restored document failed:', error)
+        logCloud('error', 'Ending the rooms of a restored document failed', {
+          error: loggedError(error)
+        })
       }
       const document = await findDocument(database, userId, documentId)
       if (!document) throw new DocumentNotFoundError()
@@ -351,7 +417,7 @@ export function createDocumentVersionService(
       const { document, start } = await openHistory(userId, documentId, false)
       const role = await workspaceRole(database, userId, document.workspaceId)
       if (!role) throw new DocumentNotFoundError()
-      if (!WRITABLE_ROLES.has(role)) throw new DocumentForbiddenError()
+      if (!workspaceRoleCan(role, { document: ['create'] })) throw new DocumentForbiddenError()
       const version = await findVersion(documentId, versionId, start)
       const copyId = crypto.randomUUID()
       const revisionId = crypto.randomUUID()

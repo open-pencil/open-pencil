@@ -17,7 +17,8 @@ async function deletedDocument() {
       id: workspaceId,
       name: 'Cleanup',
       slug: `cleanup-${crypto.randomUUID()}`,
-      createdBy: 'alice'
+      createdBy: 'alice',
+      ownerId: 'alice'
     })
     .execute()
   await runtime.database
@@ -64,7 +65,8 @@ describe('document cleanup', () => {
         await cleanup.cleanupDeletedDocuments({
           batchSize: 10,
           leaseDurationMs: 60_000,
-          retentionMs: 120_000
+          retentionMs: 120_000,
+          purgeGraceMs: 0
         })
       ).toEqual({ claimed: 0, cleaned: 0, failed: 0, objectsDeleted: 0, bytesReclaimed: 0 })
     } finally {
@@ -81,7 +83,8 @@ describe('document cleanup', () => {
         await cleanup.cleanupDeletedDocuments({
           batchSize: 10,
           leaseDurationMs: 60_000,
-          retentionMs: 0
+          retentionMs: 0,
+          purgeGraceMs: 0
         })
       ).toEqual({ claimed: 1, cleaned: 1, failed: 0, objectsDeleted: 1, bytesReclaimed: 128 })
       expect(objects.deletedKeys).toEqual([context.objectKey])

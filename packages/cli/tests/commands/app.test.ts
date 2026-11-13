@@ -1,12 +1,19 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, setDefaultTimeout, test } from 'bun:test'
-
-import { runCLI } from '#cli-tests/helpers/run'
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  setDefaultTimeout,
+  test
+} from 'bun:test'
 import { mkdtemp, writeFile } from 'node:fs/promises'
 import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
+import { runCLI } from '#cli-tests/helpers/run'
 import * as v from 'valibot'
 
 setDefaultTimeout(60_000)
@@ -75,14 +82,15 @@ beforeEach(() => {
   responses.clear()
 })
 
-const cli = (args: string[]) => runCLI(args, { env: { OPENPENCIL_MCP_DISCOVERY_PATH: discoveryPath } })
+const cli = (args: string[]) =>
+  runCLI(args, { env: { OPENPENCIL_MCP_DISCOVERY_PATH: discoveryPath } })
 
 describe('documents CLI', () => {
   test('opens files by absolute path and reports the target document', async () => {
     const opened = await cli(['documents', 'open', 'designs/landing.fig', '--json'])
     expect(opened.exitCode).toBe(0)
     expect(requests).toEqual([
-      { command: 'open_file', args: { path: resolve('designs/landing.fig') } }
+      { command: 'open_document', args: { path: resolve('designs/landing.fig') } }
     ])
     expect(JSON.parse(opened.stdout)).toEqual({ result: {}, target: TARGET })
   })
@@ -92,8 +100,8 @@ describe('documents CLI', () => {
     await cli(['documents', 'close', '--document-id', 'doc-2', '--discard'])
     await cli(['documents', 'activate', 'doc-2', '--page-id', '0:1'])
     expect(requests).toEqual([
-      { command: 'save_file', args: { document_id: 'doc-2', path: resolve('out.fig') } },
-      { command: 'close_file', args: { document_id: 'doc-2', unsaved: 'discard' } },
+      { command: 'save_document', args: { document_id: 'doc-2', path: resolve('out.fig') } },
+      { command: 'close_document', args: { document_id: 'doc-2', unsaved: 'discard' } },
       { command: 'activate_document', args: { document_id: 'doc-2', page_id: '0:1' } }
     ])
   })
@@ -101,19 +109,58 @@ describe('documents CLI', () => {
   test('close --save forwards the save choice and an absolute path', async () => {
     await cli(['documents', 'close', '--save', '--path', 'draft.fig'])
     expect(requests).toEqual([
-      { command: 'close_file', args: { unsaved: 'save', path: resolve('draft.fig') } }
+      { command: 'close_document', args: { unsaved: 'save', path: resolve('draft.fig') } }
     ])
     const both = await cli(['documents', 'close', '--save', '--discard'])
     expect(both.exitCode).toBe(1)
   })
 })
 
+describe('--page and --page-id', () => {
+  const documents = [
+    {
+      id: 'doc-2',
+      name: 'Landing',
+      active: true,
+      current_page_id: '0:1',
+      current_page_name: 'Page 1',
+      pages: [
+        { id: '0:1', name: 'Page 1' },
+        { id: '0:2', name: 'Worklist' }
+      ]
+    }
+  ]
+
+  test('a page name reaches the app as the page ID of the document it was found in, for reads, scripts, and tools alike', async () => {
+    responses.set('list_documents', { documents })
+    responses.set('tree', { page: { id: '0:2', name: 'Worklist', type: 'CANVAS' }, children: [] })
+    await cli(['tree', '--page', 'Worklist'])
+    await cli(['eval', '--page', 'Worklist', '-c', 'return 1'])
+    await cli(['tool', 'call', 'get_selection', '--page', 'Worklist'])
+    expect(requests.filter((request) => request.command !== 'list_documents')).toEqual([
+      { command: 'tree', args: { document_id: 'doc-2', page_id: '0:2' } },
+      { command: 'eval', args: { code: 'return 1', document_id: 'doc-2', page_id: '0:2' } },
+      {
+        command: 'tool',
+        args: { document_id: 'doc-2', page_id: '0:2', name: 'get_selection', args: {} }
+      }
+    ])
+  })
+
+  test('cannot be passed together', async () => {
+    const both = await cli(['find', '--page', 'Worklist', '--page-id', '0:2'])
+    expect(both.exitCode).toBe(1)
+    expect(both.stderr).toContain('--page and --page-id cannot be used together.')
+    expect(requests).toEqual([])
+  })
+})
+
 describe('history CLI', () => {
   test('reports the undone change', async () => {
-    responses.set('undo', { applied: true, label: 'Agent: set_opacity' })
+    responses.set('undo', { applied: true, label: 'Agent: update_node' })
     const undone = await cli(['undo', '--document-id', 'doc-2'])
     expect(undone.exitCode).toBe(0)
-    expect(undone.stdout).toContain('Undid: Agent: set_opacity')
+    expect(undone.stdout).toContain('Undid: Agent: update_node')
     expect(requests).toEqual([{ command: 'undo', args: { document_id: 'doc-2' } }])
   })
 })

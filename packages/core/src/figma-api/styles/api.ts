@@ -2,7 +2,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import type { GroupFitOptions } from '@open-pencil/scene-graph/group-bounds'
 import { internalCanvas, newSharedStyleId } from '@open-pencil/scene-graph/shared-styles'
 
-import { applyLayerChanges } from '#core/figma-api/accessor-utils'
+import { applyLayerChanges } from '#core/figma-api/accessors/utils'
 import { graphOf } from '#core/figma-api/graph'
 import type { FigmaNodeProxy } from '#core/figma-api/proxy'
 

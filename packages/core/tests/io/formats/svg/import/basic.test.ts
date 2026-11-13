@@ -261,6 +261,58 @@ describe('import_svg', () => {
     expect(path.height).toBeCloseTo(100)
   })
 
+  test('applies the root svg transform about the frame center, outside the viewBox', async () => {
+    // Chrome draws this square at (80, 50), 20px: the viewBox makes it 40px at the origin, and
+    // the root transform halves it about (100, 100), then moves it 30px right.
+    const result = (await importSVG.execute(figma, {
+      svg: `<svg width="200" height="200" viewBox="50 50 100 100" transform="translate(30 0) scale(0.5)"><rect x="50" y="50" width="20" height="20"/></svg>`
+    })) as { id: string }
+
+    const path = graph.getChildren(result.id)[0]
+    expect(path.x).toBeCloseTo(80)
+    expect(path.y).toBeCloseTo(50)
+    expect(path.width).toBeCloseTo(20)
+    expect(path.height).toBeCloseTo(20)
+  })
+
+  test('scales a stroke by the transform it is drawn under', async () => {
+    const result = (await importSVG.execute(figma, {
+      svg: `<svg viewBox="0 0 100 100"><g transform="scale(2)"><line x1="0" y1="10" x2="20" y2="10" stroke="black" stroke-width="3"/></g></svg>`
+    })) as { id: string }
+
+    const [group] = graph.getChildren(result.id)
+    const line = graph.getChildren(expectDefined(group, 'group').id)[0]
+    expect(line?.strokes[0]?.weight).toBe(6)
+  })
+
+  test('draws nothing in a shape with no fill or stroke, such as an icon bounding box', async () => {
+    const result = (await importSVG.execute(figma, {
+      svg: `<svg width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M4 4h16v16H4z"/></svg>`
+    })) as { id: string }
+
+    const [box, shape] = graph.getChildren(result.id)
+    expect(box?.fills).toEqual([])
+    expect(shape?.fills).toHaveLength(1)
+  })
+
+  test('paints a gradient stroke as a gradient', async () => {
+    const result = (await importSVG.execute(figma, {
+      svg: `<svg width="10" height="10"><defs><linearGradient id="a"><stop offset="0" stop-color="#f00"/><stop offset="1" stop-color="#00f"/></linearGradient></defs><rect x="1" y="1" width="8" height="8" fill="none" stroke="url(#a)" stroke-width="2"/></svg>`
+    })) as { id: string }
+
+    const path = graph.getChildren(result.id)[0]
+    expect(path.strokes[0]).toMatchObject({ type: 'GRADIENT_LINEAR', weight: 2 })
+  })
+
+  test('paints currentColor in the color the SVG sets', async () => {
+    const result = (await importSVG.execute(figma, {
+      svg: `<svg width="10" height="10" color="#ff0000"><rect width="10" height="10" fill="currentColor"/></svg>`
+    })) as { id: string }
+
+    const path = graph.getChildren(result.id)[0]
+    expect(path.fills[0]).toMatchObject({ type: 'SOLID', color: { r: 1, g: 0, b: 0 } })
+  })
+
   test('supports preserveAspectRatio none', async () => {
     const result = (await importSVG.execute(figma, {
       svg: `<svg width="200" height="200" viewBox="0 0 100 50" preserveAspectRatio="none"><rect width="100" height="50"/></svg>`

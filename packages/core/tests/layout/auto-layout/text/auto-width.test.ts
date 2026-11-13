@@ -49,6 +49,21 @@ describe('auto-width text in an auto layout frame narrower than the text', () =>
     expect(size(graph, text.id)).toEqual({ width: 200, height: 20 })
   })
 
+  test('wraps at its max width, not at a narrower column', () => {
+    measureByLength()
+    const graph = new SceneGraph()
+    const column = frame(graph, 'VERTICAL', 100)
+    const text = graph.createNode('TEXT', column.id, {
+      text: TEXT,
+      textAutoResize: 'WIDTH_AND_HEIGHT',
+      maxWidth: 150
+    })
+
+    computeAllLayouts(graph)
+
+    expect(size(graph, text.id)).toEqual({ width: 150, height: 40 })
+  })
+
   test('wraps where layout stretches it across a column', () => {
     measureByLength()
     const graph = new SceneGraph()

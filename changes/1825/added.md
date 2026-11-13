@@ -1,1 +1,0 @@
-- The toolbar docks to any edge of the canvas, at either end or centered, from its right-click menu or Settings > Toolbar; bottom center stays the default (#1825).

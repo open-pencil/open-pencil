@@ -35,9 +35,8 @@ import {
 } from '@open-pencil/scene-graph/resize'
 import { markSourceFieldsEdited } from '@open-pencil/scene-graph/source-metadata'
 
-import { calculateResizeRect, signedResizeRect } from '#vue/shared/input/resize/rect'
 import { draggedSizing, layerSizing } from '#vue/shared/input/resize/sizing'
-import { applyResizeSnap, proportionalResizeRect } from '#vue/shared/input/resize/snap'
+import { layerSnapSource, resizedRect } from '#vue/shared/input/resize/snap'
 import { optionalEditorState } from '#vue/shared/input/snap'
 import type { DragResize } from '#vue/shared/input/types'
 
@@ -120,27 +119,17 @@ function resizedPlacement(
   const aspect = keptAspectRatio(d, shiftKey, ctrlKey)
   // Control sets a lock aside even when Shift keeps the same ratio; the commit stores the size.
   d.freesLock = d.lockedAspectRatio !== null && ctrlKey
-  const { x: dx, y: dy } = canvasDeltaInLayer(placement, cx - d.startX, cy - d.startY)
-  const signed = signedResizeRect(d.handle, origRect, dx, dy, aspect)
-  if (signed.width < 0 || signed.height < 0) {
-    optionalEditorState(editor)?.snapGuides.splice(0)
-    const mirrored = {
-      ...signed,
-      width: atLeastOne(signed.width),
-      height: atLeastOne(signed.height)
-    }
-    return placeInResizedFrame(placement, origRect, mirrored)
-  }
-  const rect =
-    aspect !== null
-      ? proportionalResizeRect(d, origRect, dx, dy, aspect, editor, ctrlKey)
-      : applyResizeSnap(d, calculateResizeRect(d.handle, origRect, dx, dy, null), editor, ctrlKey)
+  const delta = canvasDeltaInLayer(placement, cx - d.startX, cy - d.startY)
+  const rect = resizedRect(
+    d.handle,
+    origRect,
+    delta,
+    aspect,
+    layerSnapSource(d, editor),
+    editor,
+    ctrlKey
+  )
   return placeInResizedFrame(placement, origRect, rect)
-}
-
-/** `size` at least a pixel long, keeping its sign. */
-function atLeastOne(size: number): number {
-  return Math.sign(size || 1) * Math.max(Math.abs(size), 1)
 }
 
 /** The angle and flips a layer had when the drag started. */
@@ -318,7 +307,7 @@ export function applyResizedRect(
     editor.renderer?.invalidateVectorPath(d.nodeId)
   }
 
-  // Two passes around the layout run: the first sizes children so Yoga can
+  // Two passes around the layout run: the first sizes children so layout can
   // resolve HUG/FILL, the second re-applies against the settled boxes.
   applyConstrainedChildren(d, newRect, editor)
   editor.graph.runPreviewUpdates(() => computeAllLayouts(editor.graph, d.nodeId))
@@ -411,6 +400,8 @@ function restoreResizePreview(d: DragResize, editor: Editor) {
       y: orig.y,
       width: orig.width,
       height: orig.height,
+      flipX: orig.flipX,
+      flipY: orig.flipY,
       vectorNetwork: orig.vectorNetwork,
       fillGeometry: orig.fillGeometry,
       strokeGeometry: orig.strokeGeometry,
@@ -525,7 +516,12 @@ function commitResizeGeometry(d: DragResize, editor: Editor) {
     for (const [childId, original] of d.origChildren) {
       const child = editor.graph.getNode(childId)
       if (!child) continue
-      finalChildren.set(childId, snapshotResizeFinal(child, original.strokeGeometry.length > 0))
+      // Constraints turn a layer over when its frame shrinks it past zero.
+      finalChildren.set(childId, {
+        ...snapshotResizeFinal(child, original.strokeGeometry.length > 0),
+        flipX: child.flipX,
+        flipY: child.flipY
+      })
     }
     restoreResizePreview(d, editor)
     // Resize is geometric — the raw Figma import payload (vectorData,

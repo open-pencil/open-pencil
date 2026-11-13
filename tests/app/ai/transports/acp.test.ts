@@ -1,25 +1,34 @@
 import { expect, test } from 'bun:test'
 
 import {
-  AgentSideConnection,
+  agent as acpAgent,
+  methods,
   ndJsonStream,
   PROTOCOL_VERSION,
-  type Agent,
+  RequestError,
+  type ClientCapabilities,
   type NewSessionRequest,
-  type ResumeSessionRequest
-} from '@agentclientprotocol/sdk'
+  type ResumeSessionRequest,
+  type SessionUpdate
+} from '@agentclientprotocol/sdk/unstable'
 import type { UIMessage, UIMessageChunk } from 'ai'
 
-import { ACP_AGENTS } from '@open-pencil/core/constants'
+import { ACP_AGENTS, type ACPAgentDef } from '@open-pencil/core/constants'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { OWN_TOOLS_ALLOWED } from '@/app/ai/agents/acp/tools'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 import { ACPChatTransport, type ACPStartup } from '@/app/ai/transports/acp'
+import { restAgents, withSubagent } from '@/app/automation/agents'
+import { diagnosticErrorDetails, diagnostics } from '@/app/diagnostics'
 import { createDeferred } from '@/app/runtime/deferred'
 const resuming = expectDefined(
   ACP_AGENTS.find((agent) => agent.resumesSessions),
   'an agent that resumes sessions'
+)
+const codex = expectDefined(
+  ACP_AGENTS.find((agent) => agent.id === 'codex'),
+  'Codex agent'
 )
 
 interface FakeAgentOptions {
@@ -27,6 +36,10 @@ interface FakeAgentOptions {
   answersSessions?: boolean
   /** Refuses every resume, as for a session the agent no longer has. */
   resumeFails?: boolean
+  /** An adapter error that the real ACP connection serializes before the client receives it. */
+  resumeError?: Error
+  /** A temporary refusal on the first resume, as when the old process still owns the session. */
+  resumeBusy?: boolean
   /** True for an automation token that is never read, as with a credential prompt left open. */
   tokenHangs?: boolean
   /**
@@ -36,78 +49,87 @@ interface FakeAgentOptions {
   turn?: 'answered' | 'refused' | 'cut-off'
   /** True for a command lookup that waits until `finishLookup`, as a slow PATH search does. */
   lookupWaits?: boolean
+  /**
+   * What the agent reports while it takes a turn, after its command list: in the turn's session,
+   * or in a subagent's session `session`.
+   */
+  updates?: { session?: string; update: SessionUpdate }[]
 }
 
 /** In-memory ACP agents, one per start, that record what the transport asks of them. */
 function fakeAgents({
   answersSessions = true,
   resumeFails = false,
+  resumeError,
+  resumeBusy = false,
   tokenHangs = false,
   turn = 'answered',
-  lookupWaits = false
+  lookupWaits = false,
+  updates = []
 }: FakeAgentOptions = {}) {
   const lookup = createDeferred<undefined>()
   const prompts: string[] = []
   const created: NewSessionRequest[] = []
   const resumed: ResumeSessionRequest[] = []
+  const capabilities: (ClientCapabilities | undefined)[] = []
   const sessionRequested = createDeferred<undefined>()
   const killed = createDeferred<undefined>()
   let kills = 0
   let spawns = 0
+  const searchPaths: (string | null | undefined)[] = []
+  const defersTools: boolean[] = []
+  const cwds: (string | undefined)[] = []
   let crashLatest: (() => void) | null = null
 
   const spawn: ACPStartup['spawn'] = async (options) => {
     spawns++
+    searchPaths.push(options.searchPath)
+    cwds.push(options.cwd)
     const toAgent = new TransformStream<Uint8Array, Uint8Array>()
     const toClient = new TransformStream<Uint8Array, Uint8Array>()
-    const agent: Agent = {
-      async initialize() {
+    acpAgent()
+      .onRequest(methods.agent.initialize, ({ params }) => {
+        capabilities.push(params.clientCapabilities)
         return {
           protocolVersion: PROTOCOL_VERSION,
           agentCapabilities: { sessionCapabilities: { resume: {} } }
         }
-      },
-      async newSession(params) {
+      })
+      .onRequest(methods.agent.session.new, ({ params }) => {
         created.push(params)
         sessionRequested.resolve(undefined)
         if (!answersSessions) return createDeferred<never>().promise
         return { sessionId: `session-${created.length}` }
-      },
-      async unstable_resumeSession(params) {
+      })
+      .onRequest(methods.agent.session.resume, ({ params }) => {
         resumed.push(params)
-        if (resumeFails) throw new Error('No conversation found')
+        if (resumeFails) throw RequestError.resourceNotFound(params.sessionId)
+        if (resumeError) throw resumeError
+        if (resumeBusy && resumed.length === 1)
+          throw RequestError.invalidRequest({ reason: 'thread_active_writer' }, 'Session in use')
         return {}
-      },
-      async prompt(params) {
+      })
+      .onRequest(methods.agent.session.prompt, async ({ params, client }) => {
         const [part] = params.prompt
         prompts.push(part?.type === 'text' ? part.text : '')
         const { sessionId } = params
-        await connection.sessionUpdate({
-          sessionId,
-          update: { sessionUpdate: 'available_commands_update', availableCommands: [] }
-        })
+        const report = (update: SessionUpdate, session = sessionId) =>
+          client.notify(methods.client.session.update, { sessionId: session, update })
+        await report({ sessionUpdate: 'available_commands_update', availableCommands: [] })
         if (turn === 'refused') throw new Error('The prompt never reached the model')
+        for (const { session, update } of updates) await report(update, session)
         if (turn === 'cut-off') {
-          await connection.sessionUpdate({
-            sessionId,
-            update: {
-              sessionUpdate: 'agent_message_chunk',
-              content: { type: 'text', text: 'On it' }
-            }
+          await report({
+            sessionUpdate: 'agent_message_chunk',
+            content: { type: 'text', text: 'On it' }
           })
           throw new Error('The turn broke off')
         }
         return { stopReason: 'end_turn' }
-      },
-      async authenticate() {
-        return {}
-      },
-      cancel: async () => undefined
-    }
-    const connection = new AgentSideConnection(
-      () => agent,
-      ndJsonStream(toClient.writable, toAgent.readable)
-    )
+      })
+      .onRequest(methods.agent.authenticate, () => ({}))
+      .onNotification(methods.agent.session.cancel, () => undefined)
+      .connect(ndJsonStream(toClient.writable, toAgent.readable))
     // Ending the pipe ends what the client reads, as a process that exits does.
     const output = new TransformStream<Uint8Array, Uint8Array>()
     const stop = new AbortController()
@@ -133,30 +155,37 @@ function fakeAgents({
   }
 
   const startup: ACPStartup = {
-    resolveCommand: async (agent) => {
+    resolveTarget: async (agent) => {
       if (lookupWaits) await lookup.promise
-      return agent.command
+      return { command: agent.command, searchPath: '/lookup/bin' }
     },
     spawn,
     authToken: async () => (tokenHangs ? createDeferred<never>().promise : null),
-    linkTools: async () => ({
-      chat: 'chat',
-      mcpServers: [],
-      meta: OWN_TOOLS_ALLOWED,
-      noteUpdate: () => undefined,
-      outcome: async () => ({ connected: true }),
-      stop: () => undefined
-    })
+    linkTools: async (_token, linkOptions) => {
+      defersTools.push(linkOptions?.defersTools ?? false)
+      return {
+        chat: 'chat',
+        mcpServers: [],
+        meta: OWN_TOOLS_ALLOWED,
+        noteUpdate: () => undefined,
+        outcome: async () => ({ connected: true }),
+        stop: () => undefined
+      }
+    }
   }
   return {
     startup,
     prompts,
     created,
     resumed,
+    capabilities,
     sessionRequested: sessionRequested.promise,
     killed: killed.promise,
     kills: () => kills,
     spawns: () => spawns,
+    searchPaths,
+    cwds,
+    defersTools,
     finishLookup: () => lookup.resolve(undefined),
     crash: () => expectDefined(crashLatest, 'a started agent')()
   }
@@ -187,17 +216,20 @@ async function send(
 
 function transport(
   agents: ReturnType<typeof fakeAgents>,
-  options: { resume?: string; startTimeoutMs?: number } = {}
+  options: { resume?: string; startTimeoutMs?: number; agentDef?: ACPAgentDef; cwd?: string } = {}
 ) {
   const sessions: (string | null)[] = []
+  const agentErrors: unknown[] = []
   const created = new ACPChatTransport({
-    agentDef: resuming,
+    agentDef: options.agentDef ?? resuming,
+    cwd: options.cwd,
     startup: agents.startup,
     resume: options.resume,
     startTimeoutMs: options.startTimeoutMs ?? 1_000,
-    onSession: (id) => sessions.push(id)
+    onSession: (id) => sessions.push(id),
+    onAgentError: (error) => agentErrors.push(error)
   })
-  return { transport: created, sessions }
+  return { transport: created, sessions, agentErrors }
 }
 
 test('a new session gets the instructions once and is reported once the agent answers', async () => {
@@ -211,6 +243,31 @@ test('a new session gets the instructions once and is reported once the agent an
   expect(agents.prompts[1]).toBe('second')
   expect(sessions).toEqual(['session-1'])
   await chat.destroy()
+})
+
+test('the agent starts in its workspace with the PATH its lookup searched', async () => {
+  const agents = fakeAgents()
+  const { transport: chat } = transport(agents, { cwd: '/agent-workspace' })
+  await send(chat, 'first')
+  expect(agents.searchPaths).toEqual(['/lookup/bin'])
+  expect(agents.cwds).toEqual(['/agent-workspace'])
+  expect(agents.created[0]?.cwd).toBe('/agent-workspace')
+  await chat.destroy()
+})
+
+test('an agent that defers MCP tools gets the server’s call_mcp_tool, others do not', async () => {
+  const antigravity = expectDefined(
+    ACP_AGENTS.find((agent) => agent.defersMCPTools),
+    'an agent that defers MCP tools'
+  )
+  const agents = fakeAgents()
+  const { transport: deferring } = transport(agents, { agentDef: antigravity })
+  await send(deferring, 'first')
+  await deferring.destroy()
+  const { transport: plain } = transport(agents)
+  await send(plain, 'first')
+  await plain.destroy()
+  expect(agents.defersTools).toEqual([true, false])
 })
 
 test('a saved session resumes without the instructions or the transcript', async () => {
@@ -237,13 +294,65 @@ test('an agent that exits continues the same session when it starts again', asyn
 })
 
 test('a saved session the agent cannot continue is forgotten and no new session starts', async () => {
+  await diagnostics.clear()
   const agents = fakeAgents({ resumeFails: true })
   const { transport: chat, sessions } = transport(agents, { resume: 'saved' })
   await expect(send(chat, 'next')).rejects.toBeInstanceOf(Error)
   expect(sessions).toEqual([null])
   expect(agents.created).toEqual([])
   expect(agents.prompts).toEqual([])
+  expect(
+    (await diagnostics.list()).find((event) => event.name === 'acp.transport.failed')?.attributes
+  ).toMatchObject({ errorCode: '-32002' })
 })
+
+test('a missing Codex rollout is forgotten after ACP wraps it as an internal error', async () => {
+  const agents = fakeAgents({ resumeError: new Error('no rollout found for thread id saved') })
+  const { transport: chat, sessions } = transport(agents, { resume: 'saved', agentDef: codex })
+  try {
+    await expect(send(chat, 'next')).rejects.toMatchObject({
+      cause: { name: 'AgentSessionResumeError', cause: { code: -32603 } }
+    })
+    expect(sessions).toEqual([null])
+    expect(agents.created).toEqual([])
+    expect(agents.prompts).toEqual([])
+    expect(agents.kills()).toBe(1)
+  } finally {
+    await chat.destroy()
+  }
+})
+
+test.each([resuming, codex])(
+  'a temporary resume refusal keeps the saved session for $id',
+  async (agentDef) => {
+    await diagnostics.clear()
+    const agents = fakeAgents({ resumeBusy: true })
+    const { transport: chat, sessions } = transport(agents, { resume: 'saved', agentDef })
+    try {
+      await expect(send(chat, 'next')).rejects.toMatchObject({
+        message: expect.stringContaining('Try again, or start a new chat.'),
+        cause: {
+          name: 'AgentSessionRetryError',
+          cause: { code: -32600, data: { reason: 'thread_active_writer' } }
+        }
+      })
+      expect(
+        (await diagnostics.list()).find((event) => event.name === 'acp.transport.failed')
+          ?.attributes
+      ).toMatchObject({ errorCode: '-32600' })
+      expect(sessions).toEqual([])
+      expect(agents.prompts).toEqual([])
+      expect(agents.kills()).toBe(1)
+
+      await send(chat, 'next', [message('user', 'earlier'), message('assistant', 'reply')])
+      expect(agents.resumed.map((request) => request.sessionId)).toEqual(['saved', 'saved'])
+      expect(agents.created).toEqual([])
+      expect(agents.prompts).toEqual(['next'])
+    } finally {
+      await chat.destroy()
+    }
+  }
+)
 
 test('an agent that never answers while starting does not keep the message waiting', async () => {
   const agents = fakeAgents({ answersSessions: false })
@@ -298,6 +407,38 @@ test('a session is not saved when its first prompt fails before the agent takes 
   await chat.destroy()
 })
 
+test('the chat shows what the agent answered, and diagnostics keep only its code', async () => {
+  const agents = fakeAgents({ resumeBusy: true })
+  const { transport: chat, agentErrors } = transport(agents, { resume: 'saved' })
+  try {
+    await expect(send(chat, 'next')).rejects.toThrow('Session in use')
+    expect(agentErrors).toHaveLength(1)
+    expect(diagnosticErrorDetails(agentErrors[0])).toMatchObject({
+      errorCode: '-32600',
+      message: null,
+      stack: null
+    })
+  } finally {
+    await chat.destroy()
+  }
+})
+
+test("a failed prompt shows the agent's answer, and diagnostics keep only its code", async () => {
+  const agents = fakeAgents({ turn: 'refused' })
+  const { transport: chat, agentErrors } = transport(agents)
+  const reply = await send(chat, 'first')
+  expect(reply).toContainEqual({
+    type: 'error',
+    errorText: 'Internal error'
+  })
+  expect(agentErrors).toHaveLength(1)
+  expect(diagnosticErrorDetails(agentErrors[0])).toMatchObject({
+    errorCode: '-32603',
+    message: null
+  })
+  await chat.destroy()
+})
+
 test('a session is saved once the agent answers, even when the turn is cut off', async () => {
   const agents = fakeAgents({ turn: 'cut-off' })
   const { transport: chat, sessions } = transport(agents)
@@ -312,4 +453,41 @@ test('a startup step outside the agent connection is bounded by the deadline too
   await expect(send(chat, 'first')).rejects.toBeInstanceOf(Error)
   await agents.killed
   expect(agents.prompts).toEqual([])
+})
+
+test('a subagent’s work is known by its session and stays out of the chat', async () => {
+  const toolCall = (toolCallId: string): SessionUpdate => ({
+    sessionUpdate: 'tool_call',
+    toolCallId,
+    title: 'mcp__open-pencil__create_shape',
+    status: 'pending'
+  })
+  const agents = fakeAgents({
+    updates: [
+      { update: { sessionUpdate: 'subagent_update', sessionId: 'subagent-1', title: 'Layout' } },
+      {
+        session: 'subagent-1',
+        update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'Mine' } }
+      },
+      { session: 'subagent-1', update: toolCall('call-inner') },
+      { update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'Ours' } } },
+      { update: toolCall('call-own') }
+    ]
+  })
+  const { transport: chat } = transport(agents)
+  /** The subagent of a call, as OpenPencil's MCP server sees it; `linkTools` names the chat. */
+  const subagentOf = (call: string) =>
+    withSubagent({ session: 'session-1', kind: 'acp', chat: 'chat', call }).subagent
+  try {
+    const chunks = await send(chat, 'go')
+    expect(agents.capabilities).toMatchObject([{ subagents: {} }])
+    expect(subagentOf('call-inner')).toBe('subagent-1')
+    expect(subagentOf('call-own')).toBeUndefined()
+    const shown = JSON.stringify(chunks)
+    expect(shown).toContain('Ours')
+    expect(shown).not.toContain('Mine')
+  } finally {
+    restAgents('acp')
+    await chat.destroy()
+  }
 })

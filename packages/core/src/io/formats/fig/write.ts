@@ -1,8 +1,6 @@
+export { exportFigFile, exportFigFileStream, type FigFileExtrasOptions } from './export'
 export {
-  exportFigFile,
-  compressFigData,
-  setFigArchiveAssembler,
-  type FigArchiveAssembler,
-  type FigArchiveParts,
-  type FigFileExtrasOptions
-} from './export'
+  setFigCanvasCompressor,
+  type FigCanvasCompressor,
+  type FigCanvasParts
+} from './export/compress'

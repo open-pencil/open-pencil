@@ -6,6 +6,34 @@
 @import './theme/tokens.css';
 
 /*
+ * Every scroll container in the app takes the thin scrollbar; `scrollbar-none` still hides one,
+ * since utilities come after the base layer.
+ */
+@layer base {
+  * {
+    @apply scrollbar-thin;
+  }
+}
+
+/*
+ * An icon that points along the line of text (back and next, a submenu, a disclosure, a sidebar)
+ * says so with data-direction="reading" and turns around in a right-to-left interface, matched as
+ * Tailwind matches `rtl:`. One that names a canvas side says data-direction="physical" and keeps
+ * its direction (`@open-pencil/vue/icon-direction`).
+ */
+@layer base {
+  [data-direction='reading']:where(:dir(rtl), [dir='rtl'], [dir='rtl'] *) {
+    scale: -1 1;
+  }
+
+  /* Code, keys, and output read left to right inside right-to-left text: 0.17.0-beta.2, ⌘N. */
+  :where(code, kbd, samp, pre) {
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+}
+
+/*
  * The interface size is the root font size: every interface size is in rem, so this one value
  * scales panels, text, and controls, while the canvas keeps drawing in screen pixels. A share of
  * 100% keeps the browser's own default font size as the starting point.

@@ -223,8 +223,10 @@ export function buildChains(segments: VectorSegment[]): number[][] {
 
   const visited = new Set<number>()
   const chains: number[][] = []
+  // Open runs start at their ends; closed loops left over start wherever their first segment does,
+  // so every loop is one contour, not one per segment.
   const degree1 = [...adj.entries()].filter(([, segs]) => segs.length === 1).map(([v]) => v)
-  const startVertices = degree1.length > 0 ? degree1 : [segments[0].start]
+  const startVertices = [...degree1, ...segments.map((segment) => segment.start)]
 
   for (const startVertex of startVertices) {
     let current = startVertex

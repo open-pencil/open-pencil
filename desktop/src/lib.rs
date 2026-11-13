@@ -1,4 +1,5 @@
 mod agents;
+mod capabilities;
 mod credentials;
 mod explicit_sync;
 mod files;
@@ -9,6 +10,7 @@ mod menu;
 mod network;
 mod system;
 
+use capabilities::DesktopCapabilities;
 use credentials::{
     credential_access_paused, credential_read, credential_remove, credential_retry_access,
     credential_status, credential_store_availability, credential_write,
@@ -33,10 +35,19 @@ pub fn run() {
     #[cfg(target_os = "linux")]
     explicit_sync::disable_nvidia_explicit_sync();
 
-    let _ = fix_path_env::fix();
-    agents::path::augment_process_path();
+    let capabilities = DesktopCapabilities::from_env();
+    // Both only help find host programs; a sandbox that cannot run them has no use for
+    // the login shell `fix_path_env` starts.
+    if capabilities.host_processes {
+        let _ = fix_path_env::fix();
+        agents::path::augment_process_path();
+    }
 
     let mut builder = tauri::Builder::default();
+
+    if capabilities.self_update {
+        builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
+    }
 
     #[cfg(feature = "native-test")]
     {
@@ -61,7 +72,14 @@ pub fn run() {
 
     builder = builder.plugin(tauri_plugin_deep_link::init());
 
+    #[cfg(target_os = "macos")]
+    {
+        builder = builder
+            .on_web_content_process_terminate(system::window::reload_after_page_process_ended);
+    }
+
     builder
+        .manage(capabilities)
         .manage(launch::PendingOpen::default())
         .manage(ProxyHttpRequests::default())
         .manage(network::oauth::ChatGPTOAuthLoopback::default())
@@ -71,7 +89,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             agents::lookup::agent_lookup,
             agents::lookup::agent_workspace,
-            files::fig::build_fig_file,
+            files::fig::compress_fig_canvas,
             network::oauth::chatgpt_oauth_listen,
             network::oauth::chatgpt_oauth_wait,
             network::oauth::chatgpt_oauth_cancel,
@@ -116,13 +134,15 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_notification::init())
-        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_os::init())
         .on_menu_event(|app, event| {
             handle_menu_event(app, event.id().0.as_str());
         })
-        .setup(|app| {
+        .setup(move |app| {
+            // Before the main window exists, so its first script can already spawn.
+            capabilities.grant(app.handle())?;
+
             // Panics from here on are kept for the next launch to offer as a report.
             if let Ok(directory) = app.path().app_data_dir() {
                 system::crash::install_panic_hook(
@@ -141,6 +161,7 @@ pub fn run() {
                 .cloned()
                 .ok_or("the main window is not configured")?;
             tauri::WebviewWindowBuilder::from_config(app.handle(), &main)?
+                .initialization_script(capabilities.init_script())
                 .on_new_window(system::opener::open_new_window_externally(
                     app.handle().clone(),
                 ))

@@ -3,7 +3,7 @@ import * as v from 'valibot'
 import { CONNECTOR_LABEL_FONT } from '@open-pencil/scene-graph/connectors'
 import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 
-import { toolNumber, defineTool, nodeSummary } from '#core/tools/schema'
+import { layoutPosition, defineTool, nodeSummary } from '#core/tools/schema'
 
 const MAGNETS = ['AUTO', 'TOP', 'RIGHT', 'BOTTOM', 'LEFT', 'CENTER'] as const
 const CAPS = [
@@ -22,11 +22,11 @@ const endInput = (label: string) =>
       magnet: v.optional(
         v.pipe(
           v.picklist(MAGNETS),
-          v.description('Side it attaches by; AUTO picks the nearest. Straight lines use CENTER')
+          v.description('AUTO picks the nearest side; straight lines use CENTER')
         )
       ),
-      x: v.optional(toolNumber(v.pipe(v.number(), v.description('Page X of a free end')))),
-      y: v.optional(toolNumber(v.pipe(v.number(), v.description('Page Y of a free end'))))
+      x: v.optional(layoutPosition('Page X of a free end')),
+      y: v.optional(layoutPosition('Page Y of a free end'))
     }),
     {}
   )
@@ -35,7 +35,7 @@ export const createConnectorTool = defineTool({
   name: 'create_connector',
 
   description:
-    'Create a FigJam-style connector between two layers, or from or to a point on the page. A connector follows the layers it joins as they move and is deleted with them. Give each end a node id (and optionally a magnet side), or x/y for a free end.',
+    'Create a FigJam-style connector between two layers, or from or to a point on the page; it follows the layers it joins and is deleted with them. Give each end a node id (and optionally a magnet), or x/y for a free end.',
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
     start: endInput('start'),

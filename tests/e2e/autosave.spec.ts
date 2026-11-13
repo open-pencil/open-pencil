@@ -6,14 +6,13 @@ const editor = useEditorSetup()
 test('autosave triggers after scene changes with a file handle', async () => {
   const writeCount = await editor.page.evaluate(() => {
     let writes = 0
-    const mockWritable: Pick<FileSystemWritableFileStream, 'write' | 'close'> = {
-      write: async () => {
-        writes++
-      },
-      close: async () => undefined
-    }
     const mockHandle = {
-      createWritable: async () => mockWritable
+      createWritable: async () =>
+        new WritableStream<Uint8Array>({
+          write: () => {
+            writes++
+          }
+        })
     } as FileSystemFileHandle
 
     window.openPencil ??= {}
@@ -30,14 +29,10 @@ test('autosave triggers after scene changes with a file handle', async () => {
     // Directly set the fileHandle via a test hook
     // Since fileHandle is a closure variable, we need to trigger the save path
     // The cleanest way: mock showSaveFilePicker to return our handle
-    const mockWritable: Pick<FileSystemWritableFileStream, 'write' | 'close'> = {
-      write: async () => undefined,
-      close: async () => undefined
-    }
     const mockHandle = {
-      createWritable: async () => mockWritable
-    }
-    window.showSaveFilePicker = async () => mockHandle as FileSystemFileHandle
+      createWritable: async () => new WritableStream<Uint8Array>()
+    } as FileSystemFileHandle
+    window.showSaveFilePicker = async () => mockHandle
   })
 
   // Trigger Save As to establish the file handle

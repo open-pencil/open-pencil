@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 
-import { cloudServicesDiscoverySchema, cloudBillingDiscoverySchema } from './services'
+import { cloudBillingDiscoverySchema } from './billing'
+import { cloudServicesDiscoverySchema } from './services'
 
 export const CLOUD_PROTOCOL_VERSION = '1' as const
 export const CLOUD_DISCOVERY_PATH = '/.well-known/openpencil' as const
@@ -54,6 +55,30 @@ export const cloudEditorVersionSchema = v.pipe(v.string(), v.regex(/^\d+\.\d+\.\
 export const cloudListingSchema = v.object({ minimumEditorVersion: cloudEditorVersionSchema })
 export type CloudListing = v.InferOutput<typeof cloudListingSchema>
 
+const legalURLSchema = v.pipe(v.string(), v.url())
+
+/**
+ * The operator's legal links, which clients show at sign-up and in account pages. A server that
+ * names none shows none; `requireAcceptance` means an account accepts `termsVersion` before it uses
+ * the server.
+ */
+export const cloudLegalDiscoverySchema = v.object({
+  termsURL: v.optional(legalURLSchema),
+  privacyURL: v.optional(legalURLSchema),
+  termsVersion: v.optional(v.string()),
+  requireAcceptance: v.boolean(),
+  abuseEmail: v.optional(v.pipe(v.string(), v.email())),
+  minimumAge: v.optional(v.pipe(v.number(), v.integer()))
+})
+export type CloudLegalDiscovery = v.InferOutput<typeof cloudLegalDiscoverySchema>
+
+/**
+ * The server's community gallery: the workspace whose documents anyone may open read-only.
+ * Saving to it publishes, so editors never choose it for anyone and say so when it is chosen.
+ */
+export const cloudCommunityDiscoverySchema = v.object({ workspaceId: v.pipe(v.string(), v.uuid()) })
+export type CloudCommunityDiscovery = v.InferOutput<typeof cloudCommunityDiscoverySchema>
+
 export const cloudDiscoverySchema = v.object({
   protocolVersion: v.literal(CLOUD_PROTOCOL_VERSION),
   deployment: cloudDeploymentSchema,
@@ -67,7 +92,10 @@ export const cloudDiscoverySchema = v.object({
   /** The services editors reach with Cloud-signed tokens; absent when the deployment has none. */
   services: v.optional(cloudServicesDiscoverySchema),
   /** Where people manage their plan and buy credits; absent when the deployment does not bill. */
-  billing: v.optional(cloudBillingDiscoverySchema)
+  billing: v.optional(cloudBillingDiscoverySchema),
+  /** The community gallery; absent when the deployment has none. */
+  community: v.optional(cloudCommunityDiscoverySchema),
+  legal: v.optional(cloudLegalDiscoverySchema)
 })
 export type CloudDiscovery = v.InferOutput<typeof cloudDiscoverySchema>
 

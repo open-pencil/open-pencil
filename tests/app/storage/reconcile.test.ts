@@ -48,6 +48,18 @@ describe('storage workspace reconciliation', () => {
     expect(result.remoteDocumentsToSeed.map((document) => document.id)).toEqual(['remote'])
   })
 
+  test('shows a document restored on the server since this device deleted it', () => {
+    const restored = { ...remoteDocument('deleted'), updatedAt: '2026-01-03T00:00:00.000Z' }
+    const result = reconcileStorageDocuments([localMeta('deleted', 'synced', true)], [restored])
+    expect(result.documents).toEqual([restored])
+    expect(result.localIdsToPurge).toEqual(['deleted'])
+
+    // Until the deletion has gone through, the document stays hidden whatever the listing says.
+    const pending = reconcileStorageDocuments([localMeta('deleted', 'pending', true)], [restored])
+    expect(pending.documents).toEqual([])
+    expect(pending.localIdsToPurge).toEqual([])
+  })
+
   test('hides tombstones until deletion is confirmed and then purges them', () => {
     const waiting = reconcileStorageDocuments(
       [localMeta('deleted', 'synced', true)],

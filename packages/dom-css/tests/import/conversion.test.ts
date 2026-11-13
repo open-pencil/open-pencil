@@ -334,6 +334,35 @@ describe('@open-pencil/dom-css conversion', () => {
     expect(roundTripImage.attrs.src).toBe('https://example.com/hero.png')
   })
 
+  it('keeps an SVG data URL as the source rather than an image fill', () => {
+    for (const src of [
+      'data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%2F%3E',
+      'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciLz4='
+    ]) {
+      const graph = designDocumentToSceneGraph({
+        type: 'document',
+        children: [
+          {
+            type: 'element',
+            tagName: 'img',
+            attrs: { src },
+            computedStyle: { width: '32px', height: '32px' },
+            children: []
+          }
+        ]
+      })
+      const page = graph.getPages()[0]
+      const image = expectFrame(page ? graph.getChildren(page.id)[0] : undefined)
+      expect(image.fills[0]).toBeUndefined()
+      expect(image.pluginData).toContainEqual({
+        pluginId: 'open-pencil-dom-css',
+        key: 'image-source-url',
+        value: src
+      })
+      expect(graph.images.size).toBe(0)
+    }
+  })
+
   it('maps data URL images, object fit, and aspect ratio', () => {
     const graph = designDocumentToSceneGraph({
       type: 'document',

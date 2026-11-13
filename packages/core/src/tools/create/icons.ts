@@ -5,10 +5,10 @@ import { parseColor } from '@open-pencil/scene-graph/color'
 import { graphOf } from '#core/figma-api/graph'
 import { prepareSlotInsertion } from '#core/figma-api/slots'
 import { placeIcon } from '#core/icons'
-import { toolNumber, defineTool } from '#core/tools/schema'
+import { layoutLength, toolNumber, defineTool } from '#core/tools/schema'
 
 export const fetchIconsTool = defineTool({
-  name: 'fetch_icons',
+  name: 'get_icons',
   exposure: { webmcp: false },
   description:
     'Pre-fetch icons from Iconify into cache. Batches by prefix (one HTTP request per set). Call this once with all needed icons, then use insert_icon to place them instantly. Popular sets: lucide (outline), mdi (filled), heroicons, tabler, solar, mingcute, ri (remix).',
@@ -20,9 +20,7 @@ export const fetchIconsTool = defineTool({
       v.minLength(1),
       v.description('Icon names as prefix:name (e.g. ["lucide:heart", "lucide:home", "mdi:star"])')
     ),
-    size: v.optional(
-      toolNumber(v.pipe(v.number(), v.description('Icon size in pixels (default: 24)')))
-    )
+    size: v.optional(layoutLength('Icon size in pixels (default: 24)', 1))
   }),
   execute: async (figma, args) => {
     const size = args.size ?? 24
@@ -43,7 +41,7 @@ export const insertIcon = defineTool({
   name: 'insert_icon',
 
   description:
-    'Insert one or more vector icons onto the canvas. Pass a single name or multiple names to batch-insert into the same parent. If already cached by fetch_icons — instant, no network request.',
+    'Insert one or more vector icons onto the canvas. Pass a single name or multiple names to batch-insert into the same parent. If already cached by get_icons — instant, no network request.',
   execution: { kind: 'async', mutation: 'document' },
   capabilities: ['document:write', 'network:access'],
   input: v.strictObject({
@@ -59,9 +57,7 @@ export const insertIcon = defineTool({
     name: v.optional(
       v.pipe(v.string(), v.description('Single icon name (shorthand for names with one icon)'))
     ),
-    size: v.optional(
-      toolNumber(v.pipe(v.number(), v.description('Icon size in pixels (default: 24)')))
-    ),
+    size: v.optional(layoutLength('Icon size in pixels (default: 24)', 1)),
     color: v.optional(
       v.pipe(v.string(), v.description('Icon color hex (replaces currentColor). Default: #000000'))
     ),
@@ -77,7 +73,7 @@ export const insertIcon = defineTool({
 
     let icons
     try {
-      icons = await figma.icons.icons(names, size)
+      icons = await graphOf(figma).waitOutsideEdit(figma.icons.icons(names, size))
     } catch (e) {
       return { error: (e as Error).message }
     }
@@ -121,7 +117,14 @@ export const searchIconsTool = defineTool({
       v.description('Search keywords (e.g. ["heart", "arrow", "settings"])')
     ),
     limit: v.optional(
-      toolNumber(v.pipe(v.number(), v.description('Max results per query (default: 5)')))
+      toolNumber(
+        v.pipe(
+          v.number(),
+          v.minValue(1),
+          v.maxValue(100),
+          v.description('Max results per query (default: 5)')
+        )
+      )
     ),
     prefix: v.optional(
       v.pipe(v.string(), v.description('Filter by icon set prefix (e.g. "lucide", "mdi")'))

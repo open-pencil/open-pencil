@@ -1,6 +1,7 @@
 import { uniq } from 'es-toolkit'
 
 import { AI_PROVIDERS, type AIProviderID, type ModelOption } from '@open-pencil/core/constants'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 
 import { modelProviderName } from '@/app/ai/models/provider-name'
 import type { AIModelCapability, AIModelProfileId, AIModelRole } from '@/app/ai/models/types'
@@ -13,6 +14,7 @@ export type OnboardingGoal = (typeof ONBOARDING_GOALS)[number]
 export const ONBOARDING_AGENTS = [
   'acp:claude-code',
   'acp:codex',
+  'acp:antigravity',
   'acp:gemini-cli',
   'acp:cursor',
   'acp:grok-build',
@@ -93,11 +95,13 @@ export interface CurrentOnboardingModels {
 }
 
 export interface PlanOptions {
-  /**
-   * Agents run as local processes and subscription sign-in returns to a local port, so only the
-   * desktop app can use them.
-   */
+  /** Agents run as local processes, so only a desktop app that may spawn them offers them. */
   agentsAvailable: boolean
+  /**
+   * Subscription sign-in returns to a local port, so only the desktop app offers it, including
+   * packages that cannot spawn agents. Defaults to `agentsAvailable`.
+   */
+  subscriptionsAvailable?: boolean
   current?: CurrentOnboardingModels
 }
 
@@ -114,12 +118,36 @@ export function isOnboardingAgent(providerID: string): boolean {
   return providerID.startsWith('acp:') || providerID === 'harness:pi'
 }
 
-/** Access that only the desktop app can use. */
-export function needsDesktop(providerID: string): boolean {
-  return (
-    isOnboardingAgent(providerID) ||
-    (ONBOARDING_SUBSCRIPTIONS as readonly string[]).includes(providerID)
-  )
+/** Whether this app can use an access: agents and subscriptions each need the desktop app. */
+function accessAvailable(providerID: string, options: PlanOptions): boolean {
+  if (isOnboardingAgent(providerID)) return options.agentsAvailable
+  if ((ONBOARDING_SUBSCRIPTIONS as readonly string[]).includes(providerID)) {
+    return options.subscriptionsAvailable ?? options.agentsAvailable
+  }
+  return true
+}
+
+/**
+ * What is configured now, without the models this app cannot run: an agent where no host process
+ * may start, or a subscription in the browser. Chat refuses those, so setup treats their roles as
+ * unconfigured and plans them again rather than keep them.
+ */
+export function usableCurrentModels(
+  current: CurrentOnboardingModels,
+  options: Omit<PlanOptions, 'current'>
+): CurrentOnboardingModels {
+  const unusable = (role: PlannedRole) =>
+    !!role && role !== 'design' && !accessAvailable(role.providerID, options)
+  // Review and fast keep a configured none, so an unusable model there falls back to following
+  // the design model, the planner's own default, which it replaces when design cannot take it.
+  const reviewOrFast = (role: PlannedRole): PlannedRole => (unusable(role) ? 'design' : role)
+  return {
+    configured: current.configured,
+    design: unusable(current.design) ? null : current.design,
+    vision: unusable(current.vision) ? null : current.vision,
+    review: reviewOrFast(current.review),
+    fast: reviewOrFast(current.fast)
+  }
 }
 
 function isAgentModel(model: PlannedModel | null): boolean {
@@ -171,7 +199,7 @@ function hasVision(model: PlannedModel): boolean {
 }
 
 function availableAccess(answers: OnboardingAnswers, options: PlanOptions): OnboardingAccess[] {
-  return answers.access.filter((access) => options.agentsAvailable || !needsDesktop(access))
+  return answers.access.filter((access) => accessAvailable(access, options))
 }
 
 /** A configured model stays while its access is still selected or onboarding cannot offer it. */
@@ -286,7 +314,7 @@ function roleModels(plan: Omit<OnboardingPlan, 'connections'>): PlannedModel[] {
  */
 export function planOnboarding(answers: OnboardingAnswers, options: PlanOptions): OnboardingPlan {
   const access = availableAccess(answers, options)
-  const current = options.current ?? NO_CURRENT
+  const current = usableCurrentModels(options.current ?? NO_CURRENT, options)
   const design = answers.goals.includes('design')
     ? planDesign(answers, access, current.design)
     : current.design
@@ -363,8 +391,9 @@ export function roleOptions(
           plannedModel(providerID)
       )
     } else {
-      candidates.push(
-        ...catalogModels(providerID)
+      appendAll(
+        candidates,
+        catalogModels(providerID)
           .filter((model) => model.capabilities)
           .map((model) => fromCatalog(providerID, model))
       )
