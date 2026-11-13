@@ -82,11 +82,21 @@
 
   /* Tables read as part of the reply: regular weight, a light header, no fills on the rows. */
   [data-markdown='table-wrapper'] {
-    @apply flex flex-col items-stretch gap-1;
+    @apply relative;
   }
 
+  /* The copy button sits in the header row's corner, shown while the table is pointed at or
+     focused; the last header cell leaves it room. */
   [data-markdown='table-controls'] {
-    @apply flex justify-end;
+    @apply absolute end-1 top-1 opacity-0 transition-opacity;
+  }
+
+  [data-markdown='table-wrapper']:is(:hover, :focus-within) [data-markdown='table-controls'] {
+    @apply opacity-100;
+  }
+
+  :where(th:last-child) {
+    @apply pe-7;
   }
 
   [data-markdown='table-scroll'] {
@@ -132,8 +142,9 @@
   }
 }
 
+/* Compact text runs at 18px lines, so inline reference chips do not touch the lines around them. */
 .markdown-content[data-markdown-density='compact'] {
-  @apply text-2xs leading-4;
+  @apply text-2xs leading-4.5;
 
   :where(h1) {
     @apply mt-2.5 mb-1 text-sm;
@@ -152,7 +163,7 @@
   }
 
   :where(ul, ol) {
-    @apply leading-4;
+    @apply leading-4.5;
   }
 
   :where(blockquote, hr, [data-markdown='code-block'], [data-markdown='table-wrapper']) {
