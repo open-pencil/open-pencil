@@ -10,7 +10,7 @@ import {
   type TransactionalEmailKind
 } from '@open-pencil/cloud/email'
 
-import CloudEmailPreview from './CloudEmailPreview.vue'
+import EmailPreview from './examples/EmailPreview.vue'
 
 type Args = { locale: CloudLocale }
 
@@ -29,9 +29,9 @@ function sample(kind: TransactionalEmailKind): Story {
   if (!content) throw new Error(`No sample email of kind ${kind}`)
   return {
     render: (args: Args) => ({
-      components: { CloudEmailPreview },
+      components: { EmailPreview },
       setup: () => ({ render: () => renderTransactionalEmail(content, args.locale) }),
-      template: '<CloudEmailPreview :render="render" />'
+      template: '<EmailPreview :render="render" />'
     })
   }
 }
@@ -54,7 +54,7 @@ export const StorageLimitReached = sample('storage-limit-reached')
 
 export const WaitlistConfirmation: Story = {
   render: (args: Args) => ({
-    components: { CloudEmailPreview },
+    components: { EmailPreview },
     setup: () => ({
       render: () =>
         renderEmail(
@@ -63,6 +63,6 @@ export const WaitlistConfirmation: Story = {
           args.locale
         )
     }),
-    template: '<CloudEmailPreview :render="render" />'
+    template: '<EmailPreview :render="render" />'
   })
 }
