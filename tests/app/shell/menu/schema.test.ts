@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { appendAll } from '@open-pencil/scene-graph/arrays'
+
 import type { AppMenuEntry } from '@/app/shell/menu/schema'
 import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
 
@@ -8,7 +10,7 @@ function actionItems(entries: readonly AppMenuEntry[]): AppMenuEntry[] {
   for (const entry of entries) {
     if ('type' in entry && entry.type === 'separator') continue
     result.push(entry)
-    if (entry.sub) result.push(...actionItems(entry.sub))
+    if (entry.sub) appendAll(result, actionItems(entry.sub))
   }
   return result
 }

@@ -71,7 +71,7 @@ export function installFigMutationJournal(graph: SceneGraph): FigMutationJournal
       const currentId = pending.pop()
       if (!currentId) continue
       const current = graph.getNode(currentId)
-      if (current) pending.push(...current.childIds)
+      if (current) for (const childId of current.childIds) pending.push(childId)
       if (!existingAtStart.has(currentId)) {
         created.delete(currentId)
         before.delete(currentId)

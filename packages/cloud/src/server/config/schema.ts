@@ -1,7 +1,8 @@
 import {
   CLOUD_PROTOCOL_MAX_UPLOAD_BYTES,
   cloudEditorVersionSchema,
-  RELAY_MINIMUM_MESSAGE_BYTES
+  RELAY_MINIMUM_MESSAGE_BYTES,
+  sendsTokenSafely
 } from '#cloud/contract'
 import { staticEntitlementsSchema } from '#cloud/server/policy/schema'
 import * as v from 'valibot'
@@ -185,6 +186,11 @@ const rawCloudServerConfigSchema = v.object({
       minimumAge: v.optional(v.pipe(v.number(), v.integer(), v.minValue(13), v.maxValue(21)))
     })
   ),
+  /**
+   * The workspace whose documents anyone may open read-only, without signing in or a link: the
+   * deployment's community gallery. Without it the server has none.
+   */
+  community: v.optional(v.object({ workspaceId: v.pipe(v.string(), v.uuid()) })),
   /** Where server errors are reported; without it the server reports nothing. */
   errorTracking: v.optional(
     v.object({
@@ -290,8 +296,10 @@ function validateServiceConfig(config: CloudServerConfig): void {
     ['services', config.servicesEndpoint],
     ['billing', config.billingEndpoint]
   ] as const) {
-    if (config.deployment === 'official' && endpoint && new URL(endpoint).protocol !== 'https:') {
-      throw new CloudConfigError(`Official ${name} endpoint must use HTTPS`)
+    if (endpoint && !sendsTokenSafely(endpoint)) {
+      throw new CloudConfigError(
+        `The ${name} endpoint must use HTTPS, or HTTP only to 127.0.0.1 or [::1] for development`
+      )
     }
   }
 }

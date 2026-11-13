@@ -6,6 +6,7 @@ export default defineConfig(
   libraryConfig({
     entry: {
       index: './src/index.ts',
+      arrays: './src/arrays.ts',
       'arrow-caps': './src/arrow-caps.ts',
       'asset-keys': './src/asset-keys.ts',
       'behaviours/index': './src/behaviours/index.ts',

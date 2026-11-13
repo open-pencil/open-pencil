@@ -116,7 +116,6 @@ defineOptions({ inheritAttrs: false })
       <template #leading="{ item }">
         <FillSwatch
           v-if="color(item.value)"
-          aria-hidden="true"
           :fill="{
             type: 'SOLID',
             visible: true,

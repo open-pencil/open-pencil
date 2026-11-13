@@ -2,6 +2,7 @@ import { sumBy } from 'es-toolkit'
 import * as v from 'valibot'
 
 import { extractFigThumbnailFromReader } from '@open-pencil/fig'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 
 import { isTauri } from '@/app/tauri/env'
 
@@ -158,8 +159,9 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
       // Bound sidecar reads so large buckets do not open hundreds of requests at once.
       for (let offset = 0; offset < entries.length; offset += 12) {
         const batch = entries.slice(offset, offset + 12)
-        documents.push(
-          ...(await Promise.all(
+        appendAll(
+          documents,
+          await Promise.all(
             batch.map(async ({ id, lastModified }) => {
               const fallback = {
                 name: id,
@@ -178,7 +180,7 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
                 metadataAuthoritative: authoritative
               } satisfies StorageDocument
             })
-          ))
+          )
         )
       }
       return documents.sort((first, second) => second.updatedAt.localeCompare(first.updatedAt))

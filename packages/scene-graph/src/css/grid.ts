@@ -1,5 +1,6 @@
 import valueParser, { type FunctionNode, type Node } from 'postcss-value-parser'
 
+import { appendAll } from '../arrays'
 import { MAX_GRID_TRACKS } from '../layout/limits'
 import type { GridTrack } from '../types'
 import { parseCSSNumber } from './values'
@@ -69,7 +70,7 @@ function tracksOf(nodes: Node[]): GridTrack[] {
   for (const node of nodes) {
     if (tracks.length >= MAX_GRID_TRACKS) break
     if (node.type === 'word') tracks.push(wordTrack(node.value))
-    else if (node.type === 'function') tracks.push(...functionTracks(node))
+    else if (node.type === 'function') appendAll(tracks, functionTracks(node))
   }
   return tracks.slice(0, MAX_GRID_TRACKS)
 }

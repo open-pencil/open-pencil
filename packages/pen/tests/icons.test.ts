@@ -87,7 +87,7 @@ describe('parsePenFile — icons in components', () => {
     const queue = [...graph.getChildren('swapped')]
     for (const node of queue) {
       expect(node.componentId).not.toBeNull()
-      queue.push(...graph.getChildren(node.id))
+      for (const child of graph.getChildren(node.id)) queue.push(child)
     }
   })
 

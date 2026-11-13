@@ -1,3 +1,5 @@
+import type { StorageLimitNoticeResult, StorageLimitNoticeService } from '#cloud/server/quota'
+
 import { startPeriodicWorker } from '../worker/periodic'
 import type { DocumentCleanupResult, DocumentCleanupService } from './documents'
 import {
@@ -23,6 +25,7 @@ export type CleanupResult = {
   documents: DocumentCleanupResult
   revisions: RevisionCompactionResult | null
   rateLimits: number
+  storageLimits: StorageLimitNoticeResult | null
 }
 
 export type CleanupServices = {
@@ -30,6 +33,8 @@ export type CleanupServices = {
   uploads: UploadCleanupService
   revisions?: RevisionCompactionService
   rateLimits?: { cleanupExpired(before: Date): Promise<number> }
+  /** Emails accounts whose storage became full; only where the server sends email. */
+  storageLimits?: Pick<StorageLimitNoticeService, 'notifyStorageLimits'>
 }
 
 export type CleanupWorker = {
@@ -66,7 +71,11 @@ export async function runCleanup(
   const rateLimits = cleanup.rateLimits
     ? await cleanup.rateLimits.cleanupExpired(new Date(Date.now() - 24 * 60 * 60_000))
     : 0
-  return { uploads, documents, revisions, rateLimits }
+  // After documents, so storage they freed counts before anyone is told theirs is full.
+  const storageLimits = cleanup.storageLimits
+    ? await cleanup.storageLimits.notifyStorageLimits()
+    : null
+  return { uploads, documents, revisions, rateLimits, storageLimits }
 }
 
 export function startCleanupWorker(

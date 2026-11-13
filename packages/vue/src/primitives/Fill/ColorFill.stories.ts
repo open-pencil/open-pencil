@@ -39,6 +39,10 @@ export const StateMatrix: Story = {
       'data-bound'
     )
     await expect(background('Picker row fill')).toBe(background('Solid fill'))
+    // Without a label the swatch is decorative: the text beside it names the color.
+    const decorative = canvasElement.querySelector('[data-slot="swatch"]:not([aria-label])')
+    await expect(decorative).toHaveAttribute('aria-hidden', 'true')
+    await expect(decorative).not.toHaveAttribute('role')
 
     await userEvent.click(canvas.getByRole('button', { name: 'Gradient' }))
     await expect(canvas.getByRole('img', { name: 'Editable fill' })).toHaveAttribute(

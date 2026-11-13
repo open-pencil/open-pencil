@@ -1,6 +1,7 @@
 import { escape } from 'es-toolkit/string'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { minOf } from '@open-pencil/scene-graph/arrays'
 
 export const MAX_REFERENCED_NODES = 20
 
@@ -109,5 +110,5 @@ export function stripModelNotes(text: string): string {
   const starts = MODEL_NOTE_MARKERS.map((marker) => text.indexOf(marker)).filter(
     (index) => index !== -1
   )
-  return starts.length === 0 ? text : text.slice(0, Math.min(...starts))
+  return starts.length === 0 ? text : text.slice(0, minOf(starts))
 }
