@@ -614,5 +614,8 @@
   "siteDocs": "Документация",
   "siteCloudDocs": "Документация Cloud",
   "siteDownload": "Скачать",
-  "siteLicense": "Распространяется по лицензии MIT."
+  "siteLicense": "Распространяется по лицензии MIT.",
+  "siteCopyright": "© {year} OpenPencil",
+  "sitePoweredBy": "Работает на OpenPencil",
+  "siteSourceCode": "Исходный код"
 }

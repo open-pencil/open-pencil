@@ -12,6 +12,7 @@ export default {
     headerInner: 'mx-auto flex h-16 w-full max-w-6xl items-center gap-8 px-4 sm:px-6',
     brand: ['flex shrink-0 items-center gap-2 rounded-md', focusStyles.ring],
     brandMark: 'size-6',
+    brandLogo: 'h-7 w-auto max-w-40 object-contain',
     brandName: 'text-base font-semibold tracking-tight',
     nav: 'flex items-center gap-6 max-sm:hidden',
     navLink: [
@@ -35,6 +36,15 @@ export default {
       'w-fit rounded-sm text-sm text-muted transition-colors hover:text-surface',
       focusStyles.ring
     ],
+    compactFooter:
+      'mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-6',
+    compactLine: 'flex flex-wrap items-center gap-x-4 gap-y-1 text-sm',
+    compactName: 'font-medium text-surface',
+    poweredBy: [
+      'flex w-fit items-center gap-1.5 rounded-sm text-sm text-muted transition-colors hover:text-surface',
+      focusStyles.ring
+    ],
+    poweredMark: 'size-3.5',
     footerBottom:
       'col-span-full flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-6 text-xs text-muted'
   }

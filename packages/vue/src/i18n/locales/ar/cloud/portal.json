@@ -644,5 +644,8 @@
   "siteDocs": "التوثيق",
   "siteCloudDocs": "توثيق Cloud",
   "siteDownload": "تنزيل",
-  "siteLicense": "صدر بموجب ترخيص MIT."
+  "siteLicense": "صدر بموجب ترخيص MIT.",
+  "siteCopyright": "© {year} OpenPencil",
+  "sitePoweredBy": "مدعوم من OpenPencil",
+  "siteSourceCode": "الشيفرة المصدرية"
 }

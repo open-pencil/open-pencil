@@ -76,6 +76,19 @@ For a server only its members use, set `deployment.local_editor = false`: the we
 
 Links the server sends point at its own address: `/documents/<id>` for a document, `/share/<id>` for a shared link, and `/invitations/<id>` for an invitation. An editor at another address, such as a development build, can still connect when its origin is in `deployment.trusted_origins`; people sign in there by approving a code, as in the desktop app.
 
+## Your name on the server's pages
+
+The server's public pages, such as its community gallery, carry your name rather than OpenPencil's: the bar shows the server's address, the gallery, and help, and the footer your legal links with a small "Powered by OpenPencil". Name the server, add your logo, and point help at your own page under `[deployment.branding]`:
+
+```toml
+[deployment.branding]
+name = "Acme Design"
+logo_url = "https://acme.example/logo.svg"
+help_url = "https://intranet.acme.example/design-help"
+```
+
+Without `help_url`, help goes to the OpenPencil documentation. The addresses must be `http` or `https`.
+
 ## Reverse proxy
 
 - Terminate TLS in front of the server and the object store, on stable hostnames.

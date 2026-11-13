@@ -191,6 +191,14 @@ const rawCloudServerConfigSchema = v.object({
    * deployment's community gallery. Without it the server has none.
    */
   community: v.optional(v.object({ workspaceId: v.pipe(v.string(), v.uuid()) })),
+  /** How a self-hosted server names itself on its public pages. */
+  branding: v.optional(
+    v.object({
+      name: v.optional(v.string()),
+      logoURL: v.optional(httpURLSchema),
+      helpURL: v.optional(httpURLSchema)
+    })
+  ),
   /** Where server errors are reported; without it the server reports nothing. */
   errorTracking: v.optional(
     v.object({

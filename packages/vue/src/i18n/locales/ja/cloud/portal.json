@@ -594,5 +594,8 @@
   "siteDocs": "ドキュメント",
   "siteCloudDocs": "Cloud ドキュメント",
   "siteDownload": "ダウンロード",
-  "siteLicense": "MIT ライセンスで公開されています。"
+  "siteLicense": "MIT ライセンスで公開されています。",
+  "siteCopyright": "© {year} OpenPencil",
+  "sitePoweredBy": "OpenPencil で稼働",
+  "siteSourceCode": "ソースコード"
 }

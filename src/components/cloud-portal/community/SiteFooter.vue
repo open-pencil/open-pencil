@@ -18,8 +18,9 @@ import {
 import siteTheme from '@/theme/cloud-portal/site'
 
 /**
- * The foot of the server's public pages: the product's name and line, its links in columns, the
- * operator's legal links when the server names them, and the server's address with the license.
+ * The foot of the server's public pages. The official server's is OpenPencil's site footer: the
+ * product's line, its links in columns, its legal links, and the copyright with the license. A
+ * self-hosted server's is two lines, as Mastodon's: the operator's own links, then what it runs.
  */
 type FooterLink = { label: string; href: string; external?: boolean }
 
@@ -28,40 +29,57 @@ const ui = site()
 const portal = usePortal()
 const messages = useCloudPortalMessages()
 const legal = usePortalLegal()
+const official = portal.discovery.deployment === 'official'
+const operator = portal.discovery.branding?.name ?? portal.host
+const year = new Date().getFullYear()
 
-const columns = computed(() => {
-  const legalLinks: FooterLink[] = [
-    ...(legal?.termsURL ? [{ label: messages.value.termsOfService, href: legal.termsURL }] : []),
-    ...(legal?.privacyURL ? [{ label: messages.value.privacyPolicy, href: legal.privacyURL }] : []),
-    ...(legal?.abuseEmail
-      ? [{ label: messages.value.reportAbuse, href: `mailto:${legal.abuseEmail}` }]
-      : [])
-  ]
-  return [
-    {
-      title: messages.value.siteProduct,
-      links: [
-        { label: messages.value.openEditor, href: '/' },
-        { label: messages.value.communityTitle, href: CLOUD_COMMUNITY_PATH },
-        { label: messages.value.siteDownload, href: DESKTOP_DOWNLOAD_URL, external: true }
-      ]
-    },
-    {
-      title: messages.value.siteResources,
-      links: [
-        { label: messages.value.siteDocs, href: DOCS_URL, external: true },
-        { label: messages.value.siteCloudDocs, href: CLOUD_DOCS_URL, external: true },
-        { label: 'GitHub', href: REPOSITORY_URL, external: true },
-        { label: 'Discord', href: COMMUNITY_URL, external: true }
-      ]
-    },
-    ...(legalLinks.length > 0 ? [{ title: messages.value.siteLegal, links: legalLinks }] : [])
-  ] satisfies Array<{ title: string; links: FooterLink[] }>
-})
+const legalLinks = computed<FooterLink[]>(() => [
+  ...(legal?.termsURL
+    ? [{ label: messages.value.termsOfService, href: legal.termsURL, external: true }]
+    : []),
+  ...(legal?.privacyURL
+    ? [{ label: messages.value.privacyPolicy, href: legal.privacyURL, external: true }]
+    : []),
+  ...(legal?.abuseEmail
+    ? [{ label: messages.value.reportAbuse, href: `mailto:${legal.abuseEmail}` }]
+    : [])
+])
+
+const columns = computed(() => [
+  {
+    title: messages.value.siteProduct,
+    links: [
+      { label: messages.value.openEditor, href: '/' },
+      ...(portal.discovery.community
+        ? [{ label: messages.value.communityTitle, href: CLOUD_COMMUNITY_PATH }]
+        : []),
+      { label: messages.value.siteDownload, href: DESKTOP_DOWNLOAD_URL, external: true }
+    ]
+  },
+  {
+    title: messages.value.siteResources,
+    links: [
+      { label: messages.value.siteDocs, href: DOCS_URL, external: true },
+      { label: messages.value.siteCloudDocs, href: CLOUD_DOCS_URL, external: true },
+      { label: 'GitHub', href: REPOSITORY_URL, external: true },
+      { label: 'Discord', href: COMMUNITY_URL, external: true }
+    ]
+  },
+  ...(legalLinks.value.length > 0
+    ? [{ title: messages.value.siteLegal, links: legalLinks.value }]
+    : [])
+])
+
+const operatorLinks = computed<FooterLink[]>(() => [
+  ...(portal.discovery.branding?.helpURL
+    ? [{ label: messages.value.help, href: portal.discovery.branding.helpURL, external: true }]
+    : []),
+  ...legalLinks.value
+])
 </script>
 
 <template>
-  <footer :class="ui.footer()">
+  <footer v-if="official" :class="ui.footer()">
     <div :class="ui.footerInner()">
       <div :class="ui.footerBrand()">
         <span class="flex items-center gap-2">
@@ -91,9 +109,38 @@ const columns = computed(() => {
         </div>
       </nav>
       <div :class="ui.footerBottom()">
-        <span>{{ portal.host }}</span>
+        <span>{{ messages.siteCopyright({ year }) }}</span>
         <span>{{ messages.siteLicense }}</span>
       </div>
+    </div>
+  </footer>
+  <footer v-else :class="ui.footer()">
+    <div :class="ui.compactFooter()">
+      <nav :class="ui.compactLine()" :aria-label="operator">
+        <span :class="ui.compactName()">{{ operator }}</span>
+        <a
+          v-for="link in operatorLinks"
+          :key="link.href"
+          :href="link.href"
+          :target="link.external ? '_blank' : undefined"
+          :rel="link.external ? 'noreferrer' : undefined"
+          :class="ui.footerLink()"
+        >
+          {{ link.label }}
+        </a>
+      </nav>
+      <nav :class="ui.compactLine()" aria-label="OpenPencil">
+        <a :href="DOCS_URL" target="_blank" rel="noreferrer" :class="ui.poweredBy()">
+          <BrandMark variant="micro" decorative :class="ui.poweredMark()" />
+          {{ messages.sitePoweredBy }}
+        </a>
+        <a :href="DOCS_URL" target="_blank" rel="noreferrer" :class="ui.footerLink()">
+          {{ messages.siteDocs }}
+        </a>
+        <a :href="REPOSITORY_URL" target="_blank" rel="noreferrer" :class="ui.footerLink()">
+          {{ messages.siteSourceCode }}
+        </a>
+      </nav>
     </div>
   </footer>
 </template>

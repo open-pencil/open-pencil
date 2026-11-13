@@ -19,6 +19,9 @@ export const communityPortalMessageDefaults = {
   siteCloudDocs: 'Cloud docs',
   siteDownload: 'Download',
   siteLicense: 'Released under the MIT License.',
+  siteCopyright: params('© {year} OpenPencil'),
+  sitePoweredBy: 'Powered by OpenPencil',
+  siteSourceCode: 'Source code',
   communityNotFoundTitle: 'This file isn’t here anymore',
   communityNotFoundDescription: 'It may have been taken down. See what else is in the community.'
 } as const

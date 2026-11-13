@@ -604,5 +604,8 @@
   "siteDocs": "Documentation",
   "siteCloudDocs": "Documentation Cloud",
   "siteDownload": "Télécharger",
-  "siteLicense": "Publié sous licence MIT."
+  "siteLicense": "Publié sous licence MIT.",
+  "siteCopyright": "© {year} OpenPencil",
+  "sitePoweredBy": "Propulsé par OpenPencil",
+  "siteSourceCode": "Code source"
 }

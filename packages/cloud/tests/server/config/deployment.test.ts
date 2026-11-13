@@ -186,6 +186,31 @@ describe('Cloud TOML deployment configuration', () => {
     ).toThrow()
   })
 
+  test('advertises the operator’s name, logo, and help link, only web addresses', () => {
+    expect(
+      cloudDiscoveryFromConfig(parseCloudDeploymentTOML(minimalSource, environment)).branding
+    ).toBeUndefined()
+    const branded = `${minimalSource}
+[deployment.branding]
+name = "Acme Design"
+logo_url = "https://acme.example/logo.svg"
+help_url = "https://acme.example/help"
+`
+    expect(
+      cloudDiscoveryFromConfig(parseCloudDeploymentTOML(branded, environment)).branding
+    ).toEqual({
+      name: 'Acme Design',
+      logoURL: 'https://acme.example/logo.svg',
+      helpURL: 'https://acme.example/help'
+    })
+    expect(() =>
+      parseCloudDeploymentTOML(
+        branded.replace('https://acme.example/help', 'data:text/html,hi'),
+        environment
+      )
+    ).toThrow()
+  })
+
   test('reads the operator’s legal links and advertises them in discovery', () => {
     expect(parseCloudDeploymentTOML(minimalSource, environment).legal).toBeUndefined()
     const source = `${minimalSource}

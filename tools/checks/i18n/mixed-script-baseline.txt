@@ -737,3 +737,5 @@ ja:cloudPortal.siteLicense
 zh-cn:cloudPortal.siteTagline
 zh-cn:cloudPortal.siteCloudDocs
 zh-cn:cloudPortal.siteLicense
+ja:cloudPortal.sitePoweredBy
+zh-cn:cloudPortal.sitePoweredBy

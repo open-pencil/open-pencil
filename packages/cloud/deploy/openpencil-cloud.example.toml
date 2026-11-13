@@ -13,6 +13,13 @@ local_editor = true
 # version on. Self-hosted servers leave it out.
 # listing = { minimum_editor_version = "0.14.0" }
 
+# How the server names itself on its public pages, such as its community gallery: your name and
+# logo in the bar, and where your people get help. Without it, the server's address names it.
+# [deployment.branding]
+# name = "Acme Design"
+# logo_url = "https://acme.example/logo.svg"
+# help_url = "https://intranet.acme.example/design-help"
+
 # Defaults to DATABASE_URL.
 [database]
 

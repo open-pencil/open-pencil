@@ -91,7 +91,15 @@ export const cloudDeploymentConfigSchema = v.strictObject({
     trusted_origins: v.optional(v.array(urlSchema), []),
     // The server's editor works with files on this device without signing in to the server.
     local_editor: v.optional(v.boolean(), true),
-    listing: v.optional(v.strictObject({ minimum_editor_version: cloudEditorVersionSchema }))
+    listing: v.optional(v.strictObject({ minimum_editor_version: cloudEditorVersionSchema })),
+    // How a self-hosted server names itself on its public pages.
+    branding: v.optional(
+      v.strictObject({
+        name: v.optional(v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(80))),
+        logo_url: v.optional(urlSchema),
+        help_url: v.optional(urlSchema)
+      })
+    )
   }),
   database: v.optional(
     v.strictObject({ url: defaultReference(DEFAULT_SECRET_NAMES.databaseURL) }),
