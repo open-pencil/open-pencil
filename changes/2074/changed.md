@@ -1,1 +1,1 @@
-- Chat replies fade in word by word with layer references fading in alongside, links appear once complete, and the copy buttons and link prompt in Markdown are translated (#2074).
+- Chat replies fade in word by word with layer references fading in alongside, and the copy buttons and link prompt in Markdown are translated (#2074).
