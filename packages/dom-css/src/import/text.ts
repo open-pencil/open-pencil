@@ -70,17 +70,6 @@ const DECORATION_PROPERTIES = new Set(
 
 const TEXT_BLOCK_TAGS = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
 
-/** What browsers' default stylesheet gives inline formatting elements that CSS does not set. */
-const FORMATTING_DEFAULTS: Record<string, DesignStyleDeclaration> = {
-  b: { 'font-weight': '700' },
-  strong: { 'font-weight': '700' },
-  i: { 'font-style': 'italic' },
-  em: { 'font-style': 'italic' },
-  u: { 'text-decoration-line': 'underline' },
-  ins: { 'text-decoration-line': 'underline' },
-  s: { 'text-decoration-line': 'line-through' },
-  del: { 'text-decoration-line': 'line-through' }
-}
 const LIST_TAGS = new Set(['ul', 'ol'])
 
 /** Lengths CSS gives as a number of pixels, or `null` for keywords such as `auto`. */
@@ -169,7 +158,7 @@ function characterDeclarations(
   element: DesignElement,
   around: DesignStyleDeclaration
 ): DesignStyleDeclaration {
-  const own = { ...FORMATTING_DEFAULTS[element.tagName.toLowerCase()], ...mergedStyle(element) }
+  const own = mergedStyle(element)
   // An element that draws no decoration of its own, as a computed `none` says, shows the one
   // around it, which CSS draws through it.
   const showsAround = !decorates(own) && decorates(around)
