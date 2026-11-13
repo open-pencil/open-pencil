@@ -1,6 +1,7 @@
 import { expect, test, mock } from 'bun:test'
 
 import type { Font, Paint, Surface } from '@open-pencil/canvaskit'
+import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { SkiaRenderer } from '#core/canvas'
@@ -14,6 +15,7 @@ import { NodePathCaches } from '#core/canvas/paths/cache'
 import { destroyRenderer } from '#core/canvas/renderer/lifecycle'
 import { createCompiledShaders } from '#core/canvas/renderer/shaders'
 import { createWholeScenePicture } from '#core/canvas/renderer/state'
+import { RenderedBoundsCache } from '#core/canvas/renderer/visual-bounds'
 import { createTextCaches } from '#core/canvas/text/caches'
 import { TextPreparationCache } from '#core/canvas/text/preparation/cache'
 import { getCanvasKit } from '#core/canvaskit'
@@ -88,6 +90,7 @@ function createRenderer() {
       techStrokePaint: deletable<Paint>()
     } as Partial<NodeEditPaints> as NodeEditPaints,
     nodePictures: new Map(),
+    renderedBounds: new RenderedBoundsCache(),
     issueMarkerStage: new IssueMarkerStage(),
     wholeScene: createWholeScenePicture(),
     tiledScene: asDouble<SkiaRenderer['tiledScene']>({ destroy: mock() }),
@@ -124,4 +127,18 @@ test('destroyRenderer deletes all renderer-owned paints and label fonts', () => 
   expect(pencilStrokePaint.delete).toHaveBeenCalled()
   expect(sectionTitle?.delete).toHaveBeenCalled()
   expect(componentLabel?.delete).toHaveBeenCalled()
+})
+
+test('destroyRenderer stops the bounds cache watching the graphs it measured', () => {
+  const renderer = createRenderer()
+  const graph = new SceneGraph()
+  const node = graph.createNode('RECTANGLE', graph.getPages()[0].id, { width: 10, height: 10 })
+  const unobserve = mock()
+  graph.observeNodeChanges = mock(() => unobserve)
+
+  renderer.renderedBounds.ownAxes(graph, node)
+  destroyRenderer(renderer)
+
+  expect(graph.observeNodeChanges).toHaveBeenCalledTimes(1)
+  expect(unobserve).toHaveBeenCalledTimes(1)
 })

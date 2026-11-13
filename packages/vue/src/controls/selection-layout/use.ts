@@ -26,7 +26,7 @@ const TEXT_AUTO_RESIZE: Record<TextResizeMode, SceneNode['textAutoResize']> = {
 
 export function textResizeMode(node: SceneNode): TextResizeMode {
   if (node.textAutoResize === 'WIDTH_AND_HEIGHT') return 'AUTO_WIDTH'
-  if (node.textAutoResize === 'HEIGHT' || node.textAutoResize === 'TRUNCATE') return 'AUTO_HEIGHT'
+  if (node.textAutoResize === 'HEIGHT') return 'AUTO_HEIGHT'
   return 'FIXED'
 }
 

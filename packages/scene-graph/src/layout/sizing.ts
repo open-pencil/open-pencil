@@ -129,8 +129,6 @@ function textSizingUpdates(
     axis === 'HORIZONTAL'
       ? textAutoResizeFor(hugsAxis, hugsOther)
       : textAutoResizeFor(hugsOther, hugsAxis)
-  // Truncated text keeps truncating when it stops hugging.
-  if (autoResize === 'NONE' && node.textAutoResize === 'TRUNCATE') return {}
   return autoResize === node.textAutoResize ? {} : { textAutoResize: autoResize }
 }
 

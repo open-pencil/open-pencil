@@ -17,7 +17,8 @@ import {
   touchedNodeIds,
   withSubagent,
   type AgentSession,
-  watchChatAgent
+  watchChatAgent,
+  subagentAgent
 } from '@/app/automation/agents'
 import { createEditorStore, type EditorStore } from '@/app/editor/session'
 import { presenceOf } from '@/app/presence/registry'
@@ -222,6 +223,18 @@ describe("a coding agent's subagents", () => {
       'the agent that worked on the layer'
     )
   }
+
+  test('a subagent is named by its agent in the document asked about, not another', () => {
+    reported('toolu_a1', 'subagent-a')
+    const shown = work('toolu_a1')
+    const elsewhere = createEditorStore(new SceneGraph())
+    try {
+      expect(subagentAgent(store, 'subagent-a')).toMatchObject({ id: shown.id, name: shown.name })
+      expect(subagentAgent(elsewhere, 'subagent-a')).toBeNull()
+    } finally {
+      elsewhere.preparationController.dispose()
+    }
+  })
 
   test("a call of the chat's own agent stays with its agent, and a subagent keeps its agent", () => {
     reported('toolu_a1', 'subagent-a')

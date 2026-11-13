@@ -21,10 +21,10 @@ import {
   occurrenceAssignmentScales,
   occurrenceScale
 } from './bindings/variables'
-import { isClearedStyle } from './cleared-style'
 import { OVERRIDE_FIELDS, type OverrideField, type RawOverrideField } from './fields'
 import { resolveOccurrencePath } from './interpret'
 import type { InstanceOccurrence } from './occurrence/types'
+import { isClearedStyle } from './style/cleared'
 import { symbolDataOf } from './types'
 
 function occurrenceMetadata(

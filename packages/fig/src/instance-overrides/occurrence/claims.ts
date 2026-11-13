@@ -5,10 +5,11 @@ import type { GUID } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
 import { declareVariableBindingUnits } from '../bindings/variables'
-import { completeClearedStyleClaim } from '../cleared-style'
 import { applyDerivedEntry } from '../derived-symbol-data'
 import type { PropertyLayer } from '../layers'
 import { resolvesInSourceComponent, type InterpreterIndex } from '../source-index'
+import { completeClearedStyleClaim } from '../style/cleared'
+import { yieldToInheritedTextStyle } from '../style/inherited-text'
 import { invalidateInheritedTextData } from '../text-provenance'
 import type { DerivedSymbolOverride } from '../types'
 import { findSegment, isRootGuid, pathError, resolveOccurrencePath, SegmentError } from './path'
@@ -45,6 +46,7 @@ function applyPropertyClaim(
       return rank === undefined || rank >= ownerRank
     })
   )
+  yieldToInheritedTextStyle(target, retained, index.textStyle)
   if (Object.keys(retained).length === 0) {
     return
   }
