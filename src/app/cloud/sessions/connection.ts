@@ -17,7 +17,7 @@ import { tauriFetch } from '@/app/tauri/http'
 import { IS_TAURI } from '@/constants'
 
 import { rememberCloudAccount, type CloudAccount, type CloudServer } from '../servers/store'
-import { forgetCloudLocale, tellCloudLocale } from './locale'
+import { tellCloudLocale } from './locale'
 import { clearCloudSessionToken, readCloudSessionToken } from './token'
 
 /**
@@ -136,7 +136,7 @@ async function signedInConnection(
   }
   rememberCloudAccount(server.id, account)
   // Waiting for approval or for terms, the account is still written to.
-  void tellCloudLocale(server.id, portal)
+  void tellCloudLocale({ server: server.id, account: account.id }, portal)
   if (status.state !== 'active') {
     const state = status.state === 'pending' || status.state === 'terms' ? status.state : 'closed'
     return { ...INITIAL, state, discovery, account }
@@ -203,7 +203,6 @@ async function askServer(server: CloudServer, generation: number): Promise<Cloud
 
 /** Drops what the app knows about a server's session, after signing out or removing it. */
 export function forgetCloudConnection(serverId: string): void {
-  forgetCloudLocale(serverId)
   generations.set(serverId, (generations.get(serverId) ?? 0) + 1)
   checks.delete(serverId)
   const { [serverId]: _removed, ...rest } = cloudConnections.value

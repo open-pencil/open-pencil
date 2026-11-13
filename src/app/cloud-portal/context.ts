@@ -8,11 +8,7 @@ import {
 } from '@open-pencil/cloud/client'
 import type { CloudAccountStatus, CloudDiscovery } from '@open-pencil/cloud/contract'
 
-import {
-  forgetCloudLocale,
-  onCloudLocaleChange,
-  tellCloudLocale
-} from '@/app/cloud/sessions/locale'
+import { onCloudLocaleChange, tellCloudLocale } from '@/app/cloud/sessions/locale'
 
 import { createPortalAuth, type PortalAuth } from './auth'
 
@@ -45,15 +41,17 @@ export async function loadPortalContext(
       }
       account.value = null
     }
-    if (account.value) void tellCloudLocale(origin, api)
-    else forgetCloudLocale(origin)
+    tellLocale()
     return account.value
   }
+  /** The server writes to the account in the language the person reads its pages in. */
+  function tellLocale() {
+    if (account.value) {
+      void tellCloudLocale({ server: origin, account: account.value.user.userId }, api)
+    }
+  }
   await refreshAccount()
-  // The server writes to the account in the language the person reads its pages in.
-  onCloudLocaleChange(() => {
-    if (account.value) void tellCloudLocale(origin, api)
-  })
+  onCloudLocaleChange(tellLocale)
   return {
     host: new URL(origin).host,
     discovery,

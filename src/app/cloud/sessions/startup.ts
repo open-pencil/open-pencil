@@ -52,9 +52,12 @@ const WRITTEN_TO = new Set(['signed-in', 'pending', 'terms'])
 function followCloudLocale(): void {
   onCloudLocaleChange(() => {
     for (const server of cloudServers.value) {
-      const { state, discovery } = cloudConnection(server.id)
-      if (discovery && WRITTEN_TO.has(state)) {
-        void tellCloudLocale(server.id, cloudPortalClient(server, discovery))
+      const { state, discovery, account } = cloudConnection(server.id)
+      if (discovery && account && WRITTEN_TO.has(state)) {
+        void tellCloudLocale(
+          { server: server.id, account: account.id },
+          cloudPortalClient(server, discovery)
+        )
       }
     }
   })
