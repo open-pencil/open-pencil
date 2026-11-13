@@ -45,6 +45,25 @@ export interface RecordEditOptions {
 /** An edit that awaits records a step of its own: what it would join can move on meanwhile. */
 export type AsyncRecordEditOptions = Omit<RecordEditOptions, 'joinStep'>
 
+/**
+ * The undo step of a recorded change. Built outside the edit's own scope, so the step keeps only
+ * the change: not the edit's recording state, nor its options, whose `onRecorded` can hold the
+ * step before it and so every step back to the first, past the history limit.
+ */
+function changeStep(
+  ctx: EditorContext,
+  label: string,
+  change: DocumentChange,
+  selectedBefore: Set<string> | undefined,
+  selectedAfter: Set<string> | undefined
+): UndoEntry {
+  return {
+    label,
+    forward: () => restoreDocumentChange(ctx, change, 'after', selectedAfter),
+    inverse: () => restoreDocumentChange(ctx, change, 'before', selectedBefore)
+  }
+}
+
 function begin(ctx: EditorContext, options: RecordEditOptions) {
   const pageId = options.pageId ?? ctx.state.currentPageId
   const selectedBefore = options.restoresSelection ? new Set(ctx.state.selectedIds) : undefined
@@ -73,11 +92,7 @@ function begin(ctx: EditorContext, options: RecordEditOptions) {
     // An edit that changed nothing, such as a read-only script, leaves no empty step behind.
     if (!isEmptyDocumentChange(change)) {
       const selectedAfter = selectedBefore && new Set(ctx.state.selectedIds)
-      const entry = {
-        label: options.label,
-        forward: () => restoreDocumentChange(ctx, change, 'after', selectedAfter),
-        inverse: () => restoreDocumentChange(ctx, change, 'before', selectedBefore)
-      }
+      const entry = changeStep(ctx, options.label, change, selectedBefore, selectedAfter)
       if (options.joinStep) ctx.undo.extendLastStep(entry)
       else if (options.ownStep) ctx.undo.pushStep(entry)
       else ctx.undo.push(entry)

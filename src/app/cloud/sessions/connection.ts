@@ -8,7 +8,8 @@ import {
   discoverCloud,
   type CloudAPIClient,
   type CloudDiscoveryFailure,
-  type CloudFetch
+  type CloudFetch,
+  type CloudPortalClient
 } from '@open-pencil/cloud/client'
 import type { CloudDiscovery, WorkspaceSummary } from '@open-pencil/cloud/contract'
 
@@ -16,6 +17,7 @@ import { tauriFetch } from '@/app/tauri/http'
 import { IS_TAURI } from '@/constants'
 
 import { rememberCloudAccount, type CloudAccount, type CloudServer } from '../servers/store'
+import { tellCloudLocale } from './locale'
 import { clearCloudSessionToken, readCloudSessionToken } from './token'
 
 /**
@@ -94,14 +96,22 @@ export function cloudAPIClient(server: CloudServer, discovery: CloudDiscovery): 
   return createCloudAPIClient(discovery.apiURL, { fetch: cloudServerFetch(server.id) })
 }
 
+/** The server's account pages' API, as this app's session there. */
+export function cloudPortalClient(
+  server: CloudServer,
+  discovery: CloudDiscovery
+): CloudPortalClient {
+  return createCloudPortalClient({
+    baseURL: new URL(discovery.apiURL).origin,
+    fetch: cloudServerFetch(server.id)
+  })
+}
+
 async function signedInConnection(
   server: CloudServer,
   discovery: CloudDiscovery
 ): Promise<CloudConnection> {
-  const portal = createCloudPortalClient({
-    baseURL: new URL(discovery.apiURL).origin,
-    fetch: cloudServerFetch(server.id)
-  })
+  const portal = cloudPortalClient(server, discovery)
   let status: Awaited<ReturnType<typeof portal.accountStatus>>
   try {
     status = await portal.accountStatus()
@@ -131,6 +141,20 @@ async function signedInConnection(
   }
   const { workspaces } = await cloudAPIClient(server, discovery).listWorkspaces()
   return { state: 'signed-in', discovery, account, workspaces, failure: null }
+}
+
+/** States in which a server has an account to write to, waiting for approval or terms too. */
+const WRITTEN_TO = new Set<CloudSessionState>(['signed-in', 'pending', 'terms'])
+
+/** Tells a server the app's language for the account signed in there, if one is. */
+export function tellCloudConnectionLocale(server: CloudServer): void {
+  const { state, discovery, account } = cloudConnection(server.id)
+  if (discovery && account && WRITTEN_TO.has(state)) {
+    void tellCloudLocale(
+      { server: server.id, account: account.id },
+      cloudPortalClient(server, discovery)
+    )
+  }
 }
 
 /** Asks the server where this app stands and publishes the answer. */
@@ -185,7 +209,11 @@ async function askServer(server: CloudServer, generation: number): Promise<Cloud
       failure: error instanceof CloudClientError ? error.reason : 'unreachable'
     }
   }
-  if (generations.get(server.id) === generation) publish(server.id, next)
+  if (generations.get(server.id) === generation) {
+    publish(server.id, next)
+    // Once the answer is out, so a language picked while the check ran is the one it reports.
+    tellCloudConnectionLocale(server)
+  }
   return next
 }
 

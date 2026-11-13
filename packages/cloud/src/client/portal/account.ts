@@ -144,6 +144,14 @@ export function createAccountAPI(call: CloudCall, { account, tokens, api }: Port
         signal
       )
     },
+    /** The app's language tag; the server writes to the account in it, or the nearest it has. */
+    setLocale(locale: string, signal?: AbortSignal) {
+      return call(
+        (options) => account.locale.$put({ json: { locale } }, options),
+        cloudAccountMutationResponseSchema,
+        signal
+      )
+    },
     updateProfile(name: string, signal?: AbortSignal) {
       return call(
         (options) => account.profile.$post({ json: { name } }, options),

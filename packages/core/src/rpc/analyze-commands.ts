@@ -203,7 +203,7 @@ export const analyzeSpacingCommand: RPCCommand<void, AnalyzeSpacingResult> = {
 
       if (node.itemSpacing > 0)
         gapMap.set(node.itemSpacing, (gapMap.get(node.itemSpacing) ?? 0) + 1)
-      if (node.counterAxisSpacing > 0)
+      if (node.counterAxisSpacing !== null && node.counterAxisSpacing > 0)
         gapMap.set(node.counterAxisSpacing, (gapMap.get(node.counterAxisSpacing) ?? 0) + 1)
 
       for (const pad of [

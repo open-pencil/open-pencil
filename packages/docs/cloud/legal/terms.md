@@ -11,7 +11,7 @@ This is a draft awaiting legal review. It is not in force, and it changes before
 
 Version: 2026-11-15
 
-These terms cover OpenPencil Cloud at `cloud.openpencil.dev` (the "Service"), run by Alena Poyarkova, a sole trader registered in Mexico, [address] ("we"). They don't cover the OpenPencil app, which is open-source software under its own license and works without the Service, or a Cloud server someone else runs: that server's operator sets its own terms.
+These terms cover OpenPencil Cloud at `cloud.openpencil.dev` (the "Service"), run by Alena Poyarkova, a sole trader registered in Mexico under RFC POAL920708M63 ("we"). They don't cover the OpenPencil app, which is open-source software under its own license and works without the Service, or a Cloud server someone else runs: that server's operator sets its own terms.
 
 ## Your account
 
