@@ -37,15 +37,15 @@ function settleParts(
         errorText: unfinishedCallError(part.toolCallId, changed)
       }
     }
-    // A subagent still at work when the reply ended stopped with it, and so did its calls.
+    // A subagent's calls settle as the reply's do; one still at work, or never reported done, as
+    // on ACP's older subagent draft, stopped with the reply.
     const subagent = subagentTranscript(part)
-    // One the agent never reported done, as on ACP's older subagent draft, has no state at all.
-    if (subagent && subagent.state !== 'idle' && subagent.state !== 'unknown') {
-      const settled: SubagentTranscript = {
-        ...subagent,
-        state: 'unknown',
-        parts: settleParts(subagent.parts, changed)
-      }
+    if (subagent) {
+      const parts = settleParts(subagent.parts, changed)
+      const state = subagent.state === 'idle' ? 'idle' : 'unknown'
+      const same = state === subagent.state && parts.every((item, i) => item === subagent.parts[i])
+      if (same) return part
+      const settled: SubagentTranscript = { ...subagent, state, parts }
       return { ...part, type: SUBAGENT_PART, data: settled }
     }
     return part

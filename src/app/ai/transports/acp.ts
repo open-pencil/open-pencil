@@ -286,7 +286,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         const mapper = createUpdateMapper(`turn-${Date.now()}`)
         const subagents = createSubagentTranscripts(
           (chunk) => controller.enqueue(chunk),
-          subagentAgent
+          // The agent each subagent shows as in this chat's document.
+          (subagent) => (this.store ? subagentAgent(this.store, subagent) : null)
         )
         let closed = false
         // The reply's run collects the edits the agent's calls make in the chat's document.
@@ -311,11 +312,12 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         session.onUpdate = (params) => {
           if (closed) return
           const { update } = params
+          // A subagent's own subagents are described on its session, as the agent's are on the chat's.
+          if (update.sessionUpdate === 'subagent_update') subagents.describe(update)
           if (params.sessionId !== sessionId) {
             subagents.update(params.sessionId, update)
             return
           }
-          if (update.sessionUpdate === 'subagent_update') subagents.describe(update)
           if (TURN_UPDATES.has(update.sessionUpdate)) this.recordSession(sessionId)
           for (const chunk of mapper.map(update)) controller.enqueue(chunk)
         }

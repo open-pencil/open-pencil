@@ -5,21 +5,23 @@ import { useActiveEditorStoreRef } from '@/app/editor/active-store'
 import { follow, presenceOf } from '@/app/presence/registry'
 
 /**
- * Following a subagent's cursor in the active document: possible while it works and has one,
- * and stopped by following no one, as any follow is.
+ * Following a subagent's cursor in the active document: it can start while the subagent works and
+ * has one, and a follow already on can always be stopped, also once the subagent rests.
  */
 export function useSubagentFollow(transcript: () => SubagentTranscript | null) {
   const storeRef = useActiveEditorStoreRef()
   const agentId = computed(() => transcript()?.agent?.id)
-  const available = computed(() => {
-    const state = transcript()?.state
-    return !!storeRef.value && !!agentId.value && (state === undefined || state === 'running')
-  })
   const following = computed(() => {
     const store = storeRef.value
     const target = store ? presenceOf(store).following.value : null
     return target?.kind === 'agent' && target.agentId === agentId.value
   })
+  const startable = computed(() => {
+    const state = transcript()?.state
+    return !!storeRef.value && !!agentId.value && (state === undefined || state === 'running')
+  })
+  /** Whether its follow control shows: to start following, or to stop. */
+  const available = computed(() => following.value || startable.value)
 
   function start() {
     const store = storeRef.value

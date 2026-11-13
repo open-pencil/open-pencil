@@ -471,6 +471,11 @@ test('a subagent’s work is known by its session and kept in its own transcript
         update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'Mine' } }
       },
       { session: 'subagent-1', update: toolCall('call-inner') },
+      // The subagent starts one of its own, which it describes on its session.
+      {
+        session: 'subagent-1',
+        update: { sessionUpdate: 'subagent_update', sessionId: 'subagent-2', title: 'Nested' }
+      },
       { update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'Ours' } } },
       { update: toolCall('call-own') }
     ]
@@ -497,6 +502,14 @@ test('a subagent’s work is known by its session and kept in its own transcript
       title: 'Layout',
       parts: expect.arrayContaining([expect.objectContaining({ type: 'text', text: 'Mine' })])
     })
+    const nested = chunks.findLast(
+      (chunk) => chunk.type === SUBAGENT_PART && 'id' in chunk && chunk.id === 'subagent-2'
+    )
+    expect(
+      nested && 'data' in nested
+        ? subagentTranscript({ type: SUBAGENT_PART, data: nested.data })
+        : null
+    ).toMatchObject({ session: 'subagent-2', title: 'Nested' })
   } finally {
     restAgents('acp')
     await chat.destroy()

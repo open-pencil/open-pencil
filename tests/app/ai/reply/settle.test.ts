@@ -115,3 +115,13 @@ test('a subagent at work when the reply ended stops with it, and so do its calls
   expect(second ? subagentTranscript(second)?.state : null).toBe('idle')
   expect(third ? subagentTranscript(third)?.state : null).toBe('unknown')
 })
+
+test('calls a subagent left unfinished settle, also once it no longer reads as at work', () => {
+  const ended = { session: 'ended', state: 'unknown', parts: [call('late', 'input-available')] }
+  const [part] = settleMessage(reply([{ type: SUBAGENT_PART, id: 'ended', data: ended }]), {
+    stopped: false
+  }).parts
+  const settled = part ? subagentTranscript(part) : null
+  expect(settled?.state).toBe('unknown')
+  expect(settled?.parts[0]).toMatchObject({ toolCallId: 'late', state: 'output-error' })
+})

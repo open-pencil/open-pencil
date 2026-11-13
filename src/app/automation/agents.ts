@@ -261,12 +261,12 @@ export interface SubagentAgent {
 }
 
 /**
- * The agent the subagent working in the ACP session `subagent` shows as, once one of its calls
- * reached a document, or null: a subagent that never touches the canvas has none.
+ * The agent the subagent working in the ACP session `subagent` shows as in the document `store`,
+ * once one of its calls reached it, or null: a subagent that never touches it has none there.
  */
-export function subagentAgent(subagent: string): SubagentAgent | null {
+export function subagentAgent(store: EditorStore, subagent: string): SubagentAgent | null {
   for (const agent of sessionAgents) {
-    if (agent.subagent !== subagent) continue
+    if (agent.store !== store || agent.subagent !== subagent) continue
     const { id, name } = agent.handle
     return { id, name, color: colorToHex(localAgentColor(agent.store, id)) }
   }

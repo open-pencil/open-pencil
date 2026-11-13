@@ -37,19 +37,25 @@ export function useSubagentThread(
   })
 
   const follow = useSubagentFollow(() => transcript.value)
+  /** A follow the opened thread asked for before its subagent had a cursor to follow. */
+  let followOnOpen = false
+  watch(follow.available, (ready) => {
+    if (!ready || !followOnOpen) return
+    followOnOpen = false
+    follow.start()
+  })
+  function close() {
+    session.value = null
+    followOnOpen = false
+  }
+
   provide(OPEN_SUBAGENT_THREAD, (id) => {
     session.value = id
-    if (appPreferences.value.chat.followAgents) follow.start()
+    followOnOpen = appPreferences.value.chat.followAgents
+    if (followOnOpen) follow.start()
+    if (follow.following.value) followOnOpen = false
   })
-  watch(conversation, () => {
-    session.value = null
-  })
+  watch(conversation, close)
 
-  return {
-    open: computed(() => transcript.value !== null),
-    transcript: shown,
-    close: () => {
-      session.value = null
-    }
-  }
+  return { open: computed(() => transcript.value !== null), transcript: shown, close }
 }
