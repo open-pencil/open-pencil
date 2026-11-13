@@ -126,10 +126,12 @@ export function createDocumentChanges(editor: Editor) {
     markSaved: (version = capture()) => {
       const captured = capturedHistory.get(version)
       savedHistory = captured ? captured.history : UNKNOWN_HISTORY
-      // A later save still in progress, such as a manual save overlapping an autosave, keeps its own.
-      for (const captured of capturedHistory.keys()) {
-        if (captured <= version) capturedHistory.delete(captured)
+      // A later save still in progress, such as a manual save overlapping an autosave, keeps its own,
+      // and so does another save of this revision.
+      for (const earlier of capturedHistory.keys()) {
+        if (earlier < version) capturedHistory.delete(earlier)
       }
+      if (captured && --captured.saves === 0) capturedHistory.delete(version)
       savedRevision.value = version
     },
     /** Lets go of a save's capture when the save failed or was cancelled, so it keeps no step. */

@@ -278,6 +278,23 @@ test('a save that fails releases its revision, but not a save of the same revisi
   })
 })
 
+test('two saves of the same revision that both succeed keep its history', async () => {
+  await withSavedRectangle(async (editor, id, changes) => {
+    editor.updateNodeWithUndo(id, { width: 30 }, 'Resize')
+    await settle()
+    const manualSave = changes.capture()
+    const autosave = changes.capture()
+    changes.markSaved(manualSave)
+    changes.markSaved(autosave)
+    expect(changes.hasUnsavedChanges()).toBe(false)
+
+    editor.updateNodeWithUndo(id, { width: 50 }, 'Resize')
+    editor.undoAction()
+    await settle()
+    expect(changes.hasUnsavedChanges()).toBe(false)
+  })
+})
+
 test('an edit made after undoing past the save leaves the saved state out of reach', async () => {
   await withSavedRectangle(async (editor, id, changes) => {
     editor.undoAction()
