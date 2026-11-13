@@ -96,6 +96,7 @@
   "subagentDone": "完成",
   "subagentEnded": "已结束",
   "subagentEmpty": "暂无内容。",
+  "subagentStarting": "正在启动…",
   "subagentBack": "聊天",
   "followSubagent": "跟随 {name}",
   "stopFollowingSubagent": "停止跟随 {name}",

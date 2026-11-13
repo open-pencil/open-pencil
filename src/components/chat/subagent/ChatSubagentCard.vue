@@ -57,7 +57,8 @@ const follow = useSubagentFollow(() => transcript.value)
           <span :class="ui.title()">{{ names.name }}</span>
           <span v-if="names.title" :class="ui.subtitle()">{{ names.title }}</span>
         </span>
-        <span v-if="activity" :class="ui.activity()">{{ activity }}</span>
+        <!-- The line is always there, so the card keeps its height as steps come and go. -->
+        <span :class="ui.activity()">{{ activity ?? (working ? ai.subagentStarting : '') }}</span>
       </span>
       <span :class="ui.state()">
         <icon-lucide-loader-circle v-if="working" :class="ui.spinner()" aria-hidden="true" />

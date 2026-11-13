@@ -96,6 +96,7 @@
   "subagentDone": "Terminé",
   "subagentEnded": "Arrêté",
   "subagentEmpty": "Rien à afficher pour l’instant.",
+  "subagentStarting": "Démarrage…",
   "subagentBack": "Discussion",
   "followSubagent": "Suivre {name}",
   "stopFollowingSubagent": "Ne plus suivre {name}",

@@ -96,6 +96,7 @@
   "subagentDone": "Готово",
   "subagentEnded": "Завершён",
   "subagentEmpty": "Пока нечего показать.",
+  "subagentStarting": "Запускается…",
   "subagentBack": "Чат",
   "followSubagent": "Следить за {name}",
   "stopFollowingSubagent": "Перестать следить за {name}",

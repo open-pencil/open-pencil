@@ -96,6 +96,7 @@
   "subagentDone": "完了",
   "subagentEnded": "終了",
   "subagentEmpty": "まだ表示するものはありません。",
+  "subagentStarting": "開始中…",
   "subagentBack": "チャット",
   "followSubagent": "{name} をフォロー",
   "stopFollowingSubagent": "{name} のフォローをやめる",

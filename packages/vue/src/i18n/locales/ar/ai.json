@@ -96,6 +96,7 @@
   "subagentDone": "تم",
   "subagentEnded": "انتهى",
   "subagentEmpty": "لا شيء لعرضه بعد.",
+  "subagentStarting": "يبدأ…",
   "subagentBack": "الدردشة",
   "followSubagent": "تتبّع {name}",
   "stopFollowingSubagent": "إيقاف تتبّع {name}",

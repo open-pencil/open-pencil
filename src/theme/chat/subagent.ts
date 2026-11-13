@@ -8,7 +8,7 @@ export default {
     names: 'flex min-w-0 items-baseline gap-1.5',
     title: 'shrink-0 font-medium text-surface',
     subtitle: 'min-w-0 truncate text-muted',
-    activity: 'truncate',
+    activity: 'min-h-lh truncate',
     state: 'flex shrink-0 items-center gap-1 text-3xs text-muted',
     spinner: 'size-3 animate-spin motion-reduce:animate-none',
     chevron: 'size-3 shrink-0 text-muted',

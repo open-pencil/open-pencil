@@ -96,6 +96,7 @@
   "subagentDone": "Gotowe",
   "subagentEnded": "Zakończono",
   "subagentEmpty": "Na razie nie ma nic do pokazania.",
+  "subagentStarting": "Uruchamianie…",
   "subagentBack": "Czat",
   "followSubagent": "Śledź {name}",
   "stopFollowingSubagent": "Przestań śledzić {name}",

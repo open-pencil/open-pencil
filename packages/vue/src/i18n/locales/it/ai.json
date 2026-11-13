@@ -96,6 +96,7 @@
   "subagentDone": "Fatto",
   "subagentEnded": "Terminato",
   "subagentEmpty": "Ancora niente da mostrare.",
+  "subagentStarting": "Avvio…",
   "subagentBack": "Chat",
   "followSubagent": "Segui {name}",
   "stopFollowingSubagent": "Smetti di seguire {name}",
