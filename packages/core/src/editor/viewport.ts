@@ -65,12 +65,14 @@ function clampZoom(zoom: number): number {
 
 /**
  * The viewport that fills the `size` canvas less `insets` with `bounds`, centred there, as Figma
- * fits layers: zoomed past 100% for small layers, to the maximum zoom for a point.
+ * fits layers: zoomed past 100% for small layers, to the maximum zoom for a point, unless
+ * `maxZoom` stops it sooner.
  */
 export function fitViewport(
   bounds: Rect,
   size: { width: number; height: number },
-  insets: ViewportInsets
+  insets: ViewportInsets,
+  maxZoom = ZOOM_MAX
 ): ViewportTransform {
   // A canvas too small for the insets fits into all of itself rather than a negative area.
   const fitted = size.width > insets.left + insets.right && size.height > insets.top + insets.bottom
@@ -78,7 +80,7 @@ export function fitViewport(
   const areaWidth = fitted ? size.width - insets.left - insets.right : size.width
   const areaHeight = fitted ? size.height - insets.top - insets.bottom : size.height
   const fit = Math.min(areaWidth / bounds.width, areaHeight / bounds.height)
-  const zoom = clampZoom(Number.isNaN(fit) ? 1 : fit)
+  const zoom = clampZoom(Math.min(Number.isNaN(fit) ? 1 : fit, maxZoom))
   return {
     zoom,
     panX: left + areaWidth / 2 - (bounds.x + bounds.width / 2) * zoom,
@@ -141,21 +143,25 @@ export function createViewportActions(ctx: EditorContext) {
 
   /**
    * Fills the canvas less `insets` and the chrome over its edges with the world rectangle,
-   * centred, zooming in or out as needed.
+   * centred, zooming in or out as needed, and in no further than `maxZoom`.
    */
   function zoomToBounds(
     minX: number,
     minY: number,
     maxX: number,
     maxY: number,
-    insets: ViewportInsets = SELECTION_INSETS
+    {
+      insets = SELECTION_INSETS,
+      maxZoom = ZOOM_MAX
+    }: { insets?: ViewportInsets; maxZoom?: number } = {}
   ) {
     const previous = currentViewport()
     const bounds = { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
     const next = fitViewport(
       bounds,
       ctx.getViewportSize(),
-      withChrome(insets, ctx.getViewportChrome())
+      withChrome(insets, ctx.getViewportChrome()),
+      maxZoom
     )
     ctx.state.zoom = next.zoom
     ctx.state.panX = next.panX
@@ -187,7 +193,7 @@ export function createViewportActions(ctx: EditorContext) {
       centerOn(0, 0, 1)
       return
     }
-    zoomToBounds(b.x, b.y, b.x + b.width, b.y + b.height, FIT_INSETS)
+    zoomToBounds(b.x, b.y, b.x + b.width, b.y + b.height, { insets: FIT_INSETS })
   }
 
   function zoomToLevel(level: number) {
