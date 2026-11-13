@@ -86,17 +86,13 @@
   }
 
   /* The copy button sits in the header row's corner, shown while the table is pointed at or
-     focused; the last header cell leaves it room. */
+     focused; the last header cell leaves it room (after the density rules below). */
   [data-markdown='table-controls'] {
-    @apply absolute end-1 top-1 opacity-0 transition-opacity;
+    @apply absolute end-1 top-0 opacity-0 transition-opacity;
   }
 
   [data-markdown='table-wrapper']:is(:hover, :focus-within) [data-markdown='table-controls'] {
     @apply opacity-100;
-  }
-
-  :where(th:last-child) {
-    @apply pe-7;
   }
 
   [data-markdown='table-scroll'] {
@@ -221,4 +217,14 @@
   :where(th, td) {
     @apply px-2.5 py-1.5 text-xs leading-5;
   }
+}
+
+/* Room for the table's copy button beside the last heading, whatever the density's padding; in
+   comfortable text the taller header row centers the button lower. */
+.markdown-content [data-markdown='table'] th:last-child {
+  @apply pe-8;
+}
+
+.markdown-content[data-markdown-density='comfortable'] [data-markdown='table-controls'] {
+  @apply top-1;
 }
