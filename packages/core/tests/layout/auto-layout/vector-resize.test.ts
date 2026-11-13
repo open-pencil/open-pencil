@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { SceneGraph, type SceneNode, type VectorNetwork } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
@@ -103,5 +104,37 @@ describe('a vector layout resizes', () => {
     expect(point(node.fillGeometry[0])).toEqual([200, 200])
     expect(node.strokeGeometry).toEqual([])
     expect(node.vectorNetwork?.vertices[2]).toEqual({ x: 180, y: 40 })
+  })
+
+  test('keeps its path when layout flattens a side, so resizing it back restores the shape', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    const row = graph.createNode('FRAME', page, {
+      width: 100,
+      height: 100,
+      layoutMode: 'HORIZONTAL',
+      primaryAxisSizing: 'FIXED',
+      counterAxisSizing: 'FIXED'
+    })
+    graph.createNode('RECTANGLE', row.id, { width: 100, height: 100 })
+    const vector = graph.createNode('VECTOR', row.id, {
+      width: 100,
+      height: 100,
+      layoutGrow: 1,
+      vectorNetwork: squareNetwork(100),
+      fillGeometry: [moveTo(100, 100)]
+    })
+
+    computeAllLayouts(graph)
+    expect(vector.width).toBe(0)
+
+    graph.reparentNode(vector.id, page)
+    const restored = expectDefined(new FigmaAPI(graph).getNodeById(vector.id))
+    restored.resize(100, 100)
+
+    const node = expectDefined(graph.getNode(vector.id))
+    expect([node.width, node.height]).toEqual([100, 100])
+    expect(node.vectorNetwork?.vertices[2]).toEqual({ x: 100, y: 100 })
+    expect(point(node.fillGeometry[0])).toEqual([100, 100])
   })
 })

@@ -26,7 +26,16 @@ function keptSizeGeometry(node: SceneNode, before: Partial<SceneNode>): Partial<
   if (!saved) return {}
   const width = typeof before.width === 'number' ? before.width : node.width
   const height = typeof before.height === 'number' ? before.height : node.height
-  return scaledGeometryChanges(createResizeSnapshot(node), width, height, node.width, node.height)
+  // A side at zero keeps the path along it, as a plugin resize does. Scaling into that side
+  // multiplies every coordinate by zero, and moving the layer out and sizing it again cannot
+  // bring the shape back.
+  return scaledGeometryChanges(
+    createResizeSnapshot(node),
+    width,
+    height,
+    node.width > 0 ? node.width : width,
+    node.height > 0 ? node.height : height
+  )
 }
 
 interface LayerWrites {
