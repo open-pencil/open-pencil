@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { toRaw } from 'vue'
 
 import { forgetAgentChat, startAgentRun } from '@/app/ai/reply/run'
+import { endAgentSession } from '@/app/automation/agents'
 import { recentDocuments } from '@/app/recent-files'
 import { recentFilesLimit } from '@/app/recent-files/preferences'
 import { appPreferences } from '@/app/settings/preferences/store'
@@ -151,6 +152,18 @@ describe("an MCP client's calls that name no document", () => {
     expect((await draw(two)).target?.documentId).toBe(second.id)
     switchTab(second.id)
     expect((await draw(one)).target?.documentId).toBe(first.id)
+  })
+
+  test('stay on that document when the connection to the MCP server drops and comes back', async () => {
+    const first = createTab()
+    const agent = { session: 'mcp-1', kind: 'mcp' }
+    await draw(agent)
+    createTab()
+
+    // What the bridge does for each session its closed connection carried.
+    endAgentSession('mcp-1')
+
+    expect((await draw(agent)).target?.documentId).toBe(first.id)
   })
 
   test('fail once that document closes, and go to the front tab after the session ends', async () => {

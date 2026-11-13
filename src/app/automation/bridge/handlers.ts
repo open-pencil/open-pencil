@@ -18,6 +18,7 @@ import { createFileHandlers, type AutomationFiles } from '@/app/automation/bridg
 import { handleRPCFallback } from '@/app/automation/bridge/rpc-handler'
 import { handleSelection } from '@/app/automation/bridge/selection-handler'
 import {
+  forgetSessionDocument,
   isUnknownRecord,
   listAutomationDocuments,
   rememberSessionDocument,
@@ -93,7 +94,12 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory, files?:
     }
     if (command === 'agent_session_closed') {
       const session = isUnknownRecord(args) ? args.session : undefined
-      if (typeof session === 'string') endAgentSession(session)
+      if (typeof session === 'string') {
+        // Only the server's word ends the session's document: a dropped connection may come
+        // back with the same session, which must keep working where it did.
+        forgetSessionDocument(session)
+        endAgentSession(session)
+      }
       return { ok: true, result: null }
     }
     if (command === 'get_settings') return handleGetSettings()
