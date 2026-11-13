@@ -8,19 +8,22 @@ import AppCopyButton from '@/components/ui/button/AppCopyButton.vue'
 
 /** A table that scrolls on its own when wide, with a button that copies it as Markdown. */
 const { __node: node } = defineProps<{
-  /** The table as Comark parsed it, which renders back to Markdown. */
   // eslint-disable-next-line vue/prop-name-casing -- Comark passes the node only to `__node`.
-  __node: ElementNode
+  __node?: ElementNode
 }>()
 
 const common = useCommonMessages()
+
+async function markdown(): Promise<string> {
+  return node ? renderMarkdown({ nodes: [node] }) : ''
+}
 </script>
 
 <template>
   <div data-markdown="table-wrapper">
     <div data-markdown="table-controls">
       <AppCopyButton
-        :value="() => renderMarkdown({ nodes: [node] })"
+        :value="markdown"
         :label="common.copyTable"
         :copied-label="common.copied"
         icon

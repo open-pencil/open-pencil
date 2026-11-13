@@ -114,9 +114,12 @@
   }
 }
 
-/* Shiki writes the block's and each token's dark color as --shiki-dark; the dark theme uses it. */
-:root[data-theme='dark'] .markdown-content :where(pre, pre span)[style*='--shiki-dark'] {
+/* Shiki's dual themes: each token carries its dark colors as --shiki-dark variables. */
+:root[data-theme='dark'] .markdown-content :where(.shiki, .shiki span) {
   color: var(--shiki-dark) !important;
+  font-style: var(--shiki-dark-font-style) !important;
+  font-weight: var(--shiki-dark-font-weight) !important;
+  text-decoration: var(--shiki-dark-text-decoration) !important;
 }
 
 /* What arrives while a reply streams fades in: each new word, list item, code block, and line. */

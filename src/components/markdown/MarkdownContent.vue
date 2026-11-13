@@ -1,21 +1,15 @@
 <script setup lang="ts">
-import { MarkdownDocument } from '@comark/vue'
-import type { MarkdownDocument as ParsedMarkdown } from 'comark'
+import type { MarkdownDocument } from 'comark'
 import { tv } from 'tailwind-variants'
 import { computed, provide, shallowRef, watch, type Component } from 'vue'
 
 import { animateWords } from '@/app/shell/markdown/animate'
 import { createMarkdownParser, type MarkdownParser } from '@/app/shell/markdown/config'
 import { animationsEnabled } from '@/app/shell/motion'
-import InlineCode from '@/components/markdown/InlineCode.vue'
-import MarkdownCodeBlock from '@/components/markdown/MarkdownCodeBlock.vue'
-import MarkdownImage from '@/components/markdown/MarkdownImage.vue'
-import MarkdownLink from '@/components/markdown/MarkdownLink.vue'
-import MarkdownTable from '@/components/markdown/MarkdownTable.vue'
-import TaskCheckbox from '@/components/markdown/TaskCheckbox.vue'
 import theme, { type MarkdownDensity } from '@/theme/markdown'
 
 import { MARKDOWN_ANIMATING } from './context'
+import { AppMarkdownDocument } from './document'
 
 const markdownTheme = tv(theme)
 
@@ -42,17 +36,7 @@ const streaming = computed(() => mode === 'streaming')
 const animating = computed(() => streaming.value && animationsEnabled.value)
 provide(MARKDOWN_ANIMATING, animating)
 
-const markdownComponents = computed(() => ({
-  a: MarkdownLink,
-  code: InlineCode,
-  img: MarkdownImage,
-  input: TaskCheckbox,
-  pre: MarkdownCodeBlock,
-  table: MarkdownTable,
-  ...components
-}))
-
-const parsed = shallowRef<ParsedMarkdown | null>(null)
+const parsed = shallowRef<MarkdownDocument | null>(null)
 let parser: Promise<MarkdownParser> | undefined
 let parserHighlights = highlightCode
 
@@ -69,7 +53,11 @@ watch(
   { immediate: true }
 )
 
-/** While a reply streams, each word is its own element, so only new words fade in. */
+/**
+ * While a reply streams, each word is its own element, so only new words fade in. Comark draws
+ * a caret but no entry animation, and its plugins cannot tell a streaming parse from the final
+ * one, so the words are split here, on the parsed document, before it renders.
+ */
 const document = computed(() => {
   const value = parsed.value
   if (!value || !animating.value) return value
@@ -79,12 +67,12 @@ const document = computed(() => {
 
 <template>
   <div data-slot="markdown" :class="ui.root({ class: className })">
-    <!-- Comark's document component has an async setup, which Vue renders only in a Suspense. -->
+    <!-- Comark's renderers are async components and render inside a Suspense. -->
     <Suspense>
-      <MarkdownDocument
+      <AppMarkdownDocument
         v-if="document"
         :value="document"
-        :components="markdownComponents"
+        :components="components"
         :streaming="streaming"
         :class="ui.markdown()"
         :data-markdown-mode="mode"
