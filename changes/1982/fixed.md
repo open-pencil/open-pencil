@@ -1,0 +1,1 @@
+- An inside stroke follows a frame when layout or a resize changes its size, including a nested instance that grows with its label, instead of keeping the outline saved for the old size.
