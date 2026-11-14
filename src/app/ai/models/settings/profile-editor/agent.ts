@@ -3,6 +3,11 @@ import { computed, ref, watch } from 'vue'
 
 import { acpAgentFor, type ACPAgentDef, type ModelOption } from '@open-pencil/core/constants'
 
+import {
+  rememberAgentOffer,
+  rememberedAgentOffer,
+  type RememberedAgentOffer
+} from '@/app/ai/agents/acp/offers'
 import { readAgentOffer, type AgentOffer } from '@/app/ai/agents/acp/oneoff'
 import type { AIModelProfileDraft } from '@/app/ai/models'
 import { canRunHostProcesses } from '@/app/tauri/capabilities'
@@ -15,17 +20,23 @@ export interface AgentModelSource {
   /** Agents run as processes of the desktop app only. */
   available: () => boolean
   read: (agent: ACPAgentDef) => Promise<AgentOffer>
+  /** What the agent offered last time, shown at once; left out, the agent is always asked. */
+  remembered?: (agent: ACPAgentDef) => Promise<RememberedAgentOffer | null>
+  remember?: (agent: ACPAgentDef, offer: AgentOffer) => Promise<void>
 }
 
 export const HOST_AGENT_MODELS: AgentModelSource = {
   available: canRunHostProcesses,
-  read: readAgentOffer
+  read: readAgentOffer,
+  remembered: rememberedAgentOffer,
+  remember: rememberAgentOffer
 }
 
 /**
- * The models an ACP agent offers while a draft uses it, read by starting the agent once each time
- * the draft changes to one, and whether it takes images. Reading fails quietly: the draft keeps
- * the model it names, and the person can retry or type a model ID.
+ * The models an ACP agent offers while a draft uses it, and whether it takes images. What the
+ * agent offered last time shows at once; the agent is started to ask only when nothing recent is
+ * remembered, or on a retry. Reading fails quietly: the draft keeps the model it names, and the
+ * person can retry or type a model ID.
  */
 export function useAgentModelSelection(
   draft: AIModelProfileDraft,
@@ -39,7 +50,14 @@ export function useAgentModelSelection(
   // An answer belongs to the read that asked for it, so a later change or close drops it.
   let reading = 0
 
-  async function read(): Promise<void> {
+  function show(offer: AgentOffer): void {
+    models.value = offer.models
+    imageInput.value = offer.imageInput
+    state.value = 'ready'
+  }
+
+  /** `again` asks the agent even when its last offer is recent. */
+  async function read(again = false): Promise<void> {
     const current = agent.value
     const request = ++reading
     models.value = []
@@ -48,22 +66,32 @@ export function useAgentModelSelection(
       state.value = 'idle'
       return
     }
-    state.value = 'loading'
+    let remembered: RememberedAgentOffer | null = null
+    if (source.remembered && !again) {
+      remembered = await source.remembered(current).catch(() => null)
+      if (request !== reading) return
+    }
+    if (remembered) {
+      show(remembered.offer)
+      if (remembered.fresh) return
+    } else {
+      state.value = 'loading'
+    }
     try {
       const offer = await source.read(current)
       if (request !== reading) return
-      models.value = offer.models
-      imageInput.value = offer.imageInput
-      state.value = 'ready'
+      show(offer)
+      void source.remember?.(current, offer)
     } catch {
-      if (request === reading) state.value = 'failed'
+      // An older offer stays on screen; only a read with nothing to show reports the failure.
+      if (request === reading && !remembered) state.value = 'failed'
     }
   }
 
-  watch(agent, read, { immediate: true })
+  watch(agent, () => read(), { immediate: true })
   tryOnScopeDispose(() => {
     reading++
   })
 
-  return { models, imageInput, state, retry: read }
+  return { models, imageInput, state, retry: () => read(true) }
 }

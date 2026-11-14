@@ -124,4 +124,78 @@ describe('the models of the agent a draft uses', () => {
     expect(selection.models.value).toEqual([])
     expect(selection.state.value).toBe('loading')
   })
+
+  describe('when the agent’s last offer is remembered', () => {
+    const olderModels: AgentOffer = {
+      imageInput: false,
+      models: [{ id: 'default', name: 'Default' }]
+    }
+    /** Agents whose last offer is `offer`, and the offers kept for next time. */
+    function remembering(offer: AgentOffer, fresh: boolean) {
+      const base = agents()
+      const kept: AgentOffer[] = []
+      const source: AgentModelSource = {
+        ...base.source,
+        remembered: async () => ({ offer, fresh }),
+        remember: async (_agent, next) => {
+          kept.push(next)
+        }
+      }
+      return { ...base, source, kept }
+    }
+
+    /** The remembered offer is read from storage, which answers after the selection starts. */
+    async function remembered(): Promise<void> {
+      await Promise.resolve()
+      await Promise.resolve()
+      await nextTick()
+    }
+
+    test('a recent one shows at once and starts no agent', async () => {
+      const { source, asked } = remembering(claudeModels, true)
+      const { selection } = selectionFor(CLAUDE, source)
+      await remembered()
+      expect(selection.state.value).toBe('ready')
+      expect(selection.models.value).toEqual(claudeModels.models)
+      expect(selection.imageInput.value).toBe(true)
+      expect(asked).toEqual([])
+    })
+
+    test('an older one shows while the agent is asked again, and the answer is kept', async () => {
+      const { source, answers, asked, kept } = remembering(olderModels, false)
+      const { selection } = selectionFor(CLAUDE, source)
+      await remembered()
+      expect(selection.state.value).toBe('ready')
+      expect(selection.models.value).toEqual(olderModels.models)
+      expect(asked).toEqual(['claude-code'])
+      answers[0]?.resolve(claudeModels)
+      await nextTick()
+      await nextTick()
+      expect(selection.models.value).toEqual(claudeModels.models)
+      expect(selection.imageInput.value).toBe(true)
+      expect(kept).toEqual([claudeModels])
+    })
+
+    test('an older one stays when the agent cannot be asked again', async () => {
+      const { source, answers } = remembering(olderModels, false)
+      const { selection } = selectionFor(CLAUDE, source)
+      await remembered()
+      answers[0]?.reject(new Error('The agent did not start.'))
+      await nextTick()
+      await nextTick()
+      expect(selection.state.value).toBe('ready')
+      expect(selection.models.value).toEqual(olderModels.models)
+    })
+
+    test('a retry asks the agent even when its offer is recent', async () => {
+      const { source, answers, asked } = remembering(olderModels, true)
+      const { selection } = selectionFor(CLAUDE, source)
+      await remembered()
+      const retried = selection.retry()
+      expect(asked).toEqual(['claude-code'])
+      answers[0]?.resolve(claudeModels)
+      await retried
+      expect(selection.models.value).toEqual(claudeModels.models)
+    })
+  })
 })
