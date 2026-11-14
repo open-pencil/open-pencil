@@ -183,6 +183,7 @@ describe('vectorNetworkToSVGPaths()', () => {
     expect(paths).toEqual(['M0 0L10 0M20 0L30 0'])
   })
 
+  // Traced from the first segment's start, as the canvas draws it.
   test('recognizes closed unfilled segment chains', () => {
     const paths = vectorNetworkToSVGPaths({
       vertices: [
@@ -198,7 +199,7 @@ describe('vectorNetworkToSVGPaths()', () => {
       regions: []
     })
 
-    expect(paths).toEqual(['M10 0L0 10L0 0L10 0Z'])
+    expect(paths).toEqual(['M0 0L10 0L0 10L0 0Z'])
   })
 
   test('empty network', () => {

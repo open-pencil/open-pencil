@@ -6,6 +6,7 @@ import {
   trimArrowShafts
 } from '@open-pencil/scene-graph/arrow-caps'
 import { strokeSideWeights } from '@open-pencil/scene-graph/geometry'
+import { addStrokeRunToPath, strokeRuns } from '@open-pencil/scene-graph/paths'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
@@ -19,12 +20,7 @@ import {
   withStrokeDash
 } from '#core/canvas/strokes'
 import { drawIndividualSideStrokes } from '#core/canvas/strokes/sides'
-import {
-  addStrokeRunToPath,
-  strokeRuns,
-  vectorNetworkToCenterlinePath,
-  vectorNetworkToPath
-} from '#core/vector'
+import { vectorNetworkToCenterlinePath, vectorNetworkToPath } from '#core/vector'
 import { isOpenVectorNetwork } from '#core/vector/connectivity'
 
 import { drawLineStroke } from './line'

@@ -1,7 +1,6 @@
 import type { GeometryPath, VectorNetwork } from '@open-pencil/scene-graph'
 import type { PathSink } from '@open-pencil/scene-graph/paths'
-
-import { addLoopToPath, addOpenSegmentsToPath } from './path-helpers'
+import { addLoopToPath, addOpenSegmentsToPath } from '@open-pencil/scene-graph/paths'
 
 const CMD_CLOSE = 0
 const CMD_MOVE_TO = 1

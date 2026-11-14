@@ -3,10 +3,10 @@ import type { Fill, SceneGraph, SceneNode, Stroke, WindingRule } from '@open-pen
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import type { GroupFitOptions } from '@open-pencil/scene-graph/group-bounds'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
+import { addOpenSegmentsToPath } from '@open-pencil/scene-graph/paths'
 
 import { getTextOutlineSupport } from '#core/text/outlines'
 import { isOpenVectorNetwork } from '#core/vector/connectivity'
-import { addOpenSegmentsToPath } from '#core/vector/path-helpers'
 
 import { clearFillShader } from './fills'
 import { sharedPath } from './paths/shared'

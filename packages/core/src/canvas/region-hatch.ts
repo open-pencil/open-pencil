@@ -2,9 +2,9 @@ import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { addLoopToPath } from '@open-pencil/scene-graph/paths'
 
 import { regionHatchPeriod } from '#core/vector'
-import { addLoopToPath } from '#core/vector/path-helpers'
 
 import type { RenderOverlays, SkiaRenderer } from './renderer'
 

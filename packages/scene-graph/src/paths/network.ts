@@ -1,6 +1,6 @@
-import type { VectorSegment, VectorVertex } from '@open-pencil/scene-graph'
-import type { PathSink } from '@open-pencil/scene-graph/paths'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { Vector } from '../primitives'
+import type { VectorSegment, VectorVertex } from '../types'
+import type { PathSink } from './sink'
 
 export function addSegmentDirected(
   path: PathSink,
@@ -32,6 +32,11 @@ export function findChainStart(chain: number[], segments: VectorSegment[]): numb
   return first.start
 }
 
+/**
+ * Draws one region loop. It starts at the end of its first segment away from the second, as a
+ * loop's stored order runs; a segment that does not continue from the last starts a new subpath,
+ * and the loop closes only when it runs unbroken back to where it started.
+ */
 export function addLoopToPath(
   path: PathSink,
   loop: number[],
@@ -39,34 +44,27 @@ export function addLoopToPath(
   vertices: VectorVertex[]
 ): void {
   if (loop.length === 0) return
-
-  const firstSeg = segments[loop[0]]
-
-  // Determine the starting vertex — if the loop has multiple segments,
-  // the first segment's direction is determined by which vertex connects
-  // to the second segment.
-  let current: number
-  if (loop.length === 1) {
-    current = firstSeg.start
-  } else {
-    const secondSeg = segments[loop[1]]
-    if (firstSeg.end === secondSeg.start || firstSeg.end === secondSeg.end) {
-      current = firstSeg.start
-    } else {
-      current = firstSeg.end
+  const first = segments[loop[0]]
+  const second = loop.length > 1 ? segments[loop[1]] : null
+  const secondMeetsStart = second?.start === first.start || second?.end === first.start
+  const secondMeetsEnd = second?.start === first.end || second?.end === first.end
+  const start = !second || secondMeetsEnd || !secondMeetsStart ? first.start : first.end
+  let current = start
+  let broken = false
+  path.moveTo(vertices[start].x, vertices[start].y)
+  for (const index of loop) {
+    const segment = segments[index]
+    const connected = segment.start === current || segment.end === current
+    const forward = segment.start === current || !connected
+    if (!connected) {
+      broken = true
+      const from = vertices[segment.start]
+      path.moveTo(from.x, from.y)
     }
+    addSegmentDirected(path, segment, vertices, forward)
+    current = forward ? segment.end : segment.start
   }
-
-  path.moveTo(vertices[current].x, vertices[current].y)
-
-  for (const segIdx of loop) {
-    const seg = segments[segIdx]
-    const forward = seg.start === current
-    addSegmentDirected(path, seg, vertices, forward)
-    current = forward ? seg.end : seg.start
-  }
-
-  path.close()
+  if (!broken && current === start) path.close()
 }
 
 function isStraight(seg: VectorSegment): boolean {
