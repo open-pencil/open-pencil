@@ -2,8 +2,6 @@ import { describe, expect, test } from 'bun:test'
 
 import type { Font } from '@open-pencil/canvaskit'
 import { createEditor } from '@open-pencil/core'
-import type { RotationPreview } from '@open-pencil/core/geometry'
-import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import {
   hitTestComponentLabel,
@@ -21,48 +19,30 @@ const labelFont = {
   }
 } as Font
 
-/**
- * The canvas the editor hit-tests names through: the real label hit tests, at the editor's zoom.
- * A stand-in CanvasKit is enough, because a right-click reads names from the renderer.
- */
-function installLabelHits(editor: ReturnType<typeof createEditor>) {
-  const pageId = editor.state.currentPageId
-  const hit = (
-    testAt: typeof hitTestFrameTitle,
-    graph: SceneGraph,
-    x: number,
-    y: number,
-    preview?: RotationPreview | null
-  ) => testAt(graph, x, y, editor.state.zoom, pageId, labelFont, undefined, { preview })
-  editor.setCanvasKit(
-    {} as Parameters<typeof editor.setCanvasKit>[0],
-    {
-      hitTestFrameTitle: (graph, x, y, preview) => hit(hitTestFrameTitle, graph, x, y, preview),
-      hitTestSectionTitle: (graph, x, y, preview) => hit(hitTestSectionTitle, graph, x, y, preview),
-      hitTestComponentLabel: (graph, x, y, preview) =>
-        hit(hitTestComponentLabel, graph, x, y, preview)
-    } as Parameters<typeof editor.setCanvasKit>[1]
-  )
-}
+type LabelRenderer = Parameters<ReturnType<typeof createEditor>['setCanvasKit']>[1]
 
 /**
- * One pane's canvas. A name is hit with that pane's page and zoom, which the renderer stores
- * apart from the editor's current view.
+ * One pane's canvas with the real label hit tests: a name is hit with that pane's page and zoom,
+ * which the renderer keeps apart from the editor's current view. A stand-in CanvasKit is enough,
+ * because a right-click reads names from the renderer.
  */
-function paneLabelRenderer(pageId: string, zoom: number) {
-  const hit = (
-    testAt: typeof hitTestFrameTitle,
-    graph: SceneGraph,
-    x: number,
-    y: number,
-    preview?: RotationPreview | null
-  ) => testAt(graph, x, y, zoom, pageId, labelFont, undefined, { preview })
+function labelRenderer(pageId: string, zoom: () => number): LabelRenderer {
+  const hit =
+    (testAt: typeof hitTestFrameTitle): LabelRenderer['hitTestFrameTitle'] =>
+    (graph, x, y, preview, filter) =>
+      testAt(graph, x, y, zoom(), pageId, labelFont, undefined, { preview, ...filter })
   return {
-    hitTestFrameTitle: (graph, x, y, preview) => hit(hitTestFrameTitle, graph, x, y, preview),
-    hitTestSectionTitle: (graph, x, y, preview) => hit(hitTestSectionTitle, graph, x, y, preview),
-    hitTestComponentLabel: (graph, x, y, preview) =>
-      hit(hitTestComponentLabel, graph, x, y, preview)
-  } as Parameters<ReturnType<typeof createEditor>['setCanvasKit']>[1]
+    hitTestFrameTitle: hit(hitTestFrameTitle),
+    hitTestSectionTitle: hit(hitTestSectionTitle),
+    hitTestComponentLabel: hit(hitTestComponentLabel)
+  } as LabelRenderer
+}
+
+function installLabelHits(editor: ReturnType<typeof createEditor>) {
+  editor.setCanvasKit(
+    {} as Parameters<typeof editor.setCanvasKit>[0],
+    labelRenderer(editor.state.currentPageId, () => editor.state.zoom)
+  )
 }
 
 describe('editor hit testing', () => {
@@ -248,8 +228,8 @@ describe('editor hit testing', () => {
       width: 200,
       height: 120
     })
-    const paneA = paneLabelRenderer(pageA, 1)
-    const paneB = paneLabelRenderer(pageB, 2)
+    const paneA = labelRenderer(pageA, () => 1)
+    const paneB = labelRenderer(pageB, () => 2)
     const canvasKit = {} as Parameters<typeof editor.setCanvasKit>[0]
     editor.setCanvasKit(canvasKit, paneA)
     editor.setCanvasKit(canvasKit, paneB)
@@ -286,5 +266,52 @@ describe('editor hit testing', () => {
 
     editor.selectAtPoint(108, 86)
     expect([...editor.state.selectedIds]).toEqual([other.id, frame.id])
+  })
+
+  // In Figma a right-click on a locked layer's name selects it, as one on its body does.
+  test('selectAtPoint on a locked frame, section, or component name selects that layer', () => {
+    const editor = createEditor()
+    const pageId = editor.state.currentPageId
+    const frame = editor.graph.createNode('FRAME', pageId, {
+      name: 'Frame',
+      x: 100,
+      y: 100,
+      width: 200,
+      height: 120,
+      locked: true
+    })
+    const section = editor.graph.createNode('SECTION', pageId, {
+      name: 'Section',
+      x: 400,
+      y: 100,
+      width: 200,
+      height: 160,
+      locked: true
+    })
+    const component = editor.graph.createNode('COMPONENT', pageId, {
+      name: 'Button',
+      x: 100,
+      y: 360,
+      width: 120,
+      height: 40,
+      locked: true
+    })
+    const other = editor.graph.createNode('RECTANGLE', pageId, {
+      x: 700,
+      y: 100,
+      width: 80,
+      height: 40
+    })
+    installLabelHits(editor)
+
+    editor.select([other.id])
+    editor.selectAtPoint(108, 86)
+    expect([...editor.state.selectedIds]).toEqual([frame.id])
+
+    editor.selectAtPoint(410, 80)
+    expect([...editor.state.selectedIds]).toEqual([section.id])
+
+    editor.selectAtPoint(108, 348)
+    expect([...editor.state.selectedIds]).toEqual([component.id])
   })
 })

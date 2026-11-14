@@ -1,1 +1,1 @@
-- Right-clicking a frame, section, or component name on the canvas selects that layer, so the context menu applies to it.
+- Right-clicking a frame, section, or component name on the canvas selects that layer, locked or not, so the context menu applies to it. Clicking or double-clicking a locked component's or section's name passes through it, as for locked frames.

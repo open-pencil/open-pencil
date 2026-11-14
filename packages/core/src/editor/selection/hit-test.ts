@@ -39,31 +39,24 @@ export function createSelectionHitTestActions(
   }
 
   /**
-   * A name drawn on one canvas, in draw order: a component's label, then a section title, then a
-   * frame title. The scene canvas does not paint names; the overlay canvas of a pane does.
+   * A name drawn on a pane's overlay canvas, in draw order: a component's label, then a section
+   * title, then a frame title. A right-click hits a locked layer's name as it hits its body.
    */
-  function labelOnRenderer(renderer: SkiaRenderer, cx: number, cy: number): SceneNode | null {
+  function labelAt(renderer: SkiaRenderer, cx: number, cy: number): SceneNode | null {
     const preview = ctx.state.rotationPreview
     const graph = ctx.graph
+    const filter = { locked: true }
     if (typeof renderer.hitTestComponentLabel === 'function') {
-      const component = renderer.hitTestComponentLabel(graph, cx, cy, preview)
+      const component = renderer.hitTestComponentLabel(graph, cx, cy, preview, filter)
       if (component) return component
     }
     if (typeof renderer.hitTestSectionTitle === 'function') {
-      const section = renderer.hitTestSectionTitle(graph, cx, cy, preview)
+      const section = renderer.hitTestSectionTitle(graph, cx, cy, preview, filter)
       if (section) return section
     }
     return typeof renderer.hitTestFrameTitle === 'function'
-      ? renderer.hitTestFrameTitle(graph, cx, cy, preview)
+      ? renderer.hitTestFrameTitle(graph, cx, cy, preview, filter)
       : null
-  }
-
-  /**
-   * A name above a frame, section, or component on the canvas that was clicked. Each pane hit-tests
-   * with its own page, zoom, viewport, and label cache, so another pane's canvas is not asked.
-   */
-  function labelAt(renderer: SkiaRenderer | null, cx: number, cy: number): SceneNode | null {
-    return renderer ? labelOnRenderer(renderer, cx, cy) : null
   }
 
   /**
@@ -74,8 +67,10 @@ export function createSelectionHitTestActions(
    * entered container follows the selection, as it does after a press.
    */
   function selectAtPoint(cx: number, cy: number, renderer?: SkiaRenderer | null) {
+    // Each pane hit-tests names with its own page, zoom, viewport, and label cache.
+    const labels = renderer === undefined ? ctx.getRenderer() : renderer
     const hit =
-      labelAt(renderer === undefined ? ctx.getRenderer() : renderer, cx, cy) ??
+      (labels ? labelAt(labels, cx, cy) : null) ??
       hitAt(cx, cy, false, true) ??
       ctx.graph.hitTestOpenContainer(cx, cy, ctx.state.currentPageId)
     if (hit) {
