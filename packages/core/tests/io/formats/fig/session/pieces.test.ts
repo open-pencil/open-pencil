@@ -65,3 +65,23 @@ test('a page load that fails after some pieces leaves none of its layers', async
     client.terminate()
   }
 })
+
+test('a page load that fails keeps a layer added inside its layers meanwhile', async () => {
+  const { graph, page, layers } = pageWithLayers(1)
+  const frame = { ...layers[0], type: 'FRAME' as const, x: 40, y: 30 }
+  const worker = populationPort()
+  const client = createPopulationWorkerClient(graph, worker.worker, worker.port)
+  try {
+    const pending = client.populate(page.id)
+    const { requestId } = worker.request()
+    worker.send({ type: 'population-chunk', requestId, created: [frame] })
+    const added = graph.createNode('RECTANGLE', frame.id, { name: 'Added', x: 5, y: 5 })
+    worker.send({ type: 'population-error', requestId, error: 'Worker failed' })
+    expect(await pending).toBeNull()
+    expect(graph.getNode(frame.id)).toBeUndefined()
+    expect(graph.getNode(added.id)?.parentId).toBe(page.id)
+    expect(graph.getAbsolutePosition(added.id)).toEqual({ x: 45, y: 35 })
+  } finally {
+    client.terminate()
+  }
+})

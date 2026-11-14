@@ -204,10 +204,22 @@ export function beginFigPopulation(graph: SceneGraph) {
       })
       return { diverged, staleInstances }
     },
-    /** Removes the layers added so far, for a load that will not finish. */
+    /**
+     * Removes the layers added so far, for a load that will not finish. A layer someone put
+     * inside one of them meanwhile is not the load's: it moves out to the nearest layer that
+     * stays, keeping its place on the canvas, before the load's layer goes.
+     */
     rollback(): void {
       graph.applyImportedStateDuring(() => {
-        for (const id of created.toReversed()) graph.deleteNode(id)
+        for (const id of created.toReversed()) {
+          const node = graph.getNode(id)
+          if (!node) continue
+          const parentId = node.parentId
+          for (const childId of node.childIds.filter((childId) => !createdIds.has(childId))) {
+            if (parentId) graph.reparentNode(childId, parentId)
+          }
+          graph.deleteNode(id)
+        }
       })
       created.length = 0
       createdIds.clear()
