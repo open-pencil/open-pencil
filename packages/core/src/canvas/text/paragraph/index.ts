@@ -5,7 +5,8 @@ import type {
   Paragraph,
   ParagraphBuilder,
   TextFontFeatures,
-  TextFontVariations
+  TextFontVariations,
+  TextStyle
 } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
@@ -19,6 +20,8 @@ import {
   type ParagraphPaintStyle,
   type ParagraphBuildOptions
 } from '#core/canvas/text/paint'
+import { JOINER, type Joiner } from '#core/canvas/text/paragraph/joiners'
+import { styledRanges } from '#core/canvas/text/paragraph/runs'
 import type { TextRenderer } from '#core/canvas/text/renderer'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
 import { autoWidthWrapWidth } from '#core/layout/text-measurement'
@@ -54,20 +57,21 @@ export function buildTruncateOpts(node: ParagraphNode): { maxLines?: number; ell
   return opts
 }
 
-function getParagraphTextAlign(
-  ck: CanvasKit,
+export type ParagraphTextAlign = 'Left' | 'Right' | 'Center' | 'Justify'
+
+export function paragraphTextAlign(
   node: Pick<SceneNode, 'textAlignHorizontal' | 'textDirection' | 'text'>
-) {
+): ParagraphTextAlign {
   const direction = resolveNodeTextDirection(node)
   switch (node.textAlignHorizontal) {
     case 'CENTER':
-      return ck.TextAlign.Center
+      return 'Center'
     case 'RIGHT':
-      return direction === 'RTL' ? ck.TextAlign.Left : ck.TextAlign.Right
+      return direction === 'RTL' ? 'Left' : 'Right'
     case 'JUSTIFIED':
-      return ck.TextAlign.Justify
+      return 'Justify'
     default:
-      return direction === 'RTL' ? ck.TextAlign.Right : ck.TextAlign.Left
+      return direction === 'RTL' ? 'Right' : 'Left'
   }
 }
 
@@ -143,7 +147,7 @@ function pushStyleRun(
   fontFamilies: (primary: string, face: NamedFace) => string[],
   halfLeading: boolean,
   paintStyle?: ParagraphPaintStyle
-): void {
+): TextStyle {
   const ck = r.ck
   const style = run.style
   const runFontSize = style.fontSize ?? baseFontSize
@@ -187,7 +191,10 @@ function pushStyleRun(
     halfLeading
   })
   pushParagraphStyle(builder, textStyle, paintStyle)
+  return textStyle
 }
+
+type AddText = (start: number, end: number, style: TextStyle) => void
 
 /** `text[start, end)` in the case each of its characters has. */
 function addParagraphText(
@@ -199,38 +206,68 @@ function addParagraphText(
   builder.addText(laidOutText(shownTextSlice(node, start, end)))
 }
 
+function joinedTextAdder(
+  ck: CanvasKit,
+  builder: ParagraphBuilder,
+  node: ParagraphNode,
+  joiners: readonly Joiner[],
+  paintStyle: ParagraphPaintStyle | undefined
+): AddText {
+  let next = 0
+  return (start, end, style) => {
+    while (next < joiners.length && joiners[next].at <= start) {
+      next++
+    }
+    let from = start
+    for (; next < joiners.length && joiners[next].at <= end; next++) {
+      const joiner = joiners[next]
+      addParagraphText(builder, node, from, joiner.at)
+      const joinerStyle = new ck.TextStyle({ ...style, letterSpacing: -joiner.spacing })
+      pushParagraphStyle(builder, joinerStyle, paintStyle)
+      builder.addText(JOINER)
+      builder.pop()
+      from = joiner.at
+    }
+    addParagraphText(builder, node, from, end)
+  }
+}
+
 function addStyledRuns(
   r: TextRenderer,
   builder: ParagraphBuilder,
   node: ParagraphNode,
-  baseColor: Float32Array,
-  baseFontSize: number,
+  base: { color: Float32Array; fontSize: number; style: TextStyle },
   fontFamilies: (primary: string, face: NamedFace) => string[],
   halfLeading: boolean,
+  addText: AddText,
   paintStyle?: ParagraphPaintStyle
 ): void {
   const text = node.text
   let pos = 0
 
-  for (const run of node.styleRuns) {
-    if (pos < run.start) addParagraphText(builder, node, pos, run.start)
-    pushStyleRun(
+  for (const { start, end, run } of styledRanges(text, node.styleRuns)) {
+    if (pos < start) {
+      addText(pos, start, base.style)
+    }
+    const style = pushStyleRun(
       r,
       builder,
       node,
       run,
-      baseColor,
-      baseFontSize,
+      base.color,
+      base.fontSize,
       fontFamilies,
       halfLeading,
       paintStyle
     )
-    addParagraphText(builder, node, run.start, run.start + run.length)
+    addText(start, end, style)
     builder.pop()
-    pos = run.start + run.length
+    pos = end
   }
 
-  if (pos < text.length) addParagraphText(builder, node, pos, text.length)
+  if (pos < text.length) {
+    addText(pos, text.length, base.style)
+  }
 }
 
 /** What a paragraph that is one block of a longer text needs beyond its node's own style. */
@@ -239,6 +276,7 @@ export interface ParagraphBlockOptions {
   firstLineIndent?: number
   /** Truncation for this block in place of the node's. */
   truncation?: { maxLines?: number; ellipsis?: string }
+  joiners?: readonly Joiner[]
 }
 
 /** Room before a paragraph's first line, as an empty placeholder on its baseline. */
@@ -302,15 +340,18 @@ export function buildSkParagraph(
     halfLeading
   }
   const paraStyle = new ck.ParagraphStyle({
-    textAlign: getParagraphTextAlign(ck, node),
+    textAlign: ck.TextAlign[paragraphTextAlign(node)],
     textDirection: textDirection === 'RTL' ? ck.TextDirection.RTL : ck.TextDirection.LTR,
     ...truncateOpts,
-    textStyle: baseTextStyle
+    textStyle: baseTextStyle,
+    // Skia otherwise rounds each line's width up to a whole pixel before fitting it in the box.
+    applyRoundingHack: false
   })
 
   if (!r.fontProvider) throw new Error('Font provider not initialized')
   const builder = makeParagraphBuilder(ck, paraStyle, r.fontProvider)
 
+  const baseStyle = new ck.TextStyle(baseTextStyle)
   let background: Paint | undefined
   try {
     let paintStyle: ParagraphPaintStyle | undefined
@@ -318,20 +359,21 @@ export function buildSkParagraph(
       background = new ck.Paint()
       background.setColor(ck.TRANSPARENT)
       paintStyle = { foreground: foregroundPaint, background }
-      builder.pushPaintStyle(new ck.TextStyle(baseTextStyle), foregroundPaint, background)
+      builder.pushPaintStyle(baseStyle, foregroundPaint, background)
     }
     if (block.firstLineIndent) addFirstLineIndent(ck, builder, block.firstLineIndent)
+    const addText = joinedTextAdder(ck, builder, node, block.joiners ?? [], paintStyle)
     if (node.styleRuns.length === 0) {
-      addParagraphText(builder, node, 0, node.text.length)
+      addText(0, node.text.length, baseStyle)
     } else {
       addStyledRuns(
         r,
         builder,
         node,
-        baseColor,
-        baseFontSize,
+        { color: baseColor, fontSize: baseFontSize, style: baseStyle },
         fontFamilies,
         halfLeading,
+        addText,
         paintStyle
       )
     }
