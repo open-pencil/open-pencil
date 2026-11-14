@@ -5,7 +5,9 @@ import { join } from 'node:path'
 import { footerColumns } from '#docs-config/theme/footer/links'
 import { FOOTER_MESSAGES } from '#docs-config/theme/footer/messages'
 
-const DOCS = join(import.meta.dir, '../../../../packages/docs')
+import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
+
+const DOCS = join(await resolveWorkspaceRoot(import.meta.dir), 'packages/docs')
 
 /** The Markdown page a site path is built from, without its `#` section. */
 function pageFile(path: string): string {

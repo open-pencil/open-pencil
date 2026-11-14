@@ -49,7 +49,7 @@ const year = new Date().getFullYear()
 .site-footer {
   position: relative;
   z-index: var(--vp-z-index-footer);
-  border-top: 1px solid var(--vp-c-gutter);
+  border-top: 1px solid var(--vp-c-divider);
   background-color: var(--vp-c-bg);
 }
 
@@ -120,7 +120,7 @@ const year = new Date().getFullYear()
   gap: 8px;
   justify-content: space-between;
   padding-top: 24px;
-  border-top: 1px solid var(--vp-c-gutter);
+  border-top: 1px solid var(--vp-c-divider);
   color: var(--vp-c-text-2);
   font-size: 12px;
 }
