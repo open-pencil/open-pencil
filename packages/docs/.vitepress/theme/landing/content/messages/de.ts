@@ -338,5 +338,45 @@ export const de: LandingMessages = {
       ],
       notes: 'Was ist neu'
     }
+  },
+  pricing: {
+    badge: 'OpenPencil Cloud',
+    title: 'Pläne und Preise',
+    lede: 'Der Editor ist kostenlos und quelloffen, mit oder ohne Konto. Ein Cloud-Plan bewahrt deine Dokumente im gehosteten Dienst auf, teilt sie und bezahlt die KI im Editor.',
+    free: 'Kostenlos',
+    perMonth: 'pro Monat',
+    storage: 'Speicher',
+    unlimitedStorage: 'Unbegrenzt',
+    credits: 'Credits pro Monat',
+    noCredits: 'Nicht enthalten',
+    maximumFile: 'Dateien bis {size}',
+    collaboration: 'Live-Zusammenarbeit',
+    collaborationUpTo: 'Live-Zusammenarbeit mit bis zu {count} Personen',
+    shareLinks: 'Freigabelinks',
+    guestsEdit: 'Gäste können bearbeiten',
+    guestsView: 'Gäste können ansehen',
+    revisionHistory: 'Versionsverlauf',
+    paidIncludes: ['Alles aus Kostenlos', 'KI und Websuche im Editor'],
+    billed:
+      'Monatliche Abrechnung in US-Dollar, zuzüglich Steuern, wo sie anfallen. Jederzeit kündbar; deine Dateien bleiben, über den kostenlosen Speicher hinaus nur lesbar.',
+    paidSoon: 'Bezahlte Pläne starten mit OpenPencil Cloud.',
+    packs: {
+      title: 'Mehr Credits',
+      lede: 'Mit einem bezahlten Plan kaufst du einmalig Credits für KI und Suche über deine monatlichen Credits hinaus. Sie bleiben, wenn ein Plan endet.',
+      credits: 'Credits',
+      price: 'Preis',
+      validFor: 'Gültig für'
+    },
+    rates: {
+      title: 'Was Credits bezahlen',
+      lede: 'Eine Anfrage kostet die Tokens, die sie liest und schreibt, zum Preis ihres Modells.',
+      search: 'Eine Websuche kostet {credits} Credits.',
+      model: 'Modell',
+      input: 'Credits pro Million Eingabe-Tokens',
+      output: 'Credits pro Million Ausgabe-Tokens'
+    },
+    selfHosting:
+      'Ein Server, den dein Team selbst betreibt, legt eigene Pläne und Limits fest; siehe die {link}.',
+    selfHostingLink: 'Anleitung zum Selbsthosten'
   }
 }

@@ -16,6 +16,7 @@ There are two ways to use Cloud, and the editor works the same with both:
 
 | Page                                | What it covers                                                      |
 | ----------------------------------- | ------------------------------------------------------------------- |
+| [Plans and Pricing](./pricing)      | The hosted service's free and paid plans, and what credits buy      |
 | [Your Account](./account)           | Profile, sign-in and security, sessions, terms, leaving a server    |
 | [Documents](./documents)            | Saving, Home, document states, conflicts, version history, Trash   |
 | [Sharing and Teams](./sharing)      | Invitations, links, team workspaces, editing together, reporting    |

@@ -132,7 +132,8 @@ function errorTrackingConfig(config: CloudDeploymentConfig, environment: CloudEn
 }
 
 /** Hard limits, whatever a plan allows; each lives in the section it limits. */
-function technicalLimits(config: CloudDeploymentConfig) {
+/** The ceilings a deployment file sets, any of them left out for the server's own. */
+export function deploymentTechnicalLimits(config: CloudDeploymentConfig) {
   return {
     maximumUploadBytes: config.object_storage.maximum_upload_bytes,
     maximumCollaborationMessageBytes: config.collaboration.maximum_message_bytes,
@@ -203,7 +204,7 @@ export function parseCloudDeploymentConfig(
     legal: legalConfig(config),
     community: config.community ? { workspaceId: config.community.workspace } : undefined,
     errorTracking: errorTrackingConfig(config, environment),
-    technicalLimits: technicalLimits(config)
+    technicalLimits: deploymentTechnicalLimits(config)
   })
 }
 

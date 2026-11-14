@@ -161,14 +161,14 @@ describe('Services server', () => {
     const context = await relay()
     const { privateKey: otherKey } = await generateKeyPair('ES256')
     const refused = [
-      await context.app.request(CLOUD_SERVICES_API_PATHS.catalog),
-      await context.request(CLOUD_SERVICES_API_PATHS.catalog, 'not-a-token'),
+      await context.app.request(CLOUD_SERVICES_API_PATHS.wallet),
+      await context.request(CLOUD_SERVICES_API_PATHS.wallet, 'not-a-token'),
       await context.request(
-        CLOUD_SERVICES_API_PATHS.catalog,
+        CLOUD_SERVICES_API_PATHS.wallet,
         await context.token({}, { issuer: 'https://other.example.com' })
       ),
       await context.request(
-        CLOUD_SERVICES_API_PATHS.catalog,
+        CLOUD_SERVICES_API_PATHS.wallet,
         await context.token({}, { signingKey: otherKey })
       )
     ]
@@ -176,7 +176,8 @@ describe('Services server', () => {
       expect(response.status).toBe(401)
       expect((await responseJSON(response, serviceErrorSchema)).error.code).toBe('unauthorized')
     }
-    const catalog = await context.request(CLOUD_SERVICES_API_PATHS.catalog, await context.token())
+    // What the service charges is public: the catalog answers without one.
+    const catalog = await context.app.request(CLOUD_SERVICES_API_PATHS.catalog)
     expect((await responseJSON(catalog, serviceCatalogSchema)).defaultModelID).toBe(MODEL)
   })
 

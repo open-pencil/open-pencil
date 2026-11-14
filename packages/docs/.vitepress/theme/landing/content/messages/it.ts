@@ -337,5 +337,45 @@ export const it: LandingMessages = {
       ],
       notes: 'Novità'
     }
+  },
+  pricing: {
+    badge: 'OpenPencil Cloud',
+    title: 'Piani e prezzi',
+    lede: 'L’editor è gratuito e open source, con o senza account. Un piano Cloud conserva i tuoi documenti sul servizio ospitato, li condivide e paga l’IA nell’editor.',
+    free: 'Gratis',
+    perMonth: 'al mese',
+    storage: 'Spazio di archiviazione',
+    unlimitedStorage: 'Illimitato',
+    credits: 'Crediti al mese',
+    noCredits: 'Non inclusi',
+    maximumFile: 'File fino a {size}',
+    collaboration: 'Collaborazione in diretta',
+    collaborationUpTo: 'Collaborazione in diretta fino a {count} persone',
+    shareLinks: 'Link di condivisione',
+    guestsEdit: 'Gli ospiti possono modificare',
+    guestsView: 'Gli ospiti possono visualizzare',
+    revisionHistory: 'Cronologia delle versioni',
+    paidIncludes: ['Tutto quello del piano Gratis', 'IA e ricerca web nell’editor'],
+    billed:
+      'Fatturazione mensile in dollari statunitensi, più le imposte dove previste. Disdici quando vuoi; i tuoi file restano, in sola lettura oltre lo spazio gratuito.',
+    paidSoon: 'I piani a pagamento arrivano con OpenPencil Cloud.',
+    packs: {
+      title: 'Altri crediti',
+      lede: 'Con un piano a pagamento, acquista crediti una tantum per IA e ricerca oltre i tuoi crediti mensili. Restano anche quando un piano finisce.',
+      credits: 'Crediti',
+      price: 'Prezzo',
+      validFor: 'Validità'
+    },
+    rates: {
+      title: 'Cosa pagano i crediti',
+      lede: 'Una richiesta costa i token che legge e scrive, al prezzo del suo modello.',
+      search: 'Una ricerca web costa {credits} crediti.',
+      model: 'Modello',
+      input: 'Crediti per milione di token in input',
+      output: 'Crediti per milione di token in output'
+    },
+    selfHosting:
+      'Un server gestito direttamente dal tuo team stabilisce piani e limiti propri; consulta la {link}.',
+    selfHostingLink: 'guida al self-hosting'
   }
 }

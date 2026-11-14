@@ -9,6 +9,9 @@ import { CLOUD_FEATURE_KEYS, type CloudPolicyContext } from './keys'
 import type { CloudPolicy } from './policy'
 import { workspacePolicyContext } from './workspace'
 
+/** What a plan allows, without the storage a workspace or account holds. */
+export type PlanEntitlements = Omit<WorkspaceEntitlements, 'usage'>
+
 export function createEntitlementService(
   database: Kysely<CloudDatabase>,
   policy: CloudPolicy,
@@ -16,6 +19,8 @@ export function createEntitlementService(
   technicalMaximumParticipants = Number.MAX_SAFE_INTEGER
 ) {
   const quota = createStorageQuotaService(database)
+  const resolve = (context: CloudPolicyContext) =>
+    resolveEntitlements(policy, context, technicalMaximumFileBytes, technicalMaximumParticipants)
   return {
     /** A workspace's entitlements: its owner's plan and pooled storage, for any member to read. */
     async workspace(userId: string, workspaceId: string): Promise<WorkspaceEntitlements> {
@@ -49,53 +54,60 @@ export function createEntitlementService(
       return { ...entitlements, usage: storageUsage(usage) }
     }
   }
+}
 
-  async function resolve(
-    context: CloudPolicyContext
-  ): Promise<Omit<WorkspaceEntitlements, 'usage'>> {
-    const [
+/**
+ * What `context`'s plan allows: each feature and limit as the policy answers, within the server's
+ * technical ceilings, which an entitlement can lower but never raise.
+ */
+export async function resolveEntitlements(
+  policy: CloudPolicy,
+  context: CloudPolicyContext,
+  technicalMaximumFileBytes: number,
+  technicalMaximumParticipants = Number.MAX_SAFE_INTEGER
+): Promise<PlanEntitlements> {
+  const [
+    links,
+    guestView,
+    guestEdit,
+    guestPresence,
+    collaboration,
+    revisionHistory,
+    cloudServices,
+    maximumFileBytes,
+    maximumStorage,
+    maximumParticipants,
+    monthlyCreditAllowance
+  ] = await Promise.all([
+    policy.boolean(CLOUD_FEATURE_KEYS.links, false, context),
+    policy.boolean(CLOUD_FEATURE_KEYS.guestView, false, context),
+    policy.boolean(CLOUD_FEATURE_KEYS.guestEdit, false, context),
+    policy.boolean(CLOUD_FEATURE_KEYS.guestPresence, false, context),
+    policy.boolean(CLOUD_FEATURE_KEYS.collaboration, false, context),
+    policy.boolean(CLOUD_FEATURE_KEYS.revisionHistory, false, context),
+    policy.boolean(CLOUD_FEATURE_KEYS.cloudServices, false, context),
+    policy.number(CLOUD_FEATURE_KEYS.maximumFileBytes, technicalMaximumFileBytes, context),
+    policy.number(CLOUD_FEATURE_KEYS.maximumStorageBytes, Number.MAX_SAFE_INTEGER, context),
+    policy.number(CLOUD_FEATURE_KEYS.maximumParticipants, technicalMaximumParticipants, context),
+    policy.number(CLOUD_FEATURE_KEYS.monthlyCreditAllowance, -1, context)
+  ])
+  // Technical limits are ceilings: an entitlement can lower them but never raise them.
+  const participants = Math.min(technicalMaximumParticipants, maximumParticipants)
+  return {
+    features: {
       links,
       guestView,
       guestEdit,
       guestPresence,
       collaboration,
       revisionHistory,
-      cloudServices,
-      maximumFileBytes,
-      maximumStorage,
-      maximumParticipants,
-      monthlyCreditAllowance
-    ] = await Promise.all([
-      policy.boolean(CLOUD_FEATURE_KEYS.links, false, context),
-      policy.boolean(CLOUD_FEATURE_KEYS.guestView, false, context),
-      policy.boolean(CLOUD_FEATURE_KEYS.guestEdit, false, context),
-      policy.boolean(CLOUD_FEATURE_KEYS.guestPresence, false, context),
-      policy.boolean(CLOUD_FEATURE_KEYS.collaboration, false, context),
-      policy.boolean(CLOUD_FEATURE_KEYS.revisionHistory, false, context),
-      policy.boolean(CLOUD_FEATURE_KEYS.cloudServices, false, context),
-      policy.number(CLOUD_FEATURE_KEYS.maximumFileBytes, technicalMaximumFileBytes, context),
-      policy.number(CLOUD_FEATURE_KEYS.maximumStorageBytes, Number.MAX_SAFE_INTEGER, context),
-      policy.number(CLOUD_FEATURE_KEYS.maximumParticipants, technicalMaximumParticipants, context),
-      policy.number(CLOUD_FEATURE_KEYS.monthlyCreditAllowance, -1, context)
-    ])
-    // Technical limits are ceilings: an entitlement can lower them but never raise them.
-    const participants = Math.min(technicalMaximumParticipants, maximumParticipants)
-    return {
-      features: {
-        links,
-        guestView,
-        guestEdit,
-        guestPresence,
-        collaboration,
-        revisionHistory,
-        cloudServices
-      },
-      limits: {
-        maximumFileBytes: Math.min(technicalMaximumFileBytes, maximumFileBytes),
-        maximumStorageBytes: maximumStorage === Number.MAX_SAFE_INTEGER ? null : maximumStorage,
-        maximumParticipants: participants === Number.MAX_SAFE_INTEGER ? null : participants,
-        monthlyCreditAllowance: monthlyCreditAllowance < 0 ? null : monthlyCreditAllowance
-      }
+      cloudServices
+    },
+    limits: {
+      maximumFileBytes: Math.min(technicalMaximumFileBytes, maximumFileBytes),
+      maximumStorageBytes: maximumStorage === Number.MAX_SAFE_INTEGER ? null : maximumStorage,
+      maximumParticipants: participants === Number.MAX_SAFE_INTEGER ? null : participants,
+      monthlyCreditAllowance: monthlyCreditAllowance < 0 ? null : monthlyCreditAllowance
     }
   }
 }

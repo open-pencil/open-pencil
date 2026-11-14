@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import {
   cloudDeploymentConfigSchema,
   cloudDiscoveryFromConfig,
+  deploymentFreeEntitlements,
   parseCloudDeploymentConfig,
   parseCloudDeploymentTOML
 } from '#cloud/server'
@@ -378,5 +379,29 @@ endpoint = "https://billing.example.com"
         environment
       )
     ).toThrow()
+  })
+
+  test('reads the free plan from the deployment file alone, over Cloud’s defaults', async () => {
+    // No secrets: a site shows a deployment's free plan from the file it runs with.
+    const free = await deploymentFreeEntitlements(`${minimalSource}
+[entitlements]
+source = "database"
+
+[entitlements.storage]
+maximum_bytes = 314_572_800
+
+[entitlements.services]
+enabled = false
+`)
+    expect(free.limits).toMatchObject({
+      maximumStorageBytes: 314_572_800,
+      monthlyCreditAllowance: null
+    })
+    expect(free.features).toMatchObject({ cloudServices: false, guestEdit: false })
+    // What the file leaves out takes the policy's defaults, within the technical ceiling.
+    const unset = await deploymentFreeEntitlements(minimalSource)
+    expect(unset.limits.maximumStorageBytes).toBeNull()
+    expect(unset.limits.maximumFileBytes).toBe(free.limits.maximumFileBytes)
+    expect(unset.limits.maximumParticipants).toBe(free.limits.maximumParticipants)
   })
 })

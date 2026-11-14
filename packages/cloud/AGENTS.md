@@ -54,7 +54,7 @@ Optional, self-hostable backend; the design is in `packages/docs/development/clo
 
 - The reference services server in `src/services/` implements the chat part of the services contract. It is runtime-neutral like `src/server`; runtimes own listening and keys (`src/runtime/node/services/server.ts`).
 - It speaks only the contract in `src/contract/services.ts` (`tests/contract/services.test.ts`).
-- It trusts nothing about a request beyond a token that verifies against Cloud's keys (`tests/integration/services/app.test.ts`).
+- It trusts nothing about a request beyond a token that verifies against Cloud's keys; only the catalog answers without one, since what the service charges is public (`tests/integration/services/app.test.ts`).
 - It forwards only the chat completion fields in `FORWARDED_FIELDS`, so routing fields cannot reach models outside the catalog (`tests/integration/services/app.test.ts`).
 - Its tables are `services_*` with their own migration history (`services_migration`), so it can share Cloud's database (`src/services/db/migrate.ts`).
 - Neither the services server nor Cloud reads the other's tables (`src/services/db/schema.ts`).

@@ -82,7 +82,8 @@
 }
 
 /* The download page has no stages between its sections, so they sit closer together. */
-.download-page .landing-section {
+.download-page .landing-section,
+.pricing-page .landing-section {
   padding-top: 112px;
 }
 
@@ -102,7 +103,8 @@
     padding-top: 96px;
   }
 
-  .download-page .landing-section {
+  .download-page .landing-section,
+  .pricing-page .landing-section {
     padding-top: 72px;
   }
 }

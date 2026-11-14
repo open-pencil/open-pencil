@@ -336,5 +336,45 @@ export const pl: LandingMessages = {
       ],
       notes: 'Co nowego'
     }
+  },
+  pricing: {
+    badge: 'OpenPencil Cloud',
+    title: 'Plany i ceny',
+    lede: 'Edytor jest darmowy i otwartoźródłowy, z kontem lub bez. Plan Cloud przechowuje Twoje dokumenty w hostowanej usłudze, udostępnia je i opłaca AI w edytorze.',
+    free: 'Darmowy',
+    perMonth: 'miesięcznie',
+    storage: 'Pamięć masowa',
+    unlimitedStorage: 'Bez limitu',
+    credits: 'Kredyty co miesiąc',
+    noCredits: 'Brak w planie',
+    maximumFile: 'Pliki do {size}',
+    collaboration: 'Współpraca na żywo',
+    collaborationUpTo: 'Współpraca na żywo do {count} osób',
+    shareLinks: 'Linki do udostępniania',
+    guestsEdit: 'Goście mogą edytować',
+    guestsView: 'Goście mogą przeglądać',
+    revisionHistory: 'Historia wersji',
+    paidIncludes: ['Wszystko z planu Darmowy', 'AI i wyszukiwanie w sieci w edytorze'],
+    billed:
+      'Rozliczenie miesięczne w dolarach amerykańskich, plus podatek, jeśli dotyczy. Możesz zrezygnować w każdej chwili; pliki zostają, ponad darmową pamięć tylko do odczytu.',
+    paidSoon: 'Płatne plany ruszą razem z OpenPencil Cloud.',
+    packs: {
+      title: 'Więcej kredytów',
+      lede: 'W płatnym planie możesz jednorazowo kupić kredyty na AI i wyszukiwanie ponad miesięczną pulę. Zostają po zakończeniu planu.',
+      credits: 'Kredyty',
+      price: 'Cena',
+      validFor: 'Ważność'
+    },
+    rates: {
+      title: 'Na co idą kredyty',
+      lede: 'Zapytanie kosztuje tyle, ile tokenów odczytuje i zapisuje, według ceny swojego modelu.',
+      search: 'Koszt wyszukiwania w sieci w kredytach: {credits}.',
+      model: 'Model',
+      input: 'Kredyty za milion tokenów wejściowych',
+      output: 'Kredyty za milion tokenów wyjściowych'
+    },
+    selfHosting:
+      'Serwer, który Twój zespół utrzymuje sam, ma własne plany i limity; zobacz {link}.',
+    selfHostingLink: 'przewodnik po hostowaniu na własnym serwerze'
   }
 }
