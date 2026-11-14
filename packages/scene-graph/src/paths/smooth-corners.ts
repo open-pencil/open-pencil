@@ -1,5 +1,6 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { minOf } from '@open-pencil/scene-graph/arrays'
+import { minOf } from '../arrays'
+import type { SceneNode } from '../types'
+import type { PathSink } from './sink'
 
 /** What a rectangle's smoothed corners are drawn from. */
 export type SmoothRectNode = Pick<
@@ -17,10 +18,7 @@ export type SmoothRectNode = Pick<
  * Where a smoothed rectangle is traced: a CanvasKit `PathBuilder`, or a writer of SVG path data.
  * `arcToRotated` takes CanvasKit's arguments, which match an SVG arc's.
  */
-export interface SmoothCornerSink {
-  moveTo(x: number, y: number): unknown
-  lineTo(x: number, y: number): unknown
-  cubicTo(x1: number, y1: number, x2: number, y2: number, x: number, y: number): unknown
+export interface SmoothCornerSink extends PathSink {
   arcToRotated(
     rx: number,
     ry: number,
@@ -30,7 +28,6 @@ export interface SmoothCornerSink {
     x: number,
     y: number
   ): unknown
-  close(): unknown
 }
 
 type SmoothCornerKey = 'topLeft' | 'topRight' | 'bottomRight' | 'bottomLeft'

@@ -8,13 +8,15 @@ import {
   readGeometryBlob,
   sweepsWholeTurn
 } from '@open-pencil/scene-graph/geometry'
-import { outlineSVGPath, polygonOutline } from '@open-pencil/scene-graph/polygon'
+import {
+  outlineSVGPath,
+  svgPathSink,
+  traceSmoothRect,
+  type SmoothCornerSink
+} from '@open-pencil/scene-graph/paths'
+import { polygonOutline } from '@open-pencil/scene-graph/polygon'
 import { shapeWithTextGeometry } from '@open-pencil/scene-graph/shape-with-text'
 import { vectorNetworkToSVGPaths } from '@open-pencil/scene-graph/vector-network'
-
-import { traceSmoothRect, type SmoothCornerSink } from '#core/canvas/paths/smooth-corners'
-import { nodeHasRadius, nodeHasSmoothCorners } from '#core/canvas/shapes'
-import type { PathSink } from '#core/vector/path-helpers'
 
 export function round(n: number, decimals = 2): number {
   const factor = 10 ** decimals
@@ -51,9 +53,6 @@ export function makePolygonPoints(node: SceneNode): string {
     .map((point) => `${round(point.x)},${round(point.y)}`)
     .join(' ')
 }
-
-export const hasRadius = nodeHasRadius
-export const hasSmoothCorners = nodeHasSmoothCorners
 
 type RectOutlineNode = Pick<
   SceneNode,
@@ -128,24 +127,6 @@ export function arcPath(node: Pick<SceneNode, 'width' | 'height' | 'arcData'>): 
   }
 
   return parts.join('')
-}
-
-/**
- * Path commands written as SVG path data into `parts`, as the canvas would build a path, each
- * coordinate written by `format`.
- */
-export function svgPathSink(
-  parts: string[],
-  format: (value: number) => number = (value) => round(value)
-): PathSink {
-  const point = (x: number, y: number) => `${format(x)} ${format(y)}`
-  return {
-    moveTo: (x, y) => parts.push(`M${point(x, y)}`),
-    lineTo: (x, y) => parts.push(`L${point(x, y)}`),
-    cubicTo: (x1, y1, x2, y2, x, y) =>
-      parts.push(`C${point(x1, y1)} ${point(x2, y2)} ${point(x, y)}`),
-    close: () => parts.push('Z')
-  }
 }
 
 /** A rectangle with smoothed corners as path data, traced as the canvas draws it. */

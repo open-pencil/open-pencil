@@ -1,38 +1,18 @@
 import type { Canvas, EmbindEnumEntity, Paint, Path } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { nodeCornerRadii } from '@open-pencil/scene-graph/corners'
+import {
+  nodeCornerRadii,
+  nodeHasRadius,
+  nodeHasSmoothCorners
+} from '@open-pencil/scene-graph/corners'
 import { isWholeArc } from '@open-pencil/scene-graph/geometry'
+import { replayOutline, traceSmoothRect } from '@open-pencil/scene-graph/paths'
 import { polygonOutline, type PolygonOutlineCommand } from '@open-pencil/scene-graph/polygon'
 import { shapeWithTextGeometry } from '@open-pencil/scene-graph/shape-with-text'
 
 import { vectorNetworkToPath, geometryBlobToPath } from '#core/vector'
 
-import { traceSmoothRect } from './paths/smooth-corners'
 import type { SkiaRenderer } from './renderer'
-
-export function nodeHasRadius(node: SceneNode): boolean {
-  return (
-    node.cornerRadius > 0 ||
-    (node.independentCorners &&
-      (node.topLeftRadius > 0 ||
-        node.topRightRadius > 0 ||
-        node.bottomRightRadius > 0 ||
-        node.bottomLeftRadius > 0))
-  )
-}
-
-export function nodeHasSmoothCorners(node: SceneNode): boolean {
-  if (!(node.cornerSmoothing > 0)) return false
-  if (node.independentCorners) {
-    return (
-      node.topLeftRadius > 0 ||
-      node.topRightRadius > 0 ||
-      node.bottomRightRadius > 0 ||
-      node.bottomLeftRadius > 0
-    )
-  }
-  return node.cornerRadius > 0
-}
 
 export function makeSmoothRRectPath(r: SkiaRenderer, node: SceneNode, spread = 0): Path {
   const path = new r.ck.PathBuilder()
@@ -176,13 +156,7 @@ export function makeNodeShapePath(r: SkiaRenderer, node: SceneNode, spread = 0):
 
 function outlinePath(r: SkiaRenderer, commands: PolygonOutlineCommand[]): Path {
   const path = new r.ck.PathBuilder()
-  for (const command of commands) {
-    if (command.type === 'M') path.moveTo(command.x, command.y)
-    else if (command.type === 'L') path.lineTo(command.x, command.y)
-    else if (command.type === 'C')
-      path.cubicTo(command.x1, command.y1, command.x2, command.y2, command.x, command.y)
-    else path.close()
-  }
+  replayOutline(commands, path)
   return path.detachAndDelete()
 }
 

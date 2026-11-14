@@ -1,7 +1,7 @@
 import type { CanvasKit, Path } from '@open-pencil/canvaskit'
+import { svgPathSink } from '@open-pencil/scene-graph/paths'
 
 import { tracePath } from '#core/canvas/paths/verbs'
-import { svgPathSink } from '#core/io/formats/svg/paths'
 
 /**
  * A path as SVG path data at full precision, each conic one cubic. Skia keeps rounded corners and

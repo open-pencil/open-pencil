@@ -1,13 +1,6 @@
 import type { VectorSegment, VectorVertex } from '@open-pencil/scene-graph'
+import type { PathSink } from '@open-pencil/scene-graph/paths'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
-
-/** Anything path commands can be emitted into: a canvaskit Path or a blob encoder. */
-export interface PathSink {
-  moveTo(x: number, y: number): unknown
-  lineTo(x: number, y: number): unknown
-  cubicTo(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number): unknown
-  close(): unknown
-}
 
 export function addSegmentDirected(
   path: PathSink,

@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
 import type { VectorSegment, VectorVertex } from '@open-pencil/scene-graph'
+import type { PathSink } from '@open-pencil/scene-graph/paths'
 
-import { addOpenSegmentsToPath, type PathSink } from '#core/vector/path-helpers'
+import { addOpenSegmentsToPath } from '#core/vector/path-helpers'
 
 const zero = { x: 0, y: 0 }
 

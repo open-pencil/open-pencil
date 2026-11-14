@@ -10,12 +10,13 @@ import {
   triangleCapPoints,
   type ArrowEndpoint
 } from '@open-pencil/scene-graph/arrow-caps'
+import { svgPathSink } from '@open-pencil/scene-graph/paths'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { addOpenSegmentsToPath } from '#core/vector/path-helpers'
 
 import { svg, type SVGNode } from './node'
-import { round, svgPathSink } from './paths'
+import { round } from './paths'
 
 type Attrs = Record<string, string | number | undefined>
 

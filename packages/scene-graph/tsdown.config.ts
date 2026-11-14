@@ -37,6 +37,7 @@ export default defineConfig(
       images: './src/images.ts',
       'instances/index': './src/instances/index.ts',
       'instances/overrides': './src/instances/overrides.ts',
+      'paths/index': './src/paths/index.ts',
       'layout/index': './src/layout/index.ts',
       matrix: './src/matrix.ts',
       'mutation-impact': './src/mutation-impact.ts',

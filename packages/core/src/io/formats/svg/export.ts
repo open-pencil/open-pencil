@@ -4,6 +4,7 @@ import {
   getWorldMatrix,
   localTransformFromWorld
 } from '@open-pencil/scene-graph/coordinate'
+import { nodeHasRadius, nodeHasSmoothCorners } from '@open-pencil/scene-graph/corners'
 import { CSS_BLEND_MODE } from '@open-pencil/scene-graph/css'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
@@ -27,8 +28,6 @@ import {
   geometryBlobToSVGPath,
   makePolygonPoints,
   roundedPolygonPath,
-  hasRadius,
-  hasSmoothCorners,
   boxOutlinePath,
   arcPath,
   shapeWithTextOutlinePath
@@ -197,8 +196,8 @@ function boxOutlineElement(
 ): SVGNode {
   const width = round(node.width)
   const height = round(node.height)
-  if (!hasRadius(node)) return svg('rect', { width, height, ...attrs })
-  if (node.independentCorners || hasSmoothCorners(node)) {
+  if (!nodeHasRadius(node)) return svg('rect', { width, height, ...attrs })
+  if (node.independentCorners || nodeHasSmoothCorners(node)) {
     return svg('path', { d: boxOutlinePath(node), ...attrs })
   }
   // SVG clamps rx and ry to their own sides; the canvas keeps a too-large radius circular.
