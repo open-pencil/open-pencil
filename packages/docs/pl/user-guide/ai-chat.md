@@ -20,19 +20,7 @@ Możesz utworzyć kilka modeli i osobno przypisać je do projektowania, przeglą
 
 ### Dostawcy
 
-| Dostawca               | Modele                                                                 | Konfiguracja                                                                                               |
-| ---------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| **OpenRouter**         | Claude, GPT, Gemini, DeepSeek, Qwen i inne                             | Klucz API z [openrouter.ai](https://openrouter.ai)                                                         |
-| **Anthropic**          | Claude Sonnet 5.5, Claude Opus 5.5, Claude Fable 5.1, Claude Haiku 5.5 | Klucz API z [console.anthropic.com](https://console.anthropic.com)                                         |
-| **OpenAI**             | GPT-6.1 Sol, GPT-6 Astra, GPT-6 Luna                                   | Klucz API z [platform.openai.com](https://platform.openai.com)                                             |
-| **Google AI**          | Gemini 3.8 Flash, Gemini 4 Argon                                       | Klucz API z [aistudio.google.dev](https://aistudio.google.dev)                                             |
-| **DeepSeek**           | DeepSeek Flash, DeepSeek V4 Pro                                        | Klucz API z [platform.deepseek.com](https://platform.deepseek.com/api_keys)                                |
-| **Z.ai**               | GLM-5.3, GLM-5.3-Flash, GLM-5.3-FlashX, GLM-5V-Turbo                   | Klucz API zgodnie z [dokumentacją Z.ai](https://docs.z.ai/devpack/quick-start)                             |
-| **MiniMax**            | MiniMax-M3.1-Flash, MiniMax-M3                                         | Klucz API z [platform.minimax.io](https://platform.minimax.io/user-center/basic-information/interface-key) |
-| **Zgodny z OpenAI**    | Dowolny punkt końcowy w formacie OpenAI API                            | Własny adres bazowy i klucz; wybór Completions API lub Responses API                                       |
-| **Zgodny z Anthropic** | Dowolny punkt końcowy w formacie Anthropic API                         | Własny adres bazowy i klucz                                                                                |
-
-OpenPencil nie wymaga osobnego serwera ani subskrypcji: żądania są wysyłane bezpośrednio do dostawcy. W przeglądarce podlegają jego zasadom CORS. Poszczególne wdrożenia modeli różnią się niezawodnością przesyłania wywołań narzędzi. Wyniki pomiarów znajdują się na stronie [Zgodność dostawców i modeli BYOK](/user-guide/byok-provider-compatibility).
+Czat działa z OpenRouter, Anthropic, OpenAI, Google AI, DeepSeek, Z.ai, MiniMax, Twoim planem ChatGPT, dowolnym serwerem zgodnym z OpenAI lub Anthropic oraz Twoim kontem [OpenPencil Cloud](/cloud/ai). Na stronie [Modele i dostawcy](/user-guide/models-and-providers) znajdziesz modele każdego dostawcy i sposób jego podłączenia, informacje o tym, co działa w przeglądarce, oraz wskazówki dotyczące wyboru modelu.
 
 ### Zewnętrzne połączenia MCP
 

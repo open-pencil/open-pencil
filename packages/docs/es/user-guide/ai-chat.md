@@ -19,9 +19,7 @@ Puedes guardar varios perfiles y asignarlos por separado a diseño, revisiones, 
 
 ## Proveedores
 
-OpenPencil admite conexiones compatibles con OpenAI y Anthropic, además de OpenRouter, Google, Z.ai y proveedores locales. Los modelos y capacidades disponibles dependen de cada servicio.
-
-OpenPencil no usa un servidor intermediario. Las solicitudes se envían directamente al proveedor; en el navegador se aplican sus políticas CORS. La fiabilidad de las llamadas de herramientas en flujo continuo también puede variar entre despliegues. Consulta [Compatibilidad BYOK](/user-guide/byok-provider-compatibility) para ver mediciones y pasos de reproducción.
+El chat funciona con OpenRouter, Anthropic, OpenAI, Google AI, DeepSeek, Z.ai, MiniMax, tu plan de ChatGPT, cualquier servidor compatible con OpenAI o Anthropic y tu cuenta de [OpenPencil Cloud](/cloud/ai). En [Modelos y proveedores](/user-guide/models-and-providers) encontrarás los modelos de cada proveedor y cómo conectarlo, qué funciona en el navegador y cómo elegir un modelo.
 
 ## Agentes ACP y MCP remoto
 
