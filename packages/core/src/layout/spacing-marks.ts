@@ -34,43 +34,53 @@ function crossRange(node: SceneNode, child: SceneNode): [number, number] {
     : [child.x, child.x + child.width]
 }
 
+type CrossRange = [start: number, end: number]
+
 /**
- * Where a gap spans across the flow: the content box, inside the paddings, or in a wrapped frame
- * its own line, the layers whose cross ranges meet the first layer's; null for a pair on two lines.
+ * Where each flowed layer's gap spans across the flow, by the layer's index: the content box,
+ * inside the paddings, or in a wrapped frame the layer's own line, the run of layers whose cross
+ * ranges meet. One pass, so a frame with many layers stays linear.
  */
-function gapCrossRange(
-  node: SceneNode,
-  children: readonly SceneNode[],
-  previous: SceneNode,
-  next: SceneNode
-): [number, number] | null {
+function lineRanges(node: SceneNode, children: readonly SceneNode[]): CrossRange[] {
   if (node.layoutWrap !== 'WRAP') {
-    return node.layoutMode === 'HORIZONTAL'
-      ? [node.paddingTop, node.height - node.paddingBottom]
-      : [node.paddingLeft, node.width - node.paddingRight]
+    const box: CrossRange =
+      node.layoutMode === 'HORIZONTAL'
+        ? [node.paddingTop, node.height - node.paddingBottom]
+        : [node.paddingLeft, node.width - node.paddingRight]
+    return children.map(() => box)
   }
-  const [lineStart, lineEnd] = crossRange(node, previous)
-  const meets = ([start, end]: [number, number]) => start < lineEnd && end > lineStart
-  if (!meets(crossRange(node, next))) return null
-  let line: [number, number] = [lineStart, lineEnd]
-  for (const child of children) {
-    const range = crossRange(node, child)
-    if (meets(range)) line = [Math.min(line[0], range[0]), Math.max(line[1], range[1])]
+  const ranges: CrossRange[] = []
+  let line: CrossRange | null = null
+  let first = 0
+  for (const [index, child] of children.entries()) {
+    const [start, end] = crossRange(node, child)
+    if (line && start < line[1] && end > line[0]) {
+      line[0] = Math.min(line[0], start)
+      line[1] = Math.max(line[1], end)
+      continue
+    }
+    for (let at = first; at < index; at++) if (line) ranges[at] = line
+    line = [start, end]
+    first = index
   }
-  return line
+  for (let at = first; at < children.length; at++) if (line) ranges[at] = line
+  return ranges
 }
 
-/** The gap between the flowed layers at `index` and `index + 1`, however much room it has. */
+/**
+ * The gap between the flowed layers at `index` and `index + 1`, however much room it has; null
+ * for a pair on two wrapped lines.
+ */
 function gapBetween(
   node: SceneNode,
   children: readonly SceneNode[],
+  ranges: readonly CrossRange[],
   index: number
 ): FlowGap | null {
   const previous = children.at(index)
   const next = children.at(index + 1)
-  if (!previous || !next || index < 0) return null
-  const cross = gapCrossRange(node, children, previous, next)
-  if (!cross) return null
+  const cross = ranges.at(index)
+  if (!previous || !next || !cross || index < 0 || cross !== ranges.at(index + 1)) return null
   const [crossStart, crossEnd] = cross
   const crossMiddle = (crossStart + crossEnd) / 2
   const isRow = node.layoutMode === 'HORIZONTAL'
@@ -101,9 +111,10 @@ function gapBetween(
 export function flowGaps(node: SceneNode, graph: SceneGraph): FlowGap[] {
   const children = flowChildren(node, graph)
   if (children.length < 2 || node.itemSpacing <= 0) return []
+  const ranges = lineRanges(node, children)
   const gaps: FlowGap[] = []
   for (let index = 0; index < children.length - 1; index++) {
-    const gap = gapBetween(node, children, index)
+    const gap = gapBetween(node, children, ranges, index)
     const room = gap && (node.layoutMode === 'HORIZONTAL' ? gap.rect.width : gap.rect.height)
     if (gap && room && room > 0) gaps.push(gap)
   }
@@ -115,7 +126,8 @@ export function flowGaps(node: SceneNode, graph: SceneGraph): FlowGap[] {
  * while its value is edited down to 0.
  */
 export function gapTick(node: SceneNode, graph: SceneGraph, index: number): Vector | null {
-  return gapBetween(node, flowChildren(node, graph), index)?.tick ?? null
+  const children = flowChildren(node, graph)
+  return gapBetween(node, children, lineRanges(node, children), index)?.tick ?? null
 }
 
 /** A padding's band along its whole side. */
