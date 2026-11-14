@@ -152,7 +152,13 @@ useHead(() => ({ title: `${messages.value.communityTitle} · ${portal.host}` }))
         class="rounded-lg border border-dashed border-border px-4 py-8 text-center text-xs text-muted"
       >
         {{
-          query.trim() ? files.noMatchingFiles({ query: query.trim() }) : messages.communityEmpty
+          query.trim()
+            ? files.noMatchingFiles({ query: query.trim() })
+            : documents.length === 0
+              ? messages.communityEmpty
+              : kind === 'board'
+                ? messages.communityNoBoards
+                : messages.communityNoDesigns
         }}
       </p>
     </section>

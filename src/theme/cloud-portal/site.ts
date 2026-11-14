@@ -9,17 +9,17 @@ export default {
   slots: {
     header:
       'sticky top-0 z-20 border-b border-border/60 bg-canvas/80 backdrop-blur-md supports-[backdrop-filter]:bg-canvas/70',
-    headerInner: 'mx-auto flex h-16 w-full max-w-6xl items-center gap-8 px-4 sm:px-6',
-    brand: ['flex shrink-0 items-center gap-2 rounded-md', focusStyles.ring],
-    brandMark: 'size-6',
-    brandLogo: 'h-7 w-auto max-w-40 object-contain',
-    brandName: 'text-base font-semibold tracking-tight',
+    headerInner: 'mx-auto flex h-16 w-full max-w-6xl items-center gap-4 px-4 sm:gap-8 sm:px-6',
+    brand: ['flex min-w-0 items-center gap-2 rounded-md', focusStyles.ring],
+    brandMark: 'size-6 shrink-0',
+    brandLogo: 'h-7 w-auto max-w-40 shrink-0 object-contain',
+    brandName: 'min-w-0 truncate text-base font-semibold tracking-tight',
     nav: 'flex items-center gap-6 max-sm:hidden',
     navLink: [
       'rounded-sm text-sm font-medium text-muted transition-colors hover:text-surface aria-[current=page]:text-surface',
       focusStyles.ring
     ],
-    actions: 'ms-auto flex items-center gap-2',
+    actions: 'ms-auto flex shrink-0 items-center gap-2',
     iconLink: [
       'flex size-8 items-center justify-center rounded-full text-muted transition-colors hover:bg-hover hover:text-surface max-sm:hidden',
       focusStyles.ring

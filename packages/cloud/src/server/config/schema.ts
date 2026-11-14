@@ -194,7 +194,7 @@ const rawCloudServerConfigSchema = v.object({
   /** How a self-hosted server names itself on its public pages. */
   branding: v.optional(
     v.object({
-      name: v.optional(v.string()),
+      name: v.optional(v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(80))),
       logoURL: v.optional(httpURLSchema),
       helpURL: v.optional(httpURLSchema)
     })

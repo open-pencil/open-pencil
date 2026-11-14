@@ -173,9 +173,9 @@ useHead(() => ({
                 :description="version.description"
                 :at="version.createdAt"
                 named
-                :selected="version.current ? versionId === null : versionId === version.id"
+                :selected="versionId === version.id || (versionId === null && version.current)"
                 :last="index === document.versions.length - 1"
-                @select="versionId = version.current ? null : version.id"
+                @select="versionId = version.id"
               />
             </ul>
           </div>

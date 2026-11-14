@@ -12,13 +12,19 @@ const site: SiteFiles = async (path) =>
     ? { body: Uint8Array.from(new TextEncoder().encode(portal)), type: 'text/html' }
     : null
 
-function server(gallery: boolean, name = 'Tour <of> "OpenPencil"') {
+function server(gallery: boolean | 'limited', name = 'Tour <of> "OpenPencil"') {
   const api = {
     fetch: (request: Request) => {
       if (new URL(request.url).pathname !== '/api/community') {
         return new Response('Not found', { status: 404 })
       }
       if (!gallery) return Response.json({ error: { code: 'not_found' } }, { status: 404 })
+      if (gallery === 'limited') {
+        return Response.json(
+          { error: { code: 'rate_limited' } },
+          { status: 429, headers: { 'Retry-After': '30' } }
+        )
+      }
       return Response.json({
         documents: [
           {
@@ -72,5 +78,18 @@ describe('community pages', () => {
   test('leave a document opened in the editor unindexed', async () => {
     const editor = await visit(server(true), `/community/${DOCUMENT_ID}/open`)
     expect(editor.headers.get('X-Robots-Tag')).toContain('noindex')
+  })
+
+  test('keep the API’s status and retry advice when it could not answer', async () => {
+    const page = await visit(server('limited'), `/community/${DOCUMENT_ID}`)
+    expect(page.status).toBe(429)
+    expect(page.headers.get('Retry-After')).toBe('30')
+  })
+
+  test('insert a name with dollar patterns as it is', async () => {
+    const html = await (
+      await visit(server(true, 'Price $& $` $$'), `/community/${DOCUMENT_ID}`)
+    ).text()
+    expect(html).toContain('<title>Price $&amp; $` $$ · Community · cloud.example</title>')
   })
 })

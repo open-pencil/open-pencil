@@ -597,5 +597,7 @@
   "siteLicense": "基于 MIT 许可证发布。",
   "siteCopyright": "© {year} OpenPencil",
   "sitePoweredBy": "由 OpenPencil 提供支持",
-  "siteSourceCode": "源代码"
+  "siteSourceCode": "源代码",
+  "communityNoDesigns": "这里还没有设计。",
+  "communityNoBoards": "这里还没有白板。"
 }

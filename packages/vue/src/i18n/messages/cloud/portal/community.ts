@@ -5,6 +5,8 @@ export const communityPortalMessageDefaults = {
   communityTitle: 'Community',
   communityDescription: 'Files to open, explore, and copy into your own workspace.',
   communityEmpty: 'Nothing has been published here yet.',
+  communityNoDesigns: 'No designs here yet.',
+  communityNoBoards: 'No boards here yet.',
   communityAllFiles: 'All files',
   communityOpenInBrowser: 'Open in browser',
   communityOpenInDesktop: 'Open in desktop app',

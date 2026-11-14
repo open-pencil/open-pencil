@@ -17,28 +17,42 @@ export type PageMeta = {
 type API = { fetch(request: Request): Response | Promise<Response> }
 
 /**
- * The gallery's documents, read through the server's own API as the visitor asked for the page,
- * so the request counts against the visitor's limits, or null when the server has no gallery.
+ * Why a community page shows no tags: there is no gallery or no such document (404), or the API
+ * could not answer, such as when it limited the visitor, whose status and retry advice the page
+ * keeps.
  */
-async function communityDocuments(api: API, page: Request): Promise<CommunityDocument[] | null> {
-  const url = new URL(`/api${CLOUD_COMMUNITY_PATH}`, page.url)
-  const response = await api.fetch(new Request(url, { headers: page.headers }))
-  if (!response.ok) return null
-  const body = v.safeParse(communityDocumentsSchema, await response.json())
-  return body.success ? body.output.documents : null
-}
+export type CommunityPageFailure = { status: number; retryAfter: string | null }
 
 /**
- * The tags for the gallery, or for one of its documents when `documentId` names one: null when
- * the server has no gallery or no such document, which the page answers with 404.
+ * The gallery's documents, read through the server's own API as the visitor asked for the page,
+ * so the request counts against the visitor's limits, or why they could not be read.
+ */
+async function communityDocuments(
+  api: API,
+  page: Request
+): Promise<CommunityDocument[] | CommunityPageFailure> {
+  const url = new URL(`/api${CLOUD_COMMUNITY_PATH}`, page.url)
+  const response = await api.fetch(new Request(url, { headers: page.headers }))
+  if (!response.ok) {
+    return { status: response.status, retryAfter: response.headers.get('Retry-After') }
+  }
+  const body = v.safeParse(communityDocumentsSchema, await response.json())
+  return body.success ? body.output.documents : { status: 502, retryAfter: null }
+}
+
+const NOT_FOUND: CommunityPageFailure = { status: 404, retryAfter: null }
+
+/**
+ * The tags for the gallery, or for one of its documents when `documentId` names one, or why the
+ * page has none: no gallery or no such document, or an API that could not answer.
  */
 export async function communityPageMeta(
   api: API,
   page: Request,
   documentId: string | undefined
-): Promise<PageMeta | null> {
+): Promise<PageMeta | CommunityPageFailure> {
   const documents = await communityDocuments(api, page)
-  if (!documents) return null
+  if (!Array.isArray(documents)) return documents
   const { origin, host } = new URL(page.url)
   if (documentId === undefined) {
     const first = documents.at(0)
@@ -50,7 +64,7 @@ export async function communityPageMeta(
     }
   }
   const document = documents.find((entry) => entry.id === documentId)
-  if (!document) return null
+  if (!document) return NOT_FOUND
   return {
     title: `${document.name} · Community · ${host}`,
     description:
@@ -92,5 +106,8 @@ export function withPageMeta(html: string, meta: PageMeta): string {
         ]
       : [])
   ].join('\n    ')
-  return html.replace(/<title>[^<]*<\/title>/, '').replace('</head>', `    ${tags}\n  </head>`)
+  // A function, so a `$` in a file's name is inserted as it is rather than read as a pattern.
+  return html
+    .replace(/<title>[^<]*<\/title>/, () => '')
+    .replace('</head>', () => `    ${tags}\n  </head>`)
 }

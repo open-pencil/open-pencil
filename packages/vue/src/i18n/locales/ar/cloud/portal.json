@@ -647,5 +647,7 @@
   "siteLicense": "صدر بموجب ترخيص MIT.",
   "siteCopyright": "© {year} OpenPencil",
   "sitePoweredBy": "مدعوم من OpenPencil",
-  "siteSourceCode": "الشيفرة المصدرية"
+  "siteSourceCode": "الشيفرة المصدرية",
+  "communityNoDesigns": "لا توجد تصاميم هنا بعد.",
+  "communityNoBoards": "لا توجد لوحات هنا بعد."
 }

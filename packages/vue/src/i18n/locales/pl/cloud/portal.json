@@ -617,5 +617,7 @@
   "siteLicense": "Udostępniono na licencji MIT.",
   "siteCopyright": "© {year} OpenPencil",
   "sitePoweredBy": "Działa na OpenPencil",
-  "siteSourceCode": "Kod źródłowy"
+  "siteSourceCode": "Kod źródłowy",
+  "communityNoDesigns": "Nie ma tu jeszcze projektów.",
+  "communityNoBoards": "Nie ma tu jeszcze tablic."
 }

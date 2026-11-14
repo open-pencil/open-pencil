@@ -597,5 +597,7 @@
   "siteLicense": "MIT ライセンスで公開されています。",
   "siteCopyright": "© {year} OpenPencil",
   "sitePoweredBy": "OpenPencil で稼働",
-  "siteSourceCode": "ソースコード"
+  "siteSourceCode": "ソースコード",
+  "communityNoDesigns": "まだデザインはありません。",
+  "communityNoBoards": "まだボードはありません。"
 }
