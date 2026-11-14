@@ -1,8 +1,15 @@
-import type { GradientTransform, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type {
+  GradientTransform,
+  SceneGraph,
+  SceneNode,
+  Stroke,
+  VectorNetwork
+} from '@open-pencil/scene-graph'
 import {
   DEFAULT_GRADIENT_TRANSFORM,
   IDENTITY_GRADIENT_TRANSFORM
 } from '@open-pencil/scene-graph/gradient'
+import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
 
 import { solid } from '../paints'
 
@@ -182,7 +189,6 @@ export function createGradientLinesScene(graph: SceneGraph, pageId: string): voi
  */
 export function createVectorStrokeAlignScene(graph: SceneGraph, pageId: string): void {
   const side = 80
-  const corner = { x: 0, y: 0 }
   for (const [column, align] of (['CENTER', 'INSIDE', 'OUTSIDE'] as const).entries()) {
     graph.createNode('VECTOR', pageId, {
       name: align,
@@ -190,21 +196,7 @@ export function createVectorStrokeAlignScene(graph: SceneGraph, pageId: string):
       y: 60,
       width: side,
       height: side,
-      vectorNetwork: {
-        vertices: [
-          { x: 0, y: 0 },
-          { x: side, y: 0 },
-          { x: side, y: side },
-          { x: 0, y: side }
-        ],
-        segments: [0, 1, 2, 3].map((start) => ({
-          start,
-          end: (start + 1) % 4,
-          tangentStart: corner,
-          tangentEnd: corner
-        })),
-        regions: [{ windingRule: 'NONZERO', loops: [[0, 1, 2, 3]] }]
-      },
+      vectorNetwork: squareNetwork(side),
       fills: [solid(0.86, 0.91, 0.98)],
       strokes: [
         {
@@ -220,5 +212,133 @@ export function createVectorStrokeAlignScene(graph: SceneGraph, pageId: string):
         }
       ]
     })
+  }
+}
+
+const ZERO = { x: 0, y: 0 }
+
+/** A closed square from the origin to `side`, the path a vector saved before layout resized it. */
+function squareNetwork(side: number): VectorNetwork {
+  return {
+    vertices: [
+      { x: 0, y: 0 },
+      { x: side, y: 0 },
+      { x: side, y: side },
+      { x: 0, y: side }
+    ],
+    segments: [0, 1, 2, 3].map((start) => ({
+      start,
+      end: (start + 1) % 4,
+      tangentStart: ZERO,
+      tangentEnd: ZERO
+    })),
+    regions: [{ windingRule: 'NONZERO', loops: [[0, 1, 2, 3]] }]
+  }
+}
+
+/** A closed rectangle from the origin, as saved fill geometry. The last byte closes the path. */
+function rectBlob(width: number, height: number): Uint8Array {
+  const corners: Array<[number, number]> = [
+    [0, 0],
+    [width, 0],
+    [width, height],
+    [0, height]
+  ]
+  const blob = new Uint8Array(corners.length * 9 + 1)
+  const view = new DataView(blob.buffer)
+  corners.forEach(([x, y], index) => {
+    blob[index * 9] = index === 0 ? 1 : 2
+    view.setFloat32(index * 9 + 1, x, true)
+    view.setFloat32(index * 9 + 5, y, true)
+  })
+  return blob
+}
+
+/** A non-empty outline saved for the previous box. Layout drops it when the box changes. */
+const SAVED_OUTLINE = {
+  windingRule: 'EVENODD' as const,
+  commandsBlob: new Uint8Array([1, 2, 3, 4])
+}
+
+function alignedStroke(align: Stroke['align'], weight: number): Stroke {
+  return {
+    type: 'SOLID',
+    color: { r: 0.1, g: 0.1, b: 0.2, a: 1 },
+    weight,
+    opacity: 1,
+    visible: true,
+    align,
+    cap: 'NONE',
+    join: 'MITER',
+    dashPattern: []
+  }
+}
+
+/** Writes the size layout kept, the same way a layout pass publishes a resized box. */
+function resizeInLayout(graph: SceneGraph, id: string, width: number, height: number) {
+  graph.withLayoutMutations(() => {
+    graph.updateNode(id, { width, height })
+  })
+}
+
+/**
+ * A frame and an instance whose inside stroke was saved for a smaller box, then a vector path
+ * at each alignment, each grown by layout. The stroke follows the new box: the saved outline is
+ * dropped, and the vector path scales with the box.
+ */
+export function createResizedStrokeScene(graph: SceneGraph, pageId: string): void {
+  const fill = solid(0.92, 0.25, 0.22)
+  const weight = 12
+  const stroke = alignedStroke('INSIDE', weight)
+  const frame = graph.createNode('FRAME', pageId, {
+    name: 'Resized frame',
+    x: 60,
+    y: 60,
+    width: 80,
+    height: 48,
+    fills: [fill],
+    strokes: [stroke],
+    strokeAlign: 'INSIDE',
+    strokeWeight: weight,
+    strokeGeometry: [SAVED_OUTLINE]
+  })
+  resizeInLayout(graph, frame.id, 200, 110)
+
+  const badge = graph.createNode('COMPONENT', pageId, {
+    name: 'Badge',
+    x: 4000,
+    y: 4000,
+    width: 80,
+    height: 48,
+    fills: [fill],
+    strokes: [stroke],
+    strokeAlign: 'INSIDE',
+    strokeWeight: weight,
+    strokeGeometry: [SAVED_OUTLINE]
+  })
+  const instance = graph.createInstance(badge.id, pageId, { x: 340, y: 60 })
+  if (!instance) throw new Error('Instance was not created')
+  graph.updateNode(instance.id, { strokeGeometry: [SAVED_OUTLINE] })
+  resizeInLayout(graph, instance.id, 200, 110)
+  // The editor syncs an instance back to its component unless the new size is its own.
+  recordInstanceOverride(graph, instance.id, ['width', 'height'])
+
+  const vectorFill = solid(0.86, 0.91, 0.98)
+  for (const [column, align] of (['INSIDE', 'CENTER', 'OUTSIDE'] as const).entries()) {
+    const vector = graph.createNode('VECTOR', pageId, {
+      name: align,
+      x: 60 + column * 240,
+      y: 230,
+      width: 80,
+      height: 80,
+      vectorNetwork: squareNetwork(80),
+      fillGeometry: [{ windingRule: 'NONZERO', commandsBlob: rectBlob(80, 80) }],
+      strokeGeometry: [{ windingRule: 'NONZERO', commandsBlob: rectBlob(80, 80) }],
+      fills: [vectorFill],
+      strokes: [alignedStroke(align, 16)],
+      strokeAlign: align,
+      strokeWeight: 16
+    })
+    resizeInLayout(graph, vector.id, 160, 110)
   }
 }

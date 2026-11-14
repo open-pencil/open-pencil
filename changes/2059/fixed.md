@@ -1,0 +1,1 @@
+- An inside stroke follows a frame when layout or a resize changes its size, including a nested instance that grows with its label, and a vector resized the same way scales its path so an inside, centered, or outside stroke follows the new outline.
