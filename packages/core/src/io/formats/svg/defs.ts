@@ -227,7 +227,13 @@ function createImagePattern(
     id,
     node: svg(
       'pattern',
-      { id, patternUnits: 'userSpaceOnUse', width: round(tile.width), height: round(tile.height) },
+      // The tile unrounded, so the image repeats at the period the canvas repeats it at.
+      {
+        id,
+        patternUnits: 'userSpaceOnUse',
+        width: round(tile.width, 6),
+        height: round(tile.height, 6)
+      },
       svg('image', {
         href,
         width: size.width,

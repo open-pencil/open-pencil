@@ -80,13 +80,17 @@ function vectorShapeElements(
 ): SVGNode[] {
   const elements: SVGNode[] = []
   const filled = fillOutlines(node)
-  appendAll(elements, outlineElements(node, filled?.outlines ?? [], common, ctx, fallbackFills))
+  // Saved stroke geometry draws the stroke below, filled; stroking the fill too would paint it twice.
+  const stroked =
+    node.strokeGeometry.length > 0 && !!strokeAttrs.stroke && strokeAttrs.stroke !== 'none'
+  const outline = stroked ? { ...common, stroke: 'none' } : common
+  appendAll(elements, outlineElements(node, filled?.outlines ?? [], outline, ctx, fallbackFills))
   const network = node.vectorNetwork
   if (network && !filled) appendAll(elements, networkElements(node, network, common))
   // Traced regions leave the open segments, which the canvas strokes, to add here.
   else if (network && filled?.traced && looseSegments(network).length > 0)
     appendAll(elements, openPathElements(node, network, common, looseSegments))
-  if (node.strokeGeometry.length > 0 && strokeAttrs.stroke && strokeAttrs.stroke !== 'none') {
+  if (stroked) {
     for (const geo of node.strokeGeometry) {
       const d = geometryBlobToSVGPath(geo.commandsBlob)
       if (d) {

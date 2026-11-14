@@ -1,7 +1,7 @@
 import { appendAll } from '../arrays'
 import { cubicPoint } from '../cubic'
 import { GeometryCommand, readGeometryBlob } from '../geometry'
-import { buildChains, findChainStart } from '../paths/network'
+import { buildChains } from '../paths/network'
 import type { PolygonOutlineCommand } from '../polygon'
 import type { Vector } from '../primitives'
 import type { VectorNetwork } from '../types'
@@ -87,9 +87,9 @@ export function loopPoints(network: VectorNetwork, loop: number[], tolerance: nu
 export function segmentRuns(network: VectorNetwork, tolerance: number): Vector[][] {
   const runs: Vector[][] = []
   for (const chain of buildChains(network.segments)) {
-    let current = findChainStart(chain, network.segments)
+    let current = chain.start
     const run: Vector[] = []
-    for (const index of chain) {
+    for (const index of chain.segments) {
       const segment = network.segments[index]
       const along = segmentPoints(network, index, tolerance)
       if (!along) continue

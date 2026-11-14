@@ -60,6 +60,12 @@ describe('an image fill exported to SVG', () => {
     expect(image).toContain('transform="matrix(0.5 0 0 0.5 0 0)"')
   })
 
+  test('a small tile keeps its exact period', () => {
+    // 40 × 20 at 1/320 is 0.125 × 0.0625: rounded to hundredths, tiles would leave gaps.
+    const { pattern } = exported({ imageScaleMode: 'TILE', scale: 0.003125 })
+    expect(pattern).toContain('width="0.125" height="0.0625"')
+  })
+
   test('a turned fill covers the layer with the image turned', () => {
     // Turned a quarter, the image is 20 × 40; covering 100 × 100 scales it by 5 and centres it.
     const { image } = exported({ imageScaleMode: 'FILL', imageRotation: 90 })

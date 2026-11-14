@@ -23,15 +23,6 @@ export function addSegmentDirected(
   }
 }
 
-export function findChainStart(chain: number[], segments: VectorSegment[]): number {
-  if (chain.length < 2) return segments[chain[0]].start
-
-  const first = segments[chain[0]]
-  const second = segments[chain[1]]
-  if (first.start === second.start || first.start === second.end) return first.end
-  return first.start
-}
-
 /**
  * Draws one region loop. It starts at the end of its first segment away from the second, as a
  * loop's stored order runs; a segment that does not continue from the last starts a new subpath,
@@ -143,13 +134,12 @@ function drawCorner(path: PathSink, corner: RoundedCorner) {
  */
 function addChainToPath(
   path: PathSink,
-  chain: number[],
+  { start: first, segments: chain }: Chain,
   segments: VectorSegment[],
   vertices: VectorVertex[],
   cornerRadius: number
 ): void {
   // The chain's vertices in drawing order; a closed chain ends where it started.
-  const first = findChainStart(chain, segments)
   const order = [first]
   for (const segIdx of chain) {
     const seg = segments[segIdx]
@@ -194,8 +184,7 @@ export function addOpenSegmentsToPath(
   const chains = buildChains(segments)
 
   for (const chain of chains) {
-    if (chain.length === 0) continue
-    for (const segIdx of chain) visited.add(segIdx)
+    for (const segIdx of chain.segments) visited.add(segIdx)
     addChainToPath(path, chain, segments, vertices, cornerRadius)
   }
 
@@ -207,7 +196,17 @@ export function addOpenSegmentsToPath(
   }
 }
 
-export function buildChains(segments: VectorSegment[]): number[][] {
+/**
+ * A run of connected segments in the order a walk took them, from the vertex it started at, or a
+ * lone segment's own start. The start is kept rather than worked out again from the first two
+ * segments, which two segments between the same vertices leave ambiguous.
+ */
+export interface Chain {
+  start: number
+  segments: number[]
+}
+
+export function buildChains(segments: VectorSegment[]): Chain[] {
   if (segments.length === 0) return []
 
   const adj = new Map<number, number[]>()
@@ -223,7 +222,7 @@ export function buildChains(segments: VectorSegment[]): number[][] {
   }
 
   const visited = new Set<number>()
-  const chains: number[][] = []
+  const chains: Chain[] = []
   // Open runs start at their ends; closed loops left over start wherever their first segment does,
   // so every loop is one contour, not one per segment.
   const degree1 = [...adj.entries()].filter(([, segs]) => segs.length === 1).map(([v]) => v)
@@ -247,7 +246,9 @@ export function buildChains(segments: VectorSegment[]): number[][] {
       current = seg.start === current ? seg.end : seg.start
     }
 
-    if (chain.length > 0) chains.push(chain)
+    // A lone segment keeps its stored direction, as a dash pattern runs from its start.
+    const start = chain.length === 1 ? segments[chain[0]].start : startVertex
+    if (chain.length > 0) chains.push({ start, segments: chain })
   }
 
   return chains
