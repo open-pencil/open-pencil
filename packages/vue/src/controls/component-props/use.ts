@@ -1,3 +1,4 @@
+import { uniq } from 'es-toolkit/array'
 import { computed, watch } from 'vue'
 
 import type { ComponentPropertyDefinition, SceneNode } from '@open-pencil/scene-graph'
@@ -136,7 +137,21 @@ export function useComponentProperties(targets?: () => SceneNode[]) {
 
   function setValue(propertyId: string, value: string) {
     const edit = resolveEdit(propertyId)
-    if (edit) applyDiscrete(edit, propertyId, value)
+    if (!edit) return
+    const toLoad = uniq(
+      edit.targets.flatMap((instance) => editor.variantsToLoad(instance.id, propertyId, value))
+    )
+    if (toLoad.length === 0) {
+      applyDiscrete(edit, propertyId, value)
+      return
+    }
+    // A variant the file holds but no page built is built in the reader worker first, so the
+    // switch neither blocks on it nor opens a reader on this thread.
+    void editor.loadSavedVariants(toLoad).then((loaded) => {
+      const targets = edit.targets.filter((instance) => editor.graph.getNode(instance.id))
+      if (loaded && targets.length > 0) applyDiscrete({ ...edit, targets }, propertyId, value)
+      return undefined
+    })
   }
 
   /** Apply typing immediately, grouping rapid changes until blur, Enter, or idle. */

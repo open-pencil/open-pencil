@@ -33,6 +33,20 @@ export function openReaderSession(
     const page = pages.find((page) => !page.internalOnly)
     if (page) session.loadPage(page.sourceId)
   }
+  /** Runs a load, with what it changed in the graph and the checkpoint after it. */
+  const journaled = (load: () => boolean) => {
+    const journal = installFigMutationJournal(session.graph)
+    try {
+      const populated = load()
+      return {
+        checkpoint: session.checkpoint(),
+        populated,
+        delta: buildFigPopulationDelta(session.graph, journal, loadedGraphIds())
+      }
+    } finally {
+      journal.stop()
+    }
+  }
   return {
     session,
     /** Records skipped so far, including those of pages loaded later. */
@@ -45,18 +59,18 @@ export function openReaderSession(
       const sourceId = sourceByGraph.get(pageId)
       if (!sourceId) throw new Error(`Unknown graph page ${pageId}`)
       const populated = !session.loadedPageIds.has(sourceId)
-      const journal = installFigMutationJournal(session.graph)
-      try {
+      return journaled(() => {
         session.loadPage(sourceId, onProgress)
         onProgress?.()
-        return {
-          checkpoint: session.checkpoint(),
-          populated,
-          delta: buildFigPopulationDelta(session.graph, journal, loadedGraphIds())
-        }
-      } finally {
-        journal.stop()
-      }
+        return populated
+      })
+    },
+    /**
+     * Builds components no page brought, such as variants of a set no instance uses, as
+     * `loadComponents` does; `populated` is false when one needs a layer the user deleted.
+     */
+    loadComponents(componentIds: readonly string[]) {
+      return journaled(() => session.loadComponents(componentIds))
     }
   }
 }

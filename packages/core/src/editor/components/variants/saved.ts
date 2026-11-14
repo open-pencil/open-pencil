@@ -4,6 +4,11 @@ import type { ComponentPropertyDefinition, SceneGraph, SceneNode } from '@open-p
 import { parseVariantName } from '@open-pencil/scene-graph/variant-name'
 
 import {
+  canUseFigPopulationWorker,
+  createFigPopulationWorker,
+  stopFigReaderWorker
+} from '#core/kiwi/fig/population/client'
+import {
   loadReaderVariant,
   loadReaderVariants,
   savedReaderVariants
@@ -63,6 +68,32 @@ export function savedVariantValues(graph: SceneGraph, setId: string): SavedVaria
 }
 
 /**
+ * Builds variants on this thread, which opens the reader there. The reader worker would build
+ * the same variants again for a later page, since its reader would not know them, so page loads
+ * stop going through it first, as they did after any edit before the worker took edits.
+ */
+function buildHere<T>(graph: SceneGraph, build: () => T): T {
+  if (canUseFigPopulationWorker(graph)) stopFigReaderWorker(graph)
+  return build()
+}
+
+/**
+ * Builds saved variants in the reader worker while it loads the document's pages, so this thread
+ * neither blocks on the build nor opens a reader of its own; on this thread when it does not.
+ * False when one of them needs a layer the user deleted. Callers that cannot wait, such as the
+ * plugin API, build on this thread instead, which stops page loads going through the worker.
+ */
+export async function loadSavedVariants(
+  graph: SceneGraph,
+  variantIds: readonly string[]
+): Promise<boolean> {
+  if (variantIds.length === 0) return true
+  const built = await createFigPopulationWorker(graph)?.loadComponents(variantIds)
+  if (built !== undefined && built !== null) return built
+  return buildHere(graph, () => loadReaderVariants(graph, variantIds))
+}
+
+/**
  * Build every variant of the set the opened file holds, so an edit to the set's properties,
  * values or names reaches all of them, as it does a set whose variants are all built. Returns
  * whether they are: none is when one of them nests a layer the user deleted. When `accept`
@@ -72,7 +103,9 @@ export function buildSavedVariants(graph: SceneGraph, setId: string, accept?: ()
   const unbuiltIds = savedReaderVariants(graph, setId)
     .filter((variant) => variant.layerId === undefined)
     .map((variant) => variant.id)
-  return unbuiltIds.length === 0 || loadReaderVariants(graph, unbuiltIds, accept)
+  return (
+    unbuiltIds.length === 0 || buildHere(graph, () => loadReaderVariants(graph, unbuiltIds, accept))
+  )
 }
 
 /** A variant property's values across the set, those of variants not built yet included. */
@@ -121,5 +154,7 @@ export function findOrBuildVariant(
     return built
   }
   const unbuilt = unbuiltVariantWith(graph, setId, requested)
-  return unbuilt ? graph.getNode(loadReaderVariant(graph, unbuilt.id) ?? '') : undefined
+  return unbuilt
+    ? graph.getNode(buildHere(graph, () => loadReaderVariant(graph, unbuilt.id)) ?? '')
+    : undefined
 }

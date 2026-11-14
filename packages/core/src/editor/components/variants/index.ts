@@ -40,7 +40,12 @@ import {
   type VariantTransitionResult
 } from './model'
 import { addVariantValue, removeVariantValue } from './options'
-import { findOrBuildVariant, savedVariantValues } from './saved'
+import {
+  findOrBuildVariant,
+  loadSavedVariants,
+  savedVariantValues,
+  unbuiltVariantWith
+} from './saved'
 
 export type {
   VariantConflict,
@@ -146,6 +151,30 @@ export function createVariantActions(ctx: EditorContext) {
     return { kind: 'changed', componentId: target.id }
   }
 
+  /**
+   * The saved variants setting an instance's variant property to `value` would build first:
+   * none when that variant is built, or the property is not a variant property. Loading them with
+   * `loadSavedVariants` before the switch builds them in the reader worker instead of on this
+   * thread.
+   */
+  function variantsToLoad(instanceId: string, propertyId: string, value: string): string[] {
+    const instance = ctx.graph.getNode(instanceId)
+    const component = instance?.componentId ? ctx.graph.getNode(instance.componentId) : undefined
+    const componentSetId = component?.parentId
+    if (component?.type !== 'COMPONENT' || !componentSetId) return []
+    const definition = getVariantDefinitions(ctx.graph, componentSetId).find(
+      (item) => item.id === propertyId
+    )
+    if (!definition) return []
+    const requested = {
+      ...variantValues(ctx.graph, componentSetId, component),
+      [definition.name]: value
+    }
+    if (findExactVariant(ctx.graph, componentSetId, requested)) return []
+    const unbuilt = unbuiltVariantWith(ctx.graph, componentSetId, requested)
+    return unbuilt ? [unbuilt.id] : []
+  }
+
   /** A copy of a variant with its values, below the set's last variant, for the caller to set. */
   function duplicateVariant(variantId: string): string | undefined {
     const variant = ctx.graph.getNode(variantId)
@@ -220,6 +249,8 @@ export function createVariantActions(ctx: EditorContext) {
       validateComponentSet(ctx.graph, componentSetId),
     getVariantOptionAvailability,
     switchInstanceVariant,
+    variantsToLoad,
+    loadSavedVariants: (variantIds: readonly string[]) => loadSavedVariants(ctx.graph, variantIds),
     addVariant: (nodeId: string) => addVariant(ctx, nodeId),
     getVariantOptions: (componentSetId: string, propertyId: string) =>
       getVariantOptions(ctx.graph, componentSetId, propertyId),

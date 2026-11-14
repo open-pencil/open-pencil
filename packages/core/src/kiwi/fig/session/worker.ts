@@ -5,6 +5,7 @@ import { applyFigGraphEdits } from '#core/kiwi/fig/population/edits'
 import { createFigArchiveOperations } from '#core/kiwi/fig/session/archive/access'
 import { sendStream } from '#core/kiwi/fig/session/port-stream'
 import type {
+  FigSessionLoadRequest,
   FigSessionOpenRequest,
   FigSessionRequest,
   FigSessionResponse
@@ -24,16 +25,20 @@ function respond(message: FigSessionResponse, transfer: Transferable[] = []): vo
   port?.postMessage(message, transfer)
 }
 
-function populate(request: Extract<FigSessionRequest, { type: 'populate' }>): void {
+function populate(request: FigSessionLoadRequest): void {
   if (!session) throw new Error('FIG session has no retained reader')
   const { requestId } = request
   let reportedAt = performance.now()
-  const result = session.populate(request.pageId, () => {
+  const progress = () => {
     const now = performance.now()
     if (now - reportedAt < PROGRESS_INTERVAL_MS) return
     reportedAt = now
     respond({ type: 'population-progress', requestId })
-  })
+  }
+  const result =
+    request.type === 'populate'
+      ? session.populate(request.pageId, progress)
+      : session.loadComponents(request.componentIds)
   // Sent in pieces, so the main thread copies and applies a large page in tasks short enough
   // for the editor to keep responding between them.
   const { created, ...changes } = result.delta
@@ -123,7 +128,10 @@ function handleRequest(request: FigSessionRequest): void {
   } catch (error) {
     respond({
       type: 'population-error',
-      requestId: request.type === 'populate' ? request.requestId : undefined,
+      requestId:
+        request.type === 'populate' || request.type === 'load-components'
+          ? request.requestId
+          : undefined,
       error: error instanceof Error ? error.message : String(error)
     })
   }
