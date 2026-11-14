@@ -9,7 +9,12 @@ export type CloudLinkKind = 'invitations' | 'share'
  */
 export type CloudLinkPathKind = CloudLinkKind | 'documents' | 'community'
 
-const CLOUD_LINK_PATH = /^\/(invitations|share|documents|community)\/([^/]+)$/
+const CLOUD_LINK_PATH = /^\/(invitations|share|documents)\/([^/]+)$/
+/** A community document opened in the editor; `/community/:id` alone is its page. */
+const COMMUNITY_EDITOR_PATH = /^\/community\/([^/]+)\/open$/
+
+/** The server's community gallery: every document in it, each with a page of its own. */
+export const CLOUD_COMMUNITY_PATH = '/community'
 
 /**
  * A link on the server's own editor. The server is the link's own address, so the link needs
@@ -59,8 +64,8 @@ export function cloudDocumentPath(documentId: string): string {
 }
 
 /**
- * A document of the server's community gallery, `/community/:id`, or one of its named versions
- * with `?version=…`, which anyone opens read-only without signing in.
+ * A document of the server's community gallery opened in the editor, `/community/:id/open`, or
+ * one of its named versions with `?version=…`, which anyone opens read-only without signing in.
  */
 export function cloudCommunityURL(
   serverURL: string,
@@ -73,7 +78,12 @@ export function cloudCommunityURL(
 }
 
 export function cloudCommunityPath(documentId: string): string {
-  return `/community/${encodeParam(documentId)}`
+  return `${cloudCommunityPagePath(documentId)}/open`
+}
+
+/** A community document's page on the server: its preview, versions, and ways to open it. */
+export function cloudCommunityPagePath(documentId: string): string {
+  return `${CLOUD_COMMUNITY_PATH}/${encodeParam(documentId)}`
 }
 
 /**
@@ -83,7 +93,10 @@ export function cloudCommunityPath(documentId: string): string {
 export function parseCloudLinkPath(
   pathname: string
 ): { kind: CloudLinkPathKind; id: string } | null {
-  const [, kind, id] = pathname.match(CLOUD_LINK_PATH) ?? []
+  const community = pathname.match(COMMUNITY_EDITOR_PATH)
+  const [, kind, id] = community
+    ? [pathname, 'community' as const, community[1]]
+    : (pathname.match(CLOUD_LINK_PATH) ?? [])
   if (
     (kind !== 'invitations' && kind !== 'share' && kind !== 'documents' && kind !== 'community') ||
     !id
@@ -110,4 +123,18 @@ export function cloudDesktopLinkURL(
 ): string {
   const link = serverLink(serverURL, `/${kind}/${encodeParam(id)}`)
   return withFragment(withQuery('openpencil://cloud', { url: link }), secret)
+}
+
+/**
+ * The desktop app's form of a community document's link, `openpencil://cloud?url=<link>`: the
+ * editor's address for it, with the named version it asks for, if any. It carries no secret.
+ */
+export function cloudCommunityDesktopLinkURL(
+  documentId: string,
+  serverURL: string,
+  versionId: string | null = null
+): string {
+  return withQuery('openpencil://cloud', {
+    url: cloudCommunityURL(serverURL, documentId, versionId)
+  })
 }

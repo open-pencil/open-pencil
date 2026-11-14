@@ -203,6 +203,11 @@ export function parseCloudDeploymentConfig(
     ...serviceConfig(config, environment),
     legal: legalConfig(config),
     community: config.community ? { workspaceId: config.community.workspace } : undefined,
+    branding: config.deployment.branding && {
+      name: config.deployment.branding.name,
+      logoURL: config.deployment.branding.logo_url,
+      helpURL: config.deployment.branding.help_url
+    },
     errorTracking: errorTrackingConfig(config, environment),
     technicalLimits: technicalLimits(config)
   })

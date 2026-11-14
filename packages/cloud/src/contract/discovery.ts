@@ -99,6 +99,24 @@ export const cloudLegalDiscoverySchema = v.object({
 })
 export type CloudLegalDiscovery = v.InferOutput<typeof cloudLegalDiscoverySchema>
 
+/** A web address a page may link or load: `http` or `https` only, never a script or data URL. */
+const webURLSchema = v.pipe(
+  v.string(),
+  v.url(),
+  v.check((value) => ['http:', 'https:'].includes(new URL(value).protocol))
+)
+
+/**
+ * How a self-hosted server names itself on its public pages: the operator's name and logo in the
+ * bar, and where its people get help. The official server is OpenPencil's own and names none.
+ */
+export const cloudBrandingSchema = v.object({
+  name: v.optional(v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(80))),
+  logoURL: v.optional(webURLSchema),
+  helpURL: v.optional(webURLSchema)
+})
+export type CloudBranding = v.InferOutput<typeof cloudBrandingSchema>
+
 /**
  * The server's community gallery: the workspace whose documents anyone may open read-only.
  * Saving to it publishes, so editors never choose it for anyone and say so when it is chosen.
@@ -127,7 +145,8 @@ export const cloudDiscoverySchema = v.object({
   billing: v.optional(cloudBillingDiscoverySchema),
   /** The community gallery; absent when the deployment has none. */
   community: v.optional(cloudCommunityDiscoverySchema),
-  legal: v.optional(cloudLegalDiscoverySchema)
+  legal: v.optional(cloudLegalDiscoverySchema),
+  branding: v.optional(cloudBrandingSchema)
 })
 export type CloudDiscovery = v.InferOutput<typeof cloudDiscoverySchema>
 

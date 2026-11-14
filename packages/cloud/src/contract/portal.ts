@@ -6,6 +6,17 @@
  */
 export const CLOUD_PORTAL_PAGE_ROOTS = ['/welcome', '/auth', '/account', '/admin'] as const
 
+/**
+ * The community gallery's pages, which the portal serves too: the gallery at `/community` and a
+ * document's page at `/community/:id`. The editor opens a document at `/community/:id/open`.
+ */
+export const CLOUD_PORTAL_COMMUNITY_PAGES = ['/community', '/community/:documentId'] as const
+
+const COMMUNITY_PAGE = /^\/community(?:\/[^/]+)?\/?$/
+
 export function isCloudPortalPage(path: string): boolean {
-  return CLOUD_PORTAL_PAGE_ROOTS.some((root) => path === root || path.startsWith(`${root}/`))
+  return (
+    COMMUNITY_PAGE.test(path) ||
+    CLOUD_PORTAL_PAGE_ROOTS.some((root) => path === root || path.startsWith(`${root}/`))
+  )
 }

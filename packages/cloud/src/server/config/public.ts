@@ -67,6 +67,7 @@ export function cloudDiscoveryFromConfig(config: CloudServerConfig): CloudDiscov
       ? { endpoint: config.billingEndpoint, contractVersion: CLOUD_BILLING_CONTRACT_VERSION }
       : undefined,
     community: config.community,
+    branding: config.branding,
     legal: config.legal
   })
 }

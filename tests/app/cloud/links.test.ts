@@ -27,7 +27,7 @@ describe('Cloud links', () => {
     for (const address of [
       `${SERVER}/`,
       `${SERVER}/documents/abc#secret`,
-      `${SERVER}/community/abc#secret`,
+      `${SERVER}/community/abc/open#secret`,
       `${SERVER}/rooms/abc#secret`,
       `${SERVER}/share/abc/more#secret`,
       `${SERVER}/share/abc`,

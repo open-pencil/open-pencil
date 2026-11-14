@@ -731,6 +731,14 @@ zh-cn:email.storageFullPreview
 zh-cn:email.waitlistSubject
 zh-cn:email.waitlistPreview
 zh-cn:email.waitlist
+ja:cloudPortal.siteTagline
+ja:cloudPortal.siteCloudDocs
+ja:cloudPortal.siteLicense
+zh-cn:cloudPortal.siteTagline
+zh-cn:cloudPortal.siteCloudDocs
+zh-cn:cloudPortal.siteLicense
+ja:cloudPortal.sitePoweredBy
+zh-cn:cloudPortal.sitePoweredBy
 ja:cloud.errorEditorOutdatedHeading
 ja:cloud.errorEditorOutdatedDescription
 ja:cloud.editorOutdatedBanner

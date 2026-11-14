@@ -125,6 +125,19 @@ export function createCloudPortalRouter(context: PortalContext) {
         meta: { account: true, admin: true }
       },
       {
+        // The community gallery, for anyone; a server without one sends visitors to the editor.
+        path: '/community',
+        name: 'community',
+        component: () => import('@/views/cloud/community/CommunityView.vue'),
+        beforeEnter: () => (context.discovery.community ? true : PORTAL_HOME)
+      },
+      {
+        path: '/community/:documentId',
+        name: 'community-document',
+        component: () => import('@/views/cloud/community/CommunityDocumentView.vue'),
+        beforeEnter: () => (context.discovery.community ? true : PORTAL_HOME)
+      },
+      {
         path: '/admin/people/:userId',
         name: 'person',
         component: () => import('@/views/cloud/ConsoleView.vue'),

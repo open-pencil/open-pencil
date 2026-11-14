@@ -677,3 +677,16 @@ ar:cloudPortal.emailTransportCloudflare
 es:cloudPortal.plan
 pl:cloudPortal.plan
 fr:cloud.savePublicLabel
+de:cloudPortal.communityTitle
+it:cloudPortal.communityTitle
+es:cloudPortal.siteLegal
+ar:cloudPortal.siteCopyright
+de:cloudPortal.siteCopyright
+es:cloudPortal.siteCopyright
+fr:cloudPortal.siteCopyright
+it:cloudPortal.siteCopyright
+ja:cloudPortal.siteCopyright
+pl:cloudPortal.siteCopyright
+pt-br:cloudPortal.siteCopyright
+ru:cloudPortal.siteCopyright
+zh-cn:cloudPortal.siteCopyright
