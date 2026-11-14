@@ -15,7 +15,7 @@ import { PEN_HANDLE_RADIUS, PEN_VERTEX_RADIUS } from '#core/constants'
 import { worldXToScreen, worldYToScreen } from '#core/geometry/viewport'
 import {
   type ShownHandles,
-  handleVisibleVertices,
+  shownHandles,
   regenerateFillGeometry,
   vectorHandleId,
   vectorNetworkToPath
@@ -70,7 +70,6 @@ export function drawNodeEditOverlay(
 
   const selectedHandles = editState.selectedHandles ?? new Set<number>()
   const hovered = editState.hoveredHandleInfo ?? null
-  const visibleHandleVertices = handleVisibleVertices(editState)
 
   // Draw the node shape with its original fills/strokes/effects using live vertices
   drawLiveShape(r, canvas, graph, editState.nodeId, vertices, segments, regions)
@@ -91,16 +90,7 @@ export function drawNodeEditOverlay(
   )
 
   // Draw tangent handle lines + diamonds for vertices with visible handles
-  drawEditHandles(
-    r,
-    canvas,
-    vertices,
-    segments,
-    visibleHandleVertices,
-    toScreen,
-    selectedHandles,
-    hovered
-  )
+  drawEditHandles(r, canvas, editState, toScreen, selectedHandles, hovered)
 
   // Draw vertex circles
   drawEditVertices(r, canvas, vertices, selectedVertexIndices, toScreen)
@@ -319,89 +309,44 @@ function drawSelectedSegments(
 function drawEditHandles(
   r: SkiaRenderer,
   canvas: Canvas,
-  vertices: VectorVertex[],
-  segments: VectorSegment[],
-  visibleHandleVertices: Set<number>,
+  editState: NonNullable<RenderOverlays['nodeEditState']>,
   toScreen: ToScreenFn,
   selectedHandles: Set<number>,
   hovered: HandleInfo
 ): void {
   const paints = r.nodeEditPaints
-  for (let si = 0; si < segments.length; si++) {
-    const seg = segments[si]
-    drawSegmentHandle(
-      r,
-      canvas,
-      vertices,
-      seg,
-      si,
-      'tangentStart',
-      visibleHandleVertices,
-      toScreen,
-      selectedHandles,
-      hovered,
-      paints
-    )
-    drawSegmentHandle(
-      r,
-      canvas,
-      vertices,
-      seg,
-      si,
-      'tangentEnd',
-      visibleHandleVertices,
-      toScreen,
-      selectedHandles,
-      hovered,
-      paints
-    )
+  for (const handle of shownHandles(editState)) {
+    const isSel = selectedHandles.has(vectorHandleId(handle.segmentIndex, handle.tangentField))
+    const isHov =
+      !isSel &&
+      !!hovered &&
+      hovered.segmentIndex === handle.segmentIndex &&
+      hovered.tangentField === handle.tangentField
+
+    let linePaint = paints.handleLinePaint
+    if (isSel) linePaint = paints.handleLineSelectedPaint
+    else if (isHov) linePaint = paints.handleLineHoverPaint
+
+    const vertex = editState.vertices[handle.vertexIndex]
+    const anchor = toScreen(vertex.x, vertex.y)
+    const cp = toScreen(handle.point.x, handle.point.y)
+    canvas.drawLine(anchor.x, anchor.y, cp.x, cp.y, linePaint)
+
+    if (isSel) {
+      drawHandleDiamond(
+        r,
+        canvas,
+        cp.x,
+        cp.y,
+        paints.handleSelectedFill,
+        paints.handleSelectedStroke
+      )
+    } else if (isHov) {
+      drawHandleDiamond(r, canvas, cp.x, cp.y, paints.handleHoverFill, paints.handleHoverStroke)
+    } else {
+      drawHandleDiamond(r, canvas, cp.x, cp.y, r.penVertexFill, paints.vertexStroke1px)
+    }
   }
-}
-
-function drawSegmentHandle(
-  r: SkiaRenderer,
-  canvas: Canvas,
-  vertices: VectorVertex[],
-  seg: VectorSegment,
-  segmentIndex: number,
-  tangentField: 'tangentStart' | 'tangentEnd',
-  visibleHandleVertices: Set<number>,
-  toScreen: ToScreenFn,
-  selectedHandles: Set<number>,
-  hovered: HandleInfo,
-  paints: NodeEditPaints
-): void {
-  const vertexIndex = tangentField === 'tangentStart' ? seg.start : seg.end
-  if (!visibleHandleVertices.has(vertexIndex)) return
-
-  const tangent = seg[tangentField]
-  if (tangent.x === 0 && tangent.y === 0) return
-
-  const key = vectorHandleId(segmentIndex, tangentField)
-  const isSel = selectedHandles.has(key)
-  const isHov =
-    !isSel &&
-    !!hovered &&
-    hovered.segmentIndex === segmentIndex &&
-    hovered.tangentField === tangentField
-
-  let linePaint = paints.handleLinePaint
-  if (isSel) linePaint = paints.handleLineSelectedPaint
-  else if (isHov) linePaint = paints.handleLineHoverPaint
-
-  const anchor = toScreen(vertices[vertexIndex].x, vertices[vertexIndex].y)
-  const cp = toScreen(vertices[vertexIndex].x + tangent.x, vertices[vertexIndex].y + tangent.y)
-  canvas.drawLine(anchor.x, anchor.y, cp.x, cp.y, linePaint)
-
-  if (isSel) {
-    drawHandleDiamond(r, canvas, cp.x, cp.y, paints.handleSelectedFill, paints.handleSelectedStroke)
-    return
-  }
-  if (isHov) {
-    drawHandleDiamond(r, canvas, cp.x, cp.y, paints.handleHoverFill, paints.handleHoverStroke)
-    return
-  }
-  drawHandleDiamond(r, canvas, cp.x, cp.y, r.penVertexFill, paints.vertexStroke1px)
 }
 
 function drawHandleDiamond(
