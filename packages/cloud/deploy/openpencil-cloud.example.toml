@@ -121,7 +121,8 @@ transport = "none"
 
 # Optional: your own terms and privacy policy, linked at sign-up and in the portal's footer. With
 # require_acceptance, each account accepts terms_version once before using the server, and again
-# whenever you change it. Leave the table out to show none.
+# whenever you change it. abuse_email is linked as Report abuse, and is where the owner of a
+# document an administrator blocks writes to contest it. Leave the table out to show none.
 # [legal]
 # terms_url = "https://example.com/terms"
 # privacy_url = "https://example.com/privacy"

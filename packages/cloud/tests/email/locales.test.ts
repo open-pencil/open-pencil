@@ -15,7 +15,9 @@ describe('localised email', () => {
     for (const email of EMAIL_SAMPLES) {
       const rendered = await renderTransactionalEmail(email, locale)
       expect(rendered.html).toContain(`lang="${locale}"`)
-      expect(rendered.html).toContain(EMAIL_SAMPLE_URL)
+      // An email with somewhere to go links there; a reporter's answers have nothing to click.
+      const links = Object.values(email.payload).includes(EMAIL_SAMPLE_URL)
+      expect(rendered.html.includes(EMAIL_SAMPLE_URL)).toBe(links)
       // A placeholder left in the text is a translation that doesn't match its source.
       expect(`${rendered.subject}\n${rendered.text}`).not.toMatch(/\{\w+\}/)
     }

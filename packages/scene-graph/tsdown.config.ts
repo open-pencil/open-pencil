@@ -28,6 +28,7 @@ export default defineConfig(
       'font-style': './src/font-style.ts',
       'generated/index': './src/generated/index.ts',
       geometry: './src/geometry.ts',
+      corners: './src/corners.ts',
       gradient: './src/gradient.ts',
       'group-bounds': './src/group-bounds.ts',
       guides: './src/guides.ts',

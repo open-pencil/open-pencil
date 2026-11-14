@@ -1,16 +1,7 @@
-import { serializeHTML } from '#dom-css/export/html'
 import { INLINE_TAGS } from '#dom-css/import/flow'
 import { parseStyleAttribute } from '#dom-css/import/style-attribute'
-import type {
-  CSSComputeOptions,
-  CSSRuntime,
-  DesignDocument,
-  DesignElement,
-  DesignNode
-} from '#dom-css/types'
+import type { DesignDocument, DesignElement, DesignNode } from '#dom-css/types'
 import { parseFragment, type DefaultTreeAdapterTypes } from 'parse5'
-
-import { computeHeadlessStyles } from './styles'
 
 function attrsToRecord(attrs: DefaultTreeAdapterTypes.Element['attrs']): Record<string, string> {
   const result: Record<string, string> = {}
@@ -83,27 +74,15 @@ function childToDesignNode(
   return element
 }
 
-function parseHTML(html: string): DesignDocument {
+/**
+ * The elements and text of an HTML fragment as a design document, without a browser: what a CSS
+ * runtime that styles documents elsewhere, such as the HTML engine, parses them into. Leaves out
+ * what draws nothing (`<head>`, `<style>`, `<script>`, ...) and whitespace between blocks.
+ */
+export function parseHTMLDocument(html: string): DesignDocument {
   const fragment = parseFragment(html)
   return {
     type: 'document',
     children: childrenToDesignNodes(fragment.childNodes, false)
-  }
-}
-
-export function createHeadlessCSSRuntime(): CSSRuntime {
-  return {
-    kind: 'headless',
-    parseHTML,
-    serializeHTML(document: DesignDocument) {
-      return serializeHTML(document)
-    },
-    async computeStyles(document: DesignDocument, cssText = '', options: CSSComputeOptions = {}) {
-      // It resolves the cascade without a layout engine, so it has no boxes to record.
-      if (options.layout) {
-        throw new Error('The headless CSS runtime cannot record layout; use the browser runtime')
-      }
-      return computeHeadlessStyles(document, cssText)
-    }
   }
 }

@@ -1,0 +1,2 @@
+- HTML import keeps a link or label in a flex row as text rather than a frame around it, keeps lists in one text layer, and carries a link's underline through the bold or italic text inside it (#2065).
+- HTML import keeps a unitless line height, such as `line-height: 1.5`, as a percent of the font size (#2065).

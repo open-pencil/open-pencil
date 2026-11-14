@@ -1,3 +1,4 @@
+export { tellReporters, type ReportReplies } from './replies'
 export { createPublicReportRoutes } from './routes'
 export {
   createDocumentReportService,

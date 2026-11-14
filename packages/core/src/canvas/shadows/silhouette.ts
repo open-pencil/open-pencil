@@ -1,9 +1,15 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
-import { strokeOverflow as strokeReach } from '@open-pencil/scene-graph/geometry'
+import { cornerRadii, fittedCornerRadii, type CornerRadii } from '@open-pencil/scene-graph/corners'
+import {
+  strokeOverflow as strokeReach,
+  strokeAlignShare,
+  strokeWeightOf
+} from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
-import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
+import { clipsChildren, isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
+import { paintShows } from '@open-pencil/scene-graph/paints'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 import { textLinesReach } from '@open-pencil/scene-graph/text'
 import { regionFills } from '@open-pencil/scene-graph/vector-network'
@@ -12,7 +18,6 @@ import { paintBooleanOperation } from '#core/canvas/boolean'
 import { renderMaskedChildIds } from '#core/canvas/masks'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { nodeHasRadius, nodeHasSmoothCorners } from '#core/canvas/shapes'
-import { strokeAlignShare } from '#core/canvas/strokes/sides'
 import { nodeOrientationMatrix } from '#core/geometry'
 
 /**
@@ -31,26 +36,13 @@ const SILHOUETTE_PAINT: Fill = {
   visible: true
 }
 
-/**
- * Figma casts a full-strength shadow from any paint above 0% opacity and none from a paint at
- * 0% or a gradient whose stops are all transparent, so such a paint counts as no paint at all.
- */
-export function paintCastsShadow(paint: Fill): boolean {
-  if (!paint.visible || paint.opacity === 0) return false
-  return paint.gradientStops?.some((stop) => stop.color.a > 0) ?? true
-}
-
 /** Frames, groups, and the like, whose shadows Figma casts from their children as well. */
 export function fillsCastShadow(node: SceneNode): boolean {
-  return node.fills.some(paintCastsShadow) || regionFills(node.vectorNetwork).some(paintCastsShadow)
+  return node.fills.some(paintShows) || regionFills(node.vectorNetwork).some(paintShows)
 }
 
 export function paintsCastShadow(node: SceneNode): boolean {
-  return fillsCastShadow(node) || node.strokes.some(paintCastsShadow)
-}
-
-function clipsChildren(node: SceneNode): boolean {
-  return node.clipsContent && node.type !== 'GROUP'
+  return fillsCastShadow(node) || node.strokes.some(paintShows)
 }
 
 function drawsSilhouette(node: SceneNode): boolean {
@@ -72,7 +64,7 @@ function silhouetteStroke(stroke: Stroke): Stroke {
 
 /** The node with its shadow-casting paints made opaque and no effects, or null when it draws none. */
 function silhouetteProxy(node: SceneNode, mode: SilhouetteMode): SceneNode | null {
-  const strokes = node.strokes.filter(paintCastsShadow).map(silhouetteStroke)
+  const strokes = node.strokes.filter(paintShows).map(silhouetteStroke)
   const castsFill = fillsCastShadow(node)
   const coversArea =
     mode === 'knockout' &&
@@ -89,7 +81,7 @@ function silhouetteProxy(node: SceneNode, mode: SilhouetteMode): SceneNode | nul
         region.fills
           ? {
               ...region,
-              fills: coversArea || region.fills.some(paintCastsShadow) ? [SILHOUETTE_PAINT] : []
+              fills: coversArea || region.fills.some(paintShows) ? [SILHOUETTE_PAINT] : []
             }
           : region
       )
@@ -152,20 +144,20 @@ function drawChildSilhouettes(
   }
 }
 
-/** How far a stroke reaches past the shape it outlines. */
-export function strokeOutset(stroke: Stroke): number {
-  return stroke.weight * strokeAlignShare(stroke.align)
+/** How far a stroke reaches past the shape it outlines, by its widest side. */
+function strokeOutset(node: SceneNode, stroke: Stroke): number {
+  return strokeWeightOf(node, stroke) * strokeAlignShare(stroke.align)
 }
 
 function strokeOverflow(node: SceneNode): number {
   let overflow = 0
   for (const stroke of node.strokes) {
-    if (!paintCastsShadow(stroke)) continue
+    if (!paintShows(stroke)) continue
     // A line's stroke lies wholly to one side of it, whatever its alignment, with its heads.
     const reach =
       node.type === 'LINE'
         ? strokeReach([stroke], node.strokeCap, null, node)
-        : strokeOutset(stroke)
+        : strokeOutset(node, stroke)
     overflow = Math.max(overflow, reach)
   }
   return overflow
@@ -182,7 +174,7 @@ function isOpaquePaint(paint: Fill): boolean {
 }
 
 function paintsOverOwnKnockout(node: SceneNode): boolean {
-  const strokes = node.strokes.filter(paintCastsShadow)
+  const strokes = node.strokes.filter(paintShows)
   const coversArea =
     !isLayerContainer(node) || fillsCastShadow(node) || strokes.length > 0 || clipsChildren(node)
   if (coversArea && !node.fills.some(isOpaquePaint)) return false
@@ -289,11 +281,12 @@ function pointInShape(node: SceneNode, x: number, y: number): boolean {
   }
   if (!nodeHasRadius(node)) return true
   const smoothing = nodeHasSmoothCorners(node) ? 1 + node.cornerSmoothing : 1
-  const radius = (value: number) => Math.min(value * smoothing, node.width / 2, node.height / 2)
-  const corners = node.independentCorners
-    ? [node.topLeftRadius, node.topRightRadius, node.bottomRightRadius, node.bottomLeftRadius]
-    : [node.cornerRadius, node.cornerRadius, node.cornerRadius, node.cornerRadius]
-  const [topLeft, topRight, bottomRight, bottomLeft] = corners.map(radius)
+  const smoothed = cornerRadii(node).map((value) => value * smoothing) as CornerRadii
+  const [topLeft, topRight, bottomRight, bottomLeft] = fittedCornerRadii(
+    node.width,
+    node.height,
+    smoothed
+  )
   const outsideCorner = (cx: number, cy: number, r: number, inCorner: boolean) =>
     inCorner && Math.hypot(x - cx, y - cy) > r + epsilon
   return !(

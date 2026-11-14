@@ -2,7 +2,9 @@ import { hitsConnectorLine } from './connectors/hit'
 import { getWorldMatrix } from './coordinate'
 import type { SceneGraph } from './graph'
 import Matrix from './matrix'
-import { hitsShape, isHitPaint, strokeReach } from './outline/hit'
+import { clipsChildren } from './node-defaults'
+import { hitsShape, strokeReach } from './outline/hit'
+import { paintShows } from './paints/shows'
 import type { SceneNode, NodeType } from './types'
 
 const CONTAINER_TYPES = new Set<NodeType>([
@@ -16,9 +18,9 @@ const CONTAINER_TYPES = new Set<NodeType>([
 ])
 const OPAQUE_CONTAINER_TYPES = new Set<NodeType>(['COMPONENT', 'INSTANCE'])
 
-/** Whether a container's own paints show, so its empty area is drawn (see `isHitPaint`). */
+/** Whether a container's own paints show, so its empty area is drawn (`paintShows`). */
 function showsPaint(node: SceneNode): boolean {
-  return node.fills.some(isHitPaint) || node.strokes.some(isHitPaint)
+  return node.fills.some(paintShows) || node.strokes.some(paintShows)
 }
 
 function isTopLevel(graph: SceneGraph, node: SceneNode): boolean {
@@ -157,7 +159,7 @@ function hitTestChildren(
   if (!parent) return null
   const { transformCache, pad } = walk
 
-  if (parent.clipsContent) {
+  if (clipsChildren(parent)) {
     if (!containsPoint(px, py, parent, graph, transformCache)) return null
   }
 
@@ -430,12 +432,7 @@ function dropTargetIn(
   transformCache: Map<string, boolean>
 ): SceneNode | null {
   // A clipped-away part of a child is not under the cursor.
-  if (
-    parent.type !== 'CANVAS' &&
-    parent.clipsContent &&
-    !containsPoint(px, py, parent, graph, transformCache)
-  )
-    return null
+  if (clipsChildren(parent) && !containsPoint(px, py, parent, graph, transformCache)) return null
 
   for (let i = parent.childIds.length - 1; i >= 0; i--) {
     const childId = parent.childIds[i]

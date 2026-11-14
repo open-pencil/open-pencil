@@ -13,6 +13,8 @@ import * as accessTokens from './migrations/009_access_tokens'
 import * as storageLimitNotices from './migrations/010_storage_limit_notices'
 import * as accountIds from './migrations/011_account_ids'
 import * as emailLocales from './migrations/012_email_locales'
+import * as documentBlockEmails from './migrations/013_document_block_emails'
+import * as reportReplies from './migrations/014_report_replies'
 import type { CloudDatabase } from './tables'
 
 /**
@@ -35,7 +37,9 @@ const migrations: Record<string, CloudMigration> = {
   '009_access_tokens': accessTokens,
   '010_storage_limit_notices': storageLimitNotices,
   '011_account_ids': accountIds,
-  '012_email_locales': emailLocales
+  '012_email_locales': emailLocales,
+  '013_document_block_emails': documentBlockEmails,
+  '014_report_replies': reportReplies
 }
 
 /** Cloud's migrations, in order. */

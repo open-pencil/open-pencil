@@ -3,7 +3,7 @@ import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 import {
-  lineHeightPixels,
+  estimatedLineStep,
   textLengthPixels,
   textVerticalOffset
 } from '@open-pencil/scene-graph/text'
@@ -163,7 +163,7 @@ export function getTextOutlineSupport(node: SceneNode): TextOutlineSupport {
 }
 
 function lineHeight(node: SceneNode): number {
-  return lineHeightPixels(node.lineHeight, node.fontSize) ?? Math.ceil(node.fontSize * 1.2)
+  return estimatedLineStep(node.lineHeight, node.fontSize)
 }
 
 interface TextLine {
