@@ -11,16 +11,16 @@ import PortalFooter from './PortalFooter.vue'
  * startup notice: the app icon, or the page's own icon, then a title and one narrow column whose
  * buttons sit right under what they act on.
  */
-const { host, heading, description, title } = defineProps<{
+const { host, heading, description, tabTitle } = defineProps<{
   host: string
   heading: string
   description?: string
   /** The tab's name, when the heading already names the site, as "Sign in to …" does. */
-  title?: string
+  tabTitle?: string
 }>()
 
 // The page's heading names its tab, under the site's name (`CloudPortalApp`).
-useHead({ title: () => title ?? heading })
+useHead({ title: () => tabTitle ?? heading })
 
 const ui = portalPublic()
 </script>
