@@ -23,10 +23,7 @@ export async function migratedNodeCloudDatabase(config: CloudServerConfig) {
     await migrating.destroy()
   }
   const database = createPostgresCloudDatabase({ connectionString: config.databaseURL })
-  return {
-    database,
-    auth: createBetterAuthAdapter(config, database, undefined, { validateSchema: true })
-  }
+  return { database, auth: createBetterAuthAdapter(config, database) }
 }
 
 export async function createMigratedNodeCloudDatabase(
