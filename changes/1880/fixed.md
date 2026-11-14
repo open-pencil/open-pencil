@@ -1,0 +1,1 @@
+- MCP `get_jsx` written to a `path` reports `truncated` and `totalLength` when the JSX was cut at its size limit, instead of reporting only a successful write (#1880).

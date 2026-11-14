@@ -119,6 +119,18 @@ describe('MCP tool file output', () => {
     expect(inline.content[0].type).toBe('text')
     expect(inline.content[0].text).toContain(result.base64)
   })
+
+  test('get_jsx written to a path reports that the JSX was truncated', async () => {
+    const jsx = '<Frame name="Card">'.padEnd(12_000, ' ')
+    const result = { id: '0:1', name: 'Card', jsx, truncated: true, totalLength: 26_349 }
+    const { root, call } = await server({ get_jsx: result })
+
+    const written = await call('get_jsx', { id: '0:1', path: 'card.jsx' })
+    expect(written.isError).toBeFalsy()
+    expect(await readFile(join(root, 'card.jsx'), 'utf8')).toBe(jsx)
+    const response: unknown = JSON.parse(written.content[0].text ?? '')
+    expect(response).toMatchObject({ byteLength: 12_000, truncated: true, totalLength: 26_349 })
+  })
 })
 
 describe('MCP tool file input', () => {
