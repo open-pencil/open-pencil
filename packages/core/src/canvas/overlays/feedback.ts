@@ -83,6 +83,10 @@ export function drawMarquee(r: SkiaRenderer, canvas: Canvas, marquee?: Rect | nu
 
   r.auxFill.setColor(r.selColor(MARQUEE_FILL_ALPHA))
   canvas.drawRect(rect, r.auxFill)
+  // The marquee is stroked in screen pixels, so its border is a screen width. The shared
+  // selection paint carries the 1/zoom the selection overlay left on it, which would draw
+  // the border that many pixels wide.
+  r.selectionPaint.setStrokeWidth(1)
   canvas.drawRect(rect, r.selectionPaint)
 }
 
