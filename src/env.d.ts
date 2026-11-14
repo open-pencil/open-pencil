@@ -5,6 +5,10 @@
 interface ImportMetaEnv {
   /** `on` only in official release builds; without it the app sends no pings or usage stats. */
   readonly VITE_OPENPENCIL_FEEDBACK?: string
+  /** Storage address a self-hosted build fills in; used only together with the bucket. */
+  readonly VITE_STORAGE_PRESET_ENDPOINT?: string
+  /** Storage bucket a self-hosted build fills in; used only together with the endpoint. */
+  readonly VITE_STORAGE_PRESET_BUCKET?: string
 }
 
 declare const __OPENPENCIL_APP_VERSION__: string
