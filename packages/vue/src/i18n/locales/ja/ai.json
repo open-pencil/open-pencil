@@ -275,7 +275,7 @@
   "aiSetupAccessTitle": "すでに使っているものは？",
   "aiSetupAccessDescription": "持っているものをすべて選んでください。まだ何もなければ、そのまま続けてください。",
   "aiSetupAccessAgents": "このコンピューターのコーディングエージェント",
-  "aiSetupAccessAgentsDescription": "既存のサブスクリプションを使います。モデルはエージェントが選びます。",
+  "aiSetupAccessAgentsDescription": "既存のサブスクリプションを使います。エージェントのモデルから選ぶか、選択をエージェントに任せます。",
   "aiSetupAccessAgentsDesktop": "コーディングエージェントは OpenPencil デスクトップアプリで利用できます。",
   "aiSetupAccessAgentsSandboxed": "この OpenPencil のインストールではコーディングエージェントを起動できません。GitHub からダウンロードした版では起動できます。",
   "modelProviderSetUp": "設定済み",

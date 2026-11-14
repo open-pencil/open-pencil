@@ -310,7 +310,7 @@ export const aiMessageDefaults = {
   aiSetupAccessDescription: 'Select everything you have. If you have nothing yet, continue.',
   aiSetupAccessAgents: 'Coding agents on this computer',
   aiSetupAccessAgentsDescription:
-    'Use your existing subscription. The agent chooses its own model.',
+    'Use your existing subscription. Pick one of the agent’s models, or leave the choice to it.',
   aiSetupAccessAgentsDesktop: 'Coding agents are available in the OpenPencil desktop app.',
   aiSetupAccessAgentsSandboxed:
     'This install of OpenPencil can’t start coding agents. The download from GitHub can.',

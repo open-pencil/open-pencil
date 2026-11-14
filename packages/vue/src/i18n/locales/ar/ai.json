@@ -275,7 +275,7 @@
   "aiSetupAccessTitle": "ماذا تستخدم بالفعل؟",
   "aiSetupAccessDescription": "حدّد كل ما لديك. إن لم يكن لديك شيء بعد، فتابع.",
   "aiSetupAccessAgents": "وكلاء البرمجة على هذا الكمبيوتر",
-  "aiSetupAccessAgentsDescription": "استخدم اشتراكك الحالي. يختار الوكيل نموذجه بنفسه.",
+  "aiSetupAccessAgentsDescription": "استخدم اشتراكك الحالي. اختر أحد نماذج الوكيل أو اترك الاختيار له.",
   "aiSetupAccessAgentsDesktop": "وكلاء البرمجة متاحون في تطبيق OpenPencil لسطح المكتب.",
   "aiSetupAccessAgentsSandboxed": "لا يستطيع هذا التثبيت من OpenPencil تشغيل وكلاء البرمجة. النسخة المنزّلة من GitHub تستطيع ذلك.",
   "modelProviderSetUp": "إعداد",

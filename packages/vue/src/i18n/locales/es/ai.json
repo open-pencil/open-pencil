@@ -275,7 +275,7 @@
   "aiSetupAccessTitle": "¿Qué usas ya?",
   "aiSetupAccessDescription": "Selecciona todo lo que tengas. Si aún no tienes nada, continúa.",
   "aiSetupAccessAgents": "Agentes de programación en este equipo",
-  "aiSetupAccessAgentsDescription": "Usa tu suscripción actual. El agente elige su propio modelo.",
+  "aiSetupAccessAgentsDescription": "Usa tu suscripción actual. Elige uno de los modelos del agente o déjale la elección.",
   "aiSetupAccessAgentsDesktop": "Los agentes de programación están disponibles en la aplicación de escritorio de OpenPencil.",
   "aiSetupAccessAgentsSandboxed": "Esta instalación de OpenPencil no puede iniciar agentes de programación. La descarga de GitHub sí puede.",
   "modelProviderSetUp": "Configurado",

@@ -275,7 +275,7 @@
   "aiSetupAccessTitle": "Qu’utilisez-vous déjà ?",
   "aiSetupAccessDescription": "Sélectionnez tout ce que vous avez. Si vous n’avez encore rien, continuez.",
   "aiSetupAccessAgents": "Agents de code sur cet ordinateur",
-  "aiSetupAccessAgentsDescription": "Utilisez votre abonnement existant. L’agent choisit son propre modèle.",
+  "aiSetupAccessAgentsDescription": "Utilisez votre abonnement existant. Choisissez l’un des modèles de l’agent ou laissez-le choisir.",
   "aiSetupAccessAgentsDesktop": "Les agents de code sont disponibles dans l’application de bureau OpenPencil.",
   "aiSetupAccessAgentsSandboxed": "Cette installation d’OpenPencil ne peut pas lancer d’agents de code. La version téléchargée sur GitHub le peut.",
   "modelProviderSetUp": "Configuré",

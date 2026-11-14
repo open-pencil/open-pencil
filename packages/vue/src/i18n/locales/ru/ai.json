@@ -275,7 +275,7 @@
   "aiSetupAccessTitle": "Чем вы уже пользуетесь?",
   "aiSetupAccessDescription": "Отметьте всё, что у вас есть. Если пока ничего нет, просто продолжайте.",
   "aiSetupAccessAgents": "Агенты для программирования на этом компьютере",
-  "aiSetupAccessAgentsDescription": "Используется ваша подписка. Модель выбирает сам агент.",
+  "aiSetupAccessAgentsDescription": "Используется ваша подписка. Выберите одну из моделей агента или оставьте выбор ему.",
   "aiSetupAccessAgentsDesktop": "Агенты для программирования доступны в настольном приложении OpenPencil.",
   "aiSetupAccessAgentsSandboxed": "Эта установка OpenPencil не может запускать агентов для программирования. Версия с GitHub может.",
   "modelProviderSetUp": "Настроено",
