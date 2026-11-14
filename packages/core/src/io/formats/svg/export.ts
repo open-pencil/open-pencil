@@ -133,6 +133,8 @@ function nodeShapeElements(
 
   switch (node.type) {
     case 'ELLIPSE': {
+      // Saved geometry first, as the canvas and hit testing draw an ellipse.
+      if (node.fillGeometry.length > 0) return vectorShapeElements(node, common, strokeAttrs, ctx)
       if (node.arcData) {
         return [svg('path', { d: arcPath(node), ...common })]
       }

@@ -5,8 +5,12 @@ import {
   nodeHasRadius,
   nodeHasSmoothCorners
 } from '@open-pencil/scene-graph/corners'
-import { isWholeArc } from '@open-pencil/scene-graph/geometry'
-import { replayOutline, traceSmoothRect } from '@open-pencil/scene-graph/paths'
+import {
+  arcOutline,
+  replayOutline,
+  sweepsWholeEllipse,
+  traceSmoothRect
+} from '@open-pencil/scene-graph/paths'
 import { polygonOutline, type PolygonOutlineCommand } from '@open-pencil/scene-graph/polygon'
 import { shapeWithTextGeometry } from '@open-pencil/scene-graph/shape-with-text'
 
@@ -260,45 +264,22 @@ export function getStrokeGeometry(r: SkiaRenderer, node: SceneNode): Path[] | nu
 }
 
 export function makeArcPath(r: SkiaRenderer, node: SceneNode) {
-  const arc = node.arcData
-  if (!arc) return null
-  const cx = node.width / 2
-  const cy = node.height / 2
-  const rx = node.width / 2
-  const ry = node.height / 2
-  const innerRx = rx * arc.innerRadius
-  const innerRy = ry * arc.innerRadius
-
-  const startDeg = arc.startingAngle * (180 / Math.PI)
-  const endDeg = arc.endingAngle * (180 / Math.PI)
-  const sweepDeg = endDeg - startDeg
-
+  if (!node.arcData) return null
+  const { cx, cy, contours } = arcOutline(node)
   const path = new r.ck.PathBuilder()
-  const oval = r.ck.LTRBRect(0, 0, node.width, node.height)
-
-  const isFullCircle = isWholeArc(arc)
-  if (arc.innerRadius > 0) {
-    const innerOval = r.ck.LTRBRect(cx - innerRx, cy - innerRy, cx + innerRx, cy + innerRy)
-    if (isFullCircle) {
-      // Two loops wound in opposite directions, so the hole stays empty under nonzero fill. A
-      // full-turn `addArc` from an angle off the axes draws nothing.
-      path.addOval(oval, false)
-      path.addOval(innerOval, true)
-    } else {
-      // One outline whose ends run straight across the ring; `addArc` would start a new contour
-      // for each edge and close them on their chords.
-      path.arcToOval(oval, startDeg, sweepDeg, true)
-      path.arcToOval(innerOval, startDeg + sweepDeg, -sweepDeg, false)
+  const toDegrees = 180 / Math.PI
+  for (const contour of contours) {
+    for (const [index, step] of contour.entries()) {
+      if (step.type === 'centre') {
+        path.lineTo(cx, cy)
+        continue
+      }
+      const oval = r.ck.LTRBRect(cx - step.rx, cy - step.ry, cx + step.rx, cy + step.ry)
+      // A full-turn `arcToOval` from an angle off the axes draws nothing, so a whole turn is an
+      // oval, wound the way its sweep runs.
+      if (sweepsWholeEllipse(step)) path.addOval(oval, step.sweep < 0)
+      else path.arcToOval(oval, step.start * toDegrees, step.sweep * toDegrees, index === 0)
     }
-    path.close()
-    return path.detachAndDelete()
-  }
-
-  if (isFullCircle) {
-    path.addOval(oval)
-  } else {
-    path.moveTo(cx, cy)
-    path.arcToOval(oval, startDeg, sweepDeg, false)
     path.close()
   }
   return path.detachAndDelete()
