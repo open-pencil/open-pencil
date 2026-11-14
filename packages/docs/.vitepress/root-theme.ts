@@ -43,9 +43,5 @@ export const rootThemeConfig = (): DefaultTheme.Config => ({
 
   editLink: {
     pattern: 'https://github.com/open-pencil/open-pencil/edit/master/packages/docs/:path'
-  },
-
-  footer: {
-    message: 'Released under the MIT License.'
   }
 })
