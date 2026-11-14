@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
 import type { Fill, SceneNode } from '@open-pencil/scene-graph'
+import { imageFillMatrix } from '@open-pencil/scene-graph/images'
 import Matrix from '@open-pencil/scene-graph/matrix'
-
-import { makeImageFillLocalMatrix, patternTileLayout } from '#core/canvas/fills'
+import { patternTileLayout } from '@open-pencil/scene-graph/paints'
 
 const node = {
   width: 120,
@@ -62,7 +62,7 @@ function place(fill: Partial<Fill>, imageWidth: number, imageHeight: number, poi
     visible: true,
     ...fill
   }
-  const matrix = makeImageFillLocalMatrix(image, node, imageWidth, imageHeight)
+  const matrix = imageFillMatrix(image, node, imageWidth, imageHeight)
   // Adding zero turns -0 into 0, which reads the same on the layer.
   return Matrix.mapPoints(matrix, points).map((value) => Math.round(value * 1000) / 1000 + 0)
 }

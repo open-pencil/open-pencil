@@ -3,8 +3,9 @@ import { bytesToHex } from '@noble/hashes/utils.js'
 import { imageSize as readImageHeader } from 'image-size'
 import { fromUint8Array, isValid, toUint8Array } from 'js-base64'
 
+import MatrixMath, { type Mat3 } from './matrix'
 import type { Matrix, Size } from './primitives'
-import type { Fill } from './types'
+import type { Fill, SceneNode } from './types'
 
 /** Hashes already computed, by the bytes hashed: a save would otherwise hash every image again. */
 const imageHashes = new WeakMap<Uint8Array, string>()
@@ -140,6 +141,54 @@ export function coverImageTransform(
   const m00 = width / scale / imageWidth
   const m11 = height / scale / imageHeight
   return { m00, m01: 0, m02: (1 - m00) / 2, m10: 0, m11, m12: (1 - m11) / 2 }
+}
+
+/**
+ * Maps `img`'s pixels onto `node` as `fill` places them. `size` is the image's own size when `img`
+ * is a downscaled preview, so a tile keeps its size. A crop places the image by its transform;
+ * Fill, Fit and Tile ignore it, as Figma does, and turn the image by `imageRotation` first.
+ */
+export function imageFillMatrix(
+  fill: Fill,
+  node: Pick<SceneNode, 'width' | 'height'>,
+  imgW: number,
+  imgH: number,
+  size: Size = { width: imgW, height: imgH }
+): Mat3 {
+  const scaleMode = fill.imageScaleMode ?? 'FILL'
+  if (scaleMode === 'CROP' && fill.imageTransform) {
+    const t = fill.imageTransform
+    const inverse = MatrixMath.invert(MatrixMath.fromAffine(t))
+    if (inverse)
+      return MatrixMath.multiply(
+        MatrixMath.scaled(node.width, node.height),
+        inverse,
+        MatrixMath.scaled(1 / imgW, 1 / imgH)
+      )
+  }
+
+  const radians = ((fill.imageRotation ?? 0) * Math.PI) / 180
+  const cos = Math.abs(Math.cos(radians))
+  const sin = Math.abs(Math.sin(radians))
+  const turnedW = size.width * cos + size.height * sin
+  const turnedH = size.width * sin + size.height * cos
+  const turned = MatrixMath.multiply(
+    MatrixMath.translated(turnedW / 2, turnedH / 2),
+    MatrixMath.rotated(radians),
+    MatrixMath.translated(-size.width / 2, -size.height / 2),
+    MatrixMath.scaled(size.width / imgW, size.height / imgH)
+  )
+  if (scaleMode === 'TILE') {
+    const scale = fill.scale && fill.scale > 0 ? fill.scale : 1
+    return MatrixMath.multiply(MatrixMath.scaled(scale, scale), turned)
+  }
+  const fit = scaleMode === 'FIT'
+  const scale = (fit ? Math.min : Math.max)(node.width / turnedW, node.height / turnedH)
+  return MatrixMath.multiply(
+    MatrixMath.translated((node.width - turnedW * scale) / 2, (node.height - turnedH * scale) / 2),
+    MatrixMath.scaled(scale, scale),
+    turned
+  )
 }
 
 /** The image a paint draws: an IMAGE paint's own, or the poster frame of a VIDEO paint. */
