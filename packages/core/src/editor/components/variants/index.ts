@@ -1,3 +1,5 @@
+import { uniq } from 'es-toolkit/array'
+
 import type { ComponentPropertyDefinition, ComponentPropertyType } from '@open-pencil/scene-graph'
 import { buildVariantName, parseVariantName } from '@open-pencil/scene-graph/variant-name'
 
@@ -30,6 +32,7 @@ import {
   getComponentSetVariantConflicts,
   getComponentSetVariants,
   getDefaultVariantForComponentSet,
+  getVariantDefinitions,
   getVariantOptions,
   validateComponentSet,
   variantValues,
@@ -37,6 +40,12 @@ import {
   type VariantTransitionResult
 } from './model'
 import { addVariantValue, removeVariantValue } from './options'
+import {
+  findOrBuildVariant,
+  loadSavedVariants,
+  savedVariantValues,
+  unbuiltVariantWith
+} from './saved'
 
 export type {
   VariantConflict,
@@ -65,17 +74,24 @@ export function createVariantActions(ctx: EditorContext) {
     if (instance?.type !== 'INSTANCE' || component?.type !== 'COMPONENT' || !componentSetId) {
       return []
     }
-    const options =
-      collectVariantOptions(ctx.graph, componentSetId).get(propertyName) ?? new Set<string>()
-    return [...options].map((value) => ({
-      value,
-      available: Boolean(
-        findExactVariant(ctx.graph, componentSetId, {
-          ...variantValues(ctx.graph, componentSetId, component),
-          [propertyName]: value
-        })
+    const definitions = getVariantDefinitions(ctx.graph, componentSetId)
+    const saved = savedVariantValues(ctx.graph, componentSetId)
+    const unbuilt = saved.filter((variant) => !variant.built)
+    const options = uniq([
+      ...saved.flatMap(({ values }) => values[propertyName] || []),
+      ...(collectVariantOptions(ctx.graph, componentSetId).get(propertyName) ?? [])
+    ])
+    const current = variantValues(ctx.graph, componentSetId, component)
+    return options.map((value) => {
+      const requested = { ...current, [propertyName]: value }
+      const unbuiltMatch = unbuilt.some(({ values }) =>
+        definitions.every(({ name }) => values[name] === requested[name])
       )
-    }))
+      return {
+        value,
+        available: Boolean(findExactVariant(ctx.graph, componentSetId, requested)) || unbuiltMatch
+      }
+    })
   }
 
   function pushSwitchStep(change: DocumentChange) {
@@ -117,7 +133,7 @@ export function createVariantActions(ctx: EditorContext) {
       ...variantValues(ctx.graph, componentSetId, component),
       [propertyName]: newValue
     }
-    const target = findExactVariant(ctx.graph, componentSetId, requested)
+    const target = findOrBuildVariant(ctx.graph, componentSetId, requested)
     if (!target) return { kind: 'unavailable', requested }
     if (target.id === instance.componentId) return { kind: 'unchanged', componentId: target.id }
 
@@ -133,6 +149,30 @@ export function createVariantActions(ctx: EditorContext) {
     })
     ctx.requestRender()
     return { kind: 'changed', componentId: target.id }
+  }
+
+  /**
+   * The saved variants setting an instance's variant property to `value` would build first:
+   * none when that variant is built, or the property is not a variant property. Loading them with
+   * `loadSavedVariants` before the switch builds them in the reader worker instead of on this
+   * thread.
+   */
+  function variantsToLoad(instanceId: string, propertyId: string, value: string): string[] {
+    const instance = ctx.graph.getNode(instanceId)
+    const component = instance?.componentId ? ctx.graph.getNode(instance.componentId) : undefined
+    const componentSetId = component?.parentId
+    if (component?.type !== 'COMPONENT' || !componentSetId) return []
+    const definition = getVariantDefinitions(ctx.graph, componentSetId).find(
+      (item) => item.id === propertyId
+    )
+    if (!definition) return []
+    const requested = {
+      ...variantValues(ctx.graph, componentSetId, component),
+      [definition.name]: value
+    }
+    if (findExactVariant(ctx.graph, componentSetId, requested)) return []
+    const unbuilt = unbuiltVariantWith(ctx.graph, componentSetId, requested)
+    return unbuilt ? [unbuilt.id] : []
   }
 
   /** A copy of a variant with its values, below the set's last variant, for the caller to set. */
@@ -209,6 +249,8 @@ export function createVariantActions(ctx: EditorContext) {
       validateComponentSet(ctx.graph, componentSetId),
     getVariantOptionAvailability,
     switchInstanceVariant,
+    variantsToLoad,
+    loadSavedVariants: (variantIds: readonly string[]) => loadSavedVariants(ctx.graph, variantIds),
     addVariant: (nodeId: string) => addVariant(ctx, nodeId),
     getVariantOptions: (componentSetId: string, propertyId: string) =>
       getVariantOptions(ctx.graph, componentSetId, propertyId),
