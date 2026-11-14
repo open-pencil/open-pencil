@@ -61,7 +61,7 @@ unset API_KEY
 origin_allowed() {
   local file="$1"
   local value
-  value="$(awk 'BEGIN { IGNORECASE=1 } /^access-control-allow-origin:/ { sub(/^[^:]+:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit }' "$file")"
+  value="$(awk 'tolower($0) ~ /^access-control-allow-origin:/ { sub(/^[^:]+:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit }' "$file")"
   [[ "$value" == "*" || "$value" == "$ORIGIN" ]]
 }
 
@@ -127,7 +127,7 @@ curl --config "$CURL_CONFIG" -sS -N -X POST "$BASE/chat/completions" \
 ```
 
 Parse each SSE event as JSON, group fragments by tool-call index, require an ID on the first delta
-for each index, and validate the concatenated arguments:
+for each index, and check that the concatenated arguments parse and satisfy the tool's schema:
 
 ```bash
 STREAM_FILE="$STREAM_FILE" node <<'JS'
@@ -147,20 +147,38 @@ for (const line of fs.readFileSync(process.env.STREAM_FILE, 'utf8').split(/\r?\n
     const current = calls.get(call.index)
     if (!current) {
       if (typeof call.id !== 'string' || !call.id) malformedFirstDeltas++
-      calls.set(call.index, { id: call.id, arguments: call.function?.arguments ?? '' })
+      calls.set(call.index, {
+        id: call.id,
+        name: call.function?.name,
+        arguments: call.function?.arguments ?? ''
+      })
     } else {
       current.arguments += call.function?.arguments ?? ''
     }
   }
 }
 
+// Arguments must parse and satisfy the declared schema, or the tool can't use them.
+const NODE_TYPES = new Set(['ELLIPSE', 'RECTANGLE', 'LINE', 'TEXT'])
+function argumentsProblem(call) {
+  if (call.name !== 'create_node') return `unknown tool ${call.name}`
+  let args
+  try {
+    args = JSON.parse(call.arguments)
+  } catch {
+    return 'arguments are not JSON'
+  }
+  if (!NODE_TYPES.has(args?.type)) return 'type is missing or not one of the declared values'
+  if (!Number.isFinite(args.x) || !Number.isFinite(args.y)) return 'x or y is missing'
+  return null
+}
+
 let invalidArguments = 0
 for (const [index, call] of calls) {
-  try {
-    JSON.parse(call.arguments)
-  } catch {
+  const problem = argumentsProblem(call)
+  if (problem) {
     invalidArguments++
-    console.error(`tool call ${index}: invalid arguments`)
+    console.error(`tool call ${index}: ${problem}`)
   }
 }
 console.log({

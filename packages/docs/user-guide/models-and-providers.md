@@ -9,7 +9,7 @@ import ModelProviders from '#docs/theme/components/ModelProviders.vue'
 
 # Models and Providers
 
-The [AI chat](./ai-chat) uses a model you connect: a [coding agent](./coding-agents) you already have, an API key from a provider, your [OpenPencil Cloud](/cloud/ai) account, or your own server. Requests go straight from the app to the provider; no OpenPencil server sits in between.
+The [AI chat](./ai-chat) uses a model you connect: a [coding agent](./coding-agents) you already have, an API key from a provider, your [OpenPencil Cloud](/cloud/ai) account, or your own server. With an API key or your own server, requests go straight from the app to the provider, and a coding agent uses its own connection. OpenPencil Cloud's AI goes through Cloud's own service, which forwards each request to the model provider it uses.
 
 Add a model from **Settings → Models**, or let guided setup do it.
 
