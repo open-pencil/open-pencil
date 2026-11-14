@@ -59,6 +59,11 @@ export function createEditorSignals(state: EditorState) {
     emitEditorEvent('render:presented', versions)
   }
 
+  /** A canvas drew more of a frame of `versions`, with tiles still to come. */
+  function reportProgress(versions: RenderVersions) {
+    emitEditorEvent('render:progressed', versions)
+  }
+
   function requestRepaint() {
     state.renderVersion++
     emitNavigationTrace('render:requested', {
@@ -140,6 +145,7 @@ export function createEditorSignals(state: EditorState) {
     textSelectionChanged,
     requestRefresh,
     reportPresented,
+    reportProgress,
     requestRepaint,
     beginInteractiveEdit,
     isInteractiveEditing: () => interactiveEdits.size > 0,

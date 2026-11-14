@@ -262,6 +262,11 @@ export interface EditorEvents extends SceneGraphEvents {
    * showing another view do not report.
    */
   'render:presented': (versions: RenderVersions) => void
+  /**
+   * Such a canvas drew more of a frame of these versions without finishing it: tiles of the
+   * visible scene are still to come. A wait for the frame tells a slow draw from a stuck one by it.
+   */
+  'render:progressed': (versions: RenderVersions) => void
   'graph:replaced': (graph: SceneGraph) => void
   'document:color-space-changed': (colorSpace: DocumentColorSpace) => void
   'document:libraries-changed': () => void
