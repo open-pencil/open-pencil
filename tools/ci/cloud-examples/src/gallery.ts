@@ -78,6 +78,19 @@ function entries(archive: Uint8Array): Record<string, number[]> {
 }
 
 /**
+ * Whether two documents hold the same images: each name with the same contents. Names count, since
+ * the file is put back together from them, so two images that swapped contents differ.
+ */
+export function sameImages(
+  stored: readonly { name: string; checksum: string }[],
+  prepared: readonly { name: string; checksum: string }[]
+): boolean {
+  const pairs = (images: readonly { name: string; checksum: string }[]) =>
+    images.map((image) => `${image.name}\n${image.checksum}`).sort((a, b) => a.localeCompare(b))
+  return isEqual(pairs(stored), pairs(prepared))
+}
+
+/**
  * Whether the document's current revision holds what `prepared` does: the same images and the same
  * entries in the stored file. Splitting writes new timestamps into the archive, so its checksum
  * changes on every run and only the contents tell an unchanged file.
@@ -89,9 +102,7 @@ async function storedMatches(
   objectFetch: CloudObjectFetch
 ): Promise<boolean> {
   const stored = await cloud.getDocument(documentId)
-  const checksums = (images: { checksum: string }[]) =>
-    images.map((image) => image.checksum).sort((a, b) => a.localeCompare(b))
-  if (!isEqual(checksums(stored.images), checksums(prepared.images))) return false
+  if (!sameImages(stored.images, prepared.images)) return false
   if (stored.checksum === prepared.checksum) return true
   const response = await objectFetch(stored.download.url, {
     method: stored.download.method,

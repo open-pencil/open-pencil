@@ -30,6 +30,16 @@ const document = {
 }
 
 describe('createCloudAPIClient', () => {
+  test('sends an access token only over HTTPS or to this computer', () => {
+    expect(() =>
+      createCloudAPIClient('http://cloud.example.com/api', { accessToken: 'secret' })
+    ).toThrow(CloudAPIError)
+    expect(() =>
+      createCloudAPIClient('http://127.0.0.1:8787/api', { accessToken: 'secret' })
+    ).not.toThrow()
+    expect(() => createCloudAPIClient('http://cloud.example.com/api')).not.toThrow()
+  })
+
   test('reads a document an older server lists without a kind as a design', async () => {
     const older = omit(document, ['kind'])
     const client = createCloudAPIClient('https://cloud.example.com/api', {

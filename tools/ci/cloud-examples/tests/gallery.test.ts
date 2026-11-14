@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { publishExample, type GalleryClient } from '#cloud-examples/gallery'
+import { publishExample, sameImages, type GalleryClient } from '#cloud-examples/gallery'
 import { strToU8, zipSync } from 'fflate'
 
 import type { DocumentSummary, DocumentVersion } from '@open-pencil/cloud/contract'
@@ -164,5 +164,20 @@ describe('publishing a gallery example', () => {
     await server.cloud.createDocument(WORKSPACE, { name: 'Tour' })
     const refused = await server.publish('Tour', file('x')).catch(String)
     expect(refused).toContain('2 documents named "Tour"')
+  })
+
+  test('tells images that swapped contents apart', () => {
+    const a = { name: 'a.png', checksum: 'one' }
+    const b = { name: 'b.png', checksum: 'two' }
+    expect(sameImages([a, b], [b, a])).toBe(true)
+    expect(
+      sameImages(
+        [a, b],
+        [
+          { name: 'a.png', checksum: 'two' },
+          { name: 'b.png', checksum: 'one' }
+        ]
+      )
+    ).toBe(false)
   })
 })

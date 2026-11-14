@@ -4,6 +4,7 @@ import {
   servicesTokenSchema,
   billingTokenSchema,
   cloudSessionSchema,
+  sendsTokenSafely,
   type AccountEntitlements,
   type ServicesToken,
   type BillingToken,
@@ -43,6 +44,10 @@ function apiURL(baseURL: string): string {
 }
 
 export function createCloudAPIClient(baseURL: string, options: CloudRequestOptions = {}) {
+  // An access token goes only where nobody between can read it, as services tokens do.
+  if (options.accessToken && !sendsTokenSafely(apiURL(baseURL))) {
+    throw new CloudAPIError('OpenPencil Cloud takes an access token only over HTTPS', 0)
+  }
   const headers = {
     'Content-Type': 'application/json',
     ...(options.accessToken ? { Authorization: `Bearer ${options.accessToken}` } : {})
