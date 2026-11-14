@@ -53,7 +53,10 @@ export function createAppRouters(
         publicURL: config.publicURL,
         contactEmail: config.legal?.abuseEmail
       }),
-      reports: createAdminReportService(database)
+      reports: createAdminReportService(database, {
+        email: services.transactionalEmail,
+        contactEmail: config.legal?.abuseEmail
+      })
     },
     allowedOrigins,
     {

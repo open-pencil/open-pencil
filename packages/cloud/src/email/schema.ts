@@ -23,6 +23,8 @@ export type TransactionalEmailKind =
   | 'storage-limit-reached'
   | 'document-blocked'
   | 'document-restored'
+  | 'document-report-received'
+  | 'document-report-decided'
 
 const documentInvitationEmailPayloadSchema = v.object({
   /** Null when the inviter's account is gone, so the email says someone invited you. */
@@ -90,6 +92,18 @@ const documentRestoredPayloadSchema = v.object({
   actionURL: v.string()
 })
 
+/** To whoever reported a document: their report arrived. */
+const documentReportReceivedPayloadSchema = v.object({ documentName: v.string() })
+
+/** To whoever reported a document: what the administrators decided. */
+const documentReportDecidedPayloadSchema = v.object({
+  documentName: v.string(),
+  /** The document blocked, the report acted on some other way, or the document left as it was. */
+  outcome: v.picklist(['blocked', 'actioned', 'dismissed']),
+  /** Where to write to disagree: the deployment's abuse address, or null without one. */
+  contactEmail: v.nullable(v.pipe(v.string(), v.email()))
+})
+
 const authenticationEmailPayloadSchema = v.object({
   name: v.string(),
   actionURL: v.optional(v.string()),
@@ -152,7 +166,9 @@ export const transactionalEmailContentSchema = v.variant('kind', [
   content('document-report', documentReportPayloadSchema),
   content('storage-limit-reached', storageLimitReachedPayloadSchema),
   content('document-blocked', documentBlockedPayloadSchema),
-  content('document-restored', documentRestoredPayloadSchema)
+  content('document-restored', documentRestoredPayloadSchema),
+  content('document-report-received', documentReportReceivedPayloadSchema),
+  content('document-report-decided', documentReportDecidedPayloadSchema)
 ])
 
 /** A transactional email's kind with the payload that kind renders. */
@@ -196,3 +212,7 @@ export type DocumentReportPayload = v.InferOutput<typeof documentReportPayloadSc
 export type StorageLimitReachedPayload = v.InferOutput<typeof storageLimitReachedPayloadSchema>
 export type DocumentBlockedPayload = v.InferOutput<typeof documentBlockedPayloadSchema>
 export type DocumentRestoredPayload = v.InferOutput<typeof documentRestoredPayloadSchema>
+export type DocumentReportReceivedPayload = v.InferOutput<
+  typeof documentReportReceivedPayloadSchema
+>
+export type DocumentReportDecidedPayload = v.InferOutput<typeof documentReportDecidedPayloadSchema>

@@ -16,6 +16,7 @@ import {
 import { userIdText, type CloudDatabase } from '#cloud/server/db'
 import { unmarkPurged } from '#cloud/server/documents/purge'
 import type { TransactionalEmailService } from '#cloud/server/email'
+import { tellReporters } from '#cloud/server/reports'
 import { dateString } from '#cloud/server/sharing/contracts'
 import { uniq } from 'es-toolkit'
 import type { ExpressionBuilder, Kysely, Transaction } from 'kysely'
@@ -266,12 +267,20 @@ export function createAdminDocumentService(
           .set({ disabledAt, disabledReason: reason ?? null })
           .where('id', '=', documentId)
           .execute()
-        await transaction
+        const reports = await transaction
           .updateTable('documentReport')
           .set({ status: 'actioned', resolvedAt: new Date(), resolvedBy: actorId })
           .where('documentId', '=', documentId)
           .where('status', '=', 'open')
+          .returning('id')
           .execute()
+        // Everyone who reported it and left an address hears it was blocked.
+        await tellReporters(
+          transaction,
+          { email, contactEmail: options.contactEmail },
+          reports.map((report) => report.id),
+          'blocked'
+        )
         await auditContentAction(
           transaction,
           actorId,

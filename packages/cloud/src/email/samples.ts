@@ -106,5 +106,10 @@ export const EMAIL_SAMPLES: TransactionalEmailContent[] = [
   {
     kind: 'document-restored',
     payload: { name: 'Ada', documentName: 'Homepage', actionURL: EMAIL_SAMPLE_URL }
+  },
+  { kind: 'document-report-received', payload: { documentName: 'Homepage' } },
+  {
+    kind: 'document-report-decided',
+    payload: { documentName: 'Homepage', outcome: 'blocked', contactEmail: 'abuse@example.com' }
   }
 ]

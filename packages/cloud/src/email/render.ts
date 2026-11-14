@@ -17,6 +17,8 @@ import type {
 import DocumentBlocked from './templates/DocumentBlocked.vue'
 import DocumentInvitation from './templates/DocumentInvitation.vue'
 import DocumentReport from './templates/DocumentReport.vue'
+import DocumentReportDecided from './templates/DocumentReportDecided.vue'
+import DocumentReportReceived from './templates/DocumentReportReceived.vue'
 import DocumentRestored from './templates/DocumentRestored.vue'
 import EmailChangeRequested from './templates/EmailChangeRequested.vue'
 import EmailRoot from './templates/EmailRoot.vue'
@@ -113,6 +115,14 @@ const EMAILS: {
   'document-restored': {
     component: DocumentRestored,
     subject: (payload, t) => t.documentRestoredSubject({ document: payload.documentName })
+  },
+  'document-report-received': {
+    component: DocumentReportReceived,
+    subject: (payload, t) => t.reportReceivedSubject({ document: payload.documentName })
+  },
+  'document-report-decided': {
+    component: DocumentReportDecided,
+    subject: (payload, t) => t.reportDecidedSubject({ document: payload.documentName })
   }
 }
 
