@@ -187,9 +187,16 @@ export function ellipticalGradientTransform(
  * `[[1.9, 0, 0], [0, 1.333, -0.333]]` from the identity).
  */
 export function gradientTransformInBox(t: GradientTransform, box: Rect): GradientTransform {
-  const [m00, m01, m02, m10, m11, m12] = Matrix.multiply(
-    [t.m00, t.m01, t.m02, t.m10, t.m11, t.m12, 0, 0, 1],
-    [box.width, 0, box.x, 0, box.height, box.y, 0, 0, 1]
-  )
+  const [m00, m01, m02, m10, m11, m12] = Matrix.multiply(Matrix.fromAffine(t), [
+    box.width,
+    0,
+    box.x,
+    0,
+    box.height,
+    box.y,
+    0,
+    0,
+    1
+  ])
   return { m00, m01, m02, m10, m11, m12 }
 }

@@ -1,5 +1,6 @@
 import type { Canvas, Path } from '@open-pencil/canvaskit'
 import type { BlendMode, Effect, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { nodeHasRadius } from '@open-pencil/scene-graph/corners'
 import {
   blurSigma,
   drawnBlurRadius,
@@ -11,7 +12,7 @@ import { paintShows } from '@open-pencil/scene-graph/paints'
 
 import { setPaintBlendMode } from '#core/canvas/blend'
 import type { SkiaRenderer } from '#core/canvas/renderer'
-import { drawOutline, makeNodeShapePath, nodeHasRadius, withNodeOutline } from '#core/canvas/shapes'
+import { drawOutline, makeNodeShapePath, withNodeOutline } from '#core/canvas/shapes'
 import { sideStrokeRRects } from '#core/canvas/strokes/sides'
 
 import { fillsCastShadow } from './silhouette'

@@ -1,13 +1,6 @@
-import type { VectorSegment, VectorVertex } from '@open-pencil/scene-graph'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
-
-/** Anything path commands can be emitted into: a canvaskit Path or a blob encoder. */
-export interface PathSink {
-  moveTo(x: number, y: number): unknown
-  lineTo(x: number, y: number): unknown
-  cubicTo(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number): unknown
-  close(): unknown
-}
+import type { Vector } from '../primitives'
+import type { VectorRegion, VectorSegment, VectorVertex } from '../types'
+import type { PathSink } from './sink'
 
 export function addSegmentDirected(
   path: PathSink,
@@ -30,15 +23,11 @@ export function addSegmentDirected(
   }
 }
 
-export function findChainStart(chain: number[], segments: VectorSegment[]): number {
-  if (chain.length < 2) return segments[chain[0]].start
-
-  const first = segments[chain[0]]
-  const second = segments[chain[1]]
-  if (first.start === second.start || first.start === second.end) return first.end
-  return first.start
-}
-
+/**
+ * Draws one region loop. It starts at the end of its first segment away from the second, as a
+ * loop's stored order runs; a segment that does not continue from the last starts a new subpath,
+ * and the loop closes only when it runs unbroken back to where it started.
+ */
 export function addLoopToPath(
   path: PathSink,
   loop: number[],
@@ -46,34 +35,37 @@ export function addLoopToPath(
   vertices: VectorVertex[]
 ): void {
   if (loop.length === 0) return
-
-  const firstSeg = segments[loop[0]]
-
-  // Determine the starting vertex — if the loop has multiple segments,
-  // the first segment's direction is determined by which vertex connects
-  // to the second segment.
-  let current: number
-  if (loop.length === 1) {
-    current = firstSeg.start
-  } else {
-    const secondSeg = segments[loop[1]]
-    if (firstSeg.end === secondSeg.start || firstSeg.end === secondSeg.end) {
-      current = firstSeg.start
-    } else {
-      current = firstSeg.end
+  const first = segments[loop[0]]
+  const second = loop.length > 1 ? segments[loop[1]] : null
+  const secondMeetsStart = second?.start === first.start || second?.end === first.start
+  const secondMeetsEnd = second?.start === first.end || second?.end === first.end
+  const start = !second || secondMeetsEnd || !secondMeetsStart ? first.start : first.end
+  let current = start
+  let broken = false
+  path.moveTo(vertices[start].x, vertices[start].y)
+  for (const index of loop) {
+    const segment = segments[index]
+    const connected = segment.start === current || segment.end === current
+    const forward = segment.start === current || !connected
+    if (!connected) {
+      broken = true
+      const from = vertices[segment.start]
+      path.moveTo(from.x, from.y)
     }
+    addSegmentDirected(path, segment, vertices, forward)
+    current = forward ? segment.end : segment.start
   }
+  if (!broken && current === start) path.close()
+}
 
-  path.moveTo(vertices[current].x, vertices[current].y)
-
-  for (const segIdx of loop) {
-    const seg = segments[segIdx]
-    const forward = seg.start === current
-    addSegmentDirected(path, seg, vertices, forward)
-    current = forward ? seg.end : seg.start
-  }
-
-  path.close()
+/** A region's loops, one after another: the outline its fill rule fills. */
+export function addRegionToPath(
+  path: PathSink,
+  region: Pick<VectorRegion, 'loops'>,
+  segments: VectorSegment[],
+  vertices: VectorVertex[]
+): void {
+  for (const loop of region.loops) addLoopToPath(path, loop, segments, vertices)
 }
 
 function isStraight(seg: VectorSegment): boolean {
@@ -142,13 +134,12 @@ function drawCorner(path: PathSink, corner: RoundedCorner) {
  */
 function addChainToPath(
   path: PathSink,
-  chain: number[],
+  { start: first, segments: chain }: Chain,
   segments: VectorSegment[],
   vertices: VectorVertex[],
   cornerRadius: number
 ): void {
   // The chain's vertices in drawing order; a closed chain ends where it started.
-  const first = findChainStart(chain, segments)
   const order = [first]
   for (const segIdx of chain) {
     const seg = segments[segIdx]
@@ -193,8 +184,7 @@ export function addOpenSegmentsToPath(
   const chains = buildChains(segments)
 
   for (const chain of chains) {
-    if (chain.length === 0) continue
-    for (const segIdx of chain) visited.add(segIdx)
+    for (const segIdx of chain.segments) visited.add(segIdx)
     addChainToPath(path, chain, segments, vertices, cornerRadius)
   }
 
@@ -206,7 +196,17 @@ export function addOpenSegmentsToPath(
   }
 }
 
-export function buildChains(segments: VectorSegment[]): number[][] {
+/**
+ * A run of connected segments in the order a walk took them, from the vertex it started at, or a
+ * lone segment's own start. The start is kept rather than worked out again from the first two
+ * segments, which two segments between the same vertices leave ambiguous.
+ */
+export interface Chain {
+  start: number
+  segments: number[]
+}
+
+export function buildChains(segments: VectorSegment[]): Chain[] {
   if (segments.length === 0) return []
 
   const adj = new Map<number, number[]>()
@@ -222,7 +222,7 @@ export function buildChains(segments: VectorSegment[]): number[][] {
   }
 
   const visited = new Set<number>()
-  const chains: number[][] = []
+  const chains: Chain[] = []
   // Open runs start at their ends; closed loops left over start wherever their first segment does,
   // so every loop is one contour, not one per segment.
   const degree1 = [...adj.entries()].filter(([, segs]) => segs.length === 1).map(([v]) => v)
@@ -246,7 +246,9 @@ export function buildChains(segments: VectorSegment[]): number[][] {
       current = seg.start === current ? seg.end : seg.start
     }
 
-    if (chain.length > 0) chains.push(chain)
+    // A lone segment keeps its stored direction, as a dash pattern runs from its start.
+    const start = chain.length === 1 ? segments[chain[0]].start : startVertex
+    if (chain.length > 0) chains.push({ start, segments: chain })
   }
 
   return chains

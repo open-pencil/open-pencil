@@ -1,6 +1,7 @@
 import { appendAll } from '../arrays'
 import { cubicPoint } from '../cubic'
 import { GeometryCommand, readGeometryBlob } from '../geometry'
+import { buildChains } from '../paths/network'
 import type { PolygonOutlineCommand } from '../polygon'
 import type { Vector } from '../primitives'
 import type { VectorNetwork } from '../types'
@@ -80,24 +81,25 @@ export function loopPoints(network: VectorNetwork, loop: number[], tolerance: nu
 }
 
 /**
- * The network's segments joined into runs, a run continuing while each segment starts where the
- * last ended, as a path draws them one after another.
+ * The network's segments joined into runs, chained through the vertices they share as the canvas
+ * draws an open network (`buildChains`), each run walked from its open end.
  */
 export function segmentRuns(network: VectorNetwork, tolerance: number): Vector[][] {
   const runs: Vector[][] = []
-  let run: Vector[] = []
-  let end = -1
-  for (const [index, segment] of network.segments.entries()) {
-    const along = segmentPoints(network, index, tolerance)
-    if (!along) continue
-    if (segment.start === end && run.length > 0) appendAll(run, along.slice(1))
-    else {
-      if (run.length > 1) runs.push(run)
-      run = along
+  for (const chain of buildChains(network.segments)) {
+    let current = chain.start
+    const run: Vector[] = []
+    for (const index of chain.segments) {
+      const segment = network.segments[index]
+      const along = segmentPoints(network, index, tolerance)
+      if (!along) continue
+      const forward = segment.start === current
+      const points = forward ? along : along.toReversed()
+      appendAll(run, run.length > 0 ? points.slice(1) : points)
+      current = forward ? segment.end : segment.start
     }
-    end = segment.end
+    if (run.length > 1) runs.push(run)
   }
-  if (run.length > 1) runs.push(run)
   return runs
 }
 

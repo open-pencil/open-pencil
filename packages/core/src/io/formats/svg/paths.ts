@@ -5,16 +5,20 @@ import { nodeCornerRadii } from '@open-pencil/scene-graph/corners'
 import {
   GeometryCommand,
   polygonVertices,
-  readGeometryBlob,
-  sweepsWholeTurn
+  readGeometryBlob
 } from '@open-pencil/scene-graph/geometry'
-import { outlineSVGPath, polygonOutline } from '@open-pencil/scene-graph/polygon'
+import {
+  arcOutline,
+  outlineSVGPath,
+  svgPathSink,
+  sweepsWholeEllipse,
+  traceSmoothRect,
+  type ArcSweep,
+  type SmoothCornerSink
+} from '@open-pencil/scene-graph/paths'
+import { polygonOutline } from '@open-pencil/scene-graph/polygon'
 import { shapeWithTextGeometry } from '@open-pencil/scene-graph/shape-with-text'
 import { vectorNetworkToSVGPaths } from '@open-pencil/scene-graph/vector-network'
-
-import { traceSmoothRect, type SmoothCornerSink } from '#core/canvas/paths/smooth-corners'
-import { nodeHasRadius, nodeHasSmoothCorners } from '#core/canvas/shapes'
-import type { PathSink } from '#core/vector/path-helpers'
 
 export function round(n: number, decimals = 2): number {
   const factor = 10 ** decimals
@@ -52,9 +56,6 @@ export function makePolygonPoints(node: SceneNode): string {
     .join(' ')
 }
 
-export const hasRadius = nodeHasRadius
-export const hasSmoothCorners = nodeHasSmoothCorners
-
 type RectOutlineNode = Pick<
   SceneNode,
   | 'width'
@@ -86,66 +87,34 @@ export function roundedRectPath(node: RectOutlineNode): string {
   ]).join('')
 }
 
+/** An ellipse or arc as path data, drawn from the same outline as the canvas draws it. */
 export function arcPath(node: Pick<SceneNode, 'width' | 'height' | 'arcData'>): string {
-  if (!node.arcData) return ''
-  const { startingAngle, endingAngle, innerRadius } = node.arcData
-  const cx = node.width / 2
-  const cy = node.height / 2
-  const rx = node.width / 2
-  const ry = node.height / 2
-
-  const fullCircle = sweepsWholeTurn(startingAngle, endingAngle)
-  const ring = (rx: number, ry: number, sweep: 0 | 1) =>
-    `M${round(cx - rx)} ${round(cy)}A${round(rx)} ${round(ry)} 0 1 ${sweep} ${round(cx + rx)} ${round(cy)}A${round(rx)} ${round(ry)} 0 1 ${sweep} ${round(cx - rx)} ${round(cy)}Z`
-  // A whole ring has no ends to join: it is its outer edge and, for a donut, its hole, wound
-  // the other way so the default nonzero fill leaves the hole empty.
-  if (fullCircle) {
-    const outer = ring(rx, ry, 1)
-    return innerRadius > 0 ? outer + ring(rx * innerRadius, ry * innerRadius, 0) : outer
-  }
-
-  const x1 = round(cx + rx * Math.cos(startingAngle))
-  const y1 = round(cy + ry * Math.sin(startingAngle))
-  const x2 = round(cx + rx * Math.cos(endingAngle))
-  const y2 = round(cy + ry * Math.sin(endingAngle))
-  const largeArc = Math.abs(endingAngle - startingAngle) > Math.PI ? 1 : 0
-  const sweep = endingAngle > startingAngle ? 1 : 0
-
-  const parts = [`M${x1} ${y1}`, `A${round(rx)} ${round(ry)} 0 ${largeArc} ${sweep} ${x2} ${y2}`]
-
-  if (innerRadius > 0) {
-    const irx = rx * innerRadius
-    const iry = ry * innerRadius
-    const ix1 = round(cx + irx * Math.cos(endingAngle))
-    const iy1 = round(cy + iry * Math.sin(endingAngle))
-    const ix2 = round(cx + irx * Math.cos(startingAngle))
-    const iy2 = round(cy + iry * Math.sin(startingAngle))
-    parts.push(`L${ix1} ${iy1}`)
-    parts.push(`A${round(irx)} ${round(iry)} 0 ${largeArc} ${sweep === 1 ? 0 : 1} ${ix2} ${iy2}`)
+  const { cx, cy, contours } = arcOutline(node)
+  const at = (step: ArcSweep, angle: number) =>
+    `${round(cx + step.rx * Math.cos(angle))} ${round(cy + step.ry * Math.sin(angle))}`
+  const parts: string[] = []
+  for (const contour of contours) {
+    for (const [index, step] of contour.entries()) {
+      if (step.type === 'centre') {
+        parts.push(`L${round(cx)} ${round(cy)}`)
+        continue
+      }
+      const radii = `${round(step.rx)} ${round(step.ry)}`
+      const turn = step.sweep > 0 ? 1 : 0
+      if (sweepsWholeEllipse(step)) {
+        // Two half turns: one SVG arc cannot end where it starts.
+        const left = `${round(cx - step.rx)} ${round(cy)}`
+        const right = `${round(cx + step.rx)} ${round(cy)}`
+        parts.push(`M${left}A${radii} 0 1 ${turn} ${right}A${radii} 0 1 ${turn} ${left}`)
+        continue
+      }
+      const large = Math.abs(step.sweep) > Math.PI ? 1 : 0
+      parts.push(`${index === 0 ? 'M' : 'L'}${at(step, step.start)}`)
+      parts.push(`A${radii} 0 ${large} ${turn} ${at(step, step.start + step.sweep)}`)
+    }
     parts.push('Z')
-  } else {
-    parts.push(`L${round(cx)} ${round(cy)}Z`)
   }
-
   return parts.join('')
-}
-
-/**
- * Path commands written as SVG path data into `parts`, as the canvas would build a path, each
- * coordinate written by `format`.
- */
-export function svgPathSink(
-  parts: string[],
-  format: (value: number) => number = (value) => round(value)
-): PathSink {
-  const point = (x: number, y: number) => `${format(x)} ${format(y)}`
-  return {
-    moveTo: (x, y) => parts.push(`M${point(x, y)}`),
-    lineTo: (x, y) => parts.push(`L${point(x, y)}`),
-    cubicTo: (x1, y1, x2, y2, x, y) =>
-      parts.push(`C${point(x1, y1)} ${point(x2, y2)} ${point(x, y)}`),
-    close: () => parts.push('Z')
-  }
 }
 
 /** A rectangle with smoothed corners as path data, traced as the canvas draws it. */
@@ -178,8 +147,6 @@ export type OutlineNode = RectOutlineNode &
     'type' | 'arcData' | 'pointCount' | 'starInnerRadius' | 'cornerSmoothing' | 'vectorNetwork'
   >
 
-const FULL_ELLIPSE = { startingAngle: 0, endingAngle: Math.PI * 2, innerRadius: 0 }
-
 /**
  * A shape layer's outline in its own box as path data: a rectangle with its corners, an ellipse
  * or arc, a line, a polygon or star, or a vector's network. Null for other layers.
@@ -189,7 +156,7 @@ export function nodeOutlinePath(node: OutlineNode): string | null {
     case 'RECTANGLE':
       return boxOutlinePath(node)
     case 'ELLIPSE':
-      return arcPath({ ...node, arcData: node.arcData ?? FULL_ELLIPSE })
+      return arcPath(node)
     case 'LINE':
       return `M0 0L${round(node.width)} ${round(node.height)}`
     case 'POLYGON':

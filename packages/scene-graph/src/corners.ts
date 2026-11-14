@@ -53,3 +53,41 @@ export function fittedCornerRadii(width: number, height: number, radii: CornerRa
 export function nodeCornerRadii(node: CornerNode): CornerRadii {
   return fittedCornerRadii(node.width, node.height, cornerRadii(node))
 }
+
+/** Whether a layer rounds any corner. */
+export function nodeHasRadius(
+  node: Pick<
+    SceneNode,
+    | 'cornerRadius'
+    | 'independentCorners'
+    | 'topLeftRadius'
+    | 'topRightRadius'
+    | 'bottomRightRadius'
+    | 'bottomLeftRadius'
+  >
+): boolean {
+  return (
+    node.cornerRadius > 0 ||
+    (node.independentCorners &&
+      (node.topLeftRadius > 0 ||
+        node.topRightRadius > 0 ||
+        node.bottomRightRadius > 0 ||
+        node.bottomLeftRadius > 0))
+  )
+}
+
+/** Whether a layer smooths a corner it rounds. */
+export function nodeHasSmoothCorners(
+  node: Parameters<typeof nodeHasRadius>[0] & Pick<SceneNode, 'cornerSmoothing'>
+): boolean {
+  if (!(node.cornerSmoothing > 0)) return false
+  if (node.independentCorners) {
+    return (
+      node.topLeftRadius > 0 ||
+      node.topRightRadius > 0 ||
+      node.bottomRightRadius > 0 ||
+      node.bottomLeftRadius > 0
+    )
+  }
+  return node.cornerRadius > 0
+}

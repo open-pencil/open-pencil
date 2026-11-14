@@ -1,7 +1,6 @@
 import type { GeometryPath, VectorNetwork } from '@open-pencil/scene-graph'
-
-import { addLoopToPath, addOpenSegmentsToPath } from './path-helpers'
-import type { PathSink } from './path-helpers'
+import type { PathSink } from '@open-pencil/scene-graph/paths'
+import { addOpenSegmentsToPath, addRegionToPath } from '@open-pencil/scene-graph/paths'
 
 const CMD_CLOSE = 0
 const CMD_MOVE_TO = 1
@@ -54,7 +53,7 @@ export function regenerateFillGeometry(
   if (regions.length > 0) {
     return regions.map((region) => {
       const builder = new GeometryBlobBuilder()
-      for (const loop of region.loops) addLoopToPath(builder, loop, segments, vertices)
+      addRegionToPath(builder, region, segments, vertices)
       return { windingRule: region.windingRule, commandsBlob: builder.toBlob() }
     })
   }

@@ -260,6 +260,12 @@
       "import": "./dist/parse-path.js",
       "default": "./dist/parse-path.js"
     },
+    "./paths": {
+      "types": "./dist/paths/index.d.ts",
+      "bun": "./src/paths/index.ts",
+      "import": "./dist/paths/index.js",
+      "default": "./dist/paths/index.js"
+    },
     "./plugin-data": {
       "types": "./dist/plugin-data/index.d.ts",
       "bun": "./src/plugin-data/index.ts",

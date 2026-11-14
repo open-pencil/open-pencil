@@ -1,5 +1,6 @@
 import { nodeCornerRadii } from '../corners'
 import { borderWeights, sweepsWholeTurn } from '../geometry'
+import { arcOutline } from '../paths/arc'
 import { polygonOutline } from '../polygon'
 import type { Vector } from '../primitives'
 import type { SceneNode, WindingRule } from '../types'
@@ -87,8 +88,6 @@ function rectangleSides(
   }
 }
 
-const FULL_TURN = Math.PI * 2
-
 /** Whether a layer is an unbroken ellipse: an ELLIPSE whose arc, if any, is a whole turn with no hole. */
 export function isWholeEllipse(node: Pick<SceneNode, 'type' | 'arcData'>): boolean {
   if (node.type !== 'ELLIPSE') return false
@@ -97,26 +96,14 @@ export function isWholeEllipse(node: Pick<SceneNode, 'type' | 'arcData'>): boole
 }
 
 function ellipseContours(node: SceneNode, tolerance: number): Vector[][] {
-  const rx = node.width / 2
-  const ry = node.height / 2
-  const arc = node.arcData
-  const start = arc?.startingAngle ?? 0
-  const end = arc?.endingAngle ?? FULL_TURN
-  const inner = arc?.innerRadius ?? 0
-  const whole = sweepsWholeTurn(start, end)
-  const outer = arcPoints(rx, ry, rx, ry, start, whole ? start + FULL_TURN : end, tolerance)
-  if (inner <= 0) return [whole ? outer : [{ x: rx, y: ry }, ...outer]]
-  const hole = arcPoints(
-    rx,
-    ry,
-    rx * inner,
-    ry * inner,
-    whole ? start + FULL_TURN : end,
-    start,
-    tolerance
+  const { cx, cy, contours } = arcOutline(node)
+  return contours.map((contour) =>
+    contour.flatMap((step) =>
+      step.type === 'centre'
+        ? [{ x: cx, y: cy }]
+        : arcPoints(cx, cy, step.rx, step.ry, step.start, step.start + step.sweep, tolerance)
+    )
   )
-  // A whole ring is two loops wound opposite ways; a part ring is one outline across its ends.
-  return whole ? [outer, hole] : [[...outer, ...hole]]
 }
 
 function vectorOutline(node: SceneNode, tolerance: number): ShapeOutline | null {
