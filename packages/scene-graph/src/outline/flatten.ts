@@ -88,15 +88,20 @@ export function segmentRuns(network: VectorNetwork, tolerance: number): Vector[]
   const runs: Vector[][] = []
   for (const chain of buildChains(network.segments)) {
     let current = chain.start
-    const run: Vector[] = []
+    let run: Vector[] = []
     for (const index of chain.segments) {
       const segment = network.segments[index]
-      const along = segmentPoints(network, index, tolerance)
-      if (!along) continue
       const forward = segment.start === current
+      current = forward ? segment.end : segment.start
+      const along = segmentPoints(network, index, tolerance)
+      // A segment naming a missing vertex breaks the run: what follows starts a run of its own.
+      if (!along) {
+        if (run.length > 1) runs.push(run)
+        run = []
+        continue
+      }
       const points = forward ? along : along.toReversed()
       appendAll(run, run.length > 0 ? points.slice(1) : points)
-      current = forward ? segment.end : segment.start
     }
     if (run.length > 1) runs.push(run)
   }

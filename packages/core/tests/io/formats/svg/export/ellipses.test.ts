@@ -31,5 +31,8 @@ test('a saved stroke geometry draws the stroke once', () => {
       strokeGeometry: [{ windingRule: 'NONZERO', commandsBlob: moveTo(5, 6) }]
     }).id
   ])
-  expect(paths(svg).filter((path) => / stroke="#/.test(path))).toEqual([])
+  expect(paths(svg)).toEqual([
+    '<path d="M3 4" fill="#FF0000" stroke="none" stroke-width="2"/>',
+    '<path d="M5 6" fill="#000000" stroke="none"/>'
+  ])
 })
