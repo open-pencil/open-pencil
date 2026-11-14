@@ -6,15 +6,17 @@ import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import {
-  cloudCommunityDesktopLinkURL,
   cloudCommunityPagePath,
-  cloudCommunityURL,
   CLOUD_COMMUNITY_PATH,
   type CommunityDocument
 } from '@open-pencil/cloud/contract'
 import { useCloudMessages, useCloudPortalMessages, useFileMessages } from '@open-pencil/vue/i18n'
 
-import { useCommunityDocuments } from '@/app/cloud-portal/community'
+import {
+  openCommunityInBrowser,
+  openCommunityInDesktop,
+  useCommunityDocuments
+} from '@/app/cloud-portal/community'
 import { usePortal } from '@/app/cloud-portal/context'
 import { useDateFormat } from '@/app/i18n/date'
 import CommunityLayout from '@/components/cloud-portal/community/CommunityLayout.vue'
@@ -69,14 +71,6 @@ watch(
     versionId.value = null
   }
 )
-
-function openInBrowser(id: string) {
-  globalThis.location.assign(cloudCommunityURL(origin, id, versionId.value))
-}
-
-function openInDesktop(id: string) {
-  globalThis.location.assign(cloudCommunityDesktopLinkURL(id, origin, versionId.value))
-}
 
 function openPage(entry: CommunityDocument) {
   void router.push(cloudCommunityPagePath(entry.id))
@@ -133,10 +127,18 @@ useHead({ title: () => document.value?.name ?? messages.value.communityTitle })
             </p>
           </div>
           <div class="flex flex-col gap-2">
-            <AppButton color="primary" variant="solid" @click="openInBrowser(document.id)">
+            <AppButton
+              color="primary"
+              variant="solid"
+              @click="openCommunityInBrowser({ documentId: document.id, versionId })"
+            >
               {{ messages.communityOpenInBrowser }}
             </AppButton>
-            <AppButton variant="outline" class="max-sm:hidden" @click="openInDesktop(document.id)">
+            <AppButton
+              variant="outline"
+              class="max-sm:hidden"
+              @click="openCommunityInDesktop({ documentId: document.id, versionId })"
+            >
               {{ messages.communityOpenInDesktop }}
             </AppButton>
             <AppButton variant="outline" @click="copy(pageURL)">

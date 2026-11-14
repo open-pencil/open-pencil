@@ -2,8 +2,8 @@
 import { useTemplateRef, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
-import SiteFooter from './SiteFooter.vue'
-import SiteHeader from './SiteHeader.vue'
+import SiteFooter from '@/components/cloud-portal/site/SiteFooter.vue'
+import SiteHeader from '@/components/cloud-portal/site/SiteHeader.vue'
 
 /** A community gallery page: the site's bar, the page, and the site's foot. */
 const route = useRoute()
