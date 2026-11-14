@@ -4,6 +4,8 @@ import {
   communityDocumentsSchema,
   type CommunityDocument
 } from '#cloud/contract'
+// eslint-disable-next-line @open-pencil/structure/no-mixed-case-acronym-identifiers -- Upstream export spelling.
+import { createHead, transformHtmlTemplate as transformHTMLTemplate } from 'unhead/server'
 import * as v from 'valibot'
 
 /** What a community page says about itself to link previews and search engines. */
@@ -75,39 +77,25 @@ export async function communityPageMeta(
   }
 }
 
-const ESCAPES: Record<string, string> = {
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&quot;',
-  "'": '&#39;'
-}
-
-function escapeHTML(text: string): string {
-  return text.replace(/[&<>"']/g, (character) => ESCAPES[character] ?? character)
-}
-
-/** The page with its title replaced and the preview and canonical tags added to its head. */
-export function withPageMeta(html: string, meta: PageMeta): string {
-  const tag = (attribute: 'name' | 'property', key: string, value: string) =>
-    `<meta ${attribute}="${key}" content="${escapeHTML(value)}" />`
-  const tags = [
-    `<title>${escapeHTML(meta.title)}</title>`,
-    tag('name', 'description', meta.description),
-    `<link rel="canonical" href="${escapeHTML(meta.url)}" />`,
-    tag('property', 'og:type', 'website'),
-    tag('property', 'og:title', meta.title),
-    tag('property', 'og:description', meta.description),
-    tag('property', 'og:url', meta.url),
-    ...(meta.image
-      ? [
-          tag('property', 'og:image', meta.image),
-          tag('name', 'twitter:card', 'summary_large_image')
-        ]
-      : [])
-  ].join('\n    ')
-  // A function, so a `$` in a file's name is inserted as it is rather than read as a pattern.
-  return html
-    .replace(/<title>[^<]*<\/title>/, () => '')
-    .replace('</head>', () => `    ${tags}\n  </head>`)
+/** The page with the gallery's title, description, preview, and canonical address in its head. */
+export async function withPageMeta(html: string, meta: PageMeta): Promise<string> {
+  const head = createHead()
+  head.push({
+    title: meta.title,
+    meta: [
+      { name: 'description', content: meta.description },
+      { property: 'og:type', content: 'website' },
+      { property: 'og:title', content: meta.title },
+      { property: 'og:description', content: meta.description },
+      { property: 'og:url', content: meta.url },
+      ...(meta.image
+        ? [
+            { property: 'og:image', content: meta.image },
+            { name: 'twitter:card', content: 'summary_large_image' }
+          ]
+        : [])
+    ],
+    link: [{ rel: 'canonical', href: meta.url }]
+  })
+  return transformHTMLTemplate(head, html)
 }

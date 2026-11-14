@@ -94,7 +94,7 @@ export function createCloudServer(
       if (!page) return c.notFound()
       const meta = await communityPageMeta(api, c.req.raw, c.req.param('documentId'))
       const html = await new Response(page.body).text()
-      if ('title' in meta) return c.body(withPageMeta(html, meta), 200, PAGE_HEADERS)
+      if ('title' in meta) return c.body(await withPageMeta(html, meta), 200, PAGE_HEADERS)
       // The page still loads and says what went wrong; the status and retry advice stay the API's.
       const headers = meta.retryAfter
         ? { ...PAGE_HEADERS, 'Retry-After': meta.retryAfter }

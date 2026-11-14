@@ -46,28 +46,60 @@ function server(gallery: boolean | 'limited', name = 'Tour <of> "OpenPencil"') {
 const visit = (app: ReturnType<typeof server>, path: string) =>
   app.request(new Request(`https://cloud.example${path}`, { headers: { Accept: 'text/html' } }))
 
+/** What a page's head holds, as written: its titles, metas by name or property, and canonical link. */
+async function headOf(page: Response) {
+  const head = { titles: [] as string[], meta: {} as Record<string, string>, canonical: '' }
+  let title = ''
+  await new HTMLRewriter()
+    .on('title', {
+      text(chunk) {
+        title += chunk.text
+        if (chunk.lastInTextNode) {
+          head.titles.push(title)
+          title = ''
+        }
+      }
+    })
+    .on('meta', {
+      element(element) {
+        const key = element.getAttribute('property') ?? element.getAttribute('name')
+        if (key) head.meta[key] = element.getAttribute('content') ?? ''
+      }
+    })
+    .on('link[rel="canonical"]', {
+      element(element) {
+        head.canonical = element.getAttribute('href') ?? ''
+      }
+    })
+    .transform(page)
+    .text()
+  return head
+}
+
 describe('community pages', () => {
   test('describe a document to link previews, escaped, with its preview as the image', async () => {
     const page = await visit(server(true), `/community/${DOCUMENT_ID}`)
     expect(page.status).toBe(200)
-    const html = await page.text()
-    expect(html).toContain(
-      '<title>Tour &lt;of&gt; &quot;OpenPencil&quot; · Community · cloud.example</title>'
+    const head = await headOf(page)
+    // One title, the file's, whatever its name holds; the page's own is replaced.
+    expect(head.titles).toEqual([
+      'Tour &lt;of&gt; &quot;OpenPencil&quot; · Community · cloud.example'
+    ])
+    // As written in the page, which keeps the quotes in the attribute escaped.
+    expect(head.meta['og:title']).toBe(
+      'Tour <of> &quot;OpenPencil&quot; · Community · cloud.example'
     )
-    expect(html).not.toContain('<title>OpenPencil Cloud</title>')
-    expect(html).toContain(
-      `<meta property="og:image" content="https://cloud.example/api/community/thumbnails/${DOCUMENT_ID}/${REVISION_ID}" />`
+    expect(head.meta['og:image']).toBe(
+      `https://cloud.example/api/community/thumbnails/${DOCUMENT_ID}/${REVISION_ID}`
     )
-    expect(html).toContain(
-      `<link rel="canonical" href="https://cloud.example/community/${DOCUMENT_ID}" />`
-    )
+    expect(head.canonical).toBe(`https://cloud.example/community/${DOCUMENT_ID}`)
     expect(page.headers.get('X-Robots-Tag')).toBeNull()
   })
 
   test('describe the gallery itself', async () => {
-    const html = await (await visit(server(true), '/community')).text()
-    expect(html).toContain('<title>Community · cloud.example</title>')
-    expect(html).toContain('<link rel="canonical" href="https://cloud.example/community" />')
+    const head = await headOf(await visit(server(true), '/community'))
+    expect(head.titles).toEqual(['Community · cloud.example'])
+    expect(head.canonical).toBe('https://cloud.example/community')
   })
 
   test('answer 404 for a document not in the gallery, and on a server without one', async () => {
@@ -87,9 +119,9 @@ describe('community pages', () => {
   })
 
   test('insert a name with dollar patterns as it is', async () => {
-    const html = await (
+    const head = await headOf(
       await visit(server(true, 'Price $& $` $$'), `/community/${DOCUMENT_ID}`)
-    ).text()
-    expect(html).toContain('<title>Price $&amp; $` $$ · Community · cloud.example</title>')
+    )
+    expect(head.meta['og:title']).toBe('Price $& $` $$ · Community · cloud.example')
   })
 })
