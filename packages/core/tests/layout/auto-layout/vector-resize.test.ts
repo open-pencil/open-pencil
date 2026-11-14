@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { computeAllLayouts } from '@open-pencil/core/layout'
+import { computeAccurateBounds } from '@open-pencil/core/vector'
 import { SceneGraph, type SceneNode, type VectorNetwork } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
@@ -104,6 +105,133 @@ describe('a vector layout resizes', () => {
     expect(point(node.fillGeometry[0])).toEqual([200, 200])
     expect(node.strokeGeometry).toEqual([])
     expect(node.vectorNetwork?.vertices[2]).toEqual({ x: 180, y: 40 })
+  })
+
+  test('scales its path when layout expands it from a fully collapsed box', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    // Fill collapses a vector that still has extent. Once both sides are zero it no longer
+    // fills, so the frame it is moved into stretches it back out by its constraints.
+    const row = graph.createNode('FRAME', page, {
+      width: 0,
+      height: 0,
+      layoutMode: 'HORIZONTAL',
+      primaryAxisSizing: 'FIXED',
+      counterAxisSizing: 'FIXED'
+    })
+    const vector = graph.createNode('VECTOR', row.id, {
+      width: 100,
+      height: 100,
+      layoutGrow: 1,
+      layoutAlignSelf: 'STRETCH',
+      vectorNetwork: squareNetwork(100),
+      fillGeometry: [moveTo(100, 100)],
+      strokeGeometry: [moveTo(100, 100)],
+      strokes: [INSIDE],
+      strokeAlign: 'INSIDE',
+      strokeWeight: 4
+    })
+
+    computeAllLayouts(graph)
+
+    expect([vector.width, vector.height]).toEqual([0, 0])
+    expect(point(vector.fillGeometry[0])).toEqual([100, 100])
+    expect(point(vector.strokeGeometry[0])).toEqual([100, 100])
+    expect(vector.vectorNetwork?.vertices[2]).toEqual({ x: 100, y: 100 })
+
+    const board = graph.createNode('FRAME', page, {
+      width: 200,
+      height: 200,
+      layoutMode: 'HORIZONTAL',
+      primaryAxisSizing: 'FIXED',
+      counterAxisSizing: 'FIXED'
+    })
+    const holder = graph.createNode('FRAME', board.id, {
+      width: 0,
+      height: 0,
+      layoutGrow: 1,
+      layoutAlignSelf: 'STRETCH'
+    })
+    graph.reparentNode(vector.id, holder.id)
+    graph.updateNode(vector.id, {
+      horizontalConstraint: 'STRETCH',
+      verticalConstraint: 'STRETCH'
+    })
+    computeAllLayouts(graph)
+
+    expect([vector.width, vector.height]).toEqual([200, 200])
+    expect(point(vector.fillGeometry[0])).toEqual([200, 200])
+    expect(vector.strokeGeometry).toEqual([])
+    expect(vector.vectorNetwork?.vertices[2]).toEqual({ x: 200, y: 200 })
+  })
+
+  test('scales only the axis that was zero when layout gives a collapsed side its size back', () => {
+    const graph = new SceneGraph()
+    const vector = graph.createNode('VECTOR', graph.getPages()[0].id, {
+      width: 0,
+      height: 80,
+      vectorNetwork: squareNetwork(100),
+      fillGeometry: [moveTo(100, 100)],
+      strokeGeometry: [moveTo(100, 100)]
+    })
+
+    graph.withLayoutMutations(() => {
+      graph.updateNode(vector.id, { width: 200 })
+    })
+
+    const node = expectDefined(graph.getNode(vector.id))
+    expect([node.width, node.height]).toEqual([200, 80])
+    expect(point(node.fillGeometry[0])).toEqual([200, 100])
+    expect(node.strokeGeometry).toEqual([])
+    expect(node.vectorNetwork?.vertices[2]).toEqual({ x: 200, y: 100 })
+  })
+
+  test('scales outlines from the path layout found when it also replaces the network', () => {
+    const graph = new SceneGraph()
+    const vector = graph.createNode('VECTOR', graph.getPages()[0].id, {
+      width: 0,
+      height: 0,
+      vectorNetwork: squareNetwork(100),
+      fillGeometry: [moveTo(100, 100)],
+      strokeGeometry: [moveTo(100, 100)]
+    })
+    const routed = squareNetwork(200)
+
+    graph.withLayoutMutations(() => {
+      graph.updateNode(vector.id, { width: 200, height: 200, vectorNetwork: routed })
+    })
+
+    const node = expectDefined(graph.getNode(vector.id))
+    expect(point(node.fillGeometry[0])).toEqual([200, 200])
+    expect(node.strokeGeometry).toEqual([])
+    expect(node.vectorNetwork?.vertices[2]).toEqual({ x: 200, y: 200 })
+  })
+
+  test('takes a collapsed curve extent from the curve, as a resize of it does', () => {
+    const graph = new SceneGraph()
+    const network: VectorNetwork = {
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 100, y: 0 }
+      ],
+      segments: [{ start: 0, end: 1, tangentStart: { x: 0, y: -50 }, tangentEnd: { x: 0, y: 50 } }],
+      regions: []
+    }
+    const bounds = computeAccurateBounds(network)
+    const vector = graph.createNode('VECTOR', graph.getPages()[0].id, {
+      width: 0,
+      height: 0,
+      vectorNetwork: network,
+      fillGeometry: [moveTo(0, 10)]
+    })
+
+    graph.withLayoutMutations(() => {
+      graph.updateNode(vector.id, { width: 200, height: 200 })
+    })
+
+    const node = expectDefined(graph.getNode(vector.id))
+    expect(node.vectorNetwork?.vertices[1]?.x).toBeCloseTo((100 * 200) / bounds.width, 3)
+    expect(point(node.fillGeometry[0])[1]).toBeCloseTo((10 * 200) / bounds.height, 3)
   })
 
   test('keeps its path when layout flattens a side, so resizing it back restores the shape', () => {

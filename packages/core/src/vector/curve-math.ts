@@ -1,6 +1,10 @@
 import type { VectorNetwork, VectorSegment } from '@open-pencil/scene-graph'
-import { cubicPoint } from '@open-pencil/scene-graph/geometry'
-import type { Vector, Rect } from '@open-pencil/scene-graph/primitives'
+import {
+  cubicExtrema as curveExtrema,
+  cubicPoint,
+  vectorNetworkBounds
+} from '@open-pencil/scene-graph/geometry'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 export interface CubicPoints {
   p0: Vector
@@ -99,86 +103,11 @@ export function isLineSegment(seg: VectorSegment): boolean {
   )
 }
 
-// ---------------------------------------------------------------------------
-// Accurate bezier bounds via cubic extrema
-// ---------------------------------------------------------------------------
+/** Parameters in (0, 1) where a cubic is level on one axis. */
+export const cubicExtrema = curveExtrema
 
-/**
- * Find parameter values where the cubic derivative is zero (extrema) in one axis.
- * Given cubic coefficients for one axis: B(t) = (1-t)^3*p0 + 3(1-t)^2*t*p1 + 3(1-t)*t^2*p2 + t^3*p3
- * Derivative: B'(t) = 3[(1-t)^2(p1-p0) + 2(1-t)t(p2-p1) + t^2(p3-p2)]
- * Expanding: at^2 + bt + c = 0 where:
- *   a = -p0 + 3p1 - 3p2 + p3
- *   b = 2(p0 - 2p1 + p2)
- *   c = -p0 + p1
- */
-export function cubicExtrema(p0: number, p1: number, p2: number, p3: number): number[] {
-  const a = -p0 + 3 * p1 - 3 * p2 + p3
-  const b = 2 * (p0 - 2 * p1 + p2)
-  const c = -p0 + p1
-
-  const results: number[] = []
-  const EPS = 1e-12
-
-  if (Math.abs(a) < EPS) {
-    // Linear: bt + c = 0
-    if (Math.abs(b) > EPS) {
-      const t = -c / b
-      if (t > 0 && t < 1) results.push(t)
-    }
-  } else {
-    const disc = b * b - 4 * a * c
-    if (disc >= 0) {
-      const sq = Math.sqrt(disc)
-      const t1 = (-b + sq) / (2 * a)
-      const t2 = (-b - sq) / (2 * a)
-      if (t1 > 0 && t1 < 1) results.push(t1)
-      if (t2 > 0 && t2 < 1 && Math.abs(t2 - t1) > EPS) results.push(t2)
-    }
-  }
-
-  return results
-}
-
-/** Compute tight axis-aligned bounding box for a VectorNetwork. */
-export function computeAccurateBounds(network: VectorNetwork): Rect {
-  const { vertices, segments } = network
-  if (vertices.length === 0) return { x: 0, y: 0, width: 0, height: 0 }
-
-  let minX = Infinity,
-    minY = Infinity,
-    maxX = -Infinity,
-    maxY = -Infinity
-
-  const update = (x: number, y: number) => {
-    if (x < minX) minX = x
-    if (y < minY) minY = y
-    if (x > maxX) maxX = x
-    if (y > maxY) maxY = y
-  }
-
-  // Include all vertex positions
-  for (const v of vertices) update(v.x, v.y)
-
-  // For each segment, find curve extrema
-  for (let i = 0; i < segments.length; i++) {
-    const { p0, cp1, cp2, p3 } = segmentToAbsolute(network, i)
-
-    // X extrema
-    for (const t of cubicExtrema(p0.x, cp1.x, cp2.x, p3.x)) {
-      const pt = cubicPoint(p0, cp1, cp2, p3, t)
-      update(pt.x, pt.y)
-    }
-
-    // Y extrema
-    for (const t of cubicExtrema(p0.y, cp1.y, cp2.y, p3.y)) {
-      const pt = cubicPoint(p0, cp1, cp2, p3, t)
-      update(pt.x, pt.y)
-    }
-  }
-
-  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
-}
+/** Tight axis-aligned bounds of a vector network, including the peaks of its curves. */
+export const computeAccurateBounds = vectorNetworkBounds
 
 // ---------------------------------------------------------------------------
 // Nearest point on cubic bezier

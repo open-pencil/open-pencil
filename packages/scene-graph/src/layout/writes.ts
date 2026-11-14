@@ -1,6 +1,8 @@
 import { SIZE_FIELDS, TRANSFORM_FIELDS } from '../fields/geometry'
+import { vectorNetworkBounds } from '../geometry'
+import type { Rect } from '../primitives'
 import { createResizeSnapshot, scaledGeometryChanges } from '../resize'
-import type { SceneNode } from '../types'
+import type { SceneNode, VectorNetwork } from '../types'
 
 /**
  * The layout results a format keeps apart from what it saved once an edit moves or sizes.
@@ -12,6 +14,21 @@ const EDITED_GEOMETRY_FIELDS: ReadonlySet<keyof SceneNode> = new Set([
   'fillGeometry',
   'strokeGeometry'
 ])
+
+/**
+ * The network the saved outlines were built from. A network this layout replaced already sits in
+ * the new box, so its bounds are not the size those outlines were drawn at.
+ */
+function outlinesNetwork(node: SceneNode, before: Partial<SceneNode>): VectorNetwork | null {
+  if (Object.hasOwn(before, 'vectorNetwork')) return before.vectorNetwork ?? null
+  return node.vectorNetwork
+}
+
+/** The tight box of `network`, the size a zero side scales from. */
+function collapsedPathExtent(network: VectorNetwork | null): Pick<Rect, 'width' | 'height'> | null {
+  if (!network || network.vertices.length === 0) return null
+  return vectorNetworkBounds(network)
+}
 
 /**
  * The outline a kept size change must take with it. The node already has its new box; the saved
@@ -28,13 +45,17 @@ function keptSizeGeometry(node: SceneNode, before: Partial<SceneNode>): Partial<
   const height = typeof before.height === 'number' ? before.height : node.height
   // A side at zero keeps the path along it, as a plugin resize does. Scaling into that side
   // multiplies every coordinate by zero, and moving the layer out and sizing it again cannot
-  // bring the shape back.
+  // bring the shape back. A side already at zero lost the box the path was drawn in, so that
+  // side scales from the tight box of the path it kept. A side that still has a size keeps it.
+  const extent = width > 0 && height > 0 ? null : collapsedPathExtent(outlinesNetwork(node, before))
+  const fromWidth = width > 0 ? width : (extent?.width ?? 0)
+  const fromHeight = height > 0 ? height : (extent?.height ?? 0)
   return scaledGeometryChanges(
     createResizeSnapshot(node),
-    width,
-    height,
-    node.width > 0 ? node.width : width,
-    node.height > 0 ? node.height : height
+    fromWidth,
+    fromHeight,
+    node.width > 0 ? node.width : fromWidth,
+    node.height > 0 ? node.height : fromHeight
   )
 }
 

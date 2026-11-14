@@ -1,8 +1,9 @@
 import { arrowCapOverflow } from './arrow-caps'
+import { cubicExtrema, cubicPoint } from './cubic'
 import type { Rect, Vector } from './primitives'
 import type { Effect, SceneNode, Stroke, StrokeCap, StrokeJoin, VectorNetwork } from './types'
 
-export { cubicPoint } from './cubic'
+export { cubicExtrema, cubicPoint }
 
 export function degToRad(degrees: number): number {
   return (degrees * Math.PI) / 180
@@ -113,6 +114,35 @@ export function computeBounds(items: Iterable<Rect>): Rect {
   const bounds = createBoundsAccumulator()
   for (const item of items) includeRect(bounds, item)
   return boundsToRect(bounds)
+}
+
+function pointBounds(point: Vector): Rect {
+  return { x: point.x, y: point.y, width: 0, height: 0 }
+}
+
+/**
+ * The tight box of a vector network, including where its curves peak. A zero side scales from
+ * this, which is the size the path was drawn at.
+ */
+export function vectorNetworkBounds(network: VectorNetwork): Rect {
+  if (network.vertices.length === 0) return { x: 0, y: 0, width: 0, height: 0 }
+  const points = network.vertices.map(pointBounds)
+  for (const segment of network.segments) {
+    if (!Number.isInteger(segment.start) || segment.start < 0) continue
+    if (!Number.isInteger(segment.end) || segment.end < 0) continue
+    const start = network.vertices.at(segment.start)
+    const end = network.vertices.at(segment.end)
+    if (!start || !end) continue
+    const p1 = { x: start.x + segment.tangentStart.x, y: start.y + segment.tangentStart.y }
+    const p2 = { x: end.x + segment.tangentEnd.x, y: end.y + segment.tangentEnd.y }
+    for (const t of cubicExtrema(start.x, p1.x, p2.x, end.x)) {
+      points.push(pointBounds(cubicPoint(start, p1, p2, end, t)))
+    }
+    for (const t of cubicExtrema(start.y, p1.y, p2.y, end.y)) {
+      points.push(pointBounds(cubicPoint(start, p1, p2, end, t)))
+    }
+  }
+  return computeBounds(points)
 }
 
 export function polygonVertices(node: {
