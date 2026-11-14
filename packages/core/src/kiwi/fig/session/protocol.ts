@@ -5,6 +5,7 @@ import type {
   FigSessionCheckpoint
 } from '@open-pencil/fig'
 import type { FigPageManifestEntry } from '@open-pencil/kiwi/fig'
+import type { SceneNode } from '@open-pencil/scene-graph'
 
 import type { ParseFigFileOptions } from '#core/io/formats/fig/read'
 import type { SerializedSceneGraph } from '#core/kiwi/fig/parse/transfer'
@@ -111,6 +112,11 @@ export type FigSessionResponse =
       checkpoint?: FigSessionCheckpoint
       delta: FigPopulationDelta
     }
+  /**
+   * Some of a page load's new layers, each after its parent, sent ahead of its result so the main
+   * thread applies a large page piece by piece.
+   */
+  | { type: 'population-chunk'; requestId: string; created: SceneNode[] }
   /** A page load is still advancing; sent at most once a second while it runs. */
   | { type: 'population-progress'; requestId: string }
   | { type: 'population-error'; requestId?: string; error: string }

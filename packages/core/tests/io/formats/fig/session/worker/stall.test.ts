@@ -43,7 +43,7 @@ test('a page load that keeps reporting progress outlives the stall window', asyn
     requestId: sent().requestId,
     baseRevision: sent().baseRevision,
     populated: true,
-    delta: { created: [], updated: [], deleted: [], instanceIndex: [], populatedRootIds: [] }
+    delta: { created: [], updated: [], deleted: [], populatedRootIds: [] }
   })
   expect(await pending).toBe(true)
   client.terminate()
@@ -78,7 +78,7 @@ test('an edit during a page load keeps the load going', async () => {
     requestId: sent().requestId,
     baseRevision: sent().baseRevision,
     populated: true,
-    delta: { created: [], updated: [], deleted: [], instanceIndex: [], populatedRootIds: [] }
+    delta: { created: [], updated: [], deleted: [], populatedRootIds: [] }
   })
   expect(await pending).toBe(true)
   expect(terminated()).toBe(false)

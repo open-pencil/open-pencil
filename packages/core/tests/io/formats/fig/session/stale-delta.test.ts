@@ -11,7 +11,6 @@ const emptyDelta = (): FigPopulationDelta => ({
   created: [],
   updated: [],
   deleted: [],
-  instanceIndex: [],
   populatedRootIds: []
 })
 

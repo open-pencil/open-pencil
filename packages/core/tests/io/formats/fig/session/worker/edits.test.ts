@@ -100,7 +100,6 @@ test('a page that arrives while an edit waits stays out of its undo step', async
         created: [['loaded', { ...template, id: 'loaded', parentId: page.id, name: 'Loaded' }]],
         updated: [[page.id, { childIds: ['loaded'] }]],
         deleted: [],
-        instanceIndex: [],
         populatedRootIds: [page.id]
       }
     })
