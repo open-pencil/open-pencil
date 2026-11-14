@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import process from 'node:process'
 
 import {
-  createHeadlessCSSRuntime,
+  parseHTMLDocument,
   type DesignDocument,
   type DesignElement,
   type DesignNode
@@ -32,7 +32,7 @@ function captured(
   html: string,
   css: string
 ) {
-  const document = createHeadlessCSSRuntime().parseHTML(html)
+  const document = parseHTMLDocument(html)
   return browserRuntimeComputeStyles(page, document, css, 'iframe', {
     layout: true,
     viewport: VIEWPORT
@@ -173,7 +173,7 @@ test.describe('@open-pencil/dom-css browser layout capture', () => {
   })
 
   test('leaves layout out unless asked', async ({ page }) => {
-    const document = createHeadlessCSSRuntime().parseHTML('<div id="plain"></div>')
+    const document = parseHTMLDocument('<div id="plain"></div>')
     const computed = await browserRuntimeComputeStyles(page, document, '', 'iframe')
 
     expect(byId(computed, 'plain').layout).toBeUndefined()

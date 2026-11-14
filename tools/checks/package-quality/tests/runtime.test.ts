@@ -25,6 +25,11 @@ test('public imports retain separate bounded Node and Bun invocations and their 
         name: '@open-pencil/core',
         version: '1.0.0',
         exports: { './runtime-assets/install': './dist/runtime-assets/install.js' }
+      },
+      {
+        name: '@open-pencil/cloud',
+        version: '1.0.0',
+        exports: { './runtime/cloudflare': './dist/runtime-cloudflare.js' }
       }
     ],
     '/fixture',

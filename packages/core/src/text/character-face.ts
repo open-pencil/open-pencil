@@ -4,6 +4,7 @@ import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
 
 import { drawnFontVariations, loadedFace, paragraphSourceFamilies } from './font/families'
 import {
+  fontHasGlyphSync,
   glyphOutlineSourceSync,
   shardCovers,
   shardOutlineSources,
@@ -33,6 +34,7 @@ export function fontAt(node: FontNode, index: number) {
   const weight = run?.style.fontWeight ?? node.fontWeight
   const italic = run?.style.italic ?? node.italic
   const style = textFontFace(node, run?.style).style
+  const loaded = loadedFace(family, weight, italic, style)
   const variations = drawnFontVariations({
     family,
     weight,
@@ -40,9 +42,10 @@ export function fontAt(node: FontNode, index: number) {
     style,
     fontSize: run?.style.fontSize ?? node.fontSize,
     variations: run?.style.fontVariations ?? node.fontVariations,
-    opticalSizeFromFontSize: run?.style.opticalSizeFromFontSize ?? node.opticalSizeFromFontSize
+    opticalSizeFromFontSize: run?.style.opticalSizeFromFontSize ?? node.opticalSizeFromFontSize,
+    loaded
   })
-  const drawn = loadedFace(family, weight, italic, style) ?? { weight, italic, style }
+  const drawn = loaded ?? { weight, italic, style }
   return { family, weight, italic, style, variations, drawn }
 }
 
@@ -118,8 +121,8 @@ export function characterFace(node: SceneNode, text: string, index: number): Cha
     const style = sourceStyle(family, font)
     if (!style) continue
     const fallback = family !== font.family
-    if (glyphOutlineSourceSync(family, style, font.variations)?.covers(character))
-      return { family, style, file: 0, fallback }
+    // Whether a file maps a character does not depend on the instance it is drawn at.
+    if (fontHasGlyphSync(family, style, character)) return { family, style, file: 0, fallback }
     const shard = fontManager
       .shardData(family, style)
       .findIndex((data) => shardCovers(data, character))

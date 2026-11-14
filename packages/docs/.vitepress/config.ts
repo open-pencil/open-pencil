@@ -1,3 +1,4 @@
+import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -15,6 +16,7 @@ import { appSourceConfig } from '@open-pencil/vite-config/app-source'
 import { landingPreloads } from './landing-head.ts'
 import { docsLocales } from './locales/docs.ts'
 import { rootThemeConfig } from './root-theme.ts'
+import { securityTxt } from './security-txt.ts'
 import { BASE, LOCALE_PREFIXES, applyPageSeo, siteHead, withAlternateSitemapLinks } from './seo.ts'
 
 await ensureBrandAssets(['docs'])
@@ -69,6 +71,12 @@ export default defineConfig({
     }
   },
   transformHead: landingPreloads,
+
+  // Security reports go to GitHub Security Advisories; the file's expiry moves with each build.
+  async buildEnd({ outDir }) {
+    await mkdir(resolve(outDir, '.well-known'), { recursive: true })
+    await writeFile(resolve(outDir, '.well-known/security.txt'), securityTxt(BASE, new Date()))
+  },
 
   markdown: {
     codeTransformers: [

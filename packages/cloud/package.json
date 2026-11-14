@@ -71,13 +71,16 @@
     },
     "./email": {
       "types": "./dist/email.d.ts",
-      "bun": "./src/email/index.ts",
       "import": "./dist/email.js",
       "default": "./dist/email.js"
     },
+    "./runtime/cloudflare": {
+      "types": "./dist/runtime-cloudflare.d.ts",
+      "import": "./dist/runtime-cloudflare.js",
+      "default": "./dist/runtime-cloudflare.js"
+    },
     "./runtime/node": {
       "types": "./dist/runtime-node.d.mts",
-      "bun": "./src/runtime/node/index.ts",
       "import": "./dist/runtime-node.mjs",
       "default": "./dist/runtime-node.mjs"
     },
@@ -89,7 +92,6 @@
     },
     "./server": {
       "types": "./dist/server.d.ts",
-      "bun": "./src/server/index.ts",
       "import": "./dist/server.js",
       "default": "./dist/server.js"
     }
@@ -102,7 +104,7 @@
     "build": "bunx tsdown --config tsdown.config.ts",
     "build:standalone": "bunx tsdown --config tsdown.standalone.config.ts",
     "start": "node dist-standalone/server.mjs",
-    "dev": "bun --watch src/runtime/node/main.ts",
+    "dev": "bun --preload @open-pencil/test-support/vue/sfc --watch src/runtime/node/main.ts",
     "services": "bun src/runtime/node/services/main.ts",
     "check": "bun run typecheck && bun run test && bun run build",
     "test": "bun run test:unit && bun run test:integration",
@@ -116,7 +118,7 @@
     "quota:reconcile": "bun src/runtime/node/quota-reconcile.ts",
     "entitlements": "bun src/runtime/node/entitlements/main.ts",
     "admin": "bun src/runtime/node/admin.ts",
-    "typecheck": "bunx tsc --noEmit -p tsconfig.json && bunx tsc -p src/runtime/cloudflare/tsconfig.json && bunx tsc -p tsconfig.cloudflare.tests.json"
+    "typecheck": "bunx vue-tsc --noEmit -p tsconfig.json && bunx vue-tsc -p src/runtime/cloudflare/tsconfig.json && bunx vue-tsc -p tsconfig.cloudflare.tests.json"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1149.0",
@@ -127,6 +129,7 @@
     "@better-auth/utils": "0.4.2",
     "@hono/node-server": "^1.19.17",
     "@internationalized/date": "^3.12.3",
+    "@nanostores/i18n": "^1.3.3",
     "@noble/hashes": "^2.4.0",
     "@open-pencil/fig": "workspace:*",
     "@open-pencil/kiwi": "workspace:*",
@@ -146,6 +149,7 @@
     "js-base64": "^3.9.3",
     "kysely": "^0.29.6",
     "lib0": "^0.2.117",
+    "nanostores": "^1.5.4",
     "nodemailer": "^9.0.5",
     "posthog-node": "5.56.0",
     "smol-toml": "^1.8.0",
@@ -166,6 +170,8 @@
     "kysely-pglite-dialect": "1.3.1",
     "tsdown": "^0.22.14",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "unplugin-vue": "^7.2.0",
+    "vue-tsc": "3.3.11",
     "wrangler": "4.149.0",
     "y-protocols": "^1.0.7"
   },

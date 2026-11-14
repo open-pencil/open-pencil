@@ -1,6 +1,10 @@
 import type { EnrollmentStatus } from '#cloud/admin/enrollment/service'
 import type { CloudSignInMethod, DocumentPermission, WorkspaceRole } from '#cloud/contract'
-import type { TransactionalEmailKind, TransactionalEmailPayloadByKind } from '#cloud/email'
+import type {
+  EmailLocale,
+  TransactionalEmailKind,
+  TransactionalEmailPayloadByKind
+} from '#cloud/email'
 import type { Account, Session } from 'better-auth'
 import type { ColumnType, Generated, Insertable, Selectable, Updateable } from 'kysely'
 
@@ -115,6 +119,8 @@ export interface DocumentReportTable {
   reporterUserId: string | null
   reporterGuestId: string | null
   replyEmail: string | null
+  /** The language to reply in when the reporter has no account that chose one. */
+  replyLocale: Generated<EmailLocale | null>
   reason: 'spam-phishing' | 'illegal' | 'copyright' | 'harassment' | 'other'
   description: string
   status: Generated<'open' | 'dismissed' | 'actioned'>
@@ -206,6 +212,8 @@ export interface AuthUserTable {
   banExpires: TimestampColumn | null
   /** Unset on accounts that never turned two-step sign-in on. */
   twoFactorEnabled: Generated<boolean | null>
+  /** The language Cloud writes to the account in; unset is English. */
+  locale: Generated<EmailLocale | null>
   createdAt: TimestampColumn
   updatedAt: TimestampColumn
 }
@@ -354,6 +362,8 @@ export interface TransactionalEmailTable {
   kind: TransactionalEmailKind
   recipientEmailNormalized: string
   payloadEncrypted: string | null
+  /** The language the email is written in. */
+  locale: Generated<EmailLocale>
   status: TransactionalEmailStatus
   attemptCount: Generated<number>
   nextAttemptAt: TimestampColumn

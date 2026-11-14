@@ -1,6 +1,6 @@
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
 import { mergedStyle, pickStyle } from './css-values'
-import { elementDisplay } from './flow'
+import { elementDisplay, type ParentFlow } from './flow'
 
 /**
  * What each box property is set to when it draws or sizes nothing. A browser computes every
@@ -53,6 +53,13 @@ const ZERO_LENGTH_PROPERTIES = new Set([
   'padding-inline'
 ])
 
+/** Box properties a tag lays out with: a list's left padding is the gutter its markers sit in. */
+const LIST_GUTTER = new Set(['padding-left', 'padding-inline-start'])
+const TAG_LAYOUT_PROPERTIES = new Map<string, ReadonlySet<string>>([
+  ['ul', LIST_GUTTER],
+  ['ol', LIST_GUTTER]
+])
+
 /** Lengths that take no room: every part of the value is zero, in whatever unit. */
 function isZeroLength(value: string): boolean {
   return value
@@ -80,15 +87,31 @@ function drawsBox(property: string, value: string): boolean {
   return !(NO_BOX_VALUES[property] ?? []).includes(normalized)
 }
 
+/** The display a flex item gets from its tag's own: an inline-level box becomes its block form. */
+function blockified(display: string): string {
+  if (display === 'inline' || display === 'inline-block') return 'block'
+  return display.startsWith('inline-') ? display.slice('inline-'.length) : display
+}
+
 /**
  * Whether the element draws or sizes a box of its own, so it becomes a layer rather than text in
- * the text around it. Its display counts when it is not its tag's own.
+ * the text around it. Its display counts when it is not its tag's own, a flex item's display
+ * being its tag's own once the flex container blockifies it, so an item that only shows text
+ * stays text; the properties its tag lays out with, such as a list's gutter, do not count.
  */
-export function hasBoxStyle(element: DesignElement, style: DesignStyleDeclaration): boolean {
+export function hasBoxStyle(
+  element: DesignElement,
+  style: DesignStyleDeclaration,
+  parentFlow: ParentFlow = 'block'
+): boolean {
   const display = pickStyle(style, 'display')
   const shown = display?.replace(/!important/i, '').trim()
-  if (shown !== undefined && shown !== elementDisplay(element, {})) return true
+  const own = elementDisplay(element, {})
+  const blockifies = parentFlow === 'flex' && shown === blockified(own)
+  if (shown !== undefined && shown !== own && !blockifies) return true
+  const layout = TAG_LAYOUT_PROPERTIES.get(element.tagName.toLowerCase())
   return BOX_PROPERTIES.some((property) => {
+    if (layout?.has(property)) return false
     const value = pickStyle(style, property)
     return value !== undefined && drawsBox(property, value)
   })

@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
 
+import * as v from 'valibot'
+
+import { cloudLocaleUpdateSchema } from '@open-pencil/cloud/contract'
 import { fetchStub } from '@open-pencil/test-support/fetch'
+import { localeSetting } from '@open-pencil/vue/i18n'
 
 import { addCloudServer, cloudServers, removeCloudServer } from '@/app/cloud/servers/store'
 import {
@@ -27,16 +31,29 @@ type Answer = { status: number; body?: unknown }
 let answers: Record<string, Answer> = {}
 let authorization: (string | null)[] = []
 let statusRequests = 0
+/** The languages the app told the server, in order. */
+let locales: string[] = []
+/** Runs while the server answers for its workspaces, as a check is under way. */
+let duringCheck: (() => void) | undefined
 
 beforeEach(() => {
   answers = {}
   authorization = []
   statusRequests = 0
+  locales = []
+  duringCheck = undefined
   spyOn(globalThis, 'fetch').mockImplementation(
     fetchStub(async (input, init) => {
       const url = new URL(input instanceof Request ? input.url : String(input))
       authorization.push(new Headers(init?.headers).get('Authorization'))
       if (url.pathname === '/api/account/status') statusRequests += 1
+      if (url.pathname === '/api/workspaces') duringCheck?.()
+      if (url.pathname === '/api/account/locale') {
+        locales.push(
+          v.parse(v.pipe(v.string(), v.parseJson(), cloudLocaleUpdateSchema), init?.body).locale
+        )
+        return Response.json({ ok: true })
+      }
       if (url.pathname === '/.well-known/openpencil')
         return Response.json(cloudDiscoveryFixture(ORIGIN))
       const answer = answers[url.pathname]
@@ -50,6 +67,7 @@ beforeEach(() => {
 
 afterEach(() => {
   for (const server of cloudServers.value) removeCloudServer(server.id)
+  localeSetting.set(undefined)
 })
 
 async function server() {
@@ -70,6 +88,21 @@ describe('Cloud connections', () => {
       email: 'ada@example.com',
       image: null
     })
+  })
+
+  test('tell the server the language picked while it was being checked', async () => {
+    answers['/api/account/status'] = {
+      status: 200,
+      body: { user: { ...user, userId: 'user-changing-language' }, state: 'active' }
+    }
+    answers['/api/workspaces'] = { status: 200, body: { workspaces: [workspace] } }
+    localeSetting.set('de')
+    duringCheck = () => localeSetting.set('fr')
+    expect((await refreshCloudConnection(await server())).state).toBe('signed-in')
+    await new Promise((resolve) => {
+      setTimeout(resolve, 10)
+    })
+    expect(locales.at(-1)).toBe('fr')
   })
 
   test('tell an account waiting for an administrator from one signed out', async () => {

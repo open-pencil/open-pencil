@@ -24,6 +24,8 @@ export interface DrawnFontAxes {
   /** The axes the text sets. */
   variations: readonly FontVariation[]
   opticalSizeFromFontSize: boolean
+  /** The family's face the text draws in, as {@link loadedFace} finds it; looked up when left out. */
+  loaded?: LoadedFace | null
 }
 
 /**
@@ -48,8 +50,12 @@ export function drawnFontVariations(font: DrawnFontAxes): FontVariation[] {
       ]
     : font.variations
   const axes = new Map([...named, ...set].map(({ axis, value }) => [axis, value]))
-  if (!axes.has('wght') && !loadedFace(font.family, font.weight, font.italic, font.style)) {
-    axes.set('wght', font.weight)
+  if (!axes.has('wght')) {
+    const loaded =
+      font.loaded === undefined
+        ? loadedFace(font.family, font.weight, font.italic, font.style)
+        : font.loaded
+    if (!loaded) axes.set('wght', font.weight)
   }
   return [...axes].map(([axis, value]) => ({ axis, value }))
 }
@@ -89,6 +95,7 @@ export function loadedFace(
   italic: boolean,
   style = faceLoadKey(weight, italic)
 ): LoadedFace | null {
+  if (!fontManager.isLoaded(family)) return null
   if (fontManager.isStyleLoaded(family, style)) return { weight, italic, style }
   for (const slant of [italic, !italic]) {
     for (const candidate of fontWeightMatchOrder(weight)) {
