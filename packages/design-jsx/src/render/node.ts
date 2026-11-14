@@ -2,13 +2,16 @@ import { omitBy, range } from 'es-toolkit'
 
 import type { NodeType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
+import { parseCSSNumber } from '@open-pencil/scene-graph/css'
+import type { Size } from '@open-pencil/scene-graph/primitives'
 
 import type { RekaScope } from '../behaviours'
 import { renderRekaNode } from '../behaviours/render'
 import { componentIdNamed, renderInstanceNode } from '../components/instances'
 import { bindProperties, inferComponentSetProperties } from '../components/properties'
+import { designJSXPropertyNames } from '../definitions'
 import { elementNodeType, elementOwnLayer, type OwnLayerRenderer } from '../elements'
-import { applySizeOverrides, propsToOverrides, shapeOverrides } from '../overrides'
+import { applySizeOverrides, explicitSize, propsToOverrides, shapeOverrides } from '../overrides'
 import { placeVectorPaths } from '../overrides/vector'
 import type { LayerRefs } from '../refs'
 import { readElementProps } from '../schema'
@@ -76,6 +79,35 @@ function renderOwnLayerElement(
   return node
 }
 
+/** The side of an `<Icon>` or inline `<svg>` that sets neither `w`, `h`, nor `size`. */
+const DEFAULT_ARTWORK_SIZE = 24
+
+/**
+ * The box an `<Icon>` or inline `<svg>` is drawn in: its `w` and `h` under either of their names,
+ * a side it leaves out following the one it sets, or the square `size` when it sets neither.
+ */
+function artworkBox(props: Record<string, unknown>): Size {
+  const { width = 0, height = 0 } = explicitSize(props)
+  const square = typeof props.size === 'number' ? props.size : DEFAULT_ARTWORK_SIZE
+  const size = width > 0 || height > 0 ? Math.max(width, height) : square
+  return { width: width > 0 ? width : size, height: height > 0 ? height : size }
+}
+
+/**
+ * An inline `<svg>`'s props with a `width` or `height` written as SVG markup writes it, `"20"` or
+ * `"20px"`, as the number of pixels it means. A length that depends on what holds the layer, such
+ * as `"100%"`, stays as written and sets no size.
+ */
+function svgSizeProps(props: Record<string, unknown>): Record<string, unknown> {
+  const sized = { ...props }
+  for (const key of [...designJSXPropertyNames('w'), ...designJSXPropertyNames('h')]) {
+    const value = props[key]
+    const pixels = typeof value === 'string' ? parseCSSNumber(value) : null
+    if (pixels !== null) sized[key] = pixels
+  }
+  return sized
+}
+
 function applyIconSize(
   props: Record<string, unknown>,
   overrides: Partial<SceneNode>,
@@ -97,10 +129,19 @@ async function renderIconNode<Artwork>(
   const iconName = props.name as string | undefined
   if (!iconName) throw new Error('<Icon> requires a name prop (e.g. name="lucide:heart")')
 
-  const size = (props.size as number | undefined) ?? 24
+  // An icon is square, so it fits the smaller side of its box and sits in the middle of the other.
+  const box = artworkBox(props)
+  const size = Math.min(box.width, box.height)
   const artwork = await graph.waitOutsideEdit(services.icon(iconName, size))
   if (!artwork) throw new Error(`Icon "${iconName}" not found`)
-  return placeArtwork(services, graph, artwork, props, size, parentId)
+  const node = placeArtwork(services, graph, artwork, props, size, parentId)
+  const offset = { x: (box.width - size) / 2, y: (box.height - size) / 2 }
+  if (offset.x !== 0 || offset.y !== 0) {
+    for (const path of graph.getChildren(node.id)) {
+      graph.updateNode(path.id, { x: path.x + offset.x, y: path.y + offset.y })
+    }
+  }
+  return node
 }
 
 function placeArtwork<Artwork>(
@@ -150,26 +191,17 @@ function renderSVGNode<Artwork>(
   tree: TreeNode,
   parentId: string
 ): SceneNode {
-  const props = tree.props
-  const explicitW = typeof props.w === 'number' ? props.w : 0
-  const explicitH = typeof props.h === 'number' ? props.h : 0
-  const size =
-    explicitW > 0 || explicitH > 0
-      ? Math.max(explicitW, explicitH)
-      : ((props.size as number | undefined) ?? 24)
+  const props = svgSizeProps(tree.props)
   const body =
     (typeof props.body === 'string' && props.body) ||
     tree.children.filter((c): c is string => typeof c === 'string').join('')
   // The viewBox maps into the layer's own box, which `w` and `h` set apart from the square `size`.
-  const box = {
-    width: explicitW > 0 ? explicitW : size,
-    height: explicitH > 0 ? explicitH : size
-  }
+  const box = artworkBox(props)
   const artwork = services.svg({ body, elements: tree.children.filter(isTreeNode), props }, box)
   if (!artwork) {
     throw new Error('<svg> requires SVG markup, a body prop, or supported SVG shape children')
   }
-  return placeArtwork(services, graph, artwork, props, size, parentId)
+  return placeArtwork(services, graph, artwork, props, Math.max(box.width, box.height), parentId)
 }
 
 async function renderArtworkNode<Artwork>(
