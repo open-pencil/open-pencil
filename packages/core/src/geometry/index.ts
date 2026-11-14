@@ -58,7 +58,12 @@ export {
 } from './line-ends'
 export { createSceneGeometry, nodeOrientationMatrix, projectedNode, viewportMatrix } from './scene'
 export type { SceneGeometry } from './scene'
-export { selectionPath, selectionHandleRect, rotationHandleLayout } from './selection'
+export {
+  selectionBounds,
+  selectionPath,
+  selectionHandleRect,
+  rotationHandleLayout
+} from './selection'
 export {
   TRANSFORM_ZONE,
   hasTransformHandles,
