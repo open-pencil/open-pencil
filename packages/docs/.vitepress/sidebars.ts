@@ -126,7 +126,7 @@ export const docsSidebar = (
       { text: prog.aiChat, link: `${prefix}/user-guide/ai-chat` },
       // English only until translated; locales link to the canonical page.
       { text: 'Coding Agents', link: '/user-guide/coding-agents' },
-      { text: 'BYOK Compatibility', link: '/user-guide/byok-provider-compatibility' },
+      { text: 'Models and Providers', link: '/user-guide/models-and-providers' },
       { text: prog.collaboration, link: `${prefix}/user-guide/collaboration` }
     ]
   },
@@ -175,6 +175,7 @@ export const developmentSidebar = (
       { text: labels.architecture, link: `${prefix}/development/architecture` },
       { text: '.fig Reader Architecture', link: '/development/fig-reader' },
       { text: labels.techStack, link: `${prefix}/development/tech-stack` },
+      { text: 'Testing a Model Provider', link: '/development/testing-model-providers' },
       { text: 'Roadmap', link: '/development/roadmap' }
     ]
   },
