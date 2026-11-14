@@ -76,6 +76,10 @@ For a server only its members use, set `deployment.local_editor = false`: the we
 
 Links the server sends point at its own address: `/documents/<id>` for a document, `/share/<id>` for a shared link, and `/invitations/<id>` for an invitation. An editor at another address, such as a development build, can still connect when its origin is in `deployment.trusted_origins`; people sign in there by approving a code, as in the desktop app.
 
+## Editor versions
+
+When a server update needs a newer editor, set `deployment.minimum_editor_version`, such as `"0.17.0"`. An older desktop app then shows a banner offering its update instead of connecting, and the server answers its requests with `426 Upgrade Required`; a browser tab on an older editor offers a reload. Requests that name no editor version, from the CLI or MCP, are served as before.
+
 ## Reverse proxy
 
 - Terminate TLS in front of the server and the object store, on stable hostnames.

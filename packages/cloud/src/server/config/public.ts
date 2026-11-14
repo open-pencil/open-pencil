@@ -59,6 +59,7 @@ export function cloudDiscoveryFromConfig(config: CloudServerConfig): CloudDiscov
     listing: config.listingMinimumEditorVersion
       ? { minimumEditorVersion: config.listingMinimumEditorVersion }
       : undefined,
+    minimumEditorVersion: config.minimumEditorVersion,
     services: config.servicesEndpoint
       ? { endpoint: config.servicesEndpoint, contractVersion: CLOUD_SERVICES_CONTRACT_VERSION }
       : undefined,

@@ -1,6 +1,8 @@
 import { useLocalStorage } from '@vueuse/core'
 import { computed, ref } from 'vue'
 
+import { isEditorVersionAtLeast } from '@open-pencil/cloud/contract'
+
 import { APP_VERSION } from '@/app/runtime/version'
 import { IS_BROWSER, IS_CLOUD_SITE, OFFICIAL_CLOUD_URL } from '@/constants'
 
@@ -18,23 +20,6 @@ const listedFrom = IS_BROWSER
   : ref<string | null>(null)
 const preview = IS_BROWSER ? useLocalStorage('open-pencil:cloud-preview', false) : ref(false)
 
-function versionParts(version: string): number[] | null {
-  const match = /^(\d+)\.(\d+)\.(\d+)/.exec(version)
-  return match ? match.slice(1).map(Number) : null
-}
-
-/** Whether `version` is `minimum` or later, comparing `major.minor.patch` numerically. */
-export function isVersionAtLeast(version: string, minimum: string): boolean {
-  const have = versionParts(version)
-  const need = versionParts(minimum)
-  if (!have || !need) return false
-  for (let index = 0; index < need.length; index++) {
-    const difference = (have[index] ?? 0) - (need[index] ?? 0)
-    if (difference !== 0) return difference > 0
-  }
-  return true
-}
-
 /**
  * Whether the official server is open to this editor, being previewed here, or serving this
  * editor itself; until then Settings offers its waitlist.
@@ -43,7 +28,7 @@ export const cloudOfficialListed = computed(
   () =>
     IS_CLOUD_SITE ||
     preview.value ||
-    (listedFrom.value !== null && isVersionAtLeast(APP_VERSION, listedFrom.value))
+    (listedFrom.value !== null && isEditorVersionAtLeast(APP_VERSION, listedFrom.value))
 )
 
 /** Reads the preview switch from the address and asks the official server whether it is listed. */

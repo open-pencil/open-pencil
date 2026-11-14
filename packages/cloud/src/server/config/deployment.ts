@@ -152,6 +152,7 @@ export function parseCloudDeploymentConfig(
     trustedOrigins: config.deployment.trusted_origins,
     localEditor: config.deployment.local_editor,
     listingMinimumEditorVersion: config.deployment.listing?.minimum_editor_version,
+    minimumEditorVersion: config.deployment.minimum_editor_version,
     databaseURL: requiredSecret(environment, config.database.url),
     authSecret: requiredSecret(environment, config.authentication.secret),
     enrollmentMode: config.authentication.enrollment.mode,
