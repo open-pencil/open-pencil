@@ -10,7 +10,7 @@ import {
   USER_REFERENCE_PAGES
 } from './sidebars.ts'
 
-const DEVELOPERS_NAV = { reference: 'Reference', development: 'Development' }
+const DEVELOPERS_NAV = { reference: 'Reference', development: 'Contributing' }
 
 export const rootThemeConfig = (): DefaultTheme.Config => ({
   logo: { light: '/brand/mark.svg', dark: '/brand/mark-dark.svg', alt: 'OpenPencil' },
@@ -18,23 +18,23 @@ export const rootThemeConfig = (): DefaultTheme.Config => ({
 
   nav: [
     { text: 'Docs', link: '/getting-started', activeMatch: sectionMatch('').docs },
-    { text: 'Developers', link: '/programmable/', activeMatch: sectionMatch('').developers },
+    { text: 'Developers', link: '/developers/', activeMatch: sectionMatch('').developers },
     { text: 'Cloud', link: '/cloud/', activeMatch: '^/cloud/' },
     { text: 'Download', link: '/download' }
   ],
 
   sidebar: {
-    '/user-guide/': docsSidebar('', 'Reference', EN),
+    '/user-guide/': docsSidebar('', 'Reference', EN, EN_PROG),
     // Before `/reference/`, which has as many segments: VitePress keeps their order.
     ...Object.fromEntries(
-      USER_REFERENCE_PAGES.map((page) => [page, docsSidebar('', 'Reference', EN)])
+      USER_REFERENCE_PAGES.map((page) => [page, docsSidebar('', 'Reference', EN, EN_PROG)])
     ),
-    '/programmable/sdk/': sdkSidebar(''),
-    '/programmable/': developersSidebar('', DEVELOPERS_NAV, EN, EN_PROG),
+    '/developers/sdk/': sdkSidebar(''),
+    '/developers/': developersSidebar('', DEVELOPERS_NAV, EN, EN_PROG),
     '/reference/': developersSidebar('', DEVELOPERS_NAV, EN, EN_PROG),
     '/development/': developersSidebar('', DEVELOPERS_NAV, EN, EN_PROG),
     '/cloud/': cloudSidebar(),
-    '/': docsSidebar('', 'Reference', EN)
+    '/': docsSidebar('', 'Reference', EN, EN_PROG)
   },
 
   socialLinks: [

@@ -57,7 +57,7 @@ function sidebarLinks(items: SidebarItem[]): string[] {
 
 function localeSidebarLinks({ labels, prefix, programmable }: LocaleConfig): string[] {
   return sidebarLinks([
-    ...docsSidebar(prefix, 'Reference', labels),
+    ...docsSidebar(prefix, 'Reference', labels, programmable),
     ...developersSidebar(
       prefix,
       { reference: 'Reference', development: 'Development' },

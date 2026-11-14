@@ -189,7 +189,7 @@ Los cambios serializables encajan con la colaboración basada en servidor, pero 
 
 ## 11. Scripts y extensibilidad
 
-El comando [`eval`](/programmable/cli/scripting) proporciona una API compatible con plugins de Figma para scripts sin interfaz, operaciones por lotes y pruebas automatizadas. Además, el chat con AI, el servidor MCP y la CLI ofrecen 90 herramientas para leer, crear, modificar, estructurar, gestionar variables, editar rutas vectoriales, analizar, comparar, ejecutar operaciones booleanas y ordenar.
+El comando [`eval`](/developers/cli/scripting) proporciona una API compatible con plugins de Figma para scripts sin interfaz, operaciones por lotes y pruebas automatizadas. Además, el chat con AI, el servidor MCP y la CLI ofrecen 90 herramientas para leer, crear, modificar, estructurar, gestionar variables, editar rutas vectoriales, analizar, comparar, ejecutar operaciones booleanas y ordenar.
 
 Penpot ofrece plugins aislados, pero no una API equivalente para scripting sin interfaz ni integración MCP.
 

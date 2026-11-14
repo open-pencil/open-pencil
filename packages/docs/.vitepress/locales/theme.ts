@@ -16,7 +16,7 @@ export const localeThemeConfig = (
     { text: nav.docs, link: `${prefix}/getting-started`, activeMatch: sectionMatch(prefix).docs },
     {
       text: nav.developers,
-      link: `${prefix}/programmable/`,
+      link: `${prefix}/developers/`,
       activeMatch: sectionMatch(prefix).developers
     },
     // English only until translated.
@@ -24,12 +24,12 @@ export const localeThemeConfig = (
     { text: nav.download, link: `${prefix}/download` }
   ],
   sidebar: {
-    [`${prefix}/user-guide/`]: docsSidebar(prefix, nav.reference, sidebar),
+    [`${prefix}/user-guide/`]: docsSidebar(prefix, nav.reference, sidebar, prog),
     // Before `/reference/`, which has as many segments: VitePress keeps their order.
-    [`${prefix}/reference/figma-compatibility`]: docsSidebar(prefix, nav.reference, sidebar),
-    [`${prefix}/programmable/sdk/`]: sdkSidebar(prefix),
-    [`${prefix}/programmable/`]: developersSidebar(prefix, nav, sidebar, prog),
+    [`${prefix}/reference/figma-compatibility`]: docsSidebar(prefix, nav.reference, sidebar, prog),
+    [`${prefix}/developers/sdk/`]: sdkSidebar(prefix),
+    [`${prefix}/developers/`]: developersSidebar(prefix, nav, sidebar, prog),
     [`${prefix}/reference/`]: developersSidebar(prefix, nav, sidebar, prog),
-    [`${prefix}/`]: docsSidebar(prefix, nav.reference, sidebar)
+    [`${prefix}/`]: docsSidebar(prefix, nav.reference, sidebar, prog)
   }
 })

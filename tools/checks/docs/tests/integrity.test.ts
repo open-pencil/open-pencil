@@ -117,6 +117,23 @@ describe('checkDocsIntegrity', () => {
     ])
   })
 
+  test('checks a moved section by its folders', async () => {
+    const docsRoot = await fixture()
+    await write(join(docsRoot, 'index.md'))
+    await write(join(docsRoot, 'new/page.md'))
+    await write(join(docsRoot, 'kept/page.md'))
+    await writeFile(
+      join(docsRoot, 'public/_redirects'),
+      '/old/* /new/:splat 301\n/kept/* /new/:splat 301\n/gone/* /missing/:splat 301\n',
+      'utf8'
+    )
+
+    expect(check(docsRoot).errors).toEqual([
+      "Redirect '/gone/*' targets missing section '/missing/'.",
+      "Redirect source '/kept/*' still has pages and would shadow them."
+    ])
+  })
+
   test('reports invalid, duplicate, shadowing, and missing redirect targets', async () => {
     const docsRoot = await fixture()
     await write(join(docsRoot, 'old.md'))

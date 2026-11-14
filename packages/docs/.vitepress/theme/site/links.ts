@@ -29,7 +29,7 @@ export function footerColumns(messages: SiteMessages, localeIndex: string): Foot
       title: messages.resources,
       links: [
         { label: messages.docs, href: translated(LINKS.docs) },
-        { label: messages.sdk, href: translated('/programmable/sdk/') },
+        { label: messages.sdk, href: translated('/developers/sdk/') },
         { label: 'GitHub', href: LINKS.github },
         { label: 'Discord', href: DISCORD }
       ]

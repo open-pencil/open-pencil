@@ -1,9 +1,18 @@
+/** The Developers overview's URL scheme section, now a page of its own in every locale. */
+const URL_SCHEME = Object.fromEntries(
+  ['', '/de', '/es', '/fr', '/it', '/pl', '/ru'].map((locale) => [
+    `${locale}/developers/`,
+    { 'url-scheme': `${locale}/developers/url-scheme` }
+  ])
+)
+
 /**
  * Sections that moved to pages of their own when OpenPencil Cloud got its own section. The server
  * redirects the old pages (`public/_redirects`) and the browser keeps the `#section`, which the
  * new page doesn't have, so the first load sends it on to where that section lives now.
  */
 const MOVED_SECTIONS: Record<string, Record<string, string>> = {
+  ...URL_SCHEME,
   // Was /user-guide/openpencil-cloud.
   '/cloud/': {
     'your-account': '/cloud/account',
