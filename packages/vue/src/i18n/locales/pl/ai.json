@@ -197,6 +197,7 @@
   "modelRoleReviewDescription": "Jawne recenzje planów i projektów",
   "modelRoleFastDescription": "Tania praca w tle",
   "modelRoleVisionDescription": "Zrzuty ekranu i odniesienia wizualne",
+  "modelRoleNotUsed": "Jeszcze nieużywane",
   "modelRoleUseDesign": "Użyj roli projektowej",
   "noModel": "Brak",
   "apiKey": "Klucz API",

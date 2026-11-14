@@ -197,6 +197,7 @@
   "modelRoleReviewDescription": "مراجعات صريحة للخطط والتصاميم",
   "modelRoleFastDescription": "أعمال خلفية منخفضة التكلفة",
   "modelRoleVisionDescription": "لقطات الشاشة والصور المرجعية",
+  "modelRoleNotUsed": "غير مستخدم بعد",
   "modelRoleUseDesign": "مثل التصميم",
   "noModel": "لا شيء",
   "apiKey": "مفتاح API",

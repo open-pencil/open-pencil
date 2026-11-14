@@ -197,6 +197,7 @@
   "modelRoleReviewDescription": "Revisiones explícitas de planes y diseños",
   "modelRoleFastDescription": "Trabajo económico en segundo plano",
   "modelRoleVisionDescription": "Capturas y referencias visuales",
+  "modelRoleNotUsed": "Aún no se usa",
   "modelRoleUseDesign": "Igual que Diseño",
   "noModel": "Ninguno",
   "apiKey": "Clave API",

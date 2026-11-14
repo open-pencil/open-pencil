@@ -197,6 +197,7 @@
   "modelRoleReviewDescription": "Явная проверка планов и макетов",
   "modelRoleFastDescription": "Недорогая фоновая работа",
   "modelRoleVisionDescription": "Снимки экрана и визуальные референсы",
+  "modelRoleNotUsed": "Пока не используется",
   "modelRoleUseDesign": "Как для дизайна",
   "noModel": "Нет",
   "apiKey": "Ключ API",

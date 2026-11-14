@@ -212,6 +212,7 @@ export const aiMessageDefaults = {
   modelRoleReviewDescription: 'Explicit plan and design reviews',
   modelRoleFastDescription: 'Low-cost background work',
   modelRoleVisionDescription: 'Screenshots and image references',
+  modelRoleNotUsed: 'Not used yet',
   modelRoleUseDesign: 'Same as Design',
   noModel: 'None',
   apiKey: 'API Key',

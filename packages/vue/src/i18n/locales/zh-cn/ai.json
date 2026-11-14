@@ -197,6 +197,7 @@
   "modelRoleReviewDescription": "明确的计划和设计审查",
   "modelRoleFastDescription": "低成本后台工作",
   "modelRoleVisionDescription": "截图和图像参考",
+  "modelRoleNotUsed": "尚未使用",
   "modelRoleUseDesign": "与设计相同",
   "noModel": "无",
   "apiKey": "API 密钥",
