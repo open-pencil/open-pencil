@@ -92,5 +92,19 @@ export const EMAIL_SAMPLES: TransactionalEmailContent[] = [
       upgradable: true,
       actionURL: EMAIL_SAMPLE_URL
     }
+  },
+  {
+    kind: 'document-blocked',
+    payload: {
+      name: 'Ada',
+      documentName: 'Homepage',
+      reason: 'Phishing page imitating a bank',
+      contactEmail: 'abuse@example.com',
+      actionURL: EMAIL_SAMPLE_URL
+    }
+  },
+  {
+    kind: 'document-restored',
+    payload: { name: 'Ada', documentName: 'Homepage', actionURL: EMAIL_SAMPLE_URL }
   }
 ]

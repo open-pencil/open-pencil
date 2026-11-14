@@ -21,6 +21,8 @@ export type TransactionalEmailKind =
   | 'two-step-changed'
   | 'document-report'
   | 'storage-limit-reached'
+  | 'document-blocked'
+  | 'document-restored'
 
 const documentInvitationEmailPayloadSchema = v.object({
   /** Null when the inviter's account is gone, so the email says someone invited you. */
@@ -66,6 +68,25 @@ const storageLimitReachedPayloadSchema = v.object({
   limitBytes: v.number(),
   /** Whether the server sells plans, so the account can get more storage rather than only free it. */
   upgradable: v.boolean(),
+  actionURL: v.string()
+})
+
+/** To a workspace's owner: an administrator took one of its documents down. */
+const documentBlockedPayloadSchema = v.object({
+  /** The owner's name, or null when the account has none. */
+  name: v.nullable(v.string()),
+  documentName: v.string(),
+  /** Why, as the administrator wrote it, or null when they gave no reason. */
+  reason: v.nullable(v.string()),
+  /** Where to write to contest it: the deployment's abuse address, or null without one. */
+  contactEmail: v.nullable(v.pipe(v.string(), v.email())),
+  actionURL: v.string()
+})
+
+/** To a workspace's owner: a document taken down is back. */
+const documentRestoredPayloadSchema = v.object({
+  name: v.nullable(v.string()),
+  documentName: v.string(),
   actionURL: v.string()
 })
 
@@ -129,7 +150,9 @@ export const transactionalEmailContentSchema = v.variant('kind', [
   content('new-sign-in', newSignInPayloadSchema),
   content('two-step-changed', twoStepChangedPayloadSchema),
   content('document-report', documentReportPayloadSchema),
-  content('storage-limit-reached', storageLimitReachedPayloadSchema)
+  content('storage-limit-reached', storageLimitReachedPayloadSchema),
+  content('document-blocked', documentBlockedPayloadSchema),
+  content('document-restored', documentRestoredPayloadSchema)
 ])
 
 /** A transactional email's kind with the payload that kind renders. */
@@ -171,3 +194,5 @@ export type RenderedTransactionalEmail = {
 }
 export type DocumentReportPayload = v.InferOutput<typeof documentReportPayloadSchema>
 export type StorageLimitReachedPayload = v.InferOutput<typeof storageLimitReachedPayloadSchema>
+export type DocumentBlockedPayload = v.InferOutput<typeof documentBlockedPayloadSchema>
+export type DocumentRestoredPayload = v.InferOutput<typeof documentRestoredPayloadSchema>

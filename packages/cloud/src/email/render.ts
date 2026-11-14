@@ -14,8 +14,10 @@ import type {
   TransactionalEmailKind,
   TransactionalEmailPayloadByKind
 } from './schema'
+import DocumentBlocked from './templates/DocumentBlocked.vue'
 import DocumentInvitation from './templates/DocumentInvitation.vue'
 import DocumentReport from './templates/DocumentReport.vue'
+import DocumentRestored from './templates/DocumentRestored.vue'
 import EmailChangeRequested from './templates/EmailChangeRequested.vue'
 import EmailRoot from './templates/EmailRoot.vue'
 import EmailVerification from './templates/EmailVerification.vue'
@@ -103,6 +105,14 @@ const EMAILS: {
   'storage-limit-reached': {
     component: StorageLimitReached,
     subject: (_payload, t) => t.storageFullSubject
+  },
+  'document-blocked': {
+    component: DocumentBlocked,
+    subject: (payload, t) => t.documentBlockedSubject({ document: payload.documentName })
+  },
+  'document-restored': {
+    component: DocumentRestored,
+    subject: (payload, t) => t.documentRestoredSubject({ document: payload.documentName })
   }
 }
 

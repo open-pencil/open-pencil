@@ -731,3 +731,5 @@ zh-cn:email.storageFullPreview
 zh-cn:email.waitlistSubject
 zh-cn:email.waitlistPreview
 zh-cn:email.waitlist
+ja:email.documentBlocked
+zh-cn:email.documentBlocked

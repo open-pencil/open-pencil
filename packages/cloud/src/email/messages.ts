@@ -147,6 +147,24 @@ export const emailMessageDefaults = {
   storageFullFreeSpace: 'Delete documents and empty the trash to edit again.',
   storageFullAction: 'Get more storage',
 
+  documentBlockedSubject: params('Your document “{document}” was blocked'),
+  documentBlockedHeading: 'A document of yours was blocked',
+  documentBlocked: params(
+    'An administrator of OpenPencil Cloud blocked your document “{document}”. Nobody can open it, you included, until it’s restored. Nothing in it was deleted.'
+  ),
+  documentBlockedReason: params('The reason they gave: {reason}'),
+  documentBlockedContest: params(
+    'If you think this is a mistake, write to {email} to have it looked at again.'
+  ),
+  documentBlockedContestAdministrators:
+    'If you think this is a mistake, ask the server’s administrators to look at it again.',
+  documentRestoredSubject: params('Your document “{document}” is back'),
+  documentRestoredHeading: 'Your document is back',
+  documentRestored: params(
+    'An administrator restored your document “{document}”. It opens again for you and everyone you shared it with.'
+  ),
+  openHome: 'Open Home',
+
   waitlistSubject: 'Confirm your place on the OpenPencil Cloud waitlist',
   waitlistHeading: 'Confirm your email',
   waitlistPreview: 'One click to join the OpenPencil Cloud waitlist.',
