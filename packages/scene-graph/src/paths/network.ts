@@ -1,5 +1,5 @@
 import type { Vector } from '../primitives'
-import type { VectorSegment, VectorVertex } from '../types'
+import type { VectorRegion, VectorSegment, VectorVertex } from '../types'
 import type { PathSink } from './sink'
 
 export function addSegmentDirected(
@@ -65,6 +65,16 @@ export function addLoopToPath(
     current = forward ? segment.end : segment.start
   }
   if (!broken && current === start) path.close()
+}
+
+/** A region's loops, one after another: the outline its fill rule fills. */
+export function addRegionToPath(
+  path: PathSink,
+  region: Pick<VectorRegion, 'loops'>,
+  segments: VectorSegment[],
+  vertices: VectorVertex[]
+): void {
+  for (const loop of region.loops) addLoopToPath(path, loop, segments, vertices)
 }
 
 function isStraight(seg: VectorSegment): boolean {

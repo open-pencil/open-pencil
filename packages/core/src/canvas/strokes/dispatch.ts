@@ -9,6 +9,7 @@ import { strokeSideWeights } from '@open-pencil/scene-graph/geometry'
 import { addStrokeRunToPath, strokeRuns } from '@open-pencil/scene-graph/paths'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
+import { fillGeometryPath, unitedPath } from '#core/canvas/boolean'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import {
   configureStrokePaint,
@@ -305,7 +306,7 @@ function drawAlignedVectorPathStrokes(
   // `vectorNetworkToPath` lists a path for each region, then one for the open segments.
   const regions = node.vectorNetwork?.regions.length ?? 0
   const closed = vectorPaths.slice(0, regions)
-  const inside = stroke.align === 'INSIDE' && closed.length > 0 ? unitePaths(r, closed) : null
+  const inside = stroke.align === 'INSIDE' && closed.length > 0 ? unitedPath(r, closed) : null
   const sided = clipToStrokeSide(r, canvas, closed, stroke.align, inside)
   inside?.delete()
   if (!sided) {
@@ -359,31 +360,6 @@ function clipToStrokeSide(
   return true
 }
 
-function cachedFillUnion(r: SkiaRenderer, node: SceneNode, fillPaths: Path[]): Path | null {
-  const key = `${node.id}|fill-union`
-  const cached = r.nodePaths.strokeOutline.get(key)
-  if (cached) {
-    return cached[0]
-  }
-  const united = unitePaths(r, fillPaths)
-  if (united) {
-    r.nodePaths.store(r.nodePaths.strokeOutline, key, [united])
-  }
-  return united
-}
-
-/** One path covering every path given, which a clip can keep the inside of. */
-function unitePaths(r: SkiaRenderer, paths: Path[]): Path | null {
-  let united: Path | null = paths[0]?.copy() ?? null
-  for (const path of paths.slice(1)) {
-    if (!united) break
-    const next = r.ck.Path.MakeFromOp(united, path, r.ck.PathOp.Union)
-    united.delete()
-    united = next
-  }
-  return united
-}
-
 function drawFillSideStrokeGeometry(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -394,8 +370,10 @@ function drawFillSideStrokeGeometry(
 ): void {
   const fillPaths = r.getFillGeometry(node)
   const sideable = fillPaths && !(node.vectorNetwork && isOpenVectorNetwork(node.vectorNetwork))
-  const inside = sideable && stroke.align === 'INSIDE' ? cachedFillUnion(r, node, fillPaths) : null
-  if (!sideable || !clipToStrokeSide(r, canvas, fillPaths, stroke.align, inside)) {
+  const inside = sideable && stroke.align === 'INSIDE' ? fillGeometryPath(r, node) : null
+  const sided = sideable && clipToStrokeSide(r, canvas, fillPaths, stroke.align, inside)
+  inside?.delete()
+  if (!sided) {
     drawVectorStrokeGeometry(r, canvas, sg, sc, stroke.opacity)
     return
   }

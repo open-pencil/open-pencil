@@ -3,7 +3,7 @@ import { isEqual } from 'es-toolkit/predicate'
 import { cloneVectorNetwork, copyVectorRegion } from './copy'
 import type { Mat3 } from './matrix'
 import type { VectorPathWindingRule } from './parse-path'
-import { addLoopToPath, addOpenSegmentsToPath } from './paths/network'
+import { addOpenSegmentsToPath, addRegionToPath } from './paths/network'
 import { svgPathSink } from './paths/sink'
 import type { Vector } from './primitives'
 import type { Fill, GeometryPath, SceneNode, VectorNetwork, VectorSegment } from './types'
@@ -379,8 +379,7 @@ export function regionSVGPaths(network: VectorNetwork, decimals: number | null =
   const { vertices, segments, regions } = network
   return regions.map((region) => {
     const parts: string[] = []
-    const sink = svgPathSink(parts, coordinateFormat(decimals))
-    for (const loop of region.loops) addLoopToPath(sink, loop, segments, vertices)
+    addRegionToPath(svgPathSink(parts, coordinateFormat(decimals)), region, segments, vertices)
     return parts.join('')
   })
 }

@@ -5,7 +5,6 @@ import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix, localTransformFromWorld } from '@open-pencil/scene-graph/coordinate'
 import { copyFills } from '@open-pencil/scene-graph/copy'
 import Matrix from '@open-pencil/scene-graph/matrix'
-import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 
 import {
   baseShapePath,
@@ -14,11 +13,9 @@ import {
   makeBooleanOperationPath,
   nodeHasVisibleFill,
   nodeHasVisibleStroke,
-  placedPath,
-  strokeAreaPath,
-  windingRuleOf
+  strokeAreaPath
 } from './boolean'
-import { curvePathData } from './paths/svg-data'
+import { pathBounds, pathToNetwork } from './paths/network'
 import type { SkiaRenderer } from './renderer'
 import { textGlyphPaths, textOutlinePieces, type PaintedPath } from './text/outlines/glyphs'
 
@@ -73,25 +70,10 @@ interface Box {
   height: number
 }
 
+/** The box around `paths`, or null when it covers no area. */
 function boundsOf(paths: readonly Path[]): Box | null {
-  let [left, top, right, bottom] = [Infinity, Infinity, -Infinity, -Infinity]
-  for (const path of paths) {
-    const [l, t, r, b] = path.getBounds()
-    left = Math.min(left, l)
-    top = Math.min(top, t)
-    right = Math.max(right, r)
-    bottom = Math.max(bottom, b)
-  }
-  if (!(right > left) || !(bottom > top)) return null
-  return { x: left, y: top, width: right - left, height: bottom - top }
-}
-
-/** A path as a vector network, moved so `box` starts at the origin. */
-function networkIn(r: SkiaRenderer, path: Path, box: Box): SceneNode['vectorNetwork'] {
-  const moved = placedPath(r, path, r.ck.Matrix.translated(-box.x, -box.y))
-  const network = parseSVGPath(curvePathData(r.ck, moved), windingRuleOf(r, moved))
-  moved.delete()
-  return network
+  const box = pathBounds(paths)
+  return box && box.width > 0 && box.height > 0 ? box : null
 }
 
 /**
@@ -121,7 +103,7 @@ function pieceOf(
   if (!box || !first) return null
   const props = { ...structuredClone(pick(node, KEPT_FIELDS)), ...placedLike(node, box), name }
   if (node.type !== 'TEXT') {
-    const vectorNetwork = networkIn(r, first.path, box)
+    const vectorNetwork = pathToNetwork(r, first.path, box)
     return {
       type: 'VECTOR',
       props: {
@@ -144,7 +126,7 @@ function pieceOf(
         width: own.width,
         height: own.height,
         fills: copyFills(fills),
-        vectorNetwork: networkIn(r, path, own)
+        vectorNetwork: pathToNetwork(r, path, own)
       }
     ]
   })

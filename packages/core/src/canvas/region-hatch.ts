@@ -2,9 +2,8 @@ import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
-import { addLoopToPath } from '@open-pencil/scene-graph/paths'
 
-import { regionHatchPeriod } from '#core/vector'
+import { regionHatchPeriod, regionPath } from '#core/vector'
 
 import type { RenderOverlays, SkiaRenderer } from './renderer'
 
@@ -54,13 +53,7 @@ export function drawRegionHatch(
   for (const index of hatched) {
     const region = editState.regions.at(index)
     if (!region) continue
-    const builder = new r.ck.PathBuilder()
-    for (const loop of region.loops) addLoopToPath(builder, loop, segments, vertices)
-    const path = builder.detachAndDelete()
-    // On the detached path: the builder's setFillType returns a copy that nothing deletes.
-    path.setFillType(
-      region.windingRule === 'EVENODD' ? r.ck.FillType.EvenOdd : r.ck.FillType.Winding
-    )
+    const path = regionPath(r.ck, { vertices, segments }, region)
     // Lines only where the region is on screen: a large region would otherwise draw thousands of
     // invisible ones on every hover repaint.
     const [pathLeft, pathTop, pathRight, pathBottom] = path.getBounds()
