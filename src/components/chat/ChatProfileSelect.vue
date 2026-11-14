@@ -13,7 +13,7 @@ import {
 } from 'reka-ui'
 import { computed, ref } from 'vue'
 
-import { AI_PROVIDERS, providerKind } from '@open-pencil/core/constants'
+import { providerKind } from '@open-pencil/core/constants'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import {
@@ -23,6 +23,7 @@ import {
   setModelRoleAssignment
 } from '@/app/ai/models'
 import type { AIModelProfile, AIModelProfileId } from '@/app/ai/models'
+import { profileModelName } from '@/app/ai/models/profile-model-name'
 import { modelProviderName } from '@/app/ai/models/provider-name'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import ChatProfileItem from '@/components/chat/ChatProfileItem.vue'
@@ -52,12 +53,9 @@ const selectedProfileId = computed({
 /** The profile's model and where it runs; an agent profile that names no model leaves it to the agent. */
 function profileMetadata(profile: AIModelProfile): string {
   const providerID = modelConnection(profile.connectionId)?.providerID
-  const provider = AI_PROVIDERS.find((candidate) => candidate.id === providerID)
-  const modelID = profile.customModelID || profile.modelID
-  const modelName = provider?.models.find((model) => model.id === modelID)?.name || modelID
   const agent = providerID !== undefined && providerKind(providerID) !== 'api'
   return compact([
-    modelName || (agent ? ai.value.agentDefaultModel : ''),
+    profileModelName(profile) || (agent ? ai.value.agentDefaultModel : ''),
     providerID && modelProviderName(providerID)
   ]).join(' · ')
 }
