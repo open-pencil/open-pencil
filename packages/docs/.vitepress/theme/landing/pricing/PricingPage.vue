@@ -31,9 +31,6 @@ const [selfHostingBefore, selfHostingAfter] = copy.selfHosting.split('{link}')
       <span class="landing-badge">{{ copy.badge }}</span>
       <h1>{{ copy.title }}</h1>
       <p class="lede">{{ copy.lede }}</p>
-    </section>
-
-    <section class="landing-section">
       <div class="plans">
         <article v-for="plan in plans" :key="plan.id" class="plan">
           <h2>{{ plan.name }}</h2>
@@ -59,6 +56,13 @@ const [selfHostingBefore, selfHostingAfter] = copy.selfHosting.split('{link}')
         </article>
       </div>
       <p class="note">{{ sellsPlans ? copy.billed : copy.paidSoon }}</p>
+      <p class="note">
+        {{ selfHostingBefore
+        }}<a :href="localePath('/cloud/self-hosting/', { translated: false })">{{
+          copy.selfHostingLink
+        }}</a
+        >{{ selfHostingAfter }}
+      </p>
     </section>
 
     <section v-if="packs.length > 0" class="landing-section">
@@ -109,16 +113,6 @@ const [selfHostingBefore, selfHostingAfter] = copy.selfHosting.split('{link}')
         </tbody>
       </table>
     </section>
-
-    <section class="landing-section">
-      <p class="note">
-        {{ selfHostingBefore
-        }}<a :href="localePath('/cloud/self-hosting/', { translated: false })">{{
-          copy.selfHostingLink
-        }}</a
-        >{{ selfHostingAfter }}
-      </p>
-    </section>
   </div>
 </template>
 
@@ -146,6 +140,7 @@ h1 {
 
 .plans {
   display: grid;
+  margin-top: 48px;
   grid-template-columns: repeat(auto-fill, minmax(260px, 360px));
   gap: 24px;
 }
