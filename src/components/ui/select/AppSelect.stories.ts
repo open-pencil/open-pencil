@@ -63,6 +63,41 @@ export const Grouped: Story = {
   })
 }
 
+/** An action under the options, such as opening where they are managed; `close` shuts the menu. */
+export const WithFooter: Story = {
+  render: () => ({
+    components: { AppSelect },
+    setup() {
+      const value = ref('sonnet')
+      const managed = ref(0)
+      const groups = [
+        {
+          label: 'Design agent',
+          options: [
+            { value: 'sonnet', label: 'Sonnet' },
+            { value: 'opus', label: 'Opus' }
+          ]
+        }
+      ]
+      return { value, groups, managed }
+    },
+    template: `
+      <div class="w-48 p-16">
+        <AppSelect v-model="value" :groups="groups" label="Model">
+          <template #footer="{ close }">
+            <button
+              type="button"
+              class="flex h-6 w-full items-center rounded-md pe-2 ps-6 text-start text-muted hover:bg-hover"
+              @click="managed++; close()"
+            >
+              Manage models…
+            </button>
+          </template>
+        </AppSelect>
+      </div>`
+  })
+}
+
 /** Each row is one step of the control scale: the input, select, combobox, and button line up. */
 export const ControlSizes: Story = {
   render: () => ({

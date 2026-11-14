@@ -80,6 +80,10 @@ const contentUI = computed(() => ({
   scrollButton: ui?.scrollButton
 }))
 const itemUI = computed(() => ({ item: ui?.item, indicator: ui?.indicator }))
+
+function closePopup(): void {
+  popupOpen.value = false
+}
 </script>
 
 <template>
@@ -118,6 +122,11 @@ const itemUI = computed(() => ({ item: ui?.item, indicator: ui?.indicator }))
             <template #end><slot name="option-end" :option="option" /></template>
           </AppSelectItem>
         </SelectGroup>
+      </template>
+      <!-- An action below the options, such as opening where they are managed; `close` shuts the menu. -->
+      <template v-if="$slots.footer">
+        <SelectSeparator :class="styles.separator({ class: ui?.separator })" />
+        <slot name="footer" :close="closePopup" />
       </template>
     </AppSelectContent>
   </SelectRoot>
