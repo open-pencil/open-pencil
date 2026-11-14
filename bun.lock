@@ -421,6 +421,7 @@
         "@ai-sdk/vue": "^4.0.127",
         "@iconify/vue": "^5.0.1",
         "@open-pencil/canvaskit": "workspace:*",
+        "@open-pencil/cloud": "workspace:*",
         "@open-pencil/core": "workspace:*",
         "@open-pencil/design-jsx": "workspace:*",
         "@open-pencil/dom-css": "workspace:*",
@@ -882,6 +883,16 @@
         "@open-pencil/package-artifacts-tools": "workspace:*",
       },
     },
+    "tools/ci/cloud-examples": {
+      "name": "@open-pencil/cloud-examples-tools",
+      "dependencies": {
+        "@open-pencil/cloud": "workspace:*",
+        "@open-pencil/demo-tools": "workspace:*",
+        "@open-pencil/fig": "workspace:*",
+        "es-toolkit": "^1.52.0",
+        "fflate": "^0.8.3",
+      },
+    },
     "tools/ci/images": {
       "name": "@open-pencil/ci-images-tools",
     },
@@ -954,17 +965,14 @@
         "@iconify-json/lucide": "^1.2.139",
         "@open-pencil/core": "workspace:*",
         "@open-pencil/design-jsx": "workspace:*",
-        "@open-pencil/package-artifacts-tools": "workspace:*",
         "@open-pencil/scene-graph": "workspace:*",
         "@playwright/test": "^1.63.0",
         "js-base64": "^3.9.3",
-        "proper-lockfile": "4.1.2",
         "shaders": "4.0.4",
       },
       "devDependencies": {
         "@types/bun": "^1.3.14",
         "@types/node": "^25.9.9",
-        "@types/proper-lockfile": "4.1.4",
         "typescript": "npm:@typescript/typescript6@^6.0.2",
       },
     },
@@ -1876,6 +1884,8 @@
     "@open-pencil/cloud": ["@open-pencil/cloud@workspace:packages/cloud"],
 
     "@open-pencil/cloud-deploy-tools": ["@open-pencil/cloud-deploy-tools@workspace:tools/ci/cloud-deploy"],
+
+    "@open-pencil/cloud-examples-tools": ["@open-pencil/cloud-examples-tools@workspace:tools/ci/cloud-examples"],
 
     "@open-pencil/cloud-off-tools": ["@open-pencil/cloud-off-tools@workspace:tools/checks/cloud-off"],
 

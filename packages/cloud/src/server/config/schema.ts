@@ -190,7 +190,13 @@ const rawCloudServerConfigSchema = v.object({
    * The workspace whose documents anyone may open read-only, without signing in or a link: the
    * deployment's community gallery. Without it the server has none.
    */
-  community: v.optional(v.object({ workspaceId: v.pipe(v.string(), v.uuid()) })),
+  community: v.optional(
+    v.object({
+      workspaceId: v.pipe(v.string(), v.uuid()),
+      /** The gallery document editors open as their tour. */
+      tourDocumentId: v.optional(v.pipe(v.string(), v.uuid()))
+    })
+  ),
   /** Where server errors are reported; without it the server reports nothing. */
   errorTracking: v.optional(
     v.object({

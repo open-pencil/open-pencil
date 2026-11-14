@@ -60,14 +60,7 @@ export interface AppSourceConfig {
  */
 export function appSourceConfig(): AppSourceConfig {
   return {
-    alias: [
-      // Files the app serves from its root, such as the prebuilt demo document.
-      {
-        find: /^#app-public\//,
-        replacement: `${fileURLToPath(new URL('../public/', import.meta.url))}`
-      },
-      ...createOpenPencilAliases(REPO_ROOT)
-    ],
+    alias: [...createOpenPencilAliases(REPO_ROOT)],
     define: {
       __OPENPENCIL_APP_VERSION__: JSON.stringify(rootManifest.version),
       ...donationDefine(REPO_ROOT),

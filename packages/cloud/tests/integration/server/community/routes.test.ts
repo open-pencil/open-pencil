@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
 import { responseJSON } from '#cloud-tests/helpers/response'
+import { fetchCommunityTour } from '#cloud/client'
 import { communityDocumentsSchema, communityDownloadSchema } from '#cloud/contract'
 import {
   createBetterAuthAdapter,
@@ -11,7 +12,7 @@ import {
   type CloudActor,
   type CloudServerConfig
 } from '#cloud/server'
-import { zipSync } from 'fflate'
+import { unzipSync, zipSync } from 'fflate'
 import { fromUint8Array, toUint8Array } from 'js-base64'
 import * as v from 'valibot'
 
@@ -136,7 +137,11 @@ async function gallery() {
     document,
     save,
     nameVersion,
+    objects,
     visitor: (path: string, init?: RequestInit) => community.request(path, init),
+    /** The gallery's server, naming `tour` as the tour editors open. */
+    withTour: (tour: string) =>
+      app({ ...config, community: { workspaceId: communityId, tourDocumentId: tour } }, false),
     withoutGallery: (path: string) => app(config, false).request(path)
   }
 }
@@ -252,6 +257,37 @@ describe('community gallery', () => {
     ).toBe(404)
   })
 
+  test('lets any page read the gallery and the discovery, without an account', async () => {
+    const server = await gallery()
+    const from = (origin: string, init: RequestInit = {}) => {
+      const headers = new Headers(init.headers)
+      headers.set('Origin', origin)
+      return { ...init, headers }
+    }
+    const docs = 'https://docs.example.com'
+
+    for (const path of ['/api/community', '/.well-known/openpencil']) {
+      const response = await server.visitor(path, from(docs))
+      expect(response.headers.get('access-control-allow-origin')).toBe('*')
+      expect(response.headers.get('access-control-allow-credentials')).toBeNull()
+    }
+    const preflight = await server.visitor(
+      '/api/community',
+      from(docs, { method: 'OPTIONS', headers: { 'Access-Control-Request-Method': 'GET' } })
+    )
+    expect(preflight.headers.get('access-control-allow-origin')).toBe('*')
+
+    // Anything else stays with the origins the server trusts, which send their account.
+    const write = await server.visitor(
+      '/api/workspaces',
+      from(docs, { method: 'OPTIONS', headers: { 'Access-Control-Request-Method': 'POST' } })
+    )
+    expect(write.headers.get('access-control-allow-origin')).toBeNull()
+    const own = await server.visitor('/api/community', from('http://localhost:8787'))
+    expect(own.headers.get('access-control-allow-origin')).toBe('http://localhost:8787')
+    expect(own.headers.get('access-control-allow-credentials')).toBe('true')
+  })
+
   test('serves the thumbnail the current revision carries, to be cached for good', async () => {
     const server = await gallery()
     const tour = await server.document(server.workspace.community, 'Tour')
@@ -267,5 +303,45 @@ describe('community gallery', () => {
 
     // An address for a revision that is no longer current shows nothing rather than old work.
     expect((await server.visitor(`/api/community/thumbnails/${tour}/${first}`)).status).toBe(404)
+  })
+
+  test('hands any page the tour as the release it asks for, else as it is now', async () => {
+    const server = await gallery()
+    const tour = await server.document(server.workspace.community, 'Welcome tour')
+    const first = await server.save(tour, null, 'first')
+    await server.nameVersion(tour, '0.17.0')
+    await server.save(tour, first, 'second')
+    const tourServer = server.withTour(tour)
+    const credentials: (RequestCredentials | undefined)[] = []
+    // The server answers its own addresses, and the object store its download links.
+    const fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      credentials.push(init?.credentials)
+      const url = new URL(input instanceof Request ? input.url : String(input))
+      if (url.host !== 'objects.example.com') {
+        return tourServer.request(`${url.pathname}${url.search}`, init)
+      }
+      const bytes = await server.objects.store.read(url.pathname.slice(1))
+      return bytes ? new Response(Uint8Array.from(bytes)) : new Response(null, { status: 404 })
+    }
+    const contents = async (bytes: Uint8Array) =>
+      new TextDecoder().decode(unzipSync(bytes)['canvas.fig'])
+
+    const released = await fetchCommunityTour('http://localhost:8787', { version: '0.17.0', fetch })
+    if (!released) throw new Error('The release of the tour was not found')
+    expect(released.version).toBe('0.17.0')
+    expect(await contents(released.bytes)).toBe('first')
+    const current = await fetchCommunityTour('http://localhost:8787', { version: '9.9.9', fetch })
+    if (!current) throw new Error('The tour was not found')
+    expect(current.version).toBeNull()
+    expect(await contents(current.bytes)).toBe('second')
+    // No request carries an account, so it works from any page.
+    expect(credentials.every((value) => value === 'omit')).toBe(true)
+
+    // A server naming no tour has none to give.
+    const plain = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = new URL(input instanceof Request ? input.url : String(input))
+      return server.visitor(`${url.pathname}${url.search}`, init)
+    }
+    expect(await fetchCommunityTour('http://localhost:8787', { fetch: plain })).toBeNull()
   })
 })

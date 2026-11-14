@@ -1,0 +1,58 @@
+name: Publish gallery examples
+
+# Publishes the community gallery's examples (tools/ci/cloud-examples) to an official Cloud
+# deployment's gallery workspace, as the account whose personal access token the cloud-<target>
+# environment holds. A version names the published state for a release, once.
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Deployment
+        type: choice
+        options: [staging, production]
+      version:
+        description: Release to name the examples' current state after, such as 0.17.0
+        type: string
+        required: false
+      description:
+        description: What the named version says, such as the release's summary
+        type: string
+        required: false
+
+run-name: Publish gallery examples to ${{ inputs.target }}${{ inputs.version && format(' as {0}', inputs.version) || '' }}
+
+concurrency:
+  group: cloud-examples-${{ inputs.target }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: cloud-${{ inputs.target }}
+      url: ${{ vars.CLOUD_URL }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup/workspace
+        with:
+          packages: 'true'
+
+      # The tour is the editor's demo document, whose shader fills draw in a headless Chromium.
+      - uses: ./.github/actions/setup/playwright
+
+      - name: Publish the examples
+        env:
+          CLOUD_URL: ${{ vars.CLOUD_URL }}
+          CLOUD_COMMUNITY_WORKSPACE: ${{ vars.CLOUD_COMMUNITY_WORKSPACE }}
+          CLOUD_COMMUNITY_TOKEN: ${{ secrets.CLOUD_COMMUNITY_TOKEN }}
+          VERSION: ${{ inputs.version }}
+          DESCRIPTION: ${{ inputs.description }}
+        run: >-
+          bun tools/ci/cloud-examples/src/publish.ts --server "$CLOUD_URL"
+          --workspace "$CLOUD_COMMUNITY_WORKSPACE" --version "$VERSION" --description "$DESCRIPTION"

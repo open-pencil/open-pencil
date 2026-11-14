@@ -50,9 +50,6 @@ jobs:
           TARGET: ${{ inputs.target }}
         run: bun tools/ci/cloud-deploy/src/ref.ts "$TARGET"
 
-      # The editor's demo document draws its shader fills at build time in a headless Chromium.
-      - uses: ./.github/actions/setup/playwright
-
       # The Worker serves the editor and the portal as static assets. The editor names this
       # deployment as the official server and, like app.openpencil.dev, sends the daily ping.
       - name: Build the Cloud site

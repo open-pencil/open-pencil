@@ -75,8 +75,12 @@ export type CloudLegalDiscovery = v.InferOutput<typeof cloudLegalDiscoverySchema
 /**
  * The server's community gallery: the workspace whose documents anyone may open read-only.
  * Saving to it publishes, so editors never choose it for anyone and say so when it is chosen.
+ * `tourDocumentId` is the gallery document editors open as their tour.
  */
-export const cloudCommunityDiscoverySchema = v.object({ workspaceId: v.pipe(v.string(), v.uuid()) })
+export const cloudCommunityDiscoverySchema = v.object({
+  workspaceId: v.pipe(v.string(), v.uuid()),
+  tourDocumentId: v.optional(v.pipe(v.string(), v.uuid()))
+})
 export type CloudCommunityDiscovery = v.InferOutput<typeof cloudCommunityDiscoverySchema>
 
 export const cloudDiscoverySchema = v.object({

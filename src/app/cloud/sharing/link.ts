@@ -1,12 +1,15 @@
 import { useLocalStorage } from '@vueuse/core'
 import { ref, shallowRef, watch } from 'vue'
 
-import { CloudAPIError, createCloudAPIClient } from '@open-pencil/cloud/client'
+import {
+  CloudAPIError,
+  createCloudAPIClient,
+  downloadCloudDocument
+} from '@open-pencil/cloud/client'
 import { randomHex } from '@open-pencil/scene-graph/random'
 
 import { useCollabIdentity } from '@/app/collab/identity'
 import type { EditorStore } from '@/app/editor/session'
-import { downloadCloudDocument } from '@/app/integrations/storage/cloud/download'
 import { storageFetch } from '@/app/integrations/storage/s3/fetch'
 import {
   allTabs,

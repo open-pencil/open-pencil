@@ -1,3 +1,4 @@
+import type { CloudTransferProgress } from '@open-pencil/cloud/client'
 import type { DocumentKind } from '@open-pencil/scene-graph'
 
 import type { CredentialResolver } from '@/app/settings/credentials/types'
@@ -20,10 +21,8 @@ export type StorageDocumentBinding = StorageLocation & {
   documentId: string
 }
 
-export type StorageTransferProgress = {
-  transferredBytes: number
-  totalBytes: number | null
-}
+/** How much of a transfer is done, for every provider as for Cloud's object uploads. */
+export type StorageTransferProgress = CloudTransferProgress
 
 export type StorageDocumentMetadata = {
   name: string

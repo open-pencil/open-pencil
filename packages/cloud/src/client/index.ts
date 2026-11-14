@@ -14,6 +14,8 @@ export {
   type CloudBillingClientOptions
 } from './billing'
 export { cloudEditorReturnURL, cloudRedirectPath, cloudSignInURL } from './auth/navigation'
+export * from './files'
+export { fetchCommunityTour, type CommunityTour } from './tour'
 export {
   CloudAPIError,
   createCloudAPIClient,

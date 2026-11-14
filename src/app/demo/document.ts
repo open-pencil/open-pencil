@@ -1,6 +1,7 @@
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { nextFrame } from '@open-pencil/vue/shared/frame'
 
+import { fetchOfficialTour } from '@/app/cloud/integration'
 import type { EditorStore } from '@/app/editor/session'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { resolvedAppTheme } from '@/app/shell/theme'
@@ -10,9 +11,10 @@ import { closeTab, createTab } from '@/app/tabs'
 import { followAppTheme } from './theme'
 import { showFirstChapter } from './viewport'
 
-/** Built from `tools/generate/demo` before the app is served or bundled. */
-const DEMO_URL = '/demo.fig'
 const DEMO_FILE_NAME = 'Demo.fig'
+
+/** Where the tour comes from: the official Cloud server's gallery, by default. */
+export type TourSource = () => Promise<Uint8Array | null>
 
 /**
  * Nothing has been opened or edited in the store since it showed `blank`: not on the page in
@@ -28,15 +30,19 @@ function untouched(store: EditorStore, blank: SceneGraph): boolean {
 }
 
 /**
- * Opens the bundled demo document like any `.fig` file: decoded off the main thread, behind
- * the canvas loader. Once it is open it follows the app's theme and the view settles on the
- * first chapter. Resolves whether the demo opened: not when the tab was used while it loaded.
+ * Opens the tour from OpenPencil Cloud's gallery like any `.fig` file: decoded off the main
+ * thread, behind the canvas loader. Once it is open it follows the app's theme and the view
+ * settles on the first chapter. Resolves whether the demo opened: not when the tab was used
+ * while it loaded.
  */
-export async function openDemoDocument(store: EditorStore): Promise<boolean> {
+export async function openDemoDocument(
+  store: EditorStore,
+  source: TourSource = fetchOfficialTour
+): Promise<boolean> {
   const blank = store.graph
-  const response = await fetch(DEMO_URL)
-  if (!response.ok) throw new Error(`The demo document is unavailable (${response.status})`)
-  const file = new File([await response.arrayBuffer()], DEMO_FILE_NAME)
+  const bytes = await source()
+  if (!bytes) throw new Error('The tour is unavailable')
+  const file = new File([Uint8Array.from(bytes)], DEMO_FILE_NAME)
   // A file opened, or a layer drawn, while the demo was loading keeps the tab; the demo never
   // replaces them.
   if (!untouched(store, blank)) return false
@@ -55,11 +61,11 @@ export async function openDemoDocument(store: EditorStore): Promise<boolean> {
  * to load, its tab closes again unless something was opened or drawn in it meanwhile. Resolves
  * whether the tour opened, which it does not when the tab was used while it loaded.
  */
-export async function openTour(): Promise<boolean> {
+export async function openTour(source?: TourSource): Promise<boolean> {
   const tab = createTab()
   const blank = tab.store.graph
   try {
-    return await openDemoDocument(tab.store)
+    return await openDemoDocument(tab.store, source)
   } catch (error) {
     if (untouched(tab.store, blank)) {
       // A failure to close the tab is its own problem; the tour's failure is what to report.

@@ -28,8 +28,10 @@ These settings outside the repository:
   `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY`. The bucket is in the EU jurisdiction, and its CORS
   rules allow GET, PUT, and HEAD from `https://cloud.openpencil.dev` with any request header
   (uploads send `Content-Type` and `x-amz-meta-openpencil-sha256`) and expose `ETag`, which
-  multipart uploads read for each part. Its `expire-deleted` lifecycle rule removes what
-  `deleted_prefix` keeps after 14 days, longer than the database's restore window.
+  multipart uploads read for each part. They also allow GET and HEAD from
+  `https://app.openpencil.dev` and `https://openpencil.dev`, whose pages download the tour from the
+  gallery. Its `expire-deleted` lifecycle rule removes what `deleted_prefix` keeps after 14 days,
+  longer than the database's restore window.
 - A Hyperdrive over the database's direct connection, as the runtime role, with query caching
   off, since a cached read can miss the write just before it. Hyperdrive pools connections itself,
   as staging's does. Its ID goes in `production/wrangler.jsonc`.

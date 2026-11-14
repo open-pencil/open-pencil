@@ -408,11 +408,6 @@ jobs:
         with:
           packages: 'true'
 
-      # The editor's demo document draws its shader fills at build time in a headless Chromium.
-      - name: Install Chromium for the demo document
-        if: env.WORKER == 'true'
-        uses: ./.github/actions/setup/playwright
-
       # The Worker serves the editor and the portal as static assets, and every official
       # deployment bundles them.
       - name: Build the Cloud site

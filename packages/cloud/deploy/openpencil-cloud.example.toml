@@ -137,6 +137,9 @@ transport = "none"
 # gallery is rate-limited by client IP, and a request without the header has none.
 # [community]
 # workspace = "0f6b1c1e-6a8e-4b8e-9a4f-3c2d1e0f9a8b"
+# The gallery document this server names as its tour, for clients that ask it. The OpenPencil app
+# and openpencil.dev take theirs from the official server, whatever this one names.
+# tour = "7c6939c0-dedc-4fbe-80b2-80919621de10"
 
 # Optional: reports server errors to PostHog error tracking. Leave it out to send nothing. The host
 # defaults to https://eu.i.posthog.com and the project API key to POSTHOG_PROJECT_API_KEY.

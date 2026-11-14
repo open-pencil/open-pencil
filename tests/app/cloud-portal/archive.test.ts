@@ -2,8 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 import { unzipSync } from 'fflate'
 
+import { cloudChecksum } from '@open-pencil/cloud/client'
+
 import { saveAccountArchive } from '@/app/cloud-portal/archive'
-import { cloudChecksum } from '@/app/integrations/storage/cloud/download'
 
 const ORIGIN = 'https://cloud.example.com'
 const WORKSPACE = '00000000-0000-4000-8000-000000000001'

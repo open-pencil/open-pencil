@@ -1,21 +1,22 @@
-// The app's tour, prebuilt from `tools/generate/demo`; the docs config ensures it exists.
-import demoFigURL from '#app-public/demo.fig?url'
-
 import { CHAPTERS, sectionName, type TourChapter } from '@open-pencil/demo-tools/chapters'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
+import { fetchOfficialTour } from '@/app/cloud/community/tour'
 import { followAppTheme } from '@/app/demo/theme'
 import type { EditorStore } from '@/app/editor/active-store'
 import { resolvedAppTheme } from '@/app/shell/theme'
 
-/** One download of the tour for every stage that shows a chapter of it. */
-let tourBytes: Promise<ArrayBuffer> | null = null
+/**
+ * One download of the tour, from OpenPencil Cloud's gallery as the app opens it, for every stage
+ * that shows a chapter of it.
+ */
+let tourBytes: Promise<Uint8Array> | null = null
 
-function fetchTour(): Promise<ArrayBuffer> {
+function fetchTour(): Promise<Uint8Array> {
   if (tourBytes) return tourBytes
-  const request = fetch(demoFigURL).then((response) => {
-    if (!response.ok) throw new Error(`The tour is unavailable (${response.status})`)
-    return response.arrayBuffer()
+  const request = fetchOfficialTour().then((bytes) => {
+    if (!bytes) throw new Error('The tour is unavailable')
+    return bytes
   })
   // A failed download is tried again by the next stage rather than shared.
   request.catch(() => {
@@ -28,7 +29,7 @@ function fetchTour(): Promise<ArrayBuffer> {
 /** Opens the tour like any `.fig` file, in the theme the docs site shows, as `/demo` does. */
 async function openTour(store: EditorStore): Promise<void> {
   // A File copies the bytes, so every stage decodes its own.
-  await store.openFigFile(new File([await fetchTour()], 'Demo.fig'))
+  await store.openFigFile(new File([Uint8Array.from(await fetchTour())], 'Demo.fig'))
   followAppTheme(store, resolvedAppTheme)
 }
 

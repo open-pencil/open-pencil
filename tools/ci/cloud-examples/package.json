@@ -1,0 +1,18 @@
+{
+  "name": "@open-pencil/cloud-examples-tools",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#cloud-examples/*": "./src/*.ts"
+  },
+  "scripts": {
+    "test": "bun test tests"
+  },
+  "dependencies": {
+    "@open-pencil/cloud": "workspace:*",
+    "@open-pencil/demo-tools": "workspace:*",
+    "@open-pencil/fig": "workspace:*",
+    "es-toolkit": "^1.52.0",
+    "fflate": "^0.8.3"
+  }
+}

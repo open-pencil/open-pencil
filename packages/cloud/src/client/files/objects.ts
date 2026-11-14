@@ -1,22 +1,24 @@
+import type { ObjectUploadTarget } from '#cloud/contract'
 import { limitAsync, retry } from 'es-toolkit'
 
-import type { CloudAPIClient } from '@open-pencil/cloud/client'
-import type { ObjectUploadTarget } from '@open-pencil/cloud/contract'
-
-import type { StorageTransferProgress } from '../types'
+import type { CloudAPIClient } from '../api'
 
 const MULTIPART_CONCURRENCY = 4
 const PART_RETRIES = 2
 const RETRY_DELAY_MS = 200
 
-type ObjectFetch = (input: string, init: RequestInit) => Promise<Response>
+/** How bytes reach the object store, which carries no Cloud session: `fetch` or a native one. */
+export type CloudObjectFetch = (input: string, init: RequestInit) => Promise<Response>
+
+/** How much of a transfer is done; the total is unknown until the server says. */
+export type CloudTransferProgress = { transferredBytes: number; totalBytes: number | null }
 type MultipartUpload = Extract<ObjectUploadTarget, { kind: 'multipart' }>
 
 /** Bytes on their way to the object store, and how to report and stop the transfer. */
 export type CloudObjectTransfer = {
   bytes: Uint8Array
-  objectFetch: ObjectFetch
-  onProgress?: (progress: StorageTransferProgress) => void
+  objectFetch: CloudObjectFetch
+  onProgress?: (progress: CloudTransferProgress) => void
   signal?: AbortSignal
 }
 

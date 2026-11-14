@@ -1,4 +1,9 @@
-import { communityDownloadSchema, type CommunityDownload } from '#cloud/contract'
+import {
+  communityDocumentsSchema,
+  communityDownloadSchema,
+  type CommunityDocument,
+  type CommunityDownload
+} from '#cloud/contract'
 import type { PublicCloudAPI } from '#cloud/server/api'
 import type { hc } from 'hono/client'
 
@@ -10,6 +15,16 @@ export function createCommunityRequests(
   onDiagnostic?: CloudClientDiagnostic
 ) {
   return {
+    /** The gallery's documents, most recently changed first, each with its named versions. */
+    async listCommunityDocuments(): Promise<CommunityDocument[]> {
+      const response = await parseResponse(
+        publicClient.community.$get(),
+        communityDocumentsSchema,
+        onDiagnostic
+      )
+      return response.documents
+    },
+
     /**
      * A document of the server's community gallery as it is now, or one of its named versions,
      * which anyone may open without signing in.
