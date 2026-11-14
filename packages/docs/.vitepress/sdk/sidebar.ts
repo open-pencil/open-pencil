@@ -92,43 +92,43 @@ export const sdkSidebar = (prefix: string): DefaultTheme.SidebarItem[] => [
   {
     text: 'Vue SDK',
     items: [
-      { text: 'Overview', link: `${prefix}/programmable/sdk/` },
-      { text: 'Getting Started', link: `${prefix}/programmable/sdk/getting-started` },
-      { text: 'Architecture', link: `${prefix}/programmable/sdk/architecture` },
-      { text: 'Custom Shell', link: `${prefix}/programmable/sdk/guides/custom-editor-shell` },
-      { text: 'Property Panels', link: `${prefix}/programmable/sdk/guides/property-panels` },
-      { text: 'Navigation Panels', link: `${prefix}/programmable/sdk/guides/navigation-panels` },
+      { text: 'Overview', link: `${prefix}/developers/sdk/` },
+      { text: 'Getting Started', link: `${prefix}/developers/sdk/getting-started` },
+      { text: 'Architecture', link: `${prefix}/developers/sdk/architecture` },
+      { text: 'Custom Shell', link: `${prefix}/developers/sdk/guides/custom-editor-shell` },
+      { text: 'Property Panels', link: `${prefix}/developers/sdk/guides/property-panels` },
+      { text: 'Navigation Panels', link: `${prefix}/developers/sdk/guides/navigation-panels` },
       {
         text: 'API Reference',
         items: [
-          { text: 'Overview', link: `${prefix}/programmable/sdk/api/` },
+          { text: 'Overview', link: `${prefix}/developers/sdk/api/` },
           {
             text: 'Components',
             items: [
-              { text: 'Overview', link: `${prefix}/programmable/sdk/api/components/` },
+              { text: 'Overview', link: `${prefix}/developers/sdk/api/components/` },
               ...SDK_COMPONENT_PAGES.map((page) => ({
                 text: page.text,
-                link: `${'canonical' in page ? '' : prefix}/programmable/sdk/api/components/${page.slug}`
+                link: `${'canonical' in page ? '' : prefix}/developers/sdk/api/components/${page.slug}`
               }))
             ]
           },
           {
             text: 'Composables',
             items: [
-              { text: 'Overview', link: `${prefix}/programmable/sdk/api/composables/` },
+              { text: 'Overview', link: `${prefix}/developers/sdk/api/composables/` },
               ...SDK_COMPOSABLE_PAGES.map((page) => ({
                 text: page.text,
-                link: `${'canonical' in page ? '' : prefix}/programmable/sdk/api/composables/${page.slug}`
+                link: `${'canonical' in page ? '' : prefix}/developers/sdk/api/composables/${page.slug}`
               }))
             ]
           },
           {
             text: 'Advanced',
             items: [
-              { text: 'Overview', link: `${prefix}/programmable/sdk/api/advanced/` },
+              { text: 'Overview', link: `${prefix}/developers/sdk/api/advanced/` },
               ...SDK_ADVANCED_PAGES.map((page) => ({
                 text: page.text,
-                link: `${'canonical' in page ? '' : prefix}/programmable/sdk/api/advanced/${page.slug}`
+                link: `${'canonical' in page ? '' : prefix}/developers/sdk/api/advanced/${page.slug}`
               }))
             ]
           }

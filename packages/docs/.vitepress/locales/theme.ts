@@ -1,12 +1,6 @@
 import type { NavLabels, ProgrammableLabels, SidebarLabels } from '#docs/labels.ts'
 import { sdkSidebar } from '#docs/sdk/sidebar.ts'
-import {
-  developmentSidebar,
-  guideSidebar,
-  programmableSidebar,
-  referenceSidebar,
-  userGuideSidebar
-} from '#docs/sidebars.ts'
+import { developersSidebar, docsSidebar, sectionMatch } from '#docs/sidebars.ts'
 import type { DefaultTheme } from 'vitepress'
 
 export const localeThemeConfig = (
@@ -19,22 +13,23 @@ export const localeThemeConfig = (
   // to the locale home instead of inventing a corresponding URL that may 404.
   i18nRouting: false,
   nav: [
-    { text: nav.overview, link: `${prefix}/getting-started` },
-    { text: nav.userGuide, link: `${prefix}/user-guide/` },
-    { text: nav.programmable, link: `${prefix}/programmable/` },
-    { text: nav.sdk, link: `${prefix}/programmable/sdk/` },
-    { text: nav.reference, link: `${prefix}/reference/keyboard-shortcuts` },
-    { text: nav.development, link: '/development/contributing' },
+    { text: nav.docs, link: `${prefix}/getting-started`, activeMatch: sectionMatch(prefix).docs },
+    {
+      text: nav.developers,
+      link: `${prefix}/developers/`,
+      activeMatch: sectionMatch(prefix).developers
+    },
     // English only until translated.
     { text: nav.cloud, link: '/cloud/', activeMatch: '^/cloud/' },
-    { text: nav.openApp, link: 'https://app.openpencil.dev' }
+    { text: nav.download, link: `${prefix}/download` }
   ],
   sidebar: {
-    [`${prefix}/user-guide/`]: userGuideSidebar(prefix, sidebar),
-    [`${prefix}/programmable/sdk/`]: sdkSidebar(prefix),
-    [`${prefix}/programmable/`]: programmableSidebar(prefix, prog),
-    [`${prefix}/reference/`]: referenceSidebar(prefix, nav.reference, sidebar),
-    [`${prefix}/development/`]: developmentSidebar('', nav.development, sidebar),
-    [`${prefix}/`]: guideSidebar(prefix, sidebar)
+    [`${prefix}/user-guide/`]: docsSidebar(prefix, nav.reference, sidebar, prog),
+    // Before `/reference/`, which has as many segments: VitePress keeps their order.
+    [`${prefix}/reference/figma-compatibility`]: docsSidebar(prefix, nav.reference, sidebar, prog),
+    [`${prefix}/developers/sdk/`]: sdkSidebar(prefix),
+    [`${prefix}/developers/`]: developersSidebar(prefix, nav, sidebar, prog),
+    [`${prefix}/reference/`]: developersSidebar(prefix, nav, sidebar, prog),
+    [`${prefix}/`]: docsSidebar(prefix, nav.reference, sidebar, prog)
   }
 })

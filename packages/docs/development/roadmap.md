@@ -45,7 +45,7 @@ Since v0.15.1, the development branch adds:
 
 These changes are not part of v0.15.1; they ship with the next release.
 
-See [AI chat](../programmable/ai-chat), [exporting](../user-guide/exporting), and [components and libraries](../user-guide/components).
+See [AI chat](../user-guide/ai-chat), [exporting](../user-guide/exporting), and [components and libraries](../user-guide/components).
 
 ### In development
 

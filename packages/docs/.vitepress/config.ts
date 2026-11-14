@@ -108,7 +108,7 @@ export default defineConfig({
   vite: {
     resolve: {
       alias: [
-        { find: '#docs-api', replacement: resolve(docsRoot, 'programmable/sdk/api') },
+        { find: '#docs-api', replacement: resolve(docsRoot, 'developers/sdk/api') },
         { find: '#docs', replacement: configDir },
         ...appSource.alias
       ]

@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { footerColumns } from '#docs-config/theme/footer/links'
-import { FOOTER_MESSAGES } from '#docs-config/theme/footer/messages'
+import { footerColumns } from '#docs-config/theme/site/links'
+import { SITE_MESSAGES } from '#docs-config/theme/site/messages'
 
 import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
 
@@ -16,7 +16,7 @@ function pageFile(path: string): string {
 }
 
 describe('site footer', () => {
-  test.each(Object.entries(FOOTER_MESSAGES))(
+  test.each(Object.entries(SITE_MESSAGES))(
     '%s links only to pages that exist',
     (locale, messages) => {
       const internal = footerColumns(messages, locale)
@@ -28,7 +28,7 @@ describe('site footer', () => {
   )
 
   test('links inside the locale only to translated pages', () => {
-    const hrefs = footerColumns(FOOTER_MESSAGES.de, 'de').flatMap((column) =>
+    const hrefs = footerColumns(SITE_MESSAGES.de, 'de').flatMap((column) =>
       column.links.map((link) => link.href)
     )
     expect(hrefs).toContain('/de/download')
