@@ -11,6 +11,7 @@ import { DEFAULT_AGENT_STEPS } from '@/app/ai/reply/step-limit'
 import { readToolChange } from '@/app/ai/tools/changes/store'
 import { runEditorTool } from '@/app/ai/tools/runner'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
+import { toolUsage, toolUseCount } from '@/app/automation/tool-access/usage'
 import * as fonts from '@/app/editor/fonts'
 import { createEditorStore, type EditorStore } from '@/app/editor/session/create'
 import { createDeferred } from '@/app/runtime/deferred'
@@ -20,6 +21,7 @@ beforeEach(() => {
   // The automation FigmaAPI reads the viewport size from the window.
   Object.assign(globalThis, { window: { innerWidth: 1024, innerHeight: 768 } })
   store = createEditorStore(new SceneGraph())
+  toolUsage.value = { startedAt: null, counts: {} }
 })
 
 afterEach(() => {
@@ -27,6 +29,43 @@ afterEach(() => {
   mock.restore()
   store.dispose()
   Reflect.deleteProperty(globalThis, 'window')
+})
+
+test('counts read and write tool calls once, including failures and cancellations', async () => {
+  const read = expectDefined(
+    ALL_TOOLS.find((tool) => tool.name === 'get_current_page'),
+    'read tool'
+  )
+  const write = expectDefined(
+    ALL_TOOLS.find((tool) => tool.name === 'create_shape'),
+    'write tool'
+  )
+  const figma = makeFigmaFromStore(store, store.state.currentPageId)
+
+  expect(toolUseCount(read.name)).toBe(0)
+  await runEditorTool({ store, figma, def: read, args: {} })
+  await expect(
+    runEditorTool({
+      store,
+      figma,
+      def: {
+        ...read,
+        execute: () => {
+          throw new Error('failed')
+        }
+      },
+      args: {}
+    })
+  ).rejects.toThrow('failed')
+  await runEditorTool({
+    store,
+    figma,
+    def: write,
+    args: { type: 'RECTANGLE', x: 0, y: 0, width: 40, height: 20 }
+  })
+  expect(toolUseCount(read.name)).toBe(2)
+  expect(toolUseCount(write.name)).toBe(1)
+  expect(toolUsage.value.startedAt).not.toBeNull()
 })
 
 test('a call cancelled while it waits for its turn edits nothing', async () => {
@@ -59,6 +98,7 @@ test('a call cancelled while it waits for its turn edits nothing', async () => {
   await expect(queued).rejects.toThrow()
   held.resolve(undefined)
   await first
+  expect(toolUseCount(createShape.name)).toBe(2)
   expect(store.graph.getChildren(pageId)).toEqual([])
   expect(store.undo.peekUndo()).toBeUndefined()
 })
