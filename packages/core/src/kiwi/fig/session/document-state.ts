@@ -235,7 +235,9 @@ export function loadReaderVariants(
 
 /** `loadReaderVariants` for one variant, returning its layer once built. */
 export function loadReaderVariant(graph: SceneGraph, variantId: string): string | undefined {
-  if (!loadReaderVariants(graph, [variantId])) {
+  // Built from the file, as a page loads, outside any edit open now, such as a script's tool
+  // call: undoing that edit would remove the variant while the reader still counts it built.
+  if (!graph.runOutsideEdits(() => loadReaderVariants(graph, [variantId]))) {
     return undefined
   }
   return states.get(graph)?.session?.layerOf(variantId)

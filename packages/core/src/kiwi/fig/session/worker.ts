@@ -38,7 +38,7 @@ function populate(request: FigSessionLoadRequest): void {
   const result =
     request.type === 'populate'
       ? session.populate(request.pageId, progress)
-      : session.loadComponents(request.componentIds)
+      : session.loadComponents(request.componentIds, progress)
   // Sent in pieces, so the main thread copies and applies a large page in tasks short enough
   // for the editor to keep responding between them.
   const { created, ...changes } = result.delta

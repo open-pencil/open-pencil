@@ -589,3 +589,18 @@ test('a switch built on this thread stops page loads through the worker, so none
     releaseFigPopulationWorker(graph)
   }
 })
+
+test('a switch inside an open edit builds the variant outside it, so undoing the edit keeps it', async () => {
+  const graph = await parseFigFile((await libraryVariantFile()).slice().buffer, {
+    populate: 'first-page'
+  })
+  const editor = createEditor({ graph })
+  await editor.recordEditAsync({ label: 'Agent' }, async () => {
+    switchToDisabled(editor, graph)
+  })
+  editor.undoAction()
+  expect(graph.getNode(pageInstance(graph).componentId ?? '')?.name).toBe('State=Default')
+  expect(builtValues(graph, 'Chip', 'State')).toContain('Disabled')
+  const instance = switchToDisabled(editor, graph)
+  expect(graph.getNode(instance.componentId ?? '')?.name).toBe('State=Disabled')
+})

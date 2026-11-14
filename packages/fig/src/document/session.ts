@@ -119,7 +119,8 @@ export function createFigDocumentSession(
    */
   const loadComponents = (
     ids: readonly string[],
-    accept: () => void = () => undefined
+    accept: () => void = () => undefined,
+    onProgress?: () => void
   ): boolean => {
     const pending = ids.filter((id) => !state.components.has(id))
     if (pending.length === 0) {
@@ -131,7 +132,10 @@ export function createFigDocumentSession(
     }
     loadPageTransaction(state, reader.dependencyClosure, () => {
       keepContainerOrder(state, reader, reader.dependencyClosure.ancestorIds, () =>
-        materializeReader(reader, archive.blobs, sessionOptions, state, { edited: edits.edited })
+        materializeReader(reader, archive.blobs, sessionOptions, state, {
+          edited: edits.edited,
+          onProgress
+        })
       )
       accept()
     })

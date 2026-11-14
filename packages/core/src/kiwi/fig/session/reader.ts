@@ -69,8 +69,8 @@ export function openReaderSession(
      * Builds components no page brought, such as variants of a set no instance uses, as
      * `loadComponents` does; `populated` is false when one needs a layer the user deleted.
      */
-    loadComponents(componentIds: readonly string[]) {
-      return journaled(() => session.loadComponents(componentIds))
+    loadComponents(componentIds: readonly string[], onProgress?: () => void) {
+      return journaled(() => session.loadComponents(componentIds, undefined, onProgress))
     }
   }
 }
