@@ -41,9 +41,13 @@ import ChatPermissionDialog from '@/components/chat/ChatPermissionDialog.vue'
 import ChatProviderSetup from '@/components/chat/ChatProviderSetup.vue'
 import ChatRunLocation from '@/components/chat/ChatRunLocation.vue'
 import ChatTranscript from '@/components/chat/ChatTranscript.vue'
+import ChatSubagentHeader from '@/components/chat/subagent/ChatSubagentHeader.vue'
+import ChatSubagentThread from '@/components/chat/subagent/ChatSubagentThread.vue'
+import { useSubagentThread } from '@/components/chat/subagent/useSubagentThread'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { useImageDrop } from '@/components/ui/drop/useImageDrop'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
+import PanelDrillIn from '@/components/ui/panel/PanelDrillIn.vue'
 
 const {
   isConfigured,
@@ -126,6 +130,8 @@ void history.initialize().catch(() => {
 })
 
 const messages = computed(() => chat.value?.messages ?? history.messages.value)
+const subagentThread = useSubagentThread(messages, () => history.current.value?.id)
+const subagentHeader = useTemplateRef<{ focus: () => void }>('subagentHeader')
 const context = useChatContext(messages)
 /** Past this share of its window, a bar over the message field offers to compact. */
 const CONTEXT_WARNING = 0.7
@@ -382,7 +388,15 @@ function handleStop() {
     data-test-id="chat-panel"
     class="flex min-w-0 flex-1 flex-col overflow-hidden select-text"
   >
+    <!-- An open subagent thread names itself in the header's place, with the way back. -->
+    <ChatSubagentHeader
+      v-if="subagentThread.open.value && subagentThread.transcript.value"
+      ref="subagentHeader"
+      :transcript="subagentThread.transcript.value"
+      @back="subagentThread.close"
+    />
     <ChatHistory
+      v-else
       :saved="history.conversations.value.some((row) => row.id === history.current.value?.id)"
       :conversations="historyOptions"
       :selected-id="history.current.value?.id"
@@ -419,30 +433,47 @@ function handleStop() {
       >
         {{ ai.chatInterrupted }}
       </p>
-      <ChatTranscript
-        :messages="messages"
-        :status="status"
-        :show-continue="showContinue"
-        :queued="queuedMessages"
-        :steers="!providerID.startsWith('acp:') && providerID !== 'harness:pi'"
-        :sending="submission.sending.value?.displayText ?? null"
-        :compacting="compaction.compacting.value"
-        @remove-queued="removeQueuedMessage"
-        :nodes-live="!history.readOnly.value"
-        :interactive="chat !== null && !submission.busy.value && !compaction.compacting.value"
-        @regenerate="submission.regenerate()"
-        @revert="(messageId) => submission.revert(messageId)"
-        @restore="(messageId) => submission.restore(messageId)"
-        @edit="(messageId, text) => submission.resend(messageId, text)"
-        @continue="
-          submission.submit({
-            modelText: 'Continue where you left off',
-            displayText: 'Continue where you left off',
-            images: [],
-            nodes: []
-          })
+      <!-- The thread's way back is in the header, which takes focus as the thread opens. -->
+      <PanelDrillIn
+        :open="subagentThread.open.value"
+        @open-auto-focus="
+          (event) => {
+            event.preventDefault()
+            subagentHeader?.focus()
+          }
         "
-      />
+      >
+        <template #detail>
+          <ChatSubagentThread
+            v-if="subagentThread.transcript.value"
+            :transcript="subagentThread.transcript.value"
+          />
+        </template>
+        <ChatTranscript
+          :messages="messages"
+          :status="status"
+          :show-continue="showContinue"
+          :queued="queuedMessages"
+          :steers="!providerID.startsWith('acp:') && providerID !== 'harness:pi'"
+          :sending="submission.sending.value?.displayText ?? null"
+          :compacting="compaction.compacting.value"
+          @remove-queued="removeQueuedMessage"
+          :nodes-live="!history.readOnly.value"
+          :interactive="chat !== null && !submission.busy.value && !compaction.compacting.value"
+          @regenerate="submission.regenerate()"
+          @revert="(messageId) => submission.revert(messageId)"
+          @restore="(messageId) => submission.restore(messageId)"
+          @edit="(messageId, text) => submission.resend(messageId, text)"
+          @continue="
+            submission.submit({
+              modelText: 'Continue where you left off',
+              displayText: 'Continue where you left off',
+              images: [],
+              nodes: []
+            })
+          "
+        />
+      </PanelDrillIn>
 
       <p v-if="agentHistoryReadOnly" role="status" class="px-3 py-2 text-xs text-muted">
         {{ ai.chatAgentReadOnly }}

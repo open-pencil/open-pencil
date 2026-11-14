@@ -2,6 +2,7 @@ import { uniqBy } from 'es-toolkit'
 import * as v from 'valibot'
 
 import type { Fill, SceneNode, TextLength } from '@open-pencil/scene-graph'
+import { clampLayoutPosition, MAX_TEXT_LENGTH } from '@open-pencil/scene-graph/layout'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
 
@@ -19,9 +20,11 @@ const PERCENT_LENGTH = /^(-?\d+(?:\.\d+)?)%$/
 
 /** A line height or letter spacing a prop gives: pixels as a number, or a percent string. */
 export function textLengthProp(value: unknown): TextLength | undefined {
-  if (typeof value === 'number' && Number.isFinite(value)) return pixelLength(value)
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return pixelLength(clampLayoutPosition(value, MAX_TEXT_LENGTH))
+  }
   const match = typeof value === 'string' ? PERCENT_LENGTH.exec(value.trim()) : null
-  return match ? percentLength(Number(match[1])) : undefined
+  return match ? percentLength(clampLayoutPosition(Number(match[1]), MAX_TEXT_LENGTH)) : undefined
 }
 
 /** A line height or letter spacing as a prop writes it. */

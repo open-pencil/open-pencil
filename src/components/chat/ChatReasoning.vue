@@ -101,7 +101,7 @@ function updateOpen(value: boolean): void {
     </CollapsibleTrigger>
     <CollapsibleContent data-slot="chat-reasoning-content" :class="collapsibleContentMotion">
       <div class="border-t border-border px-2 py-1.5 text-2xs leading-relaxed text-muted">
-        <ChatMarkdown :content="text" :mode="markdownMode" surface="reasoning" />
+        <ChatMarkdown :content="text" :mode="markdownMode" />
       </div>
     </CollapsibleContent>
   </CollapsibleRoot>

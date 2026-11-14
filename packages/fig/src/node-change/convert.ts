@@ -1,12 +1,14 @@
-import { clamp } from 'es-toolkit'
+import { clamp, omitBy } from 'es-toolkit'
 
 import { guidToString, isUnsetGuid } from '@open-pencil/kiwi/fig/guid'
 import {
   DEFAULT_FONT_FAMILY,
   DEFAULT_STROKE_MITER_LIMIT,
-  DEFAULT_STROKE_WEIGHT
+  DEFAULT_STROKE_WEIGHT,
+  TRANSPARENT
 } from '@open-pencil/scene-graph/constants'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
+import { hasLayoutGridAlignment } from '@open-pencil/scene-graph/layout'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
 import { OPEN_PENCIL_PLUGIN_DATA } from '@open-pencil/scene-graph/plugin-data'
 import { POINT_COUNT_RANGE } from '@open-pencil/scene-graph/polygon'
@@ -93,6 +95,8 @@ import type { Vector, GUID } from '@open-pencil/scene-graph/primitives'
 import { savedFace } from './font/style'
 import { numericVariableAssignmentScales, sourceVariableBindingScales } from './variable/bindings'
 export { VARIABLE_BINDING_FIELDS, VARIABLE_BINDING_FIELDS_INVERSE } from './variable/bindings'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
+
 import type { FigVariableModeMap } from './variable/maps'
 
 export function extractVariableModes(nc: NodeChange): VariableModeMap {
@@ -505,7 +509,7 @@ function savedLinesHeight(nc: NodeChange): number | null {
   const bottoms = (nc.derivedTextData?.baselines ?? []).map(
     (line) => (line.lineY ?? line.position.y - line.lineAscent) + line.lineHeight
   )
-  return bottoms.length > 0 ? Math.max(...bottoms) : null
+  return bottoms.length > 0 ? maxOf(bottoms) : null
 }
 
 function convertLayoutPadding(
@@ -600,7 +604,8 @@ function convertLayoutProps(
     primaryAxisAlign: mapStackJustify(nc.stackPrimaryAlignItems ?? nc.stackJustify),
     counterAxisAlign: mapStackCounterAlign(nc.stackCounterAlignItems ?? nc.stackCounterAlign),
     layoutWrap: nc.stackWrap === 'WRAP' ? 'WRAP' : 'NO_WRAP',
-    counterAxisSpacing: nc.stackCounterSpacing ?? 0,
+    // Figma saves NaN while the space between wrapped lines follows the item spacing.
+    counterAxisSpacing: Number.isNaN(nc.stackCounterSpacing) ? null : (nc.stackCounterSpacing ?? 0),
     layoutPositioning: nc.stackPositioning === 'ABSOLUTE' ? 'ABSOLUTE' : 'AUTO',
     layoutGrow: nc.stackChildPrimaryGrow ?? 0,
     layoutAlignSelf: mapAlignSelf(nc.stackChildAlignSelf),
@@ -631,8 +636,15 @@ function sharedStyleType(value: string | undefined): SharedStyleType | null {
   return null
 }
 
+/**
+ * A file's guides as Figma reads them: one without an alignment is dropped, and one without a
+ * color is transparent (Figma desktop, live, pasting records that lost either field).
+ */
 function convertLayoutGrids(value: unknown): LayoutGrid[] {
-  return Array.isArray(value) ? structuredClone(value as LayoutGrid[]) : []
+  if (!Array.isArray(value)) return []
+  return structuredClone(value as LayoutGrid[])
+    .filter(hasLayoutGridAlignment)
+    .map((grid) => ({ ...grid, color: grid.color ?? { ...TRANSPARENT } }))
 }
 
 function convertTextPathData(nc: NodeChange, blobs: Uint8Array[]): SceneNode['textPathData'] {
@@ -717,11 +729,30 @@ function resolveNodeType(nc: NodeChange): NodeType | 'DOCUMENT' | 'VARIABLE' {
   return nodeType
 }
 
+/** Fields whose saved NaN means something: wrapped lines spaced as the items are. */
+const MEANINGFUL_NAN_FIELDS: ReadonlySet<string> = new Set(['stackCounterSpacing'])
+
+/**
+ * The record with each other top-level NaN or Infinity left out, so the layer takes the field's
+ * default. OpenPencil 0.16 saved NaN stroke weights, and one non-finite size or position hides a
+ * whole page from the renderer's spatial index. Nested values keep theirs: Figma saves Infinity
+ * for an axis without a maximum size.
+ */
+function withFiniteNumbers(nc: NodeChange): NodeChange {
+  const dropped = (value: unknown, key: string) =>
+    typeof value === 'number' &&
+    !Number.isFinite(value) &&
+    !(Number.isNaN(value) && MEANINGFUL_NAN_FIELDS.has(key))
+  if (!Object.entries(nc).some(([key, value]) => dropped(value, key))) return nc
+  return omitBy(nc, dropped)
+}
+
 export function nodeChangeToProps(
-  nc: NodeChange,
+  record: NodeChange,
   blobs: Uint8Array[],
   metadata: 'source' | 'occurrence' = 'source'
 ): Partial<SceneNode> & { nodeType: NodeType | 'DOCUMENT' | 'VARIABLE' } {
+  const nc = withFiniteNumbers(record)
   const nodeType = resolveNodeType(nc)
 
   const vectorAndStrokeProps = convertVectorAndStrokeProps(nc, blobs)

@@ -1,0 +1,1 @@
+- Glass over an ellipse no longer builds a map of its outline first, so resizing one stays smooth and exporting one takes about a quarter of the time.

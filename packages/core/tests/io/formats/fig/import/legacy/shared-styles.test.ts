@@ -23,7 +23,14 @@ const effect = {
   visible: true
 }
 
-const grid = { pattern: 'COLUMNS', count: 12, gutterSize: 16, visible: true }
+const grid = {
+  pattern: 'COLUMNS',
+  alignment: 'STRETCH',
+  count: 12,
+  gutterSize: 16,
+  visible: true,
+  color: { r: 1, g: 0, b: 0, a: 0.1 }
+}
 
 describe('fig-import: shared styles', () => {
   test('models all style references and keeps definitions internal', () => {

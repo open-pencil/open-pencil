@@ -1,5 +1,11 @@
-import { ClientSideConnection, ndJsonStream, PROTOCOL_VERSION } from '@agentclientprotocol/sdk'
-import type { InitializeResponse, SessionUpdate } from '@agentclientprotocol/sdk'
+import {
+  client,
+  methods,
+  ndJsonStream,
+  PROTOCOL_VERSION,
+  type InitializeResponse,
+  type SessionUpdate
+} from '@agentclientprotocol/sdk/unstable'
 import { promiseTimeout } from '@vueuse/core'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
@@ -10,6 +16,7 @@ import { resolveSpawnTarget } from '@/app/ai/agents/setup/discovery'
 import { createDeferred, type Deferred } from '@/app/runtime/deferred'
 
 import {
+  AUTH_STATUS_UPDATE_METHOD,
   isSignedIn,
   parseAuthMethods,
   parseAuthStatusUpdate,
@@ -113,19 +120,17 @@ async function openAuthSession(
   const streams = await spawn(agent)
   const log = createStatusLog()
   let onUpdate: ((update: SessionUpdate) => void) | null = null
-  const connection = new ClientSideConnection(
-    () => ({
-      // Nothing runs in this connection, so nothing may ask for permission.
-      requestPermission: async () => ({ outcome: { outcome: 'cancelled' } }),
-      sessionUpdate: async ({ update }) => onUpdate?.(update),
-      extNotification: async (method, params) => {
-        const status = parseAuthStatusUpdate(method, params)
-        if (status) log.push(status)
-      }
-    }),
-    ndJsonStream(streams.input, streams.output)
-  )
-  // The SDK leaves requests pending when the agent exits, so each one races the connection.
+  const connection = client({ name: 'OpenPencil' })
+    // Nothing runs in this connection, so nothing may ask for permission.
+    .onRequest(methods.client.session.requestPermission, () => ({
+      outcome: { outcome: 'cancelled' }
+    }))
+    .onNotification(methods.client.session.update, ({ params }) => onUpdate?.(params.update))
+    .onNotification(AUTH_STATUS_UPDATE_METHOD, parseAuthStatusUpdate, ({ params }) => {
+      if (params) log.push(params)
+    })
+    .connect(ndJsonStream(streams.input, streams.output))
+  // Each request races the connection, so one the agent never answers ends when it exits.
   const stopped = connection.closed.then(() => {
     throw new Error('The agent stopped.')
   })
@@ -137,7 +142,7 @@ async function openAuthSession(
   try {
     init = await untilStopped(
       Promise.race([
-        connection.initialize({
+        connection.agent.request(methods.agent.initialize, {
           protocolVersion: PROTOCOL_VERSION,
           // Without it, Claude's adapter offers no sign-in methods.
           clientCapabilities: { _meta: { 'terminal-auth': true } }
@@ -178,7 +183,7 @@ async function checkTools(session: AuthSession, probe: ToolsProbe): Promise<OwnT
     const linked = link
     session.onUpdate = (update) => linked.noteUpdate(update)
     await session.untilStopped(
-      session.connection.newSession({
+      session.connection.agent.request(methods.agent.session.new, {
         cwd: await probe.cwd(),
         mcpServers: link.mcpServers,
         _meta: link.meta
@@ -235,7 +240,9 @@ export async function signInWithAgent(
     await session.untilStopped(session.log.next(0, statusTimeoutMs))
     signal.throwIfAborted()
     const seen = session.log.count
-    await session.untilStopped(session.connection.authenticate({ methodId }))
+    await session.untilStopped(
+      session.connection.agent.request(methods.agent.authenticate, { methodId })
+    )
     return await session.log.next(seen, statusTimeoutMs)
   } finally {
     signal.removeEventListener('abort', stop)

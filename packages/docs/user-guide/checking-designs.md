@@ -33,7 +33,9 @@ Other issues show the value that needs attention, such as a contrast ratio or a 
 
 ## Canvas Markers
 
-Layers with errors and warnings carry a marker at their top-right corner: red for errors, amber for warnings. Suggestions appear only in the Lint panel.
+Canvas markers, page counts, and Layers panel marks stay off until you turn them on, so a file opened in a new profile is not covered in warnings. Turn them on or off with **View → Design issues**, or with **Show issues on canvas** in the Lint panel's settings menu. A profile that already stored the choice keeps it.
+
+While they are on, layers with errors and warnings carry a marker at their top-right corner: red for errors, amber for warnings. Suggestions appear only in the Lint panel.
 
 - Hover a marker to see its issues. Click it to select the layer and open its issues in the Lint panel.
 - Markers that would overlap merge into one showing their combined count.
@@ -41,13 +43,11 @@ Layers with errors and warnings carry a marker at their top-right corner: red fo
 - Errors and warnings outside the visible canvas are pinned to its edge, pointing toward them. Hover a pin to see them; click it to bring the nearest of the most severe into view and open it in Lint.
 - Hidden layers and layers clipped out of view by a frame keep their issues in the panel but get no marker.
 
-Pages with errors or warnings show their count in the page list, checked in the background while you work. The Layers panel marks the same layers: a layer with errors or warnings shows the most severe as an icon, and a collapsed layer with issues inside it shows a dot.
-
-Turn markers and Layers panel marks on or off with **View → Design issues**, or with **Show issues on canvas** in the Lint panel's settings menu.
+Pages with errors or warnings show their count in the page list, checked in the background while you work. The Layers panel marks the same layers: a layer with errors or warnings shows the most severe as an icon, and a collapsed layer with issues inside it shows a dot. Those marks follow the same switch as the canvas markers.
 
 ## In the Code Panel
 
-The Code tab underlines errors and warnings on the Design JSX, HTML, Vue, or React of their layers, on the property that causes the issue when there is one, such as `size={10}` for small text, or the class that styles the layer. Hover the underline to read the issue. The underlines follow your edits while you change the code live.
+The Code tab underlines errors and warnings on the Design JSX, HTML, Vue, or React of their layers, on the property that causes the issue when there is one, such as `size={10}` for small text, or the class that styles the layer. Hover the underline to read the issue. The page is checked while the Lint panel is open or canvas markers are on, and the underlines follow that check and your edits.
 
 ## Rules
 

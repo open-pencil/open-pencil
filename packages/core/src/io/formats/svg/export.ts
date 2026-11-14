@@ -37,6 +37,8 @@ import {
 export { geometryBlobToSVGPath, nodeOutlinePath, type OutlineNode } from './paths'
 
 import type { SceneGraph, SceneNode, Fill, Stroke, VectorNetwork } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
 import {
   hasRegionFills,
   looseSegments,
@@ -45,7 +47,7 @@ import {
 
 import { arrowHeadElements, openPathElements, vectorArrowHeads } from './arrows'
 import type { SVGExportContext } from './defs'
-import { svg, renderSVGNode } from './node'
+import { svg, svgElement, renderSVGNode } from './node'
 import type { SVGNode } from './node'
 import { fillOutlines, outlineElements } from './regions'
 import { alignedStroke, alignedStrokeElement, shapeWithTextDetailElements } from './strokes'
@@ -79,12 +81,12 @@ function vectorShapeElements(
 ): SVGNode[] {
   const elements: SVGNode[] = []
   const filled = fillOutlines(node)
-  elements.push(...outlineElements(node, filled?.outlines ?? [], common, ctx, fallbackFills))
+  appendAll(elements, outlineElements(node, filled?.outlines ?? [], common, ctx, fallbackFills))
   const network = node.vectorNetwork
-  if (network && !filled) elements.push(...networkElements(node, network, common))
+  if (network && !filled) appendAll(elements, networkElements(node, network, common))
   // Traced regions leave the open segments, which the canvas strokes, to add here.
   else if (network && filled?.traced && looseSegments(network).length > 0)
-    elements.push(...openPathElements(node, network, common, looseSegments))
+    appendAll(elements, openPathElements(node, network, common, looseSegments))
   if (node.strokeGeometry.length > 0 && strokeAttrs.stroke && strokeAttrs.stroke !== 'none') {
     for (const geo of node.strokeGeometry) {
       const d = geometryBlobToSVGPath(geo.commandsBlob)
@@ -100,7 +102,8 @@ function vectorShapeElements(
       }
     }
   }
-  if (node.vectorNetwork) elements.push(...vectorArrowHeads(node, node.vectorNetwork, strokeAttrs))
+  if (node.vectorNetwork)
+    appendAll(elements, vectorArrowHeads(node, node.vectorNetwork, strokeAttrs))
   return elements.length > 0
     ? elements
     : [svg('rect', { width: round(node.width), height: round(node.height), ...common })]
@@ -261,7 +264,7 @@ function buildGroupAttrs(
   }
 
   let clipId: string | undefined
-  if (node.clipsContent && node.childIds.length > 0) {
+  if (clipsChildren(node) && node.childIds.length > 0) {
     clipId = nextDefId(ctx, 'clip')
     ctx.defs.push(svg('clipPath', { id: clipId }, boxOutlineElement(node, {})))
   }
@@ -459,9 +462,9 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
   }
 
   if (clipId && childContent.length > 0) {
-    children.push(svg('g', { 'clip-path': `url(#${clipId})` }, ...childContent))
+    children.push(svgElement('g', { 'clip-path': `url(#${clipId})` }, childContent))
   } else {
-    children.push(...childContent)
+    appendAll(children, childContent)
   }
 
   const validChildren = children.filter((c): c is SVGNode => c !== null)
@@ -474,7 +477,7 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
     return validChildren[0]
   }
 
-  return svg('g', groupAttrs, ...validChildren)
+  return svgElement('g', groupAttrs, validChildren)
 }
 
 function isGroupLike(node: SceneNode): boolean {
@@ -540,11 +543,11 @@ export function renderNodesToSVG(
 
   const rootChildren: (SVGNode | string)[] = []
   if (ctx.defs.length > 0) {
-    rootChildren.push(svg('defs', {}, ...ctx.defs))
+    rootChildren.push(svgElement('defs', {}, ctx.defs))
   }
-  rootChildren.push(...contentNodes)
+  appendAll(rootChildren, contentNodes)
 
-  const root = svg(
+  const root = svgElement(
     'svg',
     {
       xmlns: 'http://www.w3.org/2000/svg',
@@ -553,7 +556,7 @@ export function renderNodesToSVG(
       height,
       viewBox: `0 0 ${width} ${height}`
     },
-    ...(rootChildren as SVGNode[])
+    rootChildren
   )
 
   const svgStr = renderSVGNode(root)
@@ -584,7 +587,7 @@ export function renderNodeSVGElement(
   return svg(
     'svg',
     { width, height, viewBox: `0 0 ${width} ${height}` },
-    ctx.defs.length > 0 ? svg('defs', {}, ...ctx.defs) : null,
+    ctx.defs.length > 0 ? svgElement('defs', {}, ctx.defs) : null,
     drawn
   )
 }

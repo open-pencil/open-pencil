@@ -108,9 +108,11 @@ transport = "none"
 # endpoint = "https://ai.example.com"
 # token_lifetime_minutes = 10
 
-# Where people manage their plan; editors link to it. Leave it out when the deployment does not bill.
+# The billing service that sells plans and credits; editors link to the plan page whenever it is
+# set. Needs the [services] signing key, which signs its tokens, and the [internal_api], through
+# which it sets the plans it sells. Leave it out when the deployment does not bill.
 # [billing]
-# portal_url = "https://billing.example.com"
+# endpoint = "https://billing.example.com"
 
 # Add this table to let services such as billing set an account's entitlements, which every
 # workspace it owns takes, over HTTP at PUT /api/internal/accounts/<user id>/entitlements. The
@@ -119,7 +121,8 @@ transport = "none"
 
 # Optional: your own terms and privacy policy, linked at sign-up and in the portal's footer. With
 # require_acceptance, each account accepts terms_version once before using the server, and again
-# whenever you change it. Leave the table out to show none.
+# whenever you change it. abuse_email is linked as Report abuse, and is where the owner of a
+# document an administrator blocks writes to contest it. Leave the table out to show none.
 # [legal]
 # terms_url = "https://example.com/terms"
 # privacy_url = "https://example.com/privacy"
@@ -127,6 +130,13 @@ transport = "none"
 # require_acceptance = true
 # abuse_email = "abuse@example.com"
 # minimum_age = 16
+
+# Optional: a workspace whose documents anyone may open read-only, without signing in or a share
+# link, as a public gallery. Everything saved there is public. Leave the table out to have none.
+# Set [authentication.trusted_proxies] headers first and let only the proxy reach the server: the
+# gallery is rate-limited by client IP, and a request without the header has none.
+# [community]
+# workspace = "0f6b1c1e-6a8e-4b8e-9a4f-3c2d1e0f9a8b"
 
 # Optional: reports server errors to PostHog error tracking. Leave it out to send nothing. The host
 # defaults to https://eu.i.posthog.com and the project API key to POSTHOG_PROJECT_API_KEY.

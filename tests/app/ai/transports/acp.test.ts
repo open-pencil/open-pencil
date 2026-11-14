@@ -1,22 +1,26 @@
 import { expect, test } from 'bun:test'
 
 import {
-  AgentSideConnection,
+  agent as acpAgent,
+  methods,
   ndJsonStream,
   PROTOCOL_VERSION,
   RequestError,
-  type Agent,
+  type ClientCapabilities,
   type NewSessionRequest,
-  type ResumeSessionRequest
-} from '@agentclientprotocol/sdk'
+  type ResumeSessionRequest,
+  type SessionUpdate
+} from '@agentclientprotocol/sdk/unstable'
 import type { UIMessage, UIMessageChunk } from 'ai'
 
 import { ACP_AGENTS, type ACPAgentDef } from '@open-pencil/core/constants'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { OWN_TOOLS_ALLOWED } from '@/app/ai/agents/acp/tools'
+import { SUBAGENT_PART, subagentTranscript } from '@/app/ai/chat/subagents'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 import { ACPChatTransport, type ACPStartup } from '@/app/ai/transports/acp'
+import { restAgents, withSubagent } from '@/app/automation/agents'
 import { diagnosticErrorDetails, diagnostics } from '@/app/diagnostics'
 import { createDeferred } from '@/app/runtime/deferred'
 const resuming = expectDefined(
@@ -46,6 +50,11 @@ interface FakeAgentOptions {
   turn?: 'answered' | 'refused' | 'cut-off'
   /** True for a command lookup that waits until `finishLookup`, as a slow PATH search does. */
   lookupWaits?: boolean
+  /**
+   * What the agent reports while it takes a turn, after its command list: in the turn's session,
+   * or in a subagent's session `session`.
+   */
+  updates?: { session?: string; update: SessionUpdate }[]
 }
 
 /** In-memory ACP agents, one per start, that record what the transport asks of them. */
@@ -56,12 +65,14 @@ function fakeAgents({
   resumeBusy = false,
   tokenHangs = false,
   turn = 'answered',
-  lookupWaits = false
+  lookupWaits = false,
+  updates = []
 }: FakeAgentOptions = {}) {
   const lookup = createDeferred<undefined>()
   const prompts: string[] = []
   const created: NewSessionRequest[] = []
   const resumed: ResumeSessionRequest[] = []
+  const capabilities: (ClientCapabilities | undefined)[] = []
   const sessionRequested = createDeferred<undefined>()
   const killed = createDeferred<undefined>()
   let kills = 0
@@ -78,57 +89,49 @@ function fakeAgents({
     cwds.push(options.cwd)
     const toAgent = new TransformStream<Uint8Array, Uint8Array>()
     const toClient = new TransformStream<Uint8Array, Uint8Array>()
-    const agent: Agent = {
-      async initialize() {
+    acpAgent()
+      .onRequest(methods.agent.initialize, ({ params }) => {
+        capabilities.push(params.clientCapabilities)
         return {
           protocolVersion: PROTOCOL_VERSION,
           agentCapabilities: { sessionCapabilities: { resume: {} } }
         }
-      },
-      async newSession(params) {
+      })
+      .onRequest(methods.agent.session.new, ({ params }) => {
         created.push(params)
         sessionRequested.resolve(undefined)
         if (!answersSessions) return createDeferred<never>().promise
         return { sessionId: `session-${created.length}` }
-      },
-      async unstable_resumeSession(params) {
+      })
+      .onRequest(methods.agent.session.resume, ({ params }) => {
         resumed.push(params)
         if (resumeFails) throw RequestError.resourceNotFound(params.sessionId)
         if (resumeError) throw resumeError
         if (resumeBusy && resumed.length === 1)
           throw RequestError.invalidRequest({ reason: 'thread_active_writer' }, 'Session in use')
         return {}
-      },
-      async prompt(params) {
+      })
+      .onRequest(methods.agent.session.prompt, async ({ params, client }) => {
         const [part] = params.prompt
         prompts.push(part?.type === 'text' ? part.text : '')
         const { sessionId } = params
-        await connection.sessionUpdate({
-          sessionId,
-          update: { sessionUpdate: 'available_commands_update', availableCommands: [] }
-        })
+        const report = (update: SessionUpdate, session = sessionId) =>
+          client.notify(methods.client.session.update, { sessionId: session, update })
+        await report({ sessionUpdate: 'available_commands_update', availableCommands: [] })
         if (turn === 'refused') throw new Error('The prompt never reached the model')
+        for (const { session, update } of updates) await report(update, session)
         if (turn === 'cut-off') {
-          await connection.sessionUpdate({
-            sessionId,
-            update: {
-              sessionUpdate: 'agent_message_chunk',
-              content: { type: 'text', text: 'On it' }
-            }
+          await report({
+            sessionUpdate: 'agent_message_chunk',
+            content: { type: 'text', text: 'On it' }
           })
           throw new Error('The turn broke off')
         }
         return { stopReason: 'end_turn' }
-      },
-      async authenticate() {
-        return {}
-      },
-      cancel: async () => undefined
-    }
-    const connection = new AgentSideConnection(
-      () => agent,
-      ndJsonStream(toClient.writable, toAgent.readable)
-    )
+      })
+      .onRequest(methods.agent.authenticate, () => ({}))
+      .onNotification(methods.agent.session.cancel, () => undefined)
+      .connect(ndJsonStream(toClient.writable, toAgent.readable))
     // Ending the pipe ends what the client reads, as a process that exits does.
     const output = new TransformStream<Uint8Array, Uint8Array>()
     const stop = new AbortController()
@@ -178,6 +181,7 @@ function fakeAgents({
     prompts,
     created,
     resumed,
+    capabilities,
     sessionRequested: sessionRequested.promise,
     killed: killed.promise,
     kills: () => kills,
@@ -468,4 +472,64 @@ test('a startup step outside the agent connection is bounded by the deadline too
   await expect(send(chat, 'first')).rejects.toBeInstanceOf(Error)
   await agents.killed
   expect(agents.prompts).toEqual([])
+})
+
+test('a subagent’s work is known by its session and kept in its own transcript', async () => {
+  const toolCall = (toolCallId: string): SessionUpdate => ({
+    sessionUpdate: 'tool_call',
+    toolCallId,
+    title: 'mcp__open-pencil__create_shape',
+    status: 'pending'
+  })
+  const agents = fakeAgents({
+    updates: [
+      { update: { sessionUpdate: 'subagent_update', sessionId: 'subagent-1', title: 'Layout' } },
+      {
+        session: 'subagent-1',
+        update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'Mine' } }
+      },
+      { session: 'subagent-1', update: toolCall('call-inner') },
+      // The subagent starts one of its own, which it describes on its session.
+      {
+        session: 'subagent-1',
+        update: { sessionUpdate: 'subagent_update', sessionId: 'subagent-2', title: 'Nested' }
+      },
+      { update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'Ours' } } },
+      { update: toolCall('call-own') }
+    ]
+  })
+  const { transport: chat } = transport(agents)
+  /** The subagent of a call, as OpenPencil's MCP server sees it; `linkTools` names the chat. */
+  const subagentOf = (call: string) =>
+    withSubagent({ session: 'session-1', kind: 'acp', chat: 'chat', call }).subagent
+  try {
+    const chunks = await send(chat, 'go')
+    expect(agents.capabilities).toMatchObject([{ subagents: {} }])
+    expect(subagentOf('call-inner')).toBe('subagent-1')
+    expect(subagentOf('call-own')).toBeUndefined()
+    // The reply's own text is the agent's; the subagent's is its transcript's.
+    const text = chunks.flatMap((chunk) => (chunk.type === 'text-delta' ? [chunk.delta] : []))
+    expect(text.join('')).toBe('Ours')
+    const transcript = chunks.findLast((chunk) => chunk.type === SUBAGENT_PART)
+    expect(
+      transcript && 'data' in transcript
+        ? subagentTranscript({ type: SUBAGENT_PART, data: transcript.data })
+        : null
+    ).toMatchObject({
+      session: 'subagent-1',
+      title: 'Layout',
+      parts: expect.arrayContaining([expect.objectContaining({ type: 'text', text: 'Mine' })])
+    })
+    const nested = chunks.findLast(
+      (chunk) => chunk.type === SUBAGENT_PART && 'id' in chunk && chunk.id === 'subagent-2'
+    )
+    expect(
+      nested && 'data' in nested
+        ? subagentTranscript({ type: SUBAGENT_PART, data: nested.data })
+        : null
+    ).toMatchObject({ session: 'subagent-2', title: 'Nested' })
+  } finally {
+    restAgents('acp')
+    await chat.destroy()
+  }
 })

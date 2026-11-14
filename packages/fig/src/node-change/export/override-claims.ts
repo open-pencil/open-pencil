@@ -6,9 +6,9 @@ import {
 import { compact } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { overriddenAssignmentId } from '@open-pencil/scene-graph/components'
 import {
   forEachInstanceOverride,
+  overriddenAssignmentId,
   overriddenBindingField
 } from '@open-pencil/scene-graph/instances/overrides'
 import type { GUID, Vector } from '@open-pencil/scene-graph/primitives'

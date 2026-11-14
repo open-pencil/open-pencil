@@ -21,7 +21,7 @@ function layerIn(graph: SceneGraph, root: SceneNode, name: string): SceneNode {
     if (node.name === name) {
       return node
     }
-    pending.push(...node.childIds)
+    for (const childId of node.childIds) pending.push(childId)
   }
   throw new Error(`Missing layer ${name}`)
 }

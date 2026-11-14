@@ -30,7 +30,7 @@ function contextFits(graph: SceneGraph, rootId: string): boolean {
     if (++count > MAX_PREVIEW_CONTEXT_NODES) return false
     const id = pending.pop()
     const node = id ? graph.getNode(id) : undefined
-    if (node) pending.push(...node.childIds)
+    if (node) for (const childId of node.childIds) pending.push(childId)
   }
   return true
 }

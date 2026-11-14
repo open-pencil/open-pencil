@@ -1,4 +1,5 @@
-# Keeps the commits third-party actions are pinned to current, with their version comments.
+# Keeps the commits third-party actions are pinned to current, with their version comments, and the
+# digests Dockerfiles pin their base images to.
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -14,4 +15,23 @@ updates:
       prefix: ci
     groups:
       actions:
+        patterns: ['*']
+  - package-ecosystem: docker
+    directories:
+      - /.devcontainer
+      - /packages/cloud/deploy
+      - /tools/ci/images/*
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    # Only the digest of the tag a Dockerfile names: a version, such as Ubuntu's or Bun's, which
+    # rust-toolchain.toml or packageManager may also name, changes by hand.
+    ignore:
+      - dependency-name: '*'
+        update-types: [version-update:semver-major, version-update:semver-minor, version-update:semver-patch]
+    commit-message:
+      prefix: build
+    groups:
+      images:
         patterns: ['*']

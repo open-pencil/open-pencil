@@ -1,0 +1,1 @@
+- Flatten turns text into a vector that keeps each character's colour, its underlines and strikethroughs, and the text's opacity, blend mode, and effects, named after the layer, and Outline stroke turns text into glyph vectors even without a stroke, as in Figma.

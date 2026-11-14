@@ -6,7 +6,6 @@ export interface FigPopulationDelta {
   created: Array<[string, SceneNode]>
   updated: Array<[string, Partial<SceneNode>]>
   deleted: string[]
-  instanceIndex: Array<[string, string[]]>
   populatedRootIds: string[]
 }
 
@@ -71,7 +70,7 @@ export function installFigMutationJournal(graph: SceneGraph): FigMutationJournal
       const currentId = pending.pop()
       if (!currentId) continue
       const current = graph.getNode(currentId)
-      if (current) pending.push(...current.childIds)
+      if (current) for (const childId of current.childIds) pending.push(childId)
       if (!existingAtStart.has(currentId)) {
         created.delete(currentId)
         before.delete(currentId)
@@ -116,24 +115,131 @@ export function buildFigPopulationDelta(
     created,
     updated,
     deleted: [...journal.deleted],
-    instanceIndex: [...graph.instanceIndex].map(([id, ids]) => [id, [...ids]]),
     populatedRootIds: [...populatedRootIds]
   }
 }
 
-export function applyFigPopulationDelta(graph: SceneGraph, delta: FigPopulationDelta): void {
-  graph.applyImportedStateDuring(() => {
-    for (const [, node] of delta.created) {
-      graph.createNodeWithId(node.id, node.type, node.parentId, node)
+/** Where a page load applied over edits made while it loaded differs from what it brought. */
+export interface FigPopulationRebase {
+  /** Layers whose state here is not the loaded one: the worker takes this thread's state. */
+  diverged: string[]
+  /** New instances of components edited while the page loaded, built from them as they were. */
+  staleInstances: string[]
+}
+
+/** The components holding `ids`, or being them. */
+function componentsHolding(graph: SceneGraph, ids: Iterable<string>): Set<string> {
+  const components = new Set<string>()
+  for (const id of ids) {
+    let node = graph.getNode(id)
+    while (node) {
+      if (node.type === 'COMPONENT') components.add(node.id)
+      node = node.parentId ? graph.getNode(node.parentId) : undefined
     }
-    for (const [id, changes] of delta.updated) graph.updateNode(id, changes)
-    for (const id of delta.deleted) graph.deleteNode(id)
-  })
-  graph.instanceIndex.clear()
-  for (const node of graph.getAllNodes()) {
-    if (node.type !== 'INSTANCE' || !node.componentId) continue
-    const ids = graph.instanceIndex.get(node.componentId) ?? new Set<string>()
-    ids.add(node.id)
-    graph.instanceIndex.set(node.componentId, ids)
   }
+  return components
+}
+
+/**
+ * A page load applied as it arrives: the worker sends a large page's new layers in pieces, each
+ * applied in its own task so the editor keeps responding, then the changes to layers already
+ * here. `edited` holds the layers this thread changed after the load began; the load did not see
+ * those edits, so they win: fields of an edited layer stay as edited, a layer removed meanwhile
+ * keeps the new layers out, and the new layers still join an edited parent.
+ */
+export function beginFigPopulation(graph: SceneGraph) {
+  const diverged: string[] = []
+  const created: string[] = []
+  const createdIds = new Set<string>()
+  return {
+    /** How many new layers it has added. */
+    get created(): number {
+      return created.length
+    },
+    /** Adds new layers, each after its parent. */
+    add(nodes: Iterable<SceneNode>): void {
+      graph.applyImportedStateDuring(() => {
+        for (const node of nodes) {
+          if (graph.getNode(node.id) || (node.parentId && !graph.getNode(node.parentId))) {
+            diverged.push(node.id)
+            continue
+          }
+          graph.createNodeWithId(node.id, node.type, node.parentId, node)
+          created.push(node.id)
+          createdIds.add(node.id)
+        }
+      })
+    },
+    finish(
+      changes: Pick<FigPopulationDelta, 'updated' | 'deleted'>,
+      edited: ReadonlySet<string> = new Set()
+    ): FigPopulationRebase {
+      graph.applyImportedStateDuring(() => {
+        for (const [id, fields] of changes.updated) {
+          if (!edited.has(id)) {
+            graph.updateNode(id, fields)
+            continue
+          }
+          diverged.push(id)
+          const node = graph.getNode(id)
+          // Only new layers still here under this parent: one moved or removed since is not.
+          const joining = fields.childIds?.filter(
+            (childId) =>
+              createdIds.has(childId) &&
+              graph.getNode(childId)?.parentId === id &&
+              !node?.childIds.includes(childId)
+          )
+          if (node && joining?.length) {
+            graph.updateNode(id, { childIds: [...node.childIds, ...joining] })
+          }
+        }
+        for (const id of changes.deleted) {
+          if (edited.has(id)) diverged.push(id)
+          else graph.deleteNode(id)
+        }
+      })
+      const editedComponents =
+        edited.size > 0 ? componentsHolding(graph, edited) : new Set<string>()
+      const staleInstances = created.filter((id) => {
+        const node = graph.getNode(id)
+        return (
+          node?.type === 'INSTANCE' && !!node.componentId && editedComponents.has(node.componentId)
+        )
+      })
+      return { diverged, staleInstances }
+    },
+    /**
+     * Removes the layers added so far, for a load that will not finish. A layer someone put
+     * inside one of them meanwhile is not the load's: it moves out to the nearest layer that
+     * stays, keeping its place on the canvas, before the load's layer goes.
+     */
+    rollback(): void {
+      graph.applyImportedStateDuring(() => {
+        for (const id of created.toReversed()) {
+          const node = graph.getNode(id)
+          if (!node) continue
+          const parentId = node.parentId
+          for (const childId of node.childIds.filter((childId) => !createdIds.has(childId))) {
+            if (parentId) graph.reparentNode(childId, parentId)
+          }
+          graph.deleteNode(id)
+        }
+      })
+      created.length = 0
+      createdIds.clear()
+    }
+  }
+}
+
+export type FigPopulation = ReturnType<typeof beginFigPopulation>
+
+/** Applies a whole page load at once; see `beginFigPopulation`. */
+export function applyFigPopulationDelta(
+  graph: SceneGraph,
+  delta: FigPopulationDelta,
+  edited: ReadonlySet<string> = new Set()
+): FigPopulationRebase {
+  const population = beginFigPopulation(graph)
+  population.add(delta.created.map(([, node]) => node))
+  return population.finish(delta, edited)
 }

@@ -1,12 +1,15 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createHeadlessCSSRuntime, htmlToDesignDocument, type CSSRuntime } from '#dom-css/index'
+import { serializeHTML } from '#dom-css/export/html'
+import { parseHTMLDocument } from '#dom-css/import/markup'
+import { htmlToDesignDocument, type CSSRuntime } from '#dom-css/index'
 
 /** A runtime that records the CSS it is asked to apply. */
 function recordingRuntime(sheets: string[]): CSSRuntime {
-  const runtime = createHeadlessCSSRuntime()
   return {
-    ...runtime,
+    kind: 'headless',
+    parseHTML: parseHTMLDocument,
+    serializeHTML,
     computeStyles: async (document, cssText = '') => {
       sheets.push(cssText)
       return document

@@ -9,6 +9,8 @@ import {
 } from '@open-pencil/scene-graph/coordinate'
 import { cycleSafeParent } from '@open-pencil/scene-graph/instances'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import { layerImageHashes } from '@open-pencil/scene-graph/transfer'
+import { keepPastedBoundPaints, type AppliedBoundPaints } from '@open-pencil/scene-graph/variables'
 
 import { prepareClipboardImport } from '#core/clipboard/fig-import'
 import { computeAllLayouts } from '#core/layout'
@@ -167,6 +169,8 @@ export function createClipboardActions(ctx: EditorContext) {
         dependencies.nodes,
         snapshot.placement,
         snapshot.images,
+        // Records from another document name its variables and modes, not the pasted ones.
+        snapshot.sourceRootId === ctx.graph.rootId ? snapshot.appliedBoundPaints : new Map(),
         dependencies.componentDependencies,
         cursorPos,
         options
@@ -229,6 +233,7 @@ export function createClipboardActions(ctx: EditorContext) {
     nodes: Array<SceneNode & { children?: SceneNode[] }>,
     placement: ClipboardPlacement,
     images: Map<string, Uint8Array>,
+    applied: AppliedBoundPaints,
     dependencies: Array<SceneNode & { children?: SceneNode[] }> = [],
     cursorPos?: Vector,
     options: PasteOptions = {}
@@ -281,6 +286,7 @@ export function createClipboardActions(ctx: EditorContext) {
       }
       ctx.graph.updateNode(id, { componentId: componentId ?? node.componentId, instanceOverrides })
     }
+    keepPastedBoundPaints(ctx.graph, copiedIds, applied)
     if (dependencyRootIds.length > 0) {
       const snapshots = collectSubtrees(ctx.graph, dependencyRootIds)
       ctx.undo.push({
@@ -310,9 +316,9 @@ export function createClipboardActions(ctx: EditorContext) {
   function missingImageHashes(nodeIds: string[]) {
     const hashes = new Set<string>()
     for (const node of collectSubtrees(ctx.graph, nodeIds)) {
-      for (const fill of node.fills) {
-        if (fill.type === 'IMAGE' && fill.imageHash && !ctx.graph.images.has(fill.imageHash)) {
-          hashes.add(fill.imageHash)
+      for (const imageHash of layerImageHashes(node)) {
+        if (!ctx.graph.images.has(imageHash)) {
+          hashes.add(imageHash)
         }
       }
     }

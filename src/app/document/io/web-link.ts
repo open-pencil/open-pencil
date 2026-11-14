@@ -50,7 +50,7 @@ export function parseWebOpenParams(search: string): WebOpenParams | null {
 
 /** Fetch entry point, injected so tests can drive the failure branch. */
 export interface WebLinkIo {
-  open: (url: URL) => Promise<void>
+  open: (url: URL) => Promise<unknown>
 }
 
 const browserIo: WebLinkIo = {

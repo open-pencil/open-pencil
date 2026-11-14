@@ -149,13 +149,9 @@ export function parseFigBuffer(
   }
 
   const metaBytes = archive['meta.json']
-  const images = Object.entries(archive)
-    .filter(([name]) => name.startsWith('images/') && name !== 'images/')
-    .map(([name, data]) => [name.slice('images/'.length), data] as [string, Uint8Array])
-
   return {
     ...decoded,
-    images,
+    images: archiveFolder(archive, 'images/'),
     thumbnailPNG: archive['thumbnail.png'] ?? null,
     metaJSON: Object.hasOwn(archive, 'meta.json') ? new TextDecoder().decode(metaBytes) : null
   }
@@ -170,8 +166,19 @@ export interface FigArchiveParts {
   /** A design file or a FigJam board, by the canvas's header. */
   kind: FigFileKind
   images: Array<[string, Uint8Array]>
+  /** Video clips, kept so a patched archive still holds the clips its video paints name. */
+  videos: Array<[string, Uint8Array]>
   thumbnailPNG: Uint8Array | null
   metaJSON: string | null
+}
+
+function archiveFolder(
+  archive: Unzipped,
+  folder: 'images/' | 'videos/'
+): Array<[string, Uint8Array]> {
+  return Object.entries(archive)
+    .filter(([name]) => name.startsWith(folder) && name !== folder)
+    .map(([name, data]) => [name.slice(folder.length), data])
 }
 
 function canvasParts(canvasData: Uint8Array) {
@@ -194,7 +201,7 @@ export function readFigArchiveParts(buffer: ArrayBuffer): FigArchiveParts {
   const chunks = parseFigKiwiChunks(bytes)
   if (chunks) {
     const thumbnailPNG = chunks.slice(2).find(isPNG) ?? null
-    return { ...canvasParts(bytes), images: [], thumbnailPNG, metaJSON: null }
+    return { ...canvasParts(bytes), images: [], videos: [], thumbnailPNG, metaJSON: null }
   }
   const entries = readZipDirectory(bytes)
   if (!entries) throw new Error('Not a .fig file: neither a ZIP archive nor a fig-kiwi container')
@@ -209,12 +216,15 @@ export function readFigArchiveParts(buffer: ArrayBuffer): FigArchiveParts {
       `No canvas data found in .fig file. Entries: ${entries.map((entry) => entry.name).join(', ')}`
     )
   }
+  const folder = (prefix: 'images/' | 'videos/'): Array<[string, Uint8Array]> =>
+    entries
+      .filter((entry) => entry.name.startsWith(prefix) && entry.name !== prefix)
+      .map((entry) => [entry.name.slice(prefix.length), zipEntryContents(bytes, entry)])
   const meta = contents('meta.json')
   return {
     ...canvasParts(canvasData),
-    images: entries
-      .filter((entry) => entry.name.startsWith('images/') && entry.name !== 'images/')
-      .map((entry) => [entry.name.slice('images/'.length), zipEntryContents(bytes, entry)]),
+    images: folder('images/'),
+    videos: folder('videos/'),
     thumbnailPNG: contents('thumbnail.png'),
     metaJSON: meta ? new TextDecoder().decode(meta) : null
   }

@@ -13,20 +13,26 @@ not deploy to the target or its commit is not on master (`tools/ci/cloud-deploy/
 
 ## Before production's first deploy
 
-The values in `production/` marked "Replace" and these settings outside the repository:
+These settings outside the repository:
 
 - The `cloud-production` environment: required reviewers, deployment refs limited to tags `v*`,
   the `CLOUD_URL` variable, and the secrets the workflow names (`NEON_MIGRATOR_DATABASE_URL`, the
   Worker's secrets, `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `POSTHOG_CLI_API_KEY`).
-- A Neon project in an EU region, with a restore window of at least `purge_grace_days` (7).
+- A Neon project in an EU region, with a restore window of at least `purge_grace_days` (7), whose
+  `openpencil_cloud` database belongs to a migrator role (`NEON_MIGRATOR_DATABASE_URL`) and is
+  used by a runtime role, which Hyperdrive connects as. The migrator gives the runtime role
+  `CONNECT` on the database, `USAGE` on `public`, and by default read and write on its tables and
+  sequences (`ALTER DEFAULT PRIVILEGES FOR ROLE <migrator> IN SCHEMA public GRANT SELECT, INSERT,
+  UPDATE, DELETE ON TABLES TO <runtime>`, and `SELECT, USAGE ON SEQUENCES`), as on staging.
 - An R2 API token with Object Read & Write on the `openpencil-cloud` bucket only, whose keys are
   `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY`. The bucket is in the EU jurisdiction, and its CORS
   rules allow GET, PUT, and HEAD from `https://cloud.openpencil.dev` with any request header
   (uploads send `Content-Type` and `x-amz-meta-openpencil-sha256`) and expose `ETag`, which
   multipart uploads read for each part. Its `expire-deleted` lifecycle rule removes what
   `deleted_prefix` keeps after 14 days, longer than the database's restore window.
-- A Hyperdrive over the database's pooled connection with query caching off, since a cached read
-  can miss the write just before it. Its ID goes in `production/wrangler.jsonc`.
+- A Hyperdrive over the database's direct connection, as the runtime role, with query caching
+  off, since a cached read can miss the write just before it. Hyperdrive pools connections itself,
+  as staging's does. Its ID goes in `production/wrangler.jsonc`.
 - Google's OAuth client allowing `https://cloud.openpencil.dev/api/auth/callback/google`, Email
   Routing sending from `cloud@openpencil.dev`, and the services Worker at
   `services.openpencil.dev` trusting this Cloud's keys.

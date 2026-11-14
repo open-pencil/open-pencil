@@ -1,9 +1,7 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import {
-  overriddenAssignmentId,
-  reapplyComponentPropertyAssignments
-} from '../components/properties'
+import { appendAll } from '../arrays'
+import { reapplyComponentPropertyAssignments } from '../components/properties'
 import type { SceneGraph } from '../graph'
 import { ownsSlotContent, slotPropertyId } from '../slots/frames'
 import type { SceneNode } from '../types'
@@ -11,12 +9,16 @@ import { applyBoundPaintColorsIn, refreshBoundPaintsIn } from '../variables/pain
 import { applyEnclosingAssignments } from './assignments'
 import { keepOverrides, restoreOverrides, type OverrideScope } from './kept-overrides'
 import { ownsSelfFillField } from './main-component'
-import { hasInstanceOverride, overriddenBindingField, setInstanceOverride } from './overrides'
 import {
-  bindingProtection,
+  hasInstanceOverride,
+  overriddenAssignmentId,
+  overriddenBindingField,
+  setInstanceOverride
+} from './overrides'
+import { bindingProtection, NOTHING_PROTECTED } from './protection'
+import {
   cloneChildInCoordinates,
   cloneChildrenWithMapping,
-  NOTHING_PROTECTED,
   syncCopy,
   type MatchedCopy
 } from './sync'
@@ -128,7 +130,7 @@ function untakenCopies(byLayer: CopiesByLayer): SceneNode[] {
     }
   }
   for (const namesakes of byLayer.unlinked.values()) {
-    untaken.push(...namesakes)
+    appendAll(untaken, namesakes)
   }
   return untaken
 }
@@ -328,7 +330,7 @@ function matchCopies(swap: Swap, compParent: SceneNode, instParent: SceneNode) {
     retyped.set(index, copy)
     return undefined
   })
-  stale.push(...untakenCopies(byLayer))
+  appendAll(stale, untakenCopies(byLayer))
   return { matched, stale, retyped }
 }
 

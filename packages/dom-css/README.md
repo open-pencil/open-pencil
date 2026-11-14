@@ -44,12 +44,12 @@ const document = runtime.parseHTML('<article class="card">OpenPencil</article>')
 const styled = await runtime.computeStyles(document, '.card { width: calc(10rem + 16px); }')
 ```
 
-The headless runtime is useful for Bun/Node tests, CLI flows, and fast approximate conversion. It supports common selectors, inheritance, shorthands, CSSOM grouping rules, and simple variable/calc values, but it is not a browser replacement. Do not use it as an oracle for browser-only CSS behavior such as layout-dependent computed values, full custom-property fallback behavior, modern color serialization, or UA defaults. Do not expand headless CSS parsing with ad hoc regex/string parsers; add a maintained parser/runtime dependency or use the browser runtime instead.
+Outside a browser there is no runtime to default to, and `createCSSRuntime()` throws: pass one. `createHTMLEngineRuntime()` from `@open-pencil/html-engine` computes styles and layout with the same engine in Bun, Node, and the browser, so its results match a browser's computed styles, including UA defaults. `parseHTMLDocument()` parses markup into DesignDOM without computing any styles.
 
 ```ts
-import { createHeadlessCSSRuntime } from '@open-pencil/dom-css'
+import { createHTMLEngineRuntime } from '@open-pencil/html-engine'
 
-const runtime = createHeadlessCSSRuntime()
+const runtime = createHTMLEngineRuntime()
 ```
 
 ## HTML/CSS to scene graph
@@ -62,7 +62,8 @@ import { htmlToSceneGraph } from '@open-pencil/dom-css'
 const graph = await htmlToSceneGraph(
   '<article class="card"><h1>OpenPencil</h1></article>',
   {
-    cssText: '.card { display: flex; gap: 12px; width: 320px; padding: 24px; }'
+    cssText: '.card { display: flex; gap: 12px; width: 320px; padding: 24px; }',
+    runtime
   }
 )
 ```
@@ -188,15 +189,17 @@ const graph = await browserTailwindHTMLToSceneGraph(
 
 ### Bun/Node recipe
 
-In Bun or Node, the package can load Tailwind's default stylesheet through filesystem-backed module resolution. Without a DOM, this uses the headless CSS runtime; pass a browser runtime only when the process has a real `document` available, such as Playwright or a browser extension page:
+In Bun or Node, the package can load Tailwind's default stylesheet through filesystem-backed module resolution. Without a DOM, pass the HTML engine's runtime; a browser runtime works only when the process has a real `document` available, such as Playwright or a browser extension page:
 
 ```ts
 import { tailwindHTMLToSceneGraph } from '@open-pencil/dom-css'
+import { createHTMLEngineRuntime } from '@open-pencil/html-engine'
 
 const classes = ['flex', 'w-80', 'p-6', 'rounded-xl', 'bg-white']
 const graph = await tailwindHTMLToSceneGraph(
   `<article class="${classes.join(' ')}">OpenPencil</article>`,
-  classes
+  classes,
+  { runtime: createHTMLEngineRuntime() }
 )
 ```
 
@@ -206,7 +209,7 @@ const graph = await tailwindHTMLToSceneGraph(
 
 - DOM-shaped `DesignDocument` / `DesignElement` types
 - Browser-backed runtime adapter for native HTML parsing, serialization, and computed-style extraction
-- Headless runtime adapter with `parse5` HTML parsing and CSSOM-backed style computation for basic selectors, nested CSSOM rules, cascade order, inheritance, common shorthands, and simple custom-property/calc values
+- `parseHTMLDocument()` for `parse5` HTML parsing into DesignDOM without styles; style computation outside a browser comes from a runtime such as `@open-pencil/html-engine`
 - SceneGraph ⇄ DesignDOM conversion for simple HTML/CSS-shaped layouts, including flex alignment/wrapping, self alignment, absolute positioning basics, logical padding, independent side borders, constraints, clipping, opacity, typography, and shadows
 - JSX runtime helpers for DOM-shaped authoring into DesignDOM and SceneGraph
 - Tailwind v4 compiler adapter

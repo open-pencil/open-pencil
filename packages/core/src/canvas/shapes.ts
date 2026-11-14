@@ -1,9 +1,10 @@
 import type { Canvas, EmbindEnumEntity, Paint, Path } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { nodeCornerRadii } from '@open-pencil/scene-graph/corners'
+import { isWholeArc } from '@open-pencil/scene-graph/geometry'
 import { polygonOutline, type PolygonOutlineCommand } from '@open-pencil/scene-graph/polygon'
 import { shapeWithTextGeometry } from '@open-pencil/scene-graph/shape-with-text'
 
-import { isWholeArc } from '#core/geometry'
 import { vectorNetworkToPath, geometryBlobToPath } from '#core/vector'
 
 import { traceSmoothRect } from './paths/smooth-corners'
@@ -121,7 +122,7 @@ function nodeOutline(r: SkiaRenderer, node: SceneNode, spread: number): NodeOutl
       if (nodeHasSmoothCorners(node)) {
         return { kind: 'paths', paths: [makeSmoothRRectPath(r, node, spread)], owned: true }
       }
-      if (nodeHasRadius(node)) return { kind: 'rrect', rrect: makeRRectWithSpread(r, node, spread) }
+      if (nodeHasRadius(node)) return { kind: 'rrect', rrect: makeRRectWithSpread(node, spread) }
       return { kind: 'rect', rect: rect() }
   }
 }
@@ -207,55 +208,29 @@ export function makeShapeWithTextDetailsPath(r: SkiaRenderer, node: SceneNode): 
   return details.length > 0 ? outlinePath(r, details) : null
 }
 
-export function makeRRect(r: SkiaRenderer, node: SceneNode): Float32Array {
-  if (node.independentCorners) {
-    return new Float32Array([
-      0,
-      0,
-      node.width,
-      node.height,
-      node.topLeftRadius,
-      node.topLeftRadius,
-      node.topRightRadius,
-      node.topRightRadius,
-      node.bottomRightRadius,
-      node.bottomRightRadius,
-      node.bottomLeftRadius,
-      node.bottomLeftRadius
-    ])
-  }
-  return r.ck.RRectXY(
-    r.ck.LTRBRect(0, 0, node.width, node.height),
-    node.cornerRadius,
-    node.cornerRadius
-  )
+/** Skia's rounded rectangle for `node`, its corners fitted to its box as Figma draws them. */
+export function makeRRect(node: SceneNode): Float32Array {
+  return makeRRectWithSpread(node, 0)
 }
 
-export function makeRRectWithSpread(
-  r: SkiaRenderer,
-  node: SceneNode,
-  spread: number
-): Float32Array {
-  if (node.independentCorners) {
-    return new Float32Array([
-      0 - spread,
-      0 - spread,
-      node.width + spread,
-      node.height + spread,
-      Math.max(0, node.topLeftRadius + spread),
-      Math.max(0, node.topLeftRadius + spread),
-      Math.max(0, node.topRightRadius + spread),
-      Math.max(0, node.topRightRadius + spread),
-      Math.max(0, node.bottomRightRadius + spread),
-      Math.max(0, node.bottomRightRadius + spread),
-      Math.max(0, node.bottomLeftRadius + spread),
-      Math.max(0, node.bottomLeftRadius + spread)
-    ])
-  }
-  return r.ck.RRectXY(
-    r.ck.LTRBRect(0 - spread, 0 - spread, node.width + spread, node.height + spread),
-    Math.max(0, node.cornerRadius + spread),
-    Math.max(0, node.cornerRadius + spread)
+/**
+ * `node`'s rounded rectangle grown by `spread` on every side, each fitted corner grown with it.
+ */
+export function makeRRectWithSpread(node: SceneNode, spread: number): Float32Array {
+  const [tl, tr, br, bl] = nodeCornerRadii(node).map((radius) => Math.max(0, radius + spread))
+  return Float32Array.of(
+    -spread,
+    -spread,
+    node.width + spread,
+    node.height + spread,
+    tl,
+    tl,
+    tr,
+    tr,
+    br,
+    br,
+    bl,
+    bl
   )
 }
 

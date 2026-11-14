@@ -3,6 +3,7 @@ import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
 
 import {
   backdropReach,
@@ -111,7 +112,7 @@ export function chunkContext(graph: SceneGraph, node: SceneNode): RenderChunkCon
   for (let index = chain.length - 1; index >= 0; index--) {
     const ancestor = chain[index]
     matrix = Matrix.multiply(matrix, getNodeLocalMatrix(ancestor))
-    if (!ancestor.clipsContent) continue
+    if (!clipsChildren(ancestor)) continue
     const translated = matrix[0] === 1 && matrix[1] === 0 && matrix[3] === 0 && matrix[4] === 1
     if (translated && !nodeHasRadius(ancestor) && !nodeHasSmoothCorners(ancestor)) {
       const box = {

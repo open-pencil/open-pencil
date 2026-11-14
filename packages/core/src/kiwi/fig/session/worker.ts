@@ -1,6 +1,7 @@
 import { loadFigDataDecompressor } from '@open-pencil/kiwi/fig/container'
 
 import { serializeSceneGraph } from '#core/kiwi/fig/parse/transfer'
+import { applyFigGraphEdits } from '#core/kiwi/fig/population/edits'
 import { createFigArchiveOperations } from '#core/kiwi/fig/session/archive/access'
 import { sendStream } from '#core/kiwi/fig/session/port-stream'
 import type {
@@ -16,9 +17,11 @@ let port: MessagePort | undefined
 
 /** How often a page load reports that it is still advancing. */
 const PROGRESS_INTERVAL_MS = 1000
+/** New layers per piece of a page load: copying and applying one takes the main thread ~50 ms. */
+const POPULATION_CHUNK_LAYERS = 1000
 
-function respond(message: FigSessionResponse): void {
-  port?.postMessage(message)
+function respond(message: FigSessionResponse, transfer: Transferable[] = []): void {
+  port?.postMessage(message, transfer)
 }
 
 function populate(request: Extract<FigSessionRequest, { type: 'populate' }>): void {
@@ -31,11 +34,23 @@ function populate(request: Extract<FigSessionRequest, { type: 'populate' }>): vo
     reportedAt = now
     respond({ type: 'population-progress', requestId })
   })
+  // Sent in pieces, so the main thread copies and applies a large page in tasks short enough
+  // for the editor to keep responding between them.
+  const { created, ...changes } = result.delta
+  for (let start = 0; start < created.length; start += POPULATION_CHUNK_LAYERS) {
+    respond({
+      type: 'population-chunk',
+      requestId,
+      created: created.slice(start, start + POPULATION_CHUNK_LAYERS).map(([, node]) => node)
+    })
+  }
   respond({
     type: 'population-result',
-    requestId: request.requestId,
+    requestId,
     baseRevision: request.baseRevision,
-    ...result
+    populated: result.populated,
+    checkpoint: result.checkpoint,
+    delta: { ...changes, created: [] }
   })
 }
 
@@ -100,6 +115,10 @@ function handleRequest(request: FigSessionRequest): void {
       session = undefined
       return
     }
+    if (request.type === 'edits') {
+      if (session) applyFigGraphEdits(session.graph, request.edits)
+      return
+    }
     populate(request)
   } catch (error) {
     respond({
@@ -115,24 +134,26 @@ self.onmessage = async (event: MessageEvent<FigSessionOpenRequest>) => {
   port = request.port
   port.onmessage = (message: MessageEvent<FigSessionRequest>) => handleRequest(message.data)
   port.start()
-  // The worker copies the archive itself, so the main thread sends the file once.
-  const archiveBytes = request.buffer.slice(0)
   try {
     await loadFigDataDecompressor()
     const opened = openReaderSession(request.buffer, request.options?.populate)
     const archiveInfo = opened.session.archiveRecordInfo()
-    archive = createFigArchiveOperations(archiveBytes, () => archiveInfo)
+    archive = createFigArchiveOperations(request.buffer, () => archiveInfo)
     respond({ type: 'page-manifest', pages: opened.pages })
-    session =
+    const keepsSession =
       request.options?.populate === 'first-page' || request.options?.populate === 'none'
-        ? opened
-        : undefined
-    respond({
-      type: 'graph',
-      graph: serializeSceneGraph(opened.graph),
-      checkpoint: opened.checkpoint(),
-      archiveInfo
-    })
+    session = keepsSession ? opened : undefined
+    const mainThreadArchive = keepsSession ? request.buffer.slice(0) : undefined
+    respond(
+      {
+        type: 'graph',
+        graph: serializeSceneGraph(opened.graph),
+        checkpoint: opened.checkpoint(),
+        archiveInfo,
+        archive: mainThreadArchive
+      },
+      mainThreadArchive ? [mainThreadArchive] : []
+    )
   } catch (error) {
     respond({ type: 'graph', error: error instanceof Error ? error.message : String(error) })
   }

@@ -34,7 +34,7 @@ function findCopy(graph: SceneGraph, root: SceneNode, sourceId: string): SceneNo
   const queue = graph.getChildren(root.id)
   for (const node of queue) {
     if (sources(graph, node).has(sourceId)) return node
-    queue.push(...graph.getChildren(node.id))
+    for (const child of graph.getChildren(node.id)) queue.push(child)
   }
   return undefined
 }
@@ -224,7 +224,7 @@ function inheritCopyFields(build: Build, root: SceneNode): void {
     if (placement) placements.set(copy.id, placement)
     if (source && build.groupIds.has(source)) build.groupIds.add(copy.id)
     if (source && build.aroundIds.has(source)) build.aroundIds.add(copy.id)
-    copies.push(...graph.getChildren(copy.id))
+    for (const child of graph.getChildren(copy.id)) copies.push(child)
   }
 }
 

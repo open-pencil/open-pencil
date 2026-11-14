@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { minOf } from '@open-pencil/scene-graph/arrays'
 import { connectorRoute, createConnector, freeEndpoint } from '@open-pencil/scene-graph/connectors'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
@@ -95,8 +96,8 @@ describe('applyArrangement routes', () => {
 
     const all = [...layout.boxes.values()]
     const shift = {
-      x: origin.x - Math.min(...all.map((rect) => rect.x)),
-      y: origin.y - Math.min(...all.map((rect) => rect.y))
+      x: origin.x - minOf(all.map((rect) => rect.x)),
+      y: origin.y - minOf(all.map((rect) => rect.y))
     }
     let bent = 0
     for (const [edgeId, connectorId] of connectors) {
