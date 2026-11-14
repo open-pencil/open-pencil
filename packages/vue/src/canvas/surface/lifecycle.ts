@@ -171,8 +171,9 @@ export function createCanvasSurfaceManager({
     return true
   }
 
-  /** Visible tiles the renderer had drawn by the last frame. */
+  /** Visible tiles the renderer had drawn by the last frame; a new renderer counts from zero. */
   let lastTilesRendered = 0
+  let progressRenderer: SkiaRenderer | null = null
 
   /**
    * Reports the frame as shown once the whole visible scene is on it. A scene frame with tiles
@@ -191,6 +192,10 @@ export function createCanvasSurfaceManager({
     }
     // A scene still filling in reports the tiles it drew, so a wait for it can tell a large page
     // drawing slowly, as on a slow machine, from a canvas that stopped drawing.
+    if (renderer !== progressRenderer) {
+      progressRenderer = renderer
+      lastTilesRendered = 0
+    }
     const tilesRendered = renderer.tiledScene.visibleTilesRendered
     const drewTiles = tilesRendered > lastTilesRendered
     lastTilesRendered = tilesRendered
