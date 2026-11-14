@@ -27,6 +27,39 @@ export interface FlowGap {
   readonly tick: Vector
 }
 
+/** A layer's start and end across the flow. */
+function crossRange(node: SceneNode, child: SceneNode): [number, number] {
+  return node.layoutMode === 'HORIZONTAL'
+    ? [child.y, child.y + child.height]
+    : [child.x, child.x + child.width]
+}
+
+/**
+ * Where a gap spans across the flow: the content box, inside the paddings, or in a wrapped frame
+ * its own line, the layers whose cross ranges meet the first layer's; null for a pair on two lines.
+ */
+function gapCrossRange(
+  node: SceneNode,
+  children: readonly SceneNode[],
+  previous: SceneNode,
+  next: SceneNode
+): [number, number] | null {
+  if (node.layoutWrap !== 'WRAP') {
+    return node.layoutMode === 'HORIZONTAL'
+      ? [node.paddingTop, node.height - node.paddingBottom]
+      : [node.paddingLeft, node.width - node.paddingRight]
+  }
+  const [lineStart, lineEnd] = crossRange(node, previous)
+  const meets = ([start, end]: [number, number]) => start < lineEnd && end > lineStart
+  if (!meets(crossRange(node, next))) return null
+  let line: [number, number] = [lineStart, lineEnd]
+  for (const child of children) {
+    const range = crossRange(node, child)
+    if (meets(range)) line = [Math.min(line[0], range[0]), Math.max(line[1], range[1])]
+  }
+  return line
+}
+
 /** The gap between the flowed layers at `index` and `index + 1`, however much room it has. */
 function gapBetween(
   node: SceneNode,
@@ -36,12 +69,16 @@ function gapBetween(
   const previous = children.at(index)
   const next = children.at(index + 1)
   if (!previous || !next || index < 0) return null
-  const isRow = node.layoutMode === 'HORIZONTAL'
-  const crossStart = isRow ? node.paddingTop : node.paddingLeft
-  const crossEnd = isRow ? node.height - node.paddingBottom : node.width - node.paddingRight
+  const cross = gapCrossRange(node, children, previous, next)
+  if (!cross) return null
+  const [crossStart, crossEnd] = cross
   const crossMiddle = (crossStart + crossEnd) / 2
-  const start = isRow ? previous.x + previous.width : previous.y + previous.height
-  const end = isRow ? next.x : next.y
+  const isRow = node.layoutMode === 'HORIZONTAL'
+  // The facing edges, whichever way the flow runs: right to left, the first layer is on the right.
+  const start = isRow
+    ? Math.min(previous.x + previous.width, next.x + next.width)
+    : Math.min(previous.y + previous.height, next.y + next.height)
+  const end = isRow ? Math.max(previous.x, next.x) : Math.max(previous.y, next.y)
   const middle = (start + end) / 2
   return isRow
     ? {
@@ -58,7 +95,8 @@ function gapBetween(
 
 /**
  * The gaps between flowed layers that have room between them. Across the flow a gap spans the
- * content box, inside the paddings, and its tick sits in the middle of it (Figma desktop, live).
+ * content box, inside the paddings, or in a wrapped frame its own line, and its tick sits in the
+ * middle of it (Figma desktop, live).
  */
 export function flowGaps(node: SceneNode, graph: SceneGraph): FlowGap[] {
   const children = flowChildren(node, graph)

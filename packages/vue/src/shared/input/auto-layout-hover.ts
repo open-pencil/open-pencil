@@ -63,7 +63,7 @@ function resolveSpacingHover(
     const cross = isRow ? point.y : point.x
     const crossStart = isRow ? rect.y : rect.x
     const crossEnd = crossStart + (isRow ? rect.height : rect.width)
-    if (cross < crossStart || cross > crossEnd) return null
+    if (cross < crossStart || cross > crossEnd) continue
     if (isNearTick(point, tick)) return { nodeId: node.id, kind: 'spacing-value', index }
     const cursor = isRow ? point.x : point.y
     const start = isRow ? rect.x : rect.y

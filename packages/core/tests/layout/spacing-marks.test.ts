@@ -36,6 +36,41 @@ describe('auto layout spacing marks', () => {
     expect(paddingTick(frame, 'top')).toEqual({ x: 100, y: 40 })
   })
 
+  test('a row laid out right to left marks the same gap between the facing edges', () => {
+    const { graph, frame } = row()
+    const [first, second] = frame.childIds
+    graph.updateNode(first, { x: 120 })
+    graph.updateNode(second, { x: 0 })
+    expect(flowGaps(frame, graph)).toEqual([
+      { index: 0, rect: { x: 80, y: 80, width: 40, height: 80 }, tick: { x: 100, y: 120 } }
+    ])
+  })
+
+  // Figma desktop (2026-11-14): a wrapped row marks a gap across its own line only, 20 to 80 here,
+  // and none between the last layer of one line and the first of the next.
+  test("a wrapped row's gap spans its own line", () => {
+    const graph = new SceneGraph()
+    const frame = graph.createNode('FRAME', graph.getPages()[0].id, {
+      width: 208,
+      height: 168,
+      layoutMode: 'HORIZONTAL',
+      layoutWrap: 'WRAP',
+      itemSpacing: 8,
+      counterAxisSpacing: 8,
+      paddingTop: 20,
+      paddingLeft: 20,
+      paddingRight: 20,
+      paddingBottom: 20
+    })
+    graph.createNode('RECTANGLE', frame.id, { x: 20, y: 20, width: 80, height: 60 })
+    graph.createNode('RECTANGLE', frame.id, { x: 108, y: 20, width: 80, height: 60 })
+    graph.createNode('RECTANGLE', frame.id, { x: 20, y: 88, width: 168, height: 60 })
+    const node = graph.getNode(frame.id) ?? frame
+    expect(flowGaps(node, graph)).toEqual([
+      { index: 0, rect: { x: 100, y: 20, width: 8, height: 60 }, tick: { x: 104, y: 50 } }
+    ])
+  })
+
   test('layers with no room between them leave no gap', () => {
     const { graph, frame } = row()
     const [, second] = frame.childIds
