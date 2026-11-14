@@ -1,0 +1,366 @@
+---
+title: MCP Server
+description: Connect Claude Code, Cursor, Windsurf, and other MCP clients to OpenPencil for AI-assisted design inspection and editing.
+---
+
+# MCP Server
+
+OpenPencil includes an MCP (Model Context Protocol) server that lets AI coding tools — Claude Code, Cursor, Windsurf, etc. — read and modify designs through the running app.
+
+Two transports: **stdio** for MCP clients, and **Streamable HTTP** for browser extensions and scripts. On macOS and Linux, local clients prefer a private Unix domain socket; Windows and unavailable sockets fall back to localhost TCP.
+
+Tool definitions own native Valibot input schemas, execution/mutation metadata, capabilities, and optional interface exposure exclusions. Tools are included by default; `exposure: { mcp: false, ai: false, webmcp: false }` can exclude them independently from each adapter. Exposure does not bypass execution support or user permissions: WebMCP still requires supported execution and explicit Off, Inspect, or Edit access. AI and MCP consume the same schema through Standard Schema; WebMCP derives its JSON Schema from that input. Numeric strings are accepted consistently across adapters, while non-finite values are rejected. Programmatic integrations use MCP SDK v2; custom tools replace the former `params`/`ParamDef` contract with `input` and execution metadata.
+
+## Tool access settings
+
+Use **Settings → Tool access** (select **Local MCP**) to search and toggle the local server's tools, individually or by read-only/side-effect group. Group switches affect all group members, even during search. **Restore defaults** enables the configurable MCP tools again. Existing MCP preferences are preserved separately from the **Built-in AI** settings.
+
+Restart the MCP server, then reconnect stdio clients, to apply changes. For an externally managed server, restart its owning process. The list shows the tools the server offers, also while it is stopped; disabling a dedicated tool does not prevent an enabled script tool from performing the same operation. These switches are not a sandbox and do not configure remote MCP servers or WebMCP.
+
+## Share only the selection {#selection-scope}
+
+Turn on **Share only the selection** in **Settings → MCP → Local server** to let MCP clients read only the layers you select. Clients then get `get_selection`, `get_node`, `get_page_tree`, `describe`, and `export_image`, and no tools that edit, open files, list documents, or change settings. Every node a call names must be a selected layer or inside one; `describe` and `export_image` read the selection when given no IDs, and `get_page_tree` needs a `root_id` from the selection. `export_image` returns the image but cannot write it to a file. With nothing selected, calls fail and ask the user to select layers.
+
+The server enforces this on every call it sends to the app, including `POST /rpc` and stdio clients, so a client cannot widen it. Restart the MCP server to apply the change. For a server you start yourself, set `OPENPENCIL_MCP_SCOPE=selection`; a stdio client can also set it to limit itself while the server shares the whole document.
+
+## Browser-native WebMCP (experimental) {#webmcp}
+
+WebMCP is **off by default**. Open **Settings → MCP → WebMCP** and choose **Inspect** for read-only access or **Edit** to also allow scoped, undoable changes. **Off** unregisters all browser tools; changing modes revokes the previous registrations immediately. This preference is independent of local MCP authentication, tool switches, and outbound connections.
+
+For local testing, use a Chrome version exposing `document.modelContext`, enable `chrome://flags/#enable-webmcp-testing`, and relaunch the browser. Open a document, enable access in Settings, and connect a WebMCP-capable browser agent or the [Model Context Tool Inspector](https://developer.chrome.com/docs/ai/webmcp). Settings shows browser support and registration status. See the [Chrome WebMCP guide](https://developer.chrome.com/docs/ai/webmcp) for current availability.
+
+In supported browsers, OpenPencil registers the selected reviewed set of tools directly in the workspace. Browser agents can inspect nodes, JSX, variables, components, and design patterns, and edit existing layer properties and variable values without installing or connecting an MCP server.
+
+Tools target the document and page active when the call starts. Switching tabs does not redirect an in-flight call. Closing the workspace unregisters the tools. Tool inputs are validated and large inspection results require a narrower query. Oversized editing results are omitted with a committed-edit notice rather than reporting a successful edit as failed.
+
+Edits to geometry, paints, layout, text, and variable bindings/values commit synchronously as individual undoable operations. Failed edits roll back, and undo targets the original document/page even after a page switch. Cancellation prevents an edit from starting; cancellation after commit does not reverse it. Font loading finishes separately without holding a mutation transaction open. Atomic editing currently requires a document with at most 10,000 nodes and variables combined; this shared limit also applies when the same editing tools run through app AI/MCP.
+
+This surface does **not** expose structural creation/deletion, arbitrary JavaScript/JSX execution, image loading, filesystem operations, or credentials. Those tools retain their existing AI/MCP paths. WebMCP is an evolving browser proposal, not universally available; unsupported browsers continue to use OpenPencil normally. The stdio and HTTP integrations below remain independent.
+
+## Install
+
+```sh
+npm install -g @open-pencil/mcp
+```
+
+## Stdio (Claude Code, Cursor, etc.)
+
+The stdio server discovers the running OpenPencil app automatically. It prefers the app's Unix domain socket on macOS and Linux and falls back to localhost TCP when needed. Make sure the desktop app is open with a document loaded.
+
+### Claude Code
+
+Install the MCP package and register it with Claude Code:
+
+```sh
+npm install -g @open-pencil/mcp
+claude mcp add --scope user open-pencil -- openpencil-mcp
+```
+
+Check the connection:
+
+```sh
+claude mcp list
+```
+
+Claude Code asks before using each MCP tool unless you allow the server's tools. To auto-approve OpenPencil tools only, add this to `~/.claude/settings.json`:
+
+```json
+{
+  "permissions": {
+    "allow": ["mcp__open-pencil__*"]
+  }
+}
+```
+
+This is narrower than `--permission-mode bypassPermissions`, which skips prompts for every tool. You can also approve tools interactively from Claude's prompt by choosing “Yes, and don't ask again”.
+
+Example prompt:
+
+```text
+Use the open-pencil MCP server to inspect the current page and create a small hero section on the canvas.
+```
+
+### Other MCP clients
+
+Add to your MCP config (for example `.cursor/mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "open-pencil": {
+      "command": "openpencil-mcp"
+    }
+  }
+}
+```
+
+Or run from source without installing:
+
+::: code-group
+```json [Bun]
+{
+  "mcpServers": {
+    "open-pencil": {
+      "command": "bun",
+      "args": ["/path/to/open-pencil/packages/mcp/src/stdio.ts"]
+    }
+  }
+}
+```
+
+```json [Node.js]
+{
+  "mcpServers": {
+    "open-pencil": {
+      "command": "npx",
+      "args": ["tsx", "/path/to/open-pencil/packages/mcp/src/stdio.ts"]
+    }
+  }
+}
+```
+:::
+
+## HTTP
+
+For browser extensions, scripts, CI, or any HTTP client:
+
+```sh
+openpencil-mcp-http
+```
+
+Or from source: `bun packages/mcp/src/index.ts` / `npx tsx packages/mcp/src/index.ts`
+
+Security defaults:
+
+- Unix socket and discovery files are created with owner-only permissions on macOS and Linux.
+- TCP binds to `127.0.0.1` and uses port 7600 by default.
+- Authentication is enabled by default with a generated token stored in the private discovery file.
+- `eval` is disabled.
+- File operations are limited to `OPENPENCIL_MCP_ROOT` (defaults to the current working directory) and reject symlink escapes.
+- The browser app reaches those files through the server: `open_document` reads one, and `save_document` or `create_document` with a path writes a copy, so a document opened in the browser keeps saving where it did before.
+- Only the desktop app's own origin (`tauri://localhost` and its `http(s)://tauri.localhost` variants) is allowed by default, so a server you start yourself works from the app without extra configuration. Set `OPENPENCIL_MCP_CORS_ORIGIN` to a comma-separated list to allow other origins, such as a worktree dev server.
+
+Set `PORT=0` to disable TCP on macOS and Linux. Windows requires TCP. Set `OPENPENCIL_MCP_SOCKET` to override the Unix socket path, or `OPENPENCIL_MCP_DISCOVERY_PATH` to override the discovery file location. To provide a stable token, set `OPENPENCIL_MCP_AUTH_TOKEN`; an explicitly empty value disables authentication and should only be used with a trusted local socket.
+
+Endpoints are available over both active transports:
+
+- `GET /health` — server and app connection status; never returns the auth token.
+- `POST /rpc` — authenticated live-app automation.
+- `POST /mcp` — MCP Streamable HTTP. Sessions use the `mcp-session-id` header.
+
+## Workflow
+
+1. **Discover targets** — call `list_documents` first when more than one document or page may be open. It returns stable `document_id` and page IDs.
+2. **Open** — `open_document` to load an existing `.fig`, or `create_document` for a blank canvas. `list_recent_documents` lists recently opened files inside the MCP root to reopen. These return target metadata for the opened or created document.
+3. **Read** — `get_page_tree`, `find_nodes`, `get_node`, `list_pages`
+4. **Create** — `create_shape`, `render` (JSX)
+5. **Modify** — `set_fill`, `set_stroke`, `set_layout`, `update_node`, `set_effects`
+6. **Structure** — `reparent_node`, `group_nodes`, `clone_nodes`, `delete_nodes`
+7. **Save** — `save_document` to write back to `.fig`
+8. **Close** — `close_document` to close an open document tab. With unsaved changes it fails unless `unsaved` is `"save"` or `"discard"`; it never prompts in the app.
+
+`undo` and `redo` step back through the agent's own changes, and `activate_document` brings a tab to the front when the user should see it.
+
+Each MCP session shows in the app as an agent with a callsign, like the built-in chat: its cursor and outline sit on the layers each tool reads or changes, it rests after a quiet spell and leaves when the session ends, and people can follow it from their avatar. Collaborators in a shared room see it too.
+
+Most tools accept optional `document_id` and `page_id` fields. Pass them explicitly for agent workflows. A call that names no document works on the one the session last worked on: the active tab at its first call that works on a document, then whichever document it last named, opened, created, or activated, so another tab coming to the front does not move it. `list_documents` does not choose one. Once that document closes, such calls fail until one names a document. An app chat's agent works on the chat's document unless a call names another. `create_page` only creates a page; call `switch_page` separately when the workflow should change the active page.
+
+## AI Agent Skill
+
+Teach your AI coding agent to use OpenPencil tools:
+
+```sh
+npx skills add open-pencil/open-pencil
+```
+
+Works with Claude Code, Cursor, Windsurf, Codex, and any agent that supports [skills](https://skills.sh). The skill covers the CLI, MCP tools, JSX rendering, eval, and the running app's automation bridge.
+
+## Tools
+
+OpenPencil currently registers 100+ shared design tools, plus MCP-only document and prompt operations when applicable.
+
+### Document
+
+| Tool                    | Description                                                                                          |
+| ----------------------- | ---------------------------------------------------------------------------------------------------- |
+| `open_document`         | Open a `.fig` file for editing                                                                       |
+| `close_document`        | Close an open document tab; `unsaved: "save"` or `"discard"` decides what happens to unsaved changes |
+| `save_document`         | Save the current document to a `.fig` file                                                           |
+| `create_document`       | Create a new empty document                                                                          |
+| `list_documents`        | List open app documents/tabs and their pages                                                         |
+| `list_recent_documents` | List recently opened files inside the MCP root, newest first, up to the app's recent files limit     |
+| `activate_document`     | Bring a document tab to the front, optionally on a given page                                        |
+
+### History
+
+| Tool   | Description                                          |
+| ------ | ---------------------------------------------------- |
+| `undo` | Undo the newest change made through MCP or the CLI   |
+| `redo` | Redo the newest change undone through MCP or the CLI |
+
+The history is shared with the person in the editor. `undo` and `redo` refuse when the newest step was made in the editor, so an agent never reverts the user's work. Each editing tool call, and each `eval` script, is one undo step of everything it changed, on any page. Collaborators' edits and undo or redo in the editor never join a call's step. Edits made in the editor stay out of it too while the call waits on a download, such as a font, image, or page load; an edit made in the editor while an `eval` script waits on its own `fetch` or timer joins the script's step. Undoing a step that created a frame keeps layers someone else put into it: they move out to the frame's parent and keep their place on the canvas. A call the app has not answered after 20 seconds fails with a timeout and is cancelled in the app: one still waiting for its turn at the document never runs, and a script stops at the next font, image, or page load it waits on. A call that fails or is cancelled is rolled back: the document is left as it was, and no undo step is recorded.
+
+### Settings
+
+| Tool              | Description                                                                                                   |
+| ----------------- | ------------------------------------------------------------------------------------------------------------- |
+| `get_settings`    | Read editor settings: appearance, snapping, canvas rendering, recovery, AI chat, and design check preferences |
+| `update_settings` | Change settings with a partial object shaped like `get_settings` output; invalid keys and values are rejected |
+
+Settings tools never expose credentials, AI models, MCP connections, storage, or tool access. The available keys are listed in [Controlling the App](/developers/cli/app-control#settings).
+
+### Read
+
+| Tool                   | Description                                                                                                                                                      |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `get_selection`        | Get the selected nodes, with their direct children by default; `depth` sets how many levels                                                                      |
+| `get_page_tree`        | Get the full node tree of the current page                                                                                                                       |
+| `get_current_page`     | Get the current page name and ID                                                                                                                                 |
+| `get_node`             | Get detailed properties of a node by ID                                                                                                                          |
+| `find_nodes`           | Find nodes by name pattern and/or type                                                                                                                           |
+| `list_components`      | List all components in the document                                                                                                                              |
+| `list_pages`           | List all pages                                                                                                                                                   |
+| `list_variables`       | List design variables, optionally by name or type                                                                                                                |
+| `list_collections`     | List variable collections                                                                                                                                        |
+| `list_available_fonts` | List font families the current host can render                                                                                                                   |
+| `get_font_status`      | Report the faces used on the page, optionally of one family: loaded sources, active substitutions, why an installed face could not be loaded, and affected nodes |
+| `get_bounds`           | Get the bounding box of a node, or of everything on the current page                                                                                             |
+| `get_ancestors`        | Get ancestor chain of a node                                                                                                                                     |
+| `get_bindings`         | Get variable bindings on a node                                                                                                                                  |
+
+### Create
+
+| Tool                    | Description                                                                                     |
+| ----------------------- | ----------------------------------------------------------------------------------------------- |
+| `create_shape`          | Create a shape (`FRAME`, `RECTANGLE`, `ELLIPSE`, `TEXT`, `LINE`, `STAR`, `POLYGON`, `SECTION`)  |
+| `create_vector`         | Create a vector node from a path string                                                         |
+| `create_slice`          | Create an export slice                                                                          |
+| `create_connector`      | Join two layers, or a layer and a point, with a connector that follows them                     |
+| `create_page`           | Create a new page                                                                               |
+| `render`                | Render JSX to design nodes — create entire component trees in one call                          |
+| `create_instance`       | Create an instance of a component                                                               |
+| `create_slot`           | Make a frame inside a main component a slot                                                     |
+| `set_behaviour`         | Make a component behave as a Reka UI control, by its property and slot names; `null` removes it |
+| `get_behaviour`         | Read a component's behaviour and what it still misses; without an ID, list every kind           |
+| `convert_to_components` | Convert an existing node into a component in-place                                              |
+
+### Modify
+
+| Tool                  | Description                                                                                                                                                      |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `set_fill`            | Set fill color (hex)                                                                                                                                             |
+| `set_image_fill`      | Set an image fill from `image_data` (Base64 or a data URL), or from `image_path`, a file inside the MCP root                                                     |
+| `set_stroke`          | Set stroke color, weight, alignment                                                                                                                              |
+| `set_effects`         | Add shadow or blur effects                                                                                                                                       |
+| `update_node`         | Update position, size, rotation, opacity, corner radius, visibility, lock, name, text, font                                                                      |
+| `set_layout`          | Set auto-layout (flexbox) — direction, spacing, padding, alignment                                                                                               |
+| `set_constraints`     | Set resize constraints                                                                                                                                           |
+| `set_radius`          | Set corner radius (uniform or per-corner)                                                                                                                        |
+| `set_size_limits`     | Set min/max width and height constraints                                                                                                                         |
+| `set_text`            | Set text content of a `TEXT` node                                                                                                                                |
+| `set_font`            | Set font family and weight                                                                                                                                       |
+| `set_text_range`      | Set font properties on a character range                                                                                                                         |
+| `set_blend_mode`      | Set blend mode                                                                                                                                                   |
+| `set_text_properties` | Set text layout: alignment, auto-resize, text case, decoration, truncation                                                                                       |
+| `set_layout_child`    | Configure auto-layout child: sizing, grow, alignment, absolute positioning                                                                                       |
+| `replace_node`        | Replace a node with another node                                                                                                                                 |
+| `arrange`             | Spread overlapping layers apart, pack them, place them in a grid, row, or column, or lay them out along their connectors as a flow, tree, radial map, or network |
+
+### Structure
+
+| Tool            | Description                                                       |
+| --------------- | ----------------------------------------------------------------- |
+| `delete_nodes`  | Delete nodes                                                      |
+| `clone_nodes`   | Duplicate nodes                                                   |
+| `reparent_node` | Move a node into a different parent                               |
+| `set_selection` | Select nodes by ID                                                |
+| `group_nodes`   | Group nodes                                                       |
+| `ungroup_nodes` | Ungroup groups                                                    |
+| `flatten_nodes` | Flatten nodes into a single vector                                |
+| `boolean`       | Combine two or more nodes: union, subtract, intersect, or exclude |
+
+### Vector Path
+
+| Tool             | Description                                      |
+| ---------------- | ------------------------------------------------ |
+| `get_path`       | Get the path data of a vector node               |
+| `set_path`       | Set the path data of a vector node               |
+| `transform_path` | Scale, flip, or move the points of a vector path |
+
+### Export
+
+| Tool           | Description                                                          |
+| -------------- | -------------------------------------------------------------------- |
+| `export_image` | Export nodes as PNG, JPG, or WEBP. Returns base64-encoded image data |
+| `export_svg`   | Export nodes as SVG markup                                           |
+
+### Viewport
+
+| Tool           | Description                                                                  |
+| -------------- | ---------------------------------------------------------------------------- |
+| `get_viewport` | Get current viewport position and zoom level                                 |
+| `set_viewport` | Set viewport position and zoom                                               |
+| `zoom_to_fit`  | Scroll and zoom the view to fit layers on the current page, up to 100%       |
+
+### Variables
+
+| Tool                | Description                                                                |
+| ------------------- | -------------------------------------------------------------------------- |
+| `get_variable`      | Get a variable by ID or name                                               |
+| `create_variable`   | Create a new variable in a collection                                      |
+| `set_variable`      | Set a variable value in a mode                                             |
+| `delete_variable`   | Delete a variable                                                          |
+| `bind_variable`     | Bind a variable to a node property, or unbind it with a null `variable_id` |
+| `get_collection`    | Get a variable collection by ID or name                                    |
+| `create_collection` | Create a new variable collection                                           |
+| `delete_collection` | Delete a variable collection                                               |
+
+### Analyze
+
+| Tool                 | Description                                                                |
+| -------------------- | -------------------------------------------------------------------------- |
+| `analyze_colors`     | Analyze color palette usage across the document                            |
+| `analyze_typography` | Analyze font/size/weight distribution                                      |
+| `analyze_spacing`    | Analyze gap and padding values                                             |
+| `analyze_clusters`   | Detect repeated patterns (potential components)                            |
+| `lint`               | Check accessibility and consistency issues, with fixes and suggestions     |
+| `lint_fix`           | Apply safe lint fixes, and optionally the first suggestion of each finding |
+
+### Diff
+
+| Tool            | Description                                                           |
+| --------------- | --------------------------------------------------------------------- |
+| `diff_nodes`    | Patch that turns one node tree into another, as JSX attribute changes |
+| `preview_patch` | Preview the patch that setting JSX attributes on a node would produce |
+| `apply_patch`   | Apply a patch after checking the nodes still match its old values     |
+| `diff_pixels`   | Pixel diff between two rendered nodes, returned as an image           |
+
+### Comments
+
+| Tool               | Description                                                                                                        |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `list_comments`    | Read the comments left on the canvas, open ones unless asked for resolved too, with their layer, page, and replies |
+| `add_comment`      | Pin a comment on a layer or at a point of a page, in Markdown                                                      |
+| `reply_to_comment` | Answer a thread, which reopens it if it was resolved                                                               |
+| `resolve_comment`  | Resolve a thread once its feedback is addressed, or reopen it                                                      |
+
+### Statuses
+
+| Tool            | Description                                                                                                                |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `list_statuses` | List the document's statuses and the sections, frames, components, and instances that show one, optionally only one status |
+| `set_status`    | Give a layer one of the document's statuses by name, or clear it                                                           |
+
+### Navigation
+
+| Tool          | Description                    |
+| ------------- | ------------------------------ |
+| `switch_page` | Switch to a page by name or ID |
+
+### Escape Hatch
+
+| Tool   | Description                                          |
+| ------ | ---------------------------------------------------- |
+| `eval` | Execute JavaScript with full Figma Plugin API access |
+
+Note: `eval` is available over stdio, but disabled in HTTP mode for security.

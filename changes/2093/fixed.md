@@ -1,0 +1,1 @@
+- Switching pages in a large `.fig` after editing it no longer freezes the editor while the page loads, and neither does switching away from a page still loading (#2093).

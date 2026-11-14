@@ -76,6 +76,10 @@ For a server only its members use, set `deployment.local_editor = false`: the we
 
 Links the server sends point at its own address: `/documents/<id>` for a document, `/share/<id>` for a shared link, and `/invitations/<id>` for an invitation. An editor at another address, such as a development build, can still connect when its origin is in `deployment.trusted_origins`; people sign in there by approving a code, as in the desktop app.
 
+## Editor versions
+
+When a server update needs a newer editor, set `deployment.minimum_editor_version`, such as `"0.17.0"`. An older desktop app then shows a banner offering its update instead of connecting, and the server answers its requests with `426 Upgrade Required`; a browser tab on an older editor offers a reload. Requests that name no editor version, from the CLI or MCP, are served as before.
+
 ## Reverse proxy
 
 - Terminate TLS in front of the server and the object store, on stable hostnames.
@@ -96,7 +100,7 @@ Deployment administrators manage enrollment and users in the server's administra
 
 ## Terms and privacy
 
-The server shows no terms or privacy policy of its own: you run it, so the documents are yours to write. Add a `[legal]` table to link them. `terms_url` and `privacy_url` appear under the sign-in buttons and in the footer of the server's pages, `abuse_email` as a Report abuse link there, and `minimum_age` as a line at sign-up; editors read them from discovery too. With `require_acceptance = true`, which needs both `terms_url` and `terms_version`, each account accepts that version on its first sign-in, and again whenever you change it, before it can use the server; declining signs out. Until it accepts, the account can still download its documents and delete itself from the terms page, and nothing else. The server records which version each account accepted and when, so give each version that needs accepting again a value never used before: going back to an earlier one asks nobody who accepted it.
+The server shows no terms or privacy policy of its own: you run it, so the documents are yours to write. Add a `[legal]` table to link them. `terms_url` and `privacy_url` appear under the sign-in buttons and in the footer of the server's pages, `abuse_email` as a Report abuse link there and as the address a document's owner writes to when an administrator blocks it, and `minimum_age` as a line at sign-up; editors read them from discovery too. With `require_acceptance = true`, which needs both `terms_url` and `terms_version`, each account accepts that version on its first sign-in, and again whenever you change it, before it can use the server; declining signs out. Until it accepts, the account can still download its documents and delete itself from the terms page, and nothing else. The server records which version each account accepted and when, so give each version that needs accepting again a value never used before: going back to an earlier one asks nobody who accepted it.
 
 ## Community gallery
 

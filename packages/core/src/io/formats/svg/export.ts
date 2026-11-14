@@ -38,6 +38,7 @@ export { geometryBlobToSVGPath, nodeOutlinePath, type OutlineNode } from './path
 
 import type { SceneGraph, SceneNode, Fill, Stroke, VectorNetwork } from '@open-pencil/scene-graph'
 import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
 import {
   hasRegionFills,
   looseSegments,
@@ -263,7 +264,7 @@ function buildGroupAttrs(
   }
 
   let clipId: string | undefined
-  if (node.clipsContent && node.childIds.length > 0) {
+  if (clipsChildren(node) && node.childIds.length > 0) {
     clipId = nextDefId(ctx, 'clip')
     ctx.defs.push(svg('clipPath', { id: clipId }, boxOutlineElement(node, {})))
   }

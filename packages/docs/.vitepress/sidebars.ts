@@ -1,6 +1,6 @@
 import type { DefaultTheme } from 'vitepress'
 
-import type { ProgrammableLabels, SidebarLabels } from './labels.ts'
+import type { NavLabels, ProgrammableLabels, SidebarLabels } from './labels.ts'
 
 export const guideSidebar = (prefix: string, labels: SidebarLabels): DefaultTheme.SidebarItem[] => [
   {
@@ -60,63 +60,112 @@ export const userGuideSidebar = (
   }
 ]
 
+/** The Developers section's own pages, by the tool they cover. */
 export const programmableSidebar = (
   prefix: string,
   labels: ProgrammableLabels
 ): DefaultTheme.SidebarItem[] => [
+  { text: labels.overview, link: `${prefix}/developers/` },
   {
-    text: labels.overview,
+    text: labels.cli,
     items: [
-      { text: labels.overview, link: `${prefix}/programmable/` },
-      { text: labels.cli, link: '/reference/cli' },
-      { text: labels.inspecting, link: `${prefix}/programmable/cli/inspecting` },
-      { text: labels.exporting, link: `${prefix}/programmable/cli/exporting` },
-      { text: labels.analyzing, link: `${prefix}/programmable/cli/analyzing` },
-      { text: labels.comparing, link: '/programmable/cli/comparing' },
-      { text: labels.appControl, link: '/programmable/cli/app-control' },
-      { text: labels.scripting, link: `${prefix}/programmable/cli/scripting` },
-      { text: labels.jsxRenderer, link: `${prefix}/programmable/jsx-renderer` },
-      { text: 'Native JavaScript APIs', link: '/programmable/native-api' },
-      { text: 'Design authoring reference', link: '/reference/design-authoring' },
-      { text: labels.mcpServer, link: '/programmable/mcp-server' },
-      { text: labels.aiChat, link: `${prefix}/programmable/ai-chat` },
-      ...(!prefix
-        ? [
-            { text: 'Coding agents', link: '/programmable/coding-agents' },
-            {
-              text: 'BYOK Compatibility',
-              link: '/programmable/byok-provider-compatibility'
-            }
-          ]
-        : []),
-      { text: labels.collaboration, link: `${prefix}/programmable/collaboration` }
+      { text: labels.commandReference, link: '/reference/cli' },
+      { text: labels.inspecting, link: `${prefix}/developers/cli/inspecting` },
+      { text: labels.exporting, link: `${prefix}/developers/cli/exporting` },
+      { text: labels.analyzing, link: `${prefix}/developers/cli/analyzing` },
+      { text: labels.comparing, link: '/developers/cli/comparing' },
+      { text: labels.appControl, link: '/developers/cli/app-control' },
+      { text: labels.scripting, link: `${prefix}/developers/cli/scripting` }
+    ]
+  },
+  {
+    text: labels.aiAgents,
+    items: [
+      { text: labels.mcpServer, link: '/developers/mcp-server' },
+      { text: labels.jsxRenderer, link: `${prefix}/developers/jsx-renderer` },
+      { text: 'Design Authoring Reference', link: '/reference/design-authoring' }
+    ]
+  },
+  {
+    text: labels.libraries,
+    items: [
+      { text: 'Vue SDK', link: `${prefix}/developers/sdk/` },
+      { text: 'Native JavaScript APIs', link: '/developers/native-api' }
     ]
   }
 ]
 
-export const referenceSidebar = (
+/** Reference pages for people using the editor; the rest of the reference is for developers. */
+export const USER_REFERENCE_PAGES = [
+  '/reference/keyboard-shortcuts',
+  '/reference/figma-compatibility'
+]
+
+const userReferenceNames = USER_REFERENCE_PAGES.map((page) =>
+  page.slice('/reference/'.length)
+).join('|')
+
+/** The header item a page belongs to, as `activeMatch` patterns for a locale's `prefix`. */
+export const sectionMatch = (prefix: string) => ({
+  docs: `^${prefix}/(getting-started|overview/|user-guide/|reference/(${userReferenceNames}))`,
+  developers: `^${prefix}/(developers/|development/|reference/(?!${userReferenceNames}))`
+})
+
+/** The Docs section: the overview, the user guide, and the reference for using the editor. */
+export const docsSidebar = (
   prefix: string,
-  label: string,
-  labels: SidebarLabels
+  referenceLabel: string,
+  labels: SidebarLabels,
+  prog: ProgrammableLabels
 ): DefaultTheme.SidebarItem[] => [
+  ...guideSidebar(prefix, labels),
+  ...userGuideSidebar(prefix, labels),
   {
-    text: label,
+    text: labels.aiAndCollaboration,
     items: [
+      { text: prog.aiChat, link: `${prefix}/user-guide/ai-chat` },
+      // English only until translated; locales link to the canonical page.
+      { text: 'Coding Agents', link: '/user-guide/coding-agents' },
+      { text: 'Models and Providers', link: '/user-guide/models-and-providers' },
+      { text: prog.collaboration, link: `${prefix}/user-guide/collaboration` }
+    ]
+  },
+  {
+    text: referenceLabel,
+    items: [
+      // English only until translated; locales link to the canonical page.
       { text: 'Keyboard Shortcuts', link: '/reference/keyboard-shortcuts' },
-      { text: 'CLI', link: '/reference/cli' },
-      { text: 'Node Types', link: '/reference/node-types' },
-      { text: 'Scene Graph', link: '/reference/scene-graph' },
-      { text: labels.figmaMatrix, link: `${prefix}/reference/figma-compatibility` },
-      ...(!prefix ? [{ text: 'DOM/CSS Mapping', link: '/reference/dom-css-mapping' }] : []),
-      { text: 'File Format', link: '/reference/file-format' }
+      { text: labels.figmaMatrix, link: `${prefix}/reference/figma-compatibility` }
     ]
   }
+]
+
+/** The Developers section: automation, the reference for code, and contributing. */
+export const developersSidebar = (
+  prefix: string,
+  nav: Pick<NavLabels, 'reference' | 'development'>,
+  labels: SidebarLabels,
+  prog: ProgrammableLabels
+): DefaultTheme.SidebarItem[] => [
+  ...programmableSidebar(prefix, prog),
+  {
+    text: nav.reference,
+    items: [
+      { text: 'Node Types', link: '/reference/node-types' },
+      { text: 'Scene Graph', link: '/reference/scene-graph' },
+      ...(!prefix ? [{ text: 'DOM/CSS Mapping', link: '/reference/dom-css-mapping' }] : []),
+      { text: 'File Format', link: '/reference/file-format' },
+      { text: prog.urlScheme, link: `${prefix}/developers/url-scheme` }
+    ]
+  },
+  ...developmentSidebar('', nav.development, labels, prog.internals)
 ]
 
 export const developmentSidebar = (
   prefix: string,
   label: string,
-  labels: SidebarLabels
+  labels: SidebarLabels,
+  internalsLabel: string
 ): DefaultTheme.SidebarItem[] => [
   {
     text: label,
@@ -126,19 +175,24 @@ export const developmentSidebar = (
       { text: labels.architecture, link: `${prefix}/development/architecture` },
       { text: '.fig Reader Architecture', link: '/development/fig-reader' },
       { text: labels.techStack, link: `${prefix}/development/tech-stack` },
-      ...(!prefix
-        ? [
-            { text: 'Roadmap', link: '/development/roadmap' },
-            { text: 'AI Chat Replies', link: '/development/ai-chat' },
-            { text: 'Behaviours and Preview', link: '/development/behaviours-and-preview' },
-            { text: 'Cloud Architecture', link: '/development/cloud' },
-            { text: 'Demo Tour', link: '/development/demo-tour' },
-            { text: 'Navigation Performance', link: '/development/navigation-performance' },
-            { text: 'Renderer Lifecycle', link: '/development/renderer-lifecycle' },
-            { text: 'Renderer Profiler', link: '/development/renderer-profiler' },
-            { text: 'Vector Conversion', link: '/development/vector-conversion' }
-          ]
-        : [])
+      { text: 'Testing a Model Provider', link: '/development/testing-model-providers' },
+      { text: 'Roadmap', link: '/development/roadmap' }
+    ]
+  },
+  {
+    // How parts of the editor work inside, for whoever changes them; English only.
+    text: internalsLabel,
+    collapsed: true,
+    items: [
+      { text: 'AI Chat Replies', link: '/development/ai-chat' },
+      { text: 'Behaviours and Preview', link: '/development/behaviours-and-preview' },
+      { text: 'Cloud Architecture', link: '/development/cloud' },
+      { text: 'Demo Tour', link: '/development/demo-tour' },
+      { text: 'Document Identity', link: '/development/document-identity' },
+      { text: 'Navigation Performance', link: '/development/navigation-performance' },
+      { text: 'Renderer Lifecycle', link: '/development/renderer-lifecycle' },
+      { text: 'Renderer Profiler', link: '/development/renderer-profiler' },
+      { text: 'Vector Conversion', link: '/development/vector-conversion' }
     ]
   }
 ]

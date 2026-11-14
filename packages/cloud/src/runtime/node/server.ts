@@ -87,7 +87,10 @@ async function startConfiguredServer(
     invitationOutbox,
     transport: emailTransport
   } = createNodeTransactionalEmailRuntime(config, database)
-  const { auth, enrollment } = createCloudAuthenticationRuntime(config, database, email)
+  // The adapter that serves for as long as the server runs checks the schema once it starts.
+  const { auth, enrollment } = createCloudAuthenticationRuntime(config, database, email, {
+    validateSchema: true
+  })
   const policy = createConfiguredCloudPolicy(config, database)
   // Cleanup sweeps may run longer than a request should, so they have a connection of their own
   // without the statement timeout.

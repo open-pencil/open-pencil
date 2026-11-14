@@ -302,7 +302,7 @@ const { appMenu, canvasMenu } = useMenuModel()
 
 For fuller guides and API docs, see the documentation site:
 
-- `packages/docs/programmable/sdk/`
+- `packages/docs/developers/sdk/`
 
 ## Example app
 

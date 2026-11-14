@@ -91,7 +91,9 @@ export const cloudDeploymentConfigSchema = v.strictObject({
     trusted_origins: v.optional(v.array(urlSchema), []),
     // The server's editor works with files on this device without signing in to the server.
     local_editor: v.optional(v.boolean(), true),
-    listing: v.optional(v.strictObject({ minimum_editor_version: cloudEditorVersionSchema }))
+    listing: v.optional(v.strictObject({ minimum_editor_version: cloudEditorVersionSchema })),
+    // Older editors ask to be updated, and the server refuses their requests.
+    minimum_editor_version: v.optional(cloudEditorVersionSchema)
   }),
   database: v.optional(
     v.strictObject({ url: defaultReference(DEFAULT_SECRET_NAMES.databaseURL) }),

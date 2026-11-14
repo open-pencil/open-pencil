@@ -62,9 +62,13 @@ describe('discoverCloud', () => {
 })
 
 describe('discovery failures', () => {
-  async function reason(fetch: () => Promise<Response>, url = 'https://cloud.example.com') {
+  async function reason(
+    fetch: () => Promise<Response>,
+    url = 'https://cloud.example.com',
+    editorVersion?: string
+  ) {
     try {
-      await discoverCloud(url, { fetch })
+      await discoverCloud(url, { fetch, editorVersion })
     } catch (error) {
       return error instanceof CloudClientError ? error.reason : 'other'
     }
@@ -80,9 +84,20 @@ describe('discovery failures', () => {
     expect(await reason(async () => Response.json({ name: 'something else' }))).toBe('not-cloud')
   })
 
-  test('tell a server on another protocol version from one that is not Cloud', async () => {
+  test('tell which side is behind when the server speaks another protocol version', async () => {
     expect(await reason(async () => Response.json({ ...discovery, protocolVersion: '2' }))).toBe(
-      'outdated'
+      'editor-outdated'
     )
+    expect(await reason(async () => Response.json({ ...discovery, protocolVersion: '0' }))).toBe(
+      'server-outdated'
+    )
+  })
+
+  test('refuse an editor older than the server’s minimum', async () => {
+    const gated = async () => Response.json({ ...discovery, minimumEditorVersion: '0.17.0' })
+    const url = 'https://cloud.example.com'
+    expect(await reason(gated, url, '0.16.4')).toBe('editor-outdated')
+    expect(await reason(gated, url, '0.17.0')).toBe('none')
+    expect(await reason(gated, url)).toBe('none')
   })
 })

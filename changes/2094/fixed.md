@@ -1,0 +1,6 @@
+- Component sets clip their variants on the canvas, and a section never clips, in hit testing and SVG and PPTX export as on the canvas, as in Figma (#2094).
+- Corners too large for their rectangle draw, export to SVG and hit-test at the radii Figma draws, each scaled by the tighter of its two edges (#2094).
+- A stroke with sides of their own weights bounds exports and shadows by each side's weight, and setting one side from a script keeps the others at the stroke's weight, as in Figma (#2094).
+- An ellipse swept less than 0.001 rad short of a whole turn draws, hit-tests and exports as a whole ellipse, as in Figma (#2094).
+- A drop shadow's spread grows the export bounds only of rectangles, ellipses and frames, and a layer whose paints are all transparent exports nothing, as in Figma (#2094).
+- Layout guides read the same on the canvas, in scripts and in export; a `.fig` guide without an alignment is dropped and one without a color is transparent, as Figma reads them (#2094).

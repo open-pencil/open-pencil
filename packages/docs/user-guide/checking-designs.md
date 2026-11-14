@@ -59,4 +59,4 @@ The settings menu in the Lint panel switches between rule presets:
 
 Turn off a single rule from its group's menu. **Turn on turned-off rules** in the settings menu brings them back. Presets and turned-off rules are saved between sessions.
 
-The same rules run from the command line with `openpencil lint`; see [Inspecting Files](/programmable/cli/inspecting).
+The same rules run from the command line with `openpencil lint`; see [Inspecting Files](/developers/cli/inspecting).

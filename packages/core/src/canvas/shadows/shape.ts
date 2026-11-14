@@ -1,18 +1,25 @@
 import type { Canvas, Path } from '@open-pencil/canvaskit'
 import type { BlendMode, Effect, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import { blurSigma, drawnBlurRadius } from '@open-pencil/scene-graph/geometry'
+import {
+  blurSigma,
+  drawnBlurRadius,
+  borderWeights,
+  strokeAlignShare,
+  isWholeArc
+} from '@open-pencil/scene-graph/geometry'
+import { paintShows } from '@open-pencil/scene-graph/paints'
 
 import { setPaintBlendMode } from '#core/canvas/blend'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { drawOutline, makeNodeShapePath, nodeHasRadius, withNodeOutline } from '#core/canvas/shapes'
-import { sideStrokeRRects, strokeAlignShare } from '#core/canvas/strokes/sides'
+import { sideStrokeRRects } from '#core/canvas/strokes/sides'
 
-import { fillsCastShadow, paintCastsShadow } from './silhouette'
+import { fillsCastShadow } from './silhouette'
 
 /** Whether every region of a vector casts a shadow, from its own paints or the layer's. */
 function regionsCastShadow(node: SceneNode): boolean {
   const regions = node.vectorNetwork?.regions ?? []
-  return regions.every((region) => (region.fills ?? node.fills).some(paintCastsShadow))
+  return regions.every((region) => (region.fills ?? node.fills).some(paintShows))
 }
 
 /**
@@ -26,7 +33,7 @@ export function castsFromOwnShape(node: SceneNode): boolean {
     !isPartialArc(node) &&
     regionsCastShadow(node) &&
     fillsCastShadow(node) &&
-    node.strokes.every((stroke) => !paintCastsShadow(stroke) || stroke.align === 'INSIDE')
+    node.strokes.every((stroke) => !paintShows(stroke) || stroke.align === 'INSIDE')
   )
 }
 
@@ -53,7 +60,7 @@ const OUTLINE_SHAPE_TYPES: ReadonlySet<SceneNode['type']> = new Set<SceneNode['t
 function isPartialArc(node: SceneNode): boolean {
   const arc = node.type === 'ELLIPSE' ? node.arcData : null
   if (!arc) return false
-  return arc.innerRadius > 0 || Math.abs(arc.endingAngle - arc.startingAngle) < 2 * Math.PI - 1e-6
+  return arc.innerRadius > 0 || !isWholeArc(arc)
 }
 
 /** Distances from each side of a rectangle: top, right, bottom, left. */
@@ -88,18 +95,13 @@ function sideOutline([top, right, bottom, left]: Sides, align: Stroke['align']):
  */
 export function regularStrokeOutline(node: SceneNode, spread: number): StrokeOutline | null {
   if (!OUTLINE_SHAPE_TYPES.has(node.type) || isPartialArc(node)) return null
-  const strokes = node.strokes.filter(paintCastsShadow)
+  const strokes = node.strokes.filter(paintShows)
   if (strokes.length === 0) return evenOutline(0, 'INSIDE')
   const [stroke] = strokes
   if (strokes.length > 1 || stroke.dashPattern?.length) return null
   const sharp = node.type !== 'ELLIPSE' && !nodeHasRadius(node)
   if (node.independentStrokeWeights && node.type !== 'ELLIPSE') {
-    const sides: Sides = [
-      node.borderTopWeight,
-      node.borderRightWeight,
-      node.borderBottomWeight,
-      node.borderLeftWeight
-    ]
+    const sides: Sides = borderWeights(node)
     if (sides.every((weight) => weight === sides[0])) return evenOutline(sides[0], stroke.align)
     if (spread !== 0) return evenOutline(node.strokeWeight, stroke.align)
     return sideOutline(sides, stroke.align)

@@ -46,6 +46,7 @@ const rawCloudServerConfigSchema = v.object({
   deployment: v.picklist(['official', 'self-hosted']),
   publicURL: httpURLSchema,
   listingMinimumEditorVersion: v.optional(cloudEditorVersionSchema),
+  minimumEditorVersion: v.optional(cloudEditorVersionSchema),
   relayURL: v.optional(websocketURLSchema),
   technicalLimits: v.optional(
     v.object({

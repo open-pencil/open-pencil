@@ -45,8 +45,11 @@ export type CloudAuthRuntimeOptions = {
   email?: AuthenticationEmailService
   runInBackground?: (promise: Promise<unknown>) => void
   /**
-   * Whether Better Auth checks the database schema when it starts. Runtimes that start it for
-   * every request turn this off; `migrateCloudDatabase` has already checked the recorded version.
+   * Whether Better Auth checks the database schema when it starts, off unless asked for. The check
+   * runs in the background and nothing waits for it, so an adapter made briefly, as for one
+   * request, for migrating, or in a test, would leave it querying a database being closed;
+   * `migrateCloudDatabase` has already checked the recorded version. A server's long-lived
+   * adapter turns it on.
    */
   validateSchema?: boolean
 }
@@ -133,7 +136,7 @@ export function createBetterAuthAdapter(
     },
     session: { freshAge: ACCOUNT_SECURITY_FRESH_AGE_SECONDS },
     advanced: {
-      database: { generateId: 'uuid', validateSchema: runtime.validateSchema },
+      database: { generateId: 'uuid', validateSchema: runtime.validateSchema ?? false },
       ipAddress: {
         ipAddressHeaders: config.authTrustedIPHeaders,
         trustedProxies: config.authTrustedProxies

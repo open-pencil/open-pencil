@@ -883,11 +883,11 @@ export class SkiaRenderer {
   }
 
   makeRRect(node: SceneNode): Float32Array {
-    return Shapes.makeRRect(this, node)
+    return Shapes.makeRRect(node)
   }
 
   makeRRectWithSpread(node: SceneNode, spread: number): Float32Array {
-    return Shapes.makeRRectWithSpread(this, node, spread)
+    return Shapes.makeRRectWithSpread(node, spread)
   }
 
   getCachedBlur(sigma: number): ImageFilter | null {

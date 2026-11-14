@@ -43,6 +43,21 @@ export function resolveFillColor(
   return resolveFillColorInfo(fill, fillIndex, node, graph, presentation).color
 }
 
+/**
+ * A gradient stop's color as drawn. Bindings and OkHCL data belong to a solid paint's one color, so
+ * a stop only goes through color management, whatever paint list or index its gradient sits at.
+ */
+export function resolveGradientStopColor(
+  color: Color,
+  graph: SceneGraph,
+  presentation: RenderColorSpace
+): Color {
+  return resolveRGBAForPreview(color, {
+    documentColorSpace: graph.documentColorSpace,
+    colorSpace: presentation
+  }).color
+}
+
 export function resolveStrokeColorInfo(
   stroke: Stroke,
   strokeIndex: number,
