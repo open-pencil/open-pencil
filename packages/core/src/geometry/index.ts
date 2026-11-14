@@ -73,3 +73,13 @@ export {
 export type { CornerPosition, HandlePosition, TransformZone } from './transform-zones'
 export type { RotationHandleLayout } from './selection'
 export type { RotationPreview, ViewportTransform } from './types'
+export {
+  screenCenterInWorld,
+  screenToWorld,
+  screenXToWorld,
+  screenYToWorld,
+  worldRectToScreen,
+  worldToScreen,
+  worldXToScreen,
+  worldYToScreen
+} from './viewport'

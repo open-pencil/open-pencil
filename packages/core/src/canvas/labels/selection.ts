@@ -15,6 +15,7 @@ import {
   panelNumber,
   selectionBounds
 } from '#core/geometry'
+import { worldXToScreen, worldYToScreen } from '#core/geometry/viewport'
 
 import { measureGlyphWidth } from './paragraph-cache'
 import { frameLabelPlacement, labelScreenMatrix } from './transform'
@@ -104,9 +105,9 @@ function drawMultiSelectionSize(
   sizeFont: NonNullable<SkiaRenderer['chromeFonts']['size']>
 ): void {
   const sizeText = `${panelNumber(maxX - minX)} × ${panelNumber(maxY - minY)}`
-  const sx1 = minX * r.zoom + r.panX
-  const sx2 = maxX * r.zoom + r.panX
-  const sy2 = maxY * r.zoom + r.panY
+  const sx1 = worldXToScreen(r, minX)
+  const sx2 = worldXToScreen(r, maxX)
+  const sy2 = worldYToScreen(r, maxY)
   const smx = (sx1 + sx2) / 2
   const allComponents = nodes.length > 0 && nodes.every((n) => r.isInComponent(n, graph))
   const pillColor = allComponents ? r.compColor() : r.selColor()

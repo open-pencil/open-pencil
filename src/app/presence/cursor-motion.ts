@@ -1,4 +1,5 @@
 import type { PresenceCursor } from '@open-pencil/core/canvas'
+import { screenToWorld } from '@open-pencil/core/geometry'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { EditorStore } from '@/app/editor/active-store'
@@ -92,11 +93,7 @@ export function showCursors(store: EditorStore, targets: TrackedCursor[]): void 
 
 /** The world point at the center of the view. */
 function viewCenter(store: EditorStore): Vector {
-  const screen = store.viewportCanvasCenter()
-  return {
-    x: (screen.x - store.state.panX) / store.state.zoom,
-    y: (screen.y - store.state.panY) / store.state.zoom
-  }
+  return screenToWorld(store.state, store.viewportCanvasCenter())
 }
 
 /**

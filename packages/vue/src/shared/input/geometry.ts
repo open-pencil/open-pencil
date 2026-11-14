@@ -15,7 +15,8 @@ import {
   type HandlePosition,
   type SceneGeometry,
   type RotationPreview,
-  type TransformZone
+  type TransformZone,
+  worldRectToScreen
 } from '@open-pencil/core/geometry'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { svgDataURL } from '@open-pencil/scene-graph/images'
@@ -89,12 +90,8 @@ export function getScreenRect(
   panX: number,
   panY: number
 ) {
-  return {
-    x1: absX * zoom + panX,
-    y1: absY * zoom + panY,
-    x2: (absX + w) * zoom + panX,
-    y2: (absY + h) * zoom + panY
-  }
+  const screen = worldRectToScreen({ zoom, panX, panY }, { x: absX, y: absY, width: w, height: h })
+  return { x1: screen.x, y1: screen.y, x2: screen.x + screen.width, y2: screen.y + screen.height }
 }
 
 export function getHandlePositions(

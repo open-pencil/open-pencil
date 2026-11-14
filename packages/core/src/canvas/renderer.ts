@@ -16,6 +16,7 @@ import {
   IS_BROWSER
 } from '#core/constants'
 import type { EditorState } from '#core/editor/types'
+import { screenToWorld } from '#core/geometry/viewport'
 import { RenderProfiler } from '#core/profiler'
 import type { FontResolutionSnapshot } from '#core/text/resolver'
 
@@ -779,10 +780,7 @@ export class SkiaRenderer {
   }
 
   screenToCanvas(sx: number, sy: number): Vector {
-    return {
-      x: (sx - this.panX) / this.zoom,
-      y: (sy - this.panY) / this.zoom
-    }
+    return screenToWorld(this, { x: sx, y: sy })
   }
 
   /**

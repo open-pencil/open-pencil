@@ -18,6 +18,12 @@ import {
   RULER_MAJOR_TOLERANCE
 } from '#core/constants'
 import { selectionBounds, type RotationPreview } from '#core/geometry'
+import {
+  screenXToWorld,
+  screenYToWorld,
+  worldXToScreen,
+  worldYToScreen
+} from '#core/geometry/viewport'
 
 import { cachedGlyphWidth } from './labels/paragraph-cache'
 import type { SkiaRenderer } from './renderer'
@@ -38,10 +44,10 @@ function getSelectionScreenBounds(
 ): SelectionScreenBounds {
   const b = selectionBounds(r.sceneGeometry(graph, preview), selNodes)
   return {
-    sx1: b.x * r.zoom + r.panX,
-    sx2: (b.x + b.width) * r.zoom + r.panX,
-    sy1: b.y * r.zoom + r.panY,
-    sy2: (b.y + b.height) * r.zoom + r.panY
+    sx1: worldXToScreen(r, b.x),
+    sx2: worldXToScreen(r, b.x + b.width),
+    sy1: worldYToScreen(r, b.y),
+    sy2: worldYToScreen(r, b.y + b.height)
   }
 }
 
@@ -59,14 +65,14 @@ function drawHorizontalRulerTicks(
 
   canvas.save()
   canvas.clipRect(r.ck.LTRBRect(R, 0, vw, R), r.ck.ClipOp.Intersect, false)
-  const worldLeft = -r.panX / r.zoom
-  const worldRight = (vw - r.panX) / r.zoom
+  const worldLeft = screenXToWorld(r, 0)
+  const worldRight = screenXToWorld(r, vw)
   const startX = Math.floor(worldLeft / step) * step
 
   // Every tick is one line segment in a single draw; only the labels are drawn one by one.
   const ticks: number[] = []
   for (let wx = startX; wx <= worldRight; wx += minorStep) {
-    const sx = wx * r.zoom + r.panX
+    const sx = worldXToScreen(r, wx)
     if (sx < R) continue
     const isMajor = Math.abs(wx % step) < RULER_MAJOR_TOLERANCE
     const tickLen = isMajor ? R * RULER_MAJOR_TICK : R * RULER_MINOR_TICK
@@ -99,13 +105,13 @@ function drawVerticalRulerTicks(
 
   canvas.save()
   canvas.clipRect(r.ck.LTRBRect(0, R, R, vh), r.ck.ClipOp.Intersect, false)
-  const worldTop = -r.panY / r.zoom
-  const worldBottom = (vh - r.panY) / r.zoom
+  const worldTop = screenYToWorld(r, 0)
+  const worldBottom = screenYToWorld(r, vh)
   const startY = Math.floor(worldTop / step) * step
 
   const ticks: number[] = []
   for (let wy = startY; wy <= worldBottom; wy += minorStep) {
-    const sy = wy * r.zoom + r.panY
+    const sy = worldYToScreen(r, wy)
     if (sy < R) continue
     const isMajor = Math.abs(wy % step) < RULER_MAJOR_TOLERANCE
     const tickLen = isMajor ? R * RULER_MAJOR_TICK : R * RULER_MINOR_TICK
@@ -168,8 +174,8 @@ export function drawRulers(
       canvas,
       font,
       [
-        rulerEdgeLabel((selBounds.sx1 - r.panX) / r.zoom),
-        rulerEdgeLabel((selBounds.sx2 - r.panX) / r.zoom)
+        rulerEdgeLabel(screenXToWorld(r, selBounds.sx1)),
+        rulerEdgeLabel(screenXToWorld(r, selBounds.sx2))
       ],
       [Math.max(R, selBounds.sx1), selBounds.sx2],
       'horizontal'
@@ -179,8 +185,8 @@ export function drawRulers(
       canvas,
       font,
       [
-        rulerEdgeLabel((selBounds.sy1 - r.panY) / r.zoom),
-        rulerEdgeLabel((selBounds.sy2 - r.panY) / r.zoom)
+        rulerEdgeLabel(screenYToWorld(r, selBounds.sy1)),
+        rulerEdgeLabel(screenYToWorld(r, selBounds.sy2))
       ],
       [Math.max(R, selBounds.sy1), selBounds.sy2],
       'vertical'

@@ -5,6 +5,7 @@ import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import { ZOOM_DIVISOR, ZOOM_MAX, ZOOM_MIN, ZOOM_SCALE_MAX, ZOOM_SCALE_MIN } from '#core/constants'
 import type { ViewportTransform } from '#core/geometry/types'
+import { screenToWorld, worldRectToScreen } from '#core/geometry/viewport'
 import { emitNavigationTrace } from '#core/profiler'
 
 import type { EditorContext } from './types'
@@ -109,10 +110,7 @@ export function createViewportActions(ctx: EditorContext) {
   }
 
   function screenToCanvas(sx: number, sy: number) {
-    return {
-      x: (sx - ctx.state.panX) / ctx.state.zoom,
-      y: (sy - ctx.state.panY) / ctx.state.zoom
-    }
+    return screenToWorld(ctx.state, { x: sx, y: sy })
   }
 
   function setZoomAroundPoint(level: number, centerX: number, centerY: number) {
@@ -235,17 +233,18 @@ export function createViewportActions(ctx: EditorContext) {
     if (nodes.length === 0) return
     const bounds = computeBounds(nodes.map((node) => getAxisAlignedWorldBounds(node, ctx.graph)))
     const { width, height } = ctx.getViewportSize()
-    const { zoom, panX, panY } = ctx.state
+    const { zoom } = ctx.state
     const fits =
       bounds.width * zoom <= width - margin * 2 && bounds.height * zoom <= height - margin * 2
     if (!fits) {
       zoomToBounds(bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height)
       return
     }
-    const left = bounds.x * zoom + panX
-    const top = bounds.y * zoom + panY
-    const right = left + bounds.width * zoom
-    const bottom = top + bounds.height * zoom
+    const screen = worldRectToScreen(ctx.state, bounds)
+    const left = screen.x
+    const top = screen.y
+    const right = left + screen.width
+    const bottom = top + screen.height
     const visible =
       left >= margin && top >= margin && right <= width - margin && bottom <= height - margin
     if (visible) return

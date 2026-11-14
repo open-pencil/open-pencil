@@ -13,6 +13,7 @@ import {
   MEASUREMENT_PILL_RADIUS,
   MEASUREMENT_TEXT_BASELINE
 } from '#core/constants'
+import { worldXToScreen, worldYToScreen } from '#core/geometry/viewport'
 
 import { outlineNode } from './outline'
 
@@ -194,15 +195,15 @@ export function drawMeasurementSegment(
   )
   r.auxStroke.setPathEffect(null)
   if (segment.axis === 'x') {
-    const x1 = segment.from * r.zoom + r.panX
-    const x2 = segment.to * r.zoom + r.panX
-    const y = segment.cross * r.zoom + r.panY
+    const x1 = worldXToScreen(r, segment.from)
+    const x2 = worldXToScreen(r, segment.to)
+    const y = worldYToScreen(r, segment.cross)
     canvas.drawLine(x1, y, x2, y, r.auxStroke)
     drawPill(r, canvas, String(Math.round(segment.value)), center(x1, x2 - x1), y)
   } else {
-    const x = segment.cross * r.zoom + r.panX
-    const y1 = segment.from * r.zoom + r.panY
-    const y2 = segment.to * r.zoom + r.panY
+    const x = worldXToScreen(r, segment.cross)
+    const y1 = worldYToScreen(r, segment.from)
+    const y2 = worldYToScreen(r, segment.to)
     canvas.drawLine(x, y1, x, y2, r.auxStroke)
     drawPill(r, canvas, String(Math.round(segment.value)), x, center(y1, y2 - y1))
   }

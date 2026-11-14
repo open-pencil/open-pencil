@@ -12,6 +12,7 @@ import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 import { transformVectorNetwork } from '@open-pencil/scene-graph/vector-network'
 
 import { PEN_HANDLE_RADIUS, PEN_VERTEX_RADIUS } from '#core/constants'
+import { worldXToScreen, worldYToScreen } from '#core/geometry/viewport'
 import {
   type ShownHandles,
   handleVisibleVertices,
@@ -63,8 +64,8 @@ export function drawNodeEditOverlay(
   if (vertices.length === 0) return
 
   const toScreen: ToScreenFn = (x, y) => ({
-    x: x * r.zoom + r.panX,
-    y: y * r.zoom + r.panY
+    x: worldXToScreen(r, x),
+    y: worldYToScreen(r, y)
   })
 
   const selectedHandles = editState.selectedHandles ?? new Set<number>()
