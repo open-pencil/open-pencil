@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { addOpenSegmentsToPath, svgPathSink } from '@open-pencil/scene-graph/paths'
+import { addLoopToPath, addOpenSegmentsToPath, svgPathSink } from '@open-pencil/scene-graph/paths'
 
 const zero = { x: 0, y: 0 }
 const line = (start: number, end: number) => ({
@@ -23,4 +23,17 @@ test('draws a chain that starts with two segments between the same vertices from
   const parts: string[] = []
   addOpenSegmentsToPath(svgPathSink(parts), segments, vertices)
   expect(parts.join('')).toBe('M0 0L10 0L0 0L0 10L10 10L0 0Z')
+})
+
+test('starts a new subpath where a region loop does not connect, and leaves it open', () => {
+  const vertices = [
+    { x: 0, y: 0 },
+    { x: 10, y: 0 },
+    { x: 10, y: 10 },
+    { x: 0, y: 10 }
+  ]
+  const segments = [line(0, 1), line(2, 3)]
+  const parts: string[] = []
+  addLoopToPath(svgPathSink(parts), [0, 1], segments, vertices)
+  expect(parts.join('')).toBe('M0 0L10 0M10 10L0 10')
 })
