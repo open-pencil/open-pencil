@@ -1,8 +1,11 @@
 import { LINKS } from '../landing/content/links'
-import type { FooterMessages } from './messages'
+import type { SiteMessages } from './messages'
 
 export type FooterLink = { label: string; href: string }
 export type FooterColumn = { title: string; links: FooterLink[] }
+
+/** The editor on the web. */
+export const APP_URL = 'https://app.openpencil.dev'
 
 const SECURITY_POLICY = 'https://github.com/open-pencil/open-pencil/security/policy'
 const DISCORD = 'https://discord.gg/4wXc9fuZfm'
@@ -11,13 +14,13 @@ const DISCORD = 'https://discord.gg/4wXc9fuZfm'
  * The footer's link columns for a docs locale. Pages that have a translation link inside the
  * locale; the Cloud and legal pages exist only in English, so every locale links to those.
  */
-export function footerColumns(messages: FooterMessages, localeIndex: string): FooterColumn[] {
+export function footerColumns(messages: SiteMessages, localeIndex: string): FooterColumn[] {
   const translated = (path: string) => (localeIndex === 'root' ? path : `/${localeIndex}${path}`)
   return [
     {
       title: messages.product,
       links: [
-        { label: messages.openApp, href: 'https://app.openpencil.dev' },
+        { label: messages.openApp, href: APP_URL },
         { label: messages.download, href: translated(LINKS.downloadPage) },
         { label: messages.cloud, href: '/cloud/' }
       ]

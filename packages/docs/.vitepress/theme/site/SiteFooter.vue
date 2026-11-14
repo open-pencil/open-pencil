@@ -5,7 +5,7 @@ import { computed } from 'vue'
 
 import { fill } from '../landing/content/messages/fill'
 import { footerColumns } from './links'
-import { FOOTER_MESSAGES } from './messages'
+import { SITE_MESSAGES } from './messages'
 
 /**
  * The site's foot on pages without a sidebar, as VitePress shows its own: the product's line,
@@ -14,7 +14,7 @@ import { FOOTER_MESSAGES } from './messages'
 const { theme, frontmatter, localeIndex } = useData()
 const { hasSidebar } = useLayout()
 const messages = computed(
-  () => FOOTER_MESSAGES[localeIndex.value as keyof typeof FOOTER_MESSAGES] ?? FOOTER_MESSAGES.root
+  () => SITE_MESSAGES[localeIndex.value as keyof typeof SITE_MESSAGES] ?? SITE_MESSAGES.root
 )
 const columns = computed(() => footerColumns(messages.value, localeIndex.value))
 const home = computed(() => (localeIndex.value === 'root' ? '/' : `/${localeIndex.value}/`))

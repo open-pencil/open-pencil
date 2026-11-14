@@ -45,14 +45,14 @@ export interface ProgrammableLabels {
 }
 
 export interface NavLabels {
-  overview: string
-  userGuide: string
-  programmable: string
-  sdk: string
+  docs: string
+  developers: string
+  download: string
+  /** Heads the reference pages in each section's sidebar. */
   reference: string
+  /** Heads the contributor pages in the Developers sidebar. */
   development: string
   cloud: string
-  openApp: string
 }
 
 export const EN_PROG: ProgrammableLabels = {

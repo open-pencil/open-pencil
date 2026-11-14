@@ -4,36 +4,37 @@ import { EN, EN_PROG } from './labels.ts'
 import { sdkSidebar } from './sdk/sidebar.ts'
 import {
   cloudSidebar,
-  developmentSidebar,
-  guideSidebar,
-  programmableSidebar,
-  referenceSidebar,
-  userGuideSidebar
+  developersSidebar,
+  docsSidebar,
+  sectionMatch,
+  USER_REFERENCE_PAGES
 } from './sidebars.ts'
+
+const DEVELOPERS_NAV = { reference: 'Reference', development: 'Development' }
 
 export const rootThemeConfig = (): DefaultTheme.Config => ({
   logo: { light: '/brand/mark.svg', dark: '/brand/mark-dark.svg', alt: 'OpenPencil' },
   search: { provider: 'local' },
 
   nav: [
-    { text: 'Overview', link: '/getting-started' },
-    { text: 'User Guide', link: '/user-guide/' },
-    { text: 'Automation', link: '/programmable/' },
-    { text: 'SDK', link: '/programmable/sdk/' },
-    { text: 'Reference', link: '/reference/keyboard-shortcuts' },
-    { text: 'Development', link: '/development/contributing' },
+    { text: 'Docs', link: '/getting-started', activeMatch: sectionMatch('').docs },
+    { text: 'Developers', link: '/programmable/', activeMatch: sectionMatch('').developers },
     { text: 'Cloud', link: '/cloud/', activeMatch: '^/cloud/' },
-    { text: 'Open App', link: 'https://app.openpencil.dev' }
+    { text: 'Download', link: '/download' }
   ],
 
   sidebar: {
-    '/user-guide/': userGuideSidebar('', EN),
+    '/user-guide/': docsSidebar('', 'Reference', EN),
+    // Before `/reference/`, which has as many segments: VitePress keeps their order.
+    ...Object.fromEntries(
+      USER_REFERENCE_PAGES.map((page) => [page, docsSidebar('', 'Reference', EN)])
+    ),
     '/programmable/sdk/': sdkSidebar(''),
-    '/programmable/': programmableSidebar('', EN_PROG),
-    '/reference/': referenceSidebar('', 'Reference', EN),
-    '/development/': developmentSidebar('', 'Development', EN),
+    '/programmable/': developersSidebar('', DEVELOPERS_NAV, EN, EN_PROG),
+    '/reference/': developersSidebar('', DEVELOPERS_NAV, EN, EN_PROG),
+    '/development/': developersSidebar('', DEVELOPERS_NAV, EN, EN_PROG),
     '/cloud/': cloudSidebar(),
-    '/': guideSidebar('', EN)
+    '/': docsSidebar('', 'Reference', EN)
   },
 
   socialLinks: [

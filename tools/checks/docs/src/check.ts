@@ -19,13 +19,7 @@ import {
 } from '#docs-config/labels'
 import type { ProgrammableLabels, SidebarLabels } from '#docs-config/labels'
 import { sdkSidebar } from '#docs-config/sdk/sidebar'
-import {
-  developmentSidebar,
-  guideSidebar,
-  programmableSidebar,
-  referenceSidebar,
-  userGuideSidebar
-} from '#docs-config/sidebars'
+import { developersSidebar, docsSidebar } from '#docs-config/sidebars'
 
 import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
 import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
@@ -62,14 +56,15 @@ function sidebarLinks(items: SidebarItem[]): string[] {
 }
 
 function localeSidebarLinks({ labels, prefix, programmable }: LocaleConfig): string[] {
-  const developmentPrefix = prefix ? '' : prefix
   return sidebarLinks([
-    ...guideSidebar(prefix, labels),
-    ...userGuideSidebar(prefix, labels),
-    ...programmableSidebar(prefix, programmable),
-    ...sdkSidebar(prefix),
-    ...referenceSidebar(prefix, 'Reference', labels),
-    ...developmentSidebar(developmentPrefix, 'Development', labels)
+    ...docsSidebar(prefix, 'Reference', labels),
+    ...developersSidebar(
+      prefix,
+      { reference: 'Reference', development: 'Development' },
+      labels,
+      programmable
+    ),
+    ...sdkSidebar(prefix)
   ])
 }
 

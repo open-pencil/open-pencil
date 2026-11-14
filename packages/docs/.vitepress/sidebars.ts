@@ -1,6 +1,6 @@
 import type { DefaultTheme } from 'vitepress'
 
-import type { ProgrammableLabels, SidebarLabels } from './labels.ts'
+import type { NavLabels, ProgrammableLabels, SidebarLabels } from './labels.ts'
 
 export const guideSidebar = (prefix: string, labels: SidebarLabels): DefaultTheme.SidebarItem[] => [
   {
@@ -94,23 +94,58 @@ export const programmableSidebar = (
   }
 ]
 
-export const referenceSidebar = (
+/** Reference pages for people using the editor; the rest of the reference is for developers. */
+export const USER_REFERENCE_PAGES = [
+  '/reference/keyboard-shortcuts',
+  '/reference/figma-compatibility'
+]
+
+const userReferenceNames = USER_REFERENCE_PAGES.map((page) =>
+  page.slice('/reference/'.length)
+).join('|')
+
+/** The header item a page belongs to, as `activeMatch` patterns for a locale's `prefix`. */
+export const sectionMatch = (prefix: string) => ({
+  docs: `^${prefix}/(getting-started|overview/|user-guide/|reference/(${userReferenceNames}))`,
+  developers: `^${prefix}/(programmable/|development/|reference/(?!${userReferenceNames}))`
+})
+
+/** The Docs section: the overview, the user guide, and the reference for using the editor. */
+export const docsSidebar = (
   prefix: string,
-  label: string,
+  referenceLabel: string,
   labels: SidebarLabels
 ): DefaultTheme.SidebarItem[] => [
+  ...guideSidebar(prefix, labels),
+  ...userGuideSidebar(prefix, labels),
   {
-    text: label,
+    text: referenceLabel,
     items: [
+      // English only until translated; locales link to the canonical page.
       { text: 'Keyboard Shortcuts', link: '/reference/keyboard-shortcuts' },
-      { text: 'CLI', link: '/reference/cli' },
+      { text: labels.figmaMatrix, link: `${prefix}/reference/figma-compatibility` }
+    ]
+  }
+]
+
+/** The Developers section: automation, the reference for code, and contributing. */
+export const developersSidebar = (
+  prefix: string,
+  nav: Pick<NavLabels, 'reference' | 'development'>,
+  labels: SidebarLabels,
+  prog: ProgrammableLabels
+): DefaultTheme.SidebarItem[] => [
+  ...programmableSidebar(prefix, prog),
+  {
+    text: nav.reference,
+    items: [
       { text: 'Node Types', link: '/reference/node-types' },
       { text: 'Scene Graph', link: '/reference/scene-graph' },
-      { text: labels.figmaMatrix, link: `${prefix}/reference/figma-compatibility` },
       ...(!prefix ? [{ text: 'DOM/CSS Mapping', link: '/reference/dom-css-mapping' }] : []),
       { text: 'File Format', link: '/reference/file-format' }
     ]
-  }
+  },
+  ...developmentSidebar('', nav.development, labels)
 ]
 
 export const developmentSidebar = (

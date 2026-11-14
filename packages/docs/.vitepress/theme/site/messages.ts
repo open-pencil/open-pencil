@@ -1,7 +1,7 @@
 import type { docsLocales } from '#docs/locales/docs.ts'
 
-/** What the site footer says, in each docs locale. */
-export interface FooterMessages {
+/** What the site header and footer say, in each docs locale. */
+export interface SiteMessages {
   tagline: string
   product: string
   openApp: string
@@ -20,7 +20,7 @@ export interface FooterMessages {
   license: string
 }
 
-const en: FooterMessages = {
+const en: SiteMessages = {
   tagline: 'The open-source design editor. Open your Figma files, own your work.',
   product: 'Product',
   openApp: 'Open the app',
@@ -38,7 +38,7 @@ const en: FooterMessages = {
   license: 'Released under the MIT License.'
 }
 
-const de: FooterMessages = {
+const de: SiteMessages = {
   tagline: 'Der Open-Source-Design-Editor. Öffne deine Figma-Dateien, behalte deine Arbeit.',
   product: 'Produkt',
   openApp: 'App öffnen',
@@ -56,7 +56,7 @@ const de: FooterMessages = {
   license: 'Veröffentlicht unter der MIT-Lizenz.'
 }
 
-const es: FooterMessages = {
+const es: SiteMessages = {
   tagline: 'El editor de diseño de código abierto. Abre tus archivos de Figma, tu trabajo es tuyo.',
   product: 'Producto',
   openApp: 'Abrir la app',
@@ -74,7 +74,7 @@ const es: FooterMessages = {
   license: 'Publicado bajo la licencia MIT.'
 }
 
-const fr: FooterMessages = {
+const fr: SiteMessages = {
   tagline: 'L’éditeur de design open source. Ouvrez vos fichiers Figma, gardez votre travail.',
   product: 'Produit',
   openApp: 'Ouvrir l’app',
@@ -92,7 +92,7 @@ const fr: FooterMessages = {
   license: 'Publié sous licence MIT.'
 }
 
-const it: FooterMessages = {
+const it: SiteMessages = {
   tagline: 'L’editor di design open source. Apri i tuoi file Figma, il tuo lavoro resta tuo.',
   product: 'Prodotto',
   openApp: 'Apri l’app',
@@ -110,7 +110,7 @@ const it: FooterMessages = {
   license: 'Rilasciato con licenza MIT.'
 }
 
-const pl: FooterMessages = {
+const pl: SiteMessages = {
   tagline: 'Edytor projektów open source. Otwieraj pliki Figmy, Twoja praca należy do Ciebie.',
   product: 'Produkt',
   openApp: 'Otwórz aplikację',
@@ -128,7 +128,7 @@ const pl: FooterMessages = {
   license: 'Udostępniono na licencji MIT.'
 }
 
-const ru: FooterMessages = {
+const ru: SiteMessages = {
   tagline: 'Редактор дизайна с открытым кодом. Открывайте файлы Figma, ваша работа остаётся вашей.',
   product: 'Продукт',
   openApp: 'Открыть приложение',
@@ -147,7 +147,7 @@ const ru: FooterMessages = {
 }
 
 /** Keyed by the docs locale index, as `useData().localeIndex` gives it; `root` is English. */
-export const FOOTER_MESSAGES: Record<keyof typeof docsLocales, FooterMessages> = {
+export const SITE_MESSAGES: Record<keyof typeof docsLocales, SiteMessages> = {
   root: en,
   de,
   es,
