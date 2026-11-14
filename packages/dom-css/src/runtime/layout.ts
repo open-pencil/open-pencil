@@ -64,14 +64,86 @@ function groupIntoLines(rects: readonly Rect[]): Rect[] {
   return lines.map((group) => computeBounds(group))
 }
 
-function lineRects(element: Element, origin: DOMRectReadOnly, view: DocumentView): Rect[] {
+/** The properties that decide where a run's glyphs sit in its line box, and how tall that is. */
+const LINE_FONT_PROPERTIES = [
+  'font-family',
+  'font-size',
+  'font-style',
+  'font-weight',
+  'font-stretch',
+  'line-height'
+] as const
+
+/** Where a run's line box is relative to the area its glyphs cover, which is what a range reports. */
+interface LineBoxOffset {
+  /** How far above the glyphs the line box starts: half the leading, as the browser rounds it. */
+  above: number
+  height: number
+}
+
+/** The line box offset of a run of text set in an element's font, by the element. */
+type LineBoxOffsets = (element: Element, sample: string) => LineBoxOffset
+
+/**
+ * Measures line box offsets on one line set in each font and line height, appended to `host`,
+ * so they round as the browser rounds the leading, and remembers them per font.
+ */
+function lineBoxOffsets(host: Element, view: DocumentView): LineBoxOffsets {
+  const document = host.ownerDocument
+  const known = new Map<string, LineBoxOffset>()
+  return (element, sample) => {
+    const style = view.getComputedStyle(element)
+    const font = LINE_FONT_PROPERTIES.map((property) => style.getPropertyValue(property))
+    const key = [...font, sample].join('|')
+    const remembered = known.get(key)
+    if (remembered) return remembered
+    const line = document.createElement('div')
+    line.style.cssText =
+      'position:absolute;left:0;top:0;margin:0;padding:0;border:0;white-space:pre;visibility:hidden'
+    for (const [index, property] of LINE_FONT_PROPERTIES.entries()) {
+      line.style.setProperty(property, font[index])
+    }
+    const text = document.createTextNode(sample)
+    line.append(text)
+    host.append(line)
+    const range = document.createRange()
+    range.selectNodeContents(text)
+    const glyphs = range.getBoundingClientRect()
+    const box = line.getBoundingClientRect()
+    line.remove()
+    const offset = { above: glyphs.top - box.top, height: box.height }
+    known.set(key, offset)
+    return offset
+  }
+}
+
+/**
+ * The characters a run's line box is measured with: a Latin letter, or the run's first character
+ * where that is not ASCII, since a fallback font sets it with metrics of its own.
+ */
+function sampleOf(text: string): string {
+  const first = text.trim().charAt(0)
+  return first && first.charCodeAt(0) > 0x7f ? first : 'x'
+}
+
+/** The line boxes of the text an element lays out, each around the runs it sets. */
+function lineRects(
+  element: Element,
+  origin: DOMRectReadOnly,
+  view: DocumentView,
+  offsets: LineBoxOffsets
+): Rect[] {
   const document = element.ownerDocument
   const rects = lineTextNodes(element, view).flatMap((text) => {
     const range = document.createRange()
     range.selectNodeContents(text)
-    return Array.from(range.getClientRects())
-      .filter(hasArea)
-      .map((rect) => toRect(rect, origin))
+    const glyphs = Array.from(range.getClientRects()).filter(hasArea)
+    if (glyphs.length === 0 || !text.parentElement) return []
+    const { above, height } = offsets(text.parentElement, sampleOf(text.data))
+    return glyphs.map((rect) => {
+      const run = toRect(rect, origin)
+      return { ...run, y: run.y - above, height }
+    })
   })
   return groupIntoLines(rects)
 }
@@ -79,7 +151,8 @@ function lineRects(element: Element, origin: DOMRectReadOnly, view: DocumentView
 function measureElement(
   element: Element,
   origin: DOMRectReadOnly,
-  view: DocumentView
+  view: DocumentView,
+  offsets: LineBoxOffsets
 ): DesignLayout {
   const layout: DesignLayout = { box: toRect(element.getBoundingClientRect(), origin) }
   if (isInlineFlow(view.getComputedStyle(element).display)) {
@@ -87,7 +160,7 @@ function measureElement(
     if (fragments.length > 0) layout.fragments = fragments.map((rect) => toRect(rect, origin))
     return layout
   }
-  const lines = lineRects(element, origin, view)
+  const lines = lineRects(element, origin, view, offsets)
   if (lines.length > 0) layout.lines = lines
   return layout
 }
@@ -109,8 +182,9 @@ export function recordLayout(
   styleRoot.append(untransformed)
   try {
     const originRect = origin.getBoundingClientRect()
+    const offsets = lineBoxOffsets(origin, view)
     for (const [designElement, domElement] of pairs) {
-      designElement.layout = measureElement(domElement, originRect, view)
+      designElement.layout = measureElement(domElement, originRect, view, offsets)
     }
   } finally {
     untransformed.remove()

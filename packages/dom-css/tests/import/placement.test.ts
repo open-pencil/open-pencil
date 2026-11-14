@@ -30,7 +30,7 @@ describe('captured layout in the projection', () => {
     expect(mainLayer).toMatchObject({ x: 0, y: 64, width: 1440, height: 400 })
   })
 
-  it('gives text in a box the box’s content box and its line count', () => {
+  it('gives text in a box the box’s content box across, its lines down, and their count', () => {
     const lines = [rect(16, 16, 200, 20), rect(16, 36, 120, 20)]
     const card = element(
       'div',
@@ -46,9 +46,9 @@ describe('captured layout in the projection', () => {
     const text = graph.getChildren(cardLayer.id)[0]
 
     expect(text.type).toBe('TEXT')
-    // The 240×72 box less its 16px padding on the top and left; the words span the lines.
+    // Across, the 240px box less its 16px left padding; down, the two lines; the words span them.
     expect(boxes.get(text.id)).toEqual({
-      box: rect(16, 16, 224, 56),
+      box: rect(16, 16, 224, 40),
       lines: 2,
       extent: rect(16, 16, 200, 40)
     })
