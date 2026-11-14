@@ -1,3 +1,2 @@
-- A coding agent that exits mid-reply no longer leaves the chat stuck until you press Stop: the reply ends with an error and your next message goes out (#2030).
 - Tool calls a coding agent never reported back no longer show as running after its reply ends (#2030).
 - Stop ends a Pi reply that is still waiting for its session to start (#2030).
