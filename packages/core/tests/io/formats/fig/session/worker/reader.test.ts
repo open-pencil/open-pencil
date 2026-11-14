@@ -78,10 +78,10 @@ test.each(['first-page', 'none'] as const)(
         baseRevision: 0,
         pageId: page.id
       })
-      const result = await next('population-result')
-      expect(result.type).toBe('population-result')
-      if (result.type === 'population-result')
-        expect(result.delta.created.some(([, node]) => node.text === 'Second')).toBe(true)
+      const chunk = await next('population-chunk')
+      if (chunk.type !== 'population-chunk') throw new Error('Missing page layers')
+      expect(chunk.created.some((node) => node.text === 'Second')).toBe(true)
+      expect((await next('population-result')).type).toBe('population-result')
       channel.port1.postMessage({ type: 'dispose' })
       await next('disposed')
     } finally {

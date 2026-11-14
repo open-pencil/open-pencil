@@ -1,10 +1,12 @@
 import { compact } from 'es-toolkit/array'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { nodeCornerRadii } from '@open-pencil/scene-graph/corners'
 import {
   GeometryCommand,
   polygonVertices,
-  readGeometryBlob
+  readGeometryBlob,
+  sweepsWholeTurn
 } from '@open-pencil/scene-graph/geometry'
 import { outlineSVGPath, polygonOutline } from '@open-pencil/scene-graph/polygon'
 import { shapeWithTextGeometry } from '@open-pencil/scene-graph/shape-with-text'
@@ -68,20 +70,7 @@ type RectOutlineNode = Pick<
 export function roundedRectPath(node: RectOutlineNode): string {
   const w = node.width
   const h = node.height
-  let tl: number, tr: number, br: number, bl: number
-  if (node.independentCorners) {
-    tl = node.topLeftRadius
-    tr = node.topRightRadius
-    br = node.bottomRightRadius
-    bl = node.bottomLeftRadius
-  } else {
-    tl = tr = br = bl = node.cornerRadius
-  }
-
-  tl = Math.min(tl, w / 2, h / 2)
-  tr = Math.min(tr, w / 2, h / 2)
-  br = Math.min(br, w / 2, h / 2)
-  bl = Math.min(bl, w / 2, h / 2)
+  const [tl, tr, br, bl] = nodeCornerRadii(node)
 
   return compact([
     `M${round(tl)} 0`,
@@ -105,7 +94,7 @@ export function arcPath(node: Pick<SceneNode, 'width' | 'height' | 'arcData'>): 
   const rx = node.width / 2
   const ry = node.height / 2
 
-  const fullCircle = Math.abs(endingAngle - startingAngle) >= Math.PI * 2 - 0.001
+  const fullCircle = sweepsWholeTurn(startingAngle, endingAngle)
   const ring = (rx: number, ry: number, sweep: 0 | 1) =>
     `M${round(cx - rx)} ${round(cy)}A${round(rx)} ${round(ry)} 0 1 ${sweep} ${round(cx + rx)} ${round(cy)}A${round(rx)} ${round(ry)} 0 1 ${sweep} ${round(cx - rx)} ${round(cy)}Z`
   // A whole ring has no ends to join: it is its outer edge and, for a donut, its hole, wound

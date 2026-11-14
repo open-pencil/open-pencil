@@ -154,8 +154,6 @@ jobs:
           pattern: chromium-*
           path: chromium-artifacts
           merge-multiple: true
-      - name: Install signature verifier
-        run: sudo apt-get update && sudo apt-get install -y minisign
       - name: Verify signatures, write the feed, and add them to the release
         env:
           GH_TOKEN: ${{ github.token }}

@@ -49,7 +49,7 @@ export const INLINE_TAGS = new Set([
   'u'
 ])
 const INLINE_BLOCK_TAGS = new Set(['button', 'img', 'input', 'select', 'textarea'])
-/** Elements browsers center their text in by default. */
+/** Elements browsers center their content in both ways, beyond what their styles say. */
 const CENTERED_TAGS = new Set(['button'])
 
 /** What a run of text takes from its element: the properties CSS inherits, and decoration. */
@@ -73,15 +73,8 @@ const TEXT_PROPERTIES = [
  * The style a run of text directly inside an element takes from it. The element's own box,
  * position, and opacity stay on the element, so the text is neither placed nor faded twice.
  */
-export function inheritedTextStyle(
-  element: DesignElement,
-  style: DesignStyleDeclaration
-): DesignStyleDeclaration {
-  const inherited = pick(style, TEXT_PROPERTIES)
-  if (!inherited['text-align'] && CENTERED_TAGS.has(element.tagName.toLowerCase())) {
-    inherited['text-align'] = 'center'
-  }
-  return inherited
+export function inheritedTextStyle(style: DesignStyleDeclaration): DesignStyleDeclaration {
+  return pick(style, TEXT_PROPERTIES)
 }
 
 /** The element's `display`, or the one browsers give its tag by default. */
@@ -90,6 +83,7 @@ export function elementDisplay(element: DesignElement, style: DesignStyleDeclara
   if (display) return display
   const tag = element.tagName.toLowerCase()
   if (INLINE_TAGS.has(tag)) return 'inline'
+  if (tag === 'li') return 'list-item'
   return INLINE_BLOCK_TAGS.has(tag) ? 'inline-block' : 'block'
 }
 
@@ -107,12 +101,10 @@ export function isInlineLevel(display: string): boolean {
   return display.startsWith('inline')
 }
 
-function textAlignAxis(element: DesignElement, style: DesignStyleDeclaration) {
+function textAlignAxis(style: DesignStyleDeclaration) {
   const align = pickStyle(style, 'text-align')?.trim().toLowerCase()
   if (align === 'center') return 'CENTER'
-  if (align === 'right' || align === 'end') return 'MAX'
-  if (align) return 'MIN'
-  return CENTERED_TAGS.has(element.tagName.toLowerCase()) ? 'CENTER' : 'MIN'
+  return align === 'right' || align === 'end' ? 'MAX' : 'MIN'
 }
 
 /** The auto layout an element's own flow gives its children. */
@@ -141,7 +133,7 @@ export function applyContainerLayout(
   }
   // Inline content runs in a line, aligned by `text-align`.
   node.layoutMode = 'HORIZONTAL'
-  node.primaryAxisAlign = textAlignAxis(element, style)
+  node.primaryAxisAlign = textAlignAxis(style)
   node.counterAxisAlign = 'CENTER'
 }
 

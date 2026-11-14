@@ -73,7 +73,7 @@ describe('effect program warm-up', () => {
     warmUpEffectPrograms(renderer, graph, 'scene', 0)
     expect(renderer.effectProgramsWarm).toBe(true)
     expect(made.count).toBe(1)
-    // Glass over an ellipse draws its geometry map, so that program is built too.
+    // Glass over a star draws its geometry map, so that program is built too.
     expect(renderer.shaders.programs.has(GLASS_GEOMETRY_MAP)).toBe(true)
     expect(renderer.glassMaps.size).toBeGreaterThan(0)
     // Warm, it never draws again, on this page or another.

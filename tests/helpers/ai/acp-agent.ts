@@ -1,14 +1,16 @@
 import {
-  AgentSideConnection,
+  agent as acpAgent,
+  methods,
   ndJsonStream,
   PROTOCOL_VERSION,
   RequestError,
-  type Agent,
+  type AgentConnection,
+  type ClientCapabilities,
   type NewSessionRequest,
   type ResumeSessionRequest,
   type SessionUpdate,
   type StopReason
-} from '@agentclientprotocol/sdk'
+} from '@agentclientprotocol/sdk/unstable'
 import type { UIMessage, UIMessageChunk } from 'ai'
 
 import { ACP_AGENTS, type ACPAgentDef } from '@open-pencil/core/constants'
@@ -42,6 +44,11 @@ interface FakeAgentOptions {
   turn?: 'answered' | 'refused' | 'cut-off' | 'held'
   /** True for a command lookup that waits until `finishLookup`, as a slow PATH search does. */
   lookupWaits?: boolean
+  /**
+   * What the agent reports while it takes a turn, after its command list: in the turn's session,
+   * or in a subagent's session `session`.
+   */
+  updates?: { session?: string; update: SessionUpdate }[]
 }
 
 /** In-memory ACP agents, one per start, that record what the transport asks of them. */
@@ -52,12 +59,14 @@ export function fakeAgents({
   resumeBusy = false,
   tokenHangs = false,
   turn = 'answered',
-  lookupWaits = false
+  lookupWaits = false,
+  updates = []
 }: FakeAgentOptions = {}) {
   const lookup = createDeferred<undefined>()
   const prompts: string[] = []
   const created: NewSessionRequest[] = []
   const resumed: ResumeSessionRequest[] = []
+  const capabilities: (ClientCapabilities | undefined)[] = []
   const sessionRequested = createDeferred<undefined>()
   const killed = createDeferred<undefined>()
   let kills = 0
@@ -71,7 +80,7 @@ export function fakeAgents({
   // Each held prompt waits on its own signal, so one cancelled or ended never frees a later one.
   let heldTurn = createDeferred<StopReason>()
   const promptWaiters: { count: number; taken: () => void }[] = []
-  let latest: AgentSideConnection | null = null
+  let latest: AgentConnection | null = null
   let promptedSession = ''
 
   const spawn: ACPStartup['spawn'] = async (options) => {
@@ -80,28 +89,29 @@ export function fakeAgents({
     cwds.push(options.cwd)
     const toAgent = new TransformStream<Uint8Array, Uint8Array>()
     const toClient = new TransformStream<Uint8Array, Uint8Array>()
-    const agent: Agent = {
-      async initialize() {
+    latest = acpAgent()
+      .onRequest(methods.agent.initialize, ({ params }) => {
+        capabilities.push(params.clientCapabilities)
         return {
           protocolVersion: PROTOCOL_VERSION,
           agentCapabilities: { sessionCapabilities: { resume: {} } }
         }
-      },
-      async newSession(params) {
+      })
+      .onRequest(methods.agent.session.new, ({ params }) => {
         created.push(params)
         sessionRequested.resolve(undefined)
         if (!answersSessions) return createDeferred<never>().promise
         return { sessionId: `session-${created.length}` }
-      },
-      async unstable_resumeSession(params) {
+      })
+      .onRequest(methods.agent.session.resume, ({ params }) => {
         resumed.push(params)
         if (resumeFails) throw RequestError.resourceNotFound(params.sessionId)
         if (resumeError) throw resumeError
         if (resumeBusy && resumed.length === 1)
           throw RequestError.invalidRequest({ reason: 'thread_active_writer' }, 'Session in use')
         return {}
-      },
-      async prompt(params) {
+      })
+      .onRequest(methods.agent.session.prompt, async ({ params, client }) => {
         const [part] = params.prompt
         prompts.push(part?.type === 'text' ? part.text : '')
         const { sessionId } = params
@@ -109,39 +119,29 @@ export function fakeAgents({
         const held = createDeferred<StopReason>()
         heldTurn = held
         for (const waiter of promptWaiters) if (prompts.length >= waiter.count) waiter.taken()
-        await connection.sessionUpdate({
-          sessionId,
-          update: { sessionUpdate: 'available_commands_update', availableCommands: [] }
-        })
+        const report = (update: SessionUpdate, session = sessionId) =>
+          client.notify(methods.client.session.update, { sessionId: session, update })
+        await report({ sessionUpdate: 'available_commands_update', availableCommands: [] })
         promptTaken.resolve(undefined)
         if (turn === 'held') return { stopReason: await held.promise }
         if (turn === 'refused') throw new Error('The prompt never reached the model')
+        for (const { session, update } of updates) await report(update, session)
         if (turn === 'cut-off') {
-          await connection.sessionUpdate({
-            sessionId,
-            update: {
-              sessionUpdate: 'agent_message_chunk',
-              content: { type: 'text', text: 'On it' }
-            }
+          await report({
+            sessionUpdate: 'agent_message_chunk',
+            content: { type: 'text', text: 'On it' }
           })
           throw new Error('The turn broke off')
         }
         return { stopReason: 'end_turn' }
-      },
-      async authenticate() {
-        return {}
-      },
-      async cancel({ sessionId }) {
-        cancels.push(sessionId)
+      })
+      .onRequest(methods.agent.authenticate, () => ({}))
+      .onNotification(methods.agent.session.cancel, ({ params }) => {
+        cancels.push(params.sessionId)
         // Agents answer a cancelled turn with its stop reason.
         heldTurn.resolve('cancelled')
-      }
-    }
-    const connection = new AgentSideConnection(
-      () => agent,
-      ndJsonStream(toClient.writable, toAgent.readable)
-    )
-    latest = connection
+      })
+      .connect(ndJsonStream(toClient.writable, toAgent.readable))
     // Ending the pipe ends what the client reads, as a process that exits does.
     const output = new TransformStream<Uint8Array, Uint8Array>()
     const stop = new AbortController()
@@ -149,7 +149,8 @@ export function fakeAgents({
       .pipeTo(output.writable, { signal: stop.signal, preventCancel: true })
       .catch(() => undefined)
     crashLatest = () => {
-      stop.abort()
+      // What the process pipe reports when the agent exits (`src/app/ai/agents/acp/process.ts`).
+      stop.abort(new Error('Agent process exited unexpectedly.'))
       options.onUnexpectedClose()
     }
     return {
@@ -190,6 +191,7 @@ export function fakeAgents({
     prompts,
     created,
     resumed,
+    capabilities,
     sessionRequested: sessionRequested.promise,
     killed: killed.promise,
     kills: () => kills,
@@ -209,7 +211,7 @@ export function fakeAgents({
       }),
     /** Sends an update as the agent's turn goes on. */
     say: (update: SessionUpdate) =>
-      expectDefined(latest, 'a started agent').sessionUpdate({
+      expectDefined(latest, 'a started agent').client.notify(methods.client.session.update, {
         sessionId: promptedSession,
         update
       }),

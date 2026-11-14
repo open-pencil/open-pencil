@@ -5,6 +5,7 @@ import {
   hasTrimmedShaft,
   trimArrowShafts
 } from '@open-pencil/scene-graph/arrow-caps'
+import { strokeSideWeights } from '@open-pencil/scene-graph/geometry'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
@@ -28,7 +29,7 @@ import { isOpenVectorNetwork } from '#core/vector/connectivity'
 
 import { drawLineStroke } from './line'
 import { drawOutlinedDashes } from './outlined-dashes'
-import { drawDashedRectStroke, strokeDashesByOutline, strokeSideWeights } from './sides'
+import { drawDashedRectStroke, strokeDashesByOutline } from './sides'
 
 function drawVectorStrokeGeometry(
   r: SkiaRenderer,

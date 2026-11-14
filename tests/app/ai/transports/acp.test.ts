@@ -1,9 +1,13 @@
 import { expect, test } from 'bun:test'
 
+import type { SessionUpdate } from '@agentclientprotocol/sdk/unstable'
+
 import { ACP_AGENTS } from '@open-pencil/core/constants'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
+import { SUBAGENT_PART, subagentTranscript } from '@/app/ai/chat/subagents'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
+import { restAgents, withSubagent } from '@/app/automation/agents'
 import { diagnosticErrorDetails, diagnostics } from '@/app/diagnostics'
 
 import {
@@ -244,6 +248,66 @@ test('a startup step outside the agent connection is bounded by the deadline too
   expect(agents.prompts).toEqual([])
 })
 
+test('a subagent’s work is known by its session and kept in its own transcript', async () => {
+  const toolCall = (toolCallId: string): SessionUpdate => ({
+    sessionUpdate: 'tool_call',
+    toolCallId,
+    title: 'mcp__open-pencil__create_shape',
+    status: 'pending'
+  })
+  const agents = fakeAgents({
+    updates: [
+      { update: { sessionUpdate: 'subagent_update', sessionId: 'subagent-1', title: 'Layout' } },
+      {
+        session: 'subagent-1',
+        update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'Mine' } }
+      },
+      { session: 'subagent-1', update: toolCall('call-inner') },
+      // The subagent starts one of its own, which it describes on its session.
+      {
+        session: 'subagent-1',
+        update: { sessionUpdate: 'subagent_update', sessionId: 'subagent-2', title: 'Nested' }
+      },
+      { update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'Ours' } } },
+      { update: toolCall('call-own') }
+    ]
+  })
+  const { transport: chat } = transport(agents)
+  /** The subagent of a call, as OpenPencil's MCP server sees it; `linkTools` names the chat. */
+  const subagentOf = (call: string) =>
+    withSubagent({ session: 'session-1', kind: 'acp', chat: 'chat', call }).subagent
+  try {
+    const chunks = await send(chat, 'go')
+    expect(agents.capabilities).toMatchObject([{ subagents: {} }])
+    expect(subagentOf('call-inner')).toBe('subagent-1')
+    expect(subagentOf('call-own')).toBeUndefined()
+    // The reply's own text is the agent's; the subagent's is its transcript's.
+    const text = chunks.flatMap((chunk) => (chunk.type === 'text-delta' ? [chunk.delta] : []))
+    expect(text.join('')).toBe('Ours')
+    const transcript = chunks.findLast((chunk) => chunk.type === SUBAGENT_PART)
+    expect(
+      transcript && 'data' in transcript
+        ? subagentTranscript({ type: SUBAGENT_PART, data: transcript.data })
+        : null
+    ).toMatchObject({
+      session: 'subagent-1',
+      title: 'Layout',
+      parts: expect.arrayContaining([expect.objectContaining({ type: 'text', text: 'Mine' })])
+    })
+    const nested = chunks.findLast(
+      (chunk) => chunk.type === SUBAGENT_PART && 'id' in chunk && chunk.id === 'subagent-2'
+    )
+    expect(
+      nested && 'data' in nested
+        ? subagentTranscript({ type: SUBAGENT_PART, data: nested.data })
+        : null
+    ).toMatchObject({ session: 'subagent-2', title: 'Nested' })
+  } finally {
+    restAgents('acp')
+    await chat.destroy()
+  }
+})
+
 test('the reply ends with an error when the agent exits mid-prompt', async () => {
   const agents = fakeAgents({ turn: 'held' })
   const { transport: chat } = transport(agents)
@@ -256,7 +320,10 @@ test('the reply ends with an error when the agent exits mid-prompt', async () =>
   agents.crash()
   await reply.ended
   expect(reply.chunks.map((chunk) => chunk.type)).toContain('text-end')
-  expect(reply.chunks).toContainEqual(expect.objectContaining({ type: 'error' }))
+  expect(reply.chunks).toContainEqual({
+    type: 'error',
+    errorText: 'Agent process exited unexpectedly.'
+  })
   expect(reply.chunks.at(-1)).toEqual({ type: 'finish', finishReason: 'error' })
   await chat.destroy()
 })

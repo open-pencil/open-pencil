@@ -1,0 +1,1 @@
+- `@open-pencil/dom-css` no longer has a headless CSS runtime: `createHeadlessCSSRuntime` is removed, and `createCSSRuntime()` throws outside a browser. Pass `createHTMLEngineRuntime()` from `@open-pencil/html-engine` as `runtime` instead; `parseHTMLDocument()` still parses HTML into DesignDOM without styles (#2065).

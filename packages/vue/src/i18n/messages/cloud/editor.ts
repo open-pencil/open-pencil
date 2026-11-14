@@ -186,6 +186,10 @@ export const cloudMessageDefaults = {
 
   // Status
   statusViewOnlyDetail: 'You can look around and follow others; your changes won’t reach anyone.',
+  statusStorageFull: 'Storage full',
+  statusStorageFullDetail:
+    'The owner of this file has used all their storage, so it’s view only until space is freed or their plan grows. It can still be opened, downloaded, and deleted.',
+  statusManagePlan: 'Manage plan',
   // Keeping a file without an account
   draftHeading: 'Keep this file',
   draftDescription: params<{ host: string }>(
@@ -384,6 +388,13 @@ export const cloudMessageDefaults = {
   syncConflict: 'Edited elsewhere too — choose which version to keep',
   syncError: 'Could not upload changes',
   shareLinkFailed: 'This link doesn’t open a document. Ask for a new one.',
+  communityLinkFailed: 'This document isn’t in the gallery any more.',
+  communityBanner: 'A community example, open read-only.',
+  communitySaveCopy: 'Save a copy',
+  savePublicLabel: 'Public',
+  savePublicHeading: 'Anyone can open what you save here',
+  savePublicDescription:
+    'This workspace is the server’s community gallery, so saving to it publishes the document.',
   documentLinkFailed: 'Couldn’t open this document. Ask its owner for access.',
   documentLinkUnknownServer: params('Sign in to {host} first to open this link.'),
   shareOpenedInBrowser: 'Opened in the browser',

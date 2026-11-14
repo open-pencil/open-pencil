@@ -1,0 +1,10 @@
+{
+  "repository": "open-pencil/taffy",
+  "tag": "taffy-eeb0e4e7e94a825ed5f4e88d4238c3d31ede21c7",
+  "files": {
+    "taffy.js": "ede2bbdf20dd95506d82958841113177c29d1a85179f78c8610003e9bc465bc9",
+    "taffy.wasm": "4566b5ac0c5f2af045721cde1add8850b0d6afc54e278dfdd14b3b26ef047ef6",
+    "taffy.d.ts": "819fda3154b817a917940803c9920bbf95fd8ad700d19897baeb22414fa467aa",
+    "THIRD-PARTY-NOTICES.md": "423b14f7d880f26f16da8bd7fb80a514630dee333e3c8dba836e89f3a3d06a1d"
+  }
+}

@@ -1,0 +1,1 @@
+- Opening a large .fig file with many images needs less memory, since each image is kept once instead of twice (#1788).

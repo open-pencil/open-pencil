@@ -62,10 +62,21 @@ describe('parseAppPreferences', () => {
       designCheck: { preset: 'strict', disabledRules: ['contrast', 7, 'contrast', 'spacing'] }
     })
     expect(designCheck).toEqual({
-      showOnCanvas: true,
+      showOnCanvas: false,
       preset: 'strict',
       disabledRules: ['contrast', 'spacing']
     })
+  })
+
+  test('keeps a stored canvas marker choice and leaves markers off when none is stored', () => {
+    expect(DEFAULT_APP_PREFERENCES.designCheck.showOnCanvas).toBe(false)
+    expect(parseAppPreferences({}).designCheck.showOnCanvas).toBe(false)
+    expect(
+      parseAppPreferences({ designCheck: { showOnCanvas: true } }).designCheck.showOnCanvas
+    ).toBe(true)
+    expect(
+      parseAppPreferences({ designCheck: { showOnCanvas: false, preset: 'strict' } }).designCheck
+    ).toEqual({ showOnCanvas: false, preset: 'strict', disabledRules: [] })
   })
 
   test('keeps a preset or a custom accent and falls back to blue for anything else', () => {

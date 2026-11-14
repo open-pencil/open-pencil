@@ -1,5 +1,6 @@
 import type { ToolCapability, ToolDef } from '@open-pencil/core/tools'
 import { ALL_TOOLS, toolChangesDocument, isToolExposed } from '@open-pencil/core/tools'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 
 import type { ToolAvailability, ToolDescriptor, ToolEffect } from '#mcp/tool/metadata'
 
@@ -32,7 +33,7 @@ export function getMCPToolDefinitions() {
 
 export function createToolDescriptors(filesystemEnabled: boolean): ToolDescriptor[] {
   const descriptors = getMCPToolDefinitions().map(coreToolDescriptor)
-  descriptors.push(
+  appendAll(descriptors, [
     {
       name: 'list_documents',
       description:
@@ -144,6 +145,6 @@ export function createToolDescriptors(filesystemEnabled: boolean): ToolDescripto
       capabilities: [],
       enabled: true
     }
-  )
+  ])
   return descriptors
 }

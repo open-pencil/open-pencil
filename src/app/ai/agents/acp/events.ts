@@ -1,9 +1,10 @@
-import type { SessionUpdate } from '@agentclientprotocol/sdk'
+import type { SessionUpdate } from '@agentclientprotocol/sdk/unstable'
 import type { UIMessageChunk } from 'ai'
 import { isEmptyObject, omit } from 'es-toolkit'
 import * as v from 'valibot'
 
 import { OPEN_PENCIL_MCP_SERVER } from '@open-pencil/core/constants'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
 import { createReplyStream, type ReplyToolCall } from '@/app/ai/reply/stream'
@@ -302,15 +303,17 @@ export function createUpdateMapper(idPrefix: string) {
     const chunks = stream.toolStart(call)
     const input = identity.input ?? update.rawInput
     // A call can arrive already finished, as Codex reports an MCP server that failed to start.
-    if (input || isFinished(update)) chunks.push(...stream.toolInput(call, input ?? {}))
-    chunks.push(...resultChunks(update, identity))
+    if (input || isFinished(update)) appendAll(chunks, stream.toolInput(call, input ?? {}))
+    appendAll(chunks, resultChunks(update, identity))
     return chunks
   }
 
   function map(update: SessionUpdate): UIMessageChunk[] {
     switch (update.sessionUpdate) {
       case 'agent_message_chunk':
-        if (update.content.type === 'text') return stream.text(update.content.text)
+        if (update.content.type === 'text') {
+          return stream.text(update.content.text, update.messageId ?? undefined)
+        }
         console.warn('[ACP] Unhandled content type:', update.content.type)
         return []
       case 'agent_thought_chunk':
@@ -334,11 +337,12 @@ export function createUpdateMapper(idPrefix: string) {
         const chunks: UIMessageChunk[] = []
         // Claude's adapter sends a call's complete input once it has streamed in.
         if (update.rawInput && identity.input === undefined) {
-          chunks.push(
-            ...stream.toolInput(callOf(update.toolCallId, identity, undefined), update.rawInput)
+          appendAll(
+            chunks,
+            stream.toolInput(callOf(update.toolCallId, identity, undefined), update.rawInput)
           )
         }
-        chunks.push(...resultChunks(update, identity))
+        appendAll(chunks, resultChunks(update, identity))
         return chunks
       }
       default:

@@ -6,12 +6,14 @@ import {
   createCollaborationTicketService,
   createDefaultCloudPolicy,
   createDocumentReportService,
+  createTransactionalEmailService,
   DocumentNotFoundError,
   DocumentShareInvalidError,
   relayDocumentLookups,
   resolveDocumentAccess
 } from '#cloud/server'
 import { listDocuments } from '#cloud/server/documents/repository'
+import { decryptTransactionalEmailPayload } from '#cloud/server/email'
 
 const ADMIN = 'admin-user'
 
@@ -176,6 +178,68 @@ describe('document takedown', () => {
       expect(await audited(context)).toEqual([
         { action: 'document-report.dismissed', subjectType: 'document-report', subjectId: first.id }
       ])
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
+  test('tells the workspace’s owner when a document is blocked, why, and when it is back', async () => {
+    const context = await seedSharing()
+    // The real outbox, in the block's own transaction, so a kind the table refuses fails here.
+    const email = createTransactionalEmailService(context.runtime.database, {
+      encryptionSecret: 'integration-test-secret-at-least-32-characters',
+      from: 'cloud@example.com'
+    })
+    const documents = createAdminDocumentService(context.runtime.database, {
+      email,
+      publicURL: 'https://cloud.example.com',
+      contactEmail: 'abuse@example.com'
+    })
+    try {
+      const ownerId = crypto.randomUUID()
+      await context.runtime.database
+        .insertInto('user')
+        .values({ id: ownerId, name: 'Owner', email: 'owner@example.com', emailVerified: true })
+        .execute()
+      await context.runtime.database
+        .updateTable('workspace')
+        .set({ ownerId })
+        .where('ownerId', '=', 'owner')
+        .execute()
+
+      await documents.disable(ADMIN, context.documentId, 'Phishing')
+      // Blocking it again tells nobody twice.
+      await documents.disable(ADMIN, context.documentId, 'Phishing')
+      await documents.enable(ADMIN, context.documentId)
+
+      const queued = await context.runtime.database
+        .selectFrom('transactionalEmail')
+        .select(['id', 'kind', 'recipientEmailNormalized', 'payloadEncrypted'])
+        // Ordered by what they are, never by when, which two writes can share.
+        .orderBy('kind')
+        .execute()
+      expect(
+        queued.map(({ kind, recipientEmailNormalized }) => [kind, recipientEmailNormalized])
+      ).toEqual([
+        ['document-blocked', 'owner@example.com'],
+        ['document-restored', 'owner@example.com']
+      ])
+      const [blocked] = queued
+      if (!blocked?.payloadEncrypted) throw new Error('The block queued no email')
+      // Read the sealed payload back as delivery would.
+      const content = await decryptTransactionalEmailPayload(
+        'integration-test-secret-at-least-32-characters',
+        blocked.id,
+        'document-blocked',
+        blocked.payloadEncrypted
+      )
+      expect(content.payload).toMatchObject({
+        name: 'Owner',
+        documentName: 'Homepage',
+        reason: 'Phishing',
+        contactEmail: 'abuse@example.com',
+        actionURL: 'https://cloud.example.com'
+      })
     } finally {
       await context.runtime.close()
     }

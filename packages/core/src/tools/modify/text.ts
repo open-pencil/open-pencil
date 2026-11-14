@@ -10,6 +10,7 @@ import { OpenPencilAPI } from '#core/openpencil-api'
 import { textMarkdownChanges } from '#core/openpencil-api/nodes'
 import { collectNodeFontFaces } from '#core/text/requirements/collect'
 import {
+  layoutFontSize,
   toolNumber,
   nodeIdInputSchema,
   defineTool,
@@ -108,7 +109,7 @@ export const setFont = defineTool({
   input: v.strictObject({
     id: nodeIdInputSchema,
     family: v.optional(v.pipe(v.string(), v.description('Font family name'))),
-    size: v.optional(toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Font size')))),
+    size: v.optional(layoutFontSize('Font size')),
     style: v.optional(
       v.pipe(v.string(), v.description('Font style (e.g. "Bold", "Regular", "Bold Italic")'))
     ),
@@ -158,7 +159,7 @@ export const setFontRange = defineTool({
     start: toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Start character index'))),
     end: toolNumber(v.pipe(v.number(), v.minValue(0), v.description('End character index'))),
     family: v.optional(v.pipe(v.string(), v.description('Font family name'))),
-    size: v.optional(toolNumber(v.pipe(v.number(), v.minValue(1), v.description('Font size')))),
+    size: v.optional(layoutFontSize('Font size')),
     style: v.optional(v.pipe(v.string(), v.description('Font style'))),
     variations: variationsInputSchema,
     color: v.optional(v.pipe(v.string(), v.description('Text color (hex)')))

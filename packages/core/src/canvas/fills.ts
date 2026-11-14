@@ -1,14 +1,17 @@
 import type { Canvas, Image, Paint, Shader } from '@open-pencil/canvaskit'
 import type { SceneNode, SceneGraph, Fill } from '@open-pencil/scene-graph'
 import { invertGradientTransform } from '@open-pencil/scene-graph/gradient'
+import { drawnImageHash } from '@open-pencil/scene-graph/images'
 import Matrix from '@open-pencil/scene-graph/matrix'
-import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import { fillGeometryMatchesRegions, hasRegionFills } from '@open-pencil/scene-graph/vector-network'
 
 import { setPaintBlendMode } from './blend'
 import { makeDiamondGradient } from './gradients/diamond'
 import { previewEdge } from './images/previews'
+import { drawOffOutputGrid, landsOnOutputPixels, makeImageShader } from './images/sampling'
 import type { SkiaRenderer } from './renderer'
+import { resolveGradientStopColor } from './renderer/colors'
 import { drawOutline, withNodeOutline } from './shapes'
 
 interface PaintFillsOptions {
@@ -116,7 +119,7 @@ export function applyFill(
     return applyGradientFill(r, fill, node, graph)
   }
 
-  if (fill.type === 'IMAGE' && fill.imageHash) {
+  if (drawnImageHash(fill)) {
     return applyImageFill(r, fill, node, graph)
   }
 
@@ -229,7 +232,9 @@ function applyPatternFill(
   const layout = patternTileLayout(source, fill)
   let picture
   try {
-    picture = recordPatternSource(r, source, graph, layout, patternStack)
+    picture = drawOffOutputGrid(r, () =>
+      recordPatternSource(r, source, graph, layout, patternStack)
+    )
   } finally {
     patternStack.delete(source.id)
   }
@@ -273,9 +278,6 @@ function makeGradientLocalMatrix(
   ])
 }
 
-/** Resolves one gradient stop's color, so a stroke resolves its own bindings, not a fill's. */
-export type ResolveGradientStop = (color: Color, stopIndex: number) => Color
-
 /**
  * Sets `paint`'s shader to `fill`'s gradient on `node` and returns whether it did. CanvasKit
  * builds no shader when the local matrix cannot be inverted, as for a transform that holds no
@@ -286,20 +288,13 @@ export function applyGradientFill(
   fill: Fill,
   node: SceneNode,
   graph: SceneGraph,
-  paint: Paint = r.fillPaint,
-  resolveStop: ResolveGradientStop = (color, stopIndex) =>
-    r.resolveFillColorInfo(
-      { ...fill, type: 'SOLID', color, opacity: color.a, visible: true },
-      stopIndex,
-      node,
-      graph
-    ).color
+  paint: Paint = r.fillPaint
 ): boolean {
   const stops = fill.gradientStops
   const t = fill.gradientTransform
   if (!stops || !t) return false
-  const colors = stops.map((s, index) => {
-    const c = resolveStop(s.color, index)
+  const colors = stops.map((s) => {
+    const c = resolveGradientStopColor(s.color, graph, r.presentationColorSpace)
     return r.ck.Color4f(c.r, c.g, c.b, c.a)
   })
   const positions = stops.map((s) => s.position)
@@ -417,6 +412,7 @@ function setImageShader(
   r: SkiaRenderer,
   fill: Fill,
   node: SceneNode,
+  graph: SceneGraph,
   img: Image,
   paint: Paint,
   preview?: { originalWidth: number; originalHeight: number }
@@ -431,17 +427,13 @@ function setImageShader(
     imgH,
     preview && { width: preview.originalWidth, height: preview.originalHeight }
   )
-  const tileMode = scaleMode === 'FIT' ? r.ck.TileMode.Decal : r.ck.TileMode.Clamp
-  const shader =
-    scaleMode === 'TILE'
-      ? img.makeShaderCubic(r.ck.TileMode.Repeat, r.ck.TileMode.Repeat, 1 / 3, 1 / 3, localMatrix)
-      : img.makeShaderOptions(
-          tileMode,
-          tileMode,
-          r.ck.FilterMode.Linear,
-          r.ck.MipmapMode.Linear,
-          localMatrix
-        )
+  const shader = makeImageShader(
+    r,
+    img,
+    scaleMode,
+    localMatrix,
+    landsOnOutputPixels(r, node, graph, localMatrix)
+  )
   try {
     paint.setShader(shader)
     markShaded(r, paint)
@@ -458,10 +450,12 @@ export function applyImageFill(
   graph: SceneGraph,
   paint: Paint = r.fillPaint
 ): boolean {
-  const hash = fill.imageHash
+  const hash = drawnImageHash(fill)
   if (!hash) return false
   const live = r.images.live.get(hash)
-  if (live?.surface === r.surface) return setImageShader(r, fill, node, live.image, paint)
+  if (live?.surface === r.surface) {
+    return setImageShader(r, fill, node, graph, live.image, paint)
+  }
   if (r.viewportImageRendering) {
     r.noteImageFillUser(hash, node.id)
     r.images.previewsDrawn = true
@@ -489,7 +483,7 @@ export function applyImageFill(
   }
 
   try {
-    return setImageShader(r, fill, node, img, paint, preview?.preview)
+    return setImageShader(r, fill, node, graph, img, paint, preview?.preview)
   } finally {
     if (temporary) img.delete()
   }

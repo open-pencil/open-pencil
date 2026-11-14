@@ -196,7 +196,7 @@ export function createChatSessionManager({
       captureAgentError
     )
     acpTransportInstance = transport
-    return transport as ChatTransport<UIMessage>
+    return transport
   }
 
   /** `provider` is the one the chat chose, as for ACP: a change while Pi works keeps its usage there. */
@@ -295,18 +295,23 @@ export function createChatSessionManager({
       // Failures belong to the provider this chat was created for, even if the profile changes.
       const chatProviderID = providerID.value
       let transport: ChatTransport<UIMessage>
-      // An ACP or Pi chat's tool calls show as an agent of that kind (`src/app/automation/agents.ts`).
-      let agentKind: 'acp' | 'harness' | null = null
+      // An ACP or Pi chat's tool calls show as an agent of that kind (`src/app/automation/agents.ts`);
+      // when a reply ends, that chat's agents rest, and an ACP chat's alone.
+      let restAgentsOnFinish: (() => void) | null = null
       if (isACPProvider.value) {
-        agentKind = 'acp'
-        transport = await createActiveACPTransport(
+        const acp = await createActiveACPTransport(
           store,
           diagnosticContext,
           chatProviderID,
           agentSession
         )
+        transport = acp
+        restAgentsOnFinish = () => {
+          const chatId = acp.agentChat
+          if (chatId) restAgents('acp', chatId)
+        }
       } else if (isHarnessProvider.value) {
-        agentKind = 'harness'
+        restAgentsOnFinish = () => restAgents('harness')
         transport = await createActiveHarnessTransport(sessionId, diagnosticContext, chatProviderID)
       } else {
         transport = await createTransport(store, diagnosticContext)
@@ -344,7 +349,7 @@ export function createChatSessionManager({
         onFinish: (event) => {
           handleChatFinish(diagnosticContext, event)
           // The reply is over, however it ended; its agent rests instead of waiting it out.
-          if (agentKind) restAgents(agentKind)
+          restAgentsOnFinish?.()
           // However it ended, nothing in the reply may still read as running: an agent can finish
           // its turn with a call it never reported back.
           void settleEndedReply(created, store, event.message.id, event.isAbort)

@@ -3,6 +3,7 @@ import { uniqBy } from 'es-toolkit'
 import type { DesignDocument, DesignElement } from '@open-pencil/dom-css'
 import type { HTMLEngine, HTMLEngineFontFace } from '@open-pencil/html-engine'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import {
   CSS_GENERIC_FONT_FAMILIES,
   cssFontFamilyName,
@@ -105,7 +106,7 @@ export async function registerLayerFonts(engine: HTMLEngine, graph: SceneGraph):
   let reset = false
   if (await standInResolved(fonts, characters)) {
     // Every face looked for so far, so earlier documents keep laying out in theirs.
-    wanted.push(...[...fonts.faces].map(faceOfKey))
+    appendAll(wanted, [...fonts.faces].map(faceOfKey))
     engine.resetFonts()
     engineFonts.delete(engine)
     fonts = fontsOf(engine)
@@ -113,17 +114,39 @@ export async function registerLayerFonts(engine: HTMLEngine, graph: SceneGraph):
   }
   let added = false
   for (const face of uniqBy(wanted, faceKey).filter((face) => !fonts.faces.has(faceKey(face)))) {
-    fonts.faces.add(faceKey(face))
-    const drawn = await drawnFace(face.family, face.style, characters)
-    if (!drawn) continue
-    if (drawn.standIn) fonts.standIns.add(faceKey(face))
-    const file = new Uint8Array(drawn.face)
-    engine.addFont(file, face.family)
-    fonts.files.set(face.family, [...(fonts.files.get(face.family) ?? []), file])
-    added = true
+    if (await registerFace(engine, fonts, face, characters)) added = true
   }
   if (added) mapGenericFamilies(engine, fonts)
   return added || reset
+}
+
+/** Registers the face text in `face` draws with, under its family; returns whether there was one. */
+async function registerFace(
+  engine: HTMLEngine,
+  fonts: EngineFonts,
+  face: { family: string; style: string },
+  characters: string
+): Promise<boolean> {
+  fonts.faces.add(faceKey(face))
+  const drawn = await drawnFace(face.family, face.style, characters)
+  if (!drawn) return false
+  if (drawn.standIn) fonts.standIns.add(faceKey(face))
+  const file = new Uint8Array(drawn.face)
+  engine.addFont(file, face.family)
+  fonts.files.set(face.family, [...(fonts.files.get(face.family) ?? []), file])
+  return true
+}
+
+/**
+ * Gives the engine the default family as its generic families before it lays a page out, as a
+ * browser always has a font to fall back to. The engine sets no line without a font, so a page
+ * whose text names none it has would otherwise lose its inline boxes and images along with it.
+ */
+export async function registerFallbackFont(engine: HTMLEngine): Promise<void> {
+  const fonts = fontsOf(engine)
+  const face = { family: DEFAULT_FONT_FAMILY, style: 'Regular' }
+  if (fonts.faces.has(faceKey(face))) return
+  if (await registerFace(engine, fonts, face, '')) mapGenericFamilies(engine, fonts)
 }
 
 function styledElements(styled: DesignDocument): DesignElement[] {

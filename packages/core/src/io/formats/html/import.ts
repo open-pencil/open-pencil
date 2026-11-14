@@ -16,7 +16,12 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import type { IOFormatAdapter } from '#core/io/types'
 
-import { registerLayerFonts, registerPageFontFace, resolvePageFontFamilies } from './fonts'
+import {
+  registerFallbackFont,
+  registerLayerFonts,
+  registerPageFontFace,
+  resolvePageFontFamilies
+} from './fonts'
 import { HTML_IMPORT_VIEWPORT, sceneGraphFromStyledHTML } from './layers'
 
 export interface ReadHTMLOptions {
@@ -165,6 +170,7 @@ export async function readHTMLDocument(
   options: ReadHTMLOptions = {}
 ): Promise<ReadHTMLResult> {
   const engine = await loadHTMLEngine()
+  await registerFallbackFont(engine)
   // The page's own fonts, from its `@font-face` rules, which its text may name first.
   const pageFamilies = new Map<string, string>()
   const runtime = createHTMLEngineRuntime({

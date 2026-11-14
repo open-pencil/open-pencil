@@ -47,7 +47,8 @@ export class BufferedSceneEmitter implements Emitter<SceneGraphEvents> {
     }
     this.buffers.pop()
     const outer = this.buffers.at(-1)
-    if (outer) outer.push(...pending)
+    // One edit can publish more events than an engine takes arguments.
+    if (outer) for (const publish of pending) outer.push(publish)
     else {
       const errors: unknown[] = []
       for (const publish of pending) {

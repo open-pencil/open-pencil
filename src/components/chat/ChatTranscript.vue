@@ -130,7 +130,12 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
 
 <template>
   <ScrollAreaRoot class="relative min-h-0 flex-1">
-    <ScrollAreaViewport ref="viewportComponent" class="h-full px-3 pt-3 [&>div]:h-full">
+    <!-- Text below the fold fades out at the bottom edge, as tab bars fade at theirs. -->
+    <ScrollAreaViewport
+      ref="viewportComponent"
+      class="h-full px-3 pt-3 data-overflow-end:mask-b-from-[calc(100%-2rem)] [&>div]:h-full"
+      :data-overflow-end="(messages.length && !arrivedState.bottom) || undefined"
+    >
       <AppPlaceholder
         v-if="messages.length === 0 && sending === null && !compacting"
         data-test-id="chat-empty-state"

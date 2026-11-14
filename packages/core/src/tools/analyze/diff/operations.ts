@@ -1,6 +1,8 @@
 import { union } from 'es-toolkit'
 import type { Delta } from 'jsondiffpatch'
 
+import { appendAll } from '@open-pencil/scene-graph/arrays'
+
 import type { ProjectedNode } from './projection'
 
 /** One edit to a node tree; together they turn the old tree into the new one. */
@@ -90,7 +92,7 @@ function childOperations(
     const counterpart = oldChildren.find((item) => item.key === child.key)
     if (counterpart) nodeOperations(change, counterpart, child, childPath(path, counterpart), walk)
   }
-  walk.out.push(...removals)
+  appendAll(walk.out, removals)
 }
 
 function nodeOperations(

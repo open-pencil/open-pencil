@@ -1,10 +1,12 @@
 import type { CloudAPIEnvironment } from '#cloud/server/api/types'
 import type { CloudSessionResolver } from '#cloud/server/auth'
+import { createBillingRoutes, type BillingTokenService } from '#cloud/server/billing'
 import type { CollaborationTicketService } from '#cloud/server/collaboration'
 import {
   createCollaborationRoutes,
   createPublicCollaborationRoutes
 } from '#cloud/server/collaboration'
+import { createCommunityRoutes, type CommunityService } from '#cloud/server/community'
 import type { CloudDatabase } from '#cloud/server/db'
 import type { DocumentService } from '#cloud/server/documents'
 import { createDocumentRoutes } from '#cloud/server/documents'
@@ -33,6 +35,8 @@ export type CloudAPIServices = {
   collaboration: CollaborationTicketService
   documents: DocumentService
   versions: DocumentVersionService
+  /** The community gallery, which anyone may read. */
+  community: CommunityService
   sharing: DocumentSharingService
   /** Reports about documents shared by link. */
   reports: DocumentReportService
@@ -40,6 +44,8 @@ export type CloudAPIServices = {
   entitlements?: EntitlementService
   /** Signs service tokens; without it the deployment offers no services. */
   servicesTokens?: ServicesTokenService
+  /** Signs billing tokens; without it the deployment sells nothing. */
+  billingTokens?: BillingTokenService
   workspaces: WorkspaceService
   workspaceMembers: WorkspaceMemberService
 }
@@ -53,11 +59,19 @@ export function createPublicCloudAPIRouter(services: CloudAPIServices) {
       createPublicDocumentRoutes(services.sharing, services.documents, services.resolveSession)
     )
     .route('/', createPublicCollaborationRoutes(services.collaboration, services.resolveSession))
+    .route('/', createCommunityRoutes(services.community))
 }
 
 export function createCloudAPIRouter(services: CloudAPIServices) {
   return new Hono<CloudAPIEnvironment>()
     .route('/public', createPublicCloudAPIRouter(services))
+    .get('/account/entitlements', async (context) => {
+      if (!services.entitlements)
+        return context.json({ error: { code: 'not_found' as const } }, 404)
+      return context.json({
+        entitlements: await services.entitlements.account(context.get('actor').userId)
+      })
+    })
     .get('/workspaces/:workspaceId/entitlements', workspaceParams, async (context) => {
       if (!services.entitlements)
         return context.json({ error: { code: 'not_found' as const } }, 404)
@@ -73,6 +87,15 @@ export function createCloudAPIRouter(services: CloudAPIServices) {
       '/',
       createServicesRoutes(
         services.servicesTokens,
+        services.database && services.rateLimitSecret
+          ? { database: services.database, secret: services.rateLimitSecret }
+          : undefined
+      )
+    )
+    .route(
+      '/',
+      createBillingRoutes(
+        services.billingTokens,
         services.database && services.rateLimitSecret
           ? { database: services.database, secret: services.rateLimitSecret }
           : undefined

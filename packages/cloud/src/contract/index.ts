@@ -1,4 +1,5 @@
 export * from './account'
+export * from './locale'
 export {
   SERVICE_ERROR_STATUS,
   serviceCatalogSchema,
@@ -23,7 +24,6 @@ export {
   CLOUD_SERVICES_JWKS_PATH,
   CLOUD_SERVICES_TOKEN_AUDIENCE,
   cloudServicesDiscoverySchema,
-  cloudBillingDiscoverySchema,
   createServicesTokenSchema,
   parseUsageQuery,
   parseSearchRequest,
@@ -45,11 +45,42 @@ export {
   type SearchResult,
   type SearchResponse,
   type CloudServicesDiscovery,
-  type CloudBillingDiscovery,
   type CreateServicesTokenInput,
   type CloudServicesAPI,
-  type CloudServicesSchema
+  type CloudServicesSchema,
+  sendsTokenSafely
 } from './services'
+export {
+  BILLING_ERROR_STATUS,
+  CLOUD_ACCOUNT_PLAN_PATH,
+  CLOUD_BILLING_API_PATHS,
+  CLOUD_BILLING_CONTRACT_VERSION,
+  CLOUD_BILLING_TOKEN_AUDIENCE,
+  billingAccountSchema,
+  billingCatalogSchema,
+  billingErrorCodeSchema,
+  billingErrorSchema,
+  billingPlanSchema,
+  billingRedirectSchema,
+  billingTokenClaimsSchema,
+  billingTokenSchema,
+  checkoutRequestSchema,
+  cloudBillingDiscoverySchema,
+  creditPackSchema,
+  type BillingAccount,
+  type BillingCatalog,
+  type BillingError,
+  type BillingErrorCode,
+  type BillingPlan,
+  type BillingRedirect,
+  type BillingToken,
+  type BillingTokenClaims,
+  type CheckoutRequest,
+  type CloudBillingAPI,
+  type CloudBillingDiscovery,
+  type CloudBillingSchema,
+  type CreditPack
+} from './billing'
 export * from './admin'
 export {
   cloudPresenceSchema,
@@ -60,13 +91,20 @@ export {
   type CollaborationTicket
 } from './collaboration'
 export * from './relay'
-export { workspaceEntitlementsSchema, type WorkspaceEntitlements } from './entitlements'
+export {
+  accountEntitlementsResponseSchema,
+  accountEntitlementsSchema,
+  workspaceEntitlementsSchema,
+  type AccountEntitlements,
+  type WorkspaceEntitlements
+} from './entitlements'
 export {
   CLOUD_DISCOVERY_PATH,
   CLOUD_PROTOCOL_VERSION,
   cloudAuthenticationSchema,
   cloudCapabilitiesSchema,
   cloudDeploymentSchema,
+  cloudCommunityDiscoverySchema,
   cloudDiscoverySchema,
   cloudEditorVersionSchema,
   cloudLegalDiscoverySchema,
@@ -76,6 +114,7 @@ export {
   type CloudAuthentication,
   type CloudCapabilities,
   type CloudDeployment,
+  type CloudCommunityDiscovery,
   type CloudDiscovery,
   type CloudLegalDiscovery,
   type CloudListing
@@ -214,11 +253,14 @@ export {
   cloudInvitationURL,
   cloudShareURL,
   parseCloudLinkPath,
+  cloudCommunityPath,
+  cloudCommunityURL,
   type CloudLinkKind,
   type CloudLinkPathKind
 } from './links'
 export { CLOUD_PORTAL_PAGE_ROOTS, isCloudPortalPage } from './portal'
 export * from './versions'
+export * from './community'
 export {
   DOCUMENT_REPORT_DESCRIPTION_MAX,
   documentReportReasonSchema,

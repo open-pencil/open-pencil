@@ -26,6 +26,12 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./arrays": {
+      "types": "./dist/arrays.d.ts",
+      "bun": "./src/arrays.ts",
+      "import": "./dist/arrays.js",
+      "default": "./dist/arrays.js"
+    },
     "./arrow-caps": {
       "types": "./dist/arrow-caps.d.ts",
       "bun": "./src/arrow-caps.ts",
@@ -91,6 +97,12 @@
       "bun": "./src/coordinate.ts",
       "import": "./dist/coordinate.js",
       "default": "./dist/coordinate.js"
+    },
+    "./corners": {
+      "types": "./dist/corners.d.ts",
+      "bun": "./src/corners.ts",
+      "import": "./dist/corners.js",
+      "default": "./dist/corners.js"
     },
     "./copy": {
       "types": "./dist/copy.d.ts",

@@ -1,14 +1,17 @@
-import type {
-  ClientSideConnection,
-  PromptResponse,
-  SessionNotification,
-  SessionUpdate
-} from '@agentclientprotocol/sdk'
+import {
+  methods,
+  type ClientConnection,
+  type PromptResponse,
+  type SessionNotification,
+  type SessionUpdate
+} from '@agentclientprotocol/sdk/unstable'
 import type { UIMessageChunk } from 'ai'
 
 import { createUpdateMapper, isFinished } from '@/app/ai/agents/acp/events'
+import { createSubagentTranscripts } from '@/app/ai/agents/acp/transcripts'
 import { endRun, startAgentRun } from '@/app/ai/reply/run'
 import { createSteering, type Steering } from '@/app/ai/transports/steering'
+import { subagentAgent } from '@/app/automation/agents'
 import type { EditorStore } from '@/app/editor/active-store'
 
 /**
@@ -27,7 +30,7 @@ const TURN_UPDATES: ReadonlySet<SessionUpdate['sessionUpdate']> = new Set([
 
 /** The part of an agent session a turn drives. */
 interface TurnSession {
-  connection: ClientSideConnection
+  connection: ClientConnection
   sessionId: string
   /** The id the agent's tool calls carry, which ties them to this chat's replies. */
   chat: string
@@ -61,7 +64,8 @@ function followToolCalls(steering: Steering, update: SessionUpdate): void {
 
 /**
  * One reply as a stream: the agent's prompt, mapped to chunks until its turn is over. The reply
- * ends when the prompt answers, the agent exits, Stop is pressed, or its reader leaves.
+ * ends when the prompt answers or fails, which it does when the agent exits, when Stop is pressed,
+ * or when its reader leaves.
  */
 export function streamAgentTurn({
   session,
@@ -75,51 +79,72 @@ export function streamAgentTurn({
 }: AgentTurnOptions): ReadableStream<UIMessageChunk> {
   const { connection, sessionId } = session
   const mapper = createUpdateMapper(`turn-${Date.now()}`)
-  const cancelTurn = () => void connection.cancel({ sessionId })
+  const cancelTurn = () =>
+    void connection.agent
+      .notify(methods.agent.session.cancel, { sessionId })
+      // An agent that exited has no turn left to cancel.
+      .catch(() => undefined)
   const steering = createSteering({ yieldWhen, cancel: cancelTurn })
   const run = store ? startAgentRun(store, session.chat) : null
-  /** The reply's stream while someone reads it; once it ended or its reader left, null. */
-  let reading: ReadableStreamDefaultController<UIMessageChunk> | null = null
+  /** The reply's stream until it closes or its reader leaves. */
+  let output: ReadableStreamDefaultController<UIMessageChunk> | null = null
+  /** Whether the reply is still going, as opposed to ended, though its stream may not be closed. */
+  let live = false
+  const subagents = createSubagentTranscripts(
+    (chunk) => output?.enqueue(chunk),
+    // The agent each subagent shows as in this chat's document.
+    (subagent) => (store ? subagentAgent(store, subagent) : null)
+  )
 
   function stopTurn() {
     cancelTurn()
     finish('stop')
   }
 
-  /** Ends the reply, once, and hands back its stream if someone still reads it. */
-  function release() {
-    const controller = reading
-    reading = null
+  /** Ends the reply, once; whether it was still going. */
+  function release(): boolean {
+    if (!live) return false
+    live = false
     steering.stop()
     // The signal can outlive the reply, and its abort then would cancel the session's next turn.
     abortSignal?.removeEventListener('abort', stopTurn)
-    if (controller) {
-      if (store && run) endRun(store, run)
-      session.onUpdate = null
-    }
-    return controller
+    if (store && run) endRun(store, run)
+    session.onUpdate = null
+    return true
   }
 
   function finish(reason: 'stop' | 'other' | 'error', errorText?: string) {
-    const controller = release()
-    if (!controller) return
-    if (errorText) controller.enqueue({ type: 'error', errorText })
-    for (const chunk of mapper.end()) controller.enqueue(chunk)
-    controller.enqueue({ type: 'finish-step' })
-    controller.enqueue({ type: 'finish', finishReason: reason })
-    controller.close()
+    if (!release()) return
+    // The subagents' transcripts reach the chat in full before the reply closes.
+    void subagents.end().finally(() => {
+      const open = output
+      if (!open) return
+      output = null
+      if (errorText) open.enqueue({ type: 'error', errorText })
+      for (const chunk of mapper.end()) open.enqueue(chunk)
+      open.enqueue({ type: 'finish-step' })
+      open.enqueue({ type: 'finish', finishReason: reason })
+      open.close()
+    })
   }
 
   return new ReadableStream<UIMessageChunk>({
     start: (controller) => {
-      reading = controller
+      output = controller
+      live = true
 
-      session.onUpdate = ({ update }) => {
-        const open = reading
-        if (!open) return
+      session.onUpdate = (params) => {
+        if (!live) return
+        const { update } = params
+        // A subagent's own subagents are described on its session, as the agent's are on the chat's.
+        if (update.sessionUpdate === 'subagent_update') subagents.describe(update)
+        if (params.sessionId !== sessionId) {
+          subagents.update(params.sessionId, update)
+          return
+        }
         const inTurn = TURN_UPDATES.has(update.sessionUpdate)
         if (inTurn) onTurn()
-        for (const chunk of mapper.map(update)) open.enqueue(chunk)
+        for (const chunk of mapper.map(update)) controller.enqueue(chunk)
         followToolCalls(steering, update)
         // A message waiting from the start lets the agent take a turn first, as the built-in
         // chat's step runs before it yields. A cancel before the agent took the prompt can miss it.
@@ -137,15 +162,12 @@ export function streamAgentTurn({
         return
       }
 
-      // The SDK leaves the prompt pending when the agent exits, so the reply races the exit.
-      const exited = connection.closed.then((): never => {
-        throw new Error('Agent process exited unexpectedly.')
-      })
-      Promise.race([
-        connection.prompt({ sessionId, prompt: [{ type: 'text', text: promptText }] }),
-        exited
-      ])
-        // The prompt answers once the agent's turn is over, or the agent exits.
+      connection.agent
+        .request(methods.agent.session.prompt, {
+          sessionId,
+          prompt: [{ type: 'text', text: promptText }]
+        })
+        // The prompt answers once the agent's turn is over, or fails when the agent exits.
         .then((result) => {
           onTurn()
           onAnswer(result)
@@ -160,7 +182,11 @@ export function streamAgentTurn({
     },
     // The reader left without a Stop, as when the chat cannot process a chunk: stop its work.
     cancel: () => {
-      if (release()) cancelTurn()
+      output = null
+      if (release()) {
+        cancelTurn()
+        void subagents.end()
+      }
     }
   })
 }

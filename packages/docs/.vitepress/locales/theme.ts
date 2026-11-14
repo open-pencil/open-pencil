@@ -25,6 +25,8 @@ export const localeThemeConfig = (
     { text: nav.sdk, link: `${prefix}/programmable/sdk/` },
     { text: nav.reference, link: `${prefix}/reference/keyboard-shortcuts` },
     { text: nav.development, link: '/development/contributing' },
+    // English only until translated.
+    { text: nav.cloud, link: '/cloud/', activeMatch: '^/cloud/' },
     { text: nav.openApp, link: 'https://app.openpencil.dev' }
   ],
   sidebar: {
