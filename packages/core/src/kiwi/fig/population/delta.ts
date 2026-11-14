@@ -182,8 +182,12 @@ export function beginFigPopulation(graph: SceneGraph) {
           }
           diverged.push(id)
           const node = graph.getNode(id)
+          // Only new layers still here under this parent: one moved or removed since is not.
           const joining = fields.childIds?.filter(
-            (childId) => createdIds.has(childId) && !node?.childIds.includes(childId)
+            (childId) =>
+              createdIds.has(childId) &&
+              graph.getNode(childId)?.parentId === id &&
+              !node?.childIds.includes(childId)
           )
           if (node && joining?.length) {
             graph.updateNode(id, { childIds: [...node.childIds, ...joining] })

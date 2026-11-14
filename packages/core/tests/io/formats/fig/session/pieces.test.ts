@@ -85,3 +85,35 @@ test('a page load that fails keeps a layer added inside its layers meanwhile', a
     client.terminate()
   }
 })
+
+test('a loaded layer moved or removed before the load finishes stays where the edit left it', async () => {
+  const { graph, page, layers } = pageWithLayers(2)
+  const [moved, removed] = layers
+  const other = graph.createNode('FRAME', page.id, { name: 'Other' })
+  const worker = populationPort()
+  const client = createPopulationWorkerClient(graph, worker.worker, worker.port)
+  try {
+    const pending = client.populate(page.id)
+    const { requestId, baseRevision } = worker.request()
+    worker.send({ type: 'population-chunk', requestId, created: layers })
+    graph.reparentNode(moved.id, other.id)
+    graph.deleteNode(removed.id)
+    worker.send({
+      type: 'population-result',
+      requestId,
+      baseRevision,
+      populated: true,
+      delta: {
+        created: [],
+        updated: [[page.id, { childIds: [other.id, moved.id, removed.id] }]],
+        deleted: [],
+        populatedRootIds: [page.id]
+      }
+    })
+    expect(await pending).toBe(true)
+    expect(page.childIds).toEqual([other.id])
+    expect(graph.getNode(other.id)?.childIds).toEqual([moved.id])
+  } finally {
+    client.terminate()
+  }
+})
