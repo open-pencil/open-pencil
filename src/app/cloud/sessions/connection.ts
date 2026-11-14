@@ -83,7 +83,9 @@ function publish(serverId: string, connection: CloudConnection): void {
  */
 export const cloudFetch: CloudFetch = (input, init) => {
   if (!IS_TAURI) return globalThis.fetch(input, init)
-  const headers = new Headers(init?.headers)
+  // A request's own headers, then the call's, as `fetch` would combine them.
+  const headers = new Headers(input instanceof Request ? input.headers : undefined)
+  new Headers(init?.headers).forEach((value, name) => headers.set(name, value))
   headers.set(CLOUD_EDITOR_VERSION_HEADER, APP_VERSION)
   return tauriFetch(input, { ...init, headers })
 }
@@ -92,11 +94,18 @@ export const cloudFetch: CloudFetch = (input, init) => {
  * A server that refused this editor as too old raised its minimum since the app last asked: the
  * kept discovery is stale, so the server is asked again and its answer says to update.
  */
+/**
+ * Servers being asked again after a refusal. A refusal during that check, as from a replica still
+ * on the old minimum while discovery comes from one on the new, starts no other one.
+ */
+const rechecking = new Set<string>()
+
 function recheckRefusedEditor(serverId: string): void {
   const server = findCloudServer(serverId)
-  if (!server) return
+  if (!server || rechecking.has(serverId)) return
+  rechecking.add(serverId)
   discoveries.delete(server.url)
-  void refreshCloudConnection(server)
+  void refreshCloudConnection(server).finally(() => rechecking.delete(serverId))
 }
 
 /** Requests to one server, carrying its device-code token when this app has one. */

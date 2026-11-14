@@ -62,4 +62,23 @@ describe('Cloud servers that need a newer editor', () => {
     expect((await checkedCloudConnection(server)).failure).toBe('editor-outdated')
     expect(cloudServerNeedingUpdate.value?.id).toBe(server.id)
   })
+
+  test('a refusal while the server is asked again starts no other check', async () => {
+    const server = await addCloudServer({ kind: 'self-hosted', url: 'https://rolling.example.com' })
+    let discoveries = 0
+    spyOn(globalThis, 'fetch').mockImplementation(
+      fetchStub(async (input) => {
+        const url = new URL(input instanceof Request ? input.url : String(input))
+        if (url.pathname === '/.well-known/openpencil') {
+          discoveries += 1
+          return Response.json(cloudDiscoveryFixture(url.origin))
+        }
+        // Discovery still accepts the editor, but every account request refuses it.
+        return Response.json({ error: { code: 'editor_outdated' } }, { status: 426 })
+      })
+    )
+    await cloudServerFetch(server.id)('https://rolling.example.com/api/documents')
+    await checkedCloudConnection(server)
+    expect(discoveries).toBe(1)
+  })
 })
