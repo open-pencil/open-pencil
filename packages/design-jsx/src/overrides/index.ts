@@ -52,7 +52,7 @@ function numberProp(value: unknown): number | undefined {
 }
 
 /** A size or radius as an element may set it: non-negative and bounded. */
-function layoutLengthProp(value: unknown): number | undefined {
+export function layoutLengthProp(value: unknown): number | undefined {
   const length = numberProp(value)
   return length === undefined ? undefined : clampLayoutLength(length)
 }

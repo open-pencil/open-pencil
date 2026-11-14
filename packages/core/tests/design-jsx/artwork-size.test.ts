@@ -73,6 +73,14 @@ describe('inline SVG size', () => {
     expect(markup).toEqual({ frame: [48, 48], path: [4, 4, 40, 40], stroke: 4 })
   })
 
+  test('a side set to 0 draws nothing in a frame of that size', async () => {
+    expect(await drawn(svg('width="0" height="24"'))).toEqual({
+      frame: [0, 24],
+      path: [0, 12, 0, 0],
+      stroke: 0
+    })
+  })
+
   test('a width that depends on what holds the layer leaves the default size', async () => {
     expect(await drawn(svg('width="100%" height="2em"'))).toEqual({
       frame: [24, 24],
@@ -102,6 +110,14 @@ describe('<Icon> size', () => {
       frame: [48, 48],
       path: [4, 4, 40, 40],
       stroke: 4
+    })
+  })
+
+  test('a side set to 0 draws nothing in a frame of that size', async () => {
+    expect(await drawn('<Icon name="test:square" w={0} h={24} />')).toEqual({
+      frame: [0, 24],
+      path: [0, 12, 0, 0],
+      stroke: 0
     })
   })
 

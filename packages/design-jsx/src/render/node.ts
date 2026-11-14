@@ -11,7 +11,13 @@ import { componentIdNamed, renderInstanceNode } from '../components/instances'
 import { bindProperties, inferComponentSetProperties } from '../components/properties'
 import { designJSXPropertyNames } from '../definitions'
 import { elementNodeType, elementOwnLayer, type OwnLayerRenderer } from '../elements'
-import { applySizeOverrides, explicitSize, propsToOverrides, shapeOverrides } from '../overrides'
+import {
+  applySizeOverrides,
+  explicitSize,
+  layoutLengthProp,
+  propsToOverrides,
+  shapeOverrides
+} from '../overrides'
 import { placeVectorPaths } from '../overrides/vector'
 import type { LayerRefs } from '../refs'
 import { readElementProps } from '../schema'
@@ -84,13 +90,13 @@ const DEFAULT_ARTWORK_SIZE = 24
 
 /**
  * The box an `<Icon>` or inline `<svg>` is drawn in: its `w` and `h` under either of their names,
- * a side it leaves out following the one it sets, or the square `size` when it sets neither.
+ * a side it leaves out following the one it sets, or the square `size` when it sets neither. A
+ * side set to 0 stays 0, as the layer's own size does.
  */
 function artworkBox(props: Record<string, unknown>): Size {
-  const { width = 0, height = 0 } = explicitSize(props)
-  const square = typeof props.size === 'number' ? props.size : DEFAULT_ARTWORK_SIZE
-  const size = width > 0 || height > 0 ? Math.max(width, height) : square
-  return { width: width > 0 ? width : size, height: height > 0 ? height : size }
+  const { width, height } = explicitSize(props)
+  const square = layoutLengthProp(props.size) ?? DEFAULT_ARTWORK_SIZE
+  return { width: width ?? height ?? square, height: height ?? width ?? square }
 }
 
 /**
