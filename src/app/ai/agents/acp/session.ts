@@ -74,6 +74,11 @@ const codexMissingRolloutSchema = v.union([
   v.object({ code: v.literal(-32603), message: noRolloutSchema }),
   v.object({ code: v.literal(-32603), data: v.object({ details: noRolloutSchema }) })
 ])
+/** `omp acp` reports a session it does not have as an internal error naming it in `data.details`. */
+const ompMissingSessionSchema = v.object({
+  code: v.literal(-32603),
+  data: v.object({ details: v.pipe(v.string(), v.startsWith('ACP session not found:')) })
+})
 
 /** The message of an `Error` or of a decoded ACP error, or the value as text. */
 export function acpErrorMessage(e: unknown): string {
@@ -101,7 +106,8 @@ function canResume(agentDef: ACPAgentDef, initialized: InitializeResponse): bool
 /** Whether the agent confirms it no longer has the session; anything else may be retried. */
 function isMissingSession(error: unknown, agent: ACPAgentID): boolean {
   if (v.is(resourceNotFoundSchema, error)) return true
-  return agent === 'codex' && v.is(codexMissingRolloutSchema, error)
+  if (agent === 'codex') return v.is(codexMissingRolloutSchema, error)
+  return agent === 'omp' && v.is(ompMissingSessionSchema, error)
 }
 
 /** The agent cannot continue the saved session, which a new session would not know. */

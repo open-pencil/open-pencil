@@ -9,7 +9,7 @@ Press <kbd>⌘</kbd><kbd>J</kbd> (<kbd>Ctrl</kbd> + <kbd>J</kbd>) to open the AI
 
 ## Setup
 
-The first time you open OpenPencil, guided setup asks what AI should help with and what you already use: a [coding agent](./coding-agents) such as Claude Code, Codex, Antigravity CLI, Gemini CLI, Cursor, Grok Build, or Pi in the desktop app, an API account, or a local or company server. It connects that access and assigns it to the **Design agent** and **Vision** roles, keeping anything you configured by hand. With OpenRouter you can sign in instead of pasting an API key. Skip it to start designing, and run it again from **Settings → Models → Run guided setup**. To configure models by hand:
+The first time you open OpenPencil, guided setup asks what AI should help with and what you already use: a [coding agent](./coding-agents) such as Claude Code, Codex, Antigravity CLI, Gemini CLI, Cursor, Grok Build, Oh My Pi, or Pi in the desktop app, an API account, or a local or company server. It connects that access and assigns it to the **Design agent** and **Vision** roles, keeping anything you configured by hand. With OpenRouter you can sign in instead of pasting an API key. Skip it to start designing, and run it again from **Settings → Models → Run guided setup**. To configure models by hand:
 
 1. Open the AI chat panel (<kbd>⌘</kbd><kbd>J</kbd>)
 2. Open the model picker under the message field and choose **Manage models and roles…**
@@ -122,7 +122,7 @@ You can keep typing while a reply runs. **Enter** sends the message as soon as t
 
 Each tool call that changes the document is one step in Edit → Undo. Undoing it with <kbd>⌘</kbd><kbd>Z</kbd> marks the call _Undone_ in the chat. A reply with only some edits undone says how many; one with all of them undone is dimmed and marked _Changes reverted_. Redo removes the marks. The marks are saved with the conversation.
 
-**Revert changes** on a reply undoes its edits while nothing has been edited since, and **Restore changes** brings undone edits back while Redo still can. **Regenerate** and editing your last message undo the replaced reply's edits first when they can.
+**Revert changes** on a reply undoes its edits while nothing has been edited since, and **Restore changes** brings undone edits back while Redo still can. **Regenerate** and editing your last message undo the replaced reply's edits first when they can. [Oh My Pi](./coding-agents#omp) is the exception: its edits show in the chat but are not part of the reply, so these actions do not cover them.
 
 Your next message tells the assistant which of its edits you undid or redid, so it does not build on edits that are gone. If you undo the assistant's edits while it is still working, it hears about it with its next tool call.
 

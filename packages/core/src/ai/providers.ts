@@ -7,6 +7,7 @@ export type ACPAgentID =
   | 'antigravity'
   | 'cursor'
   | 'grok-build'
+  | 'omp'
 
 export interface ACPAgentDef {
   id: ACPAgentID
@@ -39,6 +40,12 @@ export interface ACPAgentDef {
    * OpenPencil's MCP server then provides that tool for the agent's sessions.
    */
   defersMCPTools?: boolean
+  /**
+   * Whether the agent names an MCP tool by joining its server's name and its own, as Oh My Pi
+   * does, so that a tool of another server can take the name of one of OpenPencil's. OpenPencil
+   * then leaves out of the agent's sessions any server that could.
+   */
+  joinsMCPNames?: boolean
 }
 
 export const ACP_AGENTS: ACPAgentDef[] = [
@@ -104,6 +111,17 @@ export const ACP_AGENTS: ACPAgentDef[] = [
     command: 'grok',
     args: ['agent', 'stdio'],
     setupURL: 'https://docs.x.ai/build/overview'
+  },
+  {
+    id: 'omp',
+    name: 'Oh My Pi',
+    command: 'omp',
+    args: ['acp'],
+    setupURL: 'https://omp.sh',
+    installCommand: 'curl -fsSL https://omp.sh/install | sh',
+    windowsInstallCommand: 'irm https://omp.sh/install.ps1 | iex',
+    resumesSessions: true,
+    joinsMCPNames: true
   }
 ]
 

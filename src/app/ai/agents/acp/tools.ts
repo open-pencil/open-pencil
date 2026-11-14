@@ -11,6 +11,7 @@ import { buildACPMCPServers } from '@/app/integrations/mcp'
 import { linkChatAgent } from '@/app/integrations/mcp/link'
 
 import { isOwnToolCall, textFromContent } from './events'
+import { shadowsOwnTools } from './omp'
 
 /**
  * Lets the agent use OpenPencil's own tools without asking each time: their edits are undoable
@@ -69,10 +70,15 @@ export interface OwnToolsLink {
  */
 export async function linkOwnTools(
   authorizationToken: string | null,
-  options: { defersTools?: boolean } = {}
+  options: { defersTools?: boolean; joinsNames?: boolean } = {}
 ): Promise<OwnToolsLink> {
   const link = await linkChatAgent((chat) =>
-    buildACPMCPServers({ authorizationToken, chat, defersTools: options.defersTools })
+    buildACPMCPServers({
+      authorizationToken,
+      chat,
+      defersTools: options.defersTools,
+      skipExternal: options.joinsNames ? shadowsOwnTools : undefined
+    })
   )
   const failures: string[] = []
   return {

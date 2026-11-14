@@ -526,7 +526,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     // The agent must reach OpenPencil's tools before it gets a prompt. An outside MCP connection
     // whose credential cannot be read fails here.
     const linking = this.startup.linkTools(automationAuthToken, {
-      defersTools: this.agentDef.defersMCPTools === true
+      defersTools: this.agentDef.defersMCPTools === true,
+      joinsNames: this.agentDef.joinsMCPNames === true
     })
     release = () => stopWhenLinked(linking)
     const tools = await step(linking)

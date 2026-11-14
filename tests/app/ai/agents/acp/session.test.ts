@@ -30,6 +30,10 @@ const codex = expectDefined(
   ACP_AGENTS.find((agent) => agent.id === 'codex'),
   'Codex agent'
 )
+const omp = expectDefined(
+  ACP_AGENTS.find((agent) => agent.id === 'omp'),
+  'Oh My Pi agent'
+)
 const claude = expectDefined(
   ACP_AGENTS.find((agent) => agent.id === 'claude-code'),
   'Claude agent'
@@ -169,6 +173,35 @@ test('Codex error wording does not classify another agent’s internal error', a
   const error = RequestError.internalError({ details: 'no rollout found for thread id saved' })
   const fake = connection({ resumeError: error })
   await expectRetry(openAgentSession(fake, claude, resumes, { ...request, resume: 'saved' }), error)
+})
+
+test('a session Oh My Pi no longer has retires the saved session, and its other errors stay retryable', async () => {
+  // `omp acp` reports an unknown session as an internal error that names it.
+  const missing = RequestError.internalError({ details: 'ACP session not found: saved' })
+  const gone = connection({ resumeError: missing })
+  const failure = await openAgentSession(gone, omp, resumes, {
+    ...request,
+    resume: 'saved'
+  }).catch((cause: unknown) => cause)
+  expect(failure).toBeInstanceOf(AgentSessionResumeError)
+  expect(failure instanceof Error && failure.cause).toBe(missing)
+  expect(gone.created).toEqual([])
+
+  const other = RequestError.internalError({ details: 'Session file is locked' })
+  await expectRetry(
+    openAgentSession(connection({ resumeError: other }), omp, resumes, {
+      ...request,
+      resume: 'saved'
+    }),
+    other
+  )
+  await expectRetry(
+    openAgentSession(connection({ resumeError: missing }), claude, resumes, {
+      ...request,
+      resume: 'saved'
+    }),
+    missing
+  )
 })
 
 test.each([

@@ -36,9 +36,10 @@ pub fn candidate_dirs() -> Vec<PathBuf> {
         if let Some(appdata) = std::env::var_os("APPDATA").map(PathBuf::from) {
             dirs.push(appdata.join("npm"));
         }
-        // Antigravity CLI's installer puts `agy.exe` here.
+        // Antigravity CLI's installer puts `agy.exe` here, and Oh My Pi's puts `omp.exe` in `omp`.
         if let Some(local) = std::env::var_os("LOCALAPPDATA").map(PathBuf::from) {
             dirs.push(local.join("agy").join("bin"));
+            dirs.push(local.join("omp"));
         }
     }
     dirs
