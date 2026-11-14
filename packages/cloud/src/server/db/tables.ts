@@ -119,6 +119,8 @@ export interface DocumentReportTable {
   reporterUserId: string | null
   reporterGuestId: string | null
   replyEmail: string | null
+  /** The language to reply in when the reporter has no account that chose one. */
+  replyLocale: Generated<EmailLocale | null>
   reason: 'spam-phishing' | 'illegal' | 'copyright' | 'harassment' | 'other'
   description: string
   status: Generated<'open' | 'dismissed' | 'actioned'>

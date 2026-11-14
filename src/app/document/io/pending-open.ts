@@ -20,7 +20,7 @@ export interface PendingOpenFile extends DeepLinkTarget {
 
 /** File-system entry points, injected so tests can observe the routing. */
 export interface PendingOpenIo {
-  openPath: (path: string) => Promise<void>
+  openPath: (path: string) => Promise<unknown>
   openLink: (target: DeepLinkTarget, actions: DeepLinkActions) => Promise<void>
 }
 

@@ -1,8 +1,15 @@
 import * as v from 'valibot'
 
+import { colorToHex } from '@open-pencil/scene-graph/color'
+
 import { isUnknownRecord } from '@/app/automation/bridge/target'
 import type { EditorStore } from '@/app/editor/active-store'
-import { addAgent, agentPlacement, type AgentHandle } from '@/app/presence/registry'
+import {
+  addAgent,
+  agentPlacement,
+  localAgentColor,
+  type AgentHandle
+} from '@/app/presence/registry'
 import { MAX_NAME_LENGTH } from '@/app/presence/schema'
 import { createDeferred } from '@/app/runtime/deferred'
 
@@ -245,6 +252,27 @@ export function subagentFinished(chat: string, subagent: string): void {
   }
 }
 
+/** The agent a subagent shows as on the canvas: its presence id, callsign, and color. */
+export interface SubagentAgent {
+  id: string
+  name: string
+  /** As a hex color, such as `#3B82F6`. */
+  color: string
+}
+
+/**
+ * The agent the subagent working in the ACP session `subagent` shows as in the document `store`,
+ * once one of its calls reached it, or null: a subagent that never touches it has none there.
+ */
+export function subagentAgent(store: EditorStore, subagent: string): SubagentAgent | null {
+  for (const agent of sessionAgents) {
+    if (agent.store !== store || agent.subagent !== subagent) continue
+    const { id, name } = agent.handle
+    return { id, name, color: colorToHex(localAgentColor(agent.store, id)) }
+  }
+  return null
+}
+
 /**
  * `session` with the subagent that made its call, when its chat's ACP updates already named it.
  * A call that reaches OpenPencil before its update stays with the session's own agent: a tool
@@ -278,7 +306,7 @@ export function agentSessionOpened(args: unknown): void {
   waitingChats.delete(chat)
 }
 
-/** The MCP server says a session ended: its agents leave every document. */
+/** A session ended or lost its connection: its agents leave every document. */
 export function endAgentSession(sessionId: string): void {
   // Removing entries while iterating a Set is safe: visited ones stay visited.
   for (const agent of sessionAgents) if (agent.session === sessionId) remove(agent)

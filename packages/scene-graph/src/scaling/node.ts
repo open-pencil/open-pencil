@@ -148,6 +148,7 @@ export function scaleNodeChanges(
     paragraphSpacing: node.paragraphSpacing * scale,
     paragraphIndent: node.paragraphIndent * scale,
     textParagraphs: scaledParagraphStyles(node.textParagraphs, scale),
+    derivedTextHeight: scaledOptional(node.derivedTextHeight, scale),
     itemSpacing: node.itemSpacing * scale,
     counterAxisSpacing: node.counterAxisSpacing === null ? null : node.counterAxisSpacing * scale,
     paddingTop: node.paddingTop * scale,

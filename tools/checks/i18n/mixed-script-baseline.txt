@@ -739,3 +739,5 @@ zh-cn:cloudPortal.siteCloudDocs
 zh-cn:cloudPortal.siteLicense
 ja:cloudPortal.sitePoweredBy
 zh-cn:cloudPortal.sitePoweredBy
+ja:email.documentBlocked
+zh-cn:email.documentBlocked

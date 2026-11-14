@@ -134,8 +134,7 @@ export const TEXT_ALIGN_VERTICAL = lowercaseEnum<SceneNode['textAlignVertical']>
 export const TEXT_AUTO_RESIZE = jsxEnum<TextAutoResize>({
   NONE: 'none',
   WIDTH_AND_HEIGHT: 'width',
-  HEIGHT: 'height',
-  TRUNCATE: 'truncate'
+  HEIGHT: 'height'
 })
 export const TEXT_DIRECTION = lowercaseEnum<TextDirection>(['AUTO', 'LTR', 'RTL'])
 export const TEXT_DECORATION = lowercaseEnum<TextDecoration>(['NONE', 'UNDERLINE', 'STRIKETHROUGH'])

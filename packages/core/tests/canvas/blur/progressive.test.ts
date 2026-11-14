@@ -6,6 +6,7 @@ import { FigmaAPI, type FigmaFrameNode } from '@open-pencil/core/figma-api'
 import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { maxOf } from '@open-pencil/scene-graph/arrays'
+import { blurReach } from '@open-pencil/scene-graph/geometry'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import {
@@ -256,5 +257,31 @@ describe('progressive blur against Figma', () => {
       // The corner is sharp, so only antialiasing differs.
       expect(worstDifference(ours, figma)).toBeLessThanOrEqual(30)
     }
+  })
+})
+
+describe('progressive layer blur layer', () => {
+  test('spreads as far as its wider start, past what its end radius reaches', () => {
+    const at = render((api, frame) => {
+      const rect = api.createRectangle()
+      frame.appendChild(rect)
+      rect.resize(40, 40)
+      rect.x = 108
+      rect.y = 108
+      rect.fills = [{ type: 'SOLID', color: { r: 0, g: 0, b: 0 } }]
+      rect.effects = [
+        {
+          type: 'LAYER_BLUR',
+          visible: true,
+          blurType: 'PROGRESSIVE',
+          radius: 2,
+          startRadius: 32,
+          startOffset: { x: 0, y: 0.5 },
+          endOffset: { x: 1, y: 0.5 }
+        }
+      ]
+    })
+    const pastEndReach = 108 - blurReach(2) - 4
+    expect(at(pastEndReach, 128)).toBeLessThan(250)
   })
 })

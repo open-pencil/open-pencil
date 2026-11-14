@@ -205,8 +205,7 @@ function collectSizingProps(
 }
 
 function collectTextSizingProps(node: SceneNode, graph: SceneGraph, props: JSXProp[]): void {
-  const autoResize = node.textAutoResize
-  const emitH = autoResize === 'NONE' || autoResize === 'TRUNCATE'
+  const emitH = node.textAutoResize === 'NONE'
   // Don't emit fixed w when text stretches to fill parent — the layoutAlignSelf
   // check below will emit w="fill" instead. Without this guard, w={computedPx}
   // gets emitted first and blocks the fill detection.
@@ -222,7 +221,7 @@ function collectTextSizingProps(node: SceneNode, graph: SceneGraph, props: JSXPr
       const parent = node.parentId ? graph.getNode(node.parentId) : null
       return parent?.layoutMode === 'HORIZONTAL'
     })()
-  const emitW = autoResize !== 'WIDTH_AND_HEIGHT' && !isFillWidth && !isGrowWidth
+  const emitW = node.textAutoResize !== 'WIDTH_AND_HEIGHT' && !isFillWidth && !isGrowWidth
   if (emitW && node.width > 0) props.push(['w', node.width])
   if (emitH && node.height > 0) props.push(['h', node.height])
 }
@@ -295,8 +294,7 @@ function collectTextNodeProps(node: SceneNode, props: JSXProp[]): void {
 const TEXT_AUTO_RESIZE: Record<SceneNode['textAutoResize'], string> = {
   NONE: 'none',
   WIDTH_AND_HEIGHT: 'width',
-  HEIGHT: 'height',
-  TRUNCATE: 'truncate'
+  HEIGHT: 'height'
 }
 
 /** The renderer infers auto-resize from the width props; say so only when it differs. */
