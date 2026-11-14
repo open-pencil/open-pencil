@@ -1,4 +1,4 @@
-import { uniq } from 'es-toolkit'
+import { pickBy, uniq } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { appendAll } from '@open-pencil/scene-graph/arrays'
@@ -9,7 +9,7 @@ import { elementBindings, elementProps, elementSchema } from '../elements'
 import { ENUM_PROPS } from '../enums'
 import { DESIGN_JSX_HELPERS, designJSXHelpers } from '../helpers'
 import * as React from '../mini-react'
-import { elementPropWarnings, gridPropsSchema } from '../schema'
+import { elementPropWarnings, gridPropsSchema, layerPropsSchema } from '../schema'
 import type { DesignJSXServices } from '../services'
 import { TEXT_CONTENT_NAMES } from '../text-content'
 import { transformDesignJSXExpression } from '../transform'
@@ -58,6 +58,12 @@ function collectUnsupportedPropWarnings(
   const element = TEXT_CONTENT_NAMES[tree.type] ?? tree.type
   const schema = elementSchema(tree.type)
   if (schema) appendAll(warnings, elementPropWarnings(schema, tree.props, element))
+  // The layer props an element takes are read by one schema, which its own schema may restate.
+  const layerProps = pickBy(
+    tree.props,
+    (_, key) => supported.has(key) && !(schema && Object.hasOwn(schema.entries, key))
+  )
+  appendAll(warnings, elementPropWarnings(layerPropsSchema, layerProps, element))
   // Every layer reads a grid placement inside a grid, whatever element it is.
   appendAll(warnings, elementPropWarnings(gridPropsSchema, tree.props, element))
   for (const [key, value] of Object.entries(tree.props)) {

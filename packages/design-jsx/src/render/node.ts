@@ -20,7 +20,7 @@ import {
 } from '../overrides'
 import { placeVectorPaths } from '../overrides/vector'
 import type { LayerRefs } from '../refs'
-import { readElementProps } from '../schema'
+import { readElementProps, readLayerProps, type LayerProps } from '../schema'
 import type { DesignJSXServices, MarkdownService } from '../services'
 import { isTextContent, TEXT_CONTENT_NAMES, textContentFields } from '../text-content'
 import { isTreeNode } from '../tree'
@@ -131,8 +131,8 @@ async function renderIconNode<Artwork>(
   tree: TreeNode,
   parentId: string
 ): Promise<SceneNode> {
-  const props = tree.props
-  const iconName = props.name as string | undefined
+  const props = readLayerProps(tree.props)
+  const iconName = props.name
   if (!iconName) throw new Error('<Icon> requires a name prop (e.g. name="lucide:heart")')
 
   // An icon is square, so it fits the smaller side of its box and sits in the middle of the other.
@@ -154,13 +154,13 @@ function placeArtwork<Artwork>(
   services: DesignJSXServices<Artwork>,
   graph: SceneGraph,
   artwork: Artwork,
-  props: Record<string, unknown>,
+  props: LayerProps,
   size: number,
   parentId: string
 ): SceneNode {
   const parentLayout = graph.getNode(parentId)?.layoutMode ?? 'NONE'
   const overrides: Partial<SceneNode> = {}
-  if (props.label) overrides.name = props.label as string
+  if (props.label) overrides.name = props.label
   applyIconSize(props, overrides, parentLayout, size)
   const modes = variableModes(graph, props.mode)
   if (modes) overrides.variableModes = modes
@@ -197,7 +197,7 @@ function renderSVGNode<Artwork>(
   tree: TreeNode,
   parentId: string
 ): SceneNode {
-  const props = svgSizeProps(tree.props)
+  const props = readLayerProps(svgSizeProps(tree.props))
   const body =
     (typeof props.body === 'string' && props.body) ||
     tree.children.filter((c): c is string => typeof c === 'string').join('')
