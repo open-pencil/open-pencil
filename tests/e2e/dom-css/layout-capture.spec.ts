@@ -115,10 +115,19 @@ test.describe('@open-pencil/dom-css browser layout capture', () => {
     expect(lines).toHaveLength(4)
     expect(lines.map((line) => Math.round(line.y - lines[0].y))).toEqual([0, 30, 60, 90])
     expect(lines.every((line) => line.x === 0)).toBe(true)
+    // Line boxes, as tall as the line height, rather than the area the glyphs cover.
+    expect(lines.map((line) => [line.y, line.height])).toEqual([
+      [0, 30],
+      [30, 30],
+      [60, 30],
+      [90, 30]
+    ])
 
     const fragments = bold.layout?.fragments ?? []
     expect(fragments).toHaveLength(2)
-    expect(fragments.map((fragment) => Math.round(fragment.y - lines[0].y))).toEqual([30, 60])
+    // One fragment in each of the two lines the bold text spans.
+    const lineOf = (y: number) => lines.findIndex((line) => y >= line.y && y < line.y + line.height)
+    expect(fragments.map((fragment) => lineOf(fragment.y))).toEqual([1, 2])
     expect(bold.layout?.lines).toBeUndefined()
   })
 
