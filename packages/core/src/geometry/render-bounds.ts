@@ -8,6 +8,7 @@ import {
   shadowSpreadOf,
   intersectVisualBounds,
   strokeOverflow,
+  drawsStrokeSides,
   strokeSideReach,
   type SideWeights,
   textDecorationOverflow,
@@ -141,7 +142,7 @@ function ownPaint(node: SceneNode, reach: EffectReach): VisualBounds | null {
   const shape = ownShape(node)
   if (!shape) return null
   const stroke = strokeOverflow(node.strokes, node.strokeCap, node.vectorNetwork, node)
-  const drawn = node.independentStrokeWeights
+  const drawn = drawsStrokeSides(node)
     ? grownBySides(shape, strokeSideReach(node))
     : grown(shape, stroke)
   const outside = node.strokes.some((stroke) => stroke.visible && stroke.align !== 'INSIDE')

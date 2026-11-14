@@ -54,6 +54,13 @@ export function layoutGridAlignment(
   return grid.alignment ?? grid.type ?? 'STRETCH'
 }
 
+/** Whether a file's guide record names an alignment; Figma drops one that does not (live). */
+export function hasLayoutGridAlignment(
+  grid: Partial<Pick<LayoutGrid, 'alignment' | 'type'>>
+): boolean {
+  return grid.type !== undefined || grid.alignment !== undefined
+}
+
 /** A guide's color, Figma's new-guide red for one set without any. */
 export function layoutGridColor(grid: Pick<LayoutGrid, 'color'>): Color {
   return { ...(grid.color ?? DEFAULT_LAYOUT_GRID_COLOR) }

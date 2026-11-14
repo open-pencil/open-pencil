@@ -1,7 +1,7 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
-import { nodeCornerRadii } from '@open-pencil/scene-graph/corners'
+import { cornerRadii, fittedCornerRadii, type CornerRadii } from '@open-pencil/scene-graph/corners'
 import {
   strokeOverflow as strokeReach,
   strokeAlignShare,
@@ -276,8 +276,12 @@ function pointInShape(node: SceneNode, x: number, y: number): boolean {
   }
   if (!nodeHasRadius(node)) return true
   const smoothing = nodeHasSmoothCorners(node) ? 1 + node.cornerSmoothing : 1
-  const radius = (value: number) => Math.min(value * smoothing, node.width / 2, node.height / 2)
-  const [topLeft, topRight, bottomRight, bottomLeft] = nodeCornerRadii(node).map(radius)
+  const smoothed = cornerRadii(node).map((value) => value * smoothing) as CornerRadii
+  const [topLeft, topRight, bottomRight, bottomLeft] = fittedCornerRadii(
+    node.width,
+    node.height,
+    smoothed
+  )
   const outsideCorner = (cx: number, cy: number, r: number, inCorner: boolean) =>
     inCorner && Math.hypot(x - cx, y - cy) > r + epsilon
   return !(

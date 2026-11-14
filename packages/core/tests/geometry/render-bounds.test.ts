@@ -412,6 +412,29 @@ describe('render bounds of a stroke with sides of their own weights', () => {
     ])
     expect(box(exportBounds(graph, [sided('INSIDE', 22000).id]))).toEqual([22000, 0, 100, 100])
   })
+
+  test('a line keeps its one weight whatever the side flag says, as it has no sides', () => {
+    const line = (y: number) => {
+      const made = figma.createLine()
+      made.x = 23000
+      made.y = y
+      made.resize(100, 0)
+      made.strokes = [{ type: 'SOLID', color: { r: 0, g: 0, b: 1 } }]
+      made.strokeWeight = 4
+      return made
+    }
+    const plain = line(0)
+    const flagged = line(0)
+    graph.updateNode(flagged.id, {
+      independentStrokeWeights: true,
+      borderTopWeight: 0,
+      borderRightWeight: 0,
+      borderBottomWeight: 0,
+      borderLeftWeight: 0
+    })
+    expect(box(exportBounds(graph, [flagged.id]))).toEqual(box(exportBounds(graph, [plain.id])))
+    expect(box(exportBounds(graph, [plain.id]))?.[3]).toBe(8)
+  })
 })
 
 // Figma desktop (2026-11-14): a drop shadow's spread grows the render bounds of a rectangle, an

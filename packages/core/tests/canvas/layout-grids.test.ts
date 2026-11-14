@@ -38,6 +38,20 @@ describe('layout grid rendering', () => {
     expect(mockCalls(r.ck.LTRBRect)[3]).toEqual([208, 0, 256, 160])
   })
 
+  // Figma drops a file's guide without an alignment; the raw records the canvas falls back to
+  // still hold it, and follow the same rule.
+  test('draws no raw guide that the import dropped for lacking an alignment', () => {
+    const r = createMockRenderer()
+    const canvas = createMockCanvas()
+    const node = nodeWithLayoutGrids([
+      { pattern: 'COLUMNS', visible: true, color: { r: 1, g: 0, b: 0, a: 0.1 }, count: 3 }
+    ])
+
+    drawLayoutGrids(r, asCanvas(canvas), node)
+
+    expect(mockCalls(canvas.drawRect)).toHaveLength(0)
+  })
+
   test('renders stretched column grids', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()

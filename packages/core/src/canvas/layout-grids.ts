@@ -2,6 +2,7 @@ import type { Canvas } from '@open-pencil/canvaskit'
 import { readEffectiveFigmaRawField } from '@open-pencil/fig'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import {
+  hasLayoutGridAlignment,
   layoutGridAlignment,
   layoutGridColor,
   layoutGridCount,
@@ -43,7 +44,11 @@ function rawLayoutGrids(node: SceneNode): RawLayoutGrid[] {
   const source = (node as Partial<SceneNode>).source
   const grids = source ? readEffectiveFigmaRawField(node, 'layoutGrids') : undefined
   if (!Array.isArray(grids)) return []
-  return grids.filter((grid): grid is RawLayoutGrid => grid !== null && typeof grid === 'object')
+  // The raw records still hold what the import dropped; they follow the import's rule.
+  return grids.filter(
+    (grid): grid is RawLayoutGrid =>
+      grid !== null && typeof grid === 'object' && hasLayoutGridAlignment(grid)
+  )
 }
 
 function gridGeometry(grid: RawLayoutGrid): GridGeometry | null {

@@ -8,6 +8,7 @@ import {
   TRANSPARENT
 } from '@open-pencil/scene-graph/constants'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
+import { hasLayoutGridAlignment } from '@open-pencil/scene-graph/layout'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
 import { OPEN_PENCIL_PLUGIN_DATA } from '@open-pencil/scene-graph/plugin-data'
 import { POINT_COUNT_RANGE } from '@open-pencil/scene-graph/polygon'
@@ -642,7 +643,7 @@ function sharedStyleType(value: string | undefined): SharedStyleType | null {
 function convertLayoutGrids(value: unknown): LayoutGrid[] {
   if (!Array.isArray(value)) return []
   return structuredClone(value as LayoutGrid[])
-    .filter((grid) => grid.type !== undefined || grid.alignment !== undefined)
+    .filter(hasLayoutGridAlignment)
     .map((grid) => ({ ...grid, color: grid.color ?? { ...TRANSPARENT } }))
 }
 

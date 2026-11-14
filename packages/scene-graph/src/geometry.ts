@@ -204,6 +204,25 @@ type SideStrokeNode = Pick<
   | 'borderLeftWeight'
 >
 
+/** The layers the canvas strokes side by side when their sides have weights of their own. */
+const SIDE_STROKE_TYPES: ReadonlySet<string> = new Set<SceneNode['type']>([
+  'FRAME',
+  'RECTANGLE',
+  'ROUNDED_RECTANGLE',
+  'COMPONENT',
+  'INSTANCE',
+  'SECTION',
+  'GROUP'
+])
+
+/**
+ * Whether `node` strokes each side by its own weight. A line or vector keeps one weight whatever
+ * the flag says, since its outline has no sides.
+ */
+export function drawsStrokeSides(node: Partial<SideStrokeNode> & { type?: string }): boolean {
+  return node.independentStrokeWeights === true && (!node.type || SIDE_STROKE_TYPES.has(node.type))
+}
+
 /** The share of a stroke's weight that lies outside the shape it outlines. */
 export function strokeAlignShare(align: Stroke['align']): number {
   if (align === 'OUTSIDE') return 1
@@ -223,20 +242,19 @@ export function borderWeights(node: SideStrokeNode): SideWeights {
 
 /** The weight of each side of `node` under `stroke`, its own when its sides have their own. */
 export function strokeSideWeights(
-  node: SideStrokeNode,
+  node: SideStrokeNode & { type?: string },
   stroke: Pick<Stroke, 'weight'>
 ): SideWeights {
-  if (!node.independentStrokeWeights)
-    return [stroke.weight, stroke.weight, stroke.weight, stroke.weight]
+  if (!drawsStrokeSides(node)) return [stroke.weight, stroke.weight, stroke.weight, stroke.weight]
   return borderWeights(node)
 }
 
 /** A stroke's weight, or with sides of their own the widest side, for what is not drawn per side. */
 export function strokeWeightOf(
-  node: Partial<SideStrokeNode>,
+  node: Partial<SideStrokeNode> & { type?: string },
   stroke: Pick<Stroke, 'weight'>
 ): number {
-  if (!node.independentStrokeWeights) return stroke.weight
+  if (!drawsStrokeSides(node)) return stroke.weight
   return Math.max(
     node.borderTopWeight ?? 0,
     node.borderRightWeight ?? 0,
@@ -250,7 +268,9 @@ export function strokeWeightOf(
  * With sides of their own each side reaches by its own weight (Figma desktop, live: a 1px outside
  * stroke with a 20px right side bounds a 100 × 100 rectangle at 121 × 102).
  */
-export function strokeSideReach(node: SideStrokeNode & Pick<SceneNode, 'strokes'>): SideWeights {
+export function strokeSideReach(
+  node: SideStrokeNode & Pick<SceneNode, 'strokes'> & { type?: string }
+): SideWeights {
   let reach: SideWeights = [0, 0, 0, 0]
   for (const stroke of node.strokes) {
     if (!stroke.visible) continue
