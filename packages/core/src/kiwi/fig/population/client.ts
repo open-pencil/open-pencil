@@ -244,17 +244,19 @@ export function createPopulationWorkerClient(
     if (!request) return
     clearTimeout(request.timeout)
     request.abort?.()
-    pending.delete(result.requestId)
     if (stale || result.baseRevision !== request.revision) {
+      pending.delete(result.requestId)
       emitTelemetry({ event: 'stale', reason: 'graph-mutation' })
       return request.resolve(null)
     }
     const applyStartedAt = performance.now()
     let rebase: FigPopulationRebase
     try {
-      // Edits not sent yet are among those the worker did not see.
+      // Edits not sent yet are among those the worker did not see. The load stays pending until
+      // they are read, so sending them keeps the batches it needs.
       edits.flush()
       const edited = edits.changedSince(request.revision)
+      pending.delete(result.requestId)
       // The page arrives from outside any edit open now, such as a script's awaiting tool call,
       // so no undo step takes it in.
       rebase = graph.runOutsideEdits(() =>
@@ -262,6 +264,7 @@ export function createPopulationWorkerClient(
       )
       if (result.checkpoint) updateReaderRecovery(graph, result.checkpoint)
     } catch {
+      pending.delete(result.requestId)
       fail()
       return request.resolve(null)
     }

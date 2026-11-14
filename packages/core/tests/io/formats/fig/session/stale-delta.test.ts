@@ -68,8 +68,8 @@ test('a page load answered for another revision is rejected', async () => {
   }
 })
 
-for (const edit of ['add', 'reorder'] as const) {
-  test(`a page load keeps the page's layers as an ${edit} made while it loaded left them`, async () => {
+for (const edit of ['an add', 'an add, then an edit elsewhere', 'a reorder'] as const) {
+  test(`a page load keeps the page's layers after ${edit} while it loaded`, async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
     const first = graph.createNode('RECTANGLE', page.id)
@@ -78,8 +78,13 @@ for (const edit of ['add', 'reorder'] as const) {
     const client = createPopulationWorkerClient(graph, worker.worker, worker.port)
     try {
       const pending = client.populate(page.id)
-      if (edit === 'add') graph.createNode('RECTANGLE', page.id)
-      if (edit === 'reorder') graph.insertChildAt(second.id, page.id, 0)
+      if (edit !== 'a reorder') graph.createNode('RECTANGLE', page.id)
+      if (edit === 'an add, then an edit elsewhere') {
+        // The add is sent before the result arrives; the later edit is sent as it arrives.
+        await Promise.resolve()
+        graph.updateNode(first.id, { name: 'Elsewhere' })
+      }
+      if (edit === 'a reorder') graph.insertChildAt(second.id, page.id, 0)
       const expected = [...page.childIds]
       const loaded = { ...first, id: 'loaded', parentId: page.id, name: 'Loaded' }
       worker.send({
