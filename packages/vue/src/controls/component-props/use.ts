@@ -38,12 +38,18 @@ export function useComponentProperties(targets?: () => SceneNode[]) {
   const batch = useUndoBatch(editor.undo, editor.beginInteractiveEdit)
   const retainedActivity = useRetainedActivity()
   /**
-   * Counts choices: a variant load still pending applies its choice only while it is the latest,
-   * and leaving the selection, the page, or the panel drops it.
+   * A variant load still pending applies its choice only while it is the property's latest, and
+   * leaving the selection, the page, or the panel drops every pending one.
    */
-  let choice = 0
+  const choices = new Map<string, number>()
+  let scope = 0
+  const choose = (propertyId: string) => {
+    const choice = (choices.get(propertyId) ?? 0) + 1
+    choices.set(propertyId, choice)
+    return choice
+  }
   const leave = () => {
-    choice++
+    scope++
     batch.flush()
   }
   // A batch never spans a page change, a new selection, or a paused retained scope.
@@ -60,7 +66,7 @@ export function useComponentProperties(targets?: () => SceneNode[]) {
     )
   }
   onScopeDispose(() => {
-    choice++
+    scope++
   })
   const instances = useSceneComputed(() =>
     (targets ? targets() : editor.getSelectedNodes()).filter((node) => node.type === 'INSTANCE')
@@ -148,7 +154,8 @@ export function useComponentProperties(targets?: () => SceneNode[]) {
   }
 
   function setValue(propertyId: string, value: string) {
-    const current = ++choice
+    const choice = choose(propertyId)
+    const chosenIn = scope
     const edit = resolveEdit(propertyId)
     if (!edit) return
     const toLoad = uniq(
@@ -161,7 +168,7 @@ export function useComponentProperties(targets?: () => SceneNode[]) {
     // A variant the file holds but no page built is built in the reader worker first, so the
     // switch neither blocks on it nor opens a reader on this thread.
     void editor.loadSavedVariants(toLoad).then((loaded) => {
-      if (!loaded || current !== choice) return undefined
+      if (!loaded || scope !== chosenIn || choices.get(propertyId) !== choice) return undefined
       const targets = edit.targets.filter((instance) => editor.graph.getNode(instance.id))
       if (targets.length > 0) applyDiscrete({ ...edit, targets }, propertyId, value)
       return undefined
@@ -176,7 +183,7 @@ export function useComponentProperties(targets?: () => SceneNode[]) {
       setValue(propertyId, value)
       return
     }
-    choice++
+    choose(propertyId)
     if (hasValueEverywhere(edit, value)) return
     batch.ensure(batchKey(propertyId, edit.targets), edit.label)
     commitToInstances(edit, propertyId, value)
