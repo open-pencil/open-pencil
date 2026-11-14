@@ -3,7 +3,8 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 import { solidFill } from '#core-tests/helpers/figma-api'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 
 // Text edits need the text's font loaded, as in Figma; this file must not rely on another's.
@@ -92,6 +93,26 @@ describe('absoluteRenderBounds', () => {
     ]
 
     expect(text.absoluteRenderBounds).toEqual({ x: 0, y: 0, width: 110, height: 160 })
+  })
+
+  // Figma 126 lets a 20 px line in a 12 px box run past the side away from its vertical alignment.
+  test('absoluteRenderBounds reaches text lines past a fixed-size box by vertical alignment', () => {
+    const graph = new SceneGraph()
+    const api = new FigmaAPI(graph)
+    const rows = (textAlignVertical: SceneNode['textAlignVertical']) => {
+      const text = api.createText()
+      text.characters = 'Line'
+      text.fills = [solidFill({ r: 0, g: 0, b: 0, a: 1 })]
+      text.textAutoResize = 'NONE'
+      text.resize(110, 12)
+      graph.updateNode(text.id, { derivedTextHeight: 20, textAlignVertical })
+      const bounds = expectDefined(text.absoluteRenderBounds, 'render bounds')
+      return [bounds.y, bounds.y + bounds.height]
+    }
+
+    expect(rows('TOP')).toEqual([0, 20])
+    expect(rows('CENTER')).toEqual([-4, 16])
+    expect(rows('BOTTOM')).toEqual([-8, 12])
   })
 
   test('absoluteRenderBounds is clipped by ancestor frames', () => {

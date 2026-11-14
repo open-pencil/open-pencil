@@ -9,19 +9,14 @@ import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
-import { pixelLength } from '@open-pencil/scene-graph/text'
+import { pixelLength, textVerticalOffset } from '@open-pencil/scene-graph/text'
 import { detectTextDirection, resolveTextDirection } from '@open-pencil/scene-graph/text/direction'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { repoPath } from '@open-pencil/test-support/paths'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { renderText } from '#core/canvas/scene'
-import {
-  buildParagraph,
-  isNodeFontLoaded,
-  nodeFontReadiness,
-  textVerticalOffset
-} from '#core/canvas/text'
+import { buildParagraph, isNodeFontLoaded, nodeFontReadiness } from '#core/canvas/text'
 import { createDerivedGlyphPathCache } from '#core/canvas/text/derived'
 import { transformTextCase } from '#core/text/case'
 import { fontManager } from '#core/text/font/manager'
@@ -141,7 +136,12 @@ describe('text case and vertical alignment', () => {
     expect(textVerticalOffset(textNode({ height: 100, textAlignVertical: 'TOP' }), 20)).toBe(0)
     expect(textVerticalOffset(textNode({ height: 100, textAlignVertical: 'CENTER' }), 20)).toBe(40)
     expect(textVerticalOffset(textNode({ height: 100, textAlignVertical: 'BOTTOM' }), 20)).toBe(80)
-    expect(textVerticalOffset(textNode({ height: 10, textAlignVertical: 'BOTTOM' }), 20)).toBe(0)
+  })
+
+  test('lets text taller than its box overflow away from its alignment', () => {
+    expect(textVerticalOffset(textNode({ height: 12, textAlignVertical: 'TOP' }), 20)).toBe(0)
+    expect(textVerticalOffset(textNode({ height: 12, textAlignVertical: 'CENTER' }), 20)).toBe(-4)
+    expect(textVerticalOffset(textNode({ height: 12, textAlignVertical: 'BOTTOM' }), 20)).toBe(-8)
   })
 })
 

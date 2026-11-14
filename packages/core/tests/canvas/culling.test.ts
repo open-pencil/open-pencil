@@ -90,6 +90,53 @@ describe('canvas culling', () => {
     expect(renderer.drawCounts.culled).toBe(0)
   })
 
+  // Figma 126 lets a bottom-aligned text's lines run up past its box: a 20 px line in a 12 px box.
+  test('keeps a text whose lines reach up into the viewport from a box below it', () => {
+    const graph = new SceneGraph()
+    const lines = { width: 100, height: 12, text: 'Line', derivedTextHeight: 20 }
+    const bottom = graph.createNode('TEXT', pageId(graph), {
+      ...lines,
+      x: 1000,
+      y: 1205,
+      textAlignVertical: 'BOTTOM'
+    })
+    const top = graph.createNode('TEXT', pageId(graph), {
+      ...lines,
+      x: 1000,
+      y: 1205,
+      textAlignVertical: 'TOP'
+    })
+    const { renderer, rendered } = createRenderer()
+
+    renderNode(renderer, asCanvas(createCanvas()), graph, bottom.id, {})
+    renderNode(renderer, asCanvas(createCanvas()), graph, top.id, {})
+
+    expect(rendered).toEqual([bottom.id])
+    expect(renderer.drawCounts.culled).toBe(1)
+  })
+
+  test('keeps a flipped text whose lines reach down into the viewport from a box above it', () => {
+    const graph = new SceneGraph()
+    const lines = {
+      width: 100,
+      height: 12,
+      text: 'Line',
+      derivedTextHeight: 20,
+      x: 1000,
+      y: 885,
+      textAlignVertical: 'BOTTOM'
+    } as const
+    const flipped = graph.createNode('TEXT', pageId(graph), { ...lines, flipY: true })
+    const upright = graph.createNode('TEXT', pageId(graph), lines)
+    const { renderer, rendered } = createRenderer()
+
+    renderNode(renderer, asCanvas(createCanvas()), graph, flipped.id, {})
+    renderNode(renderer, asCanvas(createCanvas()), graph, upright.id, {})
+
+    expect(rendered).toEqual([flipped.id])
+    expect(renderer.drawCounts.culled).toBe(1)
+  })
+
   test('uses world bounds for children of transformed instances', () => {
     const graph = new SceneGraph()
     const instance = graph.createNode('INSTANCE', pageId(graph), {

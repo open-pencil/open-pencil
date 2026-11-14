@@ -11,6 +11,7 @@ import Matrix from '@open-pencil/scene-graph/matrix'
 import { clipsChildren, isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import { paintShows } from '@open-pencil/scene-graph/paints'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
+import { textLinesReach } from '@open-pencil/scene-graph/text'
 import { regionFills } from '@open-pencil/scene-graph/vector-network'
 
 import { paintBooleanOperation } from '#core/canvas/boolean'
@@ -248,18 +249,22 @@ function childrenBounds(graph: SceneGraph, node: SceneNode): Rect | null {
   return right > x && bottom > y ? { x, y, width: right - x, height: bottom - y } : null
 }
 
-/** The box the node's silhouette can cover, in its own coordinates, strokes included. */
+/**
+ * The box the node's silhouette can cover, in its own coordinates, strokes and the text lines a
+ * fixed-size box lets run past it included.
+ */
 export function silhouetteBounds(
   graph: SceneGraph,
   node: SceneNode,
   includeChildren: boolean
 ): Rect | null {
   const overflow = strokeOverflow(node)
+  const lines = textLinesReach(node)
   const own: Rect = {
     x: -overflow,
-    y: -overflow,
+    y: lines.minY - overflow,
     width: node.width + overflow * 2,
-    height: node.height + overflow * 2
+    height: lines.maxY - lines.minY + overflow * 2
   }
   if (!includeChildren || !isLayerContainer(node)) return own
   return unionRect(own, childrenBounds(graph, node))

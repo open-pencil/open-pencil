@@ -1,0 +1,1 @@
+- `@open-pencil/scene-graph/text` no longer exports `textLinesOverflow`; `textLinesReach` gives the rows a text's lines cover, above its box as well as below (#1885).

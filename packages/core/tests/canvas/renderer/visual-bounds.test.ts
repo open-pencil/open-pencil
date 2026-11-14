@@ -343,6 +343,17 @@ describe('text past its box', () => {
     expect(bounds.maxY - bounds.minY).toBeCloseTo(110)
   })
 
+  // Figma 126 lets a 20 px line in a 12 px box run past the side away from its vertical alignment.
+  test('lines past a fixed-size box reach away from its vertical alignment', () => {
+    const rows = (textAlignVertical: SceneNode['textAlignVertical']) => {
+      const bounds = textBounds({ y: 0, height: 12, derivedTextHeight: 20, textAlignVertical })
+      return [bounds.minY, bounds.maxY]
+    }
+    expect(rows('TOP')).toEqual([0, 20])
+    expect(rows('CENTER')).toEqual([-4, 16])
+    expect(rows('BOTTOM')).toEqual([-8, 12])
+  })
+
   test('lines within the box leave it as it is', () => {
     expect(textBounds({ derivedTextHeight: 30 }).maxY).toBe(60)
   })

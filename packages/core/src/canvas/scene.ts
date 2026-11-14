@@ -4,7 +4,7 @@ import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import { intersectVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { clipsChildren, isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
-import { textLinesOverflow } from '@open-pencil/scene-graph/text'
+import { textLinesReach } from '@open-pencil/scene-graph/text'
 
 import { drawIndividualSideStrokes } from '#core/canvas/strokes/sides'
 import { nodeOrientationMatrix, projectedNode } from '#core/geometry'
@@ -97,20 +97,18 @@ function isCulled(
 ): boolean {
   const canCull = node.childIds.length === 0 || clipsChildren(node)
   if (!canCull || hasOverflowPathTextPaint(node)) return false
-  // Text lines past a fixed-size box still draw, as in Figma.
-  const linesOverflow = textLinesOverflow(node)
+  const lines = textLinesReach(node)
 
   const vp = r.worldViewport
   const bw = node.width
-  const bh = node.height + linesOverflow
-  if (frame || projectedNode(node, preview).rotation !== 0) {
+  if (frame || hasNodeTransform(projectedNode(node, preview))) {
     const bounds = mapVisualBounds(
       worldMatrixIn(frame, node, absX - node.x, absY - node.y, preview),
       {
         minX: 0,
-        minY: 0,
+        minY: lines.minY,
         maxX: bw,
-        maxY: bh
+        maxY: lines.maxY
       }
     )
     return (
@@ -120,7 +118,12 @@ function isCulled(
       bounds.maxY < vp.y
     )
   }
-  return absX > vp.x + vp.w || absY > vp.y + vp.h || absX + bw < vp.x || absY + bh < vp.y
+  return (
+    absX > vp.x + vp.w ||
+    absY + lines.minY > vp.y + vp.h ||
+    absX + bw < vp.x ||
+    absY + lines.maxY < vp.y
+  )
 }
 
 function applyNodeTransforms(canvas: Canvas, node: SceneNode, overlays: RenderOverlays): void {

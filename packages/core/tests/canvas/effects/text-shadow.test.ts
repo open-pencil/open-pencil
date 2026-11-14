@@ -43,6 +43,35 @@ describe('Text shadows follow the glyphs, not the bounding box (Behavioral)', ()
     expect(r.paintShapeContent).toHaveBeenCalledTimes(1)
   })
 
+  // Figma 126 lets a bottom-aligned 20 px line in a 12 px box run 8 px up past it.
+  test('drop shadow layer holds lines that run past a fixed-size box', () => {
+    const r = createMockRenderer()
+    const canvas = createMockCanvas()
+    const node = effectNode({
+      type: 'TEXT',
+      width: 100,
+      height: 12,
+      derivedTextHeight: 20,
+      textAlignVertical: 'BOTTOM',
+      fills: [OPAQUE_FILL],
+      childIds: [],
+      effects: [
+        {
+          type: 'DROP_SHADOW',
+          visible: true,
+          color: { r: 0, g: 0, b: 0, a: 0.5 },
+          offset: { x: 0, y: 0 },
+          radius: 0,
+          spread: 0
+        }
+      ]
+    })
+
+    renderEffects(r, asCanvas(canvas), node, TEST_GRAPH, 'behind')
+
+    expect(r.ck.LTRBRect).toHaveBeenCalledWith(0, -8, 100, 12)
+  })
+
   test('inner shadow is cut from the glyph silhouette', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
