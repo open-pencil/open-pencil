@@ -30,12 +30,15 @@ import {
 import { hasBoxStyle } from './boxes'
 import { colorToStrokeFromCSS, mergedStyle, pickStyle } from './css-values'
 import {
+  alignBlockInFlow,
   alignBlockLines,
   applyContainerLayout,
   applyFlowSizing,
   elementDisplay,
   flowOf,
   inheritedTextStyle,
+  isInlineLevel,
+  textAlignOf,
   type FlowKind,
   type ParentFlow
 } from './flow'
@@ -224,7 +227,7 @@ function applyTextStyle(node: SceneNode, style: DesignStyleDeclaration): void {
   const effects = cssShadows(pickStyle(style, 'text-shadow'))
   if (effects.length > 0) node.effects = effects
 
-  const textAlign = pickStyle(style, 'text-align')?.toUpperCase()
+  const textAlign = textAlignOf(style)?.toUpperCase()
   if (textAlign === 'CENTER' || textAlign === 'RIGHT' || textAlign === 'JUSTIFIED') {
     node.textAlignHorizontal = textAlign
   }
@@ -375,7 +378,6 @@ function createElementNode(
   applyFlowSizing(graph, node, style, display, parentFlow)
 
   createChildLayers(graph, node, element, style, flow, recorded)
-  if (flow === 'block') alignBlockLines(graph, node)
   return node
 }
 
@@ -396,17 +398,27 @@ function createChildLayers(
     const textDisplay = flow === 'inline' ? 'inline' : 'block'
     const text = createRichTextNode(graph, node.id, element, textStyle, textDisplay, flow ?? 'none')
     record(graph, recorded, text, capturedTextBox(element))
+    if (flow === 'block') alignBlockLines(graph, node, style, true)
     return
   }
   // Text alone in a box takes the box its lines are in; text among elements has none of its own.
   const textBox = element.children.every((child) => child.type === 'text')
     ? capturedTextBox(element)
     : undefined
+  // Whether everything the element holds sits in its lines, which its `text-align` aligns.
+  let inlineContent = true
   for (const child of element.children) {
     const inherited = inheritedTextStyle(style)
     const layer = createDesignNode(graph, node.id, child, flow ?? 'none', recorded, inherited)
     if (layer?.type === 'TEXT') record(graph, recorded, layer, textBox)
+    if (child.type !== 'element' || !layer) continue
+    const childStyle = mergedStyle(child)
+    if (isInlineLevel(elementDisplay(child, childStyle))) continue
+    inlineContent = false
+    if (flow === 'block' && layer.type === 'FRAME')
+      alignBlockInFlow(graph, layer, childStyle, style)
   }
+  if (flow === 'block') alignBlockLines(graph, node, style, inlineContent)
 }
 
 function createDesignNode(

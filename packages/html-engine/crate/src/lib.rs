@@ -141,6 +141,9 @@ const COMPUTED_PROPERTIES: &[LonghandId] = &[
     LonghandId::MaxHeight,
     LonghandId::FlexBasis,
     LonghandId::LineHeight,
+    // `auto` side margins center or end-align a block, which their used lengths don't say.
+    LonghandId::MarginLeft,
+    LonghandId::MarginRight,
 ];
 
 // ---------------------------------------------------------------------------------------------

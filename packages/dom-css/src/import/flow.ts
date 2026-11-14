@@ -1,6 +1,6 @@
 import { pick } from 'es-toolkit'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { LayoutAlignSelf, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   parseCSSAlignItems,
   parseCSSFlexDirection,
@@ -11,6 +11,7 @@ import {
   autoLayoutSizingFields,
   fillSizingFields,
   layoutSizing,
+  layoutSizingUpdates,
   textAutoResizeFor
 } from '@open-pencil/scene-graph/layout'
 
@@ -102,10 +103,71 @@ export function isInlineLevel(display: string): boolean {
   return display.startsWith('inline')
 }
 
-function textAlignAxis(style: DesignStyleDeclaration) {
+/**
+ * The legacy `text-align` values `<center>` and the `align` attribute compute to, which align a
+ * block's children as well as its lines, by the side they put them on.
+ */
+const LEGACY_TEXT_ALIGN: Partial<Record<string, 'left' | 'center' | 'right'>> = {
+  '-moz-left': 'left',
+  '-webkit-left': 'left',
+  '-moz-center': 'center',
+  '-webkit-center': 'center',
+  '-moz-right': 'right',
+  '-webkit-right': 'right'
+}
+
+/** The element's `text-align`, lowercase, with a legacy value read as the side it aligns to. */
+export function textAlignOf(style: DesignStyleDeclaration): string | undefined {
   const align = pickStyle(style, 'text-align')?.trim().toLowerCase()
+  return align === undefined ? undefined : (LEGACY_TEXT_ALIGN[align] ?? align)
+}
+
+function textAlignAxis(style: DesignStyleDeclaration) {
+  const align = textAlignOf(style)
   if (align === 'center') return 'CENTER'
   return align === 'right' || align === 'end' ? 'MAX' : 'MIN'
+}
+
+const BLOCK_ALIGN: Partial<Record<string, LayoutAlignSelf>> = { center: 'CENTER', right: 'MAX' }
+
+/**
+ * Where block flow puts a block across its container: by its auto margins, which take up the
+ * space it leaves, or else by a legacy `text-align` on the container, as `<center>` sets.
+ */
+function blockAlignSelf(
+  style: DesignStyleDeclaration,
+  containerStyle: DesignStyleDeclaration
+): LayoutAlignSelf | null {
+  const left = pickStyle(style, 'margin-left')?.trim() === 'auto'
+  const right = pickStyle(style, 'margin-right')?.trim() === 'auto'
+  if (left && right) return 'CENTER'
+  if (left) return 'MAX'
+  if (right) return null
+  const legacy = pickStyle(containerStyle, 'text-align')?.trim().toLowerCase() ?? ''
+  const side = LEGACY_TEXT_ALIGN[legacy]
+  return side ? (BLOCK_ALIGN[side] ?? null) : null
+}
+
+/**
+ * Aligns a block in its block-flow container where CSS centers it or puts it at the end, as
+ * `margin: auto` and `<center>` do. A block that fills the container's width has no room to
+ * move, so only one with a width of its own, or a maximum width that keeps it narrower, does: the
+ * latter hugs its content up to that maximum instead of filling.
+ */
+export function alignBlockInFlow(
+  graph: SceneGraph,
+  node: SceneNode,
+  style: DesignStyleDeclaration,
+  containerStyle: DesignStyleDeclaration
+): void {
+  if (node.layoutPositioning === 'ABSOLUTE') return
+  const align = blockAlignSelf(style, containerStyle)
+  if (!align) return
+  if (node.layoutAlignSelf === 'STRETCH') {
+    if (node.maxWidth === null) return
+    Object.assign(node, layoutSizingUpdates(graph, node, 'HORIZONTAL', 'HUG'))
+  }
+  node.layoutAlignSelf = align
 }
 
 const LINE_ALIGN: Partial<Record<SceneNode['textAlignHorizontal'], SceneNode['counterAxisAlign']>> =
@@ -116,17 +178,28 @@ const LINE_ALIGN: Partial<Record<SceneNode['textAlignHorizontal'], SceneNode['co
 
 /**
  * Aligns a block's lines across it, as `text-align` does, when they are all it holds: a single
- * line hugs its words, so the block places it where the page did. `text-align` moves lines,
- * not blocks, so a block with any other child keeps its children at its start.
+ * line hugs its words, and an inline-level box, such as an inline-block, its content, so the
+ * block places them where the page did. Text takes its own alignment, which a block element that
+ * became a text layer may set; boxes in a line take the block's. `text-align` moves lines, not
+ * blocks, so a block with a block-level child keeps its children at its start.
  */
-export function alignBlockLines(graph: SceneGraph, node: SceneNode): void {
+export function alignBlockLines(
+  graph: SceneGraph,
+  node: SceneNode,
+  style: DesignStyleDeclaration,
+  inlineContent: boolean
+): void {
   if (node.layoutMode !== 'VERTICAL') return
   const children = graph.getChildren(node.id)
-  if (children.length === 0 || !children.every((child) => child.type === 'TEXT')) return
-  const [first] = children
-  if (!children.every((child) => child.textAlignHorizontal === first.textAlignHorizontal)) return
-  const align = LINE_ALIGN[first.textAlignHorizontal]
-  if (align) node.counterAxisAlign = align
+  if (children.length === 0) return
+  if (children.every((child) => child.type === 'TEXT')) {
+    const [first] = children
+    if (!children.every((child) => child.textAlignHorizontal === first.textAlignHorizontal)) return
+    const align = LINE_ALIGN[first.textAlignHorizontal]
+    if (align) node.counterAxisAlign = align
+    return
+  }
+  if (inlineContent) node.counterAxisAlign = textAlignAxis(style)
 }
 
 /** The auto layout an element's own flow gives its children. */

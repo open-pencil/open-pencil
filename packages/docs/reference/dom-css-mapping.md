@@ -17,6 +17,8 @@ OpenPencil maps browser-computed DOM/CSS styles into SceneGraph fields through `
 | `overflow: hidden/clip` | `clipsContent` | Other overflow values are ignored. |
 | `width`, `height`, min/max sizes | node size constraints | Browser-computed pixel values are preferred. |
 | `aspect-ratio` | fallback width/height sizing | Used when one axis is available and the other is `auto`/missing. |
+| `margin-left`/`margin-right: auto`, `<center>` | `layoutAlignSelf` | In block flow, both auto margins or a `-webkit-center` container center a block, `margin-left: auto` alone puts it at the end. A block that fills its container stays filling; one narrowed by `max-width` hugs up to it. |
+| `display: table`, rows, cells | vertical and horizontal auto layout | Rows stack, a row's cells sit side by side and stretch to its height, `border-spacing` is the gap, and `vertical-align` places a cell's content. Spanning cells and collapsed borders keep the positions layout gave them. |
 
 ## Paint, stroke, and effects
 
@@ -44,7 +46,7 @@ OpenPencil maps browser-computed DOM/CSS styles into SceneGraph fields through `
 | `font-style: italic` | `italic` | Other styles ignored. |
 | `line-height` | `lineHeight` | Pixels stay pixels; a unitless multiple or a percent becomes a percent of the font size, which export writes back as a unitless multiple. |
 | `letter-spacing` | `letterSpacing` | Pixels stay pixels; `em` becomes a percent of the font size, which export writes back in `em`. |
-| `text-align` | horizontal text alignment | Supports center, right, justified; defaults left. |
+| `text-align` | horizontal text alignment | Supports center, right, justified, and the `-webkit-center` family `<center>` computes to; defaults left. A block holding only lines aligns them across it. |
 | `text-decoration-line` | underline / strikethrough | Decoration style/thickness are not mapped yet. |
 | `text-transform` | `textCase` | Uppercase, lowercase, and capitalize map to SceneGraph text case. |
 | `white-space: nowrap` | `maxLines = 1` | Other white-space values are not mapped yet. |

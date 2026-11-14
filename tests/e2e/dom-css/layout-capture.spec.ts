@@ -58,6 +58,24 @@ test.describe('@open-pencil/dom-css browser layout capture', () => {
     expect(byId(document, 'd').layout?.box).toEqual({ x: 438, y: 70, width: 30, height: 30 })
   })
 
+  test('keeps auto side margins, which center or end-align a block', async ({ page }) => {
+    const document = await captured(
+      page,
+      `<div id="centered"></div><div id="end"></div>`,
+      `body { margin: 0 }
+       div { width: 200px; height: 10px }
+       #centered { margin: 0 auto }
+       #end { margin-left: auto; margin-right: 10px }`
+    )
+    const style = (id: string) => byId(document, id).computedStyle ?? {}
+
+    expect(style('centered')['margin-left']).toBe('auto')
+    expect(style('centered')['margin-right']).toBe('auto')
+    expect(style('end')['margin-left']).toBe('auto')
+    expect(style('end')['margin-right']).not.toBe('auto')
+    expect(byId(document, 'centered').layout?.box.x).toBe(300)
+  })
+
   test('applies body rules to the top-level elements', async ({ page }) => {
     const document = await captured(
       page,

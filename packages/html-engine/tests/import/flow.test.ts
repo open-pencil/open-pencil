@@ -145,4 +145,36 @@ describe('HTML flow as auto layout', () => {
     expect(byName('blocks').counterAxisAlign).toBe('MIN')
     expect(byName('inner').counterAxisAlign).toBe('CENTER')
   })
+
+  it('centers a block by its auto margins, and puts one with only a left one at the end', async () => {
+    const { byName, sizing } = await importHTML(
+      `<div style="width:600px">` +
+        `<div id="centered" style="width:200px;height:10px;margin:0 auto"></div>` +
+        `<div id="end" style="width:200px;height:10px;margin-left:auto"></div>` +
+        `<div id="capped" style="max-width:300px;margin:0 auto"><div style="width:400px;height:10px"></div></div>` +
+        `<div id="full" style="margin:0 auto">Fills</div>` +
+        `</div>`
+    )
+    expect(byName('centered').layoutAlignSelf).toBe('CENTER')
+    expect(byName('end').layoutAlignSelf).toBe('MAX')
+    // A block narrower than its container by a maximum width hugs up to it, centered.
+    const capped = byName('capped')
+    expect(capped.layoutAlignSelf).toBe('CENTER')
+    expect(sizing(capped)[0]).toBe('HUG')
+    expect(capped.maxWidth).toBe(300)
+    // Without a width of its own a block fills the container, with no room to center in.
+    expect(sizing(byName('full'))[0]).toBe('FILL')
+  })
+
+  it('centers blocks and lines in <center>, and boxes in a line by text-align', async () => {
+    const { graph, byName } = await importHTML(
+      `<div style="width:600px">` +
+        `<center id="legacy"><div id="block" style="width:200px;height:10px"></div><div id="line">Words</div></center>` +
+        `<div id="row" style="text-align:center"><span id="chip" style="display:inline-block;padding:4px">Tag</span></div>` +
+        `</div>`
+    )
+    expect(byName('block').layoutAlignSelf).toBe('CENTER')
+    expect(textIn(graph, byName('line')).textAlignHorizontal).toBe('CENTER')
+    expect(byName('row').counterAxisAlign).toBe('CENTER')
+  })
 })
