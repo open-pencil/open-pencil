@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useHead } from '@unhead/vue'
+
 import BrandMark from '@/components/brand/BrandMark.vue'
 import { portalPublic } from '@/components/cloud-portal/ui'
 
@@ -9,11 +11,16 @@ import PortalFooter from './PortalFooter.vue'
  * startup notice: the app icon, or the page's own icon, then a title and one narrow column whose
  * buttons sit right under what they act on.
  */
-const { host, heading, description } = defineProps<{
+const { host, heading, description, title } = defineProps<{
   host: string
   heading: string
   description?: string
+  /** The tab's name, when the heading already names the site, as "Sign in to …" does. */
+  title?: string
 }>()
+
+// The page's heading names its tab, under the site's name (`CloudPortalApp`).
+useHead({ title: () => title ?? heading })
 
 const ui = portalPublic()
 </script>

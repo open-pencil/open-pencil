@@ -61,7 +61,7 @@ function open(document: CommunityDocument) {
   void router.push(cloudCommunityPagePath(document.id))
 }
 
-useHead(() => ({ title: `${messages.value.communityTitle} · ${portal.host}` }))
+useHead({ title: () => messages.value.communityTitle })
 </script>
 
 <template>
