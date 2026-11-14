@@ -2,7 +2,6 @@ import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { layerRotates } from '@open-pencil/scene-graph/generated'
 import Matrix from '@open-pencil/scene-graph/matrix'
-import { slotPropertyId } from '@open-pencil/scene-graph/slots'
 
 import { drawSelectionLabels } from '#core/canvas/labels/selection'
 import { drawConnectorHover, drawConnectorSelection } from '#core/canvas/overlays/connectors'
@@ -13,8 +12,6 @@ import {
   HANDLE_HALF_SIZE,
   ROTATION_HANDLE_DISTANCE,
   CODE_FOCUS_FILL_ALPHA,
-  PARENT_OUTLINE_ALPHA,
-  PARENT_OUTLINE_DASH,
   SELECTION_DASH_ALPHA
 } from '#core/constants'
 import {
@@ -30,13 +27,7 @@ import {
 } from '#core/geometry'
 import { pointAtArc, textPathStartArc } from '#core/text/path'
 
-import {
-  inNodeSpace,
-  outlineHoveredNode,
-  outlineNode,
-  type ScreenStroke,
-  withScreenStroke
-} from './outline'
+import { inNodeSpace, outlineHoveredNode, withScreenStroke } from './outline'
 
 /** The dash of faint selection bounds, in screen pixels. */
 const SELECTION_DASH = [4, 4] as const
@@ -132,8 +123,6 @@ export function drawSelection(
   if (selectedIds.size === 0) return
   const nodeEditId = overlays.nodeEditState?.nodeId ?? null
   const preview = overlays.rotationPreview
-
-  drawParentFrameOutlines(r, canvas, graph, selectedIds, preview)
 
   if (selectedIds.size === 1) {
     const id = [...selectedIds][0]
@@ -362,40 +351,6 @@ export function drawNodeSelection(
     },
     preview
   )
-}
-
-export function drawParentFrameOutlines(
-  r: SkiaRenderer,
-  canvas: Canvas,
-  graph: SceneGraph,
-  selectedIds: Set<string>,
-  preview?: RotationPreview | null
-): void {
-  const drawn = new Set<string>()
-  for (const id of selectedIds) {
-    const node = graph.getNode(id)
-    if (!node?.parentId) continue
-
-    const parent = graph.getNode(node.parentId)
-    if (!parent || parent.type === 'CANVAS') continue
-    if (drawn.has(parent.id) || selectedIds.has(parent.id)) continue
-    // Slots get their own dashed outline (overlays/slots.ts).
-    if (slotPropertyId(parent)) continue
-
-    const grandparent = parent.parentId ? graph.getNode(parent.parentId) : null
-    if (!grandparent || grandparent.type === 'CANVAS') continue
-
-    drawn.add(parent.id)
-    outlineNode(r, canvas, graph, parent.id, parentOutline(r), preview)
-  }
-}
-
-/** The dashed outline of a selected layer's parent, in the selection colour, faded. */
-function parentOutline(r: SkiaRenderer): ScreenStroke {
-  return {
-    color: r.selColor(PARENT_OUTLINE_ALPHA),
-    dash: [PARENT_OUTLINE_DASH, PARENT_OUTLINE_DASH]
-  }
 }
 
 export function drawNodeOutline(
