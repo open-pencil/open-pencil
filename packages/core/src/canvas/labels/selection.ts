@@ -17,7 +17,7 @@ import {
 } from '#core/geometry'
 import { worldXToScreen, worldYToScreen } from '#core/geometry/viewport'
 
-import { measureGlyphWidth } from './paragraph-cache'
+import { drawTextPill } from './pill'
 import { frameLabelPlacement, labelScreenMatrix } from './transform'
 
 function accumulateSelectionBounds(
@@ -49,25 +49,18 @@ function drawSizePill(
   color: ReturnType<SkiaRenderer['selColor']>,
   textColor: ReturnType<SkiaRenderer['selColor']>
 ): void {
-  const pillW = measureGlyphWidth(sizeFont, text) + SIZE_PILL_PADDING_X * 2
-  const pillX = x - pillW / 2
-  const pillY = y + SIZE_PILL_PADDING_Y
-  r.auxFill.setColor(color)
-  const rrect = r.ck.RRectXY(
-    r.ck.LTRBRect(pillX, pillY, pillX + pillW, pillY + SIZE_PILL_HEIGHT),
-    SIZE_PILL_RADIUS,
-    SIZE_PILL_RADIUS
-  )
-  canvas.drawRRect(rrect, r.auxFill)
-
-  r.auxFill.setColor(textColor)
-  canvas.drawText(
+  drawTextPill(r, canvas, {
     text,
-    pillX + SIZE_PILL_PADDING_X,
-    pillY + SIZE_PILL_TEXT_OFFSET_Y,
-    r.auxFill,
-    sizeFont
-  )
+    font: sizeFont,
+    centerX: x,
+    top: y + SIZE_PILL_PADDING_Y,
+    height: SIZE_PILL_HEIGHT,
+    paddingX: SIZE_PILL_PADDING_X,
+    radius: SIZE_PILL_RADIUS,
+    baseline: SIZE_PILL_TEXT_OFFSET_Y,
+    fill: color,
+    textColor
+  })
 }
 
 export function drawSingleSelectionSize(

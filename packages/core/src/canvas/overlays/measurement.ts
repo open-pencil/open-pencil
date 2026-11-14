@@ -4,7 +4,7 @@ import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
-import { cachedGlyphWidth } from '#core/canvas/labels/paragraph-cache'
+import { drawTextPill } from '#core/canvas/labels/pill'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import {
   MEASUREMENT_COLOR,
@@ -148,34 +148,21 @@ function selectedBounds(graph: SceneGraph, selectedIds: Set<string>): Rect | nul
   return computeBounds(nodes.map((node) => getAxisAlignedWorldBounds(node, graph)))
 }
 
-function textWidth(r: SkiaRenderer, text: string): number {
-  return r.chromeFonts.size ? cachedGlyphWidth(r, r.chromeFonts.size, text) : 0
-}
-
 function drawPill(r: SkiaRenderer, canvas: Canvas, text: string, x: number, y: number) {
   const font = r.chromeFonts.size
   if (!font) return
-  const width = textWidth(r, text) + MEASUREMENT_PILL_PADDING_X * 2
-  const rect = r.ck.RRectXY(
-    r.ck.LTRBRect(
-      x - width / 2,
-      y - MEASUREMENT_PILL_HEIGHT / 2,
-      x + width / 2,
-      y + MEASUREMENT_PILL_HEIGHT / 2
-    ),
-    MEASUREMENT_PILL_RADIUS,
-    MEASUREMENT_PILL_RADIUS
-  )
-  r.auxFill.setColorComponents(MEASUREMENT_COLOR.r, MEASUREMENT_COLOR.g, MEASUREMENT_COLOR.b, 1)
-  canvas.drawRRect(rect, r.auxFill)
-  r.auxFill.setColor(r.ck.WHITE)
-  canvas.drawText(
+  drawTextPill(r, canvas, {
     text,
-    x - width / 2 + MEASUREMENT_PILL_PADDING_X,
-    y + MEASUREMENT_TEXT_BASELINE,
-    r.auxFill,
-    font
-  )
+    font,
+    centerX: x,
+    top: y - MEASUREMENT_PILL_HEIGHT / 2,
+    height: MEASUREMENT_PILL_HEIGHT,
+    paddingX: MEASUREMENT_PILL_PADDING_X,
+    radius: MEASUREMENT_PILL_RADIUS,
+    baseline: MEASUREMENT_PILL_HEIGHT / 2 + MEASUREMENT_TEXT_BASELINE,
+    fill: r.ck.Color4f(MEASUREMENT_COLOR.r, MEASUREMENT_COLOR.g, MEASUREMENT_COLOR.b, 1),
+    textColor: r.ck.WHITE
+  })
 }
 
 function drawTargetOutline(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph, target: SceneNode) {
