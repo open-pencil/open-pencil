@@ -16,7 +16,7 @@ import {
   parseCounterAxisAlign,
   parsePrimaryAxisAlign
 } from '@open-pencil/scene-graph/layout'
-import type { Color, JSONObject } from '@open-pencil/scene-graph/primitives'
+import type { Color, JSONObject, Size } from '@open-pencil/scene-graph/primitives'
 import { withShaderPaints, type ShaderPaint } from '@open-pencil/scene-graph/shaders'
 
 import { DESIGN_JSX_STYLE_KEYS, designJSXProp } from '../definitions'
@@ -120,6 +120,14 @@ export function normalizeStyleProps(props: Record<string, unknown>): Record<stri
   return normalized
 }
 
+/** The `w` and `h` set as numbers, under either of their names, bounded as a layer's size is. */
+export function explicitSize(props: Record<string, unknown>): Partial<Size> {
+  return {
+    width: layoutLengthProp(designJSXProp(props, 'w')),
+    height: layoutLengthProp(designJSXProp(props, 'h'))
+  }
+}
+
 export function applySizeOverrides(
   props: Record<string, unknown>,
   o: Partial<SceneNode>,
@@ -127,8 +135,7 @@ export function applySizeOverrides(
 ): { w: unknown; h: unknown } {
   const w = designJSXProp(props, 'w')
   const h = designJSXProp(props, 'h')
-  const width = layoutLengthProp(w)
-  const height = layoutLengthProp(h)
+  const { width, height } = explicitSize(props)
   if (width !== undefined) o.width = width
   if (height !== undefined) o.height = height
 
