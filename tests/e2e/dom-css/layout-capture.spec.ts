@@ -150,6 +150,31 @@ test.describe('@open-pencil/dom-css browser layout capture', () => {
     expect(line('small')).toMatchObject({ y: 30, height: 30 })
   })
 
+  test('sets each line box as the browser does, by line height and vertical alignment', async ({
+    page
+  }) => {
+    const document = await captured(
+      page,
+      `<p id="tight">x</p>
+       <p id="nested"><span style="line-height:80px"><span style="line-height:10px">x</span></span></p>
+       <p id="raised"><span style="line-height:10px;vertical-align:10px">x</span></p>
+       <p id="lowered"><span style="line-height:10px;vertical-align:-25%">x</span> y</p>`,
+      `body { margin: 0 }
+       p { margin: 0; font: 20px/40px monospace }
+       #tight { line-height: 0 }`
+    )
+    // A block of one line is as tall as its line box, which says where the line is.
+    for (const id of ['tight', 'nested', 'raised', 'lowered']) {
+      const block = byId(document, id).layout
+      const [line] = block?.lines ?? []
+      expect({ id, y: line.y, height: line.height }).toEqual({
+        id,
+        y: block?.box.y,
+        height: block?.box.height
+      })
+    }
+  })
+
   test('waits for web fonts before recording layout', async ({ page }) => {
     const origin = new URL(test.info().project.use.baseURL ?? '').origin
     const font = `${origin}/@fs${process.cwd()}/packages/core/assets/CaveatVariable.woff2`
