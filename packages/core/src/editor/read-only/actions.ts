@@ -61,6 +61,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'snapshotPage',
   'statusWorkflow',
   'validateComponentSet',
+  'variantsToLoad',
 
   // Selection and hover
   'clearSelection',
@@ -118,6 +119,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'preparePage',
   'preparePageNodes',
   'loadPageNodes',
+  'loadSavedVariants',
   'pageHoldingNode',
   'revealNodes',
   'setZoomAroundPoint',

@@ -1,4 +1,5 @@
-import { computed, watch } from 'vue'
+import { uniq } from 'es-toolkit/array'
+import { computed, onScopeDispose, watch } from 'vue'
 
 import type { ComponentPropertyDefinition, SceneNode } from '@open-pencil/scene-graph'
 import { exposedInstances, findComponentPropertyTargets } from '@open-pencil/scene-graph/components'
@@ -36,19 +37,31 @@ export function useComponentProperties(targets?: () => SceneNode[]) {
   const editor = useEditor()
   const batch = useUndoBatch(editor.undo, editor.beginInteractiveEdit)
   const retainedActivity = useRetainedActivity()
+  /**
+   * Counts choices: a variant load still pending applies its choice only while it is the latest,
+   * and leaving the selection, the page, or the panel drops it.
+   */
+  let choice = 0
+  const leave = () => {
+    choice++
+    batch.flush()
+  }
   // A batch never spans a page change, a new selection, or a paused retained scope.
-  watch([() => editor.state.currentPageId, () => editor.state.selectedIds], batch.flush, {
+  watch([() => editor.state.currentPageId, () => editor.state.selectedIds], leave, {
     flush: 'sync'
   })
   if (retainedActivity) {
     watch(
       retainedActivity,
       (active) => {
-        if (!active) batch.flush()
+        if (!active) leave()
       },
       { flush: 'sync' }
     )
   }
+  onScopeDispose(() => {
+    choice++
+  })
   const instances = useSceneComputed(() =>
     (targets ? targets() : editor.getSelectedNodes()).filter((node) => node.type === 'INSTANCE')
   )
@@ -135,8 +148,24 @@ export function useComponentProperties(targets?: () => SceneNode[]) {
   }
 
   function setValue(propertyId: string, value: string) {
+    const current = ++choice
     const edit = resolveEdit(propertyId)
-    if (edit) applyDiscrete(edit, propertyId, value)
+    if (!edit) return
+    const toLoad = uniq(
+      edit.targets.flatMap((instance) => editor.variantsToLoad(instance.id, propertyId, value))
+    )
+    if (toLoad.length === 0) {
+      applyDiscrete(edit, propertyId, value)
+      return
+    }
+    // A variant the file holds but no page built is built in the reader worker first, so the
+    // switch neither blocks on it nor opens a reader on this thread.
+    void editor.loadSavedVariants(toLoad).then((loaded) => {
+      if (!loaded || current !== choice) return undefined
+      const targets = edit.targets.filter((instance) => editor.graph.getNode(instance.id))
+      if (targets.length > 0) applyDiscrete({ ...edit, targets }, propertyId, value)
+      return undefined
+    })
   }
 
   /** Apply typing immediately, grouping rapid changes until blur, Enter, or idle. */
@@ -144,9 +173,10 @@ export function useComponentProperties(targets?: () => SceneNode[]) {
     const edit = resolveEdit(propertyId)
     if (!edit) return
     if (edit.definition.type !== 'TEXT') {
-      applyDiscrete(edit, propertyId, value)
+      setValue(propertyId, value)
       return
     }
+    choice++
     if (hasValueEverywhere(edit, value)) return
     batch.ensure(batchKey(propertyId, edit.targets), edit.label)
     commitToInstances(edit, propertyId, value)

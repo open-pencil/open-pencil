@@ -13,6 +13,11 @@ import {
   getVariantDefinitions,
   variantValues
 } from '#core/editor/components/variants/model'
+import {
+  buildSavedVariants,
+  findOrBuildVariant,
+  unbuiltVariantWith
+} from '#core/editor/components/variants/saved'
 import { applyVariantProperties, variantSetProps } from '#core/editor/components/variants/set'
 import { wrapNodes } from '#core/editor/structure/container-wrap'
 
@@ -74,7 +79,7 @@ export function switchVariant(
   const setId = component?.parentId
   const target =
     component && setId && getComponentSet(scene, setId)
-      ? findExactVariant(scene, setId, {
+      ? findOrBuildVariant(scene, setId, {
           ...variantValues(scene, setId, component),
           ...Object.fromEntries(
             values.map(({ definition, value }) => [definition.name, String(value)])
@@ -96,6 +101,13 @@ function assertAxisNameFree(set: SceneNode, method: string, name: string, self?:
   if (taken) throw new Error(`in ${method}: Node already has a variant property with name ${name}`)
 }
 
+/** An edit to a set reaches every variant the file saves for it, so each must be built first. */
+function assertSavedVariantsBuilt(scene: SceneGraph, setId: string, method: string): void {
+  if (!buildSavedVariants(scene, setId)) {
+    throw new Error(`in ${method}: A variant of this set nests a component that was deleted`)
+  }
+}
+
 /** Adds a variant axis to a set, appending its value to every variant's name, as Figma does. */
 export function addVariantAxis(
   scene: SceneGraph,
@@ -108,6 +120,7 @@ export function addVariantAxis(
   if (defaultValue.trim() === '')
     throw new Error('in addComponentProperty: Component property default value cannot be empty')
   assertAxisNameFree(node, 'addComponentProperty', name)
+  assertSavedVariantsBuilt(scene, node.id, 'addComponentProperty')
   const id = appendPropertyDefinition(scene, node.id, name, 'VARIANT', defaultValue.trim())
   const definition = getVariantDefinitions(scene, node.id).find((item) => item.id === id)
   if (!definition) throw new Error(`in addComponentProperty: Could not add ${name}`)
@@ -130,7 +143,10 @@ export function editVariantAxis(
   if (name === undefined) return definition.name
   if (name === '') throw new Error('Property name must not be empty')
   assertAxisNameFree(node, 'editComponentProperty', name, definition.id)
-  if (name !== definition.name) renameProperty(scene, node.id, definition.id, name)
+  if (name !== definition.name) {
+    assertSavedVariantsBuilt(scene, node.id, 'editComponentProperty')
+    renameProperty(scene, node.id, definition.id, name)
+  }
   return name
 }
 
@@ -162,9 +178,12 @@ export function syncVariantName(scene: SceneGraph, node: SceneNode): void {
   const names = Object.keys(parsed)
   if (names.length !== axes.length || !axes.every((axis) => parsed[axis]?.trim())) return
   const values = { ...node.componentPropertyValues, ...parsed }
+  if (axes.every((axis) => node.componentPropertyValues[axis] === values[axis])) return
   // Values another variant has already leave the set in error in Figma; these stay too.
   const twin = findExactVariant(scene, setId, values)
   if (twin && twin.id !== node.id) return
+  if (unbuiltVariantWith(scene, setId, values)) return
+  if (!buildSavedVariants(scene, setId)) return
   setVariantValues(scene, setId, node.id, values)
   refreshVariantOptions(scene, setId, { dropUnused: true })
 }

@@ -27,6 +27,18 @@ export interface FigSessionPopulateRequest {
   pageId: string
 }
 
+/** Build components no page brought, such as variants of a set no instance uses. */
+export interface FigSessionLoadComponentsRequest {
+  type: 'load-components'
+  requestId: string
+  baseRevision: number
+  /** Archive GUIDs of the components, as `session:local`. */
+  componentIds: string[]
+}
+
+/** A load whose layers come back as a page load's do. */
+export type FigSessionLoadRequest = FigSessionPopulateRequest | FigSessionLoadComponentsRequest
+
 /** Edits made on the main thread since the last batch, for the worker's copy of the graph. */
 export interface FigSessionEditsRequest {
   type: 'edits'
@@ -82,6 +94,7 @@ export interface FigSessionDisposeRequest {
 
 export type FigSessionRequest =
   | FigSessionPopulateRequest
+  | FigSessionLoadComponentsRequest
   | FigSessionEditsRequest
   | FigSessionOriginalArchiveRequest
   | FigSessionArchiveInfoRequest

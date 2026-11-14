@@ -1016,7 +1016,7 @@ function extractComponentPropertyAssignments(nc: NodeChange): Record<string, str
   )
 }
 
-function extractVariantPropSpecs(nc: NodeChange): VariantPropSpec[] {
+export function extractVariantPropSpecs(nc: NodeChange): VariantPropSpec[] {
   const specs = nc.variantPropSpecs as Array<{ propDefId?: GUID; value?: string }> | undefined
   if (!specs?.length) return []
   return specs
