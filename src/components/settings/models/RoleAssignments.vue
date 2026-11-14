@@ -4,7 +4,7 @@ import { computed } from 'vue'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import { useModelRoleAssignments } from '@/app/ai/models/settings/assignments'
-import { AI_MODEL_ROLES } from '@/app/ai/models/types'
+import { AI_MODEL_ROLES, isModelRoleInUse } from '@/app/ai/models/types'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
@@ -14,7 +14,9 @@ import { useModelRoleLabels } from './role-labels'
 const { ai } = useI18n()
 
 const roleLabel = useModelRoleLabels()
-const roleDefinitions = computed(() => AI_MODEL_ROLES.map((role) => ({ role, ...roleLabel(role) })))
+const roleDefinitions = computed(() =>
+  AI_MODEL_ROLES.map((role) => ({ role, inUse: isModelRoleInUse(role), ...roleLabel(role) }))
+)
 
 const { assignmentValue, optionsForRole, updateAssignment } = useModelRoleAssignments(ai)
 </script>
@@ -30,6 +32,7 @@ const { assignmentValue, optionsForRole, updateAssignment } = useModelRoleAssign
       :data-model-role="definition.role"
     >
       <AppSelect
+        v-if="definition.inUse"
         class="w-full sm:w-52"
         :model-value="assignmentValue(definition.role)"
         :options="optionsForRole(definition.role)"
@@ -37,6 +40,8 @@ const { assignmentValue, optionsForRole, updateAssignment } = useModelRoleAssign
         :data-test-id="`settings-model-assignment-${definition.role}`"
         @update:model-value="updateAssignment(definition.role, String($event))"
       />
+      <!-- Nothing reads the role yet, so there is nothing to choose for it. -->
+      <span v-else class="text-xs text-muted">{{ ai.modelRoleNotUsed }}</span>
     </SettingsRow>
   </SettingsGroup>
 </template>

@@ -212,6 +212,7 @@ export const aiMessageDefaults = {
   modelRoleReviewDescription: 'Explicit plan and design reviews',
   modelRoleFastDescription: 'Low-cost background work',
   modelRoleVisionDescription: 'Screenshots and image references',
+  modelRoleNotUsed: 'Not used yet',
   modelRoleUseDesign: 'Same as Design',
   noModel: 'None',
   apiKey: 'API Key',
@@ -227,6 +228,11 @@ export const aiMessageDefaults = {
   customModelID: 'Custom model ID',
   customModel: 'Custom model…',
   customModelGroup: 'Custom model',
+  agentDefaultModel: 'Agent default',
+  agentModelsLoading: 'Reading the models this agent offers…',
+  agentModelsFailed: 'Couldn’t read the models this agent offers. Retry, or choose a custom model.',
+  agentImageInputHint:
+    'Starts as the agent reports it. Turn it off if the model you chose can’t read images.',
   outputLimit: 'Output limit',
   outputLimitAutomatic: 'Automatic recommendation',
   maxOutputTokens: 'Max output tokens',
@@ -304,7 +310,7 @@ export const aiMessageDefaults = {
   aiSetupAccessDescription: 'Select everything you have. If you have nothing yet, continue.',
   aiSetupAccessAgents: 'Coding agents on this computer',
   aiSetupAccessAgentsDescription:
-    'Use your existing subscription. The agent chooses its own model.',
+    'Use your existing subscription. Pick one of the agent’s models, or leave the choice to it.',
   aiSetupAccessAgentsDesktop: 'Coding agents are available in the OpenPencil desktop app.',
   aiSetupAccessAgentsSandboxed:
     'This install of OpenPencil can’t start coding agents. The download from GitHub can.',

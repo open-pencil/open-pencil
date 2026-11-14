@@ -123,13 +123,23 @@ describe('applyOnboardingPlan', () => {
     expect(parseAIModelSettings(settings)).toEqual(settings)
   })
 
-  test('clears roles an agent cannot take when design moves to an agent', () => {
+  test('lets review and fast work follow an agent that takes the design role', () => {
     const { settings } = apply(freshInstall(), {
       goals: ['design'],
       access: ['acp:codex'],
       spending: 'existing'
     })
-    expect(settings.assignments).toMatchObject({ review: null, fast: null, vision: null })
+    expect(settings.assignments).toMatchObject({ review: 'design', fast: 'design', vision: null })
+    expect(parseAIModelSettings(settings)?.assignments).toEqual(settings.assignments)
+  })
+
+  test('clears a vision role that follows a design agent without image input', () => {
+    const { settings } = apply(configured(), {
+      goals: ['design'],
+      access: ['acp:codex'],
+      spending: 'existing'
+    })
+    expect(settings.assignments).toMatchObject({ review: 'model-opus', vision: null })
     expect(parseAIModelSettings(settings)?.assignments).toEqual(settings.assignments)
   })
 

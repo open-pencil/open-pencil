@@ -2,12 +2,16 @@ import { describe, expect, test } from 'bun:test'
 
 import type { LanguageModel } from 'ai'
 
+import { ACP_AGENTS } from '@open-pencil/core/constants'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { asDouble } from '@open-pencil/test-support/doubles'
 
+import type { AgentQuestion } from '@/app/ai/agents/acp/oneoff'
 import {
   analyzeAttachedImages,
   designMessageWithImageFindings,
+  VisionModelUnavailableError,
   type ImageAnalysisDependencies
 } from '@/app/ai/attachment/image/analyze'
 import {
@@ -15,7 +19,13 @@ import {
   validateImageAttachmentFile
 } from '@/app/ai/attachment/image/prepare'
 import type { PreparedImageAttachment } from '@/app/ai/attachment/image/types'
+import type { AIModelRuntime } from '@/app/ai/models/runtime'
 import type { EditorStore } from '@/app/editor/session/create'
+
+const claude = expectDefined(
+  ACP_AGENTS.find((agent) => agent.id === 'claude-code'),
+  'Claude agent'
+)
 const image: PreparedImageAttachment = {
   data: new Uint8Array([4, 5, 6]),
   blob: new Blob(),
@@ -104,6 +114,58 @@ describe('image attachment analysis', () => {
     ])
     expect(request.messages[0]?.content[1]?.data).toEqual(image.data)
     expect(request.messages[0]?.content[2]?.data).toEqual(secondImage.data)
+  })
+
+  describe('when a coding agent holds Vision', () => {
+    const agentRuntime = (kind: 'acp' | 'harness') => ({
+      createRuntime: async () =>
+        asDouble<AIModelRuntime>({
+          kind,
+          agent: claude,
+          model: 'opus',
+          role: { requestedRole: 'vision', profile: { maxOutputTokens: 8000 } }
+        }),
+      inspect: async () => {
+        throw new Error('A direct model is not in play.')
+      }
+    })
+
+    test('asks the agent about all images, the selection included, and returns its findings', async () => {
+      const graph = new SceneGraph()
+      const page = graph.getPages()[0]
+      const frame = graph.createNode('FRAME', page.id, { width: 2560, height: 1600 })
+      const store = asDouble<EditorStore>({
+        graph,
+        state: { currentPageId: page.id, selectedIds: new Set([frame.id]) },
+        renderExportImage: async () => new Uint8Array([1, 2, 3])
+      })
+      const asked: Array<{ id: string; question: AgentQuestion }> = []
+
+      const findings = await analyzeAttachedImages(store, 'Match this layout', [image], {
+        ...agentRuntime('acp'),
+        askAgent: async ({ id }, question) => {
+          asked.push({ id, question })
+          return 'A tighter grid.'
+        }
+      })
+
+      expect(findings).toBe('A tighter grid.')
+      expect(asked).toHaveLength(1)
+      expect(asked[0]?.id).toBe('claude-code')
+      expect(asked[0]?.question.model).toBe('opus')
+      expect(asked[0]?.question.text).toContain('Match this layout')
+      expect(asked[0]?.question.images).toEqual([
+        { mediaType: 'image/png', data: image.data },
+        { mediaType: 'image/png', data: new Uint8Array([1, 2, 3]) }
+      ])
+    })
+
+    test('keeps Pi on the unavailable path', async () => {
+      const store = asDouble<EditorStore>({ state: { selectedIds: new Set() } })
+      await expect(
+        analyzeAttachedImages(store, 'Look', [image], agentRuntime('harness'))
+      ).rejects.toBeInstanceOf(VisionModelUnavailableError)
+    })
   })
 
   test('passes textual findings rather than image data to Design', () => {
