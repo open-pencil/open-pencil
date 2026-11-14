@@ -16,13 +16,13 @@ import {
 
 import { readNodeChangePluginData } from '../plugin-data'
 
-const { token, modeConditions, modeAttribute } = OPEN_PENCIL_PLUGIN_DATA
+const { token, modeConditions, modeAttribute, libraryModes } = OPEN_PENCIL_PLUGIN_DATA
 
 type TokenFields = Pick<Variable, 'unit' | 'expressions'>
 
 /** Plugin data other than the token entries, which are rebuilt on every save. */
 export function withoutTokenPluginData(pluginData: PluginDataEntry[]): PluginDataEntry[] {
-  return withoutPluginData(pluginData, [token, modeConditions, modeAttribute])
+  return withoutPluginData(pluginData, [token, modeConditions, modeAttribute, libraryModes])
 }
 
 function nonEmpty<T extends object>(record: T): T | undefined {
@@ -66,6 +66,21 @@ export function modeAttributePluginData(
   return collection.modeAttribute
     ? pluginDataEntry(modeAttribute, collection.modeAttribute)
     : undefined
+}
+
+/** Which library mode each mode of a copied collection came from, by the file's mode id. */
+export function readLibraryModeIds(nc: NodeChange): Record<string, string> {
+  return readNodeChangePluginData(nc, libraryModes) ?? {}
+}
+
+export function libraryModesPluginData(
+  collection: VariableCollection,
+  modeKey: (modeId: string) => string
+): PluginDataEntry | undefined {
+  const sources = collection.modes.flatMap((mode) =>
+    mode.libraryModeId ? [[modeKey(mode.modeId), mode.libraryModeId] as const] : []
+  )
+  return sources.length > 0 ? pluginDataEntry(libraryModes, Object.fromEntries(sources)) : undefined
 }
 
 /** Mode ids in the file differ from the model's, so callers map them. */

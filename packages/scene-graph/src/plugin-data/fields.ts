@@ -216,6 +216,8 @@ export const OPEN_PENCIL_PLUGIN_DATA = {
     'format',
     v.pipe(v.string(), v.trim(), v.maxLength(100), v.regex(MODE_ATTRIBUTE_PATTERN))
   ),
+  /** The library mode each mode of a copied collection came from, by the file's mode id. */
+  libraryModes: jsonPluginDataField('libraryModes', 'format', v.record(v.string(), v.string())),
   /** One entry per paint picked in OkHCL, so the picker reopens on the same coordinates. */
   okhcl: jsonPluginDataField('okhcl', 'content', okhclSchema),
   /** How a main component or component set behaves as a control in preview. */
