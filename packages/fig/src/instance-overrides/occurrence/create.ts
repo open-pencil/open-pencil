@@ -5,7 +5,7 @@ import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 
 import type { BoundPropertyClaim } from '../bindings/properties'
-import { COMPONENT_IDENTITY_FIELDS } from '../fields'
+import { UNINHERITED_COMPONENT_FIELDS } from '../fields'
 import { ownerAssignedProperties } from '../layers'
 import { readOverrideKey, sameGuid, type InterpreterIndex } from '../source-index'
 import { assignedSlotContent, type ComponentPropAssignment } from '../types'
@@ -92,8 +92,8 @@ export function createOccurrence(
     overrideKey: readOverrideKey(source.overrideKey),
     // The record is the top layer of its own root: its fields are placed state.
     properties: {
-      // The component's look carries over; its identity does not.
-      ...(base && omit(base.properties, COMPONENT_IDENTITY_FIELDS)),
+      // The component's look carries over; its identity and its place in its own parent do not.
+      ...(base && omit(base.properties, UNINHERITED_COMPONENT_FIELDS)),
       ...placed,
       ...(effective && source.symbolData
         ? { symbolData: { ...source.symbolData, symbolID: effective } }

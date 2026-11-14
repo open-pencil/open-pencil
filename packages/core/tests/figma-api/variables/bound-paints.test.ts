@@ -122,6 +122,46 @@ describe('bound paints in the plugin API', () => {
     expect(read(rect)).toBe('0,0,1,0.2')
   })
 
+  // scratch/pr-oracle/1879 rule-probe: the mode set for the layer decides, not the color it gives.
+  test('setting the mode a layer already shows refreshes the paint; the same mode from elsewhere does not', () => {
+    const { figma, collection, light, bind, setOpacity } = setup()
+    const frame = figma.createFrame()
+    const rect = figma.createRectangle()
+    frame.appendChild(rect)
+    bind(rect)
+    setOpacity(rect, 0.4)
+    frame.setExplicitVariableModeForCollection(collection, light)
+    expect(read(rect)).toBe('1,0,0,1')
+    // An inner frame setting the mode already set keeps the edit, and shields it from outer changes.
+    setOpacity(rect, 0.4)
+    const inner = figma.createFrame()
+    frame.appendChild(inner)
+    inner.appendChild(rect)
+    inner.setExplicitVariableModeForCollection(collection, light)
+    expect(read(rect)).toBe('1,0,0,0.4')
+    frame.clearExplicitVariableModeForCollection(collection)
+    expect(read(rect)).toBe('1,0,0,0.4')
+  })
+
+  test('moving into a frame that sets the mode a layer already shows refreshes the paint', () => {
+    const { figma, collection, light, bind, setOpacity } = setup()
+    const plain = figma.createFrame()
+    const rect = figma.createRectangle()
+    bind(rect)
+    setOpacity(rect, 0.4)
+    plain.appendChild(rect)
+    expect(read(rect)).toBe('1,0,0,0.4')
+    const lightFrame = figma.createFrame()
+    lightFrame.setExplicitVariableModeForCollection(collection, light)
+    lightFrame.appendChild(rect)
+    expect(read(rect)).toBe('1,0,0,1')
+    setOpacity(rect, 0.4)
+    const alsoLight = figma.createFrame()
+    alsoLight.setExplicitVariableModeForCollection(collection, light)
+    alsoLight.appendChild(rect)
+    expect(read(rect)).toBe('1,0,0,0.4')
+  })
+
   test('removing the variable leaves the paint as it was last colored', () => {
     const { figma, light, tone, bind } = setup()
     const rect = figma.createRectangle()

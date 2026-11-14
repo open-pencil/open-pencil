@@ -28,7 +28,8 @@ import { makeParagraphBuilder } from '#core/text/font/collection'
 import {
   drawnFontVariations,
   loadedFace,
-  resolveParagraphFontFamilies
+  resolveParagraphFontFamilies,
+  type LoadedFace
 } from '#core/text/font/families'
 import { fontManager } from '#core/text/font/manager'
 import { laidOutText } from '#core/text/keycap'
@@ -102,12 +103,11 @@ export function textFontFeatures(
  */
 function drawnFontStyle(
   ck: CanvasKit,
-  family: string,
+  loaded: LoadedFace | null,
   weight: number,
-  italic: boolean,
-  style: string
+  italic: boolean
 ): FontStyle {
-  const face = loadedFace(family, weight, italic, style) ?? { weight, italic }
+  const face = loaded ?? { weight, italic }
   return {
     weight: { value: face.weight },
     slant: face.italic ? ck.FontSlant.Italic : ck.FontSlant.Upright
@@ -161,13 +161,14 @@ function pushStyleRun(
     fontStyle: rangeFontStyle(node, style)
   }
   const runKey = faceStyleKey(runFace)
+  const runLoaded = loadedFace(runFamily, runWeight, runItalic, runKey)
 
   const textStyle = new ck.TextStyle({
     color: styleRunColor(ck, style, baseColor),
     fontFamilies: fontFamilies(runFamily, runFace),
     fontSize: runFontSize,
     locale: styleRunLanguage(style, node),
-    fontStyle: drawnFontStyle(ck, runFamily, runWeight, runItalic, runKey),
+    fontStyle: drawnFontStyle(ck, runLoaded, runWeight, runItalic),
     fontVariations: textFontVariations(
       drawnFontVariations({
         family: runFamily,
@@ -176,7 +177,8 @@ function pushStyleRun(
         style: runKey,
         fontSize: runFontSize,
         variations: style.fontVariations ?? node.fontVariations,
-        opticalSizeFromFontSize: style.opticalSizeFromFontSize ?? node.opticalSizeFromFontSize
+        opticalSizeFromFontSize: style.opticalSizeFromFontSize ?? node.opticalSizeFromFontSize,
+        loaded: runLoaded
       })
     ),
     fontFeatures: textFontFeatures(style.fontFeatures ?? node.fontFeatures),
@@ -272,29 +274,26 @@ export function buildSkParagraph(
       arabicFallbacks,
       cjkFallbacks
     )
+  const nodeFamily = node.fontFamily || DEFAULT_FONT_FAMILY
   const nodeKey = faceStyleKey(node)
+  const nodeLoaded = loadedFace(nodeFamily, node.fontWeight, node.italic, nodeKey)
 
   const baseTextStyle = {
     color: baseColor,
-    fontFamilies: fontFamilies(node.fontFamily || DEFAULT_FONT_FAMILY, node),
+    fontFamilies: fontFamilies(nodeFamily, node),
     fontSize: baseFontSize,
     locale: node.textLanguage ?? undefined,
-    fontStyle: drawnFontStyle(
-      ck,
-      node.fontFamily || DEFAULT_FONT_FAMILY,
-      node.fontWeight,
-      node.italic,
-      nodeKey
-    ),
+    fontStyle: drawnFontStyle(ck, nodeLoaded, node.fontWeight, node.italic),
     fontVariations: textFontVariations(
       drawnFontVariations({
-        family: node.fontFamily || DEFAULT_FONT_FAMILY,
+        family: nodeFamily,
         weight: node.fontWeight,
         italic: node.italic,
         style: nodeKey,
         fontSize: baseFontSize,
         variations: node.fontVariations,
-        opticalSizeFromFontSize: node.opticalSizeFromFontSize
+        opticalSizeFromFontSize: node.opticalSizeFromFontSize,
+        loaded: nodeLoaded
       })
     ),
     fontFeatures: textFontFeatures(node.fontFeatures),

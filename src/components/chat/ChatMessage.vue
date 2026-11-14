@@ -15,12 +15,14 @@ import {
   tokenUsageDisplay
 } from '@/app/ai/chat/preferences'
 import { visibleUserMessageText } from '@/app/ai/chat/presentation'
+import { SUBAGENT_PART } from '@/app/ai/chat/subagents'
 import { groupMessageParts, type MessagePartGroup } from '@/app/ai/chat/tool-calls/display'
 import type { ReasoningDisplay } from '@/app/settings/preferences/store'
 import ChatAttachmentList from '@/components/chat/attachment/ChatAttachmentList.vue'
 import ChatMarkdown from '@/components/chat/ChatMarkdown.vue'
 import ChatReasoning from '@/components/chat/ChatReasoning.vue'
 import ChatReferenceText from '@/components/chat/reference/ChatReferenceText.vue'
+import ChatSubagentCard from '@/components/chat/subagent/ChatSubagentCard.vue'
 import ChatToolCallGroup from '@/components/chat/tool/ChatToolCallGroup.vue'
 import ChatCompactionDivider from '@/components/chat/turn/ChatCompactionDivider.vue'
 import ChatMessageEditor from '@/components/chat/turn/ChatMessageEditor.vue'
@@ -175,6 +177,9 @@ function groupKey(group: MessagePartGroup): string {
               :reasoning-label="ai.reasoning"
               :duration-label="(seconds) => ai.thoughtFor({ seconds })"
             />
+
+            <!-- A subagent the agent started -->
+            <ChatSubagentCard v-else-if="group.part.type === SUBAGENT_PART" :part="group.part" />
 
             <!-- Text -->
             <div

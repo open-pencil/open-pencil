@@ -89,7 +89,7 @@ export function presenceOf(store: EditorStore): Presence {
 }
 
 /** Our agent's color: the owner's in a room, as peers see it, else the one it was given. */
-function localAgentColor(store: EditorStore, agentId: string): Color {
+export function localAgentColor(store: EditorStore, agentId: string): Color {
   const { ownerColor, colors } = presenceOf(store)
   return ownerColor.value ?? colors.get(agentId) ?? SOLO_AGENT_COLOR
 }

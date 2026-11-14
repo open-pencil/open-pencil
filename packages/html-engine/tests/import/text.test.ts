@@ -1,11 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { serializeHTML } from '#dom-css/export/html'
-import { sceneNodeToDesignDocument } from '#dom-css/export/projection'
-import { designDocumentToSceneGraph } from '#dom-css/import/scene-graph'
-import { createHeadlessCSSRuntime, htmlToDesignDocument } from '#dom-css/index'
-
+import { htmlToDesignDocument } from '@open-pencil/dom-css'
+import { sceneNodeToDesignDocument, serializeHTML } from '@open-pencil/dom-css/export'
+import { designDocumentToSceneGraph } from '@open-pencil/dom-css/scene-graph'
 import { SceneGraph, type SceneNode, type TextParagraphStyle } from '@open-pencil/scene-graph'
+import { colorToFill } from '@open-pencil/scene-graph/color'
 import {
   paragraphSpacingAt,
   percentLength,
@@ -13,8 +12,10 @@ import {
   textParagraphRanges
 } from '@open-pencil/scene-graph/text'
 
+import { engineRuntime } from '../helpers/engine'
+
 async function texts(html: string): Promise<SceneNode[]> {
-  const document = await htmlToDesignDocument(html, { runtime: createHeadlessCSSRuntime() })
+  const document = await htmlToDesignDocument(html, { runtime: engineRuntime() })
   const graph = designDocumentToSceneGraph(document)
   return [...graph.getAllNodes()].filter((node) => node.type === 'TEXT')
 }
@@ -155,11 +156,14 @@ describe('rich text import', () => {
       '<p>Read <a href="https://openpencil.dev/docs">the <b>docs</b></a> now</p>'
     )
     const link = { type: 'URL' as const, value: 'https://openpencil.dev/docs' }
+    // Drawn as browsers draw links, underlined in their blue through what the link holds.
+    const drawn = { fills: [colorToFill('#0000ee')], textDecoration: 'UNDERLINE' as const }
     expect(text?.styleRuns).toEqual([
-      { start: 5, length: 4, style: { hyperlink: link } },
-      { start: 9, length: 4, style: { hyperlink: link, fontWeight: 700 } }
+      { start: 5, length: 4, style: { hyperlink: link, ...drawn } },
+      { start: 9, length: 4, style: { hyperlink: link, ...drawn, fontWeight: 700 } }
     ])
     const [alone] = await texts('<a href="https://openpencil.dev">Home</a>')
+    expect(alone).toMatchObject(drawn)
     expect(alone?.styleRuns).toEqual([
       {
         start: 0,
@@ -204,22 +208,21 @@ describe('rich text import', () => {
   })
 })
 
-// CSS keeps a line height relative as a unitless multiple and letter spacing in em, so a percent
-// of the font size survives the trip, as it does in Figma.
 describe('relative text lengths', () => {
-  test('a unitless or percent line height and an em letter spacing read as percents', async () => {
+  // CSS inherits a unitless line height as a ratio, but computes a percent or `em` to pixels.
+  test('a unitless line height reads as a percent, and lengths CSS computes as pixels', async () => {
     const [unitless, percent] = await texts(
       '<p style="font-size:20px;line-height:1.5;letter-spacing:0.1em">One</p>' +
         '<p style="font-size:20px;line-height:120%;letter-spacing:2px">Two</p>'
     )
     expect(unitless).toMatchObject({
       lineHeight: percentLength(150),
-      letterSpacing: percentLength(10)
+      letterSpacing: pixelLength(2)
     })
-    expect(percent).toMatchObject({ lineHeight: percentLength(120), letterSpacing: pixelLength(2) })
+    expect(percent).toMatchObject({ lineHeight: pixelLength(24), letterSpacing: pixelLength(2) })
   })
 
-  test('reads back the percents it writes, for the text and its runs', async () => {
+  test('reads back the line height percent it writes, and letter spacing at its size', async () => {
     const { back } = await roundTrip({
       text: 'Hello world',
       lineHeight: percentLength(150),
@@ -228,7 +231,7 @@ describe('relative text lengths', () => {
         { start: 6, length: 5, style: { fontWeight: 700, letterSpacing: pixelLength(1) } }
       ]
     })
-    expect(back).toMatchObject({ lineHeight: percentLength(150), letterSpacing: percentLength(5) })
+    expect(back).toMatchObject({ lineHeight: percentLength(150), letterSpacing: pixelLength(0.8) })
     expect(back.styleRuns.at(-1)?.style.letterSpacing).toEqual(pixelLength(1))
   })
 })

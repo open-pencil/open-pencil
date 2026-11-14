@@ -100,6 +100,17 @@ function rectangleSides(
 
 const FULL_TURN = Math.PI * 2
 
+function sweepsWholeTurn(start: number, end: number): boolean {
+  return Math.abs(end - start) >= FULL_TURN - 1e-6
+}
+
+/** Whether a layer is an unbroken ellipse: an ELLIPSE whose arc, if any, is a whole turn with no hole. */
+export function isWholeEllipse(node: Pick<SceneNode, 'type' | 'arcData'>): boolean {
+  if (node.type !== 'ELLIPSE') return false
+  const arc = node.arcData
+  return !arc || (arc.innerRadius <= 0 && sweepsWholeTurn(arc.startingAngle, arc.endingAngle))
+}
+
 function ellipseContours(node: SceneNode, tolerance: number): Vector[][] {
   const rx = node.width / 2
   const ry = node.height / 2
@@ -107,7 +118,7 @@ function ellipseContours(node: SceneNode, tolerance: number): Vector[][] {
   const start = arc?.startingAngle ?? 0
   const end = arc?.endingAngle ?? FULL_TURN
   const inner = arc?.innerRadius ?? 0
-  const whole = Math.abs(end - start) >= FULL_TURN - 1e-6
+  const whole = sweepsWholeTurn(start, end)
   const outer = arcPoints(rx, ry, rx, ry, start, whole ? start + FULL_TURN : end, tolerance)
   if (inner <= 0) return [whole ? outer : [{ x: rx, y: ry }, ...outer]]
   const hole = arcPoints(
