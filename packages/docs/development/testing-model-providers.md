@@ -170,6 +170,10 @@ function argumentsProblem(call) {
   }
   if (!NODE_TYPES.has(args?.type)) return 'type is missing or not one of the declared values'
   if (!Number.isFinite(args.x) || !Number.isFinite(args.y)) return 'x or y is missing'
+  for (const key of ['width', 'height']) {
+    if (key in args && !Number.isFinite(args[key])) return `${key} is not a number`
+  }
+  if ('fill' in args && typeof args.fill !== 'string') return 'fill is not a string'
   return null
 }
 
