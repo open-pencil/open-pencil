@@ -113,6 +113,25 @@ test.describe('@open-pencil/dom-css browser layout capture', () => {
     expect(bold.layout?.lines).toBeUndefined()
   })
 
+  test('measures line boxes apart from the page’s styles, no shorter than the block’s', async ({
+    page
+  }) => {
+    const document = await captured(
+      page,
+      `<p id="p">x</p><p id="small"><span>x</span></p>`,
+      `body { margin: 0 }
+       div, * { height: 120px }
+       p { height: auto; margin: 0; font: 20px/30px monospace }
+       span { height: auto; line-height: 10px }`
+    )
+    const line = (id: string) => byId(document, id).layout?.lines?.[0]
+
+    // A page rule for every element leaves the line boxes as tall as the line height.
+    expect(line('p')).toMatchObject({ y: 0, height: 30 })
+    // A run with a smaller line height still sits in a line as tall as its block's.
+    expect(line('small')).toMatchObject({ y: 30, height: 30 })
+  })
+
   test('waits for web fonts before recording layout', async ({ page }) => {
     const origin = new URL(test.info().project.use.baseURL ?? '').origin
     const font = `${origin}/@fs${process.cwd()}/packages/core/assets/CaveatVariable.woff2`
