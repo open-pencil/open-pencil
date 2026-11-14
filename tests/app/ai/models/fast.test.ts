@@ -4,7 +4,8 @@ import type { LanguageModel } from 'ai'
 
 import { asDouble } from '@open-pencil/test-support/doubles'
 
-import { summaryModel } from '@/app/ai/chat/compaction/model'
+import type { ContextLimits } from '@/app/ai/chat/compaction/limits'
+import { summaryWriter } from '@/app/ai/chat/compaction/model'
 import { modelSettingsSnapshot, replaceAIModelSettings } from '@/app/ai/models'
 import { fastTasksRuntime } from '@/app/ai/models/fast'
 import type { AIModelRuntime } from '@/app/ai/models/runtime'
@@ -63,21 +64,40 @@ describe('the Fast tasks model', () => {
   })
 })
 
-describe('the model that writes a conversation’s summaries', () => {
-  const conversationModel = asDouble<LanguageModel>({})
+describe('who writes a conversation’s summaries', () => {
+  const conversation = {
+    model: asDouble<LanguageModel>({}),
+    limits: { contextWindow: 200_000, maxOutputTokens: 32_000 }
+  }
+  const fastLimits: ContextLimits = { contextWindow: 8_000, maxOutputTokens: 1_000 }
 
-  test('is the Fast tasks model when that is an API model', async () => {
-    expect(await summaryModel(conversationModel, async () => fastRuntime)).toBe(
-      fastRuntime.kind === 'direct' ? fastRuntime.model : conversationModel
+  test('is the Fast tasks model, sized for its own window, when that is an API model', async () => {
+    const writer = await summaryWriter(
+      conversation,
+      async () => fastRuntime,
+      async () => fastLimits
     )
+    expect(writer.model).toBe(
+      fastRuntime.kind === 'direct' ? fastRuntime.model : conversation.model
+    )
+    expect(writer.limits).toEqual(fastLimits)
+  })
+
+  test('is sized as the conversation’s model when the Fast tasks catalog gives no window', async () => {
+    const writer = await summaryWriter(
+      conversation,
+      async () => fastRuntime,
+      async () => null
+    )
+    expect(writer.limits).toBe(conversation.limits)
   })
 
   test('is the conversation’s own when no model is assigned to Fast tasks', async () => {
-    expect(await summaryModel(conversationModel, async () => null)).toBe(conversationModel)
+    expect(await summaryWriter(conversation, async () => null)).toBe(conversation)
   })
 
   test('is the conversation’s own when a coding agent holds Fast tasks', async () => {
     const agent = asDouble<AIModelRuntime>({ kind: 'acp' })
-    expect(await summaryModel(conversationModel, async () => agent)).toBe(conversationModel)
+    expect(await summaryWriter(conversation, async () => agent)).toBe(conversation)
   })
 })

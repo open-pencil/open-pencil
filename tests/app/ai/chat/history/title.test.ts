@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import type { generateText, LanguageModel, UIMessage } from 'ai'
 
+import type { ReasoningEffort } from '@open-pencil/core/constants'
 import { asDouble } from '@open-pencil/test-support/doubles'
 
 import { conversationTitle, type TitleDependencies } from '@/app/ai/chat/history/title'
@@ -24,7 +25,11 @@ const exchange: UIMessage[] = [
 type GenerateOptions = Parameters<typeof generateText>[0]
 
 /** A Fast tasks model of `kind` that answers `answer`, recording what it was asked. */
-function fastModel(answer: string | Error, kind: AIModelRuntime['kind'] = 'direct') {
+function fastModel(
+  answer: string | Error,
+  kind: AIModelRuntime['kind'] = 'direct',
+  minReasoningEffort?: ReasoningEffort
+) {
   const generated: GenerateOptions[] = []
   const asked: ModelQuestion[] = []
   const fail = () => {
@@ -35,9 +40,10 @@ function fastModel(answer: string | Error, kind: AIModelRuntime['kind'] = 'direc
       asDouble<AIModelRuntime>({
         kind,
         model: asDouble<LanguageModel>({}),
+        minReasoningEffort,
         role: {
           connection: { providerID: 'anthropic' },
-          profile: { maxOutputTokens: 8000, thinkingLevel: 'default' }
+          profile: { maxOutputTokens: 8000, thinkingLevel: 'high' }
         }
       }),
     generate: asDouble<typeof generateText>(async (options: GenerateOptions) => {
@@ -63,6 +69,20 @@ describe('a conversation’s title', () => {
     expect(fast.generated[0]?.prompt).toContain('Make the pricing cards the same height')
     expect(fast.generated[0]?.prompt).toContain('I set all three cards to fill.')
     expect(fast.asked).toEqual([])
+  })
+
+  test('is asked for without thinking, which would spend the few tokens a title takes', async () => {
+    const fast = fastModel('Pricing cards')
+    await conversationTitle(exchange, fast.dependencies)
+    expect(fast.generated[0]?.reasoning).toBe('none')
+    expect(fast.generated[0]?.maxOutputTokens).toBe(40)
+  })
+
+  test('leaves a model that always thinks the profile’s allowance to think in', async () => {
+    const fast = fastModel('Pricing cards', 'direct', 'low')
+    await conversationTitle(exchange, fast.dependencies)
+    expect(fast.generated[0]?.reasoning).toBe('low')
+    expect(fast.generated[0]?.maxOutputTokens).toBe(8000)
   })
 
   test('is what a coding agent on Fast tasks answers', async () => {

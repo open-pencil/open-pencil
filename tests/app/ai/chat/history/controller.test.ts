@@ -540,3 +540,22 @@ test('a conversation keeps its first message as the title when none is generated
     titleSource: 'fallback'
   })
 })
+
+test('a reply stopped by starting another conversation does not name the one it leaves', async () => {
+  const asked: UIMessage[][] = []
+  const f = fixture(async (messages) => {
+    asked.push(messages)
+    return 'Equal-height cards'
+  })
+  await f.history.ensureChat()
+  f.chat.stop = async () => {
+    f.chat.status = 'ready'
+    await nextTick()
+  }
+  f.chat.status = 'streaming'
+  await nextTick()
+  f.chat.messages = exchange
+  await f.history.newChat()
+  await f.history.flush()
+  expect(asked).toEqual([])
+})

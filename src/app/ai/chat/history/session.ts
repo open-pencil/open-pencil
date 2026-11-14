@@ -31,7 +31,9 @@ export function createHistorySession(reset: () => Promise<void>) {
       (status, before) => {
         if (next.status === 'submitted') interrupted = false
         save()
-        if (status === 'ready' && before === 'streaming' && live === next) replied?.()
+        // A reply stopped by closing the conversation is not one to name it from.
+        if (status === 'ready' && before === 'streaming' && live === next && !interrupted)
+          replied?.()
       }
     )
     // Change previews render after their message settles; save them when they arrive.

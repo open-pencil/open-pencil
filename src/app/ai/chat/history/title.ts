@@ -5,11 +5,12 @@ import * as v from 'valibot'
 
 import { answersQuestions, askModel } from '@/app/ai/models/ask'
 import { fastTasksRuntime } from '@/app/ai/models/fast'
-import { runtimeReasoningSettings } from '@/app/ai/models/reasoning/settings'
+import { reasoningCallSettings } from '@/app/ai/models/reasoning/settings'
+import type { DirectAIModelRuntime } from '@/app/ai/models/runtime'
 
 import { fallbackTitle } from './messages'
 
-/** A title is a few words; the model is cut off well past that. */
+/** A title is a few words; a model that does not think is cut off well past that. */
 const MAX_TITLE_TOKENS = 40
 /** How much of the first reply the model reads to name the conversation. */
 const REPLY_EXCERPT_LENGTH = 600
@@ -36,6 +37,20 @@ const DEFAULT_DEPENDENCIES: TitleDependencies = {
 const titleSchema = v.object({
   title: v.pipe(v.string(), v.minLength(1), v.description('At most six words'))
 })
+
+/**
+ * A title needs no thinking, so it is turned off. A model that always thinks spends its thinking
+ * from the same allowance, so it keeps the profile's.
+ */
+function titleSettings(runtime: DirectAIModelRuntime) {
+  const { connection, profile } = runtime.role
+  return {
+    maxOutputTokens: runtime.minReasoningEffort
+      ? profile.maxOutputTokens
+      : Math.min(profile.maxOutputTokens, MAX_TITLE_TOKENS),
+    ...reasoningCallSettings(connection.providerID, 'off', runtime.minReasoningEffort)
+  }
+}
 
 function firstReply(messages: readonly UIMessage[]): string {
   const reply = messages.find((message) => message.role === 'assistant')
@@ -75,8 +90,7 @@ export async function conversationTitle(
     if (runtime.kind === 'direct') {
       const { output } = await generate({
         model: runtime.model,
-        maxOutputTokens: Math.min(runtime.role.profile.maxOutputTokens, MAX_TITLE_TOKENS),
-        ...runtimeReasoningSettings(runtime),
+        ...titleSettings(runtime),
         output: Output.object({ schema: valibotSchema(titleSchema), name: 'conversation_title' }),
         prompt: text
       })
