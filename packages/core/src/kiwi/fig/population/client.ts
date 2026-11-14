@@ -4,9 +4,10 @@ import { randomHex } from '@open-pencil/scene-graph/random'
 import { releaseFigArchive } from '#core/kiwi/fig/session/archive/access'
 import { archiveChanges, trackArchiveChanges } from '#core/kiwi/fig/session/archive/changes'
 import { updateReaderRecovery, releaseReaderRecovery } from '#core/kiwi/fig/session/document-state'
-import type { FigSessionResponse } from '#core/kiwi/fig/session/protocol'
+import type { FigSessionRequest, FigSessionResponse } from '#core/kiwi/fig/session/protocol'
 
-import { applyFigPopulationDelta } from './delta'
+import { applyFigPopulationDelta, type FigPopulationRebase } from './delta'
+import { trackFigGraphEdits } from './edits'
 
 /** The responses this client acts on, taken from the session protocol itself. */
 type WorkerResult = Extract<
@@ -189,10 +190,8 @@ export function createPopulationWorkerClient(
       timeout: ReturnType<typeof setTimeout>
     }
   >()
-  let revision = 0
   let stale = false
   let disposed = false
-  let applyingDelta = false
   /** Answer every load in flight with null, so its page loads on the main thread instead. */
   const settlePending = () => {
     for (const request of pending.values()) {
@@ -202,25 +201,25 @@ export function createPopulationWorkerClient(
     }
     pending.clear()
   }
-  const invalidate = () => {
-    // Layout recomputation (import-time or after a switch) is derived from the
-    // same scene graph the worker deltas were built from; it must not count as
-    // user divergence. Only real user edits invalidate the worker.
-    if (applyingDelta || stale || graph.isApplyingLayout) return
-    revision++
-    stale = true
-    emitTelemetry({ event: 'stale', reason: 'graph-mutation' })
-    // A load in flight can no longer apply, however long the worker keeps reporting progress.
-    settlePending()
+  const post = (message: FigSessionRequest) => {
+    if (port) port.postMessage(message)
+    else worker.postMessage(message, [])
   }
-  let unbind: (() => void) | undefined
-  const releaseSubscription = () => {
-    unbind?.()
-    unbind = undefined
+  // Edits reach the worker's copy of the graph, so pages keep loading there once it is edited.
+  const edits = trackFigGraphEdits(graph, (batch) => {
+    post({ type: 'edits', edits: batch })
+    forgetSettledEdits(batch.revision)
+  })
+  /** Batches up to the oldest load in flight, or all of them with none, are not needed. */
+  const forgetSettledEdits = (newest: number) => {
+    let oldest = newest
+    for (const request of pending.values()) oldest = Math.min(oldest, request.revision)
+    edits.forget(oldest)
   }
+  const releaseSubscription = () => edits.stop()
   /**
-   * Stop loading pages here. A graph that diverged only retires the worker's session, so the
-   * worker keeps serving the archive; an abandoned or failed load stops the worker itself.
+   * Stop loading pages here. A load the worker reports failing only retires its session, so the
+   * worker keeps serving the archive; a stuck or crashed worker is stopped.
    */
   const fail = (emit = true, stop = true) => {
     stale = true
@@ -231,13 +230,6 @@ export function createPopulationWorkerClient(
     else port?.postMessage({ type: 'retire' })
     populationWorkers.delete(graph)
   }
-  unbind = graph.onNodeEvents({
-    created: invalidate,
-    updated: invalidate,
-    deleted: invalidate,
-    reparented: invalidate,
-    reordered: invalidate
-  })
   const watchForStall = () => setTimeout(() => fail(), FIG_POPULATION_WORKER_STALL_MS)
   const receive = (result: WorkerResult) => {
     if (result.type === 'population-error') return fail(true, false)
@@ -252,23 +244,37 @@ export function createPopulationWorkerClient(
     if (!request) return
     clearTimeout(request.timeout)
     request.abort?.()
-    pending.delete(result.requestId)
-    if (stale || revision !== request.revision || result.baseRevision !== request.revision) {
+    if (stale || result.baseRevision !== request.revision) {
+      pending.delete(result.requestId)
       emitTelemetry({ event: 'stale', reason: 'graph-mutation' })
       return request.resolve(null)
     }
-    applyingDelta = true
     const applyStartedAt = performance.now()
+    let rebase: FigPopulationRebase
     try {
-      applyFigPopulationDelta(graph, result.delta)
+      // Edits not sent yet are among those the worker did not see. The load stays pending until
+      // they are read, so sending them keeps the batches it needs.
+      edits.flush()
+      const edited = edits.changedSince(request.revision)
+      pending.delete(result.requestId)
+      // The page arrives from outside any edit open now, such as a script's awaiting tool call,
+      // so no undo step takes it in.
+      rebase = graph.runOutsideEdits(() =>
+        edits.ignoring(() => applyFigPopulationDelta(graph, result.delta, edited))
+      )
       if (result.checkpoint) updateReaderRecovery(graph, result.checkpoint)
     } catch {
-      applyingDelta = false
+      pending.delete(result.requestId)
       fail()
       return request.resolve(null)
-    } finally {
-      applyingDelta = false
     }
+    forgetSettledEdits(edits.revision)
+    // The worker built what it sent without the edits made meanwhile; it takes this thread's
+    // state where they met, and the instances it built from components edited since.
+    edits.send(rebase.diverged)
+    graph.runOutsideEdits(() => {
+      for (const id of rebase.staleInstances) graph.syncInstance(id)
+    })
     request.resolve(result.populated)
     emitTelemetry({
       event: 'populate',
@@ -291,14 +297,15 @@ export function createPopulationWorkerClient(
       signal?.throwIfAborted()
       if (stale) return Promise.resolve(null)
       const requestId = randomHex()
-      const baseRevision = revision
+      // Sent first, so the worker loads the page into a graph with every edit made so far.
+      const baseRevision = edits.revision
       return new Promise((resolve, reject) => {
         const abort = () => {
           const request = pending.get(requestId)
           if (!request) return
-          clearTimeout(request.timeout)
-          pending.delete(requestId)
-          fail(false)
+          // The worker loads the page into its copy all the same. Its layers still apply here
+          // when they arrive, so both graphs stay alike and later pages keep loading there.
+          request.resolve = () => undefined
           reject(new DOMException('Aborted', 'AbortError'))
         }
         signal?.addEventListener('abort', abort, { once: true })
@@ -309,8 +316,7 @@ export function createPopulationWorkerClient(
           startedAt: performance.now(),
           timeout: watchForStall()
         })
-        if (port) port.postMessage({ type: 'populate', requestId, baseRevision, pageId })
-        else worker.postMessage({ type: 'populate', requestId, baseRevision, pageId }, [])
+        post({ type: 'populate', requestId, baseRevision, pageId })
       })
     },
     stop() {
