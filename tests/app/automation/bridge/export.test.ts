@@ -243,10 +243,12 @@ describe('automation export of a document whose canvas just came on screen', () 
     const renderer = store.renderer
     if (!renderer) throw new Error('Missing canvas renderer')
     const fontsLoaded = renderer.whenFontsLoaded.bind(renderer)
-    let waiting = () => {}
-    const exportWaits = new Promise<void>((resolve) => (waiting = resolve))
+    let waiting: (() => void) | undefined
+    const exportWaits = new Promise<void>((resolve) => {
+      waiting = resolve
+    })
     spyOn(renderer, 'whenFontsLoaded').mockImplementation(() => {
-      waiting()
+      waiting?.()
       return fontsLoaded()
     })
 
