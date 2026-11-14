@@ -74,13 +74,15 @@ export async function createACPTransport(
     onSession:
       agentSession &&
       ((id) => agentSession.record(id === null ? null : { agent: agentDef.id, id })),
-    onAgentError
+    onAgentError,
+    yieldWhen: hasSteeringMessage
   })
 }
 
 /**
- * A reply that ended unfinished is settled once its last edit landed, so it no longer reads as
- * running and the model learns which of its calls changed the document.
+ * A reply that ended is settled once its last edit landed, so nothing in it reads as running and
+ * the model learns which of its calls changed the document. A reply that finished with every
+ * call reported back stays as it is.
  */
 async function settleEndedReply(
   chat: Chat<UIMessage>,
@@ -197,7 +199,12 @@ export function createChatSessionManager({
     return transport
   }
 
-  async function createActiveHarnessTransport(sessionId: string, context: AIDiagnosticContext) {
+  /** `provider` is the one the chat chose, as for ACP: a change while Pi works keeps its usage there. */
+  async function createActiveHarnessTransport(
+    sessionId: string,
+    context: AIDiagnosticContext,
+    provider: AIProviderID
+  ) {
     await destroyAgentTransports()
     const runtime = await createAIModelRuntime('design')
     if (runtime?.kind !== 'harness') throw new Error('The Design agent is not configured for Pi')
@@ -232,7 +239,8 @@ export function createChatSessionManager({
         ? { OPENPENCIL_HARNESS_API_KEY: apiKey }
         : { OPENPENCIL_HARNESS_AGENT_DIR: account?.agentDir ?? '' },
       undefined,
-      (usage) => recordModelStepCompleted({ provider: providerID.value, model, ...usage }, context)
+      (usage) => recordModelStepCompleted({ provider, model, ...usage }, context),
+      hasSteeringMessage
     )
     harnessTransportInstance = transport
     return transport as ChatTransport<UIMessage>
@@ -304,7 +312,7 @@ export function createChatSessionManager({
         }
       } else if (isHarnessProvider.value) {
         restAgentsOnFinish = () => restAgents('harness')
-        transport = await createActiveHarnessTransport(sessionId, diagnosticContext)
+        transport = await createActiveHarnessTransport(sessionId, diagnosticContext, chatProviderID)
       } else {
         transport = await createTransport(store, diagnosticContext)
       }
@@ -342,9 +350,9 @@ export function createChatSessionManager({
           handleChatFinish(diagnosticContext, event)
           // The reply is over, however it ended; its agent rests instead of waiting it out.
           restAgentsOnFinish?.()
-          if (event.isAbort || event.isDisconnect || event.isError) {
-            void settleEndedReply(created, store, event.message.id, event.isAbort)
-          }
+          // However it ended, nothing in the reply may still read as running: an agent can finish
+          // its turn with a call it never reported back.
+          void settleEndedReply(created, store, event.message.id, event.isAbort)
           // A reply stopped by the person, or cut off with its connection, ends unannounced.
           if (!event.isAbort && !event.isDisconnect)
             void notifyReplyEnded(

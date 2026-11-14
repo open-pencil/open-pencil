@@ -1,13 +1,8 @@
 import { expect, test } from 'bun:test'
 
 import { readUIMessageStream, type UIMessage } from 'ai'
-import * as v from 'valibot'
 
-import type {
-  HarnessSidecarMessage,
-  HarnessTurnEvent,
-  HarnessTurnUsage
-} from '@open-pencil/harness'
+import type { HarnessSidecarMessage, HarnessTurnUsage } from '@open-pencil/harness'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import {
@@ -16,6 +11,9 @@ import {
   replyCompactions
 } from '@/app/ai/chat/compaction/marker'
 import { HarnessChatTransport } from '@/app/ai/transports/pi'
+
+import { configuration, fakeCompanion, send } from '#tests/helpers/ai/pi-companion'
+
 test('failed session stop kills the process without deleting resume state', async () => {
   let output: ReadableStreamDefaultController<HarnessSidecarMessage> | undefined
   const methods: string[] = []
@@ -81,84 +79,6 @@ test('failed session stop kills the process without deleting resume state', asyn
   await transport.stop()
   expect(kills).toBe(1)
 })
-
-const configuration = {
-  adapter: 'pi',
-  sandbox: 'just-bash',
-  model: 'test',
-  settings: {},
-  instructions: '',
-  mcpServers: {}
-} as const
-
-/**
- * A companion that answers session requests at once and holds each turn open, so the test
- * decides when its events and its answer arrive, as Pi's do after a Stop.
- */
-const promptParams = v.object({ prompt: v.string() })
-
-function fakeCompanion({ turnsFail = false } = {}) {
-  let output: ReadableStreamDefaultController<HarnessSidecarMessage> | undefined
-  const methods: string[] = []
-  const turns: string[] = []
-  const prompts: unknown[] = []
-  let spawns = 0
-  const spawn = async () => {
-    spawns++
-    return {
-      child: { write: async () => undefined, kill: async () => output?.close() },
-      messages: new ReadableStream<HarnessSidecarMessage>({
-        start(controller) {
-          output = controller
-        }
-      }),
-      send: async (request: object) => {
-        if (!('id' in request) || !('method' in request)) throw new Error('Invalid request')
-        const { id, method } = request
-        if (typeof id !== 'string' || typeof method !== 'string') throw new Error('Invalid request')
-        methods.push(method)
-        if (method === 'session.turn' && turnsFail) throw new Error('Pipe closed')
-        if (method === 'session.turn') {
-          turns.push(id)
-          if ('params' in request && v.is(promptParams, request.params))
-            prompts.push(request.params.prompt)
-        } else output?.enqueue({ type: 'response', id, result: {} })
-      }
-    }
-  }
-  return {
-    spawn,
-    methods,
-    get spawns() {
-      return spawns
-    },
-    /** The turn's next event or its final answer, as the companion would send it. */
-    text: (turn: string, text: string) =>
-      output?.enqueue({ type: 'turn.event', id: turn, event: { type: 'text-delta', text } }),
-    event: (turn: string, event: HarnessTurnEvent) =>
-      output?.enqueue({ type: 'turn.event', id: turn, event }),
-    complete: (turn: string) =>
-      output?.enqueue({ type: 'response', id: turn, result: { completed: true } }),
-    finish: (turn: string, usage?: HarnessTurnUsage) =>
-      output?.enqueue({
-        type: 'turn.event',
-        id: turn,
-        event: { type: 'finish', finishReason: 'stop', ...(usage ? { usage } : {}) }
-      }),
-    turns,
-    prompts
-  }
-}
-
-function send(transport: HarnessChatTransport, abortSignal?: AbortSignal) {
-  return transport.sendMessages({
-    chatId: 'test',
-    trigger: 'submit-message',
-    messageId: undefined,
-    messages: [{ id: crypto.randomUUID(), role: 'user', parts: [{ type: 'text', text: 'Hi' }] }],
-    abortSignal
-  })
-}
 
 test('stopping a turn keeps the session, and its late events and answer are ignored', async () => {
   const companion = fakeCompanion()
@@ -357,5 +277,43 @@ test('compacting asks Pi to, and a turn keeps each compaction Pi runs in it', as
   expect(JSON.stringify(next[0])).toContain('Greeted thrice.')
   expect(JSON.stringify(next[1])).toContain('And once more')
   expect(JSON.stringify(next[1])).not.toContain('And again')
+  await transport.destroy()
+})
+
+test('stopping while the companion has not answered the session start ends the send', async () => {
+  const companion = fakeCompanion({ createWaits: true })
+  const transport = new HarnessChatTransport('silent-session', configuration, {}, companion.spawn)
+  const stop = new AbortController()
+  const sending = send(transport, stop.signal)
+  await Bun.sleep(0)
+  stop.abort()
+  await expect(sending).rejects.toMatchObject({ name: 'AbortError' })
+  expect(companion.turns).toEqual([])
+  await transport.destroy()
+})
+
+test('a session start that answers after Stop is not started a second time', async () => {
+  const companion = fakeCompanion({ createWaits: true })
+  const transport = new HarnessChatTransport('late-session', configuration, {}, companion.spawn)
+  const stop = new AbortController()
+  const stopped = send(transport, stop.signal)
+  await Bun.sleep(0)
+  stop.abort()
+  await expect(stopped).rejects.toMatchObject({ name: 'AbortError' })
+
+  const sending = send(transport)
+  await Bun.sleep(0)
+  companion.finishCreate()
+  const next = (await sending).getReader()
+  await Bun.sleep(0)
+  const turn = companion.turns.at(-1) ?? ''
+  companion.text(turn, 'pong')
+  companion.complete(turn)
+  const chunks: string[] = []
+  for (let read = await next.read(); !read.done; read = await next.read()) {
+    if (read.value.type === 'text-delta') chunks.push(read.value.delta)
+  }
+  expect(chunks).toEqual(['pong'])
+  expect(companion.methods.filter((method) => method === 'session.create')).toHaveLength(1)
   await transport.destroy()
 })

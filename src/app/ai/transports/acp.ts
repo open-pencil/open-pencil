@@ -5,7 +5,6 @@ import {
   PROTOCOL_VERSION,
   type ClientConnection,
   type SessionNotification,
-  type SessionUpdate,
   type Usage
 } from '@agentclientprotocol/sdk/unstable'
 import { promiseTimeout } from '@vueuse/core'
@@ -16,7 +15,6 @@ import type { ACPAgentDef } from '@open-pencil/core/constants'
 
 import { AUTH_STATUS_UPDATE_METHOD, parseAuthStatusUpdate } from '@/app/ai/agents/acp/auth/status'
 import { setAgentCommands } from '@/app/ai/agents/acp/commands'
-import { createUpdateMapper } from '@/app/ai/agents/acp/events'
 import { requestPermissionFromUser } from '@/app/ai/agents/acp/permission'
 import { spawnACPProcess, type ACPProcess } from '@/app/ai/agents/acp/process'
 import {
@@ -29,14 +27,13 @@ import {
 } from '@/app/ai/agents/acp/session'
 import { noteSubagents } from '@/app/ai/agents/acp/subagents'
 import { createOwnToolApproval, linkOwnTools, type OwnToolsLink } from '@/app/ai/agents/acp/tools'
-import { createSubagentTranscripts } from '@/app/ai/agents/acp/transcripts'
 import { agentAccounts } from '@/app/ai/agents/setup/accounts'
 import { resolveSpawnTarget } from '@/app/ai/agents/setup/discovery'
 import { AgentNotInstalledError } from '@/app/ai/agents/setup/readiness'
 import { notifyPermissionWaiting } from '@/app/ai/chat/notifications'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
-import { endRun, forgetAgentChat, startAgentRun } from '@/app/ai/reply/run'
-import { subagentAgent } from '@/app/automation/agents'
+import { forgetAgentChat } from '@/app/ai/reply/run'
+import { streamAgentTurn } from '@/app/ai/transports/agent-turn'
 import { getAutomationAuthToken } from '@/app/automation/mcp/spawn'
 import { describeDiagnosticError, recordACPTransportFailure } from '@/app/diagnostics'
 import type { EditorStore } from '@/app/editor/active-store'
@@ -57,20 +54,6 @@ const DEFAULT_STARTUP: ACPStartup = {
   authToken: getAutomationAuthToken,
   linkTools: linkOwnTools
 }
-
-/**
- * Updates that belong to a turn the agent took, after which it can continue the session even if
- * the turn is cut off. Claude Code and Codex cannot resume a session that never took a prompt, and
- * both send command, usage, and session info updates before they take one.
- */
-const TURN_UPDATES: ReadonlySet<SessionUpdate['sessionUpdate']> = new Set([
-  'user_message_chunk',
-  'agent_message_chunk',
-  'agent_thought_chunk',
-  'tool_call',
-  'tool_call_update',
-  'plan'
-])
 
 /** How long each startup request may take; resuming starts the agent's CLI, which is slowest. */
 const AGENT_START_TIMEOUT_MS = 60_000
@@ -212,6 +195,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
   private onAgentError: ((error: unknown) => void) | null
   private startup: ACPStartup
   private startTimeoutMs: number
+  private yieldWhen: () => boolean
 
   constructor(options: {
     agentDef: ACPAgentDef
@@ -233,6 +217,11 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     onAgentError?: (error: unknown) => void
     startup?: ACPStartup
     startTimeoutMs?: number
+    /**
+     * Whether a message waits to go in mid-turn. An agent cannot take it, so once no tool call
+     * runs its turn is cancelled and the reply ends as a finished one. Read from reactive state.
+     */
+    yieldWhen?: () => boolean
   }) {
     this.agentDef = options.agentDef
     this.cwd = options.cwd ?? '.'
@@ -243,6 +232,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     this.onAgentError = options.onAgentError ?? null
     this.startup = options.startup ?? DEFAULT_STARTUP
     this.startTimeoutMs = options.startTimeoutMs ?? AGENT_START_TIMEOUT_MS
+    this.yieldWhen = options.yieldWhen ?? (() => false)
   }
 
   async sendMessages({
@@ -276,88 +266,28 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
 
     const carriesContext = !this.sentContext
     const promptText = carriesContext ? `${SYSTEM_PROMPT}\n\n${text}` : text
-    this.sentContext = true
+    // Stopped before the prompt could go out, the instructions went with nothing: the next message
+    // carries them.
+    this.sentContext = !carriesContext || !abortSignal?.aborted
 
-    const { connection, sessionId } = this.session
     const session = this.session
-
-    return new ReadableStream<UIMessageChunk>({
-      start: (controller) => {
-        const mapper = createUpdateMapper(`turn-${Date.now()}`)
-        const subagents = createSubagentTranscripts(
-          (chunk) => controller.enqueue(chunk),
-          // The agent each subagent shows as in this chat's document.
-          (subagent) => (this.store ? subagentAgent(this.store, subagent) : null)
-        )
-        let closed = false
-        // The reply's run collects the edits the agent's calls make in the chat's document.
-        const store = this.store
-        const run = store ? startAgentRun(store, session.chat) : null
-
-        function finish(reason: 'stop' | 'other' | 'error', errorText?: string) {
-          if (closed) return
-          closed = true
-          session.onUpdate = null
-          if (store && run) endRun(store, run)
-          // The subagents' transcripts reach the chat in full before the reply closes.
-          void subagents.end().finally(() => {
-            if (errorText) controller.enqueue({ type: 'error', errorText })
-            for (const chunk of mapper.end()) controller.enqueue(chunk)
-            controller.enqueue({ type: 'finish-step' })
-            controller.enqueue({ type: 'finish', finishReason: reason })
-            controller.close()
-          })
-        }
-
-        session.onUpdate = (params) => {
-          if (closed) return
-          const { update } = params
-          // A subagent's own subagents are described on its session, as the agent's are on the chat's.
-          if (update.sessionUpdate === 'subagent_update') subagents.describe(update)
-          if (params.sessionId !== sessionId) {
-            subagents.update(params.sessionId, update)
-            return
-          }
-          if (TURN_UPDATES.has(update.sessionUpdate)) this.recordSession(sessionId)
-          for (const chunk of mapper.map(update)) controller.enqueue(chunk)
-        }
-
-        abortSignal?.addEventListener('abort', () => {
-          void connection.agent.notify(methods.agent.session.cancel, { sessionId })
-          finish('stop')
-        })
-
-        controller.enqueue({ type: 'start' })
-        controller.enqueue({ type: 'start-step' })
-
-        // Stopped while the agent started and reached its tools: the abort event already fired.
-        if (abortSignal?.aborted) {
-          // The instructions went out with nothing, so the next message carries them.
-          if (carriesContext) this.sentContext = false
-          finish('stop')
-          return
-        }
-
-        connection.agent
-          .request(methods.agent.session.prompt, {
-            sessionId,
-            prompt: [{ type: 'text', text: promptText }]
-          })
-          // The prompt answers once the agent's turn is over; nothing else ends the reply.
-          .then((result) => {
-            this.recordSession(sessionId)
-            if (result.usage) this.onUsage?.(agentTurnUsage(result.usage, session.model))
-            finish(result.stopReason === 'end_turn' ? 'stop' : 'other')
-            return undefined
-          })
-          .catch((e) => {
-            recordACPTransportFailure({
-              operation: 'message',
-              ...describeDiagnosticError(e)
-            })
-            this.onAgentError?.(e)
-            finish('error', formatConnectionError(e, this.agentDef))
-          })
+    const { sessionId } = session
+    return streamAgentTurn({
+      session,
+      promptText,
+      abortSignal,
+      store: this.store,
+      yieldWhen: this.yieldWhen,
+      onTurn: () => this.recordSession(sessionId),
+      onAnswer: (result) => {
+        if (result.usage) this.onUsage?.(agentTurnUsage(result.usage, session.model))
+      },
+      onFailure: (e) => {
+        // The chat closed its agent, as it does with a reply still going: nothing failed.
+        if (this.destroying) return null
+        recordACPTransportFailure({ operation: 'message', ...describeDiagnosticError(e) })
+        this.onAgentError?.(e)
+        return formatConnectionError(e, this.agentDef)
       }
     })
   }

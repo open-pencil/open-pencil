@@ -1,237 +1,29 @@
 import { expect, test } from 'bun:test'
 
-import {
-  agent as acpAgent,
-  methods,
-  ndJsonStream,
-  PROTOCOL_VERSION,
-  RequestError,
-  type ClientCapabilities,
-  type NewSessionRequest,
-  type ResumeSessionRequest,
-  type SessionUpdate
-} from '@agentclientprotocol/sdk/unstable'
-import type { UIMessage, UIMessageChunk } from 'ai'
+import type { SessionUpdate } from '@agentclientprotocol/sdk/unstable'
 
-import { ACP_AGENTS, type ACPAgentDef } from '@open-pencil/core/constants'
+import { ACP_AGENTS } from '@open-pencil/core/constants'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { OWN_TOOLS_ALLOWED } from '@/app/ai/agents/acp/tools'
 import { SUBAGENT_PART, subagentTranscript } from '@/app/ai/chat/subagents'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
-import { ACPChatTransport, type ACPStartup } from '@/app/ai/transports/acp'
 import { restAgents, withSubagent } from '@/app/automation/agents'
 import { diagnosticErrorDetails, diagnostics } from '@/app/diagnostics'
-import { createDeferred } from '@/app/runtime/deferred'
-const resuming = expectDefined(
-  ACP_AGENTS.find((agent) => agent.resumesSessions),
-  'an agent that resumes sessions'
-)
+
+import {
+  fakeAgents,
+  message,
+  resuming,
+  send,
+  sending,
+  tick,
+  transport
+} from '#tests/helpers/ai/acp-agent'
+
 const codex = expectDefined(
   ACP_AGENTS.find((agent) => agent.id === 'codex'),
   'Codex agent'
 )
-
-interface FakeAgentOptions {
-  /** False for an agent that runs but never answers a new session. */
-  answersSessions?: boolean
-  /** Refuses every resume, as for a session the agent no longer has. */
-  resumeFails?: boolean
-  /** An adapter error that the real ACP connection serializes before the client receives it. */
-  resumeError?: Error
-  /** A temporary refusal on the first resume, as when the old process still owns the session. */
-  resumeBusy?: boolean
-  /** True for an automation token that is never read, as with a credential prompt left open. */
-  tokenHangs?: boolean
-  /**
-   * How the agent's turn ends: `refused` fails before the agent takes the prompt, `cut-off` fails
-   * after it started answering. Either way it first sends updates that are not part of a turn.
-   */
-  turn?: 'answered' | 'refused' | 'cut-off'
-  /** True for a command lookup that waits until `finishLookup`, as a slow PATH search does. */
-  lookupWaits?: boolean
-  /**
-   * What the agent reports while it takes a turn, after its command list: in the turn's session,
-   * or in a subagent's session `session`.
-   */
-  updates?: { session?: string; update: SessionUpdate }[]
-}
-
-/** In-memory ACP agents, one per start, that record what the transport asks of them. */
-function fakeAgents({
-  answersSessions = true,
-  resumeFails = false,
-  resumeError,
-  resumeBusy = false,
-  tokenHangs = false,
-  turn = 'answered',
-  lookupWaits = false,
-  updates = []
-}: FakeAgentOptions = {}) {
-  const lookup = createDeferred<undefined>()
-  const prompts: string[] = []
-  const created: NewSessionRequest[] = []
-  const resumed: ResumeSessionRequest[] = []
-  const capabilities: (ClientCapabilities | undefined)[] = []
-  const sessionRequested = createDeferred<undefined>()
-  const killed = createDeferred<undefined>()
-  let kills = 0
-  let spawns = 0
-  const searchPaths: (string | null | undefined)[] = []
-  const defersTools: boolean[] = []
-  const cwds: (string | undefined)[] = []
-  let crashLatest: (() => void) | null = null
-
-  const spawn: ACPStartup['spawn'] = async (options) => {
-    spawns++
-    searchPaths.push(options.searchPath)
-    cwds.push(options.cwd)
-    const toAgent = new TransformStream<Uint8Array, Uint8Array>()
-    const toClient = new TransformStream<Uint8Array, Uint8Array>()
-    acpAgent()
-      .onRequest(methods.agent.initialize, ({ params }) => {
-        capabilities.push(params.clientCapabilities)
-        return {
-          protocolVersion: PROTOCOL_VERSION,
-          agentCapabilities: { sessionCapabilities: { resume: {} } }
-        }
-      })
-      .onRequest(methods.agent.session.new, ({ params }) => {
-        created.push(params)
-        sessionRequested.resolve(undefined)
-        if (!answersSessions) return createDeferred<never>().promise
-        return { sessionId: `session-${created.length}` }
-      })
-      .onRequest(methods.agent.session.resume, ({ params }) => {
-        resumed.push(params)
-        if (resumeFails) throw RequestError.resourceNotFound(params.sessionId)
-        if (resumeError) throw resumeError
-        if (resumeBusy && resumed.length === 1)
-          throw RequestError.invalidRequest({ reason: 'thread_active_writer' }, 'Session in use')
-        return {}
-      })
-      .onRequest(methods.agent.session.prompt, async ({ params, client }) => {
-        const [part] = params.prompt
-        prompts.push(part?.type === 'text' ? part.text : '')
-        const { sessionId } = params
-        const report = (update: SessionUpdate, session = sessionId) =>
-          client.notify(methods.client.session.update, { sessionId: session, update })
-        await report({ sessionUpdate: 'available_commands_update', availableCommands: [] })
-        if (turn === 'refused') throw new Error('The prompt never reached the model')
-        for (const { session, update } of updates) await report(update, session)
-        if (turn === 'cut-off') {
-          await report({
-            sessionUpdate: 'agent_message_chunk',
-            content: { type: 'text', text: 'On it' }
-          })
-          throw new Error('The turn broke off')
-        }
-        return { stopReason: 'end_turn' }
-      })
-      .onRequest(methods.agent.authenticate, () => ({}))
-      .onNotification(methods.agent.session.cancel, () => undefined)
-      .connect(ndJsonStream(toClient.writable, toAgent.readable))
-    // Ending the pipe ends what the client reads, as a process that exits does.
-    const output = new TransformStream<Uint8Array, Uint8Array>()
-    const stop = new AbortController()
-    toClient.readable
-      .pipeTo(output.writable, { signal: stop.signal, preventCancel: true })
-      .catch(() => undefined)
-    crashLatest = () => {
-      stop.abort()
-      options.onUnexpectedClose()
-    }
-    return {
-      child: {
-        write: async () => undefined,
-        kill: async () => {
-          kills++
-          stop.abort()
-          killed.resolve(undefined)
-        }
-      },
-      input: toAgent.writable,
-      output: output.readable
-    }
-  }
-
-  const startup: ACPStartup = {
-    resolveTarget: async (agent) => {
-      if (lookupWaits) await lookup.promise
-      return { command: agent.command, searchPath: '/lookup/bin' }
-    },
-    spawn,
-    authToken: async () => (tokenHangs ? createDeferred<never>().promise : null),
-    linkTools: async (_token, linkOptions) => {
-      defersTools.push(linkOptions?.defersTools ?? false)
-      return {
-        chat: 'chat',
-        mcpServers: [],
-        meta: OWN_TOOLS_ALLOWED,
-        noteUpdate: () => undefined,
-        outcome: async () => ({ connected: true }),
-        stop: () => undefined
-      }
-    }
-  }
-  return {
-    startup,
-    prompts,
-    created,
-    resumed,
-    capabilities,
-    sessionRequested: sessionRequested.promise,
-    killed: killed.promise,
-    kills: () => kills,
-    spawns: () => spawns,
-    searchPaths,
-    cwds,
-    defersTools,
-    finishLookup: () => lookup.resolve(undefined),
-    crash: () => expectDefined(crashLatest, 'a started agent')()
-  }
-}
-
-function message(role: UIMessage['role'], text: string): UIMessage {
-  return { id: crypto.randomUUID(), role, parts: [{ type: 'text', text }] }
-}
-
-/** Sends `text` after `history` and waits for the reply to end. */
-async function send(
-  transport: ACPChatTransport,
-  text: string,
-  history: UIMessage[] = [],
-  abortSignal?: AbortSignal
-): Promise<UIMessageChunk[]> {
-  const reply = await transport.sendMessages({
-    trigger: 'submit-message',
-    chatId: 'chat',
-    messageId: undefined,
-    messages: [...history, message('user', text)],
-    abortSignal
-  })
-  const chunks: UIMessageChunk[] = []
-  await reply.pipeTo(new WritableStream({ write: (chunk) => void chunks.push(chunk) }))
-  return chunks
-}
-
-function transport(
-  agents: ReturnType<typeof fakeAgents>,
-  options: { resume?: string; startTimeoutMs?: number; agentDef?: ACPAgentDef; cwd?: string } = {}
-) {
-  const sessions: (string | null)[] = []
-  const agentErrors: unknown[] = []
-  const created = new ACPChatTransport({
-    agentDef: options.agentDef ?? resuming,
-    cwd: options.cwd,
-    startup: agents.startup,
-    resume: options.resume,
-    startTimeoutMs: options.startTimeoutMs ?? 1_000,
-    onSession: (id) => sessions.push(id),
-    onAgentError: (error) => agentErrors.push(error)
-  })
-  return { transport: created, sessions, agentErrors }
-}
 
 test('a new session gets the instructions once and is reported once the agent answers', async () => {
   const agents = fakeAgents()
@@ -514,4 +306,55 @@ test('a subagent’s work is known by its session and kept in its own transcript
     restAgents('acp')
     await chat.destroy()
   }
+})
+
+test('the reply ends with an error when the agent exits mid-prompt', async () => {
+  const agents = fakeAgents({ turn: 'held' })
+  const { transport: chat } = transport(agents)
+  const reply = sending(chat, 'first')
+  await agents.promptTaken
+  await agents.say({
+    sessionUpdate: 'agent_message_chunk',
+    content: { type: 'text', text: 'On it' }
+  })
+  agents.crash()
+  await reply.ended
+  expect(reply.chunks.map((chunk) => chunk.type)).toContain('text-end')
+  expect(reply.chunks).toContainEqual({
+    type: 'error',
+    errorText: 'Agent process exited unexpectedly.'
+  })
+  expect(reply.chunks.at(-1)).toEqual({ type: 'finish', finishReason: 'error' })
+  await chat.destroy()
+})
+
+test("a reply nobody reads any more cancels the agent's turn", async () => {
+  const agents = fakeAgents({ turn: 'held' })
+  const { transport: chat, agentErrors } = transport(agents)
+  const reply = await chat.sendMessages({
+    trigger: 'submit-message',
+    chatId: 'chat',
+    messageId: undefined,
+    messages: [message('user', 'first')],
+    abortSignal: undefined
+  })
+  await agents.promptTaken
+  // As when the chat cannot process a chunk: its reader goes away without a Stop.
+  await reply.cancel()
+  await tick()
+  expect(agents.cancels).toEqual(['session-1'])
+  expect(agentErrors).toEqual([])
+  await chat.destroy()
+})
+
+test('closing the chat ends its reply without reporting the agent as failed', async () => {
+  const agents = fakeAgents({ turn: 'held' })
+  const { transport: chat, agentErrors } = transport(agents)
+  const reply = sending(chat, 'first')
+  await agents.promptTaken
+  await chat.destroy()
+  await reply.ended
+  expect(reply.chunks.some((chunk) => chunk.type === 'error')).toBe(false)
+  expect(reply.chunks.at(-1)).toEqual({ type: 'finish', finishReason: 'stop' })
+  expect(agentErrors).toEqual([])
 })

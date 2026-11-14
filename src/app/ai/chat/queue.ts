@@ -6,7 +6,7 @@ import type { ChatSubmission } from '@/app/ai/chat/submission/types'
 /**
  * How a message written while the agent works reaches it, as in pi: `steer` goes in as soon as
  * the current tool calls finish, and `follow-up` waits until the agent has finished all work.
- * An agent that cannot take a message mid-turn gets either once its turn ends.
+ * A coding agent takes a steering message after its turn is cancelled, once no tool call runs.
  */
 export type QueuedMessageKind = 'steer' | 'follow-up'
 
@@ -21,7 +21,10 @@ const items = shallowRef<readonly QueuedMessage[]>([])
 /** Messages the person wrote while the agent was working, in the order they wrote them. */
 export const queuedMessages = computed(() => items.value)
 
-/** Whether a message is waiting to go in mid-turn; the built-in chat ends its run for it. */
+/**
+ * Whether a message is waiting to go in mid-turn; the reply gives way to it, and it is read from
+ * reactive state so the agent transports notice a message that starts waiting.
+ */
 export function hasSteeringMessage(): boolean {
   return items.value.some((item) => item.kind === 'steer')
 }
