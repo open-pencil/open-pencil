@@ -4,7 +4,6 @@ import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import { intersectVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { clipsChildren, isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
-import { textLinesOverflow } from '@open-pencil/scene-graph/text'
 
 import { drawIndividualSideStrokes } from '#core/canvas/strokes/sides'
 import { nodeOrientationMatrix, projectedNode } from '#core/geometry'
@@ -87,40 +86,38 @@ function worldMatrixIn(
   )
 }
 
+/**
+ * Whether nothing a node and its subtree draw reaches the viewport: their rendered bounds
+ * (`RenderedBoundsCache`), strokes, shadows, and blurs included, placed where the node lands.
+ * Text set on a path draws its glyphs along the path, which those bounds do not follow.
+ */
 function isCulled(
   r: SkiaRenderer,
+  graph: SceneGraph,
   node: SceneNode,
   absX: number,
   absY: number,
   frame: Mat3 | null,
   preview?: RenderOverlays['rotationPreview']
 ): boolean {
-  const canCull = node.childIds.length === 0 || clipsChildren(node)
-  if (!canCull || hasOverflowPathTextPaint(node)) return false
-  // Text lines past a fixed-size box still draw, as in Figma.
-  const linesOverflow = textLinesOverflow(node)
-
+  if (hasOverflowPathTextPaint(node)) return false
+  const own = r.renderedBounds.ownAxes(graph, node, preview)
+  const bounds =
+    frame || hasNodeTransform(projectedNode(node, preview))
+      ? mapLayerBounds(worldMatrixIn(frame, node, absX - node.x, absY - node.y, preview), own)
+      : {
+          minX: absX + own.minX,
+          minY: absY + own.minY,
+          maxX: absX + own.maxX,
+          maxY: absY + own.maxY
+        }
   const vp = r.worldViewport
-  const bw = node.width
-  const bh = node.height + linesOverflow
-  if (frame || projectedNode(node, preview).rotation !== 0) {
-    const bounds = mapVisualBounds(
-      worldMatrixIn(frame, node, absX - node.x, absY - node.y, preview),
-      {
-        minX: 0,
-        minY: 0,
-        maxX: bw,
-        maxY: bh
-      }
-    )
-    return (
-      bounds.minX > vp.x + vp.w ||
-      bounds.minY > vp.y + vp.h ||
-      bounds.maxX < vp.x ||
-      bounds.maxY < vp.y
-    )
-  }
-  return absX > vp.x + vp.w || absY > vp.y + vp.h || absX + bw < vp.x || absY + bh < vp.y
+  return (
+    bounds.minX > vp.x + vp.w ||
+    bounds.minY > vp.y + vp.h ||
+    bounds.maxX < vp.x ||
+    bounds.maxY < vp.y
+  )
 }
 
 function applyNodeTransforms(canvas: Canvas, node: SceneNode, overlays: RenderOverlays): void {
@@ -371,7 +368,7 @@ export function renderNode(
   const absX = parentAbsX + node.x
   const absY = parentAbsY + node.y
 
-  if (isCulled(r, node, absX, absY, frame, overlays.rotationPreview)) {
+  if (isCulled(r, graph, node, absX, absY, frame, overlays.rotationPreview)) {
     r.drawCounts.culled++
     return
   }
