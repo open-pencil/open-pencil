@@ -266,6 +266,23 @@ export function isLayerContainer(node: Pick<SceneNode, 'type'>): boolean {
   return LAYER_CONTAINER_TYPES.has(node.type)
 }
 
+/** The kinds that clip their children when their clip content is on. */
+export const CLIPPING_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
+  'FRAME',
+  'COMPONENT',
+  'COMPONENT_SET',
+  'INSTANCE'
+])
+
+/**
+ * Whether a layer clips its children: a frame, component, component set or instance with clip
+ * content on. A section or group has no such setting in Figma and never clips, whatever an import
+ * left in `clipsContent` (Figma desktop, live).
+ */
+export function clipsChildren(node: Pick<SceneNode, 'type' | 'clipsContent'>): boolean {
+  return node.clipsContent && CLIPPING_TYPES.has(node.type)
+}
+
 export const CONTAINER_TYPES = new Set<NodeType>([
   'CANVAS',
   'FRAME',

@@ -76,7 +76,3 @@ These values are collected or covered by browser oracle tests but do not yet hav
 - multi-shadow lists
 - media-query-specific provenance
 - pseudo-elements
-
-## Headless limitations
-
-The headless runtime uses maintained parsers for HTML (`parse5`) and stylesheets/inline declarations (`@acemir/cssom`), but still has limited approximations for selector matching, shorthand expansion, `calc()`, and simple shadows. Do not expand those with ad hoc parsers; prefer browser `getComputedStyle()` oracle coverage or maintained parser dependencies for new CSS behavior.

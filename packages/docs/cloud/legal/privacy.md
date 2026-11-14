@@ -5,10 +5,6 @@ description: What OpenPencil Cloud at cloud.openpencil.dev stores about you, whe
 
 # OpenPencil Cloud Privacy Policy
 
-::: warning Draft
-This is a draft awaiting legal review. It is not in force, and it changes before OpenPencil Cloud opens. Text in [brackets] is still to be filled in.
-:::
-
 Version: 2026-11-15
 
 This policy covers OpenPencil Cloud at `cloud.openpencil.dev` (the "Service"), run by Alena Poyarkova, a sole trader registered in Mexico (RFC POAL920708M63), the controller of your personal data. What the OpenPencil app itself sends, with or without the Service, is described in [Privacy and Usage Stats](/overview/privacy). A Cloud server someone else runs has its own operator and policy.

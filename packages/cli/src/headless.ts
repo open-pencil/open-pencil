@@ -29,7 +29,7 @@ import { collectSceneMutation } from '@open-pencil/scene-graph/mutation-impact'
 import type { RequestedPage } from '#cli/app/target'
 import { printError } from '#cli/format'
 
-/** The document formats the CLI reads and writes, with HTML read by the headless CSS runtime. */
+/** The document formats the CLI reads and writes, with HTML read by the HTML engine. */
 export const CLI_IO_FORMATS = [...BUILTIN_IO_FORMATS, headlessHTMLReader]
 
 const io = new IORegistry(CLI_IO_FORMATS)

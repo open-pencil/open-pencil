@@ -374,6 +374,7 @@ export function createEditor(options?: EditorOptions) {
     textSelectionChanged: signals.textSelectionChanged,
     requestRepaint,
     reportPresented: signals.reportPresented,
+    reportProgress: signals.reportProgress,
     onEditorEvent,
     setCanvasKit: canvas.setCanvasKit,
     setNavigationPhase,

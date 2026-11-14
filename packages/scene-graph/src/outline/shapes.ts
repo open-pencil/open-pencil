@@ -1,3 +1,5 @@
+import { nodeCornerRadii } from '../corners'
+import { borderWeights, sweepsWholeTurn } from '../geometry'
 import { polygonOutline } from '../polygon'
 import type { Vector } from '../primitives'
 import type { SceneNode, WindingRule } from '../types'
@@ -47,17 +49,9 @@ function fromContours(contours: Vector[][], windingRule: WindingRule = 'NONZERO'
   return { areas: [{ windingRule, contours }], lines: contours.map(closed) }
 }
 
-function cornerRadii(node: SceneNode): [number, number, number, number] {
-  const radii: [number, number, number, number] = node.independentCorners
-    ? [node.topLeftRadius, node.topRightRadius, node.bottomRightRadius, node.bottomLeftRadius]
-    : [node.cornerRadius, node.cornerRadius, node.cornerRadius, node.cornerRadius]
-  const limit = Math.min(node.width, node.height) / 2
-  return radii.map((radius) => Math.max(0, Math.min(radius, limit))) as typeof radii
-}
-
 function rectangleContour(node: SceneNode, tolerance: number): Vector[] {
   const { width: w, height: h } = node
-  const [tl, tr, br, bl] = cornerRadii(node)
+  const [tl, tr, br, bl] = nodeCornerRadii(node)
   const corner = (cx: number, cy: number, r: number, from: number): Vector[] =>
     r > 0 ? arcPoints(cx, cy, r, r, from, from + Math.PI / 2, tolerance) : [{ x: cx, y: cy }]
   return [
@@ -78,7 +72,7 @@ function rectangleSides(
   tolerance: number
 ): Pick<ShapeOutline, 'lines' | 'lineWeights'> {
   const { width: w, height: h } = node
-  const [tl, tr, br, bl] = cornerRadii(node)
+  const [tl, tr, br, bl] = nodeCornerRadii(node)
   const quarter = Math.PI / 4
   const arc = (cx: number, cy: number, r: number, from: number): Vector[] =>
     r > 0 ? arcPoints(cx, cy, r, r, from, from + quarter, tolerance) : [{ x: cx, y: cy }]
@@ -89,20 +83,11 @@ function rectangleSides(
       [...arc(w - br, h - br, br, quarter), ...arc(bl, h - bl, bl, 2 * quarter)],
       [...arc(bl, h - bl, bl, 3 * quarter), ...arc(tl, tl, tl, 4 * quarter)]
     ],
-    lineWeights: [
-      node.borderTopWeight,
-      node.borderRightWeight,
-      node.borderBottomWeight,
-      node.borderLeftWeight
-    ]
+    lineWeights: [...borderWeights(node)]
   }
 }
 
 const FULL_TURN = Math.PI * 2
-
-function sweepsWholeTurn(start: number, end: number): boolean {
-  return Math.abs(end - start) >= FULL_TURN - 1e-6
-}
 
 /** Whether a layer is an unbroken ellipse: an ELLIPSE whose arc, if any, is a whole turn with no hole. */
 export function isWholeEllipse(node: Pick<SceneNode, 'type' | 'arcData'>): boolean {

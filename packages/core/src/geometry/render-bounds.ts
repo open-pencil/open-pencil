@@ -5,14 +5,20 @@ import {
   blurReach,
   geometryBlobBounds,
   shadowReach,
+  shadowSpreadOf,
   intersectVisualBounds,
   strokeOverflow,
+  drawsStrokeSides,
+  strokeSideReach,
+  type SideWeights,
   textDecorationOverflow,
   unionVisualBounds,
   type VisualBounds,
   widestBlurRadius
 } from '@open-pencil/scene-graph/geometry'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
+import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
+import { paintShows } from '@open-pencil/scene-graph/paints'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { textLinesOverflow } from '@open-pencil/scene-graph/text'
 
@@ -79,6 +85,16 @@ function grown(bounds: VisualBounds, by: number): VisualBounds {
   }
 }
 
+/** `bounds` grown by a reach of its own on each side: top, right, bottom, left. */
+function grownBySides(bounds: VisualBounds, [top, right, bottom, left]: SideWeights): VisualBounds {
+  return {
+    minX: bounds.minX - left,
+    minY: bounds.minY - top,
+    maxX: bounds.maxX + right,
+    maxY: bounds.maxY + bottom
+  }
+}
+
 /**
  * Whether a node paints anything of its own, as Figma's render bounds count it: a text paints
  * with a visible fill or stroke, or an emoji, which draws apart from its fills. A container's box
@@ -86,8 +102,7 @@ function grown(bounds: VisualBounds, by: number): VisualBounds {
  */
 function paints(node: SceneNode): boolean {
   if (node.type === 'GROUP') return false
-  const painted =
-    node.fills.some((fill) => fill.visible) || node.strokes.some((stroke) => stroke.visible)
+  const painted = node.fills.some(paintShows) || node.strokes.some(paintShows)
   if (node.type === 'TEXT') return node.text.length > 0 && (painted || mayHoldEmoji(node.text))
   // A vector without a path draws nothing, whatever its paints.
   if (
@@ -127,7 +142,9 @@ function ownPaint(node: SceneNode, reach: EffectReach): VisualBounds | null {
   const shape = ownShape(node)
   if (!shape) return null
   const stroke = strokeOverflow(node.strokes, node.strokeCap, node.vectorNetwork, node)
-  const drawn = grown(shape, stroke)
+  const drawn = drawsStrokeSides(node)
+    ? grownBySides(shape, strokeSideReach(node))
+    : grown(shape, stroke)
   const outside = node.strokes.some((stroke) => stroke.visible && stroke.align !== 'INSIDE')
   const geometry = geometryBlobBounds([
     ...node.fillGeometry,
@@ -200,7 +217,8 @@ function withEffects(
   for (const effect of node.effects) {
     if (!effect.visible) continue
     if (effect.type === 'DROP_SHADOW') {
-      const shadow = shadowOf(content, matrix, effect.offset, effect.radius + effect.spread)
+      const by = effect.radius + shadowSpreadOf(node, effect)
+      const shadow = shadowOf(content, matrix, effect.offset, by)
       bounds = unionVisualBounds(bounds, shadow) ?? bounds
     } else if (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR') {
       const by = widestBlurRadius(effect)
@@ -230,7 +248,7 @@ function withDrawnShadows(node: SceneNode, content: VisualBounds, matrix: Mat3):
   let bounds = content
   for (const effect of node.effects) {
     if (effect.visible && effect.type === 'DROP_SHADOW') {
-      const by = shadowReach(effect.radius, effect.color.a) + effect.spread
+      const by = shadowReach(effect.radius, effect.color.a) + shadowSpreadOf(node, effect)
       bounds = unionVisualBounds(bounds, shadowOf(content, matrix, effect.offset, by)) ?? bounds
     }
   }
@@ -264,13 +282,6 @@ export function localPaintBounds(node: SceneNode, withShadows: boolean): VisualB
 export function localRenderBounds(node: SceneNode, reach: EffectReach): VisualBounds | null {
   const own = ownPaint(node, reach)
   return own && withEffects(node, own, Matrix.identity(), reach)
-}
-
-function clipsChildren(node: SceneNode): boolean {
-  return (
-    node.clipsContent &&
-    (node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE')
-  )
 }
 
 /** Whether a node draws at all: shown, and, as Figma counts it, not fully transparent. */

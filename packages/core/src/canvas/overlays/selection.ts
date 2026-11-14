@@ -1,7 +1,6 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { layerRotates } from '@open-pencil/scene-graph/generated'
-import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import { slotPropertyId } from '@open-pencil/scene-graph/slots'
 
@@ -26,6 +25,7 @@ import {
   selectionPath,
   rotationHandleLayout,
   type RotationHandleLayout,
+  selectionBounds,
   type RotationPreview
 } from '#core/geometry'
 import { pointAtArc, textPathStartArc } from '#core/text/path'
@@ -418,7 +418,7 @@ export function drawGroupBounds(
   showRotation = true
 ): void {
   const geometry = r.sceneGeometry(graph, preview)
-  const bounds = computeBounds(nodes.map(geometry.bounds))
+  const bounds = selectionBounds(geometry, nodes)
   const [minX, minY, maxX, maxY] = Matrix.mapPoints(viewportMatrix(r), [
     bounds.x,
     bounds.y,

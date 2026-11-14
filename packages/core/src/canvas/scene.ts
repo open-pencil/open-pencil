@@ -3,7 +3,7 @@ import { type SceneNode, type SceneGraph, type Fill } from '@open-pencil/scene-g
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import { intersectVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
-import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
+import { clipsChildren, isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import { textLinesOverflow } from '@open-pencil/scene-graph/text'
 
 import { drawIndividualSideStrokes } from '#core/canvas/strokes/sides'
@@ -95,10 +95,7 @@ function isCulled(
   frame: Mat3 | null,
   preview?: RenderOverlays['rotationPreview']
 ): boolean {
-  const canCull =
-    node.childIds.length === 0 ||
-    ((node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE') &&
-      node.clipsContent)
+  const canCull = node.childIds.length === 0 || clipsChildren(node)
   if (!canCull || hasOverflowPathTextPaint(node)) return false
   // Text lines past a fixed-size box still draw, as in Figma.
   const linesOverflow = textLinesOverflow(node)
@@ -247,9 +244,7 @@ function renderChildren(
   frame: Mat3 | null
 ): void {
   if (node.type === 'BOOLEAN_OPERATION') return
-  const isClippableContainer =
-    node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE'
-  if (isClippableContainer && node.clipsContent && node.childIds.length > 0) {
+  if (clipsChildren(node) && node.childIds.length > 0) {
     canvas.save()
     r.clipNodeShape(canvas, node)
     renderChildIds(r, canvas, graph, node.childIds, overlays, absX, absY, frame)

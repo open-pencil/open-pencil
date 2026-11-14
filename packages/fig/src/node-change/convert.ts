@@ -4,9 +4,11 @@ import { guidToString, isUnsetGuid } from '@open-pencil/kiwi/fig/guid'
 import {
   DEFAULT_FONT_FAMILY,
   DEFAULT_STROKE_MITER_LIMIT,
-  DEFAULT_STROKE_WEIGHT
+  DEFAULT_STROKE_WEIGHT,
+  TRANSPARENT
 } from '@open-pencil/scene-graph/constants'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
+import { hasLayoutGridAlignment } from '@open-pencil/scene-graph/layout'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
 import { OPEN_PENCIL_PLUGIN_DATA } from '@open-pencil/scene-graph/plugin-data'
 import { POINT_COUNT_RANGE } from '@open-pencil/scene-graph/polygon'
@@ -634,8 +636,15 @@ function sharedStyleType(value: string | undefined): SharedStyleType | null {
   return null
 }
 
+/**
+ * A file's guides as Figma reads them: one without an alignment is dropped, and one without a
+ * color is transparent (Figma desktop, live, pasting records that lost either field).
+ */
 function convertLayoutGrids(value: unknown): LayoutGrid[] {
-  return Array.isArray(value) ? structuredClone(value as LayoutGrid[]) : []
+  if (!Array.isArray(value)) return []
+  return structuredClone(value as LayoutGrid[])
+    .filter(hasLayoutGridAlignment)
+    .map((grid) => ({ ...grid, color: grid.color ?? { ...TRANSPARENT } }))
 }
 
 function convertTextPathData(nc: NodeChange, blobs: Uint8Array[]): SceneNode['textPathData'] {

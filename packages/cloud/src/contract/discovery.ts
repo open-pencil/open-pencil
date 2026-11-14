@@ -48,6 +48,33 @@ export type CloudCapabilities = v.InferOutput<typeof cloudCapabilitiesSchema>
 export const cloudEditorVersionSchema = v.pipe(v.string(), v.regex(/^\d+\.\d+\.\d+$/))
 
 /**
+ * The header desktop editors send with each request, naming their version, so a server can refuse
+ * an editor older than its `minimumEditorVersion`. Browser editors leave it out: the server serves
+ * them, and an older server's CORS rules would refuse a header they don't list.
+ */
+export const CLOUD_EDITOR_VERSION_HEADER = 'X-OpenPencil-Editor-Version' as const
+
+function editorVersionParts(version: string): number[] | null {
+  const match = /^(\d+)\.(\d+)\.(\d+)/.exec(version)
+  return match ? match.slice(1).map(Number) : null
+}
+
+/**
+ * Whether `version` is `minimum` or later, comparing `major.minor.patch` numerically; a prerelease
+ * counts as its release. A version that isn't one, on either side, is not at least anything.
+ */
+export function isEditorVersionAtLeast(version: string, minimum: string): boolean {
+  const have = editorVersionParts(version)
+  const need = editorVersionParts(minimum)
+  if (!have || !need) return false
+  for (let index = 0; index < need.length; index++) {
+    const difference = (have[index] ?? 0) - (need[index] ?? 0)
+    if (difference !== 0) return difference > 0
+  }
+  return true
+}
+
+/**
  * Whether editors offer this server to everyone, and from which editor version on. Only the
  * official server's listing is read: it turns the Cloud entry points on without an editor release,
  * and an editor older than the minimum keeps them hidden.
@@ -89,6 +116,11 @@ export const cloudDiscoverySchema = v.object({
   authentication: cloudAuthenticationSchema,
   capabilities: cloudCapabilitiesSchema,
   listing: v.optional(cloudListingSchema),
+  /**
+   * The oldest editor version the server works with. Older editors ask to be updated instead of
+   * connecting, and the server refuses their requests.
+   */
+  minimumEditorVersion: v.optional(cloudEditorVersionSchema),
   /** The services editors reach with Cloud-signed tokens; absent when the deployment has none. */
   services: v.optional(cloudServicesDiscoverySchema),
   /** Where people manage their plan and buy credits; absent when the deployment does not bill. */

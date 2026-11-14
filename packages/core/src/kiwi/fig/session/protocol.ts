@@ -5,10 +5,12 @@ import type {
   FigSessionCheckpoint
 } from '@open-pencil/fig'
 import type { FigPageManifestEntry } from '@open-pencil/kiwi/fig'
+import type { SceneNode } from '@open-pencil/scene-graph'
 
 import type { ParseFigFileOptions } from '#core/io/formats/fig/read'
 import type { SerializedSceneGraph } from '#core/kiwi/fig/parse/transfer'
 import type { FigPopulationDelta } from '#core/kiwi/fig/population/delta'
+import type { FigGraphEdits } from '#core/kiwi/fig/population/edits'
 
 export interface FigSessionOpenRequest {
   type: 'open'
@@ -23,6 +25,12 @@ export interface FigSessionPopulateRequest {
   requestId: string
   baseRevision: number
   pageId: string
+}
+
+/** Edits made on the main thread since the last batch, for the worker's copy of the graph. */
+export interface FigSessionEditsRequest {
+  type: 'edits'
+  edits: FigGraphEdits
 }
 
 export interface FigSessionOriginalArchiveRequest {
@@ -58,7 +66,7 @@ export interface FigSessionPatchArchiveRequest {
   port: MessagePort
 }
 
-/** The graph diverged from the worker's: stop loading pages there, keep the archive. */
+/** Loading a page failed: stop loading pages there, keep serving the archive. */
 export interface FigSessionRetireRequest {
   type: 'retire'
 }
@@ -74,6 +82,7 @@ export interface FigSessionDisposeRequest {
 
 export type FigSessionRequest =
   | FigSessionPopulateRequest
+  | FigSessionEditsRequest
   | FigSessionOriginalArchiveRequest
   | FigSessionArchiveInfoRequest
   | FigSessionComponentPagesRequest
@@ -103,6 +112,11 @@ export type FigSessionResponse =
       checkpoint?: FigSessionCheckpoint
       delta: FigPopulationDelta
     }
+  /**
+   * Some of a page load's new layers, each after its parent, sent ahead of its result so the main
+   * thread applies a large page piece by piece.
+   */
+  | { type: 'population-chunk'; requestId: string; created: SceneNode[] }
   /** A page load is still advancing; sent at most once a second while it runs. */
   | { type: 'population-progress'; requestId: string }
   | { type: 'population-error'; requestId?: string; error: string }

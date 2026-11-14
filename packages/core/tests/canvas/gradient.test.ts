@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
-import type { Fill, GradientTransform } from '@open-pencil/scene-graph'
+import type { Fill, GradientTransform, SceneNode } from '@open-pencil/scene-graph'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { rgbaToOkHCL, setNodeFillOkHCL, setNodeStrokeOkHCL } from '@open-pencil/scene-graph/color'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { SkiaRenderer } from '#core/canvas/renderer'
@@ -23,7 +24,10 @@ function hue([r, g, b]: number[]): Hue | 'other' {
   return 'other'
 }
 
-async function render(type: Fill['type'], transform: number[]) {
+/** Edits the layer before it is drawn, from what the editor leaves on it to what it now holds. */
+type Prepare = (graph: SceneGraph, node: SceneNode, gradient: Fill) => void
+
+async function render(type: Fill['type'], transform: number[], prepare?: Prepare) {
   const ck = await getCanvasKit()
   const surface = expectDefined(ck.MakeSurface(WIDTH, HEIGHT), 'surface')
   const renderer = new SkiaRenderer(ck, surface)
@@ -31,20 +35,21 @@ async function render(type: Fill['type'], transform: number[]) {
   const page = expectDefined(graph.getPages()[0], 'page')
   const [m00, m01, m02, m10, m11, m12] = transform
   const gradientTransform: GradientTransform = { m00, m01, m02, m10, m11, m12 }
-  const node = graph.createNode('RECTANGLE', page.id, {
+  const gradient: Fill = {
+    type,
+    color: STOPS[0].color,
+    opacity: 1,
+    visible: true,
+    gradientStops: STOPS,
+    gradientTransform
+  }
+  const created = graph.createNode('RECTANGLE', page.id, {
     width: WIDTH,
     height: HEIGHT,
-    fills: [
-      {
-        type,
-        color: STOPS[0].color,
-        opacity: 1,
-        visible: true,
-        gradientStops: STOPS,
-        gradientTransform
-      }
-    ]
+    fills: [gradient]
   })
+  prepare?.(graph, created, gradient)
+  const node = expectDefined(graph.getNode(created.id), 'node')
   try {
     const canvas = surface.getCanvas()
     canvas.clear(ck.TRANSPARENT)
@@ -171,4 +176,51 @@ describe('gradients match Figma', () => {
       expect(expected.map(([x, y]) => at(x, y))).toEqual(expected.map(([, , hue]) => hue))
     })
   }
+})
+
+// A solid picked in OkHCL keeps that color as plugin data when the paint becomes a gradient; the
+// gradient's stops are still drawn in their own colors.
+describe('a gradient once a solid picked in OkHCL', () => {
+  const GREEN = rgbaToOkHCL({ r: 0, g: 0.8, b: 0, a: 1 })
+  const SOLID: Fill = {
+    type: 'SOLID',
+    color: { r: 0, g: 0.8, b: 0, a: 1 },
+    opacity: 1,
+    visible: true
+  }
+  const ACROSS: Array<[number, number, Hue]> = [
+    [5, 60, 'red'],
+    [100, 60, 'yellow'],
+    [195, 60, 'blue']
+  ]
+
+  test('as a fill', async () => {
+    const at = await render('GRADIENT_LINEAR', [1, 0, 0, 0, 1, 0], (graph, node, gradient) => {
+      graph.updateNode(node.id, { fills: [SOLID] })
+      graph.updateNode(
+        node.id,
+        setNodeFillOkHCL(expectDefined(graph.getNode(node.id), 'node'), 0, GREEN)
+      )
+      graph.updateNode(node.id, { fills: [gradient] })
+    })
+    expect(ACROSS.map(([x, y]) => at(x, y))).toEqual(ACROSS.map(([, , hue]) => hue))
+  })
+
+  test('as a stroke', async () => {
+    const at = await render('GRADIENT_LINEAR', [1, 0, 0, 0, 1, 0], (graph, node, gradient) => {
+      const stroke = { ...SOLID, weight: 60, align: 'INSIDE' as const }
+      graph.updateNode(node.id, { fills: [], strokes: [stroke] })
+      graph.updateNode(
+        node.id,
+        setNodeStrokeOkHCL(expectDefined(graph.getNode(node.id), 'node'), 0, GREEN)
+      )
+      graph.updateNode(node.id, { strokes: [{ ...gradient, weight: 60, align: 'INSIDE' }] })
+    })
+    const edge: Array<[number, number, Hue]> = [
+      [5, 60, 'red'],
+      [100, 5, 'yellow'],
+      [195, 60, 'blue']
+    ]
+    expect(edge.map(([x, y]) => at(x, y))).toEqual(edge.map(([, , hue]) => hue))
+  })
 })
