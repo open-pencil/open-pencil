@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'bun:test'
 
-import { createHeadlessCSSRuntime, htmlToSceneGraph } from '#dom-css/index'
-
+import { htmlToSceneGraph } from '@open-pencil/dom-css'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { layoutSizing } from '@open-pencil/scene-graph/layout'
 
+import { engineRuntime } from '../helpers/engine'
+
 async function importHTML(html: string) {
-  const graph = await htmlToSceneGraph(html, { runtime: createHeadlessCSSRuntime() })
+  const graph = await htmlToSceneGraph(html, { runtime: engineRuntime() })
   const byName = (name: string): SceneNode => {
     const node = [...graph.getAllNodes()].find((candidate) => candidate.name === name)
     if (!node) throw new Error(`Missing ${name}`)

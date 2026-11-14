@@ -739,3 +739,5 @@ zh-cn:cloud.errorEditorOutdatedHeading
 zh-cn:cloud.errorEditorOutdatedDescription
 zh-cn:cloud.editorOutdatedBanner
 zh-cn:cloud.updateOpenPencil
+ja:email.documentBlocked
+zh-cn:email.documentBlocked

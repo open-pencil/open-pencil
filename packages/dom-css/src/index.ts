@@ -2,7 +2,8 @@ import type * as DesignTypes from './types'
 
 export { exportStorybook, STORY_MODES, STORYBOOK_FRAMEWORKS } from './export/storybook/export'
 export { serializeNode } from './export/html'
-export { createBrowserCSSRuntime, createCSSRuntime, createHeadlessCSSRuntime } from './runtime'
+export { createBrowserCSSRuntime, createCSSRuntime } from './runtime'
+export { parseHTMLDocument } from './import/markup'
 export {
   htmlToDesignDocument,
   htmlToSceneGraph,
