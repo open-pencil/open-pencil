@@ -1,19 +1,28 @@
 import { expect, test } from 'bun:test'
 
+import {
+  STATES,
+  KINDS,
+  libraryVariantFile,
+  setNamed,
+  builtValues,
+  allAvailable,
+  pageInstance,
+  switchState,
+  switchToDisabled,
+  type LibraryFileOptions
+} from '#core-tests/helpers/fig/library-variants'
+
 import { createEditor, type Editor } from '@open-pencil/core'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { parseFigBuffer } from '@open-pencil/fig'
-import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { switchVariant, syncVariantName } from '#core/figma-api/variants'
 import { parseFigFileViaWorker } from '#core/io/formats/fig/read'
 import { deserializeSceneGraph, serializeSceneGraph } from '#core/kiwi/fig/parse/transfer'
-import {
-  createFigPopulationWorker,
-  releaseFigPopulationWorker
-} from '#core/kiwi/fig/population/client'
+import { releaseFigPopulationWorker } from '#core/kiwi/fig/population/client'
 import {
   loadReaderVariants,
   populateFigInternalPages,
@@ -21,121 +30,6 @@ import {
   savedReaderVariants
 } from '#core/kiwi/fig/session/document-state'
 import { openReaderSession } from '#core/kiwi/fig/session/reader'
-
-const STATES = ['Default', 'Hover', 'Pressed', 'Disabled']
-const KINDS = ['Star', 'Heart', 'Dot']
-
-function variantSet(graph: SceneGraph, parentId: string, name: string, property: string) {
-  return graph.createNode('COMPONENT_SET', parentId, {
-    name,
-    componentPropertyDefinitions: [
-      { id: `${name}:prop`, name: property, type: 'VARIANT', defaultValue: '' }
-    ]
-  })
-}
-
-function variant(graph: SceneGraph, setId: string, property: string, value: string, x: number) {
-  const node = graph.createNode('COMPONENT', setId, {
-    name: `${property}=${value}`,
-    x,
-    width: 100,
-    height: 40,
-    componentPropertyValues: { [property]: value }
-  })
-  graph.createNode('RECTANGLE', node.id, { name: `${value} fill`, width: 100, height: 40 })
-  return node
-}
-
-interface LibraryFileOptions {
-  chipName?: (state: string) => string
-  /** Chip variants saved with a name and no specs. */
-  nameOnly?: boolean
-  /** An instance of the first icon on the page too, so the icon set is built at open. */
-  iconOnPage?: boolean
-  /** A chip state whose variant a library owns, so it cannot be edited here. */
-  readOnlyState?: string
-}
-
-/**
- * Library sets copied onto the internal canvas: a chip whose instance on the page uses one
- * variant, and whose last variant holds an icon from a second set.
- */
-async function libraryVariantFile({
-  chipName = (state) => `State=${state}`,
-  nameOnly = false,
-  iconOnPage = false,
-  readOnlyState
-}: LibraryFileOptions = {}): Promise<Uint8Array> {
-  await initCodec()
-  const graph = new SceneGraph()
-  const page = graph.getPages()[0]
-  const internal = graph.addPage('Internal Only Canvas')
-  graph.updateNode(internal.id, { internalOnly: true })
-  const icons = variantSet(graph, internal.id, 'Icon', 'Kind')
-  const iconVariants = KINDS.map((kind, index) =>
-    variant(graph, icons.id, 'Kind', kind, index * 120)
-  )
-  const chip = variantSet(graph, internal.id, 'Chip', 'State')
-  const chipVariants = STATES.map((state, index) => {
-    const node = variant(graph, chip.id, 'State', state, index * 120)
-    graph.updateNode(node.id, { name: chipName(state) })
-    if (nameOnly) {
-      graph.updateNode(node.id, { componentPropertyValues: {} })
-    }
-    if (state === readOnlyState) {
-      graph.updateNode(node.id, {
-        librarySource: {
-          identity: { libraryId: 'kit', assetKey: 'chip', revisionId: 'r1' },
-          sourceNodeId: null,
-          readOnly: true
-        }
-      })
-    }
-    return node
-  })
-  graph.createInstance(iconVariants[0].id, chipVariants[3].id)
-  graph.createInstance(chipVariants[0].id, page.id)
-  if (iconOnPage) {
-    graph.createInstance(iconVariants[0].id, page.id)
-  }
-  return exportFigFile(graph)
-}
-
-function setNamed(graph: SceneGraph, name: string): SceneNode | undefined {
-  return [...graph.nodes.values()].find(
-    (node) => node.type === 'COMPONENT_SET' && node.name === name
-  )
-}
-
-function builtValues(graph: SceneGraph, setName: string, property: string): string[] {
-  const set = setNamed(graph, setName)
-  return set
-    ? graph.getChildren(set.id).map((node) => node.componentPropertyValues[property] ?? '')
-    : []
-}
-
-function allAvailable(values: readonly string[]) {
-  return values.map((value) => ({ value, available: true }))
-}
-
-function pageInstance(graph: SceneGraph): SceneNode {
-  const instance = graph.getChildren(graph.getPages()[0].id)[0]
-  if (instance?.type !== 'INSTANCE') {
-    throw new Error('Expected the chip instance')
-  }
-  return instance
-}
-
-function switchState(editor: Editor, graph: SceneGraph, state: string): SceneNode {
-  const instance = pageInstance(graph)
-  const [definition] = editor.getInstanceComponentPropertyDefinitions(instance.id)
-  editor.setInstanceComponentProperty(instance.id, definition.id, state)
-  return pageInstance(graph)
-}
-
-function switchToDisabled(editor: Editor, graph: SceneGraph): SceneNode {
-  return switchState(editor, graph, 'Disabled')
-}
 
 for (const populate of ['all', 'first-page'] as const) {
   test(`an internal set builds only the used variant and lists every option (${populate})`, async () => {
@@ -533,61 +427,6 @@ test('an edit that meets a read-only saved variant throws and removes what it bu
   expect(builtValues(graph, 'Chip', 'State')).toEqual(['Default'])
   const instance = switchToDisabled(editor, graph)
   expect(graph.getNode(instance.componentId ?? '')?.componentPropertyValues.State).toBe('Disabled')
-})
-
-/** The chip variants and the icon sets the graph holds, by name, to tell a variant built twice. */
-function builtSets(graph: SceneGraph) {
-  const internal = graph.getPages(true).find((page) => page.internalOnly)
-  return {
-    sets: graph.getChildren(internal?.id ?? '').map((node) => node.name),
-    chip: graph.getChildren(setNamed(graph, 'Chip')?.id ?? '').map((node) => node.name)
-  }
-}
-
-async function loadInternalCanvasThroughWorker(graph: SceneGraph) {
-  const internal = graph.getPages(true).find((page) => page.internalOnly)
-  if (!internal) throw new Error('Expected the internal canvas')
-  return createFigPopulationWorker(graph)?.populate(internal.id)
-}
-
-test('a switch the panel prepares builds the variant in the reader worker', async () => {
-  const bytes = (await libraryVariantFile()).slice().buffer
-  const graph = await parseFigFileViaWorker(bytes, { populate: 'first-page' })
-  try {
-    const editor = createEditor({ graph })
-    const instance = pageInstance(graph)
-    const [definition] = editor.getInstanceComponentPropertyDefinitions(instance.id)
-    const toLoad = editor.variantsToLoad(instance.id, definition.id, 'Disabled')
-    expect(toLoad).toHaveLength(1)
-    expect(await editor.loadSavedVariants(toLoad)).toBe(true)
-    expect(editor.variantsToLoad(instance.id, definition.id, 'Disabled')).toEqual([])
-    switchToDisabled(editor, graph)
-    // The worker built it, so the switch did not take page loads off it.
-    expect(createFigPopulationWorker(graph)).not.toBeNull()
-    expect(await loadInternalCanvasThroughWorker(graph)).toBe(true)
-    expect(builtSets(graph)).toEqual({
-      sets: ['Icon', 'Chip'],
-      chip: STATES.map((state) => `State=${state}`)
-    })
-  } finally {
-    releaseFigPopulationWorker(graph)
-  }
-})
-
-test('a switch built on this thread stops page loads through the worker, so none builds it twice', async () => {
-  const bytes = (await libraryVariantFile()).slice().buffer
-  const graph = await parseFigFileViaWorker(bytes, { populate: 'first-page' })
-  try {
-    switchToDisabled(createEditor({ graph }), graph)
-    expect(createFigPopulationWorker(graph)).toBeNull()
-    expect(populateFigInternalPages(graph)).toBe(true)
-    expect(builtSets(graph)).toEqual({
-      sets: ['Icon', 'Chip'],
-      chip: STATES.map((state) => `State=${state}`)
-    })
-  } finally {
-    releaseFigPopulationWorker(graph)
-  }
 })
 
 test('a switch inside an open edit builds the variant outside it, so undoing the edit keeps it', async () => {
