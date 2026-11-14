@@ -8,6 +8,7 @@ import {
   equilateralArrowPoints,
   triangleCapPoints
 } from '@open-pencil/scene-graph/arrow-caps'
+import { strokeAlignShare } from '@open-pencil/scene-graph/geometry'
 import { drawnImageHash } from '@open-pencil/scene-graph/images'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
@@ -51,10 +52,9 @@ export function normalizeDashPattern(dash: readonly number[] | undefined): numbe
   return dash.length % 2 === 0 ? [...dash] : [...dash, ...dash]
 }
 
+/** How far a stroke's middle lies inside the shape it outlines. */
 function strokeInset(stroke: Stroke): number {
-  if (stroke.align === 'INSIDE') return stroke.weight / 2
-  if (stroke.align === 'OUTSIDE') return -stroke.weight / 2
-  return 0
+  return (0.5 - strokeAlignShare(stroke.align)) * stroke.weight
 }
 
 export function drawDashedRRectWithSolidCorners(

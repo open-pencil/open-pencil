@@ -4,6 +4,7 @@ import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { imageDataURL } from '@open-pencil/scene-graph/images'
 import TransformMatrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
+import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
 import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
 
 import {
@@ -324,7 +325,7 @@ function isImageLeaf(node: SceneNode): boolean {
 
 /** True when `node` clips and some descendant actually reaches past its bounds. */
 function clipsOverflowingContent(graph: SceneGraph, node: SceneNode): boolean {
-  if (!node.clipsContent || !CONTAINER_TYPES.has(node.type)) return false
+  if (!clipsChildren(node) || !CONTAINER_TYPES.has(node.type)) return false
   const toNodeSpace = TransformMatrix.invert(getWorldMatrix(node, graph))
   if (!toNodeSpace) return false
 

@@ -11,6 +11,7 @@ import {
   type VisualBounds
 } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type {
@@ -343,12 +344,7 @@ function collectClipChain(graph: SceneGraph, node: SceneNode): Vector[][] {
     const current = graph.getNode(currentId)
     if (!current) break
     if (current.type === 'CANVAS') break
-    if (
-      current.clipsContent &&
-      (current.type === 'FRAME' || current.type === 'COMPONENT' || current.type === 'INSTANCE')
-    ) {
-      clips.push(nodeWorldCorners(current, graph))
-    }
+    if (clipsChildren(current)) clips.push(nodeWorldCorners(current, graph))
     currentId = current.parentId
   }
   return clips

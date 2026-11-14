@@ -342,3 +342,144 @@ describe('render bounds under a mask', () => {
     expect(box(exportBounds(graph, [group.id]))).toEqual([2000, 0, 100, 100])
   })
 })
+
+// Figma desktop (2026-11-14): a component set clips its variants as a frame does; a section never
+// clips, even one an import marked as clipping.
+describe('render bounds of containers that clip', () => {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0].id
+  const solidFill = {
+    type: 'SOLID' as const,
+    color: { r: 1, g: 0, b: 0, a: 1 },
+    opacity: 1,
+    visible: true
+  }
+  const overflowing = (type: 'COMPONENT_SET' | 'SECTION', x: number) => {
+    const container = graph.createNode(type, page, {
+      x,
+      y: 0,
+      width: 100,
+      height: 100,
+      clipsContent: true
+    })
+    graph.createNode('RECTANGLE', container.id, {
+      x: 50,
+      y: 0,
+      width: 100,
+      height: 50,
+      fills: [solidFill]
+    })
+    return container
+  }
+  const box = (bounds: ReturnType<typeof exportBounds>) =>
+    bounds && [bounds.minX, bounds.minY, bounds.maxX - bounds.minX, bounds.maxY - bounds.minY]
+
+  test('a component set clips a variant past its edge', () => {
+    const set = overflowing('COMPONENT_SET', 10000)
+    expect(box(exportBounds(graph, [set.id]))).toEqual([10000, 0, 100, 100])
+  })
+
+  test('a section shows a layer past its edge', () => {
+    const section = overflowing('SECTION', 11000)
+    expect(box(exportBounds(graph, [section.id]))?.[2]).toBe(150)
+  })
+})
+
+// Figma desktop (2026-11-14): a 100×100 rectangle with a 1px stroke and a 20px right side is
+// bounded by each side's own weight: 121×102 outside, 110.5×101 centred, its box inside.
+describe('render bounds of a stroke with sides of their own weights', () => {
+  const graph = new SceneGraph()
+  const figma = new FigmaAPI(graph)
+  const box = (bounds: ReturnType<typeof exportBounds>) =>
+    bounds && [bounds.minX, bounds.minY, bounds.maxX - bounds.minX, bounds.maxY - bounds.minY]
+  const sided = (align: 'OUTSIDE' | 'CENTER' | 'INSIDE', x: number) => {
+    const rect = figma.createRectangle()
+    rect.x = x
+    rect.y = 0
+    rect.resize(100, 100)
+    rect.fills = solid(1, 0, 0)
+    rect.strokes = solid(0, 0, 1)
+    rect.strokeAlign = align
+    rect.strokeWeight = 1
+    rect.strokeRightWeight = 20
+    return rect
+  }
+
+  test('each side reaches by its own weight', () => {
+    expect(box(exportBounds(graph, [sided('OUTSIDE', 20000).id]))).toEqual([19999, -1, 121, 102])
+    expect(box(exportBounds(graph, [sided('CENTER', 21000).id]))).toEqual([
+      20999.5, -0.5, 110.5, 101
+    ])
+    expect(box(exportBounds(graph, [sided('INSIDE', 22000).id]))).toEqual([22000, 0, 100, 100])
+  })
+
+  test('a line keeps its one weight whatever the side flag says, as it has no sides', () => {
+    const line = (y: number) => {
+      const made = figma.createLine()
+      made.x = 23000
+      made.y = y
+      made.resize(100, 0)
+      made.strokes = [{ type: 'SOLID', color: { r: 0, g: 0, b: 1 } }]
+      made.strokeWeight = 4
+      return made
+    }
+    const plain = line(0)
+    const flagged = line(0)
+    graph.updateNode(flagged.id, {
+      independentStrokeWeights: true,
+      borderTopWeight: 0,
+      borderRightWeight: 0,
+      borderBottomWeight: 0,
+      borderLeftWeight: 0
+    })
+    expect(box(exportBounds(graph, [flagged.id]))).toEqual(box(exportBounds(graph, [plain.id])))
+    expect(box(exportBounds(graph, [plain.id]))?.[3]).toBe(8)
+  })
+})
+
+// Figma desktop (2026-11-14): a drop shadow's spread grows the render bounds of a rectangle, an
+// ellipse or a frame, clipped or not, and not those of a star, polygon, vector, text or boolean.
+describe('render bounds of a spread shadow by layer type', () => {
+  const graph = new SceneGraph()
+  const figma = new FigmaAPI(graph)
+  const spread = [shadow(0, 10, { x: 0, y: 0 })]
+  const growth = (make: () => { id: string; effects: unknown }, x: number) => {
+    const plain = make() as Rectangle
+    plain.x = x
+    const shadowed = make() as Rectangle
+    shadowed.x = x + 500
+    shadowed.effects = spread
+    const a = exportBounds(graph, [plain.id])
+    const b = exportBounds(graph, [shadowed.id])
+    return a && b ? b.maxX - b.minX - (a.maxX - a.minX) : null
+  }
+  const filled = <T extends { fills: unknown }>(node: T) => {
+    node.fills = solid(1, 0, 0)
+    return node
+  }
+
+  test('a rectangle, an ellipse and a frame spread; a star, polygon, vector and text do not', () => {
+    expect(growth(() => filled(figma.createRectangle()), 30000)).toBe(20)
+    expect(growth(() => filled(figma.createEllipse()), 31000)).toBe(20)
+    expect(
+      growth(() => {
+        const frame = filled(figma.createFrame())
+        frame.clipsContent = false
+        return frame
+      }, 32000)
+    ).toBe(20)
+    expect(growth(() => filled(figma.createStar()), 33000)).toBe(0)
+    expect(growth(() => filled(figma.createPolygon()), 34000)).toBe(0)
+  })
+})
+
+// Figma desktop (2026-11-14): a rectangle whose only fill is at 0% opacity has no render bounds,
+// its drop shadow included, as one with a hidden fill or none.
+test('a layer whose paints are all transparent has no render bounds', () => {
+  const graph = new SceneGraph()
+  const figma = new FigmaAPI(graph)
+  const clear = figma.createRectangle()
+  clear.fills = [{ type: 'SOLID', color: { r: 1, g: 0, b: 0 }, opacity: 0 }]
+  clear.effects = [shadow(4, 0, { x: 10, y: 10 })]
+  expect(exportBounds(graph, [clear.id])).toBeNull()
+})
