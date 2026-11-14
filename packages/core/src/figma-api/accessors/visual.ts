@@ -1,9 +1,12 @@
+import * as v from 'valibot'
+
 import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { newStrokeGeometry } from '@open-pencil/scene-graph/node-defaults'
 import { independentCornerChanges } from '@open-pencil/scene-graph/variables'
 import { regionFillsDiffer } from '@open-pencil/scene-graph/vector-network'
 
 import {
+  fieldAccessor,
   raw,
   strokeOwner,
   updateNode,
@@ -11,6 +14,7 @@ import {
   type ProxyThis
 } from '#core/figma-api/accessors/utils'
 import {
+  BLEND_MODES,
   fillsGainingGlass,
   parseFigmaEffects,
   toFigmaEffect,
@@ -172,38 +176,10 @@ export function installVisualNodeProxyAccessors(
         updateNode(this, internals, { opacity: finiteNumber(value, 'opacity') })
       }
     },
-    visible: {
-      get(this: ProxyThis): boolean {
-        return raw(this, internals).visible
-      },
-      set(this: ProxyThis, value: boolean) {
-        updateNode(this, internals, { visible: value })
-      }
-    },
-    locked: {
-      get(this: ProxyThis): boolean {
-        return raw(this, internals).locked
-      },
-      set(this: ProxyThis, value: boolean) {
-        updateNode(this, internals, { locked: value })
-      }
-    },
-    blendMode: {
-      get(this: ProxyThis): string {
-        return raw(this, internals).blendMode
-      },
-      set(this: ProxyThis, value: string) {
-        updateNode(this, internals, { blendMode: value as SceneNode['blendMode'] })
-      }
-    },
-    clipsContent: {
-      get(this: ProxyThis): boolean {
-        return raw(this, internals).clipsContent
-      },
-      set(this: ProxyThis, value: boolean) {
-        updateNode(this, internals, { clipsContent: value })
-      }
-    },
+    visible: fieldAccessor(internals, 'visible', v.boolean()),
+    locked: fieldAccessor(internals, 'locked', v.boolean()),
+    blendMode: fieldAccessor(internals, 'blendMode', v.picklist(BLEND_MODES)),
+    clipsContent: fieldAccessor(internals, 'clipsContent', v.boolean()),
     cornerRadius: {
       get(this: ProxyThis): number | symbol {
         const node = raw(this, internals)
