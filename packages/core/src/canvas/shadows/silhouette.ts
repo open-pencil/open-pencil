@@ -13,6 +13,7 @@ import {
   strokeAlignShare,
   strokeWeightOf
 } from '@open-pencil/scene-graph/geometry'
+import { isVisibleMask } from '@open-pencil/scene-graph/masks'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import { clipsChildren, isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import { paintShows } from '@open-pencil/scene-graph/paints'
@@ -137,7 +138,7 @@ function drawChildSilhouettes(
       node.childIds,
       (childId) => {
         const child = graph.getNode(childId)
-        return child && drawsSilhouette(child) && child.isMask ? child.maskType : null
+        return child && !child.internalOnly && isVisibleMask(child) ? child.maskType : null
       },
       drawChild,
       drawChild,

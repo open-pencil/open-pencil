@@ -2,6 +2,7 @@ import type { Canvas } from '@open-pencil/canvaskit'
 import { type SceneNode, type SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import { intersectVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
+import { isVisibleMask } from '@open-pencil/scene-graph/masks'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { clipsChildren, isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 
@@ -214,7 +215,7 @@ function renderChildIds(
     childIds,
     (childId) => {
       const child = graph.getNode(childId)
-      return child?.visible && child.isMask ? child.maskType : null
+      return child && isVisibleMask(child) ? child.maskType : null
     },
     (childId) => r.renderNode(canvas, graph, childId, overlays, absX, absY, frame),
     (childId) => {
