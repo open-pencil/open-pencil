@@ -14,6 +14,7 @@ import SdkFieldGroup from './components/SdkFieldGroup.vue'
 import SdkPropsTable from './components/SdkPropsTable.vue'
 import SdkRelatedLinks from './components/SdkRelatedLinks.vue'
 import SdkSlotsTable from './components/SdkSlotsTable.vue'
+import Layout from './Layout.vue'
 import { movedSection } from './moved-sections'
 
 import './tailwind.css'
@@ -21,6 +22,7 @@ import './vars.css'
 
 export default {
   extends: DefaultTheme,
+  Layout,
   enhanceApp({ app }) {
     // An old link to a section that moved to its own page lands here with that section's `#`.
     if (inBrowser) {
