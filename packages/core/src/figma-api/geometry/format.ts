@@ -1,9 +1,8 @@
 import type { CanvasKit, Path } from '@open-pencil/canvaskit'
+import { svgPathSink, type PathSink } from '@open-pencil/scene-graph/paths'
 import type { VectorPath } from '@open-pencil/scene-graph/vector-network'
 
 import { tracePath } from '#core/canvas/paths/verbs'
-import { svgPathSink } from '#core/io/formats/svg/paths'
-import type { PathSink } from '#core/vector/path-helpers'
 
 /** A number as Figma writes path data: six significant digits, no trailing zeros. */
 function figmaNumber(value: number): number {
