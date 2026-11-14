@@ -1,6 +1,6 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import type { Color } from '@open-pencil/scene-graph/primitives'
+import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { cachedGlyphWidth } from '#core/canvas/labels/paragraph-cache'
 import { strokeLayoutChildren } from '#core/canvas/overlays/layout-outlines'
@@ -21,89 +21,56 @@ import {
   AUTO_LAYOUT_HOVER_VALUE_PILL_PADDING_X,
   AUTO_LAYOUT_HOVER_VALUE_PILL_RADIUS
 } from '#core/constants'
+import type { RotationPreview, SceneGeometry } from '#core/geometry'
+import {
+  flowGaps,
+  PADDING_SIDES,
+  paddingOf,
+  paddingRect,
+  paddingTick,
+  type PaddingSide
+} from '#core/layout/spacing-marks'
 
-type Hover = NonNullable<RenderOverlays['autoLayoutHover']>
-type RectTuple = [x: number, y: number, width: number, height: number]
-
-function visibleLayoutChildren(node: SceneNode, graph: SceneGraph) {
-  return node.childIds
-    .map((id) => graph.getNode(id))
-    .filter(
-      (child): child is SceneNode =>
-        !!child && child.visible && child.layoutPositioning !== 'ABSOLUTE'
-    )
-}
+import { inNodeSpace } from './outline'
 
 function canvasColor(r: SkiaRenderer, color: Color) {
   return r.ck.Color4f(color.r, color.g, color.b, color.a)
 }
 
-function setStroke(r: SkiaRenderer, color: Color) {
-  r.auxStroke.setStrokeWidth(AUTO_LAYOUT_HOVER_STROKE_WIDTH)
+/** The shared stroke at a width that stays the same on screen, drawn in the frame's space. */
+function setStroke(r: SkiaRenderer, color: Color, width: number) {
+  r.auxStroke.setStrokeWidth(width / r.zoom)
   r.auxStroke.setColor(canvasColor(r, color))
   r.auxStroke.setPathEffect(null)
 }
 
-function drawHorizontalTick(r: SkiaRenderer, canvas: Canvas, x: number, y: number) {
-  canvas.drawLine(
-    x - AUTO_LAYOUT_HOVER_TICK_LENGTH,
-    y,
-    x + AUTO_LAYOUT_HOVER_TICK_LENGTH,
-    y,
-    r.auxStroke
-  )
+/** A tick across `along`: a line through `at` that runs the other way, a fixed length on screen. */
+function drawTick(r: SkiaRenderer, canvas: Canvas, at: Vector, along: 'x' | 'y') {
+  const half = AUTO_LAYOUT_HOVER_TICK_LENGTH / r.zoom
+  if (along === 'x') canvas.drawLine(at.x - half, at.y, at.x + half, at.y, r.auxStroke)
+  else canvas.drawLine(at.x, at.y - half, at.x, at.y + half, r.auxStroke)
 }
 
-function drawVerticalTick(r: SkiaRenderer, canvas: Canvas, x: number, y: number) {
-  canvas.drawLine(
-    x,
-    y - AUTO_LAYOUT_HOVER_TICK_LENGTH,
-    x,
-    y + AUTO_LAYOUT_HOVER_TICK_LENGTH,
-    r.auxStroke
-  )
-}
-
-function toScreenRect(r: SkiaRenderer, [x, y, width, height]: RectTuple) {
-  return r.ck.LTRBRect(
-    x * r.zoom + r.panX,
-    y * r.zoom + r.panY,
-    (x + width) * r.zoom + r.panX,
-    (y + height) * r.zoom + r.panY
-  )
-}
-
-function drawStripedRect(
-  r: SkiaRenderer,
-  canvas: Canvas,
-  rectTuple: RectTuple,
-  color: Color,
-  fill: Color
-) {
-  const [, , width, height] = rectTuple
+function drawStripedRect(r: SkiaRenderer, canvas: Canvas, rect: Rect, color: Color, fill: Color) {
+  const { x, y, width, height } = rect
   if (width <= 0 || height <= 0) return
-  const rect = toScreenRect(r, rectTuple)
+  const box = r.ck.LTRBRect(x, y, x + width, y + height)
   r.auxFill.setColor(canvasColor(r, fill))
-  canvas.drawRect(rect, r.auxFill)
+  canvas.drawRect(box, r.auxFill)
 
   const path = new r.ck.PathBuilder()
-  const left = rect[0]
-  const top = rect[1]
-  const right = rect[2]
-  const bottom = rect[3]
-  for (let sx = left - (bottom - top); sx < right; sx += AUTO_LAYOUT_HOVER_STRIPE_GAP) {
-    path.moveTo(sx, bottom)
-    path.lineTo(sx + (bottom - top), top)
+  const gap = AUTO_LAYOUT_HOVER_STRIPE_GAP / r.zoom
+  for (let sx = x - height; sx < x + width; sx += gap) {
+    path.moveTo(sx, y + height)
+    path.lineTo(sx + height, y)
   }
-  r.auxStroke.setStrokeWidth(AUTO_LAYOUT_HOVER_STRIPE_WIDTH)
-  r.auxStroke.setColor(canvasColor(r, color))
-  r.auxStroke.setPathEffect(null)
+  setStroke(r, color, AUTO_LAYOUT_HOVER_STRIPE_WIDTH)
   canvas.save()
-  canvas.clipRect(rect, r.ck.ClipOp.Intersect, true)
-  const immutablePath = path.detachAndDelete()
-  canvas.drawPath(immutablePath, r.auxStroke)
+  canvas.clipRect(box, r.ck.ClipOp.Intersect, true)
+  const stripes = path.detachAndDelete()
+  canvas.drawPath(stripes, r.auxStroke)
   canvas.restore()
-  immutablePath.delete()
+  stripes.delete()
 }
 
 /** A value in a pill as wide as its text, its digits centred, as Figma draws padding and gaps. */
@@ -140,152 +107,104 @@ function drawValuePill(
   canvas.drawText(text, x - advance / 2, y - (top + bottom) / 2, r.auxFill, font)
 }
 
-function gapRects(node: SceneNode, graph: SceneGraph): RectTuple[] {
-  const children = visibleLayoutChildren(node, graph)
-  if (children.length < 2 || node.itemSpacing <= 0) return []
-  const abs = graph.getAbsolutePosition(node.id)
-  const isRow = node.layoutMode === 'HORIZONTAL'
-  const rects: RectTuple[] = []
-
-  for (let i = 0; i < children.length - 1; i++) {
-    const prev = children[i]
-    const next = children[i + 1]
-    const gapStart = isRow ? prev.x + prev.width : prev.y + prev.height
-    const gapEnd = isRow ? next.x : next.y
-    if (gapEnd <= gapStart) continue
-    rects.push(
-      isRow
-        ? [
-            abs.x + gapStart,
-            abs.y + node.paddingTop,
-            gapEnd - gapStart,
-            node.height - node.paddingTop - node.paddingBottom
-          ]
-        : [
-            abs.x + node.paddingLeft,
-            abs.y + gapStart,
-            node.width - node.paddingLeft - node.paddingRight,
-            gapEnd - gapStart
-          ]
-    )
-  }
-  return rects
-}
-
-function paddingRect(node: SceneNode, graph: SceneGraph, side: Hover['side']): RectTuple | null {
-  if (!side) return null
-  const abs = graph.getAbsolutePosition(node.id)
-  if (side === 'top') return [abs.x, abs.y, node.width, node.paddingTop]
-  if (side === 'bottom') {
-    return [abs.x, abs.y + node.height - node.paddingBottom, node.width, node.paddingBottom]
-  }
-  if (side === 'left') return [abs.x, abs.y, node.paddingLeft, node.height]
-  return [abs.x + node.width - node.paddingRight, abs.y, node.paddingRight, node.height]
-}
-
-function drawBaselineTicks(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph, node: SceneNode) {
-  const abs = graph.getAbsolutePosition(node.id)
-  const xCenter = (abs.x + node.width / 2) * r.zoom + r.panX
-  const yCenter = (abs.y + node.height / 2) * r.zoom + r.panY
-
-  setStroke(r, AUTO_LAYOUT_HOVER_BLUE)
-  if (node.paddingTop > 0) {
-    drawHorizontalTick(r, canvas, xCenter, (abs.y + node.paddingTop / 2) * r.zoom + r.panY)
-  }
-  if (node.paddingBottom > 0) {
-    drawHorizontalTick(
-      r,
-      canvas,
-      xCenter,
-      (abs.y + node.height - node.paddingBottom / 2) * r.zoom + r.panY
-    )
-  }
-  if (node.paddingLeft > 0) {
-    drawVerticalTick(r, canvas, (abs.x + node.paddingLeft / 2) * r.zoom + r.panX, yCenter)
-  }
-  if (node.paddingRight > 0) {
-    drawVerticalTick(
-      r,
-      canvas,
-      (abs.x + node.width - node.paddingRight / 2) * r.zoom + r.panX,
-      yCenter
-    )
-  }
-
-  setStroke(r, AUTO_LAYOUT_HOVER_MAGENTA)
-  for (const rect of gapRects(node, graph)) {
-    const [x, y, width, height] = rect
-    if (node.layoutMode === 'HORIZONTAL') {
-      drawVerticalTick(r, canvas, (x + width / 2) * r.zoom + r.panX, yCenter)
-    } else {
-      drawHorizontalTick(r, canvas, xCenter, (y + height / 2) * r.zoom + r.panY)
-    }
-  }
-}
-
-function drawSpacingHover(
+/** The pill beside a mark, upright on screen whatever the frame's rotation. */
+function drawValueBeside(
   r: SkiaRenderer,
   canvas: Canvas,
-  graph: SceneGraph,
+  geometry: SceneGeometry,
   node: SceneNode,
-  showValue: boolean
+  value: number,
+  at: Vector,
+  color: Color
 ) {
-  const rects = gapRects(node, graph)
-  for (const rect of rects) {
-    drawStripedRect(r, canvas, rect, AUTO_LAYOUT_HOVER_MAGENTA, AUTO_LAYOUT_HOVER_MAGENTA_FILL)
-  }
-  if (!showValue || rects.length === 0) return
-  const [x, y, width, height] = rects[0]
-  drawValuePill(
-    r,
-    canvas,
-    String(Math.round(node.itemSpacing)),
-    (x + width / 2) * r.zoom + r.panX + AUTO_LAYOUT_HOVER_VALUE_OFFSET,
-    (y + height / 2) * r.zoom + r.panY - AUTO_LAYOUT_HOVER_VALUE_OFFSET,
-    AUTO_LAYOUT_HOVER_GAP_PILL
-  )
-}
-
-function drawPaddingHover(
-  r: SkiaRenderer,
-  canvas: Canvas,
-  graph: SceneGraph,
-  node: SceneNode,
-  hover: Hover,
-  showValue: boolean
-) {
-  const rect = paddingRect(node, graph, hover.side)
-  if (!rect) return
-  drawStripedRect(r, canvas, rect, AUTO_LAYOUT_HOVER_BLUE, AUTO_LAYOUT_HOVER_BLUE_FILL)
-  if (!showValue) return
-  const [x, y, width, height] = rect
-  const value = hover.side === 'left' || hover.side === 'right' ? width : height
+  const screen = geometry.toScreen(node, at, r)
   drawValuePill(
     r,
     canvas,
     String(Math.round(value)),
-    (x + width / 2) * r.zoom + r.panX + AUTO_LAYOUT_HOVER_VALUE_OFFSET,
-    (y + height / 2) * r.zoom + r.panY - AUTO_LAYOUT_HOVER_VALUE_OFFSET,
-    AUTO_LAYOUT_HOVER_PADDING_PILL
+    screen.x + AUTO_LAYOUT_HOVER_VALUE_OFFSET,
+    screen.y - AUTO_LAYOUT_HOVER_VALUE_OFFSET,
+    color
   )
+}
+
+const isAcross = (side: PaddingSide) => side === 'left' || side === 'right'
+
+/** The ticks Figma shows on every padding and gap of a hovered frame. */
+function drawTicks(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph, node: SceneNode) {
+  setStroke(r, AUTO_LAYOUT_HOVER_BLUE, AUTO_LAYOUT_HOVER_STROKE_WIDTH)
+  for (const side of PADDING_SIDES) {
+    if (paddingOf(node, side) > 0) {
+      drawTick(r, canvas, paddingTick(node, side), isAcross(side) ? 'y' : 'x')
+    }
+  }
+  setStroke(r, AUTO_LAYOUT_HOVER_MAGENTA, AUTO_LAYOUT_HOVER_STROKE_WIDTH)
+  const across = node.layoutMode === 'HORIZONTAL' ? 'y' : 'x'
+  for (const gap of flowGaps(node, graph)) drawTick(r, canvas, gap.tick, across)
 }
 
 export function drawAutoLayoutHover(
   r: SkiaRenderer,
   canvas: Canvas,
   graph: SceneGraph,
-  hover?: RenderOverlays['autoLayoutHover']
+  hover?: RenderOverlays['autoLayoutHover'],
+  preview?: RotationPreview | null
 ): void {
   if (!hover) return
   const node = graph.getNode(hover.nodeId)
   if (!node || (node.layoutMode !== 'HORIZONTAL' && node.layoutMode !== 'VERTICAL')) return
 
   if (hover.kind === 'children') strokeLayoutChildren(r, canvas, graph, node)
-  if (hover.kind === 'spacing' || hover.kind === 'spacing-value') {
-    drawSpacingHover(r, canvas, graph, node, hover.kind === 'spacing-value')
+  const geometry = r.sceneGeometry(graph, preview)
+  const gaps =
+    hover.kind === 'spacing' || hover.kind === 'spacing-value' ? flowGaps(node, graph) : []
+  const side = hover.kind === 'padding' || hover.kind === 'padding-value' ? hover.side : undefined
+  inNodeSpace(r, canvas, geometry, node, () => {
+    for (const gap of gaps) {
+      drawStripedRect(
+        r,
+        canvas,
+        gap.rect,
+        AUTO_LAYOUT_HOVER_MAGENTA,
+        AUTO_LAYOUT_HOVER_MAGENTA_FILL
+      )
+    }
+    if (side) {
+      drawStripedRect(
+        r,
+        canvas,
+        paddingRect(node, side),
+        AUTO_LAYOUT_HOVER_BLUE,
+        AUTO_LAYOUT_HOVER_BLUE_FILL
+      )
+    }
+    drawTicks(r, canvas, graph, node)
+  })
+
+  if (hover.kind === 'spacing-value') {
+    const gap = gaps.find((candidate) => candidate.index === hover.index) ?? gaps.at(0)
+    if (gap) {
+      drawValueBeside(
+        r,
+        canvas,
+        geometry,
+        node,
+        node.itemSpacing,
+        gap.tick,
+        AUTO_LAYOUT_HOVER_GAP_PILL
+      )
+    }
   }
-  if (hover.kind === 'padding' || hover.kind === 'padding-value') {
-    drawPaddingHover(r, canvas, graph, node, hover, hover.kind === 'padding-value')
+  if (hover.kind === 'padding-value' && side) {
+    const tick = paddingTick(node, side)
+    drawValueBeside(
+      r,
+      canvas,
+      geometry,
+      node,
+      paddingOf(node, side),
+      tick,
+      AUTO_LAYOUT_HOVER_PADDING_PILL
+    )
   }
-  drawBaselineTicks(r, canvas, graph, node)
 }

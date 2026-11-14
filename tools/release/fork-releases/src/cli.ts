@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { resolve } from 'node:path'
+import { join, resolve } from 'node:path'
 
 import { defineCommand, runMain } from 'citty'
 
@@ -37,7 +37,10 @@ await runMain(
         },
         async run({ args }) {
           const dir = resolve(String(args.package))
-          const release = await pinRelease(dir, String(args.tag))
+          const root = await resolveWorkspaceRoot(process.cwd())
+          const release = await pinRelease(dir, String(args.tag), {
+            cargoManifest: join(root, 'Cargo.toml')
+          })
           process.stdout.write(`Pinned ${release.tag}: ${Object.keys(release.files).join(', ')}\n`)
         }
       })

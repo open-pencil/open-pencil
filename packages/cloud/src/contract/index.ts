@@ -100,6 +100,7 @@ export {
 } from './entitlements'
 export {
   CLOUD_DISCOVERY_PATH,
+  CLOUD_EDITOR_VERSION_HEADER,
   CLOUD_PROTOCOL_VERSION,
   cloudAuthenticationSchema,
   cloudBrandingSchema,
@@ -111,6 +112,7 @@ export {
   cloudLegalDiscoverySchema,
   cloudListingSchema,
   cloudServerOrigin,
+  isEditorVersionAtLeast,
   parseCloudDiscovery,
   type CloudAuthentication,
   type CloudBranding,

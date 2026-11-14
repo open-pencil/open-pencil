@@ -189,7 +189,7 @@ export function drawOverlayPass(
   drawMarquee(r, canvas, overlays.marquee)
   drawLayoutInsertIndicator(r, canvas, overlays.layoutInsertIndicator)
   if (!measuring && !overlays.transforming && r.editHandles) {
-    drawAutoLayoutHover(r, canvas, graph, overlays.autoLayoutHover)
+    drawAutoLayoutHover(r, canvas, graph, overlays.autoLayoutHover, overlays.rotationPreview)
   }
   drawNodeEditOverlay(r, canvas, graph, overlays.nodeEditState)
   drawPenOverlay(r, canvas, overlays.penState)
@@ -208,7 +208,8 @@ export function drawChromePass(
   overlays: RenderOverlays
 ): void {
   r.profiler.beginPhase('render:rulers')
-  if (r.showRulers) drawRulers(r, canvas, graph, selectedIds, overlays.guides)
+  if (r.showRulers)
+    drawRulers(r, canvas, graph, selectedIds, overlays.guides, overlays.rotationPreview)
   r.profiler.endPhase('render:rulers')
   r.profiler.drawHUD(canvas, r.showRulers)
 }

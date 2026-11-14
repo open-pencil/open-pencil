@@ -99,7 +99,9 @@ export const cloudDeploymentConfigSchema = v.strictObject({
         logo_url: v.optional(urlSchema),
         help_url: v.optional(urlSchema)
       })
-    )
+    ),
+    // Older editors ask to be updated, and the server refuses their requests.
+    minimum_editor_version: v.optional(cloudEditorVersionSchema)
   }),
   database: v.optional(
     v.strictObject({ url: defaultReference(DEFAULT_SECRET_NAMES.databaseURL) }),

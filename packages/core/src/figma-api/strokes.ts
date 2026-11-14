@@ -42,9 +42,29 @@ export function setIndependentStrokeWeight(
   field: 'borderTopWeight' | 'borderRightWeight' | 'borderBottomWeight' | 'borderLeftWeight',
   value: number
 ): void {
+  const node = graph.getNode(nodeId)
+  // Read before the write: the stored node is the object `updateNode` changes.
+  const separated = node?.independentStrokeWeights === true
+  // The first side set apart keeps the others at the stroke's weight, as in Figma (desktop, live:
+  // a 1px stroke given a 20px right side keeps 1px on the other three).
+  const others =
+    node && !separated
+      ? Object.fromEntries(SIDE_FIELDS.map((side) => [side, node.strokeWeight]))
+      : {}
   graph.updateNode(nodeId, {
+    ...others,
     [field]: value,
     independentStrokeWeights: true
   })
-  recordInstanceOverride(graph, nodeId, [field, 'independentStrokeWeights'])
+  recordInstanceOverride(graph, nodeId, [
+    ...(separated ? [field] : SIDE_FIELDS),
+    'independentStrokeWeights'
+  ])
 }
+
+const SIDE_FIELDS = [
+  'borderTopWeight',
+  'borderRightWeight',
+  'borderBottomWeight',
+  'borderLeftWeight'
+] as const

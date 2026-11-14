@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import type { Editor } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
 import { autoLayoutValueAnchor, resolveAutoLayoutHover } from '#vue/shared/input/auto-layout-hover'
@@ -113,6 +113,48 @@ describe('auto-layout hover resolver', () => {
     const anchor = autoLayoutValueAnchor(uneven, 'frame', 'itemSpacing', 0)
     expect(anchor).toEqual({ x: 220, y: 156 })
     expect(resolveAutoLayoutHover(220, 156, uneven)).toMatchObject({
+      kind: 'spacing-value',
+      index: 0
+    })
+  })
+
+  // Turned half a turn about its middle at 240,180, the frame's own point (lx, ly) lands at
+  // (380 - lx, 260 - ly): the first gap's tick, at 140,56 in the frame, is at 240,204.
+  test("finds and opens a turned frame's gap where its tick is on the canvas", () => {
+    const turned = editor({ rotation: 180 })
+    expect(autoLayoutValueAnchor(turned, 'frame', 'itemSpacing', 0)).toEqual({ x: 240, y: 204 })
+    expect(resolveAutoLayoutHover(240, 204, turned)).toMatchObject({
+      kind: 'spacing-value',
+      index: 0
+    })
+  })
+
+  // While a gap's value is edited down to 0 its layers touch; the editor stays on the gap.
+  test("keeps a gap's editor on the gap while its value is 0", () => {
+    const closed = editor({ itemSpacing: 0 })
+    expect(autoLayoutValueAnchor(closed, 'frame', 'itemSpacing', 0)).toEqual({ x: 240, y: 156 })
+  })
+
+  // A wrapped row's gaps mark their own line: over a child on the next line, the child hovers.
+  test("hovers a child on a wrapped row's second line, not the first line's gap", () => {
+    const graph = new SceneGraph()
+    const row = graph.createNode('FRAME', graph.getPages()[0].id, {
+      width: 208,
+      height: 168,
+      layoutMode: 'HORIZONTAL',
+      layoutWrap: 'WRAP',
+      itemSpacing: 8,
+      paddingTop: 20,
+      paddingLeft: 20,
+      paddingRight: 20,
+      paddingBottom: 20
+    })
+    graph.createNode('RECTANGLE', row.id, { x: 20, y: 20, width: 80, height: 60 })
+    graph.createNode('RECTANGLE', row.id, { x: 108, y: 20, width: 80, height: 60 })
+    graph.createNode('RECTANGLE', row.id, { x: 20, y: 88, width: 168, height: 60 })
+    const wrapped = { state: { selectedIds: new Set([row.id]) }, graph } as Editor
+    expect(resolveAutoLayoutHover(104, 118, wrapped)).toMatchObject({ kind: 'children', index: 2 })
+    expect(resolveAutoLayoutHover(104, 50, wrapped)).toMatchObject({
       kind: 'spacing-value',
       index: 0
     })

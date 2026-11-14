@@ -1,4 +1,6 @@
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
+import type * as CornerScenes from '#tests/helpers/canvas/corners/scene'
+import { pageScene, showView } from '#tests/helpers/canvas/page-scene'
 
 const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
 
@@ -57,4 +59,18 @@ test('regular partial full and independent corner smoothing', async () => {
   editor.canvas.assertNoErrors()
   const buffer = await editor.canvas.screenshotCanvasRegion()
   expect(buffer).toMatchSnapshot('corner-smoothing-profiles.png')
+})
+
+// Figma desktop (2026-11-14) scales each corner too large for its rectangle by the tighter of its
+// two edges: 90, 30 and 60 on a 100 × 100 rectangle draw as 60, 25 and 40.
+test('corners too large for their rectangle fit per edge', async () => {
+  await showView(editor.page, { zoom: 2, panX: -100, panY: -100 })
+  await pageScene<typeof CornerScenes>(
+    () => editor.page,
+    '/tests/helpers/canvas/corners/scene.ts'
+  ).build('createOversizedCornersScene')
+  await editor.canvas.waitForRender()
+  editor.canvas.assertNoErrors()
+  const buffer = await editor.canvas.screenshotCanvasRegion(400, 400)
+  expect(buffer).toMatchSnapshot('oversized-corners.png', { maxDiffPixelRatio: 0, threshold: 0 })
 })

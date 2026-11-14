@@ -165,6 +165,7 @@ export const READ_ONLY_ACTIONS: ReadonlySet<string> = new Set([
   'releaseGraphResources',
   'removeCanvasRenderer',
   'reportPresented',
+  'reportProgress',
   'replaceGraph',
   'requestRefresh',
   'requestRender',
