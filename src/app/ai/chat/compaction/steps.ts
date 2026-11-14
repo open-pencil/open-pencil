@@ -5,6 +5,7 @@ import { createDeferred } from '@/app/runtime/deferred'
 
 import { autoCompactAt, designContextLimits, summaryBudget, type ContextLimits } from './limits'
 import { compactionOf, summaryText, type StepCompaction } from './marker'
+import { summaryModel } from './model'
 import { summarizeModelMessages } from './summarize'
 
 /** The model's limits, or null when they cannot be read or the reply is stopped first. */
@@ -40,7 +41,9 @@ interface StepState {
  */
 export function createStepCompaction(
   model: LanguageModel,
-  contextLimits: () => Promise<ContextLimits | null> = designContextLimits
+  contextLimits: () => Promise<ContextLimits | null> = designContextLimits,
+  /** The model that writes the summaries, given the reply's own. */
+  summaryModelFor: (model: LanguageModel) => Promise<LanguageModel> = summaryModel
 ) {
   let limits: ContextLimits | null = null
   let abortSignal: AbortSignal | undefined
@@ -71,7 +74,7 @@ export function createStepCompaction(
     let summary: string
     try {
       summary = await summarizeModelMessages(messages.slice(0, last), {
-        model,
+        model: await summaryModelFor(model),
         summaryFirst,
         budget: summaryBudget(limits),
         abortSignal

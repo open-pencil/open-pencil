@@ -195,7 +195,7 @@
   "modelRoleVision": "Visión",
   "modelRoleDesignDescription": "Chat de IA y edición del lienzo",
   "modelRoleReviewDescription": "Revisiones explícitas de planes y diseños",
-  "modelRoleFastDescription": "Trabajo económico en segundo plano",
+  "modelRoleFastDescription": "Títulos de chats y resúmenes de compactación",
   "modelRoleVisionDescription": "Capturas y referencias visuales",
   "modelRoleNotUsed": "Aún no se usa",
   "modelRoleUseDesign": "Igual que Diseño",

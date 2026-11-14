@@ -16,7 +16,7 @@ The first time you open OpenPencil, guided setup asks what AI should help with a
 3. Add a model and configure its provider, model ID, credentials, and capabilities
 4. Save the model and assign it to **Design agent**
 
-You can configure multiple reusable models and separately assign models for design work and image input. **Review** and **Fast tasks** are listed as not used yet. Models using the same provider connection reuse its stored credential.
+You can configure multiple reusable models and separately assign models for design work, fast tasks, and image input. A model assigned to **Fast tasks** names each conversation after its first reply and writes compaction summaries; while Fast tasks is **Same as Design** or **None**, conversations keep their first message as the title and the Design model writes the summaries. **Review** is listed as not used yet. Models using the same provider connection reuse its stored credential.
 
 The chat composer grows with multiline prompts. Type `@` to mention a layer, page, or skill, and `/` at the start of a message to run a skill, `/compact`, or one of an ACP agent's commands. Mentions show as chips, in replies too, where the assistant names the layers it touched; click one to show the layer on the canvas. Assistant messages show provider reasoning in collapsible sections and provide a per-response copy action. Image attachments remain available for visual references when a Vision model is configured. Streaming responses use a hardened Markdown renderer with Shiki-highlighted code blocks; unsafe link protocols and embedded data images are blocked.
 

@@ -13,6 +13,7 @@ import {
   summaryBudget
 } from './limits'
 import { agentCompactionMessage, compactionMessage, type Compaction } from './marker'
+import { summaryModel } from './model'
 import { summarizeConversation } from './summarize'
 
 interface CompactionOptions {
@@ -70,7 +71,7 @@ export function useChatCompaction(options: CompactionOptions) {
     try {
       const limits = await designContextLimits()
       const summary = await summarizeConversation(covered, {
-        model: runtime.model,
+        model: await summaryModel(runtime.model),
         instructions: request.instructions,
         budget: limits ? summaryBudget(limits) : undefined,
         abortSignal: abort.signal

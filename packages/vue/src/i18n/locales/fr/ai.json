@@ -195,7 +195,7 @@
   "modelRoleVision": "Vision",
   "modelRoleDesignDescription": "Chat IA et modifications du canevas",
   "modelRoleReviewDescription": "Révisions explicites des plans et designs",
-  "modelRoleFastDescription": "Travail économique en arrière-plan",
+  "modelRoleFastDescription": "Titres des discussions et résumés de compactage",
   "modelRoleVisionDescription": "Captures et références visuelles",
   "modelRoleNotUsed": "Pas encore utilisé",
   "modelRoleUseDesign": "Comme Design",

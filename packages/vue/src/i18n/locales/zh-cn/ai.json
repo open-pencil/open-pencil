@@ -195,7 +195,7 @@
   "modelRoleVision": "视觉",
   "modelRoleDesignDescription": "AI 聊天和画布编辑",
   "modelRoleReviewDescription": "明确的计划和设计审查",
-  "modelRoleFastDescription": "低成本后台工作",
+  "modelRoleFastDescription": "聊天标题和压缩摘要",
   "modelRoleVisionDescription": "截图和图像参考",
   "modelRoleNotUsed": "尚未使用",
   "modelRoleUseDesign": "与设计相同",
