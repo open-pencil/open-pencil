@@ -12,7 +12,8 @@ export function createHistorySession(reset: () => Promise<void>) {
   let generation = 0
   let stopWatch: (() => void) | undefined
 
-  function attach(next: HistoryChat, flush: () => Promise<void>): void {
+  /** `replied` is told each time the chat finishes a reply. */
+  function attach(next: HistoryChat, flush: () => Promise<void>, replied?: () => void): void {
     if (live === next) return
     stopWatch?.()
     live = next
@@ -27,9 +28,10 @@ export function createHistorySession(reset: () => Promise<void>) {
     })
     const stopStatus = watch(
       () => next.status,
-      () => {
+      (status, before) => {
         if (next.status === 'submitted') interrupted = false
         save()
+        if (status === 'ready' && before === 'streaming' && live === next) replied?.()
       }
     )
     // Change previews render after their message settles; save them when they arrive.

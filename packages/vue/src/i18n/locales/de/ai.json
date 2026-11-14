@@ -195,7 +195,7 @@
   "modelRoleVision": "Vision",
   "modelRoleDesignDescription": "KI-Chat und Canvas-Bearbeitung",
   "modelRoleReviewDescription": "Explizite Plan- und Designprüfungen",
-  "modelRoleFastDescription": "Kostengünstige Hintergrundarbeit",
+  "modelRoleFastDescription": "Chat-Titel und Zusammenfassungen beim Komprimieren",
   "modelRoleVisionDescription": "Screenshots und Bildreferenzen",
   "modelRoleNotUsed": "Noch nicht verwendet",
   "modelRoleUseDesign": "Als Designmodell verwenden",
