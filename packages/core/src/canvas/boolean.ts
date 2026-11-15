@@ -9,6 +9,7 @@ import { getTextOutlineSupport } from '#core/text/outlines'
 import { isOpenVectorNetwork } from '#core/vector/connectivity'
 
 import { clearFillShader } from './fills/paint'
+import { withNoiseEffects } from './noise/render'
 import { sharedPath } from './paths/shared'
 import { curvePathData } from './paths/svg-data'
 import type { SkiaRenderer } from './renderer/skia'
@@ -561,10 +562,11 @@ export function renderBooleanOperation(
   graph: SceneGraph
 ): void {
   r.renderEffects(canvas, node, graph, 'behind')
-  withLeafTexture(r, canvas, node, () =>
-    paintBooleanOperation(r, canvas, node, graph, () =>
-      r.renderEffects(canvas, node, graph, 'inner')
+  withNoiseEffects(r, canvas, node, graph, () =>
+    withLeafTexture(r, canvas, node, () =>
+      paintBooleanOperation(r, canvas, node, graph, () =>
+        r.renderEffects(canvas, node, graph, 'inner')
+      )
     )
   )
-  r.renderEffects(canvas, node, graph, 'front')
 }

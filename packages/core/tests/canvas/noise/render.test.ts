@@ -7,7 +7,7 @@ import { noise } from '@open-pencil/design-jsx'
 import { SceneGraph, type Effect } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { renderNoiseEffects } from '#core/canvas/noise/render'
+import { withNoiseEffects } from '#core/canvas/noise/render'
 import { noiseUniforms } from '#core/canvas/noise/shader'
 
 const ck = await getCanvasKit()
@@ -80,8 +80,14 @@ describe('noise effects drawn as Figma draws them', () => {
     })
     const surface = expectDefined(ck.MakeSurface(SIZE, SIZE))
     try {
-      surface.getCanvas().clear(ck.WHITE)
-      renderNoiseEffects(renderer, surface.getCanvas(), node, graph)
+      const canvas = surface.getCanvas()
+      canvas.clear(ck.WHITE)
+      const white = new ck.Paint()
+      white.setColor(ck.WHITE)
+      withNoiseEffects(renderer, canvas, node, graph, () =>
+        canvas.drawRect(ck.LTRBRect(0, 0, SIZE, SIZE), white)
+      )
+      white.delete()
       const direct = expectDefined(
         surface.makeImageSnapshot().readPixels(0, 0, {
           width: SIZE,
@@ -98,6 +104,57 @@ describe('noise effects drawn as Figma draws them', () => {
     } finally {
       surface.delete()
     }
+  })
+
+  test('grain only what the layer draws, as much as it covers each pixel', () => {
+    const red = noise({ color: '#ff0000', noiseSize: 1, density: 1 })
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    const frame = graph.createNode('FRAME', page, {
+      width: SIZE,
+      height: SIZE,
+      fills: [],
+      effects: [red]
+    })
+    graph.createNode('RECTANGLE', frame.id, {
+      width: SIZE / 2,
+      height: SIZE,
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 0.5, visible: true }]
+    })
+    const png = renderNodesToImage(ck, renderer, graph, page, [frame.id], {
+      scale: 1,
+      format: 'PNG'
+    })
+    const image = expectDefined(ck.MakeImageFromEncoded(expectDefined(png)))
+    const pixels = expectDefined(
+      image.readPixels(0, 0, {
+        width: SIZE,
+        height: SIZE,
+        colorType: ck.ColorType.RGBA_8888,
+        alphaType: ck.AlphaType.Premul,
+        colorSpace: ck.ColorSpace.SRGB
+      })
+    )
+    image.delete()
+    let gapAlpha = 0
+    let maxAlpha = 0
+    let maxRed = 0
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        const at = (y * SIZE + x) * 4
+        if (x >= SIZE / 2) gapAlpha = Math.max(gapAlpha, pixels[at + 3])
+        else {
+          maxAlpha = Math.max(maxAlpha, pixels[at + 3])
+          maxRed = Math.max(maxRed, pixels[at])
+        }
+      }
+    }
+    // Nothing in the frame's empty half; over the half-covering child, the noise at half strength:
+    // red r·0.5 over 50% black reaches 0.5 red and 0.75 alpha at most.
+    expect(gapAlpha).toBe(0)
+    expect(maxRed).toBeGreaterThan(100)
+    expect(maxRed).toBeLessThanOrEqual(128)
+    expect(maxAlpha).toBeLessThanOrEqual(192)
   })
 
   test('a duotone splits each pixel between its two colours at full density', () => {

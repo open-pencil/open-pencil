@@ -13,7 +13,6 @@ import { regionFills } from '@open-pencil/scene-graph/vector-network'
 import { needsIsolatedBlendLayer, setPaintBlendMode } from '#core/canvas/blend/modes'
 import { makeBooleanOperationPath } from '#core/canvas/boolean'
 import { renderGlassLight, renderGlassRefraction } from '#core/canvas/glass/render'
-import { renderNoiseEffects } from '#core/canvas/noise/render'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { nodeOrientationMatrix } from '#core/geometry'
 import { fillsCastShadow, shadowSpread } from '#core/geometry/shadows'
@@ -45,9 +44,9 @@ function resetEffectLayerPaint(r: SkiaRenderer): void {
 
 /**
  * `behind` draws drop shadows, background blur, and glass refraction, `inner` inner shadows and
- * glass light over fills, `front` noise.
+ * glass light over fills. Noise wraps the whole content instead (`withNoiseEffects`).
  */
-export type EffectPass = 'behind' | 'inner' | 'front'
+export type EffectPass = 'behind' | 'inner'
 
 function shadowLayerBounds(
   r: SkiaRenderer,
@@ -386,9 +385,6 @@ export function renderEffects(
   graph: SceneGraph,
   pass: EffectPass
 ): void {
-  // A frame or group draws its noise over its children, after them; a shape draws its own here.
-  if (pass === 'front' && !isLayerContainer(node)) renderNoiseEffects(r, canvas, node, graph)
-
   const ownShadows = !isLayerContainer(node)
   for (const effect of node.effects) {
     if (!effect.visible) continue
@@ -404,7 +400,7 @@ export function renderEffects(
       shape?.delete()
     }
 
-    if (effect.type === 'GLASS' && pass !== 'front') {
+    if (effect.type === 'GLASS') {
       const shape =
         node.type === 'BOOLEAN_OPERATION' ? makeBooleanOperationPath(r, node, graph) : null
       if (pass === 'behind') renderGlassRefraction(r, canvas, node, effect, shape)
