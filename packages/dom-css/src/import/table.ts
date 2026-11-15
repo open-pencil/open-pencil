@@ -1,4 +1,5 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { parseCSSNumber, splitCSSValue } from '@open-pencil/scene-graph/css'
 
 import type { DesignStyleDeclaration } from '../types'
 import { pickStyle } from './css-values'
@@ -25,11 +26,9 @@ export function isTableRow(display: string): boolean {
  */
 function borderSpacing(style: DesignStyleDeclaration): { across: number; down: number } {
   if (pickStyle(style, 'border-collapse')?.trim() === 'collapse') return { across: 0, down: 0 }
-  const [across = 0, down = across] = (pickStyle(style, 'border-spacing') ?? '')
-    .trim()
-    .split(/\s+/)
-    .map((part) => Number.parseFloat(part))
-    .filter((value) => Number.isFinite(value))
+  const [across = 0, down = across] = splitCSSValue(pickStyle(style, 'border-spacing') ?? '').map(
+    (part) => parseCSSNumber(part) ?? 0
+  )
   return { across, down }
 }
 
