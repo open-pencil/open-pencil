@@ -1,0 +1,1 @@
+- A pasted instance keeps the variable mode it pins on a nested layer when pasting into another document copies that mode's collection (#1845).

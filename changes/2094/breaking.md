@@ -1,0 +1,1 @@
+- `isWholeArc` moves from `@open-pencil/core/geometry` to `@open-pencil/scene-graph/geometry`, and `isHitPaint` from `@open-pencil/scene-graph/outline` is replaced by `paintShows` from `@open-pencil/scene-graph/paints` (#2094).

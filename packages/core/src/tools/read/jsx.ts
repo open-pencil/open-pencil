@@ -6,38 +6,43 @@ import { graphOf } from '#core/figma-api/graph'
 import { jsxPatch } from '#core/tools/analyze/diff/jsx'
 import { nodeIdInputSchema, nodeComparisonInputSchema, defineTool } from '#core/tools/schema'
 
-const MAX_JSX_LENGTH = 12_000
+const MAX_INLINE_JSX_LENGTH = 12_000
 
 export const getJSX = defineTool({
   name: 'get_jsx',
   description:
-    'Get JSX representation of a node and its children. Compact round-trip format — same syntax as the render tool.',
+    'Get JSX representation of a node and its children. Compact round-trip format — same syntax as the render tool. ' +
+    `JSX longer than ${MAX_INLINE_JSX_LENGTH} characters is cut, and the result says so.`,
   execution: { kind: 'sync', mutation: 'none' },
   input: v.strictObject({
     id: nodeIdInputSchema,
     path: v.optional(
       v.pipe(
         v.string(),
+        v.minLength(1),
         v.description(
-          'Write JSX to this path instead of returning it (requires OPENPENCIL_MCP_ROOT)'
+          'Write the complete JSX to this path instead of returning it (requires OPENPENCIL_MCP_ROOT)'
         )
       )
     )
   }),
-  execute: (figma, { id }) => {
+  inputExposure: { path: { ai: false, webmcp: false } },
+  execute: (figma, { id, path }) => {
     const node = figma.getNodeById(id)
     if (!node) return { error: `Node "${id}" not found` }
     const jsx = sceneNodeToJSX(id, graphOf(figma))
-    if (jsx.length > MAX_JSX_LENGTH) {
-      return {
-        id,
-        name: node.name,
-        jsx: jsx.slice(0, MAX_JSX_LENGTH),
-        truncated: true,
-        totalLength: jsx.length
-      }
+    const writtenToFile = path !== undefined
+    if (writtenToFile || jsx.length <= MAX_INLINE_JSX_LENGTH) {
+      return { id, name: node.name, jsx }
     }
-    return { id, name: node.name, jsx }
+    return {
+      id,
+      name: node.name,
+      jsx: jsx.slice(0, MAX_INLINE_JSX_LENGTH),
+      truncated: true,
+      totalLength: jsx.length,
+      note: `JSX cut at ${MAX_INLINE_JSX_LENGTH} of ${jsx.length} characters.`
+    }
   }
 })
 

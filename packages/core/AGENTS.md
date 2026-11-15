@@ -43,6 +43,7 @@ Renderer, layout, editor, Figma API, tools, clipboard, vector conversion, and do
 - An atomic transaction, its undo, and its redo lay out each changed layer once, as the outermost auto-layout frame holding it where there is one, so changed siblings share one layout of their parent; every page is laid out only when a variable changed (`packages/core/tests/editor/history/atomic/layout.test.ts`).
 - One atomic call changes at most 10 000 layers, and a larger one is rolled back with an error asking for fewer layers per call (`packages/core/tests/editor/history/atomic/tools.test.ts`).
 - Shared scene-authoring guidance and tested examples live under `packages/design-jsx/src/reference/`; `reference/index.ts` combines them with renderer metadata. Prompts under `packages/core/src/tools/prompts/` and the app chat/ACP prompt compose that reference rather than copying it. Run `bun run generate:authoring-reference` after changes; `check:authoring-reference` (part of `check:docs`) verifies the committed skill/docs copies. Do not edit generated reference files.
+- A numeric layout argument is declared with `layoutPosition`, `layoutLength`, `layoutSpacing`, `layoutFactor`, `layoutAngle`, or `layoutFontSize` from `packages/core/src/tools/schema.ts`, which states in the description the same bound it enforces, so a call outside it fails and names the tool and the argument (`packages/core/tests/tools/schema.test.ts`).
 - The installable agent skill is maintained in `skills/open-pencil/`. Changes to agent-facing APIs, CLI/MCP behavior, or design authoring must update affected skill examples, prompts, and public documentation in the same change. Keep examples valid in their actual execution environment; do not advertise library exports as scripting globals unless exposed there. Prefer runtime discovery and canonical references over duplicated API/tool inventories.
 - MCP-only tools and transports: `packages/mcp/AGENTS.md`. WebMCP registration and app completion: `src/AGENTS.md`.
 
@@ -73,7 +74,7 @@ Renderer, layout, editor, Figma API, tools, clipboard, vector conversion, and do
 - Put OpenPencil-only features on `openpencil`, in the same style as `figma`: methods and node-like handles with getters and setters, not parallel helper functions. `figma` stays Figma's (Figma API, Shape follows Figma).
 - Script runners get both globals only through `compileScript` (`packages/core/src/tools/analyze/eval/wrap.ts`); the `eval` tool, `openpencil eval`, and app automation must not build their own `AsyncFunction`.
 - Members take names, not internal ids, and write through the same scene-graph functions the editor's actions use, such as `behaviourFromSpec`; errors name what exists. Tools for the same feature wrap the `openpencil` API rather than reimplementing it (`packages/core/src/tools/create/behaviours.ts`).
-- A new member updates `packages/docs/programmable/cli/scripting.md` and the agent skill in the same change; tests drive it as scripts do, through `compileScript` (`packages/core/tests/openpencil-api/`).
+- A new member updates `packages/docs/developers/cli/scripting.md` and the agent skill in the same change; tests drive it as scripts do, through `compileScript` (`packages/core/tests/openpencil-api/`).
 
 ## Renderer
 

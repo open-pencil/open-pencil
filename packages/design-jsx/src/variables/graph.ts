@@ -10,7 +10,12 @@ import type {
   VariableValue
 } from '@open-pencil/scene-graph'
 import { tryParseColor } from '@open-pencil/scene-graph/color'
-import { getNodeVariableModeId, resolveVariableInModes } from '@open-pencil/scene-graph/variables'
+import {
+  getNodeVariableModeId,
+  lookupCollection,
+  lookupMode,
+  resolveVariableInModes
+} from '@open-pencil/scene-graph/variables'
 
 import { isTreeNode, type TreeNode } from '../tree'
 import {
@@ -51,12 +56,14 @@ function collectDefinitions(
   }
 }
 
-/** The one collection with this name; a name several collections share is an error. */
-export function collectionNamed(graph: SceneGraph, name: string): VariableCollection | undefined {
-  const matches = [...graph.variableCollections.values()].filter((item) => item.name === name)
-  if (matches.length > 1)
-    throw new Error(`More than one variable collection is named ${name}; rename one to use it`)
-  return matches[0]
+/** The collection with this ID or one exact name; a name several collections share is an error. */
+export function findCollection(graph: SceneGraph, ref: string): VariableCollection | undefined {
+  const found = lookupCollection(graph, ref)
+  if (found.kind === 'ambiguous') {
+    const ids = found.matches.map((collection) => collection.id).join(', ')
+    throw new Error(`More than one variable collection is named ${ref}; name one by its ID: ${ids}`)
+  }
+  return found.kind === 'found' ? found.value : undefined
 }
 
 function variableNamed(
@@ -73,7 +80,7 @@ function variableNamed(
 
 /** The collection, with its modes in place, by the definition's names. */
 function ensureCollection(graph: SceneGraph, definition: CollectionDefinition): VariableCollection {
-  let collection = collectionNamed(graph, definition.name)
+  let collection = findCollection(graph, definition.name)
   if (!collection) {
     collection = graph.createCollection(definition.name)
     graph.renameMode(collection.id, collection.defaultModeId, definition.modes[0].name)
@@ -168,7 +175,7 @@ export function resolveVariableId(graph: SceneGraph, variable: DesignVariable): 
   if (variable.collection) {
     const name =
       typeof variable.collection === 'string' ? variable.collection : variable.collection.name
-    const collection = collectionNamed(graph, name)
+    const collection = findCollection(graph, name)
     return collection && variableNamed(graph, collection, variable.name)?.id
   }
   if (graph.variables.has(variable.name)) return variable.name
@@ -195,7 +202,7 @@ export function requireVariableId(graph: SceneGraph, variable: DesignVariable): 
   )
 }
 
-/** The collection and mode IDs a layer's `mode` prop pins, by their names. */
+/** The collection and mode IDs a layer's `mode` prop pins, by their IDs or names. */
 export function variableModes(graph: SceneGraph, value: unknown): VariableModeMap | undefined {
   if (value === undefined) return undefined
   const modes: unknown[] = Array.isArray(value) ? value : [value]
@@ -203,16 +210,21 @@ export function variableModes(graph: SceneGraph, value: unknown): VariableModeMa
   for (const mode of modes) {
     if (!isMode(mode)) throw new Error('mode takes defineMode() or designMode() modes')
     const name = typeof mode.collection === 'string' ? mode.collection : mode.collection.name
-    const collection =
-      (typeof mode.collection === 'string' && graph.variableCollections.get(name)) ||
-      collectionNamed(graph, name)
+    const collection = findCollection(graph, name)
     if (!collection)
       throw new Error(
         `Unknown variable collection: ${name}. A defineVars() collection is added once a layer binds one of its variables`
       )
-    const modeId = collection.modes.find((item) => item.name === mode.name)?.modeId
-    if (!modeId) throw new Error(`Collection ${name} has no mode named ${mode.name}`)
-    result[collection.id] = modeId
+    const found = lookupMode(collection, mode.name)
+    if (found.kind === 'missing')
+      throw new Error(`Collection ${name} has no mode named ${mode.name}`)
+    if (found.kind === 'ambiguous') {
+      const ids = found.matches.map((item) => item.modeId).join(', ')
+      throw new Error(
+        `Collection ${name} has more than one mode named ${mode.name}; name one by its ID: ${ids}`
+      )
+    }
+    result[collection.id] = found.value.modeId
   }
   return result
 }

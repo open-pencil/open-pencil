@@ -1,23 +1,31 @@
 // Pairing an instance's children with its component's before a sync copies fields across.
 import type { SceneGraph } from '../graph'
 import type { SceneNode } from '../types'
+import type { InstanceSyncContext } from './copies'
 import {
   copiedComponentLayerId,
+  hasInstanceOverride,
   setInstanceOverride,
   type InstanceOverrideState
 } from './overrides'
 
+/** Links a copy to the component layer it matched, reporting each changed node and its owner. */
 function linkMatchedChild(
-  overrides: InstanceOverrideState,
+  graph: SceneGraph,
+  context: InstanceSyncContext,
   instParentId: string,
   instChild: SceneNode,
   compChildId: string
 ): void {
-  if (instChild.type === 'INSTANCE') {
+  const { overrides } = context
+  const recorded = hasInstanceOverride(overrides, instParentId, instChild.id, 'sourceComponentId')
+  if (instChild.type === 'INSTANCE' || recorded) {
+    const owner = graph.nodes.get(context.instanceId)
+    graph.willChangeNode(owner)
     setInstanceOverride(overrides, instParentId, instChild.id, 'sourceComponentId', compChildId)
-  } else {
-    instChild.componentId = compChildId
+    if (owner) graph.updateNode(owner.id, { instanceOverrides: owner.instanceOverrides })
   }
+  if (instChild.type !== 'INSTANCE') graph.updateNode(instChild.id, { componentId: compChildId })
 }
 
 /** Children no link pairs, matched by type and name where the counts leave no doubt. */
@@ -26,7 +34,7 @@ export function matchFallbackChildren(
   compParent: SceneNode,
   instParent: SceneNode,
   instParentId: string,
-  overrides: InstanceOverrideState,
+  context: InstanceSyncContext,
   instChildMap: Map<string, SceneNode>,
   usedInstChildIds: Set<string>
 ): void {
@@ -67,7 +75,7 @@ export function matchFallbackChildren(
     remainingCandidateCount.set(compChild.type, candidateCount - 1)
     instChildMap.set(compChildId, match)
     usedInstChildIds.add(match.id)
-    linkMatchedChild(overrides, instParentId, match, compChildId)
+    linkMatchedChild(graph, context, instParentId, match, compChildId)
   }
 }
 

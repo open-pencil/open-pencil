@@ -27,13 +27,15 @@ export function textFontFace(
   }
 }
 
-export function collectNodeFontFaces(node: SceneNode): Array<{ family: string; style: string }> {
+/** The faces a text and its style runs draw in, each once, with the weight and slant they ask. */
+export function collectNodeFontFaceRefs(node: SceneNode): FontFaceRef[] {
   if (node.type !== 'TEXT') return []
   const faces = [textFontFace(node), ...node.styleRuns.map((run) => textFontFace(node, run.style))]
-  return uniqBy(faces, (face) => `${face.family}\0${face.style}`).map(({ family, style }) => ({
-    family,
-    style
-  }))
+  return uniqBy(faces, (face) => `${face.family}\0${face.style}`)
+}
+
+export function collectNodeFontFaces(node: SceneNode): Array<{ family: string; style: string }> {
+  return collectNodeFontFaceRefs(node).map(({ family, style }) => ({ family, style }))
 }
 
 export function collectGraphFontKeys(

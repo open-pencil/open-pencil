@@ -1,0 +1,400 @@
+import type { Canvas, CanvasKit, Paint } from '@open-pencil/canvaskit'
+import type {
+  VectorVertex,
+  VectorSegment,
+  VectorRegion,
+  SceneGraph
+} from '@open-pencil/scene-graph'
+import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import { cubicPoint } from '@open-pencil/scene-graph/geometry'
+import Matrix from '@open-pencil/scene-graph/matrix'
+import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
+import { transformVectorNetwork } from '@open-pencil/scene-graph/vector-network'
+
+import { drawRegionHatch } from '#core/canvas/overlays/region-hatch'
+import type { SkiaRenderer, RenderOverlays } from '#core/canvas/renderer/skia'
+import { PEN_HANDLE_RADIUS, PEN_VERTEX_RADIUS } from '#core/constants'
+import { worldXToScreen, worldYToScreen } from '#core/geometry/viewport'
+import {
+  type ShownHandles,
+  shownHandles,
+  regenerateFillGeometry,
+  vectorHandleId,
+  vectorNetworkToPath
+} from '#core/vector'
+import { segmentToAbsolute } from '#core/vector/curve-math'
+
+type ToScreenFn = (x: number, y: number) => Vector
+
+type HandleInfo =
+  | { segmentIndex: number; tangentField: 'tangentStart' | 'tangentEnd' }
+  | null
+  | undefined
+
+export interface NodeEditOverlayState {
+  nodeId: string
+  vertices: VectorVertex[]
+  segments: VectorSegment[]
+  regions: VectorRegion[]
+  selectedVertexIndices: Set<number>
+  selectedSegmentIndices?: Set<number>
+  selectedHandles?: Set<number>
+  hoveredHandleInfo?: HandleInfo
+  hoveredRegion?: number | null
+  selectedRegions?: Set<number>
+  /** Which points show their handles; near the selection when unset. */
+  showHandles?: ShownHandles
+}
+
+/** How far a hovered point or handle lightens the selection colour toward white. */
+const HOVER_LIGHTEN = 0.25
+
+export function drawNodeEditOverlay(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  graph: SceneGraph,
+  editState: RenderOverlays['nodeEditState']
+): void {
+  if (!editState) return
+  const { segments, selectedVertexIndices } = editState
+  const vertices = editState.vertices
+  const regions = editState.regions
+
+  if (vertices.length === 0) return
+
+  const toScreen: ToScreenFn = (x, y) => ({
+    x: worldXToScreen(r, x),
+    y: worldYToScreen(r, y)
+  })
+
+  const selectedHandles = editState.selectedHandles ?? new Set<number>()
+  const hovered = editState.hoveredHandleInfo ?? null
+
+  // Draw the node shape with its original fills/strokes/effects using live vertices
+  drawLiveShape(r, canvas, graph, editState.nodeId, vertices, segments, regions)
+
+  // Hatch the hovered and selected regions, as Figma does
+  drawRegionHatch(r, canvas, graph, editState)
+
+  // Draw technical stroke outline over the shape
+  drawTechStroke(r, canvas, graph, editState.nodeId, vertices, segments, regions)
+
+  drawSelectedSegments(
+    r,
+    canvas,
+    vertices,
+    segments,
+    editState.selectedSegmentIndices ?? new Set<number>(),
+    toScreen
+  )
+
+  drawEditVertices(r, canvas, vertices, selectedVertexIndices, toScreen)
+
+  // Handles above the points, lines and diamonds alike, so a handle on a point shows on top and a
+  // press there takes the handle (Figma desktop, live).
+  drawEditHandles(r, canvas, editState, toScreen, selectedHandles, hovered)
+}
+
+// ---------------------------------------------------------------------------
+// Live shape rendering with full styles
+// ---------------------------------------------------------------------------
+
+function drawLiveShape(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  graph: SceneGraph,
+  nodeId: string,
+  vertices: VectorVertex[],
+  segments: VectorSegment[],
+  regions: VectorRegion[]
+): void {
+  const node = graph.getNode(nodeId)
+  if (!node) return
+
+  // The edit state is page-absolute; map it back into the node's local frame
+  // so static fillGeometry (multi-color vectors) stays aligned, and render
+  // through the node's full world matrix (nesting, rotation, flips).
+  const world = getWorldMatrix(node, graph)
+  const inverse = Matrix.invert(world)
+  if (!inverse) return
+  const localNetwork = transformVectorNetwork(inverse, { vertices, segments, regions })
+
+  // Temporarily patch the node so renderShapeUncached uses our live network;
+  // fills draw from fillGeometry blobs, so rebuild those from the live network.
+  // Clear strokeGeometry so strokes use the live vector network instead of
+  // stale imported stroke blobs.
+  const origNetwork = node.vectorNetwork
+  const origFillGeometry = node.fillGeometry
+  const origStrokeGeometry = node.strokeGeometry
+
+  // The overlay canvas is in screen space; renderShapeUncached expects the
+  // node's local frame, so apply viewport then the node's world matrix.
+  canvas.save()
+  try {
+    node.vectorNetwork = localNetwork
+    node.fillGeometry = regenerateFillGeometry(localNetwork, origFillGeometry)
+    node.strokeGeometry = []
+    r.invalidateVectorPath(nodeId)
+    canvas.translate(r.panX, r.panY)
+    canvas.scale(r.zoom, r.zoom)
+    canvas.concat(world)
+    r.renderShapeUncached(canvas, node, graph)
+  } finally {
+    canvas.restore()
+    // Restore the original node properties and invalidate again so the
+    // original renders correctly after exit — even if regeneration or rendering throws.
+    node.vectorNetwork = origNetwork
+    node.fillGeometry = origFillGeometry
+    node.strokeGeometry = origStrokeGeometry
+    r.invalidateVectorPath(nodeId)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Paints
+// ---------------------------------------------------------------------------
+
+export interface NodeEditPaints {
+  handleLinePaint: Paint
+  handleLineSelectedPaint: Paint
+  handleLineHoverPaint: Paint
+  vertexStroke1px: Paint
+  vertexSelectedFill: Paint
+  handleSelectedFill: Paint
+  handleSelectedStroke: Paint
+  handleHoverFill: Paint
+  handleHoverStroke: Paint
+  techStrokePaint: Paint
+  segmentSelectedPaint: Paint
+}
+
+function strokePaint(ck: CanvasKit, width: number, color: Float32Array): Paint {
+  const paint = new ck.Paint()
+  paint.setStyle(ck.PaintStyle.Stroke)
+  paint.setStrokeWidth(width)
+  paint.setColor(color)
+  paint.setAntiAlias(true)
+  return paint
+}
+
+function fillPaint(ck: CanvasKit, color: Float32Array): Paint {
+  const paint = new ck.Paint()
+  paint.setStyle(ck.PaintStyle.Fill)
+  paint.setColor(color)
+  paint.setAntiAlias(true)
+  return paint
+}
+
+/**
+ * The renderer owns these: it creates them with its other paints and frees them when destroyed.
+ * The ones in the selection colour are coloured by {@link colorNodeEditPaints}.
+ */
+export function createNodeEditPaints(ck: CanvasKit): NodeEditPaints {
+  const white = ck.Color4f(1, 1, 1, 1)
+  return {
+    handleLinePaint: strokePaint(ck, 1, ck.Color4f(0.6, 0.6, 0.6, 1)),
+    handleLineSelectedPaint: strokePaint(ck, 1, white),
+    handleLineHoverPaint: strokePaint(ck, 1, white),
+    vertexStroke1px: strokePaint(ck, 1, white),
+    vertexSelectedFill: fillPaint(ck, white),
+    handleSelectedFill: fillPaint(ck, white),
+    // White outset strokes around the selected and hovered handle diamonds.
+    handleSelectedStroke: strokePaint(ck, 3, white),
+    handleHoverFill: fillPaint(ck, white),
+    handleHoverStroke: strokePaint(ck, 3, white),
+    // Technical stroke: rgb(178, 178, 178).
+    techStrokePaint: strokePaint(ck, 1, ck.Color4f(0.698, 0.698, 0.698, 1)),
+    segmentSelectedPaint: strokePaint(ck, 2, white)
+  }
+}
+
+/** Colours the selected and hovered points, handles and segments in the selection colour. */
+export function colorNodeEditPaints(ck: CanvasKit, paints: NodeEditPaints, color: Color): void {
+  const selected = ck.Color4f(color.r, color.g, color.b, 1)
+  const lighten = (channel: number) => channel + (1 - channel) * HOVER_LIGHTEN
+  const hovered = ck.Color4f(lighten(color.r), lighten(color.g), lighten(color.b), 1)
+  for (const paint of [
+    paints.handleLineSelectedPaint,
+    paints.vertexStroke1px,
+    paints.vertexSelectedFill,
+    paints.handleSelectedFill,
+    paints.segmentSelectedPaint
+  ])
+    paint.setColor(selected)
+  paints.handleLineHoverPaint.setColor(hovered)
+  paints.handleHoverFill.setColor(hovered)
+}
+
+export function disposeNodeEditPaints(paints: NodeEditPaints): void {
+  for (const paint of Object.values(paints)) paint.delete()
+}
+
+// ---------------------------------------------------------------------------
+// Technical stroke outline
+// ---------------------------------------------------------------------------
+
+function drawTechStroke(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  graph: SceneGraph,
+  nodeId: string,
+  vertices: VectorVertex[],
+  segments: VectorSegment[],
+  regions: VectorRegion[]
+): void {
+  const { techStrokePaint } = r.nodeEditPaints
+  const node = graph.getNode(nodeId)
+  if (!node) return
+  const world = getWorldMatrix(node, graph)
+  const inverse = Matrix.invert(world)
+  if (!inverse) return
+  const localNetwork = transformVectorNetwork(inverse, { vertices, segments, regions })
+  const paths = vectorNetworkToPath(r.ck, localNetwork)
+
+  // Keep the technical outline in the same coordinate space as the live shape.
+  techStrokePaint.setStrokeWidth(1 / r.zoom)
+
+  canvas.save()
+  canvas.translate(r.panX, r.panY)
+  canvas.scale(r.zoom, r.zoom)
+  canvas.concat(world)
+  for (const p of paths) {
+    canvas.drawPath(p, techStrokePaint)
+    p.delete()
+  }
+  canvas.restore()
+}
+
+// ---------------------------------------------------------------------------
+// Selected segments
+// ---------------------------------------------------------------------------
+
+/** Selected segments draw in blue with a knob at their midpoint, as in Figma. */
+function drawSelectedSegments(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  vertices: VectorVertex[],
+  segments: VectorSegment[],
+  selectedSegmentIndices: Set<number>,
+  toScreen: ToScreenFn
+): void {
+  const { segmentSelectedPaint, vertexStroke1px } = r.nodeEditPaints
+  const network = { vertices, segments, regions: [] }
+  for (const index of selectedSegmentIndices) {
+    if (index >= segments.length) continue
+    const { p0, cp1, cp2, p3 } = segmentToAbsolute(network, index)
+    const s0 = toScreen(p0.x, p0.y)
+    const s1 = toScreen(cp1.x, cp1.y)
+    const s2 = toScreen(cp2.x, cp2.y)
+    const s3 = toScreen(p3.x, p3.y)
+
+    const builder = new r.ck.PathBuilder()
+    builder.moveTo(s0.x, s0.y)
+    builder.cubicTo(s1.x, s1.y, s2.x, s2.y, s3.x, s3.y)
+    const path = builder.detachAndDelete()
+    canvas.drawPath(path, segmentSelectedPaint)
+    path.delete()
+
+    const mid = cubicPoint(s0, s1, s2, s3, 0.5)
+    canvas.drawCircle(mid.x, mid.y, PEN_HANDLE_RADIUS, r.penVertexFill)
+    canvas.drawCircle(mid.x, mid.y, PEN_HANDLE_RADIUS, vertexStroke1px)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Handle lines + diamonds
+// ---------------------------------------------------------------------------
+
+function drawEditHandles(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  editState: NonNullable<RenderOverlays['nodeEditState']>,
+  toScreen: ToScreenFn,
+  selectedHandles: Set<number>,
+  hovered: HandleInfo
+): void {
+  const paints = r.nodeEditPaints
+  for (const handle of shownHandles(editState)) {
+    const isSel = selectedHandles.has(vectorHandleId(handle.segmentIndex, handle.tangentField))
+    const isHov =
+      !isSel &&
+      !!hovered &&
+      hovered.segmentIndex === handle.segmentIndex &&
+      hovered.tangentField === handle.tangentField
+
+    let linePaint = paints.handleLinePaint
+    if (isSel) linePaint = paints.handleLineSelectedPaint
+    else if (isHov) linePaint = paints.handleLineHoverPaint
+
+    const vertex = editState.vertices[handle.vertexIndex]
+    const anchor = toScreen(vertex.x, vertex.y)
+    const cp = toScreen(handle.point.x, handle.point.y)
+    canvas.drawLine(anchor.x, anchor.y, cp.x, cp.y, linePaint)
+
+    if (isSel) {
+      drawHandleDiamond(
+        r,
+        canvas,
+        cp.x,
+        cp.y,
+        paints.handleSelectedFill,
+        paints.handleSelectedStroke
+      )
+    } else if (isHov) {
+      drawHandleDiamond(r, canvas, cp.x, cp.y, paints.handleHoverFill, paints.handleHoverStroke)
+    } else {
+      drawHandleDiamond(r, canvas, cp.x, cp.y, r.penVertexFill, paints.vertexStroke1px)
+    }
+  }
+}
+
+function drawHandleDiamond(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  x: number,
+  y: number,
+  fillPaint: Paint,
+  strokePaint: Paint
+): void {
+  const s = PEN_HANDLE_RADIUS
+  const path = new r.ck.PathBuilder()
+  path.moveTo(x, y - s)
+  path.lineTo(x + s, y)
+  path.lineTo(x, y + s)
+  path.lineTo(x - s, y)
+  path.close()
+
+  const immutablePath = path.detachAndDelete()
+  // Draw stroke first (outset) then fill on top
+  canvas.drawPath(immutablePath, strokePaint)
+  canvas.drawPath(immutablePath, fillPaint)
+  immutablePath.delete()
+}
+
+// ---------------------------------------------------------------------------
+// Vertex circles
+// ---------------------------------------------------------------------------
+
+function drawEditVertices(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  vertices: VectorVertex[],
+  selectedVertexIndices: Set<number>,
+  toScreen: ToScreenFn
+): void {
+  const vertexFill = r.penVertexFill
+  const { vertexStroke1px, vertexSelectedFill } = r.nodeEditPaints
+
+  for (let i = 0; i < vertices.length; i++) {
+    const v = toScreen(vertices[i].x, vertices[i].y)
+    const radius = PEN_VERTEX_RADIUS
+
+    if (selectedVertexIndices.has(i)) {
+      canvas.drawCircle(v.x, v.y, radius, vertexSelectedFill)
+      canvas.drawCircle(v.x, v.y, radius, vertexStroke1px)
+    } else {
+      canvas.drawCircle(v.x, v.y, radius, vertexFill)
+      canvas.drawCircle(v.x, v.y, radius, vertexStroke1px)
+    }
+  }
+}

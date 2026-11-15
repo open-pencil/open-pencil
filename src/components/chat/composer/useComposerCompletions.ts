@@ -36,12 +36,20 @@ export function useComposerCompletions() {
     command: ai.value.chatReferenceCommands
   })
 
-  /** An ACP agent's own commands, or else the chat's `/compact` and the user's skills. */
+  /**
+   * The chat's `/review`, then an ACP agent's own commands, or else the chat's `/compact` and the
+   * user's skills. `/review` asks the Review model whatever holds the chat, so it stands in for
+   * an agent's own command of that name.
+   */
   function commands(): CommandCandidate[] {
+    const review = { name: 'review', description: ai.value.reviewCommand, hint: null }
     const agentId = acpAgentId(providerID.value)
-    if (agentId) return agentCommandCandidates(agentCommands.value[agentId] ?? [])
+    if (agentId) {
+      const own = (agentCommands.value[agentId] ?? []).filter(({ name }) => name !== review.name)
+      return agentCommandCandidates([review, ...own])
+    }
     const compact = { name: 'compact', description: ai.value.compactCommand, hint: null }
-    return chatCommandCandidates([compact], enabledSkills.value)
+    return chatCommandCandidates([review, compact], enabledSkills.value)
   }
 
   /** The active document's layers and pages matching `query`, then the user's skills. */

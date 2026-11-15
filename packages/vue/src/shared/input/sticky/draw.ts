@@ -8,7 +8,7 @@ import { scaleNodeChanges } from '@open-pencil/scene-graph/scaling'
 
 import { parentSpace } from '#vue/shared/input/draw'
 import { findDrawParent } from '#vue/shared/input/drop-target'
-import { gridRounding } from '#vue/shared/input/snap'
+import { gridRounding } from '#vue/shared/input/snap/resolve'
 import { subtree } from '#vue/shared/input/sticky/scale'
 import type { DragState, DragStickyDraw } from '#vue/shared/input/types'
 

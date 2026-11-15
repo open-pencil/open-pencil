@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -59,5 +59,35 @@ describe('pinRelease', () => {
     await expect(
       pinRelease(dir, NEXT_TAG, { checksums: async () => '', download })
     ).rejects.toThrow(/at least one file/)
+  })
+
+  test("moves the fork's revs in a Cargo manifest to the commit it pins", async () => {
+    const manifest = join(dir, 'Cargo.toml')
+    const old = 'a'.repeat(40)
+    const other = `other = { git = "https://github.com/open-pencil/other", rev = "${old}" }`
+    await writeFile(
+      manifest,
+      `[patch."https://github.com/upstream/example"]\nexample = { git = "https://github.com/open-pencil/example", rev = "${old}" }\n${other}\n`
+    )
+    const sums = `${sha256(bytes('next'))}  module.js\n`
+    await pinRelease(dir, NEXT_TAG, {
+      checksums: async () => sums,
+      download,
+      cargoManifest: manifest
+    })
+    expect(await readFile(manifest, 'utf8')).toBe(
+      `[patch."https://github.com/upstream/example"]\nexample = { git = "https://github.com/open-pencil/example", rev = "${'b'.repeat(40)}" }\n${other}\n`
+    )
+  })
+
+  test('keeps the old pin when the Cargo manifest cannot be read', async () => {
+    const before = await readRelease(dir)
+    const manifest = join(dir, 'Cargo.toml')
+    await mkdir(manifest)
+    const sums = `${sha256(bytes('next'))}  module.js\n`
+    await expect(
+      pinRelease(dir, NEXT_TAG, { checksums: async () => sums, download, cargoManifest: manifest })
+    ).rejects.toThrow()
+    expect(await readRelease(dir)).toEqual(before)
   })
 })

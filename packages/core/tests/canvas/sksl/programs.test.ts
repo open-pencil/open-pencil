@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 
 // Loads every module the renderer draws with, and so defines every program it can use.
-import '#core/canvas/renderer'
+import '#core/canvas/renderer/skia'
 import { compileProgram, definedPrograms } from '#core/canvas/sksl'
 
 const ck = await getCanvasKit()

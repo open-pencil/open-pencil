@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { createEditor } from '#core/editor/create'
+import { deserializeSceneGraph, serializeSceneGraph } from '#core/kiwi/fig/parse/transfer'
 import {
   applyFigPopulationDelta,
   buildFigPopulationDelta,
@@ -16,9 +17,8 @@ describe('FIG population deltas', () => {
     const component = source.createNode('COMPONENT', page.id)
     const label = source.createNode('TEXT', component.id, { text: 'Área' })
     const instance = source.createNode('INSTANCE', page.id, { componentId: component.id })
-    const target = new SceneGraph()
-    target.rootId = source.rootId
-    target.nodes = structuredClone(source.nodes)
+    // The main thread's copy, as the worker sends it when the file opens.
+    const target = deserializeSceneGraph(serializeSceneGraph(source))
     const editor = createEditor({ graph: target })
     const journal = installFigMutationJournal(source)
     source.populateInstanceChildren(instance.id, component.id, 'fig-import')
@@ -27,7 +27,10 @@ describe('FIG population deltas', () => {
     source.updateNode(label.id, { width: 120 })
     journal.stop()
     try {
-      applyFigPopulationDelta(target, buildFigPopulationDelta(source, journal, [page.id]))
+      applyFigPopulationDelta(
+        target,
+        structuredClone(buildFigPopulationDelta(source, journal, [page.id]))
+      )
       await Promise.resolve()
       expect(target.getNode(clone.id)?.text).toBe('Cadastro')
       // Ordinary component edits still synchronize after the population scope exits.
@@ -72,7 +75,7 @@ describe('FIG population deltas', () => {
     const component = source.createNode('COMPONENT', page.id, { name: 'Component' })
     const created = source.createNode('INSTANCE', page.id, { componentId: component.id })
     journal.stop()
-    const delta = buildFigPopulationDelta(source, journal, [page.id])
+    const delta = structuredClone(buildFigPopulationDelta(source, journal, [page.id]))
     const events: string[] = []
     target.onNodeEvents({
       created: (node) => events.push(`created:${node.id}`),

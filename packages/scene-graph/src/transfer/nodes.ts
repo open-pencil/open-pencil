@@ -67,7 +67,8 @@ export function prepareNodeTransfer(
   result.instanceOverrides = remapInstanceOverrideState(source.instanceOverrides, {
     node,
     variable,
-    collection: (id) => refs.collections.get(id)
+    collection: (id) => refs.collections.get(id),
+    property: (id) => refs.properties.get(id)
   })
   Object.assign(
     result,

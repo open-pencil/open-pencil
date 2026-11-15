@@ -3,7 +3,7 @@ import { describe, expect, mock, test } from 'bun:test'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Fill, SceneNode } from '@open-pencil/scene-graph'
 
-import { applyFill } from '#core/canvas/fills'
+import { applyFill } from '#core/canvas/fills/paint'
 
 import { asRenderer } from './helpers'
 
@@ -43,6 +43,7 @@ function createRenderer() {
       PictureRecorder: mock(() => recorder),
       TileMode: { Repeat: 'repeat' }
     },
+    images: { supersampledOutput: null },
     resolveFillColor: mock((fill: Fill) => fill.color),
     makeRRect: mock(() => 'rrect')
   })

@@ -1,0 +1,1 @@
+- Text in a font that is not available draws its fallback at the text's weight instead of an emboldened regular face, and saves the same outlines.

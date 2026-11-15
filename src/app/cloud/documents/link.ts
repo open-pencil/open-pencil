@@ -14,6 +14,7 @@ import { toast } from '@/app/shell/ui'
 import { openStorageDocumentInNewTab } from '@/app/tabs'
 import { IS_BROWSER } from '@/constants'
 
+import { cloudCommunityAddress } from '../community/link'
 import { cloudSignedIn, signInToOpen } from '../connect/flow'
 import { cloudServerHost, normalizeCloudServerURL } from '../servers/address'
 import { cloudServerForLink, findCloudServer, isCloudSiteServer } from '../servers/store'
@@ -49,12 +50,14 @@ export function readCloudDocumentLink(url: URL): CloudDocumentLink | null {
 
 /**
  * What the tab of `store` has at its address: its Cloud document, and the version shown in place
- * of it. Null for anything else, and for a document of any server but the one serving this
- * editor, whose address could not name it.
+ * of it, or the community gallery document it shows. Null for anything else, and for a document
+ * of any server but the one serving this editor, whose address could not name it.
  */
 export function cloudDocumentAddress(
   store: EditorStore
 ): { path: string; query: Record<string, string> } | null {
+  const community = cloudCommunityAddress(store)
+  if (community) return community
   const history = versionHistoryOf(store)
   const binding = (history?.store ?? store).getStorageBinding()
   if (!binding || !isCloudBinding(binding) || !binding.profileId) return null

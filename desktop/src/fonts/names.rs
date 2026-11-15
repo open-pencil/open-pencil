@@ -92,6 +92,12 @@ pub fn face_names(data: &[u8], index: u32) -> FaceNames {
     FaceNames { style, instances }
 }
 
+pub fn typographic_family(data: &[u8], index: u32) -> Option<String> {
+    let name = FontRef::from_index(data, index).ok()?.name().ok()?;
+    name_string(&name, NameId::TYPOGRAPHIC_FAMILY_NAME)
+        .or_else(|| name_string(&name, NameId::FAMILY_NAME))
+}
+
 /// A name compared without case or spaces, so "Semi Bold" and "SemiBold" name one face.
 pub fn spelling(name: &str) -> String {
     name.chars()

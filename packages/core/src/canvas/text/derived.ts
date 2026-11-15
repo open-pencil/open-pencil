@@ -13,9 +13,9 @@ import {
 
 import type { ResourceCache } from '#core/cache/resource'
 import { createPathCache } from '#core/canvas/paths/cache'
-import type { SkiaRenderer } from '#core/canvas/renderer'
-import { drawTextDecorations } from '#core/canvas/text/decorations'
-import { styleRunAt, type StyleRun } from '#core/text/character-face'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
+import { drawTextDecorations } from '#core/canvas/text/draw/decorations'
+import { styleRunAt, type StyleRun } from '#core/text/character/face'
 import { hasDecoration, savedTextDecorationRects } from '#core/text/decorations'
 import { geometryBlobToPath } from '#core/vector'
 

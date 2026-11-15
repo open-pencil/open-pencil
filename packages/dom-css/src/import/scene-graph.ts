@@ -30,6 +30,7 @@ import {
 import { hasBoxStyle } from './boxes'
 import { colorToStrokeFromCSS, mergedStyle, pickStyle } from './css-values'
 import {
+  alignBlockLines,
   applyContainerLayout,
   applyFlowSizing,
   elementDisplay,
@@ -46,6 +47,7 @@ import {
   type CapturedBox,
   type CapturedBoxes
 } from './placement'
+import { applyTableLayout, isTableColumn } from './table'
 import {
   blockRichText,
   characterStyleFromCSS,
@@ -307,20 +309,26 @@ interface Recorded {
 }
 
 /** Remembers where the layer's element was laid out, and how many lines its text took. */
-function record(recorded: Recorded, node: SceneNode, captured: CapturedBox | undefined) {
+function record(
+  graph: SceneGraph,
+  recorded: Recorded,
+  node: SceneNode,
+  captured: CapturedBox | undefined
+) {
   if (!captured) return
   recorded.boxes.set(node.id, captured)
-  applyCapturedLines(node, captured)
+  applyCapturedLines(graph, node, captured)
 }
 
 /** Remembers the element's box, and its transform, for the layer built for it. */
 function recordElement(
+  graph: SceneGraph,
   recorded: Recorded,
   node: SceneNode,
   element: DesignElement,
   style: DesignStyleDeclaration
 ) {
-  record(recorded, node, capturedBox(element))
+  record(graph, recorded, node, capturedBox(element))
   const transform = cssTransform(style)
   if (transform) recorded.transforms.set(node.id, transform)
 }
@@ -334,20 +342,20 @@ function createElementNode(
 ): SceneNode | null {
   const style = mergedStyle(element)
   const display = elementDisplay(element, style)
-  if (display === 'none') return null
+  if (display === 'none' || isTableColumn(display)) return null
   if (
     isTextLikeElement(element) &&
-    !hasBoxStyle(element, style) &&
+    !hasBoxStyle(element, style, parentFlow) &&
     element.children.every((child) => child.type === 'text')
   ) {
     const text = createTextNode(graph, parentId, textContent(element), style, display, parentFlow)
     linkText(text, element)
-    recordElement(recorded, text, element, style)
+    recordElement(graph, recorded, text, element, style)
     return text
   }
-  if (!hasBoxStyle(element, style) && holdsRichText(element)) {
+  if (!hasBoxStyle(element, style, parentFlow) && holdsRichText(element)) {
     const text = createRichTextNode(graph, parentId, element, style, display, parentFlow)
-    recordElement(recorded, text, element, style)
+    recordElement(graph, recorded, text, element, style)
     return text
   }
 
@@ -356,16 +364,18 @@ function createElementNode(
     clipsContent: false
   })
   applyElementStyle(graph, node, element, style)
-  recordElement(recorded, node, element, style)
+  recordElement(graph, recorded, node, element, style)
   // A box without content keeps its own size, as an image does, unless it declares a layout.
   const flow = hasContent(element) || flowOf(display) === 'flex' ? flowOf(display) : null
   if (flow) {
     applyContainerLayout(node, element, style, flow)
     if (flow === 'flex') applyFlexGap(node, style)
+    applyTableLayout(node, style, display)
   }
   applyFlowSizing(graph, node, style, display, parentFlow)
 
   createChildLayers(graph, node, element, style, flow, recorded)
+  if (flow === 'block') alignBlockLines(graph, node)
   return node
 }
 
@@ -382,10 +392,10 @@ function createChildLayers(
   recorded: Recorded
 ): void {
   if (flow !== 'flex' && holdsRichText(element)) {
-    const textStyle = inheritedTextStyle(element, style)
+    const textStyle = inheritedTextStyle(style)
     const textDisplay = flow === 'inline' ? 'inline' : 'block'
     const text = createRichTextNode(graph, node.id, element, textStyle, textDisplay, flow ?? 'none')
-    record(recorded, text, capturedTextBox(element))
+    record(graph, recorded, text, capturedTextBox(element))
     return
   }
   // Text alone in a box takes the box its lines are in; text among elements has none of its own.
@@ -393,9 +403,9 @@ function createChildLayers(
     ? capturedTextBox(element)
     : undefined
   for (const child of element.children) {
-    const inherited = inheritedTextStyle(element, style)
+    const inherited = inheritedTextStyle(style)
     const layer = createDesignNode(graph, node.id, child, flow ?? 'none', recorded, inherited)
-    if (layer?.type === 'TEXT') record(recorded, layer, textBox)
+    if (layer?.type === 'TEXT') record(graph, recorded, layer, textBox)
   }
 }
 

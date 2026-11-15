@@ -7,6 +7,7 @@ import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph, type MaskType, type SceneNode } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
+import { RenderedBoundsCache } from '#core/canvas/renderer/visual-bounds'
 import { renderNode } from '#core/canvas/scene'
 
 import { asCanvas, asRenderer } from './helpers'
@@ -118,6 +119,7 @@ function createRenderer() {
       setAlphaf: mock(() => undefined),
       setBlendMode: mock(() => undefined)
     },
+    renderedBounds: new RenderedBoundsCache(),
     effectLayerPaint: {
       setImageFilter: mock(() => undefined),
       setColorFilter: mock(() => undefined),
@@ -160,7 +162,7 @@ describe('canvas masks', () => {
     expect(renderer.effectLayerPaint.setBlendMode).toHaveBeenCalledWith('DstIn')
     expect(renderer.effectLayerPaint.setBlendMode).toHaveBeenLastCalledWith('SrcOver')
     expect(canvas.saveLayer).toHaveBeenCalledTimes(2)
-    expect(renderer.ck.LTRBRect).toHaveBeenCalledWith(0, 0, 200, 200)
+    expect(renderer.ck.LTRBRect).toHaveBeenCalledWith(0, 0, 100, 100)
     for (const call of canvas.saveLayer.mock.calls) {
       expect(call[1]).toBeInstanceOf(Float32Array)
     }

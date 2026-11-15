@@ -4,9 +4,13 @@ import type { DesignElement } from '@open-pencil/dom-css'
 import { designDocumentToSceneGraph } from '@open-pencil/dom-css/scene-graph'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { pixelLength } from '@open-pencil/scene-graph/text'
-import { DOM_CSS_COLORS } from '@open-pencil/test-support/dom-css'
-
-import { expectElement, expectFrame, exportedFirstLayer, firstLayer } from './helpers'
+import {
+  DOM_CSS_COLORS,
+  expectElement,
+  expectFrame,
+  exportedFirstLayer,
+  firstLayer
+} from '@open-pencil/test-support/dom-css'
 
 function createStyleRoundTripGraph() {
   return designDocumentToSceneGraph({

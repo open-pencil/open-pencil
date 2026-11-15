@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { createEditor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
-import { applyResize, commitResizePreview } from '#vue/shared/input/resize'
+import { applyResize, commitResizePreview } from '#vue/shared/input/resize/apply'
 import { tryStartResize } from '#vue/shared/input/resize/start'
 import type { DragResize } from '#vue/shared/input/types'
 

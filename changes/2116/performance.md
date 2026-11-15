@@ -1,0 +1,1 @@
+- Pages with many component instances load about a quarter sooner (#2116).

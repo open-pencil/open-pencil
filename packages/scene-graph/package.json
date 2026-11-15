@@ -98,6 +98,12 @@
       "import": "./dist/coordinate.js",
       "default": "./dist/coordinate.js"
     },
+    "./corners": {
+      "types": "./dist/corners.d.ts",
+      "bun": "./src/corners.ts",
+      "import": "./dist/corners.js",
+      "default": "./dist/corners.js"
+    },
     "./copy": {
       "types": "./dist/copy.d.ts",
       "bun": "./src/copy.ts",
@@ -212,6 +218,12 @@
       "import": "./dist/layout/index.js",
       "default": "./dist/layout/index.js"
     },
+    "./masks": {
+      "types": "./dist/masks.d.ts",
+      "bun": "./src/masks.ts",
+      "import": "./dist/masks.js",
+      "default": "./dist/masks.js"
+    },
     "./matrix": {
       "types": "./dist/matrix.d.ts",
       "bun": "./src/matrix.ts",
@@ -253,6 +265,12 @@
       "bun": "./src/parse-path.ts",
       "import": "./dist/parse-path.js",
       "default": "./dist/parse-path.js"
+    },
+    "./paths": {
+      "types": "./dist/paths/index.d.ts",
+      "bun": "./src/paths/index.ts",
+      "import": "./dist/paths/index.js",
+      "default": "./dist/paths/index.js"
     },
     "./plugin-data": {
       "types": "./dist/plugin-data/index.d.ts",

@@ -178,3 +178,22 @@ export const COMPONENT_IDENTITY_FIELDS = [
   'componentPropDefs',
   'overrideKey'
 ] as const
+
+/**
+ * How a layer sits in its parent. Figma writes these on an instance record whenever they differ
+ * from the default, even when they equal the component's, so a missing one is the default: in
+ * saved files, 54 resized nested instances that omit grow, of a growing component, did not grow.
+ */
+export const PARENT_PLACEMENT_FIELDS = [
+  'stackChildAlignSelf',
+  'stackChildPrimaryGrow',
+  'stackPositioning',
+  'horizontalConstraint',
+  'verticalConstraint'
+] as const
+
+/** A component's fields an instance occurrence never takes from it. */
+export const UNINHERITED_COMPONENT_FIELDS = [
+  ...COMPONENT_IDENTITY_FIELDS,
+  ...PARENT_PLACEMENT_FIELDS
+] as const

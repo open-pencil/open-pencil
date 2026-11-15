@@ -1,5 +1,5 @@
 import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
-import { lineHeightPixels } from '@open-pencil/scene-graph/text'
+import { estimatedLineStep } from '@open-pencil/scene-graph/text'
 import { containsRTLText, resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import { svg, type SVGNode } from '#core/io/formats/svg/node'
@@ -247,20 +247,11 @@ function lineSpans(
   return spans
 }
 
-/**
- * Baseline-to-baseline distance with no measured layout. A line height is pixels — a percent is
- * already that fraction of the font size — and automatic (`null` or `0`) is 1.2 times the font
- * size, the estimate text layout uses when it has no font metrics.
- */
-function resolvedLineHeight(fontSize: number, lineHeight: number | null): number {
-  return lineHeight || fontSize * 1.2
-}
-
 /** The line height a run contributes: its own when it sets one, otherwise the node's. */
 function runLineHeight(node: SceneNode, style: CharacterStyleOverride | null): number {
   const fontSize = style?.fontSize ?? node.fontSize
   const lineHeight = style?.lineHeight !== undefined ? style.lineHeight : node.lineHeight
-  return resolvedLineHeight(fontSize, lineHeightPixels(lineHeight, fontSize))
+  return estimatedLineStep(lineHeight, fontSize)
 }
 
 /**
@@ -299,9 +290,7 @@ function explicitLineHeight(
     covered = true
     height = Math.max(height, runLineHeight(node, piece.style))
   }
-  return covered
-    ? height
-    : resolvedLineHeight(node.fontSize, lineHeightPixels(node.lineHeight, node.fontSize))
+  return covered ? height : estimatedLineStep(node.lineHeight, node.fontSize)
 }
 
 /**

@@ -1,3 +1,5 @@
+import * as v from 'valibot'
+
 import type {
   HyperlinkTarget,
   LeadingTrim,
@@ -5,6 +7,11 @@ import type {
   TextCase,
   TextParagraphSpacingField
 } from '@open-pencil/scene-graph'
+import {
+  figmaTextAutoResize,
+  textAutoResizeFields,
+  type FigmaTextAutoResize
+} from '@open-pencil/scene-graph/text'
 
 import {
   raw,
@@ -27,7 +34,7 @@ import {
 } from '#core/figma-api/text'
 import { getTextStyle, type TextSegmentField } from '#core/figma-api/text/style'
 import { parseFigma } from '#core/figma-api/validation'
-import { styleRunsWithPatch, textStyleChanges } from '#core/text/character-style'
+import { styleRunsWithPatch, textStyleChanges } from '#core/text/character/style'
 
 import { installTextDecorationAccessors } from './decoration'
 import { hyperlinkTarget } from './hyperlink'
@@ -108,11 +115,12 @@ export function installTextNodeProxyAccessors(
       get(this: ProxyThis): string {
         return raw(this, internals).text
       },
-      set(this: ProxyThis, value: string) {
+      set(this: ProxyThis, value: unknown) {
+        const text = parseFigma(v.string(), value, 'set_characters', 'characters')
         assertTextFontsLoaded('set_characters', raw(this, internals))
-        const textParagraphs = paragraphStylesForCharacters(raw(this, internals), value)
-        const styleRuns = styleRunsForCharacters(raw(this, internals), value)
-        updateNode(this, internals, { text: value, textParagraphs, styleRuns })
+        const textParagraphs = paragraphStylesForCharacters(raw(this, internals), text)
+        const styleRuns = styleRunsForCharacters(raw(this, internals), text)
+        updateNode(this, internals, { text, textParagraphs, styleRuns })
       }
     },
     // The new font replaces every character's, so only it has to be loaded, as in Figma.
@@ -138,7 +146,16 @@ export function installTextNodeProxyAccessors(
     }),
     textAlignHorizontal: field(internals, 'textAlignHorizontal'),
     textAlignVertical: field(internals, 'textAlignVertical'),
-    textAutoResize: field(internals, 'textAutoResize'),
+    // Figma reads and writes a fixed box that truncates as TRUNCATE; other modes stop truncating.
+    textAutoResize: {
+      get(this: ProxyThis): FigmaTextAutoResize {
+        return figmaTextAutoResize(raw(this, internals))
+      },
+      set(this: ProxyThis, value: FigmaTextAutoResize) {
+        assertTextFontsLoaded('set_textAutoResize', raw(this, internals))
+        updateNode(this, internals, textAutoResizeFields(value))
+      }
+    },
     // Figma's plugin API reads and writes these as { unit, value }; a bare object stored on the
     // node instead of pixels would leave the text unmeasurable.
     letterSpacing: characterStyle<FigmaLetterSpacing | number>(

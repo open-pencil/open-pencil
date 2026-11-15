@@ -1,0 +1,2 @@
+- AI tools refuse a size, position, gap, padding, grow factor, rotation, or font size beyond what layout can use, naming the argument and the range it accepts.
+- Design JSX reports a grid placement or track count it cannot lay out in the render's warnings, and refuses a track count above 1,000 before allocating for it.

@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { renderNodesToSVG } from '@open-pencil/core/io/formats/svg'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { createShapeWithText } from '@open-pencil/scene-graph/generated'
-import { outlineSVGPath } from '@open-pencil/scene-graph/polygon'
+import { outlineSVGPath } from '@open-pencil/scene-graph/paths'
 import { shapeWithTextGeometry } from '@open-pencil/scene-graph/shape-with-text'
 import { expectDefined } from '@open-pencil/test-support/assert'
 

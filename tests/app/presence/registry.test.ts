@@ -1,7 +1,9 @@
 import 'fake-indexeddb/auto'
 import { afterEach, expect, spyOn, test } from 'bun:test'
 
-import { createEditorStore } from '@/app/editor/session/create'
+import { expectDefined } from '@open-pencil/test-support/assert'
+
+import { createEditorStore, type EditorStore } from '@/app/editor/session/create'
 import {
   addAgent,
   follow,
@@ -10,7 +12,8 @@ import {
   presenceOf,
   renameAgent,
   setOwnerColor,
-  setPeers
+  setPeers,
+  type AgentHandle
 } from '@/app/presence/registry'
 
 const stores: ReturnType<typeof createEditorStore>[] = []
@@ -53,6 +56,65 @@ test('hides idle agents and gives each a different callsign', () => {
   expect(new Set(agents.map((agent) => agent.name)).size).toBe(5)
   agents[0]?.update({ status: 'idle', cursor: { x: 0, y: 0, pageId } })
   expect(store.state.presenceCursors).toEqual([])
+})
+
+/** The color each agent's cursor is drawn in, as comparable strings. */
+function cursorColors(store: EditorStore, agents: readonly AgentHandle[]): string[] {
+  return agents.map((agent) => {
+    const cursor = store.state.presenceCursors.find((entry) => entry.id === `agent:${agent.id}`)
+    return JSON.stringify(expectDefined(cursor, `a cursor for ${agent.name}`).color)
+  })
+}
+
+function startWorking(store: EditorStore, pageId: string, count: number): AgentHandle[] {
+  return Array.from({ length: count }, (_, index) => {
+    const agent = addAgent(store, 'acp')
+    agent.update({ status: 'editing', cursor: { x: index * 10, y: 0, pageId } })
+    return agent
+  })
+}
+
+test('outside a room, each of our agents is drawn in a color of its own', () => {
+  const { store, pageId } = setup()
+  const agents = startWorking(store, pageId, 4)
+  expect(new Set(cursorColors(store, agents)).size).toBe(4)
+})
+
+test('an agent keeps its color while others come and go, and a newcomer takes a free one', () => {
+  const { store, pageId } = setup()
+  const [leaving, ...staying] = startWorking(store, pageId, 3)
+  const before = cursorColors(store, staying)
+  leaving?.remove()
+  expect(cursorColors(store, staying)).toEqual(before)
+
+  const newcomer = startWorking(store, pageId, 1)
+  expect(before).not.toContain(cursorColors(store, newcomer)[0])
+})
+
+test('more agents than colors are all still drawn in one', () => {
+  const { store, pageId } = setup()
+  const agents = startWorking(store, pageId, 20)
+  expect(cursorColors(store, agents).every(Boolean)).toBe(true)
+})
+
+test('in a room, all of our agents wear our color, as our peers see them', () => {
+  const { store, pageId } = setup()
+  setOwnerColor(store, red)
+  startWorking(store, pageId, 3)
+  expect(store.state.presenceCursors.map((cursor) => cursor.color)).toEqual([red, red, red])
+})
+
+test('page lists and the follow label show an agent in the color of its cursor', () => {
+  const { store, pageId } = setup()
+  const agents = startWorking(store, pageId, 3)
+  const entries = presenceByPage(store).get(pageId) ?? []
+  for (const agent of agents) {
+    const [color] = cursorColors(store, [agent])
+    const entry = entries.find((candidate) => candidate.id === `agent:${agent.id}`)
+    expect(JSON.stringify(entry?.color)).toBe(color)
+    follow(store, { kind: 'agent', agentId: agent.id })
+    expect(JSON.stringify(followedLabel(store)?.color)).toBe(color)
+  }
 })
 
 test('draws people and their agents with the person color', () => {

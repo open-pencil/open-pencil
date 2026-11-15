@@ -1,6 +1,6 @@
 import type { ImageInfo, Surface } from '@open-pencil/canvaskit'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 
 import { TILE_DEVICE_SIZE } from './geometry'
 

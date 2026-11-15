@@ -25,7 +25,7 @@ import { useProfileModelSelection } from './selection'
 interface ProfileEditorOptions {
   profileId?: string
   keyInput: Ref<string>
-  labels: Readonly<Ref<ModelPickerLabels & { customModel: string }>>
+  labels: Readonly<Ref<ModelPickerLabels & { customModel: string; agentDefaultModel: string }>>
 }
 
 export function useModelProfileEditor({ profileId, keyInput, labels: ai }: ProfileEditorOptions) {
@@ -173,11 +173,14 @@ export function useModelProfileEditor({ profileId, keyInput, labels: ai }: Profi
     cloudWorkspaces,
     cloudState,
     retryCloud,
+    agentModelState: selection.agentModelState,
+    retryAgentModels: selection.retryAgentModels,
     supportsThinking,
     providerDisplayName,
     modelOptions,
     selectedModelValue,
     customModelSelected: selection.customModelSelected,
+    supportsCustomModel: selection.supportsCustomModel,
     knownModel,
     knownCapabilities,
     outputTokenRecommendation,

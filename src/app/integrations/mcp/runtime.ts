@@ -1,4 +1,4 @@
-import type { McpServer } from '@agentclientprotocol/sdk'
+import type { McpServer } from '@agentclientprotocol/sdk/unstable'
 
 import {
   MCP_AGENT_HEADER,

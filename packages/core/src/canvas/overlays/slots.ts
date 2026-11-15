@@ -2,7 +2,7 @@ import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { instanceSlotFrames, slotPropertyId } from '@open-pencil/scene-graph/slots'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { SLOT_EMPTY_FILL_ALPHA } from '#core/constants'
 import { type RotationPreview } from '#core/geometry'
 

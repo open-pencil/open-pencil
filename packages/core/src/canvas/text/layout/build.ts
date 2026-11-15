@@ -44,7 +44,7 @@ import { JoinerIndex, sliceJoiners, type Joiner } from '#core/canvas/text/paragr
 import type { TextRenderer } from '#core/canvas/text/renderer'
 import { autoWidthWrapWidth } from '#core/layout/text-measurement'
 import { shownText } from '#core/text/case'
-import { rangeCapHeight } from '#core/text/character-face'
+import { rangeCapHeight } from '#core/text/character/face'
 import { utf8Length } from '#core/text/utf8'
 
 /** The placeholder a first-line indent puts before the text takes one UTF-16 unit, three bytes. */

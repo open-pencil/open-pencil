@@ -68,6 +68,9 @@ export const workspaceMemberParams = validatedParams(
 )
 export const accountParams = validatedParams(v.object({ userId: uuidParamSchema }))
 export const shareParams = validatedParams(v.object({ shareId: uuidParamSchema }))
+export const communityThumbnailParams = validatedParams(
+  v.object({ documentId: uuidParamSchema, revisionId: uuidParamSchema })
+)
 export const invitationParams = validatedParams(v.object({ invitationId: uuidParamSchema }))
 export const invitationContinuationParams = validatedParams(
   v.object({ continuationId: textParamSchema })

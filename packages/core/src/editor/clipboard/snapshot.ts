@@ -1,6 +1,10 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { copyImages } from '@open-pencil/scene-graph/images'
 import { layerDependencies } from '@open-pencil/scene-graph/transfer'
+import {
+  captureAppliedBoundPaints,
+  type AppliedBoundPaints
+} from '@open-pencil/scene-graph/variables'
 
 import { clipboardPlacement, type ClipboardPlacement } from './placement'
 import { captureClipboardVariables, type ClipboardVariables } from './variables'
@@ -16,6 +20,8 @@ export interface ClipboardSnapshot {
   /** Where the copied layers sat on the canvas when they were copied. */
   placement: ClipboardPlacement
   images: Map<string, Uint8Array>
+  /** The colors the copied layers' bound paints were last given, so a paste counts from those. */
+  appliedBoundPaints: AppliedBoundPaints
   /** Written by Copy properties: Paste skips it and Paste properties reads it, as in Figma. */
   properties?: boolean
 }
@@ -56,6 +62,10 @@ export function captureClipboardSnapshot(
     variableDependencies: captureClipboardVariables(graph, dependencies),
     nodes,
     placement: clipboardPlacement(graph, roots),
-    images
+    images,
+    appliedBoundPaints: captureAppliedBoundPaints(
+      graph,
+      capturedNodes.map((node) => node.id)
+    )
   }
 }

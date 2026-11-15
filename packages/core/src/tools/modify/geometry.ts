@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import { toolNumber, nodeIdInputSchema, defineTool, nodeNotFound } from '#core/tools/schema'
+import { layoutLength, nodeIdInputSchema, defineTool, nodeNotFound } from '#core/tools/schema'
 
 export const setRadius = defineTool({
   name: 'set_radius',
@@ -9,21 +9,11 @@ export const setRadius = defineTool({
   execution: { kind: 'sync', mutation: 'properties' },
   input: v.strictObject({
     id: nodeIdInputSchema,
-    radius: v.optional(
-      toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Corner radius for all corners')))
-    ),
-    top_left: v.optional(
-      toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Top-left radius')))
-    ),
-    top_right: v.optional(
-      toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Top-right radius')))
-    ),
-    bottom_right: v.optional(
-      toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Bottom-right radius')))
-    ),
-    bottom_left: v.optional(
-      toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Bottom-left radius')))
-    )
+    radius: v.optional(layoutLength('Corner radius for all corners')),
+    top_left: v.optional(layoutLength('Top-left radius')),
+    top_right: v.optional(layoutLength('Top-right radius')),
+    bottom_right: v.optional(layoutLength('Bottom-right radius')),
+    bottom_left: v.optional(layoutLength('Bottom-left radius'))
   }),
   execute: (figma, args) => {
     const node = figma.getNodeById(args.id)
@@ -56,18 +46,10 @@ export const setMinMax = defineTool({
   execution: { kind: 'sync', mutation: 'properties' },
   input: v.strictObject({
     id: nodeIdInputSchema,
-    min_width: v.optional(
-      toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Minimum width')))
-    ),
-    max_width: v.optional(
-      toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Maximum width')))
-    ),
-    min_height: v.optional(
-      toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Minimum height')))
-    ),
-    max_height: v.optional(
-      toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Maximum height')))
-    )
+    min_width: v.optional(layoutLength('Minimum width')),
+    max_width: v.optional(layoutLength('Maximum width')),
+    min_height: v.optional(layoutLength('Minimum height')),
+    max_height: v.optional(layoutLength('Maximum height'))
   }),
   execute: (figma, args) => {
     const node = figma.getNodeById(args.id)

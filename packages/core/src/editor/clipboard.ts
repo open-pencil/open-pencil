@@ -9,6 +9,8 @@ import {
 } from '@open-pencil/scene-graph/coordinate'
 import { cycleSafeParent } from '@open-pencil/scene-graph/instances'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import { layerImageHashes } from '@open-pencil/scene-graph/transfer'
+import { keepPastedBoundPaints, type AppliedBoundPaints } from '@open-pencil/scene-graph/variables'
 
 import { prepareClipboardImport } from '#core/clipboard/fig-import'
 import { computeAllLayouts } from '#core/layout'
@@ -103,9 +105,17 @@ export function createClipboardActions(ctx: EditorContext) {
     const stack = () => {
       for (const { id, parentId, index } of stacking) ctx.graph.insertChildAt(id, parentId, index)
     }
+    // Auto layout parents lay out again, so a copy joins the flow and a hugging parent resizes.
+    // Undo and redo do it too, because neither stores the parent's layout. Other parents, such
+    // as the page, are skipped: laying out a page reaches every frame on it.
+    const parentIds = uniq(parents).filter((id) => ctx.graph.getNode(id)?.layoutMode !== 'NONE')
+    const relayoutParents = () => {
+      for (const parentId of parentIds) ctx.runLayoutForNode(parentId)
+    }
     stack()
 
     if (newRootIds.length > 0) {
+      relayoutParents()
       ctx.setSelectedIds(new Set(newRootIds))
       ctx.undo.push({
         label: 'Duplicate',
@@ -117,10 +127,12 @@ export function createClipboardActions(ctx: EditorContext) {
             restoreSubtree(ctx.graph, snapshot, parentId, allSnapshots)
           }
           stack()
+          relayoutParents()
           ctx.setSelectedIds(new Set(newRootIds))
         },
         inverse: () => {
           for (const id of newRootIds.slice().reverse()) ctx.graph.deleteNode(id)
+          relayoutParents()
           ctx.setSelectedIds(prevSelection)
         }
       })
@@ -167,6 +179,8 @@ export function createClipboardActions(ctx: EditorContext) {
         dependencies.nodes,
         snapshot.placement,
         snapshot.images,
+        // Records from another document name its variables and modes, not the pasted ones.
+        snapshot.sourceRootId === ctx.graph.rootId ? snapshot.appliedBoundPaints : new Map(),
         dependencies.componentDependencies,
         cursorPos,
         options
@@ -229,6 +243,7 @@ export function createClipboardActions(ctx: EditorContext) {
     nodes: Array<SceneNode & { children?: SceneNode[] }>,
     placement: ClipboardPlacement,
     images: Map<string, Uint8Array>,
+    applied: AppliedBoundPaints,
     dependencies: Array<SceneNode & { children?: SceneNode[] }> = [],
     cursorPos?: Vector,
     options: PasteOptions = {}
@@ -281,6 +296,7 @@ export function createClipboardActions(ctx: EditorContext) {
       }
       ctx.graph.updateNode(id, { componentId: componentId ?? node.componentId, instanceOverrides })
     }
+    keepPastedBoundPaints(ctx.graph, copiedIds, applied)
     if (dependencyRootIds.length > 0) {
       const snapshots = collectSubtrees(ctx.graph, dependencyRootIds)
       ctx.undo.push({
@@ -310,9 +326,9 @@ export function createClipboardActions(ctx: EditorContext) {
   function missingImageHashes(nodeIds: string[]) {
     const hashes = new Set<string>()
     for (const node of collectSubtrees(ctx.graph, nodeIds)) {
-      for (const fill of node.fills) {
-        if (fill.type === 'IMAGE' && fill.imageHash && !ctx.graph.images.has(fill.imageHash)) {
-          hashes.add(fill.imageHash)
+      for (const imageHash of layerImageHashes(node)) {
+        if (!ctx.graph.images.has(imageHash)) {
+          hashes.add(imageHash)
         }
       }
     }
