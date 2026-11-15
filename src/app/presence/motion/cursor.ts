@@ -5,7 +5,7 @@ import type { Vector } from '@open-pencil/scene-graph/primitives'
 import type { EditorStore } from '@/app/editor/active-store'
 import { animationsEnabled } from '@/app/shell/motion'
 
-import { CURSOR_GLIDE_MS, FOLLOW_GLIDE_MS, glideAt, retarget, type Glide } from './motion'
+import { CURSOR_GLIDE_MS, FOLLOW_GLIDE_MS, glideAt, retarget, type Glide } from './glide'
 
 /** A cursor with the identity it keeps between updates, so it can glide rather than jump. */
 export type TrackedCursor = PresenceCursor & { id: string }

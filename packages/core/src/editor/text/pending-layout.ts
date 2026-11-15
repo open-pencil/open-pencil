@@ -3,7 +3,7 @@ import { compact } from 'es-toolkit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { generatedFrameOwner } from '@open-pencil/scene-graph/generated'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import type { EditorContext } from '#core/editor/types'
 import { sizeAutoResizingText } from '#core/layout/text-auto-resize'
 import { fontManager } from '#core/text/font/manager'

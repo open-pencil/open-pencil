@@ -26,7 +26,7 @@ import {
 } from '#core/geometry/viewport'
 
 import { cachedGlyphWidth } from './labels/paragraph-cache'
-import type { SkiaRenderer } from './renderer'
+import type { SkiaRenderer } from './renderer/skia'
 
 interface SelectionScreenBounds {
   sx1: number

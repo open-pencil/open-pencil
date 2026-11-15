@@ -4,7 +4,7 @@ import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { drawTextPill } from '#core/canvas/labels/pill'
 import { strokeLayoutChildren } from '#core/canvas/overlays/layout-outlines'
-import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
+import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer/skia'
 import {
   AUTO_LAYOUT_HOVER_BLUE,
   AUTO_LAYOUT_HOVER_BLUE_FILL,

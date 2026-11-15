@@ -17,8 +17,8 @@ import { renderBooleanOperation } from './boolean'
 import { drawVectorMultiStyleFills, paintFills } from './fills'
 import { drawLayoutGrids } from './layout-grids'
 import { renderMaskedChildIds } from './masks'
-import type { SkiaRenderer, RenderOverlays } from './renderer'
 import { drawShapeThroughNodePicture } from './renderer/node-pictures'
+import type { SkiaRenderer, RenderOverlays } from './renderer/skia'
 import {
   mapLayerBounds,
   subtreeVisualRectInParent,

@@ -2,12 +2,12 @@ import { describe, expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core'
 
-import { explicitSnapTargets } from '#vue/shared/input/explicit-snap-targets'
+import { explicitSnapTargets } from '#vue/shared/input/snap/explicit-targets'
 import {
   resolveObjectPixelSnap,
   type ExplicitSnapTarget,
   type GeometrySnapTarget
-} from '#vue/shared/input/snap'
+} from '#vue/shared/input/snap/resolve'
 
 function pageWithGuide(offset: number, axis: 'X' | 'Y') {
   const editor = createEditor()

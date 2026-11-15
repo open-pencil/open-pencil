@@ -7,7 +7,7 @@ import { slotPropertyId } from '@open-pencil/scene-graph/slots'
 import { drawSelectionLabels } from '#core/canvas/labels/selection'
 import { drawConnectorHover, drawConnectorSelection } from '#core/canvas/overlays/connectors'
 import { drawConstraintIndicators } from '#core/canvas/overlays/constraints'
-import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
+import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer/skia'
 import { strokeNodeShape } from '#core/canvas/strokes'
 import {
   HANDLE_HALF_SIZE,

@@ -4,11 +4,10 @@ import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import { ZOOM_DIVISOR, ZOOM_MAX, ZOOM_MIN, ZOOM_SCALE_MAX, ZOOM_SCALE_MIN } from '#core/constants'
+import type { EditorContext } from '#core/editor/types'
 import type { ViewportTransform } from '#core/geometry/types'
 import { screenToWorld, worldRectToScreen } from '#core/geometry/viewport'
 import { emitNavigationTrace } from '#core/profiler'
-
-import type { EditorContext } from './types'
 
 /** Space kept between revealed layers and the viewport edge. */
 const REVEAL_MARGIN = 48

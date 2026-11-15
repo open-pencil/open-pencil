@@ -3,7 +3,7 @@ import type { MaskType } from '@open-pencil/scene-graph'
 import { maskRuns } from '@open-pencil/scene-graph/masks'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
-import type { SkiaRenderer } from './renderer'
+import type { SkiaRenderer } from './renderer/skia'
 
 function resetMaskPaint(r: SkiaRenderer): void {
   r.effectLayerPaint.setImageFilter(null)

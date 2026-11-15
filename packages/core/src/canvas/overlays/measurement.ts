@@ -5,7 +5,7 @@ import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import { drawTextPill } from '#core/canvas/labels/pill'
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import {
   MEASUREMENT_COLOR,
   MEASUREMENT_PILL_HEIGHT,

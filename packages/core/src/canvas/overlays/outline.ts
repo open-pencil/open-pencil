@@ -2,7 +2,7 @@ import type { Canvas, Color, Paint, PathEffect } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { ResourceCache } from '#core/cache/resource'
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { strokeNodeShape } from '#core/canvas/strokes'
 import { SECTION_HOVER_STROKE_WIDTH } from '#core/constants'
 import type { RotationPreview, SceneGeometry } from '#core/geometry'

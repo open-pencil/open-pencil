@@ -6,7 +6,7 @@ import { defineBlender, type NoUniforms, type SkslProgram } from '#core/canvas/s
 
 import plusDarkerSource from './blenders/plus-darker.sksl?raw'
 import plusLighterSource from './blenders/plus-lighter.sksl?raw'
-import type { SkiaRenderer } from './renderer'
+import type { SkiaRenderer } from './renderer/skia'
 
 type LinearBlendMode = 'LINEAR_BURN' | 'LINEAR_DODGE'
 

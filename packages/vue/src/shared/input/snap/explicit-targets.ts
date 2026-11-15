@@ -4,7 +4,7 @@ import { guideLineInWorld } from '@open-pencil/scene-graph/guides'
 import { layoutGuideLines } from '@open-pencil/scene-graph/layout'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
-import type { ExplicitSnapTarget } from '#vue/shared/input/snap'
+import type { ExplicitSnapTarget } from '#vue/shared/input/snap/resolve'
 
 function pageGuideTargets(editor: Editor): ExplicitSnapTarget[] {
   const page = editor.graph.getNode(editor.state.currentPageId)

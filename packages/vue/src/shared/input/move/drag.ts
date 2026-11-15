@@ -6,7 +6,7 @@ import {
   computeAutoLayoutIndicator,
   computeIndicatorPosition,
   computeAutoLayoutIndicatorForFrame
-} from '#vue/shared/input/auto-layout'
+} from '#vue/shared/input/auto-layout/insertion'
 import {
   isPastPointerDragThreshold,
   POINTER_DRAG_START_THRESHOLD_PX

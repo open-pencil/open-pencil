@@ -6,7 +6,7 @@ import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 
 import { paintFills } from '#core/canvas/fills'
 import { drawNodeHighlightRect } from '#core/canvas/highlight-rect'
-import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
+import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer/skia'
 import { connectorLabelPlaceholderNode } from '#core/canvas/text/placeholder'
 import {
   DROP_HIGHLIGHT_ALPHA,

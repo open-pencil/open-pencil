@@ -1,7 +1,7 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
-import type { PresenceCursor, SkiaRenderer } from '#core/canvas/renderer'
+import type { PresenceCursor, SkiaRenderer } from '#core/canvas/renderer/skia'
 import { worldXToScreen, worldYToScreen } from '#core/geometry/viewport'
 
 import { outlineNode } from './outline'

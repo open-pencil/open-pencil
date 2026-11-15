@@ -2,7 +2,7 @@ import { describe, expect, mock, test } from 'bun:test'
 
 import type { Image, Surface } from '@open-pencil/canvaskit'
 
-import { SkiaRenderer } from '#core/canvas/renderer'
+import { SkiaRenderer } from '#core/canvas/renderer/skia'
 
 import { asDouble, asRenderer } from './helpers'
 

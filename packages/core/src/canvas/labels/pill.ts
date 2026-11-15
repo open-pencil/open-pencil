@@ -1,6 +1,6 @@
 import type { Canvas, Color, Font } from '@open-pencil/canvaskit'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 
 import { cachedGlyphWidth } from './paragraph-cache'
 

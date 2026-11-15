@@ -8,7 +8,7 @@ import {
 } from '@open-pencil/scene-graph/arrow-caps'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import {
   arrowHeadPath,
   configureStrokePaint,

@@ -3,12 +3,12 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 import { computeSelectionBounds } from '@open-pencil/scene-graph/snap'
 
-import { explicitSnapTargets } from '#vue/shared/input/explicit-snap-targets'
+import { explicitSnapTargets } from '#vue/shared/input/snap/explicit-targets'
 import {
   resolveObjectPixelSnap,
   worldBoundsNode,
   worldDeltaToParentLocal
-} from '#vue/shared/input/snap'
+} from '#vue/shared/input/snap/resolve'
 import type { DragMove } from '#vue/shared/input/types'
 
 function movingSelection(drag: DragMove, dx: number, dy: number, editor: Editor): SceneNode[] {

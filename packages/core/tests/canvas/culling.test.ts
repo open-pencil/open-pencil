@@ -4,7 +4,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { RenderedBoundsCache } from '#core/canvas/renderer/visual-bounds'
 import { renderNode } from '#core/canvas/scene'
 

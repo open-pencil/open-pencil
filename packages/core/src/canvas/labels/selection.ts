@@ -1,7 +1,7 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneNode, SceneGraph } from '@open-pencil/scene-graph'
 
-import type { SkiaRenderer, RenderOverlays } from '#core/canvas/renderer'
+import type { SkiaRenderer, RenderOverlays } from '#core/canvas/renderer/skia'
 import {
   SIZE_PILL_PADDING_X,
   SIZE_PILL_PADDING_Y,

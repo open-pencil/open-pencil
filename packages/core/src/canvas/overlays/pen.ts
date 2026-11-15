@@ -1,6 +1,7 @@
 import type { Canvas, Paint } from '@open-pencil/canvaskit'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
+import type { SkiaRenderer, RenderOverlays } from '#core/canvas/renderer/skia'
 import {
   PEN_ANCHOR_RADIUS,
   PEN_CLOSE_MIN_POINTS,
@@ -9,8 +10,6 @@ import {
   PEN_VERTEX_RADIUS
 } from '#core/constants'
 import { worldXToScreen, worldYToScreen } from '#core/geometry/viewport'
-
-import type { SkiaRenderer, RenderOverlays } from './renderer'
 
 type ToScreenFn = (x: number, y: number) => Vector
 
