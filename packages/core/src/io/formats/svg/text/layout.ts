@@ -10,7 +10,7 @@ import type {
 } from '#core/io/formats/svg/text/lines'
 import { withTextShaper } from '#core/io/shaping'
 import { shownText } from '#core/text/case'
-import { characterFace } from '#core/text/character-face'
+import { characterFace } from '#core/text/character/face'
 import { EMOJI_METRICS_FAMILY } from '#core/text/emoji'
 import { prepareGraphFonts } from '#core/text/prepare'
 

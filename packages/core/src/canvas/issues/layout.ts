@@ -21,6 +21,7 @@ import {
   type SceneGeometry,
   type ViewportTransform
 } from '#core/geometry'
+import { worldXToScreen, worldYToScreen } from '#core/geometry/viewport'
 
 import type { DesignIssueMarker, DesignIssueSeverity, PlacedIssueMarker } from './types'
 
@@ -122,8 +123,8 @@ function worldBounds(node: SceneNode, geometry: SceneGeometry): Rect {
 /** A world box on the screen; the viewport pans and scales, so boxes stay axis-aligned. */
 function toScreen(rect: Rect, view: ViewportTransform): Rect {
   return {
-    x: rect.x * view.zoom + view.panX,
-    y: rect.y * view.zoom + view.panY,
+    x: worldXToScreen(view, rect.x),
+    y: worldYToScreen(view, rect.y),
     width: rect.width * view.zoom,
     height: rect.height * view.zoom
   }

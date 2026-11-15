@@ -14,7 +14,7 @@ import { copyGeometryPaths, copyStrokes } from '@open-pencil/scene-graph/copy'
 import type { ResizeSnapshot } from '@open-pencil/scene-graph/resize'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { applyResize, commitResizePreview } from '#vue/shared/input/resize'
+import { applyResize, commitResizePreview } from '#vue/shared/input/resize/apply'
 import type { DragResize } from '#vue/shared/input/types'
 const noopCommitResize: Editor['commitResize'] = () => undefined
 const noopCommitGroupResize: Editor['commitGroupResize'] = () => undefined

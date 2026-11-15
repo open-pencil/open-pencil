@@ -4,6 +4,7 @@ import * as v from 'valibot'
 import { graphOf } from '#core/figma-api/graph'
 import { PDF_MODES, PDFPlanError, planPDFPages } from '#core/io/formats/pdf/plan'
 import type { RasterExportFormat } from '#core/io/formats/raster'
+import type { ExportEffectWarning } from '#core/io/formats/svg'
 import { toolNumber, defineTool } from '#core/tools/schema'
 
 const exportInputs = {
@@ -67,7 +68,8 @@ export function boundedRasterScale(
 
 export const exportSVG = defineTool({
   name: 'export_svg',
-  description: 'Export nodes as SVG markup. Returns the SVG string.',
+  description:
+    'Export nodes as SVG markup. Returns the SVG string, and `warnings` naming each effect SVG cannot draw, such as glass, which the SVG leaves out.',
   execution: { kind: 'async', mutation: 'none' },
   exposure: { webmcp: false },
   input: v.strictObject({ ...exportInputs }),
@@ -76,9 +78,12 @@ export const exportSVG = defineTool({
     const pageId = figma.currentPageId
     const ids =
       args.ids && args.ids.length > 0 ? args.ids : figma.currentPage.children.map((node) => node.id)
-    const svg = await renderNodesToLaidOutSVG(graphOf(figma), pageId, ids)
+    const warnings: ExportEffectWarning[] = []
+    const svg = await renderNodesToLaidOutSVG(graphOf(figma), pageId, ids, {
+      onWarning: (warning) => warnings.push(warning)
+    })
     if (!svg) return { error: 'No visible nodes to export' }
-    return { svg }
+    return { svg, ...(warnings.length > 0 ? { warnings } : {}) }
   }
 })
 

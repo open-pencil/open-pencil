@@ -1,6 +1,7 @@
 import { hitsConnectorLine } from './connectors/hit'
 import { getWorldMatrix } from './coordinate'
 import type { SceneGraph } from './graph'
+import { asMaskShape, isVisibleMask, maskRuns, type MaskRun } from './masks'
 import Matrix from './matrix'
 import { clipsChildren } from './node-defaults'
 import { hitsShape, strokeReach } from './outline/hit'
@@ -147,6 +148,51 @@ function hitTestTransparentContainer(
   return null
 }
 
+/**
+ * The mask run holding each child, asked for from the top child down: the walk steps back through
+ * the runs once rather than searching them for every child.
+ */
+function maskRunCursor(
+  graph: SceneGraph,
+  childIds: readonly string[]
+): (index: number) => MaskRun | undefined {
+  const runs = maskRuns(childIds, (id) => {
+    const child = graph.nodes.get(id)
+    return child !== undefined && isVisibleMask(child)
+  })
+  let runIndex = runs.length - 1
+  return (index) => {
+    while (runIndex >= 0 && runs[runIndex].start > index) runIndex--
+    const run = runs.at(runIndex)
+    return run && runIndex >= 0 && index >= run.maskedStart ? run : undefined
+  }
+}
+
+/**
+ * Whether the point lies on what a run's masks draw, or there is no run to hold it to. A container
+ * mask draws its own paint and its layers, so a click between its layers is outside it.
+ */
+function insideMasks(
+  graph: SceneGraph,
+  px: number,
+  py: number,
+  childIds: readonly string[],
+  run: MaskRun | undefined,
+  walk: HitWalk
+): boolean {
+  if (!run) return true
+  return childIds.slice(run.start, run.maskedStart).some((id) => {
+    const mask = graph.nodes.get(id)
+    if (!mask) return false
+    if (!CONTAINER_TYPES.has(mask.type)) {
+      return hitsLeaf(graph, px, py, asMaskShape(mask), walk.transformCache, 0)
+    }
+    if (showsPaint(mask) && containsPoint(px, py, mask, graph, walk.transformCache)) return true
+    const drawn: HitWalk = { ...walk, deep: true, pad: 0, locked: true }
+    return hitTestChildren(graph, px, py, mask.id, drawn) !== null
+  })
+}
+
 /** The topmost layer under the point among a container's children. */
 function hitTestChildren(
   graph: SceneGraph,
@@ -163,11 +209,26 @@ function hitTestChildren(
     if (!containsPoint(px, py, parent, graph, transformCache)) return null
   }
 
+  const runAt = maskRunCursor(graph, parent.childIds)
+  // Each run's masks are tested once per query, however many siblings they mask.
+  const covered = new Map<MaskRun, boolean>()
+  const inside = (run: MaskRun | undefined) => {
+    if (!run) return true
+    let hit = covered.get(run)
+    if (hit === undefined) {
+      hit = insideMasks(graph, px, py, parent.childIds, run, walk)
+      covered.set(run, hit)
+    }
+    return hit
+  }
   for (let i = parent.childIds.length - 1; i >= 0; i--) {
+    const run = runAt(i)
     const child = graph.nodes.get(parent.childIds[i])
     // A locked layer and everything in it are invisible to a press and to hover, as in Figma: a
     // click falls through to what lies under it, and a drag from it draws a marquee.
     if (!child || child.internalOnly || !child.visible || (child.locked && !walk.locked)) continue
+    // Where its masks cut a layer away, a click falls through to what lies under it (Figma, live).
+    if (!inside(run)) continue
     if (CONTAINER_TYPES.has(child.type)) {
       if (OPAQUE_CONTAINER_TYPES.has(child.type) && !walk.deep) {
         // A plain click takes an instance or component anywhere in its box, with a fill or

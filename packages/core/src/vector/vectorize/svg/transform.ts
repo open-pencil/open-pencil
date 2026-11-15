@@ -80,6 +80,15 @@ export function resolveSVGViewportMapping(
 
 type SVGPath = ReturnType<typeof svgpath>
 
+/** A path in user space through the viewport mapping. */
+function toViewport(path: SVGPath, mapping: SVGViewportMapping): SVGPath {
+  const placed = path
+    .translate(-mapping.space.x, -mapping.space.y)
+    .scale(mapping.scaleX, mapping.scaleY)
+    .translate(mapping.offsetX, mapping.offsetY)
+  return mapping.transform ? placed.transform(mapping.transform) : placed
+}
+
 /** Path data through an element transform in user space, then the viewport mapping. */
 export function placeSVGPath(
   d: string,
@@ -88,11 +97,7 @@ export function placeSVGPath(
 ): SVGPath {
   let path = svgpath(d)
   if (elementTransform && elementTransform !== 'none') path = path.transform(elementTransform)
-  path = path
-    .translate(-mapping.space.x, -mapping.space.y)
-    .scale(mapping.scaleX, mapping.scaleY)
-    .translate(mapping.offsetX, mapping.offsetY)
-  return mapping.transform ? path.transform(mapping.transform) : path
+  return toViewport(path, mapping)
 }
 
 export function mapSVGPathToViewport(d: string, mapping: SVGViewportMapping): string {
@@ -144,17 +149,14 @@ export function mapSVGPointToViewport(
   let path = svgpath(`M${x} ${y}`)
   if (gradientTransform) path = path.transform(gradientTransform)
   if (elementTransform) path = path.transform(elementTransform)
-  path = path
-    .translate(-mapping.space.x, -mapping.space.y)
-    .scale(mapping.scaleX, mapping.scaleY)
-    .translate(mapping.offsetX, mapping.offsetY)
-  if (mapping.transform) path = path.transform(mapping.transform)
   const points: Vector[] = []
-  path.abs().iterate((segment) => {
-    if (points.length === 0 && segment[0] === 'M') {
-      points.push({ x: segment[1], y: segment[2] })
-    }
-  })
+  toViewport(path, mapping)
+    .abs()
+    .iterate((segment) => {
+      if (points.length === 0 && segment[0] === 'M') {
+        points.push({ x: segment[1], y: segment[2] })
+      }
+    })
   return points[0] ?? { x, y }
 }
 

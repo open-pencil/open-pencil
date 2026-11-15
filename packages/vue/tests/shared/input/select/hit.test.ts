@@ -3,8 +3,8 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { createEditor, type Editor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
-import { handleSelectDown, type HitTestFns } from '#vue/shared/input/select'
 import { resolveHit } from '#vue/shared/input/select/hit'
+import { handleSelectDown, type HitTestFns } from '#vue/shared/input/select/press'
 import type { DragState } from '#vue/shared/input/types'
 
 let editor: Editor

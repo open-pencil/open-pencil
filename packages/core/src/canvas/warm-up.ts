@@ -6,8 +6,8 @@ import { TRANSPARENT } from '#core/constants'
 
 import { applyClippedBlur } from './effects'
 import { renderGlassLight, renderGlassRefraction } from './glass/render'
-import type { SkiaRenderer } from './renderer'
 import type { RenderLayer } from './renderer/pipeline'
+import type { SkiaRenderer } from './renderer/skia'
 import { makeTileSurface } from './renderer/tiles/surface-pool'
 
 /**

@@ -203,6 +203,17 @@ export function createTypographyActions({
   }
 
   /**
+   * The family and style the face's own font names it with, where the browser lists it under
+   * other names, as Windows lists Segoe UI Variable's "Bold Display" as "Segoe UI Variable
+   * Display" / "Display Bold": saved so, the text opens in that face on every platform and in
+   * Figma. Nothing where the face is listed by its own names.
+   */
+  function ownFaceFields(family: string, loadKey: string): Partial<SceneNode> {
+    const own = fontManager.ownFaceName(family, loadKey)
+    return own ? { fontFamily: own.family, fontStyle: own.style } : {}
+  }
+
+  /**
    * Keeps each layer's weight and slant where the family has them, otherwise takes the nearest
    * face, as Figma does: Black goes to Bold in a family that ends at Bold.
    */
@@ -210,7 +221,7 @@ export function createTypographyActions({
     const faces = fontManager.familyFaces(family)
     await updateAfterLoading(
       'Change font',
-      ['fontFamily', 'fontWeight', 'italic'],
+      ['fontFamily', 'fontWeight', 'italic', 'fontStyle'],
       async (target) => {
         await faces
         // Asked again, so faces forgotten while loading (a catalog arriving) are read anew.
@@ -218,11 +229,13 @@ export function createTypographyActions({
         const face = known ? nearestFamilyFace(known, target.fontWeight, target.italic) : null
         const fontWeight = face?.weight ?? target.fontWeight
         const italic = face?.italic ?? target.italic
-        await options.fontLoader?.load(family, faceLoadKey(fontWeight, italic))
+        const loadKey = faceLoadKey(fontWeight, italic)
+        await options.fontLoader?.load(family, loadKey)
         return {
           fontFamily: family,
           fontWeight,
           italic,
+          ...ownFaceFields(family, loadKey),
           fontVariations: styleFontVariations(target)
         }
       }
@@ -254,8 +267,13 @@ export function createTypographyActions({
         // The menu lists the faces of the layer's slant, so a name in both slants is that one.
         const face = faceForStyle(target.fontFamily, style, target.italic)
         const fields = { fontWeight: face.weight, italic: face.italic, fontStyle: face.style }
-        await options.fontLoader?.load(target.fontFamily, faceStyleKey(fields))
-        return { ...fields, fontVariations: styleFontVariations(target) }
+        const loadKey = faceStyleKey(fields)
+        await options.fontLoader?.load(target.fontFamily, loadKey)
+        return {
+          ...fields,
+          ...ownFaceFields(target.fontFamily, loadKey),
+          fontVariations: styleFontVariations(target)
+        }
       },
       targets
     )

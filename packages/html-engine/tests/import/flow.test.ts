@@ -134,4 +134,86 @@ describe('HTML flow as auto layout', () => {
     expect(sizing(byName('wide'))[0]).toBe('FILL')
     expect([...graph.getAllNodes()].some((node) => node.name === 'hidden')).toBe(false)
   })
+
+  it('aligns a block’s lines by text-align, but not the blocks it holds', async () => {
+    const { byName } = await importHTML(
+      `<div id="lines" style="text-align:center;padding:8px">Docs</div>` +
+        `<div id="blocks" style="text-align:center;padding:8px"><div id="inner" style="width:100px;padding:8px">Box</div></div>`
+    )
+    expect(byName('lines').counterAxisAlign).toBe('CENTER')
+    // `text-align` centers the inner block's line inside it, not the block itself.
+    expect(byName('blocks').counterAxisAlign).toBe('MIN')
+    expect(byName('inner').counterAxisAlign).toBe('CENTER')
+  })
+
+  it('centers a block by its auto margins, and puts one with only a left one at the end', async () => {
+    const { byName, sizing } = await importHTML(
+      `<div style="width:600px">` +
+        `<div id="centered" style="width:200px;height:10px;margin:0 auto"></div>` +
+        `<div id="end" style="width:200px;height:10px;margin-left:auto"></div>` +
+        `<div id="capped" style="max-width:300px;margin:0 auto"><div style="width:400px;height:10px"></div></div>` +
+        `<div id="full" style="margin:0 auto">Fills</div>` +
+        `</div>`
+    )
+    expect(byName('centered').layoutAlignSelf).toBe('CENTER')
+    expect(byName('end').layoutAlignSelf).toBe('MAX')
+    // A capped block among blocks the container's alignment would move hugs up to its maximum.
+    const capped = byName('capped')
+    expect(capped.layoutAlignSelf).toBe('CENTER')
+    expect(sizing(capped)[0]).toBe('HUG')
+    expect(capped.maxWidth).toBe(300)
+    // Without a width of its own a block fills the container, with no room to center in.
+    expect(sizing(byName('full'))[0]).toBe('FILL')
+  })
+
+  it('keeps a capped block filling up to its maximum, centered by its container', async () => {
+    const { byName, sizing } = await importHTML(
+      `<div id="page" style="width:600px">` +
+        `<div id="header" style="height:10px"></div>` +
+        `<div id="main" style="max-width:300px;margin:0 auto"><div style="width:100px;height:10px"></div></div>` +
+        `</div>`
+    )
+    // CSS sizes the block before centering it: 300px wide however narrow its content, as a
+    // Fill capped at 300px is, which Figma places by its parent's alignment.
+    const main = byName('main')
+    expect(sizing(main)[0]).toBe('FILL')
+    expect(main.maxWidth).toBe(300)
+    expect(byName('page').counterAxisAlign).toBe('CENTER')
+    expect(sizing(byName('header'))[0]).toBe('FILL')
+  })
+
+  it('leaves the container unaligned when a capped sibling stays at the start', async () => {
+    const { byName, sizing } = await importHTML(
+      `<div id="page" style="width:600px">` +
+        `<div id="header" style="max-width:200px;height:10px"></div>` +
+        `<div id="main" style="max-width:300px;margin:0 auto"><div style="width:100px;height:10px"></div></div>` +
+        `</div>`
+    )
+    // Aligning the container would center the header too, which the page keeps at the start.
+    expect(byName('page').counterAxisAlign).not.toBe('CENTER')
+    expect(sizing(byName('header'))[0]).toBe('FILL')
+    expect(byName('main').layoutAlignSelf).toBe('CENTER')
+  })
+
+  it('centers boxes in a line by text-align past an absolutely positioned child', async () => {
+    const { byName } = await importHTML(
+      `<div id="row" style="width:600px;text-align:center;position:relative">` +
+        `<span style="display:inline-block;width:40px;height:10px"></span>` +
+        `<div style="position:absolute;top:0;left:0;width:10px;height:10px"></div>` +
+        `</div>`
+    )
+    expect(byName('row').counterAxisAlign).toBe('CENTER')
+  })
+
+  it('centers blocks and lines in <center>, and boxes in a line by text-align', async () => {
+    const { graph, byName } = await importHTML(
+      `<div style="width:600px">` +
+        `<center id="legacy"><div id="block" style="width:200px;height:10px"></div><div id="line">Words</div></center>` +
+        `<div id="row" style="text-align:center"><span id="chip" style="display:inline-block;padding:4px">Tag</span></div>` +
+        `</div>`
+    )
+    expect(byName('block').layoutAlignSelf).toBe('CENTER')
+    expect(textIn(graph, byName('line')).textAlignHorizontal).toBe('CENTER')
+    expect(byName('row').counterAxisAlign).toBe('CENTER')
+  })
 })

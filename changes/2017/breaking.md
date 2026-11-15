@@ -1,1 +1,0 @@
-- OpenPencil services tokens always carry `accountId`, and services refuse tokens without it; the reference services server counts a month's spend by account only, so usage recorded without an account no longer counts (#2017).

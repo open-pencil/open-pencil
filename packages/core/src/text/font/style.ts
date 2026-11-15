@@ -1,9 +1,13 @@
+import { partition, uniq } from 'es-toolkit'
+
 import {
   FONT_WEIGHT_NAMES,
   namesWeight,
+  namesWidth,
   normalizeFontFamily,
   type FontFamilyStyle,
-  parseFontStyle
+  parseFontStyle,
+  styleSpelling
 } from '@open-pencil/scene-graph/font-style'
 
 const FONT_WEIGHTS = Object.keys(FONT_WEIGHT_NAMES)
@@ -47,38 +51,80 @@ export function chooseLocalFontMatch<T extends FontFamilyStyle>(
   family: string,
   style?: string
 ): T | undefined {
-  const families = [family]
-  const normalized = normalizeFontFamily(family)
-  if (normalized !== family) families.push(normalized)
+  return uniq([family, normalizeFontFamily(family)])
+    .map((candidate) => matchInFamily(fonts, candidate, style))
+    .find((match) => match !== undefined)
+}
+
+function matchInFamily<T extends FontFamilyStyle>(
+  fonts: T[],
+  family: string,
+  style?: string
+): T | undefined {
+  const exact = style
+    ? fonts.find((font) => font.family === family && font.style === style)
+    : undefined
+  if (exact) return exact
+  // A face named apart from its weight is that face or none, never another of its weight.
+  if (style && !namesWeight(style)) return undefined
+
   const requested = parseFontStyle(style)
+  const candidates = normalWidthFirst(fonts.filter((font) => font.family === family))
+  const sameStyle = candidates.find((font) => {
+    const parsed = parseFontStyle(font.style)
+    return parsed.weight === requested.weight && parsed.italic === requested.italic
+  })
+  if (sameStyle || style) return sameStyle
 
-  for (const candidateFamily of families) {
-    const exact = style
-      ? fonts.find((font) => font.family === candidateFamily && font.style === style)
-      : undefined
-    if (exact) return exact
-    // A face named apart from its weight is that face or none, never another of its weight.
-    if (style && !namesWeight(style)) continue
-
-    const candidates = fonts.filter((font) => font.family === candidateFamily)
-    const sameStyle = candidates.find((font) => {
-      const parsed = parseFontStyle(font.style)
-      return parsed.weight === requested.weight && parsed.italic === requested.italic
-    })
-    if (sameStyle) return sameStyle
-    if (style) continue
-
-    for (const italic of [requested.italic, !requested.italic]) {
-      for (const weight of fontWeightMatchOrder(requested.weight)) {
-        const match = candidates.find((font) => {
-          const parsed = parseFontStyle(font.style)
-          return parsed.weight === weight && parsed.italic === italic
-        })
-        if (match) return match
-      }
+  for (const italic of [requested.italic, !requested.italic]) {
+    for (const weight of fontWeightMatchOrder(requested.weight)) {
+      const match = candidates.find((font) => {
+        const parsed = parseFontStyle(font.style)
+        return parsed.weight === weight && parsed.italic === italic
+      })
+      if (match) return match
     }
-    if (candidates.length > 0) return candidates[0]
   }
+  return candidates.at(0)
+}
 
-  return undefined
+function normalWidthFirst<T extends FontFamilyStyle>(fonts: T[]): T[] {
+  const [normalWidth, otherWidth] = partition(fonts, (font) => !namesWidth(font.style))
+  return [...normalWidth, ...otherWidth]
+}
+
+export interface NamedLocalFont extends FontFamilyStyle {
+  fullName: string
+}
+
+function fontByFullName<T extends NamedLocalFont>(fonts: readonly T[], fullName: string) {
+  const wanted = styleSpelling(fullName)
+  return fonts.find((font) => styleSpelling(font.fullName) === wanted)
+}
+
+/**
+ * The local font listed under `family` for `style`, else the one whose full name is the family
+ * and style, as Windows lists a face beyond regular, bold, and italic as a family of its own.
+ * The family is taken as given; {@link findLocalFont} also tries the name it normalizes to.
+ */
+export function listedLocalFont<T extends NamedLocalFont>(
+  fonts: T[],
+  family: string,
+  style?: string
+): T | undefined {
+  return (
+    matchInFamily(fonts, family, style) ??
+    (style ? fontByFullName(fonts, `${family} ${style}`) : undefined)
+  )
+}
+
+/** The local font listed for a family and style, under the family or the name it normalizes to. */
+export function findLocalFont<T extends NamedLocalFont>(
+  fonts: T[],
+  family: string,
+  style?: string
+): T | undefined {
+  return uniq([family, normalizeFontFamily(family)])
+    .map((candidate) => listedLocalFont(fonts, candidate, style))
+    .find((match) => match !== undefined)
 }

@@ -10,7 +10,7 @@ import { addStrokeRunToPath, strokeRuns } from '@open-pencil/scene-graph/paths'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { fillGeometryPath, unitedPath } from '#core/canvas/boolean'
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import {
   configureStrokePaint,
   drawArrowHeads,
@@ -19,7 +19,7 @@ import {
   getStrokeJoinEntity,
   normalizeDashPattern,
   withStrokeDash
-} from '#core/canvas/strokes'
+} from '#core/canvas/strokes/draw'
 import { drawIndividualSideStrokes } from '#core/canvas/strokes/sides'
 import { vectorNetworkToCenterlinePath, vectorNetworkToPath } from '#core/vector'
 import { isOpenVectorNetwork } from '#core/vector/connectivity'

@@ -124,6 +124,8 @@ const PROPERTIES: &[&str] = &[
     "vertical-align",
     "list-style-type",
     "content",
+    "border-collapse",
+    "border-spacing",
 ];
 
 /// Properties reported as their computed values too, where the used values `style` reports lose
@@ -139,6 +141,9 @@ const COMPUTED_PROPERTIES: &[LonghandId] = &[
     LonghandId::MaxHeight,
     LonghandId::FlexBasis,
     LonghandId::LineHeight,
+    // `auto` side margins center or end-align a block, which their used lengths don't say.
+    LonghandId::MarginLeft,
+    LonghandId::MarginRight,
 ];
 
 // ---------------------------------------------------------------------------------------------

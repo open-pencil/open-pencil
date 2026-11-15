@@ -7,11 +7,11 @@ import type {
   TextFontFeatures,
   TextFontVariations
 } from '@open-pencil/canvaskit'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
 import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
 import { faceStyleKey, type NamedFace } from '@open-pencil/scene-graph/font-style'
 import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
-import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
+import { lineHeightPixels, styleRunPieces, textLengthPixels } from '@open-pencil/scene-graph/text'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import {
@@ -137,7 +137,7 @@ function pushStyleRun(
   r: TextRenderer,
   builder: ParagraphBuilder,
   node: ParagraphNode,
-  run: SceneNode['styleRuns'][number],
+  style: CharacterStyleOverride,
   baseColor: Float32Array,
   baseFontSize: number,
   fontFamilies: (primary: string, face: NamedFace) => string[],
@@ -145,7 +145,6 @@ function pushStyleRun(
   paintStyle?: ParagraphPaintStyle
 ): void {
   const ck = r.ck
-  const style = run.style
   const runFontSize = style.fontSize ?? baseFontSize
   // A percent follows the run's own font size, as in Figma.
   const runLineHeight = lineHeightPixels(
@@ -210,27 +209,46 @@ function addStyledRuns(
   paintStyle?: ParagraphPaintStyle
 ): void {
   const text = node.text
-  let pos = 0
-
-  for (const run of node.styleRuns) {
-    if (pos < run.start) addParagraphText(builder, node, pos, run.start)
+  // A run that starts or ends inside a surrogate pair moves to its end, as Skia would shape each
+  // half on its own.
+  const boundary = (index: number) => codePointBoundary(text, index)
+  for (const { start, end, style } of styleRunPieces(node.styleRuns, text.length, boundary)) {
+    if (!style) {
+      addParagraphText(builder, node, start, end)
+      continue
+    }
     pushStyleRun(
       r,
       builder,
       node,
-      run,
+      style,
       baseColor,
       baseFontSize,
       fontFamilies,
       halfLeading,
       paintStyle
     )
-    addParagraphText(builder, node, run.start, run.start + run.length)
+    addParagraphText(builder, node, start, end)
     builder.pop()
-    pos = run.start + run.length
   }
+}
 
-  if (pos < text.length) addParagraphText(builder, node, pos, text.length)
+function isHighSurrogate(code: number): boolean {
+  return code >= 0xd800 && code <= 0xdbff
+}
+
+function isLowSurrogate(code: number): boolean {
+  return code >= 0xdc00 && code <= 0xdfff
+}
+
+/** `index`, or the end of the surrogate pair it splits. */
+function codePointBoundary(text: string, index: number): number {
+  const splitsPair =
+    index > 0 &&
+    index < text.length &&
+    isLowSurrogate(text.charCodeAt(index)) &&
+    isHighSurrogate(text.charCodeAt(index - 1))
+  return splitsPair ? index + 1 : index
 }
 
 /** What a paragraph that is one block of a longer text needs beyond its node's own style. */
@@ -305,7 +323,10 @@ export function buildSkParagraph(
     textAlign: getParagraphTextAlign(ck, node),
     textDirection: textDirection === 'RTL' ? ck.TextDirection.RTL : ck.TextDirection.LTR,
     ...truncateOpts,
-    textStyle: baseTextStyle
+    textStyle: baseTextStyle,
+    // Figma fits and sizes lines by their glyphs, and starts them at their first glyph.
+    trimLetterSpacing: true,
+    applyRoundingHack: false
   })
 
   if (!r.fontProvider) throw new Error('Font provider not initialized')

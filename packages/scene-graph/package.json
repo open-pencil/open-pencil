@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/scene-graph",
-  "version": "0.17.0-beta.4",
+  "version": "0.17.0-beta.5",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -217,6 +217,12 @@
       "bun": "./src/layout/index.ts",
       "import": "./dist/layout/index.js",
       "default": "./dist/layout/index.js"
+    },
+    "./masks": {
+      "types": "./dist/masks.d.ts",
+      "bun": "./src/masks.ts",
+      "import": "./dist/masks.js",
+      "default": "./dist/masks.js"
     },
     "./matrix": {
       "types": "./dist/matrix.d.ts",

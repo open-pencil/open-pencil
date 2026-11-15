@@ -3,7 +3,7 @@ import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 
 import type { GuideOverlayState } from '#core/canvas/guides/types'
 import type { DesignIssueOverlay } from '#core/canvas/issues/types'
-import type { NodeEditOverlayState } from '#core/canvas/node-edit-overlay'
+import type { NodeEditOverlayState } from '#core/canvas/overlays/node-edit'
 import type { ConnectorTarget } from '#core/editor/connectors/attach'
 import type { BlurRampEdit, GradientEdit, PencilState, ShapeHandleHover } from '#core/editor/types'
 import type { RotationPreview } from '#core/geometry'

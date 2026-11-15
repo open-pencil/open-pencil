@@ -6,6 +6,7 @@ import { isGradientFill } from '@open-pencil/scene-graph/gradient'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import {
   hasTextList,
+  styleRunAt,
   textListItems,
   textParagraphRanges,
   type TextParagraphRange
@@ -13,9 +14,9 @@ import {
 
 import type { ResourceCache } from '#core/cache/resource'
 import { createPathCache } from '#core/canvas/paths/cache'
-import type { SkiaRenderer } from '#core/canvas/renderer'
-import { drawTextDecorations } from '#core/canvas/text/decorations'
-import { styleRunAt, type StyleRun } from '#core/text/character-face'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
+import { drawTextDecorations } from '#core/canvas/text/draw/decorations'
+import type { StyleRun } from '#core/text/character/face'
 import { hasDecoration, savedTextDecorationRects } from '#core/text/decorations'
 import { geometryBlobToPath } from '#core/vector'
 
@@ -373,7 +374,9 @@ export function drawDerivedText(
       if (!paintsLayerSpace) applyGlyphEmTransform(canvas, glyph, glyphY)
       const character = glyph.firstCharacter ?? markerCharacters.get(index)
       const run =
-        savedTextEligible && character !== undefined ? styleRunAt(node, character) : undefined
+        savedTextEligible && character !== undefined
+          ? styleRunAt(node.styleRuns, character)
+          : undefined
       drawGlyphOutline(r, canvas, path, runPaints, run)
       if (path !== emPath) path.delete()
       canvas.restore()

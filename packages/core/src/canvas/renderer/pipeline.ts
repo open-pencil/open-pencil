@@ -3,7 +3,7 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { needsImagePreviews } from '#core/canvas/images/previews'
 import { paintPageBackground } from '#core/canvas/page/background'
-import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
+import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer/skia'
 import { warmUpEffectPrograms } from '#core/canvas/warm-up'
 import { playIslandRoots } from '#core/editor/play/islands'
 import type { EditorState } from '#core/editor/types'
