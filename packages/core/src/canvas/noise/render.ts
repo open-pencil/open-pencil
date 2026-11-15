@@ -1,12 +1,24 @@
-import type { Canvas } from '@open-pencil/canvaskit'
+import type { Canvas, Image, Shader } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
-import { fillWithShader, keptShader } from '#core/canvas/renderer/shaders'
+import { compiledProgram, fillWithShader } from '#core/canvas/renderer/shaders'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 
-import { NOISE_GRAIN, noiseUniforms } from './shader'
+import { NOISE_GRAIN, noiseTileInputs, noiseUniforms } from './shader'
+import { noiseColorTile, noiseLevelTile } from './tile'
+
+/** Catmull-Rom as Skia's cubic resampler: B 0, C 0.5, the blend Figma's grains were fitted to. */
+const CATMULL_ROM = { B: 0, C: 0.5 }
+
+/** `tile` as a repeating shader in cell units, blended between cells or one value per cell. */
+function tileShader(r: SkiaRenderer, tile: Image, blend: boolean): Shader {
+  const repeat = r.ck.TileMode.Repeat
+  return blend
+    ? tile.makeShaderCubic(repeat, repeat, CATMULL_ROM.B, CATMULL_ROM.C)
+    : tile.makeShaderOptions(repeat, repeat, r.ck.FilterMode.Nearest, r.ck.MipmapMode.None)
+}
 
 /** Draws a layer's noise effects over it, inside its outline, in the order they are listed. */
 export function renderNoiseEffects(
@@ -21,11 +33,27 @@ export function renderNoiseEffects(
   const layerToOutput = output
     ? Matrix.multiply(output.outputFromWorld, getWorldMatrix(node, graph))
     : null
+  const program = compiledProgram(r.ck, r.shaders, NOISE_GRAIN)
   for (const effect of noises) {
-    const shader = keptShader(r.ck, r.shaders, NOISE_GRAIN, noiseUniforms(effect, layerToOutput))
-    canvas.save()
-    r.clipNodeShape(canvas, node)
-    fillWithShader(canvas, r.auxFill, shader, r.ck.LTRBRect(0, 0, node.width, node.height))
-    canvas.restore()
+    const { shares, seed, blend } = noiseTileInputs(effect)
+    const levelTile = noiseLevelTile(r, shares, seed)
+    const colorTile = noiseColorTile(r, seed)
+    if (!levelTile || !colorTile) continue
+    const levels = tileShader(r, levelTile, blend)
+    const colors = tileShader(r, colorTile, false)
+    const shader = program.effect.makeShaderWithChildren(
+      program.uniforms(noiseUniforms(effect, layerToOutput)),
+      [levels, colors]
+    )
+    try {
+      canvas.save()
+      r.clipNodeShape(canvas, node)
+      fillWithShader(canvas, r.auxFill, shader, r.ck.LTRBRect(0, 0, node.width, node.height))
+      canvas.restore()
+    } finally {
+      shader.delete()
+      levels.delete()
+      colors.delete()
+    }
   }
 }

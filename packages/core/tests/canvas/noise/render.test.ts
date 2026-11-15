@@ -7,8 +7,8 @@ import { noise } from '@open-pencil/design-jsx'
 import { SceneGraph, type Effect } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { NOISE_GRAIN, noiseUniforms } from '#core/canvas/noise/shader'
-import { compileProgram } from '#core/canvas/sksl'
+import { renderNoiseEffects } from '#core/canvas/noise/render'
+import { noiseUniforms } from '#core/canvas/noise/shader'
 
 const ck = await getCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
@@ -69,15 +69,19 @@ describe('noise effects drawn as Figma draws them', () => {
   })
 
   test('sample once per output pixel in a supersampled export, so the grains stay sharp', () => {
-    // Drawn directly, at the export's own pixels, the shader is the reference.
+    // Drawn straight onto a surface of the export's own pixels, the noise is the reference.
     const effect = noise({ color: '#000000', noiseSize: 1.5, density: 1 })
-    const program = compileProgram(ck, NOISE_GRAIN)
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    const node = graph.createNode('RECTANGLE', page, {
+      width: SIZE,
+      height: SIZE,
+      effects: [effect]
+    })
     const surface = expectDefined(ck.MakeSurface(SIZE, SIZE))
-    const paint = new ck.Paint()
     try {
-      paint.setShader(program.effect.makeShader(program.uniforms(noiseUniforms(effect))))
       surface.getCanvas().clear(ck.WHITE)
-      surface.getCanvas().drawPaint(paint)
+      renderNoiseEffects(renderer, surface.getCanvas(), node, graph)
       const direct = expectDefined(
         surface.makeImageSnapshot().readPixels(0, 0, {
           width: SIZE,
@@ -92,7 +96,6 @@ describe('noise effects drawn as Figma draws them', () => {
       for (let i = 0; i < exported.length; i++) if (exported[i] === direct[i * 4]) same += 1
       expect(same / exported.length).toBeGreaterThan(0.99)
     } finally {
-      paint.delete()
       surface.delete()
     }
   })

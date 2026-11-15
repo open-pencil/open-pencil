@@ -20,10 +20,7 @@ interface NoiseUniforms {
   cell: Float2
   contrast: number
   center: number
-  shares: ArrayLike<number>
-  seed: number
   mode: number
-  blend: number
   primary: Float4
   secondary: Float4
   opacity: number
@@ -126,6 +123,19 @@ const NOISE_MODE: Record<NoiseEffectParams['noiseType'], number> = {
 }
 
 /**
+ * What the shader's `levels` and `colors` tiles are made from: the shares of pixels at each level
+ * for the density, and the seed; and whether cells wider than a pixel blend between each other.
+ */
+export function noiseTileInputs(effect: Effect) {
+  const grain = effect.noise ?? UNSET_NOISE
+  return {
+    shares: noiseLevelShares(grain.density),
+    seed: grain.seed ?? 0,
+    blend: Math.max(noiseCell(grain.noiseSize.x), noiseCell(grain.noiseSize.y)) > 1
+  }
+}
+
+/**
  * The shader's uniforms for a noise `effect`, a cell per axis and the contrast of the larger, sampled
  * once per output pixel where `layerToOutput` maps the layer onto a supersampled export.
  */
@@ -139,10 +149,7 @@ export function noiseUniforms(effect: Effect, layerToOutput: Mat3 | null = null)
     cell,
     contrast: noiseContrast(size),
     center: noiseMeanLevel(shares),
-    shares,
-    seed: grain.seed ?? 0,
     mode: NOISE_MODE[grain.noiseType],
-    blend: Math.max(cell[0], cell[1]) > 1 ? 1 : 0,
     primary: [effect.color.r, effect.color.g, effect.color.b, effect.color.a],
     secondary: [secondary.r, secondary.g, secondary.b, secondary.a],
     opacity: grain.opacity ?? 1,

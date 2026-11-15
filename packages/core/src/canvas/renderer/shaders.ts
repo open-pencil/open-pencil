@@ -1,4 +1,4 @@
-import type { Blender, Canvas, CanvasKit, Paint, Rect, Shader } from '@open-pencil/canvaskit'
+import type { Blender, Canvas, CanvasKit, Image, Paint, Rect, Shader } from '@open-pencil/canvaskit'
 
 import {
   type CompiledProgram,
@@ -18,16 +18,20 @@ export interface CompiledShaders {
   programs: Map<SkslProgram, CompiledProgram>
   blenders: Map<SkslProgram, Blender>
   kept: Map<SkslProgram, KeptShader>
+  /** Images programs read, such as a noise's cell levels, by what they were built from. */
+  tiles: Map<string, Image>
 }
 
 export function createCompiledShaders(): CompiledShaders {
-  return { programs: new Map(), blenders: new Map(), kept: new Map() }
+  return { programs: new Map(), blenders: new Map(), kept: new Map(), tiles: new Map() }
 }
 
 export function releaseCompiledShaders(shaders: CompiledShaders): void {
   for (const { effect } of shaders.programs.values()) effect.delete()
   for (const blender of shaders.blenders.values()) blender.delete()
   for (const { shader } of shaders.kept.values()) shader.delete()
+  for (const tile of shaders.tiles.values()) tile.delete()
+  shaders.tiles.clear()
   shaders.programs.clear()
   shaders.blenders.clear()
   shaders.kept.clear()

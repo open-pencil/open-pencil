@@ -1,19 +1,18 @@
-// Figma's noise effect, drawn over a layer in its own units (`p`). Each cell of `cell` units, per
-// axis for a grain wider than tall, takes
-// a uniform value from a hash of its index and the seed, and the level Figma's measured shares give
-// that value. Cells wider than a pixel blend with Catmull-Rom, and the blend is stretched around the
-// mean level by `contrast` and clipped, as Figma sharpens large grains. A duotone's second colour
-// reads the opposite tail of the same values; a multitone colours each cell at random. A
-// supersampled export draws finer than its pixels and averages them, which would smooth the
-// grains, so there each sample is taken at its output pixel's centre: `toOutput*` maps the layer
-// to the output's pixels and `fromOutput*` back.
+// Figma's noise effect, drawn over a layer in its own units (`p`). `levels` holds each cell's
+// level, made on the CPU from a hash of the cell and the seed under Figma's measured shares: in
+// red, and for a duotone's second colour the level of the opposite value in green, 15 to a level.
+// It is sampled in cells of `cell` units, per axis for a grain wider than tall: as is for cells a
+// pixel wide, and through Catmull-Rom between larger ones, whose blend is stretched around the
+// mean level by `contrast` and clipped, as Figma sharpens large grains. `colors` gives a
+// multitone's cells their colours. A supersampled export draws finer than its pixels and averages
+// them, which would smooth the grains, so there each sample is taken at its output pixel's centre:
+// `toOutput*` maps the layer to the output's pixels and `fromOutput*` back.
+uniform shader levels;
+uniform shader colors;
 uniform float2 cell;
 uniform float contrast;
 uniform float center;
-uniform float shares[16];
-uniform float seed;
 uniform float mode;
-uniform float blend;
 uniform half4 primary;
 uniform half4 secondary;
 uniform float opacity;
@@ -25,49 +24,9 @@ uniform float2 fromOutputX;
 uniform float2 fromOutputY;
 uniform float2 fromOutputOrigin;
 
-float hash(float2 c, float salt) {
-  float3 p3 = fract(float3(c.x, c.y, c.x) * 0.1031 + (seed * 0.1123 + salt * 0.2179));
-  p3 += dot(p3, p3.yzx + 33.33);
-  return fract((p3.x + p3.y) * p3.z);
-}
-
-float level(float u) {
-  float l = 0.0;
-  for (int i = 0; i < 16; i++) l += step(shares[i], u);
-  return l / 16.0;
-}
-
-float cellLevel(float2 c, float mirrored) {
-  float u = hash(c, 0.0);
-  return level(mirrored > 0.5 ? 1.0 - u : u);
-}
-
-float catmullRom(float a, float b, float c, float d, float t) {
-  return 0.5 * (2.0 * b + (c - a) * t + (2.0 * a - 5.0 * b + 4.0 * c - d) * t * t +
-    (3.0 * (b - c) + d - a) * t * t * t);
-}
-
-float field(float2 p, float mirrored) {
-  if (blend < 0.5) return cellLevel(floor(p / cell), mirrored);
-  float2 g = p / cell - 0.5;
-  float2 i = floor(g);
-  float2 f = g - i;
-  float rows[4];
-  for (int y = 0; y < 4; y++) {
-    float2 r = i + float2(-1.0, float(y) - 1.0);
-    rows[y] = catmullRom(
-      cellLevel(r, mirrored),
-      cellLevel(r + float2(1.0, 0.0), mirrored),
-      cellLevel(r + float2(2.0, 0.0), mirrored),
-      cellLevel(r + float2(3.0, 0.0), mirrored),
-      f.x
-    );
-  }
-  return catmullRom(rows[0], rows[1], rows[2], rows[3], f.y);
-}
-
-float alpha(float2 p, float mirrored) {
-  float v = clamp(center + (field(p, mirrored) - center) * contrast, 0.0, 1.0);
+/** A level, 0 to 1, stretched around the mean and quantised to Figma's 17 steps. */
+float shaped(float level) {
+  float v = clamp(center + (level - center) * contrast, 0.0, 1.0);
   return floor(v * 16.0 + 0.5) / 16.0;
 }
 
@@ -76,15 +35,17 @@ half4 main(float2 p) {
     float2 q = floor(toOutputOrigin + p.x * toOutputX + p.y * toOutputY) + 0.5;
     p = fromOutputOrigin + q.x * fromOutputX + q.y * fromOutputY;
   }
+  float2 c = p / cell;
+  // 15 to a level in a byte: 255 / 240 turns a channel back into sixteenths.
+  half2 l = levels.eval(c).rg * half(255.0 / 240.0);
   if (mode > 1.5) {
-    float2 c = floor(p / cell);
     // Figma's multitone colours keep near grey: each channel strays 0.56 as far as a uniform one.
-    half3 rgb = half3(0.5) + (half3(hash(c, 1.0), hash(c, 2.0), hash(c, 3.0)) - half3(0.5)) * 0.56;
-    half a = half(alpha(p, 0.0) * opacity);
+    half3 rgb = half3(0.5) + (colors.eval(floor(c) + 0.5).rgb - half3(0.5)) * 0.56;
+    half a = half(shaped(l.r) * opacity);
     return half4(rgb * a, a);
   }
-  half a1 = half(alpha(p, 0.0)) * primary.a;
+  half a1 = half(shaped(l.r)) * primary.a;
   if (mode < 0.5) return half4(primary.rgb * a1, a1);
-  half a2 = half(alpha(p, 1.0)) * secondary.a;
+  half a2 = half(shaped(l.g)) * secondary.a;
   return half4(primary.rgb * a1 + secondary.rgb * a2, min(half(1.0), a1 + a2));
 }
