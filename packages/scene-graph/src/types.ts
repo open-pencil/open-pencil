@@ -1149,7 +1149,7 @@ export interface VariableCollectionMode {
   /**
    * The library mode this one came from, for a mode of a collection copied from a library. A
    * library that renames its mode renames this one with it, so the layers and the document set
-   * to it keep following the library (`library/resources.ts`).
+   * to it keep following the library.
    */
   libraryModeId?: string
   /**

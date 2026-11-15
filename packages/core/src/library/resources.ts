@@ -1,6 +1,12 @@
 import { isEmptyObject, isEqual } from 'es-toolkit'
 
-import type { SceneGraph, SceneNode, Variable, VariableCollection } from '@open-pencil/scene-graph'
+import type {
+  SceneGraph,
+  SceneNode,
+  Variable,
+  VariableCollection,
+  VariableCollectionMode
+} from '@open-pencil/scene-graph'
 import {
   collectionAssetKey,
   derivedAssetVersion,
@@ -39,10 +45,43 @@ function libraryCollection(graph: SceneGraph, key: string): VariableCollection |
 }
 
 /**
+ * Which of the copy's modes each of the library's modes updates, by library mode id. A mode takes
+ * the copy's mode that came from it; where there is none, as in a copy made before modes kept
+ * that link, it takes an unpaired mode with its name, and otherwise a new one.
+ */
+function pairModes(
+  graph: SceneGraph,
+  copy: VariableCollection,
+  collection: VariableCollection,
+  candidates: readonly VariableCollectionMode[]
+): Map<string, string> {
+  const unpaired = new Set(candidates.map((mode) => mode.modeId))
+  const take = (mode: VariableCollectionMode | undefined) =>
+    mode && unpaired.delete(mode.modeId) ? mode.modeId : undefined
+  const paired = new Map<string, string>()
+  for (const mode of collection.modes) {
+    const linked = take(candidates.find((candidate) => candidate.libraryModeId === mode.modeId))
+    if (linked) paired.set(mode.modeId, linked)
+  }
+  for (const mode of collection.modes) {
+    if (paired.has(mode.modeId)) continue
+    const modeId =
+      take(
+        candidates.find(
+          (candidate) => candidate.name === mode.name && unpaired.has(candidate.modeId)
+        )
+      ) ?? graph.createMode(copy.id, mode.name)
+    if (!modeId) throw new Error(`Cannot add mode ${mode.name} to ${collection.name}`)
+    paired.set(mode.modeId, modeId)
+  }
+  return paired
+}
+
+/**
  * The document's copy of `collection`, with a mode for each of its modes. A copy is the
  * library's, so it takes the revision's name and mode names each time, and each of its modes
- * remembers the library mode it came from: a rename in the library renames it in place, so the
- * layers and the document set to that mode keep following the library.
+ * remembers the library mode it came from, so a rename in the library renames it in place and
+ * the layers and the document set to it keep following the library.
  */
 function importCollection(
   graph: SceneGraph,
@@ -52,56 +91,22 @@ function importCollection(
   const key = collectionAssetKey(collection)
   const existing = libraryCollection(graph, key)
   const copy = existing ?? graph.createCollection(collection.name)
-  // A copy's modes pair with the library's by the library mode each came from first, and by
-  // name only where it recorded none yet, so a rename pairs the mode it renamed.
-  const bySource = new Map(
-    existing
-      ? existing.modes.flatMap((mode) =>
-          mode.libraryModeId ? [[mode.libraryModeId, mode.modeId] as const] : []
-        )
-      : []
-  )
   // A new copy's first mode is the one it was made with, whatever the library names it.
-  const byName = new Map(
-    existing
-      ? existing.modes.map((mode) => [mode.name, mode.modeId])
-      : copy.modes.slice(0, 1).map((mode) => [collection.modes[0]?.name ?? mode.name, mode.modeId])
-  )
-  const paired = new Map<string, string>()
-  const taken = new Set<string>()
-  for (const mode of collection.modes) {
-    const kept = bySource.get(mode.modeId)
-    if (kept && !taken.has(kept)) {
-      paired.set(mode.modeId, kept)
-      taken.add(kept)
-    }
-  }
-  for (const mode of collection.modes) {
-    if (paired.has(mode.modeId)) continue
-    const kept = byName.get(mode.name)
-    if (kept && !taken.has(kept)) {
-      paired.set(mode.modeId, kept)
-      taken.add(kept)
-    }
-  }
-  for (const mode of collection.modes) {
-    if (paired.has(mode.modeId)) continue
-    const modeId = graph.createMode(copy.id, mode.name)
-    if (!modeId) throw new Error(`Cannot add mode ${mode.name} to ${collection.name}`)
-    paired.set(mode.modeId, modeId)
-  }
-  for (const [sourceId, modeId] of paired) modes.set(sourceId, modeId)
-  const sourceOf = new Map([...paired].map(([sourceId, modeId]) => [modeId, sourceId]))
+  const candidates = existing
+    ? existing.modes
+    : copy.modes
+        .slice(0, 1)
+        .map((mode) => ({ ...mode, name: collection.modes[0]?.name ?? mode.name }))
+  const paired = pairModes(graph, copy, collection, candidates)
+  for (const [libraryModeId, modeId] of paired) modes.set(libraryModeId, modeId)
+  const libraryModes = new Map(collection.modes.map((mode) => [paired.get(mode.modeId), mode]))
   Object.assign(copy, {
     name: collection.name,
     key,
     version: derivedAssetVersion(JSON.stringify(collection)),
     modeAttribute: collection.modeAttribute,
     modes: copy.modes.map((mode) => {
-      const sourceId = sourceOf.get(mode.modeId)
-      const source = sourceId
-        ? collection.modes.find((entry) => entry.modeId === sourceId)
-        : undefined
+      const source = libraryModes.get(mode.modeId)
       return source ? { ...mode, name: source.name, libraryModeId: source.modeId } : mode
     }),
     defaultModeId: paired.get(collection.defaultModeId) ?? copy.defaultModeId

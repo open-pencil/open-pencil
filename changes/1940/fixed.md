@@ -1,0 +1,1 @@
+- A library that renames a variable mode now renames it in the documents that use the library, so layers set to that mode keep its values instead of a second mode appearing (#1913).
