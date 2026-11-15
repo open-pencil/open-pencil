@@ -1,8 +1,7 @@
 import { parseHTMLDocument, type DesignNode } from '@open-pencil/dom-css'
 
-import { browserRuntimeComputeStyles } from '#tests/helpers/dom-css/browser'
-
 import { expect, test } from '#tests/e2e/fixtures'
+import { browserRuntimeComputeStyles } from '#tests/helpers/dom-css/browser'
 
 test.describe('@open-pencil/dom-css browser runtime properties', () => {
   test('reports the properties the importer reads from a stylesheet, as the HTML engine does', async ({

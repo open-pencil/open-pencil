@@ -12,6 +12,7 @@ import {
   tailwindNavClasses
 } from '@open-pencil/test-support/dom-css'
 
+import { expect, test } from '#tests/e2e/fixtures'
 import {
   browserRuntimeComputeStyles,
   computedStyleProperties,
@@ -20,8 +21,6 @@ import {
   publicBrowserTextNode,
   setStyledContent
 } from '#tests/helpers/dom-css/browser'
-
-import { expect, test } from '#tests/e2e/fixtures'
 
 test.describe('@open-pencil/dom-css browser CSS runtime oracle', () => {
   test('resolves Tailwind card variables and calc values in a real browser', async ({ page }) => {
