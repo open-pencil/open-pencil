@@ -257,6 +257,50 @@ describe('@open-pencil/dom-css conversion', () => {
     expect([box.width, box.height]).toEqual([320, 180])
   })
 
+  it('sizes the content box by an aspect ratio beside auto, whatever the box sizing', () => {
+    const graph = designDocumentToSceneGraph({
+      type: 'document',
+      children: [
+        {
+          type: 'element',
+          tagName: 'div',
+          attrs: {},
+          computedStyle: {
+            'aspect-ratio': 'auto 16 / 9',
+            'box-sizing': 'border-box',
+            width: '320px',
+            padding: '10px'
+          },
+          children: []
+        }
+      ]
+    })
+    const [box] = graph.getChildren(graph.getPages()[0].id)
+
+    // A 300 px content box is 168.75 tall, inside 10 px of padding each way.
+    expect([box.width, box.height]).toEqual([320, 188.75])
+  })
+
+  it('gives each side of a box its value in a padding shorthand of several values', () => {
+    const graph = designDocumentToSceneGraph({
+      type: 'document',
+      children: [
+        {
+          type: 'element',
+          tagName: 'div',
+          attrs: {},
+          computedStyle: { padding: '1px 3px 5px', 'background-color': 'rgb(255, 0, 0)' },
+          children: []
+        }
+      ]
+    })
+    const [box] = graph.getChildren(graph.getPages()[0].id)
+
+    expect([box.paddingTop, box.paddingRight, box.paddingBottom, box.paddingLeft]).toEqual([
+      1, 3, 5, 3
+    ])
+  })
+
   it('maps data URL images, object fit, and aspect ratio', () => {
     const graph = designDocumentToSceneGraph({
       type: 'document',

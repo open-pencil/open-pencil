@@ -5,7 +5,8 @@ export {
   parseCSSAlignSelf,
   parseCSSAspectRatio,
   parseCSSFlexDirection,
-  parseCSSJustifyContent
+  parseCSSJustifyContent,
+  type CSSAspectRatio
 } from './layout'
 export { parseCSSShadows } from './shadows'
 export {

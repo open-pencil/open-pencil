@@ -26,4 +26,13 @@ describe('border sides', () => {
     expect(hasBorder({ 'border-style': 'none hidden' })).toBe(false)
     expect(hasBorder({ 'border-style': 'none none none solid' })).toBe(true)
   })
+  test('box shorthands of several values give each side its own', () => {
+    const insets = contentInsets({
+      'border-style': 'solid',
+      'border-width': '2px 6px',
+      padding: '1px 3px 5px'
+    })
+
+    expect(insets).toEqual({ top: 3, right: 9, bottom: 7, left: 9 })
+  })
 })

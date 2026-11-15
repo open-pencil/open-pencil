@@ -24,11 +24,20 @@ export function setNodeBox(node: SceneNode, style: DesignStyleDeclaration): void
   const maxWidth = firstCSSNumber(style, 'max-width')
   const minHeight = firstCSSNumber(style, 'min-height')
   const maxHeight = firstCSSNumber(style, 'max-height')
-  const aspectRatio = parseCSSAspectRatio(pickStyle(style, 'aspect-ratio'))
   if (width !== null) node.width = width
   if (height !== null) node.height = height
-  if (height === null && width !== null && aspectRatio !== null) node.height = width / aspectRatio
-  if (width === null && height !== null && aspectRatio !== null) node.width = height * aspectRatio
+  const aspect = parseCSSAspectRatio(pickStyle(style, 'aspect-ratio'))
+  if (aspect && (width === null) !== (height === null)) {
+    // The ratio sizes the box `box-sizing` names, or the content box beside `auto`.
+    const insets =
+      aspect.auto && pickStyle(style, 'box-sizing')?.trim() === 'border-box'
+        ? contentInsets(style)
+        : { top: 0, right: 0, bottom: 0, left: 0 }
+    const across = insets.left + insets.right
+    const down = insets.top + insets.bottom
+    if (width !== null) node.height = (width - across) / aspect.ratio + down
+    if (height !== null) node.width = (height - down) * aspect.ratio + across
+  }
   if (minWidth !== null) node.minWidth = minWidth
   if (maxWidth !== null) node.maxWidth = maxWidth
   if (minHeight !== null) node.minHeight = minHeight
@@ -50,13 +59,23 @@ const SHORTHAND_VALUE_INDEX: Record<BorderSide, readonly number[]> = {
   left: [0, 1, 1, 3]
 }
 
-/** A side's own border style, or its value in the `border-style` shorthand. */
-function sideStyle(style: DesignStyleDeclaration, side: BorderSide): string | undefined {
-  const own = pickStyle(style, `border-${side}-style`)
+/** A side's own value, or the side's value in a one- to four-value box shorthand. */
+function sideValue(
+  style: DesignStyleDeclaration,
+  longhand: string,
+  shorthand: string,
+  side: BorderSide
+): string | undefined {
+  const own = pickStyle(style, longhand)
   if (own !== undefined) return own
-  const values = splitCSSValue(pickStyle(style, 'border-style') ?? '')
+  const values = splitCSSValue(pickStyle(style, shorthand) ?? '')
   if (values.length === 0 || values.length > 4) return undefined
   return values[SHORTHAND_VALUE_INDEX[side][values.length - 1]]
+}
+
+/** A side's own border style, or its value in the `border-style` shorthand. */
+function sideStyle(style: DesignStyleDeclaration, side: BorderSide): string | undefined {
+  return sideValue(style, `border-${side}-style`, 'border-style', side)
 }
 
 /** Whether a side's border is drawn: its style is neither `none`, CSS's default, nor `hidden`. */
@@ -189,7 +208,9 @@ export interface ContentInsets {
 /** The width of each side's border that is drawn; a side whose border is not drawn has none. */
 export function borderWidths(style: DesignStyleDeclaration): ContentInsets {
   const side = (name: BorderSide) =>
-    paints(style, name) ? (firstCSSNumber(style, `border-${name}-width`, 'border-width') ?? 0) : 0
+    paints(style, name)
+      ? (parseCSSNumber(sideValue(style, `border-${name}-width`, 'border-width', name)) ?? 0)
+      : 0
   return { top: side('top'), right: side('right'), bottom: side('bottom'), left: side('left') }
 }
 
@@ -208,8 +229,7 @@ export function contentInsets(style: DesignStyleDeclaration): ContentInsets {
   const borders = borderWidths(style)
   const share = isCollapsedCell(style) ? 0.5 : 1
   const side = (name: BorderSide, axis: 'block' | 'inline') =>
-    (firstCSSNumber(style, `padding-${name}`, `padding-${axis}`, 'padding') ?? 0) +
-    borders[name] * share
+    paddingOf(style, name, axis) + borders[name] * share
   return {
     top: side('top', 'block'),
     right: side('right', 'inline'),
@@ -247,9 +267,18 @@ export function applyBoxSizing(node: SceneNode, style: DesignStyleDeclaration): 
   }
 }
 
+/** A side's padding: its own, its axis's, or its value in the `padding` shorthand. */
+function paddingOf(style: DesignStyleDeclaration, side: BorderSide, axis: 'block' | 'inline') {
+  return (
+    firstCSSNumber(style, `padding-${side}`, `padding-${axis}`) ??
+    parseCSSNumber(sideValue(style, `padding-${side}`, 'padding', side)) ??
+    0
+  )
+}
+
 export function applyPadding(node: SceneNode, style: DesignStyleDeclaration): void {
-  node.paddingTop = firstCSSNumber(style, 'padding-top', 'padding-block', 'padding') ?? 0
-  node.paddingRight = firstCSSNumber(style, 'padding-right', 'padding-inline', 'padding') ?? 0
-  node.paddingBottom = firstCSSNumber(style, 'padding-bottom', 'padding-block', 'padding') ?? 0
-  node.paddingLeft = firstCSSNumber(style, 'padding-left', 'padding-inline', 'padding') ?? 0
+  node.paddingTop = paddingOf(style, 'top', 'block')
+  node.paddingRight = paddingOf(style, 'right', 'inline')
+  node.paddingBottom = paddingOf(style, 'bottom', 'block')
+  node.paddingLeft = paddingOf(style, 'left', 'inline')
 }
