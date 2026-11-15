@@ -355,7 +355,8 @@ function drawUnitedRegionStrokes(
 ): void {
   const regions = network.regions.length
   const closed = vectorPaths.slice(0, regions)
-  const inside = stroke.align === 'INSIDE' ? unitedOutline(r, node, closed, 0) : null
+  const inside =
+    stroke.align === 'INSIDE' ? unitedOutline(r, `${node.id}|inside-stroke`, closed) : null
   const sided = clipToStrokeSide(r, canvas, closed, stroke.align, inside)
   inside?.delete()
   const key = strokeOutlineKey(node, stroke, sided ? 'united-sided' : 'united')

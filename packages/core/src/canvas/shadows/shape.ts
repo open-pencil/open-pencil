@@ -11,11 +11,11 @@ import {
 import { paintShows } from '@open-pencil/scene-graph/paints'
 
 import { setPaintBlendMode } from '#core/canvas/blend/modes'
-import { unitedOutline } from '#core/canvas/paths/union'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import {
   drawOutline,
   makeNodeShapePath,
+  unitedOutlinePath,
   withNodeOutline,
   type NodeOutline
 } from '#core/canvas/shapes'
@@ -186,10 +186,7 @@ function drawUnitedOutline(
   outline: NodeOutline,
   spread: number
 ): void {
-  const united =
-    outline.kind === 'paths' && outline.paths.length > 1
-      ? unitedOutline(r, node, outline.paths, spread)
-      : null
+  const united = unitedOutlinePath(r, node, outline, spread)
   if (!united) {
     drawOutline(canvas, outline, r.auxFill)
     return

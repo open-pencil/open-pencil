@@ -306,3 +306,55 @@ describe('a vector whose overlapping regions wind in opposite directions', () =>
     expect(rows(OPPOSITE_WINDING)).toEqual(rows(SAME_WINDING))
   })
 })
+
+describe('a drop shadow of a vector with a ring region and an open segment', () => {
+  const ringAndTail: VectorNetwork = {
+    vertices: [
+      { x: 0, y: 0 },
+      { x: 40, y: 0 },
+      { x: 40, y: 40 },
+      { x: 0, y: 40 },
+      { x: 10, y: 10 },
+      { x: 30, y: 10 },
+      { x: 30, y: 30 },
+      { x: 10, y: 30 },
+      { x: 50, y: 0 },
+      { x: 60, y: 0 },
+      { x: 60, y: 10 },
+      { x: 50, y: 10 },
+      { x: 50, y: 30 },
+      { x: 60, y: 40 }
+    ],
+    segments: [
+      line(0, 1),
+      line(1, 2),
+      line(2, 3),
+      line(3, 0),
+      line(4, 5),
+      line(5, 6),
+      line(6, 7),
+      line(7, 4),
+      line(8, 9),
+      line(9, 10),
+      line(10, 11),
+      line(11, 8),
+      line(12, 13)
+    ],
+    regions: [
+      { windingRule: 'EVENODD', loops: [SQUARE_LOOP, [4, 5, 6, 7]] },
+      { windingRule: 'NONZERO', loops: [[8, 9, 10, 11]] }
+    ]
+  }
+
+  test('leaves the hole of the ring without shadow', () => {
+    const hole = renderRow(
+      ck,
+      renderer,
+      regionVector(ringAndTail, sharpShadow('DROP_SHADOW', 0)),
+      120,
+      118,
+      122
+    )
+    expect(hole).toEqual([0, 0, 0])
+  })
+})

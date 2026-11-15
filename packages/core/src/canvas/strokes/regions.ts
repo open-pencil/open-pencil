@@ -5,6 +5,7 @@ import type { SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
 import { addStrokeRunToPath, strokeRuns } from '@open-pencil/scene-graph/paths'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
+import { unitedPath } from '#core/canvas/paths/union'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 
 import { getStrokeCapEntity, getStrokeJoinEntity } from './draw'
@@ -223,4 +224,67 @@ export function regionStrokeOutline(
   // Skia's stroke outlines all wind the same way, so one nonzero path fills their overlaps once;
   // a PathOps union of them costs several times the whole render on large networks.
   return outlines.length > 1 ? mergedNonzero(r, outlines) : (outlines[0] ?? null)
+}
+
+function paintsStroke(stroke: Stroke): boolean {
+  return stroke.visible && stroke.opacity > 0 && stroke.weight > 0
+}
+
+function regionBandArea(
+  r: SkiaRenderer,
+  node: SceneNode,
+  network: VectorNetwork,
+  closed: Path[],
+  fill: Path | null,
+  stroke: Stroke
+): Path | null {
+  const keptSide = stroke.align === 'INSIDE' ? r.ck.PathOp.Intersect : r.ck.PathOp.Difference
+  const sided = stroke.align !== 'CENTER' && fill !== null
+  const band = regionStrokeOutline(r, node, network, closed, stroke, sided)
+  if (!band || !sided) {
+    return band
+  }
+  const area = r.ck.Path.MakeFromOp(band, fill, keptSide)
+  band.delete()
+  return area
+}
+
+function openSegmentsArea(r: SkiaRenderer, node: SceneNode, open: Path[], stroke: Stroke): Path[] {
+  const options = {
+    width: stroke.weight,
+    miter_limit: node.strokeMiterLimit,
+    cap: getStrokeCapEntity(r, stroke.cap ?? 'NONE'),
+    join: getStrokeJoinEntity(r, stroke.join ?? 'MITER')
+  }
+  return open.flatMap((path) => path.makeStroked(options) ?? [])
+}
+
+export function regionStrokeArea(
+  r: SkiaRenderer,
+  node: SceneNode,
+  network: VectorNetwork,
+  vectorPaths: Path[]
+): Path | null {
+  const closed = vectorPaths.slice(0, network.regions.length)
+  const open = vectorPaths.slice(network.regions.length)
+  const fill = unitedPath(r, closed)
+  const pieces: Path[] = []
+  for (const stroke of node.strokes.filter(paintsStroke)) {
+    const band = regionBandArea(r, node, network, closed, fill, stroke)
+    if (band) {
+      pieces.push(band)
+    }
+    for (const segmentsArea of openSegmentsArea(r, node, open, stroke)) {
+      pieces.push(segmentsArea)
+    }
+  }
+  fill?.delete()
+  if (pieces.length <= 1) {
+    return pieces[0] ?? null
+  }
+  const united = unitedPath(r, pieces)
+  for (const piece of pieces) {
+    piece.delete()
+  }
+  return united
 }

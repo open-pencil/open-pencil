@@ -1,5 +1,4 @@
 import type { Path } from '@open-pencil/canvaskit'
-import type { SceneNode } from '@open-pencil/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 
@@ -21,15 +20,12 @@ export function unitedPath(r: SkiaRenderer, regions: Path[]): Path | null {
 
 export function unitedOutline(
   r: SkiaRenderer,
-  node: SceneNode,
-  paths: readonly Path[],
-  spread: number
+  ownKey: string,
+  paths: readonly Path[]
 ): Path | null {
   if (paths.length === 0) {
     return null
   }
   const inputs = [...paths]
-  return sharedPath(r.nodePaths, `${node.id}|outline|${spread}`, 'outline', inputs, () =>
-    unitedPath(r, inputs)
-  )
+  return sharedPath(r.nodePaths, ownKey, 'outline', inputs, () => unitedPath(r, inputs))
 }
