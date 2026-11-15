@@ -142,29 +142,37 @@ export function applyLockedAspectRatio(
 }
 
 /**
+ * Whether an auto layout parent has a size of its own across: fixed or filling there, or hugging
+ * but holding its size or stretched by its own parent. A parent that hugs its children is as wide
+ * as they are.
+ */
+export function parentSizedAcross(graph: SceneGraph, parent: SceneNode): boolean {
+  if (parent.counterAxisSizing !== 'HUG') return true
+  const across = parent.layoutMode === 'VERTICAL' ? 'width' : 'height'
+  return (
+    heldHugAxes(graph, parent).includes(across) || parentStretchedAxis(graph, parent) === across
+  )
+}
+
+/**
  * A child that fills its parent across, capped by a maximum size there, sits where the parent's
  * alignment puts the children, as Figma lays it out: CSS's stretch clamps it and keeps it at the
- * start whatever the alignment. Only a parent with a size across has the room it fills: one fixed
- * or filling there, or a hugging one that holds its size or that its own parent stretches; a
- * parent that hugs its children is as wide as they are.
+ * start whatever the alignment. Only a parent with a size across has the room it fills, which
+ * `sizedAcross` says, asked once per parent and only for a capped child.
  */
 export function alignCappedFill(
-  graph: SceneGraph,
   layoutNode: LayoutNode,
   child: SceneNode,
-  parent: SceneNode
+  parent: SceneNode,
+  sizedAcross: () => boolean
 ): void {
   if (!stretchesAcross(child, parent)) return
   const across = parent.layoutMode === 'VERTICAL' ? 'width' : 'height'
   const cap = across === 'width' ? child.maxWidth : child.maxHeight
   if (cap === null) return
-  const sized =
-    parent.counterAxisSizing !== 'HUG' ||
-    heldHugAxes(graph, parent).includes(across) ||
-    parentStretchedAxis(graph, parent) === across
-  if (!sized) return
   const align = mapAlign(parent.counterAxisAlign)
   if (align === 'stretch' || align === 'baseline' || align === 'flex-start') return
+  if (!sizedAcross()) return
   layoutNode.style[across] = '100%'
   layoutNode.style.alignSelf = align
 }
