@@ -16,7 +16,8 @@ import { shapeWithTextGeometry } from '@open-pencil/scene-graph/shape-with-text'
 
 import { vectorNetworkToPath, geometryBlobToPath } from '#core/vector'
 
-import type { SkiaRenderer } from './renderer'
+import { unitedOutline } from './paths/union'
+import type { SkiaRenderer } from './renderer/skia'
 
 export function makeSmoothRRectPath(r: SkiaRenderer, node: SceneNode, spread = 0): Path {
   const path = new r.ck.PathBuilder()
@@ -142,8 +143,20 @@ export function drawOutline(canvas: Canvas, outline: NodeOutline, paint: Paint):
   }
 }
 
+export function unitedOutlinePath(
+  r: SkiaRenderer,
+  node: SceneNode,
+  outline: NodeOutline,
+  spread: number
+): Path | null {
+  if (outline.kind !== 'paths' || outline.paths.length < 2) {
+    return null
+  }
+  return unitedOutline(r, `${node.id}|outline|${spread}`, outline.paths)
+}
+
 /** `outline` as one path the caller owns. */
-function outlineToPath(r: SkiaRenderer, outline: NodeOutline): Path {
+function joinedOutlinePath(r: SkiaRenderer, outline: NodeOutline): Path {
   if (outline.kind === 'paths' && outline.paths.length === 1) return outline.paths[0].copy()
   const path = new r.ck.PathBuilder()
   if (outline.kind === 'rect') path.addRect(outline.rect)
@@ -153,9 +166,22 @@ function outlineToPath(r: SkiaRenderer, outline: NodeOutline): Path {
   return path.detachAndDelete()
 }
 
+function outlineToPath(
+  r: SkiaRenderer,
+  node: SceneNode,
+  outline: NodeOutline,
+  spread: number
+): Path {
+  return unitedOutlinePath(r, node, outline, spread)?.copy() ?? joinedOutlinePath(r, outline)
+}
+
 /** The layer's outline grown by `spread`, as one path the caller owns. */
 export function makeNodeShapePath(r: SkiaRenderer, node: SceneNode, spread = 0): Path {
-  return withNodeOutline(r, node, (outline) => outlineToPath(r, outline), spread)
+  return withNodeOutline(r, node, (outline) => outlineToPath(r, node, outline, spread), spread)
+}
+
+export function makeNodeEdgesPath(r: SkiaRenderer, node: SceneNode): Path {
+  return withNodeOutline(r, node, (outline) => joinedOutlinePath(r, outline))
 }
 
 function outlinePath(r: SkiaRenderer, commands: PolygonOutlineCommand[]): Path {
@@ -225,7 +251,7 @@ export function clipNodeShape(
     else if (outline.kind === 'paths' && outline.paths.length === 1) {
       canvas.clipPath(outline.paths[0], op, true)
     } else {
-      const path = outlineToPath(r, outline)
+      const path = outlineToPath(r, node, outline, 0)
       canvas.clipPath(path, op, true)
       path.delete()
     }

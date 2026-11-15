@@ -15,7 +15,7 @@ import {
   SECTION_TITLE_PADDING_X
 } from '#core/constants'
 
-import type { LabelParagraphCache } from './paragraph-cache'
+import type { LabelParagraphCache } from './paragraphs'
 
 export type LabelKind = 'section' | 'component' | 'frame'
 export type LabelTextMetrics = ReturnType<LabelParagraphCache['measure']>

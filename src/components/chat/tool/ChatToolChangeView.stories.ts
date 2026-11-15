@@ -1,9 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { toUint8Array } from 'js-base64'
+import { expect, userEvent, within } from 'storybook/test'
+import { computed, provide, ref } from 'vue'
 
 import type { ToolChange } from '@/app/ai/tools/changes/types'
 
 import ChatToolChangeView from './ChatToolChangeView.vue'
+import { CHAT_CHANGE_REVIEW } from './context'
 
 const BEFORE_PNG =
   'iVBORw0KGgoAAAANSUhEUgAAAGAAAAA4CAYAAAACRf2iAAAAgklEQVR42u3bsQkAIAxE0ewquH8KCysdQUgThFf8Be7VF7n2UV9hBAAABACAAAAQAAACAODVmPltAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8BFz0hMAAAIAQAAACAAAVburId+HNheO5AAAAABJRU5ErkJggg=='
@@ -54,3 +57,25 @@ type Story = StoryObj<Omit<typeof meta, 'component'>>
 
 export const Visual: Story = {}
 export const StructureOnly: Story = { args: { change: { ...change, images: undefined } } }
+
+/** In a chat that can review changes, the edit offers its review to the Review model. */
+export const Reviewable: Story = {
+  render: (args) => ({
+    components: { ChatToolChangeView },
+    setup: () => {
+      const reviewed = ref<string[]>([])
+      provide(CHAT_CHANGE_REVIEW, {
+        review: (toolCallId) => reviewed.value.push(toolCallId),
+        ready: computed(() => true)
+      })
+      return { args, reviewed }
+    },
+    template:
+      '<div class="w-80"><ChatToolChangeView v-bind="args" /><output data-test-id="reviewed">{{ reviewed.join(",") }}</output></div>'
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Review this change' }))
+    await expect(canvas.getByTestId('reviewed')).toHaveTextContent('move-card')
+  }
+}

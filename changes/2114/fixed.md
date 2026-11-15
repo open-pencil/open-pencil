@@ -1,1 +1,0 @@
-- MCP `get_jsx` with a `path` writes the complete JSX instead of cutting it at 12,000 characters (#2114).

@@ -13,6 +13,7 @@ import { enforcedAspectRatio } from './layout/aspect-ratio'
 import Matrix, { type Mat3 } from './matrix'
 import { FITTED_CONTAINER_TYPES } from './node-defaults'
 import type { Rect } from './primitives'
+import { followsPath } from './text/path'
 import type { ConstraintType, DerivedTextGlyph, SceneNode, Stroke, VectorNetwork } from './types'
 
 /**
@@ -305,11 +306,9 @@ export function scaledGeometryChanges(
   }
   // Path text scales with its path, including baked path text that kept only rotated glyphs;
   // other text reflows in the new box, so its glyphs are dropped.
-  const glyphs = orig.derivedTextGlyphs ?? []
-  const pathText =
-    !!orig.textPathData || !!orig.textPathBox || glyphs.some((glyph) => (glyph.rotation ?? 0) !== 0)
-  if (glyphs.length > 0 && pathText) {
-    changes.derivedTextGlyphs = scaleDerivedGlyphs(glyphs, sx, sy)
+  const pathText = followsPath(orig)
+  if (pathText) {
+    changes.derivedTextGlyphs = scaleDerivedGlyphs(orig.derivedTextGlyphs, sx, sy)
     // Keep the layout/selection box in sync with the scaled glyphs. reflow
     // overrides this when it applies; this covers the fallback where reflow
     // returns null (no path data) so the box doesn't carry a stale size.
@@ -324,7 +323,7 @@ export function scaledGeometryChanges(
   }
   // Glyphs scaled as a picture take their strokes along; any other stroke keeps its weight, as
   // Figma reports it, even where only a scaled outline can draw it.
-  if (orig.strokes.length > 0 && glyphs.length > 0 && pathText) {
+  if (orig.strokes.length > 0 && pathText) {
     changes.strokes = scaleStrokes(orig.strokes, sx, sy)
   }
   return changes

@@ -2,8 +2,8 @@ import type { Canvas, Image, Paint, Shader } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { ResourceCache } from '#core/cache/resource'
-import type { SkiaRenderer } from '#core/canvas/renderer'
 import { compiledProgram } from '#core/canvas/renderer/shaders'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { makeOffscreenSurface } from '#core/canvas/renderer/tiles/surface-pool'
 
 import { GLASS_GEOMETRY_MAP, type GlassOutline, glassGeometryUniforms } from './shader'

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { autoLayoutInsertIndex } from '#vue/shared/input/auto-layout'
+import { autoLayoutInsertIndex } from '#vue/shared/input/auto-layout/insertion'
 import { handleMoveMove, handleMoveUp } from '#vue/shared/input/move/drag'
 import { createSelectionMoveDrag, pressSelects } from '#vue/shared/input/select/move'
 

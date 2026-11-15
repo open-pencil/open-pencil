@@ -18,7 +18,7 @@ import { rescaleNodeTree } from '@open-pencil/scene-graph/scaling'
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'
 import type { EditorContext } from '#core/editor/types'
 import { pushCreatedSubtreesUndo } from '#core/editor/undo'
-import { textStyleChanges } from '#core/text/character-style'
+import { textStyleChanges } from '#core/text/character/style'
 
 import type { NodeActions } from './nodes/actions'
 

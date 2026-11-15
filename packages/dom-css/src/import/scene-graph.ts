@@ -30,11 +30,16 @@ import {
 import { hasBoxStyle } from './boxes'
 import { colorToStrokeFromCSS, mergedStyle, pickStyle } from './css-values'
 import {
+  alignBlocksInFlow,
+  type FlowBlock,
+  alignBlockLines,
   applyContainerLayout,
   applyFlowSizing,
   elementDisplay,
   flowOf,
   inheritedTextStyle,
+  isInlineLevel,
+  textAlignOf,
   type FlowKind,
   type ParentFlow
 } from './flow'
@@ -46,6 +51,7 @@ import {
   type CapturedBox,
   type CapturedBoxes
 } from './placement'
+import { applyTableLayout, isTableColumn } from './table'
 import {
   blockRichText,
   characterStyleFromCSS,
@@ -222,7 +228,7 @@ function applyTextStyle(node: SceneNode, style: DesignStyleDeclaration): void {
   const effects = cssShadows(pickStyle(style, 'text-shadow'))
   if (effects.length > 0) node.effects = effects
 
-  const textAlign = pickStyle(style, 'text-align')?.toUpperCase()
+  const textAlign = textAlignOf(style)?.toUpperCase()
   if (textAlign === 'CENTER' || textAlign === 'RIGHT' || textAlign === 'JUSTIFIED') {
     node.textAlignHorizontal = textAlign
   }
@@ -340,7 +346,7 @@ function createElementNode(
 ): SceneNode | null {
   const style = mergedStyle(element)
   const display = elementDisplay(element, style)
-  if (display === 'none') return null
+  if (display === 'none' || isTableColumn(display)) return null
   if (
     isTextLikeElement(element) &&
     !hasBoxStyle(element, style, parentFlow) &&
@@ -368,6 +374,7 @@ function createElementNode(
   if (flow) {
     applyContainerLayout(node, element, style, flow)
     if (flow === 'flex') applyFlexGap(node, style)
+    applyTableLayout(node, style, display)
   }
   applyFlowSizing(graph, node, style, display, parentFlow)
 
@@ -392,16 +399,31 @@ function createChildLayers(
     const textDisplay = flow === 'inline' ? 'inline' : 'block'
     const text = createRichTextNode(graph, node.id, element, textStyle, textDisplay, flow ?? 'none')
     record(graph, recorded, text, capturedTextBox(element))
+    if (flow === 'block') alignBlockLines(graph, node, style, true)
     return
   }
   // Text alone in a box takes the box its lines are in; text among elements has none of its own.
   const textBox = element.children.every((child) => child.type === 'text')
     ? capturedTextBox(element)
     : undefined
+  // Whether everything the element holds sits in its lines, which its `text-align` aligns.
+  let inlineContent = true
+  const blocks: FlowBlock[] = []
   for (const child of element.children) {
     const inherited = inheritedTextStyle(style)
     const layer = createDesignNode(graph, node.id, child, flow ?? 'none', recorded, inherited)
     if (layer?.type === 'TEXT') record(graph, recorded, layer, textBox)
+    if (child.type !== 'element' || !layer) continue
+    const childStyle = mergedStyle(child)
+    // An absolutely positioned box is out of the flow, in no line and no block of its own.
+    if (layer.layoutPositioning === 'ABSOLUTE') continue
+    if (isInlineLevel(elementDisplay(child, childStyle))) continue
+    inlineContent = false
+    if (layer.type === 'FRAME') blocks.push({ layer, style: childStyle })
+  }
+  if (flow === 'block') {
+    alignBlocksInFlow(graph, node, blocks, style)
+    alignBlockLines(graph, node, style, inlineContent)
   }
 }
 

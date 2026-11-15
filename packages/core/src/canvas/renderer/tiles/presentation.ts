@@ -1,6 +1,6 @@
 import type { Canvas, FilterMode } from '@open-pencil/canvaskit'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 
 import type { CachedTile, TileImageCache } from './cache'
 import { TILE_DEVICE_SIZE, type TileKey, tileWorldBounds, type TileWorldBounds } from './geometry'

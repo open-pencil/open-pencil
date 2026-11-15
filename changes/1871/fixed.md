@@ -1,1 +1,0 @@
-- Text ranges in imported .fig files are drawn in the paints of the fill style they name (#1871).

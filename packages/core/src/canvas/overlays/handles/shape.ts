@@ -1,7 +1,7 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import {
   HANDLE_HALF_SIZE,
   SIZE_FONT_SIZE,

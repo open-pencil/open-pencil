@@ -170,3 +170,58 @@ describe('text cache resets', () => {
     expect(node.textPathData).toBe(pathData)
   })
 })
+
+describe('path text without glyph outlines', () => {
+  const pathData = {
+    network: { vertices: [], segments: [], regions: [] },
+    normalizedSize: { x: 1, y: 1 },
+    tValue: 0,
+    forward: true
+  }
+
+  function outlinelessPathText(graph: SceneGraph) {
+    return graph.createNode('TEXT', graph.getPages()[0].id, {
+      text: 'Text',
+      fontSize: 12,
+      derivedTextGlyphs: [],
+      textPathData: structuredClone(pathData),
+      textPathBox: { x: 0, y: 0, width: 100, height: 40 }
+    })
+  }
+
+  test('keeps its path when the update places the path box with the new size', () => {
+    const graph = new SceneGraph()
+    const node = outlinelessPathText(graph)
+    graph.updateNode(node.id, { fontSize: 24, textPathBox: { x: 0, y: 0, width: 200, height: 80 } })
+    expect(node.textPathData).toEqual(pathData)
+  })
+
+  test('drops its path on a type edit after the path box update cleared its glyphs', () => {
+    const graph = new SceneGraph()
+    const node = outlinelessPathText(graph)
+    graph.updateNode(node.id, { fontSize: 24, textPathBox: { x: 0, y: 0, width: 200, height: 80 } })
+    graph.updateNode(node.id, { fontSize: 30 })
+    expect(node.textPathData).toBeNull()
+  })
+
+  test('drops its path when its type changes alone', () => {
+    const graph = new SceneGraph()
+    const node = outlinelessPathText(graph)
+    graph.updateNode(node.id, { fontSize: 24 })
+    expect(node.textPathData).toBeNull()
+  })
+
+  test('drops its path when the update repeats the path box it already has', () => {
+    const graph = new SceneGraph()
+    const node = outlinelessPathText(graph)
+    graph.updateNode(node.id, { fontSize: 24, textPathBox: { x: 0, y: 0, width: 100, height: 40 } })
+    expect(node.textPathData).toBeNull()
+  })
+
+  test('drops its path when the update clears the path box', () => {
+    const graph = new SceneGraph()
+    const node = outlinelessPathText(graph)
+    graph.updateNode(node.id, { fontSize: 24, textPathBox: null })
+    expect(node.textPathData).toBeNull()
+  })
+})

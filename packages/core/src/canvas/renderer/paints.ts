@@ -1,5 +1,5 @@
-import { colorNodeEditPaints, createNodeEditPaints } from '#core/canvas/node-edit-overlay'
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import { colorNodeEditPaints, createNodeEditPaints } from '#core/canvas/overlays/node-edit'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import {
   DEFAULT_FONT_SIZE,
   PARENT_OUTLINE_ALPHA,

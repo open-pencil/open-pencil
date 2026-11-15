@@ -1,7 +1,7 @@
 import type { Canvas, SkPicture } from '@open-pencil/canvaskit'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 
 /** Run `draw` with the renderer's culling viewport set to world-space `bounds`. */
 export function withWorldViewport<T>(r: SkiaRenderer, bounds: VisualBounds, draw: () => T): T {

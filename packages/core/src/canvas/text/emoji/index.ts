@@ -3,7 +3,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import { ResourceCache } from '#core/cache/resource'
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import {
   applyGlyphTransform,
   hasRotatedDerivedGlyphs,
@@ -13,7 +13,7 @@ import type { TextLayout } from '#core/canvas/text/layout'
 import { drawnBaseline } from '#core/canvas/text/layout/lines'
 import { laidOutGlyphs } from '#core/canvas/text/placed'
 import { shownText } from '#core/text/case'
-import { characterFamily } from '#core/text/character-face'
+import { characterFamily } from '#core/text/character/face'
 import {
   canDrawPlatformEmoji,
   EMOJI_METRICS_FAMILY,

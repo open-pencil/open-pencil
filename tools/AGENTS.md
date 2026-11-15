@@ -15,6 +15,7 @@ Private tooling lives under `tools/<role>/<domain>/{src,tests}`; Steiger enforce
 - Resolve the workspace with `resolveWorkspaceRoot` from `@open-pencil/package-artifacts-tools`, not parent-directory traversal. Keep sibling imports relative.
 - `dev/unit-tests` owns the shard map and runner (`tests/AGENTS.md`).
 - No `scripts/` entrypoints: root `package.json` scripts call tool files directly.
+- Oxlint hands a JS plugin rule only the `<script>` of a `.vue` file, so a template rule reads the component from its file through `vueSfcDescriptor` (`tools/checks/lint/src/support/vue.ts`). Plugins load under Node, so a rule imports no Bun-only workspace; a crashing plugin reports no violations, so test a new rule through `lintFiles`, which runs Oxlint, and look for "Error running JS plugin" (`tools/checks/lint/tests/helpers/lint.ts`).
 
 ## CI
 
@@ -47,6 +48,8 @@ Private tooling lives under `tools/<role>/<domain>/{src,tests}`; Steiger enforce
 - Pre-releases are only `vX.Y.Z-beta.N`: they publish to npm's `next` dist-tag, draft as a GitHub pre-release that is never latest, install on Windows as MSI `X.Y.Z.N`, and skip the app and docs deploys (`tools/release/release-packages/src/version.ts`).
 - A beta's changelog section opens with the pre-release note and lists changes since the previous beta. The final `X.Y.Z` replaces its beta sections with one section written against the previous stable release, opened by a short highlights paragraph, with fixes to new features folded into their bullets; the GitHub pre-releases keep the beta notes (`CHANGELOG.md`).
 - Official builds (`VITE_OPENPENCIL_FEEDBACK=on`) emit hidden source maps; `deploy-app.yml` and the `build.yml` frontend job inject PostHog chunk IDs, upload the maps to PostHog error tracking as release `openpencil@<version>`, and strip them from `dist`, and `build.yml` attaches them as `OpenPencil_<version>_sourcemaps.tar.gz`. Both need the `POSTHOG_CLI_API_KEY` secret, a personal key with error tracking write and organization read (`tools/release/release-packages/src/sourcemaps/publish.ts`).
+- When one native job of a `v*` build fails, rerun the whole run (`gh run rerun <id>`), never `--failed`: the publish job requires every native manifest to come from one run attempt and stops with "Mismatched release identity" otherwise (`tools/release/release-packages/tests/native/manifest.test.ts`).
+- A package that has never been on npm fails the release, since `build.yml` publishes only through trusted publishing; a maintainer bootstraps it by hand before the tag build (`tools/release/release-packages/README.md`, New npm packages).
 - Ensure Tauri and Apple signing/notarization secrets are configured. Verify the draft title, body, and artifacts, then publish. Release titles are exactly the tag (`vX.Y.Z`) without a product-name prefix.
 - Homebrew's `openpencil` cask is managed upstream: BrewTestBot proposes bumps and Homebrew merges them. Check the upstream cask PR after publication; do not push to the archived custom tap or add bump automation. Users install the app with `brew install --cask openpencil` and the CLI through npm or Bun.
 

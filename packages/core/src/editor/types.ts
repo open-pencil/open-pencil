@@ -17,7 +17,7 @@ import type { HistoryChange, UndoEntry, UndoManager } from '@open-pencil/scene-g
 
 import type { GuideOverlayState } from '#core/canvas/guides/types'
 import type { DesignIssueOverlay } from '#core/canvas/issues/types'
-import type { RulerTheme, SkiaRenderer } from '#core/canvas/renderer'
+import type { RulerTheme, SkiaRenderer } from '#core/canvas/renderer/skia'
 import type { MeasurementMode, PresenceCursor, SelectionTheme } from '#core/canvas/renderer/types'
 import type { InterfaceTheme } from '#core/constants'
 import type { ConnectorTarget } from '#core/editor/connectors/attach'
@@ -26,7 +26,7 @@ import type { SnappingPreferences } from '#core/editor/preferences'
 import type { ShaderRasterizer } from '#core/editor/shaders/types'
 import type { PenPressEvent, PenReleaseEvent } from '#core/editor/shapes/pen/gesture'
 import type { NodeEditState } from '#core/editor/vector/types'
-import type { ViewportInsets } from '#core/editor/viewport'
+import type { ViewportInsets } from '#core/editor/viewport/actions'
 import type { CanvasView, EditorRestrictions } from '#core/editor/views/types'
 import type { RotationPreview, ShapeHandleKind } from '#core/geometry'
 import type { IconProvider } from '#core/icons/provider'
@@ -376,6 +376,7 @@ export interface EditorContext {
   setActiveTool: (tool: Tool) => void
   setNavigationPhase: (phase: NavigationPhase, inputAt?: number) => void
   runLayoutForNode: (id: string) => void
+  runLayoutForParents: (parentIds: Iterable<string>) => void
   runMutationWithLayout: <T>(
     operation: () => T | Promise<T>,
     fallbackId?: string
