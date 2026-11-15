@@ -1,13 +1,19 @@
 import type { Ref } from 'vue'
 
 import type { Editor } from '@open-pencil/core'
-import type { Effect, NoiseEffectParams, SceneNode } from '@open-pencil/scene-graph'
+import type {
+  Effect,
+  NoiseEffectParams,
+  SceneNode,
+  TextureEffectParams
+} from '@open-pencil/scene-graph'
 import {
   DEFAULT_GLASS,
   DEFAULT_NOISE,
   DEFAULT_NOISE_COLOR,
   DEFAULT_TEXTURE,
-  UNSET_NOISE
+  UNSET_NOISE,
+  UNSET_TEXTURE
 } from '@open-pencil/scene-graph/constants'
 import { copyEffects } from '@open-pencil/scene-graph/copy'
 import type { Color } from '@open-pencil/scene-graph/primitives'
@@ -91,23 +97,42 @@ export function blurKindChange(kind: BlurKind): Partial<Effect> {
 export type NoiseType = NoiseEffectParams['noiseType']
 
 /**
+ * A change to one effect: fields to set, or fields made from each selected layer's own effect, so
+ * a change to one value of a noise, texture, or glass leaves each layer's other values alone.
+ */
+export type EffectChange = Partial<Effect> | ((effect: Effect) => Partial<Effect>)
+
+/**
  * The change that makes a noise monotone, duotone, or multitone, as Figma's panel switches it: a
  * duotone's second colour starts white and a multitone's opacity starts at the first colour's
  * opacity, unless the noise already has them.
  */
-export function noiseTypeChange(effect: Effect, noiseType: NoiseType): Partial<Effect> {
-  const noise: NoiseEffectParams = { ...(effect.noise ?? UNSET_NOISE), noiseType }
-  if (noiseType === 'DUOTONE') noise.secondaryColor ??= { r: 1, g: 1, b: 1, a: effect.color.a }
-  if (noiseType === 'MULTITONE') noise.opacity ??= effect.color.a
-  return { noise }
+export function noiseTypeChange(noiseType: NoiseType): EffectChange {
+  return (effect) => {
+    const noise: NoiseEffectParams = { ...(effect.noise ?? UNSET_NOISE), noiseType }
+    if (noiseType === 'DUOTONE') noise.secondaryColor ??= { r: 1, g: 1, b: 1, a: effect.color.a }
+    if (noiseType === 'MULTITONE') noise.opacity ??= effect.color.a
+    return { noise }
+  }
 }
 
 /** The change that gives a noise or texture grain of `size` on both axes, as Figma's panel does. */
-export function grainSizeChange(effect: Effect, size: number): Partial<Effect> {
+export function grainSizeChange(size: number): EffectChange {
   const noiseSize = { x: Math.max(size, 0), y: Math.max(size, 0) }
-  if (effect.type === 'TEXTURE')
-    return { texture: { ...(effect.texture ?? DEFAULT_TEXTURE), noiseSize } }
-  return { noise: { ...(effect.noise ?? UNSET_NOISE), noiseSize } }
+  return (effect) =>
+    effect.type === 'TEXTURE'
+      ? { texture: { ...(effect.texture ?? UNSET_TEXTURE), noiseSize } }
+      : { noise: { ...(effect.noise ?? UNSET_NOISE), noiseSize } }
+}
+
+/** A change to some values of a noise's grain, the rest of each layer's kept. */
+export function noiseChange(changes: Partial<NoiseEffectParams>): EffectChange {
+  return (effect) => ({ noise: { ...(effect.noise ?? UNSET_NOISE), ...changes } })
+}
+
+/** A change to some values of a texture's grain, the rest of each layer's kept. */
+export function textureChange(changes: Partial<TextureEffectParams>): EffectChange {
+  return (effect) => ({ texture: { ...(effect.texture ?? UNSET_TEXTURE), ...changes } })
 }
 
 export function createDefaultEffect(): Effect {
@@ -131,12 +156,15 @@ export function createEffectEditActions(
   editor: Editor,
   effectsBeforeScrub: Ref<Map<string, EffectEditSnapshot> | null>
 ) {
-  function apply(nodes: readonly SceneNode[], index: number, changes: Partial<Effect>) {
+  function apply(nodes: readonly SceneNode[], index: number, changes: EffectChange) {
     for (const node of nodes) {
       const effects = [...node.effects]
       const current = effects.at(index)
       if (!current) continue
-      effects[index] = { ...current, ...changes }
+      effects[index] = {
+        ...current,
+        ...(typeof changes === 'function' ? changes(current) : changes)
+      }
       editor.updateNode(node.id, { effects })
     }
     editor.requestRender()
@@ -151,14 +179,14 @@ export function createEffectEditActions(
     )
   }
 
-  function scrubEffect(nodes: readonly SceneNode[], index: number, changes: Partial<Effect>) {
+  function scrubEffect(nodes: readonly SceneNode[], index: number, changes: EffectChange) {
     if (nodes.length === 0) return
     effectsBeforeScrub.value ??= snapshot(nodes)
     apply(nodes, index, changes)
   }
 
   /** Commits a scrub, or a change made in one step such as a checkbox, as one undo step. */
-  function commitEffect(nodes: readonly SceneNode[], index: number, changes: Partial<Effect>) {
+  function commitEffect(nodes: readonly SceneNode[], index: number, changes: EffectChange) {
     if (nodes.length === 0) return
     const previous = effectsBeforeScrub.value ?? snapshot(nodes)
     effectsBeforeScrub.value = null

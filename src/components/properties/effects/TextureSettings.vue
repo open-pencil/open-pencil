@@ -3,7 +3,11 @@ import { computed } from 'vue'
 
 import type { Effect } from '@open-pencil/scene-graph'
 import { UNSET_TEXTURE } from '@open-pencil/scene-graph/constants'
-import { grainSizeChange } from '@open-pencil/vue/controls/effects'
+import {
+  type EffectChange,
+  grainSizeChange,
+  textureChange
+} from '@open-pencil/vue/controls/effects'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import NumberField from '@/components/inputs/NumberField.vue'
@@ -18,8 +22,8 @@ const { effect, index, nodeIds } = defineProps<{
   nodeIds: readonly string[]
 }>()
 const emit = defineEmits<{
-  scrub: [changes: Partial<Effect>]
-  commit: [changes: Partial<Effect>]
+  scrub: [changes: EffectChange]
+  commit: [changes: EffectChange]
 }>()
 
 const { panels } = useI18n()
@@ -41,8 +45,8 @@ function radiusChange(radius: number): Partial<Effect> {
       :min="0"
       :max="100"
       data-property="texture-size"
-      @update:model-value="emit('scrub', grainSizeChange(effect, $event))"
-      @commit="emit('commit', grainSizeChange(effect, $event))"
+      @update:model-value="emit('scrub', grainSizeChange($event))"
+      @commit="emit('commit', grainSizeChange($event))"
     />
     <!-- As in Figma, the grain stays square: the vertical size follows the horizontal one. -->
     <NumberField
@@ -74,7 +78,7 @@ function radiusChange(radius: number): Partial<Effect> {
       :model-value="texture.clipToShape"
       :ariaLabel="panels.clipToShape"
       data-property="texture-clip"
-      @update:model-value="emit('commit', { texture: { ...texture, clipToShape: $event } })"
+      @update:model-value="emit('commit', textureChange({ clipToShape: $event }))"
     />
     {{ panels.clipToShape }}
   </label>
