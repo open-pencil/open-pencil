@@ -1,4 +1,5 @@
-// Figma's noise effect, drawn over a layer in its own units (`p`). Each cell of `cell` units takes
+// Figma's noise effect, drawn over a layer in its own units (`p`). Each cell of `cell` units, per
+// axis for a grain wider than tall, takes
 // a uniform value from a hash of its index and the seed, and the level Figma's measured shares give
 // that value. Cells wider than a pixel blend with Catmull-Rom, and the blend is stretched around the
 // mean level by `contrast` and clipped, as Figma sharpens large grains. A duotone's second colour
@@ -6,7 +7,7 @@
 // supersampled export draws finer than its pixels and averages them, which would smooth the
 // grains, so there each sample is taken at its output pixel's centre: `toOutput*` maps the layer
 // to the output's pixels and `fromOutput*` back.
-uniform float cell;
+uniform float2 cell;
 uniform float contrast;
 uniform float center;
 uniform float shares[16];

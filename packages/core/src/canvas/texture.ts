@@ -1,6 +1,7 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { Effect, SceneNode } from '@open-pencil/scene-graph'
 import { UNSET_TEXTURE } from '@open-pencil/scene-graph/constants'
+import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 
@@ -66,4 +67,21 @@ export function beginTexture(
 /** Ends what `beginTexture` started, drawing the textured content. */
 export function endTexture(canvas: Canvas, saves: number): void {
   for (let i = 0; i < saves; i++) canvas.restore()
+}
+
+/**
+ * Draws a shape's own content through its texture: its fills, strokes, and inner shadows, not
+ * its shadows behind or its noise over it, as in Figma. A frame or group textures its children
+ * too, which `renderNode` does around them.
+ */
+export function withLeafTexture(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  draw: () => void
+): void {
+  const texture = isLayerContainer(node) ? undefined : visibleTexture(node)
+  const saves = texture ? beginTexture(r, canvas, node, texture) : 0
+  draw()
+  endTexture(canvas, saves)
 }

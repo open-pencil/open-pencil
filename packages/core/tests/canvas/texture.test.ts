@@ -70,4 +70,53 @@ describe('texture effects', () => {
     expect(clipped.outside).toBeLessThan(40)
     expect(clipped.missing).toBeLessThan(40)
   })
+
+  test('leave the layer’s own drop shadow whole when clipped to the shape', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    const host = graph.createNode('FRAME', page, {
+      width: 160,
+      height: 160,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }]
+    })
+    graph.createNode('RECTANGLE', host.id, {
+      x: 20,
+      y: 20,
+      width: 100,
+      height: 100,
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 1, a: 1 }, opacity: 1, visible: true }],
+      effects: [
+        {
+          type: 'DROP_SHADOW',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          offset: { x: 20, y: 20 },
+          radius: 0,
+          spread: 0,
+          visible: true
+        },
+        texture({ noiseSize: 2, radius: 4, clipToShape: true })
+      ]
+    })
+    const png = renderNodesToImage(ck, renderer, graph, page, [host.id], {
+      scale: 1,
+      format: 'PNG'
+    })
+    const image = expectDefined(ck.MakeImageFromEncoded(expectDefined(png)))
+    try {
+      const pixels = expectDefined(
+        image.readPixels(0, 0, {
+          width: 160,
+          height: 160,
+          colorType: ck.ColorType.RGBA_8888,
+          alphaType: ck.AlphaType.Unpremul,
+          colorSpace: ck.ColorSpace.SRGB
+        })
+      )
+      // Below the square's right corner, only the shadow reaches: black, not the frame's white.
+      const at = (130 * 160 + 130) * 4
+      expect([pixels[at], pixels[at + 1], pixels[at + 2]]).toEqual([0, 0, 0])
+    } finally {
+      image.delete()
+    }
+  })
 })

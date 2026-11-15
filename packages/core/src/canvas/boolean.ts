@@ -20,6 +20,7 @@ import {
 } from './strokes/draw'
 import { makeLineSegmentPath, makeLineStrokeOutline } from './strokes/line'
 import { textNodeToOutlinePath } from './text/outlines/glyphs'
+import { withLeafTexture } from './texture'
 
 const BOOLEAN_PATH_OP: Record<
   NonNullable<SceneNode['booleanOperation']>,
@@ -560,6 +561,10 @@ export function renderBooleanOperation(
   graph: SceneGraph
 ): void {
   r.renderEffects(canvas, node, graph, 'behind')
-  paintBooleanOperation(r, canvas, node, graph, () => r.renderEffects(canvas, node, graph, 'inner'))
+  withLeafTexture(r, canvas, node, () =>
+    paintBooleanOperation(r, canvas, node, graph, () =>
+      r.renderEffects(canvas, node, graph, 'inner')
+    )
+  )
   r.renderEffects(canvas, node, graph, 'front')
 }

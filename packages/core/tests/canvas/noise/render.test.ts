@@ -104,4 +104,31 @@ describe('noise effects drawn as Figma draws them', () => {
     expect(shares.mode).toBe(1)
     expect(shares.secondary).toEqual([0, 0, 1, 1])
   })
+
+  test('a grain wider than tall keeps both of its sizes', () => {
+    const wide = noiseUniforms(noise({ noiseSize: { x: 16, y: 1 } }))
+    const tall = noiseUniforms(noise({ noiseSize: { x: 1, y: 16 } }))
+    expect(wide.cell[0]).toBeGreaterThan(wide.cell[1])
+    expect(tall.cell[1]).toBeGreaterThan(tall.cell[0])
+  })
+
+  test('an export after another at a different scale draws its own pixel grid', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    const node = graph.createNode('RECTANGLE', page, {
+      width: 64,
+      height: 64,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }],
+      effects: [noise({ color: '#000000', noiseSize: 1.5, density: 1 })]
+    })
+    const exported = (with_: SkiaRenderer, scale: number) =>
+      expectDefined(renderNodesToImage(ck, with_, graph, page, [node.id], { scale, format: 'PNG' }))
+    exported(renderer, 1)
+    const fresh = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
+    try {
+      expect(exported(renderer, 2)).toEqual(exported(fresh, 2))
+    } finally {
+      fresh.destroy()
+    }
+  })
 })

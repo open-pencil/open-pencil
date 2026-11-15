@@ -38,6 +38,28 @@ describe('render chunk spatial index', () => {
     index.dispose()
   })
 
+  test('keeps a textured frame whole, so its texture reaches every child', () => {
+    const { graph, pageId } = graphWithNodes(1_000)
+    const frame = graph.getChildren(pageId)[0]
+    if (!frame) throw new Error('Expected frame')
+    graph.updateNode(frame.id, {
+      effects: [
+        {
+          type: 'TEXTURE',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          offset: { x: 0, y: 0 },
+          radius: 4,
+          spread: 0,
+          visible: true,
+          texture: { noiseSize: { x: 4, y: 4 }, clipToShape: false }
+        }
+      ]
+    })
+    const { index, stats } = RenderChunkIndex.build(graph, pageId)
+    expect(stats.chunksBuilt).toBe(1)
+    index.dispose()
+  })
+
   test('queries only chunks intersecting a world-space rectangle in painter order', () => {
     const { graph, pageId } = graphWithNodes(1_000)
     const { index } = RenderChunkIndex.build(graph, pageId)

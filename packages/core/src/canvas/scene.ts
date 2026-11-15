@@ -17,6 +17,7 @@ import { renderBooleanOperation } from './boolean'
 import { drawVectorMultiStyleFills, paintFills } from './fills/paint'
 import { drawLayoutGrids } from './layout-grids'
 import { renderMaskedChildIds } from './masks'
+import { renderNoiseEffects } from './noise/render'
 import { drawShapeThroughNodePicture } from './renderer/node-pictures'
 import type { SkiaRenderer, RenderOverlays } from './renderer/skia'
 import {
@@ -41,7 +42,7 @@ import {
 import { drawReflowedPathTextSilhouettes, isReflowedPathText } from './text/derived'
 import { drawTextEmoji, hasOverflowPathTextPaint, renderText } from './text/draw/text'
 import { stickyPlaceholderNode } from './text/placeholder'
-import { beginTexture, endTexture, visibleTexture } from './texture'
+import { beginTexture, endTexture, visibleTexture, withLeafTexture } from './texture'
 
 function drawVisibleFills(
   r: SkiaRenderer,
@@ -401,9 +402,10 @@ export function renderNode(
 
   applyNodeTransforms(canvas, node, overlays)
   renderLayerShadows(r, canvas, graph, node, 'behind')
-  // A texture roughens what the layer and its children draw, not its shadows, and noise grains
-  // the roughened result, as in Figma.
-  const texture = visibleTexture(node)
+  // A frame or group's texture roughens what it and its children draw, not its shadows, and its
+  // noise grains the roughened result over its children, as in Figma. A shape does both itself.
+  const container = isLayerContainer(node)
+  const texture = container ? visibleTexture(node) : undefined
   const textureSaves = texture ? beginTexture(r, canvas, node, texture) : 0
   renderNodeContent(r, canvas, graph, node, overlays)
   drawLayoutGrids(r, canvas, node)
@@ -418,6 +420,7 @@ export function renderNode(
     childFrame(frame, node, parentAbsX, parentAbsY, overlays.rotationPreview)
   )
   endTexture(canvas, textureSaves)
+  if (container) renderNoiseEffects(r, canvas, node, graph)
   renderLayerShadows(r, canvas, graph, node, 'front')
 
   if (layerBlur) {
@@ -533,7 +536,9 @@ export function renderShapeUncached(
   graph: SceneGraph
 ): void {
   r.renderEffects(canvas, node, graph, 'behind')
-  paintShapeContent(r, canvas, node, graph, () => r.renderEffects(canvas, node, graph, 'inner'))
+  withLeafTexture(r, canvas, node, () =>
+    paintShapeContent(r, canvas, node, graph, () => r.renderEffects(canvas, node, graph, 'inner'))
+  )
   r.renderEffects(canvas, node, graph, 'front')
 }
 

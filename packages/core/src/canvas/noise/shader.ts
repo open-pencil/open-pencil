@@ -17,7 +17,7 @@ import grainSource from './grain.sksl?raw'
 import { noiseLevelShares, noiseMeanLevel } from './table'
 
 interface NoiseUniforms {
-  cell: number
+  cell: Float2
   contrast: number
   center: number
   shares: ArrayLike<number>
@@ -126,14 +126,14 @@ const NOISE_MODE: Record<NoiseEffectParams['noiseType'], number> = {
 }
 
 /**
- * The shader's uniforms for a noise `effect`, its grain sized by the larger of its axes, sampled
+ * The shader's uniforms for a noise `effect`, a cell per axis and the contrast of the larger, sampled
  * once per output pixel where `layerToOutput` maps the layer onto a supersampled export.
  */
 export function noiseUniforms(effect: Effect, layerToOutput: Mat3 | null = null): NoiseUniforms {
   const grain = effect.noise ?? UNSET_NOISE
   const size = Math.max(grain.noiseSize.x, grain.noiseSize.y)
   const shares = noiseLevelShares(grain.density)
-  const cell = noiseCell(size)
+  const cell: Float2 = [noiseCell(grain.noiseSize.x), noiseCell(grain.noiseSize.y)]
   const secondary = grain.secondaryColor ?? effect.color
   return {
     cell,
@@ -142,7 +142,7 @@ export function noiseUniforms(effect: Effect, layerToOutput: Mat3 | null = null)
     shares,
     seed: grain.seed ?? 0,
     mode: NOISE_MODE[grain.noiseType],
-    blend: cell > 1 ? 1 : 0,
+    blend: Math.max(cell[0], cell[1]) > 1 ? 1 : 0,
     primary: [effect.color.r, effect.color.g, effect.color.b, effect.color.a],
     secondary: [secondary.r, secondary.g, secondary.b, secondary.a],
     opacity: grain.opacity ?? 1,

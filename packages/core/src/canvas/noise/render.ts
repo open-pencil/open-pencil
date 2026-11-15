@@ -15,12 +15,13 @@ export function renderNoiseEffects(
   node: SceneNode,
   graph: SceneGraph
 ): void {
+  const noises = node.effects.filter((effect) => effect.visible && effect.type === 'NOISE')
+  if (noises.length === 0) return
   const output = r.images.supersampledOutput
   const layerToOutput = output
     ? Matrix.multiply(output.outputFromWorld, getWorldMatrix(node, graph))
     : null
-  for (const effect of node.effects) {
-    if (!effect.visible || effect.type !== 'NOISE') continue
+  for (const effect of noises) {
     const shader = keptShader(r.ck, r.shaders, NOISE_GRAIN, noiseUniforms(effect, layerToOutput))
     canvas.save()
     r.clipNodeShape(canvas, node)

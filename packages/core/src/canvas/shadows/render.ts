@@ -386,7 +386,8 @@ export function renderEffects(
   graph: SceneGraph,
   pass: EffectPass
 ): void {
-  if (pass === 'front') renderNoiseEffects(r, canvas, node, graph)
+  // A frame or group draws its noise over its children, after them; a shape draws its own here.
+  if (pass === 'front' && !isLayerContainer(node)) renderNoiseEffects(r, canvas, node, graph)
 
   const ownShadows = !isLayerContainer(node)
   for (const effect of node.effects) {
