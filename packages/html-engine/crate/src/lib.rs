@@ -57,6 +57,8 @@ const PROPERTIES: &[&str] = &[
     "flex-shrink",
     "flex-basis",
     "justify-content",
+    "justify-items",
+    "justify-self",
     "align-items",
     "align-self",
     "align-content",

@@ -74,6 +74,8 @@ const DEFAULT_COMPUTED_PROPERTIES = [
   'grid-template-rows',
   'height',
   'justify-content',
+  'justify-items',
+  'justify-self',
   'left',
   'letter-spacing',
   'line-height',

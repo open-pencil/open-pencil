@@ -216,6 +216,15 @@ describe('the HTML engine runtime', () => {
     expect(elementById(document, 'c').computedStyle?.['caption-side']).toBe('bottom')
   })
 
+  test("reports a grid item's alignment across, by its own or its grid's", async () => {
+    const document = await styled(
+      '<div style="display:grid;justify-items:center"><div id="a"></div><div id="b" style="justify-self:end"></div></div>'
+    )
+
+    expect(elementById(document, 'a').computedStyle?.['justify-self']).toBe('auto')
+    expect(elementById(document, 'b').computedStyle?.['justify-self']).toBe('end')
+  })
+
   test("pairs a shader layer's children past the still frame the serializer writes", async () => {
     const card: DesignDocument = {
       type: 'document',

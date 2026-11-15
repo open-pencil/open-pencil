@@ -43,6 +43,7 @@ import {
   type FlowKind,
   type ParentFlow
 } from './flow'
+import { alignGridItems } from './grid'
 import {
   applyCapturedLines,
   capturedBox,
@@ -390,6 +391,7 @@ function createElementNode(
   if (display === 'table' || display === 'inline-table')
     wrapTableGrid(graph, node, parts, recorded.boxes)
   if (isTableRow(display)) layOutRowSpans(node, parts, recorded.boxes)
+  if (display === 'grid' || display === 'inline-grid') alignGridItems(graph, node, parts, style)
   return node
 }
 

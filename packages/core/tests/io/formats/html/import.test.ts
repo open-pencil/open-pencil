@@ -137,6 +137,18 @@ describe('reading HTML', () => {
     expect([a.x, b.x]).toEqual([42, 42])
   })
 
+  test('keeps a grid that centers its item by place-items in auto layout', async () => {
+    const { graph } = await readHTMLDocument(
+      `<div style="display:grid;place-items:center;width:400px;height:200px">` +
+        `<div style="width:100px;height:50px;background:red"></div></div>`
+    )
+    const [grid] = graph.getChildren(graph.getPages()[0].id)
+    const [item] = graph.getChildren(grid.id)
+
+    expect(grid.layoutMode).toBe('VERTICAL')
+    expect(item).toMatchObject({ x: 150, y: 75, width: 100, height: 50 })
+  })
+
   test('centers a block capped by its maximum width at that width, keeping auto layout', async () => {
     const { graph } = await readHTMLDocument(
       `<div style="width:600px"><div style="max-width:300px;margin:0 auto">` +
