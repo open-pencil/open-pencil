@@ -83,13 +83,13 @@ describe('who writes a conversation’s summaries', () => {
     expect(writer.limits).toEqual(fastLimits)
   })
 
-  test('is sized as the conversation’s model when the Fast tasks catalog gives no window', async () => {
+  test('is the conversation’s own when the Fast tasks catalog gives no window', async () => {
     const writer = await summaryWriter(
       conversation,
       async () => fastRuntime,
       async () => null
     )
-    expect(writer.limits).toBe(conversation.limits)
+    expect(writer).toBe(conversation)
   })
 
   test('is the conversation’s own when no model is assigned to Fast tasks', async () => {

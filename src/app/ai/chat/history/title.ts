@@ -1,16 +1,13 @@
-import { valibotSchema } from '@ai-sdk/valibot'
-import { generateText, Output, type UIMessage } from 'ai'
+import type { UIMessage } from 'ai'
 import dedent from 'dedent'
 import * as v from 'valibot'
 
-import { answersQuestions, askModel } from '@/app/ai/models/ask'
+import { answersQuestions, askModel, type ModelAnswer } from '@/app/ai/models/ask'
 import { fastTasksRuntime } from '@/app/ai/models/fast'
-import { reasoningCallSettings } from '@/app/ai/models/reasoning/settings'
-import type { DirectAIModelRuntime } from '@/app/ai/models/runtime'
 
 import { fallbackTitle } from './messages'
 
-/** A title is a few words; a model that does not think is cut off well past that. */
+/** A title is a few words; the model is cut off well past that. */
 const MAX_TITLE_TOKENS = 40
 /** How much of the first reply the model reads to name the conversation. */
 const REPLY_EXCERPT_LENGTH = 600
@@ -18,38 +15,21 @@ const REPLY_EXCERPT_LENGTH = 600
 /** What naming a conversation reaches, which tests replace. */
 export interface TitleDependencies {
   fastTasks: typeof fastTasksRuntime
-  /** Asks a coding agent, which answers in text. */
   ask: typeof askModel
-  /** Calls an API model, which answers in the title's shape. */
-  generate: typeof generateText
 }
 
-const DEFAULT_DEPENDENCIES: TitleDependencies = {
-  fastTasks: fastTasksRuntime,
-  ask: askModel,
-  generate: generateText
-}
+const DEFAULT_DEPENDENCIES: TitleDependencies = { fastTasks: fastTasksRuntime, ask: askModel }
 
 /**
- * What an API model answers: the title alone. It becomes the request's JSON schema, so it holds
- * only checks JSON Schema can express.
+ * The title alone. An API model answers in this shape, which becomes the request's JSON schema,
+ * so it holds only checks JSON Schema can express; an agent's answer is the title itself.
  */
-const titleSchema = v.object({
-  title: v.pipe(v.string(), v.minLength(1), v.description('At most six words'))
-})
-
-/**
- * A title needs no thinking, so it is turned off. A model that always thinks spends its thinking
- * from the same allowance, so it keeps the profile's.
- */
-function titleSettings(runtime: DirectAIModelRuntime) {
-  const { connection, profile } = runtime.role
-  return {
-    maxOutputTokens: runtime.minReasoningEffort
-      ? profile.maxOutputTokens
-      : Math.min(profile.maxOutputTokens, MAX_TITLE_TOKENS),
-    ...reasoningCallSettings(connection.providerID, 'off', runtime.minReasoningEffort)
-  }
+export const TITLE_ANSWER: ModelAnswer<{ title: string }> = {
+  schema: v.object({
+    title: v.pipe(v.string(), v.minLength(1), v.description('At most six words'))
+  }),
+  name: 'conversation_title',
+  fromText: (text) => ({ title: text })
 }
 
 function firstReply(messages: readonly UIMessage[]): string {
@@ -70,7 +50,7 @@ function firstReply(messages: readonly UIMessage[]): string {
  */
 export async function conversationTitle(
   messages: UIMessage[],
-  { fastTasks, ask, generate }: TitleDependencies = DEFAULT_DEPENDENCIES
+  { fastTasks, ask }: TitleDependencies = DEFAULT_DEPENDENCIES
 ): Promise<string | null> {
   const request = fallbackTitle(messages)
   const reply = firstReply(messages)
@@ -85,20 +65,17 @@ export async function conversationTitle(
 
     Reply:
     ${reply}
+
+    Reply with the title alone.
   `
   try {
-    if (runtime.kind === 'direct') {
-      const { output } = await generate({
-        model: runtime.model,
-        ...titleSettings(runtime),
-        output: Output.object({ schema: valibotSchema(titleSchema), name: 'conversation_title' }),
-        prompt: text
-      })
-      return output.title.trim() || null
-    }
-    // An agent answers over ACP in text alone, so it is asked for the title and nothing else.
-    const answer = await ask(runtime, { text: `${text}\n\nReply with the title alone.` })
-    return answer.trim() || null
+    const { title } = await ask(runtime, {
+      text,
+      maxOutputTokens: MAX_TITLE_TOKENS,
+      thinking: 'off',
+      answer: TITLE_ANSWER
+    })
+    return title.trim() || null
   } catch {
     return null
   }

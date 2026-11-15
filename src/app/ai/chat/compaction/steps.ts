@@ -8,20 +8,18 @@ import { compactionOf, summaryText, type StepCompaction } from './marker'
 import { summaryWriter, type SummaryWriter } from './model'
 import { summarizeModelMessages } from './summarize'
 
-/** The model's limits, or null when they cannot be read or the reply is stopped first. */
-async function readLimits(
-  contextLimits: () => Promise<ContextLimits | null>,
+/** What `work` gives, or null when the reply is stopped first: a stalled lookup must not hold it open. */
+async function unlessStopped<T>(
+  work: Promise<T>,
   signal: AbortSignal | undefined
-): Promise<ContextLimits | null> {
-  const lookup = contextLimits().catch(() => null)
-  if (!signal) return lookup
+): Promise<T | null> {
+  if (!signal) return work
   if (signal.aborted) return null
-  // A stalled catalog fetch must not hold a stopped reply open.
   const stopped = createDeferred<null>()
   const stop = () => stopped.resolve(null)
   signal.addEventListener('abort', stop, { once: true })
   try {
-    return await Promise.race([lookup, stopped.promise])
+    return await Promise.race([work, stopped.promise])
   } finally {
     signal.removeEventListener('abort', stop)
   }
@@ -55,7 +53,12 @@ export function createStepCompaction(
 
   /** Before a reply: whether it may compact, read once, and what its request starts with. */
   async function begin(sent: readonly UIMessage[], signal: AbortSignal | undefined) {
-    limits = compactAutomatically.value ? await readLimits(contextLimits, signal) : null
+    limits = compactAutomatically.value
+      ? await unlessStopped(
+          contextLimits().catch(() => null),
+          signal
+        )
+      : null
     abortSignal = signal
     const first = sent.at(0)
     summaryFirst = first !== undefined && compactionOf(first) !== null
@@ -74,7 +77,8 @@ export function createStepCompaction(
     let summary: string
     try {
       // The request is sized for the model that writes it, whose window may be the smaller.
-      const writer = await summaryWriterFor({ model, limits })
+      const writer = await unlessStopped(summaryWriterFor({ model, limits }), abortSignal)
+      if (!writer) return undefined
       summary = await summarizeModelMessages(messages.slice(0, last), {
         model: writer.model,
         summaryFirst,

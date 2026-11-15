@@ -14,7 +14,8 @@ export interface SummaryWriter {
  * Who writes a conversation's summaries: the Fast tasks model when it is an API model, else the
  * conversation's own. A summary request carries the conversation's messages, which a coding
  * agent's prompt cannot, so an agent on Fast tasks leaves summaries to the conversation's model.
- * A Fast tasks model whose catalog gives no window is sized as the conversation's model is.
+ * A Fast tasks model whose catalog gives no window leaves them to the conversation's model too,
+ * since a request sized for another model's window may not fit its own.
  */
 export async function summaryWriter(
   conversation: SummaryWriter,
@@ -24,5 +25,5 @@ export async function summaryWriter(
   const fast = await fastTasks()
   if (fast?.kind !== 'direct') return conversation
   const limits = await limitsOf(fast.role).catch(() => null)
-  return { model: fast.model, limits: limits ?? conversation.limits }
+  return limits ? { model: fast.model, limits } : conversation
 }

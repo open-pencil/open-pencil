@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { generateText, LanguageModel, UIMessage } from 'ai'
+import type { UIMessage } from 'ai'
 
-import type { ReasoningEffort } from '@open-pencil/core/constants'
 import { asDouble } from '@open-pencil/test-support/doubles'
 
 import { conversationTitle, type TitleDependencies } from '@/app/ai/chat/history/title'
@@ -22,94 +21,55 @@ const exchange: UIMessage[] = [
   }
 ]
 
-type GenerateOptions = Parameters<typeof generateText>[0]
-
-/** A Fast tasks model of `kind` that answers `answer`, recording what it was asked. */
-function fastModel(
-  answer: string | Error,
-  kind: AIModelRuntime['kind'] = 'direct',
-  minReasoningEffort?: ReasoningEffort
-) {
-  const generated: GenerateOptions[] = []
+/** A Fast tasks model of `kind` that names the conversation `answer`, recording what it was asked. */
+function fastModel(answer: string | Error, kind: AIModelRuntime['kind'] = 'direct') {
   const asked: ModelQuestion[] = []
-  const fail = () => {
-    if (answer instanceof Error) throw answer
-  }
   const dependencies: TitleDependencies = {
-    fastTasks: async () =>
-      asDouble<AIModelRuntime>({
-        kind,
-        model: asDouble<LanguageModel>({}),
-        minReasoningEffort,
-        role: {
-          connection: { providerID: 'anthropic' },
-          profile: { maxOutputTokens: 8000, thinkingLevel: 'high' }
-        }
-      }),
-    generate: asDouble<typeof generateText>(async (options: GenerateOptions) => {
-      generated.push(options)
-      fail()
-      return { output: { title: answer } }
-    }),
-    ask: async (_runtime, question) => {
-      asked.push(question)
-      fail()
-      return String(answer)
-    }
+    fastTasks: async () => asDouble<AIModelRuntime>({ kind }),
+    ask: asDouble<TitleDependencies['ask']>(
+      async (_runtime: AIModelRuntime, question: ModelQuestion) => {
+        asked.push(question)
+        if (answer instanceof Error) throw answer
+        return { title: answer }
+      }
+    )
   }
-  return { generated, asked, dependencies }
+  return { asked, dependencies }
 }
 
 describe('a conversation’s title', () => {
-  test('is the title an API model on Fast tasks returns as structured output', async () => {
-    const fast = fastModel('Equal-height pricing cards')
+  test('is what the Fast tasks model answers, asked briefly and without thinking', async () => {
+    const fast = fastModel('  Equal-height pricing cards  ')
     expect(await conversationTitle(exchange, fast.dependencies)).toBe('Equal-height pricing cards')
-    expect(fast.generated).toHaveLength(1)
-    expect(fast.generated[0]?.output).toBeDefined()
-    expect(fast.generated[0]?.prompt).toContain('Make the pricing cards the same height')
-    expect(fast.generated[0]?.prompt).toContain('I set all three cards to fill.')
-    expect(fast.asked).toEqual([])
+    expect(fast.asked).toHaveLength(1)
+    expect(fast.asked[0]).toMatchObject({ maxOutputTokens: 40, thinking: 'off' })
+    expect(fast.asked[0]?.text).toContain('Make the pricing cards the same height')
+    expect(fast.asked[0]?.text).toContain('I set all three cards to fill.')
   })
 
-  test('is asked for without thinking, which would spend the few tokens a title takes', async () => {
-    const fast = fastModel('Pricing cards')
-    await conversationTitle(exchange, fast.dependencies)
-    expect(fast.generated[0]?.reasoning).toBe('none')
-    expect(fast.generated[0]?.maxOutputTokens).toBe(40)
-  })
-
-  test('leaves a model that always thinks the profile’s allowance to think in', async () => {
-    const fast = fastModel('Pricing cards', 'direct', 'low')
-    await conversationTitle(exchange, fast.dependencies)
-    expect(fast.generated[0]?.reasoning).toBe('low')
-    expect(fast.generated[0]?.maxOutputTokens).toBe(8000)
-  })
-
-  test('is what a coding agent on Fast tasks answers', async () => {
-    const fast = fastModel('  Pricing cards  ', 'acp')
+  test('is asked of a coding agent on Fast tasks the same way', async () => {
+    const fast = fastModel('Pricing cards', 'acp')
     expect(await conversationTitle(exchange, fast.dependencies)).toBe('Pricing cards')
     expect(fast.asked).toHaveLength(1)
-    expect(fast.generated).toEqual([])
   })
 
   test('stays the first message when no model is assigned to Fast tasks', async () => {
     const fast = fastModel('Unused')
     const dependencies = { ...fast.dependencies, fastTasks: async () => null }
     expect(await conversationTitle(exchange, dependencies)).toBeNull()
-    expect(fast.generated).toEqual([])
+    expect(fast.asked).toEqual([])
   })
 
   test('stays the first message for Pi, which takes no question outside a chat', async () => {
     const fast = fastModel('Unused', 'harness')
     expect(await conversationTitle(exchange, fast.dependencies)).toBeNull()
     expect(fast.asked).toEqual([])
-    expect(fast.generated).toEqual([])
   })
 
-  test.each(['direct', 'acp'] as const)(
-    'stays the first message when a %s model fails',
-    async (kind) => {
-      const fast = fastModel(new Error('No credit'), kind)
+  test.each(['  ', new Error('No credit')])(
+    'stays the first message when the model answers %p',
+    async (answer) => {
+      const fast = fastModel(answer)
       expect(await conversationTitle(exchange, fast.dependencies)).toBeNull()
     }
   )
@@ -117,6 +77,6 @@ describe('a conversation’s title', () => {
   test('is not asked for before the conversation has a reply', async () => {
     const fast = fastModel('Unused')
     expect(await conversationTitle(exchange.slice(0, 1), fast.dependencies)).toBeNull()
-    expect(fast.generated).toEqual([])
+    expect(fast.asked).toEqual([])
   })
 })
