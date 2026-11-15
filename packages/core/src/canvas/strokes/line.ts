@@ -15,7 +15,7 @@ import {
   drawArrowHeads,
   getStrokeCapEntity,
   normalizeDashPattern
-} from '#core/canvas/strokes'
+} from '#core/canvas/strokes/draw'
 
 import { sideDashSpans } from './sides'
 

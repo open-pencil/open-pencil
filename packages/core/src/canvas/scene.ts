@@ -24,20 +24,20 @@ import {
   subtreeVisualRectInParent,
   visibleLayerBlur
 } from './renderer/visual-bounds'
-import { isolatesInnerShadows, renderLayerShadows } from './shadows'
-import {
-  configureStrokePaint,
-  drawDashedRRectWithSolidCorners,
-  drawRRectStrokeWithAlign,
-  drawStyledRRectStroke,
-  forVisibleStrokes
-} from './strokes'
+import { isolatesInnerShadows, renderLayerShadows } from './shadows/render'
 import {
   drawFigmaDashes,
   isPathTextWithStrokeGeometry,
   paintNodeStrokes,
   vectorStrokePaths
 } from './strokes/dispatch'
+import {
+  configureStrokePaint,
+  drawDashedRRectWithSolidCorners,
+  drawRRectStrokeWithAlign,
+  drawStyledRRectStroke,
+  forVisibleStrokes
+} from './strokes/draw'
 import { drawReflowedPathTextSilhouettes, isReflowedPathText } from './text/derived'
 import { stickyPlaceholderNode } from './text/placeholder'
 import { drawTextEmoji, hasOverflowPathTextPaint, renderText } from './text/render'

@@ -17,7 +17,7 @@ import {
   forVisibleStrokes,
   normalizeDashPattern,
   withStrokeDash
-} from './strokes'
+} from './strokes/draw'
 import { makeLineSegmentPath, makeLineStrokeOutline } from './strokes/line'
 import { textNodeToOutlinePath } from './text/outlines/glyphs'
 

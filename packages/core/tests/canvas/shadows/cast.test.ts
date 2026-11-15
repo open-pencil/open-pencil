@@ -1,6 +1,7 @@
 import { afterAll, describe, expect, test } from 'bun:test'
 
 import { FIGMA_SHADOW_ROWS as FIGMA } from '#core-tests/canvas/shadows/figma'
+import { expectFigmaRow, renderRow, type FigmaRowScene } from '#core-tests/helpers/figma-rows'
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
@@ -9,8 +10,6 @@ import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { separateShadowChildren } from '#core/canvas/shadows/silhouette'
-
-import { expectFigmaRow, renderRow, type FigmaRowScene } from '../helpers/figma-rows'
 
 const ck = await getCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))

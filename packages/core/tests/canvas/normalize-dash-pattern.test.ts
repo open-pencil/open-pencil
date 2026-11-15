@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { normalizeDashPattern } from '#core/canvas/strokes'
+import { normalizeDashPattern } from '#core/canvas/strokes/draw'
 
 describe('normalizeDashPattern', () => {
   test('preserves valid values and mirrors odd-length patterns', () => {
