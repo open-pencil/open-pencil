@@ -163,7 +163,8 @@ export interface FlowBlock {
  * `margin: auto` and `<center>` do. A block that fills the container's width has no room to
  * move, so only one with a width of its own moves by its own alignment. One capped by a maximum
  * width stays filling up to it, and the container's alignment places it, as Figma places a
- * capped Fill child, when that moves nothing else: when every other child fills the width too.
+ * capped Fill child, when that moves nothing else: when every other child fills the width
+ * without a maximum of its own.
  * Otherwise it hugs its content up to the maximum, and placement corrects a size that differs.
  */
 export function alignBlocksInFlow(
@@ -186,7 +187,8 @@ export function alignBlocksInFlow(
   const othersFill = graph
     .getChildren(container.id)
     .filter((child) => child.layoutPositioning !== 'ABSOLUTE' && !cappedIds.has(child.id))
-    .every((child) => child.layoutAlignSelf === 'STRETCH')
+    // A sibling capped by a maximum width of its own would move with the container's alignment.
+    .every((child) => child.layoutAlignSelf === 'STRETCH' && child.maxWidth === null)
   if (othersFill && capped.every((block) => block.align === align)) {
     container.counterAxisAlign = align
     return

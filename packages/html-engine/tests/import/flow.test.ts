@@ -182,6 +182,19 @@ describe('HTML flow as auto layout', () => {
     expect(sizing(byName('header'))[0]).toBe('FILL')
   })
 
+  it('leaves the container unaligned when a capped sibling stays at the start', async () => {
+    const { byName, sizing } = await importHTML(
+      `<div id="page" style="width:600px">` +
+        `<div id="header" style="max-width:200px;height:10px"></div>` +
+        `<div id="main" style="max-width:300px;margin:0 auto"><div style="width:100px;height:10px"></div></div>` +
+        `</div>`
+    )
+    // Aligning the container would center the header too, which the page keeps at the start.
+    expect(byName('page').counterAxisAlign).not.toBe('CENTER')
+    expect(sizing(byName('header'))[0]).toBe('FILL')
+    expect(byName('main').layoutAlignSelf).toBe('CENTER')
+  })
+
   it('centers boxes in a line by text-align past an absolutely positioned child', async () => {
     const { byName } = await importHTML(
       `<div id="row" style="width:600px;text-align:center;position:relative">` +
