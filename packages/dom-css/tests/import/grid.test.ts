@@ -131,4 +131,21 @@ describe('grid import', () => {
     expect(gridLayer.primaryAxisAlign).toBe('MIN')
     expect(itemLayers[0].layoutAlignSelf).toBe('CENTER')
   })
+  it('counts named lines as no rows or columns', () => {
+    const { gridLayer, itemLayers } = layers(
+      box(
+        {
+          ...GRID,
+          'grid-template-rows': '[start] 200px [end]',
+          'grid-template-columns': '[a b] 400px [c]',
+          'align-items': 'center',
+          'justify-items': 'center'
+        },
+        [item()]
+      )
+    )
+
+    expect(gridLayer.primaryAxisAlign).toBe('CENTER')
+    expect(itemLayers[0].layoutAlignSelf).toBe('CENTER')
+  })
 })

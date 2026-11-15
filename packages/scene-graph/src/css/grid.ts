@@ -67,9 +67,13 @@ function functionTracks(node: FunctionNode): GridTrack[] {
 
 function tracksOf(nodes: Node[]): GridTrack[] {
   const tracks: GridTrack[] = []
+  // Line names, such as `[start]` or `[a b]`, name the lines between tracks and size none.
+  let inNames = false
   for (const node of nodes) {
     if (tracks.length >= MAX_GRID_TRACKS) break
-    if (node.type === 'word') tracks.push(wordTrack(node.value))
+    if (node.type === 'word' && (inNames || node.value.startsWith('['))) {
+      inNames = !node.value.endsWith(']')
+    } else if (node.type === 'word') tracks.push(wordTrack(node.value))
     else if (node.type === 'function') appendAll(tracks, functionTracks(node))
   }
   return tracks.slice(0, MAX_GRID_TRACKS)

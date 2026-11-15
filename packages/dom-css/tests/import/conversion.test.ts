@@ -292,8 +292,9 @@ describe('@open-pencil/dom-css conversion', () => {
     }
     const style = { 'aspect-ratio': 'auto 1', 'box-sizing': 'border-box' }
 
-    expect(sized({ ...style, width: '10px', padding: '0px 20px' })).toEqual([10, 0])
-    expect(sized({ ...style, height: '10px', padding: '20px 0px' })).toEqual([0, 10])
+    // The box grows to hold its padding around the empty content box.
+    expect(sized({ ...style, width: '10px', padding: '0px 20px' })).toEqual([40, 0])
+    expect(sized({ ...style, height: '10px', padding: '20px 0px' })).toEqual([0, 40])
   })
 
   it('gives each side of a box its value in a padding shorthand of several values', () => {

@@ -2,10 +2,9 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   parseCSSAlignItems,
   parseCSSAlignSelf,
+  parseCSSGridTracks,
   parseCSSJustifyContent,
-  dimension,
-  parseCSSNumber,
-  splitCSSValue
+  parseCSSNumber
 } from '@open-pencil/scene-graph/css'
 import { layoutSizingUpdates } from '@open-pencil/scene-graph/layout'
 
@@ -49,16 +48,14 @@ function contentSide(style: DesignStyleDeclaration, property: string): Side | nu
 /**
  * A grid's one column: `auto` when the grid names none or an `auto` track, `fr` for a flexible
  * one, or its width in pixels, as a browser resolves any of them once laid out. Null for several
- * columns, or a track the importer cannot read.
+ * columns.
  */
 function singleColumn(style: DesignStyleDeclaration): 'auto' | 'fr' | number | null {
-  const columns = splitCSSValue(pickStyle(style, 'grid-template-columns')?.trim() ?? 'none')
+  const columns = parseCSSGridTracks(pickStyle(style, 'grid-template-columns') ?? 'none')
   if (columns.length !== 1) return null
   const [track] = columns
-  if (track === 'none' || track === 'auto') return 'auto'
-  const size = dimension(track)
-  if (size?.unit === 'fr') return 'fr'
-  return size?.unit === 'px' ? size.number : null
+  if (track.sizing === 'FR') return 'fr'
+  return track.sizing === 'FIXED' ? track.value : 'auto'
 }
 
 /** The width of a box's content box, from a `width` of its own. */
@@ -100,7 +97,7 @@ export function alignGridItems(
  * whose row fills the grid, by its own alignment.
  */
 function sideDown(style: DesignStyleDeclaration, lone: FlowBlock | undefined): Side | null {
-  const rows = splitCSSValue(pickStyle(style, 'grid-template-rows')?.trim() ?? 'none')
+  const rows = parseCSSGridTracks(pickStyle(style, 'grid-template-rows') ?? 'none')
   const fromItem = lone && rows.length === 1 ? itemSide(lone.style, style, 'align') : null
   return contentSide(style, 'align-content') ?? fromItem
 }

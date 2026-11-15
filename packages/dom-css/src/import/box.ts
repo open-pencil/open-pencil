@@ -249,20 +249,31 @@ function contentBoxExtras(style: DesignStyleDeclaration): { width: number; heigh
   return { width: insets.left + insets.right, height: insets.top + insets.bottom }
 }
 
-/** Explicit sizes count the padding and borders CSS places outside them. */
+/**
+ * Explicit sizes count the padding and borders CSS places outside them, and a border-box size
+ * smaller than its padding and borders grows to hold them, as its content box is at least empty.
+ */
 export function applyBoxSizing(node: SceneNode, style: DesignStyleDeclaration): void {
-  const extras = contentBoxExtras(style)
   const width = firstCSSNumber(style, 'width')
   const height = firstCSSNumber(style, 'height')
   // A size `aspect-ratio` derives from the other is a content size too.
   const ratio = parseCSSAspectRatio(pickStyle(style, 'aspect-ratio')) !== null
+  const sizedAcross = width !== null || (ratio && height !== null)
+  const sizedDown = height !== null || (ratio && width !== null)
+  if (pickStyle(style, 'box-sizing')?.trim() === 'border-box') {
+    const insets = contentInsets(style)
+    if (sizedAcross) node.width = Math.max(node.width, insets.left + insets.right)
+    if (sizedDown) node.height = Math.max(node.height, insets.top + insets.bottom)
+    return
+  }
+  const extras = contentBoxExtras(style)
   if (extras.width > 0) {
-    if (width !== null || (ratio && height !== null)) node.width += extras.width
+    if (sizedAcross) node.width += extras.width
     if (node.minWidth !== null) node.minWidth += extras.width
     if (node.maxWidth !== null) node.maxWidth += extras.width
   }
   if (extras.height > 0) {
-    if (height !== null || (ratio && width !== null)) node.height += extras.height
+    if (sizedDown) node.height += extras.height
     if (node.minHeight !== null) node.minHeight += extras.height
     if (node.maxHeight !== null) node.maxHeight += extras.height
   }

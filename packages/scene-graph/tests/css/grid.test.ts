@@ -45,4 +45,12 @@ describe('parseCSSGridTracks', () => {
     const [first, second] = parseCSSGridTracks('repeat(2, 1fr)')
     expect(first).not.toBe(second)
   })
+  test('named lines size no tracks', () => {
+    expect(parseCSSGridTracks('[start] 200px [end]')).toEqual([{ sizing: 'FIXED', value: 200 }])
+    expect(parseCSSGridTracks('[a b] 1fr [c d] auto')).toEqual([
+      { sizing: 'FR', value: 1 },
+      { sizing: 'AUTO', value: 0 }
+    ])
+    expect(parseCSSGridTracks('repeat(2, [col] 1fr)')).toHaveLength(2)
+  })
 })
