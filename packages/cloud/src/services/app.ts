@@ -3,7 +3,7 @@ import {
   servicesTokenClaimsSchema,
   CLOUD_SERVICES_API_PATHS,
   CLOUD_SERVICES_TOKEN_AUDIENCE,
-  parseUsageQuery,
+  usageQuerySchema,
   type ServiceError,
   type ServiceErrorCode,
   type ServicesTokenClaims
@@ -164,7 +164,7 @@ export function createServicesApp(services: ServicesAppDependencies) {
       const claims = context.get('claims')
       return context.json(await usage.wallet(spender(claims), claims.monthlyCreditAllowance, now()))
     })
-    .get(CLOUD_SERVICES_API_PATHS.usage, validatedQuery(parseUsageQuery), async (context) => {
+    .get(CLOUD_SERVICES_API_PATHS.usage, validatedQuery(usageQuerySchema), async (context) => {
       try {
         return context.json(
           await usage.page(context.get('claims').workspaceId, context.req.valid('query').cursor)
