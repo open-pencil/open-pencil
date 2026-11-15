@@ -148,12 +148,10 @@ function hitTestTransparentContainer(
   return null
 }
 
-/** The mask run whose masks act on the child at `index`, if any. */
-function maskRunOf(runs: readonly MaskRun[], index: number): MaskRun | undefined {
-  return runs.find((run) => index >= run.maskedStart && index < run.end)
-}
-
-/** Whether the point lies on what a run's masks draw, or there is no run to hold it to. */
+/**
+ * Whether the point lies on what a run's masks draw, or there is no run to hold it to. A container
+ * mask draws its own paint and its layers, so a click between its layers is outside it.
+ */
 function insideMasks(
   graph: SceneGraph,
   px: number,
@@ -166,10 +164,12 @@ function insideMasks(
   return childIds.slice(run.start, run.maskedStart).some((id) => {
     const mask = graph.nodes.get(id)
     if (!mask) return false
-    if (CONTAINER_TYPES.has(mask.type)) {
-      return containsPoint(px, py, mask, graph, walk.transformCache)
+    if (!CONTAINER_TYPES.has(mask.type)) {
+      return hitsLeaf(graph, px, py, mask, walk.transformCache, 0)
     }
-    return hitsLeaf(graph, px, py, mask, walk.transformCache, 0)
+    if (showsPaint(mask) && containsPoint(px, py, mask, graph, walk.transformCache)) return true
+    const drawn: HitWalk = { ...walk, deep: true, pad: 0, locked: true }
+    return hitTestChildren(graph, px, py, mask.id, drawn) !== null
   })
 }
 
@@ -193,13 +193,17 @@ function hitTestChildren(
     const child = graph.nodes.get(id)
     return child !== undefined && isVisibleMask(child)
   })
+  // Children are walked top down, so the run holding each one is found by stepping back.
+  let runIndex = runs.length - 1
   for (let i = parent.childIds.length - 1; i >= 0; i--) {
+    while (runIndex >= 0 && runs[runIndex].start > i) runIndex--
+    const run = runIndex >= 0 && i >= runs[runIndex].maskedStart ? runs[runIndex] : undefined
     const child = graph.nodes.get(parent.childIds[i])
     // A locked layer and everything in it are invisible to a press and to hover, as in Figma: a
     // click falls through to what lies under it, and a drag from it draws a marquee.
     if (!child || child.internalOnly || !child.visible || (child.locked && !walk.locked)) continue
     // Where its masks cut a layer away, a click falls through to what lies under it (Figma, live).
-    if (!insideMasks(graph, px, py, parent.childIds, maskRunOf(runs, i), walk)) continue
+    if (!insideMasks(graph, px, py, parent.childIds, run, walk)) continue
     if (CONTAINER_TYPES.has(child.type)) {
       if (OPAQUE_CONTAINER_TYPES.has(child.type) && !walk.deep) {
         // A plain click takes an instance or component anywhere in its box, with a fill or

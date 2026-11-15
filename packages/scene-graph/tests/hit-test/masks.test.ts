@@ -73,4 +73,35 @@ describe('clicks on masked layers', () => {
     graph.updateNode(mask.id, { visible: false })
     expect(graph.hitTestDeep(150, 150)?.id).toBe(masked.id)
   })
+
+  test('hold a click to what a group mask draws, not the box around its layers', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    const frame = graph.createNode('FRAME', page, { x: 0, y: 0, width: 300, height: 300 })
+    const mask = graph.createNode('GROUP', frame.id, {
+      x: 0,
+      y: 0,
+      width: 200,
+      height: 40,
+      isMask: true
+    })
+    for (const x of [0, 160]) {
+      graph.createNode('RECTANGLE', mask.id, {
+        fills: [SOLID_FILL],
+        x,
+        y: 0,
+        width: 40,
+        height: 40
+      })
+    }
+    const masked = graph.createNode('RECTANGLE', frame.id, {
+      fills: [SOLID_FILL],
+      x: 0,
+      y: 0,
+      width: 240,
+      height: 240
+    })
+    expect(graph.hitTestDeep(20, 20)?.id).toBe(masked.id)
+    expect(graph.hitTestDeep(100, 20)).toBeNull()
+  })
 })
