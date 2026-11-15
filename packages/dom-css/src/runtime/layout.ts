@@ -177,6 +177,13 @@ function inlineBox(fragment: Rect, font: LineMetrics): Run {
   return { box: { ...fragment, y: top, height: font.height }, baseline: top + font.baseline }
 }
 
+/** A fragment's border box without its padding and borders, which do not take room in a line. */
+function contentRect(fragment: Rect, style: CSSStyleDeclaration): Rect {
+  const top = Number.parseFloat(style.paddingTop) + Number.parseFloat(style.borderTopWidth)
+  const bottom = Number.parseFloat(style.paddingBottom) + Number.parseFloat(style.borderBottomWidth)
+  return { ...fragment, y: fragment.y + top, height: fragment.height - top - bottom }
+}
+
 function intersects(a: Rect, b: Rect): boolean {
   return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height
 }
@@ -205,9 +212,10 @@ function lineRects(
   const fragmentsOf = (inline: Element) => {
     let known = fragments.get(inline)
     if (!known) {
+      const style = view.getComputedStyle(inline)
       known = Array.from(inline.getClientRects())
         .filter(hasArea)
-        .map((rect) => toRect(rect, origin))
+        .map((rect) => contentRect(toRect(rect, origin), style))
       fragments.set(inline, known)
     }
     return known

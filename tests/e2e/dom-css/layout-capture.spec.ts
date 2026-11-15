@@ -158,13 +158,15 @@ test.describe('@open-pencil/dom-css browser layout capture', () => {
       `<p id="tight">x</p>
        <p id="nested"><span style="line-height:80px"><span style="line-height:10px">x</span></span></p>
        <p id="raised"><span style="line-height:10px;vertical-align:10px">x</span></p>
-       <p id="lowered"><span style="line-height:10px;vertical-align:-25%">x</span> y</p>`,
+       <p id="lowered"><span style="line-height:10px;vertical-align:-25%">x</span> y</p>
+       <p id="padded"><span style="padding:30px 0;border:5px solid"><span style="line-height:10px">x</span></span></p>`,
       `body { margin: 0 }
        p { margin: 0; font: 20px/40px monospace }
        #tight { line-height: 0 }`
     )
-    // A block of one line is as tall as its line box, which says where the line is.
-    for (const id of ['tight', 'nested', 'raised', 'lowered']) {
+    // A block of one line is as tall as its line box, which says where the line is; an inline
+    // element's padding and borders do not make it taller.
+    for (const id of ['tight', 'nested', 'raised', 'lowered', 'padded']) {
       const block = byId(document, id).layout
       const [line] = block?.lines ?? []
       expect({ id, y: line.y, height: line.height }).toEqual({
