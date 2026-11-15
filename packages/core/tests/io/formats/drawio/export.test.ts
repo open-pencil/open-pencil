@@ -148,14 +148,14 @@ describe('saving a draw.io file', () => {
     })
   })
 
-  test('a layer drawn as an SVG picture reports only what SVG cannot draw', async () => {
+  test('a layer drawn as an SVG picture reports its background blur and what SVG cannot draw', async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
     const star = graph.createNode('STAR', page.id, {
       width: 40,
       height: 40,
       fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }],
-      effects: [effect('BACKGROUND_BLUR'), effect('GLASS')]
+      effects: [effect('BACKGROUND_BLUR'), effect('GLASS'), effect('DROP_SHADOW')]
     })
 
     const result = await io.exportContent('drawio', {
@@ -163,10 +163,24 @@ describe('saving a draw.io file', () => {
       target: { scope: 'page', pageId: page.id }
     })
 
-    expect(typeof result.data).toBe('string')
+    // The picture sees only itself behind it, so the blur has nothing to blur.
     expect(result.warnings).toEqual([
-      expect.objectContaining({ code: 'unsupported-effect', effect: 'GLASS', nodeId: star.id })
+      expect.objectContaining({ effect: 'BACKGROUND_BLUR', nodeId: star.id }),
+      expect.objectContaining({ effect: 'GLASS', nodeId: star.id })
     ])
+  })
+
+  test('a cell reports the effects of the sublayers it folds in', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const shape = createShapeWithText(graph, page.id, { width: 60, height: 40 }, { text: 'Hi' })
+    const label = expectDefined(graph.getChildren(shape.id).find((child) => child.type === 'TEXT'))
+    graph.updateNode(label.id, { effects: [effect('DROP_SHADOW')] })
+
+    const warnings: ExportEffectWarning[] = []
+    sceneGraphToDrawIO(graph, { pageIds: [page.id] }, { onWarning: (w) => warnings.push(w) })
+
+    expect(warnings).toEqual([expect.objectContaining({ effect: 'DROP_SHADOW', nodeId: label.id })])
   })
 
   test('a layer drawn as a draw.io cell reports each effect the cell leaves out', async () => {
