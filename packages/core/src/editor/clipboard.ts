@@ -408,10 +408,12 @@ export function createClipboardActions(ctx: EditorContext) {
     )
     for (const entry of entries) entry.subtree = snapshotSubtree(ctx.graph, entry.id)
 
+    // Only auto layout parents lay out again; laying out the page would reach every frame on it.
+    const parentIds = uniq(entries.map((entry) => entry.parentId)).filter(
+      (id) => ctx.graph.getNode(id)?.layoutMode !== 'NONE'
+    )
     const relayoutParents = () => {
-      for (const parentId of new Set(entries.map((entry) => entry.parentId))) {
-        ctx.runLayoutForNode(parentId)
-      }
+      for (const parentId of parentIds) ctx.runLayoutForNode(parentId)
     }
 
     const prevSelection = new Set(ctx.state.selectedIds)
