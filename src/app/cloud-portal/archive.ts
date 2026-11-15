@@ -5,6 +5,7 @@ import { createCloudAPIClient } from '@open-pencil/cloud/client'
 import type { CloudAccountDeletion } from '@open-pencil/cloud/contract'
 import type { DocumentKind } from '@open-pencil/scene-graph'
 
+import { withCloudComments } from '@/app/cloud/comments/file'
 import { bundleExportFiles, createZipEntryNamer } from '@/app/document/export/zip'
 import { downloadBlob } from '@/app/document/io/browser'
 import {
@@ -12,7 +13,6 @@ import {
   pickBrowserSaveFile,
   supportsFileSystemAccess
 } from '@/app/document/io/capability'
-import { withCloudComments } from '@/app/cloud/comments/file'
 import { downloadCloudDocument } from '@/app/integrations/storage/cloud/download'
 
 type ArchiveDocument = CloudAccountDeletion['documents'][number]

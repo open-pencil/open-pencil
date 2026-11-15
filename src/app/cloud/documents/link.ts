@@ -163,8 +163,9 @@ export async function openCloudDocumentLink(link: CloudDocumentLink): Promise<vo
 /** Opens a comment thread of the document just opened, once its comments arrive. */
 async function openThread(threadId: string): Promise<void> {
   const comments = useComments()
-  const arrived = await until(() => comments.threads.value.some((thread) => thread.id === threadId))
-    .toBe(true, { timeout: THREAD_WAIT_MS })
+  const arrived = await until(() =>
+    comments.threads.value.some((thread) => thread.id === threadId)
+  ).toBe(true, { timeout: THREAD_WAIT_MS })
   if (arrived) await comments.focusThread(threadId)
   else toast.error(cloudMessages.get().commentLinkFailed)
 }
