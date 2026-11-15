@@ -34,7 +34,7 @@ import type { AgentChild } from '@/app/ai/agents/process'
 import { agentAccounts } from '@/app/ai/agents/setup/accounts'
 import { AgentNotInstalledError } from '@/app/ai/agents/setup/readiness'
 import { notifyPermissionWaiting } from '@/app/ai/chat/notifications'
-import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
+import { systemPrompt } from '@/app/ai/chat/system-prompt'
 import { endRun, forgetAgentChat, startAgentRun } from '@/app/ai/reply/run'
 import { subagentAgent } from '@/app/automation/agents'
 import { getAutomationAuthToken } from '@/app/automation/mcp/spawn'
@@ -271,7 +271,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     }
 
     const carriesContext = !this.sentContext
-    const promptText = carriesContext ? `${SYSTEM_PROMPT}\n\n${text}` : text
+    const promptText = carriesContext ? `${systemPrompt()}\n\n${text}` : text
     this.sentContext = true
 
     const { connection, sessionId } = this.session

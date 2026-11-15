@@ -19,7 +19,7 @@ import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { OWN_TOOLS_ALLOWED } from '@/app/ai/agents/acp/tools'
 import { SUBAGENT_PART, subagentTranscript } from '@/app/ai/chat/subagents'
-import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
+import { systemPrompt } from '@/app/ai/chat/system-prompt'
 import { ACPChatTransport, type ACPStartup } from '@/app/ai/transports/acp'
 import { restAgents, withSubagent } from '@/app/automation/agents'
 import { diagnosticErrorDetails, diagnostics } from '@/app/diagnostics'
@@ -261,7 +261,7 @@ test('a new session gets the instructions once and is reported once the agent an
   await send(chat, 'first')
   await send(chat, 'second', [message('user', 'first'), message('assistant', 'done')])
   expect(agents.created).toHaveLength(1)
-  expect(agents.prompts[0]?.startsWith(SYSTEM_PROMPT)).toBe(true)
+  expect(agents.prompts[0]?.startsWith(systemPrompt())).toBe(true)
   expect(agents.prompts[0]?.endsWith('first')).toBe(true)
   expect(agents.prompts[1]).toBe('second')
   expect(sessions).toEqual(['session-1'])

@@ -11,7 +11,7 @@ import { createStepCompaction } from '@/app/ai/chat/compaction/steps'
 import { resumableTransport } from '@/app/ai/chat/history/continuation'
 import type { ReplyUsage } from '@/app/ai/chat/metadata'
 import { maxAgentSteps } from '@/app/ai/chat/preferences'
-import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
+import { systemPrompt } from '@/app/ai/chat/system-prompt'
 import type { RunRecorder, RunRecording } from '@/app/ai/chat/trace/recorder'
 import { promptCachingOptions } from '@/app/ai/models/caching'
 import { reasoningCallSettings, type AIProviderOptions } from '@/app/ai/models/reasoning/settings'
@@ -107,7 +107,7 @@ export function createToolLoopTransport({
   // Only skills the model may load: one the user runs by name stays out of the listing and tools.
   const modelSkills = () => skills.enabled().filter((skill) => skill.modelInvocable)
   let offeredSkills = modelSkills()
-  let instructions = SYSTEM_PROMPT
+  let instructions = systemPrompt()
   // The reply in progress; a transport sends one message at a time.
   let run = currentRun(store)
   // While JSX streams, the chat's agent moves through the elements as they appear, here and
@@ -127,7 +127,7 @@ export function createToolLoopTransport({
   const stepCompaction = createStepCompaction(model, contextLimits)
   const agent = new ToolLoopAgent({
     model,
-    instructions: SYSTEM_PROMPT,
+    instructions: systemPrompt(),
     tools,
     maxOutputTokens,
     prepareStep: (step) => stepCompaction.prepareStep(step),
@@ -221,7 +221,8 @@ export function createToolLoopTransport({
       await skills.refresh()
       offeredSkills = modelSkills()
       const catalog = skillCatalog(offeredSkills)
-      instructions = catalog ? `${SYSTEM_PROMPT}\n\n${catalog}` : SYSTEM_PROMPT
+      const base = systemPrompt()
+      instructions = catalog ? `${base}\n\n${catalog}` : base
       const { sessionId, runId } = diagnosticContext
       const startedRecording =
         sessionId && runId

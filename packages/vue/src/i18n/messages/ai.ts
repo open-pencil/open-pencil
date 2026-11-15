@@ -540,6 +540,28 @@ export const aiMessageDefaults = {
     'The Review model cannot read images, so it cannot compare the design with an attached image.',
   reviewEmpty: 'There is nothing on this page to review.',
   reviewUnsupported: 'Pi cannot review designs. Assign another model to Review in Settings.',
+  promptDesignDescription:
+    'Your own instructions for the chat, after OpenPencil’s or in their place. The design JSX reference always follows.',
+  promptDesignMode: 'Your instructions',
+  promptDesignPlaceholder:
+    'For example: Use our 8px spacing scale and the brand colors from the Tokens page.',
+  promptDesignAdd: 'Add to OpenPencil’s',
+  promptDesignReplace: 'Replace OpenPencil’s',
+  promptDesignStart: 'Start from OpenPencil’s',
+  promptDesignReplaced: 'OpenPencil’s instructions are off',
+  promptDesignReplaceWarning:
+    'Without them the model may use its tools poorly. Reset brings them back.',
+  promptReviewDescription: 'What the Review model is told for /review and Review this change.',
+  promptTitle: 'Chat titles',
+  promptTitleDescription: 'What the Fast tasks model is asked to name a conversation.',
+  promptSummary: 'Compaction summaries',
+  promptSummaryDescription:
+    'What the model is told when it summarizes a conversation to compact it.',
+  promptVariables: 'Variables',
+  promptPreview: 'Preview with sample values',
+  promptUnknownVariable: params('{name} is not a variable of this prompt, so it stays empty.'),
+  promptErrors: 'This prompt has errors',
+  promptErrorsHint: 'OpenPencil’s is used until they are fixed.',
   tokenUsage: 'Token usage',
   tokenUsageHint: "Shows each reply's tokens.",
   tokenUsageHover: 'On hover',

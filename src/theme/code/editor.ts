@@ -101,3 +101,10 @@ export const codeViewerTheme = EditorView.theme({
   '.cm-line': { padding: '0 6px' },
   '.cm-gutters': { backgroundColor: 'var(--color-input)' }
 })
+
+/** A prompt in Settings: prose on the input colour, scrolling past 18rem rather than growing. */
+export const promptEditorTheme = EditorView.theme({
+  '&': { maxHeight: '18rem', fontSize: '11px', backgroundColor: 'var(--color-input)' },
+  '.cm-gutters': { backgroundColor: 'var(--color-input)' },
+  '.cm-placeholder': { color: 'var(--color-muted)' }
+})

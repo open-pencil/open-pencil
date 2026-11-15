@@ -1,6 +1,7 @@
 import { useLocalStorage } from '@vueuse/core'
 import { uniq } from 'es-toolkit'
 import * as v from 'valibot'
+import { toRaw } from 'vue'
 
 import { DEFAULT_SNAPPING_PREFERENCES, type SnappingPreferences } from '@open-pencil/core'
 import { COMMENT_SORTS, type CommentSort } from '@open-pencil/scene-graph/comments'
@@ -92,6 +93,22 @@ export interface NotificationPreferences {
   agentFailed: boolean
 }
 
+/** How the person's Design instructions meet OpenPencil's: added after them, or in their place. */
+export const DESIGN_PROMPT_MODES = ['add', 'replace'] as const
+export type DesignPromptMode = (typeof DESIGN_PROMPT_MODES)[number]
+
+/**
+ * The prompts the person wrote in place of OpenPencil's; null keeps the built-in one. The Design
+ * prompt is plain Markdown, which adds to the built-in instructions or replaces them; the others
+ * are Knap templates (`src/app/ai/prompts/`).
+ */
+export interface PromptPreferences {
+  review: string | null
+  title: string | null
+  summary: string | null
+  design: { mode: DesignPromptMode; text: string }
+}
+
 /** Desktop update checks. The menu item is separate from the silent launch check. */
 export interface UpdatePreferences {
   /** Silent check a few seconds after the desktop app opens. */
@@ -139,6 +156,7 @@ export interface AppPreferences {
   donation: DonationPreferences
   notifications: NotificationPreferences
   updates: UpdatePreferences
+  prompts: PromptPreferences
 }
 
 export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
@@ -177,7 +195,8 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
   sharing: { dailyPing: true, usageStats: 'unset' },
   donation: { promptAfter: null },
   notifications: { agentNeedsInput: true, agentFinished: false, agentFailed: false },
-  updates: { checkOnStartup: true }
+  updates: { checkOnStartup: true },
+  prompts: { review: null, title: null, summary: null, design: { mode: 'add', text: '' } }
 }
 
 const STORAGE_KEY = 'open-pencil:preferences:v1'
@@ -282,6 +301,15 @@ const appPreferencesSchema = section({
   }),
   updates: section({
     checkOnStartup: v.fallback(v.boolean(), defaults.updates.checkOnStartup)
+  }),
+  prompts: section({
+    review: v.fallback(v.nullable(v.string()), null),
+    title: v.fallback(v.nullable(v.string()), null),
+    summary: v.fallback(v.nullable(v.string()), null),
+    design: section({
+      mode: v.fallback(v.picklist(DESIGN_PROMPT_MODES), defaults.prompts.design.mode),
+      text: v.fallback(v.string(), defaults.prompts.design.text)
+    })
   })
 })
 
@@ -401,5 +429,14 @@ export function updateStartupUpdateCheck(checkOnStartup: boolean): void {
   appPreferences.value = {
     ...appPreferences.value,
     updates: { ...appPreferences.value.updates, checkOnStartup }
+  }
+}
+
+export function updatePromptPreferences(changes: Partial<PromptPreferences>): void {
+  // Raw, so the stored value holds plain objects rather than reactive views of them.
+  const current = toRaw(appPreferences.value)
+  appPreferences.value = {
+    ...current,
+    prompts: { ...current.prompts, design: { ...current.prompts.design }, ...changes }
   }
 }
