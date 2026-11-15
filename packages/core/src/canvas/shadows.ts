@@ -7,10 +7,11 @@ import {
   blurReach
 } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
-import { clipsChildren, isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
+import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import { regionFills } from '@open-pencil/scene-graph/vector-network'
 
 import { nodeOrientationMatrix } from '#core/geometry'
+import { fillsCastShadow, shadowSpread } from '#core/geometry/shadows'
 
 import { needsIsolatedBlendLayer, setPaintBlendMode } from './blend'
 import { makeBooleanOperationPath } from './boolean'
@@ -30,7 +31,6 @@ import {
 } from './shadows/shape'
 import {
   drawSilhouette,
-  fillsCastShadow,
   paintsCastShadow,
   paintsOverKnockout,
   shadowIncludesChildren,
@@ -48,16 +48,6 @@ function resetEffectLayerPaint(r: SkiaRenderer): void {
  * glass light over fills, `front` noise.
  */
 export type EffectPass = 'behind' | 'inner' | 'front'
-
-/**
- * The spread a drop shadow draws with. Figma draws it only where the shadow follows the layer's
- * own outline: a shape whose type spreads, or a filled frame that clips. An unclipped or empty
- * frame casts its children's silhouette unspread, though its render bounds count the spread.
- */
-function shadowSpread(node: SceneNode, effect: Effect): number {
-  if (!isLayerContainer(node)) return shadowSpreadOf(node, effect)
-  return clipsChildren(node) && fillsCastShadow(node) ? effect.spread : 0
-}
 
 function shadowLayerBounds(
   r: SkiaRenderer,
