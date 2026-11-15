@@ -486,6 +486,7 @@
   "promptUnknownVariable": "{name} ليس متغيرًا في هذا الموجّه، لذا يبقى فارغًا.",
   "promptErrors": "في هذا الموجّه أخطاء",
   "promptErrorsHint": "يُستخدم موجّه OpenPencil حتى تُصلح.",
+  "promptErrorAt": "السطر {line}: {message}.",
   "tokenUsage": "استخدام الرموز",
   "tokenUsageHint": "يعرض رموز كل رد.",
   "tokenUsageHover": "عند التمرير",

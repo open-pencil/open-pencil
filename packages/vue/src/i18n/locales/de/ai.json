@@ -486,6 +486,7 @@
   "promptUnknownVariable": "{name} ist keine Variable dieses Prompts und bleibt daher leer.",
   "promptErrors": "Dieser Prompt hat Fehler",
   "promptErrorsHint": "Bis sie behoben sind, wird der von OpenPencil verwendet.",
+  "promptErrorAt": "Zeile {line}: {message}.",
   "tokenUsage": "Token-Verbrauch",
   "tokenUsageHint": "Zeigt die Tokens jeder Antwort.",
   "tokenUsageHover": "Beim Überfahren",

@@ -3,7 +3,13 @@ import { defaultKeymap, history, historyKeymap, redo, undo } from '@codemirror/c
 import { StreamLanguage } from '@codemirror/language'
 import { setDiagnostics, type Diagnostic } from '@codemirror/lint'
 import { EditorState, type Text } from '@codemirror/state'
-import { drawSelection, EditorView, keymap, placeholder as placeholderText } from '@codemirror/view'
+import {
+  drawSelection,
+  EditorView,
+  keymap,
+  lineNumbers,
+  placeholder as placeholderText
+} from '@codemirror/view'
 import { knapStreamParser } from 'knap/codemirror'
 import { useTemplateRef, watch } from 'vue'
 
@@ -51,7 +57,8 @@ const view = useCodeMirror(useTemplateRef('host'), {
       ...defaultKeymap,
       ...historyKeymap
     ]),
-    ...(template ? [StreamLanguage.define(knapStreamParser)] : []),
+    // A template's errors are reported by line, so its lines are numbered; instructions are prose.
+    ...(template ? [lineNumbers(), StreamLanguage.define(knapStreamParser)] : []),
     EditorView.lineWrapping,
     EditorView.updateListener.of((update) => {
       if (update.docChanged && !externalUpdate)

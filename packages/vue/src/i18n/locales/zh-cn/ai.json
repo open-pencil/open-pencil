@@ -486,6 +486,7 @@
   "promptUnknownVariable": "{name} 不是此提示词的变量，因此保持为空。",
   "promptErrors": "此提示词有错误",
   "promptErrorsHint": "在修正之前使用 OpenPencil 的提示词。",
+  "promptErrorAt": "第 {line} 行：{message}。",
   "tokenUsage": "词元用量",
   "tokenUsageHint": "显示每条回复的词元。",
   "tokenUsageHover": "悬停时",

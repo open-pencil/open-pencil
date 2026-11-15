@@ -486,6 +486,7 @@
   "promptUnknownVariable": "{name} — не переменная этого промпта, поэтому она остаётся пустой.",
   "promptErrors": "В этом промпте есть ошибки",
   "promptErrorsHint": "Пока они не исправлены, используется промпт OpenPencil.",
+  "promptErrorAt": "Строка {line}: {message}.",
   "tokenUsage": "Расход токенов",
   "tokenUsageHint": "Показывает токены каждого ответа.",
   "tokenUsageHover": "При наведении",

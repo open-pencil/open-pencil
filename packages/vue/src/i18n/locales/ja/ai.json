@@ -486,6 +486,7 @@
   "promptUnknownVariable": "{name} はこのプロンプトの変数ではないため、空になります。",
   "promptErrors": "このプロンプトにはエラーがあります",
   "promptErrorsHint": "修正されるまで OpenPencil のプロンプトが使われます。",
+  "promptErrorAt": "{line} 行目: {message}。",
   "tokenUsage": "トークン使用量",
   "tokenUsageHint": "各返信のトークンを表示します。",
   "tokenUsageHover": "ホバー時",

@@ -562,6 +562,7 @@ export const aiMessageDefaults = {
   promptUnknownVariable: params('{name} is not a variable of this prompt, so it stays empty.'),
   promptErrors: 'This prompt has errors',
   promptErrorsHint: 'OpenPencil’s is used until they are fixed.',
+  promptErrorAt: params('Line {line}: {message}.'),
   tokenUsage: 'Token usage',
   tokenUsageHint: "Shows each reply's tokens.",
   tokenUsageHover: 'On hover',

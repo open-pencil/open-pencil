@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 import { useI18n } from '@open-pencil/vue/i18n'
 
@@ -17,6 +17,12 @@ const { ai } = useI18n()
 const setting = useTemplatePromptSetting(prompt)
 const { text, modified, variables, check, preview } = setting
 const previewOpen = ref(false)
+/** The first error and its line, then that OpenPencil's prompt stands in meanwhile. */
+const errorSummary = computed(() => {
+  const [first] = check.value.errors
+  if (!first) return ai.value.promptErrorsHint
+  return `${ai.value.promptErrorAt({ line: first.line, message: first.message })} ${ai.value.promptErrorsHint}`
+})
 /** How the template writes each variable, as `{{ name }}`. */
 const variableTags = variables.map((name) => `{{ ${name} }}`)
 </script>
@@ -45,7 +51,7 @@ const variableTags = variables.map((name) => `{{ ${name} }}`)
       v-if="check.errors.length > 0"
       tone="warning"
       :heading="ai.promptErrors"
-      :description="ai.promptErrorsHint"
+      :description="errorSummary"
       data-test-id="settings-prompt-errors"
     />
     <AppCollapsible

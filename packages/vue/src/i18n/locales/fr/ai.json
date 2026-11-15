@@ -486,6 +486,7 @@
   "promptUnknownVariable": "{name} n’est pas une variable de ce prompt ; elle reste vide.",
   "promptErrors": "Ce prompt contient des erreurs",
   "promptErrorsHint": "Celui d’OpenPencil est utilisé jusqu’à leur correction.",
+  "promptErrorAt": "Ligne {line} : {message}.",
   "tokenUsage": "Utilisation des jetons",
   "tokenUsageHint": "Affiche les jetons de chaque réponse.",
   "tokenUsageHover": "Au survol",

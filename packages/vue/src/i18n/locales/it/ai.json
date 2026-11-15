@@ -486,6 +486,7 @@
   "promptUnknownVariable": "{name} non è una variabile di questo prompt, quindi resta vuota.",
   "promptErrors": "Questo prompt contiene errori",
   "promptErrorsHint": "Viene usato quello di OpenPencil finché non vengono corretti.",
+  "promptErrorAt": "Riga {line}: {message}.",
   "tokenUsage": "Uso dei token",
   "tokenUsageHint": "Mostra i token di ogni risposta.",
   "tokenUsageHover": "Al passaggio del mouse",
