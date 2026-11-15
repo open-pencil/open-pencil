@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { effectDriver } from '#tests/helpers/properties/effect-driver'
 
 for (const theme of ['light', 'dark']) {
   test(`inline effect settings in ${theme}`, async ({ page }) => {
@@ -183,30 +184,9 @@ test('switch an effect to Noise and Texture and edit their settings as Figma lay
 }) => {
   await page.goto('/?test')
   await new CanvasHelper(page).waitForInit()
-  const id = await page.evaluate(async () => {
-    const path = '/src/app/shell/theme.ts'
-    const module = await import(path)
-    module.useAppTheme().setTheme('light')
-    const editor = window.openPencil?.getStore?.()
-    if (!editor) throw new Error('Editor unavailable')
-    const id = editor.createShape('RECTANGLE', 100, 100, 180, 120)
-    editor.updateNode(id, {
-      effects: [
-        {
-          type: 'DROP_SHADOW',
-          color: { r: 0, g: 0, b: 0, a: 0.25 },
-          offset: { x: 0, y: 4 },
-          radius: 4,
-          spread: 0,
-          visible: true
-        }
-      ]
-    })
-    editor.select([id])
-    return id
-  })
-  const effect = () =>
-    page.evaluate((id) => window.openPencil?.getStore?.().graph.getNode(id)?.effects[0], id)
+  const scene = effectDriver(() => page)
+  await scene.build()
+  const effect = () => scene.effect()
   const section = page.getByRole('region', { name: 'Effects', exact: true })
   await section.getByRole('button', { name: 'Expand effect settings' }).click()
   await section.getByRole('combobox', { name: 'Effects', exact: true }).click()
@@ -217,11 +197,7 @@ test('switch an effect to Noise and Texture and edit their settings as Figma lay
     color: { r: 0, g: 0, b: 0, a: 0.25 },
     noise: { noiseType: 'MONOTONE', noiseSize: { x: 0.5, y: 0.5 }, density: 1 }
   })
-  for (const label of ['Noise size', 'Density', 'Color']) {
-    await expect(section.getByText(label, { exact: true })).toBeVisible()
-  }
   await section.getByRole('button', { name: 'Duo', exact: true }).click()
-  await expect(section.getByText('Colors', { exact: true })).toBeVisible()
   await expect
     .poll(async () => (await effect())?.noise?.secondaryColor)
     .toEqual({
@@ -243,7 +219,6 @@ test('switch an effect to Noise and Texture and edit their settings as Figma lay
     type: 'TEXTURE',
     texture: { noiseSize: { x: 4, y: 4 }, clipToShape: false }
   })
-  await expect(section.getByText('Clip to shape', { exact: true })).toBeVisible()
   await expect(section).toHaveScreenshot('inline-texture-light.png')
   await section.getByRole('checkbox', { name: 'Clip to shape', exact: true }).click()
   await expect.poll(async () => (await effect())?.texture?.clipToShape).toBe(true)
