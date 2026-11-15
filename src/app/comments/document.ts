@@ -14,8 +14,18 @@ import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { EditorStore } from '@/app/editor/active-store'
 
-/** How a server keeps a document's comments, as Cloud does: whether this tab may write them. */
-export type KeptComments = { canComment: boolean }
+import type { MentionPerson } from './mentions'
+
+/**
+ * How a server keeps a document's comments, as Cloud does: whether this tab may write them,
+ * which threads someone else wrote in since this account read them, and whom it may name.
+ */
+export type KeptComments = {
+  canComment: boolean
+  unread: ReadonlySet<string>
+  markRead(threadId: string): void
+  people(): Promise<readonly MentionPerson[]>
+}
 
 /** Documents whose comments a server keeps: its copy is the one to show. */
 export const commentsKeptElsewhere = shallowRef<ReadonlyMap<EditorStore, KeptComments>>(new Map())

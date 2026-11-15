@@ -280,12 +280,14 @@ describe('account archive', () => {
       updatedAt: '2026-11-01T00:00:00.000Z',
       resolvedAt: null,
       resolvedBy: null,
+      unread: false,
       comments: [
         {
           id: '00000000-0000-4000-8000-000000000202',
           author: { kind: 'user', id: 'ana', name: 'Ana' },
           agent: null,
           body: 'Tighten the heading',
+          mentions: [],
           createdAt: '2026-11-01T00:00:00.000Z',
           editedAt: null
         }

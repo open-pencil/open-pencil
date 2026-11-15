@@ -12,6 +12,7 @@ import {
 import { readComments, writeComments } from '@open-pencil/scene-graph/comments'
 
 import { setCommentsKeptElsewhere } from '@/app/comments/document'
+import { mentionedAccounts, type MentionPerson } from '@/app/comments/mentions'
 import type { EditorStore } from '@/app/editor/session'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { allTabs, getTabsSnapshot } from '@/app/tabs'
@@ -41,6 +42,8 @@ export type CloudCommentTarget = {
   /** Which document and which way in, so a tab that moves follows its new one. */
   key: string
   requests: () => Promise<CloudCommentRequests>
+  /** Whom the account may name in the document's comments; nobody through a link. */
+  people?: () => Promise<readonly MentionPerson[]>
   /** Runs `request` once the document is on the server, for one whose first upload is pending. */
   onServer?: <T>(request: () => Promise<T>) => Promise<T>
   /**
@@ -59,6 +62,7 @@ function commentTarget(store: EditorStore): CloudCommentTarget | null {
     return {
       key: `${target.server.id}:${documentId}:${target.accountId ?? ''}`,
       requests: async () => client.documentComments(documentId),
+      people: () => client.commentPeople(documentId),
       onServer: (request) => onceOnServer(documentId, request),
       importer: async () => {
         const meta = await getLocalCanvasStore().getMeta(documentId)
@@ -130,6 +134,40 @@ export function followCloudComments(
   let changes = 0
   let retry: ReturnType<typeof setTimeout> | null = null
   let requests: CloudCommentRequests | null = null
+  /** Whether the server lets this tab write; nothing until it says. */
+  let canComment = false
+  let people: Promise<readonly MentionPerson[]> | null = null
+  /** Requests saying a thread was read, which `idle` waits for too. */
+  const reading = new Set<Promise<void>>()
+
+  /** Tells the comment UI what this tab may do and which threads are new to it. */
+  function publish() {
+    if (stopped) return
+    const unread = new Set(
+      [...server.values()].filter((thread) => thread.unread).map((thread) => thread.id)
+    )
+    setCommentsKeptElsewhere(store, {
+      canComment,
+      unread,
+      markRead: (threadId) => {
+        const request = markRead(threadId).finally(() => reading.delete(request))
+        reading.add(request)
+      },
+      people: () => (people ??= target.people?.() ?? Promise.resolve([]))
+    })
+  }
+
+  async function markRead(threadId: string) {
+    const thread = server.get(threadId)
+    if (!thread?.unread) return
+    server.set(threadId, { ...thread, unread: false })
+    publish()
+    try {
+      await (await api()).markRead(threadId)
+    } catch (error) {
+      console.warn('[Cloud] Could not mark a comment thread read', error)
+    }
+  }
 
   const api = async () => (requests ??= await target.requests())
 
@@ -145,6 +183,7 @@ export function followCloudComments(
     } finally {
       writing = false
     }
+    publish()
   }
 
   function remember(thread: CloudCommentThread | null, threadId: string) {
@@ -162,6 +201,7 @@ export function followCloudComments(
             id: thread.id,
             ...threadAnchor(thread),
             body: thread.text,
+            mentions: mentionedAccounts(thread.text),
             agent: thread.agent
           }),
           thread.id
@@ -180,6 +220,7 @@ export function followCloudComments(
           await cloud.reply(change.threadId, {
             id: change.reply.id,
             body: change.reply.text,
+            mentions: mentionedAccounts(change.reply.text),
             agent: change.reply.agent
           }),
           change.threadId
@@ -187,7 +228,10 @@ export function followCloudComments(
         return
       case 'edit':
         remember(
-          await cloud.updateComment(change.threadId, change.commentId, { body: change.body }),
+          await cloud.updateComment(change.threadId, change.commentId, {
+            body: change.body,
+            mentions: mentionedAccounts(change.body)
+          }),
           change.threadId
         )
         return
@@ -201,7 +245,7 @@ export function followCloudComments(
     const listed = await (await api()).list()
     server.clear()
     for (const thread of listed.threads) server.set(thread.id, thread)
-    setCommentsKeptElsewhere(store, { canComment: listed.access.canComment })
+    canComment = listed.access.canComment
   }
 
   /**
@@ -248,7 +292,7 @@ export function followCloudComments(
     const listed = target.onServer ? await target.onServer(list) : await list()
     if (stopped) return
     for (const thread of listed.threads) server.set(thread.id, thread)
-    setCommentsKeptElsewhere(store, { canComment: listed.access.canComment })
+    canComment = listed.access.canComment
     if (importThreads) {
       for (const batch of imports) {
         for (const thread of (await importThreads(batch)).threads) server.set(thread.id, thread)
@@ -271,7 +315,7 @@ export function followCloudComments(
   ]
 
   // Until the server says otherwise, the tab writes nothing it might refuse.
-  setCommentsKeptElsewhere(store, { canComment: false })
+  publish()
   const loading = load().catch((error: unknown) => {
     console.warn('[Cloud] Could not load the document’s comments', error)
   })
@@ -292,6 +336,7 @@ export function followCloudComments(
       await loading
       // A flush that crossed a change runs again within itself, so one wait covers it.
       await flushing
+      await Promise.all(reading)
     },
     stop() {
       stopped = true

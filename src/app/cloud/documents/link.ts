@@ -1,4 +1,4 @@
-import { useSessionStorage } from '@vueuse/core'
+import { until, useSessionStorage } from '@vueuse/core'
 import * as v from 'valibot'
 import { ref, watch } from 'vue'
 
@@ -9,6 +9,7 @@ import {
 } from '@open-pencil/cloud/contract'
 import { cloudMessages } from '@open-pencil/vue/i18n'
 
+import { useComments } from '@/app/comments/use'
 import type { EditorStore } from '@/app/editor/session'
 import { toast } from '@/app/shell/ui'
 import { openStorageDocumentInNewTab } from '@/app/tabs'
@@ -25,16 +26,26 @@ import { isCloudBinding } from './status'
 
 /**
  * A document's address for its members, `/documents/:id` on its server, with `?version=…` for
- * one of its versions. Unlike invitations and share links it carries no secret: the server
- * decides whether whoever signs in may open it.
+ * one of its versions or `?comment=…` for a comment thread, as emails about comments link.
+ * Unlike invitations and share links it carries no secret: the server decides whether whoever
+ * signs in may open it.
  */
-export type CloudDocumentLink = { documentId: string; server: string; versionId: string | null }
+export type CloudDocumentLink = {
+  documentId: string
+  server: string
+  versionId: string | null
+  threadId?: string | null
+}
 
 const linkSchema = v.object({
   documentId: v.string(),
   server: v.string(),
-  versionId: v.nullable(v.string())
+  versionId: v.nullable(v.string()),
+  threadId: v.optional(v.nullable(v.string()), null)
 })
+
+/** How long an opened document's comments may take to arrive before its thread is given up on. */
+const THREAD_WAIT_MS = 30_000
 
 /** The link this tab is opening while it signs in, kept for the tab so it survives leaving. */
 const stored = IS_BROWSER
@@ -45,7 +56,12 @@ const stored = IS_BROWSER
 export function readCloudDocumentLink(url: URL): CloudDocumentLink | null {
   const path = parseCloudLinkPath(url.pathname)
   if (path?.kind !== 'documents') return null
-  return { documentId: path.id, server: url.origin, versionId: url.searchParams.get('version') }
+  return {
+    documentId: path.id,
+    server: url.origin,
+    versionId: url.searchParams.get('version'),
+    threadId: url.searchParams.get('comment')
+  }
 }
 
 /**
@@ -134,6 +150,7 @@ export async function openCloudDocumentLink(link: CloudDocumentLink): Promise<vo
       containerId: document.workspaceId
     }
   ).catch(() => null)
+  if (store && link.threadId) await openThread(link.threadId)
   if (!store || !link.versionId) return
   const shown = await client.getDocumentVersion(document.id, link.versionId).catch(() => null)
   if (shown) {
@@ -141,6 +158,15 @@ export async function openCloudDocumentLink(link: CloudDocumentLink): Promise<vo
     await previewVersion(store, shown.version)
   }
   if (!shown || versionHistoryOf(store)?.failed) toast.error(messages.versionFailed)
+}
+
+/** Opens a comment thread of the document just opened, once its comments arrive. */
+async function openThread(threadId: string): Promise<void> {
+  const comments = useComments()
+  const arrived = await until(() => comments.threads.value.some((thread) => thread.id === threadId))
+    .toBe(true, { timeout: THREAD_WAIT_MS })
+  if (arrived) await comments.focusThread(threadId)
+  else toast.error(cloudMessages.get().commentLinkFailed)
 }
 
 /** Drops a link kept while signing in, as when the tab opens with another one. */

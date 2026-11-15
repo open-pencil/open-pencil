@@ -13,6 +13,7 @@ import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { toolCursor } from '@open-pencil/vue/editor/tool-cursor'
 import { useCommentMessages } from '@open-pencil/vue/i18n'
 
+import { commentPreview } from '@/app/comments/format'
 import { useComments } from '@/app/comments/use'
 import { useEditorStore } from '@/app/editor/active-store'
 import AppContextMenuRoot from '@/components/ui/menu/AppContextMenuRoot.vue'
@@ -194,8 +195,9 @@ function closeCard() {
             :active="activeThreadId === pin.thread.id"
             :resolved="pin.thread.resolved"
             :dragging="pin.dragging"
+            :unread="comments.isUnread(pin.thread.id)"
             :style="{ left: `${pin.left}px`, top: `${pin.top}px` }"
-            :aria-label="`${author.name(pin.thread.author)}: ${pin.thread.text}`"
+            :aria-label="`${author.name(pin.thread.author)}: ${commentPreview(pin.thread.text)}`"
             @pointerdown.stop="pinDrag.start($event, pin.thread.id, pin.at)"
             @pointermove="pinDrag.move"
             @pointerup="pinDrag.end"
@@ -243,6 +245,7 @@ function closeCard() {
             v-model="draftText"
             bare
             :label="messages.addComment"
+            :mentionable="comments.mentionable"
             @submit="postDraft"
             @cancel="closeCard"
           />
@@ -251,6 +254,7 @@ function closeCard() {
             ref="threadCard"
             :thread="activePin.thread"
             :read-only="!canComment"
+            :mentionable="comments.mentionable"
             @close="closeCard"
             @resolve="comments.setResolved"
             @reply="comments.reply"

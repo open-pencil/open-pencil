@@ -6,6 +6,7 @@ import type { CommentThread } from '@open-pencil/scene-graph'
 import { liveReplies } from '@open-pencil/scene-graph/comments'
 import { useCommentMessages, useCommonMessages } from '@open-pencil/vue/i18n'
 
+import type { MentionPerson } from '@/app/comments/mentions'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
@@ -17,10 +18,16 @@ import CommentMessage from './CommentMessage.vue'
 import { comments } from './ui'
 
 /** An open thread: the comment, its replies, and a reply box, as in Figma's comment card. */
-const { thread, readOnly = false } = defineProps<{
+const {
+  thread,
+  readOnly = false,
+  mentionable
+} = defineProps<{
   thread: CommentThread
   /** Reading only, as a guest on a link does: no resolving, deleting, or replying. */
   readOnly?: boolean
+  /** Whom a reply may name. */
+  mentionable?: () => Promise<readonly MentionPerson[]>
 }>()
 
 const emit = defineEmits<{
@@ -120,6 +127,7 @@ defineExpose({ focus: () => composer.value?.focus() })
         ref="composer"
         v-model="replyText"
         :label="messages.reply"
+        :mentionable="mentionable"
         @submit="sendReply"
         @cancel="emit('close')"
       />

@@ -1,5 +1,5 @@
 import { createEventHook, createGlobalState } from '@vueuse/core'
-import { computed, ref, type WritableComputedRef } from 'vue'
+import { computed, ref, watch, type WritableComputedRef } from 'vue'
 
 import {
   commentAnchor,
@@ -25,6 +25,7 @@ import {
 } from '@/app/settings/preferences/store'
 
 import { commentsKeptElsewhere, followDocumentComments } from './document'
+import type { MentionPerson } from './mentions'
 
 /** A comment preference the list and menus read and change in place. */
 function preference<K extends keyof CommentPreferences>(
@@ -80,10 +81,29 @@ export const useComments = createGlobalState(() => {
    * Whether this tab may write comments: anywhere the document keeps them, and where a server
    * keeps them, as it allows, which a guest on a link never is.
    */
-  const canComment = computed(() => {
+  const kept = computed(() => {
     const store = storeRef.value
-    return !store || (commentsKeptElsewhere.value.get(store)?.canComment ?? true)
+    return store ? commentsKeptElsewhere.value.get(store) : undefined
   })
+  const canComment = computed(() => kept.value?.canComment ?? true)
+
+  /** Whether someone else wrote in the thread since this account read it, where a server keeps. */
+  function isUnread(threadId: string): boolean {
+    return kept.value?.unread.has(threadId) ?? false
+  }
+
+  /** Whom a comment may name: the people the server lets see the document; nobody elsewhere. */
+  function mentionable(): Promise<readonly MentionPerson[]> {
+    return kept.value?.people() ?? Promise.resolve([])
+  }
+
+  // An open thread is read, including what arrives while it is open.
+  watch(
+    () => [activeThreadId.value, kept.value] as const,
+    ([threadId, current]) => {
+      if (threadId && current?.unread.has(threadId)) current.markRead(threadId)
+    }
+  )
 
   function startDraft(at: PagePoint) {
     if (!canComment.value) return
@@ -185,6 +205,8 @@ export const useComments = createGlobalState(() => {
     onDeleteRequested: deleteRequested.on,
     author: computed(() => me.value.name),
     canComment,
+    isUnread,
+    mentionable,
     showOnCanvas,
     listQuery,
     listShowResolved,

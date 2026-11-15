@@ -151,6 +151,19 @@ oldest first.
   without them, while Save As, a download, and the portal's Download all write them in. A document
   this device has not uploaded yet, as one just saved to Cloud, brings its file's threads along
   under the names the file gave (`POST /api/documents/:id/threads/import`, editors only).
+- A mention is a Markdown link to the account, `[@Ana](openpencil://person/<id>)`, as chat writes
+  its references; the composer shows `@Ana` and offers, for `@`, the people who can open the
+  document (`GET /api/documents/:id/threads/people`: names and pictures, never addresses). Each
+  request lists the accounts it names, and the server keeps those who can read the document
+  (`comment_mention`), at most 50 a comment.
+- Email (`comment-notification`) goes to the people a comment names, and, for a reply, to the
+  thread's other writers who chose every comment; an edit tells only the people it adds. Each
+  account chooses all, mentions (the default), or none at `/account/notifications`
+  (`GET`/`PUT /api/account/notifications`). One person's comments send at most 200 such emails a
+  day and one account receives at most 50 (`comment_email`); past either a mention is still kept,
+  only not emailed. The email links to `/documents/:id?comment=<thread>`, which opens the thread.
+- A thread is unread for an account while someone else wrote in it after the account last read it
+  (`comment_read`); opening it, or writing in it, reads it. Pins and the list mark unread threads.
 
 ## Authentication and authorization
 

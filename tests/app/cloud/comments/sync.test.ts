@@ -10,6 +10,7 @@ import {
 } from '@open-pencil/scene-graph/comments'
 
 import { followCloudComments, type CloudCommentTarget } from '@/app/cloud/comments/sync'
+import { commentsKeptElsewhere } from '@/app/comments/document'
 import type { EditorStore } from '@/app/editor/session'
 import { createEditorStore } from '@/app/editor/session/create'
 
@@ -143,5 +144,27 @@ describe('Cloud comments in a tab', () => {
     // Under the name the file gave, never as whoever saved it.
     expect(imported).toEqual(['Carol'])
     expect(server.calls).toEqual(['list'])
+  })
+
+  test('send whom a comment names, and tell the UI what is new until it is read', async () => {
+    const server = commentServer()
+    const { store, follow, pageId } = open(server, {
+      people: async () => [{ id: 'acc-ben', name: 'Ben' }]
+    })
+    const id = server.others(pageId, 'New to you')
+    const follower = follow()
+    await follower.idle()
+    const kept = () => commentsKeptElsewhere.value.get(store)
+    expect(kept()?.unread.has(id)).toBe(true)
+    expect(await kept()?.people()).toEqual([{ id: 'acc-ben', name: 'Ben' }])
+
+    kept()?.markRead(id)
+    expect(kept()?.unread.has(id)).toBe(false)
+    await follower.idle()
+    expect(server.calls).toContain('read')
+
+    const mine = addThread(store, pageId, '[@Ben](openpencil://person/acc-ben) look')
+    await follower.idle()
+    expect(server.threads.get(mine.id)?.comments[0]?.mentions).toEqual(['acc-ben'])
   })
 })

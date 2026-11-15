@@ -17,6 +17,7 @@ export function commentServer() {
     author: { kind: 'user', id: name.toLowerCase(), name },
     agent: null,
     body,
+    mentions: [],
     createdAt: NOW,
     editedAt: null
   })
@@ -38,7 +39,13 @@ export function commentServer() {
       }
     },
     get: async (id) => structuredClone(found(id)),
-    createThread: async ({ id = crypto.randomUUID(), body, agent: _agent, ...anchor }) => {
+    createThread: async ({
+      id = crypto.randomUUID(),
+      body,
+      mentions,
+      agent: _agent,
+      ...anchor
+    }) => {
       calls.push('create')
       return put({
         id,
@@ -47,7 +54,8 @@ export function commentServer() {
         updatedAt: NOW,
         resolvedAt: null,
         resolvedBy: null,
-        comments: [comment(crypto.randomUUID(), body)]
+        unread: false,
+        comments: [{ ...comment(crypto.randomUUID(), body), mentions: [...mentions] }]
       })
     },
     updateThread: async (id, input) => {
@@ -86,6 +94,10 @@ export function commentServer() {
     },
     deleteComment: async () => {
       throw new Error('not used')
+    },
+    markRead: async (id) => {
+      calls.push('read')
+      put({ ...found(id), unread: false })
     }
   }
   return {
@@ -109,6 +121,8 @@ export function commentServer() {
         updatedAt: NOW,
         resolvedAt: null,
         resolvedBy: null,
+        // Ben's words are new to the account the fake serves.
+        unread: true,
         comments: [comment(crypto.randomUUID(), body, 'Ben')]
       })
       return id

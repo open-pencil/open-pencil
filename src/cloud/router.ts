@@ -93,6 +93,12 @@ export function createCloudPortalRouter(context: PortalContext) {
         meta: { account: true }
       },
       {
+        path: '/account/notifications',
+        name: 'notifications',
+        component: () => import('@/views/cloud/ConsoleView.vue'),
+        meta: { account: true }
+      },
+      {
         path: '/account/security',
         name: 'security',
         component: () => import('@/views/cloud/ConsoleView.vue'),

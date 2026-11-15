@@ -262,6 +262,7 @@
   "savePublicHeading": "ここに保存したものは誰でも開けます",
   "savePublicDescription": "このワークスペースはサーバーのコミュニティギャラリーです。ここに保存するとドキュメントが公開されます。",
   "documentLinkFailed": "このドキュメントを開けませんでした。オーナーにアクセス権を依頼してください。",
+  "commentLinkFailed": "このコメントが見つかりません。削除された可能性があります。",
   "documentLinkUnknownServer": "このリンクを開くには、先に {host} にサインインしてください。",
   "connectServerHeading": "チームのサーバーに接続",
   "connectServerDescription": "チームが OpenPencil Cloud に使っているアドレスを入力してください。",
