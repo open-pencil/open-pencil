@@ -65,16 +65,39 @@ function functionTracks(node: FunctionNode): GridTrack[] {
   }
 }
 
+/**
+ * A word's track sizes past the line names in it, such as `[start]200px[end]`, which the value
+ * parser keeps as one word; names may run across words, as in `[a b]`, so whether the word
+ * starts inside them comes in and whether it ends inside them goes out.
+ */
+function sizesOutsideNames(word: string, inNames: boolean): { sizes: string[]; inNames: boolean } {
+  const sizes: string[] = []
+  let size = ''
+  let names = inNames
+  for (const char of word) {
+    if (char === '[' || char === ']') {
+      if (size) sizes.push(size)
+      size = ''
+      names = char === '['
+    } else if (!names) {
+      size += char
+    }
+  }
+  if (size) sizes.push(size)
+  return { sizes, inNames: names }
+}
+
 function tracksOf(nodes: Node[]): GridTrack[] {
   const tracks: GridTrack[] = []
   // Line names, such as `[start]` or `[a b]`, name the lines between tracks and size none.
   let inNames = false
   for (const node of nodes) {
     if (tracks.length >= MAX_GRID_TRACKS) break
-    if (node.type === 'word' && (inNames || node.value.startsWith('['))) {
-      inNames = !node.value.endsWith(']')
-    } else if (node.type === 'word') tracks.push(wordTrack(node.value))
-    else if (node.type === 'function') appendAll(tracks, functionTracks(node))
+    if (node.type === 'word') {
+      const word = sizesOutsideNames(node.value, inNames)
+      inNames = word.inNames
+      appendAll(tracks, word.sizes.map(wordTrack))
+    } else if (node.type === 'function') appendAll(tracks, functionTracks(node))
   }
   return tracks.slice(0, MAX_GRID_TRACKS)
 }

@@ -52,5 +52,11 @@ describe('parseCSSGridTracks', () => {
       { sizing: 'AUTO', value: 0 }
     ])
     expect(parseCSSGridTracks('repeat(2, [col] 1fr)')).toHaveLength(2)
+    // The value parser keeps names written without spaces in the same word as the size.
+    expect(parseCSSGridTracks('[start]200px[end]')).toEqual([{ sizing: 'FIXED', value: 200 }])
+    expect(parseCSSGridTracks('[a]1fr[b]2fr')).toEqual([
+      { sizing: 'FR', value: 1 },
+      { sizing: 'FR', value: 2 }
+    ])
   })
 })
