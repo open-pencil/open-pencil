@@ -34,7 +34,7 @@ function lastLineWidth(props: Props): number {
 
 describe('style runs', () => {
   test('a spacing run over half an emoji is left out, as the paragraph leaves it', () => {
-    const props: Props = { text: 'ab😀', letterSpacing: pixels(0), ...UNBOUNDED_WIDTH }
+    const props: Props = { text: 'ab😀c', letterSpacing: pixels(0), ...UNBOUNDED_WIDTH }
     const split = lastLineWidth({
       ...props,
       styleRuns: [{ start: 3, length: 1, style: { letterSpacing: pixels(10) } }]
