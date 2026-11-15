@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defaultKeymap, history, historyKeymap, redo, undo } from '@codemirror/commands'
+import { history, standardKeymap } from '@codemirror/commands'
 import { StreamLanguage } from '@codemirror/language'
 import { setDiagnostics, type Diagnostic } from '@codemirror/lint'
 import { EditorState, type Text } from '@codemirror/state'
@@ -15,6 +15,7 @@ import { tv } from 'tailwind-variants'
 import { useTemplateRef, watch } from 'vue'
 
 import type { TemplateCheck, TemplateProblem } from '@/app/ai/prompts/engine'
+import { appHistoryKeys } from '@/components/code-editor/history'
 import { useCodeMirror } from '@/components/code-editor/useCodeMirror'
 import { codeEditorTheme, promptEditorTheme } from '@/theme/code/editor'
 import promptEditorFieldTheme from '@/theme/settings/prompt-editor'
@@ -54,12 +55,11 @@ const view = useCodeMirror(useTemplateRef('host'), {
     placeholderText(placeholder),
     history(),
     drawSelection(),
-    keymap.of([
-      { key: 'Ctrl-z', run: undo },
-      { key: 'Ctrl-Shift-z', run: redo },
-      ...defaultKeymap,
-      ...historyKeymap
-    ]),
+    // Prose keys only: moving, selecting, and deleting, with undo and redo on the app's own
+    // shortcuts. Code-editing keys, such as indenting with Mod-[ and Mod-], would take keys the
+    // desktop menu uses for layers.
+    appHistoryKeys(),
+    keymap.of(standardKeymap),
     // A template's errors are reported by line, so its lines are numbered; instructions are prose.
     ...(template ? [lineNumbers(), StreamLanguage.define(knapStreamParser)] : []),
     EditorView.lineWrapping,
