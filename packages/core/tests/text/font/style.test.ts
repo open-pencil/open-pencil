@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { chooseLocalFontMatch, fontWeightMatchOrder } from '@open-pencil/core/text'
+import { chooseLocalFontMatch, findLocalFont, fontWeightMatchOrder } from '@open-pencil/core/text'
 
 describe('chooseLocalFontMatch', () => {
   const fonts = [
@@ -50,5 +50,29 @@ describe('fontWeightMatchOrder', () => {
     expect(fontWeightMatchOrder(400)).toEqual([400, 500, 300, 200, 100, 600, 700, 800, 900])
     expect(fontWeightMatchOrder(700)).toEqual([700, 800, 900, 600, 500, 400, 300, 200, 100])
     expect(fontWeightMatchOrder(300)).toEqual([300, 200, 100, 400, 500, 600, 700, 800, 900])
+  })
+})
+
+describe('findLocalFont', () => {
+  const face = (family: string, style: string, fullName: string) => ({ family, style, fullName })
+  const windows = [
+    face('Acme Sans', 'Regular', 'Acme Sans Regular'),
+    face('Acme Sans', 'Bold', 'Acme Sans Bold'),
+    face('Acme Sans Compressed Medium', 'Regular', 'Acme Sans Compressed Medium'),
+    face('Acme Sans Condensed', 'Bold', 'Acme Sans Condensed Bold')
+  ]
+
+  test('finds a face Windows lists as a family of its own by its full name', () => {
+    expect(findLocalFont(windows, 'Acme Sans', 'Compressed Medium')?.family).toBe(
+      'Acme Sans Compressed Medium'
+    )
+    expect(findLocalFont(windows, 'Acme Sans', 'Condensed Bold')?.family).toBe(
+      'Acme Sans Condensed'
+    )
+  })
+
+  test('keeps the face its own family lists, and finds none for a face nobody names', () => {
+    expect(findLocalFont(windows, 'Acme Sans', 'Bold')?.fullName).toBe('Acme Sans Bold')
+    expect(findLocalFont(windows, 'Acme Sans', 'Compressed Black')).toBeUndefined()
   })
 })

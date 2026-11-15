@@ -3,7 +3,8 @@ import {
   namesWeight,
   normalizeFontFamily,
   type FontFamilyStyle,
-  parseFontStyle
+  parseFontStyle,
+  styleSpelling
 } from '@open-pencil/scene-graph/font-style'
 
 const FONT_WEIGHTS = Object.keys(FONT_WEIGHT_NAMES)
@@ -81,4 +82,26 @@ export function chooseLocalFontMatch<T extends FontFamilyStyle>(
   }
 
   return undefined
+}
+
+export interface NamedLocalFont extends FontFamilyStyle {
+  fullName: string
+}
+
+function fontByFullName<T extends NamedLocalFont>(fonts: readonly T[], fullName: string) {
+  const wanted = styleSpelling(fullName)
+  return fonts.find((font) => styleSpelling(font.fullName) === wanted)
+}
+
+/** Windows lists a face beyond regular, bold, and italic as a family of its own, by its full name. */
+export function findLocalFont<T extends NamedLocalFont>(
+  fonts: T[],
+  family: string,
+  style?: string
+): T | undefined {
+  const listed = chooseLocalFontMatch(fonts, family, style)
+  if (listed || !style) {
+    return listed
+  }
+  return fontByFullName(fonts, `${family} ${style}`)
 }
