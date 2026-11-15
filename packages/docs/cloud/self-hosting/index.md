@@ -76,6 +76,23 @@ For a server only its members use, set `deployment.local_editor = false`: the we
 
 Links the server sends point at its own address: `/documents/<id>` for a document, `/share/<id>` for a shared link, and `/invitations/<id>` for an invitation. An editor at another address, such as a development build, can still connect when its origin is in `deployment.trusted_origins`; people sign in there by approving a code, as in the desktop app.
 
+## Your name on the server's pages
+
+The server's public pages, such as its community gallery, carry your name rather than OpenPencil's: the bar shows the server's address, the gallery, and help, and the footer your legal links with a small "Powered by OpenPencil". Name the server, add your logo, and point help at your own page under `[deployment.branding]`:
+
+```toml
+[deployment.branding]
+name = "Acme Design"
+logo_url = "https://acme.example/logo.svg"
+help_url = "https://intranet.acme.example/design-help"
+```
+
+Without `help_url`, help goes to the OpenPencil documentation. The addresses must be `http` or `https`.
+
+## Editor versions
+
+When a server update needs a newer editor, set `deployment.minimum_editor_version`, such as `"0.17.0"`. An older desktop app then shows a banner offering its update instead of connecting, and the server answers its requests with `426 Upgrade Required`; a browser tab on an older editor offers a reload. Requests that name no editor version, from the CLI or MCP, are served as before.
+
 ## Reverse proxy
 
 - Terminate TLS in front of the server and the object store, on stable hostnames.
@@ -96,7 +113,7 @@ Deployment administrators manage enrollment and users in the server's administra
 
 ## Terms and privacy
 
-The server shows no terms or privacy policy of its own: you run it, so the documents are yours to write. Add a `[legal]` table to link them. `terms_url` and `privacy_url` appear under the sign-in buttons and in the footer of the server's pages, `abuse_email` as a Report abuse link there, and `minimum_age` as a line at sign-up; editors read them from discovery too. With `require_acceptance = true`, which needs both `terms_url` and `terms_version`, each account accepts that version on its first sign-in, and again whenever you change it, before it can use the server; declining signs out. Until it accepts, the account can still download its documents and delete itself from the terms page, and nothing else. The server records which version each account accepted and when, so give each version that needs accepting again a value never used before: going back to an earlier one asks nobody who accepted it.
+The server shows no terms or privacy policy of its own: you run it, so the documents are yours to write. Add a `[legal]` table to link them. `terms_url` and `privacy_url` appear under the sign-in buttons and in the footer of the server's pages, `abuse_email` as a Report abuse link there and as the address a document's owner writes to when an administrator blocks it, and `minimum_age` as a line at sign-up; editors read them from discovery too. With `require_acceptance = true`, which needs both `terms_url` and `terms_version`, each account accepts that version on its first sign-in, and again whenever you change it, before it can use the server; declining signs out. Until it accepts, the account can still download its documents and delete itself from the terms page, and nothing else. The server records which version each account accepted and when, so give each version that needs accepting again a value never used before: going back to an earlier one asks nobody who accepted it.
 
 ## Community gallery
 
@@ -109,7 +126,9 @@ workspace = "0f6b1c1e-6a8e-4b8e-9a4f-3c2d1e0f9a8b"
 
 Anyone can then open its documents read-only, without signing in or a share link, and **everything saved there is public**: saving a document to the workspace publishes it, and moving it out or to Trash takes it down. Its members work in it as in any workspace. A document the members couldn't open either, because it is in Trash, an administrator blocked it, it was never saved, or its creator is banned, stays out of the gallery.
 
-The gallery is served without signing in:
+The server shows the gallery at `/community`, and each document's page at `/community/<document>`: its preview, its named versions, and buttons that open it read-only in the browser, at `/community/<document>/open`, or in the desktop app. Both pages carry the title, description, and preview image that link previews read.
+
+Its data is served without signing in:
 
 - `GET /api/community` lists its documents, most recently changed first, each with its named versions and the path of its thumbnail.
 - `GET /api/community/<document>/document` downloads a document as it is now, or with `?version=<version>` as one of its named versions; other history stays private.

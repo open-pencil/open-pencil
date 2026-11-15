@@ -12,6 +12,16 @@ local_editor = true
 # Editors read this only from the official OpenPencil Cloud: it shows Cloud in editors from this
 # version on. Self-hosted servers leave it out.
 # listing = { minimum_editor_version = "0.14.0" }
+# The oldest editor that may use the server. Older editors ask to be updated instead of connecting,
+# and requests from older desktop editors are refused with 426 Upgrade Required.
+# minimum_editor_version = "0.14.0"
+
+# How the server names itself on its public pages, such as its community gallery: your name and
+# logo in the bar, and where your people get help. Without it, the server's address names it.
+# [deployment.branding]
+# name = "Acme Design"
+# logo_url = "https://acme.example/logo.svg"
+# help_url = "https://intranet.acme.example/design-help"
 
 # Defaults to DATABASE_URL.
 [database]
@@ -121,7 +131,8 @@ transport = "none"
 
 # Optional: your own terms and privacy policy, linked at sign-up and in the portal's footer. With
 # require_acceptance, each account accepts terms_version once before using the server, and again
-# whenever you change it. Leave the table out to show none.
+# whenever you change it. abuse_email is linked as Report abuse, and is where the owner of a
+# document an administrator blocks writes to contest it. Leave the table out to show none.
 # [legal]
 # terms_url = "https://example.com/terms"
 # privacy_url = "https://example.com/privacy"

@@ -39,6 +39,7 @@ export function destroyRenderer(r: SkiaRenderer): void {
   r.images.cache.clear()
   releaseLiveImages(r)
   disposePathCaches(r)
+  r.renderedBounds.dispose()
   r.fillPaint.delete()
   releaseCompiledShaders(r.shaders)
   r.strokePaint.delete()

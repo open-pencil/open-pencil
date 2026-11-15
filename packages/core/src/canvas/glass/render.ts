@@ -1,6 +1,7 @@
 import type { Canvas, ImageFilter, Path, Shader } from '@open-pencil/canvaskit'
 import type { Effect, SceneNode } from '@open-pencil/scene-graph'
 import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { isWholeEllipse } from '@open-pencil/scene-graph/outline'
 
 import { tracePath } from '#core/canvas/paths/verbs'
 import type { SkiaRenderer } from '#core/canvas/renderer'
@@ -127,23 +128,36 @@ function flattenedSegments(r: SkiaRenderer, path: Path): Float32Array {
   return new Float32Array(segments)
 }
 
-/** The outline the glass shaders bend light at: the layer's box, or its outline flattened. */
+/**
+ * The outline the glass shaders bend light at: the layer's box, its ellipse, or its outline
+ * flattened. A whole ellipse is computed exactly even when it carries saved fill geometry, which
+ * for an unbroken ellipse is the same oval.
+ */
 function glassOutline(r: SkiaRenderer, node: SceneNode, shape: Path | null): GlassOutline {
   const box = (rect: Float32Array, radii: [number, number, number, number]): GlassOutline => ({
+    kind: 'box',
     origin: [rect[0], rect[1]],
     size: [rect[2] - rect[0], rect[3] - rect[1]],
     radii,
-    isBox: true,
     segments: new Float32Array()
   })
   const flattened = (path: Path): GlassOutline => ({
+    kind: 'segments',
     origin: [0, 0],
     size: [node.width, node.height],
     radii: [0, 0, 0, 0],
-    isBox: false,
     segments: flattenedSegments(r, path)
   })
   if (shape) return flattened(shape)
+  if (isWholeEllipse(node)) {
+    return {
+      kind: 'ellipse',
+      origin: [0, 0],
+      size: [node.width, node.height],
+      radii: [0, 0, 0, 0],
+      segments: new Float32Array()
+    }
+  }
   return withNodeOutline(r, node, (outline) => {
     if (outline.kind === 'rect') return box(outline.rect, [0, 0, 0, 0])
     if (outline.kind === 'rrect') {

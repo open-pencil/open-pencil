@@ -5,10 +5,6 @@ description: The terms for using OpenPencil Cloud at cloud.openpencil.dev, the h
 
 # OpenPencil Cloud Terms of Service
 
-::: warning Draft
-This is a draft awaiting legal review. It is not in force, and it changes before OpenPencil Cloud opens. Text in [brackets] is still to be filled in.
-:::
-
 Version: 2026-11-15
 
 These terms cover OpenPencil Cloud at `cloud.openpencil.dev` (the "Service"), run by Alena Poyarkova, a sole trader registered in Mexico under RFC POAL920708M63 ("we"). They don't cover the OpenPencil app, which is open-source software under its own license and works without the Service, or a Cloud server someone else runs: that server's operator sets its own terms.
@@ -17,7 +13,8 @@ These terms cover OpenPencil Cloud at `cloud.openpencil.dev` (the "Service"), ru
 
 - You must be at least 16 years old to use the Service.
 - Keep your sign-in methods secure. You are responsible for what happens under your account.
-- One person per account. Don't share an account or create accounts to get around limits or a suspension.
+- One person per account: don't share yours or use someone else's.
+- One free account per person. A separate account for work is fine; several accounts to get more free storage or credits, to get around a plan's limits, or to get around a suspension are not.
 - We may require you to accept new versions of these terms before you keep using the Service.
 
 ## Your content
@@ -37,7 +34,15 @@ Don't use the Service to:
 - probe, overload, or break the Service or other people's accounts, or get around its limits or security;
 - resell or run a competing hosted service on top of the Service.
 
-To report content that breaks these rules, use **Report** on the shared document or email [abuse@openpencil.dev](mailto:abuse@openpencil.dev). We may remove content, disable links, or suspend accounts that break these terms, and we tell you when we do unless the law or safety prevents it.
+To report content that breaks these rules, use **Report** on the shared document or email [abuse@openpencil.dev](mailto:abuse@openpencil.dev). What we may do about it is under [When we act](#when-we-act).
+
+## When we act
+
+- We may remove or block content, or disable links to it, when it breaks these terms or the law.
+- If accounts are used to get around a plan's limits, we may freeze them: their documents stay readable and downloadable, but can't be edited, and they can't use credits. We may also cancel credits or storage gained that way, and close the extra accounts.
+- We may suspend or close an account that seriously or repeatedly breaks these terms.
+- Whenever we do any of this, we tell you what we did and why, unless the law or safety prevents it. Reply to that message to contest it: we look at it again and answer.
+- Unless the law or safety prevents it, you keep at least 30 days to download your documents before we close an account.
 
 ## OpenPencil services
 
@@ -53,7 +58,7 @@ To the extent the law allows, we aren't liable for indirect or consequential los
 
 ## Ending
 
-You can stop using the Service and delete your account at any time from your account settings. We may suspend or end your access if you seriously or repeatedly break these terms.
+You can stop using the Service and delete your account at any time from your account settings. We may suspend or end your access as described under [When we act](#when-we-act).
 
 ## Changes to these terms
 

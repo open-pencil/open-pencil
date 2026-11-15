@@ -70,6 +70,7 @@ const showForm = computed(() => !!emailPassword && (!signUp.value || emailPasswo
   <PortalPublicLayout
     :host="host"
     :heading="signUp ? messages.signUpTitle : messages.signInTitle"
+    :tab-title="signUp ? messages.signUpTitle : messages.signIn"
     :description="description"
   >
     <AppAlert

@@ -343,7 +343,7 @@ function createElementNode(
   if (display === 'none') return null
   if (
     isTextLikeElement(element) &&
-    !hasBoxStyle(element, style) &&
+    !hasBoxStyle(element, style, parentFlow) &&
     element.children.every((child) => child.type === 'text')
   ) {
     const text = createTextNode(graph, parentId, textContent(element), style, display, parentFlow)
@@ -351,7 +351,7 @@ function createElementNode(
     recordElement(graph, recorded, text, element, style)
     return text
   }
-  if (!hasBoxStyle(element, style) && holdsRichText(element)) {
+  if (!hasBoxStyle(element, style, parentFlow) && holdsRichText(element)) {
     const text = createRichTextNode(graph, parentId, element, style, display, parentFlow)
     recordElement(graph, recorded, text, element, style)
     return text
@@ -388,7 +388,7 @@ function createChildLayers(
   recorded: Recorded
 ): void {
   if (flow !== 'flex' && holdsRichText(element)) {
-    const textStyle = inheritedTextStyle(element, style)
+    const textStyle = inheritedTextStyle(style)
     const textDisplay = flow === 'inline' ? 'inline' : 'block'
     const text = createRichTextNode(graph, node.id, element, textStyle, textDisplay, flow ?? 'none')
     record(graph, recorded, text, capturedTextBox(element))
@@ -399,7 +399,7 @@ function createChildLayers(
     ? capturedTextBox(element)
     : undefined
   for (const child of element.children) {
-    const inherited = inheritedTextStyle(element, style)
+    const inherited = inheritedTextStyle(style)
     const layer = createDesignNode(graph, node.id, child, flow ?? 'none', recorded, inherited)
     if (layer?.type === 'TEXT') record(graph, recorded, layer, textBox)
   }

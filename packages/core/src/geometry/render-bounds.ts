@@ -2,16 +2,24 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { getNodeLocalMatrix, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import {
-  effectOverflow,
+  blurReach,
   geometryBlobBounds,
+  shadowReach,
+  shadowSpreadOf,
   intersectVisualBounds,
   strokeOverflow,
+  drawsStrokeSides,
+  strokeSideReach,
+  type SideWeights,
   textDecorationOverflow,
   unionVisualBounds,
   type VisualBounds,
   widestBlurRadius
 } from '@open-pencil/scene-graph/geometry'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
+import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
+import { paintShows } from '@open-pencil/scene-graph/paints'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { textLinesOverflow } from '@open-pencil/scene-graph/text'
 
 import { mayHoldEmoji } from '#core/text/emoji'
@@ -27,9 +35,21 @@ import type { RotationPreview } from './types'
  */
 export type EffectReach = 'figma' | 'drawn'
 
+/**
+ * What a subtree draws in each node's own axes, already measured: a walk with `drawn` reach takes
+ * a child's from here, or measures it once and keeps it, and maps it into its parent's axes. A
+ * turned child inside a turned parent so takes the box around a box, larger than it draws but
+ * never smaller.
+ */
+export interface MeasuredSubtrees {
+  get(node: SceneNode): VisualBounds | null | undefined
+  set(node: SceneNode, bounds: VisualBounds | null): void
+}
+
 interface RenderBoundsOptions {
   reach: EffectReach
   preview?: RotationPreview | null
+  measured?: MeasuredSubtrees
 }
 
 const PAINTING_CONTAINERS = new Set(['FRAME', 'COMPONENT', 'COMPONENT_SET', 'INSTANCE', 'SECTION'])
@@ -65,6 +85,16 @@ function grown(bounds: VisualBounds, by: number): VisualBounds {
   }
 }
 
+/** `bounds` grown by a reach of its own on each side: top, right, bottom, left. */
+function grownBySides(bounds: VisualBounds, [top, right, bottom, left]: SideWeights): VisualBounds {
+  return {
+    minX: bounds.minX - left,
+    minY: bounds.minY - top,
+    maxX: bounds.maxX + right,
+    maxY: bounds.maxY + bottom
+  }
+}
+
 /**
  * Whether a node paints anything of its own, as Figma's render bounds count it: a text paints
  * with a visible fill or stroke, or an emoji, which draws apart from its fills. A container's box
@@ -72,8 +102,7 @@ function grown(bounds: VisualBounds, by: number): VisualBounds {
  */
 function paints(node: SceneNode): boolean {
   if (node.type === 'GROUP') return false
-  const painted =
-    node.fills.some((fill) => fill.visible) || node.strokes.some((stroke) => stroke.visible)
+  const painted = node.fills.some(paintShows) || node.strokes.some(paintShows)
   if (node.type === 'TEXT') return node.text.length > 0 && (painted || mayHoldEmoji(node.text))
   // A vector without a path draws nothing, whatever its paints.
   if (
@@ -112,21 +141,36 @@ function ownPaint(node: SceneNode, reach: EffectReach): VisualBounds | null {
   if (reach === 'figma' && !paints(node)) return null
   const shape = ownShape(node)
   if (!shape) return null
-  const drawn = grown(shape, strokeOverflow(node.strokes, node.strokeCap, node.vectorNetwork, node))
+  const stroke = strokeOverflow(node.strokes, node.strokeCap, node.vectorNetwork, node)
+  const drawn = drawsStrokeSides(node)
+    ? grownBySides(shape, strokeSideReach(node))
+    : grown(shape, stroke)
   const outside = node.strokes.some((stroke) => stroke.visible && stroke.align !== 'INSIDE')
   const geometry = geometryBlobBounds([
     ...node.fillGeometry,
     ...(outside ? node.strokeGeometry : [])
   ])
   if (!geometry) return drawn
-  return (
-    unionVisualBounds(drawn, {
-      minX: geometry.x,
-      minY: geometry.y,
-      maxX: geometry.x + geometry.width,
-      maxY: geometry.y + geometry.height
-    }) ?? drawn
-  )
+  const paths: VisualBounds = {
+    minX: geometry.x,
+    minY: geometry.y,
+    maxX: geometry.x + geometry.width,
+    maxY: geometry.y + geometry.height
+  }
+  return unionVisualBounds(drawn, strokedWithoutSavedPaths(node, paths, stroke, reach)) ?? drawn
+}
+
+/**
+ * A node's fill paths as the canvas draws them: without saved stroke paths it strokes the paths
+ * of its vector network, which run where its fill paths do, so they grow by the stroke.
+ */
+function strokedWithoutSavedPaths(
+  node: SceneNode,
+  paths: VisualBounds,
+  stroke: number,
+  reach: EffectReach
+): VisualBounds {
+  return reach === 'drawn' && node.strokeGeometry.length === 0 ? grown(paths, stroke) : paths
 }
 
 /**
@@ -144,6 +188,16 @@ function swept(bounds: VisualBounds, matrix: Mat3, reach: VisualBounds): VisualB
   }
 }
 
+/** A drop shadow of `content`: moved by its `offset` and grown by `by` on every side. */
+function shadowOf(content: VisualBounds, matrix: Mat3, offset: Vector, by: number): VisualBounds {
+  return swept(content, matrix, {
+    minX: offset.x - by,
+    minY: offset.y - by,
+    maxX: offset.x + by,
+    maxY: offset.y + by
+  })
+}
+
 /**
  * What a node's effects make of `content`, everything it and its children draw, in the frame
  * `matrix` maps its axes into. With `figma` reach, a drop shadow is the content moved by its
@@ -157,21 +211,14 @@ function withEffects(
   reach: EffectReach
 ): VisualBounds {
   if (reach === 'drawn') {
-    const { left, top, right, bottom } = effectOverflow(node.effects)
-    return swept(content, matrix, { minX: -left, minY: -top, maxX: right, maxY: bottom })
+    return withDrawnEffects(node, content, matrix)
   }
   let bounds = content
   for (const effect of node.effects) {
     if (!effect.visible) continue
     if (effect.type === 'DROP_SHADOW') {
-      const by = effect.radius + effect.spread
-      const { x, y } = effect.offset
-      const shadow = swept(content, matrix, {
-        minX: x - by,
-        minY: y - by,
-        maxX: x + by,
-        maxY: y + by
-      })
+      const by = effect.radius + shadowSpreadOf(node, effect)
+      const shadow = shadowOf(content, matrix, effect.offset, by)
       bounds = unionVisualBounds(bounds, shadow) ?? bounds
     } else if (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR') {
       const by = widestBlurRadius(effect)
@@ -182,19 +229,59 @@ function withEffects(
 }
 
 /**
+ * `withEffects` as far as the canvas draws them: each drop shadow is the content moved by its
+ * offset and grown to where its ink fades (`shadowReach`), and a layer blur, which blurs the
+ * shadows too, grows all of it to where its kernel ends (`blurReach`).
+ */
+function withDrawnEffects(node: SceneNode, content: VisualBounds, matrix: Mat3): VisualBounds {
+  const blur = drawnLayerBlurReach(node)
+  return swept(withDrawnShadows(node, content, matrix), matrix, {
+    minX: -blur,
+    minY: -blur,
+    maxX: blur,
+    maxY: blur
+  })
+}
+
+/** `content` with each drop shadow moved by its offset and grown to where its ink fades. */
+function withDrawnShadows(node: SceneNode, content: VisualBounds, matrix: Mat3): VisualBounds {
+  let bounds = content
+  for (const effect of node.effects) {
+    if (effect.visible && effect.type === 'DROP_SHADOW') {
+      const by = shadowReach(effect.radius, effect.color.a) + shadowSpreadOf(node, effect)
+      bounds = unionVisualBounds(bounds, shadowOf(content, matrix, effect.offset, by)) ?? bounds
+    }
+  }
+  return bounds
+}
+
+/** How far past what a node draws its layer blur leaves ink, as `drawn` reach takes it. */
+export function drawnLayerBlurReach(node: SceneNode): number {
+  let reach = 0
+  for (const effect of node.effects) {
+    if (effect.visible && (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR')) {
+      reach = Math.max(reach, blurReach(widestBlurRadius(effect)))
+    }
+  }
+  return reach
+}
+
+/**
+ * What a node paints itself, in its own axes, as far as the canvas draws it: with its drop
+ * shadows when `withShadows`, and without its layer blur, which blurs it in a layer of its own.
+ */
+export function localPaintBounds(node: SceneNode, withShadows: boolean): VisualBounds | null {
+  const own = ownPaint(node, 'drawn')
+  return own && (withShadows ? withDrawnShadows(node, own, Matrix.identity()) : own)
+}
+
+/**
  * What a node draws itself, in its own axes before position, rotation, and flips, its effects
  * included and its children not.
  */
 export function localRenderBounds(node: SceneNode, reach: EffectReach): VisualBounds | null {
   const own = ownPaint(node, reach)
   return own && withEffects(node, own, Matrix.identity(), reach)
-}
-
-function clipsChildren(node: SceneNode): boolean {
-  return (
-    node.clipsContent &&
-    (node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE')
-  )
 }
 
 /** Whether a node draws at all: shown, and, as Figma counts it, not fully transparent. */
@@ -286,7 +373,7 @@ function drawnChildren(
       matrix,
       getNodeLocalMatrix(projectedNode(child, options.preview))
     )
-    const drawn = drawnSubtree(graph, child, childMatrix, clip, options)
+    const drawn = childSubtree(graph, child, childMatrix, clip, options)
     if (mask) {
       if (run?.holds) closeRun()
       const plain = reachesPast(child, options.reach)
@@ -336,6 +423,34 @@ function drawnSubtree(
   }
   const drawn = content && withEffects(node, content, matrix, reach)
   return clipped(withBox(node, drawn, matrix, reach), clip)
+}
+
+function childSubtree(
+  graph: SceneGraph,
+  child: SceneNode,
+  matrix: Mat3,
+  clip: VisualBounds | null,
+  options: RenderBoundsOptions
+): VisualBounds | null {
+  if (options.measured && options.reach === 'drawn' && !clip) {
+    return measuredSubtree(graph, child, matrix, options.measured, options)
+  }
+  return drawnSubtree(graph, child, matrix, clip, options)
+}
+
+function measuredSubtree(
+  graph: SceneGraph,
+  node: SceneNode,
+  matrix: Mat3,
+  measured: MeasuredSubtrees,
+  options: RenderBoundsOptions
+): VisualBounds | null {
+  let own = measured.get(node)
+  if (own === undefined) {
+    own = drawnSubtree(graph, node, Matrix.identity(), null, options)
+    measured.set(node, own)
+  }
+  return own && mapVisualBounds(matrix, own)
 }
 
 /**

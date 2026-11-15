@@ -1,7 +1,7 @@
 /* eslint-disable max-lines -- MCP server scenarios share lifecycle and transport fixtures */
 
 import { describe, expect, test, beforeEach, afterEach } from 'bun:test'
-import { mkdir, readFile, stat } from 'node:fs/promises'
+import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -632,10 +632,9 @@ describe('MCP server with mcpRoot', () => {
         arguments: { document_id: 'doc-2', page_id: '0:5' }
       })
       expect(activated.isError).not.toBe(true)
-      expect(browser.requests.find((item) => item.command === 'activate_document')?.args).toEqual({
-        document_id: 'doc-2',
-        page_id: '0:5'
-      })
+      expect(
+        browser.requests.find((item) => item.command === 'activate_document')?.args
+      ).toMatchObject({ document_id: 'doc-2', page_id: '0:5' })
 
       const undone = await client.callTool({ name: 'undo', arguments: { document_id: 'doc-2' } })
       expect(undone.isError).not.toBe(true)
@@ -643,6 +642,23 @@ describe('MCP server with mcpRoot', () => {
       expect(browser.requests.find((item) => item.command === 'undo')?.args).toMatchObject({
         document_id: 'doc-2'
       })
+    })
+  })
+
+  test('open, create, and activate name the session, so its later calls stay on that document', async () => {
+    await withMCPRootServer(TEST_MCP_ROOT, async (client, browser) => {
+      const path = join(TEST_MCP_ROOT, 'session.fig')
+      await writeFile(path, '')
+      await client.callTool({ name: 'open_document', arguments: { path } })
+      await client.callTool({ name: 'create_document', arguments: {} })
+      await client.callTool({ name: 'activate_document', arguments: { document_id: 'doc-2' } })
+      const commands = new Set(['open_document', 'create_document', 'activate_document'])
+      const sessions = browser.requests
+        .filter((item) => commands.has(item.command))
+        .map((item) => (item.args as { agent?: { session?: unknown } }).agent?.session)
+      expect(sessions).toHaveLength(3)
+      expect(new Set(sessions).size).toBe(1)
+      expect(typeof sessions[0]).toBe('string')
     })
   })
 

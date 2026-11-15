@@ -25,7 +25,7 @@ async function createRenderer(): Promise<SkiaRenderer> {
       return makePolygonPath(asRenderer(this), node)
     },
     makeRRect(node) {
-      return makeRRect(asRenderer(this), node)
+      return makeRRect(node)
     },
     getVectorPaths() {
       return null

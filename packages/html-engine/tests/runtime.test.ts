@@ -6,6 +6,8 @@ import { createHTMLEngineRuntime, loadHTMLEngine } from '@open-pencil/html-engin
 import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
+import { engineWithInter } from './helpers/engine'
+
 function elementById(document: DesignDocument, id: string): DesignElement {
   const walk = (nodes: DesignDocument['children']): DesignElement | undefined => {
     for (const node of nodes) {
@@ -19,14 +21,6 @@ function elementById(document: DesignDocument, id: string): DesignElement {
   const element = walk(document.children)
   if (!element) throw new Error(`No #${id}`)
   return element
-}
-
-/** The engine with the repository's Latin subset of Inter as its sans-serif font, so text has lines. */
-async function engineWithInter() {
-  const engine = await loadHTMLEngine()
-  engine.addFont(await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).bytes())
-  engine.setGenericFamily('sans-serif', ['Inter Variable', 'Inter'])
-  return engine
 }
 
 async function styled(html: string) {

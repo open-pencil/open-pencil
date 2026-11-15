@@ -1,23 +1,28 @@
+import { isEqual } from 'es-toolkit/predicate'
+
 import { copyFills, copyStrokes } from '../copy'
 import type { SceneGraph } from '../graph'
 import { hasInstanceOverride } from '../instances/overrides'
 import type { Color } from '../primitives'
 import type { Fill, SceneNode, Stroke } from '../types'
 import { paintBindingTarget, type PaintBindingList } from './fields'
-import { collectionsResolving, getNodeVariableModeId } from './resolution'
+import { collectionsResolving, getNodeExplicitVariableModeId } from './resolution'
 import { subtreeNodes } from './subtree'
 
 /**
  * Figma keeps a bound paint's color and opacity as a cache of its variable: it draws and reads
  * what the paint holds, and writes the variable's color into it again only once the color the
- * variable gives that layer changes, so an edit to the paint sticks until then. The color each
- * binding last gave its paint lives here, beside the graph and never saved, by layer and binding
- * field. A layer without an entry, such as one just loaded, pasted, or restored, counts its
- * paint's own color as the last one applied.
+ * variable gives that layer changes, or the mode set for the layer changes, so an edit to the
+ * paint sticks until then. The color each binding last gave its paint, and the modes set for the
+ * layer then, live here, beside the graph and never saved, by layer and binding field. A layer
+ * without an entry, such as one just restored, counts its paint's own color as the last one
+ * applied, in the modes it has now.
  */
-interface AppliedColor {
+export interface AppliedColor {
   readonly variableId: string
   readonly color: Color
+  /** The mode set for the layer, or null, in each collection the variable resolves through. */
+  readonly modes: Readonly<Record<string, string | null>>
 }
 
 const appliedColors = new WeakMap<SceneNode, Map<string, AppliedColor>>()
@@ -64,9 +69,32 @@ function sameColor(a: Color, b: Color): boolean {
   )
 }
 
-function lastApplied(node: SceneNode, bound: BoundPaint, paint: Fill): Color {
+/**
+ * The modes set for a layer, or null, in the collections a variable resolves through. Figma
+ * refreshes a bound paint whenever one of them changes, even to a mode giving the same color.
+ */
+function explicitModes(
+  graph: SceneGraph,
+  node: SceneNode,
+  variableId: string
+): Record<string, string | null> {
+  const modes: Record<string, string | null> = {}
+  for (const collectionId of collectionsResolving(graph, [variableId]))
+    modes[collectionId] = getNodeExplicitVariableModeId(graph, node.id, collectionId)
+  return modes
+}
+
+/** Whether the color a binding last applied is stale: another color, or set in other modes. */
+function staleApplied(
+  node: SceneNode,
+  bound: BoundPaint,
+  paint: Fill,
+  color: Color,
+  modes: Readonly<Record<string, string | null>>
+): boolean {
   const entry = appliedColors.get(node)?.get(bound.field)
-  return entry?.variableId === bound.variableId ? entry.color : paintColor(paint)
+  if (entry?.variableId !== bound.variableId) return !sameColor(paintColor(paint), color)
+  return !sameColor(entry.color, color) || !isEqual(entry.modes, modes)
 }
 
 /**
@@ -78,13 +106,63 @@ export function copyAppliedBoundPaints(source: SceneNode, copy: SceneNode): void
   if (entries) appliedColors.set(copy, new Map(entries))
 }
 
-function recordApplied(node: SceneNode, bound: BoundPaint, color: Color): void {
+/** The colors copied layers' bindings last applied, by layer id, as a copy captured them. */
+export type AppliedBoundPaints = ReadonlyMap<string, ReadonlyMap<string, AppliedColor>>
+
+/**
+ * The colors the bindings of the layers `nodeIds` names last applied, captured when they are
+ * copied, so a paste counts what the copied paints were applied from, not what the source has now.
+ */
+export function captureAppliedBoundPaints(
+  graph: SceneGraph,
+  nodeIds: Iterable<string>
+): AppliedBoundPaints {
+  const captured = new Map<string, ReadonlyMap<string, AppliedColor>>()
+  for (const id of nodeIds) {
+    const node = graph.nodes.get(id)
+    const entries = node && appliedColors.get(node)
+    if (entries) captured.set(id, new Map(entries))
+  }
+  return captured
+}
+
+/**
+ * Pasted layers keep their paints, edits included, as Figma's copies do. One copied in this
+ * document takes the colors its source's bindings had last applied when it was copied, so a paste
+ * into another mode refreshes them as a move there would; one from elsewhere counts the colors
+ * its variables give it now as applied, as a loaded document does. `copies` maps each copied
+ * layer's id to its copy's.
+ */
+export function keepPastedBoundPaints(
+  graph: SceneGraph,
+  copies: ReadonlyMap<string, string>,
+  applied: AppliedBoundPaints
+): void {
+  for (const [sourceId, copyId] of copies) {
+    const copy = graph.nodes.get(copyId)
+    if (!copy || !hasBoundPaints(copy)) continue
+    const entries = applied.get(sourceId)
+    if (!entries) {
+      recordWrittenBoundPaints(graph, copy, { fills: copy.fills, strokes: copy.strokes })
+      continue
+    }
+    appliedColors.set(copy, new Map(entries))
+    refresh(graph, copy, NONE_FORCED)
+  }
+}
+
+function recordApplied(
+  node: SceneNode,
+  bound: BoundPaint,
+  color: Color,
+  modes: Readonly<Record<string, string | null>>
+): void {
   let entries = appliedColors.get(node)
   if (!entries) {
     entries = new Map()
     appliedColors.set(node, entries)
   }
-  entries.set(bound.field, { variableId: bound.variableId, color: { ...color } })
+  entries.set(bound.field, { variableId: bound.variableId, color: { ...color }, modes })
 }
 
 /** The variable's RGB at full alpha in the paint, and its alpha as the paint's opacity. */
@@ -143,9 +221,10 @@ function refresh(graph: SceneGraph, node: SceneNode, forced: (field: string) => 
     const color = graph.resolveColorVariableForNode(node.id, bound.variableId)
     const paint = node[bound.list].at(bound.index)
     if (!color || !paint) continue
-    const last = lastApplied(node, bound, paint)
-    recordApplied(node, bound, color)
-    if ((!forced(bound.field) && sameColor(last, color)) || showsColor(paint, color)) continue
+    const modes = explicitModes(graph, node, bound.variableId)
+    const stale = staleApplied(node, bound, paint, color, modes)
+    recordApplied(node, bound, color, modes)
+    if ((!forced(bound.field) && !stale) || showsColor(paint, color)) continue
     if (bound.list === 'fills') {
       fills ??= copyFills(node.fills)
       applyColor(fills[bound.index], color)
@@ -204,15 +283,15 @@ export function recordWrittenBoundPaints(
   for (const bound of boundPaints(node)) {
     if (!written[bound.list]) continue
     const color = graph.resolveColorVariableForNode(node.id, bound.variableId)
-    if (color) recordApplied(node, bound, color)
+    if (color) recordApplied(node, bound, color, explicitModes(graph, node, bound.variableId))
   }
 }
 
 /**
  * Refreshes the bound paints in a moved layer's subtree that resolve through a collection whose
- * mode the move changed, as Figma does when a layer enters a frame or page in another mode. A
- * move between parents in the same modes, or of layers that bind no paint, costs no more than
- * comparing those modes.
+ * mode set the move changed, as Figma does when a layer enters a frame or page that sets another
+ * mode, or one where none was. A move between parents setting the same modes, or of layers that
+ * bind no paint, costs no more than comparing those modes.
  */
 export function refreshMovedBoundPaints(
   graph: SceneGraph,
@@ -227,7 +306,8 @@ export function refreshMovedBoundPaints(
     [...graph.variableCollections.keys()].filter(
       (id) =>
         !previous ||
-        getNodeVariableModeId(graph, previous, id) !== getNodeVariableModeId(graph, parentId, id)
+        getNodeExplicitVariableModeId(graph, previous, id) !==
+          getNodeExplicitVariableModeId(graph, parentId, id)
     )
   )
   if (changed.size === 0) return
@@ -289,8 +369,9 @@ export function keepCopyBoundPaints(
       }
       const color = graph.resolveColorVariableForNode(target.id, variableId)
       if (!color) return
-      if (!keeps || !sameColor(lastApplied(target, bound, own), color)) applyColor(paint, color)
-      recordApplied(target, bound, color)
+      const modes = explicitModes(graph, target, variableId)
+      if (!keeps || staleApplied(target, bound, own, color, modes)) applyColor(paint, color)
+      recordApplied(target, bound, color, modes)
     })
   }
 }

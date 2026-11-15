@@ -48,9 +48,15 @@ export function createAppRouters(
       operations: createAdminOperationsService(database, config),
       documents: createAdminDocumentService(database, {
         closeRooms: services.onDocumentTakenDown,
-        purgeGraceMs: config.documentPurgeGraceMs
+        purgeGraceMs: config.documentPurgeGraceMs,
+        email: services.transactionalEmail,
+        publicURL: config.publicURL,
+        contactEmail: config.legal?.abuseEmail
       }),
-      reports: createAdminReportService(database)
+      reports: createAdminReportService(database, {
+        email: services.transactionalEmail,
+        contactEmail: config.legal?.abuseEmail
+      })
     },
     allowedOrigins,
     {

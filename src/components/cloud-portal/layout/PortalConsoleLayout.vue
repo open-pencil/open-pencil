@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useHead } from '@unhead/vue'
 import { uniq } from 'es-toolkit'
 import { tv } from 'tailwind-variants'
 import { useTemplateRef, watch } from 'vue'
@@ -32,6 +33,9 @@ const { host, account, sections, active, heading, description } = defineProps<{
   /** Null while it is still being counted, which keeps its line with a placeholder. */
   description?: string | null
 }>()
+
+// The page's heading names its tab, under the site's name (`CloudPortalApp`).
+useHead({ title: () => heading })
 const emit = defineEmits<{ select: [id: string]; signOut: [] }>()
 
 const ui = portalLayout()

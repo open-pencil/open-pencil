@@ -1,6 +1,6 @@
 import type { Editor, MovePlace } from '@open-pencil/core'
 
-import type { DragState } from '#vue/shared/input/types'
+import type { DragMove } from '#vue/shared/input/types'
 
 export function duplicateAndDrag(
   cx: number,
@@ -8,7 +8,7 @@ export function duplicateAndDrag(
   sx: number,
   sy: number,
   editor: Editor
-): { originals: Map<string, MovePlace>; drag: DragState } {
+): { originals: Map<string, MovePlace>; drag: DragMove } {
   const previousSelection = new Set(editor.state.selectedIds)
   const newIds: string[] = []
   const newOriginals = new Map<string, MovePlace>()

@@ -9,6 +9,7 @@ import {
   type ClientCapabilities,
   type NewSessionRequest,
   type ResumeSessionRequest,
+  type SessionConfigOption,
   type SessionUpdate
 } from '@agentclientprotocol/sdk/unstable'
 import type { UIMessage, UIMessageChunk } from 'ai'
@@ -17,11 +18,15 @@ import { ACP_AGENTS, type ACPAgentDef } from '@open-pencil/core/constants'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { OWN_TOOLS_ALLOWED } from '@/app/ai/agents/acp/tools'
+import { SUBAGENT_PART, subagentTranscript } from '@/app/ai/chat/subagents'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 import { ACPChatTransport, type ACPStartup } from '@/app/ai/transports/acp'
 import { restAgents, withSubagent } from '@/app/automation/agents'
 import { diagnosticErrorDetails, diagnostics } from '@/app/diagnostics'
 import { createDeferred } from '@/app/runtime/deferred'
+
+import { MODEL_OPTIONS } from '#tests/helpers/ai/fake-acp-agent'
+
 const resuming = expectDefined(
   ACP_AGENTS.find((agent) => agent.resumesSessions),
   'an agent that resumes sessions'
@@ -54,6 +59,8 @@ interface FakeAgentOptions {
    * or in a subagent's session `session`.
    */
   updates?: { session?: string; update: SessionUpdate }[]
+  /** What the agent offers for choosing its model; none when absent. */
+  configOptions?: SessionConfigOption[]
 }
 
 /** In-memory ACP agents, one per start, that record what the transport asks of them. */
@@ -65,10 +72,13 @@ function fakeAgents({
   tokenHangs = false,
   turn = 'answered',
   lookupWaits = false,
-  updates = []
+  updates = [],
+  configOptions
 }: FakeAgentOptions = {}) {
   const lookup = createDeferred<undefined>()
   const prompts: string[] = []
+  /** Model changes and prompts in the order the agent got them. */
+  const calls: string[] = []
   const created: NewSessionRequest[] = []
   const resumed: ResumeSessionRequest[] = []
   const capabilities: (ClientCapabilities | undefined)[] = []
@@ -99,7 +109,7 @@ function fakeAgents({
         created.push(params)
         sessionRequested.resolve(undefined)
         if (!answersSessions) return createDeferred<never>().promise
-        return { sessionId: `session-${created.length}` }
+        return { sessionId: `session-${created.length}`, configOptions }
       })
       .onRequest(methods.agent.session.resume, ({ params }) => {
         resumed.push(params)
@@ -109,8 +119,13 @@ function fakeAgents({
           throw RequestError.invalidRequest({ reason: 'thread_active_writer' }, 'Session in use')
         return {}
       })
+      .onRequest(methods.agent.session.setConfigOption, ({ params }) => {
+        calls.push(`model ${String(params.value)}`)
+        return { configOptions: [] }
+      })
       .onRequest(methods.agent.session.prompt, async ({ params, client }) => {
         const [part] = params.prompt
+        calls.push('prompt')
         prompts.push(part?.type === 'text' ? part.text : '')
         const { sessionId } = params
         const report = (update: SessionUpdate, session = sessionId) =>
@@ -176,6 +191,7 @@ function fakeAgents({
   return {
     startup,
     prompts,
+    calls,
     created,
     resumed,
     capabilities,
@@ -216,7 +232,13 @@ async function send(
 
 function transport(
   agents: ReturnType<typeof fakeAgents>,
-  options: { resume?: string; startTimeoutMs?: number; agentDef?: ACPAgentDef; cwd?: string } = {}
+  options: {
+    resume?: string
+    startTimeoutMs?: number
+    agentDef?: ACPAgentDef
+    cwd?: string
+    model?: string
+  } = {}
 ) {
   const sessions: (string | null)[] = []
   const agentErrors: unknown[] = []
@@ -225,6 +247,7 @@ function transport(
     cwd: options.cwd,
     startup: agents.startup,
     resume: options.resume,
+    model: options.model,
     startTimeoutMs: options.startTimeoutMs ?? 1_000,
     onSession: (id) => sessions.push(id),
     onAgentError: (error) => agentErrors.push(error)
@@ -455,7 +478,7 @@ test('a startup step outside the agent connection is bounded by the deadline too
   expect(agents.prompts).toEqual([])
 })
 
-test('a subagent’s work is known by its session and stays out of the chat', async () => {
+test('a subagent’s work is known by its session and kept in its own transcript', async () => {
   const toolCall = (toolCallId: string): SessionUpdate => ({
     sessionUpdate: 'tool_call',
     toolCallId,
@@ -470,6 +493,11 @@ test('a subagent’s work is known by its session and stays out of the chat', as
         update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'Mine' } }
       },
       { session: 'subagent-1', update: toolCall('call-inner') },
+      // The subagent starts one of its own, which it describes on its session.
+      {
+        session: 'subagent-1',
+        update: { sessionUpdate: 'subagent_update', sessionId: 'subagent-2', title: 'Nested' }
+      },
       { update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'Ours' } } },
       { update: toolCall('call-own') }
     ]
@@ -483,11 +511,37 @@ test('a subagent’s work is known by its session and stays out of the chat', as
     expect(agents.capabilities).toMatchObject([{ subagents: {} }])
     expect(subagentOf('call-inner')).toBe('subagent-1')
     expect(subagentOf('call-own')).toBeUndefined()
-    const shown = JSON.stringify(chunks)
-    expect(shown).toContain('Ours')
-    expect(shown).not.toContain('Mine')
+    // The reply's own text is the agent's; the subagent's is its transcript's.
+    const text = chunks.flatMap((chunk) => (chunk.type === 'text-delta' ? [chunk.delta] : []))
+    expect(text.join('')).toBe('Ours')
+    const transcript = chunks.findLast((chunk) => chunk.type === SUBAGENT_PART)
+    expect(
+      transcript && 'data' in transcript
+        ? subagentTranscript({ type: SUBAGENT_PART, data: transcript.data })
+        : null
+    ).toMatchObject({
+      session: 'subagent-1',
+      title: 'Layout',
+      parts: expect.arrayContaining([expect.objectContaining({ type: 'text', text: 'Mine' })])
+    })
+    const nested = chunks.findLast(
+      (chunk) => chunk.type === SUBAGENT_PART && 'id' in chunk && chunk.id === 'subagent-2'
+    )
+    expect(
+      nested && 'data' in nested
+        ? subagentTranscript({ type: SUBAGENT_PART, data: nested.data })
+        : null
+    ).toMatchObject({ session: 'subagent-2', title: 'Nested' })
   } finally {
     restAgents('acp')
     await chat.destroy()
   }
+})
+
+test('the agent is put on the profile’s model before it gets the first prompt', async () => {
+  const agents = fakeAgents({ configOptions: MODEL_OPTIONS })
+  const { transport: chat } = transport(agents, { model: 'opus' })
+  await send(chat, 'first')
+  expect(agents.calls).toEqual(['model opus', 'prompt'])
+  await chat.destroy()
 })

@@ -18,6 +18,11 @@ export interface LabelHitOptions {
   preview?: RotationPreview | null
   viewport?: Parameters<LabelCache['getSections']>[1]
   measure?: (node: SceneNode, layout: LabelLayout) => LabelTextMetrics | null
+  /**
+   * Hit a locked layer's name too. In Figma a click or double-click on a locked layer's name passes
+   * through it, and a right-click selects the locked layer.
+   */
+  locked?: boolean
 }
 
 function hitLabel(
@@ -99,8 +104,7 @@ function catalogHitTest(kind: 'section' | 'component' | 'frame') {
     for (let i = candidates.length - 1; i >= 0; i--) {
       const candidate = candidates[i]
       const node = graph.getNode(candidate.nodeId)
-      // Locked frames cannot be selected on the canvas, by their name either.
-      if (!node?.visible || (kind === 'frame' && node.locked)) continue
+      if (!node?.visible || (node.locked && !options.locked)) continue
       const hit = hitLabel(
         node,
         graph,

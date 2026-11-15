@@ -16,6 +16,7 @@ import { bodyLimit } from 'hono/body-limit'
 import { cors } from 'hono/cors'
 
 import { createRequestChecks, createRequestResolvers } from './checks'
+import { requireMinimumEditor } from './editors'
 import { robotsText, shouldPreventIndexing } from './indexing'
 import { createAppRateLimiters } from './limiters'
 import { createAppRouters } from './routes'
@@ -56,6 +57,7 @@ export function createCloudApp(services: CloudServices) {
     .use('*', cloudRequestId(services.forwardedRequestId))
     .use(CLOUD_DISCOVERY_PATH, cloudCORS)
     .use('/api/*', cloudCORS)
+    .use('/api/*', requireMinimumEditor(config.minimumEditorVersion))
     .use(
       '/api/*',
       bodyLimit({

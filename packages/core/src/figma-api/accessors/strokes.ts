@@ -22,6 +22,20 @@ import {
 } from '#core/figma-api/strokes'
 import { parseFigma } from '#core/figma-api/validation'
 
+/** Stroke caps in the order Figma's schema lists them. */
+const strokeCapSchema = v.picklist([
+  'NONE',
+  'ROUND',
+  'SQUARE',
+  'ARROW_LINES',
+  'ARROW_EQUILATERAL',
+  'DIAMOND_FILLED',
+  'TRIANGLE_FILLED',
+  'CIRCLE_FILLED'
+])
+
+const strokeJoinSchema = v.picklist(['MITER', 'BEVEL', 'ROUND'])
+
 type IndependentWeightField =
   | 'borderTopWeight'
   | 'borderRightWeight'
@@ -92,8 +106,8 @@ export function installStrokeNodeProxyAccessors(
       get(this: ProxyThis): string {
         return raw(this, internals).strokeCap
       },
-      set(this: ProxyThis, value: string) {
-        const strokeCap = value as SceneNode['strokeCap']
+      set(this: ProxyThis, value: unknown) {
+        const strokeCap = parseFigma(strokeCapSchema, value, 'set_strokeCap', 'strokeCap')
         const node = raw(this, internals)
         updateNode(this, internals, {
           strokeCap,
@@ -105,8 +119,8 @@ export function installStrokeNodeProxyAccessors(
       get(this: ProxyThis): string {
         return raw(strokeOwner(this, internals), internals).strokeJoin
       },
-      set(this: ProxyThis, value: string) {
-        const strokeJoin = value as SceneNode['strokeJoin']
+      set(this: ProxyThis, value: unknown) {
+        const strokeJoin = parseFigma(strokeJoinSchema, value, 'set_strokeJoin', 'strokeJoin')
         const owner = strokeOwner(this, internals)
         const node = raw(owner, internals)
         updateNode(owner, internals, {

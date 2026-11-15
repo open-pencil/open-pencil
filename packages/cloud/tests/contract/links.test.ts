@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 
 import {
+  cloudCommunityDesktopLinkURL,
   cloudCommunityURL,
   cloudDesktopLinkURL,
   cloudDocumentURL,
@@ -39,7 +40,7 @@ test('a document or version address carries no secret', () => {
 test('a community gallery document carries no secret, and names a version in the query', () => {
   const document = new URL(cloudCommunityURL(server, 'doc/id'))
   expect(document.origin).toBe('https://company.example')
-  expect(document.pathname).toBe('/community/doc%2Fid')
+  expect(document.pathname).toBe('/community/doc%2Fid/open')
   expect(document.search).toBe('')
   expect(document.hash).toBe('')
   expect(new URL(cloudCommunityURL(server, 'doc-id', 'v1')).searchParams.get('version')).toBe('v1')
@@ -57,8 +58,17 @@ test('link paths name their kind and decoded ID', () => {
   expect(parseCloudLinkPath('/share/s%201')).toEqual({ kind: 'share', id: 's 1' })
   expect(parseCloudLinkPath('/invitations/abc')).toEqual({ kind: 'invitations', id: 'abc' })
   expect(parseCloudLinkPath('/documents/abc')).toEqual({ kind: 'documents', id: 'abc' })
-  expect(parseCloudLinkPath('/community/abc')).toEqual({ kind: 'community', id: 'abc' })
-  for (const path of ['/rooms/abc', '/share/abc/more', '/share/', '/share/%E0%A4', '/']) {
+  expect(parseCloudLinkPath('/community/abc/open')).toEqual({ kind: 'community', id: 'abc' })
+  for (const path of [
+    '/rooms/abc',
+    '/share/abc/more',
+    '/share/',
+    '/share/%E0%A4',
+    '/',
+    // A community document's page, which the server shows rather than the editor.
+    '/community/abc',
+    '/community/abc/more'
+  ]) {
     expect(parseCloudLinkPath(path)).toBeNull()
   }
 })
@@ -69,4 +79,14 @@ test('desktop links carry the web link under the app scheme, with the secret in 
   expect(url.host).toBe('cloud')
   expect(url.searchParams.get('url')).toBe('https://company.example/invitations/invitation-id')
   expect(url.hash).toBe('#secret')
+})
+
+test('community desktop links carry the editor link and the version it asks for', () => {
+  const url = new URL(cloudCommunityDesktopLinkURL('doc-id', server, 'v1'))
+  expect(url.protocol).toBe('openpencil:')
+  expect(url.host).toBe('cloud')
+  expect(url.searchParams.get('url')).toBe(
+    'https://company.example/community/doc-id/open?version=v1'
+  )
+  expect(url.hash).toBe('')
 })

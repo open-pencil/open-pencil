@@ -25,8 +25,8 @@ const { preview, heading, action } = defineProps<{
   /** The line mail clients show beside the subject. */
   preview: string
   heading: string
-  /** The one thing the email asks the reader to do. */
-  action: { label: string; url: string }
+  /** The one thing the email asks the reader to do, if there is one. */
+  action?: { label: string; url: string }
 }>()
 
 const { locale, dir, t } = useEmailLocalization()
@@ -41,7 +41,7 @@ const { locale, dir, t } = useEmailLocalization()
         <Img :src="LOGO_URL" :width="44" :height="44" alt="OpenPencil" :style="styles.logo" />
         <Heading as="h1" :style="styles.heading">{{ heading }}</Heading>
         <slot />
-        <Section :style="styles.action">
+        <Section v-if="action" :style="styles.action">
           <Button :href="action.url" :style="styles.button">{{ action.label }}</Button>
         </Section>
         <Text v-if="$slots.note" :style="styles.note"><slot name="note" /></Text>

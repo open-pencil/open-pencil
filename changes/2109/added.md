@@ -1,0 +1,1 @@
+- A model assigned to Fast tasks names each conversation after its first reply and, when it is an API model, writes compaction summaries in place of the Design model; "Same as Design" and no model leave both as they were (#2109).
