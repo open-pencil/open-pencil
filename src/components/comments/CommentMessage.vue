@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import { mentionComponents } from '@/app/comments/mentions'
+import { COMMENT_MENTION, mentionPlugin } from '@/app/comments/mention-plugin'
 import MarkdownContent from '@/components/markdown/MarkdownContent.vue'
 import PersonAvatar from '@/components/presence/PersonAvatar.vue'
 
@@ -25,8 +23,8 @@ defineSlots<{ actions?(): unknown }>()
 const who = useCommentAuthor()
 const ui = comments()
 // Mentions render as names in the accent; other links stay links.
-const rendered = computed(() => mentionComponents(text))
-const components = { 'comment-mention': CommentMention }
+const components = { [COMMENT_MENTION]: CommentMention }
+const plugins = [mentionPlugin()]
 </script>
 
 <template>
@@ -37,6 +35,11 @@ const components = { 'comment-mention': CommentMention }
       <CommentTime :at="at" :class="ui.messageTime()" />
       <span v-if="$slots.actions" :class="ui.messageActions()"><slot name="actions" /></span>
     </div>
-    <MarkdownContent :content="rendered" :components="components" :class="ui.messageText()" />
+    <MarkdownContent
+      :content="text"
+      :components="components"
+      :plugins="plugins"
+      :class="ui.messageText()"
+    />
   </article>
 </template>

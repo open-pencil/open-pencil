@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { MarkdownDocument } from 'comark'
+import type { ComarkPlugin, MarkdownDocument } from 'comark'
 import { tv } from 'tailwind-variants'
 import { computed, provide, shallowRef, watch, type Component } from 'vue'
 
@@ -19,6 +19,7 @@ const {
   density = 'compact',
   highlightCode = false,
   components,
+  plugins,
   class: className
 } = defineProps<{
   content: string
@@ -28,6 +29,8 @@ const {
   highlightCode?: boolean
   /** Inline components the content uses, written `:name[text]{attributes}`. */
   components?: Record<string, Component>
+  /** Comark plugins of this renderer's own, such as one making mentions their component. */
+  plugins?: readonly ComarkPlugin[]
   class?: string
 }>()
 
@@ -44,7 +47,7 @@ watch(
   () => [content, streaming.value, highlightCode] as const,
   async ([text, isStreaming, highlight]) => {
     if (!parser || parserHighlights !== highlight) {
-      parser = createMarkdownParser(highlight)
+      parser = createMarkdownParser(highlight, undefined, plugins)
       parserHighlights = highlight
     }
     const parse = await parser

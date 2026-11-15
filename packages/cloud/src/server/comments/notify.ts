@@ -5,6 +5,8 @@ import { resolveDocumentCommentAccess } from '#cloud/server/documents/access'
 import type { TransactionalEmailService } from '#cloud/server/email'
 import { uniq } from 'es-toolkit'
 import type { Kysely, Transaction } from 'kysely'
+import { fromMarkdown } from 'mdast-util-from-markdown'
+import { toString } from 'mdast-util-to-string'
 
 /**
  * How many comment emails one person's comments may send in a day, and how many one account may
@@ -21,13 +23,14 @@ export const DEFAULT_COMMENT_EMAILS: CommentEmailSetting = 'mentions'
 
 const EXCERPT_LENGTH = 280
 
-/** A Markdown link, which a mention is too: `[@Ana](openpencil://person/…)`. */
-const MARKDOWN_LINK = /\[((?:\\.|[^\]\\])*)\]\([^)\s]*\)/g
-
-/** The start of what a comment says, on one line, its links reduced to their text. */
+/**
+ * The start of what a comment says, as plain text on one line: its Markdown read, so a mention
+ * reads as `@Ana`, a link as its text, and each block apart from the next.
+ */
 export function commentExcerpt(body: string): string {
-  const line = body
-    .replace(MARKDOWN_LINK, (_link, label: string) => label.replace(/\\(.)/g, '$1'))
+  const line = fromMarkdown(body)
+    .children.map((block) => toString(block))
+    .join(' ')
     .replace(/\s+/g, ' ')
     .trim()
   return line.length > EXCERPT_LENGTH ? `${line.slice(0, EXCERPT_LENGTH - 1).trimEnd()}…` : line
