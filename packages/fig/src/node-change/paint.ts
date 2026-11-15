@@ -5,14 +5,16 @@ import type {
   Stroke,
   Effect,
   GlassEffectParams,
+  NoiseEffectParams,
   ProgressiveBlur,
+  TextureEffectParams,
   BlendMode,
   ImageScaleMode,
   GradientTransform,
   StrokeCap,
   StrokeJoin
 } from '@open-pencil/scene-graph'
-import { BLACK, UNSET_GLASS } from '@open-pencil/scene-graph/constants'
+import { BLACK, UNSET_GLASS, UNSET_NOISE, UNSET_TEXTURE } from '@open-pencil/scene-graph/constants'
 import type { Color, Matrix } from '@open-pencil/scene-graph/primitives'
 
 import { hexToBytes } from './bytes'
@@ -215,11 +217,44 @@ export function convertStrokes(
   }))
 }
 
+/** The scene graph's name for each `.fig` effect type it models; it leaves the others out. */
+const MODELED_EFFECT_TYPES: Partial<Record<KiwiEffect['type'], Effect['type']>> = {
+  DROP_SHADOW: 'DROP_SHADOW',
+  INNER_SHADOW: 'INNER_SHADOW',
+  LAYER_BLUR: 'LAYER_BLUR',
+  BACKGROUND_BLUR: 'BACKGROUND_BLUR',
+  FOREGROUND_BLUR: 'FOREGROUND_BLUR',
+  GLASS: 'GLASS',
+  NOISE: 'NOISE',
+  GRAIN: 'TEXTURE'
+}
+
+/** The scene graph's type for a `.fig` effect type, or null for one it does not model. */
+export function modeledEffectType(type: KiwiEffect['type']): Effect['type'] | null {
+  return MODELED_EFFECT_TYPES[type] ?? null
+}
+
+/**
+ * Each `.fig` effect's index among the effects the scene graph keeps, and null for one it leaves
+ * out, such as a repeat. Variable bindings name effects by this index, so every reader of a
+ * record's effects must count the same way.
+ */
+export function modeledEffectIndexes(effects: readonly KiwiEffect[]): (number | null)[] {
+  let next = 0
+  return effects.map((effect) => (modeledEffectType(effect.type) ? next++ : null))
+}
+
+/**
+ * A record's effects as the scene graph models them. Types it does not model stay out of
+ * `effects`; the record's raw payload keeps them for `.fig` export.
+ */
 export function convertEffects(effects?: KiwiEffect[]): Effect[] {
   if (!effects) return []
-  return effects.map((e) => {
+  return effects.flatMap((e) => {
+    const type = modeledEffectType(e.type)
+    if (!type) return []
     const effect: Effect = {
-      type: e.type,
+      type,
       color: convertColor(e.color),
       offset: e.offset ?? { x: 0, y: 0 },
       radius: e.radius ?? 0,
@@ -229,9 +264,34 @@ export function convertEffects(effects?: KiwiEffect[]): Effect[] {
       showShadowBehindNode: e.showShadowBehindNode ?? true
     }
     if (e.type === 'GLASS') effect.glass = convertGlass(e)
+    if (e.type === 'NOISE') effect.noise = convertNoise(e)
+    if (e.type === 'GRAIN') effect.texture = convertTexture(e)
     if (e.blurOpType === 'PROGRESSIVE' && isBlur(e.type)) effect.progressive = convertProgressive(e)
-    return effect
+    return [effect]
   })
+}
+
+/** A noise effect's grain; only a duotone keeps a second colour, only a multitone an opacity. */
+function convertNoise(e: KiwiEffect): NoiseEffectParams {
+  const noise: NoiseEffectParams = {
+    noiseType: e.noiseType ?? UNSET_NOISE.noiseType,
+    noiseSize: { ...(e.noiseSize ?? UNSET_NOISE.noiseSize) },
+    density: e.density ?? UNSET_NOISE.density
+  }
+  if (noise.noiseType === 'DUOTONE') noise.secondaryColor = convertColor(e.secondaryColor)
+  if (noise.noiseType === 'MULTITONE') noise.opacity = e.opacity ?? 1
+  if (e.seed !== undefined) noise.seed = e.seed
+  return noise
+}
+
+/** A grain effect's texture; its `radius` stays the effect's own. */
+function convertTexture(e: KiwiEffect): TextureEffectParams {
+  const texture: TextureEffectParams = {
+    noiseSize: { ...(e.noiseSize ?? UNSET_TEXTURE.noiseSize) },
+    clipToShape: e.clipToShape ?? UNSET_TEXTURE.clipToShape
+  }
+  if (e.seed !== undefined) texture.seed = e.seed
+  return texture
 }
 
 function isBlur(type: KiwiEffect['type']): boolean {
