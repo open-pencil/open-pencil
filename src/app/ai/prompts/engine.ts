@@ -44,17 +44,21 @@ export async function renderPrompt(
   const builtIn = PROMPT_DEFINITIONS[id].template
   const custom = appPreferences.value.prompts[id]
   if (custom !== null) {
-    const result = await knap.render(custom, { variables })
+    // Knap writes a template's `{% set %}` into the variables it is given, so each render gets
+    // its own copy and the built-in prompt is filled from the values as they came.
+    const result = await knap.render(custom, { variables: { ...variables } })
     if (result.errors.length === 0) return tidy(result.output)
     console.warn(`[Prompts] The ${id} prompt in Settings does not render; using the built-in one.`)
   }
-  return tidy(await knap.renderOrThrow(builtIn, { variables }))
+  return tidy(await knap.renderOrThrow(builtIn, { variables: { ...variables } }))
 }
 
 /** The prompt `id` filled from `template` with the sample values its definition gives. */
 export async function previewPrompt(id: TemplatePrompt, template: string): Promise<string> {
   const knap = await loadPromptEngine()
-  const result = await knap.render(template, { variables: PROMPT_DEFINITIONS[id].variables })
+  const result = await knap.render(template, {
+    variables: { ...PROMPT_DEFINITIONS[id].variables }
+  })
   return result.errors.length === 0 ? tidy(result.output) : ''
 }
 
@@ -105,7 +109,8 @@ function unknownNames(nodes: readonly ASTNode[], known: Set<string>): TemplatePr
         if (node.alternate) walk(node.alternate, bound)
       } else if (node.type === 'for') {
         read(node.iterable, bound)
-        walk(node.body, new Set([...bound, node.iterator]))
+        // Knap gives each loop `loop` and `<iterator>_index` besides the iterator itself.
+        walk(node.body, new Set([...bound, node.iterator, 'loop', `${node.iterator}_index`]))
       }
     }
   }
@@ -122,6 +127,17 @@ export async function checkTemplate(id: TemplatePrompt, template: string): Promi
     column
   }))
   if (errors.length > 0) return { errors, unknownVariables: [] }
+  // A template can parse and still fail on its values, such as a loop over text, so it is
+  // filled with the sample values too.
+  const filled = await knap.render(template, {
+    variables: { ...PROMPT_DEFINITIONS[id].variables }
+  })
+  if (filled.errors.length > 0) {
+    return {
+      errors: filled.errors.map(({ message, line, column }) => ({ message, line, column })),
+      unknownVariables: []
+    }
+  }
   const known = new Set(Object.keys(PROMPT_DEFINITIONS[id].variables))
   return { errors, unknownVariables: unknownNames(knap.parse(template).ast, known) }
 }

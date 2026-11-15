@@ -59,8 +59,9 @@ export async function conversationTitle(
   if (!request || !reply) return null
   const runtime = await fastTasks()
   if (!runtime || !answersQuestions(runtime)) return null
-  const text = await renderPrompt('title', { request, reply })
   try {
+    // Inside the try: a prompt that cannot be filled keeps the first-message title too.
+    const text = await renderPrompt('title', { request, reply })
     const { title } = await ask(runtime, {
       text,
       maxOutputTokens: MAX_TITLE_TOKENS,

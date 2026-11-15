@@ -107,7 +107,10 @@ export function createToolLoopTransport({
   // Only skills the model may load: one the user runs by name stays out of the listing and tools.
   const modelSkills = () => skills.enabled().filter((skill) => skill.modelInvocable)
   let offeredSkills = modelSkills()
-  let instructions = systemPrompt()
+  // The Design prompt as it was when the chat started, as an agent's session keeps it; a change in
+  // Settings applies to the next chat. The skill catalog is read again for each message.
+  const designPrompt = systemPrompt()
+  let instructions = designPrompt
   // The reply in progress; a transport sends one message at a time.
   let run = currentRun(store)
   // While JSX streams, the chat's agent moves through the elements as they appear, here and
@@ -127,7 +130,7 @@ export function createToolLoopTransport({
   const stepCompaction = createStepCompaction(model, contextLimits)
   const agent = new ToolLoopAgent({
     model,
-    instructions: systemPrompt(),
+    instructions: designPrompt,
     tools,
     maxOutputTokens,
     prepareStep: (step) => stepCompaction.prepareStep(step),
@@ -221,8 +224,7 @@ export function createToolLoopTransport({
       await skills.refresh()
       offeredSkills = modelSkills()
       const catalog = skillCatalog(offeredSkills)
-      const base = systemPrompt()
-      instructions = catalog ? `${base}\n\n${catalog}` : base
+      instructions = catalog ? `${designPrompt}\n\n${catalog}` : designPrompt
       const { sessionId, runId } = diagnosticContext
       const startedRecording =
         sessionId && runId

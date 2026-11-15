@@ -46,7 +46,7 @@ const modes = computed(() => [
         </template>
         <AppSelect
           v-model="designMode"
-          class="w-full sm:w-64"
+          class="w-full max-w-64"
           :options="modes"
           :label="ai.promptDesignMode"
         />

@@ -11,11 +11,13 @@ import {
   placeholder as placeholderText
 } from '@codemirror/view'
 import { knapStreamParser } from 'knap/codemirror'
+import { tv } from 'tailwind-variants'
 import { useTemplateRef, watch } from 'vue'
 
 import type { TemplateCheck, TemplateProblem } from '@/app/ai/prompts/engine'
 import { useCodeMirror } from '@/components/code-editor/useCodeMirror'
 import { codeEditorTheme, promptEditorTheme } from '@/theme/code/editor'
+import promptEditorFieldTheme from '@/theme/settings/prompt-editor'
 
 /**
  * A prompt to edit: a Knap template, highlighted with what is wrong with it underlined, or plain
@@ -40,6 +42,7 @@ const {
   unknownVariableMessage?: (name: string) => string
 }>()
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
+const ui = tv(promptEditorFieldTheme)()
 
 let externalUpdate = false
 
@@ -120,5 +123,6 @@ watch(
 </script>
 
 <template>
-  <div ref="host" class="overflow-hidden rounded-md border border-border" />
+  <!-- Prompts are written left to right, as code is, in a mirrored interface too. -->
+  <div ref="host" dir="ltr" :class="ui.root()" />
 </template>

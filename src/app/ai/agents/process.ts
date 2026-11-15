@@ -1,5 +1,6 @@
 import { Command } from '@tauri-apps/plugin-shell'
 
+import { createDeferred } from '@/app/runtime/deferred'
 import { decodeTauriStderr } from '@/app/shell/ui'
 import { spawnAgentChild } from '@/app/tauri/children'
 import { resolvePlatformCommand } from '@/app/tauri/command'
@@ -51,30 +52,46 @@ export async function spawnAgentProcess({
   const resolved = resolvePlatformCommand(program, args)
   const command = Command.create(resolved.command, resolved.args, { encoding: 'raw', env, cwd })
 
-  let output: ReadableStreamDefaultController<Uint8Array> | undefined
-  // A reader that cancelled stdout wants no more of it; the process may still write.
-  let open = true
-  const stdout = new ReadableStream<Uint8Array>({
-    start(controller) {
-      output = controller
+  // What the agent wrote and nobody has read yet, delivered before its end, so a message it
+  // wrote just before it exited still arrives whole.
+  const pending: Uint8Array[] = []
+  let ended: { error: Error | null } | null = null
+  let arrived = createDeferred<undefined>()
+  /** Something arrived for a read waiting on it: output, or the end. */
+  const settle = () => {
+    arrived.resolve(undefined)
+    arrived = createDeferred<undefined>()
+  }
+  const stdout = new ReadableStream<Uint8Array>(
+    {
+      async pull(controller) {
+        // A read is asked for only when the last one was answered, so one wait is enough: the
+        // next chunk or the end resolves it.
+        if (pending.length === 0 && !ended) await arrived.promise
+        const chunk = pending.shift()
+        if (chunk) controller.enqueue(chunk)
+        else if (ended?.error) controller.error(ended.error)
+        else controller.close()
+      },
+      cancel() {
+        ended = { error: null }
+        pending.length = 0
+        settle()
+      }
     },
-    cancel() {
-      open = false
-    }
-  })
+    { highWaterMark: 0 }
+  )
   command.stdout.on('data', (raw: Uint8Array | number[]) => {
-    if (open) output?.enqueue(raw instanceof Uint8Array ? raw : new Uint8Array(raw))
+    if (ended) return
+    pending.push(raw instanceof Uint8Array ? raw : new Uint8Array(raw))
+    settle()
   })
   command.stderr.on('data', (raw: Uint8Array | number[] | string) => {
     onStderr(decodeTauriStderr(raw))
   })
   command.on('close', () => {
-    if (open) {
-      open = false
-      const error = closeError()
-      if (error) output?.error(error)
-      else output?.close()
-    }
+    ended ??= { error: closeError() }
+    settle()
     onClose()
   })
 

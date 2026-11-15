@@ -63,6 +63,26 @@ describe('checking a template', () => {
     expect(check.unknownVariables[0]?.line).toBe(1)
   })
 
+  test('knows the variables Knap gives each loop', async () => {
+    const check = await checkTemplate(
+      'title',
+      '{% for word in words %}{{ loop.index }} {{ word_index }} {{ word }}{% endfor %}'
+    )
+    expect(check.unknownVariables.map(({ message }) => message)).toEqual(['words'])
+  })
+
+  test('reports a template that parses but fails on its values', async () => {
+    const check = await checkTemplate('title', '{% for x in request %}{{ x }}{% endfor %}')
+    expect(check.errors.length).toBeGreaterThan(0)
+  })
+
+  test('leaves the values it is given as they were', async () => {
+    const variables = { request: 'cards', reply: 'done' }
+    updatePromptPreferences({ title: '{% set request = "changed" %}{{ request }}' })
+    await renderPrompt('title', variables)
+    expect(variables).toEqual({ request: 'cards', reply: 'done' })
+  })
+
   test.each([...TEMPLATE_PROMPTS])(
     'finds nothing wrong with the built-in %s prompt',
     async (id) => {
