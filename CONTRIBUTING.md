@@ -21,6 +21,8 @@ bun run tauri dev     # Desktop app (requires Rust)
 
 The first Portless run creates and trusts a local HTTPS certificate. Linked Git worktrees receive branch-prefixed URLs such as `https://fix-ui.open-pencil.localhost` and matching `https://fix-ui.mcp.open-pencil.localhost` MCP bridges with isolated ports and socket files, so concurrent servers do not compete for port 1420. Run `bunx portless doctor` if routing or certificate trust fails.
 
+The prefix comes from the branch the server starts on, without anything before a `/` (`fix/cloud-sync` serves `cloud-sync.open-pencil.localhost`), and the Cloud dev server trusts only that editor origin. To test other code at the same URL, start it from a branch of the same name (`git switch -C dev/<prefix> <commit>`), with `bun install` and `bun run build:packages` run on that branch first, and do not switch branches under a running server.
+
 The repository also works in any [Dev Container](https://containers.dev/)-compatible tool: the container pins Bun, installs dependencies, and forwards port 1420; start with `bun run dev`. It covers the web editor, packages, CLI, and automated checks. Native Tauri development needs [Rust](https://rustup.rs/) and the [Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/) on the host.
 
 For macOS release builds with ad-hoc signing (no Apple Developer account, local testing only):
@@ -35,7 +37,7 @@ APPLE_SIGNING_IDENTITY=- bun run tauri build -c '{"bundle": { "createUpdaterArti
 - Keep package boundaries and public exports intact. Keep pull requests focused: no temporary scaffolding, unrelated refactors, or changelog claims not represented by the diff.
 - For user-facing changes add a changelog fragment under `changes/<PR>/` instead of editing `CHANGELOG.md`, following `changes/README.md` and the rules in `AGENTS.md` (Documentation and changelog).
 - Tests follow the [testing architecture](packages/docs/development/testing.md) and `tests/AGENTS.md`. Extend the owner's existing suite; do not create a duplicate home.
-- `.fig` fixtures in `tests/fixtures/` are Git LFS. Use `git push --no-verify` to skip the slow LFS pre-push hook unless you changed `.fig` files.
+- `.fig` fixtures in `tests/fixtures/` are Git LFS. Use `git push --no-verify` to skip the slow LFS pre-push hook unless you changed `.fig` files. Pushing to a repository URL instead of a named remote makes the hook check and re-upload LFS objects from history, which can hang for a long time; when a push adds no LFS files, `GIT_LFS_SKIP_PUSH=1 git push` skips only the upload.
 
 ## Quality checks
 
@@ -72,7 +74,17 @@ A stack is a chain of pull requests: the bottom one targets `master`, each one a
 
 - Manage stacks with [`gh stack`](https://github.com/github/gh-stack) (`init`, `add`, `submit`, `sync`; add `--remote origin` with several remotes); a stacked pull request's base cannot be edited.
 - Keep it linear: when `master` or a lower branch moves, rebase the layers (`gh stack rebase` or the pull request's Rebase button) and push with `--force-with-lease`. Merging `master` in blocks the stack from merging.
-- Merge from the top layer through the merge queue, in the UI or with `gh api -X PUT repos/{owner}/{repo}/pulls/<n>/merge-async -f merge_action=merge_queue`; it lands every layer below too. `gh pr merge` and auto-merge are unavailable for stacks.
+- Merge from the top layer through the merge queue, in the UI or with `gh api -X PUT repos/{owner}/{repo}/pulls/<n>/merge-async -f merge_action=merge_queue`; it lands every layer below too. `gh pr merge` and auto-merge are unavailable for stacks; `gh stack merge <pr> --yes` enqueues a layer and every layer below it.
+- Open a pull request on top of another one only through `gh stack`: a plain `--base <branch>` pull request gets neither the full CI nor a CodeRabbit review.
+- `gh stack submit` opens new layers as drafts, which CodeRabbit does not review; mark each one ready with `gh pr ready <n>`.
+- A stack push starts two runs for each upper layer and cancels one. A cancelled twin usually does not block, but if its `CI result` job still ran and failed, the layer shows as blocked: rerun that one run.
+
+### Maintaining pull requests
+
+- Runs for a pull request from a fork wait as `action_required` after every push. Approve one run per workflow (`gh api -X POST repos/open-pencil/open-pencil/actions/runs/<id>/approve`): approving two runs of one workflow for the same head makes one cancel the other, and the cancelled required check blocks the merge until it is rerun. A run still `queued` long after newer runs started is orphaned; cancel it and rerun it. Before calling a fork's checks green, check that `CI result` is in the rollup at all.
+- GitHub refuses maintainer pushes to a fork owned by an organization, even when `maintainerCanModify` reports `true`; check `gh api repos/<owner>/<repo> --jq .owner.type` before planning follow-up commits there.
+- The merge queue squashes a pull request and adds a `Co-authored-by` trailer for every commit author. A commit authored by an AI identity, or carrying an AI tool's trailer, therefore fails the queue's Commit messages job though the pull request's own run passed; check `gh pr view <n> --json commits` before enqueuing.
+- After a pull request built on another one's branch outside a stack is squash-merged, update it by replaying its own commits onto a pinned `master` commit on a temporary branch, merging that same commit into it, and taking the temporary branch's tree. Merging a newer `master` than the replay used reverts whatever landed in between.
 
 ### Reviewability
 

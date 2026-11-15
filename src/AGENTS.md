@@ -6,6 +6,7 @@ Root Tauri/Vite app. Services and state live under `src/app/**`, views under `sr
 
 - `src/app/editor/session/create.ts` wraps Core: it creates reactive state, calls `createEditor()`, and assembles document I/O, autosave, export, vector edit, pen resume, flashes, profiler, and mobile clipboard. Tabs live in `src/app/tabs/`; active editor access in `src/app/editor/active-store/`.
 - Use editor actions (`clearSelection()`, `select()`, `setTool()`), never direct state assignments (`packages/core/AGENTS.md`, Editor).
+- Nothing renders progressively while it loads: no `font-display: swap`, `fallback`, or `optional` for the app's faces, no drawing in a fallback font that is swapped later, and no canvas filling in tile by tile after the loader. A document open or page switch counts as presented only once its tiled scene covers the view, so a new open or switch path places the view before it calls `waitForPresentation`, never after (`src/app/editor/preparation/controller.ts`).
 - File System Access APIs are browser APIs, not Tauri-only. Keep the Safari download fallback and defer `revokeObjectURL`.
 - Vectorize provider clients, preferences, and lazy credential resolution live under `src/app/editor/vectorize/`; conversion itself is in Core.
 
