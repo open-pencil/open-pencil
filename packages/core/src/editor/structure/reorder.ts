@@ -71,6 +71,8 @@ export function createStructureReorderActions(ctx: EditorContext) {
     const place = () => {
       if (reparents) ctx.graph.reparentNode(nodeId, newParentId)
       ctx.graph.insertChildAt(nodeId, newParentId, insertIndex)
+      // A new parent can change what the layer inherits, such as its layout direction.
+      if (reparents) ctx.runLayoutForNode(nodeId)
       ctx.runLayoutForParents([newParentId, origParentId])
     }
     place()
@@ -81,6 +83,7 @@ export function createStructureReorderActions(ctx: EditorContext) {
       inverse: () => {
         ctx.graph.insertChildAt(nodeId, origParentId, origIndex)
         ctx.graph.updateNode(nodeId, origPlace)
+        if (reparents) ctx.runLayoutForNode(nodeId)
         ctx.runLayoutForParents([origParentId, newParentId])
       }
     })

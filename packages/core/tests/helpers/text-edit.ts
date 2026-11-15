@@ -42,6 +42,7 @@ export function setupTextEdit() {
     getRenderer: () => null,
     getRenderers: () => [],
     runLayoutForNode: () => undefined,
+    runLayoutForParents: () => undefined,
     runMutationWithLayout: async (operation) => ({ result: await operation(), relayout: noop }),
     getCk: () => null,
     loadFont: async () => null,
