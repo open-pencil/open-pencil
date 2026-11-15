@@ -1,5 +1,5 @@
 import type { Vector } from '../primitives'
-import type { VectorRegion, VectorSegment, VectorVertex } from '../types'
+import type { VectorNetwork, VectorRegion, VectorSegment, VectorVertex } from '../types'
 import type { PathSink } from './sink'
 
 export function addSegmentDirected(
@@ -267,22 +267,50 @@ export interface StrokeRun {
 export type RunContinuation = (vertex: number, from: number) => number | undefined
 
 /**
+ * The indices of the segments meeting at each vertex, in segment order; a segment from a vertex to
+ * itself is listed there once. `include` leaves out the segments it returns false for.
+ */
+export function segmentsByVertex(
+  segments: readonly VectorSegment[],
+  include?: (index: number) => boolean
+): Map<number, number[]> {
+  const byVertex = new Map<number, number[]>()
+  const meet = (vertex: number, index: number) => {
+    const list = byVertex.get(vertex)
+    if (list) list.push(index)
+    else byVertex.set(vertex, [index])
+  }
+  for (const [index, segment] of segments.entries()) {
+    if (include && !include(index)) continue
+    meet(segment.start, index)
+    if (segment.end !== segment.start) meet(segment.end, index)
+  }
+  return byVertex
+}
+
+/** The direction segment `index` leaves `vertex` in, along its handle when it has one. */
+export function leavingDirection(
+  network: Pick<VectorNetwork, 'vertices' | 'segments'>,
+  index: number,
+  vertex: number
+): Vector {
+  const segment = network.segments[index]
+  const atStart = segment.start === vertex
+  const handle = atStart ? segment.tangentStart : segment.tangentEnd
+  if (handle.x !== 0 || handle.y !== 0) return handle
+  const from = network.vertices[vertex]
+  const to = network.vertices[atStart ? segment.end : segment.start]
+  return { x: to.x - from.x, y: to.y - from.y }
+}
+
+/**
  * Segments chained into runs as Figma strokes a network: by default a run passes through every
  * vertex exactly two segments meet at, so its corners take the stroke's join and only its open
  * ends take caps. Runs stop at open ends and at junctions where three or more segments meet, unless
  * `continuation` names a segment to go on with there.
  */
 export function strokeRuns(segments: VectorSegment[], continuation?: RunContinuation): StrokeRun[] {
-  const incident = new Map<number, number[]>()
-  const meet = (vertex: number, index: number) => {
-    const list = incident.get(vertex)
-    if (list) list.push(index)
-    else incident.set(vertex, [index])
-  }
-  for (const [index, segment] of segments.entries()) {
-    meet(segment.start, index)
-    if (segment.end !== segment.start) meet(segment.end, index)
-  }
+  const incident = segmentsByVertex(segments)
   const used = new Set<number>()
   const across = (index: number, vertex: number) =>
     segments[index].start === vertex ? segments[index].end : segments[index].start

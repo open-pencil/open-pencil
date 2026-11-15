@@ -2,8 +2,12 @@ import { clamp } from 'es-toolkit'
 
 import type { Path } from '@open-pencil/canvaskit'
 import type { SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
-import { addStrokeRunToPath, strokeRuns } from '@open-pencil/scene-graph/paths'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import {
+  addStrokeRunToPath,
+  leavingDirection,
+  segmentsByVertex,
+  strokeRuns
+} from '@open-pencil/scene-graph/paths'
 
 import { unitedPath } from '#core/canvas/paths/union'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
@@ -25,18 +29,6 @@ function regionsPerSegment(network: VectorNetwork): number[] {
     }
   }
   return counts
-}
-
-function leavingDirection(network: VectorNetwork, segmentIndex: number, vertex: number): Vector {
-  const segment = network.segments[segmentIndex]
-  const forward = segment.start === vertex
-  const handle = forward ? segment.tangentStart : segment.tangentEnd
-  if (handle.x !== 0 || handle.y !== 0) {
-    return handle
-  }
-  const from = network.vertices[vertex]
-  const to = network.vertices[forward ? segment.end : segment.start]
-  return { x: to.x - from.x, y: to.y - from.y }
 }
 
 function holdsPoint(bounds: Float32Array, x: number, y: number): boolean {
@@ -100,26 +92,6 @@ function indexedFillTest(fills: Path[]): FillTest {
   }
 }
 
-function regionSegmentsByVertex(network: VectorNetwork, counts: number[]): Map<number, number[]> {
-  const byVertex = new Map<number, number[]>()
-  const meet = (vertex: number, index: number) => {
-    const list = byVertex.get(vertex)
-    if (list) {
-      list.push(index)
-    } else {
-      byVertex.set(vertex, [index])
-    }
-  }
-  for (const [index, segment] of network.segments.entries()) {
-    if (counts[index] === 0 || segment.start === segment.end) {
-      continue
-    }
-    meet(segment.start, index)
-    meet(segment.end, index)
-  }
-  return byVertex
-}
-
 function pairAcrossUnfilledGaps(
   network: VectorNetwork,
   vertex: number,
@@ -160,7 +132,9 @@ function pairAcrossUnfilledGaps(
 
 function outlinePartners(network: VectorNetwork, counts: number[], isFilled: FillTest): Partners {
   const partners: Partners = new Map()
-  for (const [vertex, meeting] of regionSegmentsByVertex(network, counts)) {
+  const bounding = (index: number) =>
+    counts[index] > 0 && network.segments[index].start !== network.segments[index].end
+  for (const [vertex, meeting] of segmentsByVertex(network.segments, bounding)) {
     if (meeting.length === 2) {
       partners.set(
         vertex,
