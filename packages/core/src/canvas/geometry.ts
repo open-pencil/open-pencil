@@ -7,7 +7,7 @@ import { isOpenVectorNetwork } from '#core/vector/connectivity'
 
 import { baseShapePath, makeBooleanOperationPath, strokeSourcePath } from './boolean'
 import { appendVerb, forEachVerb } from './paths/verbs'
-import type { SkiaRenderer } from './renderer'
+import type { SkiaRenderer } from './renderer/skia'
 import { getStrokeCapEntity, getStrokeJoinEntity, normalizeDashPattern } from './strokes'
 import { makeLineSegmentPath } from './strokes/line'
 import { dashPath } from './strokes/outlined-dashes'

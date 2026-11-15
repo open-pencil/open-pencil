@@ -1,7 +1,7 @@
 import type { Canvas, SkPicture } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
-import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
+import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer/skia'
 
 /** Borrowed picture. The publisher owns disposal, including removal from every renderer. */
 export interface TransientCanvasPreview {

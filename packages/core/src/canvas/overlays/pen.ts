@@ -1,6 +1,7 @@
 import type { Canvas, Paint } from '@open-pencil/canvaskit'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
+import type { SkiaRenderer, RenderOverlays } from '#core/canvas/renderer/skia'
 import {
   PEN_ANCHOR_RADIUS,
   PEN_CLOSE_MIN_POINTS,
@@ -8,8 +9,7 @@ import {
   PEN_HANDLE_RADIUS,
   PEN_VERTEX_RADIUS
 } from '#core/constants'
-
-import type { SkiaRenderer, RenderOverlays } from './renderer'
+import { worldXToScreen, worldYToScreen } from '#core/geometry/viewport'
 
 type ToScreenFn = (x: number, y: number) => Vector
 
@@ -186,9 +186,9 @@ export function drawPencilOverlay(
   if (!pencilState) return
   const [first, ...rest] = pencilState.points
   const path = new r.ck.PathBuilder()
-  path.moveTo(first.x * r.zoom + r.panX, first.y * r.zoom + r.panY)
-  if (rest.length === 0) path.lineTo(first.x * r.zoom + r.panX, first.y * r.zoom + r.panY)
-  for (const point of rest) path.lineTo(point.x * r.zoom + r.panX, point.y * r.zoom + r.panY)
+  path.moveTo(worldXToScreen(r, first.x), worldYToScreen(r, first.y))
+  if (rest.length === 0) path.lineTo(worldXToScreen(r, first.x), worldYToScreen(r, first.y))
+  for (const point of rest) path.lineTo(worldXToScreen(r, point.x), worldYToScreen(r, point.y))
   const { color, weight } = pencilState.preview
   const paint = r.pencilStrokePaint
   paint.setColorComponents(color.r, color.g, color.b, color.a)
@@ -210,8 +210,8 @@ export function drawPenOverlay(
   const vertexStroke = r.penVertexStroke
 
   const toScreen: ToScreenFn = (x, y) => ({
-    x: x * r.zoom + r.panX,
-    y: y * r.zoom + r.panY
+    x: worldXToScreen(r, x),
+    y: worldYToScreen(r, y)
   })
 
   drawPenPaths(r, canvas, penState, toScreen)

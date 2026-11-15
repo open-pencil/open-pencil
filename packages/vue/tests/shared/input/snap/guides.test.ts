@@ -5,7 +5,7 @@ import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 import { computeSnap } from '@open-pencil/scene-graph/snap'
 
 import { layerSnapSource, snapResizedEdges } from '#vue/shared/input/resize/snap'
-import { computePixelGridSnap, resolveObjectPixelSnap } from '#vue/shared/input/snap'
+import { computePixelGridSnap, resolveObjectPixelSnap } from '#vue/shared/input/snap/resolve'
 
 describe('move snap guide presentation', () => {
   // Figma desktop 126 ends a move on whole pixels at any zoom, even from a fractional start.

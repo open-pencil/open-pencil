@@ -11,7 +11,7 @@ import { isOpenVectorNetwork } from '#core/vector/connectivity'
 import { clearFillShader } from './fills'
 import { sharedPath } from './paths/shared'
 import { curvePathData } from './paths/svg-data'
-import type { SkiaRenderer } from './renderer'
+import type { SkiaRenderer } from './renderer/skia'
 import {
   configureStrokePaint,
   forVisibleStrokes,

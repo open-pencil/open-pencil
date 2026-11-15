@@ -11,7 +11,7 @@ import {
 import { paintShows } from '@open-pencil/scene-graph/paints'
 
 import { setPaintBlendMode } from '#core/canvas/blend'
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { drawOutline, makeNodeShapePath, withNodeOutline } from '#core/canvas/shapes'
 import { sideStrokeRRects } from '#core/canvas/strokes/sides'
 import { fillsCastShadow } from '#core/geometry/shadows'

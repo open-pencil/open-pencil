@@ -6,7 +6,7 @@ import type { InputRect, Paint } from '@open-pencil/canvaskit'
 import { SceneGraph, type Fill, type SceneNode } from '@open-pencil/scene-graph'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { RenderedBoundsCache } from '#core/canvas/renderer/visual-bounds'
 import { renderEffects } from '#core/canvas/shadows'
 

@@ -2,9 +2,9 @@ import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
-import { cachedGlyphWidth } from '#core/canvas/labels/paragraph-cache'
+import { drawTextPill } from '#core/canvas/labels/pill'
 import { strokeLayoutChildren } from '#core/canvas/overlays/layout-outlines'
-import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
+import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer/skia'
 import {
   AUTO_LAYOUT_HOVER_BLUE,
   AUTO_LAYOUT_HOVER_BLUE_FILL,
@@ -85,7 +85,6 @@ function drawValuePill(
   const font = r.chromeFonts.value ?? r.chromeFonts.label
   if (!font) return
   const glyphs = font.getGlyphIDs(text)
-  const advance = cachedGlyphWidth(r, font, text)
   // The ink's top and bottom, so the digits sit in the middle whatever the font's metrics.
   const bounds = font.getGlyphBounds(glyphs)
   let top = 0
@@ -94,17 +93,19 @@ function drawValuePill(
     top = Math.min(top, bounds[i + 1])
     bottom = Math.max(bottom, bounds[i + 3])
   }
-  const width = advance + AUTO_LAYOUT_HOVER_VALUE_PILL_PADDING_X * 2
   const height = AUTO_LAYOUT_HOVER_VALUE_PILL_HEIGHT
-  const rect = r.ck.RRectXY(
-    r.ck.LTRBRect(x - width / 2, y - height / 2, x + width / 2, y + height / 2),
-    AUTO_LAYOUT_HOVER_VALUE_PILL_RADIUS,
-    AUTO_LAYOUT_HOVER_VALUE_PILL_RADIUS
-  )
-  r.auxFill.setColor(canvasColor(r, color))
-  canvas.drawRRect(rect, r.auxFill)
-  r.auxFill.setColorComponents(1, 1, 1, 1)
-  canvas.drawText(text, x - advance / 2, y - (top + bottom) / 2, r.auxFill, font)
+  drawTextPill(r, canvas, {
+    text,
+    font,
+    centerX: x,
+    top: y - height / 2,
+    height,
+    paddingX: AUTO_LAYOUT_HOVER_VALUE_PILL_PADDING_X,
+    radius: AUTO_LAYOUT_HOVER_VALUE_PILL_RADIUS,
+    baseline: height / 2 - (top + bottom) / 2,
+    fill: canvasColor(r, color),
+    textColor: r.ck.WHITE
+  })
 }
 
 /** The pill beside a mark, upright on screen whatever the frame's rotation. */

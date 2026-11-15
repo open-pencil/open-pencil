@@ -948,9 +948,10 @@ export interface SceneNode {
   textPicture: Uint8Array | null
   derivedTextGlyphs: DerivedTextGlyph[] | null
   /**
-   * How far a text's lines reach down from its top: measured at its width when its text or width
-   * changes, or read from the lines a file saved, and never saved itself. A fixed-size box does not
-   * clip them, as in Figma, so its visual bounds reach this far. Null when not known.
+   * How tall a text's lines are, from the top of the first to the bottom of the last: measured at
+   * its width when its text or width changes, or read from the lines a file saved, and never saved
+   * itself. A fixed-size box does not clip them, as in Figma, so its visual bounds reach past the
+   * box on the side away from its vertical alignment (`textLinesReach`). Null when not known.
    */
   derivedTextHeight: number | null
   /** Format-neutral layout path for text-on-path nodes. */

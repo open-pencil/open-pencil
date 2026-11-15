@@ -1,8 +1,8 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
 import { fillWithShader, keptShader } from '#core/canvas/renderer/shaders'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { defineShader } from '#core/canvas/sksl'
 
 import dotGridSource from './dot-grid.sksl?raw'

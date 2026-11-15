@@ -67,7 +67,7 @@ import { createUndoActions } from './undo'
 import { createVariableActions } from './variables/actions'
 import { createVectorEditActions } from './vector/create'
 import { createVectorizeActions } from './vectorize'
-import { createViewportActions } from './viewport'
+import { createViewportActions } from './viewport/actions'
 import { createViewportSize } from './viewport/size'
 import { createCanvasViewActions, offeredTool } from './views'
 

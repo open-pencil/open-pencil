@@ -5,7 +5,7 @@ import { FLASH_PADDING, FLASH_RADIUS, FLASH_STROKE_WIDTH } from '#core/constants
 import { type RotationPreview } from '#core/geometry'
 
 import { inNodeSpace, withScreenStroke } from './overlays/outline'
-import type { SkiaRenderer } from './renderer'
+import type { SkiaRenderer } from './renderer/skia'
 
 /**
  * Outlines the layer `nodeId` with a rounded stroke sized in screen pixels, placed through its

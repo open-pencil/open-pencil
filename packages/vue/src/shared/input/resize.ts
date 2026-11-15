@@ -37,7 +37,7 @@ import { markSourceFieldsEdited } from '@open-pencil/scene-graph/source-metadata
 
 import { draggedSizing, layerSizing } from '#vue/shared/input/resize/sizing'
 import { layerSnapSource, resizedRect } from '#vue/shared/input/resize/snap'
-import { optionalEditorState } from '#vue/shared/input/snap'
+import { optionalEditorState } from '#vue/shared/input/snap/resolve'
 import type { DragResize } from '#vue/shared/input/types'
 
 /**
