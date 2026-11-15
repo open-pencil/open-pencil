@@ -204,6 +204,7 @@ export class SkiaRenderer {
   tiledSceneBackgroundPending = false
   /** WebGL has built the programs of progressive blurs and glass (`warmUpEffectPrograms`). */
   effectProgramsWarm = false
+  recordingPictures = 0
   /**
    * The page and document version last found without effects worth warming up, so a page is
    * scanned again only once the document changes.

@@ -19,20 +19,32 @@ export function withWorldViewport<T>(r: SkiaRenderer, bounds: VisualBounds, draw
   }
 }
 
+/** Record `draw` into a picture of `bounds`. The caller owns the picture. */
+export function recordPicture(
+  r: SkiaRenderer,
+  bounds: Float32Array,
+  draw: (canvas: Canvas) => void
+): SkPicture {
+  const recorder = new r.ck.PictureRecorder()
+  r.recordingPictures++
+  try {
+    draw(recorder.beginRecording(bounds))
+    return recorder.finishRecordingAsPicture()
+  } finally {
+    r.recordingPictures--
+    recorder.delete()
+  }
+}
+
 /** Record `draw` into a picture of world-space `bounds`. The caller owns the picture. */
 export function recordWorldPicture(
   r: SkiaRenderer,
   bounds: VisualBounds,
   draw: (canvas: Canvas) => void
 ): SkPicture {
-  const recorder = new r.ck.PictureRecorder()
-  try {
-    const canvas = recorder.beginRecording(
-      r.ck.LTRBRect(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY)
-    )
-    withWorldViewport(r, bounds, () => draw(canvas))
-    return recorder.finishRecordingAsPicture()
-  } finally {
-    recorder.delete()
-  }
+  return recordPicture(
+    r,
+    r.ck.LTRBRect(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY),
+    (canvas) => withWorldViewport(r, bounds, () => draw(canvas))
+  )
 }

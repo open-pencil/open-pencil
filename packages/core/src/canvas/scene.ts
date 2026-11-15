@@ -11,7 +11,7 @@ import { nodeOrientationMatrix, projectedNode } from '#core/geometry'
 import { drawnLayerBlurReach, mapVisualBounds } from '#core/geometry/render-bounds'
 import { fontManager } from '#core/text/font/manager'
 
-import { needsIsolatedBlendLayer, setPaintBlendMode } from './blend/modes'
+import { needsIsolatedBlendLayer, restoreBlendedLayer, saveBlendedLayer } from './blend/modes'
 import { blurredContent, layerBlurFilter } from './blur/layer'
 import { renderBooleanOperation } from './boolean'
 import { drawVectorMultiStyleFills, paintFills } from './fills/paint'
@@ -383,8 +383,7 @@ export function renderNode(
       : null
   if (needsNodeLayer) {
     r.opacityPaint.setAlphaf(node.opacity)
-    setPaintBlendMode(r, r.opacityPaint, node.blendMode)
-    canvas.saveLayer(r.opacityPaint, layerBounds)
+    saveBlendedLayer(r, canvas, r.opacityPaint, node.blendMode, layerBounds)
   }
 
   if (layerBlur) {
@@ -422,7 +421,7 @@ export function renderNode(
     r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
   }
   if (needsNodeLayer) {
-    canvas.restore()
+    restoreBlendedLayer(canvas)
     r.opacityPaint.setAlphaf(1)
     r.opacityPaint.setBlendMode(r.ck.BlendMode.SrcOver)
   }

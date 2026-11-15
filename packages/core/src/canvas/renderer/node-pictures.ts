@@ -2,6 +2,7 @@ import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 
+import { recordPicture } from '#core/canvas/renderer/picture'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { localPaintBounds } from '#core/geometry/render-bounds'
 
@@ -48,14 +49,7 @@ export function drawShapeThroughNodePicture(
     maxY: 0
   }
   const bounds = r.ck.LTRBRect(drawn.minX, drawn.minY, drawn.maxX, drawn.maxY)
-  const recorder = new r.ck.PictureRecorder()
-  try {
-    const recCanvas = recorder.beginRecording(bounds)
-    draw(recCanvas)
-    const picture = recorder.finishRecordingAsPicture()
-    r.nodePictures.set(node.id, { picture, fontGeneration: r.fontGeneration })
-    canvas.drawPicture(picture)
-  } finally {
-    recorder.delete()
-  }
+  const picture = recordPicture(r, bounds, draw)
+  r.nodePictures.set(node.id, { picture, fontGeneration: r.fontGeneration })
+  canvas.drawPicture(picture)
 }

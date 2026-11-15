@@ -10,7 +10,12 @@ import Matrix from '@open-pencil/scene-graph/matrix'
 import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import { regionFills } from '@open-pencil/scene-graph/vector-network'
 
-import { needsIsolatedBlendLayer, setPaintBlendMode } from '#core/canvas/blend/modes'
+import {
+  needsIsolatedBlendLayer,
+  restoreBlendedLayer,
+  saveBlendedLayer,
+  setPaintBlendMode
+} from '#core/canvas/blend/modes'
 import { makeBooleanOperationPath } from '#core/canvas/boolean'
 import { renderNoiseEffects } from '#core/canvas/effects'
 import { renderGlassLight, renderGlassRefraction } from '#core/canvas/glass/render'
@@ -107,14 +112,13 @@ function drawSilhouetteDropShadow(
   // The layer copies the paint, so the shared one is reset at once for whatever draws inside.
   const paint = r.effectLayerPaint
   paint.setImageFilter(filter)
-  setPaintBlendMode(r, paint, blendMode)
-  canvas.saveLayer(paint, bounds)
+  saveBlendedLayer(r, canvas, paint, blendMode, bounds)
   paint.setImageFilter(null)
   paint.setBlendMode(ck.BlendMode.SrcOver)
   try {
     draw()
   } finally {
-    canvas.restore()
+    restoreBlendedLayer(canvas)
     if (morphology) {
       filter?.delete()
       morphology.delete()
@@ -233,8 +237,7 @@ function renderDropShadow(
 
   const bounds = shadowLayerBounds(r, graph, node, effect, spread, includeChildren)
   if (knockout) {
-    setPaintBlendMode(r, r.effectLayerPaint, blendMode)
-    canvas.saveLayer(r.effectLayerPaint, bounds)
+    saveBlendedLayer(r, canvas, r.effectLayerPaint, blendMode, bounds)
     setPaintBlendMode(r, r.effectLayerPaint, 'NORMAL')
   }
   try {
@@ -253,7 +256,9 @@ function renderDropShadow(
       )
     }
   } finally {
-    if (knockout) canvas.restore()
+    if (knockout) {
+      restoreBlendedLayer(canvas)
+    }
     resetEffectLayerPaint(r)
   }
 }
@@ -274,9 +279,8 @@ function drawSilhouetteInnerShadow(
   let solidBlackFilter: ReturnType<typeof ck.ColorFilter.MakeBlend> | null = null
 
   try {
-    setPaintBlendMode(r, r.effectLayerPaint, effect.blendMode)
-    canvas.saveLayer(r.effectLayerPaint, bounds)
-    restoreCount++
+    saveBlendedLayer(r, canvas, r.effectLayerPaint, effect.blendMode, bounds)
+    restoreCount += 2
     r.effectLayerPaint.setBlendMode(ck.BlendMode.SrcOver)
     draw()
 
