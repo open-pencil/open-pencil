@@ -223,3 +223,132 @@ export function namedInstanceVariations(data: ArrayBuffer, style: string): FontV
   if (!weight) return []
   return [{ axis: 'wght', value: Math.min(weight.max, Math.max(weight.min, styleToWeight(style))) }]
 }
+
+/** An axis value the font's STAT table names: the axes it covers, each with its range. */
+interface StatAxisValue {
+  axes: Array<{ tag: string; min: number; max: number }>
+  name: string
+  /** Left out of a name, as "Regular" is left out of "Bold" for a regular-width roman. */
+  elidable: boolean
+}
+
+const STAT_HEADER_SIZE = 18
+const ELIDABLE_AXIS_VALUE = 0x0002
+
+function statAxisValue(
+  view: DataView,
+  offset: number,
+  tags: readonly string[],
+  name: TableRange
+): StatAxisValue | null {
+  const format = view.getUint16(offset)
+  const range = (axisIndex: number, min: number, max = min) => {
+    const tag = tags.at(axisIndex)
+    return tag === undefined ? null : { tag, min, max }
+  }
+  let axes: Array<{ tag: string; min: number; max: number } | null>
+  let flags: number
+  let nameId: number
+  if (format === 1 || format === 3) {
+    flags = view.getUint16(offset + 4)
+    nameId = view.getUint16(offset + 6)
+    axes = [range(view.getUint16(offset + 2), fixed(view, offset + 8))]
+  } else if (format === 2) {
+    flags = view.getUint16(offset + 4)
+    nameId = view.getUint16(offset + 6)
+    axes = [range(view.getUint16(offset + 2), fixed(view, offset + 12), fixed(view, offset + 16))]
+  } else if (format === 4) {
+    const count = view.getUint16(offset + 2)
+    flags = view.getUint16(offset + 4)
+    nameId = view.getUint16(offset + 6)
+    axes = Array.from({ length: count }, (_, index) => {
+      const record = offset + 8 + index * 6
+      return range(view.getUint16(record), fixed(view, record + 2))
+    })
+  } else {
+    return null
+  }
+  const valueName = fontName(view, name, nameId)
+  if (valueName === null || axes.some((axis) => axis === null)) return null
+  return {
+    axes: axes.filter((axis) => axis !== null),
+    name: valueName,
+    elidable: (flags & ELIDABLE_AXIS_VALUE) !== 0
+  }
+}
+
+/**
+ * Names a point in the font's design space as its STAT table names it, the way Windows names a
+ * variable font's instances: each design axis's value name in the table's axis order, leaving
+ * out the elidable ones, so Segoe UI Variable's instance the font calls "Bold Display" is
+ * "Display Bold", and its regular Display instance just "Display". An axis the point does not
+ * set takes the one value the table gives it, as an italic file's "Italic". `null` for a font
+ * without a STAT table.
+ */
+export function statNamer(data: ArrayBuffer): ((variations: FontVariation[]) => string) | null {
+  const view = new DataView(data)
+  const stat = sfntTable(view, 'STAT')
+  const name = sfntTable(view, 'name')
+  if (!stat || !name || stat.length < STAT_HEADER_SIZE) return null
+  const minor = view.getUint16(stat.offset + 2)
+  const axisSize = view.getUint16(stat.offset + 4)
+  const axisCount = view.getUint16(stat.offset + 6)
+  const axesOffset = stat.offset + view.getUint32(stat.offset + 8)
+  const valueCount = view.getUint16(stat.offset + 12)
+  const valuesOffset = stat.offset + view.getUint32(stat.offset + 14)
+  const end = stat.offset + stat.length
+  if (axesOffset + axisCount * axisSize > end || valuesOffset + valueCount * 2 > end) return null
+
+  const designAxes = Array.from({ length: axisCount }, (_, index) => {
+    const record = axesOffset + index * axisSize
+    let tag = ''
+    for (let c = 0; c < 4; c++) tag += String.fromCharCode(view.getUint8(record + c))
+    return { tag, ordering: view.getUint16(record + 6) }
+  })
+  const tags = designAxes.map((axis) => axis.tag)
+  const values = Array.from({ length: valueCount }, (_, index) => {
+    const offset = valuesOffset + view.getUint16(valuesOffset + index * 2)
+    return offset + 8 <= end ? statAxisValue(view, offset, tags, name) : null
+  }).filter((value) => value !== null)
+  const fallback =
+    (minor >= 1 && stat.length >= 20 && fontName(view, name, view.getUint16(stat.offset + 18))) ||
+    'Regular'
+  const ordering = new Map(designAxes.map((axis) => [axis.tag, axis.ordering]))
+
+  return (variations) => {
+    const at = new Map(variations.map(({ axis, value }) => [axis, value]))
+    const holds = (axis: StatAxisValue['axes'][number]) => {
+      const value = at.get(axis.tag)
+      if (value !== undefined) return value >= axis.min && value <= axis.max
+      // An axis the point leaves unset is named by the font's one value for it.
+      return values.filter((other) => other.axes.some(({ tag }) => tag === axis.tag)).length === 1
+    }
+    const named = new Set<string>()
+    const parts: Array<{ ordering: number; name: string }> = []
+    const take = (value: StatAxisValue) => {
+      for (const { tag } of value.axes) named.add(tag)
+      if (value.elidable) return
+      const first = value.axes.reduce(
+        (lowest, { tag }) => Math.min(lowest, ordering.get(tag) ?? 0),
+        Number.POSITIVE_INFINITY
+      )
+      parts.push({ ordering: first, name: value.name })
+    }
+    // A value naming several axes at once names them before any single-axis value does.
+    for (const value of values) {
+      if (value.axes.length > 1 && value.axes.every(holds)) take(value)
+    }
+    for (const axis of designAxes) {
+      if (named.has(axis.tag)) continue
+      const value = values.find(
+        (candidate) =>
+          candidate.axes.length === 1 &&
+          candidate.axes[0]?.tag === axis.tag &&
+          holds(candidate.axes[0])
+      )
+      if (value) take(value)
+    }
+    const words = parts.toSorted((a, b) => a.ordering - b.ordering).map((part) => part.name)
+    return words.length > 0 ? words.join(' ') : fallback
+  }
+}

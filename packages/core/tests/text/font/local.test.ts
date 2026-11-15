@@ -1,17 +1,22 @@
 import { describe, expect, test } from 'bun:test'
 
-import { readFixtureBytes, uint8ArrayToArrayBuffer } from '@open-pencil/test-support/paths'
+import { readFixtureArrayBuffer } from '@open-pencil/test-support/paths'
 
 import { OwnFaceNames, readLocalFace } from '#core/text/font/local'
 import { fontFaceName } from '#core/text/font/variation'
 
 /** Names itself "Inter Variable", with opsz and wght axes and a "Display Heavy" instance. */
-const INTER_VARIABLE = uint8ArrayToArrayBuffer(readFixtureBytes('fonts/InterVariable-Named.ttf'))
+const INTER_VARIABLE = readFixtureArrayBuffer('fonts/InterVariable-Named.ttf')
 /** A static face whose font names another family. */
-const NASKH = uint8ArrayToArrayBuffer(readFixtureBytes('fonts/NotoNaskhArabic-Regular.ttf'))
+const NASKH = readFixtureArrayBuffer('fonts/NotoNaskhArabic-Regular.ttf')
 
-function localFace(family: string, style: string, bytes: ArrayBuffer, reads?: string[]): FontData {
-  const fullName = `${family} ${style}`
+function localFace(
+  family: string,
+  style: string,
+  bytes: ArrayBuffer,
+  reads?: string[],
+  fullName = `${family} ${style}`
+): FontData {
   return {
     family,
     style,
@@ -84,5 +89,63 @@ describe('readLocalFace', () => {
     reads.length = 0
     expect(await readLocalFace(fonts, 'Inter Variable', 'Compressed', names)).toBeNull()
     expect(reads).toEqual([])
+  })
+})
+
+describe('the names a local face’s own font gives it', () => {
+  // As Edge on Windows lists the installed fixture: its optical size's family, STAT-ordered styles.
+  const windows = () => [
+    localFace('Inter Variable Text', 'Text', INTER_VARIABLE, [], 'Inter Variable Text'),
+    localFace('Inter Variable Text', 'Text Bold', INTER_VARIABLE, [], 'Inter Variable Text Bold')
+  ]
+
+  test('a face read by its listed names learns its font’s family and style', async () => {
+    const names = new OwnFaceNames()
+    await readLocalFace(windows(), 'Inter Variable Text', 'Bold', names)
+    const bold = { family: 'Inter Variable', style: 'Bold' }
+    expect(names.ownFace('Inter Variable Text', 'Bold')).toEqual(bold)
+    expect(names.ownFace('Inter Variable Text', 'Text Bold')).toEqual(bold)
+    expect(names.families()).toEqual(['Inter Variable'])
+    expect(names.familyFaces('inter variable')?.map((face) => [face.style, face.weight])).toEqual([
+      ['Thin', 100],
+      ['ExtraLight', 200],
+      ['Light', 300],
+      ['Regular', 400],
+      ['Medium', 500],
+      ['SemiBold', 600],
+      ['Bold', 700],
+      ['ExtraBold', 800],
+      ['Black', 900],
+      ['Display Heavy', 850]
+    ])
+  })
+
+  test('a face asked for by its font’s own names learns no other names for that request', async () => {
+    const names = new OwnFaceNames()
+    let changes = 0
+    names.onChange(() => changes++)
+    await readLocalFace(windows(), 'Inter Variable', 'Bold', names)
+    expect(names.ownFace('Inter Variable', 'Bold')).toBeUndefined()
+    // Found by its weight axis in the first face listed, which is Regular, not Bold.
+    await readLocalFace(windows(), 'Inter Variable Text', 'SemiBold', names)
+    expect(names.ownFace('Inter Variable Text', 'SemiBold')).toEqual({
+      family: 'Inter Variable',
+      style: 'SemiBold'
+    })
+    expect(names.families()).toEqual(['Inter Variable'])
+    await readLocalFace(windows(), 'Inter Variable Text', 'Text', names)
+    expect(changes).toBe(1)
+  })
+
+  test('learns nothing from a face listed under the family its font names', async () => {
+    const names = new OwnFaceNames()
+    await readLocalFace(
+      [localFace('Inter Variable', 'Regular', INTER_VARIABLE)],
+      'Inter Variable',
+      'Regular',
+      names
+    )
+    expect(names.ownFace('Inter Variable', 'Regular')).toBeUndefined()
+    expect(names.families()).toEqual([])
   })
 })

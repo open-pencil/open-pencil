@@ -1,8 +1,17 @@
 import { describe, expect, test } from 'bun:test'
+import { readFileSync } from 'node:fs'
+
+import { corePackagePath } from '#core-tests/helpers/paths'
 
 import { FontManager } from '@open-pencil/core/text'
+import { readFixtureArrayBuffer } from '@open-pencil/test-support/paths'
 
-import { isVariableFont, namedInstanceVariations } from '#core/text/font/variation'
+import {
+  isVariableFont,
+  namedInstances,
+  namedInstanceVariations,
+  statNamer
+} from '#core/text/font/variation'
 
 interface Axis {
   tag: string
@@ -196,5 +205,54 @@ describe('FontManager.namedInstanceVariations', () => {
       { axis: 'wght', value: 510 }
     ])
     expect(manager.namedInstanceVariations('SF Pro', 'Bold')).toBeNull()
+  })
+})
+
+describe('statNamer', () => {
+  const font = (name: string) => readFixtureArrayBuffer(`fonts/${name}`)
+
+  test('names each instance as Windows lists it, from the STAT table in its axis order', () => {
+    // Edge 157 on Windows 11 lists this fixture as "Inter Variable Text" with these styles; the
+    // "Display Heavy" instance has no STAT name of its weight, so it is "Text" as Regular is.
+    const data = font('InterVariable-Named.ttf')
+    const statName = statNamer(data)
+    expect(statName).not.toBeNull()
+    const names = namedInstances(data).map((instance) => [
+      instance.name,
+      statName?.(instance.variations)
+    ])
+    expect(names).toEqual([
+      ['Thin', 'Text Thin'],
+      ['ExtraLight', 'Text ExtraLight'],
+      ['Light', 'Text Light'],
+      ['Regular', 'Text'],
+      ['Medium', 'Text Medium'],
+      ['SemiBold', 'Text SemiBold'],
+      ['Bold', 'Text Bold'],
+      ['ExtraBold', 'Text ExtraBold'],
+      ['Black', 'Text Black'],
+      ['Display Heavy', 'Text']
+    ])
+  })
+
+  test('names an axis the instance leaves unset by the one value the font gives it', () => {
+    const italic = readFileSync(corePackagePath('assets', 'InterVariable-Italic.ttf'))
+    const statName = statNamer(Uint8Array.from(italic).buffer)
+    expect(
+      statName?.([
+        { axis: 'opsz', value: 32 },
+        { axis: 'wght', value: 700 }
+      ])
+    ).toBe('Display Bold Italic')
+    expect(
+      statName?.([
+        { axis: 'opsz', value: 14 },
+        { axis: 'wght', value: 400 }
+      ])
+    ).toBe('Text Italic')
+  })
+
+  test('is null for a font without a STAT table', () => {
+    expect(statNamer(font('NotoNaskhArabic-Regular.ttf'))).toBeNull()
   })
 })
