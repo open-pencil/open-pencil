@@ -1,0 +1,2 @@
+- A wrapping auto layout frame places its lines where it aligns its children, as in Figma, instead of at the start (#2145).
+- HTML import reads an `aspect-ratio` written beside `auto`, such as `auto 16 / 9`, as its ratio (#2145).
