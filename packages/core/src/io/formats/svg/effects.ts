@@ -10,6 +10,7 @@ import { shadowSpread } from '#core/geometry/shadows'
 import { formatColor, nextDefId, type SVGExportContext } from './defs'
 import { svg, svgElement, type SVGNode } from './node'
 import { boxOutlinePath, nodeOutlinePath, round } from './paths'
+import { fillOutlines } from './regions'
 
 /** An effect an export left out because its format cannot draw it. */
 export interface ExportEffectWarning {
@@ -73,52 +74,73 @@ export function layerEffects(node: SceneNode, ctx: SVGExportContext): SVGLayerEf
 }
 
 /**
- * A layer's content with its effects: the filter on the layer's group, or, under a background
- * blur, which the filter must not blur, on a group of its own beside it.
+ * A layer's content with its effects: the filter on the layer's group, or, beside a background
+ * blur, on a group of the content's own. The layer's opacity and blend mode go there too: on an
+ * element around the blur's box they would make it a backdrop root, which cuts the box off from
+ * what lies behind the layer.
  */
 export function withLayerEffects(
   content: SVGNode[],
   { filter, backdrop }: SVGLayerEffects,
   groupAttrs: Record<string, string | number | undefined>
 ): SVGNode[] {
+  const filterURL = filter ? `url(#${filter})` : undefined
   if (!backdrop) {
-    if (filter) groupAttrs.filter = `url(#${filter})`
+    if (filterURL) groupAttrs.filter = filterURL
     return content
   }
-  if (!filter) return [backdrop, ...content]
-  return [backdrop, svgElement('g', { filter: `url(#${filter})` }, content)]
+  const own = { opacity: groupAttrs.opacity, style: groupAttrs.style, filter: filterURL }
+  groupAttrs.opacity = undefined
+  groupAttrs.style = undefined
+  if (Object.values(own).every((value) => value === undefined)) return [backdrop, ...content]
+  return [backdrop, svgElement('g', own, content)]
 }
 
 /**
  * A background blur as Figma's SVG export writes it: an HTML box under the layer with a CSS
- * `backdrop-filter`, clipped to the layer's outline. SVG filters cannot read what lies behind an
- * element, so only renderers that draw HTML in SVG, such as browsers, show it.
+ * `backdrop-filter`, clipped to what the layer fills. SVG filters cannot read what lies behind an
+ * element, so only renderers that draw HTML in SVG, such as browsers, show it. A progressive blur
+ * blurs by its end radius, and the box holds its widest. The box takes the layer's opacity, which
+ * Figma draws the blur with.
  */
 function backdropBlur(node: SceneNode, effects: Effect[], ctx: SVGExportContext): SVGNode | null {
   const blurs = effects.filter((e) => e.type === 'BACKGROUND_BLUR')
   if (blurs.length === 0) return null
-  const radius = maxOf(blurs.map(widestBlurRadius))
-  if (!(radius > 0)) return null
+  const blur = maxOf(blurs.map((e) => e.radius))
+  if (!(blur > 0)) return null
+  const pad = maxOf(blurs.map(widestBlurRadius))
   const clipId = nextDefId(ctx, 'bgblur')
   ctx.defs.push(
-    svg(
+    svgElement(
       'clipPath',
-      { id: clipId, transform: `translate(${round(radius)} ${round(radius)})` },
-      svg('path', { d: nodeOutlinePath(node) ?? boxOutlinePath(node) })
+      { id: clipId, transform: `translate(${round(pad)} ${round(pad)})` },
+      fillClip(node)
     )
   )
+  const opacity = node.opacity < 1 ? `opacity:${round(node.opacity)};` : ''
   return svg(
     'foreignObject',
     {
-      x: round(-radius),
-      y: round(-radius),
-      width: round(node.width + radius * 2),
-      height: round(node.height + radius * 2)
+      x: round(-pad),
+      y: round(-pad),
+      width: round(node.width + pad * 2),
+      height: round(node.height + pad * 2)
     },
     svg('div', {
       xmlns: 'http://www.w3.org/1999/xhtml',
-      style: `backdrop-filter:blur(${round(radius / 2)}px);clip-path:url(#${clipId});height:100%;width:100%`
+      style: `backdrop-filter:blur(${round(blur / 2)}px);${opacity}clip-path:url(#${clipId});height:100%;width:100%`
     })
+  )
+}
+
+/** What the layer fills, as clip paths: its fill outlines with their winding, or its outline. */
+function fillClip(node: SceneNode): SVGNode[] {
+  const outlines = fillOutlines(node)?.outlines ?? []
+  if (outlines.length === 0) {
+    return [svg('path', { d: nodeOutlinePath(node) ?? boxOutlinePath(node) })]
+  }
+  return outlines.map(({ d, windingRule }) =>
+    svg('path', { d, 'clip-rule': windingRule === 'EVENODD' ? 'evenodd' : undefined })
   )
 }
 
@@ -250,12 +272,13 @@ function effectFilter(node: SceneNode, effects: Effect[], ctx: SVGExportContext)
     shape = blended
   }
 
+  // A progressive blur blurs by its end radius, as in Figma's SVG; the region holds its widest.
   for (const effect of drawn) {
     if (effect.type !== 'LAYER_BLUR' && effect.type !== 'FOREGROUND_BLUR') continue
-    const radius = widestBlurRadius(effect)
-    if (radius <= 0) continue
+    if (effect.radius <= 0) continue
     const blurred = filter.result('layerBlur')
-    filter.push('feGaussianBlur', { in: shape, stdDeviation: round(radius / 2), result: blurred })
+    const stdDeviation = round(effect.radius / 2)
+    filter.push('feGaussianBlur', { in: shape, stdDeviation, result: blurred })
     shape = blurred
   }
 

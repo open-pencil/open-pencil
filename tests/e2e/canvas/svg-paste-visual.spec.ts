@@ -81,7 +81,8 @@ test('exported SVG text keeps characters outside the style run', async () => {
   expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot('svg-export-style-runs.png')
 })
 
-function exportedSVGWithBackdropBlur(): string {
+/** Stripes under a translucent rounded panel with a background blur, as exported SVG. */
+function exportedSVGWithBackdropBlur(panelFillOpacity = 1): string {
   const graph = new SceneGraph()
   const pageId = graph.getPages()[0].id
   const background = graph.createNode('RECTANGLE', pageId, {
@@ -114,7 +115,9 @@ function exportedSVGWithBackdropBlur(): string {
     height: 72,
     opacity: 0.72,
     cornerRadius: 12,
-    fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }],
+    fills: [
+      { type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: panelFillOpacity, visible: true }
+    ],
     effects: [
       {
         type: 'BACKGROUND_BLUR',
@@ -149,4 +152,18 @@ test('exported SVG with a background blur pastes its layers', async () => {
     }
   })
   expect(screenshot).toMatchSnapshot('svg-background-blur.png')
+})
+
+// Pasting turns the SVG into layers; a browser drawing the SVG itself shows the backdrop-filter.
+test('exported SVG draws its background blur in the browser', async ({ browser }) => {
+  const context = await browser.newContext()
+  const page = await context.newPage()
+  try {
+    await page.setContent(`<body style="margin:0">${exportedSVGWithBackdropBlur(0.3)}</body>`)
+    expect(await page.locator('svg').screenshot()).toMatchSnapshot(
+      'svg-background-blur-browser.png'
+    )
+  } finally {
+    await context.close()
+  }
 })

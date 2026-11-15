@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import type { ExportEffectWarning } from '@open-pencil/core/io/formats/svg'
 import type { Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { SceneGraph as Graph } from '@open-pencil/scene-graph'
+import { polygonBlob } from '@open-pencil/test-support/geometry'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '#core/io'
 
@@ -96,6 +97,58 @@ describe('SVG export effects, as Figma exports them', () => {
     ])
     const backdrop = exported([effect('BACKGROUND_BLUR', { radius: 20, progressive })]).svg
     expect(elements(backdrop, 'div')[0]).toContain('backdrop-filter:blur(10px)')
+  })
+
+  test('a progressive blur starting wider blurs by its end radius in a box holding its start', () => {
+    const progressive = {
+      startRadius: 20,
+      startOffset: { x: 0.5, y: 0 },
+      endOffset: { x: 0.5, y: 1 }
+    }
+    const layer = exported([effect('LAYER_BLUR', { radius: 4, progressive })]).svg
+    expect(elements(layer, 'feGaussianBlur')).toEqual([expect.stringContaining('stdDeviation="2"')])
+    expect(elements(layer, 'filter')[0]).toContain('x="-20" y="-20" width="140" height="140"')
+
+    const backdrop = exported([effect('BACKGROUND_BLUR', { radius: 4, progressive })]).svg
+    expect(elements(backdrop, 'foreignObject')).toEqual([
+      '<foreignObject x="-20" y="-20" width="140" height="140">'
+    ])
+    expect(elements(backdrop, 'div')[0]).toContain('backdrop-filter:blur(2px)')
+
+    const none = exported([effect('BACKGROUND_BLUR', { radius: 0, progressive })]).svg
+    expect(none).not.toContain('<foreignObject')
+  })
+
+  test('a translucent layer keeps its blur box out of its opacity group, at its opacity', () => {
+    const { svg } = exported([effect('BACKGROUND_BLUR', { radius: 10 })], { opacity: 0.5 })
+
+    // Around the box, the opacity would cut it off from what lies behind the layer.
+    expect(svg).toMatch(/<g>\s*<foreignObject/)
+    expect(elements(svg, 'div')[0]).toContain('opacity:0.5;')
+    expect(svg).toMatch(/<\/foreignObject>\s*<g opacity="0.5">/)
+  })
+
+  test('a background blur is clipped to the geometry the layer fills', () => {
+    const { svg } = exported(
+      [effect('BACKGROUND_BLUR', { radius: 10 })],
+      {
+        fillGeometry: [
+          {
+            windingRule: 'EVENODD',
+            commandsBlob: polygonBlob([
+              { x: 50, y: 0 },
+              { x: 100, y: 100 },
+              { x: 0, y: 100 }
+            ])
+          }
+        ]
+      },
+      'VECTOR'
+    )
+
+    const clip = svg.slice(svg.indexOf('<clipPath'), svg.indexOf('</clipPath>'))
+    expect(clip).toContain('d="M50 0L100 100L0 100Z"')
+    expect(clip).toContain('clip-rule="evenodd"')
   })
 
   test('a drop shadow grows by its spread inside a region holding all of it', () => {
