@@ -1,0 +1,1 @@
+- `/review` asks the model assigned to Review, or the Design model, to review the selection or page as an art director, from a render with the layers' structure and lint findings; text after it sets the focus, attached images are references to compare against, and Fix these sends the findings to the Design model (#2119).
