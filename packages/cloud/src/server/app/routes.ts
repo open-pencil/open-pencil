@@ -90,6 +90,7 @@ export function createAppRouters(
     collaboration: app.collaboration,
     documents: app.documents,
     versions: app.versions,
+    comments: app.comments,
     community: app.community,
     entitlements: app.entitlements,
     sharing: app.sharing,

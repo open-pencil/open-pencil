@@ -112,6 +112,38 @@ export interface DocumentTable {
 }
 
 /** A report someone filed about a document shared with them by link; see migration 032. */
+/** A comment pin on a document: where it sits, and whether it is resolved. */
+export interface CommentThreadTable {
+  id: string
+  documentId: string
+  pageId: string
+  pageName: string | null
+  nodeId: string | null
+  nodeName: string | null
+  offsetX: number | null
+  offsetY: number | null
+  x: number
+  y: number
+  createdBy: string
+  createdAt: TimestampColumn
+  updatedAt: TimestampColumn
+  resolvedAt: TimestampColumn | null
+  resolvedBy: string | null
+}
+
+/** A thread's first message or a reply to it. */
+export interface CommentTable {
+  id: string
+  threadId: string
+  /** Null only for a comment brought in from a file, which has `importedAuthorName` instead. */
+  authorId: string | null
+  importedAuthorName: string | null
+  agent: string | null
+  body: string
+  createdAt: TimestampColumn
+  editedAt: TimestampColumn | null
+}
+
 export interface DocumentReportTable {
   id: string
   documentId: string
@@ -462,6 +494,8 @@ export interface CloudDatabase {
   upload: UploadTable
   invitationSend: InvitationSendTable
   documentReport: DocumentReportTable
+  commentThread: CommentThreadTable
+  comment: CommentTable
 }
 
 export type NewTransactionalEmail = Insertable<TransactionalEmailTable>

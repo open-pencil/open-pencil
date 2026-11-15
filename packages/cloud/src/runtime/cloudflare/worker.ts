@@ -198,6 +198,8 @@ export function createCloudflareCloud(
             runInBackground(relay(c.env, documentId).closeDocument(documentId)),
           onDocumentVersionsChanged: (documentId) =>
             runInBackground(relay(c.env, documentId).announceVersions(documentId)),
+          onDocumentCommentsChanged: (documentId, threadId) =>
+            runInBackground(relay(c.env, documentId).announceComments(documentId, threadId)),
           reportError: services.reporter,
           forwardedRequestId: cloudflareRayId
         })

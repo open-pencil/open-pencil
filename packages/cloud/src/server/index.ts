@@ -181,6 +181,14 @@ export {
   type DocumentVersionService
 } from './documents/versions'
 export {
+  CommentLimitError,
+  createCommentRoutes,
+  createCommentService,
+  createSharedCommentRoutes,
+  type CommentActor,
+  type CommentService
+} from './comments'
+export {
   createInvitationOutbox,
   createTransactionalEmailService,
   startTransactionalEmailWorker,

@@ -6,6 +6,11 @@ import {
   createCollaborationRoutes,
   createPublicCollaborationRoutes
 } from '#cloud/server/collaboration'
+import {
+  createCommentRoutes,
+  createSharedCommentRoutes,
+  type CommentService
+} from '#cloud/server/comments'
 import { createCommunityRoutes, type CommunityService } from '#cloud/server/community'
 import type { CloudDatabase } from '#cloud/server/db'
 import type { DocumentService } from '#cloud/server/documents'
@@ -35,6 +40,7 @@ export type CloudAPIServices = {
   collaboration: CollaborationTicketService
   documents: DocumentService
   versions: DocumentVersionService
+  comments: CommentService
   /** The community gallery, which anyone may read. */
   community: CommunityService
   sharing: DocumentSharingService
@@ -58,6 +64,7 @@ export function createPublicCloudAPIRouter(services: CloudAPIServices) {
       '/',
       createPublicDocumentRoutes(services.sharing, services.documents, services.resolveSession)
     )
+    .route('/', createSharedCommentRoutes(services.comments, services.resolveSession))
     .route('/', createPublicCollaborationRoutes(services.collaboration, services.resolveSession))
     .route('/', createCommunityRoutes(services.community))
 }
@@ -120,6 +127,7 @@ export function createCloudAPIRouter(services: CloudAPIServices) {
       )
     )
     .route('/', createDocumentVersionRoutes(services.versions))
+    .route('/', createCommentRoutes(services.comments))
     .route(
       '/',
       createDocumentSharingRoutes(
