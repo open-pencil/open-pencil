@@ -3,6 +3,7 @@ import { uniqBy } from 'es-toolkit/array'
 import type { CharacterStyleOverride, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
+import { textLanguageAt } from '@open-pencil/scene-graph/text'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { shownCharacters } from '#core/text/case'
@@ -55,11 +56,6 @@ export function collectGraphFontKeys(
   }
   for (const nodeId of nodeIds) collect(nodeId)
   return Array.from(fontKeys, (key) => key.split('\0') as [string, string])
-}
-
-function textLanguageAt(node: SceneNode, index: number): string | null {
-  const run = node.styleRuns.find((item) => index >= item.start && index < item.start + item.length)
-  return run?.style.textLanguage !== undefined ? run.style.textLanguage : node.textLanguage
 }
 
 export interface GraphFontRequirements {

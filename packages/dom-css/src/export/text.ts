@@ -6,6 +6,7 @@ import {
   listNumberFormat,
   paragraphSpacingAt,
   paragraphStyleAt,
+  styleRunPieces,
   textListItems,
   textParagraphRanges,
   type TextListItem,
@@ -107,23 +108,12 @@ function characterStyle(node: SceneNode, override: CharacterStyleOverride = {}):
 
 /** The text in ranges of one style each: the runs, and the layer's own style between them. */
 function styledRanges(node: SceneNode): StyledRange[] {
-  const ranges: StyledRange[] = []
   const base = characterStyle(node)
-  let at = 0
-  for (const run of node.styleRuns.toSorted((a, b) => a.start - b.start)) {
-    const start = Math.max(at, run.start)
-    const end = Math.min(node.text.length, run.start + run.length)
-    if (start > at) ranges.push({ start: at, end: start, style: base, href: null })
-    if (end > start) {
-      const href = linkHref(run.style.hyperlink)
-      ranges.push({ start, end, style: characterStyle(node, run.style), href })
-    }
-    at = Math.max(at, end)
-  }
-  if (at < node.text.length) {
-    ranges.push({ start: at, end: node.text.length, style: base, href: null })
-  }
-  return ranges
+  return styleRunPieces(node.styleRuns, node.text.length).map(({ start, end, style }) =>
+    style
+      ? { start, end, style: characterStyle(node, style), href: linkHref(style.hyperlink) }
+      : { start, end, style: base, href: null }
+  )
 }
 
 /** Underline or strikethrough as CSS writes it: Figma's offset is CSS's, from the baseline. */

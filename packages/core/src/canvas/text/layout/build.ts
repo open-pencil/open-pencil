@@ -6,6 +6,7 @@ import {
   hasTextList,
   paragraphSpacingAt,
   paragraphStyleAt,
+  styleRunAt,
   textListItems,
   textParagraphRanges,
   lineStepPixels,
@@ -50,10 +51,6 @@ const LIST_DIGIT_GLYPH_ID = 48
 const FALLBACK_DIGIT_EMS = 0.6
 /** The placeholder a first-line indent puts before the text takes one UTF-16 unit, three bytes. */
 const PLACEHOLDER_UTF8_LENGTH = 3
-
-function styleAt(runs: readonly StyleRun[], index: number): CharacterStyleOverride | undefined {
-  return runs.find((run) => index >= run.start && index < run.start + run.length)?.style
-}
 
 /** Style runs of `text[start, end)` in the slice's own indices. */
 function sliceStyleRuns(runs: readonly StyleRun[], start: number, end: number): StyleRun[] {
@@ -182,7 +179,7 @@ interface ListStyle {
 }
 
 function listStyle(node: ParagraphNode, firstCharacter: number): ListStyle {
-  const override = styleAt(node.styleRuns, firstCharacter)
+  const override = styleRunAt(node.styleRuns, firstCharacter)?.style
   return {
     em: override?.fontSize ?? (node.fontSize || DEFAULT_FONT_SIZE),
     family: override?.fontFamily ?? (node.fontFamily || DEFAULT_FONT_FAMILY),

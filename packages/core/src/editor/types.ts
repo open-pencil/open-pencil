@@ -376,6 +376,7 @@ export interface EditorContext {
   setActiveTool: (tool: Tool) => void
   setNavigationPhase: (phase: NavigationPhase, inputAt?: number) => void
   runLayoutForNode: (id: string) => void
+  runLayoutForParents: (parentIds: Iterable<string>) => void
   runMutationWithLayout: <T>(
     operation: () => T | Promise<T>,
     fallbackId?: string

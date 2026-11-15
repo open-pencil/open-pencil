@@ -70,11 +70,14 @@ export function desktopResources(root: string): Record<string, string> {
   )
 }
 
-/** CI-only override; the checked-in local Tauri build remains self-contained. */
+/**
+ * CI-only override; the checked-in local Tauri build remains self-contained. Returns the override's
+ * path as this process sees it, which inside a container differs from the runner's workspace path.
+ */
 export async function prepareSharedFrontend(
   context: ReturnType<typeof createReleaseContext>,
   commands = releaseCommands(context.paths.root)
-): Promise<void> {
+): Promise<string> {
   const { identity, version, paths } = context
   const source = await commands.git('rev-parse', 'HEAD')
   const manifest = await readPackageManifest(join(paths.root, 'package.json'))
@@ -86,8 +89,9 @@ export async function prepareSharedFrontend(
 
   const wixVersion = msiVersion(version)
   const resources = desktopResources(paths.root)
+  const config = join(paths.root, 'release-build-config.json')
   await writeFile(
-    join(paths.root, 'release-build-config.json'),
+    config,
     JSON.stringify({
       build: { beforeBuildCommand: null },
       bundle: {
@@ -96,14 +100,15 @@ export async function prepareSharedFrontend(
       }
     })
   )
+  return config
 }
 
 if (import.meta.main) {
+  const output = process.env.GITHUB_OUTPUT
+  if (!output) throw new Error('Missing GITHUB_OUTPUT')
   if (process.argv[2] === 'archive') {
-    const output = process.env.GITHUB_OUTPUT
-    if (!output) throw new Error('Missing GITHUB_OUTPUT')
     await appendFile(output, `sha256=${await archiveSharedFrontend(process.cwd())}\n`)
   } else {
-    await prepareSharedFrontend(createReleaseContext())
+    await appendFile(output, `config=${await prepareSharedFrontend(createReleaseContext())}\n`)
   }
 }

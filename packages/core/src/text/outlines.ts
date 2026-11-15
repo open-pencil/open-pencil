@@ -4,6 +4,7 @@ import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 import {
   estimatedLineStep,
+  styleRunAt,
   textLengthPixels,
   textVerticalOffset
 } from '@open-pencil/scene-graph/text'
@@ -97,7 +98,7 @@ function styleKey(style: TextStyle): string {
 }
 
 function textStyleAt(node: SceneNode, index: number): TextStyle {
-  const run = node.styleRuns.find((item) => index >= item.start && index < item.start + item.length)
+  const run = styleRunAt(node.styleRuns, index)
   if (!run) return baseTextStyle(node)
   return withVariations(
     {
@@ -202,12 +203,17 @@ function styleSegments(node: SceneNode, line: TextLine): StyleSegment[] | null {
 
 /**
  * The width each character of `line` adds as its segments are shaped and drawn, kerning and
- * ligatures included: a glyph's advance and spacing go to the character it starts at.
+ * ligatures included, and the letter spacing in it: a glyph's advance and spacing go to the
+ * character it starts at.
  */
-function characterAdvances(node: SceneNode, line: TextLine): number[] | null {
+function characterAdvances(
+  node: SceneNode,
+  line: TextLine
+): { advances: number[]; spacing: number[] } | null {
   const segments = styleSegments(node, line)
   if (!segments) return null
   const advances = Array.from<number>({ length: line.text.length }).fill(0)
+  const spacings = Array.from<number>({ length: line.text.length }).fill(0)
   for (const { start, end, style } of segments) {
     const glyphs = shapedAdvancesSync(
       style.fontFamily,
@@ -218,26 +224,35 @@ function characterAdvances(node: SceneNode, line: TextLine): number[] | null {
     )
     if (!glyphs) return null
     const spacing = textLengthPixels(style.letterSpacing, style.fontSize)
-    for (const glyph of glyphs) advances[start + glyph.cluster] += glyph.advance + spacing
+    for (const glyph of glyphs) {
+      advances[start + glyph.cluster] += glyph.advance + spacing
+      spacings[start + glyph.cluster] += spacing
+    }
   }
-  return advances
+  return { advances, spacing: spacings }
 }
 
 function wrapLine(node: SceneNode, line: TextLine): TextLine[] {
   if (!line.text || node.width <= 0) return [line]
-  const advances = characterAdvances(node, line)
-  if (!advances) return [line]
+  const measured = characterAdvances(node, line)
+  if (!measured) return [line]
+  const { advances, spacing } = measured
   const result: TextLine[] = []
   let lineStart = 0
   let cursor = 0
   let lastBreak = -1
+  let lastGlyphSpacing = 0
 
   for (let index = 0; index < line.text.length; index++) {
     cursor += advances[index]
+    if (advances[index] !== 0) {
+      lastGlyphSpacing = spacing[index]
+    }
     if (/\s/.test(line.text[index])) {
       lastBreak = index + 1
     }
-    if (cursor <= node.width || index === lineStart) continue
+    // A line fits when its glyphs do, without the spacing after its last one, as on the canvas.
+    if (cursor - lastGlyphSpacing <= node.width || index === lineStart) continue
 
     const breakIndex = lastBreak > lineStart ? lastBreak : index
     result.push({ text: line.text.slice(lineStart, breakIndex), start: line.start + lineStart })
@@ -245,6 +260,7 @@ function wrapLine(node: SceneNode, line: TextLine): TextLine[] {
     index = breakIndex - 1
     cursor = 0
     lastBreak = -1
+    lastGlyphSpacing = 0
   }
 
   result.push({ text: line.text.slice(lineStart), start: line.start + lineStart })
@@ -278,6 +294,7 @@ function lineGlyphs(
   if (!segments) return null
   const glyphs: TextOutlineGlyph[] = []
   let cursorX = xOffset
+  let lastSpacing = 0
 
   for (const { start, end, style } of segments) {
     const metrics = getGlyphOutlineMetricsSync(
@@ -290,7 +307,8 @@ function lineGlyphs(
     if (!metrics) return null
 
     for (const glyph of metrics) {
-      const advance = glyph.advance + textLengthPixels(style.letterSpacing, style.fontSize)
+      lastSpacing = textLengthPixels(style.letterSpacing, style.fontSize)
+      const advance = glyph.advance + lastSpacing
       glyphs.push({
         commands: glyph.commands,
         x: cursorX,
@@ -302,7 +320,8 @@ function lineGlyphs(
     }
   }
 
-  return { glyphs, width: cursorX - xOffset }
+  // The line is as wide as its glyphs, without the spacing after its last one.
+  return { glyphs, width: cursorX - xOffset - lastSpacing }
 }
 
 export function textNodeToOutlineLayout(node: SceneNode): TextOutlineLayout | null {

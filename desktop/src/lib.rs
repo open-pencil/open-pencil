@@ -160,12 +160,13 @@ pub fn run() {
                 .first()
                 .cloned()
                 .ok_or("the main window is not configured")?;
-            tauri::WebviewWindowBuilder::from_config(app.handle(), &main)?
+            let window = tauri::WebviewWindowBuilder::from_config(app.handle(), &main)?
                 .initialization_script(capabilities.init_script())
                 .on_new_window(system::opener::open_new_window_externally(
                     app.handle().clone(),
                 ))
                 .build()?;
+            fonts::watch::start(app.handle(), &window);
 
             launch::queue_open_paths(app.handle(), args::startup_open_paths());
 

@@ -1,4 +1,4 @@
-import type { Effect, Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   colorToHex,
   colorToDisplayCSS,
@@ -20,6 +20,7 @@ import {
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
+import type { ExportEffectWarning } from './effects'
 import { svg, type SVGNode } from './node'
 import { round } from './paths'
 import type { SVGTextLayout } from './text/lines'
@@ -29,6 +30,8 @@ export interface SVGExportContext {
   defIdCounter: number
   graph: SceneGraph
   colorSpace: RenderColorSpace
+  /** Receives each effect the export leaves out because SVG cannot draw it. */
+  onWarning?: (warning: ExportEffectWarning) => void
   /** Starts every def id, so SVGs inlined on one page cannot reference each other's defs. */
   idPrefix?: string
   /** Paints drawn in `currentColor`, such as an icon's tinted paths, so CSS `color` sets them. */
@@ -242,69 +245,6 @@ function createImagePattern(
         transform: svgMatrix(matrix)
       })
     )
-  }
-}
-
-export function createFilterDef(
-  effects: Effect[],
-  ctx: SVGExportContext
-): { id: string; node: SVGNode } | null {
-  const visible = effects.filter((e) => e.visible)
-  if (visible.length === 0) return null
-
-  const id = nextDefId(ctx, 'fx')
-  const primitives: SVGNode[] = []
-
-  for (const effect of visible) {
-    if (effect.type === 'DROP_SHADOW') {
-      const stdDev = round(effect.radius / 2)
-      primitives.push(
-        svg('feDropShadow', {
-          dx: round(effect.offset.x),
-          dy: round(effect.offset.y),
-          stdDeviation: stdDev,
-          'flood-color': formatColor(effect.color, 1, ctx.colorSpace),
-          'flood-opacity': round(effect.color.a)
-        })
-      )
-    } else if (effect.type === 'INNER_SHADOW') {
-      const sid = `${id}_is`
-      const stdDev = round(effect.radius / 2)
-      primitives.push(
-        svg('feGaussianBlur', { in: 'SourceAlpha', stdDeviation: stdDev, result: `${sid}_blur` }),
-        svg('feOffset', {
-          dx: round(effect.offset.x),
-          dy: round(effect.offset.y),
-          result: `${sid}_off`
-        }),
-        svg('feComposite', {
-          in: 'SourceAlpha',
-          in2: `${sid}_off`,
-          operator: 'out',
-          result: `${sid}_inv`
-        }),
-        svg('feFlood', {
-          'flood-color': formatColor(effect.color, 1, ctx.colorSpace),
-          'flood-opacity': round(effect.color.a)
-        }),
-        svg('feComposite', { in2: `${sid}_inv`, operator: 'in', result: `${sid}_shadow` }),
-        svg('feComposite', {
-          in: `${sid}_shadow`,
-          in2: 'SourceGraphic',
-          operator: 'over'
-        })
-      )
-    } else {
-      const stdDev = round(effect.radius / 2)
-      primitives.push(svg('feGaussianBlur', { stdDeviation: stdDev }))
-    }
-  }
-
-  if (primitives.length === 0) return null
-
-  return {
-    id,
-    node: svg('filter', { id }, ...primitives)
   }
 }
 
