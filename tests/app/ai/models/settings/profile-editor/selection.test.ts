@@ -192,6 +192,23 @@ describe('the effort of a coding agent’s profile in the editor', () => {
     expect(profile.draft.agentEffort).toBe('')
   })
 
+  test('offers none for a custom model, whose efforts are never read', async () => {
+    const profile = editor()
+    await profile.choose('acp:claude-code')
+    await profile.answer(withEfforts)
+    profile.pick('Custom model…')
+    expect(profile.selection.agentEffortOptions.value).toEqual([])
+  })
+
+  test('keeps a saved effort the model no longer offers, so it can be cleared', async () => {
+    const profile = editor({ providerID: 'acp:claude-code', agentEffort: 'ultra' })
+    await profile.answer({ ...claudeCode, efforts: { '': { current: '', values: [] } } })
+    expect(profile.selection.agentEffortOptions.value.map((option) => option.label)).toEqual([
+      'Agent default',
+      'ultra'
+    ])
+  })
+
   test('offers nothing while the model’s efforts are unknown or the model has none', async () => {
     const profile = editor()
     await profile.choose('acp:claude-code')

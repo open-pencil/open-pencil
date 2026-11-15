@@ -58,6 +58,21 @@ interface FakeConnectionOptions {
   resumeOptions?: SessionConfigOption[]
 }
 
+/** The model option of `MODEL_OPTIONS`, on `current`. */
+function modelOption(current: string): SessionConfigOption {
+  return {
+    id: 'model',
+    name: 'Model',
+    type: 'select',
+    category: 'model',
+    currentValue: current,
+    options: [
+      { value: 'default', name: 'Default' },
+      { value: 'opus', name: 'Opus' }
+    ]
+  }
+}
+
 /** An effort option of the kind Claude's adapter offers for one of its models. */
 function effortOption(current: string, values: string[]): SessionConfigOption {
   return {
@@ -188,8 +203,8 @@ test('the effort is set after the model, from the efforts that model offers', as
   const fake = connection({
     configOptions: [...MODEL_OPTIONS, effortOption('default', ['default', 'low'])],
     afterChoice: ({ configId, value }) => [
-      { ...MODEL_OPTIONS[0], currentValue: configId === 'model' ? value : 'opus' },
-      effortOption(configId === 'effort' ? value : 'default', ['default', 'low', 'max'])
+      modelOption(configId === 'model' ? String(value) : 'opus'),
+      effortOption(configId === 'effort' ? String(value) : 'default', ['default', 'low', 'max'])
     ]
   })
   const opened = await openAgentSession(fake, claude, resumes, {
@@ -231,7 +246,7 @@ test('a model that offers no choice of effort refuses a chat that names one', as
 test('a saved session is put on the chat’s effort again', async () => {
   const fake = connection({
     resumeOptions: [effortOption('low', ['low', 'high'])],
-    afterChoice: ({ value }) => [effortOption(value, ['low', 'high'])]
+    afterChoice: ({ value }) => [effortOption(String(value), ['low', 'high'])]
   })
   const opened = await openAgentSession(fake, resuming, resumes, {
     ...request,

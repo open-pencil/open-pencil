@@ -48,11 +48,13 @@ export function useProfileModelSelection(
   const supportsThinking = computed(() => supportsThinkingLevel(draft.providerID))
   /**
    * The agent's efforts for the draft's model, with the agent's own pick first; empty when the
-   * model offers none or they are not read yet. A saved effort the model no longer lists stays.
+   * model offers none or they are not read yet. A saved effort the model no longer lists stays,
+   * so it can be cleared. A custom model's efforts are never read, so it keeps the agent's.
    */
   const agentEffortOptions = computed(() => {
+    if (!isACP.value || customModelSelected.value) return []
     const values = agent.efforts.value?.values ?? []
-    if (!isACP.value || values.length === 0) return []
+    if (values.length === 0 && !draft.agentEffort) return []
     const saved = draft.agentEffort && !values.some((value) => value.id === draft.agentEffort)
     return [
       { value: AGENT_DEFAULT_VALUE, label: ai.value.agentDefaultModel },

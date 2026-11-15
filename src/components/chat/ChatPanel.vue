@@ -366,7 +366,10 @@ const status = computed(() => chat.value?.status ?? 'ready')
  * takes in once the current tool calls finish, and Alt+Enter waits until all work is done.
  */
 function sendOrQueue(message: ChatSubmission, afterWork: boolean) {
-  if (status.value === 'streaming' || status.value === 'submitted') {
+  // A send still opening its chat has no status yet; sending now would replace it, so this waits
+  // with the rest and goes after that reply. A send that fails first keeps it, as a failed reply does.
+  const pending = submission.sending.value !== null
+  if (pending || status.value === 'streaming' || status.value === 'submitted') {
     enqueueMessage(message, afterWork ? 'follow-up' : 'steer')
     return
   }

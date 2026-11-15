@@ -162,7 +162,7 @@ describe('AI model profiles and role assignments', () => {
     expect(saved.agentEffort).toBe('ultra')
     expect(createModelProfileDraft(saved.id).agentEffort).toBe('ultra')
     const reloaded = parseAIModelSettings(modelSettingsSnapshot())
-    expect(reloaded.models.find((model) => model.id === saved.id)?.agentEffort).toBe('ultra')
+    expect(reloaded?.models.find((model) => model.id === saved.id)?.agentEffort).toBe('ultra')
 
     const api = createModelProfileDraft()
     Object.assign(api, {

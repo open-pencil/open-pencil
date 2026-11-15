@@ -47,8 +47,15 @@ export const chatAgentEffort = computed<string>({
   }
 })
 
-/** The efforts the open agent session offers, as its transport reports them; null without one. */
-export const agentSessionEfforts = shallowRef<AgentEfforts | null>(null)
+/**
+ * The efforts the open agent session offers, as its transport reports them, with the profile it
+ * started from; null without one. A session of another profile, which may be another agent or
+ * model, offers other efforts.
+ */
+export const agentSessionEfforts = shallowRef<{
+  profileId: AIModelProfileId
+  efforts: AgentEfforts
+} | null>(null)
 
 /**
  * The efforts the composer offers for the Design agent: the open session's, or before it opens,
@@ -59,8 +66,9 @@ export const chatAgentEfforts = computed<AgentEfforts | null>(() => {
   const role = resolveAIModelRole('design')
   const agent = role && acpAgentFor(role.connection.providerID)
   if (!role || !agent) return null
+  const session = agentSessionEfforts.value
   const efforts =
-    agentSessionEfforts.value ??
+    (session?.profileId === role.profile.id ? session.efforts : null) ??
     agentModelEfforts(agent, role.profile.customModelID || role.profile.modelID)
   return efforts && efforts.values.length > 0 ? efforts : null
 })

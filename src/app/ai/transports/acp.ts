@@ -290,7 +290,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       this.starting = null
       this.sentContext = started.resumed
     } else {
-      await this.applyEffort(this.session)
+      await this.applyEffort(this.session, abortSignal)
     }
 
     const carriesContext = !this.sentContext
@@ -407,16 +407,17 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
    * Puts a running session on the effort the chat now names, as after a change in the composer.
    * A session opens on it already; one whose model offers no effort is left as it is.
    */
-  private async applyEffort(session: ACPSession): Promise<void> {
+  private async applyEffort(session: ACPSession, signal?: AbortSignal): Promise<void> {
     const wanted = this.effort()
     const effort = session.effort
     if (!wanted || !effort || effort.current === wanted) return
-    const offered = await session.connection.bounded(
+    const offered = await session.connection.forTurn(
       sessionOptionRequests(session.connection.agent).setConfigOption({
         sessionId: session.sessionId,
         configId: effort.configId,
         value: wanted
-      })
+      }),
+      signal
     )
     this.noteEffort(session, sessionChoice(offered, 'thought_level'))
   }
