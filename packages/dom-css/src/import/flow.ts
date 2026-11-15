@@ -16,6 +16,7 @@ import {
 
 import type { DesignElement, DesignStyleDeclaration } from '../types'
 import { pickStyle } from './css-values'
+import { isTableRow } from './table'
 
 /**
  * How CSS lays an element and its children out, mapped onto auto layout: block flow stacks
@@ -92,7 +93,7 @@ export function elementDisplay(element: DesignElement, style: DesignStyleDeclara
  * a block of its own, so only a plain `inline` element lays its children out in a line.
  */
 export function flowOf(display: string): FlowKind {
-  if (display === 'flex' || display === 'inline-flex') return 'flex'
+  if (display === 'flex' || display === 'inline-flex' || isTableRow(display)) return 'flex'
   return display === 'inline' ? 'inline' : 'block'
 }
 
@@ -105,6 +106,27 @@ function textAlignAxis(style: DesignStyleDeclaration) {
   const align = pickStyle(style, 'text-align')?.trim().toLowerCase()
   if (align === 'center') return 'CENTER'
   return align === 'right' || align === 'end' ? 'MAX' : 'MIN'
+}
+
+const LINE_ALIGN: Partial<Record<SceneNode['textAlignHorizontal'], SceneNode['counterAxisAlign']>> =
+  {
+    CENTER: 'CENTER',
+    RIGHT: 'MAX'
+  }
+
+/**
+ * Aligns a block's lines across it, as `text-align` does, when they are all it holds: a single
+ * line hugs its words, so the block places it where the page did. `text-align` moves lines,
+ * not blocks, so a block with any other child keeps its children at its start.
+ */
+export function alignBlockLines(graph: SceneGraph, node: SceneNode): void {
+  if (node.layoutMode !== 'VERTICAL') return
+  const children = graph.getChildren(node.id)
+  if (children.length === 0 || !children.every((child) => child.type === 'TEXT')) return
+  const [first] = children
+  if (!children.every((child) => child.textAlignHorizontal === first.textAlignHorizontal)) return
+  const align = LINE_ALIGN[first.textAlignHorizontal]
+  if (align) node.counterAxisAlign = align
 }
 
 /** The auto layout an element's own flow gives its children. */

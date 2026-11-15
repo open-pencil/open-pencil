@@ -134,4 +134,15 @@ describe('HTML flow as auto layout', () => {
     expect(sizing(byName('wide'))[0]).toBe('FILL')
     expect([...graph.getAllNodes()].some((node) => node.name === 'hidden')).toBe(false)
   })
+
+  it('aligns a block’s lines by text-align, but not the blocks it holds', async () => {
+    const { byName } = await importHTML(
+      `<div id="lines" style="text-align:center;padding:8px">Docs</div>` +
+        `<div id="blocks" style="text-align:center;padding:8px"><div id="inner" style="width:100px;padding:8px">Box</div></div>`
+    )
+    expect(byName('lines').counterAxisAlign).toBe('CENTER')
+    // `text-align` centers the inner block's line inside it, not the block itself.
+    expect(byName('blocks').counterAxisAlign).toBe('MIN')
+    expect(byName('inner').counterAxisAlign).toBe('CENTER')
+  })
 })
