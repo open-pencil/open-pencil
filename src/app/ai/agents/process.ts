@@ -1,6 +1,5 @@
 import { Command } from '@tauri-apps/plugin-shell'
 
-import { createDeferred } from '@/app/runtime/deferred'
 import { decodeTauriStderr } from '@/app/shell/ui'
 import { spawnAgentChild } from '@/app/tauri/children'
 import { resolvePlatformCommand } from '@/app/tauri/command'
@@ -52,46 +51,39 @@ export async function spawnAgentProcess({
   const resolved = resolvePlatformCommand(program, args)
   const command = Command.create(resolved.command, resolved.args, { encoding: 'raw', env, cwd })
 
-  // What the agent wrote and nobody has read yet, delivered before its end, so a message it
-  // wrote just before it exited still arrives whole.
-  const pending: Uint8Array[] = []
-  let ended: { error: Error | null } | null = null
-  let arrived = createDeferred<undefined>()
-  /** Something arrived for a read waiting on it: output, or the end. */
-  const settle = () => {
-    arrived.resolve(undefined)
-    arrived = createDeferred<undefined>()
-  }
-  const stdout = new ReadableStream<Uint8Array>(
-    {
-      async pull(controller) {
-        // A read is asked for only when the last one was answered, so one wait is enough: the
-        // next chunk or the end resolves it.
-        if (pending.length === 0 && !ended) await arrived.promise
-        const chunk = pending.shift()
-        if (chunk) controller.enqueue(chunk)
-        else if (ended?.error) controller.error(ended.error)
-        else controller.close()
-      },
-      cancel() {
-        ended = { error: null }
-        pending.length = 0
-        settle()
-      }
+  // The process's output, queued by the stream until it is read. It closes when the process
+  // does; an exit with an error fails the stream only after what was queued is read, since
+  // `flush` runs once every chunk has passed through.
+  let source: ReadableStreamDefaultController<Uint8Array> | undefined
+  let open = true
+  let exitError: Error | null = null
+  const output = new ReadableStream<Uint8Array>({
+    start(controller) {
+      source = controller
     },
-    { highWaterMark: 0 }
+    cancel() {
+      open = false
+    }
+  })
+  const stdout = output.pipeThrough(
+    new TransformStream<Uint8Array, Uint8Array>({
+      flush() {
+        if (exitError) throw exitError
+      }
+    })
   )
   command.stdout.on('data', (raw: Uint8Array | number[]) => {
-    if (ended) return
-    pending.push(raw instanceof Uint8Array ? raw : new Uint8Array(raw))
-    settle()
+    if (open) source?.enqueue(raw instanceof Uint8Array ? raw : new Uint8Array(raw))
   })
   command.stderr.on('data', (raw: Uint8Array | number[] | string) => {
     onStderr(decodeTauriStderr(raw))
   })
   command.on('close', () => {
-    ended ??= { error: closeError() }
-    settle()
+    if (open) {
+      open = false
+      exitError = closeError()
+      source?.close()
+    }
     onClose()
   })
 
