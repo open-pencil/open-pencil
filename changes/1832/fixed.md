@@ -1,1 +1,0 @@
-- Selecting a layer inside a nested frame no longer outlines that frame, as in Figma (#1832).

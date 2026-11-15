@@ -1,3 +1,0 @@
-- A Design JSX layer prop of the wrong kind, such as `name={9}` or `opacity="50%"`, is left out as its warning says instead of reaching the layer, so one bad name no longer breaks linting for the whole document (#2071).
-- Plugin API setters such as `name`, `characters`, `visible`, `blendMode`, the auto layout alignments, `constraints`, and `strokeCap` refuse a value of the wrong kind with Figma's message instead of storing it.
-- Swapping an icon whose frame is not square draws the new glyph square at the shorter side and centered, as Design JSX draws it, instead of stretching it to the frame.
