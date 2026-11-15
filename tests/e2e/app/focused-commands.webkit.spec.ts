@@ -54,6 +54,28 @@ test('Select All and Undo from the menu edit a focused text field', async () => 
   await expect(field).toHaveValue('hello world')
 })
 
+test('Undo and Redo from the menu reach an editor that keeps its own history', async () => {
+  // As CodeMirror's history() does: it answers the browser's history input events itself.
+  await editor.page.evaluate(() => {
+    const field = document.createElement('div')
+    field.dataset.testId = 'focused-command-field'
+    field.contentEditable = 'true'
+    field.dataset.history = ''
+    field.addEventListener('beforeinput', (event) => {
+      if (!event.inputType.startsWith('history')) return
+      event.preventDefault()
+      field.dataset.history += `${event.inputType} `
+    })
+    document.body.append(field)
+    field.focus()
+  })
+  const field = editor.page.getByTestId('focused-command-field')
+
+  expect(await runAsNativeMenu('edit.undo')).toEqual([])
+  expect(await runAsNativeMenu('edit.redo')).toEqual([])
+  await expect(field).toHaveAttribute('data-history', 'historyUndo historyRedo ')
+})
+
 test('canvas commands wait while a text field has focus, view commands do not', async () => {
   await focusTextField('Name')
 
