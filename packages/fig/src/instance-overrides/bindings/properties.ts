@@ -1,5 +1,3 @@
-import { cloneRecord } from '#fig/node-change/clone'
-
 import type { GUID } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
@@ -96,7 +94,8 @@ export function bindSourceProperties(
   bindings: readonly PropertyBinding[],
   record?: (claim: BoundPropertyClaim, binding: PropertyBinding) => void
 ): NodeChange {
-  const result = cloneRecord(source)
+  // Bindings replace whole fields, never write into one, so the record's values are shared.
+  const result = { ...source }
   const refs = source.componentPropRefs as
     | (ComponentPropRef & { isDeleted?: boolean })[]
     | undefined

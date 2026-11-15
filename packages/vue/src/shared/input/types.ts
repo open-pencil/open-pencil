@@ -132,6 +132,7 @@ export interface DragMove {
   ignoreAutoLayout?: boolean
   /** Where Control drops layers among an auto layout frame's children. */
   absoluteInsertIndex?: number
+  clickDeselectsId?: string
 }
 
 export interface DragPan {

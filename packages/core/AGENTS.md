@@ -74,7 +74,7 @@ Renderer, layout, editor, Figma API, tools, clipboard, vector conversion, and do
 - Put OpenPencil-only features on `openpencil`, in the same style as `figma`: methods and node-like handles with getters and setters, not parallel helper functions. `figma` stays Figma's (Figma API, Shape follows Figma).
 - Script runners get both globals only through `compileScript` (`packages/core/src/tools/analyze/eval/wrap.ts`); the `eval` tool, `openpencil eval`, and app automation must not build their own `AsyncFunction`.
 - Members take names, not internal ids, and write through the same scene-graph functions the editor's actions use, such as `behaviourFromSpec`; errors name what exists. Tools for the same feature wrap the `openpencil` API rather than reimplementing it (`packages/core/src/tools/create/behaviours.ts`).
-- A new member updates `packages/docs/programmable/cli/scripting.md` and the agent skill in the same change; tests drive it as scripts do, through `compileScript` (`packages/core/tests/openpencil-api/`).
+- A new member updates `packages/docs/developers/cli/scripting.md` and the agent skill in the same change; tests drive it as scripts do, through `compileScript` (`packages/core/tests/openpencil-api/`).
 
 ## Renderer
 

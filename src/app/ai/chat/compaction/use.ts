@@ -13,6 +13,7 @@ import {
   summaryBudget
 } from './limits'
 import { agentCompactionMessage, compactionMessage, type Compaction } from './marker'
+import { summaryWriter } from './model'
 import { summarizeConversation } from './summarize'
 
 interface CompactionOptions {
@@ -68,11 +69,14 @@ export function useChatCompaction(options: CompactionOptions) {
     failed.value = null
     abort = new AbortController()
     try {
-      const limits = await designContextLimits()
-      const summary = await summarizeConversation(covered, {
+      const writer = await summaryWriter({
         model: runtime.model,
+        limits: await designContextLimits()
+      })
+      const summary = await summarizeConversation(covered, {
+        model: writer.model,
         instructions: request.instructions,
-        budget: limits ? summaryBudget(limits) : undefined,
+        budget: writer.limits ? summaryBudget(writer.limits) : undefined,
         abortSignal: abort.signal
       })
       // A conversation switched, replying, or changed meanwhile is no longer the one summarized.

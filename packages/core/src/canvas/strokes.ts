@@ -8,6 +8,7 @@ import {
   equilateralArrowPoints,
   triangleCapPoints
 } from '@open-pencil/scene-graph/arrow-caps'
+import { nodeHasSmoothCorners } from '@open-pencil/scene-graph/corners'
 import { strokeAlignShare } from '@open-pencil/scene-graph/geometry'
 import { drawnImageHash } from '@open-pencil/scene-graph/images'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
@@ -15,13 +16,7 @@ import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 import { setPaintBlendMode } from './blend'
 import { applyGradientFill, applyImageFill, clearFillShader, clearStrokeShader } from './fills'
 import type { SkiaRenderer } from './renderer'
-import {
-  clipNodeShape,
-  drawOutline,
-  makeShapeWithTextDetailsPath,
-  nodeHasSmoothCorners,
-  withNodeOutline
-} from './shapes'
+import { clipNodeShape, drawOutline, makeShapeWithTextDetailsPath, withNodeOutline } from './shapes'
 
 export function getStrokeCapEntity(r: SkiaRenderer, cap: string | undefined): EmbindEnumEntity {
   switch (cap) {
@@ -251,7 +246,6 @@ function fillHead(
 export function applyStrokeShader(
   r: SkiaRenderer,
   stroke: Stroke,
-  strokeIndex: number,
   node: SceneNode,
   graph: SceneGraph
 ): boolean {
@@ -260,22 +254,7 @@ export function applyStrokeShader(
   if (stroke.type.startsWith('GRADIENT') && stroke.gradientStops && stroke.gradientTransform) {
     let built = true
     for (const paint of [r.strokePaint, r.fillPaint]) {
-      built =
-        applyGradientFill(
-          r,
-          stroke,
-          node,
-          graph,
-          paint,
-          // Every stop resolves against this stroke's own binding, not the stop's position.
-          (color) =>
-            r.resolveStrokeColorInfo(
-              { ...stroke, type: 'SOLID', color, opacity: color.a, visible: true },
-              strokeIndex,
-              node,
-              graph
-            ).color
-        ) && built
+      built = applyGradientFill(r, stroke, node, graph, paint) && built
     }
     return built
   }
@@ -309,7 +288,7 @@ export function forVisibleStrokes(
   for (let index = 0; index < node.strokes.length; index++) {
     const stroke = node.strokes[index]
     if (!stroke.visible) continue
-    const draws = applyStrokeShader(r, stroke, index, node, graph)
+    const draws = applyStrokeShader(r, stroke, node, graph)
     setStrokeBlendMode(r, stroke.blendMode)
     try {
       if (draws) draw(stroke, r.resolveStrokeColor(stroke, index, node, graph))

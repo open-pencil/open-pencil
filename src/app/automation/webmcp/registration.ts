@@ -1,6 +1,6 @@
 import type { WebMCP } from 'webmcp-types'
 
-import { parseToolArgs, toolJSONSchema, type ToolDef } from '@open-pencil/core/tools'
+import { parseToolArgs, toolInputFor, toolJSONSchema, type ToolDef } from '@open-pencil/core/tools'
 
 import { getWebMCPTools } from './policy'
 import { type WebMCPMode } from './schema'
@@ -29,7 +29,7 @@ export function registerWebMCPTools(
     try {
       for (const def of getWebMCPTools(mode)) {
         lifetime.signal.throwIfAborted()
-        const schema = def.input
+        const schema = toolInputFor(def, 'webmcp')
         await context.registerTool(
           {
             name: def.name,

@@ -11,14 +11,20 @@ import type {
 } from '@modelcontextprotocol/server'
 import * as v from 'valibot'
 
-import { CODEGEN_PROMPT } from '@open-pencil/core/tools'
+import { CODEGEN_PROMPT, toolInputFor } from '@open-pencil/core/tools'
 
 import type { RPCJSONObject } from '#mcp/json'
 import { MAX_RESULT_BYTES, fail, ok, resultTooLargeMessage } from '#mcp/result'
 import { readFileInput, withFileInput } from '#mcp/tool/input'
 import { createToolDescriptors, getMCPToolDefinitions } from '#mcp/tool/manifest'
 import type { ToolDescriptor, ToolEffect, ToolPolicy } from '#mcp/tool/metadata'
-import { resolveSafePath, writeToolOutput, writesFileOutput } from '#mcp/tool/output'
+import {
+  resolveSafePath,
+  withFileOutputHint,
+  withoutOutputPath,
+  writeToolOutput,
+  writesFileOutput
+} from '#mcp/tool/output'
 import { isToolEnabled } from '#mcp/tool/policy'
 import { toolInputSchema } from '#mcp/tool/schema'
 import { SELECTION_SCOPE_FILE_OUTPUT_ERROR } from '#mcp/tool/scope'
@@ -161,8 +167,10 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
     )
   }
 
+  const canWriteFiles = resolvedRoot !== null
   for (const def of getMCPToolDefinitions()) {
-    const entries = resolvedRoot ? withFileInput(def.name, def.input.entries) : def.input.entries
+    const input = toolInputFor(def, 'mcp')
+    const entries = resolvedRoot ? withFileInput(def.name, input.entries) : input.entries
     register(
       def.name,
       {
@@ -181,7 +189,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
           }
           const appArgs = resolvedRoot
             ? await readFileInput(def.name, toolArgs, resolvedRoot)
-            : toolArgs
+            : withoutOutputPath(def.name, toolArgs)
           const result = await sendRPC({
             command: 'tool',
             args: {
@@ -230,7 +238,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
               ]
             }
           }
-          return ok(r, def.name)
+          return ok(withFileOutputHint(def.name, r, canWriteFiles), def.name)
         } catch (e) {
           return fail(e)
         }

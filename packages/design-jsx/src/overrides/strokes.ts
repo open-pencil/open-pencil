@@ -1,5 +1,6 @@
 import { designJSXProp } from '#design-jsx/definitions'
 import { STROKE_ALIGN, STROKE_CAP, STROKE_JOIN } from '#design-jsx/enums'
+import type { LayerProps } from '#design-jsx/schema'
 
 import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
@@ -78,7 +79,7 @@ function applyStrokeWeights(value: unknown, o: Partial<SceneNode>): void {
 }
 
 /** `strokes` takes structured strokes; `stroke` and its sibling props describe a single one. */
-export function applyStrokeOverrides(props: Record<string, unknown>, o: Partial<SceneNode>): void {
+export function applyStrokeOverrides(props: LayerProps, o: Partial<SceneNode>): void {
   applyStrokeWeights(props.strokeWeights, o)
   // Node-level cap and join, which strokes without their own use.
   const nodeCap = STROKE_CAP.parse(props.strokeCap)
@@ -100,8 +101,7 @@ export function applyStrokeOverrides(props: Record<string, unknown>, o: Partial<
   o.strokes = [
     toStroke({
       color,
-      weight:
-        (props.strokeWidth as number | undefined) ?? (props.borderWidth as number | undefined),
+      weight: props.strokeWidth ?? props.borderWidth,
       align: props.strokeAlign as string | undefined,
       dash: props.strokeDash as number[] | undefined
     })

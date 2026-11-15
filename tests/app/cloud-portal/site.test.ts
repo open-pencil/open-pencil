@@ -65,15 +65,15 @@ describe('Cloud server editor pages', () => {
   })
 
   test('open a community gallery document for everyone, with an account or without', () => {
-    expect(visit('/community/a', null)).toBeNull()
-    expect(visit('/community/a', null, { localEditor: false })).toBeNull()
-    expect(visit('/community/a', account('pending'), { localEditor: false })).toBeNull()
+    expect(visit('/community/a/open', null)).toBeNull()
+    expect(visit('/community/a/open', null, { localEditor: false })).toBeNull()
+    expect(visit('/community/a/open', account('pending'), { localEditor: false })).toBeNull()
   })
 
   test('tell links that carry their secret, which open on their own, from look-alikes', () => {
     const link = (address: string) => isSecretCloudLink(new URL(address, 'https://cloud.example'))
     expect(link('/documents/a')).toBe(false)
-    expect(link('/community/a#secret')).toBe(false)
+    expect(link('/community/a/open#secret')).toBe(false)
     expect(link('/share/b#secret')).toBe(true)
     expect(link('/invitations/c#token')).toBe(true)
     expect(link('/share/b')).toBe(false)

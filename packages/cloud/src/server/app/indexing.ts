@@ -11,7 +11,9 @@ export function shouldPreventIndexing(path: string, policy: 'allow' | 'deny'): b
     path === '/sign-in' ||
     path === '/sign-up' ||
     path === '/join' ||
-    path === CLOUD_DISCOVERY_PATH
+    path === CLOUD_DISCOVERY_PATH ||
+    // A community document in the editor; its page at `/community/:id` is the one to index.
+    /^\/community\/[^/]+\/open\/?$/.test(path)
   )
 }
 

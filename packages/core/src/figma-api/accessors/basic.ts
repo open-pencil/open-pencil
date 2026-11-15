@@ -1,3 +1,5 @@
+import * as v from 'valibot'
+
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { TRANSFORM_FIELDS as NODE_TRANSFORM_FIELDS } from '@open-pencil/scene-graph/fields'
@@ -123,8 +125,8 @@ export function installBasicNodeProxyAccessors(
       get(this: ProxyThis): string {
         return raw(this, internals).name
       },
-      set(this: ProxyThis, value: string) {
-        updateNode(this, internals, { name: value })
+      set(this: ProxyThis, value: unknown) {
+        updateNode(this, internals, { name: parseFigma(v.string(), value, 'set_name', 'name') })
         // A variant's name holds its values, which the set's value lists follow.
         syncVariantName(graphOf(this), raw(this, internals))
       }
