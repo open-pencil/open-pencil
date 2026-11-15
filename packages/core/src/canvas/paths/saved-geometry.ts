@@ -3,15 +3,19 @@ import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { nodeHasRadius } from '@open-pencil/scene-graph/corners'
 import { borderWeights, type SideWeights } from '@open-pencil/scene-graph/geometry'
 
+import { baseShapePath, makeBooleanOperationPath, strokeSourcePath } from '#core/canvas/boolean'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
+import {
+  getStrokeCapEntity,
+  getStrokeJoinEntity,
+  normalizeDashPattern
+} from '#core/canvas/strokes/draw'
+import { makeLineSegmentPath } from '#core/canvas/strokes/line'
+import { dashPath } from '#core/canvas/strokes/outlined-dashes'
+import { sideStrokeRRects } from '#core/canvas/strokes/sides'
 import { isOpenVectorNetwork } from '#core/vector/connectivity'
 
-import { baseShapePath, makeBooleanOperationPath, strokeSourcePath } from './boolean'
-import { appendVerb, forEachVerb } from './paths/verbs'
-import type { SkiaRenderer } from './renderer/skia'
-import { getStrokeCapEntity, getStrokeJoinEntity, normalizeDashPattern } from './strokes/draw'
-import { makeLineSegmentPath } from './strokes/line'
-import { dashPath } from './strokes/outlined-dashes'
-import { sideStrokeRRects } from './strokes/sides'
+import { appendVerb, forEachVerb } from './verbs'
 
 // The geometry Figma's plugin API reports for a layer (`fillGeometry`, `strokeGeometry`), in the
 // layer's own box. Measured in Figma desktop 126.
