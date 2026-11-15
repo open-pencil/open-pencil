@@ -358,7 +358,6 @@ function drawUnitedRegionStrokes(
   const inside =
     stroke.align === 'INSIDE' ? unitedOutline(r, `${node.id}|inside-stroke`, closed) : null
   const sided = clipToStrokeSide(r, canvas, closed, stroke.align, inside)
-  inside?.delete()
   const key = strokeOutlineKey(node, stroke, sided ? 'united-sided' : 'united')
   let outlines = r.nodePaths.strokeOutline.get(key)
   if (!outlines) {

@@ -192,7 +192,6 @@ function drawUnitedOutline(
     return
   }
   canvas.drawPath(united, r.auxFill)
-  united.delete()
 }
 
 /** Whether the stroke reaches past the shape on any side, so it grows the shadow. */

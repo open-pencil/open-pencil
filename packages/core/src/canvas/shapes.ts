@@ -173,20 +173,8 @@ export function unitedOutlinePath(
     return null
   }
   const areas = outline.paths.slice(0, outline.areas)
-  const united = unitedOutline(r, `${node.id}|outline|${spread}`, areas)
   const loose = outline.paths.slice(outline.areas)
-  if (!united || loose.length === 0) {
-    return united
-  }
-  const winding = united.makeAsWinding() ?? united.copy()
-  united.delete()
-  const path = new r.ck.PathBuilder()
-  path.addPath(winding)
-  winding.delete()
-  for (const source of loose) {
-    path.addPath(source)
-  }
-  return path.detachAndDelete()
+  return unitedOutline(r, `${node.id}|outline|${spread}`, areas, loose)
 }
 
 /** `outline` as one path the caller owns. */
@@ -206,7 +194,7 @@ function outlineToPath(
   outline: NodeOutline,
   spread: number
 ): Path {
-  return unitedOutlinePath(r, node, outline, spread) ?? joinedOutlinePath(r, outline)
+  return unitedOutlinePath(r, node, outline, spread)?.copy() ?? joinedOutlinePath(r, outline)
 }
 
 /** The layer's outline grown by `spread`, as one path the caller owns. */
