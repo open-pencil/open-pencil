@@ -123,7 +123,6 @@
   "height": "الارتفاع",
   "opacity": "الشفافية",
   "blendMode": "وضع الدمج",
-  "removeVariableMode": "إزالة وضع {collection}",
   "variableModeAuto": "تلقائي ({mode})",
   "variableModeAutoMixed": "تلقائي",
   "variableModeHeading": "الوضع",

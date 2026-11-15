@@ -652,7 +652,6 @@
   "behaviourStateField": "Estado {state}",
   "searchComponentProperties": "Buscar propiedades",
   "noComponentProperties": "No se encontraron propiedades",
-  "removeVariableMode": "Quitar el modo de {collection}",
   "variableModeAuto": "Automático ({mode})",
   "variableModeAutoMixed": "Automático",
   "variableModeHeading": "Modo",

@@ -645,7 +645,6 @@
   "behaviourStateField": "{state} 状態",
   "searchComponentProperties": "プロパティを検索",
   "noComponentProperties": "プロパティが見つかりません",
-  "removeVariableMode": "{collection} のモードを解除",
   "variableModeAuto": "自動（{mode}）",
   "variableModeAutoMixed": "自動",
   "variableModeHeading": "モード",

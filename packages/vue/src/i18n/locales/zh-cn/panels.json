@@ -645,7 +645,6 @@
   "behaviourStateField": "{state}状态",
   "searchComponentProperties": "搜索属性",
   "noComponentProperties": "未找到属性",
-  "removeVariableMode": "移除 {collection} 的模式",
   "variableModeAuto": "自动（{mode}）",
   "variableModeAutoMixed": "自动",
   "variableModeHeading": "模式",

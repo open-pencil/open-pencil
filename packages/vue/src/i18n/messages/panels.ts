@@ -133,7 +133,6 @@ export const panelMessageDefaults = {
   scaleAnchor: 'Scale anchor',
   opacity: 'Opacity',
   blendMode: 'Blend mode',
-  removeVariableMode: params('Remove {collection} mode'),
   variableModeAuto: params('Auto ({mode})'),
   variableModeAutoMixed: 'Auto',
   variableModeHeading: 'Mode',

@@ -3,7 +3,7 @@ import { propertySection } from '#tests/helpers/properties'
 
 const editor = useEditorSetup()
 
-test('a frame’s theme row shows the inherited mode, sets another for what is in it, and clears it', async () => {
+test('a frame’s theme row shows the inherited mode, sets another for what is in it, and Auto clears it', async () => {
   const ids = await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
@@ -33,15 +33,14 @@ test('a frame’s theme row shows the inherited mode, sets another for what is i
   await expect(row).toContainText('Theme')
   const select = row.getByRole('combobox', { name: 'Theme' })
   await expect(select).toHaveText('Auto (Light)')
-  const remove = row.getByRole('button', { name: 'Remove Theme mode' })
-  await expect(remove).toBeHidden()
 
   await select.click()
   await editor.page.getByRole('option', { name: 'Dark', exact: true }).click()
   await expect(select).toHaveText('Dark')
   expect(await modeOf(ids.card)).toBe('Dark')
 
-  await remove.click()
+  await select.click()
+  await editor.page.getByRole('option', { name: 'Auto (Light)', exact: true }).click()
   await expect(select).toHaveText('Auto (Light)')
   expect(await modeOf(ids.frame)).toBe('Light')
   editor.canvas.assertNoErrors()

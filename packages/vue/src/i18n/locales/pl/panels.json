@@ -659,7 +659,6 @@
   "behaviourStateField": "Stan {state}",
   "searchComponentProperties": "Szukaj właściwości",
   "noComponentProperties": "Nie znaleziono właściwości",
-  "removeVariableMode": "Usuń tryb kolekcji {collection}",
   "variableModeAuto": "Automatycznie ({mode})",
   "variableModeAutoMixed": "Automatycznie",
   "variableModeHeading": "Tryb",

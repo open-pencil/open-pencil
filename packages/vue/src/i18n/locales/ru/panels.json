@@ -659,7 +659,6 @@
   "behaviourStateField": "Состояние «{state}»",
   "searchComponentProperties": "Поиск свойств",
   "noComponentProperties": "Свойства не найдены",
-  "removeVariableMode": "Убрать режим коллекции «{collection}»",
   "variableModeAuto": "Авто ({mode})",
   "variableModeAutoMixed": "Авто",
   "variableModeHeading": "Режим",

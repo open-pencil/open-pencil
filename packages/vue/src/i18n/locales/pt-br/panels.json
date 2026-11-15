@@ -123,7 +123,6 @@
   "height": "Altura",
   "opacity": "Opacidade",
   "blendMode": "Modo de mesclagem",
-  "removeVariableMode": "Remover modo de {collection}",
   "variableModeAuto": "Automático ({mode})",
   "variableModeAutoMixed": "Automático",
   "variableModeHeading": "Modo",
