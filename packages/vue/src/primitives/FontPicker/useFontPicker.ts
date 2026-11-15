@@ -88,7 +88,11 @@ export function useFontPicker(options: UseFontPickerOptions) {
   }
 
   watch(open, async (isOpen) => {
-    if (!isOpen) return
+    // A list asked for before closing may predate a font installed since: reopening asks anew.
+    if (!isOpen) {
+      cancelLoad()
+      return
+    }
     searchTerm.value = ''
     accessState.value = options.localFontAccess?.state() ?? accessState.value
     if (accessState.value === 'prompt') {

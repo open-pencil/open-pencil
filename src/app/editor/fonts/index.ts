@@ -76,14 +76,17 @@ let tauriFontsPromise: Promise<HostFontFamily[]> | null = null
 async function getTauriFonts(): Promise<HostFontFamily[]> {
   if (tauriFontsCache) return tauriFontsCache
   if (!tauriFontsPromise) {
-    tauriFontsPromise = invoke<HostFontFamily[]>('list_system_fonts')
+    const request: Promise<HostFontFamily[]> = invoke<HostFontFamily[]>('list_system_fonts')
       .then((fonts) => {
+        // A list asked for before the fonts changed again may answer after the newer one.
+        if (tauriFontsPromise !== request) return tauriFontsCache ?? fonts
         tauriFontsCache = fonts
         // The weight list and family switches read each family's faces from these.
         fontManager.setHostFontCatalog(fonts)
         return fonts
       })
       .catch(() => [])
+    tauriFontsPromise = request
   }
   return tauriFontsPromise
 }

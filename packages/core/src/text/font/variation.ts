@@ -235,13 +235,27 @@ interface StatAxisValue {
 const STAT_HEADER_SIZE = 18
 const ELIDABLE_AXIS_VALUE = 0x0002
 
+/** The bytes each axis value format takes; format 4 adds 6 per axis it names. */
+const STAT_VALUE_SIZES = new Map([
+  [1, 12],
+  [2, 20],
+  [3, 16],
+  [4, 8]
+])
+const STAT_AXIS_RECORD_SIZE = 8
+
 function statAxisValue(
   view: DataView,
   offset: number,
+  end: number,
   tags: readonly string[],
   name: TableRange
 ): StatAxisValue | null {
+  if (offset + 2 > end) return null
   const format = view.getUint16(offset)
+  const size = STAT_VALUE_SIZES.get(format)
+  if (size === undefined || offset + size > end) return null
+  if (format === 4 && offset + size + view.getUint16(offset + 2) * 6 > end) return null
   const range = (axisIndex: number, min: number, max = min) => {
     const tag = tags.at(axisIndex)
     return tag === undefined ? null : { tag, min, max }
@@ -297,6 +311,7 @@ export function statNamer(data: ArrayBuffer): ((variations: FontVariation[]) => 
   const valueCount = view.getUint16(stat.offset + 12)
   const valuesOffset = stat.offset + view.getUint32(stat.offset + 14)
   const end = stat.offset + stat.length
+  if (axisSize < STAT_AXIS_RECORD_SIZE) return null
   if (axesOffset + axisCount * axisSize > end || valuesOffset + valueCount * 2 > end) return null
 
   const designAxes = Array.from({ length: axisCount }, (_, index) => {
@@ -308,7 +323,7 @@ export function statNamer(data: ArrayBuffer): ((variations: FontVariation[]) => 
   const tags = designAxes.map((axis) => axis.tag)
   const values = Array.from({ length: valueCount }, (_, index) => {
     const offset = valuesOffset + view.getUint16(valuesOffset + index * 2)
-    return offset + 8 <= end ? statAxisValue(view, offset, tags, name) : null
+    return statAxisValue(view, offset, end, tags, name)
   }).filter((value) => value !== null)
   const fallback =
     (minor >= 1 && stat.length >= 20 && fontName(view, name, view.getUint16(stat.offset + 18))) ||

@@ -252,6 +252,31 @@ describe('statNamer', () => {
     ).toBe('Text Italic')
   })
 
+  test('reads a font that ends inside a STAT axis value without throwing', () => {
+    const whole = font('InterVariable-Named.ttf')
+    const view = new DataView(whole)
+    let cut = whole.byteLength
+    for (let record = 12; record < 12 + view.getUint16(4) * 16; record += 16) {
+      if (new TextDecoder('latin1').decode(new Uint8Array(whole, record, 4)) !== 'STAT') continue
+      const stat = view.getUint32(record + 8)
+      const values = stat + view.getUint32(stat + 14)
+      const offsets = Array.from({ length: view.getUint16(stat + 12) }, (_, index) =>
+        view.getUint16(values + index * 2)
+      )
+      // The file, and the table, end 10 bytes into the last axis value, past its header.
+      cut = values + offsets.reduce((last, offset) => Math.max(last, offset), 0) + 10
+      view.setUint32(record + 12, cut - stat)
+    }
+    const statName = statNamer(whole.slice(0, cut))
+    expect(statName).not.toBeNull()
+    expect(
+      statName?.([
+        { axis: 'opsz', value: 14 },
+        { axis: 'wght', value: 700 }
+      ])
+    ).toBe('Text Bold')
+  })
+
   test('is null for a font without a STAT table', () => {
     expect(statNamer(font('NotoNaskhArabic-Regular.ttf'))).toBeNull()
   })

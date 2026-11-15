@@ -102,7 +102,10 @@ export class LocalFonts {
     const listed = (fonts: readonly FontInfo[] | null) =>
       (fonts ?? []).map((font) => `${font.family}|${font.style}`).join('\n')
     const before = listed(this.fonts)
-    return listed(await this.requestAccess()) !== before
+    const changed = listed(await this.requestAccess()) !== before
+    // A font removed or replaced takes the names it taught with it.
+    if (changed) this.ownNames.forget()
+    return changed
   }
 
   /** A face's bytes, once access is granted. */
@@ -143,7 +146,7 @@ export async function readLocalFace(
 ): Promise<ArrayBuffer | null> {
   const read = async (font: FontData) => {
     const data = await fontBytes(font)
-    ownNames.learn(font, data, { family, style, listed: true })
+    await ownNames.learnFamily(fonts, font, data, { family, style, listed: true })
     return data
   }
   const listed = listedLocalFont(fonts, family, style)
@@ -227,22 +230,69 @@ export class OwnFaceNames {
   private readonly listeners = new Set<() => void>()
 
   /**
-   * Records what the font of a face read for a request names the face and its family's faces,
-   * where it names a family other than the one it is listed under. The request takes the
-   * listed face's names when the face was found by its listed names (`listed`), else only a
-   * named instance of the request's own name: a face found by its weight axis is not it.
+   * Records what the font of a face read for a request names it and its family's faces, then
+   * reads one listed face of each other file the family lists, so its faces are all known: an
+   * italic file is listed apart from its roman one, as Sitka's two are.
    */
-  learn(font: FontData, data: ArrayBuffer, request: LocalFaceRequest): void {
+  async learnFamily(
+    fonts: FontData[],
+    font: FontData,
+    data: ArrayBuffer,
+    request: LocalFaceRequest
+  ): Promise<void> {
+    const family = this.learn(fonts, font, data, request)
+    if (family === null) return
+    for (const sibling of candidatesFor(fonts, family, '')) {
+      if (this.names.has(sibling.postscriptName) || this.ownFace(sibling.family, sibling.style)) {
+        continue
+      }
+      const bytes = await fontBytes(sibling)
+      this.remember(sibling, bytes)
+      const listed = { family: sibling.family, style: sibling.style, listed: true }
+      this.learn(fonts, sibling, bytes, listed)
+    }
+  }
+
+  /**
+   * Records the names the font of a face read for a request gives the face, where they differ
+   * from the listed ones, and, where it names a family other than the one it is listed under,
+   * that family's faces in the file and the names of the listed faces the file holds. The
+   * request takes the listed face's names when the face was found by them (`listed`), else
+   * only a named instance of the request's own name: a face found by its weight axis is not it.
+   * Returns the family the font names when it is listed under another.
+   */
+  private learn(
+    fonts: FontData[],
+    font: FontData,
+    data: ArrayBuffer,
+    request: LocalFaceRequest
+  ): string | null {
     const own = fontFaceName(data)
-    if (!own || styleSpelling(own.family) === styleSpelling(font.family)) return
+    if (!own) return null
     const face = { family: own.family, style: listedInstance(data, font.style)?.name ?? own.style }
-    this.ownFaces.set(faceKey(font.family, font.style), face)
+    this.translate(font.family, font.style, face)
     const { family, style } = request
-    // A face asked for by the font's own family already has its names.
-    if (style !== undefined && styleSpelling(family) !== styleSpelling(own.family)) {
+    if (style !== undefined) {
       const named = listedInstance(data, style)?.name
-      if (named) this.ownFaces.set(faceKey(family, style), { family: own.family, style: named })
-      else if (request.listed) this.ownFaces.set(faceKey(family, style), face)
+      if (named) this.translate(family, style, { family: own.family, style: named })
+      else if (request.listed) this.translate(family, style, face)
+    }
+    if (styleSpelling(own.family) === styleSpelling(font.family)) return null
+
+    // The file's other instances the platform lists, by the full name it gives each: the
+    // font's family and the instance's STAT name ("Segoe UI Variable Display Bold"). A family
+    // that only begins with the font's, as Inter Tight begins with Inter, has other names.
+    const statName = statNamer(data)
+    const fullNames = new Map(
+      namedInstances(data).flatMap((instance) => {
+        const names = [instance.name, statName?.(instance.variations)]
+        return compact(names).map((name) => [styleSpelling(`${own.family} ${name}`), instance])
+      })
+    )
+    for (const sibling of candidatesFor(fonts, own.family, '')) {
+      const instance = fullNames.get(styleSpelling(sibling.fullName))
+      if (!instance) continue
+      this.translate(sibling.family, sibling.style, { family: own.family, style: instance.name })
     }
 
     const known = this.ownFamilies.get(styleSpelling(own.family)) ?? {
@@ -257,10 +307,28 @@ export class OwnFaceNames {
             face.italic === candidate.italic
         )
     )
-    if (added.length === 0) return
-    for (const face of added) known.faces.push(face)
-    this.ownFamilies.set(styleSpelling(own.family), known)
-    for (const listener of this.listeners) listener()
+    if (added.length > 0) {
+      for (const face of added) known.faces.push(face)
+      this.ownFamilies.set(styleSpelling(own.family), known)
+      for (const listener of this.listeners) listener()
+    }
+    return own.family
+  }
+
+  /** Records a listed family and style's own names, where they differ. */
+  private translate(family: string, style: string, own: OwnFace): void {
+    if (faceKey(family, style) !== faceKey(own.family, own.style)) {
+      this.ownFaces.set(faceKey(family, style), own)
+    }
+  }
+
+  /** Forgets every name learned, as after the installed fonts changed. */
+  forget(): void {
+    this.names.clear()
+    this.ownFaces.clear()
+    const had = this.ownFamilies.size > 0
+    this.ownFamilies.clear()
+    if (had) for (const listener of this.listeners) listener()
   }
 
   ownFace(family: string, style: string): OwnFace | undefined {
@@ -288,7 +356,7 @@ export class OwnFaceNames {
       const data = await fontBytes(font)
       const names = known ?? this.remember(font, data)
       if (names && namesFace(names, font, family, style)) {
-        this.learn(font, data, { family, style, listed: false })
+        await this.learnFamily(fonts, font, data, { family, style, listed: false })
         return data
       }
     }

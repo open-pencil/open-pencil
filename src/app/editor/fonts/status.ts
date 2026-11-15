@@ -12,6 +12,8 @@ export function useDocumentFontStatus() {
   const editor = useEditorStore()
   const revision = ref(0)
   const retrying = ref(false)
+  /** A font installed while a retry runs, which may have missed it, retries once more after. */
+  let retryAgain = false
 
   // The page's text faces, kept by layer: a keystroke updates one layer rather than walking
   // a page of tens of thousands of layers again.
@@ -49,7 +51,10 @@ export function useDocumentFontStatus() {
   })
 
   async function retry() {
-    if (retrying.value) return
+    if (retrying.value) {
+      retryAgain = true
+      return
+    }
     retrying.value = true
     const preparation = editor.preparationController.begin({ kind: 'font-retry' })
     let succeeded = false
@@ -89,6 +94,10 @@ export function useDocumentFontStatus() {
     } finally {
       if (succeeded) preparation.complete()
       retrying.value = false
+    }
+    if (retryAgain) {
+      retryAgain = false
+      if (status.value.issues.length > 0) await retry()
     }
   }
 

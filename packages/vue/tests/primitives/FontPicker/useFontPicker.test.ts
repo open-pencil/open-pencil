@@ -40,3 +40,25 @@ test('reopening lists the families again, with a font installed meanwhile', asyn
   await settle()
   expect(picker.filtered.value.map((option) => option.family)).toEqual(['Inter', 'Lora', 'Caveat'])
 })
+
+test('reopening while an earlier list is still coming asks for the list again', async () => {
+  const requests: Array<(families: string[]) => void> = []
+  const picker = useFontPicker({
+    modelValue: ref('Inter'),
+    listFamilies: () =>
+      new Promise<string[]>((resolve) => {
+        requests.push(resolve)
+      })
+  })
+  picker.open.value = true
+  await nextTick()
+  picker.open.value = false
+  await nextTick()
+  picker.open.value = true
+  await nextTick()
+  expect(requests).toHaveLength(2)
+  requests[1]?.(['Inter', 'Caveat'])
+  requests[0]?.(['Inter'])
+  for (let tick = 0; tick < 5; tick++) await Promise.resolve()
+  expect(picker.filtered.value.map((option) => option.family)).toEqual(['Inter', 'Caveat'])
+})

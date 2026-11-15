@@ -1,4 +1,7 @@
 import { describe, expect, test } from 'bun:test'
+import { readFileSync } from 'node:fs'
+
+import { corePackagePath } from '#core-tests/helpers/paths'
 
 import { readFixtureArrayBuffer } from '@open-pencil/test-support/paths'
 
@@ -9,6 +12,10 @@ import { fontFaceName } from '#core/text/font/variation'
 const INTER_VARIABLE = readFixtureArrayBuffer('fonts/InterVariable-Named.ttf')
 /** A static face whose font names another family. */
 const NASKH = readFixtureArrayBuffer('fonts/NotoNaskhArabic-Regular.ttf')
+/** The italic file of the bundled Inter, whose family is also "Inter Variable". */
+const INTER_ITALIC = Uint8Array.from(
+  readFileSync(corePackagePath('assets', 'InterVariable-Italic.ttf'))
+).buffer
 
 function localFace(
   family: string,
@@ -81,11 +88,13 @@ describe('readLocalFace', () => {
     ]
     const names = new OwnFaceNames()
     await readLocalFace(fonts, 'Inter Variable', 'Display Heavy', names)
-    expect(reads).toEqual(['Inter Variable Heavy Display'])
+    // The family's other listed faces are read once each, to learn every file it has.
+    expect(reads).toEqual([
+      'Inter Variable Heavy Display',
+      'Inter Variable Small Regular',
+      'Inter Variable Noto Regular'
+    ])
 
-    reads.length = 0
-    expect(await readLocalFace(fonts, 'Inter Variable', 'Compressed', names)).toBeNull()
-    expect(reads).toEqual(['Inter Variable Small Regular', 'Inter Variable Noto Regular'])
     reads.length = 0
     expect(await readLocalFace(fonts, 'Inter Variable', 'Compressed', names)).toBeNull()
     expect(reads).toEqual([])
@@ -146,6 +155,100 @@ describe('the names a local face’s own font gives it', () => {
       names
     )
     expect(names.ownFace('Inter Variable', 'Regular')).toBeUndefined()
+    expect(names.families()).toEqual([])
+  })
+})
+
+describe('a family listed as several', () => {
+  test('reads one listed face of each of its files, so its italic faces are known too', async () => {
+    const reads: string[] = []
+    const fonts = [
+      localFace('Inter Variable Text', 'Text', INTER_VARIABLE, reads, 'Inter Variable Text'),
+      localFace(
+        'Inter Variable Text',
+        'Text Bold',
+        INTER_VARIABLE,
+        reads,
+        'Inter Variable Text Bold'
+      ),
+      localFace(
+        'Inter Variable Text',
+        'Text Italic',
+        INTER_ITALIC,
+        reads,
+        'Inter Variable Text Italic'
+      ),
+      localFace(
+        'Inter Variable Text',
+        'Text Bold Italic',
+        INTER_ITALIC,
+        reads,
+        'Inter Variable Text Bold Italic'
+      )
+    ]
+    const names = new OwnFaceNames()
+    await readLocalFace(fonts, 'Inter Variable Text', 'Text Bold', names)
+    expect(reads).toEqual(['Inter Variable Text Bold', 'Inter Variable Text Italic'])
+    expect(names.ownFace('Inter Variable Text', 'Text Bold Italic')).toEqual({
+      family: 'Inter Variable',
+      style: 'Bold Italic'
+    })
+    expect(
+      names.familyFaces('Inter Variable')?.filter((face) => face.italic).length
+    ).toBeGreaterThan(0)
+  })
+
+  test('a family whose name only begins with the font’s keeps its own font’s names', async () => {
+    const fonts = [
+      localFace('Inter Variable Text', 'Text', INTER_VARIABLE, [], 'Inter Variable Text'),
+      localFace('Inter Variable Tight', 'Regular', NASKH, [], 'Inter Variable Tight')
+    ]
+    const names = new OwnFaceNames()
+    await readLocalFace(fonts, 'Inter Variable Text', 'Text', names)
+    expect(names.ownFace('Inter Variable Tight', 'Regular')).toEqual({
+      family: 'Noto Naskh Arabic',
+      style: 'Regular'
+    })
+  })
+
+  test('forgets what it learned once the installed fonts change', async () => {
+    const names = new OwnFaceNames()
+    let changes = 0
+    names.onChange(() => changes++)
+    await readLocalFace(
+      [
+        localFace(
+          'Inter Variable Text',
+          'Text Bold',
+          INTER_VARIABLE,
+          [],
+          'Inter Variable Text Bold'
+        )
+      ],
+      'Inter Variable Text',
+      'Text Bold',
+      names
+    )
+    names.forget()
+    expect([names.families(), names.ownFace('Inter Variable Text', 'Text Bold'), changes]).toEqual([
+      [],
+      undefined,
+      2
+    ])
+  })
+
+  test('a face listed under its font’s own family keeps the font’s style name', async () => {
+    const names = new OwnFaceNames()
+    await readLocalFace(
+      [localFace('Inter Variable', 'Text Bold', INTER_VARIABLE, [], 'Inter Variable Text Bold')],
+      'Inter Variable',
+      'Text Bold',
+      names
+    )
+    expect(names.ownFace('Inter Variable', 'Text Bold')).toEqual({
+      family: 'Inter Variable',
+      style: 'Bold'
+    })
     expect(names.families()).toEqual([])
   })
 })

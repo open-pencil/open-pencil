@@ -21,6 +21,8 @@ struct Catalog {
 pub struct Scan {
     pub families: Vec<(String, Vec<ListedFace>)>,
     pub elsewhere: Vec<ListedElsewhere>,
+    /// The collection the scan read, whose positions `elsewhere` holds.
+    generation: u64,
 }
 
 /// A face Windows lists under a family other than the one its font names, as it lists a variable
@@ -224,7 +226,10 @@ fn scan() -> Arc<Scan> {
             (name, faces)
         })
         .collect();
-    let scan = Arc::new(scan_of(faces));
+    let scan = Arc::new(Scan {
+        generation,
+        ..scan_of(faces)
+    });
     with_catalog(|catalog| {
         if catalog.generation != generation {
             return scan;
@@ -241,6 +246,7 @@ pub fn scan_of(mut listed: Vec<(String, Vec<(FaceTraits, FaceNames)>)>) -> Scan 
     Scan {
         families: families_by_own_name(listed),
         elsewhere,
+        generation: 0,
     }
 }
 
@@ -291,12 +297,18 @@ pub fn load_face(family: &str, style: &str) -> Option<Face> {
             .unwrap_or_default();
         named_face(catalog, &listed, style)
     })
-    .or_else(|| {
+    .or_else(|| loop {
         let scan = scan();
-        with_catalog(|catalog| {
-            let elsewhere = fonts_listed_elsewhere(catalog, &scan.elsewhere, family);
-            named_face(catalog, &elsewhere, style)
-        })
+        // A rescan meanwhile lists other fonts at the positions the scan read: scan it again.
+        let found = with_catalog(|catalog| {
+            (catalog.generation == scan.generation).then(|| {
+                let elsewhere = fonts_listed_elsewhere(catalog, &scan.elsewhere, family);
+                named_face(catalog, &elsewhere, style)
+            })
+        });
+        if let Some(found) = found {
+            break found;
+        }
     })
 }
 

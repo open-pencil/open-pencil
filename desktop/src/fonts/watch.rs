@@ -5,7 +5,7 @@
 //! app broadcasts after it adds or removes fonts. Signals that come close together are read as
 //! one, and the fonts are listed once they stop.
 
-use notify::{RecursiveMode, Watcher};
+use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::PathBuf;
 use std::sync::mpsc::{channel, RecvTimeoutError, Sender};
 use std::sync::{Mutex, OnceLock};
@@ -48,6 +48,7 @@ pub fn start(app: &AppHandle, window: &WebviewWindow) {
                     Err(RecvTimeoutError::Disconnected) => return,
                 }
             }
+            watch_new_folders();
             #[cfg(windows)]
             win32::check_for_updates();
             catalog::rescan();
@@ -66,20 +67,79 @@ pub fn start(app: &AppHandle, window: &WebviewWindow) {
     let _ = window;
 }
 
+/// The folder watcher, and the folders it watches: each font folder there is, and for one that
+/// is not, the nearest folder above it, so its creation signals too.
+struct Folders {
+    watcher: RecommendedWatcher,
+    watched: Vec<PathBuf>,
+}
+
+static FOLDERS: OnceLock<Mutex<Folders>> = OnceLock::new();
+
 fn watch_folders() {
-    let watcher = notify::recommended_watcher(|event: notify::Result<notify::Event>| {
-        if event.is_ok_and(|event| !event.kind.is_access()) {
+    let folders = font_folders();
+    let watcher = notify::recommended_watcher(move |event: notify::Result<notify::Event>| {
+        // A folder above a font folder also changes for files that are not fonts: only a path
+        // in a font folder, or one on the way to it (`mkdir -p` makes `~/.local` first), counts.
+        let fonts_changed = event.is_ok_and(|event| {
+            !event.kind.is_access()
+                && event.paths.iter().any(|path| {
+                    folders
+                        .iter()
+                        .any(|folder| path.starts_with(folder) || folder.starts_with(path))
+                })
+        });
+        if fonts_changed {
             signal();
         }
     });
-    let Ok(mut watcher) = watcher else {
+    let Ok(watcher) = watcher else {
         return;
     };
-    for folder in font_folders().into_iter().filter(|folder| folder.is_dir()) {
-        let _ = watcher.watch(&folder, RecursiveMode::Recursive);
+    let _ = FOLDERS.set(Mutex::new(Folders {
+        watcher,
+        watched: Vec::new(),
+    }));
+    watch_new_folders();
+}
+
+/// Watches the font folders made since the last look, and stops watching folders removed.
+fn watch_new_folders() {
+    let Some(folders) = FOLDERS.get() else {
+        return;
+    };
+    let mut folders = folders
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    let Folders { watcher, watched } = &mut *folders;
+    watched.retain(|path| {
+        let present = path.is_dir();
+        if !present {
+            let _ = watcher.unwatch(path);
+        }
+        present
+    });
+    for folder in font_folders() {
+        let (path, mode) = if folder.is_dir() {
+            (folder, RecursiveMode::Recursive)
+        } else {
+            let Some(above) = folder.ancestors().find(|path| path.is_dir()) else {
+                continue;
+            };
+            (above.to_path_buf(), RecursiveMode::NonRecursive)
+        };
+        if watched.contains(&path) {
+            continue;
+        }
+        // A folder above a missing one stops being watched once the font folder is made.
+        for stale in watched.iter().filter(|stale| path.starts_with(stale)) {
+            let _ = watcher.unwatch(stale);
+        }
+        watched.retain(|stale| !path.starts_with(stale));
+        if watcher.watch(&path, mode).is_ok() {
+            watched.push(path);
+        }
     }
-    // Watches for as long as the app runs.
-    std::mem::forget(watcher);
 }
 
 /// The folders fonts are installed into.
