@@ -67,7 +67,7 @@ import type {
 } from '@open-pencil/canvaskit'
 
 import * as Effects from '#core/canvas/effects'
-import * as Fills from '#core/canvas/fills'
+import * as Fills from '#core/canvas/fills/paint'
 import { IssueMarkerStage } from '#core/canvas/issues/stage'
 import type { PlacedIssueMarker } from '#core/canvas/issues/types'
 import type { PlacedStatusLabel } from '#core/canvas/labels/status'

@@ -13,13 +13,13 @@ import { strokeAlignShare } from '@open-pencil/scene-graph/geometry'
 import { drawnImageHash } from '@open-pencil/scene-graph/images'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
-import { setPaintBlendMode } from '#core/canvas/blend'
+import { setPaintBlendMode } from '#core/canvas/blend/modes'
 import {
   applyGradientFill,
   applyImageFill,
   clearFillShader,
   clearStrokeShader
-} from '#core/canvas/fills'
+} from '#core/canvas/fills/paint'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import {
   clipNodeShape,

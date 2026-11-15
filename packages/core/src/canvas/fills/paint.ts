@@ -6,13 +6,18 @@ import Matrix from '@open-pencil/scene-graph/matrix'
 import { patternTileLayout, type PatternTileLayout } from '@open-pencil/scene-graph/paints'
 import { fillGeometryMatchesRegions, hasRegionFills } from '@open-pencil/scene-graph/vector-network'
 
-import { setPaintBlendMode } from './blend'
+import { setPaintBlendMode } from '#core/canvas/blend/modes'
+import { previewEdge } from '#core/canvas/images/previews'
+import {
+  drawOffOutputGrid,
+  landsOnOutputPixels,
+  makeImageShader
+} from '#core/canvas/images/sampling'
+import { resolveGradientStopColor } from '#core/canvas/renderer/colors'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
+import { drawOutline, withNodeOutline } from '#core/canvas/shapes'
+
 import { makeDiamondGradient } from './gradients/diamond'
-import { previewEdge } from './images/previews'
-import { drawOffOutputGrid, landsOnOutputPixels, makeImageShader } from './images/sampling'
-import { resolveGradientStopColor } from './renderer/colors'
-import type { SkiaRenderer } from './renderer/skia'
-import { drawOutline, withNodeOutline } from './shapes'
 
 interface PaintFillsOptions {
   readonly bindToNodeFills?: boolean

@@ -10,7 +10,7 @@ import Matrix from '@open-pencil/scene-graph/matrix'
 import { clipsChildren, isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import { regionFills } from '@open-pencil/scene-graph/vector-network'
 
-import { needsIsolatedBlendLayer, setPaintBlendMode } from '#core/canvas/blend'
+import { needsIsolatedBlendLayer, setPaintBlendMode } from '#core/canvas/blend/modes'
 import { makeBooleanOperationPath } from '#core/canvas/boolean'
 import { renderNoiseEffects } from '#core/canvas/effects'
 import { renderGlassLight, renderGlassRefraction } from '#core/canvas/glass/render'

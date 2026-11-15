@@ -2,11 +2,11 @@ import type { BlendMode as SkBlendMode, CanvasKit, Paint } from '@open-pencil/ca
 import type { BlendMode } from '@open-pencil/scene-graph'
 
 import { compiledBlender } from '#core/canvas/renderer/shaders'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { defineBlender, type NoUniforms, type SkslProgram } from '#core/canvas/sksl'
 
-import plusDarkerSource from './blenders/plus-darker.sksl?raw'
-import plusLighterSource from './blenders/plus-lighter.sksl?raw'
-import type { SkiaRenderer } from './renderer/skia'
+import plusDarkerSource from './plus-darker.sksl?raw'
+import plusLighterSource from './plus-lighter.sksl?raw'
 
 type LinearBlendMode = 'LINEAR_BURN' | 'LINEAR_DODGE'
 

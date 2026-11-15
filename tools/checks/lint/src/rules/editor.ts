@@ -14,7 +14,7 @@ import type { TSESTree } from '@typescript-eslint/utils'
 const SCENE_DRAWING_FILES = [
   '/packages/core/src/canvas/scene.ts',
   '/packages/core/src/canvas/strokes/draw.ts',
-  '/packages/core/src/canvas/fills.ts',
+  '/packages/core/src/canvas/fills/paint.ts',
   '/packages/core/src/canvas/boolean.ts'
 ]
 
