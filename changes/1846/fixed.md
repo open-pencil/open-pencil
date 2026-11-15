@@ -1,0 +1,1 @@
+- Instance texts that keep their component's text style import with the style's font, size, spacing, case, and decoration, as Figma draws them, even when the instance saved other values beside the style (#1846).

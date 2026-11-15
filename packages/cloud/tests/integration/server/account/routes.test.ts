@@ -88,6 +88,41 @@ describe('account profile', () => {
     }
   })
 
+  test('records the language of any signed-in account, one awaiting approval too', async () => {
+    const fixture = await createAccountAuthenticationFixture()
+    try {
+      const account = await createVerifiedCredentialAccount(fixture, {
+        email: 'waiting@example.com',
+        name: 'Waiting Person',
+        password: PASSWORD,
+        approved: false
+      })
+      const setLocale = (locale: string, cookie?: string) =>
+        fixture.app.fetch(
+          accountAuthenticationRequest('/api/account/locale', { locale }, cookie, {
+            method: 'PUT'
+          })
+        )
+      const stored = async () =>
+        (
+          await fixture.database
+            .selectFrom('user')
+            .select('locale')
+            .where('id', '=', account.userId)
+            .executeTakeFirstOrThrow()
+        ).locale
+      // The nearest language Cloud writes in is kept, or none for one it doesn't have.
+      expect((await setLocale('de-AT', account.sessionCookie)).status).toBe(200)
+      expect(await stored()).toBe('de')
+      expect((await setLocale('tlh', account.sessionCookie)).status).toBe(200)
+      expect(await stored()).toBeNull()
+      expect((await setLocale('not a tag', account.sessionCookie)).status).toBe(400)
+      expect((await setLocale('de')).status).toBe(401)
+    } finally {
+      await fixture.close()
+    }
+  })
+
   test('changes the email once the new address confirms it, keeping the approval', async () => {
     const notices: Array<{ email: string; newEmail: string }> = []
     const verifications: Array<{ email: string; url: string; purpose?: string }> = []

@@ -1,0 +1,1 @@
+- An MCP call that names no document works on the document its session last worked on, instead of whichever tab is in front, so agents stay in their own documents while you switch tabs.

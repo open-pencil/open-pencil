@@ -1,6 +1,5 @@
 import type { Canvas, CanvasKit } from '@open-pencil/canvaskit'
 import type { SceneNode, SceneGraph } from '@open-pencil/scene-graph'
-import { computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
 
 import { getGuideScreenSegment } from '#core/canvas/guides/geometry'
 import type { GuideOverlayState, GuideSelection } from '#core/canvas/guides/types'
@@ -18,6 +17,7 @@ import {
   RULER_TARGET_PIXEL_SPACING,
   RULER_MAJOR_TOLERANCE
 } from '#core/constants'
+import { selectionBounds, type RotationPreview } from '#core/geometry'
 
 import { cachedGlyphWidth } from './labels/paragraph-cache'
 import type { SkiaRenderer } from './renderer'
@@ -29,12 +29,14 @@ interface SelectionScreenBounds {
   sy2: number
 }
 
+/** What the rulers mark: the selection's bounds on the canvas, a turned layer's included, as in Figma. */
 function getSelectionScreenBounds(
   r: SkiaRenderer,
   graph: SceneGraph,
-  selNodes: SceneNode[]
+  selNodes: SceneNode[],
+  preview?: RotationPreview | null
 ): SelectionScreenBounds {
-  const b = computeAbsoluteBounds(selNodes, (id) => graph.getAbsolutePosition(id))
+  const b = selectionBounds(r.sceneGeometry(graph, preview), selNodes)
   return {
     sx1: b.x * r.zoom + r.panX,
     sx2: (b.x + b.width) * r.zoom + r.panX,
@@ -131,7 +133,8 @@ export function drawRulers(
   canvas: Canvas,
   graph: SceneGraph,
   selectedIds: Set<string>,
-  guides?: GuideOverlayState
+  guides?: GuideOverlayState,
+  preview?: RotationPreview | null
 ): void {
   const R = RULER_SIZE
   const vw = r.viewportWidth
@@ -149,7 +152,8 @@ export function drawRulers(
   const selNodes = [...selectedIds]
     .map((id) => graph.getNode(id))
     .filter((n): n is SceneNode => n !== undefined)
-  const selBounds = selNodes.length > 0 ? getSelectionScreenBounds(r, graph, selNodes) : null
+  const selBounds =
+    selNodes.length > 0 ? getSelectionScreenBounds(r, graph, selNodes, preview) : null
 
   drawHorizontalRulerTicks(r, canvas, font, step, selBounds)
   drawVerticalRulerTicks(r, canvas, font, step, selBounds)

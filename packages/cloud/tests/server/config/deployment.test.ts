@@ -186,6 +186,43 @@ describe('Cloud TOML deployment configuration', () => {
     ).toThrow()
   })
 
+  test('advertises the operator’s name, logo, and help link, only web addresses', () => {
+    expect(
+      cloudDiscoveryFromConfig(parseCloudDeploymentTOML(minimalSource, environment)).branding
+    ).toBeUndefined()
+    const branded = `${minimalSource}
+[deployment.branding]
+name = "Acme Design"
+logo_url = "https://acme.example/logo.svg"
+help_url = "https://acme.example/help"
+`
+    expect(
+      cloudDiscoveryFromConfig(parseCloudDeploymentTOML(branded, environment)).branding
+    ).toEqual({
+      name: 'Acme Design',
+      logoURL: 'https://acme.example/logo.svg',
+      helpURL: 'https://acme.example/help'
+    })
+    expect(() =>
+      parseCloudDeploymentTOML(
+        branded.replace('https://acme.example/help', 'data:text/html,hi'),
+        environment
+      )
+    ).toThrow()
+  })
+
+  test('advertises the oldest editor it works with, only when configured', () => {
+    const open = cloudDiscoveryFromConfig(parseCloudDeploymentTOML(minimalSource, environment))
+    expect(open.minimumEditorVersion).toBeUndefined()
+
+    const source = minimalSource.replace(
+      'trusted_origins = ["https://app.example.com"]',
+      'trusted_origins = ["https://app.example.com"]\nminimum_editor_version = "0.17.0"'
+    )
+    const gated = cloudDiscoveryFromConfig(parseCloudDeploymentTOML(source, environment))
+    expect(gated.minimumEditorVersion).toBe('0.17.0')
+  })
+
   test('reads the operator’s legal links and advertises them in discovery', () => {
     expect(parseCloudDeploymentTOML(minimalSource, environment).legal).toBeUndefined()
     const source = `${minimalSource}
@@ -211,6 +248,24 @@ minimum_age = 16
     expect(() =>
       parseCloudDeploymentTOML(source.replace('terms_version = "2026-11-15"\n', ''), environment)
     ).toThrow('terms_version')
+  })
+
+  test('names a community workspace only when one is configured, and advertises it', () => {
+    const plain = parseCloudDeploymentTOML(minimalSource, environment)
+    expect(plain.community).toBeUndefined()
+    expect(cloudDiscoveryFromConfig(plain).community).toBeUndefined()
+    const workspace = '0f6b1c1e-6a8e-4b8e-9a4f-3c2d1e0f9a8b'
+    const source = `${minimalSource}
+[community]
+workspace = "${workspace}"
+`
+    const config = parseCloudDeploymentTOML(source, environment)
+    expect(config.community).toEqual({ workspaceId: workspace })
+    // Editors read it to keep the gallery out of where they save on their own.
+    expect(cloudDiscoveryFromConfig(config).community).toEqual({ workspaceId: workspace })
+    expect(() =>
+      parseCloudDeploymentTOML(source.replace(workspace, 'community'), environment)
+    ).toThrow()
   })
 
   test('keeps deleted files under a prefix only when one is configured', () => {

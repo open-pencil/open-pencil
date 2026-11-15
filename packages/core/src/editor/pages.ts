@@ -117,6 +117,8 @@ export function createPageActions(ctx: EditorContext, drawing?: PageDrawing) {
     signal?: AbortSignal
   ): Promise<boolean | null> {
     throwIfAborted(signal)
+    // A page the reader has loaded, or one made here, has nothing to load.
+    if (!isReaderPagePending(ctx.graph, pageId)) return false
     const worker = populationWorker()
     const workerGeneration = populationWorkerGeneration
     const workerResult = worker ? await worker.populate(pageId, signal) : null

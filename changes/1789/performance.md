@@ -1,0 +1,1 @@
+- Opening a large .fig file needs less memory, since the file is no longer copied for the reader worker (#1789).

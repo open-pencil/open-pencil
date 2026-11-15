@@ -1,9 +1,12 @@
+import * as v from 'valibot'
+
 import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { newStrokeGeometry } from '@open-pencil/scene-graph/node-defaults'
 import { independentCornerChanges } from '@open-pencil/scene-graph/variables'
 import { regionFillsDiffer } from '@open-pencil/scene-graph/vector-network'
 
 import {
+  fieldAccessor,
   raw,
   strokeOwner,
   updateNode,
@@ -11,13 +14,20 @@ import {
   type ProxyThis
 } from '#core/figma-api/accessors/utils'
 import {
+  BLEND_MODES,
   fillsGainingGlass,
   parseFigmaEffects,
   toFigmaEffect,
   type FigmaEffect
 } from '#core/figma-api/effects'
 import { graphOf } from '#core/figma-api/graph'
-import { parseFigmaPaints, toFigmaPaint, type FigmaPaint } from '#core/figma-api/paints'
+import {
+  parseFigmaPaints,
+  toFigmaPaint,
+  withVideoPosters,
+  type FigmaPaint
+} from '#core/figma-api/paints'
+import { finiteNumber } from '#core/figma-api/schema'
 import { getTextStyle } from '#core/figma-api/text/style'
 import {
   effectBindings,
@@ -60,7 +70,7 @@ function setFills(
   method: string
 ): void {
   const node = raw(target, internals)
-  const fills = parseFigmaPaints(value, method)
+  const fills = withVideoPosters(parseFigmaPaints(value, method), graphOf(target), node.fills)
   updateNode(
     target,
     internals,
@@ -78,8 +88,13 @@ function setStrokes(
 ): void {
   const owner = strokeOwner(target, internals)
   const geometry = newStrokeGeometry(raw(owner, internals))
-  const { dashPattern } = raw(owner, internals)
-  const strokes = parseFigmaPaints(value, method, 'strokes').map((paint): Stroke => ({
+  const { dashPattern, strokes: previous } = raw(owner, internals)
+  const parsed = withVideoPosters(
+    parseFigmaPaints(value, method, 'strokes'),
+    graphOf(target),
+    previous
+  )
+  const strokes = parsed.map((paint): Stroke => ({
     ...paint,
     weight: geometry.weight,
     align: geometry.align,
@@ -157,42 +172,14 @@ export function installVisualNodeProxyAccessors(
       get(this: ProxyThis): number {
         return raw(this, internals).opacity
       },
-      set(this: ProxyThis, value: number) {
-        updateNode(this, internals, { opacity: value })
+      set(this: ProxyThis, value: unknown) {
+        updateNode(this, internals, { opacity: finiteNumber(value, 'opacity') })
       }
     },
-    visible: {
-      get(this: ProxyThis): boolean {
-        return raw(this, internals).visible
-      },
-      set(this: ProxyThis, value: boolean) {
-        updateNode(this, internals, { visible: value })
-      }
-    },
-    locked: {
-      get(this: ProxyThis): boolean {
-        return raw(this, internals).locked
-      },
-      set(this: ProxyThis, value: boolean) {
-        updateNode(this, internals, { locked: value })
-      }
-    },
-    blendMode: {
-      get(this: ProxyThis): string {
-        return raw(this, internals).blendMode
-      },
-      set(this: ProxyThis, value: string) {
-        updateNode(this, internals, { blendMode: value as SceneNode['blendMode'] })
-      }
-    },
-    clipsContent: {
-      get(this: ProxyThis): boolean {
-        return raw(this, internals).clipsContent
-      },
-      set(this: ProxyThis, value: boolean) {
-        updateNode(this, internals, { clipsContent: value })
-      }
-    },
+    visible: fieldAccessor(internals, 'visible', v.boolean()),
+    locked: fieldAccessor(internals, 'locked', v.boolean()),
+    blendMode: fieldAccessor(internals, 'blendMode', v.picklist(BLEND_MODES)),
+    clipsContent: fieldAccessor(internals, 'clipsContent', v.boolean()),
     cornerRadius: {
       get(this: ProxyThis): number | symbol {
         const node = raw(this, internals)
@@ -206,12 +193,13 @@ export function installVisualNodeProxyAccessors(
       },
       set(this: ProxyThis, value: number | symbol) {
         if (value === mixed) return
+        const radius = finiteNumber(value, 'cornerRadius')
         updateNode(this, internals, {
-          cornerRadius: value as number,
-          topLeftRadius: value as number,
-          topRightRadius: value as number,
-          bottomRightRadius: value as number,
-          bottomLeftRadius: value as number,
+          cornerRadius: radius,
+          topLeftRadius: radius,
+          topRightRadius: radius,
+          bottomRightRadius: radius,
+          bottomLeftRadius: radius,
           independentCorners: false
         })
       }
@@ -224,8 +212,8 @@ export function installVisualNodeProxyAccessors(
       get(this: ProxyThis): number {
         return raw(this, internals).cornerSmoothing
       },
-      set(this: ProxyThis, value: number) {
-        updateNode(this, internals, { cornerSmoothing: value })
+      set(this: ProxyThis, value: unknown) {
+        updateNode(this, internals, { cornerSmoothing: finiteNumber(value, 'cornerSmoothing') })
       }
     }
   })
@@ -239,10 +227,11 @@ function cornerAccessor(
     get(this: ProxyThis): number {
       return raw(this, internals)[field]
     },
-    set(this: ProxyThis, value: number) {
+    set(this: ProxyThis, value: unknown) {
+      const radius = finiteNumber(value, field)
       updateNode(this, internals, {
         ...independentCornerChanges(raw(this, internals)),
-        [field]: value
+        [field]: radius
       })
     }
   }

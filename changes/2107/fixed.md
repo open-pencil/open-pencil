@@ -1,0 +1,4 @@
+- SVG export places an image fill as the canvas draws it: a crop shows the part its transform holds, a tile repeats at its scale, and a turned image stays turned (#2107).
+- SVG export draws an ellipse or arc from the geometry Figma saved for it, as the canvas does (#2107).
+- A vector region whose loop does not connect no longer draws a line across the gap, and clicks follow an open path whose segments are stored out of order (#2107).
+- SVG export no longer paints a stroke twice where Figma saved its geometry, so translucent and dashed borders match the canvas (#2107).

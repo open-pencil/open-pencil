@@ -112,7 +112,9 @@ async function start(project: string): Promise<void> {
       editorURL,
       // Browsers upload straight to object storage, and Safari blocks plain HTTP from HTTPS pages.
       objectStorageURL,
-      smtpPort
+      smtpPort,
+      // A workspace of this local server to show as its community gallery.
+      communityWorkspace: process.env.OPENPENCIL_CLOUD_DEV_COMMUNITY_WORKSPACE || undefined
     }),
     { mode: 0o600 }
   )

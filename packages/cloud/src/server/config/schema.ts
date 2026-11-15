@@ -46,6 +46,7 @@ const rawCloudServerConfigSchema = v.object({
   deployment: v.picklist(['official', 'self-hosted']),
   publicURL: httpURLSchema,
   listingMinimumEditorVersion: v.optional(cloudEditorVersionSchema),
+  minimumEditorVersion: v.optional(cloudEditorVersionSchema),
   relayURL: v.optional(websocketURLSchema),
   technicalLimits: v.optional(
     v.object({
@@ -184,6 +185,19 @@ const rawCloudServerConfigSchema = v.object({
       requireAcceptance: v.boolean(),
       abuseEmail: v.optional(v.pipe(v.string(), v.email())),
       minimumAge: v.optional(v.pipe(v.number(), v.integer(), v.minValue(13), v.maxValue(21)))
+    })
+  ),
+  /**
+   * The workspace whose documents anyone may open read-only, without signing in or a link: the
+   * deployment's community gallery. Without it the server has none.
+   */
+  community: v.optional(v.object({ workspaceId: v.pipe(v.string(), v.uuid()) })),
+  /** How a self-hosted server names itself on its public pages. */
+  branding: v.optional(
+    v.object({
+      name: v.optional(v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(80))),
+      logoURL: v.optional(httpURLSchema),
+      helpURL: v.optional(httpURLSchema)
     })
   ),
   /** Where server errors are reported; without it the server reports nothing. */

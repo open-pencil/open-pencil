@@ -4,6 +4,7 @@ import type { UIMessage } from 'ai'
 import { reactive, toRaw } from 'vue'
 
 import { wasStopped } from '@/app/ai/chat/metadata'
+import { SUBAGENT_PART, subagentTranscript } from '@/app/ai/chat/subagents'
 import { settleMessage } from '@/app/ai/reply/settle'
 
 function reply(parts: UIMessage['parts'], metadata?: unknown): UIMessage {
@@ -89,4 +90,38 @@ test("a reply settled from the chat's reactive state can still be saved", () => 
   const settled = settleMessage(message, { stopped: true, changed: () => false })
   // Conversations are saved with `structuredClone`, which cannot copy Vue's proxies.
   expect(() => structuredClone(toRaw(settled))).not.toThrow()
+})
+
+test('a subagent at work when the reply ended stops with it, and so do its calls', () => {
+  const working = {
+    session: 'left',
+    title: 'Left card',
+    state: 'running',
+    parts: [call('inner', 'input-available')]
+  }
+  const done = { session: 'right', state: 'idle', parts: [] }
+  const unreported = { session: 'quiet', parts: [] }
+  const [first, second, third] = settleMessage(
+    reply([
+      { type: SUBAGENT_PART, id: 'left', data: working },
+      { type: SUBAGENT_PART, id: 'right', data: done },
+      { type: SUBAGENT_PART, id: 'quiet', data: unreported }
+    ]),
+    { stopped: true }
+  ).parts
+  const left = first ? subagentTranscript(first) : null
+  expect(left?.state).toBe('unknown')
+  expect(left?.parts[0]).toMatchObject({ toolCallId: 'inner', state: 'output-error' })
+  expect(second ? subagentTranscript(second)?.state : null).toBe('idle')
+  expect(third ? subagentTranscript(third)?.state : null).toBe('unknown')
+})
+
+test('calls a subagent left unfinished settle, also once it no longer reads as at work', () => {
+  const ended = { session: 'ended', state: 'unknown', parts: [call('late', 'input-available')] }
+  const [part] = settleMessage(reply([{ type: SUBAGENT_PART, id: 'ended', data: ended }]), {
+    stopped: false
+  }).parts
+  const settled = part ? subagentTranscript(part) : null
+  expect(settled?.state).toBe('unknown')
+  expect(settled?.parts[0]).toMatchObject({ toolCallId: 'late', state: 'output-error' })
 })

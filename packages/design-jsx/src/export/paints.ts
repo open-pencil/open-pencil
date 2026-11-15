@@ -281,7 +281,12 @@ function effectShorthand(effects: Effect[]): JSXProp[] | null {
   return props
 }
 
+function hasJSXHelper(effect: Effect): boolean {
+  return Object.hasOwn(EFFECT_HELPERS, effect.type)
+}
+
 export function collectEffectProps(node: SceneNode, props: JSXProp[]): void {
-  if (node.effects.length === 0) return
-  appendAll(props, effectShorthand(node.effects) ?? [['effects', node.effects.map(effectValue)]])
+  const effects = node.effects.filter(hasJSXHelper)
+  if (effects.length === 0) return
+  appendAll(props, effectShorthand(effects) ?? [['effects', effects.map(effectValue)]])
 }

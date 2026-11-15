@@ -1,5 +1,6 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { isGeneratedFrame } from '@open-pencil/scene-graph/generated'
+import { counterAxisSpacingOf } from '@open-pencil/scene-graph/layout'
 
 // Space between takes the place of the gap in Figma's auto layout. A generated frame keeps it
 // as the least space between its sublayers, as a sticky note keeps its author clear of a long body.
@@ -11,12 +12,10 @@ export function primaryAxisGap(node: SceneNode): number {
   return Math.max(0, primaryAxisSpacing(node))
 }
 
-// The space between wrapped lines. A `.fig` saves it as NaN while it follows the item spacing,
-// as Figma's `counterAxisSpacing: null` does. Wrapped lines never overlap: Figma lays a negative
-// spacing between them out as none.
+// The space between wrapped lines. Wrapped lines never overlap: Figma lays a negative spacing
+// between them out as none.
 export function counterAxisGap(node: SceneNode): number {
-  const spacing = Number.isNaN(node.counterAxisSpacing) ? node.itemSpacing : node.counterAxisSpacing
-  return Math.max(0, spacing)
+  return Math.max(0, counterAxisSpacingOf(node))
 }
 
 // CSS lays a negative gap out as none, so siblings overlap through negative trailing margins.

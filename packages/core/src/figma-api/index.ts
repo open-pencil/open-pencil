@@ -2,13 +2,11 @@ import type { Image, PageNode, UtilAPI } from '@figma/plugin-typings/plugin-api-
 import { fromUint8Array, isValid, toUint8Array } from 'js-base64'
 
 import type { SceneGraph, SceneNode as CoreSceneNode } from '@open-pencil/scene-graph'
-import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import type { GroupFitOptions } from '@open-pencil/scene-graph/group-bounds'
-import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas'
 import { groupFitOptions } from '#core/canvas/boolean'
-import { IS_BROWSER, type InterfaceTheme } from '#core/constants'
+import type { InterfaceTheme } from '#core/constants'
 import {
   invalidateBooleanAncestors,
   rendererInvalidationForChanges
@@ -39,6 +37,7 @@ import { FigmaStructureMethods, nodeIdOf, sceneNodeOf } from './structure'
 import type { ExportImageOptions } from './types'
 import { figmaUtil } from './util'
 import { FigmaVariablesAPI } from './variables'
+import { detachedViewport, Viewport, type FigmaViewport, type FigmaViewportHost } from './viewport'
 import { cancelScriptWaits, waitOutsideScript } from './waits'
 
 const noop = () => undefined
@@ -74,6 +73,12 @@ export interface FigmaAPIOptions {
    * so an API made for one call holds nothing once the call ends. `setRenderer` replaces it.
    */
   renderer?: () => SkiaRenderer | null
+  /**
+   * The view of a host that shows the document, which `figma.viewport` reads and moves. Without
+   * one nothing shows the document, so the API keeps a center and zoom of its own and fitting
+   * layers only centres them: there is no screen to size a zoom to (`detachedViewport`).
+   */
+  viewport?: FigmaViewportHost
 }
 
 export { FigmaNodeProxy } from './proxy'
@@ -84,6 +89,7 @@ export { flushPendingComponentSync } from './pending-sync'
 export type { FigmaEffect } from './effects'
 export type { ExportImageOptions } from './types'
 export { MAX_IMAGE_FETCH_BYTES, type ImageFetch } from './images'
+export type { FigmaViewport, FigmaViewportHost } from './viewport'
 export {
   FigmaVariable,
   FigmaVariableCollection,
@@ -140,10 +146,16 @@ export class FigmaAPI extends FigmaStructureMethods implements NodeProxyHost {
   /** How `createImageAsync` fetches HTTP(S) URLs; a host passes one that gets past CORS. */
   readonly #fetch: images.ImageFetch
   readonly #prepareFontList: (() => Promise<void>) | undefined
+  readonly #viewport: Viewport
 
   constructor(graph: SceneGraph, options: FigmaAPIOptions = {}) {
     super()
     this.#graph = graph
+    this.#viewport = new Viewport(
+      options.viewport ?? detachedViewport(),
+      () => this.#currentPageId,
+      (node) => this.wrapNode(nodeIdOf(node)).absoluteBoundingBox
+    )
     bindGraph(this, graph)
     this.#fetch = options.fetch ?? ((input, init) => fetch(input, init))
     if (options.signal) cancelScriptWaits(this, options.signal)
@@ -288,33 +300,8 @@ export class FigmaAPI extends FigmaStructureMethods implements NodeProxyHost {
 
   // --- Viewport ---
 
-  #viewport = { x: 0, y: 0, zoom: 1 }
-
-  get viewport(): {
-    center: Vector
-    zoom: number
-    scrollAndZoomIntoView: (nodes: readonly { absoluteBoundingBox: Rect }[]) => void
-  } {
-    return {
-      center: { x: this.#viewport.x, y: this.#viewport.y },
-      zoom: this.#viewport.zoom,
-      scrollAndZoomIntoView: (nodes) => {
-        const b = computeBounds(nodes.map((n) => n.absoluteBoundingBox))
-        if (b.width === 0 && b.height === 0 && nodes.length === 0) return
-
-        const padding = 80
-        const contentW = b.width + padding * 2
-        const contentH = b.height + padding * 2
-        const viewW = IS_BROWSER ? window.innerWidth : 1280
-        const viewH = IS_BROWSER ? window.innerHeight : 720
-        const zoom = Math.min(viewW / contentW, viewH / contentH, 1)
-        this.#viewport = { x: b.x + b.width / 2, y: b.y + b.height / 2, zoom }
-      }
-    }
-  }
-
-  set viewport(v: { center: Vector; zoom: number }) {
-    this.#viewport = { x: v.center.x, y: v.center.y, zoom: v.zoom }
+  get viewport(): FigmaViewport {
+    return this.#viewport
   }
 
   createImage(data: Uint8Array): Image {

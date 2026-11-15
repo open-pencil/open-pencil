@@ -6,15 +6,14 @@ import {
   type AgentAuthStatus
 } from '@/app/ai/agents/acp/auth/status'
 
-test('reads the login from an auth status update and nothing else', () => {
+test('reads the login an auth status update carries, and none it cannot describe', () => {
   const status: AgentAuthStatus = {
     kind: 'account',
     label: 'Claude Max',
     account: { email: 'a@example.com' }
   }
-  expect(parseAuthStatusUpdate('_auth/status_update', { authStatus: status })).toEqual(status)
-  expect(parseAuthStatusUpdate('_other/update', { authStatus: status })).toBeNull()
-  expect(parseAuthStatusUpdate('_auth/status_update', { authStatus: { kind: 'robot' } })).toBeNull()
+  expect(parseAuthStatusUpdate({ authStatus: status })).toEqual(status)
+  expect(parseAuthStatusUpdate({ authStatus: { kind: 'robot' } })).toBeNull()
 })
 
 test('treats every known identity but none as signed in', () => {

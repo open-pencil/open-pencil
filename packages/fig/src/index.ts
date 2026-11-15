@@ -10,6 +10,7 @@ export {
   type FigSessionResume,
   createFigDocumentSession
 } from './document/session'
+export type { SavedVariant } from './document/component/set-variants'
 export { figArchiveMetaSchema, type FigArchiveMetaJSON } from './schema'
 export {
   figArchiveKind,

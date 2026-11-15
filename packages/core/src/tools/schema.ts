@@ -11,9 +11,17 @@ import {
   // eslint-disable-next-line @open-pencil/structure/no-mixed-case-acronym-identifiers -- Upstream export spelling.
   type toStandardJsonSchema as toStandardJSONSchema
 } from '@valibot/to-json-schema'
+import { omit } from 'es-toolkit/object'
 import * as v from 'valibot'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
+import {
+  MAX_FONT_SIZE,
+  MAX_LAYOUT_ANGLE,
+  MAX_LAYOUT_FACTOR,
+  MAX_LAYOUT_LENGTH,
+  MAX_LAYOUT_SPACING
+} from '@open-pencil/scene-graph/layout'
 
 import type { FigmaAPI, FigmaNodeProxy } from '#core/figma-api'
 import type { FigmaFontNameInput } from '#core/figma-api/fonts/names'
@@ -45,6 +53,7 @@ interface ToolMetadata {
   execution: ToolExecution
   /** Interface inclusion defaults to true; execution support and user permissions remain separate. */
   exposure: ToolExposure
+  inputExposure: Readonly<Partial<Record<string, ToolExposure>>>
   capabilities: readonly ToolCapability[]
   availability: 'default' | 'eval'
 }
@@ -62,12 +71,16 @@ export interface ToolDef extends ToolMetadata {
   execute: (figma: FigmaAPI, args: Record<string, unknown>) => unknown
 }
 
-type ToolDefinitionMetadata = Omit<ToolMetadata, 'exposure' | 'capabilities' | 'availability'> &
+type ToolDefinitionMetadata = Omit<
+  ToolMetadata,
+  'exposure' | 'inputExposure' | 'capabilities' | 'availability'
+> &
   Partial<Pick<ToolMetadata, 'exposure' | 'capabilities' | 'availability'>>
 
 export function defineTool<P extends v.ObjectEntries, R>(
   def: ToolDefinitionMetadata & {
     input: v.StrictObjectSchema<P, undefined>
+    inputExposure?: Partial<Record<keyof P & string, ToolExposure>>
     execution: ToolExecution & (R extends PromiseLike<unknown> ? { kind: 'async' } : unknown)
     /** The fonts a call's text edits need loaded first; text edits refuse unloaded fonts. */
     fonts?: (
@@ -81,6 +94,7 @@ export function defineTool<P extends v.ObjectEntries, R>(
   return {
     ...def,
     exposure: def.exposure ?? {},
+    inputExposure: def.inputExposure ?? {},
     capabilities: def.capabilities ?? [
       toolChangesDocument(def) ? 'document:write' : 'document:read'
     ],
@@ -121,6 +135,16 @@ export function toolChangesDocument(def: Pick<ToolDef, 'execution'>): boolean {
 
 export function isToolExposed(def: Pick<ToolDef, 'exposure'>, target: ToolInterface): boolean {
   return def.exposure[target] !== false
+}
+
+export function toolInputFor(
+  def: Pick<ToolDef, 'input' | 'inputExposure'>,
+  target: ToolInterface
+): v.StrictObjectSchema<v.ObjectEntries, undefined> {
+  const hidden = Object.keys(def.inputExposure).filter(
+    (name) => def.inputExposure[name]?.[target] === false
+  )
+  return hidden.length === 0 ? def.input : v.strictObject(omit(def.input.entries, hidden))
 }
 
 export function isAtomicTool(def: ToolDef): boolean {
@@ -189,9 +213,58 @@ export function nodeTraversalInput(depthDescription: string) {
     depth: v.optional(toolNumber(v.pipe(v.number(), v.description(depthDescription))))
   })
 }
+
+/**
+ * A numeric argument bounded to `min`..`max`, with the range stated in its description so an
+ * agent reads the same bound the schema enforces.
+ */
+function boundedNumber(description: string, min: number, max: number) {
+  return toolNumber(
+    v.pipe(
+      v.number(),
+      v.minValue(min),
+      v.maxValue(max),
+      v.description(`${description} (${min} to ${max})`)
+    )
+  )
+}
+
+/**
+ * A position in layout pixels, which may lie outside its parent. Values beyond the bounds are
+ * refused rather than stored: layout, export, and rendering cannot use a coordinate that large.
+ */
+export function layoutPosition(description: string) {
+  return boundedNumber(description, -MAX_LAYOUT_LENGTH, MAX_LAYOUT_LENGTH)
+}
+
+/** A size or radius in layout pixels, at least `min` and at most `MAX_LAYOUT_LENGTH`. */
+export function layoutLength(description: string, min = 0) {
+  return boundedNumber(description, min, MAX_LAYOUT_LENGTH)
+}
+
+/** A gap or padding, which layout adds up directly. */
+export function layoutSpacing(description: string) {
+  return boundedNumber(description, 0, MAX_LAYOUT_SPACING)
+}
+
+/** A unitless ratio, such as a flex grow share, which layout multiplies sizes by. */
+export function layoutFactor(description: string) {
+  return boundedNumber(description, 0, MAX_LAYOUT_FACTOR)
+}
+
+/** A rotation in degrees, bounded so a typed value cannot overflow layout's arithmetic. */
+export function layoutAngle(description: string) {
+  return boundedNumber(description, -MAX_LAYOUT_ANGLE, MAX_LAYOUT_ANGLE)
+}
+
+/** A font size in pixels, which text layout shapes and measures at. */
+export function layoutFontSize(description: string) {
+  return boundedNumber(description, 1, MAX_FONT_SIZE)
+}
+
 export const positionInputs = {
-  x: toolNumber(v.pipe(v.number(), v.description('X position in the parent, or on the page'))),
-  y: toolNumber(v.pipe(v.number(), v.description('Y position in the parent, or on the page')))
+  x: layoutPosition('X position in the parent, or on the page'),
+  y: layoutPosition('Y position in the parent, or on the page')
 }
 
 /** Reuse a native number schema for both numeric and numeric-string agent inputs. */

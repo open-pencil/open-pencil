@@ -1,5 +1,7 @@
 import type {
+  Fill,
   HandleMirroring,
+  SceneGraph,
   VectorNetwork as SceneVectorNetwork,
   VectorRegion as SceneVectorRegion,
   VectorSegment,
@@ -10,6 +12,7 @@ import { parsePluginVectorPath } from '@open-pencil/scene-graph/parse-path'
 import {
   mergeVectorNetworks,
   normalizeVectorNetwork,
+  regionFills,
   transformVectorNetwork,
   validateVectorNetwork,
   vectorNetworkPaths
@@ -23,7 +26,12 @@ import {
   type ProxyThis
 } from '#core/figma-api/accessors/utils'
 import { graphOf } from '#core/figma-api/graph'
-import { parseFigmaPaints, toFigmaPaint, type FigmaPaint } from '#core/figma-api/paints'
+import {
+  parseFigmaPaints,
+  toFigmaPaint,
+  withVideoPosters,
+  type FigmaPaint
+} from '#core/figma-api/paints'
 import { geometryBlobToSVGPath } from '#core/io/formats/svg/paths'
 import { computeAccurateBounds } from '#core/vector/curve-math'
 
@@ -73,7 +81,13 @@ function networkFromVectorPaths(paths: readonly FigmaVectorPath[]): SceneVectorN
   return networks.length > 0 ? mergeVectorNetworks(networks) : structuredClone(EMPTY_NETWORK)
 }
 
-function normalizeInputNetwork(value: FigmaVectorNetwork): SceneVectorNetwork {
+/** Where a region's video paints find their clip's poster: the layer's paints, then the document. */
+type RegionPosters = { readonly graph: SceneGraph; readonly nearby: readonly Fill[] }
+
+function normalizeInputNetwork(
+  value: FigmaVectorNetwork,
+  posters: RegionPosters
+): SceneVectorNetwork {
   const regions = value.regions ?? []
   return normalizeVectorNetwork({
     vertices: value.vertices.map((vertex) => ({ ...vertex })),
@@ -88,18 +102,23 @@ function normalizeInputNetwork(value: FigmaVectorNetwork): SceneVectorNetwork {
         y: segment.tangentEnd?.y ?? 0
       }
     })),
-    regions: regions.map(sceneRegion)
+    regions: regions.map((region) => sceneRegion(region, posters))
   })
 }
 
 /** A region as the network stores it, with paints of its own only when Figma's names them. */
-function sceneRegion(region: FigmaVectorRegion): SceneVectorRegion {
+function sceneRegion(region: FigmaVectorRegion, posters: RegionPosters): SceneVectorRegion {
   const scene: SceneVectorRegion = {
     windingRule: region.windingRule,
     loops: region.loops.map((loop) => [...loop])
   }
-  if (region.fills !== undefined)
-    scene.fills = parseFigmaPaints(region.fills, 'set_vectorNetwork', 'vectorNetwork')
+  if (region.fills !== undefined) {
+    scene.fills = withVideoPosters(
+      parseFigmaPaints(region.fills, 'set_vectorNetwork', 'vectorNetwork'),
+      posters.graph,
+      posters.nearby
+    )
+  }
   if (region.fillStyleId) scene.fillStyleId = region.fillStyleId
   return scene
 }
@@ -159,7 +178,11 @@ function assignVectorNetwork(
   const errors = validateVectorNetwork(value)
   if (errors.length > 0) throw new TypeError(`Invalid vectorNetwork: ${errors.join('; ')}`)
   validateRegionPaintMetadata(value.regions ?? [])
-  const network = normalizeInputNetwork(value)
+  const node = raw(target, internals)
+  const network = normalizeInputNetwork(value, {
+    graph: graphOf(target),
+    nearby: [...regionFills(node.vectorNetwork), ...node.fills]
+  })
   prepareVectorDataEdit(target, internals, setter)
   setGeometry(target, internals, network)
 }

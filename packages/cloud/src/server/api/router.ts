@@ -6,6 +6,7 @@ import {
   createCollaborationRoutes,
   createPublicCollaborationRoutes
 } from '#cloud/server/collaboration'
+import { createCommunityRoutes, type CommunityService } from '#cloud/server/community'
 import type { CloudDatabase } from '#cloud/server/db'
 import type { DocumentService } from '#cloud/server/documents'
 import { createDocumentRoutes } from '#cloud/server/documents'
@@ -34,6 +35,8 @@ export type CloudAPIServices = {
   collaboration: CollaborationTicketService
   documents: DocumentService
   versions: DocumentVersionService
+  /** The community gallery, which anyone may read. */
+  community: CommunityService
   sharing: DocumentSharingService
   /** Reports about documents shared by link. */
   reports: DocumentReportService
@@ -56,6 +59,7 @@ export function createPublicCloudAPIRouter(services: CloudAPIServices) {
       createPublicDocumentRoutes(services.sharing, services.documents, services.resolveSession)
     )
     .route('/', createPublicCollaborationRoutes(services.collaboration, services.resolveSession))
+    .route('/', createCommunityRoutes(services.community))
 }
 
 export function createCloudAPIRouter(services: CloudAPIServices) {

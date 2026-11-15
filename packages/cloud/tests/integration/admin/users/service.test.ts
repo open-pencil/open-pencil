@@ -96,6 +96,7 @@ function authAdapter() {
       return null
     },
     updateProfile: complete,
+    setLocale: complete,
     changeEmail: complete,
     async sessions() {
       return null

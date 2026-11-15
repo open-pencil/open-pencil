@@ -2,8 +2,6 @@ import type { GUID } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 
-import { cloneRecord } from '../node-change/clone'
-import { claimedVariableMaps } from '../node-change/variable/bindings'
 import {
   bindSourceProperties,
   componentBindings,
@@ -11,12 +9,7 @@ import {
   type BoundPropertyClaim,
   type PropertyBinding
 } from './bindings/properties'
-import {
-  declareVariableBindingUnits,
-  declareSourceVariableBindingUnits
-} from './bindings/variables'
-import { completeClearedStyleClaim } from './cleared-style'
-import { applyDerivedEntry } from './derived-symbol-data'
+import { declareSourceVariableBindingUnits } from './bindings/variables'
 import {
   ownLayers,
   type AssignmentGroup,
@@ -24,15 +17,10 @@ import {
   type PropertyLayer,
   type StructuralLayer
 } from './layers'
+import { applyDerivedBounds, applyPropertyClaims, createClaimContext } from './occurrence/claims'
 import { createOccurrence, type Subtree } from './occurrence/create'
 import { createModeScopes, type ModeScope } from './occurrence/modes'
-import {
-  findSegment,
-  isRootGuid,
-  pathError,
-  resolveOccurrencePath,
-  SegmentError
-} from './occurrence/path'
+import { isRootGuid, pathError, SegmentError } from './occurrence/path'
 import { resolveRoot, type RootResolution } from './occurrence/root'
 import type { InstanceOccurrence, InterpretInstanceOptions } from './occurrence/types'
 import { applyPlacedConstraints } from './resize'
@@ -46,8 +34,7 @@ import {
   terminalComponent,
   type InterpreterIndex
 } from './source-index'
-import { invalidateInheritedTextData } from './text-provenance'
-import { assignedSlotContent, type DerivedSymbolOverride } from './types'
+import { assignedSlotContent } from './types'
 
 /**
  * Figma's instance model reduces to three things: an instance expands its component's
@@ -106,10 +93,7 @@ function interpretRoot(
   const { sources, children } = index
   const expanding = new Set<string>()
   const modeScopes = createModeScopes(index)
-  /** Fields set by an owner's assignment, by the rank of that owner. */
-  const assignedFields = new WeakMap<InstanceOccurrence, Map<string, number>>()
-  /** Components an occurrence expanded before an outer decision replaced them. */
-  const replacedComponents = new WeakMap<InstanceOccurrence, readonly GUID[]>()
+  const claimContext = createClaimContext(index, options)
 
   /** A layer written against a component that an outer decision replaced is stale, not wrong. */
   const isStaleLayer = ({ boundary }: StructuralLayer): boolean =>
@@ -153,89 +137,6 @@ function interpretRoot(
       else routed.set(childId, [next])
     }
     return routed
-  }
-
-  const applyPropertyClaim = (
-    owner: InstanceOccurrence,
-    ownerRank: number,
-    target: InstanceOccurrence,
-    layer: PropertyLayer
-  ): void => {
-    // An outer owner's assignment supersedes this owner's explicit value for the same field.
-    const bound = assignedFields.get(target)
-    const retained = Object.fromEntries(
-      Object.entries(layer.props).filter(([field]) => {
-        const rank = bound?.get(field)
-        return rank === undefined || rank >= ownerRank
-      })
-    )
-    if (Object.keys(retained).length === 0) return
-    completeClearedStyleClaim(target, retained, sources.get(target.sourceId))
-    declareVariableBindingUnits(target, retained)
-    invalidateInheritedTextData(target.properties, retained)
-    Object.assign(
-      target.properties,
-      cloneRecord(retained),
-      claimedVariableMaps(target.properties, retained as NodeChange)
-    )
-    if ('name' in retained) target.hasOwnName = true
-    owner.propertyClaims.push({
-      declaredBy: owner.sourceId,
-      path: structuredClone(layer.path),
-      properties: structuredClone(retained)
-    })
-  }
-
-  /**
-   * A claim that addressed a component an instance on its path no longer expands is
-   * stale, not wrong: some outer decision replaced that subtree after it was written.
-   */
-  const isRemovedTarget = (owner: InstanceOccurrence, path: readonly GUID[]): boolean => {
-    let current = owner
-    for (const [position, segment] of path.entries()) {
-      const rest = path.slice(position)
-      const replaced = replacedComponents.get(current) ?? []
-      if (replaced.some((component) => resolvesInSourceComponent(index, component, rest)))
-        return true
-      if (position === 0 && isRootGuid(current, segment)) continue
-      try {
-        current = findSegment(current, segment)
-      } catch (error) {
-        if (!(error instanceof SegmentError)) throw error
-        return false
-      }
-    }
-    return false
-  }
-
-  /** Resolve an owner's declared path in its built subtree, or decide how to skip it. */
-  const resolveClaimTarget = (
-    owner: InstanceOccurrence,
-    path: readonly GUID[]
-  ): InstanceOccurrence | undefined => {
-    try {
-      return resolveOccurrencePath(owner, path)
-    } catch (cause) {
-      if (!(cause instanceof SegmentError)) throw cause
-      const error = pathError(owner.sourceId, owner.mainComponentId, path, cause)
-      if (error.diagnostic.reason === 'missing-target' && isRemovedTarget(owner, path))
-        return undefined
-      if (!options.onUnresolvedProperty) throw error
-      options.onUnresolvedProperty(error.diagnostic)
-      return undefined
-    }
-  }
-
-  const applyDerivedBounds = (owner: InstanceOccurrence, source: NodeChange): void => {
-    if (!options.derivedBounds) return
-    const derived = source.derivedSymbolData as DerivedSymbolOverride[] | undefined
-    for (const entry of derived ?? []) {
-      const path = entry.guidPath?.guids
-      if (!path?.length) continue
-      const target = resolveClaimTarget(owner, path)
-      if (!target || target === owner) continue // Placed root bounds belong to its NodeChange.
-      applyDerivedEntry(target, entry)
-    }
   }
 
   /** Bind the record's fields from the enclosing component scope, recording provenance. */
@@ -310,8 +211,10 @@ function interpretRoot(
       }
       const occurrence = createOccurrence(sources, id, raw, source, root, subtree, record.claims)
       if (record.slotContent) occurrence.slotContentId = record.slotContent
-      assignedFields.set(occurrence, record.bound)
-      if (subtree.base && root.replaced.length) replacedComponents.set(occurrence, root.replaced)
+      claimContext.assignedFields.set(occurrence, record.bound)
+      if (subtree.base && root.replaced.length) {
+        claimContext.replacedComponents.set(occurrence, root.replaced)
+      }
       declareSourceVariableBindingUnits(occurrence, source)
       const claims = subtree.dangling
         ? own.claims.filter(({ path }) => path.length === 1 && isRootGuid(occurrence, path[0]))
@@ -419,14 +322,13 @@ function interpretRoot(
     derived: boolean,
     modes: ModeScope
   ): void => {
-    for (const claim of claims) {
-      const target = resolveClaimTarget(occurrence, claim.path)
-      if (target) applyPropertyClaim(occurrence, rank, target, claim)
-    }
+    applyPropertyClaims(claimContext, occurrence, rank, claims)
     applyInstanceLayoutScale(occurrence, source)
     applyPlacedConstraints(occurrence, base, source)
     modeScopes.applySavedSize(occurrence, source, modes)
-    if (derived) applyDerivedBounds(occurrence, source)
+    if (derived) {
+      applyDerivedBounds(claimContext, occurrence, source)
+    }
   }
 
   if (sources.get(rootId)?.type !== expectedType) {

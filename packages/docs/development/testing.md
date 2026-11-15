@@ -84,8 +84,9 @@ Current commands:
 | Storybook browser              | `bun run test:storybook`     |
 | Figma acceptance               | `bun run test:figma`         |
 | Native WebView                 | `bun run test:native`        |
+| Load every browser spec        | `bun run check:specs`        |
 
-During implementation, run the affected unit files or one representative browser scenario. Inspect discovery changes without executing the whole suite when reorganizing files. Use the final CI gate after integration; do not rerun full suites for each edit. Report commands actually run, and distinguish focused coverage from full acceptance.
+During implementation, run the affected unit files or one representative browser scenario. Inspect discovery changes without executing the whole suite when reorganizing files; `bun run check:specs` lists every spec and fails when one cannot load, such as on an import only a bundler reads. Use the final CI gate after integration; do not rerun full suites for each edit. Report commands actually run, and distinguish focused coverage from full acceptance.
 
 Visual changes require inspection and committed coverage. Update only a justified affected snapshot, then rerun that test without update mode. Never relax tolerances or regenerate unrelated baselines to turn a failed run green. Browser GPU parity and real glyph coverage complement CPU rendering tests; they are not redundant merely because both compare pixels.
 

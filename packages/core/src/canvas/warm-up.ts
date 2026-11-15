@@ -77,7 +77,7 @@ function drawWarmUp(r: SkiaRenderer, canvas: Canvas): void {
     glass: { refraction: 0.8, depth: 20, lightAngle: -45, lightIntensity: 0.5, dispersion: 0.5 }
   }
   const glassBox = warmUpLayer('RECTANGLE', [glass], 16)
-  const glassEllipse = warmUpLayer('ELLIPSE', [glass], 16)
+  const glassStar = warmUpLayer('STAR', [glass], 16)
   for (const scale of WARM_UP_SCALES) {
     canvas.save()
     canvas.scale(scale, scale)
@@ -87,7 +87,7 @@ function drawWarmUp(r: SkiaRenderer, canvas: Canvas): void {
     r.effectLayerPaint.setImageFilter(null)
     canvas.drawRect(r.ck.LTRBRect(0, 0, 96, 96), r.auxFill)
     canvas.restore()
-    for (const node of [glassBox, glassEllipse]) {
+    for (const node of [glassBox, glassStar]) {
       renderGlassRefraction(r, canvas, node, glass, null)
       renderGlassLight(r, canvas, node, glass, null)
     }
@@ -97,7 +97,7 @@ function drawWarmUp(r: SkiaRenderer, canvas: Canvas): void {
 
 /**
  * Draws a progressive background blur, a progressive layer blur, and glass over a rectangle and
- * an ellipse off screen at several scales, so the first zoom over such layers does not stall
+ * a star off screen at several scales, so the first zoom over such layers does not stall
  * while WebGL builds their programs. Once per canvas that draws the scene, after a page that uses
  * them settles.
  */

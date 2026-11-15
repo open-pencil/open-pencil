@@ -9,7 +9,6 @@ import type {
 
 import {
   isOnboardingAccess,
-  isOnboardingAgent,
   ONBOARDING_SERVER_PROVIDER,
   type OnboardingAccess,
   type OnboardingPlan,
@@ -67,35 +66,16 @@ export function isUnconfiguredModelSettings(settings: AIModelSettings): boolean 
   return settings.models.length === 1 && isPlaceholder(settings, settings.models[0])
 }
 
-function isAgentConnection(
-  settings: AIModelSettings,
-  profile: AIModelProfile | undefined
-): boolean {
-  const connection = settings.connections.find(
-    (candidate) => candidate.id === profile?.connectionId
-  )
-  return !connection || isOnboardingAgent(connection.providerID)
-}
-
 /**
- * Clears assignments the model settings would reject: agents only take the design role, and
- * vision needs a model that accepts images, whether assigned directly or through the design model.
+ * Clears a vision assignment the model settings would reject: vision needs a model that accepts
+ * images, whether assigned directly or through the design model.
  */
 function enforceRoleRules(settings: AIModelSettings): void {
-  const profileOf = (id: string | null) => settings.models.find((profile) => profile.id === id)
-  const design = profileOf(settings.assignments.design)
-  for (const role of ['review', 'fast', 'vision'] as const) {
-    const assignment = settings.assignments[role]
-    if (assignment === null) continue
-    const profile = assignment === 'design' ? design : profileOf(assignment)
-    if (!profile) continue
-    if (
-      isAgentConnection(settings, profile) ||
-      (role === 'vision' && !profile.capabilities.includes('vision'))
-    ) {
-      settings.assignments[role] = null
-    }
-  }
+  const assignment = settings.assignments.vision
+  if (assignment === null) return
+  const profileId = assignment === 'design' ? settings.assignments.design : assignment
+  const profile = settings.models.find((candidate) => candidate.id === profileId)
+  if (profile && !profile.capabilities.includes('vision')) settings.assignments.vision = null
 }
 
 function removeUnusedPlaceholder(settings: AIModelSettings): void {

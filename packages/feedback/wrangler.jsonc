@@ -2,6 +2,8 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "openpencil-feedback",
   "main": "src/index.ts",
+  // Cloud from its build, not its source (tsconfig.worker.json).
+  "tsconfig": "tsconfig.worker.json",
   "compatibility_date": "2026-10-01",
   "routes": [{ "pattern": "feedback.openpencil.dev", "custom_domain": true }],
   "workers_dev": false,

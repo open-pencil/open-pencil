@@ -1,6 +1,14 @@
 import { arrowCapOverflow } from './arrow-caps'
 import type { Rect, Vector } from './primitives'
-import type { Effect, SceneNode, Stroke, StrokeCap, StrokeJoin, VectorNetwork } from './types'
+import type {
+  ArcData,
+  Effect,
+  SceneNode,
+  Stroke,
+  StrokeCap,
+  StrokeJoin,
+  VectorNetwork
+} from './types'
 
 export { cubicPoint } from './cubic'
 
@@ -10,6 +18,47 @@ export function degToRad(degrees: number): number {
 
 export function radToDeg(radians: number): number {
   return (radians * 180) / Math.PI
+}
+
+const FULL_TURN = 2 * Math.PI
+
+/** Layers whose shadows Figma never spreads: a text, boolean, star, polygon or vector. */
+const UNSPREAD_TYPES: ReadonlySet<SceneNode['type']> = new Set<SceneNode['type']>([
+  'TEXT',
+  'BOOLEAN_OPERATION',
+  'STAR',
+  'POLYGON',
+  'VECTOR'
+])
+
+/**
+ * Whether a layer's shadows take their spread. Figma spreads those of boxes and ellipses, arcs
+ * among them, and frames, and counts it in their render bounds; a text, boolean, star, polygon or
+ * vector never spreads (Figma desktop, live).
+ */
+export function shadowSpreads(node: Pick<SceneNode, 'type'>): boolean {
+  return !UNSPREAD_TYPES.has(node.type)
+}
+
+/** The spread a shadow on `node` takes: its own, or none on a layer Figma never spreads. */
+export function shadowSpreadOf(
+  node: Pick<SceneNode, 'type'>,
+  effect: Pick<Effect, 'spread'>
+): number {
+  return shadowSpreads(node) ? effect.spread : 0
+}
+
+/**
+ * Whether a sweep from `start` to `end` is a whole turn: less than 0.001 rad short of one draws the
+ * whole ellipse in Figma (desktop, live: 0.00095 short is whole, 0.001 short an arc).
+ */
+export function sweepsWholeTurn(start: number, end: number): boolean {
+  return FULL_TURN - Math.abs(end - start) < 0.001
+}
+
+/** Whether an arc sweeps a whole turn, so it is drawn and edited as a whole ellipse or ring. */
+export function isWholeArc(arc: Pick<ArcData, 'startingAngle' | 'endingAngle'>): boolean {
+  return sweepsWholeTurn(arc.startingAngle, arc.endingAngle)
 }
 
 export function rotatePoint(px: number, py: number, cx: number, cy: number, rad: number): Vector {
@@ -143,14 +192,120 @@ export function polygonVertices(node: {
   })
 }
 
+/** A rectangle's stroke weights, side by side: top, right, bottom, left. */
+export type SideWeights = readonly [top: number, right: number, bottom: number, left: number]
+
+type SideStrokeNode = Pick<
+  SceneNode,
+  | 'independentStrokeWeights'
+  | 'borderTopWeight'
+  | 'borderRightWeight'
+  | 'borderBottomWeight'
+  | 'borderLeftWeight'
+>
+
+/** The layers the canvas strokes side by side when their sides have weights of their own. */
+const SIDE_STROKE_TYPES: ReadonlySet<string> = new Set<SceneNode['type']>([
+  'FRAME',
+  'RECTANGLE',
+  'ROUNDED_RECTANGLE',
+  'COMPONENT',
+  'INSTANCE',
+  'SECTION',
+  'GROUP'
+])
+
+/**
+ * Whether `node` strokes each side by its own weight. A line or vector keeps one weight whatever
+ * the flag says, since its outline has no sides.
+ */
+export function drawsStrokeSides(node: Partial<SideStrokeNode> & { type?: string }): boolean {
+  return node.independentStrokeWeights === true && (!node.type || SIDE_STROKE_TYPES.has(node.type))
+}
+
+/** The share of a stroke's weight that lies outside the shape it outlines. */
+export function strokeAlignShare(align: Stroke['align']): number {
+  if (align === 'OUTSIDE') return 1
+  if (align === 'CENTER') return 0.5
+  return 0
+}
+
+/** A layer's own side weights: top, right, bottom, left. */
+export function borderWeights(node: SideStrokeNode): SideWeights {
+  return [
+    node.borderTopWeight,
+    node.borderRightWeight,
+    node.borderBottomWeight,
+    node.borderLeftWeight
+  ]
+}
+
+/** The weight of each side of `node` under `stroke`, its own when its sides have their own. */
+export function strokeSideWeights(
+  node: SideStrokeNode & { type?: string },
+  stroke: Pick<Stroke, 'weight'>
+): SideWeights {
+  if (!drawsStrokeSides(node)) return [stroke.weight, stroke.weight, stroke.weight, stroke.weight]
+  return borderWeights(node)
+}
+
+/** A stroke's weight, or with sides of their own the widest side, for what is not drawn per side. */
+export function strokeWeightOf(
+  node: Partial<SideStrokeNode> & { type?: string },
+  stroke: Pick<Stroke, 'weight'>
+): number {
+  if (!drawsStrokeSides(node)) return stroke.weight
+  return Math.max(
+    node.borderTopWeight ?? 0,
+    node.borderRightWeight ?? 0,
+    node.borderBottomWeight ?? 0,
+    node.borderLeftWeight ?? 0
+  )
+}
+
+/**
+ * How far a layer's visible strokes reach past each side of its box: top, right, bottom, left.
+ * With sides of their own each side reaches by its own weight (Figma desktop, live: a 1px outside
+ * stroke with a 20px right side bounds a 100 × 100 rectangle at 121 × 102).
+ */
+export function strokeSideReach(
+  node: SideStrokeNode & Pick<SceneNode, 'strokes'> & { type?: string }
+): SideWeights {
+  let reach: SideWeights = [0, 0, 0, 0]
+  for (const stroke of node.strokes) {
+    if (!stroke.visible) continue
+    const share = strokeAlignShare(stroke.align)
+    const sides = strokeSideWeights(node, stroke)
+    reach = [
+      Math.max(reach[0], sides[0] * share),
+      Math.max(reach[1], sides[1] * share),
+      Math.max(reach[2], sides[2] * share),
+      Math.max(reach[3], sides[3] * share)
+    ]
+  }
+  return reach
+}
+
 /**
  * What shapes how far a layer's stroke reaches past its box: its type, since a line is stroked to
  * one side, and its join and miter limit, for the tips mitered path corners reach.
  */
-export interface StrokeShape {
+export interface StrokeShape extends Partial<SideStrokeNode> {
   type?: string
   strokeJoin?: StrokeJoin
   strokeMiterLimit?: number
+}
+
+/** How far past a path a stroke of `weight` reaches, before mitered corners: a line's stroke lies wholly to one side. */
+function strokeExtent(
+  weight: number,
+  align: Stroke['align'],
+  line: boolean,
+  open: boolean
+): number {
+  if (line || align === 'OUTSIDE') return weight
+  if (align === 'CENTER' || open) return weight / 2
+  return 0
 }
 
 export function strokeOverflow(
@@ -168,10 +323,8 @@ export function strokeOverflow(
   let overflow = 0
   for (const stroke of strokes ?? []) {
     if (!stroke.visible) continue
-    const align = sided ? stroke.align : 'CENTER'
-    let extra = open ? stroke.weight / 2 : 0
-    if (line || align === 'OUTSIDE') extra = stroke.weight
-    else if (align === 'CENTER') extra = stroke.weight / 2
+    const weight = strokeWeightOf(shape ?? {}, stroke)
+    const extra = strokeExtent(weight, sided ? stroke.align : 'CENTER', line, open)
     const miter = network
       ? miterRatio(network, stroke.join ?? shape?.strokeJoin, shape?.strokeMiterLimit)
       : 1
@@ -247,11 +400,71 @@ export function blurSigma(radius: number): number {
   return drawnBlurRadius(radius) * BLUR_SIGMA_PER_RADIUS
 }
 
+/** Skia's Gaussian kernels end at 3 sigma. */
+const KERNEL_SIGMAS = 3
+
+/**
+ * How far past what it blurs a Gaussian of `sigma` leaves ink on screen: where Skia's kernel
+ * ends, and one more pixel holds its rounding.
+ */
+export function kernelReach(sigma: number): number {
+  return sigma > 0 ? Math.ceil(KERNEL_SIGMAS * sigma) + 1 : 0
+}
+
+/** How far past what it blurs a Figma blur of `radius` leaves ink on screen (`kernelReach`). */
+export function blurReach(radius: number): number {
+  return kernelReach(blurSigma(radius))
+}
+
+/**
+ * The distance, in sigmas, past a straight edge blurred by a Gaussian at which the edge's share
+ * drops to `share`: the inverse of the normal tail Q, by Abramowitz and Stegun 26.2.23, which is
+ * within 0.00045 of it.
+ */
+function gaussianTailDistance(share: number): number {
+  if (share <= 0) {
+    return Number.POSITIVE_INFINITY
+  }
+  if (share >= 0.5) {
+    return 0
+  }
+  const s = Math.sqrt(-2 * Math.log(share))
+  return (
+    s -
+    (2.515517 + 0.802853 * s + 0.010328 * s * s) /
+      (1 + 1.432788 * s + 0.189269 * s * s + 0.001308 * s * s * s)
+  )
+}
+
+const COLOR_LEVELS = 255
+
+/**
+ * How far past its shape a drop shadow of `radius` and colour alpha `alpha` leaves ink on
+ * screen. Skia blurs the shape into an 8-bit mask and scales it by `alpha`, so a mask level shows
+ * once `alpha` times it rounds to a level: an opaque or half-opaque shadow shows its faintest
+ * level, out to where the kernel ends, and a fainter one ends sooner. Measured on CPU raster, the
+ * ink ends at 3.0 sigma for alpha 1 and 0.5, 2.4 for 0.25, and 2.1 for 0.1.
+ */
+export function shadowReach(radius: number, alpha: number): number {
+  const sigma = blurSigma(radius)
+  const faintestShownLevel = Math.ceil(0.5 / Math.max(alpha, 1 / COLOR_LEVELS))
+  const sigmas = Math.min(
+    KERNEL_SIGMAS,
+    gaussianTailDistance((faintestShownLevel - 1) / COLOR_LEVELS)
+  )
+  return Math.ceil(sigmas * sigma) + 1
+}
+
 /** The Figma blur radius that draws a Gaussian of `sigma`, the inverse of `blurSigma`. */
 export function blurRadiusForSigma(sigma: number): number {
   return Math.max(0, sigma) / BLUR_SIGMA_PER_RADIUS
 }
 
+/**
+ * How far a layer's shadows and blurs reach past each side as Figma's render bounds count them:
+ * a blur by its radius, a shadow by its radius and spread, moved by its offset. Ink on screen
+ * reaches further, to `blurReach`.
+ */
 export function effectOverflow(effects?: Effect[]) {
   let left = 0
   let right = 0
