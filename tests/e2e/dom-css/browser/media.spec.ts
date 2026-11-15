@@ -4,7 +4,7 @@ import {
   setStyledContent
 } from '#tests/helpers/dom-css/browser'
 
-import { expect, test } from '../fixtures'
+import { expect, test } from '#tests/e2e/fixtures'
 
 const TRANSPARENT_PIXEL_DATA_URL =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADElEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
