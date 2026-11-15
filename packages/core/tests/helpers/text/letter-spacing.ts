@@ -63,7 +63,7 @@ export function lengthLabel(length: TextLength): string {
 }
 
 /** The spacing after the character at `index`, as the text's style sets it. */
-export function spacingAt(props: Props, index: number): number {
+function spacingAt(props: Props, index: number): number {
   const run = props.styleRuns?.find(
     ({ start, length }) => index >= start && index < start + length
   )?.style
@@ -88,7 +88,7 @@ function sourceIndexOfUtf8Offset(props: Props, offset: number): number {
 }
 
 /** Where a shaped line's glyphs draw, without the spacing after its last one. */
-export function glyphSpan(props: Props, line: ShapedLine): { start: number; end: number } {
+function glyphSpan(props: Props, line: ShapedLine): { start: number; end: number } {
   let start = Infinity
   let end = -Infinity
   let lastOffset = 0

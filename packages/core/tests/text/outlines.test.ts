@@ -129,4 +129,13 @@ describe('textNodeToOutlineLayout', () => {
       )
     ).toBe(2)
   })
+
+  test('fits and sizes a spaced line by its glyphs, without the spacing after the last', () => {
+    const spaced = { text: 'Hold', letterSpacing: { value: 10, unit: 'PIXELS' as const } }
+    const glyphs = oneLineWidth(spaced)
+    expect(glyphs).toBeCloseTo(oneLineWidth({ text: 'Hold' }) + 30, 2)
+    expect(lineCount(text({ ...spaced, width: Math.ceil(glyphs), textAutoResize: 'HEIGHT' }))).toBe(
+      1
+    )
+  })
 })
