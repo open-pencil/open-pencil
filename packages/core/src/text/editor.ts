@@ -17,6 +17,17 @@ import {
   type PathTextLineMetrics
 } from '#core/text/path/caret'
 
+/**
+ * The line a caret at `pos` is on. The layout finds no line past the text, but the caret after
+ * the last character stands on the last line, unless that character is a line break, whose empty
+ * line holds nothing to move along.
+ */
+function caretLine(paragraph: TextLayout, pos: number, text: string): number {
+  const line = paragraph.getLineNumberAt(pos)
+  if (line >= 0 || pos !== text.length || pos === 0 || text.endsWith('\n')) return line
+  return paragraph.getLineMetrics().length - 1
+}
+
 export interface TextCaret {
   x: number
   y0: number
@@ -95,7 +106,7 @@ export class TextEditor {
   private currentLineMetrics() {
     const s = this.current()
     if (!s?.paragraph) return null
-    const lineNum = s.paragraph.getLineNumberAt(s.cursor)
+    const lineNum = caretLine(s.paragraph, s.cursor, s.text)
     return lineNum < 0 ? null : s.paragraph.getLineMetricsAt(lineNum)
   }
 
@@ -252,7 +263,7 @@ export class TextEditor {
   selectLine(pos: number): void {
     const s = this.current()
     if (!s?.paragraph) return
-    const lineNum = s.paragraph.getLineNumberAt(pos)
+    const lineNum = caretLine(s.paragraph, pos, s.text)
     if (lineNum < 0) return
     const metrics = s.paragraph.getLineMetricsAt(lineNum)
     if (!metrics) return

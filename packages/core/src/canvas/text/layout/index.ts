@@ -43,6 +43,23 @@ const MAX_DRAWN_FRACTIONS = 4
  * `Paragraph` queries the renderer, measurement, and the text editor ask, in indices of the
  * whole text and coordinates of the whole layout.
  */
+/**
+ * The line of `block` holding paragraph index `at`, or -1 past its text. Skia's own
+ * `getLineNumberAt` reads a UTF-8 index, while line metrics count UTF-16 units as text indices do.
+ */
+function lineNumberIn(block: TextLayoutBlock, at: number): number {
+  const lines = block.metrics
+  if (at >= (lines.at(-1)?.endIncludingNewline ?? 0)) return -1
+  let low = 0
+  let high = lines.length - 1
+  while (low < high) {
+    const middle = (low + high) >>> 1
+    if (at < lines[middle].endIncludingNewline) high = middle
+    else low = middle + 1
+  }
+  return low
+}
+
 export class TextLayout {
   private lines: LineMetrics[] = []
   private lineOffsets: number[] = []
@@ -355,9 +372,7 @@ export class TextLayout {
     const found = this.blockAt(index)
     if (!found) return -1
     const { block, order } = found
-    const local = block.empty
-      ? 0
-      : block.paragraph.getLineNumberAt(index - block.start + block.lead)
+    const local = block.empty ? 0 : lineNumberIn(block, index - block.start + block.lead)
     const isLast = order === this.lineOffsets.length - 1
     if (local < 0) {
       if (isLast) return local

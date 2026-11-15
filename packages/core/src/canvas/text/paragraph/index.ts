@@ -19,6 +19,7 @@ import {
   type ParagraphPaintStyle,
   type ParagraphBuildOptions
 } from '#core/canvas/text/paint'
+import { styledRanges } from '#core/canvas/text/paragraph/runs'
 import type { TextRenderer } from '#core/canvas/text/renderer'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
 import { autoWidthWrapWidth } from '#core/layout/text-measurement'
@@ -212,8 +213,10 @@ function addStyledRuns(
   const text = node.text
   let pos = 0
 
-  for (const run of node.styleRuns) {
-    if (pos < run.start) addParagraphText(builder, node, pos, run.start)
+  // A run that starts or ends inside a surrogate pair moves to its end, as Skia would shape each
+  // half on its own.
+  for (const { start, end, run } of styledRanges(text, node.styleRuns)) {
+    if (pos < start) addParagraphText(builder, node, pos, start)
     pushStyleRun(
       r,
       builder,
@@ -225,9 +228,9 @@ function addStyledRuns(
       halfLeading,
       paintStyle
     )
-    addParagraphText(builder, node, run.start, run.start + run.length)
+    addParagraphText(builder, node, start, end)
     builder.pop()
-    pos = run.start + run.length
+    pos = end
   }
 
   if (pos < text.length) addParagraphText(builder, node, pos, text.length)
@@ -305,7 +308,10 @@ export function buildSkParagraph(
     textAlign: getParagraphTextAlign(ck, node),
     textDirection: textDirection === 'RTL' ? ck.TextDirection.RTL : ck.TextDirection.LTR,
     ...truncateOpts,
-    textStyle: baseTextStyle
+    textStyle: baseTextStyle,
+    // Figma fits and sizes lines by their glyphs, and starts them at their first glyph.
+    trimLetterSpacing: true,
+    applyRoundingHack: false
   })
 
   if (!r.fontProvider) throw new Error('Font provider not initialized')
