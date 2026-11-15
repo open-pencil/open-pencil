@@ -20,7 +20,12 @@ describe('layout guide geometry bounds', () => {
     expect(
       layoutGuideSections(
         { width: 100, height: 100 },
-        { pattern: 'COLUMNS', count: Number.MAX_SAFE_INTEGER, sectionSize: 0.001 }
+        {
+          pattern: 'COLUMNS',
+          alignment: 'MIN',
+          count: Number.MAX_SAFE_INTEGER,
+          sectionSize: 0.001
+        }
       )
     ).toHaveLength(10_000)
     expect(

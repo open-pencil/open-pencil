@@ -1,0 +1,1 @@
+- Switching to a large page on a slow machine no longer fails with "The operation was timed out" while the page is still drawing (#2099).

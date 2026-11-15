@@ -17,7 +17,7 @@
 
 import type { Effect, GlassEffectParams, SceneNode } from '@open-pencil/scene-graph'
 import { UNSET_GLASS } from '@open-pencil/scene-graph/constants'
-import { blurSigma } from '@open-pencil/scene-graph/geometry'
+import { blurSigma, kernelReach } from '@open-pencil/scene-graph/geometry'
 
 import { defineShader, type Float2, type Float4 } from '#core/canvas/sksl'
 
@@ -36,12 +36,13 @@ export const GLASS_MAX_SEGMENTS = 128
 const CHUNK = 8
 const CHUNKS = GLASS_MAX_SEGMENTS / CHUNK
 
-/** The outline both glass shaders read: a box, or segments grouped in bounding circles. */
+/** The outline both glass shaders read: a box, an ellipse, or segments grouped in bounding circles. */
 interface GeometryUniforms {
   origin: Float2
   size: Float2
   radii: Float4
   isBox: number
+  isEllipse: number
   depth: number
   segmentCount: number
   segments: ArrayLike<number>
@@ -75,14 +76,17 @@ export const GLASS_GEOMETRY_MAP = defineShader<GeometryUniforms & GeometryMapUni
   mapSource
 )
 
-/** Where a glass layer's outline sits, in the layer's units: a box or flattened segments. */
+/**
+ * Where a glass layer's outline sits, in the layer's units: a box, the ellipse filling the box,
+ * both computed exactly, or flattened segments.
+ */
 export interface GlassOutline {
+  kind: 'box' | 'ellipse' | 'segments'
   origin: [number, number]
   size: [number, number]
   /** Top-left, top-right, bottom-right, bottom-left corner radii of a box. */
   radii: [number, number, number, number]
-  isBox: boolean
-  /** Segment end points `x0, y0, x1, y1` of a non-box outline, at most `GLASS_MAX_SEGMENTS`. */
+  /** Segment end points `x0, y0, x1, y1` of a segments outline, at most `GLASS_MAX_SEGMENTS`. */
   segments: Float32Array
 }
 
@@ -94,7 +98,8 @@ export function glassGeometryUniforms(outline: GlassOutline, depth: number): Geo
     origin: outline.origin,
     size: outline.size,
     radii: outline.radii,
-    isBox: outline.isBox ? 1 : 0,
+    isBox: outline.kind === 'box' ? 1 : 0,
+    isEllipse: outline.kind === 'ellipse' ? 1 : 0,
     depth,
     segmentCount: Math.min(GLASS_MAX_SEGMENTS, outline.segments.length / 4),
     segments,
@@ -165,5 +170,5 @@ export function glassBackdropSigma(effect: Effect): number {
  */
 export function glassSampleRadius(node: SceneNode, effect: Effect): number {
   const depth = glassDepth(glassParams(effect).depth, node.width, node.height)
-  return depth * 1.1 + 3 * glassBackdropSigma(effect) + 1
+  return depth * 1.1 + kernelReach(glassBackdropSigma(effect))
 }

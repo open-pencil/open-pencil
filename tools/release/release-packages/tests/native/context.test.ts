@@ -50,6 +50,14 @@ test('matrix metadata and target validation share the same catalog', () => {
   }
 })
 
+test('a build that runs in an image pins it by digest, and only Linux needs one', () => {
+  for (const build of desktopBuilds) {
+    if (build.target.endsWith('linux-gnu')) {
+      expect(build.container).toMatch(/^ghcr\.io\/open-pencil\/[\w-]+@sha256:[0-9a-f]{64}$/)
+    } else expect(build.container).toBe('')
+  }
+})
+
 test('command adapters delegate argument arrays and deadlines to shared tooling', async () => {
   const requests: CommandRequest[] = []
   const cwd = resolve('fixture')

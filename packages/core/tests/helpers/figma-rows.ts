@@ -1,10 +1,23 @@
 import { expect } from 'bun:test'
 
-import type { CanvasKit } from '@open-pencil/canvaskit'
+import type { CanvasKit, Image } from '@open-pencil/canvaskit'
 import type { SkiaRenderer } from '@open-pencil/core/canvas'
 import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
+export function unpremultipliedPixels(ck: CanvasKit, image: Image) {
+  return expectDefined(
+    image.readPixels(0, 0, {
+      width: image.width(),
+      height: image.height(),
+      alphaType: ck.AlphaType.Unpremul,
+      colorType: ck.ColorType.RGBA_8888,
+      colorSpace: ck.ColorSpace.SRGB
+    })
+  )
+}
+
 /** Builds a scene into the frame `hostId`. */
 export type FigmaRowScene = (graph: SceneGraph, hostId: string) => void
 
@@ -40,15 +53,7 @@ export function renderRow(
   const image = expectDefined(ck.MakeImageFromEncoded(png))
   try {
     const offset = (image.width() - 400) / 2
-    const pixels = expectDefined(
-      image.readPixels(0, 0, {
-        width: image.width(),
-        height: image.height(),
-        alphaType: ck.AlphaType.Unpremul,
-        colorType: ck.ColorType.RGBA_8888,
-        colorSpace: ck.ColorSpace.SRGB
-      })
-    )
+    const pixels = unpremultipliedPixels(ck, image)
     const values: number[] = []
     for (let x = x0; x <= x1; x += 2) {
       values.push(pixels[((y + offset) * image.width() + x + offset) * 4 + channel])
@@ -64,6 +69,6 @@ export function expectFigmaRow(values: number[], figma: number[]): void {
   expect(values).toHaveLength(figma.length)
   const differences = values.map((value, index) => Math.abs(value - figma[index]))
   const rms = Math.sqrt(differences.reduce((sum, d) => sum + d * d, 0) / differences.length)
-  expect(Math.max(...differences)).toBeLessThanOrEqual(10)
+  expect(maxOf(differences)).toBeLessThanOrEqual(10)
   expect(rms).toBeLessThanOrEqual(3)
 }

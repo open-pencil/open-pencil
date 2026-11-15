@@ -9,7 +9,11 @@ import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
-import { savedDecoratedGlyphs, textDecorationRects } from '#core/text/decorations'
+import {
+  savedDecoratedGlyphs,
+  textDecorationRects,
+  type DecoratedGlyph
+} from '#core/text/decorations'
 
 const rectSchema = v.object({ x: v.number(), y: v.number(), w: v.number(), h: v.number() })
 const oracleSchema = v.object({
@@ -112,5 +116,87 @@ describe('text decorations as Figma saves them', () => {
     const rects = textDecorationRects(node, savedDecoratedGlyphs(glyphs))
     expect(rects).toHaveLength(1)
     expect(rects[0].x).toBe(0)
+  })
+})
+
+describe('decoration paints', () => {
+  const solid = (r: number, g: number, b: number) => ({
+    type: 'SOLID' as const,
+    color: { r, g, b, a: 1 },
+    opacity: 1,
+    visible: true
+  })
+  const [red, green, blue, orange] = [
+    solid(1, 0, 0),
+    solid(0, 1, 0),
+    solid(0, 0, 1),
+    solid(1, 0.5, 0)
+  ]
+
+  /** "Hey yo" at 10px a glyph, the two y's reaching below the baseline. */
+  function decorated(
+    textDecoration: 'UNDERLINE' | 'STRIKETHROUGH',
+    runs: [number, number, typeof red, boolean?][]
+  ) {
+    const graph = new SceneGraph()
+    const node = graph.createNode('TEXT', graph.getPages()[0].id, {
+      text: 'Hey yo',
+      fontFamily: '__FigmaInter__',
+      fontSize: 20,
+      textDecoration,
+      fills: [green],
+      styleRuns: runs.map(([start, length, fill, skipInk]) => ({
+        start,
+        length,
+        style: { fills: [fill], textDecorationSkipInk: skipInk }
+      }))
+    })
+    const glyphs: DecoratedGlyph[] = [...node.text].map((character, index) => ({
+      x: index * 10,
+      y: 20,
+      firstCharacter: index,
+      advance: 10,
+      ink: (top: number, bottom: number) =>
+        // A y's tail reaches its left edge, so the break widens past the glyph's start.
+        character === 'y' && bottom > 20 && top < 26 ? [index * 10, index * 10 + 3] : null
+    }))
+    return textDecorationRects(node, glyphs).map((rect) => rect.fills[0]?.color)
+  }
+
+  // Recorded in Figma desktop 126 (scratch/pr-oracle/grouping/underline-canvas.png).
+  test('paints each underline piece as the last character it covers, not per fill', () => {
+    expect(
+      decorated('UNDERLINE', [
+        [0, 1, blue],
+        [1, 5, red]
+      ])
+    ).toEqual([red.color, red.color, red.color])
+    expect(
+      decorated('UNDERLINE', [
+        [0, 1, red],
+        [1, 1, green],
+        [2, 3, blue],
+        [5, 1, orange]
+      ])
+    ).toEqual([blue.color, blue.color, orange.color])
+  })
+
+  test('paints a strikethrough, which never breaks, as its last character', () => {
+    expect(
+      decorated('STRIKETHROUGH', [
+        [0, 1, red],
+        [1, 5, blue]
+      ])
+    ).toEqual([blue.color])
+  })
+
+  test('keeps runs that skip ink differently apart, each breaking as it says', () => {
+    // "Hey" crosses no descender; " yo" breaks around its y.
+    expect(
+      decorated('UNDERLINE', [
+        [0, 3, red, false],
+        [3, 3, blue, true]
+      ])
+    ).toEqual([red.color, blue.color, blue.color])
   })
 })

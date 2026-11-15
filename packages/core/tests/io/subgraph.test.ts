@@ -102,6 +102,66 @@ describe('export subgraph extraction', () => {
     expect(extracted.graph.getNode(libraryPage.id)?.type).toBe('CANVAS')
   })
 
+  test('selection export carries the images strokes and video fills draw', () => {
+    const graph = new SceneGraph()
+    const black = { r: 0, g: 0, b: 0, a: 1 }
+    graph.images.set('stroke-image', new Uint8Array([1]))
+    graph.images.set('video-poster', new Uint8Array([2]))
+    graph.images.set('unused', new Uint8Array([3]))
+    const layer = graph.createNode('RECTANGLE', graph.getPages()[0].id, {
+      fills: [
+        { type: 'VIDEO', color: black, opacity: 1, visible: true, imageHash: 'video-poster' }
+      ],
+      strokes: [
+        {
+          type: 'IMAGE',
+          color: black,
+          opacity: 1,
+          visible: true,
+          imageHash: 'stroke-image',
+          weight: 2,
+          align: 'INSIDE'
+        }
+      ]
+    })
+
+    const extracted = extractExportGraph(graph, { scope: 'selection', nodeIds: [layer.id] })
+
+    expect([...extracted.graph.images.keys()].sort()).toEqual(['stroke-image', 'video-poster'])
+  })
+
+  test('selection export carries the poster only a vector region draws', () => {
+    const graph = new SceneGraph()
+    graph.images.set('region-poster', new Uint8Array([1]))
+    const vector = graph.createNode('VECTOR', graph.getPages()[0].id, {
+      fills: [],
+      vectorNetwork: {
+        vertices: [],
+        segments: [],
+        regions: [
+          {
+            windingRule: 'NONZERO',
+            loops: [],
+            fills: [
+              {
+                type: 'VIDEO',
+                color: { r: 0, g: 0, b: 0, a: 1 },
+                opacity: 1,
+                visible: true,
+                imageHash: 'region-poster',
+                videoHash: 'a'.repeat(40)
+              }
+            ]
+          }
+        ]
+      }
+    })
+
+    const extracted = extractExportGraph(graph, { scope: 'selection', nodeIds: [vector.id] })
+
+    expect([...extracted.graph.images.keys()]).toEqual(['region-poster'])
+  })
+
   test('fig page export preserves valid instance component references without serializing instance children', async () => {
     await initCodec()
     const graph = new SceneGraph()

@@ -302,7 +302,7 @@ export const PROPERTY_CASES: RoundTripCase[] = [
   }),
   leafCase('truncated text', 'TEXT', {
     text: 'Clipped',
-    textAutoResize: 'TRUNCATE',
+    textAutoResize: 'NONE',
     textTruncation: 'ENDING'
   }),
   {

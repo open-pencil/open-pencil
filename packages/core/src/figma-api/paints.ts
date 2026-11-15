@@ -1,12 +1,19 @@
 import * as v from 'valibot'
 
-import type { BlendMode, Fill, GradientTransform, ImageScaleMode } from '@open-pencil/scene-graph'
+import type {
+  BlendMode,
+  Fill,
+  GradientTransform,
+  ImageScaleMode,
+  SceneGraph
+} from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import {
   gradientTransformRows,
   IDENTITY_GRADIENT_TRANSFORM
 } from '@open-pencil/scene-graph/gradient'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
+import { regionFills } from '@open-pencil/scene-graph/vector-network'
 
 import { invalid, parseFigma } from '#core/figma-api/validation'
 
@@ -280,7 +287,7 @@ function sceneFill(paint: ParsedPaint, site: PaintSite): Fill {
       ...base,
       color: { ...BLACK },
       imageScaleMode: paint.scaleMode,
-      ...(hash !== null && { imageHash: hash }),
+      ...(hash !== null && (paint.type === 'IMAGE' ? { imageHash: hash } : { videoHash: hash })),
       ...(imageTransform && { imageTransform }),
       ...(paint.rotation !== undefined && { imageRotation: paint.rotation }),
       ...(paint.scalingFactor !== undefined && { scale: paint.scalingFactor })
@@ -334,10 +341,56 @@ function figmaMediaPaint(paint: Fill, type: 'IMAGE' | 'VIDEO', base: ReadBase): 
     filters: { ...NO_FILTERS }
   }
   const transform = rows(crop ? paint.imageTransform : undefined)
-  const hash = paint.imageHash ?? null
   return type === 'IMAGE'
-    ? { type, ...media, imageTransform: transform, imageHash: hash }
-    : { type, ...media, videoTransform: transform, videoHash: hash }
+    ? { type, ...media, imageTransform: transform, imageHash: paint.imageHash ?? null }
+    : { type, ...media, videoTransform: transform, videoHash: paint.videoHash ?? null }
+}
+
+function videoClip(paint: Fill): string | undefined {
+  return paint.type === 'VIDEO' ? paint.videoHash : undefined
+}
+
+function* knownPaints(nearby: readonly Fill[], sceneGraph: SceneGraph): Generator<Fill> {
+  yield* nearby
+  for (const node of sceneGraph.nodes.values()) {
+    yield* node.fills
+    yield* node.strokes
+    yield* regionFills(node.vectorNetwork)
+    for (const run of node.styleRuns) yield* run.style.fills ?? []
+  }
+}
+
+/** The poster of each of `clips`, from the first paint of that clip that has one. */
+function clipPosters(clips: Set<string>, paints: Iterable<Fill>): Map<string, string> {
+  const posters = new Map<string, string>()
+  for (const paint of paints) {
+    if (posters.size === clips.size) break
+    const clip = videoClip(paint)
+    if (clip && paint.imageHash && clips.has(clip) && !posters.has(clip)) {
+      posters.set(clip, paint.imageHash)
+    }
+  }
+  return posters
+}
+
+/**
+ * Figma's plugin API names only a video's clip, and Figma draws every paint of a clip with that
+ * clip's one poster frame, so each video paint written takes the poster its clip already has:
+ * found in `nearby` paints first (usually the ones being replaced), else anywhere in the document.
+ */
+export function withVideoPosters<T extends Fill>(
+  paints: T[],
+  sceneGraph: SceneGraph,
+  nearby: readonly Fill[] = []
+): T[] {
+  const clips = new Set(paints.flatMap((paint) => videoClip(paint) ?? []))
+  if (clips.size === 0) return paints
+  const posters = clipPosters(clips, knownPaints(nearby, sceneGraph))
+  return paints.map((paint) => {
+    const clip = videoClip(paint)
+    const poster = clip && posters.get(clip)
+    return poster ? { ...paint, imageHash: poster } : paint
+  })
 }
 
 function figmaPatternPaint(paint: Fill, base: ReadBase): FigmaPaint {

@@ -1,4 +1,5 @@
 import type { Effect, Fill, GradientTransform, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { UNSET_GLASS } from '@open-pencil/scene-graph/constants'
 import {
   gradientTransformRows,
@@ -282,5 +283,5 @@ function effectShorthand(effects: Effect[]): JSXProp[] | null {
 
 export function collectEffectProps(node: SceneNode, props: JSXProp[]): void {
   if (node.effects.length === 0) return
-  props.push(...(effectShorthand(node.effects) ?? [['effects', node.effects.map(effectValue)]]))
+  appendAll(props, effectShorthand(node.effects) ?? [['effects', node.effects.map(effectValue)]])
 }

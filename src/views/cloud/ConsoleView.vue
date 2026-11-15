@@ -16,12 +16,13 @@ import AdminPeopleSection from '@/components/cloud-portal/sections/AdminPeopleSe
 import AdminPersonSection from '@/components/cloud-portal/sections/AdminPersonSection.vue'
 import AdminReportsSection from '@/components/cloud-portal/sections/AdminReportsSection.vue'
 import AdminRequestsSection from '@/components/cloud-portal/sections/AdminRequestsSection.vue'
+import PlanSection from '@/components/cloud-portal/sections/PlanSection.vue'
 import ProfileSection from '@/components/cloud-portal/sections/ProfileSection.vue'
 import SecuritySection from '@/components/cloud-portal/sections/SecuritySection.vue'
 import SessionsSection from '@/components/cloud-portal/sections/SessionsSection.vue'
 import type { PortalSection } from '@/components/cloud-portal/types'
 
-const ACCOUNT_SECTIONS = ['profile', 'security', 'sessions', 'tokens'] as const
+const ACCOUNT_SECTIONS = ['profile', 'plan', 'security', 'sessions', 'tokens'] as const
 /** Every section, and a few people's pages, stay loaded while others are shown. */
 const SECTIONS_KEPT = 12
 const ADMIN_SECTIONS = [
@@ -74,6 +75,17 @@ const sections = computed<PortalSection[]>(() => {
       label: value.profile,
       group: value.sectionAccount
     },
+    // Only a server that sells plans has one to show.
+    ...(portal.discovery.billing
+      ? [
+          {
+            id: 'plan',
+            icon: PORTAL_SECTION_ICONS.plan,
+            label: value.plan,
+            group: value.sectionAccount
+          }
+        ]
+      : []),
     {
       id: 'security',
       icon: PORTAL_SECTION_ICONS.security,
@@ -151,6 +163,7 @@ const description = computed(() => {
   const value = messages.value
   const descriptions: Record<SectionId, string | null> = {
     profile: value.profileDescription({ host: portal.host }),
+    plan: value.planDescription,
     security: value.securityDescription({ host: portal.host }),
     sessions: value.sessionsDescription,
     tokens: value.accessTokensDescription,
@@ -212,6 +225,7 @@ onMounted(() => void refreshWaiting())
     <!-- Sections keep what they loaded while another is shown, and load again on return. -->
     <KeepAlive :max="SECTIONS_KEPT">
       <ProfileSection v-if="active === 'profile'" />
+      <PlanSection v-else-if="active === 'plan'" />
       <SecuritySection v-else-if="active === 'security'" />
       <SessionsSection v-else-if="active === 'sessions'" />
       <AccessTokensSection v-else-if="active === 'tokens'" />

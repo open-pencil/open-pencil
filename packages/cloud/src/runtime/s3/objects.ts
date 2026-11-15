@@ -288,6 +288,23 @@ export function createS3ObjectStore(config: CloudServerConfig): ObjectStore {
         if (isNotFoundError(error)) return null
         throw error
       }
+    },
+
+    async readRange(key, start, endExclusive) {
+      if (endExclusive <= start) return new Uint8Array()
+      try {
+        const object = await client.send(
+          new GetObjectCommand({
+            Bucket: config.s3Bucket,
+            Key: key,
+            Range: `bytes=${start}-${endExclusive - 1}`
+          })
+        )
+        return object.Body ? await object.Body.transformToByteArray() : null
+      } catch (error) {
+        if (isNotFoundError(error)) return null
+        throw error
+      }
     }
   }
 }

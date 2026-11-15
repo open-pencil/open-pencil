@@ -1,9 +1,10 @@
 import { afterEach, expect, jest, test } from 'bun:test'
 
+import { populationPort } from '#core-tests/helpers/fig/population-worker'
+
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { createPopulationWorkerClient } from '#core/kiwi/fig/population/client'
-import type { FigSessionPopulateRequest, FigSessionResponse } from '#core/kiwi/fig/session/protocol'
 
 afterEach(() => {
   jest.useRealTimers()
@@ -12,32 +13,16 @@ afterEach(() => {
 function workerClient() {
   const graph = new SceneGraph()
   const page = graph.getPages()[0]
-  let request: FigSessionPopulateRequest | undefined
-  let terminated = false
-  const port = {
-    onmessage: null as ((event: MessageEvent<FigSessionResponse>) => void) | null,
-    start: () => undefined,
-    close: () => undefined,
-    postMessage(message: FigSessionPopulateRequest) {
-      request = message
-    }
+  const worker = populationPort()
+  const client = createPopulationWorkerClient(graph, worker.worker, worker.port)
+  return {
+    client,
+    graph,
+    page,
+    send: worker.send,
+    sent: worker.request,
+    terminated: worker.terminated
   }
-  const worker = {
-    terminate: () => {
-      terminated = true
-    },
-    postMessage: () => undefined,
-    onerror: null,
-    onmessage: null
-  }
-  const client = createPopulationWorkerClient(graph, worker, port)
-  const send = (data: FigSessionResponse) =>
-    port.onmessage?.(new MessageEvent<FigSessionResponse>('message', { data }))
-  const sent = () => {
-    if (!request) throw new Error('Missing request')
-    return request
-  }
-  return { client, graph, page, send, sent, terminated: () => terminated }
 }
 
 /**
@@ -58,7 +43,7 @@ test('a page load that keeps reporting progress outlives the stall window', asyn
     requestId: sent().requestId,
     baseRevision: sent().baseRevision,
     populated: true,
-    delta: { created: [], updated: [], deleted: [], instanceIndex: [], populatedRootIds: [] }
+    delta: { created: [], updated: [], deleted: [], populatedRootIds: [] }
   })
   expect(await pending).toBe(true)
   client.terminate()
@@ -78,16 +63,24 @@ test('a page load that stops reporting progress falls back once the stall window
 })
 
 /**
- * An edit makes the worker's result unusable, so progress no longer keeps the load waiting: the
- * page loads on the main thread at once instead of after the worker finishes for nothing.
+ * The worker has the edits made while it loads a page, so they do not end the load: the page
+ * still loads there instead of on the main thread.
  */
-test('an edit during a page load that keeps reporting progress ends the wait at once', async () => {
+test('an edit during a page load keeps the load going', async () => {
   jest.useFakeTimers()
-  const { client, graph, page, send, sent } = workerClient()
+  const { client, graph, page, send, sent, terminated } = workerClient()
   const pending = client.populate(page.id)
   send({ type: 'population-progress', requestId: sent().requestId })
   graph.createNode('RECTANGLE', page.id)
   send({ type: 'population-progress', requestId: sent().requestId })
-  expect(await pending).toBeNull()
+  send({
+    type: 'population-result',
+    requestId: sent().requestId,
+    baseRevision: sent().baseRevision,
+    populated: true,
+    delta: { created: [], updated: [], deleted: [], populatedRootIds: [] }
+  })
+  expect(await pending).toBe(true)
+  expect(terminated()).toBe(false)
   client.terminate()
 })

@@ -272,6 +272,7 @@
     "@open-pencil/data/prefer-es-toolkit": "error",
     "@open-pencil/runtime/no-module-mocking": "error",
     "@open-pencil/data/no-reduce-accumulator-copy": "error",
+    "@open-pencil/data/no-spread-arguments": "error",
     "@open-pencil/types/no-widen-then-assert": "error",
     "@open-pencil/data/no-unvalidated-json-parse": "error",
     "@open-pencil/data/valibot-schema-conventions": "error",

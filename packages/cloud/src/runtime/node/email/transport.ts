@@ -77,16 +77,19 @@ export function createNodemailerInvitationDelivery(
   const transport = createNodemailerTransactionalEmailTransport(options)
   return {
     async sendDocumentInvitation(message: DocumentInvitationMessage): Promise<void> {
-      const rendered = await renderTransactionalEmail({
-        kind: 'document-invitation',
-        payload: {
-          inviterName: message.inviterName,
-          documentName: message.documentName,
-          permission: message.permission,
-          expiresAt: message.expiresAt,
-          acceptanceURL: message.acceptanceURL
-        }
-      })
+      const rendered = await renderTransactionalEmail(
+        {
+          kind: 'document-invitation',
+          payload: {
+            inviterName: message.inviterName,
+            documentName: message.documentName,
+            permission: message.permission,
+            expiresAt: message.expiresAt,
+            acceptanceURL: message.acceptanceURL
+          }
+        },
+        message.locale
+      )
       await transport.send({
         deliveryId: message.deliveryId,
         from: options.from,

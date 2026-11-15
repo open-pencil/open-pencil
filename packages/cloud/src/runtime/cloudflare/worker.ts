@@ -130,7 +130,14 @@ async function runScheduled(
     if (config.cleanupEnabled) {
       const policy = createConfiguredCloudPolicy(config, database)
       await runCleanup(
-        createCleanupServices(config, database, objects, policy, services.reporter),
+        createCleanupServices(
+          config,
+          database,
+          objects,
+          policy,
+          services.reporter,
+          services.transport ? services.email : undefined
+        ),
         cleanupPassOptions(config)
       )
     }

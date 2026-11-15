@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { useObjectUrl } from '@vueuse/core'
 import { isEqual } from 'es-toolkit'
+import { joinURL } from 'ufo'
 import { computed, ref, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
 
+import { CLOUD_ACCOUNT_PLAN_PATH } from '@open-pencil/cloud/contract'
 import { useCloudMessages } from '@open-pencil/vue/i18n'
 
 import { openCloudConnect } from '@/app/cloud/connect/flow'
@@ -44,10 +46,11 @@ const ago = (iso: string | null | undefined) => (iso ? dates.relative(iso) : '')
 const savedAgo = computed(() => ago(meta.value?.lastSyncedAt) || null)
 const viewOnly = computed(() => cloudRoomPermissions.value.get(store) === 'view')
 const atStorageLimit = computed(() => cloudRoomsAtStorageLimit.value.has(store))
-/** The billing portal of the server the document lives on, where a bigger plan is chosen. */
+/** The plan page of the server the document lives on, where a bigger plan is chosen. */
 const billingURL = computed(() => {
   const binding = store.getStorageBinding()
-  return (binding && cloudShareTarget(binding)?.discovery.billing?.portalURL) ?? null
+  const target = binding && cloudShareTarget(binding)
+  return target?.discovery.billing ? joinURL(target.server.url, CLOUD_ACCOUNT_PLAN_PATH) : null
 })
 const notLive = computed(() => cloudRoomsRefused.value.has(store))
 /** A tab opened from a link without an account has no Cloud file of its own to report on. */

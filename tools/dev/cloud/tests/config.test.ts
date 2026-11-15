@@ -12,6 +12,24 @@ const secrets = {
 }
 
 describe('local Cloud development configuration', () => {
+  test('shows a workspace as the community gallery only when one is named', () => {
+    const endpoints = {
+      cloudURL: 'https://feature.cloud.open-pencil.localhost',
+      editorURL: 'https://feature.open-pencil.localhost',
+      objectStorageURL: 'http://127.0.0.1:41000',
+      smtpPort: 41025
+    }
+    const workspaceId = '0f6b1c1e-6a8e-4b8e-9a4f-3c2d1e0f9a8b'
+    const gallery = parseCloudDeploymentTOML(
+      localCloudDeploymentTOML({ ...endpoints, communityWorkspace: workspaceId }),
+      secrets
+    )
+    expect(gallery.community).toEqual({ workspaceId })
+    expect(parseCloudDeploymentTOML(localCloudDeploymentTOML(endpoints), secrets).community).toBe(
+      undefined
+    )
+  })
+
   test('points branch URLs at the Compose services published on loopback', () => {
     const config = parseCloudDeploymentTOML(
       localCloudDeploymentTOML({

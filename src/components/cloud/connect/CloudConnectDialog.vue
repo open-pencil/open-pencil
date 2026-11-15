@@ -107,9 +107,13 @@ const errors = computed<Record<CloudConnectError, { heading: string; description
       heading: t.value.errorNotCloudHeading,
       description: t.value.errorNotCloudDescription
     },
-    outdated: {
-      heading: t.value.errorOutdatedHeading,
-      description: t.value.errorOutdatedDescription
+    'server-outdated': {
+      heading: t.value.errorServerOutdatedHeading,
+      description: t.value.errorServerOutdatedDescription
+    },
+    'editor-outdated': {
+      heading: t.value.errorEditorOutdatedHeading,
+      description: t.value.errorEditorOutdatedDescription
     },
     denied: { heading: t.value.errorDeniedHeading, description: t.value.errorDeniedDescription },
     expired: { heading: t.value.errorExpiredHeading, description: t.value.errorExpiredDescription },

@@ -2,6 +2,8 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { createAPI } from '#core-tests/helpers/figma-api'
 
+import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { SceneGraph } from '@open-pencil/scene-graph'
 import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
 beforeAll(async () => {
   await registerTestFont('Inter')
@@ -54,6 +56,33 @@ describe('text', () => {
     const text = api.createText()
     text.textAutoResize = 'WIDTH_AND_HEIGHT'
     expect(text.textAutoResize).toBe('WIDTH_AND_HEIGHT')
+  })
+
+  test('TRUNCATE is a fixed box that truncates its end, as Figma reads and writes it', () => {
+    const graph = new SceneGraph()
+    const api = new FigmaAPI(graph)
+    const text = api.createText()
+    text.textAutoResize = 'HEIGHT'
+    text.textTruncation = 'ENDING'
+    text.maxLines = 2
+
+    // Read through a function: the setters take values the getters report differently.
+    const read = (): string[] => [text.textAutoResize, text.textTruncation]
+
+    text.textAutoResize = 'TRUNCATE'
+    const node = graph.getNode(text.id)
+    expect([node?.textAutoResize, node?.textTruncation, node?.maxLines]).toEqual([
+      'NONE',
+      'ENDING',
+      null
+    ])
+    expect(read()).toEqual(['TRUNCATE', 'ENDING'])
+
+    text.textAutoResize = 'NONE'
+    expect(read()).toEqual(['NONE', 'DISABLED'])
+
+    text.textTruncation = 'ENDING'
+    expect(read()).toEqual(['TRUNCATE', 'ENDING'])
   })
 })
 

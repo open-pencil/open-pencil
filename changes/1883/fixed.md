@@ -1,0 +1,1 @@
+- Nested instances from `.fig` files keep their own align, grow, absolute positioning and constraints instead of taking their main component's, so a component that fills its parent no longer stretches every nested copy of it (#1883).

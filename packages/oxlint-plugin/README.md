@@ -59,6 +59,7 @@ An `extends` path resolves from the file that declares it, so a configuration in
 | `@open-pencil/data/no-hand-rolled-base64`      | Use `js-base64` instead of `atob`, `btoa`, or `Buffer` Base64 conversions.                                                                                                    |
 | `@open-pencil/data/prefer-es-toolkit`          | Use `es-toolkit`'s `uniq` and `compact` instead of `Set` round trips and `filter(Boolean)`.                                                                                   |
 | `@open-pencil/data/no-reduce-accumulator-copy` | Do not copy the accumulator on every `reduce` step.                                                                                                                           |
+| `@open-pencil/data/no-spread-arguments`        | Do not spread a list into `push`, `unshift`, `splice`, `Math.max`/`min`, or `String.fromCharCode`/`fromCodePoint`; past about 120,000 items Chrome throws.                    |
 | `@open-pencil/data/no-raw-sql`                 | Use Kysely's typed query builder instead of `sql` templates. Turn it off for migrations and reviewed helpers.                                                                 |
 | `@open-pencil/data/no-raw-runtime-effect`      | Compile SkSL only through the module that checks every program, not with `RuntimeEffect.Make`. Turn it off for that module.                                                   |
 

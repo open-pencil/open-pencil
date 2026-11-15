@@ -63,6 +63,7 @@ export function invalidateAllPictures(r: SkiaRenderer): void {
   invalidateScenePicture(r)
   r.tiledScene.invalidateStructure()
   clearNodePictures(r)
+  r.renderedBounds.clear()
 }
 
 export function invalidateNodePicture(
@@ -74,6 +75,7 @@ export function invalidateNodePicture(
     keepShaping: changedKeys !== undefined && !changesShaping(changedKeys)
   })
   r.textFonts.readiness.delete(nodeId)
+  r.renderedBounds.forget(nodeId)
   const cached = r.nodePictures.get(nodeId)
   if (cached) {
     cached.picture.delete()

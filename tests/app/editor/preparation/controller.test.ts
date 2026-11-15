@@ -167,6 +167,40 @@ describe('editor preparation controller', () => {
     handle.fail({ code: 'render-failed', message: 'Timed out', retryable: true })
     expect(state.preparation).toBeNull()
   })
+  test('waits as long as the scene keeps drawing, and fails once it stops', async () => {
+    jest.useFakeTimers()
+    try {
+      const state = createInitialAppEditorState('page')
+      const editor = createEditor()
+      const controller = createEditorPreparationController(state, undefined, {
+        editor,
+        presentationTimeoutMs: 100
+      })
+      controller.attachCanvas()
+      const handle = controller.begin({ kind: 'page-switch' })
+      let failure: unknown = null
+      const waiting = controller.waitForPresentation(handle.id, at(7)).catch((error) => {
+        failure = error
+      })
+      // A large page on a slow machine: tiles keep arriving, for far longer than the limit.
+      for (let frame = 0; frame < 20; frame++) {
+        jest.advanceTimersByTime(90)
+        editor.reportProgress(at(7))
+      }
+      // Tiles of an older frame are not this scene drawing.
+      jest.advanceTimersByTime(90)
+      editor.reportProgress(at(6))
+      await Promise.resolve()
+      expect(failure).toBeNull()
+      jest.advanceTimersByTime(10)
+      await waiting
+      expect(failure).toHaveProperty('message', 'The operation was timed out')
+      handle.fail({ code: 'render-failed', message: 'Timed out', retryable: true })
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
   test('waits without a timeout while no canvas shows the document', async () => {
     jest.useFakeTimers()
     try {

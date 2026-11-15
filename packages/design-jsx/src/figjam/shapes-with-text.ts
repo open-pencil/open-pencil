@@ -1,4 +1,5 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import {
   createShapeWithText,
   SHAPE_WITH_TEXT_CORNER_RADIUS,
@@ -59,7 +60,7 @@ export function shapeWithTextProps(graph: SceneGraph, node: SceneNode): JSXProp[
     props.push(['kind', SHAPE_KIND.print(node.shapeWithTextType)])
   }
   const label = shapeWithTextLabel(graph, node)
-  if (label) props.push(...figJamTextProps(label))
+  if (label) appendAll(props, figJamTextProps(label))
   // A truncating shape keeps the height it has; any other grows from the height it was given.
   const height =
     !node.shapeTruncates && node.shapeUserHeight > 0 ? node.shapeUserHeight : node.height

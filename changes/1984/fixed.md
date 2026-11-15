@@ -1,0 +1,1 @@
+- Long agent sessions through the AI chat, MCP, or WebMCP no longer use more memory and slow editing with every tool call (#1984).

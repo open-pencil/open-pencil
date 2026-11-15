@@ -78,7 +78,7 @@ describe('icon glyphs', () => {
     expect(graph.getChildren(frame.id)[0]).toMatchObject({ x: 8, y: 8, width: 32, height: 32 })
   })
 
-  test('a flat path, such as a minus sign, stretches with its icon when resized or swapped', () => {
+  test('a flat path, such as a minus sign, scales with its icon when resized or swapped', () => {
     const MINUS = '<path fill="none" stroke="currentColor" stroke-width="2" d="M5 12h14"/>'
     const { graph, frame } = placed(MINUS)
     const line = () => {
@@ -150,7 +150,7 @@ describe('icon glyphs', () => {
     }
   })
 
-  test('a swap into an unevenly resized icon stretches the glyph to it', () => {
+  test('a swap into an unevenly resized icon centers the glyph at its shorter side', () => {
     const { graph, frame, modified } = placed(OUTLINE)
     resize(graph, frame.id, 40, 20)
     swapIcon(
@@ -160,11 +160,11 @@ describe('icon glyphs', () => {
     )
 
     // Built at 20, the outline's square spans 3.33 to 16.67 (paths keep two decimals), then
-    // stretches twice as wide.
+    // moves 10 right to the middle of the frame, as SVG fits a square view box.
     const path = graph.getChildren(frame.id)[0]
-    expect(path?.x).toBeCloseTo(20 / 3, 1)
+    expect(path?.x).toBeCloseTo(10 + 10 / 3, 1)
     expect(path?.y).toBeCloseTo(10 / 3, 1)
-    expect(path?.width).toBeCloseTo(80 / 3, 1)
+    expect(path?.width).toBeCloseTo(40 / 3, 1)
     expect(path?.height).toBeCloseTo(40 / 3, 1)
     expect(modified()).toBe(false)
   })

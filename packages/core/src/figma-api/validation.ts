@@ -165,6 +165,9 @@ const EXPECTED: Partial<Record<string, string>> = {
  */
 function missing(schema: Schema | undefined, path: readonly PathItem[]): string {
   const own = schema && base(schema)
+  // Zod tries each of a choice's shapes on the missing value, and each finds it missing.
+  if (own?.type === 'union')
+    return noneMatched([`Required value missing${where(path)}`], pathText(path))
   if (own?.type === 'picklist') return invalidOption(own.expects, where(path))
   if (own?.type === 'literal') return `Invalid input: expected ${own.expects}${where(path)}`
   return `Required value missing${where(path)}`
@@ -197,6 +200,12 @@ function refinementLine(issue: v.BaseIssue<unknown>, at: string): string | null 
       return tooSmall(Number(issue.requirement), at)
     case 'max_value':
       return tooBig(Number(issue.requirement), at)
+    // Figma words an array of one length as an exact count.
+    case 'length': {
+      const size = Array.isArray(issue.input) ? issue.input.length : 0
+      const bound = size < Number(issue.requirement) ? 'Too small' : 'Too big'
+      return `${bound}: expected array to have exactly ${String(issue.requirement)} items${at}`
+    }
     case 'integer':
       return `Expected int, received number${at}`
     case 'finite':
@@ -244,17 +253,31 @@ function line(issue: v.BaseIssue<unknown>, root: Schema, prefix: readonly PathIt
   return `Expected ${EXPECTED[issue.type] ?? issue.type}, received ${received(issue.input)}${where(path)}`
 }
 
+const OBJECT_TYPES = new Set(['object', 'strict_object', 'loose_object'])
+
+/** Zod, and so Figma, refuses an array as an object, where Valibot reads its indices as keys. */
+function refusesArray(schema: Schema, value: unknown): boolean {
+  return Array.isArray(value) && OBJECT_TYPES.has(base(schema).type)
+}
+
 /**
  * Whether a shape matched but for checks on its values, such as a bound, an integer, or a key it
  * does not know, so a choice settles on it. Valibot counts a key left out and a number that is not
- * finite as matching too; Zod, and so Figma, refuses those as the wrong type.
+ * finite, or an array of another length, as matching too; Zod, and so Figma, refuses those as the
+ * wrong type.
  */
 function matchedButForChecks(issues: readonly v.BaseIssue<unknown>[]): boolean {
   return issues.every((issue) =>
     issue.kind === 'validation'
-      ? issue.type !== 'finite'
+      ? issue.type !== 'finite' && issue.type !== 'length'
       : issue.path?.at(-1)?.origin === 'key' && issue.expected === 'never'
   )
+}
+
+/** A shape of a choice that refused a value: its issues, or null where Zod refuses it as an array. */
+interface FailedShape {
+  option: Schema
+  issues: readonly v.BaseIssue<unknown>[] | null
 }
 
 /**
@@ -268,19 +291,23 @@ function figmaProblems(schema: Schema, value: unknown, prefix: readonly PathItem
     const result = v.safeParse(schema, value)
     return result.success ? [] : wordIssues(schema, result.issues, prefix)
   }
-  const branches = options(own).map((option) => ({ option, result: v.safeParse(option, value) }))
-  const failed = branches.flatMap(({ option, result }) =>
-    result.success ? [] : [{ option, issues: result.issues }]
-  )
+  const branches = options(own)
+  const failed = branches.flatMap((option): FailedShape[] => {
+    if (refusesArray(option, value)) return [{ option, issues: null }]
+    const result = v.safeParse(option, value)
+    return result.success ? [] : [{ option, issues: result.issues }]
+  })
   if (failed.length < branches.length) return []
-  const settled = failed.filter(({ issues }) => matchedButForChecks(issues))
-  if (settled.length === 1) return wordIssues(settled[0].option, settled[0].issues, prefix)
+  const settled = failed.filter(({ issues }) => issues && matchedButForChecks(issues))
+  const [only] = settled
+  if (settled.length === 1 && only.issues) return wordIssues(only.option, only.issues, prefix)
   // Shapes that fail alike, as every shape fails a missing value, read once.
   const lines = failed.map(({ option, issues }) => {
+    if (!issues) return `Expected object, received array${where(prefix)}`
     const problems = wordIssues(option, issues, prefix)
     return problems.length === 1
       ? (problems[0] ?? '')
-      : `Multiple issues${where(prefix)}:\n${problems.map((text) => indent(text)).join('\n')}`
+      : `Multiple issues${prefix.length > 0 ? ` at ${pathText(prefix)}` : ''}:\n${problems.map((text) => indent(text)).join('\n')}`
   })
   return [noneMatched(uniq(lines), pathText(prefix))]
 }
@@ -291,11 +318,30 @@ function wordIssues(
   issues: readonly v.BaseIssue<unknown>[],
   prefix: readonly PathItem[]
 ): string[] {
-  return issues.map((issue) => {
-    const nested = issue.type === 'union' ? schemaAt(schema, issue.path ?? []) : undefined
-    if (!nested) return line(issue, schema, prefix)
-    return figmaProblems(nested, issue.input, [...prefix, ...(issue.path ?? [])]).join('\n')
+  const lines = issues.map((issue) => {
+    const path = issue.path ?? []
+    const choice = choiceOnPath(schema, path)
+    if (!choice) return line(issue, schema, prefix)
+    const at = path.slice(0, choice.depth)
+    const value = at.at(-1)?.value ?? issue.input
+    return figmaProblems(choice.schema, value, [...prefix, ...at]).join('\n')
   })
+  return uniq(lines)
+}
+
+/**
+ * The first choice between shapes on an issue's path. Valibot reports the one shape of a choice
+ * that got past its type check as if there were no choice; Zod words every shape of it.
+ */
+function choiceOnPath(
+  schema: Schema,
+  path: readonly PathItem[]
+): { schema: Schema; depth: number } | undefined {
+  for (let depth = 1; depth <= path.length; depth++) {
+    const at = schemaAt(schema, path.slice(0, depth))
+    if (at && base(at).type === 'union') return { schema: at, depth }
+  }
+  return undefined
 }
 
 /** A line from an issue alone, a choice listing what each of its shapes found. */

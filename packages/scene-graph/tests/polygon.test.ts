@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import { compact } from 'es-toolkit'
 import * as v from 'valibot'
 
+import { minOf } from '@open-pencil/scene-graph/arrays'
 import {
   polygonCorners,
   polygonOutline,
@@ -83,7 +84,7 @@ describe('polygon outlines', () => {
       test(`${sample.name} stays within a third of a pixel of Figma`, () => {
         const theirs = figma.flatMap((command) => command.points)
         for (const [x, y] of ours.flatMap((command) => command.points)) {
-          const nearest = Math.min(...theirs.map(([fx, fy]) => Math.hypot(x - fx, y - fy)))
+          const nearest = minOf(theirs.map(([fx, fy]) => Math.hypot(x - fx, y - fy)))
           expect(nearest).toBeLessThan(0.35)
         }
       })

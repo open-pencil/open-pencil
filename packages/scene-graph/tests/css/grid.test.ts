@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import type { GridTrack } from '@open-pencil/scene-graph'
 import { parseCSSGridTracks } from '@open-pencil/scene-graph/css'
+import { MAX_GRID_TRACKS } from '@open-pencil/scene-graph/layout'
 
 const fr = (value: number): GridTrack => ({ sizing: 'FR', value })
 const fixed = (value: number): GridTrack => ({ sizing: 'FIXED', value })
@@ -32,6 +33,12 @@ describe('parseCSSGridTracks', () => {
 
   test('bounds a huge repeat count', () => {
     expect(parseCSSGridTracks('repeat(100000, 1fr)')).toHaveLength(100)
+  })
+
+  test('bounds the tracks nested repeats multiply to', () => {
+    const nested = 'repeat(100, repeat(100, repeat(100, repeat(100, repeat(100, 1fr)))))'
+    expect(parseCSSGridTracks(nested)).toHaveLength(MAX_GRID_TRACKS)
+    expect(parseCSSGridTracks(`${nested} ${nested}`)).toHaveLength(MAX_GRID_TRACKS)
   })
 
   test('returns separate track objects for repeated tracks', () => {

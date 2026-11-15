@@ -1,6 +1,6 @@
 import { sceneNodeToDesignDocument } from '@open-pencil/dom-css/export'
 
-import { raw, type NodeProxyInternals, type ProxyThis } from '#core/figma-api/accessor-utils'
+import { raw, type NodeProxyInternals, type ProxyThis } from '#core/figma-api/accessors/utils'
 import { graphOf } from '#core/figma-api/graph'
 import { flushPendingLayout } from '#core/figma-api/pending-layout'
 import { vectorElement } from '#core/io/formats/html/vectors'

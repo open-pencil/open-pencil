@@ -66,7 +66,8 @@ export function createExportTargetActions(editor: Editor, state: EditorState, io
   /**
    * Renders `nodeIds` on the page that holds them, which need not be the page on screen;
    * without IDs, renders every layer of `pageId`. A document whose canvas is not on screen,
-   * such as one in a background tab, draws with the headless renderer, as file exports do.
+   * such as one in a background tab, draws with the headless renderer, as file exports do; one
+   * that just came on screen draws once it has its fonts.
    */
   async function renderExportImage(
     nodeIds: string[],
@@ -79,8 +80,11 @@ export function createExportTargetActions(editor: Editor, state: EditorState, io
     if (ids.length === 0) return null
     const ownerPageId = findPageId(editor.graph, ids[0]) ?? pageId
     const options = { scale, format, useAbsoluteBounds }
+    // A canvas just put on screen draws no text until its fonts load, so its export waits for
+    // them; one gone meanwhile leaves the export to the headless renderer.
+    await editor.renderer?.whenFontsLoaded()
     const renderer = editor.renderer
-    if (!renderer) return headlessRenderNodes(editor.graph, ownerPageId, ids, options)
+    if (!renderer?.fontsLoaded) return headlessRenderNodes(editor.graph, ownerPageId, ids, options)
     return renderNodesToImage(renderer.ck, renderer, editor.graph, ownerPageId, ids, options)
   }
 

@@ -1,0 +1,1 @@
+- `FillSwatch` from `@open-pencil/vue/primitives/Fill` is an image only when given a `label`; without one it is hidden from assistive technology, and it no longer has an English fallback name or `aria-roledescription` (#2049).

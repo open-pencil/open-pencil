@@ -411,7 +411,7 @@ describe('imported auto-layout bounds', () => {
     expect(graph.getNode(chevron.id)?.x).toBe(200)
   })
 
-  test('lets live Yoga resize imported text when stored and derived sizes agree', () => {
+  test('lets live layout resize imported text when stored and derived sizes agree', () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
     const frame = graph.createNode('FRAME', page.id, {
@@ -533,7 +533,7 @@ describe('imported auto-layout bounds', () => {
     })
   })
 
-  test('uses Yoga positions for imported instances while preserving imported size', () => {
+  test('uses layout positions for imported instances while preserving imported size', () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
     const row = graph.createNode('FRAME', page.id, {

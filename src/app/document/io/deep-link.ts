@@ -74,7 +74,7 @@ export async function resolveDeepLinkFile(
 /** File-system entry points, injected so tests can drive the picker branch. */
 interface DeepLinkIo {
   choosePaths: () => Promise<string[]>
-  openPath: (path: string) => Promise<void>
+  openPath: (path: string) => Promise<unknown>
   /** Focuses the tab already showing `path`. False when no tab holds it. */
   activateTab: (path: string) => Promise<boolean>
   matchesSuffix: SuffixMatcher

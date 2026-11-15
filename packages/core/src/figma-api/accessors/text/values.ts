@@ -1,7 +1,6 @@
 import * as v from 'valibot'
 
 import type {
-  CharacterStyleOverride,
   Fill,
   TextCase,
   TextDecoration,
@@ -86,7 +85,7 @@ export function lengthOrAuto(
 }
 
 /** A range's fills, checked as `fills` checks them. */
-export function fillsFromPaints(method: string, value: unknown): CharacterStyleOverride['fills'] {
+export function fillsFromPaints(method: string, value: unknown): Fill[] {
   return parseFigmaPaints(value, method, 'value')
 }
 

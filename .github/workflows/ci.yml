@@ -114,6 +114,9 @@ jobs:
       - name: Typecheck test suites
         run: bun run check:test-types
 
+      - name: Load every browser spec
+        run: bun run check:specs
+
       - name: Typecheck repository tools
         run: bun run check:tools
 
@@ -351,6 +354,10 @@ jobs:
           persist-credentials: false
 
       - uses: ./.github/actions/setup/workspace
+
+      # The Worker reads a reported document's thumbnail with it; Bun runs its source, tsc reads its types.
+      - name: Build the .fig reader the Worker uses
+        run: bun --filter @open-pencil/fig build
 
       - name: Typecheck and test the feedback Worker against a local D1
         run: bun run test:feedback

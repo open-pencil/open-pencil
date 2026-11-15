@@ -54,6 +54,9 @@ export function createMemoryObjectStore() {
     },
     async read(key) {
       return contents.get(key) ?? null
+    },
+    async readRange(key, start, endExclusive) {
+      return contents.get(key)?.slice(start, endExclusive) ?? null
     }
   }
   return {

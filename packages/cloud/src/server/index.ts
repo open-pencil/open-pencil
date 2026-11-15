@@ -20,6 +20,13 @@ export {
   type EnrollmentStatus
 } from '#cloud/admin'
 export {
+  createBillingRoutes,
+  createBillingTokenService,
+  type BillingRouteEnvironment,
+  type BillingTokenService,
+  type BillingTokenServiceOptions
+} from '#cloud/server/billing'
+export {
   ServicesNotEntitledError,
   createServicesRoutes,
   createServicesTokenService,
@@ -278,9 +285,13 @@ export {
   type StaticEntitlementsInput
 } from './policy'
 export {
+  createStorageLimitNoticeService,
   createStorageQuotaService,
   createStorageReconciliationService,
   StorageQuotaExceededError,
+  type StorageLimitNoticeOptions,
+  type StorageLimitNoticeResult,
+  type StorageLimitNoticeService,
   type StorageQuotaService,
   type StorageQuotaSnapshot,
   type StorageReconciliation

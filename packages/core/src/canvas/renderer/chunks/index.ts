@@ -1,6 +1,7 @@
 import RBush from 'rbush'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { appendAll, maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 
 import { backdropReach, worldNodeVisualBounds } from '#core/canvas/renderer/visual-bounds'
 
@@ -277,8 +278,8 @@ export class RenderChunkIndex {
     for (const rootId of stale) {
       const rebuilt = this.replaceSubtree(graph, pageId, ownerChunk.topId, owner.id, rootId)
       if (rebuilt) {
-        removed.push(...rebuilt.removed)
-        added.push(...rebuilt.added)
+        appendAll(removed, rebuilt.removed)
+        appendAll(added, rebuilt.added)
       }
     }
     if (removed.length > 0) this.cachedBounds = undefined
@@ -333,10 +334,9 @@ export class RenderChunkIndex {
     // Replaced chunks draw first in their window, so the lower bound is just before them.
     const first =
       removed.length > 0
-        ? this.orderBefore(topId, Math.min(...removed.map((chunk) => chunk.painterOrder)))
+        ? this.orderBefore(topId, minOf(removed.map((chunk) => chunk.painterOrder)))
         : this.orderBeforeSibling(graph, ownerId, rootId)
-    const last =
-      removed.length > 0 ? Math.max(...removed.map((chunk) => chunk.painterOrder)) : first
+    const last = removed.length > 0 ? maxOf(removed.map((chunk) => chunk.painterOrder)) : first
     let end = painterOrderOf(topIndex + 1, 0)
     for (const id of this.chunkIdsByTop.get(topId) ?? []) {
       const chunk = this.chunks.get(id)
@@ -482,7 +482,7 @@ export class RenderChunkIndex {
         visited.add(id)
         dependencies.add(id)
         const node = graph.getNode(id)
-        if (node) pending.push(...node.childIds)
+        if (node) for (const childId of node.childIds) pending.push(childId)
       }
     }
     for (const dependencyId of dependencies) {

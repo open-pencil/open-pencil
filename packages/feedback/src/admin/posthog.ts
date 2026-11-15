@@ -3,6 +3,8 @@ import type { FeedbackBindings, FeedbackServices } from '#feedback/env'
 import { groupBy, orderBy } from 'es-toolkit'
 import * as v from 'valibot'
 
+import { maxOf } from '@open-pencil/scene-graph/arrays'
+
 const QUERY_TIMEOUT_MS = 20_000
 
 const usageRowSchema = v.tuple([v.string(), v.string(), v.number()])
@@ -12,7 +14,7 @@ const retentionRowSchema = v.tuple([v.string(), v.number(), v.number()])
  * The range's days as SQL date literals. Both are validated `YYYY-MM-DD` strings by the time
  * they get here (`MetricsQuerySchema`), so nothing else can reach the query text.
  */
-const dayRange = ({ start, end }: MetricsQuery, column = 'toDate(timestamp)') =>
+export const dayRange = ({ start, end }: MetricsQuery, column = 'toDate(timestamp)') =>
   `${column} >= toDate('${start}') AND ${column} <= toDate('${end}')`
 
 /** Installs per day and in all, then documents, exports, and AI replies by kind. */
@@ -46,39 +48,50 @@ const ranked = (rows: [string, string, number][]): RankedCount[] =>
   )
 
 /**
- * Asks PostHog over its query API with a personal key that can only read queries. The project
- * runs at most three queries at once, so the two run one after the other.
+ * Runs one HogQL query over PostHog's query API with a personal key that can only read queries,
+ * and checks each row against `row`. The project runs at most three queries at once, so callers
+ * run theirs one after the other.
+ */
+export async function queryPostHog<T extends v.GenericSchema>(
+  env: FeedbackBindings,
+  services: FeedbackServices,
+  sql: string,
+  row: T,
+  /** Constants the query names as `{placeholder}`, which PostHog binds rather than splices in. */
+  values?: Record<string, string | number>
+): Promise<v.InferOutput<T>[]> {
+  const response = await services.fetch(
+    `${env.POSTHOG_APP_HOST}/api/projects/${env.POSTHOG_PROJECT_ID}/query/`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.POSTHOG_PERSONAL_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        query: { kind: 'HogQLQuery', query: sql, ...(values && { values }) }
+      }),
+      signal: AbortSignal.timeout(QUERY_TIMEOUT_MS)
+    }
+  )
+  if (!response.ok) throw new Error(`PostHog answered ${response.status}`)
+  const schema = v.pipe(v.string(), v.parseJson(), v.object({ results: v.array(row) }))
+  const parsed = v.safeParse(schema, await response.text())
+  if (!parsed.success) throw new Error('PostHog sent an unexpected answer')
+  return parsed.output.results
+}
+
+/**
+ * Installs, retention, and usage by kind for the range, from PostHog; the two queries run one
+ * after the other.
  */
 export async function fetchUsage(
   env: FeedbackBindings,
   services: FeedbackServices,
   range: MetricsQuery
 ): Promise<MetricsUsage> {
-  async function query<T extends v.GenericSchema>(
-    sql: string,
-    row: T
-  ): Promise<v.InferOutput<T>[]> {
-    const response = await services.fetch(
-      `${env.POSTHOG_APP_HOST}/api/projects/${env.POSTHOG_PROJECT_ID}/query/`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${env.POSTHOG_PERSONAL_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ query: { kind: 'HogQLQuery', query: sql } }),
-        signal: AbortSignal.timeout(QUERY_TIMEOUT_MS)
-      }
-    )
-    if (!response.ok) throw new Error(`PostHog answered ${response.status}`)
-    const schema = v.pipe(v.string(), v.parseJson(), v.object({ results: v.array(row) }))
-    const parsed = v.safeParse(schema, await response.text())
-    if (!parsed.success) throw new Error('PostHog sent an unexpected answer')
-    return parsed.output.results
-  }
-
-  const usage = await query(usageQuery(range), usageRowSchema)
-  const retention = await query(retentionQuery(range), retentionRowSchema)
+  const usage = await queryPostHog(env, services, usageQuery(range), usageRowSchema)
+  const retention = await queryPostHog(env, services, retentionQuery(range), retentionRowSchema)
   // A kind with no events has no rows at all, so rows are picked by kind rather than looked up.
   const rowsOf = (kind: string) => usage.filter(([rowKind]) => rowKind === kind)
   const cohorts = Object.entries(groupBy(retention, ([cohort]) => cohort))
@@ -93,7 +106,7 @@ export async function fetchUsage(
       .toSorted(([a], [b]) => a.localeCompare(b))
       .map(([cohort, rows]) => {
         const counts = new Map(rows.map(([, day, installs]) => [day, installs]))
-        const last = Math.max(...counts.keys())
+        const last = maxOf(counts.keys())
         return {
           cohort,
           values: Array.from({ length: last + 1 }, (_, day) => counts.get(day) ?? 0)

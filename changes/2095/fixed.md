@@ -1,0 +1,1 @@
+- A large `.fig` page loads without freezing the editor for seconds as it arrives: its layers arrive in pieces the editor keeps responding between (#2095).

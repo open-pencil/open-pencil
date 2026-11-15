@@ -1,4 +1,5 @@
 import type {
+  EmailLocale,
   RenderedTransactionalEmail,
   TransactionalEmailKind,
   TransactionalEmailPayloadByKind
@@ -28,6 +29,17 @@ export type EnqueueTransactionalEmailInput<Kind extends TransactionalEmailKind> 
   kind: Kind
   recipientEmail: string
   payload: TransactionalEmailPayloadByKind[Kind]
+  /**
+   * The recipient account's own language, when the sender has the account: the email is then
+   * written in it, or in English when it has none, without looking the account up. Signing up
+   * needs this, since its callbacks run inside its transaction and must not query the database.
+   */
+  recipientLocale?: EmailLocale | null
+  /**
+   * The language to write in when the recipient has no account that chose one: the inviter's for
+   * an invitation. English otherwise.
+   */
+  fallbackLocale?: EmailLocale | null
 }
 
 export type TransactionalEmailDeliveryOptions = {

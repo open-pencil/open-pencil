@@ -21,6 +21,7 @@ import {
   type StorybookFile,
   type StorybookFramework
 } from '@open-pencil/dom-css'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 
 import { requireFile } from '#cli/app/client'
 import { requestedPage } from '#cli/app/target'
@@ -267,7 +268,7 @@ async function resolveDocuments(args: StorybookArgs): Promise<string[]> {
     const matches: string[] = []
     for await (const match of glob(pattern)) matches.push(match)
     if (matches.length === 0) throw new Error(`No documents match ${pattern}.`)
-    documents.push(...matches.sort())
+    appendAll(documents, matches.sort())
   }
   return uniq(documents)
 }

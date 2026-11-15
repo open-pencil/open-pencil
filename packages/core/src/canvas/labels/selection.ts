@@ -1,6 +1,5 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneNode, SceneGraph } from '@open-pencil/scene-graph'
-import { computeBounds } from '@open-pencil/scene-graph/geometry'
 
 import type { SkiaRenderer, RenderOverlays } from '#core/canvas/renderer'
 import {
@@ -10,7 +9,12 @@ import {
   SIZE_PILL_RADIUS,
   SIZE_PILL_TEXT_OFFSET_Y
 } from '#core/constants'
-import { createSceneGeometry, hasTransformHandles, panelNumber } from '#core/geometry'
+import {
+  createSceneGeometry,
+  hasTransformHandles,
+  panelNumber,
+  selectionBounds
+} from '#core/geometry'
 
 import { measureGlyphWidth } from './paragraph-cache'
 import { frameLabelPlacement, labelScreenMatrix } from './transform'
@@ -24,7 +28,7 @@ function accumulateSelectionBounds(
     .map((id) => graph.getNode(id))
     .filter((node): node is SceneNode => node !== undefined)
   const geometry = createSceneGeometry(graph, overlays?.rotationPreview)
-  const bounds = computeBounds(nodes.map(geometry.bounds))
+  const bounds = selectionBounds(geometry, nodes)
   return {
     nodes,
     minX: bounds.x,

@@ -56,6 +56,8 @@ export type { BundledFontLocator } from '#core/text/font/bundled'
 
 export class FontManager {
   private loadedFamilies = new Map<string, ArrayBuffer>()
+  /** The families `loadedFamilies` has a face of, so asking needs no scan of its keys. */
+  private loadedFamilyNames = new Set<string>()
   private loadedFamilySources = new Map<string, FontLoadedSource>()
   private unavailableFaces = new Map<string, FontUnavailableReason>()
   /** Faces a load looked for everywhere and found nowhere, until one of them loads after all. */
@@ -585,7 +587,7 @@ export class FontManager {
   }
 
   isLoaded(family: string): boolean {
-    return [...this.loadedFamilies.keys()].some((k) => k.startsWith(`${family}|`))
+    return this.loadedFamilyNames.has(family)
   }
 
   isStyleLoaded(family: string, style: string): boolean {
@@ -962,6 +964,7 @@ export class FontManager {
       this.replacedFamilies.add(family)
     }
     this.loadedFamilies.set(key, buffer)
+    this.loadedFamilyNames.add(family)
     if (source) this.loadedFamilySources.set(key, source)
     this.registerFontInCanvasKit(family, buffer)
     if (!pageDrawsByName(source)) this.registerFontInBrowser(family, style, buffer)

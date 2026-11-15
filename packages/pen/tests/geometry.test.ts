@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import type { PenNode } from '@open-pencil/pen'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
@@ -90,8 +91,8 @@ describe('parsePenFile — shapes', () => {
     )
     const xs = expectDefined(node.vectorNetwork).vertices.map((vertex) => vertex.x)
     const ys = expectDefined(node.vectorNetwork).vertices.map((vertex) => vertex.y)
-    expect(Math.max(...xs)).toBeCloseTo(50)
-    expect(Math.max(...ys)).toBeCloseTo(40)
+    expect(maxOf(xs)).toBeCloseTo(50)
+    expect(maxOf(ys)).toBeCloseTo(40)
   })
 
   test('keeps an even-odd fill rule', () => {

@@ -1,0 +1,1 @@
+- A document read from a `.fig` saves again after one of its components swaps a layer for one of the same name before its instances sync.

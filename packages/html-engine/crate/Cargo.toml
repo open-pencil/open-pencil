@@ -9,11 +9,13 @@ publish.workspace = true
 [lib]
 crate-type = ["cdylib", "rlib"]
 
-# Blitz at DioxusLabs/blitz#1279's head, which requests atomic inline baselines from Taffy so
-# inline-block and inline-flex boxes sit on their lines; move to a main commit once it merges.
+# Blitz from open-pencil/blitz's `openpencil/blitz`, which carries DioxusLabs/blitz#1370 (tables on
+# Taffy's table layout) and #1279 (atomic inline baselines) until they merge upstream.
 [dependencies]
-blitz-dom = { git = "https://github.com/DioxusLabs/blitz", rev = "f540c664d6c37cbe1a232880223b28ef4a56f2af", default-features = false, features = ["svg", "woff", "floats"] }
-blitz-html = { git = "https://github.com/DioxusLabs/blitz", rev = "f540c664d6c37cbe1a232880223b28ef4a56f2af" }
-blitz-traits = { git = "https://github.com/DioxusLabs/blitz", rev = "f540c664d6c37cbe1a232880223b28ef4a56f2af" }
-parley = { version = "0.12", default-features = false, features = ["std"] }
+blitz-dom = { git = "https://github.com/open-pencil/blitz", rev = "eabcebd1c4906a49fad3de54bf268d8ffba666a2", default-features = false, features = ["svg", "woff", "floats"] }
+blitz-html = { git = "https://github.com/open-pencil/blitz", rev = "eabcebd1c4906a49fad3de54bf268d8ffba666a2" }
+blitz-traits = { git = "https://github.com/open-pencil/blitz", rev = "eabcebd1c4906a49fad3de54bf268d8ffba666a2" }
+# Stylo as Blitz builds it, for computed values Blitz resolves to used ones; keep it at Blitz's version.
+style = { version = "0.24.0", package = "stylo" }
+parley = { version = "0.13", default-features = false, features = ["std"] }
 serde_json = "1"

@@ -18,7 +18,7 @@ import {
   updateNode,
   type NodeProxyInternals,
   type ProxyThis
-} from '#core/figma-api/accessor-utils'
+} from '#core/figma-api/accessors/utils'
 import { assertFontLoaded, assertTextFontsLoaded } from '#core/figma-api/fonts/loaded'
 import {
   fontNameInputStyle,
@@ -28,7 +28,7 @@ import {
 } from '#core/figma-api/fonts/names'
 import { readVariationSettings } from '#core/figma-api/fonts/variations'
 import { graphOf } from '#core/figma-api/graph'
-import type { FigmaPaint } from '#core/figma-api/paints'
+import { withVideoPosters, type FigmaPaint } from '#core/figma-api/paints'
 import { fontNameSchema } from '#core/figma-api/schema'
 import {
   getRangeIndentation,
@@ -129,8 +129,11 @@ const RANGE_SETTERS: Record<string, RangeSetter> = {
     assertFontLoaded(method, node, style)
     return style
   },
-  setRangeFills: (method, _node, _start, _end, value) => ({
-    fills: fillsFromPaints(method, value)
+  setRangeFills: (method, node, _start, _end, value, graph) => ({
+    fills: withVideoPosters(fillsFromPaints(method, value), graph, [
+      ...node.styleRuns.flatMap((run) => run.style.fills ?? []),
+      ...node.fills
+    ])
   }),
   // A percent stays a percent, following the size of the characters it styles, as in Figma.
   setRangeLetterSpacing: (method, _node, _start, _end, value) => ({

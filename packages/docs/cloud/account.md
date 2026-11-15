@@ -1,15 +1,16 @@
 ---
 title: Your Cloud Account
-description: Manage your OpenPencil Cloud profile, sign-in methods, two-step sign-in, sessions, and the server's terms.
+description: Manage your OpenPencil Cloud profile, sign-in methods, two-step sign-in, sessions, access tokens, and the server's terms.
 ---
 
 # Your Account
 
-A server's account pages have three parts:
+A server's account pages have four parts:
 
 - **Profile** shows your picture, name, and email, and your account ID, which an administrator may ask for. **Upload picture**, beside your picture, takes a PNG, JPEG, WebP, or GIF image; drag and zoom it to choose what shows in the circle, and **Remove**, once you confirm, goes back to your initials. **Change name** opens a dialog for your new name. Signing in with Google uses your Google picture until you upload one. The server keeps every picture itself, so pages never load them from Google or anywhere else. **Change email** sends a link to the new address, and your email changes once you open it. The old address gets a note saying which address is taking over. If you signed in a while ago, the server asks for your password first.
 - **Sign-in and security** links Google or Apple, changes your password, and sets up two-step sign-in with an authenticator app or passkeys. Recovery codes are shown once: copy or download them before you close the dialog.
 - **Sessions** lists every browser and desktop app signed in to your account, with when each was last active, and your recent sign-ins. Sign out any session you don't recognize, or all of them except the one you're using.
+- **Access tokens** lets scripts and CI read and save your documents as you, sending a token as `Authorization: Bearer <token>`. **New token** asks what will use it and when it expires (30 days, 90 days, or a year), then shows the token once: copy it somewhere safe, such as a CI secret, before you close the dialog. The list shows each token's name, first characters, and when it was made, last used, and expires; **Revoke** stops anything using it at once. A token reaches your workspaces and documents, with their uploads, versions, and Trash, and documents shared with you; it can't change how you sign in, make other tokens, or reach administration.
 
 The server emails you when your account is signed in from an address it has never been signed in from, and when an authenticator app or a passkey is added or removed.
 

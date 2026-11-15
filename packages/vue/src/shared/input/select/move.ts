@@ -3,7 +3,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { duplicateAndDrag } from '#vue/shared/input/duplicate-drag'
 import { collectFlowDrags } from '#vue/shared/input/flow-reorder'
-import type { DragState } from '#vue/shared/input/types'
+import type { DragMove } from '#vue/shared/input/types'
 
 function isLockedInTree(id: string, editor: Editor) {
   for (
@@ -21,12 +21,6 @@ export function selectionIsLocked(editor: Editor) {
   return [...editor.state.selectedIds].every((id) => isLockedInTree(id, editor))
 }
 
-/**
- * Whether pressing `hit` should drag the current selection, as in Figma: the hit lies inside a
- * selected layer that a click does not look into, or a selected layer under the point lies inside
- * the hit group or boolean. A selected top-level frame or section stays open, so its layers are
- * selected by the press as they are when it is not selected.
- */
 /** Whether a selected frame, not a group or boolean, holds `hit`; a read-only press selects it then. */
 function insideSelectedFrame(hit: SceneNode, editor: Editor) {
   for (let node = editor.graph.getNode(hit.parentId ?? ''); node;) {
@@ -38,8 +32,8 @@ function insideSelectedFrame(hit: SceneNode, editor: Editor) {
   return false
 }
 
-function pressesSelection(hit: SceneNode, cx: number, cy: number, editor: Editor) {
-  return [...editor.state.selectedIds].some((id) => {
+function selectedLayerHoldingPress(hit: SceneNode, cx: number, cy: number, editor: Editor) {
+  return [...editor.state.selectedIds].find((id) => {
     if (id === hit.id) return false
     if (editor.graph.isDescendant(hit.id, id)) return !editor.graph.isOpenContainer(id)
     return editor.graph.isDescendant(id, hit.id) && editor.graph.isPointInNode(id, cx, cy)
@@ -115,7 +109,7 @@ export function createSelectionMoveDrag(
   sy: number,
   editor: Editor,
   duplicate: boolean
-): DragState {
+): DragMove {
   if (duplicate && editor.state.selectedIds.size > 0)
     return duplicateAndDrag(cx, cy, sx, sy, editor).drag
 
@@ -169,8 +163,24 @@ export function pressSelects(
   editor: Editor,
   deep = false
 ): boolean {
-  if (deep || !pressesSelection(hit, cx, cy, editor)) return true
+  if (deep || !selectedLayerHoldingPress(hit, cx, cy, editor)) return true
   return (
     resolveEditorProfile(editor.state).layerEdits === 'none' && insideSelectedFrame(hit, editor)
   )
+}
+
+export function pressedSelectedLayer(
+  hit: SceneNode,
+  selects: boolean,
+  cx: number,
+  cy: number,
+  editor: Editor
+): string | undefined {
+  if (editor.state.selectedIds.has(hit.id)) {
+    return hit.id
+  }
+  if (selects) {
+    return undefined
+  }
+  return selectedLayerHoldingPress(hit, cx, cy, editor)
 }

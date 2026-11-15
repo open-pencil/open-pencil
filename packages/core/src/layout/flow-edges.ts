@@ -1,29 +1,11 @@
-import {
-  Align,
-  Edge,
-  FlexDirection,
-  Gutter,
-  Justify,
-  Wrap,
-  type Node as YogaNode
-} from 'yoga-layout'
-
 import type { SceneNode } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { Edges, LayoutNode } from '@open-pencil/taffy'
 
-import { primaryAxisGap, siblingOverlap } from './item-spacing'
-import { createYogaNode, layoutPadding, mapAlign, mapJustify } from './yoga-helpers'
+import { counterAxisGap, primaryAxisGap, siblingOverlap } from './item-spacing'
+import { createLayoutNode, layoutPadding, mapAlign, mapJustify } from './node'
 
 type Side = 'top' | 'right' | 'bottom' | 'left'
-
-const PHYSICAL_EDGE: Record<Side, Edge> = {
-  top: Edge.Top,
-  right: Edge.Right,
-  bottom: Edge.Bottom,
-  left: Edge.Left
-}
-
-const SIDES = Object.keys(PHYSICAL_EDGE) as Side[]
 
 // The side a frame's flow ends on, which takes back the overlap of a negative gap.
 function trailingSide(frame: SceneNode, direction: 'LTR' | 'RTL'): Side {
@@ -32,21 +14,22 @@ function trailingSide(frame: SceneNode, direction: 'LTR' | 'RTL'): Side {
 }
 
 /** How an auto layout frame lines up its children: axis, wrapping, alignment, and gaps. */
-export function setFlexFlow(yogaNode: YogaNode, frame: SceneNode): void {
+export function setFlexFlow(layoutNode: LayoutNode, frame: SceneNode): void {
   const horizontal = frame.layoutMode === 'HORIZONTAL'
-  yogaNode.setFlexDirection(horizontal ? FlexDirection.Row : FlexDirection.Column)
-  yogaNode.setFlexWrap(frame.layoutWrap === 'WRAP' ? Wrap.Wrap : Wrap.NoWrap)
-  yogaNode.setJustifyContent(mapJustify(frame.primaryAxisAlign))
-  yogaNode.setAlignItems(mapAlign(frame.counterAxisAlign))
+  layoutNode.style.flexDirection = horizontal ? 'row' : 'column'
+  layoutNode.style.flexWrap = frame.layoutWrap === 'WRAP' ? 'wrap' : 'nowrap'
+  layoutNode.style.justifyContent = mapJustify(frame.primaryAxisAlign)
+  layoutNode.style.alignItems = mapAlign(frame.counterAxisAlign)
   if (frame.layoutWrap === 'WRAP' && frame.counterAxisAlignContent === 'SPACE_BETWEEN') {
-    yogaNode.setAlignContent(Align.SpaceBetween)
+    layoutNode.style.alignContent = 'space-between'
   }
   const primaryGap = primaryAxisGap(frame)
-  yogaNode.setGap(Gutter.Column, horizontal ? primaryGap : frame.counterAxisSpacing)
-  yogaNode.setGap(Gutter.Row, horizontal ? frame.counterAxisSpacing : primaryGap)
+  const counterGap = counterAxisGap(frame)
+  layoutNode.style.columnGap = horizontal ? primaryGap : counterGap
+  layoutNode.style.rowGap = horizontal ? counterGap : primaryGap
 }
 
-// Yoga clamps negative padding, while Figma lets it grow the box its children are laid out in past
+// CSS clamps negative padding, while Figma lets it grow the box its children are laid out in past
 // the frame's edges: they align, stretch, grow, and wrap within it. Such a frame lays its children
 // out in an inner flow box that takes the negative padding as its margins.
 function laysOutInFlowBox(frame: SceneNode): boolean {
@@ -55,56 +38,64 @@ function laysOutInFlowBox(frame: SceneNode): boolean {
   )
 }
 
-/** The Yoga node a frame's children go into: the frame's own, or its flow box. */
-export function insertFlowBox(yogaFrame: YogaNode, frame: SceneNode): YogaNode {
-  if (!laysOutInFlowBox(frame)) return yogaFrame
-  const box = createYogaNode()
+/** The layout node a frame's children go into: the frame's own, or its flow box. */
+export function insertFlowBox(frameNode: LayoutNode, frame: SceneNode): LayoutNode {
+  if (!laysOutInFlowBox(frame)) return frameNode
+  const box = createLayoutNode()
+  // Direction is not inherited from the frame's node, as each node takes its own.
+  box.style.direction = frameNode.style.direction
   setFlexFlow(box, frame)
-  box.setFlexGrow(1)
-  box.setFlexShrink(1)
-  yogaFrame.setFlexWrap(Wrap.NoWrap)
-  yogaFrame.setJustifyContent(Justify.FlexStart)
-  yogaFrame.setAlignItems(Align.Stretch)
-  yogaFrame.setAlignContent(Align.FlexStart)
-  yogaFrame.setGap(Gutter.All, 0)
-  yogaFrame.insertChild(box, 0)
+  box.style.flexGrow = 1
+  box.style.flexShrink = 1
+  frameNode.style.flexWrap = 'nowrap'
+  frameNode.style.justifyContent = 'flex-start'
+  frameNode.style.alignItems = 'stretch'
+  frameNode.style.alignContent = 'flex-start'
+  frameNode.style.columnGap = 0
+  frameNode.style.rowGap = 0
+  frameNode.append(box)
   return box
 }
 
-/** The laid-out Yoga node holding a frame's children, and where it sits in the frame. */
+/** The laid-out node holding a frame's children, and where it sits in the frame. */
 export function laidOutFlowBox(
-  yogaFrame: YogaNode,
+  frameNode: LayoutNode,
   frame: SceneNode
-): { node: YogaNode; origin: Vector } {
-  if (!laysOutInFlowBox(frame) || yogaFrame.getChildCount() === 0) {
-    return { node: yogaFrame, origin: { x: 0, y: 0 } }
+): { node: LayoutNode; origin: Vector } {
+  if (!laysOutInFlowBox(frame) || frameNode.children.length === 0) {
+    return { node: frameNode, origin: { x: 0, y: 0 } }
   }
-  const box = yogaFrame.getChild(0)
-  return { node: box, origin: { x: box.getComputedLeft(), y: box.getComputedTop() } }
+  const box = frameNode.children[0]
+  return { node: box, origin: { x: box.layout.left, y: box.layout.top } }
 }
 
 /**
- * Lays out what Yoga clamps: each in-flow child gives up a negative gap's overlap after it, and the
+ * Lays out what CSS clamps: each in-flow child gives up a negative gap's overlap after it, and the
  * frame takes it back on its trailing side, so a hugging frame ends at its last child; a negative
  * side becomes a margin of the flow box. Margins go on physical edges, as a child reads logical
  * ones in its own direction.
  */
 export function setFlowEdges(
-  yogaFrame: YogaNode,
-  box: YogaNode,
+  frameNode: LayoutNode,
+  box: LayoutNode,
   frame: SceneNode,
-  flow: readonly YogaNode[],
+  flow: readonly LayoutNode[],
   direction: 'LTR' | 'RTL'
 ): void {
   const overlap = flow.length > 1 ? siblingOverlap(frame) : 0
   const padding = layoutPadding(frame)
-  if (overlap === 0 && box === yogaFrame) return
+  if (overlap === 0 && box === frameNode) return
   const trailing = trailingSide(frame, direction)
   padding[trailing] += overlap
-  for (const side of SIDES) {
-    yogaFrame.setPadding(PHYSICAL_EDGE[side], Math.max(0, padding[side]))
-    if (box !== yogaFrame) box.setMargin(PHYSICAL_EDGE[side], Math.min(0, padding[side]))
+  const sides: Side[] = ['top', 'right', 'bottom', 'left']
+  const outer: Edges = {}
+  const inner: Edges = {}
+  for (const side of sides) {
+    outer[side] = Math.max(0, padding[side])
+    inner[side] = Math.min(0, padding[side])
   }
+  frameNode.style.padding = outer
+  if (box !== frameNode) box.style.margin = inner
   if (overlap === 0) return
-  for (const child of flow) child.setMargin(PHYSICAL_EDGE[trailing], -overlap)
+  for (const child of flow) child.style.margin = { ...child.style.margin, [trailing]: -overlap }
 }
