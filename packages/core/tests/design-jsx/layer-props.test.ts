@@ -45,6 +45,33 @@ describe('a layer prop of the wrong kind', () => {
     ])
   })
 
+  it('warns of a style value of the wrong kind, as the prop it stands for', async () => {
+    const { node, warnings } = await rendered(
+      '<Rectangle w={10} h={10} style={{ opacity: "bad" }} />'
+    )
+    expect(node.opacity).toBe(1)
+    expect(warnings).toEqual(['Invalid opacity "bad" on <rectangle> is ignored; expected number.'])
+  })
+
+  it('lets a prop override its style value', async () => {
+    const { node, warnings } = await rendered(
+      '<Rectangle w={10} h={10} opacity={0.5} style={{ opacity: "bad" }} />'
+    )
+    expect(node.opacity).toBe(0.5)
+    expect(warnings).toEqual([])
+  })
+
+  it('passes the attributes of an <svg> to its markup as written', async () => {
+    const graph = makeSceneGraph()
+    const [result] = await renderJSX(
+      graph,
+      '<svg viewBox="0 0 24 24" size={24} stroke="#000000" strokeWidth="2" fill="none"><line x1={2} y1={12} x2={22} y2={12} /></svg>'
+    )
+    const weights = graph.getChildren(result.id).map((path) => path.strokes[0]?.weight)
+    expect(weights).toEqual([2])
+    expect(result.warnings ?? []).toEqual([])
+  })
+
   it('leaves a line limit that is not a whole number of lines out', async () => {
     for (const [maxLines, warning] of [
       ['"2"', 'Invalid maxLines "2" on <text> is ignored; expected number.'],

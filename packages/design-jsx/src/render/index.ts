@@ -9,7 +9,13 @@ import { elementBindings, elementProps, elementSchema } from '../elements'
 import { ENUM_PROPS } from '../enums'
 import { DESIGN_JSX_HELPERS, designJSXHelpers } from '../helpers'
 import * as React from '../mini-react'
-import { elementPropWarnings, gridPropsSchema, layerPropsSchema } from '../schema'
+import { normalizeStyleProps } from '../overrides'
+import {
+  elementPropWarnings,
+  gridPropsSchema,
+  layerPropsSchema,
+  svgLayerPropsSchema
+} from '../schema'
 import type { DesignJSXServices } from '../services'
 import { TEXT_CONTENT_NAMES } from '../text-content'
 import { transformDesignJSXExpression } from '../transform'
@@ -58,12 +64,14 @@ function collectUnsupportedPropWarnings(
   const element = TEXT_CONTENT_NAMES[tree.type] ?? tree.type
   const schema = elementSchema(tree.type)
   if (schema) appendAll(warnings, elementPropWarnings(schema, tree.props, element))
-  // The layer props an element takes are read by one schema, which its own schema may restate.
+  // The layer props an element takes are read by one schema, which its own schema may restate,
+  // with the values its `style` gives where the props leave them unset, as rendering reads them.
+  const layerSchema = tree.type === 'svg' ? svgLayerPropsSchema : layerPropsSchema
   const layerProps = pickBy(
-    tree.props,
+    normalizeStyleProps(tree.props),
     (_, key) => supported.has(key) && !(schema && Object.hasOwn(schema.entries, key))
   )
-  appendAll(warnings, elementPropWarnings(layerPropsSchema, layerProps, element))
+  appendAll(warnings, elementPropWarnings(layerSchema, layerProps, element))
   // Every layer reads a grid placement inside a grid, whatever element it is.
   appendAll(warnings, elementPropWarnings(gridPropsSchema, tree.props, element))
   for (const [key, value] of Object.entries(tree.props)) {

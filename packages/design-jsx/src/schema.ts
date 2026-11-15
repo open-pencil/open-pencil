@@ -145,6 +145,12 @@ export const layerPropsSchema = v.object({
 /** An element's props with the layer props read by `layerPropsSchema`. */
 export type LayerProps = Record<string, unknown> & v.InferOutput<typeof layerPropsSchema>
 
+/**
+ * The layer props an inline `<svg>` reads itself. Its other props, such as `strokeWidth="2"`,
+ * are attributes of its markup's root, which the SVG service reads as SVG does.
+ */
+export const svgLayerPropsSchema = v.pick(layerPropsSchema, ['label'])
+
 /** `props` with its layer props read by `layerPropsSchema`, as every element reads them. */
 export function readLayerProps(props: Readonly<Record<string, unknown>>): LayerProps {
   return readKnownProps(layerPropsSchema, props)

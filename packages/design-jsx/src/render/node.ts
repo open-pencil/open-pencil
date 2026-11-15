@@ -197,13 +197,16 @@ function renderSVGNode<Artwork>(
   tree: TreeNode,
   parentId: string
 ): SceneNode {
-  const props = readLayerProps(svgSizeProps(tree.props))
+  const source = svgSizeProps(tree.props)
+  const props = readLayerProps(source)
   const body =
-    (typeof props.body === 'string' && props.body) ||
+    (typeof source.body === 'string' && source.body) ||
     tree.children.filter((c): c is string => typeof c === 'string').join('')
   // The viewBox maps into the layer's own box, which `w` and `h` set apart from the square `size`.
   const box = artworkBox(props)
-  const artwork = services.svg({ body, elements: tree.children.filter(isTreeNode), props }, box)
+  // The markup reads its root's attributes as written, such as a quoted `strokeWidth`.
+  const elements = tree.children.filter(isTreeNode)
+  const artwork = services.svg({ body, elements, props: source }, box)
   if (!artwork) {
     throw new Error('<svg> requires SVG markup, a body prop, or supported SVG shape children')
   }
