@@ -98,13 +98,14 @@ describe('no-hardcoded-colors lint checks indexed bindings', () => {
       fills: [{ type: 'SOLID', visible: true, opacity: 1, color: { r: 0.5, g: 0.5, b: 0.5 } }],
       strokes: [],
       effects: [],
+      textStyleId: null,
       effectStyleId: null
     }
 
     const messages: Array<{ message: string }> = []
     const context = {
       variables: GRAY_VARIABLES,
-      effectStyleIds: new Set<string>(),
+      isSharedStyle: () => false,
       report: (issue: { message: string }) => messages.push(issue),
       getConfig: () => ({}),
       getParent: () => null,
@@ -150,13 +151,14 @@ describe('no-hardcoded-colors lint checks indexed bindings', () => {
       fills: [{ type: 'SOLID', visible: true, opacity: 1, color: { r: 0.5, g: 0.5, b: 0.5 } }],
       strokes: [],
       effects: [],
+      textStyleId: null,
       effectStyleId: null
     }
 
     const messages: Array<{ message: string }> = []
     const context = {
       variables: GRAY_VARIABLES,
-      effectStyleIds: new Set<string>(),
+      isSharedStyle: () => false,
       report: (issue: { message: string }) => messages.push(issue),
       getConfig: () => ({}),
       getParent: () => null,

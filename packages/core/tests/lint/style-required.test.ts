@@ -15,21 +15,18 @@ function dropShadow(visible = true): SceneNode['effects'][number] {
   }
 }
 
-function lint(graph: SceneGraph): LintMessage[] {
-  return createLinter({
-    preset: 'recommended',
-    rules: ['effect-style-required']
-  }).lintGraph(graph).messages
+function lint(graph: SceneGraph, rule = 'effect-style-required'): LintMessage[] {
+  return createLinter({ preset: 'recommended', rules: [rule] }).lintGraph(graph).messages
 }
 
 /** A shared style on the internal canvas, linked by its source id the way a `.fig` file does. */
 function sharedStyle(
   graph: SceneGraph,
-  type: 'EFFECT' | 'FILL',
-  effects: SceneNode['effects']
+  type: 'EFFECT' | 'FILL' | 'TEXT',
+  effects: SceneNode['effects'] = []
 ): SceneNode {
-  const style = graph.createNode('RECTANGLE', internalCanvas(graph).id, {
-    name: type === 'EFFECT' ? 'shared shadow' : 'shared fill',
+  const style = graph.createNode(type === 'TEXT' ? 'TEXT' : 'RECTANGLE', internalCanvas(graph).id, {
+    name: `shared ${type.toLowerCase()}`,
     sharedStyleType: type,
     internalOnly: true,
     fills: [],
@@ -111,5 +108,52 @@ describe('effect-style-required', () => {
     card(graph, [dropShadow(false)])
 
     expect(lint(graph)).toEqual([])
+  })
+})
+
+/** A document with a FLOAT variable, so the rule has a typography token to suggest. */
+function typographyGraph(): SceneGraph {
+  const graph = new SceneGraph()
+  const collection = graph.createCollection('Typography')
+  graph.createVariable('Body size', 'FLOAT', collection.id, 16)
+  return graph
+}
+
+function label(graph: SceneGraph, textStyleId: string | null = null): SceneNode {
+  return graph.createNode('TEXT', graph.getPages()[0].id, {
+    name: 'label',
+    text: 'Checkout',
+    textStyleId
+  })
+}
+
+describe('text-style-required', () => {
+  test('accepts a text layer whose textStyleId is a shared TEXT style', () => {
+    const graph = typographyGraph()
+    const style = sharedStyle(graph, 'TEXT')
+    label(graph, style.source.id)
+
+    expect(lint(graph, 'text-style-required')).toEqual([])
+  })
+
+  test('reports a text layer with neither a text style nor bindings', () => {
+    const graph = typographyGraph()
+    const layer = label(graph)
+
+    expect(lint(graph, 'text-style-required')).toMatchObject([
+      { nodeId: layer.id, message: 'Text layer without typography variable bindings' }
+    ])
+  })
+
+  test('reports a textStyleId that names no text style', () => {
+    const graph = typographyGraph()
+    const effect = sharedStyle(graph, 'EFFECT', [dropShadow()])
+    const missing = label(graph, 'S:missing,')
+    const wrongKind = label(graph, effect.source.id)
+
+    expect(lint(graph, 'text-style-required').map((message) => message.nodeId)).toEqual([
+      missing.id,
+      wrongKind.id
+    ])
   })
 })

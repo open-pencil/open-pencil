@@ -10,7 +10,7 @@ export default defineRule({
     const visibleEffects = node.effects.filter((effect) => effect.visible)
     if (visibleEffects.length === 0) return
     // A link to a shared EFFECT style is already the preset this rule asks for.
-    if (node.effectStyleId && context.effectStyleIds.has(node.effectStyleId)) return
+    if (context.isSharedStyle('effect', node.effectStyleId)) return
     context.report({
       node,
       message: `Effect without shared style: ${visibleEffects.map((effect) => `${effect.type} ${effect.radius}px`).join(', ')}`,
