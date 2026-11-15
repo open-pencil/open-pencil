@@ -4,7 +4,14 @@ import { expectFigmaRow, renderRow, type FigmaRowScene } from '#core-tests/helpe
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
-import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
+import {
+  SceneGraph,
+  type Effect,
+  type Fill,
+  type VectorNetwork,
+  type VectorSegment
+} from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { isolatesInnerShadows } from '#core/canvas/shadows/render'
@@ -153,6 +160,112 @@ describe('a drop shadow of a vector with region fills', () => {
   test("casts from a region that takes the layer's fill", () => {
     expect(renderRow(ck, renderer, squares(undefined), 165, 110, 130)).toEqual(
       Array.from({ length: 11 }, () => 255)
+    )
+  })
+})
+
+function line(start: number, end: number): VectorSegment {
+  return { start, end, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
+}
+
+function sharpShadow(type: 'DROP_SHADOW' | 'INNER_SHADOW', offsetY: number): Effect {
+  return {
+    type,
+    radius: 0,
+    spread: 0,
+    offset: { x: 0, y: offsetY },
+    color: { r: 0, g: 0, b: 0, a: 0.5 },
+    visible: true,
+    blendMode: 'NORMAL',
+    showShadowBehindNode: false
+  }
+}
+
+const SQUARE_LOOP = [0, 1, 2, 3]
+
+function stackedSquares(regionCount: number): VectorNetwork {
+  return {
+    vertices: [
+      { x: 0, y: 0 },
+      { x: 40, y: 0 },
+      { x: 40, y: 40 },
+      { x: 0, y: 40 }
+    ],
+    segments: [line(0, 1), line(1, 2), line(2, 3), line(3, 0)],
+    regions: Array.from({ length: regionCount }, () => ({
+      windingRule: 'NONZERO' as const,
+      loops: [SQUARE_LOOP]
+    }))
+  }
+}
+
+const SAME_WINDING = [4, 5, 6, 7]
+const OPPOSITE_WINDING = [7, 6, 5, 4]
+
+function shiftedSquares(secondLoop: number[]): VectorNetwork {
+  return {
+    vertices: [
+      { x: 0, y: 0 },
+      { x: 40, y: 0 },
+      { x: 40, y: 40 },
+      { x: 0, y: 40 },
+      { x: 20, y: 0 },
+      { x: 60, y: 0 },
+      { x: 60, y: 40 },
+      { x: 20, y: 40 }
+    ],
+    segments: [
+      line(0, 1),
+      line(1, 2),
+      line(2, 3),
+      line(3, 0),
+      line(4, 5),
+      line(5, 6),
+      line(6, 7),
+      line(7, 4)
+    ],
+    regions: [
+      { windingRule: 'NONZERO', loops: [SQUARE_LOOP] },
+      { windingRule: 'NONZERO', loops: [secondLoop] }
+    ]
+  }
+}
+
+function regionVector(network: VectorNetwork, effect: Effect, fillOpacity = 1): FigmaRowScene {
+  return (graph, hostId) =>
+    graph.createNode('VECTOR', hostId, {
+      x: 100,
+      y: 100,
+      width: maxOf(network.vertices.map((vertex) => vertex.x)),
+      height: 40,
+      fills: [{ ...RED, opacity: fillOpacity }],
+      vectorNetwork: network,
+      effects: [effect]
+    })
+}
+
+describe('a drop shadow of a vector whose regions overlap', () => {
+  const dropShadow = sharpShadow('DROP_SHADOW', 30)
+
+  test('casts one shadow from the area they cover together', () => {
+    const single = renderRow(
+      ck,
+      renderer,
+      regionVector(stackedSquares(1), dropShadow),
+      165,
+      110,
+      130
+    )
+    expect(single).toEqual(Array.from({ length: 11 }, () => 128))
+    expect(
+      renderRow(ck, renderer, regionVector(stackedSquares(3), dropShadow), 165, 110, 130)
+    ).toEqual(single)
+  })
+
+  test('keeps the shadow even where only part of them overlaps', () => {
+    const shifted = regionVector(shiftedSquares(SAME_WINDING), dropShadow)
+    expect(renderRow(ck, renderer, shifted, 165, 104, 156)).toEqual(
+      Array.from({ length: 27 }, () => 128)
     )
   })
 })

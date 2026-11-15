@@ -11,8 +11,14 @@ import {
 import { paintShows } from '@open-pencil/scene-graph/paints'
 
 import { setPaintBlendMode } from '#core/canvas/blend/modes'
+import { unitedOutline } from '#core/canvas/paths/union'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
-import { drawOutline, makeNodeShapePath, withNodeOutline } from '#core/canvas/shapes'
+import {
+  drawOutline,
+  makeNodeShapePath,
+  withNodeOutline,
+  type NodeOutline
+} from '#core/canvas/shapes'
 import { sideStrokeRRects } from '#core/canvas/strokes/sides'
 import { fillsCastShadow } from '#core/geometry/shadows'
 
@@ -164,8 +170,32 @@ export function drawShapeDropShadow(
   blendMode: BlendMode | undefined
 ): void {
   drawMaskShadow(r, canvas, effect, blendMode, () =>
-    withNodeOutline(r, node, (outline) => drawOutline(canvas, outline, r.auxFill), spread)
+    withNodeOutline(
+      r,
+      node,
+      (outline) => drawUnitedOutline(r, canvas, node, outline, spread),
+      spread
+    )
   )
+}
+
+function drawUnitedOutline(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  outline: NodeOutline,
+  spread: number
+): void {
+  const united =
+    outline.kind === 'paths' && outline.paths.length > 1
+      ? unitedOutline(r, node, outline.paths, spread)
+      : null
+  if (!united) {
+    drawOutline(canvas, outline, r.auxFill)
+    return
+  }
+  canvas.drawPath(united, r.auxFill)
+  united.delete()
 }
 
 /** Whether the stroke reaches past the shape on any side, so it grows the shadow. */
