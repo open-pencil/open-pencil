@@ -16,7 +16,9 @@ import { useTemplateRef, watch } from 'vue'
 
 import type { TemplateCheck, TemplateProblem } from '@/app/ai/prompts/engine'
 import { appHistoryKeys } from '@/components/code-editor/history'
+import { dialogTooltips } from '@/components/code-editor/tooltips'
 import { useCodeMirror } from '@/components/code-editor/useCodeMirror'
+import { templateAssist } from '@/components/settings/prompts/template-assist'
 import { codeEditorTheme, promptEditorTheme } from '@/theme/code/editor'
 import promptEditorFieldTheme from '@/theme/settings/prompt-editor'
 
@@ -29,6 +31,7 @@ const {
   label,
   template = false,
   check = null,
+  variables = {},
   placeholder = '',
   unknownVariableMessage
 } = defineProps<{
@@ -37,6 +40,8 @@ const {
   /** Whether the text is a Knap template, highlighted and checked as one. */
   template?: boolean
   check?: TemplateCheck | null
+  /** A template's variables with their sample values, which completion and hovers show. */
+  variables?: Readonly<Record<string, unknown>>
   /** What an empty editor shows. */
   placeholder?: string
   /** What an underlined variable the prompt does not offer says, given its name. */
@@ -47,7 +52,8 @@ const ui = tv(promptEditorFieldTheme)()
 
 let externalUpdate = false
 
-const view = useCodeMirror(useTemplateRef('host'), {
+const host = useTemplateRef('host')
+const view = useCodeMirror(host, {
   doc: () => modelValue,
   label: () => label,
   theme: (dark) => [codeEditorTheme(dark), promptEditorTheme],
@@ -61,13 +67,17 @@ const view = useCodeMirror(useTemplateRef('host'), {
     appHistoryKeys(),
     keymap.of(standardKeymap),
     // A template's errors are reported by line, so its lines are numbered; instructions are prose.
-    ...(template ? [lineNumbers(), StreamLanguage.define(knapStreamParser)] : []),
+    ...(template
+      ? [lineNumbers(), StreamLanguage.define(knapStreamParser), templateAssist(variables)]
+      : []),
     EditorView.lineWrapping,
     EditorView.updateListener.of((update) => {
       if (update.docChanged && !externalUpdate)
         emit('update:modelValue', update.state.doc.toString())
     })
-  ]
+  ],
+  // Completion and hovers keep within Settings, which is a dialog.
+  reactive: [() => dialogTooltips(host.value)]
 })
 
 // Text set from outside, as by Reset, replaces the document.

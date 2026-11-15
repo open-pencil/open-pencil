@@ -11,6 +11,7 @@ type PromptEditorArgs = {
   label: string
   template?: boolean
   check?: TemplateCheck | null
+  variables?: Readonly<Record<string, unknown>>
   placeholder?: string
 }
 
@@ -32,13 +33,17 @@ const meta = {
 export default meta
 type Story = StoryObj<PromptEditorArgs>
 
-/** A Knap template, with a variable its prompt does not offer underlined. */
+/**
+ * A Knap template, with a variable its prompt does not offer underlined; its variables complete
+ * and show their sample values on hover.
+ */
 export const Template: Story = {
   args: {
     label: 'Chat titles',
     template: true,
     modelValue: 'Name this conversation.\n\nRequest:\n{{ request }}\n\nAlso {{ nope }}.',
-    check: { errors: [], unknownVariables: [{ message: 'nope', line: 6, column: 9 }] }
+    check: { errors: [], unknownVariables: [{ message: 'nope', line: 6, column: 9 }] },
+    variables: { request: 'Make the pricing cards the same height', reply: 'Done.' }
   },
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(canvasElement.querySelector('.cm-lintRange-warning')).not.toBeNull())

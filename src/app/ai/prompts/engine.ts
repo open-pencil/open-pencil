@@ -1,4 +1,4 @@
-import type { ASTNode, Expression, TemplateEngine } from 'knap'
+import type { ASTNode, Expression, TemplateEngine, Token, tokenize } from 'knap'
 
 import { appPreferences } from '@/app/settings/preferences/store'
 
@@ -17,13 +17,41 @@ export interface TemplateCheck {
   unknownVariables: TemplateProblem[]
 }
 
-let engine: Promise<TemplateEngine> | null = null
+/** A filter a template can pipe a value through, with how it is written when Knap shows one. */
+export interface PromptFilter {
+  name: string
+  example?: string
+}
 
-/** Knap, loaded with the first prompt it fills; the module is cached after. */
-export function loadPromptEngine(): Promise<TemplateEngine> {
-  return (engine ??= import('knap').then(({ createEngine, standardFilters }) =>
-    createEngine({ filters: standardFilters })
+interface PromptKnap {
+  engine: TemplateEngine
+  filters: PromptFilter[]
+  tokenize: typeof tokenize
+}
+
+let knap: Promise<PromptKnap> | null = null
+
+/** Knap, loaded with the first prompt it fills or the first editor that asks; cached after. */
+function loadKnap(): Promise<PromptKnap> {
+  return (knap ??= import('knap').then(
+    ({ createEngine, standardFilters, standardFilterMetadata, tokenize }) => {
+      const engine = createEngine({ filters: standardFilters })
+      const filters = Object.keys(engine.filters)
+        .sort()
+        .map((name) => ({ name, example: standardFilterMetadata[name]?.example }))
+      return { engine, filters, tokenize }
+    }
   ))
+}
+
+/** The engine that fills prompts. */
+export async function loadPromptEngine(): Promise<TemplateEngine> {
+  return (await loadKnap()).engine
+}
+
+/** The filters prompts can use, by name. */
+export async function loadPromptFilters(): Promise<PromptFilter[]> {
+  return (await loadKnap()).filters
 }
 
 /** Tags leave the lines they stood on; at most one blank line stays between paragraphs. */
@@ -40,23 +68,23 @@ export async function renderPrompt<Id extends TemplatePrompt>(
   id: Id,
   variables: PromptVariables<Id>
 ): Promise<string> {
-  const knap = await loadPromptEngine()
+  const engine = await loadPromptEngine()
   const builtIn = PROMPT_DEFINITIONS[id].template
   const custom = appPreferences.value.prompts[id]
   if (custom !== null) {
     // Knap writes a template's `{% set %}` into the variables it is given, so each render gets
     // its own copy and the built-in prompt is filled from the values as they came.
-    const result = await knap.render(custom, { variables: { ...variables } })
+    const result = await engine.render(custom, { variables: { ...variables } })
     if (result.errors.length === 0) return tidy(result.output)
     console.warn(`[Prompts] The ${id} prompt in Settings does not render; using the built-in one.`)
   }
-  return tidy(await knap.renderOrThrow(builtIn, { variables: { ...variables } }))
+  return tidy(await engine.renderOrThrow(builtIn, { variables: { ...variables } }))
 }
 
 /** The prompt `id` filled from `template` with the sample values its definition gives. */
 export async function previewPrompt(id: TemplatePrompt, template: string): Promise<string> {
-  const knap = await loadPromptEngine()
-  const result = await knap.render(template, {
+  const engine = await loadPromptEngine()
+  const result = await engine.render(template, {
     variables: { ...PROMPT_DEFINITIONS[id].variables }
   })
   return result.errors.length === 0 ? tidy(result.output) : ''
@@ -87,6 +115,11 @@ function expressionNames(expression: Expression): TemplateProblem[] {
   }
 }
 
+/** The names a loop over `iterator` reads: the iterator, and the `loop` and `<iterator>_index` Knap gives it. */
+function loopNames(iterator: string): string[] {
+  return [iterator, 'loop', `${iterator}_index`]
+}
+
 /** The variables `nodes` read that are neither the prompt's nor set by the template itself. */
 function unknownNames(nodes: readonly ASTNode[], known: Set<string>): TemplateProblem[] {
   const unknown: TemplateProblem[] = []
@@ -109,8 +142,7 @@ function unknownNames(nodes: readonly ASTNode[], known: Set<string>): TemplatePr
         if (node.alternate) walk(node.alternate, bound)
       } else if (node.type === 'for') {
         read(node.iterable, bound)
-        // Knap gives each loop `loop` and `<iterator>_index` besides the iterator itself.
-        walk(node.body, new Set([...bound, node.iterator, 'loop', `${node.iterator}_index`]))
+        walk(node.body, new Set([...bound, ...loopNames(node.iterator)]))
       }
     }
   }
@@ -120,8 +152,8 @@ function unknownNames(nodes: readonly ASTNode[], known: Set<string>): TemplatePr
 
 /** What is wrong with `template` as the prompt `id`. */
 export async function checkTemplate(id: TemplatePrompt, template: string): Promise<TemplateCheck> {
-  const knap = await loadPromptEngine()
-  const errors = knap.validate(template).map(({ message, line, column }) => ({
+  const engine = await loadPromptEngine()
+  const errors = engine.validate(template).map(({ message, line, column }) => ({
     message,
     line,
     column
@@ -129,7 +161,7 @@ export async function checkTemplate(id: TemplatePrompt, template: string): Promi
   if (errors.length > 0) return { errors, unknownVariables: [] }
   // A template can parse and still fail on its values, such as a loop over text, so it is
   // filled with the sample values too.
-  const filled = await knap.render(template, {
+  const filled = await engine.render(template, {
     variables: { ...PROMPT_DEFINITIONS[id].variables }
   })
   if (filled.errors.length > 0) {
@@ -139,5 +171,83 @@ export async function checkTemplate(id: TemplatePrompt, template: string): Promi
     }
   }
   const known = new Set(Object.keys(PROMPT_DEFINITIONS[id].variables))
-  return { errors, unknownVariables: unknownNames(knap.parse(template).ast, known) }
+  return { errors, unknownVariables: unknownNames(engine.parse(template).ast, known) }
+}
+
+/** Knap's tags, the words a template writes right after `{%`. */
+export const TEMPLATE_TAGS = ['if', 'elseif', 'else', 'endif', 'for', 'endfor', 'set'] as const
+
+/** What a template takes where some text of it ends, as Knap reads that text. */
+export interface TemplatePlace {
+  /** A tag's name after `{%`, a filter's after `|`, else a variable's. */
+  kind: 'tag' | 'filter' | 'variable'
+  /** Where the name being written starts in the text, and what of it is written. */
+  from: number
+  word: string
+  /** The names the text sets itself, and the iterators of loops still open where it ends. */
+  defined: string[]
+}
+
+/** The tokens that open or close an expression, and the text outside them. */
+const DELIMITERS = new Set<Token['type']>([
+  'variable_start',
+  'variable_end',
+  'tag_start',
+  'tag_end',
+  'text'
+])
+
+/** Where a token starts in `text`, from Knap's one-based line and column. */
+function tokenOffset(text: string, { line, column }: Token): number {
+  let offset = 0
+  for (let at = 1; at < line; at++) offset = text.indexOf('\n', offset) + 1
+  return offset + column - 1
+}
+
+/** The names `tokens` define: what `set` assigns, and the iterators of loops not yet ended. */
+function definedNames(tokens: readonly Token[]): string[] {
+  const set: string[] = []
+  const loops: string[][] = []
+  tokens.forEach((token, index) => {
+    const name = tokens.at(index + 1)
+    if (token.type === 'keyword_endfor') loops.pop()
+    if (name?.type !== 'identifier') return
+    if (token.type === 'keyword_set') set.push(name.value)
+    if (token.type === 'keyword_for') loops.push(loopNames(name.value))
+  })
+  return [...set, ...loops.flat()]
+}
+
+/**
+ * What can be written where `before`, a template's text up to the cursor, ends, read with
+ * Knap's own tokenizer: nothing in plain text, a string, a property after `.`, or the new name
+ * `for` and `set` take.
+ */
+export async function templatePlace(before: string): Promise<TemplatePlace | null> {
+  const { tokenize } = await loadKnap()
+  const tokens = tokenize(before).tokens.filter((token) => token.type !== 'eof')
+  const last = tokens.at(-1)
+  if (!last || last.type === 'string') return null
+  const lastFrom = tokenOffset(before, last)
+  const typing = last.type === 'identifier' && lastFrom + last.value.length === before.length
+  const previous = typing ? tokens.at(-2) : last
+  const opened = tokens.findLast((token) => DELIMITERS.has(token.type))
+  if (!previous || (opened?.type !== 'variable_start' && opened?.type !== 'tag_start')) return null
+  const from = typing ? lastFrom : before.length
+  const word = typing ? last.value : ''
+  // Knap reads `page.name` as one name; prompts' variables have no properties to offer.
+  if (word.includes('.')) return null
+  const defined = definedNames(tokens)
+  switch (previous.type) {
+    case 'tag_start':
+      return { kind: 'tag', from, word, defined }
+    case 'pipe':
+      return { kind: 'filter', from, word, defined }
+    case 'string':
+    case 'keyword_for':
+    case 'keyword_set':
+      return null
+    default:
+      return { kind: 'variable', from, word, defined }
+  }
 }

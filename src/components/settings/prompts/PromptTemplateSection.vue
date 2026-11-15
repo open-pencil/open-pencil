@@ -15,7 +15,7 @@ import PromptEditor from './PromptEditor.vue'
 const { prompt, heading } = defineProps<{ prompt: TemplatePrompt; heading: string }>()
 const { ai } = useI18n()
 const setting = useTemplatePromptSetting(prompt)
-const { text, modified, variables, check, preview } = setting
+const { text, modified, variables, samples, check, preview } = setting
 const previewOpen = ref(false)
 /** The first error and its line, then that OpenPencil's prompt stands in meanwhile. */
 const errorSummary = computed(() => {
@@ -36,6 +36,7 @@ const variableTags = variables.map((name) => `{{ ${name} }}`)
       template
       :label="heading"
       :check="check"
+      :variables="samples"
       :unknown-variable-message="(name) => ai.promptUnknownVariable({ name })"
     />
     <p v-if="variableTags.length > 0" class="flex flex-wrap items-center gap-1 text-2xs text-muted">

@@ -5,7 +5,13 @@ import {
   TEMPLATE_PROMPTS,
   type PromptVariables
 } from '@/app/ai/prompts/definitions'
-import { checkTemplate, previewPrompt, renderPrompt } from '@/app/ai/prompts/engine'
+import {
+  checkTemplate,
+  loadPromptFilters,
+  previewPrompt,
+  renderPrompt,
+  templatePlace
+} from '@/app/ai/prompts/engine'
 import {
   appPreferences,
   DEFAULT_APP_PREFERENCES,
@@ -123,5 +129,49 @@ describe('checking a template', () => {
     expect(text.length).toBeGreaterThan(0)
     expect(text).not.toMatch(/\n{3,}/)
     expect(appPreferences.value.prompts.review).toBeNull()
+  })
+})
+
+describe('what a template takes at the cursor', () => {
+  test('a tag after {%, a filter after |, a variable elsewhere in an expression', async () => {
+    expect(await templatePlace('Hi {% fo')).toMatchObject({ kind: 'tag', from: 6, word: 'fo' })
+    expect(await templatePlace('{{ name | up')).toMatchObject({
+      kind: 'filter',
+      from: 10,
+      word: 'up'
+    })
+    expect(await templatePlace('{{ name |')).toMatchObject({ kind: 'filter', from: 9, word: '' })
+    expect(await templatePlace('{% if la')).toMatchObject({ kind: 'variable', from: 6, word: 'la' })
+    expect(await templatePlace('Line\n{{ re')).toMatchObject({
+      kind: 'variable',
+      from: 8,
+      word: 're'
+    })
+  })
+
+  test('nothing in text, strings, properties, or the names for and set introduce', async () => {
+    for (const before of [
+      'plain te',
+      '{{ a }} te',
+      '{{ "a | b',
+      '{{ page.na',
+      '{% for it',
+      '{% set x'
+    ])
+      expect(await templatePlace(before)).toBeNull()
+  })
+
+  test('the names the template sets, and those of loops still open', async () => {
+    const open = await templatePlace('{% set n = 1 %}{% for card in cards %}{{ ')
+    expect(open?.defined).toEqual(['n', 'card', 'loop', 'card_index'])
+    const closed = await templatePlace('{% for card in cards %}{% endfor %}{{ ')
+    expect(closed?.defined).toEqual([])
+  })
+
+  test('offers the filters of the engine prompts are filled with', async () => {
+    const [first] = await loadPromptFilters()
+    expect(first).toBeDefined()
+    if (first)
+      expect((await checkTemplate('title', `{{ request | ${first.name} }}`)).errors).toEqual([])
   })
 })
