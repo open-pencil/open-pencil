@@ -2,7 +2,7 @@
 
 Vue 3 + CanvasKit (Skia WASM) + Taffy WASM design editor. Tauri v2 desktop, also runs in browser. Bun workspace monorepo.
 
-This file holds the repository map and the rules that apply everywhere. Rules for one folder live in that folder's `AGENTS.md`. **Before changing files under a mapped path, read this file and that path's guide.** Paths in every guide are repository-relative. Process for humans (setup, PRs, commits) is in `CONTRIBUTING.md`; product direction and Figma gaps are in `packages/docs/development/roadmap.md`.
+This file holds the repository map and the rules that apply everywhere. Rules for one folder live in that folder's `AGENTS.md`. **Before changing files under a mapped path, read this file and that path's guide.** Paths in every guide are repository-relative. Process for humans (setup, PRs, commits) is in `CONTRIBUTING.md`, and work that needs write access (fork runs, the merge queue, stacks) in `MAINTAINING.md`; product direction and Figma gaps are in `packages/docs/development/roadmap.md`.
 
 ## Map
 
@@ -66,6 +66,7 @@ Before a PR run `bun run check`, `bun run format`, `bun run test:unit`, and `bun
 ## Code conventions
 
 - Put code and tests in the established owning domain; inspect nearby structure before adding files. Group multi-file domains in subfolders instead of repeated sibling prefixes (`selection/container.ts`, not `selection-container.ts`).
+- Fix what a change touches in the same pull request; that a problem predates it is no reason to split it off (`.coderabbit.yaml`, path instructions).
 - Non-component folders and files use lowercase or kebab-case except standard entrypoints (`README.md`, `AGENTS.md`, `index.ts`). Component domains use kebab-case folders; Vue files stay PascalCase and component composables camelCase. Do not add new PascalCase app folders or root-level base controls; migrate old ones when touched.
 - No `any`, non-null assertions, or `Math.random()`; use precise types, guards, and `crypto.getRandomValues()` — through `randomHex`, `randomInt`, and `randomIndex` from `@open-pencil/scene-graph/random` rather than new copies. New component property IDs come from `createComponentPropertyId()`, and graph entity IDs from the `SceneGraph`'s generator (`createNode`, `createCollection`, `createMode`).
 - Valibot for first-party runtime validation. Keep Zod only where an upstream dependency requires it; never maintain parallel first-party schemas in both.
@@ -126,7 +127,7 @@ Follow `packages/docs/development/testing.md` and `tests/AGENTS.md`. Package-loc
 - Conventional Commits (`feat`, `fix`, `refactor`, `perf`, `docs`, `test`, `build`, `ci`, `chore`); short imperative subjects, rationale in the body; release commits are exactly `Release vX.Y.Z`. Preserve product casing: DOM/CSS, HTML, JSX, Tailwind, Kiwi, `.fig`, MCP, CLI, AI, ACP, i18n. Validate with `bun run check:commits --last` or `--from`/`--to`.
 - PR titles are Conventional Commits because GitHub uses them as merge subjects; branch-update merges get explicit subjects such as `chore: merge master into <branch>`. Do not rewrite published history solely to normalize messages.
 - Disclose AI assistance in the PR's AI assistance section, never as commit authorship, `Co-authored-by` trailers, promotional signatures, or session links. Preserve human co-author credits and third-party notices.
-- Stacked pull requests: `gh stack`, rebase never merge, land from the top layer via the merge queue (`CONTRIBUTING.md#stacked-pull-requests`).
+- Stacked pull requests: `gh stack`, rebase never merge, land from the top layer via the merge queue (`MAINTAINING.md#stacked-pull-requests`).
 - Issues, PR descriptions, and public comments use concise concrete technical prose: lead with the problem and outcome, add a short example when needed, avoid filler, promotional claims, decorative emojis, unnecessary tables, and file-by-file inventories. Link long logs or design notes.
 
 ## Code review
@@ -137,13 +138,8 @@ Follow `packages/docs/development/testing.md` and `tests/AGENTS.md`. Package-loc
 - Request evidence appropriate to the change: engine tests for state contracts, Storybook for isolated component states, browser integration tests for workflows, canvas snapshots for rendering, native tests for platform delivery. One does not prove another.
 - Preserve intentional behavior unless a concrete regression is demonstrated; for example, preferences and native credentials cannot transact together, so documented partial-save outcomes and retryable drafts are not bugs.
 - Keep comments concise and actionable; cite the location and the repository rule or existing analogue. Independently assess automated suggestions; never bulk-apply or bulk-resolve them to make a bot green.
-- Before reporting a pull request's state, read every CodeRabbit comment: inline threads, review bodies, outside-diff findings, and earlier rounds (`CONTRIBUTING.md`, Maintaining pull requests).
-- A ready-to-merge answer covers CI, conflicts, open threads, and related pull requests, and names each pull request by its link (`CONTRIBUTING.md`, Pull requests).
-- Look for open and recently merged pull requests and issues that overlap a change by what they do, not by one keyword, and say so before any line review when it duplicates or is made obsolete by another (`CONTRIBUTING.md`, Making a change).
-- Check behaviour meant to match Figma against live Figma, not the author's description (`packages/core/AGENTS.md`, Figma API).
 - Check a change on a hot path against a `master` baseline on a realistic document (`packages/docs/development/navigation-performance.md`, Baseline comparison).
 - Check an editing change for undo, redo, and the document's edited state (`packages/core/tests/editor/history/edit.test.ts`).
-- Fix what a change touches in the same pull request; that a problem predates it is no reason to split it off (`.coderabbit.yaml`, path instructions).
 
 ## Maintaining these guides
 

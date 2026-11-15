@@ -6,6 +6,7 @@ Questions and ideas go to [GitHub Discussions](https://github.com/open-pencil/op
 
 - `CONTRIBUTING.md` (this file): setup, pull requests, validation, commits.
 - [`AGENTS.md`](./AGENTS.md): repository map, cross-cutting conventions, and a `Guide` column pointing to the `AGENTS.md` inside each package or app domain. Read the root file and every guide on the path to the folder you change; coding agents pick them up the same way.
+- [`MAINTAINING.md`](./MAINTAINING.md): work that needs write access to the repository, such as approving fork runs, the merge queue, stacked pull requests, and releases.
 - [`packages/docs/development/`](packages/docs/development/): public explanations such as [architecture](https://openpencil.dev/development/architecture), [testing](packages/docs/development/testing.md), and the [roadmap](packages/docs/development/roadmap.md).
 
 ## Setup
@@ -37,7 +38,7 @@ APPLE_SIGNING_IDENTITY=- bun run tauri build -c '{"bundle": { "createUpdaterArti
 - Keep package boundaries and public exports intact. Keep pull requests focused: no temporary scaffolding, unrelated refactors, or changelog claims not represented by the diff.
 - For user-facing changes add a changelog fragment under `changes/<PR>/` instead of editing `CHANGELOG.md`, following `changes/README.md` and the rules in `AGENTS.md` (Documentation and changelog).
 - Tests follow the [testing architecture](packages/docs/development/testing.md) and `tests/AGENTS.md`. Extend the owner's existing suite; do not create a duplicate home.
-- `.fig` fixtures in `tests/fixtures/` are Git LFS. Use `git push --no-verify` to skip the slow LFS pre-push hook unless you changed `.fig` files. Pushing to a repository URL instead of a named remote makes the hook check and re-upload LFS objects from history, which can hang for a long time; when a push adds no LFS files, `GIT_LFS_SKIP_PUSH=1 git push` skips only the upload.
+- `.fig` fixtures in `tests/fixtures/` are Git LFS. Use `git push --no-verify` to skip the slow LFS pre-push hook unless you changed `.fig` files.
 
 ## Quality checks
 
@@ -68,24 +69,10 @@ Pull requests must be reviewable without guessing the author's intent.
 - Complete the AI assistance section. If an LLM materially helped create or modify the PR, list the model names you know. Write `None` otherwise. This is review context, not authorship attribution; prompts and transcripts are not required.
 - Keep the body primarily in English. Code identifiers, file paths, logs, error messages, and short quoted examples may use their original language.
 
-### Stacked pull requests
+### Reviews
 
-A stack is a chain of pull requests: the bottom one targets `master`, each one above targets the branch below. CI and branch protection treat every layer as targeting `master`.
-
-- Manage stacks with [`gh stack`](https://github.com/github/gh-stack) (`init`, `add`, `submit`, `sync`; add `--remote origin` with several remotes); a stacked pull request's base cannot be edited.
-- Keep it linear: when `master` or a lower branch moves, rebase the layers (`gh stack rebase` or the pull request's Rebase button) and push with `--force-with-lease`. Merging `master` in blocks the stack from merging.
-- Merge from the top layer through the merge queue, in the UI or with `gh api -X PUT repos/{owner}/{repo}/pulls/<n>/merge-async -f merge_action=merge_queue`; it lands every layer below too. `gh pr merge` and auto-merge are unavailable for stacks; `gh stack merge <pr> --yes` enqueues a layer and every layer below it.
-- Open a pull request on top of another one only through `gh stack`: a plain `--base <branch>` pull request gets neither the full CI nor a CodeRabbit review.
-- `gh stack submit` opens new layers as drafts, which CodeRabbit does not review; mark each one ready with `gh pr ready <n>`.
-- A stack push starts two runs for each upper layer and cancels one. A cancelled twin usually does not block, but if its `CI result` job still ran and failed, the layer shows as blocked: rerun that one run.
-
-### Maintaining pull requests
-
-- CodeRabbit reviews each push to a pull request that is ready for review and skips drafts. It pauses after five reviewed commits, to save review quota, and does not come back to a pull request it skipped while rate limited; ask for a review (`@coderabbitai review`) when one of those is ready for another look, after `@coderabbitai rate limit` shows capacity. Reply in its threads with the fixing commit rather than resolving them yourself, since it resolves its own.
-- Runs for a pull request from a fork wait as `action_required` after every push. Approve one run per workflow (`gh api -X POST repos/open-pencil/open-pencil/actions/runs/<id>/approve`): approving two runs of one workflow for the same head makes one cancel the other, and the cancelled required check blocks the merge until it is rerun. A run still `queued` long after newer runs started is orphaned; cancel it and rerun it. Before calling a fork's checks green, check that `CI result` is in the rollup at all.
-- GitHub refuses maintainer pushes to a fork owned by an organization, even when `maintainerCanModify` reports `true`; check `gh api repos/<owner>/<repo> --jq .owner.type` before planning follow-up commits there.
-- The merge queue squashes a pull request and adds a `Co-authored-by` trailer for every commit author. A commit authored by an AI identity, or carrying an AI tool's trailer, therefore fails the queue's Commit messages job though the pull request's own run passed; check `gh pr view <n> --json commits` before enqueuing.
-- After a pull request built on another one's branch outside a stack is squash-merged, update it by replaying its own commits onto a pinned `master` commit on a temporary branch, merging that same commit into it, and taking the temporary branch's tree. Merging a newer `master` than the replay used reverts whatever landed in between.
+- CodeRabbit reviews each push to a pull request that is ready for review and skips drafts. It pauses after five reviewed commits, to save review quota, and does not come back to a pull request it skipped while rate limited; ask for a review with `@coderabbitai review` when one of those is ready for another look.
+- Answer each review thread, human or CodeRabbit, with the commit that fixes it or the reason you disagree, rather than resolving it silently; CodeRabbit resolves its own threads once it sees the fix.
 
 ### Reviewability
 
