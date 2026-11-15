@@ -149,6 +149,26 @@ function hitTestTransparentContainer(
 }
 
 /**
+ * The mask run holding each child, asked for from the top child down: the walk steps back through
+ * the runs once rather than searching them for every child.
+ */
+function maskRunCursor(
+  graph: SceneGraph,
+  childIds: readonly string[]
+): (index: number) => MaskRun | undefined {
+  const runs = maskRuns(childIds, (id) => {
+    const child = graph.nodes.get(id)
+    return child !== undefined && isVisibleMask(child)
+  })
+  let runIndex = runs.length - 1
+  return (index) => {
+    while (runIndex >= 0 && runs[runIndex].start > index) runIndex--
+    const run = runs.at(runIndex)
+    return run && runIndex >= 0 && index >= run.maskedStart ? run : undefined
+  }
+}
+
+/**
  * Whether the point lies on what a run's masks draw, or there is no run to hold it to. A container
  * mask draws its own paint and its layers, so a click between its layers is outside it.
  */
@@ -189,15 +209,9 @@ function hitTestChildren(
     if (!containsPoint(px, py, parent, graph, transformCache)) return null
   }
 
-  const runs = maskRuns(parent.childIds, (id) => {
-    const child = graph.nodes.get(id)
-    return child !== undefined && isVisibleMask(child)
-  })
-  // Children are walked top down, so the run holding each one is found by stepping back.
-  let runIndex = runs.length - 1
+  const runAt = maskRunCursor(graph, parent.childIds)
   for (let i = parent.childIds.length - 1; i >= 0; i--) {
-    while (runIndex >= 0 && runs[runIndex].start > i) runIndex--
-    const run = runIndex >= 0 && i >= runs[runIndex].maskedStart ? runs[runIndex] : undefined
+    const run = runAt(i)
     const child = graph.nodes.get(parent.childIds[i])
     // A locked layer and everything in it are invisible to a press and to hover, as in Figma: a
     // click falls through to what lies under it, and a drag from it draws a marquee.
