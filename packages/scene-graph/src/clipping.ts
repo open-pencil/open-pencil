@@ -1,4 +1,4 @@
-import { computeBounds, type VisualBounds } from './geometry'
+import { computeBounds, visualBoundsCorners, type VisualBounds } from './geometry'
 import type { Vector } from './primitives'
 
 /**
@@ -96,14 +96,7 @@ export function clipBoundsToPolygon(
 ): VisualBounds | null {
   if (clipCorners.length < 3) return bounds
 
-  const subject: Vector[] = [
-    { x: bounds.minX, y: bounds.minY },
-    { x: bounds.maxX, y: bounds.minY },
-    { x: bounds.maxX, y: bounds.maxY },
-    { x: bounds.minX, y: bounds.maxY }
-  ]
-
-  const polygon = clipPolygon(subject, clipCorners)
+  const polygon = clipPolygon(visualBoundsCorners(bounds), clipCorners)
   if (!polygon) return null
 
   const box = computeBounds(polygon.map(({ x, y }) => ({ x, y, width: 0, height: 0 })))

@@ -7,6 +7,7 @@ import {
   intersectVisualBounds,
   strokeOverflow,
   unionVisualBounds,
+  visualBoundsCorners,
   visualBoundsToRect,
   type VisualBounds
 } from '@open-pencil/scene-graph/geometry'
@@ -363,12 +364,7 @@ export function computeNodeBounds(
   // ancestor preserving the polygon. Collapsing to an AABB between clips would
   // reintroduce corners already removed by an inner clip, so hidden regions
   // could look visible again to a later outer clip.
-  let polygon: Vector[] | null = [
-    { x: visual.minX, y: visual.minY },
-    { x: visual.maxX, y: visual.minY },
-    { x: visual.maxX, y: visual.maxY },
-    { x: visual.minX, y: visual.maxY }
-  ]
+  let polygon: Vector[] | null = visualBoundsCorners(visual)
   for (const clip of clips) {
     polygon = clipPolygon(polygon, clip)
     if (!polygon) {
