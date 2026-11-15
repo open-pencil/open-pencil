@@ -187,7 +187,7 @@ describe('a layer composited with a blend mode', () => {
     }
   }
 
-  test.each(['LINEAR_BURN', 'LINEAR_DODGE'] as const)(
+  test.each(['SOFT_LIGHT', 'LINEAR_BURN', 'LINEAR_DODGE'] as const)(
     'drawn directly, restores into a clip two device pixels around its bounds when %s draws through a runtime blender',
     (mode) => {
       expect(clipTheLayerRestoresInto(mode)).toEqual([6, 8, 22, 26])
@@ -293,7 +293,7 @@ describe('a blended layer recorded in a picture and drawn zoomed out', () => {
     }
   }
 
-  const cases = (['LINEAR_BURN', 'LINEAR_DODGE'] as const).flatMap((mode) =>
+  const cases = (['SOFT_LIGHT', 'LINEAR_BURN', 'LINEAR_DODGE'] as const).flatMap((mode) =>
     [0.25, 0.5].flatMap((scale) => [0, 17].map((rotation) => [mode, scale, rotation] as const))
   )
 

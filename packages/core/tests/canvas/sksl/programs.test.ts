@@ -20,6 +20,7 @@ describe('SkSL programs', () => {
         'dot grid',
         'plus darker blender',
         'plus lighter blender',
+        'soft light blender',
         'glass refraction',
         'glass light'
       ])
