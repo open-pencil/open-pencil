@@ -1,5 +1,7 @@
 import { markRaw, ref, type Ref } from 'vue'
 
+import { locale, LOCALE_LABELS } from '@open-pencil/vue/i18n'
+
 import { prepareImageAttachment } from '@/app/ai/attachment/image/prepare'
 import type { ImageAttachmentDraft } from '@/app/ai/attachment/image/types'
 import type { ChatInstance } from '@/app/ai/chat/submission/types'
@@ -21,6 +23,11 @@ interface ReviewOptions {
 export interface ReviewAsk {
   focus?: string
   references?: readonly ImageAttachmentDraft[]
+}
+
+/** The interface's language by its own name, as `Русский` or `日本語`. */
+function interfaceLanguage(): string {
+  return LOCALE_LABELS[locale.get()]
 }
 
 /**
@@ -78,7 +85,7 @@ export function useChatReview(options: ReviewOptions) {
       )
       return reviewDesign(
         store,
-        { focus: focus || undefined, references: images, signal },
+        { focus: focus || undefined, references: images, language: interfaceLanguage(), signal },
         options.dependencies
       )
     })
@@ -88,7 +95,9 @@ export function useChatReview(options: ReviewOptions) {
   function reviewToolChange(toolCallId: string): Promise<boolean> {
     const change = readToolChange(toolCallId)
     if (!change) return Promise.resolve(false)
-    return run((_store, signal) => reviewChange(change, { signal }, options.dependencies))
+    return run((_store, signal) =>
+      reviewChange(change, { signal, language: interfaceLanguage() }, options.dependencies)
+    )
   }
 
   /** Stops the review in progress, which then adds nothing. */

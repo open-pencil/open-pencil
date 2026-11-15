@@ -33,7 +33,14 @@ export interface ReviewRequest {
   focus?: string
   /** Images the person attached, which the design is compared against. */
   references?: readonly ModelImage[]
+  /** The interface's language, which the review is written in when the request names none. */
+  language?: string
   signal?: AbortSignal
+}
+
+/** What the review is written in: the request's language, else the interface's. */
+function languageRule(language = 'English'): string {
+  return `Write in the language of the person's request, or in ${language} when there is none.`
 }
 
 export interface ReviewDependencies {
@@ -124,10 +131,10 @@ function png(render: ModelRender): ModelImage {
 
 function question(
   context: string,
-  { focus, references = [] }: ReviewRequest,
+  { focus, references = [], language }: ReviewRequest,
   sees: boolean
 ): string {
-  const parts = [prompt.trim()]
+  const parts = [prompt.trim(), languageRule(language)]
   if (!sees) parts.push('There is no image: judge from the structure and lint findings alone.')
   else if (references.length > 0)
     parts.push(
@@ -221,7 +228,7 @@ export async function reviewDesign(
  */
 export async function reviewChange(
   change: ToolChange,
-  { signal }: { signal?: AbortSignal } = {},
+  { signal, language }: Pick<ReviewRequest, 'signal' | 'language'> = {},
   { createRuntime, ask }: ReviewDependencies = DEFAULT_DEPENDENCIES
 ): Promise<DesignReview> {
   const runtime = await reviewModel(createRuntime)
@@ -230,6 +237,7 @@ export async function reviewChange(
     canSee(runtime) && before && after ? [await blobImage(before), await blobImage(after)] : []
   const parts = [
     prompt.trim(),
+    languageRule(language),
     'Review one edit to the design: did it improve the design? Say what got better, what got worse, and what was lost, each with the change that would fix it. Ask for no close-ups.',
     images.length > 0
       ? 'The first image is the changed region before the edit, the second after it.'

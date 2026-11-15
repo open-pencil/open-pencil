@@ -229,3 +229,22 @@ describe('a review of one change', () => {
     expect(model.asked[0]?.images).toEqual([])
   })
 })
+
+describe('the language a review is written in', () => {
+  test('falls back to the interface’s, for a review asked without words', async () => {
+    const { store } = design()
+    const model = reviewer([{ findings: '- Хорошо.', zoomInto: [] }])
+    await reviewDesign(store, { language: 'Русский' }, model.dependencies)
+    expect(model.asked[0]?.text).toContain('Русский')
+  })
+
+  test('falls back to the interface’s for a change review too', async () => {
+    const model = reviewer([{ findings: '- Хорошо.', zoomInto: [] }])
+    await reviewChange(
+      { toolCallId: 'c', pageId: '0:1', nodeIds: [], jsx: { before: '', after: '' } },
+      { language: '日本語' },
+      model.dependencies
+    )
+    expect(model.asked[0]?.text).toContain('日本語')
+  })
+})
