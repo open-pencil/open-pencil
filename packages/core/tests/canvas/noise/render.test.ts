@@ -4,7 +4,7 @@ import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { noise } from '@open-pencil/design-jsx'
-import { SceneGraph, type Effect } from '@open-pencil/scene-graph'
+import { SceneGraph, type Effect, type SceneNode } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { withNoiseEffects } from '#core/canvas/noise/render'
@@ -155,6 +155,22 @@ describe('noise effects drawn as Figma draws them', () => {
     expect(maxRed).toBeGreaterThan(100)
     expect(maxRed).toBeLessThanOrEqual(128)
     expect(maxAlpha).toBeLessThanOrEqual(192)
+  })
+
+  test('grain a frame’s own fill once, as a shape’s', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    const props = {
+      width: SIZE,
+      height: SIZE,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }],
+      effects: [noise({ color: '#00000080', noiseSize: 1, density: 1 })]
+    } satisfies Partial<SceneNode>
+    const frame = graph.createNode('FRAME', page, props)
+    const rect = graph.createNode('RECTANGLE', page, { ...props, x: SIZE * 2 })
+    const exported = (id: string) =>
+      renderNodesToImage(ck, renderer, graph, page, [id], { scale: 1, format: 'PNG' })
+    expect(exported(frame.id)).toEqual(exported(rect.id))
   })
 
   test('a duotone splits each pixel between its two colours at full density', () => {

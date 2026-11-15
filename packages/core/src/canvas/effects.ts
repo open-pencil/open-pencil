@@ -1,6 +1,7 @@
 import type { Canvas, ImageFilter, MaskFilter, Path } from '@open-pencil/canvaskit'
 import type { Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { blurSigma, type VisualBounds } from '@open-pencil/scene-graph/geometry'
+import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { ResourceCache } from '#core/cache/resource'
@@ -154,5 +155,8 @@ export function renderLeafWithEffects(
 ): void {
   r.renderEffects(canvas, node, graph, 'behind')
   const content = () => paint(() => r.renderEffects(canvas, node, graph, 'inner'))
-  withNoiseEffects(r, canvas, node, graph, () => withLeafTexture(r, canvas, node, content, shape))
+  const textured = () => withLeafTexture(r, canvas, node, content, shape)
+  // A frame or group grains its fill with its children, around both, in `renderNode`.
+  if (isLayerContainer(node)) textured()
+  else withNoiseEffects(r, canvas, node, graph, textured)
 }
