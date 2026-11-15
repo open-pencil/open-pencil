@@ -182,7 +182,9 @@ mod macos {
     use objc2_core_foundation::{
         CFDictionary, CFNotificationCenter, CFNotificationName, CFNotificationSuspensionBehavior,
     };
-    use objc2_core_text::kCTFontManagerRegisteredFontsChangedNotification;
+    use objc2_core_text::{
+        kCTFontManagerRegisteredFontsChangedNotification, CTFontManagerCopyAvailableFontFamilyNames,
+    };
     use std::ffi::c_void;
     use std::ptr;
 
@@ -196,11 +198,19 @@ mod macos {
         super::signal();
     }
 
-    /// Core Text posts fonts registered for the user or the session to the distributed center.
+    /// Core Text tells a process, on its own local center, when another app registers or
+    /// removes fonts for the user or the session, or a font folder changes, once the process has
+    /// asked the font manager for its fonts; the distributed center hears none of it, and
+    /// fontique's `CTFontCollection` does not count as asking. Asking takes about 20 ms, so it
+    /// runs off the main thread.
     pub fn observe() {
-        let Some(center) = CFNotificationCenter::distributed_center() else {
+        let Some(center) = CFNotificationCenter::local_center() else {
             return;
         };
+        // SAFETY: a plain Core Text call; the list it returns is dropped.
+        std::thread::spawn(|| unsafe {
+            let _ = CTFontManagerCopyAvailableFontFamilyNames();
+        });
         // SAFETY: the callback reads none of its arguments, and the observer stays registered
         // for as long as the app runs.
         unsafe {
