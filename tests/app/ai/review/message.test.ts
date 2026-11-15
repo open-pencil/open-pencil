@@ -26,7 +26,7 @@ describe('a design review in the conversation', () => {
   })
 
   test('is not the reply a conversation is named from', () => {
-    expect(firstReply([reviewMessage(review), ask, reply])).toBe(firstReply([ask, reply]))
+    expect(firstReply([reviewMessage(review), ask, reply])).toBe('I made a card.')
     expect(firstReply([reviewMessage(review), ask])).toBe('')
   })
 })
