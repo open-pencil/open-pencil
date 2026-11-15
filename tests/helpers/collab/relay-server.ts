@@ -62,6 +62,9 @@ export async function startTestRelay() {
     rooms,
     /** Tells a document's rooms its version history changed, as the server does. */
     announceVersions: (documentId: string) => relay.announceVersions(documentId),
+    /** Tells a document's rooms one of its comment threads changed, as the server does. */
+    announceComments: (documentId: string, threadId: string) =>
+      relay.announceComments(documentId, threadId),
     /** Joins a document's room with the given permission, as a guest or a signed-in user. */
     join(
       documentId: string,

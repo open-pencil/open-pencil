@@ -7,14 +7,19 @@ import {
   withPluginData
 } from '@open-pencil/scene-graph/plugin-data'
 
-const { documentId, enabledLibraries } = OPEN_PENCIL_PLUGIN_DATA
+const { comments, documentId, enabledLibraries } = OPEN_PENCIL_PLUGIN_DATA
 
-/** The DOCUMENT record's plugin data: the root's own, the libraries it enables, and its id. */
+/**
+ * The DOCUMENT record's plugin data: the root's own, the libraries it enables, and its id. With
+ * `withoutComments` the root's comments stay out, for a server that keeps them itself.
+ */
 export function applyDocumentPluginData(
   documentNodeChange: KiwiNodeChange,
-  graph: SceneGraph
+  graph: SceneGraph,
+  options: { withoutComments?: boolean } = {}
 ): void {
-  const rootPluginData = graph.getNode(graph.rootId)?.pluginData ?? []
+  const own = graph.getNode(graph.rootId)?.pluginData ?? []
+  const rootPluginData = options.withoutComments ? withoutPluginData(own, [comments]) : own
   const bindings = [...graph.enabledLibraries.values()]
   // With no libraries enabled, the entry the document was opened with is kept as it was.
   const opened = rootPluginData.find((entry) => isPluginDataEntry(entry, enabledLibraries))

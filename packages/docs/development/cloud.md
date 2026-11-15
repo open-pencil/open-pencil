@@ -141,6 +141,16 @@ oldest first.
 - After each change the server sends `comments`, with the thread's ID, to the document's rooms, and
   open editors fetch that thread; peers cannot send it. Comments never enter the room's Yjs state or
   a revision, and go with their document when it is deleted for good.
+- In the editor, a Cloud tab's document holds the server's threads, so the comment list, pins,
+  scripts, agents and Save As read them as they read a file's (`src/app/cloud/comments/`). What the
+  tab changes in them is sent as the requests that make it, under the IDs the editor chose, so a
+  retry finds what it made; a change the server refuses is taken back. Only a tombstone deletes: a
+  thread the document lacks, as a file opened in its place does, is one it has not heard of. An
+  agent's comment is the signed-in account's, naming the agent.
+- The Cloud storage provider keeps comments (`keepsComments`), so a save to it writes the file
+  without them, while Save As, a download, and the portal's Download all write them in. A document
+  this device has not uploaded yet, as one just saved to Cloud, brings its file's threads along
+  under the names the file gave (`POST /api/documents/:id/threads/import`, editors only).
 
 ## Authentication and authorization
 

@@ -654,6 +654,8 @@ export interface CommentReply {
   author: string
   /** The author's collaboration color when they wrote it, for their avatar. */
   authorColor?: Color
+  /** The agent that wrote it, for `author` or as itself. */
+  agent?: string
   /** Markdown: bold, italic, strikethrough, links and lists. */
   text: string
   createdAt: string
@@ -678,6 +680,8 @@ export interface CommentThread {
   author: string
   /** The author's collaboration color when they wrote it, for their avatar. */
   authorColor?: Color
+  /** The agent that wrote it, for `author` or as itself. */
+  agent?: string
   /** Markdown: bold, italic, strikethrough, links and lists. */
   text: string
   createdAt: string

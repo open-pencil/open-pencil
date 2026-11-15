@@ -8,7 +8,11 @@ import CommentComposer from './CommentComposer.vue'
 import CommentThreadCard from './CommentThreadCard.vue'
 import { discussed, long, resolved } from './examples/threads'
 
-type Args = { thread: CommentThread; onReply: (threadId: string, text: string) => void }
+type Args = {
+  thread: CommentThread
+  readOnly?: boolean
+  onReply: (threadId: string, text: string) => void
+}
 
 const meta = {
   title: 'App/Editor/Comments/Thread Card',
@@ -21,7 +25,7 @@ const meta = {
     template: `
       <TooltipProvider>
         <div class="flex max-h-[28rem] w-80 flex-col overflow-hidden rounded-xl bg-panel shadow-[0_0_0_1px_var(--color-border)]">
-          <CommentThreadCard :thread="args.thread" @reply="args.onReply" />
+          <CommentThreadCard :thread="args.thread" :read-only="args.readOnly" @reply="args.onReply" />
         </div>
       </TooltipProvider>
     `
@@ -37,6 +41,16 @@ export const Formatted: Story = {}
 export const Resolved: Story = { args: { thread: resolved } }
 
 export const LongThread: Story = { args: { thread: long } }
+
+/** A guest on a link reads the thread and cannot answer, resolve, or delete in it. */
+export const ReadOnly: Story = {
+  args: { readOnly: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.queryByRole('textbox', { name: 'Reply' })).toBeNull()
+    await expect(canvas.queryByRole('button', { name: 'Resolve' })).toBeNull()
+  }
+}
 
 export const Replying: Story = {
   play: async ({ canvasElement, args }) => {

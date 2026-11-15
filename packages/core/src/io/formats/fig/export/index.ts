@@ -9,6 +9,7 @@ import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { readComments } from '@open-pencil/scene-graph/comments'
 import { fractionalPosition } from '@open-pencil/scene-graph/order-keys'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 
@@ -114,7 +115,10 @@ export async function exportFigFileStream(
 ): Promise<ReadableStream<Uint8Array>> {
   // An archive whose images Figma cannot read is written whole rather than reused.
   const reuseArchive = await archiveImagesNamedForFigma(sourceGraph)
-  const originalArchive = reuseArchive ? await originalFigArchive(sourceGraph) : null
+  // The document's comments may be in the opened archive, and this write leaves them out.
+  const dropsComments = !!options.withoutComments && readComments(sourceGraph).length > 0
+  const originalArchive =
+    reuseArchive && !dropsComments ? await originalFigArchive(sourceGraph) : null
   if (originalArchive) {
     const reused = options.documentName
       ? renameFigArchive(originalArchive, options.documentName)
@@ -152,7 +156,9 @@ async function writeFigFile(
     graph = cloneSceneGraphForFigExport(sourceGraph)
     populateReaderExport(sourceGraph, graph)
   }
-  const setup = await prepareFigExport(graph, runtime)
+  const setup = await prepareFigExport(graph, runtime, {
+    withoutComments: options.withoutComments
+  })
   const { compiled, schemaDeflated } = exportSchema(graph)
   const { canvasEntries, internalCanvasGuid, localIdCounter, blobs } = setup
   const nodeChanges: KiwiNodeChange[] = [setup.documentNc]

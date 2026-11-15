@@ -24,7 +24,7 @@ import {
   type CommentPreferences
 } from '@/app/settings/preferences/store'
 
-import { followDocumentComments } from './document'
+import { commentsKeptElsewhere, followDocumentComments } from './document'
 
 /** A comment preference the list and menus read and change in place. */
 function preference<K extends keyof CommentPreferences>(
@@ -76,7 +76,17 @@ export const useComments = createGlobalState(() => {
     return { name: own?.name.value ?? identity.name.value, color: own?.color ?? identity.color }
   })
 
+  /**
+   * Whether this tab may write comments: anywhere the document keeps them, and where a server
+   * keeps them, as it allows, which a guest on a link never is.
+   */
+  const canComment = computed(() => {
+    const store = storeRef.value
+    return !store || (commentsKeptElsewhere.value.get(store)?.canComment ?? true)
+  })
+
   function startDraft(at: PagePoint) {
+    if (!canComment.value) return
     activeThreadId.value = null
     draft.value = at
   }
@@ -98,7 +108,7 @@ export const useComments = createGlobalState(() => {
     const place = draft.value
     const body = text.trim()
     const store = documentComments.store()
-    if (!store || !place || !body) return
+    if (!store || !place || !body || !canComment.value) return
     const thread = createCommentThread(store.graph, {
       pageId: place.pageId,
       at: place,
@@ -114,18 +124,19 @@ export const useComments = createGlobalState(() => {
   /** A dragged pin lands on whatever is under it now, as in Figma. */
   function movePin(threadId: string, at: Vector) {
     const store = documentComments.store()
-    if (!store) return
+    if (!store || !canComment.value) return
     update(threadId, (thread) => ({ ...thread, ...commentAnchor(store.graph, thread.pageId, at) }))
   }
 
   function reply(threadId: string, text: string) {
     const body = text.trim()
-    if (!body) return
+    if (!body || !canComment.value) return
     const entry = createCommentReply(me.value, body, now())
     update(threadId, (thread) => replyToCommentThread(thread, entry))
   }
 
   function setResolved(threadId: string, resolved: boolean) {
+    if (!canComment.value) return
     update(threadId, (thread) => resolveCommentThread(thread, resolved, now()))
     // A resolved thread leaves the canvas unless resolved comments are shown.
     if (resolved && !listShowResolved.value && activeThreadId.value === threadId) {
@@ -139,11 +150,13 @@ export const useComments = createGlobalState(() => {
   }
 
   function confirmDelete(threadId: string) {
+    if (!canComment.value) return
     update(threadId, deleteCommentThread)
     if (activeThreadId.value === threadId) activeThreadId.value = null
   }
 
   function deleteReply(threadId: string, replyId: string) {
+    if (!canComment.value) return
     update(threadId, (thread) => deleteCommentReply(thread, replyId))
   }
 
@@ -171,6 +184,7 @@ export const useComments = createGlobalState(() => {
     draft,
     onDeleteRequested: deleteRequested.on,
     author: computed(() => me.value.name),
+    canComment,
     showOnCanvas,
     listQuery,
     listShowResolved,

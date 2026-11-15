@@ -428,7 +428,8 @@ async function buildPatch(
   runtime: FigNodeChangeExportRuntime,
   info: FigArchiveRecordInfo,
   changes: ArchiveChangeSummary,
-  archived: ArchiveRecords
+  archived: ArchiveRecords,
+  withoutComments = false
 ): Promise<{ patch: FigRecordPatch; graph: SceneGraph } | null> {
   // Serializing reads the document and writes nothing to it, so the records come from it directly.
   const graph = source
@@ -438,12 +439,14 @@ async function buildPatch(
     blobs: Array.from({ length: info.blobCount }, () => new Uint8Array(0)),
     recordOwners: archived.byGuid,
     archiveRecordIds: info.recordIds,
-    archiveResourceIds: changes.resourceIds
+    archiveResourceIds: changes.resourceIds,
+    withoutComments
   })
   const records = writeRecords(setup, plan)
   if (!records) return null
-  // The document's own fields, its plugin data among them, are written on the document record.
-  if (changes.documentChanged || changes.touched.has(graph.rootId))
+  // The document's own fields, its plugin data among them, are written on the document record,
+  // and so is leaving out comments the archive may hold.
+  if (changes.documentChanged || changes.touched.has(graph.rootId) || withoutComments)
     records.unshift(documentRecord(setup, info))
   if (plan.replaceVariables) {
     const internalPage = graph.getPages(true).find((page) => page.internalOnly)
@@ -521,7 +524,7 @@ export async function writePatchedFigFile(
   const info = await archive.info()
   let built: Awaited<ReturnType<typeof buildPatch>>
   try {
-    built = await buildPatch(source, runtime, info, changes, archived)
+    built = await buildPatch(source, runtime, info, changes, archived, options.withoutComments)
   } catch (error) {
     if (error instanceof UnpatchableChangeError) return null
     throw error

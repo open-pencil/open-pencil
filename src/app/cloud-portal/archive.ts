@@ -12,6 +12,7 @@ import {
   pickBrowserSaveFile,
   supportsFileSystemAccess
 } from '@/app/document/io/capability'
+import { withCloudComments } from '@/app/cloud/comments/file'
 import { downloadCloudDocument } from '@/app/integrations/storage/cloud/download'
 
 type ArchiveDocument = CloudAccountDeletion['documents'][number]
@@ -77,9 +78,9 @@ function pickZipFile(name: string): Promise<FileSystemFileHandle | null> {
 }
 
 /**
- * Downloads `documents` as the editor opens them, images included, and saves them as one zip,
- * named by each document with duplicates numbered. A document that fails to download is left
- * out and reported. Where the browser can write to a file as it goes, the person picks one first
+ * Downloads `documents` as the editor opens them, images and comments included, and saves them
+ * as one zip, named by each document with duplicates numbered. A document that fails to download
+ * is left out and reported. Where the browser can write to a file as it goes, the person picks one first
  * and documents go into it one at a time, so an archive of any size holds about one document in
  * memory; elsewhere the zip is built in memory and saved when at least one document arrived.
  * Resolves to null when the person cancels the picker.
@@ -102,8 +103,13 @@ export async function saveAccountArchive(
     signal: options.signal
   })
   const fetchDocument: ArchiveFetch = async (document) => {
-    const stored = await client.getDocument(document.id)
-    const bytes = await downloadCloudDocument(stored, objectFetch, { signal: options.signal })
+    const [stored, comments] = await Promise.all([
+      client.getDocument(document.id),
+      client.documentComments(document.id).list()
+    ])
+    const lean = await downloadCloudDocument(stored, objectFetch, { signal: options.signal })
+    // The server keeps the comments; the file taken out of Cloud carries them again.
+    const bytes = await withCloudComments(lean, comments.threads)
     return { bytes, fileName: `${document.name}.${EXTENSIONS[stored.document.kind]}` }
   }
   if (file) {

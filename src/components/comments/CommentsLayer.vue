@@ -44,6 +44,7 @@ const CARD_GAP = 8
 
 const store = useEditorStore()
 const comments = useComments()
+const { canComment } = comments
 const messages = useCommentMessages()
 const author = useCommentAuthor()
 const menuCls = useMenuUI({ content: 'min-w-40' })
@@ -249,12 +250,13 @@ function closeCard() {
             v-else-if="activePin"
             ref="threadCard"
             :thread="activePin.thread"
+            :read-only="!canComment"
             @close="closeCard"
             @resolve="comments.setResolved"
             @reply="comments.reply"
             @delete-reply="comments.deleteReply"
           >
-            <template #menu>
+            <template v-if="canComment" #menu>
               <CommentActionsMenu :thread="activePin.thread" kind="dropdown" />
             </template>
           </CommentThreadCard>

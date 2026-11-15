@@ -17,7 +17,11 @@ import CommentMessage from './CommentMessage.vue'
 import { comments } from './ui'
 
 /** An open thread: the comment, its replies, and a reply box, as in Figma's comment card. */
-const { thread } = defineProps<{ thread: CommentThread }>()
+const { thread, readOnly = false } = defineProps<{
+  thread: CommentThread
+  /** Reading only, as a guest on a link does: no resolving, deleting, or replying. */
+  readOnly?: boolean
+}>()
 
 const emit = defineEmits<{
   close: []
@@ -70,6 +74,7 @@ defineExpose({ focus: () => composer.value?.focus() })
           </DropdownMenuPortal>
         </AppDropdownMenuRoot>
         <IconButton
+          v-if="!readOnly"
           :label="thread.resolved ? messages.reopen : messages.resolve"
           :active="thread.resolved"
           data-command="comment-resolve"
@@ -99,7 +104,7 @@ defineExpose({ focus: () => composer.value?.focus() })
         :at="entry.createdAt"
         :text="entry.text"
       >
-        <template #actions>
+        <template v-if="!readOnly" #actions>
           <IconButton
             :label="messages.deleteReply"
             @click="emit('deleteReply', thread.id, entry.id)"
@@ -110,7 +115,7 @@ defineExpose({ focus: () => composer.value?.focus() })
       </CommentMessage>
     </div>
 
-    <div :class="ui.composerSlot()">
+    <div v-if="!readOnly" :class="ui.composerSlot()">
       <CommentComposer
         ref="composer"
         v-model="replyText"
