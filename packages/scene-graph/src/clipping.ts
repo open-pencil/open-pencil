@@ -6,6 +6,16 @@ import type { Vector } from './primitives'
  * the canvas corners of a rotated frame that clips its content.
  */
 
+/** The corners of `bounds`, clockwise from the top-left. */
+export function visualBoundsCorners(bounds: VisualBounds): Vector[] {
+  return [
+    { x: bounds.minX, y: bounds.minY },
+    { x: bounds.maxX, y: bounds.minY },
+    { x: bounds.maxX, y: bounds.maxY },
+    { x: bounds.minX, y: bounds.maxY }
+  ]
+}
+
 function crossProduct(a: Vector, b: Vector, p: Vector): number {
   return (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x)
 }
@@ -96,14 +106,7 @@ export function clipBoundsToPolygon(
 ): VisualBounds | null {
   if (clipCorners.length < 3) return bounds
 
-  const subject: Vector[] = [
-    { x: bounds.minX, y: bounds.minY },
-    { x: bounds.maxX, y: bounds.minY },
-    { x: bounds.maxX, y: bounds.maxY },
-    { x: bounds.minX, y: bounds.maxY }
-  ]
-
-  const polygon = clipPolygon(subject, clipCorners)
+  const polygon = clipPolygon(visualBoundsCorners(bounds), clipCorners)
   if (!polygon) return null
 
   const box = computeBounds(polygon.map(({ x, y }) => ({ x, y, width: 0, height: 0 })))
