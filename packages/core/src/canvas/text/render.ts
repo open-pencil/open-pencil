@@ -1,7 +1,7 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { Fill, SceneNode } from '@open-pencil/scene-graph'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { textVerticalOffset, withTextParagraph } from '#core/canvas/text'
 import { DEFAULT_FONT_SIZE } from '#core/constants'
 import { shownText } from '#core/text/case'

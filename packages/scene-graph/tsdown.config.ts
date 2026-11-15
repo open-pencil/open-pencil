@@ -39,6 +39,7 @@ export default defineConfig(
       'instances/overrides': './src/instances/overrides.ts',
       'paths/index': './src/paths/index.ts',
       'layout/index': './src/layout/index.ts',
+      masks: './src/masks.ts',
       matrix: './src/matrix.ts',
       'mutation-impact': './src/mutation-impact.ts',
       'node-defaults': './src/node-defaults.ts',

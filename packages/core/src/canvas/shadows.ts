@@ -16,7 +16,7 @@ import { needsIsolatedBlendLayer, setPaintBlendMode } from './blend'
 import { makeBooleanOperationPath } from './boolean'
 import { renderNoiseEffects } from './effects'
 import { renderGlassLight, renderGlassRefraction } from './glass/render'
-import type { SkiaRenderer } from './renderer'
+import type { SkiaRenderer } from './renderer/skia'
 import {
   castsFromOwnShape,
   castsOwnShapeDropShadow,

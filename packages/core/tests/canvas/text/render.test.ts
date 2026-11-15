@@ -14,7 +14,7 @@ import { detectTextDirection, resolveTextDirection } from '@open-pencil/scene-gr
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { repoPath } from '@open-pencil/test-support/paths'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { renderText } from '#core/canvas/scene'
 import {
   buildParagraph,

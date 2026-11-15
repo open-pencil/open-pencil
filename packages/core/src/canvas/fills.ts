@@ -10,8 +10,8 @@ import { setPaintBlendMode } from './blend'
 import { makeDiamondGradient } from './gradients/diamond'
 import { previewEdge } from './images/previews'
 import { drawOffOutputGrid, landsOnOutputPixels, makeImageShader } from './images/sampling'
-import type { SkiaRenderer } from './renderer'
 import { resolveGradientStopColor } from './renderer/colors'
+import type { SkiaRenderer } from './renderer/skia'
 import { drawOutline, withNodeOutline } from './shapes'
 
 interface PaintFillsOptions {

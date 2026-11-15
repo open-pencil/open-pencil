@@ -1,6 +1,6 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
-import type { RenderOverlays } from '#core/canvas/renderer'
+import type { RenderOverlays } from '#core/canvas/renderer/skia'
 import { createSceneGeometry } from '#core/geometry'
 
 import { hasFrameTitle } from './layout'

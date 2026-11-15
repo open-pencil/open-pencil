@@ -4,8 +4,8 @@ import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { isWholeEllipse } from '@open-pencil/scene-graph/outline'
 
 import { tracePath } from '#core/canvas/paths/verbs'
-import type { SkiaRenderer } from '#core/canvas/renderer'
 import { compiledProgram } from '#core/canvas/renderer/shaders'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { makeNodeShapePath, withNodeOutline } from '#core/canvas/shapes'
 
 import { glassGeometryMap } from './map'

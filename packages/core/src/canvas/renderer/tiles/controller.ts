@@ -1,9 +1,9 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
 import { type RenderChunkIndex, RenderChunkPictureCache } from '#core/canvas/renderer/chunks'
 import { rendererNow } from '#core/canvas/renderer/clock'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 
 import {
   type CachedTile,

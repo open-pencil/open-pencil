@@ -6,6 +6,13 @@ import { symbolDataOf } from '#fig/instance-overrides/types'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
+/** Source records are read-only for the interpreter; a write into one throws once frozen. */
+function deepFreeze(value: unknown): void {
+  if (value === null || typeof value !== 'object' || Object.isFrozen(value)) return
+  for (const child of Object.values(value)) deepFreeze(child)
+  Object.freeze(value)
+}
+
 const component = { sessionID: 1, localID: 1 }
 const label = { sessionID: 1, localID: 2 }
 const alias = { sessionID: 8, localID: 2 }
@@ -81,16 +88,13 @@ describe('instance addressing contracts', () => {
     )
   })
 
-  test('occurrence payloads and subsequent interpretations share no mutable data', () => {
+  test('interpreting writes into no source record, so payloads share its values', () => {
     const input = fixture()
+    deepFreeze(input)
     const result = interpretInstance(input, '4:1')
-    const text = result.children[0].children[0].properties.textData
-    if (!text) throw new Error('Expected text payload')
-    text.characters = 'Mutated'
+    expect(result.children[0].children[0].properties.textData?.characters).toBe('Default')
     expect(result.children[1].children[0].properties.textData?.characters).toBe('Second')
-    expect(
-      interpretInstance(input, '4:1').children[0].children[0].properties.textData?.characters
-    ).toBe('Default')
+    expect(interpretInstance(input, '4:1')).toEqual(result)
   })
 
   test('does not search across nested instance boundaries for a missing path segment', () => {

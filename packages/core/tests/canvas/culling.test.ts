@@ -4,7 +4,8 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
+import { RenderedBoundsCache } from '#core/canvas/renderer/visual-bounds'
 import { renderNode } from '#core/canvas/scene'
 
 import { asCanvas, asRenderer } from './helpers'
@@ -31,6 +32,7 @@ function createRenderer() {
   const rendered: string[] = []
   const renderer = {
     drawCounts: { nodes: 0, culled: 0 },
+    renderedBounds: new RenderedBoundsCache(),
     worldViewport: { x: 900, y: 900, w: 300, h: 300 },
     opacityPaint: { setAlphaf: mock(() => undefined) },
     effectLayerPaint: {
@@ -157,5 +159,71 @@ describe('canvas culling', () => {
     expect(start.y).toBeCloseTo(-25, 9)
     expect(end.x).toBeCloseTo(75, 9)
     expect(end.y).toBeCloseTo(75, 9)
+  })
+
+  test('draws a layer outside the viewport whose shadow reaches into it', () => {
+    const graph = new SceneGraph()
+    const rectangle = graph.createNode('RECTANGLE', pageId(graph), {
+      x: 800,
+      y: 1000,
+      width: 80,
+      height: 80,
+      effects: [
+        {
+          type: 'DROP_SHADOW',
+          color: { r: 0, g: 0, b: 0, a: 0.5 },
+          offset: { x: 40, y: 0 },
+          radius: 8,
+          spread: 0,
+          visible: true,
+          blendMode: 'NORMAL'
+        }
+      ]
+    })
+    const { renderer, rendered } = createRenderer()
+
+    renderNode(renderer, asCanvas(createCanvas()), graph, rectangle.id, {})
+
+    expect(rendered).toContain(rectangle.id)
+    expect(renderer.drawCounts.culled).toBe(0)
+  })
+
+  test('draws a layer outside the viewport whose outside stroke reaches into it', () => {
+    const graph = new SceneGraph()
+    const rectangle = graph.createNode('RECTANGLE', pageId(graph), {
+      x: 880,
+      y: 1000,
+      width: 16,
+      height: 16,
+      strokes: [
+        {
+          type: 'SOLID',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          opacity: 1,
+          visible: true,
+          weight: 10,
+          align: 'OUTSIDE'
+        }
+      ]
+    })
+    const { renderer, rendered } = createRenderer()
+
+    renderNode(renderer, asCanvas(createCanvas()), graph, rectangle.id, {})
+
+    expect(rendered).toContain(rectangle.id)
+  })
+
+  test('culls a group whose layers all lie outside the viewport, without visiting them', () => {
+    const graph = new SceneGraph()
+    const group = graph.createNode('GROUP', pageId(graph), { x: 0, y: 0, width: 200, height: 200 })
+    for (const x of [0, 100]) {
+      graph.createNode('RECTANGLE', group.id, { x, y: 0, width: 100, height: 200 })
+    }
+    const { renderer, rendered } = createRenderer()
+
+    renderNode(renderer, asCanvas(createCanvas()), graph, group.id, {})
+
+    expect(rendered).toEqual([])
+    expect(renderer.drawCounts).toEqual({ nodes: 1, culled: 1 })
   })
 })
