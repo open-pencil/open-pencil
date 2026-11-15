@@ -1,3 +1,4 @@
+import { uniq } from 'es-toolkit/array'
 import { pick } from 'es-toolkit/object'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
@@ -28,6 +29,29 @@ export function opacityFromBuffer(buffer: string): number {
   if (!Number.isFinite(n)) return 1
   const percent = buffer.length === 1 ? n * 10 : n
   return Math.min(100, Math.max(0, percent)) / 100
+}
+
+/**
+ * Fields that let layout size a layer: Fill, Hug, stretch, and its limits. Layout writes the size
+ * it gives the layer into its width and height, which a Fixed axis then keeps, so a step that sets
+ * one of these keeps the layer's size from before to give back on undo, as Figma does.
+ */
+const LAYOUT_SIZED_FIELDS = new Set<keyof SceneNode>([
+  'layoutGrow',
+  'layoutAlignSelf',
+  'primaryAxisSizing',
+  'counterAxisSizing',
+  'minWidth',
+  'maxWidth',
+  'minHeight',
+  'maxHeight'
+])
+
+function undoneFields(changes: Partial<SceneNode>): (keyof SceneNode)[] {
+  const keys = Object.keys(changes) as (keyof SceneNode)[]
+  return keys.some((key) => LAYOUT_SIZED_FIELDS.has(key))
+    ? uniq([...keys, 'width', 'height'] as const)
+    : keys
 }
 
 function changesMoreThanModes(changes: Partial<SceneNode>): boolean {
@@ -96,10 +120,7 @@ export function createNodeActions(ctx: EditorContext) {
     const previousOverrides = owner
       ? cloneInstanceOverrideState(owner.instanceOverrides)
       : undefined
-    const previous = pick(
-      node,
-      Object.keys(nextChanges) as (keyof SceneNode)[]
-    ) as Partial<SceneNode>
+    const previous = pick(node, undoneFields(nextChanges)) as Partial<SceneNode>
     ctx.graph.updateNode(id, nextChanges)
     recordInstanceOverride(ctx.graph, id, Object.keys(nextChanges))
     runChangedLayout(id, nextChanges)

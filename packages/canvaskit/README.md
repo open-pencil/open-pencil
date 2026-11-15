@@ -27,8 +27,8 @@ Serve `canvaskit.wasm` (import `@open-pencil/canvaskit/dist/canvaskit.wasm`) and
 
 ## Where it comes from
 
-The patches are commits on the `openpencil/canvaskit` branch of [open-pencil/skia](https://github.com/open-pencil/skia/tree/openpencil/canvaskit), listed in its `OPENPENCIL.md`. Every push to that branch builds CanvasKit and releases it as `canvaskit-<commit>`. `release.json` pins one release, by commit and the SHA-256 of each file, and `bun install` (the workspace's `postinstall`) or this package's `build` fetches it into `dist/`. Nothing here is built locally.
+The patches are commits on the `openpencil/canvaskit` branch of [open-pencil/skia](https://github.com/open-pencil/skia/tree/openpencil/canvaskit), listed in its `OPENPENCIL.md`. Every push to that branch builds CanvasKit and releases it as `canvaskit-<commit>`. `release.json` pins one release, by tag and the SHA-256 of each file, and `bun install` (the workspace's `postinstall`) or this package's `build` fetches it into `dist/`. Nothing here is built locally.
 
-To change CanvasKit, push to the fork's branch, wait for its release, and put the commit and the hashes from its `SHA256SUMS` in `release.json`.
+To change CanvasKit, push to the fork's branch, wait for its release, and run `bun run fork:pin packages/canvaskit canvaskit-<commit>`.
 
 The package is Skia, under Skia's BSD-3-Clause license (`LICENSE`); `dist/THIRD-PARTY-NOTICES.md` carries the licenses of the libraries compiled into it.

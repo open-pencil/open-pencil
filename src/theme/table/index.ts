@@ -8,7 +8,8 @@ export default {
     scroller: 'overflow-x-auto',
     table: 'w-full border-collapse text-start text-xs text-surface',
     header: 'border-b border-border',
-    head: 'h-8 px-3 align-middle text-2xs font-medium whitespace-nowrap text-muted first:ps-4 last:pe-4',
+    // Browsers center header cells unless told otherwise; they line up with their column's cells.
+    head: 'h-8 px-3 text-start align-middle text-2xs font-medium whitespace-nowrap text-muted first:ps-4 last:pe-4',
     // While newer rows load the old ones stay, a little faded, so the table never jumps.
     body: 'transition-opacity duration-150 data-refreshing:opacity-60 motion-reduce:transition-none',
     row: 'border-b border-border transition-colors duration-100 last:border-b-0 hover:bg-hover/40 motion-reduce:transition-none',

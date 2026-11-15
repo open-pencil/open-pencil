@@ -1,4 +1,5 @@
 import type { FileDocumentReportInput } from '#cloud/contract'
+import type { EmailLocale } from '#cloud/email'
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
 import type { TransactionalEmailService } from '#cloud/server/email'
@@ -41,7 +42,13 @@ export function createDocumentReportService(
      * tells the deployment's administrators. It answers nothing about the document, so a report
      * never tells its reporter more than the link already did.
      */
-    async file(shareId: string, input: FileDocumentReportInput, actor?: CloudActor): Promise<void> {
+    async file(
+      shareId: string,
+      input: FileDocumentReportInput,
+      actor?: CloudActor,
+      /** The language the reporter's browser asked for, to reply in without an account's own. */
+      replyLocale: EmailLocale | null = null
+    ): Promise<void> {
       const resolved = await options.sharing.resolveShare(
         shareId,
         { secret: input.secret, guestId: input.guestId },
@@ -80,6 +87,7 @@ export function createDocumentReportService(
           throw new DocumentReportLimitError()
         }
         const id = crypto.randomUUID()
+        const replyEmail = input.replyEmail ?? actor?.email ?? null
         await transaction
           .insertInto('documentReport')
           .values({
@@ -88,7 +96,8 @@ export function createDocumentReportService(
             shareId,
             reporterUserId,
             reporterGuestId,
-            replyEmail: input.replyEmail ?? actor?.email ?? null,
+            replyEmail,
+            replyLocale,
             reason: input.reason,
             description: input.description
           })
@@ -99,6 +108,19 @@ export function createDocumentReportService(
           .select('name')
           .where('id', '=', resolved.documentId)
           .executeTakeFirstOrThrow()
+        // Whoever left an address hears that the report arrived, and later what was decided.
+        if (replyEmail) {
+          await options.email.enqueue(
+            {
+              idempotencyKey: `document-report-received/${id}`,
+              kind: 'document-report-received',
+              recipientEmail: replyEmail,
+              fallbackLocale: replyLocale,
+              payload: { documentName: document.name }
+            },
+            transaction
+          )
+        }
         for (const recipientEmail of options.adminRecipients) {
           await options.email.enqueue(
             {

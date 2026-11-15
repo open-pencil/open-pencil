@@ -41,13 +41,15 @@ export function requireAccess(services: FeedbackServices) {
     const team = c.env.ACCESS_TEAM_DOMAIN
     if (!token || !team || !c.env.ACCESS_AUD) return c.body(null, 403)
     try {
-      await jwtVerify(token, createLocalJWKSet(await keysFor(team)), {
+      const { payload } = await jwtVerify(token, createLocalJWKSet(await keysFor(team)), {
         issuer: team,
         audience: c.env.ACCESS_AUD,
         currentDate: services.now(),
         // jose checks `exp` only when a token has one; Access always sets it, so one without is refused.
         requiredClaims: ['exp']
       })
+      // Access puts the signed-in person's address in every token it issues for a person.
+      if (typeof payload.email === 'string') c.set('adminEmail', payload.email)
     } catch (error) {
       console.warn('Admin request refused', { error: String(error) })
       return c.body(null, 403)

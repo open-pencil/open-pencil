@@ -55,6 +55,8 @@ export function createComponentBridge(
     validateComponentSet: components.validateComponentSet,
     getVariantOptionAvailability: components.getVariantOptionAvailability,
     switchInstanceVariant: components.switchInstanceVariant,
+    variantsToLoad: components.variantsToLoad,
+    loadSavedVariants: components.loadSavedVariants,
     addVariant: components.addVariant,
     duplicateVariant: components.duplicateVariant,
     getVariantOptions: components.getVariantOptions,

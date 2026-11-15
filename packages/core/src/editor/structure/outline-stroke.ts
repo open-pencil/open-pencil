@@ -74,10 +74,12 @@ export function outlineStrokeSelected(
   for (const { node, parentId, outlined } of plan) {
     const index = ctx.graph.getNode(parentId)?.childIds.indexOf(node.id) ?? 0
     const fill = outlined.fill ? createPiece(ctx, outlined.fill, parentId, index) : null
-    const stroke = createPiece(ctx, outlined.stroke, parentId, index + (fill ? 1 : 0))
+    const stroke = outlined.stroke
+      ? createPiece(ctx, outlined.stroke, parentId, index + (fill ? 1 : 0))
+      : null
     ctx.graph.deleteNode(node.id)
     if (fill) madeIds.push(fill)
-    madeIds.push(stroke)
+    if (stroke) madeIds.push(stroke)
   }
   const made: Made[] = madeIds.flatMap((id) => {
     const parentId = ctx.graph.getNode(id)?.parentId

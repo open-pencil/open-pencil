@@ -6,6 +6,7 @@ export default defineConfig(
   libraryConfig({
     entry: {
       index: './src/index.ts',
+      arrays: './src/arrays.ts',
       'arrow-caps': './src/arrow-caps.ts',
       'asset-keys': './src/asset-keys.ts',
       'behaviours/index': './src/behaviours/index.ts',
@@ -27,6 +28,7 @@ export default defineConfig(
       'font-style': './src/font-style.ts',
       'generated/index': './src/generated/index.ts',
       geometry: './src/geometry.ts',
+      corners: './src/corners.ts',
       gradient: './src/gradient.ts',
       'group-bounds': './src/group-bounds.ts',
       guides: './src/guides.ts',
@@ -35,6 +37,7 @@ export default defineConfig(
       images: './src/images.ts',
       'instances/index': './src/instances/index.ts',
       'instances/overrides': './src/instances/overrides.ts',
+      'paths/index': './src/paths/index.ts',
       'layout/index': './src/layout/index.ts',
       matrix: './src/matrix.ts',
       'mutation-impact': './src/mutation-impact.ts',

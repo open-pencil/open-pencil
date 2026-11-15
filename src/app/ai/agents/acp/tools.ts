@@ -3,7 +3,7 @@ import type {
   RequestPermissionRequest,
   RequestPermissionResponse,
   SessionUpdate
-} from '@agentclientprotocol/sdk'
+} from '@agentclientprotocol/sdk/unstable'
 
 import { OPEN_PENCIL_MCP_SERVER } from '@open-pencil/core/constants'
 

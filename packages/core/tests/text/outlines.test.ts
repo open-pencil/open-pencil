@@ -44,6 +44,17 @@ function oneLineWidth(props: Partial<SceneNode>): number {
 }
 
 describe('textNodeToOutlineLayout', () => {
+  test('gives each glyph the character it draws, across lines and style runs', () => {
+    const node = text({
+      text: 'Ab cd',
+      width: 60,
+      styleRuns: [{ start: 3, length: 2, style: { fontWeight: 700 } }]
+    })
+    const layout = textNodeToOutlineLayout(node)
+    const drawn = layout?.glyphs.map((glyph) => node.text[glyph.firstCharacter ?? -1])
+    expect(drawn?.filter((character) => character.trim())).toEqual(['A', 'b', 'c', 'd'])
+  })
+
   test('wraps text without style runs at its width', () => {
     const wrapped = text({ width: 100, textAutoResize: 'HEIGHT' })
     const unwrapped = text({ textAutoResize: 'WIDTH_AND_HEIGHT' })

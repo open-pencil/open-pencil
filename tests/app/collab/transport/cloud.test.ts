@@ -9,6 +9,7 @@ import {
   type RelayClientFrame,
   type RelayServerFrame
 } from '@open-pencil/cloud/contract'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { asDouble } from '@open-pencil/test-support/doubles'
 
 import { createCloudRelayJoin, relayReconnectDelay } from '@/app/collab/transport/cloud'
@@ -538,8 +539,8 @@ describe('relay reconnect delay', () => {
       [10, 30_000]
     ] as const) {
       const delays = Array.from({ length: 50 }, () => relayReconnectDelay(attempt))
-      expect(Math.min(...delays)).toBeGreaterThanOrEqual(step / 2)
-      expect(Math.max(...delays)).toBeLessThanOrEqual(step)
+      expect(minOf(delays)).toBeGreaterThanOrEqual(step / 2)
+      expect(maxOf(delays)).toBeLessThanOrEqual(step)
       expect(new Set(delays).size).toBeGreaterThan(1)
     }
   })

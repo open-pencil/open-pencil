@@ -95,6 +95,54 @@ export const cloudPasskeySchema = v.object({
 export const cloudPasskeysResponseSchema = v.object({ passkeys: v.array(cloudPasskeySchema) })
 export const cloudPasskeyDeleteSchema = v.object({ id: v.string() })
 
+/**
+ * Personal access tokens: an account's own credentials for scripts and CI, sent as
+ * `Authorization: Bearer <token>`. A token acts as its account on the document API only; it never
+ * changes how the account is reached, makes other tokens, or reaches administration.
+ */
+export const CLOUD_ACCESS_TOKEN_PREFIX = 'opc_'
+export const CLOUD_ACCESS_TOKEN_NAME_MAX_LENGTH = 64
+export const CLOUD_ACCESS_TOKEN_MAX_DAYS = 365
+export const cloudAccessTokenSchema = v.object({
+  id: v.string(),
+  name: v.string(),
+  /** The token's first characters, prefix included, to tell tokens apart; never the whole token. */
+  start: v.nullable(v.string()),
+  createdAt: v.string(),
+  expiresAt: v.nullable(v.string()),
+  lastUsedAt: v.nullable(v.string())
+})
+export const cloudAccessTokensResponseSchema = v.object({
+  tokens: v.array(cloudAccessTokenSchema)
+})
+export const cloudAccessTokenCreateSchema = v.object({
+  name: v.pipe(
+    v.string(),
+    v.trim(),
+    v.minLength(1),
+    v.maxLength(CLOUD_ACCESS_TOKEN_NAME_MAX_LENGTH)
+  ),
+  expiresInDays: v.pipe(
+    v.number(),
+    v.integer(),
+    v.minValue(1),
+    v.maxValue(CLOUD_ACCESS_TOKEN_MAX_DAYS)
+  )
+})
+/** A new token, the only time the whole of it is shown. */
+export const cloudAccessTokenCreatedResponseSchema = v.object({
+  token: v.pipe(v.string(), v.startsWith(CLOUD_ACCESS_TOKEN_PREFIX)),
+  accessToken: cloudAccessTokenSchema
+})
+export const cloudAccessTokenRevokeSchema = v.object({ id: v.pipe(v.string(), v.minLength(1)) })
+
+export function parseCloudAccessTokenCreate(input: unknown) {
+  return v.parse(cloudAccessTokenCreateSchema, input)
+}
+export function parseCloudAccessTokenRevoke(input: unknown) {
+  return v.parse(cloudAccessTokenRevokeSchema, input)
+}
+
 export function parseCloudTermsAcceptance(input: unknown) {
   return v.parse(cloudTermsAcceptanceSchema, input)
 }
@@ -254,6 +302,8 @@ export type CloudAuthenticationMethods = v.InferOutput<
 
 export type CloudAccountStatus = v.InferOutput<typeof cloudAccountStatusResponseSchema>
 export type CloudProfile = v.InferOutput<typeof cloudProfileSchema>
+export type CloudAccessToken = v.InferOutput<typeof cloudAccessTokenSchema>
+export type CloudAccessTokenCreate = v.InferOutput<typeof cloudAccessTokenCreateSchema>
 export type CloudSignInMethod = v.InferOutput<typeof cloudSignInMethodSchema>
 export type CloudAccountSession = v.InferOutput<typeof cloudAccountSessionSchema>
 export type CloudSignIn = v.InferOutput<typeof cloudSignInSchema>

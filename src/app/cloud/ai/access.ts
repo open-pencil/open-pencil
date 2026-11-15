@@ -1,4 +1,5 @@
 import { compact } from 'es-toolkit'
+import { joinURL } from 'ufo'
 import { computed } from 'vue'
 
 import {
@@ -6,11 +7,11 @@ import {
   type CloudServicesClient,
   type CloudServicesTokenSource
 } from '@open-pencil/cloud/client'
-import type { WorkspaceSummary } from '@open-pencil/cloud/contract'
+import { CLOUD_ACCOUNT_PLAN_PATH, type WorkspaceSummary } from '@open-pencil/cloud/contract'
 
 import { homeCloudServer } from '../servers/store'
 import { cloudAPIClient, cloudConnection, cloudFetch } from '../sessions/connection'
-import { createCloudAITokens } from './tokens'
+import { createCloudTokenCache } from '../tokens'
 
 export type CloudAIWorkspace = Pick<WorkspaceSummary, 'id' | 'name'>
 
@@ -32,8 +33,11 @@ export const cloudAIIdentity = computed(() => {
   return home ? `${home.server.id}:${home.account.id}` : null
 })
 
-/** Where people manage the plan that pays for AI, when the Home server bills. */
-export const cloudBillingURL = computed(() => homeAI.value?.discovery.billing?.portalURL ?? null)
+/** Where people manage the plan that pays for AI: the Home server's plan page, when it bills. */
+export const cloudBillingURL = computed(() => {
+  const home = homeAI.value
+  return home?.discovery.billing ? joinURL(home.server.url, CLOUD_ACCOUNT_PLAN_PATH) : null
+})
 
 // Keyed by account too, so a token signed for one person is never sent for another.
 const tokenSources = new Map<string, CloudServicesTokenSource>()
@@ -46,7 +50,7 @@ export function cloudAIClient(workspaceId: string): CloudServicesClient | null {
   let tokens = tokenSources.get(key)
   if (!tokens) {
     const api = cloudAPIClient(home.server, home.discovery)
-    tokens = createCloudAITokens(() => api.requestServicesToken(workspaceId))
+    tokens = createCloudTokenCache(() => api.requestServicesToken(workspaceId))
     tokenSources.set(key, tokens)
   }
   return createCloudServicesClient({ endpoint: home.endpoint, tokens, fetch: cloudFetch })

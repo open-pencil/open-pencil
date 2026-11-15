@@ -85,8 +85,8 @@ monthly_credit_allowance = 10_000
 # The hosted service's own terms and privacy policy; each account accepts terms_version once before
 # using the server, and again when it changes.
 [legal]
-terms_url = "https://openpencil.dev/overview/legal/terms"
-privacy_url = "https://openpencil.dev/overview/legal/privacy"
+terms_url = "https://openpencil.dev/cloud/legal/terms"
+privacy_url = "https://openpencil.dev/cloud/legal/privacy"
 terms_version = "2026-11-15"
 require_acceptance = true
 abuse_email = "abuse@openpencil.dev"

@@ -25,34 +25,69 @@ import {
   type Rule
 } from './support.ts'
 
+/**
+ * The longest sibling folder a file's name starts with, as `folder-` or, for a plural folder, its
+ * singular: `cloud-portal-settings.ts` belongs in `cloud-portal/` even beside `cloud/`.
+ */
+function domainFolderFor(stem: string, folders: Set<string>) {
+  let best: { folder: string; prefix: string } | undefined
+  for (const folder of folders) {
+    for (const prefix of folder.endsWith('s') ? [folder, folder.slice(0, -1)] : [folder]) {
+      if (!stem.startsWith(`${prefix}-`)) continue
+      if (!best || prefix.length > best.prefix.length) best = { folder, prefix }
+    }
+  }
+  return best
+}
+
 const preferDomainFoldersOverFilenamePrefixes: Rule = {
   name: 'open-pencil/prefer-domain-folders-over-filename-prefixes',
   check(root) {
     const diagnostics: Diagnostic[] = []
     for (const folder of collectFolders(root)) {
       const folderRel = relativePath(root.path, folder.path)
+      const children = folder.children ?? []
+      // A folder names a domain its prefixed sibling files belong in, but is not one of them:
+      // `cloud-portal/` beside `cloud/` is a domain of its own already.
+      const folders = new Set(
+        children
+          .filter((child) => child.type === 'folder')
+          .map((child) => path.basename(child.path))
+      )
       const groups = new Map<string, string[]>()
+      const misplaced = new Map<string, string>()
       const names = new Set<string>()
-      for (const child of folder.children ?? []) {
-        if (child.type !== 'file' || !TEXT_EXTENSIONS.has(path.extname(child.path))) continue
-        names.add(fileStem(child.path))
+      for (const child of children) {
+        if (child.type === 'folder' || !TEXT_EXTENSIONS.has(path.extname(child.path))) continue
+        const stem = fileStem(child.path)
+        names.add(stem)
         const prefix = filePrefix(child.path)
-        if (!prefix) continue
+        if (!prefix || FILE_PREFIX_GROUP_ALLOWLIST.has(`${folderRel}::${prefix}`)) continue
+        // `variants/` beside `variant-set.ts` already is the domain folder the file belongs in.
+        const domain = domainFolderFor(stem, folders)
+        if (domain) {
+          misplaced.set(domain.prefix, domain.folder)
+          continue
+        }
         const files = groups.get(prefix) ?? []
         files.push(child.path)
         groups.set(prefix, files)
       }
+      for (const [prefix, folderName] of misplaced) {
+        diagnostics.push({
+          message: `Move the ${prefix}-* files into the ${folderName}/ folder beside them.`,
+          location: { path: folder.path }
+        })
+      }
       for (const [prefix, files] of groups) {
         // `email.ts` beside `email-runtime.ts` is a domain as much as three `email-*` files are, and
         // so is `handles.ts` beside `handle-actions.ts`: a plural names the same domain.
-        const named = names.has(prefix) || names.has(`${prefix}s`)
-        if (files.length < 3 && !named) continue
-        if (FILE_PREFIX_GROUP_ALLOWLIST.has(`${folderRel}::${prefix}`)) continue
-        const base = names.has(prefix) ? prefix : `${prefix}s`
+        const fileName = [prefix, `${prefix}s`].find((name) => names.has(name))
+        if (files.length < 3 && !fileName) continue
         diagnostics.push({
-          message: named
-            ? `Use a ${prefix}/ domain folder instead of ${base} beside ${prefix}-* files.`
-            : `Use a ${prefix}/ domain folder instead of sibling ${prefix}-* files.`,
+          message: fileName
+            ? `Make ${prefix}/ a domain folder for ${fileName} and the ${prefix}-* files beside it.`
+            : `Group the sibling ${prefix}-* files in a ${prefix}/ domain folder.`,
           location: { path: folder.path }
         })
       }
@@ -315,6 +350,9 @@ const CLOUD_PORTAL_SOURCES = [
   'src/theme/metrics/'
 ]
 const EDITOR_ONLY_MODULES = ['src/app/editor/', 'src/app/shell/']
+// The read-only document viewer brings the editor with it, so these pages load it lazily, through
+// `defineAsyncComponent(() => import(...))`, and never import it statically.
+const LAZY_EDITOR_MODULES = ['src/components/document-viewer/', 'src/app/document-viewer/']
 
 const noEditorImportsInCloudPortal = createImportRule(
   'open-pencil/no-editor-imports-in-cloud-portal',
@@ -322,9 +360,10 @@ const noEditorImportsInCloudPortal = createImportRule(
     if (!CLOUD_PORTAL_SOURCES.some((prefix) => sourceRel.startsWith(prefix))) return null
     const editorOnly =
       specifier.startsWith('@open-pencil/canvaskit') ||
-      EDITOR_ONLY_MODULES.some((prefix) => resolved?.startsWith(prefix))
+      EDITOR_ONLY_MODULES.some((prefix) => resolved?.startsWith(prefix)) ||
+      LAZY_EDITOR_MODULES.some((prefix) => resolved?.startsWith(prefix))
     if (!editorOnly) return null
-    return 'The Cloud portal and the metrics dashboard must not import editor sessions, CanvasKit, or the app shell, so their standalone builds stay small.'
+    return 'The Cloud portal and the metrics dashboard must not import editor sessions, CanvasKit, or the app shell, so their standalone builds stay small; open the document viewer lazily with defineAsyncComponent.'
   }
 )
 

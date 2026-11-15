@@ -7,10 +7,12 @@
 import type { JSONValue, ToolResultPart, ToolSet, tool as createTool } from 'ai'
 import { isEmptyObject } from 'es-toolkit'
 
+import { appendAll } from '@open-pencil/scene-graph/arrays'
+
 import type { FigmaAPI } from '#core/figma-api'
 import { graphOf } from '#core/figma-api/graph'
 
-import { isToolExposed, toolStandardJSONSchema, type ToolDef } from './schema'
+import { isToolExposed, toolInputFor, toolStandardJSONSchema, type ToolDef } from './schema'
 
 export interface ToolLogEntry {
   tool: string
@@ -101,9 +103,9 @@ function extractNodeIds(result: unknown): string[] {
   const ids: string[] = []
   if ('id' in result && typeof result.id === 'string') ids.push(result.id)
   if ('selection' in result && Array.isArray(result.selection))
-    ids.push(...extractIdsFromArray(result.selection))
+    appendAll(ids, extractIdsFromArray(result.selection))
   if ('results' in result && Array.isArray(result.results))
-    ids.push(...extractIdsFromArray(result.results))
+    appendAll(ids, extractIdsFromArray(result.results))
   return ids
 }
 
@@ -204,7 +206,7 @@ export function toolsToAI(
     if (!isToolExposed(def, 'ai')) continue
     const toolOpts: Record<string, unknown> = {
       description: def.description,
-      inputSchema: toolStandardJSONSchema(def.input),
+      inputSchema: toolStandardJSONSchema(toolInputFor(def, 'ai')),
       execute: async (args: Record<string, unknown>, { toolCallId }: { toolCallId: string }) => {
         const startTime = Date.now()
         const figma = options.getFigma()

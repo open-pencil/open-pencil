@@ -61,19 +61,19 @@ Before applying any change, affected fields are snapshotted. The snapshot become
 
 **Batching** — operations like drag-to-move produce hundreds of position changes per second. These are debounced into a single undo entry. `beginBatch`/`commitBatch` wraps multi-step operations.
 
-## Layout Engine (Yoga)
+## Layout Engine (Taffy)
 
-Figma's auto-layout properties map to Yoga flexbox:
+Figma's auto-layout properties map to CSS flexbox styles that Taffy lays out:
 
-| Figma Property | Yoga Equivalent |
+| Figma Property | CSS Style |
 |---|---|
 | `stackMode: HORIZONTAL` | `flexDirection: row` |
 | `stackMode: VERTICAL` | `flexDirection: column` |
-| `stackSpacing` | `gap` |
+| `stackSpacing` | `columnGap` or `rowGap` along the main axis |
 | `stackPadding` | `padding` |
 | `stackJustify: MIN/CENTER/MAX/SPACE_BETWEEN` | `justifyContent` |
 | `stackCounterAlign` | `alignItems` |
-| `stackPrimarySizing: FIXED/HUG/FILL` | width/height + flex-grow |
+| `stackPrimarySizing: FIXED/HUG/FILL` | `width`/`height`, auto, or `flexGrow` |
 | `stackChildPrimaryGrow` | `flexGrow` |
 | `stackChildAlignSelf` | `alignSelf` |
 | `stackPositioning: ABSOLUTE` | `position: absolute` |

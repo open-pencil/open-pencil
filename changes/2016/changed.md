@@ -1,0 +1,1 @@
+- Auto layout and grid run on Taffy, the engine HTML import already lays pages out with, and size Fill layers in rows as Figma does where they came out narrower before, such as an image that fills its row (#1763).

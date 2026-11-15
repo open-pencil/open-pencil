@@ -2,6 +2,7 @@ import { isEqual } from 'es-toolkit/predicate'
 import type * as Y from 'yjs'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { siblingOrderKeys } from '@open-pencil/scene-graph/order-keys'
 
 import { LayerTree, type TreeMove } from '../tree/layer-tree'
@@ -187,7 +188,7 @@ function writePages(graph: SceneGraph, ynodes: YNodes, moved: readonly string[])
       const ynode = ynodes.get(layerId)
       if (!ynode || readPage(ynode) === pageId) continue
       writePage(ynode, pageId)
-      stack.push(...(graph.getNode(layerId)?.childIds ?? []))
+      appendAll(stack, graph.getNode(layerId)?.childIds ?? [])
     }
   }
 }

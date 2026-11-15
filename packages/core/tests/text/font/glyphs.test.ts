@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { corePackagePath } from '#core-tests/helpers/paths'
 
 import { fontManager } from '@open-pencil/core/text'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import {
@@ -76,5 +77,5 @@ test('outlines a shaped mark where shaping places it on its base letter', async 
   expect(xs.length).toBeGreaterThan(0)
   // The acute's pen is past the q; its outline reaches back over the q.
   expect(mark?.x).toBe(base?.advance)
-  expect(Math.max(...xs)).toBeLessThan(0)
+  expect(maxOf(xs)).toBeLessThan(0)
 })

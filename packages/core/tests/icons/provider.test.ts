@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
+
 import { createIconifyAPIClient } from '#core/icons/api'
 import { createIconifyProvider } from '#core/icons/provider'
 import type { IconData } from '#core/icons/types'
@@ -43,7 +45,7 @@ function extent(icon: IconData | undefined) {
   const vertices = icon?.paths[0]?.vectorNetwork.vertices ?? []
   const xs = vertices.map((vertex) => vertex.x)
   const ys = vertices.map((vertex) => vertex.y)
-  return { x: [Math.min(...xs), Math.max(...xs)], y: [Math.min(...ys), Math.max(...ys)] }
+  return { x: [minOf(xs), maxOf(xs)], y: [minOf(ys), maxOf(ys)] }
 }
 
 const CATALOGUE = {

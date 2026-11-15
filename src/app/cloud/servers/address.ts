@@ -1,3 +1,5 @@
+import { hasProtocol } from 'ufo'
+
 /**
  * The canonical address of a Cloud server from what a person typed: HTTPS unless they wrote a
  * scheme, no query, fragment, or trailing slash. Null when it cannot be a server address.
@@ -5,7 +7,7 @@
 export function normalizeCloudServerURL(input: string): string | null {
   const trimmed = input.trim()
   if (!trimmed) return null
-  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
+  const withScheme = hasProtocol(trimmed, { strict: true }) ? trimmed : `https://${trimmed}`
   let url: URL
   try {
     url = new URL(withScheme)
@@ -21,6 +23,7 @@ export function normalizeCloudServerURL(input: string): string | null {
   if (url.username || url.password) return null
   url.search = ''
   url.hash = ''
+  // Every trailing slash, and no other: a path's own slashes may route differently behind a proxy.
   return url.href.replace(/\/+$/, '')
 }
 

@@ -7,6 +7,7 @@ import {
   type AdminErrorCode
 } from '#cloud/contract'
 import type { CloudAccountRoutes } from '#cloud/server/account/routes'
+import type { CloudAccessTokenRoutes } from '#cloud/server/account/tokens'
 import type { CloudAPI } from '#cloud/server/api'
 import { hc } from 'hono/client'
 import * as v from 'valibot'
@@ -107,6 +108,7 @@ export function createPortalRouteClients(options: CloudPortalClientOptions = {})
   }
   return {
     account: hc<CloudAccountRoutes>(origin, clientOptions).api.account,
+    tokens: hc<CloudAccessTokenRoutes>(origin, clientOptions).api.account.tokens,
     admin: hc<CloudAdminRoutes>(new URL('/api/admin', origin).href, clientOptions),
     api: hc<CloudAPI>(new URL('/api', origin).href, clientOptions)
   }

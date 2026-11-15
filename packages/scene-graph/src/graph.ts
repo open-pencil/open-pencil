@@ -588,6 +588,7 @@ export class SceneGraph {
     const node = this.nodes.get(id)
     if (node) changes = this.sizedChanges(node, changes)
     const appliedChanges = updateNodePreview(this, id, changes, (node, applied) => {
+      for (const observer of this.changeObservers) observer.previewed?.(node)
       for (const observe of this.previewObservers) observe(node, applied)
     })
     if (appliedChanges) this.emitter.emit('node:previewUpdated', id, appliedChanges)
@@ -919,16 +920,33 @@ export class SceneGraph {
     return Instances.getInstances(this, componentId)
   }
 
+  /**
+   * The descendants of a layer in depth-first order with their depths. Each layer with children is
+   * walked once, so a cycle or repeated links in bad data cannot hang it or repeat its subtree.
+   */
   flattenTree(parentId?: string, depth = 0): Array<{ node: SceneNode; depth: number }> {
     const id = parentId ?? this.rootId
     const parent = this.nodes.get(id)
     if (!parent) return []
     const result: Array<{ node: SceneNode; depth: number }> = []
-    for (const childId of parent.childIds) {
-      const child = this.nodes.get(childId)
+    const pending = [{ node: parent, depth, index: 0 }]
+    const walked = new Set([parent])
+    while (pending.length > 0) {
+      const frame = pending.at(-1)
+      if (!frame) break
+      if (frame.index >= frame.node.childIds.length) {
+        pending.pop()
+        continue
+      }
+      const child = this.nodes.get(frame.node.childIds[frame.index++])
       if (!child) continue
-      result.push({ node: child, depth })
-      if (child.childIds.length > 0) result.push(...this.flattenTree(childId, depth + 1))
+      const container = child.childIds.length > 0
+      if (container && walked.has(child)) continue
+      result.push({ node: child, depth: frame.depth })
+      if (container) {
+        walked.add(child)
+        pending.push({ node: child, depth: frame.depth + 1, index: 0 })
+      }
     }
     return result
   }

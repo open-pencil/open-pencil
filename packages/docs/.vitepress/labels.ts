@@ -1,4 +1,5 @@
 export interface SidebarLabels {
+  aiAndCollaboration: string
   gettingAround: string
   creatingContent: string
   organizing: string
@@ -18,7 +19,6 @@ export interface SidebarLabels {
   components: string
   variables: string
   checkingDesigns: string
-  openPencilCloud: string
   cloudStorage: string
   overview: string
   gettingStarted: string
@@ -27,10 +27,6 @@ export interface SidebarLabels {
   techStack: string
   comparison: string
   privacy: string
-  cloudLegal: string
-  cloudTerms: string
-  cloudPrivacy: string
-  subprocessors: string
   figmaMatrix: string
 }
 
@@ -47,16 +43,24 @@ export interface ProgrammableLabels {
   mcpServer: string
   aiChat: string
   collaboration: string
+  /** Heads the CLI's command list. */
+  commandReference: string
+  aiAgents: string
+  libraries: string
+  /** Heads the collapsed list of how parts of the editor work inside. */
+  internals: string
+  urlScheme: string
 }
 
 export interface NavLabels {
-  overview: string
-  userGuide: string
-  programmable: string
-  sdk: string
+  docs: string
+  developers: string
+  download: string
+  /** Heads the reference pages in each section's sidebar. */
   reference: string
+  /** Heads the contributor pages in the Developers sidebar. */
   development: string
-  openApp: string
+  cloud: string
 }
 
 export const EN_PROG: ProgrammableLabels = {
@@ -71,7 +75,12 @@ export const EN_PROG: ProgrammableLabels = {
   jsxRenderer: 'JSX Renderer',
   mcpServer: 'MCP Server',
   aiChat: 'AI Chat',
-  collaboration: 'Collaboration'
+  collaboration: 'Collaboration',
+  commandReference: 'Command Reference',
+  aiAgents: 'AI Agents',
+  libraries: 'Libraries',
+  internals: 'Internals',
+  urlScheme: 'URL Scheme'
 }
 export const DE_PROG: ProgrammableLabels = {
   overview: 'Überblick',
@@ -85,7 +94,12 @@ export const DE_PROG: ProgrammableLabels = {
   jsxRenderer: 'JSX-Renderer',
   mcpServer: 'MCP-Server',
   aiChat: 'KI-Chat',
-  collaboration: 'Zusammenarbeit'
+  collaboration: 'Zusammenarbeit',
+  commandReference: 'Befehlsreferenz',
+  aiAgents: 'KI-Agenten',
+  libraries: 'Bibliotheken',
+  internals: 'Interna',
+  urlScheme: 'URL-Schema'
 }
 export const IT_PROG: ProgrammableLabels = {
   overview: 'Panoramica',
@@ -99,7 +113,12 @@ export const IT_PROG: ProgrammableLabels = {
   jsxRenderer: 'Renderer JSX',
   mcpServer: 'Server MCP',
   aiChat: 'Chat IA',
-  collaboration: 'Collaborazione'
+  collaboration: 'Collaborazione',
+  commandReference: 'Riferimento comandi',
+  aiAgents: 'Agenti IA',
+  libraries: 'Librerie',
+  internals: 'Dettagli interni',
+  urlScheme: 'Schema URL'
 }
 export const FR_PROG: ProgrammableLabels = {
   overview: 'Vue d’ensemble',
@@ -113,7 +132,12 @@ export const FR_PROG: ProgrammableLabels = {
   jsxRenderer: 'Moteur JSX',
   mcpServer: 'Serveur MCP',
   aiChat: 'Chat IA',
-  collaboration: 'Collaboration'
+  collaboration: 'Collaboration',
+  commandReference: 'Référence des commandes',
+  aiAgents: 'Agents IA',
+  libraries: 'Bibliothèques',
+  internals: 'Fonctionnement interne',
+  urlScheme: 'Schéma d’URL'
 }
 export const ES_PROG: ProgrammableLabels = {
   overview: 'Resumen',
@@ -127,7 +151,12 @@ export const ES_PROG: ProgrammableLabels = {
   jsxRenderer: 'Renderizador JSX',
   mcpServer: 'Servidor MCP',
   aiChat: 'Chat IA',
-  collaboration: 'Colaboración'
+  collaboration: 'Colaboración',
+  commandReference: 'Referencia de comandos',
+  aiAgents: 'Agentes de IA',
+  libraries: 'Bibliotecas',
+  internals: 'Funcionamiento interno',
+  urlScheme: 'Esquema de URL'
 }
 export const PL_PROG: ProgrammableLabels = {
   overview: 'Przegląd',
@@ -141,7 +170,12 @@ export const PL_PROG: ProgrammableLabels = {
   jsxRenderer: 'Renderer JSX',
   mcpServer: 'Serwer MCP',
   aiChat: 'Czat AI',
-  collaboration: 'Współpraca'
+  collaboration: 'Współpraca',
+  commandReference: 'Opis poleceń',
+  aiAgents: 'Agenci AI',
+  libraries: 'Biblioteki',
+  internals: 'Szczegóły wewnętrzne',
+  urlScheme: 'Schemat URL'
 }
 export const RU_PROG: ProgrammableLabels = {
   overview: 'Обзор',
@@ -155,10 +189,16 @@ export const RU_PROG: ProgrammableLabels = {
   jsxRenderer: 'JSX-рендерер',
   mcpServer: 'MCP-сервер',
   aiChat: 'ИИ-чат',
-  collaboration: 'Совместная работа'
+  collaboration: 'Совместная работа',
+  commandReference: 'Справочник команд',
+  aiAgents: 'ИИ-агенты',
+  libraries: 'Библиотеки',
+  internals: 'Внутреннее устройство',
+  urlScheme: 'Схема URL'
 }
 
 export const EN: SidebarLabels = {
+  aiAndCollaboration: 'AI and Collaboration',
   gettingAround: 'Getting Around',
   creatingContent: 'Creating Content',
   organizing: 'Organizing & Managing',
@@ -176,7 +216,6 @@ export const EN: SidebarLabels = {
   components: 'Components',
   variables: 'Variables',
   checkingDesigns: 'Checking Designs',
-  openPencilCloud: 'OpenPencil Cloud',
   cloudStorage: 'Cloud Storage',
   icons: 'Icons',
   photos: 'Photos',
@@ -187,13 +226,10 @@ export const EN: SidebarLabels = {
   techStack: 'Tech Stack',
   comparison: 'Comparison',
   privacy: 'Privacy',
-  cloudLegal: 'OpenPencil Cloud legal',
-  cloudTerms: 'Terms of Service',
-  cloudPrivacy: 'Privacy Policy',
-  subprocessors: 'Subprocessors',
   figmaMatrix: 'Figma Feature Matrix'
 }
 export const DE: SidebarLabels = {
+  aiAndCollaboration: 'KI und Zusammenarbeit',
   gettingAround: 'Erste Schritte',
   creatingContent: 'Inhalte erstellen',
   organizing: 'Organisieren',
@@ -211,7 +247,6 @@ export const DE: SidebarLabels = {
   components: 'Komponenten',
   variables: 'Variablen',
   checkingDesigns: 'Designs prüfen',
-  openPencilCloud: 'OpenPencil Cloud',
   cloudStorage: 'Cloud-Speicher',
   icons: 'Symbole',
   photos: 'Fotos',
@@ -222,13 +257,10 @@ export const DE: SidebarLabels = {
   techStack: 'Tech-Stack',
   comparison: 'Vergleich',
   privacy: 'Datenschutz',
-  cloudLegal: 'OpenPencil Cloud – Rechtliches',
-  cloudTerms: 'Nutzungsbedingungen',
-  cloudPrivacy: 'Datenschutzerklärung',
-  subprocessors: 'Unterauftragsverarbeiter',
   figmaMatrix: 'Figma-Funktionsmatrix'
 }
 export const IT: SidebarLabels = {
+  aiAndCollaboration: 'IA e collaborazione',
   gettingAround: 'Orientamento',
   creatingContent: 'Creazione contenuti',
   organizing: 'Organizzazione',
@@ -246,7 +278,6 @@ export const IT: SidebarLabels = {
   components: 'Componenti',
   variables: 'Variabili',
   checkingDesigns: 'Verificare i design',
-  openPencilCloud: 'OpenPencil Cloud',
   cloudStorage: 'Archiviazione cloud',
   icons: 'Icone',
   photos: 'Foto',
@@ -257,13 +288,10 @@ export const IT: SidebarLabels = {
   techStack: 'Stack tecnologico',
   comparison: 'Confronto',
   privacy: 'Privacy',
-  cloudLegal: 'OpenPencil Cloud – Note legali',
-  cloudTerms: 'Termini di servizio',
-  cloudPrivacy: 'Informativa sulla privacy',
-  subprocessors: 'Sub-responsabili',
   figmaMatrix: 'Matrice funzionalità Figma'
 }
 export const FR: SidebarLabels = {
+  aiAndCollaboration: 'IA et collaboration',
   gettingAround: 'Prise en main',
   creatingContent: 'Création de contenu',
   organizing: 'Organisation',
@@ -281,7 +309,6 @@ export const FR: SidebarLabels = {
   components: 'Composants',
   variables: 'Variables',
   checkingDesigns: 'Vérifier les designs',
-  openPencilCloud: 'OpenPencil Cloud',
   cloudStorage: 'Stockage cloud',
   icons: 'Icônes',
   photos: 'Photos',
@@ -292,13 +319,10 @@ export const FR: SidebarLabels = {
   techStack: 'Stack technique',
   comparison: 'Comparaison',
   privacy: 'Confidentialité',
-  cloudLegal: 'OpenPencil Cloud – Mentions légales',
-  cloudTerms: 'Conditions d’utilisation',
-  cloudPrivacy: 'Politique de confidentialité',
-  subprocessors: 'Sous-traitants',
   figmaMatrix: 'Matrice des fonctionnalités Figma'
 }
 export const ES: SidebarLabels = {
+  aiAndCollaboration: 'IA y colaboración',
   gettingAround: 'Orientación',
   creatingContent: 'Crear contenido',
   organizing: 'Organizar',
@@ -316,7 +340,6 @@ export const ES: SidebarLabels = {
   components: 'Componentes',
   variables: 'Variables',
   checkingDesigns: 'Revisar diseños',
-  openPencilCloud: 'OpenPencil Cloud',
   cloudStorage: 'Almacenamiento en la nube',
   icons: 'Iconos',
   photos: 'Fotos',
@@ -327,13 +350,10 @@ export const ES: SidebarLabels = {
   techStack: 'Stack tecnológico',
   comparison: 'Comparación',
   privacy: 'Privacidad',
-  cloudLegal: 'OpenPencil Cloud – Aviso legal',
-  cloudTerms: 'Términos del servicio',
-  cloudPrivacy: 'Política de privacidad',
-  subprocessors: 'Subencargados',
   figmaMatrix: 'Matriz de funcionalidades Figma'
 }
 export const PL: SidebarLabels = {
+  aiAndCollaboration: 'AI i współpraca',
   gettingAround: 'Nawigacja',
   creatingContent: 'Tworzenie treści',
   organizing: 'Organizacja',
@@ -351,7 +371,6 @@ export const PL: SidebarLabels = {
   components: 'Komponenty',
   variables: 'Zmienne',
   checkingDesigns: 'Sprawdzanie projektów',
-  openPencilCloud: 'OpenPencil Cloud',
   cloudStorage: 'Przechowywanie w chmurze',
   icons: 'Ikony',
   photos: 'Zdjęcia',
@@ -362,13 +381,10 @@ export const PL: SidebarLabels = {
   techStack: 'Stack technologiczny',
   comparison: 'Porównanie',
   privacy: 'Prywatność',
-  cloudLegal: 'OpenPencil Cloud – Informacje prawne',
-  cloudTerms: 'Warunki korzystania',
-  cloudPrivacy: 'Polityka prywatności',
-  subprocessors: 'Podmioty przetwarzające',
   figmaMatrix: 'Matryca funkcji Figma'
 }
 export const RU: SidebarLabels = {
+  aiAndCollaboration: 'ИИ и совместная работа',
   gettingAround: 'Навигация',
   creatingContent: 'Создание контента',
   organizing: 'Организация',
@@ -386,7 +402,6 @@ export const RU: SidebarLabels = {
   components: 'Компоненты',
   variables: 'Переменные',
   checkingDesigns: 'Проверка дизайна',
-  openPencilCloud: 'OpenPencil Cloud',
   cloudStorage: 'Облачное хранилище',
   icons: 'Иконки',
   photos: 'Фото',
@@ -397,9 +412,5 @@ export const RU: SidebarLabels = {
   techStack: 'Технологии',
   comparison: 'Сравнение',
   privacy: 'Конфиденциальность',
-  cloudLegal: 'OpenPencil Cloud — правовая информация',
-  cloudTerms: 'Условия использования',
-  cloudPrivacy: 'Политика конфиденциальности',
-  subprocessors: 'Субобработчики',
   figmaMatrix: 'Матрица функций Figma'
 }

@@ -5,6 +5,7 @@ import type { DesignStyleDeclaration } from '#dom-css/types'
 import { isEmptyObject } from 'es-toolkit/predicate'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { behaviourOwner, findLayerByPath } from '@open-pencil/scene-graph/behaviours'
 import { findComponentPropertyTargets } from '@open-pencil/scene-graph/components'
 import { isIconModified, isNamedIcon, readIcon } from '@open-pencil/scene-graph/icons'
@@ -133,7 +134,10 @@ export function referenceValues(
   }
   // A set may draw a flag both as a boolean and as a state value; the prop is set once.
   const flags = drawnFlags(component, values)
-  props.push(...flags.filter((flag) => !props.some((prop) => prop.name === flag.name)))
+  appendAll(
+    props,
+    flags.filter((flag) => !props.some((prop) => prop.name === flag.name))
+  )
   for (const prop of component.props) {
     const value = values[prop.property]
     if (Object.hasOwn(values, prop.property) && value !== prop.default)

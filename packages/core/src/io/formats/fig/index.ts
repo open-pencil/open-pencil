@@ -10,6 +10,7 @@ export {
 export { figThumbnailPageId } from './thumbnail-page'
 export {
   isReaderPagePending as isFigPagePending,
+  pendingReaderPageOfNode as pendingFigPageOfNode,
   populateFigPage,
   populateAllFigPages,
   readerDiagnostics

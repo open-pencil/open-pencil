@@ -8,16 +8,22 @@ import { createDefaultCloudPolicy } from './policy'
 import { EntitlementOpenFeatureProvider } from './provider'
 import { staticEntitlementValues } from './static'
 
-/** The policy a deployment configures: its static entitlements, or the database's. */
+/**
+ * The policy a deployment configures: its static entitlements, or the database's, over the
+ * defaults an account without stored entitlements takes.
+ */
 export function createConfiguredCloudPolicy(
-  config: Pick<CloudServerConfig, 'staticEntitlements'>,
+  config: Pick<CloudServerConfig, 'staticEntitlements' | 'defaultEntitlements'>,
   database: Kysely<CloudDatabase>
 ) {
   return createDefaultCloudPolicy(
     new EntitlementOpenFeatureProvider(
       config.staticEntitlements
         ? new StaticEntitlementSource(staticEntitlementValues(config.staticEntitlements))
-        : new DatabaseEntitlementSource(database)
+        : new DatabaseEntitlementSource(
+            database,
+            config.defaultEntitlements ? staticEntitlementValues(config.defaultEntitlements) : {}
+          )
     )
   )
 }

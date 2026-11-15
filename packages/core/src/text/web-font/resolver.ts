@@ -1,6 +1,7 @@
 import { uniq } from 'es-toolkit'
 import type { FontFaceData, RemoteFontSource, ResolveFontResult } from 'unifont'
 
+import { minOf } from '@open-pencil/scene-graph/arrays'
 import { parseFontStyle } from '@open-pencil/scene-graph/font-style'
 
 import { IS_BROWSER } from '#core/constants'
@@ -158,7 +159,7 @@ function resolvedRemoteFaces(
     const source = preferredRemoteSource(face)
     return source ? [{ source, init: face.meta?.init, priority: face.meta?.priority ?? 0 }] : []
   })
-  const preferredPriority = Math.min(...candidates.map((candidate) => candidate.priority))
+  const preferredPriority = minOf(candidates.map((candidate) => candidate.priority))
   const seen = new Set<string>()
   const faces: Array<{ source: RemoteFontSource; init?: RequestInit }> = []
   for (const candidate of candidates) {

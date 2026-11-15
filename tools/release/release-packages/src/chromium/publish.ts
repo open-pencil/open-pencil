@@ -3,12 +3,13 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { releaseTagSchema } from '#release/version'
-import { decode, toUint8Array } from 'js-base64'
+import { decode } from 'js-base64'
 import * as v from 'valibot'
 
 import { ARTIFACT_TRANSFER_TIMEOUT_MS, releaseCommands } from '../native/commands.ts'
 import { commitSchema, releaseVersion } from '../native/context.ts'
 import { digestFile } from '../native/manifest.ts'
+import { minisignPublicKey, verifyMinisign } from '../native/minisign.ts'
 import { assertSignedVersion } from '../native/signature.ts'
 import { CHROMIUM_FEED, chromiumAssets, chromiumTargets } from './catalog.ts'
 
@@ -20,7 +21,7 @@ const repository = v.parse(
   v.pipe(v.string(), v.regex(/^[\w.-]+\/[\w.-]+$/)),
   process.env.GITHUB_REPOSITORY
 )
-const { git, github, verifySignature } = releaseCommands(root)
+const { git, github } = releaseCommands(root)
 
 // The release must exist, draft or published, and its tag must not have moved since the plan.
 v.parse(
@@ -44,33 +45,24 @@ const config = v.parse(
 
 // Every architecture must be present and signed for this version before anything is uploaded.
 const platforms: Record<string, { signature: string; url: string }> = {}
-const temporary = await mkdtemp(join(tmpdir(), 'open-pencil-chromium-'))
+const publicKey = minisignPublicKey(decode(config.plugins.updater.pubkey))
 
-try {
-  const publicKey = join(temporary, 'key.pub')
-  await writeFile(publicKey, toUint8Array(config.plugins.updater.pubkey))
+for (const target of chromiumTargets) {
+  for (const asset of chromiumAssets(target, version)) {
+    if (!asset.signed) continue
 
-  for (const target of chromiumTargets) {
-    for (const asset of chromiumAssets(target, version)) {
-      if (!asset.signed) continue
+    const path = join(artifacts, asset.name)
+    const signature = (await readFile(`${path}.sig`, 'utf8')).trim()
+    const trusted = await verifyMinisign(path, publicKey, decode(signature))
+    assertSignedVersion(trusted, version, asset.name)
 
-      const path = join(artifacts, asset.name)
-      const signature = (await readFile(`${path}.sig`, 'utf8')).trim()
-      const decoded = join(temporary, `${asset.name}.minisig`)
-      await writeFile(decoded, toUint8Array(signature))
-      await verifySignature(path, publicKey, decoded)
-      assertSignedVersion(decode(signature), version, asset.name)
-
-      for (const platform of asset.updaterKeys) {
-        platforms[platform] = {
-          signature,
-          url: `https://github.com/${repository}/releases/download/${tag}/${asset.name}`
-        }
+    for (const platform of asset.updaterKeys) {
+      platforms[platform] = {
+        signature,
+        url: `https://github.com/${repository}/releases/download/${tag}/${asset.name}`
       }
     }
   }
-} finally {
-  await rm(temporary, { recursive: true, force: true })
 }
 
 await writeFile(

@@ -1,4 +1,5 @@
 import { parseFileDocumentReport } from '#cloud/contract'
+import { acceptedLocale } from '#cloud/email'
 import type { CloudSessionResolver } from '#cloud/server/auth'
 import { shareActor } from '#cloud/server/sharing/actor'
 import { sharingRoute } from '#cloud/server/sharing/http'
@@ -22,7 +23,8 @@ export function createPublicReportRoutes(
           await service.file(
             context.req.valid('param').shareId,
             context.req.valid('json'),
-            await shareActor(context.req.raw, resolveSession)
+            await shareActor(context.req.raw, resolveSession),
+            acceptedLocale(context.req.header('accept-language'))
           )
           return context.json({ received: true as const }, 201)
         })

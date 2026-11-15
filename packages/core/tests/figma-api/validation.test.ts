@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import * as v from 'valibot'
 
-import { atLeast, finiteNumberSchema } from '#core/figma-api/schema'
+import { atLeast, finiteNumberSchema, transformSchema } from '#core/figma-api/schema'
 import { parseFigma } from '#core/figma-api/validation'
 
 // The rules come from messages measured in Figma desktop 126, which validates with Zod 4.
@@ -199,5 +199,53 @@ describe('Figma’s validation messages', () => {
         '  Invalid option: expected one of "X"|"Y" at .axis\n' +
         '  Invalid input: expected "NONE"'
     )
+  })
+
+  // Figma takes a transform's rows, and the pair, as arrays or as objects keyed by index.
+  test('a transform words each of its shapes, refusing an array as an object', () => {
+    expect(
+      refusal(transformSchema, [
+        [1, 0, Number.NaN],
+        [0, 1, 0]
+      ])
+    ).toBe(
+      'Expected one of the following, but none matched:\n' +
+        '  Expected [0] to be one of the following, but none matched:\n' +
+        '    Expected number, received NaN at [0][2]\n' +
+        '    Expected object, received array at index 0\n' +
+        '  Expected object, received array'
+    )
+    expect(
+      refusal(transformSchema, [
+        [1, 0],
+        [0, 1, 0]
+      ])
+    ).toBe(
+      'Expected one of the following, but none matched:\n' +
+        '  Expected [0] to be one of the following, but none matched:\n' +
+        '    Too small: expected array to have exactly 3 items at index 0\n' +
+        '    Expected object, received array at index 0\n' +
+        '  Expected object, received array'
+    )
+    expect(refusal(transformSchema, [{}, [0, 1, 0]])).toBe(
+      'Expected one of the following, but none matched:\n' +
+        '  Expected [0] to be one of the following, but none matched:\n' +
+        '    Expected array, received object at index 0\n' +
+        '    Multiple issues at [0]:\n' +
+        '      Required value missing at [0].0\n' +
+        '      Required value missing at [0].1\n' +
+        '      Required value missing at [0].2\n' +
+        '  Expected object, received array'
+    )
+    expect(refusal(transformSchema, {})).toBe(
+      'Expected one of the following, but none matched:\n' +
+        '  Expected array, received object\n' +
+        '  Multiple issues:\n' +
+        '    Expected .0 to be one of the following, but none matched:\n' +
+        '      Required value missing at .0\n' +
+        '    Expected .1 to be one of the following, but none matched:\n' +
+        '      Required value missing at .1'
+    )
+    expect(refusal(transformSchema, [{ 0: 1, 1: 0, 2: 7 }, [0, 1, 0]])).toBeNull()
   })
 })

@@ -11,7 +11,7 @@ import { DOCUMENT_KIND_ICONS } from '@/components/document/kinds'
 import PreparationIndicator from '@/components/preparation/tab/PreparationIndicator.vue'
 import { useScrollOverflow } from '@/components/ui/list/useScrollOverflow'
 import Tip from '@/components/ui/overlay/Tip.vue'
-import tabBarTheme from '@/theme/tab-bar'
+import tabBarTheme from '@/theme/tabs/bar'
 
 const { files } = useI18n()
 

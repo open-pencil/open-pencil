@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { switchSet } from '#dom-css-tests/behaviours/fixtures'
+import { switchSet } from '#dom-css-tests/behaviours/fixtures/controls'
 import { layerComponents, layerMarkup } from '#dom-css/export'
 import { compileTailwindCSS } from '#dom-css/import/tailwind'
 

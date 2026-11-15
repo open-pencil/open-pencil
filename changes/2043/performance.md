@@ -1,0 +1,1 @@
+- PDF export of long text is much faster: a line of thousands of characters takes milliseconds instead of a large fraction of a second.

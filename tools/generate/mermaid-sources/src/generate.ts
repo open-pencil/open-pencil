@@ -10,6 +10,7 @@
 import { join } from 'node:path'
 
 import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 
 import { checksums, CHECKSUMS_FILE } from './checksums'
 import { extractDeclarations, hasImports } from './extract'
@@ -51,7 +52,7 @@ async function upstream(commit: string): Promise<Map<string, string>> {
   }
   const declarations: string[] = []
   for (const { source, names } of EXTRACTED_MODULE.declarations) {
-    declarations.push(...extractDeclarations(await download(source, commit), source, names))
+    appendAll(declarations, extractDeclarations(await download(source, commit), source, names))
   }
   texts.set(EXTRACTED_MODULE.file, declarations.join('\n\n'))
   return texts

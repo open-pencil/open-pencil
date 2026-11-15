@@ -3,6 +3,7 @@ import { preferEsToolkitRule } from '#oxlint-plugin/rules/quality/es-toolkit'
 import { noUnvalidatedJSONParseRule } from '#oxlint-plugin/rules/quality/json-parse'
 import { noReduceAccumulatorCopyRule } from '#oxlint-plugin/rules/quality/reduce-accumulator-copy'
 import { noRawRuntimeEffectRule } from '#oxlint-plugin/rules/quality/runtime-effect'
+import { noSpreadArgumentsRule } from '#oxlint-plugin/rules/quality/spread-arguments'
 import { valibotSchemaConventionsRule } from '#oxlint-plugin/rules/quality/valibot-schemas'
 import { noRawSQLRule } from '#oxlint-plugin/rules/sql'
 import { definePlugin } from '@oxlint/plugins'
@@ -15,6 +16,7 @@ export default definePlugin({
     'no-raw-runtime-effect': noRawRuntimeEffectRule,
     'no-raw-sql': noRawSQLRule,
     'no-reduce-accumulator-copy': noReduceAccumulatorCopyRule,
+    'no-spread-arguments': noSpreadArgumentsRule,
     'no-unvalidated-json-parse': noUnvalidatedJSONParseRule,
     'prefer-es-toolkit': preferEsToolkitRule,
     'valibot-schema-conventions': valibotSchemaConventionsRule

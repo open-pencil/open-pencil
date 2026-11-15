@@ -21,6 +21,24 @@ export function safeColor(color: Color | Omit<Color, 'a'>): Color {
   return { r: color.r, g: color.g, b: color.b, a: 'a' in color ? color.a : 1 }
 }
 
+function writeMediaPaintFields(paint: Paint, fill: Fill): void {
+  if (fill.imageHash) {
+    paint.image = { hash: hexToBytes(fill.imageHash) }
+  }
+  if (fill.videoHash) {
+    paint.video = { hash: hexToBytes(fill.videoHash) }
+  }
+  if (fill.imageScaleMode) {
+    paint.imageScaleMode = fill.imageScaleMode === 'CROP' ? 'STRETCH' : fill.imageScaleMode
+  }
+  if (fill.imageTransform) {
+    paint.transform = fill.imageTransform
+  }
+  if (fill.imageRotation) {
+    paint.rotation = fill.imageRotation
+  }
+}
+
 export function fillToKiwiPaint(fill: Fill): Paint {
   const paint: Paint = {
     type: fill.type,
@@ -36,11 +54,7 @@ export function fillToKiwiPaint(fill: Fill): Paint {
     }))
   }
   if (fill.gradientTransform) paint.transform = fill.gradientTransform
-  if (fill.imageHash) paint.image = { hash: hexToBytes(fill.imageHash) }
-  if (fill.imageScaleMode)
-    paint.imageScaleMode = fill.imageScaleMode === 'CROP' ? 'STRETCH' : fill.imageScaleMode
-  if (fill.imageTransform) paint.transform = fill.imageTransform
-  if (fill.imageRotation) paint.rotation = fill.imageRotation
+  writeMediaPaintFields(paint, fill)
   if (fill.sourceNodeId) paint.sourceNodeId = stringToGuid(fill.sourceNodeId)
   if (fill.scale) paint.scale = fill.scale
   if (fill.spacing) paint.spacing = fill.spacing
@@ -60,11 +74,20 @@ function convertColor(color?: Partial<Color>): Color {
   return { r: color.r ?? 0, g: color.g ?? 0, b: color.b ?? 0, a: color.a ?? 1 }
 }
 
-function imageHashToString(hash: Record<string, number>): string {
-  const bytes = Object.keys(hash)
-    .sort((a, b) => Number(a) - Number(b))
-    .map((k) => hash[Number(k)])
-  return bytes.map((b) => b.toString(16).padStart(2, '0')).join('')
+type MediaHash = string | Uint8Array | Record<string, number>
+
+function bytesHashToString(hash: Exclude<MediaHash, string>): string {
+  return Object.values(hash)
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('')
+}
+
+function mediaHash(source: { hash?: MediaHash } | undefined): string | undefined {
+  const hash = source?.hash
+  if (hash === undefined) {
+    return undefined
+  }
+  return typeof hash === 'string' ? hash : bytesHashToString(hash)
 }
 
 function convertGradientTransform(t?: Matrix): GradientTransform | undefined {
@@ -116,14 +139,16 @@ function applyGradientPaintFields(fill: Fill, p: Paint): void {
 }
 
 function applyImagePaintFields(fill: Fill, p: Paint): void {
-  if (p.type !== 'IMAGE') return
-  if (p.image && typeof p.image === 'object') {
-    const img = p.image as { hash: string | Record<string, number> }
-    if (typeof img.hash === 'object') {
-      fill.imageHash = imageHashToString(img.hash)
-    } else if (typeof img.hash === 'string') {
-      fill.imageHash = img.hash
-    }
+  if (p.type !== 'IMAGE' && p.type !== 'VIDEO') {
+    return
+  }
+  const imageHash = mediaHash(p.image)
+  if (imageHash) {
+    fill.imageHash = imageHash
+  }
+  const videoHash = p.type === 'VIDEO' ? mediaHash(p.video) : undefined
+  if (videoHash) {
+    fill.videoHash = videoHash
   }
   fill.imageScaleMode = (
     p.imageScaleMode === 'STRETCH' ? 'CROP' : (p.imageScaleMode ?? 'FILL')

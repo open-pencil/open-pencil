@@ -1,12 +1,14 @@
 import type { Ref } from 'vue'
 
-import { hitTestGuides } from '@open-pencil/core/canvas'
+import { hitTestGuides, type SkiaRenderer } from '@open-pencil/core/canvas'
 
 import type { EditorStore } from '@/app/editor/active-store'
 
 export function createCanvasContextSelection(
   canvasRef: Ref<HTMLCanvasElement | null>,
-  store: EditorStore
+  store: EditorStore,
+  /** This pane's overlay canvas, which paints frame, section, and component names. */
+  getOverlayRenderer: () => SkiaRenderer | null
 ) {
   function selectAtContextPoint(event: MouseEvent) {
     const canvas = canvasRef.value
@@ -36,7 +38,7 @@ export function createCanvasContextSelection(
     }
     store.setSelectedGuide(null)
     const { x: cx, y: cy } = store.screenToCanvas(sx, sy)
-    store.selectAtPoint(cx, cy)
+    store.selectAtPoint(cx, cy, getOverlayRenderer())
   }
 
   return { selectAtContextPoint }

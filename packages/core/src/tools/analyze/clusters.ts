@@ -2,6 +2,8 @@ import { orderBy, sortBy } from 'es-toolkit/array'
 import { meanBy } from 'es-toolkit/math'
 import * as v from 'valibot'
 
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
+
 import { graphOf } from '#core/figma-api/graph'
 import { toolNumber, defineTool } from '#core/tools/schema'
 
@@ -103,8 +105,8 @@ export const analyzeClusters = defineTool({
           const avgHeight = meanBy(nodes, (node) => node.height)
           const widths = nodes.map((node) => node.width)
           const heights = nodes.map((node) => node.height)
-          const widthRange = Math.max(...widths) - Math.min(...widths)
-          const heightRange = Math.max(...heights) - Math.min(...heights)
+          const widthRange = maxOf(widths) - minOf(widths)
+          const heightRange = maxOf(heights) - minOf(heights)
           const confidence = calcClusterConfidence(nodes)
 
           return {

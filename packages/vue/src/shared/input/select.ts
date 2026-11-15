@@ -20,6 +20,7 @@ import { tryStartSelectionResize } from '#vue/shared/input/resize/selection'
 import { tryStartScale } from '#vue/shared/input/scale'
 import {
   createSelectionMoveDrag,
+  pressedSelectedLayer,
   pressSelects,
   selectionIsLocked
 } from '#vue/shared/input/select/move'
@@ -152,16 +153,28 @@ function pressLayers(
     return
   }
 
-  selectOnPress(hit, e.shiftKey, pressSelects(hit, cx, cy, editor, deep), editor)
+  const selects = pressSelects(hit, cx, cy, editor, deep)
+  const shiftPressedSelectedId = e.shiftKey
+    ? pressedSelectedLayer(hit, selects, cx, cy, editor)
+    : undefined
+  if (!shiftPressedSelectedId) {
+    selectOnPress(hit, e.shiftKey, selects, editor)
+  }
 
-  // A read-only document, or one whose layers the host keeps as they are, moves nothing.
   const layerEdits = resolveEditorProfile(editor.state).layerEdits
-  if (layerEdits === 'none') return
-  if (selectionIsLocked(editor)) return
+  const nothingMoves = layerEdits === 'none' || selectionIsLocked(editor)
+  if (nothingMoves) {
+    if (shiftPressedSelectedId) {
+      editor.select([shiftPressedSelectedId], true)
+    }
+    return
+  }
 
   // A press inside the selection drags it; its layers are a double-click or ⌘-click away, as in Figma.
   // Where layers only move, Alt copies nothing and layers stay in their parents.
-  setDrag(createSelectionMoveDrag(cx, cy, sx, sy, editor, e.altKey && layerEdits === 'all'))
+  const drag = createSelectionMoveDrag(cx, cy, sx, sy, editor, e.altKey && layerEdits === 'all')
+  drag.clickDeselectsId = shiftPressedSelectedId
+  setDrag(drag)
 }
 
 /**

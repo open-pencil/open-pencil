@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
+import { layoutSizing } from '@open-pencil/scene-graph/layout'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import { readHTMLDocument } from '#core/io/formats/html/import'
@@ -46,6 +47,25 @@ describe('reading HTML', () => {
     // Centered where the engine set the line; Core measures the same font within a pixel of it.
     const label = node(button.childIds[0])
     expect(Math.abs(label.x * 2 + label.width - 390)).toBeLessThanOrEqual(1)
+  })
+
+  test('keeps sizes the page left to layout as fill and hug, and fixes those it set', async () => {
+    const { graph } = await readHTMLDocument(DEMO)
+    const node = (id: string | undefined) => {
+      const found = id === undefined ? undefined : graph.getNode(id)
+      if (!found) throw new Error(`Missing layer ${id}`)
+      return found
+    }
+    const sizing = (id: string | undefined) => {
+      const layer = node(id)
+      return [layoutSizing(graph, layer, 'HORIZONTAL'), layoutSizing(graph, layer, 'VERTICAL')]
+    }
+    const column = node(graph.getPages()[0]?.childIds[0])
+    const [, card] = column.childIds
+
+    // The column sets its width and height; the card stretches across and hugs its text.
+    expect(sizing(column.id)).toEqual(['FIXED', 'FIXED'])
+    expect(sizing(card)).toEqual(['FILL', 'HUG'])
   })
 
   test('a border takes room inside the box, as in a browser', async () => {
@@ -147,6 +167,17 @@ describe('reading HTML', () => {
 
     expect(requested).toEqual(['styles/site.css'])
     expect(box).toMatchObject({ width: 120, height: 40 })
+  })
+
+  test('lays an image out at its size on a page without text', async () => {
+    const png = await Bun.file(join(FIXTURES, 'absolute-constraint-figma.png')).bytes()
+    const view = new DataView(png.buffer, png.byteOffset)
+    const { graph } = await readHTMLDocument('<img src="photo.png">', {
+      readAsset: async (path) => (path === 'photo.png' ? png : null)
+    })
+    const [image] = graph.getChildren(graph.getPages()[0].id)
+
+    expect(image).toMatchObject({ width: view.getUint32(16), height: view.getUint32(20) })
   })
 
   test('draws text in the font its page loads with @font-face', async () => {

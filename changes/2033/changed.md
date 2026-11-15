@@ -1,0 +1,1 @@
+- Outside a room, each of your agents on the canvas has a color of its own instead of all sharing one (#2033).

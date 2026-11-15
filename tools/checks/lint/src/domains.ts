@@ -33,6 +33,7 @@ import {
   noFlatKiwiModules,
   noTopLevelPrefixedTestFiles,
   nonComponentSourceDirectoriesKebabCase,
+  storyTitles,
   vueComponentFilePascalCase
 } from '#lint/rules/structure.ts'
 import {
@@ -107,6 +108,7 @@ export const domains = {
     'no-flat-kiwi-modules': noFlatKiwiModules,
     'no-top-level-prefixed-test-files': noTopLevelPrefixedTestFiles,
     'non-component-directories-kebab-case': nonComponentSourceDirectoriesKebabCase,
+    'story-titles': storyTitles,
     'vue-component-file-pascal-case': vueComponentFilePascalCase
   },
   vue: {

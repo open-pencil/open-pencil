@@ -18,12 +18,12 @@ export function createStructureBridge(structure: StructureActions, selection: Se
     booleanOperationSelected: (operation: 'UNION' | 'SUBTRACT' | 'INTERSECT' | 'EXCLUDE') =>
       structure.booleanOperationSelected(selection.getSelectedNodes(), operation),
     flattenSelected: () => structure.flattenSelected(selection.getSelectedNodes()),
-    outlineTextSelected: () => structure.outlineTextSelected(selection.getSelectedNodes()),
     outlineStrokeSelected: () => structure.outlineStrokeSelected(selection.getSelectedNodes()),
     /** Scales the selection evenly about a canvas point, as Figma's Scale tool does. */
     scaleSelected: (scale: number, anchor: Vector) =>
       structure.scaleLayers(selection.getSelectedNodes(), scale, anchor),
-    ungroupSelected: () => structure.ungroupSelected(selection.getSelectedNode()),
+    ungroupSelected: () => structure.ungroupSelected(selection.getSelectedNodes()),
+    canUngroupSelection: () => structure.canUngroup(selection.getSelectedNodes()),
     /** Switches a layer to another type in place, as Figma's layer type menu does. */
     convertLayerType: (nodeId: string, type: LayerType) => structure.convertLayerType(nodeId, type)
   }

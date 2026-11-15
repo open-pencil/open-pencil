@@ -81,6 +81,9 @@ export function accountAuthenticationObjects() {
     },
     async read() {
       return null
+    },
+    async readRange() {
+      return null
     }
   }
 }

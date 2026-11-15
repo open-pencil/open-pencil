@@ -38,29 +38,21 @@ export class ServicesUsageCursorError extends Error {
   }
 }
 
-/**
- * Who a request spends for: the account whose allowance it draws on, and the workspace it came
- * from, whose requests recorded before accounts carry no account and still count this month.
- */
+/** Who a request spends for: the account whose allowance it draws on, and its workspace. */
 export type CreditSpender = { accountId: string; workspaceId: string }
 
-/** The spender a token names; a token without an account spends its workspace's allowance. */
-export function spender(claims: { accountId?: string; workspaceId: string }): CreditSpender {
-  return { accountId: claims.accountId ?? claims.workspaceId, workspaceId: claims.workspaceId }
+/** The spender a token names. */
+export function spender(claims: CreditSpender): CreditSpender {
+  return { accountId: claims.accountId, workspaceId: claims.workspaceId }
 }
 
 export function createServicesUsageStore(database: Kysely<ServicesDatabase>) {
-  async function spent({ accountId, workspaceId }: CreditSpender, now: Date): Promise<number> {
+  async function spent({ accountId }: CreditSpender, now: Date): Promise<number> {
     const { start, end } = usagePeriod(now)
     const row = await database
       .selectFrom('servicesUsage')
       .select((query) => query.fn.sum<string | number | null>('credits').as('credits'))
-      .where((usage) =>
-        usage.or([
-          usage('accountId', '=', accountId),
-          usage.and([usage('accountId', 'is', null), usage('workspaceId', '=', workspaceId)])
-        ])
-      )
+      .where('accountId', '=', accountId)
       .where('createdAt', '>=', start)
       .where('createdAt', '<', end)
       .executeTakeFirst()

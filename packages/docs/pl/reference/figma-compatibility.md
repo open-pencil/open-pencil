@@ -129,13 +129,13 @@ Porównanie funkcji Figma Design z obecnymi możliwościami OpenPencil.
 
 | Funkcja | Stan | Uwagi |
 |---------|------|-------|
-| Przepływ poziomy i pionowy | ✅ | Flexbox Yoga WASM |
+| Przepływ poziomy i pionowy | ✅ | Flexbox Taffy WASM |
 | Włączanie | ✅ | <kbd>⇧</kbd><kbd>A</kbd> dla ramki lub zaznaczenia |
 | Odstęp i wypełnienie | ✅ | Wspólne lub osobne wartości |
 | Wyrównanie | ✅ | Początek, środek, koniec, rozciągnięcie i rozdzielenie |
 | Rozmiary | ✅ | Stały, Wypełnij i Dopasuj |
 | Zawijanie | ✅ | Flex wrap |
-| Grid | ✅ | CSS Grid przez odmianę Yoga |
+| Grid | ✅ | CSS Grid przez Taffy |
 | Układy zagnieżdżone | ✅ | Ramki o różnych kierunkach |
 | Zmiana kolejności | ✅ | Widoczny wskaźnik wstawiania |
 | Min/max | ✅ | Minimalna i maksymalna szerokość i wysokość w sekcji Układ, z możliwością powiązania ze zmiennymi liczbowymi |

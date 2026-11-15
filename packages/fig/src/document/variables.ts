@@ -9,6 +9,7 @@ import type {
   VariableValue,
   VariableColorExpression
 } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import {
   variableFormulaSchema,
   variableColorExpressionSchema,
@@ -305,7 +306,7 @@ function collectionsThrough(
     if (links?.collection) {
       collections.add(links.collection)
     }
-    pending.push(...(links?.aliases ?? []))
+    appendAll(pending, links?.aliases ?? [])
   }
   return collections
 }

@@ -1,4 +1,9 @@
-import type { CloudAccountSession, CloudSignIn } from '#cloud/contract'
+import type {
+  CloudAccessToken,
+  CloudAccessTokenCreate,
+  CloudAccountSession,
+  CloudSignIn
+} from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth/session'
 
 export type CloudMFAStatus = {
@@ -43,6 +48,18 @@ export interface CloudAuthAdapter {
    * terms: enough to leave, by downloading its documents and deleting the account.
    */
   resolveAccountSession(headers: Headers): Promise<CloudActor | null>
+  /**
+   * The account a personal access token stands for, from `Authorization: Bearer`, once it is held
+   * to what a session would be. Only the document API reads tokens.
+   */
+  resolveAccessToken(headers: Headers): Promise<CloudActor | null>
+  listAccessTokens(headers: Headers): Promise<CloudAccessToken[] | null>
+  /** Makes a token for the signed-in account; answers the whole token, shown this once. */
+  createAccessToken(
+    headers: Headers,
+    input: CloudAccessTokenCreate
+  ): Promise<{ token: string; accessToken: CloudAccessToken }>
+  revokeAccessToken(headers: Headers, id: string): Promise<void>
   listAuthenticationMethods(headers: Headers): Promise<CloudAuthenticationMethodRecord[]>
   changePassword(
     headers: Headers,
@@ -72,6 +89,9 @@ export interface CloudAuthAdapter {
   emailChangeAvailable: boolean
   profile(headers: Headers): Promise<CloudAccountProfile | null>
   updateProfile(headers: Headers, input: { name: string }): Promise<void>
+  /** The language Cloud writes to the account in, as the app says it uses. */
+  /** Takes the app's language tag; the server keeps the nearest language it writes in. */
+  setLocale(headers: Headers, locale: string): Promise<void>
   /** Sends the confirmation to the new address and tells the old one which address it is. */
   changeEmail(headers: Headers, input: { newEmail: string; callbackURL: string }): Promise<void>
   sessions(headers: Headers): Promise<CloudAccountSession[] | null>

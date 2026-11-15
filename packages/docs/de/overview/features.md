@@ -12,7 +12,7 @@ OpenPencil öffnet und speichert `.fig`-Dateien direkt. Import und Export verwen
 - **Zeichenstift:** Vektornetzwerke statt einfacher Pfade, Bézierkurven mit Tangentengriffen.
 - **Text:** Bearbeitung direkt auf der Arbeitsfläche, IME-Unterstützung und Doppelklick zum Wechsel in den Bearbeitungsmodus.
 - **Formatierter Text:** Fett, Kursiv, Unterstrichen und Durchgestrichen für einzelne Zeichenbereiche.
-- **Automatische Anordnung:** Flexbox und CSS Grid über Yoga WASM mit Richtung, Abstand, Innenabstand, Verteilung, Ausrichtung, Größenmodi und Rasterspuren.
+- **Automatische Anordnung:** Flexbox und CSS Grid über Taffy WASM mit Richtung, Abstand, Innenabstand, Verteilung, Ausrichtung, Größenmodi und Rasterspuren.
 - **Komponenten:** Komponenten und Komponentensätze, Instanzen mit Überschreibungen und automatische Synchronisierung.
 - **Variablen:** Designtoken mit Sammlungen, Modi wie Hell und Dunkel, den Typen Color, Float, String und Boolean sowie Variablenbindungen.
 - **Sektionen:** Container zur Organisation mit automatischer Übernahme überlappender Objekte.

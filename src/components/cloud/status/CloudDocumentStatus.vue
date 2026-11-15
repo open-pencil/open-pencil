@@ -24,6 +24,8 @@ const {
   host,
   savedAgo = null,
   viewOnly = false,
+  atStorageLimit = false,
+  canManagePlan = false,
   notLive = false,
   canRejoin = false
 } = defineProps<{
@@ -32,6 +34,10 @@ const {
   host: string
   savedAgo?: string | null
   viewOnly?: boolean
+  /** View only because the document's owner holds their whole storage allowance. */
+  atStorageLimit?: boolean
+  /** The server has a billing portal, where a plan with more storage can be chosen. */
+  canManagePlan?: boolean
   /** The server ended this tab's live session; a conflict or failed save still shows first. */
   notLive?: boolean
   /** Whether rejoining loses nothing, which holds once the tab's changes are saved. */
@@ -44,14 +50,16 @@ const emit = defineEmits<{
   resolve: []
   retry: []
   rejoin: []
+  managePlan: []
 }>()
 
 const ui = cloudStatus()
 const popoverOpen = ref(false)
 /** Every action leads somewhere else, so the popover closes first. */
-function act(action: 'share' | 'openWorkspace' | 'resolve' | 'retry' | 'rejoin') {
+function act(action: 'share' | 'openWorkspace' | 'resolve' | 'retry' | 'rejoin' | 'managePlan') {
   popoverOpen.value = false
   if (action === 'share') emit('share')
+  else if (action === 'managePlan') emit('managePlan')
   else if (action === 'openWorkspace') emit('openWorkspace')
   else if (action === 'resolve') emit('resolve')
   else if (action === 'rejoin') emit('rejoin')
@@ -67,6 +75,9 @@ const t = useCloudMessages()
 const summary = computed(() => {
   const m = t.value
   if (showsNotLive.value) return { label: m.statusNotLive, detail: m.statusNotLiveDetail }
+  if (viewOnly && atStorageLimit) {
+    return { label: m.statusStorageFull, detail: m.statusStorageFullDetail }
+  }
   if (viewOnly) return { label: m.viewOnly, detail: m.statusViewOnlyDetail }
   const summaries: Record<CloudSyncState, { label: string; detail: string }> = {
     synced: {
@@ -92,6 +103,7 @@ const summary = computed(() => {
         :aria-label="summary.label"
       >
         <icon-lucide-unplug v-if="showsNotLive" class="size-3.5" />
+        <icon-lucide-hard-drive v-else-if="viewOnly && atStorageLimit" class="size-3.5" />
         <icon-lucide-eye v-else-if="viewOnly" class="size-3.5" />
         <icon-lucide-cloud-check v-else-if="state === 'synced'" class="size-3.5" />
         <icon-lucide-loader-circle
@@ -104,7 +116,7 @@ const summary = computed(() => {
         <icon-lucide-circle-alert v-else class="size-3.5" />
         <span v-if="showsNotLive" :class="ui.triggerLabel()">{{ t.statusNotLive }}</span>
         <span v-else-if="viewOnly || state === 'conflict'" :class="ui.triggerLabel()">
-          {{ viewOnly ? t.viewOnly : t.statusResolve }}
+          {{ viewOnly ? (atStorageLimit ? t.statusStorageFull : t.viewOnly) : t.statusResolve }}
         </span>
       </PopoverTrigger>
     </Tip>
@@ -113,6 +125,7 @@ const summary = computed(() => {
         <div :class="ui.header()">
           <span :class="ui.headerIcon()" :data-state-sync="syncAttribute">
             <icon-lucide-unplug v-if="showsNotLive" class="size-4" />
+            <icon-lucide-hard-drive v-else-if="viewOnly && atStorageLimit" class="size-4" />
             <icon-lucide-eye v-else-if="viewOnly" class="size-4" />
             <icon-lucide-git-compare-arrows v-else-if="state === 'conflict'" class="size-4" />
             <icon-lucide-circle-alert v-else-if="state === 'error'" class="size-4" />
@@ -143,6 +156,15 @@ const summary = computed(() => {
             @click="act('resolve')"
           >
             {{ t.statusChooseVersion }}
+          </AppButton>
+          <AppButton
+            v-else-if="viewOnly && atStorageLimit && canManagePlan"
+            size="sm"
+            color="primary"
+            variant="solid"
+            @click="act('managePlan')"
+          >
+            {{ t.statusManagePlan }}
           </AppButton>
           <AppButton
             v-else-if="showsNotLive && canRejoin"

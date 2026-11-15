@@ -13,7 +13,7 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
       OPENPENCIL_CLOUD_DEV_SITE_URL
                                  a Vite dev server to serve them from instead (cloud:dev)
       PORT, HOST                 where to listen (default 8787 on 0.0.0.0)
-    plus the secrets the TOML names. See https://openpencil.dev/reference/self-hosting-cloud
+    plus the secrets the TOML names. See https://openpencil.dev/cloud/self-hosting/
   `)
   process.exit(0)
 }

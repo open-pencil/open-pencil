@@ -3,6 +3,7 @@ import { uniq } from 'es-toolkit'
 import { resolveEditorProfile, type Editor } from '@open-pencil/core'
 import { SNAP_THRESHOLD_SCREEN_PX } from '@open-pencil/core/constants'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
@@ -263,5 +264,5 @@ function guideThroughVertices(
     pointAlong,
     ...vertices.filter((vertex) => vertex[axis] === position).map((vertex) => vertex[across])
   ])
-  return { axis, position, from: Math.min(...marks), to: Math.max(...marks), marks }
+  return { axis, position, from: minOf(marks), to: maxOf(marks), marks }
 }

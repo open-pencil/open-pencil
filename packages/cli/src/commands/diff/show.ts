@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 
-import { appTargetOptions } from '#cli/app/target'
+import { pageOptions } from '#cli/app/target'
 import { runToolData } from '#cli/tool-data'
 
 import { printDiffResult, type DiffResult } from './output'
@@ -19,7 +19,7 @@ export default defineCommand({
       description: 'JSX attributes to set, e.g. \'w={200} bg="#FF0000"\'',
       required: true
     },
-    ...appTargetOptions,
+    ...pageOptions('current page'),
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {

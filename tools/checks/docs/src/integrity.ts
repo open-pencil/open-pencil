@@ -125,6 +125,18 @@ function validateRedirects(docsRoot: string, redirectsPath: string): string[] {
       errors.push(`Redirect '${redirect.from}' must use root-relative paths.`)
       continue
     }
+    // `/old/*` to `/new/:splat` moves a whole section: the new folder must exist and the old must not.
+    if (redirect.from.endsWith('/*') && redirect.to.endsWith('/:splat')) {
+      const from = redirect.from.slice(0, -'*'.length)
+      const to = redirect.to.slice(0, -':splat'.length)
+      if (existsSync(join(docsRoot, from))) {
+        errors.push(`Redirect source '${redirect.from}' still has pages and would shadow them.`)
+      }
+      if (!existsSync(join(docsRoot, to))) {
+        errors.push(`Redirect '${redirect.from}' targets missing section '${to}'.`)
+      }
+      continue
+    }
     if (routeExists(docsRoot, redirect.from)) {
       errors.push(`Redirect source '${redirect.from}' still has a page and would shadow it.`)
     }

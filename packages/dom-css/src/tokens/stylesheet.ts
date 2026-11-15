@@ -5,6 +5,7 @@ import type {
   VariableCollectionMode,
   VariableValue
 } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { variableValueReferences } from '@open-pencil/scene-graph/variables'
 
 import { cssColor } from '../export/css'
@@ -271,7 +272,7 @@ export function buildTokenStylesheet(
   const sections: string[] = []
   if (theme.length > 0) sections.push(block('@theme', theme))
   if (root.length > 0) sections.push(block(':root', root))
-  sections.push(...scopes.map(modeBlock))
+  appendAll(sections, scopes.map(modeBlock))
   if (format === 'tailwind' && scopes.length > 0) {
     const variants = variantNames(scopes)
     sections.push(

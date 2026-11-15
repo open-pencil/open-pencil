@@ -1,5 +1,6 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 
+import type { SkiaRenderer } from '#core/canvas/renderer'
 import { LAYER_HIT_PAD } from '#core/constants'
 import type { EditorContext } from '#core/editor/types'
 import { resolveEditorProfile } from '#core/editor/views'
@@ -38,13 +39,40 @@ export function createSelectionHitTestActions(
   }
 
   /**
+   * A name drawn on a pane's overlay canvas, in draw order: a component's label, then a section
+   * title, then a frame title. A right-click hits a locked layer's name as it hits its body.
+   */
+  function labelAt(renderer: SkiaRenderer, cx: number, cy: number): SceneNode | null {
+    const preview = ctx.state.rotationPreview
+    const graph = ctx.graph
+    const filter = { locked: true }
+    if (typeof renderer.hitTestComponentLabel === 'function') {
+      const component = renderer.hitTestComponentLabel(graph, cx, cy, preview, filter)
+      if (component) return component
+    }
+    if (typeof renderer.hitTestSectionTitle === 'function') {
+      const section = renderer.hitTestSectionTitle(graph, cx, cy, preview, filter)
+      if (section) return section
+    }
+    return typeof renderer.hitTestFrameTitle === 'function'
+      ? renderer.hitTestFrameTitle(graph, cx, cy, preview, filter)
+      : null
+  }
+
+  /**
    * Selects what a right-click is over, as Figma does: the layer a click would select, a locked
    * one included, or else the frame or section whose empty area is under the point, which a click
-   * leaves for a marquee. The entered container follows the selection, as it does after a press.
+   * leaves for a marquee. A name above a frame, section, or component is part of that layer, read
+   * from `renderer` (the pane's overlay canvas; the editor's current canvas when omitted). The
+   * entered container follows the selection, as it does after a press.
    */
-  function selectAtPoint(cx: number, cy: number) {
+  function selectAtPoint(cx: number, cy: number, renderer?: SkiaRenderer | null) {
+    // Each pane hit-tests names with its own page, zoom, viewport, and label cache.
+    const labels = renderer === undefined ? ctx.getRenderer() : renderer
     const hit =
-      hitAt(cx, cy, false, true) ?? ctx.graph.hitTestOpenContainer(cx, cy, ctx.state.currentPageId)
+      (labels ? labelAt(labels, cx, cy) : null) ??
+      hitAt(cx, cy, false, true) ??
+      ctx.graph.hitTestOpenContainer(cx, cy, ctx.state.currentPageId)
     if (hit) {
       if (!ctx.state.selectedIds.has(hit.id)) {
         select([hit.id])

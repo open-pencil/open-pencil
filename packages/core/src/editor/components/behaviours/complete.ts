@@ -1,4 +1,5 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import {
   interactionStatesOf,
   readBehaviour,
@@ -9,8 +10,8 @@ import { createComponentPropertyId } from '@open-pencil/scene-graph/components'
 import { createSlotProperty } from '@open-pencil/scene-graph/slots'
 
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'
-import { VARIANT_SET_PADDING, variantSetProps } from '#core/editor/components/variant-set'
 import type { createVariantActions } from '#core/editor/components/variants'
+import { VARIANT_SET_PADDING, variantSetProps } from '#core/editor/components/variants/set'
 import { wrapSelectionInContainer } from '#core/editor/structure/container-wrap'
 import type { EditorContext } from '#core/editor/types'
 
@@ -46,7 +47,7 @@ const SET_GAP = 20
  */
 function layOutRows(ctx: EditorContext, setId: string, rows: string[][]): void {
   const nodes = rows.map((row) => row.flatMap((id) => ctx.graph.getNode(id) ?? []))
-  const width = Math.max(...nodes.flat().map((node) => node.width))
+  const width = maxOf(nodes.flat().map((node) => node.width))
   const ids = [setId, ...nodes.flat().map((node) => node.id)]
   const capture = () =>
     ids.flatMap((id) => {
@@ -58,9 +59,9 @@ function layOutRows(ctx: EditorContext, setId: string, rows: string[][]): void {
   for (const row of nodes) {
     for (const [column, node] of row.entries())
       ctx.graph.updateNode(node.id, { x: VARIANT_SET_PADDING + column * (width + SET_GAP), y })
-    y += Math.max(...row.map((node) => node.height)) + SET_GAP
+    y += maxOf(row.map((node) => node.height)) + SET_GAP
   }
-  const columns = Math.max(...nodes.map((row) => row.length))
+  const columns = maxOf(nodes.map((row) => row.length))
   ctx.graph.updateNode(setId, {
     width: VARIANT_SET_PADDING * 2 + columns * width + (columns - 1) * SET_GAP,
     height: y - SET_GAP + VARIANT_SET_PADDING

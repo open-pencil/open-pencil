@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { layoutAuthoredNodes } from '@open-pencil/core/layout'
 import { parsePenFile, type PenDocument, type PenIconSource, type PenNode } from '@open-pencil/pen'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
@@ -373,8 +374,8 @@ describe('parsePenFile — paths sized by layout', () => {
     const extent = (id: string) => {
       const vertices = graph.getNode(id)?.vectorNetwork?.vertices ?? []
       return {
-        width: Math.max(...vertices.map((vertex) => vertex.x)),
-        height: Math.max(...vertices.map((vertex) => vertex.y))
+        width: maxOf(vertices.map((vertex) => vertex.x)),
+        height: maxOf(vertices.map((vertex) => vertex.y))
       }
     }
     const copy = graph.getNode('small')?.childIds[0] ?? ''
@@ -412,7 +413,7 @@ describe('parsePenFile — paths sized by layout', () => {
     const line = graph.getNode('line')
     const xs = line?.vectorNetwork?.vertices.map((vertex) => vertex.x) ?? []
     expect(line?.width).toBe(160)
-    expect(Math.max(...xs)).toBe(160)
+    expect(maxOf(xs)).toBe(160)
   })
 })
 

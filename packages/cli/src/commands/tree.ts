@@ -3,7 +3,7 @@ import { defineCommand } from 'citty'
 
 import type { TreeNodeResult, TreeResult } from '@open-pencil/core/rpc'
 
-import { appTargetOptions } from '#cli/app/target'
+import { pageOptions } from '#cli/app/target'
 import { fmtTree, printError, entity, formatType } from '#cli/format'
 import { loadRPCData } from '#cli/rpc-data'
 
@@ -25,9 +25,8 @@ export default defineCommand({
       description: 'Document file path (omit to connect to running app)',
       required: false
     },
-    page: { type: 'string', description: 'Page name (default: first page)' },
     depth: { type: 'string', description: 'Max depth (default: unlimited)' },
-    ...appTargetOptions,
+    ...pageOptions('first page'),
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
@@ -35,7 +34,6 @@ export default defineCommand({
       args.file,
       'tree',
       {
-        page: args.page,
         depth: args.depth ? Number(args.depth) : undefined
       },
       args

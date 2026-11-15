@@ -1,0 +1,12 @@
+{
+  // What Wrangler bundles with: Cloud's email from its build, whose templates are compiled Vue
+  // components, where type checks read its source (tsconfig.json).
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "#feedback/*": ["./src/*"],
+      "@open-pencil/scene-graph/arrays": ["../scene-graph/src/arrays.ts"],
+      "@open-pencil/scene-graph/random": ["../scene-graph/src/random.ts"]
+    }
+  }
+}

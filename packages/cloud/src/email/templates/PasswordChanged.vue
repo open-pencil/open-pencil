@@ -1,0 +1,22 @@
+<script setup lang="ts">
+import type { AuthenticationEmailPayload } from '../schema'
+import BrandEmail from './BrandEmail.vue'
+import EmailText from './EmailText.vue'
+import { greeting, useEmailLocalization } from './localization'
+
+const { payload } = defineProps<{ payload: AuthenticationEmailPayload }>()
+
+const localization = useEmailLocalization()
+const { t } = localization
+</script>
+
+<template>
+  <BrandEmail
+    :preview="t.passwordChangedPreview"
+    :heading="t.passwordChangedHeading"
+    :action="{ label: t.openCloud, url: payload.actionURL ?? '#' }"
+  >
+    <EmailText>{{ greeting(localization, payload.name) }}</EmailText>
+    <EmailText>{{ t.passwordChanged }}</EmailText>
+  </BrandEmail>
+</template>

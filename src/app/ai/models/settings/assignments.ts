@@ -2,7 +2,6 @@ import type { Ref } from 'vue'
 
 import {
   aiModelSettings,
-  isAgentModelProfile,
   modelProfile,
   setModelRoleAssignment,
   type AIModelRole
@@ -24,7 +23,6 @@ export function useModelRoleAssignments(
     const profiles = aiModelSettings.value.models
       .filter((profile) => {
         if (role === 'design') return profile.capabilities.includes('tools')
-        if (isAgentModelProfile(profile)) return false
         if (role === 'vision') return profile.capabilities.includes('vision')
         return true
       })
@@ -32,8 +30,7 @@ export function useModelRoleAssignments(
     if (role === 'design') return profiles
 
     const design = modelProfile(aiModelSettings.value.assignments.design)
-    const canInherit =
-      !isAgentModelProfile(design) && (role !== 'vision' || design?.capabilities.includes('vision'))
+    const canInherit = role !== 'vision' || design?.capabilities.includes('vision')
     return [
       ...(canInherit ? [{ value: SAME_AS_DESIGN, label: ai.value.modelRoleUseDesign }] : []),
       { value: NO_MODEL, label: ai.value.noModel },

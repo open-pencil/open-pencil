@@ -1,0 +1,1 @@
+- `FillSwatch` from `@open-pencil/vue/primitives/Fill` no longer takes the resolved color and state attributes of an enclosing `BindableValueRoot`, and its slot no longer provides `bindingState` or `stateAttrs`. Pass the root's `resolvedValue` as the fill's color and bind its `stateAttrs` to preview a bound value (#1937).

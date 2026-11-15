@@ -2,6 +2,7 @@ import { sumBy } from 'es-toolkit/math'
 
 import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { colorToHex, compositeOver, contrastRatio } from '@open-pencil/scene-graph/color'
+import { counterAxisSpacingOf } from '@open-pencil/scene-graph/layout'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { DescribeIssue } from './issues'
@@ -428,7 +429,7 @@ export function detectLayoutIssues(
 
   if (node.layoutMode === 'NONE') return
 
-  if (node.layoutWrap === 'WRAP' && node.counterAxisSpacing <= 0 && children.length > 1) {
+  if (node.layoutWrap === 'WRAP' && counterAxisSpacingOf(node) <= 0 && children.length > 1) {
     issues.push({
       message: `"${node.name}" uses wrap but no rowGap — rows stick together`,
       suggestion: 'Add rowGap={8}'

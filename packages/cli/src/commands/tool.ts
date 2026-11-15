@@ -9,7 +9,7 @@ import {
   type ToolDef
 } from '@open-pencil/core/tools'
 
-import { appTargetOptions } from '#cli/app/target'
+import { pageOptions } from '#cli/app/target'
 import { bold, dim, entity, fmtList, kv, printError, warn } from '#cli/format'
 import { documentWriteOptions, writeFigDocument } from '#cli/headless'
 import { readTextSource } from '#cli/input'
@@ -135,7 +135,7 @@ const call = defineCommand({
       description: 'Read tool arguments from a JSON file, or - for stdin'
     },
     ...documentWriteOptions,
-    ...appTargetOptions,
+    ...pageOptions('current page'),
     json
   },
   async run({ args }) {

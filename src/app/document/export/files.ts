@@ -8,7 +8,11 @@ import {
   type IOFormatAdapter,
   type IORegistry
 } from '@open-pencil/core/io'
-import { type RasterExportFormat, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
+import {
+  headlessRenderNodes,
+  type RasterExportFormat,
+  renderNodesToImage
+} from '@open-pencil/core/io/formats/raster'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import type { ExportOptions } from '@/app/document/export/types'
@@ -61,7 +65,9 @@ export function getExportBytes(data: ExportData): Uint8Array {
 export function createExportTargetActions(editor: Editor, state: EditorState, io: IORegistry) {
   /**
    * Renders `nodeIds` on the page that holds them, which need not be the page on screen;
-   * without IDs, renders every layer of `pageId`.
+   * without IDs, renders every layer of `pageId`. A document whose canvas is not on screen,
+   * such as one in a background tab, draws with the headless renderer, as file exports do; one
+   * that just came on screen draws once it has its fonts.
    */
   async function renderExportImage(
     nodeIds: string[],
@@ -70,16 +76,16 @@ export function createExportTargetActions(editor: Editor, state: EditorState, io
     pageId = state.currentPageId,
     { useAbsoluteBounds = false }: { useAbsoluteBounds?: boolean } = {}
   ): Promise<Uint8Array<ArrayBuffer> | null> {
-    const renderer = editor.renderer
-    if (!renderer) return null
     const ids = nodeIds.length > 0 ? nodeIds : editor.graph.getChildren(pageId).map((n) => n.id)
     if (ids.length === 0) return null
     const ownerPageId = findPageId(editor.graph, ids[0]) ?? pageId
-    return renderNodesToImage(renderer.ck, renderer, editor.graph, ownerPageId, ids, {
-      scale,
-      format,
-      useAbsoluteBounds
-    })
+    const options = { scale, format, useAbsoluteBounds }
+    // A canvas just put on screen draws no text until its fonts load, so its export waits for
+    // them; one gone meanwhile leaves the export to the headless renderer.
+    await editor.renderer?.whenFontsLoaded()
+    const renderer = editor.renderer
+    if (!renderer?.fontsLoaded) return headlessRenderNodes(editor.graph, ownerPageId, ids, options)
+    return renderNodesToImage(renderer.ck, renderer, editor.graph, ownerPageId, ids, options)
   }
 
   function getSelectionExportTarget(): ExportRequest['target'] {

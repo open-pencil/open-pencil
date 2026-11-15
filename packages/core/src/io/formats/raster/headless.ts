@@ -73,7 +73,7 @@ export async function headlessRenderNodes(
     trimTransparent?: boolean
     useAbsoluteBounds?: boolean
   } = {}
-): Promise<Uint8Array | null> {
+): Promise<Uint8Array<ArrayBuffer> | null> {
   return withHeadlessExport(async (renderer, ck) => {
     await renderer.prepareForExport(graph, pageId, nodeIds)
     // An export takes a text by its ink, as Figma's do.

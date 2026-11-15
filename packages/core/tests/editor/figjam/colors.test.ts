@@ -48,7 +48,7 @@ describe("FigJam's colour menu", () => {
     }
     editor.graph.updateNode(photo, { fills: [image] })
     editor.select([a, b, photo])
-    const group = expectDefined(editor.groupSelected())
+    const group = expectDefined(editor.groupSelected()[0])
     const sticky = createSticky(editor.graph, pageId, {})
     const before = hex(sticky.fills[0])
     editor.setFigJamColor([group, sticky.id], 'blue')
@@ -76,7 +76,7 @@ describe("FigJam's colour menu", () => {
     })
     const other = editor.createShape('RECTANGLE', 200, 0, 100, 100, pageId)
     editor.select([photo, other])
-    const group = expectDefined(editor.groupSelected())
+    const group = expectDefined(editor.groupSelected()[0])
     editor.graph.deleteNode(other)
     const label = editor.undo.undoLabel
     editor.setFigJamColor([group], 'blue')

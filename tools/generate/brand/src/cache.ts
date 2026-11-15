@@ -5,6 +5,8 @@ import { dirname, join, relative, sep } from 'node:path'
 import sharp from 'sharp'
 import * as v from 'valibot'
 
+import { appendAll } from '@open-pencil/scene-graph/arrays'
+
 import { targetDirectory, targetFiles } from './config.ts'
 import type { BrandTarget } from './config.ts'
 import type { BrandFiles } from './web.ts'
@@ -17,7 +19,7 @@ async function inputFiles(root: string, directory: string): Promise<string[]> {
   const result: string[] = []
   for (const item of await readdir(join(root, directory), { withFileTypes: true })) {
     const path = join(directory, item.name)
-    if (item.isDirectory()) result.push(...(await inputFiles(root, path)))
+    if (item.isDirectory()) appendAll(result, await inputFiles(root, path))
     else if (item.isFile() && !item.name.endsWith('.md')) result.push(path)
   }
   return result.sort()
