@@ -54,11 +54,11 @@ The old `HOMEBREW_TAP_TOKEN` workflow secret is no longer used and can be remove
 
 ## New npm packages
 
-`build.yml` publishes to npm only through trusted publishing, which a package that has never been published cannot have yet. Before the tag build, a maintainer creates each new package by hand:
+`build.yml` publishes to npm only through trusted publishing, which a package that has never been published cannot have yet. Shortly before the tag build, a maintainer creates each new package by hand:
 
-1. On `master`, before the release changes the version, run `bun run build:packages`, `release-packages prepare`, and `release-packages pack`. The tarballs in `.npm-packages/` carry the current stable version, so they need no `--tag`.
-2. Stage the package with `npm stage publish ./<tarball> --access public`. The registry creates the package with a `0.0.0-stage` placeholder; wait until `npm stage list <package>` shows the stage as `staged`.
-3. Add `open-pencil/open-pencil`'s `.github/workflows/build.yml` as the package's trusted publisher.
+1. On `master`, before the release changes the version, run `bun run build:packages`, then, with [`cargo-about`](https://github.com/EmbarkStudios/cargo-about) installed at the version `build.yml` pins, `bun tools/release/release-packages/src/cli.ts notices`, `prepare`, and `pack`. The tarballs land in `.npm-packages/` and carry `master`'s version, which is never the one being released.
+2. Stage the package with `npm stage publish ./<tarball> --access public`, adding `--tag <name>` when that version is a pre-release, such as `--tag beta`. The registry creates the package with a `0.0.0-stage` placeholder; wait until `npm stage list <package>` shows the stage as `staged`.
+3. Add `open-pencil/open-pencil`'s `.github/workflows/build.yml` as the package's trusted publisher and turn on **Allow npm publish**: a new trusted publisher may only stage, and `build.yml` publishes directly. A trusted publisher that has not published within two days expires and has to be deleted and created again, so add it no earlier than two days before the tag build.
 4. Approve the stage with `npm stage approve <id>`, or reject it with `npm stage reject <id>`; both need 2FA. A stage left pending holds its version, and a publish of that version fails with `409 Cannot publish over previously staged version`.
 
 Never publish the version being released by hand: `release-packages resume` stops on a published version without `build.yml` provenance.
