@@ -69,9 +69,7 @@ export function ungroupSelected(ctx: EditorContext, selectedNodes: SceneNode[]):
       const freed = containers.flatMap((node) => ungroupNode(ctx.graph, node.id) ?? [])
       // A group around the ungrouped layer spans its children now; an auto layout places them.
       refitContainers(ctx, parentIds)
-      for (const parentId of parentIds) {
-        if (ctx.graph.getNode(parentId)?.layoutMode !== 'NONE') ctx.runLayoutForNode(parentId)
-      }
+      ctx.runLayoutForParents(parentIds)
       ctx.setSelectedIds(new Set([...freed, ...kept]))
       return freed
     })

@@ -1,1 +1,0 @@
-- The Outline text command, its menu items, the editor's `outlineTextSelected`, and the `selection.outlineText` command are removed; text becomes vectors through Flatten or Outline stroke, as in Figma.

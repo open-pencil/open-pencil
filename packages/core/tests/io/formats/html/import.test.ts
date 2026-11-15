@@ -105,6 +105,20 @@ describe('reading HTML', () => {
     expect(second.x).toBe(first.x + first.width)
   })
 
+  test('centers a block capped by its maximum width at that width, keeping auto layout', async () => {
+    const { graph } = await readHTMLDocument(
+      `<div style="width:600px"><div style="max-width:300px;margin:0 auto">` +
+        `<div style="width:100px;height:10px"></div></div></div>`
+    )
+    const [page] = graph.getChildren(graph.getPages()[0].id)
+    const [main] = graph.getChildren(page.id)
+
+    expect(page.layoutMode).toBe('VERTICAL')
+    expect(main).toMatchObject({ x: 150, width: 300 })
+    // It fills up to its maximum, as the page's block does, rather than holding a fixed width.
+    expect(layoutSizing(graph, main, 'HORIZONTAL')).toBe('FILL')
+  })
+
   test('a border without a style is not drawn and takes no room', async () => {
     const { graph } = await readHTMLDocument(
       '<div style="display:inline-flex;padding:10px;border-width:4px;border-color:#000;border-style:none"><div style="width:50px;height:50px;background:#f00"></div></div>'

@@ -67,6 +67,20 @@ describe('the HTML engine runtime', () => {
     expect(elementById(document, 'half').layout?.box.width).toBe(392)
   })
 
+  test('gives side margins as the page set them, so auto ones say where a block goes', async () => {
+    const document = await styled(
+      `<div id="centered" style="width:100px;margin:0 auto"></div><div id="end" style="width:100px;margin-left:auto;margin-right:4%"></div>`
+    )
+    const margins = (id: string) => {
+      const style = elementById(document, id).computedStyle ?? {}
+      return [style['margin-left'], style['margin-right']]
+    }
+
+    expect(margins('centered')).toEqual(['auto', 'auto'])
+    expect(margins('end')).toEqual(['auto', '4%'])
+    expect(elementById(document, 'centered').layout?.box.x).toBe(350)
+  })
+
   test('gives an inline element the box around its fragments, as a browser does', async () => {
     const document = await styled(
       `<p style="width:120px">Some words before <span id="s">a span that wraps onto the next line</span></p>`
@@ -181,6 +195,17 @@ describe('the HTML engine runtime', () => {
     // Cells sharing a border touch, its line centered on their edge.
     expect(b?.x).toBe((a?.x ?? 0) + 42)
     expect(box('r')).toMatchObject({ x: a?.x, width: 84, height: 22 })
+  })
+
+  test('borders a table and its cells by its border attribute, as a browser does', async () => {
+    const document = await styled('<table id="t" border="2"><tr><td id="c">x</td></tr></table>')
+    const border = (id: string) => {
+      const style = elementById(document, id).computedStyle ?? {}
+      return [style['border-top-width'], style['border-top-style']]
+    }
+
+    expect(border('t')).toEqual(['2px', 'outset'])
+    expect(border('c')).toEqual(['1px', 'inset'])
   })
 
   test("pairs a shader layer's children past the still frame the serializer writes", async () => {

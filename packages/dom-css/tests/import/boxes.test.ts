@@ -35,6 +35,8 @@ describe('laysOutBoxes', () => {
     expect(laysOut('<a style="display: inline-block">Button</a>')).toBe(true)
     expect(laysOut('<span style="background-color: rgb(37, 99, 235)">Tag</span>')).toBe(true)
     expect(laysOut('<span style="border: 1px solid red">Tag</span>')).toBe(true)
+    // A color's channels are not the border's width.
+    expect(laysOut('<span style="border: 1px solid rgb(0 0 0)">Tag</span>')).toBe(true)
     expect(laysOut('<div style="width: 300px">Fixed</div>')).toBe(true)
     expect(laysOut('<span style="background: rgb(238, 238, 255)">Tag</span>')).toBe(true)
   })

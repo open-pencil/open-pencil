@@ -1,1 +1,0 @@
-- Separate messages from a coding agent show as separate paragraphs in the chat instead of running together (#2067).

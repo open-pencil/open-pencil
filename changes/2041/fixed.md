@@ -1,1 +1,0 @@
-- MCP, CLI, and WebMCP calls that name no document no longer edit a hidden empty document while the app shows Home or a New file tab; they fail and name the open documents to pass as `document_id`.

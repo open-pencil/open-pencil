@@ -14,8 +14,7 @@ import { setPaintBlendMode } from '#core/canvas/blend/modes'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { drawOutline, makeNodeShapePath, withNodeOutline } from '#core/canvas/shapes'
 import { sideStrokeRRects } from '#core/canvas/strokes/sides'
-
-import { fillsCastShadow } from './silhouette'
+import { fillsCastShadow } from '#core/geometry/shadows'
 
 /** Whether every region of a vector casts a shadow, from its own paints or the layer's. */
 function regionsCastShadow(node: SceneNode): boolean {
