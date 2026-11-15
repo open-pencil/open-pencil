@@ -264,12 +264,15 @@ export interface StrokeRun {
   closed: boolean
 }
 
+export type RunContinuation = (vertex: number, from: number) => number | undefined
+
 /**
- * Segments chained into runs as Figma strokes a network: a run passes through every vertex
- * exactly two segments meet at, so its corners take the stroke's join and only its open ends take
- * caps. Runs stop at open ends and at junctions where three or more segments meet.
+ * Segments chained into runs as Figma strokes a network: by default a run passes through every
+ * vertex exactly two segments meet at, so its corners take the stroke's join and only its open
+ * ends take caps. Runs stop at open ends and at junctions where three or more segments meet, unless
+ * `continuation` names a segment to go on with there.
  */
-export function strokeRuns(segments: VectorSegment[]): StrokeRun[] {
+export function strokeRuns(segments: VectorSegment[], continuation?: RunContinuation): StrokeRun[] {
   const incident = new Map<number, number[]>()
   const meet = (vertex: number, index: number) => {
     const list = incident.get(vertex)
@@ -283,13 +286,20 @@ export function strokeRuns(segments: VectorSegment[]): StrokeRun[] {
   const used = new Set<number>()
   const across = (index: number, vertex: number) =>
     segments[index].start === vertex ? segments[index].end : segments[index].start
-  /** Extends a run through `vertex` for as long as two segments meet at each vertex reached. */
+  const throughPairs: RunContinuation = (vertex, from) => {
+    const meeting = incident.get(vertex)
+    if (meeting?.length !== 2) {
+      return undefined
+    }
+    return meeting[0] === from ? meeting[1] : meeting[0]
+  }
+  const continueAt = continuation ?? throughPairs
   const extend = (vertex: number, from: number, add: (index: number) => void) => {
     for (;;) {
-      const meeting = incident.get(vertex)
-      if (meeting?.length !== 2) return vertex
-      const next = meeting[0] === from ? meeting[1] : meeting[0]
-      if (used.has(next)) return vertex
+      const next = continueAt(vertex, from)
+      if (next === undefined || used.has(next)) {
+        return vertex
+      }
       used.add(next)
       add(next)
       vertex = across(next, vertex)

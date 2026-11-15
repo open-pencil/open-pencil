@@ -104,4 +104,21 @@ describe('stroke runs', () => {
     // Drawn from vertex 1 to 2: the first handle hangs off vertex 1 by tangentEnd.
     expect(cubic).toEqual([[10, -5, 20, 5, 20, 0]])
   })
+
+  test('a continuation carries a run through a junction', () => {
+    const star = [line(0, 1), line(0, 2), line(0, 3)]
+    const throughFirstTwo = (vertex: number, from: number) => {
+      if (vertex !== 0 || from === 2) {
+        return undefined
+      }
+      return from === 0 ? 1 : 0
+    }
+    const runs = strokeRuns(star, throughFirstTwo)
+    expect(runs.map((run) => run.segments)).toEqual([[1, 0], [2]])
+  })
+
+  test('a continuation stops a run at a vertex two segments meet at', () => {
+    const corner = [line(0, 1), line(1, 2)]
+    expect(strokeRuns(corner, () => undefined).map((run) => run.segments)).toEqual([[0], [1]])
+  })
 })
