@@ -5,6 +5,7 @@ import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import {
   type DerivedTextGlyph,
   type Effect,
+  type Fill,
   SceneGraph,
   type SceneNode
 } from '@open-pencil/scene-graph'
@@ -14,6 +15,7 @@ import { repoPath } from '@open-pencil/test-support/paths'
 import { buildParagraph, textVerticalOffset } from '#core/canvas/text'
 import { savedTextInk } from '#core/canvas/text/ink'
 import { laidOutGlyphs } from '#core/canvas/text/placed'
+import { exportBounds, renderNodesToImage } from '#core/io/formats/raster/render'
 import { shownText } from '#core/text/case'
 import { fontManager } from '#core/text/font/manager'
 import { withTextInkMeasurer } from '#core/text/ink'
@@ -106,6 +108,47 @@ const onAPathOverItsBox: Partial<SceneNode> = {
   derivedTextGlyphs: [savedGlyph({ y: -10, rotation: Math.PI / 2 })]
 }
 
+const blackToBlue: Fill = {
+  type: 'GRADIENT_LINEAR',
+  color: black.color,
+  opacity: 1,
+  visible: true,
+  gradientStops: [
+    { position: 0, color: black.color },
+    { position: 1, color: { r: 0, g: 0, b: 1, a: 1 } }
+  ],
+  gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+}
+
+const drawnLiveWithoutItsFont: Partial<SceneNode> = {
+  ...trimmedWithoutItsFont,
+  text: 'gy',
+  fontSize: LARGE_SIZE,
+  lineHeight: SHORT_LINE,
+  derivedTextGlyphs: [0, 1].map((index) =>
+    savedGlyph({ x: index * FONT_SIZE, firstCharacter: index })
+  ),
+  styleRuns: [{ start: 0, length: 2, style: { fills: [blackToBlue] } }]
+}
+
+const noise: Fill = {
+  type: 'NOISE',
+  color: { r: 0, g: 0, b: 1, a: 1 },
+  opacity: 1,
+  visible: true,
+  noiseType: 'MONOTONE',
+  density: 1
+}
+
+const savedAndLiveWithoutItsFont: Partial<SceneNode> = {
+  ...drawnLiveWithoutItsFont,
+  styleRuns: [],
+  fills: [black, noise],
+  derivedTextGlyphs: [0, 1].map((index) =>
+    savedGlyph({ x: index * FONT_SIZE, y: 0, firstCharacter: index })
+  )
+}
+
 function dropShadow(drop: number): Effect {
   return {
     type: 'DROP_SHADOW',
@@ -114,6 +157,35 @@ function dropShadow(drop: number): Effect {
     radius: 0,
     spread: 0,
     visible: true
+  }
+}
+
+function exportedSize(editing: boolean) {
+  const graph = new SceneGraph()
+  const page = graph.getPages()[0]
+  const node = graph.createNode('TEXT', page.id, {
+    ...BOX,
+    fills: [black],
+    ...trimmedWithoutItsFont,
+    text: 'AA',
+    derivedTextGlyphs: [0, 1].map((index) =>
+      savedGlyph({ x: index * FONT_SIZE, firstCharacter: index })
+    )
+  })
+  loaded.editingTextId = editing ? node.id : null
+  try {
+    const png = withTextInkMeasurer(
+      (measured) => loaded.measureTextInk(measured),
+      () => renderNodesToImage(ck, loaded, graph, page.id, [node.id], { scale: 1, format: 'PNG' })
+    )
+    const image = expectDefined(ck.MakeImageFromEncoded(expectDefined(png, 'png')), 'image')
+    try {
+      return { width: image.width(), height: image.height() }
+    } finally {
+      image.delete()
+    }
+  } finally {
+    loaded.editingTextId = null
   }
 }
 
@@ -167,6 +239,8 @@ const drawnCases: Array<[string, SkiaRenderer, Partial<SceneNode>]> = [
   ['trimmed text whose font is missing', loaded, trimmedWithoutItsFont],
   ['trimmed text whose fonts are still loading', loading, trimmedWithoutItsFont],
   ['letters set on a path over the box', loaded, onAPathOverItsBox],
+  ['descenders drawn live in a substitute face', loaded, drawnLiveWithoutItsFont],
+  ['saved glyphs and a live layout one text draws', loaded, savedAndLiveWithoutItsFont],
   [
     'a flipped saved glyph',
     loaded,
@@ -274,5 +348,30 @@ describe('text ink', () => {
     const opaque = inkedExtent(target, props, 1)
     expect(opaque.pixels).toBeGreaterThan(0)
     expect(inkedExtent(target, props, 0.5)).toEqual(opaque)
+  })
+
+  test('exports a text being edited as whole as one that is not', () => {
+    const unedited = exportedSize(false)
+    expect(unedited.height).toBeGreaterThan(BOX.height)
+    expect(exportedSize(true)).toEqual(unedited)
+  })
+
+  test('exports descenders drawn live in a substitute face', () => {
+    const drawn = inkedExtent(loaded, drawnLiveWithoutItsFont, 1)
+    const graph = new SceneGraph()
+    const node = graph.createNode('TEXT', graph.getPages()[0].id, {
+      ...BOX,
+      fills: [black],
+      ...drawnLiveWithoutItsFont
+    })
+    const bounds = expectDefined(
+      withTextInkMeasurer(
+        (measured) => loaded.measureTextInk(measured),
+        () => exportBounds(graph, [node.id])
+      ),
+      'export bounds'
+    )
+    expect(drawn.maxY).toBeGreaterThan(BOX.y + BOX.height)
+    expect(bounds.maxY).toBeGreaterThan(drawn.maxY)
   })
 })

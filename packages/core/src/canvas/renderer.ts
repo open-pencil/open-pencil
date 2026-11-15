@@ -2,7 +2,7 @@ import { isEqual, noop } from 'es-toolkit'
 
 import type { Effect, SceneNode, SceneGraph, Fill, Stroke } from '@open-pencil/scene-graph'
 import type { RenderColorSpace, ResolvedRenderColor } from '@open-pencil/scene-graph/color'
-import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
+import { unionVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import { slotPropertyId } from '@open-pencil/scene-graph/slots'
@@ -692,9 +692,14 @@ export class SkiaRenderer {
 
   /** Where `node`'s glyphs draw ink in its box, as `measureTextInkAsDrawn` finds it. */
   measureTextInk(node: SceneNode): VisualBounds | null | undefined {
-    return TextRender.drawsOnlySavedGlyphs(this, node)
-      ? savedTextInk(this, node)
-      : RenderText.measureTextInkAsDrawn(this, node)
+    if (TextRender.drawsOnlySavedGlyphs(this, node)) {
+      return savedTextInk(this, node)
+    }
+    const laidOut = RenderText.measureTextInkAsDrawn(this, node)
+    if (laidOut === undefined || !TextRender.drawsSomeSavedGlyphsUnedited(this, node)) {
+      return laidOut
+    }
+    return unionVisualBounds(laidOut, savedTextInk(this, node))
   }
 
   measureTextAsDrawn(node: SceneNode, maxWidth?: number): { width: number; height: number } | null {
