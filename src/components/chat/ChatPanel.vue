@@ -483,13 +483,6 @@ function handleStop() {
     <ChatProviderSetup v-if="!isConfigured" />
 
     <template v-if="isConfigured || messages.length">
-      <p
-        v-if="history.current.value?.interrupted && status === 'ready'"
-        role="status"
-        class="px-3 py-2 text-xs text-muted"
-      >
-        {{ ai.chatInterrupted }}
-      </p>
       <!-- The thread's way back is in the header, which takes focus as the thread opens. -->
       <PanelDrillIn
         :open="subagentThread.open.value"
@@ -510,6 +503,7 @@ function handleStop() {
           :messages="messages"
           :status="status"
           :show-continue="showContinue"
+          :interrupted="Boolean(history.current.value?.interrupted) && status === 'ready'"
           :queued="queuedMessages"
           :steers="!providerID.startsWith('acp:') && providerID !== 'harness:pi'"
           :sending="submission.sending.value?.displayText ?? null"

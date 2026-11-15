@@ -28,6 +28,7 @@ const {
   messages,
   status,
   showContinue = false,
+  interrupted = false,
   presentations,
   interactive = false,
   nodesLive = true,
@@ -41,6 +42,8 @@ const {
   messages: UIMessage[]
   status: ChatStatus
   showContinue?: boolean
+  /** The last reply was cut off before it finished, as by closing the app mid-reply. */
+  interrupted?: boolean
   presentations?: Record<string, { text?: string; attachments?: AttachmentPresentation[] }>
   /** Offers regenerating the last reply, retrying an unanswered request, and editing the last request. */
   interactive?: boolean
@@ -258,6 +261,16 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
           :steers="steers"
           @remove="emit('removeQueued', item.id)"
         />
+
+        <!-- Under the reply it is about, so it scrolls with the conversation. -->
+        <p
+          v-if="interrupted"
+          role="status"
+          class="px-1 text-2xs text-muted"
+          data-test-id="chat-interrupted"
+        >
+          {{ ai.chatInterrupted }}
+        </p>
 
         <!-- Continue button when step limit reached -->
         <div v-if="showContinue" class="flex justify-center py-2">
