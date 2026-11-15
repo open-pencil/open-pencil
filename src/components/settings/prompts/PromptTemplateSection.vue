@@ -77,27 +77,29 @@ const variables = computed(() =>
       :label="ai.promptVariables"
       :ui="{ trigger: 'gap-1 py-1 text-2xs text-muted hover:text-surface', icon: 'size-3' }"
     >
-      <!-- Each variable writes itself into the template where the cursor is. -->
-      <!-- Names, descriptions, and samples line up in columns across the rows. -->
-      <ul class="grid grid-cols-[auto_1fr_auto]">
+      <!-- Each variable writes itself into the template where the cursor is. Names line up in
+           a column; what a variable holds reads on after its name, its sample after that. -->
+      <ul class="grid grid-cols-[auto_1fr]">
         <li
           v-for="variable in descriptions"
           :key="variable.name"
-          class="col-span-3 grid grid-cols-subgrid"
+          class="col-span-2 grid grid-cols-subgrid"
         >
           <button
             type="button"
             :class="[
-              'col-span-3 grid grid-cols-subgrid items-baseline gap-x-2 rounded px-1.5 py-1 text-start hover:bg-hover',
+              'col-span-2 grid grid-cols-subgrid items-baseline gap-x-2 rounded px-1.5 py-1 text-start hover:bg-hover',
               focusStyles.ring
             ]"
             @click="editor?.insert(`{{ ${variable.name} }}`)"
           >
             <code class="font-mono text-3xs text-surface">{{ variable.name }}</code>
-            <span class="min-w-0 text-2xs text-muted">{{ variable.description }}</span>
-            <code dir="ltr" class="max-w-48 truncate text-end font-mono text-3xs text-muted">{{
-              variable.sample
-            }}</code>
+            <span class="min-w-0 text-2xs text-muted">
+              {{ variable.description }}
+              <code dir="ltr" class="ms-1 font-mono text-3xs break-words opacity-70">{{
+                variable.sample
+              }}</code>
+            </span>
           </button>
         </li>
       </ul>
