@@ -170,6 +170,8 @@ export function alignCappedFill(
   const across = parent.layoutMode === 'VERTICAL' ? 'width' : 'height'
   const cap = across === 'width' ? child.maxWidth : child.maxHeight
   if (cap === null) return
+  // A locked ratio that sizes the axis from the other keeps sizing it.
+  if (layoutNode.style.aspectRatio !== undefined && layoutNode.style[across] === 'auto') return
   const align = mapAlign(parent.counterAxisAlign)
   if (align === 'stretch' || align === 'baseline' || align === 'flex-start') return
   if (!sizedAcross()) return

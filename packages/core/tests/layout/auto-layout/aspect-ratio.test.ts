@@ -107,6 +107,19 @@ describe('locked aspect ratio in auto layout', () => {
     computeAllLayouts(graph)
     expect(size(graph, fixed.id)).toEqual([80, 50])
   })
+
+  test('a locked ratio keeps sizing a capped fill across a centered column', () => {
+    const graph = new SceneGraph()
+    const column = row(graph, { layoutMode: 'VERTICAL', counterAxisAlign: 'CENTER', width: 600 })
+    // Fills the column's height, and its ratio sizes the width from it, under its cap.
+    const child = locked(graph, column.id, {
+      layoutGrow: 1,
+      layoutAlignSelf: 'STRETCH',
+      maxWidth: 300
+    })
+    computeAllLayouts(graph)
+    expect(size(graph, child.id)).toEqual([200, 100])
+  })
 })
 
 // Live Figma, 2026-10-10: a locked 100×50 layer at 50,50 that ignores auto layout, in a Hug row
