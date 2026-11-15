@@ -1,9 +1,13 @@
+import { partition, uniq } from 'es-toolkit'
+
 import {
   FONT_WEIGHT_NAMES,
   namesWeight,
+  namesWidth,
   normalizeFontFamily,
   type FontFamilyStyle,
-  parseFontStyle
+  parseFontStyle,
+  styleSpelling
 } from '@open-pencil/scene-graph/font-style'
 
 const FONT_WEIGHTS = Object.keys(FONT_WEIGHT_NAMES)
@@ -60,7 +64,7 @@ export function chooseLocalFontMatch<T extends FontFamilyStyle>(
     // A face named apart from its weight is that face or none, never another of its weight.
     if (style && !namesWeight(style)) continue
 
-    const candidates = fonts.filter((font) => font.family === candidateFamily)
+    const candidates = normalWidthFirst(fonts.filter((font) => font.family === candidateFamily))
     const sameStyle = candidates.find((font) => {
       const parsed = parseFontStyle(font.style)
       return parsed.weight === requested.weight && parsed.italic === requested.italic
@@ -80,5 +84,39 @@ export function chooseLocalFontMatch<T extends FontFamilyStyle>(
     if (candidates.length > 0) return candidates[0]
   }
 
+  return undefined
+}
+
+function normalWidthFirst<T extends FontFamilyStyle>(fonts: T[]): T[] {
+  const [normalWidth, otherWidth] = partition(fonts, (font) => !namesWidth(font.style))
+  return [...normalWidth, ...otherWidth]
+}
+
+export interface NamedLocalFont extends FontFamilyStyle {
+  fullName: string
+}
+
+function fontByFullName<T extends NamedLocalFont>(fonts: readonly T[], fullName: string) {
+  const wanted = styleSpelling(fullName)
+  return fonts.find((font) => styleSpelling(font.fullName) === wanted)
+}
+
+/** Windows lists a face beyond regular, bold, and italic as a family of its own, by its full name. */
+export function findLocalFont<T extends NamedLocalFont>(
+  fonts: T[],
+  family: string,
+  style?: string
+): T | undefined {
+  const listed = chooseLocalFontMatch(fonts, family, style)
+  if (listed || !style) {
+    return listed
+  }
+  const families = uniq([family, normalizeFontFamily(family)])
+  for (const named of families) {
+    const font = fontByFullName(fonts, `${named} ${style}`)
+    if (font) {
+      return font
+    }
+  }
   return undefined
 }

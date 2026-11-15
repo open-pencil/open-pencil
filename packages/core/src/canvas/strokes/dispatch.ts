@@ -19,7 +19,7 @@ import {
   getStrokeJoinEntity,
   normalizeDashPattern,
   withStrokeDash
-} from '#core/canvas/strokes'
+} from '#core/canvas/strokes/draw'
 import { drawIndividualSideStrokes } from '#core/canvas/strokes/sides'
 import { vectorNetworkToCenterlinePath, vectorNetworkToPath } from '#core/vector'
 import { isOpenVectorNetwork } from '#core/vector/connectivity'

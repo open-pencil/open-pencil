@@ -11,7 +11,7 @@ import {
   type LabelLayout,
   type LabelTextMetrics
 } from './layout'
-import { measureGlyphWidth } from './paragraph-cache'
+import { measureGlyphWidth } from './paragraphs'
 import { frameLabelPlacement, labelLocalPoint, labelTransform } from './transform'
 
 export interface LabelHitOptions {

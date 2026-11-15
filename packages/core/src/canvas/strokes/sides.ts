@@ -10,7 +10,7 @@ import {
 } from '@open-pencil/scene-graph/geometry'
 
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
-import { normalizeDashPattern } from '#core/canvas/strokes'
+import { normalizeDashPattern } from '#core/canvas/strokes/draw'
 
 /** Arc points per wedge: a chord across at most this many degrees stays clear of the ring. */
 const WEDGE_STEP = 30

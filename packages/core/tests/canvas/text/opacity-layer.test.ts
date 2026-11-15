@@ -9,11 +9,12 @@ import {
   SceneGraph,
   type SceneNode
 } from '@open-pencil/scene-graph'
+import { textVerticalOffset } from '@open-pencil/scene-graph/text'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { repoPath } from '@open-pencil/test-support/paths'
 
-import { buildParagraph, textVerticalOffset } from '#core/canvas/text'
-import { savedTextInk } from '#core/canvas/text/ink'
+import { buildParagraph } from '#core/canvas/text'
+import { savedTextInk } from '#core/canvas/text/ink-bounds'
 import { laidOutGlyphs } from '#core/canvas/text/placed'
 import { exportBounds, renderNodesToImage } from '#core/io/formats/raster/render'
 import { shownText } from '#core/text/case'

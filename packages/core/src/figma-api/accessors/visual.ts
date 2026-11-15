@@ -35,7 +35,7 @@ import {
   setEffectBindings,
   setPaintBindings
 } from '#core/figma-api/variables/bindings'
-import { textStyleChanges } from '#core/text/character-style'
+import { textStyleChanges } from '#core/text/character/style'
 
 /**
  * `node`'s fills as Figma's plugin API reads them, each carrying the variable it is bound to. A

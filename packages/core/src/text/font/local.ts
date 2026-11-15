@@ -1,7 +1,7 @@
 import { IS_BROWSER } from '#core/constants'
 import { SharedReads } from '#core/text/font/reads'
 import type { FontInfo, LocalFontAccessState } from '#core/text/font/sources'
-import { chooseLocalFontMatch } from '#core/text/font/style'
+import { findLocalFont } from '#core/text/font/style'
 
 /** The fonts installed in the browser's system, read through the Local Font Access API. */
 export class LocalFonts {
@@ -62,7 +62,7 @@ export class LocalFonts {
     try {
       const fonts = await window.queryLocalFonts?.()
       if (!fonts) return null
-      const match = chooseLocalFontMatch(fonts, family, style)
+      const match = findLocalFont(fonts, family, style)
       if (!match) return null
       const blob: Blob = await match.blob()
       return await blob.arrayBuffer()

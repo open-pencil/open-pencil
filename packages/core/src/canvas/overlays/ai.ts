@@ -1,7 +1,7 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
-import { drawNodeHighlightRect } from '#core/canvas/highlight-rect'
+import { drawNodeHighlightRect } from '#core/canvas/overlays/highlight'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import {
   AI_ACTIVE_COLOR,

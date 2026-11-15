@@ -3,8 +3,8 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import type { Editor } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
-import { handleSelectDown, type HitTestFns } from '#vue/shared/input/select'
 import { updateHoverCursor } from '#vue/shared/input/select/hover'
+import { handleSelectDown, type HitTestFns } from '#vue/shared/input/select/press'
 import type { DragState } from '#vue/shared/input/types'
 
 import { createMoveHarness } from '../move/harness'
