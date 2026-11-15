@@ -1,1 +1,0 @@
-- Text on a path keeps its path when scaled with the Scale tool, and undo brings back the curve (#2004).

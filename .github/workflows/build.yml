@@ -68,6 +68,9 @@ jobs:
           cache-scope: desktop
       - name: Install pinned workflow tooling
         run: bun install --cwd .pipeline --frozen-lockfile
+      # The build lints the whole checkout (`oxlint .`), which would include this tooling copy; oxlint honours git excludes.
+      - name: Keep workflow tooling out of the source checkout's lint
+        run: echo /.pipeline/ >> .git/info/exclude
       - name: Generate desktop icons
         run: bun run generate:icons --target desktop
       - name: Generate the native menu

@@ -1,1 +1,0 @@
-- Exporting a frame or a masked group no longer grows the image to cover content a mask hides, such as a list scrolled past the frame: a masked group exports at its mask's size, as in Figma (#1847).

@@ -58,3 +58,15 @@ export function applyFixtureTransform(node: FixtureNode, point: Vector): Vector 
     y: node.y + (node.flipY ? node.height - rotatedY : rotatedY)
   }
 }
+
+/** A closed polygon as a `fillGeometry` commands blob: a move, a line per corner, and a close. */
+export function polygonBlob(points: readonly Vector[]): Uint8Array {
+  const blob = new Uint8Array(points.length * 9 + 1)
+  const view = new DataView(blob.buffer)
+  points.forEach(({ x, y }, index) => {
+    blob[index * 9] = index === 0 ? 1 : 2
+    view.setFloat32(index * 9 + 1, x, true)
+    view.setFloat32(index * 9 + 5, y, true)
+  })
+  return blob
+}
