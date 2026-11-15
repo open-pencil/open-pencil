@@ -117,4 +117,39 @@ describe('min/max constraints', () => {
       }
     }
   })
+  test('a fill capped in a hugging parent that has a width of its own sits where it aligns', () => {
+    // Stretched across by its own parent, and holding its width over children that all fill.
+    const graph = new SceneGraph()
+    const outer = autoFrame(graph, pageId(graph), {
+      layoutMode: 'VERTICAL',
+      width: 600,
+      height: 100
+    })
+    const stretched = autoFrame(graph, outer.id, {
+      layoutMode: 'VERTICAL',
+      counterAxisSizing: 'HUG',
+      counterAxisAlign: 'CENTER',
+      layoutAlignSelf: 'STRETCH',
+      width: 50,
+      height: 20
+    })
+    const inStretched = rect(graph, stretched.id, 50, 20, {
+      layoutAlignSelf: 'STRETCH',
+      maxWidth: 300
+    })
+    const holding = autoFrame(graph, pageId(graph), {
+      layoutMode: 'VERTICAL',
+      counterAxisSizing: 'HUG',
+      counterAxisAlign: 'CENTER',
+      width: 600,
+      height: 20
+    })
+    const inHolding = rect(graph, holding.id, 50, 20, { layoutAlignSelf: 'STRETCH', maxWidth: 300 })
+
+    computeLayout(graph, outer.id)
+    computeLayout(graph, holding.id)
+
+    expect(getNodeOrThrow(graph, inStretched.id)).toMatchObject({ x: 150, width: 300 })
+    expect(getNodeOrThrow(graph, inHolding.id)).toMatchObject({ x: 150, width: 300 })
+  })
 })

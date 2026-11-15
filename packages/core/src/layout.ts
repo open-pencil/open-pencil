@@ -216,7 +216,7 @@ function insertFlexChildren(
       item.style.display = 'none'
     } else {
       configureInFlowChild(item, child, parent, graph, direction)
-      alignCappedFill(item, child, parent)
+      alignCappedFill(graph, item, child, parent)
       flow.push(item)
     }
 
