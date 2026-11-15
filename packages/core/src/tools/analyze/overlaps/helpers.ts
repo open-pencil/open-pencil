@@ -1,5 +1,5 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { clipPolygon } from '@open-pencil/scene-graph/clipping'
+import { clipPolygon, visualBoundsCorners } from '@open-pencil/scene-graph/clipping'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import {
   effectOverflow,
@@ -7,7 +7,6 @@ import {
   intersectVisualBounds,
   strokeOverflow,
   unionVisualBounds,
-  visualBoundsCorners,
   visualBoundsToRect,
   type VisualBounds
 } from '@open-pencil/scene-graph/geometry'

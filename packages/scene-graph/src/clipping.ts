@@ -1,10 +1,20 @@
-import { computeBounds, visualBoundsCorners, type VisualBounds } from './geometry'
+import { computeBounds, type VisualBounds } from './geometry'
 import type { Vector } from './primitives'
 
 /**
  * Rotated-rectangle clipping: a polygon or an axis-aligned box cut by a convex polygon, such as
  * the canvas corners of a rotated frame that clips its content.
  */
+
+/** The corners of `bounds`, clockwise from the top-left. */
+export function visualBoundsCorners(bounds: VisualBounds): Vector[] {
+  return [
+    { x: bounds.minX, y: bounds.minY },
+    { x: bounds.maxX, y: bounds.minY },
+    { x: bounds.maxX, y: bounds.maxY },
+    { x: bounds.minX, y: bounds.maxY }
+  ]
+}
 
 function crossProduct(a: Vector, b: Vector, p: Vector): number {
   return (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x)

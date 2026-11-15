@@ -154,16 +154,6 @@ export function visualBoundsToRect(bounds: VisualBounds): Rect {
   }
 }
 
-/** The corners of `bounds`, clockwise from the top-left. */
-export function visualBoundsCorners(bounds: VisualBounds): Vector[] {
-  return [
-    { x: bounds.minX, y: bounds.minY },
-    { x: bounds.maxX, y: bounds.minY },
-    { x: bounds.maxX, y: bounds.maxY },
-    { x: bounds.minX, y: bounds.maxY }
-  ]
-}
-
 function boundsToRect(bounds: BoundsAccumulator): Rect {
   return bounds.minX === Infinity ? { x: 0, y: 0, width: 0, height: 0 } : visualBoundsToRect(bounds)
 }

@@ -3,11 +3,8 @@ import { uniq } from 'es-toolkit'
 import type { CanvasKit, Image, ImageFilter, Shader, TileMode } from '@open-pencil/canvaskit'
 import type { ProgressiveBlur } from '@open-pencil/scene-graph'
 import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
-import {
-  blurSigma,
-  visualBoundsCorners,
-  type VisualBounds
-} from '@open-pencil/scene-graph/geometry'
+import { visualBoundsCorners } from '@open-pencil/scene-graph/clipping'
+import { blurSigma, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 /**
