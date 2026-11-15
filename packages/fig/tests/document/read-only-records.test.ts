@@ -43,7 +43,7 @@ function freezeServedRecords(): () => number {
 
 /** Edits that reach the layers inside instances, as the editor makes them. */
 function editInstanceLayers(graph: SceneGraph): void {
-  // The first few hundred: syncing all eleven thousand adds seconds and reaches no new code.
+  // The first few hundred keep the test to a few seconds; syncing all eleven thousand does not.
   const instances = [...graph.getAllNodes()]
     .filter((node) => node.type === 'INSTANCE')
     .slice(0, 300)
