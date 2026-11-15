@@ -97,11 +97,66 @@ test.describe('@open-pencil/dom-css browser layout capture', () => {
     expect(lines).toHaveLength(4)
     expect(lines.map((line) => Math.round(line.y - lines[0].y))).toEqual([0, 30, 60, 90])
     expect(lines.every((line) => line.x === 0)).toBe(true)
+    // Line boxes, as tall as the line height, rather than the area the glyphs cover.
+    expect(lines.map((line) => [line.y, line.height])).toEqual([
+      [0, 30],
+      [30, 30],
+      [60, 30],
+      [90, 30]
+    ])
 
     const fragments = bold.layout?.fragments ?? []
     expect(fragments).toHaveLength(2)
-    expect(fragments.map((fragment) => Math.round(fragment.y - lines[0].y))).toEqual([30, 60])
+    // One fragment in each of the two lines the bold text spans.
+    const lineOf = (y: number) => lines.findIndex((line) => y >= line.y && y < line.y + line.height)
+    expect(fragments.map((fragment) => lineOf(fragment.y))).toEqual([1, 2])
     expect(bold.layout?.lines).toBeUndefined()
+  })
+
+  test('measures line boxes apart from the page’s styles, no shorter than the block’s', async ({
+    page
+  }) => {
+    const document = await captured(
+      page,
+      `<p id="p">x</p><p id="small"><span>x</span></p>`,
+      `body { margin: 0 }
+       div, * { height: 120px }
+       p { height: auto; margin: 0; font: 20px/30px monospace }
+       span { height: auto; line-height: 10px }`
+    )
+    const line = (id: string) => byId(document, id).layout?.lines?.[0]
+
+    // A page rule for every element leaves the line boxes as tall as the line height.
+    expect(line('p')).toMatchObject({ y: 0, height: 30 })
+    // A run with a smaller line height still sits in a line as tall as its block's.
+    expect(line('small')).toMatchObject({ y: 30, height: 30 })
+  })
+
+  test('sets each line box as the browser does, by line height and vertical alignment', async ({
+    page
+  }) => {
+    const document = await captured(
+      page,
+      `<p id="tight">x</p>
+       <p id="nested"><span style="line-height:80px"><span style="line-height:10px">x</span></span></p>
+       <p id="raised"><span style="line-height:10px;vertical-align:10px">x</span></p>
+       <p id="lowered"><span style="line-height:10px;vertical-align:-25%">x</span> y</p>
+       <p id="padded"><span style="padding:30px 0;border:5px solid"><span style="line-height:10px">x</span></span></p>`,
+      `body { margin: 0 }
+       p { margin: 0; font: 20px/40px monospace }
+       #tight { line-height: 0 }`
+    )
+    // A block of one line is as tall as its line box, which says where the line is; an inline
+    // element's padding and borders do not make it taller.
+    for (const id of ['tight', 'nested', 'raised', 'lowered', 'padded']) {
+      const block = byId(document, id).layout
+      const [line] = block?.lines ?? []
+      expect({ id, y: line.y, height: line.height }).toEqual({
+        id,
+        y: block?.box.y,
+        height: block?.box.height
+      })
+    }
   })
 
   test('waits for web fonts before recording layout', async ({ page }) => {

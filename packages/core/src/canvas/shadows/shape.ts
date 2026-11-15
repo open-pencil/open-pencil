@@ -10,7 +10,7 @@ import {
 } from '@open-pencil/scene-graph/geometry'
 import { paintShows } from '@open-pencil/scene-graph/paints'
 
-import { setPaintBlendMode } from '#core/canvas/blend'
+import { setPaintBlendMode } from '#core/canvas/blend/modes'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { drawOutline, makeNodeShapePath, withNodeOutline } from '#core/canvas/shapes'
 import { sideStrokeRRects } from '#core/canvas/strokes/sides'

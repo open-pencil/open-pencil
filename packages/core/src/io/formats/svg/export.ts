@@ -10,7 +10,7 @@ import { nodeHasRadius, nodeHasSmoothCorners } from '@open-pencil/scene-graph/co
 import { CSS_BLEND_MODE } from '@open-pencil/scene-graph/css'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
-import { normalizeDashPattern } from '#core/canvas/strokes'
+import { normalizeDashPattern } from '#core/canvas/strokes/draw'
 import { lineStrokePath } from '#core/canvas/strokes/line'
 import { fittedDashPattern } from '#core/canvas/strokes/sides'
 import { exportBounds } from '#core/io/formats/raster'

@@ -14,7 +14,7 @@ import {
   selectionResizeHandleAt,
   tryStartSelectionResize
 } from '#vue/shared/input/resize/selection'
-import { handleSelectDown, type HitTestFns } from '#vue/shared/input/select'
+import { handleSelectDown, type HitTestFns } from '#vue/shared/input/select/press'
 import type { DragState } from '#vue/shared/input/types'
 
 let editor: Editor

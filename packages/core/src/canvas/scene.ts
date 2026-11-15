@@ -11,10 +11,10 @@ import { nodeOrientationMatrix, projectedNode } from '#core/geometry'
 import { drawnLayerBlurReach, mapVisualBounds } from '#core/geometry/render-bounds'
 import { fontManager } from '#core/text/font/manager'
 
-import { needsIsolatedBlendLayer, setPaintBlendMode } from './blend'
+import { needsIsolatedBlendLayer, setPaintBlendMode } from './blend/modes'
 import { blurredContent, layerBlurFilter } from './blur/layer'
 import { renderBooleanOperation } from './boolean'
-import { drawVectorMultiStyleFills, paintFills } from './fills'
+import { drawVectorMultiStyleFills, paintFills } from './fills/paint'
 import { drawLayoutGrids } from './layout-grids'
 import { renderMaskedChildIds } from './masks'
 import { drawShapeThroughNodePicture } from './renderer/node-pictures'
@@ -24,23 +24,23 @@ import {
   subtreeVisualRectInParent,
   visibleLayerBlur
 } from './renderer/visual-bounds'
-import { isolatesInnerShadows, renderLayerShadows } from './shadows'
-import {
-  configureStrokePaint,
-  drawDashedRRectWithSolidCorners,
-  drawRRectStrokeWithAlign,
-  drawStyledRRectStroke,
-  forVisibleStrokes
-} from './strokes'
+import { isolatesInnerShadows, renderLayerShadows } from './shadows/render'
 import {
   drawFigmaDashes,
   isPathTextWithStrokeGeometry,
   paintNodeStrokes,
   vectorStrokePaths
 } from './strokes/dispatch'
+import {
+  configureStrokePaint,
+  drawDashedRRectWithSolidCorners,
+  drawRRectStrokeWithAlign,
+  drawStyledRRectStroke,
+  forVisibleStrokes
+} from './strokes/draw'
 import { drawReflowedPathTextSilhouettes, isReflowedPathText } from './text/derived'
+import { drawTextEmoji, hasOverflowPathTextPaint, renderText } from './text/draw/text'
 import { stickyPlaceholderNode } from './text/placeholder'
-import { drawTextEmoji, hasOverflowPathTextPaint, renderText } from './text/render'
 
 function drawVisibleFills(
   r: SkiaRenderer,

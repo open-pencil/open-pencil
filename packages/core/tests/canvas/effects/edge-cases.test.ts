@@ -4,7 +4,7 @@ import { asCanvas } from '#core-tests/canvas/helpers'
 
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
-import { renderEffects } from '#core/canvas/shadows'
+import { renderEffects } from '#core/canvas/shadows/render'
 
 import {
   createMockCanvas,
