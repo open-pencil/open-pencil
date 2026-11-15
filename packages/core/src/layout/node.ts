@@ -134,11 +134,38 @@ export function applyLockedAspectRatio(
   layoutNode.style.aspectRatio = ratio
   if (drivesWidth) layoutNode.style.height = 'auto'
   else layoutNode.style.width = 'auto'
-  // The ratio sizes the parent's cross axis over Fill across it, where CSS stretches instead.
+  // The ratio sizes the parent's cross axis over Fill across it, where CSS stretches instead, and
+  // Figma centers the box in the room the Fill takes (`ratioRoomShift` moves it into a capped one).
   const followsAcross = drivesWidth === primaryIsWidth
   const alignSelf =
     layoutNode.style.alignSelf ?? (stretchesAcross(node, parent) ? 'stretch' : undefined)
-  if (followsAcross && alignSelf === 'stretch') layoutNode.style.alignSelf = 'flex-start'
+  if (followsAcross && alignSelf === 'stretch') layoutNode.style.alignSelf = 'center'
+}
+
+/**
+ * How far across a locked ratio's box moves from the middle of its parent, sized across by the
+ * ratio over Fill: Figma centers it in the room the Fill takes, which a maximum size caps and the
+ * parent's alignment places (50, 200, and 350 for a 200 px box capped at 300 in a 600 px column,
+ * for MIN, CENTER, and MAX). `inner` is the parent's size across inside its padding.
+ */
+export function ratioRoomShift(
+  layoutNode: LayoutNode,
+  child: SceneNode,
+  parent: SceneNode,
+  inner: number
+): number {
+  if (layoutNode.style.aspectRatio === undefined || layoutNode.style.alignSelf !== 'center')
+    return 0
+  if (parent.layoutMode !== 'HORIZONTAL' && parent.layoutMode !== 'VERTICAL') return 0
+  if (!stretchesAcross(child, parent)) return 0
+  const across = parent.layoutMode === 'VERTICAL' ? 'width' : 'height'
+  if (layoutNode.style[across] !== 'auto') return 0
+  const cap = across === 'width' ? child.maxWidth : child.maxHeight
+  if (cap === null || cap >= inner) return 0
+  const room = (inner - cap) / 2
+  if (parent.counterAxisAlign === 'MIN') return -room
+  if (parent.counterAxisAlign === 'MAX') return room
+  return 0
 }
 
 /**

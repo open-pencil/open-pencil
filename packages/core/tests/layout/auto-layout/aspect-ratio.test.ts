@@ -108,17 +108,33 @@ describe('locked aspect ratio in auto layout', () => {
     expect(size(graph, fixed.id)).toEqual([80, 50])
   })
 
-  test('a locked ratio keeps sizing a capped fill across a centered column', () => {
-    const graph = new SceneGraph()
-    const column = row(graph, { layoutMode: 'VERTICAL', counterAxisAlign: 'CENTER', width: 600 })
-    // Fills the column's height, and its ratio sizes the width from it, under its cap.
-    const child = locked(graph, column.id, {
-      layoutGrow: 1,
-      layoutAlignSelf: 'STRETCH',
-      maxWidth: 300
-    })
-    computeAllLayouts(graph)
-    expect(size(graph, child.id)).toEqual([200, 100])
+  // Live Figma, 2026-11-15: a 2:1 locked layer filling both ways in a 600×100 column.
+  test('a locked ratio sizing a fill across centers it in the room the fill takes', () => {
+    const CASES: [SceneNode['counterAxisAlign'], number | null, number][] = [
+      ['MIN', null, 200],
+      ['CENTER', null, 200],
+      ['MAX', null, 200],
+      ['MIN', 300, 50],
+      ['CENTER', 300, 200],
+      ['MAX', 300, 350]
+    ]
+    for (const [align, maxWidth, x] of CASES) {
+      const name = `${align}/${maxWidth}`
+      const graph = new SceneGraph()
+      const column = row(graph, { layoutMode: 'VERTICAL', counterAxisAlign: align, width: 600 })
+      const child = locked(graph, column.id, {
+        layoutGrow: 1,
+        layoutAlignSelf: 'STRETCH',
+        maxWidth
+      })
+      computeAllLayouts(graph)
+      expect([name, graph.getNode(child.id)?.x, ...size(graph, child.id)]).toEqual([
+        name,
+        x,
+        200,
+        100
+      ])
+    }
   })
 })
 
