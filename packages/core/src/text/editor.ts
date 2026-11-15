@@ -2,6 +2,7 @@ import type { CanvasKit } from '@open-pencil/canvaskit'
 import type { DerivedTextGlyph, SceneNode } from '@open-pencil/scene-graph'
 import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import { textVerticalOffset } from '@open-pencil/scene-graph/text'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import type { SkiaRenderer } from '#core/canvas'
@@ -49,10 +50,7 @@ export class TextEditor {
     const s = this.current()
     const node = this.paragraphNode
     if (!s?.paragraph || !node) return 0
-    const available = Math.max(0, node.height - s.paragraph.getHeight())
-    if (node.textAlignVertical === 'CENTER') return available / 2
-    if (node.textAlignVertical === 'BOTTOM') return available
-    return 0
+    return textVerticalOffset(node, s.paragraph.getHeight())
   }
 
   private paragraphY(y: number): number {
@@ -415,10 +413,7 @@ export class TextEditor {
     const probe = this.renderer.buildParagraph({ ...node, text: ' ' })
     const height = probe.getLineMetrics()[0]?.height ?? probe.getHeight()
     probe.delete()
-    const available = Math.max(0, node.height - height)
-    let offsetY = 0
-    if (node.textAlignVertical === 'CENTER') offsetY = available / 2
-    if (node.textAlignVertical === 'BOTTOM') offsetY = available
+    const offsetY = textVerticalOffset(node, height)
     let x = 0
     if (node.textAlignHorizontal === 'CENTER') x = node.width / 2
     if (node.textAlignHorizontal === 'RIGHT') x = node.width
