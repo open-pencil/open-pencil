@@ -286,3 +286,69 @@ export function createShadowSilhouetteScene(graph: SceneGraph, pageId: string): 
     fills: [green]
   })
 }
+
+/** A grain effect at Figma's defaults with `params`, built as the scene graph holds it. */
+function grain(type: 'NOISE' | 'TEXTURE', props: Partial<Effect>): Effect {
+  return {
+    type,
+    radius: 4,
+    spread: 0,
+    offset: { x: 0, y: 0 },
+    color: { r: 0, g: 0, b: 0, a: 1 },
+    visible: true,
+    ...props
+  }
+}
+
+/**
+ * Noise and texture effects on the canvas, in two rows: monotone, duotone, and multitone noise
+ * and a larger monotone grain over a light fill, then textures over stripes, unclipped and clipped
+ * to the shape.
+ */
+export function createGrainEffectsScene(graph: SceneGraph, pageId: string): void {
+  const light = solid(0.92, 0.93, 0.96)
+  const noises: Partial<Effect>[] = [
+    { noise: { noiseType: 'MONOTONE', noiseSize: { x: 1, y: 1 }, density: 0.6 } },
+    {
+      color: { r: 0.9, g: 0.2, b: 0.3, a: 1 },
+      noise: {
+        noiseType: 'DUOTONE',
+        noiseSize: { x: 1, y: 1 },
+        density: 0.8,
+        secondaryColor: { r: 0.2, g: 0.3, b: 0.9, a: 1 }
+      }
+    },
+    {
+      noise: { noiseType: 'MULTITONE', noiseSize: { x: 1, y: 1 }, density: 1, opacity: 0.8 }
+    },
+    { noise: { noiseType: 'MONOTONE', noiseSize: { x: 4, y: 4 }, density: 1 } }
+  ]
+  noises.forEach((props, index) => {
+    graph.createNode('RECTANGLE', pageId, {
+      name: `Noise ${index + 1}`,
+      x: 80 + index * 180,
+      y: 80,
+      width: 140,
+      height: 110,
+      cornerRadius: 16,
+      fills: [light],
+      effects: [grain('NOISE', props)]
+    })
+  })
+  for (const [index, clipToShape] of [false, true].entries()) {
+    const x = 80 + index * 360
+    addStripes(graph, pageId, `Under texture ${index + 1}`, x, 240)
+    graph.createNode('RECTANGLE', pageId, {
+      name: clipToShape ? 'Texture clipped' : 'Texture',
+      x: x + 20,
+      y: 260,
+      width: 80,
+      height: 80,
+      cornerRadius: 12,
+      fills: [solid(0.1, 0.12, 0.2)],
+      effects: [
+        grain('TEXTURE', { radius: 6, texture: { noiseSize: { x: 3, y: 3 }, clipToShape } })
+      ]
+    })
+  }
+}

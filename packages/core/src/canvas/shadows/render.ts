@@ -12,8 +12,8 @@ import { regionFills } from '@open-pencil/scene-graph/vector-network'
 
 import { needsIsolatedBlendLayer, setPaintBlendMode } from '#core/canvas/blend/modes'
 import { makeBooleanOperationPath } from '#core/canvas/boolean'
-import { renderNoiseEffects } from '#core/canvas/effects'
 import { renderGlassLight, renderGlassRefraction } from '#core/canvas/glass/render'
+import { renderNoiseEffects } from '#core/canvas/noise/render'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { nodeOrientationMatrix } from '#core/geometry'
 import { fillsCastShadow, shadowSpread } from '#core/geometry/shadows'
@@ -386,7 +386,7 @@ export function renderEffects(
   graph: SceneGraph,
   pass: EffectPass
 ): void {
-  if (pass === 'front') renderNoiseEffects(r, canvas, node)
+  if (pass === 'front') renderNoiseEffects(r, canvas, node, graph)
 
   const ownShadows = !isLayerContainer(node)
   for (const effect of node.effects) {

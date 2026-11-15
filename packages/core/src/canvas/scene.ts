@@ -41,6 +41,7 @@ import {
 import { drawReflowedPathTextSilhouettes, isReflowedPathText } from './text/derived'
 import { drawTextEmoji, hasOverflowPathTextPaint, renderText } from './text/draw/text'
 import { stickyPlaceholderNode } from './text/placeholder'
+import { beginTexture, endTexture, visibleTexture } from './texture'
 
 function drawVisibleFills(
   r: SkiaRenderer,
@@ -400,6 +401,10 @@ export function renderNode(
 
   applyNodeTransforms(canvas, node, overlays)
   renderLayerShadows(r, canvas, graph, node, 'behind')
+  // A texture roughens what the layer and its children draw, not its shadows, and noise grains
+  // the roughened result, as in Figma.
+  const texture = visibleTexture(node)
+  const textureSaves = texture ? beginTexture(r, canvas, node, texture) : 0
   renderNodeContent(r, canvas, graph, node, overlays)
   drawLayoutGrids(r, canvas, node)
   renderChildren(
@@ -412,6 +417,7 @@ export function renderNode(
     absY,
     childFrame(frame, node, parentAbsX, parentAbsY, overlays.rotationPreview)
   )
+  endTexture(canvas, textureSaves)
   renderLayerShadows(r, canvas, graph, node, 'front')
 
   if (layerBlur) {
