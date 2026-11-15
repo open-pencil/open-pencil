@@ -35,8 +35,9 @@ export function setNodeBox(node: SceneNode, style: DesignStyleDeclaration): void
         : { top: 0, right: 0, bottom: 0, left: 0 }
     const across = insets.left + insets.right
     const down = insets.top + insets.bottom
-    if (width !== null) node.height = (width - across) / aspect.ratio + down
-    if (height !== null) node.width = (height - down) * aspect.ratio + across
+    // Padding and borders wider than the box leave an empty content box, as CSS floors it.
+    if (width !== null) node.height = Math.max(0, width - across) / aspect.ratio + down
+    if (height !== null) node.width = Math.max(0, height - down) * aspect.ratio + across
   }
   if (minWidth !== null) node.minWidth = minWidth
   if (maxWidth !== null) node.maxWidth = maxWidth

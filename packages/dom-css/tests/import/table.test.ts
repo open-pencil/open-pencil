@@ -283,4 +283,22 @@ describe('table import', () => {
     // Each cell still holds half of every border it shares.
     expect(a.paddingRight).toBe(1)
   })
+  it('lets a cell with rowspan zero span the rest of its group', () => {
+    const at = (x: number, y: number, width: number, height: number) => ({
+      layout: { box: { x, y, width, height } }
+    })
+    const rest = { ...cell('Rest'), attrs: { rowspan: '0' }, ...at(0, 0, 100, 46) }
+    const first = { ...row([rest, { ...cell('a'), ...at(102, 0, 98, 22) }]), ...at(0, 0, 200, 22) }
+    const second = { ...row([{ ...cell('b'), ...at(102, 24, 98, 22) }]), ...at(0, 24, 200, 22) }
+    const group = element('tbody', { display: 'table-row-group', ...SEPARATE }, [first, second])
+    const { graph } = designDocumentToLayers({
+      type: 'document',
+      children: [element('table', { display: 'table', ...SEPARATE }, [group])]
+    })
+    const [tableLayer] = graph.getChildren(graph.getPages()[0].id)
+    const [groupLayer] = graph.getChildren(tableLayer.id)
+    const [firstRow] = graph.getChildren(groupLayer.id)
+
+    expect(graph.getChildren(firstRow.id)[0].layoutPositioning).toBe('ABSOLUTE')
+  })
 })

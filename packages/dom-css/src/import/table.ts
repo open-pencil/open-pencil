@@ -234,10 +234,13 @@ function margin(style: DesignStyleDeclaration, side: 'top' | 'bottom'): number {
   return Math.max(0, parseCSSNumber(pickStyle(style, `margin-${side}`)) ?? 0)
 }
 
-/** How many rows a cell spans, by its `rowspan` attribute (HTML §4.9.11), at least one. */
-function rowSpan(cell: DesignElement): number {
+/**
+ * Whether a cell spans rows below its own by its `rowspan` attribute (HTML §4.9.11): more than
+ * one, or zero, which spans the rest of its row group.
+ */
+function spansRows(cell: DesignElement): boolean {
   const span = Number.parseInt(cell.attrs.rowspan, 10)
-  return Number.isNaN(span) ? 1 : Math.max(span, 1)
+  return span === 0 || span > 1
 }
 
 /**
@@ -251,7 +254,7 @@ export function layOutRowSpans(row: SceneNode, cells: FlowBlock[], boxes: Captur
   if (!rowBox || row.layoutMode !== 'HORIZONTAL') return
   for (const { layer, element } of cells) {
     const box = boxes.get(layer.id)?.box
-    if (rowSpan(element) === 1 || !box) continue
+    if (!spansRows(element) || !box) continue
     layer.layoutPositioning = 'ABSOLUTE'
     Object.assign(layer, {
       x: box.x - rowBox.x,

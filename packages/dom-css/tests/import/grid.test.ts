@@ -114,4 +114,21 @@ describe('grid import', () => {
 
     expect(itemLayers[0].layoutAlignSelf).toBe('CENTER')
   })
+  it('leaves a lone item in one of several rows to its row, not the whole grid', () => {
+    const { gridLayer, itemLayers } = layers(
+      box(
+        {
+          ...GRID,
+          'grid-template-rows': '100px 100px',
+          'place-items': 'center',
+          'align-items': 'center',
+          'justify-items': 'center'
+        },
+        [item()]
+      )
+    )
+
+    expect(gridLayer.primaryAxisAlign).toBe('MIN')
+    expect(itemLayers[0].layoutAlignSelf).toBe('CENTER')
+  })
 })

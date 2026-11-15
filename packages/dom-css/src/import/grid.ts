@@ -71,8 +71,8 @@ function contentWidth(style: DesignStyleDeclaration): number | null {
 
 /**
  * Aligns a one-column grid's items as the grid does, laid out as the vertical stack block flow
- * builds: `align-content` packs its rows at the top, middle, or bottom, and a lone item, whose
- * row fills the grid, takes its own `align-self` or the grid's `align-items` there too.
+ * builds: `align-content` packs its rows at the top, middle, or bottom, and a lone item in a
+ * grid of one row, which fills it, takes its own `align-self` or the grid's `align-items` too.
  * Across, a column that fills the grid lets `justify-self`, or the grid's `justify-items`, put
  * each item, hugging its content rather than stretching. A narrower column, which
  * `justify-content` places, holds a lone item as wide as it where the column goes; any other
@@ -90,14 +90,34 @@ export function alignGridItems(
   grid.itemSpacing = parseCSSNumber(pickStyle(style, 'row-gap')) ?? 0
   const inFlow = items.filter(({ layer }) => layer.layoutPositioning !== 'ABSOLUTE')
   const lone = inFlow.length === 1 ? inFlow[0] : undefined
-  const down =
-    contentSide(style, 'align-content') ?? (lone ? itemSide(lone.style, style, 'align') : null)
+  const down = sideDown(style, lone)
   if (down) grid.primaryAxisAlign = down
+  alignAcross(graph, inFlow, style, column, lone)
+}
+
+/**
+ * Where the rows go down: by `align-content`, or for a lone item in a grid of one row or none,
+ * whose row fills the grid, by its own alignment.
+ */
+function sideDown(style: DesignStyleDeclaration, lone: FlowBlock | undefined): Side | null {
+  const rows = splitCSSValue(pickStyle(style, 'grid-template-rows')?.trim() ?? 'none')
+  const fromItem = lone && rows.length === 1 ? itemSide(lone.style, style, 'align') : null
+  return contentSide(style, 'align-content') ?? fromItem
+}
+
+/** Puts each item across its column, where a stack can hold it; see `alignGridItems`. */
+function alignAcross(
+  graph: SceneGraph,
+  items: readonly FlowBlock[],
+  style: DesignStyleDeclaration,
+  column: 'auto' | 'fr' | number,
+  lone: FlowBlock | undefined
+): void {
   const tracks = contentSide(style, 'justify-content')
   const fills = column === 'fr' || (column === 'auto' ? !tracks : column === contentWidth(style))
   const loneWidth = lone ? parseCSSNumber(pickStyle(lone.style, 'width')) : null
   if (!fills && !(lone && (column === 'auto' || loneWidth === column))) return
-  for (const { layer, style: itemStyle } of inFlow) {
+  for (const { layer, style: itemStyle } of items) {
     const across = fills ? itemSide(itemStyle, style, 'justify') : (tracks ?? 'MIN')
     if (!across) continue
     if (layer.layoutAlignSelf === 'STRETCH') {

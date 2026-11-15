@@ -281,6 +281,21 @@ describe('@open-pencil/dom-css conversion', () => {
     expect([box.width, box.height]).toEqual([320, 188.75])
   })
 
+  it('leaves an empty content box when padding is wider than a box sized by its ratio', () => {
+    const sized = (computedStyle: Record<string, string>) => {
+      const graph = designDocumentToSceneGraph({
+        type: 'document',
+        children: [{ type: 'element', tagName: 'div', attrs: {}, computedStyle, children: [] }]
+      })
+      const [box] = graph.getChildren(graph.getPages()[0].id)
+      return [box.width, box.height]
+    }
+    const style = { 'aspect-ratio': 'auto 1', 'box-sizing': 'border-box' }
+
+    expect(sized({ ...style, width: '10px', padding: '0px 20px' })).toEqual([10, 0])
+    expect(sized({ ...style, height: '10px', padding: '20px 0px' })).toEqual([0, 10])
+  })
+
   it('gives each side of a box its value in a padding shorthand of several values', () => {
     const graph = designDocumentToSceneGraph({
       type: 'document',
