@@ -9,7 +9,7 @@ import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/directio
 
 import type { TextLayout, TextLayoutMarker } from '#core/canvas/text/layout'
 import { shownSourceIndices } from '#core/text/case'
-import { candidateSources, fontAt, styleRunAt, type StyleRun } from '#core/text/character-face'
+import { candidateSources, fontAt, styleRunAt, type StyleRun } from '#core/text/character/face'
 import { ELLIPSIS } from '#core/text/ellipsis'
 import {
   glyphOutlineSourceSync,

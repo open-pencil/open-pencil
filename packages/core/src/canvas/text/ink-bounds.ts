@@ -13,7 +13,7 @@ import type { TextLayout } from '#core/canvas/text/layout'
 import { drawnBaseline } from '#core/canvas/text/layout/lines'
 import { laidOutGlyphs } from '#core/canvas/text/placed'
 import { shownText } from '#core/text/case'
-import { characterFamily } from '#core/text/character-face'
+import { characterFamily } from '#core/text/character/face'
 import {
   hasDecoration,
   savedTextDecorationRects,

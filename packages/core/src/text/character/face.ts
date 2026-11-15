@@ -1,17 +1,16 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
-
-import { drawnFontVariations, loadedFace, paragraphSourceFamilies } from './font/families'
+import { drawnFontVariations, loadedFace, paragraphSourceFamilies } from '#core/text/font/families'
 import {
   fontHasGlyphSync,
   glyphOutlineSourceSync,
   shardCovers,
   shardOutlineSources,
   TYPICAL_CAP_HEIGHT_EMS
-} from './font/glyphs'
-import { fontManager } from './font/manager'
-import { textFontFace } from './requirements/collect'
+} from '#core/text/font/glyphs'
+import { fontManager } from '#core/text/font/manager'
+import { textFontFace } from '#core/text/requirements/collect'
 
 /** The loaded face of a family the paragraph draws a face in, as its key. */
 function loadedStyle(

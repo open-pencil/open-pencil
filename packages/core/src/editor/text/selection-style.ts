@@ -11,7 +11,7 @@ import {
   styleRunsWithPatch,
   TEXT_STYLE_KEYS,
   type TextStyleKey
-} from '#core/text/character-style'
+} from '#core/text/character/style'
 
 type NodeUpdate = (id: string, changes: Partial<SceneNode>) => void
 
