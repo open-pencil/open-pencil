@@ -2,8 +2,7 @@ import type { Effect, NoiseEffectParams, TextureEffectParams } from '@open-penci
 import { UNSET_NOISE, UNSET_TEXTURE } from '@open-pencil/scene-graph/constants'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
-import { formatColor } from './defs'
-import type { FilterBuilder } from './filter'
+import { floodColor, type FilterBuilder } from './filter'
 import { svg } from './node'
 import { round } from './paths'
 
@@ -97,7 +96,7 @@ export function noiseFilter(filter: FilterBuilder, effect: Effect, input: string
     filter.push('feComposite', { in: band, in2: input, operator: 'in', result: clipped })
     const flood = filter.result('noiseFlood')
     filter.push('feFlood', {
-      'flood-color': formatColor(color, 1, filter.colorSpace),
+      'flood-color': floodColor(color, filter.colorSpace),
       'flood-opacity': round(color.a),
       result: flood
     })

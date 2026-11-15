@@ -1,8 +1,17 @@
 import type { Effect } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { formatColor, type SVGExportContext } from './defs'
 import { svg, svgElement, type SVGNode } from './node'
 import { round } from './paths'
+
+/**
+ * A flood's colour, opaque: its alpha goes in `flood-opacity`, which a Display P3 colour would
+ * otherwise carry a second time.
+ */
+export function floodColor(color: Color, colorSpace: SVGExportContext['colorSpace']): string {
+  return formatColor({ ...color, a: 1 }, 1, colorSpace)
+}
 
 /** Every pixel the layer covers at full strength, which Figma casts its shadows from. */
 export const HARD_ALPHA = 'hardAlpha'
@@ -78,7 +87,7 @@ export class FilterBuilder {
   shadowColor(effect: Effect, alpha: string, result: string): void {
     const color = this.result('color')
     this.push('feFlood', {
-      'flood-color': formatColor(effect.color, 1, this.ctx.colorSpace),
+      'flood-color': floodColor(effect.color, this.ctx.colorSpace),
       'flood-opacity': round(effect.color.a),
       result: color
     })

@@ -187,6 +187,10 @@ describe('sceneNodeToJSX effects', () => {
       noise: { noiseType: 'MONOTONE', noiseSize: { x: 0.5, y: 0.5 }, density: 1 }
     })
     expect(noise({ noiseType: 'MULTITONE' }).noise?.opacity).toBe(0.25)
+    // A second colour and opacity given to a monotone stay, as its export writes them.
+    expect(
+      noise({ noiseType: 'MONOTONE', secondaryColor: '#ff0000', opacity: 0.3 }).noise
+    ).toMatchObject({ secondaryColor: { r: 1, g: 0, b: 0, a: 1 }, opacity: 0.3 })
     expect(texture()).toMatchObject({
       radius: 4,
       texture: { noiseSize: { x: 4, y: 4 }, clipToShape: false }

@@ -315,8 +315,11 @@ function grainSizeMismatch(value: unknown): string | null {
   return null
 }
 
-/** `effects` with every texture after the first left out, as Figma silently keeps one. */
-function firstTextureOnly(effects: FigmaEffect[]): FigmaEffect[] {
+/**
+ * `effects` with every texture after the first left out, as Figma silently keeps one. The effects
+ * setter reads bindings from the same list, so their indexes match the effects it keeps.
+ */
+export function firstTextureOnly<T extends { readonly type: string }>(effects: readonly T[]): T[] {
   const first = effects.findIndex((effect) => effect.type === 'TEXTURE')
   return effects.filter((effect, index) => effect.type !== 'TEXTURE' || index === first)
 }

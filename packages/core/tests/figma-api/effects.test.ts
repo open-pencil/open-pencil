@@ -321,6 +321,17 @@ describe('noise and texture effects', () => {
     expect(rect.effects).toEqual(before)
   })
 
+  test('keep bindings on the effects they bind when a second texture is dropped', () => {
+    const api = new FigmaAPI(new SceneGraph())
+    const collection = api.variables.createVariableCollection('Grain')
+    const size = api.variables.createVariable('Size', collection, 'FLOAT')
+    const rect = api.createRectangle()
+    const dropped = api.variables.setBoundVariableForEffect(texture, 'radius', size)
+    Reflect.set(rect, 'effects', [texture, dropped, shadow])
+    expect(rect.effects.map((effect) => effect.type)).toEqual(['TEXTURE', 'DROP_SHADOW'])
+    expect(rect.effects.map((effect) => effect.boundVariables)).toEqual([{}, {}])
+  })
+
   test('name the field Figma refuses', () => {
     expect(() => assign([{ ...noise, density: 1.5 }])).toThrow(
       message('Too big: expected number to be <=1 at [0].density')

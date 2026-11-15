@@ -273,6 +273,30 @@ describe('SVG export effects, as Figma exports them', () => {
     expect(loose.warnings.concat(clipped.warnings)).toEqual([])
   })
 
+  test('a flood carries its alpha once, in Display P3 too', () => {
+    const half = { r: 1, g: 0, b: 0, a: 0.5 }
+    const svg = svgOf(
+      (graph: SceneGraph, pageId: string) => [
+        graph.createNode('RECTANGLE', pageId, {
+          width: 100,
+          height: 100,
+          fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }],
+          effects: [
+            effect('DROP_SHADOW', { radius: 8, color: half }),
+            noise({ color: half, density: 1 })
+          ]
+        }).id
+      ],
+      { colorSpace: 'display-p3' }
+    )
+    const floods = elements(svg, 'feFlood').filter((flood) => flood.includes('flood-color'))
+    expect(floods).toHaveLength(2)
+    for (const flood of floods) {
+      expect(flood).toContain('flood-opacity="0.5"')
+      expect(flood).not.toMatch(/flood-color="[^"]*\/\s*0\.5/)
+    }
+  })
+
   test('a hidden effect is neither drawn nor reported', () => {
     const { svg, warnings } = exported([effect('GLASS', { visible: false })])
     expect(svg).not.toContain('<filter')

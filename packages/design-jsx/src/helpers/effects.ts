@@ -186,13 +186,12 @@ export function noise(options: NoiseEffectOptions = {}): Effect {
     noiseSize: noiseSize(options.noiseSize, DEFAULT_NOISE.noiseSize),
     density: options.density ?? DEFAULT_NOISE.density
   }
-  if (params.noiseType === 'DUOTONE') {
-    params.secondaryColor =
-      options.secondaryColor === undefined
-        ? { r: 1, g: 1, b: 1, a: color.a }
-        : toColor(options.secondaryColor)
-  }
-  if (params.noiseType === 'MULTITONE') params.opacity = options.opacity ?? color.a
+  // A second colour or opacity given is kept whatever the type, so switching back finds it; a
+  // duotone or multitone that lacks one starts where Figma's panel does.
+  if (options.secondaryColor !== undefined) params.secondaryColor = toColor(options.secondaryColor)
+  else if (params.noiseType === 'DUOTONE') params.secondaryColor = { r: 1, g: 1, b: 1, a: color.a }
+  if (options.opacity !== undefined) params.opacity = options.opacity
+  else if (params.noiseType === 'MULTITONE') params.opacity = color.a
   if (options.seed !== undefined) params.seed = options.seed
   return {
     type: 'NOISE',

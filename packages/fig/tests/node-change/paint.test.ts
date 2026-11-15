@@ -64,4 +64,12 @@ describe('convertEffects', () => {
     ])
     expect(effects.map((effect) => effect.type)).toEqual(['DROP_SHADOW'])
   })
+
+  test('a duotone without a second colour draws both tones in its first', () => {
+    const red = { r: 1, g: 0, b: 0, a: 1 }
+    const [duotone] = convertEffects([
+      { type: 'NOISE', visible: true, color: red, noiseType: 'DUOTONE', density: 1 }
+    ])
+    expect(duotone.noise?.secondaryColor).toEqual(red)
+  })
 })

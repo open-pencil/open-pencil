@@ -382,7 +382,7 @@ const KIWI_EFFECT_TYPE: Record<Effect['type'], KiwiEffect['type']> = {
  */
 function kiwiEffectKindFields(effect: Effect): Partial<KiwiEffect> {
   if (effect.type === 'GLASS') return kiwiGlassFields(effect.glass ?? UNSET_GLASS)
-  if (effect.type === 'NOISE') return kiwiNoiseFields(effect.noise ?? UNSET_NOISE)
+  if (effect.type === 'NOISE') return kiwiNoiseFields(effect.noise ?? UNSET_NOISE, effect.color)
   if (effect.type === 'TEXTURE') return kiwiTextureFields(effect.texture ?? UNSET_TEXTURE)
   if (!effect.progressive) return {}
   return {
@@ -405,16 +405,17 @@ function kiwiGlassFields(glass: GlassEffectParams): Partial<KiwiEffect> {
   }
 }
 
-/** A noise effect's grain as Figma writes it: a duotone's second colour, a multitone's opacity. */
-function kiwiNoiseFields(noise: NoiseEffectParams): Partial<KiwiEffect> {
+/**
+ * A noise effect's grain as Figma writes it: a duotone's second colour, its first where it has
+ * none as the renderer draws it, and a multitone's opacity.
+ */
+function kiwiNoiseFields(noise: NoiseEffectParams, color: Color): Partial<KiwiEffect> {
   const fields: Partial<KiwiEffect> = {
     noiseType: noise.noiseType,
     noiseSize: { ...noise.noiseSize },
     density: noise.density
   }
-  if (noise.noiseType === 'DUOTONE' && noise.secondaryColor) {
-    fields.secondaryColor = { ...noise.secondaryColor }
-  }
+  if (noise.noiseType === 'DUOTONE') fields.secondaryColor = { ...(noise.secondaryColor ?? color) }
   if (noise.noiseType === 'MULTITONE') fields.opacity = noise.opacity ?? 1
   if (noise.seed !== undefined) fields.seed = noise.seed
   return fields

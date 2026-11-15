@@ -278,7 +278,9 @@ function convertNoise(e: KiwiEffect): NoiseEffectParams {
     noiseSize: { ...(e.noiseSize ?? UNSET_NOISE.noiseSize) },
     density: e.density ?? UNSET_NOISE.density
   }
-  if (noise.noiseType === 'DUOTONE') noise.secondaryColor = convertColor(e.secondaryColor)
+  // A duotone without a second colour draws both tones in its first, as the renderer does.
+  if (noise.noiseType === 'DUOTONE')
+    noise.secondaryColor = convertColor(e.secondaryColor ?? e.color)
   if (noise.noiseType === 'MULTITONE') noise.opacity = e.opacity ?? 1
   if (e.seed !== undefined) noise.seed = e.seed
   return noise
