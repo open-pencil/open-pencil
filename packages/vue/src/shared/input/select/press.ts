@@ -1,7 +1,3 @@
-import { handleNodeEditDown } from '#vue/shared/input/vector'
-export { resolveHit } from '#vue/shared/input/select/hit'
-import { hitTestLabel, resolveHit, tinySelectionAt } from '#vue/shared/input/select/hit'
-export { updateHoverCursor } from '#vue/shared/input/select/hover'
 import {
   editedBlurRamp,
   editedGradient,
@@ -15,9 +11,10 @@ import { tryStartConnectorEndDrag } from '#vue/shared/input/connector/end'
 import { tryStartConnectorLineDrag } from '#vue/shared/input/connector/line'
 import { tryStartGradientDrag } from '#vue/shared/input/gradient'
 import { tryStartLineEndDrag } from '#vue/shared/input/line/end'
-import { tryStartResize } from '#vue/shared/input/resize'
 import { tryStartSelectionResize } from '#vue/shared/input/resize/selection'
+import { tryStartResize } from '#vue/shared/input/resize/start'
 import { tryStartScale } from '#vue/shared/input/scale'
+import { hitTestLabel, resolveHit, tinySelectionAt } from '#vue/shared/input/select/hit'
 import {
   createSelectionMoveDrag,
   pressedSelectedLayer,
@@ -27,6 +24,7 @@ import {
 import { tryStartShapeHandleDrag } from '#vue/shared/input/shape-handles'
 import { tryStartStickyScale } from '#vue/shared/input/sticky/scale'
 import type { DragState } from '#vue/shared/input/types'
+import { handleNodeEditDown } from '#vue/shared/input/vector'
 
 export interface HitTestFns {
   hitTestLayer: (cx: number, cy: number, deep: boolean) => SceneNode | null
