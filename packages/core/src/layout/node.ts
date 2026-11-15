@@ -139,6 +139,23 @@ export function applyLockedAspectRatio(
   if (followsAcross && alignSelf === 'stretch') layoutNode.style.alignSelf = 'flex-start'
 }
 
+/**
+ * A child that fills its parent across, capped by a maximum size there, sits where the parent's
+ * alignment puts the children, as Figma lays it out: CSS's stretch clamps it and keeps it at the
+ * start whatever the alignment. Only a parent with a size of its own across, fixed or filling,
+ * has the room it fills; a hugging one is as wide as its children.
+ */
+export function alignCappedFill(layoutNode: LayoutNode, child: SceneNode, parent: SceneNode): void {
+  if (!stretchesAcross(child, parent) || parent.counterAxisSizing === 'HUG') return
+  const across = parent.layoutMode === 'VERTICAL' ? 'width' : 'height'
+  const cap = across === 'width' ? child.maxWidth : child.maxHeight
+  if (cap === null) return
+  const align = mapAlign(parent.counterAxisAlign)
+  if (align === 'stretch' || align === 'baseline' || align === 'flex-start') return
+  layoutNode.style[across] = '100%'
+  layoutNode.style.alignSelf = align
+}
+
 export function applyMinMaxConstraints(layoutNode: LayoutNode, node: SceneNode): void {
   if (node.minWidth != null) layoutNode.style.minWidth = node.minWidth
   if (node.maxWidth != null) layoutNode.style.maxWidth = node.maxWidth

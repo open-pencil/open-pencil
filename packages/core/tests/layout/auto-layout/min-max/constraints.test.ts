@@ -86,4 +86,35 @@ describe('min/max constraints', () => {
     const innerNode = getNodeOrThrow(graph, inner.id)
     expect(innerNode.width).toBe(250)
   })
+  // Measured in Figma: a 600 px column puts a Fill child capped at 300 px at 0, 150, and 300.
+  test('a fill capped by its maximum width sits where the parent aligns its children', () => {
+    for (const [align, x] of [
+      ['MIN', 0],
+      ['CENTER', 150],
+      ['MAX', 300]
+    ] as const) {
+      const graph = new SceneGraph()
+      const column = autoFrame(graph, pageId(graph), {
+        layoutMode: 'VERTICAL',
+        counterAxisAlign: align,
+        width: 600,
+        height: 100
+      })
+      const leaf = rect(graph, column.id, 50, 20, { layoutAlignSelf: 'STRETCH', maxWidth: 300 })
+      const box = autoFrame(graph, column.id, {
+        layoutMode: 'VERTICAL',
+        counterAxisSizing: 'FIXED',
+        layoutAlignSelf: 'STRETCH',
+        maxWidth: 300,
+        width: 50,
+        height: 20
+      })
+
+      computeLayout(graph, column.id)
+
+      for (const child of [leaf, box]) {
+        expect(getNodeOrThrow(graph, child.id)).toMatchObject({ x, width: 300 })
+      }
+    }
+  })
 })

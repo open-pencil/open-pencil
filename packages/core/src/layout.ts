@@ -41,6 +41,7 @@ import { connectorSublayers, layoutConnector } from '@open-pencil/scene-graph/co
 import { layoutSizing } from '@open-pencil/scene-graph/layout'
 
 import {
+  alignCappedFill,
   applyMinMaxConstraints,
   applyLockedAspectRatio,
   configureAbsoluteChild,
@@ -215,6 +216,7 @@ function insertFlexChildren(
       item.style.display = 'none'
     } else {
       configureInFlowChild(item, child, parent, graph, direction)
+      alignCappedFill(item, child, parent)
       flow.push(item)
     }
 
