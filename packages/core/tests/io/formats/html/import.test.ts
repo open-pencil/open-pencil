@@ -105,6 +105,20 @@ describe('reading HTML', () => {
     expect(second.x).toBe(first.x + first.width)
   })
 
+  test('keeps a table with a caption in auto layout, the caption outside its border spacing', async () => {
+    const { graph } = await readHTMLDocument(
+      `<table style="width:400px;border-spacing:2px;font-family:'${TEST_FAMILY}'"><caption>Totals</caption>
+        <tr><td style="padding:0"><div style="width:20px;height:20px"></div></td></tr></table>`
+    )
+    const [table] = graph.getChildren(graph.getPages()[0].id)
+    const [caption, box] = graph.getChildren(table.id)
+
+    expect(table.layoutMode).toBe('VERTICAL')
+    expect(caption).toMatchObject({ name: 'caption', x: 0, y: 0, width: 400 })
+    expect(box).toMatchObject({ name: 'table box', x: 0, y: caption.height, width: 400 })
+    expect(box).toMatchObject({ layoutMode: 'VERTICAL', paddingTop: 2, itemSpacing: 2 })
+  })
+
   test('centers a block capped by its maximum width at that width, keeping auto layout', async () => {
     const { graph } = await readHTMLDocument(
       `<div style="width:600px"><div style="max-width:300px;margin:0 auto">` +

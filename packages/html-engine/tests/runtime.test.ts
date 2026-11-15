@@ -208,6 +208,14 @@ describe('the HTML engine runtime', () => {
     expect(border('c')).toEqual(['1px', 'inset'])
   })
 
+  test("reports a caption's side, which puts it above or below its table", async () => {
+    const document = await styled(
+      '<table><caption id="c" style="caption-side:bottom">x</caption><tr><td>a</td></tr></table>'
+    )
+
+    expect(elementById(document, 'c').computedStyle?.['caption-side']).toBe('bottom')
+  })
+
   test("pairs a shader layer's children past the still frame the serializer writes", async () => {
     const card: DesignDocument = {
       type: 'document',

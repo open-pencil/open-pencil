@@ -129,6 +129,7 @@ const PROPERTIES: &[&str] = &[
     "content",
     "border-collapse",
     "border-spacing",
+    "caption-side",
 ];
 
 /// Properties reported as their computed values too, where the used values `style` reports lose

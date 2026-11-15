@@ -51,7 +51,7 @@ import {
   type CapturedBox,
   type CapturedBoxes
 } from './placement'
-import { applyCollapsedBorders, applyTableLayout, isTableColumn } from './table'
+import { applyCollapsedBorders, applyTableLayout, isTableColumn, wrapTableGrid } from './table'
 import {
   blockRichText,
   characterStyleFromCSS,
@@ -379,13 +379,15 @@ function createElementNode(
   }
   applyFlowSizing(graph, node, style, display, parentFlow)
 
-  createChildLayers(graph, node, element, style, flow, recorded)
+  const parts = createChildLayers(graph, node, element, style, flow, recorded)
+  if (display === 'table' || display === 'inline-table') wrapTableGrid(graph, node, parts, recorded.boxes)
   return node
 }
 
 /**
  * A box's children as layers: blocks of text in its own flow as one text, since a flex box's
- * children are items, or each child as a layer of its own.
+ * children are items, or each child as a layer of its own. Returns the layers of its child
+ * elements, with their styles.
  */
 function createChildLayers(
   graph: SceneGraph,
@@ -394,14 +396,14 @@ function createChildLayers(
   style: DesignStyleDeclaration,
   flow: FlowKind | null,
   recorded: Recorded
-): void {
+): FlowBlock[] {
   if (flow !== 'flex' && holdsRichText(element)) {
     const textStyle = inheritedTextStyle(style)
     const textDisplay = flow === 'inline' ? 'inline' : 'block'
     const text = createRichTextNode(graph, node.id, element, textStyle, textDisplay, flow ?? 'none')
     record(graph, recorded, text, capturedTextBox(element))
     if (flow === 'block') alignBlockLines(graph, node, style, true)
-    return
+    return []
   }
   // Text alone in a box takes the box its lines are in; text among elements has none of its own.
   const textBox = element.children.every((child) => child.type === 'text')
@@ -410,12 +412,14 @@ function createChildLayers(
   // Whether everything the element holds sits in its lines, which its `text-align` aligns.
   let inlineContent = true
   const blocks: FlowBlock[] = []
+  const parts: FlowBlock[] = []
   for (const child of element.children) {
     const inherited = inheritedTextStyle(style)
     const layer = createDesignNode(graph, node.id, child, flow ?? 'none', recorded, inherited)
     if (layer?.type === 'TEXT') record(graph, recorded, layer, textBox)
     if (child.type !== 'element' || !layer) continue
     const childStyle = mergedStyle(child)
+    parts.push({ layer, style: childStyle })
     // An absolutely positioned box is out of the flow, in no line and no block of its own.
     if (layer.layoutPositioning === 'ABSOLUTE') continue
     if (isInlineLevel(elementDisplay(child, childStyle))) continue
@@ -426,6 +430,7 @@ function createChildLayers(
     alignBlocksInFlow(graph, node, blocks, style)
     alignBlockLines(graph, node, style, inlineContent)
   }
+  return parts
 }
 
 function createDesignNode(

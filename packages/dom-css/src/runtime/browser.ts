@@ -52,6 +52,7 @@ const DEFAULT_COMPUTED_PROPERTIES = [
   'bottom',
   'box-shadow',
   'box-sizing',
+  'caption-side',
   'clip-path',
   'color',
   'column-gap',

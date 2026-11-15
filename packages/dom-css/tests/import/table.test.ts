@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { designDocumentToSceneGraph } from '#dom-css/import/scene-graph'
+import { designDocumentToLayers, designDocumentToSceneGraph } from '#dom-css/import/scene-graph'
 import type { DesignElement, DesignNode, DesignStyleDeclaration } from '#dom-css/types'
 
 function element(
@@ -132,5 +132,64 @@ describe('table import', () => {
     const [tableLayer] = graph.getChildren(graph.getPages()[0].id)
 
     expect(graph.getChildren(tableLayer.id).map((layer) => layer.name)).toEqual(['tbody'])
+  })
+  it('stacks captions by their side around the table box, which draws and spaces the rows', () => {
+    const caption = (text: string, side: string) =>
+      element('caption', { display: 'table-caption', 'caption-side': side }, [
+        { type: 'text', text }
+      ])
+    const tableStyle = {
+      display: 'table',
+      ...SEPARATE,
+      'background-color': 'rgb(238, 238, 255)',
+      'border-top-width': '3px',
+      'border-top-style': 'solid',
+      'border-top-color': 'rgb(0, 0, 0)'
+    }
+    const rows = element('tbody', { display: 'table-row-group', ...SEPARATE }, [row([cell('a')])])
+    const graph = designDocumentToSceneGraph({
+      type: 'document',
+      children: [
+        element('table', tableStyle, [caption('Below', 'bottom'), rows, caption('Above', 'top')])
+      ]
+    })
+    const [tableLayer] = graph.getChildren(graph.getPages()[0].id)
+    const [above, box, below] = graph.getChildren(tableLayer.id)
+
+    expect([above.name, box.name, below.name]).toEqual(['caption', 'table box', 'caption'])
+    expect(graph.getChildren(above.id).map((text) => text.name)).toEqual(['Above'])
+    expect(graph.getChildren(below.id).map((text) => text.name)).toEqual(['Below'])
+    // The captions sit outside the table's border, background, and spacing.
+    expect(tableLayer).toMatchObject({ layoutMode: 'VERTICAL', itemSpacing: 0, paddingTop: 0 })
+    expect(tableLayer.fills).toEqual([])
+    expect(tableLayer.strokes).toEqual([])
+    expect(box).toMatchObject({ layoutMode: 'VERTICAL', itemSpacing: 4, paddingLeft: 2 })
+    expect(box.fills).toHaveLength(1)
+    expect(box.strokes).toHaveLength(1)
+    expect(graph.getChildren(box.id).map((group) => group.name)).toEqual(['tbody'])
+  })
+  it('places the table box between its captions where the page laid them out', () => {
+    const rect = (y: number, height: number) => ({ x: 0, y, width: 300, height })
+    const caption = (side: string, y: number) => ({
+      ...element('caption', { display: 'table-caption', 'caption-side': side }, [
+        { type: 'text', text: side }
+      ]),
+      layout: { box: rect(y, 20) }
+    })
+    const rows = element('tbody', { display: 'table-row-group', ...SEPARATE }, [row([cell('a')])])
+    const captioned = {
+      ...element('table', { display: 'table', ...SEPARATE }, [
+        caption('top', 0),
+        rows,
+        caption('bottom', 80)
+      ]),
+      layout: { box: rect(0, 100) }
+    }
+    const { graph, boxes } = designDocumentToLayers({ type: 'document', children: [captioned] })
+    const [tableLayer] = graph.getChildren(graph.getPages()[0].id)
+    const box = graph.getChildren(tableLayer.id)[1]
+
+    expect(box.name).toBe('table box')
+    expect(boxes.get(box.id)?.box).toEqual(rect(20, 60))
   })
 })

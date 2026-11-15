@@ -1,9 +1,16 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { partition, pick } from 'es-toolkit'
+
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { parseCSSNumber, splitCSSValue } from '@open-pencil/scene-graph/css'
+import { autoLayoutSizingFields, layoutSizingUpdates } from '@open-pencil/scene-graph/layout'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import type { DesignElement, DesignStyleDeclaration } from '../types'
 import { borderWidths } from './box'
 import { mergedStyle, pickStyle } from './css-values'
+import type { FlowBlock } from './flow'
+import type { CapturedBoxes } from './placement'
 
 /** Boxes that hold a table's rows, one above the other. */
 const ROW_GROUPS = new Set(['table-row-group', 'table-header-group', 'table-footer-group'])
@@ -125,4 +132,82 @@ export function applyTableLayout(
   } else if (isTableRow(display)) {
     node.itemSpacing = spacing.across
   }
+}
+
+/** What the table box draws and lays its rows out with, which its captions sit outside of. */
+const GRID_BOX_FIELDS = [
+  'layoutMode',
+  'primaryAxisAlign',
+  'counterAxisAlign',
+  'itemSpacing',
+  'paddingTop',
+  'paddingRight',
+  'paddingBottom',
+  'paddingLeft',
+  'fills',
+  'strokes',
+  'strokesIncludedInLayout',
+  'dashPattern',
+  'independentStrokeWeights',
+  'borderTopWeight',
+  'borderRightWeight',
+  'borderBottomWeight',
+  'borderLeftWeight',
+  'effects',
+  'cornerRadius',
+  'independentCorners',
+  'topLeftRadius',
+  'topRightRadius',
+  'bottomRightRadius',
+  'bottomLeftRadius',
+  'clipsContent'
+] as const satisfies readonly (keyof SceneNode)[]
+
+/**
+ * A table with captions as CSS boxes it (CSS 2.1 §17.4): a wrapper stacks the captions, by
+ * `caption-side`, around the table box, which takes the table's borders, background, padding,
+ * and spacing and holds its rows. The table's layer stays the wrapper, placed and sized as the
+ * table is, and the table box becomes a layer inside it that fills its width.
+ */
+export function wrapTableGrid(
+  graph: SceneGraph,
+  table: SceneNode,
+  parts: FlowBlock[],
+  boxes: CapturedBoxes
+): void {
+  const captions = parts.filter(
+    ({ style }) => pickStyle(style, 'display')?.trim() === 'table-caption'
+  )
+  const mode = table.layoutMode
+  if (captions.length === 0 || (mode !== 'VERTICAL' && mode !== 'HORIZONTAL')) return
+  const grid = graph.createNode('FRAME', table.id, { name: 'table box', clipsContent: false })
+  const box = pick(table, GRID_BOX_FIELDS)
+  Object.assign(table, pick(grid, GRID_BOX_FIELDS), { layoutMode: 'VERTICAL' })
+  Object.assign(grid, box, autoLayoutSizingFields(mode, 'HUG', 'HUG'))
+  Object.assign(grid, layoutSizingUpdates(graph, grid, 'HORIZONTAL', 'FILL'))
+  const captionIds = new Set(captions.map(({ layer }) => layer.id))
+  for (const child of graph.getChildren(table.id)) {
+    if (child.id !== grid.id && !captionIds.has(child.id)) graph.reparentNode(child.id, grid.id)
+  }
+  const [below, above] = partition(
+    captions,
+    ({ style }) => pickStyle(style, 'caption-side')?.trim() === 'bottom'
+  )
+  const order = [
+    ...above.map(({ layer }) => layer.id),
+    grid.id,
+    ...below.map(({ layer }) => layer.id)
+  ]
+  order.forEach((id, index) => graph.insertChildAt(id, table.id, index))
+  // The table box lies between the captions, where placement puts it if auto layout cannot.
+  const wrapper = boxes.get(table.id)?.box
+  if (!wrapper) return
+  const edge = (side: FlowBlock[], at: (box: Rect) => number) =>
+    side.flatMap(({ layer }) => {
+      const box = boxes.get(layer.id)?.box
+      return box ? [at(box)] : []
+    })
+  const top = maxOf([wrapper.y, ...edge(above, (box) => box.y + box.height)])
+  const bottom = minOf([wrapper.y + wrapper.height, ...edge(below, (box) => box.y)])
+  boxes.set(grid.id, { box: { x: wrapper.x, y: top, width: wrapper.width, height: bottom - top } })
 }
