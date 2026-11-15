@@ -173,6 +173,16 @@ describe('noise effects drawn as Figma draws them', () => {
     expect(exported(frame.id)).toEqual(exported(rect.id))
   })
 
+  test('draw nothing at no density, a duotone’s second colour included', () => {
+    const none = noise({
+      noiseType: 'DUOTONE',
+      color: '#000000',
+      secondaryColor: '#000000',
+      density: 0
+    })
+    expect(coverage(exportedRed(none)).mean).toBe(0)
+  })
+
   test('a duotone splits each pixel between its two colours at full density', () => {
     const shares = noiseUniforms(
       noise({ noiseType: 'DUOTONE', color: '#ff0000', secondaryColor: '#0000ff', density: 1 })

@@ -11,6 +11,9 @@ export const NOISE_TILE_CELLS = 1024
 /** What a level byte holds: 15 per level, so the 17 levels stay exact through 8 bits. */
 export const LEVEL_STEP = 15
 
+/** The step between a cell's possible values, the hash's 32 bits. */
+const CELL_VALUE_STEP = 2 ** -32
+
 /** A cell's uniform value from its index and the seed: a 32-bit integer hash. */
 function cellValue(x: number, y: number, seed: number, salt: number): number {
   let h = Math.imul(x, 0x27d4eb2d) ^ Math.imul(y, 0x165667b1) ^ Math.imul(seed + salt, 0x9e3779b9)
@@ -19,7 +22,7 @@ function cellValue(x: number, y: number, seed: number, salt: number): number {
   h ^= h >>> 15
   h = Math.imul(h, 0x846ca68b)
   h ^= h >>> 16
-  return (h >>> 0) / 4294967296
+  return (h >>> 0) * CELL_VALUE_STEP
 }
 
 /** The level a uniform value takes under `shares`, the share of pixels at each level or below. */
@@ -61,7 +64,8 @@ export function noiseLevelTile(r: SkiaRenderer, shares: readonly number[], seed:
         const u = cellValue(x, y, seed, 0)
         const at = (y * NOISE_TILE_CELLS + x) * 4
         pixels[at] = level(u, shares) * LEVEL_STEP
-        pixels[at + 1] = level(1 - u, shares) * LEVEL_STEP
+        // The opposite value, reflected within [0, 1) as the hash is, so no cell reaches 1.
+        pixels[at + 1] = level(1 - u - CELL_VALUE_STEP, shares) * LEVEL_STEP
         pixels[at + 3] = 255
       }
     }
