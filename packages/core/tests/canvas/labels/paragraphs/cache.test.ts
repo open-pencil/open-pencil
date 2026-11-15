@@ -10,7 +10,7 @@ import {
   cachedGlyphWidth,
   measureGlyphWidth,
   LabelParagraphCache
-} from '#core/canvas/labels/paragraph-cache'
+} from '#core/canvas/labels/paragraphs'
 
 const ck = await getCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(8, 8), 'surface'))

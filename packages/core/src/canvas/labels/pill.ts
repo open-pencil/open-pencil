@@ -2,7 +2,7 @@ import type { Canvas, Color, Font } from '@open-pencil/canvaskit'
 
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 
-import { cachedGlyphWidth } from './paragraph-cache'
+import { cachedGlyphWidth } from './paragraphs'
 
 /** A value the chrome shows in a rounded pill as wide as its text, centred on `centerX`. */
 export interface TextPill {

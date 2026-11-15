@@ -5,7 +5,7 @@ import { drawGuides } from '#core/canvas/guides/draw'
 import { drawIssueHighlight, drawIssueMarkers } from '#core/canvas/issues/draw'
 import { placeIssueMarkers } from '#core/canvas/issues/layout'
 import { drawComponentLabels, drawFrameTitles, drawSectionTitles } from '#core/canvas/labels/draw'
-import { cachedGlyphWidth } from '#core/canvas/labels/paragraph-cache'
+import { cachedGlyphWidth } from '#core/canvas/labels/paragraphs'
 import {
   drawAutoLayoutHover,
   drawFlashes,
