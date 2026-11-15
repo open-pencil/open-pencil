@@ -8,7 +8,7 @@ import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { textVerticalOffset } from '#core/canvas/text'
-import { textInkBounds } from '#core/canvas/text/ink'
+import { textInkBounds } from '#core/canvas/text/ink-bounds'
 import { buildParagraph } from '#core/canvas/text/layout/build'
 import { getCanvasKit } from '#core/canvaskit'
 import { fontManager } from '#core/text/font/manager'

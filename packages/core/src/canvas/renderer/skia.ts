@@ -18,7 +18,7 @@ import { createDashEffectCache } from '#core/canvas/overlays/outline'
 import { NodePathCaches } from '#core/canvas/paths/cache'
 import * as RenderText from '#core/canvas/text'
 import { createTextCaches } from '#core/canvas/text/caches'
-import { savedTextInk } from '#core/canvas/text/ink'
+import { savedTextInk } from '#core/canvas/text/ink-bounds'
 import { TextPreparationCache } from '#core/canvas/text/preparation/cache'
 /* eslint-disable max-lines -- SkiaRenderer facade owns CanvasKit state and delegates domain drawing */
 import {
@@ -76,7 +76,7 @@ import * as Scene from '#core/canvas/scene'
 import { type EffectPass, renderEffects as renderShadowEffects } from '#core/canvas/shadows/render'
 import * as Shapes from '#core/canvas/shapes'
 import * as Strokes from '#core/canvas/strokes/draw'
-import * as TextRender from '#core/canvas/text/render'
+import * as TextRender from '#core/canvas/text/draw/text'
 import { createSceneGeometry, type RotationPreview, type SceneGeometry } from '#core/geometry'
 
 import { TiledSceneController } from './tiles'

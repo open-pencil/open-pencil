@@ -6,8 +6,8 @@ import {
 } from '@open-pencil/scene-graph/geometry'
 
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
-import { decorationInk, laidOutDecoratedGlyphs } from '#core/canvas/text/decorations'
 import { hasRotatedDerivedGlyphs, snapDerivedGlyphBaseline } from '#core/canvas/text/derived'
+import { decorationInk, laidOutDecoratedGlyphs } from '#core/canvas/text/draw/decorations'
 import { emojiSquare } from '#core/canvas/text/emoji'
 import type { TextLayout } from '#core/canvas/text/layout'
 import { drawnBaseline } from '#core/canvas/text/layout/lines'

@@ -1,8 +1,7 @@
 import type { Canvas, CanvasKit, Paint } from '@open-pencil/canvaskit'
 
+import { appendOutlineCommand } from '#core/canvas/text/outlines/commands'
 import { keycapFrame } from '#core/text/keycap'
-
-import { appendOutlineCommand } from './outlines/commands'
 
 /** Draws a keycap frame with `paint`, its pen at `x` on the baseline `y`. */
 export function drawKeycapFrame(

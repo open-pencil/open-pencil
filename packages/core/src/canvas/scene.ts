@@ -39,8 +39,8 @@ import {
   forVisibleStrokes
 } from './strokes/draw'
 import { drawReflowedPathTextSilhouettes, isReflowedPathText } from './text/derived'
+import { drawTextEmoji, hasOverflowPathTextPaint, renderText } from './text/draw/text'
 import { stickyPlaceholderNode } from './text/placeholder'
-import { drawTextEmoji, hasOverflowPathTextPaint, renderText } from './text/render'
 
 function drawVisibleFills(
   r: SkiaRenderer,
