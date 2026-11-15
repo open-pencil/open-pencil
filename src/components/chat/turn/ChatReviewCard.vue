@@ -22,10 +22,14 @@ const ui = chatReviewTheme()
 </script>
 
 <template>
-  <section :class="ui.root()" data-test-id="chat-review" :aria-label="ai.designReview">
+  <section
+    :class="ui.root()"
+    data-test-id="chat-review"
+    :aria-label="review.change ? ai.changeReview : ai.designReview"
+  >
     <header :class="ui.header()">
       <icon-lucide-scan-eye :class="ui.icon()" aria-hidden="true" />
-      {{ ai.designReview }}
+      {{ review.change ? ai.changeReview : ai.designReview }}
     </header>
     <p v-if="review.focus" :class="ui.focus()">{{ review.focus }}</p>
     <div :class="ui.findings()">

@@ -3,10 +3,11 @@ import { markRaw, ref, type Ref } from 'vue'
 import { prepareImageAttachment } from '@/app/ai/attachment/image/prepare'
 import type { ImageAttachmentDraft } from '@/app/ai/attachment/image/types'
 import type { ChatInstance } from '@/app/ai/chat/submission/types'
+import { readToolChange } from '@/app/ai/tools/changes/store'
 import type { EditorStore } from '@/app/editor/active-store'
 
-import { reviewMessage } from './message'
-import { reviewDesign, type ReviewDependencies } from './run'
+import { reviewMessage, type DesignReview } from './message'
+import { reviewChange, reviewDesign, type ReviewDependencies } from './run'
 
 interface ReviewOptions {
   chat: Ref<ChatInstance | null>
@@ -33,28 +34,25 @@ export function useChatReview(options: ReviewOptions) {
   const failed = ref<unknown>(null)
   let abort: AbortController | null = null
 
-  async function review({ focus, references = [] }: ReviewAsk): Promise<boolean> {
+  /**
+   * Runs one review and adds it to the conversation it was asked in, once it is in. A review that
+   * runs while another does is not started.
+   */
+  async function run(
+    write: (store: EditorStore, signal: AbortSignal) => Promise<DesignReview>
+  ): Promise<boolean> {
     const store = options.store()
+    if (!store || reviewing.value) return false
     // The chat the review joins, made now in a new conversation, as a message makes it.
-    const target = store ? await options.ensureChat() : null
-    if (!store || !target) return false
+    const target = await options.ensureChat()
+    if (!target) return false
     options.chat.value = markRaw(target)
     failed.value = null
     reviewing.value = true
     abort = new AbortController()
     const signal = abort.signal
     try {
-      const images = await Promise.all(
-        references.map(async (draft) => {
-          const { mediaType, data } = await prepareImageAttachment(draft.file)
-          return { mediaType, data }
-        })
-      )
-      const result = await reviewDesign(
-        store,
-        { focus: focus || undefined, references: images, signal },
-        options.dependencies
-      )
+      const result = await write(store, signal)
       // A conversation switched meanwhile is not the one the review was asked in.
       if (signal.aborted || options.chat.value !== target) return false
       target.messages = [...target.messages, reviewMessage(result)]
@@ -69,10 +67,34 @@ export function useChatReview(options: ReviewOptions) {
     }
   }
 
+  /** Reviews the selection or the page, from `/review`. */
+  function review({ focus, references = [] }: ReviewAsk): Promise<boolean> {
+    return run(async (store, signal) => {
+      const images = await Promise.all(
+        references.map(async (draft) => {
+          const { mediaType, data } = await prepareImageAttachment(draft.file)
+          return { mediaType, data }
+        })
+      )
+      return reviewDesign(
+        store,
+        { focus: focus || undefined, references: images, signal },
+        options.dependencies
+      )
+    })
+  }
+
+  /** Reviews one AI edit, from its change preview. False when the chat keeps no such change. */
+  function reviewToolChange(toolCallId: string): Promise<boolean> {
+    const change = readToolChange(toolCallId)
+    if (!change) return Promise.resolve(false)
+    return run((_store, signal) => reviewChange(change, { signal }, options.dependencies))
+  }
+
   /** Stops the review in progress, which then adds nothing. */
   function stop(): void {
     abort?.abort()
   }
 
-  return { reviewing, failed, review, stop }
+  return { reviewing, failed, review, reviewToolChange, stop }
 }

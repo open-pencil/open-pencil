@@ -459,6 +459,8 @@
   "reviewCommand": "用审查模型审查所选内容或页面；其后的文字说明要关注的方面",
   "reviewing": "正在审查设计…",
   "designReview": "设计审查",
+  "changeReview": "更改审查",
+  "reviewChange": "审查此更改",
   "reviewFix": "修复这些问题",
   "reviewFixRequest": "修复这次设计审查发现的问题：\n\n{findings}",
   "reviewFailed": "无法审查设计。",

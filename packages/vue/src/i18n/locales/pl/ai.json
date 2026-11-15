@@ -459,6 +459,8 @@
   "reviewCommand": "Zrecenzuj zaznaczenie lub stronę modelem recenzji; tekst po poleceniu mówi, na czym się skupić",
   "reviewing": "Recenzowanie projektu…",
   "designReview": "Recenzja projektu",
+  "changeReview": "Recenzja zmiany",
+  "reviewChange": "Zrecenzuj tę zmianę",
   "reviewFix": "Popraw",
   "reviewFixRequest": "Popraw problemy znalezione w tej recenzji projektu:\n\n{findings}",
   "reviewFailed": "Nie udało się zrecenzować projektu.",

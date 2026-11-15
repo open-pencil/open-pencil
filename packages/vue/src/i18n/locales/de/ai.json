@@ -459,6 +459,8 @@
   "reviewCommand": "Auswahl oder Seite mit dem Prüfungsmodell prüfen; Text danach sagt, worauf geachtet werden soll",
   "reviewing": "Design wird geprüft…",
   "designReview": "Designprüfung",
+  "changeReview": "Änderungsprüfung",
+  "reviewChange": "Diese Änderung prüfen",
   "reviewFix": "Beheben",
   "reviewFixRequest": "Behebe die Probleme, die diese Designprüfung gefunden hat:\n\n{findings}",
   "reviewFailed": "Das Design konnte nicht geprüft werden.",

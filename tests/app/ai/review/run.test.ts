@@ -15,12 +15,14 @@ import {
 } from '@/app/ai/models/ask'
 import type { AIModelRuntime } from '@/app/ai/models/runtime'
 import {
+  reviewChange,
   reviewDesign,
   ReviewEmptyError,
   ReviewImagesUnreadableError,
   ReviewModelMissingError,
   type ReviewDependencies
 } from '@/app/ai/review/run'
+import type { ToolChange } from '@/app/ai/tools/changes/types'
 import type { EditorStore } from '@/app/editor/session/create'
 
 const RENDER = new Uint8Array([1, 2, 3])
@@ -183,5 +185,47 @@ describe('a design review', () => {
     await expect(reviewDesign(store, {}, reviewer([]).dependencies)).rejects.toBeInstanceOf(
       ReviewEmptyError
     )
+  })
+})
+
+describe('a review of one change', () => {
+  const change: ToolChange = {
+    toolCallId: 'call-1',
+    pageId: '0:1',
+    nodeIds: ['1:2'],
+    jsx: { before: '<Frame name="Card" />', after: '<Frame name="Card" gap={24} />' },
+    images: {
+      before: new Blob([new Uint8Array([1])], { type: 'image/png' }),
+      after: new Blob([new Uint8Array([2])], { type: 'image/png' }),
+      highlight: null,
+      width: 100,
+      height: 50,
+      changedRatio: 0.2
+    }
+  }
+
+  test('shows the Review model the region before and after, with the JSX', async () => {
+    const model = reviewer([{ findings: '- The gap helps.', zoomInto: [] }])
+    const review = await reviewChange(change, {}, model.dependencies)
+
+    expect(review).toEqual({ findings: '- The gap helps.', nodeIds: ['1:2'], change: 'call-1' })
+    expect(model.asked[0]?.images).toEqual([
+      { mediaType: 'image/png', data: new Uint8Array([1]) },
+      { mediaType: 'image/png', data: new Uint8Array([2]) }
+    ])
+    expect(model.asked[0]?.text).toContain('gap={24}')
+  })
+
+  test('judges the JSX alone for a model without image input', async () => {
+    const model = reviewer([{ findings: '- Fine.', zoomInto: [] }], runtime('direct', ['tools']))
+    await reviewChange(change, {}, model.dependencies)
+    expect(model.asked[0]?.images).toEqual([])
+    expect(model.asked[0]?.text).toContain('<Frame name="Card" />')
+  })
+
+  test('judges the JSX alone for an edit kept without images', async () => {
+    const model = reviewer([{ findings: '- Fine.', zoomInto: [] }])
+    await reviewChange({ ...change, images: undefined }, {}, model.dependencies)
+    expect(model.asked[0]?.images).toEqual([])
   })
 })

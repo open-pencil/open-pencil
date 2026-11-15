@@ -530,6 +530,8 @@ export const aiMessageDefaults = {
     'Review the selection or page with the Review model; text after it says what to focus on',
   reviewing: 'Reviewing the design…',
   designReview: 'Design review',
+  changeReview: 'Change review',
+  reviewChange: 'Review this change',
   reviewFix: 'Fix these',
   reviewFixRequest: params('Fix the issues this design review found:\n\n{findings}'),
   reviewFailed: 'The design could not be reviewed.',

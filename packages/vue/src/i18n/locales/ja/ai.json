@@ -459,6 +459,8 @@
   "reviewCommand": "選択範囲またはページをレビューモデルでレビューします。後に続く文で重点を指定します",
   "reviewing": "デザインをレビュー中…",
   "designReview": "デザインレビュー",
+  "changeReview": "変更のレビュー",
+  "reviewChange": "この変更をレビュー",
   "reviewFix": "修正する",
   "reviewFixRequest": "このデザインレビューで見つかった問題を修正してください:\n\n{findings}",
   "reviewFailed": "デザインをレビューできませんでした。",

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Chat } from '@ai-sdk/vue'
 import type { UIMessage } from 'ai'
-import { computed, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, provide, shallowRef, useTemplateRef, watch } from 'vue'
 
 import { useI18n } from '@open-pencil/vue/i18n'
 
@@ -52,6 +52,7 @@ import ChatTranscript from '@/components/chat/ChatTranscript.vue'
 import ChatSubagentHeader from '@/components/chat/subagent/ChatSubagentHeader.vue'
 import ChatSubagentThread from '@/components/chat/subagent/ChatSubagentThread.vue'
 import { useSubagentThread } from '@/components/chat/subagent/useSubagentThread'
+import { CHAT_CHANGE_REVIEW } from '@/components/chat/tool/context'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { useImageDrop } from '@/components/ui/drop/useImageDrop'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
@@ -199,6 +200,19 @@ function reviewFailure(error: unknown): string {
   if (error instanceof ModelQuestionUnsupportedError) return ai.value.reviewUnsupported
   return ai.value.reviewFailed
 }
+
+// A change preview asks the Review model about its edit while the chat is idle.
+provide(CHAT_CHANGE_REVIEW, {
+  review: (toolCallId) => void review.reviewToolChange(toolCallId),
+  ready: computed(
+    () =>
+      status.value === 'ready' &&
+      !submission.busy.value &&
+      !compaction.compacting.value &&
+      !review.reviewing.value &&
+      !history.readOnly.value
+  )
+})
 
 watch(
   () => review.failed.value,

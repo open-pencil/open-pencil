@@ -11,6 +11,7 @@ import {
   type ModelQuestion
 } from '@/app/ai/models/ask'
 import { createAIModelRuntime, type AIModelRuntime } from '@/app/ai/models/runtime'
+import type { ToolChange } from '@/app/ai/tools/changes/types'
 import { renderForModel, type ModelRender } from '@/app/ai/tools/vision/render'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import type { EditorStore } from '@/app/editor/active-store'
@@ -152,6 +153,18 @@ function canSee(runtime: AIModelRuntime): boolean {
   return runtime.role.profile.capabilities.includes('vision')
 }
 
+/** The model that holds Review, which can be asked a question. */
+async function reviewModel(createRuntime: typeof createAIModelRuntime): Promise<AIModelRuntime> {
+  const runtime = await createRuntime('review')
+  if (!runtime) throw new ReviewModelMissingError()
+  if (!answersQuestions(runtime)) throw new ModelQuestionUnsupportedError()
+  return runtime
+}
+
+async function blobImage(blob: Blob): Promise<ModelImage> {
+  return { mediaType: blob.type || 'image/png', data: new Uint8Array(await blob.arrayBuffer()) }
+}
+
 /**
  * A design review of the selection, or the current page when nothing is selected, written by the
  * model assigned to Review, which "Same as Design" makes the Design model. It sees the layers
@@ -163,9 +176,7 @@ export async function reviewDesign(
   request: ReviewRequest,
   { createRuntime, ask }: ReviewDependencies = DEFAULT_DEPENDENCIES
 ): Promise<DesignReview> {
-  const runtime = await createRuntime('review')
-  if (!runtime) throw new ReviewModelMissingError()
-  if (!answersQuestions(runtime)) throw new ModelQuestionUnsupportedError()
+  const runtime = await reviewModel(createRuntime)
   const sees = canSee(runtime)
   const references = request.references ?? []
   if (!sees && references.length > 0) throw new ReviewImagesUnreadableError()
@@ -200,4 +211,43 @@ export async function reviewDesign(
     answer: REVIEW_ANSWER
   })
   return { findings: second.findings, nodeIds, focus: request.focus }
+}
+
+/**
+ * A review of one AI edit: whether it improved the design, from the images of the changed region
+ * before and after it, which the chat keeps, and the JSX of its layers before and after. A model
+ * without image input, or an edit kept without images, is judged on the JSX alone. The layers
+ * may have changed since, so there are no close-ups.
+ */
+export async function reviewChange(
+  change: ToolChange,
+  { signal }: { signal?: AbortSignal } = {},
+  { createRuntime, ask }: ReviewDependencies = DEFAULT_DEPENDENCIES
+): Promise<DesignReview> {
+  const runtime = await reviewModel(createRuntime)
+  const { before, after } = change.images ?? {}
+  const images =
+    canSee(runtime) && before && after ? [await blobImage(before), await blobImage(after)] : []
+  const parts = [
+    prompt.trim(),
+    'Review one edit to the design: did it improve the design? Say what got better, what got worse, and what was lost, each with the change that would fix it. Ask for no close-ups.',
+    images.length > 0
+      ? 'The first image is the changed region before the edit, the second after it.'
+      : 'There is no image: judge from the JSX alone.',
+    dedent`
+      JSX before:
+      ${change.jsx.before}
+
+      JSX after:
+      ${change.jsx.after}
+    `
+  ]
+  const text = parts.join('\n\n')
+  const answer = await ask(runtime, {
+    text: text.length > MAX_CONTEXT_LENGTH ? `${text.slice(0, MAX_CONTEXT_LENGTH)}…` : text,
+    images,
+    signal,
+    answer: REVIEW_ANSWER
+  })
+  return { findings: answer.findings, nodeIds: change.nodeIds, change: change.toolCallId }
 }

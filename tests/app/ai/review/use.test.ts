@@ -4,6 +4,7 @@ import type { UIMessage } from 'ai'
 import { shallowRef } from 'vue'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { asDouble } from '@open-pencil/test-support/doubles'
 
 import type { ChatInstance } from '@/app/ai/chat/submission/types'
@@ -11,6 +12,7 @@ import type { AIModelRuntime } from '@/app/ai/models/runtime'
 import { reviewOf } from '@/app/ai/review/message'
 import type { ReviewDependencies } from '@/app/ai/review/run'
 import { useChatReview } from '@/app/ai/review/use'
+import { clearToolChanges, setToolChange } from '@/app/ai/tools/changes/store'
 import type { EditorStore } from '@/app/editor/session/create'
 
 function editor() {
@@ -80,5 +82,28 @@ describe('reviewing from the chat', () => {
     })
     expect(await review.review({})).toBe(false)
     expect(review.failed.value).toBeInstanceOf(Error)
+  })
+
+  test('adds a review of an AI edit the chat keeps', async () => {
+    setToolChange({
+      toolCallId: 'call-7',
+      pageId: '0:1',
+      nodeIds: ['1:2'],
+      jsx: { before: '<Frame />', after: '<Frame gap={8} />' }
+    })
+    const made = asDouble<ChatInstance>({ messages: [] as UIMessage[] })
+    const review = useChatReview({
+      chat: shallowRef<ChatInstance | null>(null),
+      ensureChat: async () => made,
+      store: editor,
+      dependencies: reviewer
+    })
+    try {
+      expect(await review.reviewToolChange('call-7')).toBe(true)
+      expect(reviewOf(expectDefined(made.messages[0], 'a review'))?.change).toBe('call-7')
+      expect(await review.reviewToolChange('unknown')).toBe(false)
+    } finally {
+      clearToolChanges()
+    }
   })
 })

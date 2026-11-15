@@ -459,6 +459,8 @@
   "reviewCommand": "Revisar la selección o la página con el modelo de revisión; el texto que sigue indica en qué fijarse",
   "reviewing": "Revisando el diseño…",
   "designReview": "Revisión de diseño",
+  "changeReview": "Revisión del cambio",
+  "reviewChange": "Revisar este cambio",
   "reviewFix": "Corregir",
   "reviewFixRequest": "Corrige los problemas que encontró esta revisión de diseño:\n\n{findings}",
   "reviewFailed": "No se pudo revisar el diseño.",

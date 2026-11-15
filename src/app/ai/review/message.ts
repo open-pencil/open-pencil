@@ -5,12 +5,14 @@ import { messageMetadata } from '@/app/ai/chat/metadata'
 
 /**
  * A design review the Review model wrote: its findings as Markdown, with links to the layers
- * they are about, the layers it reviewed, and what the person asked it to focus on.
+ * they are about, the layers it reviewed, what the person asked it to focus on, and for a review
+ * of one AI edit, the tool call that made it.
  */
 const reviewSchema = v.object({
   findings: v.string(),
   nodeIds: v.array(v.string()),
-  focus: v.optional(v.string())
+  focus: v.optional(v.string()),
+  change: v.optional(v.string())
 })
 
 export type DesignReview = v.InferOutput<typeof reviewSchema>
