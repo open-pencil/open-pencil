@@ -1,0 +1,1 @@
+- Design check no longer reports a shadow or blur that already uses a shared effect style.

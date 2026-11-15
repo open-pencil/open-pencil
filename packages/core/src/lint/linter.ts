@@ -3,6 +3,7 @@ import { uniq } from 'es-toolkit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import { GENERATED_FRAME_TYPES, generatedFrameOwner } from '@open-pencil/scene-graph/generated'
+import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
 
 import { presets } from './presets'
 import { allRules } from './rules'
@@ -66,6 +67,7 @@ export class Linter {
     counts: { COLOR: 0, FLOAT: 0, STRING: 0, BOOLEAN: 0 },
     colorsByHex: new Map()
   }
+  private effectStyleIds: ReadonlySet<string> = new Set()
 
   constructor(options: { config?: LintConfig; preset?: string; rules?: string[] } = {}) {
     let baseConfig: Record<
@@ -96,6 +98,7 @@ export class Linter {
     this.nodes.clear()
     this.graph = graph
     this.variables = describeVariables(graph)
+    this.effectStyleIds = sharedEffectStyleIds(graph)
     this.checks = this.ruleChecks()
     const roots = rootIds && rootIds.length > 0 ? rootIds : graph.getPages().map((p) => p.id)
     for (const id of outermostRoots(graph, roots)) {
@@ -178,7 +181,8 @@ export class Linter {
         type: effect.type,
         visible: effect.visible,
         radius: effect.radius
-      }))
+      })),
+      effectStyleId: raw.effectStyleId
     }
   }
 
@@ -192,6 +196,7 @@ export class Linter {
         rule,
         context: {
           variables: this.variables,
+          effectStyleIds: this.effectStyleIds,
           report: ({ node, message, suggest, data, fix, suggestions }) => {
             this.messages.push({
               ruleId,
@@ -248,6 +253,11 @@ function outermostRoots(graph: SceneGraph, ids: readonly string[]): string[] {
     }
     return true
   })
+}
+
+/** Source ids of shared EFFECT styles, from the same lookup a layer's `effectStyleId` uses. */
+function sharedEffectStyleIds(graph: SceneGraph): ReadonlySet<string> {
+  return new Set(getSharedStyles(graph, 'effect').map((style) => style.id))
 }
 
 function describeVariables(graph: SceneGraph): LintVariables {

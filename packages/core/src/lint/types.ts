@@ -124,6 +124,8 @@ export interface LintNode {
     visible: boolean
     radius: number
   }>
+  /** The shared effect style this layer uses, when it has one. */
+  effectStyleId: string | null
   parent?: LintNode
 }
 
@@ -137,6 +139,8 @@ export interface LintVariables {
 
 export interface RuleContext {
   variables: LintVariables
+  /** Source ids of the document's shared EFFECT styles, the ids layers link with `effectStyleId`. */
+  effectStyleIds: ReadonlySet<string>
   report(issue: {
     node: LintNode
     message: string
