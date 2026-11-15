@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { afterEach, describe, expect, test } from 'bun:test'
 
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import { createMemoryObjectStore } from '#cloud-tests/helpers/objects'
@@ -18,6 +18,10 @@ import {
 import { chunk } from 'es-toolkit'
 import * as v from 'valibot'
 
+const opened: { close(): Promise<void> }[] = []
+afterEach(async () => {
+  for (const runtime of opened.splice(0)) await runtime.close()
+})
 const config = parseCloudServerConfig({
   deployment: 'self-hosted',
   publicURL: 'http://localhost:8787',
@@ -44,6 +48,7 @@ const pin = {
 
 async function testApp() {
   const runtime = await createCloudTestDatabase()
+  opened.push(runtime)
   const announced: string[] = []
   const app = createCloudApp({
     config,

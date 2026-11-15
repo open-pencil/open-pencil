@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { afterEach, describe, expect, test } from 'bun:test'
 
 import { createCloudTestDatabase } from '#cloud-tests/helpers/database'
 import type { CreateCommentThreadInput } from '#cloud/contract'
@@ -9,6 +9,10 @@ import {
   decryptTransactionalEmailPayload
 } from '#cloud/server'
 
+const opened: { close(): Promise<void> }[] = []
+afterEach(async () => {
+  for (const runtime of opened.splice(0)) await runtime.close()
+})
 const SECRET = 'integration-test-secret-at-least-32-characters'
 
 const pin: Omit<CreateCommentThreadInput, 'body' | 'mentions'> = {
@@ -25,6 +29,7 @@ const pin: Omit<CreateCommentThreadInput, 'body' | 'mentions'> = {
 /** A workspace where Ana and Ben comment, Cy edits, and Dee is someone else entirely. */
 async function seed() {
   const runtime = await createCloudTestDatabase()
+  opened.push(runtime)
   const people = {
     ana: crypto.randomUUID(),
     ben: crypto.randomUUID(),

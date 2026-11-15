@@ -42,13 +42,15 @@ provide(MARKDOWN_ANIMATING, animating)
 const parsed = shallowRef<MarkdownDocument | null>(null)
 let parser: Promise<MarkdownParser> | undefined
 let parserHighlights = highlightCode
+let parserPlugins = plugins
 
 watch(
-  () => [content, streaming.value, highlightCode] as const,
-  async ([text, isStreaming, highlight]) => {
-    if (!parser || parserHighlights !== highlight) {
-      parser = createMarkdownParser(highlight, undefined, plugins)
+  () => [content, streaming.value, highlightCode, plugins] as const,
+  async ([text, isStreaming, highlight, own]) => {
+    if (!parser || parserHighlights !== highlight || parserPlugins !== own) {
+      parser = createMarkdownParser(highlight, undefined, own)
       parserHighlights = highlight
+      parserPlugins = own
     }
     const parse = await parser
     parsed.value = await parse(text, { streaming: isStreaming })

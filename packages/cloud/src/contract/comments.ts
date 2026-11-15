@@ -100,7 +100,11 @@ const mentionsSchema = v.optional(
   ),
   []
 )
-const agentSchema = v.optional(v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(100)))
+/** The longest agent name a comment keeps. */
+export const MAX_COMMENT_AGENT_LENGTH = 100
+const agentSchema = v.optional(
+  v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(MAX_COMMENT_AGENT_LENGTH))
+)
 /**
  * The ID the editor gave a new thread or comment, so it keeps showing it as the server's, and a
  * request sent again finds what the first one made.
@@ -166,6 +170,7 @@ export const importCommentThreadsSchema = v.object({
         ...commentAnchorEntries,
         createdAt: v.pipe(v.string(), v.isoTimestamp()),
         resolved: v.boolean(),
+        // A file's thread comes in whole, however long; only new replies keep to the limit.
         comments: v.pipe(
           v.array(
             v.object({
@@ -175,7 +180,7 @@ export const importCommentThreadsSchema = v.object({
             })
           ),
           v.minLength(1),
-          v.maxLength(MAX_COMMENTS_PER_THREAD)
+          v.maxLength(MAX_IMPORTED_COMMENTS)
         )
       })
     ),

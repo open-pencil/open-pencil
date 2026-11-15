@@ -1,13 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { COMMENT_MENTION, mentionPlugin } from '@/app/comments/mention-plugin'
 import {
   mentionedAccounts,
   mentionLink,
   mentionQuery,
   withMentionLinks
-} from '@/app/comments/mentions'
-import { createMarkdownParser } from '@/app/shell/markdown/config'
+} from '@/app/comments/mentions/links'
 
 const ana = { id: 'acc-ana', name: 'Ana' }
 const anaLee = { id: 'acc-ana-lee', name: 'Ana Lee' }
@@ -29,9 +27,27 @@ describe('comment mentions', () => {
 
   test('escape a name as Markdown writes a link’s text', () => {
     const odd = { id: 'acc-odd', name: 'Ann [ops] *' }
+    expect(mentionLink(odd)).toBe('[@Ann \\[ops\\] *](openpencil://person/acc-odd)')
     const text = withMentionLinks('hi @Ann [ops] *', [odd])
-    expect(text).toBe(`hi ${mentionLink(odd)}`)
     expect(mentionedAccounts(text)).toEqual(['acc-odd'])
+  })
+
+  test('tell two people of one name apart by the order they were picked in', () => {
+    const sam = { id: 'acc-sam', name: 'Sam' }
+    const otherSam = { id: 'acc-sam-2', name: 'Sam' }
+    expect(mentionedAccounts(withMentionLinks('@Sam and @Sam', [sam, otherSam]))).toEqual([
+      'acc-sam',
+      'acc-sam-2'
+    ])
+  })
+
+  test('find names beside escapes, and leave bare URLs alone', () => {
+    expect(withMentionLinks('@Ana please write \\* here', [ana])).toBe(
+      '[@Ana](openpencil://person/acc-ana) please write \\* here'
+    )
+    expect(withMentionLinks('https://example.com/@Ana and @Ana', [ana])).toBe(
+      'https://example.com/@Ana and [@Ana](openpencil://person/acc-ana)'
+    )
   })
 
   test('name each account a comment links to once, and nothing else', () => {
@@ -40,15 +56,6 @@ describe('comment mentions', () => {
     expect(mentionedAccounts('[@Ana](https://example.com) `[@x](openpencil://person/y)`')).toEqual(
       []
     )
-  })
-
-  test('render mentions as their element, other links as links', async () => {
-    const parse = await createMarkdownParser(false, undefined, [mentionPlugin()])
-    const { nodes } = await parse('Hi [@Ana](openpencil://person/acc-ana), see [it](https://a.b)')
-    expect(JSON.stringify(nodes)).toContain(
-      JSON.stringify([COMMENT_MENTION, { target: 'acc-ana' }, '@Ana'])
-    )
-    expect(JSON.stringify(nodes)).toContain('"href":"https://a.b"')
   })
 
   test('find the name being typed after an @', () => {

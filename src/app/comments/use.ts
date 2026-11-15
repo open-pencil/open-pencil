@@ -25,7 +25,7 @@ import {
 } from '@/app/settings/preferences/store'
 
 import { commentsKeptElsewhere, followDocumentComments } from './document'
-import type { MentionPerson } from './mentions'
+import type { MentionPerson } from './mentions/links'
 
 /** A comment preference the list and menus read and change in place. */
 function preference<K extends keyof CommentPreferences>(

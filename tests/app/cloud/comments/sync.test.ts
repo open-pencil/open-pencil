@@ -167,4 +167,36 @@ describe('Cloud comments in a tab', () => {
     await follower.idle()
     expect(server.threads.get(mine.id)?.comments[0]?.mentions).toEqual(['acc-ben'])
   })
+
+  test('keep sending after a document change that touched no comment', async () => {
+    const server = commentServer()
+    const { store, follow, pageId } = open(server)
+    const follower = follow()
+    await follower.idle()
+    // Plugin data on the document node changes, comments do not: nothing to send.
+    const root = store.graph.getNode(store.graph.rootId)
+    store.graph.updateNode(store.graph.rootId, {
+      pluginData: [...(root?.pluginData ?? []), { pluginId: 'test', key: 'k', value: 'v' }]
+    })
+    await follower.idle()
+    const thread = addThread(store, pageId, 'Still heard')
+    await follower.idle()
+    expect(server.threads.has(thread.id)).toBe(true)
+  })
+
+  test('show what someone else changed, never send the old words back', async () => {
+    const server = commentServer()
+    const { store, follow, pageId } = open(server)
+    const id = server.others(pageId, 'First words')
+    const follower = follow()
+    await follower.idle()
+    const stored = server.threads.get(id)
+    const [first] = stored?.comments ?? []
+    if (!stored || !first) throw new Error('The thread is missing')
+    // Ben changes his words in another tab; this tab still shows the old ones.
+    server.threads.set(id, { ...stored, comments: [{ ...first, body: 'Second words' }] })
+    await follower.changed(id)
+    expect(texts(store)).toEqual([['Ben', 'Second words']])
+    expect(server.calls).not.toContain('edit')
+  })
 })

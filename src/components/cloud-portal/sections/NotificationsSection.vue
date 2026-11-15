@@ -67,7 +67,7 @@ const chosen = computed({
       <RadioGroupRoot
         v-model="chosen"
         :aria-labelledby="headingId"
-        :disabled="saving.busy.value"
+        :disabled="saving.busy.value || settings.loading.value"
         :class="ui.options()"
       >
         <RadioGroupItem

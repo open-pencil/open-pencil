@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import { COMMENT_MENTION, mentionPlugin } from '@/app/comments/mention-plugin'
+import { COMMENT_MENTION, mentionPlugin } from '@/app/comments/mentions/plugin'
 import MarkdownContent from '@/components/markdown/MarkdownContent.vue'
 import PersonAvatar from '@/components/presence/PersonAvatar.vue'
 

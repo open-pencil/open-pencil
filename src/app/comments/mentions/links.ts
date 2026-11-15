@@ -1,7 +1,9 @@
-import { uniq } from 'es-toolkit'
-import type { Link, Root, Text } from 'mdast'
+import { groupBy, uniq, uniqBy } from 'es-toolkit'
+import type { Link, Root } from 'mdast'
 import { fromMarkdown } from 'mdast-util-from-markdown'
+import { gfmFromMarkdown } from 'mdast-util-gfm'
 import { toMarkdown } from 'mdast-util-to-markdown'
+import { gfm } from 'micromark-extension-gfm'
 import { SKIP, visit } from 'unist-util-visit'
 
 /**
@@ -38,50 +40,62 @@ export function mentionLink(person: MentionPerson): string {
 /** The accounts the text names, each once, in order. */
 export function mentionedAccounts(text: string): string[] {
   const ids: string[] = []
-  visit(fromMarkdown(text), 'link', (link: Link) => {
+  visit(parse(text), 'link', (link: Link) => {
     const id = mentionedAccount(link.url)
     if (id) ids.push(id)
   })
   return uniq(ids)
 }
 
-/** The plain text runs of the Markdown, outside links and code, with where each is written. */
-function textRuns(root: Root, source: string): { start: number; value: string }[] {
-  const runs: { start: number; value: string }[] = []
+/** Comment text as the renderer reads it: GFM, so a bare URL is a link, not text with `@` in it. */
+function parse(text: string): Root {
+  return fromMarkdown(text, { extensions: [gfm()], mdastExtensions: [gfmFromMarkdown()] })
+}
+
+/**
+ * Where the plain text of the Markdown is written, outside links and code: each text node's
+ * span of the source, escapes and all, so a name is found where it was typed.
+ */
+function textSpans(root: Root): { start: number; end: number }[] {
+  const spans: { start: number; end: number }[] = []
   visit(root, (node) => {
     if (node.type === 'link' || node.type === 'linkReference') return SKIP
-    if (node.type !== 'text') return undefined
-    const { value, position } = node satisfies Text
-    const start = position?.start.offset
-    const end = position?.end.offset
-    // A run with escapes in it is written differently from what it says; it is left as typed.
-    if (start !== undefined && source.slice(start, end) === value) runs.push({ start, value })
+    const start = node.type === 'text' ? node.position?.start.offset : undefined
+    const end = node.type === 'text' ? node.position?.end.offset : undefined
+    if (start !== undefined && end !== undefined) spans.push({ start, end })
     return undefined
   })
-  return runs
+  return spans
 }
 
 /**
  * The text as it is sent: each `@Name` of someone picked while writing becomes their link, in the
- * plain text only, never inside code or another link. A whole name only, so `@Ana` is not taken
- * from `@Anabel`; longer names first, so `@Ana Lee` is not taken for `@Ana`.
+ * plain text only, never inside code, a URL or another link. A whole name only, so `@Ana` is not
+ * taken from `@Anabel`, and longer names first, so `@Ana Lee` is not taken for `@Ana`. Two
+ * people of one name are told apart by the order they were picked in.
  */
 export function withMentionLinks(text: string, picked: readonly MentionPerson[]): string {
-  const people = uniq(picked.map((person) => person.id))
-    .flatMap((id) => picked.find((person) => person.id === id) ?? [])
-    .toSorted((a, b) => b.name.length - a.name.length)
-  if (people.length === 0) return text
+  if (picked.length === 0) return text
+  const byName = groupBy(picked, (person) => person.name)
+  const names = Object.keys(byName).toSorted((a, b) => b.length - a.length)
+  const spans = textSpans(parse(text))
   const replacements: { start: number; end: number; link: string }[] = []
-  for (const run of textRuns(fromMarkdown(text), text)) {
-    for (const person of people) {
-      const typed = `@${person.name}`
-      for (let at = run.value.indexOf(typed); at >= 0; at = run.value.indexOf(typed, at + 1)) {
-        const start = run.start + at
+  for (const name of names) {
+    const typed = `@${name}`
+    const people = uniqBy(byName[name] ?? [], (person) => person.id)
+    let found = 0
+    for (const span of spans) {
+      const source = text.slice(span.start, span.end)
+      for (let at = source.indexOf(typed); at >= 0; at = source.indexOf(typed, at + 1)) {
+        const start = span.start + at
         const end = start + typed.length
-        const next = text.slice(end, end + 1)
+        const whole = !/[\p{L}\p{N}_]/u.test(text.slice(end, end + 1))
+        const escaped = text.slice(start - 1, start) === '\\'
         const taken = replacements.some((other) => start < other.end && end > other.start)
-        if (taken || /[\p{L}\p{N}_]/u.test(next)) continue
-        replacements.push({ start, end, link: mentionLink(person) })
+        if (!whole || escaped || taken) continue
+        const person = people.at(Math.min(found, people.length - 1))
+        found++
+        if (person) replacements.push({ start, end, link: mentionLink(person) })
       }
     }
   }

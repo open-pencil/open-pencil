@@ -2,7 +2,7 @@ import { watch } from 'vue'
 
 import { CloudAPIError, type CloudCommentRequests } from '@open-pencil/cloud/client'
 import {
-  MAX_COMMENTS_PER_THREAD,
+  MAX_COMMENT_AGENT_LENGTH,
   MAX_IMPORTED_COMMENT_THREADS,
   MAX_IMPORTED_COMMENTS,
   type CloudCommentThread,
@@ -12,7 +12,7 @@ import {
 import { readComments, writeComments } from '@open-pencil/scene-graph/comments'
 
 import { setCommentsKeptElsewhere } from '@/app/comments/document'
-import { mentionedAccounts, type MentionPerson } from '@/app/comments/mentions'
+import { mentionedAccounts, type MentionPerson } from '@/app/comments/mentions/links'
 import type { EditorStore } from '@/app/editor/session'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { allTabs, getTabsSnapshot } from '@/app/tabs'
@@ -80,18 +80,26 @@ function commentTarget(store: EditorStore): CloudCommentTarget | null {
   }
 }
 
-/** Splits a file's threads into imports the server takes at once. */
+/**
+ * Splits a file's threads into imports the server takes at once. A thread comes in whole; only
+ * one longer than a whole import is cut, and says so.
+ */
 function importBatches(input: ImportCommentThreadsInput): ImportCommentThreadsInput[] {
   const batches: ImportCommentThreadsInput[] = []
   let current: ImportCommentThreadsInput['threads'] = []
   let comments = 0
   for (const thread of input.threads) {
-    const kept = { ...thread, comments: thread.comments.slice(0, MAX_COMMENTS_PER_THREAD) }
+    if (thread.comments.length > MAX_IMPORTED_COMMENTS) {
+      console.warn(
+        `[Cloud] A comment thread of ${thread.comments.length} comments keeps its first ${MAX_IMPORTED_COMMENTS}`
+      )
+    }
+    const kept = { ...thread, comments: thread.comments.slice(0, MAX_IMPORTED_COMMENTS) }
     if (
       current.length >= MAX_IMPORTED_COMMENT_THREADS ||
       comments + kept.comments.length > MAX_IMPORTED_COMMENTS
     ) {
-      batches.push({ threads: current })
+      if (current.length > 0) batches.push({ threads: current })
       current = []
       comments = 0
     }
@@ -100,6 +108,11 @@ function importBatches(input: ImportCommentThreadsInput): ImportCommentThreadsIn
   }
   if (current.length > 0) batches.push({ threads: current })
   return batches
+}
+
+/** An agent's name as a comment keeps it. */
+function agentName(agent: string | undefined): string | undefined {
+  return agent?.trim().slice(0, MAX_COMMENT_AGENT_LENGTH) || undefined
 }
 
 /** A refusal that sending again will not change, unlike a server out of reach. */
@@ -125,6 +138,11 @@ export function followCloudComments(
   followers.get(store)?.stop()
   /** The server's threads as last heard, by ID. */
   const server = new Map<string, CloudCommentThread>()
+  /**
+   * The threads the document was last given, by ID: what the tab changed is told from these, so
+   * a change someone else made, heard but not shown yet, is never taken for one of the tab's.
+   */
+  const shown = new Map<string, CloudCommentThread>()
   let loaded = false
   let stopped = false
   let flushing: Promise<void> | null = null
@@ -183,6 +201,8 @@ export function followCloudComments(
     } finally {
       writing = false
     }
+    shown.clear()
+    for (const [id, thread] of server) shown.set(id, thread)
     publish()
   }
 
@@ -202,7 +222,7 @@ export function followCloudComments(
             ...threadAnchor(thread),
             body: thread.text,
             mentions: mentionedAccounts(thread.text),
-            agent: thread.agent
+            agent: agentName(thread.agent)
           }),
           thread.id
         )
@@ -221,7 +241,7 @@ export function followCloudComments(
             id: change.reply.id,
             body: change.reply.text,
             mentions: mentionedAccounts(change.reply.text),
-            agent: change.reply.agent
+            agent: agentName(change.reply.agent)
           }),
           change.threadId
         )
@@ -254,34 +274,46 @@ export function followCloudComments(
    * One it could not reach is sent again later.
    */
   function flush(): Promise<void> {
-    flushing ??= (async () => {
-      try {
-        let seen = -1
-        // The tab may change its comments, or close, while a request is on its way.
-        const pending = () => !stopped && seen !== changes
-        while (pending()) {
-          seen = changes
-          for (const change of cloudCommentChanges(readComments(store.graph), server)) {
-            try {
-              await send(change)
-            } catch (error) {
-              if (!refused(error)) throw error
-              await reload()
-            }
+    if (flushing) return flushing
+    const run = sendChanges()
+    flushing = run
+    // Cleared once it settled, never by itself: a run with nothing to send settles at once.
+    void run.finally(() => {
+      if (flushing === run) flushing = null
+    })
+    return run
+  }
+
+  function retryLater(action: () => Promise<void>) {
+    retry ??= setTimeout(() => {
+      retry = null
+      void action()
+    }, RETRY_MS)
+  }
+
+  async function sendChanges(): Promise<void> {
+    try {
+      let seen = -1
+      // The tab may change its comments, or close, while a request is on its way.
+      const pending = () => !stopped && seen !== changes
+      while (pending()) {
+        seen = changes
+        for (const change of cloudCommentChanges(readComments(store.graph), shown)) {
+          try {
+            await send(change)
+          } catch (error) {
+            if (!refused(error)) throw error
+            // Refused: the server's copy shows again, as anyone else sees it.
+            await reload()
+            show()
           }
         }
-        show()
-      } catch (error) {
-        console.warn('[Cloud] Comments could not reach the server; trying again', error)
-        retry ??= setTimeout(() => {
-          retry = null
-          void flush()
-        }, RETRY_MS)
-      } finally {
-        flushing = null
       }
-    })()
-    return flushing
+      show()
+    } catch (error) {
+      console.warn('[Cloud] Comments could not reach the server; trying again', error)
+      retryLater(flush)
+    }
   }
 
   async function load() {
@@ -302,6 +334,16 @@ export function followCloudComments(
     show()
   }
 
+  /** Loads the comments, and again later while the server cannot be reached. */
+  async function loadUntilLoaded(): Promise<void> {
+    try {
+      await load()
+    } catch (error) {
+      console.warn('[Cloud] Could not load the document’s comments; trying again', error)
+      if (!stopped) retryLater(loadUntilLoaded)
+    }
+  }
+
   const stops = [
     store.onEditorEvent('node:updated', (id) => {
       if (writing || id !== store.graph.rootId) return
@@ -316,9 +358,7 @@ export function followCloudComments(
 
   // Until the server says otherwise, the tab writes nothing it might refuse.
   publish()
-  const loading = load().catch((error: unknown) => {
-    console.warn('[Cloud] Could not load the document’s comments', error)
-  })
+  const loading = loadUntilLoaded()
 
   const follower: CloudCommentFollower = {
     key: target.key,
@@ -352,7 +392,7 @@ export function followCloudComments(
 
 /** Follows the comments of every open Cloud document, as tabs open, move, and sign in. */
 export function watchCloudComments(): () => void {
-  return watch(
+  const stopWatching = watch(
     () => {
       void allTabs.value
       void cloudConnections.value
@@ -374,4 +414,10 @@ export function watchCloudComments(): () => void {
     },
     { immediate: true }
   )
+  // Stopping Cloud stops every follower, its subscriptions and any retry with it.
+  return () => {
+    stopWatching()
+    // A follower stopping leaves the map; a Map's iteration allows that.
+    for (const follower of followers.values()) follower.stop()
+  }
 }

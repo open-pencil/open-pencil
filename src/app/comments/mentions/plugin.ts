@@ -1,7 +1,7 @@
 import { defineComarkPlugin, type ElementNode } from 'comark'
 import { visit } from 'comark/utils'
 
-import { mentionedAccount } from './mentions'
+import { mentionedAccount } from './links'
 
 /** The inline component a mention renders as; the comment renderer registers it. */
 export const COMMENT_MENTION = 'comment-mention'

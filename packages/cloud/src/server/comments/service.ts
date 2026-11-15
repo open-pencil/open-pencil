@@ -16,7 +16,7 @@ import { resolveDocumentCommentAccess } from '#cloud/server/documents/access'
 import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/documents/errors'
 import { logCloud, loggedError } from '#cloud/server/logging'
 import type { DocumentSharingService } from '#cloud/server/sharing'
-import { chunk, groupBy } from 'es-toolkit'
+import { chunk, groupBy, isEmptyObject } from 'es-toolkit'
 import type { Kysely, Transaction } from 'kysely'
 
 import {
@@ -73,6 +73,20 @@ type CommentEdit = Mentioning<UpdateCommentInput>
 
 /** Rows one insert writes, within PostgreSQL's parameters per statement. */
 const INSERT_BATCH = 500
+
+/**
+ * A thread's comment times as a file gave them, each after the one before, so the first one is
+ * the thread's first wherever the file wrote two at the same moment.
+ */
+function importedTimes(times: readonly string[]): Date[] {
+  const result: Date[] = []
+  for (const time of times) {
+    const at = new Date(time)
+    const previous = result.at(-1)
+    result.push(previous && at <= previous ? new Date(previous.getTime() + 1) : at)
+  }
+  return result
+}
 
 function requireCommenter(actor: CommentActor): string {
   if (!actor.canComment || actor.userId === null) throw new DocumentForbiddenError()
@@ -350,6 +364,7 @@ export function createCommentService(
     ): Promise<CommentThreads> {
       const userId = requireCommenter(actor)
       if (!actor.canModerate) throw new DocumentForbiddenError()
+      const ids: string[] = []
       if (input.threads.length > 0) {
         await database.transaction().execute(async (transaction) => {
           await lockDocument(transaction, actor.documentId)
@@ -377,21 +392,29 @@ export function createCommentService(
             await transaction.insertInto('commentThread').values(batch).execute()
           }
           const imported = rows.flatMap(({ thread, id }) =>
-            thread.comments.map((comment) => ({
-              id: crypto.randomUUID(),
-              threadId: id,
-              authorId: null,
-              importedAuthorName: comment.authorName,
-              body: comment.body,
-              createdAt: new Date(comment.createdAt)
-            }))
+            importedTimes(thread.comments.map((comment) => comment.createdAt)).map(
+              (createdAt, index) => ({
+                id: crypto.randomUUID(),
+                threadId: id,
+                authorId: null,
+                importedAuthorName: thread.comments[index]?.authorName ?? '',
+                body: thread.comments[index]?.body ?? '',
+                createdAt
+              })
+            )
           )
           // A statement takes so many parameters; a big file's comments go in a few.
           for (const batch of chunk(imported, INSERT_BATCH)) {
             await transaction.insertInto('comment').values(batch).execute()
           }
+          // The importer has read what they brought.
+          for (const { id } of rows) {
+            await markRead(transaction, userId, id)
+            ids.push(id)
+          }
         })
       }
+      for (const id of ids) announce(actor.documentId, id)
       return list(actor)
     },
 
@@ -406,10 +429,15 @@ export function createCommentService(
         if (input.anchor && row.createdBy !== userId && !actor.canModerate) {
           throw new DocumentForbiddenError()
         }
-        const resolution = resolutionChange(input.resolved, row.resolvedAt !== null, userId)
+        const changes = {
+          ...(input.anchor ? anchorValues(input.anchor) : {}),
+          ...resolutionChange(input.resolved, row.resolvedAt !== null, userId)
+        }
+        // Resolving what is already resolved, and nothing else, changes nothing.
+        if (isEmptyObject(changes)) return readThread(transaction, row, actor.userId)
         await transaction
           .updateTable('commentThread')
-          .set({ ...(input.anchor ? anchorValues(input.anchor) : {}), ...resolution })
+          .set(changes)
           .where('id', '=', threadId)
           .execute()
         return touched(transaction, actor, threadId)

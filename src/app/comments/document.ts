@@ -14,7 +14,7 @@ import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { EditorStore } from '@/app/editor/active-store'
 
-import type { MentionPerson } from './mentions'
+import type { MentionPerson } from './mentions/links'
 
 /**
  * How a server keeps a document's comments, as Cloud does: whether this tab may write them,

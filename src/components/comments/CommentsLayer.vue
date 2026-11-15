@@ -9,6 +9,7 @@ import {
 import { computed, ref, useTemplateRef, watch } from 'vue'
 
 import type { ViewportTransform } from '@open-pencil/core/geometry'
+import type { CommentThread } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { toolCursor } from '@open-pencil/vue/editor/tool-cursor'
 import { useCommentMessages } from '@open-pencil/vue/i18n'
@@ -46,6 +47,12 @@ const CARD_GAP = 8
 const store = useEditorStore()
 const comments = useComments()
 const { canComment } = comments
+
+/** What a pin says to assistive technology: who wrote what, and whether it is new to you. */
+function pinLabel(thread: CommentThread): string {
+  const label = `${author.name(thread.author)}: ${commentPreview(thread.text)}`
+  return comments.isUnread(thread.id) ? `${messages.value.unread}, ${label}` : label
+}
 const messages = useCommentMessages()
 const author = useCommentAuthor()
 const menuCls = useMenuUI({ content: 'min-w-40' })
@@ -197,7 +204,7 @@ function closeCard() {
             :dragging="pin.dragging"
             :unread="comments.isUnread(pin.thread.id)"
             :style="{ left: `${pin.left}px`, top: `${pin.top}px` }"
-            :aria-label="`${author.name(pin.thread.author)}: ${commentPreview(pin.thread.text)}`"
+            :aria-label="pinLabel(pin.thread)"
             @pointerdown.stop="pinDrag.start($event, pin.thread.id, pin.at)"
             @pointermove="pinDrag.move"
             @pointerup="pinDrag.end"

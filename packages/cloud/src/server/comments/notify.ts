@@ -188,12 +188,13 @@ export async function notifyComment(
     participants: readonly string[]
   }
 ): Promise<void> {
+  // In account order, so two comments naming the same people take their budget locks in turn.
   const recipients = [
     ...comment.mentioned.map((userId) => ({ userId, reason: 'mention' as const })),
     ...comment.participants
       .filter((userId) => !comment.mentioned.includes(userId))
       .map((userId) => ({ userId, reason: 'reply' as const }))
-  ]
+  ].toSorted((a, b) => a.userId.localeCompare(b.userId))
   if (recipients.length === 0) return
   const ids = recipients.map((recipient) => recipient.userId)
   const author = comment.authorId

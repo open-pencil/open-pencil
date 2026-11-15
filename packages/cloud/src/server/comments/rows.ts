@@ -222,7 +222,13 @@ export async function markRead(source: Source, userId: string, threadId: string)
   await source
     .insertInto('commentRead')
     .values({ userId, threadId, readAt })
-    .onConflict((conflict) => conflict.columns(['userId', 'threadId']).doUpdateSet({ readAt }))
+    // A request that read the thread earlier but lands later never moves the marker back.
+    .onConflict((conflict) =>
+      conflict
+        .columns(['userId', 'threadId'])
+        .doUpdateSet({ readAt })
+        .where('commentRead.readAt', '<', readAt)
+    )
     .execute()
 }
 

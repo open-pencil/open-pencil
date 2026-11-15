@@ -4,7 +4,7 @@ import { expect, fn, userEvent, within } from 'storybook/test'
 
 import type { CommentThread } from '@open-pencil/scene-graph'
 
-import type { MentionPerson } from '@/app/comments/mentions'
+import type { MentionPerson } from '@/app/comments/mentions/links'
 
 import CommentComposer from './CommentComposer.vue'
 import CommentThreadCard from './CommentThreadCard.vue'

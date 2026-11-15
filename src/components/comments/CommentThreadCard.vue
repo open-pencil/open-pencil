@@ -6,7 +6,7 @@ import type { CommentThread } from '@open-pencil/scene-graph'
 import { liveReplies } from '@open-pencil/scene-graph/comments'
 import { useCommentMessages, useCommonMessages } from '@open-pencil/vue/i18n'
 
-import type { MentionPerson } from '@/app/comments/mentions'
+import type { MentionPerson } from '@/app/comments/mentions/links'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'

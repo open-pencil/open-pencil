@@ -11,7 +11,7 @@ import {
   formatComment,
   type CommentEdit
 } from '@/app/comments/format'
-import { mentionQuery, withMentionLinks, type MentionPerson } from '@/app/comments/mentions'
+import { mentionQuery, withMentionLinks, type MentionPerson } from '@/app/comments/mentions/links'
 import PersonAvatar from '@/components/presence/PersonAvatar.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
@@ -68,18 +68,23 @@ const suggestions = computed(() => {
 })
 const optionId = (index: number) => `${listId}-${index}`
 
-// The people load once, when `@` is first typed.
-let loading = false
+// The people load once, when `@` is first typed; a failed load is asked for again at the next `@`.
+let loading: Promise<void> | null = null
 watch(query, (typed) => {
   if (typed?.start !== dismissedAt.value) dismissedAt.value = null
   highlighted.value = 0
-  if (!typed || loading || !mentionable) return
-  loading = true
-  void loadPeople(mentionable)
+  if (!typed || loading || people.value.length > 0 || !mentionable) return
+  loading = loadPeople(mentionable)
 })
 
 async function loadPeople(load: () => Promise<readonly MentionPerson[]>) {
-  people.value = await load()
+  try {
+    people.value = await load()
+  } catch (error) {
+    console.warn('[Comments] Could not load the people to mention', error)
+  } finally {
+    loading = null
+  }
 }
 // A sent or cleared composer starts over with nobody picked.
 watch(text, (value) => {

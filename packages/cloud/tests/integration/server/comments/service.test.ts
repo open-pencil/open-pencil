@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { afterEach, describe, expect, test } from 'bun:test'
 
 import { grantByInvitation, seedSharing } from '#cloud-tests/helpers/sharing'
 import { MAX_COMMENTS_PER_THREAD, type CreateCommentThreadInput } from '#cloud/contract'
@@ -10,6 +10,10 @@ import {
   DocumentNotFoundError
 } from '#cloud/server'
 
+const opened: { close(): Promise<void> }[] = []
+afterEach(async () => {
+  for (const runtime of opened.splice(0)) await runtime.close()
+})
 const pin: CreateCommentThreadInput = {
   pageId: '0:1',
   pageName: 'Page 1',
@@ -25,6 +29,7 @@ const pin: CreateCommentThreadInput = {
 
 async function seedComments() {
   const context = await seedSharing()
+  opened.push(context.runtime)
   const announced: { documentId: string; threadId: string }[] = []
   const comments = createCommentService(context.runtime.database, {
     sharing: context.sharing,
@@ -210,5 +215,39 @@ describe('comment service', () => {
         { author: { kind: 'imported', name: 'Ben' }, createdAt: '2026-10-02T09:00:00.000Z' }
       ]
     })
+  })
+
+  test('change nothing when a thread already is as asked', async () => {
+    const { comments, as } = await seedComments()
+    const viewer = await as('viewer')
+    const thread = await comments.createThread(viewer, pin)
+    await comments.updateThread(viewer, thread.id, { resolved: true })
+    const again = await comments.updateThread(viewer, thread.id, { resolved: true })
+    expect(again.resolvedBy).toBe('viewer')
+  })
+
+  test('keep a file’s first comment first, whatever times it gave', async () => {
+    const { comments, as, announced } = await seedComments()
+    const at = '2026-10-01T09:00:00.000Z'
+    const { threads } = await comments.importThreads(await as('editor'), {
+      threads: [
+        {
+          ...pin,
+          createdAt: at,
+          resolved: false,
+          comments: [
+            { authorName: 'Ana', body: 'First', createdAt: at },
+            { authorName: 'Ben', body: 'Same moment', createdAt: at }
+          ]
+        }
+      ]
+    })
+    const [thread] = threads
+    if (!thread) throw new Error('The thread did not come in')
+    expect(thread.comments.map((comment) => comment.body)).toEqual(['First', 'Same moment'])
+    // Open rooms hear of what came in, as of any other change.
+    expect(announced.map((change) => change.threadId)).toEqual([thread.id])
+    const reply = thread.comments[1]?.id ?? ''
+    expect(await comments.deleteComment(await as('editor'), thread.id, reply)).not.toBeNull()
   })
 })
