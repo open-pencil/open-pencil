@@ -52,6 +52,17 @@ After each release:
 
 The old `HOMEBREW_TAP_TOKEN` workflow secret is no longer used and can be removed after the obsolete workflow is retired. Revoking the underlying token is a separate credential-owner action if it is shared elsewhere.
 
+## New npm packages
+
+`build.yml` publishes to npm only through trusted publishing, which a package that has never been published cannot have yet. Shortly before the tag build, a maintainer creates each new package by hand, with npm 11.15.0 or later and Node.js 22.14.0 or later, which `npm stage` needs:
+
+1. On `master`, before the release changes the version, run `bun run build:packages`, then, with [`cargo-about`](https://github.com/EmbarkStudios/cargo-about) installed at the version `build.yml` pins, `bun tools/release/release-packages/src/cli.ts notices`, `prepare`, and `pack`. The tarballs land in `.npm-packages/` and carry `master`'s version, which is never the one being released.
+2. Stage the package with `npm stage publish ./<tarball> --access public`, adding `--tag <name>` when that version is a pre-release, such as `--tag beta`. The registry creates the package with a `0.0.0-stage` placeholder; wait until `npm stage list <package>` shows the stage as `staged`.
+3. Add `open-pencil/open-pencil`'s `.github/workflows/build.yml` as the package's trusted publisher and turn on **Allow npm publish**: a new trusted publisher may only stage, and `build.yml` publishes directly. A trusted publisher that has not published within two days expires and has to be deleted and created again, so add it no earlier than two days before the tag build.
+4. Approve the stage with `npm stage approve <id>`, or reject it with `npm stage reject <id>`; both need 2FA. A stage left pending holds its version, and a publish of that version fails with `409 Cannot publish over previously staged version`.
+
+Never publish the version being released by hand: `release-packages resume` stops on a published version without `build.yml` provenance.
+
 ## Failure and recovery
 
 - There are explicit job/build/startup/command deadlines. Native builds do not silently retry or upload partial release outputs.

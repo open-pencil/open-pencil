@@ -109,6 +109,18 @@ Plugin-shell stops its child processes only when the app exits, so a webview rel
 
 ACP startup failures keep the original error as their cause and record its protocol error code in diagnostics, including when ACP rejects with a decoded JSON-RPC object. The diagnostic event stores error metadata without the agent's error data or conversation content. The chat shows the text an agent answered, which can quote the conversation, so the transport hands the raw agent error to `onAgentError` and the chat's `chat.failed` event records that error's code instead of the shown message.
 
+## Agent adapter behaviour
+
+What the ACP agents do differs in ways the protocol leaves open. These notes were probed over raw ACP with claude-agent-acp 0.85–0.106, codex-acp 2.2–2.6, Antigravity `agy` 1.5.3, Cursor CLI, and Grok Build; check again after an adapter's major update.
+
+- **Sign-in.** Claude Code and Codex push `_auth/status_update` shortly after `initialize`, with no session needed; silence means unknown and `kind: "none"` means signed out. Claude Code's `session/new` succeeds while signed out, so only that push tells; Codex's fails with `-32000 Authentication required`, as Antigravity's does, and Antigravity never pushes a status. Both Claude Code and Codex bundle their own CLI.
+- **Resume.** A session that never took a prompt cannot be resumed (Claude Code `-32002`, Codex `-32603`), and both send updates such as `available_commands_update` before any prompt, which do not mean a prompt was accepted. A resumed session is back on the agent's default model whatever it was switched to, so the profile's model is applied again after every resume. Claude Code keeps sessions per working directory.
+- **Models and effort.** Every agent lists models as a config option of category `model` and thinking effort as category `thought_level`, whose `id` differs between agents (`effort`, `reasoning_effort`, `thought_level`); match options by category, never by id. The legacy `models` field lists model and effort pairs, not the option's values.
+- **Working directory.** Antigravity adds its process's working directory to the session's workspaces beside the session `cwd`, so every agent is started in the agent workspace.
+- **Tool budget.** Antigravity loads MCP tools smallest first up to a total schema size of about 56 KB and defers the rest behind a `call_mcp_tool` it does not register over ACP. OpenPencil keeps its tool schemas compact and answers `call_mcp_tool` itself for agents that defer tools.
+- **Subagents.** Codex 2.6 reports subagent sessions, but its subagents cannot call the session's MCP servers ([agentclientprotocol/codex-acp#761](https://github.com/agentclientprotocol/codex-acp/issues/761)).
+- **Which `agent`.** Cursor CLI and Grok Build both install `~/.local/bin/agent`, and the last installed wins. Identify a binary by its resolved path or `--version` format before passing it credentials; Cursor speaks ACP through `agent acp`, Grok through `grok agent stdio`.
+
 ## Compaction
 
 A compaction is a message in the conversation (`chat/compaction/marker.ts`): a user message whose text is the summary and whose metadata marks it, so the transcript draws a divider and any backend that knows nothing of compaction still reads the summary. `messagesSinceCompaction` gives what a model reads, from the latest marker on; the tool loop sends only that. Undo notes still cover edits before it, which the summary describes as made. Saved conversations keep every message, so nothing changes in storage.
