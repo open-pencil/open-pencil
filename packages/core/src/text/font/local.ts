@@ -62,6 +62,18 @@ export class LocalFonts {
     }
   }
 
+  /**
+   * Lists the installed fonts again, once access is granted, as after a font was installed
+   * meanwhile; whether the list changed. Listing reads no font files.
+   */
+  async refresh(): Promise<boolean> {
+    if (this.state !== 'granted') return false
+    const listed = (fonts: readonly FontInfo[] | null) =>
+      (fonts ?? []).map((font) => `${font.family}|${font.style}`).join('\n')
+    const before = listed(this.fonts)
+    return listed(await this.requestAccess()) !== before
+  }
+
   /** A face's bytes, once access is granted. */
   read(family: string, style?: string): Promise<ArrayBuffer | null> {
     if (!IS_BROWSER || !window.queryLocalFonts) return Promise.resolve(null)

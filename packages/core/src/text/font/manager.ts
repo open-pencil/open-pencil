@@ -325,6 +325,13 @@ export class FontManager {
     return fonts
   }
 
+  /** Lists the browser's local fonts again; whether the list changed. */
+  async refreshLocalFonts(): Promise<boolean> {
+    const changed = await this.localFonts.refresh()
+    if (changed) this.faces.forget()
+    return changed
+  }
+
   async listFamilies(): Promise<string[]> {
     const options = await this.listFamilyOptions()
     return options.map((option) => option.family)

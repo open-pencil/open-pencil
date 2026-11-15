@@ -3771,6 +3771,7 @@ dependencies = [
  "fontique 0.11.1",
  "httparse",
  "keyring",
+ "notify",
  "objc2-core-foundation",
  "objc2-core-text",
  "read-fonts 0.41.0",
@@ -3798,6 +3799,7 @@ dependencies = [
  "url",
  "webkit2gtk-sys",
  "which",
+ "windows 0.62.2",
  "write-fonts",
  "zstd",
 ]

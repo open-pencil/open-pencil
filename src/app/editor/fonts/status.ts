@@ -1,3 +1,4 @@
+import { tryOnScopeDispose } from '@vueuse/core'
 import { computed, ref } from 'vue'
 
 import { computeAllLayouts } from '@open-pencil/core/layout'
@@ -5,7 +6,7 @@ import { DocumentFontUses, fontManager, fontResolver } from '@open-pencil/core/t
 import { useEditorEvent } from '@open-pencil/vue/editor/events'
 
 import { useEditorStore } from '@/app/editor/active-store'
-import { loadFont, requestLocalFontAccess } from '@/app/editor/fonts'
+import { loadFont, onInstalledFontsChanged, requestLocalFontAccess } from '@/app/editor/fonts'
 
 export function useDocumentFontStatus() {
   const editor = useEditorStore()
@@ -90,6 +91,13 @@ export function useDocumentFontStatus() {
       retrying.value = false
     }
   }
+
+  // A missing font installed while the document is open is loaded then, as a retry would.
+  tryOnScopeDispose(
+    onInstalledFontsChanged(() => {
+      if (status.value.issues.length > 0) void retry()
+    })
+  )
 
   function selectAffectedNodes() {
     editor.select(status.value.issues.flatMap((issue) => issue.nodeIds))

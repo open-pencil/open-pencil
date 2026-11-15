@@ -72,8 +72,9 @@ export function useFontPicker(options: UseFontPickerOptions) {
     return sortBy(matches, [(option) => rank(option.family, term)])
   })
 
+  /** Lists the families again on every open, so a font installed meanwhile is offered. */
   async function loadFamilies() {
-    if (families.value.length > 0 || loading.value) return
+    if (loading.value) return
     loading.value = true
     const version = ++requestVersion
     try {

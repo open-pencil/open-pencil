@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
-import { useLocalStorage } from '@vueuse/core'
+import { listen } from '@tauri-apps/api/event'
+import { useEventListener, useLocalStorage } from '@vueuse/core'
 import { watch } from 'vue'
 
 import {
@@ -23,7 +24,7 @@ import {
 } from '@/app/editor/fonts/cache'
 import { isTauri } from '@/app/tauri/env'
 import { tauriFetch } from '@/app/tauri/http'
-import { IS_TAURI } from '@/constants'
+import { IS_BROWSER, IS_TAURI } from '@/constants'
 
 if (typeof navigator !== 'undefined') {
   fontManager.setFallbackUserAgent(navigator.userAgent)
@@ -89,6 +90,7 @@ async function getTauriFonts(): Promise<HostFontFamily[]> {
 
 export function preloadFonts(): void {
   configureTauriFontCache()
+  watchInstalledFonts()
   // The installed families are listed ahead for the font picker. The page draws them by name
   // already; a face registered under a family's name would stand in for all of its faces.
   if (isTauri()) {
@@ -96,6 +98,48 @@ export function preloadFonts(): void {
     return
   }
   if (onlineFontsEnabled.value) fontManager.preloadWebFontFamilies()
+}
+
+/** The event the desktop host sends once it has listed the system fonts again. */
+const FONTS_CHANGED_EVENT = 'fonts:changed'
+
+const installedFontsListeners = new Set<() => void>()
+let watchingInstalledFonts = false
+
+/** Calls the listener whenever fonts are installed or removed while the app runs. */
+export function onInstalledFontsChanged(listener: () => void): () => void {
+  installedFontsListeners.add(listener)
+  return () => installedFontsListeners.delete(listener)
+}
+
+function installedFontsChanged() {
+  for (const listener of installedFontsListeners) listener()
+}
+
+/**
+ * Lists the installed fonts again when they change: the desktop host says so once it has read
+ * them anew; a browser can only be asked again, which costs no font reads, so it is asked when
+ * the window comes back, as it does after a font is installed in another app.
+ */
+function watchInstalledFonts() {
+  if (watchingInstalledFonts) return
+  watchingInstalledFonts = true
+  if (isTauri()) {
+    void listen(FONTS_CHANGED_EVENT, () => {
+      tauriFontsCache = null
+      tauriFontsPromise = null
+      void getTauriFonts().then(installedFontsChanged)
+    })
+    return
+  }
+  if (!IS_BROWSER) return
+  useEventListener(window, 'focus', () => {
+    if (fontManager.localAccessState() !== 'granted') return
+    void fontManager.refreshLocalFonts().then((changed) => {
+      if (changed) installedFontsChanged()
+      return undefined
+    })
+  })
 }
 
 export function localFontAccessState(): LocalFontAccessState {
