@@ -36,9 +36,9 @@ function tidy(text: string): string {
  * OpenPencil's. A template of theirs that cannot render gives way to OpenPencil's, so a mistake
  * in Settings never stops the work it is for.
  */
-export async function renderPrompt(
-  id: TemplatePrompt,
-  variables: PromptVariables
+export async function renderPrompt<Id extends TemplatePrompt>(
+  id: Id,
+  variables: PromptVariables<Id>
 ): Promise<string> {
   const knap = await loadPromptEngine()
   const builtIn = PROMPT_DEFINITIONS[id].template

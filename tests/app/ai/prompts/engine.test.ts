@@ -1,6 +1,10 @@
-import { afterEach, describe, expect, test } from 'bun:test'
+import { afterEach, describe, expect, expectTypeOf, test } from 'bun:test'
 
-import { PROMPT_DEFINITIONS, TEMPLATE_PROMPTS } from '@/app/ai/prompts/definitions'
+import {
+  PROMPT_DEFINITIONS,
+  TEMPLATE_PROMPTS,
+  type PromptVariables
+} from '@/app/ai/prompts/definitions'
 import { checkTemplate, previewPrompt, renderPrompt } from '@/app/ai/prompts/engine'
 import {
   appPreferences,
@@ -43,6 +47,22 @@ describe('a prompt', () => {
     expect(await previewPrompt('title', '{{ request }}')).toBe(
       String(PROMPT_DEFINITIONS.title.variables.request)
     )
+  })
+})
+
+describe('the values a prompt is filled with', () => {
+  test('are typed by its definition, so code passes exactly those', () => {
+    expectTypeOf<PromptVariables<'title'>>().toEqualTypeOf<{ request: string; reply: string }>()
+    expectTypeOf<PromptVariables<'review'>>().toEqualTypeOf<{
+      language: string
+      focus: string
+      sees_images: boolean
+      references: number
+      edit: boolean
+    }>()
+    expectTypeOf<Parameters<typeof renderPrompt<'title'>>[1]>().toEqualTypeOf<
+      PromptVariables<'title'>
+    >()
   })
 })
 
