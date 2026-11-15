@@ -1,4 +1,4 @@
-import { partition } from 'es-toolkit'
+import { partition, uniq } from 'es-toolkit'
 
 import {
   FONT_WEIGHT_NAMES,
@@ -111,5 +111,12 @@ export function findLocalFont<T extends NamedLocalFont>(
   if (listed || !style) {
     return listed
   }
-  return fontByFullName(fonts, `${family} ${style}`)
+  const families = uniq([family, normalizeFontFamily(family)])
+  for (const named of families) {
+    const font = fontByFullName(fonts, `${named} ${style}`)
+    if (font) {
+      return font
+    }
+  }
+  return undefined
 }

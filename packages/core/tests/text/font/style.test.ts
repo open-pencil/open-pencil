@@ -88,4 +88,10 @@ describe('findLocalFont', () => {
     expect(findLocalFont(windows, 'Acme Sans', 'Bold')?.fullName).toBe('Acme Sans Bold')
     expect(findLocalFont(windows, 'Acme Sans', 'Compressed Black')).toBeUndefined()
   })
+
+  test('finds the face by the family name a variable family normalizes to', () => {
+    expect(findLocalFont(windows, 'Acme Sans Variable', 'Compressed Medium')?.family).toBe(
+      'Acme Sans Compressed Medium'
+    )
+  })
 })
