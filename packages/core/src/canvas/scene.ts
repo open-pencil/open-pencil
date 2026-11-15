@@ -43,7 +43,7 @@ import {
 import { drawReflowedPathTextSilhouettes, isReflowedPathText } from './text/derived'
 import { drawTextEmoji, hasOverflowPathTextPaint, renderText } from './text/draw/text'
 import { stickyPlaceholderNode } from './text/placeholder'
-import { beginTexture, endTexture, visibleTexture } from './texture'
+import { beginTexture, endTexture, visibleTexture } from './texture/render'
 
 function drawVisibleFills(
   r: SkiaRenderer,

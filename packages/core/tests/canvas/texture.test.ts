@@ -71,6 +71,38 @@ describe('texture effects', () => {
     expect(clipped.missing).toBeLessThan(40)
   })
 
+  test('keep a translucent fill’s alpha inside a clipped texture', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    const square = graph.createNode('RECTANGLE', page, {
+      width: 160,
+      height: 160,
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 1, a: 1 }, opacity: 0.5, visible: true }],
+      effects: [texture({ noiseSize: 2, radius: 4, clipToShape: true })]
+    })
+    const png = renderNodesToImage(ck, renderer, graph, page, [square.id], {
+      scale: 1,
+      format: 'PNG'
+    })
+    const image = expectDefined(ck.MakeImageFromEncoded(expectDefined(png)))
+    const pixels = expectDefined(
+      image.readPixels(0, 0, {
+        width: 160,
+        height: 160,
+        colorType: ck.ColorType.RGBA_8888,
+        alphaType: ck.AlphaType.Unpremul,
+        colorSpace: ck.ColorSpace.SRGB
+      })
+    )
+    image.delete()
+    // Far from the edges the moved fill lands on the unmoved one; Figma keeps it at 50%.
+    let maxAlpha = 0
+    for (let y = 40; y < 120; y++) {
+      for (let x = 40; x < 120; x++) maxAlpha = Math.max(maxAlpha, pixels[(y * 160 + x) * 4 + 3])
+    }
+    expect(maxAlpha).toBeLessThanOrEqual(129)
+  })
+
   test('keep a clipped texture out of a boolean’s hole', () => {
     const blue: Fill = {
       type: 'SOLID',

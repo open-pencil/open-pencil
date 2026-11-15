@@ -9,7 +9,7 @@ import { ResourceCache } from '#core/cache/resource'
 import { isPlainRamp, makeProgressiveBlur, progressiveBlurRamp } from './blur/progressive'
 import { withNoiseEffects } from './noise/render'
 import type { SkiaRenderer } from './renderer/skia'
-import { withLeafTexture } from './texture'
+import { withLeafTexture } from './texture/render'
 
 /**
  * Filters a renderer keeps between frames, by their parameters: shadows and blurs reuse one across
@@ -142,20 +142,18 @@ export function applyClippedBlur(
 /**
  * Draws a shape or boolean with its own effects, as Figma layers them: shadows and background
  * blur behind, inner shadows over the fills and under the strokes (`paint` calls `inner` between
- * them), the texture roughening that content, and noise grains over it. `shape` is the outline
- * a clipped texture keeps to, where the node's own falls short.
+ * them), the texture roughening that content, and noise grains over it.
  */
 export function renderLeafWithEffects(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
   graph: SceneGraph,
-  paint: (inner: () => void) => void,
-  shape?: Path | null
+  paint: (inner: () => void) => void
 ): void {
   r.renderEffects(canvas, node, graph, 'behind')
   const content = () => paint(() => r.renderEffects(canvas, node, graph, 'inner'))
-  const textured = () => withLeafTexture(r, canvas, node, content, shape)
+  const textured = () => withLeafTexture(r, canvas, node, content)
   // A frame or group grains its fill with its children, around both, in `renderNode`.
   if (isLayerContainer(node)) textured()
   else withNoiseEffects(r, canvas, node, graph, textured)
