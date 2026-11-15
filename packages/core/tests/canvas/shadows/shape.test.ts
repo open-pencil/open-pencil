@@ -269,3 +269,40 @@ describe('a drop shadow of a vector whose regions overlap', () => {
     )
   })
 })
+
+describe('a vector whose overlapping regions wind in opposite directions', () => {
+  const WHITE: Fill = {
+    type: 'SOLID',
+    color: { r: 1, g: 1, b: 1, a: 1 },
+    opacity: 1,
+    visible: true
+  }
+  const onWhite =
+    (secondLoop: number[], effect: Effect): FigmaRowScene =>
+    (graph, hostId) => {
+      graph.createNode('RECTANGLE', hostId, { width: 400, height: 300, fills: [WHITE] })
+      regionVector(shiftedSquares(secondLoop), effect, 0.1)(graph, hostId)
+    }
+  const GREEN = 1
+  const rowAt = (secondLoop: number[], effect: Effect, y: number) =>
+    renderRow(ck, renderer, onWhite(secondLoop, effect), y, 102, 158, GREEN)
+
+  // Figma reads 206 in the green channel over the overlap: both 10% fills, no shadow under them.
+  test('hides the drop shadow under the overlap', () => {
+    const dropShadow = sharpShadow('DROP_SHADOW', 10)
+    const overlap = (secondLoop: number[]) =>
+      renderRow(ck, renderer, onWhite(secondLoop, dropShadow), 130, 122, 138, GREEN)
+    expectFigmaRow(
+      overlap(OPPOSITE_WINDING),
+      Array.from({ length: 9 }, () => 206)
+    )
+    expect(overlap(SAME_WINDING)).toEqual(overlap(OPPOSITE_WINDING))
+  })
+
+  test('casts the inner shadow from the outline they cover together', () => {
+    const innerShadow = sharpShadow('INNER_SHADOW', 10)
+    const rows = (secondLoop: number[]) =>
+      [110, 130, 148].map((y) => rowAt(secondLoop, innerShadow, y))
+    expect(rows(OPPOSITE_WINDING)).toEqual(rows(SAME_WINDING))
+  })
+})
