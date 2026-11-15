@@ -6,7 +6,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { repoPath } from '@open-pencil/test-support/paths'
 
-import { SkiaRenderer } from '#core/canvas/renderer'
+import { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { withTextParagraph, type TextLayout } from '#core/canvas/text'
 import { fontManager } from '#core/text/font/manager'
 const FONT_FAMILY = 'Painted text fixture'

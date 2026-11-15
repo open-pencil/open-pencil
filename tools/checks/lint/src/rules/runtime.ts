@@ -84,7 +84,7 @@ const noCoreBrowserGlobals = {
     const allowedFiles = [
       '/packages/core/src/constants.ts',
       '/packages/core/src/editor/create.ts',
-      '/packages/core/src/canvas/renderer.ts',
+      '/packages/core/src/canvas/renderer/skia.ts',
       '/packages/core/src/text/font/manager.ts',
       '/packages/core/src/text/font/local.ts',
       '/packages/core/src/profiler/render-profiler.ts',

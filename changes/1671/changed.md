@@ -1,0 +1,1 @@
+- Design JSX's `designMode` also takes a mode's ID, and a mode name several modes of a collection share is an error instead of picking the first; exported JSX names such a mode by its ID.

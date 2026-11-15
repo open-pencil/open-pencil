@@ -3,7 +3,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { TEXT_CARET_COLOR, TEXT_CARET_WIDTH, TEXT_SELECTION_ALPHA } from '#core/constants'
 import type { TextEditor } from '#core/text/editor'
 import { previousGraphemeBoundary } from '#core/text/graphemes'

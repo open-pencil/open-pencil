@@ -3,7 +3,7 @@ import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 
 const SCALE_TOLERANCE = 1e-6
 const PIXEL_TOLERANCE = 1e-3

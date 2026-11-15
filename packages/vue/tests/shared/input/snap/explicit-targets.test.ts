@@ -2,12 +2,12 @@ import { describe, expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core'
 
-import { explicitSnapTargets } from '#vue/shared/input/explicit-snap-targets'
+import { explicitSnapTargets } from '#vue/shared/input/snap/explicit-targets'
 import {
   resolveObjectPixelSnap,
   type ExplicitSnapTarget,
   type GeometrySnapTarget
-} from '#vue/shared/input/snap'
+} from '#vue/shared/input/snap/resolve'
 
 function pageWithGuide(offset: number, axis: 'X' | 'Y') {
   const editor = createEditor()
@@ -157,5 +157,24 @@ describe('explicit snap targets', () => {
     })
 
     expect(explicitSnapTargets(frame.id, editor)).toEqual([])
+  })
+
+  // Figma desktop (2026-11-15): a layer in a frame snaps to the frame's guide; a page layer beside
+  // the frame does not.
+  test('snaps the layers in a frame to its guides, and no others', () => {
+    const editor = createEditor()
+    const pageId = editor.state.currentPageId
+    const frame = editor.graph.createNode('FRAME', pageId, {
+      x: 100,
+      y: 200,
+      width: 300,
+      height: 200
+    })
+    editor.graph.updateNode(frame.id, { guides: [{ id: 'guide', axis: 'x', position: 100 }] })
+
+    expect(explicitSnapTargets(frame.id, editor)).toEqual([
+      { kind: 'canvas-guide', axis: 'x', position: 200, from: 200, to: 400 }
+    ])
+    expect(explicitSnapTargets(pageId, editor)).toEqual([])
   })
 })

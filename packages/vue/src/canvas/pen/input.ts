@@ -6,7 +6,7 @@ import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { createPenDrag, handlePenDragMove } from '#vue/canvas/pen/drag'
 import { PEN_CURSOR } from '#vue/editor/tool-cursor'
-import { resolveVertexSnap } from '#vue/shared/input/snap'
+import { resolveVertexSnap } from '#vue/shared/input/snap/resolve'
 import type { DragState } from '#vue/shared/input/types'
 import { handlePenNodeEditDown } from '#vue/shared/input/vector'
 

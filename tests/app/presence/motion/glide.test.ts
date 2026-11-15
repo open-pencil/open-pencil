@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { easeOutCubic, glideAt, retarget, type Glide } from '@/app/presence/motion'
+import { easeOutCubic, glideAt, retarget, type Glide } from '@/app/presence/motion/glide'
 
 describe('cursor glides', () => {
   test('ease out starts fast, ends at rest, and clamps outside its range', () => {

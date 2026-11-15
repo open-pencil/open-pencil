@@ -24,6 +24,7 @@ export interface LayerBoundsProbes {
   childShadow: Vector
   turnedMask: Vector
   turnedMaskShadow: Vector
+  offscreenShadow: Vector
   blank: Vector
 }
 
@@ -132,15 +133,35 @@ function addTurnedMask(
 }
 
 /**
+ * A square left of the canvas whose hard shadow falls 50px to its right, into view: only the
+ * square's drawn bounds, not its box, keep it from being culled.
+ */
+function addOffscreenShadowCaster(graph: SceneGraph, pageId: string): Vector {
+  graph.createNode('RECTANGLE', pageId, {
+    name: 'Offscreen shadow caster',
+    x: -70,
+    y: 200,
+    width: 60,
+    height: 60,
+    fills: [solid(0.2, 0.2, 0.2)],
+    effects: [
+      { ...effect('DROP_SHADOW', 0, { r: 0.13, g: 0.6, b: 0.33, a: 1 }), offset: { x: 50, y: 0 } }
+    ]
+  })
+  return { x: 20, y: 230 }
+}
+
+/**
  * A glowing dot under a layer blur, a translucent frame whose shadow its child casts past the
  * frame's box, and a turned mask with a shadow: each draws where a layer bounded by its unturned
- * box would cut.
+ * box would cut, and a square off the canvas whose shadow falls into view.
  */
 export function createLayerBoundsScene(graph: SceneGraph, pageId: string): LayerBoundsProbes {
   return {
     glow: addGlowingDot(graph, pageId),
     childShadow: addFrameShadowedByItsChild(graph, pageId),
     ...addTurnedMask(graph, pageId),
+    offscreenShadow: addOffscreenShadowCaster(graph, pageId),
     blank: { x: 120, y: 300 }
   }
 }

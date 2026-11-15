@@ -5,7 +5,6 @@ import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-gr
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
-import { explicitSnapTargets } from '#vue/shared/input/explicit-snap-targets'
 import {
   aspectDriver,
   atLeastOne,
@@ -14,11 +13,12 @@ import {
   signedResizeRect,
   type AspectDriver
 } from '#vue/shared/input/resize/rect'
+import { explicitSnapTargets } from '#vue/shared/input/snap/explicit-targets'
 import {
   optionalEditorState,
   resolveObjectPixelSnap,
   worldBoundsNode
-} from '#vue/shared/input/snap'
+} from '#vue/shared/input/snap/resolve'
 import type { DragResize } from '#vue/shared/input/types'
 
 function movesLeft(handle: HandlePosition): boolean {

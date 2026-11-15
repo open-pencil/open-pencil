@@ -4,8 +4,8 @@ import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
-import { cachedGlyphWidth } from '#core/canvas/labels/paragraph-cache'
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import { drawTextPill } from '#core/canvas/labels/pill'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import {
   MEASUREMENT_COLOR,
   MEASUREMENT_PILL_HEIGHT,
@@ -13,6 +13,7 @@ import {
   MEASUREMENT_PILL_RADIUS,
   MEASUREMENT_TEXT_BASELINE
 } from '#core/constants'
+import { worldXToScreen, worldYToScreen } from '#core/geometry/viewport'
 
 import { outlineNode } from './outline'
 
@@ -147,34 +148,21 @@ function selectedBounds(graph: SceneGraph, selectedIds: Set<string>): Rect | nul
   return computeBounds(nodes.map((node) => getAxisAlignedWorldBounds(node, graph)))
 }
 
-function textWidth(r: SkiaRenderer, text: string): number {
-  return r.chromeFonts.size ? cachedGlyphWidth(r, r.chromeFonts.size, text) : 0
-}
-
 function drawPill(r: SkiaRenderer, canvas: Canvas, text: string, x: number, y: number) {
   const font = r.chromeFonts.size
   if (!font) return
-  const width = textWidth(r, text) + MEASUREMENT_PILL_PADDING_X * 2
-  const rect = r.ck.RRectXY(
-    r.ck.LTRBRect(
-      x - width / 2,
-      y - MEASUREMENT_PILL_HEIGHT / 2,
-      x + width / 2,
-      y + MEASUREMENT_PILL_HEIGHT / 2
-    ),
-    MEASUREMENT_PILL_RADIUS,
-    MEASUREMENT_PILL_RADIUS
-  )
-  r.auxFill.setColorComponents(MEASUREMENT_COLOR.r, MEASUREMENT_COLOR.g, MEASUREMENT_COLOR.b, 1)
-  canvas.drawRRect(rect, r.auxFill)
-  r.auxFill.setColor(r.ck.WHITE)
-  canvas.drawText(
+  drawTextPill(r, canvas, {
     text,
-    x - width / 2 + MEASUREMENT_PILL_PADDING_X,
-    y + MEASUREMENT_TEXT_BASELINE,
-    r.auxFill,
-    font
-  )
+    font,
+    centerX: x,
+    top: y - MEASUREMENT_PILL_HEIGHT / 2,
+    height: MEASUREMENT_PILL_HEIGHT,
+    paddingX: MEASUREMENT_PILL_PADDING_X,
+    radius: MEASUREMENT_PILL_RADIUS,
+    baseline: MEASUREMENT_PILL_HEIGHT / 2 + MEASUREMENT_TEXT_BASELINE,
+    fill: r.ck.Color4f(MEASUREMENT_COLOR.r, MEASUREMENT_COLOR.g, MEASUREMENT_COLOR.b, 1),
+    textColor: r.ck.WHITE
+  })
 }
 
 function drawTargetOutline(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph, target: SceneNode) {
@@ -194,15 +182,15 @@ export function drawMeasurementSegment(
   )
   r.auxStroke.setPathEffect(null)
   if (segment.axis === 'x') {
-    const x1 = segment.from * r.zoom + r.panX
-    const x2 = segment.to * r.zoom + r.panX
-    const y = segment.cross * r.zoom + r.panY
+    const x1 = worldXToScreen(r, segment.from)
+    const x2 = worldXToScreen(r, segment.to)
+    const y = worldYToScreen(r, segment.cross)
     canvas.drawLine(x1, y, x2, y, r.auxStroke)
     drawPill(r, canvas, String(Math.round(segment.value)), center(x1, x2 - x1), y)
   } else {
-    const x = segment.cross * r.zoom + r.panX
-    const y1 = segment.from * r.zoom + r.panY
-    const y2 = segment.to * r.zoom + r.panY
+    const x = worldXToScreen(r, segment.cross)
+    const y1 = worldYToScreen(r, segment.from)
+    const y2 = worldYToScreen(r, segment.to)
     canvas.drawLine(x, y1, x, y2, r.auxStroke)
     drawPill(r, canvas, String(Math.round(segment.value)), x, center(y1, y2 - y1))
   }

@@ -8,7 +8,7 @@ import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { startPenInput, updatePenHover } from '#vue/canvas/pen/input'
-import { resolveVertexSnap } from '#vue/shared/input/snap'
+import { resolveVertexSnap } from '#vue/shared/input/snap/resolve'
 
 let editor: Editor
 

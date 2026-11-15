@@ -3,7 +3,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import { ResourceCache } from '#core/cache/resource'
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import {
   applyGlyphTransform,
   hasRotatedDerivedGlyphs,

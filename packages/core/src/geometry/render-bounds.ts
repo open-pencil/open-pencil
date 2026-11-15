@@ -1,3 +1,5 @@
+import { compact } from 'es-toolkit'
+
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { getNodeLocalMatrix, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
@@ -16,6 +18,7 @@ import {
   type VisualBounds,
   widestBlurRadius
 } from '@open-pencil/scene-graph/geometry'
+import { isVisibleMask, maskRuns } from '@open-pencil/scene-graph/masks'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
 import { paintShows } from '@open-pencil/scene-graph/paints'
@@ -312,23 +315,17 @@ function clipped(bounds: VisualBounds | null, clip: VisualBounds | null): Visual
   return bounds && clip ? intersectVisualBounds(bounds, clip) : bounds
 }
 
-function isVisibleMask(node: SceneNode): boolean {
-  return node.visible && node.isMask
-}
-
 /** Whether a mask's effects can draw past what it draws without them, which `figma` reach trims. */
 function reachesPast(node: SceneNode, reach: EffectReach): boolean {
   return reach !== 'drawn' && node.effects.some((effect) => effect.visible)
 }
 
-/** A run of masks and the siblings after them that they mask. */
-type MaskRun = {
+/** What a mask run draws, gathered from its masks and what they mask. */
+type MaskRunDrawn = {
   /** What the masks draw, their effects included: nothing in the run reaches past it. */
   masks: VisualBounds | null
   /** The masks without their effects and what they mask, which Figma holds the masks' effects to. */
   extent: VisualBounds | null
-  /** Whether a masked sibling came after the masks, so the next mask starts a new run. */
-  holds: boolean
 }
 
 /**
@@ -337,14 +334,14 @@ type MaskRun = {
  * the masks (Figma desktop, live). `drawn` reach keeps the masks' effects whole, as the canvas
  * draws them.
  */
-function maskRunBounds(run: MaskRun, reach: EffectReach): VisualBounds | null {
+function maskRunBounds(run: MaskRunDrawn, reach: EffectReach): VisualBounds | null {
   if (reach === 'drawn' || !run.masks || !run.extent) return run.masks
   return intersectVisualBounds(run.masks, run.extent)
 }
 
 /**
- * What a node's children draw, held to `clip`. A visible mask masks the siblings after it, as the
- * canvas does (`renderMaskedChildIds`), and those siblings draw only inside it (`maskRunBounds`).
+ * What a node's children draw, held to `clip`. Masks act on their siblings in runs (`maskRuns`),
+ * as the canvas draws them, and the siblings they mask draw only inside them (`maskRunBounds`).
  */
 function drawnChildren(
   graph: SceneGraph,
@@ -353,44 +350,39 @@ function drawnChildren(
   clip: VisualBounds | null,
   options: RenderBoundsOptions
 ): VisualBounds | null {
+  const children = compact(node.childIds.map((childId) => graph.getNode(childId)))
+  const childMatrix = (child: SceneNode) =>
+    Matrix.multiply(matrix, getNodeLocalMatrix(projectedNode(child, options.preview)))
+  const drawnChild = (child: SceneNode) =>
+    childSubtree(graph, child, childMatrix(child), clip, options)
+  const drawnBetween = (from: number, to: number, into: VisualBounds | null) => {
+    let bounds = into
+    for (let index = from; index < to; index++) {
+      const child = children[index]
+      if (draws(child, options.reach)) bounds = unionVisualBounds(bounds, drawnChild(child))
+    }
+    return bounds
+  }
   let content: VisualBounds | null = null
-  let run: MaskRun | null = null
-  const closeRun = () => {
-    if (run) content = unionVisualBounds(content, maskRunBounds(run, options.reach))
-    run = null
+  let next = 0
+  for (const run of maskRuns(children, isVisibleMask)) {
+    content = drawnBetween(next, run.start, content)
+    next = run.end
+    const drawn: MaskRunDrawn = { masks: null, extent: null }
+    for (const mask of children.slice(run.start, run.maskedStart)) {
+      const whole = drawnChild(mask)
+      drawn.masks = unionVisualBounds(drawn.masks, whole)
+      drawn.extent = unionVisualBounds(
+        drawn.extent,
+        reachesPast(mask, options.reach)
+          ? drawnSubtree(graph, { ...mask, effects: [] }, childMatrix(mask), clip, options)
+          : whole
+      )
+    }
+    drawn.extent = drawnBetween(run.maskedStart, run.end, drawn.extent)
+    content = unionVisualBounds(content, maskRunBounds(drawn, options.reach))
   }
-  for (const childId of node.childIds) {
-    const child = graph.getNode(childId)
-    if (!child) {
-      continue
-    }
-    const mask = isVisibleMask(child)
-    // Any sibling after the masks ends their list, drawn or not, as on the canvas.
-    if (!mask && run) run.holds = true
-    if (!mask && !draws(child, options.reach)) {
-      continue
-    }
-    const childMatrix = Matrix.multiply(
-      matrix,
-      getNodeLocalMatrix(projectedNode(child, options.preview))
-    )
-    const drawn = childSubtree(graph, child, childMatrix, clip, options)
-    if (mask) {
-      if (run?.holds) closeRun()
-      const plain = reachesPast(child, options.reach)
-        ? drawnSubtree(graph, { ...child, effects: [] }, childMatrix, clip, options)
-        : drawn
-      run ??= { masks: null, extent: null, holds: false }
-      run.masks = unionVisualBounds(run.masks, drawn)
-      run.extent = unionVisualBounds(run.extent, plain)
-    } else if (run) {
-      run.extent = unionVisualBounds(run.extent, drawn)
-    } else if (drawn) {
-      content = unionVisualBounds(content, drawn)
-    }
-  }
-  closeRun()
-  return content
+  return drawnBetween(next, children.length, content)
 }
 
 /**

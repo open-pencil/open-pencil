@@ -4,7 +4,7 @@ import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 import { shownStatusState } from '@open-pencil/scene-graph/statuses'
 
-import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
+import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer/skia'
 import { SECTION_TITLE_RADIUS } from '#core/constants'
 
 import { labelLayout, labelViewport, type LabelLayout } from './layout'

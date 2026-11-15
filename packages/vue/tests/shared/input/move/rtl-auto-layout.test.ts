@@ -4,7 +4,7 @@ import { createEditor } from '@open-pencil/core'
 import { computeLayout } from '@open-pencil/core/layout'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { computeAutoLayoutIndicatorForFrame } from '#vue/shared/input/auto-layout'
+import { computeAutoLayoutIndicatorForFrame } from '#vue/shared/input/auto-layout/insertion'
 import { handleMoveUp } from '#vue/shared/input/move/drag'
 import type { DragMove } from '#vue/shared/input/types'
 
