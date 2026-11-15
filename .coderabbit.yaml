@@ -30,7 +30,6 @@ reviews:
   path_instructions:
     - path: "**"
       instructions: >-
-        The AGENTS.md guides on the path to each changed file are this repository's review rules; check the change against them, not only against general practice.
         Flag a helper, parser, path walker, format conversion, or test utility that duplicates an existing dependency or a module the repository already has, and name the one to reuse.
         Flag code placed outside the package or domain folder that owns it, and tests outside the folder that mirrors their source.
         Flag numeric or size constants with no stated source or reason, such as an unexplained zoom limit or viewport size.
@@ -59,7 +58,6 @@ knowledge_base:
   code_guidelines:
     filePatterns:
       - "CONTRIBUTING.md"
-      - "**/AGENTS.md"
 
 chat:
   art: false
