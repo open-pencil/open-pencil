@@ -118,6 +118,18 @@ test('reads a face’s weight and slant from the font data Figma saves beside it
   expect(text('Fira Code', 'Retina', 450)).toMatchObject({ fontWeight: 450 })
 })
 
+test('reads the weight a width-named face stands for when no font data is saved', () => {
+  const props = nodeChangeToProps(
+    {
+      type: 'TEXT',
+      fontName: { family: 'Acme Sans', style: 'Compressed Medium', postscript: '' }
+    } as NodeChange,
+    []
+  )
+  expect(props).toMatchObject({ fontWeight: 500, italic: false, fontStyle: 'Compressed Medium' })
+  expect(write(props).fontName?.style).toBe('Compressed Medium')
+})
+
 test('reads a range’s weight and slant from the saved font data, not its name', () => {
   const props = nodeChangeToProps(
     {
