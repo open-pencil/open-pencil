@@ -103,6 +103,23 @@ const rows = TEXTS.flatMap((textValue) =>
   )
 )
 
+/** A text editor on `node`, laid out by the real renderer. */
+function editorOn(node: SceneNode): TextEditor {
+  const editor = new TextEditor(canvasKit())
+  editor.setRenderer(
+    asDouble<Parameters<TextEditor['setRenderer']>[0]>({
+      buildParagraph: (shown: SceneNode) => {
+        const layout = buildParagraph(renderer(), shown)
+        layout.layout(shown.width)
+        return layout
+      },
+      fontGeneration: 1
+    })
+  )
+  editor.start(node)
+  return editor
+}
+
 describe('the caret and selection keep their place against the glyphs in spaced text', () => {
   test.each(rows)('%s, %s %s: every caret moves with its line', (_, align, __, value, spacing) => {
     const layout = laidOut(boxed(value, align, spacing))
@@ -225,22 +242,6 @@ describe('up and down arrows keep the caret’s column in spaced text', () => {
   const lines = 'Hello  \nHello  '
   const lineLength = 8
 
-  function editorOn(node: SceneNode): TextEditor {
-    const editor = new TextEditor(canvasKit())
-    editor.setRenderer(
-      asDouble<Parameters<TextEditor['setRenderer']>[0]>({
-        buildParagraph: (shown: SceneNode) => {
-          const layout = buildParagraph(renderer(), shown)
-          layout.layout(shown.width)
-          return layout
-        },
-        fontGeneration: 1
-      })
-    )
-    editor.start(node)
-    return editor
-  }
-
   test.each(
     ALIGNS.flatMap((align) =>
       SPACINGS.map((spacing) => [align, lengthLabel(spacing), spacing] as const)
@@ -303,4 +304,23 @@ describe('the line a text index is on', () => {
     }
     layout.delete()
   })
+})
+
+describe('the caret after the last character', () => {
+  test.each(['e\nz', 'é\nz', 'шрифт\nтекст', 'Hello\n'])(
+    '%j: Home and End move along the last line',
+    (value) => {
+      const editor = editorOn(text(boxed(value, 'LEFT', pixels(4))))
+      const state = expectDefined(editor.state, 'editor state')
+      const lastLine = value.lastIndexOf('\n') + 1
+
+      state.cursor = value.length
+      editor.moveToLineStart()
+      expect(state.cursor).toBe(lastLine)
+
+      editor.moveToLineEnd()
+      expect(state.cursor).toBe(value.length)
+      editor.stop()
+    }
+  )
 })
