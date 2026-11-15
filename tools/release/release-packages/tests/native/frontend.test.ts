@@ -66,7 +66,7 @@ test.each(['valid', 'beta', 'legacy', 'source', 'version', 'digest'])(
       const config = join(root, 'release-build-config.json')
 
       if (scenario === 'valid') {
-        await operation
+        expect(await operation).toBe(config)
         expect(JSON.parse(await readFile(config, 'utf8'))).toEqual({
           build: { beforeBuildCommand: null },
           bundle: {
