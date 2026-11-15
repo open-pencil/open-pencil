@@ -33,6 +33,7 @@ import { createClipboardPlacementActions, type ClipboardPlacement } from './clip
 import { createClipboardWebActions } from './clipboard/web'
 import { acceptsChildren, prepareSlotEdits } from './components/slots'
 import { collectSubtrees, restoreSubtree, snapshotSubtree } from './history/subtree'
+import { fitEnclosingGroupsWithUndo } from './structure/group/bounds'
 import type { EditorContext } from './types'
 
 type PasteOptions = {
@@ -425,6 +426,12 @@ export function createClipboardActions(ctx: EditorContext) {
         ctx.setSelectedIds(prevSelection)
       }
     })
+    // Groups shrink to the layers left in them, and one left empty goes, in the same undo step,
+    // which `deleteNodes` batches.
+    fitEnclosingGroupsWithUndo(
+      ctx,
+      entries.map((entry) => entry.parentId)
+    )
     ctx.setSelectedIds(new Set(selectionAfter))
   }
 
