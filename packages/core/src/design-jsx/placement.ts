@@ -56,8 +56,21 @@ export function resolveRenderPlacement(
   }
 }
 
-/** Undo a render whose layer to replace changed while it rendered, keeping that layer. */
-function refuseReplacement(graph: SceneGraph, results: RenderResult[], reason: string): never {
+/**
+ * Undo a render whose layer to replace changed while it rendered, keeping that layer: one an edit
+ * moved into a rendered root goes back where it was before the roots are deleted.
+ */
+function refuseReplacement(
+  graph: SceneGraph,
+  results: RenderResult[],
+  placement: RenderPlacement,
+  reason: string
+): never {
+  const replaced = placement.replaceId ? graph.getNode(placement.replaceId) : undefined
+  const roots = new Set(results.map((result) => result.id))
+  if (replaced && graph.closest(replaced.id, (ancestor) => roots.has(ancestor.id))) {
+    graph.insertChildAt(replaced.id, placement.parentId, placement.insertIndex ?? 0)
+  }
   for (const result of results) graph.deleteNode(result.id)
   throw new Error(`The layer to replace ${reason} while the JSX rendered`)
 }
@@ -76,11 +89,11 @@ function currentPlacement(
   if (!placement.replaceId) return placement
   const replaced = graph.getNode(placement.replaceId)
   const parent = replaced?.parentId ? graph.getNode(replaced.parentId) : undefined
-  if (!replaced || !parent) refuseReplacement(graph, results, 'was deleted')
+  if (!replaced || !parent) refuseReplacement(graph, results, placement, 'was deleted')
   // The roots are placed in its parent's coordinates, captured before rendering.
-  if (parent.id !== placement.parentId) refuseReplacement(graph, results, 'moved')
+  if (parent.id !== placement.parentId) refuseReplacement(graph, results, placement, 'moved')
   if (results.some((result) => !graph.getNode(result.id))) {
-    refuseReplacement(graph, results, 'lost its replacement')
+    refuseReplacement(graph, results, placement, 'lost its replacement')
   }
   for (const result of results) graph.insertChildAt(result.id, parent.id, parent.childIds.length)
   return { ...placement, insertIndex: parent.childIds.indexOf(replaced.id) }
