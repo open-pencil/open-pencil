@@ -1,18 +1,28 @@
 //! System font discovery through fontique, which reads each face's attributes from the font
 //! files the platform reports.
 
-use fontique::{Blob, Collection, CollectionOptions, FontInfo, FontStyle, SourceCache};
+use fontique::{Blob, Collection, CollectionOptions, FontInfo, FontStyle, FontWidth, SourceCache};
 use std::sync::{Mutex, OnceLock};
 
-use super::names::{face_names, spelling, FaceNames};
-use super::style::{named_weight, names_weight, requested_face, style_name};
+use super::names::{face_names, spelling, typographic_family, FaceNames};
+use super::style::{named_weight, names_weight, names_width, requested_face, style_name};
 
 struct Catalog {
     collection: Collection,
     cache: SourceCache,
 }
 
+/// A face Windows lists under a family other than the one its font names, as it lists a variable
+/// font's optical sizes or a face beyond regular, bold, and italic as families of their own.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ListedElsewhere {
+    pub family: String,
+    pub listed: String,
+    pub position: usize,
+}
+
 static CATALOG: OnceLock<Mutex<Catalog>> = OnceLock::new();
+static LISTED_ELSEWHERE: OnceLock<Vec<ListedElsewhere>> = OnceLock::new();
 
 fn with_catalog<T>(f: impl FnOnce(&mut Catalog) -> T) -> T {
     let catalog = CATALOG.get_or_init(|| {
@@ -36,6 +46,7 @@ pub struct FaceTraits {
     pub italic: bool,
     /// The range of a variable font's `wght` axis.
     pub weight_axis: Option<(f32, f32)>,
+    pub normal_width: bool,
 }
 
 impl FaceTraits {
@@ -48,6 +59,7 @@ impl FaceTraits {
                 .iter()
                 .find(|axis| axis.tag == *b"wght")
                 .map(|axis| (axis.min, axis.max)),
+            normal_width: font.width() == FontWidth::NORMAL,
         }
     }
 }
@@ -133,9 +145,24 @@ pub fn choose_named_face(faces: &[(FaceTraits, FaceNames)], style: &str) -> Opti
             return None;
         }
         let (weight, italic) = requested_face(style);
-        let traits: Vec<FaceTraits> = faces.iter().map(|(traits, _)| *traits).collect();
-        choose_face(&traits, weight, italic)
+        choose_face_among(faces, has_normal_width, weight, italic)
+            .or_else(|| choose_face_among(faces, |_| true, weight, italic))
     })
+}
+
+fn has_normal_width((traits, names): &(FaceTraits, FaceNames)) -> bool {
+    traits.normal_width && !names.style.as_deref().is_some_and(names_width)
+}
+
+fn choose_face_among(
+    faces: &[(FaceTraits, FaceNames)],
+    keep: impl Fn(&(FaceTraits, FaceNames)) -> bool,
+    weight: f32,
+    italic: bool,
+) -> Option<usize> {
+    let kept: Vec<usize> = (0..faces.len()).filter(|&i| keep(&faces[i])).collect();
+    let traits: Vec<FaceTraits> = kept.iter().map(|&i| faces[i].0).collect();
+    choose_face(&traits, weight, italic).map(|found| kept[found])
 }
 
 /// The names a face's font gives it, read from the font file without caching its data.
@@ -176,21 +203,110 @@ pub fn families() -> Vec<(String, Vec<ListedFace>)> {
     })
 }
 
-/// The face of `family` that `style` names, as `choose_named_face` picks it.
+/// The face of `family` that `style` names, as `choose_named_face` picks it: among the faces
+/// listed under `family`, else among those whose font names `family` but are listed elsewhere.
 pub fn load_face(family: &str, style: &str) -> Option<Face> {
     with_catalog(|catalog| {
-        let family = catalog.collection.family_by_name(family)?;
-        let faces: Vec<(FaceTraits, FaceNames)> = family
-            .fonts()
-            .iter()
-            .map(|font| (FaceTraits::of(font), names_of(font)))
-            .collect();
-        let font = &family.fonts()[choose_named_face(&faces, style)?];
-        Some(Face {
-            data: font.load(Some(&mut catalog.cache))?,
-            index: font.index(),
+        let listed = catalog
+            .collection
+            .family_by_name(family)
+            .map(|info| info.fonts().to_vec())
+            .unwrap_or_default();
+        named_face(catalog, &listed, style)
+    })
+    .or_else(|| {
+        let index = listed_elsewhere_index();
+        with_catalog(|catalog| {
+            let elsewhere = fonts_listed_elsewhere(catalog, index, family);
+            named_face(catalog, &elsewhere, style)
         })
     })
+}
+
+fn named_face(catalog: &mut Catalog, fonts: &[FontInfo], style: &str) -> Option<Face> {
+    let faces: Vec<(FaceTraits, FaceNames)> = fonts
+        .iter()
+        .map(|font| (FaceTraits::of(font), names_of(font)))
+        .collect();
+    let font = &fonts[choose_named_face(&faces, style)?];
+    Some(Face {
+        data: font.load(Some(&mut catalog.cache))?,
+        index: font.index(),
+    })
+}
+
+fn fonts_listed_elsewhere(
+    catalog: &mut Catalog,
+    index: &[ListedElsewhere],
+    family: &str,
+) -> Vec<FontInfo> {
+    listed_elsewhere_of(index, family)
+        .filter_map(|face| {
+            let listed = catalog.collection.family_by_name(&face.listed)?;
+            listed.fonts().get(face.position).cloned()
+        })
+        .collect()
+}
+
+pub fn listed_elsewhere_of<'a>(
+    index: &'a [ListedElsewhere],
+    family: &str,
+) -> impl Iterator<Item = &'a ListedElsewhere> {
+    let wanted = spelling(family);
+    index
+        .iter()
+        .filter(move |face| spelling(&face.family) == wanted)
+}
+
+/// Read from every font file once, after the catalog lock is let go, so faces listed under their
+/// own family keep loading while the files are read.
+fn listed_elsewhere_index() -> &'static [ListedElsewhere] {
+    LISTED_ELSEWHERE.get_or_init(|| {
+        let families = with_catalog(|catalog| listed_families(&mut catalog.collection));
+        index_listed_elsewhere(families, |font| {
+            font.load(None)
+                .and_then(|data| typographic_family(data.as_ref(), font.index()))
+        })
+    })
+}
+
+fn listed_families(collection: &mut Collection) -> Vec<(String, Vec<FontInfo>)> {
+    let names: Vec<String> = collection
+        .family_names()
+        .filter(|name| !name.starts_with('.'))
+        .map(String::from)
+        .collect();
+    names
+        .into_iter()
+        .filter_map(|listed| {
+            let fonts = collection.family_by_name(&listed)?.fonts().to_vec();
+            Some((listed, fonts))
+        })
+        .collect()
+}
+
+/// The faces whose font names a family other than the one they are listed under, in family
+/// name order, so the faces found for a family come in the same order on every launch.
+pub fn index_listed_elsewhere<Font>(
+    mut families: Vec<(String, Vec<Font>)>,
+    named_family: impl Fn(&Font) -> Option<String>,
+) -> Vec<ListedElsewhere> {
+    families.sort_by(|a, b| a.0.cmp(&b.0));
+    let mut index = Vec::new();
+    for (listed, fonts) in families {
+        for (position, font) in fonts.iter().enumerate() {
+            if let Some(family) =
+                named_family(font).filter(|family| spelling(family) != spelling(&listed))
+            {
+                index.push(ListedElsewhere {
+                    family,
+                    listed: listed.clone(),
+                    position,
+                });
+            }
+        }
+    }
+    index
 }
 
 #[cfg(test)]
@@ -203,6 +319,7 @@ mod tests {
             weight,
             italic,
             weight_axis: None,
+            normal_width: true,
         }
     }
 
@@ -250,6 +367,56 @@ mod tests {
         assert_eq!(choose_face(&[narrow], 700.0, false), None);
     }
 
+    fn listed(family: &str, listed: &str, position: usize) -> ListedElsewhere {
+        ListedElsewhere {
+            family: family.to_string(),
+            listed: listed.to_string(),
+            position,
+        }
+    }
+
+    #[test]
+    fn finds_the_faces_listed_under_another_family_by_the_family_their_font_names() {
+        let index = [
+            listed("Acme Sans", "Acme Sans Compressed", 0),
+            listed("Acme Sans", "Acme Sans Compressed", 1),
+            listed("Acme Serif", "Acme Serif Display", 0),
+        ];
+        let found: Vec<_> = listed_elsewhere_of(&index, "acme sans").collect();
+        assert_eq!(found, vec![&index[0], &index[1]]);
+        assert_eq!(listed_elsewhere_of(&index, "Acme Mono").count(), 0);
+    }
+
+    #[test]
+    fn indexes_faces_named_for_another_family_in_family_name_order() {
+        let family_of = |named: &&str| Some(named.to_string());
+        let families = |order: [usize; 2]| {
+            let all = [
+                ("Acme Sans Demi", vec!["Acme Sans"]),
+                (
+                    "Acme Sans Compressed",
+                    vec!["Acme Sans", "Acme Sans Compressed"],
+                ),
+            ];
+            order
+                .iter()
+                .map(|&i| (all[i].0.to_string(), all[i].1.clone()))
+                .collect::<Vec<_>>()
+        };
+        let expected = vec![
+            listed("Acme Sans", "Acme Sans Compressed", 0),
+            listed("Acme Sans", "Acme Sans Demi", 0),
+        ];
+        assert_eq!(
+            index_listed_elsewhere(families([0, 1]), family_of),
+            expected
+        );
+        assert_eq!(
+            index_listed_elsewhere(families([1, 0]), family_of),
+            expected
+        );
+    }
+
     fn named(style: &str) -> FaceNames {
         FaceNames {
             style: Some(style.to_string()),
@@ -270,6 +437,31 @@ mod tests {
         // A weight name falls back to that weight's face; another name is that face or none.
         assert_eq!(choose_named_face(&faces, "Regular"), Some(0));
         assert_eq!(choose_named_face(&faces, "Heavy"), None);
+    }
+
+    #[test]
+    fn chooses_the_normal_width_face_for_a_weight_only_style() {
+        let faces = [
+            (face(600.0, false), named("Compressed Demi")),
+            (face(600.0, false), named("Condensed Demi")),
+            (face(600.0, false), named("Demi")),
+            (face(600.0, false), named("Wide Demi")),
+        ];
+        assert_eq!(choose_named_face(&faces, "SemiBold"), Some(2));
+        let only_width = [
+            (face(400.0, false), named("Book")),
+            (face(600.0, false), named("Condensed Demi")),
+        ];
+        assert_eq!(choose_named_face(&only_width, "SemiBold"), Some(1));
+        let narrow = FaceTraits {
+            normal_width: false,
+            ..face(600.0, false)
+        };
+        let by_width_class = [
+            (narrow, named("Demi")),
+            (face(600.0, false), named("Text Demi")),
+        ];
+        assert_eq!(choose_named_face(&by_width_class, "SemiBold"), Some(1));
     }
 
     #[test]
