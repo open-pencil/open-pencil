@@ -1,5 +1,5 @@
 import type { RenderResult } from '@open-pencil/design-jsx'
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { findPageId } from '#core/io/subgraph'
 import { layoutAuthoredNodes } from '#core/layout'
@@ -57,8 +57,32 @@ export function resolveRenderPlacement(
 }
 
 /**
+ * Move the layer to replace out of the rendered root an edit put it in: back where it was, or,
+ * when that parent is gone or inside a root too, to where the outermost root holding it stands.
+ */
+function leaveRoots(
+  graph: SceneGraph,
+  layerId: string,
+  roots: ReadonlySet<string>,
+  placement: RenderPlacement
+): void {
+  const rootOf = (id: string) => graph.closest(id, (ancestor) => roots.has(ancestor.id))
+  let holder = rootOf(layerId)
+  if (!holder) return
+  if (graph.getNode(placement.parentId) && !rootOf(placement.parentId)) {
+    graph.insertChildAt(layerId, placement.parentId, placement.insertIndex ?? 0)
+    return
+  }
+  const above = (node: SceneNode) => (node.parentId ? rootOf(node.parentId) : undefined)
+  for (let outer = above(holder); outer; outer = above(outer)) holder = outer
+  const parent = holder.parentId ? graph.getNode(holder.parentId) : undefined
+  if (parent) graph.insertChildAt(layerId, parent.id, parent.childIds.indexOf(holder.id))
+}
+
+/**
  * Undo a render whose layer to replace changed while it rendered, keeping that layer: one an edit
- * moved into a rendered root goes back where it was before the roots are deleted.
+ * moved into a rendered root leaves it before the roots are deleted, and a root it could not
+ * leave stays.
  */
 function refuseReplacement(
   graph: SceneGraph,
@@ -66,12 +90,12 @@ function refuseReplacement(
   placement: RenderPlacement,
   reason: string
 ): never {
-  const replaced = placement.replaceId ? graph.getNode(placement.replaceId) : undefined
+  const replaceId = placement.replaceId
   const roots = new Set(results.map((result) => result.id))
-  if (replaced && graph.closest(replaced.id, (ancestor) => roots.has(ancestor.id))) {
-    graph.insertChildAt(replaced.id, placement.parentId, placement.insertIndex ?? 0)
+  if (replaceId && graph.getNode(replaceId)) leaveRoots(graph, replaceId, roots, placement)
+  for (const result of results) {
+    if (!replaceId || !graph.isDescendant(replaceId, result.id)) graph.deleteNode(result.id)
   }
-  for (const result of results) graph.deleteNode(result.id)
   throw new Error(`The layer to replace ${reason} while the JSX rendered`)
 }
 
