@@ -4,6 +4,7 @@ import * as v from 'valibot'
 
 import { answersQuestions, askModel, type ModelAnswer } from '@/app/ai/models/ask'
 import { fastTasksRuntime } from '@/app/ai/models/fast'
+import { reviewOf } from '@/app/ai/review/message'
 
 import { fallbackTitle } from './messages'
 
@@ -33,7 +34,8 @@ export const TITLE_ANSWER: ModelAnswer<{ title: string }> = {
 }
 
 function firstReply(messages: readonly UIMessage[]): string {
-  const reply = messages.find((message) => message.role === 'assistant')
+  // A design review is not the conversation's reply.
+  const reply = messages.find((message) => message.role === 'assistant' && !reviewOf(message))
   return (reply?.parts ?? [])
     .filter((part) => part.type === 'text')
     .map((part) => part.text)

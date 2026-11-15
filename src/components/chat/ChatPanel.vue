@@ -23,10 +23,18 @@ import type { ChatSubmission } from '@/app/ai/chat/submission/types'
 import { useChatSubmission } from '@/app/ai/chat/submission/use'
 import { saveChatTrace } from '@/app/ai/chat/trace/export'
 import { useAIChat } from '@/app/ai/chat/use'
+import { ModelQuestionUnsupportedError } from '@/app/ai/models/ask'
 import { openAISetup } from '@/app/ai/models/settings/onboarding/dialog'
+import { reviewOf } from '@/app/ai/review/message'
+import {
+  ReviewEmptyError,
+  ReviewImagesUnreadableError,
+  ReviewModelMissingError
+} from '@/app/ai/review/run'
+import { useChatReview } from '@/app/ai/review/use'
 import { didHitStepLimit } from '@/app/ai/tools'
 import { cloudBillingURL } from '@/app/cloud/integration'
-import { getActiveEditorStore } from '@/app/editor/active-store'
+import { getActiveEditorStore, getActiveEditorStoreOrNull } from '@/app/editor/active-store'
 import { useDateFormat } from '@/app/i18n/date'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { openExternalLink, toast } from '@/app/shell/ui'
@@ -64,6 +72,12 @@ const runLocation = useChatRunLocation()
 
 const chat = shallowRef<Chat<UIMessage> | null>(null)
 const compaction = useChatCompaction({ chat, ensureChat, flush: history.flush, compactAgent })
+const review = useChatReview({
+  chat,
+  ensureChat,
+  store: getActiveEditorStoreOrNull,
+  flush: history.flush
+})
 const submission = useChatSubmission({
   chat,
   ensureChat,
@@ -110,6 +124,14 @@ let viewGeneration = 0
  */
 async function submitMessage(message: ChatSubmission) {
   const generation = viewGeneration
+  const reviewAsk = reviewCommand(message)
+  if (reviewAsk) {
+    const reviewed = await review.review({ focus: reviewAsk.rest, references: message.images })
+    if (!reviewed && generation === viewGeneration) chatInput.value?.restoreDraft(message)
+    else for (const image of message.images) revokeImagePreviewURL(image.previewURL)
+    if (reviewed && status.value === 'ready') sendNextQueued()
+    return
+  }
   const command = compactCommand(message)
   if (command) {
     const compacted = await compaction.compact({
@@ -149,6 +171,41 @@ function compactCommand(message: ChatSubmission): LeadingCommand | null {
   const command = leadingCommand(message.displayText)
   return command?.name === 'compact' ? command : null
 }
+
+/**
+ * The command when `message` starts with `/review`, and what to focus on after it: the Review
+ * model reviews the design whatever holds the chat, so an agent's own `/review` is not offered.
+ * Attached images are references the design is compared against.
+ */
+function reviewCommand(message: ChatSubmission): LeadingCommand | null {
+  const command = leadingCommand(message.displayText)
+  return command?.name === 'review' ? command : null
+}
+
+/** Sends a review's findings to the Design model as the person's message. */
+function fixReview(messageId: string): void {
+  const found = messages.value.find((message) => message.id === messageId)
+  const findings = found ? reviewOf(found)?.findings : undefined
+  if (!findings) return
+  const text = ai.value.reviewFixRequest({ findings })
+  void submitMessage({ modelText: text, displayText: text, images: [], nodes: [] })
+}
+
+/** What a review that failed tells the person, by why it failed. */
+function reviewFailure(error: unknown): string {
+  if (error instanceof ReviewModelMissingError) return ai.value.reviewNoModel
+  if (error instanceof ReviewImagesUnreadableError) return ai.value.reviewImagesUnreadable
+  if (error instanceof ReviewEmptyError) return ai.value.reviewEmpty
+  if (error instanceof ModelQuestionUnsupportedError) return ai.value.reviewUnsupported
+  return ai.value.reviewFailed
+}
+
+watch(
+  () => review.failed.value,
+  (failed) => {
+    if (failed) toast.error(reviewFailure(failed))
+  }
+)
 
 /** Compacts now, from the bar near the limit; a reply in progress finishes first. */
 function compactConversation(): void {
@@ -457,9 +514,16 @@ function handleStop() {
           :steers="!providerID.startsWith('acp:') && providerID !== 'harness:pi'"
           :sending="submission.sending.value?.displayText ?? null"
           :compacting="compaction.compacting.value"
+          :reviewing="review.reviewing.value"
           @remove-queued="removeQueuedMessage"
+          @fix-review="fixReview"
           :nodes-live="!history.readOnly.value"
-          :interactive="chat !== null && !submission.busy.value && !compaction.compacting.value"
+          :interactive="
+            chat !== null &&
+            !submission.busy.value &&
+            !compaction.compacting.value &&
+            !review.reviewing.value
+          "
           @regenerate="submission.regenerate()"
           @revert="(messageId) => submission.revert(messageId)"
           @restore="(messageId) => submission.restore(messageId)"

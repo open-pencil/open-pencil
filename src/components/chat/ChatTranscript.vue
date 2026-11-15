@@ -10,6 +10,7 @@ import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/ty
 import { compactionOf } from '@/app/ai/chat/compaction/marker'
 import { usageOf } from '@/app/ai/chat/metadata'
 import type { QueuedMessage } from '@/app/ai/chat/queue'
+import { reviewOf } from '@/app/ai/review/message'
 import type { ReasoningDisplay } from '@/app/settings/preferences/store'
 import ChatReferenceText from '@/components/chat/reference/ChatReferenceText.vue'
 import { CHAT_NODES_LIVE } from '@/components/chat/tool/context'
@@ -21,6 +22,7 @@ import ChatMessage from './ChatMessage.vue'
 import { useScrollFollowing } from './transcript/useScrollFollowing'
 import ChatCompactionDivider from './turn/ChatCompactionDivider.vue'
 import ChatMessageQueued from './turn/ChatMessageQueued.vue'
+import ChatReviewCard from './turn/ChatReviewCard.vue'
 
 const {
   messages,
@@ -33,7 +35,8 @@ const {
   queued = [],
   steers = false,
   sending = null,
-  compacting = false
+  compacting = false,
+  reviewing = false
 } = defineProps<{
   messages: UIMessage[]
   status: ChatStatus
@@ -53,6 +56,8 @@ const {
   sending?: string | null
   /** The conversation is being compacted, from a `/compact` or before a message goes. */
   compacting?: boolean
+  /** The Review model is reviewing the design, from a `/review`. */
+  reviewing?: boolean
 }>()
 const emit = defineEmits<{
   continue: []
@@ -61,6 +66,7 @@ const emit = defineEmits<{
   restore: [messageId: string]
   edit: [messageId: string, text: string]
   removeQueued: [id: string]
+  fixReview: [messageId: string]
 }>()
 const { ai } = useI18n()
 provide(
@@ -84,13 +90,14 @@ const idle = computed(() => interactive && (status === 'ready' || status === 'er
 const lastMessage = computed(() => messages.at(-1))
 /**
  * Each message with the compaction it marks, which the transcript draws as a divider, and what
- * the first reply after that compaction reported its request held.
+ * the first reply after that compaction reported its request held, or the design review it is.
  */
 const entries = computed(() =>
   messages.map((message, index) => {
     // A compaction within a reply is drawn by the reply, at the step where it ran.
     const compaction = message.role === 'user' ? compactionOf(message) : null
-    return { message, compaction, tokensAfter: compaction ? tokensAfter(index) : null }
+    const review = compaction ? null : reviewOf(message)
+    return { message, compaction, review, tokensAfter: compaction ? tokensAfter(index) : null }
   })
 )
 /** What the first reply after the compaction at `index` reported, before the next one. */
@@ -140,7 +147,7 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
       :data-overflow-end="(messages.length && !arrivedState.bottom) || undefined"
     >
       <AppPlaceholder
-        v-if="messages.length === 0 && sending === null && !compacting"
+        v-if="messages.length === 0 && sending === null && !compacting && !reviewing"
         data-test-id="chat-empty-state"
         :label="ai.describeCreateOrChange"
         :ui="{ root: 'h-full' }"
@@ -158,13 +165,19 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
         class="flex flex-col gap-3 pb-5"
       >
         <template
-          v-for="({ message: msg, compaction, tokensAfter }, index) in entries"
+          v-for="({ message: msg, compaction, review, tokensAfter }, index) in entries"
           :key="msg.id"
         >
           <ChatCompactionDivider
             v-if="compaction"
             :compaction="compaction"
             :tokens-after="tokensAfter"
+          />
+          <ChatReviewCard
+            v-else-if="review"
+            :review="review"
+            :can-fix="idle"
+            @fix="emit('fixReview', msg.id)"
           />
           <ChatMessage
             v-else
@@ -201,6 +214,19 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
             aria-hidden="true"
           />
           {{ ai.compacting }}
+        </p>
+
+        <p
+          v-if="reviewing"
+          role="status"
+          class="flex items-center justify-center gap-1.5 py-1 text-2xs text-muted"
+          data-test-id="chat-reviewing"
+        >
+          <icon-lucide-loader-circle
+            class="size-3 animate-spin motion-reduce:animate-none"
+            aria-hidden="true"
+          />
+          {{ ai.reviewing }}
         </p>
 
         <!-- Thinking indicator: shown when AI is working but no visible activity -->

@@ -6,7 +6,7 @@ import { IMAGE_ATTACHMENT_MAX_EDGE } from '@/app/ai/attachment/image/prepare'
 import type { PreparedImageAttachment } from '@/app/ai/attachment/image/types'
 import { createAIModelRuntime } from '@/app/ai/models'
 import { answersQuestions, askModel } from '@/app/ai/models/ask'
-import { boundedImageScale } from '@/app/ai/tools/vision/inspect'
+import { boundedImageScale } from '@/app/ai/tools/vision/render'
 import type { VisionModelDependencies } from '@/app/ai/tools/vision/runtime'
 import type { EditorStore } from '@/app/editor/active-store'
 

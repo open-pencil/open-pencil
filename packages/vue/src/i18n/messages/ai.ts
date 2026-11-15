@@ -209,7 +209,7 @@ export const aiMessageDefaults = {
   modelRoleFast: 'Fast tasks',
   modelRoleVision: 'Vision',
   modelRoleDesignDescription: 'AI chat and canvas edits',
-  modelRoleReviewDescription: 'Explicit plan and design reviews',
+  modelRoleReviewDescription: 'Design reviews you ask for',
   modelRoleFastDescription: 'Chat titles and compaction summaries',
   modelRoleVisionDescription: 'Screenshots and image references',
   modelRoleNotUsed: 'Not used yet',
@@ -526,6 +526,18 @@ export const aiMessageDefaults = {
   agentCompactionKeepsMessages:
     'The agent now works from its own summary of the messages above; you still see them.',
   compactionTokens: params('{before} → {after} tokens'),
+  reviewCommand:
+    'Review the selection or page with the Review model; text after it says what to focus on',
+  reviewing: 'Reviewing the design…',
+  designReview: 'Design review',
+  reviewFix: 'Fix these',
+  reviewFixRequest: params('Fix the issues this design review found:\n\n{findings}'),
+  reviewFailed: 'The design could not be reviewed.',
+  reviewNoModel: 'Assign a model to Review or Design in Settings to review designs.',
+  reviewImagesUnreadable:
+    'The Review model cannot read images, so it cannot compare the design with an attached image.',
+  reviewEmpty: 'There is nothing on this page to review.',
+  reviewUnsupported: 'Pi cannot review designs. Assign another model to Review in Settings.',
   tokenUsage: 'Token usage',
   tokenUsageHint: "Shows each reply's tokens.",
   tokenUsageHover: 'On hover',
