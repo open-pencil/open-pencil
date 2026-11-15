@@ -17,6 +17,9 @@ export async function watchTauriFile(
     filePath,
     (event) => {
       if (typeof event.type !== 'object' || !('modify' in event.type)) return
+      // macOS rewrites a file's metadata, such as its last-used date, when it is opened; only a
+      // change to its contents means the document on screen is out of date.
+      if (event.type.modify.kind === 'metadata') return
       if (Date.now() - getLastWriteTime() < TAURI_RECENT_WRITE_MS) return
       reloadFromDisk()
     },

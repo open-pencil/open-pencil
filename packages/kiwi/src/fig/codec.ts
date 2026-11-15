@@ -109,6 +109,10 @@ export interface ImageSource {
   dataBlob?: number
 }
 
+export interface VideoSource {
+  hash: string | Uint8Array
+}
+
 export interface Paint {
   type:
     | 'SOLID'
@@ -130,6 +134,7 @@ export interface Paint {
   image?: ImageSource
   imageThumbnail?: ImageSource
   animatedImage?: ImageSource
+  video?: VideoSource
   imageScaleMode?: string
   /** Degrees an image turns in Fill, Fit, and Tile; a crop's transform holds its own turn. */
   rotation?: number

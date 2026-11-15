@@ -1,7 +1,6 @@
-import type { GUID } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { stringToGuid, UNSET_GUID } from '@open-pencil/kiwi/fig/guid'
-import type { CharacterStyleOverride, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
 
 import { exportedStyleReference, type SceneNodeToKiwiContext } from '../export/context'
 import { textRunVariableEntries } from '../variable/bindings'

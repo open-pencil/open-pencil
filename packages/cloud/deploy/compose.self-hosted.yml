@@ -3,7 +3,7 @@
 # Open http://localhost:8787 and sign up; sign-up mail lands at http://localhost:8025.
 # Browsers upload straight to object storage, at the same address the server uses, so SeaweedFS
 # shares the server's network and both reach it at localhost:8333. For a server others use, see
-# https://openpencil.dev/reference/self-hosting-cloud.
+# https://openpencil.dev/cloud/self-hosting/
 name: openpencil-cloud
 
 services:

@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 
 import { panelNumber } from '@open-pencil/core/geometry'
+import { counterAxisSpacingOf } from '@open-pencil/scene-graph/layout'
 import { useI18n } from '@open-pencil/vue/i18n'
 import { useRetainedPopup } from '@open-pencil/vue/lifecycle/retention'
 import { useLayoutControlsContext } from '@open-pencil/vue/primitives/LayoutControls'
@@ -56,7 +57,9 @@ function setMode(value: string) {
         v-else
         :data-test-id="axis === 'primary' ? 'layout-gap-input' : 'layout-cross-gap-input'"
         :aria-label="label"
-        :model-value="panelNumber(ctx.node[prop])"
+        :model-value="
+          panelNumber(axis === 'primary' ? ctx.node.itemSpacing : counterAxisSpacingOf(ctx.node))
+        "
         :min="0"
         :node-id="ctx.node.id"
         :binding-path="prop"

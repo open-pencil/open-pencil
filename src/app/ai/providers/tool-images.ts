@@ -2,6 +2,7 @@ import type { LanguageModelMiddleware } from 'ai'
 import { partition } from 'es-toolkit'
 
 import type { AIProviderID } from '@open-pencil/core/constants'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 
 /**
  * Providers whose own documentation lists WebP image input, so tool images reach their models as
@@ -52,7 +53,7 @@ export const toolImagesInUserMessage: LanguageModelMiddleware = {
         if (part.type !== 'tool-result' || part.output.type !== 'content') return part
         const [moved, rest] = partition(part.output.value, isImagePart)
         if (moved.length === 0) return part
-        images.push(
+        appendAll(images, [
           { type: 'text', text: `Images from the ${part.toolName} call ${part.toolCallId}:` },
           ...moved.map(({ data, mediaType, filename }) => ({
             type: 'file' as const,
@@ -60,7 +61,7 @@ export const toolImagesInUserMessage: LanguageModelMiddleware = {
             mediaType,
             filename
           }))
-        )
+        ])
         // Text alone goes as text; a content list would be sent as its JSON.
         const text = rest.flatMap((item) => (item.type === 'text' ? [item.text] : []))
         text.push('The images follow in the next user message.')

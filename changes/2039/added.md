@@ -1,0 +1,1 @@
+- Cloud servers that sell plans show the account's **Plan** page at `/account/plan`: what the plan includes, the storage its workspaces use, and where to subscribe, buy credits, or manage billing. `GET /api/account/entitlements` reports the signed-in account's own plan and pooled storage, and `@open-pencil/cloud/client` adds `getAccountEntitlements` (#2039).

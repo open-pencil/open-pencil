@@ -1,4 +1,5 @@
 export * from './schema'
+export * from './inbox/schema'
 export {
   describeBuildFields,
   describePingFields,

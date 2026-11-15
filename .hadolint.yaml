@@ -1,0 +1,4 @@
+# hadolint's configuration (https://github.com/hadolint/hadolint#configure). Warnings and errors
+# fail CI; info-level suggestions, such as merging RUN instructions a build keeps apart for its
+# layer cache, do not. A suppression is an inline `# hadolint ignore=` with its reason beside it.
+failure-threshold: warning

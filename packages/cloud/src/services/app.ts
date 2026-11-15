@@ -232,9 +232,7 @@ export function createServicesApp(services: ServicesAppDependencies) {
           await usage.record({
             id: crypto.randomUUID(),
             workspaceId: claims.workspaceId,
-            // A token from a Cloud without accounts names none; the row then counts for its
-            // workspace, and once Cloud upgrades, for that workspace's owner as well.
-            accountId: claims.accountId ?? null,
+            accountId: claims.accountId,
             userId: claims.sub,
             modelId: model.id,
             inputTokens: tokens.inputTokens,

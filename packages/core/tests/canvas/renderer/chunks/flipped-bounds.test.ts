@@ -1,6 +1,7 @@
 import { afterAll, describe, expect, test } from 'bun:test'
 
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
@@ -104,7 +105,7 @@ function differentPixels(a: Uint8Array, b: Uint8Array): number {
     const channels = [0, 1, 2, 3].map((channel) =>
       Math.abs(a[offset + channel] - b[offset + channel])
     )
-    if (Math.max(...channels) > 8) {
+    if (maxOf(channels) > 8) {
       different++
     }
   }

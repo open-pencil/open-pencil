@@ -1,0 +1,1 @@
+- When a coding agent such as Claude Code or Codex runs subagents, the chat shows a card for each where it started, named and colored as its cursor, which opens what the subagent did as a thread of its own and can follow it on the canvas (#2076).

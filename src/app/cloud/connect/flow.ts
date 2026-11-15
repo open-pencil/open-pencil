@@ -17,6 +17,7 @@ import { addCloudServer, findCloudServer, type CloudServer } from '../servers/st
 import type { CloudAccountCredentials } from '../sessions/account-form'
 import { cloudFetch, discoverCloudServer, refreshCloudConnection } from '../sessions/connection'
 import { createCloudDeviceSignIn } from '../sessions/device'
+import { cloudLocale } from '../sessions/locale'
 import {
   cloudSignInRoute,
   redirectToCloudSignIn,
@@ -274,7 +275,7 @@ export async function signUpWithCloudEmail(credentials: CloudAccountCredentials)
   cloudConnectFailure.value = null
   const result = await signUpToCloudWithEmail(
     target.discovery,
-    { ...credentials, verifiedURL: verifiedURL(target) },
+    { ...credentials, verifiedURL: verifiedURL(target), locale: cloudLocale() },
     { fetch: cloudFetch }
   )
   if (attempt !== generation) return

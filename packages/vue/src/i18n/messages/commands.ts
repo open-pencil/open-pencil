@@ -33,7 +33,6 @@ export const commandMessageDefaults = {
   intersectSelection: 'Intersect selection',
   excludeSelection: 'Exclude selection',
   flattenSelection: 'Flatten',
-  outlineText: 'Outline text',
   outlineStroke: 'Outline stroke',
   booleanOperations: 'Boolean operations',
   flipHorizontal: 'Flip horizontal',

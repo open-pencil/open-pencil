@@ -6,6 +6,7 @@ import type {
   SceneNode,
   TextDecorationStyle
 } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 
 import { characterStyles, TEXT_STYLE_KEYS, type CharacterStyle } from './character-style'
@@ -63,19 +64,23 @@ export function hasDecoration(node: SceneNode): boolean {
   )
 }
 
-/** Whether two characters' decorations are one line: Figma joins characters of one style. */
+/**
+ * Whether two characters' decorations are one line: Figma joins characters of one style and
+ * decoration paint, whatever their fills, and paints each piece as its last character
+ * (`pieceCharacters`).
+ */
 function sameDecoration(a: CharacterStyle, b: CharacterStyle): boolean {
   return (
     a.textDecoration === b.textDecoration &&
     a.textDecorationStyle === b.textDecorationStyle &&
+    a.textDecorationSkipInk === b.textDecorationSkipInk &&
     a.textDecorationThickness === b.textDecorationThickness &&
     a.textUnderlineOffset === b.textUnderlineOffset &&
     a.fontFamily === b.fontFamily &&
     a.fontWeight === b.fontWeight &&
     a.italic === b.italic &&
     a.fontSize === b.fontSize &&
-    isEqual(a.textDecorationFills, b.textDecorationFills) &&
-    isEqual(a.fills, b.fills)
+    isEqual(a.textDecorationFills, b.textDecorationFills)
   )
 }
 
@@ -115,22 +120,31 @@ function lineSpans(
   return [...lines.values()]
 }
 
+/** A break in an underline for one character's descender. */
+interface InkBreak {
+  left: number
+  right: number
+  character: number | undefined
+}
+
 /**
  * Where an underline breaks for descenders, as Figma skips ink: around each glyph's ink in the
  * band the underline covers before its baseline is rounded, kept within the glyph's own box and
  * widened by `pad` on each side.
  */
-function inkGaps(line: LineSpan, top: number, height: number, pad: number): InkSpan[] {
+function inkBreaks(line: LineSpan, top: number, height: number, pad: number): InkBreak[] {
   const bandTop = line.baseline + top
-  const gaps: InkSpan[] = []
+  const breaks: InkBreak[] = []
   for (const { glyph, advance } of line.glyphs) {
     const ink = glyph.ink?.(bandTop, bandTop + height)
     if (!ink) continue
     const left = Math.max(ink[0], glyph.x)
     const right = Math.min(ink[1], glyph.x + advance)
-    if (right >= left) gaps.push([left - pad, right + pad])
+    if (right >= left) {
+      breaks.push({ left: left - pad, right: right + pad, character: glyph.firstCharacter })
+    }
   }
-  return gaps.toSorted((a, b) => a[0] - b[0])
+  return breaks.toSorted((a, b) => a.left - b.left)
 }
 
 /** The parts of `[x1, x2]` outside every gap, but for pieces narrower than `minWidth`. */
@@ -152,10 +166,52 @@ function withoutGaps(
   return parts.filter(([left, right]) => right - left >= minWidth)
 }
 
+/** A character's decoration paints: its own decoration paints, or its fill. */
+function decorationPaints(style: CharacterStyle): Fill[] {
+  return style.textDecorationFills.length > 0 ? style.textDecorationFills : style.fills
+}
+
+function paintsOf(
+  character: number | undefined,
+  styles: readonly CharacterStyle[],
+  fallback: Fill[]
+): Fill[] {
+  const style = character === undefined ? undefined : styles[character]
+  return style ? decorationPaints(style) : fallback
+}
+
+/** The character drawn rightmost on `line`, whose paints a piece running to the line's end takes. */
+function lastCharacter(line: LineSpan): number | undefined {
+  let last: number | undefined
+  let lastX = -Infinity
+  for (const { glyph } of line.glyphs) {
+    if (glyph.firstCharacter === undefined || glyph.x < lastX) continue
+    last = glyph.firstCharacter
+    lastX = glyph.x
+  }
+  return last
+}
+
+/**
+ * The character whose paints each piece of `line` takes, by where the piece ends, as Figma paints
+ * them (Figma desktop 126): the one whose descender breaks the underline there, or the line's last
+ * character where the piece runs to its end, as a strikethrough always does.
+ */
+function pieceCharacters(
+  line: LineSpan,
+  breaks: readonly InkBreak[]
+): (x2: number) => number | undefined {
+  const atBreak = new Map<number, number | undefined>()
+  for (const { left, character } of breaks) if (!atBreak.has(left)) atBreak.set(left, character)
+  const last = lastCharacter(line)
+  return (x2) => (atBreak.has(x2) ? atBreak.get(x2) : last)
+}
+
 function decorationRects(
   style: CharacterStyle,
   firstCharacter: number,
-  lines: LineSpan[]
+  lines: LineSpan[],
+  styles: readonly CharacterStyle[]
 ): TextDecorationRect[] {
   const metrics =
     fontDecorationMetricsSync(style.fontFamily, faceStyleKey(style)) ?? UNLOADED_FONT_METRICS
@@ -169,7 +225,7 @@ function decorationRects(
   const height = underline
     ? (style.textDecorationThickness ?? metrics.underlineThickness * size)
     : metrics.strikethroughThickness * size
-  const fills = style.textDecorationFills.length > 0 ? style.textDecorationFills : style.fills
+  const fills = decorationPaints(style)
   const skipInk = underline && style.textDecorationSkipInk
   // Figma widens a solid underline's gaps by its thickness and drops the slivers they leave; a
   // dotted or wavy one's by 0.6 of it, keeping every piece (measured from 12px to 88px).
@@ -177,8 +233,10 @@ function decorationRects(
   const pad = solid ? height : height * 0.6
   const minWidth = solid ? height : 0
   return lines.flatMap((line) => {
-    const gaps = skipInk ? inkGaps(line, top, height, pad) : []
+    const breaks = skipInk ? inkBreaks(line, top, height, pad) : []
+    const gaps = breaks.map(({ left, right }): InkSpan => [left, right])
     const parts = withoutGaps(line.x1, line.x2, gaps, minWidth)
+    const characterAt = pieceCharacters(line, breaks)
     return parts.map(([x1, x2]) => ({
       firstCharacter,
       x: x1,
@@ -186,7 +244,7 @@ function decorationRects(
       width: x2 - x1,
       height,
       style: underline ? style.textDecorationStyle : 'SOLID',
-      fills
+      fills: paintsOf(characterAt(x2), styles, fills)
     }))
   })
 }
@@ -194,7 +252,7 @@ function decorationRects(
 /**
  * The underlines and strikethroughs of a text over its glyphs, placed as Figma places them:
  * one per line for each run of characters decorated alike, from the font's metrics, with
- * underlines broken where descenders cross them.
+ * underlines broken where descenders cross them, each piece in its last character's paints.
  */
 export function textDecorationRects(
   node: SceneNode,
@@ -220,7 +278,10 @@ export function textDecorationRects(
     }
     let end = start + 1
     while (end < text.length && text[end] !== '\n' && sameDecoration(styles[end], style)) end++
-    rects.push(...decorationRects(style, start, lineSpans(glyphs, byCharacter, start, end)))
+    appendAll(
+      rects,
+      decorationRects(style, start, lineSpans(glyphs, byCharacter, start, end), styles)
+    )
     start = end
   }
   return rects

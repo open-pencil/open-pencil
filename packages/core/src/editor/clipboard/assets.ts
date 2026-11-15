@@ -2,6 +2,7 @@ import { sumBy } from 'es-toolkit'
 import { filename } from 'pathe/utils'
 
 import type { Fill } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import {
   computeImageHash,
   IMPORTABLE_RASTER_TYPES,
@@ -125,7 +126,7 @@ export function createClipboardAssetActions(
     const parentId = resolvePasteTarget(ctx)
     const center = parentLocalPoint(ctx, parentId, cx, cy)
     const totalWidth = sumBy(prepared, (asset) => asset.width) + ASSET_GAP * (prepared.length - 1)
-    const maxHeight = Math.max(...prepared.map((asset) => asset.height))
+    const maxHeight = maxOf(prepared.map((asset) => asset.height))
     let x = center.x - totalWidth / 2
     const y = center.y - maxHeight / 2
     const created: string[] = []

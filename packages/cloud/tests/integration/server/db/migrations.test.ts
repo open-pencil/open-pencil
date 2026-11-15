@@ -59,4 +59,24 @@ describe('Cloud migrations', () => {
       await context.close()
     }
   })
+  test('give accounts a language on a database whose Better Auth schema was built before', async () => {
+    const context = await createCloudTestDatabase()
+    try {
+      // A database from before: Better Auth's `user` table without the field, which its own
+      // migration never adds again.
+      const migrator = new Migrator({
+        db: context.database,
+        provider: new CloudMigrationProvider()
+      })
+      expect((await migrator.migrateTo('011_account_ids')).error).toBeUndefined()
+      await context.database.schema.alterTable('user').dropColumn('locale').execute()
+      expect((await migrator.migrateToLatest()).error).toBeUndefined()
+      const columns = await sql<{ name: string }>`
+        select column_name as name from information_schema.columns
+        where table_name = 'user' and column_name = 'locale'`.execute(context.database)
+      expect(columns.rows).toHaveLength(1)
+    } finally {
+      await context.close()
+    }
+  })
 })

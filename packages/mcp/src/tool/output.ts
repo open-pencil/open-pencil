@@ -11,6 +11,7 @@ import {
 import { dirname, basename, isAbsolute, join, parse, resolve, sep as osSep } from 'node:path'
 
 import { compact } from 'es-toolkit/array'
+import { omit } from 'es-toolkit/object'
 import { toUint8Array } from 'js-base64'
 
 import { ok } from '#mcp/result'
@@ -238,6 +239,29 @@ const FILE_OUTPUTS: Record<
   export_image: (result) =>
     typeof result.base64 === 'string' ? toUint8Array(result.base64) : null,
   export_pdf: (result) => (typeof result.base64 === 'string' ? toUint8Array(result.base64) : null)
+}
+
+const FILE_OUTPUT_HINTS: Partial<Record<string, string>> = {
+  get_jsx: 'Pass path to write the complete JSX to a file.'
+}
+
+export function withoutOutputPath(
+  toolName: string,
+  args: Record<string, unknown>
+): Record<string, unknown> {
+  return writesFileOutput(toolName) ? omit(args, ['path']) : args
+}
+
+export function withFileOutputHint<T extends Record<string, unknown>>(
+  toolName: string,
+  result: T | undefined,
+  canWriteFiles: boolean
+): T | undefined {
+  const hint = FILE_OUTPUT_HINTS[toolName]
+  if (!canWriteFiles || !hint || result?.truncated !== true) {
+    return result
+  }
+  return { ...result, note: compact([result.note, hint]).join(' ') }
 }
 
 /** Whether a tool's `path` argument names a file it writes, rather than data of its own. */

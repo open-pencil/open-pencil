@@ -1,0 +1,1 @@
+- An instance of a library component set copied into a `.fig` file lists every variant of the set, as in Figma, and switches to any of them. A variant no instance uses is built from the file when an instance first switches to it, so opening costs the same as before (#1811).

@@ -7,6 +7,7 @@ import IconMousePointerClick from '~icons/lucide/mouse-pointer-click'
 import IconWand from '~icons/lucide/wand-sparkles'
 
 import type { TreeNodeResult, TreeResult } from '@open-pencil/core/rpc'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
@@ -55,7 +56,7 @@ function entity(node: { type: string; name: string; id: string }): string {
 function treeLines(node: TreeNodeResult, index: number, depth: number): string[] {
   const lines = [`${'  '.repeat(depth)}[${index}] ${entity(node)}`]
   node.children?.forEach((child, childIndex) => {
-    lines.push(...treeLines(child, childIndex, depth + 1))
+    appendAll(lines, treeLines(child, childIndex, depth + 1))
   })
   return lines
 }

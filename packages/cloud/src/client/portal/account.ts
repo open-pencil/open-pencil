@@ -1,4 +1,8 @@
 import {
+  accountEntitlementsResponseSchema,
+  billingTokenSchema,
+  cloudAccessTokenCreatedResponseSchema,
+  cloudAccessTokensResponseSchema,
   cloudAccountDeletionResponseSchema,
   cloudAccountMutationResponseSchema,
   cloudAccountSessionsResponseSchema,
@@ -12,13 +16,30 @@ import {
   cloudPictureResponseSchema,
   cloudProfileResponseSchema,
   cloudSignInsResponseSchema,
-  cloudSocialLinkResponseSchema
+  cloudSocialLinkResponseSchema,
+  type CloudAccessTokenCreate
 } from '#cloud/contract'
 
 import type { CloudCall, PortalRouteClients } from './request'
 
-export function createAccountAPI(call: CloudCall, { account }: PortalRouteClients) {
+export function createAccountAPI(call: CloudCall, { account, tokens, api }: PortalRouteClients) {
   return {
+    /** The account's plan, and the storage its workspaces hold together. */
+    entitlements(signal?: AbortSignal) {
+      return call(
+        (options) => api.account.entitlements.$get(undefined, options),
+        accountEntitlementsResponseSchema,
+        signal
+      )
+    },
+    /** A short-lived token for the deployment's billing, for this account. */
+    billingToken(signal?: AbortSignal) {
+      return call(
+        (options) => api.billing.token.$post(undefined, options),
+        billingTokenSchema,
+        signal
+      )
+    },
     accountStatus(signal?: AbortSignal) {
       return call(
         (options) => account.status.$get(undefined, options),
@@ -123,6 +144,14 @@ export function createAccountAPI(call: CloudCall, { account }: PortalRouteClient
         signal
       )
     },
+    /** The app's language tag; the server writes to the account in it, or the nearest it has. */
+    setLocale(locale: string, signal?: AbortSignal) {
+      return call(
+        (options) => account.locale.$put({ json: { locale } }, options),
+        cloudAccountMutationResponseSchema,
+        signal
+      )
+    },
     updateProfile(name: string, signal?: AbortSignal) {
       return call(
         (options) => account.profile.$post({ json: { name } }, options),
@@ -149,6 +178,29 @@ export function createAccountAPI(call: CloudCall, { account }: PortalRouteClient
     changeEmail(newEmail: string, callbackURL: string, signal?: AbortSignal) {
       return call(
         (options) => account.profile.email.$post({ json: { newEmail, callbackURL } }, options),
+        cloudAccountMutationResponseSchema,
+        signal
+      )
+    },
+    /** The account's personal access tokens, by their first characters; never a whole one. */
+    accessTokens(signal?: AbortSignal) {
+      return call(
+        (options) => tokens.$get(undefined, options),
+        cloudAccessTokensResponseSchema,
+        signal
+      )
+    },
+    /** Makes a token; the answer holds the whole token, which is shown this once. */
+    createAccessToken(input: CloudAccessTokenCreate, signal?: AbortSignal) {
+      return call(
+        (options) => tokens.create.$post({ json: input }, options),
+        cloudAccessTokenCreatedResponseSchema,
+        signal
+      )
+    },
+    revokeAccessToken(id: string, signal?: AbortSignal) {
+      return call(
+        (options) => tokens.revoke.$post({ json: { id } }, options),
         cloudAccountMutationResponseSchema,
         signal
       )

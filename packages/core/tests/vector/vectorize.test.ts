@@ -6,6 +6,7 @@ import {
   resolveVectorFramePlacement,
   svgToVectorPaths
 } from '@open-pencil/core/vector'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { repoPath } from '@open-pencil/test-support/paths'
 let ck: Awaited<ReturnType<typeof getCanvasKit>>
@@ -217,7 +218,7 @@ describe('svgToVectorPaths', () => {
     expect(result?.paths.length).toBe(1)
     const path = expectDefined(result?.paths[0], 'vector path')
     expect(path.fills[0]?.type).toBe('SOLID')
-    const maxX = Math.max(...path.vectorNetwork.vertices.map((vertex) => vertex.x))
+    const maxX = maxOf(path.vectorNetwork.vertices.map((vertex) => vertex.x))
     expect(maxX).toBeCloseTo(200, 0)
   })
 
@@ -227,8 +228,8 @@ describe('svgToVectorPaths', () => {
     </svg>`
     const result = svgToVectorPaths(svg, { width: 240, height: 300 })
     const path = expectDefined(result?.paths[0], 'vector path')
-    const maxX = Math.max(...path.vectorNetwork.vertices.map((vertex) => vertex.x))
-    const maxY = Math.max(...path.vectorNetwork.vertices.map((vertex) => vertex.y))
+    const maxX = maxOf(path.vectorNetwork.vertices.map((vertex) => vertex.x))
+    const maxY = maxOf(path.vectorNetwork.vertices.map((vertex) => vertex.y))
     expect(maxX).toBeCloseTo(240, 0)
     expect(maxY).toBeCloseTo(300, 0)
   })
@@ -239,10 +240,10 @@ describe('svgToVectorPaths', () => {
     </svg>`
     const result = svgToVectorPaths(svg, { width: 200, height: 200 })
     const path = expectDefined(result?.paths[0], 'vector path')
-    const minX = Math.min(...path.vectorNetwork.vertices.map((vertex) => vertex.x))
-    const minY = Math.min(...path.vectorNetwork.vertices.map((vertex) => vertex.y))
-    const maxX = Math.max(...path.vectorNetwork.vertices.map((vertex) => vertex.x))
-    const maxY = Math.max(...path.vectorNetwork.vertices.map((vertex) => vertex.y))
+    const minX = minOf(path.vectorNetwork.vertices.map((vertex) => vertex.x))
+    const minY = minOf(path.vectorNetwork.vertices.map((vertex) => vertex.y))
+    const maxX = maxOf(path.vectorNetwork.vertices.map((vertex) => vertex.x))
+    const maxY = maxOf(path.vectorNetwork.vertices.map((vertex) => vertex.y))
     expect(minX).toBeCloseTo(0, 0)
     expect(minY).toBeCloseTo(0, 0)
     expect(maxX).toBeCloseTo(200, 0)
@@ -267,10 +268,10 @@ describe('svgToVectorPaths', () => {
     </svg>`
     const result = svgToVectorPaths(svg, { width: 200, height: 200 })
     const path = expectDefined(result?.paths[0], 'vector path')
-    const minX = Math.min(...path.vectorNetwork.vertices.map((vertex) => vertex.x))
-    const minY = Math.min(...path.vectorNetwork.vertices.map((vertex) => vertex.y))
-    const maxX = Math.max(...path.vectorNetwork.vertices.map((vertex) => vertex.x))
-    const maxY = Math.max(...path.vectorNetwork.vertices.map((vertex) => vertex.y))
+    const minX = minOf(path.vectorNetwork.vertices.map((vertex) => vertex.x))
+    const minY = minOf(path.vectorNetwork.vertices.map((vertex) => vertex.y))
+    const maxX = maxOf(path.vectorNetwork.vertices.map((vertex) => vertex.x))
+    const maxY = maxOf(path.vectorNetwork.vertices.map((vertex) => vertex.y))
     expect(minX).toBeCloseTo(20, 0)
     expect(minY).toBeCloseTo(40, 0)
     expect(maxX).toBeCloseTo(120, 0)
@@ -285,8 +286,8 @@ describe('svgToVectorPaths', () => {
     const result = svgToVectorPaths(svg, { width: 100, height: 100 })
     const path = expectDefined(result?.paths[0], 'vector path')
     // 25→50 in user space after scale(2), then viewBox 100→bounds 100 (1:1).
-    const maxX = Math.max(...path.vectorNetwork.vertices.map((vertex) => vertex.x))
-    const maxY = Math.max(...path.vectorNetwork.vertices.map((vertex) => vertex.y))
+    const maxX = maxOf(path.vectorNetwork.vertices.map((vertex) => vertex.x))
+    const maxY = maxOf(path.vectorNetwork.vertices.map((vertex) => vertex.y))
     expect(maxX).toBeCloseTo(50, 0)
     expect(maxY).toBeCloseTo(50, 0)
   })

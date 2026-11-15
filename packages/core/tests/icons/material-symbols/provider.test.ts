@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import { createMaterialSymbolsProvider } from '#core/icons/material-symbols/provider'
@@ -45,7 +46,7 @@ async function setup(failing: readonly string[] = []) {
 }
 
 function bounds(xs: number[]) {
-  return [Math.min(...xs), Math.max(...xs)]
+  return [minOf(xs), maxOf(xs)]
 }
 
 describe('Material Symbols', () => {

@@ -6,8 +6,15 @@ import type { EntitlementSource, EntitlementSubject } from './entitlements'
 import { staticEntitlementsSchema } from './schema'
 import { staticEntitlementValues, type StaticEntitlementsInput } from './static'
 
+/**
+ * Each account's stored entitlements, value by value over `defaults`: what an account takes until
+ * billing or an operator stores its own, and whatever a stored plan leaves out.
+ */
 export class DatabaseEntitlementSource implements EntitlementSource {
-  constructor(private readonly database: Kysely<CloudDatabase>) {}
+  constructor(
+    private readonly database: Kysely<CloudDatabase>,
+    private readonly defaults: Record<string, boolean | number> = {}
+  ) {}
 
   private async values(subject: EntitlementSubject): Promise<Record<string, boolean | number>> {
     if (subject.type !== 'user') return {}
@@ -16,7 +23,11 @@ export class DatabaseEntitlementSource implements EntitlementSource {
       .select('values')
       .where('userId', '=', subject.id)
       .executeTakeFirst()
-    return row ? staticEntitlementValues(v.parse(staticEntitlementsSchema, row.values)) : {}
+    if (!row) return this.defaults
+    return {
+      ...this.defaults,
+      ...staticEntitlementValues(v.parse(staticEntitlementsSchema, row.values))
+    }
   }
 
   async boolean(subject: EntitlementSubject, key: string): Promise<boolean | null> {

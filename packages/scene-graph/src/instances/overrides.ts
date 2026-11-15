@@ -110,6 +110,19 @@ export interface InstanceOverrideReferenceMapper {
   node: (id: string) => string
   variable: (id: string) => string
   collection?: (id: string) => string | undefined
+  property?: (id: string) => string | undefined
+}
+
+const ASSIGNMENT_OVERRIDE_PREFIX = 'componentPropertyAssignments/'
+
+export function assignmentOverrideField(propertyId: string): string {
+  return `${ASSIGNMENT_OVERRIDE_PREFIX}${propertyId}`
+}
+
+export function overriddenAssignmentId(field: string): string | undefined {
+  return field.startsWith(ASSIGNMENT_OVERRIDE_PREFIX)
+    ? field.slice(ASSIGNMENT_OVERRIDE_PREFIX.length)
+    : undefined
 }
 
 const VARIABLE_MODE_FIELD_PREFIX = 'variableModes/'
@@ -136,6 +149,11 @@ export function remapInstanceOverrideState(
     return value
   }
   const remapField = (field: string): string | undefined => {
+    const property = overriddenAssignmentId(field)
+    if (property !== undefined && references.property) {
+      const mapped = references.property(property)
+      return mapped === undefined ? undefined : assignmentOverrideField(mapped)
+    }
     const collection = variableModeOverrideCollection(field)
     if (collection === undefined || !references.collection) {
       return field

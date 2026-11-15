@@ -2,6 +2,7 @@ import { isReasoningUIPart, isTextUIPart, isToolUIPart, type UIMessage } from 'a
 import { toRaw } from 'vue'
 
 import { wasStopped, withMetadata } from '@/app/ai/chat/metadata'
+import { SUBAGENT_PART, subagentTranscript, type SubagentTranscript } from '@/app/ai/chat/subagents'
 
 export interface SettleOptions {
   /** Whether the user stopped the reply, rather than it failing or being cut off. */
@@ -17,16 +18,11 @@ function unfinishedCallError(toolCallId: string, changed: SettleOptions['changed
     : 'The reply ended before this call finished. It did not change the document.'
 }
 
-/**
- * A reply as it stands once it ended without finishing, stopped or failed: nothing in it still
- * reads as running. Reasoning and text are done, and a call that never reported back fails
- * with what happened to the document, which the model reads on the next request.
- */
-export function settleMessage(live: UIMessage, { stopped, changed }: SettleOptions): UIMessage {
-  // The chat's messages are reactive; the settled one is built from plain values, so the
-  // conversation can still be saved with `structuredClone`.
-  const message = toRaw(live)
-  const parts = message.parts.map((part): UIMessage['parts'][number] => {
+function settleParts(
+  parts: readonly UIMessage['parts'][number][],
+  changed: SettleOptions['changed']
+): UIMessage['parts'] {
+  return parts.map((part): UIMessage['parts'][number] => {
     if ((isReasoningUIPart(part) || isTextUIPart(part)) && part.state === 'streaming') {
       return { ...part, state: 'done' }
     }
@@ -41,8 +37,32 @@ export function settleMessage(live: UIMessage, { stopped, changed }: SettleOptio
         errorText: unfinishedCallError(part.toolCallId, changed)
       }
     }
+    // A subagent's calls settle as the reply's do; one still at work, or never reported done, as
+    // on ACP's older subagent draft, stopped with the reply.
+    const subagent = subagentTranscript(part)
+    if (subagent) {
+      const parts = settleParts(subagent.parts, changed)
+      const state = subagent.state === 'idle' ? 'idle' : 'unknown'
+      const same = state === subagent.state && parts.every((item, i) => item === subagent.parts[i])
+      if (same) return part
+      const settled: SubagentTranscript = { ...subagent, state, parts }
+      return { ...part, type: SUBAGENT_PART, data: settled }
+    }
     return part
   })
+}
+
+/**
+ * A reply as it stands once it ended without finishing, stopped or failed: nothing in it still
+ * reads as running. Reasoning and text are done, a call that never reported back fails with
+ * what happened to the document, which the model reads on the next request, and a subagent at
+ * work stops with its calls.
+ */
+export function settleMessage(live: UIMessage, { stopped, changed }: SettleOptions): UIMessage {
+  // The chat's messages are reactive; the settled one is built from plain values, so the
+  // conversation can still be saved with `structuredClone`.
+  const message = toRaw(live)
+  const parts = settleParts(message.parts, changed)
   const unchanged = parts.every((part, index) => part === message.parts[index])
   if (unchanged && (!stopped || wasStopped(message))) return live
   const settled = { ...message, parts }

@@ -1,0 +1,1 @@
+- Every CLI command that works on one page (`tree`, `find`, `query`, `analyze overlaps`, `export`, `eval`, `tool call`, and the `diff` commands that compare layers) takes `--page` with a page name or `--page-id` with a page ID, with a file and with the running app alike, and rejects the two together.

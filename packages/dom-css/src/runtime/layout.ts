@@ -1,3 +1,4 @@
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
@@ -40,7 +41,7 @@ function lineTextNodes(element: Element, view: DocumentView): Text[] {
       if (child.data.trim().length > 0) texts.push(child)
     } else if (child instanceof view.Element) {
       if (isInlineFlow(view.getComputedStyle(child).display)) {
-        texts.push(...lineTextNodes(child, view))
+        appendAll(texts, lineTextNodes(child, view))
       }
     }
   }

@@ -23,6 +23,31 @@ async function setAppTheme(page: Page, theme: 'dark' | 'light') {
 
 test.use({ viewport: { width: 1200, height: 900 } })
 
+// The tour screenshot includes an off-screen issue pin, which follows the canvas marker preference.
+test.use({
+  storageState: async ({ baseURL }, use) => {
+    if (!baseURL) throw new Error('Browser test baseURL is required')
+    await use({
+      cookies: [],
+      origins: [
+        {
+          origin: new URL(baseURL).origin,
+          localStorage: [
+            {
+              name: 'open-pencil:preferences:v1',
+              value: JSON.stringify({
+                version: 1,
+                onboarding: { aiSetup: 'done' },
+                designCheck: { showOnCanvas: true }
+              })
+            }
+          ]
+        }
+      ]
+    })
+  }
+})
+
 test('the tour opens on its first chapter, the rest below it', async ({ page }) => {
   const canvas = await openDemo(page)
   const opened = await page.evaluate(() => {

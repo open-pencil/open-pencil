@@ -1,5 +1,6 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import {
@@ -160,7 +161,7 @@ function stageTargets(
     const bounds = worldBounds(layer, geometry)
     const clipped: Rect | null = clip ? intersect(bounds, clip) : bounds
     visible[index] = clipped
-    if (!layer.clipsContent) continue
+    if (!clipsChildren(layer)) continue
     if (!clipped) return null
     clip = clipped
   }

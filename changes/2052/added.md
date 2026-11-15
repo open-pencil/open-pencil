@@ -1,0 +1,1 @@
+- Cloud emails an account's owner once when its workspaces hold all the storage its plan allows and turn read-only, whether it filled its plan or its plan shrank, and again each time it fills after freeing space. The cleanup pass sends it on deployments that send email (#2052).

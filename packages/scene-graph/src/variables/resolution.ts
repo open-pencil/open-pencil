@@ -1,3 +1,4 @@
+import { appendAll } from '../arrays'
 import type { SceneGraph } from '../graph'
 import type { Color } from '../primitives'
 import type { Variable, VariableLiteral, VariableValue } from '../types'
@@ -17,13 +18,24 @@ export function getNodeVariableModeId(
   nodeId: string,
   collectionId: string
 ): string {
+  return (
+    getNodeExplicitVariableModeId(graph, nodeId, collectionId) ?? defaultModeId(graph, collectionId)
+  )
+}
+
+/** The nearest mode set on a node or an ancestor for a collection, or null where none is. */
+export function getNodeExplicitVariableModeId(
+  graph: SceneGraph,
+  nodeId: string,
+  collectionId: string
+): string | null {
   let node = graph.nodes.get(nodeId)
   while (node) {
     const modeId = node.variableModes[collectionId]
     if (modeId) return modeId
     node = node.parentId ? graph.nodes.get(node.parentId) : undefined
   }
-  return defaultModeId(graph, collectionId)
+  return null
 }
 
 /**
@@ -44,7 +56,7 @@ export function collectionsResolving(
     if (!variable) continue
     collections.add(variable.collectionId)
     for (const value of Object.values(variable.valuesByMode))
-      pending.push(...variableValueReferences(value))
+      appendAll(pending, variableValueReferences(value))
   }
   return collections
 }

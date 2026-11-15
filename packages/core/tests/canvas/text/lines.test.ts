@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
 import type { CanvasKit, TypefaceFontProvider } from '@open-pencil/canvaskit'
 import { SceneGraph, type SceneNode, type StyleRun } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
@@ -87,8 +88,8 @@ function lowestInk(layout: TextLayout, left: number, right: number): number {
 
 /** The rightmost column with ink between rows `top` and `bottom`. */
 function rightmostInk(layout: TextLayout, top: number, bottom: number): number {
-  return Math.max(
-    ...inkRows(layout)
+  return maxOf(
+    inkRows(layout)
       .slice(top, bottom)
       .map((row) => row.lastIndexOf(true))
   )

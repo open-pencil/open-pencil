@@ -25,9 +25,8 @@ export type AgentAuthStatus = v.InferOutput<typeof authStatusSchema>
 
 const notificationSchema = v.object({ authStatus: authStatusSchema })
 
-/** The status an `_auth/status_update` carries, or null for anything else. */
-export function parseAuthStatusUpdate(method: string, params: unknown): AgentAuthStatus | null {
-  if (method !== AUTH_STATUS_UPDATE_METHOD) return null
+/** The status an `_auth/status_update` carries, or null when it carries none this app reads. */
+export function parseAuthStatusUpdate(params: unknown): AgentAuthStatus | null {
   const result = v.safeParse(notificationSchema, params)
   return result.success ? result.output.authStatus : null
 }

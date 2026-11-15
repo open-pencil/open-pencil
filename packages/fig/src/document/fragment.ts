@@ -41,7 +41,7 @@ export function materializeFigFragment(
     const id = result.sources.get(guidToString(page.guid))
     if (!id) continue
     if (page.internalOnly) dependencyPageIds.push(id)
-    else rootIds.push(...result.graph.getChildren(id).map((node) => node.id))
+    else for (const child of result.graph.getChildren(id)) rootIds.push(child.id)
   }
   return { ...result, rootIds, dependencyPageIds }
 }

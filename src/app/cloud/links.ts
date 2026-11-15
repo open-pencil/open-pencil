@@ -16,6 +16,7 @@ import { isTauri } from '@/app/tauri/env'
 import { bindDesktopLinkQueue } from '@/app/tauri/link-queue'
 import { IS_BROWSER } from '@/constants'
 
+import { openCloudCommunityLink } from './community/link'
 import { cloudSignedIn, signInToOpen } from './connect/flow'
 import { beginCloudInvitation } from './invitations/flow'
 import { cloudServerHost, normalizeCloudServerURL } from './servers/address'
@@ -40,11 +41,36 @@ const cloudLinkSchema = v.object({
   secret: v.string()
 })
 
+/**
+ * A link the desktop app received: an invitation or shared document with its secret, or a
+ * community gallery document with the named version it asks for, if any.
+ */
+const desktopCloudLinkSchema = v.variant('kind', [
+  cloudLinkSchema,
+  v.object({
+    kind: v.literal('community'),
+    id: v.string(),
+    server: v.string(),
+    version: v.nullable(v.string())
+  })
+])
+
+function openDesktopCloudLink(link: v.InferOutput<typeof desktopCloudLinkSchema>): Promise<void> {
+  if (link.kind === 'community') {
+    return openCloudCommunityLink({
+      documentId: link.id,
+      server: link.server,
+      versionId: link.version
+    })
+  }
+  return openCloudLink(link)
+}
+
 /** The Cloud link a web address carries, if it is one; its server is the address's own. */
 export function readCloudLink(url: URL): CloudLink | null {
   const path = parseCloudLinkPath(url.pathname)
   const secret = url.hash.slice(1)
-  if (!path || path.kind === 'documents' || !secret) return null
+  if (!path || path.kind === 'documents' || path.kind === 'community' || !secret) return null
   return { kind: path.kind, id: path.id, server: url.origin, secret }
 }
 
@@ -153,8 +179,8 @@ export function bindDesktopCloudLinks(): Promise<() => void> {
   return bindDesktopLinkQueue({
     event: CLOUD_LINKS_EVENT,
     command: TAKE_PENDING_CLOUD_LINKS,
-    schema: cloudLinkSchema,
+    schema: desktopCloudLinkSchema,
     label: 'Cloud link',
-    open: openCloudLink
+    open: openDesktopCloudLink
   })
 }

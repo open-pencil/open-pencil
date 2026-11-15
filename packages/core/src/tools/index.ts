@@ -21,6 +21,7 @@ export type { ToolDef, ToolExecution, ToolCapability } from './schema'
 export {
   isAtomicTool,
   isToolExposed,
+  toolInputFor,
   parseToolArgs,
   type ToolInterface,
   type ToolExposure

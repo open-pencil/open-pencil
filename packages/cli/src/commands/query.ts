@@ -2,7 +2,7 @@ import { defineCommand } from 'citty'
 
 import type { QueryNodeResult } from '@open-pencil/core/rpc'
 
-import { appTargetOptions } from '#cli/app/target'
+import { pageOptions } from '#cli/app/target'
 import { printNodeResults, printError } from '#cli/format'
 import { loadRPCData } from '#cli/rpc-data'
 
@@ -21,9 +21,8 @@ export default defineCommand({
       description: 'XPath selector (e.g., //FRAME[@width < 300], //TEXT[contains(@name, "Label")])',
       required: true
     },
-    page: { type: 'string', description: 'Page name (default: all pages)' },
     limit: { type: 'string', description: 'Max results (default: 1000)', default: '1000' },
-    ...appTargetOptions,
+    ...pageOptions('all pages'),
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
@@ -32,7 +31,6 @@ export default defineCommand({
       'query',
       {
         selector: args.selector,
-        page: args.page,
         limit: args.limit ? Number(args.limit) : undefined
       },
       args

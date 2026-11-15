@@ -13,6 +13,7 @@ import type { CloudDatabase } from '#cloud/server/db'
 import { DocumentNotFoundError } from '#cloud/server/documents/errors'
 import {
   spendInvitationBudget,
+  type DocumentInvitationMessage,
   type InvitationDelivery,
   type InvitationOutbox
 } from '#cloud/server/invitations'
@@ -140,26 +141,35 @@ export function createInvitationService(
           ? await Promise.all([
               database
                 .selectFrom('user')
-                .select('name')
+                .select(['name', 'locale'])
                 .where('id', '=', userId)
                 .executeTakeFirst(),
               database
                 .selectFrom('document')
                 .select('name')
                 .where('id', '=', documentId)
-                .executeTakeFirstOrThrow()
+                .executeTakeFirstOrThrow(),
+              database
+                .selectFrom('user')
+                .select('locale')
+                .where((expression) =>
+                  expression(expression.fn('lower', [expression.ref('email')]), '=', input.email)
+                )
+                .executeTakeFirst()
             ])
           : null
       const acceptanceURL =
         deliveryContext && options.publicURL
           ? cloudInvitationURL(options.publicURL, id, token)
           : null
-      const message =
+      const message: DocumentInvitationMessage | null =
         deliveryContext && acceptanceURL
           ? {
               deliveryId: id,
               recipientEmail: input.email,
-              inviterName: deliveryContext[0]?.name ?? 'An OpenPencil user',
+              // Someone without an account yet reads the inviter's language.
+              locale: deliveryContext[2]?.locale ?? deliveryContext[0]?.locale ?? 'en',
+              inviterName: deliveryContext[0]?.name ?? null,
               documentName: deliveryContext[1].name,
               permission: input.permission,
               expiresAt: expiresAt.toISOString(),

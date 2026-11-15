@@ -116,9 +116,11 @@ describe('bound paints', () => {
     expect(read()).toEqual({ ...HALF_BLUE, a: 0.7 })
     setMode(frame.id, null)
     expect(read()).toEqual(RED)
+    // Setting the mode the layer already shows still refreshes it, as in Figma: what decides is
+    // the mode set for the layer, not the color it gives (scratch/pr-oracle/1879 rule-probe).
     edit(0.7)
     setMode(frame.id, light)
-    expect(read()).toEqual({ ...RED, a: 0.7 })
+    expect(read()).toEqual(RED)
   })
 
   test('moving into a frame in another mode refreshes the paint', () => {

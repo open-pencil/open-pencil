@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 import { createRect, firstPageId } from '@open-pencil/test-support/scene'
 
@@ -80,7 +81,7 @@ describe('multi-node alignment', () => {
     const { graph, a, b, c } = setup()
     const nodes = [a, b, c].map((n) => getNodeOrThrow(graph, n.id))
     const abs = nodes.map((n) => graph.getAbsolutePosition(n.id))
-    const minX = Math.min(...abs.map((p) => p.x))
+    const minX = minOf(abs.map((p) => p.x))
 
     for (const n of nodes) {
       const nodeAbs = graph.getAbsolutePosition(n.id)
@@ -96,7 +97,7 @@ describe('multi-node alignment', () => {
     const { graph, a, b, c } = setup()
     const nodes = [a, b, c].map((n) => getNodeOrThrow(graph, n.id))
     const abs = nodes.map((n) => graph.getAbsolutePosition(n.id))
-    const maxX = Math.max(...abs.map((p, i) => p.x + nodes[i].width))
+    const maxX = maxOf(abs.map((p, i) => p.x + nodes[i].width))
 
     for (const n of nodes) {
       const nodeAbs = graph.getAbsolutePosition(n.id)
@@ -113,7 +114,7 @@ describe('multi-node alignment', () => {
     const { graph, a, b, c } = setup()
     const nodes = [a, b, c].map((n) => getNodeOrThrow(graph, n.id))
     const abs = nodes.map((n) => graph.getAbsolutePosition(n.id))
-    const minY = Math.min(...abs.map((p) => p.y))
+    const minY = minOf(abs.map((p) => p.y))
 
     for (const n of nodes) {
       const nodeAbs = graph.getAbsolutePosition(n.id)

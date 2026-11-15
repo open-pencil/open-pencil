@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'bun:test'
 
 import { laysOutBoxes } from '#dom-css/import/boxes'
-import { createHeadlessCSSRuntime } from '#dom-css/index'
+import { parseHTMLDocument } from '#dom-css/import/markup'
 
 const TEXT_STYLE = 'color: rgb(0, 0, 0); font-family: system-ui; font-size: 16px; font-weight: 400'
 
 function laysOut(html: string): boolean {
-  return laysOutBoxes(createHeadlessCSSRuntime().parseHTML(html))
+  return laysOutBoxes(parseHTMLDocument(html))
 }
 
 describe('laysOutBoxes', () => {

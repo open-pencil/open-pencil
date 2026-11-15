@@ -1,7 +1,12 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { TEXT_METRIC_FIELDS } from '@open-pencil/scene-graph/fields'
 
-import { autoWidthWrapWidth, measureAutoWidthText, measureTextForLayout } from './text-measurement'
+import {
+  autoWidthWrapWidth,
+  getTextMeasurer,
+  measureAutoWidthText,
+  measureTextForLayout
+} from './text-measurement'
 
 const WRAP_WIDTH_KEYS = ['minWidth', 'maxWidth'] as const satisfies readonly (keyof SceneNode)[]
 
@@ -40,6 +45,22 @@ type TextSizeChanges = Partial<
   Pick<SceneNode, 'width' | 'height' | 'derivedLayout' | 'derivedTextGlyphs' | 'derivedTextHeight'>
 >
 
+/** Whether a text keeps its box's size, so its lines are measured at its width and may draw past it. */
+export function isFixedSizeText(node: SceneNode): boolean {
+  return (
+    node.type === 'TEXT' &&
+    !node.textPathData &&
+    node.textAutoResize !== 'HEIGHT' &&
+    node.textAutoResize !== 'WIDTH_AND_HEIGHT'
+  )
+}
+
+/** How far a fixed-size text's lines reach in its fonts; undefined while they cannot be measured. */
+export function measuredFixedTextReach(node: SceneNode): number | null | undefined {
+  const measured = isFixedSizeText(node) ? getTextMeasurer()?.(node, node.width) : null
+  return measured ? measured.height || null : undefined
+}
+
 export function textAutoResizeChanges(
   node: SceneNode | undefined,
   changes: Partial<SceneNode>
@@ -56,8 +77,9 @@ export function textAutoResizeChanges(
   const next = { ...node, ...changes }
   const mode = next.textAutoResize
   // A fixed-size box keeps its size; its lines are measured at its width, since they draw past it.
-  if (mode !== 'HEIGHT' && mode !== 'WIDTH_AND_HEIGHT')
+  if (isFixedSizeText(next)) {
     return { derivedTextHeight: measureTextForLayout(next, next.width).height || null }
+  }
 
   const measured =
     mode === 'HEIGHT'
@@ -92,7 +114,7 @@ export function sizeAutoResizingText(
   for (let id = stack.pop(); id !== undefined; id = stack.pop()) {
     const node = graph.getNode(id)
     if (!node) continue
-    stack.push(...node.childIds)
+    for (const childId of node.childIds) stack.push(childId)
     if (node.type !== 'TEXT' || (wrappingOnly && node.textAutoResize !== 'HEIGHT')) continue
     // Wrapping text the source gave no width wraps at the width its content takes.
     const unsized = node.textAutoResize === 'HEIGHT' && node.width <= 0

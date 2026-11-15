@@ -1,5 +1,6 @@
 import { sum } from 'es-toolkit'
 
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 /** A layer's box on the page, by its id. */
@@ -69,7 +70,7 @@ function gapsEven(starts: number[], sizes: number[]): boolean {
   const gaps = starts
     .slice(1)
     .map((value, index) => value - (starts[index] ?? 0) - (sizes[index] ?? 0))
-  return gaps.length < 2 || Math.max(...gaps) - Math.min(...gaps) <= EVEN_GAPS
+  return gaps.length < 2 || maxOf(gaps) - minOf(gaps) <= EVEN_GAPS
 }
 
 function moveAlong(placed: Map<string, Vector>, box: PlacedBox, axis: Axis, value: number) {
@@ -93,12 +94,12 @@ function spreadLine(boxes: PlacedBox[], axis: Axis, placed: Map<string, Vector>)
 function alignBands(groups: PlacedBox[][], axis: Axis, placed: Map<string, Vector>) {
   const midranges = groups.map((group) => {
     const values = group.map((box) => startOf(box, axis))
-    const min = Math.min(...values)
-    const max = Math.max(...values)
+    const min = minOf(values)
+    const max = maxOf(values)
     return max - min <= ALIGNED_SPREAD ? null : roundHalfUp((min + max) / 2)
   })
   const starts = groups.map((group, index) => midranges[index] ?? startOf(group[0], axis))
-  const sizes = groups.map((group) => Math.max(...group.map((box) => sizeOf(box, axis))))
+  const sizes = groups.map((group) => maxOf(group.map((box) => sizeOf(box, axis))))
   const respaced = !gapsEven(starts, sizes)
   const targets = respaced ? evenStarts(starts, sizes) : starts
   for (const [index, group] of groups.entries()) {

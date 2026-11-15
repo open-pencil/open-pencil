@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, useTemplateRef } from 'vue'
 
-import { acpAgentFor } from '@open-pencil/core/constants'
+import { providerKind } from '@open-pencil/core/constants'
 import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
 import { useI18n } from '@open-pencil/vue/i18n'
 
@@ -101,13 +101,8 @@ function dropFiles(files: File[]): void {
 
 defineExpose({ restoreDraft, dropFiles })
 
-const isAgentProvider = computed(
-  () => providerID.value.startsWith('acp:') || providerID.value === 'harness:pi'
-)
-const agentName = computed(() => {
-  if (providerID.value === 'harness:pi') return 'Pi'
-  return acpAgentFor(providerID.value)?.name ?? providerID.value.replace('acp:', '')
-})
+/** A coding agent sets its own thinking effort, so the composer offers none for one. */
+const isAgentProvider = computed(() => providerKind(providerID.value) !== 'api')
 const isCustomProvider = computed(
   () => providerID.value === 'openai-compatible' || providerID.value === 'anthropic-compatible'
 )
@@ -195,20 +190,12 @@ const selectedProfileName = computed(
     </template>
     <template #model>
       <div class="@container flex min-w-0 items-center">
-        <template v-if="isAgentProvider">
-          <div class="flex min-w-0 items-center gap-1 px-1.5 text-3xs text-muted">
-            <icon-lucide-bot class="size-3 shrink-0" />
-            <span class="truncate">{{ agentName }}</span>
-          </div>
-        </template>
-        <template v-else>
-          <ChatProfileSelect>
-            <template #value>
-              <span class="min-w-0 truncate">{{ selectedProfileName }}</span>
-            </template>
-          </ChatProfileSelect>
-          <ChatThinkingSelect />
-        </template>
+        <ChatProfileSelect>
+          <template #value>
+            <span class="min-w-0 truncate">{{ selectedProfileName }}</span>
+          </template>
+        </ChatProfileSelect>
+        <ChatThinkingSelect v-if="!isAgentProvider" />
       </div>
     </template>
   </ChatComposer>

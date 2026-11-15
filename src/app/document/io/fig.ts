@@ -5,9 +5,13 @@ import { isUnsupportedVariableValue } from '@open-pencil/scene-graph/variables'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
 
+/**
+ * Reads a `.fig` with every page left to load: the page a document opens on, its first or the one
+ * it was left on, loads as it is shown, so no other page costs memory or time first.
+ */
 export async function readFigDocument(file: File, signal?: AbortSignal) {
   const graph = await readFigFile(file, {
-    populate: 'first-page',
+    populate: 'none',
     signal
   })
   warnUnsupportedVariableExpressions(graph)

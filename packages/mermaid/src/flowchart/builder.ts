@@ -97,6 +97,16 @@ function arrowheads(type: string): { startArrow: FlowArrowhead; endArrow: FlowAr
   return { startArrow: 'none', endArrow: ARROWHEADS[type] ?? 'arrow' }
 }
 
+/** Adds a vertex statement's styles and classes to its node, in the order they were written. */
+function addStyling(
+  node: { styles: string[]; classes: string[] },
+  styles: string[] | undefined,
+  classes: string[] | undefined
+): void {
+  for (const style of styles ?? []) node.styles.push(style)
+  for (const name of classes ?? []) node.classes.push(name)
+}
+
 /**
  * The `yy` object Mermaid's flowchart grammar calls as it parses, building a `Flowchart`. It
  * keeps the meaning Mermaid's `FlowDB` gives each call in the pinned release (MIT, Copyright (c)
@@ -155,8 +165,8 @@ export class FlowchartBuilder {
     for (const subgraph of this.subgraphs) {
       const node = this.nodes.get(subgraph.id)
       if (!node) continue
-      subgraph.styles.push(...node.styles)
-      subgraph.classes.push(...node.classes)
+      for (const style of node.styles) subgraph.styles.push(style)
+      for (const name of node.classes) subgraph.classes.push(name)
     }
     return {
       direction: this.dir,
@@ -213,8 +223,7 @@ export class FlowchartBuilder {
     }
     if (text) node.label = readLabel(text)
     if (type !== undefined) node.shape = bracketShape(type)
-    if (styles) node.styles.push(...styles)
-    if (classes) node.classes.push(...classes)
+    addStyling(node, styles, classes)
     if (!data) return
     if (typeof data.shape === 'string') {
       const shape = data.shape === data.shape.toLowerCase() ? shapeNamed(data.shape) : null
@@ -340,7 +349,7 @@ export class FlowchartBuilder {
     const existing = this.subgraphs.find((subgraph) => subgraph.id === subgraphId)
     if (existing) {
       // A repeated id adds to the first declaration, which keeps its title and direction.
-      existing.members.push(...own)
+      for (const member of own) existing.members.push(member)
       return subgraphId
     }
     this.subgraphs.push({

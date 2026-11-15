@@ -3,7 +3,7 @@ import * as v from 'valibot'
 import { CONNECTOR_LABEL_FONT } from '@open-pencil/scene-graph/connectors'
 import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 
-import { toolNumber, defineTool, nodeSummary } from '#core/tools/schema'
+import { layoutPosition, defineTool, nodeSummary } from '#core/tools/schema'
 
 const MAGNETS = ['AUTO', 'TOP', 'RIGHT', 'BOTTOM', 'LEFT', 'CENTER'] as const
 const CAPS = [
@@ -25,8 +25,8 @@ const endInput = (label: string) =>
           v.description('AUTO picks the nearest side; straight lines use CENTER')
         )
       ),
-      x: v.optional(toolNumber(v.pipe(v.number(), v.description('Page X of a free end')))),
-      y: v.optional(toolNumber(v.pipe(v.number(), v.description('Page Y of a free end'))))
+      x: v.optional(layoutPosition('Page X of a free end')),
+      y: v.optional(layoutPosition('Page Y of a free end'))
     }),
     {}
   )

@@ -1,6 +1,7 @@
 import { uniq } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { minOf } from '@open-pencil/scene-graph/arrays'
 import { connectorsAffectedBy, layoutConnector } from '@open-pencil/scene-graph/connectors'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
@@ -277,8 +278,8 @@ export async function arrangeLayers(
     edges
   }
   const topLeft = {
-    x: Math.min(...top.map((node) => node.x)),
-    y: Math.min(...top.map((node) => node.y))
+    x: minOf(top.map((node) => node.x)),
+    y: minOf(top.map((node) => node.y))
   }
   const before = readFrom(graph, pageId, nodes, groups)
   const arrangement = await graph.waitOutsideEdit(arrangeBoxes(input))

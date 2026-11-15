@@ -220,6 +220,8 @@ export interface GlyphOutlineMetrics {
   commands: OutlineCommand[]
   x: number
   advance: number
+  /** The UTF-16 index in the shaped text the glyph starts at. */
+  cluster: number
 }
 
 export type FontGlyphCoverage = 'has' | 'missing' | 'unknown'
@@ -262,7 +264,8 @@ export function getGlyphOutlineMetricsSync(
     const metrics = {
       commands: glyphCommands(parsed, instance, glyph.codepoint, fontSize, baseline, offsetX),
       x: pen,
-      advance: (glyph.xAdvance ?? 0) * scale
+      advance: (glyph.xAdvance ?? 0) * scale,
+      cluster: glyph.cluster
     }
     pen += metrics.advance
     return metrics

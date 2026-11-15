@@ -10,6 +10,7 @@ import {
   type GlassEffectParams,
   type SceneNode
 } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { asDouble } from '@open-pencil/test-support/doubles'
 
@@ -149,7 +150,7 @@ function columns(graph: SceneGraph, frameId: string) {
 function expectFigma(ours: number[], figma: number[], maxDifference: number, maxRms: number) {
   const differences = ours.map((value, index) => Math.abs(value - figma[index]))
   const rms = Math.sqrt(differences.reduce((sum, d) => sum + d * d, 0) / differences.length)
-  expect(Math.max(...differences)).toBeLessThanOrEqual(maxDifference)
+  expect(maxOf(differences)).toBeLessThanOrEqual(maxDifference)
   expect(rms).toBeLessThanOrEqual(maxRms)
 }
 
@@ -185,10 +186,10 @@ describe('glass draws as Figma does', () => {
 describe('glass geometry map', () => {
   // A diamond inside a 100px layer: corners at the middle of each side.
   const diamond: GlassOutline = {
+    kind: 'segments',
     origin: [0, 0],
     size: [100, 100],
     radii: [0, 0, 0, 0],
-    isBox: false,
     segments: new Float32Array([50, 0, 100, 50, 100, 50, 50, 100, 50, 100, 0, 50, 0, 50, 50, 0])
   }
   const layer = { id: 'map-diamond', width: 100, height: 100 } as SceneNode
@@ -231,7 +232,8 @@ describe('glass geometry map', () => {
   })
 
   test('gives way to walking the outline where no half-float surface can be made', () => {
-    // A small frame: walking the outline at every pixel is what the map saves.
+    // A small frame: walking the outline at every pixel is what the map saves. A star, as an
+    // ellipse is computed exactly and draws no map.
     const reds = () => {
       const graph = new SceneGraph()
       const page = graph.getPages()[0].id
@@ -244,7 +246,7 @@ describe('glass geometry map', () => {
           fills: [solid((x * 4) / 255, 0, 0)]
         })
       }
-      graph.createNode('ELLIPSE', frame.id, {
+      graph.createNode('STAR', frame.id, {
         x: 8,
         y: 8,
         width: 48,
@@ -309,11 +311,13 @@ describe('glass geometry map', () => {
     expect(released).toEqual(['a shader', 'a image'])
   })
 
-  test('is not drawn for a box, which the shaders compute exactly', () => {
+  test('is not drawn for a box or an ellipse, which the shaders compute exactly', () => {
     const surface = expectDefined(ck.MakeSurface(8, 8), 'surface')
-    expect(
-      glassGeometryMap(renderer, surface.getCanvas(), layer, { ...diamond, isBox: true }, 60)
-    ).toBeNull()
+    for (const kind of ['box', 'ellipse'] as const) {
+      expect(
+        glassGeometryMap(renderer, surface.getCanvas(), layer, { ...diamond, kind }, 60)
+      ).toBeNull()
+    }
     surface.delete()
   })
 })

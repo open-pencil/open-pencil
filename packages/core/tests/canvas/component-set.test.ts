@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { SkiaRenderer } from '#core/canvas/renderer'
@@ -38,7 +39,7 @@ describe('component set rendering', () => {
         'pixels'
       )
       // The border is editor chrome, drawn by the overlay pass at the live zoom.
-      expect(Math.max(...pixels.filter((_, index) => index % 4 === 3))).toBe(0)
+      expect(maxOf(pixels.filter((_, index) => index % 4 === 3))).toBe(0)
       image.delete()
     } finally {
       surface.delete()

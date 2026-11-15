@@ -11,6 +11,7 @@ import { DocumentNotFoundError } from '#cloud/server/documents'
 import { resolveDocumentAccess } from '#cloud/server/documents/access'
 import { CLOUD_FEATURE_KEYS } from '#cloud/server/policy/keys'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
+import { storageLimitReached } from '#cloud/server/policy/storage'
 import { workspacePolicyContext } from '#cloud/server/policy/workspace'
 import type { DocumentSharingService } from '#cloud/server/sharing'
 import { base64url, SignJWT } from 'jose'
@@ -40,6 +41,8 @@ export type CollaborationTicketClaims = {
   documentId: string
   principal: CollaborationPrincipal
   permission: DocumentPermission
+  /** Why a peer who could edit only views, which the editor explains; never part of the token. */
+  readOnly?: 'storage-limit'
   roomEpoch: number
   /**
    * The relay that enforces writes; without one the ticket is for peer-to-peer rooms. The ticket's
@@ -54,6 +57,7 @@ export async function signCollaborationTicket({
   documentId,
   principal,
   permission,
+  readOnly,
   roomEpoch,
   relayURL
 }: CollaborationTicketClaims): Promise<CollaborationTicket> {
@@ -78,6 +82,7 @@ export async function signCollaborationTicket({
   const ticket = {
     token,
     provider: 'trystero' as const,
+    ...(readOnly && { readOnly }),
     ...claims,
     roomKey,
     expiresAt: new Date(expiresAtSeconds * 1000).toISOString(),
@@ -110,6 +115,20 @@ export function createCollaborationTicketService({
   policy,
   deploymentMode = 'self-hosted'
 }: CollaborationTicketServiceOptions) {
+  /**
+   * The permission a ticket carries: an owner at their storage limit leaves their documents
+   * read-only, so whoever could edit them views them instead, and the ticket says why.
+   */
+  async function ticketPermission(documentId: string, permission: DocumentPermission) {
+    if (
+      permission === 'edit' &&
+      (await storageLimitReached(database, policy, { documentId }, deploymentMode))
+    ) {
+      return { permission: 'view' as const, readOnly: 'storage-limit' as const }
+    }
+    return { permission }
+  }
+
   return {
     async issueUserTicket(actor: CloudActor, documentId: string): Promise<CollaborationTicket> {
       const access = await resolveDocumentAccess(database, actor.userId, documentId)
@@ -136,7 +155,7 @@ export function createCollaborationTicketService({
         authSecret,
         documentId,
         principal: { kind: 'user', userId: actor.userId, name: actor.name, email: actor.email },
-        permission: access.permission,
+        ...(await ticketPermission(documentId, access.permission)),
         roomEpoch: document.collaborationEpoch,
         relayURL
       })
@@ -173,7 +192,7 @@ export function createCollaborationTicketService({
         authSecret,
         documentId: resolved.documentId,
         principal: resolved.principal,
-        permission: resolved.permission,
+        ...(await ticketPermission(resolved.documentId, resolved.permission)),
         roomEpoch: document.collaborationEpoch,
         relayURL
       })

@@ -6,6 +6,7 @@
     "test": "bun test tests"
   },
   "dependencies": {
+    "@open-pencil/cloud": "workspace:*",
     "es-toolkit": "^1.52.0"
   }
 }

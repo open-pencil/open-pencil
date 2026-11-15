@@ -25,6 +25,11 @@ export const runtimeScenarios: RuntimeScenario[] = [
     code: "const { interpretInstance, materializeInstance } = await import('@open-pencil/fig/instance-overrides'); if (typeof interpretInstance !== 'function' || typeof materializeInstance !== 'function') throw new Error('Fig instance override subpath failed')"
   },
   {
+    // Cloud's emails are Vue components, so a consumer must get them compiled.
+    name: 'Cloud email',
+    code: "const { EMAIL_SAMPLES, renderTransactionalEmail } = await import('@open-pencil/cloud/email'); const email = await renderTransactionalEmail(EMAIL_SAMPLES[0], 'de'); if (!/lang=.de./.test(email.html) || !email.text.includes('Homepage')) throw new Error('Cloud email smoke failed')"
+  },
+  {
     name: 'SceneGraph package',
     code: "const { SceneGraph } = await import('@open-pencil/scene-graph'); const graph = new SceneGraph(); if (graph.getPages().length !== 1) throw new Error('SceneGraph package smoke failed')"
   },
@@ -58,7 +63,7 @@ export const runtimeScenarios: RuntimeScenario[] = [
   },
   {
     name: 'DOM/CSS conversion',
-    code: "const { htmlToSceneGraph } = await import('@open-pencil/dom-css'); const graph = await htmlToSceneGraph('<div class=card>OpenPencil</div>', { cssText: '.card { width: 320px; }' }); if (graph.getPages()[0].width !== 320) throw new Error('DOM/CSS scene graph failed')"
+    code: "const { htmlToSceneGraph } = await import('@open-pencil/dom-css'); const { createHTMLEngineRuntime } = await import('@open-pencil/html-engine'); const graph = await htmlToSceneGraph('<div class=card>OpenPencil</div>', { cssText: '.card { width: 320px; }', runtime: createHTMLEngineRuntime() }); if (graph.getPages()[0].width !== 320) throw new Error('DOM/CSS scene graph failed')"
   },
   {
     name: 'DOM/CSS browser API',

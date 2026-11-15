@@ -90,4 +90,9 @@ export interface ObjectStore {
   write(input: WriteObjectInput): Promise<void>
   /** The bytes stored under `key`, or null when there are none. */
   read(key: string): Promise<Uint8Array | null>
+  /**
+   * Bytes `start` up to `endExclusive` of the object under `key`, or null when there is none:
+   * enough of a large stored file to read one part of it, such as a document's thumbnail.
+   */
+  readRange(key: string, start: number, endExclusive: number): Promise<Uint8Array | null>
 }

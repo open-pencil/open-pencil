@@ -96,6 +96,30 @@ describe('WebMCP registration', () => {
     }
   })
 
+  test('offers get_jsx without a path, since a page writes no files', async () => {
+    const context = host()
+    let calls = 0
+    const registration = registerWebMCPTools(
+      context,
+      () => ({
+        execute: async () => {
+          calls++
+          return {}
+        }
+      }),
+      'edit'
+    )
+    await registration.ready
+    try {
+      const tool = requiredTool(context.tools, 'get_jsx')
+      expect(tool.inputSchema).not.toHaveProperty('properties.path')
+      await expect(tool.execute({ id: 'node', path: 'a.jsx' }, options())).rejects.toThrow()
+      expect(calls).toBe(0)
+    } finally {
+      registration.dispose()
+    }
+  })
+
   test('rejects cancelled calls and excessive results', async () => {
     const context = host()
     const registration = registerWebMCPTools(

@@ -2,32 +2,41 @@ import { afterEach, describe, expect, test, vi } from 'bun:test'
 
 import type { Editor } from '@open-pencil/core'
 import * as fig from '@open-pencil/core/io/formats/fig'
+import { SceneGraph } from '@open-pencil/scene-graph'
 import { asDouble } from '@open-pencil/test-support/doubles'
 
+import * as importedDocument from '@/app/document/io/imported-document'
 import { createReloadActions } from '@/app/document/io/read'
+import * as reloadSource from '@/app/document/io/reload-source'
+import * as reloadState from '@/app/document/io/reload-state'
 import type { EditorPreparationController } from '@/app/editor/preparation/controller'
 import { toast } from '@/app/shell/ui'
 
-function reloadHarness(unsaved: boolean, source: { path: string | null } = { path: null }) {
-  const begin = vi.fn(() => ({
+function reloadHarness(
+  unsaved: boolean,
+  source: { path: string | null } = { path: null },
+  markDocumentSaved: () => void = vi.fn()
+) {
+  const load = {
     id: 1,
     signal: new AbortController().signal,
     update: vi.fn(),
     complete: vi.fn(),
     fail: vi.fn(),
     cancel: vi.fn()
-  }))
+  }
+  const begin = vi.fn(() => load)
   const getFilePath = vi.fn(() => source.path)
   const actions = createReloadActions({
-    editor: asDouble<Editor>({ graph: {} }),
+    editor: asDouble<Editor>({ graph: {}, requestRender: vi.fn() }),
     state: asDouble({ documentName: 'Design', panX: 0, panY: 0, zoom: 1, currentPageId: '0:1' }),
     getFilePath,
     getFileHandle: () => null,
     hasUnsavedChanges: () => unsaved,
-    markDocumentSaved: vi.fn(),
+    markDocumentSaved,
     preparationController: asDouble<EditorPreparationController>({ begin })
   })
-  return { actions, begin, getFilePath }
+  return { actions, begin, getFilePath, load }
 }
 
 afterEach(() => {
@@ -45,6 +54,28 @@ describe('reloading a document that changed on disk', () => {
     expect(stop).toHaveBeenCalledTimes(1)
     expect(stop.mock.invocationCallOrder[0]).toBeLessThan(getFilePath.mock.invocationCallOrder[0])
     expect(begin).toHaveBeenCalledTimes(1)
+  })
+
+  test('marks the file saved before the page it showed loads, so an edit meanwhile stays unsaved', async () => {
+    vi.spyOn(fig, 'stopFigReaderWorker').mockReturnValue(undefined)
+    vi.spyOn(reloadSource, 'readReloadSource').mockResolvedValue(new SceneGraph())
+    vi.spyOn(importedDocument, 'applyImportedDocument').mockResolvedValue(undefined)
+    const calls: string[] = []
+    vi.spyOn(reloadState, 'restoreReloadState').mockImplementation(async () => {
+      calls.push('restore')
+    })
+    const markDocumentSaved = vi.fn(() => calls.push('saved'))
+    const { actions, load } = reloadHarness(
+      false,
+      { path: '/designs/design.fig' },
+      markDocumentSaved
+    )
+
+    await actions.reloadFromDisk()
+
+    expect(calls).toEqual(['saved', 'restore'])
+    expect(load.fail).not.toHaveBeenCalled()
+    expect(load.complete).toHaveBeenCalledTimes(1)
   })
 
   test('keeps unsaved edits and offers to reload, which discards them', async () => {

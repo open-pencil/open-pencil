@@ -40,6 +40,18 @@ function authAdapter() {
     async resolveAccountSession() {
       return null
     },
+    async resolveAccessToken() {
+      return null
+    },
+    async listAccessTokens() {
+      return []
+    },
+    async createAccessToken() {
+      throw new Error('Access tokens are not used here')
+    },
+    async revokeAccessToken() {
+      throw new Error('Access tokens are not used here')
+    },
     async listAuthenticationMethods() {
       return []
     },
@@ -84,6 +96,7 @@ function authAdapter() {
       return null
     },
     updateProfile: complete,
+    setLocale: complete,
     changeEmail: complete,
     async sessions() {
       return null

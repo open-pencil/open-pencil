@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { afterEach, beforeEach, expect, spyOn, test } from 'bun:test'
+import { afterEach, beforeEach, expect, mock, spyOn, test } from 'bun:test'
 
 import type { IconData } from '@open-pencil/core/icons'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
@@ -23,6 +23,8 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  // A spy on a module export, such as ensureGraphFonts, outlives the file otherwise.
+  mock.restore()
   store.dispose()
   Reflect.deleteProperty(globalThis, 'window')
 })
