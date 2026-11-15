@@ -3,6 +3,7 @@ import { omitBy, range } from 'es-toolkit'
 import type { NodeType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 import { parseCSSNumber } from '@open-pencil/scene-graph/css'
+import { centerGlyph } from '@open-pencil/scene-graph/icons'
 import type { Size } from '@open-pencil/scene-graph/primitives'
 
 import type { RekaScope } from '../behaviours'
@@ -141,13 +142,8 @@ async function renderIconNode<Artwork>(
   const artwork = await graph.waitOutsideEdit(services.icon(iconName, size))
   if (!artwork) throw new Error(`Icon "${iconName}" not found`)
   const node = placeArtwork(services, graph, artwork, props, size, parentId)
-  const offset = { x: (box.width - size) / 2, y: (box.height - size) / 2 }
-  if (offset.x !== 0 || offset.y !== 0) {
-    for (const path of graph.getChildren(node.id)) {
-      graph.updateNode(path.id, { x: path.x + offset.x, y: path.y + offset.y })
-    }
-  }
-  return node
+  centerGlyph(graph, node.id, size)
+  return graph.getNode(node.id) ?? node
 }
 
 function placeArtwork<Artwork>(
