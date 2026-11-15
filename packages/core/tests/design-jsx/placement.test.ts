@@ -213,6 +213,23 @@ describe('shared render/preview placement', () => {
     expect(graph.getNode(results[0].id)).toBeUndefined()
   })
 
+  it('keeps the parent of the layer to replace, and its layers, when an edit moved it into the replacement', async () => {
+    const setup = await fixture()
+    const { graph, figma, boardId, rowId, leftId } = setup
+    const placement = resolveRenderPlacement(graph, { replace_id: leftId }, figma.currentPageId)
+    const results = await renderJSX(graph, '<Frame name="New" w={40} h={40}/>', placement)
+    graph.insertChildAt(results[0].id, boardId, 0)
+    graph.insertChildAt(rowId, results[0].id, 0)
+
+    expect(() => finishRenderPlacement(graph, results, placement)).toThrow('moved')
+    expect(getNodeOrThrow(graph, boardId).childIds).toEqual([rowId])
+    expect(getNodeOrThrow(graph, rowId).childIds.map((id) => graph.getNode(id)?.name)).toEqual([
+      'Left',
+      'Right'
+    ])
+    expect(graph.getNode(results[0].id)).toBeUndefined()
+  })
+
   it('keeps the layer to replace when its replacement was deleted while it rendered', async () => {
     const setup = await fixture()
     const { graph, figma, leftId } = setup

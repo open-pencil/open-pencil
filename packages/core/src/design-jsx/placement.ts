@@ -58,7 +58,9 @@ export function resolveRenderPlacement(
 
 /**
  * Move the layer to replace out of the rendered root an edit put it in: back where it was, or,
- * when that parent is gone or inside a root too, to where the outermost root holding it stands.
+ * when that parent is gone or inside a root too, to where the outermost root holding it stands,
+ * together with whatever holds it directly under that root, so an edit that moved its parent into
+ * a root loses none of that parent's other layers.
  */
 function leaveRoots(
   graph: SceneGraph,
@@ -66,17 +68,24 @@ function leaveRoots(
   roots: ReadonlySet<string>,
   placement: RenderPlacement
 ): void {
-  const rootOf = (id: string) => graph.closest(id, (ancestor) => roots.has(ancestor.id))
-  let holder = rootOf(layerId)
-  if (!holder) return
-  if (graph.getNode(placement.parentId) && !rootOf(placement.parentId)) {
+  const inRoot = (id: string) =>
+    graph.closest(id, (ancestor) => roots.has(ancestor.id)) !== undefined
+  if (!inRoot(layerId)) return
+  if (graph.getNode(placement.parentId) && !inRoot(placement.parentId)) {
     graph.insertChildAt(layerId, placement.parentId, placement.insertIndex ?? 0)
     return
   }
-  const above = (node: SceneNode) => (node.parentId ? rootOf(node.parentId) : undefined)
-  for (let outer = above(holder); outer; outer = above(outer)) holder = outer
-  const parent = holder.parentId ? graph.getNode(holder.parentId) : undefined
-  if (parent) graph.insertChildAt(layerId, parent.id, parent.childIds.indexOf(holder.id))
+  // The walk visits every ancestor, keeping the last one whose parent is a root: the outermost.
+  let escaping: SceneNode | undefined
+  graph.closest(layerId, (node) => {
+    if (node.parentId && roots.has(node.parentId)) escaping = node
+    return false
+  })
+  const holder = escaping?.parentId ? graph.getNode(escaping.parentId) : undefined
+  const parent = holder?.parentId ? graph.getNode(holder.parentId) : undefined
+  if (escaping && holder && parent) {
+    graph.insertChildAt(escaping.id, parent.id, parent.childIds.indexOf(holder.id))
+  }
 }
 
 /**
@@ -116,6 +125,10 @@ function currentPlacement(
   if (!replaced || !parent) refuseReplacement(graph, results, placement, 'was deleted')
   // The roots are placed in its parent's coordinates, captured before rendering.
   if (parent.id !== placement.parentId) refuseReplacement(graph, results, placement, 'moved')
+  const roots = new Set(results.map((result) => result.id))
+  if (graph.closest(parent.id, (ancestor) => roots.has(ancestor.id))) {
+    refuseReplacement(graph, results, placement, 'moved into its replacement')
+  }
   if (results.some((result) => !graph.getNode(result.id))) {
     refuseReplacement(graph, results, placement, 'lost its replacement')
   }
