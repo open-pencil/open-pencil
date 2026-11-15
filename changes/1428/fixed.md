@@ -1,2 +1,1 @@
-- A design JSX render that fails partway, such as on an `<Icon>` named without its set, leaves none of the layers it made on the page instead of a partial frame at the page origin, and the AI chat records no change and no undo step for it.
-- Replacing a layer with design JSX keeps the original when the replacement fails partway instead of deleting it and leaving part of the new one, and a design diff whose added layer fails to render leaves none of that layer behind.
+- Replacing a layer with design JSX keeps the original when the replacement fails to render instead of deleting it, and the replacement takes the original's place among its siblings instead of moving to the end (#1428).

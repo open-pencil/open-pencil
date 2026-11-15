@@ -205,7 +205,7 @@ describe('diff_nodes and apply_patch', () => {
       '+<Frame name="Badge" w={40} h={40}><Rect name="Backdrop" w={40} h={40} /><Icon name="Icon" /></Frame>'
     ].join('\n')
 
-    const applied = await run<ApplyResult>(figma, 'diff_apply', { patch })
+    const applied = await run<ApplyResult>(figma, 'apply_patch', { patch })
     expect(applied.error).toBe('Patch does not apply')
     expect(applied.results?.[0]?.error).toContain('Invalid icon name "Icon"')
     expect(getNodeOrThrow(graph, card.id).childIds).toEqual(children)

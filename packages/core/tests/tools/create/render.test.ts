@@ -1,12 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '#core-tests/helpers/assert'
 import { pick } from 'es-toolkit/object'
 
 import { createEditor, isEmptyDocumentChange } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
+
+import { captureDocumentChange } from '#core/editor/history/document-change'
 
 const render = expectDefined(
   ALL_TOOLS.find((tool) => tool.name === 'render'),
@@ -51,7 +53,7 @@ async function renderFailing(
 ) {
   const layersBefore = pageLayers(editor.graph, pageId)
   const nodesBefore = editor.graph.nodes.size
-  const finish = editor.captureDocumentChange(pageId)
+  const finish = captureDocumentChange(editor.graph, pageId)
   const error = await Promise.resolve(render.execute(figma, args)).then(
     () => {
       throw new Error('the render succeeded')
