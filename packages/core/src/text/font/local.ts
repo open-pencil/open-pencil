@@ -1,4 +1,4 @@
-import { compact, groupBy, uniq } from 'es-toolkit'
+import { compact, groupBy, uniqBy } from 'es-toolkit'
 
 import {
   namesWeight,
@@ -297,17 +297,24 @@ export class OwnFaceNames {
     // full name two instances share, as STAT names an instance without a value of its own,
     // places the listed face in this file without naming which instance it is.
     const statName = statNamer(data)
-    const fullNames = groupBy(
-      namedInstances(data).flatMap((instance) =>
-        uniq(compact([instance.name, statName?.(instance.variations)])).map((name) => ({
-          fullName: styleSpelling(`${own.family} ${name}`),
-          instance
-        }))
-      ),
-      (entry) => entry.fullName
+    const fullNames = new Map(
+      Object.entries(
+        groupBy(
+          namedInstances(data).flatMap((instance) =>
+            uniqBy(
+              compact([instance.name, statName?.(instance.variations)]).map((name) => ({
+                fullName: styleSpelling(`${own.family} ${name}`),
+                instance
+              })),
+              (entry) => entry.fullName
+            )
+          ),
+          (entry) => entry.fullName
+        )
+      )
     )
     for (const sibling of candidatesFor(fonts, own.family, '')) {
-      const named = fullNames[styleSpelling(sibling.fullName)]
+      const named = fullNames.get(styleSpelling(sibling.fullName))
       if (!named || sibling === font) continue
       if (!this.names.has(sibling.postscriptName)) this.remember(sibling, data)
       if (named.length > 1) continue

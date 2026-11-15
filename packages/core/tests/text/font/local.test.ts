@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
 import { corePackagePath } from '#core-tests/helpers/paths'
+import { noop } from 'es-toolkit'
 
 import { readFixtureArrayBuffer } from '@open-pencil/test-support/paths'
 
@@ -279,7 +280,7 @@ describe('a family listed as several', () => {
 
   test('learns nothing a read that was pending when the names were forgotten finds', async () => {
     const names = new OwnFaceNames()
-    let finish = () => {}
+    let finish = noop
     const pending = new Promise<void>((resolve) => {
       finish = resolve
     })

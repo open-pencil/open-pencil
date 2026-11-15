@@ -141,8 +141,11 @@ fn watch_targets(folders: Vec<PathBuf>) -> Vec<(PathBuf, RecursiveMode)> {
             };
             (above.to_path_buf(), RecursiveMode::NonRecursive)
         };
-        if !targets.iter().any(|(path, _)| *path == target.0) {
-            targets.push(target);
+        // A font folder that is also the folder above a missing one is watched with its inside.
+        match targets.iter_mut().find(|(path, _)| *path == target.0) {
+            Some(existing) if target.1 == RecursiveMode::Recursive => existing.1 = target.1,
+            Some(_) => {}
+            None => targets.push(target),
         }
     }
     targets
@@ -280,13 +283,16 @@ mod tests {
             fonts.clone(),
             home.join(".local/share/other/fonts"),
         ]);
+        // As with XDG_DATA_HOME at ~/.fonts: the missing folder's above is a font folder.
+        let shared = watch_targets(vec![fonts.join("fonts"), fonts.clone()]);
         let _ = std::fs::remove_dir_all(&home);
         assert_eq!(
             targets,
             [
                 (home, RecursiveMode::NonRecursive),
-                (fonts, RecursiveMode::Recursive)
+                (fonts.clone(), RecursiveMode::Recursive)
             ]
         );
+        assert_eq!(shared, [(fonts, RecursiveMode::Recursive)]);
     }
 }
