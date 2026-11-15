@@ -1,6 +1,6 @@
 import type { Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { maxOf } from '@open-pencil/scene-graph/arrays'
-import { parseCSSNumber, splitCSSValue } from '@open-pencil/scene-graph/css'
+import { parseCSSAspectRatio, parseCSSNumber, splitCSSValue } from '@open-pencil/scene-graph/css'
 
 import type { DesignStyleDeclaration } from '../types'
 import { colorToFillFromCSS, pickStyle } from './css-values'
@@ -17,17 +17,6 @@ export function fillsFromStyle(style: DesignStyleDeclaration, property: string):
   return colorToFillFromCSS(pickStyle(style, property))
 }
 
-function aspectRatioFromCSS(value: string | undefined): number | null {
-  if (!value || value === 'auto') return null
-  const parts = value
-    .split('/')
-    .map((part) => Number.parseFloat(part.trim()))
-    .filter(Number.isFinite)
-  if (parts.length === 1 && parts[0] > 0) return parts[0]
-  if (parts.length === 2 && parts[0] > 0 && parts[1] > 0) return parts[0] / parts[1]
-  return null
-}
-
 export function setNodeBox(node: SceneNode, style: DesignStyleDeclaration): void {
   const width = firstCSSNumber(style, 'width')
   const height = firstCSSNumber(style, 'height')
@@ -35,7 +24,7 @@ export function setNodeBox(node: SceneNode, style: DesignStyleDeclaration): void
   const maxWidth = firstCSSNumber(style, 'max-width')
   const minHeight = firstCSSNumber(style, 'min-height')
   const maxHeight = firstCSSNumber(style, 'max-height')
-  const aspectRatio = aspectRatioFromCSS(pickStyle(style, 'aspect-ratio'))
+  const aspectRatio = parseCSSAspectRatio(pickStyle(style, 'aspect-ratio'))
   if (width !== null) node.width = width
   if (height !== null) node.height = height
   if (height === null && width !== null && aspectRatio !== null) node.height = width / aspectRatio
@@ -245,7 +234,7 @@ export function applyBoxSizing(node: SceneNode, style: DesignStyleDeclaration): 
   const width = firstCSSNumber(style, 'width')
   const height = firstCSSNumber(style, 'height')
   // A size `aspect-ratio` derives from the other is a content size too.
-  const ratio = aspectRatioFromCSS(pickStyle(style, 'aspect-ratio')) !== null
+  const ratio = parseCSSAspectRatio(pickStyle(style, 'aspect-ratio')) !== null
   if (extras.width > 0) {
     if (width !== null || (ratio && height !== null)) node.width += extras.width
     if (node.minWidth !== null) node.minWidth += extras.width

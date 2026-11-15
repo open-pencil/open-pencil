@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import {
   parseCSSAlignItems,
   parseCSSAlignSelf,
+  parseCSSAspectRatio,
   parseCSSFlexDirection,
   parseCSSJustifyContent
 } from '@open-pencil/scene-graph/css'
@@ -32,5 +33,17 @@ describe('CSS layout values', () => {
     expect(parseCSSAlignItems('normal')).toBe('STRETCH')
     expect(parseCSSAlignSelf('normal')).toBe('STRETCH')
     expect(parseCSSAlignSelf('auto')).toBe('AUTO')
+  })
+  test('aspect ratios as a number or a width and height, with or without auto', () => {
+    expect(parseCSSAspectRatio('1.5')).toBe(1.5)
+    expect(parseCSSAspectRatio('16 / 9')).toBe(16 / 9)
+    expect(parseCSSAspectRatio('16/9')).toBe(16 / 9)
+    // A computed value keeps an `auto` beside the ratio, on either side.
+    expect(parseCSSAspectRatio('auto 16 / 9')).toBe(16 / 9)
+    expect(parseCSSAspectRatio('4 / 3 auto')).toBe(4 / 3)
+    expect(parseCSSAspectRatio('auto')).toBeNull()
+    expect(parseCSSAspectRatio('0 / 1')).toBeNull()
+    expect(parseCSSAspectRatio('1 / 0')).toBeNull()
+    expect(parseCSSAspectRatio('var(--ratio)')).toBeNull()
   })
 })

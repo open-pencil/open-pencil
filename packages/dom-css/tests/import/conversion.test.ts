@@ -239,6 +239,24 @@ describe('@open-pencil/dom-css conversion', () => {
     }
   })
 
+  it('sizes a box by the ratio of a computed aspect ratio that keeps its auto', () => {
+    const graph = designDocumentToSceneGraph({
+      type: 'document',
+      children: [
+        {
+          type: 'element',
+          tagName: 'div',
+          attrs: {},
+          computedStyle: { 'aspect-ratio': 'auto 16 / 9', width: '320px' },
+          children: []
+        }
+      ]
+    })
+    const [box] = graph.getChildren(graph.getPages()[0].id)
+
+    expect([box.width, box.height]).toEqual([320, 180])
+  })
+
   it('maps data URL images, object fit, and aspect ratio', () => {
     const graph = designDocumentToSceneGraph({
       type: 'document',

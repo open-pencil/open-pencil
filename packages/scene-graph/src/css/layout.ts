@@ -51,3 +51,27 @@ export function parseCSSAlignSelf(value: string | undefined): LayoutAlignSelf | 
   const keyword = alignmentKeyword(value)
   return keyword === 'normal' ? 'STRETCH' : parseLayoutAlignSelf(keyword)
 }
+
+/**
+ * The width-to-height ratio an `aspect-ratio` value sizes a box by: a number, or a width and a
+ * height either side of a slash, after an `auto` that leaves replaced content its own ratio.
+ * Null for `auto` alone and for a ratio with a zero or negative side.
+ */
+export function parseCSSAspectRatio(value: string | undefined): number | null {
+  if (!value) return null
+  const nodes = valueParser(value).nodes.filter(
+    (node) =>
+      node.type !== 'space' &&
+      node.type !== 'comment' &&
+      !(node.type === 'word' && node.value.toLowerCase() === 'auto')
+  )
+  const [width, slash, height] = nodes
+  if (width?.type !== 'word') return null
+  const ratio = Number(width.value)
+  if (nodes.length === 1) return ratio > 0 ? ratio : null
+  if (nodes.length !== 3 || slash.type !== 'div' || slash.value !== '/' || height.type !== 'word') {
+    return null
+  }
+  const down = Number(height.value)
+  return ratio > 0 && down > 0 ? ratio / down : null
+}

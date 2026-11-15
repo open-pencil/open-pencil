@@ -3,6 +3,7 @@ export { parseCSSGridTracks } from './grid'
 export {
   parseCSSAlignItems,
   parseCSSAlignSelf,
+  parseCSSAspectRatio,
   parseCSSFlexDirection,
   parseCSSJustifyContent
 } from './layout'
