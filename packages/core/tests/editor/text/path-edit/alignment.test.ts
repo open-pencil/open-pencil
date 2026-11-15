@@ -215,7 +215,7 @@ describe('path text that overflows its alignment’s part of the path, as in Fig
   const text = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
   /** A straight 400-wide line in two segments; the text starts at x = 300. */
-  async function overflowing(align: 'LEFT' | 'CENTER' | 'RIGHT', tValue = 0.5) {
+  async function overflowing(align: 'LEFT' | 'CENTER' | 'RIGHT', tValue = 0.5, letterSpacing = 0) {
     const font = await fontManager.fetchBundledFont('/InterVariable.ttf')
     if (!font) throw new Error('bundled font missing')
     await fontManager.markLoaded('Inter', 'Regular', font)
@@ -230,6 +230,7 @@ describe('path text that overflows its alignment’s part of the path, as in Fig
       italic: false,
       fontSize: 40,
       textAlignHorizontal: align,
+      letterSpacing: pixelLength(letterSpacing),
       textPathBox: { x: 0, y: 0, width: 400, height: 100 },
       derivedTextGlyphs: [
         { commandsBlob: new Uint8Array(4), x: 10, y: 50, fontSize: 40, rotation: 0 },
@@ -260,7 +261,7 @@ describe('path text that overflows its alignment’s part of the path, as in Fig
     const kept = metrics.slice(0, glyphs.length)
     const width = kept.reduce((sum, glyph) => sum + glyph.advance, 0)
     const next = metrics.at(glyphs.length)?.advance ?? 0
-    return { glyphs, width, next, first: expectDefined(glyphs[0]).x }
+    return { glyphs, width, next, first: expectDefined(glyphs[0]).x, metrics }
   }
 
   // Each run keeps the leading glyphs that fit its part of the path and is aligned within it, so
@@ -286,6 +287,17 @@ describe('path text that overflows its alignment’s part of the path, as in Fig
     expect(glyphs.length).toBeLessThan(text.length)
     expect(first).toBeCloseTo(300 - width / 2, 0)
     expect(width + next).toBeGreaterThan(200)
+  })
+
+  test('spaced text keeps a glyph that fits without the spacing after it', async () => {
+    // Left-aligned text has the 100 px from the start to the path's end. With this spacing "AB"
+    // fits it to within a twentieth of a pixel, counting the spacing between the two glyphs only.
+    const { metrics } = await overflowing('LEFT')
+    const [a, b] = metrics.map((glyph) => glyph.advance)
+    const fitting = 100 - a - b - 0.05
+
+    expect((await overflowing('LEFT', 0.5, fitting)).glyphs).toHaveLength(2)
+    expect((await overflowing('LEFT', 0.5, fitting + 1)).glyphs).toHaveLength(1)
   })
 
   test('a lone first glyph stays even with no room, from where its part starts', async () => {
