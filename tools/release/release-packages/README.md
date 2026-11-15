@@ -54,7 +54,7 @@ The old `HOMEBREW_TAP_TOKEN` workflow secret is no longer used and can be remove
 
 ## New npm packages
 
-`build.yml` publishes to npm only through trusted publishing, which a package that has never been published cannot have yet. Shortly before the tag build, a maintainer creates each new package by hand:
+`build.yml` publishes to npm only through trusted publishing, which a package that has never been published cannot have yet. Shortly before the tag build, a maintainer creates each new package by hand, with npm 11.15.0 or later and Node.js 22.14.0 or later, which `npm stage` needs:
 
 1. On `master`, before the release changes the version, run `bun run build:packages`, then, with [`cargo-about`](https://github.com/EmbarkStudios/cargo-about) installed at the version `build.yml` pins, `bun tools/release/release-packages/src/cli.ts notices`, `prepare`, and `pack`. The tarballs land in `.npm-packages/` and carry `master`'s version, which is never the one being released.
 2. Stage the package with `npm stage publish ./<tarball> --access public`, adding `--tag <name>` when that version is a pre-release, such as `--tag beta`. The registry creates the package with a `0.0.0-stage` placeholder; wait until `npm stage list <package>` shows the stage as `staged`.

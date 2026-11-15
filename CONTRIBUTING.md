@@ -38,7 +38,7 @@ APPLE_SIGNING_IDENTITY=- bun run tauri build -c '{"bundle": { "createUpdaterArti
 - Keep package boundaries and public exports intact. Keep pull requests focused: no temporary scaffolding, unrelated refactors, or changelog claims not represented by the diff.
 - For user-facing changes add a changelog fragment under `changes/<PR>/` instead of editing `CHANGELOG.md`, following `changes/README.md` and the rules in `AGENTS.md` (Documentation and changelog).
 - Tests follow the [testing architecture](packages/docs/development/testing.md) and `tests/AGENTS.md`. Extend the owner's existing suite; do not create a duplicate home.
-- `.fig` fixtures in `tests/fixtures/` are Git LFS. Use `git push --no-verify` to skip the slow LFS pre-push hook unless you changed `.fig` files.
+- The `.fig` fixtures in `tests/fixtures/` and the fonts in `tests/fixtures/fonts/` are Git LFS (`.gitattributes`). Use `git push --no-verify` to skip the slow LFS pre-push hook only when the push changes none of those files.
 
 ## Quality checks
 
