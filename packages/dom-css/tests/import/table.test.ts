@@ -192,4 +192,25 @@ describe('table import', () => {
     expect(box.name).toBe('table box')
     expect(boxes.get(box.id)?.box).toEqual(rect(20, 60))
   })
+  it('lets a cell spanning rows reach down past its row, the rows padded off the slots it covers', () => {
+    const at = (x: number, y: number, width: number, height: number) => ({
+      layout: { box: { x, y, width, height } }
+    })
+    const tall = { ...cell('Tall'), attrs: { rowspan: '2' }, ...at(0, 0, 100, 46) }
+    const first = { ...row([tall, { ...cell('a'), ...at(102, 0, 98, 22) }]), ...at(0, 0, 200, 22) }
+    const second = { ...row([{ ...cell('b'), ...at(102, 24, 98, 22) }]), ...at(0, 24, 200, 22) }
+    const group = {
+      ...element('tbody', { display: 'table-row-group', ...SEPARATE }, [first, second])
+    }
+    const captured = { ...element('table', { display: 'table', ...SEPARATE }, [group]) }
+    const { graph } = designDocumentToLayers({ type: 'document', children: [captured] })
+    const [tableLayer] = graph.getChildren(graph.getPages()[0].id)
+    const [groupLayer] = graph.getChildren(tableLayer.id)
+    const [firstRow, secondRow] = graph.getChildren(groupLayer.id)
+    const [tallLayer] = graph.getChildren(firstRow.id)
+
+    expect(tallLayer).toMatchObject({ layoutPositioning: 'ABSOLUTE', x: 0, y: 0, height: 46 })
+    expect([firstRow.layoutMode, firstRow.paddingLeft]).toEqual(['HORIZONTAL', 102])
+    expect([secondRow.layoutMode, secondRow.paddingLeft]).toEqual(['HORIZONTAL', 102])
+  })
 })

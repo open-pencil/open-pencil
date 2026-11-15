@@ -211,3 +211,44 @@ export function wrapTableGrid(
   const bottom = minOf([wrapper.y + wrapper.height, ...edge(below, (box) => box.y)])
   boxes.set(grid.id, { box: { x: wrapper.x, y: top, width: wrapper.width, height: bottom - top } })
 }
+
+/** How many rows a cell spans, by its `rowspan` attribute (HTML §4.9.11), at least one. */
+function rowSpan(cell: DesignElement): number {
+  const span = Number.parseInt(cell.attrs.rowspan ?? '', 10)
+  return Number.isNaN(span) ? 1 : Math.max(span, 1)
+}
+
+/**
+ * Lays a row out around cells that span rows below it: such a cell takes no room in the row's
+ * flow and keeps the box the page gave it, reaching down past the row, and the row's padding
+ * keeps its other cells off the slots that cells from rows above cover at its start and end.
+ * Slots covered between two cells have no such room, and placement puts the row's cells.
+ */
+export function layOutRowSpans(row: SceneNode, cells: FlowBlock[], boxes: CapturedBoxes): void {
+  const rowBox = boxes.get(row.id)?.box
+  if (!rowBox || row.layoutMode !== 'HORIZONTAL') return
+  for (const { layer, element } of cells) {
+    const box = boxes.get(layer.id)?.box
+    if (rowSpan(element) === 1 || !box) continue
+    layer.layoutPositioning = 'ABSOLUTE'
+    Object.assign(layer, {
+      x: box.x - rowBox.x,
+      y: box.y - rowBox.y,
+      width: box.width,
+      height: box.height
+    })
+    if (layer.layoutMode === 'HORIZONTAL' || layer.layoutMode === 'VERTICAL') {
+      Object.assign(layer, autoLayoutSizingFields(layer.layoutMode, 'FIXED', 'FIXED'))
+    }
+  }
+  const flow = cells.flatMap(({ layer }) => {
+    const box = boxes.get(layer.id)?.box
+    return box && layer.layoutPositioning !== 'ABSOLUTE' ? [box] : []
+  })
+  if (flow.length === 0) return
+  row.paddingLeft = Math.max(0, minOf(flow.map((box) => box.x)) - rowBox.x)
+  row.paddingRight = Math.max(
+    0,
+    rowBox.x + rowBox.width - maxOf(flow.map((box) => box.x + box.width))
+  )
+}

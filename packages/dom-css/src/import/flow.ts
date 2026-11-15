@@ -152,9 +152,10 @@ function blockAlignSelf(
   return side ? (BLOCK_ALIGN[side] ?? null) : null
 }
 
-/** A block-level child of a block-flow container, with its style. */
+/** A child element's layer, with the element and its style. */
 export interface FlowBlock {
   layer: SceneNode
+  element: DesignElement
   style: DesignStyleDeclaration
 }
 

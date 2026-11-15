@@ -51,7 +51,14 @@ import {
   type CapturedBox,
   type CapturedBoxes
 } from './placement'
-import { applyCollapsedBorders, applyTableLayout, isTableColumn, wrapTableGrid } from './table'
+import {
+  applyCollapsedBorders,
+  applyTableLayout,
+  isTableColumn,
+  isTableRow,
+  layOutRowSpans,
+  wrapTableGrid
+} from './table'
 import {
   blockRichText,
   characterStyleFromCSS,
@@ -380,7 +387,9 @@ function createElementNode(
   applyFlowSizing(graph, node, style, display, parentFlow)
 
   const parts = createChildLayers(graph, node, element, style, flow, recorded)
-  if (display === 'table' || display === 'inline-table') wrapTableGrid(graph, node, parts, recorded.boxes)
+  if (display === 'table' || display === 'inline-table')
+    wrapTableGrid(graph, node, parts, recorded.boxes)
+  if (isTableRow(display)) layOutRowSpans(node, parts, recorded.boxes)
   return node
 }
 
@@ -419,12 +428,12 @@ function createChildLayers(
     if (layer?.type === 'TEXT') record(graph, recorded, layer, textBox)
     if (child.type !== 'element' || !layer) continue
     const childStyle = mergedStyle(child)
-    parts.push({ layer, style: childStyle })
+    parts.push({ layer, element: child, style: childStyle })
     // An absolutely positioned box is out of the flow, in no line and no block of its own.
     if (layer.layoutPositioning === 'ABSOLUTE') continue
     if (isInlineLevel(elementDisplay(child, childStyle))) continue
     inlineContent = false
-    if (layer.type === 'FRAME') blocks.push({ layer, style: childStyle })
+    if (layer.type === 'FRAME') blocks.push({ layer, element: child, style: childStyle })
   }
   if (flow === 'block') {
     alignBlocksInFlow(graph, node, blocks, style)

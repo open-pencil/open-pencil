@@ -119,6 +119,24 @@ describe('reading HTML', () => {
     expect(box).toMatchObject({ layoutMode: 'VERTICAL', paddingTop: 2, itemSpacing: 2 })
   })
 
+  test('keeps the rows of a table with a cell spanning rows in auto layout', async () => {
+    const box = (size: number) => `<div style="width:${size}px;height:20px"></div>`
+    const { graph } = await readHTMLDocument(
+      `<table style="border-spacing:2px"><tr><td rowspan="2" style="padding:0">${box(40)}</td>
+        <td style="padding:0">${box(30)}</td></tr><tr><td style="padding:0">${box(30)}</td></tr></table>`
+    )
+    const [table] = graph.getChildren(graph.getPages()[0].id)
+    const [group] = graph.getChildren(table.id)
+    const [first, second] = graph.getChildren(group.id)
+    const [tall, a] = graph.getChildren(first.id)
+    const [b] = graph.getChildren(second.id)
+
+    expect([first.layoutMode, second.layoutMode]).toEqual(['HORIZONTAL', 'HORIZONTAL'])
+    expect(tall).toMatchObject({ layoutPositioning: 'ABSOLUTE', x: 0, height: 42 })
+    // The cells beside the tall one line up in its column's right, row after row.
+    expect([a.x, b.x]).toEqual([42, 42])
+  })
+
   test('centers a block capped by its maximum width at that width, keeping auto layout', async () => {
     const { graph } = await readHTMLDocument(
       `<div style="width:600px"><div style="max-width:300px;margin:0 auto">` +
