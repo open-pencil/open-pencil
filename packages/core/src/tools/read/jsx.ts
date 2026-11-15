@@ -61,7 +61,12 @@ export const getJSX = defineTool({
     const graph = graphOf(figma)
     const jsx = sceneNodeToJSX(id, graph)
     const writtenToFile = path !== undefined
-    if (writtenToFile || jsx.length <= MAX_INLINE_JSX_LENGTH) {
+    // A layer without children has nothing an outline could leave out.
+    if (
+      writtenToFile ||
+      jsx.length <= MAX_INLINE_JSX_LENGTH ||
+      graph.getChildren(id).length === 0
+    ) {
       return { id, name: node.name, jsx }
     }
     const outline = outlinedJSX(id, graph)

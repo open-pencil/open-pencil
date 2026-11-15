@@ -5,6 +5,7 @@ import { asSchema, tool } from 'ai'
 import { renderJSX } from '@open-pencil/core/design-jsx'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS, toolsToAI } from '@open-pencil/core/tools'
+import { sceneNodeToJSX } from '@open-pencil/design-jsx'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
@@ -123,6 +124,120 @@ describe('get_jsx', () => {
     expect(result.jsx).toContain(`{/* ${TILE_COUNT} layers kept, id ${boardId} */}`)
     expect(result.note).toContain('get_node depth 1')
   })
+
+  test('returns a layer without children whole, however long, since nothing can be left out', async () => {
+    const graph = new SceneGraph()
+    const figma = new FigmaAPI(graph)
+    const note = graph.createNode('TEXT', figma.currentPageId, {
+      name: 'Note',
+      text: 'word '.repeat(4000)
+    })
+    const result = (await getJSXTool().execute(figma, { id: note.id })) as JSXResult
+    expect(result.jsx.length).toBeGreaterThan(12_000)
+    expect(result.truncated).toBeUndefined()
+  })
+
+  test('an outline keeps a connector joined to a layer it leaves out', async () => {
+    const graph = new SceneGraph()
+    const figma = new FigmaAPI(graph)
+    const [board] = await renderJSX(
+      graph,
+      `<Frame name="Board" w={400} h={200}>
+        <Frame name="Body" w={100} h={100}><Rectangle name="Target" w={40} h={40} /></Frame>
+        <Rectangle name="Outside" x={300} w={40} h={40} />
+        <Connector from="Target" to="Outside" />
+      </Frame>`
+    )
+    const byName = (name: string) =>
+      expectDefined(
+        [...graph.getAllNodes()].find((node) => node.name === name),
+        name
+      )
+    const target = byName('Target')
+    const outline = sceneNodeToJSX(board.id, graph, { maxDepth: 1 })
+    expect(outline).toContain(`from={{ id: "${target.id}" }}`)
+
+    await renderTool().execute(figma, { jsx: outline, replace_id: board.id })
+
+    const connector = expectDefined(
+      graph.getChildren(board.id).find((node) => node.type === 'CONNECTOR'),
+      'connector'
+    )
+    expect(connector.connectorStart?.nodeId).toBe(target.id)
+    expect(connector.connectorEnd?.nodeId).toBe(byName('Outside').id)
+  })
+
+  test('a connector kept in a layer follows a layer the render rebuilds', async () => {
+    const graph = new SceneGraph()
+    const figma = new FigmaAPI(graph)
+    const [board] = await renderJSX(
+      graph,
+      `<Frame name="Board" w={400} h={200}>
+        <Frame name="Body" w={200} h={100}>
+          <Rectangle name="Inner" w={40} h={40} />
+          <Connector from="Inner" to="Icon" />
+        </Frame>
+        <Vector name="Icon" x={300} d="M0 0 L20 20" stroke="#000" />
+      </Frame>`
+    )
+    const vectorBefore = expectDefined(
+      [...graph.getAllNodes()].find((node) => node.name === 'Icon'),
+      'icon'
+    ).id
+    const outline = sceneNodeToJSX(board.id, graph, { maxDepth: 1 })
+    expect(outline).toContain('keepChildren')
+
+    await renderTool().execute(figma, { jsx: outline, replace_id: board.id })
+
+    const nodes = [...graph.getAllNodes()]
+    const icon = expectDefined(
+      nodes.find((node) => node.name === 'Icon'),
+      'icon'
+    )
+    const connector = expectDefined(
+      nodes.find((node) => node.type === 'CONNECTOR'),
+      'connector'
+    )
+    // A vector is drawn again from its path, so it is a new layer.
+    expect(icon.id).not.toBe(vectorBefore)
+    expect(connector.connectorEnd?.nodeId).toBe(icon.id)
+  })
+
+  test.each([0, 1])(
+    'a component rendered from its outline at depth %i keeps its properties and their ids',
+    async (maxDepth) => {
+      const graph = new SceneGraph()
+      const figma = new FigmaAPI(graph)
+      const [card] = await renderJSX(
+        graph,
+        `<Component name="Card" w={200} h={100}>
+          <Frame name="Body" w={100} h={50}><Text name="Title" text={property('Title', 'Hi')} /></Frame>
+          <Text name="Sub" text={property('Sub', 'x')} />
+        </Component>`
+      )
+      const before = getNodeOrThrow(graph, card.id).componentPropertyDefinitions.map(
+        ({ id, name }) => ({ id, name })
+      )
+      const title = expectDefined(
+        [...graph.getAllNodes()].find((node) => node.name === 'Title'),
+        'title'
+      )
+      const outline = sceneNodeToJSX(card.id, graph, { maxDepth })
+      expect(outline).toContain('keepChildren')
+
+      await renderTool().execute(figma, { jsx: outline, replace_id: card.id })
+
+      const after = getNodeOrThrow(graph, card.id).componentPropertyDefinitions
+      expect(after.map(({ id, name }) => ({ id, name }))).toEqual(before)
+      const titleProperty = expectDefined(
+        before.find((definition) => definition.name === 'Title'),
+        'Title property'
+      )
+      expect(getNodeOrThrow(graph, title.id).componentPropertyReferences).toEqual([
+        { propertyId: titleProperty.id, field: 'TEXT' }
+      ])
+    }
+  )
 
   test('gives the complete JSX for a path, which renders back every layer', async () => {
     const { figma, boardId } = largeBoard()

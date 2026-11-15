@@ -1,4 +1,4 @@
-import { countBy } from 'es-toolkit'
+import { compact, countBy } from 'es-toolkit'
 import type * as v from 'valibot'
 
 import type { ConnectorEndpoint, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
@@ -106,7 +106,15 @@ export function layersUnder(graph: SceneGraph, rootIds: readonly string[]): Scen
 /** A connector end's prop as a warning quotes it. */
 function endSource(prop: string, value: unknown): string {
   if (isLayerRef(value)) return `${prop}={ref}`
+  if (typeof value === 'object' && value !== null && 'id' in value)
+    return `${prop}={{ id: "${String(value.id)}" }}`
   return `${prop}="${String(value)}"`
+}
+
+/** `id` if it names a layer a connector can join, one already in the document. */
+function existingLayer(graph: SceneGraph, id: string): string | undefined {
+  const layer = graph.getNode(id)
+  return layer && layer.type !== 'CONNECTOR' && layer.type !== 'CANVAS' ? layer.id : undefined
 }
 
 /**
@@ -138,6 +146,7 @@ export function resolveConnectorEnds(
     const value = props[prop]
     let id: string | undefined
     if (isLayerRef(value)) id = refs.layerOf(value)
+    else if (typeof value === 'object' && 'id' in value) id = existingLayer(graph, value.id)
     else if (typeof value === 'object') return freeEndpoint(value.x, value.y)
     else if (typeof value === 'string') {
       const ids = named.get(value) ?? []
@@ -172,6 +181,14 @@ export function resolveConnectorEnds(
 /** What an export of connectors writes: the layers under its roots, and how ends name them. */
 export interface ConnectorExportScope {
   roots: ReadonlySet<string>
+  /** The layers connector ends under the roots join. */
+  joined: ReadonlySet<string>
+  /**
+   * The layers under the roots the export writes, when it leaves some out, as an outline does: an
+   * end on a layer it leaves out is written by its `{ id }`, which the layer keeps once the
+   * outline renders in place of its root.
+   */
+  written?: ReadonlySet<string>
   /**
    * The layers connector ends join whose name another layer of the export has too, so the name
    * would not say which: each with the `ref()` the export declares for it, or `null` when the
@@ -194,12 +211,11 @@ export function connectorExportScope(
   const layers = layersUnder(graph, rootIds)
   const connectors = layers.filter((layer) => layer.type === 'CONNECTOR')
   const refs = new Map<string, string | null>()
-  if (connectors.length === 0) return { roots: new Set(rootIds), refs }
+  if (connectors.length === 0) return { roots: new Set(rootIds), joined: new Set(), refs }
   const joined = new Set(
-    connectors.flatMap((connector) => [
-      connector.connectorStart?.nodeId,
-      connector.connectorEnd?.nodeId
-    ])
+    connectors.flatMap((connector) =>
+      compact([connector.connectorStart?.nodeId, connector.connectorEnd?.nodeId])
+    )
   )
   const named = countBy(
     layers.filter((layer) => layer.type !== 'CONNECTOR'),
@@ -209,11 +225,14 @@ export function connectorExportScope(
     if (!joined.has(layer.id) || (named[layer.name] ?? 0) < 2) continue
     refs.set(layer.id, declare ? refName(layer.name, taken) : null)
   }
-  return { roots: new Set(rootIds), refs }
+  return { roots: new Set(rootIds), joined, refs }
 }
 
-/** How a connector end is written: by its layer's name or ref, or as the point it is drawn at. */
-type EndTarget = { layer: SceneNode; ref?: string } | { point: Vector }
+/**
+ * How a connector end is written: by its layer's name or ref, by its id when the export leaves
+ * the layer out, or as the point it is drawn at.
+ */
+type EndTarget = { layer: SceneNode; ref?: string; byId?: true } | { point: Vector }
 
 function endTarget(
   graph: SceneGraph,
@@ -225,6 +244,7 @@ function endTarget(
   if (!layer) return { point: endpoint.position }
   const exported =
     !scope || graph.closest(layer.id, (ancestor) => scope.roots.has(ancestor.id)) !== undefined
+  if (exported && scope?.written && !scope.written.has(layer.id)) return { layer, byId: true }
   const ref = scope?.refs.get(layer.id)
   if (exported && ref !== null) return { layer, ref }
   return { point: drawn ?? endpoint.position }
@@ -248,6 +268,7 @@ export function connectorProps(
   const value = (written: EndTarget | null) => {
     if (!written) return null
     if ('point' in written) return { x: written.point.x, y: written.point.y }
+    if (written.byId) return { id: written.layer.id }
     return written.ref ? new Reference(written.ref) : written.layer.name
   }
   const side = (endpoint: ConnectorEndpoint | null, written: EndTarget | null) => {

@@ -1,4 +1,11 @@
-import type { NodeType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { mapKeys } from 'es-toolkit'
+
+import type {
+  ComponentPropertyDefinition,
+  NodeType,
+  SceneGraph,
+  SceneNode
+} from '@open-pencil/scene-graph'
 import { remapCopiedReferences } from '@open-pencil/scene-graph/transfer'
 
 /**
@@ -67,6 +74,11 @@ function authoredChanges(existing: SceneNode, rendered: SceneNode): Partial<Scen
   return changes
 }
 
+/** The ids of the layers under `id`, at any depth. */
+function descendantIds(graph: SceneGraph, id: string): string[] {
+  return graph.getChildren(id).flatMap((child) => [child.id, ...descendantIds(graph, child.id)])
+}
+
 /** `node` and the layers under it that are written with `keepChildren`. */
 function keptLayers(graph: SceneGraph, node: SceneNode, keep: ReadonlySet<string>): SceneNode[] {
   return [
@@ -94,9 +106,87 @@ function unpairedKeptLayers(
   )
 }
 
+interface PropertyOwner {
+  id: string
+  definitions: readonly ComponentPropertyDefinition[]
+  /** Written with `keepChildren`, so no layer of the render defined its properties. */
+  kept: boolean
+}
+
+/** The component properties the layers under `id` use, by id. */
+function usedProperties(graph: SceneGraph, id: string): Set<string> {
+  return new Set(
+    descendantIds(graph, id).flatMap(
+      (layerId) =>
+        graph.getNode(layerId)?.componentPropertyReferences.map((ref) => ref.propertyId) ?? []
+    )
+  )
+}
+
+/**
+ * Settles the properties of components rendered again. One written again keeps the id it had,
+ * so instances that set it and layers that use it still do. One the render did not write stays
+ * while layers kept from the document use it, and every one stays on a layer that kept its
+ * children, since its children are where properties are written.
+ */
+function settleProperties(graph: SceneGraph, owners: PropertyOwner[], rootIds: string[]) {
+  const renamed = new Map<string, string>()
+  for (const owner of owners) {
+    const node = graph.getNode(owner.id)
+    if (!node) continue
+    const written = node.componentPropertyDefinitions.map((definition) => {
+      const before = owner.definitions.find(
+        (old) => old.name === definition.name && old.type === definition.type
+      )
+      if (!before || before.id === definition.id) return definition
+      renamed.set(definition.id, before.id)
+      return { ...definition, id: before.id }
+    })
+    const ids = new Set(written.map((definition) => definition.id))
+    const used = owner.kept ? null : usedProperties(graph, owner.id)
+    const stay = owner.definitions.filter(
+      (definition) => !ids.has(definition.id) && (used === null || used.has(definition.id))
+    )
+    // In the order they had, new ones last, as the properties panel lists them.
+    const order = new Map(owner.definitions.map((definition, index) => [definition.id, index]))
+    const definitions = [...written, ...stay].toSorted(
+      (a, b) => (order.get(a.id) ?? order.size) - (order.get(b.id) ?? order.size)
+    )
+    graph.updateNode(owner.id, { componentPropertyDefinitions: definitions })
+  }
+  if (renamed.size === 0) return
+  const rename = (id: string) => renamed.get(id) ?? id
+  for (const id of rootIds.flatMap((rootId) => [rootId, ...descendantIds(graph, rootId)])) {
+    const node = graph.getNode(id)
+    if (!node) continue
+    const references = node.componentPropertyReferences
+    const assignments = Object.keys(node.componentPropertyAssignments)
+    if (
+      !references.some((ref) => renamed.has(ref.propertyId)) &&
+      !assignments.some((key) => renamed.has(key))
+    )
+      continue
+    graph.updateNode(id, {
+      componentPropertyReferences: references.map((ref) => ({
+        ...ref,
+        propertyId: rename(ref.propertyId)
+      })),
+      componentPropertyAssignments: mapKeys(node.componentPropertyAssignments, (_, key) =>
+        rename(key)
+      )
+    })
+  }
+}
+
 class Reconciler {
   /** Rendered layer id → the id it has once reconciled: the existing layer's, or its own. */
   readonly ids = new Map<string, string>()
+  /** Existing layer id → the rendered layer that replaced it, for one rebuilt rather than updated. */
+  readonly replaced = new Map<string, string>()
+  /** The existing layers that kept their children, which no render wrote. */
+  readonly kept: string[] = []
+  /** The paired layers that define component properties, with the ones they had. */
+  readonly owners: PropertyOwner[] = []
 
   constructor(
     private readonly graph: SceneGraph,
@@ -117,13 +207,19 @@ class Reconciler {
         this.graph.insertChildAt(rendered.id, parentId, parent.childIds.indexOf(existing.id))
       }
       this.graph.deleteNode(existing.id)
+      this.replaced.set(existing.id, rendered.id)
       this.keepRendered(rendered)
       return rendered.id
+    }
+    const definitions = existing.componentPropertyDefinitions
+    if (definitions.length > 0 || rendered.componentPropertyDefinitions.length > 0) {
+      this.owners.push({ id: existing.id, definitions, kept: this.keep.has(rendered.id) })
     }
     const changes = authoredChanges(existing, rendered)
     if (Object.keys(changes).length > 0) this.graph.updateNode(existing.id, changes)
     this.ids.set(rendered.id, existing.id)
-    if (!this.keep.has(rendered.id)) this.children(existing.id, rendered.id)
+    if (this.keep.has(rendered.id)) this.kept.push(existing.id)
+    else this.children(existing.id, rendered.id)
     this.graph.deleteNode(rendered.id)
     return existing.id
   }
@@ -188,6 +284,17 @@ export function reconcileRenderedLayers(
     return [rendered.id]
   })
   for (const id of existingRootIds.slice(renderedRootIds.length)) graph.deleteNode(id)
-  remapCopiedReferences(graph, reconciler.ids)
+  settleProperties(graph, reconciler.owners, rootIds)
+  // Layers kept from the document may refer to one the render rebuilt, such as a connector to a
+  // vector; they take its new id, as the rendered layers take their kept ones.
+  const keptLayers = reconciler.kept.flatMap((id) => descendantIds(graph, id))
+  remapCopiedReferences(
+    graph,
+    new Map([
+      ...keptLayers.map((id): [string, string] => [id, id]),
+      ...reconciler.ids,
+      ...reconciler.replaced
+    ])
+  )
   return { rootIds, ids: reconciler.ids }
 }

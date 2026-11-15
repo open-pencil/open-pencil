@@ -434,14 +434,15 @@ export function selectionToJSXWithLayers(
   const connectors = connectorExportScope(graph, nodeIds, declare, taken)
   const write = (
     refs: ReadonlyMap<string, string | null>,
-    onOf?: (component: SceneNode) => void
+    onOf?: (component: SceneNode) => void,
+    connectorScope = connectors
   ) => {
     const layerIds: Array<string | null> = []
     const reference = componentReferences(graph, refs, onOf)
     // Several roots are children of a fragment, a level in.
     const depth = nodeIds.length > 1 ? 1 : 0
     const childrenDepth = options.maxDepth === undefined ? undefined : depth + options.maxDepth
-    const scope = { connectors, refs, variables, reference, childrenDepth }
+    const scope = { connectors: connectorScope, refs, variables, reference, childrenDepth }
     const roots = compact(
       nodeIds.map((id) => {
         const node = graph.getNode(id)
@@ -462,12 +463,19 @@ export function selectionToJSXWithLayers(
         taken
       )
     : connectors.refs
-  const { roots, layerIds } = refs.size > connectors.refs.size ? write(refs) : first
+  const second = refs.size > connectors.refs.size ? write(refs) : first
+  // An outline that leaves out a layer a connector joins writes that end by the layer's id, and
+  // declares no ref for it: knowing which layers it writes takes a pass.
+  const written = new Set(compact(second.layerIds))
+  const left =
+    options.maxDepth !== undefined && [...connectors.joined].some((id) => !written.has(id))
+  const kept = left ? new Map([...refs].filter(([id]) => written.has(id))) : refs
+  const { roots, layerIds } = left ? write(kept, undefined, { ...connectors, written }) : second
   // Several roots are siblings in a fragment, so the code is one JSX expression.
   const root = roots.length > 1 ? jsx.fragment(roots, 0) : roots.at(0)
   const elements = root ? jsx.printJSX(root) : ''
   // Variables first: a ref names a layer, and nothing in a variable's definition refers to one.
-  const declarations = compact([variables.declarations(), refDeclarations(refs)]).join('\n\n')
+  const declarations = compact([variables.declarations(), refDeclarations(kept)]).join('\n\n')
   if (!declarations || !elements) return { code: elements, layerIds }
   // Statements end with `return` and the JSX.
   return { code: `${declarations}\n\nreturn ${elements}`, layerIds }
