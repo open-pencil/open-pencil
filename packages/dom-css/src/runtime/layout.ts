@@ -1,4 +1,7 @@
+import { sum } from 'es-toolkit'
+
 import { appendAll } from '@open-pencil/scene-graph/arrays'
+import { dimension, parseCSSNumber } from '@open-pencil/scene-graph/css'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
@@ -165,10 +168,11 @@ function inlineAncestors(text: Text, block: Element, view: DocumentView): Elemen
 function baselineShift(element: Element, view: DocumentView, measure: LineMeasure): number | null {
   const align = view.getComputedStyle(element).verticalAlign
   if (align === 'baseline') return 0
-  const value = Number.parseFloat(align)
-  if (Number.isNaN(value)) return null
-  if (align.endsWith('%')) return (value / 100) * measure.metrics(element, 'x').height
-  return value
+  const length = dimension(align)
+  if (!length) return null
+  if (length.unit === '%') return (length.number / 100) * measure.metrics(element, 'x').height
+  // A computed length is in pixels.
+  return length.number
 }
 
 /** The inline box an element's fragment on one line is set in, by the element's line height. */
@@ -179,8 +183,9 @@ function inlineBox(fragment: Rect, font: LineMetrics): Run {
 
 /** A fragment's border box without its padding and borders, which do not take room in a line. */
 function contentRect(fragment: Rect, style: CSSStyleDeclaration): Rect {
-  const top = Number.parseFloat(style.paddingTop) + Number.parseFloat(style.borderTopWidth)
-  const bottom = Number.parseFloat(style.paddingBottom) + Number.parseFloat(style.borderBottomWidth)
+  const px = (value: string) => parseCSSNumber(value) ?? 0
+  const top = px(style.paddingTop) + px(style.borderTopWidth)
+  const bottom = px(style.paddingBottom) + px(style.borderBottomWidth)
   return { ...fragment, y: fragment.y + top, height: fragment.height - top - bottom }
 }
 
@@ -229,9 +234,7 @@ function lineRects(
     const font = measure.metrics(text.parentElement, sample)
     const ancestors = inlineAncestors(text, element, view)
     const shifts = ancestors.map((inline) => baselineShift(inline, view, measure))
-    const shift = shifts.includes(null)
-      ? null
-      : shifts.reduce<number>((sum, s) => sum + (s ?? 0), 0)
+    const shift = shifts.some((s) => s === null) ? null : sum(shifts.map((s) => s ?? 0))
     return glyphs.map((rect) => {
       const glyphBox = toRect(rect, origin)
       const own = inlineBox(glyphBox, font)
@@ -253,10 +256,8 @@ function lineRects(
     const span = computeBounds(line.map((run) => run.box))
     const baseline =
       line.find((run) => run.blockBaseline !== null)?.blockBaseline ?? line[0].baseline
-    const strutTop = baseline - strut.baseline
-    const top = Math.min(span.y, strutTop)
-    const bottom = Math.max(span.y + span.height, strutTop + strut.height)
-    return { x: span.x, y: top, width: span.width, height: bottom - top }
+    const strutBox = { x: span.x, y: baseline - strut.baseline, width: 0, height: strut.height }
+    return computeBounds([span, strutBox])
   })
 }
 
