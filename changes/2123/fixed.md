@@ -1,1 +1,0 @@
-- Text set in a font face that Windows lists as a family of its own, such as a Compressed or Condensed cut, loads that face instead of a stand-in, and style names with a width word keep their weight (#2123).
