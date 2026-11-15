@@ -1,5 +1,11 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { parseCSSNumber, splitCSSValue } from '@open-pencil/scene-graph/css'
+import {
+  parseCSSAlignItems,
+  parseCSSAlignSelf,
+  parseCSSJustifyContent,
+  parseCSSNumber,
+  splitCSSValue
+} from '@open-pencil/scene-graph/css'
 import { layoutSizingUpdates } from '@open-pencil/scene-graph/layout'
 
 import type { DesignStyleDeclaration } from '../types'
@@ -8,36 +14,29 @@ import type { FlowBlock } from './flow'
 
 type Side = 'MIN' | 'CENTER' | 'MAX'
 
-const SIDES: Partial<Record<string, Side>> = {
-  start: 'MIN',
-  'flex-start': 'MIN',
-  'self-start': 'MIN',
-  left: 'MIN',
-  center: 'CENTER',
-  end: 'MAX',
-  'flex-end': 'MAX',
-  'self-end': 'MAX',
-  right: 'MAX'
+function side(align: string | undefined): Side | null {
+  return align === 'MIN' || align === 'CENTER' || align === 'MAX' ? align : null
 }
 
-/**
- * The side a box alignment value (CSS Box Alignment §4–5) puts an item or the tracks on, past a
- * `safe`, `unsafe`, or `legacy` keyword; none for `normal`, `stretch`, `auto`, and baselines.
- */
-function sideOf(value: string | undefined): Side | null {
-  const words = splitCSSValue(value?.trim().toLowerCase() ?? '')
-  return SIDES[words.at(-1) ?? ''] ?? null
-}
-
-/** An item's own alignment, or its container's for `auto`. */
+/** An item's own alignment, or its container's for `auto`; none for `normal` and `stretch`. */
 function itemSide(
   item: DesignStyleDeclaration,
   container: DesignStyleDeclaration,
   property: 'align' | 'justify'
 ): Side | null {
-  const own = pickStyle(item, `${property}-self`)?.trim()
-  if (own && own !== 'auto') return sideOf(own)
-  return sideOf(pickStyle(container, `${property}-items`))
+  const own = parseCSSAlignSelf(pickStyle(item, `${property}-self`))
+  if (own !== undefined && own !== 'AUTO') return side(own)
+  return side(parseCSSAlignItems(pickStyle(container, `${property}-items`)))
+}
+
+/**
+ * Where content alignment puts a grid's tracks; none for `normal` and `stretch`, which stretch
+ * an auto-sized track to fill the grid.
+ */
+function contentSide(style: DesignStyleDeclaration, property: string): Side | null {
+  const value = pickStyle(style, property)?.trim().toLowerCase()
+  if (!value || value === 'normal' || value === 'stretch') return null
+  return side(parseCSSJustifyContent(value))
 }
 
 /** Whether a grid lays its items out in one column, as the stack block flow builds does. */
@@ -65,13 +64,12 @@ export function alignGridItems(
   const inFlow = items.filter(({ layer }) => layer.layoutPositioning !== 'ABSOLUTE')
   const [lone] = inFlow.length === 1 ? inFlow : []
   const down =
-    sideOf(pickStyle(style, 'align-content')) ??
-    (lone ? itemSide(lone.style, style, 'align') : null)
+    contentSide(style, 'align-content') ?? (lone ? itemSide(lone.style, style, 'align') : null)
   if (down) grid.primaryAxisAlign = down
   for (const { layer, style: itemStyle } of inFlow) {
     const across =
       itemSide(itemStyle, style, 'justify') ??
-      (layer === lone?.layer ? sideOf(pickStyle(style, 'justify-content')) : null)
+      (layer === lone?.layer ? contentSide(style, 'justify-content') : null)
     if (!across) continue
     if (layer.layoutAlignSelf === 'STRETCH') {
       Object.assign(layer, layoutSizingUpdates(graph, layer, 'HORIZONTAL', 'HUG'))
