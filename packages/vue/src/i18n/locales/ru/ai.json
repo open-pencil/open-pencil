@@ -195,7 +195,7 @@
   "modelRoleVision": "Зрение",
   "modelRoleDesignDescription": "ИИ-чат и редактирование холста",
   "modelRoleReviewDescription": "Явная проверка планов и макетов",
-  "modelRoleFastDescription": "Недорогая фоновая работа",
+  "modelRoleFastDescription": "Названия чатов и сводки при сжатии",
   "modelRoleVisionDescription": "Снимки экрана и визуальные референсы",
   "modelRoleNotUsed": "Пока не используется",
   "modelRoleUseDesign": "Как для дизайна",
