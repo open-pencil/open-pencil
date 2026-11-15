@@ -14,6 +14,7 @@ import {
   effectsToCSS,
   fillToCSS,
   gradientToCSS,
+  letterSpacingRoomCSS,
   letterSpacingToCSS,
   lineHeightToCSS,
   strokeColorToCSS,
@@ -388,7 +389,9 @@ function styleFromTextNode(
     style['line-height'] = css('lineHeight', lineHeightToCSS(node.lineHeight))
   }
   if (node.letterSpacing.value !== 0) {
-    style['letter-spacing'] = css('letterSpacing', letterSpacingToCSS(node.letterSpacing))
+    const spacing = css('letterSpacing', letterSpacingToCSS(node.letterSpacing))
+    style['letter-spacing'] = spacing
+    Object.assign(style, letterSpacingRoomCSS(node.letterSpacing, spacing, style.width))
   }
   if (node.textAlignHorizontal !== 'LEFT')
     style['text-align'] = node.textAlignHorizontal.toLowerCase()

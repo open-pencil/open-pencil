@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { letterSpacingRoomCSS } from '#dom-css/export/css'
 import { serializeHTML } from '#dom-css/export/html'
 import { sceneNodeToDesignDocument } from '#dom-css/export/projection'
 import {
@@ -165,5 +166,52 @@ describe('text export', () => {
     expect(jsx).toContain(
       '<a href="https://openpencil.dev/docs" className="text-inherit no-underline">docs</a>'
     )
+  })
+})
+
+describe('letter-spaced text export', () => {
+  const style = (props: Parameters<SceneGraph['createNode']>[2], graph = new SceneGraph()) => {
+    const node = graph.createNode('TEXT', graph.getPages()[0].id, {
+      text: 'Hold',
+      fontFamily: 'Inter',
+      fontSize: 16,
+      width: 200,
+      height: 40,
+      ...props
+    })
+    const [element] = sceneNodeToDesignDocument(graph, node.id, { tokens: true }).children
+    if (element?.type !== 'element') throw new Error('Expected an element')
+    return element.inlineStyle
+  }
+
+  // CSS spaces the last letter too, while the canvas fits and aligns lines by their glyphs.
+  test('widens a fixed box by the spacing and takes it back with a margin', () => {
+    expect(
+      style({ letterSpacing: { value: 10, unit: 'PIXELS' }, textAutoResize: 'HEIGHT' })
+    ).toMatchObject({ width: 'calc(200px + 10px)', 'margin-right': '-10px' })
+    expect(
+      style({ letterSpacing: { value: -5, unit: 'PERCENT' }, textAutoResize: 'NONE' })
+    ).toMatchObject({ width: 'calc(200px + -0.05em)', 'margin-right': '0.05em' })
+  })
+
+  test('gives auto-width text only the margin', () => {
+    const css = style({
+      letterSpacing: { value: 10, unit: 'PERCENT' },
+      textAutoResize: 'WIDTH_AND_HEIGHT'
+    })
+    expect(css).not.toHaveProperty('width')
+    expect(css?.['margin-right']).toBe('-0.1em')
+  })
+
+  test('takes a spacing written as a token back by the token', () => {
+    const spacing = 'var(--tracking-wide)'
+    expect(letterSpacingRoomCSS({ value: 2, unit: 'PIXELS' }, spacing, '200px')).toEqual({
+      width: `calc(200px + ${spacing})`,
+      'margin-right': `calc(-1 * ${spacing})`
+    })
+  })
+
+  test('leaves unspaced text as it is', () => {
+    expect(style({ textAutoResize: 'HEIGHT' })).not.toHaveProperty('margin-right')
   })
 })
