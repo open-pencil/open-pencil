@@ -175,6 +175,17 @@ describe('the HTML engine runtime', () => {
     )
   })
 
+  test('borders a table and its cells by its border attribute, as a browser does', async () => {
+    const document = await styled('<table id="t" border="2"><tr><td id="c">x</td></tr></table>')
+    const border = (id: string) => {
+      const style = elementById(document, id).computedStyle ?? {}
+      return [style['border-top-width'], style['border-top-style']]
+    }
+
+    expect(border('t')).toEqual(['2px', 'outset'])
+    expect(border('c')).toEqual(['1px', 'inset'])
+  })
+
   test("pairs a shader layer's children past the still frame the serializer writes", async () => {
     const card: DesignDocument = {
       type: 'document',
