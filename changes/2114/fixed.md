@@ -1,1 +1,1 @@
-- MCP `get_jsx` with a `path` writes the complete JSX instead of cutting it at 12,000 characters, and JSX returned inline says when it was cut (#2114).
+- MCP `get_jsx` with a `path` writes the complete JSX instead of cutting it at 12,000 characters (#2114).
