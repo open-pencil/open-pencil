@@ -1,0 +1,1 @@
+- HTML import borders tables by their `border` attribute, and keeps a border whose color is written with spaces, such as `rgb(0 0 0)` (#2126).
