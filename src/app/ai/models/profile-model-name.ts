@@ -1,7 +1,7 @@
 import { acpAgentFor, AI_PROVIDERS } from '@open-pencil/core/constants'
 
 import { agentModelName } from '@/app/ai/agents/acp/offers'
-import { agentModelID } from '@/app/ai/models/agent'
+import { profileModelID } from '@/app/ai/models/language-model'
 import { modelConnection } from '@/app/ai/models/store'
 import type { AIModelProfile } from '@/app/ai/models/types'
 
@@ -12,7 +12,7 @@ import type { AIModelProfile } from '@/app/ai/models/types'
  */
 export function profileModelName(profile: AIModelProfile): string {
   const providerID = modelConnection(profile.connectionId)?.providerID
-  const modelID = agentModelID(profile)
+  const modelID = profileModelID(profile)
   if (!providerID || !modelID) return modelID
   const agent = acpAgentFor(providerID)
   if (agent) return agentModelName(agent, modelID) ?? modelID
