@@ -1,0 +1,1 @@
+- Hiding or showing the panels keeps the drawing where it is on screen instead of shifting it by the panel's width (#2122).
