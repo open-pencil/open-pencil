@@ -90,6 +90,7 @@ function importCollection(
 ): VariableCollection {
   const key = collectionAssetKey(collection)
   const existing = libraryCollection(graph, key)
+  if (existing) graph.willChangeCollection(existing.id)
   const copy = existing ?? graph.createCollection(collection.name)
   // A new copy's first mode is the one it was made with, whatever the library names it.
   const candidates = existing
@@ -108,9 +109,9 @@ function importCollection(
     modes: copy.modes.map((mode) => {
       const source = libraryModes.get(mode.modeId)
       return source ? { ...mode, name: source.name, libraryModeId: source.modeId } : mode
-    }),
-    defaultModeId: paired.get(collection.defaultModeId) ?? copy.defaultModeId
+    })
   })
+  graph.setDefaultMode(copy.id, paired.get(collection.defaultModeId) ?? copy.defaultModeId)
   return copy
 }
 

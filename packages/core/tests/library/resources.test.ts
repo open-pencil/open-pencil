@@ -201,15 +201,17 @@ describe('renaming a library mode', () => {
       'surface copy'
     )
 
-    // The library renames Dark to Night and gives it another value.
+    // The library renames Dark to Night, makes it the default, and gives it another value.
     graph.renameMode(theme.id, dark, 'Night')
+    graph.setDefaultMode(theme.id, dark)
     const changed = graph.variables.get(surface.id) ?? surface
     graph.variables.set(surface.id, { ...changed, valuesByMode: { [light]: RED, [dark]: GREEN } })
 
     updateLibraryDefinitions(consumer, await publish(graph, first.manifest.revisionId))
 
     const updated = consumer.variableCollections.get(copy.id)
-    expect(updated?.modes.map((mode) => mode.name)).toEqual(['Light', 'Night'])
+    expect(updated?.modes.map((mode) => mode.name)).toEqual(['Night', 'Light'])
+    expect(updated?.defaultModeId).toBe(copyDark.modeId)
     // The renamed mode is the one the frame was set to, so the frame shows the new value.
     expect(updated?.modes.find((mode) => mode.name === 'Night')?.modeId).toBe(copyDark.modeId)
     expect(consumer.getNode(frame.id)?.variableModes[copy.id]).toBe(copyDark.modeId)
