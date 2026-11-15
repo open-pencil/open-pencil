@@ -1,0 +1,1 @@
+- On Linux, the code panel's keys no longer go dead when a menu item uses the same shortcut; `Tab` and `Shift+Tab` now indent.
