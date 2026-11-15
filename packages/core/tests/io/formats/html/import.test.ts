@@ -79,6 +79,32 @@ describe('reading HTML', () => {
     expect(inner).toMatchObject({ x: 14, y: 14 })
   })
 
+  test('keeps a table with collapsed borders in auto layout, drawing each shared border once', async () => {
+    const { graph } = await readHTMLDocument(
+      `<table style="border-collapse:collapse;width:300px;font-family:'${TEST_FAMILY}'">
+        <tr><td style="border:1px solid #000;padding:8px">Name</td><td style="border:1px solid #000;padding:8px">Value</td></tr>
+        <tr><td style="border:1px solid #000;padding:8px">Alpha</td><td style="border:1px solid #000;padding:8px">1</td></tr>
+      </table>`
+    )
+    const frames = graph
+      .flattenTree(graph.getPages()[0].id)
+      .map(({ node }) => node)
+      .filter((node) => node.type === 'FRAME')
+    const cells = frames.filter((node) => node.name === 'td')
+
+    // Rows and cells keep auto layout: the importer lays them out where the page did.
+    expect(frames.every((node) => node.layoutMode !== 'NONE')).toBe(true)
+    expect(cells.flatMap((cell) => cell.strokes.map((stroke) => stroke.align))).toEqual([
+      'CENTER',
+      'CENTER',
+      'CENTER',
+      'CENTER'
+    ])
+    // Neighbouring cells touch, so their centered strokes draw one line.
+    const [first, second] = graph.getChildren(cells[0].parentId ?? '')
+    expect(second.x).toBe(first.x + first.width)
+  })
+
   test('a border without a style is not drawn and takes no room', async () => {
     const { graph } = await readHTMLDocument(
       '<div style="display:inline-flex;padding:10px;border-width:4px;border-color:#000;border-style:none"><div style="width:50px;height:50px;background:#f00"></div></div>'

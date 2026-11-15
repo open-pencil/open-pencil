@@ -161,6 +161,28 @@ describe('the HTML engine runtime', () => {
     )
   })
 
+  test('gives a cell of a collapsed table half of each border it shares, as a browser does', async () => {
+    const document = await styled(
+      `<table id="t" style="border-collapse:collapse;border-spacing:0">
+        <tr id="r"><td id="a" style="border:2px solid;padding:0;width:40px;height:20px"></td>
+        <td id="b" style="border:2px solid;padding:0;width:40px;height:20px"></td></tr></table>`
+    )
+    const box = (id: string) => elementById(document, id).layout?.box
+    const table = box('t')
+    const [a, b] = [box('a'), box('b')]
+
+    // The table holds the outer half of the outer borders, each cell the inner half of its own.
+    expect(a).toMatchObject({
+      x: (table?.x ?? 0) + 1,
+      y: (table?.y ?? 0) + 1,
+      width: 42,
+      height: 22
+    })
+    // Cells sharing a border touch, its line centered on their edge.
+    expect(b?.x).toBe((a?.x ?? 0) + 42)
+    expect(box('r')).toMatchObject({ x: a?.x, width: 84, height: 22 })
+  })
+
   test("pairs a shader layer's children past the still frame the serializer writes", async () => {
     const card: DesignDocument = {
       type: 'document',

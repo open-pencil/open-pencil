@@ -47,7 +47,7 @@ import {
   type CapturedBox,
   type CapturedBoxes
 } from './placement'
-import { applyTableLayout, isTableColumn } from './table'
+import { applyCollapsedBorders, applyTableLayout, isTableColumn } from './table'
 import {
   blockRichText,
   characterStyleFromCSS,
@@ -364,6 +364,7 @@ function createElementNode(
     clipsContent: false
   })
   applyElementStyle(graph, node, element, style)
+  applyCollapsedBorders(node, element, style, display)
   recordElement(graph, recorded, node, element, style)
   // A box without content keeps its own size, as an image does, unless it declares a layout.
   const flow = hasContent(element) || flowOf(display) === 'flex' ? flowOf(display) : null

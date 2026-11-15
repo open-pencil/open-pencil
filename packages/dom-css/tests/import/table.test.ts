@@ -76,6 +76,32 @@ describe('table import', () => {
     expect(rowLayers[0].itemSpacing).toBe(0)
   })
 
+  it('draws each collapsed border once, centered on the edge the cells share', () => {
+    const collapsed = { 'border-collapse': 'collapse', 'border-spacing': '0px' }
+    const bordered = {
+      ...collapsed,
+      'border-style': 'solid',
+      'border-width': '2px',
+      'border-color': 'rgb(0, 0, 0)',
+      padding: '8px'
+    }
+    const { graph, tableLayer, rowLayers } = layers(
+      table([row([cell('a', bordered), cell('b', bordered)], collapsed)], collapsed)
+    )
+    const [first] = graph.getChildren(rowLayers[0].id)
+
+    // Each cell holds half of the border, its stroke centered on the cell's edge, so two cells'
+    // strokes draw one line; the content sits inside its half.
+    expect(first.strokes.map((stroke) => stroke.align)).toEqual(['CENTER'])
+    expect(first).toMatchObject({ paddingTop: 9, paddingLeft: 9, paddingRight: 9 })
+    // The table holds the outer half of the outer borders.
+    expect(tableLayer).toMatchObject({
+      paddingTop: 1,
+      paddingLeft: 1,
+      strokesIncludedInLayout: false
+    })
+  })
+
   it('places a cell’s content by its vertical-align', () => {
     const { graph, rowLayers } = layers(
       table([

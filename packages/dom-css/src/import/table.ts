@@ -1,8 +1,9 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { parseCSSNumber, splitCSSValue } from '@open-pencil/scene-graph/css'
 
-import type { DesignStyleDeclaration } from '../types'
-import { pickStyle } from './css-values'
+import type { DesignElement, DesignStyleDeclaration } from '../types'
+import { borderWidths } from './box'
+import { mergedStyle, pickStyle } from './css-values'
 
 /** Boxes that hold a table's rows, one above the other. */
 const ROW_GROUPS = new Set(['table-row-group', 'table-header-group', 'table-footer-group'])
@@ -25,11 +26,69 @@ export function isTableRow(display: string): boolean {
  * across, then down. Collapsed borders have none.
  */
 function borderSpacing(style: DesignStyleDeclaration): { across: number; down: number } {
-  if (pickStyle(style, 'border-collapse')?.trim() === 'collapse') return { across: 0, down: 0 }
+  if (collapsesBorders(style)) return { across: 0, down: 0 }
   const [across = 0, down = across] = splitCSSValue(pickStyle(style, 'border-spacing') ?? '').map(
     (part) => parseCSSNumber(part) ?? 0
   )
   return { across, down }
+}
+
+/** Whether a table, or a part of one, collapses its cells' borders into the borders they share. */
+export function collapsesBorders(style: DesignStyleDeclaration): boolean {
+  return pickStyle(style, 'border-collapse')?.trim() === 'collapse'
+}
+
+/** The first cell of a table, through its row groups and rows, in document order. */
+function firstCell(element: DesignElement): DesignElement | undefined {
+  for (const child of element.children) {
+    if (child.type !== 'element') continue
+    const display = pickStyle(mergedStyle(child), 'display')?.trim() ?? ''
+    if (display === 'table-cell') return child
+    if (ROW_GROUPS.has(display) || isTableRow(display) || display === 'contents') {
+      const cell = firstCell(child)
+      if (cell) return cell
+    }
+  }
+  return undefined
+}
+
+/**
+ * Lays collapsed borders out as CSS does (CSS 2.1 §17.6.2): cells touch, each holding half of
+ * every border it shares, so a cell's border is a centered stroke that draws one line with its
+ * neighbour's, and its content sits inside half of it. The table holds the outer half of the
+ * outer borders. Its borders are its first cell's, as the HTML engine lays every collapsed border
+ * out with, so a table whose cells differ is still placed where it was laid out.
+ */
+export function applyCollapsedBorders(
+  node: SceneNode,
+  element: DesignElement,
+  style: DesignStyleDeclaration,
+  display: string
+): void {
+  if (!collapsesBorders(style)) return
+  if (display === 'table-cell') {
+    if (node.strokes.length === 0) return
+    node.strokes = node.strokes.map((stroke) => ({ ...stroke, align: 'CENTER' }))
+    const half = borderWidths(style)
+    node.paddingTop += half.top / 2
+    node.paddingRight += half.right / 2
+    node.paddingBottom += half.bottom / 2
+    node.paddingLeft += half.left / 2
+    return
+  }
+  if (display !== 'table' && display !== 'inline-table') return
+  const cell = firstCell(element)
+  if (!cell) return
+  const borders = borderWidths(mergedStyle(cell))
+  const across = Math.max(borders.left, borders.right) / 2
+  const down = Math.max(borders.top, borders.bottom) / 2
+  if (across === 0 && down === 0) return
+  // A collapsed table has no padding, and its own border is one of those its cells collapse.
+  node.strokesIncludedInLayout = false
+  node.paddingTop = down
+  node.paddingBottom = down
+  node.paddingLeft = across
+  node.paddingRight = across
 }
 
 /** Where `vertical-align` puts a cell's content in the height of its row. */

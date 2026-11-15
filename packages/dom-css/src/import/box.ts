@@ -197,10 +197,30 @@ export interface ContentInsets {
   left: number
 }
 
+/** The width of each side's border that is drawn; a side whose border is not drawn has none. */
+export function borderWidths(style: DesignStyleDeclaration): ContentInsets {
+  const side = (name: BorderSide) =>
+    paints(style, name) ? (firstCSSNumber(style, `border-${name}-width`, 'border-width') ?? 0) : 0
+  return { top: side('top'), right: side('right'), bottom: side('bottom'), left: side('left') }
+}
+
+/**
+ * A cell of a table with collapsed borders holds half of each, the neighbouring cell or the
+ * table the other half (CSS 2.1 §17.6.2).
+ */
+function isCollapsedCell(style: DesignStyleDeclaration): boolean {
+  return (
+    pickStyle(style, 'display')?.trim() === 'table-cell' &&
+    pickStyle(style, 'border-collapse')?.trim() === 'collapse'
+  )
+}
+
 export function contentInsets(style: DesignStyleDeclaration): ContentInsets {
+  const borders = borderWidths(style)
+  const share = isCollapsedCell(style) ? 0.5 : 1
   const side = (name: BorderSide, axis: 'block' | 'inline') =>
     (firstCSSNumber(style, `padding-${name}`, `padding-${axis}`, 'padding') ?? 0) +
-    (paints(style, name) ? (firstCSSNumber(style, `border-${name}-width`, 'border-width') ?? 0) : 0)
+    borders[name] * share
   return {
     top: side('top', 'block'),
     right: side('right', 'inline'),
