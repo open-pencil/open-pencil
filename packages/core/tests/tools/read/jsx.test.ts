@@ -7,6 +7,7 @@ import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS, toolsToAI } from '@open-pencil/core/tools'
 import { sceneNodeToJSX } from '@open-pencil/design-jsx'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { missingBindings, readBehaviour } from '@open-pencil/scene-graph/behaviours'
 import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 const TILE_COUNT = 220
@@ -238,6 +239,102 @@ describe('get_jsx', () => {
       ])
     }
   )
+
+  test('an outline writes a component set an instance names whole, so it renders back', async () => {
+    const graph = new SceneGraph()
+    const figma = new FigmaAPI(graph)
+    const [board] = await renderJSX(
+      graph,
+      `<Frame name="Board" w={400} h={200}>
+        <Frame name="Library" w={200} h={100}>
+          <ComponentSet name="Button">
+            <Component name="State=On" w={40} h={20} bg="#3B6CF6" />
+            <Component name="State=Off" w={40} h={20} bg="#D0D4DA" />
+          </ComponentSet>
+        </Frame>
+        <Instance name="Pressed" of="Button" State="On" />
+      </Frame>`
+    )
+    const outline = sceneNodeToJSX(board.id, graph, { maxDepth: 1 })
+    expect(outline).toContain('name="State=On"')
+
+    await renderTool().execute(figma, { jsx: outline, replace_id: board.id })
+
+    const instance = expectDefined(
+      [...graph.getAllNodes()].find((node) => node.name === 'Pressed'),
+      'instance'
+    )
+    expect(graph.getNode(instance.componentId ?? '')?.name).toBe('State=On')
+  })
+
+  test('an outline joins a connector into an instance by name, which the render rebuilds', async () => {
+    const graph = new SceneGraph()
+    const figma = new FigmaAPI(graph)
+    const [board] = await renderJSX(
+      graph,
+      `<Frame name="Board" w={400} h={200}>
+        <Component name="Card" w={60} h={40}><Rectangle name="Face" w={20} h={20} /></Component>
+        <Frame name="Body" w={100} h={100}><Rectangle name="Inner" w={10} h={10} /></Frame>
+        <Instance name="Copy" of="Card" x={200} />
+        <Connector from="Body" to="Face" />
+      </Frame>`
+    )
+    const outline = sceneNodeToJSX(board.id, graph, { maxDepth: 1 })
+    expect(outline).toContain('keepChildren')
+    expect(outline).not.toContain('{ id:')
+
+    await renderTool().execute(figma, { jsx: outline, replace_id: board.id })
+
+    const connector = expectDefined(
+      [...graph.getAllNodes()].find((node) => node.type === 'CONNECTOR'),
+      'connector'
+    )
+    expect(graph.getNode(connector.connectorEnd?.nodeId ?? '')?.name).toBe('Face')
+  })
+
+  test('a behaviour rendered again in place keeps its property bindings', async () => {
+    const graph = new SceneGraph()
+    const figma = new FigmaAPI(graph)
+    const jsx = `<TextField.Root name="Field" w={200} h={36}>
+      <TextField.Input x={10} y={10}>Email</TextField.Input>
+    </TextField.Root>`
+    const [field] = await renderJSX(graph, jsx)
+
+    await renderTool().execute(figma, { jsx, replace_id: field.id })
+
+    const root = getNodeOrThrow(graph, field.id)
+    const behaviour = expectDefined(readBehaviour(root), 'behaviour')
+    expect(behaviour.texts.value?.propertyId).toBe(root.componentPropertyDefinitions[0]?.id)
+    expect(missingBindings(graph, root, behaviour)).toEqual([])
+  })
+
+  test('a text link kept in a layer follows a layer the render rebuilds', async () => {
+    const graph = new SceneGraph()
+    const figma = new FigmaAPI(graph)
+    const [board] = await renderJSX(
+      graph,
+      `<Frame name="Board" w={400} h={200}>
+        <Frame name="Body" w={200} h={100}><Text name="Note">Go there</Text></Frame>
+        <Vector name="Icon" x={300} d="M0 0 L20 20" stroke="#000" />
+      </Frame>`
+    )
+    const byName = (name: string) =>
+      expectDefined(
+        [...graph.getAllNodes()].find((node) => node.name === name),
+        name
+      )
+    graph.updateNode(byName('Note').id, {
+      styleRuns: [
+        { start: 0, length: 2, style: { hyperlink: { type: 'NODE', value: byName('Icon').id } } }
+      ]
+    })
+    const outline = sceneNodeToJSX(board.id, graph, { maxDepth: 1 })
+
+    await renderTool().execute(figma, { jsx: outline, replace_id: board.id })
+
+    const link = byName('Note').styleRuns[0]?.style.hyperlink
+    expect(link).toEqual({ type: 'NODE', value: byName('Icon').id })
+  })
 
   test('gives the complete JSX for a path, which renders back every layer', async () => {
     const { figma, boardId } = largeBoard()

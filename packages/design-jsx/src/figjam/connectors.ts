@@ -184,11 +184,10 @@ export interface ConnectorExportScope {
   /** The layers connector ends under the roots join. */
   joined: ReadonlySet<string>
   /**
-   * The layers under the roots the export writes, when it leaves some out, as an outline does: an
-   * end on a layer it leaves out is written by its `{ id }`, which the layer keeps once the
-   * outline renders in place of its root.
+   * The layers an outline writes with `keepChildren`: an end on a layer under one is written by
+   * its `{ id }`, which the layer keeps once the outline renders in place of its root.
    */
-  written?: ReadonlySet<string>
+  kept?: ReadonlySet<string>
   /**
    * The layers connector ends join whose name another layer of the export has too, so the name
    * would not say which: each with the `ref()` the export declares for it, or `null` when the
@@ -228,6 +227,12 @@ export function connectorExportScope(
   return { roots: new Set(rootIds), joined, refs }
 }
 
+/** Whether a layer above `layer` is one of `kept`, whose children an outline leaves out. */
+function underKept(graph: SceneGraph, layer: SceneNode, kept: ReadonlySet<string>): boolean {
+  const parent = layer.parentId ? graph.getNode(layer.parentId) : undefined
+  return parent !== undefined && (kept.has(parent.id) || underKept(graph, parent, kept))
+}
+
 /**
  * How a connector end is written: by its layer's name or ref, by its id when the export leaves
  * the layer out, or as the point it is drawn at.
@@ -244,7 +249,7 @@ function endTarget(
   if (!layer) return { point: endpoint.position }
   const exported =
     !scope || graph.closest(layer.id, (ancestor) => scope.roots.has(ancestor.id)) !== undefined
-  if (exported && scope?.written && !scope.written.has(layer.id)) return { layer, byId: true }
+  if (exported && scope?.kept && underKept(graph, layer, scope.kept)) return { layer, byId: true }
   const ref = scope?.refs.get(layer.id)
   if (exported && ref !== null) return { layer, ref }
   return { point: drawn ?? endpoint.position }

@@ -6,6 +6,11 @@ import type {
   SceneGraph,
   SceneNode
 } from '@open-pencil/scene-graph'
+import {
+  readBehaviour,
+  renameBehaviourProperties,
+  withBehaviour
+} from '@open-pencil/scene-graph/behaviours'
 import { remapCopiedReferences } from '@open-pencil/scene-graph/transfer'
 
 /**
@@ -158,24 +163,39 @@ function settleProperties(graph: SceneGraph, owners: PropertyOwner[], rootIds: s
   const rename = (id: string) => renamed.get(id) ?? id
   for (const id of rootIds.flatMap((rootId) => [rootId, ...descendantIds(graph, rootId)])) {
     const node = graph.getNode(id)
-    if (!node) continue
-    const references = node.componentPropertyReferences
-    const assignments = Object.keys(node.componentPropertyAssignments)
-    if (
-      !references.some((ref) => renamed.has(ref.propertyId)) &&
-      !assignments.some((key) => renamed.has(key))
-    )
-      continue
-    graph.updateNode(id, {
-      componentPropertyReferences: references.map((ref) => ({
-        ...ref,
-        propertyId: rename(ref.propertyId)
-      })),
-      componentPropertyAssignments: mapKeys(node.componentPropertyAssignments, (_, key) =>
-        rename(key)
-      )
-    })
+    if (node) renameProperties(graph, node, renamed, rename)
   }
+}
+
+/** Points `node`'s property references, assignments and behaviour at the renamed properties. */
+function renameProperties(
+  graph: SceneGraph,
+  node: SceneNode,
+  renamed: ReadonlyMap<string, string>,
+  rename: (id: string) => string
+) {
+  const references = node.componentPropertyReferences
+  const assignments = Object.keys(node.componentPropertyAssignments)
+  const behaviour = readBehaviour(node)
+  if (
+    !references.some((ref) => renamed.has(ref.propertyId)) &&
+    !assignments.some((key) => renamed.has(key)) &&
+    !behaviour
+  )
+    return
+  graph.updateNode(node.id, {
+    componentPropertyReferences: references.map((ref) => ({
+      ...ref,
+      propertyId: rename(ref.propertyId)
+    })),
+    componentPropertyAssignments: mapKeys(node.componentPropertyAssignments, (_, key) =>
+      rename(key)
+    ),
+    // A behaviour binds its values and parts to properties by id, as references do.
+    ...(behaviour && {
+      pluginData: withBehaviour(node, renameBehaviourProperties(behaviour, rename))
+    })
+  })
 }
 
 class Reconciler {
@@ -294,7 +314,9 @@ export function reconcileRenderedLayers(
       ...keptLayers.map((id): [string, string] => [id, id]),
       ...reconciler.ids,
       ...reconciler.replaced
-    ])
+    ]),
+    // A text link to a layer the render rebuilt follows it too.
+    { followTextLinks: true }
   )
   return { rootIds, ids: reconciler.ids }
 }
