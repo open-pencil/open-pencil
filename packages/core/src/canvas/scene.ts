@@ -2,7 +2,7 @@ import type { Canvas } from '@open-pencil/canvaskit'
 import { type SceneNode, type SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import { intersectVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
-import { isVisibleMask } from '@open-pencil/scene-graph/masks'
+import { asMaskShape, isVisibleMask } from '@open-pencil/scene-graph/masks'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { clipsChildren, isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 
@@ -175,7 +175,7 @@ function renderMaskNodeContent(
     r.opacityPaint.setImageFilter(null)
   }
   applyNodeTransforms(canvas, node, overlays)
-  renderNodeContent(r, canvas, graph, node.maskType === 'VECTOR' ? opaqueFills(node) : node, {})
+  renderNodeContent(r, canvas, graph, asMaskShape(node), {})
   // A group or frame used as a mask masks with what its layers draw, as in Figma.
   renderChildren(
     r,
@@ -189,14 +189,6 @@ function renderMaskNodeContent(
   )
   if (layered) canvas.restore()
   canvas.restore()
-}
-
-/** An outline mask masks with its shape alone, so Figma ignores how opaque its fills are. */
-function opaqueFills(node: SceneNode): SceneNode {
-  return {
-    ...node,
-    fills: node.fills.map((fill) => ({ ...fill, opacity: 1, color: { ...fill.color, a: 1 } }))
-  }
 }
 
 function renderChildIds(

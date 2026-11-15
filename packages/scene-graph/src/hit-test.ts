@@ -1,7 +1,7 @@
 import { hitsConnectorLine } from './connectors/hit'
 import { getWorldMatrix } from './coordinate'
 import type { SceneGraph } from './graph'
-import { isVisibleMask, maskRuns, type MaskRun } from './masks'
+import { asMaskShape, isVisibleMask, maskRuns, type MaskRun } from './masks'
 import Matrix from './matrix'
 import { clipsChildren } from './node-defaults'
 import { hitsShape, strokeReach } from './outline/hit'
@@ -185,7 +185,7 @@ function insideMasks(
     const mask = graph.nodes.get(id)
     if (!mask) return false
     if (!CONTAINER_TYPES.has(mask.type)) {
-      return hitsLeaf(graph, px, py, mask, walk.transformCache, 0)
+      return hitsLeaf(graph, px, py, asMaskShape(mask), walk.transformCache, 0)
     }
     if (showsPaint(mask) && containsPoint(px, py, mask, graph, walk.transformCache)) return true
     const drawn: HitWalk = { ...walk, deep: true, pad: 0, locked: true }
@@ -210,6 +210,17 @@ function hitTestChildren(
   }
 
   const runAt = maskRunCursor(graph, parent.childIds)
+  // Each run's masks are tested once per query, however many siblings they mask.
+  const covered = new Map<MaskRun, boolean>()
+  const inside = (run: MaskRun | undefined) => {
+    if (!run) return true
+    let hit = covered.get(run)
+    if (hit === undefined) {
+      hit = insideMasks(graph, px, py, parent.childIds, run, walk)
+      covered.set(run, hit)
+    }
+    return hit
+  }
   for (let i = parent.childIds.length - 1; i >= 0; i--) {
     const run = runAt(i)
     const child = graph.nodes.get(parent.childIds[i])
@@ -217,7 +228,7 @@ function hitTestChildren(
     // click falls through to what lies under it, and a drag from it draws a marquee.
     if (!child || child.internalOnly || !child.visible || (child.locked && !walk.locked)) continue
     // Where its masks cut a layer away, a click falls through to what lies under it (Figma, live).
-    if (!insideMasks(graph, px, py, parent.childIds, run, walk)) continue
+    if (!inside(run)) continue
     if (CONTAINER_TYPES.has(child.type)) {
       if (OPAQUE_CONTAINER_TYPES.has(child.type) && !walk.deep) {
         // A plain click takes an instance or component anywhere in its box, with a fill or

@@ -5,7 +5,7 @@ import { maskRuns } from '@open-pencil/scene-graph/masks'
 import { SOLID_FILL } from '@open-pencil/test-support/scene'
 
 describe('mask runs', () => {
-  const runsOf = (layers: string) => maskRuns([...layers], (layer) => layer === 'M')
+  const runsOf = (layers: string) => maskRuns(layers.split(''), (layer) => layer === 'M')
 
   test('masks every sibling after them up to the next mask', () => {
     expect(runsOf('aMbcMd')).toEqual([
@@ -103,5 +103,14 @@ describe('clicks on masked layers', () => {
     })
     expect(graph.hitTestDeep(20, 20)?.id).toBe(masked.id)
     expect(graph.hitTestDeep(100, 20)).toBeNull()
+  })
+
+  test('take the masked layer inside an outline mask whose fill is transparent', () => {
+    const { graph, mask, masked } = scene()
+    graph.updateNode(mask.id, {
+      maskType: 'VECTOR',
+      fills: [{ ...SOLID_FILL, opacity: 0 }]
+    })
+    expect(graph.hitTestDeep(50, 50)?.id).toBe(masked.id)
   })
 })

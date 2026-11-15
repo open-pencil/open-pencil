@@ -1,5 +1,17 @@
 import type { SceneNode } from './types'
 
+/**
+ * The layer as it masks: an outline mask masks with its shape alone, so Figma ignores how opaque
+ * its fills are, and the canvas and hit testing take them as opaque.
+ */
+export function asMaskShape(node: SceneNode): SceneNode {
+  if (node.maskType !== 'VECTOR') return node
+  return {
+    ...node,
+    fills: node.fills.map((fill) => ({ ...fill, opacity: 1, color: { ...fill.color, a: 1 } }))
+  }
+}
+
 /** Whether a layer masks its siblings: a mask that is shown, since a hidden mask masks nothing. */
 export function isVisibleMask(node: Pick<SceneNode, 'visible' | 'isMask'>): boolean {
   return node.visible && node.isMask
