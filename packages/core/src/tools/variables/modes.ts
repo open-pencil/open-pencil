@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 
 import type { SceneGraph, VariableCollection } from '@open-pencil/scene-graph'
+import { lookupCollection, lookupMode } from '@open-pencil/scene-graph/variables'
 
 import type { FigmaAPI } from '#core/figma-api'
 import { graphOf } from '#core/figma-api/graph'
@@ -11,29 +12,21 @@ const collectionInputSchema = v.pipe(
   v.description('Variable collection ID or name, such as "Theme"')
 )
 
-/** The collection named by ID or, failing that, by its one exact name. */
+/** The collection named by ID or by its one exact name, or what to say when there is none. */
 function findCollection(graph: SceneGraph, ref: string): VariableCollection | { error: string } {
-  const byId = graph.variableCollections.get(ref)
-  if (byId) return byId
-  const named = [...graph.variableCollections.values()].filter((c) => c.name === ref)
-  if (named.length === 1) return named[0]
-  if (named.length > 1)
-    return { error: `Several collections are named "${ref}"; name one by ID: ${ids(named)}` }
-  return { error: `Collection "${ref}" not found` }
+  const found = lookupCollection(graph, ref)
+  if (found.kind === 'found') return found.value
+  if (found.kind === 'missing') return { error: `Collection "${ref}" not found` }
+  const ids = found.matches.map((collection) => collection.id).join(', ')
+  return { error: `Several collections are named "${ref}"; name one by ID: ${ids}` }
 }
 
-function ids(collections: VariableCollection[]): string {
-  return collections.map((collection) => collection.id).join(', ')
-}
-
-/** The mode of `collection` named by ID or, failing that, by its one exact name. */
+/** The mode of `collection` named by ID or by its one exact name, or what to say when there is none. */
 function findModeId(collection: VariableCollection, ref: string): string | { error: string } {
-  const byId = collection.modes.find((candidate) => candidate.modeId === ref)
-  if (byId) return byId.modeId
-  const named = collection.modes.filter((candidate) => candidate.name === ref)
-  if (named.length === 1) return named[0].modeId
-  if (named.length > 1) {
-    const modeIds = named.map((mode) => mode.modeId).join(', ')
+  const found = lookupMode(collection, ref)
+  if (found.kind === 'found') return found.value.modeId
+  if (found.kind === 'ambiguous') {
+    const modeIds = found.matches.map((mode) => mode.modeId).join(', ')
     return {
       error: `Collection "${collection.name}" has several modes named "${ref}"; name one by ID: ${modeIds}`
     }
