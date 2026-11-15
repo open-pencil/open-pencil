@@ -10,10 +10,10 @@ import { asDouble } from '@open-pencil/test-support/doubles'
 import type { AgentQuestion } from '@/app/ai/agents/acp/oneoff'
 import type { AIModelRuntime } from '@/app/ai/models/runtime'
 import {
-  boundedImageScale,
   inspectRenderedDesign,
   type VisualInspectionDependencies
 } from '@/app/ai/tools/vision/inspect'
+import { boundedImageScale } from '@/app/ai/tools/vision/render'
 import type { EditorStore } from '@/app/editor/session/create'
 
 const claude = expectDefined(
