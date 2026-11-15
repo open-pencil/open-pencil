@@ -156,6 +156,48 @@ describe('shared render/preview placement', () => {
     expect(row.childIds.map((id) => graph.getNode(id)?.name)).toEqual(['Right'])
   })
 
+  it('keeps several replacement roots together when edits put them before the target', async () => {
+    const setup = await fixture()
+    const { graph, figma, rowId, leftId } = setup
+    const placement = resolveRenderPlacement(graph, { replace_id: leftId }, figma.currentPageId)
+    const results = await renderJSX(
+      graph,
+      '<><Rect name="N1" w={10} h={10}/><Rect name="N2" w={10} h={10}/></>',
+      placement
+    )
+    for (const [index, result] of results.entries()) graph.insertChildAt(result.id, rowId, index)
+
+    finishRenderPlacement(graph, results, placement)
+
+    const row = getNodeOrThrow(graph, rowId)
+    expect(row.childIds.map((id) => graph.getNode(id)?.name)).toEqual(['N1', 'N2', 'Right'])
+  })
+
+  it('keeps the layer to replace when it moved to another parent while the JSX rendered', async () => {
+    const setup = await fixture()
+    const { graph, figma, boardId, rowId, leftId } = setup
+    const placement = resolveRenderPlacement(graph, { replace_id: leftId }, figma.currentPageId)
+    const results = await renderJSX(graph, '<Rect name="New" w={20} h={20}/>', placement)
+    graph.insertChildAt(leftId, boardId, 0)
+
+    expect(() => finishRenderPlacement(graph, results, placement)).toThrow('moved')
+    expect(getNodeOrThrow(graph, leftId).parentId).toBe(boardId)
+    expect(getNodeOrThrow(graph, rowId).childIds.map((id) => graph.getNode(id)?.name)).toEqual([
+      'Right'
+    ])
+  })
+
+  it('keeps the layer to replace when its replacement was deleted while it rendered', async () => {
+    const setup = await fixture()
+    const { graph, figma, leftId } = setup
+    const placement = resolveRenderPlacement(graph, { replace_id: leftId }, figma.currentPageId)
+    const results = await renderJSX(graph, '<Rect name="New" w={20} h={20}/>', placement)
+    for (const result of results) graph.deleteNode(result.id)
+
+    expect(() => finishRenderPlacement(graph, results, placement)).toThrow('lost its replacement')
+    expect(graph.getNode(leftId)).toBeDefined()
+  })
+
   it('recomputes Hug ancestors rather than positioning a detached child', async () => {
     const setup = await fixture(true)
     const before = getNodeOrThrow(setup.graph, setup.boardId).width
