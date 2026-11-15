@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
-import { useEventListener, useLocalStorage } from '@vueuse/core'
+import { createEventHook, useEventListener, useLocalStorage } from '@vueuse/core'
 import { watch } from 'vue'
 
 import {
@@ -106,17 +106,14 @@ export function preloadFonts(): void {
 /** The event the desktop host sends once it has listed the system fonts again. */
 const FONTS_CHANGED_EVENT = 'fonts:changed'
 
-const installedFontsListeners = new Set<() => void>()
+const installedFonts = createEventHook()
 let watchingInstalledFonts = false
 
-/** Calls the listener whenever fonts are installed or removed while the app runs. */
-export function onInstalledFontsChanged(listener: () => void): () => void {
-  installedFontsListeners.add(listener)
-  return () => installedFontsListeners.delete(listener)
-}
+/** Hears fonts installed or removed while the app runs, until the caller's scope ends. */
+export const onInstalledFontsChanged = installedFonts.on
 
 function installedFontsChanged() {
-  for (const listener of installedFontsListeners) listener()
+  void installedFonts.trigger()
 }
 
 /**

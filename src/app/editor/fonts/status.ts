@@ -1,4 +1,3 @@
-import { tryOnScopeDispose } from '@vueuse/core'
 import { computed, ref } from 'vue'
 
 import { computeAllLayouts } from '@open-pencil/core/layout'
@@ -102,11 +101,9 @@ export function useDocumentFontStatus() {
   }
 
   // A missing font installed while the document is open is loaded then, as a retry would.
-  tryOnScopeDispose(
-    onInstalledFontsChanged(() => {
-      if (status.value.issues.length > 0) void retry()
-    })
-  )
+  onInstalledFontsChanged(() => {
+    if (status.value.issues.length > 0) void retry()
+  })
 
   function selectAffectedNodes() {
     editor.select(status.value.issues.flatMap((issue) => issue.nodeIds))

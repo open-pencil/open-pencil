@@ -1,4 +1,5 @@
-import { compact, groupBy, uniqBy } from 'es-toolkit'
+import { compact, differenceWith, groupBy, uniqBy } from 'es-toolkit'
+import { createNanoEvents } from 'nanoevents'
 
 import {
   namesWeight,
@@ -228,7 +229,7 @@ export class OwnFaceNames {
   private readonly names = new Map<string, FaceNames | null>()
   private readonly ownFaces = new Map<string, OwnFace>()
   private readonly ownFamilies = new Map<string, { family: string; faces: FamilyFace[] }>()
-  private readonly listeners = new Set<() => void>()
+  private readonly events = createNanoEvents<{ change: () => void }>()
   private learned = 0
 
   /** Counts `forget` calls: what was read before the last one is not learned. */
@@ -326,18 +327,17 @@ export class OwnFaceNames {
       family: own.family,
       faces: []
     }
-    const added = ownFaces(data, own.style).filter(
-      (candidate) =>
-        !known.faces.some(
-          (face) =>
-            styleSpelling(face.style) === styleSpelling(candidate.style) &&
-            face.italic === candidate.italic
-        )
+    const added = differenceWith(
+      ownFaces(data, own.style),
+      known.faces,
+      (candidate, face) =>
+        styleSpelling(candidate.style) === styleSpelling(face.style) &&
+        candidate.italic === face.italic
     )
     if (added.length > 0) {
       for (const face of added) known.faces.push(face)
       this.ownFamilies.set(styleSpelling(own.family), known)
-      for (const listener of this.listeners) listener()
+      this.events.emit('change')
     }
     return own.family
   }
@@ -356,7 +356,7 @@ export class OwnFaceNames {
     this.ownFaces.clear()
     const had = this.ownFamilies.size > 0
     this.ownFamilies.clear()
-    if (had) for (const listener of this.listeners) listener()
+    if (had) this.events.emit('change')
   }
 
   ownFace(family: string, style: string): OwnFace | undefined {
@@ -373,8 +373,7 @@ export class OwnFaceNames {
   }
 
   onChange(listener: () => void): () => void {
-    this.listeners.add(listener)
-    return () => this.listeners.delete(listener)
+    return this.events.on('change', listener)
   }
 
   async find(fonts: FontData[], family: string, style: string): Promise<ArrayBuffer | null> {
