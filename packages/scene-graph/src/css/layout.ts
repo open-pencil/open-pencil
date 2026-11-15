@@ -74,7 +74,7 @@ export function parseCSSAspectRatio(value: string | undefined): CSSAspectRatio |
   const nodes = all.filter((node) => !isAuto(node))
   const auto = nodes.length < all.length
   const [width, slash, height] = nodes
-  if (width?.type !== 'word') return null
+  if (nodes.length === 0 || width.type !== 'word') return null
   const across = Number(width.value)
   if (nodes.length === 1) return positiveRatio(across, auto)
   if (nodes.length !== 3 || slash.type !== 'div' || slash.value !== '/' || height.type !== 'word') {

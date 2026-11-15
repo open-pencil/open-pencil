@@ -236,7 +236,7 @@ function margin(style: DesignStyleDeclaration, side: 'top' | 'bottom'): number {
 
 /** How many rows a cell spans, by its `rowspan` attribute (HTML §4.9.11), at least one. */
 function rowSpan(cell: DesignElement): number {
-  const span = Number.parseInt(cell.attrs.rowspan ?? '', 10)
+  const span = Number.parseInt(cell.attrs.rowspan, 10)
   return Number.isNaN(span) ? 1 : Math.max(span, 1)
 }
 

@@ -89,7 +89,7 @@ export function alignGridItems(
   if (grid.layoutMode !== 'VERTICAL' || column === null) return
   grid.itemSpacing = parseCSSNumber(pickStyle(style, 'row-gap')) ?? 0
   const inFlow = items.filter(({ layer }) => layer.layoutPositioning !== 'ABSOLUTE')
-  const [lone] = inFlow.length === 1 ? inFlow : []
+  const lone = inFlow.length === 1 ? inFlow[0] : undefined
   const down =
     contentSide(style, 'align-content') ?? (lone ? itemSide(lone.style, style, 'align') : null)
   if (down) grid.primaryAxisAlign = down
