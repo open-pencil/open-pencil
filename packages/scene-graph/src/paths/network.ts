@@ -288,7 +288,11 @@ export function segmentsByVertex(
   return byVertex
 }
 
-/** The direction segment `index` leaves `vertex` in, along its handle when it has one. */
+/**
+ * The direction segment `index` leaves `vertex` in: along its handle there, or with that handle
+ * collapsed, toward the far end's control point, as a cubic leaves toward its next distinct
+ * control point; a straight segment leaves along its chord.
+ */
 export function leavingDirection(
   network: Pick<VectorNetwork, 'vertices' | 'segments'>,
   index: number,
@@ -300,6 +304,9 @@ export function leavingDirection(
   if (handle.x !== 0 || handle.y !== 0) return handle
   const from = network.vertices[vertex]
   const to = network.vertices[atStart ? segment.end : segment.start]
+  const farHandle = atStart ? segment.tangentEnd : segment.tangentStart
+  const control = { x: to.x + farHandle.x - from.x, y: to.y + farHandle.y - from.y }
+  if (control.x !== 0 || control.y !== 0) return control
   return { x: to.x - from.x, y: to.y - from.y }
 }
 

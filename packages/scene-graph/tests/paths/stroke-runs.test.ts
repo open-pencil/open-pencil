@@ -1,7 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
 import type { VectorSegment, VectorVertex } from '@open-pencil/scene-graph'
-import { addStrokeRunToPath, strokeRuns, type PathSink } from '@open-pencil/scene-graph/paths'
+import {
+  addStrokeRunToPath,
+  leavingDirection,
+  strokeRuns,
+  type PathSink
+} from '@open-pencil/scene-graph/paths'
 
 const zero = { x: 0, y: 0 }
 
@@ -120,5 +125,28 @@ describe('stroke runs', () => {
   test('a continuation stops a run at a vertex two segments meet at', () => {
     const corner = [line(0, 1), line(1, 2)]
     expect(strokeRuns(corner, () => undefined).map((run) => run.segments)).toEqual([[0], [1]])
+  })
+})
+
+describe('leavingDirection', () => {
+  const network = {
+    vertices: [
+      { x: 0, y: 0 },
+      { x: 10, y: 0 }
+    ],
+    segments: [{ start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: -10, y: 10 } }]
+  }
+
+  test('leaves along the far control point when the near handle is collapsed', () => {
+    expect(leavingDirection(network, 0, 0)).toEqual({ x: 0, y: 10 })
+  })
+
+  test('leaves along its own handle when it has one', () => {
+    expect(leavingDirection(network, 0, 1)).toEqual({ x: -10, y: 10 })
+  })
+
+  test('leaves along the chord of a straight segment', () => {
+    const line = { ...network, segments: [{ ...network.segments[0], tangentEnd: { x: 0, y: 0 } }] }
+    expect(leavingDirection(line, 0, 1)).toEqual({ x: -10, y: 0 })
   })
 })
