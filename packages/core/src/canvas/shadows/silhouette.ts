@@ -1,7 +1,13 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
-import { cornerRadii, fittedCornerRadii, type CornerRadii } from '@open-pencil/scene-graph/corners'
+import {
+  cornerRadii,
+  fittedCornerRadii,
+  type CornerRadii,
+  nodeHasRadius,
+  nodeHasSmoothCorners
+} from '@open-pencil/scene-graph/corners'
 import {
   strokeOverflow as strokeReach,
   strokeAlignShare,
@@ -16,7 +22,6 @@ import { regionFills } from '@open-pencil/scene-graph/vector-network'
 import { paintBooleanOperation } from '#core/canvas/boolean'
 import { renderMaskedChildIds } from '#core/canvas/masks'
 import type { SkiaRenderer } from '#core/canvas/renderer'
-import { nodeHasRadius, nodeHasSmoothCorners } from '#core/canvas/shapes'
 import { nodeOrientationMatrix } from '#core/geometry'
 
 /**

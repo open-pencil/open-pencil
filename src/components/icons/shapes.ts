@@ -1,6 +1,7 @@
 import type { FunctionalComponent } from 'vue'
 
-import { outlineSVGPath, type PolygonOutlineCommand } from '@open-pencil/scene-graph/polygon'
+import { outlineSVGPath } from '@open-pencil/scene-graph/paths'
+import type { PolygonOutlineCommand } from '@open-pencil/scene-graph/polygon'
 import {
   SHAPE_WITH_TEXT_TYPES,
   shapeWithTextGeometry,

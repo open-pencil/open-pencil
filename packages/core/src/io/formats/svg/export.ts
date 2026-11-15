@@ -4,6 +4,7 @@ import {
   getWorldMatrix,
   localTransformFromWorld
 } from '@open-pencil/scene-graph/coordinate'
+import { nodeHasRadius, nodeHasSmoothCorners } from '@open-pencil/scene-graph/corners'
 import { CSS_BLEND_MODE } from '@open-pencil/scene-graph/css'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
@@ -27,8 +28,6 @@ import {
   geometryBlobToSVGPath,
   makePolygonPoints,
   roundedPolygonPath,
-  hasRadius,
-  hasSmoothCorners,
   boxOutlinePath,
   arcPath,
   shapeWithTextOutlinePath
@@ -81,13 +80,17 @@ function vectorShapeElements(
 ): SVGNode[] {
   const elements: SVGNode[] = []
   const filled = fillOutlines(node)
-  appendAll(elements, outlineElements(node, filled?.outlines ?? [], common, ctx, fallbackFills))
+  // Saved stroke geometry draws the stroke below, filled; stroking the fill too would paint it twice.
+  const stroked =
+    node.strokeGeometry.length > 0 && !!strokeAttrs.stroke && strokeAttrs.stroke !== 'none'
+  const outline = stroked ? { ...common, stroke: 'none' } : common
+  appendAll(elements, outlineElements(node, filled?.outlines ?? [], outline, ctx, fallbackFills))
   const network = node.vectorNetwork
   if (network && !filled) appendAll(elements, networkElements(node, network, common))
   // Traced regions leave the open segments, which the canvas strokes, to add here.
   else if (network && filled?.traced && looseSegments(network).length > 0)
     appendAll(elements, openPathElements(node, network, common, looseSegments))
-  if (node.strokeGeometry.length > 0 && strokeAttrs.stroke && strokeAttrs.stroke !== 'none') {
+  if (stroked) {
     for (const geo of node.strokeGeometry) {
       const d = geometryBlobToSVGPath(geo.commandsBlob)
       if (d) {
@@ -134,6 +137,8 @@ function nodeShapeElements(
 
   switch (node.type) {
     case 'ELLIPSE': {
+      // Saved geometry first, as the canvas and hit testing draw an ellipse.
+      if (node.fillGeometry.length > 0) return vectorShapeElements(node, common, strokeAttrs, ctx)
       if (node.arcData) {
         return [svg('path', { d: arcPath(node), ...common })]
       }
@@ -197,8 +202,8 @@ function boxOutlineElement(
 ): SVGNode {
   const width = round(node.width)
   const height = round(node.height)
-  if (!hasRadius(node)) return svg('rect', { width, height, ...attrs })
-  if (node.independentCorners || hasSmoothCorners(node)) {
+  if (!nodeHasRadius(node)) return svg('rect', { width, height, ...attrs })
+  if (node.independentCorners || nodeHasSmoothCorners(node)) {
     return svg('path', { d: boxOutlinePath(node), ...attrs })
   }
   // SVG clamps rx and ry to their own sides; the canvas keeps a too-large radius circular.

@@ -4,7 +4,11 @@ import { randomHex } from '@open-pencil/scene-graph/random'
 import { releaseFigArchive } from '#core/kiwi/fig/session/archive/access'
 import { archiveChanges, trackArchiveChanges } from '#core/kiwi/fig/session/archive/changes'
 import { updateReaderRecovery, releaseReaderRecovery } from '#core/kiwi/fig/session/document-state'
-import type { FigSessionRequest, FigSessionResponse } from '#core/kiwi/fig/session/protocol'
+import type {
+  FigSessionLoadRequest,
+  FigSessionRequest,
+  FigSessionResponse
+} from '#core/kiwi/fig/session/protocol'
 
 import { beginFigPopulation, type FigPopulation, type FigPopulationRebase } from './delta'
 import { trackFigGraphEdits } from './edits'
@@ -129,6 +133,11 @@ export function releaseFigPopulationWorker(graph: SceneGraph): void {
 export interface FigPopulationWorker {
   populate: (pageId: string, signal?: AbortSignal) => Promise<boolean | null>
   /**
+   * Builds components no page brought, such as variants of a set no instance uses, in the
+   * worker: false when one needs a layer the user deleted, null when the worker cannot.
+   */
+  loadComponents: (componentIds: readonly string[], signal?: AbortSignal) => Promise<boolean | null>
+  /**
    * Stop loading pages through the worker. The worker itself keeps serving the document's
    * archive until the document closes, which releases it with the archive.
    */
@@ -156,6 +165,7 @@ function createRetiredWorker(
   }
   return {
     populate: () => Promise.resolve(null),
+    loadComponents: () => Promise.resolve(null),
     // A worker that also serves the archive stops through the archive, which carries on without it.
     stop: () => (stopWorker ? stopWorker() : terminate()),
     terminate
@@ -315,34 +325,53 @@ export function createPopulationWorkerClient(
     worker.onmessage = (event: MessageEvent<WorkerResult>) => receive(event.data)
   }
   worker.onerror = () => fail()
-  return {
-    populate(pageId, signal) {
-      signal?.throwIfAborted()
-      if (stale) return Promise.resolve(null)
-      const requestId = randomHex()
-      // Sent first, so the worker loads the page into a graph with every edit made so far.
-      const baseRevision = edits.revision
-      return new Promise((resolve, reject) => {
-        const abort = () => {
-          const request = pending.get(requestId)
-          if (!request) return
-          // The worker loads the page into its copy all the same. Its layers still apply here
-          // when they arrive, so both graphs stay alike and later pages keep loading there.
-          request.resolve = () => undefined
-          reject(new DOMException('Aborted', 'AbortError'))
-        }
-        signal?.addEventListener('abort', abort, { once: true })
-        pending.set(requestId, {
-          resolve,
-          abort: () => signal?.removeEventListener('abort', abort),
-          revision: baseRevision,
-          startedAt: performance.now(),
-          timeout: watchForStall(),
-          population: beginFigPopulation(graph)
-        })
-        post({ type: 'populate', requestId, baseRevision, pageId })
+  /** Sends a load whose layers come back as a page's do, and applies them as they arrive. */
+  function load(
+    request: (requestId: string, baseRevision: number) => FigSessionLoadRequest,
+    signal?: AbortSignal
+  ): Promise<boolean | null> {
+    signal?.throwIfAborted()
+    if (stale) return Promise.resolve(null)
+    const requestId = randomHex()
+    // Sent first, so the worker loads into a graph with every edit made so far.
+    const baseRevision = edits.revision
+    return new Promise((resolve, reject) => {
+      const abort = () => {
+        const request = pending.get(requestId)
+        if (!request) return
+        // The worker loads into its copy all the same. Its layers still apply here when they
+        // arrive, so both graphs stay alike and later loads keep going there.
+        request.resolve = () => undefined
+        reject(new DOMException('Aborted', 'AbortError'))
+      }
+      signal?.addEventListener('abort', abort, { once: true })
+      pending.set(requestId, {
+        resolve,
+        abort: () => signal?.removeEventListener('abort', abort),
+        revision: baseRevision,
+        startedAt: performance.now(),
+        timeout: watchForStall(),
+        population: beginFigPopulation(graph)
       })
-    },
+      post(request(requestId, baseRevision))
+    })
+  }
+  return {
+    populate: (pageId, signal) =>
+      load(
+        (requestId, baseRevision) => ({ type: 'populate', requestId, baseRevision, pageId }),
+        signal
+      ),
+    loadComponents: (componentIds, signal) =>
+      load(
+        (requestId, baseRevision) => ({
+          type: 'load-components',
+          requestId,
+          baseRevision,
+          componentIds: [...componentIds]
+        }),
+        signal
+      ),
     stop() {
       if (disposed) return
       disposed = true

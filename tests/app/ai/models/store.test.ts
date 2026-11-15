@@ -114,3 +114,72 @@ describe('parseAIModelSettings', () => {
     })
   })
 })
+
+describe('parseAIModelSettings for coding agents', () => {
+  const acp = {
+    ...connection,
+    id: 'connection-acp',
+    providerID: 'acp:claude-code'
+  } satisfies AIModelConnection
+  const pi = { ...connection, id: 'connection-pi', providerID: 'harness:pi' }
+  const agentProfiles = [
+    { ...profile, id: 'model-acp', connectionId: 'connection-acp', modelID: 'sonnet' },
+    {
+      ...profile,
+      id: 'model-acp-vision',
+      connectionId: 'connection-acp',
+      capabilities: ['tools', 'vision']
+    },
+    { ...profile, id: 'model-pi', connectionId: 'connection-pi' }
+  ]
+
+  test('keeps the roles an agent holds, with the model it was saved with', () => {
+    const stored = settings({
+      connections: [connection, acp, pi],
+      models: [profile, ...agentProfiles],
+      assignments: {
+        design: 'model-acp',
+        review: 'model-pi',
+        fast: 'design',
+        vision: 'model-acp-vision'
+      }
+    })
+    const parsed = parseAIModelSettings(stored)
+    expect(parsed?.assignments).toMatchObject(stored.assignments)
+    expect(parsed?.models.find((candidate) => candidate.id === 'model-acp')?.modelID).toBe('sonnet')
+    expect(parseAIModelSettings(parsed)?.assignments).toMatchObject(stored.assignments)
+  })
+
+  test('gives an agent without image input no Vision role', () => {
+    const parsed = parseAIModelSettings(
+      settings({
+        connections: [connection, acp],
+        models: [profile, ...agentProfiles.slice(0, 1)],
+        assignments: { design: 'model-a', review: null, fast: null, vision: 'model-acp' }
+      })
+    )
+    expect(parsed?.assignments.vision).toBeNull()
+  })
+
+  test('gives agent profiles tools, and only an ACP agent image input', () => {
+    const parsed = parseAIModelSettings(
+      settings({
+        connections: [connection, acp, pi],
+        models: [
+          profile,
+          { ...agentProfiles[0], capabilities: ['vision'] },
+          { ...agentProfiles[2], capabilities: [] },
+          { ...agentProfiles[2], id: 'model-pi-vision', capabilities: ['tools', 'vision'] }
+        ],
+        assignments: { design: 'model-a', review: null, fast: null, vision: 'model-pi-vision' }
+      })
+    )
+    expect(parsed?.models.map((candidate) => candidate.capabilities)).toEqual([
+      ['tools'],
+      ['tools', 'vision'],
+      ['tools'],
+      ['tools']
+    ])
+    expect(parsed?.assignments.vision).toBeNull()
+  })
+})

@@ -27,7 +27,10 @@ describe('FIG population deltas', () => {
     source.updateNode(label.id, { width: 120 })
     journal.stop()
     try {
-      applyFigPopulationDelta(target, buildFigPopulationDelta(source, journal, [page.id]))
+      applyFigPopulationDelta(
+        target,
+        structuredClone(buildFigPopulationDelta(source, journal, [page.id]))
+      )
       await Promise.resolve()
       expect(target.getNode(clone.id)?.text).toBe('Cadastro')
       // Ordinary component edits still synchronize after the population scope exits.
@@ -72,7 +75,7 @@ describe('FIG population deltas', () => {
     const component = source.createNode('COMPONENT', page.id, { name: 'Component' })
     const created = source.createNode('INSTANCE', page.id, { componentId: component.id })
     journal.stop()
-    const delta = buildFigPopulationDelta(source, journal, [page.id])
+    const delta = structuredClone(buildFigPopulationDelta(source, journal, [page.id]))
     const events: string[] = []
     target.onNodeEvents({
       created: (node) => events.push(`created:${node.id}`),

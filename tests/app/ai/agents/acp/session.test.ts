@@ -5,6 +5,8 @@ import {
   type InitializeResponse,
   type NewSessionRequest,
   type ResumeSessionRequest,
+  type SessionConfigOption,
+  type SetSessionConfigOptionRequest,
   type ResumeSessionResponse
 } from '@agentclientprotocol/sdk/unstable'
 
@@ -12,12 +14,16 @@ import { ACP_AGENTS } from '@open-pencil/core/constants'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import {
+  AgentModelChoiceError,
   AgentSessionResumeError,
   AgentSessionRetryError,
   openAgentSession,
   resumingAgent
 } from '@/app/ai/agents/acp/session'
 import { OWN_TOOLS_ALLOWED } from '@/app/ai/agents/acp/tools'
+
+import { MODEL_OPTIONS } from '#tests/helpers/ai/fake-acp-agent'
+
 const resuming = expectDefined(
   ACP_AGENTS.find((agent) => agent.resumesSessions),
   'an agent that resumes sessions'
@@ -43,17 +49,29 @@ const request = { cwd: '/workspace', mcpServers: [], meta: OWN_TOOLS_ALLOWED }
 
 interface FakeConnectionOptions {
   resumeError?: unknown
+  /** The options a new session offers; none when absent. */
+  configOptions?: SessionConfigOption[]
 }
 
-function connection({ resumeError }: FakeConnectionOptions = {}) {
+function connection({ resumeError, configOptions }: FakeConnectionOptions = {}) {
   const created: NewSessionRequest[] = []
   const resumed: ResumeSessionRequest[] = []
+  const configured: SetSessionConfigOptionRequest[] = []
   return {
     created,
     resumed,
+    configured,
+    async setConfigOption(params: SetSessionConfigOptionRequest) {
+      configured.push(params)
+      return { configOptions: [] }
+    },
     async newSession(params: NewSessionRequest) {
       created.push(params)
-      return { sessionId: 'new-session', models: { currentModelId: 'opus', availableModels: [] } }
+      return {
+        sessionId: 'new-session',
+        models: { currentModelId: 'opus', availableModels: [] },
+        configOptions
+      }
     },
     // It names its model the legacy way when it starts, and among its options when it resumes.
     async resumeSession(params: ResumeSessionRequest): Promise<ResumeSessionResponse> {
@@ -99,6 +117,43 @@ test('a saved session resumes with the same folder and OpenPencil tools', async 
     { sessionId: 'saved', cwd: '/workspace', mcpServers: [], _meta: OWN_TOOLS_ALLOWED }
   ])
   expect(fake.created).toEqual([])
+})
+
+test('a new session is put on the profile’s model through the agent’s model option', async () => {
+  const fake = connection({ configOptions: MODEL_OPTIONS })
+  const opened = await openAgentSession(fake, claude, resumes, {
+    ...request,
+    model: 'opus',
+    resume: null
+  })
+  expect(fake.configured).toEqual([{ sessionId: 'new-session', configId: 'model', value: 'opus' }])
+  expect(opened).toMatchObject({ sessionId: 'new-session', model: 'opus' })
+})
+
+test('a session keeps the agent’s own model when the profile names none or the same', async () => {
+  const fake = connection({ configOptions: MODEL_OPTIONS })
+  await openAgentSession(fake, claude, resumes, { ...request, resume: null })
+  await openAgentSession(fake, claude, resumes, { ...request, model: 'default', resume: null })
+  expect(fake.configured).toEqual([])
+})
+
+test('a saved session is put on the profile’s model again, since resuming resets it', async () => {
+  const fake = connection()
+  const opened = await openAgentSession(fake, resuming, resumes, {
+    ...request,
+    model: 'opus',
+    resume: 'saved'
+  })
+  expect(fake.configured).toEqual([{ sessionId: 'saved', configId: 'model', value: 'opus' }])
+  expect(opened.model).toBe('opus')
+})
+
+test('an agent that offers no choice of model refuses a profile that names one', async () => {
+  const fake = connection()
+  await expect(
+    openAgentSession(fake, claude, resumes, { ...request, model: 'opus', resume: null })
+  ).rejects.toBeInstanceOf(AgentModelChoiceError)
+  expect(fake.configured).toEqual([])
 })
 
 test('a saved session never silently becomes a new one', async () => {

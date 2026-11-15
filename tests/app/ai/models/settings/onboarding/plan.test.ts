@@ -38,14 +38,14 @@ describe('planOnboarding', () => {
     expect(plan.connections).toEqual(['acp:codex'])
   })
 
-  test('runs design on Pi and takes the other roles from an API account', () => {
+  test('runs design and review on Pi and takes vision from an API account', () => {
     const plan = planOnboarding(
       answers({ goals: ['design', 'vision'], access: ['harness:pi', 'openai'] }),
       desktop
     )
     expect(plan.design).toMatchObject({ providerID: 'harness:pi', modelID: '' })
     expect(plan.vision).toMatchObject({ providerID: 'openai' })
-    expect(plan.review).not.toBe('design')
+    expect(plan.review).toBe('design')
     expect(plan.connections).toEqual(['harness:pi', 'openai'])
   })
 
@@ -274,19 +274,34 @@ describe('planOnboarding for review and fast work', () => {
     expect(planOnboarding(answers({ access: ['google'] }), desktop).fast).toBe('design')
   })
 
-  test('uses the API vision model for review and fast work behind an agent', () => {
+  test('lets review and fast work follow an agent design model', () => {
     const plan = planOnboarding(
       answers({ goals: ['design', 'vision'], access: ['acp:codex', 'openai'] }),
       desktop
     )
     expect(plan.vision).toMatchObject({ providerID: 'openai', modelID: defaultModel('openai') })
-    expect(plan.review).toMatchObject({ providerID: 'openai', modelID: defaultModel('openai') })
-    expect(plan.fast).toMatchObject({ providerID: 'openai' })
-    expect(isFastToolModel('openai', plannedModelID(plan.fast))).toBe(true)
+    expect(plan.review).toBe('design')
+    expect(plan.fast).toBe('design')
     expect(planOnboarding(answers({ access: ['acp:codex'] }), desktop)).toMatchObject({
-      review: null,
-      fast: null
+      review: 'design',
+      fast: 'design'
     })
+  })
+
+  test('keeps a configured agent for review and fast work', () => {
+    const claude = {
+      providerID: 'acp:claude-code' as const,
+      modelID: '',
+      name: 'Claude Code',
+      capabilities: ['tools' as const],
+      profileId: 'model-claude' as const
+    }
+    const plan = planOnboarding(answers({ access: ['openrouter'] }), {
+      ...desktop,
+      current: { configured: true, design: null, vision: null, review: claude, fast: claude }
+    })
+    expect(plan.review).toBe(claude)
+    expect(plan.fast).toBe(claude)
   })
 
   test('keeps configured review and fast choices, including none', () => {
@@ -305,9 +320,11 @@ describe('roleOptions', () => {
     desktop
   )
 
-  test('offers an agent only for the design role', () => {
-    expect(roleOptions('design', plan, []).map(roleChoiceKey)).toContain('acp:claude-code::')
-    expect(roleOptions('review', plan, []).map(roleChoiceKey)).not.toContain('acp:claude-code::')
+  test('offers an agent for every role that does not need image input', () => {
+    for (const role of ['design', 'review', 'fast'] as const) {
+      expect(roleOptions(role, plan, []).map(roleChoiceKey)).toContain('acp:claude-code::')
+    }
+    expect(roleOptions('vision', plan, []).map(roleChoiceKey)).not.toContain('acp:claude-code::')
   })
 
   test('offers only image-capable models for vision and none instead of an agent design', () => {

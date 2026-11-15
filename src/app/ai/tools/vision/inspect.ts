@@ -5,7 +5,7 @@ import * as v from 'valibot'
 import { computeContentBounds } from '@open-pencil/core/io/formats/raster'
 
 import { createAIModelRuntime } from '@/app/ai/models'
-import { runtimeReasoningSettings } from '@/app/ai/models/reasoning/settings'
+import { answersQuestions, askModel } from '@/app/ai/models/ask'
 import { runPageId } from '@/app/ai/reply/run'
 import type { VisionModelDependencies } from '@/app/ai/tools/vision/runtime'
 import type { EditorStore } from '@/app/editor/active-store'
@@ -47,7 +47,7 @@ export async function inspectRenderedDesign(
   }
 ): Promise<VisualInspectionResult | { error: string }> {
   const runtime = await dependencies.createRuntime('vision')
-  if (runtime?.kind !== 'direct') {
+  if (!runtime || !answersQuestions(runtime)) {
     return { error: 'Configure a vision-capable model in Settings to inspect rendered designs.' }
   }
 
@@ -69,28 +69,20 @@ export async function inspectRenderedDesign(
   const image = await store.renderExportImage(nodeIds, scale, 'PNG', pageId)
   if (!image) return { error: 'Could not render the design for visual inspection.' }
 
-  const result = await dependencies.inspect({
-    model: runtime.model,
-    maxOutputTokens: Math.min(runtime.role.profile.maxOutputTokens, MAX_VISION_OUTPUT_TOKENS),
-    ...runtimeReasoningSettings(runtime),
-    messages: [
-      {
-        role: 'user',
-        content: [
-          {
-            type: 'text',
-            text:
-              request.question?.trim() ||
-              'Review this rendered design. Concisely identify visual hierarchy, alignment, spacing, clipping, contrast, and rendering problems. Return actionable findings only.'
-          },
-          { type: 'file', mediaType: 'image/png', data: image }
-        ]
-      }
-    ]
-  })
+  const analysis = await askModel(
+    runtime,
+    {
+      text:
+        request.question?.trim() ||
+        'Review this rendered design. Concisely identify visual hierarchy, alignment, spacing, clipping, contrast, and rendering problems. Return actionable findings only.',
+      images: [{ mediaType: 'image/png', data: image }],
+      maxOutputTokens: MAX_VISION_OUTPUT_TOKENS
+    },
+    { generate: dependencies.inspect, askAgent: dependencies.askAgent }
+  )
 
   return {
-    analysis: result.text,
+    analysis,
     inspectedNodeIds: nodeIds,
     image: {
       width: Math.ceil(width * scale),
