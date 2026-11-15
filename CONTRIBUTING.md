@@ -81,6 +81,7 @@ A stack is a chain of pull requests: the bottom one targets `master`, each one a
 
 ### Maintaining pull requests
 
+- CodeRabbit reviews every push to a pull request that is ready for review and skips drafts. Reply in its threads with the fixing commit rather than resolving them yourself, since it resolves its own; ask it for a review (`@coderabbitai review`) only on a pull request it skipped, such as one it reached while rate limited.
 - Runs for a pull request from a fork wait as `action_required` after every push. Approve one run per workflow (`gh api -X POST repos/open-pencil/open-pencil/actions/runs/<id>/approve`): approving two runs of one workflow for the same head makes one cancel the other, and the cancelled required check blocks the merge until it is rerun. A run still `queued` long after newer runs started is orphaned; cancel it and rerun it. Before calling a fork's checks green, check that `CI result` is in the rollup at all.
 - GitHub refuses maintainer pushes to a fork owned by an organization, even when `maintainerCanModify` reports `true`; check `gh api repos/<owner>/<repo> --jq .owner.type` before planning follow-up commits there.
 - The merge queue squashes a pull request and adds a `Co-authored-by` trailer for every commit author. A commit authored by an AI identity, or carrying an AI tool's trailer, therefore fails the queue's Commit messages job though the pull request's own run passed; check `gh pr view <n> --json commits` before enqueuing.

@@ -137,6 +137,10 @@ Follow `packages/docs/development/testing.md` and `tests/AGENTS.md`. Package-loc
 - Request evidence appropriate to the change: engine tests for state contracts, Storybook for isolated component states, browser integration tests for workflows, canvas snapshots for rendering, native tests for platform delivery. One does not prove another.
 - Preserve intentional behavior unless a concrete regression is demonstrated; for example, preferences and native credentials cannot transact together, so documented partial-save outcomes and retryable drafts are not bugs.
 - Keep comments concise and actionable; cite the location and the repository rule or existing analogue. Independently assess automated suggestions; never bulk-apply or bulk-resolve them to make a bot green.
+- Before reporting a pull request's state or calling it ready, read every CodeRabbit comment, its inline threads, review bodies, outside-diff findings, and earlier rounds included. A ready-to-merge answer covers CI, conflicts, open threads, and related pull requests, and names each pull request by its link.
+- Look for open and recently merged pull requests and issues that overlap a change, by what they do rather than one keyword; a change that duplicates or is made obsolete by another says so before any line review.
+- Check behaviour meant to match Figma against live Figma (`packages/core/AGENTS.md`, Figma API), not the author's description; check a change on hot paths against a `master` baseline on a realistic document, and an editing change for undo, redo, and the document's edited state.
+- Fix what a change touches in the same pull request; that a problem predates it is no reason to split it off. Keep related work in as few pull requests as review allows.
 
 ## Maintaining these guides
 
