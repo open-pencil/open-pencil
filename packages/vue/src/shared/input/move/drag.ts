@@ -359,9 +359,19 @@ function isFlowClick(d: DragMove, flows: FlowDrag[], slots: number[]) {
 }
 
 function deselectClicked(d: DragMove, editor: Editor) {
-  if (d.clickDeselectsId) {
+  if (d.clickDeselectsId && editor.state.selectedIds.has(d.clickDeselectsId)) {
     editor.select([d.clickDeselectsId], true)
   }
+}
+
+function discardDuplicates(d: DragMove, editor: Editor) {
+  const previousSelection = d.duplicatedPreviousSelection ?? new Set<string>()
+  for (const id of [...d.originals.keys()].toReversed()) {
+    editor.graph.deleteNode(id)
+  }
+  editor.select([...previousSelection].filter((id) => id !== d.clickDeselectsId))
+  editor.requestRender()
+  editor.setDropTarget(null)
 }
 
 export function handleMoveUp(d: DragMove, editor: Editor) {
@@ -406,6 +416,10 @@ export function handleMoveUp(d: DragMove, editor: Editor) {
 
   if (indicator) {
     if (getMoveDistance(d) < AUTO_LAYOUT_REORDER_CLICK_SLOP) {
+      if (d.duplicated) {
+        discardDuplicates(d, editor)
+        return
+      }
       editor.setDropTarget(null)
       deselectClicked(d, editor)
       return
@@ -429,11 +443,7 @@ export function handleMoveUp(d: DragMove, editor: Editor) {
     })
 
   if (d.duplicated && !moved) {
-    const previousSelection = d.duplicatedPreviousSelection ?? new Set<string>()
-    for (const id of [...d.originals.keys()].toReversed()) editor.graph.deleteNode(id)
-    editor.select([...previousSelection].filter((id) => id !== d.clickDeselectsId))
-    editor.requestRender()
-    editor.setDropTarget(null)
+    discardDuplicates(d, editor)
     return
   }
 

@@ -130,6 +130,43 @@ describe('Shift on a selected layer, as in Figma', () => {
     expect([...editor.state.selectedIds]).toEqual([other.id])
   })
 
+  test('a click whose layer Escape deselected while pressed leaves it deselected', () => {
+    const { rect, other, shiftPress } = setup()
+    editor.select([rect.id, other.id])
+    const drag = shiftPress(rect, [350, 350])
+    if (drag?.type !== 'move') {
+      throw new Error('Expected a move drag')
+    }
+    editor.select([])
+    handleMoveUp(drag, editor)
+    expect(editor.state.selectedIds.size).toBe(0)
+  })
+
+  test('with Alt, a short jitter over an auto layout frame leaves no copy', () => {
+    const { rect, other, node, page, childIds, shiftPress } = setup()
+    const row = node('FRAME', page, {
+      x: 250,
+      y: 250,
+      layoutMode: 'HORIZONTAL',
+      primaryAxisSizing: 'HUG',
+      counterAxisSizing: 'HUG',
+      itemSpacing: 10
+    })
+    const child = node('RECTANGLE', row.id, { width: 200, height: 200, fills: [SOLID_FILL] })
+    editor.runLayoutForNode(row.id)
+    editor.select([rect.id, other.id])
+    const drag = shiftPress(rect, [350, 350], { altKey: true })
+    if (drag?.type !== 'move') {
+      throw new Error('Expected a move drag')
+    }
+    handleMoveMove(drag, 351, 350, 360, 350, editor, { shiftKey: true })
+    expect(editor.state.layoutInsertIndicator).not.toBeNull()
+    handleMoveUp(drag, editor)
+    expect(childIds(page)).toEqual([rect.id, other.id, row.id])
+    expect(childIds(row.id)).toEqual([child.id])
+    expect([...editor.state.selectedIds]).toEqual([other.id])
+  })
+
   test('a drag on a selected nested frame moves the frame, not the layer the press lands on', () => {
     const harness = setup()
     const { inner, content } = nestedFrame(harness)
