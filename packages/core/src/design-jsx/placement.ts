@@ -56,10 +56,17 @@ export function resolveRenderPlacement(
   }
 }
 
+/** Undo a render whose layer to replace changed while it rendered, keeping that layer. */
+function refuseReplacement(graph: SceneGraph, results: RenderResult[], reason: string): never {
+  for (const result of results) graph.deleteNode(result.id)
+  throw new Error(`The layer to replace ${reason} while the JSX rendered`)
+}
+
 /**
- * Where the roots go now: rendering can wait for fonts while other edits move or delete the
- * layer it replaces, so its place is read again once the roots exist. A render whose layer to
- * replace is gone is undone and throws.
+ * Where the roots go now: rendering can wait for fonts while other edits move siblings, so the
+ * place of the layer it replaces is read again once the roots exist, with the roots moved out of
+ * the way so they go in as one block. A render whose layer to replace was deleted or moved to
+ * another parent, or whose roots were deleted, is undone and throws, and the layer stays.
  */
 function currentPlacement(
   graph: SceneGraph,
@@ -69,11 +76,14 @@ function currentPlacement(
   if (!placement.replaceId) return placement
   const replaced = graph.getNode(placement.replaceId)
   const parent = replaced?.parentId ? graph.getNode(replaced.parentId) : undefined
-  if (!replaced || !parent) {
-    for (const result of results) graph.deleteNode(result.id)
-    throw new Error('The layer to replace was deleted while the JSX rendered')
+  if (!replaced || !parent) refuseReplacement(graph, results, 'was deleted')
+  // The roots are placed in its parent's coordinates, captured before rendering.
+  if (parent.id !== placement.parentId) refuseReplacement(graph, results, 'moved')
+  if (results.some((result) => !graph.getNode(result.id))) {
+    refuseReplacement(graph, results, 'lost its replacement')
   }
-  return { ...placement, parentId: parent.id, insertIndex: parent.childIds.indexOf(replaced.id) }
+  for (const result of results) graph.insertChildAt(result.id, parent.id, parent.childIds.length)
+  return { ...placement, insertIndex: parent.childIds.indexOf(replaced.id) }
 }
 
 /** Complete hierarchy changes before layout so Fill/Hug and sibling positions use the final order. */
