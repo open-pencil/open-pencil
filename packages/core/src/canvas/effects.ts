@@ -141,19 +141,18 @@ export function applyClippedBlur(
 /**
  * Draws a shape or boolean with its own effects, as Figma layers them: shadows and background
  * blur behind, inner shadows over the fills and under the strokes (`paint` calls `inner` between
- * them), the texture roughening that content, and noise grains over it.
+ * them), the texture roughening that content, and noise grains over it. `shape` is the outline
+ * a clipped texture keeps to, where the node's own falls short.
  */
 export function renderLeafWithEffects(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
   graph: SceneGraph,
-  paint: (inner: () => void) => void
+  paint: (inner: () => void) => void,
+  shape?: Path | null
 ): void {
   r.renderEffects(canvas, node, graph, 'behind')
-  withNoiseEffects(r, canvas, node, graph, () =>
-    withLeafTexture(r, canvas, node, () =>
-      paint(() => r.renderEffects(canvas, node, graph, 'inner'))
-    )
-  )
+  const content = () => paint(() => r.renderEffects(canvas, node, graph, 'inner'))
+  withNoiseEffects(r, canvas, node, graph, () => withLeafTexture(r, canvas, node, content, shape))
 }

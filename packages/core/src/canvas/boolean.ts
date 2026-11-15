@@ -21,6 +21,7 @@ import {
 } from './strokes/draw'
 import { makeLineSegmentPath, makeLineStrokeOutline } from './strokes/line'
 import { textNodeToOutlinePath } from './text/outlines/glyphs'
+import { visibleTexture } from './texture'
 
 const BOOLEAN_PATH_OP: Record<
   NonNullable<SceneNode['booleanOperation']>,
@@ -560,7 +561,20 @@ export function renderBooleanOperation(
   node: SceneNode,
   graph: SceneGraph
 ): void {
-  renderLeafWithEffects(r, canvas, node, graph, (inner) =>
-    paintBooleanOperation(r, canvas, node, graph, inner)
-  )
+  // A clipped texture keeps to the combined path, not the boolean's box with its holes.
+  const shape = visibleTexture(node)?.texture?.clipToShape
+    ? makeBooleanOperationPath(r, node, graph)
+    : null
+  try {
+    renderLeafWithEffects(
+      r,
+      canvas,
+      node,
+      graph,
+      (inner) => paintBooleanOperation(r, canvas, node, graph, inner),
+      shape
+    )
+  } finally {
+    shape?.delete()
+  }
 }

@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { noise, texture } from '@open-pencil/design-jsx'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { RenderChunkIndex } from '#core/canvas/renderer/chunks'
@@ -38,23 +39,15 @@ describe('render chunk spatial index', () => {
     index.dispose()
   })
 
-  test('keeps a textured frame whole, so its texture reaches every child', () => {
+  // A texture roughens, and noise grains, what the frame and its children draw together.
+  test.each([
+    ['textured', texture({ radius: 4, noiseSize: 4 })],
+    ['noisy', noise({ color: '#000000', density: 1 })]
+  ])('keeps a %s frame whole, so its grain reaches every child', (_, effect) => {
     const { graph, pageId } = graphWithNodes(1_000)
     const frame = graph.getChildren(pageId)[0]
     if (!frame) throw new Error('Expected frame')
-    graph.updateNode(frame.id, {
-      effects: [
-        {
-          type: 'TEXTURE',
-          color: { r: 0, g: 0, b: 0, a: 1 },
-          offset: { x: 0, y: 0 },
-          radius: 4,
-          spread: 0,
-          visible: true,
-          texture: { noiseSize: { x: 4, y: 4 }, clipToShape: false }
-        }
-      ]
-    })
+    graph.updateNode(frame.id, { effects: [effect] })
     const { index, stats } = RenderChunkIndex.build(graph, pageId)
     expect(stats.chunksBuilt).toBe(1)
     index.dispose()

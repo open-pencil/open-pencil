@@ -77,8 +77,10 @@ export function nodeRequiresAtomicChunk(graph: SceneGraph, node: SceneNode): boo
           effect.type === 'FOREGROUND_BLUR' ||
           effect.type === 'BACKGROUND_BLUR' ||
           effect.type === 'GLASS' ||
-          // A texture roughens what the layer and its children draw together.
-          effect.type === 'TEXTURE')
+          // A texture roughens what the layer and its children draw together, and noise grains
+          // only what they cover together.
+          effect.type === 'TEXTURE' ||
+          effect.type === 'NOISE')
     )
   const hasMasks = node.childIds.some((childId) => {
     const child = graph.getNode(childId)

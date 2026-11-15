@@ -4,7 +4,7 @@ import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { texture } from '@open-pencil/design-jsx'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 const ck = await getCanvasKit()
@@ -69,6 +69,54 @@ describe('texture effects', () => {
     const clipped = roughened(true)
     expect(clipped.outside).toBeLessThan(40)
     expect(clipped.missing).toBeLessThan(40)
+  })
+
+  test('keep a clipped texture out of a boolean’s hole', () => {
+    const blue: Fill = {
+      type: 'SOLID',
+      color: { r: 0, g: 0, b: 1, a: 1 },
+      opacity: 1,
+      visible: true
+    }
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    const host = graph.createNode('FRAME', page, {
+      width: 160,
+      height: 160,
+      fills: [{ ...blue, color: { r: 1, g: 1, b: 1, a: 1 } }]
+    })
+    const ring = graph.createNode('BOOLEAN_OPERATION', host.id, {
+      x: 20,
+      y: 20,
+      width: 120,
+      height: 120,
+      booleanOperation: 'SUBTRACT',
+      fills: [blue],
+      effects: [texture({ noiseSize: 2, radius: 6, clipToShape: true })]
+    })
+    graph.createNode('RECTANGLE', ring.id, { width: 120, height: 120, fills: [blue] })
+    graph.createNode('RECTANGLE', ring.id, { x: 30, y: 30, width: 60, height: 60, fills: [blue] })
+    const png = renderNodesToImage(ck, renderer, graph, page, [host.id], {
+      scale: 1,
+      format: 'PNG'
+    })
+    const image = expectDefined(ck.MakeImageFromEncoded(expectDefined(png)))
+    const pixels = expectDefined(
+      image.readPixels(0, 0, {
+        width: 160,
+        height: 160,
+        colorType: ck.ColorType.RGBA_8888,
+        alphaType: ck.AlphaType.Unpremul,
+        colorSpace: ck.ColorSpace.SRGB
+      })
+    )
+    image.delete()
+    // The hole spans 50 to 110 on both axes; the displaced ring must stay out of it.
+    let inHole = 0
+    for (let y = 50; y < 110; y++) {
+      for (let x = 50; x < 110; x++) inHole += 1 - pixels[(y * 160 + x) * 4] / 255
+    }
+    expect(inHole).toBeLessThan(20)
   })
 
   test('leave the layer’s own drop shadow whole when clipped to the shape', () => {
