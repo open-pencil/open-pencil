@@ -9,7 +9,8 @@ import { strokeSideWeights } from '@open-pencil/scene-graph/geometry'
 import { addStrokeRunToPath, strokeRuns } from '@open-pencil/scene-graph/paths'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import { fillGeometryPath, unitedPath } from '#core/canvas/boolean'
+import { fillGeometryPath } from '#core/canvas/boolean'
+import { unitedPath } from '#core/canvas/paths/union'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import {
   configureStrokePaint,
