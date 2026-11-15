@@ -19,7 +19,8 @@ const pin: CreateCommentThreadInput = {
   offsetY: 8,
   x: 104,
   y: 208,
-  body: 'Tighten the heading'
+  body: 'Tighten the heading',
+  mentions: []
 }
 
 async function seedComments() {

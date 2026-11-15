@@ -1,24 +1,46 @@
 import {
   MAX_COMMENT_THREADS_PER_DOCUMENT,
   MAX_COMMENTS_PER_THREAD,
-  type CloudComment,
   type CloudCommentThread,
   type CommentAccess,
-  type CommentAnchor,
   type CommentThreads,
   type CreateCommentInput,
   type CreateCommentThreadInput,
   type ImportCommentThreadsInput,
+  type NotificationSettings,
   type UpdateCommentInput,
   type UpdateCommentThreadInput
 } from '#cloud/contract'
-import { userIdText, type CloudDatabase } from '#cloud/server/db'
+import type { CloudDatabase } from '#cloud/server/db'
 import { resolveDocumentCommentAccess } from '#cloud/server/documents/access'
 import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/documents/errors'
 import { logCloud, loggedError } from '#cloud/server/logging'
 import type { DocumentSharingService } from '#cloud/server/sharing'
 import { chunk, groupBy } from 'es-toolkit'
 import type { Kysely, Transaction } from 'kysely'
+
+import {
+  commentPeople,
+  notifyComment,
+  recordMentions,
+  readNotificationSettings,
+  threadParticipants,
+  writeNotificationSettings,
+  type CommentNotifier
+} from './notify'
+import {
+  anchorValues,
+  comments,
+  findThread,
+  lockDocument,
+  markRead,
+  readsOf,
+  resolutionChange,
+  threadOf,
+  threads,
+  type ThreadRow,
+  type Source
+} from './rows'
 
 /** A document holds as many threads, or a thread as many comments, as it may. */
 export class CommentLimitError extends Error {
@@ -40,103 +62,16 @@ export type CommentActor = CommentAccess & {
   userId: string | null
 }
 
+/** A request's input as callers may write it: naming nobody when it lists no mentions. */
+type Mentioning<Input extends { mentions: string[] }> = Omit<Input, 'mentions'> & {
+  mentions?: readonly string[]
+}
+type NewThread = Mentioning<CreateCommentThreadInput>
+type NewComment = Mentioning<CreateCommentInput>
+type CommentEdit = Mentioning<UpdateCommentInput>
+
 /** Rows one insert writes, within PostgreSQL's parameters per statement. */
 const INSERT_BATCH = 500
-
-type Source = Kysely<CloudDatabase> | Transaction<CloudDatabase>
-
-type ThreadRow = {
-  id: string
-  pageId: string
-  pageName: string | null
-  nodeId: string | null
-  nodeName: string | null
-  offsetX: number | null
-  offsetY: number | null
-  x: number
-  y: number
-  createdBy: string
-  createdAt: Date
-  updatedAt: Date
-  resolvedAt: Date | null
-  resolvedBy: string | null
-}
-
-type CommentRow = {
-  id: string
-  threadId: string
-  authorId: string | null
-  authorName: string | null
-  importedAuthorName: string | null
-  agent: string | null
-  body: string
-  createdAt: Date
-  editedAt: Date | null
-}
-
-function commentOf(row: CommentRow): CloudComment {
-  return {
-    id: row.id,
-    author:
-      row.authorId === null
-        ? { kind: 'imported', name: row.importedAuthorName ?? '' }
-        : { kind: 'user', id: row.authorId, name: row.authorName },
-    agent: row.agent,
-    body: row.body,
-    createdAt: row.createdAt.toISOString(),
-    editedAt: row.editedAt?.toISOString() ?? null
-  }
-}
-
-function threadOf(row: ThreadRow, comments: readonly CommentRow[]): CloudCommentThread {
-  return {
-    id: row.id,
-    pageId: row.pageId,
-    pageName: row.pageName,
-    nodeId: row.nodeId,
-    nodeName: row.nodeName,
-    offsetX: row.offsetX,
-    offsetY: row.offsetY,
-    x: row.x,
-    y: row.y,
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
-    resolvedAt: row.resolvedAt?.toISOString() ?? null,
-    resolvedBy: row.resolvedBy,
-    comments: comments.map(commentOf)
-  }
-}
-
-function anchorValues(anchor: CommentAnchor) {
-  return {
-    pageId: anchor.pageId,
-    pageName: anchor.pageName,
-    nodeId: anchor.nodeId,
-    nodeName: anchor.nodeName,
-    offsetX: anchor.offsetX,
-    offsetY: anchor.offsetY,
-    x: anchor.x,
-    y: anchor.y
-  }
-}
-
-/** Holds the document's row, so one writer at a time counts and adds its threads. */
-async function lockDocument(transaction: Transaction<CloudDatabase>, documentId: string) {
-  await transaction
-    .selectFrom('document')
-    .select('id')
-    .where('id', '=', documentId)
-    .forUpdate()
-    .executeTakeFirstOrThrow()
-}
-
-/** What resolving or reopening sets, or nothing when the thread already is as asked. */
-function resolutionChange(resolved: boolean | undefined, isResolved: boolean, userId: string) {
-  if (resolved === undefined || resolved === isResolved) return {}
-  return resolved
-    ? { resolvedAt: new Date(), resolvedBy: userId }
-    : { resolvedAt: null, resolvedBy: null }
-}
 
 function requireCommenter(actor: CommentActor): string {
   if (!actor.canComment || actor.userId === null) throw new DocumentForbiddenError()
@@ -155,8 +90,43 @@ export function createCommentService(
     sharing?: Pick<DocumentSharingService, 'resolveShare'>
     /** Called once a thread changes, so the document's live rooms fetch it again. */
     onCommentsChanged?: (documentId: string, threadId: string) => void
+    /** Emails the people a comment concerns; without it nobody hears by email. */
+    notifier?: CommentNotifier
   } = {}
 ) {
+  /**
+   * Records whom a comment names and emails them, and, for a reply, the thread's other writers
+   * who asked to hear about everything.
+   */
+  async function tell(
+    transaction: Transaction<CloudDatabase>,
+    actor: CommentActor,
+    comment: { commentId: string; threadId: string; body: string },
+    mentions: readonly string[],
+    { reply = false } = {}
+  ) {
+    const authorId = requireCommenter(actor)
+    const mentioned = await recordMentions(transaction, {
+      documentId: actor.documentId,
+      commentId: comment.commentId,
+      authorId,
+      mentions
+    })
+    if (!options.notifier) return
+    const participants = reply
+      ? await threadParticipants(transaction, actor.documentId, comment.threadId, authorId)
+      : []
+    await notifyComment(transaction, options.notifier, {
+      id: comment.commentId,
+      documentId: actor.documentId,
+      threadId: comment.threadId,
+      authorId,
+      body: comment.body,
+      mentioned,
+      participants
+    })
+  }
+
   function announce(documentId: string, threadId: string): void {
     try {
       options.onCommentsChanged?.(documentId, threadId)
@@ -165,66 +135,22 @@ export function createCommentService(
     }
   }
 
-  function threads(source: Source) {
-    return source
-      .selectFrom('commentThread')
-      .select([
-        'commentThread.id',
-        'commentThread.pageId',
-        'commentThread.pageName',
-        'commentThread.nodeId',
-        'commentThread.nodeName',
-        'commentThread.offsetX',
-        'commentThread.offsetY',
-        'commentThread.x',
-        'commentThread.y',
-        'commentThread.createdBy',
-        'commentThread.createdAt',
-        'commentThread.updatedAt',
-        'commentThread.resolvedAt',
-        'commentThread.resolvedBy'
-      ])
+  async function readThread(
+    source: Source,
+    row: ThreadRow,
+    viewer: string | null
+  ): Promise<CloudCommentThread> {
+    const reads = await readsOf(source, viewer, [row.id])
+    return threadOf(row, await comments(source, [row.id]), viewer, reads.get(row.id))
   }
 
-  function comments(source: Source, threadIds: readonly string[]) {
-    return source
-      .selectFrom('comment')
-      .leftJoin('user', (join) => join.onRef(userIdText, '=', 'comment.authorId'))
-      .select([
-        'comment.id',
-        'comment.threadId',
-        'comment.authorId',
-        'user.name as authorName',
-        'comment.importedAuthorName',
-        'comment.agent',
-        'comment.body',
-        'comment.createdAt',
-        'comment.editedAt'
-      ])
-      .where('comment.threadId', 'in', [...threadIds])
-      .orderBy('comment.createdAt')
-      .orderBy('comment.id')
-      .execute()
-  }
-
-  async function findThread(source: Source, documentId: string, threadId: string, lock = false) {
-    let query = threads(source)
-      .where('commentThread.documentId', '=', documentId)
-      .where('commentThread.id', '=', threadId)
-    if (lock) query = query.forUpdate()
-    const row = await query.executeTakeFirst()
-    if (!row) throw new DocumentNotFoundError()
-    return row
-  }
-
-  async function readThread(source: Source, row: ThreadRow): Promise<CloudCommentThread> {
-    return threadOf(row, await comments(source, [row.id]))
-  }
-
-  /** Marks the thread changed now, and answers it as it is after the change. */
+  /**
+   * Marks the thread changed now, and read by whoever changed it, and answers it as it is after
+   * the change.
+   */
   async function touched(
     transaction: Transaction<CloudDatabase>,
-    documentId: string,
+    actor: CommentActor,
     threadId: string
   ): Promise<CloudCommentThread> {
     await transaction
@@ -232,7 +158,12 @@ export function createCommentService(
       .set({ updatedAt: new Date() })
       .where('id', '=', threadId)
       .execute()
-    return readThread(transaction, await findThread(transaction, documentId, threadId))
+    if (actor.userId !== null) await markRead(transaction, actor.userId, threadId)
+    return readThread(
+      transaction,
+      await findThread(transaction, actor.documentId, threadId),
+      actor.userId
+    )
   }
 
   async function findComment(
@@ -260,18 +191,14 @@ export function createCommentService(
       .orderBy('commentThread.createdAt')
       .orderBy('commentThread.id')
       .execute()
+    const ids = rows.map((row) => row.id)
     const byThread =
-      rows.length > 0
-        ? groupBy(
-            await comments(
-              database,
-              rows.map((row) => row.id)
-            ),
-            (comment) => comment.threadId
-          )
-        : {}
+      rows.length > 0 ? groupBy(await comments(database, ids), (c) => c.threadId) : {}
+    const reads = await readsOf(database, actor.userId, ids)
     return {
-      threads: rows.map((row) => threadOf(row, byThread[row.id] ?? [])),
+      threads: rows.map((row) =>
+        threadOf(row, byThread[row.id] ?? [], actor.userId, reads.get(row.id))
+      ),
       access: { canComment: actor.canComment, canModerate: actor.canModerate }
     }
   }
@@ -307,13 +234,32 @@ export function createCommentService(
     list,
 
     async get(actor: CommentActor, threadId: string): Promise<CloudCommentThread> {
-      return readThread(database, await findThread(database, actor.documentId, threadId))
+      return readThread(
+        database,
+        await findThread(database, actor.documentId, threadId),
+        actor.userId
+      )
     },
 
-    async createThread(
-      actor: CommentActor,
-      input: CreateCommentThreadInput
-    ): Promise<CloudCommentThread> {
+    /** Records that the asker read the thread as it is now; a guest keeps no such record. */
+    async markRead(actor: CommentActor, threadId: string): Promise<void> {
+      if (actor.userId === null) return
+      await findThread(database, actor.documentId, threadId)
+      await markRead(database, actor.userId, threadId)
+    },
+
+    /** Which comments the account hears about by email. */
+    notificationSettings: (userId: string) => readNotificationSettings(database, userId),
+    setNotificationSettings: (userId: string, settings: NotificationSettings) =>
+      writeNotificationSettings(database, userId, settings),
+
+    /** Whom the asker may name in the document's comments. */
+    async people(actor: CommentActor) {
+      requireCommenter(actor)
+      return { people: await commentPeople(database, actor.documentId) }
+    },
+
+    async createThread(actor: CommentActor, input: NewThread): Promise<CloudCommentThread> {
       const userId = requireCommenter(actor)
       const threadId = input.id ?? crypto.randomUUID()
       const thread = await database.transaction().execute(async (transaction) => {
@@ -329,7 +275,11 @@ export function createCommentService(
           if (existing.documentId !== actor.documentId || existing.createdBy !== userId) {
             throw new CommentConflictError()
           }
-          return readThread(transaction, await findThread(transaction, actor.documentId, threadId))
+          return readThread(
+            transaction,
+            await findThread(transaction, actor.documentId, threadId),
+            actor.userId
+          )
         }
         const { count } = await transaction
           .selectFrom('commentThread')
@@ -349,10 +299,11 @@ export function createCommentService(
             updatedAt: now
           })
           .execute()
+        const commentId = crypto.randomUUID()
         await transaction
           .insertInto('comment')
           .values({
-            id: crypto.randomUUID(),
+            id: commentId,
             threadId,
             authorId: userId,
             agent: input.agent ?? null,
@@ -360,7 +311,18 @@ export function createCommentService(
             createdAt: now
           })
           .execute()
-        return readThread(transaction, await findThread(transaction, actor.documentId, threadId))
+        await markRead(transaction, userId, threadId)
+        await tell(
+          transaction,
+          actor,
+          { commentId, threadId, body: input.body },
+          input.mentions ?? []
+        )
+        return readThread(
+          transaction,
+          await findThread(transaction, actor.documentId, threadId),
+          actor.userId
+        )
       })
       announce(actor.documentId, threadId)
       return thread
@@ -442,7 +404,7 @@ export function createCommentService(
           .set({ ...(input.anchor ? anchorValues(input.anchor) : {}), ...resolution })
           .where('id', '=', threadId)
           .execute()
-        return touched(transaction, actor.documentId, threadId)
+        return touched(transaction, actor, threadId)
       })
       announce(actor.documentId, threadId)
       return thread
@@ -461,7 +423,7 @@ export function createCommentService(
     async reply(
       actor: CommentActor,
       threadId: string,
-      input: CreateCommentInput
+      input: NewComment
     ): Promise<CloudCommentThread> {
       const userId = requireCommenter(actor)
       const commentId = input.id ?? crypto.randomUUID()
@@ -476,7 +438,11 @@ export function createCommentService(
           if (existing.threadId !== threadId || existing.authorId !== userId) {
             throw new CommentConflictError()
           }
-          return readThread(transaction, await findThread(transaction, actor.documentId, threadId))
+          return readThread(
+            transaction,
+            await findThread(transaction, actor.documentId, threadId),
+            actor.userId
+          )
         }
         const { count } = await transaction
           .selectFrom('comment')
@@ -494,7 +460,16 @@ export function createCommentService(
             body: input.body
           })
           .execute()
-        return touched(transaction, actor.documentId, threadId)
+        await tell(
+          transaction,
+          actor,
+          { commentId, threadId, body: input.body },
+          input.mentions ?? [],
+          {
+            reply: true
+          }
+        )
+        return touched(transaction, actor, threadId)
       })
       announce(actor.documentId, threadId)
       return thread
@@ -505,7 +480,7 @@ export function createCommentService(
       actor: CommentActor,
       threadId: string,
       commentId: string,
-      input: UpdateCommentInput
+      input: CommentEdit
     ): Promise<CloudCommentThread> {
       const userId = requireCommenter(actor)
       const thread = await database.transaction().execute(async (transaction) => {
@@ -517,7 +492,14 @@ export function createCommentService(
           .set({ body: input.body, editedAt: new Date() })
           .where('id', '=', commentId)
           .execute()
-        return touched(transaction, actor.documentId, threadId)
+        // An edit tells only the people it names that it did not before.
+        await tell(
+          transaction,
+          actor,
+          { commentId, threadId, body: input.body },
+          input.mentions ?? []
+        )
+        return touched(transaction, actor, threadId)
       })
       announce(actor.documentId, threadId)
       return thread
@@ -539,7 +521,7 @@ export function createCommentService(
           return null
         }
         await transaction.deleteFrom('comment').where('id', '=', commentId).execute()
-        return touched(transaction, actor.documentId, threadId)
+        return touched(transaction, actor, threadId)
       })
       announce(actor.documentId, threadId)
       return thread

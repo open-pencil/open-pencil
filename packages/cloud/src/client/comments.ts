@@ -1,7 +1,11 @@
 import {
+  commentPeopleSchema,
   commentThreadResponseSchema,
+  notificationSettingsSchema,
   commentThreadsSchema,
   type CloudCommentThread,
+  type CommentPerson,
+  type NotificationSettings,
   type CommentThreads,
   type CreateCommentInput,
   type CreateCommentThreadInput,
@@ -35,6 +39,8 @@ export type CloudCommentRequests = {
     input: UpdateCommentInput
   ): Promise<CloudCommentThread>
   deleteComment(threadId: string, commentId: string): Promise<CloudCommentThread | null>
+  /** Records that the signed-in account read the thread as it is now. */
+  markRead(threadId: string): Promise<void>
 }
 
 async function thread(request: Promise<CloudResponse>, onDiagnostic?: CloudClientDiagnostic) {
@@ -86,8 +92,41 @@ export function createCommentRequests(
           threadOrGone(
             comment.$delete({ param: { documentId, threadId, commentId } }),
             onDiagnostic
+          ),
+        markRead: async (threadId) => {
+          await parseResponse(
+            one.read.$post({ param: { documentId, threadId } }),
+            v.null(),
+            onDiagnostic
           )
+        }
       }
+    },
+
+    /** Whom the signed-in account may name in a document's comments. */
+    async commentPeople(documentId: string): Promise<CommentPerson[]> {
+      const response = await parseResponse(
+        client.documents[':documentId'].threads.people.$get({ param: { documentId } }),
+        commentPeopleSchema,
+        onDiagnostic
+      )
+      return response.people
+    },
+
+    /** Which comments the signed-in account hears about by email. */
+    notificationSettings(): Promise<NotificationSettings> {
+      return parseResponse(
+        client.account.notifications.$get(),
+        notificationSettingsSchema,
+        onDiagnostic
+      )
+    },
+    setNotificationSettings(json: NotificationSettings): Promise<NotificationSettings> {
+      return parseResponse(
+        client.account.notifications.$put({ json }),
+        notificationSettingsSchema,
+        onDiagnostic
+      )
     },
 
     /** Brings a file's threads into a document that just moved to Cloud. */
@@ -152,7 +191,14 @@ export function createSharedCommentRequests(
           threadOrGone(
             comment.$delete({ param: { shareId, threadId, commentId }, json: { share } }),
             onDiagnostic
+          ),
+        markRead: async (threadId) => {
+          await parseResponse(
+            one.read.$post({ param: { shareId, threadId }, json: { share } }),
+            v.null(),
+            onDiagnostic
           )
+        }
       }
     }
   }

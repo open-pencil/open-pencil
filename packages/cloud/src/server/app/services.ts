@@ -163,7 +163,10 @@ export function createAppServices(services: CloudServices) {
       : undefined
   const comments = createCommentService(database, {
     sharing,
-    onCommentsChanged: services.onDocumentCommentsChanged
+    onCommentsChanged: services.onDocumentCommentsChanged,
+    notifier: services.transactionalEmail
+      ? { email: services.transactionalEmail, publicURL: config.publicURL }
+      : undefined
   })
   const reports = createDocumentReportService(database, {
     sharing,

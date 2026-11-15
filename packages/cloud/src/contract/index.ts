@@ -256,6 +256,7 @@ export {
   cloudCommunityPagePath,
   cloudDesktopLinkURL,
   cloudDocumentPath,
+  cloudCommentURL,
   cloudDocumentURL,
   cloudInvitationURL,
   cloudShareURL,

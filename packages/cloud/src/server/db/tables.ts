@@ -1,5 +1,10 @@
 import type { EnrollmentStatus } from '#cloud/admin/enrollment/service'
-import type { CloudSignInMethod, DocumentPermission, WorkspaceRole } from '#cloud/contract'
+import type {
+  CloudSignInMethod,
+  CommentEmailSetting,
+  DocumentPermission,
+  WorkspaceRole
+} from '#cloud/contract'
 import type {
   EmailLocale,
   TransactionalEmailKind,
@@ -142,6 +147,34 @@ export interface CommentTable {
   body: string
   createdAt: TimestampColumn
   editedAt: TimestampColumn | null
+}
+
+/** Someone a comment names, by account. */
+export interface CommentMentionTable {
+  commentId: string
+  userId: string
+  createdAt: TimestampColumn
+}
+
+/** How far an account has read a thread. */
+export interface CommentReadTable {
+  userId: string
+  threadId: string
+  readAt: TimestampColumn
+}
+
+/** An email sent about a comment, counted against each day's budget. */
+export interface CommentEmailTable {
+  id: string
+  senderId: string
+  recipientId: string
+  sentAt: TimestampColumn
+}
+
+export interface NotificationSettingTable {
+  userId: string
+  commentEmails: CommentEmailSetting
+  updatedAt: TimestampColumn
 }
 
 export interface DocumentReportTable {
@@ -496,6 +529,10 @@ export interface CloudDatabase {
   documentReport: DocumentReportTable
   commentThread: CommentThreadTable
   comment: CommentTable
+  commentMention: CommentMentionTable
+  commentRead: CommentReadTable
+  commentEmail: CommentEmailTable
+  notificationSetting: NotificationSettingTable
 }
 
 export type NewTransactionalEmail = Insertable<TransactionalEmailTable>

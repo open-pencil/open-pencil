@@ -2,6 +2,7 @@ import {
   parseCreateComment,
   parseCreateCommentThread,
   parseImportCommentThreads,
+  parseNotificationSettings,
   parseSharedCommentsRequest,
   parseSharedCreateComment,
   parseSharedCreateCommentThread,
@@ -69,6 +70,22 @@ export function createCommentRoutes(service: CommentService) {
     answer(context, respond, documentDomainError)
 
   return new Hono<DocumentRouteEnvironment>()
+    .get('/account/notifications', async (context) =>
+      context.json(await service.notificationSettings(context.get('actor').userId))
+    )
+    .put('/account/notifications', validatedJSON(parseNotificationSettings), async (context) =>
+      context.json(
+        await service.setNotificationSettings(
+          context.get('actor').userId,
+          context.req.valid('json')
+        )
+      )
+    )
+    .get('/documents/:documentId/threads/people', documentParams, (context) =>
+      run(context, async () =>
+        context.json(await service.people(await as(context, context.req.valid('param').documentId)))
+      )
+    )
     .get('/documents/:documentId/threads', documentParams, (context) =>
       run(context, async () =>
         context.json(await service.list(await as(context, context.req.valid('param').documentId)))
@@ -99,6 +116,13 @@ export function createCommentRoutes(service: CommentService) {
       run(context, async () => {
         const { documentId, threadId } = context.req.valid('param')
         return context.json({ thread: await service.get(await as(context, documentId), threadId) })
+      })
+    )
+    .post('/documents/:documentId/threads/:threadId/read', documentThreadParams, (context) =>
+      run(context, async () => {
+        const { documentId, threadId } = context.req.valid('param')
+        await service.markRead(await as(context, documentId), threadId)
+        return context.body(null, 204)
       })
     )
     .patch(
@@ -209,6 +233,18 @@ export function createSharedCommentRoutes(
           const { shareId, threadId } = context.req.valid('param')
           const actor = await as(context, shareId, context.req.valid('json').share.secret)
           return context.json({ thread: await service.get(actor, threadId) })
+        })
+    )
+    .post(
+      '/shares/:shareId/threads/:threadId/read',
+      shareThreadParams,
+      validatedJSON(parseSharedCommentsRequest),
+      (context) =>
+        run(context, async () => {
+          const { shareId, threadId } = context.req.valid('param')
+          const actor = await as(context, shareId, context.req.valid('json').share.secret)
+          await service.markRead(actor, threadId)
+          return context.body(null, 204)
         })
     )
     .patch(

@@ -154,4 +154,35 @@ describe('comment routes', () => {
       (await request(`${shares}/list`, { method: 'POST', json: { share: wrong } })).status
     ).toBe(404)
   })
+
+  test('read and choose notifications, list people, and mark a thread read', async () => {
+    const { request, documentId } = await testApp()
+    const settings = v.object({ commentEmails: v.picklist(['all', 'mentions', 'off']) })
+    expect(await responseJSON(await request('/account/notifications'), settings)).toEqual({
+      commentEmails: 'mentions'
+    })
+    const chosen = await request('/account/notifications', {
+      method: 'PUT',
+      json: { commentEmails: 'all' }
+    })
+    expect(await responseJSON(chosen, settings)).toEqual({ commentEmails: 'all' })
+    expect(
+      (await request('/account/notifications', { method: 'PUT', json: { commentEmails: 'x' } }))
+        .status
+    ).toBe(400)
+
+    const people = await request(`/documents/${documentId}/threads/people`)
+    expect(people.status).toBe(200)
+    const { thread } = await responseJSON(
+      await request(`/documents/${documentId}/threads`, {
+        method: 'POST',
+        json: { ...pin, body: 'Hi' }
+      }),
+      commentThreadResponseSchema
+    )
+    const read = await request(`/documents/${documentId}/threads/${thread.id}/read`, {
+      method: 'POST'
+    })
+    expect(read.status).toBe(204)
+  })
 })

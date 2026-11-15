@@ -28,6 +28,8 @@ export const cloudCommentSchema = v.object({
   agent: v.nullable(v.string()),
   /** Markdown, as the editor writes it. */
   body: v.string(),
+  /** The accounts it names, which hear about it. */
+  mentions: v.array(v.string()),
   createdAt: v.string(),
   editedAt: v.nullable(v.string())
 })
@@ -58,6 +60,8 @@ export const cloudCommentThreadSchema = v.object({
   updatedAt: v.string(),
   resolvedAt: v.nullable(v.string()),
   resolvedBy: v.nullable(v.string()),
+  /** Whether someone else wrote in it since the asker last read it; false for a guest. */
+  unread: v.boolean(),
   /** Oldest first; the first is what started the thread. */
   comments: v.array(cloudCommentSchema)
 })
@@ -86,6 +90,16 @@ const bodySchema = v.pipe(
   v.minLength(1),
   v.maxLength(COMMENT_BODY_MAX_LENGTH)
 )
+/** The most accounts one comment names. */
+export const MAX_COMMENT_MENTIONS = 50
+/** The accounts a comment names; the server keeps those who can read the document. */
+const mentionsSchema = v.optional(
+  v.pipe(
+    v.array(v.pipe(v.string(), v.minLength(1), v.maxLength(200))),
+    v.maxLength(MAX_COMMENT_MENTIONS)
+  ),
+  []
+)
 const agentSchema = v.optional(v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(100)))
 /**
  * The ID the editor gave a new thread or comment, so it keeps showing it as the server's, and a
@@ -97,6 +111,7 @@ export const createCommentThreadSchema = v.object({
   id: clientIdSchema,
   ...commentAnchorEntries,
   body: bodySchema,
+  mentions: mentionsSchema,
   agent: agentSchema
 })
 export type CreateCommentThreadInput = v.InferOutput<typeof createCommentThreadSchema>
@@ -111,12 +126,30 @@ export type UpdateCommentThreadInput = v.InferOutput<typeof updateCommentThreadS
 export const createCommentSchema = v.object({
   id: clientIdSchema,
   body: bodySchema,
+  mentions: mentionsSchema,
   agent: agentSchema
 })
 export type CreateCommentInput = v.InferOutput<typeof createCommentSchema>
 
-export const updateCommentSchema = v.object({ body: bodySchema })
+export const updateCommentSchema = v.object({ body: bodySchema, mentions: mentionsSchema })
 export type UpdateCommentInput = v.InferOutput<typeof updateCommentSchema>
+
+/** Someone a comment may name: an account that can open the document. */
+export const commentPersonSchema = v.object({
+  id: v.string(),
+  name: v.string(),
+  image: v.nullable(v.string())
+})
+export type CommentPerson = v.InferOutput<typeof commentPersonSchema>
+export const commentPeopleSchema = v.object({ people: v.array(commentPersonSchema) })
+
+/** Which comments an account hears about by email. */
+export const commentEmailSettingSchema = v.picklist(['all', 'mentions', 'off'])
+export type CommentEmailSetting = v.InferOutput<typeof commentEmailSettingSchema>
+export const notificationSettingsSchema = v.object({ commentEmails: commentEmailSettingSchema })
+export type NotificationSettings = v.InferOutput<typeof notificationSettingsSchema>
+export const parseNotificationSettings = (input: unknown) =>
+  v.parse(notificationSettingsSchema, input)
 
 /** The most threads, and comments in all, one import brings in. */
 export const MAX_IMPORTED_COMMENT_THREADS = 1_000
