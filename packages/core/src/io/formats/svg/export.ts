@@ -1,3 +1,5 @@
+import { compact } from 'es-toolkit'
+
 import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
 import {
   getNodeRotationOrigin,
@@ -16,15 +18,14 @@ import { exportBounds } from '#core/io/formats/raster'
 import {
   nextDefId,
   formatSolidColor,
-  createFilterDef,
   drawnFills,
   resolveFill,
   solidFillOpacity,
   SVG_STROKE_CAP,
   SVG_STROKE_JOIN,
-  type SVGExportContext,
-  type SVGExportWarning
+  type SVGExportContext
 } from './defs'
+import { layerEffects, withLayerEffects, type ExportEffectWarning } from './effects'
 import {
   round,
   geometryBlobToSVGPath,
@@ -263,12 +264,6 @@ function buildGroupAttrs(
     attrs.style = `mix-blend-mode: ${blend}`
   }
 
-  const filterDef = createFilterDef(node.effects, ctx, node)
-  if (filterDef) {
-    ctx.defs.push(filterDef.node)
-    attrs.filter = `url(#${filterDef.id})`
-  }
-
   let clipId: string | undefined
   if (clipsChildren(node) && node.childIds.length > 0) {
     clipId = nextDefId(ctx, 'clip')
@@ -423,6 +418,7 @@ function layerId(name: string, ids: NonNullable<SVGExportContext['layerIds']>): 
 }
 
 function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
+  const effects = layerEffects(node, ctx)
   const { attrs: groupAttrs, clipId } = buildGroupAttrs(node, ctx)
 
   if (node.type === 'TEXT') {
@@ -431,7 +427,8 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
       node,
       ctx
     )
-    return svg('g', groupAttrs, renderTextNode(node, fill.color, ctx, fill.opacity))
+    const text = renderTextNode(node, fill.color, ctx, fill.opacity)
+    return svgElement('g', groupAttrs, withLayerEffects([text], effects, groupAttrs))
   }
 
   const visibleFills = node.fills.filter((f) => f.visible)
@@ -473,7 +470,7 @@ function drawNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
     appendAll(children, childContent)
   }
 
-  const validChildren = children.filter((c): c is SVGNode => c !== null)
+  const validChildren = withLayerEffects(compact(children), effects, groupAttrs)
 
   if (validChildren.length === 0 && Object.keys(groupAttrs).length === 0) {
     return null
@@ -497,10 +494,8 @@ export interface SVGExportOptions {
   xmlDeclaration?: boolean
   /** Target export color space (default: srgb) */
   colorSpace?: 'srgb' | 'display-p3'
-  /** Omit visible effects SVG cannot represent, reporting each omission through `onWarning`. */
-  skipUnsupportedEffects?: boolean
-  /** Receives an explanation when `skipUnsupportedEffects` omits an effect. */
-  onWarning?: (warning: SVGExportWarning) => void
+  /** Receives each effect the export leaves out because SVG cannot draw it, such as glass. */
+  onWarning?: (warning: ExportEffectWarning) => void
   /**
    * Line breaks of text nodes as the editor laid them out, wraps included. Without them, only
    * explicit newlines start a new baseline, which renderers that do not wrap SVG text keep.
@@ -530,7 +525,6 @@ export function renderNodesToSVG(
     defIdCounter: 0,
     graph,
     colorSpace: options.colorSpace ?? 'srgb',
-    skipUnsupportedEffects: options.skipUnsupportedEffects,
     onWarning: options.onWarning,
     textLayout: options.textLayout,
     layerIds: options.layerIds ? { names: new Map(), taken: new Set() } : undefined
@@ -587,24 +581,10 @@ export function renderNodeSVGElement(
   {
     idPrefix,
     colorSpace = 'srgb',
-    tint,
-    skipUnsupportedEffects,
-    onWarning
-  }: Pick<SVGExportContext, 'tint' | 'skipUnsupportedEffects' | 'onWarning'> & {
-    idPrefix: string
-    colorSpace?: RenderColorSpace
-  }
+    tint
+  }: Pick<SVGExportContext, 'tint'> & { idPrefix: string; colorSpace?: RenderColorSpace }
 ): SVGNode | null {
-  const ctx: SVGExportContext = {
-    defs: [],
-    defIdCounter: 0,
-    graph,
-    colorSpace,
-    idPrefix,
-    tint,
-    skipUnsupportedEffects,
-    onWarning
-  }
+  const ctx: SVGExportContext = { defs: [], defIdCounter: 0, graph, colorSpace, idPrefix, tint }
   const drawn = renderNode({ ...node, x: 0, y: 0, rotation: 0, opacity: 1 }, ctx)
   if (!drawn) return null
   // A straight line has no height or width, but its stroke still needs a viewport to draw in.

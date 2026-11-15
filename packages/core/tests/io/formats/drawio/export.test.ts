@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
 import { parseDrawIOFile } from '@open-pencil/drawio'
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph, type Effect, type SceneNode } from '@open-pencil/scene-graph'
 import {
   boundEndpoint,
   connectorSublayers,
@@ -17,9 +17,20 @@ import { expectDefined } from '@open-pencil/test-support/assert'
 import { BUILTIN_IO_FORMATS, IORegistry } from '#core/io'
 import type { ExportTarget } from '#core/io'
 import { sceneGraphToDrawIO } from '#core/io/formats/drawio'
-import { SVGUnsupportedEffectError } from '#core/io/formats/svg'
+import type { ExportEffectWarning } from '#core/io/formats/svg'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
+
+function effect(type: Effect['type'], visible = true): Effect {
+  return {
+    type,
+    radius: 12,
+    visible,
+    color: { r: 0, g: 0, b: 0, a: 0.25 },
+    offset: { x: 0, y: 0 },
+    spread: 0
+  }
+}
 
 /** A flowchart as draw.io saves it: shapes, text, elbowed, dashed, bent, and curved edges. */
 const ORDER_FLOW = readFileSync(new URL('order-flow.drawio', import.meta.url), 'utf8')
@@ -137,22 +148,14 @@ describe('saving a draw.io file', () => {
     })
   })
 
-  test('exports SVG pictures and reports omitted backdrop blur', async () => {
+  test('a layer drawn as an SVG picture reports only what SVG cannot draw', async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
     const star = graph.createNode('STAR', page.id, {
       width: 40,
       height: 40,
-      effects: [
-        {
-          type: 'BACKGROUND_BLUR',
-          radius: 12,
-          visible: true,
-          color: { r: 0, g: 0, b: 0, a: 0 },
-          offset: { x: 0, y: 0 },
-          spread: 0
-        }
-      ]
+      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }],
+      effects: [effect('BACKGROUND_BLUR'), effect('GLASS')]
     })
 
     const result = await io.exportContent('drawio', {
@@ -162,30 +165,17 @@ describe('saving a draw.io file', () => {
 
     expect(typeof result.data).toBe('string')
     expect(result.warnings).toEqual([
-      expect.objectContaining({
-        code: 'unsupported-effect',
-        effect: 'BACKGROUND_BLUR',
-        nodeId: star.id
-      })
+      expect.objectContaining({ code: 'unsupported-effect', effect: 'GLASS', nodeId: star.id })
     ])
   })
 
-  test('reports omitted backdrop blur on native draw.io shapes', async () => {
+  test('a layer drawn as a draw.io cell reports each effect the cell leaves out', async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
     const rectangle = graph.createNode('RECTANGLE', page.id, {
       width: 40,
       height: 40,
-      effects: [
-        {
-          type: 'BACKGROUND_BLUR',
-          radius: 12,
-          visible: true,
-          color: { r: 0, g: 0, b: 0, a: 0 },
-          offset: { x: 0, y: 0 },
-          spread: 0
-        }
-      ]
+      effects: [effect('BACKGROUND_BLUR'), effect('DROP_SHADOW'), effect('GLASS', false)]
     })
 
     const result = await io.exportContent('drawio', {
@@ -194,107 +184,40 @@ describe('saving a draw.io file', () => {
     })
 
     expect(result.warnings).toEqual([
-      expect.objectContaining({
-        code: 'unsupported-effect',
-        effect: 'BACKGROUND_BLUR',
-        nodeId: rectangle.id
-      })
+      expect.objectContaining({ effect: 'BACKGROUND_BLUR', nodeId: rectangle.id }),
+      expect.objectContaining({ effect: 'DROP_SHADOW', nodeId: rectangle.id })
     ])
   })
 
-  test('requires explicit omission for direct draw.io conversion', () => {
-    const graph = new SceneGraph()
-    const page = graph.getPages()[0]
-    const rectangle = graph.createNode('RECTANGLE', page.id, {
-      width: 40,
-      height: 40,
-      effects: [
-        {
-          type: 'BACKGROUND_BLUR',
-          radius: 12,
-          visible: true,
-          color: { r: 0, g: 0, b: 0, a: 0 },
-          offset: { x: 0, y: 0 },
-          spread: 0
-        }
-      ]
-    })
-
-    expect(() => sceneGraphToDrawIO(graph, { pageIds: [page.id] })).toThrow(
-      SVGUnsupportedEffectError
-    )
-
-    const warnings: Array<{ code: string; nodeId: string; effect: string }> = []
-    const result = sceneGraphToDrawIO(
-      graph,
-      { pageIds: [page.id] },
-      {
-        skipUnsupportedEffects: true,
-        onWarning: (warning) => warnings.push(warning)
-      }
-    )
-
-    expect(result.pages[0]?.cells).toHaveLength(1)
-    expect(warnings).toEqual([
-      expect.objectContaining({
-        code: 'unsupported-effect',
-        effect: 'BACKGROUND_BLUR',
-        nodeId: rectangle.id
-      })
-    ])
-  })
-
-  test('keeps hidden cells without reporting their unsupported effects', () => {
+  test('hidden layers keep their cells and report nothing', () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
     const hiddenGroup = graph.createNode('GROUP', page.id, { visible: false })
-    const hiddenChild = graph.createNode('RECTANGLE', hiddenGroup.id, {
+    graph.createNode('RECTANGLE', hiddenGroup.id, {
       width: 40,
       height: 40,
-      effects: [
-        {
-          type: 'BACKGROUND_BLUR',
-          radius: 12,
-          visible: true,
-          color: { r: 0, g: 0, b: 0, a: 0 },
-          offset: { x: 0, y: 0 },
-          spread: 0
-        }
-      ]
+      effects: [effect('BACKGROUND_BLUR')]
     })
-    const hiddenShape = graph.createNode('RECTANGLE', page.id, {
+    graph.createNode('RECTANGLE', page.id, {
       visible: false,
       width: 40,
       height: 40,
-      effects: [
-        {
-          type: 'BACKGROUND_BLUR',
-          radius: 12,
-          visible: true,
-          color: { r: 0, g: 0, b: 0, a: 0 },
-          offset: { x: 0, y: 0 },
-          spread: 0
-        }
-      ]
+      effects: [effect('BACKGROUND_BLUR')]
     })
 
-    const result = sceneGraphToDrawIO(graph, { pageIds: [page.id] })
-    expect(result.pages[0]?.cells).toHaveLength(3)
+    const warnings: ExportEffectWarning[] = []
+    const result = sceneGraphToDrawIO(
+      graph,
+      { pageIds: [page.id] },
+      { onWarning: (warning) => warnings.push(warning) }
+    )
+
     expect(result.pages[0]?.cells.map((cell) => [cell.id, cell.visible])).toEqual([
       ['2', false],
       ['3', true],
       ['4', false]
     ])
-
-    const warnings: Array<{ nodeId: string; effect: string }> = []
-    sceneGraphToDrawIO(
-      graph,
-      { pageIds: [page.id] },
-      { skipUnsupportedEffects: true, onWarning: (warning) => warnings.push(warning) }
-    )
     expect(warnings).toEqual([])
-    expect(hiddenChild.visible).toBe(true)
-    expect(hiddenShape.visible).toBe(false)
   })
 
   test('turned rectangles, ellipses, and text keep their turn', async () => {

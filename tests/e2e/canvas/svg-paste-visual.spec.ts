@@ -81,7 +81,7 @@ test('exported SVG text keeps characters outside the style run', async () => {
   expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot('svg-export-style-runs.png')
 })
 
-function exportedSVGWithSkippedBackdropBlur(): string {
+function exportedSVGWithBackdropBlur(): string {
   const graph = new SceneGraph()
   const pageId = graph.getPages()[0].id
   const background = graph.createNode('RECTANGLE', pageId, {
@@ -127,15 +127,14 @@ function exportedSVGWithSkippedBackdropBlur(): string {
     ]
   })
   const svg = renderNodesToSVG(graph, pageId, [background.id, left.id, right.id, panel.id], {
-    skipUnsupportedEffects: true,
     xmlDeclaration: false
   })
   if (!svg) throw new Error('nothing exported')
   return svg
 }
 
-test('exported SVG can be pasted when unsupported backdrop blur is omitted', async () => {
-  const pasted = await editor.canvas.pasteSVG(exportedSVGWithSkippedBackdropBlur(), 220, 160)
+test('exported SVG with a background blur pastes its layers', async () => {
+  const pasted = await editor.canvas.pasteSVG(exportedSVGWithBackdropBlur(), 220, 160)
   expect(pasted).toBe(true)
   await editor.canvas.waitForRender()
   editor.canvas.assertNoErrors()
@@ -149,5 +148,5 @@ test('exported SVG can be pasted when unsupported backdrop blur is omitted', asy
       height: 144
     }
   })
-  expect(screenshot).toMatchSnapshot('svg-skipped-backdrop-blur.png')
+  expect(screenshot).toMatchSnapshot('svg-background-blur.png')
 })

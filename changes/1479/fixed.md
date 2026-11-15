@@ -1,4 +1,2 @@
-- SVG export warns when backdrop blur cannot be represented and can omit it when requested instead of silently applying a layer blur. PDF and draw.io exports remain available and report the omitted effect.
-- SVG export results include warnings for skipped unsupported effects and continue to notify the `onWarning` callback.
-- Draw.io export reports omitted backdrop blur on native shapes; direct conversions require opting in to omit the effect.
-- Hidden draw.io cells retain backdrop blur without blocking export or producing an irrelevant warning.
+- SVG export draws background blur behind the layer, as Figma's SVG export does, instead of blurring the layer itself, and draws shadow spread, shadows hidden behind the layer, and shadow blend modes. Effects SVG cannot draw, such as glass, are left out and listed in the export's warnings (#1423).
+- Draw.io export lists the effects its shapes leave out in the export's warnings.

@@ -223,7 +223,6 @@ async function writeDrawIO(graph: SceneGraph, target: DrawIOExportTarget): Promi
   const { sceneGraphToDrawIO } = await import('./formats/drawio')
   const warnings: NonNullable<ExportResult['warnings']> = []
   const diagram = sceneGraphToDrawIO(graph, target, {
-    skipUnsupportedEffects: true,
     onWarning: (warning) => warnings.push(warning)
   })
   return {

@@ -1,4 +1,4 @@
-import type { Effect, Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   colorToHex,
   colorToDisplayCSS,
@@ -20,6 +20,7 @@ import {
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
+import type { ExportEffectWarning } from './effects'
 import { svg, type SVGNode } from './node'
 import { round } from './paths'
 import type { SVGTextLayout } from './text/lines'
@@ -29,8 +30,8 @@ export interface SVGExportContext {
   defIdCounter: number
   graph: SceneGraph
   colorSpace: RenderColorSpace
-  skipUnsupportedEffects?: boolean
-  onWarning?: (warning: SVGExportWarning) => void
+  /** Receives each effect the export leaves out because SVG cannot draw it. */
+  onWarning?: (warning: ExportEffectWarning) => void
   /** Starts every def id, so SVGs inlined on one page cannot reference each other's defs. */
   idPrefix?: string
   /** Paints drawn in `currentColor`, such as an icon's tinted paths, so CSS `color` sets them. */
@@ -42,36 +43,6 @@ export interface SVGExportContext {
    * given out so far, defs included, so no two elements share one.
    */
   layerIds?: { names: Map<string, number>; taken: Set<string> }
-}
-
-export interface SVGExportWarning {
-  code: 'unsupported-effect'
-  effect: 'BACKGROUND_BLUR'
-  nodeId: string
-  nodeName: string
-  message: string
-}
-
-export class SVGUnsupportedEffectError extends Error {
-  readonly warnings: SVGExportWarning[]
-
-  constructor(warnings: SVGExportWarning[]) {
-    super(warnings.map((warning) => warning.message).join('\n'))
-    this.name = 'SVGUnsupportedEffectError'
-    this.warnings = warnings
-  }
-}
-
-export function unsupportedEffectWarnings(effects: Effect[], node: SceneNode): SVGExportWarning[] {
-  return effects
-    .filter((effect) => effect.visible && effect.type === 'BACKGROUND_BLUR')
-    .map((): SVGExportWarning => ({
-      code: 'unsupported-effect',
-      effect: 'BACKGROUND_BLUR',
-      nodeId: node.id,
-      nodeName: node.name,
-      message: `Cannot faithfully represent BACKGROUND_BLUR on "${node.name}" (${node.id}); the target format cannot sample the backdrop.`
-    }))
 }
 
 export function nextDefId(ctx: SVGExportContext, prefix: string): string {
@@ -274,79 +245,6 @@ function createImagePattern(
         transform: svgMatrix(matrix)
       })
     )
-  }
-}
-
-export function createFilterDef(
-  effects: Effect[],
-  ctx: SVGExportContext,
-  node: SceneNode
-): { id: string; node: SVGNode } | null {
-  const visible = effects.filter((e) => e.visible)
-  if (visible.length === 0) return null
-
-  const warnings = unsupportedEffectWarnings(visible, node)
-  if (warnings.length > 0) {
-    if (!ctx.skipUnsupportedEffects) throw new SVGUnsupportedEffectError(warnings)
-    for (const warning of warnings) ctx.onWarning?.(warning)
-  }
-
-  const supported = visible.filter((effect) => effect.type !== 'BACKGROUND_BLUR')
-  if (supported.length === 0) return null
-
-  const id = nextDefId(ctx, 'fx')
-  const primitives: SVGNode[] = []
-
-  for (const effect of supported) {
-    if (effect.type === 'DROP_SHADOW') {
-      const stdDev = round(effect.radius / 2)
-      primitives.push(
-        svg('feDropShadow', {
-          dx: round(effect.offset.x),
-          dy: round(effect.offset.y),
-          stdDeviation: stdDev,
-          'flood-color': formatColor(effect.color, 1, ctx.colorSpace),
-          'flood-opacity': round(effect.color.a)
-        })
-      )
-    } else if (effect.type === 'INNER_SHADOW') {
-      const sid = `${id}_is`
-      const stdDev = round(effect.radius / 2)
-      primitives.push(
-        svg('feGaussianBlur', { in: 'SourceAlpha', stdDeviation: stdDev, result: `${sid}_blur` }),
-        svg('feOffset', {
-          dx: round(effect.offset.x),
-          dy: round(effect.offset.y),
-          result: `${sid}_off`
-        }),
-        svg('feComposite', {
-          in: 'SourceAlpha',
-          in2: `${sid}_off`,
-          operator: 'out',
-          result: `${sid}_inv`
-        }),
-        svg('feFlood', {
-          'flood-color': formatColor(effect.color, 1, ctx.colorSpace),
-          'flood-opacity': round(effect.color.a)
-        }),
-        svg('feComposite', { in2: `${sid}_inv`, operator: 'in', result: `${sid}_shadow` }),
-        svg('feComposite', {
-          in: `${sid}_shadow`,
-          in2: 'SourceGraphic',
-          operator: 'over'
-        })
-      )
-    } else {
-      const stdDev = round(effect.radius / 2)
-      primitives.push(svg('feGaussianBlur', { stdDeviation: stdDev }))
-    }
-  }
-
-  if (primitives.length === 0) return null
-
-  return {
-    id,
-    node: svg('filter', { id }, ...primitives)
   }
 }
 
