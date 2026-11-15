@@ -5,7 +5,7 @@ import {
   type VisualBounds
 } from '@open-pencil/scene-graph/geometry'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { decorationInk, laidOutDecoratedGlyphs } from '#core/canvas/text/decorations'
 import { hasRotatedDerivedGlyphs, snapDerivedGlyphBaseline } from '#core/canvas/text/derived'
 import { emojiSquare } from '#core/canvas/text/emoji'

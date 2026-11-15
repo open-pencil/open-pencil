@@ -1,7 +1,7 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { minOf } from '@open-pencil/scene-graph/arrays'
-import { nodeCornerRadii } from '@open-pencil/scene-graph/corners'
+import { nodeCornerRadii, nodeHasSmoothCorners } from '@open-pencil/scene-graph/corners'
 import {
   borderWeights,
   strokeAlignShare,
@@ -9,8 +9,7 @@ import {
   type SideWeights
 } from '@open-pencil/scene-graph/geometry'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
-import { nodeHasSmoothCorners } from '#core/canvas/shapes'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { normalizeDashPattern } from '#core/canvas/strokes'
 
 /** Arc points per wedge: a chord across at most this many degrees stays clear of the ring. */

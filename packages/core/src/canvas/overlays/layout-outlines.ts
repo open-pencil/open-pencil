@@ -1,7 +1,7 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
-import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
+import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer/skia'
 import { LAYOUT_OUTLINE_DASH, LAYOUT_OUTLINE_GAP } from '#core/constants'
 import { type RotationPreview } from '#core/geometry'
 

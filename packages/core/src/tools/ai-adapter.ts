@@ -12,7 +12,7 @@ import { appendAll } from '@open-pencil/scene-graph/arrays'
 import type { FigmaAPI } from '#core/figma-api'
 import { graphOf } from '#core/figma-api/graph'
 
-import { isToolExposed, toolStandardJSONSchema, type ToolDef } from './schema'
+import { isToolExposed, toolInputFor, toolStandardJSONSchema, type ToolDef } from './schema'
 
 export interface ToolLogEntry {
   tool: string
@@ -206,7 +206,7 @@ export function toolsToAI(
     if (!isToolExposed(def, 'ai')) continue
     const toolOpts: Record<string, unknown> = {
       description: def.description,
-      inputSchema: toolStandardJSONSchema(def.input),
+      inputSchema: toolStandardJSONSchema(toolInputFor(def, 'ai')),
       execute: async (args: Record<string, unknown>, { toolCallId }: { toolCallId: string }) => {
         const startTime = Date.now()
         const figma = options.getFigma()

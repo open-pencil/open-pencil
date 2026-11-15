@@ -12,7 +12,7 @@ import {
 } from '@open-pencil/scene-graph/layout'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import type { SkiaRenderer } from './renderer'
+import type { SkiaRenderer } from './renderer/skia'
 
 type RawLayoutGrid = SceneNode['layoutGrids'][number] & {
   visible?: boolean

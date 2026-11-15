@@ -13,7 +13,7 @@ import { DESIGN_JSX_ELEMENTS } from '../elements'
 import { layersUnder } from '../figjam/connectors'
 import { DESIGN_JSX_HELPERS } from '../helpers'
 import { DEFAULT_MODE_NAME, designMode, designVar, type DesignVariable } from '../variables'
-import { collectionNamed, resolveVariableId, variableModes } from '../variables/graph'
+import { findCollection, resolveVariableId, variableModes } from '../variables/graph'
 import { formatColor } from './helpers'
 import { helperCall, Reference, valueSyntax, type JSXValue } from './value'
 
@@ -40,7 +40,7 @@ export function variableReferences(graph: SceneGraph): VariableExport {
       return false
     }
   }
-  // A collection name several collections share names none of them; its ID still does.
+  // A name several collections or modes share names none of them; their IDs still do.
   const findsMode = (collection: string, mode: string, collectionId: string, modeId: string) => {
     try {
       return variableModes(graph, designMode(collection, mode))?.[collectionId] === modeId
@@ -63,10 +63,14 @@ export function variableReferences(graph: SceneGraph): VariableExport {
       const collection = graph.variableCollections.get(collectionId)
       const mode = collection?.modes.find((item) => item.modeId === modeId)
       if (!collection || !mode) return modeId
-      const named = [collection.name, collectionId].find((name) =>
-        findsMode(name, mode.name, collectionId, modeId)
-      )
-      return named ? helperCall('designMode', named, mode.name) : modeId
+      // Names first; a name another collection or mode shares falls back to the ID.
+      for (const collectionRef of [collection.name, collectionId]) {
+        for (const modeRef of [mode.name, modeId]) {
+          if (findsMode(collectionRef, modeRef, collectionId, modeId))
+            return helperCall('designMode', collectionRef, modeRef)
+        }
+      }
+      return modeId
     },
     declarations: () => ''
   }
@@ -185,7 +189,7 @@ function findsByName(graph: SceneGraph, variable: Variable): boolean {
   if (!collection) return false
   try {
     return (
-      collectionNamed(graph, collection.name) === collection &&
+      findCollection(graph, collection.name) === collection &&
       resolveVariableId(graph, designVar(collection.name, variable.name)) === variable.id
     )
   } catch {

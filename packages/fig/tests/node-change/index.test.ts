@@ -131,6 +131,62 @@ describe('@open-pencil/fig NodeChange policy', () => {
     expect(props.derivedTextHeight).toBe(154)
   })
 
+  // Figma 126 saves a bottom-aligned 20 px line in a 12 px box 8 px above the box.
+  test('reads how tall saved lines are when they start above the box', () => {
+    const props = nodeChangeToProps(
+      {
+        type: 'TEXT',
+        size: { x: 110, y: 12 },
+        textAutoResize: 'NONE',
+        textAlignVertical: 'BOTTOM',
+        derivedTextData: {
+          layoutSize: { x: 110, y: 12 },
+          baselines: [
+            {
+              firstCharacter: 0,
+              endCharacter: 4,
+              position: { x: 0, y: 8 },
+              width: 40,
+              lineY: -8,
+              lineHeight: 20,
+              lineAscent: 16
+            }
+          ]
+        }
+      },
+      []
+    )
+
+    expect(props.derivedTextHeight).toBe(20)
+  })
+
+  test('leaves the saved lines of a text that grows to them unread', () => {
+    const props = nodeChangeToProps(
+      {
+        type: 'TEXT',
+        size: { x: 110, y: 20 },
+        textAutoResize: 'HEIGHT',
+        derivedTextData: {
+          layoutSize: { x: 110, y: 20 },
+          baselines: [
+            {
+              firstCharacter: 0,
+              endCharacter: 4,
+              position: { x: 0, y: 16 },
+              width: 40,
+              lineY: 0,
+              lineHeight: 24,
+              lineAscent: 16
+            }
+          ]
+        }
+      },
+      []
+    )
+
+    expect(props.derivedTextHeight).toBeNull()
+  })
+
   test('converts normalized text values', () => {
     // A percent stays one, and Figma's RAW multiplier is a percent too.
     expect(convertLineHeight({ value: 120, units: 'PERCENT' })).toEqual(percentLength(120))

@@ -1,7 +1,7 @@
 import type { CanvasKit } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { installTextMeasurer, type TextMeasurer } from '#core/layout'
 import { TextEditor } from '#core/text/editor'
 import { installTextInkMeasurer } from '#core/text/ink'

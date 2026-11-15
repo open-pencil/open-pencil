@@ -1,0 +1,1 @@
+- OpenPencil Cloud shows its community gallery at `/community`, with a page for each file: its preview, named versions, and buttons that open it read-only in the browser or in the desktop app.

@@ -6,7 +6,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 import { rgbaToOkHCL, setNodeFillOkHCL, setNodeStrokeOkHCL } from '@open-pencil/scene-graph/color'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { SkiaRenderer } from '#core/canvas/renderer'
+import { SkiaRenderer } from '#core/canvas/renderer/skia'
 const WIDTH = 200
 const HEIGHT = 120
 const STOPS = [

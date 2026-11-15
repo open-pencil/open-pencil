@@ -4,7 +4,7 @@ import { figJamSectionTitleColors } from '@open-pencil/scene-graph/figjam'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import type { RotationPreview, SceneGeometry } from '#core/geometry'
 
 import { canvasLabelForeground } from './color'

@@ -4,7 +4,6 @@ export {
   drawHoverHighlight,
   drawNodeOutline,
   drawNodeSelection,
-  drawParentFrameOutlines,
   drawSelection
 } from './selection'
 export { drawAutoLayoutHover } from './auto-layout-hover'
@@ -18,6 +17,6 @@ export {
 export { drawMeasurements } from './measurement'
 export { drawTextEditOverlay } from './text-edit'
 export { drawSelectionLabels } from '#core/canvas/labels/selection'
-export { drawPenOverlay } from '#core/canvas/pen-overlay'
+export { drawPenOverlay } from '#core/canvas/overlays/pen'
 export { drawPresenceCursors } from './presence'
-export { drawNodeEditOverlay } from '#core/canvas/node-edit-overlay'
+export { drawNodeEditOverlay } from '#core/canvas/overlays/node-edit'

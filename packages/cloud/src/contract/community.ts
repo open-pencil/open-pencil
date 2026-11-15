@@ -17,7 +17,9 @@ export const communityVersionSchema = v.object({
   id: v.pipe(v.string(), v.uuid()),
   name: v.string(),
   description: v.nullable(v.string()),
-  createdAt: v.string()
+  createdAt: v.string(),
+  /** Whether the document holds this version now, with nothing changed since it was named. */
+  current: v.boolean()
 })
 export type CommunityVersion = v.InferOutput<typeof communityVersionSchema>
 

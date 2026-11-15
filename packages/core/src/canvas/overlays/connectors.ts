@@ -5,7 +5,7 @@ import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinat
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import type { ConnectorTarget } from '#core/editor/connectors/attach'
 import {
   CONNECTOR_SEGMENT_HANDLE,

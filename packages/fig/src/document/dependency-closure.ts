@@ -1,4 +1,5 @@
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 
 import { idOf, parentIdOf, type SourceIndex } from '../instance-overrides/source-index'
 import { isComponentSetRecord } from '../node-change/convert'
@@ -61,7 +62,9 @@ export function collectSceneDependencies(
   pageIds: ReadonlySet<string> | undefined,
   index: SourceIndex,
   /** The whole record for one of `changes`, when they are headers that leave fields out. */
-  whole: (record: NodeChange) => NodeChange = (record) => record
+  whole: (record: NodeChange) => NodeChange = (record) => record,
+  /** Records read with what they depend on besides the pages, such as a variant built on demand. */
+  rootIds: readonly string[] = []
 ): SceneDependencyClosure {
   const resolveReference = createResourceResolver(changes)
   const { sources, children } = index
@@ -109,6 +112,7 @@ export function collectSceneDependencies(
         (pageIds ? pageIds.has(idOf(node) ?? '') : node.internalOnly !== true)
     )
     .flatMap((node) => idOf(node) ?? [])
+  appendAll(pending, rootIds)
   while (pending.length) {
     const id = pending.pop()
     if (!id || contentIds.has(id)) continue

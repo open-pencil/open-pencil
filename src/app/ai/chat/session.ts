@@ -58,7 +58,8 @@ export async function createACPTransport(
   store?: EditorStore,
   onUsage?: (usage: AgentTurnUsage) => void,
   agentSession?: AgentSessionLink,
-  onAgentError?: (error: unknown) => void
+  onAgentError?: (error: unknown) => void,
+  model?: string
 ) {
   const agentDef = acpAgentFor(providerID)
   if (!agentDef) throw new Error(`Unknown ACP agent: ${providerID}`)
@@ -74,7 +75,8 @@ export async function createACPTransport(
     onSession:
       agentSession &&
       ((id) => agentSession.record(id === null ? null : { agent: agentDef.id, id })),
-    onAgentError
+    onAgentError,
+    model
   })
 }
 
@@ -182,8 +184,18 @@ export function createChatSessionManager({
     provider: AIProviderID,
     agentSession?: AgentSessionLink
   ) {
+    // Read before anything is awaited, so the model is the profile's the chat chose `provider`
+    // from; a profile change while the agent starts moves neither.
+    const starting = createAIModelRuntime('design')
+    // Awaited below; a teardown that fails first must not leave its rejection unhandled.
+    starting.catch(() => undefined)
     await destroyAgentTransports()
     await assertAgentReady('acp')
+    const runtime = await starting
+    const profileModel =
+      runtime?.kind === 'acp' && runtime.role.connection.providerID === provider
+        ? runtime.model
+        : ''
     // An agent's turn counts as one step of the model it names, or of the agent itself.
     const transport = await createACPTransport(
       provider,
@@ -191,7 +203,8 @@ export function createChatSessionManager({
       ({ model, ...tokens }) =>
         recordModelStepCompleted({ provider, model: model ?? provider, ...tokens }, context),
       agentSession,
-      captureAgentError
+      captureAgentError,
+      profileModel
     )
     acpTransportInstance = transport
     return transport
@@ -205,11 +218,7 @@ export function createChatSessionManager({
     // A saved key is an AI Gateway key; without one, Pi uses the CLI's own sign-in.
     const apiKey = await resolveModelConnectionAPIKey(runtime.role.connection.id)
     const account = apiKey ? null : await readPiAccount()
-    const model =
-      runtime.role.profile.customModelID ||
-      runtime.role.profile.modelID ||
-      account?.defaultModel ||
-      ''
+    const model = runtime.model || account?.defaultModel || ''
     if (!apiKey && !account?.signedIn) throw new AgentSetupError('pi-sign-in')
     if (!model) throw new AgentSetupError('pi-model')
     const transport = new HarnessChatTransport(

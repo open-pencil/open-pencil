@@ -26,7 +26,8 @@ describe('useChatCompaction', () => {
   test('an agent that compacts its own context gets a divider once it confirms', async () => {
     const created = spyOn(runtime, 'createAIModelRuntime').mockResolvedValue({
       kind: 'harness',
-      role: {} as ResolvedAIModelRole
+      role: {} as ResolvedAIModelRole,
+      model: ''
     })
     try {
       const messages: UIMessage[] = [

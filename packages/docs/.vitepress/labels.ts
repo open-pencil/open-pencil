@@ -1,4 +1,5 @@
 export interface SidebarLabels {
+  aiAndCollaboration: string
   gettingAround: string
   creatingContent: string
   organizing: string
@@ -42,17 +43,24 @@ export interface ProgrammableLabels {
   mcpServer: string
   aiChat: string
   collaboration: string
+  /** Heads the CLI's command list. */
+  commandReference: string
+  aiAgents: string
+  libraries: string
+  /** Heads the collapsed list of how parts of the editor work inside. */
+  internals: string
+  urlScheme: string
 }
 
 export interface NavLabels {
-  overview: string
-  userGuide: string
-  programmable: string
-  sdk: string
+  docs: string
+  developers: string
+  download: string
+  /** Heads the reference pages in each section's sidebar. */
   reference: string
+  /** Heads the contributor pages in the Developers sidebar. */
   development: string
   cloud: string
-  openApp: string
 }
 
 export const EN_PROG: ProgrammableLabels = {
@@ -67,7 +75,12 @@ export const EN_PROG: ProgrammableLabels = {
   jsxRenderer: 'JSX Renderer',
   mcpServer: 'MCP Server',
   aiChat: 'AI Chat',
-  collaboration: 'Collaboration'
+  collaboration: 'Collaboration',
+  commandReference: 'Command Reference',
+  aiAgents: 'AI Agents',
+  libraries: 'Libraries',
+  internals: 'Internals',
+  urlScheme: 'URL Scheme'
 }
 export const DE_PROG: ProgrammableLabels = {
   overview: 'Überblick',
@@ -81,7 +94,12 @@ export const DE_PROG: ProgrammableLabels = {
   jsxRenderer: 'JSX-Renderer',
   mcpServer: 'MCP-Server',
   aiChat: 'KI-Chat',
-  collaboration: 'Zusammenarbeit'
+  collaboration: 'Zusammenarbeit',
+  commandReference: 'Befehlsreferenz',
+  aiAgents: 'KI-Agenten',
+  libraries: 'Bibliotheken',
+  internals: 'Interna',
+  urlScheme: 'URL-Schema'
 }
 export const IT_PROG: ProgrammableLabels = {
   overview: 'Panoramica',
@@ -95,7 +113,12 @@ export const IT_PROG: ProgrammableLabels = {
   jsxRenderer: 'Renderer JSX',
   mcpServer: 'Server MCP',
   aiChat: 'Chat IA',
-  collaboration: 'Collaborazione'
+  collaboration: 'Collaborazione',
+  commandReference: 'Riferimento comandi',
+  aiAgents: 'Agenti IA',
+  libraries: 'Librerie',
+  internals: 'Dettagli interni',
+  urlScheme: 'Schema URL'
 }
 export const FR_PROG: ProgrammableLabels = {
   overview: 'Vue d’ensemble',
@@ -109,7 +132,12 @@ export const FR_PROG: ProgrammableLabels = {
   jsxRenderer: 'Moteur JSX',
   mcpServer: 'Serveur MCP',
   aiChat: 'Chat IA',
-  collaboration: 'Collaboration'
+  collaboration: 'Collaboration',
+  commandReference: 'Référence des commandes',
+  aiAgents: 'Agents IA',
+  libraries: 'Bibliothèques',
+  internals: 'Fonctionnement interne',
+  urlScheme: 'Schéma d’URL'
 }
 export const ES_PROG: ProgrammableLabels = {
   overview: 'Resumen',
@@ -123,7 +151,12 @@ export const ES_PROG: ProgrammableLabels = {
   jsxRenderer: 'Renderizador JSX',
   mcpServer: 'Servidor MCP',
   aiChat: 'Chat IA',
-  collaboration: 'Colaboración'
+  collaboration: 'Colaboración',
+  commandReference: 'Referencia de comandos',
+  aiAgents: 'Agentes de IA',
+  libraries: 'Bibliotecas',
+  internals: 'Funcionamiento interno',
+  urlScheme: 'Esquema de URL'
 }
 export const PL_PROG: ProgrammableLabels = {
   overview: 'Przegląd',
@@ -137,7 +170,12 @@ export const PL_PROG: ProgrammableLabels = {
   jsxRenderer: 'Renderer JSX',
   mcpServer: 'Serwer MCP',
   aiChat: 'Czat AI',
-  collaboration: 'Współpraca'
+  collaboration: 'Współpraca',
+  commandReference: 'Opis poleceń',
+  aiAgents: 'Agenci AI',
+  libraries: 'Biblioteki',
+  internals: 'Szczegóły wewnętrzne',
+  urlScheme: 'Schemat URL'
 }
 export const RU_PROG: ProgrammableLabels = {
   overview: 'Обзор',
@@ -151,10 +189,16 @@ export const RU_PROG: ProgrammableLabels = {
   jsxRenderer: 'JSX-рендерер',
   mcpServer: 'MCP-сервер',
   aiChat: 'ИИ-чат',
-  collaboration: 'Совместная работа'
+  collaboration: 'Совместная работа',
+  commandReference: 'Справочник команд',
+  aiAgents: 'ИИ-агенты',
+  libraries: 'Библиотеки',
+  internals: 'Внутреннее устройство',
+  urlScheme: 'Схема URL'
 }
 
 export const EN: SidebarLabels = {
+  aiAndCollaboration: 'AI and Collaboration',
   gettingAround: 'Getting Around',
   creatingContent: 'Creating Content',
   organizing: 'Organizing & Managing',
@@ -185,6 +229,7 @@ export const EN: SidebarLabels = {
   figmaMatrix: 'Figma Feature Matrix'
 }
 export const DE: SidebarLabels = {
+  aiAndCollaboration: 'KI und Zusammenarbeit',
   gettingAround: 'Erste Schritte',
   creatingContent: 'Inhalte erstellen',
   organizing: 'Organisieren',
@@ -215,6 +260,7 @@ export const DE: SidebarLabels = {
   figmaMatrix: 'Figma-Funktionsmatrix'
 }
 export const IT: SidebarLabels = {
+  aiAndCollaboration: 'IA e collaborazione',
   gettingAround: 'Orientamento',
   creatingContent: 'Creazione contenuti',
   organizing: 'Organizzazione',
@@ -245,6 +291,7 @@ export const IT: SidebarLabels = {
   figmaMatrix: 'Matrice funzionalità Figma'
 }
 export const FR: SidebarLabels = {
+  aiAndCollaboration: 'IA et collaboration',
   gettingAround: 'Prise en main',
   creatingContent: 'Création de contenu',
   organizing: 'Organisation',
@@ -275,6 +322,7 @@ export const FR: SidebarLabels = {
   figmaMatrix: 'Matrice des fonctionnalités Figma'
 }
 export const ES: SidebarLabels = {
+  aiAndCollaboration: 'IA y colaboración',
   gettingAround: 'Orientación',
   creatingContent: 'Crear contenido',
   organizing: 'Organizar',
@@ -305,6 +353,7 @@ export const ES: SidebarLabels = {
   figmaMatrix: 'Matriz de funcionalidades Figma'
 }
 export const PL: SidebarLabels = {
+  aiAndCollaboration: 'AI i współpraca',
   gettingAround: 'Nawigacja',
   creatingContent: 'Tworzenie treści',
   organizing: 'Organizacja',
@@ -335,6 +384,7 @@ export const PL: SidebarLabels = {
   figmaMatrix: 'Matryca funkcji Figma'
 }
 export const RU: SidebarLabels = {
+  aiAndCollaboration: 'ИИ и совместная работа',
   gettingAround: 'Навигация',
   creatingContent: 'Создание контента',
   organizing: 'Организация',

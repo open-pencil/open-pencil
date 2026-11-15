@@ -5,10 +5,6 @@ description: The companies that process personal data for OpenPencil Cloud at cl
 
 # OpenPencil Cloud Subprocessors
 
-::: warning Draft
-This is a draft awaiting legal review. It is not in force, and it changes before OpenPencil Cloud opens.
-:::
-
 These companies process personal data on behalf of OpenPencil Cloud at `cloud.openpencil.dev`. We update this list before adding one.
 
 | Company | What for | Where |
