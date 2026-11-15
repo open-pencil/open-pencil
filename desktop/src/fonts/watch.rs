@@ -103,7 +103,8 @@ fn watch_folders() {
     watch_new_folders();
 }
 
-/// Watches the font folders made since the last look, and stops watching folders removed.
+/// Watches each font folder there is now, and the nearest folder above each one that is not,
+/// and stops watching what no font folder needs any more: a folder made, or removed, since.
 fn watch_new_folders() {
     let Some(folders) = FOLDERS.get() else {
         return;
@@ -112,15 +113,27 @@ fn watch_new_folders() {
         .lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner());
     let Folders { watcher, watched } = &mut *folders;
+    let wanted = watch_targets(font_folders());
     watched.retain(|path| {
-        let present = path.is_dir();
-        if !present {
+        let keep = wanted.iter().any(|(wanted, _)| wanted == path);
+        if !keep {
             let _ = watcher.unwatch(path);
         }
-        present
+        keep
     });
-    for folder in font_folders() {
-        let (path, mode) = if folder.is_dir() {
+    for (path, mode) in wanted {
+        if !watched.contains(&path) && watcher.watch(&path, mode).is_ok() {
+            watched.push(path);
+        }
+    }
+}
+
+/// What to watch for the font folders: each one there is, with what is inside it, and for one
+/// that is not, the nearest folder above it, alone; each folder once.
+fn watch_targets(folders: Vec<PathBuf>) -> Vec<(PathBuf, RecursiveMode)> {
+    let mut targets: Vec<(PathBuf, RecursiveMode)> = Vec::new();
+    for folder in folders {
+        let target = if folder.is_dir() {
             (folder, RecursiveMode::Recursive)
         } else {
             let Some(above) = folder.ancestors().find(|path| path.is_dir()) else {
@@ -128,18 +141,11 @@ fn watch_new_folders() {
             };
             (above.to_path_buf(), RecursiveMode::NonRecursive)
         };
-        if watched.contains(&path) {
-            continue;
-        }
-        // A folder above a missing one stops being watched once the font folder is made.
-        for stale in watched.iter().filter(|stale| path.starts_with(stale)) {
-            let _ = watcher.unwatch(stale);
-        }
-        watched.retain(|stale| !path.starts_with(stale));
-        if watcher.watch(&path, mode).is_ok() {
-            watched.push(path);
+        if !targets.iter().any(|(path, _)| *path == target.0) {
+            targets.push(target);
         }
     }
+    targets
 }
 
 /// The folders fonts are installed into.
@@ -257,5 +263,30 @@ mod win32 {
             let mut collection: Option<IDWriteFontCollection> = None;
             let _ = factory.GetSystemFontCollection(&mut collection, true);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_missing_font_folder_keeps_its_folder_above_watched_beside_one_there_is() {
+        let home = std::env::temp_dir().join(format!("openpencil-fonts-{}", std::process::id()));
+        let fonts = home.join(".fonts");
+        std::fs::create_dir_all(&fonts).unwrap();
+        let targets = watch_targets(vec![
+            home.join(".local/share/fonts"),
+            fonts.clone(),
+            home.join(".local/share/other/fonts"),
+        ]);
+        let _ = std::fs::remove_dir_all(&home);
+        assert_eq!(
+            targets,
+            [
+                (home, RecursiveMode::NonRecursive),
+                (fonts, RecursiveMode::Recursive)
+            ]
+        );
     }
 }

@@ -251,4 +251,75 @@ describe('a family listed as several', () => {
     })
     expect(names.families()).toEqual([])
   })
+
+  test('a file that fails to read leaves the face that was read, and the rest of the family', async () => {
+    const fonts = [
+      localFace('Inter Variable Text', 'Text Bold', INTER_VARIABLE, [], 'Inter Variable Text Bold'),
+      {
+        ...localFace('Inter Variable Text', 'Text Light', INTER_VARIABLE),
+        blob: () => Promise.reject(new Error('gone'))
+      },
+      localFace(
+        'Inter Variable Text',
+        'Text Italic',
+        INTER_ITALIC,
+        [],
+        'Inter Variable Text Italic'
+      )
+    ]
+    const names = new OwnFaceNames()
+    expect(await familyOf(readLocalFace(fonts, 'Inter Variable Text', 'Text Bold', names))).toBe(
+      'Inter Variable'
+    )
+    expect(names.ownFace('Inter Variable Text', 'Text Italic')).toEqual({
+      family: 'Inter Variable',
+      style: 'Italic'
+    })
+  })
+
+  test('learns nothing a read that was pending when the names were forgotten finds', async () => {
+    const names = new OwnFaceNames()
+    let finish = () => {}
+    const pending = new Promise<void>((resolve) => {
+      finish = resolve
+    })
+    const bold = localFace('Inter Variable Text', 'Text Bold', INTER_VARIABLE)
+    const fonts = [{ ...bold, blob: () => pending.then(() => bold.blob()) }]
+    const read = readLocalFace(fonts, 'Inter Variable Text', 'Text Bold', names)
+    names.forget()
+    finish()
+    expect(await familyOf(read)).toBe('Inter Variable')
+    expect([names.families(), names.ownFace('Inter Variable Text', 'Text Bold')]).toEqual([
+      [],
+      undefined
+    ])
+  })
+
+  test('a full name two instances share does not rename a face read by its listed names', async () => {
+    // The fixture's STAT names Regular and Display Heavy alike: "Text", with no 850 weight.
+    const names = new OwnFaceNames()
+    await readLocalFace(
+      [
+        localFace('Inter Variable Text', 'Text', INTER_VARIABLE, [], 'Inter Variable Text'),
+        localFace(
+          'Inter Variable Text',
+          'Text Bold',
+          INTER_VARIABLE,
+          [],
+          'Inter Variable Text Bold'
+        )
+      ],
+      'Inter Variable Text',
+      'Text',
+      names
+    )
+    expect(names.ownFace('Inter Variable Text', 'Text')).toEqual({
+      family: 'Inter Variable',
+      style: 'Regular'
+    })
+    expect(names.ownFace('Inter Variable Text', 'Text Bold')).toEqual({
+      family: 'Inter Variable',
+      style: 'Bold'
+    })
+  })
 })

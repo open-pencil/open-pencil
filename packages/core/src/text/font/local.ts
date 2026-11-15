@@ -1,4 +1,4 @@
-import { compact } from 'es-toolkit'
+import { compact, groupBy, uniq } from 'es-toolkit'
 
 import {
   namesWeight,
@@ -145,8 +145,9 @@ export async function readLocalFace(
   ownNames = new OwnFaceNames()
 ): Promise<ArrayBuffer | null> {
   const read = async (font: FontData) => {
+    const generation = ownNames.generation
     const data = await fontBytes(font)
-    await ownNames.learnFamily(fonts, font, data, { family, style, listed: true })
+    await ownNames.learnFamily(fonts, font, data, { family, style, listed: true }, generation)
     return data
   }
   const listed = listedLocalFont(fonts, family, style)
@@ -228,25 +229,36 @@ export class OwnFaceNames {
   private readonly ownFaces = new Map<string, OwnFace>()
   private readonly ownFamilies = new Map<string, { family: string; faces: FamilyFace[] }>()
   private readonly listeners = new Set<() => void>()
+  private learned = 0
+
+  /** Counts `forget` calls: what was read before the last one is not learned. */
+  get generation(): number {
+    return this.learned
+  }
 
   /**
    * Records what the font of a face read for a request names it and its family's faces, then
    * reads one listed face of each other file the family lists, so its faces are all known: an
-   * italic file is listed apart from its roman one, as Sitka's two are.
+   * italic file is listed apart from its roman one, as Sitka's two are. A file that fails to
+   * read is skipped; nothing read before the names were last forgotten (`generation`) is kept.
    */
   async learnFamily(
     fonts: FontData[],
     font: FontData,
     data: ArrayBuffer,
-    request: LocalFaceRequest
+    request: LocalFaceRequest,
+    generation: number
   ): Promise<void> {
+    if (generation !== this.learned) return
     const family = this.learn(fonts, font, data, request)
     if (family === null) return
     for (const sibling of candidatesFor(fonts, family, '')) {
       if (this.names.has(sibling.postscriptName) || this.ownFace(sibling.family, sibling.style)) {
         continue
       }
-      const bytes = await fontBytes(sibling)
+      const bytes = await fontBytes(sibling).catch(() => null)
+      if (generation !== this.learned) return
+      if (!bytes) continue
       this.remember(sibling, bytes)
       const listed = { family: sibling.family, style: sibling.style, listed: true }
       this.learn(fonts, sibling, bytes, listed)
@@ -281,18 +293,26 @@ export class OwnFaceNames {
 
     // The file's other instances the platform lists, by the full name it gives each: the
     // font's family and the instance's STAT name ("Segoe UI Variable Display Bold"). A family
-    // that only begins with the font's, as Inter Tight begins with Inter, has other names.
+    // that only begins with the font's, as Inter Tight begins with Inter, has other names. A
+    // full name two instances share, as STAT names an instance without a value of its own,
+    // places the listed face in this file without naming which instance it is.
     const statName = statNamer(data)
-    const fullNames = new Map(
-      namedInstances(data).flatMap((instance) => {
-        const names = [instance.name, statName?.(instance.variations)]
-        return compact(names).map((name) => [styleSpelling(`${own.family} ${name}`), instance])
-      })
+    const fullNames = groupBy(
+      namedInstances(data).flatMap((instance) =>
+        uniq(compact([instance.name, statName?.(instance.variations)])).map((name) => ({
+          fullName: styleSpelling(`${own.family} ${name}`),
+          instance
+        }))
+      ),
+      (entry) => entry.fullName
     )
     for (const sibling of candidatesFor(fonts, own.family, '')) {
-      const instance = fullNames.get(styleSpelling(sibling.fullName))
-      if (!instance) continue
-      this.translate(sibling.family, sibling.style, { family: own.family, style: instance.name })
+      const named = fullNames[styleSpelling(sibling.fullName)]
+      if (!named || sibling === font) continue
+      if (!this.names.has(sibling.postscriptName)) this.remember(sibling, data)
+      if (named.length > 1) continue
+      const style = named[0].instance.name
+      this.translate(sibling.family, sibling.style, { family: own.family, style })
     }
 
     const known = this.ownFamilies.get(styleSpelling(own.family)) ?? {
@@ -324,6 +344,7 @@ export class OwnFaceNames {
 
   /** Forgets every name learned, as after the installed fonts changed. */
   forget(): void {
+    this.learned++
     this.names.clear()
     this.ownFaces.clear()
     const had = this.ownFamilies.size > 0
@@ -350,13 +371,15 @@ export class OwnFaceNames {
   }
 
   async find(fonts: FontData[], family: string, style: string): Promise<ArrayBuffer | null> {
+    const generation = this.learned
     for (const font of candidatesFor(fonts, family, style)) {
       const known = this.names.get(font.postscriptName)
       if (known === null || (known && !namesFace(known, font, family, style))) continue
       const data = await fontBytes(font)
-      const names = known ?? this.remember(font, data)
+      const names =
+        known ?? (generation === this.learned ? this.remember(font, data) : faceNames(data))
       if (names && namesFace(names, font, family, style)) {
-        await this.learnFamily(fonts, font, data, { family, style, listed: false })
+        await this.learnFamily(fonts, font, data, { family, style, listed: false }, generation)
         return data
       }
     }
@@ -364,16 +387,22 @@ export class OwnFaceNames {
   }
 
   private remember(font: FontData, data: ArrayBuffer): FaceNames | null {
-    const own = fontFaceName(data)
-    const weight = fontAxes(data)?.find((axis) => axis.tag === 'wght')
-    const names = own && {
+    const names = faceNames(data)
+    this.names.set(font.postscriptName, names)
+    return names
+  }
+}
+
+function faceNames(data: ArrayBuffer): FaceNames | null {
+  const own = fontFaceName(data)
+  const weight = fontAxes(data)?.find((axis) => axis.tag === 'wght')
+  return (
+    own && {
       ...own,
       instances: namedInstances(data).map((instance) => styleSpelling(instance.name)),
       weights: weight ? { min: weight.min, max: weight.max } : null
     }
-    this.names.set(font.postscriptName, names)
-    return names
-  }
+  )
 }
 
 /**
