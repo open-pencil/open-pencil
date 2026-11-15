@@ -159,6 +159,10 @@ describe('MCP get_jsx', () => {
     return { id: frame.id, app }
   }
 
+  async function coreNote(app: AppAnswer, id: string) {
+    return v.parse(v.object({ note: v.string() }), await app({ id })).note
+  }
+
   function parsed(result: ToolResult): Record<string, unknown> {
     return v.parse(
       v.pipe(v.string(), v.parseJson(), v.record(v.string(), v.unknown())),
@@ -184,9 +188,11 @@ describe('MCP get_jsx', () => {
     const { call } = await server({ get_jsx: app })
 
     const result = parsed(await call('get_jsx', { id }))
+    const note = await coreNote(app, id)
     expect(String(result.jsx)).toHaveLength(12_000)
     expect(result.truncated).toBe(true)
-    expect(result.note).toContain('Pass path to write the complete JSX to a file.')
+    expect(String(result.note)).toStartWith(note)
+    expect(String(result.note).length).toBeGreaterThan(note.length)
   })
 
   test('without a root, a path is dropped and the JSX stays cut, with no promise of a file', async () => {
@@ -197,7 +203,7 @@ describe('MCP get_jsx', () => {
     expect(sent).toEqual([{ id }])
     expect(String(result.jsx)).toHaveLength(12_000)
     expect(result.truncated).toBe(true)
-    expect(result.note).not.toContain('path')
+    expect(result.note).toBe(await coreNote(app, id))
   })
 
   test('refuses an empty path, as Core does', async () => {
