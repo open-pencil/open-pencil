@@ -15,6 +15,7 @@ type Partners = Map<number, Map<number, number>>
 type FillTest = (x: number, y: number) => boolean
 
 const GAP_PROBE_DISTANCE = 0.25
+const MAX_CELLS_PER_FILL = 16
 
 function regionsPerSegment(network: VectorNetwork): number[] {
   const counts = network.segments.map(() => 0)
@@ -62,18 +63,41 @@ function indexedFillTest(fills: Path[]): FillTest {
   const column = (x: number) => clamp(Math.floor((x - enclosing[0]) / cellWidth), 0, side - 1)
   const row = (y: number) => clamp(Math.floor((y - enclosing[1]) / cellHeight), 0, side - 1)
   const buckets: number[][] = Array.from({ length: side * side }, () => [])
+  const rows: number[][] = Array.from({ length: side }, () => [])
+  const columns: number[][] = Array.from({ length: side }, () => [])
+  const spanning: number[] = []
   for (const [index, box] of bounds.entries()) {
-    for (let y = row(box[1]); y <= row(box[3]); y++) {
-      for (let x = column(box[0]); x <= column(box[2]); x++) {
-        buckets[y * side + x].push(index)
+    const [left, top, right, bottom] = [column(box[0]), row(box[1]), column(box[2]), row(box[3])]
+    const [across, down] = [right - left + 1, bottom - top + 1]
+    if (across * down <= MAX_CELLS_PER_FILL) {
+      for (let y = top; y <= bottom; y++) {
+        for (let x = left; x <= right; x++) {
+          buckets[y * side + x].push(index)
+        }
       }
+    } else if (down <= MAX_CELLS_PER_FILL && down <= across) {
+      for (let y = top; y <= bottom; y++) {
+        rows[y].push(index)
+      }
+    } else if (across <= MAX_CELLS_PER_FILL) {
+      for (let x = left; x <= right; x++) {
+        columns[x].push(index)
+      }
+    } else {
+      spanning.push(index)
     }
   }
-  return (x, y) =>
-    holdsPoint(enclosing, x, y) &&
-    buckets[row(y) * side + column(x)].some(
-      (index) => holdsPoint(bounds[index], x, y) && fills[index].contains(x, y)
+  const fillHolds = (index: number, x: number, y: number) =>
+    holdsPoint(bounds[index], x, y) && fills[index].contains(x, y)
+  return (x, y) => {
+    if (!holdsPoint(enclosing, x, y)) {
+      return false
+    }
+    const [atRow, atColumn] = [row(y), column(x)]
+    return [buckets[atRow * side + atColumn], rows[atRow], columns[atColumn], spanning].some(
+      (candidates) => candidates.some((index) => fillHolds(index, x, y))
     )
+  }
 }
 
 function regionSegmentsByVertex(network: VectorNetwork, counts: number[]): Map<number, number[]> {
