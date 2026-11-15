@@ -1,5 +1,8 @@
 import type { Page, Locator } from '@playwright/test'
 
+import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { expectDefined } from '@open-pencil/test-support/assert'
+
 import { OFFICIAL_CLOUD_URL } from '@/constants'
 
 import { CanvasPointer } from './canvas/pointer'
@@ -94,6 +97,37 @@ export class CanvasHelper extends CanvasPointer {
       },
       { markup, x, y }
     )
+  }
+
+  async setView(view: { panX: number; panY: number; zoom: number }) {
+    await this.page.evaluate((next) => {
+      const store = window.openPencil?.getStore?.()
+      if (!store) {
+        throw new Error('OpenPencil store not initialized')
+      }
+      Object.assign(store.state, next)
+      store.requestRepaint()
+    }, view)
+    await this.waitForRender()
+  }
+
+  async screenPositionOf(point: Vector): Promise<Vector> {
+    const box = expectDefined(
+      await this.page.getByTestId('scene-canvas-element').boundingBox(),
+      'scene canvas bounds'
+    )
+    const view = await this.page.evaluate(() => {
+      const store = window.openPencil?.getStore?.()
+      if (!store) {
+        throw new Error('OpenPencil store not initialized')
+      }
+      const { panX, panY, zoom } = store.state
+      return { panX, panY, zoom }
+    })
+    return {
+      x: Math.round(box.x + view.panX + point.x * view.zoom),
+      y: Math.round(box.y + view.panY + point.y * view.zoom)
+    }
   }
 
   async screenshotCanvas() {
