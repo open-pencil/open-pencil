@@ -1,11 +1,11 @@
 import type PptxGenJS from 'pptxgenjs'
 
-import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { imageDataURL } from '@open-pencil/scene-graph/images'
 import TransformMatrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
-import { lineHeightPixels, textLengthPixels } from '@open-pencil/scene-graph/text'
+import { lineHeightPixels, styleRunPieces, textLengthPixels } from '@open-pencil/scene-graph/text'
 
 import {
   hasUnsupportedTransform,
@@ -461,27 +461,12 @@ function addEditableText(ctx: ExportCtx, node: SceneNode, opacity: number): void
 function buildTextRuns(ctx: ExportCtx, node: SceneNode, opacity: number): PptxGenJS.TextProps[] {
   const text = applyTextCase(node.text, node.textCase)
 
-  interface Seg {
-    start: number
-    end: number
-    style: Partial<SceneNode> & { fills?: Fill[] }
-  }
-  const segs: Seg[] = []
-  const sorted = [...node.styleRuns].sort((a, b) => a.start - b.start)
-  let cursor = 0
-  for (const run of sorted) {
-    const start = Math.max(run.start, cursor)
-    const end = Math.min(run.start + run.length, text.length)
-    if (start > cursor) segs.push({ start: cursor, end: start, style: {} })
-    if (end > start) segs.push({ start, end, style: run.style })
-    cursor = Math.max(cursor, end)
-  }
-  if (cursor < text.length) segs.push({ start: cursor, end: text.length, style: {} })
-  if (segs.length === 0) segs.push({ start: 0, end: text.length, style: {} })
+  const pieces = styleRunPieces(node.styleRuns, text.length)
+  const segs = pieces.length > 0 ? pieces : [{ start: 0, end: 0, style: null }]
 
   const baseFill = firstVisibleFill(node)
   return segs.map((seg) => {
-    const s = seg.style
+    const s = seg.style ?? {}
     const fill = s.fills?.find((f) => f.visible && f.type === 'SOLID') ?? baseFill
     const fontSize = s.fontSize ?? node.fontSize
     const weight = s.fontWeight ?? node.fontWeight

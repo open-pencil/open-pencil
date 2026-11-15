@@ -1,1 +1,0 @@
-- Long MCP and agent sessions no longer keep growing in memory once undo history is full: steps past the history limit are freed, also in documents that are never saved (#2066).

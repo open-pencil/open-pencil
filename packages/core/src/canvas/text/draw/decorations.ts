@@ -2,6 +2,7 @@ import type { Canvas, CanvasKit, Paint } from '@open-pencil/canvaskit'
 import type { Fill, SceneNode } from '@open-pencil/scene-graph'
 import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
+import { styleRunAt } from '@open-pencil/scene-graph/text'
 
 import type { TextLayout } from '#core/canvas/text/layout'
 import { drawnBaseline } from '#core/canvas/text/layout/lines'
@@ -155,9 +156,7 @@ function drawKeycapFrames(
       if (character === undefined || text[character] !== COMBINING_KEYCAP) continue
       // The frame takes the colour the paragraph gives its mark: its style run's, if it has one.
       const source = sourceIndexAt.get(character) ?? character
-      const run = node.styleRuns.find(
-        (item) => source >= item.start && source < item.start + item.length
-      )
+      const run = styleRunAt(node.styleRuns, source)
       runPaint.setColor(run ? styleRunColor(ck, run.style, paint.getColor()) : paint.getColor())
       // On the whole pixel its character is drawn on.
       drawKeycapFrame(ck, canvas, glyph.x, drawnBaseline(glyph.y), glyph.fontSize, runPaint)

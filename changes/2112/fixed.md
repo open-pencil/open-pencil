@@ -1,1 +1,0 @@
-- Design check no longer reports a shadow, blur, or text layer that already uses a shared effect or text style.

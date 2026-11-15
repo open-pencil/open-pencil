@@ -124,7 +124,9 @@ export function createEditor(options?: EditorOptions) {
   void prefetchFigmaSchema()
 
   const graphReads = createGraphReadActions(() => _graph)
-  const { runLayoutForNode, runMutationWithLayout } = createLayoutRunner(() => _graph)
+  const { runLayoutForNode, runLayoutForParents, runMutationWithLayout } = createLayoutRunner(
+    () => _graph
+  )
   const pendingTextLayout = createPendingTextLayout({
     getGraph: () => _graph,
     getRenderer: canvas.getRenderer,
@@ -187,6 +189,7 @@ export function createEditor(options?: EditorOptions) {
     setActiveTool,
     setNavigationPhase,
     runLayoutForNode,
+    runLayoutForParents,
     runMutationWithLayout,
     subscribeToGraph
   }

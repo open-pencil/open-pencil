@@ -16,6 +16,7 @@ import {
   SHARED_TEXT_STYLE_FIELDS,
   styleDetachmentChanges
 } from '@open-pencil/scene-graph/shared-styles'
+import { appendStyleRun, characterOverrides } from '@open-pencil/scene-graph/text'
 
 /** A character's style: the text's own, with its run's overrides over it. */
 export type CharacterStyle = Required<
@@ -144,18 +145,7 @@ function withoutRedundantOverrides(node: SceneNode, runs: StyleRun[]): StyleRun[
       (key) => run.style[key] !== undefined && isEqual(run.style[key], base[key])
     )
     // A key a copy left undefined overrides nothing either.
-    const style = omitBy(omit(run.style, repeated), isUndefined)
-    if (Object.keys(style).length === 0) continue
-    const previous = result.at(-1)
-    if (
-      previous &&
-      previous.start + previous.length === run.start &&
-      isEqual(previous.style, style)
-    ) {
-      previous.length += run.length
-    } else {
-      result.push({ start: run.start, length: run.length, style })
-    }
+    appendStyleRun(result, run.start, run.length, omitBy(omit(run.style, repeated), isUndefined))
   }
   return result
 }
@@ -204,12 +194,7 @@ export function styleRunsWithPatchOver(
   patch: TextStylePatch
 ): StyleRun[] {
   const length = node.text.length
-  const chars: CharacterStyleOverride[] = Array.from({ length }, () => ({}))
-  for (const run of node.styleRuns) {
-    for (let index = run.start; index < run.start + run.length && index < length; index++) {
-      chars[index] = { ...chars[index], ...run.style }
-    }
-  }
+  const chars = characterOverrides(node.styleRuns, length)
   const sized = typeof patch === 'function' ? patch : null
   const patches = new Map<number, CharacterStyleOverride>()
   for (const [start, end] of ranges) {
@@ -229,15 +214,8 @@ export function styleRunsWithPatchOver(
     if (node.text[index] === '\n') chars[index] = chars[index - 1]
   }
   const runs: StyleRun[] = []
-  for (const [index, style] of chars.entries()) {
-    const previous = runs.at(-1)
-    if (previous && isEqual(previous.style, style)) previous.length++
-    else runs.push({ start: index, length: 1, style })
-  }
-  return withoutRedundantOverrides(
-    node,
-    runs.filter((run) => Object.keys(run.style).length > 0)
-  )
+  for (const [index, style] of chars.entries()) appendStyleRun(runs, index, 1, style)
+  return withoutRedundantOverrides(node, runs)
 }
 
 /**

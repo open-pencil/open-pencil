@@ -105,13 +105,9 @@ export function createClipboardActions(ctx: EditorContext) {
     const stack = () => {
       for (const { id, parentId, index } of stacking) ctx.graph.insertChildAt(id, parentId, index)
     }
-    // Auto layout parents lay out again, so a copy joins the flow and a hugging parent resizes.
-    // Undo and redo do it too, because neither stores the parent's layout. Other parents, such
-    // as the page, are skipped: laying out a page reaches every frame on it.
-    const parentIds = uniq(parents).filter((id) => ctx.graph.getNode(id)?.layoutMode !== 'NONE')
-    const relayoutParents = () => {
-      for (const parentId of parentIds) ctx.runLayoutForNode(parentId)
-    }
+    // A copy joins its parent's flow and a hugging parent resizes, on undo and redo too, since
+    // neither stores the parent's layout.
+    const relayoutParents = () => ctx.runLayoutForParents(parents)
     stack()
 
     if (newRootIds.length > 0) {
@@ -408,11 +404,7 @@ export function createClipboardActions(ctx: EditorContext) {
     )
     for (const entry of entries) entry.subtree = snapshotSubtree(ctx.graph, entry.id)
 
-    const relayoutParents = () => {
-      for (const parentId of new Set(entries.map((entry) => entry.parentId))) {
-        ctx.runLayoutForNode(parentId)
-      }
-    }
+    const relayoutParents = () => ctx.runLayoutForParents(entries.map((entry) => entry.parentId))
 
     const prevSelection = new Set(ctx.state.selectedIds)
     for (const { id } of entries) ctx.graph.deleteNode(id)
