@@ -5,11 +5,11 @@ description: How to measure the editor page's memory in WebKit and Chromium, and
 
 # Page Memory
 
-The editor's memory lives in several places at once: the JavaScript heaps of the page and of the `.fig` session worker, WebAssembly memory for CanvasKit and Taffy, native allocations, and GPU memory, where the tile cache keeps at least the budget set in `packages/core/src/canvas/renderer/tiles/cache.ts`. A heap number from one engine's DevTools covers only part of it, so measure in the engine where the problem was reported, and compare runs only under the same window size and device pixel ratio.
+The editor's memory lives in several places at once: the JavaScript heaps of the page and of the `.fig` session worker, WebAssembly memory for CanvasKit and Taffy, native allocations, and GPU memory, where the tile cache may grow up to the budget `viewportTileCacheBudget` sets (`packages/core/src/canvas/renderer/tiles/cache.ts`). A heap number from one engine's DevTools covers only part of it, so measure in the engine where the problem was reported, and compare runs only under the same window size and device pixel ratio.
 
-## WebKit
+## WebKit on macOS
 
-The desktop app and Safari run the page in a WebContent process.
+On macOS the desktop app and Safari run the page in a WebContent process, and these tools are macOS ones. The Windows desktop app runs on WebView2, so measure it as Chromium.
 
 - `footprint -p <WebContent pid>` works without root. "WebKit Malloc" is the JavaScriptCore heap with WebKit's own allocations, and "Owned physical footprint (graphics)" is the page's GPU memory.
 - JavaScriptCore collects lazily, so most of a large "WebKit Malloc" right after a load can be garbage. `notifyutil -p org.WebKit.lowMemory` reaches the WebContent process and makes it collect and release memory; send it before every measurement.
