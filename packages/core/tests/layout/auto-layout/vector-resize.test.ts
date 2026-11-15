@@ -199,6 +199,58 @@ describe('a vector layout resizes', () => {
     expect(point(node.fillGeometry[0])).toEqual([200, 100])
   })
 
+  test('scales the finite axis when layout expands a collapsed vector whose other axis is infinite', () => {
+    const graph = new SceneGraph()
+    const vector = graph.createNode('VECTOR', graph.getPages()[0].id, {
+      width: 0,
+      height: 0,
+      vectorNetwork: {
+        vertices: [
+          { x: Number.POSITIVE_INFINITY, y: 0 },
+          { x: Number.POSITIVE_INFINITY, y: 80 }
+        ],
+        segments: [],
+        regions: []
+      }
+    })
+
+    graph.withLayoutMutations(() => {
+      graph.updateNode(vector.id, { height: 200 })
+    })
+
+    const node = expectDefined(graph.getNode(vector.id))
+    const vertices = expectDefined(node.vectorNetwork).vertices
+    expect(vertices[0]).toEqual({ x: Number.POSITIVE_INFINITY, y: 0 })
+    expect(vertices[1]).toEqual({ x: Number.POSITIVE_INFINITY, y: 200 })
+  })
+
+  test('scales the finite axis when layout expands a collapsed vector whose other axis is NaN', () => {
+    const graph = new SceneGraph()
+    const vector = graph.createNode('VECTOR', graph.getPages()[0].id, {
+      width: 0,
+      height: 0,
+      vectorNetwork: {
+        vertices: [
+          { x: Number.NaN, y: 0 },
+          { x: Number.NaN, y: 80 }
+        ],
+        segments: [],
+        regions: []
+      }
+    })
+
+    graph.withLayoutMutations(() => {
+      graph.updateNode(vector.id, { height: 200 })
+    })
+
+    const node = expectDefined(graph.getNode(vector.id))
+    const vertices = expectDefined(node.vectorNetwork).vertices
+    expect(vertices[0]?.x).toBeNaN()
+    expect(vertices[0]?.y).toBe(0)
+    expect(vertices[1]?.x).toBeNaN()
+    expect(vertices[1]?.y).toBe(200)
+  })
+
   test('scales only the axis that was zero when layout gives a collapsed side its size back', () => {
     const graph = new SceneGraph()
     const vector = graph.createNode('VECTOR', graph.getPages()[0].id, {

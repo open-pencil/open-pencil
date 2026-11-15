@@ -85,12 +85,10 @@ function createBoundsAccumulator(): BoundsAccumulator {
 }
 
 function includePoint(bounds: BoundsAccumulator, x: number, y: number): void {
-  // A comparison with NaN is false, so that coordinate stays out of the bound. Math.min and
-  // Math.max would spread it across the axis.
-  if (x < bounds.minX) bounds.minX = x
-  if (y < bounds.minY) bounds.minY = y
-  if (x > bounds.maxX) bounds.maxX = x
-  if (y > bounds.maxY) bounds.maxY = y
+  bounds.minX = Math.min(bounds.minX, x)
+  bounds.minY = Math.min(bounds.minY, y)
+  bounds.maxX = Math.max(bounds.maxX, x)
+  bounds.maxY = Math.max(bounds.maxY, y)
 }
 
 function includeRect(bounds: BoundsAccumulator, rect: Rect): void {
@@ -122,13 +120,8 @@ function pointBounds(point: Vector): Rect {
   return { x: point.x, y: point.y, width: 0, height: 0 }
 }
 
-/**
- * The tight box of a vector network, including where its curves peak. A zero side scales from
- * this, which is the size the path was drawn at.
- */
-export function vectorNetworkBounds(network: VectorNetwork): Rect {
-  if (network.vertices.length === 0) return { x: 0, y: 0, width: 0, height: 0 }
-  const points = network.vertices.map(pointBounds)
+function eachNetworkPoint(network: VectorNetwork, visit: (point: Vector) => void): void {
+  for (const vertex of network.vertices) visit(vertex)
   for (const segment of network.segments) {
     if (!Number.isInteger(segment.start) || segment.start < 0) continue
     if (!Number.isInteger(segment.end) || segment.end < 0) continue
@@ -138,13 +131,41 @@ export function vectorNetworkBounds(network: VectorNetwork): Rect {
     const p1 = { x: start.x + segment.tangentStart.x, y: start.y + segment.tangentStart.y }
     const p2 = { x: end.x + segment.tangentEnd.x, y: end.y + segment.tangentEnd.y }
     for (const t of cubicExtrema(start.x, p1.x, p2.x, end.x)) {
-      points.push(pointBounds(cubicPoint(start, p1, p2, end, t)))
+      visit(cubicPoint(start, p1, p2, end, t))
     }
     for (const t of cubicExtrema(start.y, p1.y, p2.y, end.y)) {
-      points.push(pointBounds(cubicPoint(start, p1, p2, end, t)))
+      visit(cubicPoint(start, p1, p2, end, t))
     }
   }
+}
+
+/**
+ * The tight box of a vector network, including where its curves peak. A zero side scales from
+ * this, which is the size the path was drawn at.
+ */
+export function vectorNetworkBounds(network: VectorNetwork): Rect {
+  if (network.vertices.length === 0) return { x: 0, y: 0, width: 0, height: 0 }
+  const points: Rect[] = []
+  eachNetworkPoint(network, (point) => points.push(pointBounds(point)))
   return computeBounds(points)
+}
+
+/**
+ * The width and height of a network, measured apart. A NaN coordinate is left out of its axis.
+ * An empty or infinite axis is not a finite length, and it does not erase the other axis.
+ */
+export function vectorNetworkAxisLengths(network: VectorNetwork): Pick<Rect, 'width' | 'height'> {
+  let minX = Infinity
+  let maxX = -Infinity
+  let minY = Infinity
+  let maxY = -Infinity
+  eachNetworkPoint(network, ({ x, y }) => {
+    if (x < minX) minX = x
+    if (x > maxX) maxX = x
+    if (y < minY) minY = y
+    if (y > maxY) maxY = y
+  })
+  return { width: maxX - minX, height: maxY - minY }
 }
 
 export function polygonVertices(node: {

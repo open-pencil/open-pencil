@@ -28,6 +28,14 @@ describe('computeBounds', () => {
     ])
     expect(result).toEqual({ x: 0, y: 0, width: 110, height: 110 })
   })
+
+  test('a NaN coordinate stays on its own axis', () => {
+    const result = computeBounds([{ x: Number.NaN, y: 10, width: 5, height: 30 }])
+    expect(result.x).toBeNaN()
+    expect(result.width).toBeNaN()
+    expect(result.y).toBe(10)
+    expect(result.height).toBe(30)
+  })
 })
 
 describe('computeAbsoluteBounds', () => {

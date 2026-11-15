@@ -1,5 +1,5 @@
 import { SIZE_FIELDS, TRANSFORM_FIELDS } from '../fields/geometry'
-import { vectorNetworkBounds } from '../geometry'
+import { vectorNetworkAxisLengths } from '../geometry'
 import type { Rect } from '../primitives'
 import { createResizeSnapshot, scaledGeometryChanges } from '../resize'
 import type { SceneNode, VectorNetwork } from '../types'
@@ -24,10 +24,10 @@ function outlinesNetwork(node: SceneNode, before: Partial<SceneNode>): VectorNet
   return node.vectorNetwork
 }
 
-/** The tight box of `network`, the size a zero side scales from. */
+/** The size a zero side scales from, with each axis measured on its own. */
 function collapsedPathExtent(network: VectorNetwork | null): Pick<Rect, 'width' | 'height'> | null {
   if (!network || network.vertices.length === 0) return null
-  return vectorNetworkBounds(network)
+  return vectorNetworkAxisLengths(network)
 }
 
 /** A length a collapsed side can scale from. A non-finite one is no usable length. */
