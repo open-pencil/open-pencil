@@ -5,7 +5,8 @@ import {
   parseCSSAlignItems,
   parseCSSFlexDirection,
   parseCSSJustifyContent,
-  parseCSSNumber
+  parseCSSNumber,
+  splitCSSValue
 } from '@open-pencil/scene-graph/css'
 import {
   autoLayoutSizingFields,
@@ -235,7 +236,7 @@ export function applyContainerLayout(
 function grows(style: DesignStyleDeclaration): boolean {
   const grow = parseCSSNumber(pickStyle(style, 'flex-grow'))
   if (grow !== null) return grow > 0
-  const flex = pickStyle(style, 'flex')?.trim().split(/\s+/)[0]
+  const [flex] = splitCSSValue(pickStyle(style, 'flex') ?? '')
   if (flex === 'auto') return true
   const shorthand = parseCSSNumber(flex)
   return shorthand !== null && shorthand > 0
