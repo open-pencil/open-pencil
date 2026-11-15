@@ -8,8 +8,8 @@ import { addOpenSegmentsToPath } from '@open-pencil/scene-graph/paths'
 import { getTextOutlineSupport } from '#core/text/outlines'
 import { isOpenVectorNetwork } from '#core/vector/connectivity'
 
+import { renderLeafWithEffects } from './effects'
 import { clearFillShader } from './fills/paint'
-import { withNoiseEffects } from './noise/render'
 import { sharedPath } from './paths/shared'
 import { curvePathData } from './paths/svg-data'
 import type { SkiaRenderer } from './renderer/skia'
@@ -21,7 +21,6 @@ import {
 } from './strokes/draw'
 import { makeLineSegmentPath, makeLineStrokeOutline } from './strokes/line'
 import { textNodeToOutlinePath } from './text/outlines/glyphs'
-import { withLeafTexture } from './texture'
 
 const BOOLEAN_PATH_OP: Record<
   NonNullable<SceneNode['booleanOperation']>,
@@ -561,12 +560,7 @@ export function renderBooleanOperation(
   node: SceneNode,
   graph: SceneGraph
 ): void {
-  r.renderEffects(canvas, node, graph, 'behind')
-  withNoiseEffects(r, canvas, node, graph, () =>
-    withLeafTexture(r, canvas, node, () =>
-      paintBooleanOperation(r, canvas, node, graph, () =>
-        r.renderEffects(canvas, node, graph, 'inner')
-      )
-    )
+  renderLeafWithEffects(r, canvas, node, graph, (inner) =>
+    paintBooleanOperation(r, canvas, node, graph, inner)
   )
 }

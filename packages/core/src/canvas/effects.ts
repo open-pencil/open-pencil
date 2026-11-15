@@ -1,12 +1,14 @@
 import type { Canvas, ImageFilter, MaskFilter, Path } from '@open-pencil/canvaskit'
-import type { Effect, SceneNode } from '@open-pencil/scene-graph'
+import type { Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { blurSigma, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { ResourceCache } from '#core/cache/resource'
 
 import { isPlainRamp, makeProgressiveBlur, progressiveBlurRamp } from './blur/progressive'
+import { withNoiseEffects } from './noise/render'
 import type { SkiaRenderer } from './renderer/skia'
+import { withLeafTexture } from './texture'
 
 /**
  * Filters a renderer keeps between frames, by their parameters: shadows and blurs reuse one across
@@ -134,4 +136,24 @@ export function applyClippedBlur(
   r.effectLayerPaint.setColorFilter(null)
   r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
   canvas.restore()
+}
+
+/**
+ * Draws a shape or boolean with its own effects, as Figma layers them: shadows and background
+ * blur behind, inner shadows over the fills and under the strokes (`paint` calls `inner` between
+ * them), the texture roughening that content, and noise grains over it.
+ */
+export function renderLeafWithEffects(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  graph: SceneGraph,
+  paint: (inner: () => void) => void
+): void {
+  r.renderEffects(canvas, node, graph, 'behind')
+  withNoiseEffects(r, canvas, node, graph, () =>
+    withLeafTexture(r, canvas, node, () =>
+      paint(() => r.renderEffects(canvas, node, graph, 'inner'))
+    )
+  )
 }

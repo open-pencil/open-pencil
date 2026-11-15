@@ -14,6 +14,7 @@ import { fontManager } from '#core/text/font/manager'
 import { needsIsolatedBlendLayer, setPaintBlendMode } from './blend/modes'
 import { blurredContent, layerBlurFilter } from './blur/layer'
 import { renderBooleanOperation } from './boolean'
+import { renderLeafWithEffects } from './effects'
 import { drawVectorMultiStyleFills, paintFills } from './fills/paint'
 import { drawLayoutGrids } from './layout-grids'
 import { renderMaskedChildIds } from './masks'
@@ -42,7 +43,7 @@ import {
 import { drawReflowedPathTextSilhouettes, isReflowedPathText } from './text/derived'
 import { drawTextEmoji, hasOverflowPathTextPaint, renderText } from './text/draw/text'
 import { stickyPlaceholderNode } from './text/placeholder'
-import { beginTexture, endTexture, visibleTexture, withLeafTexture } from './texture'
+import { beginTexture, endTexture, visibleTexture } from './texture'
 
 function drawVisibleFills(
   r: SkiaRenderer,
@@ -538,11 +539,8 @@ export function renderShapeUncached(
   node: SceneNode,
   graph: SceneGraph
 ): void {
-  r.renderEffects(canvas, node, graph, 'behind')
-  withNoiseEffects(r, canvas, node, graph, () =>
-    withLeafTexture(r, canvas, node, () =>
-      paintShapeContent(r, canvas, node, graph, () => r.renderEffects(canvas, node, graph, 'inner'))
-    )
+  renderLeafWithEffects(r, canvas, node, graph, (inner) =>
+    paintShapeContent(r, canvas, node, graph, inner)
   )
 }
 
