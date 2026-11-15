@@ -1,6 +1,6 @@
 import { pick } from 'es-toolkit'
 
-import type { LayoutAlignSelf, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   parseCSSAlignItems,
   parseCSSFlexDirection,
@@ -129,7 +129,10 @@ function textAlignAxis(style: DesignStyleDeclaration) {
   return align === 'right' || align === 'end' ? 'MAX' : 'MIN'
 }
 
-const BLOCK_ALIGN: Partial<Record<string, LayoutAlignSelf>> = { center: 'CENTER', right: 'MAX' }
+/** Where a block can go across its container besides its start. */
+type BlockAlign = 'CENTER' | 'MAX'
+
+const BLOCK_ALIGN: Partial<Record<string, BlockAlign>> = { center: 'CENTER', right: 'MAX' }
 
 /**
  * Where block flow puts a block across its container: by its auto margins, which take up the
@@ -138,7 +141,7 @@ const BLOCK_ALIGN: Partial<Record<string, LayoutAlignSelf>> = { center: 'CENTER'
 function blockAlignSelf(
   style: DesignStyleDeclaration,
   containerStyle: DesignStyleDeclaration
-): LayoutAlignSelf | null {
+): BlockAlign | null {
   const left = pickStyle(style, 'margin-left')?.trim() === 'auto'
   const right = pickStyle(style, 'margin-right')?.trim() === 'auto'
   if (left && right) return 'CENTER'
@@ -149,26 +152,49 @@ function blockAlignSelf(
   return side ? (BLOCK_ALIGN[side] ?? null) : null
 }
 
+/** A block-level child of a block-flow container, with its style. */
+export interface FlowBlock {
+  layer: SceneNode
+  style: DesignStyleDeclaration
+}
+
 /**
- * Aligns a block in its block-flow container where CSS centers it or puts it at the end, as
+ * Aligns blocks in their block-flow container where CSS centers them or puts them at the end, as
  * `margin: auto` and `<center>` do. A block that fills the container's width has no room to
- * move, so only one with a width of its own, or a maximum width that keeps it narrower, does: the
- * latter hugs its content up to that maximum instead of filling.
+ * move, so only one with a width of its own moves by its own alignment. One capped by a maximum
+ * width stays filling up to it, and the container's alignment places it, as Figma places a
+ * capped Fill child, when that moves nothing else: when every other child fills the width too.
+ * Otherwise it hugs its content up to the maximum, and placement corrects a size that differs.
  */
-export function alignBlockInFlow(
+export function alignBlocksInFlow(
   graph: SceneGraph,
-  node: SceneNode,
-  style: DesignStyleDeclaration,
+  container: SceneNode,
+  blocks: readonly FlowBlock[],
   containerStyle: DesignStyleDeclaration
 ): void {
-  if (node.layoutPositioning === 'ABSOLUTE') return
-  const align = blockAlignSelf(style, containerStyle)
-  if (!align) return
-  if (node.layoutAlignSelf === 'STRETCH') {
-    if (node.maxWidth === null) return
-    Object.assign(node, layoutSizingUpdates(graph, node, 'HORIZONTAL', 'HUG'))
+  const capped: { layer: SceneNode; align: BlockAlign }[] = []
+  for (const { layer, style } of blocks) {
+    if (layer.layoutPositioning === 'ABSOLUTE') continue
+    const align = blockAlignSelf(style, containerStyle)
+    if (!align) continue
+    if (layer.layoutAlignSelf !== 'STRETCH') layer.layoutAlignSelf = align
+    else if (layer.maxWidth !== null) capped.push({ layer, align })
   }
-  node.layoutAlignSelf = align
+  if (capped.length === 0) return
+  const [{ align }] = capped
+  const cappedIds = new Set(capped.map((block) => block.layer.id))
+  const othersFill = graph
+    .getChildren(container.id)
+    .filter((child) => child.layoutPositioning !== 'ABSOLUTE' && !cappedIds.has(child.id))
+    .every((child) => child.layoutAlignSelf === 'STRETCH')
+  if (othersFill && capped.every((block) => block.align === align)) {
+    container.counterAxisAlign = align
+    return
+  }
+  for (const { layer, align: own } of capped) {
+    Object.assign(layer, layoutSizingUpdates(graph, layer, 'HORIZONTAL', 'HUG'))
+    layer.layoutAlignSelf = own
+  }
 }
 
 const LINE_ALIGN: Partial<Record<SceneNode['textAlignHorizontal'], SceneNode['counterAxisAlign']>> =

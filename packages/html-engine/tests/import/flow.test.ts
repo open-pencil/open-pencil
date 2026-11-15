@@ -157,13 +157,39 @@ describe('HTML flow as auto layout', () => {
     )
     expect(byName('centered').layoutAlignSelf).toBe('CENTER')
     expect(byName('end').layoutAlignSelf).toBe('MAX')
-    // A block narrower than its container by a maximum width hugs up to it, centered.
+    // A capped block among blocks the container's alignment would move hugs up to its maximum.
     const capped = byName('capped')
     expect(capped.layoutAlignSelf).toBe('CENTER')
     expect(sizing(capped)[0]).toBe('HUG')
     expect(capped.maxWidth).toBe(300)
     // Without a width of its own a block fills the container, with no room to center in.
     expect(sizing(byName('full'))[0]).toBe('FILL')
+  })
+
+  it('keeps a capped block filling up to its maximum, centered by its container', async () => {
+    const { byName, sizing } = await importHTML(
+      `<div id="page" style="width:600px">` +
+        `<div id="header" style="height:10px"></div>` +
+        `<div id="main" style="max-width:300px;margin:0 auto"><div style="width:100px;height:10px"></div></div>` +
+        `</div>`
+    )
+    // CSS sizes the block before centering it: 300px wide however narrow its content, as a
+    // Fill capped at 300px is, which Figma places by its parent's alignment.
+    const main = byName('main')
+    expect(sizing(main)[0]).toBe('FILL')
+    expect(main.maxWidth).toBe(300)
+    expect(byName('page').counterAxisAlign).toBe('CENTER')
+    expect(sizing(byName('header'))[0]).toBe('FILL')
+  })
+
+  it('centers boxes in a line by text-align past an absolutely positioned child', async () => {
+    const { byName } = await importHTML(
+      `<div id="row" style="width:600px;text-align:center;position:relative">` +
+        `<span style="display:inline-block;width:40px;height:10px"></span>` +
+        `<div style="position:absolute;top:0;left:0;width:10px;height:10px"></div>` +
+        `</div>`
+    )
+    expect(byName('row').counterAxisAlign).toBe('CENTER')
   })
 
   it('centers blocks and lines in <center>, and boxes in a line by text-align', async () => {

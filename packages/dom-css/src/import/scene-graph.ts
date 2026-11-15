@@ -30,7 +30,8 @@ import {
 import { hasBoxStyle } from './boxes'
 import { colorToStrokeFromCSS, mergedStyle, pickStyle } from './css-values'
 import {
-  alignBlockInFlow,
+  alignBlocksInFlow,
+  type FlowBlock,
   alignBlockLines,
   applyContainerLayout,
   applyFlowSizing,
@@ -407,18 +408,23 @@ function createChildLayers(
     : undefined
   // Whether everything the element holds sits in its lines, which its `text-align` aligns.
   let inlineContent = true
+  const blocks: FlowBlock[] = []
   for (const child of element.children) {
     const inherited = inheritedTextStyle(style)
     const layer = createDesignNode(graph, node.id, child, flow ?? 'none', recorded, inherited)
     if (layer?.type === 'TEXT') record(graph, recorded, layer, textBox)
     if (child.type !== 'element' || !layer) continue
     const childStyle = mergedStyle(child)
+    // An absolutely positioned box is out of the flow, in no line and no block of its own.
+    if (layer.layoutPositioning === 'ABSOLUTE') continue
     if (isInlineLevel(elementDisplay(child, childStyle))) continue
     inlineContent = false
-    if (flow === 'block' && layer.type === 'FRAME')
-      alignBlockInFlow(graph, layer, childStyle, style)
+    if (layer.type === 'FRAME') blocks.push({ layer, style: childStyle })
   }
-  if (flow === 'block') alignBlockLines(graph, node, style, inlineContent)
+  if (flow === 'block') {
+    alignBlocksInFlow(graph, node, blocks, style)
+    alignBlockLines(graph, node, style, inlineContent)
+  }
 }
 
 function createDesignNode(
