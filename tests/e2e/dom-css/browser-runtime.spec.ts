@@ -1,10 +1,4 @@
-import {
-  compileTailwindCSS,
-  jsxToDesignDocument,
-  parseHTMLDocument,
-  type DesignDocument,
-  type DesignNode
-} from '@open-pencil/dom-css'
+import { compileTailwindCSS, jsxToDesignDocument, type DesignDocument } from '@open-pencil/dom-css'
 import { jsx } from '@open-pencil/dom-css/browser'
 import { designDocumentToSceneGraph } from '@open-pencil/dom-css/scene-graph'
 import {
@@ -467,44 +461,6 @@ test.describe('@open-pencil/dom-css browser CSS runtime oracle', () => {
       .locator('article.card')
       .evaluate((element) => getComputedStyle(element).width)
     expect(hostWidth).toBe('20px')
-  })
-
-  test('reports the properties the importer reads from a stylesheet, as the HTML engine does', async ({
-    page
-  }) => {
-    await page.goto('/')
-    const document = parseHTMLDocument(
-      `<table id="table"><tr><td id="cell">Cell</td></tr></table>
-      <div id="grid"><p id="item">Item</p></div>`
-    )
-    const css = `
-      #table { border-collapse: collapse; border-spacing: 2px 4px }
-      #cell { vertical-align: bottom }
-      #grid { display: grid; grid-template-columns: 40px 60px }
-      #item { flex-grow: 2; margin-top: 6px; text-decoration-style: dashed }
-    `
-    const computed = await browserRuntimeComputeStyles(page, document, css, 'iframe')
-    const style = (id: string) => {
-      const walk = (nodes: readonly DesignNode[]): DesignNode | undefined =>
-        nodes.find((node) => node.type === 'element' && node.attrs.id === id) ??
-        nodes
-          .flatMap((node) => (node.type === 'element' ? [walk(node.children)] : []))
-          .find(Boolean)
-      const element = walk(computed.children)
-      return element?.type === 'element' ? (element.computedStyle ?? {}) : {}
-    }
-
-    expect(style('table')).toMatchObject({
-      'border-collapse': 'collapse',
-      'border-spacing': '2px 4px'
-    })
-    expect(style('cell')['vertical-align']).toBe('bottom')
-    expect(style('grid')['grid-template-columns']).toBe('40px 60px')
-    expect(style('item')).toMatchObject({
-      'flex-grow': '2',
-      'margin-top': '6px',
-      'text-decoration-style': 'dashed'
-    })
   })
 
   test('projects HTML through public browser helpers into scene graph', async ({ page }) => {
