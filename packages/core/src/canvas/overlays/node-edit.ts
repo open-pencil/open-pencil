@@ -88,11 +88,11 @@ export function drawNodeEditOverlay(
     toScreen
   )
 
-  // Draw tangent handle lines + diamonds for vertices with visible handles
-  drawEditHandles(r, canvas, editState, toScreen, selectedHandles, hovered)
-
-  // Draw vertex circles
   drawEditVertices(r, canvas, vertices, selectedVertexIndices, toScreen)
+
+  // Handles above the points, lines and diamonds alike, so a handle on a point shows on top and a
+  // press there takes the handle (Figma desktop, live).
+  drawEditHandles(r, canvas, editState, toScreen, selectedHandles, hovered)
 }
 
 // ---------------------------------------------------------------------------
