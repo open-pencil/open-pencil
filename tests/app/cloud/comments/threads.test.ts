@@ -23,12 +23,14 @@ const stored: CloudCommentThread = {
   updatedAt: '2026-11-16T10:05:00.000Z',
   resolvedAt: null,
   resolvedBy: null,
+  unread: false,
   comments: [
     {
       id: FIRST,
       author: { kind: 'user', id: 'ana', name: 'Ana' },
       agent: null,
       body: 'Tighten the heading',
+      mentions: [],
       createdAt: '2026-11-16T10:00:00.000Z',
       editedAt: null
     },
@@ -37,6 +39,7 @@ const stored: CloudCommentThread = {
       author: { kind: 'user', id: 'gone', name: null },
       agent: 'Claude',
       body: 'Done',
+      mentions: [],
       createdAt: '2026-11-16T10:05:00.000Z',
       editedAt: null
     }

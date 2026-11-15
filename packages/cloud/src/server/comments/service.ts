@@ -31,6 +31,7 @@ import {
 import {
   anchorValues,
   comments,
+  documentThreadCount,
   findThread,
   lockDocument,
   markRead,
@@ -184,6 +185,17 @@ export function createCommentService(
     return { authorId: found.authorId, first: index === 0 }
   }
 
+  /** A comment of a thread, with the thread held until the transaction ends. */
+  async function lockedComment(
+    transaction: Transaction<CloudDatabase>,
+    actor: CommentActor,
+    threadId: string,
+    commentId: string
+  ) {
+    await findThread(transaction, actor.documentId, threadId, true)
+    return findComment(transaction, threadId, commentId)
+  }
+
   /** Every thread on the document, oldest first, with what the asker may do. */
   async function list(actor: CommentActor): Promise<CommentThreads> {
     const rows = await threads(database)
@@ -281,12 +293,12 @@ export function createCommentService(
             actor.userId
           )
         }
-        const { count } = await transaction
-          .selectFrom('commentThread')
-          .select((expression) => expression.fn.countAll<string>().as('count'))
-          .where('documentId', '=', actor.documentId)
-          .executeTakeFirstOrThrow()
-        if (Number(count) >= MAX_COMMENT_THREADS_PER_DOCUMENT) throw new CommentLimitError()
+        if (
+          (await documentThreadCount(transaction, actor.documentId)) >=
+          MAX_COMMENT_THREADS_PER_DOCUMENT
+        ) {
+          throw new CommentLimitError()
+        }
         const now = new Date()
         await transaction
           .insertInto('commentThread')
@@ -341,12 +353,8 @@ export function createCommentService(
       if (input.threads.length > 0) {
         await database.transaction().execute(async (transaction) => {
           await lockDocument(transaction, actor.documentId)
-          const { count } = await transaction
-            .selectFrom('commentThread')
-            .select((expression) => expression.fn.countAll<string>().as('count'))
-            .where('documentId', '=', actor.documentId)
-            .executeTakeFirstOrThrow()
-          if (Number(count) + input.threads.length > MAX_COMMENT_THREADS_PER_DOCUMENT) {
+          const held = await documentThreadCount(transaction, actor.documentId)
+          if (held + input.threads.length > MAX_COMMENT_THREADS_PER_DOCUMENT) {
             throw new CommentLimitError()
           }
           const now = new Date()
@@ -484,8 +492,7 @@ export function createCommentService(
     ): Promise<CloudCommentThread> {
       const userId = requireCommenter(actor)
       const thread = await database.transaction().execute(async (transaction) => {
-        await findThread(transaction, actor.documentId, threadId, true)
-        const comment = await findComment(transaction, threadId, commentId)
+        const comment = await lockedComment(transaction, actor, threadId, commentId)
         if (comment.authorId !== userId) throw new DocumentForbiddenError()
         await transaction
           .updateTable('comment')
@@ -513,8 +520,7 @@ export function createCommentService(
     ): Promise<CloudCommentThread | null> {
       const userId = requireCommenter(actor)
       const thread = await database.transaction().execute(async (transaction) => {
-        await findThread(transaction, actor.documentId, threadId, true)
-        const comment = await findComment(transaction, threadId, commentId)
+        const comment = await lockedComment(transaction, actor, threadId, commentId)
         if (comment.authorId !== userId && !actor.canModerate) throw new DocumentForbiddenError()
         if (comment.first) {
           await transaction.deleteFrom('commentThread').where('id', '=', threadId).execute()

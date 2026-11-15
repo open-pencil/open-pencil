@@ -102,21 +102,6 @@ export async function recordMentions(
   return added.map((row) => row.userId)
 }
 
-async function emailedSince(
-  transaction: Transaction<CloudDatabase>,
-  column: 'senderId' | 'recipientId',
-  value: string,
-  since: Date
-): Promise<number> {
-  const row = await transaction
-    .selectFrom('commentEmail')
-    .select((expression) => expression.fn.countAll<string>().as('count'))
-    .where(column, '=', value)
-    .where('sentAt', '>', since)
-    .executeTakeFirstOrThrow()
-  return Number(row.count)
-}
-
 /** Counts an email against both daily budgets, or answers false once either is used. */
 async function spendCommentEmail(
   transaction: Transaction<CloudDatabase>,
@@ -128,11 +113,24 @@ async function spendCommentEmail(
   await lockForTransaction(transaction, `comment-email-sender:${senderId}`)
   await lockForTransaction(transaction, `comment-email-recipient:${recipientId}`)
   const since = new Date(now.getTime() - COMMENT_EMAIL_BUDGET.windowMs)
+  // Both budgets in one read: what the sender's comments sent, and what the recipient received.
+  const spent = await transaction
+    .selectFrom('commentEmail')
+    .select((expression) => [
+      expression.fn.countAll<string>().filterWhere('senderId', '=', senderId).as('sent'),
+      expression.fn.countAll<string>().filterWhere('recipientId', '=', recipientId).as('received')
+    ])
+    .where('sentAt', '>', since)
+    .where((expression) =>
+      expression.or([
+        expression('senderId', '=', senderId),
+        expression('recipientId', '=', recipientId)
+      ])
+    )
+    .executeTakeFirstOrThrow()
   if (
-    (await emailedSince(transaction, 'senderId', senderId, since)) >=
-      COMMENT_EMAIL_BUDGET.perSender ||
-    (await emailedSince(transaction, 'recipientId', recipientId, since)) >=
-      COMMENT_EMAIL_BUDGET.perRecipient
+    Number(spent.sent) >= COMMENT_EMAIL_BUDGET.perSender ||
+    Number(spent.received) >= COMMENT_EMAIL_BUDGET.perRecipient
   ) {
     return false
   }

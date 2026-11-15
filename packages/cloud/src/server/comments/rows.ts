@@ -104,6 +104,19 @@ export function anchorValues(anchor: CommentAnchor) {
   }
 }
 
+/** How many threads the document holds, resolved ones included. */
+export async function documentThreadCount(
+  transaction: Transaction<CloudDatabase>,
+  documentId: string
+): Promise<number> {
+  const { count } = await transaction
+    .selectFrom('commentThread')
+    .select((expression) => expression.fn.countAll<string>().as('count'))
+    .where('documentId', '=', documentId)
+    .executeTakeFirstOrThrow()
+  return Number(count)
+}
+
 /** Holds the document's row, so one writer at a time counts and adds its threads. */
 export async function lockDocument(transaction: Transaction<CloudDatabase>, documentId: string) {
   await transaction

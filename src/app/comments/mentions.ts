@@ -1,5 +1,12 @@
 import { uniq } from 'es-toolkit'
 
+import {
+  componentAttribute,
+  decodeLinkTarget,
+  escapeLinkLabel,
+  unescapeLinkLabel
+} from '@/app/shell/markdown/links'
+
 /**
  * Mentions in comment text, written as Markdown links to the person's account, as chat writes
  * its references (`@/app/ai/chat/references/link.ts`): `[@Ana](openpencil://person/<account>)`.
@@ -13,37 +20,17 @@ const SCHEME = 'openpencil://person/'
 /** A link whose label holds no unescaped `]` or line break and whose URL has no space. */
 const MENTION = /\[((?:\\.|[^\]\\\n])*)\]\(openpencil:\/\/person\/([^)\s]+)\)/g
 
-function escapeLabel(label: string): string {
-  return label.replace(/[\\[\]]/g, '\\$&').replace(/\s+/g, ' ')
-}
-
-function unescapeLabel(label: string): string {
-  return label.replace(/\\(.)/g, '$1')
-}
-
-function decodeID(encoded: string): string | null {
-  try {
-    return decodeURIComponent(encoded)
-  } catch {
-    return null
-  }
-}
-
-function attribute(value: string): string {
-  return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;')
-}
-
 type MentionMatch = { id: string; label: string; start: number; end: number }
 
 function findMentions(text: string): MentionMatch[] {
   const matches: MentionMatch[] = []
   for (const match of text.matchAll(MENTION)) {
     const [source, label = '', encoded = ''] = match
-    const id = decodeID(encoded)
+    const id = decodeLinkTarget(encoded)
     if (!id) continue
     matches.push({
       id,
-      label: unescapeLabel(label),
+      label: unescapeLinkLabel(label),
       start: match.index,
       end: match.index + source.length
     })
@@ -52,7 +39,7 @@ function findMentions(text: string): MentionMatch[] {
 }
 
 export function mentionLink(person: MentionPerson): string {
-  return `[${escapeLabel(`@${person.name}`)}](${SCHEME}${encodeURIComponent(person.id)})`
+  return `[${escapeLinkLabel(`@${person.name}`)}](${SCHEME}${encodeURIComponent(person.id)})`
 }
 
 /** The accounts the text names, each once, in order. */
@@ -96,7 +83,7 @@ export function mentionComponents(markdown: string): string {
   let at = 0
   for (const { id, label, start, end } of findMentions(markdown)) {
     result += markdown.slice(at, start)
-    result += `:comment-mention[${escapeLabel(label)}]{target="${attribute(id)}" label="${attribute(label)}"}`
+    result += `:comment-mention[${escapeLinkLabel(label)}]{target="${componentAttribute(id)}" label="${componentAttribute(label)}"}`
     at = end
   }
   return result + markdown.slice(at)

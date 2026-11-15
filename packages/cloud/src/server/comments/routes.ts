@@ -9,7 +9,8 @@ import {
   parseSharedUpdateComment,
   parseSharedUpdateCommentThread,
   parseUpdateComment,
-  parseUpdateCommentThread
+  parseUpdateCommentThread,
+  type SharedCommentsRequest
 } from '#cloud/contract'
 import type { CloudSessionResolver } from '#cloud/server/auth'
 import { documentDomainError, type DocumentRouteEnvironment } from '#cloud/server/documents'
@@ -195,11 +196,26 @@ export function createSharedCommentRoutes(
   service: CommentService,
   resolveSession?: CloudSessionResolver
 ) {
-  async function as(context: Context, shareId: string, secret: string): Promise<CommentActor> {
-    return service.forShare(shareId, secret, await shareActor(context.req.raw, resolveSession))
+  /** Answers for whoever follows the link, with the secret the request's body carries. */
+  async function shared(
+    context: Context,
+    shareId: string,
+    { share }: SharedCommentsRequest,
+    respond: (actor: CommentActor) => Promise<Response>
+  ): Promise<Response> {
+    return answer(
+      context,
+      async () =>
+        respond(
+          await service.forShare(
+            shareId,
+            share.secret,
+            await shareActor(context.req.raw, resolveSession)
+          )
+        ),
+      sharingDomainError
+    )
   }
-  const run = (context: Context, respond: () => Promise<Response>) =>
-    answer(context, respond, sharingDomainError)
 
   return new Hono()
     .post(
@@ -207,105 +223,104 @@ export function createSharedCommentRoutes(
       shareParams,
       validatedJSON(parseSharedCommentsRequest),
       (context) =>
-        run(context, async () => {
-          const { share } = context.req.valid('json')
-          const actor = await as(context, context.req.valid('param').shareId, share.secret)
-          return context.json(await service.list(actor))
-        })
+        shared(
+          context,
+          context.req.valid('param').shareId,
+          context.req.valid('json'),
+          async (actor) => context.json(await service.list(actor))
+        )
     )
     .post(
       '/shares/:shareId/threads',
       shareParams,
       validatedJSON(parseSharedCreateCommentThread),
-      (context) =>
-        run(context, async () => {
-          const { share, ...input } = context.req.valid('json')
-          const actor = await as(context, context.req.valid('param').shareId, share.secret)
-          return context.json({ thread: await service.createThread(actor, input) }, 201)
-        })
+      (context) => {
+        const { share, ...input } = context.req.valid('json')
+        return shared(context, context.req.valid('param').shareId, { share }, async (actor) =>
+          context.json({ thread: await service.createThread(actor, input) }, 201)
+        )
+      }
     )
     .post(
       '/shares/:shareId/threads/:threadId/get',
       shareThreadParams,
       validatedJSON(parseSharedCommentsRequest),
-      (context) =>
-        run(context, async () => {
-          const { shareId, threadId } = context.req.valid('param')
-          const actor = await as(context, shareId, context.req.valid('json').share.secret)
-          return context.json({ thread: await service.get(actor, threadId) })
-        })
+      (context) => {
+        const { shareId, threadId } = context.req.valid('param')
+        return shared(context, shareId, context.req.valid('json'), async (actor) =>
+          context.json({ thread: await service.get(actor, threadId) })
+        )
+      }
     )
     .post(
       '/shares/:shareId/threads/:threadId/read',
       shareThreadParams,
       validatedJSON(parseSharedCommentsRequest),
-      (context) =>
-        run(context, async () => {
-          const { shareId, threadId } = context.req.valid('param')
-          const actor = await as(context, shareId, context.req.valid('json').share.secret)
+      (context) => {
+        const { shareId, threadId } = context.req.valid('param')
+        return shared(context, shareId, context.req.valid('json'), async (actor) => {
           await service.markRead(actor, threadId)
           return context.body(null, 204)
         })
+      }
     )
     .patch(
       '/shares/:shareId/threads/:threadId',
       shareThreadParams,
       validatedJSON(parseSharedUpdateCommentThread),
-      (context) =>
-        run(context, async () => {
-          const { shareId, threadId } = context.req.valid('param')
-          const { share, ...input } = context.req.valid('json')
-          const actor = await as(context, shareId, share.secret)
-          return context.json({ thread: await service.updateThread(actor, threadId, input) })
-        })
+      (context) => {
+        const { shareId, threadId } = context.req.valid('param')
+        const { share, ...input } = context.req.valid('json')
+        return shared(context, shareId, { share }, async (actor) =>
+          context.json({ thread: await service.updateThread(actor, threadId, input) })
+        )
+      }
     )
     .delete(
       '/shares/:shareId/threads/:threadId',
       shareThreadParams,
       validatedJSON(parseSharedCommentsRequest),
-      (context) =>
-        run(context, async () => {
-          const { shareId, threadId } = context.req.valid('param')
-          const actor = await as(context, shareId, context.req.valid('json').share.secret)
+      (context) => {
+        const { shareId, threadId } = context.req.valid('param')
+        return shared(context, shareId, context.req.valid('json'), async (actor) => {
           await service.deleteThread(actor, threadId)
           return context.body(null, 204)
         })
+      }
     )
     .post(
       '/shares/:shareId/threads/:threadId/comments',
       shareThreadParams,
       validatedJSON(parseSharedCreateComment),
-      (context) =>
-        run(context, async () => {
-          const { shareId, threadId } = context.req.valid('param')
-          const { share, ...input } = context.req.valid('json')
-          const actor = await as(context, shareId, share.secret)
-          return context.json({ thread: await service.reply(actor, threadId, input) }, 201)
-        })
+      (context) => {
+        const { shareId, threadId } = context.req.valid('param')
+        const { share, ...input } = context.req.valid('json')
+        return shared(context, shareId, { share }, async (actor) =>
+          context.json({ thread: await service.reply(actor, threadId, input) }, 201)
+        )
+      }
     )
     .patch(
       '/shares/:shareId/threads/:threadId/comments/:commentId',
       shareCommentParams,
       validatedJSON(parseSharedUpdateComment),
-      (context) =>
-        run(context, async () => {
-          const { shareId, threadId, commentId } = context.req.valid('param')
-          const { share, ...input } = context.req.valid('json')
-          const actor = await as(context, shareId, share.secret)
-          return context.json({
-            thread: await service.updateComment(actor, threadId, commentId, input)
-          })
-        })
+      (context) => {
+        const { shareId, threadId, commentId } = context.req.valid('param')
+        const { share, ...input } = context.req.valid('json')
+        return shared(context, shareId, { share }, async (actor) =>
+          context.json({ thread: await service.updateComment(actor, threadId, commentId, input) })
+        )
+      }
     )
     .delete(
       '/shares/:shareId/threads/:threadId/comments/:commentId',
       shareCommentParams,
       validatedJSON(parseSharedCommentsRequest),
-      (context) =>
-        run(context, async () => {
-          const { shareId, threadId, commentId } = context.req.valid('param')
-          const actor = await as(context, shareId, context.req.valid('json').share.secret)
-          return threadOrGone(context, await service.deleteComment(actor, threadId, commentId))
-        })
+      (context) => {
+        const { shareId, threadId, commentId } = context.req.valid('param')
+        return shared(context, shareId, context.req.valid('json'), async (actor) =>
+          threadOrGone(context, await service.deleteComment(actor, threadId, commentId))
+        )
+      }
     )
 }
