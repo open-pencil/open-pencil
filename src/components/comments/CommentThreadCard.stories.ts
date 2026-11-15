@@ -51,9 +51,9 @@ export const Resolved: Story = { args: { thread: resolved } }
 export const LongThread: Story = { args: { thread: long } }
 
 const people: MentionPerson[] = [
-  { id: 'acc-ada', name: 'Ada Lovelace' },
-  { id: 'acc-grace', name: 'Grace Hopper' },
-  { id: 'acc-alan', name: 'Alan Kay' }
+  { id: 'acc-ada', name: 'Ada Lovelace', image: null },
+  { id: 'acc-grace', name: 'Grace Hopper', image: null },
+  { id: 'acc-alan', name: 'Alan Kay', image: null }
 ]
 
 /** `@` offers the people who can open the document; the one picked is sent as a mention. */

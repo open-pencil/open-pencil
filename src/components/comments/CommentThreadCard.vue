@@ -21,13 +21,16 @@ import { comments } from './ui'
 const {
   thread,
   readOnly = false,
-  mentionable
+  mentionable,
+  canDeleteReply
 } = defineProps<{
   thread: CommentThread
   /** Reading only, as a guest on a link does: no resolving, deleting, or replying. */
   readOnly?: boolean
   /** Whom a reply may name. */
   mentionable?: () => Promise<readonly MentionPerson[]>
+  /** Whether a reply may be deleted here; every one where the document keeps its comments. */
+  canDeleteReply?: (replyId: string) => boolean
 }>()
 
 const emit = defineEmits<{
@@ -46,6 +49,7 @@ const ui = comments()
 const replyText = ref('')
 const composer = useTemplateRef<{ focus: () => void }>('composer')
 const replies = computed(() => liveReplies(thread))
+const deletable = (replyId: string) => canDeleteReply?.(replyId) ?? true
 
 function sendReply(text: string) {
   emit('reply', thread.id, text)
@@ -111,7 +115,7 @@ defineExpose({ focus: () => composer.value?.focus() })
         :at="entry.createdAt"
         :text="entry.text"
       >
-        <template v-if="!readOnly" #actions>
+        <template v-if="!readOnly && deletable(entry.id)" #actions>
           <IconButton
             :label="messages.deleteReply"
             @click="emit('deleteReply', thread.id, entry.id)"

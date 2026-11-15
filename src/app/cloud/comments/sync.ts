@@ -25,6 +25,8 @@ import { cloudShareTarget } from '../sharing/document'
 import { shareLinkClient } from '../sharing/link'
 import { followers, type CloudCommentFollower } from './followers'
 import {
+  acknowledged,
+  changedThreadId,
   cloudCommentChanges,
   documentThread,
   importedThreads,
@@ -154,6 +156,9 @@ export function followCloudComments(
   let requests: CloudCommentRequests | null = null
   /** Whether the server lets this tab write; nothing until it says. */
   let canComment = false
+  /** Who this tab is to the server, and whether it may delete anyone's comments. */
+  let accountId: string | null = null
+  let canModerate = false
   let people: Promise<readonly MentionPerson[]> | null = null
   /** Requests saying a thread was read, which `idle` waits for too. */
   const reading = new Set<Promise<void>>()
@@ -171,8 +176,22 @@ export function followCloudComments(
         const request = markRead(threadId).finally(() => reading.delete(request))
         reading.add(request)
       },
-      people: () => (people ??= target.people?.() ?? Promise.resolve([]))
+      people: () => (people ??= target.people?.() ?? Promise.resolve([])),
+      canDelete
     })
+  }
+
+  /**
+   * As the server decides: anyone who can edit deletes anything; others their own comments, and
+   * the threads they started or brought in.
+   */
+  function canDelete(threadId: string, commentId?: string): boolean {
+    const thread = server.get(threadId)
+    if (!thread || !canComment) return false
+    if (canModerate) return true
+    if (!commentId) return thread.createdBy === accountId
+    const comment = thread.comments.find((entry) => entry.id === commentId)
+    return comment?.author.kind === 'user' && comment.author.id === accountId
   }
 
   async function markRead(threadId: string) {
@@ -211,53 +230,53 @@ export function followCloudComments(
     else server.delete(threadId)
   }
 
-  async function send(change: CloudCommentChange) {
+  /** Sends one change, and answers the thread as the server holds it after; null once gone. */
+  async function request(change: CloudCommentChange): Promise<CloudCommentThread | null> {
     const cloud = await api()
     switch (change.kind) {
       case 'create-thread': {
         const { thread } = change
-        remember(
-          await cloud.createThread({
-            id: thread.id,
-            ...threadAnchor(thread),
-            body: thread.text,
-            mentions: mentionedAccounts(thread.text),
-            agent: agentName(thread.agent)
-          }),
-          thread.id
-        )
-        return
+        return cloud.createThread({
+          id: thread.id,
+          ...threadAnchor(thread),
+          body: thread.text,
+          mentions: mentionedAccounts(thread.text),
+          agent: agentName(thread.agent)
+        })
       }
       case 'update-thread':
-        remember(await cloud.updateThread(change.threadId, change.input), change.threadId)
-        return
+        return cloud.updateThread(change.threadId, change.input)
       case 'delete-thread':
         await cloud.deleteThread(change.threadId)
-        server.delete(change.threadId)
-        return
+        return null
       case 'reply':
-        remember(
-          await cloud.reply(change.threadId, {
-            id: change.reply.id,
-            body: change.reply.text,
-            mentions: mentionedAccounts(change.reply.text),
-            agent: agentName(change.reply.agent)
-          }),
-          change.threadId
-        )
-        return
+        return cloud.reply(change.threadId, {
+          id: change.reply.id,
+          body: change.reply.text,
+          mentions: mentionedAccounts(change.reply.text),
+          agent: agentName(change.reply.agent)
+        })
       case 'edit':
-        remember(
-          await cloud.updateComment(change.threadId, change.commentId, {
-            body: change.body,
-            mentions: mentionedAccounts(change.body)
-          }),
-          change.threadId
-        )
-        return
-      case 'delete-comment':
-        remember(await cloud.deleteComment(change.threadId, change.commentId), change.threadId)
+        return cloud.updateComment(change.threadId, change.commentId, {
+          body: change.body,
+          mentions: mentionedAccounts(change.body)
+        })
     }
+    return cloud.deleteComment(change.threadId, change.commentId)
+  }
+
+  /**
+   * Sends one change and keeps the server's answer. What the tab's next changes are told from
+   * gains that change alone, so an edit made while it was on its way is still the tab's to send.
+   */
+  async function send(change: CloudCommentChange) {
+    const threadId = changedThreadId(change)
+    const before = shown.get(threadId)
+    const after = await request(change)
+    remember(after, threadId)
+    const next = acknowledged(before, change, after)
+    if (next) shown.set(threadId, next)
+    else shown.delete(threadId)
   }
 
   /** Reads every thread again, after the server refused a change or the tab joined late. */
@@ -266,6 +285,8 @@ export function followCloudComments(
     server.clear()
     for (const thread of listed.threads) server.set(thread.id, thread)
     canComment = listed.access.canComment
+    accountId = listed.access.accountId
+    canModerate = listed.access.canModerate
   }
 
   /**
@@ -316,18 +337,33 @@ export function followCloudComments(
     }
   }
 
+  /**
+   * The file's threads still to bring in, decided once: a retry after a failed batch goes on from
+   * the next one, rather than bringing in again what already came in.
+   */
+  let importing: { send: ImportThreads; batches: ImportCommentThreadsInput[] } | null | undefined
+
   async function load() {
     // Asked before the first upload lands, which would make the document an uploaded one.
-    const importThreads = (await target.importer?.()) ?? null
-    const imports = importThreads ? importBatches(importedThreads(readComments(store.graph))) : []
+    if (importing === undefined) {
+      const send = (await target.importer?.()) ?? null
+      importing = send
+        ? { send, batches: importBatches(importedThreads(readComments(store.graph))) }
+        : null
+    }
     const list = () => api().then((cloud) => cloud.list())
     const listed = target.onServer ? await target.onServer(list) : await list()
     if (stopped) return
     for (const thread of listed.threads) server.set(thread.id, thread)
     canComment = listed.access.canComment
-    if (importThreads) {
-      for (const batch of imports) {
-        for (const thread of (await importThreads(batch)).threads) server.set(thread.id, thread)
+    accountId = listed.access.accountId
+    canModerate = listed.access.canModerate
+    const plan = importing
+    if (plan) {
+      // Each batch leaves the plan once it is in, so a retry after a failure starts at the next.
+      for (const batch of plan.batches.slice()) {
+        for (const thread of (await plan.send(batch)).threads) server.set(thread.id, thread)
+        plan.batches.shift()
       }
     }
     loaded = true

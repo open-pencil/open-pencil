@@ -128,7 +128,7 @@ describe('Cloud comments in a tab', () => {
     const { store, follow, pageId } = open(server, {
       importer: async () => async (input) => {
         for (const thread of input.threads) imported.push(thread.comments[0]?.authorName ?? '')
-        return { threads: [], access: { canComment: true, canModerate: true } }
+        return { threads: [], access: { canComment: true, canModerate: true, accountId: null } }
       }
     })
     const thread = createCommentThread(store.graph, {
@@ -149,14 +149,14 @@ describe('Cloud comments in a tab', () => {
   test('send whom a comment names, and tell the UI what is new until it is read', async () => {
     const server = commentServer()
     const { store, follow, pageId } = open(server, {
-      people: async () => [{ id: 'acc-ben', name: 'Ben' }]
+      people: async () => [{ id: 'acc-ben', name: 'Ben', image: null }]
     })
     const id = server.others(pageId, 'New to you')
     const follower = follow()
     await follower.idle()
     const kept = () => commentsKeptElsewhere.value.get(store)
     expect(kept()?.unread.has(id)).toBe(true)
-    expect(await kept()?.people()).toEqual([{ id: 'acc-ben', name: 'Ben' }])
+    expect(await kept()?.people()).toEqual([{ id: 'acc-ben', name: 'Ben', image: null }])
 
     kept()?.markRead(id)
     expect(kept()?.unread.has(id)).toBe(false)

@@ -35,7 +35,7 @@ export function commentServer() {
       calls.push('list')
       return {
         threads: [...threads.values()].map((thread) => structuredClone(thread)),
-        access: { canComment: true, canModerate: false }
+        access: { canComment: true, canModerate: false, accountId: 'ana' }
       }
     },
     get: async (id) => structuredClone(found(id)),
@@ -54,6 +54,7 @@ export function commentServer() {
         updatedAt: NOW,
         resolvedAt: null,
         resolvedBy: null,
+        createdBy: 'ana',
         unread: false,
         comments: [{ ...comment(crypto.randomUUID(), body), mentions: [...mentions] }]
       })
@@ -121,6 +122,7 @@ export function commentServer() {
         updatedAt: NOW,
         resolvedAt: null,
         resolvedBy: null,
+        createdBy: 'ben',
         // Ben's words are new to the account the fake serves.
         unread: true,
         comments: [comment(crypto.randomUUID(), body, 'Ben')]

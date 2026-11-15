@@ -100,7 +100,7 @@ describe('comment routes', () => {
     expect(resolved.thread.resolvedBy).toBe('alice')
 
     const listed = await responseJSON(await request(threads), commentThreadsSchema)
-    expect(listed.access).toEqual({ canComment: true, canModerate: true })
+    expect(listed.access).toEqual({ canComment: true, canModerate: true, accountId: 'alice' })
     expect(listed.threads.map((listedThread) => listedThread.comments.length)).toEqual([2])
 
     const first = thread.comments[0]?.id ?? ''
@@ -152,7 +152,7 @@ describe('comment routes', () => {
     )
     expect(listed.threads.map((listedThread) => listedThread.id)).toEqual([thread.id])
     // A view link lets someone signed in comment, never delete others' comments.
-    expect(listed.access).toEqual({ canComment: true, canModerate: false })
+    expect(listed.access).toEqual({ canComment: true, canModerate: false, accountId: 'alice' })
 
     const wrong = { secret: 'f'.repeat(64) }
     expect(

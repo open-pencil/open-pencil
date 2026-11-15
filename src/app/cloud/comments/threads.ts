@@ -179,3 +179,65 @@ export function importedThreads(
     })
   }
 }
+
+/** The thread change's own thread, which each kind names in its own way. */
+export function changedThreadId(change: CloudCommentChange): string {
+  return change.kind === 'create-thread' ? change.thread.id : change.threadId
+}
+
+function withResolution(thread: CloudCommentThread, from: CloudCommentThread): CloudCommentThread {
+  return { ...thread, resolvedAt: from.resolvedAt, resolvedBy: from.resolvedBy }
+}
+
+function withAnchor(thread: CloudCommentThread, from: CloudCommentThread): CloudCommentThread {
+  return {
+    ...thread,
+    pageId: from.pageId,
+    pageName: from.pageName,
+    nodeId: from.nodeId,
+    nodeName: from.nodeName,
+    offsetX: from.offsetX,
+    offsetY: from.offsetY,
+    x: from.x,
+    y: from.y
+  }
+}
+
+/**
+ * What the tab's comments were told from once the server took one change: what they were, with
+ * that change and nothing else, so what someone else changed meanwhile, which the answer may
+ * carry, is shown as theirs rather than taken for an edit of the tab's. Null once it is gone.
+ */
+export function acknowledged(
+  before: CloudCommentThread | undefined,
+  change: CloudCommentChange,
+  after: CloudCommentThread | null
+): CloudCommentThread | null {
+  if (!after || change.kind === 'delete-thread') return null
+  if (!before || change.kind === 'create-thread') return after
+  switch (change.kind) {
+    case 'update-thread': {
+      const resolved = change.input.resolved === undefined ? before : withResolution(before, after)
+      return change.input.anchor ? withAnchor(resolved, after) : resolved
+    }
+    case 'reply': {
+      const added = after.comments.find((comment) => comment.id === change.reply.id)
+      const known = before.comments.some((comment) => comment.id === change.reply.id)
+      return added && !known ? { ...before, comments: [...before.comments, added] } : before
+    }
+    case 'edit':
+      return {
+        ...before,
+        comments: before.comments.map(
+          (comment) =>
+            (comment.id === change.commentId
+              ? after.comments.find((edited) => edited.id === comment.id)
+              : undefined) ?? comment
+        )
+      }
+  }
+  return {
+    ...before,
+    comments: before.comments.filter((comment) => comment.id !== change.commentId)
+  }
+}

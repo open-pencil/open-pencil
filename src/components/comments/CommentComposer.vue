@@ -11,7 +11,13 @@ import {
   formatComment,
   type CommentEdit
 } from '@/app/comments/format'
-import { mentionQuery, withMentionLinks, type MentionPerson } from '@/app/comments/mentions/links'
+import {
+  linkMentions,
+  mentionQuery,
+  shiftMentions,
+  type MentionPerson,
+  type PickedMention
+} from '@/app/comments/mentions/links'
 import PersonAvatar from '@/components/presence/PersonAvatar.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
@@ -53,7 +59,7 @@ const empty = computed(() => text.value.trim() === '')
 
 const listId = useId()
 const people = shallowRef<readonly MentionPerson[]>([])
-const picked = ref<MentionPerson[]>([])
+const picked = shallowRef<PickedMention[]>([])
 const caret = ref(0)
 const highlighted = ref(0)
 /** Closed by Escape until the `@` it was offered for is left behind. */
@@ -86,10 +92,15 @@ async function loadPeople(load: () => Promise<readonly MentionPerson[]>) {
     loading = null
   }
 }
-// A sent or cleared composer starts over with nobody picked.
-watch(text, (value) => {
-  if (value === '') picked.value = []
-})
+// Each mention picked moves with the text around it, and one an edit touched is no longer one.
+// It follows every change as it is made, typing, formatting, and clearing after a send alike.
+watch(
+  text,
+  (next, previous) => {
+    picked.value = next === '' ? [] : shiftMentions(previous, next, picked.value)
+  },
+  { flush: 'sync' }
+)
 
 function followCaret() {
   caret.value = input.value?.selectionStart ?? text.value.length
@@ -101,7 +112,8 @@ function pick(person: MentionPerson) {
   const inserted = `@${person.name} `
   const start = typed.start
   text.value = text.value.slice(0, start) + inserted + text.value.slice(caret.value)
-  picked.value = [...picked.value, person]
+  // Added after the text changed, which the watcher has already followed.
+  picked.value = [...picked.value, { start, end: start + inserted.length - 1, person }]
   const at = start + inserted.length
   caret.value = at
   void nextTick(() => {
@@ -112,7 +124,7 @@ function pick(person: MentionPerson) {
 
 function submit() {
   if (empty.value) return
-  emit('submit', withMentionLinks(text.value.trim(), picked.value))
+  emit('submit', linkMentions(text.value, picked.value).trim())
 }
 
 /** Moves through the people offered, picks one, or closes the list; false when it is closed. */

@@ -57,7 +57,7 @@ export class CommentConflictError extends Error {
  * Whose request it is and what they may do, settled before any comment is touched: a member or
  * grantee through `forMember`, or whoever follows a share link through `forShare`.
  */
-export type CommentActor = CommentAccess & {
+export type CommentActor = Omit<CommentAccess, 'accountId'> & {
   documentId: string
   /** Null for a guest on a link, who may only read. */
   userId: string | null
@@ -225,7 +225,11 @@ export function createCommentService(
       threads: rows.map((row) =>
         threadOf(row, byThread[row.id] ?? [], actor.userId, reads.get(row.id))
       ),
-      access: { canComment: actor.canComment, canModerate: actor.canModerate }
+      access: {
+        canComment: actor.canComment,
+        canModerate: actor.canModerate,
+        accountId: actor.userId
+      }
     }
   }
 

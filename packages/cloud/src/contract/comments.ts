@@ -60,6 +60,8 @@ export const cloudCommentThreadSchema = v.object({
   updatedAt: v.string(),
   resolvedAt: v.nullable(v.string()),
   resolvedBy: v.nullable(v.string()),
+  /** Who started it, or brought it in from a file: they may move its pin and delete it. */
+  createdBy: v.string(),
   /** Whether someone else wrote in it since the asker last read it; false for a guest. */
   unread: v.boolean(),
   /** Oldest first; the first is what started the thread. */
@@ -72,7 +74,9 @@ export const commentAccessSchema = v.object({
   /** Start threads, reply, and change their own comments; anyone signed in who can view. */
   canComment: v.boolean(),
   /** Delete anyone's comments; editors. */
-  canModerate: v.boolean()
+  canModerate: v.boolean(),
+  /** The asker's account, which their own comments name; null for a guest. */
+  accountId: v.nullable(v.string())
 })
 export type CommentAccess = v.InferOutput<typeof commentAccessSchema>
 

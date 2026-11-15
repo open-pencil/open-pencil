@@ -32,7 +32,7 @@ function server(stored: Stored[]): typeof fetch {
     if (comments) {
       return Response.json({
         threads: comments.threads ?? [],
-        access: { canComment: true, canModerate: true }
+        access: { canComment: true, canModerate: true, accountId: null }
       })
     }
     const document = stored.find((candidate) => url.pathname.endsWith(candidate.id))
@@ -280,6 +280,7 @@ describe('account archive', () => {
       updatedAt: '2026-11-01T00:00:00.000Z',
       resolvedAt: null,
       resolvedBy: null,
+      createdBy: 'ana',
       unread: false,
       comments: [
         {

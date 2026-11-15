@@ -1,58 +1,59 @@
 import { describe, expect, test } from 'bun:test'
 
 import {
+  linkMentions,
   mentionedAccounts,
   mentionLink,
   mentionQuery,
-  withMentionLinks
+  shiftMentions,
+  type PickedMention
 } from '@/app/comments/mentions/links'
 
-const ana = { id: 'acc-ana', name: 'Ana' }
-const anaLee = { id: 'acc-ana-lee', name: 'Ana Lee' }
+const ana = { id: 'acc-ana', name: 'Ana', image: null }
+const sam = { id: 'acc-sam', name: 'Sam', image: null }
+const otherSam = { id: 'acc-sam-2', name: 'Sam', image: null }
+
+/** The mention of `person` where its `@Name` first stands in `text` from `from` on. */
+function at(text: string, person: typeof ana, from = 0): PickedMention {
+  const start = text.indexOf(`@${person.name}`, from)
+  return { start, end: start + person.name.length + 1, person }
+}
 
 describe('comment mentions', () => {
-  test('turn the names picked while writing into links, whole names only', () => {
-    expect(withMentionLinks('@Ana and @Ana Lee, not @Anabel', [ana, anaLee])).toBe(
-      '[@Ana](openpencil://person/acc-ana) and [@Ana Lee](openpencil://person/acc-ana-lee), not @Anabel'
+  test('send exactly the mentions picked, each as a link to the one picked', () => {
+    const text = '@Sam and @Sam, not @Ana'
+    const picked = [at(text, sam), at(text, otherSam, 5)]
+    expect(linkMentions(text, picked)).toBe(
+      '[@Sam](openpencil://person/acc-sam) and [@Sam](openpencil://person/acc-sam-2), not @Ana'
     )
-    // Someone typed but never picked stays text.
-    expect(withMentionLinks('@Ben look', [ana])).toBe('@Ben look')
   })
 
-  test('leave code and other links as they were written', () => {
-    expect(withMentionLinks('`@Ana` and [@Ana](https://a.b) and @Ana', [ana])).toBe(
-      '`@Ana` and [@Ana](https://a.b) and [@Ana](openpencil://person/acc-ana)'
-    )
+  test('keep each mention on its person as the text around it changes', () => {
+    const before = '@Sam and @Sam'
+    const picked = [at(before, sam), at(before, otherSam, 5)]
+    // The first mention is deleted; the second stays the second Sam.
+    const after = ' and @Sam'
+    const kept = shiftMentions(before, after, picked)
+    expect(kept).toEqual([{ start: 5, end: 9, person: otherSam }])
+    expect(mentionedAccounts(linkMentions(after, kept))).toEqual(['acc-sam-2'])
+    // Typing before a mention moves it; typing inside one ends it.
+    expect(shiftMentions(after, `Hi${after}`, kept)).toEqual([
+      { start: 7, end: 11, person: otherSam }
+    ])
+    expect(shiftMentions(after, ' and @Sxam', kept)).toEqual([])
   })
 
   test('escape a name as Markdown writes a link’s text', () => {
-    const odd = { id: 'acc-odd', name: 'Ann [ops] *' }
+    const odd = { id: 'acc-odd', name: 'Ann [ops] *', image: null }
     expect(mentionLink(odd)).toBe('[@Ann \\[ops\\] *](openpencil://person/acc-odd)')
-    const text = withMentionLinks('hi @Ann [ops] *', [odd])
-    expect(mentionedAccounts(text)).toEqual(['acc-odd'])
-  })
-
-  test('tell two people of one name apart by the order they were picked in', () => {
-    const sam = { id: 'acc-sam', name: 'Sam' }
-    const otherSam = { id: 'acc-sam-2', name: 'Sam' }
-    expect(mentionedAccounts(withMentionLinks('@Sam and @Sam', [sam, otherSam]))).toEqual([
-      'acc-sam',
-      'acc-sam-2'
-    ])
-  })
-
-  test('find names beside escapes, and leave bare URLs alone', () => {
-    expect(withMentionLinks('@Ana please write \\* here', [ana])).toBe(
-      '[@Ana](openpencil://person/acc-ana) please write \\* here'
-    )
-    expect(withMentionLinks('https://example.com/@Ana and @Ana', [ana])).toBe(
-      'https://example.com/@Ana and [@Ana](openpencil://person/acc-ana)'
-    )
+    expect(
+      mentionedAccounts(linkMentions('hi @Ann [ops] *', [at('hi @Ann [ops] *', odd)]))
+    ).toEqual(['acc-odd'])
   })
 
   test('name each account a comment links to once, and nothing else', () => {
-    const text = withMentionLinks('@Ana @Ana Lee @Ana', [ana, anaLee])
-    expect(mentionedAccounts(text)).toEqual(['acc-ana', 'acc-ana-lee'])
+    const text = `${mentionLink(ana)} ${mentionLink(sam)} ${mentionLink(ana)}`
+    expect(mentionedAccounts(text)).toEqual(['acc-ana', 'acc-sam'])
     expect(mentionedAccounts('[@Ana](https://example.com) `[@x](openpencil://person/y)`')).toEqual(
       []
     )

@@ -48,6 +48,12 @@ const store = useEditorStore()
 const comments = useComments()
 const { canComment } = comments
 
+/** Whether the open thread's reply may be deleted here. */
+function canDeleteReply(replyId: string): boolean {
+  const thread = activePin.value?.thread
+  return !!thread && comments.canDelete(thread.id, replyId)
+}
+
 /** What a pin says to assistive technology: who wrote what, and whether it is new to you. */
 function pinLabel(thread: CommentThread): string {
   const label = `${author.name(thread.author)}: ${commentPreview(thread.text)}`
@@ -262,6 +268,7 @@ function closeCard() {
             :thread="activePin.thread"
             :read-only="!canComment"
             :mentionable="comments.mentionable"
+            :can-delete-reply="canDeleteReply"
             @close="closeCard"
             @resolve="comments.setResolved"
             @reply="comments.reply"

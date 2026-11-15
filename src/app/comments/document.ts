@@ -25,6 +25,8 @@ export type KeptComments = {
   unread: ReadonlySet<string>
   markRead(threadId: string): void
   people(): Promise<readonly MentionPerson[]>
+  /** Whether this tab may delete the thread, or one comment of it, as the server allows. */
+  canDelete(threadId: string, commentId?: string): boolean
 }
 
 /** Documents whose comments a server keeps: its copy is the one to show. */

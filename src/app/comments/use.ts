@@ -92,6 +92,11 @@ export const useComments = createGlobalState(() => {
     return kept.value?.unread.has(threadId) ?? false
   }
 
+  /** Whether this tab may delete the thread, or a reply of it; anything where the file keeps them. */
+  function canDelete(threadId: string, replyId?: string): boolean {
+    return kept.value ? kept.value.canDelete(threadId, replyId) : true
+  }
+
   /** Whom a comment may name: the people the server lets see the document; nobody elsewhere. */
   function mentionable(): Promise<readonly MentionPerson[]> {
     return kept.value?.people() ?? Promise.resolve([])
@@ -206,6 +211,7 @@ export const useComments = createGlobalState(() => {
     author: computed(() => me.value.name),
     canComment,
     isUnread,
+    canDelete,
     mentionable,
     showOnCanvas,
     listQuery,

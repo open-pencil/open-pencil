@@ -3,7 +3,12 @@ import { describe, expect, test } from 'bun:test'
 import type { CloudCommentThread } from '@open-pencil/cloud/contract'
 import type { CommentThread } from '@open-pencil/scene-graph'
 
-import { cloudCommentChanges, documentThread, importedThreads } from '@/app/cloud/comments/threads'
+import {
+  acknowledged,
+  cloudCommentChanges,
+  documentThread,
+  importedThreads
+} from '@/app/cloud/comments/threads'
 
 const THREAD = '00000000-0000-4000-8000-000000000001'
 const FIRST = '00000000-0000-4000-8000-000000000002'
@@ -23,6 +28,7 @@ const stored: CloudCommentThread = {
   updatedAt: '2026-11-16T10:05:00.000Z',
   resolvedAt: null,
   resolvedBy: null,
+  createdBy: 'ana',
   unread: false,
   comments: [
     {
@@ -135,5 +141,34 @@ describe('Cloud comment threads', () => {
         { authorName: '', body: 'Done', createdAt: '2026-11-16T10:05:00.000Z' }
       ]
     })
+  })
+
+  test('acknowledge a change and nothing someone else did meanwhile', () => {
+    const resolvedElsewhere: CloudCommentThread = {
+      ...stored,
+      resolvedAt: '2026-11-16T11:00:00.000Z',
+      resolvedBy: 'ben',
+      comments: stored.comments.map((comment) =>
+        comment.id === FIRST ? { ...comment, body: 'Tighter' } : comment
+      )
+    }
+    const edit = { kind: 'edit' as const, threadId: THREAD, commentId: FIRST, body: 'Tighter' }
+    // The answer carries Ben's resolve too; only the tab's own edit is taken as sent.
+    expect(acknowledged(stored, edit, resolvedElsewhere)).toEqual({
+      ...stored,
+      comments: resolvedElsewhere.comments
+    })
+    // A new thread is the server's answer; edits made while it was on its way are still to send.
+    const created = acknowledged(
+      undefined,
+      { kind: 'create-thread', thread: documentThread(stored) },
+      stored
+    )
+    expect(created).toEqual(stored)
+    const local = { ...documentThread(stored), text: 'Edited while sending' }
+    expect(cloudCommentChanges([local], new Map([[THREAD, stored]]))).toEqual([
+      { kind: 'edit', threadId: THREAD, commentId: FIRST, body: 'Edited while sending' }
+    ])
+    expect(acknowledged(stored, { kind: 'delete-thread', threadId: THREAD }, null)).toBeNull()
   })
 })

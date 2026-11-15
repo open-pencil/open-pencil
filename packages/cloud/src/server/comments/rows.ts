@@ -86,6 +86,7 @@ export function threadOf(
     updatedAt: row.updatedAt.toISOString(),
     resolvedAt: row.resolvedAt?.toISOString() ?? null,
     resolvedBy: row.resolvedBy,
+    createdBy: row.createdBy,
     unread: unreadBy(comments, viewer, readAt),
     comments: comments.map(commentOf)
   }

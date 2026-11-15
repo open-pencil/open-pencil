@@ -1,20 +1,22 @@
-import { groupBy, uniq, uniqBy } from 'es-toolkit'
+import { uniq } from 'es-toolkit'
 import type { Link, Root } from 'mdast'
 import { fromMarkdown } from 'mdast-util-from-markdown'
 import { gfmFromMarkdown } from 'mdast-util-gfm'
 import { toMarkdown } from 'mdast-util-to-markdown'
 import { gfm } from 'micromark-extension-gfm'
-import { SKIP, visit } from 'unist-util-visit'
+import { visit } from 'unist-util-visit'
+
+import type { CommentPerson } from '@open-pencil/cloud/contract'
 
 /**
  * Mentions in comment text, written as Markdown links to the person's account, as chat writes
  * its references (`@/app/ai/chat/references/link.ts`): `[@Ana](openpencil://person/<account>)`.
- * The composer shows `@Ana` while it is written and turns the people picked into links on send;
- * the text is read and written with mdast, so its own Markdown is never misread.
+ * The composer shows `@Ana` while it is written, keeps where each one picked stands as the text
+ * changes, and turns exactly those into links on send; links are read and written with mdast.
  */
 
-/** Someone a comment may name. */
-export type MentionPerson = { id: string; name: string }
+/** Someone a comment may name: a person the document's server lists for it. */
+export type MentionPerson = CommentPerson
 
 const PERSON = 'openpencil://person/'
 /** What an account ID may hold, so it stands in a URL as it is. */
@@ -47,61 +49,50 @@ export function mentionedAccounts(text: string): string[] {
   return uniq(ids)
 }
 
-/** Comment text as the renderer reads it: GFM, so a bare URL is a link, not text with `@` in it. */
+/** Comment text as the renderer reads it: GFM, with bare URLs as links. */
 function parse(text: string): Root {
   return fromMarkdown(text, { extensions: [gfm()], mdastExtensions: [gfmFromMarkdown()] })
 }
 
-/**
- * Where the plain text of the Markdown is written, outside links and code: each text node's
- * span of the source, escapes and all, so a name is found where it was typed.
- */
-function textSpans(root: Root): { start: number; end: number }[] {
-  const spans: { start: number; end: number }[] = []
-  visit(root, (node) => {
-    if (node.type === 'link' || node.type === 'linkReference') return SKIP
-    const start = node.type === 'text' ? node.position?.start.offset : undefined
-    const end = node.type === 'text' ? node.position?.end.offset : undefined
-    if (start !== undefined && end !== undefined) spans.push({ start, end })
-    return undefined
-  })
-  return spans
-}
+/** A mention picked while writing: where its `@Name` is in the text, and whom it names. */
+export type PickedMention = { start: number; end: number; person: MentionPerson }
 
 /**
- * The text as it is sent: each `@Name` of someone picked while writing becomes their link, in the
- * plain text only, never inside code, a URL or another link. A whole name only, so `@Ana` is not
- * taken from `@Anabel`, and longer names first, so `@Ana Lee` is not taken for `@Ana`. Two
- * people of one name are told apart by the order they were picked in.
+ * The picked mentions after the text changed from `previous` to `next`: those before or after the
+ * edit move with the text around them, and one the edit touched is no longer a mention.
  */
-export function withMentionLinks(text: string, picked: readonly MentionPerson[]): string {
-  if (picked.length === 0) return text
-  const byName = groupBy(picked, (person) => person.name)
-  const names = Object.keys(byName).toSorted((a, b) => b.length - a.length)
-  const spans = textSpans(parse(text))
-  const replacements: { start: number; end: number; link: string }[] = []
-  for (const name of names) {
-    const typed = `@${name}`
-    const people = uniqBy(byName[name] ?? [], (person) => person.id)
-    let found = 0
-    for (const span of spans) {
-      const source = text.slice(span.start, span.end)
-      for (let at = source.indexOf(typed); at >= 0; at = source.indexOf(typed, at + 1)) {
-        const start = span.start + at
-        const end = start + typed.length
-        const whole = !/[\p{L}\p{N}_]/u.test(text.slice(end, end + 1))
-        const escaped = text.slice(start - 1, start) === '\\'
-        const taken = replacements.some((other) => start < other.end && end > other.start)
-        if (!whole || escaped || taken) continue
-        const person = people.at(Math.min(found, people.length - 1))
-        found++
-        if (person) replacements.push({ start, end, link: mentionLink(person) })
-      }
-    }
+export function shiftMentions(
+  previous: string,
+  next: string,
+  picked: readonly PickedMention[]
+): PickedMention[] {
+  let prefix = 0
+  const shorter = Math.min(previous.length, next.length)
+  while (prefix < shorter && previous[prefix] === next[prefix]) prefix++
+  let suffix = 0
+  while (
+    suffix < shorter - prefix &&
+    previous[previous.length - 1 - suffix] === next[next.length - 1 - suffix]
+  ) {
+    suffix++
   }
+  const editEnd = previous.length - suffix
+  const delta = next.length - previous.length
+  return picked.flatMap((mention) => {
+    if (mention.end <= prefix) return [mention]
+    if (mention.start >= editEnd) {
+      return [{ ...mention, start: mention.start + delta, end: mention.end + delta }]
+    }
+    return []
+  })
+}
+
+/** The text as it is sent: each picked `@Name` replaced by the link to the person picked. */
+export function linkMentions(text: string, picked: readonly PickedMention[]): string {
   let result = text
-  for (const { start, end, link } of replacements.toSorted((a, b) => b.start - a.start)) {
-    result = result.slice(0, start) + link + result.slice(end)
+  for (const { start, end, person } of picked.toSorted((a, b) => b.start - a.start)) {
+    if (text.slice(start, end) !== `@${person.name}`) continue
+    result = result.slice(0, start) + mentionLink(person) + result.slice(end)
   }
   return result
 }
