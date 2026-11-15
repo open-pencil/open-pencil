@@ -30,6 +30,11 @@ function collapsedPathExtent(network: VectorNetwork | null): Pick<Rect, 'width' 
   return vectorNetworkBounds(network)
 }
 
+/** A length a collapsed side can scale from. A non-finite one is no usable length. */
+function finiteLength(size: number | undefined): number {
+  return typeof size === 'number' && Number.isFinite(size) ? size : 0
+}
+
 /**
  * The outline a kept size change must take with it. The node already has its new box; the saved
  * paths are still the ones from `before`.
@@ -47,9 +52,10 @@ function keptSizeGeometry(node: SceneNode, before: Partial<SceneNode>): Partial<
   // multiplies every coordinate by zero, and moving the layer out and sizing it again cannot
   // bring the shape back. A side already at zero lost the box the path was drawn in, so that
   // side scales from the tight box of the path it kept. A side that still has a size keeps it.
+  // A bound that is not finite, which a decoded network can hold, is not a size to scale from.
   const extent = width > 0 && height > 0 ? null : collapsedPathExtent(outlinesNetwork(node, before))
-  const fromWidth = width > 0 ? width : (extent?.width ?? 0)
-  const fromHeight = height > 0 ? height : (extent?.height ?? 0)
+  const fromWidth = width > 0 ? width : finiteLength(extent?.width)
+  const fromHeight = height > 0 ? height : finiteLength(extent?.height)
   return scaledGeometryChanges(
     createResizeSnapshot(node),
     fromWidth,

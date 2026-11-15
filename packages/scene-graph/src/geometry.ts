@@ -85,10 +85,12 @@ function createBoundsAccumulator(): BoundsAccumulator {
 }
 
 function includePoint(bounds: BoundsAccumulator, x: number, y: number): void {
-  bounds.minX = Math.min(bounds.minX, x)
-  bounds.minY = Math.min(bounds.minY, y)
-  bounds.maxX = Math.max(bounds.maxX, x)
-  bounds.maxY = Math.max(bounds.maxY, y)
+  // A comparison with NaN is false, so that coordinate stays out of the bound. Math.min and
+  // Math.max would spread it across the axis.
+  if (x < bounds.minX) bounds.minX = x
+  if (y < bounds.minY) bounds.minY = y
+  if (x > bounds.maxX) bounds.maxX = x
+  if (y > bounds.maxY) bounds.maxY = y
 }
 
 function includeRect(bounds: BoundsAccumulator, rect: Rect): void {

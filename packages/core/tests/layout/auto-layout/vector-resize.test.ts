@@ -165,6 +165,40 @@ describe('a vector layout resizes', () => {
     expect(vector.vectorNetwork?.vertices[2]).toEqual({ x: 200, y: 200 })
   })
 
+  test('keeps a finite path when layout expands a collapsed vector with a malformed network', () => {
+    const graph = new SceneGraph()
+    // A decoded network can keep a NaN or infinite coordinate. The finite coordinates on that
+    // axis are still the size the path was drawn at. An axis with no finite extent does not scale.
+    const vector = graph.createNode('VECTOR', graph.getPages()[0].id, {
+      width: 0,
+      height: 0,
+      vectorNetwork: {
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 100, y: 80 },
+          { x: Number.NaN, y: 40 },
+          { x: 50, y: Number.POSITIVE_INFINITY }
+        ],
+        segments: [],
+        regions: []
+      },
+      fillGeometry: [moveTo(100, 100)]
+    })
+
+    graph.withLayoutMutations(() => {
+      graph.updateNode(vector.id, { width: 200, height: 200 })
+    })
+
+    const node = expectDefined(graph.getNode(vector.id))
+    const vertices = expectDefined(node.vectorNetwork).vertices
+    expect(vertices[0]).toEqual({ x: 0, y: 0 })
+    expect(vertices[1]).toEqual({ x: 200, y: 80 })
+    expect(vertices[2]?.x).toBeNaN()
+    expect(vertices[2]?.y).toBe(40)
+    expect(vertices[3]).toEqual({ x: 100, y: Number.POSITIVE_INFINITY })
+    expect(point(node.fillGeometry[0])).toEqual([200, 100])
+  })
+
   test('scales only the axis that was zero when layout gives a collapsed side its size back', () => {
     const graph = new SceneGraph()
     const vector = graph.createNode('VECTOR', graph.getPages()[0].id, {
