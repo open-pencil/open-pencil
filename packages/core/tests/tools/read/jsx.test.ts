@@ -37,21 +37,91 @@ function largeBoard() {
   return { figma, boardId: board.id }
 }
 
+const GROUP_COUNT = 20
+const TILES_PER_GROUP = 12
+
+/** A board of groups of tiles, longer than the cap, whose groups alone fit it. */
+function groupedBoard() {
+  const graph = new SceneGraph()
+  const figma = new FigmaAPI(graph)
+  const board = graph.createNode('FRAME', figma.currentPageId, {
+    name: 'Board',
+    width: 800,
+    height: 800
+  })
+  for (let group = 0; group < GROUP_COUNT; group++) {
+    const frame = graph.createNode('FRAME', board.id, { name: `Group ${group}`, width: 400 })
+    for (let tile = 0; tile < TILES_PER_GROUP; tile++) {
+      graph.createNode('RECTANGLE', frame.id, {
+        name: `Tile ${tile}`,
+        x: tile * 40,
+        width: 32,
+        height: 32
+      })
+    }
+  }
+  return { graph, figma, boardId: board.id }
+}
+
+function renderTool() {
+  return expectDefined(
+    ALL_TOOLS.find((tool) => tool.name === 'render'),
+    'render tool'
+  )
+}
+
 interface JSXResult {
   jsx: string
+  depth?: number
   truncated?: boolean
   totalLength?: number
   note?: string
 }
 
 describe('get_jsx', () => {
-  test('returns JSX cut at its cap, saying so and how to get all of it', async () => {
+  test('outlines JSX over its cap to the depth that fits, saying how to read the rest', async () => {
+    const { graph, figma, boardId } = groupedBoard()
+    const result = (await getJSXTool().execute(figma, { id: boardId })) as JSXResult
+    expect(result.jsx.length).toBeLessThanOrEqual(12_000)
+    expect(result.truncated).toBe(true)
+    expect(result.depth).toBe(1)
+    expect(expectDefined(result.totalLength, 'totalLength')).toBeGreaterThan(12_000)
+    const group = graph.getChildren(boardId)[0]
+    expect(result.jsx).toContain(`{/* ${TILES_PER_GROUP} layers kept, id ${group.id} */}`)
+    expect(result.note).toContain('get_jsx on the id in its comment')
+  })
+
+  test('renders an outline back in place, keeping the children it left out', async () => {
+    const { graph, figma, boardId } = groupedBoard()
+    const firstGroup = graph.getChildren(boardId)[0]
+    const tileIds = graph.getChildren(firstGroup.id).map((tile) => tile.id)
+    const outline = (await getJSXTool().execute(figma, { id: boardId })) as JSXResult
+    const edited = outline.jsx.replace('name="Board"', 'name="Board" opacity={0.5}')
+
+    await renderTool().execute(figma, { jsx: edited, replace_id: boardId })
+
+    const board = getNodeOrThrow(graph, boardId)
+    expect(board.opacity).toBe(0.5)
+    expect(board.childIds).toHaveLength(GROUP_COUNT)
+    expect(graph.getChildren(boardId)[0].id).toBe(firstGroup.id)
+    expect(getNodeOrThrow(graph, firstGroup.id).childIds).toEqual(tileIds)
+  })
+
+  test('refuses keepChildren with nothing to keep children from, leaving no layers', async () => {
+    const { graph, figma, boardId } = groupedBoard()
+    const outline = (await getJSXTool().execute(figma, { id: boardId })) as JSXResult
+    const before = graph.getChildren(figma.currentPageId).length
+
+    await expect(renderTool().execute(figma, { jsx: outline.jsx })).rejects.toThrow('replace_id')
+    expect(graph.getChildren(figma.currentPageId)).toHaveLength(before)
+  })
+
+  test('outlines a layer whose children alone are over the cap to itself', async () => {
     const { figma, boardId } = largeBoard()
     const result = (await getJSXTool().execute(figma, { id: boardId })) as JSXResult
-    expect(result.jsx).toHaveLength(12_000)
-    expect(result.truncated).toBe(true)
-    expect(expectDefined(result.totalLength, 'totalLength')).toBeGreaterThan(12_000)
-    expect(result.note).toBe(`JSX cut at 12000 of ${result.totalLength} characters.`)
+    expect(result.depth).toBe(0)
+    expect(result.jsx).toContain(`{/* ${TILE_COUNT} layers kept, id ${boardId} */}`)
+    expect(result.note).toContain('get_node depth 1')
   })
 
   test('gives the complete JSX for a path, which renders back every layer', async () => {

@@ -14,6 +14,7 @@ This reference describes scene creation, not React DOM output. Use the `render` 
 - `flow="auto"|"ltr"|"rtl"` controls container flow; text `dir` controls writing direction. Preserve these separately.
 - Outside auto-layout, and for `position="absolute"` children, `constraints={{ horizontal, vertical }}` sets how a layer follows its parent's resizing, with Figma's values in lowercase: `"min"`, `"center"`, `"max"`, `"stretch"`, or `"scale"`. `minW`, `maxW`, `minH`, and `maxH` bound a layer's size. `visible={false}` hides a layer and `locked` locks it.
 - Use measured node bounds and the existing `arrange` tool for independent artboards: `pack` for a page of screens, `spread` when generated layers overlap. Prefer layout constraints to calculating child coordinates; ordinary JavaScript arithmetic is appropriate when real geometry calculations are needed.
+- To edit an existing layer, render its JSX with `replace_id` set to that layer: it is updated in place, so it and the descendants that match by type and name keep their IDs. `keepChildren` on a layer of that JSX, as long `get_jsx` results write deep layers, changes the layer's own props and keeps the children it has; write no children of your own inside it. It is an error on a layer that matches none, or without `replace_id`.
 
 ## Paint, text, and artwork
 

@@ -1,4 +1,4 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { NodeType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { remapCopiedReferences } from '@open-pencil/scene-graph/transfer'
 
 /**
@@ -23,8 +23,13 @@ const IDENTITY_FIELDS = new Set<keyof SceneNode>([
  */
 const REPLACED_TYPES = new Set<SceneNode['type']>(['INSTANCE', 'VECTOR', 'BOOLEAN_OPERATION'])
 
+/** Whether a rendered layer of type `rendered` updates an existing `existing` one in place. */
+export function updatesInPlaceAs(existing: NodeType, rendered: NodeType | undefined): boolean {
+  return existing === rendered && !REPLACED_TYPES.has(existing)
+}
+
 function updatesInPlace(existing: SceneNode, rendered: SceneNode): boolean {
-  return existing.type === rendered.type && !REPLACED_TYPES.has(existing.type)
+  return updatesInPlaceAs(existing.type, rendered.type)
 }
 
 /** Pairs rendered children with existing ones: same type and name first, then same type in order. */
@@ -62,11 +67,41 @@ function authoredChanges(existing: SceneNode, rendered: SceneNode): Partial<Scen
   return changes
 }
 
+/** `node` and the layers under it that are written with `keepChildren`. */
+function keptLayers(graph: SceneGraph, node: SceneNode, keep: ReadonlySet<string>): SceneNode[] {
+  return [
+    ...(keep.has(node.id) ? [node] : []),
+    ...graph.getChildren(node.id).flatMap((child) => keptLayers(graph, child, keep))
+  ]
+}
+
+/**
+ * The layers written with `keepChildren` that reconciling `rendered` into `existing` would pair
+ * with no layer, found as `Reconciler.pair` pairs them, before anything changes.
+ */
+function unpairedKeptLayers(
+  graph: SceneGraph,
+  existing: SceneNode | undefined,
+  rendered: SceneNode,
+  keep: ReadonlySet<string>
+): SceneNode[] {
+  if (!existing || !updatesInPlace(existing, rendered)) return keptLayers(graph, rendered, keep)
+  if (keep.has(rendered.id)) return []
+  const renderedChildren = graph.getChildren(rendered.id)
+  const pairs = matchChildren(graph.getChildren(existing.id), renderedChildren)
+  return renderedChildren.flatMap((child) =>
+    unpairedKeptLayers(graph, pairs.get(child), child, keep)
+  )
+}
+
 class Reconciler {
   /** Rendered layer id → the id it has once reconciled: the existing layer's, or its own. */
   readonly ids = new Map<string, string>()
 
-  constructor(private readonly graph: SceneGraph) {}
+  constructor(
+    private readonly graph: SceneGraph,
+    private readonly keep: ReadonlySet<string>
+  ) {}
 
   keepRendered(node: SceneNode) {
     this.ids.set(node.id, node.id)
@@ -88,7 +123,7 @@ class Reconciler {
     const changes = authoredChanges(existing, rendered)
     if (Object.keys(changes).length > 0) this.graph.updateNode(existing.id, changes)
     this.ids.set(rendered.id, existing.id)
-    this.children(existing.id, rendered.id)
+    if (!this.keep.has(rendered.id)) this.children(existing.id, rendered.id)
     this.graph.deleteNode(rendered.id)
     return existing.id
   }
@@ -115,13 +150,34 @@ class Reconciler {
  * by position; extra rendered roots stay, extra existing roots are deleted. A rendered layer that
  * pointed at another, such as an instance at its component or a connector at the layers it joins,
  * points at that layer's kept id. Returns the id each rendered layer ends up with.
+ *
+ * A layer in `keepChildrenIds`, written with `keepChildren`, takes the props it is written with and
+ * keeps the children of the layer it pairs with. One that would pair with none is an error, thrown
+ * before anything changes, since its children are not in the JSX to render.
  */
 export function reconcileRenderedLayers(
   graph: SceneGraph,
   existingRootIds: readonly string[],
-  renderedRootIds: readonly string[]
+  renderedRootIds: readonly string[],
+  keepChildrenIds: Iterable<string> = []
 ): { rootIds: string[]; ids: Map<string, string> } {
-  const reconciler = new Reconciler(graph)
+  const keep = new Set(keepChildrenIds)
+  if (keep.size > 0) {
+    const unpaired = renderedRootIds.flatMap((renderedId, index) => {
+      const rendered = graph.getNode(renderedId)
+      const existingId = existingRootIds.at(index)
+      const existing = existingId ? graph.getNode(existingId) : undefined
+      return rendered ? unpairedKeptLayers(graph, existing, rendered, keep) : []
+    })
+    if (unpaired.length > 0) {
+      const names = unpaired.map((node) => `"${node.name}"`).join(', ')
+      throw new Error(
+        `keepChildren on ${names} matches no existing layer of the same type, so its children ` +
+          "cannot be kept. Write the children out, or keep the layer's type and name."
+      )
+    }
+  }
+  const reconciler = new Reconciler(graph, keep)
   const rootIds = renderedRootIds.flatMap((renderedId, index) => {
     const rendered = graph.getNode(renderedId)
     if (!rendered) return []

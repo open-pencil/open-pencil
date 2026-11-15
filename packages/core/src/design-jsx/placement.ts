@@ -1,4 +1,6 @@
-import type { RenderResult } from '@open-pencil/design-jsx'
+import { omit } from 'es-toolkit'
+
+import { reconcileRenderedLayers, type RenderResult } from '@open-pencil/design-jsx'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { findPageId } from '#core/io/subgraph'
@@ -56,20 +58,80 @@ export function resolveRenderPlacement(
   }
 }
 
-/** Complete hierarchy changes before layout so Fill/Hug and sibling positions use the final order. */
+/** What a result reports once reconciling has given its layer the id `id`. */
+function finishedResult(graph: SceneGraph, result: RenderResult, id: string): RenderResult {
+  const node = graph.getNode(id)
+  if (!node) return result
+  return {
+    ...omit(result, ['keepChildrenIds']),
+    id,
+    name: node.name,
+    type: node.type,
+    childIds: node.childIds
+  }
+}
+
+/** Reconcile the rendered roots into `replaceId`, or delete them and throw if that is refused. */
+function reconcileOrUndo(graph: SceneGraph, results: RenderResult[], replaceId: string) {
+  const renderedIds = results.map((result) => result.id)
+  try {
+    return reconcileRenderedLayers(graph, [replaceId], renderedIds, results[0]?.keepChildrenIds)
+  } catch (error) {
+    for (const id of renderedIds) graph.deleteNode(id)
+    throw error
+  }
+}
+
+/**
+ * Fold the rendered roots into the layer they replace, so it keeps its id and the layers written
+ * with `keepChildren` keep their children. A render that cannot is undone and throws.
+ */
+function replaceWithRendered(
+  graph: SceneGraph,
+  results: RenderResult[],
+  placement: RenderPlacement & { replaceId: string }
+): RenderResult[] {
+  const { ids } = reconcileOrUndo(graph, results, placement.replaceId)
+  const finished = results.map((result) =>
+    finishedResult(graph, result, ids.get(result.id) ?? result.id)
+  )
+  // The replaced layer stays where it was, after the roots rendered in front of it.
+  if (placement.insertIndex !== undefined) {
+    for (const [offset, result] of finished.entries()) {
+      graph.insertChildAt(result.id, placement.parentId, placement.insertIndex + offset)
+    }
+  }
+  return finished
+}
+
+/**
+ * Complete hierarchy changes before layout so Fill/Hug and sibling positions use the final order.
+ * Returns the results by the layers they end up as: a replaced layer keeps its id.
+ */
 export function finishRenderPlacement(
   graph: SceneGraph,
   results: RenderResult[],
   placement: RenderPlacement
-): void {
+): RenderResult[] {
   if (placement.insertIndex !== undefined) {
     for (const [offset, result] of results.entries()) {
       graph.insertChildAt(result.id, placement.parentId, placement.insertIndex + offset)
     }
   }
-  if (placement.replaceId) graph.deleteNode(placement.replaceId)
+  const { replaceId } = placement
+  let finished = results
+  if (replaceId) {
+    finished = replaceWithRendered(graph, results, { ...placement, replaceId })
+  } else if (results[0]?.keepChildrenIds) {
+    for (const result of results) graph.deleteNode(result.id)
+    throw new Error(
+      'keepChildren keeps the children of a layer the JSX replaces: render it with replace_id ' +
+        'set to the layer it was read from.'
+    )
+  }
   layoutAuthoredNodes(
     graph,
-    results.map((result) => result.id)
+    finished.map((result) => result.id)
   )
+  return finished
 }

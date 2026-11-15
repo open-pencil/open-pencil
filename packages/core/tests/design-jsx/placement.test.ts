@@ -121,7 +121,8 @@ describe('shared render/preview placement', () => {
     await compareToFinal(setup, '<Rect name="New" w="fill" h="fill"/>', {
       replace_id: setup.leftId
     })
-    expect(setup.graph.getNode(setup.leftId)).toBeUndefined()
+    // The replaced layer is updated in place, so it keeps its id.
+    expect(getNodeOrThrow(setup.graph, setup.leftId).name).toBe('New')
     const row = getNodeOrThrow(setup.graph, setup.rowId)
     expect(row.childIds.map((id) => setup.graph.getNode(id)?.name)).toEqual(['New', 'Right'])
   })

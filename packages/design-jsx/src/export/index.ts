@@ -9,7 +9,7 @@ import {
 } from '@open-pencil/scene-graph/generated'
 
 import { rekaExport, type RekaExport } from '../behaviours/export'
-import { elementTag } from '../elements'
+import { elementNodeTypeByName, elementTag } from '../elements'
 import {
   connectorExportScope,
   connectorLabelLayer,
@@ -19,6 +19,7 @@ import {
 import { shapeWithTextProps } from '../figjam/shapes-with-text'
 import { stickyBodyLayer, stickyProps } from '../figjam/stickies'
 import { refDeclarations } from '../refs'
+import { updatesInPlaceAs } from '../render/reconcile'
 import { instanceProps } from './components/instances'
 import { propertyBindingProps, withPropertyBindings } from './components/properties'
 import {
@@ -171,6 +172,42 @@ interface ExportScope {
   refs: ReadonlyMap<string, string | null>
   variables: VariableExport
   reference: ComponentReference
+  /** The nesting below which layers are written with `keepChildren` instead of their children. */
+  childrenDepth?: number
+}
+
+/**
+ * A layer written with its children, or, at `childrenDepth` or deeper, with `keepChildren` and a
+ * comment counting what it holds instead. Rendering rebuilds a layer its tag does not update in
+ * place, such as an instance written as a frame, so neither it nor any layer under it has
+ * children to keep, and they are all written.
+ */
+function containerElement(
+  node: SceneNode,
+  graph: SceneGraph,
+  tag: string,
+  attributes: SyntaxNode[],
+  depth: number,
+  scope: ExportScope,
+  children: (childDepth: number, childScope?: ExportScope) => SyntaxNode[]
+): SyntaxNode {
+  const { childrenDepth } = scope
+  if (!updatesInPlaceAs(node.type, elementNodeTypeByName(tag))) {
+    const written = children(depth + 1, { ...scope, childrenDepth: undefined })
+    return jsx.element(tag, attributes, written, depth)
+  }
+  if (childrenDepth === undefined || depth < childrenDepth || node.childIds.length === 0)
+    return jsx.element(tag, attributes, children(depth + 1), depth)
+  const count = descendantCount(graph, node)
+  const note = jsx.comment(`${count} ${count === 1 ? 'layer' : 'layers'} kept, id ${node.id}`)
+  return jsx.element(tag, [...attributes, jsx.attribute('keepChildren', null)], [note], depth)
+}
+
+/** How many layers are under `node`, at any depth. */
+function descendantCount(graph: SceneGraph, node: SceneNode): number {
+  return graph
+    .getChildren(node.id)
+    .reduce((count, child) => count + 1 + descendantCount(graph, child), 0)
 }
 
 /** The layers an export writes, by the roots it starts from. */
@@ -189,10 +226,10 @@ function nodeToJSX(
   const withRef = (props: JSXProp[]): JSXProp[] =>
     ref ? [...props, ['ref', new Reference(ref)]] : props
   // Hidden children export with `visible={false}` rather than disappearing.
-  const children = (childDepth: number) =>
+  const children = (childDepth: number, childScope = scope) =>
     graph
       .getChildren(node.id)
-      .flatMap((child) => nodeToJSX(child, graph, childDepth, scope, layerIds, reka))
+      .flatMap((child) => nodeToJSX(child, graph, childDepth, childScope, layerIds, reka))
   if (reka.flatten.has(node.id)) return children(depth)
   // An icon is written by name; its paths are the icon set's to draw again.
   const icon = iconProps(node, graph)
@@ -224,7 +261,8 @@ function nodeToJSX(
   const attributes = withRef(props).map(propAttribute)
   const text =
     node.type === 'TEXT' ? textElement(node, tag, props, attributes, depth, layerIds) : null
-  return [text ?? jsx.element(tag, attributes, children(depth + 1), depth)]
+  if (text) return [text]
+  return [containerElement(node, graph, tag, attributes, depth, scope, children)]
 }
 
 /**
@@ -360,14 +398,28 @@ export interface JSXExportOptions {
    * `defineVars` and `defineMode` that define them.
    */
   declarations?: boolean
+  /**
+   * How many levels of children to write: layers this deep that have children are written with
+   * `keepChildren` and a comment counting what they hold, which rendering the JSX in place of
+   * those layers keeps. Unset writes every level.
+   */
+  maxDepth?: number
 }
 
-export function sceneNodeToJSX(nodeId: string, graph: SceneGraph): string {
-  return selectionToJSX([nodeId], graph)
+export function sceneNodeToJSX(
+  nodeId: string,
+  graph: SceneGraph,
+  options: JSXExportOptions = {}
+): string {
+  return selectionToJSX([nodeId], graph, options)
 }
 
-export function selectionToJSX(nodeIds: string[], graph: SceneGraph): string {
-  return selectionToJSXWithLayers(nodeIds, graph).code
+export function selectionToJSX(
+  nodeIds: string[],
+  graph: SceneGraph,
+  options: JSXExportOptions = {}
+): string {
+  return selectionToJSXWithLayers(nodeIds, graph, options).code
 }
 
 export function selectionToJSXWithLayers(
@@ -386,9 +438,10 @@ export function selectionToJSXWithLayers(
   ) => {
     const layerIds: Array<string | null> = []
     const reference = componentReferences(graph, refs, onOf)
-    const scope = { connectors, refs, variables, reference }
     // Several roots are children of a fragment, a level in.
     const depth = nodeIds.length > 1 ? 1 : 0
+    const childrenDepth = options.maxDepth === undefined ? undefined : depth + options.maxDepth
+    const scope = { connectors, refs, variables, reference, childrenDepth }
     const roots = compact(
       nodeIds.map((id) => {
         const node = graph.getNode(id)
