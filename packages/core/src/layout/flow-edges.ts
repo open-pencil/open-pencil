@@ -1,6 +1,6 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
-import type { Edges, LayoutNode } from '@open-pencil/taffy'
+import type { AlignContent, Edges, LayoutNode } from '@open-pencil/taffy'
 
 import { counterAxisGap, primaryAxisGap, siblingOverlap } from './item-spacing'
 import { createLayoutNode, layoutPadding, mapAlign, mapJustify } from './node'
@@ -13,6 +13,16 @@ function trailingSide(frame: SceneNode, direction: 'LTR' | 'RTL'): Side {
   return direction === 'RTL' ? 'left' : 'right'
 }
 
+/**
+ * Where a wrapping frame puts its lines across: spread apart for space between, else together
+ * where it aligns its children, as Figma packs them, one line or several (CSS's `align-content`).
+ */
+function wrappedLinesAlign(frame: SceneNode): AlignContent {
+  if (frame.counterAxisAlignContent === 'SPACE_BETWEEN') return 'space-between'
+  if (frame.counterAxisAlign === 'CENTER') return 'center'
+  return frame.counterAxisAlign === 'MAX' ? 'flex-end' : 'flex-start'
+}
+
 /** How an auto layout frame lines up its children: axis, wrapping, alignment, and gaps. */
 export function setFlexFlow(layoutNode: LayoutNode, frame: SceneNode): void {
   const horizontal = frame.layoutMode === 'HORIZONTAL'
@@ -20,9 +30,7 @@ export function setFlexFlow(layoutNode: LayoutNode, frame: SceneNode): void {
   layoutNode.style.flexWrap = frame.layoutWrap === 'WRAP' ? 'wrap' : 'nowrap'
   layoutNode.style.justifyContent = mapJustify(frame.primaryAxisAlign)
   layoutNode.style.alignItems = mapAlign(frame.counterAxisAlign)
-  if (frame.layoutWrap === 'WRAP' && frame.counterAxisAlignContent === 'SPACE_BETWEEN') {
-    layoutNode.style.alignContent = 'space-between'
-  }
+  if (frame.layoutWrap === 'WRAP') layoutNode.style.alignContent = wrappedLinesAlign(frame)
   const primaryGap = primaryAxisGap(frame)
   const counterGap = counterAxisGap(frame)
   layoutNode.style.columnGap = horizontal ? primaryGap : counterGap
