@@ -240,14 +240,18 @@ function wrapLine(node: SceneNode, line: TextLine): TextLine[] {
   let lineStart = 0
   let cursor = 0
   let lastBreak = -1
+  let lastGlyphSpacing = 0
 
   for (let index = 0; index < line.text.length; index++) {
     cursor += advances[index]
+    if (advances[index] !== 0) {
+      lastGlyphSpacing = spacing[index]
+    }
     if (/\s/.test(line.text[index])) {
       lastBreak = index + 1
     }
     // A line fits when its glyphs do, without the spacing after its last one, as on the canvas.
-    if (cursor - spacing[index] <= node.width || index === lineStart) continue
+    if (cursor - lastGlyphSpacing <= node.width || index === lineStart) continue
 
     const breakIndex = lastBreak > lineStart ? lastBreak : index
     result.push({ text: line.text.slice(lineStart, breakIndex), start: line.start + lineStart })
@@ -255,6 +259,7 @@ function wrapLine(node: SceneNode, line: TextLine): TextLine[] {
     index = breakIndex - 1
     cursor = 0
     lastBreak = -1
+    lastGlyphSpacing = 0
   }
 
   result.push({ text: line.text.slice(lineStart), start: line.start + lineStart })

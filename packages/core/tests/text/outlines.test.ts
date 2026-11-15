@@ -139,6 +139,14 @@ describe('textNodeToOutlineLayout', () => {
     )
   })
 
+  test('fits a spaced line ending in a glyph drawn for several characters by that glyph', () => {
+    const spaced = { text: 'ab->', letterSpacing: { value: 10, unit: 'PIXELS' as const } }
+    const glyphs = oneLineWidth(spaced)
+    expect(lineCount(text({ ...spaced, width: Math.ceil(glyphs), textAutoResize: 'HEIGHT' }))).toBe(
+      1
+    )
+  })
+
   test('places a line taller than its box past the side away from its alignment', () => {
     const baseline = (textAlignVertical: SceneNode['textAlignVertical']) =>
       textNodeToOutlineLayout(
