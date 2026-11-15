@@ -1,5 +1,5 @@
 import { arrowCapOverflow } from './arrow-caps'
-import { leavingDirection, segmentsByVertex } from './paths/network'
+import { joinedSegmentPairs, leavingDirection } from './paths/network'
 import type { Rect, Vector } from './primitives'
 import type {
   ArcData,
@@ -337,42 +337,12 @@ export function strokeOverflow(
 }
 
 /**
- * The pairs of segments a stroke may join at each vertex: the two at a vertex exactly two meet at,
- * and with several regions, also each two region edges next to each other around a vertex,
- * which region strokes join where the gap between them is unfilled, open segments aside.
- */
-function joinedPairs(network: VectorNetwork): [vertex: number, a: number, b: number][] {
-  const pairs: [number, number, number][] = []
-  for (const [vertex, indices] of segmentsByVertex(network.segments)) {
-    if (indices.length === 2) pairs.push([vertex, indices[0], indices[1]])
-  }
-  if (network.regions.length < 2) return pairs
-  const bounding = new Set(network.regions.flatMap((region) => region.loops.flat()))
-  const edges = segmentsByVertex(
-    network.segments,
-    (index) => bounding.has(index) && network.segments[index].start !== network.segments[index].end
-  )
-  for (const [vertex, indices] of edges) {
-    if (indices.length < 2) continue
-    const angle = (index: number) => {
-      const direction = leavingDirection(network, index, vertex)
-      return Math.atan2(direction.y, direction.x)
-    }
-    const around = indices.toSorted((a, b) => angle(a) - angle(b))
-    for (const [position, index] of around.entries()) {
-      pairs.push([vertex, index, around[(position + 1) % around.length]])
-    }
-  }
-  return pairs
-}
-
-/**
  * How far past half the stroke the sharpest mitered corner reaches, as a multiple: a corner of
  * angle θ mitres out to 1/sin(θ/2), unless that passes the miter limit and it bevels instead.
  */
 function miterRatio(network: VectorNetwork, join: StrokeJoin | undefined, limit = 4): number {
   let ratio = 1
-  for (const [vertex, first, second] of joinedPairs(network)) {
+  for (const [vertex, first, second] of joinedSegmentPairs(network)) {
     if ((network.vertices[vertex].strokeJoin ?? join ?? 'MITER') !== 'MITER') continue
     const a = leavingDirection(network, first, vertex)
     const b = leavingDirection(network, second, vertex)

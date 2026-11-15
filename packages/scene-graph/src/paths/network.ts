@@ -311,6 +311,38 @@ export function leavingDirection(
 }
 
 /**
+ * The pairs of segments a stroke may join at each vertex: the two at a vertex exactly two meet at,
+ * and with several regions, also each two region edges next to each other around a vertex,
+ * which region strokes join where the gap between them is unfilled, open segments aside.
+ */
+export function joinedSegmentPairs(
+  network: VectorNetwork
+): [vertex: number, a: number, b: number][] {
+  const pairs: [number, number, number][] = []
+  for (const [vertex, indices] of segmentsByVertex(network.segments)) {
+    if (indices.length === 2) pairs.push([vertex, indices[0], indices[1]])
+  }
+  if (network.regions.length < 2) return pairs
+  const bounding = new Set(network.regions.flatMap((region) => region.loops.flat()))
+  const edges = segmentsByVertex(
+    network.segments,
+    (index) => bounding.has(index) && network.segments[index].start !== network.segments[index].end
+  )
+  for (const [vertex, indices] of edges) {
+    if (indices.length < 2) continue
+    const angle = (index: number) => {
+      const direction = leavingDirection(network, index, vertex)
+      return Math.atan2(direction.y, direction.x)
+    }
+    const around = indices.toSorted((a, b) => angle(a) - angle(b))
+    for (const [position, index] of around.entries()) {
+      pairs.push([vertex, index, around[(position + 1) % around.length]])
+    }
+  }
+  return pairs
+}
+
+/**
  * Segments chained into runs as Figma strokes a network: by default a run passes through every
  * vertex exactly two segments meet at, so its corners take the stroke's join and only its open
  * ends take caps. Runs stop at open ends and at junctions where three or more segments meet, unless
