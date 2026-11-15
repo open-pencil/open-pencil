@@ -1,4 +1,4 @@
-import { pick, uniq } from 'es-toolkit'
+import { pick } from 'es-toolkit'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { TRANSFORM_FIELDS } from '@open-pencil/scene-graph/fields'
@@ -150,13 +150,10 @@ export function createStructureActions(ctx: EditorContext) {
       })
       .sort((a, b) => a.index - b.index)
     if (origins.length === 0) return
-    // Only auto layout parents lay out again; laying out the page would reach every frame on it.
-    const parentIds = uniq(origins.map((origin) => origin.parentId)).filter(
-      (id) => ctx.graph.getNode(id)?.layoutMode !== 'NONE'
-    )
+    const parentIds = origins.map((origin) => origin.parentId)
     const move = () => {
       for (const { id } of origins) ctx.graph.reparentNode(id, pageId)
-      for (const parentId of parentIds) ctx.runLayoutForNode(parentId)
+      ctx.runLayoutForParents(parentIds)
     }
     move()
     ctx.setSelectedIds(new Set())
@@ -168,7 +165,7 @@ export function createStructureActions(ctx: EditorContext) {
           ctx.graph.insertChildAt(id, parentId, index)
           ctx.graph.updateNode(id, place)
         }
-        for (const parentId of parentIds) ctx.runLayoutForNode(parentId)
+        ctx.runLayoutForParents(parentIds)
       }
     })
   }

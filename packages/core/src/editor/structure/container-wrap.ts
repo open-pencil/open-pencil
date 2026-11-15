@@ -203,7 +203,7 @@ export function wrapEachParent(
         const index = canvasWrapIndex(parent, nodes)
         const id = wrapNodes(ctx.graph, containerType, nodes, parentId, index, { name }).id
         // An auto layout places the new container among the layers left beside it.
-        if (parent.layoutMode !== 'NONE') ctx.runLayoutForNode(parentId)
+        ctx.runLayoutForParents([parentId])
         return [id]
       })
       ctx.setSelectedIds(new Set(ids))
