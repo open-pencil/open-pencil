@@ -5,7 +5,7 @@ import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { drawNodeHighlightRect } from '#core/canvas/highlight-rect'
+import { drawNodeHighlightRect } from '#core/canvas/overlays/highlight'
 
 const ck = await getCanvasKit()
 

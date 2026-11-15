@@ -4,13 +4,13 @@ import { textVerticalOffset } from '@open-pencil/scene-graph/text'
 
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { withTextParagraph } from '#core/canvas/text'
+import { canDrawSavedText, drawDerivedText, drawsSavedText } from '#core/canvas/text/derived'
+import { drawLaidOutEmoji, drawSavedEmoji } from '#core/canvas/text/emoji'
 import { DEFAULT_FONT_SIZE } from '#core/constants'
 import { shownText } from '#core/text/case'
 import { mayHoldEmoji } from '#core/text/emoji'
 
 import { drawTextLayout } from './decorations'
-import { canDrawSavedText, drawDerivedText, drawsSavedText } from './derived'
-import { drawLaidOutEmoji, drawSavedEmoji } from './emoji'
 
 export function hasOverflowPathTextPaint(node: SceneNode): boolean {
   return (

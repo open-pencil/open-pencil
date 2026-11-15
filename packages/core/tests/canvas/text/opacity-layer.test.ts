@@ -13,7 +13,7 @@ import { expectDefined } from '@open-pencil/test-support/assert'
 import { repoPath } from '@open-pencil/test-support/paths'
 
 import { buildParagraph } from '#core/canvas/text'
-import { savedTextInk } from '#core/canvas/text/ink'
+import { savedTextInk } from '#core/canvas/text/ink-bounds'
 import { laidOutGlyphs } from '#core/canvas/text/placed'
 import { shownText } from '#core/text/case'
 import { fontManager } from '#core/text/font/manager'

@@ -55,7 +55,7 @@ import {
   nodeStyle,
   styleRunsWithPatch,
   type TextStylePatch
-} from '#core/text/character-style'
+} from '#core/text/character/style'
 import { textStyleName } from '#core/text/font/names'
 
 import { rangeDecorationPatch, type DecorationField } from './decoration'

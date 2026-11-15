@@ -25,7 +25,7 @@ import {
   worldYToScreen
 } from '#core/geometry/viewport'
 
-import { cachedGlyphWidth } from './labels/paragraph-cache'
+import { cachedGlyphWidth } from './labels/paragraphs'
 import type { SkiaRenderer } from './renderer/skia'
 
 interface SelectionScreenBounds {

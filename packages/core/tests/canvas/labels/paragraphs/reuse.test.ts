@@ -11,7 +11,7 @@ import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { repoPath } from '@open-pencil/test-support/paths'
 
-import { LabelParagraphCache } from '#core/canvas/labels/paragraph-cache'
+import { LabelParagraphCache } from '#core/canvas/labels/paragraphs'
 let ck: Awaited<ReturnType<typeof getCanvasKit>>
 let provider: TypefaceFontProvider
 beforeAll(async () => {

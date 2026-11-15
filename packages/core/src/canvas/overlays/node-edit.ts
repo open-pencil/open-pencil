@@ -11,7 +11,7 @@ import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 import { transformVectorNetwork } from '@open-pencil/scene-graph/vector-network'
 
-import { drawRegionHatch } from '#core/canvas/region-hatch'
+import { drawRegionHatch } from '#core/canvas/overlays/region-hatch'
 import type { SkiaRenderer, RenderOverlays } from '#core/canvas/renderer/skia'
 import { PEN_HANDLE_RADIUS, PEN_VERTEX_RADIUS } from '#core/constants'
 import { worldXToScreen, worldYToScreen } from '#core/geometry/viewport'

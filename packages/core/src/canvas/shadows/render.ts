@@ -10,13 +10,13 @@ import Matrix from '@open-pencil/scene-graph/matrix'
 import { clipsChildren, isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import { regionFills } from '@open-pencil/scene-graph/vector-network'
 
+import { needsIsolatedBlendLayer, setPaintBlendMode } from '#core/canvas/blend/modes'
+import { makeBooleanOperationPath } from '#core/canvas/boolean'
+import { renderNoiseEffects } from '#core/canvas/effects'
+import { renderGlassLight, renderGlassRefraction } from '#core/canvas/glass/render'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { nodeOrientationMatrix } from '#core/geometry'
 
-import { needsIsolatedBlendLayer, setPaintBlendMode } from './blend'
-import { makeBooleanOperationPath } from './boolean'
-import { renderNoiseEffects } from './effects'
-import { renderGlassLight, renderGlassRefraction } from './glass/render'
-import type { SkiaRenderer } from './renderer/skia'
 import {
   castsFromOwnShape,
   castsOwnShapeDropShadow,
@@ -27,7 +27,7 @@ import {
   drawShapeInnerShadow,
   regularStrokeOutline,
   strokeGrowsOutline
-} from './shadows/shape'
+} from './shape'
 import {
   drawSilhouette,
   fillsCastShadow,
@@ -36,7 +36,7 @@ import {
   shadowIncludesChildren,
   silhouetteBounds,
   separateShadowChildren
-} from './shadows/silhouette'
+} from './silhouette'
 function resetEffectLayerPaint(r: SkiaRenderer): void {
   r.effectLayerPaint.setImageFilter(null)
   r.effectLayerPaint.setColorFilter(null)

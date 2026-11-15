@@ -15,8 +15,8 @@ import {
   missingGlyphsByScript
 } from '#core/text/resolver'
 
-import { drawTextLayout } from './decorations'
-import { textInkBounds } from './ink'
+import { drawTextLayout } from './draw/decorations'
+import { textInkBounds } from './ink-bounds'
 import { buildParagraph } from './layout/build'
 import { resolveParagraphLayoutWidth } from './paragraph'
 import { withPreparedText } from './preparation'

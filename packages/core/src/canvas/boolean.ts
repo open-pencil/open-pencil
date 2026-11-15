@@ -8,7 +8,7 @@ import { addOpenSegmentsToPath } from '@open-pencil/scene-graph/paths'
 import { getTextOutlineSupport } from '#core/text/outlines'
 import { isOpenVectorNetwork } from '#core/vector/connectivity'
 
-import { clearFillShader } from './fills'
+import { clearFillShader } from './fills/paint'
 import { sharedPath } from './paths/shared'
 import { curvePathData } from './paths/svg-data'
 import type { SkiaRenderer } from './renderer/skia'
@@ -17,7 +17,7 @@ import {
   forVisibleStrokes,
   normalizeDashPattern,
   withStrokeDash
-} from './strokes'
+} from './strokes/draw'
 import { makeLineSegmentPath, makeLineStrokeOutline } from './strokes/line'
 import { textNodeToOutlinePath } from './text/outlines/glyphs'
 

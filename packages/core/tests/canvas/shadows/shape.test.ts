@@ -7,7 +7,7 @@ import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { isolatesInnerShadows } from '#core/canvas/shadows'
+import { isolatesInnerShadows } from '#core/canvas/shadows/render'
 
 const ck = await getCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))

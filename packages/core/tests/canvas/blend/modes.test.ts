@@ -5,11 +5,11 @@ import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { SceneGraph, type BlendMode, type Fill, type SceneNode } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { figmaBlendModeToSkia } from '#core/canvas/blend'
+import { figmaBlendModeToSkia } from '#core/canvas/blend/modes'
 import { RenderedBoundsCache } from '#core/canvas/renderer/visual-bounds'
 import { renderNode, renderSection } from '#core/canvas/scene'
 
-import { asCanvas, asCanvasKit, asRenderer } from './helpers'
+import { asCanvas, asCanvasKit, asRenderer } from '../helpers'
 
 const SIZE = 40
 

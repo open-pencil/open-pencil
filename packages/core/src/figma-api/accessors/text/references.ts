@@ -17,7 +17,7 @@ import {
 } from '#core/figma-api/text/bindings'
 import { assertTextRange } from '#core/figma-api/text/style'
 import { parseFigma } from '#core/figma-api/validation'
-import { styleRunsWithPatch } from '#core/text/character-style'
+import { styleRunsWithPatch } from '#core/text/character/style'
 
 /** Methods that give characters a text or fill style, deprecated and async alike. */
 const SHARED_STYLE_SETTERS = {

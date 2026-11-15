@@ -2,10 +2,10 @@ import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import { cachedGlyphWidth } from '#core/canvas/labels/paragraph-cache'
+import { cachedGlyphWidth } from '#core/canvas/labels/paragraphs'
 import { inNodeSpace, withScreenStroke } from '#core/canvas/overlays/outline'
 import type { SkiaRenderer } from '#core/canvas/renderer/skia'
-import { strokeNodeShape } from '#core/canvas/strokes'
+import { strokeNodeShape } from '#core/canvas/strokes/draw'
 import {
   ISSUE_EDGE_ARROW,
   ISSUE_ERROR_COLOR,

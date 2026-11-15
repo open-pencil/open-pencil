@@ -7,7 +7,11 @@ import { hasInstanceOverride } from '@open-pencil/scene-graph/instances'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import { createResizeSnapshot } from '@open-pencil/scene-graph/resize'
 
-import { applyResize, cancelResizePreview, commitResizePreview } from '#vue/shared/input/resize'
+import {
+  applyResize,
+  cancelResizePreview,
+  commitResizePreview
+} from '#vue/shared/input/resize/apply'
 import type { DragResize } from '#vue/shared/input/types'
 
 function drag(node: SceneNode): DragResize {

@@ -1,5 +1,3 @@
-export { constrainToAspectRatio } from '#vue/shared/input/resize/rect'
-export { tryStartResize } from '#vue/shared/input/resize/start'
 import { isEqual } from 'es-toolkit'
 import { toRaw } from 'vue'
 
