@@ -1,0 +1,4 @@
+- A shadow, outside stroke, or blur reaching into view from a layer just off the canvas is drawn instead of dropped (#2111).
+- A click where a mask cuts a layer away falls through to the layers below it, as in Figma (#2111).
+- Layers in a frame snap to the frame's guides (#2111).
+- Where two vector handles overlap, a press picks the one drawn on top, and handles draw above the points, as in Figma (#2111).

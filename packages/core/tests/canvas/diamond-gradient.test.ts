@@ -5,7 +5,7 @@ import type { Fill } from '@open-pencil/scene-graph'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { SkiaRenderer } from '#core/canvas/renderer'
+import { SkiaRenderer } from '#core/canvas/renderer/skia'
 test('diamond contours use Manhattan distance and dispose their retained program', async () => {
   const ck = await getCanvasKit()
   const surface = expectDefined(ck.MakeSurface(101, 101), 'surface')

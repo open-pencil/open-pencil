@@ -8,7 +8,7 @@ import { mergeVectorNetworks } from '@open-pencil/scene-graph/vector-network'
 
 import { canContainFlattenableChildren, flattenSourcePath, placedPath } from './boolean'
 import { pathBounds, pathToNetwork } from './paths/network'
-import type { SkiaRenderer } from './renderer'
+import type { SkiaRenderer } from './renderer/skia'
 import { textOutlinePieces, type PaintedPath } from './text/outlines/glyphs'
 
 /** The stroke a flattened vector takes from its topmost shape. */

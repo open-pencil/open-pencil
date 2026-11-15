@@ -1,5 +1,5 @@
-import { disposeNodeEditPaints } from '#core/canvas/node-edit-overlay'
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import { disposeNodeEditPaints } from '#core/canvas/overlays/node-edit'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { fontManager } from '#core/text/font/manager'
 
 import { releaseCompiledShaders } from './shaders'

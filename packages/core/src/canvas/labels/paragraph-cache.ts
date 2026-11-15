@@ -10,7 +10,7 @@ import type { Size } from '@open-pencil/scene-graph/primitives'
 import { detectTextDirection } from '@open-pencil/scene-graph/text/direction'
 
 import { ResourceCache } from '#core/cache/resource'
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { DEFAULT_FONT_FAMILY, SECTION_TITLE_FONT_FAMILY } from '#core/constants'
 import { textHasFallbackScript } from '#core/text/coverage'
 import { ELLIPSIS } from '#core/text/ellipsis'

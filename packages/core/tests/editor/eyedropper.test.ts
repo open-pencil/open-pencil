@@ -5,7 +5,7 @@ import type { Fill, SceneNode } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
-import { SkiaRenderer } from '#core/canvas/renderer'
+import { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { getCanvasKit } from '#core/canvaskit'
 import { createEditor } from '#core/editor/create'
 import {

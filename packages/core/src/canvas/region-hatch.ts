@@ -3,9 +3,10 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
+import { worldXToScreen, worldYToScreen } from '#core/geometry/viewport'
 import { regionHatchPeriod, regionPath } from '#core/vector'
 
-import type { RenderOverlays, SkiaRenderer } from './renderer'
+import type { RenderOverlays, SkiaRenderer } from './renderer/skia'
 
 /** Width of a hatch line in screen pixels, as Figma's shaded-region shader covers it. */
 const HATCH_LINE_WIDTH = 1.4
@@ -30,8 +31,8 @@ export function drawRegionHatch(
   // The edit session's network is in canvas coordinates; draw it in screen pixels.
   const vertices = editState.vertices.map((v) => ({
     ...v,
-    x: v.x * r.zoom + r.panX,
-    y: v.y * r.zoom + r.panY
+    x: worldXToScreen(r, v.x),
+    y: worldYToScreen(r, v.y)
   }))
   const segments = editState.segments.map((s) => ({
     ...s,
@@ -39,8 +40,8 @@ export function drawRegionHatch(
     tangentEnd: { x: s.tangentEnd.x * r.zoom, y: s.tangentEnd.y * r.zoom }
   }))
   const [originX, originY] = Matrix.mapPoints(getWorldMatrix(node, graph), [0, 0])
-  const ox = originX * r.zoom + r.panX
-  const oy = originY * r.zoom + r.panY
+  const ox = worldXToScreen(r, originX)
+  const oy = worldYToScreen(r, originY)
   // Lines x + y = c, a period apart across them, so √2 periods apart along either axis.
   const step = regionHatchPeriod(r.zoom) * Math.SQRT2
 

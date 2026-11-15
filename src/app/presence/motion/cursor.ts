@@ -1,10 +1,11 @@
 import type { PresenceCursor } from '@open-pencil/core/canvas'
+import { screenToWorld } from '@open-pencil/core/geometry'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { animationsEnabled } from '@/app/shell/motion'
 
-import { CURSOR_GLIDE_MS, FOLLOW_GLIDE_MS, glideAt, retarget, type Glide } from './motion'
+import { CURSOR_GLIDE_MS, FOLLOW_GLIDE_MS, glideAt, retarget, type Glide } from './glide'
 
 /** A cursor with the identity it keeps between updates, so it can glide rather than jump. */
 export type TrackedCursor = PresenceCursor & { id: string }
@@ -92,11 +93,7 @@ export function showCursors(store: EditorStore, targets: TrackedCursor[]): void 
 
 /** The world point at the center of the view. */
 function viewCenter(store: EditorStore): Vector {
-  const screen = store.viewportCanvasCenter()
-  return {
-    x: (screen.x - store.state.panX) / store.state.zoom,
-    y: (screen.y - store.state.panY) / store.state.zoom
-  }
+  return screenToWorld(store.state, store.viewportCanvasCenter())
 }
 
 /**

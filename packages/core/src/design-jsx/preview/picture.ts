@@ -1,8 +1,8 @@
 import type { CanvasKit, SkPicture } from '@open-pencil/canvaskit'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 
-import { SkiaRenderer } from '#core/canvas/renderer'
 import { recordWorldPicture } from '#core/canvas/renderer/picture'
+import { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { computeContentBounds } from '#core/canvas/renderer/visual-bounds'
 
 import type { StagedJSXPreview } from './stage'

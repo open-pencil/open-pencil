@@ -7,6 +7,19 @@ import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import { slotPropertyId } from '@open-pencil/scene-graph/slots'
 
+import { createImageFilterCache, createMaskFilterCache } from '#core/canvas/effects'
+import { createGlassMapCache } from '#core/canvas/glass/map'
+import { createRendererImages } from '#core/canvas/images/state'
+import { LabelCache } from '#core/canvas/labels/cache'
+import * as LabelHitTest from '#core/canvas/labels/hit-test'
+import { LabelParagraphCache } from '#core/canvas/labels/paragraph-cache'
+import { labelHitOptions } from '#core/canvas/labels/style'
+import { createDashEffectCache } from '#core/canvas/overlays/outline'
+import { NodePathCaches } from '#core/canvas/paths/cache'
+import * as RenderText from '#core/canvas/text'
+import { createTextCaches } from '#core/canvas/text/caches'
+import { savedTextInk } from '#core/canvas/text/ink'
+import { TextPreparationCache } from '#core/canvas/text/preparation/cache'
 /* eslint-disable max-lines -- SkiaRenderer facade owns CanvasKit state and delegates domain drawing */
 import {
   DEFAULT_SELECTION_THEME,
@@ -16,46 +29,30 @@ import {
   IS_BROWSER
 } from '#core/constants'
 import type { EditorState } from '#core/editor/types'
+import { screenToWorld } from '#core/geometry/viewport'
 import { RenderProfiler } from '#core/profiler'
 import type { FontResolutionSnapshot } from '#core/text/resolver'
 
-import { createImageFilterCache, createMaskFilterCache } from './effects'
-import { createGlassMapCache } from './glass/map'
-import { createRendererImages } from './images/state'
-import { LabelCache } from './labels/cache'
-import * as LabelHitTest from './labels/hit-test'
-import { LabelParagraphCache } from './labels/paragraph-cache'
-import { labelHitOptions } from './labels/style'
-import { createDashEffectCache } from './overlays/outline'
-import { NodePathCaches } from './paths/cache'
-import * as RenderColors from './renderer/colors'
-import { createChromeFonts, createTextFontState } from './renderer/fonts'
-import * as RendererFonts from './renderer/fonts'
-import { destroyRenderer, releaseLiveImages } from './renderer/lifecycle'
+import * as RenderColors from './colors'
+import { createChromeFonts, createTextFontState } from './fonts'
+import * as RendererFonts from './fonts'
+import { destroyRenderer, releaseLiveImages } from './lifecycle'
 import {
   initializeRendererPaints,
   initializeRulerPaintColors,
   initializeSelectionPaintColors
-} from './renderer/paints'
-import * as RenderPipeline from './renderer/pipeline'
-import { createCompiledShaders } from './renderer/shaders'
-import {
-  createFeedbackMarks,
-  createWholeScenePicture,
-  type NodePictureEntry
-} from './renderer/state'
-import * as RendererState from './renderer/state'
-import * as RenderText from './text'
-import { createTextCaches } from './text/caches'
-import { savedTextInk } from './text/ink'
-import { TextPreparationCache } from './text/preparation/cache'
+} from './paints'
+import * as RenderPipeline from './pipeline'
+import { createCompiledShaders } from './shaders'
+import { createFeedbackMarks, createWholeScenePicture, type NodePictureEntry } from './state'
+import * as RendererState from './state'
 export type {
   MeasurementMode,
   PresenceCursor,
   RenderOverlays,
   RulerTheme,
   SelectionTheme
-} from './renderer/types'
+} from './types'
 import type {
   Canvas,
   CanvasKit,
@@ -69,23 +66,23 @@ import type {
   TypefaceFontProvider
 } from '@open-pencil/canvaskit'
 
+import * as Effects from '#core/canvas/effects'
+import * as Fills from '#core/canvas/fills'
+import { IssueMarkerStage } from '#core/canvas/issues/stage'
+import type { PlacedIssueMarker } from '#core/canvas/issues/types'
+import type { PlacedStatusLabel } from '#core/canvas/labels/status'
+import type { NodeEditPaints } from '#core/canvas/overlays/node-edit'
+import * as Scene from '#core/canvas/scene'
+import { type EffectPass, renderEffects as renderShadowEffects } from '#core/canvas/shadows'
+import * as Shapes from '#core/canvas/shapes'
+import * as Strokes from '#core/canvas/strokes'
+import * as TextRender from '#core/canvas/text/render'
 import { createSceneGeometry, type RotationPreview, type SceneGeometry } from '#core/geometry'
 
-import * as Effects from './effects'
-import * as Fills from './fills'
-import { IssueMarkerStage } from './issues/stage'
-import type { PlacedIssueMarker } from './issues/types'
-import type { PlacedStatusLabel } from './labels/status'
-import type { NodeEditPaints } from './node-edit-overlay'
-import { TiledSceneController } from './renderer/tiles'
-import type { TransientCanvasPreview } from './renderer/transient-previews'
-import type { RenderOverlays, RulerTheme, SelectionTheme } from './renderer/types'
-import { RenderedBoundsCache } from './renderer/visual-bounds'
-import * as Scene from './scene'
-import { type EffectPass, renderEffects as renderShadowEffects } from './shadows'
-import * as Shapes from './shapes'
-import * as Strokes from './strokes'
-import * as TextRender from './text/render'
+import { TiledSceneController } from './tiles'
+import type { TransientCanvasPreview } from './transient-previews'
+import type { RenderOverlays, RulerTheme, SelectionTheme } from './types'
+import { RenderedBoundsCache } from './visual-bounds'
 
 /**
  * A picture uploaded as a texture that knows its size: an `ImageBitmap`, or a canvas, which
@@ -782,10 +779,7 @@ export class SkiaRenderer {
   }
 
   screenToCanvas(sx: number, sy: number): Vector {
-    return {
-      x: (sx - this.panX) / this.zoom,
-      y: (sy - this.panY) / this.zoom
-    }
+    return screenToWorld(this, { x: sx, y: sy })
   }
 
   /**

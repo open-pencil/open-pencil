@@ -3,6 +3,7 @@ import {
   MAX_IMAGE_FETCH_BYTES,
   type FigmaViewportHost
 } from '@open-pencil/core/figma-api'
+import { screenCenterInWorld, screenToWorld } from '@open-pencil/core/geometry'
 import { createCanvasKitRasterCodec } from '@open-pencil/core/io/formats/raster'
 
 import { renderAutomationImage } from '@/app/automation/bridge/export-handlers'
@@ -35,11 +36,12 @@ function editorViewport(store: EditorStore): FigmaViewportHost {
   return {
     get: () => {
       const { width, height } = store.getViewportSize()
-      const { panX, panY, zoom } = store.state
+      const { zoom } = store.state
+      const topLeft = screenToWorld(store.state, { x: 0, y: 0 })
       return {
-        center: { x: (width / 2 - panX) / zoom, y: (height / 2 - panY) / zoom },
+        center: screenCenterInWorld(store.state, width, height),
         zoom,
-        bounds: { x: -panX / zoom, y: -panY / zoom, width: width / zoom, height: height / zoom }
+        bounds: { ...topLeft, width: width / zoom, height: height / zoom }
       }
     },
     set: (pageId, center, zoom) => {

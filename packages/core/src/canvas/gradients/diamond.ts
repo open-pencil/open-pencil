@@ -1,7 +1,7 @@
 import type { InputMatrix, Shader } from '@open-pencil/canvaskit'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
 import { compiledProgram } from '#core/canvas/renderer/shaders'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { defineShader } from '#core/canvas/sksl'
 
 import diamondSource from './diamond.sksl?raw'

@@ -13,6 +13,7 @@ import {
   strokeAlignShare,
   strokeWeightOf
 } from '@open-pencil/scene-graph/geometry'
+import { isVisibleMask } from '@open-pencil/scene-graph/masks'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import { clipsChildren, isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import { paintShows } from '@open-pencil/scene-graph/paints'
@@ -21,7 +22,7 @@ import { regionFills } from '@open-pencil/scene-graph/vector-network'
 
 import { paintBooleanOperation } from '#core/canvas/boolean'
 import { renderMaskedChildIds } from '#core/canvas/masks'
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { nodeOrientationMatrix } from '#core/geometry'
 
 /**
@@ -137,7 +138,7 @@ function drawChildSilhouettes(
       node.childIds,
       (childId) => {
         const child = graph.getNode(childId)
-        return child && drawsSilhouette(child) && child.isMask ? child.maskType : null
+        return child && !child.internalOnly && isVisibleMask(child) ? child.maskType : null
       },
       drawChild,
       drawChild,

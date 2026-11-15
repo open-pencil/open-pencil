@@ -15,7 +15,7 @@ import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { setPaintBlendMode } from './blend'
 import { applyGradientFill, applyImageFill, clearFillShader, clearStrokeShader } from './fills'
-import type { SkiaRenderer } from './renderer'
+import type { SkiaRenderer } from './renderer/skia'
 import { clipNodeShape, drawOutline, makeShapeWithTextDetailsPath, withNodeOutline } from './shapes'
 
 export function getStrokeCapEntity(r: SkiaRenderer, cap: string | undefined): EmbindEnumEntity {
