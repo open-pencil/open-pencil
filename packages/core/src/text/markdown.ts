@@ -1,4 +1,3 @@
-import { isEmptyObject, isEqual } from 'es-toolkit/predicate'
 import type { Nodes, PhrasingContent, RootContent } from 'mdast'
 import { fromMarkdown } from 'mdast-util-from-markdown'
 import { gfmFromMarkdown } from 'mdast-util-gfm'
@@ -15,7 +14,8 @@ import type {
 import {
   MAX_LIST_INDENTATION,
   PLAIN_PARAGRAPH,
-  trimParagraphStyles
+  trimParagraphStyles,
+  appendStyleRun
 } from '@open-pencil/scene-graph/text'
 
 /** The style of the text Markdown is written into, which headings and code are relative to. */
@@ -290,17 +290,7 @@ export function markdownText(markdown: string, base: MarkdownBase): MarkdownText
         ? [...paragraph.segments, { text: '\n', style: paragraph.segments.at(-1)?.style ?? {} }]
         : paragraph.segments
     for (const segment of segments) {
-      const style = ownStyle(segment.style, base)
-      const previous = runs.at(-1)
-      if (!isEmptyObject(style)) {
-        if (
-          previous &&
-          previous.start + previous.length === text.length &&
-          isEqual(previous.style, style)
-        )
-          previous.length += segment.text.length
-        else runs.push({ start: text.length, length: segment.text.length, style })
-      }
+      appendStyleRun(runs, text.length, segment.text.length, ownStyle(segment.style, base))
       text += segment.text
     }
   }
