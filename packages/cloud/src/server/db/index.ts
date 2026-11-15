@@ -1,5 +1,6 @@
 export { createCloudDatabase, type CloudDatabaseOptions } from './database'
 export { migrateCloudDatabase } from './migrate'
+export { isBannedNow, userIdText } from './users'
 export type {
   CloudDatabase,
   Document,
@@ -15,6 +16,7 @@ export type {
   TransactionalEmailStatus,
   Upload,
   UploadStatus,
+  UserPictureFormat,
   Workspace,
   WorkspaceUpdate
 } from './tables'

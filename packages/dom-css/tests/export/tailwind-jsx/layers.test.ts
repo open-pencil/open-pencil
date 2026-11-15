@@ -5,7 +5,7 @@ import {
   sceneNodesToTailwindJSXWithLayers
 } from '#dom-css/export/tailwind-jsx'
 
-import { makeGraph, pageId } from './helpers'
+import { makeSceneGraph, firstPageId } from '@open-pencil/test-support/scene'
 
 /** `data-name` of each opening tag, in the order the tags open. */
 function openingTagNames(code: string): Array<string | null> {
@@ -16,11 +16,19 @@ function openingTagNames(code: string): Array<string | null> {
 
 describe('Tailwind JSX layer order', () => {
   test('lists the layer behind each element in the order elements open', () => {
-    const graph = makeGraph()
-    const card = graph.createNode('FRAME', pageId(graph), { name: 'Card', width: 200, height: 100 })
+    const graph = makeSceneGraph('Page 1')
+    const card = graph.createNode('FRAME', firstPageId(graph), {
+      name: 'Card',
+      width: 200,
+      height: 100
+    })
     const title = graph.createNode('TEXT', card.id, { name: 'Title', text: 'Hello' })
     const swatch = graph.createNode('RECTANGLE', card.id, { name: 'Swatch', width: 20, height: 20 })
-    const badge = graph.createNode('FRAME', pageId(graph), { name: 'Badge', width: 40, height: 20 })
+    const badge = graph.createNode('FRAME', firstPageId(graph), {
+      name: 'Badge',
+      width: 40,
+      height: 20
+    })
 
     const result = sceneNodesToTailwindJSXWithLayers(graph, [card.id, badge.id])
 

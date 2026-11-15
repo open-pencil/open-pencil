@@ -1,4 +1,5 @@
 import { mapValues, omit, pick } from 'es-toolkit/object'
+import * as v from 'valibot'
 
 import {
   TEXT_BINDABLE_FIELDS,
@@ -10,11 +11,12 @@ import {
   type Variable
 } from '@open-pencil/scene-graph'
 import { copyFills } from '@open-pencil/scene-graph/copy'
-import { getSharedStyles, SHARED_TEXT_STYLE_FIELDS } from '@open-pencil/scene-graph/shared-styles'
+import { findSharedStyle, SHARED_TEXT_STYLE_FIELDS } from '@open-pencil/scene-graph/shared-styles'
 
-import { styleNameToWeight } from '#core/figma-api/fonts'
+import { parseFigma } from '#core/figma-api/validation'
 import { variableAlias, type FigmaVariableAlias } from '#core/figma-api/variables/values'
 import { styleRunsWithPatch } from '#core/text/character-style'
+import { faceForStyle } from '#core/text/font/names'
 
 import { getStyledTextSegments } from './style'
 
@@ -30,32 +32,25 @@ function isParagraphField(
 
 /**
  * The style a text or fill style gives characters that use it, with the reference that keeps
- * them attached. An empty ID detaches them; a style the document does not hold attaches by ID
- * alone, as the text's own setters do.
+ * them attached; an empty ID detaches them, keeping their values. Null when the document holds
+ * no such style, which Figma refuses.
  */
 export function rangeSharedStylePatch(
   graph: SceneGraph,
   kind: 'text' | 'fill',
   styleId: string
-): CharacterStyleOverride {
+): CharacterStyleOverride | null {
   const key = kind === 'text' ? 'textStyleId' : 'fillStyleId'
   if (!styleId) return { [key]: null }
-  const found = getSharedStyles(graph, kind).find((style) => style.id === styleId)
-  const style = found ? graph.getNode(found.nodeId) : undefined
-  if (!style) return { [key]: styleId }
+  const style = findSharedStyle(graph, styleId, kind === 'text' ? 'TEXT' : 'FILL')
+  if (!style) return null
   if (kind === 'fill') return { fillStyleId: styleId, fills: copyFills(style.fills) }
   return { textStyleId: styleId, ...structuredClone(pick(style, SHARED_TEXT_STYLE_FIELDS)) }
 }
 
 /** Figma's message for a text field it cannot bind. */
 export function assertTextBindableField(method: string, field: unknown): TextBindableField {
-  if (!(TEXT_BINDABLE_FIELDS as readonly unknown[]).includes(field)) {
-    throw new Error(
-      `in ${method}: Property "field" failed validation: Invalid enum value. Expected ` +
-        `${TEXT_BINDABLE_FIELDS.map((name) => `'${name}'`).join(' | ')}, received '${String(field)}'`
-    )
-  }
-  return field as TextBindableField
+  return parseFigma(v.picklist(TEXT_BINDABLE_FIELDS), field, method, 'field')
 }
 
 /** The variable a binding takes: one the document holds, of the type the field takes. */
@@ -88,8 +83,9 @@ function boundValue(
     const value = graph.resolveVariableForNode(node.id, variable.id)
     if (typeof value !== 'string') return {}
     if (field === 'fontFamily') return { fontFamily: value }
-    const { weight, italic } = styleNameToWeight(value)
-    return { fontWeight: weight, italic }
+    // A style variable names a face of the text's family, as its font names it.
+    const face = faceForStyle(node.fontFamily, value)
+    return { fontWeight: face.weight, italic: face.italic, fontStyle: face.style }
   }
   const value = graph.resolveNumberVariableForNode(node.id, variable.id)
   if (value === undefined || !Number.isFinite(value) || isParagraphField(field)) return {}

@@ -1,9 +1,9 @@
 import { expect, test } from 'bun:test'
 
-import { guid } from '#fig-tests/helpers/guid'
 import { patchedRecord } from '#fig/record-patch/fields'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { guid } from '@open-pencil/test-support/fig/guid'
 
 const path = (...ids: number[]) => ({ guids: ids.map((id) => guid(id)) })
 

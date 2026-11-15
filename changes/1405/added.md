@@ -1,1 +1,0 @@
-- The desktop app signs in with ChatGPT, so OpenPencil's agent can use the models of a ChatGPT plan without an API key; the model list comes from the account.

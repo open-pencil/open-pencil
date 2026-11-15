@@ -30,9 +30,14 @@ export function createSelectionCommands({
   capabilities,
   messages: t,
   otherPages,
-  moveSelectionToPage,
-  getOpacityTarget
+  moveSelectionToPage
 }: EditorCommandMapOptions): Record<SelectionCommandId, EditorCommand> {
+  function arrangeSelection(options: Parameters<typeof editor.arrangeNodes>[1]) {
+    void editor.arrangeNodes([...selection.selectedIds.value], options).catch((error: unknown) => {
+      console.error('[Vue] Arrange failed:', error)
+    })
+  }
+
   return {
     'selection.selectAll': {
       id: 'selection.selectAll',
@@ -113,6 +118,14 @@ export function createSelectionCommands({
       },
       enabled: capabilities.canFrameSelection,
       run: () => editor.frameSelection()
+    },
+    'selection.wrapInSection': {
+      id: 'selection.wrapInSection',
+      get label() {
+        return t.value.wrapInSection
+      },
+      enabled: capabilities.canWrapInSection,
+      run: () => editor.wrapSelectionInSection()
     },
     'selection.ungroup': {
       id: 'selection.ungroup',
@@ -291,6 +304,102 @@ export function createSelectionCommands({
       enabled: capabilities.canDistribute,
       run: () => editor.distributeNodes([...selection.selectedIds.value], 'vertical')
     },
+    'selection.tidyUp': {
+      id: 'selection.tidyUp',
+      get label() {
+        return t.value.tidyUp
+      },
+      enabled: capabilities.canArrange,
+      run: () => editor.tidyNodes([...selection.selectedIds.value])
+    },
+    'selection.packHorizontal': {
+      id: 'selection.packHorizontal',
+      get label() {
+        return t.value.packHorizontal
+      },
+      enabled: capabilities.canArrange,
+      run: () => editor.packNodes([...selection.selectedIds.value], 'horizontal')
+    },
+    'selection.packVertical': {
+      id: 'selection.packVertical',
+      get label() {
+        return t.value.packVertical
+      },
+      enabled: capabilities.canArrange,
+      run: () => editor.packNodes([...selection.selectedIds.value], 'vertical')
+    },
+    'selection.arrangeSpread': {
+      id: 'selection.arrangeSpread',
+      get label() {
+        return t.value.arrangeSpread
+      },
+      enabled: capabilities.canAutoArrange,
+      run: () => arrangeSelection({ layout: 'spread' })
+    },
+    'selection.arrangeCompact': {
+      id: 'selection.arrangeCompact',
+      get label() {
+        return t.value.arrangeCompact
+      },
+      enabled: capabilities.canAutoArrange,
+      run: () => arrangeSelection({ layout: 'compact' })
+    },
+    'selection.arrangePack': {
+      id: 'selection.arrangePack',
+      get label() {
+        return t.value.arrangePack
+      },
+      enabled: capabilities.canAutoArrange,
+      run: () => arrangeSelection({ layout: 'pack' })
+    },
+    'selection.arrangeFlowDown': {
+      id: 'selection.arrangeFlowDown',
+      get label() {
+        return t.value.arrangeFlowDown
+      },
+      enabled: capabilities.canAutoArrange,
+      run: () => arrangeSelection({ layout: 'flow', direction: 'TB' })
+    },
+    'selection.arrangeFlowRight': {
+      id: 'selection.arrangeFlowRight',
+      get label() {
+        return t.value.arrangeFlowRight
+      },
+      enabled: capabilities.canAutoArrange,
+      run: () => arrangeSelection({ layout: 'flow', direction: 'LR' })
+    },
+    'selection.arrangeTreeDown': {
+      id: 'selection.arrangeTreeDown',
+      get label() {
+        return t.value.arrangeTreeDown
+      },
+      enabled: capabilities.canAutoArrange,
+      run: () => arrangeSelection({ layout: 'tree', direction: 'TB' })
+    },
+    'selection.arrangeTreeRight': {
+      id: 'selection.arrangeTreeRight',
+      get label() {
+        return t.value.arrangeTreeRight
+      },
+      enabled: capabilities.canAutoArrange,
+      run: () => arrangeSelection({ layout: 'tree', direction: 'LR' })
+    },
+    'selection.arrangeRadial': {
+      id: 'selection.arrangeRadial',
+      get label() {
+        return t.value.arrangeRadial
+      },
+      enabled: capabilities.canAutoArrange,
+      run: () => arrangeSelection({ layout: 'radial' })
+    },
+    'selection.arrangeNetwork': {
+      id: 'selection.arrangeNetwork',
+      get label() {
+        return t.value.arrangeNetwork
+      },
+      enabled: capabilities.canAutoArrange,
+      run: () => arrangeSelection({ layout: 'network' })
+    },
     'selection.booleanUnion': {
       id: 'selection.booleanUnion',
       get label() {
@@ -331,14 +440,6 @@ export function createSelectionCommands({
       enabled: capabilities.canFlatten,
       run: () => editor.flattenSelected()
     },
-    'selection.outlineText': {
-      id: 'selection.outlineText',
-      get label() {
-        return t.value.outlineText
-      },
-      enabled: capabilities.canOutlineText,
-      run: () => editor.outlineTextSelected()
-    },
     'selection.outlineStroke': {
       id: 'selection.outlineStroke',
       get label() {
@@ -355,17 +456,6 @@ export function createSelectionCommands({
       enabled: capabilities.canMoveToPage,
       run: () => {
         moveSelectionToPage(otherPages.value[0].id)
-      }
-    },
-    'selection.setOpacity': {
-      id: 'selection.setOpacity',
-      get label() {
-        return t.value.setOpacity
-      },
-      enabled: capabilities.canSetOpacity,
-      run: () => {
-        const target = getOpacityTarget()
-        editor.setOpacity(target.value, target.coalesceKey)
       }
     }
   }

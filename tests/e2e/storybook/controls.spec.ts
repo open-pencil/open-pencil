@@ -19,7 +19,7 @@ const stories = [
   'design-system-navigation-tabs--constrained-labels',
   'design-system-layout-collapsible--collapsed',
   'design-system-inputs-preset-number--custom-selected',
-  'app-settings-tool-access-list--mixed-access',
+  'app-settings-capability-list--mixed-access',
   'app-settings-mcp-failure-alert--all-reasons'
 ]
 

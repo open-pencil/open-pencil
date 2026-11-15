@@ -36,7 +36,8 @@ function isRequired(row: SdkDataTableRow) {
           <td v-for="column in columns" :key="column.key">
             <template v-if="column.kind === 'code'">
               <code class="sdk-table__code">
-                {{ cellValue(row, column.key) }}<span v-if="column.key === 'name' && isRequired(row)">*</span>
+                {{ cellValue(row, column.key)
+                }}<span v-if="column.key === 'name' && isRequired(row)">*</span>
               </code>
               <div v-if="row.description" class="sdk-table__description">
                 {{ row.description }}

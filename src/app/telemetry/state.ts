@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core'
 import { useLocalStorage } from '@vueuse/core'
 import * as v from 'valibot'
 
@@ -9,16 +10,20 @@ export interface SharingState {
   installId: string | null
   /** UTC day of the last delivered ping, so an install pings once a day. */
   lastPingDay: string | null
+  /** How many days a ping was delivered on; only its step ever leaves the device. */
+  pingDays: number
 }
 
 const sharingStateSchema = v.object({
   installId: v.fallback(v.nullable(v.pipe(v.string(), v.regex(/^[0-9a-f]{32}$/))), null),
-  lastPingDay: v.fallback(v.nullable(v.pipe(v.string(), v.isoDate())), null)
+  lastPingDay: v.fallback(v.nullable(v.pipe(v.string(), v.isoDate())), null),
+  // Installs from before the count start at zero, as if their first ping were the next one.
+  pingDays: v.fallback(v.pipe(v.number(), v.integer(), v.minValue(0)), 0)
 })
 
 export const sharingState = useLocalStorage<SharingState>(
   'open-pencil:sharing:v1',
-  { installId: null, lastPingDay: null },
+  { installId: null, lastPingDay: null, pingDays: 0 },
   {
     mergeDefaults: (stored) =>
       v.parse(
@@ -34,7 +39,6 @@ const ENVIRONMENT_CHECK_TIMEOUT_MS = 2_000
 let disabledByEnvironment: Promise<boolean> | null = null
 
 async function readDesktopEnvironment(): Promise<boolean> {
-  const { invoke } = await import('@tauri-apps/api/core')
   const timeout = new Promise<boolean>((resolve) => {
     setTimeout(() => resolve(true), ENVIRONMENT_CHECK_TIMEOUT_MS)
   })

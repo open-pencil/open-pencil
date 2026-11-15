@@ -162,6 +162,7 @@ function restArgs(
   return [
     ...(model && rest ? [[model, rest] as [string, es.SyntaxNode]] : []),
     ...(component.disabled ? [['disabled', FALSE] as [string, es.SyntaxNode]] : []),
+    ...(component.invalid ? [['invalid', FALSE] as [string, es.SyntaxNode]] : []),
     ...component.props.map((prop): [string, es.SyntaxNode] => [prop.name, es.string(prop.default)]),
     ...component.texts.map((text): [string, es.SyntaxNode] => [text.name, es.string(text.default)]),
     ...component.booleans.map((prop): [string, es.SyntaxNode] => [
@@ -207,6 +208,7 @@ function argTypes(component: ComponentModel, model: string | null, list: boolean
   return es.object([
     ...(model ? [[model, modelControl(component, list)] as [string, es.SyntaxNode]] : []),
     ...(component.disabled ? [['disabled', boolean] as [string, es.SyntaxNode]] : []),
+    ...(component.invalid ? [['invalid', boolean] as [string, es.SyntaxNode]] : []),
     ...component.props.map((prop): [string, es.SyntaxNode] => [prop.name, select(prop.options)]),
     ...component.texts.map((text): [string, es.SyntaxNode] => [
       text.name,
@@ -216,7 +218,7 @@ function argTypes(component: ComponentModel, model: string | null, list: boolean
   ])
 }
 
-/** A story per state worth seeing: at rest, each boolean on, disabled, and each prop value. */
+/** A story per state worth seeing: at rest, each boolean on, each flag, and each prop value. */
 function stories(
   component: ComponentModel,
   model: string | null,
@@ -263,6 +265,7 @@ function stories(
           .map((option) => story(option, [[model, es.string(option)]]))
       : []),
     ...(component.disabled ? [story('Disabled', [['disabled', TRUE]])] : []),
+    ...(component.invalid ? [story('Invalid', [['invalid', TRUE]])] : []),
     ...component.props.flatMap((prop) =>
       prop.options
         .filter((option) => option !== prop.default)

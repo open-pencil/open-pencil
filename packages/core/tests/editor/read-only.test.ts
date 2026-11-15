@@ -1,10 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getNodeOrThrow } from '#core-tests/helpers/assert'
-
 import { createEditor, executeAtomicTool, ReadOnlyDocumentError } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { ALL_TOOLS } from '@open-pencil/core/tools'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 import { READ_ONLY_ACTIONS } from '#core/editor/read-only/actions'
 
@@ -62,6 +61,15 @@ describe('read-only documents', () => {
     editor.pan(10, 10)
     expect(editor.copySelectionAsText([rect.id])).toBe('Rect')
     expect(editor.getNode(rect.id)?.name).toBe('Rect')
+    // The unsaved-changes tracker asks this on every node event, read-only or not.
+    expect(editor.isSyncingComponents()).toBe(false)
+  })
+
+  test('lets the canvas report the frames it draws', () => {
+    const { editor } = setup()
+    editor.setReadOnly(true)
+    const { renderVersion, sceneVersion } = editor.state
+    expect(() => editor.reportPresented({ renderVersion, sceneVersion })).not.toThrow()
   })
 
   test('clears a rotation preview, which only shows on the canvas', () => {
@@ -92,6 +100,33 @@ describe('read-only documents', () => {
     expect(changes).toEqual([true, false])
   })
 
+  test('keeps a vector edit in progress, as it keeps edited text', () => {
+    const { editor, pageId } = setup()
+    const path = editor.graph.createNode('VECTOR', pageId, {
+      width: 100,
+      height: 10,
+      vectorNetwork: {
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 100, y: 0 }
+        ],
+        segments: [{ start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }],
+        regions: []
+      }
+    })
+    editor.enterNodeEditMode(path.id)
+    const vertex = editor.state.nodeEditState?.vertices[1]
+    if (vertex) vertex.y = 40
+
+    editor.setReadOnly(true)
+
+    expect(editor.state.nodeEditState).toBeNull()
+    const committed = getNodeOrThrow(editor.graph, path.id)
+    expect(committed.height).toBe(40)
+    expect(committed.vectorNetwork?.vertices[1]).toMatchObject({ x: 100, y: 40 })
+    expect(() => editor.enterNodeEditMode(path.id)).toThrow(ReadOnlyDocumentError)
+  })
+
   test('edits again once editable', () => {
     const { editor, rect } = setup()
     editor.setReadOnly(true)
@@ -103,12 +138,15 @@ describe('read-only documents', () => {
 
   test('agents cannot edit through atomic tools', () => {
     const { editor, rect } = setup()
-    const setOpacity = ALL_TOOLS.find((tool) => tool.name === 'set_opacity')
-    if (!setOpacity) throw new Error('set_opacity is missing')
+    const updateNode = ALL_TOOLS.find((tool) => tool.name === 'update_node')
+    if (!updateNode) throw new Error('update_node is missing')
     editor.setReadOnly(true)
 
     expect(() =>
-      executeAtomicTool(editor, new FigmaAPI(editor.graph), setOpacity, { id: rect.id, value: 0.5 })
+      executeAtomicTool(editor, new FigmaAPI(editor.graph), updateNode, {
+        id: rect.id,
+        opacity: 0.5
+      })
     ).toThrow(ReadOnlyDocumentError)
     expect(getNodeOrThrow(editor.graph, rect.id).opacity).toBe(1)
   })

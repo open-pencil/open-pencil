@@ -1,14 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
+import { fetchStub } from '@open-pencil/test-support/fetch'
+
 import {
   exchangeOpenRouterCode,
   openRouterAuthorizationURL,
   OpenRouterKeyExchangeError,
   OPENROUTER_KEYS_URL
 } from '@/app/ai/providers/openrouter/oauth'
-
-import { fetchStub } from '#tests/helpers/fetch'
-
 describe('OpenRouter OAuth PKCE', () => {
   test('builds the authorization URL with the challenge, state, and key label', () => {
     const url = new URL(

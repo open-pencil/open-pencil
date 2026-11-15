@@ -8,10 +8,10 @@ describe('import_svg', () => {
   test('loads the fonts its text uses before creating the text', async () => {
     const graph = new SceneGraph()
     const figma = new FigmaAPI(graph)
-    const loaded: Array<{ family: string; style: string; textsSoFar: number }> = []
+    const loaded: Array<{ family: string; style?: string; textsSoFar: number }> = []
     figma.loadFontAsync = async (font) => {
       const textsSoFar = [...graph.getAllNodes()].filter((node) => node.type === 'TEXT').length
-      loaded.push({ ...font, textsSoFar })
+      loaded.push({ family: font.family, style: font.style, textsSoFar })
     }
 
     await importSVG.execute(figma, {

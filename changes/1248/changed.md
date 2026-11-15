@@ -1,1 +1,0 @@
-- Lines and arrows select by their two ends, as in Figma: dragging an end turns and stretches the line, Shift holds it to 45° steps, and Alt keeps its midpoint.

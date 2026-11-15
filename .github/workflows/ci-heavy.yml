@@ -1,0 +1,38 @@
+name: Heavy tests
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * *'
+
+concurrency:
+  group: heavy-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    name: Heavy and isolated unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup/workspace
+        with:
+          packages: 'true'
+          lfs: 'true'
+
+      - name: Heavy fixture unit tests
+        run: bun run test:unit:heavy
+
+      # Fresh global object per file: a suite that only passes because an
+      # earlier file initialized a codec, loaded a font or left a database
+      # open fails here instead of flaking in a PR shard.
+      - name: Quick unit tests with per-file isolation
+        if: ${{ !cancelled() }}
+        run: bun run test:unit:isolated

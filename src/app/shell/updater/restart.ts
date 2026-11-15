@@ -1,3 +1,5 @@
+import { emitTo, listen, TauriEvent } from '@tauri-apps/api/event'
+import { WebviewWindow } from '@tauri-apps/api/webviewWindow'
 import * as v from 'valibot'
 
 import { randomHex } from '@open-pencil/scene-graph/random'
@@ -14,10 +16,6 @@ export const EDITOR_WINDOW_LABEL = 'main'
 
 /** Called from the Software Update window; resolves true once the editor's documents may close. */
 export async function requestRestartApproval(): Promise<boolean> {
-  const [{ emitTo, listen, TauriEvent }, { WebviewWindow }] = await Promise.all([
-    import('@tauri-apps/api/event'),
-    import('@tauri-apps/api/webviewWindow')
-  ])
   const editor = await WebviewWindow.getByLabel(EDITOR_WINDOW_LABEL)
   if (!editor) return true
 

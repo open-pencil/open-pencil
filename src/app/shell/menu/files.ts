@@ -1,5 +1,8 @@
+import { open } from '@tauri-apps/plugin-dialog'
+import { readFile } from '@tauri-apps/plugin-fs'
 import { useFileDialog } from '@vueuse/core'
 import { uniq } from 'es-toolkit/array'
+import { basename } from 'pathe'
 import { decode } from 'ufo'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
@@ -10,6 +13,7 @@ import {
   MAX_REMOTE_DOCUMENT_BYTES,
   readBoundedBody
 } from '@/app/document/io/browser'
+import type { EditorStore } from '@/app/editor/active-store'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { rememberRecentFile } from '@/app/recent-files'
 import { toast } from '@/app/shell/ui'
@@ -63,11 +67,12 @@ if (IS_BROWSER && 'window' in globalThis) {
  * escape stays as written.
  */
 function fileNameFromURL(url: URL): string {
-  return decode(url.pathname.split('/').pop() ?? '') || 'file.fig'
+  return decode(basename(url.pathname)) || 'file.fig'
 }
 
 /** Fetches a document over HTTP and opens it in a new tab. Browser builds only. */
-export async function openBrowserFileFromURL(url: URL, init?: RequestInit): Promise<void> {
+/** Opens the design file at `url` in a new tab, and resolves with that tab's store. */
+export async function openBrowserFileFromURL(url: URL, init?: RequestInit): Promise<EditorStore> {
   // The cap needs a controller of its own, so a caller's signal is combined with it
   // rather than replaced: dropping it would leave the caller unable to cancel.
   const controller = new AbortController()
@@ -86,7 +91,7 @@ export async function openBrowserFileFromURL(url: URL, init?: RequestInit): Prom
   const name = fileNameFromURL(url)
   assertSupportedDesignFile(name)
   const file = new File([bytes], name, { type: 'application/octet-stream' })
-  await openFileInNewTab(file, undefined, url.href)
+  return openFileInNewTab(file, undefined, url.href)
 }
 
 function isSupportedDesignFile(fileName: string): boolean {
@@ -106,7 +111,7 @@ function assertSupportedDesignFile(fileName: string): void {
 export async function openDesignFileBatch<T>(
   items: Iterable<T>,
   displayName: (item: T) => string,
-  openItem: (item: T) => Promise<void>
+  openItem: (item: T) => Promise<unknown>
 ): Promise<void> {
   for (const item of items) {
     try {
@@ -122,13 +127,11 @@ export async function openDesignFileBatch<T>(
 
 export async function readTauriDesignFile(path: string): Promise<File> {
   assertSupportedDesignFile(path)
-  const { readFile } = await import('@tauri-apps/plugin-fs')
   const bytes = await readFile(path)
-  return new File([bytes], path.split('/').pop() ?? 'file.fig')
+  return new File([bytes], basename(path) || 'file.fig')
 }
 
 export async function chooseTauriOpenPaths(): Promise<string[]> {
-  const { open } = await import('@tauri-apps/plugin-dialog')
   const paths = await open({
     filters: [{ name: 'Design file', extensions: READABLE_DOCUMENT_EXTENSIONS }],
     multiple: true
@@ -137,11 +140,13 @@ export async function chooseTauriOpenPaths(): Promise<string[]> {
   return typeof paths === 'string' ? [paths] : paths
 }
 
-export async function openFileFromPath(path: string) {
-  if (!isTauri()) return
+/** Opens the design file at `path` on desktop, and resolves with its tab's store. */
+export async function openFileFromPath(path: string): Promise<EditorStore | undefined> {
+  if (!isTauri()) return undefined
   const file = await readTauriDesignFile(path)
-  await openFileInNewTab(file, undefined, path)
-  rememberRecentFile(path)
+  const store = await openFileInNewTab(file, undefined, path)
+  rememberRecentFile(path, store.state.documentKind)
+  return store
 }
 
 /**
@@ -161,7 +166,7 @@ export async function activateTabForPath(path: string): Promise<boolean> {
 export async function openFileDialog() {
   if (isTauri()) {
     const paths = await chooseTauriOpenPaths()
-    await openDesignFileBatch(paths, (path) => path.split(/[/\\]/).pop() ?? path, openFileFromPath)
+    await openDesignFileBatch(paths, (path) => basename(path) || path, openFileFromPath)
     return
   }
 
@@ -173,7 +178,7 @@ export async function openFileDialog() {
           {
             description: 'Design file',
             accept: {
-              'application/octet-stream': ['.fig'],
+              'application/octet-stream': ['.fig', '.jam'],
               'application/json': ['.pen'],
               'text/html': ['.html', '.htm'],
               'application/xhtml+xml': ['.xhtml'],

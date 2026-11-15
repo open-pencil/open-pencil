@@ -1,16 +1,17 @@
 import { afterAll, describe, expect, test } from 'bun:test'
 
+import { expectFigmaRow, renderRow } from '#core-tests/helpers/figma-rows'
+
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { sideDashSpans, sideStrokeRRects } from '#core/canvas/strokes/sides'
 
-import { expectDefined } from '#core-tests/helpers/assert'
-import { expectFigmaRow, renderRow } from '#core-tests/helpers/figma-rows'
-
-const ck = await initCanvasKit()
+const ck = await getCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
 afterAll(() => renderer.destroy())
 
@@ -23,25 +24,24 @@ const FIGMA = {
     255, 255, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 255
   ],
   evenSharp: [
-    0, 0, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0,
-    255
+    0, 0, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255,
+    255, 255, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 255
   ],
   evenRound: [
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 144, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0,
-    0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 144, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0,
+    0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255,
+    255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0,
+    0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0
   ],
   evenRoundInside: [
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 16, 0, 239, 255, 128, 0, 0, 255, 255, 128, 0, 0,
-    255, 255, 128, 0, 0, 255, 255, 128, 0, 0, 255, 255, 128, 0, 0, 255, 255, 128, 0, 0
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 16, 0, 239, 255, 128, 0, 0, 255, 255, 128, 0, 0, 255,
+    255, 128, 0, 0, 255, 255, 128, 0, 0, 255, 255, 128, 0, 0, 255, 255, 128, 0, 0
   ],
   sidesRound: [
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 144, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0,
-    0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 223, 0, 0, 0, 0, 0, 0, 0, 0
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 144, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0,
+    0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255,
+    255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0,
+    0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 223, 0, 0, 0, 0, 0, 0, 0, 0
   ]
 }
 
@@ -96,7 +96,8 @@ describe('strokes with sides of their own weights, as in Figma', () => {
       (graph, hostId) => {
         dashed(graph, hostId)
         const frame = graph.getNode(expectDefined(graph.getNode(hostId)).childIds[0])
-        if (frame) frame.strokes = frame.strokes.map((stroke) => ({ ...stroke, dashPattern: [20, 10] }))
+        if (frame)
+          frame.strokes = frame.strokes.map((stroke) => ({ ...stroke, dashPattern: [20, 10] }))
       },
       68,
       112,
@@ -144,26 +145,30 @@ describe('strokes with sides of their own weights, as in Figma', () => {
   })
 
   test('draw nothing when no side has a weight', () => {
-    const empty = sidesFrame({
-      cornerRadius: 24,
-      borderTopWeight: 0,
-      borderRightWeight: 0,
-      borderBottomWeight: 0,
-      borderLeftWeight: 0
-    }, 1)
+    const empty = sidesFrame(
+      {
+        cornerRadius: 24,
+        borderTopWeight: 0,
+        borderRightWeight: 0,
+        borderBottomWeight: 0,
+        borderLeftWeight: 0
+      },
+      1
+    )
     const values = renderRow(
       ck,
       renderer,
       (graph, hostId) => {
         empty(graph, hostId)
         const frame = graph.getNode(expectDefined(graph.getNode(hostId)).childIds[0])
-        if (frame) frame.strokes = frame.strokes.map((stroke) => ({ ...stroke, dashPattern: [20, 10] }))
+        if (frame)
+          frame.strokes = frame.strokes.map((stroke) => ({ ...stroke, dashPattern: [20, 10] }))
       },
       70,
       112,
       170
     )
-    expect(Math.max(...values)).toBe(0)
+    expect(maxOf(values)).toBe(0)
   })
 
   test('take Figma’s corner radii: inner by each side, outer by the narrower side', () => {
@@ -268,12 +273,22 @@ describe('dashed rectangles, as in Figma', () => {
       (graph, hostId) => {
         scene(graph, hostId)
         const frame = graph.getNode(expectDefined(graph.getNode(hostId)).childIds[0])
-        if (frame) frame.strokes = frame.strokes.map((stroke) => ({ ...stroke, dashPattern: [20, 10] }))
+        if (frame)
+          frame.strokes = frame.strokes.map((stroke) => ({ ...stroke, dashPattern: [20, 10] }))
       },
       70,
       112,
       290
     )
     expectFigmaRow(values, FIGMA.sidesRound)
+  })
+})
+
+describe('dash layout along a side', () => {
+  test('draws a pattern too fine to lay out as one solid dash rather than looping', () => {
+    // A denormal period scales every dash to 0; a tiny one would need more dashes than exist.
+    expect(sideDashSpans(40, [1e-320, 1e-320])).toEqual([[0, 40]])
+    expect(sideDashSpans(40, [1e-300, 1e-300])).toEqual([[0, 40]])
+    expect(sideDashSpans(40, [4, 4]).length).toBeGreaterThan(1)
   })
 })

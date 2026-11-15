@@ -1,7 +1,9 @@
+import { omit } from 'es-toolkit'
+
 import type { NodeType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { designJSXProp } from '../definitions'
-import type { TreeNode } from '../tree'
+import { isTreeNode, type TreeNode } from '../tree'
 import {
   BEHAVIOUR_PROPS,
   bindInput,
@@ -15,30 +17,37 @@ import {
   type RekaScope
 } from './index'
 
-export type RenderChild = (
-  tree: TreeNode,
+/** Render children in the renderer's order, returning their layers in written order. */
+export type RenderChildren = (
+  children: TreeNode[],
   parentId: string,
   scope?: RekaScope
-) => Promise<SceneNode>
+) => Promise<SceneNode[]>
 export type CreateElement = (nodeType: NodeType, tree: TreeNode, parentId: string) => SceneNode
 export type RenderInstance = (tree: TreeNode, parentId: string) => Promise<SceneNode>
 
 function withoutBehaviourProps(tree: TreeNode): TreeNode {
-  const props = Object.fromEntries(
-    Object.entries(tree.props).filter(
-      ([key]) => !(BEHAVIOUR_PROPS as readonly string[]).includes(key)
-    )
-  )
-  return { ...tree, props }
+  return { ...tree, props: omit(tree.props, BEHAVIOUR_PROPS) }
 }
 
 async function renderChildren(
-  render: RenderChild,
+  graph: SceneGraph,
+  render: RenderChildren,
   children: TreeNode['children'],
   parentId: string,
   scope: RekaScope | undefined
 ): Promise<void> {
-  for (const child of children) if (typeof child !== 'string') await render(child, parentId, scope)
+  const trees = children.filter(isTreeNode)
+  const layers = await render(trees, parentId, scope)
+  // Only the first tab's panel shows as designed; preview shows the others as chosen.
+  const panels = trees.flatMap((tree, index) => {
+    const role = rekaRole(tree.type)
+    return role?.role === 'repeat' && role.container === 'panels'
+      ? [{ tree, layer: layers[index] }]
+      : []
+  })
+  for (const { tree, layer } of panels.slice(1))
+    if (tree.props.visible === undefined) graph.updateNode(layer.id, { visible: false })
 }
 
 /** A name for a part that JSX leaves unnamed: the Reka part it is, such as Thumb. */
@@ -73,7 +82,7 @@ export async function renderRekaNode(
   parentId: string,
   scope: RekaScope | undefined,
   hooks: {
-    render: RenderChild
+    renderChildren: RenderChildren
     create: CreateElement
     instance: RenderInstance
     /** Derive a component set's variant properties from its variants' names. */
@@ -97,7 +106,13 @@ export async function renderRekaNode(
         parentId
       )
       const own = createScope(role.kind, root.id)
-      await renderChildren(hooks.render, wrapRepeatedParts(tree, role.kind), root.id, own)
+      await renderChildren(
+        graph,
+        hooks.renderChildren,
+        wrapRepeatedParts(tree, role.kind),
+        root.id,
+        own
+      )
       if (variants) hooks.finishSet(root.id)
       finishRoot(graph, own, tree.props)
       return root
@@ -105,21 +120,13 @@ export async function renderRekaNode(
     case 'part': {
       if (!scope) throw new Error(`<${tree.type}> must be inside its Root`)
       const frame = hooks.create('FRAME', laidOut(named(tree, partName)), parentId)
-      await renderChildren(hooks.render, tree.children, frame.id, scope)
+      await renderChildren(graph, hooks.renderChildren, tree.children, frame.id, scope)
       bindPart(graph, scope, frame, role.part)
       return frame
     }
     case 'repeat': {
       const frame = hooks.create('FRAME', laidOut(named(tree, partName)), parentId)
-      await renderChildren(hooks.render, tree.children, frame.id, scope)
-      // Only the first tab's panel shows as designed; preview shows the others as chosen.
-      const siblings = graph.getChildren(parentId)
-      if (
-        role.container === 'panels' &&
-        siblings[0]?.id !== frame.id &&
-        tree.props.visible === undefined
-      )
-        graph.updateNode(frame.id, { visible: false })
+      await renderChildren(graph, hooks.renderChildren, tree.children, frame.id, scope)
       return frame
     }
     case 'input': {
@@ -136,7 +143,7 @@ export async function renderRekaNode(
     }
     case 'frame': {
       const frame = hooks.create('FRAME', laidOut(named(tree, partName)), parentId)
-      await renderChildren(hooks.render, tree.children, frame.id, scope)
+      await renderChildren(graph, hooks.renderChildren, tree.children, frame.id, scope)
       return frame
     }
   }

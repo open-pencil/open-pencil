@@ -1,3 +1,5 @@
+import { inject, provide, type InjectionKey } from 'vue'
+
 import type { Editor } from '@open-pencil/core'
 
 /**
@@ -7,23 +9,24 @@ import type { Editor } from '@open-pencil/core'
 export type ShaderFrameListener = (source: CanvasImageSource) => void
 
 /**
- * Where the canvas's shader playback hands each frame it draws, by the image its paint shows,
- * to anything else that shows that shader: preview's islands draw their shader layers from it,
- * so every shader on the page has one player whatever shows it.
+ * Where a canvas's shader playback hands each frame it draws, by the image its paint shows, to
+ * anything else on that canvas that shows that shader: preview's islands draw their shader
+ * layers from it, so every shader on the page has one player whatever shows it.
  */
 export interface ShaderFrames {
   listen(image: string, listener: ShaderFrameListener): () => void
   publish(image: string, source: CanvasImageSource): void
 }
 
-const hubs = new WeakMap<Editor, ShaderFrames>()
+/**
+ * One canvas's frames. Split panes each play their own shaders at their own size, so a hub
+ * per editor would let one pane's islands draw the other pane's frames.
+ */
+const SHADER_FRAMES_KEY: InjectionKey<ShaderFrames> = Symbol('shader-frames')
 
-/** The shader frames of `editor`'s documents, shared by its canvases and islands. */
-export function shaderFrames(editor: Editor): ShaderFrames {
-  let hub = hubs.get(editor)
-  if (hub) return hub
+function createShaderFrames(): ShaderFrames {
   const listeners = new Map<string, Set<ShaderFrameListener>>()
-  hub = {
+  return {
     listen(image, listener) {
       const set = listeners.get(image) ?? new Set()
       set.add(listener)
@@ -37,6 +40,44 @@ export function shaderFrames(editor: Editor): ShaderFrames {
       for (const listener of listeners.get(image) ?? []) listener(source)
     }
   }
-  hubs.set(editor, hub)
+}
+
+/**
+ * Every frame any canvas of an editor plays, for islands mounted outside a canvas, such as an SDK
+ * app placing `PlayIslands` beside `CanvasRoot` rather than inside it.
+ */
+const editorHubs = new WeakMap<Editor, ShaderFrames>()
+
+function editorFrames(editor: Editor): ShaderFrames {
+  let hub = editorHubs.get(editor)
+  if (!hub) {
+    hub = createShaderFrames()
+    editorHubs.set(editor, hub)
+  }
   return hub
+}
+
+/**
+ * Where this canvas publishes the frames it plays: to the islands drawn over it, which it offers
+ * them to, and to islands of the same editor that no canvas holds. Call during setup.
+ */
+export function provideShaderFrames(editor: Editor): ShaderFrames {
+  const own = createShaderFrames()
+  const shared = editorFrames(editor)
+  provide(SHADER_FRAMES_KEY, own)
+  return {
+    listen: (image, listener) => own.listen(image, listener),
+    publish(image, source) {
+      own.publish(image, source)
+      shared.publish(image, source)
+    }
+  }
+}
+
+/**
+ * The frames an island draws from: the canvas it is drawn over, or, outside any canvas, every
+ * canvas of its editor.
+ */
+export function useShaderFrames(editor: Editor): ShaderFrames {
+  return inject(SHADER_FRAMES_KEY, null) ?? editorFrames(editor)
 }

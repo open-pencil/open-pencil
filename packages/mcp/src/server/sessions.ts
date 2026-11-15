@@ -7,6 +7,13 @@ import {
 } from '@modelcontextprotocol/server'
 import { withTimeout } from 'es-toolkit/promise'
 
+import {
+  MCP_AGENT_HEADER,
+  MCP_DEFERS_TOOLS_HEADER,
+  MCP_CHAT_HEADER
+} from '@open-pencil/core/constants'
+
+import { MCP_SERVER_INSTRUCTIONS } from '#mcp/instructions'
 import { createPendingRequests } from '#mcp/server/pending-requests'
 import { MCP_AGENT_KINDS, type MCPAgentSession, type MCPToolSettled } from '#mcp/tool/registration'
 
@@ -47,15 +54,16 @@ const MAX_MCP_SESSIONS = 10
 /** App chat ids are random hex; anything else is ignored rather than forwarded. */
 const CHAT_ID = /^[0-9a-f]{16,64}$/
 
-/** The opener a session's first request names through the app's agent and chat headers. */
-export function sessionOpener(
-  kind: string | undefined,
-  chat: string | undefined
-): MCPSessionOpener {
-  return {
-    kind: MCP_AGENT_KINDS.find((candidate) => candidate === kind) ?? 'mcp',
-    ...(chat && CHAT_ID.test(chat) ? { chat } : {})
+/** The opener a session's first request names through the app's agent, chat, and tool headers. */
+export function sessionOpener(header: (name: string) => string | undefined): MCPSessionOpener {
+  const kind = header(MCP_AGENT_HEADER)
+  const opener: MCPSessionOpener = {
+    kind: MCP_AGENT_KINDS.find((candidate) => candidate === kind) ?? 'mcp'
   }
+  const chat = header(MCP_CHAT_HEADER)
+  if (chat && CHAT_ID.test(chat)) opener.chat = chat
+  if (header(MCP_DEFERS_TOOLS_HEADER) === '1') opener.defersTools = true
+  return opener
 }
 const MCP_SESSION_IDLE_TIMEOUT_MS = 15 * 60_000
 const MAX_SWEEP_INTERVAL_MS = 60_000
@@ -160,7 +168,10 @@ export function createMCPSessionManager({
     if (inFlight) return inFlight
 
     const promise = (async () => {
-      const server = new McpServer({ name: 'open-pencil', version: serverVersion })
+      const server = new McpServer(
+        { name: 'open-pencil', version: serverVersion },
+        { instructions: MCP_SERVER_INSTRUCTIONS }
+      )
       const agent: MCPAgentSession = { id, ...opener }
 
       const transport = new WebStandardStreamableHTTPServerTransport({

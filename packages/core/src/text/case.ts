@@ -124,3 +124,10 @@ export function shownCharacters(
   }
   return result
 }
+
+/** The index of the character of `text` each UTF-16 unit of the shown text comes from. */
+export function shownSourceIndices(node: CasedText): number[] {
+  return shownCharacters(node).flatMap(({ character, sourceIndex }) =>
+    Array.from({ length: character.length }, () => sourceIndex)
+  )
+}

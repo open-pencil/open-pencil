@@ -1,12 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { previewFocus } from '@/app/ai/preview/canvas'
 import { MAX_OUTLINE } from '@/app/presence/schema'
-
-import { expectDefined } from '#tests/helpers/assert'
-
 function page(graph: SceneGraph) {
   return expectDefined(graph.getPages()[0], 'page').id
 }

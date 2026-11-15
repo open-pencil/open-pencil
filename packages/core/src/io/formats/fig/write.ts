@@ -1,1 +1,6 @@
-export { exportFigFile, compressFigData, type FigFileExtrasOptions } from './export'
+export { exportFigFile, exportFigFileStream, type FigFileExtrasOptions } from './export'
+export {
+  setFigCanvasCompressor,
+  type FigCanvasCompressor,
+  type FigCanvasParts
+} from './export/compress'

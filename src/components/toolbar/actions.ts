@@ -1,5 +1,4 @@
 import { computed } from 'vue'
-import type { Ref } from 'vue'
 import IconArrowDownToLine from '~icons/lucide/arrow-down-to-line'
 import IconArrowUpToLine from '~icons/lucide/arrow-up-to-line'
 import IconClipboard from '~icons/lucide/clipboard'
@@ -11,18 +10,17 @@ import IconScissors from '~icons/lucide/scissors'
 import IconTrash2 from '~icons/lucide/trash-2'
 import IconUngroup from '~icons/lucide/ungroup'
 
-import type { useEditorCommands } from '@open-pencil/vue/editor/commands'
+import { useEditorCommands } from '@open-pencil/vue/editor/commands'
+import { useI18n } from '@open-pencil/vue/i18n'
 
-import type { EditorStore } from '@/app/editor/active-store'
+import { useEditorStore } from '@/app/editor/active-store'
 import type { ToolbarActionItem } from '@/components/toolbar/types'
 
-type ToolbarActionOptions = {
-  store: EditorStore
-  getCommand: ReturnType<typeof useEditorCommands>['getCommand']
-  menu: Ref<{ copy: string; paste: string; cut: string; front: string; back: string; lock: string }>
-}
-
-export function useToolbarActions({ store, getCommand, menu }: ToolbarActionOptions) {
+/** The phone toolbar's edit and arrange pages: clipboard, duplicate, delete, order, group, lock. */
+export function useToolbarActions() {
+  const store = useEditorStore()
+  const { getCommand } = useEditorCommands()
+  const { menu } = useI18n()
   const editActions = computed<ToolbarActionItem[]>(() => [
     { icon: IconCopy, label: menu.value.copy, action: () => void store.mobileCopy() },
     { icon: IconClipboard, label: menu.value.paste, action: () => void store.mobilePaste() },

@@ -1,13 +1,14 @@
+import { invoke } from '@tauri-apps/api/core'
 import { useLocalStorage } from '@vueuse/core'
 import { watch } from 'vue'
 
 import {
   DEFAULT_WEB_FONT_PROVIDER_SETTINGS,
   WEB_FONT_PROVIDER_IDS,
-  collectGraphFontRequirements,
   fontManager,
-  missingGraphFontScripts,
+  prepareGraphFonts,
   type FontFamilyOption,
+  type HostFontFamily,
   type LocalFontAccessState,
   type WebFontProviderId,
   UnsupportedFontFormatError
@@ -30,7 +31,9 @@ if (typeof navigator !== 'undefined') {
 
 export type FontProviderSettings = Record<WebFontProviderId, boolean>
 
-export const onlineFontsEnabled = useLocalStorage('op-online-fonts-enabled', true)
+/** Online fonts are on until turned off in Settings. */
+export const DEFAULT_ONLINE_FONTS = true
+export const onlineFontsEnabled = useLocalStorage('op-online-fonts-enabled', DEFAULT_ONLINE_FONTS)
 export const fontProviderSettings = useLocalStorage<FontProviderSettings>(
   'op-font-providers',
   DEFAULT_WEB_FONT_PROVIDER_SETTINGS
@@ -66,19 +69,13 @@ function configureTauriFontCache() {
 configureTauriFontCache()
 if (!isTauri()) fontManager.setWebFontFetch(browserWebFontFetch)
 
-interface TauriFontFamily {
-  family: string
-  styles: string[]
-}
+let tauriFontsCache: HostFontFamily[] | null = null
+let tauriFontsPromise: Promise<HostFontFamily[]> | null = null
 
-let tauriFontsCache: TauriFontFamily[] | null = null
-let tauriFontsPromise: Promise<TauriFontFamily[]> | null = null
-
-async function getTauriFonts(): Promise<TauriFontFamily[]> {
+async function getTauriFonts(): Promise<HostFontFamily[]> {
   if (tauriFontsCache) return tauriFontsCache
   if (!tauriFontsPromise) {
-    tauriFontsPromise = import('@tauri-apps/api/core')
-      .then(({ invoke }) => invoke<TauriFontFamily[]>('list_system_fonts'))
+    tauriFontsPromise = invoke<HostFontFamily[]>('list_system_fonts')
       .then((fonts) => {
         tauriFontsCache = fonts
         // The weight list and family switches read each family's faces from these.
@@ -92,8 +89,10 @@ async function getTauriFonts(): Promise<TauriFontFamily[]> {
 
 export function preloadFonts(): void {
   configureTauriFontCache()
+  // The installed families are listed ahead for the font picker. The page draws them by name
+  // already; a face registered under a family's name would stand in for all of its faces.
   if (isTauri()) {
-    void getTauriFonts().then(registerFontFaces)
+    void getTauriFonts()
     return
   }
   if (onlineFontsEnabled.value) fontManager.preloadWebFontFamilies()
@@ -125,30 +124,13 @@ export async function predownloadFallbackFonts() {
   return fontManager.ensureFallbackPack()
 }
 
-function registerFontFaces(fonts: TauriFontFamily[]): void {
-  if (typeof document === 'undefined') return
-  for (const { family } of fonts) {
-    const face = new FontFace(family, `local("${family}")`)
-    document.fonts.add(face)
-  }
-}
-
 export async function listFamilies(): Promise<FontFamilyOption[]> {
-  configureTauriFontCache()
-  if (isTauri()) {
-    const [systemFonts, webFonts] = await Promise.all([
-      getTauriFonts(),
-      fontManager.listFamilyOptions()
-    ])
-    const byFamily = new Map(webFonts.map((font) => [font.family, font]))
-    for (const font of systemFonts)
-      byFamily.set(font.family, { family: font.family, source: 'local' })
-    return [...byFamily.values()].sort((a, b) => a.family.localeCompare(b.family))
-  }
+  // The font manager lists the installed families once the host has read them.
+  await listFonts()
   return fontManager.listFamilyOptions()
 }
 
-export async function listFonts(): Promise<TauriFontFamily[]> {
+export async function listFonts(): Promise<HostFontFamily[]> {
   configureTauriFontCache()
   if (isTauri()) {
     return getTauriFonts()
@@ -157,47 +139,28 @@ export async function listFonts(): Promise<TauriFontFamily[]> {
 }
 
 interface FontRenderInvalidator {
-  invalidateAllPictures(): void
+  invalidateNodesForFonts(graph: SceneGraph, nodeIds: readonly string[]): void
 }
 
+/**
+ * Prepares the fonts of `nodeIds` with the app's loader, keeping them off the canvas meanwhile;
+ * resolves to whether that changed any face their text draws with.
+ */
 export async function ensureGraphFonts(
   graph: SceneGraph,
   nodeIds: string[],
   renderer?: FontRenderInvalidator | null
 ): Promise<boolean> {
-  fontManager.blockNodesUntilFontsResolve(nodeIds)
   try {
-    const generationBefore = fontManager.generation()
-    const fontKeys = fontManager.collectFontKeys(graph, nodeIds)
-    const requirements = collectGraphFontRequirements(graph, nodeIds)
-    const { characters } = requirements
-    await Promise.all(fontKeys.map(([family, style]) => loadFont(family, style, characters)))
-    const fallbackScripts = missingGraphFontScripts(requirements, {
+    const prepared = await prepareGraphFonts(graph, nodeIds, {
+      loadFont,
+      hide: true,
       treatUnknownCoverageAsMissing: IS_TAURI
     })
-    if (fallbackScripts.length > 0) {
-      const fallbacks = await fontManager.ensureFallbackPack(fallbackScripts, characters)
-      if (Object.values(fallbacks).some((families) => families.length > 0)) {
-        clearTextPictures(graph, nodeIds)
-      }
-    } else if (fontManager.generation() !== generationBefore) {
-      clearTextPictures(graph, nodeIds)
-    }
-    return fontManager.generation() !== generationBefore || fallbackScripts.length > 0
+    return prepared.changed
   } finally {
-    fontManager.unblockNodes(nodeIds)
-    renderer?.invalidateAllPictures()
+    renderer?.invalidateNodesForFonts(graph, nodeIds)
   }
-}
-
-function clearTextPictures(graph: SceneGraph, nodeIds: string[]): void {
-  const clear = (id: string) => {
-    const node = graph.getNode(id)
-    if (!node) return
-    if (node.type === 'TEXT') node.textPicture = null
-    for (const childId of node.childIds) clear(childId)
-  }
-  for (const id of nodeIds) clear(id)
 }
 
 type NativeFontLoadError = { code?: 'not-found' | 'unsupported-format' | 'failed' }
@@ -205,7 +168,6 @@ type NativeFontLoadError = { code?: 'not-found' | 'unsupported-format' | 'failed
 async function loadSystemFont(family: string, style = 'Regular'): Promise<ArrayBuffer | null> {
   if (!isTauri()) return null
   try {
-    const { invoke } = await import('@tauri-apps/api/core')
     const data = await invoke<ArrayBuffer>('load_system_font', { family, style })
     if (data.byteLength === 0) return null
     return data

@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+
 import {
   cornerRadiusAtPoint,
   cornerRadiusChanges,
@@ -10,7 +12,6 @@ import {
   pointCountAtPoint,
   starRatioAtPoint
 } from '#core/geometry'
-import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
 // Values measured on a 160 × 232 rectangle in Figma desktop, 2026-10-10.
 
@@ -156,9 +157,28 @@ describe('shape handles', () => {
     expect(snapped).toEqual([20, 30, 30, 40, 50])
   })
 
+  test('move a binding of the whole radius to the corners when one is dragged alone', () => {
+    const { graph, node } = rectangle({ cornerRadius: 20 })
+    const radius = graph.createVariable('Radius', 'FLOAT', graph.createCollection('Tokens').id, 20)
+    graph.bindVariable(node.id, 'cornerRadius', radius.id)
+    const changes = cornerRadiusChanges(graph.getNode(node.id) ?? node, 'bottomRight', 30, true)
+
+    expect(changes).toMatchObject({ independentCorners: true, bottomRightRadius: 30 })
+    expect(Object.keys(changes.boundVariables ?? {}).toSorted()).toEqual([
+      'bottomLeftRadius',
+      'bottomRightRadius',
+      'topLeftRadius',
+      'topRightRadius'
+    ])
+  })
+
   test('drag equal corners together and differing ones alone, Alt reversing either', () => {
     const uniform = rectangle({ cornerRadius: 20 }).node
-    const mixed = rectangle({ independentCorners: true, topLeftRadius: 10, topRightRadius: 40 }).node
+    const mixed = rectangle({
+      independentCorners: true,
+      topLeftRadius: 10,
+      topRightRadius: 40
+    }).node
     expect(dragsSingleCorner(uniform, false)).toBe(false)
     expect(dragsSingleCorner(uniform, true)).toBe(true)
     expect(dragsSingleCorner(mixed, false)).toBe(true)

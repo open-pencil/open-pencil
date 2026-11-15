@@ -49,7 +49,7 @@ export const INLINE_TAGS = new Set([
   'u'
 ])
 const INLINE_BLOCK_TAGS = new Set(['button', 'img', 'input', 'select', 'textarea'])
-/** Elements browsers center their text in by default. */
+/** Elements browsers center their content in both ways, beyond what their styles say. */
 const CENTERED_TAGS = new Set(['button'])
 
 /** What a run of text takes from its element: the properties CSS inherits, and decoration. */
@@ -65,6 +65,7 @@ const TEXT_PROPERTIES = [
   'text-decoration-line',
   'text-shadow',
   'text-transform',
+  'text-wrap-mode',
   'white-space'
 ]
 
@@ -72,15 +73,8 @@ const TEXT_PROPERTIES = [
  * The style a run of text directly inside an element takes from it. The element's own box,
  * position, and opacity stay on the element, so the text is neither placed nor faded twice.
  */
-export function inheritedTextStyle(
-  element: DesignElement,
-  style: DesignStyleDeclaration
-): DesignStyleDeclaration {
-  const inherited = pick(style, TEXT_PROPERTIES)
-  if (!inherited['text-align'] && CENTERED_TAGS.has(element.tagName.toLowerCase())) {
-    inherited['text-align'] = 'center'
-  }
-  return inherited
+export function inheritedTextStyle(style: DesignStyleDeclaration): DesignStyleDeclaration {
+  return pick(style, TEXT_PROPERTIES)
 }
 
 /** The element's `display`, or the one browsers give its tag by default. */
@@ -89,6 +83,7 @@ export function elementDisplay(element: DesignElement, style: DesignStyleDeclara
   if (display) return display
   const tag = element.tagName.toLowerCase()
   if (INLINE_TAGS.has(tag)) return 'inline'
+  if (tag === 'li') return 'list-item'
   return INLINE_BLOCK_TAGS.has(tag) ? 'inline-block' : 'block'
 }
 
@@ -106,12 +101,10 @@ export function isInlineLevel(display: string): boolean {
   return display.startsWith('inline')
 }
 
-function textAlignAxis(element: DesignElement, style: DesignStyleDeclaration) {
+function textAlignAxis(style: DesignStyleDeclaration) {
   const align = pickStyle(style, 'text-align')?.trim().toLowerCase()
   if (align === 'center') return 'CENTER'
-  if (align === 'right' || align === 'end') return 'MAX'
-  if (align) return 'MIN'
-  return CENTERED_TAGS.has(element.tagName.toLowerCase()) ? 'CENTER' : 'MIN'
+  return align === 'right' || align === 'end' ? 'MAX' : 'MIN'
 }
 
 /** The auto layout an element's own flow gives its children. */
@@ -140,7 +133,7 @@ export function applyContainerLayout(
   }
   // Inline content runs in a line, aligned by `text-align`.
   node.layoutMode = 'HORIZONTAL'
-  node.primaryAxisAlign = textAlignAxis(element, style)
+  node.primaryAxisAlign = textAlignAxis(style)
   node.counterAxisAlign = 'CENTER'
 }
 
@@ -203,17 +196,35 @@ function hasDefiniteWidth(graph: SceneGraph, node: SceneNode): boolean {
   return layoutSizing(graph, node, 'HORIZONTAL') !== 'HUG'
 }
 
+/** White space values that break lines only where the text does, never to fit a width. */
+const UNWRAPPED_WHITE_SPACE = new Set(['nowrap', 'pre'])
+
+/** Whether CSS keeps text's lines as the text breaks them, however narrow its box. */
+function keepsLines(style: DesignStyleDeclaration): boolean {
+  const whiteSpace = pickStyle(style, 'white-space')
+  return (
+    (whiteSpace !== undefined && UNWRAPPED_WHITE_SPACE.has(whiteSpace)) ||
+    pickStyle(style, 'text-wrap-mode') === 'nowrap'
+  )
+}
+
 /**
  * Text wraps where its width is fixed or fills a parent with a width of its own, and hugs its
- * content otherwise. It is measured when the document is laid out.
+ * content otherwise, as text that CSS does not wrap always does. It is measured when the
+ * document is laid out.
  */
-function applyTextSizing(graph: SceneGraph, node: SceneNode, size: BoxSize): void {
+function applyTextSizing(
+  graph: SceneGraph,
+  node: SceneNode,
+  style: DesignStyleDeclaration,
+  size: BoxSize
+): void {
   const parent = node.parentId ? graph.getNode(node.parentId) : undefined
   const fillsWidth =
     parent !== undefined &&
     hasDefiniteWidth(graph, parent) &&
     layoutSizing(graph, node, 'HORIZONTAL') === 'FILL'
-  const wraps = size.fixedWidth || fillsWidth
+  const wraps = (size.fixedWidth || fillsWidth) && !keepsLines(style)
   node.textAutoResize = wraps ? textAutoResizeFor(false, !size.fixedHeight) : 'WIDTH_AND_HEIGHT'
   // Wrapping text starts at its content's width.
   if (!size.fixedWidth) node.width = 0
@@ -244,5 +255,5 @@ export function applyFlowSizing(
     )
   }
   applyParentFill(graph, node, style, display, parentFlow, size)
-  if (node.type === 'TEXT') applyTextSizing(graph, node, size)
+  if (node.type === 'TEXT') applyTextSizing(graph, node, style, size)
 }

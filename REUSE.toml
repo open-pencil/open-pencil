@@ -39,3 +39,18 @@ path = [
 precedence = "override"
 SPDX-FileCopyrightText = "2026 Danila Poyarkov and OpenPencil contributors"
 SPDX-License-Identifier = "MIT"
+
+# Mermaid's flowchart grammar, the parser generated from it, and Mermaid's text preparation,
+# copied from a pinned Mermaid release by tools/generate/mermaid-sources.
+[[annotations]]
+path = [
+  "packages/mermaid/src/upstream/comments.ts",
+  "packages/mermaid/src/upstream/flow.jison",
+  "packages/mermaid/src/upstream/flow.js",
+  "packages/mermaid/src/upstream/MERMAID-LICENSE.txt",
+  "packages/mermaid/src/upstream/preprocess.ts",
+  "packages/mermaid/src/upstream/regexes.ts",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "2014 - 2022 Knut Sveidqvist"
+SPDX-License-Identifier = "MIT"

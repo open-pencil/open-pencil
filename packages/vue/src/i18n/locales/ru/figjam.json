@@ -30,5 +30,12 @@
   "colorLightTeal": "Светло-бирюзовый",
   "colorLightBlue": "Светло-синий",
   "colorLightViolet": "Светло-фиолетовый",
-  "colorLightPink": "Светло-розовый"
+  "colorLightPink": "Светло-розовый",
+  "changeColor": "Изменить цвет",
+  "lineStyle": "Стиль линии",
+  "lineShape": "Форма линии",
+  "solid": "Сплошная",
+  "thin": "Тонкая",
+  "renameSection": "Переименовать секцию",
+  "addText": "Добавить текст"
 }

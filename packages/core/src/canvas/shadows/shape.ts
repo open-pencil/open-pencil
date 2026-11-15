@@ -1,23 +1,40 @@
-import type { BlendMode, Canvas, Path } from 'canvaskit-wasm'
+import type { Canvas, Path } from '@open-pencil/canvaskit'
+import type { BlendMode, Effect, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { nodeHasRadius } from '@open-pencil/scene-graph/corners'
+import {
+  blurSigma,
+  drawnBlurRadius,
+  borderWeights,
+  strokeAlignShare,
+  isWholeArc
+} from '@open-pencil/scene-graph/geometry'
+import { paintShows } from '@open-pencil/scene-graph/paints'
 
-import type { Effect, SceneNode, Stroke } from '@open-pencil/scene-graph'
-
-import { figmaBlendModeToSkia } from '#core/canvas/blend'
-import { blurSigma } from '#core/canvas/effects'
+import { setPaintBlendMode } from '#core/canvas/blend'
 import type { SkiaRenderer } from '#core/canvas/renderer'
-import { drawOutline, makeNodeShapePath, nodeHasRadius, withNodeOutline } from '#core/canvas/shapes'
-import { sideStrokeRRects, strokeAlignShare } from '#core/canvas/strokes/sides'
+import { drawOutline, makeNodeShapePath, withNodeOutline } from '#core/canvas/shapes'
+import { sideStrokeRRects } from '#core/canvas/strokes/sides'
 
-import { fillsCastShadow, paintCastsShadow } from './silhouette'
+import { fillsCastShadow } from './silhouette'
 
-/** Whether the node's fill outline is its whole shadow: it casts from a fill and no stroke reaches past it. */
+/** Whether every region of a vector casts a shadow, from its own paints or the layer's. */
+function regionsCastShadow(node: SceneNode): boolean {
+  const regions = node.vectorNetwork?.regions ?? []
+  return regions.every((region) => (region.fills ?? node.fills).some(paintShows))
+}
+
+/**
+ * Whether the node's fill outline is its whole shadow: it casts from a fill, every region of a
+ * vector casts too, and no stroke reaches past it.
+ */
 export function castsFromOwnShape(node: SceneNode): boolean {
   return (
     node.type !== 'TEXT' &&
     node.type !== 'BOOLEAN_OPERATION' &&
     !isPartialArc(node) &&
+    regionsCastShadow(node) &&
     fillsCastShadow(node) &&
-    node.strokes.every((stroke) => !paintCastsShadow(stroke) || stroke.align === 'INSIDE')
+    node.strokes.every((stroke) => !paintShows(stroke) || stroke.align === 'INSIDE')
   )
 }
 
@@ -44,7 +61,7 @@ const OUTLINE_SHAPE_TYPES: ReadonlySet<SceneNode['type']> = new Set<SceneNode['t
 function isPartialArc(node: SceneNode): boolean {
   const arc = node.type === 'ELLIPSE' ? node.arcData : null
   if (!arc) return false
-  return arc.innerRadius > 0 || Math.abs(arc.endingAngle - arc.startingAngle) < 2 * Math.PI - 1e-6
+  return arc.innerRadius > 0 || !isWholeArc(arc)
 }
 
 /** Distances from each side of a rectangle: top, right, bottom, left. */
@@ -79,18 +96,13 @@ function sideOutline([top, right, bottom, left]: Sides, align: Stroke['align']):
  */
 export function regularStrokeOutline(node: SceneNode, spread: number): StrokeOutline | null {
   if (!OUTLINE_SHAPE_TYPES.has(node.type) || isPartialArc(node)) return null
-  const strokes = node.strokes.filter(paintCastsShadow)
+  const strokes = node.strokes.filter(paintShows)
   if (strokes.length === 0) return evenOutline(0, 'INSIDE')
   const [stroke] = strokes
   if (strokes.length > 1 || stroke.dashPattern?.length) return null
   const sharp = node.type !== 'ELLIPSE' && !nodeHasRadius(node)
   if (node.independentStrokeWeights && node.type !== 'ELLIPSE') {
-    const sides: Sides = [
-      node.borderTopWeight,
-      node.borderRightWeight,
-      node.borderBottomWeight,
-      node.borderLeftWeight
-    ]
+    const sides: Sides = borderWeights(node)
     if (sides.every((weight) => weight === sides[0])) return evenOutline(sides[0], stroke.align)
     if (spread !== 0) return evenOutline(node.strokeWeight, stroke.align)
     return sideOutline(sides, stroke.align)
@@ -125,13 +137,13 @@ function drawMaskShadow(
   r: SkiaRenderer,
   canvas: Canvas,
   effect: Effect,
-  blendMode: BlendMode,
+  blendMode: BlendMode | undefined,
   draw: () => void
 ): void {
   r.auxFill.setColor(r.color4f(effect.color.r, effect.color.g, effect.color.b, effect.color.a))
   r.auxFill.setMaskFilter(r.getCachedMaskBlur(blurSigma(effect.radius)))
   r.auxFill.setImageFilter(null)
-  r.auxFill.setBlendMode(blendMode)
+  setPaintBlendMode(r, r.auxFill, blendMode)
   canvas.save()
   try {
     canvas.translate(effect.offset.x, effect.offset.y)
@@ -150,7 +162,7 @@ export function drawShapeDropShadow(
   node: SceneNode,
   effect: Effect,
   spread: number,
-  blendMode: BlendMode
+  blendMode: BlendMode | undefined
 ): void {
   drawMaskShadow(r, canvas, effect, blendMode, () =>
     withNodeOutline(r, node, (outline) => drawOutline(canvas, outline, r.auxFill), spread)
@@ -170,7 +182,7 @@ export function drawOutlineDropShadow(
   effect: Effect,
   outline: StrokeOutline,
   spread: number,
-  blendMode: BlendMode
+  blendMode: BlendMode | undefined
 ): void {
   drawMaskShadow(r, canvas, effect, blendMode, () => {
     if (outline.even) {
@@ -188,7 +200,7 @@ export function drawRingDropShadow(
   effect: Effect,
   outline: StrokeOutline,
   spread: number,
-  blendMode: BlendMode
+  blendMode: BlendMode | undefined
 ): void {
   const builder = new r.ck.PathBuilder()
   if (outline.even) {
@@ -241,12 +253,12 @@ export function drawShapeInnerShadow(
   isolated = false
 ): void {
   const sp = spread
-  r.auxFill.setColor(r.ck.Color4f(effect.color.r, effect.color.g, effect.color.b, effect.color.a))
+  r.auxFill.setColorComponents(effect.color.r, effect.color.g, effect.color.b, effect.color.a)
   r.auxFill.setImageFilter(r.getCachedDecalBlur(blurSigma(effect.radius)))
 
   canvas.save()
   try {
-    const expand = effect.radius * 2
+    const expand = drawnBlurRadius(effect.radius) * 2
     const { x: offsetX, y: offsetY } = effect.offset
     const spreadPadding = sp < 0 ? -sp : 0
     const area = new r.ck.PathBuilder()
@@ -275,7 +287,7 @@ export function drawShapeInnerShadow(
       canvas.drawPath(shadowPath, r.auxFill)
       r.auxFill.setBlendMode(r.ck.BlendMode.Plus)
     } else {
-      r.auxFill.setBlendMode(figmaBlendModeToSkia(r.ck, effect.blendMode))
+      setPaintBlendMode(r, r.auxFill, effect.blendMode)
     }
     r.clipNodeShape(canvas, node)
     canvas.drawPath(shadowPath, r.auxFill)

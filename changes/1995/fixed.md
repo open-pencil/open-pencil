@@ -1,0 +1,1 @@
+- Text scaled with the Scale tool no longer disappears while another layer is rotated or moved, when only the lines past its box are in view (#1995).

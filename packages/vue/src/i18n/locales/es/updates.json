@@ -21,5 +21,10 @@
   "installFailed": "No se pudo instalar la actualización: {error}",
   "restartFailed": "No se pudo reiniciar OpenPencil: {error}",
   "unavailable": "Las actualizaciones aún no están disponibles. Publica primero una versión firmada con latest.json.",
-  "checkFailed": "Error al encontrar actualizaciones: {error}"
+  "checkFailed": "Error al encontrar actualizaciones: {error}",
+  "webUpdateReady": "Hay una nueva versión de OpenPencil lista",
+  "reload": "Recargar",
+  "settingsSection": "Actualizaciones",
+  "checkOnStartup": "Buscar actualizaciones al iniciar",
+  "checkOnStartupDescription": "Busca una versión nueva poco después de abrir la aplicación de escritorio. «Buscar actualizaciones…» del menú sigue funcionando cuando esto está desactivado."
 }

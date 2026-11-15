@@ -1,13 +1,18 @@
 import type { LanguageModel } from 'ai'
 import { ref } from 'vue'
 
-import type { ReasoningEffort } from '@open-pencil/core/constants'
+import { acpAgentFor, providerKind } from '@open-pencil/core/constants'
+import type { ACPAgentDef, ReasoningEffort } from '@open-pencil/core/constants'
 
+import { agentModelID } from '@/app/ai/models/agent'
 import { createLanguageModel, resolveLanguageModelID } from '@/app/ai/models/language-model'
 import { resolveProviderModel } from '@/app/ai/models/reasoning/floors'
 import { modelConnection, resolveAIModelRole } from '@/app/ai/models/store'
 import type { AIModelConnection, AIModelRole, ResolvedAIModelRole } from '@/app/ai/models/types'
+import { cloudModelConfig } from '@/app/ai/providers/openpencil/model'
+import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
 import type { ModelCredentialStore } from '@/app/ai/providers/types'
+import { cloudAIClient } from '@/app/cloud/integration'
 import { appCredentialServices } from '@/app/settings/credentials/app'
 import {
   initializeCredentialMigration,
@@ -25,11 +30,16 @@ export type DirectAIModelRuntime = {
 export type ACPModelRuntime = {
   kind: 'acp'
   role: ResolvedAIModelRole
+  agent: ACPAgentDef
+  /** The model the profile names, which the agent's sessions are put on; empty keeps its own. */
+  model: string
 }
 
 export type HarnessModelRuntime = {
   kind: 'harness'
   role: ResolvedAIModelRole
+  /** The model the profile names; empty leaves it to the companion's agent. */
+  model: string
 }
 
 export type AIModelRuntime = DirectAIModelRuntime | ACPModelRuntime | HarnessModelRuntime
@@ -82,6 +92,22 @@ export function modelConnectionCredentialStore(connectionId: string): ModelCrede
   }
 }
 
+/** Cloud's AI service is unavailable: signed out, no service, or no workspace chosen. */
+export class CloudAIUnavailableError extends Error {
+  override readonly name = 'CloudAIUnavailableError'
+
+  constructor() {
+    super('OpenPencil Cloud AI is unavailable')
+  }
+}
+
+async function openPencilLanguageModel(resolved: ResolvedAIModelRole): Promise<LanguageModel> {
+  const client = cloudAIClient(resolved.connection.cloudWorkspaceId ?? '')
+  if (!client) throw new CloudAIUnavailableError()
+  const { config, runtime } = cloudModelConfig(client, resolved.profile.modelID)
+  return createLanguageModel(config, runtime)
+}
+
 export async function createAIModelRuntime(role: AIModelRole): Promise<AIModelRuntime | null> {
   const resolved = resolveAIModelRole(role)
   if (!resolved) return null
@@ -91,17 +117,18 @@ export async function createAIModelRuntime(role: AIModelRole): Promise<AIModelRu
   if (role === 'vision' && !resolved.profile.capabilities.includes('vision')) {
     throw new Error('The Vision model must support image input')
   }
-  if (resolved.connection.providerID === 'harness:pi') {
-    if (role !== 'design') {
-      throw new Error('Harness agents can only be assigned to the Design agent role')
-    }
-    return { kind: 'harness', role: resolved }
+  const kind = providerKind(resolved.connection.providerID)
+  if (kind === 'harness') {
+    return { kind, role: resolved, model: agentModelID(resolved.profile) }
   }
-  if (resolved.connection.providerID.startsWith('acp:')) {
-    if (role !== 'design') {
-      throw new Error('ACP agents can only be assigned to the Design agent role')
-    }
-    return { kind: 'acp', role: resolved }
+  if (kind === 'acp') {
+    const agent = acpAgentFor(resolved.connection.providerID)
+    if (!agent) throw new Error(`Unknown ACP agent: ${resolved.connection.providerID}`)
+    return { kind, role: resolved, agent, model: agentModelID(resolved.profile) }
+  }
+
+  if (resolved.connection.providerID === OPENPENCIL_AI_PROVIDER) {
+    return { kind: 'direct', role: resolved, model: await openPencilLanguageModel(resolved) }
   }
 
   const apiKey = await resolveModelConnectionAPIKey(resolved.connection.id)
@@ -115,7 +142,7 @@ export async function createAIModelRuntime(role: AIModelRole): Promise<AIModelRu
     kind: 'direct',
     role: resolved,
     minReasoningEffort: known?.minReasoningEffort,
-    model: createLanguageModel(
+    model: await createLanguageModel(
       {
         providerID: resolved.connection.providerID,
         apiKey,
@@ -124,7 +151,7 @@ export async function createAIModelRuntime(role: AIModelRole): Promise<AIModelRu
         customBaseURL: resolved.connection.customBaseURL,
         customAPIType: resolved.connection.customAPIType
       },
-      modelConnectionCredentialStore(resolved.connection.id)
+      { credentials: modelConnectionCredentialStore(resolved.connection.id) }
     )
   }
 }

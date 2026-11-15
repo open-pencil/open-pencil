@@ -8,6 +8,7 @@ import { AppDialogBody, AppDialogFooter } from '@/components/ui/dialog'
       <slot />
     </AppDialogBody>
     <AppDialogFooter v-if="$slots.footer">
+      <template v-if="$slots['footer-start']" #start><slot name="footer-start" /></template>
       <slot name="footer" />
     </AppDialogFooter>
   </div>

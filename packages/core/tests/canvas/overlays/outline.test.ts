@@ -1,0 +1,25 @@
+import { afterAll, expect, test } from 'bun:test'
+
+import { SkiaRenderer } from '@open-pencil/core/canvas'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
+import { expectDefined } from '@open-pencil/test-support/assert'
+
+import { dashEffect, withScreenStroke } from '#core/canvas/overlays/outline'
+
+const ck = await getCanvasKit()
+const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(8, 8), 'surface'))
+
+afterAll(() => renderer.destroy())
+
+test('a screen stroke reuses its dash across frames at one zoom and makes another per zoom', () => {
+  renderer.zoom = 1
+  const draw = () => withScreenStroke(renderer, { color: ck.BLACK, dash: [4, 2] }, () => undefined)
+  draw()
+  draw()
+  expect(renderer.dashEffects.size).toBe(1)
+  const first = dashEffect(renderer, 4, 2)
+  expect(dashEffect(renderer, 4, 2)).toBe(first)
+  renderer.zoom = 2
+  draw()
+  expect(renderer.dashEffects.size).toBe(2)
+})

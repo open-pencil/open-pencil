@@ -9,18 +9,18 @@ import {
   Instance,
   Rectangle,
   Text,
+  property,
   shader,
   type TreeNode
 } from '@open-pencil/design-jsx'
-import type { ComponentPropertyDefinition } from '@open-pencil/scene-graph'
 import type { ShaderPreset } from '@open-pencil/scene-graph/shaders'
 
 import type { Theme } from '../theme'
 
 export const PLAYER_PROPERTIES = {
-  title: { id: 'player-title', name: 'Title', type: 'TEXT', defaultValue: 'Night Drive' },
-  artist: { id: 'player-artist', name: 'Artist', type: 'TEXT', defaultValue: 'Lumen' }
-} satisfies Record<string, ComponentPropertyDefinition>
+  title: property('Title', 'Night Drive'),
+  artist: property('Artist', 'Lumen')
+}
 
 export const PLAYER_WIDTH = 360
 export const ARTWORK_SIZE = 320
@@ -69,7 +69,6 @@ export function playerComponent({ vars }: Theme, parts: PlayerParts): TreeNode {
   return (
     <Component
       name="Player"
-      properties={Object.values(PLAYER_PROPERTIES)}
       flex="col"
       w={PLAYER_WIDTH}
       h="hug"
@@ -96,19 +95,15 @@ export function playerComponent({ vars }: Theme, parts: PlayerParts): TreeNode {
           size={20}
           weight={600}
           color={vars.text}
-          propertyRefs={[{ propertyId: PLAYER_PROPERTIES.title.id, field: 'TEXT' }]}
-        >
-          {PLAYER_PROPERTIES.title.defaultValue}
-        </Text>
+          text={PLAYER_PROPERTIES.title}
+        />
         <Text
           name="Artist"
           font="Inter"
           size={14}
           color={vars.muted}
-          propertyRefs={[{ propertyId: PLAYER_PROPERTIES.artist.id, field: 'TEXT' }]}
-        >
-          {PLAYER_PROPERTIES.artist.defaultValue}
-        </Text>
+          text={PLAYER_PROPERTIES.artist}
+        />
       </Frame>
       <Frame name="Progress" flex="col" w="fill" h="hug" gap={8}>
         <Instance of={parts.slider} />

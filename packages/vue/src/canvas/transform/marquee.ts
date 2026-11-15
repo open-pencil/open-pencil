@@ -41,13 +41,16 @@ export function handleMarqueeMove(editor: Editor, d: DragMarquee, cx: number, cy
   editor.setMarquee(marquee)
 }
 
-/** Ends a marquee; a click on a section's empty area, without a drag, selects it, as in Figma. */
+/**
+ * Ends a marquee; a click on a section's empty area, without a drag, selects it when nothing was
+ * selected, as in Figma, where the same click with a selection only deselects.
+ */
 export function finishMarquee(editor: Editor, d: DragMarquee) {
   const container = d.containerId ? editor.graph.getNode(d.containerId) : undefined
   const marquee = editor.state.marquee
   const zoom = editor.state.zoom
   const dragged =
     !!marquee && isPastPointerDragThreshold(0, 0, marquee.width * zoom, marquee.height * zoom)
-  if (!dragged && container?.type === 'SECTION') editor.select([container.id])
+  if (!dragged && d.selectsSection && container?.type === 'SECTION') editor.select([container.id])
   editor.setMarquee(null)
 }

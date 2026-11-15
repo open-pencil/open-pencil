@@ -36,7 +36,7 @@ defineSlots<{ icon(): unknown; actions(): unknown }>()
       >
         <slot name="icon" />
         <span class="truncate">{{ name }}</span>
-        <span v-if="value !== undefined" class="ml-auto max-w-1/2 min-w-0 truncate text-muted">
+        <span v-if="value !== undefined" class="ms-auto max-w-1/2 min-w-0 truncate text-muted">
           {{ value }}
         </span>
       </span>

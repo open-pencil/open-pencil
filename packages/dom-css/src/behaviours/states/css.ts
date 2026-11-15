@@ -26,12 +26,16 @@ export const FILLED = ':has(:is(input, textarea):not(:placeholder-shown))'
 export function conditionSelector(condition: StateCondition): string {
   if (condition.type === 'state') return `[data-state=${quoted(condition.value)}]`
   if (condition.type === 'disabled') return '[data-disabled]'
+  if (condition.type === 'invalid')
+    return condition.enabled ? '[data-invalid]:not([data-disabled])' : '[data-invalid]'
   if (condition.type === 'filled') return FILLED
   if (condition.type === 'prop')
     return `[${propAttribute(condition.name)}=${quoted(condition.value)}]`
-  if (condition.state === 'focus') return condition.within ? ':focus-within' : ':focus-visible'
+  const valid = condition.valid ? ':not([data-invalid])' : ''
+  if (condition.state === 'focus')
+    return `${condition.within ? ':focus-within' : ':focus-visible'}${valid}`
   // A disabled control keeps its disabled look under the pointer.
-  return `${condition.state === 'hover' ? ':hover' : ':active'}:not([data-disabled])`
+  return `${condition.state === 'hover' ? ':hover' : ':active'}:not([data-disabled])${valid}`
 }
 
 function designNode(node: StateNode, classes: Map<StateElement, string>): DesignNode {

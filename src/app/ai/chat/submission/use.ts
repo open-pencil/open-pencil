@@ -1,4 +1,4 @@
-import { computed, markRaw, ref, type Ref } from 'vue'
+import { computed, markRaw, ref, shallowReadonly, shallowRef, type Ref } from 'vue'
 
 import { designMessageWithImageFindings } from '@/app/ai/attachment/image/analyze'
 import { revokeImagePreviewURL } from '@/app/ai/attachment/image/prepare'
@@ -6,18 +6,23 @@ import {
   imageDraftPresentations,
   preparedImagePresentations
 } from '@/app/ai/attachment/image/presentation'
-import { snapshotNode } from '@/app/ai/attachment/node/snapshot'
+import { snapshotNodes } from '@/app/ai/attachment/node/snapshot'
 import {
   deleteMessageAttachments,
   setMessageAttachments
 } from '@/app/ai/attachment/presentation/store'
+import { appendSkillContext } from '@/app/ai/chat/context'
 import { setVisibleMessageText } from '@/app/ai/chat/presentation'
+import { commandsAsText } from '@/app/ai/chat/references/command'
+import { mentionedNodes } from '@/app/ai/chat/references/nodes'
 import { reportSubmissionError, type SubmissionErrorOptions } from '@/app/ai/chat/submission/errors'
 import { prepareSubmittedImages } from '@/app/ai/chat/submission/images'
 import { chatToResend } from '@/app/ai/chat/submission/resend'
+import { sendText } from '@/app/ai/chat/submission/text'
 import type { ChatInstance, ChatSubmission } from '@/app/ai/chat/submission/types'
 import { restoreTurn, revertTurn } from '@/app/ai/reply/turns'
 import { useUndoRecords } from '@/app/ai/reply/undo'
+import { invokedSkill } from '@/app/ai/skills/invoke'
 import type { EditorStore } from '@/app/editor/active-store'
 
 interface SubmissionOptions extends SubmissionErrorOptions {
@@ -26,10 +31,13 @@ interface SubmissionOptions extends SubmissionErrorOptions {
   flush?: () => Promise<void>
   clearFailure: () => void
   getEditor: () => EditorStore
+  prepare?: (chat: ChatInstance, text: string) => Promise<void> // e.g. compacting before `text`
 }
 
 export function useChatSubmission(options: SubmissionOptions) {
   const isPreparingAttachments = ref(false)
+  /** A message sent but not in the chat yet, shown while the chat connects or compacts first. */
+  const sending = shallowRef<ChatSubmission | null>(null)
   let operationVersion = 0
 
   const undone = useUndoRecords(options)
@@ -47,22 +55,6 @@ export function useChatSubmission(options: SubmissionOptions) {
     await options.flush?.().catch(() => undefined)
   }
 
-  async function sendText(
-    currentChat: ChatInstance,
-    submission: ChatSubmission,
-    dispatch: () => void
-  ): Promise<void> {
-    const previousIds = new Set(currentChat.messages.map((message) => message.id))
-    dispatch()
-    await withTurn(currentChat, () =>
-      currentChat.sendMessage({ text: submission.modelText }).catch(() => undefined)
-    )
-    const message = currentChat.messages.find(
-      (candidate) => candidate.role === 'user' && !previousIds.has(candidate.id)
-    )
-    if (message) setVisibleMessageText(message.id, submission.displayText)
-  }
-
   /**
    * Shows the message at once and sends it once its images are prepared. A failure before it
    * is sent takes the message back out, so the composer can restore the draft.
@@ -75,9 +67,7 @@ export function useChatSubmission(options: SubmissionOptions) {
   ): Promise<void> {
     const messageId = crypto.randomUUID()
     const editor = options.getEditor()
-    const nodeAttachments = submission.nodes
-      .map((node) => snapshotNode(editor, messageId, node))
-      .filter((attachment) => attachment !== null)
+    const nodeAttachments = snapshotNodes(editor, messageId, submission.nodes)
     currentChat.messages = [
       ...currentChat.messages,
       { id: messageId, role: 'user', parts: [{ type: 'text', text: submission.modelText }] }
@@ -149,9 +139,12 @@ export function useChatSubmission(options: SubmissionOptions) {
     const dispatch = () => {
       sent = true
     }
+    sending.value = submission
     isPreparingAttachments.value = submission.images.length > 0
     options.clearFailure()
     try {
+      // Read before the version check below, so a cancel or newer message meanwhile wins.
+      const skill = await invokedSkill(submission.displayText)
       const currentChat = await options.ensureChat()
       if (currentChat && version === operationVersion) options.chat.value = markRaw(currentChat)
       if (!currentChat || version !== operationVersion) {
@@ -159,10 +152,14 @@ export function useChatSubmission(options: SubmissionOptions) {
         return false
       }
       const note = undone.note(submission.modelText, currentChat.messages)
-      const noted = { ...submission, modelText: note.text }
+      const noted = { ...submission, modelText: appendSkillContext(note.text, skill) }
+      await options.prepare?.(currentChat, noted.modelText)
+      if (version !== operationVersion) return false
       const previousIds = new Set(currentChat.messages.map((message) => message.id))
+      // Both ways of sending add the message to the chat at once, which shows it from then on.
+      sending.value = null
       if (submission.images.length === 0 && submission.nodes.length === 0) {
-        await sendText(currentChat, noted, dispatch)
+        await sendText(currentChat, noted, dispatch, withTurn)
       } else {
         await sendAttachments(currentChat, noted, version, dispatch)
       }
@@ -176,7 +173,10 @@ export function useChatSubmission(options: SubmissionOptions) {
       return sent
     } finally {
       await options.flush?.().catch(() => undefined)
-      if (version === operationVersion) isPreparingAttachments.value = false
+      if (version === operationVersion) {
+        isPreparingAttachments.value = false
+        sending.value = null
+      }
     }
   }
 
@@ -213,11 +213,20 @@ export function useChatSubmission(options: SubmissionOptions) {
     options.clearFailure()
     for (const message of later) if (message.role === 'assistant') revertTurn(message.id)
     // Replies after the edited message are replaced; what it reported needs a new report.
-    const note = undone.note(trimmed, currentChat.messages.slice(0, index))
+    const note = undone.note(commandsAsText(trimmed), currentChat.messages.slice(0, index))
+    const skill = await invokedSkill(trimmed)
     setVisibleMessageText(messageId, trimmed)
+    // The layers the edited text mentions replace the previews the message showed.
+    const editor = options.getEditor()
+    setMessageAttachments(
+      messageId,
+      snapshotNodes(editor, messageId, mentionedNodes(editor.graph, trimmed))
+    )
     try {
       await withTurn(currentChat, () =>
-        currentChat.sendMessage({ messageId, text: note.text }).catch(() => undefined)
+        currentChat
+          .sendMessage({ messageId, text: appendSkillContext(note.text, skill) })
+          .catch(() => undefined)
       )
       undone.reported(currentChat, note.reports, messageId)
     } finally {
@@ -228,12 +237,14 @@ export function useChatSubmission(options: SubmissionOptions) {
   function cancel(): void {
     operationVersion += 1
     isPreparingAttachments.value = false
+    sending.value = null
   }
 
   const busy = computed(() => isPreparingAttachments.value)
 
   return {
     busy,
+    sending: shallowReadonly(sending),
     cancel,
     stop: () => options.chat.value?.stop(),
     submit,

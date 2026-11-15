@@ -1,12 +1,21 @@
 import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
 
+import * as v from 'valibot'
+
+import { cloudLocaleUpdateSchema } from '@open-pencil/cloud/contract'
+import { fetchStub } from '@open-pencil/test-support/fetch'
+import { localeSetting } from '@open-pencil/vue/i18n'
+
 import { addCloudServer, cloudServers, removeCloudServer } from '@/app/cloud/servers/store'
-import { cloudConnection, refreshCloudConnection } from '@/app/cloud/sessions/connection'
+import {
+  checkedCloudConnection,
+  cloudConnection,
+  recheckedCloudConnection,
+  refreshCloudConnection
+} from '@/app/cloud/sessions/connection'
 import { readCloudSessionToken, saveCloudSessionToken } from '@/app/cloud/sessions/token'
 
 import { cloudDiscoveryFixture } from '#tests/helpers/cloud/discovery'
-import { fetchStub } from '#tests/helpers/fetch'
-
 const ORIGIN = 'https://cloud.example.com'
 const user = { userId: 'user-1', email: 'ada@example.com', name: 'Ada' }
 const workspace = {
@@ -21,14 +30,30 @@ const workspace = {
 type Answer = { status: number; body?: unknown }
 let answers: Record<string, Answer> = {}
 let authorization: (string | null)[] = []
+let statusRequests = 0
+/** The languages the app told the server, in order. */
+let locales: string[] = []
+/** Runs while the server answers for its workspaces, as a check is under way. */
+let duringCheck: (() => void) | undefined
 
 beforeEach(() => {
   answers = {}
   authorization = []
+  statusRequests = 0
+  locales = []
+  duringCheck = undefined
   spyOn(globalThis, 'fetch').mockImplementation(
     fetchStub(async (input, init) => {
       const url = new URL(input instanceof Request ? input.url : String(input))
       authorization.push(new Headers(init?.headers).get('Authorization'))
+      if (url.pathname === '/api/account/status') statusRequests += 1
+      if (url.pathname === '/api/workspaces') duringCheck?.()
+      if (url.pathname === '/api/account/locale') {
+        locales.push(
+          v.parse(v.pipe(v.string(), v.parseJson(), cloudLocaleUpdateSchema), init?.body).locale
+        )
+        return Response.json({ ok: true })
+      }
       if (url.pathname === '/.well-known/openpencil')
         return Response.json(cloudDiscoveryFixture(ORIGIN))
       const answer = answers[url.pathname]
@@ -42,6 +67,7 @@ beforeEach(() => {
 
 afterEach(() => {
   for (const server of cloudServers.value) removeCloudServer(server.id)
+  localeSetting.set(undefined)
 })
 
 async function server() {
@@ -59,13 +85,36 @@ describe('Cloud connections', () => {
     expect(cloudServers.value[0]?.account).toEqual({
       id: 'user-1',
       name: 'Ada',
-      email: 'ada@example.com'
+      email: 'ada@example.com',
+      image: null
     })
+  })
+
+  test('tell the server the language picked while it was being checked', async () => {
+    answers['/api/account/status'] = {
+      status: 200,
+      body: { user: { ...user, userId: 'user-changing-language' }, state: 'active' }
+    }
+    answers['/api/workspaces'] = { status: 200, body: { workspaces: [workspace] } }
+    localeSetting.set('de')
+    duringCheck = () => localeSetting.set('fr')
+    expect((await refreshCloudConnection(await server())).state).toBe('signed-in')
+    await new Promise((resolve) => {
+      setTimeout(resolve, 10)
+    })
+    expect(locales.at(-1)).toBe('fr')
   })
 
   test('tell an account waiting for an administrator from one signed out', async () => {
     answers['/api/account/status'] = { status: 200, body: { user, state: 'pending' } }
     expect((await refreshCloudConnection(await server())).state).toBe('pending')
+  })
+
+  test('tell an account with new terms to accept from one whose access was closed', async () => {
+    answers['/api/account/status'] = { status: 200, body: { user, state: 'terms' } }
+    expect((await refreshCloudConnection(await server())).state).toBe('terms')
+    answers['/api/account/status'] = { status: 200, body: { user, state: 'revoked' } }
+    expect((await refreshCloudConnection(await server())).state).toBe('closed')
   })
 
   test('send the device-code token and drop it once the server stops accepting it', async () => {
@@ -88,5 +137,37 @@ describe('Cloud connections', () => {
     if (!remembered) throw new Error('Expected the server to be saved')
     expect((await refreshCloudConnection(remembered)).state).toBe('expired')
     expect(cloudConnection(target.id).account?.email).toBe('ada@example.com')
+  })
+
+  test('wait for the check under way instead of starting one that throws its answer away', async () => {
+    answers['/api/account/status'] = { status: 200, body: { user, state: 'active' } }
+    answers['/api/workspaces'] = { status: 200, body: { workspaces: [workspace] } }
+    const target = await server()
+    const starting = refreshCloudConnection(target)
+    const waiting = checkedCloudConnection(target)
+    await starting
+    expect(cloudConnection(target.id).state).toBe('signed-in')
+    expect((await waiting).state).toBe('signed-in')
+    // One account status and one workspace list: the server was asked once.
+    expect(authorization).toHaveLength(2)
+  })
+
+  test('ask a server out of reach again rather than keep its old answer', async () => {
+    answers['/api/account/status'] = { status: 503, body: { error: { code: 'unavailable' } } }
+    const target = await server()
+    expect((await refreshCloudConnection(target)).state).toBe('unreachable')
+    answers['/api/account/status'] = { status: 200, body: { user, state: 'active' } }
+    answers['/api/workspaces'] = { status: 200, body: { workspaces: [workspace] } }
+    expect((await recheckedCloudConnection(target)).state).toBe('signed-in')
+  })
+
+  test('take the answer of the check under way without asking twice', async () => {
+    answers['/api/account/status'] = { status: 503, body: { error: { code: 'unavailable' } } }
+    const target = await server()
+    const starting = refreshCloudConnection(target)
+    const waiting = recheckedCloudConnection(target)
+    await starting
+    expect((await waiting).state).toBe('unreachable')
+    expect(statusRequests).toBe(1)
   })
 })

@@ -40,7 +40,7 @@ const meta = {
     components: { CloudInvitationDialog },
     setup: () => ({ args }),
     template: `
-      <div class="h-[600px]">
+      <div class="h-150">
         <CloudInvitationDialog :open="true" :state="args.state" :invitation="args.invitation" :account="args.account" :offer-desktop="args.offerDesktop" @accept="args.onAccept" @sign-in="args.onSignIn" @open-in-desktop="args.onOpenInDesktop" />
       </div>`
   })

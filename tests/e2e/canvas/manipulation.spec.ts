@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 
-import { expectDefined } from '#tests/helpers/assert'
+import { expectDefined } from '@open-pencil/test-support/assert'
+
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { getSelectedIds, getPageChildren, getSelectedNode, getNodeById } from '#tests/helpers/store'
 
@@ -11,7 +12,7 @@ test.describe.configure({ mode: 'serial' })
 
 test.beforeAll(async ({ browser }) => {
   page = await browser.newPage()
-  await page.goto('/')
+  await page.goto('/?test')
   canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   await canvas.clearCanvas()
@@ -59,6 +60,74 @@ test('Alt+drag duplicate increases child count', async () => {
 
   const after = (await getPageChildren(page)).length
   expect(after).toBe(before + 1)
+  canvas.assertNoErrors()
+})
+
+async function withKeyHeld(key: string, gesture: () => Promise<void>) {
+  await page.keyboard.down(key)
+  await gesture()
+  await page.keyboard.up(key)
+  await canvas.waitForRender()
+}
+
+async function selectedRect() {
+  await canvas.clearCanvas()
+  await canvas.drawRect(100, 100, 80, 80)
+  await canvas.click(140, 140)
+  await canvas.waitForRender()
+  return expectDefined(await getSelectedNode(page), 'selected rectangle')
+}
+
+test('Alt+Shift+drag on a selected layer duplicates it along one axis', async () => {
+  const rect = await selectedRect()
+  const before = (await getPageChildren(page)).length
+
+  await withKeyHeld('Alt', () => canvas.shiftDrag(140, 140, 290, 170))
+
+  const children = await getPageChildren(page)
+  expect(children).toHaveLength(before + 1)
+  expect(children.find((child) => child.id === rect.id)).toMatchObject({ x: rect.x, y: rect.y })
+  const copy = expectDefined(await getSelectedNode(page), 'selected copy')
+  expect(copy.id).not.toBe(rect.id)
+  expect(copy).toMatchObject({ x: rect.x + 150, y: rect.y })
+  canvas.assertNoErrors()
+})
+
+test('Shift+drag on a selected layer moves it along one axis and keeps it selected', async () => {
+  const rect = await selectedRect()
+
+  await canvas.shiftDrag(140, 140, 290, 170)
+
+  expect(await getSelectedNode(page)).toMatchObject({ id: rect.id, x: rect.x + 150, y: rect.y })
+  expect(await getSelectedIds(page)).toBe(1)
+  canvas.assertNoErrors()
+})
+
+test('Shift+click on a selected layer deselects it on release', async () => {
+  await selectedRect()
+  const box = expectDefined(await canvas.canvas.boundingBox(), 'canvas bounds')
+
+  await page.keyboard.down('Shift')
+  await page.mouse.move(box.x + 140, box.y + 140)
+  await page.mouse.down()
+  expect(await getSelectedIds(page)).toBe(1)
+  await page.mouse.up()
+  await page.keyboard.up('Shift')
+  await canvas.waitForRender()
+
+  expect(await getSelectedIds(page)).toBe(0)
+  canvas.assertNoErrors()
+})
+
+test('Shift+click on another layer adds it to the selection', async () => {
+  await selectedRect()
+  await canvas.drawRect(300, 100, 80, 80)
+  await canvas.click(140, 140)
+  await canvas.waitForRender()
+
+  await withKeyHeld('Shift', () => canvas.click(340, 140))
+
+  expect(await getSelectedIds(page)).toBe(2)
   canvas.assertNoErrors()
 })
 
@@ -154,7 +223,8 @@ test('resize snapping preferences control pixel alignment and Control bypass', a
   await page.mouse.down()
   await page.mouse.move(box.x + 212.25, box.y + 214.25, { steps: 5 })
   await page.mouse.up()
-  expect(await getSelectedNode(page)).toMatchObject({ width: 111.75, height: 113.75 })
+  // Snapping rounds the size, as Figma does, and the layer keeps its fractional position.
+  expect(await getSelectedNode(page)).toMatchObject({ x: 100.25, width: 112, height: 114 })
 
   await page.mouse.move(box.x + 212, box.y + 214)
   await page.mouse.down()
@@ -162,7 +232,7 @@ test('resize snapping preferences control pixel alignment and Control bypass', a
   await page.mouse.move(box.x + 218, box.y + 221, { steps: 5 })
   await page.keyboard.up('Control')
   await page.mouse.up()
-  expect(await getSelectedNode(page)).toMatchObject({ width: 117.75, height: 120.75 })
+  expect(await getSelectedNode(page)).toMatchObject({ width: 118, height: 121 })
   canvas.assertNoErrors()
 })
 

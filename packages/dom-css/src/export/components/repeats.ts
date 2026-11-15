@@ -11,6 +11,8 @@ import { isPlacement } from './references'
 export interface RepeatedPart {
   part: string
   value: string
+  /** A trigger drawn as a disabled tab, which cannot be chosen. */
+  disabled?: boolean
 }
 
 /**

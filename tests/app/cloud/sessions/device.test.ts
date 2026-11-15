@@ -13,8 +13,8 @@ const discovery = cloudDiscoveryFixture()
 const authorization = {
   device_code: 'device',
   user_code: 'ABCD-EFGH',
-  verification_uri: 'https://cloud.example/cloud/device',
-  verification_uri_complete: 'https://cloud.example/cloud/device?user_code=ABCD-EFGH',
+  verification_uri: 'https://cloud.example/auth/device',
+  verification_uri_complete: 'https://cloud.example/auth/device?user_code=ABCD-EFGH',
   expires_in: 900,
   interval: 5
 }

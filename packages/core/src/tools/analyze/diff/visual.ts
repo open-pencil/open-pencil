@@ -3,6 +3,7 @@ import pixelmatch from 'pixelmatch'
 import * as v from 'valibot'
 
 import type { FigmaAPI } from '#core/figma-api'
+import { graphOf } from '#core/figma-api/graph'
 import { computeContentBounds, type RGBAImage } from '#core/io/formats/raster'
 import { findPageId } from '#core/io/subgraph'
 import { nodeComparisonInputSchema, toolNumber, defineTool } from '#core/tools/schema'
@@ -23,8 +24,8 @@ async function renderNode(
   id: string,
   scale: number
 ): Promise<Rendered | { error: string }> {
-  const pageId = findPageId(figma.graph, id)
-  const bounds = computeContentBounds(figma.graph, [id])
+  const pageId = findPageId(graphOf(figma), id)
+  const bounds = computeContentBounds(graphOf(figma), [id])
   if (!pageId || !bounds) return { error: `Node "${id}" has no visible content` }
   const bytes = await figma.exportImage?.([id], { scale, format: 'PNG', pageId })
   const image = bytes ? figma.rasterCodec?.decode(bytes) : null
@@ -72,7 +73,7 @@ function round(value: number): number {
 }
 
 export const diffVisual = defineTool({
-  name: 'diff_visual',
+  name: 'diff_pixels',
   description:
     'Pixel diff between two rendered nodes. Returns a PNG with changed pixels in red over a faded copy of the source, the changed pixel ratio, and the changed region in source-node coordinates. Use it to confirm an edit only touched the intended area.',
   execution: { kind: 'async', mutation: 'none' },
@@ -95,12 +96,12 @@ export const diffVisual = defineTool({
     if (!figma.exportImage || !figma.rasterCodec) {
       return { error: 'Visual diff is not available in this environment' }
     }
-    const fromNode = figma.graph.getNode(args.from)
+    const fromNode = graphOf(figma).getNode(args.from)
     if (!fromNode) return { error: `Node "${args.from}" not found` }
-    if (!figma.graph.getNode(args.to)) return { error: `Node "${args.to}" not found` }
+    if (!graphOf(figma).getNode(args.to)) return { error: `Node "${args.to}" not found` }
 
-    const fromBounds = computeContentBounds(figma.graph, [args.from])
-    const toBounds = computeContentBounds(figma.graph, [args.to])
+    const fromBounds = computeContentBounds(graphOf(figma), [args.from])
+    const toBounds = computeContentBounds(graphOf(figma), [args.to])
     if (!fromBounds || !toBounds) return { error: 'Both nodes need visible content to compare' }
     // One scale for both sides, so equal designs produce equal pixels.
     const scale = boundedRasterScale(
@@ -131,7 +132,7 @@ export const diffVisual = defineTool({
     if (!png) return { error: 'Visual diff image could not be encoded' }
 
     const pixels = changedPixelBounds(output, width, height)
-    const origin = figma.graph.getAbsolutePosition(args.from)
+    const origin = graphOf(figma).getAbsolutePosition(args.from)
     const totalPixels = width * height
     return {
       mimeType: 'image/png',

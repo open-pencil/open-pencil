@@ -16,7 +16,8 @@ export const ALLOWED_ORIGINS = [
 
 export const allowOpenPencilOrigins = cors({
   origin: ALLOWED_ORIGINS,
-  allowMethods: ['POST'],
-  allowHeaders: ['Content-Type'],
+  allowMethods: ['POST', 'PUT'],
+  // `Authorization` carries a report's upload token.
+  allowHeaders: ['Content-Type', 'Authorization'],
   maxAge: 86400
 })

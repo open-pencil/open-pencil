@@ -2,11 +2,12 @@ import { mkdtemp, readdir, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+import { assertPublishedReleaseArtifacts } from '#release/resume'
 import { isPrerelease } from '#release/version'
-import { createPublicationPlan } from '#release/workflow'
 import { isEqual } from 'es-toolkit'
 import * as v from 'valibot'
 
+import { isChromiumAsset } from '../chromium/catalog.ts'
 import { ARTIFACT_TRANSFER_TIMEOUT_MS, releaseCommands } from './commands.ts'
 import { createReleaseContext } from './context.ts'
 import { assertDraftReplacement, releaseChannelArgs, releaseSchema } from './draft.ts'
@@ -30,13 +31,15 @@ const names = (await readdir(paths.output)).sort()
 assertDraftReplacement(release, names, actualCommit, identity)
 
 if (process.argv[2] === 'check') {
-  const plan = await createPublicationPlan(paths.root)
-  const published = plan.filter((entry) => entry.status === 'published')
-  if (published.length > 0) {
-    throw new Error('Release already has published npm packages; review provenance before recovery')
-  }
+  // npm versions already on the registry must be this tag's own, by provenance, and carry the
+  // registry's bytes (`release-packages resume` before assembly); publication then skips them.
+  await assertPublishedReleaseArtifacts(paths.root, {
+    repository,
+    tag: identity.tag,
+    commit: actualCommit
+  })
 
-  console.log('Draft, unpublished npm versions and immutable tag verified before publication')
+  console.log('Draft, npm versions and immutable tag verified before publication')
   process.exit(0)
 }
 
@@ -105,7 +108,10 @@ const remote = v.parse(
     ])
   )
 )
-const remoteNames = remote.assets.map((asset) => asset.name).sort()
+const remoteNames = remote.assets
+  .map((asset) => asset.name)
+  .filter((name) => !isChromiumAsset(name))
+  .sort()
 
 if (!remote.isDraft || !isEqual(remoteNames, names)) {
   throw new Error('Uploaded asset set mismatch')
@@ -118,7 +124,16 @@ const temporary = await mkdtemp(join(tmpdir(), 'open-pencil-release-verify-'))
 
 try {
   await github(
-    ['release', 'download', identity.tag, '--repo', repository, '--dir', temporary],
+    [
+      'release',
+      'download',
+      identity.tag,
+      '--repo',
+      repository,
+      '--dir',
+      temporary,
+      ...names.flatMap((name) => ['--pattern', name])
+    ],
     ARTIFACT_TRANSFER_TIMEOUT_MS
   )
 

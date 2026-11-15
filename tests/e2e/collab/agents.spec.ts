@@ -98,7 +98,7 @@ test('an MCP session shows as an agent at the layers it touches, to collaborator
     await host.page.evaluate(
       (id) =>
         window.openPencil?.test?.automation?.('tool', {
-          name: 'rename_node',
+          name: 'update_node',
           args: { id, name: 'Checkout card' },
           agent: { session: 'session-1', kind: 'mcp', client: 'claude-code' }
         }),

@@ -1,6 +1,7 @@
 import { orderBy } from 'es-toolkit/array'
 import * as v from 'valibot'
 
+import { graphOf } from '#core/figma-api/graph'
 import { toolNumber, defineTool } from '#core/tools/schema'
 
 export const analyzeSpacing = defineTool({
@@ -28,7 +29,7 @@ export const analyzeSpacing = defineTool({
 
     page.findAll((node) => {
       totalNodes++
-      const raw = figma.graph.getNode(node.id)
+      const raw = graphOf(figma).getNode(node.id)
       if (!raw) return false
 
       if (raw.layoutMode !== 'NONE' && raw.itemSpacing > 0) {

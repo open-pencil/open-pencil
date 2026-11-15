@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
 
+import { fetchStub } from '@open-pencil/test-support/fetch'
+
 import {
   acceptCloudInvitation,
   beginCloudInvitation,
@@ -12,8 +14,6 @@ import { addCloudServer, cloudServers, removeCloudServer } from '@/app/cloud/ser
 import { refreshCloudConnection } from '@/app/cloud/sessions/connection'
 
 import { cloudDiscoveryFixture } from '#tests/helpers/cloud/discovery'
-import { fetchStub } from '#tests/helpers/fetch'
-
 const ORIGIN = 'https://invite.example.com'
 const INVITATION = '6f1c6c1e-7a4d-4d1b-9a2e-1f0b6a3c2d11'
 let answers: Record<string, { status: number; body?: unknown }> = {}

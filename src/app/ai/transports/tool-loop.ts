@@ -1,18 +1,36 @@
 import { useEventListener } from '@vueuse/core'
 import { createUIMessageStream, DirectChatTransport, stepCountIs, ToolLoopAgent } from 'ai'
 import type { ChatTransport, LanguageModel, ToolExecutionOptions, UIMessage } from 'ai'
+import { toMerged } from 'es-toolkit'
 
 import type { AIProviderID, ReasoningEffort } from '@open-pencil/core/constants'
 
+import type { ContextLimits } from '@/app/ai/chat/compaction/limits'
+import { messagesSinceCompaction } from '@/app/ai/chat/compaction/marker'
+import { createStepCompaction } from '@/app/ai/chat/compaction/steps'
 import { resumableTransport } from '@/app/ai/chat/history/continuation'
+import type { ReplyUsage } from '@/app/ai/chat/metadata'
 import { maxAgentSteps } from '@/app/ai/chat/preferences'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 import type { RunRecorder, RunRecording } from '@/app/ai/chat/trace/recorder'
+import { promptCachingOptions } from '@/app/ai/models/caching'
 import { reasoningCallSettings, type AIProviderOptions } from '@/app/ai/models/reasoning/settings'
 import type { ThinkingLevel } from '@/app/ai/models/types'
 import { createRunPreview } from '@/app/ai/preview/run'
-import { createAITools, currentRun, endRun, recordStep, startRun } from '@/app/ai/tools'
+import { providerTakesWebPImages } from '@/app/ai/providers/tool-images'
+import { skillCatalog } from '@/app/ai/skills/catalog'
+import { appSkillLibrary, type SkillLibrary } from '@/app/ai/skills/library'
+import { createSkillTools, SKILL_TOOL_NAMES } from '@/app/ai/skills/tools'
+import {
+  createAITools,
+  currentRun,
+  endRun,
+  recordStep,
+  startRun,
+  type AITools
+} from '@/app/ai/tools'
 import { enabledAIToolDefinitions } from '@/app/ai/tools/catalog'
+import { encodeWebPModelImage } from '@/app/ai/tools/model-image'
 import { aiToolOverrides } from '@/app/ai/tools/preferences'
 import { recordModelStepCompleted } from '@/app/diagnostics/events'
 import type { AIDiagnosticContext } from '@/app/diagnostics/events/ai'
@@ -33,31 +51,19 @@ export type ToolLoopTransportOptions = {
   diagnosticContext?: AIDiagnosticContext
   /** Records each run so a saved trace can rebuild its requests. */
   recorder?: RunRecorder
-}
-
-const ANTHROPIC_CACHE_CONTROL = {
-  anthropic: { cacheControl: { type: 'ephemeral' } }
-} as const
-
-function supportsAnthropicCaching(providerID: AIProviderID, modelID: string): boolean {
-  return (
-    providerID === 'anthropic' ||
-    providerID === 'anthropic-compatible' ||
-    (providerID === 'openrouter' && modelID.startsWith('anthropic/'))
-  )
-}
-
-function mergeProviderOptions(
-  cacheOptions: typeof ANTHROPIC_CACHE_CONTROL | undefined,
-  reasoningOptions: AIProviderOptions | undefined
-): AIProviderOptions | undefined {
-  if (!cacheOptions && !reasoningOptions) return undefined
-  return { ...cacheOptions, ...reasoningOptions }
+  skills?: SkillLibrary
+  /**
+   * Whether the person has a message waiting to go in mid-turn. The run then ends once the
+   * current step's tool calls finish, and the chat sends that message next.
+   */
+  yieldWhen?: () => boolean
+  /** The model's context limits, for compacting between steps; the Design model's by default. */
+  contextLimits?: () => Promise<ContextLimits | null>
 }
 
 function callSettings(
   providerID: AIProviderID,
-  cacheOptions: typeof ANTHROPIC_CACHE_CONTROL | undefined,
+  cacheOptions: AIProviderOptions | undefined,
   thinkingLevel: ThinkingLevel,
   minReasoningEffort: ReasoningEffort | undefined
 ) {
@@ -66,7 +72,12 @@ function callSettings(
     thinkingLevel,
     minReasoningEffort
   )
-  return { reasoning, providerOptions: mergeProviderOptions(cacheOptions, providerOptions) }
+  // OpenRouter reads caching and reasoning from the same namespace, so merge them per key.
+  const merged =
+    cacheOptions || providerOptions
+      ? toMerged(cacheOptions ?? {}, providerOptions ?? {})
+      : undefined
+  return { reasoning, providerOptions: merged }
 }
 
 export function createToolLoopTransport({
@@ -79,9 +90,24 @@ export function createToolLoopTransport({
   thinkingLevel,
   onError,
   diagnosticContext = {},
-  recorder
+  recorder,
+  skills = appSkillLibrary,
+  yieldWhen = () => false,
+  contextLimits
 }: ToolLoopTransportOptions) {
-  const tools = createAITools(store, diagnosticContext)
+  const tools: AITools = {
+    ...createAITools(
+      store,
+      diagnosticContext,
+      providerTakesWebPImages(providerID) ? encodeWebPModelImage : undefined
+    ),
+    ...createSkillTools(() => offeredSkills)
+  }
+  // Read again for each message, so skills installed or switched off since apply to the next one.
+  // Only skills the model may load: one the user runs by name stays out of the listing and tools.
+  const modelSkills = () => skills.enabled().filter((skill) => skill.modelInvocable)
+  let offeredSkills = modelSkills()
+  let instructions = SYSTEM_PROMPT
   // The reply in progress; a transport sends one message at a time.
   let run = currentRun(store)
   // While JSX streams, the chat's agent moves through the elements as they appear, here and
@@ -93,21 +119,25 @@ export function createToolLoopTransport({
     preview.delta(toolCallId, inputTextDelta)
   renderTool.onInputAvailable = ({ toolCallId }: ToolExecutionOptions<unknown>) =>
     preview.finish(toolCallId)
-  const cacheProviderOptions = supportsAnthropicCaching(providerID, effectiveModelID)
-    ? ANTHROPIC_CACHE_CONTROL
-    : undefined
+  const cacheProviderOptions = promptCachingOptions(providerID, effectiveModelID)
   let recording: RunRecording | undefined
+  // The last step's tokens: what the reply's final request held, which the next one starts from.
+  let lastStep: { inputTokens: number; outputTokens: number } | null = null
+  let firstRequestTokens: number | undefined
+  const stepCompaction = createStepCompaction(model, contextLimits)
   const agent = new ToolLoopAgent({
     model,
     instructions: SYSTEM_PROMPT,
     tools,
     maxOutputTokens,
+    prepareStep: (step) => stepCompaction.prepareStep(step),
     // Kept only to fingerprint each step's request for its trace.
     include: { requestMessages: recorder !== undefined },
     prepareCall: (options) => {
       const enabledNames = new Set(
         enabledAIToolDefinitions(aiToolOverrides.value).map((tool) => tool.name)
       )
+      if (offeredSkills.length > 0) for (const name of SKILL_TOOL_NAMES) enabledNames.add(name)
       preview.clear()
       // Keep the full catalog for validating history; offer only enabled tools to this request.
       const offered = Object.fromEntries(
@@ -116,7 +146,8 @@ export function createToolLoopTransport({
       recording?.offer(offered)
       return {
         ...options,
-        stopWhen: stepCountIs(currentRun(store).maxSteps),
+        instructions,
+        stopWhen: [stepCountIs(currentRun(store).maxSteps), () => yieldWhen()],
         tools: offered,
         maxOutputTokens,
         ...callSettings(providerID, cacheProviderOptions, thinkingLevel(), minReasoningEffort)
@@ -129,6 +160,11 @@ export function createToolLoopTransport({
     },
     onStepFinish: (step) => {
       const { usage } = step
+      // A step without a count says nothing of what the request held, so the last counted stands.
+      if (usage.inputTokens !== undefined) {
+        lastStep = { inputTokens: usage.inputTokens, outputTokens: usage.outputTokens ?? 0 }
+        firstRequestTokens ??= usage.inputTokens
+      }
       preview.clear()
       recordStep(store)
       recording?.step(step)
@@ -155,14 +191,37 @@ export function createToolLoopTransport({
   }
   const transport = new DirectChatTransport({
     agent,
-    onError: handleError
+    onError: handleError,
+    // The reply keeps its tokens, which the transcript shows and the context meter reads.
+    messageMetadata: ({ part }) => {
+      const compacted = stepCompaction.metadataFor(part)
+      if (compacted) return compacted
+      if (part.type !== 'finish' || !lastStep) return undefined
+      const usage: ReplyUsage = {
+        contextTokens: lastStep.inputTokens + lastStep.outputTokens,
+        firstRequestTokens,
+        inputTokens: part.totalUsage.inputTokens ?? 0,
+        outputTokens: part.totalUsage.outputTokens ?? 0,
+        cacheReadTokens: part.totalUsage.inputTokenDetails.cacheReadTokens ?? null
+      }
+      return { usage }
+    }
   }) as ChatTransport<UIMessage>
   return resumableTransport({
     reconnectToStream: (options) => transport.reconnectToStream(options),
-    async sendMessages(options) {
+    async sendMessages(sent) {
+      // A compacted conversation reaches the model as its summary and what followed it.
+      const options = { ...sent, messages: messagesSinceCompaction(sent.messages) }
       // The run starts as the message is sent, so a Stop before the model is reached ends it.
       const started = startRun(store, maxAgentSteps.value, effectiveModelID)
       run = started
+      lastStep = null
+      firstRequestTokens = undefined
+      await stepCompaction.begin(options.messages, options.abortSignal)
+      await skills.refresh()
+      offeredSkills = modelSkills()
+      const catalog = skillCatalog(offeredSkills)
+      instructions = catalog ? `${SYSTEM_PROMPT}\n\n${catalog}` : SYSTEM_PROMPT
       const { sessionId, runId } = diagnosticContext
       const startedRecording =
         sessionId && runId
@@ -176,7 +235,7 @@ export function createToolLoopTransport({
                 thinking: thinkingLevel(),
                 cache: cacheProviderOptions !== undefined
               },
-              instructions: SYSTEM_PROMPT,
+              instructions,
               messages: options.messages
             })
           : undefined

@@ -42,7 +42,8 @@ export function useToolAccess(tools: Readonly<Ref<ToolAccessEntry[]>>, disabled:
       }),
       state: computed<'mixed' | 'idle'>(() =>
         count.value > 0 && count.value < members.value.length ? 'mixed' : 'idle'
-      )
+      ),
+      counts: computed(() => ({ enabled: count.value, total: members.value.length }))
     }
   }
 
@@ -58,6 +59,7 @@ export function useToolAccess(tools: Readonly<Ref<ToolAccessEntry[]>>, disabled:
       effect,
       enabled: categories[effect].enabled.value,
       state: categories[effect].state.value,
+      counts: categories[effect].counts.value,
       tools: visibleTools.value.filter((tool) => tool.effect === effect)
     }))
   )

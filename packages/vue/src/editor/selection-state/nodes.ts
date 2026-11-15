@@ -15,8 +15,8 @@ export interface SelectedNodeState {
 }
 
 /**
- * The selected layers as the panel shows them: text being edited has the style of its selected
- * characters, which the panel then edits.
+ * The selected layers as the panel shows them: text has the style of its first character, or of
+ * its selected characters while it is edited, which the panel then edits.
  */
 export function selectedNodesAsShown(editor: Editor): SceneNode[] {
   if (editor.state.editingTextId) void editor.state.textSelectionVersion

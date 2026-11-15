@@ -117,6 +117,26 @@ const downloadedChecksum = createHash('sha256')
   .digest('base64')
 if (downloadedChecksum !== checksum) throw new Error('Downloaded object checksum did not match')
 await store.delete(key)
+
+// With a deleted prefix, a deleted file stays readable there, keeping its checksum metadata, and
+// deleting one that is already gone succeeds.
+const keeping = createS3ObjectStore({ ...config, s3DeletedPrefix: 'deleted/' })
+const keptKey = `smoke/${crypto.randomUUID()}-kept.fig`
+await keeping.write({
+  key: keptKey,
+  bytes: singleBytes,
+  checksum: singleChecksum,
+  contentType: 'application/octet-stream'
+})
+await keeping.delete(keptKey)
+if (await keeping.read(keptKey)) throw new Error('Deleted object is still readable')
+const kept = await keeping.head(`deleted/${keptKey}`)
+if (!kept || kept.checksum !== singleChecksum) {
+  throw new Error(`Deleted object was not kept: ${JSON.stringify(kept)}`)
+}
+await keeping.delete(keptKey)
+await store.delete(`deleted/${keptKey}`)
+
 console.log(
-  `${provider} smoke passed (single PUT, ${parts.length} multipart parts, verified GET, ${byteSize} bytes)`
+  `${provider} smoke passed (single PUT, ${parts.length} multipart parts, verified GET, ${byteSize} bytes, deleted file kept)`
 )

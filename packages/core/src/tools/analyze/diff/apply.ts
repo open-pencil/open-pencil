@@ -11,11 +11,12 @@ import {
   type JSXAttributeSource
 } from '@open-pencil/design-jsx'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { appendAll, insertAll } from '@open-pencil/scene-graph/arrays'
 import { recordInstanceOverride } from '@open-pencil/scene-graph/instances'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
-import { revertOnFailure } from '#core/editor/history/document-change'
 import type { FigmaAPI } from '#core/figma-api'
+import { graphOf } from '#core/figma-api/graph'
 
 import type { DiffOperation } from './operations'
 
@@ -217,28 +218,25 @@ type Placed = Plan & { place: Placement }
 
 /**
  * Render added nodes before changing anything else. Rendering can still fail, for example on
- * an icon that cannot be fetched; then what the failing render made is put back, the nodes
- * rendered before it are deleted, and nothing else is committed, so a patch never half-applies.
+ * an icon that cannot be fetched; then the nodes rendered so far are deleted and nothing else
+ * is committed, so a patch never half-applies.
  */
 async function renderAdditions(figma: FigmaAPI, plans: Placed[]): Promise<boolean> {
-  const { designJSXRenderer } = await import('#core/design-jsx')
+  const { designJSXRenderer } = await graphOf(figma).waitOutsideEdit(import('#core/design-jsx'))
   const { renderJSX } = designJSXRenderer(figma.icons)
   const rendered: string[] = []
   for (const plan of plans) {
     const { jsx, parentId } = plan.place
     if (jsx === undefined) continue
     try {
-      const pageId = figma.graph.pageOf(parentId) ?? figma.currentPageId
-      const results = await revertOnFailure(figma.graph, pageId, () =>
-        renderJSX(figma.graph, jsx, { parentId })
-      )
+      const results = await renderJSX(graphOf(figma), jsx, { parentId })
       plan.place.ids = results.map((result) => result.id)
       plan.result.id = results[0].id
-      rendered.push(...plan.place.ids)
+      appendAll(rendered, plan.place.ids)
     } catch (error) {
       plan.result.status = 'failed'
       plan.result.error = errorMessage(error)
-      for (const id of rendered.toReversed()) figma.graph.deleteNode(id)
+      for (const id of rendered.toReversed()) graphOf(figma).deleteNode(id)
       for (const other of plans) if (other.place.jsx !== undefined) other.result.id = null
       return false
     }
@@ -254,7 +252,7 @@ function commitPlacements(graph: SceneGraph, parentId: string, plans: Placed[]):
   const placed = new Set(plans.flatMap((plan) => plan.place.ids ?? []))
   const order = (graph.getNode(parentId)?.childIds ?? []).filter((id) => !placed.has(id))
   for (const plan of plans.toSorted((a, b) => a.place.index - b.place.index)) {
-    order.splice(plan.place.index, 0, ...(plan.place.ids ?? []))
+    insertAll(order, plan.place.index, plan.place.ids ?? [])
   }
   for (const [index, id] of order.entries()) {
     if (graph.getNode(parentId)?.childIds[index] !== id) graph.insertChildAt(id, parentId, index)
@@ -272,14 +270,14 @@ export async function applyOperations(
   operations: DiffOperation[],
   options: ApplyOptions
 ): Promise<ApplyResult[]> {
-  const plans = planOperations(figma.graph, operations, options.force)
+  const plans = planOperations(graphOf(figma), operations, options.force)
   const results = () => plans.map((plan) => plan.result)
   if (options.dryRun || plans.some((plan) => plan.result.status === 'failed')) return results()
   const placed = plans.filter((plan): plan is Placed => !!plan.place)
   if (!(await renderAdditions(figma, placed))) return results()
   for (const plan of plans) {
     if (plan.update && plan.result.status === 'applied') {
-      commitUpdate(figma.graph, plan.update)
+      commitUpdate(graphOf(figma), plan.update)
     }
   }
   for (const plan of plans) {
@@ -289,7 +287,7 @@ export async function applyOperations(
     }
   }
   for (const [parentId, group] of Object.entries(groupBy(placed, (plan) => plan.place.parentId))) {
-    commitPlacements(figma.graph, parentId, group)
+    commitPlacements(graphOf(figma), parentId, group)
   }
   return results()
 }

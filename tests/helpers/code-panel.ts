@@ -60,6 +60,40 @@ export function getCodeNodeSummaries(page: Page): Promise<CodeNodeSummary[]> {
   })
 }
 
+export type CodePreviewLinks = {
+  layers: Record<
+    string,
+    { id: string; x: number; y: number; width: number; componentId: string | null }
+  >
+  /** The layer ids each connector's ends follow. */
+  connectorEnds: Array<[string | null, string | null]>
+}
+
+/** The named layers' places and main components, and the layers connectors join. */
+export function getCodePreviewLinks(page: Page, names: string[]): Promise<CodePreviewLinks> {
+  return page.evaluate((layerNames) => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const nodes = [...store.graph.getAllNodes()]
+    const layers: CodePreviewLinks['layers'] = {}
+    for (const name of layerNames) {
+      const node = nodes.find((candidate) => candidate.name === name)
+      if (!node) continue
+      const { id, x, y, width, componentId } = node
+      layers[name] = { id, x, y, width, componentId }
+    }
+    return {
+      layers,
+      connectorEnds: nodes
+        .filter((node) => node.type === 'CONNECTOR')
+        .map((node): [string | null, string | null] => [
+          node.connectorStart?.nodeId ?? null,
+          node.connectorEnd?.nodeId ?? null
+        ])
+    }
+  }, names)
+}
+
 export function getUndoLabel(page: Page): Promise<string | null> {
   return page.evaluate(() => {
     const store = window.openPencil?.getStore?.()

@@ -7,6 +7,3 @@ export const panelFieldState = {
   bound: 'text-surface',
   invalid: 'border-error focus:border-error focus-visible:border-error'
 } as const
-
-export const panelIconButtonBase =
-  'flex size-6 shrink-0 cursor-pointer items-center justify-center rounded border border-transparent bg-transparent text-muted outline-none hover:bg-hover hover:text-surface focus-visible:border-panel-focus disabled:cursor-not-allowed disabled:opacity-50'

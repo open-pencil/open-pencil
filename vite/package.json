@@ -8,9 +8,15 @@
   },
   "dependencies": {
     "@open-pencil/core": "workspace:*",
+    "rollup-plugin-license": "^3.7.1",
+    "spdx-satisfies": "^6.0.0",
     "unplugin-icons": "^23.0.1",
     "unplugin-vue-components": "^31.1.0",
+    "valibot": "^1.5.0",
     "vite": "8.1.4",
     "vite-plugin-pwa": "^1.3.0"
+  },
+  "devDependencies": {
+    "@types/spdx-satisfies": "^6.0.0"
   }
 }

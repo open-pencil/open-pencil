@@ -60,6 +60,8 @@ Duplicates keep their names. Duplicating a main component this way creates an in
 
 <kbd>⌘</kbd><kbd>V</kbd> keeps the copied position. Pasted into a selected frame, nodes keep their offset from the frame they were copied from, and are centered along any axis where they don't fit; nodes that would land out of view are centered in it. Use **Paste here** in the [context menu](./context-menu) to paste at the cursor.
 
+Text copied from a web page or another app pastes as one text layer, as in Figma, and its links keep their targets. When the copy lays something out, such as a card or a toolbar copied from a web page, or is HTML source, a notice offers **Paste as layers**: the text is replaced by the HTML's layers, laid out as a browser lays them out, in one undo step. A sentence copied from a page carries only text styling, so it pastes as text without the notice. **Paste as layers** is also in the Edit menu and the context menu. It lays HTML out at the width of the frame it is pasted into, or at 1440 px on the canvas.
+
 ## Deleting
 
 Press <kbd>Backspace</kbd> or <kbd>Delete</kbd> to remove all selected nodes.

@@ -5,6 +5,7 @@ import * as v from 'valibot'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { expect, test } from '#tests/helpers/chat/fixture'
+import { openAppMenu } from '#tests/helpers/menu'
 
 /** The JSON that Copy diagnostics puts on the clipboard, as far as these tests read it. */
 const reportSchema = v.pipe(
@@ -161,4 +162,25 @@ test('uncaught errors are listed with their stack and can be filtered and copied
   const runtime = report.events.find((event) => event.name === 'runtime.error')
   expect(runtime?.attributes).toMatchObject({ source: 'window', errorName: 'TypeError' })
   expect(String(runtime?.attributes.stack)).toContain('TypeError')
+})
+
+test('File › Diagnostics opens its own page, and usage history is switched on the Usage page', async ({
+  page
+}) => {
+  await page.goto('/?test')
+  await new CanvasHelper(page).waitForInit()
+  const menu = await openAppMenu(page, 'File')
+  await menu.getByRole('menuitem', { name: 'Diagnostics…' }).click()
+  await expect(page.getByTestId('settings-section-diagnostics')).toHaveAttribute(
+    'aria-selected',
+    'true'
+  )
+  await expect(page.getByTestId('settings-diagnostics-panel')).toBeVisible()
+  await expect(page.getByRole('switch', { name: 'Usage history' })).toHaveCount(0)
+
+  await page.getByTestId('settings-section-usage').click()
+  const history = page
+    .getByTestId('settings-usage-panel')
+    .getByRole('switch', { name: 'Usage history' })
+  await expect(history).toHaveAttribute('data-state', 'checked')
 })

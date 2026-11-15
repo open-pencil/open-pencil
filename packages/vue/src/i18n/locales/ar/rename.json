@@ -1,0 +1,14 @@
+{
+  "title": "إعادة تسمية",
+  "layers": "إعادة تسمية {count} طبقات",
+  "preview": "معاينة",
+  "match": "مطابقة",
+  "to": "إعادة التسمية إلى",
+  "currentName": "الاسم الحالي",
+  "layerName": "اسم الطبقة",
+  "numberAscending": "رقم ↑",
+  "numberDescending": "رقم ↓",
+  "startAscendingFrom": "بدء التصاعد من",
+  "stopDescendingAt": "إيقاف التنازل عند",
+  "invalidPattern": "تعبير نمطي غير صالح"
+}

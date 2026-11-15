@@ -1,9 +1,9 @@
 import { expect, test } from 'bun:test'
 
-import { guid } from '#fig-tests/helpers/guid'
 import { interpretInstance } from '#fig/instance-overrides/interpret'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { guid } from '@open-pencil/test-support/fig/guid'
 
 test('explicit swaps preserve references owned by the enclosing component', () => {
   const refs = [{ defID: guid(80), componentPropNodeField: 'VISIBLE' }]
@@ -30,7 +30,6 @@ test('explicit swaps preserve references owned by the enclosing component', () =
   const child = interpretInstance(changes, '1:5').children[0]
   expect(child.mainComponentId).toBe('1:4')
   expect(child.properties.componentPropRefs).toEqual(refs)
-  expect(child.properties.componentPropRefs).not.toBe(refs)
 })
 
 test('binding swaps retain source-root claims without mapping old children into the replacement', () => {

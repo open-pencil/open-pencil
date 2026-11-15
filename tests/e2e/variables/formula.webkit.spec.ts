@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test'
+import type { Locator, Page } from '@playwright/test'
 
 import { expect, test } from '#tests/e2e/fixtures'
 import { CanvasHelper } from '#tests/helpers/canvas'
@@ -28,6 +28,16 @@ async function openToken(page: Page, id: string) {
   return { dialog, row, inspector }
 }
 
+/** The field's text as assistive technology reads it, without its hidden unit or result. */
+function spokenText(field: Locator) {
+  return field.evaluate((element) => {
+    const copy = element.cloneNode(true)
+    if (!(copy instanceof Element)) return ''
+    for (const hidden of copy.querySelectorAll('[aria-hidden="true"]')) hidden.remove()
+    return (copy.textContent ?? '').replaceAll('\u200B', '')
+  })
+}
+
 test('a number field takes literals, references and formulas, and reports errors on commit', async ({
   page
 }) => {
@@ -37,7 +47,7 @@ test('a number field takes literals, references and formulas, and reports errors
   const ids = await seedFormulaScene(page)
   const { inspector, row } = await openToken(page, ids.width)
   const value = inspector.getByRole('textbox', { name: 'Value', exact: true })
-  await expect(value).toHaveText('8')
+  await expect.poll(() => spokenText(value)).toBe('8')
   await value.fill('{base} * 3')
   await expect(inspector.getByText('= 12px', { exact: true })).toBeVisible()
   expect((await formulaSceneState(page, ids)).width).toBe(8)
@@ -84,7 +94,7 @@ test('a number field takes literals, references and formulas, and reports errors
   expect((await formulaSceneState(page, ids)).width).toBe(16)
   await value.fill('24')
   await value.press('Enter')
-  await expect(css).toHaveText('clamp(1rem, 4vw, 2rem)')
+  await expect.poll(() => spokenText(css)).toBe('clamp(1rem, 4vw, 2rem)')
   await expect(cssToggle).toHaveAttribute('aria-pressed', 'true')
   await cssToggle.click()
   await expect(css).toHaveCount(0)
@@ -133,7 +143,7 @@ test('references are atomic pills with editable operators and plain source on co
   await value.fill('{base} * 2')
   const pill = value.locator('[data-reference]')
   await expect(pill).toHaveText('base')
-  await expect(pill).toHaveAttribute('contenteditable', 'false')
+  expect(await pill.evaluate((element: HTMLElement) => element.isContentEditable)).toBe(false)
   await expect(value).not.toContainText('{')
   await value.press('Meta+a')
   const copied = await value.evaluate((element) => {
@@ -185,7 +195,7 @@ test('the variable picker shows the numeric value of the edited mode', async ({ 
   await dense.fill('{base} * 2')
   await expect(dense.locator('[data-reference]')).toHaveText('base')
   await expect(inspector.getByText('= 4px', { exact: true })).toBeVisible()
-  await inspector.getByRole('button', { name: 'Use a variable', exact: true }).last().click()
+  await inspector.getByRole('button', { name: 'Dense: Use a variable', exact: true }).click()
   await expect(page.getByRole('option', { name: 'base 2px', exact: true })).toBeVisible()
   canvas.assertNoErrors()
 })
@@ -202,14 +212,14 @@ test('redo preserves the selection restored after an external value update', asy
   await value.press('ArrowRight')
   await value.press('Shift+ArrowRight')
   await updateFormulaNumber(page, ids, 5678)
-  await expect(value).toHaveText('5678')
+  await expect.poll(() => spokenText(value)).toBe('5678')
   await expect(value).toBeFocused()
   await value.press('Meta+z')
-  await expect(value).toHaveText('1234')
+  await expect.poll(() => spokenText(value)).toBe('1234')
   await value.press('Meta+Shift+z')
-  await expect(value).toHaveText('5678')
+  await expect.poll(() => spokenText(value)).toBe('5678')
   await page.keyboard.insertText('9')
-  await expect(value).toHaveText('5978')
+  await expect.poll(() => spokenText(value)).toBe('5978')
   await value.press('Enter')
   expect((await formulaSceneState(page, ids)).width).toBe(5978)
   canvas.assertNoErrors()

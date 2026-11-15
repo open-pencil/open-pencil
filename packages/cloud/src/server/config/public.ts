@@ -1,5 +1,6 @@
 import {
-  CLOUD_AI_CONTRACT_VERSION,
+  CLOUD_BILLING_CONTRACT_VERSION,
+  CLOUD_SERVICES_CONTRACT_VERSION,
   CLOUD_PROTOCOL_VERSION,
   parseCloudDiscovery,
   type CloudDiscovery
@@ -48,7 +49,6 @@ export function cloudDiscoveryFromConfig(config: CloudServerConfig): CloudDiscov
     deployment: config.deployment,
     apiURL: withoutTrailingSlash(new URL('/api', config.publicURL).href),
     authURL: withoutTrailingSlash(new URL('/api/auth', config.publicURL).href),
-    appURL: config.appURL ?? config.publicURL,
     localEditor: config.localEditor,
     authentication,
     capabilities: {
@@ -59,9 +59,15 @@ export function cloudDiscoveryFromConfig(config: CloudServerConfig): CloudDiscov
     listing: config.listingMinimumEditorVersion
       ? { minimumEditorVersion: config.listingMinimumEditorVersion }
       : undefined,
-    ai: config.aiEndpoint
-      ? { endpoint: config.aiEndpoint, contractVersion: CLOUD_AI_CONTRACT_VERSION }
+    minimumEditorVersion: config.minimumEditorVersion,
+    services: config.servicesEndpoint
+      ? { endpoint: config.servicesEndpoint, contractVersion: CLOUD_SERVICES_CONTRACT_VERSION }
       : undefined,
-    billing: config.billingPortalURL ? { portalURL: config.billingPortalURL } : undefined
+    billing: config.billingEndpoint
+      ? { endpoint: config.billingEndpoint, contractVersion: CLOUD_BILLING_CONTRACT_VERSION }
+      : undefined,
+    community: config.community,
+    branding: config.branding,
+    legal: config.legal
   })
 }

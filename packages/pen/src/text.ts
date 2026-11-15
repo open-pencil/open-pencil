@@ -1,4 +1,6 @@
 import type { SceneNode, TextAlignVertical, TextAutoResize } from '@open-pencil/scene-graph'
+import { parseFontStyle, type FontFamilyStyle } from '@open-pencil/scene-graph/font-style'
+import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
 
 import type { PenNode } from './schema'
 import { bindIfVar, isVarRef, resolveNumber, resolveString, type VarContext } from './variables'
@@ -54,7 +56,12 @@ const TEXT_GROWTH: Partial<Record<string, TextAutoResize>> = {
  * as pen.dev shows it. pen.dev 2.21 draws no underline, strikethrough, or text stroke, so those
  * are left out to match it.
  */
-export function applyTextProps(node: SceneNode, pen: PenNode, ctx: VarContext): void {
+export function applyTextProps(
+  node: SceneNode,
+  pen: PenNode,
+  ctx: VarContext,
+  fonts: ReadonlyMap<string, FontFamilyStyle>
+): void {
   const isIconFont = pen.type === 'icon_font'
   node.text = isIconFont ? (pen.iconFontName ?? '') : (pen.content ?? '')
   node.fontFamily = isIconFont
@@ -65,12 +72,28 @@ export function applyTextProps(node: SceneNode, pen: PenNode, ctx: VarContext): 
   bindIfVar(node, 'fontSize', pen.fontSize, ctx)
   node.fontWeight = fontWeight(pen.fontWeight ?? (isIconFont ? pen.weight : undefined), ctx)
   node.italic = resolveString(pen.fontStyle, ctx)?.toLowerCase() === 'italic'
+  // A bundled font's name stands for one face of the family its file names.
+  const bundled = isIconFont ? undefined : fonts.get(node.fontFamily)
+  if (bundled) {
+    const { weight, italic } = parseFontStyle(bundled.style)
+    Object.assign(node, {
+      fontFamily: bundled.family,
+      fontStyle: bundled.style,
+      fontWeight: weight,
+      italic
+    })
+  }
   node.textAlignHorizontal = TEXT_ALIGN[pen.textAlign ?? 'left'] ?? 'LEFT'
   node.textAlignVertical = TEXT_ALIGN_VERTICAL[pen.textAlignVertical ?? 'top'] ?? 'TOP'
-  // pen.dev's line height multiplies the font size.
-  if (pen.lineHeight !== undefined)
-    node.lineHeight = resolveNumber(pen.lineHeight, ctx) * node.fontSize
-  if (pen.letterSpacing !== undefined) node.letterSpacing = resolveNumber(pen.letterSpacing, ctx)
+  // pen.dev's line height multiplies the font size, so it follows the size as a percent.
+  if (pen.lineHeight !== undefined) {
+    node.lineHeight = percentLength(resolveNumber(pen.lineHeight, ctx) * 100)
+  }
+  if (pen.letterSpacing !== undefined) {
+    node.letterSpacing = pixelLength(resolveNumber(pen.letterSpacing, ctx))
+  }
   node.textAutoResize = TEXT_GROWTH[pen.textGrowth ?? 'auto'] ?? 'WIDTH_AND_HEIGHT'
+  // pen.dev draws every font at its default optical size, whatever the text's size.
+  node.opticalSizeFromFontSize = false
   node.strokes = []
 }

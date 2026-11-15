@@ -1,6 +1,6 @@
 import { computed, ref, toValue, watch, type MaybeRefOrGetter } from 'vue'
 
-import { ACP_AGENTS, type ACPAgentDef, type ACPAgentID } from '@open-pencil/core/constants'
+import { acpAgentFor, type ACPAgentDef, type ACPAgentID } from '@open-pencil/core/constants'
 
 import { readPiAccount } from '@/app/ai/agents/pi/settings'
 
@@ -22,7 +22,7 @@ export function useAgentSetup(
   const readingPi = ref(false)
 
   function agentID(providerID: string): ACPAgentID | null {
-    return ACP_AGENTS.find((agent) => `acp:${agent.id}` === providerID)?.id ?? null
+    return acpAgentFor(providerID)?.id ?? null
   }
 
   function agentSetup(providerID: string): AgentSetupState {
@@ -95,17 +95,51 @@ export function useAgentSetup(
     if (installed) await accounts.check(installed)
   }
 
-  async function refreshAgents(): Promise<void> {
-    if (!discovery.supported) return
+  /** Runs `lookup` beside reading Pi's account, which is two file checks. */
+  async function lookupWithPi(lookup: Promise<void>): Promise<void> {
     readingPi.value = true
     try {
-      const [, account] = await Promise.all([discovery.refresh(true), readPi().catch(() => null)])
+      const [, account] = await Promise.all([lookup, readPi().catch(() => null)])
       piDefaultModel.value = account?.defaultModel ?? null
       piSignedIn.value = account?.signedIn ?? null
     } finally {
       readingPi.value = false
     }
+  }
+
+  async function refreshAgents(): Promise<void> {
+    if (!discovery.supported) return
+    await lookupWithPi(discovery.refresh(true))
     await checkAccounts()
+  }
+
+  /**
+   * Fills in what this session has not checked: the lookup, Pi's account, and the login of each
+   * agent nobody has checked yet. Starting an agent takes seconds, so one already checked keeps
+   * its result until someone checks it again.
+   */
+  async function checkOnce(): Promise<void> {
+    if (!discovery.supported) return
+    await lookupWithPi(discovery.checked.value ? Promise.resolve() : discovery.refresh())
+    const unchecked = discovery.agents.value.filter((agent) => {
+      const account = accounts.account(agent.definition.id)
+      return (
+        agent.status === 'available' &&
+        agent.definition.signIn &&
+        account.status === undefined &&
+        !account.checking &&
+        !account.error
+      )
+    })
+    await Promise.all(unchecked.map((agent) => accounts.check(agent.definition)))
+  }
+
+  /** Looks the agent up again and restarts it to read its login and reach OpenPencil's tools. */
+  async function checkAgent(providerID: string): Promise<void> {
+    if (!discovery.supported) return
+    await discovery.refresh(true)
+    const agent = installedAgent(providerID)
+    if (agent?.signIn) await accounts.check(agent)
   }
 
   function signInAgent(providerID: string): Promise<void> {
@@ -124,11 +158,45 @@ export function useAgentSetup(
     mcpServerSetup,
     installAgent,
     refreshAgents,
+    checkOnce,
+    checkAgent,
     signInAgent,
     cancelAgentSignIn: (providerID: string) => agentAction(providerID, accounts.cancelSignIn),
     submitAgentSignInCode: (providerID: string, code: string) =>
       agentAction(providerID, (id) => accounts.submitCode(id, code)),
     setupCanvasBridge: () => discovery.setupCanvasBridge()
+  }
+}
+
+/**
+ * A coding agent's setup while `providerID` names one, checked each time it does, so its model
+ * settings show whether it is installed, signed in, and reaches OpenPencil's tools. Undefined
+ * outside the desktop app, where agents cannot run.
+ */
+export function useCodingAgentSetup(providerID: MaybeRefOrGetter<string>, setup = useAgentSetup()) {
+  const agent = computed(() => acpAgentFor(toValue(providerID)))
+  const state = computed(() => {
+    if (!agent.value) return undefined
+    const current = setup.agentSetup(toValue(providerID))
+    return current.supported ? current : undefined
+  })
+  const check = () => setup.checkAgent(toValue(providerID))
+  watch(
+    agent,
+    (current) => {
+      if (current) void check()
+    },
+    { immediate: true }
+  )
+  return {
+    agent,
+    state,
+    check,
+    install: () => setup.installAgent(toValue(providerID)),
+    installBridge: setup.setupCanvasBridge,
+    signIn: () => setup.signInAgent(toValue(providerID)),
+    cancelSignIn: () => setup.cancelAgentSignIn(toValue(providerID)),
+    submitSignInCode: (code: string) => setup.submitAgentSignInCode(toValue(providerID), code)
   }
 }
 

@@ -29,7 +29,11 @@ const SNIPPET = dedent`
 `
 
 /** What the snippet needs installed, shown on two lines and copied as one command. */
-const INSTALL_PACKAGES = ['@open-pencil/core', '@open-pencil/vue', 'canvaskit-wasm'] as const
+const INSTALL_PACKAGES = [
+  '@open-pencil/core',
+  '@open-pencil/vue',
+  '@open-pencil/canvaskit'
+] as const
 const INSTALL = `bun add ${INSTALL_PACKAGES.join(' ')}`
 const FILE_NAME = 'Canvas.vue'
 

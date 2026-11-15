@@ -1,5 +1,4 @@
-import type { Canvas, Paint } from 'canvaskit-wasm'
-
+import type { Canvas, Paint } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { connectorSublayers } from '@open-pencil/scene-graph/connectors'
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
@@ -9,12 +8,15 @@ import type { Vector } from '@open-pencil/scene-graph/primitives'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import type { ConnectorTarget } from '#core/editor/connectors/attach'
 import {
+  CONNECTOR_SEGMENT_HANDLE,
+  connectorRouteHandles,
   connectorScreenEnds,
-  createSceneGeometry,
   viewportMatrix,
   type RotationPreview
 } from '#core/geometry'
 import { vectorNetworkToPath } from '#core/vector'
+
+import { outlineHoveredNode } from './outline'
 
 /** Radius of a connector's end handles and of a layer's magnet dots, in screen pixels. */
 export const CONNECTOR_HANDLE_RADIUS = 5
@@ -34,7 +36,7 @@ function strokeConnectorLine(
   // Traced as drawn, its elbows rounded.
   const paths = vectorNetworkToPath(r.ck, line.vectorNetwork, line.cornerRadius)
   canvas.save()
-  canvas.concat(createSceneGeometry(graph, preview).screenMatrix(line, r))
+  canvas.concat(r.sceneGeometry(graph, preview).screenMatrix(line, r))
   for (const path of paths) {
     canvas.drawPath(path, paint)
     path.delete()
@@ -66,7 +68,36 @@ export function drawConnectorHover(
   strokeConnectorLine(r, canvas, graph, connector, r.auxStroke, preview)
 }
 
-/** A selected connector, as FigJam shows it: its line outlined and a handle at each end. */
+/**
+ * The handles that drag a selected connector's line, as FigJam draws them: a bar along the middle
+ * of each elbow segment, no longer than the segment, and a dot midway along a curve, both solid.
+ */
+function drawConnectorRouteHandles(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  graph: SceneGraph,
+  connector: SceneNode,
+  preview?: RotationPreview | null
+) {
+  r.auxFill.setMaskFilter(null)
+  r.auxFill.setColor(r.selColor())
+  const { length, thickness } = CONNECTOR_SEGMENT_HANDLE
+  for (const handle of connectorRouteHandles(graph, connector, r, preview)) {
+    if (handle.kind === 'curve') {
+      canvas.drawCircle(handle.at.x, handle.at.y, CONNECTOR_HANDLE_RADIUS, r.auxFill)
+      continue
+    }
+    const along = Math.min(length, handle.length)
+    const [width, height] = handle.vertical ? [thickness, along] : [along, thickness]
+    const rect = r.ck.XYWHRect(handle.at.x - width / 2, handle.at.y - height / 2, width, height)
+    canvas.drawRRect(r.ck.RRectXY(rect, thickness / 2, thickness / 2), r.auxFill)
+  }
+}
+
+/**
+ * A selected connector, as FigJam shows it: its line outlined, the handles that drag its line,
+ * and a handle at each end.
+ */
 export function drawConnectorSelection(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -75,6 +106,7 @@ export function drawConnectorSelection(
   preview?: RotationPreview | null
 ) {
   drawConnectorHover(r, canvas, graph, connector, preview)
+  drawConnectorRouteHandles(r, canvas, graph, connector, preview)
   const ends = connectorScreenEnds(graph, connector, r, preview)
   if (!ends) return
   drawDot(r, canvas, ends.start, CONNECTOR_HANDLE_RADIUS, false)
@@ -94,7 +126,7 @@ export function drawConnectorTarget(
 ) {
   const node = target ? graph.getNode(target.nodeId) : undefined
   if (!target || !node) return
-  r.drawHoverHighlight(canvas, graph, node.id, preview)
+  outlineHoveredNode(r, canvas, graph, node, preview)
   const page = graph.pageOf(node.id)
   if (!page) return
   const box = getAxisAlignedBoundsInParent([node], page, graph)

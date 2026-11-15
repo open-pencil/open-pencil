@@ -1,7 +1,9 @@
-import { uniq } from 'es-toolkit/array'
-
 import type { ComponentPropertyDefinition, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { compareCanvasPosition, defaultVariant } from '@open-pencil/scene-graph/components'
+import {
+  compareCanvasPosition,
+  defaultVariant,
+  variantOptions
+} from '@open-pencil/scene-graph/components'
 
 export type VariantConflict = {
   values: Record<string, string>
@@ -88,12 +90,9 @@ export function collectVariantOptions(
 
 /** Declared values stay available even before a component uses them. */
 export function getVariantOptions(graph: SceneGraph, setId: string, propertyId: string): string[] {
+  const set = getComponentSet(graph, setId)
   const definition = getVariantDefinitions(graph, setId).find((item) => item.id === propertyId)
-  if (!definition) return []
-  return uniq([
-    ...(definition.variantOptions ?? []),
-    ...(collectVariantOptions(graph, setId).get(definition.name) ?? [])
-  ])
+  return set && definition ? variantOptions(graph, set, definition) : []
 }
 
 export function findVariantByValues(

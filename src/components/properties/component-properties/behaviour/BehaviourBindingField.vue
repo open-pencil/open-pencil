@@ -53,7 +53,6 @@ const items = computed(() => options.map((option) => ({ value: option.id, label:
       <AppButton
         size="xs"
         class="w-full justify-start"
-        data-slot="action"
         @click="
           () => {
             close()

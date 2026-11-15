@@ -23,12 +23,14 @@ describe('structured static entitlements', () => {
     })
   })
 
-  test('maps AI service entitlements, including a zero allowance', () => {
+  test('maps services entitlements, including a zero allowance', () => {
     expect(
       staticEntitlementValues(
-        parseStaticEntitlementsTOML({ ai: { enabled: true, monthly_credit_allowance: 0 } })
+        parseStaticEntitlementsTOML({ services: { enabled: true, monthly_credit_allowance: 0 } })
       )
-    ).toEqual({ 'cloud.ai.enabled': true, 'cloud.ai.monthly-credit-allowance': 0 })
-    expect(() => parseStaticEntitlementsTOML({ ai: { monthly_credit_allowance: -1 } })).toThrow()
+    ).toEqual({ 'cloud.services.enabled': true, 'cloud.services.monthly-credit-allowance': 0 })
+    expect(() =>
+      parseStaticEntitlementsTOML({ services: { monthly_credit_allowance: -1 } })
+    ).toThrow()
   })
 })

@@ -1,4 +1,11 @@
-import { editorCommandMetadata, formatShortcut } from '@open-pencil/vue/editor/commands'
+import type { HotkeyChord } from '@tanstack/hotkeys'
+import { compact } from 'es-toolkit'
+
+import {
+  editorCommandMetadata,
+  formatShortcut,
+  parseShortcut
+} from '@open-pencil/vue/editor/commands'
 
 import type { AppMenuActionItem, AppMenuEntry } from '@/app/shell/menu/schema'
 import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
@@ -7,7 +14,10 @@ function isActionItem(entry: AppMenuEntry): entry is AppMenuActionItem {
   return !('type' in entry && entry.type === 'separator')
 }
 
-function findShortcutInEntries(entries: readonly AppMenuEntry[], id: string): string | undefined {
+function findShortcutInEntries(
+  entries: readonly AppMenuEntry[],
+  id: string
+): HotkeyChord | undefined {
   for (const entry of entries) {
     if (!isActionItem(entry)) continue
     if (entry.id === id)
@@ -21,7 +31,7 @@ function findShortcutInEntries(entries: readonly AppMenuEntry[], id: string): st
   return undefined
 }
 
-export function appMenuShortcut(id: string): string | undefined {
+export function appMenuShortcut(id: string): HotkeyChord | undefined {
   for (const group of APP_MENU_SCHEMA) {
     const shortcut = findShortcutInEntries(group.items, id)
     if (shortcut) return shortcut
@@ -29,40 +39,20 @@ export function appMenuShortcut(id: string): string | undefined {
   return undefined
 }
 
-function normalizeShortcutToken(shortcut: string): string {
-  return shortcut === '⌫'
-    ? 'Backspace'
-    : shortcut.replaceAll('↩', 'Enter').replaceAll('⇞', 'PageUp').replaceAll('⇟', 'PageDown')
-}
-
-/** A letter becomes its key code, which the keyboard registry matches by layout (`shortcutCode`). */
-export function shortcutTokenToTinykeys(shortcut: string | undefined): string | undefined {
-  return shortcut
-    ? normalizeShortcutToken(shortcut)
-        .replaceAll('MOD', '$mod')
-        .replaceAll('SHIFT', 'Shift')
-        .replaceAll('ALT', 'Alt')
-        .replace(/(^|\+)([A-Z])$/, '$1Key$2')
-    : undefined
-}
-
-export function shortcutTokenToAccelerator(shortcut: string | undefined): string | undefined {
-  return shortcut
-    ? normalizeShortcutToken(shortcut)
-        .replaceAll('MOD', 'CmdOrCtrl')
-        .replaceAll('SHIFT', 'Shift')
-        .replaceAll('ALT', 'Alt')
-    : undefined
+/** A shortcut as a native menu accelerator: `Mod+Shift+S` is `CmdOrCtrl+Shift+S`. */
+export function shortcutToAccelerator(shortcut: HotkeyChord | undefined): string | undefined {
+  if (!shortcut) return undefined
+  const { mod, ctrl, alt, shift, meta, key } = parseShortcut(shortcut)
+  return compact([
+    mod && 'CmdOrCtrl',
+    ctrl && 'Ctrl',
+    alt && 'Alt',
+    shift && 'Shift',
+    meta && 'Super',
+    key
+  ]).join('+')
 }
 
 export function appMenuShortcutLabel(id: string): string | undefined {
   return formatShortcut(appMenuShortcut(id))
-}
-
-export function appMenuTinykeysShortcut(id: string): string | undefined {
-  return shortcutTokenToTinykeys(appMenuShortcut(id))
-}
-
-export function appMenuAccelerator(id: string): string | undefined {
-  return shortcutTokenToAccelerator(appMenuShortcut(id))
 }

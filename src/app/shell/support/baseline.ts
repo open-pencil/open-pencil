@@ -112,7 +112,7 @@ export function missingSupportSentinels(
 ): string[] {
   const missing: string[] = []
   for (const sentinel of sentinels) {
-    let supported = false
+    let supported: boolean
     try {
       supported = sentinel.test()
     } catch {

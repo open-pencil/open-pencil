@@ -16,7 +16,7 @@ const meta = {
   render: (args) => ({
     components: { FollowFrame },
     setup: () => ({ args }),
-    template: '<div class="relative h-64 w-[480px] bg-canvas"><FollowFrame v-bind="args" /></div>'
+    template: '<div class="relative h-64 w-120 bg-canvas"><FollowFrame v-bind="args" /></div>'
   })
 } satisfies Meta<Args>
 

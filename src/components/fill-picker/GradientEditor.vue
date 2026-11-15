@@ -50,6 +50,7 @@ function listStopClass(active: boolean) {
       </div>
 
       <GradientEditorBar
+        dir="ltr"
         :stops="root.stops"
         :active-stop-index="root.activeStopIndex"
         :bar-background="root.barBackground"
@@ -78,7 +79,7 @@ function listStopClass(active: boolean) {
 
       <div class="mb-2">
         <div class="mb-1 flex items-center justify-between">
-          <span class="text-[11px] text-muted">{{ panels.stops }}</span>
+          <span class="text-2xs text-muted">{{ panels.stops }}</span>
           <IconButton
             :label="panels.addStop"
             data-test-id="fill-picker-add-stop"
@@ -89,6 +90,7 @@ function listStopClass(active: boolean) {
         </div>
         <GradientEditorStop
           v-for="(stop, idx) in root.stops"
+          dir="ltr"
           :key="idx"
           :stop="stop"
           :index="idx"
@@ -105,7 +107,7 @@ function listStopClass(active: boolean) {
         >
           <NumberField
             class="w-14 flex-none"
-            :ui="{ leading: 'hidden', field: 'pl-1.5', display: 'pl-1.5' }"
+            :ui="{ leading: 'hidden', field: 'ps-1.5', display: 'ps-1.5' }"
             suffix="%"
             :model-value="s.positionPercent"
             :min="0"
@@ -128,7 +130,7 @@ function listStopClass(active: boolean) {
             </template>
             <template #value>
               <input
-                class="min-w-0 flex-1 border-none bg-transparent font-mono text-[11px] text-surface outline-none"
+                class="min-w-0 flex-1 border-none bg-transparent font-mono text-2xs text-surface outline-none"
                 :value="s.hex"
                 maxlength="6"
                 @change="s.actions.updateColor(inputValue($event))"
@@ -146,7 +148,11 @@ function listStopClass(active: boolean) {
         </GradientEditorStop>
       </div>
 
-      <ColorPickerPanel :color="root.activeColor" @update="root.actions.updateActiveColor" />
+      <ColorPickerPanel
+        :color="root.activeColor"
+        eyedropper
+        @update="root.actions.updateActiveColor"
+      />
     </div>
   </GradientEditorRoot>
 </template>

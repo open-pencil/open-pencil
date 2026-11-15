@@ -1,6 +1,7 @@
-import { randomBytes } from 'node:crypto'
-import { mkdir, open, readFile, rename, rm } from 'node:fs/promises'
+import { mkdir, readFile, rm } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
+
+import { writeFileAtomic } from '@open-pencil/core/node/fs'
 
 import type { HarnessResumeState } from './backends/types'
 
@@ -63,14 +64,7 @@ export class FileResumeStateStore implements ResumeStateStore {
       throw new Error('Harness state exceeds the persistence size limit')
     }
     await mkdir(dirname(path), { recursive: true, mode: 0o700 })
-    const temporaryPath = `${path}.${process.pid}.${randomBytes(8).toString('hex')}.tmp`
-    const handle = await open(temporaryPath, 'wx', 0o600)
-    try {
-      await handle.writeFile(content, 'utf8')
-    } finally {
-      await handle.close()
-    }
-    await rename(temporaryPath, path)
+    await writeFileAtomic(path, content, { mode: 0o600 })
   }
 
   async remove(sessionId: string): Promise<void> {

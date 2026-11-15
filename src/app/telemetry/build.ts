@@ -1,3 +1,5 @@
+import { platform, arch } from '@tauri-apps/plugin-os'
+
 import type { Architecture, Build } from '@open-pencil/feedback/contract'
 
 import { APP_VERSION } from '@/app/runtime/version'
@@ -16,7 +18,6 @@ async function detectBuild(): Promise<Build> {
     const { os, browser } = describeEnvironment(facts)
     return { version: APP_VERSION, platform: os, arch: 'unknown', app: 'web', browser }
   }
-  const { platform, arch } = await import('@tauri-apps/plugin-os')
   const { os } = describeEnvironment(facts, { platform: platform() })
   return {
     version: APP_VERSION,

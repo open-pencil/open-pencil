@@ -148,7 +148,7 @@ function onToggleSides(nodes: readonly SceneNode[]) {
         @update:model-value="updateStyle"
       />
 
-      <p v-if="isMixed" class="text-[11px] text-muted">{{ panels.mixedStrokesHelp }}</p>
+      <p v-if="isMixed" class="text-2xs text-muted">{{ panels.mixedStrokesHelp }}</p>
 
       <PropertyItemRow
         v-for="(stroke, index) in items"
@@ -233,7 +233,7 @@ function onToggleSides(nodes: readonly SceneNode[]) {
       <div v-if="!isMixed && items.length > 0" class="mt-1 flex items-center gap-1.5">
         <AppSelect
           :label="panels.strokeType"
-          :ui="{ trigger: 'w-[88px] flex-none' }"
+          :ui="{ trigger: 'w-22 flex-none' }"
           :model-value="alignValue"
           :placeholder="panels.mixed"
           :options="strokeCtx.alignOptions"
@@ -260,7 +260,7 @@ function onToggleSides(nodes: readonly SceneNode[]) {
           v-if="sidesOffered"
           :label="panels.strokeSides"
           size="xs"
-          class="size-[26px] shrink-0"
+          class="size-6.5 shrink-0"
           :active="expandedSides"
           data-property="stroke-sides"
           @click="onToggleSides(selectedNodes)"

@@ -7,7 +7,8 @@ import { compileScript } from './wrap'
 export const evalCode = defineTool({
   name: 'eval',
   description:
-    'Execute JavaScript with full Figma Plugin API access. Use for operations not covered by other tools. The `figma` global is the Figma Plugin API; the `openpencil` global adds what Figma has no API for, such as component behaviours (`openpencil.setBehaviour`, `openpencil.getBehaviour`, `openpencil.behaviourKinds`), slots (`openpencil.createSlot`), comments (`openpencil.getComments`, `openpencil.getComment`, `openpencil.addComment`, and each comment’s `reply` and `resolve`), statuses (`openpencil.statuses`, `openpencil.getStatus`, `openpencil.setStatus`), variable bindings as the layer panel makes them (`openpencil.bindVariable(node, field, variable)`, `openpencil.unbindVariable(node, field)`), layout and text direction (`openpencil.getLayoutDirection`, `setLayoutDirection`, `getTextDirection`, `setTextDirection`), OkHCL paint colors (`openpencil.getFillOkHCL`, `setFillOkHCL`, `getStrokeOkHCL`, `setStrokeOkHCL`), `openpencil.exposeInstanceSwap(instances, candidates, name)`, and `openpencil.getFontStatus()`.',
+    'Run JavaScript with the Figma Plugin API as `figma`, for what other tools do not cover. As in Figma, `await figma.loadFontAsync(fontName)` for every font a text uses, and any new one, before editing its text, size, font, or layout. ' +
+    'The `openpencil` global adds what Figma lacks: setBehaviour, getBehaviour, behaviourKinds, createSlot, getComments, getComment, addComment (comments have reply and resolve), statuses, getStatus, setStatus, bindVariable(node, field, variable), unbindVariable(node, field), get/setLayoutDirection, get/setTextDirection, get/setFillOkHCL, get/setStrokeOkHCL, exposeInstanceSwap(instances, candidates, name), and getFontStatus().',
   execution: { kind: 'async', mutation: 'document' },
   capabilities: ['document:read', 'document:write', 'code:execute'],
   availability: 'eval',

@@ -1,3 +1,4 @@
+import { escapeUTF8 } from 'entities'
 import { compact } from 'es-toolkit/array'
 
 import { IS_BROWSER, WEB_APP_ORIGIN } from '@/constants'
@@ -27,19 +28,10 @@ export function collectCloudCORSOrigins(extra?: string | null): string[] {
   return compact([...set]).sort()
 }
 
-function escapeXML(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;')
-}
-
 /** S3 PutBucketCors XML body (AWS + B2 S3-compatible). */
 export function buildCORSConfigurationXML(origins: string[]): string {
   const originTags = origins
-    .map((origin) => `    <AllowedOrigin>${escapeXML(origin)}</AllowedOrigin>`)
+    .map((origin) => `    <AllowedOrigin>${escapeUTF8(origin)}</AllowedOrigin>`)
     .join('\n')
   return `<?xml version="1.0" encoding="UTF-8"?>
 <CORSConfiguration>

@@ -8,7 +8,10 @@ import {
 
 /** A variant property a boolean value draws, as the component's boolean prop. */
 export interface BooleanArg {
-  /** The prop's name, as Reka and Radix call it: `checked`, `pressed`, `open`, `disabled`. */
+  /**
+   * The prop's name, as Reka and Radix call it: `checked`, `pressed`, `open`, `disabled`; or
+   * `invalid`, which code marks with `aria-invalid`.
+   */
   name: string
   on: string
   off: string
@@ -20,16 +23,24 @@ export interface BehaviourArgs {
   booleans: Map<string, BooleanArg>
   /**
    * The variant property that draws interaction states. States follow the pointer and focus,
-   * so they are not props; `rest` is the value shown without one, and `disabled` the value the
-   * disabled prop shows, if the set draws it.
+   * so they are not props; `rest` is the value shown without one, and `disabled` and `invalid`
+   * the values the `disabled` and `invalid` props show, if the set draws them.
    */
-  states?: { property: string; rest: string; disabled?: string }
+  states?: { property: string; rest: string; disabled?: string; invalid?: string }
   /**
    * The variant property that draws a field with text, which the field shows while its input
    * has text rather than taking as a prop.
    */
   filled?: { property: string; on: string; off: string }
 }
+
+/** Props that mark the control rather than hold its value. */
+export const FLAGS = ['disabled', 'invalid'] as const
+
+export type Flag = (typeof FLAGS)[number]
+
+/** Whether a boolean prop is a flag rather than the control's value. */
+export const isFlag = (name: string): name is Flag => FLAGS.some((flag) => flag === name)
 
 /** Values a behaviour derives from others instead of taking as props. */
 const DERIVED_VALUES = new Set(['filled'])
@@ -77,7 +88,8 @@ export function behaviourArgs(graph: SceneGraph, set: SceneNode): BehaviourArgs 
     ? {
         property: statesProperty.name,
         rest: behaviour.states?.rest ?? statesProperty.defaultValue,
-        disabled: behaviour.states?.disabled
+        disabled: behaviour.states?.disabled,
+        invalid: behaviour.states?.invalid
       }
     : undefined
   const filled = filledArg(behaviour, variant)

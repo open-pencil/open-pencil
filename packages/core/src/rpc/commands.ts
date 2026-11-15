@@ -54,5 +54,5 @@ export const ALL_RPC_COMMANDS = [
 export function executeRPCCommand(graph: SceneGraph, name: string, args: unknown): unknown {
   const cmd = ALL_RPC_COMMANDS.find((c) => c.name === name)
   if (!cmd) throw new Error(`Unknown command: ${name}`)
-  return cmd.execute(graph, args as never)
+  return cmd.execute(graph, args)
 }

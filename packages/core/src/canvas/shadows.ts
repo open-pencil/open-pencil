@@ -1,13 +1,21 @@
-import type { BlendMode, Canvas, ImageFilter } from 'canvaskit-wasm'
-
-import type { Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Canvas, ImageFilter } from '@open-pencil/canvaskit'
+import type { BlendMode, Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import {
+  blurSigma,
+  drawnBlurRadius,
+  shadowSpreadOf,
+  blurReach
+} from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
+import { clipsChildren, isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
+import { regionFills } from '@open-pencil/scene-graph/vector-network'
 
 import { nodeOrientationMatrix } from '#core/geometry'
 
-import { figmaBlendModeToSkia, needsIsolatedBlendLayer } from './blend'
+import { needsIsolatedBlendLayer, setPaintBlendMode } from './blend'
 import { makeBooleanOperationPath } from './boolean'
-import { blurSigma, renderNoiseEffects } from './effects'
+import { renderNoiseEffects } from './effects'
+import { renderGlassLight, renderGlassRefraction } from './glass/render'
 import type { SkiaRenderer } from './renderer'
 import {
   castsFromOwnShape,
@@ -23,7 +31,6 @@ import {
 import {
   drawSilhouette,
   fillsCastShadow,
-  isLayerContainer,
   paintsCastShadow,
   paintsOverKnockout,
   shadowIncludesChildren,
@@ -36,31 +43,20 @@ function resetEffectLayerPaint(r: SkiaRenderer): void {
   r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
 }
 
-/** `behind` draws drop shadows and background blur, `inner` inner shadows over fills, `front` noise. */
+/**
+ * `behind` draws drop shadows, background blur, and glass refraction, `inner` inner shadows and
+ * glass light over fills, `front` noise.
+ */
 export type EffectPass = 'behind' | 'inner' | 'front'
 
 /**
- * Layers whose shadows Figma 126 never spreads: only boxes and ellipses, arcs among them, take a
- * spread, for drop and inner shadows alike.
+ * The spread a drop shadow draws with. Figma draws it only where the shadow follows the layer's
+ * own outline: a shape whose type spreads, or a filled frame that clips. An unclipped or empty
+ * frame casts its children's silhouette unspread, though its render bounds count the spread.
  */
-const UNSPREAD_TYPES: ReadonlySet<SceneNode['type']> = new Set<SceneNode['type']>([
-  'TEXT',
-  'BOOLEAN_OPERATION',
-  'STAR',
-  'POLYGON',
-  'VECTOR'
-])
-
-/** Figma spreads a shadow only where it follows the layer's own outline: shapes and filled frames that clip. */
 function shadowSpread(node: SceneNode, effect: Effect): number {
-  if (UNSPREAD_TYPES.has(node.type)) return 0
-  if (!isLayerContainer(node)) return effect.spread
-  return node.clipsContent && fillsCastShadow(node) ? effect.spread : 0
-}
-
-/** The spread an inner shadow takes, inside any layer whose type Figma spreads. */
-function innerShadowSpread(node: SceneNode, effect: Effect): number {
-  return UNSPREAD_TYPES.has(node.type) ? 0 : effect.spread
+  if (!isLayerContainer(node)) return shadowSpreadOf(node, effect)
+  return clipsChildren(node) && fillsCastShadow(node) ? effect.spread : 0
 }
 
 function shadowLayerBounds(
@@ -78,7 +74,7 @@ function shadowLayerBounds(
     height: node.height
   }
   const offset = effect.offset
-  const padding = effect.radius * 2 + Math.abs(spread)
+  const padding = drawnBlurRadius(effect.radius) * 2 + Math.abs(spread)
   return r.ck.LTRBRect(
     box.x + Math.min(0, offset.x) - padding,
     box.y + Math.min(0, offset.y) - padding,
@@ -101,7 +97,7 @@ function drawSilhouetteDropShadow(
   effect: Effect,
   spread: number,
   bounds: Float32Array,
-  blendMode: BlendMode,
+  blendMode: BlendMode | undefined,
   draw: () => void
 ): void {
   const ck = r.ck
@@ -118,31 +114,33 @@ function drawSilhouetteDropShadow(
         morphology
       )
     : r.getCachedDropShadow(effect.offset.x, effect.offset.y, sigma, color)
-  const paint = new ck.Paint()
+  // The layer copies the paint, so the shared one is reset at once for whatever draws inside.
+  const paint = r.effectLayerPaint
   paint.setImageFilter(filter)
-  paint.setBlendMode(blendMode)
+  setPaintBlendMode(r, paint, blendMode)
   canvas.saveLayer(paint, bounds)
+  paint.setImageFilter(null)
+  paint.setBlendMode(ck.BlendMode.SrcOver)
   try {
     draw()
   } finally {
     canvas.restore()
-    paint.delete()
     if (morphology) {
-      filter.delete()
+      filter?.delete()
       morphology.delete()
     }
   }
 }
 
 function drawKnockout(r: SkiaRenderer, canvas: Canvas, bounds: Float32Array, draw: () => void) {
-  const paint = new r.ck.Paint()
+  const paint = r.effectLayerPaint
   paint.setBlendMode(r.ck.BlendMode.DstOut)
   canvas.saveLayer(paint, bounds)
+  paint.setBlendMode(r.ck.BlendMode.SrcOver)
   try {
     draw()
   } finally {
     canvas.restore()
-    paint.delete()
   }
 }
 
@@ -156,7 +154,7 @@ function drawOwnShapeDropShadow(
   node: SceneNode,
   effect: Effect,
   spread: number,
-  blendMode: BlendMode,
+  blendMode: BlendMode | undefined,
   knockout: boolean
 ): boolean {
   const outline = regularStrokeOutline(node, spread)
@@ -183,7 +181,7 @@ function drawOwnShapeDropShadow(
  * another child: the blur's reach from both, any spread, and the offset.
  */
 function shadowGap(effect: Effect, spread: number): number {
-  const reach = 3 * blurSigma(effect.radius) + Math.abs(spread) + 1
+  const reach = blurReach(effect.radius) + Math.abs(spread)
   return 2 * reach + Math.hypot(effect.offset.x, effect.offset.y)
 }
 
@@ -222,7 +220,7 @@ function renderDropShadow(
 ): void {
   if (!includeChildren && !paintsCastShadow(node)) return
   const spread = shadowSpread(node, effect)
-  const blendMode = figmaBlendModeToSkia(r.ck, effect.blendMode)
+  const blendMode = effect.blendMode
   const knockout =
     effect.showShadowBehindNode === false && !paintsOverKnockout(graph, node, includeChildren)
   const children = includeChildren
@@ -244,10 +242,10 @@ function renderDropShadow(
   }
 
   const bounds = shadowLayerBounds(r, graph, node, effect, spread, includeChildren)
-  const isolation = knockout ? new r.ck.Paint() : null
-  if (isolation) {
-    isolation.setBlendMode(blendMode)
-    canvas.saveLayer(isolation, bounds)
+  if (knockout) {
+    setPaintBlendMode(r, r.effectLayerPaint, blendMode)
+    canvas.saveLayer(r.effectLayerPaint, bounds)
+    setPaintBlendMode(r, r.effectLayerPaint, 'NORMAL')
   }
   try {
     drawSilhouetteDropShadow(
@@ -256,7 +254,7 @@ function renderDropShadow(
       effect,
       spread,
       bounds,
-      isolation ? r.ck.BlendMode.SrcOver : blendMode,
+      knockout ? 'NORMAL' : blendMode,
       () => drawSilhouette(r, canvas, graph, node, 'cast', includeChildren)
     )
     if (knockout) {
@@ -265,10 +263,7 @@ function renderDropShadow(
       )
     }
   } finally {
-    if (isolation) {
-      canvas.restore()
-      isolation.delete()
-    }
+    if (knockout) canvas.restore()
     resetEffectLayerPaint(r)
   }
 }
@@ -289,7 +284,7 @@ function drawSilhouetteInnerShadow(
   let solidBlackFilter: ReturnType<typeof ck.ColorFilter.MakeBlend> | null = null
 
   try {
-    r.effectLayerPaint.setBlendMode(figmaBlendModeToSkia(ck, effect.blendMode))
+    setPaintBlendMode(r, r.effectLayerPaint, effect.blendMode)
     canvas.saveLayer(r.effectLayerPaint, bounds)
     restoreCount++
     r.effectLayerPaint.setBlendMode(ck.BlendMode.SrcOver)
@@ -317,7 +312,7 @@ function drawSilhouetteInnerShadow(
     canvas.saveLayer(r.effectLayerPaint, inverse)
     restoreCount++
 
-    r.auxFill.setColor(ck.Color4f(0, 0, 0, 1))
+    r.auxFill.setColorComponents(0, 0, 0, 1)
     canvas.drawRect(inverse, r.auxFill)
 
     r.effectLayerPaint.setImageFilter(null)
@@ -354,13 +349,13 @@ function renderInnerShadow(
   if (children?.every(castsFromOwnShape)) {
     for (const child of children) {
       withChildCoordinates(canvas, child, effect, (local) =>
-        drawShapeInnerShadow(r, canvas, child, local, innerShadowSpread(child, local))
+        drawShapeInnerShadow(r, canvas, child, local, shadowSpreadOf(child, local))
       )
     }
     return
   }
   if (!includeChildren && castsFromOwnShape(node)) {
-    const spread = innerShadowSpread(node, effect)
+    const spread = shadowSpreadOf(node, effect)
     drawShapeInnerShadow(r, canvas, node, effect, spread, isolatesInnerShadows(node))
     return
   }
@@ -374,15 +369,17 @@ function renderInnerShadow(
  * Whether a shape draws its fills and inner shadows in a layer of their own. There each shadow
  * replaces the fill under it before taking the shape's outline, so the antialiased edge applies
  * once, as in Figma, rather than letting the fill show through. Blended fills and shadows mix with
- * what lies under the shape, so they keep drawing in place.
+ * what lies under the shape, so they keep drawing in place, and so does glass, whose light reads
+ * what lies under the shape through its fills.
  */
 export function isolatesInnerShadows(node: SceneNode): boolean {
   if (isLayerContainer(node) || !castsFromOwnShape(node)) return false
+  if (node.effects.some((effect) => effect.visible && effect.type === 'GLASS')) return false
   const shadows = node.effects.filter((effect) => effect.visible && effect.type === 'INNER_SHADOW')
   return (
     shadows.length > 0 &&
     shadows.every((effect) => !needsIsolatedBlendLayer(effect.blendMode)) &&
-    [...node.fills, ...node.fillGeometry.flatMap((geometry) => geometry.fills ?? [])].every(
+    [...node.fills, ...regionFills(node.vectorNetwork)].every(
       (fill) => !fill.visible || !needsIsolatedBlendLayer(fill.blendMode)
     )
   )
@@ -412,7 +409,15 @@ export function renderEffects(
     if (pass === 'behind' && effect.type === 'BACKGROUND_BLUR') {
       const shape =
         node.type === 'BOOLEAN_OPERATION' ? makeBooleanOperationPath(r, node, graph) : null
-      r.applyClippedBlur(canvas, node, blurSigma(effect.radius), shape)
+      r.applyClippedBlur(canvas, node, effect, shape)
+      shape?.delete()
+    }
+
+    if (effect.type === 'GLASS' && pass !== 'front') {
+      const shape =
+        node.type === 'BOOLEAN_OPERATION' ? makeBooleanOperationPath(r, node, graph) : null
+      if (pass === 'behind') renderGlassRefraction(r, canvas, node, effect, shape)
+      else renderGlassLight(r, canvas, node, effect, shape)
       shape?.delete()
     }
 

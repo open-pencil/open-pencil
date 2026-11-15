@@ -6,9 +6,12 @@ import { runCommand } from '@open-pencil/package-artifacts-tools'
 const TYPE_CONSUMER = `import { createEditor, type Editor } from '@open-pencil/core'
 import { Frame, type TreeNode } from '@open-pencil/design-jsx'
 import { htmlToDesignDocument, type DesignDocument } from '@open-pencil/dom-css'
+import { parseDrawIOFile, type DrawIOFile } from '@open-pencil/drawio'
 import { FIG_PACKAGE_STATUS, type FigContainerDocument } from '@open-pencil/fig'
+import { loadHTMLEngine, type HTMLEngineCapture } from '@open-pencil/html-engine'
 import { FIG_KIWI_DEFAULT_VERSION, buildFigKiwi } from '@open-pencil/kiwi/fig/container'
 import type { GUID as KiwiGUID } from '@open-pencil/kiwi/fig'
+import { parseFlowchart, type Flowchart } from '@open-pencil/mermaid'
 import { parsePenFile, type PenDocument } from '@open-pencil/pen'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
@@ -25,10 +28,13 @@ const maybeNode: SceneNode | undefined = graph.getPages()[0]
 const penDocument: PenDocument = { version: '1', children: [] }
 const figDocument: FigContainerDocument = { schemaDeflated: new Uint8Array([1]), dataRaw: new Uint8Array([2]) }
 const kiwiGuid: KiwiGUID = { sessionID: 1, localID: 2 }
+const drawioFile: DrawIOFile | null = parseDrawIOFile('<mxfile/>')
+const flowchart: Flowchart = parseFlowchart('flowchart LR\\n  A --> B')
+declare const capture: HTMLEngineCapture
 void editorFactory; void editor; void designDocument; void color; void vector; void maybeNode
 void penDocument; void figDocument; void kiwiGuid; void FIG_PACKAGE_STATUS
 void FIG_KIWI_DEFAULT_VERSION; void buildFigKiwi; void parsePenFile; void htmlToDesignDocument
-void testIdSelector; void tree
+void testIdSelector; void tree; void drawioFile; void flowchart; void loadHTMLEngine; void capture.nodes[0]?.box
 `
 
 export async function verifyTypeConsumer(root: string, consumerDirectory: string): Promise<void> {
@@ -57,7 +63,7 @@ export async function verifyTypeConsumer(root: string, consumerDirectory: string
     root,
     'node_modules',
     '.bin',
-    process.platform === 'win32' ? 'tsgo.cmd' : 'tsgo'
+    process.platform === 'win32' ? 'tsc.cmd' : 'tsc'
   )
   await runCommand({
     command: executable,

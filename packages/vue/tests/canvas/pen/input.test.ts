@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test'
 
-import { ref } from 'vue'
+import { reactive, ref } from 'vue'
 
-import { createEditor, type Editor } from '@open-pencil/core'
+import { createDefaultEditorState, createEditor, type Editor } from '@open-pencil/core'
+import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { startPenInput, updatePenHover } from '#vue/canvas/pen/input'
 import { resolveVertexSnap } from '#vue/shared/input/snap'
@@ -85,5 +87,40 @@ describe('pen vertex snapping', () => {
     expect(editor.state.snapGuides).toHaveLength(1)
     editor.penCancel()
     expect(editor.state.snapGuides).toEqual([])
+  })
+})
+
+// The SDK guides keep the editor's state reactive, so the pen's undo steps copy through its proxies.
+test('undo takes back pen points when the editor state is reactive', () => {
+  const graph = new SceneGraph()
+  const page = expectDefined(graph.getPages()[0])
+  editor = createEditor({ graph, state: reactive(createDefaultEditorState(page.id)) })
+  editor.setTool('PEN')
+  click(0, 0)
+  click(100, 0)
+  editor.undoAction()
+  expect(editor.state.penState?.vertices).toHaveLength(1)
+  editor.redoAction()
+  expect(editor.state.penState?.vertices).toHaveLength(2)
+})
+
+describe('host hooks on the pen', () => {
+  test('a press the host refuses starts no drag and places no point', () => {
+    setup()
+    editor.onEditorEvent('pen:pressed', ({ kind }) => {
+      if (kind === 'start') editor.cancelGesture()
+    })
+    const setDrag = mock()
+    startPenInput({ altKey: false }, 10, 10, editor, setDrag, ref<string | null>(null))
+    expect(setDrag).not.toHaveBeenCalled()
+    expect(editor.state.penState).toBeNull()
+  })
+
+  test('the next point lines up with the points the host adds', () => {
+    setup()
+    editor.setSnapTargets({ points: [{ x: 300, y: 40 }] })
+    click(0, 0)
+    click(297, 42)
+    expect(editor.state.penState?.vertices.at(-1)).toMatchObject({ x: 300, y: 40 })
   })
 })

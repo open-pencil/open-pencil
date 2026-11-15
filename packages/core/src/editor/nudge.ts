@@ -9,6 +9,27 @@ import type { EditorContext } from './types'
 
 const NUDGE_COMMIT_DELAY = 300
 
+/** The step from `position` to the next multiple of `grid` in `direction` (1 or -1). */
+function toNextGridLine(position: number, direction: number, grid: number): number {
+  if (direction === 0) return 0
+  const next =
+    direction > 0
+      ? (Math.floor(position / grid + 1e-9) + 1) * grid
+      : (Math.ceil(position / grid - 1e-9) - 1) * grid
+  return next - position
+}
+
+/**
+ * How far Shift+arrow moves a selection on a board: its top-left corner to the next line of the
+ * board grid that way, as FigJam does, rather than Figma Design's 10 units.
+ */
+export function gridNudge(origin: Vector, direction: Vector, grid: number): Vector {
+  return {
+    x: toNextGridLine(origin.x, direction.x, grid),
+    y: toNextGridLine(origin.y, direction.y, grid)
+  }
+}
+
 /** The flow an arrow key moves a layer along: its row or column, or none. */
 function flowParent(ctx: EditorContext, node: SceneNode): SceneNode | null {
   if (node.layoutPositioning === 'ABSOLUTE' || !node.parentId) return null
@@ -52,6 +73,8 @@ export function createNudgeActions(ctx: EditorContext) {
   let nudgeOriginals: Map<string, Vector> | null = null
   let reorderOriginals: Map<string, string[]> | null = null
   let nudgeCommitTimer: ReturnType<typeof setTimeout> | null = null
+  /** Open from the first key press until the nudge records its step, which waits for a pause. */
+  let closeNudgeEdit: (() => void) | null = null
 
   function applyOrder(parentId: string, order: readonly string[]) {
     order.forEach((id, index) => ctx.graph.insertChildAt(id, parentId, index))
@@ -79,7 +102,18 @@ export function createNudgeActions(ctx: EditorContext) {
 
   function commitNudge() {
     nudgeCommitTimer = null
-    commitReorder()
+    const before = ctx.undo.peekUndo()
+    try {
+      commitReorder()
+      commitMove()
+    } finally {
+      closeNudgeEdit?.()
+      closeNudgeEdit = null
+      if (ctx.undo.peekUndo() === before) ctx.undo.discardEdit()
+    }
+  }
+
+  function commitMove() {
     if (!nudgeOriginals) return
     const originals = nudgeOriginals
     nudgeOriginals = null
@@ -140,6 +174,7 @@ export function createNudgeActions(ctx: EditorContext) {
     }
     if (movable.length === 0) return
 
+    closeNudgeEdit ??= ctx.undo.openEdit()
     const reordered = reorderInFlows(movable, dx, dy)
     const nudged = movable.filter((id) => !reordered.has(id))
 
@@ -154,7 +189,7 @@ export function createNudgeActions(ctx: EditorContext) {
     for (const id of nudged) {
       const node = ctx.graph.getNode(id)
       if (!node) continue
-      ctx.graph.updateNode(id, { x: node.x + dx, y: node.y + dy })
+      ctx.graph.updateNode(id, ctx.constrainMove(node, { x: node.x + dx, y: node.y + dy }))
       ctx.runLayoutForNode(id)
     }
 

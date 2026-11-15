@@ -1,3 +1,5 @@
+import { invoke } from '@tauri-apps/api/core'
+import { listen } from '@tauri-apps/api/event'
 import * as v from 'valibot'
 
 import { isTauri } from '@/app/tauri/env'
@@ -15,10 +17,6 @@ export async function bindDesktopLinkQueue<T>(options: {
   open: (item: T) => unknown
 }): Promise<() => void> {
   if (!isTauri()) return () => undefined
-  const [{ invoke }, { listen }] = await Promise.all([
-    import('@tauri-apps/api/core'),
-    import('@tauri-apps/api/event')
-  ])
   const queue = v.array(options.schema)
   async function drain() {
     const items = v.parse(queue, await invoke<unknown>(options.command))

@@ -1,13 +1,17 @@
 import { describe, expect, test } from 'bun:test'
 
-import { CLOUD_DISCOVERY_PATH, CLOUD_PROTOCOL_VERSION, parseCloudDiscovery } from '#cloud/contract'
+import {
+  CLOUD_DISCOVERY_PATH,
+  CLOUD_PROTOCOL_VERSION,
+  isEditorVersionAtLeast,
+  parseCloudDiscovery
+} from '#cloud/contract'
 
 const discovery = {
   protocolVersion: CLOUD_PROTOCOL_VERSION,
   deployment: 'self-hosted' as const,
   apiURL: 'https://pencil.example.com/api',
   authURL: 'https://pencil.example.com/api/auth',
-  appURL: 'https://app.example.com',
   localEditor: true,
   authentication: {
     socialProviders: ['google' as const],
@@ -52,5 +56,21 @@ describe('Cloud discovery contract', () => {
 
   test('rejects relative service URLs', () => {
     expect(() => parseCloudDiscovery({ ...discovery, apiURL: '/api' })).toThrow()
+  })
+
+  test('reads a minimum editor version, and refuses one that is not a release', () => {
+    expect(parseCloudDiscovery({ ...discovery, minimumEditorVersion: '0.17.0' })).toMatchObject({
+      minimumEditorVersion: '0.17.0'
+    })
+    expect(() => parseCloudDiscovery({ ...discovery, minimumEditorVersion: 'latest' })).toThrow()
+  })
+
+  test('compares editor versions by number, not by text', () => {
+    expect(isEditorVersionAtLeast('0.14.0', '0.14.0')).toBe(true)
+    expect(isEditorVersionAtLeast('0.14.2', '0.14.0')).toBe(true)
+    expect(isEditorVersionAtLeast('0.10.0', '0.9.5')).toBe(true)
+    expect(isEditorVersionAtLeast('0.9.5', '0.10.0')).toBe(false)
+    expect(isEditorVersionAtLeast('1.0.0-beta.1', '1.0.0')).toBe(true)
+    expect(isEditorVersionAtLeast('next', '1.0.0')).toBe(false)
   })
 })

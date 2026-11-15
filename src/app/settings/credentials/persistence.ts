@@ -5,6 +5,7 @@ import { VECTORIZE_CREDENTIAL_REFS } from '@/app/editor/vectorize/credentials'
 import { mcpConnectionSettings, mcpConnectionCredentialRef } from '@/app/integrations/mcp'
 import { storageCredentialRefs, storageProviderRegistry } from '@/app/integrations/storage'
 import {
+  EXA_CREDENTIAL,
   PEXELS_CREDENTIAL,
   UNSPLASH_CREDENTIAL,
   providerCredentialRef
@@ -33,6 +34,7 @@ export function appCredentialRefs(): CredentialRef[] {
     ...modelConnectionRefs,
     PEXELS_CREDENTIAL,
     UNSPLASH_CREDENTIAL,
+    EXA_CREDENTIAL,
     ...VECTORIZE_CREDENTIAL_REFS,
     ...mcpConnectionSettings.value.connections.map((connection) =>
       mcpConnectionCredentialRef(connection.id)

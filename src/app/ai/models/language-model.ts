@@ -1,7 +1,6 @@
 import type { LanguageModel } from 'ai'
 
-import { modelProviderAdapter } from '@/app/ai/providers/registry'
-import type { ModelConfig, ModelCredentialStore } from '@/app/ai/providers/types'
+import type { ModelConfig, ModelProviderRuntime } from '@/app/ai/providers/types'
 import type { FetchFunction } from '@/app/http/types'
 import { isTauri } from '@/app/tauri/env'
 import { tauriFetch } from '@/app/tauri/http'
@@ -25,13 +24,18 @@ function desktopFetch(): FetchFunction | undefined {
   return isTauri() ? tauriFetch : undefined
 }
 
-/** `credentials` is the connection's store, for providers whose sign-in refreshes. */
-export function createLanguageModel(
+/**
+ * `runtime.credentials` is the connection's store, for providers whose sign-in refreshes; a
+ * `runtime.fetch`, such as Cloud's AI service's, replaces the desktop fetch. The provider SDKs
+ * load with the first request, not with the editor.
+ */
+export async function createLanguageModel(
   config: ModelConfig,
-  credentials?: ModelCredentialStore
-): LanguageModel {
+  runtime: ModelProviderRuntime = {}
+): Promise<LanguageModel> {
+  const { modelProviderAdapter } = await import('@/app/ai/providers/registry')
   return modelProviderAdapter(config.providerID).create(config, {
-    fetch: desktopFetch(),
-    credentials
+    ...runtime,
+    fetch: runtime.fetch ?? desktopFetch()
   })
 }

@@ -49,7 +49,7 @@ export async function vectorizeImageNode(store: EditorStore, nodeId: string): Pr
       toast.error(
         notificationMessages.get().vectorizeCredentialRequired({ provider: provider.name })
       )
-      openSettingsDialog('media')
+      openSettingsDialog('services')
       return
     }
 
@@ -81,7 +81,7 @@ export async function vectorizeImageNode(store: EditorStore, nodeId: string): Pr
   } catch (error) {
     if (error instanceof VectorizeAuthError) {
       toast.error(notificationMessages.get().vectorizeCredentialFailed({ error: error.message }))
-      openSettingsDialog('media')
+      openSettingsDialog('services')
     } else {
       toast.error(
         notificationMessages

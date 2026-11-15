@@ -1,42 +1,22 @@
-import type { Canvas } from 'canvaskit-wasm'
-
+import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { minOf } from '@open-pencil/scene-graph/arrays'
+import { nodeCornerRadii, nodeHasSmoothCorners } from '@open-pencil/scene-graph/corners'
+import {
+  borderWeights,
+  strokeAlignShare,
+  strokeSideWeights,
+  type SideWeights
+} from '@open-pencil/scene-graph/geometry'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
-import { nodeHasSmoothCorners } from '#core/canvas/shapes'
 import { normalizeDashPattern } from '#core/canvas/strokes'
 
 /** Arc points per wedge: a chord across at most this many degrees stays clear of the ring. */
 const WEDGE_STEP = 30
 
-/** A rectangle's stroke weights, side by side: top, right, bottom, left. */
-export type SideWeights = readonly [number, number, number, number]
-
-/** The weight of each side of `node` under `stroke`, its own when its sides have their own. */
-export function strokeSideWeights(node: SceneNode, stroke: Stroke): SideWeights {
-  if (!node.independentStrokeWeights)
-    return [stroke.weight, stroke.weight, stroke.weight, stroke.weight]
-  return [
-    node.borderTopWeight,
-    node.borderRightWeight,
-    node.borderBottomWeight,
-    node.borderLeftWeight
-  ]
-}
-
-/** The share of a stroke's weight that lies outside the shape it outlines. */
-export function strokeAlignShare(align: Stroke['align']): number {
-  if (align === 'OUTSIDE') return 1
-  if (align === 'CENTER') return 0.5
-  return 0
-}
-
-function cornerRadii(node: SceneNode): [number, number, number, number] {
-  if (!node.independentCorners) {
-    return [node.cornerRadius, node.cornerRadius, node.cornerRadius, node.cornerRadius]
-  }
-  return [node.topLeftRadius, node.topRightRadius, node.bottomRightRadius, node.bottomLeftRadius]
-}
+/** The most times a dash pattern repeats along one side before it draws as a solid line. */
+const MAX_DASH_REPEATS = 10_000
 
 /**
  * The outer and inner edges of a frame's stroke with sides of their own weights, as rounded
@@ -50,22 +30,17 @@ export function sideStrokeRRects(
   node: SceneNode,
   align: Stroke['align'],
   grow = 0,
-  weights: SideWeights = [
-    node.borderTopWeight,
-    node.borderRightWeight,
-    node.borderBottomWeight,
-    node.borderLeftWeight
-  ]
+  weights: SideWeights = borderWeights(node)
 ): { outer: Float32Array; inner: Float32Array | null } {
   const share = strokeAlignShare(align)
   const [top, right, bottom, left] = weights.map((weight) => weight * share + grow)
   const [topIn, rightIn, bottomIn, leftIn] = weights.map((weight) => weight * (1 - share) + grow)
   const [tWeight, rWeight, bWeight, lWeight] = weights
-  const [tl, tr, br, bl] = cornerRadii(node)
+  const [tl, tr, br, bl] = nodeCornerRadii(node)
   const out = (radius: number, a: number, aWeight: number, b: number, bWeight: number) => {
     if (radius <= 0) return 0
     const stroked = [aWeight > 0 ? a : null, bWeight > 0 ? b : null].filter((side) => side !== null)
-    return Math.max(0, radius + (stroked.length > 0 ? Math.min(...stroked) : grow))
+    return Math.max(0, radius + (stroked.length > 0 ? minOf(stroked) : grow))
   }
   const into = (radius: number, side: number) => Math.max(0, radius - side)
   const tlOut = out(tl, top, tWeight, left, lWeight)
@@ -142,8 +117,11 @@ export function fittedDashPattern(
   pattern: readonly number[]
 ): { intervals: number[]; offset: number } | null {
   const period = pattern.reduce((sum, size) => sum + size, 0)
-  if (period <= 0 || length <= 0) return null
-  const scale = length / (Math.max(1, Math.round(length / period)) * period)
+  if (!(period > 0) || !(length > 0)) return null
+  const repeats = Math.max(1, Math.round(length / period))
+  const scale = length / (repeats * period)
+  // Dashes too fine to count, or a period too small to scale, draw as a solid line.
+  if (repeats > MAX_DASH_REPEATS || !(scale > 0) || !Number.isFinite(scale)) return null
   return { intervals: pattern.map((size) => size * scale), offset: (pattern[0] * scale) / 2 }
 }
 
@@ -362,7 +340,7 @@ function drawClippedCornerDashes(r: SkiaRenderer, canvas: Canvas, dashed: Dashed
 
 /** Corner radii as Skia draws them: scaled down together when two corners overflow a side. */
 function fittedCornerRadii(node: SceneNode): [number, number, number, number] {
-  const [tl, tr, br, bl] = cornerRadii(node)
+  const [tl, tr, br, bl] = nodeCornerRadii(node)
   const fit = (length: number, a: number, b: number) => (a + b > length ? length / (a + b) : 1)
   const scale = Math.min(
     fit(node.width, tl, tr),

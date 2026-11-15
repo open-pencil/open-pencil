@@ -1,15 +1,32 @@
+import { Command } from '@tauri-apps/plugin-shell'
+
 import { decodeTauriStderr } from '@/app/shell/ui'
-import { resolvePlatformCommand } from '@/app/tauri/command'
+import { spawnAgentChild } from '@/app/tauri/children'
+import { platformCommandEnv, resolvePlatformCommand } from '@/app/tauri/command'
 
 export type TauriChild = {
   write(data: number[]): Promise<void>
   kill(): Promise<void>
 }
 
+/** A started agent: its process, and the pipes the ACP connection reads and writes. */
+export interface ACPProcess {
+  child: TauriChild
+  input: WritableStream<Uint8Array>
+  output: ReadableStream<Uint8Array>
+}
+
 type ACPProcessOptions = {
   command: string
   args: string[]
   logId: string
+  /** The `PATH` the agent starts with, from the lookup that found it; omitted keeps the app's. */
+  searchPath?: string | null
+  /**
+   * The folder the agent runs in, the same one its sessions open in. Antigravity CLI adds its
+   * process folder to the session's workspace, which would otherwise be wherever the app started.
+   */
+  cwd?: string
   destroying: () => boolean
   onUnexpectedClose: () => void
 }
@@ -18,14 +35,16 @@ export async function spawnACPProcess({
   command: commandName,
   args,
   logId,
+  searchPath = null,
+  cwd,
   destroying,
   onUnexpectedClose
-}: ACPProcessOptions) {
-  const { Command } = await import('@tauri-apps/plugin-shell')
+}: ACPProcessOptions): Promise<ACPProcess> {
   const resolved = resolvePlatformCommand(commandName, args)
   const command = Command.create(resolved.command, resolved.args, {
     encoding: 'raw',
-    env: {}
+    env: { ...platformCommandEnv(), ...(searchPath ? { PATH: searchPath } : {}) },
+    cwd
   })
 
   const stdoutChunks: Uint8Array[] = []
@@ -61,7 +80,7 @@ export async function spawnACPProcess({
     }
   })
 
-  const child = await command.spawn()
+  const child = await spawnAgentChild(command)
 
   const output = new ReadableStream<Uint8Array>({
     async pull(controller) {

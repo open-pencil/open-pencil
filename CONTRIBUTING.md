@@ -34,7 +34,7 @@ APPLE_SIGNING_IDENTITY=- bun run tauri build -c '{"bundle": { "createUpdaterArti
 - Before adding a helper, type, component, state mechanism, parser, or test utility, inspect the owning folder, nearby implementations, existing dependencies, and tests. Reuse or extend the established mechanism; extract genuinely shared logic instead of introducing a parallel implementation.
 - Keep package boundaries and public exports intact. Keep pull requests focused: no temporary scaffolding, unrelated refactors, or changelog claims not represented by the diff.
 - For user-facing changes add a changelog fragment under `changes/<PR>/` instead of editing `CHANGELOG.md`, following `changes/README.md` and the rules in `AGENTS.md` (Documentation and changelog).
-- Tests follow the [testing architecture](packages/docs/development/testing.md) and `tests/AGENTS.md`. Extend an existing `tests/engine/**` suite until its domain migrates; do not create a duplicate home.
+- Tests follow the [testing architecture](packages/docs/development/testing.md) and `tests/AGENTS.md`. Extend the owner's existing suite; do not create a duplicate home.
 - `.fig` fixtures in `tests/fixtures/` are Git LFS. Use `git push --no-verify` to skip the slow LFS pre-push hook unless you changed `.fig` files.
 
 ## Quality checks

@@ -1,31 +1,18 @@
 <script setup lang="ts">
+import { useTemplateRef } from 'vue'
+
 import AppInput from '@/components/ui/input/AppInput.vue'
 
-interface ProviderSettingsInputProps {
-  id?: string
-  type?: 'text' | 'password' | 'number'
-  placeholder?: string
-  min?: number
-  max?: number
-  step?: number
-}
-
-const { id, type = 'text', placeholder, min, max, step } = defineProps<ProviderSettingsInputProps>()
-
+/**
+ * The text field of every Settings form, so fields read alike beside the selects they sit with.
+ * Everything else, such as type, placeholder, autocomplete and listeners, passes through to
+ * `AppInput`.
+ */
 const modelValue = defineModel<string | number>({ required: true })
-const emit = defineEmits<{ change: [] }>()
+const input = useTemplateRef('input')
+defineExpose({ focus: (options?: FocusOptions) => input.value?.focus(options) })
 </script>
 
 <template>
-  <AppInput
-    v-model="modelValue"
-    :id="id"
-    :type="type"
-    :placeholder="placeholder"
-    :min="min"
-    :max="max"
-    :step="step"
-    size="sm"
-    @change="emit('change')"
-  />
+  <AppInput ref="input" v-model="modelValue" size="sm" tone="panel" />
 </template>

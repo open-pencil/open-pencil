@@ -1,5 +1,6 @@
 import {
   FONT_WEIGHT_NAMES,
+  namesWeight,
   normalizeFontFamily,
   type FontFamilyStyle,
   parseFontStyle
@@ -12,9 +13,21 @@ const FONT_WEIGHTS = Object.keys(FONT_WEIGHT_NAMES)
 /**
  * Font weights in the order CSS font matching tries them for `weight`, as Skia picks a face
  * from a family: heavier first above 500, lighter first below 400, and from 400 to 500 the
- * weights up to 500, then lighter, then heavier.
+ * weights up to 500, then lighter, then heavier. Each weight's order is worked out once, since
+ * every face lookup of a text run asks for it.
  */
-export function fontWeightMatchOrder(weight: number): number[] {
+export function fontWeightMatchOrder(weight: number): readonly number[] {
+  let order = matchOrders.get(weight)
+  if (!order) {
+    order = matchOrder(weight)
+    matchOrders.set(weight, order)
+  }
+  return order
+}
+
+const matchOrders = new Map<number, readonly number[]>()
+
+function matchOrder(weight: number): number[] {
   const lighter = FONT_WEIGHTS.filter((candidate) => candidate < weight).toReversed()
   const heavier = FONT_WEIGHTS.filter((candidate) => candidate > weight)
   const own = FONT_WEIGHTS.includes(weight) ? [weight] : []
@@ -44,6 +57,8 @@ export function chooseLocalFontMatch<T extends FontFamilyStyle>(
       ? fonts.find((font) => font.family === candidateFamily && font.style === style)
       : undefined
     if (exact) return exact
+    // A face named apart from its weight is that face or none, never another of its weight.
+    if (style && !namesWeight(style)) continue
 
     const candidates = fonts.filter((font) => font.family === candidateFamily)
     const sameStyle = candidates.find((font) => {

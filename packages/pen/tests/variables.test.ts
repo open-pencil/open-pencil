@@ -1,9 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { parsePenFile, type PenDocument, type PenNode } from '@open-pencil/pen'
-
-import { expectDefined } from './helpers/assert'
-
+import { expectDefined } from '@open-pencil/test-support/assert'
 const BLUE = { r: 64 / 255, g: 148 / 255, b: 208 / 255, a: 1 }
 
 function parseVariableDocument(prefix: string, children: PenNode[]) {
@@ -264,5 +262,114 @@ describe('parsePenFile — themes', () => {
     expect(modeName('outer')).toBe('dark / compact')
     expect(modeName('inner')).toBe('dark / cozy')
     expect(graph.getNode('accent')?.variableModes[id]).toBeUndefined()
+  })
+})
+
+describe('parsePenFile — independent theme axes (#1829)', () => {
+  const read = (children: PenNode[]) =>
+    parsePenFile(
+      JSON.stringify({
+        version: '2.21',
+        themes: {
+          mode: ['light', 'dark'],
+          density: ['compact', 'cozy'],
+          shape: ['round', 'square', 'pill']
+        },
+        variables: {
+          surface: {
+            type: 'color',
+            value: [
+              { value: '#FFFFFF', theme: { mode: 'light' } },
+              { value: '#000000', theme: { mode: 'dark' } }
+            ]
+          },
+          gap: {
+            type: 'number',
+            value: [
+              { value: 4, theme: { density: 'compact' } },
+              { value: 16, theme: { density: 'cozy' } }
+            ]
+          },
+          radius: { type: 'number', value: [{ value: 8, theme: { shape: 'round' } }] },
+          card: { type: 'color', value: '$surface' },
+          spacing: { type: 'number', value: '$gap' }
+        },
+        children
+      } satisfies PenDocument)
+    )
+  const collectionNamed = (graph: ReturnType<typeof read>, name: string) =>
+    expectDefined(
+      [...graph.variableCollections.values()].find((collection) => collection.name === name),
+      name
+    )
+
+  test('gives each axis no variable combines with another a collection of its own', () => {
+    const graph = read([])
+    expect(
+      [...graph.variableCollections.values()].map((collection) => [
+        collection.name,
+        collection.modes.map((mode) => mode.name)
+      ])
+    ).toEqual([
+      ['mode', ['light', 'dark']],
+      ['density', ['compact', 'cozy']],
+      ['shape', ['round', 'square', 'pill']]
+    ])
+  })
+
+  test('sets a themed layer’s mode only in the collections of the axes it names', () => {
+    const graph = read([
+      {
+        id: 'outer',
+        type: 'frame',
+        theme: { mode: 'dark' },
+        children: [
+          {
+            id: 'inner',
+            type: 'frame',
+            theme: { density: 'cozy' },
+            layout: 'vertical',
+            gap: '$gap',
+            fill: '$card',
+            children: [{ id: 'spaced', type: 'frame', layout: 'vertical', gap: '$spacing' }]
+          }
+        ]
+      }
+    ])
+    const mode = collectionNamed(graph, 'mode')
+    const density = collectionNamed(graph, 'density')
+    const modeName = (collection: typeof mode, nodeId: string) =>
+      collection.modes.find(
+        (entry) => entry.modeId === graph.getNode(nodeId)?.variableModes[collection.id]
+      )?.name
+    expect(modeName(mode, 'outer')).toBe('dark')
+    expect(graph.getNode('outer')?.variableModes[density.id]).toBeUndefined()
+    expect(modeName(density, 'inner')).toBe('cozy')
+    expect(graph.getNode('inner')?.variableModes[mode.id]).toBeUndefined()
+    // `spacing` sits with the unthemed variables, in the `mode` collection, and aliases `gap` in
+    // the `density` one, so it resolves in the cozy density the inner layer set.
+    const spacing = [...graph.variables.values()].find((variable) => variable.name === 'spacing')
+    expect(spacing?.collectionId).toBe(mode.id)
+    expect(graph.getNode('spaced')?.itemSpacing).toBe(16)
+    // The alias resolves in the dark mode the outer layer set.
+    expect(graph.getNode('inner')).toMatchObject({
+      itemSpacing: 16,
+      fills: [{ color: { r: 0, g: 0, b: 0 } }]
+    })
+  })
+
+  test('reads many independent axes without a mode for every combination', () => {
+    const themes = Object.fromEntries(
+      Array.from({ length: 12 }, (_, axis) => [`axis${axis}`, ['a', 'b', 'c']])
+    )
+    const variables = Object.fromEntries(
+      Object.keys(themes).map((axis) => [
+        axis,
+        { type: 'number' as const, value: [{ value: 1, theme: { [axis]: 'b' } }] }
+      ])
+    )
+    const graph = parsePenFile(JSON.stringify({ version: '2.21', themes, variables, children: [] }))
+    const modes = [...graph.variableCollections.values()].flatMap((collection) => collection.modes)
+    expect(modes).toHaveLength(36)
   })
 })

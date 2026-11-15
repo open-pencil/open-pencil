@@ -1,0 +1,21 @@
+[package]
+name = "open-pencil-html-engine"
+version = "0.0.0"
+description = "Lays HTML out with Blitz and captures every node's box, computed styles, and text lines."
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+# Blitz from open-pencil/blitz's `openpencil/blitz`, which carries DioxusLabs/blitz#1370 (tables on
+# Taffy's table layout) and #1279 (atomic inline baselines) until they merge upstream.
+[dependencies]
+blitz-dom = { git = "https://github.com/open-pencil/blitz", rev = "eabcebd1c4906a49fad3de54bf268d8ffba666a2", default-features = false, features = ["svg", "woff", "floats"] }
+blitz-html = { git = "https://github.com/open-pencil/blitz", rev = "eabcebd1c4906a49fad3de54bf268d8ffba666a2" }
+blitz-traits = { git = "https://github.com/open-pencil/blitz", rev = "eabcebd1c4906a49fad3de54bf268d8ffba666a2" }
+# Stylo as Blitz builds it, for computed values Blitz resolves to used ones; keep it at Blitz's version.
+style = { version = "0.24.0", package = "stylo" }
+parley = { version = "0.13", default-features = false, features = ["std"] }
+serde_json = "1"

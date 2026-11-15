@@ -2,7 +2,7 @@
 import { existsSync } from 'node:fs'
 import { parseArgs } from 'node:util'
 
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 
 import type { PixelImage } from '../image/pixel-image'
 
@@ -50,7 +50,7 @@ console.log(
 )
 
 async function loadImage(path: string): Promise<PixelImage> {
-  const ck = await initCanvasKit()
+  const ck = await getCanvasKit()
   const data = await Bun.file(path).arrayBuffer()
   const image = ck.MakeImageFromEncoded(new Uint8Array(data))
   if (!image) throw new Error(`Failed to decode ${path}`)

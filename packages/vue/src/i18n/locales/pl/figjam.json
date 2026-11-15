@@ -30,5 +30,12 @@
   "colorLightTeal": "Jasnomorski",
   "colorLightBlue": "Jasnoniebieski",
   "colorLightViolet": "Jasnofioletowy",
-  "colorLightPink": "Jasnoróżowy"
+  "colorLightPink": "Jasnoróżowy",
+  "changeColor": "Zmień kolor",
+  "lineStyle": "Styl linii",
+  "lineShape": "Kształt linii",
+  "solid": "Ciągła",
+  "thin": "Cienka",
+  "renameSection": "Zmień nazwę sekcji",
+  "addText": "Dodaj tekst"
 }

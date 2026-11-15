@@ -99,4 +99,38 @@ describe('authoring slots', () => {
     const [restored] = instanceSlotFrames(editor.graph, restoredInstance)
     expect(editor.graph.getChildren(restored.id)).toEqual([])
   })
+
+  // Variants own no properties (desktop 126): a slot made in one is its set's, which a save
+  // writes and links each variant's copy to.
+  test('a slot made in a variant is its set’s, and removing it drops its instances’ content', async () => {
+    const editor = createEditor()
+    const pageId = editor.state.currentPageId
+    const set = editor.graph.createNode('COMPONENT_SET', pageId, { name: 'Switch' })
+    const on = editor.graph.createNode('COMPONENT', set.id, { name: 'State=On' })
+    editor.graph.createNode('COMPONENT', set.id, { name: 'State=Off' })
+    const thumb = editor.graph.createNode('FRAME', on.id, { name: 'Thumb' })
+    editor.graph.createNode('TEXT', thumb.id, { name: 'Dot', text: 'Dot' })
+    const instance = editor.graph.createInstance(on.id, pageId)
+    if (!instance) throw new Error('No instance')
+
+    const id = editor.convertToSlot(thumb.id) ?? ''
+    await synced()
+    expect(editor.graph.getNode(set.id)?.componentPropertyDefinitions).toEqual([
+      expect.objectContaining({ id, name: 'Thumb', type: 'SLOT' })
+    ])
+    expect(editor.graph.getNode(on.id)?.componentPropertyDefinitions).toEqual([])
+    const [frame] = instanceSlotFrames(editor.graph, instance)
+    editor.clearSlot(frame.id)
+    expect(editor.graph.getNode(instance.id)?.componentPropertyAssignments).toEqual({ [id]: '' })
+
+    editor.removeSlot(set.id, id)
+    await synced()
+    expect(editor.graph.getNode(set.id)?.componentPropertyDefinitions).toEqual([])
+    expect(slotPropertyId(thumb)).toBeUndefined()
+    expect(editor.graph.getNode(instance.id)?.componentPropertyAssignments).toEqual({})
+
+    editor.undo.undo()
+    await synced()
+    expect(editor.graph.getNode(instance.id)?.componentPropertyAssignments).toEqual({ [id]: '' })
+  })
 })

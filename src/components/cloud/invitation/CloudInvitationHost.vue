@@ -18,6 +18,7 @@ import {
   switchCloudInvitationAccount
 } from '@/app/cloud/invitations/flow'
 import { canOfferDesktopApp } from '@/app/cloud/links'
+import { useHeldContent } from '@/components/ui/overlay/held'
 
 import CloudInvitationDialog from './CloudInvitationDialog.vue'
 
@@ -39,6 +40,11 @@ const summary = computed(() => {
   return { ...invitation, expiresIn }
 })
 
+// Dismissing clears the invitation; the dialog keeps drawing it while it animates closed.
+const shownInvitation = useHeldContent(summary, cloudInvitationOpen)
+const shownState = useHeldContent(cloudInvitationState, cloudInvitationOpen)
+const shownAccount = useHeldContent(cloudInvitationAccount, cloudInvitationOpen)
+
 // Signing in for the invitation comes back here; check it again with the new account.
 watch(cloudSignedIn, () => {
   if (cloudInvitationOpen.value) void checkCloudInvitation()
@@ -48,9 +54,9 @@ watch(cloudSignedIn, () => {
 <template>
   <CloudInvitationDialog
     :open="cloudInvitationOpen"
-    :state="cloudInvitationState"
-    :invitation="summary"
-    :account="cloudInvitationAccount"
+    :state="shownState"
+    :invitation="shownInvitation"
+    :account="shownAccount"
     :offer-desktop="canOfferDesktopApp()"
     @update:open="(open) => !open && dismissCloudInvitation()"
     @accept="acceptCloudInvitation"

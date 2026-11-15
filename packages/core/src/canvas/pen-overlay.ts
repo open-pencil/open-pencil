@@ -1,9 +1,9 @@
-import type { Canvas, Paint } from 'canvaskit-wasm'
-
+import type { Canvas, Paint } from '@open-pencil/canvaskit'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import {
   PEN_ANCHOR_RADIUS,
+  PEN_CLOSE_MIN_POINTS,
   PEN_CLOSE_RADIUS_BOOST,
   PEN_HANDLE_RADIUS,
   PEN_VERTEX_RADIUS
@@ -57,18 +57,19 @@ function buildCursorPath(
   const { vertices, dragTangent, cursorX, cursorY } = penState
   if (vertices.length === 0) return null
 
-  if (penState.pendingClose && vertices.length > 2) {
+  if (penState.pendingClose && vertices.length >= PEN_CLOSE_MIN_POINTS) {
+    // Closing preview: last -> first, leaving the last point along its own handle and arriving
+    // along the mirror of the drag at the first point.
+    const lastVertex = vertices[vertices.length - 1]
+    const out = penState.closeTangent ?? { x: 0, y: 0 }
+    const into = dragTangent ? { x: -dragTangent.x, y: -dragTangent.y } : { x: 0, y: 0 }
     const path = new r.ck.PathBuilder()
-    const last = toScreen(vertices[vertices.length - 1].x, vertices[vertices.length - 1].y)
+    const last = toScreen(lastVertex.x, lastVertex.y)
+    const cp1 = toScreen(lastVertex.x + out.x, lastVertex.y + out.y)
+    const cp2 = toScreen(vertices[0].x + into.x, vertices[0].y + into.y)
     const first = toScreen(vertices[0].x, vertices[0].y)
     path.moveTo(last.x, last.y)
-    if (dragTangent) {
-      // Closing preview: segment last -> first, active handle belongs to first vertex.
-      const cp2 = toScreen(vertices[0].x + dragTangent.x, vertices[0].y + dragTangent.y)
-      path.cubicTo(last.x, last.y, cp2.x, cp2.y, first.x, first.y)
-    } else {
-      path.lineTo(first.x, first.y)
-    }
+    path.cubicTo(cp1.x, cp1.y, cp2.x, cp2.y, first.x, first.y)
     return path.detachAndDelete()
   }
 
@@ -149,6 +150,17 @@ function drawPenTangentHandles(
     }
   }
 
+  const lastVertex = vertices.at(-1)
+  if (penState.pendingClose && penState.closeTangent && lastVertex) {
+    const s = toScreen(lastVertex.x, lastVertex.y)
+    const cp = toScreen(
+      lastVertex.x + penState.closeTangent.x,
+      lastVertex.y + penState.closeTangent.y
+    )
+    canvas.drawLine(s.x, s.y, cp.x, cp.y, handlePaint)
+    drawPenHandlePoint(canvas, cp.x, cp.y, vertexFill, handlePaint)
+  }
+
   if (dragTangent && vertices.length > 0) {
     // During closing, handles are on vertex 0; otherwise on the last vertex
     const anchor = penState.pendingClose ? vertices[0] : vertices[vertices.length - 1]
@@ -179,7 +191,7 @@ export function drawPencilOverlay(
   for (const point of rest) path.lineTo(point.x * r.zoom + r.panX, point.y * r.zoom + r.panY)
   const { color, weight } = pencilState.preview
   const paint = r.pencilStrokePaint
-  paint.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
+  paint.setColorComponents(color.r, color.g, color.b, color.a)
   paint.setStrokeWidth(weight * r.zoom)
   const stroke = path.detachAndDelete()
   canvas.drawPath(stroke, paint)

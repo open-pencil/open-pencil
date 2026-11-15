@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useClipboard } from '@vueuse/core'
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
@@ -10,6 +9,7 @@ import { codingAgentGuideURL, codingAgentSetupPrompt } from '@/app/ai/agents/set
 import { agentSetupView, type AgentSetupState } from '@/app/ai/agents/setup/view'
 import SettingsLink from '@/components/settings/layout/SettingsLink.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import AppCopyButton from '@/components/ui/button/AppCopyButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppCopyField from '@/components/ui/input/AppCopyField.vue'
 import { NODE_DOWNLOAD_URL } from '@/constants'
@@ -31,7 +31,6 @@ const emit = defineEmits<{
 const { ai, common } = useI18n()
 const styles = tv(theme)()
 const setupProblemMessage = useSetupProblemMessage()
-const { copy, copied } = useClipboard({ copiedDuring: 1500 })
 
 const detected = computed(() => setup.detected)
 const prompt = computed(() => codingAgentSetupPrompt(agent.id))
@@ -192,13 +191,13 @@ function agentState(): string {
 
   <p :class="styles.help()">{{ ai.aiSetupAgentPromptHint({ agent: agent.name }) }}</p>
   <div :class="styles.actions()">
-    <AppButton size="xs" variant="outline" @click="copy(prompt)">
-      <template #leading>
-        <icon-lucide-check v-if="copied" class="size-3" />
-        <icon-lucide-copy v-else class="size-3" />
-      </template>
-      {{ copied ? common.copied : ai.aiSetupAgentCopyPrompt }}
-    </AppButton>
+    <AppCopyButton
+      :value="prompt"
+      :label="ai.aiSetupAgentCopyPrompt"
+      :copied-label="common.copied"
+      size="xs"
+      variant="outline"
+    />
     <AppButton
       v-if="setup.supported"
       size="xs"

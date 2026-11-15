@@ -60,7 +60,7 @@ test('layout guides set from a script or the panel save and reopen in Figma’s 
     },
     { pattern: 'GRID', sectionSize: 10, visible: true, color: green }
   ]
-  expect(guidesOf(await reopen(graph))).toEqual([
+  expect<unknown>(guidesOf(await reopen(graph))).toEqual([
     {
       pattern: 'COLUMNS',
       alignment: 'STRETCH',
@@ -68,7 +68,8 @@ test('layout guides set from a script or the panel save and reopen in Figma’s 
       count: 5,
       offset: 0,
       visible: true,
-      color: red
+      color: red,
+      boundVariables: {}
     },
     {
       pattern: 'ROWS',
@@ -78,7 +79,8 @@ test('layout guides set from a script or the panel save and reopen in Figma’s 
       sectionSize: 40,
       offset: 4,
       visible: false,
-      color: blue
+      color: blue,
+      boundVariables: {}
     },
     {
       pattern: 'COLUMNS',
@@ -88,9 +90,10 @@ test('layout guides set from a script or the panel save and reopen in Figma’s 
       sectionSize: 40,
       offset: 0,
       visible: true,
-      color: green
+      color: green,
+      boundVariables: {}
     },
-    { pattern: 'GRID', sectionSize: 10, visible: true, color: green }
+    { pattern: 'GRID', sectionSize: 10, visible: true, color: green, boundVariables: {} }
   ])
 })
 
@@ -117,7 +120,7 @@ test('a grid saved without a size is Figma’s 10 px one', async () => {
     name: 'Guides',
     layoutGrids: [{ pattern: 'GRID', color: blue }]
   })
-  expect(guidesOf(await reopen(graph))).toEqual([
-    { pattern: 'GRID', sectionSize: 10, visible: true, color: blue }
+  expect<unknown>(guidesOf(await reopen(graph))).toEqual([
+    { pattern: 'GRID', sectionSize: 10, visible: true, color: blue, boundVariables: {} }
   ])
 })

@@ -2,9 +2,7 @@
 import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
-import { openExternalLink } from '@/app/shell/ui'
 import type { ComponentUI } from '@/components/ui/types'
-import { IS_TAURI } from '@/constants'
 import linkTheme from '@/theme/link'
 
 const { href, ui } = defineProps<{
@@ -20,16 +18,12 @@ const styles = computed(() => {
   }
 })
 
-/** Desktop WebViews cannot open external pages themselves, so route them to the system browser. */
-function navigate(event: MouseEvent) {
-  if (!IS_TAURI) return
-  event.preventDefault()
-  void openExternalLink(href)
-}
+// On the desktop the shell opens the link in the system browser, as it does every link that opens
+// a new tab (`useExternalLinks`).
 </script>
 
 <template>
-  <a :href="href" target="_blank" rel="noopener noreferrer" :class="styles.base" @click="navigate">
+  <a :href="href" target="_blank" rel="noopener noreferrer" :class="styles.base">
     <slot />
     <icon-lucide-external-link :class="styles.icon" aria-hidden="true" />
   </a>

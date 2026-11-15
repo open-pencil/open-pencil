@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
+import { Window } from 'happy-dom'
+
+import { asDouble } from '@open-pencil/test-support/doubles'
+
 import {
   commentFormatForKey,
   commentPreview,
@@ -30,17 +34,26 @@ function continued(marked: string): string {
 
 describe('comment formatting', () => {
   test('maps Figma’s shortcuts', () => {
-    const key = (code: string, shiftKey = false) =>
-      commentFormatForKey({ code, shiftKey, altKey: false, mod: true })
-    expect([key('KeyB'), key('KeyI'), key('KeyK')]).toEqual(['bold', 'italic', 'link'])
-    expect([key('KeyX', true), key('Digit7', true), key('Digit8', true)]).toEqual([
+    const { KeyboardEvent } = new Window()
+    const format = (code: string, key: string, init: { shiftKey?: boolean; metaKey?: boolean }) =>
+      commentFormatForKey(
+        asDouble<globalThis.KeyboardEvent>(new KeyboardEvent('keydown', { code, key, ...init })),
+        'mac'
+      )
+    const mod = (code: string, key: string) => format(code, key, { metaKey: true })
+    const modShift = (code: string, key: string) =>
+      format(code, key, { metaKey: true, shiftKey: true })
+    expect([mod('KeyB', 'b'), mod('KeyI', 'i'), mod('KeyK', 'k')]).toEqual([
+      'bold',
+      'italic',
+      'link'
+    ])
+    expect([modShift('KeyX', 'x'), modShift('Digit7', '&'), modShift('Digit8', '*')]).toEqual([
       'strikethrough',
       'numbered',
       'bulleted'
     ])
-    expect(commentFormatForKey({ code: 'KeyB', shiftKey: false, altKey: false, mod: false })).toBe(
-      null
-    )
+    expect(format('KeyB', 'b', {})).toBe(null)
   })
 
   test('wraps the selection and unwraps it again', () => {

@@ -1,7 +1,5 @@
-import { tv } from 'tailwind-variants'
-
 /** The icon colour of a problem's severity, shared by the design check and property limits. */
-export const severityIcon = tv({
+export default {
   base: 'size-3 shrink-0',
   variants: {
     severity: {
@@ -10,4 +8,4 @@ export const severityIcon = tv({
       info: 'text-muted'
     }
   }
-})
+} as const

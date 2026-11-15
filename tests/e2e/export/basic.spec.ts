@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises'
+
 import { test, expect, type Page } from '@playwright/test'
 
 import type { ExportSetting } from '@open-pencil/scene-graph'
@@ -14,7 +16,7 @@ test.describe.configure({ mode: 'serial' })
 test.beforeAll(async ({ browser }) => {
   page = await browser.newPage()
   await page.setViewportSize({ width: 1440, height: 1100 })
-  await page.goto('/')
+  await page.goto('/?test')
   canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   await canvas.clearCanvas()
@@ -111,7 +113,7 @@ test('format selector changes to JPG', async () => {
   await expect(formatTrigger).toHaveAttribute('aria-label', 'Export format')
   await formatTrigger.click()
 
-  for (const label of ['PNG', 'JPG', 'WEBP', 'SVG', 'PDF', 'PPTX']) {
+  for (const label of ['PNG', 'JPG', 'WEBP', 'SVG', 'PDF', 'PPTX', 'draw.io']) {
     await expect(page.locator('[role="option"]').filter({ hasText: label })).toBeVisible()
   }
 
@@ -227,6 +229,28 @@ test('a PPTX export setting downloads a PowerPoint file', async () => {
   await expect(exportItems().first().getByRole('textbox', { name: 'Export scale' })).toHaveCount(0)
   const [download] = await Promise.all([page.waitForEvent('download'), exportButton().click()])
   expect(download.suggestedFilename()).toBe('Export rect 1.pptx')
+  canvas.assertNoErrors()
+})
+
+test('a PDF export setting downloads a PDF the canvas renderer drew', async () => {
+  await createExportableRect([{ scale: 1, format: 'pdf' }])
+  await forceBlobDownload()
+
+  const [download] = await Promise.all([page.waitForEvent('download'), exportButton().click()])
+  expect(download.suggestedFilename()).toBe('Export rect 1.pdf')
+  const pdf = new TextDecoder('latin1').decode(await readFile(await download.path()))
+  expect(pdf.startsWith('%PDF-')).toBe(true)
+  expect(pdf).toContain('/Creator (OpenPencil)')
+  canvas.assertNoErrors()
+})
+
+test('a draw.io export setting downloads a draw.io file', async () => {
+  await createExportableRect([{ scale: 1, format: 'drawio' }])
+  await forceBlobDownload()
+
+  await expect(exportItems().first().getByRole('textbox', { name: 'Export scale' })).toHaveCount(0)
+  const [download] = await Promise.all([page.waitForEvent('download'), exportButton().click()])
+  expect(download.suggestedFilename()).toBe('Export rect 1.drawio')
   canvas.assertNoErrors()
 })
 

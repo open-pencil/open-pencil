@@ -5,6 +5,7 @@ import { MCP_INSTALL_COMMAND } from '@/app/automation/mcp/failure'
 import { detectUserAgent } from '@/app/tauri/command'
 
 import { type AgentAccount } from './accounts'
+import { agentInstallCommand } from './companions'
 import { type DetectedAgent, type DiscoveryError } from './discovery'
 
 /** What setup knows about one coding agent and the MCP server it needs. */
@@ -216,14 +217,18 @@ function adapterMismatch(agent: ACPAgentDef, setup: AgentSetupState): boolean {
 }
 
 /** The agent's install command to run by hand, or null where one click installs its adapter. */
-function manualAgentCommand(agent: ACPAgentDef, setup: AgentSetupState): string | null {
-  if (!agent.installCommand || setup.detected?.status === 'available') return null
+function manualAgentCommand(
+  agent: ACPAgentDef,
+  setup: AgentSetupState,
+  userAgent: string = detectUserAgent()
+): string | null {
+  const windows = userAgent.includes('Windows')
+  const command = agentInstallCommand(agent, windows)
+  if (!command || setup.detected?.status === 'available') return null
   const admin = setup.adapterNeedsAdmin === true
   const oneClick = setup.supported && setup.npm && !admin && setup.error !== 'install'
   if (oneClick && agent.adapterPackage) return null
-  return admin && !detectUserAgent().includes('Windows')
-    ? `sudo ${agent.installCommand}`
-    : agent.installCommand
+  return admin && !windows ? `sudo ${command}` : command
 }
 
 /** The MCP server's install command to run by hand, or null where one click installs it. */
@@ -235,7 +240,11 @@ function manualBridgeCommand(setup: AgentSetupState, bridge: CompanionCheck): st
   return bridge.ready || oneClick ? null : setup.bridgeCommand
 }
 
-export function agentSetupView(agent: ACPAgentDef, setup: AgentSetupState): AgentSetupView {
+export function agentSetupView(
+  agent: ACPAgentDef,
+  setup: AgentSetupState,
+  userAgent: string = detectUserAgent()
+): AgentSetupView {
   const bridgeAdmin = setup.bridgeNeedsAdmin === true
   const adapterAdmin = setup.adapterNeedsAdmin === true
   const bridgeInstallable = oneClickInstallable(setup.bridgeInstallable, setup.npm, bridgeAdmin)
@@ -258,8 +267,8 @@ export function agentSetupView(agent: ACPAgentDef, setup: AgentSetupState): Agen
     busy: setup.installingAgent || setup.installingBridge,
     problem: setupProblem(setup.error, needsNpm, ['install', 'canvas-install'], needsAdmin),
     manualAgentCommand: mismatch
-      ? (agent.installCommand ?? null)
-      : manualAgentCommand(agent, setup),
+      ? agentInstallCommand(agent, userAgent.includes('Windows'))
+      : manualAgentCommand(agent, setup, userAgent),
     manualBridgeCommand: manualBridgeCommand(setup, bridge),
     account: accountView(setup, mismatch),
     adapterMismatch: mismatch

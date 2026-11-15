@@ -16,17 +16,24 @@ export type StoragePersistenceDependencies = {
 export type PersistStorageCanvasOptions = StorageLocation & {
   canvasId: string
   name: string
-  figBytes: Uint8Array
+  /** The `.fig`; a save hands over a Blob, which is stored without being read whole. */
+  figBytes: Uint8Array | Blob
 }
 
 /** The preview a `.fig` carries, read in place. */
-function figThumbnail(figBytes: Uint8Array): Promise<Uint8Array | null> {
-  return extractFigThumbnailFromReader({
-    size: figBytes.byteLength,
-    async read(start, endExclusive) {
-      return figBytes.subarray(start, endExclusive)
-    }
-  })
+function figThumbnail(fig: Uint8Array | Blob): Promise<Uint8Array | null> {
+  return extractFigThumbnailFromReader(
+    fig instanceof Blob
+      ? {
+          size: fig.size,
+          read: async (start, endExclusive) =>
+            new Uint8Array(await fig.slice(start, endExclusive).arrayBuffer())
+        }
+      : {
+          size: fig.byteLength,
+          read: async (start, endExclusive) => fig.subarray(start, endExclusive)
+        }
+  )
 }
 
 /** Write locally before scheduling remote synchronization. */

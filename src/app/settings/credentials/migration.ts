@@ -23,6 +23,7 @@ export function providerCredentialRef(
 
 export const PEXELS_CREDENTIAL = credentialRef('pexels', 'api-key')
 export const UNSPLASH_CREDENTIAL = credentialRef('unsplash', 'access-key')
+export const EXA_CREDENTIAL = credentialRef('exa', 'api-key')
 
 type LegacyCredential = {
   storageKey: string

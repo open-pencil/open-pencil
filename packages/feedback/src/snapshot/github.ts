@@ -4,6 +4,8 @@ import type { CalendarDate } from '@internationalized/date'
 import { groupBy, sumBy } from 'es-toolkit'
 import * as v from 'valibot'
 
+import { appendAll } from '@open-pencil/scene-graph/arrays'
+
 import { releaseFileKind } from './assets'
 
 const API = 'https://api.github.com'
@@ -99,7 +101,7 @@ export function githubClient(
     const all: v.InferOutput<typeof releasesSchema> = []
     for (let page = 1; ; page++) {
       const batch = await get(`/releases?per_page=${PER_PAGE}&page=${page}`, releasesSchema)
-      all.push(...batch)
+      appendAll(all, batch)
       if (batch.length < PER_PAGE) return all
     }
   }

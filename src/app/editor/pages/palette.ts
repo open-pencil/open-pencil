@@ -45,7 +45,7 @@ export function usePagePaletteGroup() {
 
   return computed<CommandPaletteGroup | null>(() => {
     const tab = activeTab.value
-    if (!tab || tab.kind === 'home') return null
+    if (tab?.kind !== 'document') return null
     const store = tab.store
     // Pages and their names change with the scene.
     void store.state.sceneVersion

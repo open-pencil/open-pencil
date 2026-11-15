@@ -26,6 +26,7 @@ export function useBlendModeGroups(includePassThrough = false) {
       options: [
         { value: 'DARKEN', label: panels.value.blendModeDarken },
         { value: 'MULTIPLY', label: panels.value.blendModeMultiply },
+        { value: 'LINEAR_BURN', label: panels.value.blendModeLinearBurn },
         { value: 'COLOR_BURN', label: panels.value.blendModeColorBurn }
       ]
     },
@@ -33,6 +34,7 @@ export function useBlendModeGroups(includePassThrough = false) {
       options: [
         { value: 'LIGHTEN', label: panels.value.blendModeLighten },
         { value: 'SCREEN', label: panels.value.blendModeScreen },
+        { value: 'LINEAR_DODGE', label: panels.value.blendModeLinearDodge },
         { value: 'COLOR_DODGE', label: panels.value.blendModeColorDodge }
       ]
     },

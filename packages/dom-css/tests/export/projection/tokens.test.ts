@@ -32,11 +32,23 @@ describe('token references in design-to-code', () => {
     expect(attrs).not.toHaveProperty('data-theme')
   })
 
-  test('keeps the literal value where the node no longer draws the token', () => {
+  test('writes the colour a bound paint stores, as the canvas draws it', () => {
+    // A bound paint edited since its variable last gave it a colour draws its own colour, as in
+    // Figma, so only a paint showing its variable's colour writes the token.
     const graph = designSystem()
-    const frame = card(graph, graph.getPages()[0].id, BLUE_300)
+    const page = graph.getPages()[0].id
+    const edited = card(graph, page, BLUE_300)
+    const current = card(graph, page, BLUE_500)
 
-    expect(element(graph, frame.id).inlineStyle?.['background-color']).toBe('#94C4FC')
+    expect(element(graph, current.id).inlineStyle?.['background-color']).toBe(
+      'var(--color-primary)'
+    )
+    expect(element(graph, edited.id).inlineStyle?.['background-color']).toBe(
+      element(graph, edited.id, false).inlineStyle?.['background-color']
+    )
+    expect(element(graph, edited.id, false).inlineStyle?.['background-color']).not.toBe(
+      element(graph, current.id, false).inlineStyle?.['background-color']
+    )
   })
 
   test('keeps a length literal when the token is unitless', () => {
@@ -87,10 +99,11 @@ describe('token references in design-to-code', () => {
     expect(child(projected, 1).inlineStyle?.['background-color']).toBe('#94C4FC')
   })
 
-  test('starts an exported node in the modes the editor is showing', () => {
+  test('starts an exported node in the modes its page sets', () => {
     const graph = designSystem()
-    graph.setActiveMode('theme', 'dark')
-    const frame = card(graph, graph.getPages()[0].id, BLUE_300)
+    const page = graph.getPages()[0].id
+    graph.updateNode(page, { variableModes: { theme: 'dark' } })
+    const frame = card(graph, page, BLUE_300)
 
     const projected = element(graph, frame.id)
 
@@ -106,5 +119,49 @@ describe('token references in design-to-code', () => {
       'background-color': '#3B82F5',
       padding: '24px'
     })
+  })
+})
+
+describe('token references in effects', () => {
+  const shadow = (offsetY: number) => ({
+    type: 'DROP_SHADOW' as const,
+    color: BLUE_500,
+    offset: { x: 0, y: offsetY },
+    radius: 8,
+    spread: 0,
+    visible: true
+  })
+
+  test('write a bound shadow’s colour and length as tokens', () => {
+    const graph = designSystem()
+    const frame = card(graph, graph.getPages()[0].id, BLUE_500, { effects: [shadow(24)] })
+    graph.bindVariable(frame.id, 'effects/0/offsetY', 'gutter')
+    graph.bindVariable(frame.id, 'effects/0/color', 'primary')
+
+    // A shadow's blur length is twice the sigma the canvas blurs radius 8 by.
+    expect(element(graph, frame.id).inlineStyle?.['box-shadow']).toBe(
+      '0px var(--spacing-gutter) 6.88px 0px var(--color-primary)'
+    )
+  })
+
+  test('write a bound blur radius as a token', () => {
+    const graph = designSystem()
+    const frame = card(graph, graph.getPages()[0].id, BLUE_500, {
+      effects: [{ ...shadow(0), type: 'LAYER_BLUR' as const, radius: 24 }]
+    })
+    graph.bindVariable(frame.id, 'effects/0/radius', 'gutter')
+
+    // The token holds the Figma radius; `blur()` takes the sigma the canvas draws it with.
+    expect(element(graph, frame.id).inlineStyle?.filter).toBe(
+      'blur(calc(var(--spacing-gutter) * 0.43))'
+    )
+  })
+
+  test('keep the literal where the shadow draws another value, as a scaled instance does', () => {
+    const graph = designSystem()
+    const frame = card(graph, graph.getPages()[0].id, BLUE_500, { effects: [shadow(48)] })
+    graph.updateNode(frame.id, { boundVariables: { 'effects/0/offsetY': 'gutter' } })
+
+    expect(element(graph, frame.id).inlineStyle?.['box-shadow']).toBe('0px 48px 6.88px 0px #3B82F5')
   })
 })

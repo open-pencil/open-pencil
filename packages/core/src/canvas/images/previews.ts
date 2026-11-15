@@ -55,6 +55,7 @@ interface PreviewEntry {
 }
 interface PreviewJob {
   key: string
+  hash: string
   source: Uint8Array
   edge: number
 }
@@ -71,7 +72,8 @@ export class ImagePreviewCache {
   private generation = 0
 
   constructor(
-    private readonly ready: () => void,
+    /** Called with the image's hash once one of its previews has decoded. */
+    private readonly ready: (hash: string) => void,
     maxBytes = PREVIEW_CACHE_BYTES
   ) {
     this.entries = new ResourceCache({
@@ -129,7 +131,7 @@ export class ImagePreviewCache {
     const existing = this.entries.peek(key)
     if (existing && existing.source !== source) this.entries.delete(key)
     if (!this.entries.has(key) && !this.pending.has(key) && this.pending.size < MAX_PENDING) {
-      const job = { key, source, edge }
+      const job = { key, hash, source, edge }
       this.pending.set(key, job)
       this.queue.push(job)
       this.drain()
@@ -172,7 +174,7 @@ export class ImagePreviewCache {
           // Remember oversized results as failures instead of decoding them on every repaint.
           this.entries.set(job.key, { source: job.source })
         }
-        if (preview) this.ready()
+        if (preview) this.ready(job.hash)
       }
     } finally {
       this.workers--

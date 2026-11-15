@@ -1,17 +1,33 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { compositeOver } from '@open-pencil/scene-graph/color'
+import { figJamSectionTitleColors } from '@open-pencil/scene-graph/figjam'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
-import { createSceneGeometry, type RotationPreview } from '#core/geometry'
+import type { RotationPreview, SceneGeometry } from '#core/geometry'
 
 import { canvasLabelForeground } from './color'
 import type { LabelHitOptions } from './hit-test'
 import type { LabelLayout, LabelTextMetrics } from './layout'
 import { frameLabelPlacement } from './transform'
 
+/** FigJam's title pill takes a darker edge of its own colour. */
+const FIGJAM_TITLE_EDGE = 0.2
+
 export function sectionLabelColors(r: SkiaRenderer, graph: SceneGraph, node: SceneNode) {
+  const figJam = r.sectionTitles === 'outline' ? figJamSectionTitleColors(node) : null
+  if (figJam) {
+    const text = figJam.lightText ? 1 : 0
+    const outline = node.strokes[figJam.strokeIndex]
+    return {
+      // The outline's colour as drawn, in the canvas's colour space; the pill itself is opaque.
+      background: { ...r.resolveStrokeColor(outline, figJam.strokeIndex, node, graph), a: 1 },
+      border: r.ck.Color4f(0, 0, 0, FIGJAM_TITLE_EDGE),
+      hover: r.ck.Color4f(text, text, text, 0.08),
+      foreground: r.ck.Color4f(text, text, text, 1)
+    }
+  }
   const background: Color =
     node.fills.length > 0 && node.fills[0].visible
       ? r.resolveFillColor(node.fills[0], 0, node, graph)
@@ -52,11 +68,7 @@ function frameTitlePoint(
   }
 }
 
-function sectionContains(
-  geometry: ReturnType<typeof createSceneGeometry>,
-  section: SceneNode,
-  point: Vector
-): boolean {
+function sectionContains(geometry: SceneGeometry, section: SceneNode, point: Vector): boolean {
   const inverse = Matrix.invert(geometry.worldMatrix(section))
   if (!inverse) return false
   const local = Matrix.mapPoint(inverse, point)
@@ -76,7 +88,7 @@ function frameTitleBackground(
   preview?: RotationPreview | null
 ): Color {
   const point = frameTitlePoint(r, graph, node, layout, preview)
-  const geometry = createSceneGeometry(graph, preview)
+  const geometry = r.sceneGeometry(graph, preview)
   const sections: SceneNode[] = []
   for (
     let ancestor = node.parentId ? graph.getNode(node.parentId) : undefined;

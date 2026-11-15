@@ -38,12 +38,18 @@ Durchgestrichen ist über **S** im Bereich Typografie verfügbar. Die Formatieru
 
 Die Schriftauswahl unterstützt Suche, Vorschau, virtuelles Scrollen und das Anspringen der aktuellen Schrift.
 
+## Variable Schriften
+
+Ist die Schrift variabel, etwa Inter, zeigt der Bereich Typografie ihre Achsen (Stärke, optische Größe, Breite und weitere) mit dem Wert, in dem sie gezeichnet werden. Ein eingegebener oder gezogener Wert setzt die Achse; eine neue Stärke, Neigung oder Familie setzt die Achsen auf die des Schnitts zurück. Die optische Größe zeigt **Automatisch**, solange sie der Schriftgröße folgt; ein Wert oder **Fest** in ihrem Menü hält sie, **Automatisch** lässt sie wieder folgen.
+
 ## Schriftquellen
 
 - Inter wird automatisch geladen.
 - Die Desktop-App verwendet Systemschriften und aktivierte Kataloge von Google Fonts, Fontsource, Bunny Fonts und Fontshare.
 - Chrome und Edge können Systemschriften im Browser verwenden.
 - Heruntergeladene Schriftschnitte werden lokal gespeichert.
+
+Zugriff auf Systemschriften und Online-Anbieter verwaltest du unter **Einstellungen › Schriften**, die das Zahnrad neben der Schriftfamilie öffnet; in der Desktop-App verwaltet die Seite auch heruntergeladene Schriften und Fallback-Pakete.
 
 ## Fehlende Schriften
 

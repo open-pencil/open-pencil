@@ -2,6 +2,7 @@ import { sha1 } from '@noble/hashes/legacy.js'
 import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils.js'
 
 import { TRANSPARENT } from '../constants'
+import { imagePaintHashes } from '../images'
 import { readAllPluginData, withAllPluginData } from '../plugin-data/field'
 import { OPEN_PENCIL_PLUGIN_DATA } from '../plugin-data/fields'
 import { randomHex } from '../random'
@@ -43,9 +44,7 @@ export function withShaderPaints(
   paints: readonly Fill[],
   shaders: readonly ShaderPaint[] = []
 ): SceneNode['pluginData'] {
-  const shown = new Set(
-    paints.flatMap((paint) => (paint.type === 'IMAGE' && paint.imageHash ? [paint.imageHash] : []))
-  )
+  const shown = new Set(imagePaintHashes(paints))
   const byImage = new Map(readShaderPaints(node).map((shader) => [shader.image, shader]))
   for (const shader of shaders) byImage.set(shader.image, shader)
   return withAllPluginData(

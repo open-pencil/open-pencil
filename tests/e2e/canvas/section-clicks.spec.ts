@@ -40,3 +40,53 @@ test('a right-click selects the frame or section whose empty area is under it', 
     await page.keyboard.press('Escape')
   }
 })
+
+test('a swatch reached by double-clicks, then clicks on other rows and sections, as in Figma', async () => {
+  const ids = await scene.buildSwatchRows()
+  await canvas.waitForRender()
+  const swatch = await scene.center(ids.lightSwatch)
+  const other = await scene.center(ids.lightRowTwoSwatch)
+  const dark = await scene.center(ids.darkSwatch)
+
+  // A click from nothing selects the row, the direct child of the section's top-level frame.
+  await canvas.click(swatch.x, swatch.y)
+  await expect.poll(() => scene.selection()).toEqual(['Light Row 1'])
+  await canvas.dblclick(swatch.x, swatch.y)
+  await expect.poll(() => scene.selection()).toEqual(['Card 2'])
+  await canvas.dblclick(swatch.x, swatch.y)
+  await expect.poll(() => scene.selection()).toEqual(['Light Row 1 Card 2'])
+  expect(await scene.entered()).toBe('Card 2')
+
+  // A swatch in another row selects that row, however deep the selection was.
+  await canvas.click(other.x, other.y)
+  await expect.poll(() => scene.selection()).toEqual(['Light Row 2'])
+  expect(await scene.entered()).toBeNull()
+  // A swatch in another section selects its row.
+  await canvas.click(dark.x, dark.y)
+  await expect.poll(() => scene.selection()).toEqual(['Dark Row 2'])
+  await canvas.dblclick(dark.x, dark.y)
+  await canvas.dblclick(dark.x, dark.y)
+  await expect.poll(() => scene.selection()).toEqual(['Dark Row 2 Card 1'])
+
+  // The page between the sections deselects and leaves every entered container.
+  await canvas.click(swatch.x, 330)
+  await expect.poll(() => scene.selection()).toEqual([])
+  expect(await scene.entered()).toBeNull()
+  canvas.assertNoErrors()
+})
+
+test('a section’s empty area deselects a selection and is selected only from nothing', async () => {
+  const ids = await scene.buildSwatchRows()
+  await canvas.waitForRender()
+  const swatch = await scene.center(ids.lightSwatch)
+  await canvas.click(swatch.x, swatch.y)
+  await canvas.dblclick(swatch.x, swatch.y)
+  await expect.poll(() => scene.selection()).toEqual(['Card 2'])
+
+  // The section's padding below its rows.
+  await canvas.click(70, 300)
+  await expect.poll(() => scene.selection()).toEqual([])
+  await canvas.click(70, 300)
+  await expect.poll(() => scene.selection()).toEqual(['Light'])
+  canvas.assertNoErrors()
+})

@@ -1,6 +1,8 @@
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
+import { booleanStrokeAlignmentDriver } from '#tests/helpers/canvas/boolean/driver'
 
 const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
+const strokeAlignment = booleanStrokeAlignmentDriver(() => editor.page)
 
 async function expectCanvas(name: string) {
   editor.canvas.assertNoErrors()
@@ -63,4 +65,10 @@ test('boolean operations', async () => {
   })
   await editor.canvas.waitForRender()
   await expectCanvas('boolean-operations')
+})
+
+test('boolean operation strokes keep their alignment and corner radius', async () => {
+  await strokeAlignment.show()
+  await editor.canvas.waitForRender()
+  await expectCanvas('boolean-stroke-alignment')
 })

@@ -1,4 +1,5 @@
 import type { CloudDatabase } from '#cloud/server/db'
+import { reportCloudError, type CloudErrorReporter } from '#cloud/server/errors'
 import type { ObjectStore } from '#cloud/server/objects'
 import { createStorageQuotaService } from '#cloud/server/quota'
 import type { Kysely } from 'kysely'
@@ -27,7 +28,9 @@ type ClaimedUpload = {
 
 export function createUploadCleanupService(
   database: Kysely<CloudDatabase>,
-  objects: ObjectStore
+  objects: ObjectStore,
+  /** Where each upload cleanup couldn't remove is reported; a pass carries on with the rest. */
+  reportError?: CloudErrorReporter
 ): UploadCleanupService {
   const quota = createStorageQuotaService(database)
   return {
@@ -96,8 +99,11 @@ export function createUploadCleanupService(
             await quota.release(upload.id)
             cleaned++
           }
-        } catch {
+        } catch (error) {
           failed++
+          await reportCloudError(reportError, `Cleaning up upload ${upload.id} failed`, error, {
+            source: 'cleanup'
+          })
           await database
             .updateTable('upload')
             .set({

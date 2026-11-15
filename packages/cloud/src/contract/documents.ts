@@ -13,6 +13,14 @@ export function isCloudChecksum(value: string): boolean {
 export const CLOUD_MAX_DOCUMENT_IMAGES = 10_000
 
 /**
+ * The most a Cloud API request body may hold; a server refuses anything past it before reading
+ * it. Files go to the object store, never through the API, so only lists grow large: a save's
+ * images fit with room to spare, and a client commits image uploads, whose part lists can run
+ * long, in batches under half of it.
+ */
+export const CLOUD_API_MAX_BODY_BYTES = 8 * 1024 * 1024
+
+/**
  * An image's name inside a `.fig` file that Cloud stores apart from it: the SHA-1 Figma names it
  * by, or an older plain name. A client leaves images under other names inside the file.
  */
@@ -62,10 +70,16 @@ export const documentAccessSchema = v.object({
 })
 export type DocumentAccess = v.InferOutput<typeof documentAccessSchema>
 
+/** What a document is: a Figma design or a FigJam board, which the file it stores says too. */
+export const documentKindSchema = v.picklist(['design', 'board'])
+export type CloudDocumentKind = v.InferOutput<typeof documentKindSchema>
+
 export const documentSummarySchema = v.object({
   id: v.pipe(v.string(), v.uuid()),
   workspaceId: v.pipe(v.string(), v.uuid()),
   name: v.string(),
+  /** A design unless said otherwise; servers from before boards list no kind. */
+  kind: v.optional(documentKindSchema, 'design'),
   currentRevisionId: v.nullable(v.pipe(v.string(), v.uuid())),
   version: v.number(),
   createdAt: v.string(),
@@ -82,6 +96,25 @@ export const sharedDocumentSchema = v.object({
   sharedAt: v.string()
 })
 export type SharedDocument = v.InferOutput<typeof sharedDocumentSchema>
+
+/**
+ * A document in Trash the person may restore: who deleted it and when, and when it goes for good.
+ * `canPurge` says whether they may also delete it for good before then.
+ */
+export const trashedDocumentSchema = v.object({
+  id: v.pipe(v.string(), v.uuid()),
+  workspaceId: v.pipe(v.string(), v.uuid()),
+  workspaceName: v.string(),
+  name: v.string(),
+  kind: v.optional(documentKindSchema, 'design'),
+  deletedAt: v.string(),
+  deletedBy: v.nullable(v.object({ name: v.string() })),
+  purgeAt: v.string(),
+  canPurge: v.boolean()
+})
+export type TrashedDocument = v.InferOutput<typeof trashedDocumentSchema>
+
+export const trashSchema = v.object({ documents: v.array(trashedDocumentSchema) })
 
 export const documentDownloadSchema = v.object({
   document: documentSummarySchema,
@@ -112,11 +145,17 @@ export const workspaceUsageSchema = v.object({
 })
 export type WorkspaceUsage = v.InferOutput<typeof workspaceUsageSchema>
 
+export const CLOUD_DOCUMENT_NAME_MAX_LENGTH = 255
+
 export const createDocumentSchema = v.object({
   id: v.optional(v.pipe(v.string(), v.uuid())),
-  name: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(255))
+  name: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(CLOUD_DOCUMENT_NAME_MAX_LENGTH)),
+  /** A design unless said otherwise; older clients create only designs. */
+  kind: v.optional(documentKindSchema, 'design')
 })
 export type CreateDocumentInput = v.InferOutput<typeof createDocumentSchema>
+/** A new document as a client sends it, which may leave out its kind to make a design. */
+export type CreateDocumentRequest = v.InferInput<typeof createDocumentSchema>
 
 export const createUploadSchema = v.object({
   baseRevisionId: v.nullable(v.pipe(v.string(), v.uuid())),
@@ -189,6 +228,10 @@ export const completedUploadPartSchema = v.object({
 
 export const commitUploadSchema = v.object({
   checksum: checksumSchema,
+  /** The document title captured with this revision; omitted by older clients. */
+  name: v.optional(createDocumentSchema.entries.name),
+  /** What the uploaded file is, which the document takes; omitted by older clients. */
+  kind: v.optional(documentKindSchema),
   multipart: v.optional(
     v.object({
       uploadId: v.pipe(v.string(), v.minLength(1)),

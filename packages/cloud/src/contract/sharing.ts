@@ -53,7 +53,10 @@ export function parseRequestSharedImageLinks(input: unknown): RequestSharedImage
 
 export const resolvedDocumentShareSchema = v.object({
   documentId: v.pipe(v.string(), v.uuid()),
+  /** What this person may do; a guest on an edit link may only view where guests may not edit. */
   permission: documentPermissionSchema,
+  /** What the link lets someone signed in to the server do. */
+  linkPermission: documentPermissionSchema,
   principal: collaborationPrincipalSchema,
   roomEpoch: v.pipe(v.number(), v.integer(), v.minValue(0))
 })
@@ -88,11 +91,6 @@ export const acceptedInvitationSchema = v.variant('kind', [
   })
 ])
 export type AcceptedInvitation = v.InferOutput<typeof acceptedInvitationSchema>
-
-export const lookupCloudUserSchema = v.object({
-  email: v.pipe(v.string(), v.trim(), v.toLowerCase(), v.email())
-})
-export type LookupCloudUserInput = v.InferOutput<typeof lookupCloudUserSchema>
 
 export const putDocumentGrantSchema = v.object({ permission: documentPermissionSchema })
 export type PutDocumentGrantInput = v.InferOutput<typeof putDocumentGrantSchema>
@@ -160,10 +158,6 @@ export function parseCreateInvitationContinuation(
   input: unknown
 ): CreateInvitationContinuationInput {
   return v.parse(createInvitationContinuationSchema, input)
-}
-
-export function parseLookupCloudUser(input: unknown): LookupCloudUserInput {
-  return v.parse(lookupCloudUserSchema, input)
 }
 
 export function parseCreateDocumentShare(input: unknown): CreateDocumentShareInput {

@@ -2,11 +2,10 @@ import { afterEach, describe, expect, mock, spyOn, test } from 'bun:test'
 
 import * as v from 'valibot'
 
+import { fetchStub } from '@open-pencil/test-support/fetch'
+
 import * as cache from '@/app/cache'
 import { cachedRemoteJSON } from '@/app/cache/remote'
-
-import { fetchStub } from '#tests/helpers/fetch'
-
 const namesSchema = v.array(v.string())
 
 function remoteNames(load: (fetcher: typeof fetch) => Promise<string[] | null>) {

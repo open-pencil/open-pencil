@@ -1,3 +1,6 @@
+import { getCurrentWindow } from '@tauri-apps/api/window'
+import { relaunch } from '@tauri-apps/plugin-process'
+import { check } from '@tauri-apps/plugin-updater'
 import type { DownloadEvent } from '@tauri-apps/plugin-updater'
 import { shallowRef, type ShallowRef } from 'vue'
 
@@ -241,16 +244,13 @@ function errorMessage(error: unknown): string {
 export function createTauriUpdaterBackend(): UpdaterBackend {
   return {
     async check() {
-      const { check } = await import('@tauri-apps/plugin-updater')
       return check()
     },
     confirmRestart: requestRestartApproval,
     async relaunch() {
-      const { relaunch } = await import('@tauri-apps/plugin-process')
       await relaunch()
     },
     async closeWindow() {
-      const { getCurrentWindow } = await import('@tauri-apps/api/window')
       await getCurrentWindow().close()
     },
     installQuitsApp: navigator.userAgent.includes('Windows')

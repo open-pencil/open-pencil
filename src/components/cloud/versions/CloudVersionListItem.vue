@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import CommentTime from '@/components/comments/CommentTime.vue'
-import { cloudVersions } from '@/theme/cloud/versions'
+
+import { cloudVersions } from './ui'
 
 /**
  * An entry on the history's timeline. A named version shows a ring, an autosave a dot, as in

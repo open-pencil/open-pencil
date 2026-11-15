@@ -1,35 +1,71 @@
 import { requireTrustedMutationOrigin } from '#cloud/admin/api/security'
 import type { AdminAuditService } from '#cloud/admin/audit/service'
+import type { AdminDocumentService } from '#cloud/admin/documents/service'
 import type { AdminEmailService } from '#cloud/admin/email/service'
 import type { EnrollmentService } from '#cloud/admin/enrollment/service'
 import { adminErrorStatus, AdminDomainError } from '#cloud/admin/errors'
 import type { AdminOperationsService } from '#cloud/admin/operations/service'
+import type { AdminReportService } from '#cloud/admin/reports/service'
 import {
   enrollmentStatusSchema,
+  parseDocumentTakedown,
   parseEnrollmentReview,
   parseUserMutation,
   parseUserRoleMutation
 } from '#cloud/admin/schema'
 import type { AdminUserService } from '#cloud/admin/users/service'
+import {
+  cloudAdminAuditFilterSchema,
+  cloudAdminDocumentFilterSchema,
+  cloudAdminEmailFilterSchema,
+  cloudAdminReportFilterSchema,
+  cloudAdminUserFilterSchema
+} from '#cloud/contract'
 import type { CloudAPIEnvironment } from '#cloud/server/api'
 import type { CloudAuthAdapter } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
 import { CLOUD_RATE_LIMITS, createActorRateLimiter } from '#cloud/server/rate-limit'
-import { validatedJSON, validatedQuery } from '#cloud/server/validation'
-import { Hono } from 'hono'
+import { idParams, validatedJSON, validatedQuery } from '#cloud/server/validation'
+import { Hono, type Context } from 'hono'
 import { NoResultError, type Kysely } from 'kysely'
 import * as v from 'valibot'
 
-/** A count from the query string; anything but digits is a bad request, not a NaN query. */
-const countSchema = v.optional(v.pipe(v.string(), v.digits(), v.toNumber()))
-const parseEnrollmentQuery = (input: unknown) =>
-  v.parse(v.object({ status: v.optional(enrollmentStatusSchema) }), input)
-const parseUserQuery = (input: unknown) =>
-  v.parse(
-    v.object({ search: v.optional(v.string()), limit: countSchema, offset: countSchema }),
-    input
-  )
-const parseLimitQuery = (input: unknown) => v.parse(v.object({ limit: countSchema }), input)
+/**
+ * A count from the query string; anything but digits, or a number too large to be exact, is a bad
+ * request rather than a NaN or out-of-range query.
+ */
+const countSchema = v.optional(v.pipe(v.string(), v.digits(), v.toNumber(), v.safeInteger()))
+/** What an admin list reads from its query string: a search, one of `filters`, and a page. */
+function listQuery<const Filter extends string>(filters: v.PicklistSchema<Filter[], undefined>) {
+  const schema = v.object({
+    search: v.optional(v.string()),
+    filter: v.optional(filters),
+    limit: countSchema,
+    offset: countSchema
+  })
+  return (input: unknown) => v.parse(schema, input)
+}
+const parseEnrollmentQuery = listQuery(enrollmentStatusSchema)
+const parseUserQuery = listQuery(cloudAdminUserFilterSchema)
+const parseEmailQuery = listQuery(cloudAdminEmailFilterSchema)
+const parseAuditQuery = listQuery(cloudAdminAuditFilterSchema)
+const parseDocumentQuery = listQuery(cloudAdminDocumentFilterSchema)
+const parseReportQuery = listQuery(cloudAdminReportFilterSchema)
+/** Accounts are named by UUID; anything else names no one, rather than failing the query. */
+const accountIdSchema = v.pipe(v.string(), v.uuid())
+
+/** Does what an administrator asked to another account; one that is not an account is not found. */
+async function accountMutation(
+  context: Context<CloudAPIEnvironment>,
+  userId: string,
+  mutate: (actorId: string, userId: string) => Promise<void>
+) {
+  if (!v.is(accountIdSchema, userId)) {
+    return context.json({ error: { code: 'not_found' as const } }, 404)
+  }
+  await mutate(context.get('actor').userId, userId)
+  return context.json({ ok: true as const })
+}
 
 export type CloudAdminServices = {
   email: AdminEmailService
@@ -37,6 +73,8 @@ export type CloudAdminServices = {
   users: AdminUserService
   audit: AdminAuditService
   operations: AdminOperationsService
+  documents: AdminDocumentService
+  reports: AdminReportService
 }
 
 export function createCloudAdminRoutes(
@@ -92,50 +130,68 @@ export function createCloudAdminRoutes(
       throw error
     })
     .get('/enrollments', validatedQuery(parseEnrollmentQuery), async (context) =>
-      context.json({
-        enrollments: await services.enrollment.list(context.req.valid('query').status)
-      })
+      context.json(await services.enrollment.list(context.req.valid('query')))
     )
-    .post('/enrollments/:id/approve', validatedJSON(parseEnrollmentReview), async (context) =>
-      context.json({
-        enrollment: await services.enrollment.review(
-          context.get('actor').userId,
-          context.req.param('id'),
-          'approved',
-          context.req.valid('json')
-        )
-      })
-    )
-    .post('/enrollments/:id/reject', validatedJSON(parseEnrollmentReview), async (context) =>
-      context.json({
-        enrollment: await services.enrollment.review(
-          context.get('actor').userId,
-          context.req.param('id'),
-          'rejected',
-          context.req.valid('json')
-        )
-      })
-    )
-    .post('/enrollments/:id/revoke', validatedJSON(parseEnrollmentReview), async (context) =>
-      context.json({
-        enrollment: await services.enrollment.review(
-          context.get('actor').userId,
-          context.req.param('id'),
-          'revoked',
-          context.req.valid('json')
-        )
-      })
-    )
-    .get('/users', validatedQuery(parseUserQuery), async (context) => {
-      const query = context.req.valid('query')
-      return context.json(
-        await services.users.list(context.req.raw.headers, {
-          searchValue: query.search,
-          limit: query.limit ?? 100,
-          offset: query.offset ?? 0
+    .post(
+      '/enrollments/:id/approve',
+      idParams,
+      validatedJSON(parseEnrollmentReview),
+      async (context) =>
+        context.json({
+          enrollment: await services.enrollment.review(
+            context.get('actor').userId,
+            context.req.valid('param').id,
+            'approved',
+            context.req.valid('json')
+          )
         })
-      )
+    )
+    .post(
+      '/enrollments/:id/reject',
+      idParams,
+      validatedJSON(parseEnrollmentReview),
+      async (context) =>
+        context.json({
+          enrollment: await services.enrollment.review(
+            context.get('actor').userId,
+            context.req.valid('param').id,
+            'rejected',
+            context.req.valid('json')
+          )
+        })
+    )
+    .post(
+      '/enrollments/:id/revoke',
+      idParams,
+      validatedJSON(parseEnrollmentReview),
+      async (context) =>
+        context.json({
+          enrollment: await services.enrollment.review(
+            context.get('actor').userId,
+            context.req.valid('param').id,
+            'revoked',
+            context.req.valid('json')
+          )
+        })
+    )
+    .get('/users', validatedQuery(parseUserQuery), async (context) =>
+      context.json(await services.users.list(context.req.valid('query')))
+    )
+    .get('/users/:id', idParams, async (context) => {
+      const detail = await services.users.detail(context.req.valid('param').id)
+      if (!detail) return context.json({ error: { code: 'not_found' as const } }, 404)
+      return context.json(detail)
     })
+    .post('/users/reset-two-step', validatedJSON(parseUserMutation), (context) =>
+      accountMutation(context, context.req.valid('json').userId, (actorId, userId) =>
+        services.users.resetTwoStep(actorId, userId)
+      )
+    )
+    .post('/users/remove-picture', validatedJSON(parseUserMutation), (context) =>
+      accountMutation(context, context.req.valid('json').userId, (actorId, userId) =>
+        services.users.removePicture(actorId, userId)
+      )
+    )
     .post('/users/ban', validatedJSON(parseUserMutation), async (context) => {
       const input = context.req.valid('json')
       await services.users.ban(
@@ -170,21 +226,67 @@ export function createCloudAdminRoutes(
       )
       return context.json({ ok: true as const })
     })
-    .get('/email', validatedQuery(parseLimitQuery), async (context) =>
-      context.json({
-        messages: await services.email.list(context.req.valid('query').limit ?? 100)
-      })
+    .get('/email', validatedQuery(parseEmailQuery), async (context) =>
+      context.json(await services.email.list(context.req.valid('query')))
     )
-    .post('/email/:id/regenerate', async (context) => {
-      await services.email.regenerate(context.get('actor').userId, context.req.param('id'))
+    .post('/email/:id/regenerate', idParams, async (context) => {
+      await services.email.regenerate(context.get('actor').userId, context.req.valid('param').id)
       return context.json({ ok: true as const })
     })
-    .get('/audit', validatedQuery(parseLimitQuery), async (context) =>
-      context.json({
-        events: await services.audit.list(context.req.valid('query').limit ?? 100)
-      })
+    .get('/audit', validatedQuery(parseAuditQuery), async (context) =>
+      context.json(await services.audit.list(context.req.valid('query')))
     )
     .get('/operations', async (context) => context.json(await services.operations.summary()))
+    .get('/reports', validatedQuery(parseReportQuery), async (context) =>
+      context.json(await services.reports.list(context.req.valid('query')))
+    )
+    .post('/reports/:id/dismiss', idParams, async (context) => {
+      await services.reports.resolve(
+        context.get('actor').userId,
+        context.req.valid('param').id,
+        'dismissed'
+      )
+      return context.json({ ok: true as const })
+    })
+    .post('/reports/:id/action', idParams, async (context) => {
+      await services.reports.resolve(
+        context.get('actor').userId,
+        context.req.valid('param').id,
+        'actioned'
+      )
+      return context.json({ ok: true as const })
+    })
+    .get('/documents', validatedQuery(parseDocumentQuery), async (context) =>
+      context.json(await services.documents.list(context.req.valid('query')))
+    )
+    .post(
+      '/documents/:id/disable',
+      idParams,
+      validatedJSON(parseDocumentTakedown),
+      async (context) => {
+        await services.documents.disable(
+          context.get('actor').userId,
+          context.req.valid('param').id,
+          context.req.valid('json').reason
+        )
+        return context.json({ ok: true as const })
+      }
+    )
+    .post('/documents/:id/enable', idParams, async (context) => {
+      await services.documents.enable(context.get('actor').userId, context.req.valid('param').id)
+      return context.json({ ok: true as const })
+    })
+    .post('/documents/:id/undelete', idParams, async (context) => {
+      await services.documents.undelete(context.get('actor').userId, context.req.valid('param').id)
+      return context.json({ ok: true as const })
+    })
+    .post('/shares/:id/revoke', idParams, async (context) => {
+      await services.documents.revokeShare(
+        context.get('actor').userId,
+        context.req.valid('param').id
+      )
+      return context.json({ ok: true as const })
+    })
 }
 
 /** The administration routes' types, for the portal's typed client. */

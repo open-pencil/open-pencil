@@ -19,10 +19,13 @@ export function pasteFigmaClipboard(
       await store.pasteFromHTML(markup)
       store.clearSelection()
       const layers = store.graph.getChildren(store.state.currentPageId)
-      const left = Math.min(...layers.map((layer) => layer.x))
-      const top = Math.min(...layers.map((layer) => layer.y))
-      const right = Math.max(...layers.map((layer) => layer.x + layer.width))
-      const bottom = Math.max(...layers.map((layer) => layer.y + layer.height))
+      let [left, top, right, bottom] = [Infinity, Infinity, -Infinity, -Infinity]
+      for (const layer of layers) {
+        left = Math.min(left, layer.x)
+        top = Math.min(top, layer.y)
+        right = Math.max(right, layer.x + layer.width)
+        bottom = Math.max(bottom, layer.y + layer.height)
+      }
       const width = region.width - 2 * margin
       const height = region.height - 2 * margin
       const zoom = Math.min(width / (right - left), height / (bottom - top))

@@ -51,7 +51,7 @@ export default defineCommand({
       },
       isUndefined
     )
-    const data = await runToolData(args.file, 'diff_visual', toolArgs, args)
+    const data = await runToolData(args.file, 'diff_pixels', toolArgs, args)
     const result = data.result as VisualDiffResult
     if (result.error || !result.base64) {
       printError(result.error ?? 'Visual diff produced no image')

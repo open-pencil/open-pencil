@@ -1,7 +1,6 @@
-import type { Paragraph } from 'canvaskit-wasm'
-
+import type { Paragraph } from '@open-pencil/canvaskit'
 import type { CharacterStyleOverride, StyleRun } from '@open-pencil/scene-graph'
-import { weightToStyle } from '@open-pencil/scene-graph/font-style'
+import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 import {
   hasParagraphSpacing,
   hasTextList,
@@ -9,13 +8,19 @@ import {
   paragraphStyleAt,
   textListItems,
   textParagraphRanges,
+  lineStepPixels,
   topLevelNumberDigits,
   type TextListItem,
   type TextParagraphRange
 } from '@open-pencil/scene-graph/text'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
-import { TextLayout, type TextLayoutBlock, type TextLayoutMarker } from '#core/canvas/text/layout'
+import {
+  TextLayout,
+  type LineCapHeight,
+  type TextLayoutBlock,
+  type TextLayoutMarker
+} from '#core/canvas/text/layout'
 import type { LineHeightRun, TextLayoutBlockLines } from '#core/canvas/text/layout/lines'
 import type { ParagraphBuildOptions } from '#core/canvas/text/paint'
 import {
@@ -26,10 +31,13 @@ import {
 } from '#core/canvas/text/paragraph'
 import type { ParagraphNode } from '#core/canvas/text/paragraph/inputs'
 import type { TextRenderer } from '#core/canvas/text/renderer'
-import { utf8Length } from '#core/canvas/text/utf8'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
-import { shownText } from '#core/text/case'
-import { glyphAdvanceSync } from '#core/text/opentype'
+import { autoWidthWrapWidth } from '#core/layout/text-measurement'
+import { shownSourceIndices, shownText, textCaseSegments } from '#core/text/case'
+import { rangeCapHeight } from '#core/text/character-face'
+import { glyphAdvanceSync } from '#core/text/font/glyphs'
+import { textFontFace } from '#core/text/requirements/collect'
+import { utf8Length } from '#core/text/utf8'
 
 /** A list item's indent per level, in ems of the list's first character. */
 const LIST_INDENT_EMS = 1.5
@@ -60,22 +68,28 @@ function sliceStyleRuns(runs: readonly StyleRun[], start: number, end: number): 
 
 /** Line heights by paragraph index, `lead` places before the text: each run's, the text's elsewhere. */
 function lineHeightRuns(node: ParagraphNode, lead: number): LineHeightRun[] {
-  const own = node.lineHeight || null
+  // A percent line height follows the font size of the characters it spaces; one of zero, or a
+  // percent one under half a pixel, steps lines by none, as Figma does.
+  const own = (fontSize = node.fontSize) => lineStepPixels(node.lineHeight, fontSize)
   const runs: LineHeightRun[] = []
   const add = (start: number, end: number, lineHeight: number | null) => {
     const last = runs.at(-1)
     // Runs at one line height measure as one, whatever else they style.
-    if (last && last.end === start && last.lineHeight === lineHeight) last.end = end
+    if (last?.end === start && last.lineHeight === lineHeight) last.end = end
     else runs.push({ start, end, lineHeight })
   }
   let position = 0
   for (const run of node.styleRuns) {
-    if (position < run.start) add(position + lead, run.start + lead, own)
-    const lineHeight = run.style.lineHeight !== undefined ? run.style.lineHeight || null : own
+    if (position < run.start) add(position + lead, run.start + lead, own())
+    const runSize = run.style.fontSize ?? node.fontSize
+    const lineHeight =
+      run.style.lineHeight !== undefined
+        ? lineStepPixels(run.style.lineHeight, runSize)
+        : own(runSize)
     add(run.start + lead, run.start + run.length + lead, lineHeight)
     position = run.start + run.length
   }
-  if (position < node.text.length) add(position + lead, node.text.length + lead, own)
+  if (position < node.text.length) add(position + lead, node.text.length + lead, own())
   return runs
 }
 
@@ -94,7 +108,7 @@ function paragraphLines(
   // Lines are cut by character index, which the text's case must keep.
   if (shownText(node).length !== node.text.length) return undefined
   const lead = firstLineIndent > 0 ? 1 : 0
-  const ellipsis = buildTruncateOpts(node, node.fontSize || DEFAULT_FONT_SIZE).ellipsis
+  const ellipsis = buildTruncateOpts(node).ellipsis
   // A justified line is stretched only with text after it: lines are laid out with the rest
   // of the paragraph and cut, as truncated last lines are.
   const justified = node.textAlignHorizontal === 'JUSTIFIED'
@@ -104,23 +118,19 @@ function paragraphLines(
   }
   return {
     heights: lineHeightRuns(node, lead),
-    // A trimmed edge is laid out by where it stands in the paragraph.
-    build:
-      node.leadingTrim === 'CAP_HEIGHT'
-        ? undefined
-        : (start, end, lines, truncated) => {
-            const from = Math.max(0, start - lead)
-            const to = justified ? node.text.length : end - lead
-            const line: ParagraphNode = {
-              ...node,
-              text: node.text.slice(from, to),
-              styleRuns: sliceStyleRuns(node.styleRuns, from, to)
-            }
-            return buildSkParagraph(r, line, color, options, {
-              firstLineIndent: start === 0 ? firstLineIndent : 0,
-              truncation: lineTruncation(lines, truncated)
-            })
-          }
+    build: (start, end, lines, truncated) => {
+      const from = Math.max(0, start - lead)
+      const to = justified ? node.text.length : end - lead
+      const line: ParagraphNode = {
+        ...node,
+        text: node.text.slice(from, to),
+        styleRuns: sliceStyleRuns(node.styleRuns, from, to)
+      }
+      return buildSkParagraph(r, line, color, options, {
+        firstLineIndent: start === 0 ? firstLineIndent : 0,
+        truncation: lineTruncation(lines, truncated)
+      })
+    }
   }
 }
 
@@ -136,10 +146,28 @@ function needsParagraphLayout(node: ParagraphNode): boolean {
 
 function layoutForNode(layout: TextLayout, node: ParagraphNode): void {
   if (node.textAutoResize === 'WIDTH_AND_HEIGHT') {
-    layout.layout(1e6)
-    layout.layout(Math.max(node.width || 1, Math.ceil(layout.getLongestLine())))
+    layoutAutoWidth(layout, node)
   } else {
     layout.layout(resolveParagraphLayoutWidth(node))
+  }
+}
+
+function truncatesAtMaxWidth(node: ParagraphNode): boolean {
+  return node.textTruncation === 'ENDING' && autoWidthWrapWidth(node) !== undefined
+}
+
+function layoutAutoWidth(layout: TextLayout, node: ParagraphNode): void {
+  const wrapWidth = resolveParagraphLayoutWidth(node)
+  if (truncatesAtMaxWidth(node)) {
+    const measuredBoxWidth = node.width || wrapWidth
+    layout.layout(Math.min(measuredBoxWidth, wrapWidth))
+    return
+  }
+  layout.layout(wrapWidth)
+  const widestLine = Math.ceil(layout.getLongestLine())
+  const width = Math.min(wrapWidth, Math.max(node.width || 1, widestLine))
+  if (width !== wrapWidth) {
+    layout.layout(width)
   }
 }
 
@@ -147,6 +175,8 @@ interface ListStyle {
   em: number
   family: string
   style: string
+  /** The name of the first character's face, which its markers are drawn in. */
+  faceName: string | null
   /** The list's first character's style, which its markers take. */
   override: CharacterStyleOverride | undefined
 }
@@ -156,7 +186,8 @@ function listStyle(node: ParagraphNode, firstCharacter: number): ListStyle {
   return {
     em: override?.fontSize ?? (node.fontSize || DEFAULT_FONT_SIZE),
     family: override?.fontFamily ?? (node.fontFamily || DEFAULT_FONT_FAMILY),
-    style: weightToStyle(override?.fontWeight ?? node.fontWeight, override?.italic ?? node.italic),
+    style: textFontFace(node, override).style,
+    faceName: rangeFontStyle(node, override ?? {}),
     override
   }
 }
@@ -172,12 +203,14 @@ function markerNode(node: ParagraphNode, item: TextListItem, style: ListStyle): 
     fontFamily: style.family,
     fontWeight: override?.fontWeight ?? node.fontWeight,
     italic: override?.italic ?? node.italic,
+    fontStyle: style.faceName,
     letterSpacing: override?.letterSpacing ?? node.letterSpacing,
     lineHeight: override?.lineHeight !== undefined ? override.lineHeight : node.lineHeight,
     fontVariations: override?.fontVariations ?? node.fontVariations,
+    opticalSizeFromFontSize: override?.opticalSizeFromFontSize ?? node.opticalSizeFromFontSize,
     fontFeatures:
       item.listType === 'ORDERED' ? [...features, { tag: 'TNUM', enabled: true }] : features,
-    textLanguage: override?.textLanguage ?? node.textLanguage,
+    textLanguage: override?.textLanguage !== undefined ? override.textLanguage : node.textLanguage,
     styleRuns: override?.fills
       ? [{ start: 0, length: item.marker.length, style: { fills: override.fills } }]
       : [],
@@ -210,7 +243,7 @@ function buildBlocks(
   )
   const digits = topLevelNumberDigits([...items.values()])
   const rtl = resolveNodeTextDirection(node) === 'RTL'
-  const truncation = buildTruncateOpts(node, node.fontSize || DEFAULT_FONT_SIZE)
+  const truncation = buildTruncateOpts(node)
   const maxLines = truncation.maxLines
   // Each paragraph starts one byte, its newline, after the one before it ends.
   const utf8Starts: number[] = []
@@ -233,7 +266,7 @@ function buildBlocks(
     }
     throw error
   }
-  return new TextLayout(r.ck, blocks, maxLines)
+  return new TextLayout(r.ck, blocks, maxLines, trimmedCapHeight(node))
 
   function buildBlock(index: number, start: number, end: number): TextLayoutBlock {
     const shownRange: TextParagraphRange = shownRanges[index]
@@ -252,8 +285,7 @@ function buildBlocks(
       paragraphStyle.listType === 'NONE' && paragraphIndent > 0 ? paragraphIndent : 0
     const blockOptions = (lines?: number): ParagraphBlockOptions => ({
       firstLineIndent,
-      truncation: lines === undefined ? {} : { maxLines: lines, ellipsis: truncation.ellipsis },
-      edges: { first: index === 0, last: index === sources.length - 1 }
+      truncation: lines === undefined ? {} : { maxLines: lines, ellipsis: truncation.ellipsis }
     })
     const betweenItems =
       index > 0 &&
@@ -292,7 +324,8 @@ function buildBlocks(
       lines: paragraphLines(r, blockNode, color, options, firstLineIndent),
       x: 0,
       y: 0,
-      visible: true
+      visible: true,
+      metrics: []
     }
   }
 }
@@ -338,6 +371,56 @@ function buildMarker(
   }
 }
 
+function createTextLayout(
+  r: TextRenderer,
+  node: ParagraphNode,
+  color: Float32Array | undefined,
+  options: ParagraphBuildOptions
+): TextLayout {
+  return needsParagraphLayout(node)
+    ? buildBlocks(r, node, color, options)
+    : TextLayout.ofParagraph(
+        r.ck,
+        buildSkParagraph(r, node, color, options),
+        shownText(node).length,
+        paragraphLines(r, node, color, options),
+        trimmedCapHeight(node)
+      )
+}
+
+function trimmedCapHeight(node: ParagraphNode): LineCapHeight | undefined {
+  if (node.leadingTrim !== 'CAP_HEIGHT') {
+    return undefined
+  }
+  const sourceIndex = shownToSourceIndex(node)
+  return (start, end) => {
+    const sourceStart = sourceIndex(start)
+    const sourceEnd = end > start ? sourceIndex(end - 1) + 1 : sourceStart
+    return rangeCapHeight(node, sourceStart, sourceEnd)
+  }
+}
+
+function shownToSourceIndex(node: ParagraphNode): (shownIndex: number) => number {
+  if (textCaseSegments(node).every((segment) => segment.textCase === 'ORIGINAL')) {
+    return (shownIndex) => Math.min(shownIndex, node.text.length)
+  }
+  let indices: number[] | undefined
+  return (shownIndex) => {
+    indices ??= shownSourceIndices(node)
+    return indices[shownIndex] ?? node.text.length
+  }
+}
+
+/** How many laid-out line boxes fit the fixed height, preserving the first line. */
+function linesWithinHeight(layout: TextLayout, node: ParagraphNode): number {
+  const lines = layout.getLineMetrics()
+  const trimmed = node.leadingTrim === 'CAP_HEIGHT'
+  const firstOverflow = lines.findIndex(
+    (line) => line.baseline + (trimmed ? 0 : line.descent) > node.height
+  )
+  return Math.max(1, firstOverflow === -1 ? lines.length : firstOverflow)
+}
+
 /** Lay a text node out as the renderer draws it, at its own width. */
 export function buildParagraph(
   r: TextRenderer,
@@ -345,19 +428,24 @@ export function buildParagraph(
   color?: Float32Array,
   options: ParagraphBuildOptions = {}
 ): TextLayout {
-  const layout = needsParagraphLayout(node)
-    ? buildBlocks(r, node, color, options)
-    : TextLayout.ofParagraph(
-        r.ck,
-        buildSkParagraph(r, node, color, options),
-        shownText(node).length,
-        paragraphLines(r, node, color, options)
-      )
+  const layout = createTextLayout(r, node, color, options)
+  const heightTruncation =
+    node.textTruncation === 'ENDING' &&
+    node.height > 0 &&
+    (node.maxLines == null || node.maxLines <= 0)
+  let fittingLines: number | undefined
   try {
     layoutForNode(layout, node)
-    return layout
+    if (heightTruncation) {
+      fittingLines = linesWithinHeight(layout, node)
+    }
   } catch (error) {
     layout.delete()
     throw error
   }
+  if (fittingLines !== undefined && fittingLines < layout.getLineMetrics().length) {
+    layout.delete()
+    return buildParagraph(r, { ...node, maxLines: fittingLines }, color, options)
+  }
+  return layout
 }

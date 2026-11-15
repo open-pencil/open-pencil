@@ -1,0 +1,1 @@
+- A document opened from a `.fig` file keeps a recovery copy of its unsaved edits while autosave is off, so a crash no longer loses them; on macOS the desktop window loads the editor again when WebKit ends its page, instead of staying blank (#2037).

@@ -1,18 +1,21 @@
+import type { TextDecorationOffset } from '@figma/plugin-typings/plugin-api-standalone'
 import { mapValues, pickBy } from 'es-toolkit/object'
 import { isEqual } from 'es-toolkit/predicate'
+import * as v from 'valibot'
 
-import type { Fill, SceneNode } from '@open-pencil/scene-graph'
-import { copyFills } from '@open-pencil/scene-graph/copy'
+import type { SceneNode } from '@open-pencil/scene-graph'
 import {
   paragraphIndexAt,
   paragraphSpacingAt,
   paragraphStyleAt
 } from '@open-pencil/scene-graph/text'
 
-import { weightToStyleName } from '#core/figma-api/fonts'
-import { toFigmaPaint, type WithFigmaTransforms } from '#core/figma-api/paints'
+import { readVariationSettings } from '#core/figma-api/fonts/variations'
+import { toFigmaPaint, type FigmaPaint } from '#core/figma-api/paints'
+import { parseFigma, tooSmall } from '#core/figma-api/validation'
 import { variableAlias } from '#core/figma-api/variables/values'
 import { characterStyles, nodeStyle, type CharacterStyle } from '#core/text/character-style'
+import { textStyleName } from '#core/text/font/names'
 
 /** The fields `getStyledTextSegments` takes, in the order Figma lists them. */
 export const TEXT_SEGMENT_FIELDS = [
@@ -47,7 +50,8 @@ export const TEXT_SEGMENT_FIELDS = [
 export type TextSegmentField = (typeof TEXT_SEGMENT_FIELDS)[number]
 
 /** A size Figma reads as automatic or in pixels; the node keeps pixels. */
-export type FigmaTextLength = { unit: 'AUTO' } | { unit: 'PIXELS' | 'PERCENT'; value: number }
+/** Figma's lengths that may be automatic, such as `TextDecorationOffset`. */
+export type FigmaTextLength = TextDecorationOffset
 
 function pixels(value: number | null): FigmaTextLength {
   return value === null ? { unit: 'AUTO' } : { unit: 'PIXELS', value }
@@ -60,7 +64,7 @@ function underlined(style: CharacterStyle): boolean {
 /** Figma's paint for an underline colour of its own, or automatic, following the text. */
 function decorationColor(style: CharacterStyle) {
   const paint = style.textDecorationFills.at(0)
-  return paint ? { value: toFigmaPaint(copyFills([paint])[0]) } : { value: 'AUTO' as const }
+  return paint ? { value: toFigmaPaint(paint) } : { value: 'AUTO' as const }
 }
 
 function fontFeatureMap(style: CharacterStyle): Record<string, boolean> {
@@ -68,6 +72,22 @@ function fontFeatureMap(style: CharacterStyle): Record<string, boolean> {
 }
 
 type FieldContext = { node: SceneNode; style: CharacterStyle; paragraph: number }
+
+/**
+ * A character's fills as Figma reads them. Fills a range sets draw at the colour's alpha times the
+ * paint's opacity, so a solid reads that product as its opacity; the layer's own fills, which
+ * characters without fills of their own share, draw at their opacity alone.
+ */
+function rangeFills(node: SceneNode, style: CharacterStyle): FigmaPaint[] {
+  if (style.fills === node.fills) return style.fills.map((paint) => toFigmaPaint(paint))
+  return style.fills.map((paint) =>
+    toFigmaPaint(
+      paint.type === 'SOLID'
+        ? { ...paint, opacity: paint.opacity * paint.color.a, color: { ...paint.color, a: 1 } }
+        : paint
+    )
+  )
+}
 
 /** The decoration's own style reads null where the text is not underlined. */
 function whenUnderlined(read: (style: CharacterStyle) => unknown) {
@@ -84,11 +104,21 @@ function spacing(field: 'paragraphSpacing' | 'listSpacing' | 'paragraphIndent') 
  */
 const FIELD_READERS: Record<TextSegmentField, (context: FieldContext) => unknown> = {
   fontSize: ({ style }) => style.fontSize,
-  fontName: ({ style }) => ({
-    family: style.fontFamily,
-    style: weightToStyleName(style.fontWeight, style.italic)
-  }),
-  fontWeight: ({ style }) => style.fontWeight,
+  fontName: ({ style }) => {
+    const name = textStyleName(style)
+    const variationSettings = readVariationSettings(
+      style.fontFamily,
+      name,
+      style.fontVariations,
+      style.opticalSizeFromFontSize
+    )
+    return variationSettings
+      ? { family: style.fontFamily, style: name, variationSettings }
+      : { family: style.fontFamily, style: name }
+  },
+  // A weight axis the text sets is its weight, as Figma reads it.
+  fontWeight: ({ style }) =>
+    style.fontVariations.find((variation) => variation.axis === 'wght')?.value ?? style.fontWeight,
   fontStyle: ({ style }) => (style.italic ? 'ITALIC' : 'REGULAR'),
   textDecoration: ({ style }) => style.textDecoration,
   textDecorationStyle: whenUnderlined((style) => style.textDecorationStyle),
@@ -97,9 +127,12 @@ const FIELD_READERS: Record<TextSegmentField, (context: FieldContext) => unknown
   textDecorationThickness: whenUnderlined((style) => pixels(style.textDecorationThickness)),
   textDecorationColor: whenUnderlined(decorationColor),
   textCase: ({ style }) => style.textCase,
-  lineHeight: ({ style }) => pixels(style.lineHeight),
-  letterSpacing: ({ style }) => ({ unit: 'PIXELS', value: style.letterSpacing }),
-  fills: ({ style }) => copyFills(style.fills).map(toFigmaPaint),
+  lineHeight: ({ style }) => (style.lineHeight ? { ...style.lineHeight } : { unit: 'AUTO' }),
+  letterSpacing: ({ style }) => ({
+    unit: style.letterSpacing.unit,
+    value: style.letterSpacing.value
+  }),
+  fills: ({ node, style }) => rangeFills(node, style),
   textStyleId: ({ style }) => style.textStyleId ?? '',
   fillStyleId: ({ style }) => style.fillStyleId ?? '',
   listOptions: ({ node, paragraph }) => ({
@@ -130,9 +163,7 @@ function readField(
 /** Figma's messages for a range a text method cannot use. */
 export function assertTextRange(method: string, node: SceneNode, start: number, end: number) {
   if (start < 0) {
-    throw new Error(
-      `in ${method}: Property "start" failed validation: Number must be greater than or equal to 0`
-    )
+    throw new Error(`in ${method}: Property "start" failed validation: ${tooSmall(0)}`)
   }
   if (end <= start) {
     throw new Error(`in ${method}: Empty range selected. 'end' must be greater than 'start'`)
@@ -162,6 +193,26 @@ function fieldValues(
   })
 }
 
+/** Fields that style an underline, which characters without one read as null. */
+const UNDERLINE_FIELDS: ReadonlySet<TextSegmentField> = new Set([
+  'textDecorationStyle',
+  'textDecorationSkipInk',
+  'textDecorationOffset',
+  'textDecorationThickness',
+  'textDecorationColor'
+])
+
+/**
+ * The value characters share, or `mixed`. An underline's style is read from the underlined
+ * characters alone, and null when there are none (Figma desktop 126).
+ */
+function sharedValue(field: TextSegmentField, values: unknown[], mixed: symbol): unknown {
+  const read = UNDERLINE_FIELDS.has(field) ? values.filter((value) => value !== null) : values
+  if (read.length === 0) return null
+  const [first, ...rest] = read
+  return rest.every((value) => isEqual(value, first)) ? first : mixed
+}
+
 /** The value every character of the range shares, or `mixed`. */
 export function getRangeTextStyle(
   method: string,
@@ -172,15 +223,13 @@ export function getRangeTextStyle(
   mixed: symbol
 ): unknown {
   assertTextRange(method, node, start, end)
-  const [first, ...rest] = fieldValues(node, field, start, end)
-  return rest.every((value) => isEqual(value, first)) ? first : mixed
+  return sharedValue(field, fieldValues(node, field, start, end), mixed)
 }
 
 /** The value every character of the text shares, or `mixed`; empty text reads its own style. */
 export function getTextStyle(node: SceneNode, field: TextSegmentField, mixed: symbol): unknown {
   if (node.text.length === 0) return readField(node, nodeStyle(node), 0, field)
-  const [first, ...rest] = fieldValues(node, field, 0, node.text.length)
-  return rest.every((value) => isEqual(value, first)) ? first : mixed
+  return sharedValue(field, fieldValues(node, field, 0, node.text.length), mixed)
 }
 
 export type StyledTextSegment = {
@@ -196,14 +245,7 @@ export function getStyledTextSegments(
   end?: number
 ): StyledTextSegment[] {
   const method = 'getStyledTextSegments'
-  for (const [index, field] of fields.entries()) {
-    if (!(TEXT_SEGMENT_FIELDS as readonly string[]).includes(field)) {
-      throw new Error(
-        `in ${method}: Property "${method}" failed validation: Invalid enum value. Expected ` +
-          `${TEXT_SEGMENT_FIELDS.map((name) => `'${name}'`).join(' | ')}, received '${String(field)}' at index ${index}`
-      )
-    }
-  }
+  parseFigma(v.array(v.picklist(TEXT_SEGMENT_FIELDS)), fields, method, method)
   if ((start === undefined) !== (end === undefined)) {
     throw new Error(`in ${method}: Invalid range. Must provide both 'start' and 'end'`)
   }
@@ -249,4 +291,4 @@ export function rangeHasUnderline(node: SceneNode, start: number, end: number): 
   return characterStyles(node, start, end).some(underlined)
 }
 
-export type FigmaDecorationColor = { value: 'AUTO' } | { value: WithFigmaTransforms<Fill> }
+export type FigmaDecorationColor = { value: 'AUTO' } | { value: FigmaPaint }

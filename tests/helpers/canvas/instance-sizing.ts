@@ -1,5 +1,5 @@
 import { renderTree } from '@open-pencil/core/design-jsx'
-import { Component, Frame, Instance, Text } from '@open-pencil/design-jsx'
+import { Component, Frame, Instance, Text, property } from '@open-pencil/design-jsx'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 export async function createInstanceSizingScene(graph: SceneGraph, parentId: string) {
@@ -14,7 +14,6 @@ export async function createInstanceSizingScene(graph: SceneGraph, parentId: str
       p: 16,
       bg: '#FFFFFF',
       rounded: 10,
-      properties: [{ id: 'message', name: 'Message', type: 'TEXT', defaultValue: 'A short note.' }],
       children: Text({
         name: 'Message',
         w: 'fill',
@@ -22,8 +21,7 @@ export async function createInstanceSizingScene(graph: SceneGraph, parentId: str
         size: 14,
         lineHeight: 20,
         color: '#252A31',
-        propertyRefs: [{ propertyId: 'message', field: 'TEXT' }],
-        children: 'A short note.'
+        text: property('Message', 'A short note.')
       })
     }),
     { parentId: library.id }
@@ -51,7 +49,7 @@ export async function createInstanceSizingScene(graph: SceneGraph, parentId: str
               of: component.id,
               w: 'fill',
               properties: {
-                message:
+                Message:
                   'The blue feels right. Give the date a little more room at the bottom, and keep the quieter version for the print edition.'
               }
             })

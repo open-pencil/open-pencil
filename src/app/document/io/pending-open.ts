@@ -1,3 +1,5 @@
+import { basename } from 'pathe'
+
 // The queue the desktop shell fills before the editor exists: a double-clicked
 // document, an `Open With`, an argv path, or an `openpencil://` link. Rust tags each
 // entry with its producer because the frontend cannot tell them apart from the path
@@ -18,14 +20,14 @@ export interface PendingOpenFile extends DeepLinkTarget {
 
 /** File-system entry points, injected so tests can observe the routing. */
 export interface PendingOpenIo {
-  openPath: (path: string) => Promise<void>
+  openPath: (path: string) => Promise<unknown>
   openLink: (target: DeepLinkTarget, actions: DeepLinkActions) => Promise<void>
 }
 
 const tauriIo: PendingOpenIo = { openPath: openFileFromPath, openLink: openDeepLink }
 
 function displayName(file: PendingOpenFile): string {
-  return file.path.split(/[/\\]/).pop() ?? file.path
+  return basename(file.path) || file.path
 }
 
 /**

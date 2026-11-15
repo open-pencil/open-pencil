@@ -1,0 +1,96 @@
+<!doctype html>
+<html>
+  <head>
+    <style>
+      :root {
+        --brand: oklch(62% 0.19 260);
+        --gap: 24px;
+        --radius: 0.75rem;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      body {
+        font-family: sans-serif;
+        color: #111;
+      }
+      .nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px calc(var(--gap) * 2);
+      }
+      .hero {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: var(--gap);
+        padding: 64px 48px;
+      }
+      .hero h1 {
+        font-size: clamp(32px, 4vw, 64px);
+        line-height: 1.1;
+      }
+      .hero p {
+        margin-top: 16px;
+        font-size: 18px;
+        line-height: 1.5;
+        max-width: 40ch;
+      }
+      .btn {
+        display: inline-block;
+        margin-top: 24px;
+        padding: 12px 20px;
+        border-radius: var(--radius);
+        background: var(--brand);
+        color: white;
+        transform: rotate(-2deg);
+      }
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 16px;
+        padding: 48px;
+      }
+      .card {
+        padding: 20px;
+        border-radius: var(--radius);
+        background: #f4f4f8;
+      }
+      .media {
+        float: left;
+        width: 120px;
+        height: 80px;
+        margin-right: 16px;
+        background: #ccd;
+      }
+      @media (max-width: 700px) {
+        .hero {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="nav" id="nav">
+      <strong id="logo">Acme</strong>
+      <div id="links"><a>Docs</a> <a>Pricing</a></div>
+    </nav>
+    <section class="hero" id="hero">
+      <div id="copy">
+        <h1 id="title">Design without vendor lock-in</h1>
+        <p id="lede">Open files, real code, and an editor that runs anywhere.</p>
+        <a class="btn" id="cta">Get started</a>
+      </div>
+      <div id="art" style="aspect-ratio: 4 / 3; background: #dde; border-radius: 16px"></div>
+    </section>
+    <section class="cards" id="cards">
+      <div class="card" id="card-1">
+        <div class="media" id="media"></div>
+        Floats wrap text around a thumbnail.
+      </div>
+      <div class="card" id="card-2">Card two</div>
+      <div class="card" id="card-3">Card three</div>
+    </section>
+  </body>
+</html>

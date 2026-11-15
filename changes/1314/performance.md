@@ -1,1 +1,0 @@
-- The editor downloads and compiles CanvasKit once when it opens instead of twice.

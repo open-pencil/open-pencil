@@ -1,11 +1,15 @@
 import type { CloudDatabase } from '#cloud/server/db'
 import { CLOUD_FEATURE_KEYS } from '#cloud/server/policy/keys'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
+import { workspacePolicyContext } from '#cloud/server/policy/workspace'
 import type { Kysely } from 'kysely'
 
 import type { CollaborationRelayOptions } from './hub'
 
-/** The relay's lookups of a document: its participant limit under `policy`, and its epoch. */
+/**
+ * The relay's lookups of a document: its participant limit under `policy`, none while it is taken
+ * down, and its epoch.
+ */
 export function relayDocumentLookups(
   database: Kysely<CloudDatabase>,
   policy: CloudPolicy,
@@ -13,18 +17,17 @@ export function relayDocumentLookups(
 ): Pick<CollaborationRelayOptions, 'maximumParticipants' | 'currentRoomEpoch'> {
   return {
     async maximumParticipants(documentId) {
-      const document = await database
+      // A taken-down document's room takes nobody, even with a ticket issued before.
+      const open = await database
         .selectFrom('document')
-        .select('workspaceId')
+        .select('id')
         .where('id', '=', documentId)
+        .where('disabledAt', 'is', null)
         .executeTakeFirst()
-      if (!document) return 0
-      const limit = await policy.number(CLOUD_FEATURE_KEYS.maximumParticipants, -1, {
-        targetingKey: document.workspaceId,
-        workspaceId: document.workspaceId,
-        documentId,
-        deploymentMode
-      })
+      if (!open) return 0
+      const context = await workspacePolicyContext(database, { documentId }, { deploymentMode })
+      if (!context) return 0
+      const limit = await policy.number(CLOUD_FEATURE_KEYS.maximumParticipants, -1, context)
       return limit < 0 ? null : limit
     },
     async currentRoomEpoch(documentId) {

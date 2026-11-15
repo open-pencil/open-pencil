@@ -55,7 +55,9 @@ function copyAction(
         actions.clipboardWrite(editor.copySelectionAsText(actions.ids()), 'text')
       )
     case 'copy-as-svg':
-      return runAsync(() => actions.clipboardWrite(editor.copySelectionAsSVG(actions.ids()), 'SVG'))
+      return runAsync(async () =>
+        actions.clipboardWrite(await editor.copySelectionAsSVG(actions.ids()), 'SVG')
+      )
     case 'copy-as-png':
       return runAsync(actions.copyAsPNG)
     case 'copy-as-jsx':

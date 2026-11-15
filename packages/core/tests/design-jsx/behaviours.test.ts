@@ -1,11 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getNodeOrThrow } from '#core-tests/helpers/assert'
-
 import { renderJSX } from '@open-pencil/core/design-jsx'
 import { sceneNodeToJSX } from '@open-pencil/design-jsx'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { missingBindings, readBehaviour } from '@open-pencil/scene-graph/behaviours'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 async function render(jsx: string) {
   const graph = new SceneGraph()
@@ -185,6 +184,29 @@ describe('Reka UI elements in JSX export', () => {
     expect(Object.keys(again?.parts ?? {})).toEqual(Object.keys(before?.parts ?? {}))
   })
 
+  test('a checkbox keeps its invalid value and invalid state through export', async () => {
+    const graph = new SceneGraph()
+    const [first] = await renderJSX(
+      graph,
+      `<Checkbox.Root name="Checkbox" modelValue="Checked" invalid="Error" states="State">
+        <Component name="Checked=Off, Error=Off, State=Default" w={16} h={16} />
+        <Component name="Checked=On, Error=Off, State=Default" w={16} h={16} />
+        <Component name="Checked=Off, Error=On, State=Default" w={16} h={16} />
+        <Component name="Checked=Off, Error=Off, State=Invalid" w={16} h={16} />
+      </Checkbox.Root>`
+    )
+    const before = readBehaviour(getNodeOrThrow(graph, first.id))
+    expect(before?.booleans.invalid).toMatchObject({ on: 'On', off: 'Off' })
+    expect(before?.states?.invalid).toBe('Invalid')
+    const code = sceneNodeToJSX(first.id, graph)
+    expect(code).toContain('invalid={{ property: "Error", on: "On", off: "Off" }}')
+
+    const [second] = await renderJSX(graph, code)
+    const again = readBehaviour(getNodeOrThrow(graph, second.id))
+    expect(again?.booleans.invalid).toMatchObject({ on: 'On', off: 'Off' })
+    expect(again?.states?.invalid).toBe('Invalid')
+  })
+
   test('tabs and a radio group export their repeated parts and items as Reka writes them', async () => {
     const graph = new SceneGraph()
     const [radio] = await renderJSX(
@@ -196,9 +218,17 @@ describe('Reka UI elements in JSX export', () => {
     )
     const [group] = await renderJSX(
       graph,
-      `<RadioGroup.Root name="Plan"><RadioGroup.Item of="${radio.id}" /></RadioGroup.Root>`
+      `<RadioGroup.Root name="Plan">
+        <RadioGroup.Item of="${radio.id}" />
+        <RadioGroup.Item of="${radio.id}" Checked="On" />
+      </RadioGroup.Root>`
     )
-    expect(sceneNodeToJSX(group.id, graph)).toContain(`<RadioGroup.Item of="${radio.id}" />`)
+    // Each item keeps its variant, so a checked item renders back checked.
+    const exported = sceneNodeToJSX(group.id, graph)
+    expect(exported).toContain('<RadioGroup.Item of="Radio" Checked="Off" />')
+    expect(exported).toContain('<RadioGroup.Item of="Radio" Checked="On" />')
+    const [copy] = await renderJSX(graph, exported)
+    expect(sceneNodeToJSX(copy.id, graph)).toBe(exported)
 
     const [tabs] = await renderJSX(
       graph,
@@ -212,5 +242,98 @@ describe('Reka UI elements in JSX export', () => {
     expect(code).toContain('<Tabs.Trigger')
     expect(code).toContain('<Tabs.Content')
     expect(code).not.toContain('name="Panels"')
+  })
+
+  test('a Tabs.Tab component draws the triggers a tab list holds as its instances', async () => {
+    const graph = new SceneGraph()
+    const [tab] = await renderJSX(
+      graph,
+      `<Tabs.Tab name="Tab" modelValue="Selected">
+        <Component name="Selected=Off" w={60} h={24} />
+        <Component name="Selected=On" w={60} h={24} />
+      </Tabs.Tab>`
+    )
+    expect(readBehaviour(getNodeOrThrow(graph, tab.id))?.kind).toBe('tab')
+    const [tabs] = await renderJSX(
+      graph,
+      `<Tabs.Root name="Tabs" flex="col">
+        <Tabs.Tab of="${tab.id}" Selected="On" />
+        <Tabs.Tab of="${tab.id}" />
+        <Tabs.Content><Text>First</Text></Tabs.Content>
+        <Tabs.Content><Text>Second</Text></Tabs.Content>
+      </Tabs.Root>`
+    )
+    const root = getNodeOrThrow(graph, tabs.id)
+    const [list] = graph.getChildren(root.id)
+    expect(list?.name).toBe('List')
+    expect(graph.getChildren(list?.id ?? '').map((trigger) => trigger.type)).toEqual([
+      'INSTANCE',
+      'INSTANCE'
+    ])
+    const behaviour = readBehaviour(root)
+    expect(behaviour && missingBindings(graph, root, behaviour)).toEqual([])
+
+    const exported = sceneNodeToJSX(tabs.id, graph)
+    expect(exported).toContain('<Tabs.Tab of="Tab" Selected="On" />')
+    expect(exported).toContain('<Tabs.Tab of="Tab" Selected="Off" />')
+    const [copy] = await renderJSX(graph, exported)
+    expect(sceneNodeToJSX(copy.id, graph)).toBe(exported)
+  })
+
+  test('a group item whose changes JSX cannot write is written as the layer it draws', async () => {
+    const graph = new SceneGraph()
+    await renderJSX(
+      graph,
+      `<><Component name="Mark" w={4} h={4} />
+      <RadioGroup.Item name="Radio" modelValue="Checked">
+        <Component name="Checked=Off" w={20} h={20}><Instance name="Dot" of="Mark" /></Component>
+        <Component name="Checked=On" w={20} h={20}><Instance name="Dot" of="Mark" /></Component>
+      </RadioGroup.Item></>`
+    )
+    const [group] = await renderJSX(
+      graph,
+      `<RadioGroup.Root name="Plan">
+        <RadioGroup.Item of="Radio" overrides={{ 'Dot:opacity': 0.5 }} />
+      </RadioGroup.Root>`
+    )
+    const exported = sceneNodeToJSX(group.id, graph)
+    expect(exported).not.toContain('<RadioGroup.Item')
+    // The item renders back as the layers it drew, its dot still half transparent.
+    const [copy] = await renderJSX(graph, exported)
+    const [item] = graph.getChildren(copy.id)
+    const [dot] = graph.getChildren(item?.id ?? '')
+    expect([item?.type, item?.name]).toEqual(['FRAME', 'Checked=Off'])
+    expect([dot?.type, dot?.name, dot?.opacity]).toEqual(['INSTANCE', 'Dot', 0.5])
+  })
+
+  test('a group item exports the property values and layer overrides it gives its component', async () => {
+    const graph = new SceneGraph()
+    await renderJSX(
+      graph,
+      `<RadioGroup.Item name="Radio" modelValue="Checked">
+        <Component name="Checked=Off" w={20} h={20}>
+          <Frame name="Dot" w={4} h={4} /><Text name="Label" text={property('Label', 'Plan')} />
+        </Component>
+        <Component name="Checked=On" w={20} h={20}>
+          <Frame name="Dot" w={4} h={4} /><Text name="Label" text={property('Label', 'Plan')} />
+        </Component>
+      </RadioGroup.Item>`
+    )
+    const [group] = await renderJSX(
+      graph,
+      `<RadioGroup.Root name="Plan">
+        <RadioGroup.Item of="Radio" Checked="On" Label="Pro" overrides={{ 'Dot:opacity': 0.5 }} />
+        <RadioGroup.Item of="Radio" visible={false} />
+        <RadioGroup.Item of="Radio" opacity={0.4} />
+      </RadioGroup.Root>`
+    )
+    const exported = sceneNodeToJSX(group.id, graph)
+    expect(exported).toContain(
+      '<RadioGroup.Item of="Radio" Checked="On" Label="Pro" overrides={{ "Dot:opacity": 0.5 }} />'
+    )
+    expect(exported).toContain('<RadioGroup.Item of="Radio" Checked="Off" visible={false} />')
+    expect(exported).toContain('<RadioGroup.Item of="Radio" Checked="Off" opacity={0.4} />')
+    const [copy] = await renderJSX(graph, exported)
+    expect(sceneNodeToJSX(copy.id, graph)).toBe(exported)
   })
 })

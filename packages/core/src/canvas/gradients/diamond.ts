@@ -1,14 +1,12 @@
-import type { InputMatrix, Shader } from 'canvaskit-wasm'
+import type { InputMatrix, Shader } from '@open-pencil/canvaskit'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
+import { compiledProgram } from '#core/canvas/renderer/shaders'
+import { defineShader } from '#core/canvas/sksl'
 
-const DIAMOND_GRADIENT = `
-uniform shader ramp;
-half4 main(float2 position) {
-  float2 distance = abs(position - float2(0.5));
-  return ramp.eval(float2(2.0 * (distance.x + distance.y), 0.0));
-}
-`
+import diamondSource from './diamond.sksl?raw'
+
+const DIAMOND_GRADIENT = defineShader('diamond gradient', diamondSource)
 
 /** Use Skia's ordinary gradient ramp for stop interpolation and color management. */
 export function makeDiamondGradient(
@@ -17,14 +15,7 @@ export function makeDiamondGradient(
   positions: number[],
   localMatrix: InputMatrix
 ): Shader {
-  if (!r.diamondGradientEffect) {
-    let error = ''
-    const effect = r.ck.RuntimeEffect.Make(DIAMOND_GRADIENT, (message) => {
-      error = message
-    })
-    if (!effect) throw new Error(`Cannot compile diamond gradient: ${error}`)
-    r.diamondGradientEffect = effect
-  }
+  const diamond = compiledProgram(r.ck, r.shaders, DIAMOND_GRADIENT)
   const ramp = r.ck.Shader.MakeLinearGradient(
     [0, 0],
     [1, 0],
@@ -33,7 +24,7 @@ export function makeDiamondGradient(
     r.ck.TileMode.Clamp
   )
   try {
-    return r.diamondGradientEffect.makeShaderWithChildren([], [ramp], localMatrix)
+    return diamond.effect.makeShaderWithChildren(diamond.uniforms({}), [ramp], localMatrix)
   } finally {
     ramp.delete()
   }

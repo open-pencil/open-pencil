@@ -1,6 +1,7 @@
 import { Frame, Text } from '@open-pencil/design-jsx'
 import type { TreeNode } from '@open-pencil/design-jsx'
 
+import { TOUR_KEYS } from '../callout'
 import { menuBar } from '../chrome'
 import { Icon, type IconProps } from '../elements'
 import type { Theme } from '../theme'
@@ -105,7 +106,7 @@ export async function createYoursChapter(context: ChapterContext): Promise<Chapt
       step: 8,
       title: 'Keep it',
       body: 'File → Save writes a .fig you can open here again, or in Figma. The card you are reading is a component as well: its main component sits under the list.',
-      keys: '⌘ S',
+      keys: TOUR_KEYS.save,
       where: menuBar(theme, 'File')
     }
   })

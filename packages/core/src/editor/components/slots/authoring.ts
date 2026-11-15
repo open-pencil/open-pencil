@@ -119,11 +119,14 @@ export function createSlotAuthoringActions(ctx: EditorContext) {
     const owner = ctx.graph.getNode(ownerId)
     if (!owner) return
     const frames = boundFrames(ctx, owner, propertyId)
+    // A set's slots are its variants': their instances hold the content.
+    const components = new Set([owner.id, ...owner.childIds])
     const owning = [...ctx.graph.getAllNodes()]
       .filter(
         (node) =>
           node.type === 'INSTANCE' &&
-          node.componentId === owner.id &&
+          !!node.componentId &&
+          components.has(node.componentId) &&
           Object.hasOwn(node.componentPropertyAssignments, propertyId)
       )
       .map((instance) => instance.id)

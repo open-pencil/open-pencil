@@ -10,6 +10,12 @@ import {
 
 import { computeAllLayouts, computeLayout } from '#core/layout'
 
+export interface MutationWithLayout<T> {
+  result: T
+  /** Lays out the layers the edit touched again, as once its fonts have loaded. */
+  relayout: () => void
+}
+
 export function createLayoutRunner(getGraph: () => SceneGraph) {
   function runLayoutForNode(id: string) {
     const graph = getGraph()
@@ -40,16 +46,24 @@ export function createLayoutRunner(getGraph: () => SceneGraph) {
     })
   }
 
+  /**
+   * Runs an edit and lays out what it touched as soon as it is done, with no wait in between, so
+   * an undo step recorded around this holds the edit and its layout and nothing else. `relayout`
+   * lays the same layers out again, for once fonts the edit drew text in have loaded: that is
+   * presentation, not part of the edit.
+   */
   async function runMutationWithLayout<T>(
     operation: () => T | Promise<T>,
-    fallbackId?: string,
-    beforeLayout?: (result: T) => Promise<void> | void
-  ): Promise<T> {
+    fallbackId?: string
+  ): Promise<MutationWithLayout<T>> {
     const graph = getGraph()
     const { result, impact } = await collectSceneMutation(graph, operation)
-    await beforeLayout?.(result)
-    if (!runLayoutForImpact(impact) && fallbackId) computeAllLayouts(graph, fallbackId)
-    return result
+    const layout = () => {
+      if (getGraph() !== graph) return
+      if (!runLayoutForImpact(impact) && fallbackId) computeAllLayouts(graph, fallbackId)
+    }
+    layout()
+    return { result, relayout: layout }
   }
 
   /**

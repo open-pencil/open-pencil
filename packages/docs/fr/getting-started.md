@@ -4,7 +4,7 @@
 
 OpenPencil fonctionne directement dans le navigateur et ne nécessite aucune installation. Ouvrez [app.openpencil.dev](https://app.openpencil.dev) pour commencer à créer.
 
-Si vous souhaitez développer votre propre produit avec OpenPencil plutôt que vous limiter à l'application par défaut, consultez la section [Automatisation](/programmable/) et la documentation du [Vue SDK](/programmable/sdk/).
+Si vous souhaitez développer votre propre produit avec OpenPencil plutôt que vous limiter à l'application par défaut, consultez la section [Automatisation](/developers/) et la documentation du [Vue SDK](/developers/sdk/).
 
 ## Application de bureau
 
@@ -74,7 +74,7 @@ L'éditeur sera accessible à l'adresse `http://localhost:1420`.
 | ------------------------------- | ------------------------------------------------------------------------------------------- |
 | `bun run dev` | Démarrer le serveur de développement avec HMR |
 | `bun run build` | Générer la version de production |
-| `bun run check` | Exécuter oxlint et vérifier les types avec tsgo |
+| `bun run check` | Exécuter oxlint et vérifier les types avec TypeScript 7 |
 | `bun run test` | Exécuter les tests E2E et de régression visuelle avec Playwright |
 | `bun run test:update` | Mettre à jour les captures de référence |
 | `bun run test:unit` | Exécuter les tests unitaires avec bun:test |

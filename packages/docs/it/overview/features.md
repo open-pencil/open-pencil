@@ -12,7 +12,7 @@ OpenPencil apre e salva direttamente i file `.fig`. Import ed export usano lo st
 - **Penna:** reti vettoriali, curve di Bézier e maniglie tangenti.
 - **Testo:** modifica diretta nel canvas e supporto IME.
 - **Testo formattato:** grassetto, corsivo, sottolineato e barrato su intervalli di caratteri.
-- **Disposizione automatica:** Flexbox e CSS Grid tramite Yoga WASM, con direzione, intervallo, rientri, allineamento, dimensionamento e tracce della griglia.
+- **Disposizione automatica:** Flexbox e CSS Grid tramite Taffy WASM, con direzione, intervallo, rientri, allineamento, dimensionamento e tracce della griglia.
 - **Componenti:** creazione di componenti e set, istanze, override e sincronizzazione automatica.
 - **Variabili:** token di design con collezioni, modalità Light/Dark, tipi Color/Float/String/Boolean e collegamenti.
 - **Sezioni:** contenitori di primo livello che integrano gli oggetti sovrapposti.

@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, defineAsyncComponent, ref } from 'vue'
 
 import type { MetricsSnapshot } from '@open-pencil/feedback/contract'
 
 import { usePortalTheme } from '@/app/cloud-portal/theme'
 import { useMetricsSnapshot } from '@/app/metrics/load'
 import type { MetricsRange } from '@/app/metrics/range'
+import { useReportInbox, useReportTriage } from '@/app/metrics/reports'
 import MetricsDashboard from '@/components/metrics/MetricsDashboard.vue'
+import ReportInboxPanel from '@/components/metrics/reports/ReportInboxPanel.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
@@ -23,6 +25,56 @@ const { initialRange, initialSnapshot } = defineProps<{
 
 const range = ref(initialRange)
 const { snapshot, loading, failed, refresh } = useMetricsSnapshot(range, initialSnapshot)
+const tab = ref<'metrics' | 'reports'>('metrics')
+
+// The inbox loads with the page, so its tab can show how many reports are open.
+const inbox = useReportInbox()
+void inbox.refresh()
+const {
+  filter,
+  query,
+  reports,
+  counts,
+  next,
+  loading: inboxLoading,
+  loadingMore,
+  loaded: inboxLoaded,
+  failed: inboxFailed
+} = inbox
+const openReports = computed(() => counts.value?.open)
+const triage = useReportTriage(inbox)
+const { selected, detail, detailFailed, saveState } = triage
+/** The document open read-only, by the address it downloads from. */
+const previewing = ref<string | null>(null)
+
+// The editor loads only when a document is opened, so the dashboard itself stays light.
+const ReportDocumentViewer = defineAsyncComponent(
+  () => import('@/components/document-viewer/DocumentViewer.vue')
+)
+
+const inboxPanel = computed(() => ({
+  reports: reports.value,
+  loaded: inboxLoaded.value,
+  loadFailed: inboxFailed.value,
+  counts: counts.value,
+  hasMore: next.value !== null,
+  loadingMore: loadingMore.value,
+  selected: selected.value,
+  detail: detail.value,
+  detailFailed: detailFailed.value,
+  saveState: saveState.value
+}))
+const inboxPanelEvents = {
+  select: (report: Parameters<typeof triage.open>[0]) => void triage.open(report),
+  more: () => void inbox.loadMore(),
+  status: (...args: Parameters<typeof triage.setStatus>) => void triage.setStatus(...args),
+  note: (...args: Parameters<typeof triage.setNote>) => void triage.setNote(...args),
+  preview: (url: string) => {
+    previewing.value = url
+  },
+  reload: () => reload()
+}
+const refreshTab = () => (tab.value === 'reports' ? inbox.refresh() : refresh())
 const host = globalThis.location.host
 // Access's session may have run out; reloading the page signs in again.
 const reload = () => globalThis.location.reload()
@@ -32,11 +84,21 @@ const reload = () => globalThis.location.reload()
   <MetricsDashboard
     v-if="snapshot"
     v-model:range="range"
+    v-model:tab="tab"
     :host="host"
     :snapshot="snapshot"
-    :loading="loading"
-    @refresh="refresh"
+    :loading="tab === 'reports' ? inboxLoading : loading"
+    :open-reports="openReports"
+    @refresh="refreshTab"
   >
+    <template #reports>
+      <ReportInboxPanel
+        v-model:filter="filter"
+        v-model:query="query"
+        v-bind="inboxPanel"
+        v-on="inboxPanelEvents"
+      />
+    </template>
     <template v-if="failed" #alert>
       <AppAlert
         tone="warning"
@@ -49,6 +111,26 @@ const reload = () => globalThis.location.reload()
       </AppAlert>
     </template>
   </MetricsDashboard>
+  <!-- The inbox loads on its own, so it stays reachable while the metrics are down. -->
+  <main
+    v-else-if="failed && tab === 'reports'"
+    class="h-full overflow-y-auto bg-canvas text-surface"
+  >
+    <div class="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-6 md:px-6">
+      <div class="flex items-center justify-between gap-2">
+        <AppButton size="sm" variant="ghost" @click="tab = 'metrics'">
+          <icon-lucide-arrow-left class="size-3.5" data-direction="reading" />
+          Metrics
+        </AppButton>
+      </div>
+      <ReportInboxPanel
+        v-model:filter="filter"
+        v-model:query="query"
+        v-bind="inboxPanel"
+        v-on="inboxPanelEvents"
+      />
+    </div>
+  </main>
   <main v-else-if="failed" class="flex h-full bg-canvas text-surface">
     <AppPlaceholder
       size="page"
@@ -59,7 +141,13 @@ const reload = () => globalThis.location.reload()
       <template #icon><icon-lucide-cloud-off class="size-5" /></template>
       <template #action>
         <AppButton variant="outline" @click="reload">Reload</AppButton>
+        <AppButton variant="outline" @click="tab = 'reports'">Open reports</AppButton>
       </template>
     </AppPlaceholder>
   </main>
+  <ReportDocumentViewer
+    v-if="previewing"
+    :url="previewing"
+    @update:open="(open: boolean) => !open && (previewing = null)"
+  />
 </template>

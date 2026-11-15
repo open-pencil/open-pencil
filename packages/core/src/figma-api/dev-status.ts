@@ -10,8 +10,10 @@ import {
   type FigmaDevStatus
 } from '@open-pencil/scene-graph/statuses'
 
-import type { NodeProxyInternals, ProxyThis } from './accessor-utils'
-import { graph, raw, updateNode } from './accessor-utils'
+import { graphOf } from '#core/figma-api/graph'
+
+import type { NodeProxyInternals, ProxyThis } from './accessors/utils'
+import { raw, updateNode } from './accessors/utils'
 
 /** Figma's `DevStatus`; a description is not kept, as comments hold what people say about it. */
 export type FigmaDevStatusValue = { type: FigmaDevStatus; description?: string } | null
@@ -40,7 +42,7 @@ export function installDevStatusAccessors(prototype: object, internals: NodeProx
       get(this: ProxyThis): FigmaDevStatusValue | undefined {
         const node = raw(this, internals)
         if (!STATUS_NODE_TYPES.has(node.type)) return undefined
-        const status = effectiveStatus(graph(this, internals), node)
+        const status = effectiveStatus(graphOf(this), node)
         const type = status ? figmaDevStatusOf(status) : null
         return type ? { type } : null
       },
@@ -53,7 +55,7 @@ export function installDevStatusAccessors(prototype: object, internals: NodeProx
           updateNode(this, internals, { status: null })
           return
         }
-        const placement = statusPlacement(graph(this, internals), node)
+        const placement = statusPlacement(graphOf(this), node)
         if (placement === 'parent' || placement === 'ancestor') {
           throw new Error(PLACEMENT_ERRORS[placement])
         }

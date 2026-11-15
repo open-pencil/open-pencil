@@ -1,5 +1,4 @@
-import type { Canvas, Paint } from 'canvaskit-wasm'
-
+import type { Canvas, CanvasKit, Paint } from '@open-pencil/canvaskit'
 import type {
   VectorVertex,
   VectorSegment,
@@ -7,18 +6,20 @@ import type {
   SceneGraph
 } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import { cubicPoint } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 import { transformVectorNetwork } from '@open-pencil/scene-graph/vector-network'
 
 import { PEN_HANDLE_RADIUS, PEN_VERTEX_RADIUS } from '#core/constants'
 import {
+  type ShownHandles,
+  handleVisibleVertices,
   regenerateFillGeometry,
   vectorHandleId,
-  vectorHandleParts,
   vectorNetworkToPath
 } from '#core/vector'
-import { evalCubic, segmentToAbsolute } from '#core/vector/curve-math'
+import { segmentToAbsolute } from '#core/vector/curve-math'
 
 import { drawRegionHatch } from './region-hatch'
 import type { SkiaRenderer, RenderOverlays } from './renderer'
@@ -41,34 +42,12 @@ export interface NodeEditOverlayState {
   hoveredHandleInfo?: HandleInfo
   hoveredRegion?: number | null
   selectedRegions?: Set<number>
+  /** Which points show their handles; near the selection when unset. */
+  showHandles?: ShownHandles
 }
 
-// Blue = rgb(59,130,246) ≈ 0.23, 0.51, 0.96
-// Light blue (hover) = rgb(96,165,250) ≈ 0.376, 0.647, 0.98
-const BLUE = [0.23, 0.51, 0.96] as const
-const LIGHT_BLUE = [0.376, 0.647, 0.98] as const
-
-export function computeHandleVisibleVertices(
-  selectedVertexIndices: Set<number>,
-  selectedHandles: Set<number>,
-  segments: VectorSegment[]
-): Set<number> {
-  // Seed: selected vertices + vertices that own a selected handle
-  const seed = new Set(selectedVertexIndices)
-  for (const handleId of selectedHandles) {
-    const handle = vectorHandleParts(handleId)
-    if (!handle || handle.segmentIndex >= segments.length) continue
-    const seg = segments[handle.segmentIndex]
-    seed.add(handle.tangentField === 'tangentStart' ? seg.start : seg.end)
-  }
-  // Expand: add only direct neighbors of seed vertices (no cascading)
-  const visible = new Set(seed)
-  for (const seg of segments) {
-    if (seed.has(seg.start)) visible.add(seg.end)
-    if (seed.has(seg.end)) visible.add(seg.start)
-  }
-  return visible
-}
+/** How far a hovered point or handle lightens the selection colour toward white. */
+const HOVER_LIGHTEN = 0.25
 
 export function drawNodeEditOverlay(
   r: SkiaRenderer,
@@ -83,8 +62,6 @@ export function drawNodeEditOverlay(
 
   if (vertices.length === 0) return
 
-  ensureNodeEditPaints(r)
-
   const toScreen: ToScreenFn = (x, y) => ({
     x: x * r.zoom + r.panX,
     y: y * r.zoom + r.panY
@@ -92,11 +69,7 @@ export function drawNodeEditOverlay(
 
   const selectedHandles = editState.selectedHandles ?? new Set<number>()
   const hovered = editState.hoveredHandleInfo ?? null
-  const handleVisibleVertices = computeHandleVisibleVertices(
-    selectedVertexIndices,
-    selectedHandles,
-    segments
-  )
+  const visibleHandleVertices = handleVisibleVertices(editState)
 
   // Draw the node shape with its original fills/strokes/effects using live vertices
   drawLiveShape(r, canvas, graph, editState.nodeId, vertices, segments, regions)
@@ -122,7 +95,7 @@ export function drawNodeEditOverlay(
     canvas,
     vertices,
     segments,
-    handleVisibleVertices,
+    visibleHandleVertices,
     toScreen,
     selectedHandles,
     hovered
@@ -188,125 +161,82 @@ function drawLiveShape(
 }
 
 // ---------------------------------------------------------------------------
-// Lazy paint cache
+// Paints
 // ---------------------------------------------------------------------------
 
-const paintCache = new WeakMap<
-  SkiaRenderer,
-  {
-    handleLinePaint: Paint
-    handleLineSelectedPaint: Paint
-    handleLineHoverPaint: Paint
-    vertexStroke1px: Paint
-    vertexSelectedFill: Paint
-    handleSelectedFill: Paint
-    handleSelectedStroke: Paint
-    handleHoverFill: Paint
-    handleHoverStroke: Paint
-    techStrokePaint: Paint
-    segmentSelectedPaint: Paint
-  }
->()
-
-function ensureNodeEditPaints(r: SkiaRenderer) {
-  if (paintCache.has(r)) return
-  const ck = r.ck
-
-  // Default handle line — gray
-  const handleLinePaint = new ck.Paint()
-  handleLinePaint.setStyle(ck.PaintStyle.Stroke)
-  handleLinePaint.setStrokeWidth(1)
-  handleLinePaint.setColor(ck.Color4f(0.6, 0.6, 0.6, 1))
-  handleLinePaint.setAntiAlias(true)
-
-  // Selected handle line — blue
-  const handleLineSelectedPaint = new ck.Paint()
-  handleLineSelectedPaint.setStyle(ck.PaintStyle.Stroke)
-  handleLineSelectedPaint.setStrokeWidth(1)
-  handleLineSelectedPaint.setColor(ck.Color4f(BLUE[0], BLUE[1], BLUE[2], 1))
-  handleLineSelectedPaint.setAntiAlias(true)
-
-  // Hover handle line — light blue
-  const handleLineHoverPaint = new ck.Paint()
-  handleLineHoverPaint.setStyle(ck.PaintStyle.Stroke)
-  handleLineHoverPaint.setStrokeWidth(1)
-  handleLineHoverPaint.setColor(ck.Color4f(LIGHT_BLUE[0], LIGHT_BLUE[1], LIGHT_BLUE[2], 1))
-  handleLineHoverPaint.setAntiAlias(true)
-
-  // Vertex stroke — blue 1px
-  const vertexStroke1px = new ck.Paint()
-  vertexStroke1px.setStyle(ck.PaintStyle.Stroke)
-  vertexStroke1px.setStrokeWidth(1)
-  vertexStroke1px.setColor(ck.Color4f(BLUE[0], BLUE[1], BLUE[2], 1))
-  vertexStroke1px.setAntiAlias(true)
-
-  // Vertex selected fill — blue
-  const vertexSelectedFill = new ck.Paint()
-  vertexSelectedFill.setStyle(ck.PaintStyle.Fill)
-  vertexSelectedFill.setColor(ck.Color4f(BLUE[0], BLUE[1], BLUE[2], 1))
-  vertexSelectedFill.setAntiAlias(true)
-
-  // Selected handle diamond — blue fill
-  const handleSelectedFill = new ck.Paint()
-  handleSelectedFill.setStyle(ck.PaintStyle.Fill)
-  handleSelectedFill.setColor(ck.Color4f(BLUE[0], BLUE[1], BLUE[2], 1))
-  handleSelectedFill.setAntiAlias(true)
-
-  // Selected handle diamond — white outset stroke 3px
-  const handleSelectedStroke = new ck.Paint()
-  handleSelectedStroke.setStyle(ck.PaintStyle.Stroke)
-  handleSelectedStroke.setStrokeWidth(3)
-  handleSelectedStroke.setColor(ck.Color4f(1, 1, 1, 1))
-  handleSelectedStroke.setAntiAlias(true)
-
-  // Hover handle diamond — light blue fill
-  const handleHoverFill = new ck.Paint()
-  handleHoverFill.setStyle(ck.PaintStyle.Fill)
-  handleHoverFill.setColor(ck.Color4f(LIGHT_BLUE[0], LIGHT_BLUE[1], LIGHT_BLUE[2], 1))
-  handleHoverFill.setAntiAlias(true)
-
-  // Hover handle diamond — white outset stroke 3px
-  const handleHoverStroke = new ck.Paint()
-  handleHoverStroke.setStyle(ck.PaintStyle.Stroke)
-  handleHoverStroke.setStrokeWidth(3)
-  handleHoverStroke.setColor(ck.Color4f(1, 1, 1, 1))
-  handleHoverStroke.setAntiAlias(true)
-
-  // Technical stroke: rgb(178,178,178) = 0.698
-  const techStrokePaint = new ck.Paint()
-  techStrokePaint.setStyle(ck.PaintStyle.Stroke)
-  techStrokePaint.setStrokeWidth(1)
-  techStrokePaint.setColor(ck.Color4f(0.698, 0.698, 0.698, 1))
-  techStrokePaint.setAntiAlias(true)
-
-  // Selected segment — blue 2px
-  const segmentSelectedPaint = new ck.Paint()
-  segmentSelectedPaint.setStyle(ck.PaintStyle.Stroke)
-  segmentSelectedPaint.setStrokeWidth(2)
-  segmentSelectedPaint.setColor(ck.Color4f(BLUE[0], BLUE[1], BLUE[2], 1))
-  segmentSelectedPaint.setAntiAlias(true)
-
-  paintCache.set(r, {
-    handleLinePaint,
-    handleLineSelectedPaint,
-    handleLineHoverPaint,
-    vertexStroke1px,
-    vertexSelectedFill,
-    handleSelectedFill,
-    handleSelectedStroke,
-    handleHoverFill,
-    handleHoverStroke,
-    techStrokePaint,
-    segmentSelectedPaint
-  })
+export interface NodeEditPaints {
+  handleLinePaint: Paint
+  handleLineSelectedPaint: Paint
+  handleLineHoverPaint: Paint
+  vertexStroke1px: Paint
+  vertexSelectedFill: Paint
+  handleSelectedFill: Paint
+  handleSelectedStroke: Paint
+  handleHoverFill: Paint
+  handleHoverStroke: Paint
+  techStrokePaint: Paint
+  segmentSelectedPaint: Paint
 }
 
-function getNodeEditPaints(r: SkiaRenderer) {
-  const paints = paintCache.get(r)
-  if (!paints) {
-    throw new Error('Node edit paints are not initialized')
+function strokePaint(ck: CanvasKit, width: number, color: Float32Array): Paint {
+  const paint = new ck.Paint()
+  paint.setStyle(ck.PaintStyle.Stroke)
+  paint.setStrokeWidth(width)
+  paint.setColor(color)
+  paint.setAntiAlias(true)
+  return paint
+}
+
+function fillPaint(ck: CanvasKit, color: Float32Array): Paint {
+  const paint = new ck.Paint()
+  paint.setStyle(ck.PaintStyle.Fill)
+  paint.setColor(color)
+  paint.setAntiAlias(true)
+  return paint
+}
+
+/**
+ * The renderer owns these: it creates them with its other paints and frees them when destroyed.
+ * The ones in the selection colour are coloured by {@link colorNodeEditPaints}.
+ */
+export function createNodeEditPaints(ck: CanvasKit): NodeEditPaints {
+  const white = ck.Color4f(1, 1, 1, 1)
+  return {
+    handleLinePaint: strokePaint(ck, 1, ck.Color4f(0.6, 0.6, 0.6, 1)),
+    handleLineSelectedPaint: strokePaint(ck, 1, white),
+    handleLineHoverPaint: strokePaint(ck, 1, white),
+    vertexStroke1px: strokePaint(ck, 1, white),
+    vertexSelectedFill: fillPaint(ck, white),
+    handleSelectedFill: fillPaint(ck, white),
+    // White outset strokes around the selected and hovered handle diamonds.
+    handleSelectedStroke: strokePaint(ck, 3, white),
+    handleHoverFill: fillPaint(ck, white),
+    handleHoverStroke: strokePaint(ck, 3, white),
+    // Technical stroke: rgb(178, 178, 178).
+    techStrokePaint: strokePaint(ck, 1, ck.Color4f(0.698, 0.698, 0.698, 1)),
+    segmentSelectedPaint: strokePaint(ck, 2, white)
   }
-  return paints
+}
+
+/** Colours the selected and hovered points, handles and segments in the selection colour. */
+export function colorNodeEditPaints(ck: CanvasKit, paints: NodeEditPaints, color: Color): void {
+  const selected = ck.Color4f(color.r, color.g, color.b, 1)
+  const lighten = (channel: number) => channel + (1 - channel) * HOVER_LIGHTEN
+  const hovered = ck.Color4f(lighten(color.r), lighten(color.g), lighten(color.b), 1)
+  for (const paint of [
+    paints.handleLineSelectedPaint,
+    paints.vertexStroke1px,
+    paints.vertexSelectedFill,
+    paints.handleSelectedFill,
+    paints.segmentSelectedPaint
+  ])
+    paint.setColor(selected)
+  paints.handleLineHoverPaint.setColor(hovered)
+  paints.handleHoverFill.setColor(hovered)
+}
+
+export function disposeNodeEditPaints(paints: NodeEditPaints): void {
+  for (const paint of Object.values(paints)) paint.delete()
 }
 
 // ---------------------------------------------------------------------------
@@ -322,7 +252,7 @@ function drawTechStroke(
   segments: VectorSegment[],
   regions: VectorRegion[]
 ): void {
-  const { techStrokePaint } = getNodeEditPaints(r)
+  const { techStrokePaint } = r.nodeEditPaints
   const node = graph.getNode(nodeId)
   if (!node) return
   const world = getWorldMatrix(node, graph)
@@ -358,7 +288,7 @@ function drawSelectedSegments(
   selectedSegmentIndices: Set<number>,
   toScreen: ToScreenFn
 ): void {
-  const { segmentSelectedPaint, vertexStroke1px } = getNodeEditPaints(r)
+  const { segmentSelectedPaint, vertexStroke1px } = r.nodeEditPaints
   const network = { vertices, segments, regions: [] }
   for (const index of selectedSegmentIndices) {
     if (index >= segments.length) continue
@@ -375,7 +305,7 @@ function drawSelectedSegments(
     canvas.drawPath(path, segmentSelectedPaint)
     path.delete()
 
-    const mid = evalCubic(s0.x, s0.y, s1.x, s1.y, s2.x, s2.y, s3.x, s3.y, 0.5)
+    const mid = cubicPoint(s0, s1, s2, s3, 0.5)
     canvas.drawCircle(mid.x, mid.y, PEN_HANDLE_RADIUS, r.penVertexFill)
     canvas.drawCircle(mid.x, mid.y, PEN_HANDLE_RADIUS, vertexStroke1px)
   }
@@ -390,12 +320,12 @@ function drawEditHandles(
   canvas: Canvas,
   vertices: VectorVertex[],
   segments: VectorSegment[],
-  handleVisibleVertices: Set<number>,
+  visibleHandleVertices: Set<number>,
   toScreen: ToScreenFn,
   selectedHandles: Set<number>,
   hovered: HandleInfo
 ): void {
-  const paints = getNodeEditPaints(r)
+  const paints = r.nodeEditPaints
   for (let si = 0; si < segments.length; si++) {
     const seg = segments[si]
     drawSegmentHandle(
@@ -405,7 +335,7 @@ function drawEditHandles(
       seg,
       si,
       'tangentStart',
-      handleVisibleVertices,
+      visibleHandleVertices,
       toScreen,
       selectedHandles,
       hovered,
@@ -418,7 +348,7 @@ function drawEditHandles(
       seg,
       si,
       'tangentEnd',
-      handleVisibleVertices,
+      visibleHandleVertices,
       toScreen,
       selectedHandles,
       hovered,
@@ -434,14 +364,14 @@ function drawSegmentHandle(
   seg: VectorSegment,
   segmentIndex: number,
   tangentField: 'tangentStart' | 'tangentEnd',
-  handleVisibleVertices: Set<number>,
+  visibleHandleVertices: Set<number>,
   toScreen: ToScreenFn,
   selectedHandles: Set<number>,
   hovered: HandleInfo,
-  paints: ReturnType<typeof getNodeEditPaints>
+  paints: NodeEditPaints
 ): void {
   const vertexIndex = tangentField === 'tangentStart' ? seg.start : seg.end
-  if (!handleVisibleVertices.has(vertexIndex)) return
+  if (!visibleHandleVertices.has(vertexIndex)) return
 
   const tangent = seg[tangentField]
   if (tangent.x === 0 && tangent.y === 0) return
@@ -508,7 +438,7 @@ function drawEditVertices(
   toScreen: ToScreenFn
 ): void {
   const vertexFill = r.penVertexFill
-  const { vertexStroke1px, vertexSelectedFill } = getNodeEditPaints(r)
+  const { vertexStroke1px, vertexSelectedFill } = r.nodeEditPaints
 
   for (let i = 0; i < vertices.length; i++) {
     const v = toScreen(vertices[i].x, vertices[i].y)

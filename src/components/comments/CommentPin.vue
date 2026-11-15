@@ -3,10 +3,10 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { commentPreview } from '@/app/comments/format'
 import PersonAvatar from '@/components/presence/PersonAvatar.vue'
-import { comments } from '@/theme/comments'
 
 import { useCommentAuthor } from './author'
 import CommentTime from './CommentTime.vue'
+import { comments } from './ui'
 
 /**
  * A comment on the canvas: its author's avatar in a bubble pointing at the spot. Hovering opens

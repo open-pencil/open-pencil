@@ -9,6 +9,12 @@ import {
 } from './workspace/catalog'
 import { resolveWorkspaceRoot } from './workspace/root'
 
+/**
+ * How long one package's build may run. A package that compiles a Rust crate to WebAssembly, such
+ * as the HTML engine, takes minutes on a cold cache.
+ */
+const PACKAGE_BUILD_TIMEOUT_MS = 15 * 60_000
+
 export interface BuildPublicPackagesOptions {
   log?: (message: string) => void
   output?: 'capture' | 'inherit'
@@ -45,7 +51,7 @@ export async function buildPublicPackages(
                 args: ['run', 'build'],
                 cwd: join(root, pkg.directory),
                 output: 'capture',
-                timeoutMs: options.timeoutMs ?? 180_000
+                timeoutMs: options.timeoutMs ?? PACKAGE_BUILD_TIMEOUT_MS
               })
             )
           } catch (error) {

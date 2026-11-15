@@ -3,8 +3,8 @@ import { describe, expect, test } from 'bun:test'
 import type { PenNode } from '@open-pencil/pen'
 import { gradientPoint } from '@open-pencil/scene-graph/gradient'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 
-import { expectDefined, getNodeOrThrow } from './helpers/assert'
 import { parseDocument } from './helpers/document'
 
 function gradientOf(fill: PenNode['fill']) {

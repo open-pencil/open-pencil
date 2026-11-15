@@ -38,8 +38,18 @@ export const collaborationTicketSchema = v.object({
   roomKey: v.pipe(v.string(), v.minLength(43), v.maxLength(128)),
   principal: collaborationPrincipalSchema,
   permission: documentPermissionSchema,
+  /**
+   * Why a peer whose access would let them edit may only view: `storage-limit` when the document's
+   * owner holds their whole storage allowance, until they free space or their plan grows.
+   */
+  readOnly: v.optional(v.picklist(['storage-limit'])),
   roomEpoch: v.pipe(v.number(), v.integer(), v.minValue(0)),
   expiresAt: v.string(),
-  serverEnforcedWrites: v.boolean()
+  serverEnforcedWrites: v.boolean(),
+  /**
+   * Whether the relay answers `RELAY_HEARTBEAT`. A relay from before it takes a ping for a
+   * malformed frame and turns the peer away, so editors ask only a relay that says it answers.
+   */
+  relayHeartbeat: v.optional(v.boolean(), false)
 })
 export type CollaborationTicket = v.InferOutput<typeof collaborationTicketSchema>

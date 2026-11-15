@@ -8,7 +8,8 @@ function rootElement(svg: string): Element | null {
   return parseSVGDocument(svg)?.documentElement ?? null
 }
 
-function parseViewBoxValue(value: string | null): Rect | null {
+/** A `viewBox` value as a rect, or null when it is malformed or does not establish a viewport. */
+export function parseSVGViewBoxValue(value: string | null | undefined): Rect | null {
   if (!value) return null
   const values = value
     .trim()
@@ -21,7 +22,7 @@ function parseViewBoxValue(value: string | null): Rect | null {
 }
 
 export function parseSVGViewBox(svg: string): Rect | null {
-  return parseViewBoxValue(rootElement(svg)?.getAttribute('viewBox') ?? null)
+  return parseSVGViewBoxValue(rootElement(svg)?.getAttribute('viewBox') ?? null)
 }
 
 function parseSVGDimension(root: Element | null, attribute: string): number | null {
@@ -33,7 +34,7 @@ function parseSVGDimension(root: Element | null, attribute: string): number | nu
 
 export function parseSVGSize(svg: string, fallback: Size = { width: 24, height: 24 }): Size {
   const root = rootElement(svg)
-  const viewBox = parseViewBoxValue(root?.getAttribute('viewBox') ?? null)
+  const viewBox = parseSVGViewBoxValue(root?.getAttribute('viewBox') ?? null)
   const width = parseSVGDimension(root, 'width')
   const height = parseSVGDimension(root, 'height')
   if (width && height) return { width, height }

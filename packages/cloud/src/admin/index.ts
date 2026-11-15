@@ -17,3 +17,9 @@ export {
 } from './enrollment/service'
 export { createAdminOperationsService, type AdminOperationsService } from './operations/service'
 export { createAdminUserService, type AdminUserService } from './users/service'
+export {
+  createAdminDocumentService,
+  type AdminDocumentService,
+  type AdminDocumentServiceOptions
+} from './documents/service'
+export { createAdminReportService, type AdminReportService } from './reports/service'

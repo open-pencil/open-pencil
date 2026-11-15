@@ -7,6 +7,8 @@ import {
   PostgresRateLimitStore
 } from '#cloud/server'
 
+import { maxOf } from '@open-pencil/scene-graph/arrays'
+
 describe('Cloud enrollment integration', () => {
   test('deduplicates requests and applies audited reviews', async () => {
     const runtime = await createCloudTestDatabase()
@@ -14,7 +16,7 @@ describe('Cloud enrollment integration', () => {
       const enrollment = createEnrollmentService(runtime.database)
       await enrollment.request({ email: 'Person@Example.com', name: 'Person', reason: 'Design' })
       await enrollment.request({ email: 'person@example.com', name: 'Duplicate' })
-      const [pending] = await enrollment.list('pending')
+      const [pending] = (await enrollment.list({ filter: 'pending' })).enrollments
       expect(pending).toMatchObject({
         email: 'person@example.com',
         name: 'Person',
@@ -45,7 +47,7 @@ describe('Cloud enrollment integration', () => {
       expect(await enrollment.statusForEmail('PERSON@example.com')).toBe('approved')
       expect(
         await runtime.database
-          .selectFrom('cloudAdminAuditEvent')
+          .selectFrom('adminAuditEvent')
           .select('action')
           .executeTakeFirstOrThrow()
       ).toEqual({ action: 'enrollment.approved' })
@@ -62,13 +64,12 @@ describe('Cloud enrollment integration', () => {
         from: 'cloud@example.com'
       })
       const enrollment = createEnrollmentService(runtime.database, {
-        appURL: 'https://cloud.example.com',
-        portalURL: 'https://cloud.example.com',
+        publicURL: 'https://cloud.example.com',
         adminRecipients: ['admin@example.com'],
         email
       })
       await enrollment.request({ email: 'person@example.com', name: 'Person', reason: 'Design' })
-      let [record] = await enrollment.list()
+      let [record] = (await enrollment.list()).enrollments
       if (!record) throw new Error('Expected enrollment')
       expect(record.requestRevision).toBe(1)
       expect(
@@ -82,7 +83,7 @@ describe('Cloud enrollment integration', () => {
         'Enrollment cannot transition'
       )
       await enrollment.request({ email: 'person@example.com', reason: 'Try again' })
-      ;[record] = await enrollment.list()
+      ;[record] = (await enrollment.list()).enrollments
       expect(record).toMatchObject({ status: 'pending', requestRevision: 2, reason: 'Try again' })
       if (!record) throw new Error('Expected reopened enrollment')
       await enrollment.review('admin-user', record.id, 'approved', {})
@@ -106,10 +107,10 @@ describe('Cloud enrollment integration', () => {
       const results = await Promise.all(
         Array.from({ length: 20 }, () => store.increment('person@example.com'))
       )
-      expect(Math.max(...results.map((result) => result.totalHits))).toBe(20)
+      expect(maxOf(results.map((result) => result.totalHits))).toBe(20)
       expect(
         await runtime.database
-          .selectFrom('cloudRateLimit')
+          .selectFrom('apiRateLimit')
           .select(['keyHash', 'requestCount'])
           .executeTakeFirstOrThrow()
       ).toMatchObject({

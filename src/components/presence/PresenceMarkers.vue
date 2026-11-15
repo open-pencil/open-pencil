@@ -1,11 +1,14 @@
 <script setup lang="ts">
+import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
 import { colorToCSS } from '@open-pencil/scene-graph/color'
 
 import type { PagePresenceEntry } from '@/app/presence/registry'
 import Tip from '@/components/ui/overlay/Tip.vue'
-import { pageMarkers } from '@/theme/collaboration/page-markers'
+import pageMarkersTheme from '@/theme/collaboration/page-markers'
+
+const pageMarkers = tv(pageMarkersTheme)
 
 /** How many people and agents a row shows before summarizing the rest as "+N". */
 const MAX_MARKERS = 3

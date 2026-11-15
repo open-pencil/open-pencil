@@ -28,6 +28,7 @@ import {
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import TransformMatrix from '@open-pencil/scene-graph/matrix'
+import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
 
 describe('@open-pencil/fig NodeChange policy', () => {
   test('keeps raw LINE endpoints through reflected parents and exports authored origin pivots', () => {
@@ -105,9 +106,37 @@ describe('@open-pencil/fig NodeChange policy', () => {
     for (const [i, value] of expected.entries()) expect(actual[i]).toBeCloseTo(value)
   })
 
+  // Figma's layout size is a fixed-size text's box even when its lines draw past it.
+  test('reads how far a text’s saved lines reach', () => {
+    const line = (lineY: number) => ({
+      firstCharacter: 0,
+      endCharacter: 3,
+      position: { x: 0, y: lineY + 58 },
+      width: 100,
+      lineY,
+      lineHeight: 77,
+      lineAscent: 58
+    })
+    const props = nodeChangeToProps(
+      {
+        type: 'TEXT',
+        size: { x: 110, y: 40 },
+        textAutoResize: 'NONE',
+        derivedTextData: { layoutSize: { x: 110, y: 40 }, baselines: [line(0), line(77)] }
+      },
+      []
+    )
+
+    expect(props.derivedLayout).toEqual({ width: 110, height: 40 })
+    expect(props.derivedTextHeight).toBe(154)
+  })
+
   test('converts normalized text values', () => {
-    expect(convertLineHeight({ value: 120, units: 'PERCENT' }, 20)).toBe(24)
-    expect(convertLetterSpacing({ value: 10, units: 'PERCENT' }, 20)).toBe(2)
+    // A percent stays one, and Figma's RAW multiplier is a percent too.
+    expect(convertLineHeight({ value: 120, units: 'PERCENT' })).toEqual(percentLength(120))
+    expect(convertLineHeight({ value: 1.5, units: 'RAW' })).toEqual(percentLength(150))
+    expect(convertLineHeight({ value: 24, units: 'PIXELS' })).toEqual(pixelLength(24))
+    expect(convertLetterSpacing({ value: 10, units: 'PERCENT' })).toEqual(percentLength(10))
     expect(mapTextDecoration('UNDERLINE')).toBe('UNDERLINE')
   })
 
@@ -173,6 +202,72 @@ describe('@open-pencil/fig NodeChange policy', () => {
       radius: 0,
       visible: true
     })
+  })
+
+  test('reads a glass effect under the names Figma copies it with', () => {
+    // A rectangle's effect as Figma 126 copied it, set to refraction 0.11, depth 22, light 33° at
+    // 0.44, dispersion 0.55, and frost 6 through the plugin API.
+    const [effect] = convertEffects([
+      {
+        type: 'GLASS',
+        offset: { x: 0, y: 0 },
+        radius: 6,
+        visible: true,
+        blendMode: 'NORMAL',
+        spread: 0,
+        showShadowBehindNode: true,
+        color: { r: 0, g: 0, b: 0, a: 1 },
+        refractionRadius: 22,
+        specularAngle: 33,
+        specularIntensity: 0.4399999976158142,
+        bevelSize: 1,
+        chromaticAberration: 0.550000011920929,
+        refractionIntensity: 0.10999999940395355
+      }
+    ])
+    expect(effect).toMatchObject({
+      type: 'GLASS',
+      radius: 6,
+      glass: {
+        refraction: 0.10999999940395355,
+        depth: 22,
+        lightAngle: 33,
+        lightIntensity: 0.4399999976158142,
+        dispersion: 0.550000011920929
+      }
+    })
+  })
+
+  test('reads a progressive blur under the names Figma copies it with', () => {
+    // A rectangle's effects as Figma 126 copied them: a progressive layer blur from 3 at (0.1, 0.2)
+    // to 12 at (0.7, 0.9), and a normal one, which leaves the progressive fields out.
+    const [progressive, normal] = convertEffects([
+      {
+        type: 'FOREGROUND_BLUR',
+        offset: { x: 0, y: 0 },
+        radius: 12,
+        visible: true,
+        blendMode: 'NORMAL',
+        spread: 0,
+        showShadowBehindNode: true,
+        blurOpType: 'PROGRESSIVE',
+        startOffset: { x: 0.10000000149011612, y: 0.20000000298023224 },
+        endOffset: { x: 0.699999988079071, y: 0.8999999761581421 },
+        startRadius: 3,
+        color: { r: 0, g: 0, b: 0, a: 1 }
+      },
+      { type: 'FOREGROUND_BLUR', radius: 5, visible: true }
+    ])
+    expect(progressive).toMatchObject({
+      type: 'FOREGROUND_BLUR',
+      radius: 12,
+      progressive: {
+        startRadius: 3,
+        startOffset: { x: 0.10000000149011612, y: 0.20000000298023224 },
+        endOffset: { x: 0.699999988079071, y: 0.8999999761581421 }
+      }
+    })
+    expect(normal.progressive).toBeUndefined()
   })
 
   test('preserves the translation of rotated and mirrored Figma instances', () => {

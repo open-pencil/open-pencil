@@ -1,8 +1,8 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import { copyGeometryPaths, scaleGeometryPaths } from '../copy'
+import { cloneVectorNetwork, copyGeometryPaths, scaleGeometryPaths } from '../copy'
 import type { SceneNode, VectorNetwork } from '../types'
-import { cloneVectorNetwork, transformVectorNetwork } from '../vector-network'
+import { transformVectorNetwork } from '../vector-network'
 
 /** How far apart two paths' points may be and still count as one path, in pixels. */
 const PATH_TOLERANCE = 1e-3

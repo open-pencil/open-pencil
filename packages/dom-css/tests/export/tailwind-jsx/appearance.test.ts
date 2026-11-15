@@ -1,11 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
-import { makeGraph, pageId, tw } from './helpers'
+import { makeSceneGraph, firstPageId } from '@open-pencil/test-support/scene'
+
+import { tw } from './helpers'
 
 describe('Tailwind JSX appearance classes', () => {
   test('fill and stroke', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 100,
       height: 100,
       fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }],
@@ -27,8 +29,8 @@ describe('Tailwind JSX appearance classes', () => {
   })
 
   test('border radius — named values', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 100,
       height: 100,
       cornerRadius: 8
@@ -37,8 +39,8 @@ describe('Tailwind JSX appearance classes', () => {
   })
 
   test('border radius — default (4px) omits suffix', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 100,
       height: 100,
       cornerRadius: 4
@@ -48,8 +50,8 @@ describe('Tailwind JSX appearance classes', () => {
   })
 
   test('border radius — full', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 100,
       height: 100,
       cornerRadius: 9999
@@ -58,8 +60,8 @@ describe('Tailwind JSX appearance classes', () => {
   })
 
   test('border radius — arbitrary', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 100,
       height: 100,
       cornerRadius: 5
@@ -68,8 +70,8 @@ describe('Tailwind JSX appearance classes', () => {
   })
 
   test('independent corners', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 100,
       height: 40,
       cornerRadius: 20,
@@ -85,8 +87,8 @@ describe('Tailwind JSX appearance classes', () => {
   })
 
   test('opacity and rotation', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 50,
       height: 50,
       opacity: 0.5,
@@ -98,8 +100,8 @@ describe('Tailwind JSX appearance classes', () => {
   })
 
   test('non-standard opacity and rotation use arbitrary values', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 50,
       height: 50,
       opacity: 0.37,
@@ -111,8 +113,8 @@ describe('Tailwind JSX appearance classes', () => {
   })
 
   test('overflow hidden', () => {
-    const graph = makeGraph()
-    const frame = graph.createNode('FRAME', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const frame = graph.createNode('FRAME', firstPageId(graph), {
       width: 100,
       height: 100,
       clipsContent: true
@@ -121,8 +123,8 @@ describe('Tailwind JSX appearance classes', () => {
   })
 
   test('shadow emits arbitrary shadow class', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 100,
       height: 100,
       effects: [
@@ -136,12 +138,13 @@ describe('Tailwind JSX appearance classes', () => {
         }
       ]
     })
-    expect(tw(graph, node.id)).toMatch(/shadow-\[0px_4px_8px/)
+    // CSS blurs a shadow by half its blur length: 2 × 0.43 × radius 8.
+    expect(tw(graph, node.id)).toMatch(/shadow-\[0px_4px_6.88px/)
   })
 
   test('inner shadow includes inset and spread', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 100,
       height: 100,
       effects: [
@@ -155,12 +158,12 @@ describe('Tailwind JSX appearance classes', () => {
         }
       ]
     })
-    expect(tw(graph, node.id)).toMatch(/shadow-\[inset_1px_2px_3px_4px/)
+    expect(tw(graph, node.id)).toMatch(/shadow-\[inset_1px_2px_2.58px_4px/)
   })
 
   test('blur emits blur class', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('RECTANGLE', firstPageId(graph), {
       width: 100,
       height: 100,
       effects: [
@@ -174,12 +177,13 @@ describe('Tailwind JSX appearance classes', () => {
         }
       ]
     })
-    expect(tw(graph, node.id)).toContain('blur-[4px]')
+    // CSS's blur() takes the sigma: 0.43 × radius 4.
+    expect(tw(graph, node.id)).toContain('blur-[1.72px]')
   })
 
   test('font size — named values', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('TEXT', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('TEXT', firstPageId(graph), {
       width: 200,
       height: 24,
       text: 'Hello',
@@ -190,8 +194,8 @@ describe('Tailwind JSX appearance classes', () => {
   })
 
   test('font size — arbitrary', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('TEXT', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('TEXT', firstPageId(graph), {
       width: 200,
       height: 24,
       text: 'Hello',
@@ -202,8 +206,8 @@ describe('Tailwind JSX appearance classes', () => {
   })
 
   test('font weight — named values', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('TEXT', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('TEXT', firstPageId(graph), {
       width: 100,
       height: 20,
       text: 'X',
@@ -213,8 +217,8 @@ describe('Tailwind JSX appearance classes', () => {
   })
 
   test('font family keeps original spaces via arbitrary value', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('TEXT', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('TEXT', firstPageId(graph), {
       width: 100,
       height: 20,
       text: 'X',
@@ -224,8 +228,8 @@ describe('Tailwind JSX appearance classes', () => {
   })
 
   test('white color uses named class', () => {
-    const graph = makeGraph()
-    const node = graph.createNode('TEXT', pageId(graph), {
+    const graph = makeSceneGraph('Page 1')
+    const node = graph.createNode('TEXT', firstPageId(graph), {
       width: 100,
       height: 20,
       text: 'X',

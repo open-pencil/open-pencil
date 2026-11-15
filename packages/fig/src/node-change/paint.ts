@@ -1,23 +1,42 @@
-import type { Paint, Effect as KiwiEffect } from '@open-pencil/kiwi/fig/codec'
+import type { Effect as KiwiEffect, Paint, VariableAliasValue } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type {
   Fill,
-  FillType,
   Stroke,
   Effect,
+  GlassEffectParams,
+  ProgressiveBlur,
   BlendMode,
   ImageScaleMode,
   GradientTransform,
   StrokeCap,
   StrokeJoin
 } from '@open-pencil/scene-graph'
-import { BLACK } from '@open-pencil/scene-graph/constants'
+import { BLACK, UNSET_GLASS } from '@open-pencil/scene-graph/constants'
 import type { Color, Matrix } from '@open-pencil/scene-graph/primitives'
 
 import { hexToBytes } from './bytes'
 
 export function safeColor(color: Color | Omit<Color, 'a'>): Color {
   return { r: color.r, g: color.g, b: color.b, a: 'a' in color ? color.a : 1 }
+}
+
+function writeMediaPaintFields(paint: Paint, fill: Fill): void {
+  if (fill.imageHash) {
+    paint.image = { hash: hexToBytes(fill.imageHash) }
+  }
+  if (fill.videoHash) {
+    paint.video = { hash: hexToBytes(fill.videoHash) }
+  }
+  if (fill.imageScaleMode) {
+    paint.imageScaleMode = fill.imageScaleMode === 'CROP' ? 'STRETCH' : fill.imageScaleMode
+  }
+  if (fill.imageTransform) {
+    paint.transform = fill.imageTransform
+  }
+  if (fill.imageRotation) {
+    paint.rotation = fill.imageRotation
+  }
 }
 
 export function fillToKiwiPaint(fill: Fill): Paint {
@@ -35,11 +54,7 @@ export function fillToKiwiPaint(fill: Fill): Paint {
     }))
   }
   if (fill.gradientTransform) paint.transform = fill.gradientTransform
-  if (fill.imageHash) paint.image = { hash: hexToBytes(fill.imageHash) }
-  if (fill.imageScaleMode)
-    paint.imageScaleMode = fill.imageScaleMode === 'CROP' ? 'STRETCH' : fill.imageScaleMode
-  if (fill.imageTransform) paint.transform = fill.imageTransform
-  if (fill.imageRotation) paint.rotation = fill.imageRotation
+  writeMediaPaintFields(paint, fill)
   if (fill.sourceNodeId) paint.sourceNodeId = stringToGuid(fill.sourceNodeId)
   if (fill.scale) paint.scale = fill.scale
   if (fill.spacing) paint.spacing = fill.spacing
@@ -59,11 +74,20 @@ function convertColor(color?: Partial<Color>): Color {
   return { r: color.r ?? 0, g: color.g ?? 0, b: color.b ?? 0, a: color.a ?? 1 }
 }
 
-function imageHashToString(hash: Record<string, number>): string {
-  const bytes = Object.keys(hash)
-    .sort((a, b) => Number(a) - Number(b))
-    .map((k) => hash[Number(k)])
-  return bytes.map((b) => b.toString(16).padStart(2, '0')).join('')
+type MediaHash = string | Uint8Array | Record<string, number>
+
+function bytesHashToString(hash: Exclude<MediaHash, string>): string {
+  return Object.values(hash)
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('')
+}
+
+function mediaHash(source: { hash?: MediaHash } | undefined): string | undefined {
+  const hash = source?.hash
+  if (hash === undefined) {
+    return undefined
+  }
+  return typeof hash === 'string' ? hash : bytesHashToString(hash)
 }
 
 function convertGradientTransform(t?: Matrix): GradientTransform | undefined {
@@ -71,12 +95,10 @@ function convertGradientTransform(t?: Matrix): GradientTransform | undefined {
   return { m00: t.m00, m01: t.m01, m02: t.m02, m10: t.m10, m11: t.m11, m12: t.m12 }
 }
 
-type VariableAliasRef = NonNullable<NonNullable<NonNullable<Paint['colorVar']>['value']>['alias']>
-
-let variableColorResolver: ((alias: VariableAliasRef) => Color | null) | null = null
+let variableColorResolver: ((alias: VariableAliasValue) => Color | null) | null = null
 
 export function setVariableColorResolver(
-  resolver: ((alias: VariableAliasRef) => Color | null) | null
+  resolver: ((alias: VariableAliasValue) => Color | null) | null
 ): void {
   variableColorResolver = resolver
 }
@@ -99,7 +121,7 @@ function resolvedPaintColor(paint: Paint): { color: Color; opacity: number } {
 function convertBaseFill(p: Paint): Fill {
   const { color, opacity } = resolvedPaintColor(p)
   return {
-    type: p.type as FillType,
+    type: p.type,
     color,
     opacity,
     visible: p.visible ?? true,
@@ -117,14 +139,16 @@ function applyGradientPaintFields(fill: Fill, p: Paint): void {
 }
 
 function applyImagePaintFields(fill: Fill, p: Paint): void {
-  if (p.type !== 'IMAGE') return
-  if (p.image && typeof p.image === 'object') {
-    const img = p.image as { hash: string | Record<string, number> }
-    if (typeof img.hash === 'object') {
-      fill.imageHash = imageHashToString(img.hash)
-    } else if (typeof img.hash === 'string') {
-      fill.imageHash = img.hash
-    }
+  if (p.type !== 'IMAGE' && p.type !== 'VIDEO') {
+    return
+  }
+  const imageHash = mediaHash(p.image)
+  if (imageHash) {
+    fill.imageHash = imageHash
+  }
+  const videoHash = p.type === 'VIDEO' ? mediaHash(p.video) : undefined
+  if (videoHash) {
+    fill.videoHash = videoHash
   }
   fill.imageScaleMode = (
     p.imageScaleMode === 'STRETCH' ? 'CROP' : (p.imageScaleMode ?? 'FILL')
@@ -193,14 +217,43 @@ export function convertStrokes(
 
 export function convertEffects(effects?: KiwiEffect[]): Effect[] {
   if (!effects) return []
-  return effects.map((e) => ({
-    type: e.type,
-    color: convertColor(e.color),
-    offset: e.offset ?? { x: 0, y: 0 },
-    radius: e.radius ?? 0,
-    spread: e.spread ?? 0,
-    visible: e.visible ?? true,
-    blendMode: (e.blendMode ?? 'NORMAL') as BlendMode,
-    showShadowBehindNode: e.showShadowBehindNode ?? true
-  }))
+  return effects.map((e) => {
+    const effect: Effect = {
+      type: e.type,
+      color: convertColor(e.color),
+      offset: e.offset ?? { x: 0, y: 0 },
+      radius: e.radius ?? 0,
+      spread: e.spread ?? 0,
+      visible: e.visible ?? true,
+      blendMode: (e.blendMode ?? 'NORMAL') as BlendMode,
+      showShadowBehindNode: e.showShadowBehindNode ?? true
+    }
+    if (e.type === 'GLASS') effect.glass = convertGlass(e)
+    if (e.blurOpType === 'PROGRESSIVE' && isBlur(e.type)) effect.progressive = convertProgressive(e)
+    return effect
+  })
+}
+
+function isBlur(type: KiwiEffect['type']): boolean {
+  return type === 'FOREGROUND_BLUR' || type === 'LAYER_BLUR' || type === 'BACKGROUND_BLUR'
+}
+
+/** A progressive blur's ramp, top centre to bottom centre where the archive leaves it out. */
+function convertProgressive(e: KiwiEffect): ProgressiveBlur {
+  return {
+    startRadius: e.startRadius ?? 0,
+    startOffset: { ...(e.startOffset ?? { x: 0.5, y: 0 }) },
+    endOffset: { ...(e.endOffset ?? { x: 0.5, y: 1 }) }
+  }
+}
+
+/** A glass effect's lens from the archive's names for its fields (`refractionRadius` is depth). */
+function convertGlass(e: KiwiEffect): GlassEffectParams {
+  return {
+    refraction: e.refractionIntensity ?? UNSET_GLASS.refraction,
+    depth: e.refractionRadius ?? UNSET_GLASS.depth,
+    lightAngle: e.specularAngle ?? UNSET_GLASS.lightAngle,
+    lightIntensity: e.specularIntensity ?? UNSET_GLASS.lightIntensity,
+    dispersion: e.chromaticAberration ?? UNSET_GLASS.dispersion
+  }
 }

@@ -1,10 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
+import { DESIGN_JSX_PROPERTY_ALIASES } from '#design-jsx/definitions'
 import {
   DESIGN_JSX_ELEMENTS,
   DESIGN_JSX_SUPPORTED_PROPERTIES,
   transformDesignJSXExpression
 } from '#design-jsx/index'
+import { layerPropsSchema } from '#design-jsx/schema'
 
 describe('Design JSX schema', () => {
   test('includes renderer compatibility properties', () => {
@@ -51,5 +53,14 @@ return <Card title="Hello" />`
 
   test('rejects statements that return nothing', () => {
     expect(() => transformDesignJSXExpression('const value = 1')).toThrow()
+  })
+
+  test('reads a layer prop under every name it is written by', () => {
+    const read = Object.keys(layerPropsSchema.entries)
+    for (const [name, aliases] of Object.entries(DESIGN_JSX_PROPERTY_ALIASES)) {
+      if ([name, ...aliases].some((key) => read.includes(key)))
+        expect(read).toEqual(expect.arrayContaining([name, ...aliases]))
+    }
+    for (const key of read) expect(DESIGN_JSX_SUPPORTED_PROPERTIES.has(key)).toBe(true)
   })
 })

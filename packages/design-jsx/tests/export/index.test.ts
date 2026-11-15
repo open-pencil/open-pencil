@@ -1,0 +1,393 @@
+import { describe, expect, test } from 'bun:test'
+
+import { sceneNodeAttributes, sceneNodeToJSX, selectionToJSX } from '#design-jsx/index'
+
+import { makeGraph, pageId } from './helpers'
+
+describe('sceneNodeToJSX', () => {
+  test('a row aligned by baseline exports items="baseline"', () => {
+    const graph = makeGraph()
+    const node = graph.createNode('FRAME', pageId(graph), {
+      name: 'Row',
+      layoutMode: 'HORIZONTAL',
+      counterAxisAlign: 'BASELINE'
+    })
+    expect(sceneNodeToJSX(node.id, graph)).toContain('items="baseline"')
+  })
+
+  test('basic rectangle', () => {
+    const graph = makeGraph()
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      name: 'Box',
+      width: 100,
+      height: 50
+    })
+    const jsx = sceneNodeToJSX(node.id, graph)
+    expect(jsx).toBe('<Rectangle name="Box" w={100} h={50} />')
+  })
+
+  test('rectangle with fill and rounded corners', () => {
+    const graph = makeGraph()
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      name: 'Card',
+      width: 320,
+      height: 200,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }],
+      cornerRadius: 16
+    })
+    const jsx = sceneNodeToJSX(node.id, graph)
+    expect(jsx).toContain('w={320}')
+    expect(jsx).toContain('h={200}')
+    expect(jsx).toContain('bg="#FFFFFF"')
+    expect(jsx).toContain('rounded={16}')
+    expect(jsx).toContain('<Rectangle')
+    expect(jsx).toContain('/>')
+  })
+
+  test('text node', () => {
+    const graph = makeGraph()
+    const node = graph.createNode('TEXT', pageId(graph), {
+      name: 'Title',
+      width: 200,
+      height: 24,
+      text: 'Hello World',
+      fontSize: 18,
+      fontWeight: 700,
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+    })
+    const jsx = sceneNodeToJSX(node.id, graph)
+    expect(jsx).toContain('<Text')
+    expect(jsx).toContain('size={18}')
+    expect(jsx).toContain('weight="bold"')
+    expect(jsx).toContain('color="#000000"')
+    expect(jsx).toContain('>Hello World</Text>')
+  })
+
+  test('rtl text node', () => {
+    const graph = makeGraph()
+    const node = graph.createNode('TEXT', pageId(graph), {
+      name: 'Arabic Title',
+      width: 200,
+      height: 24,
+      text: 'مرحبا',
+      textDirection: 'RTL'
+    })
+    const jsx = sceneNodeToJSX(node.id, graph)
+    expect(jsx).toContain('dir="rtl"')
+  })
+
+  test('frame with auto-layout', () => {
+    const graph = makeGraph()
+    const frame = graph.createNode('FRAME', pageId(graph), {
+      name: 'Row',
+      width: 400,
+      height: 100,
+      layoutMode: 'HORIZONTAL',
+      itemSpacing: 16,
+      paddingTop: 12,
+      paddingRight: 12,
+      paddingBottom: 12,
+      paddingLeft: 12,
+      primaryAxisSizing: 'FIXED',
+      counterAxisSizing: 'HUG'
+    })
+    const jsx = sceneNodeToJSX(frame.id, graph)
+    expect(jsx).toContain('flex="row"')
+    expect(jsx).toContain('gap={16}')
+    expect(jsx).toContain('p={12}')
+    expect(jsx).toContain('w={400}')
+  })
+
+  test('frame with rtl auto-layout', () => {
+    const graph = makeGraph()
+    const frame = graph.createNode('FRAME', pageId(graph), {
+      name: 'Row RTL',
+      width: 400,
+      height: 100,
+      layoutMode: 'HORIZONTAL',
+      layoutDirection: 'RTL'
+    })
+    const jsx = sceneNodeToJSX(frame.id, graph)
+    expect(jsx).toContain('dir="rtl"')
+  })
+
+  test('frame with children', () => {
+    const graph = makeGraph()
+    const frame = graph.createNode('FRAME', pageId(graph), {
+      name: 'Card',
+      width: 320,
+      height: 200,
+      layoutMode: 'VERTICAL',
+      itemSpacing: 8,
+      primaryAxisSizing: 'HUG',
+      counterAxisSizing: 'FIXED'
+    })
+    graph.createNode('RECTANGLE', frame.id, {
+      name: 'Image',
+      width: 320,
+      height: 120
+    })
+    graph.createNode('TEXT', frame.id, {
+      name: 'Title',
+      width: 200,
+      height: 20,
+      text: 'Card Title',
+      fontSize: 16,
+      fontWeight: 700,
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+    })
+
+    const jsx = sceneNodeToJSX(frame.id, graph)
+    expect(jsx).toContain('<Frame')
+    expect(jsx).toContain('flex="col"')
+    expect(jsx).toContain('gap={8}')
+    expect(jsx).toContain('  <Rectangle')
+    expect(jsx).toContain('  <Text')
+    expect(jsx).toContain('>Card Title</Text>')
+    expect(jsx).toContain('</Frame>')
+  })
+
+  test('asymmetric padding', () => {
+    const graph = makeGraph()
+    const frame = graph.createNode('FRAME', pageId(graph), {
+      name: 'Box',
+      width: 100,
+      height: 100,
+      layoutMode: 'HORIZONTAL',
+      paddingTop: 8,
+      paddingRight: 16,
+      paddingBottom: 8,
+      paddingLeft: 16,
+      primaryAxisSizing: 'FIXED',
+      counterAxisSizing: 'FIXED'
+    })
+    const jsx = sceneNodeToJSX(frame.id, graph)
+    expect(jsx).toContain('py={8}')
+    expect(jsx).toContain('px={16}')
+    expect(jsx).not.toContain('pt=')
+    expect(jsx).not.toContain('pb=')
+  })
+
+  test('independent corners', () => {
+    const graph = makeGraph()
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      name: 'Pill',
+      width: 100,
+      height: 40,
+      cornerRadius: 20,
+      independentCorners: true,
+      topLeftRadius: 20,
+      topRightRadius: 0,
+      bottomRightRadius: 0,
+      bottomLeftRadius: 20
+    })
+    const jsx = sceneNodeToJSX(node.id, graph)
+    expect(jsx).toContain('roundedTL={20}')
+    expect(jsx).toContain('roundedBL={20}')
+    expect(jsx).not.toContain('roundedTR=')
+    expect(jsx).not.toContain('roundedBR=')
+  })
+
+  test('opacity and rotation', () => {
+    const graph = makeGraph()
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      width: 50,
+      height: 50,
+      opacity: 0.5,
+      rotation: 45
+    })
+    const jsx = sceneNodeToJSX(node.id, graph)
+    expect(jsx).toContain('opacity={0.5}')
+    expect(jsx).toContain('rotate={45}')
+  })
+
+  test('stroke', () => {
+    const graph = makeGraph()
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      width: 100,
+      height: 100,
+      strokes: [
+        {
+          type: 'SOLID',
+          color: { r: 1, g: 0, b: 0, a: 1 },
+          weight: 2,
+          opacity: 1,
+          visible: true,
+          align: 'INSIDE' as const
+        }
+      ]
+    })
+    const jsx = sceneNodeToJSX(node.id, graph)
+    expect(jsx).toContain('stroke="#FF0000"')
+    expect(jsx).toContain('strokeWidth={2}')
+  })
+
+  // As Figma's plugin API gives them, so an author reads and writes the form a script does.
+  test("a gradient's transform exports as Figma's rows", () => {
+    const graph = makeGraph()
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      fills: [
+        {
+          type: 'GRADIENT_LINEAR',
+          color: { r: 0, g: 0, b: 0, a: 0 },
+          opacity: 1,
+          visible: true,
+          gradientStops: [
+            { color: { r: 1, g: 0, b: 0, a: 1 }, position: 0 },
+            { color: { r: 0, g: 0, b: 1, a: 1 }, position: 1 }
+          ],
+          gradientTransform: { m00: 0, m01: 1, m02: 0, m10: -1, m11: 0, m12: 1 }
+        }
+      ]
+    })
+    expect(sceneNodeToJSX(node.id, graph)).toContain(
+      'linearGradient([["#FF0000", 0], ["#0000FF", 1]], { transform: [[0, 1, 0], [-1, 0, 1]] })'
+    )
+  })
+
+  test("an image crop exports its window as Figma's rows", () => {
+    const graph = makeGraph()
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      fills: [
+        {
+          type: 'IMAGE',
+          color: { r: 1, g: 1, b: 1, a: 1 },
+          opacity: 1,
+          visible: true,
+          imageHash: 'abc123',
+          imageScaleMode: 'CROP',
+          imageTransform: { m00: 0.5, m01: 0, m02: 0.25, m10: 0, m11: 0.5, m12: 0.25 }
+        }
+      ]
+    })
+    expect(sceneNodeToJSX(node.id, graph)).toContain(
+      'imageTransform: [[0.5, 0, 0.25], [0, 0.5, 0.25]]'
+    )
+  })
+
+  test('hidden children are kept and marked hidden', () => {
+    const graph = makeGraph()
+    const frame = graph.createNode('FRAME', pageId(graph), {
+      name: 'Parent',
+      width: 100,
+      height: 100
+    })
+    graph.createNode('RECTANGLE', frame.id, {
+      name: 'Visible',
+      width: 50,
+      height: 50
+    })
+    graph.createNode('RECTANGLE', frame.id, {
+      name: 'Hidden',
+      width: 50,
+      height: 50,
+      visible: false
+    })
+    expect(sceneNodeToJSX(frame.id, graph)).toBe(
+      [
+        '<Frame name="Parent" w={100} h={100}>',
+        '  <Rectangle name="Visible" w={50} h={50} />',
+        '  <Rectangle name="Hidden" w={50} h={50} visible={false} />',
+        '</Frame>'
+      ].join('\n')
+    )
+  })
+
+  test('empty text node renders self-closing', () => {
+    const graph = makeGraph()
+    const node = graph.createNode('TEXT', pageId(graph), {
+      name: 'Empty',
+      width: 100,
+      height: 20,
+      text: ''
+    })
+    const jsx = sceneNodeToJSX(node.id, graph)
+    expect(jsx).toContain('/>')
+    expect(jsx).not.toContain('</Text>')
+  })
+
+  test('omits default values', () => {
+    const graph = makeGraph()
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      width: 100,
+      height: 100,
+      opacity: 1,
+      rotation: 0,
+      cornerRadius: 0
+    })
+    const jsx = sceneNodeToJSX(node.id, graph)
+    expect(jsx).not.toContain('opacity')
+    expect(jsx).not.toContain('rotate')
+    expect(jsx).not.toContain('rounded')
+  })
+})
+
+describe('sceneNodeAttributes', () => {
+  test('prints each attribute as sceneNodeToJSX does, on one line', () => {
+    const graph = makeGraph()
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      name: 'Box',
+      width: 100,
+      height: 50,
+      strokes: [
+        {
+          type: 'SOLID',
+          color: { r: 1, g: 0, b: 0, a: 1 },
+          weight: 2,
+          opacity: 1,
+          visible: true,
+          align: 'OUTSIDE'
+        },
+        {
+          type: 'SOLID',
+          color: { r: 0, g: 0, b: 1, a: 1 },
+          weight: 1,
+          opacity: 1,
+          visible: false,
+          align: 'INSIDE'
+        }
+      ]
+    })
+    const attributes = sceneNodeAttributes(node.id, graph) ?? []
+    expect(attributes.map((attribute) => attribute.name)).toEqual(['name', 'w', 'h', 'strokes'])
+    expect(attributes.every((attribute) => !attribute.source.includes('\n'))).toBe(true)
+    expect(sceneNodeToJSX(node.id, graph)).toStartWith(
+      `<Rectangle ${attributes
+        .slice(0, 3)
+        .map((attribute) => attribute.source)
+        .join(' ')}`
+    )
+  })
+
+  test("writes a text node's content as a text attribute", () => {
+    const graph = makeGraph()
+    const node = graph.createNode('TEXT', pageId(graph), { name: 'Note', text: 'Two\nlines' })
+    expect(sceneNodeAttributes(node.id, graph)?.at(-1)).toEqual({
+      name: 'text',
+      source: 'text={"Two\\nlines"}'
+    })
+  })
+
+  test('is null for a node the export skips', () => {
+    const graph = makeGraph()
+    expect(sceneNodeAttributes(pageId(graph), graph)).toBeNull()
+  })
+})
+
+describe('selectionToJSX', () => {
+  test('several nodes are siblings in a fragment, so the code is one JSX expression', () => {
+    const graph = makeGraph()
+    const a = graph.createNode('RECTANGLE', pageId(graph), {
+      name: 'A',
+      width: 10,
+      height: 10
+    })
+    const b = graph.createNode('ELLIPSE', pageId(graph), {
+      name: 'B',
+      width: 20,
+      height: 20
+    })
+    const jsx = selectionToJSX([a.id, b.id], graph)
+    expect(jsx).toMatch(/^<>\n  <Rectangle [^\n]*\/>\n  <Ellipse [^\n]*\/>\n<\/>$/)
+  })
+})

@@ -7,6 +7,7 @@ export const APP_DATABASE_NAMES = {
   outbox: 'open-pencil-cloud-outbox',
   recovery: 'open-pencil-recovery',
   diagnostics: 'open-pencil-diagnostics',
+  skills: 'open-pencil-skills',
   /** Written and deleted once per page, to learn whether the engine stores Blobs. */
   blobProbe: 'open-pencil-blob-probe'
 } as const

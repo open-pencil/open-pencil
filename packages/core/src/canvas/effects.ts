@@ -1,20 +1,31 @@
-import type { Canvas, ImageFilter, MaskFilter, Path } from 'canvaskit-wasm'
-
+import type { Canvas, ImageFilter, MaskFilter, Path } from '@open-pencil/canvaskit'
 import { readEffectiveFigmaRawField } from '@open-pencil/fig'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { Effect, SceneNode } from '@open-pencil/scene-graph'
+import { blurSigma, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
+import { ResourceCache } from '#core/cache/resource'
 import { BLACK } from '#core/constants'
 
+import { isPlainRamp, makeProgressiveBlur, progressiveBlurRamp } from './blur/progressive'
 import type { SkiaRenderer } from './renderer'
 
 /**
- * The Gaussian sigma that draws a Figma blur radius as Figma does. Measured on Figma 126 exports,
- * layer blur, both shadows, and background blur fall off as a Gaussian of 0.43 × radius; Figma's
- * SVG export writes radius / 2, which is wider (`packages/core/tests/canvas/blur.test.ts`).
+ * Filters a renderer keeps between frames, by their parameters: shadows and blurs reuse one across
+ * every node and frame that shares them. Bounded, so a slider dragged through hundreds of values
+ * frees the ones it passed rather than keeping them for the session.
  */
-export function blurSigma(radius: number): number {
-  return radius * 0.43
+const MAX_CACHED_FILTERS = 256
+
+export type ImageFilterCache = ResourceCache<string, ImageFilter>
+export type MaskFilterCache = ResourceCache<number, MaskFilter>
+
+export function createImageFilterCache(): ImageFilterCache {
+  return new ResourceCache({ maxEntries: MAX_CACHED_FILTERS, dispose: (filter) => filter.delete() })
+}
+
+export function createMaskFilterCache(): MaskFilterCache {
+  return new ResourceCache({ maxEntries: MAX_CACHED_FILTERS, dispose: (filter) => filter.delete() })
 }
 
 export function getCachedDropShadow(
@@ -23,42 +34,72 @@ export function getCachedDropShadow(
   dy: number,
   sigma: number,
   color: Float32Array
-): ImageFilter {
+): ImageFilter | null {
   const key = `ds:${dx},${dy},${sigma},${color[0]},${color[1]},${color[2]},${color[3]}`
-  let filter = r.imageFilterCache.get(key)
-  if (!filter) {
-    filter = r.ck.ImageFilter.MakeDropShadowOnly(dx, dy, sigma, sigma, color, null)
-    r.imageFilterCache.set(key, filter)
-  }
+  return cachedImageFilter(r, key, () =>
+    r.ck.ImageFilter.MakeDropShadowOnly(dx, dy, sigma, sigma, color, null)
+  )
+}
+
+export function getCachedBlur(r: SkiaRenderer, sigma: number): ImageFilter | null {
+  return cachedImageFilter(r, `blur:${sigma}`, () =>
+    r.ck.ImageFilter.MakeBlur(sigma, sigma, r.ck.TileMode.Clamp, null)
+  )
+}
+
+export function getCachedDecalBlur(r: SkiaRenderer, sigma: number): ImageFilter | null {
+  return cachedImageFilter(r, `dblur:${sigma}`, () =>
+    r.ck.ImageFilter.MakeBlur(sigma, sigma, r.ck.TileMode.Decal, null)
+  )
+}
+
+/**
+ * The filter a layer or background blur draws with over a `width` × `height` layer: a plain blur,
+ * or Figma's progressive one with its points mapped by `toFilter` into the filter's coordinates.
+ * `bounds` holds what it blurs, in those coordinates, so each level blurs only its share.
+ */
+export function getCachedLayerBlur(
+  r: SkiaRenderer,
+  effect: Pick<Effect, 'radius' | 'progressive'>,
+  width: number,
+  height: number,
+  bounds: VisualBounds | null,
+  toFilter?: (point: Vector) => Vector
+): ImageFilter | null {
+  if (!effect.progressive) return r.getCachedBlur(blurSigma(effect.radius))
+  const ramp = progressiveBlurRamp(
+    effect.progressive,
+    effect.radius,
+    width,
+    height,
+    bounds,
+    toFilter
+  )
+  if (isPlainRamp(ramp)) return r.getCachedBlur(ramp.endSigma)
+  const box = bounds ? `${bounds.minX},${bounds.minY},${bounds.maxX},${bounds.maxY}` : 'unbounded'
+  const key = `pblur:${ramp.start.x},${ramp.start.y},${ramp.end.x},${ramp.end.y},${ramp.startSigma},${ramp.endSigma}:${box}`
+  return cachedImageFilter(r, key, () => makeProgressiveBlur(r.ck, ramp, r.ck.TileMode.Clamp))
+}
+
+/** CanvasKit makes no filter for a blur too small to draw; a paint takes null as none. */
+export function getCachedMaskBlur(r: SkiaRenderer, sigma: number): MaskFilter | null {
+  const cached = r.maskFilterCache.get(sigma)
+  if (cached) return cached
+  // Typed as always made; at runtime a sigma too small to blur makes none.
+  const filter = r.ck.MaskFilter.MakeBlur(r.ck.BlurStyle.Normal, sigma, true) as MaskFilter | null
+  if (filter) r.maskFilterCache.set(sigma, filter)
   return filter
 }
 
-export function getCachedBlur(r: SkiaRenderer, sigma: number): ImageFilter {
-  const key = `blur:${sigma}`
-  let filter = r.imageFilterCache.get(key)
-  if (!filter) {
-    filter = r.ck.ImageFilter.MakeBlur(sigma, sigma, r.ck.TileMode.Clamp, null)
-    r.imageFilterCache.set(key, filter)
-  }
-  return filter
-}
-
-export function getCachedDecalBlur(r: SkiaRenderer, sigma: number): ImageFilter {
-  const key = `dblur:${sigma}`
-  let filter = r.imageFilterCache.get(key)
-  if (!filter) {
-    filter = r.ck.ImageFilter.MakeBlur(sigma, sigma, r.ck.TileMode.Decal, null)
-    r.imageFilterCache.set(key, filter)
-  }
-  return filter
-}
-
-export function getCachedMaskBlur(r: SkiaRenderer, sigma: number): MaskFilter {
-  let filter = r.maskFilterCache.get(sigma)
-  if (!filter) {
-    filter = r.ck.MaskFilter.MakeBlur(r.ck.BlurStyle.Normal, sigma, true)
-    r.maskFilterCache.set(sigma, filter)
-  }
+function cachedImageFilter(
+  r: SkiaRenderer,
+  key: string,
+  make: () => ImageFilter | null
+): ImageFilter | null {
+  const cached = r.imageFilterCache.get(key)
+  if (cached) return cached
+  const filter = make()
+  if (filter) r.imageFilterCache.set(key, filter)
   return filter
 }
 
@@ -70,7 +111,7 @@ export function applyClippedBlur(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
-  sigma: number,
+  effect: Pick<Effect, 'radius' | 'progressive'>,
   shape: Path | null = null
 ): void {
   const rect = r.ck.LTRBRect(0, 0, node.width, node.height)
@@ -82,7 +123,13 @@ export function applyClippedBlur(
   canvas.save()
   if (shape) canvas.clipPath(shape, r.ck.ClipOp.Intersect, true)
   else r.clipNodeShape(canvas, node)
-  canvas.saveLayer(undefined, rect, r.getCachedBlur(sigma), undefined, r.ck.TileMode.Clamp)
+  const filter = r.getCachedLayerBlur(effect, node.width, node.height, {
+    minX: 0,
+    minY: 0,
+    maxX: node.width,
+    maxY: node.height
+  })
+  canvas.saveLayer(undefined, rect, filter, undefined, r.ck.TileMode.Clamp)
   canvas.restore()
   // Exit guard: ensure shared paint is in clean state
   r.effectLayerPaint.setImageFilter(null)
@@ -145,7 +192,7 @@ function renderNoiseEffect(
         const value = seededNoise((x + 1) * 73856093 + (y + 1) * 19349663)
         if (value > density) continue
         const alpha = Math.max(0, Math.min(1, opacity * (0.35 + value * 0.65)))
-        paint.setColor(r.ck.Color4f(color.r, color.g, color.b, alpha))
+        paint.setColorComponents(color.r, color.g, color.b, alpha)
         canvas.drawRect(
           r.ck.LTRBRect(x, y, Math.min(node.width, x + 1), Math.min(node.height, y + 1)),
           paint

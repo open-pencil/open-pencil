@@ -1,0 +1,5 @@
+# Commits that only reformat code, which `git blame` skips. GitHub reads this file; locally run
+# `git config blame.ignoreRevsFile .git-blame-ignore-revs` once per clone.
+
+# chore: format the code the format script never reached (#1994)
+1ceaca40fa83c47a8b3ed7867af630a5a43b50e1

@@ -1,14 +1,12 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { createRunPreview } from '@/app/ai/preview/run'
 import { runAgentId, runPageId, startRun } from '@/app/ai/reply/run'
 import { createEditorStore } from '@/app/editor/session'
 import { onAgentPreview, type AgentPreviewEvent } from '@/app/presence/preview-stream'
-
-import { expectDefined } from '#tests/helpers/assert'
-
 const stores: ReturnType<typeof createEditorStore>[] = []
 afterEach(() => {
   for (const store of stores.splice(0)) store.preparationController.dispose()

@@ -10,8 +10,8 @@ import { join } from 'node:path'
  * Deleting that file while the OpenPencil desktop app is running breaks every
  * MCP client: the discovery file is the only place the server's auth token is
  * published, so stdio bridges fall back to a null token and every /rpc call
- * returns 401 (surfacing as a spurious "auth issue"). The engine tests in
- * tests/engine/mcp/** call startServer()/handle.close() which writes and then
+ * returns 401 (surfacing as a spurious "auth issue"). The MCP tests in
+ * packages/mcp/tests/** call startServer()/handle.close() which writes and then
  * removes the discovery file — without isolation they did so at the real
  * platform path.
  *

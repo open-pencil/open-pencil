@@ -1,6 +1,15 @@
-import { isEqual } from 'es-toolkit/predicate'
+import { mapValues, omitBy } from 'es-toolkit/object'
+import { isEqual, isPlainObject } from 'es-toolkit/predicate'
 
-import type { SceneGraph, SceneNode, Variable, VariableCollection } from '@open-pencil/scene-graph'
+import type {
+  DocumentColorSpace,
+  DocumentKind,
+  EnabledLibraryBinding,
+  SceneGraph,
+  SceneNode,
+  Variable,
+  VariableCollection
+} from '@open-pencil/scene-graph'
 
 /**
  * How a document opened from a `.fig` archive has diverged from it, for writing only what
@@ -23,29 +32,31 @@ interface ArchiveChanges {
   resourceIds: Set<string>
   variables: Map<string, Variable>
   collections: CollectionsSnapshot
-  settings: unknown
+  settings: SettingsSnapshot
 }
 
-/** The variable collections and the modes the document shows them in. */
-interface CollectionsSnapshot {
-  collections: Array<[string, VariableCollection]>
-  activeMode: Array<[string, string]>
+/** The document's own settings, which its record holds rather than any layer. */
+export interface SettingsSnapshot {
+  colorSpace: DocumentColorSpace
+  kind: DocumentKind
+  libraries: Array<[string, EnabledLibraryBinding]>
 }
+
+/** The variable collections, with their modes. */
+type CollectionsSnapshot = Array<[string, VariableCollection]>
 
 const changes = new WeakMap<SceneGraph, ArchiveChanges>()
 
-function settingsSnapshot(graph: SceneGraph): unknown {
+export function settingsSnapshot(graph: SceneGraph): SettingsSnapshot {
   return structuredClone({
     colorSpace: graph.documentColorSpace,
+    kind: graph.documentKind,
     libraries: [...graph.enabledLibraries]
   })
 }
 
 function collectionsSnapshot(graph: SceneGraph): CollectionsSnapshot {
-  return structuredClone({
-    collections: [...graph.variableCollections],
-    activeMode: [...graph.activeMode]
-  })
+  return structuredClone([...graph.variableCollections])
 }
 
 function resourceIdsOf(graph: SceneGraph): Set<string> {
@@ -70,8 +81,14 @@ export function trackArchiveChanges(graph: SceneGraph): void {
     collections: collectionsSnapshot(graph),
     settings: settingsSnapshot(graph)
   }
+  // What a copy takes from its component is saved with the component, not as the copy's edit.
   const touch = (id: string) => {
-    if (!graph.isApplyingImportedState && !graph.isApplyingDerivedLayout) entry.touched.add(id)
+    if (
+      !graph.isApplyingImportedState &&
+      !graph.isApplyingDerivedLayout &&
+      !graph.isApplyingComponentDerived
+    )
+      entry.touched.add(id)
   }
   const edits = () => !graph.isApplyingImportedState && !graph.isApplyingDerivedLayout
   graph.observeNodeChanges({
@@ -111,18 +128,32 @@ export interface ArchiveChangeSummary {
   documentChanged: boolean
 }
 
+/** A value without its unset keys: a field set to `undefined` and one removed are the same. */
+function withoutUnset(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(withoutUnset)
+  if (!isPlainObject(value)) return value
+  return mapValues(
+    omitBy(value, (field) => field === undefined),
+    withoutUnset
+  )
+}
+
 export function archiveChanges(graph: SceneGraph): ArchiveChangeSummary | undefined {
   const entry = changes.get(graph)
   if (!entry) return undefined
   const changedVariables = new Set<string>()
   for (const [id, variable] of graph.variables)
-    if (!isEqual(entry.variables.get(id), variable)) changedVariables.add(id)
+    if (!isEqual(withoutUnset(entry.variables.get(id)), withoutUnset(variable)))
+      changedVariables.add(id)
   for (const id of entry.variables.keys()) if (!graph.variables.has(id)) changedVariables.add(id)
   return {
     touched: entry.touched,
     resourceIds: entry.resourceIds,
     changedVariables,
-    collectionsChanged: !isEqual(entry.collections, collectionsSnapshot(graph)),
+    collectionsChanged: !isEqual(
+      withoutUnset(entry.collections),
+      withoutUnset(collectionsSnapshot(graph))
+    ),
     documentChanged: !isEqual(entry.settings, settingsSnapshot(graph))
   }
 }
@@ -137,6 +168,7 @@ export interface ArchiveBaseline {
   loadedAfterEdits: ReadonlySet<string>
   variables: ReadonlyMap<string, Variable>
   collections: CollectionsSnapshot
+  settings: SettingsSnapshot
 }
 
 export function archiveBaseline(graph: SceneGraph): ArchiveBaseline | undefined {
@@ -147,6 +179,7 @@ export function archiveBaseline(graph: SceneGraph): ArchiveBaseline | undefined 
     created: entry.created,
     loadedAfterEdits: entry.loadedAfterEdits,
     variables: entry.variables,
-    collections: entry.collections
+    collections: entry.collections,
+    settings: entry.settings
   }
 }

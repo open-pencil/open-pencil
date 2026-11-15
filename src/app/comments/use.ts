@@ -42,7 +42,7 @@ function preference<K extends keyof CommentPreferences>(
  * Changes are document changes but never undo steps, as in Figma.
  *
  * Escape closes things in order: the composer and the card's popover close themselves, and the
- * editor's Escape asks `closeCard` before it leaves the Comment tool.
+ * app's Escape shortcut asks `closeCard` before the editor's Escape leaves the Comment tool.
  */
 export const useComments = createGlobalState(() => {
   const identity = useCollabIdentity()

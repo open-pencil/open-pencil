@@ -31,6 +31,38 @@ export function shapeWithTextFit(graph: SceneGraph, shape: SceneNode): Partial<S
   return { height, ...shapeWithTextFrameFields(shape.shapeWithTextType, shape.width, height) }
 }
 
+/** Wider than any label lays out, for measuring one on a single line. */
+const UNWRAPPED = 100_000
+
+/**
+ * The narrowest whole width, from `min` to `max`, whose label box holds the shape's label in lines
+ * no wider than `lineWidth`, with the height `heightFor` gives each width. The label wraps past
+ * `lineWidth`, and the shape's fit then makes it taller.
+ */
+export function shapeWithTextWidthFor(
+  graph: SceneGraph,
+  shape: SceneNode,
+  { min, max, lineWidth }: { min: number; max: number; lineWidth: number },
+  heightFor: (width: number) => number = () => shape.height
+): number {
+  const label = shapeWithTextLabel(graph, shape)
+  if (!label?.text) return min
+  const natural = measureTextForLayout(wholeText(label, UNWRAPPED), UNWRAPPED).width
+  const needed = Math.min(Math.ceil(natural), lineWidth)
+  const holds = (width: number) =>
+    shapeWithTextLabelBox(shape.shapeWithTextType, width, heightFor(width)).width >= needed
+  if (holds(min)) return min
+  if (!holds(max)) return max
+  let low = min
+  let high = max
+  while (high - low > 1) {
+    const middle = Math.floor((low + high) / 2)
+    if (holds(middle)) high = middle
+    else low = middle
+  }
+  return high
+}
+
 /** A label's whole text wrapped at `width`, not cut short by a truncation it already has. */
 function wholeText(label: SceneNode, width: number): SceneNode {
   return {

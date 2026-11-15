@@ -1,0 +1,19 @@
+{
+  "name": "@open-pencil/mermaid-sources-tools",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#mermaid-sources/*": "./src/*.ts"
+  },
+  "scripts": {
+    "test": "bun test tests"
+  },
+  "dependencies": {
+    "jison": "0.4.18",
+    "typescript": "npm:@typescript/typescript6@^6.0.2"
+  },
+  "devDependencies": {
+    "@open-pencil/package-artifacts-tools": "workspace:*",
+    "valibot": "^1.5.0"
+  }
+}

@@ -15,6 +15,6 @@
     "@open-pencil/package-artifacts-tools": "workspace:*",
     "citty": "^0.1.6",
     "es-toolkit": "^1.52.0",
-    "typescript": "~5.8.3"
+    "typescript": "npm:@typescript/typescript6@^6.0.2"
   }
 }

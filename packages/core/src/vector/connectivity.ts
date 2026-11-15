@@ -93,3 +93,15 @@ export function extractSubNetwork(network: VectorNetwork, vertexIndices: number[
 
   return { vertices: newVertices, segments: newSegments, regions: newRegions }
 }
+
+export function isOpenVectorNetwork(network: VectorNetwork): boolean {
+  if (network.regions.length > 0) {
+    return false
+  }
+  const segmentEnds = new Uint16Array(network.vertices.length)
+  for (const segment of network.segments) {
+    segmentEnds[segment.start]++
+    segmentEnds[segment.end]++
+  }
+  return segmentEnds.some((count) => count === 1)
+}

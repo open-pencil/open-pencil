@@ -1,0 +1,14 @@
+{
+  "title": "Renomear",
+  "layers": "Renomear {count} camadas",
+  "preview": "Pré-visualização",
+  "match": "Corresponder",
+  "to": "Renomear para",
+  "currentName": "Nome atual",
+  "layerName": "Nome da camada",
+  "numberAscending": "Número ↑",
+  "numberDescending": "Número ↓",
+  "startAscendingFrom": "Começar a ordem crescente em",
+  "stopDescendingAt": "Terminar a ordem decrescente em",
+  "invalidPattern": "Expressão regular inválida"
+}

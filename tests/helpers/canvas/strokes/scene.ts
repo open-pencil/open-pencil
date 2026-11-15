@@ -4,6 +4,8 @@ import {
   IDENTITY_GRADIENT_TRANSFORM
 } from '@open-pencil/scene-graph/gradient'
 
+import { solid } from '../paints'
+
 const ALIGNS = ['INSIDE', 'CENTER', 'OUTSIDE'] as const
 const CORNERS = [
   { name: 'sharp', cornerRadius: 0, dashPattern: undefined },
@@ -156,7 +158,7 @@ export function createGradientLinesScene(graph: SceneGraph, pageId: string): voi
     y: 60,
     width: 120,
     height: 80,
-    fills: [{ type: 'SOLID', color: { r: 0.2, g: 0.7, b: 0.4, a: 1 }, opacity: 1, visible: true }]
+    fills: [solid(0.2, 0.7, 0.4)]
   })
   const lines: Array<[string, Partial<SceneNode>, GradientTransform]> = [
     ['horizontal', { x: 60, y: 200, width: 300, height: 0 }, IDENTITY_GRADIENT_TRANSFORM],
@@ -170,6 +172,53 @@ export function createGradientLinesScene(graph: SceneGraph, pageId: string): voi
       strokes: [gradientStroke(transform)],
       strokeWeight: 6,
       ...placement
+    })
+  }
+}
+
+/**
+ * Translucent squares drawn from their paths with a centred, an inside, and an outside stroke, as
+ * a vector without a saved stroke outline draws, such as one drawn or resized on the canvas.
+ */
+export function createVectorStrokeAlignScene(graph: SceneGraph, pageId: string): void {
+  const side = 80
+  const corner = { x: 0, y: 0 }
+  for (const [column, align] of (['CENTER', 'INSIDE', 'OUTSIDE'] as const).entries()) {
+    graph.createNode('VECTOR', pageId, {
+      name: align,
+      x: 60 + column * 160,
+      y: 60,
+      width: side,
+      height: side,
+      vectorNetwork: {
+        vertices: [
+          { x: 0, y: 0 },
+          { x: side, y: 0 },
+          { x: side, y: side },
+          { x: 0, y: side }
+        ],
+        segments: [0, 1, 2, 3].map((start) => ({
+          start,
+          end: (start + 1) % 4,
+          tangentStart: corner,
+          tangentEnd: corner
+        })),
+        regions: [{ windingRule: 'NONZERO', loops: [[0, 1, 2, 3]] }]
+      },
+      fills: [solid(0.86, 0.91, 0.98)],
+      strokes: [
+        {
+          type: 'SOLID',
+          color: { r: 0.1, g: 0.1, b: 0.2, a: 1 },
+          weight: 12,
+          opacity: 0.6,
+          visible: true,
+          align,
+          cap: 'NONE',
+          join: 'MITER',
+          dashPattern: []
+        }
+      ]
     })
   }
 }

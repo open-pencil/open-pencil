@@ -9,6 +9,57 @@ import {
 } from '#cloud/server'
 
 describe('document sharing capabilities integration', () => {
+  test('stops a link while its maker or its document’s maker is banned', async () => {
+    const context = await seedSharing()
+    try {
+      const maker = crypto.randomUUID()
+      await context.runtime.database
+        .insertInto('user')
+        .values({ id: maker, name: 'Maker', email: 'maker@example.com', emailVerified: true })
+        .execute()
+      const capability = await context.sharing.createShare('owner', context.documentId, {
+        permission: 'view'
+      })
+      await context.runtime.database
+        .updateTable('documentShare')
+        .set({ createdBy: maker })
+        .where('id', '=', capability.share.id)
+        .execute()
+      const resolve = () =>
+        context.sharing.resolveShare(capability.share.id, { secret: capability.secret })
+      const ban = (banExpires: Date | null) =>
+        context.runtime.database
+          .updateTable('user')
+          .set({ banned: true, banExpires })
+          .where('id', '=', maker)
+          .execute()
+
+      await ban(null)
+      await expect(resolve()).rejects.toBeInstanceOf(DocumentShareInvalidError)
+      // A ban that runs out later still holds; one that ran out no longer does.
+      await ban(new Date(Date.now() + 60_000))
+      await expect(resolve()).rejects.toBeInstanceOf(DocumentShareInvalidError)
+      await ban(new Date(Date.now() - 1_000))
+      await expect(resolve()).resolves.toMatchObject({ documentId: context.documentId })
+
+      // The document's maker counts too, whoever made the link.
+      await context.runtime.database
+        .updateTable('documentShare')
+        .set({ createdBy: 'owner' })
+        .where('id', '=', capability.share.id)
+        .execute()
+      await context.runtime.database
+        .updateTable('document')
+        .set({ createdBy: maker })
+        .where('id', '=', context.documentId)
+        .execute()
+      await ban(null)
+      await expect(resolve()).rejects.toBeInstanceOf(DocumentShareInvalidError)
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
   test('creates hash-only capabilities and resolves user and guest principals', async () => {
     const context = await seedSharing()
     try {
@@ -136,6 +187,45 @@ describe('document sharing capabilities integration', () => {
         })
         expect(member).toMatchObject({ permission, principal: { kind: 'user', userId: 'alice' } })
       }
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
+  test('lets guests view an edit link where they may view but not edit', async () => {
+    const context = await seedSharing()
+    try {
+      const viewOnly = sharingWithPolicy(context, {
+        [CLOUD_FEATURE_KEYS.links]: true,
+        [CLOUD_FEATURE_KEYS.guestView]: true,
+        [CLOUD_FEATURE_KEYS.guestEdit]: false
+      })
+      const capability = await viewOnly.createShare('owner', context.documentId, {
+        permission: 'edit'
+      })
+      const input = { secret: capability.secret, guestName: 'Visitor' }
+      expect(await viewOnly.resolveShare(capability.share.id, input)).toMatchObject({
+        permission: 'view',
+        linkPermission: 'edit',
+        principal: { kind: 'guest', name: 'Visitor' }
+      })
+      expect(
+        await viewOnly.resolveShare(capability.share.id, input, {
+          userId: 'alice',
+          name: 'Alice',
+          email: 'alice@example.com'
+        })
+      ).toMatchObject({ permission: 'edit', linkPermission: 'edit' })
+
+      const open = sharingWithPolicy(context, {
+        [CLOUD_FEATURE_KEYS.links]: true,
+        [CLOUD_FEATURE_KEYS.guestView]: false,
+        [CLOUD_FEATURE_KEYS.guestEdit]: true
+      })
+      expect(await open.resolveShare(capability.share.id, input)).toMatchObject({
+        permission: 'edit',
+        linkPermission: 'edit'
+      })
     } finally {
       await context.runtime.close()
     }

@@ -92,6 +92,11 @@ async function dispatch(line: string): Promise<boolean> {
       await emit({ type: 'response', id: request.id, result: { cancelled: true } })
       return true
     }
+    if (request.method === 'session.compact') {
+      await service.compactSession(request.params.sessionId, request.params.instructions)
+      await emit({ type: 'response', id: request.id, result: { compacted: true } })
+      return true
+    }
     if (request.method === 'session.stop') {
       await service.stopSession(request.params.sessionId)
       await emit({ type: 'response', id: request.id, result: { stopped: true } })

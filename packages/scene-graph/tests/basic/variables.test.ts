@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { resolvedValueBindings } from '@open-pencil/scene-graph/variables'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { resolvedValueBindings } from '@open-pencil/scene-graph/variables'
 
 describe('Variables', () => {
   function pageId(graph: SceneGraph): string {
@@ -84,7 +84,7 @@ describe('Variables', () => {
     expect(graph.resolveColorVariable('v2')).toEqual({ r: 0, g: 0, b: 1, a: 1 })
   })
 
-  test('mode switching changes resolved value', () => {
+  test('a page mode switches what its layers resolve to', () => {
     const graph = new SceneGraph()
     graph.addCollection({
       id: 'col1',
@@ -109,9 +109,13 @@ describe('Variables', () => {
       hiddenFromPublishing: false
     })
 
+    const page = graph.getPages()[0]
+    const rect = graph.createNode('RECTANGLE', page.id)
+    expect(graph.resolveColorVariableForNode(rect.id, 'v1')).toEqual({ r: 1, g: 1, b: 1, a: 1 })
+    graph.updateNode(page.id, { variableModes: { col1: 'dark' } })
+    expect(graph.resolveColorVariableForNode(rect.id, 'v1')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
+    // Without a node, a variable resolves in its collection's default mode.
     expect(graph.resolveColorVariable('v1')).toEqual({ r: 1, g: 1, b: 1, a: 1 })
-    graph.setActiveMode('col1', 'dark')
-    expect(graph.resolveColorVariable('v1')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
   })
 
   test('node variable modes inherit from the nearest ancestor', () => {
@@ -160,7 +164,7 @@ describe('Variables', () => {
     })
   })
 
-  test('missing active mode falls back to default value', () => {
+  test('a mode without a value falls back to the default value', () => {
     const graph = new SceneGraph()
     graph.addCollection({
       id: 'col1',
@@ -182,8 +186,10 @@ describe('Variables', () => {
       hiddenFromPublishing: false
     })
 
-    graph.setActiveMode('col1', 'dark')
-    expect(graph.resolveColorVariable('v1')).toEqual({ r: 1, g: 1, b: 1, a: 1 })
+    const frame = graph.createNode('FRAME', graph.getPages()[0].id, {
+      variableModes: { col1: 'dark' }
+    })
+    expect(graph.resolveColorVariableForNode(frame.id, 'v1')).toEqual({ r: 1, g: 1, b: 1, a: 1 })
   })
 
   test('explicit alias resolution preserves source mode', () => {
@@ -360,5 +366,58 @@ describe('Variables', () => {
     })
 
     expect(graph.resolveColorVariable('v1')).toBeUndefined()
+  })
+
+  function collectionWithSortPositions(graph: SceneGraph, sortPositions: string[]): void {
+    graph.addCollection({
+      id: 'col1',
+      name: 'Theme',
+      modes: sortPositions.map((sortPosition, index) => ({
+        modeId: `m${index}`,
+        name: `Mode ${index}`,
+        sortPosition
+      })),
+      defaultModeId: 'm0',
+      variableIds: []
+    })
+  }
+
+  function listedModes(graph: SceneGraph) {
+    return graph.variableCollections.get('col1')?.modes ?? []
+  }
+
+  test('a new default mode sorts first and the others keep their positions', () => {
+    const graph = new SceneGraph()
+    collectionWithSortPositions(graph, ['a', 'b', 'c'])
+
+    graph.setDefaultMode('col1', 'm2')
+
+    const modes = listedModes(graph)
+    expect(modes.map((mode) => mode.modeId)).toEqual(['m2', 'm0', 'm1'])
+    expect(modes.slice(1).map((mode) => mode.sortPosition)).toEqual(['a', 'b'])
+    expect((modes[0].sortPosition ?? '') < 'a').toBe(true)
+  })
+
+  test('a new default mode sorts first even when no position fits below the old first', () => {
+    const graph = new SceneGraph()
+    collectionWithSortPositions(graph, ['!', '"'])
+
+    graph.setDefaultMode('col1', 'm1')
+
+    const positions = listedModes(graph).map((mode) => mode.sortPosition ?? '')
+    expect(listedModes(graph)[0].modeId).toBe('m1')
+    expect(positions).toEqual(positions.toSorted())
+    expect(new Set(positions).size).toBe(positions.length)
+  })
+
+  test('a collection without sort positions does not gain any when its default changes', () => {
+    const graph = new SceneGraph()
+    const collection = graph.createCollection('Theme')
+    graph.addMode(collection.id, 'dark', 'Dark')
+
+    graph.setDefaultMode(collection.id, 'dark')
+
+    const modes = graph.variableCollections.get(collection.id)?.modes ?? []
+    expect(modes.map((mode) => mode.sortPosition)).toEqual([undefined, undefined])
   })
 })

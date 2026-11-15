@@ -2,7 +2,8 @@ import type * as DesignTypes from './types'
 
 export { exportStorybook, STORY_MODES, STORYBOOK_FRAMEWORKS } from './export/storybook/export'
 export { serializeNode } from './export/html'
-export { createBrowserCSSRuntime, createCSSRuntime, createHeadlessCSSRuntime } from './runtime'
+export { createBrowserCSSRuntime, createCSSRuntime } from './runtime'
+export { parseHTMLDocument } from './import/markup'
 export {
   htmlToDesignDocument,
   htmlToSceneGraph,
@@ -10,6 +11,11 @@ export {
   tailwindHTMLToSceneGraph
 } from './import/html'
 export { compileTailwindCSS } from './import/tailwind'
+export {
+  parseFontFaceRules,
+  parseStylesheetImports,
+  type CSSFontFaceRule
+} from './import/font-faces'
 export {
   jsxToDesignDocument,
   jsxToSceneGraph,
@@ -45,6 +51,8 @@ export type CSSComputeOptions = DesignTypes.CSSComputeOptions
 export type CSSRuntime = DesignTypes.CSSRuntime
 export type DesignDocument = DesignTypes.DesignDocument
 export type DesignElement = DesignTypes.DesignElement
+export type DesignLayout = DesignTypes.DesignLayout
+export type DesignViewport = DesignTypes.DesignViewport
 export type DesignNode = DesignTypes.DesignNode
 export type DesignStyleDeclaration = DesignTypes.DesignStyleDeclaration
 export type DesignStyleSheet = DesignTypes.DesignStyleSheet

@@ -18,10 +18,12 @@ function setup() {
 
 describe('slots', () => {
   test('createSlot appends a 100×100 frame named Slot bound to a new SLOT property', () => {
-    const { component } = setup()
+    const { api, component } = setup()
     const slot = component.createSlot()
 
     expect(slot.type).toBe('SLOT')
+    // Figma's SlotNode typing has no toJSON; the proxy behind it does.
+    expect(api.getNodeById(slot.id)?.toJSON().type).toBe('SLOT')
     expect(slot.name).toBe('Slot')
     expect([slot.width, slot.height]).toEqual([100, 100])
     expect(slot.parent?.id).toBe(component.id)

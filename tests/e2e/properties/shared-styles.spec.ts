@@ -11,7 +11,7 @@ test.describe.configure({ mode: 'serial' })
 
 test.beforeAll(async ({ browser }) => {
   page = await browser.newPage()
-  await page.goto('/')
+  await page.goto('/?test')
   canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   targetId = await page.evaluate(() => {
@@ -37,7 +37,7 @@ test.beforeAll(async ({ browser }) => {
       fontFamily: 'Inter',
       fontSize: 30,
       fontWeight: 700,
-      lineHeight: 38,
+      lineHeight: { value: 38, unit: 'PIXELS' },
       sharedStyleType: 'TEXT',
       internalOnly: true
     })

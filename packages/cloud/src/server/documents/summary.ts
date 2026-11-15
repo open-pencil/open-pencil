@@ -5,6 +5,7 @@ const SUMMARY_COLUMNS = [
   'id',
   'workspaceId',
   'name',
+  'kind',
   'currentRevisionId',
   'version',
   'createdAt',
@@ -32,5 +33,6 @@ export async function getDocumentSummaryRow(
     .select(SUMMARY_COLUMNS)
     .where('id', '=', documentId)
     .where('deletedAt', 'is', null)
+    .where('disabledAt', 'is', null)
     .executeTakeFirst()
 }

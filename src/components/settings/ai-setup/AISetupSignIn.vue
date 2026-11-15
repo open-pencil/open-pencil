@@ -11,7 +11,7 @@ import type {
 } from '@/app/ai/models/settings/onboarding/sign-in'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
-import theme from '@/theme/settings/ai-setup/flow'
+import theme from '@/theme/settings/ai-setup/sign-in'
 
 /**
  * Signing in to a provider, and the account it signed in to. OpenRouter's sign-in creates a key

@@ -47,7 +47,7 @@ function select(choice: VariableModeChoice, value: string) {
     class="mt-1.5 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2"
     data-variable-mode-row
   >
-    <span class="truncate text-[11px] text-muted">{{ choice.name }}</span>
+    <span class="truncate text-2xs text-muted">{{ choice.name }}</span>
     <AppSelect
       :model-value="current(choice)"
       class="w-full"

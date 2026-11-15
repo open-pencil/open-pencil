@@ -1,1 +1,0 @@
-- A line draws its stroke above it as Figma does, instead of centred on it, keeps round and square caps and arrow heads within its length, spaces its dashes as Figma does, and draws with inside and outside alignment instead of disappearing.

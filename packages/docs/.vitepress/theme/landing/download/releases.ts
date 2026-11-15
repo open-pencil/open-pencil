@@ -61,6 +61,8 @@ export function classifyAsset(asset: {
   url: string
   size: number
 }): ReleaseFile | null {
+  // OpenPencil Chromium (`OpenPencil-Chromium_…`) shares the release but is not offered here.
+  if (asset.name.startsWith('OpenPencil-Chromium_')) return null
   const match = FILE_PATTERNS.find(({ pattern }) => pattern.test(asset.name))
   if (!match) return null
   const { platform, arch, format } = match

@@ -54,6 +54,14 @@ export function useSelectionState() {
     return !!slotOwner(editor.graph, first)
   })
 
+  /** Whether Ungroup takes any selected layer apart: a group, frame, boolean, or section. */
+  const canUngroup = useSceneComputed(
+    () => selectedIds.value.size > 0 && editor.canUngroupSelection()
+  )
+
+  /** Whether the selection holds layers the Auto Arrange layouts take. */
+  const canAutoArrange = useSceneComputed(() => editor.canAutoArrangeNodes([...selectedIds.value]))
+
   return {
     editor,
     selectedIds,
@@ -66,6 +74,8 @@ export function useSelectionState() {
     isComponent,
     isGroup,
     canCreateComponentSet,
-    canCreateSlot
+    canCreateSlot,
+    canUngroup,
+    canAutoArrange
   }
 }

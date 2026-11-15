@@ -1,19 +1,23 @@
 <script setup lang="ts">
-import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
+import { PopoverContent, PopoverPortal, PopoverTrigger } from 'reka-ui'
+import { tv } from 'tailwind-variants'
 
 import HudButton from '@/components/mobile-hud/HudButton.vue'
 import { useMobileHudContext } from '@/components/MobileHud/context'
 import AvatarStack from '@/components/presence/AvatarStack.vue'
 import PresenceList from '@/components/presence/PresenceList.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
-import { presencePopover } from '@/theme/mobile/presence-popover'
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
+import presencePopoverTheme from '@/theme/mobile/presence-popover'
+
+const presencePopover = tv(presencePopoverTheme)
 
 const hud = useMobileHudContext()
 const styles = presencePopover()
 </script>
 
 <template>
-  <PopoverRoot v-if="hud.collabState.inRoom">
+  <AppPopoverRoot v-if="hud.collabState.inRoom">
     <PopoverTrigger as-child>
       <HudButton :label="hud.peopleLabel" data-test-id="mobile-presence" :class="styles.trigger()">
         <span :class="styles.summary()">
@@ -50,5 +54,5 @@ const styles = presencePopover()
         </AppButton>
       </PopoverContent>
     </PopoverPortal>
-  </PopoverRoot>
+  </AppPopoverRoot>
 </template>

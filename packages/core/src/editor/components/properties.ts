@@ -3,9 +3,11 @@ import {
   applyComponentPropertyValue,
   componentPropertyDefinitions,
   findComponentPropertyTargets,
+  recordAssignmentOverride,
   resolveComponentPropertyValue,
   type ComponentPropertyTarget
 } from '@open-pencil/scene-graph/components'
+import { findInstanceAncestor } from '@open-pencil/scene-graph/instances'
 import {
   cloneInstanceOverrideState,
   setInstanceOverride
@@ -131,6 +133,8 @@ export function createComponentPropertyActions(
 
     const previousAssignments = { ...instance.componentPropertyAssignments }
     const previousOverrides = cloneInstanceOverrideState(instance.instanceOverrides)
+    const owner = instance.parentId ? findInstanceAncestor(ctx.graph, instance.parentId) : undefined
+    const previousOwnerOverrides = owner && cloneInstanceOverrideState(owner.instanceOverrides)
 
     // A property can drive several layers; undo restores each one to what it showed.
     const assignedValue = instance.componentPropertyAssignments[propertyId]
@@ -142,11 +146,13 @@ export function createComponentPropertyActions(
     )
 
     if (!applyPropertyValue(ctx, instanceId, definition, value)) return
+    recordAssignmentOverride(ctx.graph, instanceId, propertyId)
     ctx.runLayoutForNode(instanceId)
     ctx.undo.push({
       label: `Change ${definition.name}`,
       forward: () => {
         applyPropertyValue(ctx, instanceId, definition, value)
+        recordAssignmentOverride(ctx.graph, instanceId, propertyId)
         ctx.runLayoutForNode(instanceId)
         ctx.requestRender()
       },
@@ -158,6 +164,11 @@ export function createComponentPropertyActions(
             componentPropertyAssignments: previousAssignments,
             instanceOverrides: cloneInstanceOverrideState(previousOverrides)
           })
+          if (owner && previousOwnerOverrides) {
+            ctx.graph.updateNode(owner.id, {
+              instanceOverrides: cloneInstanceOverrideState(previousOwnerOverrides)
+            })
+          }
           restoredTargets.forEach((target, index) =>
             restoreTarget(live, target, previousValues[index] ?? '')
           )

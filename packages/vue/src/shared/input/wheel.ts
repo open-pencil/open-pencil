@@ -117,9 +117,12 @@ function zoomStep(delta: number, perDelta: number): WheelStep {
 
 /**
  * Turns wheel events into pan and zoom steps. It keeps the last Windows notch so a fast spin
- * accelerates, so each canvas uses its own.
+ * accelerates, so each canvas uses its own. `zoomSpeed` multiplies how far each event zooms.
  */
-export function createWheelSteps(platform: WheelPlatform = currentWheelPlatform()) {
+export function createWheelSteps(
+  platform: WheelPlatform = currentWheelPlatform(),
+  zoomSpeed: () => number = () => 1
+) {
   let lastNotch = { time: Number.NEGATIVE_INFINITY, signX: 0, signY: 0, step: 0 }
 
   function notchStep(event: WheelInput, notches: WheelPanDelta, zoom: boolean): WheelPanDelta {
@@ -148,7 +151,7 @@ export function createWheelSteps(platform: WheelPlatform = currentWheelPlatform(
 
     if (zoom) {
       const perDelta = event.ctrlKey && !notches ? PINCH_ZOOM_PER_DELTA : WHEEL_ZOOM_PER_DELTA
-      return zoomStep(delta.dy, perDelta)
+      return zoomStep(delta.dy, perDelta * zoomSpeed())
     }
 
     const pan = shiftToHorizontal(delta, event.shiftKey)
@@ -162,7 +165,15 @@ export function createWheelSteps(platform: WheelPlatform = currentWheelPlatform(
 
 const NAVIGATION_SETTLE_DELAY_MS = 120
 
-export function setupWheelPanZoom(canvasRef: Ref<HTMLCanvasElement | null>, editor: Editor) {
+/**
+ * Wheel and pinch zoom on the canvas. `zoomSpeed` scales how far each event zooms: 1 keeps
+ * Figma's rate, 0.5 zooms half as far.
+ */
+export function setupWheelPanZoom(
+  canvasRef: Ref<HTMLCanvasElement | null>,
+  editor: Editor,
+  zoomSpeed: () => number = () => 1
+) {
   const wheelAccum: WheelAccum = {
     deltaX: 0,
     deltaY: 0,
@@ -172,7 +183,7 @@ export function setupWheelPanZoom(canvasRef: Ref<HTMLCanvasElement | null>, edit
     hasZoom: false
   }
 
-  const wheelStep = createWheelSteps()
+  const wheelStep = createWheelSteps(currentWheelPlatform(), zoomSpeed)
   let settleTimer: ReturnType<typeof setTimeout> | null = null
 
   function scheduleSettle() {

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { diagnosticErrorDetails } from '@/app/diagnostics/error'
+import { describeDiagnosticError, diagnosticErrorDetails } from '@/app/diagnostics/error'
 
 function errorWith(message: string, stack: string, name = 'TypeError'): Error {
   const error = new Error(message)
@@ -10,6 +10,15 @@ function errorWith(message: string, stack: string, name = 'TypeError'): Error {
 }
 
 describe('diagnostic error details', () => {
+  test('keeps numeric protocol error codes as diagnostic strings', () => {
+    const error = Object.assign(new Error('Session in use'), { code: -32600 })
+    expect(describeDiagnosticError(error).errorCode).toBe('-32600')
+    expect(describeDiagnosticError({ code: -32600, message: 'Session in use' }).errorCode).toBe(
+      '-32600'
+    )
+    expect(describeDiagnosticError(Object.assign(error, { code: Number.NaN })).errorCode).toBeNull()
+  })
+
   test('keeps a runtime error’s message and stack', () => {
     const error = errorWith(
       'Attempting to define property on object that is not extensible.',

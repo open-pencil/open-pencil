@@ -15,6 +15,8 @@ export function checkpointComponent(
   const nodes: ComponentCheckpoint['nodes'] = []
   const visit = (occurrence: InstanceOccurrence, path: string[]): void => {
     const node = component.materialized.nodes.get(occurrence)
+    // A layer deleted before a resumed checkpoint is left out, as the restore leaves it out.
+    if (!node && path.length > 0) return
     if (!node) throw new Error('Missing checkpoint occurrence')
     nodes.push({ path, nodeId: node.id, mainComponentId: occurrence.mainComponentId })
     const ids = new Set<string>()

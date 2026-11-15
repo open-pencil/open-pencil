@@ -234,7 +234,8 @@ defineExpose({ patchFromLayers })
 <template>
   <div
     ref="host"
+    dir="ltr"
     data-slot="code-editor"
-    class="min-h-0 flex-1 overflow-hidden text-xs [&_.cm-scroller]:scrollbar-thin"
+    class="min-h-0 flex-1 overflow-hidden text-xs"
   />
 </template>

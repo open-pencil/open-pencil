@@ -14,7 +14,9 @@ import AISetupFlow from './AISetupFlow.vue'
 interface Args {
   entry: 'welcome' | 'guided'
   offersTour?: boolean
+  tourFailed?: boolean
   agentsAvailable: boolean
+  subscriptionsAvailable?: boolean
 }
 
 const freshInstall: AIModelSettings = {
@@ -83,6 +85,17 @@ export const Welcome: Story = { args: { entry: 'welcome' } }
 
 /** Offered over the demo, which is the tour, so it does not point to it. */
 export const WelcomeInTour: Story = { args: { entry: 'welcome', offersTour: false } }
+
+/** The tour could not load; the welcome stays open so the person can try again. */
+export const WelcomeTourFailed: Story = {
+  args: { entry: 'welcome', tourFailed: true },
+  play: async () => {
+    // Behaviour, not copy: the alert shows and the tour can be tried again.
+    await expect(page().getByRole('alert')).toBeVisible()
+    const tour = document.querySelector<HTMLElement>('[data-test-id="ai-setup-tour"]')
+    await expect(tour && within(tour).getByRole('button')).toBeEnabled()
+  }
+}
 export const Goals: Story = {}
 export const AccessInBrowser: Story = {
   play: async () => {
@@ -92,15 +105,30 @@ export const AccessInBrowser: Story = {
   }
 }
 export const AccessOnDesktop: Story = {
-  args: { agentsAvailable: true },
+  args: { agentsAvailable: true, subscriptionsAvailable: true },
   play: async () => {
     await next()
     await expect(page().getByRole('checkbox', { name: 'Claude Code' })).toBeVisible()
+    await expect(page().getByRole('checkbox', { name: 'ChatGPT' })).toBeVisible()
+  }
+}
+
+/** A Snap or Flatpak that cannot start agents still signs in to a ChatGPT subscription. */
+export const AccessInSandboxedPackage: Story = {
+  args: { agentsAvailable: false, subscriptionsAvailable: true },
+  play: async () => {
+    await next()
+    await expect(page().getByRole('checkbox', { name: 'ChatGPT' })).toBeVisible()
+    await expect(page().queryByRole('checkbox', { name: 'Claude Code' })).toBeNull()
+    // The notice says this install cannot start agents, not that only the desktop app can.
+    const notice = document.querySelector<HTMLElement>('[data-agents-unavailable]')
+    await expect(notice).toHaveAttribute('data-agents-unavailable', 'sandboxed')
+    await expect(notice && within(notice).getByRole('link')).toBeVisible()
   }
 }
 
 export const ConnectAgentAndFinish: Story = {
-  args: { agentsAvailable: true },
+  args: { agentsAvailable: true, subscriptionsAvailable: true },
   play: async () => {
     await next()
     await choose('Codex')

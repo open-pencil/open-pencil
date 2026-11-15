@@ -51,6 +51,22 @@ describe('behaviour specs', () => {
     })
   })
 
+  // The shadcn/ui community kit saves its switch as `state` with neither values nor a default.
+  test('a set read from a file without its option lists binds to its variants’ values', () => {
+    const graph = new SceneGraph()
+    const set = graph.createNode('COMPONENT_SET', graph.getPages()[0].id, {
+      name: 'switch',
+      componentPropertyDefinitions: [{ id: 'p1', name: 'state', type: 'VARIANT', defaultValue: '' }]
+    })
+    for (const state of ['off', 'on'])
+      graph.createNode('COMPONENT', set.id, {
+        name: `state=${state}`,
+        componentPropertyValues: { state }
+      })
+    const behaviour = behaviourFromSpec(graph, set, { kind: 'switch', values: { value: 'state' } })
+    expect(behaviour.booleans.value).toEqual({ propertyId: 'p1', on: 'on', off: 'off' })
+  })
+
   test('on and off are guessed by name before order', () => {
     expect(guessOnOff(['Off', 'On'])).toEqual({ on: 'On', off: 'Off' })
     expect(guessOnOff(['False', 'True'])).toEqual({ on: 'True', off: 'False' })
@@ -79,5 +95,11 @@ describe('behaviour specs', () => {
     expect(() =>
       behaviourFromSpec(graph, set, { kind: 'slider', parts: { track: 'Thumb', thumb: 'Thumb' } })
     ).toThrow('"Thumb" is already the track; a slot draws one part')
+    expect(() =>
+      behaviourFromSpec(graph, set, {
+        kind: 'button',
+        states: { property: 'Interaction', invalid: 'Disabled' }
+      })
+    ).toThrow('A button has no invalid state')
   })
 })

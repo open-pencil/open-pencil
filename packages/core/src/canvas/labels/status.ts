@@ -1,5 +1,5 @@
-import type { Canvas, Paragraph } from 'canvaskit-wasm'
-
+import type { Canvas, Paragraph } from '@open-pencil/canvaskit'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { StatusState } from '@open-pencil/scene-graph/statuses'
@@ -35,11 +35,11 @@ export function placeStatusLabel(r: SkiaRenderer, nodeId: string, matrix: Mat3, 
   ]
   const xs = corners.map((corner) => corner.x)
   const ys = corners.map((corner) => corner.y)
-  const x = Math.min(...xs)
-  const y = Math.min(...ys)
+  const x = minOf(xs)
+  const y = minOf(ys)
   r.statusLabels.push({
     nodeId,
-    rect: { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y }
+    rect: { x, y, width: maxOf(xs) - x, height: maxOf(ys) - y }
   })
 }
 
@@ -149,13 +149,13 @@ export function drawSectionStatus(
       SECTION_TITLE_RADIUS
     )
     const { background } = colors
-    r.auxFill.setColor(r.ck.Color4f(background.r, background.g, background.b, background.a))
+    r.auxFill.setColorComponents(background.r, background.g, background.b, background.a)
     canvas.drawRRect(bounds, r.auxFill)
     r.auxStroke.setColor(colors.border)
     r.auxStroke.setStrokeWidth(1)
     r.auxStroke.setPathEffect(null)
     canvas.drawRRect(bounds, r.auxStroke)
-    r.auxFill.setColor(r.ck.Color4f(label.color.r, label.color.g, label.color.b, 1))
+    r.auxFill.setColorComponents(label.color.r, label.color.g, label.color.b, 1)
     canvas.drawCircle(
       x + SECTION_TITLE_PADDING_X + DOT_RADIUS,
       y + height / 2,
@@ -191,6 +191,6 @@ export function drawStatusDot(
   label: StatusState,
   center: Vector
 ): void {
-  r.auxFill.setColor(r.ck.Color4f(label.color.r, label.color.g, label.color.b, 1))
+  r.auxFill.setColorComponents(label.color.r, label.color.g, label.color.b, 1)
   canvas.drawCircle(center.x, center.y, DOT_RADIUS, r.auxFill)
 }

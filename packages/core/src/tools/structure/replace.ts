@@ -1,10 +1,10 @@
 import * as v from 'valibot'
 
-import { revertOnFailure } from '#core/editor/history/document-change'
+import { graphOf } from '#core/figma-api/graph'
 import { defineTool } from '#core/tools/schema'
 
 export const nodeReplaceWith = defineTool({
-  name: 'node_replace_with',
+  name: 'replace_node',
 
   description: 'Replace a node with JSX content.',
   execution: { kind: 'async', mutation: 'document' },
@@ -13,20 +13,15 @@ export const nodeReplaceWith = defineTool({
     jsx: v.pipe(v.string(), v.description('JSX string for the replacement'))
   }),
   execute: async (figma, args) => {
+    const { designJSXRenderer } = await graphOf(figma).waitOutsideEdit(import('#core/design-jsx'))
     const node = figma.getNodeById(args.id)
     if (!node) return { error: `Node "${args.id}" not found` }
     const parentId = node.parent?.id ?? figma.currentPageId
-    const pageId = figma.graph.pageOf(node.id) ?? figma.currentPageId
     const x = node.x
     const y = node.y
-    const { designJSXRenderer } = await import('#core/design-jsx')
+    node.remove()
     const { renderJSX } = designJSXRenderer(figma.icons)
-    // The original goes before its replacement renders, so a render that fails partway brings it
-    // back along with removing what it made.
-    const results = await revertOnFailure(figma.graph, pageId, async () => {
-      node.remove()
-      return renderJSX(figma.graph, args.jsx, { parentId, x, y })
-    })
+    const results = await renderJSX(graphOf(figma), args.jsx, { parentId, x, y })
     const result = results[0]
     return {
       id: result.id,

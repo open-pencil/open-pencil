@@ -14,8 +14,7 @@ export function createCloudAuthenticationRuntime(
   options: Pick<CloudAuthRuntimeOptions, 'runInBackground' | 'validateSchema'> = {}
 ) {
   const enrollment = createEnrollmentService(database, {
-    appURL: config.appURL ?? config.publicURL,
-    portalURL: config.publicURL,
+    publicURL: config.publicURL,
     adminRecipients: config.enrollmentAdminNotificationEmails,
     email
   })

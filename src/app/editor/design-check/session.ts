@@ -1,7 +1,7 @@
 import { useTimeoutFn } from '@vueuse/core'
 import { computed, effectScope, ref, shallowRef, watch } from 'vue'
 
-import type { Editor } from '@open-pencil/core'
+import { resolveEditorProfile, type Editor } from '@open-pencil/core'
 import { isFigPagePending } from '@open-pencil/core/io/formats/fig'
 import { createLinter, type LintConfig, type LintFixRequest } from '@open-pencil/core/lint'
 
@@ -50,7 +50,10 @@ export function createDesignCheck(editor: Editor, state: AppEditorState) {
   })
 
   const preferences = computed(() => appPreferences.value.designCheck)
-  const enabled = computed(() => panelVisible.value || preferences.value.showOnCanvas)
+  // A board has no design lint, as FigJam has none.
+  const enabled = computed(
+    () => resolveEditorProfile(state).lint && (panelVisible.value || preferences.value.showOnCanvas)
+  )
   // Primitive keys keep unrelated preference changes, like toggling markers, from rebuilding rules.
   const preset = computed(() => preferences.value.preset)
   const disabledRules = computed(() => preferences.value.disabledRules.join('\n'))

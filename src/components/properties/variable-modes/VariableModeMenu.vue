@@ -6,7 +6,6 @@ import {
   DropdownMenuPortal,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuRoot,
   DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
@@ -20,6 +19,7 @@ import type { VariableModeChoice } from '@open-pencil/vue/controls/variable-mode
 import { usePanelMessages } from '@open-pencil/vue/i18n'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
 
@@ -51,7 +51,7 @@ function select(choice: VariableModeChoice, value: string) {
 </script>
 
 <template>
-  <DropdownMenuRoot v-if="choices.length > 0">
+  <AppDropdownMenuRoot v-if="choices.length > 0">
     <DropdownMenuTrigger as-child>
       <IconButton :label="panels.applyVariableMode" data-variable-mode-menu>
         <icon-lucide-swatch-book class="size-3.5" />
@@ -68,7 +68,7 @@ function select(choice: VariableModeChoice, value: string) {
                 :class="[menu.subTrigger, 'justify-between data-[highlighted]:bg-hover']"
               >
                 {{ choice.name }}
-                <icon-lucide-chevron-right :class="menu.icon" />
+                <icon-lucide-chevron-right data-direction="reading" :class="menu.icon" />
               </DropdownMenuSubTrigger>
               <DropdownMenuPortal>
                 <DropdownMenuSubContent :side-offset="4" :class="menu.content">
@@ -80,7 +80,7 @@ function select(choice: VariableModeChoice, value: string) {
                       "
                     >
                       <DropdownMenuRadioItem :value="AUTO_MODE" :class="item">
-                        <DropdownMenuItemIndicator class="absolute left-1.5">
+                        <DropdownMenuItemIndicator class="absolute inset-s-1.5">
                           <icon-lucide-check :class="menu.icon" />
                         </DropdownMenuItemIndicator>
                         {{ autoModeLabel(panels, choice) }}
@@ -95,7 +95,7 @@ function select(choice: VariableModeChoice, value: string) {
                         :value="mode.modeId"
                         :class="item"
                       >
-                        <DropdownMenuItemIndicator class="absolute left-1.5">
+                        <DropdownMenuItemIndicator class="absolute inset-s-1.5">
                           <icon-lucide-check :class="menu.icon" />
                         </DropdownMenuItemIndicator>
                         {{ mode.name }}
@@ -109,5 +109,5 @@ function select(choice: VariableModeChoice, value: string) {
         </MenuScrollArea>
       </DropdownMenuContent>
     </DropdownMenuPortal>
-  </DropdownMenuRoot>
+  </AppDropdownMenuRoot>
 </template>

@@ -7,7 +7,12 @@ import { ACP_AGENTS, type ACPAgentDef } from '@open-pencil/core/constants'
 import { createAgentAccounts, type AgentAccount } from '@/app/ai/agents/setup/accounts'
 import { createAgentDiscovery, type DetectedAgent } from '@/app/ai/agents/setup/discovery'
 import type { AgentLookup } from '@/app/ai/agents/setup/native'
-import { useAgentSetup, useMCPServerSetup, usePiSetup } from '@/app/ai/agents/setup/use'
+import {
+  useAgentSetup,
+  useCodingAgentSetup,
+  useMCPServerSetup,
+  usePiSetup
+} from '@/app/ai/agents/setup/use'
 import {
   agentSetupView,
   mcpServerSetupView,
@@ -88,7 +93,75 @@ describe('useAgentSetup', () => {
     await agents.signInAgent('acp:codex')
     expect(signInWithAgent).toHaveBeenCalledTimes(1)
   })
+
+  test('starts each agent once per session for the list, and one again on request', async () => {
+    const { agents, check, lookups } = signedInAgents()
+    await agents.checkOnce()
+    await agents.checkOnce()
+    expect(lookups()).toBe(1)
+    expect(check.mock.calls.map(([definition]) => definition.id).sort()).toEqual([
+      'claude-code',
+      'codex'
+    ])
+
+    await agents.checkAgent('acp:codex')
+    expect(lookups()).toBe(2)
+    expect(check.mock.calls.map(([definition]) => definition.id).sort()).toEqual([
+      'claude-code',
+      'codex',
+      'codex'
+    ])
+  })
+
+  test('checks a coding agent whenever its model settings name it', async () => {
+    const { agents, check, lookups } = signedInAgents()
+    const providerID = ref('openrouter')
+    const codingAgent = useCodingAgentSetup(providerID, agents)
+    expect(codingAgent.agent.value).toBeUndefined()
+    expect(lookups()).toBe(0)
+
+    providerID.value = 'acp:claude-code'
+    await nextTick()
+    // Naming the agent starts the lookup on its own; the explicit check below only settles it.
+    expect(lookups()).toBe(1)
+    await agents.checkAgent('acp:claude-code')
+    expect(codingAgent.agent.value?.id).toBe('claude-code')
+    expect(codingAgent.state.value?.detected?.status).toBe('available')
+    expect(check.mock.calls.every(([definition]) => definition.id === 'claude-code')).toBe(true)
+  })
 })
+
+/** Codex and Claude Code installed, both signed in. */
+function signedInAgents() {
+  let lookupCount = 0
+  const discovery = createAgentDiscovery({
+    enabled: true,
+    lookup: async () => {
+      lookupCount++
+      return lookup('npm', 'codex-acp', 'claude-agent-acp')
+    },
+    install: async () => undefined
+  })
+  const check = mock(async (_agent: ACPAgentDef) => ({
+    status: { kind: 'account' as const, label: 'Plus' },
+    adapter: null,
+    methods: [],
+    tools: { connected: true as const }
+  }))
+  const accounts = createAgentAccounts({
+    enabled: true,
+    check,
+    signInWithAgent: async () => null,
+    startTerminalSignIn: async () => {
+      throw new Error('Not expected')
+    }
+  })
+  return {
+    agents: useAgentSetup(discovery, async () => null, accounts),
+    check,
+    lookups: () => lookupCount
+  }
+}
 
 function agent(id: string): ACPAgentDef {
   const definition = ACP_AGENTS.find((candidate) => candidate.id === id)
@@ -174,6 +247,27 @@ describe('agentSetupView', () => {
       })
     )
     expect(view.manualAgentCommand).toBe(gemini.installCommand ?? null)
+  })
+
+  test('offers the install command for Antigravity CLI on POSIX and Windows', () => {
+    const agy = agent('antigravity')
+    const posixView = agentSetupView(
+      agy,
+      agentState({
+        detected: { definition: agy, status: 'not-installed', cliPath: null, adapterPath: null }
+      }),
+      'Mozilla/5.0 (Macintosh)'
+    )
+    expect(posixView.manualAgentCommand).toBe(agy.installCommand ?? null)
+
+    const windowsView = agentSetupView(
+      agy,
+      agentState({
+        detected: { definition: agy, status: 'not-installed', cliPath: null, adapterPath: null }
+      }),
+      'Mozilla/5.0 (Windows NT 10.0)'
+    )
+    expect(windowsView.manualAgentCommand).toBe(agy.windowsInstallCommand ?? null)
   })
 
   test('shows the commands after a failed installation', () => {

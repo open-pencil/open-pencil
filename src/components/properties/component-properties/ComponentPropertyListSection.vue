@@ -3,13 +3,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuPortal,
-  DropdownMenuRoot,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   PopoverAnchor,
   PopoverContent,
-  PopoverPortal,
-  PopoverRoot
+  PopoverPortal
 } from 'reka-ui'
 import { computed, ref, type ComponentPublicInstance } from 'vue'
 
@@ -20,8 +18,11 @@ import { useFlatReorderDrag } from '@open-pencil/vue/shared/drag'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import { useInlineSide } from '@/components/ui/direction/inline-side'
+import AppDropdownMenuRoot from '@/components/ui/menu/AppDropdownMenuRoot.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import MenuScrollArea from '@/components/ui/menu/MenuScrollArea.vue'
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
@@ -32,6 +33,7 @@ import PropertyRow from './PropertyRow.vue'
 import PropertyTypeIcon from './PropertyTypeIcon.vue'
 import VariantValueList from './variant/VariantValueList.vue'
 
+const startSide = useInlineSide('start')
 /** A main component's text, boolean and swap properties, and the nested instances it exposes. */
 const authoring = useComponentPropertyAuthoring()
 const { context, definitions, rows, conflicts, componentSet, nestedInstances, editable } = authoring
@@ -109,7 +111,7 @@ function valueLabel(type: ComponentPropertyType, value: string) {
 </script>
 
 <template>
-  <PopoverRoot v-if="context && isComponent" v-model:open="nestedOpen">
+  <AppPopoverRoot v-if="context && isComponent" v-model:open="nestedOpen">
     <PopoverAnchor as-child>
       <PanelSection
         :key="context.node.id"
@@ -117,7 +119,7 @@ function valueLabel(type: ComponentPropertyType, value: string) {
         data-test-id="component-property-list"
       >
         <template #actions>
-          <DropdownMenuRoot>
+          <AppDropdownMenuRoot>
             <DropdownMenuTrigger as-child>
               <IconButton
                 :label="panels.createComponentProperty"
@@ -169,14 +171,14 @@ function valueLabel(type: ComponentPropertyType, value: string) {
                 </MenuScrollArea>
               </DropdownMenuContent>
             </DropdownMenuPortal>
-          </DropdownMenuRoot>
+          </AppDropdownMenuRoot>
         </template>
 
         <div
           v-for="conflict in conflicts"
           :key="conflict.label"
           role="alert"
-          class="flex items-start gap-1.5 rounded bg-warning/10 px-2 py-1.5 text-[11px] leading-4 text-warning"
+          class="flex items-start gap-1.5 rounded bg-warning/10 px-2 py-1.5 text-2xs leading-4 text-warning"
         >
           <icon-lucide-triangle-alert class="mt-0.5 size-3 shrink-0" aria-hidden="true" />
           <span class="min-w-0 flex-1">
@@ -262,7 +264,7 @@ function valueLabel(type: ComponentPropertyType, value: string) {
         </div>
 
         <div v-if="exposed.length" class="flex flex-col gap-0.5">
-          <span class="text-[11px] text-muted">{{ panels.nestedInstances }}</span>
+          <span class="text-2xs text-muted">{{ panels.nestedInstances }}</span>
           <div class="-mx-1.5 flex flex-col">
             <div
               v-for="node in exposed"
@@ -272,7 +274,7 @@ function valueLabel(type: ComponentPropertyType, value: string) {
             >
               <button
                 type="button"
-                class="flex min-w-0 flex-1 items-center gap-1.5 text-left"
+                class="flex min-w-0 flex-1 items-center gap-1.5 text-start"
                 @click="authoring.select(node.id)"
               >
                 <icon-lucide-component class="size-3.5 shrink-0 text-component" />
@@ -293,7 +295,7 @@ function valueLabel(type: ComponentPropertyType, value: string) {
     </PopoverAnchor>
     <PopoverPortal>
       <PopoverContent
-        side="left"
+        :side="startSide"
         align="start"
         :side-offset="8"
         :aria-label="panels.nestedInstances"
@@ -301,7 +303,7 @@ function valueLabel(type: ComponentPropertyType, value: string) {
       >
         <div :class="nestedStyles.header">
           <h3 class="text-xs font-semibold text-surface">{{ panels.nestedInstances }}</h3>
-          <AppButton :aria-label="common.close" class="ml-auto" @click="nestedOpen = false">
+          <AppButton :aria-label="common.close" class="ms-auto" @click="nestedOpen = false">
             <icon-lucide-x class="size-3.5" />
           </AppButton>
         </div>
@@ -329,5 +331,5 @@ function valueLabel(type: ComponentPropertyType, value: string) {
         </div>
       </PopoverContent>
     </PopoverPortal>
-  </PopoverRoot>
+  </AppPopoverRoot>
 </template>

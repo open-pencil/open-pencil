@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
+import { PopoverContent, PopoverPortal, PopoverTrigger } from 'reka-ui'
+import { tv } from 'tailwind-variants'
 import { computed, ref } from 'vue'
 
 import { formatDay } from '@/app/metrics/format'
@@ -8,8 +9,11 @@ import type { MetricsRange, MetricsRangePreset } from '@/app/metrics/range'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppRangeCalendar from '@/components/ui/date/AppRangeCalendar.vue'
 import type { DayRange } from '@/components/ui/date/range'
+import AppPopoverRoot from '@/components/ui/overlay/AppPopoverRoot.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
-import { metricsRangePicker } from '@/theme/metrics/dashboard'
+import { metricsRangePickerTheme } from '@/theme/metrics/dashboard'
+
+const metricsRangePicker = tv(metricsRangePickerTheme)
 
 /**
  * Which days the whole dashboard shows: presets as rows, a calendar for any other span. Days
@@ -44,7 +48,7 @@ function choose(preset: Exclude<MetricsRangePreset, 'custom'>) {
 </script>
 
 <template>
-  <PopoverRoot v-model:open="open">
+  <AppPopoverRoot v-model:open="open">
     <PopoverTrigger as-child>
       <AppButton variant="outline" size="sm">
         <icon-lucide-calendar class="size-3.5" />
@@ -75,5 +79,5 @@ function choose(preset: Exclude<MetricsRangePreset, 'custom'>) {
         </div>
       </PopoverContent>
     </PopoverPortal>
-  </PopoverRoot>
+  </AppPopoverRoot>
 </template>

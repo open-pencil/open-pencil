@@ -5,11 +5,11 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 const hook = join(import.meta.dir, '../src/typescript-dependencies.ts')
-// The hook needs Node's module hooks and type stripping, which older Node versions lack.
+// The hook needs Node's synchronous module hooks, which older Node versions lack.
 const nodeSupportsHook =
   spawnSync('node', [
     '-e',
-    "const m = require('node:module'); process.exit(typeof m.registerHooks === 'function' && typeof m.stripTypeScriptTypes === 'function' && process.features.typescript ? 0 : 1)"
+    "process.exit(typeof require('node:module').registerHooks === 'function' ? 0 : 1)"
   ]).status === 0
 
 function importUnderNode(register: boolean) {
@@ -18,7 +18,10 @@ function importUnderNode(register: boolean) {
     const dependency = join(root, 'node_modules', 'typed-dependency')
     mkdirSync(dependency, { recursive: true })
     writeFileSync(join(dependency, 'package.json'), '{"type":"module","exports":"./index.ts"}')
-    writeFileSync(join(dependency, 'index.ts'), 'export const value: number = 42\n')
+    writeFileSync(
+      join(dependency, 'index.ts'),
+      'class Box { constructor(readonly value: number) {} }\nexport const { value } = new Box(42)\n'
+    )
     const script = [
       register
         ? `const { loadTypeScriptDependencies } = await import(${JSON.stringify(hook)})`

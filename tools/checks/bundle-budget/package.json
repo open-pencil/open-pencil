@@ -1,0 +1,12 @@
+{
+  "name": "@open-pencil/bundle-budget-tools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "bun test tests"
+  },
+  "dependencies": {
+    "@open-pencil/package-artifacts-tools": "workspace:*",
+    "valibot": "^1.5.0"
+  }
+}

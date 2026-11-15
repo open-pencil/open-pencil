@@ -1,11 +1,14 @@
 <script setup lang="ts">
+import { tv } from 'tailwind-variants'
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'vccs'
 import { computed } from 'vue'
 
 import { formatCount, formatPercent } from '@/app/metrics/format'
 import { pooledRetention } from '@/app/metrics/retention'
 import type { RetentionCohort } from '@/app/metrics/retention'
-import { metricsRetention } from '@/theme/metrics/dashboard'
+import { metricsRetentionTheme } from '@/theme/metrics/dashboard'
+
+const metricsRetention = tv(metricsRetentionTheme)
 
 /**
  * How many installs come back: Day 1, 7, and 30 as numbers, then the whole curve. A day says
@@ -52,7 +55,7 @@ const tooltipValue = (value: unknown, _name: unknown, item: { payload?: unknown 
       :height="180"
       :margin="{ top: 8, right: 8, bottom: 0, left: 0 }"
       :is-animation-active="false"
-      class="text-[11px]"
+      class="text-2xs"
       title="Share of installs that came back, by days since first seen"
     >
       <CartesianGrid :vertical="false" />

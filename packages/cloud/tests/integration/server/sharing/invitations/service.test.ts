@@ -5,7 +5,8 @@ import {
   createDocumentSharingService,
   createInvitationOutbox,
   createTransactionalEmailService,
-  DocumentShareInvalidError
+  DocumentShareInvalidError,
+  type DocumentInvitationMessage
 } from '#cloud/server'
 
 const OWNER_ID = '11111111-1111-4111-8111-111111111111'
@@ -37,12 +38,7 @@ describe('document sharing invitations integration', () => {
 
   test('delivers fragment-protected invitation URLs without storing raw tokens', async () => {
     const context = await seedSharing()
-    const delivered: Array<{
-      recipientEmail: string
-      inviterName: string
-      documentName: string
-      acceptanceURL: string
-    }> = []
+    const delivered: DocumentInvitationMessage[] = []
     try {
       await assignOwnerUser(context, {
         id: OWNER_ID,
@@ -51,7 +47,6 @@ describe('document sharing invitations integration', () => {
       })
       const sharing = createDocumentSharingService(context.runtime.database, {
         publicURL: 'https://cloud.example.com',
-        appURL: 'https://app.example.com',
         delivery: {
           async sendDocumentInvitation(message) {
             delivered.push(message)
@@ -65,6 +60,7 @@ describe('document sharing invitations integration', () => {
       expect(delivered).toHaveLength(1)
       expect(delivered[0]).toMatchObject({
         recipientEmail: 'person@example.com',
+        locale: 'en',
         inviterName: 'Owner Name',
         documentName: 'Homepage'
       })
@@ -79,9 +75,9 @@ describe('document sharing invitations integration', () => {
         expiresAt: created.invitation.expiresAt,
         recipientHint: 'pe****@example.com'
       })
-      expect(deliveryURL.origin).toBe('https://app.example.com')
-      expect(deliveryURL.pathname).toBe(`/cloud/invitations/${created.invitation.id}`)
-      expect(deliveryURL.searchParams.get('server')).toBe('https://cloud.example.com')
+      expect(deliveryURL.origin).toBe('https://cloud.example.com')
+      expect(deliveryURL.pathname).toBe(`/invitations/${created.invitation.id}`)
+      expect(deliveryURL.search).toBe('')
       expect(deliveryURL.hash).toBe(`#${created.token}`)
       const stored = await context.runtime.database
         .selectFrom('documentInvitation')
@@ -108,7 +104,6 @@ describe('document sharing invitations integration', () => {
       })
       const sharing = createDocumentSharingService(context.runtime.database, {
         publicURL: 'https://cloud.example.com',
-        appURL: 'https://app.example.com',
         outbox: createInvitationOutbox(email)
       })
       const created = await sharing.createInvitation(OWNER_ID, context.documentId, {
@@ -178,7 +173,6 @@ describe('document sharing invitations integration', () => {
       })
       const sharing = createDocumentSharingService(context.runtime.database, {
         publicURL: 'https://cloud.example.com',
-        appURL: 'https://app.example.com',
         delivery: {
           async sendDocumentInvitation() {
             throw new Error('SMTP unavailable')

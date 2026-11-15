@@ -29,7 +29,8 @@ for (const viewport of [
     const search = page.getByRole('searchbox', { name: 'Search tools' })
     await search.fill('no-such-mcp-tool')
     await expect(page.getByText('No tools match your search.', { exact: true })).toBeVisible()
-    await selectMCPSection(page, viewport.width < 640)
+    // The tool list opens over the MCP page; its breadcrumb leads back.
+    await page.getByTestId('settings-editor-back').click()
     const access = page.getByRole('combobox', { name: 'Browser agent access' })
     await expect(access).toHaveText('Off')
     await access.click()

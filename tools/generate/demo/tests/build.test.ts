@@ -100,9 +100,9 @@ describe('the demo document', () => {
     )
     expect(light).toHaveLength(1)
     expect(collection?.modes.map((mode) => mode.name)).toEqual(['Dark', 'Light'])
-    expect(Object.values(light[0].variableModes)).toEqual([
-      collection?.modes.find((mode) => mode.name === 'Light')?.modeId
-    ])
+    const lightMode = collection?.modes.find((mode) => mode.name === 'Light')
+    if (!lightMode) throw new Error('Expected a Light mode')
+    expect(Object.values(light[0].variableModes)).toEqual([lightMode.modeId])
   })
 
   test('keeps a shader preset on every shader fill', () => {

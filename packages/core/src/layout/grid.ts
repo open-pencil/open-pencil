@@ -1,86 +1,80 @@
-import { Direction, Display, Gutter, Edge, type Node as YogaNode } from 'yoga-layout'
-
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { layoutSizing } from '@open-pencil/scene-graph/layout'
 import { resolveNodeLayoutDirection } from '@open-pencil/scene-graph/text/direction'
+import type { LayoutNode } from '@open-pencil/taffy'
 
-import { configureAbsoluteChild, createYogaNode, mapGridTrack } from './yoga-helpers'
+import { configureAbsoluteChild, createLayoutNode, mapGridTrack, setLayoutPadding } from './node'
 
 function configureAsGrid(
-  yogaNode: YogaNode,
+  layoutNode: LayoutNode,
   node: SceneNode,
   direction: Exclude<SceneNode['layoutDirection'], 'AUTO'>
 ): void {
-  yogaNode.setDisplay(Display.Grid)
-  yogaNode.setDirection(direction === 'RTL' ? Direction.RTL : Direction.LTR)
-  yogaNode.setWidth(node.width)
+  layoutNode.style.display = 'grid'
+  layoutNode.style.direction = direction === 'RTL' ? 'rtl' : 'ltr'
+  layoutNode.style.width = node.width
   if (node.gridTemplateRows.length > 0 || node.height > 0) {
-    yogaNode.setHeight(node.height)
+    layoutNode.style.height = node.height
   }
 
   if (node.gridTemplateColumns.length > 0) {
-    yogaNode.setGridTemplateColumns(node.gridTemplateColumns.map(mapGridTrack))
+    layoutNode.style.gridTemplateColumns = node.gridTemplateColumns.map(mapGridTrack)
   }
   if (node.gridTemplateRows.length > 0) {
-    yogaNode.setGridTemplateRows(node.gridTemplateRows.map(mapGridTrack))
+    layoutNode.style.gridTemplateRows = node.gridTemplateRows.map(mapGridTrack)
   }
 
-  yogaNode.setGap(Gutter.Column, node.gridColumnGap)
-  yogaNode.setGap(Gutter.Row, node.gridRowGap)
+  layoutNode.style.columnGap = node.gridColumnGap
+  layoutNode.style.rowGap = node.gridRowGap
 
-  yogaNode.setPadding(Edge.Top, node.paddingTop)
-  yogaNode.setPadding(Edge.Right, node.paddingRight)
-  yogaNode.setPadding(Edge.Bottom, node.paddingBottom)
-  yogaNode.setPadding(Edge.Left, node.paddingLeft)
+  setLayoutPadding(layoutNode, node)
 }
 
-export function createGridChildNode(graph: SceneGraph, child: SceneNode): YogaNode {
-  const yogaChild = createYogaNode()
+export function createGridChildNode(graph: SceneGraph, child: SceneNode): LayoutNode {
+  const item = createLayoutNode()
   if (!child.visible) {
-    yogaChild.setDisplay(Display.None)
+    item.style.display = 'none'
   } else {
     const pos = child.gridPosition
     if (pos) {
-      yogaChild.setGridColumnStart(pos.column)
-      yogaChild.setGridColumnEndSpan(pos.columnSpan)
-      yogaChild.setGridRowStart(pos.row)
-      yogaChild.setGridRowEndSpan(pos.rowSpan)
+      item.style.gridColumn = { start: pos.column, span: pos.columnSpan }
+      item.style.gridRow = { start: pos.row, span: pos.rowSpan }
     }
     // Each axis fills its cell on its own, as in Figma: grow for width, stretch for height.
-    if (layoutSizing(graph, child, 'HORIZONTAL') === 'FILL') yogaChild.setWidthStretch()
-    else yogaChild.setWidth(child.width)
-    if (layoutSizing(graph, child, 'VERTICAL') === 'FILL') yogaChild.setHeightStretch()
-    else yogaChild.setHeight(child.height)
+    if (layoutSizing(graph, child, 'HORIZONTAL') === 'FILL') item.style.justifySelf = 'stretch'
+    else item.style.width = child.width
+    if (layoutSizing(graph, child, 'VERTICAL') === 'FILL') item.style.alignSelf = 'stretch'
+    else item.style.height = child.height
   }
-  return yogaChild
+  return item
 }
 
 export function buildGridTree(
   graph: SceneGraph,
   frame: SceneNode,
   inheritedDirection: 'LTR' | 'RTL'
-): YogaNode {
-  const root = createYogaNode()
+): LayoutNode {
+  const root = createLayoutNode()
   const direction = resolveNodeLayoutDirection(frame, inheritedDirection)
   configureAsGrid(root, frame, direction)
 
   const children = graph.getChildren(frame.id)
   for (const child of children) {
     if (child.layoutPositioning === 'ABSOLUTE') {
-      const yogaChild = createYogaNode()
-      configureAbsoluteChild(yogaChild, child)
-      root.insertChild(yogaChild, root.getChildCount())
+      const item = createLayoutNode()
+      configureAbsoluteChild(item, child)
+      root.append(item)
     } else {
-      const yogaChild = createGridChildNode(graph, child)
+      const item = createGridChildNode(graph, child)
       if (
         child.layoutMode === 'GRID' ||
         child.layoutMode === 'HORIZONTAL' ||
         child.layoutMode === 'VERTICAL'
       ) {
         const childDirection = resolveNodeLayoutDirection(child, direction)
-        yogaChild.setDirection(childDirection === 'RTL' ? Direction.RTL : Direction.LTR)
+        item.style.direction = childDirection === 'RTL' ? 'rtl' : 'ltr'
       }
-      root.insertChild(yogaChild, root.getChildCount())
+      root.append(item)
     }
   }
 

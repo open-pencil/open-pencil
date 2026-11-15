@@ -1,1 +1,0 @@
-- Safari keeps each tab on its own document; after a few tab switches, every tab showed the canvas and layers of the tab before it.

@@ -4,7 +4,7 @@ import type { SupportNotice } from './guidance'
 
 /**
  * Root element the notice replaces. It is the app mount point, so the notice
- * takes over whatever the splash or a half-mounted app left behind.
+ * takes over whatever a half-mounted app left behind, and the splash beside it hides.
  */
 const APP_ROOT_SELECTOR = '#app'
 export const BOOT_NOTICE_ID = 'boot-notice'

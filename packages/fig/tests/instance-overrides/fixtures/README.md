@@ -12,7 +12,7 @@ Oracle checks use the actual Figma Plugin API via figma-use. These reduced fixtu
 
 ## Gold Preview source evidence
 
-The archive-backed gold preview test, now in `tests/engine/io/fig/instance/gold/`, uses
+The archive-backed gold preview test, in `packages/core/tests/io/formats/fig/instance/gold/`, uses
 `tests/fixtures/gold-preview.fig`. In original
 Figma file `NmoHzskYNiSKOaRX14bMdw`, source badges `1:1820`, `1:1821`, and `1:1822` report
 `characters` overrides. Their placed occurrences under input `1:3503` inherit those claims

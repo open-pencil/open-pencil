@@ -9,7 +9,7 @@ import { flattenNodesToVectorProps } from '#core/canvas/flatten'
 function flattenPlaceholder(graph: SceneGraph, nodes: SceneNode[], parentId: string): SceneNode {
   const first = nodes[0]
   return graph.createNode('VECTOR', parentId, {
-    name: 'Flatten',
+    name: nodes.length === 1 ? first.name : 'Vector',
     x: first.x,
     y: first.y,
     width: first.width,

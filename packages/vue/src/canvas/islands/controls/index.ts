@@ -117,7 +117,9 @@ function valueRoot(
       TabsRoot,
       {
         modelValue: state.choice,
-        'onUpdate:modelValue': (value: string | number) => (state.choice = String(value))
+        // Tabs that are instances show whether they are the chosen one, as group items do.
+        'onUpdate:modelValue': (value: string | number) =>
+          chooseItem(island, control, String(value))
       },
       () => base()
     )
@@ -222,6 +224,25 @@ function disclosurePart(
   return base()
 }
 
+/**
+ * A tab trigger. A tab with the tab behaviour takes hover, press, and focus as its own states
+ * and is disabled while its disabled value is on or it is drawn disabled, so it cannot be
+ * chosen, as Reka's TabsTrigger is.
+ */
+function trigger(
+  island: IslandRenderContext,
+  role: Extract<ControlRole, { type: 'trigger' }>,
+  base: RoleContext['base']
+): VNode {
+  const tab = role.tab
+  const props = tab ? interaction(stateOf(island, tab)) : {}
+  return asChild(
+    TabsTrigger,
+    { value: String(role.index), disabled: tab ? disabled(island, tab) : false },
+    () => base({ tag: 'button', props: { type: 'button', ...props } })
+  )
+}
+
 /** Render a layer with the role it has for the controls of its island. */
 export function wrapRole(
   island: IslandRenderContext,
@@ -237,9 +258,7 @@ export function wrapRole(
     case 'part':
       return part({ island, role, element, base })
     case 'trigger':
-      return asChild(TabsTrigger, { value: String(role.index) }, () =>
-        base({ tag: 'button', props: { type: 'button' } })
-      )
+      return trigger(island, role, base)
     case 'panel':
       return asChild(TabsContent, { value: String(role.index) }, () => base())
     case 'text':

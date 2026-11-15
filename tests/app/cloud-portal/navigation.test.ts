@@ -43,9 +43,9 @@ describe('portal access rules', () => {
   })
 
   test('account pages ask for a session and come back after it', () => {
-    expect(portalDestination(target('/cloud/device', { account: true }), null)).toEqual({
+    expect(portalDestination(target('/auth/device', { account: true }), null)).toEqual({
       name: 'sign-in',
-      query: { redirect: '/cloud/device' }
+      query: { redirect: '/auth/device' }
     })
   })
 
@@ -68,6 +68,26 @@ describe('portal access rules', () => {
       name: 'sign-in',
       query: { redirect: '/account/closed' }
     })
+  })
+
+  test('an account with terms to accept reads them first, then goes where it was going', () => {
+    const signIn = target('/auth/sign-in', { signedOut: true }, '/auth/device?user_code=ABCD')
+    expect(portalDestination(signIn, account('terms'))).toEqual({
+      path: '/account/terms',
+      query: { redirect: '/auth/device?user_code=ABCD' }
+    })
+    const security = target('/account/security', { account: true })
+    expect(portalDestination(security, account('terms'))).toEqual({
+      path: '/account/terms',
+      query: { redirect: '/account/security' }
+    })
+    expect(portalDestination(target('/welcome', { signedOut: true }), account('terms'))).toBe(
+      '/account/terms'
+    )
+    const terms = target('/account/terms', { account: true }, '/account/security')
+    expect(portalDestination(terms, account('terms'))).toBe(true)
+    expect(portalDestination(terms, account('active'))).toBe('/')
+    expect(portalDestination(terms, account('pending'))).toBe('/account/pending')
   })
 
   test('console pages ask for a deployment administrator', () => {

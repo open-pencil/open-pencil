@@ -52,7 +52,13 @@ describe('document comments', () => {
     const page = graph.getPages()[0]
     if (!page) throw new Error('Page missing')
     const frame = graph.createNode('FRAME', page.id, { x: 100, y: 50, width: 200, height: 100 })
-    graph.createNode('RECTANGLE', frame.id, { x: 10, y: 10, width: 20, height: 20 })
+    graph.createNode('RECTANGLE', frame.id, {
+      x: 10,
+      y: 10,
+      width: 20,
+      height: 20,
+      fills: [{ type: 'SOLID', color: { r: 0.8, g: 0.8, b: 0.8, a: 1 }, opacity: 1, visible: true }]
+    })
 
     const anchor = commentAnchor(graph, page.id, { x: 115, y: 65 })
     expect(anchor).toMatchObject({ nodeId: frame.id, offsetX: 15, offsetY: 15 })
@@ -69,7 +75,13 @@ describe('document comments', () => {
     if (!page) throw new Error('Page missing')
     const section = graph.createNode('SECTION', page.id, { x: 0, y: 0, width: 800, height: 600 })
     const frame = graph.createNode('FRAME', section.id, { x: 100, y: 100, width: 200, height: 100 })
-    graph.createNode('RECTANGLE', frame.id, { x: 10, y: 10, width: 20, height: 20 })
+    graph.createNode('RECTANGLE', frame.id, {
+      x: 10,
+      y: 10,
+      width: 20,
+      height: 20,
+      fills: [{ type: 'SOLID', color: { r: 0.8, g: 0.8, b: 0.8, a: 1 }, opacity: 1, visible: true }]
+    })
 
     expect(commentAnchor(graph, page.id, { x: 115, y: 115 }).nodeId).toBe(frame.id)
   })

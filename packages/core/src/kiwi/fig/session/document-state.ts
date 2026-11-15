@@ -1,6 +1,12 @@
-import { createFigDocumentSession, type FigSessionCheckpoint } from '@open-pencil/fig'
+import {
+  createFigDocumentSession,
+  figCheckpointRecords,
+  type FigSessionCheckpoint,
+  type SavedVariant
+} from '@open-pencil/fig'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
+import { figArchive } from '#core/kiwi/fig/session/archive/access'
 import { readerSessionOptions, type FigReaderDiagnostic } from '#core/kiwi/fig/session/options'
 
 /**
@@ -50,6 +56,23 @@ export function isReaderPagePending(graph: SceneGraph, pageId: string): boolean 
   return session
     ? session.pages.some((page) => page.id === sourceId) && !session.loadedPageIds.has(sourceId)
     : !checkpoint.loadedPageIds.includes(sourceId)
+}
+
+/**
+ * The page holding a layer of the file while that page has not loaded, so a layer named by its
+ * ID, as a link to it names it, is found by loading its page. A layer's ID is its record's GUID;
+ * the archive answers which page holds it, in the reader's worker when there is one.
+ */
+export async function pendingReaderPageOfNode(
+  graph: SceneGraph,
+  nodeId: string
+): Promise<string | null> {
+  const archive = figArchive(graph)
+  const checkpoint = readerCheckpoint(graph)
+  if (!archive || !checkpoint || states.get(graph)?.complete) return null
+  const [pageGuid] = await archive.recordPages([nodeId])
+  const pageId = pageGuid ? figCheckpointRecords(checkpoint).get(pageGuid) : undefined
+  return pageId && isReaderPagePending(graph, pageId) ? pageId : null
 }
 
 /** Where the reader stands: which records became which layers, and which pages it loaded. */
@@ -147,10 +170,11 @@ export function releaseReaderRecovery(graph: SceneGraph): void {
   states.delete(graph)
 }
 
-export function recoverReaderPage(graph: SceneGraph, pageId: string): boolean {
-  const state = states.get(graph)
-  if (!state) throw new Error('No reader recovery state')
-  if (state.complete) return false
+/** The live session, opened on this thread from the checkpoint once a worker has stopped loading. */
+function liveReaderSession(
+  graph: SceneGraph,
+  state: ReaderState
+): ReturnType<typeof createFigDocumentSession> {
   if (!state.session) {
     if (!state.checkpoint || !state.bytes) throw new Error('Missing reader checkpoint')
     state.session = createFigDocumentSession(state.bytes, readerSessionOptions(state.diagnostics), {
@@ -158,12 +182,63 @@ export function recoverReaderPage(graph: SceneGraph, pageId: string): boolean {
       checkpoint: state.checkpoint
     })
   }
-  const page = state.session.pages.find((page) => state.session?.graphPageId(page.id) === pageId)
+  return state.session
+}
+
+export function recoverReaderPage(graph: SceneGraph, pageId: string): boolean {
+  const state = states.get(graph)
+  if (!state) throw new Error('No reader recovery state')
+  if (state.complete) return false
+  const session = liveReaderSession(graph, state)
+  const page = session.pages.find((page) => session.graphPageId(page.id) === pageId)
   if (!page) throw new Error(`Unknown graph page ${pageId}`)
-  const session = state.session
   const populated = !session.loadedPageIds.has(page.id)
   // The layers come from the opened file, as they do through the population worker's delta.
   graph.applyImportedStateDuring(() => session.loadPage(page.id))
   releaseLoadedReader(state)
   return populated
+}
+
+/**
+ * Every variant of a component set the file holds, in saved order, when the graph lacks some: a
+ * library set copied into the file keeps only the variants its instances use until another is
+ * asked for. Empty when every variant is built.
+ */
+export function savedReaderVariants(graph: SceneGraph, setId: string): readonly SavedVariant[] {
+  const state = states.get(graph)
+  if (!state || state.complete) {
+    return []
+  }
+  if (state.session) {
+    return state.session.savedVariants(setId)
+  }
+  return state.checkpoint?.savedVariants?.find(([layerId]) => layerId === setId)?.[1] ?? []
+}
+
+/**
+ * Build variants `savedReaderVariants` names, from the opened file, as a page load would.
+ * Returns whether they are built: none is when one of them needs a layer the user deleted. When
+ * `accept` throws once they are built, the load is undone and the error rethrown.
+ */
+export function loadReaderVariants(
+  graph: SceneGraph,
+  variantIds: readonly string[],
+  accept?: () => void
+): boolean {
+  const state = states.get(graph)
+  if (!state || state.complete) {
+    return false
+  }
+  const session = liveReaderSession(graph, state)
+  return graph.applyImportedStateDuring(() => session.loadComponents(variantIds, accept))
+}
+
+/** `loadReaderVariants` for one variant, returning its layer once built. */
+export function loadReaderVariant(graph: SceneGraph, variantId: string): string | undefined {
+  // Built from the file, as a page loads, outside any edit open now, such as a script's tool
+  // call: undoing that edit would remove the variant while the reader still counts it built.
+  if (!graph.runOutsideEdits(() => loadReaderVariants(graph, [variantId]))) {
+    return undefined
+  }
+  return states.get(graph)?.session?.layerOf(variantId)
 }

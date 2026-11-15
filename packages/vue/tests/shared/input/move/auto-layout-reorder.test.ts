@@ -20,7 +20,8 @@ function rows(count = 1) {
       paddingTop: 10,
       paddingBottom: 10
     })
-    for (const name of 'ABCD') node('RECTANGLE', frame.id, { name: `${name}${r}`, width: 60, height: 40 })
+    for (const name of 'ABCD')
+      node('RECTANGLE', frame.id, { name: `${name}${r}`, width: 60, height: 40 })
     editor.runLayoutForNode(frame.id)
     return frame
   })

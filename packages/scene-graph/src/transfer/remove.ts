@@ -30,10 +30,13 @@ export function removeGraphTransfer(graph: SceneGraph, plan: GraphTransferPlan):
   }
   graph.withBufferedEvents(() => {
     for (const node of plan.nodes.toReversed()) graph.deleteNode(node.id)
-    for (const id of variables) graph.variables.delete(id)
+    for (const id of variables) {
+      graph.willChangeVariable(id)
+      graph.variables.delete(id)
+    }
     for (const id of collections) {
+      graph.willChangeCollection(id)
       graph.variableCollections.delete(id)
-      graph.activeMode.delete(id)
     }
   })
 }

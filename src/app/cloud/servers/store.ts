@@ -13,7 +13,9 @@ const CLOUD_SERVERS_KEY = 'open-pencil:cloud-servers'
 const cloudAccountSchema = v.object({
   id: v.string(),
   name: v.string(),
-  email: v.string()
+  email: v.string(),
+  /** The address of the account's picture on the server; unset shows initials. */
+  image: v.optional(v.nullable(v.string()))
 })
 
 const cloudServerSchema = v.object({

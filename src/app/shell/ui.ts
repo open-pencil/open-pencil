@@ -1,9 +1,11 @@
+import { invoke } from '@tauri-apps/api/core'
 import { useEventListener } from '@vueuse/core'
-import { ref } from 'vue'
+import { ref, toRaw } from 'vue'
 
-import { ReadOnlyDocumentError } from '@open-pencil/core'
+import { RefusedEditError } from '@open-pencil/core'
 
 import { recordRuntimeError } from '@/app/diagnostics'
+import { reportErrorAction } from '@/app/reports/state'
 import { isTauri } from '@/app/tauri/env'
 import type { ProgressAmount } from '@/components/ui/feedback/progress'
 import type { ToastVariant } from '@/components/ui/feedback/toast'
@@ -12,7 +14,8 @@ export type { ToastVariant } from '@/components/ui/feedback/toast'
 
 export interface ToastAction {
   label: string
-  run: () => void
+  /** Gets the toast it was clicked on, for actions that close it once their work is done. */
+  run: (toastId: number) => void
 }
 
 export interface Toast {
@@ -26,6 +29,8 @@ export interface Toast {
   progress?: ProgressAmount
   /** Measurement text beside the progress bar, formatted by the producing domain. */
   progressLabel?: string
+  /** Keeps the toast until the person dismisses it, for a failure they must act on. */
+  sticky?: boolean
 }
 
 export interface ToastPatch {
@@ -55,7 +60,12 @@ let nextId = 0
 let errorHandlersInitialized = false
 
 /** Returns the toast's ID, which `remove` takes, also when it merged into a visible one. */
-function push(message: string, variant: ToastVariant, action?: ToastAction): number {
+function push(
+  message: string,
+  variant: ToastVariant,
+  action?: ToastAction,
+  sticky = false
+): number {
   // Dedupe: if the same message+variant is already visible, increment
   // its repeat count instead of stacking a duplicate. Prevents the
   // cascade-on-every-frame failure mode where a single unhealthy
@@ -66,24 +76,29 @@ function push(message: string, variant: ToastVariant, action?: ToastAction): num
   )
   if (existing) {
     existing.count += 1
-    existing.action = action
+    if (action || !existing.sticky) existing.action = action
+    if (sticky) existing.sticky = true
     return existing.id
   }
   const id = ++nextId
-  toasts.value.push({ id, message, variant, count: 1, action })
+  toasts.value.push({ id, message, variant, count: 1, action, sticky })
   trim()
   return id
 }
 
 function trim() {
-  if (toasts.value.length > TOAST_STACK_LIMIT) {
-    toasts.value.splice(0, toasts.value.length - TOAST_STACK_LIMIT)
+  // A failure the person must act on stays until they dismiss it, even when newer messages
+  // arrive; ordinary messages give way first.
+  while (toasts.value.length > TOAST_STACK_LIMIT) {
+    const index = toasts.value.findIndex((entry) => !entry.sticky)
+    if (index === -1) return
+    toasts.value.splice(index, 1)
   }
 }
 
 /** Toast-driven work keeps its toast open until progress clears or the work ends. */
 export function toastDuration(entry: Toast): number {
-  if (entry.progress) return 0
+  if (entry.progress || entry.sticky) return 0
   // A toast that offers an action stays long enough to reach it.
   return entry.variant === 'error' || entry.action ? ERROR_TOAST_DURATION : TOAST_DURATION
 }
@@ -122,39 +137,50 @@ function info(message: string, action?: ToastAction) {
   push(message, 'default', action)
 }
 
-function warning(message: string) {
-  push(message, 'warning')
+function warning(message: string, action?: ToastAction, options?: { sticky?: boolean }): number {
+  return push(message, 'warning', action, options?.sticky)
 }
 
-function error(message: string, action?: ToastAction): number {
-  return push(message, 'error', action)
+function error(message: string, action?: ToastAction, options?: { sticky?: boolean }): number {
+  return push(message, 'error', action, options?.sticky)
 }
 
 function remove(id: number) {
   toasts.value = toasts.value.filter((t) => t.id !== id)
 }
 
+/**
+ * Removes the toast once its action is done, unless a later message merged into it and brought
+ * an action of its own, which stays on offer.
+ */
+function removeOffer(id: number, action: ToastAction) {
+  toasts.value = toasts.value.filter((t) => t.id !== id || toRaw(t.action) !== action)
+}
+
 function setupGlobalErrorHandler() {
   if (errorHandlersInitialized) return
   errorHandlersInitialized = true
 
-  // An edit to a read-only document does nothing, as in Figma, wherever it came from.
+  // An edit the document refuses, as a read-only one's, does nothing, as in Figma.
   useEventListener(window, 'error', (e) => {
-    if (e.error instanceof ReadOnlyDocumentError) {
+    if (e.error instanceof RefusedEditError) {
       e.preventDefault()
       return
     }
     recordRuntimeError(e.error ?? e.message, 'window')
-    error(e.message || 'An unexpected error occurred')
+    error(
+      e.message || 'An unexpected error occurred',
+      reportErrorAction(e.error ?? e.message, 'window')
+    )
   })
   useEventListener(window, 'unhandledrejection', (e) => {
-    if (e.reason instanceof ReadOnlyDocumentError) {
+    if (e.reason instanceof RefusedEditError) {
       e.preventDefault()
       return
     }
     recordRuntimeError(e.reason, 'rejection')
     const msg = e.reason instanceof Error ? e.reason.message : String(e.reason)
-    error(msg || 'An unexpected error occurred')
+    error(msg || 'An unexpected error occurred', reportErrorAction(e.reason, 'rejection'))
   })
 }
 
@@ -164,6 +190,7 @@ export const toast = {
   error,
   startProgress,
   remove,
+  removeOffer,
   toasts,
   setupGlobalErrorHandler,
   TOAST_DURATION,
@@ -173,10 +200,10 @@ export const toast = {
 export async function openExternalLink(url: string) {
   if (isTauri()) {
     // An app command, so native tests can read the address instead of opening a browser.
-    const { invoke } = await import('@tauri-apps/api/core')
     await invoke('open_external_url', { url })
   } else {
-    window.open(url, '_blank')
+    // Without an opener, the page cannot navigate the editor's tab.
+    window.open(url, '_blank', 'noopener,noreferrer')
   }
 }
 export function decodeTauriStderr(raw: Uint8Array | number[] | string): string {

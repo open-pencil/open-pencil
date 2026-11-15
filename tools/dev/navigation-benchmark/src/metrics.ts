@@ -1,3 +1,5 @@
+import { maxOf } from '@open-pencil/scene-graph/arrays'
+
 import type { Distribution, NavigationMetrics, NavigationRecordingFile, TraceEvent } from './types'
 
 function round(value: number): number {
@@ -172,16 +174,16 @@ export function computeNavigationMetrics(recording: NavigationRecordingFile): Na
     finalInputToCrispMs: crisp ? round(crisp.timestamp - finalInput) : null,
     scheduler: {
       frameCount: schedulerEvents.length,
-      maximumJobsPerFrame: Math.max(0, ...schedulerCompleted),
-      maximumJobRenderMs: round(Math.max(0, ...schedulerNumbers('maximumJobRenderMs'))),
+      maximumJobsPerFrame: maxOf([0, ...schedulerCompleted]),
+      maximumJobRenderMs: round(maxOf([0, ...schedulerNumbers('maximumJobRenderMs')])),
       overBudgetJobs: schedulerNumbers('overBudgetJobs').reduce((sum, value) => sum + value, 0),
-      maximumDeadlineOverrunMs: round(Math.max(0, ...schedulerNumbers('deadlineOverrunMs'))),
+      maximumDeadlineOverrunMs: round(maxOf([0, ...schedulerNumbers('deadlineOverrunMs')])),
       cancelledJobs: schedulerNumbers('cancelledJobs').reduce((sum, value) => sum + value, 0)
     },
     longTasks: {
       count: longTaskDurations.length,
       totalMs: round(longTaskDurations.reduce((sum, duration) => sum + duration, 0)),
-      maximumMs: round(Math.max(0, ...longTaskDurations))
+      maximumMs: round(maxOf([0, ...longTaskDurations]))
     },
     missedDisplayFrames: intervalCounts(displayFrameIntervals),
     renderGaps: intervalCounts(renderFrameIntervals)

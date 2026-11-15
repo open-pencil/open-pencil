@@ -55,6 +55,17 @@ export function createAccountAuthenticationService(
     },
     async unlink(headers: Headers, methodId: string): Promise<void> {
       await auth.unlinkAuthenticationMethod(headers, methodId)
+    },
+    /** Asks for a new address; the link that confirms it comes back to this server's pages. */
+    async changeEmail(
+      headers: Headers,
+      input: { newEmail: string; callbackURL: string }
+    ): Promise<void> {
+      const callback = new URL(input.callbackURL)
+      if (callback.origin !== new URL(config.publicURL).origin) {
+        throw new Error('Email change callback origin is unavailable')
+      }
+      await auth.changeEmail(headers, { ...input, callbackURL: callback.href })
     }
   }
 }

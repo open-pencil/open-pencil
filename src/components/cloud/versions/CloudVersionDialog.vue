@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
 
 import {
   DOCUMENT_VERSION_DESCRIPTION_MAX_LENGTH,
@@ -8,16 +8,19 @@ import {
 import { useCloudMessages, useCommonMessages } from '@open-pencil/vue/i18n'
 
 import { editVersion, saveVersion } from '@/app/cloud/versions/actions'
-import { versionDialog, versionsChanged } from '@/app/cloud/versions/history'
+import {
+  versionDialog,
+  versionDraft,
+  versionsChanged,
+  type VersionDialog
+} from '@/app/cloud/versions/history'
 import AppButton from '@/components/ui/button/AppButton.vue'
-import AppDialogBody from '@/components/ui/dialog/AppDialogBody.vue'
-import AppDialogFooter from '@/components/ui/dialog/AppDialogFooter.vue'
-import AppDialogHeader from '@/components/ui/dialog/AppDialogHeader.vue'
-import AppDialogRoot from '@/components/ui/dialog/AppDialogRoot.vue'
-import AppAlert from '@/components/ui/feedback/AppAlert.vue'
+import AppDialogCancel from '@/components/ui/dialog/AppDialogCancel.vue'
+import AppFormDialog from '@/components/ui/dialog/AppFormDialog.vue'
+import AppFormField from '@/components/ui/input/AppFormField.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppTextarea from '@/components/ui/input/AppTextarea.vue'
-import { cloudVersions } from '@/theme/cloud/versions'
+import { useHeldContent } from '@/components/ui/overlay/held'
 
 /**
  * Figma's Add to version history: a title and what changed, for the document as it is now, or
@@ -25,11 +28,9 @@ import { cloudVersions } from '@/theme/cloud/versions'
  */
 const t = useCloudMessages()
 const common = useCommonMessages()
-const ui = cloudVersions()
-const name = ref('')
-const description = ref('')
 const busy = ref(false)
-const failed = ref(false)
+/** The opening whose save failed; a new opening is another object, so it starts without the alert. */
+const failedFor = shallowRef<VersionDialog | null>(null)
 
 const open = computed({
   get: () => versionDialog.value !== null,
@@ -37,21 +38,16 @@ const open = computed({
     if (!value) versionDialog.value = null
   }
 })
-const editing = computed(() => versionDialog.value?.version ?? null)
-const trimmed = computed(() => name.value.trim())
-
-watch(versionDialog, (dialog) => {
-  name.value = dialog?.version?.name ?? ''
-  description.value = dialog?.version?.description ?? ''
-  failed.value = false
-})
+const shown = useHeldContent(versionDialog)
+const editing = computed(() => shown.value?.version ?? null)
+const trimmed = computed(() => versionDraft.value.name.trim())
 
 async function submit() {
   const dialog = versionDialog.value
-  if (!dialog || !trimmed.value) return
+  if (!dialog) return
   busy.value = true
-  failed.value = false
-  const input = { name: trimmed.value, description: description.value.trim() }
+  failedFor.value = null
+  const input = { name: trimmed.value, description: versionDraft.value.description.trim() }
   try {
     if (dialog.version) await editVersion(dialog.store, dialog.version, input)
     else await saveVersion(dialog.store, input)
@@ -59,7 +55,7 @@ async function submit() {
     versionDialog.value = null
   } catch (error) {
     console.warn('[Cloud] Saving to the version history failed:', error)
-    failed.value = true
+    failedFor.value = dialog
   } finally {
     busy.value = false
   }
@@ -67,47 +63,40 @@ async function submit() {
 </script>
 
 <template>
-  <AppDialogRoot v-model:open="open" size="sm">
-    <AppDialogHeader
-      :heading="editing ? t.editVersionInfo : t.addToVersionHistory"
-      :close-label="common.close"
-    />
-    <AppDialogBody>
-      <form id="cloud-version" :class="ui.form()" novalidate @submit.prevent="submit">
-        <label for="cloud-version-title" :class="ui.label()">{{ t.versionTitle }}</label>
+  <AppFormDialog
+    v-model:open="open"
+    :heading="editing ? t.editVersionInfo : t.addToVersionHistory"
+    :error="failedFor !== null && failedFor === shown ? t.versionChangeFailed : null"
+    @submit="submit"
+  >
+    <AppFormField :label="t.versionTitle" label-hidden>
+      <template #default="{ id }">
         <AppInput
-          id="cloud-version-title"
-          v-model="name"
+          :id="id"
+          v-model="versionDraft.name"
           autofocus
           :maxlength="DOCUMENT_VERSION_NAME_MAX_LENGTH"
           :disabled="busy"
           :placeholder="t.versionTitle"
         />
-        <label for="cloud-version-description" :class="ui.label()">
-          {{ t.versionDescription }}
-        </label>
+      </template>
+    </AppFormField>
+    <AppFormField :label="t.versionDescription" label-hidden>
+      <template #default="{ id }">
         <AppTextarea
-          id="cloud-version-description"
-          v-model="description"
+          :id="id"
+          v-model="versionDraft.description"
           :maxlength="DOCUMENT_VERSION_DESCRIPTION_MAX_LENGTH"
           :disabled="busy"
           :placeholder="t.versionDescription"
         />
-        <AppAlert v-if="failed" tone="error" :heading="t.versionChangeFailed" />
-      </form>
-    </AppDialogBody>
-    <AppDialogFooter>
-      <AppButton @click="open = false">{{ common.cancel }}</AppButton>
-      <AppButton
-        type="submit"
-        form="cloud-version"
-        color="primary"
-        variant="solid"
-        :loading="busy"
-        :disabled="!trimmed"
-      >
+      </template>
+    </AppFormField>
+    <template #footer>
+      <AppDialogCancel />
+      <AppButton type="submit" color="primary" variant="solid" :loading="busy" :disabled="!trimmed">
         {{ common.save }}
       </AppButton>
-    </AppDialogFooter>
-  </AppDialogRoot>
+    </template>
+  </AppFormDialog>
 </template>

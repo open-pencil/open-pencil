@@ -1,1 +1,0 @@
-- A shape whose fills are all at 0% opacity casts no drop shadow and takes no inner shadow, as in Figma, and a frame with a 0% fill shadows its children instead of its own bounds.

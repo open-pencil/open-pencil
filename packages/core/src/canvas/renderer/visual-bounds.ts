@@ -1,91 +1,38 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import {
-  effectOverflow,
-  geometryBlobBounds,
-  strokeOverflow,
-  textDecorationOverflow,
+  blurReach,
   unionVisualBounds,
-  type VisualBounds
+  type VisualBounds,
+  widestBlurRadius
 } from '@open-pencil/scene-graph/geometry'
 import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
 
+import { glassSampleRadius } from '#core/canvas/glass/shader'
 import { projectedNode, type RotationPreview } from '#core/geometry'
+import {
+  localRenderBounds,
+  mapVisualBounds,
+  subtreeRenderBounds,
+  type MeasuredSubtrees
+} from '#core/geometry/render-bounds'
 
-/** The axis-aligned box around `bounds` once `matrix` maps it. */
-export function mapVisualBounds(matrix: Mat3, bounds: VisualBounds): VisualBounds {
-  const points = Matrix.mapPoints(matrix, [
-    bounds.minX,
-    bounds.minY,
-    bounds.maxX,
-    bounds.minY,
-    bounds.maxX,
-    bounds.maxY,
-    bounds.minX,
-    bounds.maxY
-  ])
-  const xs = [points[0], points[2], points[4], points[6]]
-  const ys = [points[1], points[3], points[5], points[7]]
-  return {
-    minX: Math.min(...xs),
-    minY: Math.min(...ys),
-    maxX: Math.max(...xs),
-    maxY: Math.max(...ys)
-  }
+/** Where a node that draws nothing stands: its origin, as a box of no size. */
+function origin(matrix: Mat3): VisualBounds {
+  return mapVisualBounds(matrix, { minX: 0, minY: 0, maxX: 0, maxY: 0 })
 }
 
+/** What a node draws itself on the page, as far as the canvas draws its effects. */
 export function worldNodeVisualBounds(graph: SceneGraph, node: SceneNode): VisualBounds {
-  const stroke = strokeOverflow(node.strokes, node.strokeCap, node.vectorNetwork, node)
-  const effects = effectOverflow(node.effects)
-  return mapVisualBounds(getWorldMatrix(node, graph), {
-    minX: -stroke - effects.left,
-    minY: -stroke - effects.top,
-    maxX: node.width + stroke + effects.right,
-    maxY: node.height + stroke + effects.bottom
-  })
-}
-
-/**
- * What a node draws itself, in its own axes before position, rotation, and flips: the box grown
- * by strokes and effects, its path geometry, and text decoration. Children are not included.
- */
-function localVisualBounds(node: SceneNode): VisualBounds {
-  const stroke = strokeOverflow(node.strokes, node.strokeCap, node.vectorNetwork, node)
-  const effects = effectOverflow(node.effects)
-  const box: VisualBounds = {
-    minX: -stroke - effects.left,
-    minY: -stroke - effects.top,
-    maxX: node.width + stroke + effects.right,
-    maxY: node.height + stroke + effects.bottom + textDecorationOverflow(node)
-  }
-  const hasNonInsideStroke = node.strokes.some(
-    (stroke) => stroke.visible && stroke.align !== 'INSIDE'
-  )
-  const geometry = geometryBlobBounds([
-    ...node.fillGeometry,
-    ...(hasNonInsideStroke ? node.strokeGeometry : [])
-  ])
-  if (!geometry) return box
-  return {
-    minX: Math.min(box.minX, geometry.x),
-    minY: Math.min(box.minY, geometry.y),
-    maxX: Math.max(box.maxX, geometry.x + geometry.width),
-    maxY: Math.max(box.maxY, geometry.y + geometry.height)
-  }
-}
-
-function clipsChildren(node: SceneNode): boolean {
-  return (
-    node.clipsContent &&
-    (node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE')
-  )
+  const matrix = getWorldMatrix(node, graph)
+  const local = localRenderBounds(node, 'drawn')
+  return local ? mapVisualBounds(matrix, local) : origin(matrix)
 }
 
 /**
  * What a node and its visible descendants draw, in the frame `toFrame` maps the node's own axes
- * into. One pass down the subtree composes each child's local matrix, so no node walks its
- * ancestors. A container that clips its content ends the walk: its children draw inside its box,
- * which its own bounds already hold.
+ * into, as far as the canvas draws their effects (`subtreeRenderBounds`).
  */
 export function subtreeVisualBounds(
   graph: SceneGraph,
@@ -93,19 +40,288 @@ export function subtreeVisualBounds(
   toFrame: Mat3,
   preview?: RotationPreview | null
 ): VisualBounds {
-  let bounds = mapVisualBounds(toFrame, localVisualBounds(node))
-  const pending = [{ node, matrix: toFrame }]
-  for (let entry = pending.pop(); entry; entry = pending.pop()) {
-    if (clipsChildren(entry.node)) continue
-    for (const childId of entry.node.childIds) {
-      const child = graph.getNode(childId)
-      if (!child?.visible) continue
-      const local = getNodeLocalMatrix(projectedNode(child, preview))
-      const matrix = Matrix.multiply(entry.matrix, local)
-      bounds =
-        unionVisualBounds(bounds, mapVisualBounds(matrix, localVisualBounds(child))) ?? bounds
-      pending.push({ node: child, matrix })
-    }
+  return subtreeRenderBounds(graph, node, toFrame, { reach: 'drawn', preview }) ?? origin(toFrame)
+}
+
+/**
+ * What the layers and their visible descendants draw, in page coordinates, as far as the canvas
+ * draws their effects; null when none is visible.
+ */
+export function computeContentBounds(
+  graph: SceneGraph,
+  nodeIds: readonly string[]
+): VisualBounds | null {
+  let bounds: VisualBounds | null = null
+  for (const nodeId of nodeIds) {
+    const node = graph.getNode(nodeId)
+    if (!node?.visible) continue
+    bounds = unionVisualBounds(
+      bounds,
+      subtreeVisualBounds(graph, node, getWorldMatrix(node, graph))
+    )
   }
   return bounds
+}
+
+function isAffine(matrix: Mat3): boolean {
+  return matrix[6] === 0 && matrix[7] === 0 && matrix[8] === 1
+}
+
+/**
+ * `mapVisualBounds` for the draw path, without its arrays: an affine map takes the box's centre
+ * and grows it by how far the mapped half extents reach along each axis.
+ */
+export function mapLayerBounds(matrix: Mat3, bounds: VisualBounds): VisualBounds {
+  if (!isAffine(matrix)) {
+    return mapVisualBounds(matrix, bounds)
+  }
+  const centerX = (bounds.minX + bounds.maxX) / 2
+  const centerY = (bounds.minY + bounds.maxY) / 2
+  const halfWidth = (bounds.maxX - bounds.minX) / 2
+  const halfHeight = (bounds.maxY - bounds.minY) / 2
+  const mappedX = matrix[0] * centerX + matrix[1] * centerY + matrix[2]
+  const mappedY = matrix[3] * centerX + matrix[4] * centerY + matrix[5]
+  const reachX = Math.abs(matrix[0]) * halfWidth + Math.abs(matrix[1]) * halfHeight
+  const reachY = Math.abs(matrix[3]) * halfWidth + Math.abs(matrix[4]) * halfHeight
+  return {
+    minX: mappedX - reachX,
+    minY: mappedY - reachY,
+    maxX: mappedX + reachX,
+    maxY: mappedY + reachY
+  }
+}
+
+export function visibleLayerBlur(node: SceneNode): Effect | undefined {
+  return node.effects.find(
+    (effect) =>
+      effect.visible && (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR')
+  )
+}
+
+type BoundsStore = Map<string, VisualBounds | null>
+
+/**
+ * The bounds a rotation preview changes, those of the turned layer's ancestors, kept apart for as
+ * long as the same turn is previewed.
+ */
+interface PreviewedBounds {
+  nodeId: string
+  angle: number
+  ancestorIds: Set<string>
+  byNode: BoundsStore
+}
+
+interface GraphRenderedBounds {
+  graph: SceneGraph
+  generation: number
+  byNode: BoundsStore
+  previewed: PreviewedBounds | null
+  unobserve: () => void
+}
+
+function ancestorIdsOf(graph: SceneGraph, nodeId: string): Set<string> {
+  const ids = new Set<string>()
+  let parentId = graph.getNode(nodeId)?.parentId
+  while (parentId && !ids.has(parentId)) {
+    ids.add(parentId)
+    parentId = graph.getNode(parentId)?.parentId
+  }
+  return ids
+}
+
+/** Drops `nodeId`'s bounds and those of its ancestors, which hold them. */
+function forgetIn(entry: GraphRenderedBounds, nodeId: string): void {
+  for (const id of [nodeId, ...ancestorIdsOf(entry.graph, nodeId)]) {
+    entry.byNode.delete(id)
+    entry.previewed?.byNode.delete(id)
+  }
+}
+
+const NOTHING_DRAWN: VisualBounds = { minX: 0, minY: 0, maxX: 0, maxY: 0 }
+
+/**
+ * Each node's rendered bounds in its own axes, kept per graph, a parent's made from its
+ * children's. When the graph reports a node about to change, added, or previewed, that node and
+ * its ancestors are measured again and the rest are kept; the renderer forgets a redrawn node and
+ * its ancestors the same way, as when a text's fonts resolve, and everything on a new font
+ * generation. A rotation preview turns one layer without telling the graph, and only its
+ * ancestors' bounds hold that turn, so theirs are kept apart for the preview. A node object the
+ * graph does not hold, such as a placeholder drawn in a layer's place, is measured apart from the
+ * layer it shares an id with.
+ */
+export class RenderedBoundsCache {
+  private readonly graphs = new WeakMap<SceneGraph, GraphRenderedBounds>()
+  /** Held weakly, so a renderer that outlives the graphs it drew does not keep them alive. */
+  private readonly observed = new Set<WeakRef<GraphRenderedBounds>>()
+  private generation = 0
+
+  ownAxes(graph: SceneGraph, node: SceneNode, preview?: RotationPreview | null): VisualBounds {
+    if (graph.getNode(node.id) !== node) {
+      return subtreeVisualBounds(graph, node, Matrix.identity(), preview)
+    }
+    const measured = this.measuredIn(graph, preview)
+    let own = measured.get(node)
+    if (own === undefined) {
+      own = subtreeRenderBounds(graph, node, Matrix.identity(), {
+        reach: 'drawn',
+        preview,
+        measured
+      })
+      measured.set(node, own)
+    }
+    return own ?? NOTHING_DRAWN
+  }
+
+  clear(): void {
+    this.generation++
+  }
+
+  /** Forgets `nodeId`'s bounds and those of its ancestors, which hold them, in every graph. */
+  forget(nodeId: string): void {
+    for (const ref of this.observed) {
+      const entry = ref.deref()
+      if (entry) {
+        forgetIn(entry, nodeId)
+      }
+    }
+  }
+
+  /** Stops watching every graph this cache has measured. */
+  dispose(): void {
+    for (const ref of this.observed) {
+      ref.deref()?.unobserve()
+    }
+    this.observed.clear()
+    this.generation++
+  }
+
+  private measuredIn(graph: SceneGraph, preview?: RotationPreview | null): MeasuredSubtrees {
+    const entry = this.entryOf(graph)
+    const previewed = preview ? this.previewedOf(graph, entry, preview) : null
+    const storeOf = (node: SceneNode) =>
+      previewed?.ancestorIds.has(node.id) ? previewed.byNode : entry.byNode
+    return {
+      get: (node) => storeOf(node).get(node.id),
+      set: (node, bounds) => {
+        storeOf(node).set(node.id, bounds)
+      }
+    }
+  }
+
+  private previewedOf(
+    graph: SceneGraph,
+    entry: GraphRenderedBounds,
+    preview: RotationPreview
+  ): PreviewedBounds {
+    const current = entry.previewed
+    if (current && current.nodeId === preview.nodeId && current.angle === preview.angle) {
+      return current
+    }
+    const previewed: PreviewedBounds = {
+      nodeId: preview.nodeId,
+      angle: preview.angle,
+      ancestorIds: ancestorIdsOf(graph, preview.nodeId),
+      byNode: new Map()
+    }
+    entry.previewed = previewed
+    return previewed
+  }
+
+  private entryOf(graph: SceneGraph): GraphRenderedBounds {
+    const entry = this.graphs.get(graph) ?? this.watch(graph)
+    if (entry.generation !== this.generation) {
+      entry.byNode.clear()
+      entry.previewed = null
+      entry.generation = this.generation
+    }
+    return entry
+  }
+
+  private watch(graph: SceneGraph): GraphRenderedBounds {
+    const entry: GraphRenderedBounds = {
+      graph,
+      generation: this.generation,
+      byNode: new Map(),
+      previewed: null,
+      unobserve: () => undefined
+    }
+    const changed = (node: SceneNode) => {
+      forgetIn(entry, node.id)
+      entry.previewed = null
+    }
+    const previewed = (node: SceneNode) => {
+      forgetIn(entry, node.id)
+    }
+    const unobserve = graph.observeNodeChanges({ before: changed, created: changed, previewed })
+    entry.unobserve = () => {
+      unobserve()
+    }
+    this.graphs.set(graph, entry)
+    this.forgetCollectedGraphs()
+    this.observed.add(new WeakRef(entry))
+    return entry
+  }
+
+  private forgetCollectedGraphs(): void {
+    for (const ref of this.observed) {
+      if (!ref.deref()) {
+        this.observed.delete(ref)
+      }
+    }
+  }
+}
+
+function childMatrix(child: SceneNode, preview?: RotationPreview | null): Mat3 {
+  return getNodeLocalMatrix(projectedNode(child, preview))
+}
+
+/** What a node and its visible descendants put on screen, in its parent's axes. */
+export function subtreeVisualRectInParent(
+  cache: RenderedBoundsCache,
+  graph: SceneGraph,
+  node: SceneNode,
+  preview?: RotationPreview | null
+): Rect {
+  const bounds = mapLayerBounds(childMatrix(node, preview), cache.ownAxes(graph, node, preview))
+  return {
+    x: bounds.minX,
+    y: bounds.minY,
+    width: bounds.maxX - bounds.minX,
+    height: bounds.maxY - bounds.minY
+  }
+}
+
+/**
+ * How far past what a node draws its effects read the canvas behind it, in page units: glass
+ * refraction and background blur sample the backdrop around each point they draw. 0 for none.
+ */
+function nodeBackdropReach(graph: SceneGraph, node: SceneNode): number {
+  let reach = 0
+  for (const effect of node.effects) {
+    if (!effect.visible) continue
+    if (effect.type === 'GLASS') reach = Math.max(reach, glassSampleRadius(node, effect))
+    if (effect.type === 'BACKGROUND_BLUR') {
+      reach = Math.max(reach, blurReach(widestBlurRadius(effect)))
+    }
+  }
+  if (reach === 0) return 0
+  const matrix = getWorldMatrix(node, graph)
+  return reach * Math.max(Math.hypot(matrix[0], matrix[3]), Math.hypot(matrix[1], matrix[4]))
+}
+
+/** The farthest backdrop reach of a node, or with `subtree` of it and its visible descendants. */
+export function backdropReach(graph: SceneGraph, node: SceneNode, subtree: boolean): number {
+  if (!subtree) return nodeBackdropReach(graph, node)
+  let reach = 0
+  const stack = [node]
+  while (stack.length > 0) {
+    const current = stack.pop()
+    if (!current?.visible) continue
+    reach = Math.max(reach, nodeBackdropReach(graph, current))
+    for (const childId of current.childIds) {
+      const child = graph.getNode(childId)
+      if (child) stack.push(child)
+    }
+  }
+  return reach
 }

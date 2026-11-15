@@ -116,6 +116,13 @@ function contextCommandTestId(id: EditorCommandId | undefined): string | undefin
           <span>{{ t.pasteToReplace }}</span>
         </ContextMenuItem>
         <ContextMenuItem
+          data-test-id="context-paste-as-layers"
+          :class="cls.item"
+          @select="canvasMenuActions.pasteAsLayers"
+        >
+          <span>{{ t.pasteAsLayers }}</span>
+        </ContextMenuItem>
+        <ContextMenuItem
           data-test-id="context-duplicate"
           :class="cls.item"
           :disabled="!hasSelection"
@@ -143,24 +150,24 @@ function contextCommandTestId(id: EditorCommandId | undefined): string | undefin
           <ContextMenuSub v-else-if="item.sub">
             <ContextMenuSubTrigger v-test-id="item.testId" :class="cls.item">
               <span>{{ item.label }}</span>
-              <IconChevronRight class="size-3.5 text-muted" />
+              <IconChevronRight data-direction="reading" class="size-3.5 text-muted" />
             </ContextMenuSubTrigger>
             <ContextMenuPortal>
               <ContextMenuSubContent :class="cls.submenu">
                 <MenuScrollArea>
-                  <ContextMenuItem
-                    v-for="(sub, j) in item.sub"
-                    :key="j"
-                    :class="cls.item"
-                    v-test-id="sub.separator ? undefined : sub.testId"
-                    :disabled="sub.separator ? true : sub.disabled"
-                    @select="!sub.separator && sub.action?.()"
-                  >
-                    <template v-if="!sub.separator">
+                  <template v-for="(sub, j) in item.sub" :key="j">
+                    <ContextMenuSeparator v-if="sub.separator" :class="cls.sep" />
+                    <ContextMenuItem
+                      v-else
+                      :class="cls.item"
+                      v-test-id="sub.testId"
+                      :disabled="sub.disabled"
+                      @select="sub.action?.()"
+                    >
                       <span class="min-w-0 flex-1 truncate">{{ sub.label }}</span>
                       <AppShortcutText v-if="sub.shortcut">{{ sub.shortcut }}</AppShortcutText>
-                    </template>
-                  </ContextMenuItem>
+                    </ContextMenuItem>
+                  </template>
                 </MenuScrollArea>
               </ContextMenuSubContent>
             </ContextMenuPortal>
@@ -175,7 +182,7 @@ function contextCommandTestId(id: EditorCommandId | undefined): string | undefin
             <span class="min-w-0 flex-1 truncate">{{ item.label }}</span>
             <span
               v-if="item.shortcut"
-              class="text-[11px]"
+              class="text-2xs"
               :class="canvasMenuShortcutClass(item.label)"
               >{{ item.shortcut }}</span
             >

@@ -1,16 +1,12 @@
 import { CLOUD_PROTOCOL_VERSION, type CloudDiscovery } from '@open-pencil/cloud/contract'
 
-/** A Cloud server's discovery at `origin`, with email sign-in and an editor at `appURL`. */
-export function cloudDiscoveryFixture(
-  origin = 'https://cloud.example.com',
-  appURL = 'https://app.example.com'
-): CloudDiscovery {
+/** A Cloud server's discovery at `origin`, with email sign-in. */
+export function cloudDiscoveryFixture(origin = 'https://cloud.example.com'): CloudDiscovery {
   return {
     protocolVersion: CLOUD_PROTOCOL_VERSION,
     deployment: 'self-hosted',
     apiURL: `${origin}/api`,
     authURL: `${origin}/api/auth`,
-    appURL,
     localEditor: true,
     authentication: {
       socialProviders: ['google'],

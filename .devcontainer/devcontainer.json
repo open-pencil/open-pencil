@@ -13,6 +13,7 @@
     "source=open-pencil-root-modules-${devcontainerId},target=/workspace/open-pencil/node_modules,type=volume",
     "source=open-pencil-scene-graph-modules-${devcontainerId},target=/workspace/open-pencil/packages/scene-graph/node_modules,type=volume",
     "source=open-pencil-pen-modules-${devcontainerId},target=/workspace/open-pencil/packages/pen/node_modules,type=volume",
+    "source=open-pencil-collab-modules-${devcontainerId},target=/workspace/open-pencil/packages/collab/node_modules,type=volume",
     "source=open-pencil-kiwi-modules-${devcontainerId},target=/workspace/open-pencil/packages/kiwi/node_modules,type=volume",
     "source=open-pencil-fig-modules-${devcontainerId},target=/workspace/open-pencil/packages/fig/node_modules,type=volume",
     "source=open-pencil-core-modules-${devcontainerId},target=/workspace/open-pencil/packages/core/node_modules,type=volume",
