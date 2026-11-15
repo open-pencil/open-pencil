@@ -1,1 +1,1 @@
-- Replacing a layer with design JSX keeps the original when the replacement fails to render instead of deleting it, and the replacement takes the original's place among its siblings instead of moving to the end (#1428).
+- Replacing a layer with design JSX keeps the original when the replacement fails to render instead of deleting it, and the replacement takes the original's place among its siblings instead of moving to the end (#1428, #2120).

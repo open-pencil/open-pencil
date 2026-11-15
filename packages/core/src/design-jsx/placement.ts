@@ -56,12 +56,33 @@ export function resolveRenderPlacement(
   }
 }
 
+/**
+ * Where the roots go now: rendering can wait for fonts while other edits move or delete the
+ * layer it replaces, so its place is read again once the roots exist. A render whose layer to
+ * replace is gone is undone and throws.
+ */
+function currentPlacement(
+  graph: SceneGraph,
+  results: RenderResult[],
+  placement: RenderPlacement
+): RenderPlacement {
+  if (!placement.replaceId) return placement
+  const replaced = graph.getNode(placement.replaceId)
+  const parent = replaced?.parentId ? graph.getNode(replaced.parentId) : undefined
+  if (!replaced || !parent) {
+    for (const result of results) graph.deleteNode(result.id)
+    throw new Error('The layer to replace was deleted while the JSX rendered')
+  }
+  return { ...placement, parentId: parent.id, insertIndex: parent.childIds.indexOf(replaced.id) }
+}
+
 /** Complete hierarchy changes before layout so Fill/Hug and sibling positions use the final order. */
 export function finishRenderPlacement(
   graph: SceneGraph,
   results: RenderResult[],
-  placement: RenderPlacement
+  resolved: RenderPlacement
 ): void {
+  const placement = currentPlacement(graph, results, resolved)
   if (placement.insertIndex !== undefined) {
     for (const [offset, result] of results.entries()) {
       graph.insertChildAt(result.id, placement.parentId, placement.insertIndex + offset)

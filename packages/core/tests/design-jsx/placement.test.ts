@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'bun:test'
 
 import {
+  finishRenderPlacement,
   renderJSX,
   renderTree,
+  resolveRenderPlacement,
   stageJSXPreview,
   type RenderPlacementInput
 } from '@open-pencil/core/design-jsx'
@@ -124,6 +126,33 @@ describe('shared render/preview placement', () => {
     expect(setup.graph.getNode(setup.leftId)).toBeUndefined()
     const row = getNodeOrThrow(setup.graph, setup.rowId)
     expect(row.childIds.map((id) => setup.graph.getNode(id)?.name)).toEqual(['New', 'Right'])
+  })
+
+  it('replaces a layer where it is once rendered, after edits made while it rendered', async () => {
+    const setup = await fixture()
+    const { graph, figma, rowId, leftId } = setup
+    const placement = resolveRenderPlacement(graph, { replace_id: leftId }, figma.currentPageId)
+    const results = await renderJSX(graph, '<Rect name="New" w={20} h={20}/>', placement)
+    // Another edit lands while the render waits for fonts.
+    graph.createNode('RECTANGLE', rowId, { name: 'Early', width: 10, height: 10 })
+    graph.insertChildAt(graph.getChildren(rowId).at(-1)?.id ?? '', rowId, 0)
+
+    finishRenderPlacement(graph, results, placement)
+
+    const row = getNodeOrThrow(graph, rowId)
+    expect(row.childIds.map((id) => graph.getNode(id)?.name)).toEqual(['Early', 'New', 'Right'])
+  })
+
+  it('undoes a render whose layer to replace was deleted while it rendered', async () => {
+    const setup = await fixture()
+    const { graph, figma, rowId, leftId } = setup
+    const placement = resolveRenderPlacement(graph, { replace_id: leftId }, figma.currentPageId)
+    const results = await renderJSX(graph, '<Rect name="New" w={20} h={20}/>', placement)
+    graph.deleteNode(leftId)
+
+    expect(() => finishRenderPlacement(graph, results, placement)).toThrow('was deleted')
+    const row = getNodeOrThrow(graph, rowId)
+    expect(row.childIds.map((id) => graph.getNode(id)?.name)).toEqual(['Right'])
   })
 
   it('recomputes Hug ancestors rather than positioning a detached child', async () => {
