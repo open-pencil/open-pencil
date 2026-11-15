@@ -195,7 +195,7 @@
   "modelRoleVision": "الرؤية",
   "modelRoleDesignDescription": "محادثة الذكاء الاصطناعي وتعديلات لوحة الرسم",
   "modelRoleReviewDescription": "مراجعات صريحة للخطط والتصاميم",
-  "modelRoleFastDescription": "أعمال خلفية منخفضة التكلفة",
+  "modelRoleFastDescription": "عناوين المحادثات وملخصات الضغط",
   "modelRoleVisionDescription": "لقطات الشاشة والصور المرجعية",
   "modelRoleNotUsed": "غير مستخدم بعد",
   "modelRoleUseDesign": "مثل التصميم",

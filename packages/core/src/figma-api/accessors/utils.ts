@@ -1,4 +1,5 @@
 import { isEqual } from 'es-toolkit/predicate'
+import type * as v from 'valibot'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { connectorSublayers } from '@open-pencil/scene-graph/connectors'
@@ -13,6 +14,7 @@ import { assertNodeEditable } from '#core/editor/capabilities'
 import { bindGraph, graphOf } from '#core/figma-api/graph'
 import { flushPendingComponentSync } from '#core/figma-api/pending-sync'
 import type { NodeProxyHost } from '#core/figma-api/proxy'
+import { parseFigma } from '#core/figma-api/validation'
 import { textAutoResizeChanges } from '#core/layout/text-auto-resize'
 
 export interface NodeProxyInternals {
@@ -126,6 +128,28 @@ export function updateNode(
     changes,
     hostFitOptions(target, internals)
   )
+}
+
+/**
+ * A field Figma's plugin API reads as the layer stores it, under `property` when Figma names it
+ * apart from the field, and sets only to a value `schema` takes: any other is refused with
+ * Figma's own message, so it never reaches the layer.
+ */
+export function fieldAccessor<F extends keyof SceneNode>(
+  internals: NodeProxyInternals,
+  field: F,
+  schema: v.GenericSchema<unknown, SceneNode[F]>,
+  property: string = field
+): PropertyDescriptor {
+  return {
+    get(this: ProxyThis): SceneNode[F] {
+      return raw(this, internals)[field]
+    },
+    set(this: ProxyThis, value: unknown) {
+      const parsed = parseFigma(schema, value, `set_${property}`, property)
+      updateNode(this, internals, { [field]: parsed })
+    }
+  }
 }
 
 /**

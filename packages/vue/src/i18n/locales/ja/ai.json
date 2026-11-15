@@ -195,7 +195,7 @@
   "modelRoleVision": "ビジョン",
   "modelRoleDesignDescription": "AIチャットとキャンバス編集",
   "modelRoleReviewDescription": "計画とデザインの明示的なレビュー",
-  "modelRoleFastDescription": "低コストのバックグラウンド処理",
+  "modelRoleFastDescription": "チャットのタイトルと圧縮時の要約",
   "modelRoleVisionDescription": "スクリーンショットと画像参照",
   "modelRoleNotUsed": "まだ使われていません",
   "modelRoleUseDesign": "デザインと同じ",
