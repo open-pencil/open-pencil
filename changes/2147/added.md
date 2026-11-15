@@ -1,0 +1,1 @@
+- Coding agent profiles choose the agent's own thinking level for their model, such as Claude Code's Max or Codex's Ultra, and the chat composer changes it for the next message (#2147).
