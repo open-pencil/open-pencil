@@ -353,11 +353,33 @@ export function cancelMove(d: DragMove, editor: Editor) {
   editor.requestRender()
 }
 
+function isFlowClick(d: DragMove, flows: FlowDrag[], slots: number[]) {
+  const keptSlots = flows.every((flow, i) => slots[i] === flow.start)
+  return keptSlots && getMoveDistance(d) < AUTO_LAYOUT_REORDER_CLICK_SLOP
+}
+
+function deselectClicked(d: DragMove, editor: Editor) {
+  if (d.clickDeselectsId && editor.state.selectedIds.has(d.clickDeselectsId)) {
+    editor.select([d.clickDeselectsId], true)
+  }
+}
+
+function discardDuplicates(d: DragMove, editor: Editor) {
+  const previousSelection = d.duplicatedPreviousSelection ?? new Set<string>()
+  for (const id of [...d.originals.keys()].toReversed()) {
+    editor.graph.deleteNode(id)
+  }
+  editor.select([...previousSelection].filter((id) => id !== d.clickDeselectsId))
+  editor.requestRender()
+  editor.setDropTarget(null)
+}
+
 export function handleMoveUp(d: DragMove, editor: Editor) {
   if (!d.dragStarted) {
     editor.setLayoutInsertIndicator(null)
     editor.setSnapGuides([])
     editor.setDropTarget(null)
+    deselectClicked(d, editor)
     return
   }
 
@@ -386,12 +408,20 @@ export function handleMoveUp(d: DragMove, editor: Editor) {
   if (d.flows && d.flowSlots && !d.brokeFromAutoLayout) {
     dropAlongFlows(d, d.flows, editor)
     editor.setDropTarget(null)
+    if (isFlowClick(d, d.flows, d.flowSlots)) {
+      deselectClicked(d, editor)
+    }
     return
   }
 
   if (indicator) {
     if (getMoveDistance(d) < AUTO_LAYOUT_REORDER_CLICK_SLOP) {
+      if (d.duplicated) {
+        discardDuplicates(d, editor)
+        return
+      }
       editor.setDropTarget(null)
+      deselectClicked(d, editor)
       return
     }
     // Claiming a slot records its own step; the batch makes it one undo with the reorder.
@@ -413,11 +443,13 @@ export function handleMoveUp(d: DragMove, editor: Editor) {
     })
 
   if (d.duplicated && !moved) {
-    const previousSelection = d.duplicatedPreviousSelection ?? new Set<string>()
-    for (const id of [...d.originals.keys()].toReversed()) editor.graph.deleteNode(id)
-    editor.select([...previousSelection])
-    editor.requestRender()
+    discardDuplicates(d, editor)
+    return
+  }
+
+  if (!moved && !d.duplicated && getMoveDistance(d) < AUTO_LAYOUT_REORDER_CLICK_SLOP) {
     editor.setDropTarget(null)
+    deselectClicked(d, editor)
     return
   }
 

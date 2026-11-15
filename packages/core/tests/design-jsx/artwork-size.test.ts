@@ -6,7 +6,9 @@ import { expectDefined } from '@open-pencil/test-support/assert'
 import { fetchStub } from '@open-pencil/test-support/fetch'
 
 import { createIconifyAPIClient } from '#core/icons/api'
+import { buildIconData } from '#core/icons/artwork'
 import { createIconifyProvider } from '#core/icons/provider'
+import { swapIcon } from '#core/icons/render'
 
 /** One icon whose stroked square spans 2 to 22 of its 24-unit box. */
 const SET = {
@@ -34,10 +36,11 @@ function svg(attributes: string): string {
   return `<svg viewBox="0 0 24 24" ${attributes}><path d="M2 2h20v20H2z" fill="none" stroke="#222222" strokeWidth={2} /></svg>`
 }
 
-/** The frame's size, and its one path's box and stroke weight. */
-async function drawn(jsx: string) {
+/** The frame's size, and its one path's box and stroke weight, after `edit` if one is given. */
+async function drawn(jsx: string, edit?: (graph: SceneGraph, frameId: string) => void) {
   const graph = new SceneGraph()
   const [root] = await renderJSX(graph, jsx)
+  edit?.(graph, root.id)
   const frame = expectDefined(graph.getNode(root.id), 'frame')
   const path = expectDefined(graph.getChildren(frame.id)[0], 'path')
   return {
@@ -132,5 +135,14 @@ describe('<Icon> size', () => {
       path: [2, 14, 20, 20],
       stroke: 2
     })
+  })
+
+  test('a swap keeps the glyph as rendered in a box that is not square', async () => {
+    const jsx = '<Icon name="test:square" w={48} h={24} />'
+    const square = { ...SET.icons.square, width: 24, height: 24 }
+    const swapped = await drawn(jsx, (graph, frameId) =>
+      swapIcon(graph, frameId, buildIconData(square, 'test', 'square', 24))
+    )
+    expect(swapped).toEqual(await drawn(jsx))
   })
 })

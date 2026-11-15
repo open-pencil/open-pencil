@@ -85,7 +85,6 @@ const onViewportResize = (width: number, height: number) => {
 }
 
 const { updateCursor } = useCanvasCollaborationAwareness(store)
-const { selectAtContextPoint } = createCanvasContextSelection(canvasRef, store)
 
 const shouldSuspendRender = () =>
   store.state.preparation !== null &&
@@ -125,6 +124,7 @@ useCanvas(sceneCanvasRef, store, {
   }
 })
 const {
+  getRenderer: getOverlayRenderer,
   hitTestSectionTitle,
   hitTestComponentLabel,
   hitTestFrameTitle,
@@ -147,6 +147,7 @@ const {
   getRenderState,
   onViewportResize
 })
+const { selectAtContextPoint } = createCanvasContextSelection(canvasRef, store, getOverlayRenderer)
 const {
   drag,
   cursorOverride,

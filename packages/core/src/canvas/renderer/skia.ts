@@ -587,7 +587,8 @@ export class SkiaRenderer {
     graph: SceneGraph,
     canvasX: number,
     canvasY: number,
-    preview?: RenderOverlays['rotationPreview']
+    preview?: RenderOverlays['rotationPreview'],
+    filter: Pick<LabelHitTest.LabelHitOptions, 'locked'> = {}
   ): SceneNode | null {
     return LabelHitTest.hitTestSectionTitle(
       graph,
@@ -597,7 +598,7 @@ export class SkiaRenderer {
       this.pageId ?? graph.rootId,
       this.chromeFonts.sectionTitle,
       this.labelCache,
-      labelHitOptions(this, graph, preview)
+      { ...labelHitOptions(this, graph, preview), ...filter }
     )
   }
 
@@ -605,7 +606,8 @@ export class SkiaRenderer {
     graph: SceneGraph,
     canvasX: number,
     canvasY: number,
-    preview?: RenderOverlays['rotationPreview']
+    preview?: RenderOverlays['rotationPreview'],
+    filter: Pick<LabelHitTest.LabelHitOptions, 'locked'> = {}
   ): SceneNode | null {
     return LabelHitTest.hitTestComponentLabel(
       graph,
@@ -615,7 +617,7 @@ export class SkiaRenderer {
       this.pageId ?? graph.rootId,
       this.chromeFonts.componentLabel,
       this.labelCache,
-      labelHitOptions(this, graph, preview)
+      { ...labelHitOptions(this, graph, preview), ...filter }
     )
   }
 
@@ -623,7 +625,8 @@ export class SkiaRenderer {
     graph: SceneGraph,
     canvasX: number,
     canvasY: number,
-    preview?: RenderOverlays['rotationPreview']
+    preview?: RenderOverlays['rotationPreview'],
+    filter: Pick<LabelHitTest.LabelHitOptions, 'locked'> = {}
   ): SceneNode | null {
     return LabelHitTest.hitTestFrameTitle(
       graph,
@@ -633,7 +636,7 @@ export class SkiaRenderer {
       this.pageId ?? graph.rootId,
       this.chromeFonts.label,
       this.labelCache,
-      labelHitOptions(this, graph, preview)
+      { ...labelHitOptions(this, graph, preview), ...filter }
     )
   }
 
