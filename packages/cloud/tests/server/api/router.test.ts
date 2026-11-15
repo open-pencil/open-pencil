@@ -76,6 +76,7 @@ function services() {
     comments: {
       forMember: notUsed,
       forShare: notUsed,
+      importThreads: notUsed,
       list: notUsed,
       get: notUsed,
       createThread: notUsed,

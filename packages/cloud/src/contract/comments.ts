@@ -87,8 +87,14 @@ const bodySchema = v.pipe(
   v.maxLength(COMMENT_BODY_MAX_LENGTH)
 )
 const agentSchema = v.optional(v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(100)))
+/**
+ * The ID the editor gave a new thread or comment, so it keeps showing it as the server's, and a
+ * request sent again finds what the first one made.
+ */
+const clientIdSchema = v.optional(v.pipe(v.string(), v.uuid()))
 
 export const createCommentThreadSchema = v.object({
+  id: clientIdSchema,
   ...commentAnchorEntries,
   body: bodySchema,
   agent: agentSchema
@@ -102,11 +108,54 @@ export const updateCommentThreadSchema = v.object({
 })
 export type UpdateCommentThreadInput = v.InferOutput<typeof updateCommentThreadSchema>
 
-export const createCommentSchema = v.object({ body: bodySchema, agent: agentSchema })
+export const createCommentSchema = v.object({
+  id: clientIdSchema,
+  body: bodySchema,
+  agent: agentSchema
+})
 export type CreateCommentInput = v.InferOutput<typeof createCommentSchema>
 
 export const updateCommentSchema = v.object({ body: bodySchema })
 export type UpdateCommentInput = v.InferOutput<typeof updateCommentSchema>
+
+/** The most threads, and comments in all, one import brings in. */
+export const MAX_IMPORTED_COMMENT_THREADS = 1_000
+export const MAX_IMPORTED_COMMENTS = 10_000
+
+/**
+ * Threads a file held when it moved to Cloud. Their authors are names the file gave, which the
+ * server keeps as such; their times are the file's.
+ */
+export const importCommentThreadsSchema = v.object({
+  threads: v.pipe(
+    v.array(
+      v.object({
+        ...commentAnchorEntries,
+        createdAt: v.pipe(v.string(), v.isoTimestamp()),
+        resolved: v.boolean(),
+        comments: v.pipe(
+          v.array(
+            v.object({
+              authorName: v.pipe(v.string(), v.trim(), v.maxLength(NAME_MAX_LENGTH)),
+              body: bodySchema,
+              createdAt: v.pipe(v.string(), v.isoTimestamp())
+            })
+          ),
+          v.minLength(1),
+          v.maxLength(MAX_COMMENTS_PER_THREAD)
+        )
+      })
+    ),
+    v.maxLength(MAX_IMPORTED_COMMENT_THREADS),
+    v.check(
+      (threads) =>
+        threads.reduce((total, thread) => total + thread.comments.length, 0) <=
+        MAX_IMPORTED_COMMENTS,
+      `An import brings in at most ${MAX_IMPORTED_COMMENTS} comments`
+    )
+  )
+})
+export type ImportCommentThreadsInput = v.InferOutput<typeof importCommentThreadsSchema>
 
 /**
  * The same requests made through a share link: the link's secret rides in the body, as it does
@@ -136,6 +185,8 @@ export const parseCreateCommentThread = (input: unknown) =>
   v.parse(createCommentThreadSchema, input)
 export const parseUpdateCommentThread = (input: unknown) =>
   v.parse(updateCommentThreadSchema, input)
+export const parseImportCommentThreads = (input: unknown) =>
+  v.parse(importCommentThreadsSchema, input)
 export const parseCreateComment = (input: unknown) => v.parse(createCommentSchema, input)
 export const parseUpdateComment = (input: unknown) => v.parse(updateCommentSchema, input)
 export const parseSharedCommentsRequest = (input: unknown) =>

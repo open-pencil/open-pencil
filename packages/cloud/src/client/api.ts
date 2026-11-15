@@ -13,6 +13,7 @@ import type { CloudAPI, PublicCloudAPI } from '#cloud/server/api'
 import { hc } from 'hono/client'
 import * as v from 'valibot'
 
+import { createCommentRequests, createSharedCommentRequests } from './comments'
 import { createCommunityRequests } from './community'
 import { createDocumentRequests } from './documents'
 import { createImageRequests } from './images'
@@ -87,6 +88,8 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
     ...createImageRequests(client, publicClient, options.onDiagnostic),
     ...createDocumentRequests(client, options.onDiagnostic),
     ...createVersionRequests(client, options.onDiagnostic),
+    ...createCommentRequests(client, options.onDiagnostic),
+    ...createSharedCommentRequests(publicClient, options.onDiagnostic),
     ...createSharingRequests(client, publicClient, options.onDiagnostic),
     ...createCommunityRequests(publicClient, options.onDiagnostic)
   }

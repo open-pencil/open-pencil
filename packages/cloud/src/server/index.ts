@@ -181,6 +181,7 @@ export {
   type DocumentVersionService
 } from './documents/versions'
 export {
+  CommentConflictError,
   CommentLimitError,
   createCommentRoutes,
   createCommentService,

@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { grantByInvitation, seedSharing } from '#cloud-tests/helpers/sharing'
 import { MAX_COMMENTS_PER_THREAD, type CreateCommentThreadInput } from '#cloud/contract'
 import {
+  CommentConflictError,
   CommentLimitError,
   createCommentService,
   DocumentForbiddenError,
@@ -159,5 +160,54 @@ describe('comment service', () => {
     await comments.createThread(await as('owner'), pin)
     await runtime.database.deleteFrom('document').where('id', '=', documentId).execute()
     expect(await runtime.database.selectFrom('comment').select('id').execute()).toEqual([])
+  })
+
+  test('takes the ID the editor chose, and finds it again when a request is sent twice', async () => {
+    const { comments, as } = await seedComments()
+    const viewer = await as('viewer')
+    const id = crypto.randomUUID()
+    const thread = await comments.createThread(viewer, { ...pin, id })
+    expect(thread.id).toBe(id)
+    expect(await comments.createThread(viewer, { ...pin, id, body: 'Sent again' })).toEqual(thread)
+    await expect(comments.createThread(await as('owner'), { ...pin, id })).rejects.toThrow(
+      CommentConflictError
+    )
+
+    const replyId = crypto.randomUUID()
+    const replied = await comments.reply(viewer, id, { id: replyId, body: 'Also' })
+    expect(replied.comments[1]?.id).toBe(replyId)
+    expect((await comments.reply(viewer, id, { id: replyId, body: 'Also' })).comments).toHaveLength(
+      2
+    )
+  })
+
+  test('brings in a file’s threads under the names it gave, for editors only', async () => {
+    const { comments, as } = await seedComments()
+    const imported = {
+      threads: [
+        {
+          ...pin,
+          createdAt: '2026-10-01T09:00:00.000Z',
+          resolved: true,
+          comments: [
+            { authorName: 'Ana', body: 'Too tight', createdAt: '2026-10-01T09:00:00.000Z' },
+            { authorName: 'Ben', body: 'Fixed', createdAt: '2026-10-02T09:00:00.000Z' }
+          ]
+        }
+      ]
+    }
+    await expect(comments.importThreads(await as('viewer'), imported)).rejects.toThrow(
+      DocumentForbiddenError
+    )
+    const { threads } = await comments.importThreads(await as('editor'), imported)
+    expect(threads).toHaveLength(1)
+    expect(threads[0]).toMatchObject({
+      createdAt: '2026-10-01T09:00:00.000Z',
+      resolvedBy: 'editor',
+      comments: [
+        { author: { kind: 'imported', name: 'Ana' }, body: 'Too tight' },
+        { author: { kind: 'imported', name: 'Ben' }, createdAt: '2026-10-02T09:00:00.000Z' }
+      ]
+    })
   })
 })

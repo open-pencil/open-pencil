@@ -8,6 +8,7 @@ import {
   type CommentThreads,
   type CreateCommentInput,
   type CreateCommentThreadInput,
+  type ImportCommentThreadsInput,
   type UpdateCommentInput,
   type UpdateCommentThreadInput
 } from '#cloud/contract'
@@ -16,12 +17,17 @@ import { resolveDocumentCommentAccess } from '#cloud/server/documents/access'
 import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/documents/errors'
 import { logCloud, loggedError } from '#cloud/server/logging'
 import type { DocumentSharingService } from '#cloud/server/sharing'
-import { groupBy } from 'es-toolkit'
+import { chunk, groupBy } from 'es-toolkit'
 import type { Kysely, Transaction } from 'kysely'
 
 /** A document holds as many threads, or a thread as many comments, as it may. */
 export class CommentLimitError extends Error {
   override readonly name = 'CommentLimitError'
+}
+
+/** A new thread or comment named an ID something else already has. */
+export class CommentConflictError extends Error {
+  override readonly name = 'CommentConflictError'
 }
 
 /**
@@ -33,6 +39,9 @@ export type CommentActor = CommentAccess & {
   /** Null for a guest on a link, who may only read. */
   userId: string | null
 }
+
+/** Rows one insert writes, within PostgreSQL's parameters per statement. */
+const INSERT_BATCH = 500
 
 type Source = Kysely<CloudDatabase> | Transaction<CloudDatabase>
 
@@ -109,6 +118,16 @@ function anchorValues(anchor: CommentAnchor) {
     x: anchor.x,
     y: anchor.y
   }
+}
+
+/** Holds the document's row, so one writer at a time counts and adds its threads. */
+async function lockDocument(transaction: Transaction<CloudDatabase>, documentId: string) {
+  await transaction
+    .selectFrom('document')
+    .select('id')
+    .where('id', '=', documentId)
+    .forUpdate()
+    .executeTakeFirstOrThrow()
 }
 
 /** What resolving or reopening sets, or nothing when the thread already is as asked. */
@@ -234,6 +253,29 @@ export function createCommentService(
     return { authorId: found.authorId, first: index === 0 }
   }
 
+  /** Every thread on the document, oldest first, with what the asker may do. */
+  async function list(actor: CommentActor): Promise<CommentThreads> {
+    const rows = await threads(database)
+      .where('commentThread.documentId', '=', actor.documentId)
+      .orderBy('commentThread.createdAt')
+      .orderBy('commentThread.id')
+      .execute()
+    const byThread =
+      rows.length > 0
+        ? groupBy(
+            await comments(
+              database,
+              rows.map((row) => row.id)
+            ),
+            (comment) => comment.threadId
+          )
+        : {}
+    return {
+      threads: rows.map((row) => threadOf(row, byThread[row.id] ?? [])),
+      access: { canComment: actor.canComment, canModerate: actor.canModerate }
+    }
+  }
+
   return {
     /** A member's or grantee's access to a document's comments. */
     async forMember(userId: string, documentId: string): Promise<CommentActor> {
@@ -262,28 +304,7 @@ export function createCommentService(
       }
     },
 
-    /** Every thread on the document, oldest first, with what the asker may do. */
-    async list(actor: CommentActor): Promise<CommentThreads> {
-      const rows = await threads(database)
-        .where('commentThread.documentId', '=', actor.documentId)
-        .orderBy('commentThread.createdAt')
-        .orderBy('commentThread.id')
-        .execute()
-      const byThread =
-        rows.length > 0
-          ? groupBy(
-              await comments(
-                database,
-                rows.map((row) => row.id)
-              ),
-              (comment) => comment.threadId
-            )
-          : {}
-      return {
-        threads: rows.map((row) => threadOf(row, byThread[row.id] ?? [])),
-        access: { canComment: actor.canComment, canModerate: actor.canModerate }
-      }
-    },
+    list,
 
     async get(actor: CommentActor, threadId: string): Promise<CloudCommentThread> {
       return readThread(database, await findThread(database, actor.documentId, threadId))
@@ -294,15 +315,22 @@ export function createCommentService(
       input: CreateCommentThreadInput
     ): Promise<CloudCommentThread> {
       const userId = requireCommenter(actor)
-      const threadId = crypto.randomUUID()
+      const threadId = input.id ?? crypto.randomUUID()
       const thread = await database.transaction().execute(async (transaction) => {
         // One writer at a time per document, so the count below holds until the insert.
-        await transaction
-          .selectFrom('document')
-          .select('id')
-          .where('id', '=', actor.documentId)
-          .forUpdate()
-          .executeTakeFirstOrThrow()
+        await lockDocument(transaction, actor.documentId)
+        const existing = await transaction
+          .selectFrom('commentThread')
+          .select(['documentId', 'createdBy'])
+          .where('id', '=', threadId)
+          .executeTakeFirst()
+        if (existing) {
+          // The same request again, its answer lost on the way: the thread it made.
+          if (existing.documentId !== actor.documentId || existing.createdBy !== userId) {
+            throw new CommentConflictError()
+          }
+          return readThread(transaction, await findThread(transaction, actor.documentId, threadId))
+        }
         const { count } = await transaction
           .selectFrom('commentThread')
           .select((expression) => expression.fn.countAll<string>().as('count'))
@@ -336,6 +364,65 @@ export function createCommentService(
       })
       announce(actor.documentId, threadId)
       return thread
+    },
+
+    /**
+     * Brings in the threads a file held as it moved to Cloud, for someone who may edit it. Their
+     * authors stay the names the file gave; the importer may move and resolve them as a starter.
+     */
+    async importThreads(
+      actor: CommentActor,
+      input: ImportCommentThreadsInput
+    ): Promise<CommentThreads> {
+      const userId = requireCommenter(actor)
+      if (!actor.canModerate) throw new DocumentForbiddenError()
+      if (input.threads.length > 0) {
+        await database.transaction().execute(async (transaction) => {
+          await lockDocument(transaction, actor.documentId)
+          const { count } = await transaction
+            .selectFrom('commentThread')
+            .select((expression) => expression.fn.countAll<string>().as('count'))
+            .where('documentId', '=', actor.documentId)
+            .executeTakeFirstOrThrow()
+          if (Number(count) + input.threads.length > MAX_COMMENT_THREADS_PER_DOCUMENT) {
+            throw new CommentLimitError()
+          }
+          const now = new Date()
+          const rows = input.threads.map((thread) => ({
+            thread,
+            id: crypto.randomUUID(),
+            createdAt: new Date(thread.createdAt)
+          }))
+          const threadRows = rows.map(({ thread, id, createdAt }) => ({
+            id,
+            documentId: actor.documentId,
+            ...anchorValues(thread),
+            createdBy: userId,
+            createdAt,
+            updatedAt: now,
+            resolvedAt: thread.resolved ? now : null,
+            resolvedBy: thread.resolved ? userId : null
+          }))
+          for (const batch of chunk(threadRows, INSERT_BATCH)) {
+            await transaction.insertInto('commentThread').values(batch).execute()
+          }
+          const imported = rows.flatMap(({ thread, id }) =>
+            thread.comments.map((comment) => ({
+              id: crypto.randomUUID(),
+              threadId: id,
+              authorId: null,
+              importedAuthorName: comment.authorName,
+              body: comment.body,
+              createdAt: new Date(comment.createdAt)
+            }))
+          )
+          // A statement takes so many parameters; a big file's comments go in a few.
+          for (const batch of chunk(imported, INSERT_BATCH)) {
+            await transaction.insertInto('comment').values(batch).execute()
+          }
+        })
+      }
+      return list(actor)
     },
 
     async updateThread(
@@ -377,8 +464,20 @@ export function createCommentService(
       input: CreateCommentInput
     ): Promise<CloudCommentThread> {
       const userId = requireCommenter(actor)
+      const commentId = input.id ?? crypto.randomUUID()
       const thread = await database.transaction().execute(async (transaction) => {
         await findThread(transaction, actor.documentId, threadId, true)
+        const existing = await transaction
+          .selectFrom('comment')
+          .select(['threadId', 'authorId'])
+          .where('id', '=', commentId)
+          .executeTakeFirst()
+        if (existing) {
+          if (existing.threadId !== threadId || existing.authorId !== userId) {
+            throw new CommentConflictError()
+          }
+          return readThread(transaction, await findThread(transaction, actor.documentId, threadId))
+        }
         const { count } = await transaction
           .selectFrom('comment')
           .select((expression) => expression.fn.countAll<string>().as('count'))
@@ -388,7 +487,7 @@ export function createCommentService(
         await transaction
           .insertInto('comment')
           .values({
-            id: crypto.randomUUID(),
+            id: commentId,
             threadId,
             authorId: userId,
             agent: input.agent ?? null,

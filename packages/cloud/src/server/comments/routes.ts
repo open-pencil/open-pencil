@@ -1,6 +1,7 @@
 import {
   parseCreateComment,
   parseCreateCommentThread,
+  parseImportCommentThreads,
   parseSharedCommentsRequest,
   parseSharedCreateComment,
   parseSharedCreateCommentThread,
@@ -24,11 +25,19 @@ import {
 } from '#cloud/server/validation'
 import { Hono, type Context } from 'hono'
 
-import { CommentLimitError, type CommentActor, type CommentService } from './service'
+import {
+  CommentConflictError,
+  CommentLimitError,
+  type CommentActor,
+  type CommentService
+} from './service'
 
 function commentDomainError(context: Context, error: unknown): Response | null {
   if (error instanceof CommentLimitError) {
     return context.json({ error: { code: 'comment_limit_reached' as const } }, 409)
+  }
+  if (error instanceof CommentConflictError) {
+    return context.json({ error: { code: 'comment_conflict' as const } }, 409)
   }
   return null
 }
@@ -74,6 +83,16 @@ export function createCommentRoutes(service: CommentService) {
           const actor = await as(context, context.req.valid('param').documentId)
           const thread = await service.createThread(actor, context.req.valid('json'))
           return context.json({ thread }, 201)
+        })
+    )
+    .post(
+      '/documents/:documentId/threads/import',
+      documentParams,
+      validatedJSON(parseImportCommentThreads),
+      (context) =>
+        run(context, async () => {
+          const actor = await as(context, context.req.valid('param').documentId)
+          return context.json(await service.importThreads(actor, context.req.valid('json')), 201)
         })
     )
     .get('/documents/:documentId/threads/:threadId', documentThreadParams, (context) =>
