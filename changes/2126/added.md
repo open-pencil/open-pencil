@@ -1,0 +1,1 @@
+- HTML import keeps blocks centered by `margin: auto` or `<center>` in auto layout, and aligns inline-blocks by `text-align` (#2126).
