@@ -26,6 +26,8 @@ import {
   useBlendModeGroups
 } from '@/components/properties/blend-mode/use'
 import { useBlurRampEditing } from '@/components/properties/effects/blur-ramp'
+import NoiseSettings from '@/components/properties/effects/NoiseSettings.vue'
+import TextureSettings from '@/components/properties/effects/TextureSettings.vue'
 import PropertyItemRow from '@/components/properties/item-list/PropertyItemRow.vue'
 import { applyPaintMutation, commitPaintMutation } from '@/components/properties/paint/binding'
 import PaintValue from '@/components/properties/paint/PaintValue.vue'
@@ -191,6 +193,14 @@ function effectPreview(effect: Effect): Fill {
                     class="size-full border-0"
                   />
                   <icon-lucide-gem v-else-if="effect.type === 'GLASS'" class="size-3 text-muted" />
+                  <icon-lucide-square-dashed
+                    v-else-if="effect.type === 'NOISE'"
+                    class="size-3 text-muted"
+                  />
+                  <icon-lucide-grip
+                    v-else-if="effect.type === 'TEXTURE'"
+                    class="size-3 text-muted"
+                  />
                   <icon-lucide-layers-2
                     v-else-if="effect.type === 'BACKGROUND_BLUR'"
                     class="size-3 text-muted"
@@ -505,6 +515,23 @@ function effectPreview(effect: Effect): Fill {
               </PanelFieldGroup>
             </PanelGrid>
           </template>
+
+          <NoiseSettings
+            v-else-if="effect.type === 'NOISE'"
+            :effect="effect"
+            @scrub="effectsCtx.scrubEffect(index, $event)"
+            @commit="effectsCtx.commitEffect(index, $event)"
+            @patch="actions.patch(index, $event)"
+          />
+
+          <TextureSettings
+            v-else-if="effect.type === 'TEXTURE'"
+            :effect="effect"
+            :index="index"
+            :node-ids="selectedNodeIds"
+            @scrub="effectsCtx.scrubEffect(index, $event)"
+            @commit="effectsCtx.commitEffect(index, $event)"
+          />
 
           <template v-else>
             <SegmentedControl

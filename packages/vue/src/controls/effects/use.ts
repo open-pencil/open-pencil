@@ -9,7 +9,9 @@ import {
   createEffectControlActions,
   createEffectEditActions,
   blurKindChange,
+  grainSizeChange,
   isBlur,
+  noiseTypeChange,
   isShadow,
   type EffectEditSnapshot
 } from '#vue/controls/effects/helpers'
@@ -42,6 +44,8 @@ export function useEffectsControls() {
     isShadow,
     isBlur,
     blurKindChange,
+    noiseTypeChange,
+    grainSizeChange,
     /** Previews a change to one effect on every selected layer. */
     scrubEffect: (index: number, changes: Partial<Effect>) =>
       editActions.scrubEffect(nodes.value, index, changes),
