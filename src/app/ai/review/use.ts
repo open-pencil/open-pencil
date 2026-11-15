@@ -27,8 +27,11 @@ export interface ReviewAsk {
   references?: readonly ImageAttachmentDraft[]
 }
 
-/** The interface's language by its own name, as `Русский` or `日本語`. */
-function interfaceLanguage(): string {
+/**
+ * The language a review is written in when the request names none: the interface's, by its own
+ * name, as `Русский` or `日本語`.
+ */
+export function interfaceLanguage(): string {
   return LOCALE_LABELS[locale.get()]
 }
 

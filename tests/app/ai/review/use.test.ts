@@ -6,12 +6,13 @@ import { shallowRef } from 'vue'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { asDouble } from '@open-pencil/test-support/doubles'
+import { localeSetting } from '@open-pencil/vue/i18n'
 
 import type { ChatInstance } from '@/app/ai/chat/submission/types'
 import type { AIModelRuntime } from '@/app/ai/models/runtime'
 import { reviewOf } from '@/app/ai/review/message'
 import type { ReviewDependencies } from '@/app/ai/review/run'
-import { useChatReview } from '@/app/ai/review/use'
+import { interfaceLanguage, useChatReview } from '@/app/ai/review/use'
 import { clearToolChanges, setToolChange } from '@/app/ai/tools/changes/store'
 import type { EditorStore } from '@/app/editor/session/create'
 import { createDeferred } from '@/app/runtime/deferred'
@@ -142,5 +143,15 @@ describe('reviewing from the chat', () => {
     })
     expect(await review.review({})).toBe(false)
     expect(chat.value).toBeNull()
+  })
+
+  test('is written in the interface’s language when the request names none', () => {
+    const saved = localeSetting.get()
+    localeSetting.set('ru')
+    try {
+      expect(interfaceLanguage()).toBe('Русский')
+    } finally {
+      localeSetting.set(saved)
+    }
   })
 })

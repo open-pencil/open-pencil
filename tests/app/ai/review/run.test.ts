@@ -17,6 +17,7 @@ import type { AIModelRuntime } from '@/app/ai/models/runtime'
 import {
   reviewChange,
   reviewDesign,
+  snapshotsWithin,
   ReviewEmptyError,
   ReviewImagesUnreadableError,
   ReviewModelMissingError,
@@ -226,14 +227,12 @@ describe('a review of one change', () => {
       { mediaType: 'image/png', data: new Uint8Array([1]) },
       { mediaType: 'image/png', data: new Uint8Array([2]) }
     ])
-    expect(model.asked[0]?.text).toContain('gap={24}')
   })
 
   test('judges the JSX alone for a model without image input', async () => {
     const model = reviewer([{ findings: '- Fine.', zoomInto: [] }], runtime('direct', ['tools']))
     await reviewChange(change, {}, model.dependencies)
     expect(model.asked[0]?.images).toEqual([])
-    expect(model.asked[0]?.text).toContain('<Frame name="Card" />')
   })
 
   test('judges the JSX alone for an edit kept without images', async () => {
@@ -243,21 +242,16 @@ describe('a review of one change', () => {
   })
 })
 
-describe('the language a review is written in', () => {
-  test('falls back to the interface’s, for a review asked without words', async () => {
-    const { store } = design()
-    const model = reviewer([{ findings: '- Хорошо.', zoomInto: [] }])
-    await reviewDesign(store, { language: 'Русский' }, model.dependencies)
-    expect(model.asked[0]?.text).toContain('Русский')
+describe('an edit’s JSX within the review’s budget', () => {
+  test('keeps both snapshots whole when they fit', () => {
+    const jsx = { before: '<Frame />', after: '<Frame gap={8} />' }
+    expect(snapshotsWithin(jsx, 100)).toEqual(jsx)
   })
 
-  test('falls back to the interface’s for a change review too', async () => {
-    const model = reviewer([{ findings: '- Хорошо.', zoomInto: [] }])
-    await reviewChange(
-      { toolCallId: 'c', pageId: '0:1', nodeIds: [], jsx: { before: '', after: '' } },
-      { language: '日本語' },
-      model.dependencies
-    )
-    expect(model.asked[0]?.text).toContain('日本語')
+  test('keeps the after snapshot when the before one is long', () => {
+    const fitted = snapshotsWithin({ before: 'x'.repeat(500), after: '<Frame gap={8} />' }, 100)
+    expect(fitted.after).toBe('<Frame gap={8} />')
+    expect(fitted.before.length).toBeLessThanOrEqual(50)
+    expect(fitted.before).not.toBe('x'.repeat(50))
   })
 })

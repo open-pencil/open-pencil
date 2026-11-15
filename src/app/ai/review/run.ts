@@ -234,6 +234,23 @@ export async function reviewDesign(
   return { findings: second.findings, nodeIds, focus: request.focus }
 }
 
+/** Marks a snapshot cut to fit, so the model knows it does not see all of it. */
+const CUT_MARK = '\n… (cut to fit)'
+
+/**
+ * The edit's JSX before and after, each within half of `budget` characters, so a long snapshot
+ * never pushes the other out and both can still be compared.
+ */
+export function snapshotsWithin(
+  { before, after }: ToolChange['jsx'],
+  budget: number
+): ToolChange['jsx'] {
+  const half = Math.floor(budget / 2)
+  const clip = (text: string) =>
+    text.length > half ? `${text.slice(0, Math.max(0, half - CUT_MARK.length))}${CUT_MARK}` : text
+  return { before: clip(before), after: clip(after) }
+}
+
 /**
  * A review of one AI edit: whether it improved the design, from the images of the changed region
  * before and after it, which the chat keeps, and the JSX of its layers before and after. A model
@@ -249,27 +266,18 @@ export async function reviewChange(
   const { before, after } = change.images ?? {}
   const images =
     canSee(runtime) && before && after ? [await blobImage(before), await blobImage(after)] : []
-  const parts = [
+  const jsx = snapshotsWithin(change.jsx, MAX_CONTEXT_LENGTH)
+  const text = [
     prompt.trim(),
     languageRule(language),
     'Review one edit to the design: did it improve the design? Say what got better, what got worse, and what was lost, each with the change that would fix it. Ask for no close-ups.',
     images.length > 0
       ? 'The first image is the changed region before the edit, the second after it.'
       : 'There is no image: judge from the JSX alone.',
-    dedent`
-      JSX before:
-      ${change.jsx.before}
-
-      JSX after:
-      ${change.jsx.after}
-    `
-  ]
-  const text = parts.join('\n\n')
-  const answer = await ask(runtime, {
-    text: text.length > MAX_CONTEXT_LENGTH ? `${text.slice(0, MAX_CONTEXT_LENGTH)}…` : text,
-    images,
-    signal,
-    answer: REVIEW_ANSWER
-  })
+    // Joined rather than dedented, which would flatten the snapshots' own indentation.
+    `JSX before:\n${jsx.before}`,
+    `JSX after:\n${jsx.after}`
+  ].join('\n\n')
+  const answer = await ask(runtime, { text, images, signal, answer: REVIEW_ANSWER })
   return { findings: answer.findings, nodeIds: change.nodeIds, change: change.toolCallId }
 }
