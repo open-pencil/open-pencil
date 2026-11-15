@@ -558,6 +558,13 @@ export const aiMessageDefaults = {
   promptSummaryDescription:
     'What the model is told when it summarizes a conversation to compact it.',
   promptVariables: 'Variables',
+  promptVariableLanguage: 'The language to write in when the request names none',
+  promptVariableFocus: 'What the person asked the review to look at, or empty',
+  promptVariableSeesImages: 'Whether the model is shown images of the design',
+  promptVariableReferences: 'How many reference images follow the design',
+  promptVariableEdit: 'Whether this reviews the agent’s own last change, not a whole design',
+  promptVariableRequest: 'The conversation’s first request',
+  promptVariableReply: 'The beginning of the first reply',
   promptPreview: 'Preview with sample values',
   promptUnknownVariable: params('{name} is not a variable of this prompt, so it stays empty.'),
   promptErrors: 'This prompt has errors',

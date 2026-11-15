@@ -35,3 +35,16 @@ test('a template completes the variables its prompt offers, and filters after a 
     '{{ request | upper}}'
   )
 })
+
+test('a prompt lists what its variables hold, and a click writes one in', async ({ page }) => {
+  const editor = await openTitlePrompt(page)
+  const section = page.getByRole('region', { name: 'Chat titles', exact: true })
+
+  await section.getByRole('button', { name: 'Variables', exact: true }).click()
+  const request = section.getByRole('button', { name: /^request/ })
+  await expect(request).toBeVisible()
+  await request.click()
+
+  await expect(editor).toBeFocused()
+  await expect(editor).toContainText(/\{\{ request \}\}\s*$/)
+})

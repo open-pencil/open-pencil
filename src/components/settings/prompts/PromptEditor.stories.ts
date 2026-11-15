@@ -5,13 +5,14 @@ import { ref } from 'vue'
 import type { TemplateCheck } from '@/app/ai/prompts/engine'
 
 import PromptEditor from './PromptEditor.vue'
+import type { TemplateVariable } from './template-assist'
 
 type PromptEditorArgs = {
   modelValue: string
   label: string
   template?: boolean
   check?: TemplateCheck | null
-  variables?: Readonly<Record<string, unknown>>
+  variables?: Readonly<Record<string, TemplateVariable>>
   placeholder?: string
 }
 
@@ -43,7 +44,13 @@ export const Template: Story = {
     template: true,
     modelValue: 'Name this conversation.\n\nRequest:\n{{ request }}\n\nAlso {{ nope }}.',
     check: { errors: [], unknownVariables: [{ message: 'nope', line: 6, column: 9 }] },
-    variables: { request: 'Make the pricing cards the same height', reply: 'Done.' }
+    variables: {
+      request: {
+        description: 'The conversation’s first request',
+        sample: 'Make the pricing cards the same height'
+      },
+      reply: { description: 'The beginning of the first reply', sample: 'Done.' }
+    }
   },
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(canvasElement.querySelector('.cm-lintRange-warning')).not.toBeNull())

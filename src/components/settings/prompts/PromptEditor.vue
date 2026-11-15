@@ -18,7 +18,10 @@ import type { TemplateCheck, TemplateProblem } from '@/app/ai/prompts/engine'
 import { appHistoryKeys } from '@/components/code-editor/history'
 import { dialogTooltips } from '@/components/code-editor/tooltips'
 import { useCodeMirror } from '@/components/code-editor/useCodeMirror'
-import { templateAssist } from '@/components/settings/prompts/template-assist'
+import {
+  templateAssist,
+  type TemplateVariable
+} from '@/components/settings/prompts/template-assist'
 import { codeEditorTheme, promptEditorTheme } from '@/theme/code/editor'
 import promptEditorFieldTheme from '@/theme/settings/prompt-editor'
 
@@ -40,8 +43,8 @@ const {
   /** Whether the text is a Knap template, highlighted and checked as one. */
   template?: boolean
   check?: TemplateCheck | null
-  /** A template's variables with their sample values, which completion and hovers show. */
-  variables?: Readonly<Record<string, unknown>>
+  /** A template's variables, which completion and hovers describe. */
+  variables?: Readonly<Record<string, TemplateVariable>>
   /** What an empty editor shows. */
   placeholder?: string
   /** What an underlined variable the prompt does not offer says, given its name. */
@@ -68,7 +71,7 @@ const view = useCodeMirror(host, {
     keymap.of(standardKeymap),
     // A template's errors are reported by line, so its lines are numbered; instructions are prose.
     ...(template
-      ? [lineNumbers(), StreamLanguage.define(knapStreamParser), templateAssist(variables)]
+      ? [lineNumbers(), StreamLanguage.define(knapStreamParser), templateAssist(() => variables)]
       : []),
     EditorView.lineWrapping,
     EditorView.updateListener.of((update) => {
@@ -79,6 +82,16 @@ const view = useCodeMirror(host, {
   // Completion and hovers keep within Settings, which is a dialog.
   reactive: [() => dialogTooltips(host.value)]
 })
+
+/** Puts `text` where the cursor is, or over the selection, and returns focus to the editor. */
+function insert(text: string): void {
+  const editor = view.value
+  if (!editor) return
+  editor.dispatch(editor.state.replaceSelection(text), { scrollIntoView: true, userEvent: 'input' })
+  editor.focus()
+}
+
+defineExpose({ insert })
 
 // Text set from outside, as by Reset, replaces the document.
 watch(

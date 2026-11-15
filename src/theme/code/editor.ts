@@ -50,9 +50,17 @@ export function codeEditorTheme(dark: boolean) {
           border: '1px solid var(--color-border)'
         },
         '.cm-tooltip': { borderRadius: '6px', overflow: 'hidden' },
-        '.cm-tooltip-hover': {
-          padding: '4px 8px',
+        // The completion list's info sits outside it, so the list rounds its own corners instead.
+        '.cm-tooltip.cm-tooltip-autocomplete': { overflow: 'visible' },
+        '.cm-tooltip-autocomplete > ul': { borderRadius: '6px' },
+        // A tooltip's template code in the editor's font, and what it means in the interface's.
+        '.cm-tooltip-hover': { padding: '4px 8px', maxWidth: '24rem' },
+        '.cm-tooltip-hover code, .cm-completionInfo code': {
           fontFamily: 'var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace)'
+        },
+        '.cm-tooltip-hover p, .cm-completionInfo p': {
+          margin: '2px 0 0',
+          color: 'var(--color-muted)'
         },
         '.cm-tooltip-autocomplete > ul > li[aria-selected]': {
           backgroundColor: 'var(--color-hover)',

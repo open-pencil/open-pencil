@@ -28,7 +28,6 @@ export function useTemplatePromptSetting(id: TemplatePrompt) {
   })
   const modified = computed(() => appPreferences.value.prompts[id] !== null)
   const samples: Readonly<Record<string, unknown>> = PROMPT_DEFINITIONS[id].variables
-  const variables = Object.keys(samples)
   const check = ref<TemplateCheck>({ errors: [], unknownVariables: [] })
   const preview = ref('')
 
@@ -51,7 +50,6 @@ export function useTemplatePromptSetting(id: TemplatePrompt) {
   return {
     text,
     modified,
-    variables,
     samples,
     check,
     preview,

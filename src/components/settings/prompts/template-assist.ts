@@ -19,52 +19,74 @@ import {
 import { appMenuShortcuts } from '@/app/shell/menu/shortcut'
 import { withoutMenuKeys } from '@/components/code-editor/keys'
 
-/** A prompt's variables, with the sample values its preview is filled with. */
-type Samples = Readonly<Record<string, unknown>>
-
-/** A variable's type and sample, as a template would write the sample. */
-function describe(samples: Samples, name: string): { type: string; sample: string } | null {
-  if (!Object.hasOwn(samples, name)) return null
-  const value = samples[name]
-  return { type: typeof value, sample: JSON.stringify(value) }
+/** A variable a prompt offers: what it holds, and the sample value its preview is filled with. */
+export interface TemplateVariable {
+  description: string
+  sample: unknown
 }
 
-async function completions(place: TemplatePlace, samples: Samples): Promise<Completion[]> {
+type Variables = () => Readonly<Record<string, TemplateVariable>>
+
+/** A variable's description, type, and sample, as a template would write the sample. */
+function describe(variables: Variables, name: string) {
+  if (!Object.hasOwn(variables(), name)) return null
+  const { description, sample } = variables()[name]
+  return { description, type: typeof sample, sample: JSON.stringify(sample) }
+}
+
+async function completions(place: TemplatePlace, variables: Variables): Promise<Completion[]> {
   if (place.kind === 'tag') return TEMPLATE_TAGS.map((label) => ({ label, type: 'keyword' }))
   if (place.kind === 'filter') {
     const filters = await loadPromptFilters()
     return filters.map(({ name, example }) => ({ label: name, type: 'function', detail: example }))
   }
-  const names = new Set([...Object.keys(samples), ...place.defined])
+  const names = new Set([...Object.keys(variables()), ...place.defined])
   return [...names].map((name) => {
-    const known = describe(samples, name)
+    const known = describe(variables, name)
     return known
-      ? { label: name, type: 'variable', detail: known.type, info: known.sample, boost: 1 }
+      ? {
+          label: name,
+          type: 'variable',
+          detail: known.type,
+          info: () => tooltipContent(known.sample, known.description),
+          boost: 1
+        }
       : { label: name, type: 'variable' }
   })
 }
 
-async function hoverText(place: TemplatePlace, samples: Samples): Promise<string | null> {
+/** A tooltip's text: a line of template code, then what it means, if anything. */
+function tooltipContent(code: string, meaning?: string): HTMLElement {
+  const dom = document.createElement('div')
+  dom.append(Object.assign(document.createElement('code'), { textContent: code }))
+  if (meaning) dom.append(Object.assign(document.createElement('p'), { textContent: meaning }))
+  return dom
+}
+
+async function hoverContent(place: TemplatePlace, variables: Variables) {
   if (place.kind === 'variable') {
-    const known = describe(samples, place.word)
-    return known && `${place.word}: ${known.type} = ${known.sample}`
+    const known = describe(variables, place.word)
+    return (
+      known && tooltipContent(`${place.word}: ${known.type} = ${known.sample}`, known.description)
+    )
   }
   if (place.kind !== 'filter') return null
   const filters = await loadPromptFilters()
-  return filters.find(({ name }) => name === place.word)?.example ?? null
+  const example = filters.find(({ name }) => name === place.word)?.example
+  return example ? tooltipContent(example) : null
 }
 
 /**
  * Help writing a Knap template, reading it with Knap's own tokenizer (`templatePlace`):
  * completion of tags after `{%`, filters after `|`, and the variables in scope elsewhere; a
- * hover with a variable's sample or a filter's example; and braces that close as they open.
+ * hover with what a variable holds and its sample, or a filter's example; and braces that close as they open.
  * Keys the desktop menu takes are left out (`withoutMenuKeys`).
  */
-export function templateAssist(samples: Samples): Extension[] {
+export function templateAssist(variables: Variables): Extension[] {
   const complete = async (context: CompletionContext): Promise<CompletionResult | null> => {
     const place = await templatePlace(context.state.sliceDoc(0, context.pos))
     if (!place || (!place.word && !context.explicit && place.kind === 'variable')) return null
-    return { from: place.from, options: await completions(place, samples), validFor: /^\w*$/ }
+    return { from: place.from, options: await completions(place, variables), validFor: /^\w*$/ }
   }
 
   const hover = hoverTooltip(async (view, pos): Promise<Tooltip | null> => {
@@ -72,18 +94,9 @@ export function templateAssist(samples: Samples): Extension[] {
     if (!word) return null
     const place = await templatePlace(view.state.sliceDoc(0, word.to))
     if (place?.from !== word.from) return null
-    const text = await hoverText(place, samples)
-    if (!text) return null
-    return {
-      pos: word.from,
-      end: word.to,
-      above: true,
-      create: () => {
-        const dom = document.createElement('div')
-        dom.textContent = text
-        return { dom }
-      }
-    }
+    const dom = await hoverContent(place, variables)
+    if (!dom) return null
+    return { pos: word.from, end: word.to, above: true, create: () => ({ dom }) }
   })
 
   return [
