@@ -3,10 +3,9 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
+import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer/skia'
 import { worldXToScreen, worldYToScreen } from '#core/geometry/viewport'
 import { regionHatchPeriod, regionPath } from '#core/vector'
-
-import type { RenderOverlays, SkiaRenderer } from './renderer/skia'
 
 /** Width of a hatch line in screen pixels, as Figma's shaded-region shader covers it. */
 const HATCH_LINE_WIDTH = 1.4

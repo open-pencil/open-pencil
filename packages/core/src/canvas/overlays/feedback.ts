@@ -5,7 +5,7 @@ import type { Rect } from '@open-pencil/scene-graph/primitives'
 import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 
 import { paintFills } from '#core/canvas/fills/paint'
-import { drawNodeHighlightRect } from '#core/canvas/highlight-rect'
+import { drawNodeHighlightRect } from '#core/canvas/overlays/highlight'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer/skia'
 import { connectorLabelPlaceholderNode } from '#core/canvas/text/placeholder'
 import {
