@@ -7,7 +7,7 @@ import {
   parseShortcut
 } from '@open-pencil/vue/editor/commands'
 
-import type { AppMenuActionItem, AppMenuEntry } from '@/app/shell/menu/schema'
+import type { AppMenuActionItem, AppMenuEntry, AppMenuGroupSchema } from '@/app/shell/menu/schema'
 import { APP_MENU_APP_ITEMS, APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
 
 function isActionItem(entry: AppMenuEntry): entry is AppMenuActionItem {
@@ -63,12 +63,13 @@ export function appMenuShortcut(id: string): HotkeyChord | undefined {
 }
 
 /**
- * The shortcuts with Ctrl, Alt, or Cmd that the menu's items take on `platform`, but for the
- * edits a text field does itself. A field must leave these keys alone: on Linux a menu item's
- * accelerator takes its key before the page sees it, then skips its command while the field has
- * focus, so the key would do nothing there (`desktop/src/menu/mod.rs`).
+ * The shortcuts with Ctrl, Alt, or Cmd that the items of `groups` take on `platform`, but for the
+ * edits a text field does itself and items only the browser shows.
  */
-export function appMenuShortcuts(platform: HotkeyPlatform = detectPlatform()): HotkeyChord[] {
+export function menuShortcuts(
+  groups: readonly AppMenuGroupSchema[],
+  platform: HotkeyPlatform
+): HotkeyChord[] {
   const shortcuts: HotkeyChord[] = []
   const walk = (entries: readonly AppMenuEntry[]) => {
     for (const entry of entries) {
@@ -78,9 +79,17 @@ export function appMenuShortcuts(platform: HotkeyPlatform = detectPlatform()): H
       if (entry.sub) walk(entry.sub)
     }
   }
-  for (const group of APP_MENU_SCHEMA) if (group.target !== 'browser') walk(group.items)
-  walk(APP_MENU_APP_ITEMS)
+  for (const group of groups) if (group.target !== 'browser') walk(group.items)
   return shortcuts
+}
+
+/**
+ * The app menu's shortcuts a text field must leave alone (`menuShortcuts`): on Linux a menu
+ * item's accelerator takes its key before the page sees it, then skips its command while the
+ * field has focus, so the key would do nothing there (`desktop/src/menu/mod.rs`).
+ */
+export function appMenuShortcuts(platform: HotkeyPlatform = detectPlatform()): HotkeyChord[] {
+  return menuShortcuts([...APP_MENU_SCHEMA, { label: '', items: APP_MENU_APP_ITEMS }], platform)
 }
 
 /** A shortcut as a native menu accelerator: `Mod+Shift+S` is `CmdOrCtrl+Shift+S`. */

@@ -1,5 +1,12 @@
 import type { KeyBinding } from '@codemirror/view'
-import { detectPlatform, type HotkeyChord, type HotkeyPlatform } from '@tanstack/hotkeys'
+import {
+  areHotkeysEqual,
+  detectPlatform,
+  type HotkeyChord,
+  type HotkeyPlatform,
+  type RawHotkeyChord,
+  type RawModifiers
+} from '@tanstack/hotkeys'
 import { compact } from 'es-toolkit'
 
 import { parseShortcut } from '@open-pencil/vue/editor/commands'
@@ -17,26 +24,34 @@ export function codeMirrorKey(shortcut: HotkeyChord): string {
   ]).join('-')
 }
 
+/** CodeMirror's modifier names and their short forms, as `RawModifiers` fields. */
+const CODEMIRROR_MODIFIERS = new Map<string, keyof RawModifiers>([
+  ['mod', 'mod'],
+  ['ctrl', 'ctrl'],
+  ['control', 'ctrl'],
+  ['c', 'ctrl'],
+  ['alt', 'alt'],
+  ['a', 'alt'],
+  ['shift', 'shift'],
+  ['s', 'shift'],
+  ['meta', 'meta'],
+  ['cmd', 'meta'],
+  ['m', 'meta']
+])
+
 /**
- * A CodeMirror key name as CodeMirror resolves it on `platform`, for comparing two names:
- * modifiers in one order, `Mod` as Cmd on macOS and Ctrl elsewhere, and letters lowercase.
+ * A CodeMirror key name as a chord. An uppercase letter means Shift, as it does to CodeMirror,
+ * which reads `Alt-A` as Alt+Shift+A.
  */
-function resolvedKey(name: string, platform: HotkeyPlatform): string {
+function codeMirrorChord(name: string): RawHotkeyChord {
   const parts = name.split(/-(?!$)/)
-  const key = parts.at(-1) ?? name
-  const modifiers = new Set(
-    parts.slice(0, -1).map((part) => {
-      const modifier = part.toLowerCase()
-      if (modifier === 'mod') return platform === 'mac' ? 'meta' : 'ctrl'
-      if (modifier === 'cmd' || modifier === 'm') return 'meta'
-      if (modifier === 'control' || modifier === 'c') return 'ctrl'
-      if (modifier === 'a') return 'alt'
-      if (modifier === 's') return 'shift'
-      return modifier
-    })
-  )
-  const order = ['alt', 'ctrl', 'meta', 'shift'].filter((modifier) => modifiers.has(modifier))
-  return [...order, key.length === 1 ? key.toLowerCase() : key].join('-')
+  const key = parts.pop() ?? name
+  const chord: RawHotkeyChord = { key, shift: /^[A-Z]$/.test(key) }
+  for (const part of parts) {
+    const modifier = CODEMIRROR_MODIFIERS.get(part.toLowerCase())
+    if (modifier) chord[modifier] = true
+  }
+  return chord
 }
 
 /** The key a binding answers on `platform`: its platform's own key where it names one. */
@@ -55,11 +70,10 @@ export function withoutMenuKeys(
   menuShortcuts: readonly HotkeyChord[],
   platform: HotkeyPlatform = detectPlatform()
 ): KeyBinding[] {
-  const taken = new Set(
-    menuShortcuts.map((shortcut) => resolvedKey(codeMirrorKey(shortcut), platform))
-  )
   return bindings.filter((binding) => {
     const key = bindingKey(binding, platform)
-    return !key || !taken.has(resolvedKey(key, platform))
+    if (!key) return true
+    const chord = codeMirrorChord(key)
+    return !menuShortcuts.some((shortcut) => areHotkeysEqual(chord, shortcut, platform))
   })
 }

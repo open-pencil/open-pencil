@@ -1,8 +1,17 @@
 import { describe, expect, test } from 'bun:test'
 
 import type { KeyBinding } from '@codemirror/view'
+import { compact } from 'es-toolkit'
 
-import { appMenuShortcut, appMenuShortcuts, shortcutToAccelerator } from '@/app/shell/menu/shortcut'
+import { editorCommandMetadata } from '@open-pencil/vue/editor/commands'
+
+import type { AppMenuGroupSchema } from '@/app/shell/menu/schema'
+import {
+  appMenuShortcut,
+  appMenuShortcuts,
+  menuShortcuts,
+  shortcutToAccelerator
+} from '@/app/shell/menu/shortcut'
 import { withoutMenuKeys } from '@/components/code-editor/keys'
 
 describe('app menu shortcuts', () => {
@@ -23,19 +32,46 @@ describe('app menu shortcuts', () => {
 })
 
 describe('menu keys in text fields', () => {
-  test('lists the menu keys a field must leave alone, but for its own edits', () => {
-    const shortcuts = appMenuShortcuts('linux')
-    expect(shortcuts).toContain('Mod+]')
-    expect(shortcuts).toContain('Mod+Shift+K')
-    expect(shortcuts).toContain('Mod+I')
-    for (const edit of ['Mod+Z', 'Mod+Shift+Z', 'Mod+A', 'Mod+C', 'Mod+X', 'Mod+V'])
-      expect(shortcuts).not.toContain(edit)
+  const groups: AppMenuGroupSchema[] = [
+    {
+      label: 'Edit',
+      items: [
+        { id: 'edit.undo', label: 'Undo', command: 'edit.undo' },
+        { id: 'copy', label: 'Copy', shortcut: 'Mod+C' },
+        { id: 'arrange', label: 'Arrange', shortcut: 'Mod+]' },
+        { id: 'delete', label: 'Delete', shortcut: 'Backspace' },
+        { id: 'next', label: 'Next', shortcut: 'Shift+N' },
+        { id: 'web', label: 'Web only', shortcut: 'Mod+J', target: 'browser' },
+        { type: 'separator' },
+        {
+          id: 'more',
+          label: 'More',
+          sub: [
+            { id: 'align', label: 'Align', shortcut: 'Alt+A' },
+            { id: 'group', label: 'Group', command: 'selection.group' }
+          ]
+        }
+      ]
+    },
+    {
+      label: 'Debug',
+      target: 'browser',
+      items: [{ id: 'tools', label: 'Tools', shortcut: 'Mod+K' }]
+    }
+  ]
+
+  test('collects the items of every native menu, nested ones included', () => {
+    const group = editorCommandMetadata('selection.group', 'linux').shortcut
+    expect(group).toBeDefined()
+    expect(menuShortcuts(groups, 'linux')).toEqual(compact(['Mod+]', 'Alt+A', group]))
   })
 
-  test('leaves out keys without Ctrl, Alt, or Cmd', () => {
-    expect(
-      appMenuShortcuts('linux').every((shortcut) => /Mod|Control|Alt|Meta/.test(shortcut))
-    ).toBe(true)
+  test('leaves field edits in the app menu to the field', () => {
+    const edits = compact(
+      ['edit.undo', 'edit.redo', 'selection.selectAll', 'copy', 'cut', 'paste'].map(appMenuShortcut)
+    )
+    expect(edits).toHaveLength(6)
+    expect(appMenuShortcuts('linux').filter((shortcut) => edits.includes(shortcut))).toEqual([])
   })
 
   test('drops editor bindings whose key the menu takes', () => {
@@ -55,6 +91,12 @@ describe('menu keys in text fields', () => {
       )
     expect(keys('linux')).toEqual(['Mod-z', 'Tab', 'Alt-ArrowUp', 'Cmd-]'])
     expect(keys('mac')).toEqual(['Mod-z', 'Tab', 'Alt-ArrowUp'])
+  })
+
+  test('reads an uppercase letter as Shift, as CodeMirror does', () => {
+    const run = () => true
+    expect(withoutMenuKeys([{ key: 'Alt-A', run }], ['Alt+A'], 'linux')).toHaveLength(1)
+    expect(withoutMenuKeys([{ key: 'Alt-A', run }], ['Alt+Shift+A'], 'linux')).toHaveLength(0)
   })
 
   test('keeps a Ctrl binding where the menu takes Cmd', () => {
