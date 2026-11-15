@@ -91,6 +91,14 @@ describe('a design review', () => {
     expect(model.asked[0]?.text).toContain('spacing')
   })
 
+  test('reviews the layers asked about, whatever is selected by the time it runs', async () => {
+    const { card, button, store } = design()
+    const model = reviewer([{ findings: '- Fine.', zoomInto: [] }])
+    const review = await reviewDesign(store, { nodeIds: [button.id] }, model.dependencies)
+    expect(review.nodeIds).toEqual([button.id])
+    expect(review.nodeIds).not.toContain(card.id)
+  })
+
   test('reviews the page’s layers when nothing is selected', async () => {
     const { card, store } = design({ select: false })
     const model = reviewer([{ findings: '- Fine.', zoomInto: [] }])
@@ -103,12 +111,17 @@ describe('a design review', () => {
       { findings: '- The button may be clipped.', zoomInto: [button.id, 'missing:1'] },
       { findings: '- The button label is clipped by 2px.', zoomInto: [] }
     ])
-    const review = await reviewDesign(store, {}, model.dependencies)
+    const review = await reviewDesign(store, { references: [REFERENCE] }, model.dependencies)
 
     expect(review.findings).toBe('- The button label is clipped by 2px.')
     expect(rendered.at(-1)).toEqual([button.id])
     expect(model.asked).toHaveLength(2)
-    expect(model.asked[1]?.images).toHaveLength(1)
+    // The second request sees the design and the reference again, then the close-up.
+    expect(model.asked[1]?.images).toEqual([
+      { mediaType: 'image/png', data: RENDER },
+      REFERENCE,
+      { mediaType: 'image/png', data: RENDER }
+    ])
     expect(model.asked[1]?.text).toContain('- The button may be clipped.')
   })
 

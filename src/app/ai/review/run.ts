@@ -29,6 +29,12 @@ const MAX_LINT_FINDINGS = 30
 type ModelImage = NonNullable<ModelQuestion['images']>[number]
 
 export interface ReviewRequest {
+  /**
+   * The page and layers to review, taken when the review was asked; the selection, or the
+   * current page's layers, by default.
+   */
+  pageId?: string
+  nodeIds?: string[]
   /** What the person asked the review to focus on. */
   focus?: string
   /** Images the person attached, which the design is compared against. */
@@ -98,10 +104,15 @@ const DEFAULT_DEPENDENCIES: ReviewDependencies = {
   ask: askModel
 }
 
-/** The review's layers: the selection, or the page's own layers when nothing is selected. */
-function reviewedLayers(store: EditorStore, pageId: string): string[] {
+/** The review's layers: the selection, or the current page's own layers when nothing is selected. */
+export function reviewTarget(
+  store: EditorStore
+): Required<Pick<ReviewRequest, 'pageId' | 'nodeIds'>> {
+  const pageId = store.state.currentPageId
   const selected = [...store.state.selectedIds]
-  return selected.length > 0 ? selected : store.graph.getChildren(pageId).map((node) => node.id)
+  const nodeIds =
+    selected.length > 0 ? selected : store.graph.getChildren(pageId).map((node) => node.id)
+  return { pageId, nodeIds }
 }
 
 function toolNamed(name: string) {
@@ -183,27 +194,30 @@ export async function reviewDesign(
   request: ReviewRequest,
   { createRuntime, ask }: ReviewDependencies = DEFAULT_DEPENDENCIES
 ): Promise<DesignReview> {
+  // Taken before anything awaits, so a selection changed meanwhile is not reviewed instead.
+  const asked = reviewTarget(store)
+  const pageId = request.pageId ?? asked.pageId
+  const nodeIds = request.nodeIds ?? asked.nodeIds
   const runtime = await reviewModel(createRuntime)
   const sees = canSee(runtime)
   const references = request.references ?? []
   if (!sees && references.length > 0) throw new ReviewImagesUnreadableError()
-
-  const pageId = store.state.currentPageId
-  const nodeIds = reviewedLayers(store, pageId)
   if (nodeIds.length === 0) throw new ReviewEmptyError()
   const render = sees ? await renderForModel(store, nodeIds, pageId) : null
   if (sees && !render) throw new ReviewEmptyError()
 
   const context = await layerContext(store, nodeIds, pageId)
+  const shown = render ? [png(render), ...references] : []
   const first = await ask(runtime, {
     text: question(context, request, sees),
-    images: render ? [png(render), ...references] : [],
+    images: shown,
     signal: request.signal,
     answer: REVIEW_ANSWER
   })
   const zoomed = sees ? await closeUps(store, first.zoomInto, pageId) : []
   if (zoomed.length === 0) return { findings: first.findings, nodeIds, focus: request.focus }
 
+  // A new request: it sees the design and references again, with the close-ups after them.
   const second = await ask(runtime, {
     text: dedent`
       ${question(context, request, sees)}
@@ -211,9 +225,9 @@ export async function reviewDesign(
       Your first review:
       ${first.findings}
 
-      The images are close-ups of the layers you asked to see, in this order: ${zoomed.map(({ id }) => id).join(', ')}. Write the final review, correcting or adding findings from what they show. Ask for no more close-ups.
+      The last ${zoomed.length === 1 ? 'image is a close-up' : `${zoomed.length} images are close-ups`} of the layers you asked to see, in this order: ${zoomed.map(({ id }) => id).join(', ')}. Write the final review, correcting or adding findings from what they show. Ask for no more close-ups.
     `,
-    images: zoomed.map(({ render: closeUp }) => png(closeUp)),
+    images: [...shown, ...zoomed.map(({ render: closeUp }) => png(closeUp))],
     signal: request.signal,
     answer: REVIEW_ANSWER
   })

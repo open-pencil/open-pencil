@@ -9,12 +9,14 @@ import { readToolChange } from '@/app/ai/tools/changes/store'
 import type { EditorStore } from '@/app/editor/active-store'
 
 import { reviewMessage, type DesignReview } from './message'
-import { reviewChange, reviewDesign, type ReviewDependencies } from './run'
+import { reviewChange, reviewDesign, reviewTarget, type ReviewDependencies } from './run'
 
 interface ReviewOptions {
   chat: Ref<ChatInstance | null>
   ensureChat: () => Promise<ChatInstance | null>
   store: () => EditorStore | null
+  /** Changes when the chat shows another conversation, so a review asked in one stays there. */
+  generation?: () => number
   flush?: () => Promise<void>
   dependencies?: ReviewDependencies
 }
@@ -42,31 +44,32 @@ export function useChatReview(options: ReviewOptions) {
   let abort: AbortController | null = null
 
   /**
-   * Runs one review and adds it to the conversation it was asked in, once it is in. A review that
-   * runs while another does is not started.
+   * Runs one review and adds it to the conversation it was asked in, once it is in. One review
+   * runs at a time: another asked meanwhile is not started.
    */
-  async function run(
-    write: (store: EditorStore, signal: AbortSignal) => Promise<DesignReview>
-  ): Promise<boolean> {
-    const store = options.store()
-    if (!store || reviewing.value) return false
-    // The chat the review joins, made now in a new conversation, as a message makes it.
-    const target = await options.ensureChat()
-    if (!target) return false
-    options.chat.value = markRaw(target)
+  async function run(write: (signal: AbortSignal) => Promise<DesignReview>): Promise<boolean> {
+    if (reviewing.value) return false
+    const generation = options.generation?.()
+    const moved = () => options.generation?.() !== generation
     failed.value = null
     reviewing.value = true
     abort = new AbortController()
     const signal = abort.signal
+    // Read afresh after each await; Stop can end the review while it waits.
+    const stopped = () => signal.aborted
     try {
-      const result = await write(store, signal)
+      // The chat the review joins, made now in a new conversation, as a message makes it.
+      const target = await options.ensureChat()
+      if (!target || stopped() || moved()) return false
+      options.chat.value = markRaw(target)
+      const result = await write(signal)
       // A conversation switched meanwhile is not the one the review was asked in.
-      if (signal.aborted || options.chat.value !== target) return false
+      if (stopped() || moved() || options.chat.value !== target) return false
       target.messages = [...target.messages, reviewMessage(result)]
       await options.flush?.().catch(() => undefined)
       return true
     } catch (error) {
-      if (!signal.aborted) failed.value = error
+      if (!stopped()) failed.value = error
       return false
     } finally {
       reviewing.value = false
@@ -74,9 +77,12 @@ export function useChatReview(options: ReviewOptions) {
     }
   }
 
-  /** Reviews the selection or the page, from `/review`. */
+  /** Reviews the selection or the page as it is now, from `/review`. */
   function review({ focus, references = [] }: ReviewAsk): Promise<boolean> {
-    return run(async (store, signal) => {
+    const store = options.store()
+    if (!store) return Promise.resolve(false)
+    const target = reviewTarget(store)
+    return run(async (signal) => {
       const images = await Promise.all(
         references.map(async (draft) => {
           const { mediaType, data } = await prepareImageAttachment(draft.file)
@@ -85,7 +91,13 @@ export function useChatReview(options: ReviewOptions) {
       )
       return reviewDesign(
         store,
-        { focus: focus || undefined, references: images, language: interfaceLanguage(), signal },
+        {
+          ...target,
+          focus: focus || undefined,
+          references: images,
+          language: interfaceLanguage(),
+          signal
+        },
         options.dependencies
       )
     })
@@ -95,7 +107,7 @@ export function useChatReview(options: ReviewOptions) {
   function reviewToolChange(toolCallId: string): Promise<boolean> {
     const change = readToolChange(toolCallId)
     if (!change) return Promise.resolve(false)
-    return run((_store, signal) =>
+    return run((signal) =>
       reviewChange(change, { signal, language: interfaceLanguage() }, options.dependencies)
     )
   }

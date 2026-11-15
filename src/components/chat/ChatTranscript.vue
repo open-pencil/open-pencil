@@ -37,7 +37,8 @@ const {
   steers = false,
   sending = null,
   compacting = false,
-  reviewing = false
+  reviewing = false,
+  reviewsActionable = false
 } = defineProps<{
   messages: UIMessage[]
   status: ChatStatus
@@ -61,6 +62,8 @@ const {
   compacting?: boolean
   /** The Review model is reviewing the design, from a `/review`. */
   reviewing?: boolean
+  /** Whether a review's findings can be sent on now, which needs no live chat. */
+  reviewsActionable?: boolean
 }>()
 const emit = defineEmits<{
   continue: []
@@ -179,7 +182,7 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
           <ChatReviewCard
             v-else-if="review"
             :review="review"
-            :can-fix="idle"
+            :can-fix="reviewsActionable"
             @fix="emit('fixReview', msg.id)"
           />
           <ChatMessage

@@ -14,6 +14,7 @@ import type { ReviewDependencies } from '@/app/ai/review/run'
 import { useChatReview } from '@/app/ai/review/use'
 import { clearToolChanges, setToolChange } from '@/app/ai/tools/changes/store'
 import type { EditorStore } from '@/app/editor/session/create'
+import { createDeferred } from '@/app/runtime/deferred'
 
 function editor() {
   const graph = new SceneGraph()
@@ -105,5 +106,41 @@ describe('reviewing from the chat', () => {
     } finally {
       clearToolChanges()
     }
+  })
+
+  test('starts no second review while one runs', async () => {
+    const answer = createDeferred<{ findings: string; zoomInto: string[] }>()
+    const made = asDouble<ChatInstance>({ messages: [] as UIMessage[] })
+    const review = useChatReview({
+      chat: shallowRef<ChatInstance | null>(null),
+      ensureChat: async () => made,
+      store: editor,
+      dependencies: { ...reviewer, ask: asDouble<ReviewDependencies['ask']>(() => answer.promise) }
+    })
+
+    const first = review.review({})
+    expect(await review.review({})).toBe(false)
+    expect(review.reviewing.value).toBe(true)
+    answer.resolve({ findings: '- Pad it.', zoomInto: [] })
+    expect(await first).toBe(true)
+    expect(made.messages).toHaveLength(1)
+    expect(review.reviewing.value).toBe(false)
+  })
+
+  test('joins no conversation opened while its chat was being made', async () => {
+    let generation = 0
+    const chat = shallowRef<ChatInstance | null>(null)
+    const review = useChatReview({
+      chat,
+      ensureChat: async () => {
+        generation++
+        return asDouble<ChatInstance>({ messages: [] as UIMessage[] })
+      },
+      generation: () => generation,
+      store: editor,
+      dependencies: reviewer
+    })
+    expect(await review.review({})).toBe(false)
+    expect(chat.value).toBeNull()
   })
 })

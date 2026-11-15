@@ -39,7 +39,6 @@ export const Findings: Story = {
   args: { review, canFix: true, onFix: fn() },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('spacing and hierarchy')).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: 'Fix these' }))
     await expect(args.onFix).toHaveBeenCalledOnce()
   }

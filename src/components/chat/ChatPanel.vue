@@ -77,6 +77,7 @@ const review = useChatReview({
   chat,
   ensureChat,
   store: getActiveEditorStoreOrNull,
+  generation: () => viewGeneration,
   flush: history.flush
 })
 const submission = useChatSubmission({
@@ -201,17 +202,23 @@ function reviewFailure(error: unknown): string {
   return ai.value.reviewFailed
 }
 
+/**
+ * Whether a review can start or send its findings on: the chat takes a message now. A reopened
+ * conversation has no live chat until one is sent, and sending makes it.
+ */
+const reviewReady = computed(
+  () =>
+    isConfigured.value &&
+    status.value === 'ready' &&
+    !submission.busy.value &&
+    !compaction.compacting.value &&
+    !review.reviewing.value &&
+    !history.readOnly.value
+)
 // A change preview asks the Review model about its edit while the chat is idle.
 provide(CHAT_CHANGE_REVIEW, {
   review: (toolCallId) => void review.reviewToolChange(toolCallId),
-  ready: computed(
-    () =>
-      status.value === 'ready' &&
-      !submission.busy.value &&
-      !compaction.compacting.value &&
-      !review.reviewing.value &&
-      !history.readOnly.value
-  )
+  ready: reviewReady
 })
 
 watch(
@@ -523,6 +530,7 @@ function handleStop() {
           :sending="submission.sending.value?.displayText ?? null"
           :compacting="compaction.compacting.value"
           :reviewing="review.reviewing.value"
+          :reviews-actionable="reviewReady"
           @remove-queued="removeQueuedMessage"
           @fix-review="fixReview"
           :nodes-live="!history.readOnly.value"

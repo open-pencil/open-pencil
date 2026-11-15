@@ -33,8 +33,8 @@ export const TITLE_ANSWER: ModelAnswer<{ title: string }> = {
   fromText: (text) => ({ title: text })
 }
 
-function firstReply(messages: readonly UIMessage[]): string {
-  // A design review is not the conversation's reply.
+/** The first reply's text, which the title is written from; a design review is not a reply. */
+export function firstReply(messages: readonly UIMessage[]): string {
   const reply = messages.find((message) => message.role === 'assistant' && !reviewOf(message))
   return (reply?.parts ?? [])
     .filter((part) => part.type === 'text')
