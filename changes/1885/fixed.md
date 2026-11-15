@@ -1,0 +1,1 @@
+- Centre and bottom aligned text taller than its fixed box overflows up as well as down, as in Figma, instead of hanging from the top of the box (#1885).

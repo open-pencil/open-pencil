@@ -2,10 +2,9 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
 import type { CanvasKit, TypefaceFontProvider } from '@open-pencil/canvaskit'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
-import { percentLength, pixelLength } from '@open-pencil/scene-graph/text'
+import { percentLength, pixelLength, textVerticalOffset } from '@open-pencil/scene-graph/text'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { textVerticalOffset } from '#core/canvas/text'
 import type { TextLayout } from '#core/canvas/text/layout'
 import { buildParagraph } from '#core/canvas/text/layout/build'
 import { getCanvasKit } from '#core/canvaskit'
