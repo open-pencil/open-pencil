@@ -1,6 +1,9 @@
+import { partition } from 'es-toolkit'
+
 import {
   FONT_WEIGHT_NAMES,
   namesWeight,
+  namesWidth,
   normalizeFontFamily,
   type FontFamilyStyle,
   parseFontStyle,
@@ -61,7 +64,7 @@ export function chooseLocalFontMatch<T extends FontFamilyStyle>(
     // A face named apart from its weight is that face or none, never another of its weight.
     if (style && !namesWeight(style)) continue
 
-    const candidates = fonts.filter((font) => font.family === candidateFamily)
+    const candidates = normalWidthFirst(fonts.filter((font) => font.family === candidateFamily))
     const sameStyle = candidates.find((font) => {
       const parsed = parseFontStyle(font.style)
       return parsed.weight === requested.weight && parsed.italic === requested.italic
@@ -82,6 +85,11 @@ export function chooseLocalFontMatch<T extends FontFamilyStyle>(
   }
 
   return undefined
+}
+
+function normalWidthFirst<T extends FontFamilyStyle>(fonts: T[]): T[] {
+  const [normalWidth, otherWidth] = partition(fonts, (font) => !namesWidth(font.style))
+  return [...normalWidth, ...otherWidth]
 }
 
 export interface NamedLocalFont extends FontFamilyStyle {

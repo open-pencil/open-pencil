@@ -15,6 +15,19 @@ describe('chooseLocalFontMatch', () => {
     expect(chooseLocalFontMatch(fonts, 'Inter', 'Regular')?.style).toBe('Regular')
   })
 
+  test('takes the normal-width face of a weight over a width face', () => {
+    const widths = [
+      { family: 'Acme Sans', style: 'Condensed Semi Bold' },
+      { family: 'Acme Sans', style: 'Compressed Regular' },
+      { family: 'Acme Sans', style: 'Semi Bold' },
+      { family: 'Acme Sans', style: 'Book' },
+      { family: 'Acme Sans', style: 'Condensed Bold' }
+    ]
+    expect(chooseLocalFontMatch(widths, 'Acme Sans', 'SemiBold')?.style).toBe('Semi Bold')
+    expect(chooseLocalFontMatch(widths, 'Acme Sans')?.style).toBe('Book')
+    expect(chooseLocalFontMatch(widths, 'Acme Sans', 'Bold')?.style).toBe('Condensed Bold')
+  })
+
   test('does not substitute nearby weights for explicit style requests', () => {
     expect(chooseLocalFontMatch(fonts, 'Inter', 'Bold')).toBeUndefined()
   })
