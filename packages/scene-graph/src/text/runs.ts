@@ -44,13 +44,18 @@ export interface StyleRunPiece {
 /**
  * The first `length` characters cut at their runs, in order and covering every character once:
  * a run's part that an earlier run already covers, or that lies past the text, is left out.
+ * `boundary` moves each cut to where the text may be cut, such as out of a surrogate pair.
  */
-export function styleRunPieces(runs: readonly StyleRun[], length: number): StyleRunPiece[] {
+export function styleRunPieces(
+  runs: readonly StyleRun[],
+  length: number,
+  boundary: (index: number) => number = (index) => index
+): StyleRunPiece[] {
   const pieces: StyleRunPiece[] = []
   let at = 0
   for (const run of runs.toSorted((a, b) => a.start - b.start)) {
-    const start = Math.min(length, Math.max(at, run.start))
-    const end = Math.min(length, run.start + run.length)
+    const start = Math.min(length, Math.max(at, boundary(run.start)))
+    const end = Math.min(length, boundary(run.start + run.length))
     if (start > at) pieces.push({ start: at, end: start, style: null })
     if (end > start) pieces.push({ start, end, style: run.style })
     at = Math.max(start, end)
