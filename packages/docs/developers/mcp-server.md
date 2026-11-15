@@ -294,6 +294,8 @@ Settings tools never expose credentials, AI models, MCP connections, storage, or
 | `export_image` | Export nodes as PNG, JPG, or WEBP. Returns base64-encoded image data |
 | `export_svg`   | Export nodes as SVG markup                                           |
 
+`export_svg` returns `warnings` for effects SVG cannot draw, such as glass; the SVG leaves them out.
+
 ### Viewport
 
 | Tool           | Description                                                                  |

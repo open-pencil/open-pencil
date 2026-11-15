@@ -100,7 +100,7 @@ describe('renderNodesToSVG()', () => {
     })
     const result = exportSVGOrThrow(graph, [node.id])
     expect(result).toContain('<filter')
-    expect(result).toContain('<feDropShadow')
+    expect(result).toContain('<feOffset')
     expect(result).toContain('dy="4"')
     expect(result).toContain('filter="url(#fx')
   })
