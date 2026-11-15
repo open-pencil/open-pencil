@@ -46,7 +46,7 @@ export type NodeOutline =
   | { kind: 'rect'; rect: Float32Array }
   | { kind: 'rrect'; rrect: Float32Array }
   | { kind: 'oval'; rect: Float32Array }
-  | { kind: 'paths'; paths: readonly Path[]; owned: boolean; areas: number }
+  | { kind: 'paths'; paths: readonly Path[]; owned: boolean }
 
 /**
  * `path` grown by `spread`, or shrunk when it is negative, by a round-joined ring around it. Null
@@ -70,23 +70,13 @@ function pathsOutline(
   r: SkiaRenderer,
   paths: readonly (Path | null)[],
   spread: number,
-  owned: boolean,
-  areas = paths.length
+  owned: boolean
 ): NodeOutline {
-  const presentOf = (list: readonly (Path | null)[]) =>
-    list.filter((path): path is Path => path !== null)
-  const present = presentOf(paths)
-  if (spread === 0) {
-    return { kind: 'paths', paths: present, owned, areas: presentOf(paths.slice(0, areas)).length }
-  }
-  const grown = paths.map((path) => (path ? pathWithSpread(r, path, spread) : null))
+  const present = paths.filter((path): path is Path => path !== null)
+  if (spread === 0) return { kind: 'paths', paths: present, owned }
+  const grown = present.map((path) => pathWithSpread(r, path, spread))
   if (owned) for (const path of present) path.delete()
-  return {
-    kind: 'paths',
-    paths: presentOf(grown),
-    owned: true,
-    areas: presentOf(grown.slice(0, areas)).length
-  }
+  return { kind: 'paths', paths: grown.filter((path): path is Path => path !== null), owned: true }
 }
 
 /**
@@ -100,13 +90,8 @@ function nodeOutline(r: SkiaRenderer, node: SceneNode, spread: number): NodeOutl
     r.ck.LTRBRect(0 - spread, 0 - spread, node.width + spread, node.height + spread)
   switch (node.type) {
     case 'VECTOR': {
-      const saved = r.getFillGeometry(node)
-      if (saved) {
-        return pathsOutline(r, saved, spread, false)
-      }
-      const paths = r.getVectorPaths(node) ?? []
-      const regions = node.vectorNetwork?.regions.length ?? paths.length
-      return pathsOutline(r, paths, spread, false, regions)
+      const paths = r.getFillGeometry(node) ?? r.getVectorPaths(node) ?? []
+      return pathsOutline(r, paths, spread, false)
     }
     case 'ELLIPSE': {
       const geometry = r.getFillGeometry(node)
@@ -120,12 +105,7 @@ function nodeOutline(r: SkiaRenderer, node: SceneNode, spread: number): NodeOutl
       return pathsOutline(r, [makePolygonPath(r, node)], spread, true)
     default:
       if (nodeHasSmoothCorners(node)) {
-        return {
-          kind: 'paths',
-          paths: [makeSmoothRRectPath(r, node, spread)],
-          owned: true,
-          areas: 1
-        }
+        return { kind: 'paths', paths: [makeSmoothRRectPath(r, node, spread)], owned: true }
       }
       if (nodeHasRadius(node)) return { kind: 'rrect', rrect: makeRRectWithSpread(node, spread) }
       return { kind: 'rect', rect: rect() }
@@ -169,12 +149,10 @@ export function unitedOutlinePath(
   outline: NodeOutline,
   spread: number
 ): Path | null {
-  if (outline.kind !== 'paths' || outline.areas < 2) {
+  if (outline.kind !== 'paths' || outline.paths.length < 2) {
     return null
   }
-  const areas = outline.paths.slice(0, outline.areas)
-  const loose = outline.paths.slice(outline.areas)
-  return unitedOutline(r, `${node.id}|outline|${spread}`, areas, loose)
+  return unitedOutline(r, `${node.id}|outline|${spread}`, outline.paths)
 }
 
 /** `outline` as one path the caller owns. */

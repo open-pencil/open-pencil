@@ -358,3 +358,156 @@ describe('a drop shadow of a vector with a ring region and an open segment', () 
     expect(hole).toEqual([0, 0, 0])
   })
 })
+
+describe('a vector with an open chain inside one of its regions', () => {
+  const squaresAndChain = (chain: number[], regionCount: number): VectorNetwork => ({
+    vertices: [
+      { x: 0, y: 0 },
+      { x: 40, y: 0 },
+      { x: 40, y: 40 },
+      { x: 0, y: 40 },
+      { x: 50, y: 0 },
+      { x: 60, y: 0 },
+      { x: 60, y: 10 },
+      { x: 50, y: 10 },
+      { x: 10, y: 10 },
+      { x: 30, y: 10 },
+      { x: 30, y: 30 },
+      { x: 10, y: 30 }
+    ],
+    segments: [
+      line(0, 1),
+      line(1, 2),
+      line(2, 3),
+      line(3, 0),
+      line(4, 5),
+      line(5, 6),
+      line(6, 7),
+      line(7, 4),
+      line(chain[0], chain[1]),
+      line(chain[1], chain[2]),
+      line(chain[2], chain[3])
+    ],
+    regions: [
+      { windingRule: 'NONZERO' as const, loops: [SQUARE_LOOP] },
+      { windingRule: 'NONZERO' as const, loops: [[4, 5, 6, 7]] }
+    ].slice(0, regionCount)
+  })
+  const ALONG = [8, 9, 10, 11]
+  const AGAINST = [11, 10, 9, 8]
+  const underTheChain = (chain: number[], regionCount: number, effect: Effect, y: number) =>
+    renderRow(
+      ck,
+      renderer,
+      regionVector(squaresAndChain(chain, regionCount), effect, 0.5),
+      y,
+      116,
+      124
+    )
+  const bothWays = (regionCount: number, effect: Effect, y: number) => [
+    underTheChain(ALONG, regionCount, effect, y),
+    underTheChain(AGAINST, regionCount, effect, y)
+  ]
+
+  const row = (value: number) => Array.from({ length: 5 }, () => value)
+
+  for (const [regionCount, label] of [
+    [1, 'one region'],
+    [2, 'two regions']
+  ] as const) {
+    test(`casts the drop shadow under the chain once either way, with ${label}`, () => {
+      expect(bothWays(regionCount, sharpShadow('DROP_SHADOW', 50), 170)).toEqual([
+        row(128),
+        row(128)
+      ])
+    })
+
+    test(`casts the inner shadow the same either way, with ${label}`, () => {
+      expect(bothWays(regionCount, sharpShadow('INNER_SHADOW', 4), 132)).toEqual([
+        row(128),
+        row(128)
+      ])
+    })
+
+    test(`knocks the drop shadow out under the chain either way, with ${label}`, () => {
+      const underTheFill = sharpShadow('DROP_SHADOW', 0.0001)
+      expect(bothWays(regionCount, underTheFill, 120)).toEqual([row(192), row(192)])
+    })
+  }
+})
+
+describe('an inner shadow at a hole the regions of a vector enclose', () => {
+  const points = (corners: [number, number][]) => corners.map(([x, y]) => ({ x, y }))
+  const loopOf = (first: number, count: number) =>
+    Array.from({ length: count }, (_, index) => first + index)
+  const loopSegments = (first: number, count: number) =>
+    loopOf(first, count).map((index) => line(index, first + ((index - first + 1) % count)))
+  const blackShadowBelow: Effect = {
+    ...sharpShadow('INNER_SHADOW', 4),
+    color: { r: 0, g: 0, b: 0, a: 1 }
+  }
+  const RED_CHANNEL = 0
+  const belowTheHole = (network: VectorNetwork) =>
+    renderRow(ck, renderer, regionVector(network, blackShadowBelow), 132, 112, 128, RED_CHANNEL)
+  const shadowed = Array.from({ length: 9 }, () => 0)
+
+  test('falls under the hole a C shape and a bar close between them', () => {
+    const cShape = points([
+      [0, 0],
+      [40, 0],
+      [40, 10],
+      [10, 10],
+      [10, 30],
+      [40, 30],
+      [40, 40],
+      [0, 40]
+    ])
+    const bar = points([
+      [30, 0],
+      [40, 0],
+      [40, 40],
+      [30, 40]
+    ])
+    expect(
+      belowTheHole({
+        vertices: [...cShape, ...bar],
+        segments: [...loopSegments(0, 8), ...loopSegments(8, 4)],
+        regions: [
+          { windingRule: 'NONZERO', loops: [loopOf(0, 8)] },
+          { windingRule: 'NONZERO', loops: [loopOf(8, 4)] }
+        ]
+      })
+    ).toEqual(shadowed)
+  })
+
+  test('falls under the hole of an even-odd ring next to another region', () => {
+    const outer = points([
+      [0, 0],
+      [40, 0],
+      [40, 40],
+      [0, 40]
+    ])
+    const hole = points([
+      [10, 10],
+      [30, 10],
+      [30, 30],
+      [10, 30]
+    ])
+    const beside = points([
+      [50, 0],
+      [60, 0],
+      [60, 10],
+      [50, 10]
+    ])
+    expect(
+      belowTheHole({
+        vertices: [...outer, ...hole, ...beside],
+        segments: [...loopSegments(0, 4), ...loopSegments(4, 4), ...loopSegments(8, 4)],
+        regions: [
+          { windingRule: 'EVENODD', loops: [loopOf(0, 4), loopOf(4, 4)] },
+          { windingRule: 'NONZERO', loops: [loopOf(8, 4)] }
+        ]
+      })
+    ).toEqual(shadowed)
+  })
+})

@@ -5,15 +5,8 @@ import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { fontManager } from '@open-pencil/core/text'
 import { vectorNetworkToPath } from '@open-pencil/core/vector'
-import type {
-  Effect,
-  SceneNode,
-  Stroke,
-  VectorNetwork,
-  VectorSegment
-} from '@open-pencil/scene-graph'
-import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
-import { expectDefined } from '@open-pencil/test-support/assert'
+import type { Effect, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 // Figma's Outline stroke (⇧⌘O), measured live: each stroked layer becomes its fill, "<name>", under
 // "<name> (Stroke)", painted with the stroke where it is drawn; both keep the layer's turn,
@@ -491,101 +484,5 @@ describe('outlineStrokeSelected', () => {
 
     editor.undo.redo()
     expect(names()).toEqual(outlined)
-  })
-})
-
-describe('outlineStrokeSelected on a vector network', () => {
-  const line = (start: number, end: number): VectorSegment => ({
-    start,
-    end,
-    tangentStart: { x: 0, y: 0 },
-    tangentEnd: { x: 0, y: 0 }
-  })
-
-  async function outlinedStroke(network: VectorNetwork, align: Stroke['align'] = 'CENTER') {
-    const editor = await createEditorWithRenderer()
-    const vector = editor.graph.createNode('VECTOR', editor.state.currentPageId, {
-      name: 'V',
-      x: 50,
-      y: 50,
-      width: 60,
-      height: 40,
-      vectorNetwork: network,
-      fills: [solid(BLUE)],
-      strokes: [stroke(align)]
-    })
-    editor.select([vector.id])
-    editor.outlineStrokeSelected()
-    const children = editor.graph.getChildren(editor.state.currentPageId)
-    const outline = children.find((node) => node.name === 'V (Stroke)')
-    const fill = children.find((node) => node.name === 'V')
-    if (!outline?.vectorNetwork || !fill) {
-      throw new Error('No outlined layers')
-    }
-    return { outline, fill }
-  }
-
-  test('keeps the stroke of an open segment off a region', async () => {
-    const { outline, fill } = await outlinedStroke({
-      vertices: [
-        { x: 0, y: 10 },
-        { x: 40, y: 10 },
-        { x: 20, y: 40 },
-        { x: 60, y: 0 }
-      ],
-      segments: [line(0, 1), line(1, 2), line(2, 0), line(1, 3)],
-      regions: [{ windingRule: 'NONZERO', loops: [[0, 1, 2]] }]
-    })
-    expect(outline.x + outline.width).toBeGreaterThan(110)
-    expect(outline.y).toBeLessThan(50)
-    expect([fill.x, fill.y, fill.width, fill.height]).toEqual([50, 50, 60, 40])
-  })
-
-  const splitSquare: VectorNetwork = {
-    vertices: [
-      { x: 0, y: 0 },
-      { x: 40, y: 0 },
-      { x: 40, y: 40 },
-      { x: 0, y: 40 }
-    ],
-    segments: [line(0, 1), line(1, 2), line(2, 3), line(3, 0), line(0, 2)],
-    regions: [
-      { windingRule: 'NONZERO', loops: [[0, 1, 4]] },
-      { windingRule: 'NONZERO', loops: [[4, 2, 3]] }
-    ]
-  }
-
-  async function strokeCovers(align: Stroke['align'], points: Vector[]) {
-    const { outline } = await outlinedStroke(splitSquare, align)
-    const ck = await getCanvasKit()
-    const [path] = vectorNetworkToPath(ck, expectDefined(outline.vectorNetwork))
-    const covered = points.map(({ x, y }) => path.contains(50 + x - outline.x, 50 + y - outline.y))
-    path.delete()
-    return covered
-  }
-
-  const fromCorner = (degrees: number, distance: number) => ({
-    x: Math.cos((degrees * Math.PI) / 180) * distance,
-    y: Math.sin((degrees * Math.PI) / 180) * distance
-  })
-
-  test('keeps the stroke of an edge two regions share', async () => {
-    expect(await strokeCovers('CENTER', [{ x: 20, y: 20 }])).toEqual([true])
-  })
-
-  test('strokes an edge two regions share at its own weight, as the canvas does', async () => {
-    const threeOffTheDiagonal = { x: 20 + 3 / Math.SQRT2, y: 20 - 3 / Math.SQRT2 }
-    const oneOffTheDiagonal = { x: 20 + 1 / Math.SQRT2, y: 20 - 1 / Math.SQRT2 }
-    expect(await strokeCovers('INSIDE', [threeOffTheDiagonal, oneOffTheDiagonal])).toEqual([
-      false,
-      true
-    ])
-  })
-
-  test('joins the outline at a corner where regions meet, without their miters', async () => {
-    expect(await strokeCovers('CENTER', [fromCorner(202.5, 3), fromCorner(247.5, 3)])).toEqual([
-      false,
-      false
-    ])
   })
 })

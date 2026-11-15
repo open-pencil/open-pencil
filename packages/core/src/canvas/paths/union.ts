@@ -42,36 +42,20 @@ function unitedInPairs(r: SkiaRenderer, paths: readonly Path[]): Path | null {
   return level.at(0) ?? null
 }
 
-function nonzeroWithLoose(r: SkiaRenderer, united: Path, loose: readonly Path[]): Path {
-  const winding = united.makeAsWinding() ?? united.copy()
-  united.delete()
-  if (loose.length === 0) {
-    return winding
-  }
-  const path = new r.ck.PathBuilder()
-  path.addPath(winding)
-  winding.delete()
-  for (const source of loose) {
-    path.addPath(source)
-  }
-  return path.detachAndDelete()
-}
-
-export function unitedOutline(
-  r: SkiaRenderer,
-  key: string,
-  areas: readonly Path[],
-  loose: readonly Path[] = []
-): Path | null {
+export function unitedOutline(r: SkiaRenderer, key: string, paths: readonly Path[]): Path | null {
   const cached = r.nodePaths.strokeOutline.get(key)
   if (cached) {
     return cached[0]
   }
-  const united = areas.length > 0 ? unitedInPairs(r, areas) : null
+  const united = paths.length > 0 ? unitedInPairs(r, paths) : null
   if (!united) {
     return null
   }
-  const outline = nonzeroWithLoose(r, united, loose)
+  const winding = united.makeAsWinding()
+  const outline = winding ?? united
+  if (winding) {
+    united.delete()
+  }
   r.nodePaths.store(r.nodePaths.strokeOutline, key, [outline])
   return outline
 }
