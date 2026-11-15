@@ -8,9 +8,6 @@ import type { SkiaRenderer } from '#core/canvas/renderer/skia'
  */
 export const NOISE_TILE_CELLS = 1024
 
-/** Tiles kept at once; a document rarely uses more densities and seeds on one screen. */
-const KEPT_TILES = 8
-
 /** What a level byte holds: 15 per level, so the 17 levels stay exact through 8 bits. */
 export const LEVEL_STEP = 15
 
@@ -33,14 +30,8 @@ function level(u: number, shares: readonly number[]): number {
 }
 
 function cached(r: SkiaRenderer, key: string, build: () => Uint8Array): Image | null {
-  const tiles = r.shaders.tiles
-  const kept = tiles.get(key)
-  if (kept) {
-    // Most recently used last, so the oldest is the one to let go.
-    tiles.delete(key)
-    tiles.set(key, kept)
-    return kept
-  }
+  const kept = r.shaders.tiles.get(key)
+  if (kept) return kept
   const image = r.ck.MakeImage(
     {
       width: NOISE_TILE_CELLS,
@@ -53,13 +44,9 @@ function cached(r: SkiaRenderer, key: string, build: () => Uint8Array): Image | 
     NOISE_TILE_CELLS * 4
   )
   if (!image) return null
-  tiles.set(key, image)
-  for (const [oldest, tile] of tiles) {
-    if (tiles.size <= KEPT_TILES) break
-    tile.delete()
-    tiles.delete(oldest)
-  }
-  return image
+  if (r.shaders.tiles.set(key, image)) return image
+  image.delete()
+  return null
 }
 
 /**

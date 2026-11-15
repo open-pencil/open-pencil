@@ -37,7 +37,8 @@ export function renderNoiseEffects(
   for (const effect of noises) {
     const { shares, seed, blend } = noiseTileInputs(effect)
     const levelTile = noiseLevelTile(r, shares, seed)
-    const colorTile = noiseColorTile(r, seed)
+    // Only a multitone reads cell colours; the others bind the levels in their place.
+    const colorTile = effect.noise?.noiseType === 'MULTITONE' ? noiseColorTile(r, seed) : levelTile
     if (!levelTile || !colorTile) continue
     const levels = tileShader(r, levelTile, blend)
     const colors = tileShader(r, colorTile, false)
