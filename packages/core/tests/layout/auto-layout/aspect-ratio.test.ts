@@ -136,6 +136,30 @@ describe('locked aspect ratio in auto layout', () => {
       ])
     }
   })
+
+  // Live Figma, 2026-11-16: between two 150×80 layers in a 200×600 wrapping row aligned to the top.
+  test('a locked ratio sizing a fill across a wrapped row centers it in its own line', () => {
+    for (const maxHeight of [null, 300]) {
+      const graph = new SceneGraph()
+      const wrapped = row(graph, { layoutWrap: 'WRAP', width: 200, height: 600 })
+      graph.createNode('FRAME', wrapped.id, { width: 150, height: 80 })
+      const child = locked(graph, wrapped.id, {
+        layoutGrow: 1,
+        layoutAlignSelf: 'STRETCH',
+        maxHeight
+      })
+      graph.createNode('FRAME', wrapped.id, { width: 150, height: 80 })
+      computeAllLayouts(graph)
+      const node = graph.getNode(child.id)
+      expect([maxHeight, node?.x, node?.y, ...size(graph, child.id)]).toEqual([
+        maxHeight,
+        150,
+        27.5,
+        50,
+        25
+      ])
+    }
+  })
 })
 
 // Live Figma, 2026-10-10: a locked 100×50 layer at 50,50 that ignores auto layout, in a Hug row

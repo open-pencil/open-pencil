@@ -157,6 +157,8 @@ export function ratioRoomShift(
   if (layoutNode.style.aspectRatio === undefined || layoutNode.style.alignSelf !== 'center')
     return 0
   if (parent.layoutMode !== 'HORIZONTAL' && parent.layoutMode !== 'VERTICAL') return 0
+  // Wrapped, the box is centered in its own line, as Figma does once the children take two lines.
+  if (parent.layoutWrap === 'WRAP') return 0
   if (!stretchesAcross(child, parent)) return 0
   const across = parent.layoutMode === 'VERTICAL' ? 'width' : 'height'
   if (layoutNode.style[across] !== 'auto') return 0
