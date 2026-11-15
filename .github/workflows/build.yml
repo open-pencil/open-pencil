@@ -154,6 +154,11 @@ jobs:
           ref: ${{ github.workflow_sha }}
           path: .pipeline
           persist-credentials: false
+      # The release image runs as root over a checkout the runner's user owns, which git refuses as
+      # dubious ownership; checkout trusts it only for its own git calls.
+      - name: Trust the checkout inside the release image
+        if: matrix.container != ''
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 26.x
@@ -174,9 +179,6 @@ jobs:
         with:
           workspaces: . -> target
           key: ${{ matrix.target }}
-      # Packages come from kernel.org's Ubuntu mirror first, a domain apart from ubuntu.com, so an
-      # outage resolving it does not stop a release; apt verifies them against Ubuntu's key either
-      # way, and the runner's own mirrors remain the fallback.
       - uses: ./.pipeline/.github/actions/setup/workspace
         with:
           cache-scope: desktop
