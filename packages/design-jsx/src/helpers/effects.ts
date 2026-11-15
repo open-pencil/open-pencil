@@ -1,6 +1,19 @@
-import type { BlendMode, Effect, GlassEffectParams } from '@open-pencil/scene-graph'
+import type {
+  BlendMode,
+  Effect,
+  GlassEffectParams,
+  NoiseEffectParams,
+  TextureEffectParams
+} from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
-import { BLACK, DEFAULT_GLASS, TRANSPARENT } from '@open-pencil/scene-graph/constants'
+import {
+  BLACK,
+  DEFAULT_GLASS,
+  DEFAULT_NOISE,
+  DEFAULT_NOISE_COLOR,
+  DEFAULT_TEXTURE,
+  TRANSPARENT
+} from '@open-pencil/scene-graph/constants'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
 export type EffectColor = string | Color
@@ -42,6 +55,37 @@ const PROGRESSIVE_END: Vector = { x: 0.5, y: 1 }
 
 /** A glass lens in Figma's terms, with `radius` frosting it. */
 export type GlassEffectOptions = Partial<GlassEffectParams> & BlurringEffectOptions
+
+/** A grain size as Figma's plugin API takes it, one number for both axes, or each axis apart. */
+export type NoiseSize = number | Vector
+
+/**
+ * A noise effect in Figma's terms: grains in `color`, a duotone's `secondaryColor` too, or a
+ * multitone's many colours at `opacity`. Left out, each value is what Figma's panel starts with.
+ */
+export interface NoiseEffectOptions extends Partial<
+  Omit<NoiseEffectParams, 'noiseSize' | 'secondaryColor'>
+> {
+  noiseSize?: NoiseSize
+  color?: EffectColor
+  secondaryColor?: EffectColor
+  visible?: boolean
+}
+
+/** A texture effect in Figma's terms, `radius` being how far its grain moves the edges. */
+export interface TextureEffectOptions extends Partial<Omit<TextureEffectParams, 'noiseSize'>> {
+  noiseSize?: NoiseSize
+  radius?: number
+  visible?: boolean
+}
+
+/** Radius of a new texture effect, as Figma's effects panel starts one. */
+const DEFAULT_TEXTURE_RADIUS = 4
+
+function noiseSize(size: NoiseSize | undefined, fallback: Vector): Vector {
+  if (size === undefined) return { ...fallback }
+  return typeof size === 'number' ? { x: size, y: size } : { ...size }
+}
 
 /** The lens a `glass()` call gets for each value it leaves out. */
 
@@ -128,5 +172,53 @@ export function glass(options: GlassEffectOptions = {}): Effect {
       lightIntensity: options.lightIntensity ?? DEFAULT_GLASS.lightIntensity,
       dispersion: options.dispersion ?? DEFAULT_GLASS.dispersion
     }
+  }
+}
+
+/**
+ * A noise effect. A duotone's second colour starts white at the first colour's opacity and a
+ * multitone's opacity at that opacity, as Figma's panel switches them.
+ */
+export function noise(options: NoiseEffectOptions = {}): Effect {
+  const color = options.color === undefined ? { ...DEFAULT_NOISE_COLOR } : toColor(options.color)
+  const params: NoiseEffectParams = {
+    noiseType: options.noiseType ?? DEFAULT_NOISE.noiseType,
+    noiseSize: noiseSize(options.noiseSize, DEFAULT_NOISE.noiseSize),
+    density: options.density ?? DEFAULT_NOISE.density
+  }
+  if (params.noiseType === 'DUOTONE') {
+    params.secondaryColor =
+      options.secondaryColor === undefined
+        ? { r: 1, g: 1, b: 1, a: color.a }
+        : toColor(options.secondaryColor)
+  }
+  if (params.noiseType === 'MULTITONE') params.opacity = options.opacity ?? color.a
+  if (options.seed !== undefined) params.seed = options.seed
+  return {
+    type: 'NOISE',
+    color,
+    offset: { x: 0, y: 0 },
+    radius: 0,
+    spread: 0,
+    visible: options.visible ?? true,
+    noise: params
+  }
+}
+
+/** A texture effect, which roughens the layer's edges by `radius`. */
+export function texture(options: TextureEffectOptions = {}): Effect {
+  const params: TextureEffectParams = {
+    noiseSize: noiseSize(options.noiseSize, DEFAULT_TEXTURE.noiseSize),
+    clipToShape: options.clipToShape ?? DEFAULT_TEXTURE.clipToShape
+  }
+  if (options.seed !== undefined) params.seed = options.seed
+  return {
+    type: 'TEXTURE',
+    color: { ...BLACK },
+    offset: { x: 0, y: 0 },
+    radius: options.radius ?? DEFAULT_TEXTURE_RADIUS,
+    spread: 0,
+    visible: options.visible ?? true,
+    texture: params
   }
 }

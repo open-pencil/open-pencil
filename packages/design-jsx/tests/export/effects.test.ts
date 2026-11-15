@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { backgroundBlur, glass, sceneNodeToJSX } from '#design-jsx/index'
+import { backgroundBlur, glass, noise, sceneNodeToJSX, texture } from '#design-jsx/index'
 
 import type { Effect } from '@open-pencil/scene-graph'
 
@@ -145,11 +145,60 @@ describe('sceneNodeToJSX effects', () => {
     )
   })
 
-  test('effects without a helper, such as an imported noise, are left out', () => {
+  test('effects: noise and texture export as the calls that build them', () => {
     const graph = makeGraph()
-    const figImportedType: string = 'NOISE'
-    const noise: Effect = {
-      type: figImportedType as Effect['type'],
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      name: 'Grain',
+      width: 10,
+      height: 10,
+      effects: [
+        noise({ noiseType: 'DUOTONE', noiseSize: 2, density: 0.5, color: '#ff000080', seed: 3 }),
+        texture({ noiseSize: { x: 3, y: 5 }, radius: 6, clipToShape: true, visible: false })
+      ]
+    })
+    expect(sceneNodeToJSX(node.id, graph)).toBe(
+      [
+        '<Rectangle name="Grain" w={10} h={10} effects={[',
+        '  noise({',
+        '    noiseType: "DUOTONE",',
+        '    noiseSize: 2,',
+        '    density: 0.5,',
+        '    color: "#FF000080",',
+        '    secondaryColor: "#FFFFFF80",',
+        '    seed: 3',
+        '  }),',
+        '',
+        '  texture({',
+        '    noiseSize: { x: 3, y: 5 },',
+        '    radius: 6,',
+        '    clipToShape: true,',
+        '    visible: false',
+        '  })',
+        ']} />'
+      ].join('\n')
+    )
+  })
+
+  test("effects: noise and texture start as Figma's effects panel starts them", () => {
+    // Figma 126: a new noise is monotone black at 25%, size 0.5, density 1; switching it to
+    // multitone takes the colour's opacity. A new texture has size 4, radius 4, and no clip.
+    expect(noise()).toMatchObject({
+      color: { r: 0, g: 0, b: 0, a: 0.25 },
+      noise: { noiseType: 'MONOTONE', noiseSize: { x: 0.5, y: 0.5 }, density: 1 }
+    })
+    expect(noise({ noiseType: 'MULTITONE' }).noise?.opacity).toBe(0.25)
+    expect(texture()).toMatchObject({
+      radius: 4,
+      texture: { noiseSize: { x: 4, y: 4 }, clipToShape: false }
+    })
+  })
+
+  test('effects without a helper, such as a repeat, are left out', () => {
+    const graph = makeGraph()
+    // The scene graph does not model a repeat, so only a document built outside it can hold one.
+    const unmodeledType: string = 'REPEAT'
+    const repeat: Effect = {
+      type: unmodeledType as Effect['type'],
       color: { r: 0, g: 0, b: 0, a: 0.4 },
       offset: { x: 0, y: 0 },
       radius: 0,
@@ -166,7 +215,7 @@ describe('sceneNodeToJSX effects', () => {
       width: 10,
       height: 10,
       effects: [
-        noise,
+        repeat,
         {
           type: 'DROP_SHADOW',
           color: { r: 0, g: 0, b: 0, a: 0.2 },
@@ -181,7 +230,7 @@ describe('sceneNodeToJSX effects', () => {
       name: 'Plain',
       width: 10,
       height: 10,
-      effects: [noise]
+      effects: [repeat]
     })
     expect(sceneNodeToJSX(grain.id, graph)).toBe(
       '<Rectangle name="Grain" w={10} h={10} shadow="0 2 4 #00000033" />'
