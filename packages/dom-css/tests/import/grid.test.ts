@@ -57,4 +57,61 @@ describe('grid import', () => {
     expect(gridLayer.primaryAxisAlign).toBe('MIN')
     expect(itemLayers[0].layoutAlignSelf).not.toBe('CENTER')
   })
+  it('puts a lone item by justify-content in a column the grid names none of, which hugs it', () => {
+    const { itemLayers } = layers(
+      box({ ...GRID, 'justify-content': 'end', 'justify-items': 'center' }, [item()])
+    )
+
+    expect(itemLayers[0].layoutAlignSelf).toBe('MAX')
+  })
+
+  it('leaves an item narrower than its narrow column to placement, rows still aligned down', () => {
+    const { gridLayer, itemLayers } = layers(
+      box(
+        {
+          ...GRID,
+          'grid-template-columns': '200px',
+          'justify-content': 'end',
+          'justify-items': 'center',
+          'align-content': 'center'
+        },
+        [item()]
+      )
+    )
+
+    expect(gridLayer.primaryAxisAlign).toBe('CENTER')
+    expect(itemLayers[0].layoutAlignSelf).not.toBe('CENTER')
+  })
+
+  it('aligns items in a column as wide as the grid, as a browser resolves 1fr', () => {
+    const { itemLayers } = layers(
+      box({ ...GRID, 'grid-template-columns': '400px', 'justify-items': 'center' }, [item()])
+    )
+
+    expect(itemLayers[0].layoutAlignSelf).toBe('CENTER')
+  })
+
+  it('keeps a paragraph alone in a grid an item of its own, which the grid aligns', () => {
+    const paragraph: DesignElement = {
+      type: 'element',
+      tagName: 'p',
+      attrs: {},
+      children: [{ type: 'text', text: 'Hello' }],
+      computedStyle: { display: 'block' }
+    }
+    const { itemLayers } = layers(
+      box({ ...GRID, 'place-items': 'center', 'justify-items': 'center' }, [paragraph])
+    )
+
+    expect(itemLayers.map((layer) => [layer.type, layer.layoutAlignSelf])).toEqual([
+      ['TEXT', 'CENTER']
+    ])
+  })
+  it('puts a lone item as wide as its narrow column where justify-content puts the column', () => {
+    const { itemLayers } = layers(
+      box({ ...GRID, 'grid-template-columns': '100px', 'justify-content': 'center' }, [item()])
+    )
+
+    expect(itemLayers[0].layoutAlignSelf).toBe('CENTER')
+  })
 })

@@ -43,7 +43,7 @@ import {
   type FlowKind,
   type ParentFlow
 } from './flow'
-import { alignGridItems } from './grid'
+import { alignGridItems, isGrid } from './grid'
 import {
   applyCapturedLines,
   capturedBox,
@@ -55,9 +55,12 @@ import {
 import {
   applyCollapsedBorders,
   applyTableLayout,
+  collapsesBorders,
+  isTable,
   isTableColumn,
   isTableRow,
   layOutRowSpans,
+  paintSharedBordersOnce,
   wrapTableGrid
 } from './table'
 import {
@@ -318,6 +321,8 @@ function hasContent(element: DesignElement): boolean {
 interface Recorded {
   boxes: CapturedBoxes
   transforms: CSSTransforms
+  /** Cells of tables with collapsed borders, until their table draws each shared border once. */
+  collapsedCells: SceneNode[]
 }
 
 /** Remembers where the layer's element was laid out, and how many lines its text took. */
@@ -387,12 +392,34 @@ function createElementNode(
   }
   applyFlowSizing(graph, node, style, display, parentFlow)
 
-  const parts = createChildLayers(graph, node, element, style, flow, recorded)
-  if (display === 'table' || display === 'inline-table')
-    wrapTableGrid(graph, node, parts, recorded.boxes)
-  if (isTableRow(display)) layOutRowSpans(node, parts, recorded.boxes)
-  if (display === 'grid' || display === 'inline-grid') alignGridItems(graph, node, parts, style)
+  if (display === 'table-cell' && collapsesBorders(style)) recorded.collapsedCells.push(node)
+  const ownCells = recorded.collapsedCells.length
+  const parts = createChildLayers(graph, node, element, style, flow, recorded, isGrid(display))
+  layOutTablesAndGrids(graph, node, style, display, parts, recorded, ownCells)
   return node
+}
+
+/**
+ * What tables and grids add once their children are layers: a table draws each collapsed border
+ * once, its cells' from `cellsFrom` on, and boxes its captions; a row lays out cells that span
+ * rows; a grid aligns its items.
+ */
+function layOutTablesAndGrids(
+  graph: SceneGraph,
+  node: SceneNode,
+  style: DesignStyleDeclaration,
+  display: string,
+  parts: FlowBlock[],
+  recorded: Recorded,
+  cellsFrom: number
+): void {
+  if (isTable(display)) {
+    const cells = recorded.collapsedCells.splice(cellsFrom)
+    if (collapsesBorders(style)) paintSharedBordersOnce(cells, recorded.boxes)
+    wrapTableGrid(graph, node, parts, recorded.boxes)
+  }
+  if (isTableRow(display)) layOutRowSpans(node, parts, recorded.boxes)
+  if (isGrid(display)) alignGridItems(graph, node, parts, style)
 }
 
 /**
@@ -406,9 +433,11 @@ function createChildLayers(
   element: DesignElement,
   style: DesignStyleDeclaration,
   flow: FlowKind | null,
-  recorded: Recorded
+  recorded: Recorded,
+  grid = false
 ): FlowBlock[] {
-  if (flow !== 'flex' && holdsRichText(element)) {
+  // A flex container's and a grid's children are items, each a layer its container aligns.
+  if (flow !== 'flex' && !grid && holdsRichText(element)) {
     const textStyle = inheritedTextStyle(style)
     const textDisplay = flow === 'inline' ? 'inline' : 'block'
     const text = createRichTextNode(graph, node.id, element, textStyle, textDisplay, flow ?? 'none')
@@ -489,7 +518,7 @@ export function designDocumentToLayers(
 ): DesignLayers {
   const graph = new SceneGraph()
   const page = graph.getPages().find((node) => node.type === 'CANVAS') ?? graph.addPage('DesignDOM')
-  const recorded: Recorded = { boxes: new Map(), transforms: new Map() }
+  const recorded: Recorded = { boxes: new Map(), transforms: new Map(), collapsedCells: [] }
 
   page.name = options.pageName ?? 'DesignDOM'
 

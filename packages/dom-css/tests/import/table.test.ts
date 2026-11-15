@@ -3,6 +3,8 @@ import { describe, expect, it } from 'bun:test'
 import { designDocumentToLayers, designDocumentToSceneGraph } from '#dom-css/import/scene-graph'
 import type { DesignElement, DesignNode, DesignStyleDeclaration } from '#dom-css/types'
 
+import type { SceneNode } from '@open-pencil/scene-graph'
+
 function element(
   tagName: string,
   computedStyle: DesignStyleDeclaration,
@@ -212,5 +214,73 @@ describe('table import', () => {
     expect(tallLayer).toMatchObject({ layoutPositioning: 'ABSOLUTE', x: 0, y: 0, height: 46 })
     expect([firstRow.layoutMode, firstRow.paddingLeft]).toEqual(['HORIZONTAL', 102])
     expect([secondRow.layoutMode, secondRow.paddingLeft]).toEqual(['HORIZONTAL', 102])
+  })
+  it('keeps a caption its margin from the table box', () => {
+    const rect = (y: number, height: number) => ({ x: 0, y, width: 300, height })
+    const caption = {
+      ...element('caption', { display: 'table-caption', 'margin-bottom': '10px' }, [
+        { type: 'text', text: 'Title' }
+      ]),
+      layout: { box: rect(0, 20) }
+    }
+    const rows = element('tbody', { display: 'table-row-group', ...SEPARATE }, [row([cell('a')])])
+    const captioned = {
+      ...element('table', { display: 'table', ...SEPARATE }, [caption, rows]),
+      layout: { box: rect(0, 100) }
+    }
+    const { graph, boxes } = designDocumentToLayers({ type: 'document', children: [captioned] })
+    const [tableLayer] = graph.getChildren(graph.getPages()[0].id)
+    const box = graph.getChildren(tableLayer.id)[1]
+
+    expect(tableLayer.itemSpacing).toBe(10)
+    expect(boxes.get(box.id)?.box).toEqual(rect(30, 70))
+  })
+  it('paints a border two collapsed cells share once, by the wider of the two', () => {
+    const collapsed = { 'border-collapse': 'collapse', 'border-spacing': '0px' }
+    const border = (width: string) => ({
+      ...collapsed,
+      'border-style': 'solid',
+      'border-width': width,
+      'border-color': 'rgba(0, 0, 0, 0.5)'
+    })
+    const at = (x: number, y: number) => ({ layout: { box: { x, y, width: 50, height: 20 } } })
+    const cells = [
+      [
+        { ...cell('a', border('2px')), ...at(0, 0) },
+        { ...cell('b', border('4px')), ...at(50, 0) }
+      ],
+      [
+        { ...cell('c', border('2px')), ...at(0, 20) },
+        { ...cell('d', border('2px')), ...at(50, 20) }
+      ]
+    ]
+    const { graph } = designDocumentToLayers({
+      type: 'document',
+      children: [
+        table(
+          cells.map((cellsInRow) => row(cellsInRow, collapsed)),
+          collapsed
+        )
+      ]
+    })
+    const [tableLayer] = graph.getChildren(graph.getPages()[0].id)
+    const [groupLayer] = graph.getChildren(tableLayer.id)
+    const [[a, b], [c, d]] = graph
+      .getChildren(groupLayer.id)
+      .map((rowLayer) => graph.getChildren(rowLayer.id))
+    const sides = (layer: SceneNode) => [
+      layer.borderTopWeight,
+      layer.borderRightWeight,
+      layer.borderBottomWeight,
+      layer.borderLeftWeight
+    ]
+
+    // b's wider left border wins over a's right; on a tie the cell to the left or above keeps it.
+    expect(sides(a)).toEqual([2, 0, 2, 2])
+    expect(sides(b)).toEqual([4, 4, 4, 4])
+    expect(sides(c)).toEqual([0, 2, 2, 2])
+    expect(sides(d)).toEqual([0, 2, 2, 0])
+    // Each cell still holds half of every border it shares.
+    expect(a.paddingRight).toBe(1)
   })
 })

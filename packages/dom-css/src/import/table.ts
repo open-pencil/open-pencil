@@ -1,4 +1,4 @@
-import { partition, pick } from 'es-toolkit'
+import { groupBy, partition, pick } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
@@ -21,6 +21,11 @@ const ROW_GROUPS = new Set(['table-row-group', 'table-header-group', 'table-foot
  */
 export function isTableColumn(display: string): boolean {
   return display === 'table-column' || display === 'table-column-group'
+}
+
+/** Whether the display makes a table, block-level or inline-level. */
+export function isTable(display: string): boolean {
+  return display === 'table' || display === 'inline-table'
 }
 
 /** Whether the display lays its children out as a table row lays out its cells, side by side. */
@@ -199,17 +204,34 @@ export function wrapTableGrid(
     ...below.map(({ layer }) => layer.id)
   ]
   order.forEach((id, index) => graph.insertChildAt(id, table.id, index))
-  // The table box lies between the captions, where placement puts it if auto layout cannot.
+  // A lone caption keeps its margin from the table box, as the gap between them.
+  if (captions.length === 1) {
+    const [{ style }] = captions
+    table.itemSpacing = margin(style, below.length === 1 ? 'top' : 'bottom')
+  }
+  // The table box lies between the captions and their margins, where placement puts it if auto
+  // layout cannot.
   const wrapper = boxes.get(table.id)?.box
   if (!wrapper) return
-  const edge = (side: FlowBlock[], at: (box: Rect) => number) =>
-    side.flatMap(({ layer }) => {
+  const edge = (side: FlowBlock[], at: (box: Rect, style: DesignStyleDeclaration) => number) =>
+    side.flatMap(({ layer, style }) => {
       const box = boxes.get(layer.id)?.box
-      return box ? [at(box)] : []
+      return box ? [at(box, style)] : []
     })
-  const top = maxOf([wrapper.y, ...edge(above, (box) => box.y + box.height)])
-  const bottom = minOf([wrapper.y + wrapper.height, ...edge(below, (box) => box.y)])
+  const top = maxOf([
+    wrapper.y,
+    ...edge(above, (box, style) => box.y + box.height + margin(style, 'bottom'))
+  ])
+  const bottom = minOf([
+    wrapper.y + wrapper.height,
+    ...edge(below, (box, style) => box.y - margin(style, 'top'))
+  ])
   boxes.set(grid.id, { box: { x: wrapper.x, y: top, width: wrapper.width, height: bottom - top } })
+}
+
+/** A box's margin on one side, in pixels; none for `auto` or a percentage. */
+function margin(style: DesignStyleDeclaration, side: 'top' | 'bottom'): number {
+  return Math.max(0, parseCSSNumber(pickStyle(style, `margin-${side}`)) ?? 0)
 }
 
 /** How many rows a cell spans, by its `rowspan` attribute (HTML §4.9.11), at least one. */
@@ -251,4 +273,52 @@ export function layOutRowSpans(row: SceneNode, cells: FlowBlock[], boxes: Captur
     0,
     rowBox.x + rowBox.width - maxOf(flow.map((box) => box.x + box.width))
   )
+}
+
+type Side = 'borderTopWeight' | 'borderRightWeight' | 'borderBottomWeight' | 'borderLeftWeight'
+
+/** How close two laid-out edges are to count as one, in CSS pixels. */
+const SHARED_EDGE = 0.5
+
+/** Whether two spans along an edge overlap by more than a point. */
+function overlaps(start: number, end: number, otherStart: number, otherEnd: number): boolean {
+  return Math.min(end, otherEnd) - Math.max(start, otherStart) > SHARED_EDGE
+}
+
+/**
+ * Draws each border two cells of a collapsed table share once, as CSS paints the one border that
+ * wins the conflict between them (CSS 2.1 §17.6.2.1): the wider, or on a tie the one to the left
+ * or above. The other cell's side draws nothing, so a translucent border is not painted twice;
+ * its content keeps the half of the border it holds.
+ */
+export function paintSharedBordersOnce(cells: readonly SceneNode[], boxes: CapturedBoxes): void {
+  const placed = cells.flatMap((cell) => {
+    const box = boxes.get(cell.id)?.box
+    return box ? [{ cell, box }] : []
+  })
+  const byEdge = (edge: (box: Rect) => number) =>
+    groupBy(placed, ({ box }) => String(Math.round(edge(box))))
+  const byLeft = byEdge((box) => box.x)
+  const byTop = byEdge((box) => box.y)
+  // A bordered cell has a weight on each side, which the importer sets from its border.
+  const drop = (cell: SceneNode, side: Side) => {
+    cell[side] = 0
+    cell.independentStrokeWeights = true
+  }
+  for (const { cell, box } of placed) {
+    const right = box.x + box.width
+    const bottom = box.y + box.height
+    for (const next of byLeft[String(Math.round(right))] ?? []) {
+      if (Math.abs(next.box.x - right) > SHARED_EDGE) continue
+      if (!overlaps(box.y, bottom, next.box.y, next.box.y + next.box.height)) continue
+      if (next.cell.borderLeftWeight > cell.borderRightWeight) drop(cell, 'borderRightWeight')
+      else drop(next.cell, 'borderLeftWeight')
+    }
+    for (const next of byTop[String(Math.round(bottom))] ?? []) {
+      if (Math.abs(next.box.y - bottom) > SHARED_EDGE) continue
+      if (!overlaps(box.x, right, next.box.x, next.box.x + next.box.width)) continue
+      if (next.cell.borderTopWeight > cell.borderBottomWeight) drop(cell, 'borderBottomWeight')
+      else drop(next.cell, 'borderTopWeight')
+    }
+  }
 }
