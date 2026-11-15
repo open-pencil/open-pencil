@@ -1,0 +1,1 @@
+- Shift-dragging an already selected layer, including a nested frame, moves it, and Alt+Shift-dragging duplicates it, instead of dropping the selection (#2113).
