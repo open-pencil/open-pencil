@@ -46,6 +46,27 @@ export function useProfileModelSelection(
   })
   const isHarness = computed(() => draft.providerID === 'harness:pi')
   const supportsThinking = computed(() => supportsThinkingLevel(draft.providerID))
+  /**
+   * The agent's efforts for the draft's model, with the agent's own pick first; empty when the
+   * model offers none or they are not read yet. A saved effort the model no longer lists stays.
+   */
+  const agentEffortOptions = computed(() => {
+    const values = agent.efforts.value?.values ?? []
+    if (!isACP.value || values.length === 0) return []
+    const saved = draft.agentEffort && !values.some((value) => value.id === draft.agentEffort)
+    return [
+      { value: AGENT_DEFAULT_VALUE, label: ai.value.agentDefaultModel },
+      ...(saved ? [{ value: draft.agentEffort, label: draft.agentEffort }] : []),
+      ...values.map((value) => ({ value: value.id, label: value.name }))
+    ]
+  })
+  /** The draft's effort as the select shows it, which holds no empty value for the agent's own. */
+  const agentEffortValue = computed({
+    get: () => draft.agentEffort || AGENT_DEFAULT_VALUE,
+    set: (value: string) => {
+      draft.agentEffort = value === AGENT_DEFAULT_VALUE ? '' : value
+    }
+  })
   const providerDisplayName = computed(() => {
     if (!isACP.value) return providerDef.value.name
     return acpAgentFor(draft.providerID)?.name ?? draft.providerID
@@ -177,6 +198,7 @@ export function useProfileModelSelection(
     customModelSelected.value = providerID === 'harness:pi'
     draft.customBaseURL = ''
     draft.customAPIType = 'completions'
+    draft.agentEffort = ''
     if (providerID !== OPENPENCIL_AI_PROVIDER) draft.cloudWorkspaceId = undefined
     if (isACP.value || isHarness.value) {
       draft.capabilities = ['tools']
@@ -193,11 +215,14 @@ export function useProfileModelSelection(
     if (modelID === CUSTOM_MODEL_VALUE) {
       customModelSelected.value = true
       draft.customModelID = ''
+      draft.agentEffort = ''
       catalogModel.value = null
 
       return
     }
     draft.modelID = modelID === AGENT_DEFAULT_VALUE ? '' : modelID
+    // Each model offers its own efforts, so another model starts on the agent's.
+    draft.agentEffort = ''
     catalogModel.value = availableModels.value.find((model) => model.id === modelID) ?? null
     customModelSelected.value = false
     draft.customModelID = ''
@@ -228,6 +253,8 @@ export function useProfileModelSelection(
     customModelSelected,
     supportsCustomModel,
     supportsThinking,
+    agentEffortOptions,
+    agentEffortValue,
     providerDisplayName,
     modelOptions,
     selectedModelValue,

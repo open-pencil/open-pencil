@@ -35,6 +35,8 @@ interface FakeAgentOptions {
   imageInput?: boolean
   /** What the agent offers for choosing its model; none when absent. */
   configOptions?: SessionConfigOption[]
+  /** What the session offers after an option is set, as each model offers its own efforts. */
+  afterChoice?: (params: SetSessionConfigOptionRequest) => SessionConfigOption[]
   /** Whether the agent answers `session/options`, so its options are read without a session. */
   answersOptions?: boolean
   /** The text the agent answers a prompt with, sent as one message chunk each. */
@@ -47,6 +49,7 @@ interface FakeAgentOptions {
 export function fakeOneOffAgent({
   imageInput = true,
   configOptions,
+  afterChoice,
   answersOptions = false,
   answer = [],
   stalls
@@ -102,7 +105,7 @@ export function fakeOneOffAgent({
         })
         .onRequest(methods.agent.session.setConfigOption, ({ params }) => {
           configured.push(params)
-          return { configOptions: [] }
+          return { configOptions: afterChoice?.(params) ?? [] }
         })
         .onRequest(methods.agent.session.prompt, async ({ params, client }) => {
           prompts.push(params.prompt)

@@ -17,7 +17,8 @@ import type { UIMessage, UIMessageChunk } from 'ai'
 import { ACP_AGENTS, type ACPAgentDef } from '@open-pencil/core/constants'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { OWN_TOOLS_ALLOWED } from '@/app/ai/agents/acp/tools'
+import type { AgentEfforts } from '@/app/ai/agents/acp/options'
+import { AGENT_SESSION_META } from '@/app/ai/agents/acp/tools'
 import { SUBAGENT_PART, subagentTranscript } from '@/app/ai/chat/subagents'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 import { ACPChatTransport, type ACPStartup } from '@/app/ai/transports/acp'
@@ -76,6 +77,7 @@ function fakeAgents({
   configOptions
 }: FakeAgentOptions = {}) {
   const lookup = createDeferred<undefined>()
+  let offered = configOptions
   const prompts: string[] = []
   /** Model changes and prompts in the order the agent got them. */
   const calls: string[] = []
@@ -120,8 +122,14 @@ function fakeAgents({
         return {}
       })
       .onRequest(methods.agent.session.setConfigOption, ({ params }) => {
-        calls.push(`model ${String(params.value)}`)
-        return { configOptions: [] }
+        calls.push(`${params.configId} ${String(params.value)}`)
+        // The session now runs on the value, and says so with the rest of its options.
+        offered = offered?.map((option) =>
+          option.id === params.configId && option.type === 'select'
+            ? { ...option, currentValue: String(params.value) }
+            : option
+        )
+        return { configOptions: offered ?? [] }
       })
       .onRequest(methods.agent.session.prompt, async ({ params, client }) => {
         const [part] = params.prompt
@@ -181,7 +189,7 @@ function fakeAgents({
       return {
         chat: 'chat',
         mcpServers: [],
-        meta: OWN_TOOLS_ALLOWED,
+        meta: AGENT_SESSION_META,
         noteUpdate: () => undefined,
         outcome: async () => ({ connected: true }),
         stop: () => undefined
@@ -238,9 +246,11 @@ function transport(
     agentDef?: ACPAgentDef
     cwd?: string
     model?: string
+    effort?: () => string
   } = {}
 ) {
   const sessions: (string | null)[] = []
+  const efforts: (AgentEfforts | null)[] = []
   const agentErrors: unknown[] = []
   const created = new ACPChatTransport({
     agentDef: options.agentDef ?? resuming,
@@ -248,11 +258,13 @@ function transport(
     startup: agents.startup,
     resume: options.resume,
     model: options.model,
+    effort: options.effort,
+    onEfforts: (reported) => efforts.push(reported),
     startTimeoutMs: options.startTimeoutMs ?? 1_000,
     onSession: (id) => sessions.push(id),
     onAgentError: (error) => agentErrors.push(error)
   })
-  return { transport: created, sessions, agentErrors }
+  return { transport: created, sessions, agentErrors, efforts }
 }
 
 test('a new session gets the instructions once and is reported once the agent answers', async () => {
@@ -543,5 +555,45 @@ test('the agent is put on the profile’s model before it gets the first prompt'
   const { transport: chat } = transport(agents, { model: 'opus' })
   await send(chat, 'first')
   expect(agents.calls).toEqual(['model opus', 'prompt'])
+  await chat.destroy()
+})
+
+/** An effort option as Codex offers it, under its own ID. */
+const EFFORT_OPTION: SessionConfigOption = {
+  id: 'reasoning_effort',
+  name: 'Effort',
+  type: 'select',
+  category: 'thought_level',
+  currentValue: 'medium',
+  options: ['medium', 'ultra'].map((value) => ({ value, name: value.toUpperCase() }))
+}
+
+test('a session opens on the chat’s effort, and a later choice applies before the next prompt', async () => {
+  const agents = fakeAgents({ configOptions: [EFFORT_OPTION] })
+  let effort = 'ultra'
+  const { transport: chat, efforts } = transport(agents, { effort: () => effort })
+  await send(chat, 'first')
+  effort = 'medium'
+  await send(chat, 'second', [message('user', 'first'), message('assistant', 'done')])
+  await send(chat, 'third', [message('user', 'second'), message('assistant', 'done')])
+  expect(agents.calls).toEqual([
+    'reasoning_effort ultra',
+    'prompt',
+    'reasoning_effort medium',
+    'prompt',
+    'prompt'
+  ])
+  expect(efforts.map((reported) => reported?.current)).toEqual(['ultra', 'medium'])
+  expect(efforts[0]?.values.map((value) => value.name)).toEqual(['MEDIUM', 'ULTRA'])
+  await chat.destroy()
+  expect(efforts.at(-1)).toBeNull()
+})
+
+test('a session keeps the agent’s effort while the chat names none', async () => {
+  const agents = fakeAgents({ configOptions: [EFFORT_OPTION] })
+  const { transport: chat, efforts } = transport(agents)
+  await send(chat, 'first')
+  expect(agents.calls).toEqual(['prompt'])
+  expect(efforts[0]?.current).toBe('medium')
   await chat.destroy()
 })

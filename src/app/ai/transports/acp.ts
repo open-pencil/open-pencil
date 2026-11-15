@@ -18,6 +18,12 @@ import {
   type AgentLaunch
 } from '@/app/ai/agents/acp/connection'
 import { createUpdateMapper } from '@/app/ai/agents/acp/events'
+import {
+  sessionChoice,
+  sessionOptionRequests,
+  type AgentEfforts,
+  type SessionChoice
+} from '@/app/ai/agents/acp/options'
 import { requestPermissionFromUser } from '@/app/ai/agents/acp/permission'
 import type { ACPProcess } from '@/app/ai/agents/acp/process'
 import {
@@ -79,6 +85,8 @@ interface ACPSession {
   dead: boolean
   /** The model the agent says it uses, once it has said; Codex names it, Claude in its usage. */
   model: string | null
+  /** The efforts the session's model offers and the one it runs on; null when it offers none. */
+  effort: SessionChoice | null
   /** Whether the agent continued a saved session, which already holds the instructions. */
   resumed: boolean
 }
@@ -206,6 +214,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
   private onAgentError: ((error: unknown) => void) | null
   private startup: ACPStartup
   private model: string
+  private effort: () => string
+  private onEfforts: ((efforts: AgentEfforts | null) => void) | null
   private startTimeoutMs: number | undefined
 
   constructor(options: {
@@ -228,6 +238,13 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     onAgentError?: (error: unknown) => void
     /** The model the chat's profile names, which each session is put on; empty keeps the agent's. */
     model?: string
+    /**
+     * The effort the next prompt runs on, by the agent's own value, read before each prompt so a
+     * change in the composer applies to the next message; empty keeps the agent's.
+     */
+    effort?: () => string
+    /** Told the efforts the session offers whenever they change, and null once it ends. */
+    onEfforts?: (efforts: AgentEfforts | null) => void
     startup?: ACPStartup
     startTimeoutMs?: number
   }) {
@@ -240,6 +257,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     this.onAgentError = options.onAgentError ?? null
     this.startup = options.startup ?? DEFAULT_STARTUP
     this.model = options.model ?? ''
+    this.effort = options.effort ?? (() => '')
+    this.onEfforts = options.onEfforts ?? null
     this.startTimeoutMs = options.startTimeoutMs
   }
 
@@ -270,6 +289,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       this.session = started
       this.starting = null
       this.sentContext = started.resumed
+    } else {
+      await this.applyEffort(this.session)
     }
 
     const carriesContext = !this.sentContext
@@ -376,6 +397,30 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     return this.session?.chat ?? null
   }
 
+  /** Records the session's efforts and tells the chat, which offers them in the composer. */
+  private noteEffort(session: ACPSession, effort: SessionChoice | null): void {
+    session.effort = effort
+    this.onEfforts?.(effort && { current: effort.current, values: effort.values })
+  }
+
+  /**
+   * Puts a running session on the effort the chat now names, as after a change in the composer.
+   * A session opens on it already; one whose model offers no effort is left as it is.
+   */
+  private async applyEffort(session: ACPSession): Promise<void> {
+    const wanted = this.effort()
+    const effort = session.effort
+    if (!wanted || !effort || effort.current === wanted) return
+    const offered = await session.connection.bounded(
+      sessionOptionRequests(session.connection.agent).setConfigOption({
+        sessionId: session.sessionId,
+        configId: effort.configId,
+        value: wanted
+      })
+    )
+    this.noteEffort(session, sessionChoice(offered, 'thought_level'))
+  }
+
   async destroy(): Promise<void> {
     this.destroying = true
     const starting = this.starting
@@ -386,6 +431,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       await this.session.child.kill()
       this.session = null
     }
+    this.onEfforts?.(null)
   }
 
   /**
@@ -412,6 +458,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           if (!this.session) return
           this.session.dead = true
           this.session = null
+          this.onEfforts?.(null)
         },
         // Kept until the agent becomes the session, so destroying can stop it while it starts.
         onProcess: (process) => {
@@ -443,6 +490,10 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           }
           if (update.sessionUpdate === 'available_commands_update') {
             setAgentCommands(agentId, update.availableCommands)
+          }
+          // The agent changed its options itself, as when its model changed what it offers.
+          if (update.sessionUpdate === 'config_option_update' && sessionRef) {
+            this.noteEffort(sessionRef, sessionChoice(update, 'thought_level'))
           }
           onUpdate?.(params)
         },
@@ -500,7 +551,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         mcpServers: tools.mcpServers,
         meta: tools.meta,
         resume: this.resume,
-        model: this.model
+        model: this.model,
+        effort: this.effort()
       }),
       (e) => {
         // The saved conversation goes back to read-only; this chat keeps failing, never starting anew.
@@ -525,6 +577,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       child,
       dead: false,
       model: opened.model,
+      effort: null,
       resumed: opened.resumed,
       get onUpdate() {
         return onUpdate
@@ -535,6 +588,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     }
 
     sessionRef = session
+    this.noteEffort(session, opened.effort)
     return session
   }
 }

@@ -21,6 +21,7 @@ const {
   capabilities,
   outputTokens,
   thinking = false,
+  agentEfforts = [],
   acp = false,
   harness = false
 } = defineProps<{
@@ -30,6 +31,8 @@ const {
   outputTokens: number
   /** The provider takes a thinking level. */
   thinking?: boolean
+  /** The efforts an ACP agent offers for the model, by its own values; empty when it offers none. */
+  agentEfforts?: { value: string; label: string }[]
   /** The model runs through an ACP coding agent, which always has tools and sets its own limits. */
   acp?: boolean
   /**
@@ -41,6 +44,7 @@ const {
 const tools = defineModel<boolean>('tools', { required: true })
 const vision = defineModel<boolean>('vision', { required: true })
 const thinkingLevel = defineModel<ThinkingLevel>('thinkingLevel', { required: true })
+const agentEffort = defineModel<string>('agentEffort', { required: true })
 const permissionMode = defineModel<HarnessPermissionMode>('permissionMode', { required: true })
 
 const { ai, common } = useI18n()
@@ -98,6 +102,20 @@ const support = (capability: AIModelCapability) =>
         v-model="thinkingLevel"
         :label="ai.thinkingLevel"
         :options="thinkingLevelOptions"
+      />
+    </ProviderSettingsField>
+    <ProviderSettingsField
+      v-if="agentEfforts.length > 0"
+      v-slot="{ control }"
+      :label="ai.thinkingLevel"
+      :hint="ai.thinkingLevelDescription"
+    >
+      <AppSelect
+        v-bind="control"
+        v-model="agentEffort"
+        :label="ai.thinkingLevel"
+        :options="agentEfforts"
+        data-test-id="profile-agent-effort"
       />
     </ProviderSettingsField>
     <ProviderSettingsField v-if="harness" v-slot="{ control }" :label="ai.harnessToolPermissions">

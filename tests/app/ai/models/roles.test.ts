@@ -150,6 +150,30 @@ describe('AI model profiles and role assignments', () => {
     expect(modelSettingsSnapshot().connections).toHaveLength(2)
   })
 
+  test('keeps an agent’s effort by its own value, and none for other providers', () => {
+    const agent = createModelProfileDraft()
+    Object.assign(agent, {
+      name: 'Codex Ultra',
+      providerID: 'acp:codex',
+      modelID: 'gpt-5.6-sol',
+      agentEffort: 'ultra'
+    })
+    const saved = saveModelProfileDraft(agent)
+    expect(saved.agentEffort).toBe('ultra')
+    expect(createModelProfileDraft(saved.id).agentEffort).toBe('ultra')
+    const reloaded = parseAIModelSettings(modelSettingsSnapshot())
+    expect(reloaded.models.find((model) => model.id === saved.id)?.agentEffort).toBe('ultra')
+
+    const api = createModelProfileDraft()
+    Object.assign(api, {
+      name: 'API',
+      providerID: 'anthropic',
+      modelID: 'claude-opus-4-6-20260301',
+      agentEffort: 'ultra'
+    })
+    expect(saveModelProfileDraft(api).agentEffort).toBeUndefined()
+  })
+
   test('stores multiple Harness provider profiles with independent model IDs', () => {
     const first = createModelProfileDraft()
     Object.assign(first, {

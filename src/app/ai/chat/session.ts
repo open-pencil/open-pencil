@@ -13,7 +13,7 @@ import { classifyAIChatError, type AIChatFailure } from '@/app/ai/chat/failure'
 import { notifyReplyEnded } from '@/app/ai/chat/notifications'
 import { hasSteeringMessage } from '@/app/ai/chat/queue'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
-import { chatThinkingLevel } from '@/app/ai/chat/thinking'
+import { agentSessionEfforts, chatAgentEffort, chatThinkingLevel } from '@/app/ai/chat/thinking'
 import { createAIModelRuntime, resolveModelConnectionAPIKey } from '@/app/ai/models'
 import { resolveLanguageModelID } from '@/app/ai/models/language-model'
 import { cloudCreditRefusal } from '@/app/ai/providers/openpencil/failure'
@@ -59,7 +59,8 @@ export async function createACPTransport(
   onUsage?: (usage: AgentTurnUsage) => void,
   agentSession?: AgentSessionLink,
   onAgentError?: (error: unknown) => void,
-  model?: string
+  model?: string,
+  effort?: () => string
 ) {
   const agentDef = acpAgentFor(providerID)
   if (!agentDef) throw new Error(`Unknown ACP agent: ${providerID}`)
@@ -76,7 +77,11 @@ export async function createACPTransport(
       agentSession &&
       ((id) => agentSession.record(id === null ? null : { agent: agentDef.id, id })),
     onAgentError,
-    model
+    model,
+    effort,
+    onEfforts: (efforts) => {
+      agentSessionEfforts.value = efforts
+    }
   })
 }
 
@@ -192,10 +197,8 @@ export function createChatSessionManager({
     await destroyAgentTransports()
     await assertAgentReady('acp')
     const runtime = await starting
-    const profileModel =
-      runtime?.kind === 'acp' && runtime.role.connection.providerID === provider
-        ? runtime.model
-        : ''
+    const profileRuns = runtime?.kind === 'acp' && runtime.role.connection.providerID === provider
+    const profileModel = profileRuns ? runtime.model : ''
     // An agent's turn counts as one step of the model it names, or of the agent itself.
     const transport = await createACPTransport(
       provider,
@@ -204,7 +207,9 @@ export function createChatSessionManager({
         recordModelStepCompleted({ provider, model: model ?? provider, ...tokens }, context),
       agentSession,
       captureAgentError,
-      profileModel
+      profileModel,
+      // The profile's effort, or the composer's; another agent's profile names none for this one.
+      profileRuns ? () => chatAgentEffort.value : undefined
     )
     acpTransportInstance = transport
     return transport

@@ -154,6 +154,14 @@ void history.initialize().catch(() => {
 })
 
 const messages = computed(() => chat.value?.messages ?? history.messages.value)
+/**
+ * The field waits while attachments are prepared or the history switches conversations. A send
+ * opens the chat through the history itself, which must not lock the field for those moments:
+ * it would flash disabled and swap its placeholder on every message.
+ */
+const inputLocked = computed(
+  () => submission.busy.value || (history.busy.value && submission.sending.value === null)
+)
 const subagentThread = useSubagentThread(messages, () => history.current.value?.id)
 const subagentHeader = useTemplateRef<{ focus: () => void }>('subagentHeader')
 const context = useChatContext(messages)
@@ -595,7 +603,7 @@ function handleStop() {
         ref="chatInput"
         :status="status"
         :dragging="draggingImages"
-        :disabled="submission.busy.value || history.busy.value"
+        :disabled="inputLocked"
         @submit="sendOrQueue"
         @stop="handleStop"
         @interrupt="handleStop"
