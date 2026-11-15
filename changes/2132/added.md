@@ -1,0 +1,1 @@
+- **Settings → Prompts** lets you write your own instructions for the Design agent, added after OpenPencil's or in their place, and your own prompts for design reviews, chat titles, and compaction summaries as Knap templates, with errors underlined, the variables each offers, a preview, and Reset to default (#2132).
