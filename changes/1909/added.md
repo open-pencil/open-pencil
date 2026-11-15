@@ -1,3 +1,0 @@
-- Hosts can let layers only move with `setHostRestrictions({ layerEdits: 'move' })`: drags keep layers in their parents, and resizing, rotating, deleting, duplicating, and every other change are refused with a `MoveOnlyLayersError` (#1909).
-- `editor.asHost(run)` runs a host's own edit past its restrictions, which narrow what the person does; a read-only document still refuses it (#1909).
-- `recordEdit({ joinStep: step })` adds a host's response to the undo step it answers, such as snapping a dropped layer into place, so one undo takes back both; `history:changed` says whether a step was recorded, joined, undone, redone, or cleared, and passes the recorded step (#1909).

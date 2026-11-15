@@ -8,9 +8,11 @@ import {
   backgroundBlur,
   dropShadow,
   foregroundBlur,
+  glass,
   innerShadow,
   layerBlur,
   type BlurEffectOptions,
+  type GlassEffectOptions,
   type ShadowEffectOptions
 } from './effects'
 import {
@@ -42,8 +44,21 @@ const SHADOW_OPTIONS = {
 
 const BLUR_OPTIONS = {
   radius: true,
-  visible: true
+  visible: true,
+  startRadius: true,
+  startOffset: true,
+  endOffset: true
 } satisfies OptionKeys<BlurEffectOptions>
+
+const GLASS_OPTIONS = {
+  refraction: true,
+  depth: true,
+  lightAngle: true,
+  lightIntensity: true,
+  dispersion: true,
+  radius: true,
+  visible: true
+} satisfies OptionKeys<GlassEffectOptions>
 
 const SOLID_OPTIONS = {
   opacity: true,
@@ -110,6 +125,7 @@ export function designJSXHelpers(warnings: string[]) {
     layerBlur: checked(warnings, 'layerBlur', layerBlur, BLUR_OPTIONS, 0),
     backgroundBlur: checked(warnings, 'backgroundBlur', backgroundBlur, BLUR_OPTIONS, 0),
     foregroundBlur: checked(warnings, 'foregroundBlur', foregroundBlur, BLUR_OPTIONS, 0),
+    glass: checked(warnings, 'glass', glass, GLASS_OPTIONS, 0),
     defineVars,
     defineMode,
     designVar,

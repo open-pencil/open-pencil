@@ -35,7 +35,6 @@ function cloneIntoGraph(
   graph.images = new Map()
   graph.variables = new Map()
   graph.variableCollections = new Map()
-  graph.activeMode = new Map(source.activeMode)
   graph.figKiwiVersion = source.figKiwiVersion
   graph.figSchemaDeflated = source.figSchemaDeflated
   graph.documentColorSpace = source.documentColorSpace

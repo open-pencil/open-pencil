@@ -105,7 +105,16 @@ describe('Cloud server', () => {
       const response = await failing.request(new Request('https://cloud.example/favicon.svg'))
       expect(response.status).toBe(500)
       expect(reported).toEqual([
-        { error: failure, context: { source: 'request', method: 'GET', route: '/*' } }
+        {
+          error: failure,
+          context: {
+            source: 'request',
+            method: 'GET',
+            route: '/*',
+            message: 'Request failed',
+            requestId: expect.any(String)
+          }
+        }
       ])
     } finally {
       logged.mockRestore()

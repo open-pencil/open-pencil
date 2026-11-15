@@ -131,6 +131,9 @@ describe('Tauri file actions', () => {
     )
     watcher.onEvent?.({ type: { modify: { kind: 'data' } } })
     expect(calls).toEqual(['reload'])
+    // macOS updates a file's last-used date when it is opened, which changes nothing on screen.
+    watcher.onEvent?.({ type: { modify: { kind: 'metadata', mode: 'extended' } } })
+    expect(calls).toEqual(['reload'])
 
     await clearTauriMocks()
     await mockTauriIPC((cmd, args) => {

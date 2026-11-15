@@ -30,8 +30,8 @@ are kept.
 
 Building, configuring, and running a server, the editor address, the first administrator, operator
 commands, email, storage, backups, and upgrades are covered in the
-[self-hosting guide](https://openpencil.dev/reference/self-hosting-cloud)
-(`packages/docs/reference/self-hosting-cloud.md`). The example files it refers to are here:
+[self-hosting guide](https://openpencil.dev/cloud/self-hosting/)
+(`packages/docs/cloud/self-hosting/`). The example files it refers to are here:
 [`openpencil-cloud.example.toml`](./openpencil-cloud.example.toml) and [`.env.example`](./.env.example).
 [`Dockerfile`](./Dockerfile) builds the published image, `ghcr.io/open-pencil/cloud`, from the
 repository root once the HTML engine's WebAssembly module is built there (`bun run --filter
@@ -46,7 +46,8 @@ bun --filter @open-pencil/cloud test:e2e:garage  # Garage S3 compatibility
 bun --filter @open-pencil/cloud test:e2e:cloudflare  # the Worker under wrangler dev
 ```
 
-The Cloudflare run needs `dist-cloud/` (`bun run build:cloud`), which the Worker serves.
+The Cloudflare run needs `dist-cloud/` (`bun run build:cloud`), which the Worker serves, and the
+package build (`bun run build:packages`), which it runs.
 
 Each runner starts an isolated Compose project and removes it with its volumes afterwards. The main
 suite checks object-store readiness, a presigned single PUT and a 33 MiB three-part multipart upload

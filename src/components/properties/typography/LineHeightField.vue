@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { SelectTrigger } from 'reka-ui'
 import { computed } from 'vue'
 
 import type { SceneNode, TextLength } from '@open-pencil/scene-graph'
@@ -12,6 +11,7 @@ import VariableNumberField from '@/components/properties/VariableNumberField.vue
 import AppSelectContent from '@/components/ui/select/AppSelectContent.vue'
 import AppSelectItem from '@/components/ui/select/AppSelectItem.vue'
 import AppSelectRoot from '@/components/ui/select/AppSelectRoot.vue'
+import SelectFieldTrigger from '@/components/ui/select/SelectFieldTrigger.vue'
 
 import { TEXT_LENGTH_UNITS, useTextLength } from './useTextLength'
 
@@ -76,19 +76,13 @@ function setMode(mode: string) {
     <template v-if="automatic" #display
       ><span class="min-w-0 flex-1 truncate text-surface">{{ panels.auto }}</span></template
     >
-    <template #after-variable>
+    <template #menu>
       <AppSelectRoot
         v-model:open="popupOpen"
         :model-value="automatic ? 'AUTO' : 'FIXED'"
         @update:model-value="setMode"
       >
-        <SelectTrigger
-          :aria-label="panels.lineHeightMode"
-          class="flex shrink-0 items-center self-stretch px-1 text-muted"
-          @pointerdown.stop
-          @keydown.stop
-          ><icon-lucide-chevron-down class="size-3"
-        /></SelectTrigger>
+        <SelectFieldTrigger :label="panels.lineHeightMode" />
         <AppSelectContent v-if="portalActive" align="end">
           <AppSelectItem value="AUTO">{{ panels.auto }}</AppSelectItem>
           <AppSelectItem value="FIXED">{{ panels.sizingFixed }}</AppSelectItem>

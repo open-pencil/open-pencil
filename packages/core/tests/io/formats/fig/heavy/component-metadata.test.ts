@@ -2,8 +2,8 @@ import { expect, setDefaultTimeout, test } from 'bun:test'
 
 import { parseFigBuffer, materializeDocument } from '@open-pencil/fig'
 import { expectDefined } from '@open-pencil/test-support/assert'
-import { readFixtureArrayBuffer } from '@open-pencil/test-support/paths'
 import { heavy } from '@open-pencil/test-support/heavy'
+import { readFixtureArrayBuffer } from '@open-pencil/test-support/paths'
 function importFixture(name: string) {
   const { nodeChanges, blobs, images } = parseFigBuffer(readFixtureArrayBuffer(name))
   // Library default is strict; skip the stale override records Figma keeps, as the app does.

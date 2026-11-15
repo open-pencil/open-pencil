@@ -63,12 +63,6 @@ export function createVariableCollectionActions(editor: Editor, activeCollection
     return editor.duplicateMode(colId, modeId)
   }
 
-  function setActiveMode(modeId: string) {
-    const colId = activeCollectionId.value
-    if (!colId) return
-    editor.setActiveMode(colId, modeId)
-  }
-
   return {
     setActiveCollection,
     addCollection,
@@ -78,8 +72,7 @@ export function createVariableCollectionActions(editor: Editor, activeCollection
     removeMode,
     renameMode,
     setDefaultMode,
-    duplicateMode,
-    setActiveMode
+    duplicateMode
   }
 }
 

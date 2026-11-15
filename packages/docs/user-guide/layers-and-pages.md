@@ -76,7 +76,7 @@ Displays the selected node as code with syntax highlighting, line numbers, and a
 
 ### AI Tab
 
-An [AI chat interface](../programmable/ai-chat) (also toggled with <kbd>⌘</kbd><kbd>J</kbd>) that can create and modify design elements via natural language. Configure reusable models and provider connections in Settings, and browse locally saved conversations.
+An [AI chat interface](./ai-chat) (also toggled with <kbd>⌘</kbd><kbd>J</kbd>) that can create and modify design elements via natural language. Configure reusable models and provider connections in Settings, and browse locally saved conversations.
 
 ## Keyboard Shortcuts
 

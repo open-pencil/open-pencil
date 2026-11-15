@@ -134,6 +134,8 @@ Figma retains such records after deletions, so the application reader opts into 
 ## Implementation and tests
 
 - [Interpreter](../src/instance-overrides/interpret.ts)
+- [Root resolution](../src/instance-overrides/occurrence/root.ts)
+- [Occurrence construction](../src/instance-overrides/occurrence/create.ts)
 - [Static source routing](../src/instance-overrides/source-index.ts)
 - [Occurrence path resolution](../src/instance-overrides/occurrence/path.ts)
 - [Binding evaluation](../src/instance-overrides/interpret-bindings.ts)

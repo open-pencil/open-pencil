@@ -129,7 +129,7 @@ export function createCloudStorageAdapter(
         await cloud.createDocument(workspaceId(), { id, name, kind })
       }
       // The workspace keeps images once; the stored file names them and uploads only those it lacks.
-      const { lean, images } = splitCloudDocument(bytes)
+      const { lean, images } = await splitCloudDocument(bytes)
       const named = await Promise.all(
         images.map(async (image) => ({ ...image, checksum: await cloudChecksum(image.bytes) }))
       )

@@ -1,6 +1,8 @@
 {
   "interfaceScale": "インターフェースのサイズ",
   "interfaceScaleDescription": "キャンバスのズームを変更せずに、パネル、テキスト、コントロールのサイズを調整します。",
+  "mirrorInterface": "インターフェースを反転",
+  "mirrorInterfaceDescription": "言語の読む方向に合わせて、パネル、メニュー、コントロールを右から左に配置します。キャンバス、座標、コードは左から右のままです。",
   "recentFiles": "最近使ったファイル",
   "recentFilesDescription": "最近使ったファイルの一覧とメニューに保持するファイル数を選択します。",
   "recentFilesLimit": "最近使ったファイルの数",

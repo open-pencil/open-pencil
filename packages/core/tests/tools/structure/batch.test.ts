@@ -47,7 +47,12 @@ describe('batch_update', () => {
   test.each([
     ['a missing layer', 'missing', {}, 'Node "missing" not found'],
     ['a value of the wrong type', 'self', { spacing: 'wide' }, 'at 1.props.spacing'],
-    ['a value outside its options', 'self', { counter_align: 'middle' }, 'at 1.props.counter_align'],
+    [
+      'a value outside its options',
+      'self',
+      { counter_align: 'middle' },
+      'at 1.props.counter_align'
+    ],
     ['a prop it does not take', 'self', { fill: '#f00' }, 'at 1.props.fill']
   ])('changes nothing when one operation names %s', (_, target, props, message) => {
     const { figma, editor, undo, rectangle } = setup()

@@ -1,12 +1,12 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
+import { getTool, setupToolTest, type ALL_TOOLS, type ToolResult } from '#core-tests/helpers/tools'
+
 import { DEFAULT_FONT_FAMILY } from '@open-pencil/core/constants'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { fontManager } from '@open-pencil/core/text'
 import { expectDefined } from '@open-pencil/test-support/assert'
-
 import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
-import { getTool, setupToolTest, type ALL_TOOLS, type ToolResult } from '#core-tests/helpers/tools'
 beforeAll(() => registerTestFont())
 
 /** The `list_pages` tool answers with the document's pages. */
@@ -195,6 +195,26 @@ describe('get_font_status', () => {
   })
 })
 
+describe('get_font_status family', () => {
+  test('keeps only the faces of matching families', () => {
+    const { figma, graph } = setupToolTest()
+    const missing = figma.createText()
+    graph.updateNode(missing.id, { fontFamily: 'Unavailable Sans' })
+    const other = figma.createText()
+    graph.updateNode(other.id, { fontFamily: 'Elsewhere Serif' })
+
+    const result = getTool('get_font_status').execute(figma, { family: 'serif' }) as {
+      faithful: boolean
+      faces: Array<{ family: string }>
+      issues: Array<{ family: string }>
+    }
+
+    expect(result.faces.map((face) => face.family)).toEqual(['Elsewhere Serif'])
+    expect(result.issues.map((face) => face.family)).toEqual(['Elsewhere Serif'])
+    expect(result.faithful).toBe(false)
+  })
+})
+
 describe('get_node', () => {
   test('returns node details', async () => {
     const { figma } = setupToolTest()
@@ -254,7 +274,7 @@ describe('pages not yet visited', () => {
       await getTool('query_nodes').execute(query.figma, { selector: '//COMPONENT', page: 'Later' })
     ).toMatchObject({ count: 1 })
     const components = lazyDocument()
-    expect(await getTool('get_components').execute(components.figma, {})).toMatchObject({
+    expect(await getTool('list_components').execute(components.figma, {})).toMatchObject({
       components: [{ name: 'Loaded button', page: 'Later' }]
     })
   })

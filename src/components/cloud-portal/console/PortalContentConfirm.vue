@@ -3,8 +3,8 @@ import { computed, ref, watch } from 'vue'
 
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
-import { portalForm } from '@/components/cloud-portal/ui'
 import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
+import AppFormField from '@/components/ui/input/AppFormField.vue'
 import AppTextarea from '@/components/ui/input/AppTextarea.vue'
 import { useHeldContent } from '@/components/ui/overlay/held'
 
@@ -20,7 +20,6 @@ const { pending } = defineProps<{
 }>()
 const emit = defineEmits<{ confirm: [reason?: string]; cancel: [] }>()
 
-const form = portalForm()
 const messages = useCloudPortalMessages()
 const reason = ref('')
 const shown = useHeldContent(() => pending)
@@ -39,17 +38,17 @@ watch(
 <template>
   <AppConfirmationDialog
     :open="pending !== null"
-    tone="danger"
+    :tone="confirmation?.tone ?? 'danger'"
     :heading="confirmation?.heading ?? ''"
     :description="confirmation?.description"
-    :cancel-label="messages.cancel"
     :confirm-label="confirmation?.confirm ?? ''"
     @update:open="(open) => !open && emit('cancel')"
     @confirm="emit('confirm', reason.trim() || undefined)"
   >
-    <div v-if="confirmation?.reason" :class="[form.field(), 'mt-3']">
-      <label for="portal-content-reason" :class="form.label()">{{ messages.takeDownReason }}</label>
-      <AppTextarea id="portal-content-reason" v-model="reason" :rows="2" maxlength="500" />
-    </div>
+    <AppFormField v-if="confirmation?.reason" :label="messages.takeDownReason">
+      <template #default="{ id }">
+        <AppTextarea :id="id" v-model="reason" :rows="2" maxlength="500" />
+      </template>
+    </AppFormField>
   </AppConfirmationDialog>
 </template>

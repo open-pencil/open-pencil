@@ -86,10 +86,9 @@ export function prepareVariableTransfer(
 }
 
 /**
- * Copies the variables `ids` and the collections `collectionIds` into `target`, IDs kept, with the
- * mode each collection shows. Each collection comes from the first of its `sources` that has it,
- * and its variables with it; a variable it lacks there comes from the next. A collection keeps
- * only the variables copied.
+ * Copies the variables `ids` and the collections `collectionIds` into `target`, IDs kept. Each
+ * collection comes from the first of its `sources` that has it, and its variables with it; a
+ * variable it lacks there comes from the next. A collection keeps only the variables copied.
  */
 export function copyVariableTables(
   target: SceneGraph,
@@ -110,8 +109,6 @@ export function copyVariableTables(
       ...structuredClone(collection),
       variableIds: members
     })
-    const mode = first((graph) => graph.activeMode.get(collectionId))
-    if (mode) target.activeMode.set(collectionId, mode)
     for (const id of members) {
       const variable = first((graph) => graph.variables.get(id))
       if (variable) target.variables.set(id, structuredClone(variable))

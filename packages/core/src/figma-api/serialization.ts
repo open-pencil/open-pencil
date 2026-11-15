@@ -1,4 +1,5 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { figmaTextAutoResize } from '@open-pencil/scene-graph/text'
 
 import { figmaNodeType } from './accessors/basic'
 import { pluginChildren } from './accessors/sticky'
@@ -27,7 +28,7 @@ function appendTextProps(obj: Record<string, unknown>, n: SceneNode): void {
   obj.italic = n.italic
   obj.textAlignHorizontal = n.textAlignHorizontal
   obj.textAlignVertical = n.textAlignVertical
-  obj.textAutoResize = n.textAutoResize
+  obj.textAutoResize = figmaTextAutoResize(n)
   obj.textDirection = n.textDirection
   if (n.lineHeight != null) obj.lineHeight = n.lineHeight
   if (n.letterSpacing.value !== 0) obj.letterSpacing = n.letterSpacing
@@ -68,8 +69,8 @@ export function nodeProxyToJSON(
     width: n.width,
     height: n.height
   }
-  if (n.fills.length > 0) obj.fills = figmaFills(graph, n)
-  if (n.strokes.length > 0) obj.strokes = figmaStrokes(graph, n)
+  if (n.fills.length > 0) obj.fills = figmaFills(n)
+  if (n.strokes.length > 0) obj.strokes = figmaStrokes(n)
   if (n.effects.length > 0) obj.effects = n.effects
   if (n.opacity !== 1) obj.opacity = n.opacity
   if (n.cornerRadius > 0) obj.cornerRadius = n.cornerRadius
@@ -87,6 +88,8 @@ export function nodeProxyToJSON(
   // Include variable bindings with resolved values
   const bindings = resolveBindings(graph, n)
   if (bindings) obj.boundVariables = bindings
+  // The modes the layer sets itself, by collection ID, as Figma names them; children inherit them.
+  if (Object.keys(n.variableModes).length > 0) obj.explicitVariableModes = { ...n.variableModes }
   const children = pluginChildren(graph, nodeId)
   if (children.length > 0) {
     if (maxDepth !== undefined && currentDepth >= maxDepth) {

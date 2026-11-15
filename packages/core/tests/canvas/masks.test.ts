@@ -1,14 +1,18 @@
 import { afterAll, describe, expect, test, mock } from 'bun:test'
+
+import type { Canvas, InputRect, Paint } from '@open-pencil/canvaskit'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit, renderNodesToImage } from '@open-pencil/core/io/formats/raster'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
+import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import { SceneGraph, type MaskType, type SceneNode } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
-import type { Canvas, InputRect, Paint } from 'canvaskit-wasm'
 
+import { RenderedBoundsCache } from '#core/canvas/renderer/visual-bounds'
 import { renderNode } from '#core/canvas/scene'
+
 import { asCanvas, asRenderer } from './helpers'
 
-const ck = await initCanvasKit()
+const ck = await getCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
 afterAll(() => renderer.destroy())
 
@@ -115,6 +119,7 @@ function createRenderer() {
       setAlphaf: mock(() => undefined),
       setBlendMode: mock(() => undefined)
     },
+    renderedBounds: new RenderedBoundsCache(),
     effectLayerPaint: {
       setImageFilter: mock(() => undefined),
       setColorFilter: mock(() => undefined),
@@ -157,7 +162,7 @@ describe('canvas masks', () => {
     expect(renderer.effectLayerPaint.setBlendMode).toHaveBeenCalledWith('DstIn')
     expect(renderer.effectLayerPaint.setBlendMode).toHaveBeenLastCalledWith('SrcOver')
     expect(canvas.saveLayer).toHaveBeenCalledTimes(2)
-    expect(renderer.ck.LTRBRect).toHaveBeenCalledWith(0, 0, 200, 200)
+    expect(renderer.ck.LTRBRect).toHaveBeenCalledWith(0, 0, 100, 100)
     for (const call of canvas.saveLayer.mock.calls) {
       expect(call[1]).toBeInstanceOf(Float32Array)
     }

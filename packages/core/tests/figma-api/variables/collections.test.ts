@@ -1,8 +1,10 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { createAPI } from '#core-tests/helpers/figma-api'
+
+import { expectDefined } from '@open-pencil/test-support/assert'
 import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
+
 import { graphOf } from '#core/figma-api/graph'
 beforeAll(() => registerTestFont())
 
@@ -144,7 +146,11 @@ describe('figma.variables', () => {
 
   test('scopes the plugin API cannot name stay when a script sets scopes', () => {
     const { api, size } = tokens()
-    expectDefined(graphOf(api).variables.get(size.id), 'size').scopes = ['GAP', 'TRANSFORM', 'STROKE']
+    expectDefined(graphOf(api).variables.get(size.id), 'size').scopes = [
+      'GAP',
+      'TRANSFORM',
+      'STROKE'
+    ]
     expect(size.scopes).toEqual(['GAP', 'STROKE_COLOR'])
     size.scopes = size.scopes.filter((scope) => scope !== 'GAP')
     expect(graphOf(api).variables.get(size.id)?.scopes).toEqual(['STROKE', 'TRANSFORM'])
@@ -408,7 +414,7 @@ describe('node variable bindings', () => {
       defaultModeId: 'light',
       variableIds: []
     })
-    graphOf(api).setActiveMode('col1', 'dark')
+    graphOf(api).updateNode(api.currentPage.id, { variableModes: { col1: 'dark' } })
 
     const parent = api.createFrame()
     const child = api.createRectangle()

@@ -33,6 +33,7 @@ test('reads appearance from the theme and locale stores alongside app preference
     theme: 'light',
     language: 'de',
     animations: appPreferences.value.appearance.animations,
+    mirrorInterface: appPreferences.value.appearance.mirrorInterface,
     accent: appPreferences.value.appearance.accent
   })
   expect(settings.editing).toEqual(appPreferences.value.editing)

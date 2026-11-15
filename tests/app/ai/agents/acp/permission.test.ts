@@ -1,6 +1,9 @@
 import { describe, expect, test, beforeEach, jest } from 'bun:test'
 
-import type { RequestPermissionRequest, RequestPermissionResponse } from '@agentclientprotocol/sdk'
+import type {
+  RequestPermissionRequest,
+  RequestPermissionResponse
+} from '@agentclientprotocol/sdk/unstable'
 
 import {
   permissionQueue,
@@ -191,6 +194,19 @@ describe('permission for OpenPencil’s own tools', () => {
       title: 'use_tool',
       rawInput: { tool_name: 'open-pencil__get_node', tool_input: { id: '1:2' } },
       _meta: { 'x.ai/tool': { name: 'use_tool' } }
+    })
+    expect(approval.answer(makeRequest())).toEqual({
+      outcome: { outcome: 'selected', optionId: 'allow' }
+    })
+  })
+
+  test('Antigravity CLI’s calls to OpenPencil’s server are allowed once without asking', () => {
+    const approval = createOwnToolApproval()
+    approval.noteUpdate({
+      sessionUpdate: 'tool_call',
+      toolCallId: 'tc-1',
+      title: 'Run mcp_open-pencil_get_node',
+      rawInput: { id: '1:2', toolSummary: 'Inspect the node' }
     })
     expect(approval.answer(makeRequest())).toEqual({
       outcome: { outcome: 'selected', optionId: 'allow' }

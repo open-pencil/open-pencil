@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
 import { compileScript } from '@open-pencil/core/tools'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -53,7 +53,12 @@ test('unbinding a paint keeps the color its variable last gave it', () => {
   const brand = graph.createVariable('brand', 'COLOR', collection.id, { r: 1, g: 0, b: 0, a: 1 })
   const figma = new FigmaAPI(graph)
   const rect = figma.createRectangle()
-  const black = { type: 'SOLID' as const, color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }
+  const black = {
+    type: 'SOLID' as const,
+    color: { r: 0, g: 0, b: 0, a: 1 },
+    opacity: 1,
+    visible: true
+  }
   rect.fills = [black]
   const openpencil = new OpenPencilAPI(figma)
   openpencil.bindVariable(rect, 'fills/0/color', brand)

@@ -1,1 +1,0 @@
-- OpenPencil Cloud starts its database from six migrations, one per domain, and its services server from one, with keys, checks, and indexes named one way. Databases created by pre-release versions cannot be upgraded: recreate them, along with the bucket's documents.

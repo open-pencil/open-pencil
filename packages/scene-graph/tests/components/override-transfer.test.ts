@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 
 import {
+  assignmentOverrideField,
   createInstanceOverrideState,
   remapInstanceOverrideState,
   variableModeOverrideField
@@ -69,6 +70,25 @@ test('override transfer remaps the collection a mode override is keyed by', () =
   })
   expect(result.descendants.get('child')).toEqual(
     new Map<string, unknown>([[variableModeOverrideField('pasted-sizes'), true]])
+  )
+})
+
+test('override transfer remaps the property an assignment override is keyed by', () => {
+  const state = createInstanceOverrideState()
+  state.descendants.set(
+    'badge',
+    new Map<string, unknown>([
+      [assignmentOverrideField('label'), 'Bonus'],
+      [assignmentOverrideField('gone'), 'x']
+    ])
+  )
+  const result = remapInstanceOverrideState(state, {
+    node: (id) => id,
+    variable: (id) => id,
+    property: (id) => (id === 'label' ? 'pasted-label' : undefined)
+  })
+  expect(result.descendants.get('badge')).toEqual(
+    new Map<string, unknown>([[assignmentOverrideField('pasted-label'), 'Bonus']])
   )
 })
 

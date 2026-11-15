@@ -148,7 +148,7 @@ function layerNamed(store: EditorStore, roots: readonly string[], name: string):
     const node = store.graph.getNode(id)
     if (!node) continue
     if (node.name === name) return node.id
-    pending.push(...node.childIds)
+    for (const childId of node.childIds) pending.push(childId)
   }
   return null
 }

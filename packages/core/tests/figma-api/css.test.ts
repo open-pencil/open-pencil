@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createAPI } from '#core-tests/helpers/figma-api'
-import { renderNodesToHTML } from '#core/io/formats/html'
+
 import { graphOf } from '#core/figma-api/graph'
+import { renderNodesToHTML } from '#core/io/formats/html'
 
 const RED = [{ type: 'SOLID', color: { r: 1, g: 0, b: 0 } }] as const
 const BLUE = [{ type: 'SOLID', color: { r: 0, g: 0, b: 1 } }] as const

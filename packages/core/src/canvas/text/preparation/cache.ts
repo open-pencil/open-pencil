@@ -1,5 +1,4 @@
-import type { TypefaceFontProvider } from 'canvaskit-wasm'
-
+import type { TypefaceFontProvider } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
 import type { Size } from '@open-pencil/scene-graph/primitives'

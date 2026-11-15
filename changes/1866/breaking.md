@@ -1,1 +1,0 @@
-- Code that writes into a variable or collection directly, rather than through graph methods, calls `SceneGraph.willChangeVariable` or `willChangeCollection` first, as it calls `willChangeNode` for a layer, so undo records the change. `recordEdit` and `recordEditAsync` roll back an edit that throws instead of keeping it as an undo step, and no longer take `layerId` (#1866).

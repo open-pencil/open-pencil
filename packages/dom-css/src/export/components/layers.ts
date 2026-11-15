@@ -6,6 +6,7 @@ import type { DesignDocument, DesignElement, DesignNode } from '#dom-css/types'
 import { zip } from 'es-toolkit/array'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 
 import { extractImageAssets, type ExportHTMLFile } from '../bundle'
 import { serializedElements, serializeHTML } from '../html'
@@ -109,7 +110,7 @@ export async function layerMarkup(
         ? { document: stateStylesToTailwind(named), css: '' }
         : await stateStylesToCSS(named)
     html.push(serializeHTML(sheet.document, { indent: true }))
-    layers.push(...markupLayers(graph, named, sheet.document))
+    appendAll(layers, markupLayers(graph, named, sheet.document))
     if (sheet.css) css.push(sheet.css)
   }
   const { html: page, files } = extractImageAssets(

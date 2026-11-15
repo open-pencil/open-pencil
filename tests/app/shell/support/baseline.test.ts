@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises'
 
 import * as v from 'valibot'
 
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { repoPath } from '@open-pencil/test-support/paths'
 
 import {
@@ -81,7 +82,7 @@ describe('browser baseline', () => {
   })
 
   test.each(BROWSERS)('at least one sentinel marks the %s baseline exactly', (browser) => {
-    const newest = Math.max(...SUPPORT_SENTINELS.map((sentinel) => sentinel.since[browser] ?? 0))
+    const newest = maxOf(SUPPORT_SENTINELS.map((sentinel) => sentinel.since[browser] ?? 0))
     expect(newest).toBe(BROWSER_BASELINE[browser])
   })
 

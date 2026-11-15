@@ -32,15 +32,21 @@ describe('token references in design-to-code', () => {
     expect(attrs).not.toHaveProperty('data-theme')
   })
 
-  test('writes the colour the canvas draws for a bound paint, whatever colour the paint keeps', () => {
-    // A script binding a paint keeps the colour it gave; the canvas draws the variable's value.
+  test('writes the colour a bound paint stores, as the canvas draws it', () => {
+    // A bound paint edited since its variable last gave it a colour draws its own colour, as in
+    // Figma, so only a paint showing its variable's colour writes the token.
     const graph = designSystem()
     const page = graph.getPages()[0].id
-    const stale = card(graph, page, BLUE_300)
+    const edited = card(graph, page, BLUE_300)
     const current = card(graph, page, BLUE_500)
 
-    expect(element(graph, stale.id).inlineStyle?.['background-color']).toBe('var(--color-primary)')
-    expect(element(graph, stale.id, false).inlineStyle?.['background-color']).toBe(
+    expect(element(graph, current.id).inlineStyle?.['background-color']).toBe(
+      'var(--color-primary)'
+    )
+    expect(element(graph, edited.id).inlineStyle?.['background-color']).toBe(
+      element(graph, edited.id, false).inlineStyle?.['background-color']
+    )
+    expect(element(graph, edited.id, false).inlineStyle?.['background-color']).not.toBe(
       element(graph, current.id, false).inlineStyle?.['background-color']
     )
   })
@@ -93,10 +99,11 @@ describe('token references in design-to-code', () => {
     expect(child(projected, 1).inlineStyle?.['background-color']).toBe('#94C4FC')
   })
 
-  test('starts an exported node in the modes the editor is showing', () => {
+  test('starts an exported node in the modes its page sets', () => {
     const graph = designSystem()
-    graph.setActiveMode('theme', 'dark')
-    const frame = card(graph, graph.getPages()[0].id, BLUE_300)
+    const page = graph.getPages()[0].id
+    graph.updateNode(page, { variableModes: { theme: 'dark' } })
+    const frame = card(graph, page, BLUE_300)
 
     const projected = element(graph, frame.id)
 

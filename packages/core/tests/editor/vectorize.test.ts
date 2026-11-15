@@ -2,7 +2,6 @@ import { describe, expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core'
 import { svgToVectorPaths } from '@open-pencil/core/vector'
-
 import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'
 function vectorizedInset() {
   return expectDefined(

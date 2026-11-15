@@ -45,5 +45,4 @@ test('prepares a real FIG fragment without mutating the destination', () => {
     if (inserted?.componentId) expect(target.getNode(inserted.componentId)).toBeDefined()
   }
   expect(target.variables.size).toBe(plan.variables.length)
-  expect(target.activeMode).toEqual(plan.activeModes)
 })

@@ -27,6 +27,7 @@ import { StdioClientTransport } from '@modelcontextprotocol/client/stdio'
 import { groupBy, omit, pick } from 'es-toolkit'
 import * as v from 'valibot'
 
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import {
   createIconifyProvider,
   createIconSetsProvider,
@@ -38,8 +39,7 @@ import { IORegistry, penFormat } from '@open-pencil/core/io'
 import {
   comparePNGs,
   createCanvasKitRasterCodec,
-  headlessRenderNodes,
-  initCanvasKit
+  headlessRenderNodes
 } from '@open-pencil/core/io/formats/raster'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { fontManager, prepareGraphFonts } from '@open-pencil/core/text'
@@ -199,7 +199,7 @@ await prepareGraphFonts(
   frames.map((frame) => frame.id)
 )
 
-const codec = createCanvasKitRasterCodec(await initCanvasKit())
+const codec = createCanvasKitRasterCodec(await getCanvasKit())
 for (const frame of frames) {
   const name = frame.name ?? frame.id
   const dir = join(output, frame.id)

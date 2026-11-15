@@ -12,8 +12,8 @@ import {
 
 import { graphOf } from '#core/figma-api/graph'
 
-import type { NodeProxyInternals, ProxyThis } from './accessor-utils'
-import { raw, updateNode } from './accessor-utils'
+import type { NodeProxyInternals, ProxyThis } from './accessors/utils'
+import { raw, updateNode } from './accessors/utils'
 
 /** Figma's `DevStatus`; a description is not kept, as comments hold what people say about it. */
 export type FigmaDevStatusValue = { type: FigmaDevStatus; description?: string } | null

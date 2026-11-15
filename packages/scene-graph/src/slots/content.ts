@@ -3,6 +3,7 @@ import type { SceneGraph } from '../graph'
 import { getInstanceOverride, setInstanceOverride } from '../instances/overrides'
 import { cloneChildrenWithMapping } from '../instances/sync'
 import type { SceneNode } from '../types'
+import { applyBoundPaintColorsIn } from '../variables/paints'
 import { ownsSlotContent, slotPropertyId } from './frames'
 
 /**
@@ -116,7 +117,9 @@ export function resetSlotContent(
   Reflect.deleteProperty(assignments, propertyId)
   graph.updateNode(instance.id, { componentPropertyAssignments: assignments })
   const source = componentSource(instance, frame)
-  if (source && graph.nodes.has(source)) cloneChildrenWithMapping(graph, source, frame.id)
+  if (!source || !graph.nodes.has(source)) return
+  cloneChildrenWithMapping(graph, source, frame.id)
+  for (const childId of frame.childIds) applyBoundPaintColorsIn(graph, childId)
 }
 
 /** Remove everything from the slot; the instance keeps owning it, now empty. */

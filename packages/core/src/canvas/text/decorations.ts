@@ -1,5 +1,4 @@
-import type { Canvas, CanvasKit, Paint } from 'canvaskit-wasm'
-
+import type { Canvas, CanvasKit, Paint } from '@open-pencil/canvaskit'
 import type { Fill, SceneNode } from '@open-pencil/scene-graph'
 import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'

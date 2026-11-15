@@ -1,16 +1,19 @@
 import { afterAll, describe, expect, test, mock } from 'bun:test'
-import { expectDefined } from '@open-pencil/test-support/assert'
-import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
-import { SceneGraph, type BlendMode, type Fill, type SceneNode } from '@open-pencil/scene-graph'
-import { figmaBlendModeToSkia } from '#core/canvas/blend'
 
+import { SkiaRenderer } from '@open-pencil/core/canvas'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
+import { SceneGraph, type BlendMode, type Fill, type SceneNode } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
+
+import { figmaBlendModeToSkia } from '#core/canvas/blend'
+import { RenderedBoundsCache } from '#core/canvas/renderer/visual-bounds'
 import { renderNode, renderSection } from '#core/canvas/scene'
+
 import { asCanvas, asCanvasKit, asRenderer } from './helpers'
 
 const SIZE = 40
 
-const ck = await initCanvasKit()
+const ck = await getCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(SIZE, SIZE), 'surface'))
 afterAll(() => renderer.destroy())
 
@@ -214,6 +217,7 @@ function createRenderer(overrides: Partial<SkiaRenderer> = {}) {
       setAlphaf: mock(() => undefined),
       setBlendMode: mock(() => undefined)
     },
+    renderedBounds: new RenderedBoundsCache(),
     effectLayerPaint: {
       setImageFilter: mock(() => undefined),
       setColorFilter: mock(() => undefined),

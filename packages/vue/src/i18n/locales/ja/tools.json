@@ -16,5 +16,6 @@
   "hand": "手のひらツール",
   "comment": "コメント",
   "eyedropper": "スポイト",
-  "eyedropperSample": "キャンバスから色を取得"
+  "eyedropperSample": "キャンバスから色を取得",
+  "scale": "拡大縮小"
 }

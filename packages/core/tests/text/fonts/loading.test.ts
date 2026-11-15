@@ -2,12 +2,10 @@
 
 import { describe, test, expect } from 'bun:test'
 
-import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
-
+import type { CanvasKit, TypefaceFontProvider } from '@open-pencil/canvaskit'
 import { fontManager, isVariableFont, FontManager } from '@open-pencil/core/text'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
-
 import { fetchStub } from '@open-pencil/test-support/fetch'
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id

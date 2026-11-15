@@ -16,7 +16,15 @@ export { createDocumentGraph } from './document-settings'
 export { gridNudge } from './nudge'
 export { figJamColoredLayers, figJamToolbarKind, type FigJamToolbarKind } from './figjam/toolbar'
 export { createDefaultEditorSharedState } from './state/shared'
-export { editedGradient, editedGradientLayout } from './gradient-edit'
+export { editedGradient, editedGradientLayout } from './handles/gradient'
+export {
+  blurRampHandleAt,
+  BLUR_RAMP_HANDLE,
+  editedBlurRamp,
+  editedBlurRampLayout,
+  type BlurRampHandle,
+  type BlurRampLayout
+} from './handles/blur-ramp'
 export type { SelectionSpacing } from './alignment'
 export type { MovePlace } from './undo'
 export type { AttachModifiers } from './connectors/attach'
@@ -32,7 +40,7 @@ export {
   pickEditorViewState
 } from './state/view'
 export { createDefaultEditorState, createEditor } from './create'
-export { DEFAULT_VIEWPORT_CHROME, type ViewportInsets } from './viewport'
+export { DEFAULT_VIEWPORT_CHROME, type ViewportInsets } from './viewport/actions'
 export { executeAtomicTool, type AtomicToolOptions } from './history/atomic-tool'
 export { isEmptyDocumentChange, type DocumentChange } from './history/document-change'
 export type { RecordEditOptions } from './history/edit'
@@ -56,6 +64,8 @@ export type {
 export type { ShaderRasterizer } from './shaders/types'
 export { editsHandlesOnly } from './vector/limits'
 export type { NodeEditExitOptions, NodeEditOptions, NodeEditState } from './vector/types'
+export type { PenPress, PenPressEvent, PenPressKind, PenReleaseEvent } from './shapes/pen/gesture'
+export type { DecidedMove, MoveChange, MovePolicy } from './move-policy'
 export type { ShaderPaintList } from './shaders/actions'
 export type { Editor } from './create'
 export type {
@@ -68,6 +78,7 @@ export type { ExposableComponentField } from './components/authoring/context'
 export type { VariableTokenFields } from './variables/actions'
 export { reapplyInstanceComponentProperties } from './components/properties'
 export { createGuideActions } from './guides'
+export { createPageLayouts } from './pages/layouts'
 export { createTextActions } from './text'
 export { resizedPathTextGlyphs } from './text/path-edit'
 export { opacityFromBuffer } from './nodes/actions'
@@ -102,6 +113,7 @@ export type {
   FigmaClipboardImageResolver,
   ResumedPath,
   ShapeHandleHover,
+  BlurRampEdit,
   GradientEdit,
   Tool
 } from './types'

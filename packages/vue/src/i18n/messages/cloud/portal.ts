@@ -1,6 +1,9 @@
 import { count, params } from '@nanostores/i18n'
 
 import { i18n } from '#vue/i18n/create'
+import { communityPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/community'
+import { planPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/plan'
+import { accessTokenPortalMessageDefaults } from '#vue/i18n/messages/cloud/portal/tokens'
 
 /** Copy for the pages a Cloud server shows on its own address. */
 export const cloudPortalMessageDefaults = {
@@ -80,6 +83,25 @@ export const cloudPortalMessageDefaults = {
     'An administrator declined or removed your access. Ask them if you think this is a mistake.',
   signOut: 'Sign out',
 
+  termsTitle: 'Accept the terms to continue',
+  termsDescription: params('Read and accept the {terms} of {host} to continue.'),
+  termsOfService: 'Terms of Service',
+  privacyPolicy: 'Privacy Policy',
+  reportAbuse: 'Report abuse',
+  acceptTerms: 'Accept and continue',
+  declineTerms: 'Decline and sign out',
+  termsLeaveHint: 'Don’t want to accept?',
+  /** Opens deleting the account, whose dialog downloads every document first. */
+  termsLeave: 'Leave with your documents',
+  termsChanged:
+    'The terms changed while this page was open. Reload it to read the current version.',
+  consentTerms: params('By continuing, you agree to the {terms}.'),
+  consentTermsAndPrivacy: params(
+    'By continuing, you agree to the {terms} and acknowledge the {privacy}.'
+  ),
+  consentPrivacy: params('The {privacy} explains how this server handles your data.'),
+  minimumAge: params('You must be {age} or older.'),
+
   twoStepTitle: 'Confirm it’s you',
   twoStepAuthenticator: 'Enter the 6-digit code from your authenticator app.',
   twoStepRecovery: 'Enter one of the recovery codes you saved. Each works once.',
@@ -127,6 +149,9 @@ export const cloudPortalMessageDefaults = {
   securityDescription: params('How you sign in to {host}.'),
   sessions: 'Sessions',
   sessionsDescription: 'Where your account is signed in, and when it was.',
+  ...accessTokenPortalMessageDefaults,
+  ...communityPortalMessageDefaults,
+  ...planPortalMessageDefaults,
   overview: 'Overview',
   accessRequests: 'Access requests',
   accessRequestsDescription:
@@ -174,6 +199,37 @@ export const cloudPortalMessageDefaults = {
   accountId: 'Account ID',
   accountIdDescription: 'Give this to an administrator when you ask for help with your account.',
   memberSince: params('Member since {date}'),
+  deleteAccount: 'Delete account',
+  deleteAccountDescription:
+    'Deletes your account and the workspaces only you belong to, with their files. It can’t be undone.',
+  deleteAccountOpen: 'Delete account…',
+  deleteAccountHeading: 'Delete your account?',
+  deleteAccountIntro: 'This can’t be undone. Here’s what goes:',
+  deleteAccountWorkspaces: count({
+    one: '{count} workspace only you belong to, with its files',
+    many: '{count} workspaces only you belong to, with their files'
+  }),
+  deleteAccountLeaves: 'Your membership in shared workspaces, whose files stay with the others',
+  deleteAccountSignIn: 'Your sign-in methods, sessions, and picture.',
+  deleteAccountBlockedHeading: 'Make someone else an admin first',
+  deleteAccountBlockedDescription:
+    'You’re the only admin of these workspaces, and other people still use them.',
+  deleteAccountLastAdminHeading: 'Make someone else a server admin first',
+  deleteAccountLastAdminDescription:
+    'You’re this server’s only administrator. Without one, nobody can open its admin console.',
+  deleteAccountDownload: 'Download your files first',
+  deleteAccountDownloadDescription: count({
+    one: '{count} file you’d lose, saved in one zip.',
+    many: '{count} files you’d lose, saved in one zip.'
+  }),
+  deleteAccountNothingToDownload: 'You have no files to lose.',
+  downloadAll: 'Download all',
+  downloadProgress: params('Downloading {done} of {total}…'),
+  downloadSaved: count({ one: 'Saved {count} file.', many: 'Saved {count} files.' }),
+  downloadFailed: params('Couldn’t download {names}.'),
+  deleteAccountConfirm: 'Delete account',
+  accountDeleted: 'Your account is deleted.',
+  accountArchiveName: params('Files from {host}'),
 
   activeSessions: 'Signed-in sessions',
   activeSessionsDescription: 'Sign out any session you don’t recognize; it ends at once.',
@@ -453,6 +509,7 @@ export const cloudPortalMessageDefaults = {
   filterDismissed: 'Dismissed',
   filterReported: 'Reported',
   filterTakenDown: 'Taken down',
+  filterDeletedForever: 'Deleted forever',
   filterDocuments: 'Documents',
   columnDocument: 'Document',
   columnReport: 'Report',
@@ -471,6 +528,8 @@ export const cloudPortalMessageDefaults = {
   reportedByGuest: 'From a guest',
   linkRevoked: 'Link revoked',
   takenDown: 'Taken down',
+  deletedForever: 'Deleted forever',
+  destroyedOn: params('Removed from the server on {date}'),
   openReports: count({ one: '{count} open report', many: '{count} open reports' }),
   takeDown: 'Take down',
   restoreDocument: 'Restore document',
@@ -485,6 +544,10 @@ export const cloudPortalMessageDefaults = {
   restoreDocumentHeading: params('Restore {name}?'),
   restoreDocumentDescription:
     'Its owner and the people it was shared with can open it again, and its links work again.',
+  undeleteDocument: 'Restore to workspace',
+  undeleteHeading: params('Restore {name} to its workspace?'),
+  undeleteDescription:
+    'Someone deleted it forever. It goes back into its workspace, where its members can open it again, and counts toward the owner’s storage again.',
   revokeLinkHeading: params('Revoke this link to {name}?'),
   revokeLinkDescription: 'Anyone using it loses access at once. The owner can make a new link.',
   noReports: 'No reports',
@@ -494,6 +557,7 @@ export const cloudPortalMessageDefaults = {
     'Search by name, ID, or the owner’s name or email, or try another filter.',
   activityTookDown: 'took down',
   activityRestoredDocument: 'restored',
+  activityUndeletedDocument: 'brought back',
   activityRevokedLink: 'revoked a link:',
   activityDismissedReport: 'dismissed a report:',
   activityActionedReport: 'closed a report:',
@@ -502,11 +566,17 @@ export const cloudPortalMessageDefaults = {
   errorLastMethod: 'Keep at least one way to sign in.',
   errorSessionNotFresh: 'For your security, sign in again before making this change.',
   errorLastAdmin: 'The server needs at least one administrator.',
+  errorAccountSoleAdmin:
+    'You’re still the only admin of a workspace other people use. Make someone else an admin first.',
   errorSelfAction: 'You can’t do that to your own account.',
   errorTwoStepRequired: 'Turn on two-step sign-in first.',
   errorNotAllowed: 'You don’t have permission to do that.',
   errorNetwork: 'Couldn’t reach the server. Check your connection.',
   errorAlreadyDecided: 'Someone already decided this request. Refresh to see it.',
+  errorDocumentNotRestorable:
+    'It can’t be restored anymore: the server has removed it, or is removing it now.',
+  errorWorkspaceGone:
+    'Its workspace has nobody in it anymore, so there’s nowhere to restore it to.',
   errorEmailUnchanged: 'That’s already your email.',
   errorCurrentSession: 'Sign out to end the session you’re using.',
   errorPictureInvalid: 'The server can’t use this picture. Choose another image.',

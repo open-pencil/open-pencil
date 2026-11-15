@@ -33,6 +33,19 @@ export function panelDecimalsDriver(page: () => Page) {
     /** The scene's layer ids. */
     ids: () => Promise.resolve(scene()),
 
+    /** A layer's field binding, and the exact values of the variable it reads. */
+    binding(pick: (ids: SceneIds) => string, field: string) {
+      return page().evaluate(
+        ({ id, field }) => {
+          const store = window.openPencil?.getStore?.()
+          const variableId = store?.graph.getNode(id)?.boundVariables[field]
+          const variable = variableId ? store?.getVariable(variableId) : undefined
+          return { variableId: variableId ?? null, values: variable?.valuesByMode ?? null }
+        },
+        { id: pick(scene()), field }
+      )
+    },
+
     /** The value of the variable a layer's field is bound to, or null when it is unbound. */
     boundValue(pick: (ids: SceneIds) => string, field: string) {
       return page().evaluate(

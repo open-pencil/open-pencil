@@ -16,5 +16,6 @@
   "hand": "Hand",
   "comment": "Kommentar",
   "eyedropper": "Pipette",
-  "eyedropperSample": "Farbe von der Arbeitsfläche aufnehmen"
+  "eyedropperSample": "Farbe von der Arbeitsfläche aufnehmen",
+  "scale": "Skalieren"
 }

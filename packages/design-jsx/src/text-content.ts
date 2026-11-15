@@ -7,6 +7,7 @@ import type {
   StyleRun,
   TextParagraphStyle
 } from '@open-pencil/scene-graph'
+import { minOf } from '@open-pencil/scene-graph/arrays'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 import {
   MAX_LIST_INDENTATION,
@@ -259,7 +260,7 @@ function withoutSharedIndent(source: string): string {
     .filter((line) => line.trim() !== '')
     .map((line) => line.length - line.trimStart().length)
   if (indents.length === 0) return ''
-  const shared = Math.min(...indents)
+  const shared = minOf(indents)
   return lines.map((line) => line.slice(Math.min(shared, line.length))).join('\n')
 }
 

@@ -1,0 +1,1 @@
+- Cloud writes each email in its reader's language: the account's own, which it takes from the app or, failing that, the browser, and for someone without an account the sender's. The email copy is translated into every language the app has, and Storybook previews every email in each (#2062).

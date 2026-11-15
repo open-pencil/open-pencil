@@ -98,7 +98,7 @@ export function cancelNodeEditDrag(current: DragState | null, editor: Editor) {
     current?.type === 'edit-handle' ||
     current?.type === 'bend-handle'
   ) {
-    editor.nodeEditCancelDrag()
+    editor.cancelGesture()
   }
   if (current?.type === 'edit-marquee') editor.setMarquee(null)
 }

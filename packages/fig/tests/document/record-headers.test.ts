@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 
 import { figArchiveOf } from '#fig-tests/helpers/fig-fixtures'
-import { parseFigBuffer } from '#fig/archive'
+import { parseFigBuffer } from '#fig/archive/index'
 import { materializeDocument, materializeFigArchive } from '#fig/document/materialize'
 import {
   createArchiveDocumentReader,

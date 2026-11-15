@@ -61,7 +61,8 @@ describe('native Cloud links', () => {
       const opened: string[] = []
       await browser.waitUntil(
         async () => {
-          opened.push(...(await invokeNative<string[]>('take_native_test_opened_urls')))
+          for (const url of await invokeNative<string[]>('take_native_test_opened_urls'))
+            opened.push(url)
           return opened.length > 0
         },
         { timeout: 5_000, timeoutMsg: 'The link did not open' }

@@ -62,6 +62,28 @@ describe('local-first storage persistence', () => {
     )
   })
 
+  test('stores a saved Blob with its preview, read from the ranges it needs', async () => {
+    const store = createMemoryLocalCanvasStore()
+    const fixture = readFileSync(repoPath('tests/fixtures/gold-preview.fig'))
+    const fig = new Blob([fixture])
+    const slice = vi.spyOn(fig, 'slice')
+
+    await persistStorageCanvasLocally(
+      { providerId: 'cloud', canvasId: 'canvas-blob', name: 'Saved design', figBytes: fig },
+      { store, enqueueCanvas: () => Promise.resolve() }
+    )
+
+    expect(await store.readFig('canvas-blob')).toEqual(new Uint8Array(fixture))
+    expect((await store.getMeta('canvas-blob'))?.figSize).toBe(fixture.byteLength)
+    expect((await store.readThumb('canvas-blob'))?.subarray(0, 4)).toEqual(
+      new Uint8Array([0x89, 0x50, 0x4e, 0x47])
+    )
+    expect(slice).toHaveBeenCalled()
+    expect(slice.mock.calls.every(([start = 0, end = fig.size]) => end - start < fig.size)).toBe(
+      true
+    )
+  })
+
   test('keeps the preview of a downloaded document', async () => {
     const store = createMemoryLocalCanvasStore()
     resetLocalCanvasStoreForTests(store)

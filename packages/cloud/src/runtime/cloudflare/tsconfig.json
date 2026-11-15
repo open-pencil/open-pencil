@@ -13,7 +13,8 @@
     "skipLibCheck": true,
     "types": ["@cloudflare/workers-types"],
     "paths": {
-      "#cloud/*": ["../../*"]
+      "#cloud/*": ["../../*"],
+      "@open-pencil/cloud/runtime/cloudflare": ["./index.ts"]
     }
   },
   "include": ["./**/*.ts", "../../../deploy/**/*.ts"],

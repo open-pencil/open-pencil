@@ -1,1 +1,0 @@
-- `enterNodeEditMode`'s `handles` option, which picks the points that show their handles, is now `showHandles`, and its type `NodeEditHandles` is now `ShownHandles`, so it no longer shares a word with the `pathEdits: 'handles'` restriction (#1920).

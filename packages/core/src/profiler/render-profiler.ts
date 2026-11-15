@@ -1,4 +1,4 @@
-import type { CanvasKit, Canvas, Typeface } from 'canvaskit-wasm'
+import type { CanvasKit, Canvas, Typeface } from '@open-pencil/canvaskit'
 
 import { createCaptureSession, createFrameCapture } from './capture-session'
 import type { CaptureSession } from './capture-session'

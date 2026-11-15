@@ -112,6 +112,11 @@ export function startRun(store: EditorStore, maxSteps: number, model?: string): 
 /** Each ACP chat's document, by the chat id its agent's MCP session carries. */
 const agentChats = new Map<string, EditorStore>()
 
+/** The document of the ACP chat `chat` names, where its agent's calls go unless they say. */
+export function agentChatStore(chat: string | undefined): EditorStore | undefined {
+  return chat === undefined ? undefined : agentChats.get(chat)
+}
+
 /**
  * Begin a run for an ACP chat's reply. Its agent shows through its MCP session instead of as
  * the built-in chat, and its tool calls find the run by `chat` (`agentReplyRun`).

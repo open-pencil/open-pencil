@@ -3,6 +3,7 @@ import { omitBy, pick } from 'es-toolkit/object'
 import { materializeFigFragment } from '@open-pencil/fig'
 import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
 import type { SceneGraph, SceneNode, StyleRun } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import {
   AUTO_LAYOUT_FIELDS,
   CORNER_FIELDS,
@@ -75,9 +76,9 @@ function mixedFields(source: SceneNode): Set<string> {
 function pastedFields(source: SceneNode, target: SceneNode): PastedField[] {
   const fields: PastedField[] = [...APPEARANCE_FIELDS]
   // A text layer has no corners in Figma.
-  if (source.type !== 'TEXT' && target.type !== 'TEXT') fields.push(...CORNER_FIELDS)
-  if (FRAME_TYPES.has(source.type) && FRAME_TYPES.has(target.type)) fields.push(...FRAME_FIELDS)
-  if (source.type === 'TEXT' && target.type === 'TEXT') fields.push(...TEXT_FIELDS)
+  if (source.type !== 'TEXT' && target.type !== 'TEXT') appendAll(fields, CORNER_FIELDS)
+  if (FRAME_TYPES.has(source.type) && FRAME_TYPES.has(target.type)) appendAll(fields, FRAME_FIELDS)
+  if (source.type === 'TEXT' && target.type === 'TEXT') appendAll(fields, TEXT_FIELDS)
   const mixed = source.type === 'TEXT' ? mixedFields(source) : new Set<string>()
   return fields.filter((field) => !mixed.has(field))
 }

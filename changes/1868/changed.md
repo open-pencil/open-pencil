@@ -1,1 +1,0 @@
-- A guest following an edit link on a Cloud server that lets guests view but not edit sees the file read-only with Sign in to edit, instead of being sent to sign in first. Shipped Cloud configurations turn guest editing off.

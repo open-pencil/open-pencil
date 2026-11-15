@@ -1,7 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import type { Font } from 'canvaskit-wasm'
-
+import type { Font } from '@open-pencil/canvaskit'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 

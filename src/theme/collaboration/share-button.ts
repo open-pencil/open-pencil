@@ -1,5 +1,10 @@
+import { focusStyles } from '../focus/styles'
+
 export default {
-  base: 'flex h-7 cursor-pointer items-center gap-1.5 rounded border-none px-3 text-2xs font-medium transition-colors outline-none focus-visible:ring-1 focus-visible:ring-panel-focus',
+  base: [
+    'flex h-7 cursor-pointer items-center gap-1.5 rounded border-none px-3 text-2xs font-medium transition-colors',
+    focusStyles.ring
+  ],
   variants: {
     connection: {
       idle: 'bg-accent text-on-accent hover:bg-accent/90',

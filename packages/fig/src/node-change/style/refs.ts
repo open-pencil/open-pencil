@@ -1,43 +1,12 @@
 import type { GUID } from '@open-pencil/kiwi/fig'
-import type { NodeChange, StyleReference } from '@open-pencil/kiwi/fig/codec'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, isUnsetGuid } from '@open-pencil/kiwi/fig/guid'
 
-const TEXT_STYLE_FIELDS = [
-  'fontSize',
-  'fontName',
-  'lineHeight',
-  'letterSpacing',
-  'textDecoration',
-  'textCase'
-] as const
+import { referencedStyle, textStyleValues, type StyleChangeMap } from './lookup'
 
 type StyleRefFields = NodeChange
 
-type StyleSource = Pick<
-  NodeChange,
-  | 'type'
-  | 'styleType'
-  | 'fillPaints'
-  | 'effects'
-  | 'layoutGrids'
-  | (typeof TEXT_STYLE_FIELDS)[number]
->
-
-type StyleChangeMap = ReadonlyMap<string, Partial<StyleSource>>
-
-function referencedStyle(
-  changeMap: StyleChangeMap,
-  reference: StyleReference | undefined,
-  assetRefs?: ReadonlyMap<string, string>
-): Partial<StyleSource> | undefined {
-  if (reference?.guid) return changeMap.get(guidToString(reference.guid))
-  if (!reference?.assetRef || !assetRefs) return undefined
-  const { key, version } = reference.assetRef
-  const id = (version ? assetRefs.get(`${key}@${version}`) : undefined) ?? assetRefs.get(key)
-  return id ? changeMap.get(id) : undefined
-}
-
-function applyPaintStyleRefs(
+export function applyFillStyleRef(
   changeMap: StyleChangeMap,
   fields: StyleRefFields,
   assetRefs?: ReadonlyMap<string, string>
@@ -46,6 +15,13 @@ function applyPaintStyleRefs(
   if (fillStyle?.styleType === 'FILL' && fillStyle.fillPaints) {
     fields.fillPaints = fillStyle.fillPaints
   }
+}
+
+function applyStrokeStyleRef(
+  changeMap: StyleChangeMap,
+  fields: StyleRefFields,
+  assetRefs?: ReadonlyMap<string, string>
+): void {
   const strokeStyle = referencedStyle(changeMap, fields.styleIdForStrokeFill, assetRefs)
   if (strokeStyle?.styleType === 'FILL' && strokeStyle.fillPaints) {
     fields.strokePaints = strokeStyle.fillPaints
@@ -73,18 +49,16 @@ function applyTextStyleRef(
 ): void {
   const style = referencedStyle(changeMap, fields.styleIdForText, assetRefs)
   if (style?.type !== 'TEXT' || style.styleType !== 'TEXT') return
-  for (const field of TEXT_STYLE_FIELDS) {
-    if (field === 'textDecoration') fields.textDecoration = style.textDecoration
-    else if (style[field] !== undefined) Object.assign(fields, { [field]: style[field] })
-  }
+  Object.assign(fields, textStyleValues(style))
 }
 
 export function applyStyleRefsToFields(
-  changeMap: ReadonlyMap<string, Partial<StyleSource>>,
+  changeMap: StyleChangeMap,
   fields: StyleRefFields,
   assetRefs?: ReadonlyMap<string, string>
 ): void {
-  applyPaintStyleRefs(changeMap, fields, assetRefs)
+  applyFillStyleRef(changeMap, fields, assetRefs)
+  applyStrokeStyleRef(changeMap, fields, assetRefs)
   applyEffectAndGridStyleRefs(changeMap, fields, assetRefs)
   applyTextStyleRef(changeMap, fields, assetRefs)
 }

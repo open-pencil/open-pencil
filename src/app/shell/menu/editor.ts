@@ -73,7 +73,7 @@ export function useEditorMenu() {
 
   const actions: Partial<Record<string, () => void>> = {
     ...createTabMenuActions(),
-    ...createSaveMenuActions(store),
+    ...createSaveMenuActions(),
     'export-selection': () => {
       if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'png')
     },

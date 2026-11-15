@@ -113,7 +113,7 @@ export function effectBindingTarget(
   return { index: Number(match[1]), property: match[2] as EffectBindingProperty }
 }
 
-/** The properties of an effect that bind: every shadow property, and only a blur's radius. */
+/** The properties of an effect that bind: every shadow property, else only the radius. */
 export function effectBindableProperties(type: Effect['type']): readonly EffectBindingProperty[] {
   return type === 'DROP_SHADOW' || type === 'INNER_SHADOW'
     ? EFFECT_BINDING_PROPERTIES

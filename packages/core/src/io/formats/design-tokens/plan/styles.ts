@@ -2,6 +2,7 @@ import { isEqual, isPlainObject } from 'es-toolkit/predicate'
 import * as v from 'valibot'
 
 import type { Effect, SceneGraph, SceneNode, TextLength } from '@open-pencil/scene-graph'
+import { appendAll } from '@open-pencil/scene-graph/arrays'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { getSharedStyles } from '@open-pencil/scene-graph/shared-styles'
 import { percentLength, pixelLength, textLengthSchema } from '@open-pencil/scene-graph/text'
@@ -251,8 +252,8 @@ function shadowList(value: unknown, resolve: Resolve, depth = 0): ReadShadows | 
   for (const entry of entries) {
     const shadows = shadowEffects(entry, resolve, depth)
     if (!shadows) return null
-    list.effects.push(...shadows.effects)
-    list.references.push(...shadows.references)
+    appendAll(list.effects, shadows.effects)
+    appendAll(list.references, shadows.references)
   }
   return list.effects.length > 0 ? list : null
 }

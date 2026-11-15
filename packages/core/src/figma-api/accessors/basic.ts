@@ -1,3 +1,5 @@
+import * as v from 'valibot'
+
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { TRANSFORM_FIELDS as NODE_TRANSFORM_FIELDS } from '@open-pencil/scene-graph/fields'
@@ -26,12 +28,12 @@ import {
   updateNode,
   type NodeProxyInternals,
   type ProxyThis
-} from '#core/figma-api/accessor-utils'
+} from '#core/figma-api/accessors/utils'
 import { graphOf } from '#core/figma-api/graph'
 import type { FigmaNodeType } from '#core/figma-api/members'
-import { flushPendingLayout } from '#core/figma-api/pending-layout'
+import { flushPendingLayout, flushPendingLayoutBefore } from '#core/figma-api/pending-layout'
 import type { FigmaNodeProxy, NodeProxyHost } from '#core/figma-api/proxy'
-import { atLeast } from '#core/figma-api/schema'
+import { atLeast, finiteNumber, transformSchema } from '#core/figma-api/schema'
 import {
   containerTransform,
   setContainerTransform,
@@ -43,6 +45,7 @@ import { parseFigma } from '#core/figma-api/validation'
 import { syncVariantName } from '#core/figma-api/variants'
 import { figmaRotation } from '#core/geometry/figma'
 import { absoluteRenderBounds } from '#core/geometry/render-bounds'
+import { restoredHuggedSize } from '#core/layout/apply'
 import { computeAccurateBounds } from '#core/vector/curve-math'
 
 const TRANSFORM_FIELDS: ReadonlySet<string> = new Set(NODE_TRANSFORM_FIELDS)
@@ -90,6 +93,8 @@ function setTransform(
   assertEditable(target, internals)
   const scene = graphOf(target)
   const node = raw(target, internals)
+  // Placed against its frame as the script's edits leave it, as Figma lays them out as it runs.
+  flushPendingLayoutBefore(scene, node)
   setContainerTransform(scene, node, change(containerTransform(node, scene)))
   fitGroupsAround(scene, node.parentId, hostFitOptions(target, internals))
 }
@@ -120,8 +125,8 @@ export function installBasicNodeProxyAccessors(
       get(this: ProxyThis): string {
         return raw(this, internals).name
       },
-      set(this: ProxyThis, value: string) {
-        updateNode(this, internals, { name: value })
+      set(this: ProxyThis, value: unknown) {
+        updateNode(this, internals, { name: parseFigma(v.string(), value, 'set_name', 'name') })
         // A variant's name holds its values, which the set's value lists follow.
         syncVariantName(graphOf(this), raw(this, internals))
       }
@@ -137,9 +142,10 @@ export function installBasicNodeProxyAccessors(
         flushPendingLayout(graphOf(this))
         return containerTransform(raw(this, internals), graphOf(this))[2]
       },
-      set(this: ProxyThis, value: number) {
+      set(this: ProxyThis, value: unknown) {
+        const x = finiteNumber(value, 'x')
         prepareFollowedFieldEdit(graphOf(this), raw(this, internals), 'x', 'relative-transform')
-        setTransform(this, internals, (matrix) => withOrigin(matrix, value, matrix[5]))
+        setTransform(this, internals, (matrix) => withOrigin(matrix, x, matrix[5]))
       }
     },
     y: {
@@ -147,9 +153,10 @@ export function installBasicNodeProxyAccessors(
         flushPendingLayout(graphOf(this))
         return containerTransform(raw(this, internals), graphOf(this))[5]
       },
-      set(this: ProxyThis, value: number) {
+      set(this: ProxyThis, value: unknown) {
+        const y = finiteNumber(value, 'y')
         prepareFollowedFieldEdit(graphOf(this), raw(this, internals), 'y', 'relative-transform')
-        setTransform(this, internals, (matrix) => withOrigin(matrix, matrix[2], value))
+        setTransform(this, internals, (matrix) => withOrigin(matrix, matrix[2], y))
       }
     },
     width: {
@@ -174,14 +181,15 @@ export function installBasicNodeProxyAccessors(
         return figmaRotation(containerTransform(node, graphOf(this)))
       },
       // Figma turns a node counterclockwise about its top-left corner.
-      set(this: ProxyThis, value: number) {
+      set(this: ProxyThis, value: unknown) {
+        const rotation = finiteNumber(value, 'rotation')
         prepareFollowedFieldEdit(
           graphOf(this),
           raw(this, internals),
           'rotation',
           'relative-transform'
         )
-        setTransform(this, internals, (matrix) => withFigmaRotation(matrix, value))
+        setTransform(this, internals, (matrix) => withFigmaRotation(matrix, rotation))
       }
     },
     relativeTransform: {
@@ -204,15 +212,32 @@ export function installBasicNodeProxyAccessors(
         }
         return figmaTransform(containerTransform(node, scene))
       },
-      set(this: ProxyThis, value: FigmaTransform) {
+      set(this: ProxyThis, value: unknown) {
+        // Figma takes each row, and the pair, as an array or as an object keyed by index.
+        const rows = parseFigma(
+          transformSchema,
+          value,
+          'set_relativeTransform',
+          'relativeTransform'
+        )
         prepareFollowedFieldEdit(
           graphOf(this),
           raw(this, internals),
           'relativeTransform',
           'relative-transform'
         )
-        const [[a, b, x], [c, d, y]] = value
-        setTransform(this, internals, () => [a, b, x, c, d, y, 0, 0, 1])
+        const [first, second] = [rows[0], rows[1]]
+        setTransform(this, internals, () => [
+          first[0],
+          first[1],
+          first[2],
+          second[0],
+          second[1],
+          second[2],
+          0,
+          0,
+          1
+        ])
       }
     },
     absoluteTransform: {
@@ -245,13 +270,21 @@ export function installBasicNodeProxyAccessors(
     resizeWithoutConstraints(this: ProxyThis, width: number, height: number): void {
       resizeNode(this, internals, width, height, false)
     },
-    rescale(this: ProxyThis, scale: number): void {
+    rescale(this: ProxyThis, value: unknown): void {
+      const scale = finiteNumber(value, 'scale', 'rescale')
       assertEditable(this, internals)
       const scene = graphOf(this)
       const node = raw(this, internals)
+      flushPendingLayoutBefore(scene, node, { placesChildren: true })
       if (node.parentId && findInstanceAncestor(scene, node.parentId))
         throw new Error('This property cannot be overridden in an instance: size')
       rescaleNodeTree(scene, node.id, scale)
+      // Its Hug frames' constrained layers are scaled with them, so the next hug moves them from the
+      // scaled size, not again from the size they had before.
+      for (const scaled of [node, ...descendants(scene, node)]) {
+        const current = scene.getNode(scaled.id)
+        if (current) restoredHuggedSize(current)
+      }
     },
     getTopLevelFrame(this: ProxyThis): FigmaNodeProxy | undefined {
       const top = topLevelFrame(graphOf(this), raw(this, internals))
@@ -385,6 +418,8 @@ function resizeNode(
   assertEditable(target, internals)
   const scene = graphOf(target)
   const node = raw(target, internals)
+  // As for a move; a constrained resize also places the children from the node's own size.
+  flushPendingLayoutBefore(scene, node, { placesChildren: constrained })
   const { width, height } = resizedSize(node, requestedWidth, requestedHeight, constrained)
   // Figma has no size for a layer inside an instance: the resize does nothing, and records nothing.
   if (node.parentId && findInstanceAncestor(scene, node.parentId)) return

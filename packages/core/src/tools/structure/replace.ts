@@ -4,7 +4,7 @@ import { graphOf } from '#core/figma-api/graph'
 import { defineTool } from '#core/tools/schema'
 
 export const nodeReplaceWith = defineTool({
-  name: 'node_replace_with',
+  name: 'replace_node',
 
   description: 'Replace a node with JSX content.',
   execution: { kind: 'async', mutation: 'document' },

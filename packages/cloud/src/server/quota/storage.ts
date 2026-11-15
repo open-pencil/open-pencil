@@ -159,6 +159,11 @@ export function createStorageQuotaService(database: Kysely<CloudDatabase>) {
       return ownerId === null ? null : usage(database, ownerId)
     },
 
+    /** What `ownerId` holds and has reserved across every workspace they own. */
+    async account(ownerId: string): Promise<StorageQuotaSnapshot> {
+      return usage(database, ownerId)
+    },
+
     async reserve(input: {
       workspaceId: string
       uploadId: string

@@ -1,21 +1,24 @@
 import { isEqual } from 'es-toolkit/predicate'
 
-import {
-  overriddenAssignmentId,
-  reapplyComponentPropertyAssignments
-} from '../components/properties'
+import { appendAll } from '../arrays'
+import { reapplyComponentPropertyAssignments } from '../components/properties'
 import type { SceneGraph } from '../graph'
 import { ownsSlotContent, slotPropertyId } from '../slots/frames'
 import type { SceneNode } from '../types'
+import { applyBoundPaintColorsIn, refreshBoundPaintsIn } from '../variables/paints'
 import { applyEnclosingAssignments } from './assignments'
 import { keepOverrides, restoreOverrides, type OverrideScope } from './kept-overrides'
 import { ownsSelfFillField } from './main-component'
-import { hasInstanceOverride, overriddenBindingField, setInstanceOverride } from './overrides'
 import {
-  bindingProtection,
+  hasInstanceOverride,
+  overriddenAssignmentId,
+  overriddenBindingField,
+  setInstanceOverride
+} from './overrides'
+import { bindingProtection, NOTHING_PROTECTED } from './protection'
+import {
   cloneChildInCoordinates,
   cloneChildrenWithMapping,
-  NOTHING_PROTECTED,
   syncCopy,
   type MatchedCopy
 } from './sync'
@@ -127,7 +130,7 @@ function untakenCopies(byLayer: CopiesByLayer): SceneNode[] {
     }
   }
   for (const namesakes of byLayer.unlinked.values()) {
-    untaken.push(...namesakes)
+    appendAll(untaken, namesakes)
   }
   return untaken
 }
@@ -291,6 +294,8 @@ function cloneLayer(
   if (layer.childIds.length > 0) {
     cloneChildrenWithMapping(swap.graph, layer.id, clone.id)
   }
+  // A new copy shows its variables where it sits; overrides restored after this keep theirs.
+  applyBoundPaintColorsIn(swap.graph, clone.id)
   return clone
 }
 
@@ -325,7 +330,7 @@ function matchCopies(swap: Swap, compParent: SceneNode, instParent: SceneNode) {
     retyped.set(index, copy)
     return undefined
   })
-  stale.push(...untakenCopies(byLayer))
+  appendAll(stale, untakenCopies(byLayer))
   return { matched, stale, retyped }
 }
 
@@ -395,6 +400,8 @@ function followLayers(swap: Swap, compParent: SceneNode, instParent: SceneNode):
       // A new copy takes the values the instances around it assign, as one a sync adds does.
       applyEnclosingAssignments(graph, copy)
       restoreOverrides(overrideScope(swap), copy)
+      // A mode restored on the copy changes what its unclaimed bound paints resolve to.
+      refreshBoundPaintsIn(graph, copy.id)
     }
   })
 }

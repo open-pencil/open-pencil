@@ -54,22 +54,22 @@ const partlyUndoneMessage: UIMessage = {
   metadata: {
     undo: {
       edits: [
-        { tool: 'node_resize', toolCallId: 'resize' },
-        { tool: 'set_opacity', toolCallId: 'fade' }
+        { tool: 'update_node', toolCallId: 'resize' },
+        { tool: 'update_node', toolCallId: 'fade' }
       ],
       undone: ['fade']
     }
   },
   parts: [
     {
-      type: 'tool-node_resize',
+      type: 'tool-update_node',
       toolCallId: 'resize',
       state: 'output-available',
       input: { id: '0:1', width: 200, height: 60 },
       output: { id: '0:1' }
     },
     {
-      type: 'tool-set_opacity',
+      type: 'tool-update_node',
       toolCallId: 'fade',
       state: 'output-available',
       input: { id: '0:1', value: 0.5 },
@@ -83,6 +83,16 @@ type ChatMessageStoryArgs = {
   message: UIMessage
   streaming?: boolean
   canRegenerate?: boolean
+}
+
+/** The usage parts on the one line a reply's corner shows; parts that do not fit wrap below it. */
+function shownUsage(canvas: HTMLElement): string[] {
+  const usage = canvas.querySelector('[data-slot="chat-reply-usage"]')
+  if (!(usage instanceof HTMLElement)) throw new Error('No usage in the reply')
+  const { bottom } = usage.getBoundingClientRect()
+  return [...usage.querySelectorAll('[data-slot="chat-reply-usage-part"]')]
+    .filter((part) => part.getBoundingClientRect().bottom <= bottom)
+    .map((part) => part.textContent.trim())
 }
 
 const meta = {
@@ -151,8 +161,53 @@ export const WithUsage: Story = {
     canRegenerate: true
   },
   play: async ({ canvasElement }) => {
-    await expect(canvasElement.querySelector('[data-slot="chat-reply-usage"]')).toHaveTextContent(
-      '28.7K in · 609 out'
-    )
+    await expect(shownUsage(canvasElement)).toEqual(['28.7K in · 609 out'])
+  }
+}
+
+/** A reply whose usage has cached tokens too, the longest usage a reply shows. */
+const cachedUsageMessage: UIMessage = {
+  id: 'cached-usage-message',
+  role: 'assistant',
+  parts: [
+    {
+      type: 'text',
+      text: 'The right column moved left from x=705 to x=619, because the old horizontal gap was 126px against 40px vertically. I also zoomed the view to fit the grid.'
+    }
+  ],
+  metadata: {
+    usage: {
+      contextTokens: 88_000,
+      inputTokens: 88_000,
+      outputTokens: 883,
+      cacheReadTokens: 87_100
+    }
+  }
+}
+
+/** A chat as narrow as `width`, a literal width class. */
+const narrowChat =
+  (width: string): Story['render'] =>
+  (args) => ({
+    components: { ChatMessage },
+    setup: () => ({ args }),
+    template: `<div class="${width} rounded-xl bg-panel p-4 text-surface"><ChatMessage v-bind="args" /></div>`
+  })
+
+/** In a narrow chat the usage still fits whole beside the copy button, over less of the line. */
+export const WithCachedUsageInNarrowChat: Story = {
+  args: { message: cachedUsageMessage, canRegenerate: true },
+  render: narrowChat('w-64'),
+  play: async ({ canvasElement }) => {
+    await expect(shownUsage(canvasElement)).toEqual(['88K in · 883 out', '· 87.1K cached'])
+  }
+}
+
+/** Narrower still, the usage drops its cached tokens whole rather than cutting a number short. */
+export const WithCachedUsageInNarrowerChat: Story = {
+  args: { message: cachedUsageMessage, canRegenerate: true },
+  render: narrowChat('w-48'),
+  play: async ({ canvasElement }) => {
+    await expect(shownUsage(canvasElement)).toEqual(['88K in · 883 out'])
   }
 }

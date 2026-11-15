@@ -13,6 +13,7 @@ import { createVectorFromNetwork, type CreateShape } from '#core/editor/shapes/v
 import type { EditorContext, ResumedPath } from '#core/editor/types'
 import { vectorChangesFromPagePath } from '#core/vector'
 
+import { createPenGesture } from './gesture'
 import { createPenHistory } from './history'
 
 export interface PenDragOptions {
@@ -104,14 +105,6 @@ export function createPenActions(
    */
   function penPushHistory() {
     history.begin()
-  }
-
-  /**
-   * Takes back the press in progress, the point it placed and its drag, leaving no undo step or
-   * redo: a host that refuses the point, such as one off a shape being traced, puts it back so.
-   */
-  function penCancelPress() {
-    history.cancel()
   }
 
   function penAddVertex(x: number, y: number) {
@@ -316,9 +309,19 @@ export function createPenActions(
     else finishPath()
   }
 
+  const gesture = createPenGesture(ctx, history, {
+    penAddVertex,
+    penSetPendingClose,
+    penSetClosingToFirst,
+    penCommit
+  })
+
   return {
     penPushHistory,
-    penCancelPress,
+    penPress: gesture.penPress,
+    penRelease: gesture.penRelease,
+    /** Takes back the press in progress, for `cancelGesture`; true when there was one. */
+    cancelPenGesture: gesture.cancel,
     penAddVertex,
     penSetDragTangent,
     penSetClosingToFirst,

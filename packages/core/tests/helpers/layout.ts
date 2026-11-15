@@ -1,8 +1,8 @@
 import { join } from 'node:path'
 
 import { readFigFile } from '@open-pencil/core/io/formats/fig'
-import { FIXTURES } from '@open-pencil/test-support/paths'
 import type { GridTrack, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 
 export function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id

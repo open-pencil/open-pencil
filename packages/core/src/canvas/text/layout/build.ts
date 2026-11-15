@@ -1,5 +1,4 @@
-import type { Paragraph } from 'canvaskit-wasm'
-
+import type { Paragraph } from '@open-pencil/canvaskit'
 import type { CharacterStyleOverride, StyleRun } from '@open-pencil/scene-graph'
 import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 import {

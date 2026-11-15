@@ -113,10 +113,11 @@ describe('reconcileVariableLayouts', () => {
     })
   })
 
-  test('an active mode change lays out every layer it reaches as one layer at a time would', () => {
+  test('a page mode change lays out every layer it reaches as one layer at a time would', () => {
     expectSameLayoutAsPerLayer(({ graph, tokens, compact }) => {
-      graph.setActiveMode(tokens.id, compact)
-      return { variables: tokens.variableIds }
+      const page = graph.getPages()[0]
+      graph.updateNode(page.id, { variableModes: { [tokens.id]: compact } })
+      return { subtrees: [page.id] }
     })
   })
 
@@ -143,7 +144,7 @@ describe('reconcileVariableLayouts', () => {
       boundVariables: { fontSize: size.id }
     })
 
-    graph.setActiveMode(tokens.id, 'large')
+    graph.updateNode(graph.getPages()[0].id, { variableModes: { [tokens.id]: 'large' } })
     reconcileVariableLayouts(graph, { variables: [size.id] })
 
     expect([label.fontSize, label.width, label.height]).toEqual([20, 80, 20])

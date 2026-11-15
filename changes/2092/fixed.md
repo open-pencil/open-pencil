@@ -1,0 +1,3 @@
+- A paint picked as an OkHCL solid and then made a gradient draws its stops in their own colors, not the old solid's (#2092).
+- An auto layout frame's gap tick sits in the middle of its content box, where the pointer finds it, as in Figma, and a turned frame's paddings and gaps hover where they are drawn (#2092).
+- The rulers mark a turned layer's bounds on the canvas, as in Figma (#2092).

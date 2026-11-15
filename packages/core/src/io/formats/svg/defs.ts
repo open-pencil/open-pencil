@@ -1,38 +1,28 @@
-import type { Effect, Fill, FontVariation, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Effect, Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   colorToHex,
   colorToDisplayCSS,
   getDefaultRenderColorSpace,
   type RenderColorSpace
 } from '@open-pencil/scene-graph/color'
+import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import {
   gradientPoint,
   invertGradientTransform,
   isIdentityGradientTransform
 } from '@open-pencil/scene-graph/gradient'
-import { imageDataURL } from '@open-pencil/scene-graph/images'
+import {
+  drawnImageHash,
+  imageDataURL,
+  imageFillMatrix,
+  imageSize
+} from '@open-pencil/scene-graph/images'
+import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { Color } from '@open-pencil/scene-graph/primitives'
-
-import type { FontFaceRef } from '#core/text/font/faces'
 
 import { svg, type SVGNode } from './node'
 import { round } from './paths'
 import type { SVGTextLayout } from './text/lines'
-
-/**
- * A face text is drawn in, with what sets its axes: the font size the optical size follows unless
- * `opticalSizeFromFontSize` is off, and the axes the text sets.
- */
-export interface SVGFontRequest extends FontFaceRef {
-  /** Which of the style's files draws the text, 0 for its own then its shards; 0 when left out. */
-  file?: number
-  fontSize: number
-  variations: readonly FontVariation[]
-  opticalSizeFromFontSize: boolean
-}
-
-/** The family to name a font face by instead of its own, or null to keep the face. */
-export type SVGFontAlias = (font: SVGFontRequest) => string | null
 
 export interface SVGExportContext {
   defs: SVGNode[]
@@ -45,7 +35,6 @@ export interface SVGExportContext {
   tint?: (node: SceneNode) => readonly ('fill' | 'stroke')[]
   /** Measured line breaks. Without them, only explicit newlines start a new baseline. */
   textLayout?: SVGTextLayout
-  fontAlias?: SVGFontAlias
   /**
    * When layers are written with their names as ids: how many have taken each name, and every id
    * given out so far, defs included, so no two elements share one.
@@ -182,31 +171,75 @@ function createGradientDef(
   return null
 }
 
+/** An SVG `matrix()` for a row-major 3 × 3 transform. */
+function svgMatrix(m: Mat3): string {
+  return `matrix(${[m[0], m[3], m[1], m[4], m[2], m[5]].map((value) => round(value, 6)).join(' ')})`
+}
+
+/**
+ * An image fill as a pattern in the layer's own units, the image placed as the canvas places it
+ * (`imageFillMatrix`): a crop by its transform, Fill and Fit turned and fitted, a tile repeated
+ * at its scale. An image whose size cannot be read covers the layer, or fits it for Fit.
+ */
 function createImagePattern(
   fill: Fill,
   node: SceneNode,
   ctx: SVGExportContext
 ): { id: string; node: SVGNode } | null {
-  if (!fill.imageHash) return null
-  const data = ctx.graph.images.get(fill.imageHash)
+  const imageHash = drawnImageHash(fill)
+  if (!imageHash) {
+    return null
+  }
+  const data = ctx.graph.images.get(imageHash)
   if (!data) return null
 
   const id = nextDefId(ctx, 'img')
+  const href = imageDataURL(data)
+  const size = imageSize(data)
+  if (!size) {
+    return {
+      id,
+      node: svg(
+        'pattern',
+        { id, patternUnits: 'objectBoundingBox', width: 1, height: 1 },
+        svg('image', {
+          href,
+          width: node.width,
+          height: node.height,
+          preserveAspectRatio: fill.imageScaleMode === 'FIT' ? 'xMidYMid meet' : 'xMidYMid slice'
+        })
+      )
+    }
+  }
+  const matrix = imageFillMatrix(fill, node, size.width, size.height)
+  const tile =
+    fill.imageScaleMode === 'TILE'
+      ? computeBounds(
+          [
+            Matrix.mapPoint(matrix, { x: 0, y: 0 }),
+            Matrix.mapPoint(matrix, { x: size.width, y: size.height }),
+            Matrix.mapPoint(matrix, { x: size.width, y: 0 }),
+            Matrix.mapPoint(matrix, { x: 0, y: size.height })
+          ].map((point) => ({ ...point, width: 0, height: 0 }))
+        )
+      : { width: node.width, height: node.height }
   return {
     id,
     node: svg(
       'pattern',
+      // The tile unrounded, so the image repeats at the period the canvas repeats it at.
       {
         id,
-        patternUnits: 'objectBoundingBox',
-        width: 1,
-        height: 1
+        patternUnits: 'userSpaceOnUse',
+        width: round(tile.width, 6),
+        height: round(tile.height, 6)
       },
       svg('image', {
-        href: imageDataURL(data),
-        width: node.width,
-        height: node.height,
-        preserveAspectRatio: fill.imageScaleMode === 'FIT' ? 'xMidYMid meet' : 'xMidYMid slice'
+        href,
+        width: size.width,
+        height: size.height,
+        preserveAspectRatio: 'none',
+        transform: svgMatrix(matrix)
       })
     )
   }
@@ -290,7 +323,7 @@ export function resolveFill(fill: Fill, node: SceneNode, ctx: SVGExportContext):
     }
   }
 
-  if (fill.type === 'IMAGE') {
+  if (drawnImageHash(fill)) {
     const pattern = createImagePattern(fill, node, ctx)
     if (pattern) {
       ctx.defs.push(pattern.node)

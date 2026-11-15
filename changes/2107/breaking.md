@@ -1,0 +1,1 @@
+- `strokeRuns`, `addStrokeRunToPath` and `StrokeRun` move from `@open-pencil/core/vector` to `@open-pencil/scene-graph/paths`, and `outlineSVGPath` from `@open-pencil/scene-graph/polygon` to `@open-pencil/scene-graph/paths` (#2107).

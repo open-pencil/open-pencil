@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, expect, test } from 'bun:test'
 
 import { createEditor, type Editor } from '@open-pencil/core'
-
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 let editor: Editor
@@ -142,8 +141,9 @@ test('a press taken back leaves no step, and redo keeps what it had', () => {
   press(0, 0)
   press(100, 0)
   editor.undoAction()
-  press(100, 100, [20, 0])
-  editor.penCancelPress()
+  editor.penPress({ x: 100, y: 100 })
+  editor.penSetDragTangent(20, 0)
+  editor.cancelGesture()
   expect(points()).toEqual([[0, 0]])
 
   editor.redoAction()

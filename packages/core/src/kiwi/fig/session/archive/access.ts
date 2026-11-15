@@ -10,6 +10,7 @@ import { loadFigDataCompressor } from '@open-pencil/kiwi/fig/container'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { randomHex } from '@open-pencil/scene-graph/random'
 
+import { receiveStream } from '#core/kiwi/fig/session/port-stream'
 import type { FigSessionRequest, FigSessionResponse } from '#core/kiwi/fig/session/protocol'
 
 /**
@@ -24,7 +25,8 @@ export interface FigArchiveAccess {
   componentPages(componentIds: string[]): Promise<string[]>
   /** The archive GUID of the page each record is on, `null` for one on no page. */
   recordPages(recordIds: string[]): Promise<(string | null)[]>
-  patch(patch: FigRecordPatch, input: FigPatchedArchiveInput): Promise<Uint8Array>
+  /** The archive with the patch applied, streaming from wherever the archive is held. */
+  patch(patch: FigRecordPatch, input: FigPatchedArchiveInput): Promise<ReadableStream<Uint8Array>>
   /** The document closed: release whatever holds the archive. */
   close(): void
 }
@@ -103,7 +105,10 @@ type ArchiveWorker = Pick<Worker, 'terminate' | 'addEventListener'>
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never
 
 export interface WorkerFigArchiveAccess extends FigArchiveAccess {
-  /** Stop the worker now, as an abandoned page load does; requests continue on the fallback. */
+  /**
+   * Stop using the worker, as an abandoned page load does: requests continue on the fallback, and
+   * the worker stops once the archives it is still streaming are done.
+   */
   dropWorker(): void
 }
 
@@ -124,18 +129,36 @@ export function workerFigArchive(
   fallback: () => FigArchiveAccess
 ): WorkerFigArchiveAccess {
   const pending = new Map<string, WaitingRequest>()
+  // Fails the archives still streaming from the worker once it stops serving them.
+  const served = new AbortController()
+  let streaming = 0
+  let retiring = false
   let local: FigArchiveAccess | undefined
   let closed = false
-  const toFallback = (): FigArchiveAccess => {
+  const stopWorker = (reason: string) => {
+    retiring = false
+    worker.terminate()
+    served.abort(new Error(reason))
+  }
+  /**
+   * Sends requests to the fallback from now on. A worker that failed stops at once; one dropped
+   * because nothing needs its page loads first finishes the archives it is still streaming.
+   */
+  const toFallback = (failed: boolean): FigArchiveAccess => {
+    if (failed || streaming === 0) stopWorker('The archive worker stopped')
+    else retiring = true
     if (local) return local
     const access = fallback()
     local = access
-    worker.terminate()
     for (const waiting of pending.values()) waiting.retry(access)
     pending.clear()
     return access
   }
-  worker.addEventListener('error', () => toFallback())
+  const streamClosed = () => {
+    streaming--
+    if (retiring && streaming === 0) stopWorker('The archive worker stopped')
+  }
+  worker.addEventListener('error', () => toFallback(true))
   port.addEventListener('message', (event: MessageEvent<FigSessionResponse>) => {
     if (!ARCHIVE_RESPONSES.has(event.data.type)) return
     const response = event.data as ArchiveResponse
@@ -149,7 +172,8 @@ export function workerFigArchive(
     message: DistributiveOmit<FigSessionRequest, 'requestId'>,
     type: T,
     read: (response: Extract<ArchiveResponse, { type: T }>) => Result,
-    onFallback: (access: FigArchiveAccess) => Promise<Result>
+    onFallback: (access: FigArchiveAccess) => Promise<Result>,
+    transfer: Transferable[] = []
   ): Promise<Result> => {
     if (closed) return Promise.reject(new Error('The document closed'))
     if (local) return onFallback(local)
@@ -164,7 +188,7 @@ export function workerFigArchive(
         },
         reject
       })
-      port.postMessage({ ...message, requestId })
+      port.postMessage({ ...message, requestId }, transfer)
     })
   }
   return {
@@ -196,20 +220,30 @@ export function workerFigArchive(
         (response) => response.pageIds,
         (access) => access.recordPages(recordIds)
       ),
-    patch: (patch, input) =>
-      ask(
-        { type: 'patch-archive', patch, input },
+    patch: (patch, input) => {
+      const channel = new MessageChannel()
+      return ask(
+        { type: 'patch-archive', patch, input, port: channel.port2 },
         'patch-archive-result',
-        (response) => response.bytes,
-        (access) => access.patch(patch, input)
-      ),
-    dropWorker: () => void toFallback(),
+        () => {
+          streaming++
+          return receiveStream(channel.port1, { signal: served.signal, onClose: streamClosed })
+        },
+        (access) => access.patch(patch, input),
+        [channel.port2]
+      )
+    },
+    dropWorker: () => void toFallback(false),
     close() {
       if (closed) return
       closed = true
       for (const waiting of pending.values()) waiting.reject(new Error('The document closed'))
       pending.clear()
-      if (local) return
+      if (local) {
+        if (retiring) stopWorker('The document closed')
+        return
+      }
+      served.abort(new Error('The document closed'))
       port.postMessage({ type: 'dispose' })
       port.close()
       worker.terminate()

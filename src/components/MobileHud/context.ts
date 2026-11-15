@@ -11,6 +11,7 @@ import { useI18n } from '@open-pencil/vue/i18n'
 
 import { isCloudBinding, openCloudShare, saveDocument } from '@/app/cloud/integration'
 import { DEFAULT_COLLAB_STATE, useCollabInjected } from '@/app/collab/use'
+import { saveWithFeedback } from '@/app/document/io/save/feedback'
 import { useActiveEditorStoreRef, useEditorStore } from '@/app/editor/active-store'
 import { useNotificationMessages } from '@/app/i18n/notifications'
 import { presenceOf, renameAgent as renameLocalAgent } from '@/app/presence/registry'
@@ -18,7 +19,7 @@ import type { FollowTarget } from '@/app/presence/types'
 import { openFileDialog } from '@/app/shell/menu/use'
 import { useSendLink } from '@/app/shell/share/link'
 import { toast } from '@/app/shell/ui'
-import { createTab } from '@/app/tabs'
+import { createTab, getTabForStore } from '@/app/tabs'
 import { roomStatusText } from '@/components/collab-room/statusText'
 import { toolIcons } from '@/components/icons'
 import { presenceRows } from '@/components/presence/rows'
@@ -67,7 +68,15 @@ function createMobileHudContext() {
       action: () => createTab()
     },
     { icon: IconFolderOpen, label: 'Open…', action: () => void openFileDialog() },
-    { icon: IconSave, label: 'Save', action: () => void saveDocument(store) },
+    {
+      icon: IconSave,
+      label: 'Save',
+      action: () =>
+        void saveWithFeedback(() => saveDocument(store), {
+          key: store,
+          isOpen: () => getTabForStore(store) !== undefined
+        })
+    },
     { icon: IconImageDown, label: 'Export…', action: () => void store.exportSelection(1, 'png') },
     { icon: IconZoomIn, label: 'Zoom to fit', action: () => getCommand('view.zoomFit').run() }
   ]

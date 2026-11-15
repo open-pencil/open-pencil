@@ -53,8 +53,9 @@ export function usePosition() {
   // Typed X, Y, and rotation become each node's own move or turn, as typing them in Figma does.
   function updateProp(key: NumericNodeProperty, value: number) {
     if (key === 'x' || key === 'y') {
+      // A typed position is a move: the host's move policy decides it.
       scrub.updateEach(nodes.value, key, (target) =>
-        panelPositionChange(target, editor.graph, key, value)
+        editor.constrainMove(target, panelPositionChange(target, editor.graph, key, value))
       )
     } else if (key === 'rotation') {
       scrub.updateEach(nodes.value, key, (target) =>

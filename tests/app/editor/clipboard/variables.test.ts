@@ -8,7 +8,6 @@ test('cross-document paste imports variable aliases and undoes definitions with 
   const collection = source.graph.createCollection('Spacing')
   const alternateModeId = crypto.randomUUID()
   source.graph.addMode(collection.id, alternateModeId, 'Comfortable')
-  source.graph.activeMode.set(collection.id, alternateModeId)
   const base = source.graph.createVariable('Base', 'FLOAT', collection.id, 12)
   const alias = source.graph.createVariable('Alias', 'FLOAT', collection.id, { aliasId: base.id })
   const node = source.graph.createNode('RECTANGLE', source.state.currentPageId, {
@@ -31,10 +30,9 @@ test('cross-document paste imports variable aliases and undoes definitions with 
   const importedCollection = target.graph.variableCollections.get(imported.collectionId)
   if (!importedCollection) throw new Error('Missing imported collection')
   expect(importedCollection.modes.map((mode) => mode.modeId)).not.toContain(alternateModeId)
-  expect(target.graph.getActiveModeId(importedCollection.id)).toBe(
-    expectDefined(target.graph.getNode(pastedId), 'pasted node').variableModes[
-      importedCollection.id
-    ]
+  const pastedMode = expectDefined(pasted, 'pasted node').variableModes[importedCollection.id]
+  expect(importedCollection.modes.find((mode) => mode.modeId === pastedMode)?.name).toBe(
+    'Comfortable'
   )
   const value = Object.values(imported.valuesByMode)[0]
   if (typeof value !== 'object' || !('aliasId' in value)) throw new Error('Missing alias')

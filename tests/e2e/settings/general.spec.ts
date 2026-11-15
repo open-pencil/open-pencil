@@ -28,6 +28,36 @@ test('language can be changed from General settings and persists', async ({ page
   await expect(page.getByRole('combobox', { name: 'Animations' })).toHaveText('Follow system')
 })
 
+test('Arabic mirrors the interface until mirroring is turned off', async ({ page }) => {
+  await page.goto('/?test')
+  const canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+  const root = page.locator('html')
+  await expect(root).toHaveAttribute('dir', 'ltr')
+  await expect(page.getByTestId('settings-mirror-interface')).toHaveCount(0)
+
+  await page.getByTestId('app-settings-trigger').click()
+  await expect(page.getByTestId('settings-mirror-interface')).toHaveCount(0)
+  await page.getByTestId('settings-language').click()
+  await page.getByRole('option', { name: 'العربية' }).click()
+  await expect(root).toHaveAttribute('dir', 'rtl')
+  // The canvas and what describes it stay left to right.
+  await expect(page.getByTestId('canvas-area')).toHaveAttribute('dir', 'ltr')
+
+  await page.getByTestId('settings-mirror-interface').click()
+  await expect(root).toHaveAttribute('dir', 'ltr')
+  await page.reload()
+  await canvas.waitForInit()
+  await expect(root).toHaveAttribute('dir', 'ltr')
+
+  await page.getByTestId('app-settings-trigger').click()
+  await page.getByTestId('settings-mirror-interface').click()
+  await expect(root).toHaveAttribute('dir', 'rtl')
+  await page.getByTestId('settings-language').click()
+  await page.getByRole('option', { name: 'English' }).click()
+  await expect(root).toHaveAttribute('dir', 'ltr')
+})
+
 test('general snapping preferences persist and apply to editor sessions', async ({ page }) => {
   await page.goto('/?test')
   const canvas = new CanvasHelper(page)

@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
+import { pageId, rect } from '#core-tests/helpers/layout'
+
 import { computeLayout } from '@open-pencil/core/layout'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
-
-import { pageId, rect } from '#core-tests/helpers/layout'
 
 describe('layout mode NONE', () => {
   test('computeLayout does nothing for NONE layout', () => {

@@ -67,14 +67,14 @@ const aspectRatio = computed(() =>
         <SplitterGroup v-else direction="horizontal" :class="ui.split()">
           <SplitterPanel :default-size="50" :class="ui.panel()">
             <img v-if="beforeURL" :src="beforeURL" :alt="ai.changeBefore" :class="ui.before()" />
-            <span :class="ui.label({ class: 'left-1' })">{{ ai.changeBefore }}</span>
+            <span :class="ui.label({ class: 'inset-s-1' })">{{ ai.changeBefore }}</span>
           </SplitterPanel>
           <SplitterResizeHandle :class="splitter.handle()" :aria-label="ai.changeSplit">
             <div :class="splitter.divider({ class: ui.divider() })" />
           </SplitterResizeHandle>
           <SplitterPanel :default-size="50" :class="ui.panel()">
             <img v-if="afterURL" :src="afterURL" :alt="ai.changeAfter" :class="ui.after()" />
-            <span :class="ui.label({ class: 'right-1' })">{{ ai.changeAfter }}</span>
+            <span :class="ui.label({ class: 'inset-e-1' })">{{ ai.changeAfter }}</span>
           </SplitterPanel>
         </SplitterGroup>
       </div>

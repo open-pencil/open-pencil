@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
+import { pageId, toKiwi } from '#core-tests/io/formats/fig/serialize-fixes/helpers'
+
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { lineHeightPixels, pixelLength } from '@open-pencil/scene-graph/text'
 import { expectDefined } from '@open-pencil/test-support/assert'
-
-import { pageId, toKiwi } from '#core-tests/io/formats/fig/serialize-fixes/helpers'
 
 describe('Fix 4: text lineHeight serialization', () => {
   test('text node with explicit lineHeight uses that value', () => {

@@ -16,7 +16,7 @@ export {
 export { computeGuideRedline } from './guides/redlines'
 export { hitTestGuides, type GuideHit } from './guides/hit-test'
 export type { GuideOverlayState, GuidePreview, GuideSelection } from './guides/types'
-export { canvasLabelForeground, outlineColorInMode } from './labels/color'
+export { canvasLabelForeground } from './labels/color'
 export type { ImagePreview, ImagePreviewDecoder } from './images/previews'
 export {
   SkiaRenderer,
@@ -24,7 +24,7 @@ export {
   type RenderOverlays,
   type RulerTheme,
   type SelectionTheme
-} from './renderer'
+} from './renderer/skia'
 export {
   hitTestIssueMarkers,
   issueMarkerLabel,

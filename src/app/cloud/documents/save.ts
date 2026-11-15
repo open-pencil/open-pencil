@@ -21,6 +21,7 @@ export async function cloudSaveDestinations(): Promise<SaveDestination[]> {
     const connection = cloudConnection(server.id)
     if (connection.state !== 'signed-in') return []
     const place = { id: server.id, label: cloudServerHost(server.url) }
+    const gallery = connection.discovery?.community?.workspaceId
     return connection.workspaces.map((workspace): SaveDestination => {
       const location = {
         providerId: CLOUD_STORAGE_PROVIDER_ID,
@@ -33,7 +34,8 @@ export async function cloudSaveDestinations(): Promise<SaveDestination[]> {
         label: workspace.name,
         kind: 'workspace',
         place,
-        role: workspace.role
+        role: workspace.role,
+        public: workspace.id === gallery
       }
     })
   })

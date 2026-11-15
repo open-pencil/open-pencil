@@ -6,6 +6,9 @@ export const settingsMessageDefaults = {
   appearance: 'Appearance',
   interfaceScale: 'Interface size',
   interfaceScaleDescription: 'Scale panels, text, and controls without changing canvas zoom.',
+  mirrorInterface: 'Mirror the interface',
+  mirrorInterfaceDescription:
+    'Lay out panels, menus, and controls right to left, as the language reads. The canvas, coordinates, and code stay left to right.',
   animations: 'Animations',
   animationsSystem: 'Follow system',
   animationsOff: 'Off',

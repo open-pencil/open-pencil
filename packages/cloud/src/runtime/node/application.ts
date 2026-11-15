@@ -12,6 +12,7 @@ import {
 
 import { loadNodeCloudServerConfig } from './config'
 import { createNodeTransactionalEmailRuntime } from './email/runtime'
+import { proxyRequestId } from './request-id'
 
 export type NodeCloudApplicationOptions = {
   environment?: CloudEnvironment
@@ -44,7 +45,8 @@ export async function createNodeCloudApplication(
     invitationOutbox,
     transactionalEmail: email,
     enrollment,
-    servicesSigningKey
+    servicesSigningKey,
+    forwardedRequestId: proxyRequestId
   })
   return { app, config, database, objects, email }
 }

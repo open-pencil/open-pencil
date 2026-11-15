@@ -53,45 +53,4 @@ describe('variable mode undo', () => {
     expect(restored?.defaultModeId).toBe('light')
     expect(restored?.modes.map((m) => m.modeId)).toEqual(['light', 'dark'])
   })
-
-  test('undoing a collection’s removal shows the mode it showed', () => {
-    const editor = createEditor()
-    editor.graph.addCollection({
-      id: 'theme',
-      name: 'Theme',
-      modes: [
-        { modeId: 'light', name: 'Light' },
-        { modeId: 'dark', name: 'Dark' }
-      ],
-      defaultModeId: 'light',
-      variableIds: []
-    })
-    editor.setActiveMode('theme', 'dark')
-    editor.removeCollection('theme')
-
-    editor.undo.undo()
-    expect(editor.graph.activeMode.get('theme')).toBe('dark')
-  })
-
-  test('undoing the removal of the mode on show shows it again', () => {
-    const editor = createEditor()
-    editor.graph.addCollection({
-      id: 'theme',
-      name: 'Theme',
-      modes: [
-        { modeId: 'light', name: 'Light' },
-        { modeId: 'dark', name: 'Dark' }
-      ],
-      defaultModeId: 'light',
-      variableIds: []
-    })
-    editor.setActiveMode('theme', 'dark')
-    editor.removeMode('theme', 'dark')
-    expect(editor.graph.activeMode.get('theme')).toBe('light')
-
-    editor.undo.undo()
-    expect(editor.graph.activeMode.get('theme')).toBe('dark')
-    editor.undo.redo()
-    expect(editor.graph.activeMode.get('theme')).toBe('light')
-  })
 })

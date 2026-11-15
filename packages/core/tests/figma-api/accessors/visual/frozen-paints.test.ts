@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createAPI, solidFill } from '#core-tests/helpers/figma-api'
+
 import type { Fill } from '@open-pencil/scene-graph'
 
 describe('frozen arrays', () => {

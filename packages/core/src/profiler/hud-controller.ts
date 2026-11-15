@@ -1,4 +1,4 @@
-import type { CanvasKit, Canvas, Typeface } from 'canvaskit-wasm'
+import type { CanvasKit, Canvas, Typeface } from '@open-pencil/canvaskit'
 
 import type { FrameStats } from './frame/stats'
 import { HudRenderer } from './hud-renderer'

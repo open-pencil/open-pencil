@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import type { Fill, VectorNetwork, VectorSegment } from '@open-pencil/scene-graph'
+import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { gradientPoint } from '@open-pencil/scene-graph/gradient'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { expectDefined } from '@open-pencil/test-support/assert'
@@ -155,7 +156,7 @@ function scaledNetwork(d: string, scaleX = 12 / 24, scaleY = scaleX): VectorNetw
 }
 
 function span(values: number[]): number {
-  return Math.max(...values) - Math.min(...values)
+  return maxOf(values) - minOf(values)
 }
 
 function segmentBetween(

@@ -1,8 +1,9 @@
 import { uniq } from 'es-toolkit'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode, SharedStyleType } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import { GENERATED_FRAME_TYPES, generatedFrameOwner } from '@open-pencil/scene-graph/generated'
+import { sharedStyleLayers, sharedStyleTypeForKind } from '@open-pencil/scene-graph/shared-styles'
 
 import { presets } from './presets'
 import { allRules } from './rules'
@@ -66,6 +67,7 @@ export class Linter {
     counts: { COLOR: 0, FLOAT: 0, STRING: 0, BOOLEAN: 0 },
     colorsByHex: new Map()
   }
+  private sharedStyleTypes: ReadonlyMap<string, SharedStyleType> = new Map()
 
   constructor(options: { config?: LintConfig; preset?: string; rules?: string[] } = {}) {
     let baseConfig: Record<
@@ -96,6 +98,7 @@ export class Linter {
     this.nodes.clear()
     this.graph = graph
     this.variables = describeVariables(graph)
+    this.sharedStyleTypes = sharedStyleTypes(graph)
     this.checks = this.ruleChecks()
     const roots = rootIds && rootIds.length > 0 ? rootIds : graph.getPages().map((p) => p.id)
     for (const id of outermostRoots(graph, roots)) {
@@ -123,22 +126,14 @@ export class Linter {
     if (cached) return cached
     const raw = this.graph?.getNode(id)
     if (!this.graph || !raw) return undefined
-    const node = this.toLintNode(this.graph, raw)
+    const node = this.toLintNode(raw)
     node.parent = parent
     this.nodes.set(id, node)
     return node
   }
 
-  private toLintNode(graph: SceneGraph, raw: SceneNode): LintNode {
-    // Rules see the color a paint renders with, including a bound variable in this node's mode.
-    const paintColor = (
-      field: 'fills' | 'strokes',
-      index: number,
-      color: SceneNode['fills'][number]['color']
-    ) => {
-      const variableId = raw.boundVariables[`${field}/${index}/color`]
-      return (variableId && graph.resolveColorVariableForNode(raw.id, variableId)) || color
-    }
+  private toLintNode(raw: SceneNode): LintNode {
+    // Rules see the color a paint draws with, which a bound paint stores as its variable gave it.
     return {
       id: raw.id,
       name: raw.name,
@@ -171,22 +166,24 @@ export class Linter {
       textStyles: raw.type === 'TEXT' ? effectiveTextStyles(raw) : undefined,
       styleRunCount: raw.styleRuns.length,
       boundVariables: raw.boundVariables,
-      fills: raw.fills.map((f, index) => ({
+      fills: raw.fills.map((f) => ({
         type: f.type,
         visible: f.visible,
         opacity: f.opacity,
-        color: f.type === 'SOLID' ? paintColor('fills', index, f.color) : undefined
+        color: f.type === 'SOLID' ? f.color : undefined
       })),
-      strokes: raw.strokes.map((stroke, index) => ({
+      strokes: raw.strokes.map((stroke) => ({
         visible: stroke.visible,
         opacity: stroke.opacity,
-        color: paintColor('strokes', index, stroke.color)
+        color: stroke.color
       })),
       effects: raw.effects.map((effect) => ({
         type: effect.type,
         visible: effect.visible,
         radius: effect.radius
-      }))
+      })),
+      textStyleId: raw.textStyleId,
+      effectStyleId: raw.effectStyleId
     }
   }
 
@@ -200,6 +197,8 @@ export class Linter {
         rule,
         context: {
           variables: this.variables,
+          isSharedStyle: (kind, id) =>
+            id !== null && this.sharedStyleTypes.get(id) === sharedStyleTypeForKind(kind),
           report: ({ node, message, suggest, data, fix, suggestions }) => {
             this.messages.push({
               ruleId,
@@ -256,6 +255,14 @@ function outermostRoots(graph: SceneGraph, ids: readonly string[]): string[] {
     }
     return true
   })
+}
+
+/** The type of each shared style in the document, by the source id layers link it by. */
+function sharedStyleTypes(graph: SceneGraph): ReadonlyMap<string, SharedStyleType> {
+  const types = new Map<string, SharedStyleType>()
+  for (const [id, style] of sharedStyleLayers(graph))
+    if (style.sharedStyleType) types.set(id, style.sharedStyleType)
+  return types
 }
 
 function describeVariables(graph: SceneGraph): LintVariables {

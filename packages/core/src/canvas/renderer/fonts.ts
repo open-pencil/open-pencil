@@ -1,13 +1,13 @@
-import type { Font, TypefaceFontProvider } from 'canvaskit-wasm'
 import { uniqBy } from 'es-toolkit'
 
+import type { Font, TypefaceFontProvider } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { CONNECTOR_LABEL_FONT } from '@open-pencil/scene-graph/connectors'
 import { FIGJAM_TYPEFACES } from '@open-pencil/scene-graph/figjam'
 import { faceLoadKey } from '@open-pencil/scene-graph/font-style'
 import { STICKY_FONT_FAMILY, STICKY_FONT_WEIGHT } from '@open-pencil/scene-graph/generated'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import type { NodeFontReadiness } from '#core/canvas/text'
 import {
   COMPONENT_LABEL_FONT_SIZE,
@@ -93,7 +93,11 @@ export function resolveLabelFontCoverage(
 }
 
 export function syncFontGeneration(r: SkiaRenderer): void {
-  r.fontGeneration = fontManager.generation()
+  const generation = fontManager.generation()
+  if (generation !== r.fontGeneration) {
+    r.renderedBounds.clear()
+  }
+  r.fontGeneration = generation
 }
 
 export function trackFontDemand(r: SkiaRenderer, node: SceneNode, key: string): void {
@@ -136,7 +140,7 @@ function settleFontDemand(
       if (pending.keys.size === 0) r.textFonts.pending.delete(nodeId)
     }
     r.textFonts.pictureGenerations.delete(nodeId)
-    r.invalidateNodePicture(nodeId)
+    r.redrawNode(nodeId)
   }
 }
 

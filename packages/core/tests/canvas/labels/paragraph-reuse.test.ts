@@ -1,17 +1,21 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
-import type { CanvasKit, Paragraph, ParagraphBuilder, TypefaceFontProvider } from 'canvaskit-wasm'
-
-import { initCanvasKit } from '@open-pencil/core/io/formats/raster'
+import type {
+  CanvasKit,
+  Paragraph,
+  ParagraphBuilder,
+  TypefaceFontProvider
+} from '@open-pencil/canvaskit'
+import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { repoPath } from '@open-pencil/test-support/paths'
 
 import { LabelParagraphCache } from '#core/canvas/labels/paragraph-cache'
-let ck: Awaited<ReturnType<typeof initCanvasKit>>
+let ck: Awaited<ReturnType<typeof getCanvasKit>>
 let provider: TypefaceFontProvider
 beforeAll(async () => {
-  ck = await initCanvasKit()
+  ck = await getCanvasKit()
   provider = ck.TypefaceFontProvider.Make()
   provider.registerFont(readFileSync(repoPath('packages/core/assets/InterVariable.ttf')), 'Inter')
   provider.registerFont(readFileSync(repoPath('packages/core/assets/Inter-SemiBold.ttf')), 'Inter')

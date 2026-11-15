@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createEditor, isEmptyDocumentChange, type DocumentChange } from '@open-pencil/core'
+import { DEFAULT_HISTORY_LIMIT } from '@open-pencil/scene-graph/undo'
+import { heldInstances } from '@open-pencil/test-support/heap'
+import { HEAVY_TEST_TIMEOUT_MS } from '@open-pencil/test-support/heavy'
 
 function setup() {
   const editor = createEditor()
@@ -367,20 +370,39 @@ describe('recordEditAsync', () => {
     expect(editor.graph.getNode(note.id)).toBeUndefined()
   })
 
-  test('undoing it brings back the mode a collection it removed was showing', () => {
-    const { editor } = setup()
-    const collection = editor.graph.createCollection('Theme')
-    const dark = editor.graph.createMode(collection.id, 'Dark')
-    if (!dark) throw new Error('No Dark mode')
-    editor.graph.setActiveMode(collection.id, dark)
+  test(
+    'lets go of a step trimmed from history, though the options of the edit after it hold it',
+    async () => {
+      const { editor, card } = setup()
+      // Markers in the first and the latest steps' changes, which the heap names by their classes.
+      class TrimmedStep {
+        readonly step = 'first'
+      }
+      class LatestStep {
+        readonly step = 'latest'
+      }
 
-    editor.recordEdit({ label: 'Agent: remove' }, () =>
-      editor.graph.removeCollection(collection.id)
-    )
-    expect(editor.undo.undo()).toBe('Agent: remove')
-    expect(editor.graph.activeMode.get(collection.id)).toBe(dark)
+      // An agent's call keeps the step on top when it started, as the app's tool runner does.
+      for (let edit = 0; edit <= DEFAULT_HISTORY_LIMIT; edit++) {
+        const stepBefore = editor.undo.peekUndo()
+        await editor.recordEditAsync(
+          {
+            label: 'Agent: move',
+            onRecorded: (change) => {
+              void stepBefore
+              const marker = stepBefore === undefined ? new TrimmedStep() : new LatestStep()
+              Object.assign(change, { marker })
+            }
+          },
+          async () => editor.graph.updateNode(card.id, { x: edit + 1 })
+        )
+      }
 
-    editor.undo.redo()
-    expect(editor.graph.activeMode.has(collection.id)).toBe(false)
-  })
+      // What history holds, not what the collector has freed yet, so it never depends on timing.
+      expect([...heldInstances('UndoManager', ['TrimmedStep', 'LatestStep'])]).toEqual([
+        'LatestStep'
+      ])
+    },
+    HEAVY_TEST_TIMEOUT_MS
+  )
 })

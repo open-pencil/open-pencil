@@ -2,6 +2,7 @@
 import type { Component } from 'vue'
 import { computed } from 'vue'
 import IconAnthropic from '~icons/ai/anthropic'
+import IconAntigravity from '~icons/ai/antigravity'
 import IconClaudeCode from '~icons/ai/claudecode'
 import IconCodex from '~icons/ai/codex'
 import IconCursor from '~icons/ai/cursor'
@@ -35,6 +36,7 @@ const LOGOS: Record<string, Component> = {
   'acp:claude-code': IconClaudeCode,
   'acp:codex': IconCodex,
   'acp:cursor': IconCursor,
+  'acp:antigravity': IconAntigravity,
   'acp:gemini-cli': IconGeminiCLI,
   'acp:grok-build': IconGrok,
   'harness:pi': IconBot

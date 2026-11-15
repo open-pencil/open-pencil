@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { createAPI } from '#core-tests/helpers/figma-api'
+
+import { expectDefined } from '@open-pencil/test-support/assert'
 describe('document & pages', () => {
   test('root has pages as children', () => {
     const api = createAPI()

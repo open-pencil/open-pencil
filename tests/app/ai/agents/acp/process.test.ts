@@ -56,7 +56,7 @@ describe('Tauri process helpers', () => {
     expect(calls[2]?.args).toEqual({ cmd: 'killChild', pid: 42 })
   })
 
-  test('starts Windows ACP command shims through their cmd scope entry', async () => {
+  test('starts Windows ACP command shims through their cmd scope entry, skipping the workspace', async () => {
     Object.defineProperty(globalThis, 'navigator', {
       configurable: true,
       value: { userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
@@ -66,7 +66,7 @@ describe('Tauri process helpers', () => {
         expect(args).toMatchObject({
           program: 'cmd-agent-cli',
           args: ['/c', 'agent-cli', '--stdio'],
-          options: { encoding: 'raw', env: {} }
+          options: { encoding: 'raw', env: { NoDefaultCurrentDirectoryInExePath: '1' } }
         })
         return 44
       }
@@ -77,6 +77,31 @@ describe('Tauri process helpers', () => {
       command: 'agent-cli',
       args: ['--stdio'],
       logId: 'test',
+      destroying: () => false,
+      onUnexpectedClose: vi.fn()
+    })
+    await process.child.kill()
+  })
+
+  test('starts the agent in its workspace with the PATH its lookup searched', async () => {
+    await mockTauriIPC((cmd, args) => {
+      if (cmd === 'plugin:shell|spawn') {
+        expect(args).toMatchObject({
+          program: 'agent-cli',
+          args: ['--stdio'],
+          options: { encoding: 'raw', env: { PATH: '/custom/agent/bin' }, cwd: '/agent-workspace' }
+        })
+        return 45
+      }
+      return null
+    })
+
+    const process = await spawnACPProcess({
+      command: 'agent-cli',
+      args: ['--stdio'],
+      logId: 'test',
+      searchPath: '/custom/agent/bin',
+      cwd: '/agent-workspace',
       destroying: () => false,
       onUnexpectedClose: vi.fn()
     })

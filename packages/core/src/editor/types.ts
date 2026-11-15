@@ -1,5 +1,4 @@
-import type { CanvasKit } from 'canvaskit-wasm'
-
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import type {
   DocumentColorSpace,
   DocumentKind,
@@ -18,14 +17,16 @@ import type { HistoryChange, UndoEntry, UndoManager } from '@open-pencil/scene-g
 
 import type { GuideOverlayState } from '#core/canvas/guides/types'
 import type { DesignIssueOverlay } from '#core/canvas/issues/types'
-import type { RulerTheme, SkiaRenderer } from '#core/canvas/renderer'
+import type { RulerTheme, SkiaRenderer } from '#core/canvas/renderer/skia'
 import type { MeasurementMode, PresenceCursor, SelectionTheme } from '#core/canvas/renderer/types'
 import type { InterfaceTheme } from '#core/constants'
 import type { ConnectorTarget } from '#core/editor/connectors/attach'
+import type { DecidedMove } from '#core/editor/move-policy'
 import type { SnappingPreferences } from '#core/editor/preferences'
 import type { ShaderRasterizer } from '#core/editor/shaders/types'
+import type { PenPressEvent, PenReleaseEvent } from '#core/editor/shapes/pen/gesture'
 import type { NodeEditState } from '#core/editor/vector/types'
-import type { ViewportInsets } from '#core/editor/viewport'
+import type { ViewportInsets } from '#core/editor/viewport/actions'
 import type { CanvasView, EditorRestrictions } from '#core/editor/views/types'
 import type { RotationPreview, ShapeHandleKind } from '#core/geometry'
 import type { IconProvider } from '#core/icons/provider'
@@ -51,6 +52,7 @@ export type Tool =
   | 'HAND'
   | 'COMMENT'
   | 'EYEDROPPER'
+  | 'SCALE'
 
 /** The gradient whose handles the canvas shows while its paint picker is open. */
 export interface GradientEdit {
@@ -59,6 +61,13 @@ export interface GradientEdit {
   index: number
   /** The selected stop, shared by the canvas handles and the picker. */
   stop: number
+}
+
+/** The progressive blur whose start and end handles the canvas shows while its settings are open. */
+export interface BlurRampEdit {
+  nodeId: string
+  /** The blur's place in the layer's effects. */
+  index: number
 }
 
 /** The selected shape's radius, point count, and ratio handles, shown while the pointer is over it. */
@@ -88,8 +97,12 @@ export interface EditorSharedState {
   snappingPreferences: SnappingPreferences
   /** Draw the pixel grid once zoomed in far enough, as Figma's View › Pixel grid; shown unless false. */
   showPixelGrid?: boolean
+  /** Draw the selection's width × height under it, as Figma does; shown unless false. */
+  showSizeLabels?: boolean
   /** The gradient being edited, whose handles the canvas draws and drags. */
   gradientEdit?: GradientEdit | null
+  /** The progressive blur being edited, whose start and end the canvas draws and drags. */
+  blurRampEdit?: BlurRampEdit | null
   presenceCursors: PresenceCursor[]
   documentName: string
   /** Design check markers and highlight, shared by every canvas pane. */
@@ -135,6 +148,11 @@ export interface EditorViewState {
   selectedIds: Set<string>
   marquee: Rect | null
   snapGuides: SnapGuide[]
+  /**
+   * Points the host adds to what the pen and vector edit mode snap to, on the current page
+   * (`setSnapTargets`), such as where a traced shape starts and ends.
+   */
+  snapTargets: { points: Vector[] }
   guides: GuideOverlayState
   rotationPreview: RotationPreview | null
   dropTargetId: string | null
@@ -147,6 +165,11 @@ export interface EditorViewState {
     direction: 'HORIZONTAL' | 'VERTICAL'
   } | null
   hoveredNodeId: string | null
+  /**
+   * The point of the selection's box the Scale tool keeps in place, as fractions of its width and
+   * height: the center when the tool is picked, then where a drag or the panel's anchor puts it.
+   */
+  scaleAnchor: Vector
   /** A pointer move, resize, or rotation is in progress. */
   transforming: boolean
   measurementMode: MeasurementMode
@@ -239,6 +262,11 @@ export interface EditorEvents extends SceneGraphEvents {
    * showing another view do not report.
    */
   'render:presented': (versions: RenderVersions) => void
+  /**
+   * Such a canvas drew more of a frame of these versions without finishing it: tiles of the
+   * visible scene are still to come. A wait for the frame tells a slow draw from a stuck one by it.
+   */
+  'render:progressed': (versions: RenderVersions) => void
   'graph:replaced': (graph: SceneGraph) => void
   'document:color-space-changed': (colorSpace: DocumentColorSpace) => void
   'document:libraries-changed': () => void
@@ -258,6 +286,12 @@ export interface EditorEvents extends SceneGraphEvents {
    * meanwhile is undone. The history is unchanged.
    */
   'edit:discarded': () => void
+  /** A press of the pen, before it acts; `cancelGesture` refuses it. */
+  'pen:pressed': (event: PenPressEvent) => void
+  /** The release ending a press of the pen, before it commits; `cancelGesture` takes it back. */
+  'pen:released': (event: PenReleaseEvent) => void
+  /** The gesture in progress was taken back (`cancelGesture`); the canvas drops what it holds. */
+  'gesture:cancelled': () => void
   'selection:changed': (selectedIds: string[], previousIds: string[]) => void
   'rotation:preview-changed': (preview: RotationPreview | null) => void
   'tool:changed': (tool: Tool, previousTool: Tool) => void
@@ -323,6 +357,12 @@ export interface EditorContext {
   getRenderers: () => Iterable<SkiaRenderer>
   getTextEditor: () => TextEditor | null
   requestRender: () => void
+  /** A change to a layer with its position as the host's move policy decides it (`setMovePolicy`). */
+  constrainMove: <T extends Partial<SceneNode>>(
+    node: SceneNode,
+    changes: T,
+    preview?: boolean
+  ) => DecidedMove<T>
   /** A document change the canvas does not draw: views and saving follow, nothing is redrawn. */
   requestRefresh: () => void
   requestRepaint: () => void

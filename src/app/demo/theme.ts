@@ -6,7 +6,7 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 type AppTheme = 'dark' | 'light'
 type TourThemeEditor = Pick<
   Editor,
-  'graph' | 'setActiveMode' | 'setPageColor' | 'onEditorEvent' | 'requestRender'
+  'graph' | 'updateNode' | 'setPageColor' | 'onEditorEvent' | 'requestRender'
 >
 
 /**
@@ -23,9 +23,9 @@ function isColor(value: unknown): value is Color {
 }
 
 /**
- * Show the tour in the app's theme: each tour collection reads its mode of that name wherever a
- * layer does not pin one, and the page takes the Page color. Neither is an edit, so the tour
- * opens with nothing to save.
+ * Show the tour in the app's theme: each page sets each tour collection to its mode of that name,
+ * as the Page section's mode control does, so layers that do not pin one read it, and the page
+ * takes the Page color. Neither is an edit, so the tour opens with nothing to save or undo.
  */
 export function applyTourTheme(editor: TourThemeEditor, theme: AppTheme): void {
   const { graph } = editor
@@ -34,7 +34,12 @@ export function applyTourTheme(editor: TourThemeEditor, theme: AppTheme): void {
       if (!TOUR_COLLECTIONS.some((name) => name === collection.name)) continue
       const mode = collection.modes.find((candidate) => candidate.name === MODE_NAMES[theme])
       if (!mode) continue
-      editor.setActiveMode(collection.id, mode.modeId)
+      for (const tourPage of graph.getPages()) {
+        if (tourPage.variableModes[collection.id] === mode.modeId) continue
+        editor.updateNode(tourPage.id, {
+          variableModes: { ...tourPage.variableModes, [collection.id]: mode.modeId }
+        })
+      }
       if (collection.name !== TOUR_COLLECTIONS[0]) continue
       const page = collection.variableIds
         .map((id) => graph.variables.get(id))

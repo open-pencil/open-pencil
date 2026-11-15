@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
+import { ref } from 'vue'
 
 import CloudReportDialog from './CloudReportDialog.vue'
 
@@ -16,13 +17,13 @@ const meta = {
   args: { host: 'cloud.openpencil.dev', email: null, busy: false, failure: null },
   render: (args) => ({
     components: { CloudReportDialog },
-    setup: () => ({ args }),
+    setup: () => ({ args, replyEmail: ref(args.email ?? '') }),
     template: `
       <div class="h-140">
         <CloudReportDialog
           :open="true"
           :host="args.host"
-          :email="args.email"
+          v-model:reply-email="replyEmail"
           :busy="args.busy"
           :failure="args.failure"
         />

@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { appendAll } from '@open-pencil/scene-graph/arrays'
+
 import type { AppMenuEntry } from '@/app/shell/menu/schema'
 import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
 
@@ -8,7 +10,7 @@ function actionItems(entries: readonly AppMenuEntry[]): AppMenuEntry[] {
   for (const entry of entries) {
     if ('type' in entry && entry.type === 'separator') continue
     result.push(entry)
-    if (entry.sub) result.push(...actionItems(entry.sub))
+    if (entry.sub) appendAll(result, actionItems(entry.sub))
   }
   return result
 }
@@ -49,10 +51,6 @@ describe('APP_MENU_SCHEMA', () => {
     ).filter((entry) => !('type' in entry) && entry.handler === 'shell')
 
     expect(shellEntries.map((entry) => ('type' in entry ? '' : entry.id))).toEqual([
-      'open-tour',
-      'diagnostics',
-      'report-problem',
-      'support-openpencil',
       'settings',
       'view-design-issues',
       'theme-light',
@@ -60,7 +58,16 @@ describe('APP_MENU_SCHEMA', () => {
       'theme-auto',
       'snap-geometry',
       'snap-objects',
-      'snap-pixel-grid'
+      'snap-pixel-grid',
+      'help-docs',
+      'help-shortcuts',
+      'help-whats-new',
+      'open-tour',
+      'report-problem',
+      'diagnostics',
+      'help-community',
+      'help-github',
+      'support-openpencil'
     ])
   })
 
@@ -75,6 +82,33 @@ describe('APP_MENU_SCHEMA', () => {
     expect(ids).not.toContain('browse-files')
     expect(ids).toContain('save-to')
     expect(ids).not.toContain('save-to-cloud')
+  })
+
+  // Last on every platform, as each one expects; getting help is never a File command.
+  test('ends with a Help menu holding guides, reporting, and the community', () => {
+    const help = APP_MENU_SCHEMA.at(-1)
+    const ids = (help ? actionItems(help.items) : []).map((entry) =>
+      'type' in entry ? '' : entry.id
+    )
+
+    expect(help?.label).toBe('Help')
+    expect(help?.feature).toBeUndefined()
+    expect(ids).toEqual([
+      'help-docs',
+      'help-shortcuts',
+      'help-whats-new',
+      'open-tour',
+      'report-problem',
+      'diagnostics',
+      'help-community',
+      'help-github',
+      'support-openpencil'
+    ])
+    const fileMenu = APP_MENU_SCHEMA.find((group) => group.label === 'File')
+    const fileIds = (fileMenu ? actionItems(fileMenu.items) : []).map((entry) =>
+      'type' in entry ? '' : entry.id
+    )
+    for (const id of ids) expect(fileIds).not.toContain(id)
   })
 
   test('exposes recent files through the native File menu', () => {
@@ -100,7 +134,7 @@ describe('APP_MENU_SCHEMA', () => {
       ])
     )
 
-    expect([...shown.keys()]).toEqual(['File', 'Edit', 'View'])
+    expect([...shown.keys()]).toEqual(['File', 'Edit', 'View', 'Help'])
     expect(shown.get('File')).toEqual(expect.arrayContaining(['new', 'open', 'settings']))
     expect(shown.get('Edit')).toEqual(expect.arrayContaining(['copy', 'cut', 'paste']))
     const shownAnywhere = [...shown.values()].flat()

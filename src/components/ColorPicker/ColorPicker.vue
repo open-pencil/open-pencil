@@ -9,6 +9,8 @@ import { ColorPickerRoot } from '@open-pencil/vue/primitives/ColorPicker'
 import ColorPickerPanel from '@/components/color-picker-panel/ColorPickerPanel.vue'
 import { useEyedropperKeepOpen } from '@/components/color-picker-panel/eyedropper'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
+import FillSwatchTrigger from '@/components/ui/paint/FillSwatchTrigger.vue'
+import { solidFill } from '@/components/ui/paint/swatch-trigger'
 
 const { panels } = useI18n()
 const {
@@ -39,16 +41,16 @@ const keepOpen = eyedropper ? useEyedropperKeepOpen() : undefined
     :color="color"
     :label="panels.editColor"
     :keep-open="keepOpen"
-    :ui="{
-      content: cls.content,
-      swatch: 'size-5 shrink-0 cursor-pointer rounded border border-border p-0'
-    }"
+    :ui="{ content: cls.content }"
     @update="emit('update', $event)"
     @open-change="emit('openChange', $event)"
     @cancel="emit('cancel')"
   >
-    <template v-if="$slots.trigger" #trigger="trigger">
-      <slot name="trigger" v-bind="trigger" />
+    <!-- The same swatch a fill row shows, so a colour's preview reads alike in every field. -->
+    <template #trigger="trigger">
+      <slot name="trigger" v-bind="trigger">
+        <FillSwatchTrigger :fill="solidFill(color)" :label="panels.editColor" />
+      </slot>
     </template>
     <template #default="{ color: currentColor }">
       <ColorPickerPanel

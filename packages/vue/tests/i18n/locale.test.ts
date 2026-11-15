@@ -32,6 +32,12 @@ describe('browser locale matching', () => {
     expect(resolveBrowserLocale(['fr-CA', 'pt-PT'])).toBe('fr')
   })
 
+  test('matches regional Arabic to ar', () => {
+    expect(resolveBrowserLocale(['ar-EG', 'en-US'])).toBe('ar')
+    expect(resolveBrowserLocale(['ar-SA'])).toBe('ar')
+    expect(resolveBrowserLocale(['en-US', 'ar'])).toBe('en')
+  })
+
   test('falls back to English when no locale matches', () => {
     expect(resolveBrowserLocale(['ko-KR'])).toBe('en')
   })

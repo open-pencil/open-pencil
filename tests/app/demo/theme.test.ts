@@ -30,20 +30,20 @@ function tour() {
   return { store, graph, theme, chrome, brand }
 }
 
-const activeMode = (graph: ReturnType<typeof tour>['graph'], collectionId: string) =>
+const pageMode = (graph: ReturnType<typeof tour>['graph'], collectionId: string) =>
   graph.getNodeVariableModeId(graph.getPages()[0].id, collectionId)
 
 describe('the tour in the app theme', () => {
   test('reads both tour collections in the theme’s mode and paints the page', () => {
     const { store, graph, theme, chrome, brand } = tour()
     applyTourTheme(store, 'light')
-    expect(activeMode(graph, theme.id)).toBe(theme.light)
-    expect(activeMode(graph, chrome.id)).toBe(chrome.light)
-    expect(activeMode(graph, brand.id)).toBe(brand.dark)
+    expect(pageMode(graph, theme.id)).toBe(theme.light)
+    expect(pageMode(graph, chrome.id)).toBe(chrome.light)
+    expect(pageMode(graph, brand.id)).toBe(brand.dark)
     expect(store.state.pageColor).toMatchObject(LIGHT_PAGE)
 
     applyTourTheme(store, 'dark')
-    expect(activeMode(graph, theme.id)).toBe(theme.dark)
+    expect(pageMode(graph, theme.id)).toBe(theme.dark)
     expect(store.state.pageColor).toMatchObject(DARK_PAGE)
   })
 
@@ -59,17 +59,17 @@ describe('the tour in the app theme', () => {
     const { store, graph, theme } = tour()
     const appTheme = ref<'dark' | 'light'>('dark')
     followAppTheme(store, appTheme)
-    expect(activeMode(graph, theme.id)).toBe(theme.dark)
+    expect(pageMode(graph, theme.id)).toBe(theme.dark)
     appTheme.value = 'light'
     await nextTick()
-    expect(activeMode(graph, theme.id)).toBe(theme.light)
+    expect(pageMode(graph, theme.id)).toBe(theme.light)
 
     // Another document with a collection of the same name is not the tour.
     const other = new SceneGraph()
     const collection = other.createCollection('Theme')
     other.renameMode(collection.id, collection.defaultModeId, 'Dark')
     store.replaceGraph(other)
-    const setMode = spyOn(store, 'setActiveMode')
+    const setMode = spyOn(store, 'updateNode')
     appTheme.value = 'dark'
     await nextTick()
     expect(setMode).not.toHaveBeenCalled()
@@ -79,7 +79,7 @@ describe('the tour in the app theme', () => {
     const { store } = tour()
     const appTheme = ref<'dark' | 'light'>('dark')
     store.runInScope(() => followAppTheme(store, appTheme))
-    const setMode = spyOn(store, 'setActiveMode')
+    const setMode = spyOn(store, 'updateNode')
 
     store.dispose()
     appTheme.value = 'light'

@@ -13,21 +13,21 @@ export function constraintIndicatorDriver(page: () => Page) {
       vertical: ConstraintType,
       rotation = 0
     ) {
+      await showView(page(), { zoom: 1, panX: 0, panY: 0 })
       const ids = await pageScene<typeof ConstraintScene>(
         page,
         '/tests/helpers/canvas/constraint-indicators/scene.ts'
       ).build('createConstrainedLayerScene', horizontal, vertical, rotation)
-      await showView(page(), { zoom: 1, panX: 0, panY: 0 })
       await page().evaluate((id) => window.openPencil?.getStore?.().select([id]), ids.rectangle)
     },
 
     /** Builds a frame holding a group and selects the group or the first layer in it. */
     async selectInGroup(second: ConstraintType, select: 'group' | 'first') {
+      await showView(page(), { zoom: 1, panX: 0, panY: 0 })
       const ids = await pageScene<typeof ConstraintScene>(
         page,
         '/tests/helpers/canvas/constraint-indicators/scene.ts'
       ).build('createConstrainedGroupScene', second)
-      await showView(page(), { zoom: 1, panX: 0, panY: 0 })
       await page().evaluate((id) => window.openPencil?.getStore?.().select([id]), ids[select])
     }
   }

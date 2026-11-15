@@ -43,6 +43,8 @@ export interface NodeChangeObserver {
   before: (node: SceneNode) => void
   /** A node was just added. */
   created: (node: SceneNode) => void
+  /** A node is about to take a preview's changes, which no history keeps. */
+  previewed?: (node: SceneNode) => void
   /**
    * A variable or collection is about to change, be added, or be removed, and is still as it
    * was: absent, for one about to be added.
@@ -192,7 +194,10 @@ export interface Fill {
   blendMode?: BlendMode
   gradientStops?: GradientStop[]
   gradientTransform?: GradientTransform
+  /** The image an IMAGE paint draws, or the poster frame a VIDEO paint draws in its clip's place. */
   imageHash?: string
+  /** A VIDEO paint's clip, which `imageHash`'s poster frame stands in for when drawn. */
+  videoHash?: string
   imageScaleMode?: ImageScaleMode
   /** A crop's image-space window; Fill, Fit and Tile ignore it. */
   imageTransform?: GradientTransform
@@ -257,8 +262,39 @@ export interface Stroke extends Fill {
   dashPattern?: number[]
 }
 
+/**
+ * A Glass effect's lens, in Figma's plugin terms: how far in from the edge it bends what is
+ * behind the layer (`depth`, 1 to 100 px) and how strongly (`refraction`, 0 to 1), the light it
+ * catches (`lightAngle` in degrees, 0 lighting the top edge, and `lightIntensity`, 0 to 1), and how
+ * far the colours split (`dispersion`, 0 to 1). The effect's `radius` frosts the glass.
+ */
+export interface GlassEffectParams {
+  refraction: number
+  depth: number
+  lightAngle: number
+  lightIntensity: number
+  dispersion: number
+}
+
+/**
+ * A progressive blur's ramp, in Figma's plugin terms: the blur grows from `startRadius` at
+ * `startOffset` to the effect's `radius` at `endOffset`, both points fractions of the layer's
+ * size, and holds each end's radius beyond it.
+ */
+export interface ProgressiveBlur {
+  startRadius: number
+  startOffset: Vector
+  endOffset: Vector
+}
+
 export interface Effect {
-  type: 'DROP_SHADOW' | 'INNER_SHADOW' | 'LAYER_BLUR' | 'BACKGROUND_BLUR' | 'FOREGROUND_BLUR'
+  type:
+    | 'DROP_SHADOW'
+    | 'INNER_SHADOW'
+    | 'LAYER_BLUR'
+    | 'BACKGROUND_BLUR'
+    | 'FOREGROUND_BLUR'
+    | 'GLASS'
   color: Color
   offset: Vector
   radius: number
@@ -266,10 +302,14 @@ export interface Effect {
   visible: boolean
   blendMode?: BlendMode
   showShadowBehindNode?: boolean
+  /** Set on a `GLASS` effect, and only there. */
+  glass?: GlassEffectParams
+  /** Set on a layer or background blur that is progressive, and only there. */
+  progressive?: ProgressiveBlur
 }
 
 export type ConstraintType = 'MIN' | 'CENTER' | 'MAX' | 'STRETCH' | 'SCALE'
-export type TextAutoResize = 'NONE' | 'HEIGHT' | 'WIDTH_AND_HEIGHT' | 'TRUNCATE'
+export type TextAutoResize = 'NONE' | 'HEIGHT' | 'WIDTH_AND_HEIGHT'
 
 /** Where a connector end attaches to a layer: a side, the side Figma picks, or a fixed point. */
 export type ConnectorMagnet =
@@ -663,7 +703,7 @@ export interface SceneNode {
   height: number
   rotation: number
   source: SourceMetadata
-  /** Materialized layout hint imported or generated outside the live Yoga layout pass. */
+  /** Materialized layout hint imported or generated outside the live layout pass. */
   derivedLayout: Partial<Rect> | null
 
   fills: Fill[]
@@ -754,7 +794,8 @@ export interface SceneNode {
   primaryAxisSizing: AxisSizingMode
   counterAxisSizing: AxisSizingMode
   itemSpacing: number
-  counterAxisSpacing: number
+  /** Space between wrapped lines; null follows `itemSpacing`. Read it with `counterAxisSpacingOf`. */
+  counterAxisSpacing: number | null
   paddingTop: number
   paddingRight: number
   paddingBottom: number
@@ -1093,9 +1134,13 @@ export interface Variable {
   version?: string
 }
 
-/** Scalar numeric node fields accepted by numeric property controls. */
+/** Scalar numeric node fields accepted by numeric property controls; some may also be null. */
 export type NumericNodeProperty = {
-  [K in keyof SceneNode]-?: SceneNode[K] extends number ? K : never
+  [K in keyof SceneNode]-?: SceneNode[K] extends number | null
+    ? number extends SceneNode[K]
+      ? K
+      : never
+    : never
 }[keyof SceneNode]
 
 export interface VariableCollectionMode {

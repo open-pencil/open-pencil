@@ -37,7 +37,7 @@ import { markSourceFieldsEdited } from '@open-pencil/scene-graph/source-metadata
 
 import { draggedSizing, layerSizing } from '#vue/shared/input/resize/sizing'
 import { layerSnapSource, resizedRect } from '#vue/shared/input/resize/snap'
-import { optionalEditorState } from '#vue/shared/input/snap'
+import { optionalEditorState } from '#vue/shared/input/snap/resolve'
 import type { DragResize } from '#vue/shared/input/types'
 
 /**
@@ -307,7 +307,7 @@ export function applyResizedRect(
     editor.renderer?.invalidateVectorPath(d.nodeId)
   }
 
-  // Two passes around the layout run: the first sizes children so Yoga can
+  // Two passes around the layout run: the first sizes children so layout can
   // resolve HUG/FILL, the second re-applies against the settled boxes.
   applyConstrainedChildren(d, newRect, editor)
   editor.graph.runPreviewUpdates(() => computeAllLayouts(editor.graph, d.nodeId))

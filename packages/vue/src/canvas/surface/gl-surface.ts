@@ -1,5 +1,4 @@
-import type { CanvasKit, Surface } from 'canvaskit-wasm'
-
+import type { CanvasKit, Surface } from '@open-pencil/canvaskit'
 import type { Editor } from '@open-pencil/core'
 import { IS_BROWSER } from '@open-pencil/core/constants'
 import type { DocumentColorSpace } from '@open-pencil/scene-graph'

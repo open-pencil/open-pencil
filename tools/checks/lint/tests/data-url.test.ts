@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { lintFiles, ruleDiagnostics } from './helpers/lint.ts'
 
-const rule = 'no-hand-rolled-data-url'
-const rules = { [`open-pencil/${rule}`]: 'error' }
+const rule = '@open-pencil/data/no-hand-rolled-data-url'
+const rules = { [rule]: 'error' }
 
 const rejected = [
   `const url = \`data:image/png;base64,\${fromUint8Array(bytes)}\``,
@@ -26,7 +26,7 @@ const accepted = [
   "const link = 'https://example.com/' + encodeURIComponent(name)"
 ]
 
-describe('no-hand-rolled-data-url', () => {
+describe('@open-pencil/data/no-hand-rolled-data-url', () => {
   test('reports hand-built and hand-matched data URLs once each, in one Oxlint run', async () => {
     const cases = [...rejected, ...accepted]
     const sources = Object.fromEntries(

@@ -1,10 +1,9 @@
 import { onTestFinished } from 'bun:test'
 
-import type { Canvas, CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
-
+import type { Canvas, CanvasKit, TypefaceFontProvider } from '@open-pencil/canvaskit'
 import { asDouble } from '@open-pencil/test-support/doubles'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { fontManager } from '#core/text/font/manager'
 export { asDouble }
 

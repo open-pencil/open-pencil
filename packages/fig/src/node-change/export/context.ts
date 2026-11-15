@@ -9,10 +9,13 @@ import type {
 import { isUnsetGuid, stringToGuid, UNSET_GUID } from '@open-pencil/kiwi/fig/guid'
 import type {
   ComponentPropertyDefinition,
+  Effect,
+  GlassEffectParams,
   PluginDataEntry,
   SceneGraph,
   SceneNode
 } from '@open-pencil/scene-graph'
+import { UNSET_GLASS } from '@open-pencil/scene-graph/constants'
 import type { Color, GUID, Matrix } from '@open-pencil/scene-graph/primitives'
 import { sharedStyleLayers } from '@open-pencil/scene-graph/shared-styles'
 import { EFFECT_BINDING_PROPERTIES, effectBindingField } from '@open-pencil/scene-graph/variables'
@@ -344,9 +347,34 @@ export function createEffects(context: SceneNodeToKiwiContext, node: SceneNode):
       spread: effect.spread,
       visible: effect.visible,
       blendMode: effect.blendMode ?? 'NORMAL',
-      showShadowBehindNode: effect.showShadowBehindNode
+      showShadowBehindNode: effect.showShadowBehindNode,
+      ...kiwiEffectKindFields(effect)
     }))
   )
+}
+
+/** The fields only a glass effect or a progressive blur writes, under the archive's names. */
+function kiwiEffectKindFields(effect: Effect): Partial<KiwiEffect> {
+  if (effect.type === 'GLASS') return kiwiGlassFields(effect.glass ?? UNSET_GLASS)
+  if (!effect.progressive) return {}
+  return {
+    blurOpType: 'PROGRESSIVE',
+    startRadius: effect.progressive.startRadius,
+    startOffset: { ...effect.progressive.startOffset },
+    endOffset: { ...effect.progressive.endOffset }
+  }
+}
+
+/** A glass effect's lens under the archive's field names, with the bevel Figma always writes. */
+function kiwiGlassFields(glass: GlassEffectParams): Partial<KiwiEffect> {
+  return {
+    refractionRadius: glass.depth,
+    specularAngle: glass.lightAngle,
+    specularIntensity: glass.lightIntensity,
+    bevelSize: 1,
+    chromaticAberration: glass.dispersion,
+    refractionIntensity: glass.refraction
+  }
 }
 
 /** Instances address descendants by override key when one exists, else by node GUID. */

@@ -35,11 +35,16 @@
   "save": "Salvar",
   "done": "Concluído",
   "task": "Tarefa",
+  "copyCode": "Copiar código",
+  "copyTable": "Copiar tabela",
+  "openLinkHeading": "Abrir este link?",
+  "openLink": "Abrir link",
   "back": "Voltar",
   "supported": "Compatível",
   "unsupported": "Não compatível",
   "tokens": "tokens",
   "clear": "Limpar",
   "dismiss": "Dispensar",
-  "browserSupport": "Verificar compatibilidade do navegador"
+  "browserSupport": "Verificar compatibilidade do navegador",
+  "typeToConfirm": "Para confirmar, digite “{text}”."
 }

@@ -133,7 +133,12 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
 
 <template>
   <ScrollAreaRoot class="relative min-h-0 flex-1">
-    <ScrollAreaViewport ref="viewportComponent" class="h-full px-3 pt-3 [&>div]:h-full">
+    <!-- Text below the fold fades out at the bottom edge, as tab bars fade at theirs. -->
+    <ScrollAreaViewport
+      ref="viewportComponent"
+      class="h-full px-3 pt-3 data-overflow-end:mask-b-from-[calc(100%-2rem)] [&>div]:h-full"
+      :data-overflow-end="(messages.length && !arrivedState.bottom) || undefined"
+    >
       <AppPlaceholder
         v-if="messages.length === 0 && sending === null && !compacting"
         data-test-id="chat-empty-state"
@@ -179,7 +184,7 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
 
         <div v-if="sending !== null" class="flex justify-end" data-test-id="chat-sending-message">
           <div
-            class="max-w-[85%] rounded-xl rounded-br-md bg-accent px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap text-on-accent"
+            class="max-w-[85%] rounded-xl rounded-ee-md bg-accent px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap text-on-accent"
           >
             <ChatReferenceText :text="sending" />
           </div>
@@ -243,7 +248,7 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
     <IconButton
       v-if="messages.length && !arrivedState.bottom"
       :label="ai.jumpToLatest"
-      class="absolute right-3 bottom-3 border border-border bg-panel shadow-sm"
+      class="absolute inset-e-3 bottom-3 border border-border bg-panel shadow-sm"
       @click="resumeFollowing"
       ><icon-lucide-arrow-down class="size-4"
     /></IconButton>

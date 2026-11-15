@@ -47,6 +47,12 @@ const capturedNodeSchema = v.object({
    * `color`, sizes, and font properties.
    */
   style: v.optional(v.record(v.string(), v.string())),
+  /**
+   * Computed values where `style`'s used ones lose what the page set: the sizes (`width`,
+   * `height`, their minimums and maximums, and `flex-basis`) before layout resolves `auto` and
+   * percentages to pixels, such as `auto`, `50%`, or `390px`, and `line-height`, such as `1.5`.
+   */
+  computed: v.optional(v.record(v.string(), v.string())),
   /** An inline element's box on each line it spans, in page pixels. */
   fragments: v.optional(v.array(rectSchema)),
   /** The lines of the inline formatting context the element holds, in page pixels. */

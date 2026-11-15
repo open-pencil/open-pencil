@@ -2,8 +2,12 @@ import type { Fill, StyleRun } from '@open-pencil/scene-graph'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 import styledGlyphs from '#tests/fixtures/styled-saved-glyphs.json' with { type: 'json' }
+import { waitForSettledScene } from '#tests/helpers/canvas/page-scene'
 
 const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
+
+/** A family no font provider has, so its text draws only from saved glyphs. */
+const SAVED_ONLY_FONT = 'Unavailable Visual Test Face'
 
 test('saved glyphs remain authoritative with an available font and invalidate on edit', async () => {
   await editor.page.evaluate(() => {
@@ -108,9 +112,10 @@ test('saved glyphs remain authoritative with an available font and invalidate on
  * fill, here a half-transparent red or a gradient, colours the letters and never the emoji. A
  * gradient spans the layer as on a shape. Measured in Figma desktop; the square was drawn in the
  * fill colour before, and gradient text lost its emoji and stretched its gradient by the font size.
+ * The text's font is missing, so it draws from its saved glyphs: loaded text lays out live.
  */
 test('saved emoji glyphs draw the emoji, not their placeholder, in their own colours', async () => {
-  await editor.page.evaluate(() => {
+  await editor.page.evaluate((fontFamily) => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('Missing editor')
     const outline = (points: [number, number, number][]) => {
@@ -141,7 +146,7 @@ test('saved emoji glyphs draw the emoji, not their placeholder, in their own col
       width: 300,
       height: 80,
       text: 'H🖥️H👍🏽',
-      fontFamily: 'Inter',
+      fontFamily,
       fontSize: 64,
       fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 0.5, visible: true }],
       derivedTextGlyphs: [
@@ -180,7 +185,7 @@ test('saved emoji glyphs draw the emoji, not their placeholder, in their own col
       width: 240,
       height: 80,
       text: 'HH🖥️',
-      fontFamily: 'Inter',
+      fontFamily,
       fontSize: 64,
       fills: [
         {
@@ -217,13 +222,8 @@ test('saved emoji glyphs draw the emoji, not their placeholder, in their own col
       ]
     })
     store.requestRender()
-  })
-  await editor.page.evaluate(
-    () =>
-      new Promise<void>((resolve) => {
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
-      })
-  )
+  }, SAVED_ONLY_FONT)
+  await waitForSettledScene(editor.page)
   // A missing emoji covers less than the default 1% of the region, so allow only edge noise.
   expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot('saved-emoji-glyphs.png', {
     maxDiffPixels: 500

@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '#core/editor'
-import { FigmaAPI } from '#core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
+import { createEditor } from '#core/editor'
+import { FigmaAPI } from '#core/figma-api'
+
 // Each case repeats a Figma desktop 126 plugin API script; the numbers are what Figma reported.
-// Figma lays out as a script edits, while ours lays out when geometry is read, so the cases read
-// a frame's size where Figma would already have laid it out.
+// Both lay out a script's edits before it reads or places a layer.
 
 function button(figma: FigmaAPI) {
   const frame = figma.createFrame()

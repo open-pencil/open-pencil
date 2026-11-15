@@ -2,12 +2,14 @@ import { describe, expect, setDefaultTimeout, test } from 'bun:test'
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+
 import { figThumbnailSize } from '#cli-tests/helpers/fig'
+import { runCLI } from '#cli-tests/helpers/run'
+
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { parseFigFile } from '@open-pencil/core/io/formats/fig'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { uint8ArrayToArrayBuffer } from '@open-pencil/test-support/paths'
-import { runCLI } from '#cli-tests/helpers/run'
 
 setDefaultTimeout(60_000)
 

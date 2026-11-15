@@ -20,7 +20,7 @@ export const open = defineCommand({
     json
   },
   run: ({ args }) =>
-    runAppCommand('open_file', absolutePath(args.file), {
+    runAppCommand('open_document', absolutePath(args.file), {
       json: args.json,
       message: () => ok(`Opened ${args.file}`)
     })
@@ -33,7 +33,7 @@ export const create = defineCommand({
     json
   },
   run: ({ args }) =>
-    runAppCommand('new_document', absolutePath(args.path), {
+    runAppCommand('create_document', absolutePath(args.path), {
       json: args.json,
       message: () => ok('Created document')
     })
@@ -48,7 +48,7 @@ export const save = defineCommand({
   },
   run: ({ args }) =>
     runAppCommand(
-      'save_file',
+      'save_document',
       { ...appTargetRPCArgs(args), ...absolutePath(args.path) },
       {
         json: args.json,
@@ -80,7 +80,7 @@ export const close = defineCommand({
     }
     if (args.save) rpcArgs.unsaved = 'save'
     if (args.discard) rpcArgs.unsaved = 'discard'
-    return runAppCommand('close_file', rpcArgs, {
+    return runAppCommand('close_document', rpcArgs, {
       json: args.json,
       message: (result) =>
         (result as { closed?: boolean }).closed ? ok('Closed document') : 'Document stayed open'

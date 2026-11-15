@@ -1,1 +1,0 @@
-- In the browser, Object → Insert Icon… keeps the icon picker open instead of closing it at once.

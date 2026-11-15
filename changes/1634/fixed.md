@@ -1,2 +1,0 @@
-- Layers pinned by constraints inside a Hug auto layout frame move once when the frame resizes, instead of drifting.
-- Negative item spacing in auto layout overlaps siblings, and Hug frames shrink by the overlap, as in Figma.

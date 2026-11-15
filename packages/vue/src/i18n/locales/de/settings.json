@@ -1,6 +1,8 @@
 {
   "interfaceScale": "Oberflächengröße",
   "interfaceScaleDescription": "Skaliert Bedienfelder, Text und Steuerelemente, ohne den Canvas-Zoom zu ändern.",
+  "mirrorInterface": "Oberfläche spiegeln",
+  "mirrorInterfaceDescription": "Ordnet Bedienfelder, Menüs und Steuerelemente von rechts nach links an, wie die Sprache gelesen wird. Canvas, Koordinaten und Code bleiben von links nach rechts.",
   "recentFiles": "Zuletzt verwendete Dateien",
   "recentFilesDescription": "Wähle, wie viele Dateien in der Liste und im Menü „Zuletzt verwendet“ gespeichert werden.",
   "recentFilesLimit": "Anzahl zuletzt verwendeter Dateien",

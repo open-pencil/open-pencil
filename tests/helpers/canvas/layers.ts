@@ -44,6 +44,26 @@ export function layerDriver(page: () => Page) {
     },
 
     /**
+     * Where the bottom-right handle of the one selected, upright layer shows on the canvas, in
+     * canvas-element pixels.
+     */
+    selectedCorner(): Promise<Vector> {
+      return page().evaluate(() => {
+        const store = window.openPencil?.getStore?.()
+        if (!store) throw new Error('OpenPencil store not initialized')
+        const [id] = store.state.selectedIds
+        const layer = id ? store.graph.getNode(id) : undefined
+        if (!layer) throw new Error('No layer selected')
+        const position = store.graph.getAbsolutePosition(id)
+        const { zoom, panX, panY } = store.state
+        return {
+          x: (position.x + layer.width) * zoom + panX,
+          y: (position.y + layer.height) * zoom + panY
+        }
+      })
+    },
+
+    /**
      * Driver: an auto layout frame on the current page with a rectangle per name in its flow,
      * expanded in the layers panel by selecting its first item.
      */

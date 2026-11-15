@@ -1,0 +1,1 @@
+- Cloud names accounts by text in its MFA, sign-in and profile picture tables, like every other table it builds (#2053).

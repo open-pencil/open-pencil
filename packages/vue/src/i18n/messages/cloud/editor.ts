@@ -49,8 +49,15 @@ export const cloudMessageDefaults = {
   errorNotCloudHeading: 'This isn’t an OpenPencil Cloud server',
   errorNotCloudDescription:
     'The address answered, but not as OpenPencil Cloud. Ask your team for the right one.',
-  errorOutdatedHeading: 'This server needs an update',
-  errorOutdatedDescription: 'It runs an older version of OpenPencil Cloud than this app supports.',
+  errorServerOutdatedHeading: 'This server needs an update',
+  errorServerOutdatedDescription:
+    'It runs an older version of OpenPencil Cloud than this app supports.',
+  errorEditorOutdatedHeading: 'Update OpenPencil to use this server',
+  errorEditorOutdatedDescription: 'This server needs a newer version of OpenPencil than this one.',
+  editorOutdatedBanner: params(
+    '{host} needs a newer version of OpenPencil. Update to keep working with your files there.'
+  ),
+  updateOpenPencil: 'Update OpenPencil',
   errorDeniedHeading: 'Sign-in was denied',
   errorDeniedDescription: 'The request was turned down in the browser. Start again to sign in.',
   errorExpiredHeading: 'The code expired',
@@ -186,6 +193,10 @@ export const cloudMessageDefaults = {
 
   // Status
   statusViewOnlyDetail: 'You can look around and follow others; your changes won’t reach anyone.',
+  statusStorageFull: 'Storage full',
+  statusStorageFullDetail:
+    'The owner of this file has used all their storage, so it’s view only until space is freed or their plan grows. It can still be opened, downloaded, and deleted.',
+  statusManagePlan: 'Manage plan',
   // Keeping a file without an account
   draftHeading: 'Keep this file',
   draftDescription: params<{ host: string }>(
@@ -269,7 +280,6 @@ export const cloudMessageDefaults = {
   deleteWorkspaceHeading: params('Delete {workspace}?'),
   deleteWorkspaceDescription:
     'Everyone loses access and its invitations stop working. Only an empty workspace can be deleted.',
-  deleteWorkspaceTypeName: params('To confirm, type “{workspace}”.'),
   dangerZone: 'Danger zone',
   leaveWorkspaceShort: 'Leave',
   deleteWorkspaceShort: 'Delete',
@@ -297,6 +307,8 @@ export const cloudMessageDefaults = {
   settingsSignedOut: 'Signed out',
   settingsWaitingForApproval: 'Waiting for an administrator to approve your account',
   settingsAccessClosed: 'An administrator declined or removed your access',
+  settingsAcceptTerms: 'Accept this server’s terms to keep using it',
+  settingsReviewTerms: 'Review terms',
   settingsOptionsFor: params('Options for {host}'),
   settingsAccountAndSecurity: 'Account and security',
   settingsShowOnHome: 'Show on Home',
@@ -323,6 +335,27 @@ export const cloudMessageDefaults = {
   homeSharedWithYou: 'Shared with you',
   homeSharedSubtitle: 'Files people invited you to',
   homeSharedBy: params('Shared by {name}'),
+  homeTrash: 'Trash',
+  homeTrashSubtitle: 'Deleted files you can still restore',
+  homeTrashEmpty: 'Trash is empty',
+  homeTrashEmptyDescription:
+    'Files deleted from your workspaces wait here for a while, so you can restore them.',
+  homeTrashLoadFailed: 'Couldn’t load Trash',
+  homeTrashDeleted: params('{workspace} · Deleted {when}'),
+  homeTrashDeletedBy: params('{workspace} · Deleted {when} by {name}'),
+  homeTrashDaysLeft: count({ one: '{count} day left', many: '{count} days left' }),
+  homeTrashRestore: 'Restore',
+  homeTrashRestored: params('“{name}” is back in {workspace}.'),
+  homeTrashRestoreFailed: params('Couldn’t restore “{name}”. It may be gone for good already.'),
+  homeTrashDeleteForever: 'Delete forever',
+  homeTrashDeleteForeverHeading: params('Delete “{name}” forever?'),
+  homeTrashDeleteForeverDescription:
+    'It’s deleted with its version history, for everyone, and stops counting toward your storage. This can’t be undone.',
+  homeTrashDeleteForeverFailed: params(
+    'Couldn’t delete “{name}” forever. If it’s still in Trash, try again.'
+  ),
+  homeTrashMoveDescription:
+    'It moves to Trash for everyone who can open it. You can restore it from there for a while.',
   homeSignIn: 'Sign in…',
   homeStorage: 'Storage',
   homeStorageSettings: 'Storage settings',
@@ -362,6 +395,13 @@ export const cloudMessageDefaults = {
   syncConflict: 'Edited elsewhere too — choose which version to keep',
   syncError: 'Could not upload changes',
   shareLinkFailed: 'This link doesn’t open a document. Ask for a new one.',
+  communityLinkFailed: 'This document isn’t in the gallery any more.',
+  communityBanner: 'A community example, open read-only.',
+  communitySaveCopy: 'Save a copy',
+  savePublicLabel: 'Public',
+  savePublicHeading: 'Anyone can open what you save here',
+  savePublicDescription:
+    'This workspace is the server’s community gallery, so saving to it publishes the document.',
   documentLinkFailed: 'Couldn’t open this document. Ask its owner for access.',
   documentLinkUnknownServer: params('Sign in to {host} first to open this link.'),
   shareOpenedInBrowser: 'Opened in the browser',

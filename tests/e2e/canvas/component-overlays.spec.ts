@@ -1,8 +1,14 @@
+import type { Page } from '@playwright/test'
+
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
+import type * as ComponentSetScenes from '#tests/helpers/canvas/component-sets/scene'
+import { pageScene } from '#tests/helpers/canvas/page-scene'
 
 // Figma desktop 126: layers inside a component or an instance outline in the component purple.
 
 const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
+const sets = (page: () => Page) =>
+  pageScene<typeof ComponentSetScenes>(page, '/tests/helpers/canvas/component-sets/scene.ts')
 
 test('layers inside a component and an instance outline in component purple', async () => {
   await editor.page.evaluate(() => {
@@ -38,6 +44,18 @@ test('layers inside a component and an instance outline in component purple', as
   editor.canvas.assertNoErrors()
   const buffer = await editor.canvas.screenshotCanvasRegion(600, 320)
   expect(buffer).toMatchSnapshot('component-descendant-outlines.png', {
+    maxDiffPixelRatio: 0,
+    threshold: 0
+  })
+})
+
+// Figma desktop (2026-11-14) clips a component set like a frame: a variant past its edge is cut.
+test('a component set clips a variant that reaches past its edge', async () => {
+  await sets(() => editor.page).build('createClippingComponentSetScene')
+  await editor.canvas.waitForRender()
+  editor.canvas.assertNoErrors()
+  const buffer = await editor.canvas.screenshotCanvasRegion(600, 320)
+  expect(buffer).toMatchSnapshot('component-set-clips-variant.png', {
     maxDiffPixelRatio: 0,
     threshold: 0
   })

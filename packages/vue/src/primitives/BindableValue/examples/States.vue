@@ -236,12 +236,12 @@ const pickerTarget: BindingTarget[] = [{ nodeId: 'picker', path: 'width' }]
         </BindableValueTrigger>
         <BindableValuePicker v-if="open" v-slot="{ variables: options, actions }">
           <div
-            class="absolute top-full left-0 z-10 mt-1 w-40 rounded border border-[var(--vp-c-divider)] bg-[var(--vp-c-bg-soft)] p-1"
+            class="absolute top-full inset-s-0 z-10 mt-1 w-40 rounded border border-[var(--vp-c-divider)] bg-[var(--vp-c-bg-soft)] p-1"
           >
             <button
               v-for="option in options"
               :key="option.id"
-              class="block w-full rounded px-2 py-1 text-left text-xs hover:bg-[var(--vp-c-bg-alt)]"
+              class="block w-full rounded px-2 py-1 text-start text-xs hover:bg-[var(--vp-c-bg-alt)]"
               type="button"
               @click="actions.bind(option.id)"
             >

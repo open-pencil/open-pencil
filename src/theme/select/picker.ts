@@ -14,16 +14,16 @@ const appPickerTheme = {
       motionStyles.floating
     ],
     // The title and close button line up with the panel's section headers and the search field.
-    header: 'flex h-9 shrink-0 items-center gap-1.5 border-b border-border pr-2 pl-3',
+    header: 'flex h-9 shrink-0 items-center gap-1.5 border-b border-border pe-2 ps-3',
     title: 'min-w-0 flex-1 truncate text-2xs font-semibold text-surface',
     search: [panelFieldBase, 'relative m-2 flex h-7 shrink-0 items-center'],
-    searchIcon: 'pointer-events-none absolute left-2 size-3.5 text-muted',
+    searchIcon: 'pointer-events-none absolute inset-s-2 size-3.5 text-muted',
     input:
-      'h-full min-w-0 flex-1 bg-transparent pr-2 pl-7 text-xs text-surface outline-none placeholder:text-muted',
+      'h-full min-w-0 flex-1 bg-transparent pe-2 ps-7 text-xs text-surface outline-none placeholder:text-muted',
     list: 'flex min-h-0 flex-col gap-2 overflow-y-auto px-2 pb-2',
     group: '',
     groupLabel: 'px-1 pb-1 text-3xs font-medium tracking-wide text-muted uppercase',
-    item: 'flex w-full cursor-pointer items-center gap-2 rounded px-1 py-1 text-left outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-hover',
+    item: 'flex w-full cursor-pointer items-center gap-2 rounded px-1 py-1 text-start outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-hover',
     leading:
       'flex size-8 shrink-0 items-center justify-center overflow-hidden rounded border border-border bg-panel-secondary text-muted',
     text: 'min-w-0 flex-1',

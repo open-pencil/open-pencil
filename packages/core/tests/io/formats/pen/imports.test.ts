@@ -1,10 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getNodeOrThrow } from '@open-pencil/test-support/assert'
-
 import { toUint8Array } from 'js-base64'
 
 import { IORegistry, penFormat } from '@open-pencil/core/io'
+import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
 const io = new IORegistry([penFormat])
 

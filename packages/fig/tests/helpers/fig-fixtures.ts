@@ -1,4 +1,4 @@
-import { writeFigArchive } from '#fig/archive'
+import { writeFigArchive } from '#fig/archive/index'
 import { deflateSync } from 'fflate'
 
 import {

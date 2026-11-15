@@ -1,6 +1,6 @@
-import type { Canvas, Paint, Path } from 'canvaskit-wasm'
 import { fromUint8Array } from 'js-base64'
 
+import type { Canvas, Paint, Path } from '@open-pencil/canvaskit'
 import type { Fill, DerivedTextGlyph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { isGradientFill } from '@open-pencil/scene-graph/gradient'
 import type { Color } from '@open-pencil/scene-graph/primitives'
@@ -13,7 +13,7 @@ import {
 
 import type { ResourceCache } from '#core/cache/resource'
 import { createPathCache } from '#core/canvas/paths/cache'
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { drawTextDecorations } from '#core/canvas/text/decorations'
 import { styleRunAt, type StyleRun } from '#core/text/character-face'
 import { hasDecoration, savedTextDecorationRects } from '#core/text/decorations'

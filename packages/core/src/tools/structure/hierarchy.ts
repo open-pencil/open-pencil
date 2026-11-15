@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-import { defineTool, nodeSummary, requireNodes } from '#core/tools/schema'
+import { defineTool, nodeSummary, requireNodes, toolFailure } from '#core/tools/schema'
 
 export const reparentNode = defineTool({
   name: 'reparent_node',
@@ -38,19 +38,23 @@ export const groupNodes = defineTool({
   }
 })
 
-export const ungroupNode = defineTool({
-  name: 'ungroup_node',
+export const ungroupNodes = defineTool({
+  name: 'ungroup_nodes',
 
-  description: 'Ungroup a group node.',
+  description: 'Ungroup groups, keeping their children in place.',
   execution: { kind: 'sync', mutation: 'document' },
   input: v.strictObject({
-    id: v.pipe(v.string(), v.description('Group node ID'))
+    ids: v.pipe(v.array(v.string()), v.minLength(1), v.description('Group node IDs'))
   }),
-  execute: (figma, { id }) => {
-    const node = figma.getNodeById(id)
-    if (!node) return { error: `Node "${id}" not found` }
-    figma.ungroup(node)
-    return { ungrouped: id }
+  execute: (figma, { ids }) => {
+    const nodes = requireNodes(figma, ids)
+    if (!nodes) return { error: 'One or more node IDs were not found' }
+    try {
+      for (const node of nodes) figma.ungroup(node)
+    } catch (error) {
+      return toolFailure(error)
+    }
+    return { ungrouped: ids }
   }
 })
 
@@ -70,7 +74,7 @@ export const flattenNodes = defineTool({
 })
 
 export const nodeToComponent = defineTool({
-  name: 'node_to_component',
+  name: 'convert_to_components',
 
   description: 'Convert one or more frames/groups into components.',
   execution: { kind: 'sync', mutation: 'document' },

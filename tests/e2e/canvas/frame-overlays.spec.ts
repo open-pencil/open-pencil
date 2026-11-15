@@ -4,7 +4,11 @@ import { TRANSFORM_ZONE } from '@open-pencil/core/geometry'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
+import { nestedSelectionDriver } from '#tests/helpers/canvas/nested-selection/driver'
+import { waitForSettledScene } from '#tests/helpers/canvas/page-scene'
+
 const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
+const nested = nestedSelectionDriver(() => editor.page)
 
 async function expectCanvas(name: string) {
   editor.canvas.assertNoErrors()
@@ -75,7 +79,7 @@ async function createOverlayDemo(rotation: number) {
     store.requestRender()
   }, rotation)
 
-  await editor.canvas.waitForRender()
+  await waitForSettledScene(editor.page)
 }
 
 test('rotated frame selection labels render with hovered child', async () => {
@@ -146,8 +150,12 @@ test('nested frame labels use the parent transform during rotation preview', asy
   await editor.canvas.waitForRender()
   const after = await editor.canvas.screenshotCanvasRegion()
   await writeFile(test.info().outputPath('nested-frame-held.png'), during)
-  await writeFile(test.info().outputPath('nested-frame-released.png'), after)
-  expect(after.equals(during)).toBe(true)
+  // Released, the frame draws from tiles rather than the preview's direct pass, which rounds the
+  // rotated section's edges up to 3 levels apart; a label that jumped would differ far more.
+  expect(after).toMatchSnapshot('nested-frame-rotation-preview.png', {
+    maxDiffPixels: 0,
+    threshold: 0.02
+  })
 })
 
 for (const angle of [-32, 32]) {
@@ -264,6 +272,13 @@ for (const [name, size] of [
     await expectCanvas(name)
   })
 }
+
+// Figma outlines no parent of a selected layer, however deeply that parent is nested (#1703).
+test('a layer selected two frames deep outlines neither frame', async () => {
+  await nested.selectNestedRectangle()
+  await editor.canvas.waitForRender()
+  await expectCanvas('nested-layer-selected')
+})
 
 // Figma desktop (2026-11-08) labels a 151.25 × 33.333333 layer "151.25 × 33.33", to two decimals
 // as its Design panel shows them.

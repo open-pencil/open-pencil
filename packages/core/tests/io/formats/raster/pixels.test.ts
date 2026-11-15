@@ -1,8 +1,8 @@
 import { expect, setDefaultTimeout, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
 import { createCanvasKitRasterCodec, reencodeImage } from '@open-pencil/core/io/formats/raster'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 setDefaultTimeout(60_000)
 

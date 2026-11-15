@@ -5,6 +5,7 @@
   "object": "Obiekt",
   "arrange": "Rozmieszczenie",
   "text": "Tekst",
+  "help": "Pomoc",
   "new": "Nowy projekt",
   "newTab": "Nowa karta",
   "open": "Otwórz…",
@@ -91,6 +92,11 @@
   "saveToVersionHistory": "Zapisz w historii wersji…",
   "reportProblem": "Zgłoś problem…",
   "supportOpenPencil": "Wesprzyj OpenPencil…",
+  "documentation": "Dokumentacja OpenPencil",
+  "keyboardShortcuts": "Skróty klawiszowe",
+  "whatsNew": "Co nowego",
+  "community": "Społeczność na Discordzie",
+  "github": "OpenPencil na GitHubie",
   "newBoard": "Nowa tablica",
   "toggleAIChat": "Przełącz czat AI"
 }

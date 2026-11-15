@@ -9,12 +9,9 @@ export const queryNodes = defineTool({
   description: `Query nodes using XPath selectors. Returns id, name, and type, plus text for TEXT nodes. Node types are element names (FRAME, TEXT, RECTANGLE, ELLIPSE, etc.). Attributes: id, name, width, height, x, y, visible, opacity, cornerRadius, fontSize, fontFamily, fontWeight, layoutMode, itemSpacing, paddingTop/Right/Bottom/Left, strokeWeight, rotation, locked, blendMode, text, lineHeight, letterSpacing.
 
 Examples:
-//FRAME — all frames
 //FRAME[@width < 300] — frames narrower than 300px
 //COMPONENT[starts-with(@name, 'Button')] — components starting with "Button"
-//SECTION/FRAME — direct frame children of sections
 //SECTION//TEXT — all text nodes inside sections
-//*[@cornerRadius > 0] — any node with corner radius
 //TEXT[contains(@text, 'Hello')] — text nodes containing "Hello"
 //*[@id='1:2']//TEXT[not(ancestor-or-self::*[@visible='false'])] — visible text inside a frame, in layer order`,
   execution: { kind: 'async', mutation: 'none' },

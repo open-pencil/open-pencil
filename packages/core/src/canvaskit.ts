@@ -1,4 +1,4 @@
-import CanvasKitInit, { type CanvasKit } from 'canvaskit-wasm/full'
+import CanvasKitInit, { type CanvasKit } from '@open-pencil/canvaskit'
 
 import { IS_BROWSER } from './constants'
 import { servesRuntimeAsset, unservedRuntimeAssetMessage } from './runtime-assets/served'
@@ -21,7 +21,7 @@ export interface CanvasKitOptions {
 }
 
 let locator: CanvasKitLocator = (file) =>
-  IS_BROWSER ? `/${file}` : new URL(file, import.meta.resolve('canvaskit-wasm/full')).href
+  IS_BROWSER ? `/${file}` : new URL(file, import.meta.resolve('@open-pencil/canvaskit')).href
 
 /** Points CanvasKit at the host's copy of its files. Call before the first {@link getCanvasKit}. */
 export function setCanvasKitLocator(locate: CanvasKitLocator): void {

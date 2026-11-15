@@ -57,7 +57,10 @@ export function createDefaultNode(
   type: NodeType,
   overrides: Partial<SceneNode> = {}
 ): SceneNode {
-  return {
+  // A literal ending in a spread is built one field at a time, and V8 keeps an object given this
+  // many fields that way in dictionary mode, about 3 KB more per layer; a spread copy of a
+  // finished literal keeps fast fields, in JavaScriptCore as well.
+  const defaults = {
     id: generateId(),
     type,
     name: type.charAt(0) + type.slice(1).toLowerCase(),
@@ -229,9 +232,9 @@ export function createDefaultNode(
     derivedTextHeight: null,
     textPathData: null,
     textPathBox: null,
-    booleanOperation: undefined,
-    ...overrides
+    booleanOperation: undefined
   } satisfies CompleteNodeFields
+  return { ...defaults, ...overrides }
 }
 
 /** Containers whose bounds follow their children and that set no coordinate space, as in Figma. */
@@ -261,6 +264,23 @@ export const LAYER_CONTAINER_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
 
 export function isLayerContainer(node: Pick<SceneNode, 'type'>): boolean {
   return LAYER_CONTAINER_TYPES.has(node.type)
+}
+
+/** The kinds that clip their children when their clip content is on. */
+export const CLIPPING_TYPES: ReadonlySet<NodeType> = new Set<NodeType>([
+  'FRAME',
+  'COMPONENT',
+  'COMPONENT_SET',
+  'INSTANCE'
+])
+
+/**
+ * Whether a layer clips its children: a frame, component, component set or instance with clip
+ * content on. A section or group has no such setting in Figma and never clips, whatever an import
+ * left in `clipsContent` (Figma desktop, live).
+ */
+export function clipsChildren(node: Pick<SceneNode, 'type' | 'clipsContent'>): boolean {
+  return node.clipsContent && CLIPPING_TYPES.has(node.type)
 }
 
 export const CONTAINER_TYPES = new Set<NodeType>([

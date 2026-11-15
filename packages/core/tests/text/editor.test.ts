@@ -1,15 +1,13 @@
 import { describe, test, expect } from 'bun:test'
 
-import type { CanvasKit, LineMetrics, Paragraph, RectWithDirection } from 'canvaskit-wasm'
-
+import type { CanvasKit, LineMetrics, Paragraph, RectWithDirection } from '@open-pencil/canvaskit'
 import { TextEditor } from '@open-pencil/core/text'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 import { expectDefined } from '@open-pencil/test-support/assert'
+import { asDouble } from '@open-pencil/test-support/doubles'
 
 import { TextLayout } from '#core/canvas/text/layout'
-
-import { asDouble } from '@open-pencil/test-support/doubles'
 const mockCk = asDouble<CanvasKit>({
   RectHeightStyle: { Max: 0 },
   RectWidthStyle: { Tight: 0 }

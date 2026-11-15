@@ -33,6 +33,10 @@
   "save": "Guardar",
   "done": "Hecho",
   "task": "Tarea",
+  "copyCode": "Copiar código",
+  "copyTable": "Copiar tabla",
+  "openLinkHeading": "¿Abrir este enlace?",
+  "openLink": "Abrir enlace",
   "back": "Atrás",
   "supported": "Compatible",
   "unsupported": "No compatible",
@@ -41,5 +45,6 @@
   "dismiss": "Descartar",
   "browserSupport": "Consultar compatibilidad",
   "showPassword": "Mostrar contraseña",
-  "hidePassword": "Ocultar contraseña"
+  "hidePassword": "Ocultar contraseña",
+  "typeToConfirm": "Para confirmar, escribe «{text}»."
 }

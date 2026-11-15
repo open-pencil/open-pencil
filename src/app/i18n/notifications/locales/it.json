@@ -34,5 +34,9 @@
   "designTokensLeftOut": "Esclusi dai design token: {names}.",
   "designTokensAmbiguous": "Questi stili rimandano a una variabile il cui percorso esiste anche in un’altra collezione, quindi altri strumenti potrebbero leggere quella sbagliata: {names}.",
   "designTokensImported": "Importati {count} design token.",
-  "unsupportedVariableExpressions": "OpenPencil non sa ancora valutare queste variabili, quindi i livelli mantengono i valori salvati nel file: {names}."
+  "unsupportedVariableExpressions": "OpenPencil non sa ancora valutare queste variabili, quindi i livelli mantengono i valori salvati nel file: {names}.",
+  "savingDocument": "Salvataggio del documento…",
+  "saveFailedRetry": "Riprova salvataggio",
+  "fileChangedOnDisk": "«{name}» è cambiato sul disco. Le modifiche non salvate vengono mantenute; salvando si sostituisce il file.",
+  "reloadDiscardingChanges": "Ricarica"
 }

@@ -1,3 +1,4 @@
+import { AdminDomainError } from '#cloud/admin/errors'
 import {
   containsPattern,
   countEachFilter,
@@ -12,7 +13,10 @@ import {
   type CloudAdminDocument,
   type CloudAdminDocumentFilter
 } from '#cloud/contract'
-import type { CloudDatabase } from '#cloud/server/db'
+import { userIdText, type CloudDatabase } from '#cloud/server/db'
+import { unmarkPurged } from '#cloud/server/documents/purge'
+import type { TransactionalEmailService } from '#cloud/server/email'
+import { tellReporters } from '#cloud/server/reports'
 import { dateString } from '#cloud/server/sharing/contracts'
 import { uniq } from 'es-toolkit'
 import type { ExpressionBuilder, Kysely, Transaction } from 'kysely'
@@ -29,10 +33,29 @@ const reported = (expression: DocumentExpression) =>
       .where('documentReport.status', '=', 'open')
   )
 
+const live = (expression: DocumentExpression) => expression('document.deletedAt', 'is', null)
+
 const FILTERS: ListFilters<CloudAdminDocumentFilter, 'document'> = {
-  all: (expression) => expression.lit(true),
-  reported,
-  disabled: (expression) => expression('document.disabledAt', 'is not', null)
+  all: live,
+  reported: (expression) => expression.and([live(expression), reported(expression)]),
+  disabled: (expression) =>
+    expression.and([live(expression), expression('document.disabledAt', 'is not', null)]),
+  purged: (expression) => expression('document.purgedAt', 'is not', null)
+}
+
+/**
+ * What the console lists: live documents, and those deleted forever an administrator can still
+ * restore, inside the grace and not yet being destroyed.
+ */
+function listable(graceSince: Date) {
+  return (expression: DocumentExpression) =>
+    expression.or([
+      live(expression),
+      expression.and([
+        expression('document.purgedAt', '>', graceSince),
+        expression('document.cleanupClaimId', 'is', null)
+      ])
+    ])
 }
 
 /** Documents whose name, ID, or maker's name or email has the search in it. */
@@ -46,9 +69,7 @@ function searchCondition(search: string) {
         expression
           .selectFrom('user')
           .select('user.id')
-          .where((inner) =>
-            inner(inner.cast('user.id', 'text'), '=', inner.ref('document.createdBy'))
-          )
+          .whereRef(userIdText, '=', 'document.createdBy')
           .where((inner) =>
             inner.or([inner('user.email', 'ilike', pattern), inner('user.name', 'ilike', pattern)])
           )
@@ -56,10 +77,14 @@ function searchCondition(search: string) {
     ])
 }
 
-/** The documents with these IDs as the console shows them, in no particular order. */
+/**
+ * The documents with these IDs as the console shows them, in no particular order; with
+ * `purgeGraceMs`, when cleanup destroys one deleted forever.
+ */
 export async function adminDocuments(
   database: Kysely<CloudDatabase>,
-  documentIds: readonly string[]
+  documentIds: readonly string[],
+  purgeGraceMs?: number
 ): Promise<Map<string, CloudAdminDocument>> {
   const ids = uniq(documentIds).filter(isUUID)
   if (ids.length === 0) return new Map()
@@ -74,6 +99,7 @@ export async function adminDocuments(
       'document.updatedAt',
       'document.disabledAt',
       'document.disabledReason',
+      'document.purgedAt',
       'workspace.id as workspaceId',
       'workspace.name as workspaceName',
       expression
@@ -106,7 +132,12 @@ export async function adminDocuments(
         updatedAt: dateString(row.updatedAt) ?? '',
         disabledAt: dateString(row.disabledAt),
         disabledReason: row.disabledReason,
-        openReports: Number(row.openReports ?? 0)
+        openReports: Number(row.openReports ?? 0),
+        purgedAt: dateString(row.purgedAt),
+        destroyedAt:
+          row.purgedAt === null || purgeGraceMs === undefined
+            ? null
+            : new Date(new Date(row.purgedAt).getTime() + purgeGraceMs).toISOString()
       }
     ])
   )
@@ -152,19 +183,49 @@ export type AdminDocumentServiceOptions = {
    * and a restore loses no edit.
    */
   closeRooms?: (documentId: string) => void
+  /** How long a document deleted forever waits before cleanup destroys it; 0 when not given. */
+  purgeGraceMs?: number
+  /**
+   * Tells the owner of a document's workspace when it is blocked and restored. Without it, or
+   * without the server's address its link needs, nobody is told.
+   */
+  email?: TransactionalEmailService
+  publicURL?: string
+  /** Where an owner writes to contest a block: the deployment's abuse address. */
+  contactEmail?: string
+}
+
+/** The owner of a document's workspace, and the document's name, to tell about a block. */
+async function documentOwner(transaction: Transaction<CloudDatabase>, documentId: string) {
+  const document = await transaction
+    .selectFrom('document')
+    .innerJoin('workspace', 'workspace.id', 'document.workspaceId')
+    .select(['document.name', 'workspace.ownerId'])
+    .where('document.id', '=', documentId)
+    .executeTakeFirst()
+  if (!document) return undefined
+  const owner = await transaction
+    .selectFrom('user')
+    .select(['name', 'email'])
+    .where((expression) => expression(userIdText(expression), '=', document.ownerId))
+    .executeTakeFirst()
+  return owner && { ...owner, documentName: document.name }
 }
 
 export function createAdminDocumentService(
   database: Kysely<CloudDatabase>,
   options: AdminDocumentServiceOptions = {}
 ) {
+  const purgeGraceMs = options.purgeGraceMs ?? 0
+  const { email, publicURL } = options
+  const graceSince = (now: Date) => new Date(now.getTime() - purgeGraceMs)
   return {
     /** A page of documents, newest change first, and how many match the search under each filter. */
     async list(query: AdminListQuery<CloudAdminDocumentFilter> = {}) {
       const search = listSearch(query)
       const filter = query.filter ?? 'all'
       const { limit, offset } = listWindow(query)
-      let searched = database.selectFrom('document').where('document.deletedAt', 'is', null)
+      let searched = database.selectFrom('document').where(listable(graceSince(new Date())))
       if (search) searched = searched.where(searchCondition(search))
       const counts = await countEachFilter(
         searched,
@@ -181,7 +242,8 @@ export function createAdminDocumentService(
         .execute()
       const documents = await adminDocuments(
         database,
-        page.map((row) => row.id)
+        page.map((row) => row.id),
+        purgeGraceMs
       )
       return {
         documents: page.flatMap((row) => documents.get(row.id) ?? []),
@@ -199,17 +261,26 @@ export function createAdminDocumentService(
       await database.transaction().execute(async (transaction) => {
         const document = await lockedDocument(transaction, documentId)
         if (document.disabledAt) return
+        const disabledAt = new Date()
         await transaction
           .updateTable('document')
-          .set({ disabledAt: new Date(), disabledReason: reason ?? null })
+          .set({ disabledAt, disabledReason: reason ?? null })
           .where('id', '=', documentId)
           .execute()
-        await transaction
+        const reports = await transaction
           .updateTable('documentReport')
           .set({ status: 'actioned', resolvedAt: new Date(), resolvedBy: actorId })
           .where('documentId', '=', documentId)
           .where('status', '=', 'open')
+          .returning('id')
           .execute()
+        // Everyone who reported it and left an address hears it was blocked.
+        await tellReporters(
+          transaction,
+          { email, contactEmail: options.contactEmail },
+          reports.map((report) => report.id),
+          'blocked'
+        )
         await auditContentAction(
           transaction,
           actorId,
@@ -217,6 +288,25 @@ export function createAdminDocumentService(
           { type: 'document', id: documentId },
           reason ? { reason } : {}
         )
+        // Told in the same transaction, so a block that rolls back sends nothing.
+        const owner = email && publicURL && (await documentOwner(transaction, documentId))
+        if (owner) {
+          await email.enqueue(
+            {
+              idempotencyKey: `document-blocked/${documentId}/${disabledAt.getTime()}`,
+              kind: 'document-blocked',
+              recipientEmail: owner.email,
+              payload: {
+                name: owner.name || null,
+                documentName: owner.documentName,
+                reason: reason ?? null,
+                contactEmail: options.contactEmail ?? null,
+                actionURL: publicURL
+              }
+            },
+            transaction
+          )
+        }
       })
       options.closeRooms?.(documentId)
     },
@@ -235,6 +325,71 @@ export function createAdminDocumentService(
           type: 'document',
           id: documentId
         })
+        const owner = email && publicURL && (await documentOwner(transaction, documentId))
+        if (owner) {
+          await email.enqueue(
+            {
+              idempotencyKey: `document-restored/${documentId}/${Date.now()}`,
+              kind: 'document-restored',
+              recipientEmail: owner.email,
+              payload: {
+                name: owner.name || null,
+                documentName: owner.documentName,
+                actionURL: publicURL
+              }
+            },
+            transaction
+          )
+        }
+      })
+    },
+
+    /**
+     * Brings back a document someone deleted forever, while its grace lasts: it is live again in
+     * its workspace, not in Trash, and counts toward the workspace's storage again, over its plan
+     * or not. A document cleanup is destroying, or whose workspace has nobody left in it, can't be.
+     */
+    async undelete(actorId: string, documentId: string, now = new Date()): Promise<void> {
+      await database.transaction().execute(async (transaction) => {
+        const document = await transaction
+          .selectFrom('document')
+          .select(['id', 'workspaceId', 'purgedAt', 'purgedBytes', 'cleanupClaimId'])
+          .where('id', '=', documentId)
+          .forUpdate()
+          .executeTakeFirst()
+        // Cleanup may have destroyed it since the list was loaded.
+        if (
+          !document ||
+          document.purgedAt === null ||
+          document.cleanupClaimId !== null ||
+          new Date(document.purgedAt) <= graceSince(now)
+        ) {
+          throw new AdminDomainError(
+            'document_not_restorable',
+            'Only a document deleted forever, inside its grace, can be restored'
+          )
+        }
+        const member = await transaction
+          .selectFrom('workspaceMember')
+          .select('userId')
+          .where('workspaceId', '=', document.workspaceId)
+          .limit(1)
+          .executeTakeFirst()
+        if (!member) {
+          throw new AdminDomainError('workspace_gone', 'The document’s workspace has nobody in it')
+        }
+        await unmarkPurged(transaction, {
+          id: document.id,
+          workspaceId: document.workspaceId,
+          purgedBytes: Number(document.purgedBytes)
+        })
+        await auditContentAction(
+          transaction,
+          actorId,
+          'document.undeleted',
+          { type: 'document', id: documentId },
+          { workspaceId: document.workspaceId }
+        )
       })
     },
 

@@ -23,6 +23,17 @@ export function lineStepPixels(lineHeight: TextLength | null, fontSize: number):
   return lineHeight.unit === 'PIXELS' ? pixels : Math.round(pixels)
 }
 
+/** How far an automatic line height steps lines when no font metrics measure them. */
+const ESTIMATED_LINE_STEP = 1.2
+
+/**
+ * How far apart lines step where no font metrics measure them: as `lineStepPixels` steps them,
+ * and 1.2 times the font size when automatic.
+ */
+export function estimatedLineStep(lineHeight: TextLength | null, fontSize: number): number {
+  return lineStepPixels(lineHeight, fontSize) ?? fontSize * ESTIMATED_LINE_STEP
+}
+
 /** A length in pixels, as a bound number variable and most authored formats give one. */
 export function pixelLength(value: number): TextLength {
   return { value, unit: 'PIXELS' }

@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
+import { autoFrame, pageId, rect } from '#core-tests/helpers/layout'
+
 import { computeLayout } from '@open-pencil/core/layout'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { autoFrame, pageId, rect } from '#core-tests/helpers/layout'
 
 describe('gap mapping correctness', () => {
   test('horizontal: itemSpacing is column gap, counterAxisSpacing is row gap', () => {

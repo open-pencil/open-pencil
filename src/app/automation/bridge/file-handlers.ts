@@ -9,13 +9,15 @@ import type { DocumentKind } from '@open-pencil/scene-graph'
 import {
   resolveAutomationTarget,
   responseWithTarget,
-  type AutomationTarget
+  type AutomationTarget,
+  type TargetResponse
 } from '@/app/automation/bridge/target'
 import { resolveBrowserFileURL } from '@/app/document/io/browser'
 import { documentPathFor } from '@/app/document/io/names'
+import type { EditorStore } from '@/app/editor/active-store'
 import { openBrowserFileFromURL } from '@/app/shell/menu/files'
 import { openFileFromPath } from '@/app/shell/menu/use'
-import { closeTab, createTab, getActiveStore, getTabById } from '@/app/tabs'
+import { closeTab, createTab, getTabById } from '@/app/tabs'
 import { isTauri } from '@/app/tauri/env'
 
 /** Where a browser app reads and writes the paths the file tools name: the MCP server's `/files/`. */
@@ -31,7 +33,7 @@ const saveArgsSchema = v.object({ path: v.optional(v.string()) })
  * file `saveFigFile` will write: a desktop path, or the browser handle `createWritable` will
  * open. That handle is installed by Save As before the write, and the remembered identity is
  * updated only after success, so the two can differ. A stored document has no such file.
- * `open_file` reads `.fig` and `.jam` as that archive and any other extension, such as `.pen`,
+ * `open_document` reads `.fig` and `.jam` as that archive and any other extension, such as `.pen`,
  * as another format, so a mismatched destination is refused before a byte is written, and the
  * error names the path to retry with.
  */
@@ -121,7 +123,7 @@ export function createFileHandlers(files?: AutomationFiles) {
   // Automation never opens the Save dialog: nobody may be there to answer it.
   async function saveWithoutPrompt(store: AutomationTarget['store'], path?: string): Promise<void> {
     const name = store.state.documentName
-    // close_file with unsaved "save" uses this too, so an existing file is checked the same way.
+    // close_document with unsaved "save" uses this too, so an existing file is checked the same way.
     assertAutomationSaveDestination(store, path || undefined)
     if (!path && !store.hasWritableSource()) throw unsavedDocumentError(store)
     if (path && files && !isTauri()) {
@@ -135,13 +137,13 @@ export function createFileHandlers(files?: AutomationFiles) {
   }
 
   async function handleSaveFile(target: AutomationTarget, args: unknown): Promise<unknown> {
-    const { path } = parseToolArgs('save_file', saveArgsSchema, args)
+    const { path } = parseToolArgs('save_document', saveArgsSchema, args)
     await saveWithoutPrompt(target.store, path)
     return { ok: true, result: { saved: true } }
   }
 
   async function handleCloseFile(target: AutomationTarget, args: unknown): Promise<unknown> {
-    const { path, unsaved } = parseToolArgs('close_file', closeArgsSchema, args)
+    const { path, unsaved } = parseToolArgs('close_document', closeArgsSchema, args)
     const store = target.store
     if (store.hasUnsavedChanges()) {
       if (unsaved === 'error') {
@@ -156,8 +158,9 @@ export function createFileHandlers(files?: AutomationFiles) {
     return { ok: true, result: { closed: getTabById(target.documentId) === undefined } }
   }
 
-  async function handleNewDocument(_target: AutomationTarget, args: unknown): Promise<unknown> {
-    const { path } = parseToolArgs('new_document', saveArgsSchema, args)
+  // Creating and opening work while the selected tab is Home or a New file tab.
+  async function handleNewDocument(args: unknown): Promise<TargetResponse> {
+    const { path } = parseToolArgs('create_document', saveArgsSchema, args)
     const tab = createTab()
     if (path) {
       try {
@@ -171,19 +174,23 @@ export function createFileHandlers(files?: AutomationFiles) {
     return responseWithTarget({ ok: true, result: { created: true } }, target)
   }
 
-  async function handleOpenFile(_target: AutomationTarget, args: unknown): Promise<unknown> {
+  async function handleOpenFile(args: unknown): Promise<TargetResponse> {
     const path = (args as { path?: string }).path
     if (!path) throw new Error('Missing "path" in args')
+    // The opened tab's own store, not the active one: another tab can come to the front while
+    // the file is read and decoded.
+    let store: EditorStore | undefined
     if (isTauri()) {
-      await openFileFromPath(path)
+      store = await openFileFromPath(path)
     } else if (files) {
       // The browser cannot read the path, so it fetches it from the MCP server, with the same
       // cap and format check as every other browser open.
-      await openBrowserFileFromURL(files.url(path), { headers: files.headers })
+      store = await openBrowserFileFromURL(files.url(path), { headers: files.headers })
     } else {
-      await openBrowserFileFromURL(resolveBrowserFileURL(path))
+      store = await openBrowserFileFromURL(resolveBrowserFileURL(path))
     }
-    const target = resolveAutomationTarget(getActiveStore(), undefined)
+    if (!store) throw new Error(`Could not open "${path}"`)
+    const target = resolveAutomationTarget(store, undefined)
     return responseWithTarget({ ok: true, result: { opened: true } }, target)
   }
 

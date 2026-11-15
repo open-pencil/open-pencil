@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { isCloudPortalPage } from '@open-pencil/cloud/contract'
 
 import type { PortalContext } from '@/app/cloud-portal/context'
-import { PORTAL_HOME, portalDestination } from '@/app/cloud-portal/navigation'
+import { PORTAL_HOME, portalDestination, TERMS_PAGE } from '@/app/cloud-portal/navigation'
 
 /**
  * The Cloud portal's pages, guarded by the portal's access rules (`portalDestination`). The
@@ -81,6 +81,12 @@ export function createCloudPortalRouter(context: PortalContext) {
         meta: { account: true }
       },
       {
+        path: TERMS_PAGE,
+        name: 'terms',
+        component: () => import('@/views/cloud/TermsView.vue'),
+        meta: { account: true }
+      },
+      {
         path: '/account',
         name: 'profile',
         component: () => import('@/views/cloud/ConsoleView.vue'),
@@ -99,10 +105,37 @@ export function createCloudPortalRouter(context: PortalContext) {
         meta: { account: true }
       },
       {
+        path: '/account/plan',
+        name: 'plan',
+        component: () => import('@/views/cloud/ConsoleView.vue'),
+        meta: { account: true },
+        // Only a server that sells plans has one to show; editors link here only then.
+        beforeEnter: () => (context.discovery.billing ? true : { name: 'profile' })
+      },
+      {
+        path: '/account/tokens',
+        name: 'tokens',
+        component: () => import('@/views/cloud/ConsoleView.vue'),
+        meta: { account: true }
+      },
+      {
         path: '/admin/:section(overview|requests|reports|documents|people|email|activity)?',
         name: 'admin',
         component: () => import('@/views/cloud/ConsoleView.vue'),
         meta: { account: true, admin: true }
+      },
+      {
+        // The community gallery, for anyone; a server without one sends visitors to the editor.
+        path: '/community',
+        name: 'community',
+        component: () => import('@/views/cloud/community/CommunityView.vue'),
+        beforeEnter: () => (context.discovery.community ? true : PORTAL_HOME)
+      },
+      {
+        path: '/community/:documentId',
+        name: 'community-document',
+        component: () => import('@/views/cloud/community/CommunityDocumentView.vue'),
+        beforeEnter: () => (context.discovery.community ? true : PORTAL_HOME)
       },
       {
         path: '/admin/people/:userId',

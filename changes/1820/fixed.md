@@ -1,2 +1,0 @@
-- Canvas shortcuts, arrow-key nudging, and `⌘\` keep working while the selection toolbar shows with the UI hidden, as on boards (#1820).
-- Each mode's "Use a variable" button in the Variables dialog names its mode for screen readers (#1820).

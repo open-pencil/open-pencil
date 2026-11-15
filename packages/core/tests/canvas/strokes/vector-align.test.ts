@@ -1,10 +1,10 @@
 import { beforeAll, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { SceneGraph, type Stroke, type VectorNetwork } from '@open-pencil/scene-graph'
 import { strokeOverflow } from '@open-pencil/scene-graph/geometry'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { SkiaRenderer } from '#core/canvas/renderer'
+import { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { getCanvasKit } from '#core/canvaskit'
 import { renderNodesToImage } from '#core/io/formats/raster/render'
 

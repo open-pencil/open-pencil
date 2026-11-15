@@ -1,13 +1,12 @@
-import type { Canvas } from 'canvaskit-wasm'
-
+import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
-import { regionHatchPeriod } from '#core/vector'
-import { addLoopToPath } from '#core/vector/path-helpers'
+import { worldXToScreen, worldYToScreen } from '#core/geometry/viewport'
+import { regionHatchPeriod, regionPath } from '#core/vector'
 
-import type { RenderOverlays, SkiaRenderer } from './renderer'
+import type { RenderOverlays, SkiaRenderer } from './renderer/skia'
 
 /** Width of a hatch line in screen pixels, as Figma's shaded-region shader covers it. */
 const HATCH_LINE_WIDTH = 1.4
@@ -32,8 +31,8 @@ export function drawRegionHatch(
   // The edit session's network is in canvas coordinates; draw it in screen pixels.
   const vertices = editState.vertices.map((v) => ({
     ...v,
-    x: v.x * r.zoom + r.panX,
-    y: v.y * r.zoom + r.panY
+    x: worldXToScreen(r, v.x),
+    y: worldYToScreen(r, v.y)
   }))
   const segments = editState.segments.map((s) => ({
     ...s,
@@ -41,8 +40,8 @@ export function drawRegionHatch(
     tangentEnd: { x: s.tangentEnd.x * r.zoom, y: s.tangentEnd.y * r.zoom }
   }))
   const [originX, originY] = Matrix.mapPoints(getWorldMatrix(node, graph), [0, 0])
-  const ox = originX * r.zoom + r.panX
-  const oy = originY * r.zoom + r.panY
+  const ox = worldXToScreen(r, originX)
+  const oy = worldYToScreen(r, originY)
   // Lines x + y = c, a period apart across them, so √2 periods apart along either axis.
   const step = regionHatchPeriod(r.zoom) * Math.SQRT2
 
@@ -55,13 +54,7 @@ export function drawRegionHatch(
   for (const index of hatched) {
     const region = editState.regions.at(index)
     if (!region) continue
-    const builder = new r.ck.PathBuilder()
-    for (const loop of region.loops) addLoopToPath(builder, loop, segments, vertices)
-    const path = builder.detachAndDelete()
-    // On the detached path: the builder's setFillType returns a copy that nothing deletes.
-    path.setFillType(
-      region.windingRule === 'EVENODD' ? r.ck.FillType.EvenOdd : r.ck.FillType.Winding
-    )
+    const path = regionPath(r.ck, { vertices, segments }, region)
     // Lines only where the region is on screen: a large region would otherwise draw thousands of
     // invisible ones on every hover repaint.
     const [pathLeft, pathTop, pathRight, pathBottom] = path.getBounds()

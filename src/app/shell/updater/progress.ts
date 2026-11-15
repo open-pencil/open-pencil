@@ -1,4 +1,4 @@
-import { progressPercent } from '@/components/ui/feedback/progress'
+import { formatBytes, progressPercent } from '@/components/ui/feedback/progress'
 
 import type { UpdaterMessages } from './messages'
 
@@ -17,11 +17,4 @@ export function downloadProgressLabel(
     downloaded: formatBytes(downloaded),
     total: formatBytes(total)
   })
-}
-
-export function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  const kib = bytes / 1024
-  if (kib < 1024) return `${kib.toFixed(1)} KiB`
-  return `${(kib / 1024).toFixed(1)} MiB`
 }

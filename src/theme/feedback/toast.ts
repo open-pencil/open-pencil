@@ -11,7 +11,7 @@ const toastTheme = {
     icon: 'size-3.5 shrink-0',
     content: 'min-w-0 flex-1 py-1',
     message: 'leading-4 select-text',
-    count: 'ml-1.5 text-muted tabular-nums',
+    count: 'ms-1.5 text-muted tabular-nums',
     progress: 'mt-1.5',
     action: 'shrink-0',
     controls: 'flex shrink-0 items-center'
@@ -19,7 +19,7 @@ const toastTheme = {
   variants: {
     // Buttons bring their own padding, so a toast that ends in one keeps a narrow edge there.
     trailing: {
-      true: { root: 'pr-1 pl-3' },
+      true: { root: 'pe-1 ps-3' },
       false: { root: 'px-3' }
     },
     // Work in progress spins a muted icon, and AppProgress draws the bar; a warning or an error

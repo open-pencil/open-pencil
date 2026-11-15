@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { createEditor } from '@open-pencil/core'
 import { computeAllLayouts, setTextMeasurer } from '@open-pencil/core/layout'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
@@ -10,6 +9,7 @@ import {
   connectorSublayers,
   freeEndpoint
 } from '@open-pencil/scene-graph/connectors'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 /** Two boxes 300 apart with an elbow from the first's right side to the second's left. */
 function setup() {
@@ -130,7 +130,11 @@ describe('connector routing', () => {
         width: 400,
         height: 320
       })
-      const pinned = { nodeId: section.id, magnet: 'ABSOLUTE' as const, position: { x: 40, y: 258 } }
+      const pinned = {
+        nodeId: section.id,
+        magnet: 'ABSOLUTE' as const,
+        position: { x: 40, y: 258 }
+      }
       editor.updateNodeWithUndo(connector.id, { connectorEnd: pinned }, 'Bind')
       await settle()
       expect(route(editor, connector).at(-1)).toEqual([433.5, 58])

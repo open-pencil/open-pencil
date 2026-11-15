@@ -1,12 +1,12 @@
-import type { CanvasKit } from 'canvaskit-wasm'
 import { isEqual } from 'es-toolkit'
 
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import type { Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { newStrokeGeometry } from '@open-pencil/scene-graph/node-defaults'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import type { UndoManager } from '@open-pencil/scene-graph/undo'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { getPageColor } from '#core/figma-api/page-backgrounds'
 
 /** Which paint of the selection a sampled colour replaces. Alt samples into the stroke. */

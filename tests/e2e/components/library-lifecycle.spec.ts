@@ -51,25 +51,23 @@ test('preserves source publication identity across FIG save and reopen', async (
   expect(firstRevision).toBeTruthy()
 
   const saved = await page.evaluate(async () => {
-    const writes: Uint8Array[] = []
+    const writes: Uint8Array<ArrayBuffer>[] = []
     window.showSaveFilePicker = async () =>
       ({
         name: 'source.fig',
         getFile: async () => new File([], 'source.fig'),
-        createWritable: async (): Promise<
-          Pick<FileSystemWritableFileStream, 'write' | 'close'>
-        > => ({
-          write: async (data: FileSystemWriteChunkType) => {
-            if (!(data instanceof Uint8Array)) throw new Error('Unexpected write chunk')
-            writes.push(data)
-          },
-          close: async () => undefined
-        })
+        // A save pipes the archive into the writable a chunk at a time.
+        createWritable: async () =>
+          new WritableStream<Uint8Array>({
+            write: (chunk) => {
+              writes.push(chunk.slice())
+            }
+          })
       }) as FileSystemFileHandle
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     await store.saveFigFileAs()
-    return Array.from(writes[0] ?? [])
+    return Array.from(new Uint8Array(await new Blob(writes).arrayBuffer()))
   })
   expect(saved.length).toBeGreaterThan(0)
 
@@ -221,25 +219,23 @@ test('publishes, consumes, saves, and reopens a multidimensional library instanc
   await page.getByRole('option', { name: 'Brand' }).click()
 
   const saved = await page.evaluate(async () => {
-    const writes: Uint8Array[] = []
+    const writes: Uint8Array<ArrayBuffer>[] = []
     window.showSaveFilePicker = async () =>
       ({
         name: 'consumer.fig',
         getFile: async () => new File([], 'consumer.fig'),
-        createWritable: async (): Promise<
-          Pick<FileSystemWritableFileStream, 'write' | 'close'>
-        > => ({
-          write: async (data: FileSystemWriteChunkType) => {
-            if (!(data instanceof Uint8Array)) throw new Error('Unexpected write chunk')
-            writes.push(data)
-          },
-          close: async () => undefined
-        })
+        // A save pipes the archive into the writable a chunk at a time.
+        createWritable: async () =>
+          new WritableStream<Uint8Array>({
+            write: (chunk) => {
+              writes.push(chunk.slice())
+            }
+          })
       }) as FileSystemFileHandle
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     await store.saveFigFileAs()
-    return Array.from(writes[0] ?? [])
+    return Array.from(new Uint8Array(await new Blob(writes).arrayBuffer()))
   })
   expect(saved.length).toBeGreaterThan(0)
 

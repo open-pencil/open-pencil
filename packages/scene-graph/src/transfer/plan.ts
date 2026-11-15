@@ -2,7 +2,6 @@ import type { SceneGraph } from '../graph'
 import { sharedStyleLayers } from '../shared-styles'
 import type { ComponentPropertyType, SceneNode } from '../types'
 import { prepareNodeTransfer } from './nodes'
-import { requireTransferReference } from './references'
 import { prepareVariableTransfer } from './variables'
 
 export interface GraphTransferInput {
@@ -118,12 +117,6 @@ export function prepareGraphTransfer(input: GraphTransferInput) {
       props: withStyleId(node, prepareNodeTransfer(node, references), styles)
     })),
     ...resources,
-    activeModes: new Map(
-      [...source.activeMode].map(([collection, mode]) => [
-        requireTransferReference(collections, collection, 'collection'),
-        requireTransferReference(modes, mode, 'mode')
-      ])
-    ),
     images: new Map([...source.images].map(([hash, bytes]) => [hash, bytes.slice()]))
   }
 }

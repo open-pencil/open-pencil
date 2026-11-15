@@ -50,7 +50,6 @@ test('transfer rolls back inserted nodes and buffered events on mutation failure
   expect(events).toBe(0)
   expect(target.variables.size).toBe(0)
   expect(target.variableCollections.size).toBe(0)
-  expect(target.activeMode.size).toBe(0)
   expect([...target.images]).toEqual([['existing', new Uint8Array([1])]])
 })
 

@@ -1,5 +1,4 @@
-import type { CanvasKit } from 'canvaskit-wasm'
-
+import type { CanvasKit } from '@open-pencil/canvaskit'
 import type { ShapedText } from '@open-pencil/fig/node-change'
 import type { SceneNode } from '@open-pencil/scene-graph'
 

@@ -1,8 +1,12 @@
+import { groupBy } from 'es-toolkit'
+
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { getAxisAlignedBoundsInParent } from '@open-pencil/scene-graph/coordinate'
 import { groupBounds } from '@open-pencil/scene-graph/group-bounds'
 
-import { prepareSlotEdits } from '#core/editor/components/slots'
+import { acceptsChildren, prepareSlotEdits } from '#core/editor/components/slots'
+import { recordEdit } from '#core/editor/history/edit'
 import { nextNumberedName } from '#core/editor/structure/rename'
 import type { EditorContext } from '#core/editor/types'
 
@@ -107,7 +111,7 @@ export function inStackOrder(
  * counted among the children left once they move into it.
  */
 export function canvasWrapIndex(parent: SceneNode, nodes: readonly SceneNode[]): number {
-  return Math.max(...nodes.map((node) => parent.childIds.indexOf(node.id))) - (nodes.length - 1)
+  return maxOf(nodes.map((node) => parent.childIds.indexOf(node.id))) - (nodes.length - 1)
 }
 
 export function wrapSelectionInContainer(
@@ -161,4 +165,49 @@ export function wrapSelectionInContainer(
   })
 
   return containerId
+}
+
+/**
+ * Wraps the selected layers in a new group or frame in each parent they sit in, as Figma's Group
+ * and Frame selection do: one layer is enough, a layer inside another selected one goes with it,
+ * and parents in the locked part of an instance are left alone. One undo step; selects the new
+ * containers and returns their ids.
+ */
+export function wrapEachParent(
+  ctx: EditorContext,
+  containerType: 'GROUP' | 'FRAME',
+  selectedNodes: SceneNode[]
+): string[] {
+  const selected = new Set(selectedNodes.map((node) => node.id))
+  const outermost = selectedNodes.filter(
+    (node) => !node.parentId || !ctx.graph.closest(node.parentId, (n) => selected.has(n.id))
+  )
+  const byParent = groupBy(outermost, (node) => node.parentId ?? ctx.state.currentPageId)
+  const parentIds = Object.keys(byParent).filter((id) => acceptsChildren(ctx, id))
+  if (parentIds.length === 0) return []
+
+  // Named before any is made, so each parent's new container is "Group 1" there, as in Figma.
+  const names = new Map(
+    parentIds.map((id) => [id, nextNumberedName(ctx.graph, id, CONTAINER_NAMES[containerType])])
+  )
+  const label = `Create ${containerType.toLowerCase()}`
+  // Claiming an instance slot's content is part of the same undo step.
+  return ctx.undo.runBatch(label, () => {
+    if (!prepareSlotEdits(ctx, parentIds)) return []
+    return recordEdit(ctx, { label, restoresSelection: true }, () => {
+      const ids = parentIds.flatMap((parentId) => {
+        const parent = ctx.graph.getNode(parentId)
+        const nodes = byParent[parentId]
+        if (!parent) return []
+        const name = names.get(parentId) ?? CONTAINER_NAMES[containerType]
+        const index = canvasWrapIndex(parent, nodes)
+        const id = wrapNodes(ctx.graph, containerType, nodes, parentId, index, { name }).id
+        // An auto layout places the new container among the layers left beside it.
+        if (parent.layoutMode !== 'NONE') ctx.runLayoutForNode(parentId)
+        return [id]
+      })
+      ctx.setSelectedIds(new Set(ids))
+      return ids
+    })
+  })
 }

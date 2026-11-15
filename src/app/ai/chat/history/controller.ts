@@ -32,6 +32,8 @@ export function createConversationHistory<TChat extends HistoryChat>(
   // Weak, so the history does not keep a closed document's editor alive.
   let owner: WeakRef<ChatDocumentEditor> | null = null
   let operation: Promise<unknown> = Promise.resolve()
+  let disposed = false
+  let disposal: Promise<void> | null = null
   const session = createHistorySession(() => runtime.resetChat())
   const { flush, storageError } = createHistoryPersistence({
     store,
@@ -162,8 +164,33 @@ export function createConversationHistory<TChat extends HistoryChat>(
     void flush().catch(() => undefined)
   }
 
+  /** The conversations a title was asked for, so each is named at most once. */
+  const named = new Set<string>()
+
+  /**
+   * Names the conversation after its first reply, unless it has a title of its own already. The
+   * title is asked for outside the serialized actions, so a slow answer holds nothing up, and is
+   * dropped when the conversation changed or was renamed meanwhile.
+   */
+  async function nameConversation(): Promise<void> {
+    const conversation = current.value
+    const chat = session.chat
+    if (!runtime.title || !conversation || !chat || readOnly.value) return
+    if (conversation.titleSource !== 'fallback' || named.has(conversation.id)) return
+    named.add(conversation.id)
+    const title = await runtime.title(chat.messages).catch(() => null)
+    if (!title) return
+    await serialize(async () => {
+      const latest = current.value
+      if (latest?.id !== conversation.id || latest.titleSource !== 'fallback') return
+      current.value = { ...latest, title, titleSource: 'generated' }
+      await flush()
+    })
+  }
+
   function ensureChat() {
     return serialize(async () => {
+      if (disposed) return null
       if (readOnly.value && owner?.deref() === runtime.getEditor()) return null
       await loadDocument()
       const resume = resumableSession(current.value)
@@ -189,7 +216,7 @@ export function createConversationHistory<TChat extends HistoryChat>(
         return null
       }
       if (!next) return null
-      session.attach(next, flush)
+      session.attach(next, flush, () => void nameConversation())
       // A session that missed what this chat adds must not be continued; kept until the chat starts.
       if (conversation?.agentSession && resume === null) recordAgentSession(conversation.id, null)
       return next
@@ -198,6 +225,17 @@ export function createConversationHistory<TChat extends HistoryChat>(
 
   function initialize() {
     return serialize(loadDocument)
+  }
+  /**
+   * Saves the conversation and releases its agent before this runtime is replaced. No chat starts
+   * afterwards; a save that failed is tried again by the next call.
+   */
+  function dispose(): Promise<void> {
+    disposed = true
+    return (disposal ??= serialize(detach).catch((error: unknown) => {
+      disposal = null
+      throw error
+    }))
   }
   function newChat() {
     return serialize(async () => {
@@ -249,6 +287,7 @@ export function createConversationHistory<TChat extends HistoryChat>(
     busy,
     storageError,
     initialize,
+    dispose,
     ensureChat,
     flush,
     newChat,

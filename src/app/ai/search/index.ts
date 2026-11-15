@@ -8,7 +8,7 @@ import { resolveExaKey } from '@/app/settings/credentials/media'
 import { exaWebSearch } from './exa'
 
 /**
- * Where `web_search` goes, for the built-in chat and for agents reaching OpenPencil's tools
+ * Where `search_web` goes, for the built-in chat and for agents reaching OpenPencil's tools
  * alike: the person's own Exa key when one is saved, in the desktop app; otherwise Cloud's
  * services when the Design model runs there; otherwise nowhere.
  */
@@ -31,7 +31,7 @@ export async function webSearchProvider(
 
 let refresh = 0
 
-/** Points `web_search` at the provider for the current key and Design model. */
+/** Points `search_web` at the provider for the current key and Design model. */
 export async function refreshWebSearchProvider(
   connection: Pick<AIModelConnection, 'providerID' | 'cloudWorkspaceId'> | null
 ): Promise<void> {

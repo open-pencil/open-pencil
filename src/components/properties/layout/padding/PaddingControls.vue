@@ -19,13 +19,14 @@ const paddingSides: Array<{ prop: PaddingProp; icon: string }> = [
 </script>
 
 <template>
-  <div class="flex items-start gap-1.5">
+  <div dir="ltr" class="flex items-start gap-1.5">
     <div class="min-w-0 flex-1">
       <div
         v-if="!ctx.showIndividualPadding && ctx.hasSymmetricPadding"
         class="mt-1.5 grid grid-cols-2 gap-1.5"
       >
         <VariableNumberField
+          :round="panelNumber"
           data-test-id="layout-horizontal-padding-input"
           :model-value="panelNumber(ctx.node.paddingLeft)"
           :min="0"
@@ -40,6 +41,7 @@ const paddingSides: Array<{ prop: PaddingProp; icon: string }> = [
           </template>
         </VariableNumberField>
         <VariableNumberField
+          :round="panelNumber"
           data-test-id="layout-vertical-padding-input"
           :model-value="panelNumber(ctx.node.paddingTop)"
           :min="0"
@@ -57,6 +59,7 @@ const paddingSides: Array<{ prop: PaddingProp; icon: string }> = [
 
       <div v-else-if="ctx.isGrid || ctx.isFlex" class="mt-1.5 grid grid-cols-2 gap-1.5">
         <VariableNumberField
+          :round="panelNumber"
           v-for="side in paddingSides"
           :key="side.prop"
           :model-value="panelNumber(ctx.node[side.prop])"
@@ -69,9 +72,13 @@ const paddingSides: Array<{ prop: PaddingProp; icon: string }> = [
         >
           <template #icon>
             <icon-lucide-panel-top v-if="side.icon === 'top'" class="size-3.5" />
-            <icon-lucide-panel-right v-else-if="side.icon === 'right'" class="size-3.5" />
+            <icon-lucide-panel-right
+              v-else-if="side.icon === 'right'"
+              data-direction="physical"
+              class="size-3.5"
+            />
             <icon-lucide-panel-bottom v-else-if="side.icon === 'bottom'" class="size-3.5" />
-            <icon-lucide-panel-left v-else class="size-3.5" />
+            <icon-lucide-panel-left v-else data-direction="physical" class="size-3.5" />
           </template>
         </VariableNumberField>
       </div>

@@ -33,7 +33,7 @@ export const getSelection = defineTool({
 })
 
 export const selectNodes = defineTool({
-  name: 'select_nodes',
+  name: 'set_selection',
 
   description: 'Select one or more nodes by ID.',
   execution: { kind: 'sync', mutation: 'view' },

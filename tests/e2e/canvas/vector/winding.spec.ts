@@ -66,7 +66,7 @@ test('even-odd vector geometry preserves holes', async () => {
     const pushFloat = (value: number) => {
       const buffer = new ArrayBuffer(4)
       new DataView(buffer).setFloat32(0, value, true)
-      bytes.push(...new Uint8Array(buffer))
+      for (const byte of new Uint8Array(buffer)) bytes.push(byte)
     }
     const moveTo = (x: number, y: number) => {
       bytes.push(1)

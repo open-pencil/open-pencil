@@ -1,14 +1,15 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
-import { parseFixture } from '@open-pencil/test-support/fig/fixtures'
-import { runsHeavyTests } from '@open-pencil/test-support/heavy'
-import { createEditor } from '#core/editor'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io/formats/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph, type Variable } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { parseFixture } from '@open-pencil/test-support/fig/fixtures'
+import { runsHeavyTests } from '@open-pencil/test-support/heavy'
+
+import { createEditor } from '#core/editor'
 
 setDefaultTimeout(60_000)
 
@@ -254,6 +255,23 @@ describe('variable roundtrip', () => {
         a: 1
       }
     )
+  })
+
+  test("a page's variable mode survives export → re-import, and so does clearing it", async () => {
+    await initCodec()
+    const graph = new SceneGraph()
+    const collection = graph.createCollection('Theme')
+    const darkId = expectDefined(graph.createMode(collection.id, 'Dark'), 'dark mode')
+    const page = graph.getPages()[0]
+    graph.updateNode(page.id, { variableModes: { [collection.id]: darkId } })
+
+    const pageModes = async (source: SceneGraph) => {
+      const exported = await exportFigFile(source)
+      return (await parseFigFile(exported.buffer as ArrayBuffer)).getPages()[0].variableModes
+    }
+    expect(await pageModes(graph)).toEqual({ [collection.id]: darkId })
+    graph.updateNode(page.id, { variableModes: {} })
+    expect(await pageModes(graph)).toEqual({})
   })
 
   test('variable metadata and plugin data survive export → re-import', async () => {

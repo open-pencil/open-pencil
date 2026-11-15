@@ -29,7 +29,11 @@ import { createStoredDocument } from '@/app/storage/workspace/create'
 import { activeStorageLocation, createStorageWorkspaceSource } from '@/app/storage/workspace/source'
 import { openStorageDocumentInNewTab } from '@/app/tabs'
 import { recoverable } from '@/app/tabs/recovery'
-import { CloudSharedSection, CloudWorkspaceSection } from '@/components/cloud/integration'
+import {
+  CloudSharedSection,
+  CloudTrashSection,
+  CloudWorkspaceSection
+} from '@/components/cloud/integration'
 import DocumentDeleteDialog from '@/components/home/document/DocumentDeleteDialog.vue'
 import DocumentEntry from '@/components/home/document/DocumentEntry.vue'
 import { ofKind, type DocumentKindFilter } from '@/components/home/document/filter'
@@ -121,7 +125,7 @@ const sidebarStorage = computed(() => {
 const newDesignTarget = computed<{ location: StorageLocation; label: string } | null>(() => {
   const workspace = places.workspace.value
   const serverId = places.serverId.value
-  if (workspace && serverId && workspace.role !== 'viewer') {
+  if (workspace && serverId && workspace.role !== 'viewer' && !workspace.public) {
     return {
       location: {
         providerId: CLOUD_STORAGE_PROVIDER_ID,
@@ -131,9 +135,11 @@ const newDesignTarget = computed<{ location: StorageLocation; label: string } | 
       label: workspace.name
     }
   }
-  // Shared documents belong to other people's workspaces, so a new one goes to the person's own.
-  const own = places.workspaces.value.find((entry) => entry.role !== 'viewer')
-  if (places.location.value.kind === 'shared' && own && serverId) {
+  // Shared documents belong to other people's workspaces, Trash to none, and what is made in the
+  // community gallery is public at once, so a new one goes to the person's own.
+  const own = places.workspaces.value.find((entry) => entry.role !== 'viewer' && !entry.public)
+  const kind = places.location.value.kind
+  if ((kind === 'shared' || kind === 'trash' || workspace?.public) && own && serverId) {
     return {
       location: { providerId: CLOUD_STORAGE_PROVIDER_ID, profileId: serverId, containerId: own.id },
       label: own.name
@@ -261,6 +267,11 @@ function formattedDate(updatedAt: string): string {
       :server-id="places.serverId.value"
       :query="normalizedQuery"
     />
+    <CloudTrashSection
+      v-else-if="places.location.value.kind === 'trash' && places.serverId.value"
+      :server-id="places.serverId.value"
+      :query="normalizedQuery"
+    />
     <template v-else>
       <p
         v-if="noSearchMatches"
@@ -287,7 +298,7 @@ function formattedDate(updatedAt: string): string {
               {{ storageDescription }}
             </p>
           </div>
-          <div class="ml-auto flex shrink-0 items-center gap-1">
+          <div class="ms-auto flex shrink-0 items-center gap-1">
             <IconButton
               :label="common.refresh"
               class="size-10 sm:size-7"

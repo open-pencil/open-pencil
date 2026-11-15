@@ -64,11 +64,11 @@ test('a reused AI transport refreshes actual request tools for each message', as
       }
       return model.doStreamCalls.at(-1)?.tools?.map((tool) => tool.name) ?? []
     }
-    expect(await send()).not.toContain('create_component')
-    aiToolOverrides.value = { create_component: true, get_components: false }
+    expect(await send()).not.toContain('convert_to_components')
+    aiToolOverrides.value = { convert_to_components: true, list_components: false }
     const updated = await send()
-    expect(updated).toContain('create_component')
-    expect(updated).not.toContain('get_components')
+    expect(updated).toContain('convert_to_components')
+    expect(updated).not.toContain('list_components')
     expect(model.doStreamCalls).toHaveLength(2)
     // History remains valid even if an extended tool is now disabled.
     const next = await send([

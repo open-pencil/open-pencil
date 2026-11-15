@@ -1,4 +1,5 @@
 import { IS_BROWSER } from '@open-pencil/core/constants'
+import { minOf } from '@open-pencil/scene-graph/arrays'
 
 import {
   describeDiagnosticError,
@@ -45,7 +46,7 @@ function backoffMs(attempts: number): number {
 
 export function nextSyncWakeDelay(jobs: OutboxJob[], now = Date.now()): number | null {
   if (jobs.length === 0) return null
-  const nextAt = Math.min(...jobs.map((job) => job.nextAttemptAt))
+  const nextAt = minOf(jobs.map((job) => job.nextAttemptAt))
   return nextAt === PARKED_ATTEMPT_AT ? null : Math.max(250, nextAt - now)
 }
 
@@ -233,7 +234,7 @@ async function pumpOnce(): Promise<void> {
     // Wake for the next ready job across the whole queue — not this job's
     // full backoff, which starved other jobs that were ready sooner.
     const all = await outbox.list()
-    const nextAt = Math.min(...all.map((j) => j.nextAttemptAt))
+    const nextAt = minOf(all.map((j) => j.nextAttemptAt))
     scheduleWake(Math.max(250, nextAt - Date.now()))
   }
 }

@@ -1,12 +1,12 @@
 import { beforeAll, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
-import { FIXTURES } from '@open-pencil/test-support/paths'
 import { buildFigmaClipboardHTML, importClipboardNodes } from '@open-pencil/core/clipboard'
 import { parseFigmaClipboard } from '@open-pencil/fig/clipboard'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 
 /**
  * A vector as Figma copies it, with three regions: red of its own, the layer's grey, and an empty

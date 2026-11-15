@@ -99,10 +99,11 @@ describe('bindings where the nearest and owning instances differ or coincide wit
         hasInstanceOverride(target.instanceOverrides, target.id, copy.id, 'boundVariables')
       ).toBe(true)
       expect(seen.touched.has(target.id)).toBe(true)
+      // Both claim this binding alone, so the layer's other bindings follow the component.
+      expect(hasInstanceOverride(target.instanceOverrides, target.id, copy.id, opacityClaim)).toBe(
+        true
+      )
     }
-    expect(
-      hasInstanceOverride(instance.instanceOverrides, instance.id, copy.id, opacityClaim)
-    ).toBe(true)
   })
 
   test('an instance bound itself is reported once, before its own overrides change', () => {

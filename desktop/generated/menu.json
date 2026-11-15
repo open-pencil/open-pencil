@@ -26,24 +26,6 @@
         "label": "Open Recent"
       },
       {
-        "id": "open-tour",
-        "label": "Open the Tour"
-      },
-      {
-        "id": "diagnostics",
-        "label": "Diagnostics…"
-      },
-      {
-        "id": "report-problem",
-        "label": "Report a Problem…",
-        "feature": "reports"
-      },
-      {
-        "id": "support-openpencil",
-        "label": "Support OpenPencil…",
-        "feature": "donation"
-      },
-      {
         "type": "separator"
       },
       {
@@ -520,10 +502,6 @@
         "accelerator": "Alt+Shift+F"
       },
       {
-        "id": "selection.outlineText",
-        "label": "Outline text"
-      },
-      {
         "id": "selection.outlineStroke",
         "label": "Outline stroke"
       },
@@ -728,6 +706,54 @@
             "label": "Network"
           }
         ]
+      }
+    ]
+  },
+  {
+    "label": "Help",
+    "items": [
+      {
+        "id": "help-docs",
+        "label": "OpenPencil Documentation"
+      },
+      {
+        "id": "help-shortcuts",
+        "label": "Keyboard Shortcuts"
+      },
+      {
+        "id": "help-whats-new",
+        "label": "What’s New"
+      },
+      {
+        "id": "open-tour",
+        "label": "Open the Tour"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "id": "report-problem",
+        "label": "Report a Problem…"
+      },
+      {
+        "id": "diagnostics",
+        "label": "Diagnostics…"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "id": "help-community",
+        "label": "Community on Discord"
+      },
+      {
+        "id": "help-github",
+        "label": "OpenPencil on GitHub"
+      },
+      {
+        "id": "support-openpencil",
+        "label": "Support OpenPencil…",
+        "feature": "donation"
       }
     ]
   }

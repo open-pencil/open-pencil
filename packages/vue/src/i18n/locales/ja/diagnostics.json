@@ -99,6 +99,7 @@
   "reportNotePlaceholder": "行った操作、起きたこと、本来期待していた動作。",
   "reportEmail": "メールアドレス（任意）",
   "reportEmailHint": "返信を希望する場合のみ。",
+  "reportEmailInvalid": "メールアドレスを入力するか、空欄のままにしてください。",
   "reportActivity": "最近のアクティビティを含める",
   "reportActivityDescription": "診断の直近 50 件のイベント（エラーや所要時間など）。チャットのメッセージやツールの出力は含まれません。",
   "reportDocument": "このドキュメントを添付",

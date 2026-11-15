@@ -1,15 +1,15 @@
 import { expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
-import { readFixture } from '@open-pencil/test-support/fig/fixtures'
-import { capturedFigRecordsSchema } from '@open-pencil/test-support/fig/schema'
-import { inheritedNestedBindingRecords } from '@open-pencil/test-support/fig/nested-binding'
-import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
 import { createEditor } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'
+import { OpenPencilAPI } from '@open-pencil/core/openpencil-api'
 import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
 import { initCodec } from '@open-pencil/kiwi/fig/codec'
+import { expectDefined } from '@open-pencil/test-support/assert'
+import { readFixture } from '@open-pencil/test-support/fig/fixtures'
+import { inheritedNestedBindingRecords } from '@open-pencil/test-support/fig/nested-binding'
+import { capturedFigRecordsSchema } from '@open-pencil/test-support/fig/schema'
 
 const fixture = readFixture('nested-binding-ownership-records.json', capturedFigRecordsSchema)
 
@@ -119,15 +119,21 @@ test('definition rescale propagates occurrence units through editor sync and exp
     nested.paddingRight
   ]).toEqual([22.5, 7, 12.5, 7, 5, 2.5])
   expect(nested.variableBindingScales.paddingLeft).toBe(0.25)
-  expectDefined(api.variables.getVariableById('293733:7')).setValueForMode(graph.getNodeVariableModeId(
+  expectDefined(api.variables.getVariableById('293733:7')).setValueForMode(
+    graph.getNodeVariableModeId(
       nested.id,
       expectDefined(graph.variables.get('293733:7')).collectionId
-    ), 40)
+    ),
+    40
+  )
   expect([root.width, nested.width, nested.paddingLeft]).toEqual([27.5, 17.5, 10])
-  expectDefined(api.variables.getVariableById('293733:7')).setValueForMode(graph.getNodeVariableModeId(
+  expectDefined(api.variables.getVariableById('293733:7')).setValueForMode(
+    graph.getNodeVariableModeId(
       nested.id,
       expectDefined(graph.variables.get('293733:7')).collectionId
-    ), 20)
+    ),
+    20
+  )
   graph.updateNode(root.id, { name: 'Definition rescale acceptance' })
   await initCodec()
   const bytes = await exportFigFile(graph)

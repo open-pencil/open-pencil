@@ -76,15 +76,12 @@ const useDescription = computed(() => {
         </div>
       </SettingsSection>
     </div>
+    <template v-if="uploaded" #footer-start>
+      <AppButton color="error" variant="link" @click="emit('remove')">{{
+        ai.skillsDelete
+      }}</AppButton>
+    </template>
     <template #footer>
-      <AppButton
-        v-if="uploaded"
-        class="mr-auto"
-        color="error"
-        variant="link"
-        @click="emit('remove')"
-        >{{ ai.skillsDelete }}</AppButton
-      >
       <AppButton color="primary" variant="solid" @click="emit('done')">{{ common.done }}</AppButton>
     </template>
   </SettingsPage>

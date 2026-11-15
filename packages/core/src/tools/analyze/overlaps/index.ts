@@ -333,16 +333,14 @@ export function computeOverlaps(
 export const analyzeOverlaps = defineTool({
   name: 'analyze_overlaps',
   description:
-    'Detect visual overlaps and layout overflows across the current page. Useful for finding content that covers footers, text that bleeds outside frames, and accidental sibling overlaps.',
+    'Detect visual overlaps and layout overflows on the current page, such as content covering a footer, text bleeding out of its frame, or siblings overlapping by accident.',
   execution: { kind: 'async', mutation: 'none' },
   exposure: { webmcp: false },
   input: v.strictObject({
     scope: v.optional(
       v.pipe(
         v.picklist(['all', 'same-parent', 'cross-parent', 'top-level', 'inside-parent']),
-        v.description(
-          'Which pairs to inspect: all, same-parent, cross-parent, top-level, inside-parent (default: all)'
-        )
+        v.description('Which pairs to inspect')
       ),
       'all'
     ),
@@ -357,7 +355,7 @@ export const analyzeOverlaps = defineTool({
     severity: v.optional(
       v.pipe(
         v.picklist(['critical', 'major', 'minor', 'info']),
-        v.description('Minimum severity to include: critical, major, minor, info (default: info)')
+        v.description('Minimum severity to include')
       ),
       'info'
     ),

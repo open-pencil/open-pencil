@@ -83,9 +83,9 @@ const selectedTypeface = typefaceModel(
           :aria-label="shapes.kind"
           :class="select.trigger()"
         >
-          <component :is="SHAPE_KIND_ICONS[kind]" class="mr-1.5 size-4 text-muted" />
+          <component :is="SHAPE_KIND_ICONS[kind]" class="me-1.5 size-4 text-muted" />
           <span :class="select.value()">{{ label(kind) }}</span>
-          <icon-lucide-chevron-down class="ml-1 size-3 shrink-0 text-muted" />
+          <icon-lucide-chevron-down class="ms-1 size-3 shrink-0 text-muted" />
         </button>
       </template>
     </ShapeKindPicker>

@@ -59,7 +59,9 @@ export function fakeGoogleFonts(
         }))
       })
     if (url.href.startsWith('https://fonts.google.com/metadata/icons'))
-      return new Response(`)]}'\n${JSON.stringify({ families: icons.map(({ family }) => family) })}`)
+      return new Response(
+        `)]}'\n${JSON.stringify({ families: icons.map(({ family }) => family) })}`
+      )
     if (url.href.startsWith('https://fonts.googleapis.com/css2')) {
       stylesheets.push(url)
       const rules = url.searchParams.getAll('family').flatMap((param) => {

@@ -1,0 +1,1 @@
+- Cloud servers can advertise a billing service that sells plans and credit packs: a `[billing]` table names its `endpoint`, `POST /api/billing/token` signs a token for the signed-in person's own account, and editors link to the server's plan page when it bills. `@open-pencil/cloud/client` adds `requestBillingToken` and `createCloudBillingClient` (#2027).

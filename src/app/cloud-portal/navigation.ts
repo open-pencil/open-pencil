@@ -26,11 +26,15 @@ export function continuationURL(path: string, redirect: string): string {
   return url.href
 }
 
+/** Where an account accepts the server's current terms, then goes on to what it asked for. */
+export const TERMS_PAGE = '/account/terms'
+
 const STANDING_PATHS: Record<CloudAccountStatus['state'], string | null> = {
   active: null,
   pending: '/account/pending',
   rejected: '/account/closed',
-  revoked: '/account/closed'
+  revoked: '/account/closed',
+  terms: TERMS_PAGE
 }
 
 const STANDING_PAGES = new Set(Object.values(STANDING_PATHS))
@@ -50,21 +54,34 @@ export interface PortalRouteTarget {
 }
 
 /**
+ * The page an account in this standing belongs on, keeping where it was going when that page
+ * leads on, as accepting the terms does.
+ */
+function standingDestination(standing: string, continuation: string): RouteLocationRaw {
+  return standing === TERMS_PAGE && continuation !== PORTAL_HOME
+    ? { path: standing, query: { redirect: continuation } }
+    : standing
+}
+
+/**
  * Where a navigation may go. Signed-out pages send signed-in people on; account pages ask for a
  * session; console pages ask for a deployment administrator. An account waiting for review, or
- * whose access was declined, only reaches the page that explains it.
+ * whose access was declined, only reaches the page that explains it, and one with terms to accept
+ * reaches its terms first.
  */
 export function portalDestination(
   to: PortalRouteTarget,
   account: CloudAccountStatus | null
 ): true | RouteLocationRaw {
   if (to.meta.signedOut && account) {
-    return standingPath(account) ?? continuationPath(to.query.redirect)
+    const continuation = continuationPath(to.query.redirect)
+    const standing = standingPath(account)
+    return standing ? standingDestination(standing, continuation) : continuation
   }
   if (!to.meta.account) return true
   if (!account) return { name: 'sign-in', query: { redirect: to.fullPath } }
   const standing = standingPath(account)
-  if (standing && to.path !== standing) return standing
+  if (standing && to.path !== standing) return standingDestination(standing, to.fullPath)
   // An active account has nothing waiting or declined to read about.
   if (!standing && STANDING_PAGES.has(to.path)) return PORTAL_HOME
   if (to.meta.admin && account.user.deploymentRole !== 'admin') return ACCOUNT_PAGE

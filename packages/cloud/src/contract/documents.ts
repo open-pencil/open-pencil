@@ -97,6 +97,25 @@ export const sharedDocumentSchema = v.object({
 })
 export type SharedDocument = v.InferOutput<typeof sharedDocumentSchema>
 
+/**
+ * A document in Trash the person may restore: who deleted it and when, and when it goes for good.
+ * `canPurge` says whether they may also delete it for good before then.
+ */
+export const trashedDocumentSchema = v.object({
+  id: v.pipe(v.string(), v.uuid()),
+  workspaceId: v.pipe(v.string(), v.uuid()),
+  workspaceName: v.string(),
+  name: v.string(),
+  kind: v.optional(documentKindSchema, 'design'),
+  deletedAt: v.string(),
+  deletedBy: v.nullable(v.object({ name: v.string() })),
+  purgeAt: v.string(),
+  canPurge: v.boolean()
+})
+export type TrashedDocument = v.InferOutput<typeof trashedDocumentSchema>
+
+export const trashSchema = v.object({ documents: v.array(trashedDocumentSchema) })
+
 export const documentDownloadSchema = v.object({
   document: documentSummarySchema,
   revisionId: v.pipe(v.string(), v.uuid()),

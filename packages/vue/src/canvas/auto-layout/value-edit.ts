@@ -6,7 +6,7 @@ import {
   autoLayoutValueField,
   resolveAutoLayoutHover,
   type AutoLayoutValueField
-} from '#vue/shared/input/auto-layout-hover'
+} from '#vue/shared/input/auto-layout/hover'
 
 /**
  * A padding or gap value edited on the canvas, as Figma opens one on a double-click: the editor

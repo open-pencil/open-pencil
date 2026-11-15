@@ -24,14 +24,6 @@ function validate(target: SceneGraph, plan: GraphTransferPlan): void {
     plan.collections,
     variableIdentityReferences(plan.variables, plan.collections)
   )
-  for (const [id, mode] of plan.activeModes) {
-    if (
-      !plan.collections
-        .find((collection) => collection.id === id)
-        ?.modes.some((entry) => entry.modeId === mode)
-    )
-      throw new Error(`Invalid transferred active mode ${id}:${mode}`)
-  }
   for (const collection of plan.collections) claim(collection.id)
   for (const variable of plan.variables) claim(variable.id)
   const parents = new Set(target.nodes.keys())
@@ -64,7 +56,6 @@ export function applyGraphTransfer(target: SceneGraph, input: GraphTransferPlan)
     try {
       for (const collection of plan.collections) target.addCollection(collection)
       for (const variable of plan.variables) target.addVariable(variable)
-      for (const [id, mode] of plan.activeModes) target.activeMode.set(id, mode)
       for (const [hash, bytes] of plan.images)
         if (!target.images.has(hash)) target.images.set(hash, bytes)
       for (const node of plan.nodes)
@@ -73,10 +64,7 @@ export function applyGraphTransfer(target: SceneGraph, input: GraphTransferPlan)
       for (const node of plan.nodes.toReversed())
         if (target.getNode(node.id)) target.deleteNode(node.id)
       for (const variable of plan.variables) target.variables.delete(variable.id)
-      for (const collection of plan.collections) {
-        target.variableCollections.delete(collection.id)
-        target.activeMode.delete(collection.id)
-      }
+      for (const collection of plan.collections) target.variableCollections.delete(collection.id)
       for (const hash of imageIds) target.images.delete(hash)
       throw error
     }

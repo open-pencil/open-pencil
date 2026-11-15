@@ -6,7 +6,6 @@ import { imageDataURL } from '@open-pencil/scene-graph/images'
 import { layoutSizingInParent } from '@open-pencil/scene-graph/layout'
 import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
-import { resolvedPaintBindings } from '@open-pencil/scene-graph/variables'
 
 import { DesignTokens, type CSSModes } from '../tokens/references'
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from '../types'
@@ -206,14 +205,15 @@ function addPadding(style: DesignStyleDeclaration, node: SceneNode, css: FieldCS
 }
 
 function addFlexGap(style: DesignStyleDeclaration, node: SceneNode, css: FieldCSS): void {
-  if (node.itemSpacing <= 0 && node.counterAxisSpacing <= 0) return
+  const counterAxisSpacing = node.counterAxisSpacing ?? 0
+  if (node.itemSpacing <= 0 && counterAxisSpacing <= 0) return
   const item = css('itemSpacing', px(node.itemSpacing))
-  if (node.counterAxisSpacing <= 0) {
+  if (counterAxisSpacing <= 0) {
     style.gap = item
     return
   }
 
-  const counter = css('counterAxisSpacing', px(node.counterAxisSpacing))
+  const counter = css('counterAxisSpacing', px(counterAxisSpacing))
   if (node.layoutMode === 'HORIZONTAL') {
     if (node.itemSpacing > 0) style['column-gap'] = item
     style['row-gap'] = counter
@@ -479,14 +479,10 @@ function sceneNodeToDesignNode(
   const entered = tokens?.enter(node, inherited, root)
   const modes = entered?.modes ?? inherited
   const attrs = { ...attrsForNode(graph, node, includeSourceIds), ...entered?.attrs }
-  // A bound paint keeps the colour it was set with; the canvas draws its variable's value, so
-  // the styles do too, and a token reference then matches what is drawn.
-  const paints = resolvedPaintBindings(graph, node)
-  const drawn = paints.fills || paints.strokes ? { ...node, ...paints } : node
-  const css: FieldCSS = (field, literal) => tokens?.reference(drawn, field, modes) ?? literal
+  const css: FieldCSS = (field, literal) => tokens?.reference(node, field, modes) ?? literal
 
   if (node.type === 'TEXT') {
-    const content = textElementContent(drawn, styleFromTextNode(drawn, parent, css))
+    const content = textElementContent(node, styleFromTextNode(node, parent, css))
     return {
       type: 'element',
       tagName: content.tagName,
@@ -500,7 +496,7 @@ function sceneNodeToDesignNode(
 
   // An icon is one drawing, however many paths it has.
   if (VECTOR_SHAPES.has(node.type) || readIcon(node)) {
-    const vector = vectorDesignNode(context, node, attrs, styleFromSceneNode(drawn, parent, css))
+    const vector = vectorDesignNode(context, node, attrs, styleFromSceneNode(node, parent, css))
     if (vector) return vector
   }
 
@@ -519,7 +515,7 @@ function sceneNodeToDesignNode(
     }
   }
 
-  const style = styleFromSceneNode(drawn, parent, css)
+  const style = styleFromSceneNode(node, parent, css)
   const shader = layerShader(graph, node)
   if (shader) addShaderLayerStyle(style)
   return {

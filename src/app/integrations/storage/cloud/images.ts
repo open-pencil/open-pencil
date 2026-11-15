@@ -1,5 +1,4 @@
 import { limitAsync } from 'es-toolkit'
-import { unzipSync, zipSync, type Zippable } from 'fflate'
 
 import type { CloudAPIClient } from '@open-pencil/cloud/client'
 import {
@@ -7,12 +6,19 @@ import {
   CLOUD_IMAGE_NAME_PATTERN,
   type ObjectUploadTarget
 } from '@open-pencil/cloud/contract'
+import {
+  readStreamBytes,
+  readZipDirectory,
+  zipEntryContents,
+  zipStream,
+  type ZipEntry,
+  type ZipStreamEntry
+} from '@open-pencil/fig'
 
 import { putCloudObject, type CloudObjectTransfer } from './upload'
 
 /** Where a `.fig` archive keeps its images, each under the name its paints refer to. */
 const IMAGE_ENTRY_PREFIX = 'images/'
-const ZIP_SIGNATURE = [0x50, 0x4b, 0x03, 0x04]
 const IMAGE_UPLOAD_CONCURRENCY = 4
 /** How much of a request one image commit may fill: each upload brings its parts' ETags. */
 const IMAGE_COMMIT_BYTES = CLOUD_API_MAX_BODY_BYTES / 2
@@ -39,41 +45,48 @@ export function imageCommitBatches<T>(uploads: readonly T[]): T[][] {
 /** An image a `.fig` archive holds, as Cloud stores it apart from the file. */
 export type CloudDocumentImage = { name: string; bytes: Uint8Array }
 
-function isZip(bytes: Uint8Array): boolean {
-  return ZIP_SIGNATURE.every((byte, index) => bytes[index] === byte)
+function archiveEntry(bytes: Uint8Array, entry: ZipEntry): ZipStreamEntry {
+  return { name: entry.name, data: zipEntryContents(bytes, entry), deflate: entry.method !== 0 }
 }
 
 /**
- * The archive without its images, and the images. A file that is not a zip archive, or holds no
- * images, comes back whole; an image under a name Cloud does not store apart stays inside.
+ * The archive without its images, and the images, as views of `bytes`. A file that is not a zip
+ * archive, or holds no images, comes back whole; an image under a name Cloud does not store
+ * apart stays inside.
  */
-export function splitCloudDocument(bytes: Uint8Array): {
-  lean: Uint8Array
-  images: CloudDocumentImage[]
-} {
-  if (!isZip(bytes)) return { lean: bytes, images: [] }
-  const entries = unzipSync(bytes)
+export async function splitCloudDocument(
+  bytes: Uint8Array
+): Promise<{ lean: Uint8Array; images: CloudDocumentImage[] }> {
+  const entries = readZipDirectory(bytes)
+  if (!entries) return { lean: bytes, images: [] }
   const images: CloudDocumentImage[] = []
-  const rest: Zippable = {}
-  for (const [path, data] of Object.entries(entries)) {
-    const name = path.startsWith(IMAGE_ENTRY_PREFIX) ? path.slice(IMAGE_ENTRY_PREFIX.length) : null
+  const rest: ZipStreamEntry[] = []
+  for (const entry of entries) {
+    const name = entry.name.startsWith(IMAGE_ENTRY_PREFIX)
+      ? entry.name.slice(IMAGE_ENTRY_PREFIX.length)
+      : null
     // An empty image, or one under a name Cloud does not take, stays inside the file.
-    if (name && CLOUD_IMAGE_NAME_PATTERN.test(name) && data.byteLength > 0) {
-      images.push({ name, bytes: data })
-    } else rest[path] = [data, { level: 0 }]
+    if (name && CLOUD_IMAGE_NAME_PATTERN.test(name) && entry.size > 0) {
+      images.push({ name, bytes: zipEntryContents(bytes, entry) })
+    } else rest.push(archiveEntry(bytes, entry))
   }
-  return images.length === 0 ? { lean: bytes, images } : { lean: zipSync(rest), images }
+  if (images.length === 0) return { lean: bytes, images }
+  return { lean: await readStreamBytes(zipStream(rest)), images }
 }
 
 /** The archive with its images put back under their names; the lean archive when there are none. */
-export function assembleCloudDocument(lean: Uint8Array, images: CloudDocumentImage[]): Uint8Array {
-  if (images.length === 0) return lean
-  const entries: Zippable = {}
-  for (const [path, data] of Object.entries(unzipSync(lean))) entries[path] = [data, { level: 0 }]
-  for (const image of images) {
-    entries[`${IMAGE_ENTRY_PREFIX}${image.name}`] = [image.bytes, { level: 0 }]
-  }
-  return zipSync(entries)
+export async function assembleCloudDocument(
+  lean: Uint8Array,
+  images: CloudDocumentImage[]
+): Promise<Uint8Array> {
+  const entries = images.length === 0 ? null : readZipDirectory(lean)
+  if (!entries) return lean
+  return readStreamBytes(
+    zipStream([
+      ...entries.map((entry) => archiveEntry(lean, entry)),
+      ...images.map((image) => ({ name: `${IMAGE_ENTRY_PREFIX}${image.name}`, data: image.bytes }))
+    ])
+  )
 }
 
 /**

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { asComponentNode, createAPI } from '#core-tests/helpers/figma-api'
+
 import { graphOf } from '#core/figma-api/graph'
 describe('combineAsVariants', () => {
   test('wraps components into a COMPONENT_SET', () => {

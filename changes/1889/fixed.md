@@ -1,1 +1,0 @@
-- A canvas shortcut pressed right after closing a menu, such as Escape then R, works instead of doing nothing while the menu fades out (#1889).

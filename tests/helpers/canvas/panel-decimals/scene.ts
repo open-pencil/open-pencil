@@ -47,5 +47,16 @@ export function createPanelDecimalsScene(graph: SceneGraph, pageId: string) {
         height: 20
       }).id
   )
-  return { measured: measured.id, turned: turned.id, padded: padded.id, thirds }
+  // A width bound to a variable a .fig stored as a 32-bit float: 100.4 reads back 100.4000015…
+  const sizes = graph.createCollection('Sizes')
+  const stored = graph.createVariable('Card width', 'FLOAT', sizes.id, Math.fround(100.4))
+  const bound = graph.createNode('RECTANGLE', pageId, {
+    name: 'Bound',
+    x: 600,
+    y: 40,
+    width: Math.fround(100.4),
+    height: 20
+  })
+  graph.bindVariable(bound.id, 'width', stored.id)
+  return { measured: measured.id, turned: turned.id, padded: padded.id, thirds, bound: bound.id }
 }

@@ -1,7 +1,7 @@
 import { createEventHook } from '@vueuse/core'
 
 import type { Editor, EditorState } from '@open-pencil/core'
-import { exportFigFile } from '@open-pencil/core/io/formats/fig'
+import { exportFigFile, exportFigFileStream } from '@open-pencil/core/io/formats/fig'
 
 import { createAutosave } from '@/app/document/autosave'
 import { createDocumentChanges } from '@/app/document/io/changes'
@@ -16,6 +16,7 @@ import { createSaveActions } from '@/app/document/io/save/actions'
 import { createDocumentSourceState } from '@/app/document/io/source/state'
 import type { DocumentSourceAccess } from '@/app/document/io/types'
 import { createDocumentRecovery } from '@/app/document/recovery'
+import { createRecoveryCover } from '@/app/document/recovery/cover'
 import { recoveryEnabled } from '@/app/document/recovery/preferences'
 import { storageLocationOf } from '@/app/integrations/storage/location'
 import type { StorageDocumentBinding, StorageLocation } from '@/app/integrations/storage/types'
@@ -62,21 +63,31 @@ export function createDocumentSourceActions({
 }: DocumentSourceOptions) {
   const changes = createDocumentChanges(editor)
 
+  /** Runs a save, marking the revision it started from saved if it succeeds, releasing it if not. */
   async function saveAndTrack(save: () => Promise<boolean>) {
     const revision = changes.capture()
-    const saved = await save()
-    if (saved) changes.markSaved(revision)
+    let saved = false
+    try {
+      saved = await save()
+    } finally {
+      if (saved) changes.markSaved(revision)
+      else changes.release(revision)
+    }
     return saved
   }
 
-  function buildFigFile() {
+  function figExportOptions() {
     const renderer = getRenderer()
-    return exportFigFile(editor.graph, {
+    return {
       ck: renderer?.ck,
       renderer: renderer ?? undefined,
       pageId: state.currentPageId,
       documentName: state.documentName
-    })
+    }
+  }
+
+  function buildFigStream() {
+    return exportFigFileStream(editor.graph, figExportOptions())
   }
 
   /**
@@ -88,7 +99,7 @@ export function createDocumentSourceActions({
     const path = getFilePath()
     const renderer = getRenderer()
     if (!path || !renderer || !isFigArchiveName(path)) return
-    if (changes.capture() !== version) return
+    if (changes.revision() !== version) return
     void cacheRecentFileCover(path, editor.graph, renderer).catch((error: unknown) => {
       console.warn('[Recent files] Could not cache the preview after saving', error)
     })
@@ -103,20 +114,20 @@ export function createDocumentSourceActions({
 
   const recovery = createDocumentRecovery({
     state,
-    version: changes.capture,
+    version: changes.revision,
     isEnabled: () => recoveryEnabled.value,
     buildFigFile: buildRecoveryFigFile,
-    buildCover: () => {
+    buildCover: createRecoveryCover(editor, () => {
       const renderer = getRenderer()
       return renderer ? drawHomeCardCover(editor.graph, renderer) : null
-    },
-    hasWritableSource
+    }),
+    autosaves: () => hasWritableSource() && state.autosaveEnabled
   })
 
   const { saveFigFile, saveFigFileAs, writeFile } = createSaveActions({
     state,
-    version: changes.capture,
-    buildFigFile,
+    version: changes.revision,
+    buildFigStream,
     getFilePath,
     setFilePath,
     getFileHandle,
@@ -141,19 +152,17 @@ export function createDocumentSourceActions({
 
   const autosave = createAutosave({
     state,
-    version: changes.capture,
+    version: changes.revision,
     getSavedVersion,
     hasWritableSource,
     saveCurrentDocument: async (version) => {
-      const revision = changes.capture()
-      const data = await buildFigFile()
-      if (await writeFile(data, version)) changes.markSaved(revision)
+      await saveAndTrack(async () => writeFile(await buildFigStream(), version))
     }
   })
 
   function markDocumentSaved() {
     changes.markSaved()
-    setSavedVersion(changes.capture())
+    setSavedVersion(changes.revision())
   }
 
   // Only names the person gives; a save's provisional name and the room's own are no rename.
@@ -182,7 +191,7 @@ export function createDocumentSourceActions({
     setDownloadName(figDownloadName(fileName, sourceFormat))
     setSourceIdentity({ handle: handle ?? null, path: path ?? null })
     markDocumentSaved()
-    void recovery.markProtectedVersion(changes.capture())
+    void recovery.markProtectedVersion(changes.revision())
     trackDocumentFormat('document_opened', sourceFormat)
     if (isFig && (handle || path)) {
       void startWatchingFile()
@@ -199,7 +208,7 @@ export function createDocumentSourceActions({
     state.documentName = documentName
     state.autosaveEnabled = true
     markDocumentSaved()
-    void recovery.markProtectedVersion(changes.capture())
+    void recovery.markProtectedVersion(changes.revision())
   }
 
   function setPlannedFilePath(path: string) {
@@ -262,8 +271,8 @@ export function createDocumentSourceActions({
    * reach, and count it saved as a download is. Where the document saves next does not change.
    */
   async function saveFigFileCopy(write: (data: Uint8Array) => Promise<void>): Promise<boolean> {
-    const version = changes.capture()
-    await write(await buildFigFile())
+    const version = changes.revision()
+    await write(await exportFigFile(editor.graph, figExportOptions()))
     await recovery.markProtectedVersion(version)
     return true
   }

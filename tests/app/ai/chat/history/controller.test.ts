@@ -1,8 +1,8 @@
 import 'fake-indexeddb/auto'
 import { expect, test } from 'bun:test'
 
-import type { UIMessage } from 'ai'
-import { reactive } from 'vue'
+import type { ChatStatus, UIMessage } from 'ai'
+import { nextTick, reactive } from 'vue'
 
 import type { ACPAgentID } from '@open-pencil/core/constants'
 import { expectDefined } from '@open-pencil/test-support/assert'
@@ -10,7 +10,8 @@ import { expectDefined } from '@open-pencil/test-support/assert'
 import { createConversationHistory } from '@/app/ai/chat/history/controller'
 import type { ChatDocumentEditor } from '@/app/ai/chat/history/document'
 import { createConversationStore } from '@/app/ai/chat/history/idb'
-import type { AgentSessionLink } from '@/app/ai/chat/history/types'
+import type { AgentSessionLink, ConversationStore } from '@/app/ai/chat/history/types'
+import { createDeferred } from '@/app/runtime/deferred'
 function editor(): ChatDocumentEditor {
   const id = crypto.randomUUID()
   return {
@@ -56,18 +57,19 @@ test('adopting recovery in the same editor loads its selection instead of moving
   expect((await store.read(original.id))?.documentId).toBe(original.documentId)
 })
 
-function fixture() {
+function fixture(title?: (messages: UIMessage[]) => Promise<string | null>) {
   let activeEditor = editor()
   let failWrites = false
   let resets = 0
   const store = createConversationStore()
   const chat = reactive({
     messages: [] as UIMessage[],
-    status: 'ready' as const,
+    status: 'ready' as ChatStatus,
     stop: async () => undefined
   })
   const history = createConversationHistory(
     {
+      title,
       getEditor: () => activeEditor,
       ensureChat: async () => chat,
       resetChat: async () => {
@@ -251,6 +253,116 @@ const savedMessage: UIMessage = {
   parts: [{ type: 'text', text: 'Make the hero bigger' }]
 }
 
+test('disposing for a reload stops and saves the chat before releasing its agent', async () => {
+  const active = editor()
+  const store = createConversationStore()
+  const stopping = createDeferred<undefined>()
+  const stopped = createDeferred<undefined>()
+  const chat = reactive({
+    messages: [savedMessage],
+    status: 'streaming' as ChatStatus,
+    async stop() {
+      stopping.resolve(undefined)
+      await stopped.promise
+      chat.status = 'ready'
+    }
+  })
+  let resets = 0
+  let id = ''
+  const runtime = {
+    getEditor: () => active,
+    ensureChat: async () => chat,
+    resetChat: async () => {
+      if (id) {
+        const saved = await store.read(id)
+        expect(saved?.messages[0]?.message).toEqual(savedMessage)
+        expect(saved?.agentSession).toEqual({ agent: 'codex', id: 'codex-session' })
+        expect(saved?.interrupted).toBe(true)
+      }
+      resets++
+    },
+    profileId: () => null,
+    backend: () => 'acp' as const,
+    resumingAgent: () => 'codex' as const
+  }
+  const history = createConversationHistory(runtime, store)
+  await history.ensureChat()
+  const conversation = expectDefined(history.current.value, 'conversation')
+  id = conversation.id
+  history.current.value = {
+    ...conversation,
+    agentSession: { agent: 'codex', id: 'codex-session' }
+  }
+  const before = resets
+  const disposing = history.dispose()
+  await stopping.promise
+  expect(resets).toBe(before)
+  // A follow-up triggered by Stop must not launch another agent during teardown.
+  const queued = history.ensureChat()
+  expect(history.dispose()).toBe(disposing)
+  stopped.resolve(undefined)
+  await disposing
+  expect(await queued).toBeNull()
+  expect(resets).toBe(before + 1)
+  expect(await store.getSelected(conversation.documentId)).toBe(id)
+
+  const reopened = createConversationHistory(runtime, store)
+  await reopened.initialize()
+  expect(reopened.current.value?.id).toBe(id)
+  expect(reopened.continuesAgentSession.value).toBe(true)
+  expect(reopened.agentReadOnly.value).toBe(false)
+})
+
+test('a disposal whose save failed saves on the next call, and no chat starts in between', async () => {
+  const active = editor()
+  const real = createConversationStore()
+  let failing = false
+  const store: ConversationStore = {
+    ...real,
+    write: async (conversation) => {
+      if (failing) throw new Error('Storage is unavailable')
+      await real.write(conversation)
+    }
+  }
+  const chat = reactive({
+    messages: [savedMessage],
+    status: 'ready' as ChatStatus,
+    stop: async () => undefined
+  })
+  let resets = 0
+  let starts = 0
+  const history = createConversationHistory(
+    {
+      getEditor: () => active,
+      ensureChat: async () => {
+        starts++
+        return chat
+      },
+      resetChat: async () => {
+        resets++
+      },
+      profileId: () => null,
+      backend: () => 'acp' as const,
+      resumingAgent: () => 'codex' as const
+    },
+    store
+  )
+  await history.ensureChat()
+  const id = expectDefined(history.current.value, 'conversation').id
+  const before = { resets, starts }
+
+  failing = true
+  await expect(history.dispose()).rejects.toThrow('Storage is unavailable')
+  expect(resets).toBe(before.resets)
+  expect(await history.ensureChat()).toBeNull()
+
+  failing = false
+  await history.dispose()
+  expect(resets).toBe(before.resets + 1)
+  expect(starts).toBe(before.starts)
+  expect((await real.read(id))?.messages[0]?.message).toEqual(savedMessage)
+})
+
 test('a saved agent conversation continues in its session with the agent that resumes it', async () => {
   const f = await agentFixture('claude-code', { messages: [savedMessage] })
   expect(f.history.continuesAgentSession.value).toBe(true)
@@ -356,4 +468,94 @@ test('a conversation continued on another agent no longer resumes the saved sess
   link.record({ agent: 'claude-code', id: 'partial-session' })
   await f.history.flush()
   expect((await f.store.read(f.id))?.agentSession).toBeUndefined()
+})
+
+/** One request and its reply, as the chat holds them once the reply is in. */
+const exchange: UIMessage[] = [
+  { id: 'ask', role: 'user', parts: [{ type: 'text', text: 'Make the cards the same height' }] },
+  { id: 'reply', role: 'assistant', parts: [{ type: 'text', text: 'Done.' }] }
+]
+
+/** The chat takes a message and finishes its reply, as a turn does. */
+async function reply(chat: { messages: UIMessage[]; status: ChatStatus }): Promise<void> {
+  chat.status = 'streaming'
+  await nextTick()
+  chat.messages = exchange
+  chat.status = 'ready'
+  await nextTick()
+}
+
+/** Naming runs beside the chat, so a test waits for the title it expects to land. */
+async function named(history: { current: { value: { titleSource: string } | null } }) {
+  for (let turn = 0; turn < 50 && history.current.value?.titleSource !== 'generated'; turn++) {
+    await Bun.sleep(0)
+  }
+}
+
+test('a conversation is named once its first reply is in, and keeps the name', async () => {
+  const asked: UIMessage[][] = []
+  const f = fixture(async (messages) => {
+    asked.push(messages)
+    return 'Equal-height cards'
+  })
+  await f.history.ensureChat()
+  const id = expectDefined(f.history.current.value?.id, 'a conversation')
+  await reply(f.chat)
+  await named(f.history)
+  await f.history.flush()
+  expect(asked).toHaveLength(1)
+  expect(f.history.current.value).toMatchObject({
+    title: 'Equal-height cards',
+    titleSource: 'generated'
+  })
+  expect(await f.store.read(id)).toMatchObject({
+    title: 'Equal-height cards',
+    titleSource: 'generated'
+  })
+
+  await reply(f.chat)
+  await f.history.flush()
+  expect(asked).toHaveLength(1)
+})
+
+test('a name the person typed is not replaced by a generated one', async () => {
+  const answer = createDeferred<string | null>()
+  const f = fixture(() => answer.promise)
+  await f.history.ensureChat()
+  const id = expectDefined(f.history.current.value?.id, 'a conversation')
+  await reply(f.chat)
+  await f.history.rename(id, 'My own name')
+  answer.resolve('Generated name')
+  await f.history.flush()
+  expect(f.history.current.value).toMatchObject({ title: 'My own name', titleSource: 'manual' })
+})
+
+test('a conversation keeps its first message as the title when none is generated', async () => {
+  const f = fixture(async () => null)
+  await f.history.ensureChat()
+  await reply(f.chat)
+  await f.history.flush()
+  expect(f.history.current.value).toMatchObject({
+    title: 'Make the cards the same height',
+    titleSource: 'fallback'
+  })
+})
+
+test('a reply stopped by starting another conversation does not name the one it leaves', async () => {
+  const asked: UIMessage[][] = []
+  const f = fixture(async (messages) => {
+    asked.push(messages)
+    return 'Equal-height cards'
+  })
+  await f.history.ensureChat()
+  f.chat.stop = async () => {
+    f.chat.status = 'ready'
+    await nextTick()
+  }
+  f.chat.status = 'streaming'
+  await nextTick()
+  f.chat.messages = exchange
+  await f.history.newChat()
+  await f.history.flush()
+  expect(asked).toEqual([])
 })

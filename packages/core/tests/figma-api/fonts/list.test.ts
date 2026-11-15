@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, expect, spyOn, test } from 'bun:test'
 
+import { fakeGoogleFonts, withGoogleFonts } from '#core-tests/helpers/google-fonts'
+
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { facesFromStyles, fontManager, type WebFontProviderId } from '@open-pencil/core/text'
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { fakeGoogleFonts, withGoogleFonts } from '#core-tests/helpers/google-fonts'
 
 let providers: WebFontProviderId[] = []
 
@@ -23,7 +23,9 @@ afterEach(() => {
 
 async function stylesOf(family: string): Promise<string[]> {
   const fonts = await new FigmaAPI(new SceneGraph()).listAvailableFontsAsync()
-  return fonts.filter(({ fontName }) => fontName.family === family).map(({ fontName }) => fontName.style)
+  return fonts
+    .filter(({ fontName }) => fontName.family === family)
+    .map(({ fontName }) => fontName.style)
 }
 
 test('figma.listAvailableFontsAsync lists every face of a bundled family', async () => {

@@ -1,4 +1,4 @@
-import type { Canvas, CanvasKit, Paint } from 'canvaskit-wasm'
+import type { Canvas, CanvasKit, Paint } from '@open-pencil/canvaskit'
 
 import { keycapFrame } from '#core/text/keycap'
 

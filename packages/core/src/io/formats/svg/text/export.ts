@@ -1,14 +1,8 @@
 import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
-import { parseFontStyle } from '@open-pencil/scene-graph/font-style'
 import { textLengthPixels } from '@open-pencil/scene-graph/text'
 import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text/direction'
 
-import {
-  formatColor,
-  type SVGExportContext,
-  type SVGFontAlias,
-  type SVGFontRequest
-} from '#core/io/formats/svg/defs'
+import { formatColor, type SVGExportContext } from '#core/io/formats/svg/defs'
 import { svg, type SVGNode } from '#core/io/formats/svg/node'
 import { round } from '#core/io/formats/svg/paths'
 import {
@@ -19,8 +13,6 @@ import {
   type SVGFallbackFace
 } from '#core/io/formats/svg/text/lines'
 import { shownText } from '#core/text/case'
-import { drawnFontVariations } from '#core/text/font/families'
-import { textFontFace } from '#core/text/requirements/collect'
 
 function styleOverrideToTspanAttrs(
   style: CharacterStyleOverride,
@@ -65,61 +57,9 @@ function styleOverrideToTspanAttrs(
   return attrs
 }
 
-/**
- * Font attributes naming a face's alias, such as the family a PDF embeds its file under, or else
- * the face itself, so text inside an aliased parent does not inherit the alias.
- */
-function aliasedFontAttrs(
-  face: SVGFontRequest,
-  fontAlias: SVGFontAlias
-): Record<string, string | number> {
-  const alias = fontAlias(face)
-  if (alias) return { 'font-family': alias, 'font-weight': 'normal', 'font-style': 'normal' }
-  return {
-    'font-family': face.family,
-    'font-weight': face.weight,
-    'font-style': face.italic ? 'italic' : 'normal'
-  }
-}
-
-/**
- * The font attributes of a span: its face's alias where there is one, otherwise the family of the
- * fallback face that draws it, if any.
- */
-function spanFontAttrs(
-  node: SceneNode,
-  style: CharacterStyleOverride,
-  fallback: SVGFallbackFace | undefined,
-  fontAlias: SVGFontAlias | undefined
-): Record<string, string | number> {
-  if (fontAlias) return aliasedFontAttrs(fontRequest(node, style, fallback), fontAlias)
+/** The family of the fallback face that draws a span's characters, if any. */
+function spanFontAttrs(fallback: SVGFallbackFace | undefined): Record<string, string> {
   return fallback ? { 'font-family': fallback.family } : {}
-}
-
-/**
- * The face a run of `node` is drawn in, or the fallback face that draws its characters instead,
- * with the size and axes its instance follows. A fallback is drawn at the axes the run's own font
- * is drawn at, as the paragraph draws every font it falls back to.
- */
-function fontRequest(
-  node: SceneNode,
-  style: CharacterStyleOverride = {},
-  fallback?: SVGFallbackFace
-): SVGFontRequest {
-  const own: SVGFontRequest = {
-    ...textFontFace(node, style),
-    fontSize: style.fontSize ?? node.fontSize,
-    variations: style.fontVariations ?? node.fontVariations,
-    opticalSizeFromFontSize: style.opticalSizeFromFontSize ?? node.opticalSizeFromFontSize
-  }
-  if (!fallback) return own
-  return {
-    ...own,
-    ...fallback,
-    ...parseFontStyle(fallback.style),
-    variations: drawnFontVariations(own),
-    opticalSizeFromFontSize: false
-  }
 }
 
 function isLogicalTextEnd(node: SceneNode, direction: 'LTR' | 'RTL'): boolean {
@@ -180,7 +120,7 @@ export function renderTextNode(
   ctx: SVGExportContext,
   fillOpacity?: number
 ): SVGNode {
-  const { colorSpace, textLayout, fontAlias } = ctx
+  const { colorSpace, textLayout } = ctx
   const direction = resolveNodeTextDirection(node)
   const lines = textLayout ? textLayout(node) : null
   const laidOut = lines && lines.length > 0 ? lines : null
@@ -201,12 +141,11 @@ export function renderTextNode(
     direction: direction === 'RTL' && !laidOut ? 'rtl' : undefined,
     'text-anchor': laidOut ? undefined : textAnchorForNode(node, direction),
     'text-decoration': textDecoration,
-    'letter-spacing': letterSpacing ? round(letterSpacing) : undefined,
-    ...(fontAlias ? aliasedFontAttrs(fontRequest(node), fontAlias) : {})
+    'letter-spacing': letterSpacing ? round(letterSpacing) : undefined
   }
   const spanAttrs = (style: CharacterStyleOverride, fallback?: SVGFallbackFace) => ({
     ...styleOverrideToTspanAttrs(style, colorSpace, fillOpacity, node),
-    ...spanFontAttrs(node, style, fallback, fontAlias)
+    ...spanFontAttrs(fallback)
   })
 
   if (laidOut) {

@@ -21,7 +21,7 @@ const emit = defineEmits<{ toggle: [] }>()
     @click.stop="emit('toggle')"
     @dblclick.stop
   >
-    <icon-lucide-chevron-right class="size-3" />
+    <icon-lucide-chevron-right data-direction="reading" class="size-3" />
   </button>
   <span v-else data-slot="disclosure-placeholder" :class="ui.placeholder" />
 </template>

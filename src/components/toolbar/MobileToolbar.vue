@@ -88,7 +88,10 @@ function navigationClass(disabled: boolean) {
       :transition="itemTransition"
       @click="goPrev"
     >
-      <IconChevronLeft :class="styles.navigationIcon({ class: ui?.navigationIcon })" />
+      <IconChevronLeft
+        data-direction="reading"
+        :class="styles.navigationIcon({ class: ui?.navigationIcon })"
+      />
     </motion.button>
 
     <ToolbarRoot as-child>
@@ -195,7 +198,10 @@ function navigationClass(disabled: boolean) {
       :transition="itemTransition"
       @click="goNext"
     >
-      <IconChevronRight :class="styles.navigationIcon({ class: ui?.navigationIcon })" />
+      <IconChevronRight
+        data-direction="reading"
+        :class="styles.navigationIcon({ class: ui?.navigationIcon })"
+      />
     </motion.button>
   </div>
 </template>

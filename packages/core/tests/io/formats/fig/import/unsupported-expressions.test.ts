@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 
 import { deflateSync } from 'fflate'
 
-import { compressFigDataSync, parseFigBuffer } from '@open-pencil/fig'
+import { parseFigBuffer, writeFigArchive } from '@open-pencil/fig'
 import { getCompiledSchema, getSchemaBytes, type NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import { SceneGraph, type VariableValue } from '@open-pencil/scene-graph'
@@ -70,13 +70,12 @@ async function figWithLookup() {
   // Figma saves the size a binding gave; drawing keeps it while the expression has no value.
   for (const node of decoded.nodeChanges)
     if (node.type === 'RECTANGLE') node.size = { x: 91, y: 70 }
-  const bytes = compressFigDataSync(
-    deflateSync(getSchemaBytes()),
-    getCompiledSchema().encodeMessage(decoded),
-    new Uint8Array(),
-    '{}',
-    []
-  )
+  const bytes = writeFigArchive({
+    schemaDeflated: deflateSync(getSchemaBytes()),
+    kiwiData: getCompiledSchema().encodeMessage(decoded),
+    thumbnailPNG: new Uint8Array(),
+    metaJSON: '{}'
+  })
   return {
     bytes,
     data: entry.variableData,

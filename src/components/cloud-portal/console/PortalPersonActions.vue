@@ -4,8 +4,8 @@ import { computed, ref } from 'vue'
 
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
-import { portalForm } from '@/components/cloud-portal/ui'
 import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
+import AppFormField from '@/components/ui/input/AppFormField.vue'
 import AppTextarea from '@/components/ui/input/AppTextarea.vue'
 import { useHeldContent } from '@/components/ui/overlay/held'
 
@@ -29,7 +29,6 @@ const {
 const emit = defineEmits<{ act: [action: PortalPersonAction, reason?: string] }>()
 
 const messages = useCloudPortalMessages()
-const form = portalForm()
 const confirming = ref<PortalPersonAction | null>(null)
 const reason = ref('')
 
@@ -131,14 +130,14 @@ function confirm() {
     :tone="confirmation?.tone"
     :heading="confirmation?.heading ?? ''"
     :description="confirmation?.description"
-    :cancel-label="messages.cancel"
     :confirm-label="confirmation?.confirm ?? ''"
     @update:open="(open) => !open && (confirming = null)"
     @confirm="confirm"
   >
-    <div v-if="confirmingShown === 'suspend'" :class="[form.field(), 'mt-3']">
-      <label for="portal-suspend-reason" :class="form.label()">{{ messages.suspendReason }}</label>
-      <AppTextarea id="portal-suspend-reason" v-model="reason" :rows="2" maxlength="500" />
-    </div>
+    <AppFormField v-if="confirmingShown === 'suspend'" :label="messages.suspendReason">
+      <template #default="{ id }">
+        <AppTextarea :id="id" v-model="reason" :rows="2" maxlength="500" />
+      </template>
+    </AppFormField>
   </AppConfirmationDialog>
 </template>

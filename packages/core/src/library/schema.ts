@@ -70,7 +70,6 @@ export const serializedLibraryRevisionSchema = v.object({
     images: v.array(v.tuple([v.string(), serializedBytesSchema])),
     variables: v.array(v.tuple([v.string(), serializedVariableSchema])),
     variableCollections: v.array(v.tuple([v.string(), serializedCollectionSchema])),
-    activeMode: v.array(v.tuple([v.string(), v.string()])),
     documentColorSpace: v.picklist(['srgb', 'display-p3'])
   })
 }) satisfies v.GenericSchema<unknown, SerializedComponentLibraryRevision>

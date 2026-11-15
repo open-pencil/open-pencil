@@ -1,16 +1,20 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ref } from 'vue'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
+import AppFormField from '@/components/ui/input/AppFormField.vue'
+import AppInput from '@/components/ui/input/AppInput.vue'
 import { useHeldContent } from '@/components/ui/overlay/held'
 
 import AppConfirmationDialog from './AppConfirmationDialog.vue'
 import AppDialog from './AppDialog.vue'
 import AppDialogBody from './AppDialogBody.vue'
+import AppDialogCancel from './AppDialogCancel.vue'
 import AppDialogFooter from './AppDialogFooter.vue'
 import AppDialogHeader from './AppDialogHeader.vue'
 import AppDialogRoot from './AppDialogRoot.vue'
+import AppFormDialog from './AppFormDialog.vue'
 
 const meta = {
   title: 'Design System/Overlays/Dialog',
@@ -117,4 +121,197 @@ export const TargetedConfirmation: Story = {
       />
     `
   })
+}
+
+/**
+ * A dialog that is one form: it opens on its field, an empty name is caught in place and takes
+ * focus back, Enter submits, and a failed submit shows why under the fields. The name starts empty each time it opens.
+ */
+export const Form: Story = {
+  render: () => ({
+    components: { AppButton, AppDialogCancel, AppFormDialog, AppFormField, AppInput },
+    setup() {
+      const open = ref(false)
+      const name = ref('')
+      const invalid = ref<string | null>(null)
+      const failed = ref<string | null>(null)
+      // The opener fills the fields, so each opening starts clean.
+      function openRename() {
+        name.value = ''
+        invalid.value = null
+        failed.value = null
+        open.value = true
+      }
+      function submit() {
+        invalid.value = name.value.trim() ? null : 'Enter a name.'
+        if (!invalid.value) failed.value = 'The server could not be reached.'
+      }
+      return { open, name, invalid, failed, openRename, submit }
+    },
+    template: `
+      <AppButton @click="openRename">Rename workspace</AppButton>
+      <AppFormDialog
+        v-model:open="open"
+        heading="Rename workspace"
+        description="Everyone in the workspace sees the new name."
+        :error="failed"
+        error-heading="Couldn't rename the workspace"
+        @submit="submit"
+      >
+        <AppFormField label="Name" :error="invalid">
+          <template #default="{ id, invalid: hasError, describedBy }">
+            <AppInput :id="id" v-model="name" autofocus :state="hasError ? 'invalid' : 'idle'" :aria-invalid="hasError || undefined" :aria-describedby="describedBy" />
+          </template>
+        </AppFormField>
+        <template #footer>
+          <AppDialogCancel />
+          <AppButton type="submit" color="primary" variant="solid">Rename</AppButton>
+        </template>
+      </AppFormDialog>
+    `
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const body = within(document.body)
+    await userEvent.click(canvas.getByRole('button', { name: 'Rename workspace' }))
+    const name = await body.findByLabelText('Name')
+    await expect(name).toHaveFocus()
+    // Submitting from the button leaves focus on it, until the invalid field takes it back.
+    await userEvent.click(body.getByRole('button', { name: 'Rename' }))
+    await expect(name).toHaveAccessibleDescription('Enter a name.')
+    await waitFor(() => expect(name).toHaveFocus())
+    await userEvent.type(name, 'Design{Enter}')
+    await expect(body.getByText('The server could not be reached.')).toBeVisible()
+    await userEvent.click(body.getByRole('button', { name: 'Cancel' }))
+    await expect(body.queryByRole('dialog')).not.toBeInTheDocument()
+    await userEvent.click(canvas.getByRole('button', { name: 'Rename workspace' }))
+    await expect(await body.findByLabelText('Name')).toHaveValue('')
+  }
+}
+
+/**
+ * Enter in a field submits only while the submit button can be pressed: a disabled or loading
+ * button blocks it, as the browser blocks a form's implicit submission.
+ */
+export const FormSubmitBlocked: Story = {
+  render: () => ({
+    components: { AppButton, AppDialogCancel, AppFormDialog, AppFormField, AppInput },
+    setup() {
+      const open = ref(false)
+      const name = ref('')
+      const sent = ref(0)
+      const saving = ref(false)
+      function submit() {
+        sent.value++
+        saving.value = true
+      }
+      return { open, name, sent, saving, submit }
+    },
+    template: `
+      <AppButton @click="open = true">New workspace</AppButton>
+      <p class="mt-2 text-xs text-surface" data-test-id="sent">Sent {{ sent }}</p>
+      <AppFormDialog v-model:open="open" heading="New workspace" @submit="submit">
+        <AppFormField label="Name">
+          <template #default="{ id }"><AppInput :id="id" v-model="name" autofocus /></template>
+        </AppFormField>
+        <template #footer>
+          <AppDialogCancel />
+          <AppButton type="submit" color="primary" variant="solid" :loading="saving" :disabled="!name.trim()">Create</AppButton>
+        </template>
+      </AppFormDialog>
+    `
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const body = within(document.body)
+    await userEvent.click(canvas.getByRole('button', { name: 'New workspace' }))
+    const name = await body.findByLabelText('Name')
+    await userEvent.type(name, '{Enter}')
+    await expect(canvas.getByText('Sent 0')).toBeVisible()
+    await userEvent.type(name, 'Design{Enter}')
+    await expect(canvas.getByText('Sent 1')).toBeVisible()
+    await userEvent.type(name, '{Enter}')
+    await expect(canvas.getByText('Sent 1')).toBeVisible()
+  }
+}
+
+/**
+ * Deleting something that can't be brought back waits for its name, typed in any letter case;
+ * Enter confirms once it matches.
+ */
+export const TypedConfirmation: Story = {
+  render: () => ({
+    components: { AppButton, AppConfirmationDialog },
+    setup() {
+      const open = ref(false)
+      const deleted = ref(false)
+      return { open, deleted }
+    },
+    template: `
+      <AppButton color="error" @click="open = true">Delete workspace</AppButton>
+      <p v-if="deleted" class="mt-2 text-xs text-surface">Deleted</p>
+      <AppConfirmationDialog
+        v-model:open="open"
+        tone="danger"
+        heading="Delete Design team?"
+        description="Its files go to the trash for everyone."
+        cancel-label="Cancel"
+        confirm-label="Delete workspace"
+        confirm-text="Design team"
+        @confirm="deleted = true"
+      />
+    `
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const body = within(document.body)
+    await userEvent.click(canvas.getByRole('button', { name: 'Delete workspace' }))
+    const dialog = within(await body.findByRole('alertdialog'))
+    const confirm = dialog.getByRole('button', { name: 'Delete workspace' })
+    await expect(confirm).toBeDisabled()
+    const typed = dialog.getByLabelText('To confirm, type “Design team”.')
+    await userEvent.type(typed, 'design')
+    await expect(confirm).toBeDisabled()
+    await userEvent.type(typed, ' TEAM {Enter}')
+    await expect(canvas.getByText('Deleted')).toBeVisible()
+  }
+}
+
+/**
+ * Actions sit at the end, Cancel first and the main action last; a separate action, here Delete,
+ * goes in the footer's start slot. A footer's `ui` can restyle it but not move its actions.
+ */
+export const FooterStartAction: Story = {
+  render: () => ({
+    components: { AppButton, AppDialogBody, AppDialogFooter, AppDialogHeader, AppDialogRoot },
+    setup() {
+      const open = ref(false)
+      return { open }
+    },
+    template: `
+      <AppButton @click="open = true">Edit connection</AppButton>
+      <AppDialogRoot v-model:open="open" size="sm">
+        <AppDialogHeader heading="Edit connection" close-label="Close" />
+        <AppDialogBody><p class="text-xs text-surface">Connection settings.</p></AppDialogBody>
+        <AppDialogFooter :ui="{ footer: 'justify-between' }">
+          <template #start><AppButton color="error" variant="link">Delete</AppButton></template>
+          <AppButton @click="open = false">Cancel</AppButton>
+          <AppButton color="primary" variant="solid" @click="open = false">Save</AppButton>
+        </AppDialogFooter>
+      </AppDialogRoot>
+    `
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Edit connection' }))
+    const dialog = within(await within(document.body).findByRole('dialog'))
+    const footer = dialog.getByRole('button', { name: 'Save' }).closest('footer')
+    await expect(footer).toHaveClass('justify-end')
+    await expect(footer).not.toHaveClass('justify-between')
+    const cancel = dialog.getByRole('button', { name: 'Cancel' }).getBoundingClientRect()
+    const save = dialog.getByRole('button', { name: 'Save' }).getBoundingClientRect()
+    const remove = dialog.getByRole('button', { name: 'Delete' }).getBoundingClientRect()
+    await expect(remove.right).toBeLessThan(cancel.left)
+    await expect(cancel.right).toBeLessThan(save.left)
+  }
 }

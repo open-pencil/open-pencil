@@ -12,6 +12,7 @@ import AppDialogHeader from '@/components/ui/dialog/AppDialogHeader.vue'
 import AppDialogRoot from '@/components/ui/dialog/AppDialogRoot.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppCopyField from '@/components/ui/input/AppCopyField.vue'
+import AppFormField from '@/components/ui/input/AppFormField.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 
 /** Pairing an authenticator app: scan the code or type the key, then prove it works. */
@@ -49,22 +50,20 @@ const image = computed(() => (rendered.value?.uri === uri ? rendered.value.data 
     <AppDialogHeader
       :heading="messages.authenticatorSetupTitle"
       :description="messages.authenticatorSetupScan"
-      :close-label="messages.cancel"
     />
     <AppDialogBody :ui="{ body: 'flex flex-col items-center gap-4' }">
       <!-- The box keeps its size while the code renders, so the dialog does not jump. -->
       <div class="size-44 rounded-lg bg-white p-2">
         <img v-if="image" :src="image" alt="" class="size-full" />
       </div>
-      <div class="flex w-full flex-col gap-1.5">
-        <span :class="ui.label()">{{ messages.authenticatorSetupKey }}</span>
+      <AppFormField class="w-full" :label="messages.authenticatorSetupKey" :label-for="false">
         <AppCopyField
           :value="secret"
           :copy-label="messages.copyKey"
           :copied-label="messages.copied"
           look="command"
         />
-      </div>
+      </AppFormField>
       <AppAlert v-if="error" tone="error" :heading="error" />
       <form class="flex w-full flex-col gap-3" novalidate @submit.prevent="emit('verify', code)">
         <AppInput

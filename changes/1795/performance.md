@@ -1,1 +1,0 @@
-- The editor no longer downloads AI provider code at startup, and the web app's offline cache is about 9 MiB smaller.

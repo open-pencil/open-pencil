@@ -99,6 +99,7 @@
   "reportNotePlaceholder": "你做了什么、发生了什么，以及你原本期望的结果。",
   "reportEmail": "电子邮件（可选）",
   "reportEmailHint": "仅在你希望我们回复时填写。",
+  "reportEmailInvalid": "请输入邮箱地址，或留空。",
   "reportActivity": "包含最近的活动",
   "reportActivityDescription": "来自诊断的最近 50 个事件，例如错误和耗时。绝不包括聊天消息或工具输出。",
   "reportDocument": "附加此文档",

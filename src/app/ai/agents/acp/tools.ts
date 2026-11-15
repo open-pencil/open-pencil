@@ -3,7 +3,7 @@ import type {
   RequestPermissionRequest,
   RequestPermissionResponse,
   SessionUpdate
-} from '@agentclientprotocol/sdk'
+} from '@agentclientprotocol/sdk/unstable'
 
 import { OPEN_PENCIL_MCP_SERVER } from '@open-pencil/core/constants'
 
@@ -67,8 +67,13 @@ export interface OwnToolsLink {
  * Links a new ACP session to OpenPencil's MCP server. Codex reports a server it could not start
  * as a failed tool call before any prompt, which gives the reason when the agent never connects.
  */
-export async function linkOwnTools(authorizationToken: string | null): Promise<OwnToolsLink> {
-  const link = await linkChatAgent((chat) => buildACPMCPServers({ authorizationToken, chat }))
+export async function linkOwnTools(
+  authorizationToken: string | null,
+  options: { defersTools?: boolean } = {}
+): Promise<OwnToolsLink> {
+  const link = await linkChatAgent((chat) =>
+    buildACPMCPServers({ authorizationToken, chat, defersTools: options.defersTools })
+  )
   const failures: string[] = []
   return {
     chat: link.chat,

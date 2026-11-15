@@ -1,8 +1,7 @@
-import type { SkPicture } from 'canvaskit-wasm'
-
+import type { SkPicture } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { changesShaping } from '#core/canvas/text/paragraph/inputs'
 
 export interface NodeFlash {
@@ -64,6 +63,7 @@ export function invalidateAllPictures(r: SkiaRenderer): void {
   invalidateScenePicture(r)
   r.tiledScene.invalidateStructure()
   clearNodePictures(r)
+  r.renderedBounds.clear()
 }
 
 export function invalidateNodePicture(
@@ -75,6 +75,7 @@ export function invalidateNodePicture(
     keepShaping: changedKeys !== undefined && !changesShaping(changedKeys)
   })
   r.textFonts.readiness.delete(nodeId)
+  r.renderedBounds.forget(nodeId)
   const cached = r.nodePictures.get(nodeId)
   if (cached) {
     cached.picture.delete()

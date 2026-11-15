@@ -2,6 +2,7 @@ import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 
+import { domains } from '#lint/domains.ts'
 import * as v from 'valibot'
 
 import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts-tools'
@@ -48,7 +49,7 @@ export async function lintFiles(
       configPath,
       JSON.stringify({
         plugins: ['typescript', 'vue'],
-        jsPlugins: [join(root, 'lint/plugin.js')],
+        jsPlugins: Object.keys(domains).map((domain) => join(root, `lint/${domain}.js`)),
         rules
       })
     )
@@ -82,6 +83,9 @@ export async function lintFiles(
   }
 }
 
+/** The diagnostics of one rule, by its full ID: Oxlint reports `@open-pencil/data/no-x` as `@open-pencil/data(no-x)`. */
 export function ruleDiagnostics(diagnostics: Diagnostic[], rule: string): Diagnostic[] {
-  return diagnostics.filter((diagnostic) => diagnostic.code === `open-pencil(${rule})`)
+  const at = rule.lastIndexOf('/')
+  const code = `${rule.slice(0, at)}(${rule.slice(at + 1)})`
+  return diagnostics.filter((diagnostic) => diagnostic.code === code)
 }

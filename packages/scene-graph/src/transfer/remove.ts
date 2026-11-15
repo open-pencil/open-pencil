@@ -37,7 +37,6 @@ export function removeGraphTransfer(graph: SceneGraph, plan: GraphTransferPlan):
     for (const id of collections) {
       graph.willChangeCollection(id)
       graph.variableCollections.delete(id)
-      graph.activeMode.delete(id)
     }
   })
 }

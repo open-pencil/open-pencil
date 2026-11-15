@@ -10,7 +10,7 @@ export { parsePhotoRequests } from './stock-photo/requests'
 export { setPexelsAPIKey, setUnsplashAccessKey } from './stock-photo/providers'
 
 export const stockPhoto = defineTool({
-  name: 'stock_photo',
+  name: 'search_stock_photos',
 
   description:
     'Search stock photos and apply to leaf image placeholders or closed area geometry. ' +

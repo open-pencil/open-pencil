@@ -1,9 +1,9 @@
 import { beforeAll, expect, test } from 'bun:test'
 
-import { styleRunsWithPatch, textStyleChanges } from '#core/text/character-style'
-
 import { createEditor } from '@open-pencil/core'
 import { fontManager, faceForStyle, textStyleName } from '@open-pencil/core/text'
+
+import { styleRunsWithPatch, textStyleChanges } from '#core/text/character-style'
 
 beforeAll(async () => {
   await fontManager.familyFaces('Inter')
@@ -20,10 +20,18 @@ function textNode(fields: Parameters<ReturnType<typeof createEditor>['graph']['c
 
 test('finds a face by its family’s own name for it, whatever its spelling', () => {
   // Our Inter 4 joins the names Figma's Inter 3 spaces.
-  expect(faceForStyle('Inter', 'Semi Bold')).toEqual({ weight: 600, italic: false, style: 'SemiBold' })
+  expect(faceForStyle('Inter', 'Semi Bold')).toEqual({
+    weight: 600,
+    italic: false,
+    style: 'SemiBold'
+  })
   expect(faceForStyle('Inter', 'italic')).toEqual({ weight: 400, italic: true, style: 'Italic' })
   // A name the family does not hold stays as asked, so a file keeps it.
-  expect(faceForStyle('Nowhere Sans', 'Book')).toEqual({ weight: 400, italic: false, style: 'Book' })
+  expect(faceForStyle('Nowhere Sans', 'Book')).toEqual({
+    weight: 400,
+    italic: false,
+    style: 'Book'
+  })
 })
 
 test('names a text by the name it was given, else by its font’s name for its weight', () => {

@@ -28,13 +28,13 @@ export class WebSearchRefusedError extends Error {
 
 let provider: WebSearchProvider | null = null
 
-/** Sets where `web_search` sends searches; `null` when there is nowhere to search. */
+/** Sets where `search_web` sends searches; `null` when there is nowhere to search. */
 export function setWebSearchProvider(next: WebSearchProvider | null): void {
   provider = next
 }
 
 export const webSearch = defineTool({
-  name: 'web_search',
+  name: 'search_web',
   description:
     'Search the web for current facts, references, examples, or real copy a design needs. ' +
     'Returns pages with their title, URL, date, author, and an excerpt. Each search costs ' +

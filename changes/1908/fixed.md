@@ -1,1 +1,0 @@
-- Paste to replace from Figma keeps the pasted layer as it was drawn when the replaced layer sits in a rotated or flipped frame, instead of turning it with the frame (#1908).

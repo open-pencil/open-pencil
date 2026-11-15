@@ -1,6 +1,8 @@
 {
   "interfaceScale": "Dimensione dell’interfaccia",
   "interfaceScaleDescription": "Ridimensiona pannelli, testo e controlli senza modificare lo zoom della tela.",
+  "mirrorInterface": "Rispecchia l’interfaccia",
+  "mirrorInterfaceDescription": "Dispone pannelli, menu e controlli da destra a sinistra, come si legge la lingua. La tela, le coordinate e il codice restano da sinistra a destra.",
   "recentFiles": "File recenti",
   "recentFilesDescription": "Scegli quanti file conservare nell’elenco e nel menu dei file recenti.",
   "recentFilesLimit": "Numero di file recenti",

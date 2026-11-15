@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
+import { SceneGraph } from '@open-pencil/scene-graph'
+
 import { FigmaAPI, type FigmaNodeProxy } from '#core/figma-api'
 import { computeAllLayouts } from '#core/layout'
-import { SceneGraph } from '@open-pencil/scene-graph'
 
 /** A Hug row with padding and gap 10 around a 60 × 40 and a 50 × 30 rectangle. */
 function hugRow() {

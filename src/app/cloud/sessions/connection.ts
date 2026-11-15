@@ -8,25 +8,39 @@ import {
   discoverCloud,
   type CloudAPIClient,
   type CloudDiscoveryFailure,
-  type CloudFetch
+  type CloudFetch,
+  type CloudPortalClient
 } from '@open-pencil/cloud/client'
-import type { CloudDiscovery, WorkspaceSummary } from '@open-pencil/cloud/contract'
+import {
+  CLOUD_EDITOR_VERSION_HEADER,
+  type CloudDiscovery,
+  type WorkspaceSummary
+} from '@open-pencil/cloud/contract'
 
+import { APP_VERSION } from '@/app/runtime/version'
 import { tauriFetch } from '@/app/tauri/http'
 import { IS_TAURI } from '@/constants'
 
-import { rememberCloudAccount, type CloudAccount, type CloudServer } from '../servers/store'
+import {
+  findCloudServer,
+  rememberCloudAccount,
+  type CloudAccount,
+  type CloudServer
+} from '../servers/store'
+import { tellCloudLocale } from './locale'
 import { clearCloudSessionToken, readCloudSessionToken } from './token'
 
 /**
- * Where this app stands with a server: signed in, waiting for an administrator, refused, signed
- * out after having been signed in, never signed in, or out of reach.
+ * Where this app stands with a server: signed in, waiting for an administrator, refused, asked to
+ * accept the server's current terms, signed out after having been signed in, never signed in, or
+ * out of reach.
  */
 export type CloudSessionState =
   | 'checking'
   | 'signed-in'
   | 'pending'
   | 'closed'
+  | 'terms'
   | 'expired'
   | 'signed-out'
   | 'unreachable'
@@ -63,18 +77,50 @@ function publish(serverId: string, connection: CloudConnection): void {
   cloudConnections.value = { ...cloudConnections.value, [serverId]: connection }
 }
 
-/** Desktop requests skip the webview's CORS, since a server lists only its web editors. */
-export const cloudFetch: CloudFetch = (input, init) =>
-  IS_TAURI ? tauriFetch(input, init) : globalThis.fetch(input, init)
+/**
+ * Desktop requests skip the webview's CORS, since a server lists only its web editors, and name the
+ * editor's version so a server can refuse one older than it supports.
+ */
+export const cloudFetch: CloudFetch = (input, init) => {
+  if (!IS_TAURI) return globalThis.fetch(input, init)
+  // A request's own headers, then the call's, as `fetch` would combine them.
+  const headers = new Headers(input instanceof Request ? input.headers : undefined)
+  new Headers(init?.headers).forEach((value, name) => headers.set(name, value))
+  headers.set(CLOUD_EDITOR_VERSION_HEADER, APP_VERSION)
+  return tauriFetch(input, { ...init, headers })
+}
+
+/**
+ * A server that refused this editor as too old raised its minimum since the app last asked: the
+ * kept discovery is stale, so the server is asked again and its answer says to update.
+ */
+/**
+ * Servers being asked again after a refusal. A refusal during that check, as from a replica still
+ * on the old minimum while discovery comes from one on the new, starts no other one.
+ */
+const rechecking = new Set<string>()
+
+function recheckRefusedEditor(serverId: string): void {
+  const server = findCloudServer(serverId)
+  if (!server || rechecking.has(serverId)) return
+  rechecking.add(serverId)
+  discoveries.delete(server.url)
+  void refreshCloudConnection(server).finally(() => rechecking.delete(serverId))
+}
 
 /** Requests to one server, carrying its device-code token when this app has one. */
 export function cloudServerFetch(serverId: string): CloudFetch {
   return async (input, init) => {
     const token = await readCloudSessionToken(serverId)
-    if (!token) return cloudFetch(input, init)
-    const headers = new Headers(init?.headers)
-    headers.set('Authorization', `Bearer ${token}`)
-    return cloudFetch(input, { ...init, headers })
+    let request = init
+    if (token) {
+      const headers = new Headers(init?.headers)
+      headers.set('Authorization', `Bearer ${token}`)
+      request = { ...init, headers }
+    }
+    const response = await cloudFetch(input, request)
+    if (response.status === 426) recheckRefusedEditor(serverId)
+    return response
   }
 }
 
@@ -82,7 +128,7 @@ export function cloudServerFetch(serverId: string): CloudFetch {
 export function discoverCloudServer(url: string): Promise<CloudDiscovery> {
   const cached = discoveries.get(url)
   if (cached) return cached
-  const request = discoverCloud(url, { fetch: cloudFetch })
+  const request = discoverCloud(url, { fetch: cloudFetch, editorVersion: APP_VERSION })
   discoveries.set(url, request)
   request.catch(() => discoveries.delete(url))
   return request
@@ -92,14 +138,22 @@ export function cloudAPIClient(server: CloudServer, discovery: CloudDiscovery): 
   return createCloudAPIClient(discovery.apiURL, { fetch: cloudServerFetch(server.id) })
 }
 
+/** The server's account pages' API, as this app's session there. */
+export function cloudPortalClient(
+  server: CloudServer,
+  discovery: CloudDiscovery
+): CloudPortalClient {
+  return createCloudPortalClient({
+    baseURL: new URL(discovery.apiURL).origin,
+    fetch: cloudServerFetch(server.id)
+  })
+}
+
 async function signedInConnection(
   server: CloudServer,
   discovery: CloudDiscovery
 ): Promise<CloudConnection> {
-  const portal = createCloudPortalClient({
-    baseURL: new URL(discovery.apiURL).origin,
-    fetch: cloudServerFetch(server.id)
-  })
+  const portal = cloudPortalClient(server, discovery)
   let status: Awaited<ReturnType<typeof portal.accountStatus>>
   try {
     status = await portal.accountStatus()
@@ -124,11 +178,25 @@ async function signedInConnection(
   }
   rememberCloudAccount(server.id, account)
   if (status.state !== 'active') {
-    const state = status.state === 'pending' ? 'pending' : 'closed'
+    const state = status.state === 'pending' || status.state === 'terms' ? status.state : 'closed'
     return { ...INITIAL, state, discovery, account }
   }
   const { workspaces } = await cloudAPIClient(server, discovery).listWorkspaces()
   return { state: 'signed-in', discovery, account, workspaces, failure: null }
+}
+
+/** States in which a server has an account to write to, waiting for approval or terms too. */
+const WRITTEN_TO = new Set<CloudSessionState>(['signed-in', 'pending', 'terms'])
+
+/** Tells a server the app's language for the account signed in there, if one is. */
+export function tellCloudConnectionLocale(server: CloudServer): void {
+  const { state, discovery, account } = cloudConnection(server.id)
+  if (discovery && account && WRITTEN_TO.has(state)) {
+    void tellCloudLocale(
+      { server: server.id, account: account.id },
+      cloudPortalClient(server, discovery)
+    )
+  }
 }
 
 /** Asks the server where this app stands and publishes the answer. */
@@ -183,7 +251,11 @@ async function askServer(server: CloudServer, generation: number): Promise<Cloud
       failure: error instanceof CloudClientError ? error.reason : 'unreachable'
     }
   }
-  if (generations.get(server.id) === generation) publish(server.id, next)
+  if (generations.get(server.id) === generation) {
+    publish(server.id, next)
+    // Once the answer is out, so a language picked while the check ran is the one it reports.
+    tellCloudConnectionLocale(server)
+  }
   return next
 }
 

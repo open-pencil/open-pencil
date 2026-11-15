@@ -5,7 +5,9 @@ import { guideOwnersOnPage } from '@open-pencil/scene-graph/guides'
 
 const guide = (id: string) => ({ id, axis: 'x' as const, position: 10 })
 const names = (graph: SceneGraph, pageId: string) =>
-  guideOwnersOnPage(graph, pageId).map((node) => node.name).toSorted()
+  guideOwnersOnPage(graph, pageId)
+    .map((node) => node.name)
+    .toSorted()
 
 describe('guide owners', () => {
   test('lists the page and frames at any depth that carry guides, on that page only', () => {

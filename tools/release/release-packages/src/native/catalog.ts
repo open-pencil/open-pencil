@@ -1,36 +1,50 @@
 import { releaseTagSchema } from '#release/version'
 import * as v from 'valibot'
 
+/**
+ * The Linux build's environment: Ubuntu 22.04 with the libraries the bundles link and the Rust
+ * toolchain, pinned to the digest `image-native-release.yml` built and bundled the app in, so a
+ * release downloads none of them (`tools/ci/images/native-release`).
+ */
+export const LINUX_RELEASE_IMAGE =
+  'ghcr.io/open-pencil/native-release-ci@sha256:f5a3796ee3242d7b3a0ad39002011dedd95366175e8bbc4bc69b84c966ada2e6'
+
+/** Each desktop build; `container` is the image it runs in, or empty to run on the runner itself. */
 export const desktopBuilds = [
   {
     target: 'aarch64-apple-darwin',
     platform: 'macos-latest',
     label: 'macos-arm64',
-    saveBunCache: true
+    saveBunCache: true,
+    container: ''
   },
   {
     target: 'x86_64-apple-darwin',
     platform: 'macos-latest',
     label: 'macos-x64',
-    saveBunCache: false
+    saveBunCache: false,
+    container: ''
   },
   {
     target: 'x86_64-pc-windows-msvc',
     platform: 'windows-latest',
     label: 'windows-x64',
-    saveBunCache: true
+    saveBunCache: true,
+    container: ''
   },
   {
     target: 'aarch64-pc-windows-msvc',
     platform: 'windows-latest',
     label: 'windows-arm64',
-    saveBunCache: false
+    saveBunCache: false,
+    container: ''
   },
   {
     target: 'x86_64-unknown-linux-gnu',
     platform: 'ubuntu-22.04',
     label: 'linux-x64',
-    saveBunCache: true
+    saveBunCache: true,
+    container: LINUX_RELEASE_IMAGE
   }
 ] as const
 

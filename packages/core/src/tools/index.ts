@@ -21,11 +21,19 @@ export type { ToolDef, ToolExecution, ToolCapability } from './schema'
 export {
   isAtomicTool,
   isToolExposed,
+  toolInputFor,
   parseToolArgs,
   type ToolInterface,
   type ToolExposure
 } from './schema'
-export { toolNumber } from './schema'
+export {
+  jsonSchemaTarget,
+  toolJSONSchema,
+  toolNumber,
+  toolNumberSchema,
+  toolStandardJSONSchema
+} from './schema'
+export type { JSONSchemaTarget } from './schema'
 export { toolsToAI, buildDebugLog } from './ai-adapter'
 export type {
   ToolLogEntry,

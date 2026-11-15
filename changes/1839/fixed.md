@@ -1,1 +1,0 @@
-- A canvas started on a document that is already read-only draws instead of failing on its first frame, and a host can lift restrictions it set (#1839).

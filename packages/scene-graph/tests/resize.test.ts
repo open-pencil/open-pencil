@@ -231,7 +231,13 @@ describe('resizing a frame across zero', () => {
     const resize = (width: number, height: number) => {
       graph.updateNode(frame.id, { width, height })
       const before = { width: 100, height: 100 }
-      const changes = computeConstrainedResizeChanges(graph, frame.id, before, { width, height }, originals)
+      const changes = computeConstrainedResizeChanges(
+        graph,
+        frame.id,
+        before,
+        { width, height },
+        originals
+      )
       for (const [id, change] of changes) graph.updateNode(id, change)
     }
     resize(110, 110)
@@ -306,7 +312,13 @@ describe('layers in groups through a frame resize', () => {
       const originals = collectResizeDescendants(graph, frame.id)
       if (!originals) throw new Error('Expected the group')
       graph.updateNode(frame.id, { width, height })
-      const changes = computeConstrainedResizeChanges(graph, frame.id, size, { width, height }, originals)
+      const changes = computeConstrainedResizeChanges(
+        graph,
+        frame.id,
+        size,
+        { width, height },
+        originals
+      )
       for (const [id, change] of changes) graph.updateNode(id, change)
       size = { width, height }
     }
@@ -315,7 +327,7 @@ describe('layers in groups through a frame resize', () => {
       const node = graph.getNode(id)
       if (!node) throw new Error(`Expected ${id}`)
       let { x, y } = node
-      for (let p = graph.getNode(node.parentId ?? ''); p && p.id !== frame.id; ) {
+      for (let p = graph.getNode(node.parentId ?? ''); p && p.id !== frame.id;) {
         x += p.x
         y += p.y
         p = graph.getNode(p.parentId ?? '')
@@ -340,8 +352,14 @@ describe('layers in groups through a frame resize', () => {
 
   test('Left & right, Center, and Scale work in the frame, not the group', () => {
     const stretch = grouped()
-    stretch.graph.updateNode(stretch.a.id, { horizontalConstraint: 'STRETCH', verticalConstraint: 'STRETCH' })
-    stretch.graph.updateNode(stretch.b.id, { horizontalConstraint: 'CENTER', verticalConstraint: 'CENTER' })
+    stretch.graph.updateNode(stretch.a.id, {
+      horizontalConstraint: 'STRETCH',
+      verticalConstraint: 'STRETCH'
+    })
+    stretch.graph.updateNode(stretch.b.id, {
+      horizontalConstraint: 'CENTER',
+      verticalConstraint: 'CENTER'
+    })
     stretch.resize(400, 300)
     expect(stretch.inFrame(stretch.a.id)).toEqual([60, 50, 140, 110])
     expect(stretch.inFrame(stretch.b.id)).toEqual([210, 140, 30, 30])
@@ -353,7 +371,10 @@ describe('layers in groups through a frame resize', () => {
 
     const scale = grouped()
     for (const layer of [scale.a, scale.b]) {
-      scale.graph.updateNode(layer.id, { horizontalConstraint: 'SCALE', verticalConstraint: 'SCALE' })
+      scale.graph.updateNode(layer.id, {
+        horizontalConstraint: 'SCALE',
+        verticalConstraint: 'SCALE'
+      })
     }
     scale.resize(400, 300)
     expect(scale.inFrame(scale.a.id)).toEqual([80, 68.18, 53.33, 40.91])
@@ -398,7 +419,13 @@ describe('layers in groups through a frame resize', () => {
     const dragTo = (width: number) => {
       graph.updateNode(frame.id, { width })
       const before = { width: 300, height: 220 }
-      const changes = computeConstrainedResizeChanges(graph, frame.id, before, { width, height: 220 }, originals)
+      const changes = computeConstrainedResizeChanges(
+        graph,
+        frame.id,
+        before,
+        { width, height: 220 },
+        originals
+      )
       for (const [id, change] of changes) graph.updateNode(id, change)
     }
     dragTo(400)

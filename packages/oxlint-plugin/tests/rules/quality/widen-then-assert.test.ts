@@ -2,10 +2,10 @@ import { describe, expect, test } from 'bun:test'
 
 import { lint, ruleDiagnostics } from '#oxlint-plugin-tests/helpers/lint'
 
-const rule = 'no-widen-then-assert'
-const rules = { [`open-pencil/${rule}`]: 'error' }
+const rule = '@open-pencil/types/no-widen-then-assert'
+const rules = { [rule]: 'error' }
 
-describe('no-widen-then-assert', () => {
+describe('@open-pencil/types/no-widen-then-assert', () => {
   test.each([
     'const source: User = loadUser(); const widened: unknown = source; const result = widened as User',
     '// é 中文 😀\nconst source: User = loadUser(); const widened: object = source; const result = widened as User',

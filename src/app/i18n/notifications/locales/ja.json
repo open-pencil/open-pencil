@@ -34,5 +34,9 @@
   "designTokensLeftOut": "デザイントークンに含まれていません: {names}",
   "designTokensAmbiguous": "これらのスタイルは、別のコレクションにも同じパスがある変数を参照しているため、他のツールが別の変数を読み取る可能性があります: {names}",
   "designTokensImported": "{count} 個のデザイントークンを読み込みました。",
-  "unsupportedVariableExpressions": "OpenPencil はまだこれらの変数を評価できないため、レイヤーはファイルに保存された値を保ちます: {names}"
+  "unsupportedVariableExpressions": "OpenPencil はまだこれらの変数を評価できないため、レイヤーはファイルに保存された値を保ちます: {names}",
+  "savingDocument": "ドキュメントを保存しています…",
+  "saveFailedRetry": "保存を再試行",
+  "fileChangedOnDisk": "「{name}」がディスク上で変更されました。保存していない変更は保持され、保存するとファイルが置き換えられます。",
+  "reloadDiscardingChanges": "再読み込み"
 }

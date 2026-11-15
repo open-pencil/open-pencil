@@ -44,7 +44,10 @@ const maskOracleSchema = v.pipe(
 )
 
 function readOracle() {
-  return v.parse(maskOracleSchema, readFileSync(repoPath('tests/fixtures/figma-oracles/masks.json'), 'utf8'))
+  return v.parse(
+    maskOracleSchema,
+    readFileSync(repoPath('tests/fixtures/figma-oracles/masks.json'), 'utf8')
+  )
 }
 
 /** The plugin API reports a vector mask as VECTOR. The .fig MaskType enum stores it as OUTLINE. */

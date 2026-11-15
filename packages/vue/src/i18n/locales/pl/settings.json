@@ -1,6 +1,8 @@
 {
   "interfaceScale": "Rozmiar interfejsu",
   "interfaceScaleDescription": "Skaluj panele, tekst i elementy sterujące bez zmiany powiększenia płótna.",
+  "mirrorInterface": "Odwróć interfejs",
+  "mirrorInterfaceDescription": "Układa panele, menu i elementy sterujące od prawej do lewej, tak jak czyta się język. Płótno, współrzędne i kod pozostają od lewej do prawej.",
   "recentFiles": "Ostatnie pliki",
   "recentFilesDescription": "Wybierz, ile plików zachować na liście ostatnich plików i w menu ich otwierania.",
   "recentFilesLimit": "Liczba ostatnich plików",

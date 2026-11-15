@@ -1,7 +1,17 @@
 import { isValid as isBase64 } from 'js-base64'
 import * as v from 'valibot'
 
-export const cloudAccountStateSchema = v.picklist(['active', 'pending', 'rejected', 'revoked'])
+/**
+ * Where an account stands: it may use the server, waits for an administrator, was refused or had
+ * its access taken back, or has to accept the server's current terms first.
+ */
+export const cloudAccountStateSchema = v.picklist([
+  'active',
+  'pending',
+  'rejected',
+  'revoked',
+  'terms'
+])
 export const cloudIdentitySchema = v.object({
   userId: v.string(),
   email: v.pipe(v.string(), v.email()),
@@ -15,6 +25,9 @@ export const cloudAccountStatusResponseSchema = v.object({
   user: cloudIdentitySchema,
   state: cloudAccountStateSchema
 })
+
+/** Accepting the server's terms: the version the person read, which must be the current one. */
+export const cloudTermsAcceptanceSchema = v.object({ version: v.pipe(v.string(), v.minLength(1)) })
 
 export const cloudAuthenticationProviderSchema = v.picklist(['credential', 'google', 'apple'])
 export const cloudAuthenticationMethodSchema = v.object({
@@ -47,7 +60,10 @@ export const accountSecurityErrorCodeSchema = v.picklist([
   'email_unchanged',
   'email_change_unavailable',
   'current_session',
-  'picture_invalid'
+  'picture_invalid',
+  'account_sole_admin',
+  'last_admin_required',
+  'terms_changed'
 ])
 export const accountSecurityErrorResponseSchema = v.object({
   error: v.object({ code: accountSecurityErrorCodeSchema })
@@ -79,6 +95,57 @@ export const cloudPasskeySchema = v.object({
 export const cloudPasskeysResponseSchema = v.object({ passkeys: v.array(cloudPasskeySchema) })
 export const cloudPasskeyDeleteSchema = v.object({ id: v.string() })
 
+/**
+ * Personal access tokens: an account's own credentials for scripts and CI, sent as
+ * `Authorization: Bearer <token>`. A token acts as its account on the document API only; it never
+ * changes how the account is reached, makes other tokens, or reaches administration.
+ */
+export const CLOUD_ACCESS_TOKEN_PREFIX = 'opc_'
+export const CLOUD_ACCESS_TOKEN_NAME_MAX_LENGTH = 64
+export const CLOUD_ACCESS_TOKEN_MAX_DAYS = 365
+export const cloudAccessTokenSchema = v.object({
+  id: v.string(),
+  name: v.string(),
+  /** The token's first characters, prefix included, to tell tokens apart; never the whole token. */
+  start: v.nullable(v.string()),
+  createdAt: v.string(),
+  expiresAt: v.nullable(v.string()),
+  lastUsedAt: v.nullable(v.string())
+})
+export const cloudAccessTokensResponseSchema = v.object({
+  tokens: v.array(cloudAccessTokenSchema)
+})
+export const cloudAccessTokenCreateSchema = v.object({
+  name: v.pipe(
+    v.string(),
+    v.trim(),
+    v.minLength(1),
+    v.maxLength(CLOUD_ACCESS_TOKEN_NAME_MAX_LENGTH)
+  ),
+  expiresInDays: v.pipe(
+    v.number(),
+    v.integer(),
+    v.minValue(1),
+    v.maxValue(CLOUD_ACCESS_TOKEN_MAX_DAYS)
+  )
+})
+/** A new token, the only time the whole of it is shown. */
+export const cloudAccessTokenCreatedResponseSchema = v.object({
+  token: v.pipe(v.string(), v.startsWith(CLOUD_ACCESS_TOKEN_PREFIX)),
+  accessToken: cloudAccessTokenSchema
+})
+export const cloudAccessTokenRevokeSchema = v.object({ id: v.pipe(v.string(), v.minLength(1)) })
+
+export function parseCloudAccessTokenCreate(input: unknown) {
+  return v.parse(cloudAccessTokenCreateSchema, input)
+}
+export function parseCloudAccessTokenRevoke(input: unknown) {
+  return v.parse(cloudAccessTokenRevokeSchema, input)
+}
+
+export function parseCloudTermsAcceptance(input: unknown) {
+  return v.parse(cloudTermsAcceptanceSchema, input)
+}
 export function parseCloudMFAEnable(input: unknown) {
   return v.parse(cloudMFAEnableSchema, input)
 }
@@ -177,6 +244,39 @@ export const cloudSignInSchema = v.object({
 })
 export const cloudSignInsResponseSchema = v.object({ signIns: v.array(cloudSignInSchema) })
 
+/** A workspace an account deletion reads: one it would delete, or one that stops it. */
+export const cloudAccountDeletionWorkspaceSchema = v.object({
+  id: v.pipe(v.string(), v.uuid()),
+  name: v.string()
+})
+/** A document the account would lose, which Download all saves first. */
+export const cloudAccountDeletionDocumentSchema = v.object({
+  id: v.pipe(v.string(), v.uuid()),
+  name: v.string(),
+  workspaceName: v.string()
+})
+/**
+ * What deleting the account takes: the workspaces only it belongs to, which go with their
+ * documents; the ones it leaves to their other members; the ones it alone administers for other
+ * members, which stop the deletion until it makes someone else an admin; and the documents it
+ * would lose, those workspaces' and the ones it created in workspaces it leaves.
+ */
+export const cloudAccountDeletionSchema = v.object({
+  /** The account is the deployment's only administrator, which also stops the deletion. */
+  lastAdministrator: v.boolean(),
+  blockedBy: v.array(cloudAccountDeletionWorkspaceSchema),
+  deletes: v.array(cloudAccountDeletionWorkspaceSchema),
+  leaves: v.array(cloudAccountDeletionWorkspaceSchema),
+  documents: v.array(cloudAccountDeletionDocumentSchema)
+})
+export const cloudAccountDeletionResponseSchema = v.object({
+  deletion: cloudAccountDeletionSchema
+})
+/** The password, for a session that signed in too long ago to delete the account on its own. */
+export const cloudAccountDeleteSchema = v.object({
+  password: v.optional(v.pipe(v.string(), v.minLength(1)))
+})
+
 export function parseCloudProfileUpdate(input: unknown) {
   return v.parse(cloudProfileUpdateSchema, input)
 }
@@ -185,6 +285,9 @@ export function parseCloudPictureUpload(input: unknown) {
 }
 export function parseCloudEmailChange(input: unknown) {
   return v.parse(cloudEmailChangeSchema, input)
+}
+export function parseCloudAccountDelete(input: unknown) {
+  return v.parse(cloudAccountDeleteSchema, input)
 }
 export function parseCloudSessionRevoke(input: unknown) {
   return v.parse(cloudSessionRevokeSchema, input)
@@ -199,6 +302,9 @@ export type CloudAuthenticationMethods = v.InferOutput<
 
 export type CloudAccountStatus = v.InferOutput<typeof cloudAccountStatusResponseSchema>
 export type CloudProfile = v.InferOutput<typeof cloudProfileSchema>
+export type CloudAccessToken = v.InferOutput<typeof cloudAccessTokenSchema>
+export type CloudAccessTokenCreate = v.InferOutput<typeof cloudAccessTokenCreateSchema>
 export type CloudSignInMethod = v.InferOutput<typeof cloudSignInMethodSchema>
 export type CloudAccountSession = v.InferOutput<typeof cloudAccountSessionSchema>
 export type CloudSignIn = v.InferOutput<typeof cloudSignInSchema>
+export type CloudAccountDeletion = v.InferOutput<typeof cloudAccountDeletionSchema>

@@ -2,11 +2,12 @@ import { beforeAll, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
 import { asTextNode } from '#core-tests/helpers/figma-api'
-import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
-import { FIXTURES } from '@open-pencil/test-support/paths'
+
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { fontManager } from '@open-pencil/core/text'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { registerTestFont } from '@open-pencil/test-support/fonts/bundled'
+import { FIXTURES } from '@open-pencil/test-support/paths'
 
 beforeAll(() => registerTestFont('Load Test'))
 

@@ -1,6 +1,8 @@
 {
   "interfaceScale": "Taille de l’interface",
   "interfaceScaleDescription": "Redimensionne les panneaux, le texte et les commandes sans modifier le zoom du canevas.",
+  "mirrorInterface": "Inverser l’interface",
+  "mirrorInterfaceDescription": "Dispose les panneaux, les menus et les commandes de droite à gauche, dans le sens de lecture de la langue. Le canevas, les coordonnées et le code restent de gauche à droite.",
   "recentFiles": "Fichiers récents",
   "recentFilesDescription": "Choisissez combien de fichiers conserver dans la liste et le menu des fichiers récents.",
   "recentFilesLimit": "Nombre de fichiers récents",

@@ -148,7 +148,7 @@ describe('MCP path scoping', () => {
     const filePath = `${testDir}/new.fig`
     try {
       await mkdir(testDir, { recursive: true })
-      // File doesn't exist yet (common for save_file / export operations)
+      // File doesn't exist yet (common for save_document / export operations)
       const result = await resolveSafePath(filePath, testDir)
       expect(result.resolved).toBe(resolve(filePath))
       // realPath uses the canonical parent directory + filename

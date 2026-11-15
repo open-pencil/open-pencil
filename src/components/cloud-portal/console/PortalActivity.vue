@@ -39,6 +39,7 @@ const actions = computed<Record<string, string>>(() => ({
   'user.picture-removed': messages.value.activityPictureRemoved,
   'document.disabled': messages.value.activityTookDown,
   'document.enabled': messages.value.activityRestoredDocument,
+  'document.undeleted': messages.value.activityUndeletedDocument,
   'document-share.revoked': messages.value.activityRevokedLink,
   'document-report.dismissed': messages.value.activityDismissedReport,
   'document-report.actioned': messages.value.activityActionedReport

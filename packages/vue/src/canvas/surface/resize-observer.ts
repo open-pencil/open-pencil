@@ -1,6 +1,7 @@
 import { useDevicePixelRatio, useResizeObserver } from '@vueuse/core'
-import type { CanvasKit } from 'canvaskit-wasm'
 import { watch, type Ref } from 'vue'
+
+import type { CanvasKit } from '@open-pencil/canvaskit'
 
 type ResizeObserverOptions = {
   canvasRef: Ref<HTMLCanvasElement | null>

@@ -2,7 +2,6 @@ import { describe, test, expect } from 'bun:test'
 
 import { SceneGraph, type Effect } from '@open-pencil/scene-graph'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
-
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id

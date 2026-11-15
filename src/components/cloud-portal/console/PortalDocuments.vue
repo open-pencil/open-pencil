@@ -21,7 +21,10 @@ import type { PortalContentAction, PortalDocumentRow } from '../types'
 import { contentActions } from './content'
 import PortalContentConfirm from './PortalContentConfirm.vue'
 
-/** Every document on the server, to find one by name, ID, or owner and take it down or back. */
+/**
+ * Every document on the server, to find one by name, ID, or owner and take it down or back, and
+ * those deleted forever that cleanup hasn't destroyed yet, to restore.
+ */
 const { load, busy = null } = defineProps<{
   load: (
     request: PortalListRequest<CloudAdminDocumentFilter>
@@ -78,6 +81,9 @@ const documents = usePortalList<CloudAdminDocumentFilter, PortalDocumentRow>({
       cell: ({ row: { original: document } }) =>
         h(PortalStatusCell, {
           statuses: [
+            ...(document.deletedForever
+              ? [{ label: messages.value.deletedForever, tone: 'error' as const }]
+              : []),
             ...(document.takenDown
               ? [{ label: messages.value.takenDown, tone: 'error' as const }]
               : []),
@@ -90,7 +96,9 @@ const documents = usePortalList<CloudAdminDocumentFilter, PortalDocumentRow>({
                 ]
               : [])
           ],
-          detail: document.takenDownReason
+          detail: document.destroyed
+            ? messages.value.destroyedOn({ date: document.destroyed })
+            : document.takenDownReason
         })
     }),
     column.display({
@@ -110,7 +118,8 @@ const documents = usePortalList<CloudAdminDocumentFilter, PortalDocumentRow>({
 const filters = computed(() => [
   { value: 'all' as const, label: messages.value.filterAll },
   { value: 'reported' as const, label: messages.value.filterReported },
-  { value: 'disabled' as const, label: messages.value.filterTakenDown }
+  { value: 'disabled' as const, label: messages.value.filterTakenDown },
+  { value: 'purged' as const, label: messages.value.filterDeletedForever }
 ])
 
 defineExpose({ reload: documents.reload })

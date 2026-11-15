@@ -5,7 +5,7 @@ export default {
     trigger: 'relative',
     /** How many people are in a call we are not in yet. */
     count:
-      'absolute -top-1 -right-1 flex h-3 min-w-3 items-center justify-center rounded-full bg-success-fill px-0.5 text-5xs leading-none font-semibold text-white',
+      'absolute -top-1 -inset-e-1 flex h-3 min-w-3 items-center justify-center rounded-full bg-success-fill px-0.5 text-5xs leading-none font-semibold text-white',
     chevron: 'size-2.5',
     content: 'z-50 flex w-64 flex-col gap-3 p-3',
     header: 'flex items-center justify-between gap-2',

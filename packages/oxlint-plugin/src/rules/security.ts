@@ -131,6 +131,17 @@ export const noSecretInQueryRule = defineRule({
   }
 })
 
+/** Cloud's structured logger, which writes to the console too. */
+const LOG_FUNCTIONS = new Set(['logCloud'])
+
+function isLogCall(callee: ESTree.Node): boolean {
+  if (callee.type === 'Identifier') return LOG_FUNCTIONS.has(callee.name)
+  if (callee.type !== 'MemberExpression') return false
+  if (callee.object.type !== 'Identifier' || callee.object.name !== 'console') return false
+  const method = staticMemberName(callee)
+  return method !== null && CONSOLE_METHODS.has(method)
+}
+
 /** Logs outlive sessions and leave the machine; credentials never go into them. */
 export const noSecretLoggingRule = defineRule({
   meta: {
@@ -145,11 +156,7 @@ export const noSecretLoggingRule = defineRule({
   createOnce(context) {
     return {
       CallExpression(node) {
-        const { callee } = node
-        if (callee.type !== 'MemberExpression') return
-        if (callee.object.type !== 'Identifier' || callee.object.name !== 'console') return
-        const method = staticMemberName(callee)
-        if (!method || !CONSOLE_METHODS.has(method)) return
+        if (!isLogCall(node.callee)) return
         const leaks = node.arguments.some((argument) =>
           loggedNames(argument).some((name) => SECRET_NAME.test(name))
         )

@@ -2,12 +2,12 @@ import type { Editor, NodeEditState } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
-import { explicitSnapTargets } from '#vue/shared/input/explicit-snap-targets'
+import { explicitSnapTargets } from '#vue/shared/input/snap/explicit-targets'
 import {
   resolveObjectPixelSnap,
   type GeometrySnapTarget,
   worldBoundsNode
-} from '#vue/shared/input/snap'
+} from '#vue/shared/input/snap/resolve'
 import type { DragEditNode } from '#vue/shared/input/types'
 
 function draggedVertexBounds(drag: DragEditNode, dx: number, dy: number): Rect | null {
@@ -64,6 +64,14 @@ function geometrySnapTargets(
   })
 }
 
+/** Lines through the points the host adds (`setSnapTargets`), which snap whatever the preferences. */
+function hostSnapTargets(editor: Editor): GeometrySnapTarget[] {
+  return editor.state.snapTargets.points.flatMap((point) => [
+    { kind: 'geometry', axis: 'x', position: point.x, from: point.y, to: point.y },
+    { kind: 'geometry', axis: 'y', position: point.y, from: point.x, to: point.x }
+  ])
+}
+
 export function applyNodeEditSnap(
   drag: DragEditNode,
   dx: number,
@@ -85,7 +93,10 @@ export function applyNodeEditSnap(
     siblingSnapTargets(editor, editedNode),
     editor,
     explicitSnapTargets(parentId, editor),
-    geometrySnapTargets(editor, editState, new Set(drag.origPositions.keys()))
+    [
+      ...geometrySnapTargets(editor, editState, new Set(drag.origPositions.keys())),
+      ...hostSnapTargets(editor)
+    ]
   )
   editor.setSnapGuides(snap.guides)
   return { x: dx + snap.correction.x, y: dy + snap.correction.y }

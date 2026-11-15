@@ -18,7 +18,6 @@ export function serializeSceneGraph(graph: SceneGraph): SerializedSceneGraph {
     images: [...graph.images],
     variables: [...graph.variables],
     variableCollections: [...graph.variableCollections],
-    activeMode: [...graph.activeMode],
     instanceIndex: [...graph.instanceIndex].map(([id, nodeIds]) => [id, [...nodeIds]]),
     figKiwiVersion: graph.figKiwiVersion,
     figSchemaDeflated: graph.figSchemaDeflated,
@@ -66,7 +65,6 @@ export function cloneSceneGraphForFigExport(graph: SceneGraph): SceneGraph {
   cloned.images = new Map(graph.images)
   cloned.variables = new Map(graph.variables)
   cloned.variableCollections = new Map(graph.variableCollections)
-  cloned.activeMode = new Map(graph.activeMode)
   cloned.instanceIndex = new Map(
     [...graph.instanceIndex].map(([id, nodeIds]) => [id, new Set(nodeIds)])
   )
@@ -99,7 +97,6 @@ export function deserializeSceneGraph(data: SerializedSceneGraph): SceneGraph {
   graph.images = new Map(data.images)
   graph.variables = new Map(data.variables)
   graph.variableCollections = new Map(data.variableCollections)
-  graph.activeMode = new Map(data.activeMode)
   graph.instanceIndex = new Map(data.instanceIndex.map(([id, nodeIds]) => [id, new Set(nodeIds)]))
   // Routing finds connectors through the index the nodes it was sent without imply.
   for (const [id, node] of graph.nodes) if (node.type === 'CONNECTOR') graph.connectorIds.add(id)

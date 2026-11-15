@@ -2,6 +2,8 @@
   "appearance": "Aparência",
   "interfaceScale": "Tamanho da interface",
   "interfaceScaleDescription": "Dimensiona painéis, texto e controles sem alterar o zoom da tela.",
+  "mirrorInterface": "Espelhar a interface",
+  "mirrorInterfaceDescription": "Organiza painéis, menus e controles da direita para a esquerda, como o idioma é lido. A tela, as coordenadas e o código continuam da esquerda para a direita.",
   "animations": "Animações",
   "animationsSystem": "Seguir o sistema",
   "animationsOff": "Desativadas",

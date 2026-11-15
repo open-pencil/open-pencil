@@ -68,7 +68,7 @@ if (IS_BROWSER) {
         <Search class="mx-2 size-5 shrink-0 text-muted" />
       </template>
       <template #search-trailing>
-        <IconButton class="ml-2" size="md" :label="common.close" @click="close">
+        <IconButton class="ms-2" size="md" :label="common.close" @click="close">
           <X class="size-5" />
         </IconButton>
       </template>

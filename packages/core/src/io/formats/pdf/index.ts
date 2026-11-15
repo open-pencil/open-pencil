@@ -1,6 +1,5 @@
-export { exportPDFDocument, type PDFDocumentOptions } from './document'
-export { renderPagesToPDFDetailed } from './export'
+export { exportPDFDocument, readPDFPages, type PDFDocumentOptions } from './document'
+export { PDF_RASTER_DPI, renderPagesToPDF } from './export'
 export type { PDFExportOptions, PDFExportResult } from './export'
-export type { PDFFontFace, PDFFontReport } from './fonts'
 export { MAX_PDF_PAGES, PDF_MODES, PDFPlanError, planPDFPages } from './plan'
 export type { PDFMode, PDFPageSpec, PDFPlanInput } from './plan'

@@ -8,6 +8,7 @@ import { computeAllLayouts } from '@open-pencil/core/layout'
 import { Frame, Section, Text } from '@open-pencil/design-jsx'
 import type { TreeNode } from '@open-pencil/design-jsx'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 
 import { tipInstance, type Tip } from '../callout'
 import { renderTree } from '../icons'
@@ -168,8 +169,8 @@ export async function layoutChapter(
 export function fitSection({ graph }: ChapterContext, sectionId: string): void {
   const children = graph.getChildren(sectionId)
   graph.updateNode(sectionId, {
-    width: Math.max(...children.map((child) => child.x + child.width)) + CHAPTER_PADDING,
-    height: Math.max(...children.map((child) => child.y + child.height)) + CHAPTER_PADDING
+    width: maxOf(children.map((child) => child.x + child.width)) + CHAPTER_PADDING,
+    height: maxOf(children.map((child) => child.y + child.height)) + CHAPTER_PADDING
   })
 }
 

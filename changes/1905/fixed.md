@@ -1,2 +1,0 @@
-- Design panel fields and the canvas size label show fractional values to two decimals, as in Figma, instead of rounding them to whole numbers (#1905).
-- Resizing a layer by its handles with Snap to pixel grid on rounds its size to whole pixels and keeps the edges the handle leaves, as in Figma, instead of moving the dragged edge onto the grid; pressing a handle without moving leaves the layer as it was (#1905).

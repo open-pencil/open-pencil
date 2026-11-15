@@ -1,4 +1,4 @@
-// Points Core at the CanvasKit binary, bundled fonts, and HarfBuzz subsetter Vite serves;
+// Points Core at the CanvasKit binary and bundled fonts Vite serves;
 // importing the module is what sets them, before anything loads.
 import '@open-pencil/core/runtime-assets/install'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'

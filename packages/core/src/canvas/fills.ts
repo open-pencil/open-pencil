@@ -1,15 +1,17 @@
-import type { Canvas, Image, Paint, Shader } from 'canvaskit-wasm'
-
+import type { Canvas, Image, Paint, Shader } from '@open-pencil/canvaskit'
 import type { SceneNode, SceneGraph, Fill } from '@open-pencil/scene-graph'
 import { invertGradientTransform } from '@open-pencil/scene-graph/gradient'
+import { drawnImageHash, imageFillMatrix } from '@open-pencil/scene-graph/images'
 import Matrix from '@open-pencil/scene-graph/matrix'
-import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import { patternTileLayout, type PatternTileLayout } from '@open-pencil/scene-graph/paints'
 import { fillGeometryMatchesRegions, hasRegionFills } from '@open-pencil/scene-graph/vector-network'
 
 import { setPaintBlendMode } from './blend'
 import { makeDiamondGradient } from './gradients/diamond'
 import { previewEdge } from './images/previews'
-import type { SkiaRenderer } from './renderer'
+import { drawOffOutputGrid, landsOnOutputPixels, makeImageShader } from './images/sampling'
+import { resolveGradientStopColor } from './renderer/colors'
+import type { SkiaRenderer } from './renderer/skia'
 import { drawOutline, withNodeOutline } from './shapes'
 
 interface PaintFillsOptions {
@@ -117,7 +119,7 @@ export function applyFill(
     return applyGradientFill(r, fill, node, graph)
   }
 
-  if (fill.type === 'IMAGE' && fill.imageHash) {
+  if (drawnImageHash(fill)) {
     return applyImageFill(r, fill, node, graph)
   }
 
@@ -130,45 +132,6 @@ export function applyFill(
   }
 
   return false
-}
-
-interface PatternTileLayout {
-  rect: Rect
-  scale: number
-  positions: Vector[]
-}
-
-function patternAlignmentOffset(
-  alignment: Fill['horizontalAlignment'],
-  gap: number,
-  sourceSize: number,
-  axis: 'x' | 'y'
-): number {
-  if (alignment === 'CENTER') return axis === 'x' ? -gap / 2 : -sourceSize / 2
-  if (alignment === 'END') return -gap
-  return 0
-}
-
-export function patternTileLayout(source: SceneNode, fill: Fill): PatternTileLayout {
-  const scale = fill.scale && fill.scale > 0 ? fill.scale : 1
-  const spacing = fill.patternSpacing ?? { x: 0, y: 0 }
-  const scaledWidth = source.width * scale
-  const scaledHeight = source.height * scale
-  const gapX = scaledWidth * spacing.x
-  const gapY = scaledHeight * spacing.y
-  const width = scaledWidth + gapX
-  const height = scaledHeight + gapY
-  const x = patternAlignmentOffset(fill.horizontalAlignment, gapX, scaledWidth, 'x')
-  const y = patternAlignmentOffset(fill.verticalAlignment, gapY, scaledHeight, 'y')
-  const positions = [{ x, y }]
-
-  if (fill.patternTileType === 'HORIZONTAL_HEXAGONAL') {
-    positions.push({ x: x + width / 2, y: y + height / 2 })
-  } else if (fill.patternTileType === 'VERTICAL_HEXAGONAL') {
-    positions.push({ x: x + width / 2, y: y - height / 2 })
-  }
-
-  return { rect: { x: 0, y: 0, width, height }, scale, positions }
 }
 
 function recordPatternSource(
@@ -230,7 +193,9 @@ function applyPatternFill(
   const layout = patternTileLayout(source, fill)
   let picture
   try {
-    picture = recordPatternSource(r, source, graph, layout, patternStack)
+    picture = drawOffOutputGrid(r, () =>
+      recordPatternSource(r, source, graph, layout, patternStack)
+    )
   } finally {
     patternStack.delete(source.id)
   }
@@ -261,21 +226,8 @@ function makeGradientLocalMatrix(
   transform: NonNullable<Fill['gradientTransform']>
 ) {
   const t = invertGradientTransform(transform)
-  return r.ck.Matrix.multiply(r.ck.Matrix.scaled(width || 1, height || 1), [
-    t.m00,
-    t.m01,
-    t.m02,
-    t.m10,
-    t.m11,
-    t.m12,
-    0,
-    0,
-    1
-  ])
+  return r.ck.Matrix.multiply(r.ck.Matrix.scaled(width || 1, height || 1), Matrix.fromAffine(t))
 }
-
-/** Resolves one gradient stop's color, so a stroke resolves its own bindings, not a fill's. */
-export type ResolveGradientStop = (color: Color, stopIndex: number) => Color
 
 /**
  * Sets `paint`'s shader to `fill`'s gradient on `node` and returns whether it did. CanvasKit
@@ -287,20 +239,13 @@ export function applyGradientFill(
   fill: Fill,
   node: SceneNode,
   graph: SceneGraph,
-  paint: Paint = r.fillPaint,
-  resolveStop: ResolveGradientStop = (color, stopIndex) =>
-    r.resolveFillColorInfo(
-      { ...fill, type: 'SOLID', color, opacity: color.a, visible: true },
-      stopIndex,
-      node,
-      graph
-    ).color
+  paint: Paint = r.fillPaint
 ): boolean {
   const stops = fill.gradientStops
   const t = fill.gradientTransform
   if (!stops || !t) return false
-  const colors = stops.map((s, index) => {
-    const c = resolveStop(s.color, index)
+  const colors = stops.map((s) => {
+    const c = resolveGradientStopColor(s.color, graph, r.presentationColorSpace)
     return r.ck.Color4f(c.r, c.g, c.b, c.a)
   })
   const positions = stops.map((s) => s.position)
@@ -363,54 +308,6 @@ export function applyGradientFill(
 }
 
 /**
- * Maps `img`'s pixels onto `node` as `fill` places them. `size` is the image's own size when `img`
- * is a downscaled preview, so a tile keeps its size. A crop places the image by its transform;
- * Fill, Fit and Tile ignore it, as Figma does, and turn the image by `imageRotation` first.
- */
-export function makeImageFillLocalMatrix(
-  fill: Fill,
-  node: SceneNode,
-  imgW: number,
-  imgH: number,
-  size: { width: number; height: number } = { width: imgW, height: imgH }
-) {
-  const scaleMode = fill.imageScaleMode ?? 'FILL'
-  if (scaleMode === 'CROP' && fill.imageTransform) {
-    const t = fill.imageTransform
-    const inverse = Matrix.invert([t.m00, t.m01, t.m02, t.m10, t.m11, t.m12, 0, 0, 1])
-    if (inverse)
-      return Matrix.multiply(
-        Matrix.scaled(node.width, node.height),
-        inverse,
-        Matrix.scaled(1 / imgW, 1 / imgH)
-      )
-  }
-
-  const radians = ((fill.imageRotation ?? 0) * Math.PI) / 180
-  const cos = Math.abs(Math.cos(radians))
-  const sin = Math.abs(Math.sin(radians))
-  const turnedW = size.width * cos + size.height * sin
-  const turnedH = size.width * sin + size.height * cos
-  const turned = Matrix.multiply(
-    Matrix.translated(turnedW / 2, turnedH / 2),
-    Matrix.rotated(radians),
-    Matrix.translated(-size.width / 2, -size.height / 2),
-    Matrix.scaled(size.width / imgW, size.height / imgH)
-  )
-  if (scaleMode === 'TILE') {
-    const scale = fill.scale && fill.scale > 0 ? fill.scale : 1
-    return Matrix.multiply(Matrix.scaled(scale, scale), turned)
-  }
-  const fit = scaleMode === 'FIT'
-  const scale = (fit ? Math.min : Math.max)(node.width / turnedW, node.height / turnedH)
-  return Matrix.multiply(
-    Matrix.translated((node.width - turnedW * scale) / 2, (node.height - turnedH * scale) / 2),
-    Matrix.scaled(scale, scale),
-    turned
-  )
-}
-
-/**
  * Sets `paint`'s shader to `img` laid out as `fill` places it on `node`; `preview`, when `img`
  * is a downscaled preview, keeps a tiled image at its original size.
  */
@@ -418,6 +315,7 @@ function setImageShader(
   r: SkiaRenderer,
   fill: Fill,
   node: SceneNode,
+  graph: SceneGraph,
   img: Image,
   paint: Paint,
   preview?: { originalWidth: number; originalHeight: number }
@@ -425,24 +323,20 @@ function setImageShader(
   const imgW = img.width()
   const imgH = img.height()
   const scaleMode = fill.imageScaleMode ?? 'FILL'
-  const localMatrix = makeImageFillLocalMatrix(
+  const localMatrix = imageFillMatrix(
     fill,
     node,
     imgW,
     imgH,
     preview && { width: preview.originalWidth, height: preview.originalHeight }
   )
-  const tileMode = scaleMode === 'FIT' ? r.ck.TileMode.Decal : r.ck.TileMode.Clamp
-  const shader =
-    scaleMode === 'TILE'
-      ? img.makeShaderCubic(r.ck.TileMode.Repeat, r.ck.TileMode.Repeat, 1 / 3, 1 / 3, localMatrix)
-      : img.makeShaderOptions(
-          tileMode,
-          tileMode,
-          r.ck.FilterMode.Linear,
-          r.ck.MipmapMode.Linear,
-          localMatrix
-        )
+  const shader = makeImageShader(
+    r,
+    img,
+    scaleMode,
+    localMatrix,
+    landsOnOutputPixels(r, node, graph, localMatrix)
+  )
   try {
     paint.setShader(shader)
     markShaded(r, paint)
@@ -459,10 +353,12 @@ export function applyImageFill(
   graph: SceneGraph,
   paint: Paint = r.fillPaint
 ): boolean {
-  const hash = fill.imageHash
+  const hash = drawnImageHash(fill)
   if (!hash) return false
   const live = r.images.live.get(hash)
-  if (live?.surface === r.surface) return setImageShader(r, fill, node, live.image, paint)
+  if (live?.surface === r.surface) {
+    return setImageShader(r, fill, node, graph, live.image, paint)
+  }
   if (r.viewportImageRendering) {
     r.noteImageFillUser(hash, node.id)
     r.images.previewsDrawn = true
@@ -490,7 +386,7 @@ export function applyImageFill(
   }
 
   try {
-    return setImageShader(r, fill, node, img, paint, preview?.preview)
+    return setImageShader(r, fill, node, graph, img, paint, preview?.preview)
   } finally {
     if (temporary) img.delete()
   }

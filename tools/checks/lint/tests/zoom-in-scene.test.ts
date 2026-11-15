@@ -2,11 +2,11 @@ import { describe, expect, test } from 'bun:test'
 
 import { lint, ruleDiagnostics } from './helpers/lint.ts'
 
-const rule = 'no-zoom-in-scene-drawing'
-const rules = { [`open-pencil/${rule}`]: 'error' }
+const rule = '@open-pencil/editor/no-zoom-in-scene-drawing'
+const rules = { [rule]: 'error' }
 const SCENE = 'packages/core/src/canvas/scene.ts'
 
-describe('no-zoom-in-scene-drawing', () => {
+describe('@open-pencil/editor/no-zoom-in-scene-drawing', () => {
   test.each([
     'paint.setStrokeWidth(1 / r.zoom)',
     'const dash = [4 / renderer.zoom, 4 / renderer.zoom]',

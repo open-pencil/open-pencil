@@ -126,13 +126,13 @@ const rectangle = {
 
 test("an edit that changes nothing adds no undo step and does not claim an earlier reply's", async () => {
   await withStore(async (store, { a }) => {
-    aiToolOverrides.value = { ...aiToolOverrides.value, delete_node: true }
+    aiToolOverrides.value = { ...aiToolOverrides.value, delete_nodes: true }
     const node = store.graph.createNode('RECTANGLE', a, { name: 'Card' })
-    await runMessage(store, [{ toolName: 'delete_node', input: { id: node.id } }])
+    await runMessage(store, [{ toolName: 'delete_nodes', input: { ids: [node.id] } }])
     const deleted = expectDefined(store.undo.peekUndo(), 'delete entry')
     expect(runUndoEntries(store)).toEqual([deleted])
 
-    await runMessage(store, [{ toolName: 'delete_node', input: { id: 'missing' } }])
+    await runMessage(store, [{ toolName: 'delete_nodes', input: { ids: ['missing'] } }])
     expect(store.undo.peekUndo()).toBe(deleted)
     expect(runUndoEntries(store)).toEqual([])
   })

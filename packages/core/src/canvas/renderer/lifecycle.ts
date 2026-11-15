@@ -1,5 +1,5 @@
-import { disposeNodeEditPaints } from '#core/canvas/node-edit-overlay'
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import { disposeNodeEditPaints } from '#core/canvas/overlays/node-edit'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { fontManager } from '#core/text/font/manager'
 
 import { releaseCompiledShaders } from './shaders'
@@ -39,6 +39,7 @@ export function destroyRenderer(r: SkiaRenderer): void {
   r.images.cache.clear()
   releaseLiveImages(r)
   disposePathCaches(r)
+  r.renderedBounds.dispose()
   r.fillPaint.delete()
   releaseCompiledShaders(r.shaders)
   r.strokePaint.delete()
@@ -61,6 +62,7 @@ export function destroyRenderer(r: SkiaRenderer): void {
   r.penVertexFill.delete()
   r.penVertexStroke.delete()
   r.effectLayerPaint.delete()
+  r.glassMaps.clear()
   r.imageFilterCache.clear()
   r.maskFilterCache.clear()
   r.dashEffects.clear()

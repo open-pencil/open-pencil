@@ -3,7 +3,13 @@ import { createDocumentVariables, type DocumentVariables } from '#fig/document/v
 import type { GUID } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, isUnsetGuid } from '@open-pencil/kiwi/fig/guid'
+import { compareOrderKeys } from '@open-pencil/scene-graph/order-keys'
 
+import {
+  assetIdsByKey,
+  createTextStyleLookup,
+  type TextStyleLookup
+} from '../node-change/style/lookup'
 import { findWithinBoundary, type TreeShape } from './tree'
 
 /** Archive records indexed by GUID, with children in saved order. */
@@ -14,11 +20,16 @@ export interface SourceIndex {
 
 export interface InterpreterIndex extends SourceIndex {
   readonly variables: DocumentVariables
+  readonly textStyle: TextStyleLookup
 }
 
 /** A record's archive identity, or undefined for the rare record without a GUID. */
 export function idOf(record: NodeChange): string | undefined {
   return record.guid ? guidToString(record.guid) : undefined
+}
+
+export function isActiveRecord(record: NodeChange): boolean {
+  return record.phase !== 'REMOVED'
 }
 
 export function parentIdOf(record: NodeChange): string | undefined {
@@ -37,10 +48,7 @@ export function indexRecords(changes: readonly NodeChange[]): Map<string, NodeCh
 
 /** Saved sibling order: the fractional position string, compared as text. */
 export function bySavedPosition(a: NodeChange, b: NodeChange): number {
-  const left = a.parentIndex?.position ?? ''
-  const right = b.parentIndex?.position ?? ''
-  if (left === right) return 0
-  return left < right ? -1 : 1
+  return compareOrderKeys(a.parentIndex?.position ?? '', b.parentIndex?.position ?? '')
 }
 
 export function createSourceIndex(changes: readonly NodeChange[]): SourceIndex {
@@ -62,7 +70,13 @@ export function createSourceIndex(changes: readonly NodeChange[]): SourceIndex {
 }
 
 export function createInterpreterIndex(changes: readonly NodeChange[]): InterpreterIndex {
-  return { ...createSourceIndex(changes), variables: createDocumentVariables(changes) }
+  const activeRecords = changes.filter(isActiveRecord)
+  const index = createSourceIndex(activeRecords)
+  return {
+    ...index,
+    variables: createDocumentVariables(activeRecords),
+    textStyle: createTextStyleLookup(index.sources, assetIdsByKey(activeRecords))
+  }
 }
 
 export function sameGuid(left: GUID | undefined, right: GUID): boolean {

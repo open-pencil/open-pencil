@@ -10,14 +10,15 @@ import {
   PL,
   PL_PROG,
   RU,
-  RU_PROG,
+  RU_PROG
 } from '#docs/labels.ts'
+
 import { localeThemeConfig } from './theme.ts'
 
 export const docsLocales = {
   root: {
     label: 'English',
-    lang: 'en',
+    lang: 'en'
   },
   de: {
     label: 'Deutsch',
@@ -26,17 +27,16 @@ export const docsLocales = {
     themeConfig: localeThemeConfig(
       '/de',
       {
-        overview: 'Überblick',
-        userGuide: 'Benutzerhandbuch',
-        programmable: 'Automation',
-        sdk: 'SDK',
+        docs: 'Dokumentation',
+        developers: 'Entwickler',
+        download: 'Herunterladen',
         reference: 'Referenz',
         development: 'Entwicklung',
-        openApp: 'App öffnen',
+        cloud: 'Cloud'
       },
       DE,
-      DE_PROG,
-    ),
+      DE_PROG
+    )
   },
   it: {
     label: 'Italiano',
@@ -45,17 +45,16 @@ export const docsLocales = {
     themeConfig: localeThemeConfig(
       '/it',
       {
-        overview: 'Panoramica',
-        userGuide: 'Guida utente',
-        programmable: 'Automation',
-        sdk: 'SDK',
+        docs: 'Documentazione',
+        developers: 'Sviluppatori',
+        download: 'Scarica',
         reference: 'Riferimento',
         development: 'Sviluppo',
-        openApp: 'Apri app',
+        cloud: 'Cloud'
       },
       IT,
-      IT_PROG,
-    ),
+      IT_PROG
+    )
   },
   fr: {
     label: 'Français',
@@ -64,17 +63,17 @@ export const docsLocales = {
     themeConfig: localeThemeConfig(
       '/fr',
       {
-        overview: 'Vue d’ensemble',
-        userGuide: 'Guide utilisateur',
-        programmable: 'Automation',
-        sdk: 'SDK',
+        docs: 'Documentation',
+        developers: 'Développeurs',
+        download: 'Télécharger',
         reference: 'Référence',
         development: 'Développement',
-        openApp: "Ouvrir l'app",
+        cloud: 'Cloud',
+        openApp: "Ouvrir l'app"
       },
       FR,
-      FR_PROG,
-    ),
+      FR_PROG
+    )
   },
   es: {
     label: 'Español',
@@ -83,17 +82,16 @@ export const docsLocales = {
     themeConfig: localeThemeConfig(
       '/es',
       {
-        overview: 'Resumen',
-        userGuide: 'Guía del usuario',
-        programmable: 'Automation',
-        sdk: 'SDK',
+        docs: 'Documentación',
+        developers: 'Desarrolladores',
+        download: 'Descargar',
         reference: 'Referencia',
         development: 'Desarrollo',
-        openApp: 'Abrir app',
+        cloud: 'Cloud'
       },
       ES,
-      ES_PROG,
-    ),
+      ES_PROG
+    )
   },
   pl: {
     label: 'Polski',
@@ -102,17 +100,16 @@ export const docsLocales = {
     themeConfig: localeThemeConfig(
       '/pl',
       {
-        overview: 'Przegląd',
-        userGuide: 'Podręcznik',
-        programmable: 'Automation',
-        sdk: 'SDK',
+        docs: 'Dokumentacja',
+        developers: 'Dla programistów',
+        download: 'Pobierz',
         reference: 'Referencja',
         development: 'Rozwój',
-        openApp: 'Otwórz app',
+        cloud: 'Cloud'
       },
       PL,
-      PL_PROG,
-    ),
+      PL_PROG
+    )
   },
   ru: {
     label: 'Русский',
@@ -121,16 +118,15 @@ export const docsLocales = {
     themeConfig: localeThemeConfig(
       '/ru',
       {
-        overview: 'Обзор',
-        userGuide: 'Руководство',
-        programmable: 'Automation',
-        sdk: 'SDK',
+        docs: 'Документация',
+        developers: 'Разработчикам',
+        download: 'Скачать',
         reference: 'Справочник',
         development: 'Разработка',
-        openApp: 'Открыть приложение',
+        cloud: 'Cloud'
       },
       RU,
-      RU_PROG,
-    ),
-  },
+      RU_PROG
+    )
+  }
 }

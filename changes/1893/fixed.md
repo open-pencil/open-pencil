@@ -1,1 +1,0 @@
-- Ask again in AI setup for a design model on a coding agent where this install cannot run agents, instead of finishing setup on a model chat refuses.

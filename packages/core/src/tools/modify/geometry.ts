@@ -1,42 +1,6 @@
 import * as v from 'valibot'
 
-import { toolNumber, nodeIdInputSchema, defineTool, nodeNotFound } from '#core/tools/schema'
-
-export const setRotation = defineTool({
-  name: 'set_rotation',
-
-  description: 'Set rotation angle of a node in degrees.',
-  execution: { kind: 'sync', mutation: 'properties' },
-  input: v.strictObject({
-    id: nodeIdInputSchema,
-    angle: toolNumber(v.pipe(v.number(), v.description('Rotation angle in degrees')))
-  }),
-  execute: (figma, { id, angle }) => {
-    const node = figma.getNodeById(id)
-    if (!node) return { error: `Node "${id}" not found` }
-    node.rotation = angle
-    return { id, rotation: angle }
-  }
-})
-
-export const setOpacity = defineTool({
-  name: 'set_opacity',
-
-  description: 'Set opacity of a node (0-1).',
-  execution: { kind: 'sync', mutation: 'properties' },
-  input: v.strictObject({
-    id: nodeIdInputSchema,
-    value: toolNumber(
-      v.pipe(v.number(), v.minValue(0), v.maxValue(1), v.description('Opacity (0-1)'))
-    )
-  }),
-  execute: (figma, { id, value }) => {
-    const node = figma.getNodeById(id)
-    if (!node) return { error: `Node "${id}" not found` }
-    node.opacity = value
-    return { id, opacity: value }
-  }
-})
+import { layoutLength, nodeIdInputSchema, defineTool, nodeNotFound } from '#core/tools/schema'
 
 export const setRadius = defineTool({
   name: 'set_radius',
@@ -45,21 +9,11 @@ export const setRadius = defineTool({
   execution: { kind: 'sync', mutation: 'properties' },
   input: v.strictObject({
     id: nodeIdInputSchema,
-    radius: v.optional(
-      toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Corner radius for all corners')))
-    ),
-    top_left: v.optional(
-      toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Top-left radius')))
-    ),
-    top_right: v.optional(
-      toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Top-right radius')))
-    ),
-    bottom_right: v.optional(
-      toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Bottom-right radius')))
-    ),
-    bottom_left: v.optional(
-      toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Bottom-left radius')))
-    )
+    radius: v.optional(layoutLength('Corner radius for all corners')),
+    top_left: v.optional(layoutLength('Top-left radius')),
+    top_right: v.optional(layoutLength('Top-right radius')),
+    bottom_right: v.optional(layoutLength('Bottom-right radius')),
+    bottom_left: v.optional(layoutLength('Bottom-left radius'))
   }),
   execute: (figma, args) => {
     const node = figma.getNodeById(args.id)
@@ -86,24 +40,16 @@ export const setRadius = defineTool({
 })
 
 export const setMinMax = defineTool({
-  name: 'set_minmax',
+  name: 'set_size_limits',
 
   description: 'Set min/max width and height constraints on a node.',
   execution: { kind: 'sync', mutation: 'properties' },
   input: v.strictObject({
     id: nodeIdInputSchema,
-    min_width: v.optional(
-      toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Minimum width')))
-    ),
-    max_width: v.optional(
-      toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Maximum width')))
-    ),
-    min_height: v.optional(
-      toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Minimum height')))
-    ),
-    max_height: v.optional(
-      toolNumber(v.pipe(v.number(), v.minValue(0), v.description('Maximum height')))
-    )
+    min_width: v.optional(layoutLength('Minimum width')),
+    max_width: v.optional(layoutLength('Maximum width')),
+    min_height: v.optional(layoutLength('Minimum height')),
+    max_height: v.optional(layoutLength('Maximum height'))
   }),
   execute: (figma, args) => {
     const node = figma.getNodeById(args.id)

@@ -1,17 +1,17 @@
-import type { Path, PathBuilder } from 'canvaskit-wasm'
-
+import type { Path, PathBuilder } from '@open-pencil/canvaskit'
 import type { SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { nodeHasRadius } from '@open-pencil/scene-graph/corners'
+import { borderWeights, type SideWeights } from '@open-pencil/scene-graph/geometry'
 
 import { isOpenVectorNetwork } from '#core/vector/connectivity'
 
 import { baseShapePath, makeBooleanOperationPath, strokeSourcePath } from './boolean'
 import { appendVerb, forEachVerb } from './paths/verbs'
-import type { SkiaRenderer } from './renderer'
-import { nodeHasRadius } from './shapes'
+import type { SkiaRenderer } from './renderer/skia'
 import { getStrokeCapEntity, getStrokeJoinEntity, normalizeDashPattern } from './strokes'
 import { makeLineSegmentPath } from './strokes/line'
 import { dashPath } from './strokes/outlined-dashes'
-import { sideStrokeRRects, type SideWeights } from './strokes/sides'
+import { sideStrokeRRects } from './strokes/sides'
 
 // The geometry Figma's plugin API reports for a layer (`fillGeometry`, `strokeGeometry`), in the
 // layer's own box. Measured in Figma desktop 126.
@@ -216,12 +216,8 @@ function dashedSides(
  * null when no side has a weight.
  */
 function sidesBand(r: SkiaRenderer, node: SceneNode, scale: number): Path | null {
-  const weights: SideWeights = [
-    node.borderTopWeight * scale,
-    node.borderRightWeight * scale,
-    node.borderBottomWeight * scale,
-    node.borderLeftWeight * scale
-  ]
+  const [top, right, bottom, left] = borderWeights(node)
+  const weights: SideWeights = [top * scale, right * scale, bottom * scale, left * scale]
   if (weights.every((weight) => weight <= 0)) return null
   const { outer, inner } = sideStrokeRRects(node, 'CENTER', 0, weights)
   const builder = new r.ck.PathBuilder()

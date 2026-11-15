@@ -6,7 +6,7 @@ import {
   type OnboardingPlan,
   type PlannedRole
 } from '@/app/ai/models/settings/onboarding/plan'
-import { AI_MODEL_ROLES, type AIModelRole } from '@/app/ai/models/types'
+import { AI_MODEL_ROLES, isModelRoleInUse, type AIModelRole } from '@/app/ai/models/types'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -42,12 +42,15 @@ function selectOptions(role: AIModelRole) {
       :data-model-role="role"
     >
       <AppSelect
+        v-if="isModelRoleInUse(role)"
         class="w-full sm:w-64"
         :model-value="roleChoiceKey(plan[role])"
         :options="selectOptions(role)"
         :label="roleLabel(role).label"
         @update:model-value="emit('choose', role, String($event))"
       />
+      <!-- Nothing reads the role yet, so there is nothing to choose for it. -->
+      <span v-else class="text-xs text-muted">{{ ai.modelRoleNotUsed }}</span>
     </SettingsRow>
   </SettingsGroup>
   <AppButton v-if="!isRecommended" class="self-start" @click="emit('useRecommended')">

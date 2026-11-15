@@ -189,7 +189,7 @@ export function createNudgeActions(ctx: EditorContext) {
     for (const id of nudged) {
       const node = ctx.graph.getNode(id)
       if (!node) continue
-      ctx.graph.updateNode(id, { x: node.x + dx, y: node.y + dy })
+      ctx.graph.updateNode(id, ctx.constrainMove(node, { x: node.x + dx, y: node.y + dy }))
       ctx.runLayoutForNode(id)
     }
 

@@ -99,6 +99,7 @@
   "reportNotePlaceholder": "Cosa hai fatto, cosa è successo e cosa ti aspettavi invece.",
   "reportEmail": "Email (facoltativa)",
   "reportEmailHint": "Solo se vuoi che ti ricontattiamo.",
+  "reportEmailInvalid": "Inserisci un indirizzo email o lascia vuoto.",
   "reportActivity": "Includi l’attività recente",
   "reportActivityDescription": "Gli ultimi 50 eventi della Diagnostica, come errori e tempi. Mai messaggi della chat o output degli strumenti.",
   "reportDocument": "Allega questo documento",

@@ -2,7 +2,7 @@ import type { SceneNode, NodeType } from '@open-pencil/scene-graph'
 
 import type { createSelectionActions } from '#core/editor/selection'
 import type { EditorContext } from '#core/editor/types'
-import type { createViewportActions } from '#core/editor/viewport'
+import type { createViewportActions } from '#core/editor/viewport/actions'
 
 type SelectionActions = ReturnType<typeof createSelectionActions>
 type ViewportActions = ReturnType<typeof createViewportActions>

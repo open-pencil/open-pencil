@@ -1,5 +1,4 @@
-import type { Canvas, Paint } from 'canvaskit-wasm'
-
+import type { Canvas, Paint } from '@open-pencil/canvaskit'
 import type { ConstraintType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   constraintFrame,
@@ -8,7 +7,7 @@ import {
 } from '@open-pencil/scene-graph/constraints'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import type { RotationPreview } from '#core/geometry'
 
 import { inNodeSpace, withScreenStroke } from './outline'

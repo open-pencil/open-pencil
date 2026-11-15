@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { createAPI, solidFill } from '#core-tests/helpers/figma-api'
+
 import { graphOf } from '#core/figma-api/graph'
 describe('stroke details', () => {
   test('strokeWeight and strokeAlign', () => {

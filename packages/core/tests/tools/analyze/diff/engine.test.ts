@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined } from '@open-pencil/test-support/assert'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { formatOperations, parseOperations } from '#core/tools/analyze/diff/format'
 import { deltaOperations, type DiffOperation } from '#core/tools/analyze/diff/operations'

@@ -1,12 +1,13 @@
 import { afterEach, expect, spyOn, test } from 'bun:test'
+
 import { noop } from 'es-toolkit'
 
 import { createEditor } from '@open-pencil/core'
 import type { SkiaRenderer } from '@open-pencil/core/canvas'
 import { setTextMeasurer, sizeAutoResizingText } from '@open-pencil/core/layout'
 import type { SceneNode } from '@open-pencil/scene-graph'
-
 import { expectDefined } from '@open-pencil/test-support/assert'
+
 import {
   createPendingTextLayout,
   type PendingLayoutRenderer
@@ -168,7 +169,11 @@ test('the layout of the document’s own state stays derived', async () => {
 })
 
 /** Edits the text as the editor and the plugin API do, measuring it as it changes. */
-function edit(graph: ReturnType<typeof setup>['graph'], text: SceneNode, changes: Partial<SceneNode>) {
+function edit(
+  graph: ReturnType<typeof setup>['graph'],
+  text: SceneNode,
+  changes: Partial<SceneNode>
+) {
   graph.updateNode(text.id, { ...changes, ...textAutoResizeChanges(text, changes) })
 }
 
@@ -270,8 +275,7 @@ test('text an edit queues again while it is prepared stays hidden until it is pr
 })
 
 test('text its prepared fonts still cannot measure shows, and is laid out once fonts settle', async () => {
-  const { graph, text, prepared, pending, runLayoutForNode, stopPreparing, loadElsewhere } =
-    setup()
+  const { graph, text, prepared, pending, runLayoutForNode, stopPreparing, loadElsewhere } = setup()
   stopPreparing()
   runLayoutForNode(text.id)
   await settle()
@@ -321,7 +325,9 @@ test('text that keeps the glyphs its file saved keeps the size the file gave it'
     text: {
       width: 120,
       height: 20,
-      derivedTextGlyphs: [{ commandsBlob: new Uint8Array(), x: 0, y: 16, fontSize: 16, firstCharacter: 0 }]
+      derivedTextGlyphs: [
+        { commandsBlob: new Uint8Array(), x: 0, y: 16, fontSize: 16, firstCharacter: 0 }
+      ]
     }
   })
   graph.applyDerivedLayoutDuring(() => runLayoutForNode(text.id))

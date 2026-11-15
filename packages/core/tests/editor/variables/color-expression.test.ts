@@ -36,9 +36,10 @@ test('100 instances repaint derived colors on a token edit, undo, and redo', () 
     graph.createInstance(component.id, graph.getPages()[0].id)
   )
   const editor = createEditor({ graph })
+  // A bound paint draws the color its variable wrote into it, the alpha as the paint's opacity.
   const colorOf = (node: typeof component | null) => {
     if (!node) throw new Error('Missing component instance')
-    return resolveFillColor(node.fills[0], 0, node, graph, 'srgb')
+    return { ...resolveFillColor(node.fills[0], 0, node, graph, 'srgb'), a: node.fills[0].opacity }
   }
   editor.updateVariableValue(base.id, collection.defaultModeId, { r: 0, g: 0, b: 1, a: 1 })
   for (const node of [component, ...instances]) {

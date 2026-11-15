@@ -73,7 +73,7 @@ function forwardWheel(event: WheelEvent) {
     @wheel="forwardWheel"
   >
     <div
-      class="absolute top-0 left-0 origin-top-left"
+      class="absolute top-0 inset-s-0 origin-top-left"
       :style="{
         transform: `translate(${placement.panX}px, ${placement.panY}px) scale(${placement.zoom})`
       }"

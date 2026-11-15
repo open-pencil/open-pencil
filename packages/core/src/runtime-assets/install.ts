@@ -4,6 +4,7 @@ import interVariableItalic from '#core-assets/InterVariable-Italic.ttf?url'
 import interVariable from '#core-assets/InterVariable.ttf?url'
 import notoNaskhArabic from '#core-assets/NotoNaskhArabic-Regular.ttf?url'
 import emojiMetrics from '#core-assets/OpenPencilEmojiMetrics-Regular.ttf?url'
+
 /**
  * Points Core at the files it loads at run time, imported as Vite `?url` assets so a Vite build
  * serves them in development and emits them, hashed and under `base`, with the build. Importing
@@ -11,11 +12,9 @@ import emojiMetrics from '#core-assets/OpenPencilEmojiMetrics-Regular.ttf?url'
  * loads Core behind a gate of its own imports it there instead. Its `?url` imports stay as written in
  * `dist`, so the app's Vite resolves them, the fonts through Core's `#core-assets` import.
  */
-import canvasKit from 'canvaskit-wasm/bin/full/canvaskit.wasm?url'
-import harfBuzzSubset from 'harfbuzzjs/dist/harfbuzz-subset.wasm?url'
+import canvasKit from '@open-pencil/canvaskit/dist/canvaskit.wasm?url'
 
 import { setCanvasKitLocator } from '#core/canvaskit'
-import { setHarfBuzzSubsetLocator } from '#core/text/font/harfbuzz'
 import { fontManager } from '#core/text/font/manager'
 
 /** Every font file in `@open-pencil/core/assets`: the bundled faces and the stand-ins. */
@@ -29,5 +28,4 @@ const FONT_URLS: Record<string, string> = {
 }
 
 setCanvasKitLocator(() => canvasKit)
-setHarfBuzzSubsetLocator(() => harfBuzzSubset)
 fontManager.setBundledFontLocator((file) => FONT_URLS[file] ?? `/${file}`)

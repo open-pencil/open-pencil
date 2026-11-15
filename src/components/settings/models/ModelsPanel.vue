@@ -139,7 +139,7 @@ const { connectionState, refresh: refreshAgents } = useModelConnectionStates(sta
               </template>
               <template #trailing>
                 <span
-                  class="mr-1 flex items-center gap-1 text-2xs text-muted"
+                  class="me-1 flex items-center gap-1 text-2xs text-muted"
                   data-test-id="settings-model-status"
                   :data-state="connectionState(profile.connectionId, profile.providerID)"
                 >
@@ -162,7 +162,10 @@ const { connectionState, refresh: refreshAgents } = useModelConnectionStates(sta
                       : ai.modelCapabilityVisionShort
                   }}
                 </span>
-                <icon-lucide-chevron-right class="size-3.5 shrink-0 text-muted" />
+                <icon-lucide-chevron-right
+                  data-direction="reading"
+                  class="size-3.5 shrink-0 text-muted"
+                />
               </template>
             </AppActionRow>
           </div>

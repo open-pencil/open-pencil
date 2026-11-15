@@ -17,9 +17,8 @@ import {
   useConstraints
 } from '@open-pencil/vue/controls/constraints'
 
-import { provideEditor } from '#vue/editor/context'
-
 import { MIXED } from '#vue/controls/node-props/use'
+import { provideEditor } from '#vue/editor/context'
 import { applyResize } from '#vue/shared/input/resize'
 import type { DragResize } from '#vue/shared/input/types'
 function original(node: {
@@ -216,7 +215,7 @@ function mountConstraints(editor: Editor) {
 // Figma (desktop, 2026-11-08): a group owns no constraints; the panel shows its layers', Mixed
 // where they differ, and a choice sets every layer in it, through nested groups.
 describe("a group's constraints in the panel", () => {
-  test('are its layers\', and setting one sets them all in one step', () => {
+  test("are its layers', and setting one sets them all in one step", () => {
     const editor = createEditor()
     const frame = editor.graph.createNode('FRAME', editor.state.currentPageId)
     const group = editor.graph.createNode('GROUP', frame.id)

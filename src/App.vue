@@ -2,7 +2,7 @@
 import { useHead } from '@unhead/vue'
 import { useEventListener } from '@vueuse/core'
 import { MotionConfig } from 'motion-v'
-import { TooltipProvider } from 'reka-ui'
+import { ConfigProvider, TooltipProvider } from 'reka-ui'
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
@@ -13,6 +13,7 @@ import { startCloud } from '@/app/cloud/integration'
 import { useDocumentCloseProtection } from '@/app/document/close/use'
 import { endRecoverySession, startRecoverySession } from '@/app/document/recovery/session'
 import { useFollowingEditorStore } from '@/app/editor/active-store'
+import { useInterfaceDirection } from '@/app/i18n/direction'
 import { offerCrashReports } from '@/app/reports/crash'
 import { interfaceScalePreference } from '@/app/shell/interface-scale'
 import { animationsEnabled } from '@/app/shell/motion'
@@ -40,11 +41,13 @@ import VoiceCallAudio from '@/components/voice-call/VoiceCallAudio.vue'
 
 const { updates, locale } = useI18n()
 const router = useRouter()
+const dir = useInterfaceDirection()
 
 useHead({
   titleTemplate: (title) => (title ? `${title} — OpenPencil` : 'OpenPencil'),
   htmlAttrs: {
     lang: locale,
+    dir,
     'data-interface-scale': interfaceScalePreference,
     'data-motion': computed(() => (animationsEnabled.value ? 'full' : 'off'))
   }
@@ -81,22 +84,24 @@ onMounted(() => {
 
 <template>
   <MotionConfig :reduced-motion="animationsEnabled ? 'never' : 'always'">
-    <TooltipProvider :delay-duration="400">
-      <AppShell>
-        <RouterView />
-      </AppShell>
-      <SettingsDialog />
-      <AISetupDialog />
-      <SaveToHost />
-      <CloudHosts />
-      <UnsavedChangesDialog />
-      <PublishLibraryDialog />
-      <LibraryUpdateReviewDialog />
-      <UsageStatsPrompt />
-      <DonationPrompt />
-      <ReportDialogHost />
-      <AppToaster />
-      <VoiceCallAudio />
-    </TooltipProvider>
+    <ConfigProvider :dir="dir">
+      <TooltipProvider :delay-duration="400">
+        <AppShell>
+          <RouterView />
+        </AppShell>
+        <SettingsDialog />
+        <AISetupDialog />
+        <SaveToHost />
+        <CloudHosts />
+        <UnsavedChangesDialog />
+        <PublishLibraryDialog />
+        <LibraryUpdateReviewDialog />
+        <UsageStatsPrompt />
+        <DonationPrompt />
+        <ReportDialogHost />
+        <AppToaster />
+        <VoiceCallAudio />
+      </TooltipProvider>
+    </ConfigProvider>
   </MotionConfig>
 </template>

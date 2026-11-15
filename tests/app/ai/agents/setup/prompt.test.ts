@@ -17,4 +17,13 @@ describe('coding agent setup prompt', () => {
       'install it: `npm i -g @google/gemini-cli`'
     )
   })
+
+  test('gives Antigravity CLI the installer for the platform', () => {
+    const macOS = codingAgentSetupPrompt('antigravity', 'Mozilla/5.0 (Macintosh)')
+    const windows = codingAgentSetupPrompt('antigravity', 'Mozilla/5.0 (Windows NT 10.0)')
+    expect(macOS).toContain(
+      'install it: `curl -fsSL https://antigravity.google/cli/install.sh | bash`'
+    )
+    expect(windows).toContain('install it: `irm https://antigravity.google/cli/install.ps1 | iex`')
+  })
 })

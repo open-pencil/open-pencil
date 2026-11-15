@@ -1,4 +1,4 @@
-import { isEqual, omit } from 'es-toolkit'
+import { isEqual, omit, pickBy } from 'es-toolkit'
 
 import type {
   FigmaSourcePayload,
@@ -15,6 +15,7 @@ import {
   createSceneMutationImpact,
   recordSceneMutations
 } from '@open-pencil/scene-graph/mutation-impact'
+import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
 import type { EditorContext } from '#core/editor/types'
 import { computeAllLayouts } from '#core/layout'
@@ -43,6 +44,14 @@ interface LayerUpdate {
   fig: FieldChanges<FigmaSourcePayload> | null
 }
 
+/**
+ * A layer an edit created or deleted, as its step keeps it: the fields that differ from a new
+ * layer of its type, which `SceneGraph.createNode` fills back in. A layer has some 170 fields and
+ * most hold their defaults, so a step costs what its layers hold rather than every field of each.
+ */
+export type StoredLayer = Partial<SceneNode> &
+  Pick<SceneNode, 'id' | 'type' | 'parentId' | 'childIds'>
+
 /** A parent's children in one state, listed parents first. */
 interface ChildList {
   id: string
@@ -61,20 +70,15 @@ export interface DocumentChange {
   /** Pages whose layers the edit changed, laid out again when it is undone or redone. */
   pageIds: string[]
   /** Layers as the edit left them, parents first. */
-  created: SceneNode[]
+  created: StoredLayer[]
   /** Layers as they were before the edit removed them, parents first. */
-  deleted: SceneNode[]
+  deleted: StoredLayer[]
   /** Fields the edit changed on layers that exist in both states, children aside. */
   updated: LayerUpdate[]
   /** Child lists that differ between the states, each side's parents first. */
   children: Record<Side, ChildList[]>
   variables: RecordChange<Variable>[]
   collections: RecordChange<VariableCollection>[]
-  /**
-   * The mode each changed collection showed on each side, which the editor keeps apart from the
-   * collection, so undoing a collection's or a mode's removal shows the mode it showed.
-   */
-  activeModes: RecordChange<string>[]
 }
 
 /** Layers by id: the live graph's, or those captured before the edit. */
@@ -156,6 +160,14 @@ function captureNode(node: SceneNode): SceneNode {
   }
 }
 
+/** A copy of `node` that leaves out the fields a new layer of its type starts with. */
+function storeLayer(node: SceneNode): StoredLayer {
+  const defaults = createDefaultNode(() => node.id, node.type)
+  const fields = pickBy(node, (value, key) => !isEqual(value, defaults[key]))
+  const { id, type, parentId, childIds } = node
+  return structuredClone({ ...fields, id, type, parentId, childIds })
+}
+
 /**
  * A layer and its ancestors, nearest first. Like `SceneGraph.closest`, the walk visits at most as
  * many layers as there are, so a parent cycle in bad data cannot hang it.
@@ -193,9 +205,9 @@ function recordLayer(
     change.children.after.push({ id, childIds: [...current.childIds] })
   }
   if (!previous) {
-    if (current) change.created.push(structuredClone(current))
+    if (current) change.created.push(storeLayer(current))
   } else if (!current) {
-    change.deleted.push(structuredClone(previous))
+    change.deleted.push(storeLayer(previous))
   } else {
     const update = diffLayer(id, previous, current)
     if (update) change.updated.push(update)
@@ -229,7 +241,6 @@ export function captureDocumentChange(graph: SceneGraph, pageId: string): () => 
   const created = new Set<string>()
   const variables: RecordCopies<Variable> = new Map()
   const collections: RecordCopies<VariableCollection> = new Map()
-  const activeModes: RecordCopies<string> = new Map()
   const impact = createSceneMutationImpact()
   let elsewhere: ReturnType<typeof createSceneMutationImpact> | null = null
   const layersAtPause = new Map<string, SceneNode>()
@@ -260,7 +271,6 @@ export function captureDocumentChange(graph: SceneGraph, pageId: string): () => 
         copyRecord(elsewhere ? variablesAtPause : variables, graph.variables, id)
       } else {
         copyRecord(elsewhere ? collectionsAtPause : collections, graph.variableCollections, id)
-        if (!elsewhere) copyRecord(activeModes, graph.activeMode, id)
       }
     },
     pause: () => {
@@ -306,13 +316,12 @@ export function captureDocumentChange(graph: SceneGraph, pageId: string): () => 
     const ids = new Set([...touchedIds(impact), ...captured.keys()])
     return buildDocumentChange(graph, pageId, ids, previous, created, {
       variables: recordChangesOf(variables, graph.variables),
-      collections: recordChangesOf(collections, graph.variableCollections),
-      activeModes: recordChangesOf(activeModes, graph.activeMode)
+      collections: recordChangesOf(collections, graph.variableCollections)
     })
   }
 }
 
-type RecordChanges = Pick<DocumentChange, 'variables' | 'collections' | 'activeModes'>
+type RecordChanges = Pick<DocumentChange, 'variables' | 'collections'>
 
 /**
  * The change of the touched layers `ids`, given each one's state before the edit in `previous`,
@@ -330,8 +339,7 @@ function buildDocumentChange(
   const change: DocumentChange = {
     ...emptyDocumentChange(pageId),
     variables: records.variables,
-    collections: records.collections,
-    activeModes: records.activeModes
+    collections: records.collections
   }
   const pageIds = new Set<string>()
   for (const id of ids) {
@@ -363,8 +371,7 @@ export function emptyDocumentChange(pageId: string): DocumentChange {
     updated: [],
     children: { before: [], after: [] },
     variables: [],
-    collections: [],
-    activeModes: []
+    collections: []
   }
 }
 
@@ -372,9 +379,7 @@ export function emptyDocumentChange(pageId: string): DocumentChange {
 export function recordChanges(graph: SceneGraph, checkpoint: TouchedCheckpoint): RecordChanges {
   return {
     variables: recordChangesOf(checkpoint.variables, graph.variables),
-    collections: recordChangesOf(checkpoint.variableCollections, graph.variableCollections),
-    // A property edit cannot change collections, so not the modes they show either.
-    activeModes: []
+    collections: recordChangesOf(checkpoint.variableCollections, graph.variableCollections)
   }
 }
 
@@ -424,8 +429,7 @@ export function isEmptyDocumentChange(change: DocumentChange): boolean {
     change.children.before.length === 0 &&
     change.children.after.length === 0 &&
     change.variables.length === 0 &&
-    change.collections.length === 0 &&
-    change.activeModes.length === 0
+    change.collections.length === 0
   )
 }
 
@@ -440,7 +444,7 @@ export function isEmptyDocumentChange(change: DocumentChange): boolean {
  * there, to the nearest parent that stays, where the outermost removed layer was, keeping their
  * place on the canvas.
  */
-function keepOthersLayers(graph: SceneGraph, removed: readonly SceneNode[]): void {
+function keepOthersLayers(graph: SceneGraph, removed: readonly StoredLayer[]): void {
   const removedIds = new Set(removed.map((node) => node.id))
   for (const { id } of removed) {
     const live = graph.getNode(id)
@@ -468,11 +472,6 @@ export function applyDocumentChange(graph: SceneGraph, change: DocumentChange, s
     graph.willChangeCollection(id)
   )
   restoreRecords(graph.variables, change.variables, side, (id) => graph.willChangeVariable(id))
-  for (const mode of change.activeModes) {
-    const modeId = mode[side]
-    if (modeId) graph.activeMode.set(mode.id, modeId)
-    else graph.activeMode.delete(mode.id)
-  }
   graph.preserveSourceMetadataDuring(() => {
     for (const node of restored) {
       const { parentId, childIds: _childIds, ...fields } = structuredClone(node)
@@ -494,11 +493,15 @@ export function applyDocumentChange(graph: SceneGraph, change: DocumentChange, s
   graph.clearAbsPosCache()
 }
 
-/** Undoes or redoes an edit in the editor, whichever page is on screen. */
+/**
+ * Undoes or redoes an edit in the editor, whichever page is on screen. The selection on that page
+ * is cleared, or becomes `selection` where the edit says what it selects.
+ */
 export function restoreDocumentChange(
   ctx: EditorContext,
   change: DocumentChange,
-  side: Side
+  side: Side,
+  selection?: ReadonlySet<string>
 ): void {
   applyDocumentChange(ctx.graph, change, side)
   const pageIds = new Set(change.pageIds)
@@ -508,7 +511,7 @@ export function restoreDocumentChange(
     if (ctx.graph.getNode(pageId)) computeAllLayouts(ctx.graph, pageId)
   }
   if (pageIds.has(ctx.state.currentPageId)) {
-    ctx.setSelectedIds(new Set())
+    ctx.setSelectedIds(new Set([...(selection ?? [])].filter((id) => ctx.graph.getNode(id))))
     ctx.state.hoveredNodeId = null
   }
   ctx.requestRender()

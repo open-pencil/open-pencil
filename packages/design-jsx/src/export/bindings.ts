@@ -1,6 +1,7 @@
 import { isEqual } from 'es-toolkit'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { insertAll } from '@open-pencil/scene-graph/arrays'
 
 import {
   PADDING_FIELDS,
@@ -113,7 +114,12 @@ function expandCorners(
   const index = props.findIndex(([prop]) => prop === 'rounded')
   if (!bound || index === -1) return
   const [, radius] = props[index]
-  props.splice(index, 1, ...CORNER_PROPS.map((prop): JSXProp => [prop, radius]))
+  props.splice(index, 1)
+  insertAll(
+    props,
+    index,
+    CORNER_PROPS.map((prop): JSXProp => [prop, radius])
+  )
 }
 
 /**
