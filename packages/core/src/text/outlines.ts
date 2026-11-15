@@ -4,6 +4,7 @@ import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import { rangeFontStyle } from '@open-pencil/scene-graph/shared-styles'
 import {
   estimatedLineStep,
+  styleRunAt,
   textLengthPixels,
   textVerticalOffset
 } from '@open-pencil/scene-graph/text'
@@ -97,7 +98,7 @@ function styleKey(style: TextStyle): string {
 }
 
 function textStyleAt(node: SceneNode, index: number): TextStyle {
-  const run = node.styleRuns.find((item) => index >= item.start && index < item.start + item.length)
+  const run = styleRunAt(node.styleRuns, index)
   if (!run) return baseTextStyle(node)
   return withVariations(
     {

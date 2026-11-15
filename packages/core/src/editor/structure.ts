@@ -150,10 +150,10 @@ export function createStructureActions(ctx: EditorContext) {
       })
       .sort((a, b) => a.index - b.index)
     if (origins.length === 0) return
-    const parentIds = new Set(origins.map((origin) => origin.parentId))
+    const parentIds = origins.map((origin) => origin.parentId)
     const move = () => {
       for (const { id } of origins) ctx.graph.reparentNode(id, pageId)
-      for (const parentId of parentIds) ctx.runLayoutForNode(parentId)
+      ctx.runLayoutForParents(parentIds)
     }
     move()
     ctx.setSelectedIds(new Set())
@@ -165,7 +165,7 @@ export function createStructureActions(ctx: EditorContext) {
           ctx.graph.insertChildAt(id, parentId, index)
           ctx.graph.updateNode(id, place)
         }
-        for (const parentId of parentIds) ctx.runLayoutForNode(parentId)
+        ctx.runLayoutForParents(parentIds)
       }
     })
   }
