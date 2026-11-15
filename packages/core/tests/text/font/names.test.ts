@@ -3,7 +3,7 @@ import { beforeAll, expect, test } from 'bun:test'
 import { createEditor } from '@open-pencil/core'
 import { fontManager, faceForStyle, textStyleName } from '@open-pencil/core/text'
 
-import { styleRunsWithPatch, textStyleChanges } from '#core/text/character-style'
+import { styleRunsWithPatch, textStyleChanges } from '#core/text/character/style'
 
 beforeAll(async () => {
   await fontManager.familyFaces('Inter')

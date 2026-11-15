@@ -1,6 +1,6 @@
 import { computed, toValue, type ComputedRef, type MaybeRefOrGetter, type Ref } from 'vue'
 
-import type { ViewportTransform } from '@open-pencil/core/geometry'
+import { worldToScreen, type ViewportTransform } from '@open-pencil/core/geometry'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 type CanvasVirtualReference = {
@@ -22,14 +22,12 @@ export function useCanvasVirtualReference(
     const canvas = canvasRef.value
     if (!point || !canvas) return null
 
-    const { zoom, panX, panY } = toValue(view)
+    const screen = worldToScreen(toValue(view), point)
 
     return {
       getBoundingClientRect() {
         const rect = canvas.getBoundingClientRect()
-        const x = rect.left + point.x * zoom + panX
-        const y = rect.top + point.y * zoom + panY
-        return new DOMRect(x, y, 0, 0)
+        return new DOMRect(rect.left + screen.x, rect.top + screen.y, 0, 0)
       }
     }
   })

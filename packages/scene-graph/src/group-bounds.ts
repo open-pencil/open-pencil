@@ -1,5 +1,6 @@
 import { getAxisAlignedBoundsInParent, getNodeLocalMatrix } from './coordinate'
 import type { SceneGraph } from './graph'
+import { isVisibleMask, maskRuns } from './masks'
 import Matrix from './matrix'
 import { FITTED_CONTAINER_TYPES } from './node-defaults'
 import type { Rect, Vector } from './primitives'
@@ -77,9 +78,12 @@ function fittedAncestors(graph: SceneGraph, parentIds: Iterable<string>): SceneN
  */
 function groupBoundingLayers(children: readonly SceneNode[]): SceneNode[] {
   const shown = children.filter((child) => child.visible)
-  const firstMask = shown.findIndex((child) => child.isMask)
-  if (firstMask === -1) return shown
-  return [...shown.slice(0, firstMask), ...shown.slice(firstMask).filter((c) => c.isMask)]
+  const runs = maskRuns(shown, isVisibleMask)
+  if (runs.length === 0) return shown
+  return [
+    ...shown.slice(0, runs[0].start),
+    ...runs.flatMap((run) => shown.slice(run.start, run.maskedStart))
+  ]
 }
 
 /**

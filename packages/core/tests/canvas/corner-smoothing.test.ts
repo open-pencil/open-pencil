@@ -2,7 +2,7 @@ import { describe, expect, mock, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { drawNodeFill } from '#core/canvas/fills'
+import { drawNodeFill } from '#core/canvas/fills/paint'
 import { makeSmoothRRectPath } from '#core/canvas/shapes'
 
 import { asCanvas, asRenderer } from './helpers'

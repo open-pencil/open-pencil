@@ -1,7 +1,7 @@
 import type { SkPicture } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { changesShaping } from '#core/canvas/text/paragraph/inputs'
 
 export interface NodeFlash {

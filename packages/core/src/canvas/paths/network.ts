@@ -5,7 +5,7 @@ import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { placedPath, windingRuleOf } from '#core/canvas/boolean'
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 
 import { curvePathData } from './svg-data'
 

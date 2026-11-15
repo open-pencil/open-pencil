@@ -16,7 +16,7 @@ import { shapeWithTextGeometry } from '@open-pencil/scene-graph/shape-with-text'
 
 import { vectorNetworkToPath, geometryBlobToPath } from '#core/vector'
 
-import type { SkiaRenderer } from './renderer'
+import type { SkiaRenderer } from './renderer/skia'
 
 export function makeSmoothRRectPath(r: SkiaRenderer, node: SceneNode, spread = 0): Path {
   const path = new r.ck.PathBuilder()

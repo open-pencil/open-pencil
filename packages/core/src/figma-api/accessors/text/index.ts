@@ -34,7 +34,7 @@ import {
 } from '#core/figma-api/text'
 import { getTextStyle, type TextSegmentField } from '#core/figma-api/text/style'
 import { parseFigma } from '#core/figma-api/validation'
-import { styleRunsWithPatch, textStyleChanges } from '#core/text/character-style'
+import { styleRunsWithPatch, textStyleChanges } from '#core/text/character/style'
 
 import { installTextDecorationAccessors } from './decoration'
 import { hyperlinkTarget } from './hyperlink'

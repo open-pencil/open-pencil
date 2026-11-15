@@ -4,9 +4,9 @@ import { nodeHasSmoothCorners } from '@open-pencil/scene-graph/corners'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { appendVerb, forEachVerb } from '#core/canvas/paths/verbs'
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { makeSmoothRRectPath } from '#core/canvas/shapes'
-import { getStrokeCapEntity, getStrokeJoinEntity } from '#core/canvas/strokes'
+import { getStrokeCapEntity, getStrokeJoinEntity } from '#core/canvas/strokes/draw'
 import { sideDashSpans } from '#core/canvas/strokes/sides'
 
 /** Lengths closer than this count as touching. */

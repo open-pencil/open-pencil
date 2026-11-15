@@ -2,7 +2,7 @@ import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { localPaintBounds } from '#core/geometry/render-bounds'
 
 function drawsImage(node: SceneNode): boolean {

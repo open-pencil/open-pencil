@@ -18,7 +18,7 @@ import type { ShapeWithTextType } from '@open-pencil/scene-graph/shape-with-text
 import { recordSubtreeEdit } from '#core/editor/components/slots/history'
 import type { NodeActions } from '#core/editor/nodes/actions'
 import type { EditorContext } from '#core/editor/types'
-import { textStyleChanges } from '#core/text/character-style'
+import { textStyleChanges } from '#core/text/character/style'
 
 const FILL_OPACITY: Record<FigJamFillMode, number> = { fill: 1, transparent: 0.5, none: 0 }
 

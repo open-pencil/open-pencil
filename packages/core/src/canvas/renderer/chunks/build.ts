@@ -2,6 +2,7 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix } from '@open-pencil/scene-graph/coordinate'
 import { nodeHasRadius, nodeHasSmoothCorners } from '@open-pencil/scene-graph/corners'
 import type { VisualBounds } from '@open-pencil/scene-graph/geometry'
+import { isVisibleMask } from '@open-pencil/scene-graph/masks'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import { clipsChildren } from '@open-pencil/scene-graph/node-defaults'
@@ -77,7 +78,10 @@ export function nodeRequiresAtomicChunk(graph: SceneGraph, node: SceneNode): boo
           effect.type === 'BACKGROUND_BLUR' ||
           effect.type === 'GLASS')
     )
-  const hasMasks = node.childIds.some((childId) => graph.getNode(childId)?.isMask === true)
+  const hasMasks = node.childIds.some((childId) => {
+    const child = graph.getNode(childId)
+    return child !== undefined && isVisibleMask(child)
+  })
   return isolated || hasMasks
 }
 

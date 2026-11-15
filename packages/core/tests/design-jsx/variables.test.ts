@@ -351,7 +351,7 @@ test('a collection name several collections share is an error, not the first of 
     `<Frame mode={designMode('Twin', 'Mode 1')} />`
   ]) {
     await expect(renderJSX(graph, jsx)).rejects.toThrow(
-      'More than one variable collection is named Twin; rename one to use it'
+      'More than one variable collection is named Twin; name one by its ID'
     )
   }
   // Export names such a collection by its ID, which renders back into the same mode.
@@ -362,6 +362,21 @@ test('a collection name several collections share is an error, not the first of 
   expect(exported).toContain(`mode={designMode("${twin.id}", "Mode 1")}`)
   const [copy] = await renderJSX(graph, exported)
   expect(graph.getNode(copy.id)?.variableModes).toEqual({ [twin.id]: twin.defaultModeId })
+})
+
+test('a mode name several modes share is an error, not the first of them', async () => {
+  const graph = new SceneGraph()
+  const theme = graph.createCollection('Theme')
+  graph.createMode(theme.id, 'Dark')
+  const second = expectDefined(graph.createMode(theme.id, 'Dark'))
+  await expect(renderJSX(graph, `<Frame mode={designMode('Theme', 'Dark')} />`)).rejects.toThrow(
+    'Collection Theme has more than one mode named Dark; name one by its ID'
+  )
+  // Export names such a mode by its ID, which renders back into the same mode.
+  const [frame] = await renderJSX(graph, '<Frame w={10} h={10} />')
+  graph.updateNode(frame.id, { variableModes: { [theme.id]: second } })
+  const [copy] = await renderJSX(graph, sceneNodeToJSX(frame.id, graph))
+  expect(graph.getNode(copy.id)?.variableModes).toEqual({ [theme.id]: second })
 })
 
 test('a sticky note pins its mode and reads its values in it, as any layer does', async () => {

@@ -16,9 +16,9 @@ The first time you open OpenPencil, guided setup asks what AI should help with a
 3. Add a model and configure its provider, model ID, credentials, and capabilities
 4. Save the model and assign it to **Design agent**
 
-You can configure multiple reusable models and separately assign models for design work, fast tasks, and image input. A model assigned to **Fast tasks** names each conversation after its first reply, and, when it is an API model, writes compaction summaries; while Fast tasks is **Same as Design** or **None**, conversations keep their first message as the title and the Design model writes the summaries. **Review** is listed as not used yet. Models using the same provider connection reuse its stored credential.
+You can configure multiple reusable models and separately assign models for design work, reviews, fast tasks, and image input. A model assigned to **Fast tasks** names each conversation after its first reply, and, when it is an API model whose context window its catalog gives, writes compaction summaries; while Fast tasks is **Same as Design** or **None**, conversations keep their first message as the title and the Design model writes the summaries. A model assigned to **Review** writes the [design reviews](#design-reviews) you ask for; while Review is **Same as Design**, the Design model writes them. Models using the same provider connection reuse its stored credential.
 
-The chat composer grows with multiline prompts. Type `@` to mention a layer, page, or skill, and `/` at the start of a message to run a skill, `/compact`, or one of an ACP agent's commands. Mentions show as chips, in replies too, where the assistant names the layers it touched; click one to show the layer on the canvas. Assistant messages show provider reasoning in collapsible sections and provide a per-response copy action. Image attachments remain available for visual references when a Vision model is configured. Streaming responses use a hardened Markdown renderer with Shiki-highlighted code blocks; unsafe link protocols and embedded data images are blocked.
+The chat composer grows with multiline prompts. Type `@` to mention a layer, page, or skill, and `/` at the start of a message to run a skill, `/review`, `/compact`, or one of an ACP agent's commands. Mentions show as chips, in replies too, where the assistant names the layers it touched; click one to show the layer on the canvas. Assistant messages show provider reasoning in collapsible sections and provide a per-response copy action. Image attachments remain available for visual references when a Vision model is configured. Streaming responses use a hardened Markdown renderer with Shiki-highlighted code blocks; unsafe link protocols and embedded data images are blocked.
 
 ## Step limit
 
@@ -88,6 +88,12 @@ The configurable tool catalog covers these categories; the tools offered to a mo
 ## Visual Verification
 
 The assistant can verify its work visually. With `export_image`, on by default, it can capture a screenshot after creating or modifying designs and checks the result against the original request. This catches layout issues, missing elements, and color mismatches that text-only responses would miss. `diff_pixels`, enabled by default, compares an edited node with a reference copy and returns the changed pixels and region, so the assistant can confirm an edit stayed within its target.
+
+## Design reviews
+
+`/review` asks the Review model to review the selection, or the current page when nothing is selected, as an art director would: alignment, spacing, contrast, hierarchy, and anything that looks broken. Text after it says what to focus on, such as `/review typography`, and images attached to it are references the design is compared against, such as a screenshot of a site you admire. The model sees the layers rendered when its profile has image input, together with their structure and the design lint's findings; an API model can also ask once to see a few layers closer before it settles its findings. A model without image input reviews from the structure and lint findings alone, and cannot take references.
+
+Each AI edit's change preview also offers **Review this change**, which asks the Review model whether that edit improved the design: what got better, what got worse, and what was lost, judged from the images of the changed region before and after it and the layers' JSX, or from the JSX alone for a model without image input or an edit kept without images. The review appears in the conversation as a card, with each finding linking to its layer. No model reads it on its own: **Fix these** sends its findings to the Design model as your message. `/review` asks the Review model whichever model or agent holds the chat, so an ACP agent's own `/review` is not offered. Pi cannot review.
 
 ## Context and compaction
 

@@ -124,6 +124,8 @@ const PROPERTIES: &[&str] = &[
     "vertical-align",
     "list-style-type",
     "content",
+    "border-collapse",
+    "border-spacing",
 ];
 
 /// Properties reported as their computed values too, where the used values `style` reports lose

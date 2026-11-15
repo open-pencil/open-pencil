@@ -7,7 +7,7 @@ import {
 } from '@open-pencil/scene-graph/constraints'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import type { RotationPreview } from '#core/geometry'
 
 import { inNodeSpace, withScreenStroke } from './outline'

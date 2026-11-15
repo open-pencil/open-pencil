@@ -3,13 +3,16 @@ import { MIXED } from '@open-pencil/vue/controls/node-props'
 import type { VariableModeChoice } from '@open-pencil/vue/controls/variable-modes'
 import { usePanelMessages } from '@open-pencil/vue/i18n'
 
-import IconButton from '@/components/ui/button/IconButton.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import type { AppSelectGroup } from '@/components/ui/select/select'
 
+import ComponentPropertyRow from '../component-properties/ComponentPropertyRow.vue'
 import { AUTO_MODE, autoModeLabel } from './labels'
 
-/** A row for each collection a mode is set for: its name, Auto or a mode, and a remove button. */
+/**
+ * A row for each collection the layers can show a mode of, such as a frame's theme: its name, then
+ * Auto (the inherited mode, which also clears one the layers set) or a mode.
+ */
 const { choices } = defineProps<{ choices: VariableModeChoice[] }>()
 const emit = defineEmits<{ set: [collectionId: string, modeId: string | null] }>()
 
@@ -41,25 +44,19 @@ function select(choice: VariableModeChoice, value: string) {
 </script>
 
 <template>
-  <div
-    v-for="choice in choices"
-    :key="choice.collectionId"
-    class="mt-1.5 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2"
-    data-variable-mode-row
-  >
-    <span class="truncate text-2xs text-muted">{{ choice.name }}</span>
-    <AppSelect
-      :model-value="current(choice)"
-      class="w-full"
-      :label="choice.name"
-      :groups="groups(choice)"
-      @update:model-value="(value: string) => select(choice, value)"
-    />
-    <IconButton
-      :label="panels.removeVariableMode({ collection: choice.name })"
-      @click="emit('set', choice.collectionId, null)"
+  <div v-if="choices.length > 0" class="mt-1.5 flex flex-col gap-1">
+    <ComponentPropertyRow
+      v-for="choice in choices"
+      :key="choice.collectionId"
+      :name="choice.name"
+      data-variable-mode-row
     >
-      <icon-lucide-minus class="size-3.5" />
-    </IconButton>
+      <AppSelect
+        :model-value="current(choice)"
+        :label="choice.name"
+        :groups="groups(choice)"
+        @update:model-value="(value: string) => select(choice, value)"
+      />
+    </ComponentPropertyRow>
   </div>
 </template>
