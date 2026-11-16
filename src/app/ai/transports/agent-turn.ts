@@ -1,12 +1,12 @@
 import {
   methods,
-  type ClientConnection,
   type PromptResponse,
   type SessionNotification,
   type SessionUpdate
 } from '@agentclientprotocol/sdk/unstable'
 import type { UIMessageChunk } from 'ai'
 
+import type { AgentConnection } from '@/app/ai/agents/acp/connection'
 import { createUpdateMapper, isFinished } from '@/app/ai/agents/acp/events'
 import { createSubagentTranscripts } from '@/app/ai/agents/acp/transcripts'
 import { endRun, startAgentRun } from '@/app/ai/reply/run'
@@ -30,7 +30,7 @@ const TURN_UPDATES: ReadonlySet<SessionUpdate['sessionUpdate']> = new Set([
 
 /** The part of an agent session a turn drives. */
 interface TurnSession {
-  connection: ClientConnection
+  connection: Pick<AgentConnection, 'agent'>
   sessionId: string
   /** The id the agent's tool calls carry, which ties them to this chat's replies. */
   chat: string
