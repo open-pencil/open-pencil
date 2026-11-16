@@ -1,5 +1,5 @@
 import compareVersions from 'semver/functions/compare.js'
-import validVersion from 'semver/functions/valid.js'
+import parseVersion from 'semver/functions/parse.js'
 import * as v from 'valibot'
 
 import { cloudBillingDiscoverySchema } from './billing'
@@ -71,8 +71,19 @@ export type CloudCapabilities = v.InferOutput<typeof cloudCapabilitiesSchema>
  */
 export const cloudEditorVersionSchema = v.pipe(
   v.string(),
-  v.check((value) => validVersion(value) === value, 'Expected a SemVer version')
+  v.check(isSemVer, 'Expected a SemVer version')
 )
+
+/**
+ * Whether the text is exactly a SemVer version, build metadata included: semver's own parse also
+ * takes a `v` prefix or spaces, which a version here never has.
+ */
+function isSemVer(value: string): boolean {
+  const parsed = parseVersion(value)
+  if (!parsed) return false
+  const build = parsed.build.length > 0 ? `+${parsed.build.join('.')}` : ''
+  return `${parsed.version}${build}` === value
+}
 
 /**
  * The header desktop editors send with each request, naming their version, so a server can refuse
@@ -89,7 +100,7 @@ export const CLOUD_EDITOR_VERSION_HEADER = 'X-OpenPencil-Editor-Version' as cons
  * version that isn't SemVer, on either side, is not at least anything.
  */
 export function isEditorVersionAtLeast(version: string, minimum: string): boolean {
-  if (validVersion(version) !== version || validVersion(minimum) !== minimum) return false
+  if (!isSemVer(version) || !isSemVer(minimum)) return false
   return compareVersions(version, minimum) >= 0
 }
 

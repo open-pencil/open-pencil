@@ -59,7 +59,12 @@ describe('Cloud discovery contract', () => {
   })
 
   test('reads a minimum editor version, a pre-release too, and refuses one that is not SemVer', () => {
-    for (const minimumEditorVersion of ['0.17.0', '0.18.0-beta.2', '0.18.0-nightly.20261116']) {
+    for (const minimumEditorVersion of [
+      '0.17.0',
+      '0.18.0-beta.2',
+      '0.18.0-nightly.20261116',
+      '0.18.0+build.5'
+    ]) {
       expect(parseCloudDiscovery({ ...discovery, minimumEditorVersion })).toMatchObject({
         minimumEditorVersion
       })
@@ -82,6 +87,10 @@ describe('Cloud discovery contract', () => {
     expect(isEditorVersionAtLeast('0.10.0', '0.9.5')).toBe(true)
     expect(isEditorVersionAtLeast('0.9.5', '0.10.0')).toBe(false)
     expect(isEditorVersionAtLeast('next', '1.0.0')).toBe(false)
+    // Build metadata takes no part in the order.
+    expect(isEditorVersionAtLeast('1.0.0+local.1', '1.0.0')).toBe(true)
+    expect(isEditorVersionAtLeast('1.0.0', '1.0.0+ci.7')).toBe(true)
+    expect(isEditorVersionAtLeast('v1.0.0', '1.0.0')).toBe(false)
   })
 
   test('orders pre-releases before their release, and nightlies after betas by date', () => {
