@@ -63,6 +63,52 @@ test("a steering message cancels the agent's turn once its running tool calls fi
   await chat.destroy()
 })
 
+test("a subagent's running tool call keeps a waiting steering message from cancelling the turn", async () => {
+  const agents = fakeAgents({ turn: 'held' })
+  let waiting = false
+  const { transport: chat } = transport(agents, { yieldWhen: () => waiting })
+  const reply = sending(chat, 'first')
+  await agents.promptTaken
+  // The agent took a turn and handed the work to a subagent, which edits in a session of its own.
+  await agents.say(agentText('Delegating'))
+  await agents.say(toolCall('edit-1'), 'subagent-1')
+  waiting = true
+  await agents.say(agentText('Waiting for it'))
+  await tick()
+  expect(agents.cancels).toEqual([])
+
+  // The subagent's reports alone never cancel; the agent's next one does, now that no call runs.
+  await agents.say(toolCallEnded('edit-1', 'completed'), 'subagent-1')
+  await tick()
+  expect(agents.cancels).toEqual([])
+  await agents.say(agentText('It finished'))
+  await reply.ended
+  expect(agents.cancels).toEqual(['session-1'])
+  expect(reply.chunks.at(-1)).toEqual({ type: 'finish', finishReason: 'stop' })
+  await chat.destroy()
+})
+
+test("a subagent's tool call is not mistaken for the agent's call with the same id", async () => {
+  const agents = fakeAgents({ turn: 'held' })
+  let waiting = false
+  const { transport: chat } = transport(agents, { yieldWhen: () => waiting })
+  const reply = sending(chat, 'first')
+  await agents.promptTaken
+  await agents.say(toolCall('call-1'))
+  await agents.say(toolCall('call-1'), 'subagent-1')
+  waiting = true
+  await agents.say(toolCallEnded('call-1', 'completed'))
+  await tick()
+  // The subagent's `call-1` still runs.
+  expect(agents.cancels).toEqual([])
+
+  await agents.say(toolCallEnded('call-1', 'completed'), 'subagent-1')
+  await agents.say(agentText('Done'))
+  await reply.ended
+  expect(agents.cancels).toEqual(['session-1'])
+  await chat.destroy()
+})
+
 test('a steering message waiting at the start lets the agent take a turn first', async () => {
   const agents = fakeAgents({ turn: 'held' })
   const { transport: chat } = transport(agents, { yieldWhen: () => true })

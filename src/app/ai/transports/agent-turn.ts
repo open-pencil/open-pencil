@@ -53,12 +53,16 @@ interface AgentTurnOptions {
   onFailure: (error: unknown) => string | null
 }
 
-/** A call runs from its first report until one says it completed or failed. */
-function followToolCalls(steering: Steering, update: SessionUpdate): void {
+/**
+ * A call runs from its first report until one says it completed or failed. A subagent's calls
+ * count as the agent's own, since cancelling the turn would cut them off too; their ids are only
+ * unique within the session that made them.
+ */
+function followToolCalls(steering: Steering, { sessionId, update }: SessionNotification): void {
   if (update.sessionUpdate !== 'tool_call' && update.sessionUpdate !== 'tool_call_update') return
   // An update without a status leaves its call as it was.
   if (update.sessionUpdate === 'tool_call' || update.status) {
-    steering.callRunning(update.toolCallId, !isFinished(update))
+    steering.callRunning(`${sessionId}:${update.toolCallId}`, !isFinished(update))
   }
 }
 
@@ -138,6 +142,8 @@ export function streamAgentTurn({
         const { update } = params
         // A subagent's own subagents are described on its session, as the agent's are on the chat's.
         if (update.sessionUpdate === 'subagent_update') subagents.describe(update)
+        followToolCalls(steering, params)
+        // A subagent's report says nothing of the agent's own turn, so it never makes the check.
         if (params.sessionId !== sessionId) {
           subagents.update(params.sessionId, update)
           return
@@ -145,7 +151,6 @@ export function streamAgentTurn({
         const inTurn = TURN_UPDATES.has(update.sessionUpdate)
         if (inTurn) onTurn()
         for (const chunk of mapper.map(update)) controller.enqueue(chunk)
-        followToolCalls(steering, update)
         // A message waiting from the start lets the agent take a turn first, as the built-in
         // chat's step runs before it yields. A cancel before the agent took the prompt can miss it.
         if (inTurn) steering.check()

@@ -221,10 +221,10 @@ export function fakeAgents({
         if (prompts.length >= count) resolve()
         else promptWaiters.push({ count, taken: resolve })
       }),
-    /** Sends an update as the agent's turn goes on. */
-    say: (update: SessionUpdate) =>
+    /** Sends an update as the agent's turn goes on, in the turn's session or a subagent's. */
+    say: (update: SessionUpdate, session = promptedSession) =>
       expectDefined(latest, 'a started agent').client.notify(methods.client.session.update, {
-        sessionId: promptedSession,
+        sessionId: session,
         update
       }),
     endTurn: (stopReason: StopReason) => heldTurn.resolve(stopReason)
