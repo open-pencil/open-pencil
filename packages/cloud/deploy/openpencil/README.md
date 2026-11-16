@@ -68,6 +68,20 @@ when that run succeeded.
 
 The environment's reviewers approve each run before it starts.
 
+## Administrators
+
+Deployment administrators approve sign-up requests and grant or revoke the role in the console
+(`/admin`). For a target with no administrator who can sign in, `neonctl` logged in to the team's
+Neon organization gives the admin command its database:
+
+```sh
+bun run cloud:admin production approve owner@example.com
+# after that person signs in once
+bun run cloud:admin production grant owner@example.com
+```
+
+The address never leaves the command's environment (`tools/ci/cloud-deploy/src/admin.ts`).
+
 The workflow uploads the Worker's source maps, migrates the database over its direct connection,
 deploys the Worker, and checks that `/health`, `/ready`, and the pages answer 200.
 

@@ -1,12 +1,14 @@
 export {
   adminErrorStatus,
   AdminDomainError,
+  approveEnrollmentByEmail,
   createAdminAuditService,
   createAdminEmailService,
   createAdminOperationsService,
   createAdminUserService,
   createCloudAdminRoutes,
   createEnrollmentService,
+  grantDeploymentAdminByEmail,
   normalizeEnrollmentEmail,
   type AdminAuditService,
   type AdminErrorCode,
@@ -142,6 +144,7 @@ export {
 export {
   createCloudDatabase,
   migrateCloudDatabase,
+  pendingCloudMigrations,
   type CloudDatabase,
   type CloudDatabaseOptions,
   type Document,

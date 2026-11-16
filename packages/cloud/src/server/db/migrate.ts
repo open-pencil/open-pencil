@@ -97,6 +97,18 @@ export async function migrateToLatest(migrator: Migrator, failure: string): Prom
   }
 }
 
+/**
+ * Cloud's migrations this database has not run, in order: none once a deployment of this
+ * version has started. A tool that only reads or writes rows checks this instead of migrating,
+ * so running it never changes the schema under a server of another version.
+ */
+export async function pendingCloudMigrations(database: Kysely<CloudDatabase>): Promise<string[]> {
+  const migrator = new Migrator({ db: database, provider: new CloudMigrationProvider() })
+  return (await migrator.getMigrations())
+    .filter((migration) => migration.executedAt === undefined)
+    .map((migration) => migration.name)
+}
+
 export async function migrateCloudDatabase(
   database: Kysely<CloudDatabase>,
   authMigration?: CloudAuthMigration

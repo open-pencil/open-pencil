@@ -101,15 +101,15 @@ When a server update needs a newer editor, set `deployment.minimum_editor_versio
 
 ## The first administrator
 
-Set `[authentication.enrollment] mode = "approval"` for a controlled deployment: a verified identity then creates a pending request that an administrator reviews. Startup never grants roles, so bootstrap the first operator from a repository checkout that reads the same configuration and secrets and can reach the server's database at `DATABASE_URL`:
+Set `[authentication.enrollment] mode = "approval"` for a controlled deployment: a verified identity then creates a pending request that an administrator reviews. Startup never grants roles, so bootstrap the first operator from a repository checkout that can reach the server's database. The command needs only `DATABASE_URL`, and refuses a database the server's version has not migrated yet:
 
 ```sh
-bun --filter @open-pencil/cloud admin approve owner@example.com
+DATABASE_URL=postgres://… bun --filter @open-pencil/cloud admin approve owner@example.com
 # after that person signs in once
-bun --filter @open-pencil/cloud admin grant owner@example.com
+DATABASE_URL=postgres://… bun --filter @open-pencil/cloud admin grant owner@example.com
 ```
 
-Deployment administrators manage enrollment and users in the server's administration pages. They are separate from workspace administrators.
+From then on, deployment administrators approve requests and grant or revoke the role in the server's administration pages, which ask for two-step sign-in first; keep the command for when no administrator can sign in. Deployment administrators are separate from workspace administrators.
 
 ## Terms and privacy
 
