@@ -66,6 +66,7 @@
     "fork:pin": "bun tools/release/fork-releases/src/cli.ts pin",
     "dev": "vite",
     "dev:portless": "portless run vite",
+    "cloud:admin": "bun tools/ci/cloud-deploy/src/admin.ts",
     "cloud:dev": "bun tools/dev/cloud/src/index.ts up",
     "cloud:dev:down": "bun tools/dev/cloud/src/index.ts down",
     "build": "bun run build:packages && bun run lint && vite build",
