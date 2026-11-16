@@ -222,17 +222,19 @@ describe('an empty last line after a line break', () => {
   )
 
   test.each(breaks)(
-    '%s, %s %s: the saved line widths take no spacing off it',
+    '%s, %s %s: the saved lines end at the closing break, and a blank one takes no spacing off',
     (_, align, __, value, spacing) => {
       const fontProvider = expectDefined(renderer().fontProvider, 'font provider')
       const shaped = expectDefined(
         shapeText(canvasKit(), fontProvider, text(boxed(value, align, spacing))),
         'shaped'
       )
-      const last = expectDefined(shaped.baselines.at(-1), 'last baseline')
-      expect(last.width).toBe(0)
+      // Figma saves no baseline for the empty line after a closing break.
+      expect(shaped.baselines.at(-1)?.endCharacter).toBe(value.length)
       for (const baseline of shaped.baselines) {
-        expect(baseline.width).toBeGreaterThanOrEqual(0)
+        const blank = value.slice(baseline.firstCharacter, baseline.endCharacter) === '\n'
+        if (blank) expect(baseline.width).toBe(0)
+        else expect(baseline.width).toBeGreaterThan(0)
       }
     }
   )
@@ -307,7 +309,7 @@ describe('the line a text index is on', () => {
 })
 
 describe('the caret after the last character', () => {
-  test.each(['e\nz', 'é\nz', 'шрифт\nтекст', 'Hello\n'])(
+  test.each(['e\nz', 'é\nz', 'шрифт\nтекст', 'Hello\n', 'Hello\n\n'])(
     '%j: Home and End move along the last line',
     (value) => {
       const editor = editorOn(text(boxed(value, 'LEFT', pixels(4))))
@@ -321,6 +323,22 @@ describe('the caret after the last character', () => {
       editor.moveToLineEnd()
       expect(state.cursor).toBe(value.length)
       editor.stop()
+    }
+  )
+})
+
+describe('the lines of a text', () => {
+  test.each(['Hello\n', 'Hello\n\n', 'a\nb\n', 'Hi there\nfoo  \nbar'])(
+    '%j: each starts where the one before ends, and an empty last line at the end',
+    (value) => {
+      const layout = laidOut(boxed(value, 'LEFT', pixels(4)))
+      const lines = layout.getLineMetrics()
+      for (const [index, line] of lines.entries()) {
+        expect(line.startIndex).toBe(index === 0 ? 0 : lines[index - 1].endIncludingNewline)
+        expect(line.endExcludingWhitespaces).toBeGreaterThanOrEqual(line.startIndex)
+      }
+      if (value.endsWith('\n')) expect(lines.at(-1)?.startIndex).toBe(value.length)
+      layout.delete()
     }
   )
 })

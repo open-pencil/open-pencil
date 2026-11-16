@@ -304,12 +304,20 @@ export class TextLayout {
       const metrics = block.metrics
       const boxes = this.placements.get(block)?.boxes
       const blockEnd = block.start + block.length
+      // Skia starts the empty line after a closing line break at that break; a line starts where
+      // the one before it ends, its line break included.
+      let previousEnd = block.start
       for (const [lineIndex, line] of metrics.entries()) {
         const lastOfBlock = lineIndex === metrics.length - 1
         const endsAtNewline = lastOfBlock && blockIndex < visible.length - 1
         // A first-line indent is room before the text, not part of the line.
         const indent = lineIndex === 0 ? block.leadWidth : 0
         const box = boxes?.[lineIndex]
+        const startIndex = Math.max(previousEnd, this.toTextIndex(block, line.startIndex))
+        const endIncludingNewline = endsAtNewline
+          ? blockEnd + 1
+          : this.toTextIndex(block, line.endIncludingNewline)
+        previousEnd = endIncludingNewline
         this.lines.push({
           ...line,
           ...(box && {
@@ -317,12 +325,13 @@ export class TextLayout {
             descent: box.height - box.ascent,
             height: box.height
           }),
-          startIndex: this.toTextIndex(block, line.startIndex),
-          endIndex: this.toTextIndex(block, line.endIndex),
-          endExcludingWhitespaces: this.toTextIndex(block, line.endExcludingWhitespaces),
-          endIncludingNewline: endsAtNewline
-            ? blockEnd + 1
-            : this.toTextIndex(block, line.endIncludingNewline),
+          startIndex,
+          endIndex: Math.max(startIndex, this.toTextIndex(block, line.endIndex)),
+          endExcludingWhitespaces: Math.max(
+            startIndex,
+            this.toTextIndex(block, line.endExcludingWhitespaces)
+          ),
+          endIncludingNewline,
           isHardBreak: endsAtNewline || line.isHardBreak,
           width: block.empty ? 0 : line.width - indent,
           left: line.left + block.x + (block.rtl ? 0 : indent),
