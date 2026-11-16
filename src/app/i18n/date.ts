@@ -1,3 +1,9 @@
+import {
+  fromDate,
+  getLocalTimeZone,
+  toCalendarDate,
+  type CalendarDate
+} from '@internationalized/date'
 import { createSharedComposable, useNow } from '@vueuse/core'
 
 import { useI18n } from '@open-pencil/vue/i18n'
@@ -25,9 +31,11 @@ type DateInput = Date | string | number | null | undefined
 const MINUTE = 60_000
 const HOUR = 60 * MINUTE
 const DAY = 24 * HOUR
-const WEEK = 7 * DAY
+/** Days back that still read as "yesterday" or "3 days ago" before a date takes over. */
+const RELATIVE_DAYS = 7
 
 const formats = new Map<string, Intl.DateTimeFormat>()
+const relativeFormats = new Map<string, Intl.RelativeTimeFormat>()
 
 function dateFormat(format: DateFormat, locale: string): Intl.DateTimeFormat {
   const key = `${locale}\u0000${format}`
@@ -38,6 +46,19 @@ function dateFormat(format: DateFormat, locale: string): Intl.DateTimeFormat {
   }
   return found
 }
+
+function relativeFormat(locale: string): Intl.RelativeTimeFormat {
+  let found = relativeFormats.get(locale)
+  if (!found) {
+    found = new Intl.RelativeTimeFormat(locale, { numeric: 'auto', style: 'short' })
+    relativeFormats.set(locale, found)
+  }
+  return found
+}
+
+/** The calendar day a moment falls on where the person is. */
+const localDayOf = (time: number): CalendarDate =>
+  toCalendarDate(fromDate(new Date(time), getLocalTimeZone()))
 
 function timeOf(value: DateInput): number | null {
   if (value === null || value === undefined || value === '') return null
@@ -59,16 +80,22 @@ export function formatTimeOrDay(value: DateInput, now: number, locale: string): 
   return dateFormat(today ? 'time' : 'dayTime', locale).format(time)
 }
 
-/** "now", "5 min. ago", "3 hr. ago", "yesterday", then a short date; empty for a bad date. */
+/**
+ * "now", "5 min. ago", "3 hr. ago", then "yesterday" or "3 days ago" by calendar day, then a short
+ * date; empty for a bad date. Days count midnights where the person is, not 24-hour spans, so
+ * something from late the day before yesterday never reads as "yesterday".
+ */
 export function formatRelativeTime(value: DateInput, now: number, locale: string): string {
   const time = timeOf(value)
   if (time === null) return ''
   const elapsed = Math.max(0, now - time)
-  const relative = new Intl.RelativeTimeFormat(locale, { numeric: 'auto', style: 'short' })
+  const relative = relativeFormat(locale)
   if (elapsed < MINUTE) return relative.format(0, 'second')
   if (elapsed < HOUR) return relative.format(-Math.floor(elapsed / MINUTE), 'minute')
   if (elapsed < DAY) return relative.format(-Math.floor(elapsed / HOUR), 'hour')
-  if (elapsed < WEEK) return relative.format(-Math.floor(elapsed / DAY), 'day')
+  // A day may run 25 hours when the clocks change, so a full day ago is at least yesterday.
+  const days = Math.max(1, localDayOf(now).compare(localDayOf(time)))
+  if (days < RELATIVE_DAYS) return relative.format(-days, 'day')
   return dateFormat('day', locale).format(time)
 }
 
