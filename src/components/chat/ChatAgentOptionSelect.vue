@@ -58,7 +58,7 @@ const selectedLabel = computed(
         />
         <icon-lucide-list-checks v-else :class="ui.triggerIcon()" aria-hidden="true" />
         <span :class="thinking.label()">{{ selectedLabel }}</span>
-        <icon-lucide-chevron-down :class="ui.triggerChevron()" aria-hidden="true" />
+        <icon-lucide-chevron-down :class="thinking.agentChevron()" aria-hidden="true" />
       </button>
     </template>
   </AppSelect>
