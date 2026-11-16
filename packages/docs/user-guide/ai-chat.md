@@ -95,6 +95,19 @@ The assistant can verify its work visually. With `export_image`, on by default, 
 
 Each AI edit's change preview also offers **Review this change**, which asks the Review model whether that edit improved the design: what got better, what got worse, and what was lost, judged from the images of the changed region before and after it and the layers' JSX, or from the JSX alone for a model without image input or an edit kept without images. The review appears in the conversation as a card, with each finding linking to its layer. No model reads it on its own: **Fix these** sends its findings to the Design model as your message. `/review` asks the Review model whichever model or agent holds the chat, so an ACP agent's own `/review` is not offered. Pi cannot review.
 
+## Prompts
+
+**Settings → Prompts** holds the instructions OpenPencil gives its models, for you to change:
+
+::: v-pre
+
+- **Design agent**: your own instructions for the chat, added after OpenPencil's, or, with **Replace OpenPencil's**, in their place. **Start from OpenPencil's** puts OpenPencil's instructions in the field to edit. The design JSX reference always follows, since the model needs it to write layers; without OpenPencil's instructions it may use its tools poorly. A change applies to chats started afterwards.
+- **Review**, **Chat titles**, and **Compaction summaries**: the prompts for design reviews, conversation names, and the summaries that compact a conversation. They are [Knap](https://knap.md) templates: `{{ focus }}` puts a value in, and `{% if sees_images %}…{% endif %}` includes text only when it applies. Each lists the variables it can use, underlines what stops it rendering and variables it does not have, and previews how it reads with sample values. A prompt with errors is not used until they are fixed; OpenPencil's is used meanwhile.
+
+:::
+
+**Reset to default** brings back OpenPencil's prompt. A prompt left as OpenPencil's follows OpenPencil's updates.
+
 ## Context and compaction
 
 A model reads a limited amount of conversation at once, its context window. With a model the chat calls itself, the header shows how full the window is; click it for the token count, when the conversation compacts, and the Cloud credits left. When the window is nearly full, a bar over the message field offers to compact.

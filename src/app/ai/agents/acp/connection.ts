@@ -16,6 +16,7 @@ import {
   type AgentAuthStatus
 } from '@/app/ai/agents/acp/auth/status'
 import { spawnACPProcess, type ACPProcess } from '@/app/ai/agents/acp/process'
+import type { AgentChild } from '@/app/ai/agents/process'
 import { resolveSpawnTarget } from '@/app/ai/agents/setup/discovery'
 import { createDeferred } from '@/app/runtime/deferred'
 
@@ -73,7 +74,7 @@ export interface AgentConnectionOptions {
   /** Told when the agent exits without having been stopped. */
   onExit?: () => void
   /** Told the process once it runs, so its owner can stop an agent that is still starting. */
-  onProcess?: (child: ACPProcess['child']) => void
+  onProcess?: (child: AgentChild) => void
   /**
    * Answers the agent's permission requests. Left out, every request is refused, for a connection
    * in which nothing may run on its own.
@@ -91,7 +92,7 @@ export interface AgentConnectionOptions {
 export interface AgentConnection {
   /** Sends the agent requests and notifications. */
   agent: ClientContext
-  child: ACPProcess['child']
+  child: AgentChild
   /**
    * The request's answer, unless the agent exits or `signal` stops it first. The SDK leaves a
    * request pending when the agent's process exits, so every request waits through this.

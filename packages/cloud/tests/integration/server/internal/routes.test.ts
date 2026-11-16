@@ -10,6 +10,7 @@ import {
   DatabaseEntitlementSource,
   parseCloudServerConfig
 } from '#cloud/server'
+import { testClient } from 'hono/testing'
 import * as v from 'valibot'
 
 const SERVICE_TOKEN = 'billing-service-token-with-at-least-32-characters'
@@ -41,12 +42,16 @@ async function testApp() {
     objects: createMemoryObjectStore().store,
     resolveSession: async () => null
   })
-  const put = (id: string, body: unknown, token = SERVICE_TOKEN) =>
-    app.request(`/api/internal/accounts/${id}/entitlements`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify(body)
-    })
+  const entitlements = testClient(app).api.internal.accounts[':userId'].entitlements
+  const put = (
+    userId: string,
+    json: Parameters<typeof entitlements.$put>[0]['json'],
+    token = SERVICE_TOKEN
+  ) =>
+    entitlements.$put(
+      { param: { userId }, json },
+      { headers: { Authorization: `Bearer ${token}` } }
+    )
   const enabled = () =>
     new DatabaseEntitlementSource(runtime.database).boolean(
       { type: 'user', id: userId },

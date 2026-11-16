@@ -1,4 +1,4 @@
-import { parseRequestSharedImageLinks, parseResolveDocumentShare } from '#cloud/contract'
+import { requestSharedImageLinksSchema, resolveDocumentShareSchema } from '#cloud/contract'
 import type { CloudSessionResolver } from '#cloud/server/auth'
 import type { DocumentService } from '#cloud/server/documents'
 import type { DocumentSharingService } from '#cloud/server/sharing'
@@ -17,7 +17,7 @@ export function createPublicDocumentRoutes(
     .post(
       '/shares/:shareId/document',
       shareParams,
-      validatedJSON(parseResolveDocumentShare),
+      validatedJSON(resolveDocumentShareSchema),
       (context) =>
         sharingRoute(context, async () => {
           const resolution = await sharing.resolveShare(
@@ -34,7 +34,7 @@ export function createPublicDocumentRoutes(
     .post(
       '/shares/:shareId/images',
       shareParams,
-      validatedJSON(parseRequestSharedImageLinks),
+      validatedJSON(requestSharedImageLinksSchema),
       (context) =>
         sharingRoute(context, async () => {
           const { checksums, ...share } = context.req.valid('json')

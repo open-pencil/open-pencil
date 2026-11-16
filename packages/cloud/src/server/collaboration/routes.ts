@@ -1,4 +1,4 @@
-import { parseResolveDocumentShare } from '#cloud/contract'
+import { resolveDocumentShareSchema } from '#cloud/contract'
 import type { CloudActor, CloudSessionResolver } from '#cloud/server/auth'
 import type { CollaborationTicketService } from '#cloud/server/collaboration/service'
 import type { CloudDatabase } from '#cloud/server/db'
@@ -68,7 +68,7 @@ export function createPublicCollaborationRoutes(
   return new Hono().post(
     '/shares/:shareId/collaboration-ticket',
     shareParams,
-    validatedJSON(parseResolveDocumentShare),
+    validatedJSON(resolveDocumentShareSchema),
     async (context) => {
       try {
         return context.json({
