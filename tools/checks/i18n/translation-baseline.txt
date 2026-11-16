@@ -695,6 +695,12 @@ pl:cloudPortal.siteCopyright
 pt-br:cloudPortal.siteCopyright
 ru:cloudPortal.siteCopyright
 zh-cn:cloudPortal.siteCopyright
+de:updates.channelNightly
+fr:updates.channelStable
+fr:updates.channelNightly
+it:updates.channelNightly
+pl:updates.channelNightly
+pt-br:updates.channelNightly
 de:panels.noiseMono
 de:panels.noiseDuo
 de:panels.noiseMulti

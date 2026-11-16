@@ -1,4 +1,3 @@
-import { check } from '@tauri-apps/plugin-updater'
 import { promiseTimeout } from '@vueuse/core'
 import type { Ref } from 'vue'
 
@@ -6,6 +5,8 @@ import { appPreferences } from '@/app/settings/preferences/store'
 import { toast } from '@/app/shell/ui'
 import { canSelfUpdate } from '@/app/tauri/capabilities'
 
+import { resolveUpdateChannel } from './channel'
+import { checkUpdateChannel } from './feed'
 import { updateFailureText, type UpdaterMessages } from './messages'
 import { openUpdaterWindow } from './window'
 
@@ -51,7 +52,9 @@ export function resetStartupUpdateCheckForTests(): void {
 // window checks again for its own handle, then shows the notes and installs.
 async function runUpdateCheck(silent: boolean, messages: Ref<UpdaterMessages>) {
   try {
-    const update = await check()
+    const update = await checkUpdateChannel(
+      resolveUpdateChannel(appPreferences.value.updates.channel)
+    )
     if (!update) {
       if (!silent) toast.info(messages.value.upToDate)
       return

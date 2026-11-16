@@ -9,6 +9,7 @@ mod launch;
 mod menu;
 mod network;
 mod system;
+mod updates;
 
 use capabilities::DesktopCapabilities;
 use credentials::{
@@ -125,6 +126,7 @@ pub fn run() {
             launch::take_pending_rooms,
             system::env::sharing_disabled_by_env,
             system::crash::take_last_panic,
+            updates::check_for_update,
             launch::take_pending_cloud_links,
             system::env::webview_version
         ])

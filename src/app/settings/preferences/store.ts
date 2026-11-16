@@ -18,6 +18,10 @@ import { DEFAULT_RECENT_FILES_LIMIT } from '@/app/recent-files/limit'
 import { recentFilesLimitSchema } from '@/app/recent-files/schema'
 import { DEFAULT_ACCENT } from '@/app/shell/accent/palette'
 import { accentPreferenceSchema, type AccentPreference } from '@/app/shell/accent/schema'
+import {
+  UPDATE_CHANNEL_PREFERENCES,
+  type UpdateChannelPreference
+} from '@/app/shell/updater/channel'
 
 export const INTERFACE_SCALES = [100, 110, 125, 150] as const
 export type InterfaceScale = (typeof INTERFACE_SCALES)[number]
@@ -113,6 +117,8 @@ export interface PromptPreferences {
 export interface UpdatePreferences {
   /** Silent check a few seconds after the desktop app opens. */
   checkOnStartup: boolean
+  /** Stable releases or nightly builds; `build` follows the installed build. */
+  channel: UpdateChannelPreference
 }
 
 export interface AppPreferences {
@@ -195,7 +201,7 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
   sharing: { dailyPing: true, usageStats: 'unset' },
   donation: { promptAfter: null },
   notifications: { agentNeedsInput: true, agentFinished: false, agentFailed: false },
-  updates: { checkOnStartup: true },
+  updates: { checkOnStartup: true, channel: 'build' },
   prompts: { review: null, title: null, summary: null, design: { mode: 'add', text: '' } }
 }
 
@@ -300,7 +306,8 @@ const appPreferencesSchema = section({
     agentFailed: v.fallback(v.boolean(), defaults.notifications.agentFailed)
   }),
   updates: section({
-    checkOnStartup: v.fallback(v.boolean(), defaults.updates.checkOnStartup)
+    checkOnStartup: v.fallback(v.boolean(), defaults.updates.checkOnStartup),
+    channel: v.fallback(v.picklist(UPDATE_CHANNEL_PREFERENCES), defaults.updates.channel)
   }),
   prompts: section({
     review: v.fallback(v.nullable(v.string()), null),
@@ -429,6 +436,13 @@ export function updateStartupUpdateCheck(checkOnStartup: boolean): void {
   appPreferences.value = {
     ...appPreferences.value,
     updates: { ...appPreferences.value.updates, checkOnStartup }
+  }
+}
+
+export function updateUpdateChannel(channel: UpdateChannelPreference): void {
+  appPreferences.value = {
+    ...appPreferences.value,
+    updates: { ...appPreferences.value.updates, channel }
   }
 }
 
