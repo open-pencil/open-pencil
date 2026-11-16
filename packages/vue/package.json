@@ -456,6 +456,7 @@
     "url": "git+https://github.com/open-pencil/open-pencil.git",
     "directory": "packages/vue"
   },
+  "funding": "https://ko-fi.com/dannote",
   "publishConfig": {
     "access": "public",
     "provenance": true
