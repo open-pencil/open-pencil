@@ -398,6 +398,9 @@ export const cloudMessageDefaults = {
   communityLinkFailed: 'This document isn’t in the gallery any more.',
   communityBanner: 'A community example, open read-only.',
   communitySaveCopy: 'Save a copy',
+  betaBanner:
+    'OpenPencil Cloud is in beta, and some features may not work yet. The desktop app needs the beta release.',
+  betaDownload: 'Download beta',
   savePublicLabel: 'Public',
   savePublicHeading: 'Anyone can open what you save here',
   savePublicDescription:

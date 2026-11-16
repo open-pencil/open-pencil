@@ -262,6 +262,8 @@
   "communityLinkFailed": "Dieses Dokument ist nicht mehr in der Galerie.",
   "communityBanner": "Ein Community-Beispiel, schreibgeschützt geöffnet.",
   "communitySaveCopy": "Kopie speichern",
+  "betaBanner": "OpenPencil Cloud ist in der Beta, manche Funktionen arbeiten noch nicht. Die Desktop-App braucht die Beta-Version.",
+  "betaDownload": "Beta herunterladen",
   "savePublicLabel": "Öffentlich",
   "savePublicHeading": "Was du hier speicherst, kann jeder öffnen",
   "savePublicDescription": "Dieser Arbeitsbereich ist die Community-Galerie des Servers, Speichern hier veröffentlicht das Dokument.",
