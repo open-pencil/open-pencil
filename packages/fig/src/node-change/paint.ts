@@ -1,3 +1,5 @@
+import { clamp } from 'es-toolkit/math'
+
 import type { Effect as KiwiEffect, Paint, VariableAliasValue } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type {
@@ -15,7 +17,7 @@ import type {
   StrokeJoin
 } from '@open-pencil/scene-graph'
 import { BLACK, UNSET_GLASS, UNSET_NOISE, UNSET_TEXTURE } from '@open-pencil/scene-graph/constants'
-import type { Color, Matrix } from '@open-pencil/scene-graph/primitives'
+import type { Color, Matrix, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { hexToBytes } from './bytes'
 
@@ -275,25 +277,43 @@ export function convertEffects(effects?: KiwiEffect[]): Effect[] {
 function convertNoise(e: KiwiEffect): NoiseEffectParams {
   const noise: NoiseEffectParams = {
     noiseType: e.noiseType ?? UNSET_NOISE.noiseType,
-    noiseSize: { ...(e.noiseSize ?? UNSET_NOISE.noiseSize) },
-    density: e.density ?? UNSET_NOISE.density
+    noiseSize: grainSize(e.noiseSize, UNSET_NOISE.noiseSize),
+    density: finiteWithin(e.density, UNSET_NOISE.density, 0, 1)
   }
   // A duotone without a second colour draws both tones in its first, as the renderer does.
   if (noise.noiseType === 'DUOTONE')
     noise.secondaryColor = convertColor(e.secondaryColor ?? e.color)
-  if (noise.noiseType === 'MULTITONE') noise.opacity = e.opacity ?? 1
-  if (e.seed !== undefined) noise.seed = e.seed
+  if (noise.noiseType === 'MULTITONE') noise.opacity = finiteWithin(e.opacity, 1, 0, 1)
+  if (e.seed !== undefined && Number.isFinite(e.seed)) noise.seed = e.seed
   return noise
 }
 
 /** A grain effect's texture; its `radius` stays the effect's own. */
 function convertTexture(e: KiwiEffect): TextureEffectParams {
   const texture: TextureEffectParams = {
-    noiseSize: { ...(e.noiseSize ?? UNSET_TEXTURE.noiseSize) },
+    noiseSize: grainSize(e.noiseSize, UNSET_TEXTURE.noiseSize),
     clipToShape: e.clipToShape ?? UNSET_TEXTURE.clipToShape
   }
-  if (e.seed !== undefined) texture.seed = e.seed
+  if (e.seed !== undefined && Number.isFinite(e.seed)) texture.seed = e.seed
   return texture
+}
+
+/** The most Figma lets a grain size be on either axis. */
+const MAX_GRAIN_SIZE = 100
+
+/**
+ * `value` held within Figma's range for it, or `fallback` where a file stores no number there:
+ * a damaged or hand-made record must not reach the renderer as NaN.
+ */
+function finiteWithin(value: number | undefined, fallback: number, min: number, max: number) {
+  return value !== undefined && Number.isFinite(value) ? clamp(value, min, max) : fallback
+}
+
+function grainSize(size: Vector | undefined, fallback: Vector): Vector {
+  return {
+    x: finiteWithin(size?.x, fallback.x, 0, MAX_GRAIN_SIZE),
+    y: finiteWithin(size?.y, fallback.y, 0, MAX_GRAIN_SIZE)
+  }
 }
 
 function isBlur(type: KiwiEffect['type']): boolean {

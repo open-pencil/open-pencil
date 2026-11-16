@@ -65,6 +65,28 @@ describe('convertEffects', () => {
     expect(effects.map((effect) => effect.type)).toEqual(['DROP_SHADOW'])
   })
 
+  test('hold damaged noise and texture numbers within Figma’s ranges', () => {
+    const [noise, texture] = convertEffects([
+      {
+        type: 'NOISE',
+        visible: true,
+        noiseType: 'MULTITONE',
+        noiseSize: { x: Number.NaN, y: 400 },
+        density: Number.NaN,
+        opacity: 3,
+        seed: Number.POSITIVE_INFINITY
+      },
+      { type: 'GRAIN', visible: true, radius: 4, noiseSize: { x: -2, y: Number.NaN } }
+    ])
+    expect(noise.noise).toEqual({
+      noiseType: 'MULTITONE',
+      noiseSize: { x: 1, y: 100 },
+      density: 0,
+      opacity: 1
+    })
+    expect(texture.texture?.noiseSize).toEqual({ x: 0, y: 1 })
+  })
+
   test('a duotone without a second colour draws both tones in its first', () => {
     const red = { r: 1, g: 0, b: 0, a: 1 }
     const [duotone] = convertEffects([
