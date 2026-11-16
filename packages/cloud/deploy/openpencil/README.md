@@ -58,7 +58,7 @@ gh workflow run deploy-cloud.yml --ref master -f target=production
 ```
 
 Production deploys the commit of staging's newest deployment, whatever master is by then, and
-refuses while that deployment is waiting, running, or failed. A release deploys the same way, with
+refuses while that deployment is waiting, running, or failed, or while staging's Worker serves another commit, as after a rollback in Cloudflare, which GitHub does not record; deploy staging again then. A release deploys the same way, with
 `--ref vX.Y.Z` for staging.
 
 The environment's reviewers approve each run before it starts.

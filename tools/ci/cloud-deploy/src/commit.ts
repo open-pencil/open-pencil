@@ -21,8 +21,8 @@ export type DeployCommitOptions = {
   /** Redeploy what production serves instead of promoting staging: maintenance, or ending it. */
   keep: boolean
   github: GitHubGet
-  /** The commit production's Worker serves, from the tag each deploy gives it; none before tags. */
-  serving: () => Promise<string | undefined>
+  /** The commit a target's Worker serves, from the tag each deploy gives it; none before tags. */
+  serving: (target: CloudTarget) => Promise<string | undefined>
 }
 
 /**
@@ -39,7 +39,7 @@ export async function deployCommit(
   { dispatched, keep, github, serving }: DeployCommitOptions
 ): Promise<string> {
   if (target === 'staging') return dispatched
-  if (keep) return (await serving()) ?? dispatched
+  if (keep) return (await serving('production')) ?? dispatched
   const get = github
   const [newest] = v.parse(
     deploymentsSchema,
@@ -56,6 +56,13 @@ export async function deployCommit(
       `Staging's newest deployment, of ${newest.sha}, is ${status?.state ?? 'without a status'}; wait for it to succeed or deploy staging again`
     )
   }
+  // A rollback in Cloudflare leaves GitHub's record behind, so staging must serve what it names.
+  const staged = await serving('staging')
+  if (staged !== newest.sha) {
+    throw new Error(
+      `Staging serves ${staged ?? 'an untagged version'}, not ${newest.sha} that its newest deployment names; deploy staging again`
+    )
+  }
   return newest.sha
 }
 
@@ -69,7 +76,8 @@ const jsonSchema = v.pipe(v.string(), v.parseJson())
 
 /**
  * The commit a Worker serves: the tag of the version its current deployment sends every request
- * to. Undefined for a version without one, or while a gradual rollout splits traffic.
+ * to, or undefined for a version deployed before deploys were tagged. A gradual rollout that
+ * splits traffic serves no one commit, which is an error rather than a fallback.
  */
 export async function servingCommit(
   config: string,
@@ -84,7 +92,11 @@ export async function servingCommit(
     )
   const { versions } = v.parse(deploymentStatusSchema, await wrangler('deployments', 'status'))
   const [only] = versions
-  if (versions.length !== 1 || !only || only.percentage !== 100) return undefined
+  if (versions.length !== 1 || !only || only.percentage !== 100) {
+    throw new Error(
+      `${config} splits traffic between versions; finish or roll back that rollout first`
+    )
+  }
   const version = v.parse(versionSchema, await wrangler('versions', 'view', only.version_id))
   return version.annotations?.['workers/tag']
 }
@@ -109,7 +121,7 @@ export function gitHubGet(repository: string, token: string): GitHubGet {
  * when production promotes an older commit whose tooling had others.
  */
 if (import.meta.main) {
-  const [target = '', config = ''] = process.argv.slice(2)
+  const [target = ''] = process.argv.slice(2)
   const {
     GITHUB_OUTPUT,
     GITHUB_REF,
@@ -128,7 +140,8 @@ if (import.meta.main) {
     dispatched: GITHUB_SHA,
     keep: MAINTENANCE === 'true' || REDEPLOY === 'true',
     github: gitHubGet(GITHUB_REPOSITORY, GITHUB_TOKEN),
-    serving: () => servingCommit(config, process.cwd())
+    serving: (served) =>
+      servingCommit(`packages/cloud/deploy/openpencil/${served}/wrangler.jsonc`, process.cwd())
   })
   if (!(await isOnMaster(process.cwd(), commit))) {
     throw new Error(`${commit} is not on master`)

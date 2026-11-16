@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { deployCommit, servingCommit, type GitHubGet } from '#cloud-deploy/commit'
+import type { CloudTarget } from '#cloud-deploy/ref'
 
 import type { CommandRequest } from '@open-pencil/package-artifacts-tools'
 
@@ -24,8 +25,18 @@ function gitHub(deployments: { sha: string; states: string[] }[]): {
   return { get, paths }
 }
 
-function options(github: GitHubGet, serving?: string, keep = false) {
-  return { dispatched: DISPATCHED, keep, github, serving: async () => serving }
+/** What each Worker serves: by default staging serves what its newest deployment names. */
+function options(
+  github: GitHubGet,
+  serving: Partial<Record<CloudTarget, string>> = { staging: STAGED },
+  keep = false
+) {
+  return {
+    dispatched: DISPATCHED,
+    keep,
+    github,
+    serving: async (target: CloudTarget) => serving[target]
+  }
 }
 
 describe('deployCommit', () => {
@@ -55,11 +66,23 @@ describe('deployCommit', () => {
     )
   })
 
+  test.each([
+    ['rolled back in Cloudflare', 'd'.repeat(40)],
+    ['untagged', undefined]
+  ])('refuses to promote while staging is %s', async (_, served) => {
+    const { get } = gitHub([{ sha: STAGED, states: ['success'] }])
+    await expect(deployCommit('production', options(get, { staging: served }))).rejects.toThrow(
+      'deploy staging again'
+    )
+  })
+
   test('keeps the commit production serves for maintenance and its end, without asking staging', async () => {
     const { get, paths } = gitHub([{ sha: STAGED, states: ['failure'] }])
     const serving = 'c5d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9'
-    expect(await deployCommit('production', options(get, serving, true))).toBe(serving)
-    expect(await deployCommit('production', options(get, undefined, true))).toBe(DISPATCHED)
+    expect(await deployCommit('production', options(get, { production: serving }, true))).toBe(
+      serving
+    )
+    expect(await deployCommit('production', options(get, {}, true))).toBe(DISPATCHED)
     expect(paths).toEqual([])
   })
 })
@@ -92,7 +115,7 @@ describe('servingCommit', () => {
     ])
   })
 
-  test('names no commit for an untagged version or a split rollout', async () => {
+  test('names no commit for a version deployed before tags', async () => {
     expect(
       await servingCommit(
         'wrangler.jsonc',
@@ -100,14 +123,17 @@ describe('servingCommit', () => {
         wrangler({ versions: [{ version_id: 'v1', percentage: 100 }] }, { annotations: {} }).execute
       )
     ).toBeUndefined()
+  })
+
+  test('refuses a rollout that splits traffic, rather than guessing a commit', async () => {
     const split = {
       versions: [
         { version_id: 'v1', percentage: 50 },
         { version_id: 'v2', percentage: 50 }
       ]
     }
-    expect(
-      await servingCommit('wrangler.jsonc', '/repo', wrangler(split, {}).execute)
-    ).toBeUndefined()
+    await expect(
+      servingCommit('wrangler.jsonc', '/repo', wrangler(split, {}).execute)
+    ).rejects.toThrow('splits traffic')
   })
 })
