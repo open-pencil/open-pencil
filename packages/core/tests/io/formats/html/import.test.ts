@@ -279,6 +279,21 @@ describe('reading HTML', () => {
     expect(vectors(sized).map((vector) => [vector.width, vector.height])).toEqual([[16, 16]])
   })
 
+  test("applies an SVG's opacity once, and draws its text in the type the page's CSS gives it", async () => {
+    const { graph } = await readHTMLDocument(
+      `<style>text { font-size: 32px; font-family: '${TEST_FAMILY}' }</style>
+      <div><svg width="100" height="50" style="opacity:0.5"><rect width="10" height="10"/></svg>
+      <svg width="100" height="50"><text x="0" y="40">Hi</text></svg></div>`
+    )
+    const [box] = graph.getChildren(graph.getPages()[0].id)
+    const [faded, titled] = graph.getChildren(box.id)
+    const inside = (svg: SceneNode) => graph.flattenTree(svg.id).map(({ node }) => node)
+
+    expect(faded.opacity).toBe(0.5)
+    expect(inside(faded).map((node) => node.opacity)).toEqual([1])
+    expect(inside(titled).find((node) => node.type === 'TEXT')?.fontSize).toBe(32)
+  })
+
   test('centers a block capped by its maximum width at that width, keeping auto layout', async () => {
     const { graph } = await readHTMLDocument(
       `<div style="width:600px"><div style="max-width:300px;margin:0 auto">` +

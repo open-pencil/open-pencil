@@ -122,6 +122,7 @@ const DEFAULT_COMPUTED_PROPERTIES = [
   'stroke-opacity',
   'stroke-width',
   'text-align',
+  'text-anchor',
   'text-decoration-color',
   'text-decoration-line',
   'text-decoration-style',

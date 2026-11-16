@@ -66,4 +66,9 @@ describe('inline SVG import', () => {
       imported(svg({ viewBox: '0 0 40 20' }, { ...sized, 'aspect-ratio': 'auto 3 / 1' })).frame
     ).toMatchObject({ width: 30, height: 15 })
   })
+  it('lets a style of auto override a size attribute, the side then following the ratio', () => {
+    expect(
+      imported(svg({ height: '20', viewBox: '0 0 40 20' }, { width: '30px', height: 'auto' })).frame
+    ).toMatchObject({ width: 30, height: 15 })
+  })
 })

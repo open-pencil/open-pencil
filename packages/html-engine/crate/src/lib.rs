@@ -145,6 +145,7 @@ const PROPERTIES: &[&str] = &[
     "stroke-linecap",
     "stroke-linejoin",
     "stroke-dasharray",
+    "text-anchor",
 ];
 
 /// Properties reported as their computed values too, where the used values `style` reports lose

@@ -21,8 +21,8 @@ function viewBoxRatio(element: DesignElement): number | null {
 const DEFAULT_SVG_SIZE = { width: 300, height: 150 }
 
 /**
- * Sizes inline SVG as CSS sizes a replaced element: each side takes its style's size, else its
- * `width` or `height` attribute; a side still unsized follows the other by the box's
+ * Sizes inline SVG as CSS sizes a replaced element: each side takes its style's size, `auto`
+ * included, else its `width` or `height` attribute; a side still unsized follows the other by the box's
  * `aspect-ratio`, else the `viewBox` ratio, the SVG's own; one with nothing to follow takes the
  * default of 300 by 150.
  */
@@ -32,8 +32,11 @@ export function applySVGSize(
   style: DesignStyleDeclaration
 ): void {
   const attrs: Partial<Record<string, string>> = element.attrs
-  const sized = (name: 'width' | 'height') =>
-    parseCSSNumber(pickStyle(style, name)) ?? parseCSSNumber(attrs[name])
+  // A size the style gives, `auto` included, overrides the attribute, which counts only without it.
+  const sized = (name: 'width' | 'height') => {
+    const value = pickStyle(style, name)
+    return parseCSSNumber(value === undefined ? attrs[name] : value)
+  }
   const width = sized('width')
   const height = sized('height')
   const aspect = parseCSSAspectRatio(pickStyle(style, 'aspect-ratio'))

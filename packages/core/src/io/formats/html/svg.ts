@@ -1,4 +1,4 @@
-import { compact, isEmptyObject } from 'es-toolkit'
+import { compact, isEmptyObject, omit } from 'es-toolkit'
 
 import type { DesignDocument, DesignElement } from '@open-pencil/dom-css'
 import { serializeNode } from '@open-pencil/dom-css/export'
@@ -66,6 +66,14 @@ const INITIAL_PAINT: Readonly<Record<string, string>> = {
 }
 
 /**
+ * The text properties SVG `<text>` draws with, which it inherits from the page: the root takes
+ * whatever the page computed for it, since its own parent is HTML.
+ */
+const TEXT_PROPERTIES = ['font-family', 'font-size', 'font-weight', 'font-style', 'text-anchor']
+
+const SVG_STYLE_PROPERTIES = [...Object.keys(INITIAL_PAINT), ...TEXT_PROPERTIES]
+
+/**
  * An SVG element with the paint its page's CSS gives it written into its `style`, and its
  * children likewise. A runtime computes the CSS cascade, which may leave out presentation
  * attributes such as `fill="green"`, as the HTML engine does; so only a value that differs from
@@ -74,17 +82,18 @@ const INITIAL_PAINT: Readonly<Record<string, string>> = {
  */
 function withComputedPaint(
   element: DesignElement,
-  inherited: Readonly<Record<string, string>>,
+  inherited: Readonly<Partial<Record<string, string>>>,
   rootColor: string | undefined
 ): DesignElement {
   const style = element.computedStyle
   const color = style?.color
-  const own: Record<string, string> = {}
+  const own: Partial<Record<string, string>> = {}
   const paint: Record<string, string> = {}
-  for (const property of Object.keys(INITIAL_PAINT)) {
+  for (const property of SVG_STYLE_PROPERTIES) {
     const value = style?.[property]?.trim()
-    own[property] = value ?? inherited[property]
-    if (value === undefined || value === inherited[property]) continue
+    const parent = inherited[property]
+    own[property] = value ?? parent
+    if (value === undefined || value === parent) continue
     // The artwork's color tints `currentColor`, so only paint in that color follows it; a shape
     // with a color of its own keeps the paint it resolved to.
     const isColor = property === 'fill' || property === 'stroke'
@@ -128,14 +137,23 @@ function svgMarkup(
     withComputedPaint(target, INITIAL_PAINT, color)
   )
   const defs: DesignElement = { type: 'element', tagName: 'defs', attrs: {}, children: outside }
-  // A shape nothing paints is black, as in a browser, rather than in the icon's color.
+  // A shape nothing paints is black, as in a browser, rather than in the icon's color. The
+  // frame already takes the SVG's own opacity, so its artwork does not apply it again.
+  // A parsed inline style is the element's style, which the serializer writes in its place.
+  const dropped = element.inlineStyle ? ['opacity', 'style'] : ['opacity']
   const attrs = {
     fill: 'black',
-    ...element.attrs,
+    ...omit(element.attrs, dropped),
     width: String(box.width),
     height: String(box.height)
   }
-  const painted = withComputedPaint({ ...element, attrs }, INITIAL_PAINT, color)
+  const root = {
+    ...element,
+    attrs,
+    inlineStyle: element.inlineStyle && omit(element.inlineStyle, ['opacity']),
+    computedStyle: element.computedStyle && omit(element.computedStyle, ['opacity'])
+  }
+  const painted = withComputedPaint(root, INITIAL_PAINT, color)
   const children = outside.length > 0 ? [defs, ...painted.children] : painted.children
   return serializeNode({ ...painted, children })
 }
