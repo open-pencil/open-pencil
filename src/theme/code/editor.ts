@@ -55,6 +55,9 @@ export function codeEditorTheme(dark: boolean) {
         '.cm-tooltip-autocomplete > ul': { borderRadius: '6px' },
         // A tooltip's template code in the editor's font, and what it means in the interface's.
         '.cm-tooltip-hover': { padding: '4px 8px', maxWidth: '24rem' },
+        // Narrow enough to sit beside the completion list in a dialog: with no room beside it,
+        // CodeMirror lays the info over the options below the selected one.
+        '.cm-completionInfo > div': { maxWidth: '16rem' },
         '.cm-tooltip-hover code, .cm-completionInfo code': {
           fontFamily: 'var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace)'
         },
@@ -122,7 +125,7 @@ export const codeViewerTheme = EditorView.theme({
 /** A prompt in Settings: prose on the input colour, scrolling past 18rem rather than growing. */
 export const promptEditorTheme = EditorView.theme({
   '&.cm-editor': { maxHeight: '18rem' },
-  '&': { fontSize: '11px', backgroundColor: 'var(--color-input)' },
+  '&': { fontSize: 'var(--text-2xs)', backgroundColor: 'var(--color-input)' },
   '.cm-gutters': { backgroundColor: 'var(--color-input)' },
   '.cm-placeholder': { color: 'var(--color-muted)' }
 })

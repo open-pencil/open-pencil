@@ -89,6 +89,27 @@ describe('checking a template', () => {
     expect(check.unknownVariables[0]?.line).toBe(1)
   })
 
+  test.each([
+    [
+      'set in one branch, read in another',
+      '{% if edit %}{% set note = "a" %}{% else %}{{ note }}{% endif %}',
+      ['note']
+    ],
+    [
+      'set in a branch, read after an if without else',
+      '{% if edit %}{% set note = "a" %}{% endif %}{{ note }}',
+      ['note']
+    ],
+    [
+      'set on every path, read after',
+      '{% if edit %}{% set note = "a" %}{% else %}{% set note = "b" %}{% endif %}{{ note }}',
+      []
+    ]
+  ])('knows a name %s', async (_, template, unknown) => {
+    const check = await checkTemplate('review', template)
+    expect(check.unknownVariables.map(({ message }) => message)).toEqual(unknown)
+  })
+
   test('knows the variables Knap gives each loop', async () => {
     const check = await checkTemplate(
       'title',

@@ -191,6 +191,11 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
   private agentDef: ACPAgentDef
   private cwd: string
   private sentContext = false
+  /**
+   * The Design prompt as it was when the chat started. A replacement session, after the agent
+   * restarted without resuming, gets this one too: a change in Settings applies to the next chat.
+   */
+  private readonly designPrompt = systemPrompt()
   private destroying = false
   /** The agent while it starts, before it becomes the session, so destroying can stop it. */
   private starting: AgentChild | null = null
@@ -271,7 +276,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     }
 
     const carriesContext = !this.sentContext
-    const promptText = carriesContext ? `${systemPrompt()}\n\n${text}` : text
+    const promptText = carriesContext ? `${this.designPrompt}\n\n${text}` : text
     this.sentContext = true
 
     const { connection, sessionId } = this.session

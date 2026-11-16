@@ -33,15 +33,19 @@ let knap: Promise<PromptKnap> | null = null
 
 /** Knap, loaded with the first prompt it fills or the first editor that asks; cached after. */
 function loadKnap(): Promise<PromptKnap> {
-  return (knap ??= import('knap').then(
-    ({ createEngine, standardFilters, standardFilterMetadata, tokenize }) => {
+  return (knap ??= import('knap')
+    .then(({ createEngine, standardFilters, standardFilterMetadata, tokenize }) => {
       const engine = createEngine({ filters: standardFilters })
       const filters = Object.keys(engine.filters)
         .sort()
         .map((name) => ({ name, example: standardFilterMetadata[name]?.example }))
       return { engine, filters, tokenize }
-    }
-  ))
+    })
+    .catch((error: unknown) => {
+      // A failed load, such as the chunk not arriving offline, is tried again next time.
+      knap = null
+      throw error
+    }))
 }
 
 /** The engine that fills prompts. */
@@ -133,13 +137,21 @@ function unknownNames(nodes: readonly ASTNode[], known: Set<string>): TemplatePr
         read(node.value, bound)
         bound.add(node.variable)
       } else if (node.type === 'if') {
-        read(node.condition, bound)
-        walk(node.consequent, bound)
-        for (const branch of node.elseifs) {
-          read(branch.condition, bound)
-          walk(branch.body, bound)
+        // Each branch sets names for itself; after the `if`, a name is set only when every path
+        // sets it, which takes an `else`.
+        const paths = [{ condition: node.condition, body: node.consequent }, ...node.elseifs]
+        const branches = paths.map(({ condition, body }) => {
+          read(condition, bound)
+          const branch = new Set(bound)
+          walk(body, branch)
+          return branch
+        })
+        if (node.alternate) {
+          const otherwise = new Set(bound)
+          walk(node.alternate, otherwise)
+          for (const name of otherwise)
+            if (branches.every((branch) => branch.has(name))) bound.add(name)
         }
-        if (node.alternate) walk(node.alternate, bound)
       } else if (node.type === 'for') {
         read(node.iterable, bound)
         walk(node.body, new Set([...bound, ...loopNames(node.iterator)]))

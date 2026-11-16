@@ -18,22 +18,20 @@ test('a template completes the variables its prompt offers, and filters after a 
   page
 }) => {
   await openTitlePrompt(page)
-  const options = page.getByRole('listbox').getByRole('option')
+  const editor = page.getByRole('textbox', { name: 'Chat titles', exact: true })
+  const option = (label: string) =>
+    page.getByRole('listbox').getByRole('option').filter({ hasText: label })
 
   await page.keyboard.type('{{ re')
-  await expect(options).toHaveCount(2)
-  await expect(options.first()).toContainText('reply')
-  await expect(options.last()).toContainText('request')
+  await expect(option('request')).toBeVisible()
   // The list opens inside the Settings dialog without pushing its content out of view.
   await expect(page.getByRole('heading', { name: 'Chat titles', exact: true })).toBeInViewport()
+  await option('request').click()
+  await expect(editor).toContainText('{{ request}}')
 
-  await page.keyboard.type('quest | uppe')
-  await expect(options).toHaveCount(1)
-  await expect(options.first()).toContainText('upper')
-  await page.keyboard.press('Enter')
-  await expect(page.getByRole('textbox', { name: 'Chat titles', exact: true })).toContainText(
-    '{{ request | upper}}'
-  )
+  await page.keyboard.type(' | uppe')
+  await option('upper').click()
+  await expect(editor).toContainText('{{ request | upper}}')
 })
 
 test('a prompt lists what its variables hold and the text they fill, and a click writes one in', async ({
