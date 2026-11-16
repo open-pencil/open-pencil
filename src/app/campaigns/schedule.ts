@@ -9,6 +9,8 @@ import type {
   CampaignPlacement
 } from '@open-pencil/feedback/contract'
 
+import type { CampaignRecordPreferences } from '@/app/settings/preferences/store'
+
 const DAY = 24 * 60 * 60 * 1000
 
 /**
@@ -17,13 +19,11 @@ const DAY = 24 * 60 * 60 * 1000
  */
 export const PROMPT_GAP = 7 * DAY
 
-/** What the install did with one campaign, kept on the device and never sent. */
-export type CampaignRecord = {
-  /** When the person chose Not now or closed it. */
-  dismissedAt?: number
-  /** When the person followed its action. */
-  actedAt?: number
-}
+/**
+ * What scheduling reads of a campaign: everything but what it says. The app's own campaigns,
+ * which speak its translations, have no text of their own.
+ */
+export type ScheduledCampaign = Omit<Campaign, 'content'>
 
 /** What a campaign's audience and timing are checked against. */
 export type CampaignContext = {
@@ -32,13 +32,14 @@ export type CampaignContext = {
   installedAt: number
   build: Pick<Build, 'version' | 'platform' | 'app'>
   cloud: 'signed-in' | 'signed-out'
-  records: Readonly<Record<string, CampaignRecord>>
+  /** What the install did with each campaign, kept on the device and never sent. */
+  records: Readonly<Record<string, CampaignRecordPreferences>>
   /** When any campaign last showed as a prompt, and whether one has this launch. */
   lastPromptAt: number | null
   promptedThisLaunch: boolean
 }
 
-function inAudience(campaign: Campaign, { build, cloud }: CampaignContext): boolean {
+function inAudience(campaign: ScheduledCampaign, { build, cloud }: CampaignContext): boolean {
   const { apps, platforms, minVersion, maxVersion, cloud: wanted } = campaign.audience
   if (apps && !apps.includes(build.app)) return false
   if (platforms && !platforms.includes(build.platform)) return false
@@ -49,7 +50,10 @@ function inAudience(campaign: Campaign, { build, cloud }: CampaignContext): bool
   return !wanted || wanted === cloud
 }
 
-function isDue(campaign: Campaign, { now, installedAt, records }: CampaignContext): boolean {
+function isDue(
+  campaign: ScheduledCampaign,
+  { now, installedAt, records }: CampaignContext
+): boolean {
   if (campaign.startsAt && now < Date.parse(campaign.startsAt)) return false
   if (campaign.endsAt && now >= Date.parse(campaign.endsAt)) return false
   const { afterInstallDays, repeatAfterDays, afterActionDays } = campaign.timing
@@ -75,11 +79,11 @@ function isDue(campaign: Campaign, { now, installedAt, records }: CampaignContex
  * whose timing is due, the highest priority first. The prompt also waits `PROMPT_GAP` after the
  * last prompt of any campaign, and shows at most once a launch.
  */
-export function dueCampaign(
-  campaigns: readonly Campaign[],
+export function dueCampaign<TCampaign extends ScheduledCampaign>(
+  campaigns: readonly TCampaign[],
   placement: CampaignPlacement,
   context: CampaignContext
-): Campaign | null {
+): TCampaign | null {
   if (placement === 'prompt') {
     if (context.promptedThisLaunch) return null
     if (context.lastPromptAt !== null && context.now < context.lastPromptAt + PROMPT_GAP)

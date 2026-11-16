@@ -78,9 +78,27 @@ export interface SharingPreferences {
 export const AI_SETUP_STATES = ['pending', 'done'] as const
 export type AISetupState = (typeof AI_SETUP_STATES)[number]
 
-/** When the donation question may show again, as a time in milliseconds; `null` before it was ever due. */
+/**
+ * When the donation question may show again, as a time in milliseconds; `null` before it was ever
+ * due. Builds before campaigns kept it; the campaigns carry it over once and clear it.
+ */
 export interface DonationPreferences {
   promptAfter: number | null
+}
+
+/** What one campaign was answered with, as times in milliseconds, kept on the device. */
+export interface CampaignRecordPreferences {
+  /** When the person chose Not now or closed it. */
+  dismissedAt?: number
+  /** When the person followed its action. */
+  actedAt?: number
+}
+
+/** The campaign clock: when the install first ran, its last prompt, and each campaign's answers. */
+export interface CampaignPreferences {
+  installedAt: number | null
+  lastPromptAt: number | null
+  records: Record<string, CampaignRecordPreferences>
 }
 
 /** Which events send a system notification while OpenPencil is out of view. */
@@ -154,6 +172,7 @@ export interface AppPreferences {
   }
   sharing: SharingPreferences
   donation: DonationPreferences
+  campaigns: CampaignPreferences
   notifications: NotificationPreferences
   updates: UpdatePreferences
   prompts: PromptPreferences
@@ -194,6 +213,7 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
   onboarding: { aiSetup: 'pending' },
   sharing: { dailyPing: true, usageStats: 'unset' },
   donation: { promptAfter: null },
+  campaigns: { installedAt: null, lastPromptAt: null, records: {} },
   notifications: { agentNeedsInput: true, agentFinished: false, agentFailed: false },
   updates: { checkOnStartup: true },
   prompts: { review: null, title: null, summary: null, design: { mode: 'add', text: '' } }
@@ -208,6 +228,8 @@ function section<TEntries extends v.ObjectEntries>(entries: TEntries) {
 }
 
 const defaults = DEFAULT_APP_PREFERENCES
+/** A moment as milliseconds since the epoch. */
+const timeSchema = v.pipe(v.number(), v.integer(), v.minValue(0))
 const snapping = defaults.editing.snapping
 
 /** Stored preferences, read field by field so one bad value keeps the rest. */
@@ -294,6 +316,17 @@ const appPreferencesSchema = section({
       defaults.donation.promptAfter
     )
   }),
+  campaigns: section({
+    installedAt: v.fallback(v.nullable(timeSchema), defaults.campaigns.installedAt),
+    lastPromptAt: v.fallback(v.nullable(timeSchema), defaults.campaigns.lastPromptAt),
+    records: v.fallback(
+      v.record(
+        v.string(),
+        v.object({ dismissedAt: v.optional(timeSchema), actedAt: v.optional(timeSchema) })
+      ),
+      () => ({})
+    )
+  }),
   notifications: section({
     agentNeedsInput: v.fallback(v.boolean(), defaults.notifications.agentNeedsInput),
     agentFinished: v.fallback(v.boolean(), defaults.notifications.agentFinished),
@@ -359,6 +392,13 @@ export function updateDonationPreferences(changes: Partial<DonationPreferences>)
   appPreferences.value = {
     ...appPreferences.value,
     donation: { ...appPreferences.value.donation, ...changes }
+  }
+}
+
+export function updateCampaignPreferences(changes: Partial<CampaignPreferences>): void {
+  appPreferences.value = {
+    ...appPreferences.value,
+    campaigns: { ...appPreferences.value.campaigns, ...changes }
   }
 }
 

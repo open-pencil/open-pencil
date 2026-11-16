@@ -113,6 +113,14 @@ export const CAMPAIGN_PLACEMENTS = [
 ] as const
 export type CampaignPlacement = (typeof CAMPAIGN_PLACEMENTS)[number]
 
+/**
+ * Campaigns the app ships with, by ID and kind, such as the donation ask official builds make
+ * when the server sends nothing. Ingest counts their events as it does the ones it serves, and a
+ * served campaign with the same ID replaces the app's own.
+ */
+export const BUILT_IN_CAMPAIGNS = { donation: 'donation' } as const
+export type BuiltInCampaignId = keyof typeof BUILT_IN_CAMPAIGNS
+
 /** A campaign's ID, which the server gives it; ingest forwards only the ones it still serves. */
 export const campaignIdSchema = v.pipe(v.string(), v.regex(/^[a-z0-9][a-z0-9-]{0,62}$/))
 

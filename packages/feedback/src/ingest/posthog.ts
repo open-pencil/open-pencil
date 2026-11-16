@@ -1,8 +1,14 @@
-import type { Campaign, UsageBatch, UsageEvent } from '#feedback/contract'
+import {
+  BUILT_IN_CAMPAIGNS,
+  type Campaign,
+  type UsageBatch,
+  type UsageEvent
+} from '#feedback/contract'
 import { omit } from 'es-toolkit'
 
 /**
- * The batch's events PostHog is sent: a campaign event only while its campaign is still served,
+ * The batch's events PostHog is sent: a campaign event only for a campaign it still serves or the
+ * app ships with,
  * so a campaign's ID is as closed a list as every other property, and with the campaign's kind,
  * which the Worker knows and the app need not send.
  */
@@ -10,7 +16,10 @@ export function servedEvents(
   events: UsageEvent[],
   campaigns: readonly Campaign[]
 ): (UsageEvent & { kind?: string })[] {
-  const served = new Map(campaigns.map((campaign) => [campaign.id, campaign]))
+  const served = new Map<string, { kind: string }>([
+    ...Object.entries(BUILT_IN_CAMPAIGNS).map(([id, kind]) => [id, { kind }] as const),
+    ...campaigns.map((campaign) => [campaign.id, campaign] as const)
+  ])
   return events.flatMap((event): (UsageEvent & { kind?: string })[] => {
     if (!('campaign' in event)) return [event]
     const campaign = served.get(event.campaign)

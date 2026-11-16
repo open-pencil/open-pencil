@@ -6,7 +6,6 @@ import { useDiagnosticsMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import campaignPromptTheme from '@/theme/campaigns/prompt'
-import donationTheme from '@/theme/donation'
 import promptTheme from '@/theme/sharing/prompt'
 import questionTheme from '@/theme/sharing/question'
 
@@ -24,7 +23,6 @@ const emit = defineEmits<{ dismiss: []; act: [] }>()
 const diagnostics = useDiagnosticsMessages()
 const prompt = tv(promptTheme)()
 const styles = tv(questionTheme)()
-const donation = tv(donationTheme)()
 const campaign = tv(campaignPromptTheme)()
 const headingId = useId()
 </script>
@@ -32,7 +30,7 @@ const headingId = useId()
 <template>
   <aside :class="prompt.root()" :aria-labelledby="headingId" data-test-id="campaign-prompt">
     <section :class="styles.root()">
-      <h3 :id="headingId" :class="donation.heading()">
+      <h3 :id="headingId" :class="campaign.heading()">
         <CampaignIcon :kind="kind" :class="campaign.icon()" />
         {{ content.title }}
       </h3>
