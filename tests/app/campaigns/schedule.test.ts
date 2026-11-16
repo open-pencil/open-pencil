@@ -8,7 +8,6 @@ import {
   campaignActionURL,
   campaignContent,
   dueCampaign,
-  PROMPT_GAP,
   type CampaignContext
 } from '@/app/campaigns/schedule'
 
@@ -105,11 +104,11 @@ describe('campaign schedule', () => {
   test('the prompt waits between campaigns and shows once a launch, whatever they ask', () => {
     const offer = campaign()
     const now = INSTALLED + 10 * DAY
+    // A week, as the app promises, not read from the rule under test.
+    const week = 7 * DAY
     expect(dueCampaign([offer], 'prompt', context({ promptedThisLaunch: true }))).toBeNull()
-    expect(
-      dueCampaign([offer], 'prompt', context({ lastPromptAt: now - PROMPT_GAP + 1 }))
-    ).toBeNull()
-    expect(dueCampaign([offer], 'prompt', context({ lastPromptAt: now - PROMPT_GAP }))).toBe(offer)
+    expect(dueCampaign([offer], 'prompt', context({ lastPromptAt: now - week + 1 }))).toBeNull()
+    expect(dueCampaign([offer], 'prompt', context({ lastPromptAt: now - week }))).toBe(offer)
     // Notes in a placement of their own are not prompts, so the gap does not hold them back.
     const note = campaign({ placement: 'share' })
     expect(dueCampaign([note], 'share', context({ promptedThisLaunch: true }))).toBe(note)
