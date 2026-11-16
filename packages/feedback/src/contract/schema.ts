@@ -92,6 +92,30 @@ export const CONSENT_SOURCES = ['welcome', 'prompt', 'settings'] as const
 export type ConsentSource = (typeof CONSENT_SOURCES)[number]
 
 /** Where a person chose to donate: the question the app asks, the File menu, or Settings. */
+/**
+ * Where the app can show a campaign. Each is drawn by the app, so a new one needs a release;
+ * campaigns for a placement an install does not know are ignored there, which lets the server
+ * aim at placements newer builds have.
+ */
+export const CAMPAIGN_PLACEMENTS = [
+  /** The corner prompt the donation question uses: one at a time, never twice a launch. */
+  'prompt',
+  /** A note at the top of Settings › Cloud, for an install that is signed out. */
+  'settings-cloud',
+  /** A note in Settings › Models, beside bringing a provider key. */
+  'settings-models',
+  /** A note in Settings › Integrations, beside web search. */
+  'settings-integrations',
+  /** A note in Settings › Usage. */
+  'settings-usage',
+  /** A note in the share dialog of a document that is not in Cloud. */
+  'share'
+] as const
+export type CampaignPlacement = (typeof CAMPAIGN_PLACEMENTS)[number]
+
+/** A campaign's ID, which the server gives it; ingest forwards only the ones it still serves. */
+export const campaignIdSchema = v.pipe(v.string(), v.regex(/^[a-z0-9][a-z0-9-]{0,62}$/))
+
 export const DONATION_SOURCES = ['prompt', 'menu', 'settings'] as const
 export type DonationSource = (typeof DONATION_SOURCES)[number]
 
@@ -171,7 +195,15 @@ export const usageEventSchema = v.variant('name', [
     name: v.literal('donate_clicked'),
     timestamp: timestampSchema,
     source: v.picklist(DONATION_SOURCES)
-  })
+  }),
+  ...(['campaign_shown', 'campaign_dismissed', 'campaign_acted'] as const).map((name) =>
+    v.strictObject({
+      name: v.literal(name),
+      timestamp: timestampSchema,
+      campaign: campaignIdSchema,
+      placement: v.picklist(CAMPAIGN_PLACEMENTS)
+    })
+  )
 ])
 export type UsageEvent = v.InferOutput<typeof usageEventSchema>
 export type UsageEventName = UsageEvent['name']

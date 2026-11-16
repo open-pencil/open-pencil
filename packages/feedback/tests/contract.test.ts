@@ -20,13 +20,17 @@ describe('contract descriptions', () => {
       'document_exported',
       'ai_reply_finished',
       'usage_stats_enabled',
-      'donate_clicked'
+      'donate_clicked',
+      'campaign_shown',
+      'campaign_dismissed',
+      'campaign_acted'
     ])
     for (const event of events) {
       expect(event.description).not.toBe('')
       for (const property of event.properties) {
         expect(property.description).not.toBe('')
-        expect(property.values.length).toBeGreaterThan(0)
+        // A campaign's ID is closed by the catalog the Worker serves, which ingest checks.
+        if (property.name !== 'campaign') expect(property.values.length).toBeGreaterThan(0)
       }
     }
     expect(events[1].properties).toEqual([
