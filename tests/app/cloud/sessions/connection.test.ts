@@ -35,6 +35,8 @@ let statusRequests = 0
 let locales: string[] = []
 /** Runs while the server answers for its workspaces, as a check is under way. */
 let duringCheck: (() => void) | undefined
+/** Runs while the server answers who is signed in. */
+let duringStatus: (() => Promise<void>) | undefined
 
 beforeEach(() => {
   answers = {}
@@ -42,11 +44,15 @@ beforeEach(() => {
   statusRequests = 0
   locales = []
   duringCheck = undefined
+  duringStatus = undefined
   spyOn(globalThis, 'fetch').mockImplementation(
     fetchStub(async (input, init) => {
       const url = new URL(input instanceof Request ? input.url : String(input))
       authorization.push(new Headers(init?.headers).get('Authorization'))
-      if (url.pathname === '/api/account/status') statusRequests += 1
+      if (url.pathname === '/api/account/status') {
+        statusRequests += 1
+        await duringStatus?.()
+      }
       if (url.pathname === '/api/workspaces') duringCheck?.()
       if (url.pathname === '/api/account/locale') {
         locales.push(
@@ -136,6 +142,15 @@ describe('Cloud connections', () => {
     await saveCloudSessionToken(target.id, 'device-token')
     expect((await refreshCloudConnection(target)).state).toBe('expired')
     expect(await readCloudSessionToken(target.id)).toBeNull()
+  })
+
+  test('keep a token a newer sign-in stored while the server turned the old one away', async () => {
+    const target = await server()
+    await saveCloudSessionToken(target.id, 'device-token')
+    answers['/api/account/status'] = { status: 200, body: { user, state: 'two-step' } }
+    duringStatus = () => saveCloudSessionToken(target.id, 'newer-token')
+    await refreshCloudConnection(target)
+    expect(await readCloudSessionToken(target.id)).toBe('newer-token')
   })
 
   test('call a remembered account whose session ended expired', async () => {

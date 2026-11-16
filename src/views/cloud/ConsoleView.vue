@@ -210,10 +210,15 @@ onMounted(() => void refreshWaiting())
 const adminPage = computed(() => personId.value !== null || isAdminSection(active.value))
 watch(
   () => adminPage.value && route.fullPath,
-  async (page) => {
+  async (page, _, onCleanup) => {
     if (!page) return
+    // An answer that comes after the person moved on, or left the console, decides nothing.
+    let current = true
+    onCleanup(() => {
+      current = false
+    })
     const mfa = (await portal.api.mfaStatus().catch(() => null))?.mfa
-    if (mfa?.required && mfa.enabled) {
+    if (current && route.fullPath === page && mfa?.required && mfa.enabled) {
       await router.replace({ path: CONFIRM_PAGE, query: { redirect: page } })
     }
   },

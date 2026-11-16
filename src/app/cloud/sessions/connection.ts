@@ -150,11 +150,20 @@ export function cloudPortalClient(
   })
 }
 
+/** Forgets a token the server turned away, unless a newer sign-in replaced it meanwhile. */
+async function clearCloudSessionTokenIfStill(serverId: string, token: string | null) {
+  if (token && (await readCloudSessionToken(serverId)) === token) {
+    await clearCloudSessionToken(serverId)
+  }
+}
+
 async function signedInConnection(
   server: CloudServer,
   discovery: CloudDiscovery
 ): Promise<CloudConnection> {
   const portal = cloudPortalClient(server, discovery)
+  // The token the answer is about: a newer sign-in may store another while the check runs.
+  const token = await readCloudSessionToken(server.id)
   let status: Awaited<ReturnType<typeof portal.accountStatus>>
   try {
     status = await portal.accountStatus()
@@ -163,7 +172,7 @@ async function signedInConnection(
       throw error
     }
     // A token the server no longer accepts cannot be used again; keep the account to sign back in.
-    if (await readCloudSessionToken(server.id)) await clearCloudSessionToken(server.id)
+    await clearCloudSessionTokenIfStill(server.id, token)
     return {
       ...INITIAL,
       state: server.account ? 'expired' : 'signed-out',
@@ -178,10 +187,10 @@ async function signedInConnection(
     image: status.user.image ?? null
   }
   rememberCloudAccount(server.id, account)
-  if (status.state === 'two-step' && (await readCloudSessionToken(server.id))) {
+  if (status.state === 'two-step' && token) {
     // A desktop app's own session counts as proved once a browser that proved it approved the
     // sign-in; one from before that never will, so the app signs in again.
-    await clearCloudSessionToken(server.id)
+    await clearCloudSessionTokenIfStill(server.id, token)
     return { ...INITIAL, state: 'expired', discovery, account }
   }
   if (status.state !== 'active') {

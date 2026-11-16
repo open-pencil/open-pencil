@@ -186,6 +186,26 @@ describe('two-step confirmation', () => {
     }
   })
 
+  test('counts a code checked on the two-step endpoint itself for the session that checked it', async () => {
+    const fixture = await createAccountAuthenticationFixture({ config })
+    try {
+      const account = await accountWithAuthenticator(fixture)
+      const held = await sessionWithoutSecondStep(fixture, account.userId)
+      const verified = await fixture.app.fetch(
+        accountAuthenticationRequest(
+          '/api/auth/two-factor/verify-totp',
+          { code: await account.code() },
+          undefined,
+          held
+        )
+      )
+      expect(verified.status).toBe(200)
+      expect(await accountState(fixture, held)).toBe('active')
+    } finally {
+      await fixture.close()
+    }
+  })
+
   test('leaves an account without a second step as it was', async () => {
     const fixture = await createAccountAuthenticationFixture({ config })
     try {

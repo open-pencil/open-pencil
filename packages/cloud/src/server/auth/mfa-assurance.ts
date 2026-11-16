@@ -167,8 +167,16 @@ export function createProofRecorder(
     current: () => Promise<{ session: { id: string }; user: { id: string } } | null>
   ): Promise<void> => {
     const method = signIns.get(path)
-    if (method) await recordResponseAssurance(response, method, database, assurance)
-    else if (path === paths.deviceToken) await recordDeviceAssurance(response, database, assurance)
+    if (method) {
+      const recorded = await recordResponseAssurance(response, method, database, assurance)
+      // A code checked for a session whose account already has the step does not replace the
+      // session, so it proves it for that one; a passkey sign-in always starts a session.
+      const session = !recorded && method !== 'passkey' ? await current() : null
+      if (session) {
+        await assurance.record({ sessionId: session.session.id, userId: session.user.id, method })
+      }
+    } else if (path === paths.deviceToken)
+      await recordDeviceAssurance(response, database, assurance)
     else if (path === paths.passkeyRegistration) {
       const session = await current()
       if (session) {
@@ -182,10 +190,6 @@ export function createProofRecorder(
   }
 }
 
-/**
- * Checks a second-step code through the two-step plugin's own endpoint, and records the session's
- * assurance when it passes.
- */
 /** Better Auth's words for a code that does not match. */
 const WRONG_CODES = new Set(['INVALID_CODE', 'INVALID_TWO_FACTOR_CODE', 'INVALID_BACKUP_CODE'])
 const authErrorSchema = v.pipe(
@@ -194,6 +198,10 @@ const authErrorSchema = v.pipe(
   v.object({ code: v.optional(v.string()) })
 )
 
+/**
+ * Checks a second-step code through the two-step plugin's own endpoint, and records the session's
+ * assurance when it passes.
+ */
 export async function verifySecondFactor(
   auth: { handler(request: Request): Promise<Response> },
   config: CloudServerConfig,
