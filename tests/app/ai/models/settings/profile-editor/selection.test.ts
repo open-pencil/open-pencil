@@ -203,10 +203,11 @@ describe('the effort of a coding agent’s profile in the editor', () => {
   test('keeps a saved effort the model no longer offers, so it can be cleared', async () => {
     const profile = editor({ providerID: 'acp:claude-code', agentEffort: 'ultra' })
     await profile.answer({ ...claudeCode, efforts: { '': { current: '', values: [] } } })
-    expect(profile.selection.agentEffortOptions.value.map((option) => option.label)).toEqual([
-      'Agent default',
-      'ultra'
-    ])
+    const [agentDefault, ...saved] = profile.selection.agentEffortOptions.value
+    expect(saved.map((option) => option.value)).toEqual(['ultra'])
+    expect(profile.selection.agentEffortValue.value).toBe('ultra')
+    profile.selection.agentEffortValue.value = agentDefault.value
+    expect(profile.draft.agentEffort).toBe('')
   })
 
   test('offers nothing while the model’s efforts are unknown or the model has none', async () => {
