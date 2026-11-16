@@ -16,7 +16,10 @@ export interface NightlyPlan {
 export interface NightlySources {
   /** Master as the plan's checkout fetched it. */
   master: () => Promise<string>
-  /** The commit the nightly tag points at, or nothing before the first nightly. */
+  /**
+   * The commit the last fully published nightly built, from its release manifest, which publishing
+   * uploads last; nothing before the first one or after one that failed partway.
+   */
   lastNightly: () => Promise<string | undefined>
   /** The version the nightly release names, or nothing before the first one. */
   lastVersion: () => Promise<string | undefined>
@@ -38,6 +41,18 @@ export async function planNightly(sources: NightlySources, now: Date): Promise<N
 
 const manifestSchema = v.pipe(v.string(), v.parseJson(), v.object({ version: v.string() }))
 
+/** The release manifest the nightly release carries once published. */
+export const NIGHTLY_MANIFEST = 'release-manifest.json'
+const publishedSchema = v.pipe(v.string(), v.parseJson(), v.object({ sourceCommit: commitSchema }))
+
+/** GitHub answered that there is no nightly release, or no manifest on it, yet. */
+function isMissing(error: unknown): boolean {
+  return (
+    error instanceof CommandError &&
+    /release not found|no assets match/i.test(`${error.stderr}${error.stdout}`)
+  )
+}
+
 /** The plan's sources in a checkout with master's history and tags, as the plan job's is. */
 export function checkoutSources(
   git: (...args: string[]) => Promise<string>,
@@ -48,9 +63,21 @@ export function checkoutSources(
     master: () => git('rev-parse', '--verify', 'origin/master^{commit}'),
     async lastNightly() {
       try {
-        return await git('rev-parse', '--verify', `refs/tags/${NIGHTLY_TAG}^{commit}`)
-      } catch {
-        return undefined
+        const manifest = await github([
+          'release',
+          'download',
+          NIGHTLY_TAG,
+          '--repo',
+          repository,
+          '--pattern',
+          NIGHTLY_MANIFEST,
+          '--output',
+          '-'
+        ])
+        return v.parse(publishedSchema, manifest).sourceCommit
+      } catch (error) {
+        if (isMissing(error)) return undefined
+        throw error
       }
     },
     async lastVersion() {
@@ -70,9 +97,7 @@ export function checkoutSources(
         return title.trim() || undefined
       } catch (error) {
         // Only a missing release means none yet; any other failure must not reuse a version.
-        if (error instanceof CommandError && /release not found/i.test(error.stderr)) {
-          return undefined
-        }
+        if (isMissing(error)) return undefined
         throw error
       }
     },

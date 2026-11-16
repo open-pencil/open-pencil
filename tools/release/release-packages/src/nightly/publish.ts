@@ -10,6 +10,7 @@ import { CommandError } from '@open-pencil/package-artifacts-tools'
 import { ARTIFACT_TRANSFER_TIMEOUT_MS, releaseCommands } from '../native/commands.ts'
 import { createReleaseContext, isNightly } from '../native/context.ts'
 import { verifyUploadedAssets } from '../native/uploaded.ts'
+import { NIGHTLY_MANIFEST } from './plan.ts'
 
 /** The feed desktop apps on the Nightly channel read; it goes up last. */
 const FEED = 'latest.json'
@@ -36,15 +37,20 @@ async function unlessMissing<T>(operation: Promise<T>): Promise<T | undefined> {
 
 /**
  * Publishes the verified nightly as the one rolling `nightly` pre-release: moves its tag to the
- * nightly's commit, uploads this run's files with the feed last, then removes the previous
- * night's. GitHub has no atomic upload, so for a moment the feed can name a macOS archive that
- * was just replaced, whose signature then fails and the app tries again at its next check.
+ * nightly's commit, uploads this run's files with the feed after them, removes the previous
+ * night's, checks every byte, and only then uploads the release manifest, which the next plan
+ * reads as the commit the last complete nightly built (`plan.ts`). A run that fails before it
+ * leaves the previous manifest, so the next night builds again. GitHub has no atomic upload, so
+ * for a moment the feed can name a macOS archive that was just replaced, whose signature then
+ * fails and the app tries again at its next check.
  */
 const { identity, repository, version, paths } = createReleaseContext()
 if (!isNightly(identity)) throw new Error(`${identity.tag} is not the nightly release`)
 const { github } = releaseCommands(paths.root)
 const names = (await readdir(paths.output)).sort()
-if (!names.includes(FEED)) throw new Error(`Missing ${FEED}`)
+for (const required of [FEED, NIGHTLY_MANIFEST]) {
+  if (!names.includes(required)) throw new Error(`Missing ${required}`)
+}
 
 const tagged = await unlessMissing(
   github(['api', `repos/${repository}/git/ref/tags/${NIGHTLY_TAG}`])
@@ -105,7 +111,8 @@ const upload = (files: string[]) =>
     ],
     ARTIFACT_TRANSFER_TIMEOUT_MS
   )
-await upload(names.filter((name) => name !== FEED))
+const published = names.filter((name) => name !== NIGHTLY_MANIFEST)
+await upload(published.filter((name) => name !== FEED))
 await upload([FEED])
 if (existing) await github(['release', 'edit', NIGHTLY_TAG, ...metadata])
 
@@ -122,5 +129,19 @@ const remote = v.parse(
 if (!isEqual(remote.assets.map(({ name }) => name).sort(), names)) {
   throw new Error('The nightly release carries other files than this run built')
 }
-await verifyUploadedAssets({ github, repository, tag: NIGHTLY_TAG, names, directory: paths.output })
+await verifyUploadedAssets({
+  github,
+  repository,
+  tag: NIGHTLY_TAG,
+  names: published,
+  directory: paths.output
+})
+await upload([NIGHTLY_MANIFEST])
+await verifyUploadedAssets({
+  github,
+  repository,
+  tag: NIGHTLY_TAG,
+  names: [NIGHTLY_MANIFEST],
+  directory: paths.output
+})
 console.log(`Nightly ${version} published from ${identity.sourceCommit}`)

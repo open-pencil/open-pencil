@@ -1,6 +1,8 @@
-import { expect, test } from 'bun:test'
+import { describe, expect, test } from 'bun:test'
 
-import { planNightly, type NightlySources } from '#release/nightly/plan'
+import { checkoutSources, planNightly, type NightlySources } from '#release/nightly/plan'
+
+import { CommandError } from '@open-pencil/package-artifacts-tools'
 
 const MASTER = 'a'.repeat(40)
 const NIGHT = new Date('2026-11-16T03:00:00Z')
@@ -44,4 +46,33 @@ test('numbers a second build on the same day', async () => {
 
 test('refuses a master that is not a commit', async () => {
   await expect(planNightly(sources({ master: async () => 'master' }), NIGHT)).rejects.toThrow()
+})
+
+describe('the published nightly', () => {
+  const git = async () => MASTER
+  const failing = (stderr: string) => async (args: string[]) => {
+    throw new CommandError('gh failed', { command: 'gh', args, cwd: '/repo' }, 1, '', stderr, false)
+  }
+
+  test('is the commit the release manifest names, which publishing uploads last', async () => {
+    const github = async () => JSON.stringify({ sourceCommit: 'c'.repeat(40), tag: 'nightly' })
+    expect(await checkoutSources(git, github, 'open-pencil/open-pencil').lastNightly()).toBe(
+      'c'.repeat(40)
+    )
+  })
+
+  test.each(['release not found', 'no assets match the file pattern'])(
+    'is none when GitHub answers %s',
+    async (stderr) => {
+      expect(
+        await checkoutSources(git, failing(stderr), 'open-pencil/open-pencil').lastNightly()
+      ).toBeUndefined()
+    }
+  )
+
+  test('fails on any other answer rather than building again blindly', async () => {
+    await expect(
+      checkoutSources(git, failing('HTTP 502'), 'open-pencil/open-pencil').lastNightly()
+    ).rejects.toThrow()
+  })
 })
