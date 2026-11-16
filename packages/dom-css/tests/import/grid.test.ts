@@ -235,4 +235,46 @@ describe('grid import', () => {
       { column: 3, columnSpan: 1, row: 1, rowSpan: 1 }
     ])
   })
+  it('resolves the lines an item declares as CSS does, leaving named lines to its box', () => {
+    const at = (x: number, width: number) => ({ layout: { box: { x, y: 0, width, height: 20 } } })
+    const placed = (start: string, end: string, x: number, width: number) => ({
+      ...box({ width: `${width}px`, 'grid-column-start': start, 'grid-column-end': end }),
+      ...at(x, width)
+    })
+    const grid: DesignElement = {
+      ...box(
+        {
+          display: 'grid',
+          width: '320px',
+          'grid-template-columns': '100px 100px 100px',
+          'grid-template-rows': '20px 20px 20px 20px',
+          'column-gap': '10px'
+        },
+        [
+          // Reversed lines bound the same area.
+          placed('3', '1', 0, 60),
+          // A span on the start wins over one on the end.
+          placed('span 2', 'span 3', 0, 60),
+          // A number among named lines counts only those, so the box says where it is.
+          placed('2 foo', 'auto', 220, 60),
+          // A span against an end line counts back from it.
+          placed('span 2', '4', 110, 60)
+        ]
+      ),
+      layout: { box: { x: 0, y: 0, width: 320, height: 80 } }
+    }
+    const { graph } = designDocumentToLayers({ type: 'document', children: [grid] })
+    const [gridLayer] = graph.getChildren(graph.getPages()[0].id)
+
+    expect(
+      graph
+        .getChildren(gridLayer.id)
+        .map((item) => [item.gridPosition?.column, item.gridPosition?.columnSpan])
+    ).toEqual([
+      [1, 2],
+      [1, 2],
+      [3, 1],
+      [2, 2]
+    ])
+  })
 })

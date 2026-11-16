@@ -179,18 +179,28 @@ function trackSpan(starts: readonly number[], start: number, end: number) {
   return { track: Math.max(first, 0) + 1, span: Math.max(last - first, 0) + 1 }
 }
 
-/** A grid line a placement property names: a line number, or a span of tracks. */
-function gridLine(value: string | undefined): { line: number } | { span: number } | null {
-  const [first, second] = splitCSSValue(value?.trim().toLowerCase() ?? '')
-  const count = Number(first === 'span' ? second : first)
+type GridLine = { line: number } | { span: number }
+
+/**
+ * A grid line a placement property names by number alone: a line, or a span of tracks. Null for
+ * `auto`, a line name, or a number counted among named lines, as in `2 foo`, which counts only
+ * the lines of that name.
+ */
+function gridLine(value: string | undefined): GridLine | null {
+  const words = splitCSSValue(value?.trim().toLowerCase() ?? '')
+  const isSpan = words[0] === 'span'
+  if (words.length !== (isSpan ? 2 : 1)) return null
+  const count = Number(words.at(-1))
   if (!Number.isInteger(count) || count < 1) return null
-  return first === 'span' ? { span: count } : { line: count }
+  return isSpan ? { span: count } : { line: count }
 }
 
 /**
- * The start track and span an item's `grid-column-*` or `grid-row-*` declare, where they name
- * them by number: a span shows how many tracks an item at the start of its area covers, which
- * its box does not. Named lines and negative numbers are left to the item's box.
+ * The start track and span an item's `grid-column-*` or `grid-row-*` declare by number, as CSS
+ * Grid §8.3.1 resolves them: two lines in either order bound the area, a span on the start wins
+ * over one on the end, and a span against a line counts back or on from it. A span shows how
+ * many tracks an item at the start of its area covers, which its box does not; what is left
+ * undeclared, or named, its box fills in.
  */
 function declaredArea(
   item: DesignStyleDeclaration,
@@ -198,14 +208,16 @@ function declaredArea(
 ): { track?: number; span?: number } {
   const start = gridLine(pickStyle(item, `grid-${axis}-start`))
   const end = gridLine(pickStyle(item, `grid-${axis}-end`))
-  const area: { track?: number; span?: number } = {}
-  if (start && 'line' in start) area.track = start.line
-  if (end && 'span' in end) area.span = end.span
-  else if (start && 'span' in start) area.span = start.span
-  else if (start && 'line' in start && end && 'line' in end && end.line > start.line) {
-    area.span = end.line - start.line
+  const startLine = start && 'line' in start ? start.line : null
+  const endLine = end && 'line' in end ? end.line : null
+  const spanOf = (line: GridLine | null) => (line && 'span' in line ? line.span : null)
+  const span = spanOf(start) ?? spanOf(end)
+  if (startLine !== null && endLine !== null && startLine !== endLine) {
+    return { track: Math.min(startLine, endLine), span: Math.abs(endLine - startLine) }
   }
-  return area
+  if (startLine !== null) return span === null ? { track: startLine } : { track: startLine, span }
+  if (endLine !== null && span !== null) return { track: Math.max(1, endLine - span), span }
+  return span === null ? {} : { span }
 }
 
 /**
