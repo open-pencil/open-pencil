@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'bun:test'
 
-import { designDocumentToSceneGraph } from '#dom-css/import/scene-graph'
+import { designDocumentToLayers, designDocumentToSceneGraph } from '#dom-css/import/scene-graph'
 import type { DesignElement, DesignNode, DesignStyleDeclaration } from '#dom-css/types'
+
+import type { SceneNode } from '@open-pencil/scene-graph'
 
 function element(
   tagName: string,
@@ -76,6 +78,32 @@ describe('table import', () => {
     expect(rowLayers[0].itemSpacing).toBe(0)
   })
 
+  it('draws each collapsed border once, centered on the edge the cells share', () => {
+    const collapsed = { 'border-collapse': 'collapse', 'border-spacing': '0px' }
+    const bordered = {
+      ...collapsed,
+      'border-style': 'solid',
+      'border-width': '2px',
+      'border-color': 'rgb(0, 0, 0)',
+      padding: '8px'
+    }
+    const { graph, tableLayer, rowLayers } = layers(
+      table([row([cell('a', bordered), cell('b', bordered)], collapsed)], collapsed)
+    )
+    const [first] = graph.getChildren(rowLayers[0].id)
+
+    // Each cell holds half of the border, its stroke centered on the cell's edge, so two cells'
+    // strokes draw one line; the content sits inside its half.
+    expect(first.strokes.map((stroke) => stroke.align)).toEqual(['CENTER'])
+    expect(first).toMatchObject({ paddingTop: 9, paddingLeft: 9, paddingRight: 9 })
+    // The table holds the outer half of the outer borders.
+    expect(tableLayer).toMatchObject({
+      paddingTop: 1,
+      paddingLeft: 1,
+      strokesIncludedInLayout: false
+    })
+  })
+
   it('places a cell’s content by its vertical-align', () => {
     const { graph, rowLayers } = layers(
       table([
@@ -106,5 +134,171 @@ describe('table import', () => {
     const [tableLayer] = graph.getChildren(graph.getPages()[0].id)
 
     expect(graph.getChildren(tableLayer.id).map((layer) => layer.name)).toEqual(['tbody'])
+  })
+  it('stacks captions by their side around the table box, which draws and spaces the rows', () => {
+    const caption = (text: string, side: string) =>
+      element('caption', { display: 'table-caption', 'caption-side': side }, [
+        { type: 'text', text }
+      ])
+    const tableStyle = {
+      display: 'table',
+      ...SEPARATE,
+      'background-color': 'rgb(238, 238, 255)',
+      'border-top-width': '3px',
+      'border-top-style': 'solid',
+      'border-top-color': 'rgb(0, 0, 0)'
+    }
+    const rows = element('tbody', { display: 'table-row-group', ...SEPARATE }, [row([cell('a')])])
+    const graph = designDocumentToSceneGraph({
+      type: 'document',
+      children: [
+        element('table', tableStyle, [caption('Below', 'bottom'), rows, caption('Above', 'top')])
+      ]
+    })
+    const [tableLayer] = graph.getChildren(graph.getPages()[0].id)
+    const [above, box, below] = graph.getChildren(tableLayer.id)
+
+    expect([above.name, box.name, below.name]).toEqual(['caption', 'table box', 'caption'])
+    expect(graph.getChildren(above.id).map((text) => text.name)).toEqual(['Above'])
+    expect(graph.getChildren(below.id).map((text) => text.name)).toEqual(['Below'])
+    // The captions sit outside the table's border, background, and spacing.
+    expect(tableLayer).toMatchObject({ layoutMode: 'VERTICAL', itemSpacing: 0, paddingTop: 0 })
+    expect(tableLayer.fills).toEqual([])
+    expect(tableLayer.strokes).toEqual([])
+    expect(box).toMatchObject({ layoutMode: 'VERTICAL', itemSpacing: 4, paddingLeft: 2 })
+    expect(box.fills).toHaveLength(1)
+    expect(box.strokes).toHaveLength(1)
+    expect(graph.getChildren(box.id).map((group) => group.name)).toEqual(['tbody'])
+  })
+  it('places the table box between its captions where the page laid them out', () => {
+    const rect = (y: number, height: number) => ({ x: 0, y, width: 300, height })
+    const caption = (side: string, y: number) => ({
+      ...element('caption', { display: 'table-caption', 'caption-side': side }, [
+        { type: 'text', text: side }
+      ]),
+      layout: { box: rect(y, 20) }
+    })
+    const rows = element('tbody', { display: 'table-row-group', ...SEPARATE }, [row([cell('a')])])
+    const captioned = {
+      ...element('table', { display: 'table', ...SEPARATE }, [
+        caption('top', 0),
+        rows,
+        caption('bottom', 80)
+      ]),
+      layout: { box: rect(0, 100) }
+    }
+    const { graph, boxes } = designDocumentToLayers({ type: 'document', children: [captioned] })
+    const [tableLayer] = graph.getChildren(graph.getPages()[0].id)
+    const box = graph.getChildren(tableLayer.id)[1]
+
+    expect(box.name).toBe('table box')
+    expect(boxes.get(box.id)?.box).toEqual(rect(20, 60))
+  })
+  it('lets a cell spanning rows reach down past its row, the rows padded off the slots it covers', () => {
+    const at = (x: number, y: number, width: number, height: number) => ({
+      layout: { box: { x, y, width, height } }
+    })
+    const tall = { ...cell('Tall'), attrs: { rowspan: '2' }, ...at(0, 0, 100, 46) }
+    const first = { ...row([tall, { ...cell('a'), ...at(102, 0, 98, 22) }]), ...at(0, 0, 200, 22) }
+    const second = { ...row([{ ...cell('b'), ...at(102, 24, 98, 22) }]), ...at(0, 24, 200, 22) }
+    const group = {
+      ...element('tbody', { display: 'table-row-group', ...SEPARATE }, [first, second])
+    }
+    const captured = { ...element('table', { display: 'table', ...SEPARATE }, [group]) }
+    const { graph } = designDocumentToLayers({ type: 'document', children: [captured] })
+    const [tableLayer] = graph.getChildren(graph.getPages()[0].id)
+    const [groupLayer] = graph.getChildren(tableLayer.id)
+    const [firstRow, secondRow] = graph.getChildren(groupLayer.id)
+    const [tallLayer] = graph.getChildren(firstRow.id)
+
+    expect(tallLayer).toMatchObject({ layoutPositioning: 'ABSOLUTE', x: 0, y: 0, height: 46 })
+    expect([firstRow.layoutMode, firstRow.paddingLeft]).toEqual(['HORIZONTAL', 102])
+    expect([secondRow.layoutMode, secondRow.paddingLeft]).toEqual(['HORIZONTAL', 102])
+  })
+  it('keeps a caption its margin from the table box', () => {
+    const rect = (y: number, height: number) => ({ x: 0, y, width: 300, height })
+    const caption = {
+      ...element('caption', { display: 'table-caption', 'margin-bottom': '10px' }, [
+        { type: 'text', text: 'Title' }
+      ]),
+      layout: { box: rect(0, 20) }
+    }
+    const rows = element('tbody', { display: 'table-row-group', ...SEPARATE }, [row([cell('a')])])
+    const captioned = {
+      ...element('table', { display: 'table', ...SEPARATE }, [caption, rows]),
+      layout: { box: rect(0, 100) }
+    }
+    const { graph, boxes } = designDocumentToLayers({ type: 'document', children: [captioned] })
+    const [tableLayer] = graph.getChildren(graph.getPages()[0].id)
+    const box = graph.getChildren(tableLayer.id)[1]
+
+    expect(tableLayer.itemSpacing).toBe(10)
+    expect(boxes.get(box.id)?.box).toEqual(rect(30, 70))
+  })
+  it('paints a border two collapsed cells share once, by the wider of the two', () => {
+    const collapsed = { 'border-collapse': 'collapse', 'border-spacing': '0px' }
+    const border = (width: string) => ({
+      ...collapsed,
+      'border-style': 'solid',
+      'border-width': width,
+      'border-color': 'rgba(0, 0, 0, 0.5)'
+    })
+    const at = (x: number, y: number) => ({ layout: { box: { x, y, width: 50, height: 20 } } })
+    const cells = [
+      [
+        { ...cell('a', border('2px')), ...at(0, 0) },
+        { ...cell('b', border('4px')), ...at(50, 0) }
+      ],
+      [
+        { ...cell('c', border('2px')), ...at(0, 20) },
+        { ...cell('d', border('2px')), ...at(50, 20) }
+      ]
+    ]
+    const { graph } = designDocumentToLayers({
+      type: 'document',
+      children: [
+        table(
+          cells.map((cellsInRow) => row(cellsInRow, collapsed)),
+          collapsed
+        )
+      ]
+    })
+    const [tableLayer] = graph.getChildren(graph.getPages()[0].id)
+    const [groupLayer] = graph.getChildren(tableLayer.id)
+    const [[a, b], [c, d]] = graph
+      .getChildren(groupLayer.id)
+      .map((rowLayer) => graph.getChildren(rowLayer.id))
+    const sides = (layer: SceneNode) => [
+      layer.borderTopWeight,
+      layer.borderRightWeight,
+      layer.borderBottomWeight,
+      layer.borderLeftWeight
+    ]
+
+    // b's wider left border wins over a's right; on a tie the cell to the left or above keeps it.
+    expect(sides(a)).toEqual([2, 0, 2, 2])
+    expect(sides(b)).toEqual([4, 4, 4, 4])
+    expect(sides(c)).toEqual([0, 2, 2, 2])
+    expect(sides(d)).toEqual([0, 2, 2, 0])
+    // Each cell still holds half of every border it shares.
+    expect(a.paddingRight).toBe(1)
+  })
+  it('lets a cell with rowspan zero span the rest of its group', () => {
+    const at = (x: number, y: number, width: number, height: number) => ({
+      layout: { box: { x, y, width, height } }
+    })
+    const rest = { ...cell('Rest'), attrs: { rowspan: '0' }, ...at(0, 0, 100, 46) }
+    const first = { ...row([rest, { ...cell('a'), ...at(102, 0, 98, 22) }]), ...at(0, 0, 200, 22) }
+    const second = { ...row([{ ...cell('b'), ...at(102, 24, 98, 22) }]), ...at(0, 24, 200, 22) }
+    const group = element('tbody', { display: 'table-row-group', ...SEPARATE }, [first, second])
+    const { graph } = designDocumentToLayers({
+      type: 'document',
+      children: [element('table', { display: 'table', ...SEPARATE }, [group])]
+    })
+    const [tableLayer] = graph.getChildren(graph.getPages()[0].id)
+    const [groupLayer] = graph.getChildren(tableLayer.id)
+    const [firstRow] = graph.getChildren(groupLayer.id)
+
+    expect(graph.getChildren(firstRow.id)[0].layoutPositioning).toBe('ABSOLUTE')
   })
 })

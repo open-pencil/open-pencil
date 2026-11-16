@@ -14,6 +14,7 @@ import {
   type CloudServerConfig
 } from '#cloud/server'
 import { createTermsService } from '#cloud/server/account/terms'
+import { testClient } from 'hono/testing'
 import * as v from 'valibot'
 
 const errorSchema = v.object({ error: v.object({ code: v.string() }) })
@@ -56,18 +57,14 @@ async function appFor(config: CloudServerConfig) {
     objects: {} as never,
     resolveIdentity: async () => person
   })
-  return { ...runtime, app }
+  return { ...runtime, client: testClient(app) }
 }
 
-function accept(
-  app: { request: (path: string, init: RequestInit) => Response | Promise<Response> },
-  version: string
-) {
-  return app.request('/api/account/terms', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Origin: base.publicURL },
-    body: JSON.stringify({ version })
-  })
+function accept(client: Awaited<ReturnType<typeof appFor>>['client'], version: string) {
+  return client.api.account.terms.$post(
+    { json: { version } },
+    { headers: { Origin: base.publicURL } }
+  )
 }
 
 /** Signs up and in with a password on a deployment that requires the terms, before accepting. */
@@ -110,27 +107,21 @@ async function signedUp(runtime: Awaited<ReturnType<typeof createCloudTestDataba
 
 describe('terms acceptance', () => {
   test('holds an account at its terms until it accepts the current version', async () => {
-    const { app, database, close } = await appFor(requiring)
+    const { client, database, close } = await appFor(requiring)
     try {
       expect(
-        await responseJSON(
-          await app.request('/api/account/status'),
-          cloudAccountStatusResponseSchema
-        )
+        await responseJSON(await client.api.account.status.$get(), cloudAccountStatusResponseSchema)
       ).toMatchObject({
         state: 'terms'
       })
-      const stale = await accept(app, '2026-01-01')
+      const stale = await accept(client, '2026-01-01')
       expect(stale.status).toBe(409)
       expect(await responseJSON(stale, errorSchema)).toEqual({ error: { code: 'terms_changed' } })
 
-      expect((await accept(app, legal.termsVersion)).status).toBe(200)
-      expect((await accept(app, legal.termsVersion)).status).toBe(200)
+      expect((await accept(client, legal.termsVersion)).status).toBe(200)
+      expect((await accept(client, legal.termsVersion)).status).toBe(200)
       expect(
-        await responseJSON(
-          await app.request('/api/account/status'),
-          cloudAccountStatusResponseSchema
-        )
+        await responseJSON(await client.api.account.status.$get(), cloudAccountStatusResponseSchema)
       ).toMatchObject({
         state: 'active'
       })
@@ -159,19 +150,16 @@ describe('terms acceptance', () => {
   })
 
   test('asks nothing of a deployment that requires no acceptance', async () => {
-    const { app, close } = await appFor(
+    const { client, close } = await appFor(
       parseCloudServerConfig({ ...base, legal: { ...legal, requireAcceptance: false } })
     )
     try {
       expect(
-        await responseJSON(
-          await app.request('/api/account/status'),
-          cloudAccountStatusResponseSchema
-        )
+        await responseJSON(await client.api.account.status.$get(), cloudAccountStatusResponseSchema)
       ).toMatchObject({
         state: 'active'
       })
-      expect((await accept(app, legal.termsVersion)).status).toBe(404)
+      expect((await accept(client, legal.termsVersion)).status).toBe(404)
     } finally {
       await close()
     }
@@ -191,28 +179,29 @@ describe('terms acceptance', () => {
         resolveSession: async () => (accepted ? person : null),
         resolveAccountSession: async () => person
       })
-      const post = (path: string, body: object) =>
-        app.request(path, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        })
+      const client = testClient(app)
       const { workspace } = await responseJSON(
-        await post('/api/workspaces', { name: 'Studio', slug: 'studio' }),
+        await client.api.workspaces.$post({ json: { name: 'Studio', slug: 'studio' } }),
         v.object({ workspace: v.object({ id: v.string() }) })
       )
       const { document } = await responseJSON(
-        await post(`/api/workspaces/${workspace.id}/documents`, { name: 'Homepage' }),
+        await client.api.workspaces[':workspaceId'].documents.$post({
+          param: { workspaceId: workspace.id },
+          json: { name: 'Homepage' }
+        }),
         v.object({ document: v.object({ id: v.string() }) })
       )
       // One save, as the editor makes it: an upload, then its commit.
       const checksum = `${'A'.repeat(43)}=`
       const upload = await responseJSON(
-        await post(`/api/documents/${document.id}/uploads`, {
-          baseRevisionId: null,
-          byteSize: 16,
-          checksum,
-          contentType: 'application/octet-stream'
+        await client.api.documents[':documentId'].uploads.$post({
+          param: { documentId: document.id },
+          json: {
+            baseRevisionId: null,
+            byteSize: 16,
+            checksum,
+            contentType: 'application/octet-stream'
+          }
         }),
         v.object({ id: v.string() })
       )
@@ -227,7 +216,14 @@ describe('terms acceptance', () => {
         checksumVerification: 'native',
         contentType: 'application/octet-stream'
       })
-      expect((await post(`/api/uploads/${upload.id}/commit`, { checksum })).status).toBe(200)
+      expect(
+        (
+          await client.api.uploads[':uploadId'].commit.$post({
+            param: { uploadId: upload.id },
+            json: { checksum }
+          })
+        ).status
+      ).toBe(200)
 
       // Someone else joins, so this account is the workspace's only admin: deleting it waits for
       // a handover, and the plan must still list what it made there.
@@ -239,7 +235,7 @@ describe('terms acceptance', () => {
       // Then the terms change, and this account has not accepted them yet.
       accepted = false
       const deletion = await responseJSON(
-        await app.request('/api/account/deletion'),
+        await client.api.account.deletion.$get(),
         v.object({
           deletion: v.object({
             blockedBy: v.array(v.object({ id: v.string() })),
@@ -249,15 +245,22 @@ describe('terms acceptance', () => {
       )
       expect(deletion.deletion.blockedBy.map((entry) => entry.id)).toEqual([workspace.id])
       expect(deletion.deletion.documents.map((entry) => entry.id)).toEqual([document.id])
-      expect((await app.request(`/api/documents/${document.id}`)).status).toBe(200)
+      const documentParam = { param: { documentId: document.id } }
+      expect((await client.api.documents[':documentId'].$get(documentParam)).status).toBe(200)
 
-      expect((await app.request('/api/workspaces')).status).toBe(401)
-      expect((await app.request(`/api/documents/${document.id}/versions`)).status).toBe(401)
+      expect((await client.api.workspaces.$get()).status).toBe(401)
       expect(
-        (await app.request(`/api/documents/${document.id}`, { method: 'DELETE' })).status
+        (await client.api.documents[':documentId'].versions.$get({ ...documentParam, query: {} }))
+          .status
       ).toBe(401)
+      expect((await client.api.documents[':documentId'].$delete(documentParam)).status).toBe(401)
       expect(
-        (await post(`/api/workspaces/${workspace.id}/documents`, { name: 'Other' })).status
+        (
+          await client.api.workspaces[':workspaceId'].documents.$post({
+            param: { workspaceId: workspace.id },
+            json: { name: 'Other' }
+          })
+        ).status
       ).toBe(401)
     } finally {
       await runtime.close()
@@ -296,15 +299,10 @@ describe('terms acceptance', () => {
         objects: createMemoryObjectStore().store
       })
       expect(await auth.resolveSession(headers)).toBeNull()
-      const response = await app.request('/api/account/delete', {
-        method: 'POST',
-        headers: new Headers([
-          ...headers,
-          ['Content-Type', 'application/json'],
-          ['Origin', requiring.publicURL]
-        ]),
-        body: JSON.stringify({})
-      })
+      const response = await testClient(app).api.account.delete.$post(
+        { json: {} },
+        { headers: { ...Object.fromEntries(headers), Origin: requiring.publicURL } }
+      )
       expect(response.status).toBe(200)
       expect(
         await runtime.database

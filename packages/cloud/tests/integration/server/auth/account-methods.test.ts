@@ -3,7 +3,8 @@ import { describe, expect, test } from 'bun:test'
 import {
   accountAuthenticationRequest,
   createAccountAuthenticationFixture,
-  createVerifiedCredentialAccount
+  createVerifiedCredentialAccount,
+  withCookie
 } from '#cloud-tests/helpers/account-authentication'
 import { cloudAuthenticationMethodsResponseSchema } from '#cloud/contract'
 import * as v from 'valibot'
@@ -29,12 +30,9 @@ describe('account authentication methods', () => {
           updatedAt: new Date()
         })
         .execute()
-      const response = await fixture.app.fetch(
-        accountAuthenticationRequest(
-          '/api/account/authentication',
-          undefined,
-          account.sessionCookie
-        )
+      const response = await fixture.client.api.account.authentication.$get(
+        undefined,
+        withCookie(account.sessionCookie)
       )
       const body = v.parse(cloudAuthenticationMethodsResponseSchema, await response.json())
       expect(body.methods).toEqual(
@@ -48,12 +46,9 @@ describe('account authentication methods', () => {
       if (!google) throw new Error('Expected a linked Google method')
       expect(
         (
-          await fixture.app.fetch(
-            accountAuthenticationRequest(
-              '/api/account/authentication/unlink',
-              { methodId: google.id },
-              account.sessionCookie
-            )
+          await fixture.client.api.account.authentication.unlink.$post(
+            { json: { methodId: google.id } },
+            withCookie(account.sessionCookie)
           )
         ).status
       ).toBe(200)
@@ -73,12 +68,9 @@ describe('account authentication methods', () => {
       })
       expect(
         (
-          await fixture.app.fetch(
-            accountAuthenticationRequest(
-              '/api/account/authentication',
-              undefined,
-              account.sessionCookie
-            )
+          await fixture.client.api.account.authentication.$get(
+            undefined,
+            withCookie(account.sessionCookie)
           )
         ).status
       ).toBe(401)
@@ -108,12 +100,9 @@ describe('account authentication methods', () => {
           approvedUserId: account.userId
         })
         .execute()
-      const methodsResponse = await fixture.app.fetch(
-        accountAuthenticationRequest(
-          '/api/account/authentication',
-          undefined,
-          account.sessionCookie
-        )
+      const methodsResponse = await fixture.client.api.account.authentication.$get(
+        undefined,
+        withCookie(account.sessionCookie)
       )
       const methods = v.parse(
         cloudAuthenticationMethodsResponseSchema,
@@ -125,12 +114,9 @@ describe('account authentication methods', () => {
       if (!method) throw new Error('Expected a credential method')
       expect(
         (
-          await fixture.app.fetch(
-            accountAuthenticationRequest(
-              '/api/account/authentication/unlink',
-              { methodId: method.id },
-              account.sessionCookie
-            )
+          await fixture.client.api.account.authentication.unlink.$post(
+            { json: { methodId: method.id } },
+            withCookie(account.sessionCookie)
           )
         ).status
       ).toBe(400)

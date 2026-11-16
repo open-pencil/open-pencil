@@ -1,6 +1,6 @@
 import type { Ref } from 'vue'
 
-import { acpAgentFor, HARNESS_PROVIDER_ID } from '@open-pencil/core/constants'
+import { acpAgentFor, providerKind } from '@open-pencil/core/constants'
 
 import {
   codingAgentDetection,
@@ -39,7 +39,7 @@ export interface ModelConnectionInput {
 }
 
 function isAgentProvider(providerID: string): boolean {
-  return providerID.startsWith('acp:') || providerID === HARNESS_PROVIDER_ID
+  return providerKind(providerID) !== 'api'
 }
 
 export function modelConnectionState({
@@ -52,7 +52,7 @@ export function modelConnectionState({
   // Cloud's AI service signs in with the Home server, not a saved key.
   if (providerID === OPENPENCIL_AI_PROVIDER) return cloudAI ? 'connected' : 'unavailable'
   // Pi uses its own sign-ins unless an AI Gateway key is saved.
-  if (credential === 'configured' && !providerID.startsWith('acp:')) return 'connected'
+  if (credential === 'configured' && providerKind(providerID) !== 'acp') return 'connected'
   if (isAgentProvider(providerID)) {
     if (!agent) return 'agent'
     switch (agent.state) {
@@ -62,7 +62,7 @@ export function modelConnectionState({
         return 'not-installed'
       // Pi is found once its companion is installed, and signed in once it has a provider login.
       case 'found':
-        return providerID === HARNESS_PROVIDER_ID ? 'signed-out' : 'installed'
+        return providerKind(providerID) === 'harness' ? 'signed-out' : 'installed'
       case 'signed-out':
         return 'signed-out'
       case 'signed-in':
@@ -89,7 +89,7 @@ export function useModelConnectionStates(
     providerID: string
   ): Pick<ModelConnectionInput, 'agent' | 'toolsUnreachable'> {
     const none = { agent: null, toolsUnreachable: false }
-    if (providerID === HARNESS_PROVIDER_ID) {
+    if (providerKind(providerID) === 'harness') {
       const pi = setup.piSetup(providerID)
       return pi?.supported ? { agent: piDetection(pi), toolsUnreachable: false } : none
     }

@@ -1,3 +1,5 @@
+import { providerKind } from '@open-pencil/core/constants'
+
 import { THINKING_LEVELS, type ThinkingLevel } from '@/app/ai/models/types'
 
 const LABEL_KEYS = {
@@ -22,5 +24,5 @@ export function thinkingLevelOptions(labels: ThinkingLevelLabels) {
 
 /** ACP agents choose their own reasoning; API models and Pi accept a level. */
 export function supportsThinkingLevel(providerID: string): boolean {
-  return !providerID.startsWith('acp:')
+  return providerKind(providerID) !== 'acp'
 }

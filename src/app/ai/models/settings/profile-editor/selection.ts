@@ -4,12 +4,14 @@ import {
   acpAgentFor,
   AI_PROVIDERS,
   type AIProviderID,
-  type ModelOption
+  type ModelOption,
+  providerKind
 } from '@open-pencil/core/constants'
 
 import type { AIModelProfileDraft, AIModelCapability } from '@/app/ai/models'
 import { resolveModelsDevModel } from '@/app/ai/models/catalog'
 import { useProviderModelCatalog } from '@/app/ai/models/catalog/use'
+import { profileModelID } from '@/app/ai/models/language-model'
 import { modelPickerOptions, type ModelPickerLabels } from '@/app/ai/models/picker/options'
 import { supportsThinkingLevel } from '@/app/ai/models/thinking'
 import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
@@ -27,7 +29,7 @@ export function useProfileModelSelection(
   const AGENT_DEFAULT_VALUE = '__agent__'
   const DEFAULT_MAX_OUTPUT_TOKENS = 16384
   const customModelSelected = ref(
-    Boolean(draft.customModelID.trim()) || draft.providerID === 'harness:pi'
+    Boolean(draft.customModelID.trim()) || providerKind(draft.providerID) === 'harness'
   )
   const catalogModel = ref<ModelOption | null>(null)
 
@@ -38,13 +40,13 @@ export function useProfileModelSelection(
   const fallbackModels = computed(() => providerDef.value.models)
   const { models: providerModels } = useProviderModelCatalog(catalogProviderID, fallbackModels)
   const cloud = useCloudModelSelection(draft, (modelID) => updateModel(modelID))
-  const isACP = computed(() => draft.providerID.startsWith('acp:'))
+  const isACP = computed(() => providerKind(draft.providerID) === 'acp')
   const agent = useAgentModelSelection(draft, agents)
   const availableModels = computed(() => {
     if (cloud.isCloud.value) return cloud.models.value
     return isACP.value ? agent.models.value : providerModels.value
   })
-  const isHarness = computed(() => draft.providerID === 'harness:pi')
+  const isHarness = computed(() => providerKind(draft.providerID) === 'harness')
   const supportsThinking = computed(() => supportsThinkingLevel(draft.providerID))
   const providerDisplayName = computed(() => {
     if (!isACP.value) return providerDef.value.name
@@ -106,7 +108,7 @@ export function useProfileModelSelection(
     () => knownModel.value?.recommendedMaxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS
   )
   const modelDisplayName = computed(() => {
-    const modelId = draft.customModelID.trim() || draft.modelID
+    const modelId = profileModelID(draft)
     return availableModels.value.find((model) => model.id === modelId)?.name || modelId
   })
   const toolsEnabled = capabilityModel('tools')
@@ -174,7 +176,7 @@ export function useProfileModelSelection(
     draft.modelID = provider?.defaultModel ?? ''
     catalogModel.value = provider?.models.find((model) => model.id === draft.modelID) ?? null
     draft.customModelID = ''
-    customModelSelected.value = providerID === 'harness:pi'
+    customModelSelected.value = providerKind(providerID) === 'harness'
     draft.customBaseURL = ''
     draft.customAPIType = 'completions'
     if (providerID !== OPENPENCIL_AI_PROVIDER) draft.cloudWorkspaceId = undefined
