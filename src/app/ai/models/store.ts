@@ -384,7 +384,9 @@ export function createModelProfileDraft(profileId?: string): AIModelProfileDraft
 
 /** An ACP agent's effort, which only agent profiles keep; empty keeps the agent's own. */
 function draftAgentEffort(draft: AIModelProfileDraft): string | undefined {
-  return providerKind(draft.providerID) === 'acp' && draft.agentEffort ? draft.agentEffort : undefined
+  return providerKind(draft.providerID) === 'acp' && draft.agentEffort
+    ? draft.agentEffort
+    : undefined
 }
 
 export function saveModelProfileDraft(draft: AIModelProfileDraft): AIModelProfile {
