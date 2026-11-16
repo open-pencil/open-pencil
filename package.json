@@ -227,6 +227,7 @@
     "lib0": "^0.2.117",
     "mdast-util-from-markdown": "^2.0.3",
     "mdast-util-gfm": "^3",
+    "mdast-util-to-markdown": "^2.1.2",
     "mdast-util-to-string": "^4.0.0",
     "micromark-extension-gfm": "^3",
     "motion-v": "^2.5.2",

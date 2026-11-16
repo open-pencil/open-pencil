@@ -16,13 +16,21 @@ import AdminPeopleSection from '@/components/cloud-portal/sections/AdminPeopleSe
 import AdminPersonSection from '@/components/cloud-portal/sections/AdminPersonSection.vue'
 import AdminReportsSection from '@/components/cloud-portal/sections/AdminReportsSection.vue'
 import AdminRequestsSection from '@/components/cloud-portal/sections/AdminRequestsSection.vue'
+import NotificationsSection from '@/components/cloud-portal/sections/NotificationsSection.vue'
 import PlanSection from '@/components/cloud-portal/sections/PlanSection.vue'
 import ProfileSection from '@/components/cloud-portal/sections/ProfileSection.vue'
 import SecuritySection from '@/components/cloud-portal/sections/SecuritySection.vue'
 import SessionsSection from '@/components/cloud-portal/sections/SessionsSection.vue'
 import type { PortalSection } from '@/components/cloud-portal/types'
 
-const ACCOUNT_SECTIONS = ['profile', 'plan', 'security', 'sessions', 'tokens'] as const
+const ACCOUNT_SECTIONS = [
+  'profile',
+  'plan',
+  'notifications',
+  'security',
+  'sessions',
+  'tokens'
+] as const
 /** Every section, and a few people's pages, stay loaded while others are shown. */
 const SECTIONS_KEPT = 12
 const ADMIN_SECTIONS = [
@@ -86,6 +94,12 @@ const sections = computed<PortalSection[]>(() => {
           }
         ]
       : []),
+    {
+      id: 'notifications',
+      icon: PORTAL_SECTION_ICONS.notifications,
+      label: value.notifications,
+      group: value.sectionAccount
+    },
     {
       id: 'security',
       icon: PORTAL_SECTION_ICONS.security,
@@ -165,6 +179,7 @@ const description = computed(() => {
     profile: value.profileDescription({ host: portal.host }),
     plan: value.planDescription,
     security: value.securityDescription({ host: portal.host }),
+    notifications: value.notificationsDescription,
     sessions: value.sessionsDescription,
     tokens: value.accessTokensDescription,
     overview: portal.host,
@@ -227,6 +242,7 @@ onMounted(() => void refreshWaiting())
       <ProfileSection v-if="active === 'profile'" />
       <PlanSection v-else-if="active === 'plan'" />
       <SecuritySection v-else-if="active === 'security'" />
+      <NotificationsSection v-else-if="active === 'notifications'" />
       <SessionsSection v-else-if="active === 'sessions'" />
       <AccessTokensSection v-else-if="active === 'tokens'" />
       <AdminOverviewSection v-else-if="active === 'overview'" @open="select" />

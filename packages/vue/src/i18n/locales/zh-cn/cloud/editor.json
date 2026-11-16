@@ -262,6 +262,7 @@
   "savePublicHeading": "任何人都能打开你保存在这里的内容",
   "savePublicDescription": "此工作区是服务器的社区图库，保存到这里会发布该文档。",
   "documentLinkFailed": "无法打开此文档。请向所有者申请访问权限。",
+  "commentLinkFailed": "找不到这条评论，可能已被删除。",
   "documentLinkUnknownServer": "请先登录 {host}，再打开此链接。",
   "connectServerHeading": "连接团队的服务器",
   "connectServerDescription": "输入团队用于 OpenPencil Cloud 的地址。",

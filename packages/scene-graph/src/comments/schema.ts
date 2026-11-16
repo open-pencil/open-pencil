@@ -13,6 +13,7 @@ const commentAuthorColorSchema = v.fallback(
 const commentEntry = {
   author: v.fallback(v.string(), ''),
   authorColor: commentAuthorColorSchema,
+  agent: v.fallback(v.optional(v.string()), undefined),
   text: v.fallback(v.string(), ''),
   createdAt: v.fallback(v.string(), ''),
   deleted: v.optional(v.boolean())

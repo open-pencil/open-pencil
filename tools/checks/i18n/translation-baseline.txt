@@ -450,6 +450,7 @@ de:cloudPortal.pictureZoom
 fr:cloudPortal.columnAction
 fr:cloudPortal.columnActions
 fr:cloudPortal.columnMessage
+fr:cloudPortal.notifications
 fr:cloudPortal.productName
 fr:cloudPortal.providerGoogle
 fr:cloudPortal.providerApple

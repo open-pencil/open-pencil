@@ -20,7 +20,8 @@ const {
   active = false,
   resolved = false,
   dragging = false,
-  draft = false
+  draft = false,
+  unread = false
 } = defineProps<{
   author?: string
   color?: Color
@@ -31,6 +32,8 @@ const {
   dragging?: boolean
   /** A comment still being written: an empty bubble, as Figma draws it. */
   draft?: boolean
+  /** Someone else wrote in the thread since this account read it. */
+  unread?: boolean
 }>()
 
 const who = useCommentAuthor()
@@ -45,10 +48,12 @@ const ui = comments()
     :data-resolved="resolved || undefined"
     :data-dragging="dragging || undefined"
     :data-draft="draft || undefined"
+    :data-unread="unread || undefined"
     :class="ui.pin()"
   >
     <template v-if="!draft">
       <PersonAvatar :name="author" :color="who.color(color)" />
+      <span v-if="unread" :class="ui.unreadDot()" aria-hidden="true" />
       <!-- An open or moving pin stays a bubble; its thread or its new place is what matters. -->
       <span v-if="text && !active && !dragging" :class="ui.pinPreview()" aria-hidden="true">
         <span :class="ui.pinPreviewClip()">

@@ -25,5 +25,7 @@
   "noMatches": "Нет подходящих комментариев.",
   "replyCount": "Ответы: {count}",
   "commentDeleted": "Комментарий удалён",
-  "hideComments": "Скрыть комментарии"
+  "hideComments": "Скрыть комментарии",
+  "mentionPeople": "Кого упомянуть",
+  "unread": "Не прочитано"
 }

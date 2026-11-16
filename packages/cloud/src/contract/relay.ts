@@ -31,7 +31,9 @@ export const COLLAB_ACTIONS = {
   agentPreview: 'agent-preview',
   upload: 'upload',
   /** From the server only: the document's version history changed, so open lists load it again. */
-  versions: 'versions'
+  versions: 'versions',
+  /** From the server only: a comment thread changed; the payload is its ID as UTF-8. */
+  comments: 'comments'
 } as const
 
 /**

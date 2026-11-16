@@ -74,6 +74,23 @@ function services() {
       restore: notUsed,
       duplicate: notUsed
     },
+    comments: {
+      forMember: notUsed,
+      forShare: notUsed,
+      importThreads: notUsed,
+      markRead: notUsed,
+      people: notUsed,
+      notificationSettings: notUsed,
+      setNotificationSettings: notUsed,
+      list: notUsed,
+      get: notUsed,
+      createThread: notUsed,
+      updateThread: notUsed,
+      deleteThread: notUsed,
+      reply: notUsed,
+      updateComment: notUsed,
+      deleteComment: notUsed
+    },
     community: {
       enabled: false,
       list: notUsed,

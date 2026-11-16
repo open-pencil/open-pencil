@@ -354,6 +354,7 @@
   "savePublicHeading": "يمكن لأي شخص فتح ما تحفظه هنا",
   "savePublicDescription": "مساحة العمل هذه هي معرض المجتمع على الخادم، لذا فإن الحفظ فيها ينشر المستند.",
   "documentLinkFailed": "تعذّر فتح هذا المستند. اطلب الوصول من مالكه.",
+  "commentLinkFailed": "تعذّر العثور على هذا التعليق. ربما حُذف.",
   "documentLinkUnknownServer": "سجّل الدخول إلى {host} أولًا لفتح هذا الرابط.",
   "shareOpenedInBrowser": "فُتح في المتصفح",
   "openInDesktopApp": "فتح في تطبيق سطح المكتب",

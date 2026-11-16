@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { MarkdownDocument } from 'comark'
+import type { ComarkPlugin, MarkdownDocument } from 'comark'
 import { tv } from 'tailwind-variants'
 import { computed, provide, shallowRef, watch, type Component } from 'vue'
 
@@ -19,6 +19,7 @@ const {
   density = 'compact',
   highlightCode = false,
   components,
+  plugins,
   class: className
 } = defineProps<{
   content: string
@@ -28,6 +29,8 @@ const {
   highlightCode?: boolean
   /** Inline components the content uses, written `:name[text]{attributes}`. */
   components?: Record<string, Component>
+  /** Comark plugins of this renderer's own, such as one making mentions their component. */
+  plugins?: readonly ComarkPlugin[]
   class?: string
 }>()
 
@@ -39,13 +42,15 @@ provide(MARKDOWN_ANIMATING, animating)
 const parsed = shallowRef<MarkdownDocument | null>(null)
 let parser: Promise<MarkdownParser> | undefined
 let parserHighlights = highlightCode
+let parserPlugins = plugins
 
 watch(
-  () => [content, streaming.value, highlightCode] as const,
-  async ([text, isStreaming, highlight]) => {
-    if (!parser || parserHighlights !== highlight) {
-      parser = createMarkdownParser(highlight)
+  () => [content, streaming.value, highlightCode, plugins] as const,
+  async ([text, isStreaming, highlight, own]) => {
+    if (!parser || parserHighlights !== highlight || parserPlugins !== own) {
+      parser = createMarkdownParser(highlight, undefined, own)
       parserHighlights = highlight
+      parserPlugins = own
     }
     const parse = await parser
     parsed.value = await parse(text, { streaming: isStreaming })

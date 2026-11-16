@@ -25,5 +25,7 @@
   "noMatches": "Aucun commentaire ne correspond.",
   "replyCount": "Réponses : {count}",
   "commentDeleted": "Commentaire supprimé",
-  "hideComments": "Masquer les commentaires"
+  "hideComments": "Masquer les commentaires",
+  "mentionPeople": "Personnes à mentionner",
+  "unread": "Non lu"
 }

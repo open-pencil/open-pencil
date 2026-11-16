@@ -403,6 +403,7 @@ export const cloudMessageDefaults = {
   savePublicDescription:
     'This workspace is the server’s community gallery, so saving to it publishes the document.',
   documentLinkFailed: 'Couldn’t open this document. Ask its owner for access.',
+  commentLinkFailed: 'Couldn’t find this comment. It may have been deleted.',
   documentLinkUnknownServer: params('Sign in to {host} first to open this link.'),
   shareOpenedInBrowser: 'Opened in the browser',
   openInDesktopApp: 'Open in the desktop app',

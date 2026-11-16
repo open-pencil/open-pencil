@@ -137,31 +137,40 @@ describe('collaboration relay', () => {
     expect(carol.messages(COLLAB_ACTIONS.agentPreview)).toHaveLength(1)
   })
 
-  test('tells everyone in a document’s room, viewers too, that its history changed', async () => {
-    const { relay: hub } = startTestRelay()
-    const alice = await join(hub)
-    const bob = await join(hub, { permission: 'view' })
-    const elsewhere = await join(hub, { documentId: crypto.randomUUID() })
-    // A peer cannot say it; only the server can.
-    alice.send({
-      type: 'message',
+  const threadId = crypto.randomUUID()
+  test.each([
+    {
+      change: 'its history',
       namespace: COLLAB_ACTIONS.versions,
-      target: null,
-      payload: new Uint8Array()
-    })
-    hub.announceVersions(documentId)
-
-    const announced = {
-      type: 'message' as const,
-      namespace: COLLAB_ACTIONS.versions,
-      from: RELAY_SERVER_PEER,
-      payload: new Uint8Array()
+      payload: new Uint8Array(),
+      announce: (hub: ReturnType<typeof startTestRelay>['relay']) =>
+        hub.announceVersions(documentId)
+    },
+    {
+      change: 'a comment thread',
+      namespace: COLLAB_ACTIONS.comments,
+      payload: new TextEncoder().encode(threadId),
+      announce: (hub: ReturnType<typeof startTestRelay>['relay']) =>
+        hub.announceComments(documentId, threadId)
     }
-    await until(() => bob.messages(COLLAB_ACTIONS.versions).length > 0)
-    expect(alice.messages(COLLAB_ACTIONS.versions)).toEqual([announced])
-    expect(bob.messages(COLLAB_ACTIONS.versions)).toEqual([announced])
-    expect(elsewhere.messages(COLLAB_ACTIONS.versions)).toEqual([])
-  })
+  ])(
+    'tells everyone in a document’s room, viewers too, that $change changed',
+    async ({ namespace, payload, announce }) => {
+      const { relay: hub } = startTestRelay()
+      const alice = await join(hub)
+      const bob = await join(hub, { permission: 'view' })
+      const elsewhere = await join(hub, { documentId: crypto.randomUUID() })
+      // A peer cannot say it; only the server can.
+      alice.send({ type: 'message', namespace, target: null, payload })
+      announce(hub)
+
+      const announced = { type: 'message' as const, namespace, from: RELAY_SERVER_PEER, payload }
+      await until(() => bob.messages(namespace).length > 0)
+      expect(alice.messages(namespace)).toEqual([announced])
+      expect(bob.messages(namespace)).toEqual([announced])
+      expect(elsewhere.messages(namespace)).toEqual([])
+    }
+  )
 
   test('drops document writes from viewers', async () => {
     const { relay: hub } = startTestRelay()
