@@ -8,24 +8,46 @@ export const ADMIN_BOOTSTRAP_ACTOR = 'cli-bootstrap'
 
 /**
  * Approves an email's enrollment from the admin command, whether or not that person has asked
- * yet, for a deployment with no administrator to approve it in the console.
+ * yet, for a deployment with no administrator to approve it in the console. As a review there
+ * does, it binds the account that already uses the address, which keeps the approval when that
+ * account changes its address (`followEmailChange`), and records the approval in the audit trail.
  */
 export async function approveEnrollmentByEmail(
   database: Kysely<CloudDatabase>,
   email: string
 ): Promise<string> {
   const normalized = normalizeEnrollmentEmail(email)
-  const review = {
-    status: 'approved',
-    reviewedAt: new Date(),
-    reviewedBy: ADMIN_BOOTSTRAP_ACTOR,
-    reviewNote: 'Approved through CLI bootstrap'
-  } as const
-  await database
-    .insertInto('enrollment')
-    .values({ id: crypto.randomUUID(), emailNormalized: normalized, ...review })
-    .onConflict((conflict) => conflict.column('emailNormalized').doUpdateSet(review))
-    .execute()
+  await database.transaction().execute(async (transaction) => {
+    const user = await transaction
+      .selectFrom('user')
+      .select('id')
+      .where('email', '=', normalized)
+      .executeTakeFirst()
+    const review = {
+      status: 'approved',
+      reviewedAt: new Date(),
+      reviewedBy: ADMIN_BOOTSTRAP_ACTOR,
+      reviewNote: 'Approved through CLI bootstrap',
+      ...(user ? { approvedUserId: user.id } : {})
+    } as const
+    const enrollment = await transaction
+      .insertInto('enrollment')
+      .values({ id: crypto.randomUUID(), emailNormalized: normalized, ...review })
+      .onConflict((conflict) => conflict.column('emailNormalized').doUpdateSet(review))
+      .returning('id')
+      .executeTakeFirstOrThrow()
+    await transaction
+      .insertInto('adminAuditEvent')
+      .values({
+        id: crypto.randomUUID(),
+        actorUserId: ADMIN_BOOTSTRAP_ACTOR,
+        action: 'enrollment.approved',
+        subjectType: 'enrollment',
+        subjectId: enrollment.id,
+        metadata: { email: normalized }
+      })
+      .execute()
+  })
   return normalized
 }
 
@@ -38,7 +60,7 @@ export async function grantDeploymentAdminByEmail(
   email: string
 ): Promise<{ email: string; userId: string }> {
   const normalized = normalizeEnrollmentEmail(email)
-  return await database.transaction().execute(async (transaction) => {
+  return database.transaction().execute(async (transaction) => {
     const user = await transaction
       .updateTable('user')
       .set({ role: 'admin' })
