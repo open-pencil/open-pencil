@@ -59,7 +59,7 @@ describe('Cloud discovery contract', () => {
   })
 
   test('reads a minimum editor version, a pre-release too, and refuses one that is not SemVer', () => {
-    for (const minimumEditorVersion of ['0.17.0', '0.18.0-beta.2', '0.18.0-alpha.20261116']) {
+    for (const minimumEditorVersion of ['0.17.0', '0.18.0-beta.2', '0.18.0-nightly.20261116']) {
       expect(parseCloudDiscovery({ ...discovery, minimumEditorVersion })).toMatchObject({
         minimumEditorVersion
       })
@@ -84,14 +84,15 @@ describe('Cloud discovery contract', () => {
     expect(isEditorVersionAtLeast('next', '1.0.0')).toBe(false)
   })
 
-  test('orders pre-releases before their release, and nightlies by date', () => {
+  test('orders pre-releases before their release, and nightlies after betas by date', () => {
     expect(isEditorVersionAtLeast('1.0.0-beta.1', '1.0.0')).toBe(false)
     expect(isEditorVersionAtLeast('1.0.0', '1.0.0-beta.1')).toBe(true)
     expect(isEditorVersionAtLeast('1.0.0-beta.10', '1.0.0-beta.9')).toBe(true)
-    expect(isEditorVersionAtLeast('1.0.0-alpha.20261116', '1.0.0-beta.1')).toBe(false)
-    expect(isEditorVersionAtLeast('1.0.0-beta.1', '1.0.0-alpha.20261116')).toBe(true)
-    expect(isEditorVersionAtLeast('1.0.0-alpha.20261120', '1.0.0-alpha.20261116')).toBe(true)
-    expect(isEditorVersionAtLeast('1.0.0-alpha.20261115', '1.0.0-alpha.20261116')).toBe(false)
-    expect(isEditorVersionAtLeast('1.1.0-alpha.20261201', '1.0.0')).toBe(true)
+    expect(isEditorVersionAtLeast('1.0.0-nightly.20261116', '1.0.0-beta.5')).toBe(true)
+    expect(isEditorVersionAtLeast('1.0.0-beta.5', '1.0.0-nightly.20261116')).toBe(false)
+    expect(isEditorVersionAtLeast('1.0.0-nightly.20261116', '1.0.0')).toBe(false)
+    expect(isEditorVersionAtLeast('1.0.0-nightly.20261120', '1.0.0-nightly.20261116')).toBe(true)
+    expect(isEditorVersionAtLeast('1.0.0-nightly.20261115', '1.0.0-nightly.20261116')).toBe(false)
+    expect(isEditorVersionAtLeast('1.1.0-nightly.20261201', '1.0.0')).toBe(true)
   })
 })

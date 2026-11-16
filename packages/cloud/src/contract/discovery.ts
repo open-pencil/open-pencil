@@ -64,7 +64,7 @@ export type CloudCapabilities = v.InferOutput<typeof cloudCapabilitiesSchema>
 
 /**
  * An editor version, as SemVer: a release such as `0.18.0`, or a pre-release such as
- * `0.18.0-beta.2` or a nightly's `0.18.0-alpha.20261116`.
+ * `0.18.0-beta.2` or a nightly's `0.18.0-nightly.20261116`.
  *
  * Editors before 0.18.0 accept only `major.minor.patch` here and fail discovery on anything else,
  * so a server names a pre-release minimum only once its minimum is already 0.18.0 or later.
@@ -83,8 +83,9 @@ export const CLOUD_EDITOR_VERSION_HEADER = 'X-OpenPencil-Editor-Version' as cons
 
 /**
  * Whether `version` is `minimum` or later, in SemVer order: a pre-release comes before its
- * release, so `0.18.0-beta.2` is not at least `0.18.0`, and nightlies order by their date. To
- * admit a release's pre-releases, name the earliest one, such as `0.18.0-alpha.20261116`. A
+ * release, so `0.18.0-beta.2` is not at least `0.18.0`; a release's nightlies come after its
+ * betas and order by date. To admit a release's pre-releases, name the earliest one, such as
+ * `0.18.0-beta.1`, or `0.18.0-nightly.20261116` for nightlies from that day on. A
  * version that isn't SemVer, on either side, is not at least anything.
  */
 export function isEditorVersionAtLeast(version: string, minimum: string): boolean {
