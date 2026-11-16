@@ -40,13 +40,17 @@ jobs:
 
       - uses: ./.github/actions/setup/workspace
 
-      # This ref's rules, even when production promotes a commit whose tooling had others.
+      # This ref's rules, even when production promotes a commit whose tooling had others. Under
+      # maintenance, production keeps the commit its Worker serves, which wrangler reads.
       - name: Choose the commit to deploy
         id: commit
         env:
           TARGET: ${{ inputs.target }}
+          MAINTENANCE: ${{ inputs.maintenance }}
           GITHUB_TOKEN: ${{ github.token }}
-        run: bun tools/ci/cloud-deploy/src/commit.ts "$TARGET"
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: bun tools/ci/cloud-deploy/src/commit.ts "$TARGET" "packages/cloud/deploy/openpencil/$TARGET/wrangler.jsonc"
 
   deploy:
     needs: commit
@@ -137,7 +141,7 @@ jobs:
           command: >-
             deploy ${{ runner.temp }}/worker/worker.js --config wrangler.jsonc --no-bundle
             --assets ${{ github.workspace }}/dist-cloud
-            --secrets-file ${{ runner.temp }}/cloud-secrets.json
+            --secrets-file ${{ runner.temp }}/cloud-secrets.json --tag ${{ needs.commit.outputs.commit }}
             ${{ inputs.maintenance && '--var OPENPENCIL_CLOUD_MAINTENANCE:on' || '' }}
 
       - name: Check the deployment

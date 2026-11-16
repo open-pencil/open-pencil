@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { deployCommit, type GitHubGet } from '#cloud-deploy/commit'
+import { deployCommit, servingCommit, type GitHubGet } from '#cloud-deploy/commit'
+
+import type { CommandRequest } from '@open-pencil/package-artifacts-tools'
 
 const STAGED = 'e60fbae32e5f0e8ba6f7d59d9aeef14031249aa8'
 const DISPATCHED = 'd89d88c3569f73af446af0076878df0bc002149a'
@@ -22,16 +24,20 @@ function gitHub(deployments: { sha: string; states: string[] }[]): {
   return { get, paths }
 }
 
+function options(github: GitHubGet, serving?: string, maintenance = false) {
+  return { dispatched: DISPATCHED, maintenance, github, serving: async () => serving }
+}
+
 describe('deployCommit', () => {
   test('deploys the dispatched commit to staging without asking GitHub', async () => {
     const { get, paths } = gitHub([])
-    expect(await deployCommit('staging', DISPATCHED, get)).toBe(DISPATCHED)
+    expect(await deployCommit('staging', options(get))).toBe(DISPATCHED)
     expect(paths).toEqual([])
   })
 
   test('promotes the commit staging runs to production', async () => {
     const { get, paths } = gitHub([{ sha: STAGED, states: ['success', 'in_progress', 'queued'] }])
-    expect(await deployCommit('production', DISPATCHED, get)).toBe(STAGED)
+    expect(await deployCommit('production', options(get))).toBe(STAGED)
     expect(paths[0]).toBe('deployments?environment=cloud-staging&per_page=1')
   })
 
@@ -39,13 +45,69 @@ describe('deployCommit', () => {
     'refuses while staging’s newest deployment is %s',
     async (state) => {
       const { get } = gitHub([{ sha: STAGED, states: [state, 'success'] }])
-      await expect(deployCommit('production', DISPATCHED, get)).rejects.toThrow(`is ${state}`)
+      await expect(deployCommit('production', options(get))).rejects.toThrow(`is ${state}`)
     }
   )
 
   test('refuses before staging has ever been deployed', async () => {
-    await expect(deployCommit('production', DISPATCHED, gitHub([]).get)).rejects.toThrow(
+    await expect(deployCommit('production', options(gitHub([]).get))).rejects.toThrow(
       'never been deployed'
     )
+  })
+
+  test('takes production off the air on the commit it serves, without asking staging', async () => {
+    const { get, paths } = gitHub([{ sha: STAGED, states: ['failure'] }])
+    const serving = 'c5d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9'
+    expect(await deployCommit('production', options(get, serving, true))).toBe(serving)
+    expect(await deployCommit('production', options(get, undefined, true))).toBe(DISPATCHED)
+    expect(paths).toEqual([])
+  })
+})
+
+describe('servingCommit', () => {
+  function wrangler(status: unknown, version: unknown) {
+    const asked: string[][] = []
+    const execute = async (request: CommandRequest) => {
+      const args = request.args ?? []
+      asked.push(args)
+      return { stdout: JSON.stringify(args.includes('status') ? status : version), stderr: '' }
+    }
+    return { asked, execute }
+  }
+
+  test('reads the tag of the version that takes every request', async () => {
+    const { asked, execute } = wrangler(
+      { versions: [{ version_id: 'v1', percentage: 100 }] },
+      { annotations: { 'workers/tag': STAGED, 'workers/triggered_by': 'upload' } }
+    )
+    expect(await servingCommit('wrangler.jsonc', '/repo', execute)).toBe(STAGED)
+    expect(asked[1]).toEqual([
+      'wrangler',
+      'versions',
+      'view',
+      'v1',
+      '--json',
+      '-c',
+      'wrangler.jsonc'
+    ])
+  })
+
+  test('names no commit for an untagged version or a split rollout', async () => {
+    expect(
+      await servingCommit(
+        'wrangler.jsonc',
+        '/repo',
+        wrangler({ versions: [{ version_id: 'v1', percentage: 100 }] }, { annotations: {} }).execute
+      )
+    ).toBeUndefined()
+    const split = {
+      versions: [
+        { version_id: 'v1', percentage: 50 },
+        { version_id: 'v2', percentage: 50 }
+      ]
+    }
+    expect(
+      await servingCommit('wrangler.jsonc', '/repo', wrangler(split, {}).execute)
+    ).toBeUndefined()
   })
 })

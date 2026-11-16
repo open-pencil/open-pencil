@@ -112,8 +112,9 @@ What holds what:
 
 To restore the database to an earlier time:
 
-1. Take production off the air: run Deploy Cloud for `production` from the deployed tag with
-   **maintenance** checked. Every request then answers 503, the cron's cleanup does nothing, so
+1. Take production off the air: run Deploy Cloud for `production` from master with
+   **maintenance** checked. It redeploys the commit production serves, which each deploy tags its
+   Worker version with, without waiting on staging. Every request then answers 503, the cron's cleanup does nothing, so
    nothing deletes what the restore brings back, and the rooms' objects refuse new sockets and
    close any open one that sends a message, so no edit reaches the database. It skips migrating
    and the health check. Wait five minutes after it finishes before restoring: Cloudflare may take
@@ -126,7 +127,8 @@ To restore the database to an earlier time:
    that the bucket lacks, copy `deleted/<object_key>` back to `<object_key>` with any S3 client
    against the bucket's endpoint. Other `storage_object` rows can name files never written, such
    as a snapshot whose upload failed; skip them. Files deleted more than 14 days ago are gone.
-4. Put production back: run Deploy Cloud again from the same tag without maintenance. It migrates
+4. Put production back: run Deploy Cloud for `production` again without maintenance, which
+   promotes what staging runs. It migrates
    the restored database, so its schema matches the Worker even if the restore point predates a
    migration, deploys without the maintenance variable, and checks the pages answer.
 5. Open a document saved before the restore point.

@@ -2,6 +2,8 @@ import { appendFile } from 'node:fs/promises'
 
 import * as v from 'valibot'
 
+import { runCommand } from '@open-pencil/package-artifacts-tools'
+
 import { isCloudTarget, isOnMaster, refusal, type CloudTarget } from './ref'
 
 /** The environment whose deployments say what staging runs. */
@@ -13,17 +15,31 @@ const statusesSchema = v.array(v.object({ state: v.string() }))
 /** Reads one GitHub REST path as JSON. */
 export type GitHubGet = (path: string) => Promise<unknown>
 
+export type DeployCommitOptions = {
+  /** The commit the run was started from. */
+  dispatched: string
+  maintenance: boolean
+  github: GitHubGet
+  /** The commit production's Worker serves, from the tag each deploy gives it; none before tags. */
+  serving: () => Promise<string | undefined>
+}
+
 /**
  * The commit a target deploys. Staging deploys the commit it was started from. Production
  * promotes what staging runs: the commit of staging's newest deployment, once that deployment
  * succeeded, so nothing reaches production that has not served from staging first.
+ *
+ * Taking production off the air for a restore must not wait on staging, so maintenance redeploys
+ * the commit production serves, or, for a Worker deployed before deploys were tagged, the one
+ * the run was started from.
  */
 export async function deployCommit(
   target: CloudTarget,
-  dispatched: string,
-  get: GitHubGet
+  { dispatched, maintenance, github, serving }: DeployCommitOptions
 ): Promise<string> {
   if (target === 'staging') return dispatched
+  if (maintenance) return (await serving()) ?? dispatched
+  const get = github
   const [newest] = v.parse(
     deploymentsSchema,
     await get(`deployments?environment=${STAGING_ENVIRONMENT}&per_page=1`)
@@ -40,6 +56,36 @@ export async function deployCommit(
     )
   }
   return newest.sha
+}
+
+const deploymentStatusSchema = v.object({
+  versions: v.array(v.object({ version_id: v.string(), percentage: v.number() }))
+})
+const versionSchema = v.object({
+  annotations: v.optional(v.object({ 'workers/tag': v.optional(v.string()) }))
+})
+const jsonSchema = v.pipe(v.string(), v.parseJson())
+
+/**
+ * The commit a Worker serves: the tag of the version its current deployment sends every request
+ * to. Undefined for a version without one, or while a gradual rollout splits traffic.
+ */
+export async function servingCommit(
+  config: string,
+  cwd: string,
+  execute = runCommand
+): Promise<string | undefined> {
+  const wrangler = async (...args: string[]) =>
+    v.parse(
+      jsonSchema,
+      (await execute({ command: 'bunx', args: ['wrangler', ...args, '--json', '-c', config], cwd }))
+        .stdout
+    )
+  const { versions } = v.parse(deploymentStatusSchema, await wrangler('deployments', 'status'))
+  const [only] = versions
+  if (versions.length !== 1 || !only || only.percentage !== 100) return undefined
+  const version = v.parse(versionSchema, await wrangler('versions', 'view', only.version_id))
+  return version.annotations?.['workers/tag']
 }
 
 /** A `GitHubGet` for this repository through the REST API, with the workflow's token. */
@@ -62,14 +108,20 @@ export function gitHubGet(repository: string, token: string): GitHubGet {
  * when production promotes an older commit whose tooling had others.
  */
 if (import.meta.main) {
-  const [target = ''] = process.argv.slice(2)
-  const { GITHUB_OUTPUT, GITHUB_REF, GITHUB_REPOSITORY, GITHUB_SHA, GITHUB_TOKEN } = process.env
+  const [target = '', config = ''] = process.argv.slice(2)
+  const { GITHUB_OUTPUT, GITHUB_REF, GITHUB_REPOSITORY, GITHUB_SHA, GITHUB_TOKEN, MAINTENANCE } =
+    process.env
   if (!GITHUB_OUTPUT || !GITHUB_REF || !GITHUB_REPOSITORY || !GITHUB_SHA || !GITHUB_TOKEN) {
     throw new Error('Run commit.ts <target> in a workflow step, with GITHUB_TOKEN set')
   }
   const refused = refusal(target, GITHUB_REF)
   if (refused || !isCloudTarget(target)) throw new Error(refused)
-  const commit = await deployCommit(target, GITHUB_SHA, gitHubGet(GITHUB_REPOSITORY, GITHUB_TOKEN))
+  const commit = await deployCommit(target, {
+    dispatched: GITHUB_SHA,
+    maintenance: MAINTENANCE === 'true',
+    github: gitHubGet(GITHUB_REPOSITORY, GITHUB_TOKEN),
+    serving: () => servingCommit(config, process.cwd())
+  })
   if (!(await isOnMaster(process.cwd(), commit))) {
     throw new Error(`${commit} is not on master`)
   }
