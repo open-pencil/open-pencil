@@ -12,9 +12,17 @@ function drawsImage(node: SceneNode): boolean {
   )
 }
 
-/** Its sampling depends on where the layer lands on the export's pixels, which no key follows. */
+/** Noise samples once per output pixel in an export, so it follows that export's pixel grid. */
+function drawsNoise(node: SceneNode): boolean {
+  return node.effects.some((effect) => effect.visible && effect.type === 'NOISE')
+}
+
+/**
+ * Its sampling depends on where the layer lands on the export's pixels, which no key follows:
+ * an image's, and a noise's, which is taken once per output pixel.
+ */
 function samplesImagesForExport(r: SkiaRenderer, node: SceneNode): boolean {
-  return r.images.supersampledOutput !== null && drawsImage(node)
+  return r.images.supersampledOutput !== null && (drawsImage(node) || drawsNoise(node))
 }
 
 /**

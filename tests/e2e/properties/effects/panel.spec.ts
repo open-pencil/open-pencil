@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { effectDriver } from '#tests/helpers/properties/effect-driver'
 
 for (const theme of ['light', 'dark']) {
   test(`inline effect settings in ${theme}`, async ({ page }) => {
@@ -176,6 +177,51 @@ test('switch an effect to Glass and edit its labelled settings', async ({ page }
   await depth.fill('12')
   await depth.press('Enter')
   await expect.poll(async () => (await glass())?.glass?.depth).toBe(12)
+})
+
+test('switch an effect to Noise and Texture and edit their settings as Figma lays them out', async ({
+  page
+}) => {
+  await page.goto('/?test')
+  await new CanvasHelper(page).waitForInit()
+  const scene = effectDriver(() => page)
+  await scene.build()
+  const effect = () => scene.effect()
+  const section = page.getByRole('region', { name: 'Effects', exact: true })
+  await section.getByRole('button', { name: 'Expand effect settings' }).click()
+  await section.getByRole('combobox', { name: 'Effects', exact: true }).click()
+  await page.getByRole('option', { name: 'Noise', exact: true }).click()
+  // Figma 126 starts a noise monotone black at 25%, size 0.5, fully dense.
+  await expect.poll(effect).toMatchObject({
+    type: 'NOISE',
+    color: { r: 0, g: 0, b: 0, a: 0.25 },
+    noise: { noiseType: 'MONOTONE', noiseSize: { x: 0.5, y: 0.5 }, density: 1 }
+  })
+  await section.getByRole('button', { name: 'Duo', exact: true }).click()
+  await expect
+    .poll(async () => (await effect())?.noise?.secondaryColor)
+    .toEqual({
+      r: 1,
+      g: 1,
+      b: 1,
+      a: 0.25
+    })
+  await expect(section).toHaveScreenshot('inline-noise-light.png')
+  const density = section.getByRole('spinbutton', { name: 'Density', exact: true })
+  await density.focus()
+  await density.fill('40')
+  await density.press('Enter')
+  await expect.poll(async () => (await effect())?.noise?.density).toBe(0.4)
+
+  await section.getByRole('combobox', { name: 'Effects', exact: true }).click()
+  await page.getByRole('option', { name: 'Texture', exact: true }).click()
+  await expect.poll(effect).toMatchObject({
+    type: 'TEXTURE',
+    texture: { noiseSize: { x: 4, y: 4 }, clipToShape: false }
+  })
+  await expect(section).toHaveScreenshot('inline-texture-light.png')
+  await section.getByRole('checkbox', { name: 'Clip to shape', exact: true }).click()
+  await expect.poll(async () => (await effect())?.texture?.clipToShape).toBe(true)
 })
 
 test('a drop shadow shows behind transparent areas until unchecked', async ({ page }) => {

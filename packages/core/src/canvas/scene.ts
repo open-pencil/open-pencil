@@ -14,9 +14,11 @@ import { fontManager } from '#core/text/font/manager'
 import { needsIsolatedBlendLayer, setPaintBlendMode } from './blend/modes'
 import { blurredContent, layerBlurFilter } from './blur/layer'
 import { renderBooleanOperation } from './boolean'
+import { renderLeafWithEffects } from './effects'
 import { drawVectorMultiStyleFills, paintFills } from './fills/paint'
 import { drawLayoutGrids } from './layout-grids'
 import { renderMaskedChildIds } from './masks'
+import { withNoiseEffects } from './noise/render'
 import { drawShapeThroughNodePicture } from './renderer/node-pictures'
 import type { SkiaRenderer, RenderOverlays } from './renderer/skia'
 import {
@@ -41,6 +43,7 @@ import {
 import { drawReflowedPathTextSilhouettes, isReflowedPathText } from './text/derived'
 import { drawTextEmoji, hasOverflowPathTextPaint, renderText } from './text/draw/text'
 import { stickyPlaceholderNode } from './text/placeholder'
+import { beginTexture, endTexture, visibleTexture } from './texture/render'
 
 function drawVisibleFills(
   r: SkiaRenderer,
@@ -400,19 +403,32 @@ export function renderNode(
 
   applyNodeTransforms(canvas, node, overlays)
   renderLayerShadows(r, canvas, graph, node, 'behind')
-  renderNodeContent(r, canvas, graph, node, overlays)
-  drawLayoutGrids(r, canvas, node)
-  renderChildren(
-    r,
-    canvas,
-    graph,
-    node,
-    overlays,
-    absX,
-    absY,
-    childFrame(frame, node, parentAbsX, parentAbsY, overlays.rotationPreview)
-  )
-  renderLayerShadows(r, canvas, graph, node, 'front')
+  // A frame or group's texture roughens what it and its children draw, not its shadows, and its
+  // noise grains the roughened result and its inner shadows, as in Figma. A shape does both itself.
+  const container = isLayerContainer(node)
+  const texture = container ? visibleTexture(node) : undefined
+  const drawContent = () => {
+    const textureSaves = texture ? beginTexture(r, canvas, node, texture) : 0
+    try {
+      renderNodeContent(r, canvas, graph, node, overlays)
+      drawLayoutGrids(r, canvas, node)
+      renderChildren(
+        r,
+        canvas,
+        graph,
+        node,
+        overlays,
+        absX,
+        absY,
+        childFrame(frame, node, parentAbsX, parentAbsY, overlays.rotationPreview)
+      )
+    } finally {
+      endTexture(canvas, textureSaves)
+    }
+    renderLayerShadows(r, canvas, graph, node, 'front')
+  }
+  if (container) withNoiseEffects(r, canvas, node, graph, drawContent)
+  else drawContent()
 
   if (layerBlur) {
     canvas.restore()
@@ -526,9 +542,9 @@ export function renderShapeUncached(
   node: SceneNode,
   graph: SceneGraph
 ): void {
-  r.renderEffects(canvas, node, graph, 'behind')
-  paintShapeContent(r, canvas, node, graph, () => r.renderEffects(canvas, node, graph, 'inner'))
-  r.renderEffects(canvas, node, graph, 'front')
+  renderLeafWithEffects(r, canvas, node, graph, (inner) =>
+    paintShapeContent(r, canvas, node, graph, inner)
+  )
 }
 
 /** Draws a shape's fills and strokes without its effects; `afterFills` runs between the two. */

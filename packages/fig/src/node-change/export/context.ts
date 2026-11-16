@@ -11,15 +11,18 @@ import type {
   ComponentPropertyDefinition,
   Effect,
   GlassEffectParams,
+  NoiseEffectParams,
   PluginDataEntry,
   SceneGraph,
-  SceneNode
+  SceneNode,
+  TextureEffectParams
 } from '@open-pencil/scene-graph'
-import { UNSET_GLASS } from '@open-pencil/scene-graph/constants'
+import { UNSET_GLASS, UNSET_NOISE, UNSET_TEXTURE } from '@open-pencil/scene-graph/constants'
 import type { Color, GUID, Matrix } from '@open-pencil/scene-graph/primitives'
 import { sharedStyleLayers } from '@open-pencil/scene-graph/shared-styles'
 import { EFFECT_BINDING_PROPERTIES, effectBindingField } from '@open-pencil/scene-graph/variables'
 
+import { modeledEffectIndexes } from '../paint'
 import { variableAlias } from '../variable/bindings'
 import { EFFECT_VARIABLE_FIELDS, kiwiEffectWithBindings } from '../variable/effects'
 
@@ -307,7 +310,9 @@ export function createStrokePaints(context: SceneNodeToKiwiContext, node: SceneN
  * `effects` as a record writes them for `node`. Each bound property names its variable as a
  * paint's colour does and carries the value it resolves to; a property the node no longer binds
  * loses its alias. With `keepUnresolved`, an imported alias to a library variable the document
- * never resolved stays as it came, since nothing stands in for it.
+ * never resolved stays as it came, since nothing stands in for it. `effects` may be a record's
+ * raw list: an effect the scene graph does not model stays as it came, and the rest are matched
+ * to the node's effects by their index among the modeled ones.
  */
 export function bindKiwiEffects(
   context: SceneNodeToKiwiContext,
@@ -317,7 +322,10 @@ export function bindKiwiEffects(
 ): KiwiEffect[] {
   const alias = (variableId: string) =>
     variableAlias(context.graph, variableId, context.varIdToGuid)
-  return effects.map((effect, index) => {
+  const indexes = modeledEffectIndexes(effects)
+  return effects.map((effect, rawIndex) => {
+    const index = indexes[rawIndex]
+    if (index === null) return effect
     const bound = kiwiEffectWithBindings(effect, index, node.boundVariables, alias)
     const current = node.effects.at(index)
     for (const property of EFFECT_BINDING_PROPERTIES) {
@@ -334,13 +342,16 @@ export function bindKiwiEffects(
   })
 }
 
-/** A node's effects as its record writes them, `.fig` naming a layer blur a foreground blur. */
+/**
+ * A node's effects as its record writes them, `.fig` naming a layer blur a foreground blur and a
+ * texture a grain.
+ */
 export function createEffects(context: SceneNodeToKiwiContext, node: SceneNode): KiwiEffect[] {
   return bindKiwiEffects(
     context,
     node,
     node.effects.map((effect) => ({
-      type: effect.type === 'LAYER_BLUR' ? 'FOREGROUND_BLUR' : effect.type,
+      type: KIWI_EFFECT_TYPE[effect.type],
       color: context.safeColor(effect.color),
       offset: effect.offset,
       radius: effect.radius,
@@ -353,9 +364,26 @@ export function createEffects(context: SceneNodeToKiwiContext, node: SceneNode):
   )
 }
 
-/** The fields only a glass effect or a progressive blur writes, under the archive's names. */
+/** The `.fig` name of each effect type. */
+const KIWI_EFFECT_TYPE: Record<Effect['type'], KiwiEffect['type']> = {
+  DROP_SHADOW: 'DROP_SHADOW',
+  INNER_SHADOW: 'INNER_SHADOW',
+  LAYER_BLUR: 'FOREGROUND_BLUR',
+  BACKGROUND_BLUR: 'BACKGROUND_BLUR',
+  FOREGROUND_BLUR: 'FOREGROUND_BLUR',
+  GLASS: 'GLASS',
+  NOISE: 'NOISE',
+  TEXTURE: 'GRAIN'
+}
+
+/**
+ * The fields only a glass, noise, or texture effect or a progressive blur writes, under the
+ * archive's names.
+ */
 function kiwiEffectKindFields(effect: Effect): Partial<KiwiEffect> {
   if (effect.type === 'GLASS') return kiwiGlassFields(effect.glass ?? UNSET_GLASS)
+  if (effect.type === 'NOISE') return kiwiNoiseFields(effect.noise ?? UNSET_NOISE, effect.color)
+  if (effect.type === 'TEXTURE') return kiwiTextureFields(effect.texture ?? UNSET_TEXTURE)
   if (!effect.progressive) return {}
   return {
     blurOpType: 'PROGRESSIVE',
@@ -375,6 +403,32 @@ function kiwiGlassFields(glass: GlassEffectParams): Partial<KiwiEffect> {
     chromaticAberration: glass.dispersion,
     refractionIntensity: glass.refraction
   }
+}
+
+/**
+ * A noise effect's grain as Figma writes it: a duotone's second colour, its first where it has
+ * none as the renderer draws it, and a multitone's opacity.
+ */
+function kiwiNoiseFields(noise: NoiseEffectParams, color: Color): Partial<KiwiEffect> {
+  const fields: Partial<KiwiEffect> = {
+    noiseType: noise.noiseType,
+    noiseSize: { ...noise.noiseSize },
+    density: noise.density
+  }
+  if (noise.noiseType === 'DUOTONE') fields.secondaryColor = { ...(noise.secondaryColor ?? color) }
+  if (noise.noiseType === 'MULTITONE') fields.opacity = noise.opacity ?? 1
+  if (noise.seed !== undefined) fields.seed = noise.seed
+  return fields
+}
+
+/** A texture's grain under the `.fig` names; its strength is the effect's `radius`. */
+function kiwiTextureFields(texture: TextureEffectParams): Partial<KiwiEffect> {
+  const fields: Partial<KiwiEffect> = {
+    noiseSize: { ...texture.noiseSize },
+    clipToShape: texture.clipToShape
+  }
+  if (texture.seed !== undefined) fields.seed = texture.seed
+  return fields
 }
 
 /** Instances address descendants by override key when one exists, else by node GUID. */
