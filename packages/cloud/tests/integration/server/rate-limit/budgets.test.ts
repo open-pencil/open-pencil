@@ -10,6 +10,7 @@ import {
   routeParamResource
 } from '#cloud/server/rate-limit'
 import { Hono } from 'hono'
+import { testClient } from 'hono/testing'
 
 const SECRET = 'a rate limit secret'
 const policy = (namespace: string, limit: number) => ({ namespace, windowMs: 60_000, limit })
@@ -43,15 +44,14 @@ describe('rate limit budgets', () => {
           )
         )
         .route('/', routes)
-      const status = async (method: string, path: string) =>
-        (await app.request(path, { method })).status
+      const client = testClient(app)
 
       // Three creations fit the route's own budget, though the general one allows a single request.
-      for (const _ of [1, 2, 3]) expect(await status('POST', '/documents')).toBe(200)
-      expect(await status('POST', '/documents')).toBe(429)
+      for (const _ of [1, 2, 3]) expect((await client.documents.$post()).status).toBe(200)
+      expect((await client.documents.$post()).status).toBe(429)
       // A request the route's limiter does not count is the general limiter's.
-      expect(await status('DELETE', '/documents')).toBe(200)
-      expect(await status('POST', '/rename')).toBe(429)
+      expect((await client.documents.$delete()).status).toBe(200)
+      expect((await client.rename.$post()).status).toBe(429)
     } finally {
       await runtime.close()
     }
@@ -81,8 +81,11 @@ describe('rate limit budgets', () => {
           )
         )
         .post('/documents/:documentId/uploads', (context) => context.text('created'))
+      const client = testClient(app)
       const upload = async (document: string) => {
-        const response = await app.request(`/documents/${document}/uploads`, { method: 'POST' })
+        const response = await client.documents[':documentId'].uploads.$post({
+          param: { documentId: document }
+        })
         const budget = response.headers.get('RateLimit')?.match(/limit=(\d+), remaining=(\d+)/)
         return { status: response.status, limit: budget?.[1], remaining: budget?.[2] }
       }
