@@ -89,6 +89,26 @@ describe('createUpdaterSession', () => {
     expect(session.state.value).toEqual({ status: 'up-to-date' })
   })
 
+  test('checks again when the channel changes, unless an update is already on its way', async () => {
+    const nightly = { ...fakeUpdate().update, version: '0.18.0-nightly.20261116' }
+    const stable = { ...fakeUpdate().update, version: '0.17.0' }
+    const offers = [nightly, stable]
+    const session = createUpdaterSession(fakeBackend(async () => offers.shift() ?? null).backend)
+    await session.check()
+    await session.recheck()
+    expect(session.state.value).toMatchObject({
+      status: 'available',
+      release: { version: '0.17.0' }
+    })
+
+    const busy = createUpdaterSession(fakeBackend(async () => fakeUpdate().update).backend)
+    await busy.check()
+    const release = { version: '0.16.0', currentVersion: '0.15.1', notes: '' }
+    busy.state.value = { status: 'installed', release }
+    await busy.recheck()
+    expect(busy.state.value).toEqual({ status: 'installed', release })
+  })
+
   test('retries a failed check', async () => {
     const { update } = fakeUpdate()
     let attempts = 0

@@ -9,11 +9,7 @@ import {
   updateStartupUpdateCheck,
   updateUpdateChannel
 } from '@/app/settings/preferences/store'
-import {
-  buildUpdateChannel,
-  resolveUpdateChannel,
-  type UpdateChannel
-} from '@/app/shell/updater/channel'
+import { resolveUpdateChannel, type UpdateChannel } from '@/app/shell/updater/channel'
 import { canSelfUpdate } from '@/app/tauri/capabilities'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
@@ -30,7 +26,8 @@ const checkOnStartup = computed({
   get: () => appPreferences.value.updates.checkOnStartup,
   set: updateStartupUpdateCheck
 })
-// Until a channel is chosen it follows the installed build, which Reset goes back to.
+// Until a channel is chosen it follows the installed build, which Reset goes back to; a channel
+// chosen to match the build still counts as chosen, so Reset stays offered.
 const channel = computed<UpdateChannel>({
   get: () => resolveUpdateChannel(appPreferences.value.updates.channel),
   set: updateUpdateChannel
@@ -61,7 +58,7 @@ const channelOptions = computed(() => [
       <SettingsRow
         :label="updates.channel"
         :description="updates.channelDescription"
-        :modified="channel !== buildUpdateChannel()"
+        :modified="appPreferences.updates.channel !== 'build'"
         class="max-sm:flex-col max-sm:items-stretch"
         @reset="updateUpdateChannel('build')"
       >

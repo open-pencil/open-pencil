@@ -57,6 +57,11 @@ export interface UpdaterSession {
   restart(): Promise<void>
   /** Repeats the step that failed. */
   retry(): Promise<void>
+  /**
+   * Checks again after the update channel changed, so the window never installs the other
+   * channel's build; one already downloading, installing, or installed carries on.
+   */
+  recheck(): Promise<void>
   dismiss(): Promise<void>
 }
 
@@ -223,13 +228,19 @@ export function createUpdaterSession(backend: UpdaterBackend): UpdaterSession {
     return install()
   }
 
+  async function recheck() {
+    const { status } = state.value
+    if (status === 'downloading' || status === 'installing' || status === 'installed') return
+    await check()
+  }
+
   async function dismiss() {
     if (state.value.status === 'installing') return
     await release()
     await backend.closeWindow()
   }
 
-  return { state, check, install, cancel, restart, retry, dismiss }
+  return { state, check, install, cancel, restart, retry, recheck, dismiss }
 }
 
 function releaseInfo(update: PendingUpdate): ReleaseInfo {
