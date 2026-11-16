@@ -211,6 +211,44 @@ describe('letter-spaced text export', () => {
     })
   })
 
+  test('makes room for the spacing every character has, from its runs or the layer', () => {
+    const spaced = { value: 10, unit: 'PIXELS' } as const
+    const unspaced = { value: 0, unit: 'PIXELS' } as const
+    // Runs that take the layer's spacing off every character leave no spacing to make room for.
+    expect(
+      style({
+        letterSpacing: spaced,
+        textAutoResize: 'HEIGHT',
+        styleRuns: [{ start: 0, length: 4, style: { letterSpacing: unspaced } }]
+      })
+    ).not.toHaveProperty('margin-right')
+    // Characters that differ leave the box as the layer sets it.
+    expect(
+      style({
+        letterSpacing: spaced,
+        textAutoResize: 'HEIGHT',
+        styleRuns: [{ start: 2, length: 2, style: { letterSpacing: unspaced } }]
+      })
+    ).toMatchObject({ width: '200px' })
+    // Runs that space every character alike take their own spacing back.
+    expect(
+      style({
+        textAutoResize: 'HEIGHT',
+        styleRuns: [{ start: 0, length: 4, style: { letterSpacing: spaced } }]
+      })
+    ).toMatchObject({ width: 'calc(200px + 10px)', 'margin-right': '-10px' })
+  })
+
+  test('makes no room in text with no characters', () => {
+    const css = style({
+      text: '',
+      letterSpacing: { value: 10, unit: 'PIXELS' },
+      textAutoResize: 'WIDTH_AND_HEIGHT'
+    })
+    expect(css?.['letter-spacing']).toBe('10px')
+    expect(css).not.toHaveProperty('margin-right')
+  })
+
   test('leaves unspaced text as it is', () => {
     expect(style({ textAutoResize: 'HEIGHT' })).not.toHaveProperty('margin-right')
   })

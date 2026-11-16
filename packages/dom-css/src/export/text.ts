@@ -1,6 +1,12 @@
+import { uniqWith } from 'es-toolkit/array'
 import { isEqual } from 'es-toolkit/predicate'
 
-import type { CharacterStyleOverride, HyperlinkTarget, SceneNode } from '@open-pencil/scene-graph'
+import type {
+  CharacterStyleOverride,
+  HyperlinkTarget,
+  SceneNode,
+  TextLength
+} from '@open-pencil/scene-graph'
 import {
   hasTextList,
   listNumberFormat,
@@ -88,6 +94,20 @@ function linkHref(link: HyperlinkTarget | null | undefined): string | null {
     // Not an absolute URL, which a page could not follow from anywhere it is placed.
     return null
   }
+}
+
+/**
+ * The letter spacing every character of a text has, from its run or the layer, or `undefined`
+ * when characters differ or there are none: then no one spacing ends every line.
+ */
+export function uniformLetterSpacing(node: SceneNode): TextLength | undefined {
+  const spacings = uniqWith(
+    styleRunPieces(node.styleRuns, node.text.length).map(
+      (piece) => piece.style?.letterSpacing ?? node.letterSpacing
+    ),
+    isEqual
+  )
+  return spacings.length === 1 ? spacings[0] : undefined
 }
 
 export function textCaseToCSS(value: SceneNode['textCase']): string | undefined {
