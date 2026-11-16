@@ -481,7 +481,7 @@
   "promptTitleDescription": "О чём просят модель быстрых задач, чтобы назвать разговор.",
   "promptSummary": "Сводки при сжатии",
   "promptSummaryDescription": "Что получает модель, когда кратко пересказывает разговор, чтобы сжать его.",
-  "promptVariables": "Переменные",
+  "promptVariablesAndPreview": "Переменные и предпросмотр",
   "promptVariableLanguage": "Язык ответа, если в запросе он не указан",
   "promptVariableFocus": "На что человек просил обратить внимание в проверке, или пусто",
   "promptVariableSeesImages": "Видит ли модель изображения дизайна",

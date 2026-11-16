@@ -85,7 +85,6 @@ es:ai.responses
 es:ai.toolError
 es:ai.notifyTitle
 es:ai.subagentBack
-es:ai.promptVariables
 es:automation.statusError
 es:code.editorDesignLabel
 es:code.sourceDesignJSX
@@ -557,7 +556,6 @@ de:ai.subagent
 de:ai.subagentBack
 fr:ai.chatReferencePages
 fr:ai.notifyTitle
-fr:ai.promptVariables
 de:settings.groupApp
 de:settings.editor
 es:settings.editor

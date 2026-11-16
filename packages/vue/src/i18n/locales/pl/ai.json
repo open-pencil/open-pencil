@@ -481,7 +481,7 @@
   "promptTitleDescription": "O co model szybkich zadań jest proszony, by nazwać rozmowę.",
   "promptSummary": "Podsumowania kompaktowania",
   "promptSummaryDescription": "Co model słyszy, gdy streszcza rozmowę, by ją skompaktować.",
-  "promptVariables": "Zmienne",
+  "promptVariablesAndPreview": "Zmienne i podgląd",
   "promptVariableLanguage": "Język, w którym pisać, gdy prośba żadnego nie wskazuje",
   "promptVariableFocus": "Na czym osoba prosiła skupić przegląd, albo puste",
   "promptVariableSeesImages": "Czy model widzi obrazy projektu",

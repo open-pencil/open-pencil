@@ -36,13 +36,18 @@ test('a template completes the variables its prompt offers, and filters after a 
   )
 })
 
-test('a prompt lists what its variables hold, and a click writes one in', async ({ page }) => {
+test('a prompt lists what its variables hold and the text they fill, and a click writes one in', async ({
+  page
+}) => {
   const editor = await openTitlePrompt(page)
   const section = page.getByRole('region', { name: 'Chat titles', exact: true })
 
-  await section.getByRole('button', { name: 'Variables', exact: true }).click()
+  await section.getByRole('button', { name: 'Variables and preview', exact: true }).click()
   const request = section.getByRole('button', { name: /^request/ })
   await expect(request).toBeVisible()
+  const sample = /"(.+)"$/.exec((await request.textContent())?.trim() ?? '')?.[1]
+  expect(sample).toBeTruthy()
+  await expect(section.getByTestId('settings-prompt-preview')).toContainText(sample ?? '')
   await request.click()
 
   await expect(editor).toBeFocused()

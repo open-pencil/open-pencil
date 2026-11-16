@@ -481,7 +481,7 @@
   "promptTitleDescription": "Worum das Modell für schnelle Aufgaben gebeten wird, um eine Unterhaltung zu benennen.",
   "promptSummary": "Zusammenfassungen beim Komprimieren",
   "promptSummaryDescription": "Was das Modell gesagt bekommt, wenn es eine Unterhaltung zum Komprimieren zusammenfasst.",
-  "promptVariables": "Variablen",
+  "promptVariablesAndPreview": "Variablen und Vorschau",
   "promptVariableLanguage": "Die Sprache, in der geschrieben wird, wenn die Anfrage keine nennt",
   "promptVariableFocus": "Worauf die Prüfung achten soll, oder leer",
   "promptVariableSeesImages": "Ob das Modell Bilder des Designs sieht",

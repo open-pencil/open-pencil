@@ -481,7 +481,7 @@
   "promptTitleDescription": "Cosa viene chiesto al modello delle attività rapide per dare un nome a una conversazione.",
   "promptSummary": "Riepiloghi di compattazione",
   "promptSummaryDescription": "Cosa viene detto al modello quando riassume una conversazione per compattarla.",
-  "promptVariables": "Variabili",
+  "promptVariablesAndPreview": "Variabili e anteprima",
   "promptVariableLanguage": "La lingua in cui scrivere quando la richiesta non ne indica una",
   "promptVariableFocus": "Su cosa la persona ha chiesto di concentrare la revisione, o vuoto",
   "promptVariableSeesImages": "Se il modello vede immagini del design",

@@ -17,8 +17,7 @@ const { prompt, heading } = defineProps<{ prompt: TemplatePrompt; heading: strin
 const { ai } = useI18n()
 const setting = useTemplatePromptSetting(prompt)
 const { text, modified, samples, check, preview } = setting
-const previewOpen = ref(false)
-const variablesOpen = ref(false)
+const samplesOpen = ref(false)
 const editor = useTemplateRef('editor')
 /** The first error and its line, then that OpenPencil's prompt stands in meanwhile. */
 const errorSummary = computed(() => {
@@ -71,15 +70,23 @@ const variables = computed(() =>
       :variables="variables"
       :unknown-variable-message="(name) => ai.promptUnknownVariable({ name })"
     />
+    <AppAlert
+      v-if="check.errors.length > 0"
+      tone="warning"
+      :heading="ai.promptErrors"
+      :description="errorSummary"
+      data-test-id="settings-prompt-errors"
+    />
+    <!-- The sample values going in, then the prompt they fill: one disclosure, input above
+         output. A prompt without variables shows only its preview. -->
     <AppCollapsible
-      v-if="descriptions.length > 0"
-      v-model:open="variablesOpen"
-      :label="ai.promptVariables"
+      v-model:open="samplesOpen"
+      :label="descriptions.length > 0 ? ai.promptVariablesAndPreview : ai.promptPreview"
       :ui="{ trigger: 'gap-1 py-1 text-2xs text-muted hover:text-surface', icon: 'size-3' }"
     >
       <!-- Each variable writes itself into the template where the cursor is. Names line up in
            a column; what a variable holds reads on after its name, its sample after that. -->
-      <ul class="grid grid-cols-[auto_1fr]">
+      <ul v-if="descriptions.length > 0" class="mb-1.5 grid grid-cols-[auto_1fr]">
         <li
           v-for="variable in descriptions"
           :key="variable.name"
@@ -103,19 +110,6 @@ const variables = computed(() =>
           </button>
         </li>
       </ul>
-    </AppCollapsible>
-    <AppAlert
-      v-if="check.errors.length > 0"
-      tone="warning"
-      :heading="ai.promptErrors"
-      :description="errorSummary"
-      data-test-id="settings-prompt-errors"
-    />
-    <AppCollapsible
-      v-model:open="previewOpen"
-      :label="ai.promptPreview"
-      :ui="{ trigger: 'gap-1 py-1 text-2xs text-muted hover:text-surface', icon: 'size-3' }"
-    >
       <!-- The model reads the prompt as text, so it shows as text, with its own line breaks. -->
       <p
         class="rounded-md bg-hover px-2.5 py-2 text-xs leading-relaxed whitespace-pre-wrap"

@@ -481,7 +481,7 @@
   "promptTitleDescription": "Lo que se le pide al modelo de tareas rápidas para nombrar una conversación.",
   "promptSummary": "Resúmenes de compactación",
   "promptSummaryDescription": "Lo que se le dice al modelo cuando resume una conversación para compactarla.",
-  "promptVariables": "Variables",
+  "promptVariablesAndPreview": "Variables y vista previa",
   "promptVariableLanguage": "El idioma en que escribir cuando la solicitud no indica ninguno",
   "promptVariableFocus": "En qué pidió la persona que se fije la revisión, o vacío",
   "promptVariableSeesImages": "Si el modelo ve imágenes del diseño",

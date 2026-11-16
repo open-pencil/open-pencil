@@ -481,7 +481,7 @@
   "promptTitleDescription": "ما يُطلب من نموذج المهام السريعة لتسمية المحادثة.",
   "promptSummary": "ملخصات الضغط",
   "promptSummaryDescription": "ما يُقال للنموذج عند تلخيص المحادثة لضغطها.",
-  "promptVariables": "المتغيرات",
+  "promptVariablesAndPreview": "المتغيرات والمعاينة",
   "promptVariableLanguage": "اللغة التي يُكتب بها عندما لا يحدد الطلب لغة",
   "promptVariableFocus": "ما طلب الشخص أن تركّز عليه المراجعة، أو فارغ",
   "promptVariableSeesImages": "هل يرى النموذج صورًا للتصميم",

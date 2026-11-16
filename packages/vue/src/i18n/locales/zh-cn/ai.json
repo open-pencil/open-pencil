@@ -481,7 +481,7 @@
   "promptTitleDescription": "为对话命名时向快速任务模型提出的要求。",
   "promptSummary": "压缩摘要",
   "promptSummaryDescription": "模型为压缩对话而总结对话时被告知的内容。",
-  "promptVariables": "变量",
+  "promptVariablesAndPreview": "变量与预览",
   "promptVariableLanguage": "请求未指明语言时使用的语言",
   "promptVariableFocus": "用户要求审查关注的内容，没有则为空",
   "promptVariableSeesImages": "模型是否能看到设计的图像",

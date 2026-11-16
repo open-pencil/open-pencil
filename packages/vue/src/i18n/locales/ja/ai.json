@@ -481,7 +481,7 @@
   "promptTitleDescription": "会話に名前を付けるとき、高速タスクのモデルに依頼する内容です。",
   "promptSummary": "圧縮時の要約",
   "promptSummaryDescription": "会話を圧縮するために要約するとき、モデルに伝える内容です。",
-  "promptVariables": "変数",
+  "promptVariablesAndPreview": "変数とプレビュー",
   "promptVariableLanguage": "リクエストで言語が指定されていないときに使う言語",
   "promptVariableFocus": "レビューで注目するよう依頼された点（なければ空）",
   "promptVariableSeesImages": "モデルにデザインの画像が見えるかどうか",

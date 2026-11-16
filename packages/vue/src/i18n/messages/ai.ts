@@ -557,7 +557,7 @@ export const aiMessageDefaults = {
   promptSummary: 'Compaction summaries',
   promptSummaryDescription:
     'What the model is told when it summarizes a conversation to compact it.',
-  promptVariables: 'Variables',
+  promptVariablesAndPreview: 'Variables and preview',
   promptVariableLanguage: 'The language to write in when the request names none',
   promptVariableFocus: 'What the person asked the review to look at, or empty',
   promptVariableSeesImages: 'Whether the model is shown images of the design',
