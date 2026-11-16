@@ -133,6 +133,7 @@ const rawCloudServerConfigSchema = v.object({
   smtpUser: optionalTextSchema,
   smtpPassword: optionalTextSchema,
   emailFrom: optionalTextSchema,
+  emailReplyTo: v.optional(v.pipe(v.string(), v.email())),
   emailTransport: v.optional(v.picklist(['none', 'smtp', 'cloudflare']), 'none'),
   emailBatchSize: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(1000)), 50),
   emailIntervalMs: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1000)), 30_000),

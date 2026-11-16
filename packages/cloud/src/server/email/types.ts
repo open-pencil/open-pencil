@@ -10,6 +10,7 @@ import type { Transaction } from 'kysely'
 export type TransactionalEmailEnvelope = RenderedTransactionalEmail & {
   deliveryId: string
   from: string
+  replyTo?: string
   to: string
   headers: Record<string, string>
 }

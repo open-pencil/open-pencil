@@ -17,6 +17,7 @@ import * as documentBlockEmails from './migrations/013_document_block_emails'
 import * as reportReplies from './migrations/014_report_replies'
 import * as comments from './migrations/015_comments'
 import * as commentNotifications from './migrations/016_comment_notifications'
+import * as invitationEmails from './migrations/017_invitation_emails'
 import type { CloudDatabase } from './tables'
 
 /**
@@ -43,7 +44,8 @@ const migrations: Record<string, CloudMigration> = {
   '013_document_block_emails': documentBlockEmails,
   '014_report_replies': reportReplies,
   '015_comments': comments,
-  '016_comment_notifications': commentNotifications
+  '016_comment_notifications': commentNotifications,
+  '017_invitation_emails': invitationEmails
 }
 
 /** Cloud's migrations, in order. */

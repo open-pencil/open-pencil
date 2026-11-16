@@ -19,7 +19,8 @@ import { useEmailLocalization } from './localization'
 
 /**
  * The branded email every OpenPencil service sends, in its reader's language and direction: a
- * heading, the paragraphs in the default slot, one button, and small print in `note`.
+ * heading, the paragraphs in the default slot, one button, the sender's name in `signature` when a
+ * person writes, and small print in `note`.
  */
 const { preview, heading, action } = defineProps<{
   /** The line mail clients show beside the subject. */
@@ -44,6 +45,7 @@ const { locale, dir, t } = useEmailLocalization()
         <Section v-if="action" :style="styles.action">
           <Button :href="action.url" :style="styles.button">{{ action.label }}</Button>
         </Section>
+        <Text v-if="$slots.signature" :style="styles.signature"><slot name="signature" /></Text>
         <Text v-if="$slots.note" :style="styles.note"><slot name="note" /></Text>
       </Container>
       <Text :style="styles.footer">

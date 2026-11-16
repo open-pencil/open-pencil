@@ -57,6 +57,8 @@ endpoint = "https://services.openpencil.dev"
 [email]
 transport = "cloudflare"
 from = "cloud@openpencil.dev"
+# Replies reach the team's inbox; cloud@ receives nothing.
+reply_to = "hello@openpencil.dev"
 
 [entitlements]
 source = "static"
