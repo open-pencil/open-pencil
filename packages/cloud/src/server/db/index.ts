@@ -5,6 +5,7 @@ export type {
   CloudDatabase,
   Document,
   DocumentRevision,
+  MFAAssuranceMethod,
   NewDocument,
   NewDocumentRevision,
   NewStorageObject,

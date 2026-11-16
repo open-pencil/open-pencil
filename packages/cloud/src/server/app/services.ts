@@ -44,6 +44,11 @@ export type CloudServices = {
    * documents and deleting the account. Defaults to `resolveSession` when that is given.
    */
   resolveAccountSession?: CloudSessionResolver
+  /**
+   * Whether the request's session proved its account's second step, or the account has none.
+   * Defaults to the auth adapter's, or to yes when `resolveIdentity` stands in for signing in.
+   */
+  twoStepConfirmed?: (request: Request) => Promise<boolean>
   invitationDelivery?: InvitationDelivery
   invitationOutbox?: InvitationOutbox
   transactionalEmail?: TransactionalEmailService

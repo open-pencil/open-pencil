@@ -582,6 +582,7 @@ export const cloudPortalMessageDefaults = {
     'You’re still the only admin of a workspace other people use. Make someone else an admin first.',
   errorSelfAction: 'You can’t do that to your own account.',
   errorTwoStepRequired: 'Turn on two-step sign-in first.',
+  errorTwoStepUnconfirmed: 'Confirm it’s you with your second step, then try again.',
   errorNotAllowed: 'You don’t have permission to do that.',
   errorNetwork: 'Couldn’t reach the server. Check your connection.',
   errorAlreadyDecided: 'Someone already decided this request. Refresh to see it.',

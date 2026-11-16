@@ -525,6 +525,7 @@
   "errorAccountSoleAdmin": "Você ainda é o único admin de um espaço de trabalho que outras pessoas usam. Primeiro torne outra pessoa admin.",
   "errorSelfAction": "Você não pode fazer isso com a sua própria conta.",
   "errorTwoStepRequired": "Ative primeiro a verificação em duas etapas.",
+  "errorTwoStepUnconfirmed": "Confirme que é você com a segunda etapa e tente de novo.",
   "errorNotAllowed": "Você não tem permissão para fazer isso.",
   "errorNetwork": "Não foi possível acessar o servidor. Verifique a conexão.",
   "errorAlreadyDecided": "Alguém já decidiu esta solicitação. Atualize para ver.",

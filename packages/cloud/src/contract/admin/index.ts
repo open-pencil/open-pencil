@@ -41,6 +41,8 @@ export const adminErrorCodeSchema = v.picklist([
   'self_admin_action_forbidden',
   'email_regeneration_unavailable',
   'mfa_required',
+  // Two-step is on, but this session has not proved it lately; confirming it lets it back in.
+  'two_step_unconfirmed',
   'document_not_restorable',
   'workspace_gone'
 ])

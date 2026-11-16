@@ -506,6 +506,7 @@
   "errorAccountSoleAdmin": "他の人が使っているワークスペースの唯一の管理者のままです。先に他の人を管理者にしてください。",
   "errorSelfAction": "自分のアカウントにはこの操作を行えません。",
   "errorTwoStepRequired": "先に2段階認証をオンにしてください。",
+  "errorTwoStepUnconfirmed": "2段階目の確認で本人であることを確かめてから、もう一度お試しください。",
   "errorNotAllowed": "この操作を行う権限がありません。",
   "errorNetwork": "サーバーに接続できませんでした。接続を確認してください。",
   "errorAlreadyDecided": "このリクエストはすでに他の人が対応しました。更新して確認してください。",

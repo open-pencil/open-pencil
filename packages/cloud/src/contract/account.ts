@@ -3,13 +3,15 @@ import * as v from 'valibot'
 
 /**
  * Where an account stands: it may use the server, waits for an administrator, was refused or had
- * its access taken back, or has to accept the server's current terms first.
+ * its access taken back, has to prove its second step in this session, as after signing in through
+ * a linked account such as Google, or has to accept the server's current terms first.
  */
 export const cloudAccountStateSchema = v.picklist([
   'active',
   'pending',
   'rejected',
   'revoked',
+  'two-step',
   'terms'
 ])
 export const cloudIdentitySchema = v.object({

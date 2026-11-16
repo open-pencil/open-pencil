@@ -516,6 +516,7 @@
   "errorAccountSoleAdmin": "Sigues siendo el único administrador de un espacio de trabajo que usan otras personas. Primero nombra a otro administrador.",
   "errorSelfAction": "No puedes hacer eso con tu propia cuenta.",
   "errorTwoStepRequired": "Primero activa la verificación en dos pasos.",
+  "errorTwoStepUnconfirmed": "Confirma que eres tú con tu segundo paso y vuelve a intentarlo.",
   "errorNotAllowed": "No tienes permiso para hacer eso.",
   "errorNetwork": "No se pudo conectar con el servidor. Comprueba tu conexión.",
   "errorAlreadyDecided": "Alguien ya ha resuelto esta solicitud. Actualiza para verla.",

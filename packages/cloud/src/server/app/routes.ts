@@ -30,7 +30,7 @@ export function createAppRouters(
   allowedOrigins: ReadonlySet<string>
 ) {
   const { config, database } = services
-  const { resolveIdentity, resolveSession } = resolvers
+  const { resolveIdentity, resolveSession, twoStepConfirmed } = resolvers
   const admin = createCloudAdminRoutes(
     {
       email: createAdminEmailService(database, services.transactionalEmail, {
@@ -77,6 +77,7 @@ export function createAppRouters(
     deletion: createAccountDeletionService(database),
     resolveIdentity,
     resolveSession,
+    twoStepConfirmed,
     requireActiveSession: checks.requireActiveSession,
     requireAccountSession: checks.requireAccountSession,
     authenticatedMutationLimiter: limiters.authenticatedMutationLimiter
