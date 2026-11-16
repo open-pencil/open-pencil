@@ -79,7 +79,7 @@ test('choosing sets the option by the agent’s own ID', async () => {
     'thought_level',
     'low'
   )
-  expect(chosen).toBe(true)
+  expect(chosen).toEqual({ configOptions: [] })
   expect(fake.configured).toEqual([
     { sessionId: 'session', configId: 'reasoning_effort', value: 'low' }
   ])
@@ -89,12 +89,12 @@ test('a value the session already has is not set again', async () => {
   const fake = requests()
   expect(
     await chooseSessionOption(fake, 'session', { configOptions: MODEL_OPTIONS }, 'model', 'default')
-  ).toBe(true)
+  ).toEqual({ configOptions: MODEL_OPTIONS })
   expect(fake.configured).toEqual([])
 })
 
 test('a session that offers no such option is left alone', async () => {
   const fake = requests()
-  expect(await chooseSessionOption(fake, 'session', {}, 'model', 'opus')).toBe(false)
+  expect(await chooseSessionOption(fake, 'session', {}, 'model', 'opus')).toBeNull()
   expect(fake.configured).toEqual([])
 })

@@ -11,6 +11,7 @@ import { takeBackMessages } from '@/app/ai/chat/queue'
 import type { ChatSubmission } from '@/app/ai/chat/submission/types'
 import { useAIChat } from '@/app/ai/chat/use'
 import { designModelProfile } from '@/app/ai/models'
+import ChatAgentEffortSelect from '@/components/chat/ChatAgentEffortSelect.vue'
 import ChatProfileSelect from '@/components/chat/ChatProfileSelect.vue'
 import ChatThinkingSelect from '@/components/chat/ChatThinkingSelect.vue'
 import { useComposerCompletions } from '@/components/chat/composer/useComposerCompletions'
@@ -196,6 +197,7 @@ const selectedProfileName = computed(
           </template>
         </ChatProfileSelect>
         <ChatThinkingSelect v-if="!isAgentProvider" />
+        <ChatAgentEffortSelect v-else />
       </div>
     </template>
   </ChatComposer>

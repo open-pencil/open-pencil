@@ -3,7 +3,12 @@ import { describe, expect, test } from 'bun:test'
 import { ACP_AGENTS } from '@open-pencil/core/constants'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { AgentImageInputError, askAgent, readAgentOffer } from '@/app/ai/agents/acp/oneoff'
+import {
+  AgentImageInputError,
+  askAgent,
+  readAgentEfforts,
+  readAgentOffer
+} from '@/app/ai/agents/acp/oneoff'
 import { AgentModelChoiceError } from '@/app/ai/agents/acp/session'
 
 import { fakeOneOffAgent, MODEL_OPTIONS, WORKSPACE } from '#tests/helpers/ai/fake-acp-agent'
@@ -26,7 +31,11 @@ describe('reading what an agent offers', () => {
       models: [
         { id: 'default', name: 'Default' },
         { id: 'opus', name: 'Opus' }
-      ]
+      ],
+      efforts: {
+        '': { current: '', values: [] },
+        default: { current: '', values: [] }
+      }
     })
     expect(fake.kills()).toBe(1)
   })
@@ -48,7 +57,39 @@ describe('reading what an agent offers', () => {
 
   test('says so when the agent offers no choice or takes no images', async () => {
     const fake = fakeOneOffAgent({ imageInput: false })
-    expect(await readAgentOffer(agent, fake.startup)).toEqual({ models: [], imageInput: false })
+    expect(await readAgentOffer(agent, fake.startup)).toEqual({
+      models: [],
+      imageInput: false,
+      efforts: { '': { current: '', values: [] } }
+    })
+  })
+
+  test('reads the efforts of one model by putting a session on it, then stops the agent', async () => {
+    const fake = fakeOneOffAgent({
+      configOptions: MODEL_OPTIONS,
+      afterChoice: () => [
+        {
+          id: 'reasoning_effort',
+          name: 'Effort',
+          type: 'select',
+          category: 'thought_level',
+          currentValue: 'medium',
+          options: [
+            { value: 'medium', name: 'Medium' },
+            { value: 'ultra', name: 'Ultra' }
+          ]
+        }
+      ]
+    })
+    expect(await readAgentEfforts(agent, 'opus', fake.startup)).toEqual({
+      current: 'medium',
+      values: [
+        { id: 'medium', name: 'Medium' },
+        { id: 'ultra', name: 'Ultra' }
+      ]
+    })
+    expect(fake.configured).toEqual([{ sessionId: 'session-1', configId: 'model', value: 'opus' }])
+    expect(fake.kills()).toBe(1)
   })
 
   test.each(['initialize', 'newSession'] as const)(

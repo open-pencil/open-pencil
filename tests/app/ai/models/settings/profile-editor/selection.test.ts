@@ -25,7 +25,8 @@ const claudeCode: AgentOffer = {
     { id: 'default', name: 'Default' },
     { id: 'opus', name: 'Opus' },
     { id: 'sonnet', name: 'Sonnet' }
-  ]
+  ],
+  efforts: {}
 }
 
 const scopes: EffectScope[] = []
@@ -150,5 +151,69 @@ describe('the model of a coding agent’s profile in the editor', () => {
 
   test('shows the agent’s default for a profile that names none', () => {
     expect(editor({ providerID: 'acp:claude-code' }).shown()).toBe('Agent default')
+  })
+})
+
+describe('the effort of a coding agent’s profile in the editor', () => {
+  const withEfforts: AgentOffer = {
+    ...claudeCode,
+    efforts: {
+      '': {
+        current: 'default',
+        values: [
+          { id: 'default', name: 'Default' },
+          { id: 'max', name: 'Max' }
+        ]
+      }
+    }
+  }
+
+  test('lists the agent’s own pick first, then the model’s efforts by the agent’s names', async () => {
+    const profile = editor()
+    await profile.choose('acp:claude-code')
+    await profile.answer(withEfforts)
+    expect(profile.selection.agentEffortOptions.value.map((option) => option.label)).toEqual([
+      'Agent default',
+      'Default',
+      'Max'
+    ])
+    profile.selection.agentEffortValue.value = 'max'
+    expect(profile.draft.agentEffort).toBe('max')
+    profile.selection.agentEffortValue.value = profile.selection.agentEffortOptions.value[0].value
+    expect(profile.draft.agentEffort).toBe('')
+  })
+
+  test('goes back to the agent’s own when another model is chosen', async () => {
+    const profile = editor()
+    await profile.choose('acp:claude-code')
+    await profile.answer(withEfforts)
+    profile.selection.agentEffortValue.value = 'max'
+    profile.pick('Opus')
+    expect(profile.draft.agentEffort).toBe('')
+  })
+
+  test('offers none for a custom model, whose efforts are never read', async () => {
+    const profile = editor()
+    await profile.choose('acp:claude-code')
+    await profile.answer(withEfforts)
+    profile.pick('Custom model…')
+    expect(profile.selection.agentEffortOptions.value).toEqual([])
+  })
+
+  test('keeps a saved effort the model no longer offers, so it can be cleared', async () => {
+    const profile = editor({ providerID: 'acp:claude-code', agentEffort: 'ultra' })
+    await profile.answer({ ...claudeCode, efforts: { '': { current: '', values: [] } } })
+    const [agentDefault, ...saved] = profile.selection.agentEffortOptions.value
+    expect(saved.map((option) => option.value)).toEqual(['ultra'])
+    expect(profile.selection.agentEffortValue.value).toBe('ultra')
+    profile.selection.agentEffortValue.value = agentDefault.value
+    expect(profile.draft.agentEffort).toBe('')
+  })
+
+  test('offers nothing while the model’s efforts are unknown or the model has none', async () => {
+    const profile = editor()
+    await profile.choose('acp:claude-code')
+    await profile.answer(claudeCode)
+    expect(profile.selection.agentEffortOptions.value).toEqual([])
   })
 })

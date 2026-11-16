@@ -155,6 +155,14 @@ void history.initialize().catch(() => {
 })
 
 const messages = computed(() => chat.value?.messages ?? history.messages.value)
+/**
+ * The field waits while attachments are prepared or the history switches conversations. A send
+ * opens the chat through the history itself, which must not lock the field for those moments:
+ * it would flash disabled and swap its placeholder on every message.
+ */
+const inputLocked = computed(
+  () => submission.busy.value || (history.busy.value && submission.sending.value === null)
+)
 const subagentThread = useSubagentThread(messages, () => history.current.value?.id)
 const subagentHeader = useTemplateRef<{ focus: () => void }>('subagentHeader')
 const context = useChatContext(messages)
@@ -359,7 +367,10 @@ const status = computed(() => chat.value?.status ?? 'ready')
  * takes in once the current tool calls finish, and Alt+Enter waits until all work is done.
  */
 function sendOrQueue(message: ChatSubmission, afterWork: boolean) {
-  if (status.value === 'streaming' || status.value === 'submitted') {
+  // A send still opening its chat has no status yet; sending now would replace it, so this waits
+  // with the rest and goes after that reply. A send that fails first keeps it, as a failed reply does.
+  const pending = submission.sending.value !== null
+  if (pending || status.value === 'streaming' || status.value === 'submitted') {
     enqueueMessage(message, afterWork ? 'follow-up' : 'steer')
     return
   }
@@ -596,7 +607,7 @@ function handleStop() {
         ref="chatInput"
         :status="status"
         :dragging="draggingImages"
-        :disabled="submission.busy.value || history.busy.value"
+        :disabled="inputLocked"
         @submit="sendOrQueue"
         @stop="handleStop"
         @interrupt="handleStop"

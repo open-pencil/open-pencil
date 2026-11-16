@@ -58,6 +58,11 @@ export type AIModelProfile = {
   customModelID: string
   maxOutputTokens: number
   thinkingLevel: ThinkingLevel
+  /**
+   * The effort an ACP agent runs the model on, by the agent's own value for it, since each agent
+   * and model names its own efforts; absent keeps the agent's.
+   */
+  agentEffort?: string
   harnessPermissionMode?: HarnessPermissionMode
   capabilities: AIModelCapability[]
 }
@@ -88,6 +93,8 @@ export type AIModelProfileDraft = {
   cloudWorkspaceId?: string
   maxOutputTokens: number
   thinkingLevel: ThinkingLevel
+  /** Empty keeps the agent's effort. */
+  agentEffort: string
   harnessPermissionMode: HarnessPermissionMode
   capabilities: AIModelCapability[]
 }

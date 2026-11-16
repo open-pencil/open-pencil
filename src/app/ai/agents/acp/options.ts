@@ -47,6 +47,19 @@ export function sessionChoice(
   }
 }
 
+/** The efforts the model a session is on offers, and the one it runs on. */
+export interface AgentEfforts {
+  current: string
+  /** Empty when the model offers no choice of effort. */
+  values: SessionOptionValue[]
+}
+
+/** The efforts a session offers for the model it is on. */
+export function sessionEfforts(offered: OfferedSessionOptions): AgentEfforts {
+  const choice = sessionChoice(offered, 'thought_level')
+  return { current: choice?.current ?? '', values: choice?.values ?? [] }
+}
+
 /** The agent request that changes a session option, which tests make without a connection. */
 export interface SessionOptionRequests {
   setConfigOption(params: SetSessionConfigOptionRequest): Promise<SetSessionConfigOptionResponse>
@@ -61,8 +74,9 @@ export function sessionOptionRequests(agent: ClientContext): SessionOptionReques
 
 /**
  * Sets the session's option of `category` to `value`, unless it already has it. The agent itself
- * refuses a value it does not know. False when the session offers no such option, so the caller
- * decides whether going on without it is right.
+ * refuses a value it does not know. The result is what the session offers afterwards, which can
+ * change with the value: each model has its own efforts. Null when the session offers no such
+ * option, so the caller decides whether going on without it is right.
  */
 export async function chooseSessionOption(
   requests: SessionOptionRequests,
@@ -70,11 +84,9 @@ export async function chooseSessionOption(
   offered: OfferedSessionOptions,
   category: SessionConfigOptionCategory,
   value: string
-): Promise<boolean> {
+): Promise<OfferedSessionOptions | null> {
   const choice = sessionChoice(offered, category)
-  if (!choice) return false
-  if (choice.current !== value) {
-    await requests.setConfigOption({ sessionId, configId: choice.configId, value })
-  }
-  return true
+  if (!choice) return null
+  if (choice.current === value) return offered
+  return requests.setConfigOption({ sessionId, configId: choice.configId, value })
 }

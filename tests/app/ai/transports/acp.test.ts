@@ -1,260 +1,25 @@
 import { expect, test } from 'bun:test'
 
-import {
-  agent as acpAgent,
-  methods,
-  ndJsonStream,
-  PROTOCOL_VERSION,
-  RequestError,
-  type ClientCapabilities,
-  type NewSessionRequest,
-  type ResumeSessionRequest,
-  type SessionConfigOption,
-  type SessionUpdate
-} from '@agentclientprotocol/sdk/unstable'
-import type { UIMessage, UIMessageChunk } from 'ai'
+import type { SessionConfigOption, SessionUpdate } from '@agentclientprotocol/sdk/unstable'
 
-import { ACP_AGENTS, type ACPAgentDef } from '@open-pencil/core/constants'
+import { ACP_AGENTS } from '@open-pencil/core/constants'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import { OWN_TOOLS_ALLOWED } from '@/app/ai/agents/acp/tools'
 import { SUBAGENT_PART, subagentTranscript } from '@/app/ai/chat/subagents'
 import { systemPrompt } from '@/app/ai/chat/system-prompt'
-import { ACPChatTransport, type ACPStartup } from '@/app/ai/transports/acp'
 import { restAgents, withSubagent } from '@/app/automation/agents'
 import { diagnosticErrorDetails, diagnostics } from '@/app/diagnostics'
-import { createDeferred } from '@/app/runtime/deferred'
 import { DEFAULT_APP_PREFERENCES, updatePromptPreferences } from '@/app/settings/preferences/store'
 
+import {
+  codex,
+  fakeAgents,
+  message,
+  resuming,
+  send,
+  transport
+} from '#tests/helpers/ai/acp-transport'
 import { MODEL_OPTIONS } from '#tests/helpers/ai/fake-acp-agent'
-
-const resuming = expectDefined(
-  ACP_AGENTS.find((agent) => agent.resumesSessions),
-  'an agent that resumes sessions'
-)
-const codex = expectDefined(
-  ACP_AGENTS.find((agent) => agent.id === 'codex'),
-  'Codex agent'
-)
-
-interface FakeAgentOptions {
-  /** False for an agent that runs but never answers a new session. */
-  answersSessions?: boolean
-  /** Refuses every resume, as for a session the agent no longer has. */
-  resumeFails?: boolean
-  /** An adapter error that the real ACP connection serializes before the client receives it. */
-  resumeError?: Error
-  /** A temporary refusal on the first resume, as when the old process still owns the session. */
-  resumeBusy?: boolean
-  /** True for an automation token that is never read, as with a credential prompt left open. */
-  tokenHangs?: boolean
-  /**
-   * How the agent's turn ends: `refused` fails before the agent takes the prompt, `cut-off` fails
-   * after it started answering. Either way it first sends updates that are not part of a turn.
-   */
-  turn?: 'answered' | 'refused' | 'cut-off'
-  /** True for a command lookup that waits until `finishLookup`, as a slow PATH search does. */
-  lookupWaits?: boolean
-  /**
-   * What the agent reports while it takes a turn, after its command list: in the turn's session,
-   * or in a subagent's session `session`.
-   */
-  updates?: { session?: string; update: SessionUpdate }[]
-  /** What the agent offers for choosing its model; none when absent. */
-  configOptions?: SessionConfigOption[]
-}
-
-/** In-memory ACP agents, one per start, that record what the transport asks of them. */
-function fakeAgents({
-  answersSessions = true,
-  resumeFails = false,
-  resumeError,
-  resumeBusy = false,
-  tokenHangs = false,
-  turn = 'answered',
-  lookupWaits = false,
-  updates = [],
-  configOptions
-}: FakeAgentOptions = {}) {
-  const lookup = createDeferred<undefined>()
-  const prompts: string[] = []
-  /** Model changes and prompts in the order the agent got them. */
-  const calls: string[] = []
-  const created: NewSessionRequest[] = []
-  const resumed: ResumeSessionRequest[] = []
-  const capabilities: (ClientCapabilities | undefined)[] = []
-  const sessionRequested = createDeferred<undefined>()
-  const killed = createDeferred<undefined>()
-  let kills = 0
-  let spawns = 0
-  const searchPaths: (string | null | undefined)[] = []
-  const defersTools: boolean[] = []
-  const cwds: (string | undefined)[] = []
-  let crashLatest: (() => void) | null = null
-
-  const spawn: ACPStartup['spawn'] = async (options) => {
-    spawns++
-    searchPaths.push(options.searchPath)
-    cwds.push(options.cwd)
-    const toAgent = new TransformStream<Uint8Array, Uint8Array>()
-    const toClient = new TransformStream<Uint8Array, Uint8Array>()
-    acpAgent()
-      .onRequest(methods.agent.initialize, ({ params }) => {
-        capabilities.push(params.clientCapabilities)
-        return {
-          protocolVersion: PROTOCOL_VERSION,
-          agentCapabilities: { sessionCapabilities: { resume: {} } }
-        }
-      })
-      .onRequest(methods.agent.session.new, ({ params }) => {
-        created.push(params)
-        sessionRequested.resolve(undefined)
-        if (!answersSessions) return createDeferred<never>().promise
-        return { sessionId: `session-${created.length}`, configOptions }
-      })
-      .onRequest(methods.agent.session.resume, ({ params }) => {
-        resumed.push(params)
-        if (resumeFails) throw RequestError.resourceNotFound(params.sessionId)
-        if (resumeError) throw resumeError
-        if (resumeBusy && resumed.length === 1)
-          throw RequestError.invalidRequest({ reason: 'thread_active_writer' }, 'Session in use')
-        return {}
-      })
-      .onRequest(methods.agent.session.setConfigOption, ({ params }) => {
-        calls.push(`model ${String(params.value)}`)
-        return { configOptions: [] }
-      })
-      .onRequest(methods.agent.session.prompt, async ({ params, client }) => {
-        const [part] = params.prompt
-        calls.push('prompt')
-        prompts.push(part?.type === 'text' ? part.text : '')
-        const { sessionId } = params
-        const report = (update: SessionUpdate, session = sessionId) =>
-          client.notify(methods.client.session.update, { sessionId: session, update })
-        await report({ sessionUpdate: 'available_commands_update', availableCommands: [] })
-        if (turn === 'refused') throw new Error('The prompt never reached the model')
-        for (const { session, update } of updates) await report(update, session)
-        if (turn === 'cut-off') {
-          await report({
-            sessionUpdate: 'agent_message_chunk',
-            content: { type: 'text', text: 'On it' }
-          })
-          throw new Error('The turn broke off')
-        }
-        return { stopReason: 'end_turn' }
-      })
-      .onRequest(methods.agent.authenticate, () => ({}))
-      .onNotification(methods.agent.session.cancel, () => undefined)
-      .connect(ndJsonStream(toClient.writable, toAgent.readable))
-    // Ending the pipe ends what the client reads, as a process that exits does.
-    const output = new TransformStream<Uint8Array, Uint8Array>()
-    const stop = new AbortController()
-    toClient.readable
-      .pipeTo(output.writable, { signal: stop.signal, preventCancel: true })
-      .catch(() => undefined)
-    crashLatest = () => {
-      stop.abort()
-      options.onUnexpectedClose()
-    }
-    return {
-      child: {
-        write: async () => undefined,
-        kill: async () => {
-          kills++
-          stop.abort()
-          killed.resolve(undefined)
-        }
-      },
-      input: toAgent.writable,
-      output: output.readable
-    }
-  }
-
-  const startup: ACPStartup = {
-    resolveTarget: async (agent) => {
-      if (lookupWaits) await lookup.promise
-      return { command: agent.command, searchPath: '/lookup/bin' }
-    },
-    spawn,
-    authToken: async () => (tokenHangs ? createDeferred<never>().promise : null),
-    linkTools: async (_token, linkOptions) => {
-      defersTools.push(linkOptions?.defersTools ?? false)
-      return {
-        chat: 'chat',
-        mcpServers: [],
-        meta: OWN_TOOLS_ALLOWED,
-        noteUpdate: () => undefined,
-        outcome: async () => ({ connected: true }),
-        stop: () => undefined
-      }
-    }
-  }
-  return {
-    startup,
-    prompts,
-    calls,
-    created,
-    resumed,
-    capabilities,
-    sessionRequested: sessionRequested.promise,
-    killed: killed.promise,
-    kills: () => kills,
-    spawns: () => spawns,
-    searchPaths,
-    cwds,
-    defersTools,
-    finishLookup: () => lookup.resolve(undefined),
-    crash: () => expectDefined(crashLatest, 'a started agent')()
-  }
-}
-
-function message(role: UIMessage['role'], text: string): UIMessage {
-  return { id: crypto.randomUUID(), role, parts: [{ type: 'text', text }] }
-}
-
-/** Sends `text` after `history` and waits for the reply to end. */
-async function send(
-  transport: ACPChatTransport,
-  text: string,
-  history: UIMessage[] = [],
-  abortSignal?: AbortSignal
-): Promise<UIMessageChunk[]> {
-  const reply = await transport.sendMessages({
-    trigger: 'submit-message',
-    chatId: 'chat',
-    messageId: undefined,
-    messages: [...history, message('user', text)],
-    abortSignal
-  })
-  const chunks: UIMessageChunk[] = []
-  await reply.pipeTo(new WritableStream({ write: (chunk) => void chunks.push(chunk) }))
-  return chunks
-}
-
-function transport(
-  agents: ReturnType<typeof fakeAgents>,
-  options: {
-    resume?: string
-    startTimeoutMs?: number
-    agentDef?: ACPAgentDef
-    cwd?: string
-    model?: string
-  } = {}
-) {
-  const sessions: (string | null)[] = []
-  const agentErrors: unknown[] = []
-  const created = new ACPChatTransport({
-    agentDef: options.agentDef ?? resuming,
-    cwd: options.cwd,
-    startup: agents.startup,
-    resume: options.resume,
-    model: options.model,
-    startTimeoutMs: options.startTimeoutMs ?? 1_000,
-    onSession: (id) => sessions.push(id),
-    onAgentError: (error) => agentErrors.push(error)
-  })
-  return { transport: created, sessions, agentErrors }
-}
 
 test('a new session gets the instructions once and is reported once the agent answers', async () => {
   const agents = fakeAgents()
@@ -566,5 +331,80 @@ test('the agent is put on the profile’s model before it gets the first prompt'
   const { transport: chat } = transport(agents, { model: 'opus' })
   await send(chat, 'first')
   expect(agents.calls).toEqual(['model opus', 'prompt'])
+  await chat.destroy()
+})
+
+/** An effort option as Codex offers it, under its own ID. */
+const EFFORT_OPTION: SessionConfigOption = {
+  id: 'reasoning_effort',
+  name: 'Effort',
+  type: 'select',
+  category: 'thought_level',
+  currentValue: 'medium',
+  options: ['medium', 'ultra'].map((value) => ({ value, name: value.toUpperCase() }))
+}
+
+test('a session opens on the chat’s effort, and a later choice applies before the next prompt', async () => {
+  const agents = fakeAgents({ configOptions: [EFFORT_OPTION] })
+  let effort = 'ultra'
+  const { transport: chat, efforts } = transport(agents, { effort: () => effort })
+  await send(chat, 'first')
+  effort = 'medium'
+  await send(chat, 'second', [message('user', 'first'), message('assistant', 'done')])
+  await send(chat, 'third', [message('user', 'second'), message('assistant', 'done')])
+  expect(agents.calls).toEqual([
+    'reasoning_effort ultra',
+    'prompt',
+    'reasoning_effort medium',
+    'prompt',
+    'prompt'
+  ])
+  expect(efforts.map((reported) => reported?.current)).toEqual(['ultra', 'medium'])
+  expect(efforts[0]?.values.map((value) => value.name)).toEqual(['MEDIUM', 'ULTRA'])
+  await chat.destroy()
+  expect(efforts.at(-1)).toBeNull()
+})
+
+test('a session keeps the agent’s effort while the chat names none', async () => {
+  const agents = fakeAgents({ configOptions: [EFFORT_OPTION] })
+  const { transport: chat, efforts } = transport(agents)
+  await send(chat, 'first')
+  expect(agents.calls).toEqual(['prompt'])
+  expect(efforts[0]?.current).toBe('medium')
+  await chat.destroy()
+})
+
+test('an effort change the reply stopped waiting for is asked again once the chat names another', async () => {
+  const agents = fakeAgents({ configOptions: [EFFORT_OPTION], choicesWait: true })
+  let effort = ''
+  const { transport: chat, efforts } = transport(agents, { effort: () => effort })
+  const history = [message('user', 'first'), message('assistant', 'done')]
+  await send(chat, 'first')
+  effort = 'ultra'
+  const stop = new AbortController()
+  const stopped = send(chat, 'second', history, stop.signal)
+  stop.abort()
+  expect(stopped).rejects.toThrow('The request was stopped.')
+  await stopped.catch(() => undefined)
+  // The agent takes the change after all, then the chat goes back to the effort it ran on.
+  agents.answerChoices()
+  effort = 'medium'
+  await send(chat, 'third', history)
+  expect(agents.calls).toEqual([
+    'prompt',
+    'reasoning_effort ultra',
+    'reasoning_effort medium',
+    'prompt'
+  ])
+  expect(efforts.at(-1)?.current).toBe('medium')
+  await chat.destroy()
+})
+
+test('a session reports the efforts its agent changed while OpenPencil’s tools connected', async () => {
+  const startupOptions = [{ ...EFFORT_OPTION, currentValue: 'ultra' }]
+  const agents = fakeAgents({ configOptions: [EFFORT_OPTION], startupOptions })
+  const { transport: chat, efforts } = transport(agents)
+  await send(chat, 'first')
+  expect(efforts.map((reported) => reported?.current)).toEqual(['ultra'])
   await chat.destroy()
 })
