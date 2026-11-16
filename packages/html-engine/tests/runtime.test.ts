@@ -6,6 +6,8 @@ import { createHTMLEngineRuntime, loadHTMLEngine } from '@open-pencil/html-engin
 import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
+import { engineWithInter } from './helpers/engine'
+
 function elementById(document: DesignDocument, id: string): DesignElement {
   const walk = (nodes: DesignDocument['children']): DesignElement | undefined => {
     for (const node of nodes) {
@@ -19,14 +21,6 @@ function elementById(document: DesignDocument, id: string): DesignElement {
   const element = walk(document.children)
   if (!element) throw new Error(`No #${id}`)
   return element
-}
-
-/** The engine with the repository's Latin subset of Inter as its sans-serif font, so text has lines. */
-async function engineWithInter() {
-  const engine = await loadHTMLEngine()
-  engine.addFont(await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).bytes())
-  engine.setGenericFamily('sans-serif', ['Inter Variable', 'Inter'])
-  return engine
 }
 
 async function styled(html: string) {
@@ -71,6 +65,20 @@ describe('the HTML engine runtime', () => {
     expect(sizes('half')).toEqual(['50%', 'auto', '20px', 'none', '30px'])
     expect(sizes('fixed')).toEqual(['120px', 'auto', 'auto', 'none', 'auto'])
     expect(elementById(document, 'half').layout?.box.width).toBe(392)
+  })
+
+  test('gives side margins as the page set them, so auto ones say where a block goes', async () => {
+    const document = await styled(
+      `<div id="centered" style="width:100px;margin:0 auto"></div><div id="end" style="width:100px;margin-left:auto;margin-right:4%"></div>`
+    )
+    const margins = (id: string) => {
+      const style = elementById(document, id).computedStyle ?? {}
+      return [style['margin-left'], style['margin-right']]
+    }
+
+    expect(margins('centered')).toEqual(['auto', 'auto'])
+    expect(margins('end')).toEqual(['auto', '4%'])
+    expect(elementById(document, 'centered').layout?.box.x).toBe(350)
   })
 
   test('gives an inline element the box around its fragments, as a browser does', async () => {
@@ -165,6 +173,17 @@ describe('the HTML engine runtime', () => {
     expect(elementById(document, 'b').layout?.box.x).toBe(
       (elementById(document, 'a').layout?.box.x ?? 0) + 40
     )
+  })
+
+  test('borders a table and its cells by its border attribute, as a browser does', async () => {
+    const document = await styled('<table id="t" border="2"><tr><td id="c">x</td></tr></table>')
+    const border = (id: string) => {
+      const style = elementById(document, id).computedStyle ?? {}
+      return [style['border-top-width'], style['border-top-style']]
+    }
+
+    expect(border('t')).toEqual(['2px', 'outset'])
+    expect(border('c')).toEqual(['1px', 'inset'])
   })
 
   test("pairs a shader layer's children past the still frame the serializer writes", async () => {

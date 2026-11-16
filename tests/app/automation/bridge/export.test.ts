@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
 
 import { toUint8Array } from 'js-base64'
 
@@ -31,13 +31,19 @@ afterEach(() => {
   Reflect.deleteProperty(globalThis, 'window')
 })
 
-async function storeWithCanvas(graph?: SceneGraph): Promise<EditorStore> {
+/** A document on screen; its canvas has loaded its fonts unless `fonts` is false. */
+async function storeWithCanvas(
+  graph?: SceneGraph,
+  { fonts = true }: { fonts?: boolean } = {}
+): Promise<EditorStore> {
   const store = createEditorStore(graph)
   stores.push(store)
   const ck = await getCanvasKit()
   const surface = ck.MakeSurface(1, 1)
   if (!surface) throw new Error('Failed to create CanvasKit surface')
-  store.setCanvasKit(ck, new SkiaRenderer(ck, surface))
+  const renderer = new SkiaRenderer(ck, surface)
+  if (fonts) await renderer.loadFonts()
+  store.setCanvasKit(ck, renderer)
   return store
 }
 
@@ -200,5 +206,58 @@ describe('automation export of a document whose canvas is not on screen', () => 
     const response = await handleTargetCommand(target(store, pageId), 'export', { scope: 'page' })
 
     expect(imageSize(resultBytes(response))).toEqual({ width: 50, height: 20 })
+  })
+})
+
+// A tab brought to the front mounts a canvas that loads its fonts first (#1169).
+describe('automation export of a document whose canvas just came on screen', () => {
+  /** Starts the export without waiting for it. */
+  function exportText(store: EditorStore, text: string): Promise<Uint8Array> {
+    const pageId = store.state.currentPageId
+    const node = store.graph.createNode('TEXT', pageId, { width: 120, height: 30, text })
+    const answer = handleTargetCommand(target(store, pageId), 'tool', {
+      name: 'export_image',
+      args: { ids: [node.id] }
+    })
+    return answer.then(resultBytes)
+  }
+
+  async function exportWithFonts(text: string): Promise<Uint8Array> {
+    return await exportText(await storeWithCanvas(), text)
+  }
+
+  test('export_image draws text once the canvas has its fonts', async () => {
+    const store = await storeWithCanvas(undefined, { fonts: false })
+    const renderer = store.renderer
+    if (!renderer) throw new Error('Missing canvas renderer')
+
+    const exported = exportText(store, 'Icons')
+    await renderer.loadFonts()
+
+    expect(await exported).toEqual(await exportWithFonts('Icons'))
+  })
+
+  test('export_image draws text without a canvas that went away before its fonts', async () => {
+    const store = await storeWithCanvas(undefined, { fonts: false })
+
+    const renderer = store.renderer
+    if (!renderer) throw new Error('Missing canvas renderer')
+    const fontsLoaded = renderer.whenFontsLoaded.bind(renderer)
+    let waiting: (() => void) | undefined
+    const exportWaits = new Promise<void>((resolve) => {
+      waiting = resolve
+    })
+    spyOn(renderer, 'whenFontsLoaded').mockImplementation(() => {
+      waiting?.()
+      return fontsLoaded()
+    })
+
+    const exported = exportText(store, 'Icons')
+    await exportWaits
+    // Unmounted as the canvas does it.
+    store.removeCanvasRenderer(renderer)
+    renderer.destroy()
+
+    expect(await exported).toEqual(await exportWithFonts('Icons'))
   })
 })

@@ -67,7 +67,7 @@ import { createUndoActions } from './undo'
 import { createVariableActions } from './variables/actions'
 import { createVectorEditActions } from './vector/create'
 import { createVectorizeActions } from './vectorize'
-import { createViewportActions } from './viewport'
+import { createViewportActions } from './viewport/actions'
 import { createViewportSize } from './viewport/size'
 import { createCanvasViewActions, offeredTool } from './views'
 
@@ -124,7 +124,9 @@ export function createEditor(options?: EditorOptions) {
   void prefetchFigmaSchema()
 
   const graphReads = createGraphReadActions(() => _graph)
-  const { runLayoutForNode, runMutationWithLayout } = createLayoutRunner(() => _graph)
+  const { runLayoutForNode, runLayoutForParents, runMutationWithLayout } = createLayoutRunner(
+    () => _graph
+  )
   const pendingTextLayout = createPendingTextLayout({
     getGraph: () => _graph,
     getRenderer: canvas.getRenderer,
@@ -187,6 +189,7 @@ export function createEditor(options?: EditorOptions) {
     setActiveTool,
     setNavigationPhase,
     runLayoutForNode,
+    runLayoutForParents,
     runMutationWithLayout,
     subscribeToGraph
   }
@@ -374,6 +377,7 @@ export function createEditor(options?: EditorOptions) {
     textSelectionChanged: signals.textSelectionChanged,
     requestRepaint,
     reportPresented: signals.reportPresented,
+    reportProgress: signals.reportProgress,
     onEditorEvent,
     setCanvasKit: canvas.setCanvasKit,
     setNavigationPhase,

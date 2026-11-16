@@ -31,8 +31,8 @@ const names = (await readdir(paths.output)).sort()
 assertDraftReplacement(release, names, actualCommit, identity)
 
 if (process.argv[2] === 'check') {
-  // npm versions already on the registry must be this tag's own, by provenance, and carry the
-  // registry's bytes (`release-packages resume` before assembly); publication then skips them.
+  // npm versions already on the registry must carry the registry's bytes (`release-packages
+  // resume` before assembly keeps identical ones and adopts this tag's own); publication skips them.
   await assertPublishedReleaseArtifacts(paths.root, {
     repository,
     tag: identity.tag,

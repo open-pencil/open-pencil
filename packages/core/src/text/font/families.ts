@@ -24,12 +24,17 @@ export interface DrawnFontAxes {
   /** The axes the text sets. */
   variations: readonly FontVariation[]
   opticalSizeFromFontSize: boolean
+  /** The family's face the text draws in, as {@link loadedFace} finds it; looked up when left out. */
+  loaded?: LoadedFace | null
 }
 
 /**
  * The axis values text is drawn at, as Figma draws a variable font: its style's named instance,
  * then the axes it sets. While the optical size follows the font size, `opsz` is the font size and
- * a stored `opsz` is ignored. Fonts without an axis ignore its value.
+ * a stored `opsz` is ignored. A family with no face loaded is drawn in its fallbacks, and a
+ * variable fallback takes the text's weight on its `wght` axis unless the text sets one, so the
+ * canvas draws that instance instead of emboldening the default one. Fonts without an axis ignore
+ * its value.
  */
 export function drawnFontVariations(font: DrawnFontAxes): FontVariation[] {
   // A face named apart from its weight ("Condensed Bold") is the instance of that name.
@@ -45,6 +50,13 @@ export function drawnFontVariations(font: DrawnFontAxes): FontVariation[] {
       ]
     : font.variations
   const axes = new Map([...named, ...set].map(({ axis, value }) => [axis, value]))
+  if (!axes.has('wght')) {
+    const loaded =
+      font.loaded === undefined
+        ? loadedFace(font.family, font.weight, font.italic, font.style)
+        : font.loaded
+    if (!loaded) axes.set('wght', font.weight)
+  }
   return [...axes].map(([axis, value]) => ({ axis, value }))
 }
 
@@ -83,6 +95,7 @@ export function loadedFace(
   italic: boolean,
   style = faceLoadKey(weight, italic)
 ): LoadedFace | null {
+  if (!fontManager.isLoaded(family)) return null
   if (fontManager.isStyleLoaded(family, style)) return { weight, italic, style }
   for (const slant of [italic, !italic]) {
     for (const candidate of fontWeightMatchOrder(weight)) {

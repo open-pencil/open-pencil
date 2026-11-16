@@ -2,12 +2,12 @@ import type { Editor, NodeEditState } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
-import { explicitSnapTargets } from '#vue/shared/input/explicit-snap-targets'
+import { explicitSnapTargets } from '#vue/shared/input/snap/explicit-targets'
 import {
   resolveObjectPixelSnap,
   type GeometrySnapTarget,
   worldBoundsNode
-} from '#vue/shared/input/snap'
+} from '#vue/shared/input/snap/resolve'
 import type { DragEditNode } from '#vue/shared/input/types'
 
 function draggedVertexBounds(drag: DragEditNode, dx: number, dy: number): Rect | null {

@@ -23,7 +23,10 @@ const router = createRouter({
     { path: '/invitations/:invitationId', component: WorkspaceView },
     { path: '/share/:shareId', component: WorkspaceView },
     // A Cloud document, or one of its versions, for whoever signs in with access to it.
-    { path: '/documents/:documentId', component: WorkspaceView }
+    { path: '/documents/:documentId', component: WorkspaceView },
+    // A document of the server's community gallery, which anyone opens read-only; its page on the
+    // server, `/community/:documentId`, links here.
+    { path: '/community/:documentId/open', component: WorkspaceView }
   ]
 })
 

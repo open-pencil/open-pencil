@@ -8,7 +8,7 @@ import type {
   UpdateDocumentVersionInput
 } from '#cloud/contract'
 import { workspaceRoleCan } from '#cloud/server/auth/access-control'
-import type { CloudDatabase } from '#cloud/server/db'
+import { userIdText, type CloudDatabase } from '#cloud/server/db'
 import { canEditDocument, resolveDocumentAccess } from '#cloud/server/documents/access'
 import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/documents/errors'
 import { copyRevisionImages, revisionImageDownloads } from '#cloud/server/documents/images'
@@ -73,15 +73,7 @@ export function createDocumentVersionService(
   function versions() {
     return database
       .selectFrom('documentVersion')
-      .leftJoin('user', (join) =>
-        join.on((expression) =>
-          expression(
-            expression.cast(expression.ref('user.id'), 'text'),
-            '=',
-            expression.ref('documentVersion.createdBy')
-          )
-        )
-      )
+      .leftJoin('user', (join) => join.onRef(userIdText, '=', 'documentVersion.createdBy'))
       .select([
         'documentVersion.id',
         'documentVersion.revisionId',

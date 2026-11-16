@@ -3,7 +3,7 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { guideOwnersOnPage } from '@open-pencil/scene-graph/guides'
 
 import { dashEffect } from '#core/canvas/overlays/outline'
-import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
+import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer/skia'
 
 import { getGuideScreenSegment } from './geometry'
 

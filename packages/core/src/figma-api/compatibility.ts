@@ -28,7 +28,8 @@ import type {
   Variable,
   VariableCollection,
   VariablesAPI,
-  VideoPaint
+  VideoPaint,
+  ViewportAPI
 } from '@figma/plugin-typings/plugin-api-standalone'
 
 import type { FigmaAPI } from './index'
@@ -52,6 +53,7 @@ import type {
   SERIALIZATION_MEMBERS
 } from './surface'
 import type { FigmaVariable, FigmaVariableCollection, FigmaVariablesAPI } from './variables'
+import type { FigmaViewport } from './viewport'
 
 type Expect<T extends true> = T
 
@@ -472,3 +474,10 @@ const _textStyleExtras: None<
 > = {}
 const _effectStyleExtras: None<Exclude<StringKeys<FigmaEffectStyle>, keyof EffectStyle>> = {}
 const _gridStyleExtras: None<Exclude<StringKeys<FigmaGridStyle>, keyof GridStyle>> = {}
+
+/** `figma.viewport` outside Figma Slides and Buzz, whose `slidesView` and `canvasView` it lacks. */
+type SupportedViewportKeys = 'center' | 'zoom' | 'bounds' | 'scrollAndZoomIntoView'
+type ViewportMatch = Expect<
+  Equal<Pick<FigmaViewport, SupportedViewportKeys>, Pick<ViewportAPI, SupportedViewportKeys>>
+>
+const _viewportMatch: ViewportMatch = true

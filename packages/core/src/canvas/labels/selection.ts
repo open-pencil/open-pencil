@@ -1,8 +1,7 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneNode, SceneGraph } from '@open-pencil/scene-graph'
-import { computeBounds } from '@open-pencil/scene-graph/geometry'
 
-import type { SkiaRenderer, RenderOverlays } from '#core/canvas/renderer'
+import type { SkiaRenderer, RenderOverlays } from '#core/canvas/renderer/skia'
 import {
   SIZE_PILL_PADDING_X,
   SIZE_PILL_PADDING_Y,
@@ -10,9 +9,15 @@ import {
   SIZE_PILL_RADIUS,
   SIZE_PILL_TEXT_OFFSET_Y
 } from '#core/constants'
-import { createSceneGeometry, hasTransformHandles, panelNumber } from '#core/geometry'
+import {
+  createSceneGeometry,
+  hasTransformHandles,
+  panelNumber,
+  selectionBounds
+} from '#core/geometry'
+import { worldXToScreen, worldYToScreen } from '#core/geometry/viewport'
 
-import { measureGlyphWidth } from './paragraph-cache'
+import { drawTextPill } from './pill'
 import { frameLabelPlacement, labelScreenMatrix } from './transform'
 
 function accumulateSelectionBounds(
@@ -24,7 +29,7 @@ function accumulateSelectionBounds(
     .map((id) => graph.getNode(id))
     .filter((node): node is SceneNode => node !== undefined)
   const geometry = createSceneGeometry(graph, overlays?.rotationPreview)
-  const bounds = computeBounds(nodes.map(geometry.bounds))
+  const bounds = selectionBounds(geometry, nodes)
   return {
     nodes,
     minX: bounds.x,
@@ -44,25 +49,18 @@ function drawSizePill(
   color: ReturnType<SkiaRenderer['selColor']>,
   textColor: ReturnType<SkiaRenderer['selColor']>
 ): void {
-  const pillW = measureGlyphWidth(sizeFont, text) + SIZE_PILL_PADDING_X * 2
-  const pillX = x - pillW / 2
-  const pillY = y + SIZE_PILL_PADDING_Y
-  r.auxFill.setColor(color)
-  const rrect = r.ck.RRectXY(
-    r.ck.LTRBRect(pillX, pillY, pillX + pillW, pillY + SIZE_PILL_HEIGHT),
-    SIZE_PILL_RADIUS,
-    SIZE_PILL_RADIUS
-  )
-  canvas.drawRRect(rrect, r.auxFill)
-
-  r.auxFill.setColor(textColor)
-  canvas.drawText(
+  drawTextPill(r, canvas, {
     text,
-    pillX + SIZE_PILL_PADDING_X,
-    pillY + SIZE_PILL_TEXT_OFFSET_Y,
-    r.auxFill,
-    sizeFont
-  )
+    font: sizeFont,
+    centerX: x,
+    top: y + SIZE_PILL_PADDING_Y,
+    height: SIZE_PILL_HEIGHT,
+    paddingX: SIZE_PILL_PADDING_X,
+    radius: SIZE_PILL_RADIUS,
+    baseline: SIZE_PILL_TEXT_OFFSET_Y,
+    fill: color,
+    textColor
+  })
 }
 
 export function drawSingleSelectionSize(
@@ -100,9 +98,9 @@ function drawMultiSelectionSize(
   sizeFont: NonNullable<SkiaRenderer['chromeFonts']['size']>
 ): void {
   const sizeText = `${panelNumber(maxX - minX)} × ${panelNumber(maxY - minY)}`
-  const sx1 = minX * r.zoom + r.panX
-  const sx2 = maxX * r.zoom + r.panX
-  const sy2 = maxY * r.zoom + r.panY
+  const sx1 = worldXToScreen(r, minX)
+  const sx2 = worldXToScreen(r, maxX)
+  const sy2 = worldYToScreen(r, maxY)
   const smx = (sx1 + sx2) / 2
   const allComponents = nodes.length > 0 && nodes.every((n) => r.isInComponent(n, graph))
   const pillColor = allComponents ? r.compColor() : r.selColor()

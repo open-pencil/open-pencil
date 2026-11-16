@@ -73,7 +73,7 @@ Press <kbd>⌘</kbd><kbd>J</kbd> to open the AI assistant. 90+ tools that can cr
 
 Tool calls display as collapsible timeline entries. Visual verification — the assistant renders its work and checks it against your request. Full undo support for all AI mutations.
 
-See [AI Chat](/programmable/ai-chat) for setup and provider details.
+See [AI Chat](/user-guide/ai-chat) for setup and provider details.
 
 ## MCP Server
 
@@ -93,7 +93,7 @@ npm install -g @open-pencil/mcp
 }
 ```
 
-See [MCP Tools reference](/programmable/mcp-server) for the full tool list.
+See [MCP Tools reference](/developers/mcp-server) for the full tool list.
 
 ## CLI
 

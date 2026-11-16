@@ -199,7 +199,9 @@ describe('community gallery', () => {
             id: release,
             name: '0.17.0',
             description: 'The release tour',
-            createdAt: expect.any(String)
+            createdAt: expect.any(String),
+            // Saved again since it was named, so the gallery holds a newer state.
+            current: false
           }
         ]
       }
@@ -261,7 +263,8 @@ describe('community gallery', () => {
     const thumbnail = await server.visitor(`/api/community/thumbnails/${tour}/${current}`)
     expect(thumbnail.status).toBe(200)
     expect(thumbnail.headers.get('content-type')).toBe('image/png')
-    expect(thumbnail.headers.get('cache-control')).toContain('immutable')
+    // Cached no longer than the listing, so a takedown reaches every copy within minutes.
+    expect(thumbnail.headers.get('cache-control')).toBe('public, max-age=300')
     expect([...new Uint8Array(await thumbnail.arrayBuffer())]).toEqual([...PNG])
 
     // An address for a revision that is no longer current shows nothing rather than old work.

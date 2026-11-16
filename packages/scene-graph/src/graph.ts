@@ -588,6 +588,7 @@ export class SceneGraph {
     const node = this.nodes.get(id)
     if (node) changes = this.sizedChanges(node, changes)
     const appliedChanges = updateNodePreview(this, id, changes, (node, applied) => {
+      for (const observer of this.changeObservers) observer.previewed?.(node)
       for (const observe of this.previewObservers) observe(node, applied)
     })
     if (appliedChanges) this.emitter.emit('node:previewUpdated', id, appliedChanges)

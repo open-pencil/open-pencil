@@ -114,6 +114,9 @@ jobs:
       - name: Typecheck test suites
         run: bun run check:test-types
 
+      - name: Load every browser spec
+        run: bun run check:specs
+
       - name: Typecheck repository tools
         run: bun run check:tools
 

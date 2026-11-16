@@ -182,6 +182,21 @@ function computedStyleToRecord(
   return entries
 }
 
+const SIDE_MARGINS = ['margin-left', 'margin-right'] as const
+
+/**
+ * Gives `auto` side margins as `auto`: `getComputedStyle` reports the length layout resolved them
+ * to, which loses that they center or end-align the block. Their computed value says so where the
+ * browser has CSS Typed OM; elsewhere the lengths stay.
+ */
+function keepAutoSideMargins(element: Element, style: Record<string, string>): void {
+  if (!('computedStyleMap' in element)) return
+  const computed = element.computedStyleMap()
+  for (const side of SIDE_MARGINS) {
+    if (computed.get(side)?.toString() === 'auto') style[side] = 'auto'
+  }
+}
+
 /**
  * How long layout waits for an image to load. An image without a size takes its own once loaded,
  * moving what follows it, but a request that never ends must not hold an import forever.
@@ -340,7 +355,9 @@ function copyComputedStyles(
   }
 
   for (const [designElement, domElement] of pairs) {
-    designElement.computedStyle = computedStyleToRecord(view.getComputedStyle(domElement), options)
+    const style = computedStyleToRecord(view.getComputedStyle(domElement), options)
+    keepAutoSideMargins(domElement, style)
+    designElement.computedStyle = style
   }
   // After the styles are copied: reading layout switches transforms off for a moment.
   if (options.layout) recordLayout(pairs, frame.origin, frame.styleRoot)

@@ -90,10 +90,17 @@ const errors = computed(() => ({
                 :disabled="entry.role === 'viewer'"
                 :class="ui.choice()"
               >
-                <icon-lucide-layers v-if="entry.kind === 'workspace'" :class="ui.choiceIcon()" />
+                <icon-lucide-globe v-if="entry.public" :class="ui.choiceIcon()" />
+                <icon-lucide-layers
+                  v-else-if="entry.kind === 'workspace'"
+                  :class="ui.choiceIcon()"
+                />
                 <icon-lucide-database v-else :class="ui.choiceIcon()" />
                 <span :class="ui.choiceLabel()">{{ entry.label }}</span>
-                <span v-if="entry.role" :class="ui.choiceRole()">{{ roles[entry.role] }}</span>
+                <span v-if="entry.public" :class="ui.choiceRole()">{{ t.savePublicLabel }}</span>
+                <span v-else-if="entry.role" :class="ui.choiceRole()">
+                  {{ roles[entry.role] }}
+                </span>
                 <span :class="ui.choiceMark()" aria-hidden="true" />
               </RadioGroupItem>
             </template>
@@ -125,6 +132,12 @@ const errors = computed(() => ({
         tone="error"
         :heading="errors[state.reason].heading"
         :description="errors[state.reason].description"
+      />
+      <AppAlert
+        v-else-if="chosen?.public"
+        tone="warning"
+        :heading="t.savePublicHeading"
+        :description="t.savePublicDescription"
       />
       <p v-else :class="ui.note()">
         {{ t.saveNote }}

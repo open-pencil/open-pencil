@@ -1,5 +1,5 @@
 import { renderTransactionalEmail } from '#cloud/email'
-import type { TransactionalEmailKind } from '#cloud/email'
+import type { EmailLocale, TransactionalEmailKind } from '#cloud/email'
 import type { CloudDatabase, TransactionalEmailStatus } from '#cloud/server/db'
 import type { Kysely, Transaction } from 'kysely'
 
@@ -40,6 +40,7 @@ type ClaimedTransactionalEmail = {
   kind: TransactionalEmailKind
   recipientEmailNormalized: string
   payloadEncrypted: string
+  locale: EmailLocale
   attemptCount: number
 }
 
@@ -93,14 +94,33 @@ export function createTransactionalEmailService(
         input.payload
       )
       const executor = transaction ?? database
+      const recipientEmailNormalized = normalizedEmail(input.recipientEmail)
+      // An account is written to in the language it chose, whoever sends to it.
+      const recipientLocale =
+        input.recipientLocale !== undefined
+          ? input.recipientLocale
+          : (
+              await executor
+                .selectFrom('user')
+                .select('locale')
+                .where((expression) =>
+                  expression(
+                    expression.fn('lower', [expression.ref('email')]),
+                    '=',
+                    recipientEmailNormalized
+                  )
+                )
+                .executeTakeFirst()
+            )?.locale
       const row = await executor
         .insertInto('transactionalEmail')
         .values({
           id,
           idempotencyKey: input.idempotencyKey,
           kind: input.kind,
-          recipientEmailNormalized: normalizedEmail(input.recipientEmail),
+          recipientEmailNormalized,
           payloadEncrypted,
+          locale: recipientLocale ?? input.fallbackLocale ?? 'en',
           status: 'pending',
           nextAttemptAt: new Date(),
           claimId: null,
@@ -136,7 +156,14 @@ export function createTransactionalEmailService(
       const claimed = await database.transaction().execute(async (transaction) => {
         const candidates = await transaction
           .selectFrom('transactionalEmail')
-          .select(['id', 'kind', 'recipientEmailNormalized', 'payloadEncrypted', 'attemptCount'])
+          .select([
+            'id',
+            'kind',
+            'recipientEmailNormalized',
+            'payloadEncrypted',
+            'locale',
+            'attemptCount'
+          ])
           .where('payloadEncrypted', 'is not', null)
           .where((expression) =>
             expression.or([
@@ -186,7 +213,7 @@ export function createTransactionalEmailService(
             message.kind,
             message.payloadEncrypted
           )
-          const rendered = await renderTransactionalEmail(content)
+          const rendered = await renderTransactionalEmail(content, message.locale)
           const sent = await options.transport.send({
             deliveryId: message.id,
             from: options.from,

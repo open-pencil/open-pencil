@@ -3,13 +3,13 @@ import * as v from 'valibot'
 import { finishRenderPlacement, resolveRenderPlacement } from '#core/design-jsx/placement'
 import { graphOf } from '#core/figma-api/graph'
 import { prepareSlotInsertion } from '#core/figma-api/slots'
-import { toolNumber, defineTool } from '#core/tools/schema'
+import { layoutPosition, toolNumber, defineTool } from '#core/tools/schema'
 
 export const render = defineTool({
   name: 'render',
 
   description:
-    'Render JSX to design nodes. Draw a shape of your own as one layer with <Vector d="M2 12 L22 12" stroke="#000" />, styled like any layer; inline <svg> is for artwork copied from elsewhere and draws its shapes, without its text. Use replace_id to replace a placeholder while preserving its position.',
+    'Render JSX to design nodes. Draw a shape of your own as one layer with <Vector d="M2 12 L22 12" stroke="#000" />, styled like any layer; inline <svg> is for artwork copied from elsewhere and draws its shapes, without its text. Use replace_id to replace a placeholder while preserving its position, or to edit a layer in place from its get_jsx: it keeps its id, and layers written with keepChildren keep their children.',
   execution: { kind: 'async', mutation: 'document' },
   input: v.strictObject({
     replace_id: v.optional(
@@ -29,8 +29,8 @@ export const render = defineTool({
         )
       )
     ),
-    x: v.optional(toolNumber(v.pipe(v.number(), v.description('X position of the root node')))),
-    y: v.optional(toolNumber(v.pipe(v.number(), v.description('Y position of the root node')))),
+    x: v.optional(layoutPosition('X position of the root node')),
+    y: v.optional(layoutPosition('Y position of the root node')),
     jsx: v.pipe(v.string(), v.description('JSX string to render'))
   }),
   execute: async (figma, args) => {
@@ -39,8 +39,8 @@ export const render = defineTool({
 
     const placement = resolveRenderPlacement(graphOf(figma), args, figma.currentPageId)
     prepareSlotInsertion(graphOf(figma), placement.parentId, 'render')
-    const results = await renderJSX(graphOf(figma), args.jsx, placement)
-    finishRenderPlacement(graphOf(figma), results, placement)
+    const rendered = await renderJSX(graphOf(figma), args.jsx, placement)
+    const results = finishRenderPlacement(graphOf(figma), rendered, placement)
     const result = results[0]
 
     const response: {

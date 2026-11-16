@@ -1,7 +1,8 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
-import type { PresenceCursor, SkiaRenderer } from '#core/canvas/renderer'
+import type { PresenceCursor, SkiaRenderer } from '#core/canvas/renderer/skia'
+import { worldXToScreen, worldYToScreen } from '#core/geometry/viewport'
 
 import { outlineNode } from './outline'
 
@@ -27,8 +28,8 @@ function drawSelection(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph, curso
   for (const rect of cursor.outline ?? []) {
     canvas.drawRect(
       r.ck.XYWHRect(
-        rect.x * r.zoom + r.panX,
-        rect.y * r.zoom + r.panY,
+        worldXToScreen(r, rect.x),
+        worldYToScreen(r, rect.y),
         rect.width * r.zoom,
         rect.height * r.zoom
       ),
@@ -146,8 +147,8 @@ export function drawPresenceCursors(
   cursors?: PresenceCursor[]
 ): void {
   for (const cursor of cursors ?? []) {
-    const x = cursor.x * r.zoom + r.panX
-    const y = cursor.y * r.zoom + r.panY
+    const x = worldXToScreen(r, cursor.x)
+    const y = worldYToScreen(r, cursor.y)
     drawSelection(r, canvas, graph, cursor)
     drawArrow(r, canvas, x, y, cursor)
     drawLabel(r, canvas, x, y, cursor)

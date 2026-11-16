@@ -79,6 +79,20 @@ describe('reading HTML', () => {
     expect(inner).toMatchObject({ x: 14, y: 14 })
   })
 
+  test('centers a block capped by its maximum width at that width, keeping auto layout', async () => {
+    const { graph } = await readHTMLDocument(
+      `<div style="width:600px"><div style="max-width:300px;margin:0 auto">` +
+        `<div style="width:100px;height:10px"></div></div></div>`
+    )
+    const [page] = graph.getChildren(graph.getPages()[0].id)
+    const [main] = graph.getChildren(page.id)
+
+    expect(page.layoutMode).toBe('VERTICAL')
+    expect(main).toMatchObject({ x: 150, width: 300 })
+    // It fills up to its maximum, as the page's block does, rather than holding a fixed width.
+    expect(layoutSizing(graph, main, 'HORIZONTAL')).toBe('FILL')
+  })
+
   test('a border without a style is not drawn and takes no room', async () => {
     const { graph } = await readHTMLDocument(
       '<div style="display:inline-flex;padding:10px;border-width:4px;border-color:#000;border-style:none"><div style="width:50px;height:50px;background:#f00"></div></div>'
@@ -167,6 +181,17 @@ describe('reading HTML', () => {
 
     expect(requested).toEqual(['styles/site.css'])
     expect(box).toMatchObject({ width: 120, height: 40 })
+  })
+
+  test('lays an image out at its size on a page without text', async () => {
+    const png = await Bun.file(join(FIXTURES, 'absolute-constraint-figma.png')).bytes()
+    const view = new DataView(png.buffer, png.byteOffset)
+    const { graph } = await readHTMLDocument('<img src="photo.png">', {
+      readAsset: async (path) => (path === 'photo.png' ? png : null)
+    })
+    const [image] = graph.getChildren(graph.getPages()[0].id)
+
+    expect(image).toMatchObject({ width: view.getUint32(16), height: view.getUint32(20) })
   })
 
   test('draws text in the font its page loads with @font-face', async () => {

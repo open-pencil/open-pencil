@@ -1,6 +1,9 @@
 import { describe, expect, test, beforeEach, jest } from 'bun:test'
 
-import type { RequestPermissionRequest, RequestPermissionResponse } from '@agentclientprotocol/sdk'
+import type {
+  RequestPermissionRequest,
+  RequestPermissionResponse
+} from '@agentclientprotocol/sdk/unstable'
 
 import {
   permissionQueue,

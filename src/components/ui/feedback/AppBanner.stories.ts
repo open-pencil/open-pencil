@@ -23,6 +23,18 @@ export const Dismissible: Story = {
   })
 }
 
+export const WithAction: Story = {
+  render: () => ({
+    components: { AppBanner },
+    template: `
+      <AppBanner>
+        A community example, open read-only.
+        <template #action>Save a copy</template>
+      </AppBanner>
+    `
+  })
+}
+
 export const Persistent: Story = {
   render: () => ({
     components: { AppBanner },

@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'bun:test'
 
 import { laysOutBoxes } from '#dom-css/import/boxes'
-import { createHeadlessCSSRuntime } from '#dom-css/index'
+import { parseHTMLDocument } from '#dom-css/import/markup'
 
 const TEXT_STYLE = 'color: rgb(0, 0, 0); font-family: system-ui; font-size: 16px; font-weight: 400'
 
 function laysOut(html: string): boolean {
-  return laysOutBoxes(createHeadlessCSSRuntime().parseHTML(html))
+  return laysOutBoxes(parseHTMLDocument(html))
 }
 
 describe('laysOutBoxes', () => {
@@ -35,6 +35,8 @@ describe('laysOutBoxes', () => {
     expect(laysOut('<a style="display: inline-block">Button</a>')).toBe(true)
     expect(laysOut('<span style="background-color: rgb(37, 99, 235)">Tag</span>')).toBe(true)
     expect(laysOut('<span style="border: 1px solid red">Tag</span>')).toBe(true)
+    // A color's channels are not the border's width.
+    expect(laysOut('<span style="border: 1px solid rgb(0 0 0)">Tag</span>')).toBe(true)
     expect(laysOut('<div style="width: 300px">Fixed</div>')).toBe(true)
     expect(laysOut('<span style="background: rgb(238, 238, 255)">Tag</span>')).toBe(true)
   })

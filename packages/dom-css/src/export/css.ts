@@ -155,6 +155,28 @@ export function letterSpacingToCSS(length: TextLength): string {
   return length.unit === 'PIXELS' ? `${length.value}px` : `${length.value / 100}em`
 }
 
+/**
+ * Room for the spacing CSS puts after a line's last letter. A layer fits and aligns its lines by
+ * their glyphs, without that spacing, so a spaced text's box is one spacing wider than its own
+ * width and a negative margin takes the spacing back: lines break and align as on the canvas, and
+ * the text takes the room it does there. Browsers put the spacing on a glyph's right in either
+ * direction, so the margin is on the right. `spacing` is the CSS the text's letter spacing is
+ * written as, which may refer to a token.
+ */
+export function letterSpacingRoomCSS(
+  length: TextLength,
+  spacing: string,
+  width: string | undefined
+): DesignStyleDeclaration {
+  const literal = spacing === letterSpacingToCSS(length)
+  return {
+    ...(width !== undefined && { width: `calc(${width} + ${spacing})` }),
+    'margin-right': literal
+      ? letterSpacingToCSS({ ...length, value: -length.value })
+      : `calc(-1 * ${spacing})`
+  }
+}
+
 /** A share of the layer's box as a CSS percentage. */
 function percent(value: number): string {
   return `${Number((value * 100).toFixed(3))}%`

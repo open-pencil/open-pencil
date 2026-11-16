@@ -1,0 +1,1 @@
+- On Linux, the code panel's keys no longer go dead when a menu item uses the same shortcut, Undo and Redo from the menu now reach the code panel's own edits such as indenting and commenting, and `Tab` and `Shift+Tab` indent.

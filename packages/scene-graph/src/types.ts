@@ -43,6 +43,8 @@ export interface NodeChangeObserver {
   before: (node: SceneNode) => void
   /** A node was just added. */
   created: (node: SceneNode) => void
+  /** A node is about to take a preview's changes, which no history keeps. */
+  previewed?: (node: SceneNode) => void
   /**
    * A variable or collection is about to change, be added, or be removed, and is still as it
    * was: absent, for one about to be added.
@@ -192,7 +194,10 @@ export interface Fill {
   blendMode?: BlendMode
   gradientStops?: GradientStop[]
   gradientTransform?: GradientTransform
+  /** The image an IMAGE paint draws, or the poster frame a VIDEO paint draws in its clip's place. */
   imageHash?: string
+  /** A VIDEO paint's clip, which `imageHash`'s poster frame stands in for when drawn. */
+  videoHash?: string
   imageScaleMode?: ImageScaleMode
   /** A crop's image-space window; Fill, Fit and Tile ignore it. */
   imageTransform?: GradientTransform
@@ -304,7 +309,7 @@ export interface Effect {
 }
 
 export type ConstraintType = 'MIN' | 'CENTER' | 'MAX' | 'STRETCH' | 'SCALE'
-export type TextAutoResize = 'NONE' | 'HEIGHT' | 'WIDTH_AND_HEIGHT' | 'TRUNCATE'
+export type TextAutoResize = 'NONE' | 'HEIGHT' | 'WIDTH_AND_HEIGHT'
 
 /** Where a connector end attaches to a layer: a side, the side Figma picks, or a fixed point. */
 export type ConnectorMagnet =
@@ -789,7 +794,8 @@ export interface SceneNode {
   primaryAxisSizing: AxisSizingMode
   counterAxisSizing: AxisSizingMode
   itemSpacing: number
-  counterAxisSpacing: number
+  /** Space between wrapped lines; null follows `itemSpacing`. Read it with `counterAxisSpacingOf`. */
+  counterAxisSpacing: number | null
   paddingTop: number
   paddingRight: number
   paddingBottom: number
@@ -942,9 +948,10 @@ export interface SceneNode {
   textPicture: Uint8Array | null
   derivedTextGlyphs: DerivedTextGlyph[] | null
   /**
-   * How far a text's lines reach down from its top: measured at its width when its text or width
-   * changes, or read from the lines a file saved, and never saved itself. A fixed-size box does not
-   * clip them, as in Figma, so its visual bounds reach this far. Null when not known.
+   * How tall a text's lines are, from the top of the first to the bottom of the last: measured at
+   * its width when its text or width changes, or read from the lines a file saved, and never saved
+   * itself. A fixed-size box does not clip them, as in Figma, so its visual bounds reach past the
+   * box on the side away from its vertical alignment (`textLinesReach`). Null when not known.
    */
   derivedTextHeight: number | null
   /** Format-neutral layout path for text-on-path nodes. */
@@ -1128,14 +1135,24 @@ export interface Variable {
   version?: string
 }
 
-/** Scalar numeric node fields accepted by numeric property controls. */
+/** Scalar numeric node fields accepted by numeric property controls; some may also be null. */
 export type NumericNodeProperty = {
-  [K in keyof SceneNode]-?: SceneNode[K] extends number ? K : never
+  [K in keyof SceneNode]-?: SceneNode[K] extends number | null
+    ? number extends SceneNode[K]
+      ? K
+      : never
+    : never
 }[keyof SceneNode]
 
 export interface VariableCollectionMode {
   modeId: string
   name: string
+  /**
+   * The library mode this one came from, for a mode of a collection copied from a library. A
+   * library that renames its mode renames this one with it, so the layers and the document set
+   * to it keep following the library.
+   */
+  libraryModeId?: string
   /**
    * Where the mode applies in CSS: a selector (`[data-theme="dark"]`, `.compact`) or an
    * at-rule prelude (`@media (max-width: 640px)`). Absent means the default for its axis.

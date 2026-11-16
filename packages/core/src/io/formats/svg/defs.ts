@@ -1,18 +1,26 @@
-import type { Effect, Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   colorToHex,
   colorToDisplayCSS,
   getDefaultRenderColorSpace,
   type RenderColorSpace
 } from '@open-pencil/scene-graph/color'
+import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import {
   gradientPoint,
   invertGradientTransform,
   isIdentityGradientTransform
 } from '@open-pencil/scene-graph/gradient'
-import { imageDataURL } from '@open-pencil/scene-graph/images'
+import {
+  drawnImageHash,
+  imageDataURL,
+  imageFillMatrix,
+  imageSize
+} from '@open-pencil/scene-graph/images'
+import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
+import type { ExportEffectWarning } from './effects'
 import { svg, type SVGNode } from './node'
 import { round } from './paths'
 import type { SVGTextLayout } from './text/lines'
@@ -22,6 +30,8 @@ export interface SVGExportContext {
   defIdCounter: number
   graph: SceneGraph
   colorSpace: RenderColorSpace
+  /** Receives each effect the export leaves out because SVG cannot draw it. */
+  onWarning?: (warning: ExportEffectWarning) => void
   /** Starts every def id, so SVGs inlined on one page cannot reference each other's defs. */
   idPrefix?: string
   /** Paints drawn in `currentColor`, such as an icon's tinted paths, so CSS `color` sets them. */
@@ -164,96 +174,77 @@ function createGradientDef(
   return null
 }
 
+/** An SVG `matrix()` for a row-major 3 × 3 transform. */
+function svgMatrix(m: Mat3): string {
+  return `matrix(${[m[0], m[3], m[1], m[4], m[2], m[5]].map((value) => round(value, 6)).join(' ')})`
+}
+
+/**
+ * An image fill as a pattern in the layer's own units, the image placed as the canvas places it
+ * (`imageFillMatrix`): a crop by its transform, Fill and Fit turned and fitted, a tile repeated
+ * at its scale. An image whose size cannot be read covers the layer, or fits it for Fit.
+ */
 function createImagePattern(
   fill: Fill,
   node: SceneNode,
   ctx: SVGExportContext
 ): { id: string; node: SVGNode } | null {
-  if (!fill.imageHash) return null
-  const data = ctx.graph.images.get(fill.imageHash)
+  const imageHash = drawnImageHash(fill)
+  if (!imageHash) {
+    return null
+  }
+  const data = ctx.graph.images.get(imageHash)
   if (!data) return null
 
   const id = nextDefId(ctx, 'img')
+  const href = imageDataURL(data)
+  const size = imageSize(data)
+  if (!size) {
+    return {
+      id,
+      node: svg(
+        'pattern',
+        { id, patternUnits: 'objectBoundingBox', width: 1, height: 1 },
+        svg('image', {
+          href,
+          width: node.width,
+          height: node.height,
+          preserveAspectRatio: fill.imageScaleMode === 'FIT' ? 'xMidYMid meet' : 'xMidYMid slice'
+        })
+      )
+    }
+  }
+  const matrix = imageFillMatrix(fill, node, size.width, size.height)
+  const tile =
+    fill.imageScaleMode === 'TILE'
+      ? computeBounds(
+          [
+            Matrix.mapPoint(matrix, { x: 0, y: 0 }),
+            Matrix.mapPoint(matrix, { x: size.width, y: size.height }),
+            Matrix.mapPoint(matrix, { x: size.width, y: 0 }),
+            Matrix.mapPoint(matrix, { x: 0, y: size.height })
+          ].map((point) => ({ ...point, width: 0, height: 0 }))
+        )
+      : { width: node.width, height: node.height }
   return {
     id,
     node: svg(
       'pattern',
+      // The tile unrounded, so the image repeats at the period the canvas repeats it at.
       {
         id,
-        patternUnits: 'objectBoundingBox',
-        width: 1,
-        height: 1
+        patternUnits: 'userSpaceOnUse',
+        width: round(tile.width, 6),
+        height: round(tile.height, 6)
       },
       svg('image', {
-        href: imageDataURL(data),
-        width: node.width,
-        height: node.height,
-        preserveAspectRatio: fill.imageScaleMode === 'FIT' ? 'xMidYMid meet' : 'xMidYMid slice'
+        href,
+        width: size.width,
+        height: size.height,
+        preserveAspectRatio: 'none',
+        transform: svgMatrix(matrix)
       })
     )
-  }
-}
-
-export function createFilterDef(
-  effects: Effect[],
-  ctx: SVGExportContext
-): { id: string; node: SVGNode } | null {
-  const visible = effects.filter((e) => e.visible)
-  if (visible.length === 0) return null
-
-  const id = nextDefId(ctx, 'fx')
-  const primitives: SVGNode[] = []
-
-  for (const effect of visible) {
-    if (effect.type === 'DROP_SHADOW') {
-      const stdDev = round(effect.radius / 2)
-      primitives.push(
-        svg('feDropShadow', {
-          dx: round(effect.offset.x),
-          dy: round(effect.offset.y),
-          stdDeviation: stdDev,
-          'flood-color': formatColor(effect.color, 1, ctx.colorSpace),
-          'flood-opacity': round(effect.color.a)
-        })
-      )
-    } else if (effect.type === 'INNER_SHADOW') {
-      const sid = `${id}_is`
-      const stdDev = round(effect.radius / 2)
-      primitives.push(
-        svg('feGaussianBlur', { in: 'SourceAlpha', stdDeviation: stdDev, result: `${sid}_blur` }),
-        svg('feOffset', {
-          dx: round(effect.offset.x),
-          dy: round(effect.offset.y),
-          result: `${sid}_off`
-        }),
-        svg('feComposite', {
-          in: 'SourceAlpha',
-          in2: `${sid}_off`,
-          operator: 'out',
-          result: `${sid}_inv`
-        }),
-        svg('feFlood', {
-          'flood-color': formatColor(effect.color, 1, ctx.colorSpace),
-          'flood-opacity': round(effect.color.a)
-        }),
-        svg('feComposite', { in2: `${sid}_inv`, operator: 'in', result: `${sid}_shadow` }),
-        svg('feComposite', {
-          in: `${sid}_shadow`,
-          in2: 'SourceGraphic',
-          operator: 'over'
-        })
-      )
-    } else {
-      const stdDev = round(effect.radius / 2)
-      primitives.push(svg('feGaussianBlur', { stdDeviation: stdDev }))
-    }
-  }
-
-  if (primitives.length === 0) return null
-
-  return {
-    id,
-    node: svg('filter', { id }, ...primitives)
   }
 }
 
@@ -272,7 +263,7 @@ export function resolveFill(fill: Fill, node: SceneNode, ctx: SVGExportContext):
     }
   }
 
-  if (fill.type === 'IMAGE') {
+  if (drawnImageHash(fill)) {
     const pattern = createImagePattern(fill, node, ctx)
     if (pattern) {
       ctx.defs.push(pattern.node)

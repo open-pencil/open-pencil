@@ -1,4 +1,5 @@
 import type { SceneGraph, SceneNode, Variable, VariableCollection } from '@open-pencil/scene-graph'
+import { remapInstanceOverrideState } from '@open-pencil/scene-graph/instances/overrides'
 import {
   remappedResourceReferences,
   type LayerDependencies
@@ -84,13 +85,20 @@ export function remapClipboardVariableBindings(
   modeIds: ReadonlyMap<string, string> = new Map(),
   styleIds: ReadonlyMap<string, string> = new Map()
 ): void {
+  const variable = (id: string) => variables.get(id) ?? id
+  const collection = (id: string) => collections.get(id) ?? id
   Object.assign(
     node,
     remappedResourceReferences(node, {
-      variable: (id) => variables.get(id) ?? id,
-      collection: (id) => collections.get(id) ?? id,
+      variable,
+      collection,
       mode: (id) => modeIds.get(id) ?? id,
       style: (id) => styleIds.get(id) ?? id
     })
   )
+  node.instanceOverrides = remapInstanceOverrideState(node.instanceOverrides, {
+    node: (id) => id,
+    variable,
+    collection
+  })
 }

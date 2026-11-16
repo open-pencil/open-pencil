@@ -306,7 +306,7 @@ The CLI defaults the filesystem root to the home directory on Windows and the cu
 
 ### MCP workflow
 
-1. **Find or open a document** — `list_documents` for open tabs and their IDs; `open_document { path }` within the effective filesystem root (`list_recent_documents` lists recently opened files there), or `create_document {}`. Pass `document_id` and `page_id` explicitly instead of relying on the active tab; `activate_document { document_id }` brings a tab to the front when the user should see it.
+1. **Find or open a document** — `list_documents` for open tabs and their IDs; `open_document { path }` within the effective filesystem root (`list_recent_documents` lists recently opened files there), or `create_document {}`. Pass `document_id` and `page_id` explicitly. A call that names none works on the document your MCP session last named, opened, created, or activated (at first, the active tab), so a tab the user brings to the front does not redirect it; `activate_document { document_id }` brings a tab to the front when the user should see it.
 2. **Query** — `get_page_tree`, `find_nodes`, `query_nodes`, `get_node`, `list_pages`, `get_current_page`.
 3. **Inspect** — `get_jsx`, `diff_nodes`, `diff_pixels`, `describe`, `export_image`, `export_svg`, `export_pdf`.
 4. **Modify** — `render`, `batch_update`, `update_node`, `set_fill`, `set_layout`, `create_shape`, `import_svg`, etc. To fill a layer with a photo, pass `set_image_fill` the file as `image_path` inside the MCP root rather than its Base64 as `image_data`, which a client can cut short. For a flowchart, write it as Mermaid and call `import_mermaid { mermaid }`: it lays out FigJam shapes, sections, and connectors without overlaps and returns each node's layer id, instead of placing shapes and connectors by hand. When layers you created overlap, call `arrange { ids }`: it spreads them apart and keeps each near where it was. `arrange` also packs screens (`mode: "pack"`) and lays shapes out along the connectors joining them (`mode: "flow"` for flows, `"tree"` for hierarchies, `"radial"` for mind maps, `"network"` for relationship maps).
@@ -332,12 +332,12 @@ Discover available tools and their arguments from the connected server or browse
 ## Key tools for agents
 
 - **`query_nodes`** — XPath selectors to find specific nodes without fetching the full tree.
-- **`get_jsx`** — inspect any node as JSX in the same format accepted by `render`.
+- **`get_jsx`** — inspect any node as JSX in the same format accepted by `render`. Long JSX comes back outlined: deep layers are written with `keepChildren` and a comment naming their ID to read next, and rendering the outline with `replace_id` on that node keeps those layers' children.
 - **`diff_nodes`** — compare two nodes as an appliable patch of JSX attributes; `preview_patch` previews setting attributes and `apply_patch` applies a patch only if the nodes still match it.
 - **`diff_pixels`** — pixel diff between two rendered nodes; use it to confirm an edit changed only the intended region.
 - **`describe`** — semantic analysis of role, visual style, layout, and design issues.
 - **`batch_update`** — apply multiple node updates efficiently.
-- **`export_image` / `export_svg` / `export_pdf`** — visual verification and deliverables.
+- **`export_image` / `export_svg` / `export_pdf`** — visual verification and deliverables. `export_svg` lists the effects SVG cannot draw, such as glass, in `warnings`; the SVG leaves them out.
 - **`zoom_to_fit` / `set_viewport` / `get_viewport`** — move the user's view only when they ask to be shown something.
 - **`get_codegen_prompt`** — retrieve OpenPencil's current JSX/codegen guidance.
 - **`undo` / `redo`** — revert or reapply your newest change; they refuse to touch the user's edits.

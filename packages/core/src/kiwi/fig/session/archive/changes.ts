@@ -1,4 +1,5 @@
-import { isEqual } from 'es-toolkit/predicate'
+import { mapValues, omitBy } from 'es-toolkit/object'
+import { isEqual, isPlainObject } from 'es-toolkit/predicate'
 
 import type {
   DocumentColorSpace,
@@ -35,7 +36,7 @@ interface ArchiveChanges {
 }
 
 /** The document's own settings, which its record holds rather than any layer. */
-interface SettingsSnapshot {
+export interface SettingsSnapshot {
   colorSpace: DocumentColorSpace
   kind: DocumentKind
   libraries: Array<[string, EnabledLibraryBinding]>
@@ -46,7 +47,7 @@ type CollectionsSnapshot = Array<[string, VariableCollection]>
 
 const changes = new WeakMap<SceneGraph, ArchiveChanges>()
 
-function settingsSnapshot(graph: SceneGraph): SettingsSnapshot {
+export function settingsSnapshot(graph: SceneGraph): SettingsSnapshot {
   return structuredClone({
     colorSpace: graph.documentColorSpace,
     kind: graph.documentKind,
@@ -127,18 +128,32 @@ export interface ArchiveChangeSummary {
   documentChanged: boolean
 }
 
+/** A value without its unset keys: a field set to `undefined` and one removed are the same. */
+function withoutUnset(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(withoutUnset)
+  if (!isPlainObject(value)) return value
+  return mapValues(
+    omitBy(value, (field) => field === undefined),
+    withoutUnset
+  )
+}
+
 export function archiveChanges(graph: SceneGraph): ArchiveChangeSummary | undefined {
   const entry = changes.get(graph)
   if (!entry) return undefined
   const changedVariables = new Set<string>()
   for (const [id, variable] of graph.variables)
-    if (!isEqual(entry.variables.get(id), variable)) changedVariables.add(id)
+    if (!isEqual(withoutUnset(entry.variables.get(id)), withoutUnset(variable)))
+      changedVariables.add(id)
   for (const id of entry.variables.keys()) if (!graph.variables.has(id)) changedVariables.add(id)
   return {
     touched: entry.touched,
     resourceIds: entry.resourceIds,
     changedVariables,
-    collectionsChanged: !isEqual(entry.collections, collectionsSnapshot(graph)),
+    collectionsChanged: !isEqual(
+      withoutUnset(entry.collections),
+      withoutUnset(collectionsSnapshot(graph))
+    ),
     documentChanged: !isEqual(entry.settings, settingsSnapshot(graph))
   }
 }

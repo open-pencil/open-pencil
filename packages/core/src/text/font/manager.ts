@@ -56,6 +56,8 @@ export type { BundledFontLocator } from '#core/text/font/bundled'
 
 export class FontManager {
   private loadedFamilies = new Map<string, ArrayBuffer>()
+  /** The families `loadedFamilies` has a face of, so asking needs no scan of its keys. */
+  private loadedFamilyNames = new Set<string>()
   private loadedFamilySources = new Map<string, FontLoadedSource>()
   private unavailableFaces = new Map<string, FontUnavailableReason>()
   /** Faces a load looked for everywhere and found nowhere, until one of them loads after all. */
@@ -101,6 +103,7 @@ export class FontManager {
   private readonly localFonts = new LocalFonts()
   private readonly faces = new FamilyFaceCatalog({
     localFonts: () => this.localFonts.list(),
+    ownLocalFaces: (family) => this.localFonts.ownFamilyFaces(family),
     webFaces: (family) => this.webFonts.familyFaces(family),
     bundledStyles: (family) => this.bundled.styles(family)
   })
@@ -112,6 +115,11 @@ export class FontManager {
     CanvasKit,
     { provider: TypefaceFontProvider; users: number }
   >()
+
+  constructor() {
+    // A local font read that names a family of its own gives the family's faces anew.
+    this.localFonts.onOwnFamiliesChanged(() => this.faces.forget())
+  }
 
   /**
    * The provider every renderer and shaper of `canvasKit` draws from. They share one module's
@@ -323,6 +331,22 @@ export class FontManager {
     return fonts
   }
 
+  /**
+   * The family and style the font of a local face read for `family` and `style` names it with,
+   * where the browser lists it under other names; `null` otherwise. Saving these names keeps a
+   * text in the face on every platform and in Figma.
+   */
+  ownFaceName(family: string, style: string): { family: string; style: string } | null {
+    return this.localFonts.ownFace(family, style) ?? null
+  }
+
+  /** Lists the browser's local fonts again; whether the list changed. */
+  async refreshLocalFonts(): Promise<boolean> {
+    const changed = await this.localFonts.refresh()
+    if (changed) this.faces.forget()
+    return changed
+  }
+
   async listFamilies(): Promise<string[]> {
     const options = await this.listFamilyOptions()
     return options.map((option) => option.family)
@@ -343,8 +367,12 @@ export class FontManager {
         if (!byFamily.has(family)) byFamily.set(family, { family, source: provider })
       }
     }
-    for (const family of [...fonts.map((font) => font.family), ...this.faces.hostFamilies()])
-      byFamily.set(family, { family, source: 'local' })
+    const installed = [
+      ...fonts.map((font) => font.family),
+      ...this.localFonts.ownFamilies(),
+      ...this.faces.hostFamilies()
+    ]
+    for (const family of installed) byFamily.set(family, { family, source: 'local' })
     return [...byFamily.values()].sort((a, b) => a.family.localeCompare(b.family))
   }
 
@@ -585,7 +613,7 @@ export class FontManager {
   }
 
   isLoaded(family: string): boolean {
-    return [...this.loadedFamilies.keys()].some((k) => k.startsWith(`${family}|`))
+    return this.loadedFamilyNames.has(family)
   }
 
   isStyleLoaded(family: string, style: string): boolean {
@@ -962,6 +990,7 @@ export class FontManager {
       this.replacedFamilies.add(family)
     }
     this.loadedFamilies.set(key, buffer)
+    this.loadedFamilyNames.add(family)
     if (source) this.loadedFamilySources.set(key, source)
     this.registerFontInCanvasKit(family, buffer)
     if (!pageDrawsByName(source)) this.registerFontInBrowser(family, style, buffer)

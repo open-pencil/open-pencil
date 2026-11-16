@@ -4,7 +4,7 @@
 
 OpenPencil fonctionne directement dans le navigateur et ne nécessite aucune installation. Ouvrez [app.openpencil.dev](https://app.openpencil.dev) pour commencer à créer.
 
-Si vous souhaitez développer votre propre produit avec OpenPencil plutôt que vous limiter à l'application par défaut, consultez la section [Automatisation](/programmable/) et la documentation du [Vue SDK](/programmable/sdk/).
+Si vous souhaitez développer votre propre produit avec OpenPencil plutôt que vous limiter à l'application par défaut, consultez la section [Automatisation](/developers/) et la documentation du [Vue SDK](/developers/sdk/).
 
 ## Application de bureau
 

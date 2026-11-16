@@ -13,8 +13,10 @@ import {
   type CloudAdminDocument,
   type CloudAdminDocumentFilter
 } from '#cloud/contract'
-import type { CloudDatabase } from '#cloud/server/db'
+import { userIdText, type CloudDatabase } from '#cloud/server/db'
 import { unmarkPurged } from '#cloud/server/documents/purge'
+import type { TransactionalEmailService } from '#cloud/server/email'
+import { tellReporters } from '#cloud/server/reports'
 import { dateString } from '#cloud/server/sharing/contracts'
 import { uniq } from 'es-toolkit'
 import type { ExpressionBuilder, Kysely, Transaction } from 'kysely'
@@ -67,9 +69,7 @@ function searchCondition(search: string) {
         expression
           .selectFrom('user')
           .select('user.id')
-          .where((inner) =>
-            inner(inner.cast('user.id', 'text'), '=', inner.ref('document.createdBy'))
-          )
+          .whereRef(userIdText, '=', 'document.createdBy')
           .where((inner) =>
             inner.or([inner('user.email', 'ilike', pattern), inner('user.name', 'ilike', pattern)])
           )
@@ -185,6 +185,31 @@ export type AdminDocumentServiceOptions = {
   closeRooms?: (documentId: string) => void
   /** How long a document deleted forever waits before cleanup destroys it; 0 when not given. */
   purgeGraceMs?: number
+  /**
+   * Tells the owner of a document's workspace when it is blocked and restored. Without it, or
+   * without the server's address its link needs, nobody is told.
+   */
+  email?: TransactionalEmailService
+  publicURL?: string
+  /** Where an owner writes to contest a block: the deployment's abuse address. */
+  contactEmail?: string
+}
+
+/** The owner of a document's workspace, and the document's name, to tell about a block. */
+async function documentOwner(transaction: Transaction<CloudDatabase>, documentId: string) {
+  const document = await transaction
+    .selectFrom('document')
+    .innerJoin('workspace', 'workspace.id', 'document.workspaceId')
+    .select(['document.name', 'workspace.ownerId'])
+    .where('document.id', '=', documentId)
+    .executeTakeFirst()
+  if (!document) return undefined
+  const owner = await transaction
+    .selectFrom('user')
+    .select(['name', 'email'])
+    .where((expression) => expression(userIdText(expression), '=', document.ownerId))
+    .executeTakeFirst()
+  return owner && { ...owner, documentName: document.name }
 }
 
 export function createAdminDocumentService(
@@ -192,6 +217,7 @@ export function createAdminDocumentService(
   options: AdminDocumentServiceOptions = {}
 ) {
   const purgeGraceMs = options.purgeGraceMs ?? 0
+  const { email, publicURL } = options
   const graceSince = (now: Date) => new Date(now.getTime() - purgeGraceMs)
   return {
     /** A page of documents, newest change first, and how many match the search under each filter. */
@@ -235,17 +261,26 @@ export function createAdminDocumentService(
       await database.transaction().execute(async (transaction) => {
         const document = await lockedDocument(transaction, documentId)
         if (document.disabledAt) return
+        const disabledAt = new Date()
         await transaction
           .updateTable('document')
-          .set({ disabledAt: new Date(), disabledReason: reason ?? null })
+          .set({ disabledAt, disabledReason: reason ?? null })
           .where('id', '=', documentId)
           .execute()
-        await transaction
+        const reports = await transaction
           .updateTable('documentReport')
           .set({ status: 'actioned', resolvedAt: new Date(), resolvedBy: actorId })
           .where('documentId', '=', documentId)
           .where('status', '=', 'open')
+          .returning('id')
           .execute()
+        // Everyone who reported it and left an address hears it was blocked.
+        await tellReporters(
+          transaction,
+          { email, contactEmail: options.contactEmail },
+          reports.map((report) => report.id),
+          'blocked'
+        )
         await auditContentAction(
           transaction,
           actorId,
@@ -253,6 +288,25 @@ export function createAdminDocumentService(
           { type: 'document', id: documentId },
           reason ? { reason } : {}
         )
+        // Told in the same transaction, so a block that rolls back sends nothing.
+        const owner = email && publicURL && (await documentOwner(transaction, documentId))
+        if (owner) {
+          await email.enqueue(
+            {
+              idempotencyKey: `document-blocked/${documentId}/${disabledAt.getTime()}`,
+              kind: 'document-blocked',
+              recipientEmail: owner.email,
+              payload: {
+                name: owner.name || null,
+                documentName: owner.documentName,
+                reason: reason ?? null,
+                contactEmail: options.contactEmail ?? null,
+                actionURL: publicURL
+              }
+            },
+            transaction
+          )
+        }
       })
       options.closeRooms?.(documentId)
     },
@@ -271,6 +325,22 @@ export function createAdminDocumentService(
           type: 'document',
           id: documentId
         })
+        const owner = email && publicURL && (await documentOwner(transaction, documentId))
+        if (owner) {
+          await email.enqueue(
+            {
+              idempotencyKey: `document-restored/${documentId}/${Date.now()}`,
+              kind: 'document-restored',
+              recipientEmail: owner.email,
+              payload: {
+                name: owner.name || null,
+                documentName: owner.documentName,
+                actionURL: publicURL
+              }
+            },
+            transaction
+          )
+        }
       })
     },
 

@@ -27,6 +27,12 @@ export interface CollaborationRelayRPC extends DurableObject<CloudflareCloudEnvi
   announceVersions(documentId: string): Promise<void>
 }
 
+/** The Durable Object class a Worker exports for collaboration rooms. */
+export type CollaborationRelayObjectClass = new (
+  ctx: DurableObjectState,
+  env: CloudflareCloudEnvironment
+) => CollaborationRelayRPC
+
 const documentIdSchema = v.pipe(v.string(), v.uuid())
 
 /**
@@ -99,7 +105,7 @@ function configuredRelay(
  */
 export function createCloudflareRelayObject(
   prepare: (env: CloudflareCloudEnvironment) => Promise<PreparedCloudflareCloud>
-) {
+): CollaborationRelayObjectClass {
   return class CollaborationRelayObject
     extends DurableObject<CloudflareCloudEnvironment>
     implements CollaborationRelayRPC

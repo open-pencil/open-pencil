@@ -2,8 +2,8 @@ import type { Canvas, Image, Paint, Shader } from '@open-pencil/canvaskit'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { ResourceCache } from '#core/cache/resource'
-import type { SkiaRenderer } from '#core/canvas/renderer'
 import { compiledProgram } from '#core/canvas/renderer/shaders'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { makeOffscreenSurface } from '#core/canvas/renderer/tiles/surface-pool'
 
 import { GLASS_GEOMETRY_MAP, type GlassOutline, glassGeometryUniforms } from './shader'
@@ -75,7 +75,7 @@ export function glassGeometryMap(
   outline: GlassOutline,
   depth: number
 ): GlassGeometryMap | null {
-  if (outline.isBox) return null
+  if (outline.kind !== 'segments') return null
   const width = node.width + 2 * MAP_MARGIN
   const height = node.height + 2 * MAP_MARGIN
   // A power of two at or above the device scale, so a zoom keeps its map until the next step.

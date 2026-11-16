@@ -8,7 +8,7 @@ import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
 import { makeBooleanOperationPath } from '#core/canvas/boolean'
 import { NodePathCaches } from '#core/canvas/paths/cache'
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { makeNodeShapePath, makePolygonPath, makeRRect } from '#core/canvas/shapes'
 import { BLACK } from '#core/constants'
 import { graphOf } from '#core/figma-api/graph'
@@ -25,7 +25,7 @@ async function createRenderer(): Promise<SkiaRenderer> {
       return makePolygonPath(asRenderer(this), node)
     },
     makeRRect(node) {
-      return makeRRect(asRenderer(this), node)
+      return makeRRect(node)
     },
     getVectorPaths() {
       return null
