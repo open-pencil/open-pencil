@@ -133,7 +133,12 @@ To restore the database to an earlier time:
    maintenance and with **redeploy** checked, which redeploys the commit production serves
    rather than waiting on staging. It migrates
    the restored database, so its schema matches the Worker even if the restore point predates a
-   migration, deploys without the maintenance variable, and checks the pages answer.
+   migration, deploys without the maintenance variable, and checks the pages answer. Its migrate
+   step stops, and production stays in maintenance, when the restored database has run a migration
+   the served commit does not know, as after a rollback in Cloudflare (see Rolling back). Compare
+   `kysely_migration` with the migrations in `src/server/db/migrate.ts` at that commit first; if
+   the database is ahead, leave **redeploy** unchecked to promote what staging runs instead, once
+   staging runs a commit that knows them.
 5. Open a document saved before the restore point.
 
 ## Restore drill
