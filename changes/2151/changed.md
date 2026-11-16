@@ -1,0 +1,1 @@
+- Self-hosted Cloud: the `admin` command that approves and promotes the first deployment administrator needs only `DATABASE_URL` instead of the whole deployment configuration and its secrets, and stops on a database the server has not migrated yet. (#2151)
