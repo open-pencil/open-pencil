@@ -6,11 +6,7 @@ import ChatReferenceText from '@/components/chat/reference/ChatReferenceText.vue
 import IconButton from '@/components/ui/button/IconButton.vue'
 
 /** A message the person wrote while the agent works, dimmed until the agent takes it in. */
-const { message, steers } = defineProps<{
-  message: QueuedMessage
-  /** Whether the agent takes a message mid-turn; ACP agents and Pi take it once the turn ends. */
-  steers: boolean
-}>()
+const { message } = defineProps<{ message: QueuedMessage }>()
 const emit = defineEmits<{ remove: [] }>()
 const ai = useAIMessages()
 </script>
@@ -27,7 +23,7 @@ const ai = useAIMessages()
       <ChatReferenceText :text="message.submission.displayText" />
     </div>
     <div class="flex items-center gap-1 text-3xs text-muted">
-      <span>{{ message.kind === 'steer' && steers ? ai.queuedSteer : ai.queuedFollowUp }}</span>
+      <span>{{ message.kind === 'steer' ? ai.queuedSteer : ai.queuedFollowUp }}</span>
       <IconButton :label="ai.removeQueuedMessage" size="xs" @click="emit('remove')">
         <icon-lucide-x class="size-3" />
       </IconButton>

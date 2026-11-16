@@ -1,0 +1,1 @@
+- Enter steers ACP coding agents and Pi while they work: once the tool call they are running finishes, their turn gives way and your message goes next in the same session (#2030).

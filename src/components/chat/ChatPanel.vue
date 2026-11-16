@@ -355,8 +355,8 @@ const failureHasSettingsAction = computed(() =>
 const status = computed(() => chat.value?.status ?? 'ready')
 
 /**
- * A message written while the agent works waits for it: Enter steers, which the built-in chat
- * takes in once the current tool calls finish, and Alt+Enter waits until all work is done.
+ * A message written while the agent works waits for it: Enter steers, which the agent takes in
+ * once its current tool calls finish, and Alt+Enter waits until all work is done.
  */
 function sendOrQueue(message: ChatSubmission, afterWork: boolean) {
   if (status.value === 'streaming' || status.value === 'submitted') {
@@ -527,7 +527,6 @@ function handleStop() {
           :show-continue="showContinue"
           :interrupted="Boolean(history.current.value?.interrupted) && status === 'ready'"
           :queued="queuedMessages"
-          :steers="providerKind(providerID) === 'api'"
           :sending="submission.sending.value?.displayText ?? null"
           :compacting="compaction.compacting.value"
           :reviewing="review.reviewing.value"

@@ -1,0 +1,2 @@
+- Tool calls a coding agent never reported back no longer show as running after its reply ends (#2030).
+- Stop ends a Pi reply that is still waiting for its session to start (#2030).

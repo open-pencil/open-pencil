@@ -34,7 +34,6 @@ const {
   nodesLive = true,
   reasoningDisplay,
   queued = [],
-  steers = false,
   sending = null,
   compacting = false,
   reviewing = false,
@@ -54,8 +53,6 @@ const {
   reasoningDisplay?: ReasoningDisplay
   /** Messages written while the agent works, shown after its reply until it takes them in. */
   queued?: readonly QueuedMessage[]
-  /** Whether the agent takes a waiting message mid-turn. */
-  steers?: boolean
   /** The text of a message sent but not in the chat yet, shown at once while the chat connects. */
   sending?: string | null
   /** The conversation is being compacted, from a `/compact` or before a message goes. */
@@ -261,7 +258,6 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
           v-for="item in queued"
           :key="item.id"
           :message="item"
-          :steers="steers"
           @remove="emit('removeQueued', item.id)"
         />
 
