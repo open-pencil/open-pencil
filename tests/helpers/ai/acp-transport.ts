@@ -62,6 +62,8 @@ export interface FakeAgentOptions {
   startupOptions?: SessionConfigOption[]
   /** True to keep option changes waiting until `answerChoices`, as a slow agent does. */
   choicesWait?: boolean
+  /** True for a turn that first asks permission for a tool and waits for the answer. */
+  asksPermission?: boolean
 }
 
 /** In-memory ACP agents, one per start, that record what the transport asks of them. */
@@ -76,8 +78,11 @@ export function fakeAgents({
   updates = [],
   configOptions,
   startupOptions,
-  choicesWait = false
+  choicesWait = false,
+  asksPermission = false
 }: FakeAgentOptions = {}) {
+  /** What the person answered the turn's permission request, or `cancelled`. */
+  const permission = createDeferred<string>()
   const choices = createDeferred<undefined>()
   let notifyLatest: ((update: SessionUpdate) => Promise<void>) | null = null
   const startupNoted = createDeferred<undefined>()
@@ -150,6 +155,14 @@ export function fakeAgents({
           client.notify(methods.client.session.update, { sessionId: session, update })
         await report({ sessionUpdate: 'available_commands_update', availableCommands: [] })
         if (turn === 'refused') throw new Error('The prompt never reached the model')
+        if (asksPermission) {
+          const { outcome } = await client.request(methods.client.session.requestPermission, {
+            sessionId,
+            toolCall: { toolCallId: 'tool-1', title: 'Approve Plan' },
+            options: [{ optionId: 'allow', name: 'Allow', kind: 'allow_once' }]
+          })
+          permission.resolve(outcome.outcome === 'selected' ? outcome.optionId : outcome.outcome)
+        }
         for (const { session, update } of updates) await report(update, session)
         if (turn === 'cut-off') {
           await report({
@@ -224,6 +237,7 @@ export function fakeAgents({
     searchPaths,
     cwds,
     defersTools,
+    permissionAnswer: permission.promise,
     finishLookup: () => lookup.resolve(undefined),
     answerChoices: () => choices.resolve(undefined),
     crash: () => expectDefined(crashLatest, 'a started agent')()

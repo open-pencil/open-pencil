@@ -192,6 +192,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
   private choices: () => AgentChoices
   private onChoices: ((choices: AgentModelChoices | null) => void) | null
   private onAgentChoices: ((choices: AgentChoices) => void) | null
+  /** Ends the permission requests of the turn now running, which a stopped turn leaves behind. */
+  private turnPermissions: AbortController | null = null
   private startTimeoutMs: number | undefined
 
   constructor(options: {
@@ -222,10 +224,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     choices?: () => AgentChoices
     /** Told what the session offers to choose whenever it changes, and null once it ends. */
     onChoices?: (choices: AgentModelChoices | null) => void
-    /**
-     * Told the values the agent moved to on its own, as when approving a plan leaves Plan mode,
-     * so the chat follows them instead of putting the agent back on the next message.
-     */
+    /** Told the values the agent moved to on its own, as approving a plan leaves Plan mode. */
     onAgentChoices?: (choices: AgentChoices) => void
     startup?: ACPStartup
     startTimeoutMs?: number
@@ -292,6 +291,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           (subagent) => (this.store ? subagentAgent(this.store, subagent) : null)
         )
         let closed = false
+        const permissions = new AbortController()
+        this.turnPermissions = permissions
         // The reply's run collects the edits the agent's calls make in the chat's document.
         const store = this.store
         const run = store ? startAgentRun(store, session.chat) : null
@@ -299,6 +300,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         function finish(reason: 'stop' | 'other' | 'error', errorText?: string) {
           if (closed) return
           closed = true
+          permissions.abort()
           session.onUpdate = null
           if (store && run) endRun(store, run)
           // The subagents' transcripts reach the chat in full before the reply closes.
@@ -416,6 +418,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
 
   async destroy(): Promise<void> {
     this.destroying = true
+    this.turnPermissions?.abort()
     const starting = this.starting
     this.starting = null
     await starting?.kill().catch(() => undefined)
@@ -465,7 +468,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           const title = params.toolCall.title ?? ''
           return requestPermissionFromUser(
             params,
-            store ? () => notifyPermissionWaiting(store, agentDef.name, title) : undefined
+            store ? () => notifyPermissionWaiting(store, agentDef.name, title) : undefined,
+            this.turnPermissions?.signal
           )
         },
         onSessionUpdate: (params) => {
