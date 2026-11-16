@@ -110,7 +110,7 @@ On Windows, run this in PowerShell instead:
 irm https://omp.sh/install.ps1 | iex
 ```
 
-Sign in with `omp login`, or set the provider keys it reads, and pick a model in `omp`; OpenPencil uses the model Oh My Pi has selected. Oh My Pi does not report the account it uses, so guided setup shows it as installed without a plan or email.
+Sign in with `omp login`, or set the provider keys it reads, and pick a model in `omp`; a profile left on **Agent default** uses the model Oh My Pi has selected, and a profile that picks one of its models uses that one instead. Oh My Pi does not report the account it uses, so guided setup shows it as installed without a plan or email.
 
 Oh My Pi does not tell OpenPencil which of its tool calls an edit belongs to, so the changes it makes to the canvas show in the chat but are not part of the reply: **Revert changes** and **Restore changes** do not cover them.
 
