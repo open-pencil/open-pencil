@@ -1,6 +1,7 @@
 import { compact, isEmptyObject } from 'es-toolkit'
 
-import { serializeNode, type DesignDocument, type DesignElement } from '@open-pencil/dom-css'
+import type { DesignDocument, DesignElement } from '@open-pencil/dom-css'
+import { serializeNode } from '@open-pencil/dom-css/export'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import { parseCSSColor, parseCSSURLReferences } from '@open-pencil/scene-graph/css'
