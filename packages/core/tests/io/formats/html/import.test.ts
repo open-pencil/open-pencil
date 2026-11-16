@@ -157,6 +157,7 @@ describe('reading HTML', () => {
         cellItem('width:60px;height:20px') +
         cellItem() +
         cellItem('grid-column:span 2;height:20px') +
+        cellItem('grid-column:span 2;width:60px;height:20px') +
         `</div>`
     )
     const [grid] = graph.getChildren(graph.getPages()[0].id)
@@ -169,8 +170,11 @@ describe('reading HTML', () => {
       [0, 0, 100, 40],
       [110, 0, 60, 20],
       [220, 0, 100, 40],
-      [0, 50, 210, 20]
+      [0, 50, 210, 20],
+      [0, 80, 60, 20]
     ])
+    // A start-aligned item still covers the two columns it spans.
+    expect(graph.getChildren(grid.id)[4].gridPosition).toMatchObject({ column: 1, columnSpan: 2 })
   })
 
   test('centers a block capped by its maximum width at that width, keeping auto layout', async () => {

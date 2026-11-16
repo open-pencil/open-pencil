@@ -4,7 +4,8 @@ import {
   parseCSSAlignSelf,
   parseCSSGridTracks,
   parseCSSJustifyContent,
-  parseCSSNumber
+  parseCSSNumber,
+  splitCSSValue
 } from '@open-pencil/scene-graph/css'
 import { layoutSizingUpdates } from '@open-pencil/scene-graph/layout'
 
@@ -178,10 +179,39 @@ function trackSpan(starts: readonly number[], start: number, end: number) {
   return { track: Math.max(first, 0) + 1, span: Math.max(last - first, 0) + 1 }
 }
 
+/** A grid line a placement property names: a line number, or a span of tracks. */
+function gridLine(value: string | undefined): { line: number } | { span: number } | null {
+  const [first, second] = splitCSSValue(value?.trim().toLowerCase() ?? '')
+  const count = Number(first === 'span' ? second : first)
+  if (!Number.isInteger(count) || count < 1) return null
+  return first === 'span' ? { span: count } : { line: count }
+}
+
+/**
+ * The start track and span an item's `grid-column-*` or `grid-row-*` declare, where they name
+ * them by number: a span shows how many tracks an item at the start of its area covers, which
+ * its box does not. Named lines and negative numbers are left to the item's box.
+ */
+function declaredArea(
+  item: DesignStyleDeclaration,
+  axis: 'column' | 'row'
+): { track?: number; span?: number } {
+  const start = gridLine(pickStyle(item, `grid-${axis}-start`))
+  const end = gridLine(pickStyle(item, `grid-${axis}-end`))
+  const area: { track?: number; span?: number } = {}
+  if (start && 'line' in start) area.track = start.line
+  if (end && 'span' in end) area.span = end.span
+  else if (start && 'span' in start) area.span = start.span
+  else if (start && 'line' in start && end && 'line' in end && end.line > start.line) {
+    area.span = end.line - start.line
+  }
+  return area
+}
+
 /**
  * Lays a grid of several columns out as a grid layer (CSS Grid §7): its tracks as the page
- * resolved them, its gaps, and each item in the area the page placed it in, read from where
- * the item was laid out, as the runtimes report no line numbers. An item that stretches over its
+ * resolved them, its gaps, and each item in the area the page placed it in: by the lines it
+ * declares by number, else read from where it was laid out. An item that stretches over its
  * area fills it; one at the start with a size of its own keeps it, or hugs its content. A grid
  * whose alignment moves items within their areas, or its tracks within it, stays a stack, and
  * placement puts its items.
@@ -237,8 +267,8 @@ function layOutGridTracks(
     if (!own || !box || !columnStarts || !rowStarts) return
     const x = box.x - own.x - insets.left
     const y = box.y - own.y - insets.top
-    const column = trackSpan(columnStarts, x, x + box.width)
-    const row = trackSpan(rowStarts, y, y + box.height)
+    const column = { ...trackSpan(columnStarts, x, x + box.width), ...declaredArea(item, 'column') }
+    const row = { ...trackSpan(rowStarts, y, y + box.height), ...declaredArea(item, 'row') }
     layer.gridPosition = {
       column: column.track,
       columnSpan: column.span,

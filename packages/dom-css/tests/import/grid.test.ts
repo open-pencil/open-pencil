@@ -201,4 +201,38 @@ describe('grid import', () => {
 
     expect(gridLayer.layoutMode).toBe('VERTICAL')
   })
+  it('takes the span an item declares, which a box at the start of its area does not show', () => {
+    const at = (x: number, y: number, width: number, height: number) => ({
+      layout: { box: { x, y, width, height } }
+    })
+    const grid: DesignElement = {
+      ...box(
+        {
+          display: 'grid',
+          width: '320px',
+          'grid-template-columns': '100px 100px 100px',
+          'grid-template-rows': '20px',
+          'column-gap': '10px'
+        },
+        [
+          {
+            ...box({ width: '60px', 'grid-column-start': 'auto', 'grid-column-end': 'span 2' }),
+            ...at(0, 0, 60, 20)
+          },
+          {
+            ...box({ 'grid-column-start': '3', 'grid-column-end': 'auto' }),
+            ...at(220, 0, 100, 20)
+          }
+        ]
+      ),
+      ...at(0, 0, 320, 20)
+    }
+    const { graph } = designDocumentToLayers({ type: 'document', children: [grid] })
+    const [gridLayer] = graph.getChildren(graph.getPages()[0].id)
+
+    expect(graph.getChildren(gridLayer.id).map((item) => item.gridPosition)).toEqual([
+      { column: 1, columnSpan: 2, row: 1, rowSpan: 1 },
+      { column: 3, columnSpan: 1, row: 1, rowSpan: 1 }
+    ])
+  })
 })
