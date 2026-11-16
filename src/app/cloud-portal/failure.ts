@@ -38,6 +38,7 @@ export function usePortalFailureMessages() {
     }
     const words: Partial<Record<NonNullable<CloudPortalAPIError['code']>, string>> = {
       current_password_invalid: value.failureInvalidCredentials,
+      code_invalid: value.failureInvalidCode,
       password_too_short: value.failurePasswordTooShort,
       password_too_long: value.failurePasswordTooLong,
       last_authentication_method: value.errorLastMethod,

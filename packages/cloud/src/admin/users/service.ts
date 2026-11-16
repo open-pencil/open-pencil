@@ -1,3 +1,4 @@
+import { normalizeEnrollmentEmail } from '#cloud/admin/enrollment/service'
 import { AdminDomainError } from '#cloud/admin/errors'
 import {
   containsPattern,
@@ -80,6 +81,8 @@ export function createAdminUserService(
     notify?: AuthenticationEmailService
     /** Takes down a person's picture; without it, `removePicture` refuses. */
     pictures?: UserPictureService
+    /** People join only once approved, so the list says where each account's request stands. */
+    approval?: boolean
   } = {}
 ) {
   const activity = createSignInActivity(database)
@@ -144,7 +147,7 @@ export function createAdminUserService(
   async function accountSummaries(rows: UserRow[]): Promise<CloudAdminUser[]> {
     const ids = rows.map((row) => row.id)
     if (ids.length === 0) return []
-    const [passkeys, sessions, memberships] = await Promise.all([
+    const [passkeys, sessions, memberships, requests] = await Promise.all([
       database.selectFrom('passkey').select('userId').where('userId', 'in', ids).execute(),
       database
         .selectFrom('session')
@@ -153,8 +156,20 @@ export function createAdminUserService(
         .where('session.expiresAt', '>', new Date())
         .groupBy('session.userId')
         .execute(),
-      database.selectFrom('workspaceMember').select('userId').where('userId', 'in', ids).execute()
+      database.selectFrom('workspaceMember').select('userId').where('userId', 'in', ids).execute(),
+      options.approval
+        ? database
+            .selectFrom('enrollment')
+            .select(['emailNormalized', 'status'])
+            .where(
+              'emailNormalized',
+              'in',
+              rows.map((row) => normalizeEnrollmentEmail(row.email))
+            )
+            .execute()
+        : []
     ])
+    const requestStatus = keyBy(requests, (request) => request.emailNormalized)
     const withPasskeys = new Set(passkeys.map((passkey) => passkey.userId))
     const lastActive = keyBy(sessions, (session) => session.userId)
     const workspaceCounts = countBy(memberships, (membership) => membership.userId)
@@ -169,7 +184,10 @@ export function createAdminUserService(
       createdAt: dateString(row.createdAt) ?? '',
       twoStep: row.twoFactorEnabled === true || withPasskeys.has(row.id),
       lastActiveAt: dateString(lastActive[row.id]?.lastActiveAt ?? null),
-      workspaceCount: workspaceCounts[row.id] ?? 0
+      workspaceCount: workspaceCounts[row.id] ?? 0,
+      ...(options.approval && {
+        request: requestStatus[normalizeEnrollmentEmail(row.email)]?.status ?? null
+      })
     }))
   }
 
