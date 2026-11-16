@@ -46,6 +46,7 @@
   "invitationDesktop": "Żeby używać Cloud w aplikacji na komputer, potrzebujesz wersji beta ze {link}.",
   "invitationDownloadLink": "strony pobierania",
   "invitationAction": "Otwórz Cloud",
+  "invitationSignatureName": "Danila",
   "invitationSignatureRole": "Założyciel OpenPencil",
   "enrollmentNotificationSubject": "Nowa prośba o dostęp do OpenPencil Cloud",
   "enrollmentNotificationHeading": "Nowa prośba o dostęp",

@@ -46,6 +46,7 @@
   "invitationDesktop": "デスクトップアプリで Cloud を使うには、{link}からベータ版を入手してください。",
   "invitationDownloadLink": "ダウンロードページ",
   "invitationAction": "Cloud を開く",
+  "invitationSignatureName": "ダニラ",
   "invitationSignatureRole": "OpenPencil 創業者",
   "enrollmentNotificationSubject": "OpenPencil Cloud への新しいアクセスリクエスト",
   "enrollmentNotificationHeading": "新しいアクセスリクエスト",

@@ -14,9 +14,6 @@ import { greeting, useEmailLocalization } from './localization'
  */
 const { payload } = defineProps<{ payload: EnrollmentEmailPayload }>()
 
-/** Who signs the letter; a name, so it reads the same in every language. */
-const SIGNER = 'Danila'
-
 const localization = useEmailLocalization()
 const { t } = localization
 // Each translation places its link inside the sentence, where `{link}` is.
@@ -43,7 +40,7 @@ const [beforeDownload = '', afterDownload = ''] = t.invitationDesktop.split('{li
       >{{ afterDownload }}
     </EmailText>
     <template #signature>
-      {{ SIGNER }}<br />
+      {{ t.invitationSignatureName }}<br />
       {{ t.invitationSignatureRole }}
     </template>
   </BrandEmail>

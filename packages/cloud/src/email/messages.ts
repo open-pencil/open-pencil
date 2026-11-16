@@ -63,6 +63,7 @@ export const emailMessageDefaults = {
   invitationDesktop: 'To use Cloud in the desktop app, you need the beta release from the {link}.',
   invitationDownloadLink: 'download page',
   invitationAction: 'Open Cloud',
+  invitationSignatureName: 'Danila',
   invitationSignatureRole: 'Founder of OpenPencil',
 
   enrollmentNotificationSubject: 'New OpenPencil Cloud access request',

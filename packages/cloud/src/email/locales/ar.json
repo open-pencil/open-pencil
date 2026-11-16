@@ -46,6 +46,7 @@
   "invitationDesktop": "لاستخدام Cloud في تطبيق سطح المكتب، تحتاج إلى الإصدار التجريبي من {link}.",
   "invitationDownloadLink": "صفحة التنزيل",
   "invitationAction": "افتح Cloud",
+  "invitationSignatureName": "دانيلا",
   "invitationSignatureRole": "مؤسس OpenPencil",
   "enrollmentNotificationSubject": "طلب وصول جديد إلى OpenPencil Cloud",
   "enrollmentNotificationHeading": "طلب وصول جديد",

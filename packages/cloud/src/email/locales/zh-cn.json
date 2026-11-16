@@ -46,6 +46,7 @@
   "invitationDesktop": "要在桌面应用中使用 Cloud，需要从{link}下载测试版。",
   "invitationDownloadLink": "下载页面",
   "invitationAction": "打开 Cloud",
+  "invitationSignatureName": "达尼拉",
   "invitationSignatureRole": "OpenPencil 创始人",
   "enrollmentNotificationSubject": "新的 OpenPencil Cloud 访问申请",
   "enrollmentNotificationHeading": "新的访问申请",
