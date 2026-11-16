@@ -26,5 +26,9 @@
   "reload": "再読み込み",
   "settingsSection": "アップデート",
   "checkOnStartup": "起動時にアップデートを確認",
-  "checkOnStartupDescription": "デスクトップアプリを開いて少ししてから、新しいバージョンを探します。これを切っても、メニューの「アップデートを確認」は使えます。"
+  "checkOnStartupDescription": "デスクトップアプリを開いて少ししてから、新しいバージョンを探します。これを切っても、メニューの「アップデートを確認」は使えます。",
+  "channel": "アップデートチャンネル",
+  "channelDescription": "ナイトリービルドは毎晩最新のコードから作られ、不具合を含むことがあります。「安定版」に戻すと、次回の確認時に現在の安定版がインストールされます。",
+  "channelStable": "安定版",
+  "channelNightly": "ナイトリー"
 }

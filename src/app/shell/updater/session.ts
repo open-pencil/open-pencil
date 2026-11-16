@@ -1,9 +1,12 @@
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { relaunch } from '@tauri-apps/plugin-process'
-import { check } from '@tauri-apps/plugin-updater'
 import type { DownloadEvent } from '@tauri-apps/plugin-updater'
 import { shallowRef, type ShallowRef } from 'vue'
 
+import { appPreferences } from '@/app/settings/preferences/store'
+
+import { resolveUpdateChannel } from './channel'
+import { checkUpdateChannel } from './feed'
 import type { UpdateFailureStep } from './messages'
 import type { DownloadProgress } from './progress'
 import { requestRestartApproval } from './restart'
@@ -244,7 +247,7 @@ function errorMessage(error: unknown): string {
 export function createTauriUpdaterBackend(): UpdaterBackend {
   return {
     async check() {
-      return check()
+      return checkUpdateChannel(resolveUpdateChannel(appPreferences.value.updates.channel))
     },
     confirmRestart: requestRestartApproval,
     async relaunch() {

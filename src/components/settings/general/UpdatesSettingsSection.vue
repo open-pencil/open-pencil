@@ -6,12 +6,19 @@ import { useUpdateMessages } from '@open-pencil/vue/i18n'
 import {
   appPreferences,
   DEFAULT_APP_PREFERENCES,
-  updateStartupUpdateCheck
+  updateStartupUpdateCheck,
+  updateUpdateChannel
 } from '@/app/settings/preferences/store'
+import {
+  buildUpdateChannel,
+  resolveUpdateChannel,
+  type UpdateChannel
+} from '@/app/shell/updater/channel'
 import { canSelfUpdate } from '@/app/tauri/capabilities'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 const updates = useUpdateMessages()
@@ -22,6 +29,15 @@ const checkOnStartup = computed({
   get: () => appPreferences.value.updates.checkOnStartup,
   set: updateStartupUpdateCheck
 })
+// Until a channel is chosen it follows the installed build, which Reset goes back to.
+const channel = computed<UpdateChannel>({
+  get: () => resolveUpdateChannel(appPreferences.value.updates.channel),
+  set: updateUpdateChannel
+})
+const channelOptions = computed(() => [
+  { value: 'stable' as const, label: updates.value.channelStable },
+  { value: 'nightly' as const, label: updates.value.channelNightly }
+])
 </script>
 
 <template>
@@ -39,6 +55,21 @@ const checkOnStartup = computed({
           v-model="checkOnStartup"
           :label="updates.checkOnStartup"
           data-test-id="settings-startup-update-check"
+        />
+      </SettingsRow>
+      <SettingsRow
+        :label="updates.channel"
+        :description="updates.channelDescription"
+        :modified="channel !== buildUpdateChannel()"
+        class="max-sm:flex-col max-sm:items-stretch"
+        @reset="updateUpdateChannel('build')"
+      >
+        <AppSelect
+          v-model="channel"
+          :label="updates.channel"
+          :options="channelOptions"
+          :ui="{ trigger: 'w-full sm:w-52' }"
+          data-test-id="settings-update-channel"
         />
       </SettingsRow>
     </SettingsGroup>
