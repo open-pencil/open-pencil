@@ -153,8 +153,18 @@ describe('local agent discovery', () => {
       ['gemini-cli', 'not-installed'],
       ['antigravity', 'not-installed'],
       ['cursor', 'not-installed'],
-      ['grok-build', 'not-installed']
+      ['grok-build', 'not-installed'],
+      ['omp', 'not-installed']
     ])
+  })
+
+  test('finds Oh My Pi by its own command, which speaks ACP without an adapter', () => {
+    const omp = expectDefined(
+      detectedAgents(lookup('omp')).find((agent) => agent.definition.id === 'omp'),
+      'Oh My Pi'
+    )
+    expect(omp.status).toBe('available')
+    expect(spawnCommandFromLookup(omp.definition, { omp: '/test/bin/omp' })).toBe('omp')
   })
 
   test('offers an adapter that carries its agent even without the agent CLI', () => {
@@ -165,7 +175,8 @@ describe('local agent discovery', () => {
       ['gemini-cli', 'not-installed'],
       ['antigravity', 'not-installed'],
       ['cursor', 'not-installed'],
-      ['grok-build', 'not-installed']
+      ['grok-build', 'not-installed'],
+      ['omp', 'not-installed']
     ])
   })
 

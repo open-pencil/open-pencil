@@ -61,7 +61,15 @@ async function externalMCPServer(connection: MCPConnection): Promise<McpServer> 
   }
 }
 
-export async function buildACPMCPServers(options: BuiltInMCPServerOptions): Promise<McpServer[]> {
-  const external = await Promise.all(enabledMCPConnections.value.map(externalMCPServer))
+export async function buildACPMCPServers(
+  options: BuiltInMCPServerOptions & {
+    /** Names the outside connections to leave out of the session. */
+    skipExternal?: (name: string) => boolean
+  }
+): Promise<McpServer[]> {
+  const connections = enabledMCPConnections.value.filter(
+    (connection) => !options.skipExternal?.(connection.name)
+  )
+  const external = await Promise.all(connections.map(externalMCPServer))
   return [builtInMCPServer(options), ...external]
 }

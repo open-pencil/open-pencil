@@ -15,6 +15,7 @@ const EXECUTABLES: &[&str] = &[
     "agy",
     "cursor-agent",
     "grok",
+    "omp",
     "openpencil-mcp-http",
     "openpencil-harness",
     "npm",
@@ -245,6 +246,20 @@ mod tests {
     fn checks_npm_only_when_npm_is_found() {
         let result = lookup_with("/bin".to_owned(), |_| None, |_| None, |_| Some(true));
         assert_eq!(result.npm_global_writable, None);
+    }
+
+    #[test]
+    fn finds_oh_my_pi_by_its_own_command() {
+        let result = lookup_with(
+            "/agents/bin".to_owned(),
+            |command| (command == "omp").then(|| PathBuf::from("/agents/bin/omp")),
+            |_| None,
+            |_| None,
+        );
+        assert_eq!(
+            result.executables["omp"],
+            Some("/agents/bin/omp".to_owned())
+        );
     }
 
     #[test]

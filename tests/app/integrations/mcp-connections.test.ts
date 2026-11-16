@@ -167,6 +167,21 @@ describe('MCP connections', () => {
     }
   })
 
+  test('leaves out the outside servers the caller skips', async () => {
+    for (const name of ['GitHub', 'Linear']) {
+      const draft = createMCPConnectionDraft()
+      draft.name = name
+      draft.url = 'https://example.com/mcp'
+      draft.enabled = true
+      saveMCPConnectionDraft(draft)
+    }
+    const servers = await buildACPMCPServers({
+      authorizationToken: null,
+      skipExternal: (name) => name === 'Linear'
+    })
+    expect(servers.map((server) => server.name)).toEqual(['open-pencil', 'GitHub'])
+  })
+
   test('tells the server when the agent defers tools', async () => {
     const header = { name: MCP_DEFERS_TOOLS_HEADER, value: '1' }
     const [server] = await buildACPMCPServers({ authorizationToken: null, defersTools: true })

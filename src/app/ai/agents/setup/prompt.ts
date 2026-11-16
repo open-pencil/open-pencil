@@ -16,7 +16,8 @@ const SIGN_IN: Record<ACPAgentID, string> = {
   antigravity:
     'Make sure I am signed in to Antigravity CLI: run `agy` and choose a sign-in method.',
   cursor: 'Make sure I am signed in to Cursor: run `cursor-agent login` if I am not.',
-  'grok-build': 'Make sure I am signed in to Grok Build: run `grok login` if I am not.'
+  'grok-build': 'Make sure I am signed in to Grok Build: run `grok login` if I am not.',
+  omp: 'Make sure I am signed in to Oh My Pi: run `omp login` if I am not.'
 }
 
 export function codingAgentGuideURL(agentID: ACPAgentID): string {
