@@ -115,7 +115,7 @@ export function createAdminEmailService(
             payload: {
               name: enrollment.name ?? 'there',
               actionURL:
-                kind === 'enrollment-approved'
+                kind === 'enrollment-approved' || kind === 'enrollment-invited'
                   ? links.publicURL
                   : new URL('/auth/sign-in', links.publicURL).href
             }

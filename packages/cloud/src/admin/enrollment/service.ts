@@ -27,6 +27,11 @@ export type EnrollmentReviewInput = {
   note?: string
   /** An approval that sends the founder's letter instead of the plain approval. */
   invite?: boolean
+  /**
+   * The status the reviewer saw, checked under the row's lock: a request another administrator
+   * decided meanwhile is refused rather than decided again.
+   */
+  expectedStatus?: EnrollmentStatus
 }
 export type EnrollmentRecord = {
   id: string
@@ -213,7 +218,10 @@ export function createEnrollmentService(
           .where('id', '=', enrollmentId)
           .forUpdate()
           .executeTakeFirstOrThrow()
-        if (!ALLOWED_TRANSITIONS[current.status].has(status)) {
+        if (
+          !ALLOWED_TRANSITIONS[current.status].has(status) ||
+          (input.expectedStatus !== undefined && current.status !== input.expectedStatus)
+        ) {
           throw new AdminDomainError(
             'invalid_enrollment_transition',
             `Enrollment cannot transition from ${current.status} to ${status}`
@@ -285,7 +293,10 @@ export function createEnrollmentService(
       let invited = 0
       for (const { id } of pending) {
         try {
-          await service.review(actorId, id, 'approved', { invite: true })
+          await service.review(actorId, id, 'approved', {
+            invite: true,
+            expectedStatus: 'pending'
+          })
           invited++
         } catch (error) {
           if (!(error instanceof AdminDomainError)) throw error

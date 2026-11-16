@@ -43,6 +43,7 @@ export {
   createAuthenticationEmailService,
   createAccountAuthenticationService,
   createCloudAuthenticationRuntime,
+  enrollmentEmailOptions,
   createBetterAuthAdapter,
   createCloudIdentityResolver,
   createCloudSessionResolver,

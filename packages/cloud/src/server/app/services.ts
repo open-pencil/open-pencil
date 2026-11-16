@@ -4,6 +4,7 @@ import type {
   CloudIdentityResolver,
   CloudSessionResolver
 } from '#cloud/server/auth'
+import { enrollmentEmailOptions } from '#cloud/server/auth'
 import { createBillingTokenService } from '#cloud/server/billing'
 import { createCollaborationTicketService } from '#cloud/server/collaboration'
 import { createCommentService } from '#cloud/server/comments'
@@ -87,12 +88,7 @@ export function createAppServices(services: CloudServices) {
   })
   const enrollment =
     services.enrollment ??
-    createEnrollmentService(database, {
-      publicURL: config.publicURL,
-      adminRecipients: config.enrollmentAdminNotificationEmails,
-      email: services.transactionalEmail,
-      invitations: config.deployment === 'official'
-    })
+    createEnrollmentService(database, enrollmentEmailOptions(config, services.transactionalEmail))
   const policy =
     services.policy ??
     (services.entitlementSource

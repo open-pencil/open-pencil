@@ -142,6 +142,13 @@ describe('Cloud enrollment integration', () => {
       await expect(selfHosted.invitePending('admin-user')).rejects.toMatchObject({
         code: 'invitations_unavailable'
       })
+      // Another administrator declined it after this reviewer saw it waiting.
+      await expect(
+        official.review('admin-user', declined.id, 'approved', {
+          invite: true,
+          expectedStatus: 'pending'
+        })
+      ).rejects.toMatchObject({ code: 'invalid_enrollment_transition' })
       expect(await official.invitePending('admin-user')).toEqual({ invited: 2 })
       expect(await official.invitePending('admin-user')).toEqual({ invited: 0 })
 
