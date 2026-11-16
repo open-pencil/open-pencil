@@ -11,6 +11,21 @@ The Deploy Cloud workflow (`.github/workflows/deploy-cloud.yml`) deploys a targe
 and reviewers of its `cloud-<target>` GitHub environment. It stops before building when the ref may
 not deploy to the target or its commit is not on master (`tools/ci/cloud-deploy/src/ref.ts`).
 
+## Billing
+
+A deployment whose `openpencil-cloud.toml` names `[billing]` sets plans through `[internal_api]`,
+with database entitlements whose values are the free plan; staging does. Its GitHub environment
+then holds `OPENPENCIL_CLOUD_SERVICE_TOKEN`, which the workflow passes on only where it is set,
+and the billing Worker holds the same token as `CLOUD_SERVICE_TOKEN`. Make it once and give it to
+both in your own terminal, so it is never shown:
+
+```sh
+token=$(openssl rand -base64 32)
+printf %s "$token" | gh secret set OPENPENCIL_CLOUD_SERVICE_TOKEN --env cloud-staging
+printf %s "$token" | bunx wrangler secret put CLOUD_SERVICE_TOKEN -c wrangler.billing.jsonc   # in openpencil-commerce
+unset token
+```
+
 ## Before production's first deploy
 
 These settings outside the repository:

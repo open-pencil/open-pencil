@@ -1,14 +1,26 @@
 import { writeFile } from 'node:fs/promises'
 
+import { partition, zipObject } from 'es-toolkit'
+
 /**
  * The Worker's secrets as wrangler's `--secrets-file` takes them: each named environment variable
- * by its name. A secret the environment lacks or leaves empty is an error, not an empty secret.
+ * by its name. A secret the environment lacks or leaves empty is an error, not an empty secret,
+ * unless its name ends in `?`: one only some deployments have, such as the internal API's token,
+ * which is left out where it is not set.
  */
 export function workerSecrets(names: string[], env: NodeJS.ProcessEnv): Record<string, string> {
   if (names.length === 0) throw new Error('Name at least one secret')
-  const missing = names.filter((name) => !env[name])
+  const [optional, required] = partition(names, (name) => name.endsWith('?'))
+  const missing = required.filter((name) => !env[name])
   if (missing.length > 0) throw new Error(`Missing secrets: ${missing.join(', ')}`)
-  return Object.fromEntries(names.map((name) => [name, env[name] ?? '']))
+  const present = [
+    ...required,
+    ...optional.map((name) => name.slice(0, -1)).filter((name) => env[name])
+  ]
+  return zipObject(
+    present,
+    present.map((name) => env[name] ?? '')
+  )
 }
 
 /** Writes the secrets file readable only by its owner. */
