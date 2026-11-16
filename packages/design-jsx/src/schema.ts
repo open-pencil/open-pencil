@@ -245,10 +245,18 @@ export function elementPropWarnings(
   })
 }
 
-/** A layer of the same JSX by name or `ref()`, or a point in the connector's parent. */
+/**
+ * A layer of the same JSX by name or `ref()`, a layer already in the document by `{ id }`, as an
+ * outline writes an end whose layer it leaves out, or a point in the connector's parent.
+ */
 const connectorEndSchema = v.union(
-  [v.string(), v.custom<LayerRef>(isLayerRef), v.object({ x: v.number(), y: v.number() })],
-  'expected a layer name, a ref(), or { x, y }'
+  [
+    v.string(),
+    v.custom<LayerRef>(isLayerRef),
+    v.strictObject({ id: v.string() }),
+    v.object({ x: v.number(), y: v.number() })
+  ],
+  'expected a layer name, a ref(), { id }, or { x, y }'
 )
 
 /** The props `<Connector>` takes: its own, and the layer props that style its line. */

@@ -25,6 +25,7 @@ import {
 } from '@open-pencil/scene-graph/generated'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { styleRunPieces } from '@open-pencil/scene-graph/text'
 
 import { computeContentBounds } from '#core/io/formats/raster'
 import { renderNodesToSVG, type ExportEffectWarning } from '#core/io/formats/svg'
@@ -106,15 +107,13 @@ function fontValues(text: SceneNode): Record<string, string | undefined> {
 function labelHTML(text: SceneNode): string {
   const { text: characters, styleRuns } = text
   let html = ''
-  let at = 0
-  const plain = (to: number) => {
-    html += escapeText(characters.slice(at, to)).replaceAll('\n', '<br>')
-    at = to
-  }
-  for (const run of [...styleRuns].sort((a, b) => a.start - b.start)) {
-    plain(run.start)
+  for (const { start, end, style: s } of styleRunPieces(styleRuns, characters.length)) {
+    const inner = escapeText(characters.slice(start, end)).replaceAll('\n', '<br>')
+    if (!s) {
+      html += inner
+      continue
+    }
     const css: string[] = []
-    const { style: s } = run
     if (s.fontWeight !== undefined) css.push(`font-weight: ${s.fontWeight}`)
     if (s.italic !== undefined) css.push(`font-style: ${s.italic ? 'italic' : 'normal'}`)
     if (s.textDecoration)
@@ -123,14 +122,8 @@ function labelHTML(text: SceneNode): string {
     if (s.fontFamily) css.push(`font-family: ${s.fontFamily}`)
     const fill = s.fills?.find((paint) => paint.type === 'SOLID')
     if (fill?.type === 'SOLID') css.push(`color: ${colorToHex(fill.color)}`)
-    const inner = escapeText(characters.slice(run.start, run.start + run.length)).replaceAll(
-      '\n',
-      '<br>'
-    )
     html += css.length > 0 ? `<span style="${css.join('; ')}">${inner}</span>` : inner
-    at = run.start + run.length
   }
-  plain(characters.length)
   return html
 }
 

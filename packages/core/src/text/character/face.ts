@@ -1,4 +1,5 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { styleRunAt } from '@open-pencil/scene-graph/text'
 
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
 import { drawnFontVariations, loadedFace, paragraphSourceFamilies } from '#core/text/font/families'
@@ -28,7 +29,7 @@ function loadedStyle(
  * `drawnFontStyle` asks CanvasKit.
  */
 export function fontAt(node: FontNode, index: number) {
-  const run = styleRunAt(node, index)
+  const run = styleRunAt(node.styleRuns, index)
   const family = run?.style.fontFamily ?? (node.fontFamily || DEFAULT_FONT_FAMILY)
   const weight = run?.style.fontWeight ?? node.fontWeight
   const italic = run?.style.italic ?? node.italic
@@ -61,13 +62,6 @@ type FontNode = Pick<
 >
 
 export type StyleRun = SceneNode['styleRuns'][number]
-
-export function styleRunAt(
-  node: Pick<SceneNode, 'styleRuns'>,
-  index: number
-): StyleRun | undefined {
-  return node.styleRuns.find((item) => index >= item.start && index < item.start + item.length)
-}
 
 /**
  * The style a family of the paragraph is drawn in: the face its own family draws the asked style
@@ -136,7 +130,8 @@ export function characterFamily(node: SceneNode, text: string, index: number): s
 }
 
 function capHeightAt(node: FontNode, index: number): number {
-  const fontSize = styleRunAt(node, index)?.style.fontSize ?? (node.fontSize || DEFAULT_FONT_SIZE)
+  const fontSize =
+    styleRunAt(node.styleRuns, index)?.style.fontSize ?? (node.fontSize || DEFAULT_FONT_SIZE)
   const source = candidateSources(fontAt(node, index)).next()
   return (source.done ? TYPICAL_CAP_HEIGHT_EMS : source.value.capHeight()) * fontSize
 }

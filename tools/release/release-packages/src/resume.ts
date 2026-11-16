@@ -5,8 +5,10 @@ import { fromUint8Array } from 'js-base64'
 import * as v from 'valibot'
 
 import {
+  publishedTarball,
   verifyPublishedFromRelease,
   type PublishedReleaseVersion,
+  type PublishedTarball,
   type ReleaseSource
 } from './provenance'
 import {
@@ -24,6 +26,7 @@ export function tarballIntegrity(bytes: Uint8Array): string {
 export interface ResumeOperations {
   plan(root: string): Promise<PublicationPlanEntry[]>
   artifacts(directory: string): Promise<Map<string, string>>
+  published(name: string, version: string): Promise<PublishedTarball>
   verify(name: string, version: string, source: ReleaseSource): Promise<PublishedReleaseVersion>
   download(url: string): Promise<Uint8Array>
   write(path: string, bytes: Uint8Array): Promise<void>
@@ -38,16 +41,21 @@ async function downloadTarball(url: string): Promise<Uint8Array> {
 const resumeOperations: ResumeOperations = {
   plan: createPublicationPlan,
   artifacts: artifactsByPackage,
+  published: publishedTarball,
   verify: verifyPublishedFromRelease,
   download: downloadTarball,
   write: writeFile
 }
 
 /**
- * Resumes a release whose npm publication stopped partway. Every version already on npm must have
- * been published by this release's tag (by its provenance); its rebuilt tarball is replaced with
- * the registry's exact bytes, so the release manifest attests what npm serves and publication
- * skips it. A rebuild can differ from the published bytes, as in the order of a union type.
+ * Resumes a release whose npm publication stopped partway. A version already on npm is kept when
+ * the registry serves exactly the tarball this run built, whoever published it: identical bytes
+ * need no provenance, and the release manifest attests them either way. A run started by hand
+ * signs its provenance from the default branch, not the tag, so this is how a manual recovery that
+ * published some versions before stopping resumes. Otherwise the version must have been published
+ * by this release's tag (by its provenance), and its rebuilt tarball is replaced with the
+ * registry's exact bytes, so the manifest attests what npm serves and publication skips it. A
+ * rebuild can differ from the published bytes, as in the order of a union type.
  */
 export async function adoptPublishedReleaseArtifacts(
   root: string,
@@ -63,6 +71,12 @@ export async function adoptPublishedReleaseArtifacts(
     const spec = `${name}@${version}`
     const path = artifacts.get(spec)
     if (!path) throw new Error(`Missing release artifact for published ${spec}`)
+    const registry = await operations.published(name, version)
+    if (tarballIntegrity(await readFile(path)) === registry.integrity) {
+      console.log(`${spec} on npm is the tarball this run built; keeping it`)
+      adopted.push(spec)
+      continue
+    }
     const published = await operations.verify(name, version, source)
     const bytes = await operations.download(published.tarball)
     if (tarballIntegrity(bytes) !== published.integrity) {
@@ -75,11 +89,14 @@ export async function adoptPublishedReleaseArtifacts(
   return adopted
 }
 
-/** Fails unless every version already on npm is this tag's and its local tarball is npm's. */
+/** Fails unless every version already on npm is the local tarball's bytes. */
 export async function assertPublishedReleaseArtifacts(
   root: string,
   source: ReleaseSource,
-  operations: Pick<ResumeOperations, 'plan' | 'artifacts' | 'verify'> = resumeOperations
+  operations: Pick<
+    ResumeOperations,
+    'plan' | 'artifacts' | 'published' | 'verify'
+  > = resumeOperations
 ): Promise<void> {
   const plan = await operations.plan(root)
   const artifacts = await operations.artifacts(releasePaths(root).artifacts)
@@ -89,10 +106,11 @@ export async function assertPublishedReleaseArtifacts(
     const spec = `${name}@${version}`
     const path = artifacts.get(spec)
     if (!path) throw new Error(`Missing release artifact for published ${spec}`)
-    const published = await operations.verify(name, version, source)
-    if (tarballIntegrity(await readFile(path)) !== published.integrity) {
-      throw new Error(`${spec} is already published with other bytes; run release-packages resume`)
-    }
+    const registry = await operations.published(name, version)
+    if (tarballIntegrity(await readFile(path)) === registry.integrity) continue
+    // Says why first when the version is not this tag's, since resume would refuse it too.
+    await operations.verify(name, version, source)
+    throw new Error(`${spec} is already published with other bytes; run release-packages resume`)
   }
 }
 

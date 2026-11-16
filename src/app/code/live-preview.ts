@@ -122,7 +122,12 @@ export async function previewDesignJSX(
       onNode
     })
     const renderedIds = results.map(({ id }) => id)
-    const { rootIds, ids } = reconcileRenderedLayers(store.graph, session.rootIds, renderedIds)
+    const { rootIds, ids } = reconcileRenderedLayers(
+      store.graph,
+      session.rootIds,
+      renderedIds,
+      results[0]?.keepChildrenIds
+    )
     if (session.targetIndex >= 0) {
       for (const [index, id] of rootIds.entries()) {
         store.graph.insertChildAt(id, session.targetParentId, session.targetIndex + index)

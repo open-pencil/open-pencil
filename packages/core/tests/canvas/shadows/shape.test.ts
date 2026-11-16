@@ -4,7 +4,14 @@ import { expectFigmaRow, renderRow, type FigmaRowScene } from '#core-tests/helpe
 
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
-import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
+import {
+  SceneGraph,
+  type Effect,
+  type Fill,
+  type VectorNetwork,
+  type VectorSegment
+} from '@open-pencil/scene-graph'
+import { maxOf } from '@open-pencil/scene-graph/arrays'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { isolatesInnerShadows } from '#core/canvas/shadows/render'
@@ -154,5 +161,353 @@ describe('a drop shadow of a vector with region fills', () => {
     expect(renderRow(ck, renderer, squares(undefined), 165, 110, 130)).toEqual(
       Array.from({ length: 11 }, () => 255)
     )
+  })
+})
+
+function line(start: number, end: number): VectorSegment {
+  return { start, end, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
+}
+
+function sharpShadow(type: 'DROP_SHADOW' | 'INNER_SHADOW', offsetY: number): Effect {
+  return {
+    type,
+    radius: 0,
+    spread: 0,
+    offset: { x: 0, y: offsetY },
+    color: { r: 0, g: 0, b: 0, a: 0.5 },
+    visible: true,
+    blendMode: 'NORMAL',
+    showShadowBehindNode: false
+  }
+}
+
+const SQUARE_LOOP = [0, 1, 2, 3]
+
+function stackedSquares(regionCount: number): VectorNetwork {
+  return {
+    vertices: [
+      { x: 0, y: 0 },
+      { x: 40, y: 0 },
+      { x: 40, y: 40 },
+      { x: 0, y: 40 }
+    ],
+    segments: [line(0, 1), line(1, 2), line(2, 3), line(3, 0)],
+    regions: Array.from({ length: regionCount }, () => ({
+      windingRule: 'NONZERO' as const,
+      loops: [SQUARE_LOOP]
+    }))
+  }
+}
+
+const SAME_WINDING = [4, 5, 6, 7]
+const OPPOSITE_WINDING = [7, 6, 5, 4]
+
+function shiftedSquares(secondLoop: number[]): VectorNetwork {
+  return {
+    vertices: [
+      { x: 0, y: 0 },
+      { x: 40, y: 0 },
+      { x: 40, y: 40 },
+      { x: 0, y: 40 },
+      { x: 20, y: 0 },
+      { x: 60, y: 0 },
+      { x: 60, y: 40 },
+      { x: 20, y: 40 }
+    ],
+    segments: [
+      line(0, 1),
+      line(1, 2),
+      line(2, 3),
+      line(3, 0),
+      line(4, 5),
+      line(5, 6),
+      line(6, 7),
+      line(7, 4)
+    ],
+    regions: [
+      { windingRule: 'NONZERO', loops: [SQUARE_LOOP] },
+      { windingRule: 'NONZERO', loops: [secondLoop] }
+    ]
+  }
+}
+
+function regionVector(network: VectorNetwork, effect: Effect, fillOpacity = 1): FigmaRowScene {
+  return (graph, hostId) =>
+    graph.createNode('VECTOR', hostId, {
+      x: 100,
+      y: 100,
+      width: maxOf(network.vertices.map((vertex) => vertex.x)),
+      height: 40,
+      fills: [{ ...RED, opacity: fillOpacity }],
+      vectorNetwork: network,
+      effects: [effect]
+    })
+}
+
+describe('a drop shadow of a vector whose regions overlap', () => {
+  const dropShadow = sharpShadow('DROP_SHADOW', 30)
+
+  test('casts one shadow from the area they cover together', () => {
+    const single = renderRow(
+      ck,
+      renderer,
+      regionVector(stackedSquares(1), dropShadow),
+      165,
+      110,
+      130
+    )
+    expect(single).toEqual(Array.from({ length: 11 }, () => 128))
+    expect(
+      renderRow(ck, renderer, regionVector(stackedSquares(3), dropShadow), 165, 110, 130)
+    ).toEqual(single)
+  })
+
+  test('keeps the shadow even where only part of them overlaps', () => {
+    const shifted = regionVector(shiftedSquares(SAME_WINDING), dropShadow)
+    expect(renderRow(ck, renderer, shifted, 165, 104, 156)).toEqual(
+      Array.from({ length: 27 }, () => 128)
+    )
+  })
+})
+
+describe('a vector whose overlapping regions wind in opposite directions', () => {
+  const WHITE: Fill = {
+    type: 'SOLID',
+    color: { r: 1, g: 1, b: 1, a: 1 },
+    opacity: 1,
+    visible: true
+  }
+  const onWhite =
+    (secondLoop: number[], effect: Effect): FigmaRowScene =>
+    (graph, hostId) => {
+      graph.createNode('RECTANGLE', hostId, { width: 400, height: 300, fills: [WHITE] })
+      regionVector(shiftedSquares(secondLoop), effect, 0.1)(graph, hostId)
+    }
+  const GREEN = 1
+  const rowAt = (secondLoop: number[], effect: Effect, y: number) =>
+    renderRow(ck, renderer, onWhite(secondLoop, effect), y, 102, 158, GREEN)
+
+  // Figma reads 206 in the green channel over the overlap: both 10% fills, no shadow under them.
+  test('hides the drop shadow under the overlap', () => {
+    const dropShadow = sharpShadow('DROP_SHADOW', 10)
+    const overlap = (secondLoop: number[]) =>
+      renderRow(ck, renderer, onWhite(secondLoop, dropShadow), 130, 122, 138, GREEN)
+    expectFigmaRow(
+      overlap(OPPOSITE_WINDING),
+      Array.from({ length: 9 }, () => 206)
+    )
+    expect(overlap(SAME_WINDING)).toEqual(overlap(OPPOSITE_WINDING))
+  })
+
+  test('casts the inner shadow from the outline they cover together', () => {
+    const innerShadow = sharpShadow('INNER_SHADOW', 10)
+    const rows = (secondLoop: number[]) =>
+      [110, 130, 148].map((y) => rowAt(secondLoop, innerShadow, y))
+    expect(rows(OPPOSITE_WINDING)).toEqual(rows(SAME_WINDING))
+  })
+})
+
+describe('a drop shadow of a vector with a ring region and an open segment', () => {
+  const ringAndTail: VectorNetwork = {
+    vertices: [
+      { x: 0, y: 0 },
+      { x: 40, y: 0 },
+      { x: 40, y: 40 },
+      { x: 0, y: 40 },
+      { x: 10, y: 10 },
+      { x: 30, y: 10 },
+      { x: 30, y: 30 },
+      { x: 10, y: 30 },
+      { x: 50, y: 0 },
+      { x: 60, y: 0 },
+      { x: 60, y: 10 },
+      { x: 50, y: 10 },
+      { x: 50, y: 30 },
+      { x: 60, y: 40 }
+    ],
+    segments: [
+      line(0, 1),
+      line(1, 2),
+      line(2, 3),
+      line(3, 0),
+      line(4, 5),
+      line(5, 6),
+      line(6, 7),
+      line(7, 4),
+      line(8, 9),
+      line(9, 10),
+      line(10, 11),
+      line(11, 8),
+      line(12, 13)
+    ],
+    regions: [
+      { windingRule: 'EVENODD', loops: [SQUARE_LOOP, [4, 5, 6, 7]] },
+      { windingRule: 'NONZERO', loops: [[8, 9, 10, 11]] }
+    ]
+  }
+
+  test('leaves the hole of the ring without shadow', () => {
+    const hole = renderRow(
+      ck,
+      renderer,
+      regionVector(ringAndTail, sharpShadow('DROP_SHADOW', 0)),
+      120,
+      118,
+      122
+    )
+    expect(hole).toEqual([0, 0, 0])
+  })
+})
+
+describe('a vector with an open chain inside one of its regions', () => {
+  const squaresAndChain = (chain: number[], regionCount: number): VectorNetwork => ({
+    vertices: [
+      { x: 0, y: 0 },
+      { x: 40, y: 0 },
+      { x: 40, y: 40 },
+      { x: 0, y: 40 },
+      { x: 50, y: 0 },
+      { x: 60, y: 0 },
+      { x: 60, y: 10 },
+      { x: 50, y: 10 },
+      { x: 10, y: 10 },
+      { x: 30, y: 10 },
+      { x: 30, y: 30 },
+      { x: 10, y: 30 }
+    ],
+    segments: [
+      line(0, 1),
+      line(1, 2),
+      line(2, 3),
+      line(3, 0),
+      line(4, 5),
+      line(5, 6),
+      line(6, 7),
+      line(7, 4),
+      line(chain[0], chain[1]),
+      line(chain[1], chain[2]),
+      line(chain[2], chain[3])
+    ],
+    regions: [
+      { windingRule: 'NONZERO' as const, loops: [SQUARE_LOOP] },
+      { windingRule: 'NONZERO' as const, loops: [[4, 5, 6, 7]] }
+    ].slice(0, regionCount)
+  })
+  const ALONG = [8, 9, 10, 11]
+  const AGAINST = [11, 10, 9, 8]
+  const underTheChain = (chain: number[], regionCount: number, effect: Effect, y: number) =>
+    renderRow(
+      ck,
+      renderer,
+      regionVector(squaresAndChain(chain, regionCount), effect, 0.5),
+      y,
+      116,
+      124
+    )
+  const bothWays = (regionCount: number, effect: Effect, y: number) => [
+    underTheChain(ALONG, regionCount, effect, y),
+    underTheChain(AGAINST, regionCount, effect, y)
+  ]
+
+  const row = (value: number) => Array.from({ length: 5 }, () => value)
+
+  for (const [regionCount, label] of [
+    [1, 'one region'],
+    [2, 'two regions']
+  ] as const) {
+    test(`casts the drop shadow under the chain once either way, with ${label}`, () => {
+      expect(bothWays(regionCount, sharpShadow('DROP_SHADOW', 50), 170)).toEqual([
+        row(128),
+        row(128)
+      ])
+    })
+
+    test(`casts the inner shadow the same either way, with ${label}`, () => {
+      expect(bothWays(regionCount, sharpShadow('INNER_SHADOW', 4), 132)).toEqual([
+        row(128),
+        row(128)
+      ])
+    })
+
+    test(`knocks the drop shadow out under the chain either way, with ${label}`, () => {
+      const underTheFill = sharpShadow('DROP_SHADOW', 0.0001)
+      expect(bothWays(regionCount, underTheFill, 120)).toEqual([row(192), row(192)])
+    })
+  }
+})
+
+describe('an inner shadow at a hole the regions of a vector enclose', () => {
+  const points = (corners: [number, number][]) => corners.map(([x, y]) => ({ x, y }))
+  const loopOf = (first: number, count: number) =>
+    Array.from({ length: count }, (_, index) => first + index)
+  const loopSegments = (first: number, count: number) =>
+    loopOf(first, count).map((index) => line(index, first + ((index - first + 1) % count)))
+  const blackShadowBelow: Effect = {
+    ...sharpShadow('INNER_SHADOW', 4),
+    color: { r: 0, g: 0, b: 0, a: 1 }
+  }
+  const RED_CHANNEL = 0
+  const belowTheHole = (network: VectorNetwork) =>
+    renderRow(ck, renderer, regionVector(network, blackShadowBelow), 132, 112, 128, RED_CHANNEL)
+  const shadowed = Array.from({ length: 9 }, () => 0)
+
+  test('falls under the hole a C shape and a bar close between them', () => {
+    const cShape = points([
+      [0, 0],
+      [40, 0],
+      [40, 10],
+      [10, 10],
+      [10, 30],
+      [40, 30],
+      [40, 40],
+      [0, 40]
+    ])
+    const bar = points([
+      [30, 0],
+      [40, 0],
+      [40, 40],
+      [30, 40]
+    ])
+    expect(
+      belowTheHole({
+        vertices: [...cShape, ...bar],
+        segments: [...loopSegments(0, 8), ...loopSegments(8, 4)],
+        regions: [
+          { windingRule: 'NONZERO', loops: [loopOf(0, 8)] },
+          { windingRule: 'NONZERO', loops: [loopOf(8, 4)] }
+        ]
+      })
+    ).toEqual(shadowed)
+  })
+
+  test('falls under the hole of an even-odd ring next to another region', () => {
+    const outer = points([
+      [0, 0],
+      [40, 0],
+      [40, 40],
+      [0, 40]
+    ])
+    const hole = points([
+      [10, 10],
+      [30, 10],
+      [30, 30],
+      [10, 30]
+    ])
+    const beside = points([
+      [50, 0],
+      [60, 0],
+      [60, 10],
+      [50, 10]
+    ])
+    expect(
+      belowTheHole({
+        vertices: [...outer, ...hole, ...beside],
+        segments: [...loopSegments(0, 4), ...loopSegments(4, 4), ...loopSegments(8, 4)],
+        regions: [
+          { windingRule: 'EVENODD', loops: [loopOf(0, 4), loopOf(4, 4)] },
+          { windingRule: 'NONZERO', loops: [loopOf(8, 4)] }
+        ]
+      })
+    ).toEqual(shadowed)
   })
 })
