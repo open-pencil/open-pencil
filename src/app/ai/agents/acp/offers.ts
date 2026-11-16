@@ -12,7 +12,9 @@ const valueSchema = v.object({ id: v.string(), name: v.string() })
 const choiceSchema = v.object({
   name: v.string(),
   current: v.string(),
-  values: v.array(valueSchema)
+  values: v.array(
+    v.object({ id: v.string(), name: v.string(), description: v.optional(v.string()) })
+  )
 })
 const offerSchema = v.object({
   models: v.array(valueSchema),

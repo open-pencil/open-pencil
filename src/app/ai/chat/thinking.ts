@@ -1,4 +1,4 @@
-import { omit, pickBy } from 'es-toolkit'
+import { mapValues, omit, pickBy } from 'es-toolkit'
 import { computed, shallowRef } from 'vue'
 
 import { acpAgentFor } from '@open-pencil/core/constants'
@@ -84,7 +84,33 @@ export function chooseAgentOption(category: AgentChoiceCategory, value: string):
 export const agentSessionChoices = shallowRef<{
   profileId: AIModelProfileId
   choices: AgentModelChoices
+  /** The agent's own values, from the options the chat left to it when the session opened. */
+  defaults: AgentChoices
 } | null>(null)
+
+/**
+ * The values the Design agent runs on when the chat names none: as its model offered them when
+ * the profile read it, or else as the open session reported them. The composer marks a choice that
+ * differs from these.
+ */
+export const chatAgentDefaults = computed<AgentChoices>(() => {
+  const role = resolveAIModelRole('design')
+  const agent = role && acpAgentFor(role.connection.providerID)
+  if (!role || !agent) return {}
+  const session = agentSessionChoices.value
+  const reported = session?.profileId === role.profile.id ? session.defaults : {}
+  const offered = agentModelChoicesOffered(
+    agent,
+    role.profile.customModelID || role.profile.modelID
+  )
+  return {
+    ...reported,
+    ...pickBy(
+      mapValues(offered ?? {}, (choice) => choice?.current),
+      Boolean
+    )
+  }
+})
 
 /**
  * What the composer offers to choose for the Design agent: the open session's options, or before

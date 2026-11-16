@@ -60,7 +60,7 @@ afterEach(() => {
 })
 
 test('the composer offers a session’s options only for the profile it started from', () => {
-  agentSessionChoices.value = { profileId: 'model-opus', choices: OFFERED }
+  agentSessionChoices.value = { profileId: 'model-opus', choices: OFFERED, defaults: {} }
   // An option with no values to choose from is left out.
   expect(chatAgentOptions.value).toEqual({ thought_level: OFFERED.thought_level })
   // Haiku's options were never read, so it offers none until its own session reports them.

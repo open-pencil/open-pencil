@@ -19,7 +19,10 @@ export interface OfferedSessionOptions {
 }
 
 /** One value a session option can take, as a model option lists a model. */
-export type SessionOptionValue = Pick<ModelOption, 'id' | 'name'>
+export type SessionOptionValue = Pick<ModelOption, 'id' | 'name'> & {
+  /** What the agent says the value does, as Claude Code's Plan "Create a plan before making changes". */
+  description?: string
+}
 
 /** A session option that takes one of several values, such as its model or its thinking effort. */
 export interface SessionChoice {
@@ -47,7 +50,11 @@ export function sessionChoice(
     current: option.currentValue,
     values: option.options
       .flatMap((entry) => ('options' in entry ? entry.options : [entry]))
-      .map(({ value, name }) => ({ id: value, name }))
+      .map(({ value, name, description }) => ({
+        id: value,
+        name,
+        ...(description ? { description } : {})
+      }))
   }
 }
 
@@ -98,6 +105,31 @@ export function choicesMoved(before: SessionChoices, after: SessionChoices): Age
     if (was && now && was !== now) moved[category] = now
   }
   return moved
+}
+
+/**
+ * Which of an agent's options sets how it works, Plan among them, and which only what it may do
+ * without asking. Codex keeps Plan in its collaboration mode, so there its mode is access; other
+ * agents' mode is how they work, and they offer no separate access.
+ */
+export function agentModeCategories(offered: Partial<Record<AgentChoiceCategory, unknown>>): {
+  mode: AgentChoiceCategory | null
+  access: AgentChoiceCategory | null
+} {
+  if (offered.collaboration_mode) {
+    return { mode: 'collaboration_mode', access: offered.mode ? 'mode' : null }
+  }
+  return { mode: offered.mode ? 'mode' : null, access: null }
+}
+
+/** The agent's own values among a session's options: those the chat did not name. */
+export function agentOwnChoices(offered: AgentModelChoices, named: AgentChoices): AgentChoices {
+  const own: AgentChoices = {}
+  for (const category of AGENT_CHOICE_CATEGORIES) {
+    const current = offered[category]?.current
+    if (current && !named[category]) own[category] = current
+  }
+  return own
 }
 
 /** A session's choices as the chat shows them, without the IDs only the agent needs. */

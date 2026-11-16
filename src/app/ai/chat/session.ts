@@ -6,7 +6,7 @@ import { ref } from 'vue'
 import { acpAgentFor, AI_PROVIDERS } from '@open-pencil/core/constants'
 import type { AIProviderID } from '@open-pencil/core/constants'
 
-import type { AgentChoices } from '@/app/ai/agents/acp/options'
+import { agentOwnChoices, type AgentChoices } from '@/app/ai/agents/acp/options'
 import { readPiAccount } from '@/app/ai/agents/pi/settings'
 import { agentWorkspace } from '@/app/ai/agents/setup/native'
 import { AgentSetupError, assertAgentReady } from '@/app/ai/agents/setup/readiness'
@@ -98,8 +98,17 @@ export async function createACPTransport(
     model,
     choices: choices?.wanted,
     onChoices: (offered) => {
-      agentSessionChoices.value =
-        choices && offered ? { profileId: choices.profileId, choices: offered } : null
+      if (!choices || !offered) {
+        agentSessionChoices.value = null
+        return
+      }
+      const previous = agentSessionChoices.value
+      // The first report of a session: the options the chat left to the agent are its own values.
+      const defaults =
+        previous?.profileId === choices.profileId
+          ? previous.defaults
+          : agentOwnChoices(offered, choices.wanted())
+      agentSessionChoices.value = { profileId: choices.profileId, choices: offered, defaults }
     },
     // Approving a plan can move the agent off Plan mode; the chat follows while it runs that profile.
     onAgentChoices: (moved) => {

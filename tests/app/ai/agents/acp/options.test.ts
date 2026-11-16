@@ -5,7 +5,7 @@ import type {
   SetSessionConfigOptionRequest
 } from '@agentclientprotocol/sdk/unstable'
 
-import { chooseSessionOption, sessionChoice } from '@/app/ai/agents/acp/options'
+import { agentOwnChoices, chooseSessionOption, sessionChoice } from '@/app/ai/agents/acp/options'
 
 import { MODEL_OPTIONS } from '#tests/helpers/ai/fake-acp-agent'
 
@@ -98,4 +98,12 @@ test('a session that offers no such option is left alone', async () => {
   const fake = requests()
   expect(await chooseSessionOption(fake, 'session', {}, 'model', 'opus')).toBeNull()
   expect(fake.configured).toEqual([])
+})
+
+test('the agent’s own values are those the chat left to it when the session opened', () => {
+  const offered = {
+    thought_level: { name: 'Effort', current: 'max', values: [] },
+    mode: { name: 'Mode', current: 'auto', values: [] }
+  }
+  expect(agentOwnChoices(offered, { thought_level: 'max' })).toEqual({ mode: 'auto' })
 })
