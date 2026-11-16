@@ -409,19 +409,22 @@ export function renderNode(
   const texture = container ? visibleTexture(node) : undefined
   const drawContent = () => {
     const textureSaves = texture ? beginTexture(r, canvas, node, texture) : 0
-    renderNodeContent(r, canvas, graph, node, overlays)
-    drawLayoutGrids(r, canvas, node)
-    renderChildren(
-      r,
-      canvas,
-      graph,
-      node,
-      overlays,
-      absX,
-      absY,
-      childFrame(frame, node, parentAbsX, parentAbsY, overlays.rotationPreview)
-    )
-    endTexture(canvas, textureSaves)
+    try {
+      renderNodeContent(r, canvas, graph, node, overlays)
+      drawLayoutGrids(r, canvas, node)
+      renderChildren(
+        r,
+        canvas,
+        graph,
+        node,
+        overlays,
+        absX,
+        absY,
+        childFrame(frame, node, parentAbsX, parentAbsY, overlays.rotationPreview)
+      )
+    } finally {
+      endTexture(canvas, textureSaves)
+    }
     renderLayerShadows(r, canvas, graph, node, 'front')
   }
   if (container) withNoiseEffects(r, canvas, node, graph, drawContent)

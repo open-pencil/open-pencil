@@ -7,6 +7,8 @@ import { texture } from '@open-pencil/design-jsx'
 import { SceneGraph, type Fill } from '@open-pencil/scene-graph'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
+import { withLeafTexture } from '#core/canvas/texture/render'
+
 const ck = await getCanvasKit()
 const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
 afterAll(() => renderer.destroy())
@@ -69,6 +71,29 @@ describe('texture effects', () => {
     const clipped = roughened(true)
     expect(clipped.outside).toBeLessThan(40)
     expect(clipped.missing).toBeLessThan(40)
+  })
+
+  test('restore the canvas when drawing through a texture throws', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    const node = graph.createNode('RECTANGLE', page, {
+      width: 40,
+      height: 40,
+      effects: [texture({ noiseSize: 2, radius: 4 })]
+    })
+    const surface = expectDefined(ck.MakeSurface(40, 40))
+    try {
+      const canvas = surface.getCanvas()
+      const before = canvas.getSaveCount()
+      expect(() =>
+        withLeafTexture(renderer, canvas, node, () => {
+          throw new Error('draw failed')
+        })
+      ).toThrow('draw failed')
+      expect(canvas.getSaveCount()).toBe(before)
+    } finally {
+      surface.delete()
+    }
   })
 
   test('keep a translucent fill’s alpha inside a clipped texture', () => {

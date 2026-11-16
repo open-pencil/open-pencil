@@ -90,6 +90,9 @@ export function withLeafTexture(
 ): void {
   const texture = isLayerContainer(node) ? undefined : visibleTexture(node)
   const saves = texture ? beginTexture(r, canvas, node, texture) : 0
-  draw()
-  endTexture(canvas, saves)
+  try {
+    draw()
+  } finally {
+    endTexture(canvas, saves)
+  }
 }
