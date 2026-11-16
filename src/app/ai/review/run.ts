@@ -11,13 +11,13 @@ import {
   type ModelQuestion
 } from '@/app/ai/models/ask'
 import { createAIModelRuntime, type AIModelRuntime } from '@/app/ai/models/runtime'
+import { renderPrompt } from '@/app/ai/prompts/engine'
 import type { ToolChange } from '@/app/ai/tools/changes/types'
 import { renderForModel, type ModelRender } from '@/app/ai/tools/vision/render'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import type { EditorStore } from '@/app/editor/active-store'
 
 import type { DesignReview } from './message'
-import prompt from './prompt.md?raw'
 
 /** The most layers the Review model may ask to see closer, and how large each close-up is. */
 const MAX_ZOOMED_LAYERS = 3
@@ -42,11 +42,6 @@ export interface ReviewRequest {
   /** The interface's language, which the review is written in when the request names none. */
   language?: string
   signal?: AbortSignal
-}
-
-/** What the review is written in: the request's language, else the interface's. */
-function languageRule(language = 'English'): string {
-  return `Write in the language of the person's request, or in ${language} when there is none.`
 }
 
 export interface ReviewDependencies {
@@ -140,20 +135,23 @@ function png(render: ModelRender): ModelImage {
   return { mediaType: 'image/png', data: render.png }
 }
 
-function question(
+/**
+ * What the Review model is asked: the Review prompt, the person's own in Settings or the
+ * built-in one, then the layers' structure and lint findings.
+ */
+async function question(
   context: string,
-  { focus, references = [], language }: ReviewRequest,
+  { focus, references = [], language = 'English' }: ReviewRequest,
   sees: boolean
-): string {
-  const parts = [prompt.trim(), languageRule(language)]
-  if (!sees) parts.push('There is no image: judge from the structure and lint findings alone.')
-  else if (references.length > 0)
-    parts.push(
-      `The first image is the design; the ${references.length === 1 ? 'next is a reference' : `next ${references.length} are references`} to compare it against.`
-    )
-  if (focus) parts.push(`The person asked the review to focus on: ${focus}`)
-  parts.push(context)
-  return parts.join('\n\n')
+): Promise<string> {
+  const instructions = await renderPrompt('review', {
+    language,
+    focus: focus ?? '',
+    sees_images: sees,
+    references: references.length,
+    edit: false
+  })
+  return `${instructions}\n\n${context}`
 }
 
 /** Close-ups of the layers the model asked to see, which are on the page and show something. */
@@ -208,8 +206,9 @@ export async function reviewDesign(
 
   const context = await layerContext(store, nodeIds, pageId)
   const shown = render ? [png(render), ...references] : []
+  const firstQuestion = await question(context, request, sees)
   const first = await ask(runtime, {
-    text: question(context, request, sees),
+    text: firstQuestion,
     images: shown,
     signal: request.signal,
     answer: REVIEW_ANSWER
@@ -220,7 +219,7 @@ export async function reviewDesign(
   // A new request: it sees the design and references again, with the close-ups after them.
   const second = await ask(runtime, {
     text: dedent`
-      ${question(context, request, sees)}
+      ${firstQuestion}
 
       Your first review:
       ${first.findings}
@@ -267,13 +266,15 @@ export async function reviewChange(
   const images =
     canSee(runtime) && before && after ? [await blobImage(before), await blobImage(after)] : []
   const jsx = snapshotsWithin(change.jsx, MAX_CONTEXT_LENGTH)
+  const instructions = await renderPrompt('review', {
+    language: language ?? 'English',
+    focus: '',
+    sees_images: images.length > 0,
+    references: 0,
+    edit: true
+  })
   const text = [
-    prompt.trim(),
-    languageRule(language),
-    'Review one edit to the design: did it improve the design? Say what got better, what got worse, and what was lost, each with the change that would fix it. Ask for no close-ups.',
-    images.length > 0
-      ? 'The first image is the changed region before the edit, the second after it.'
-      : 'There is no image: judge from the JSX alone.',
+    instructions,
     // Joined rather than dedented, which would flatten the snapshots' own indentation.
     `JSX before:\n${jsx.before}`,
     `JSX after:\n${jsx.after}`

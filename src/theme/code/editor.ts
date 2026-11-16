@@ -6,8 +6,10 @@ export function codeEditorTheme(dark: boolean) {
   return [
     EditorView.theme(
       {
+        // Sizes go on the editor alone: tooltips placed in another parent get a wrapper with the
+        // theme's classes, which a bare `&` would size too.
+        '&.cm-editor': { height: '100%' },
         '&': {
-          height: '100%',
           backgroundColor: 'var(--color-panel)',
           color: 'var(--color-surface)',
           fontSize: '12px'
@@ -48,6 +50,21 @@ export function codeEditorTheme(dark: boolean) {
           border: '1px solid var(--color-border)'
         },
         '.cm-tooltip': { borderRadius: '6px', overflow: 'hidden' },
+        // The completion list's info sits outside it, so the list rounds its own corners instead.
+        '.cm-tooltip.cm-tooltip-autocomplete': { overflow: 'visible' },
+        '.cm-tooltip-autocomplete > ul': { borderRadius: '6px' },
+        // A tooltip's template code in the editor's font, and what it means in the interface's.
+        '.cm-tooltip-hover': { padding: '4px 8px', maxWidth: '24rem' },
+        // Narrow enough to sit beside the completion list in a dialog: with no room beside it,
+        // CodeMirror lays the info over the options below the selected one.
+        '.cm-completionInfo > div': { maxWidth: '16rem' },
+        '.cm-tooltip-hover code, .cm-completionInfo code': {
+          fontFamily: 'var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace)'
+        },
+        '.cm-tooltip-hover p, .cm-completionInfo p': {
+          margin: '2px 0 0',
+          color: 'var(--color-muted)'
+        },
         '.cm-tooltip-autocomplete > ul > li[aria-selected]': {
           backgroundColor: 'var(--color-hover)',
           color: 'var(--color-surface)'
@@ -92,12 +109,23 @@ export function codeEditorTheme(dark: boolean) {
 
 /** Compact read-only code in chat tool calls, layered over `codeEditorTheme`. */
 /** For a viewer that fills its container rather than stopping at the 16rem cap. */
-export const codeViewerFillTheme = EditorView.theme({ '&': { maxHeight: 'none', height: '100%' } })
+export const codeViewerFillTheme = EditorView.theme({
+  '&.cm-editor': { maxHeight: 'none', height: '100%' }
+})
 
 export const codeViewerTheme = EditorView.theme({
-  '&': { maxHeight: '16rem', fontSize: '10.5px', backgroundColor: 'var(--color-input)' },
+  '&.cm-editor': { maxHeight: '16rem' },
+  '&': { fontSize: '10.5px', backgroundColor: 'var(--color-input)' },
   '.cm-scroller': { lineHeight: '1.55' },
   '.cm-content': { padding: '6px 0' },
   '.cm-line': { padding: '0 6px' },
   '.cm-gutters': { backgroundColor: 'var(--color-input)' }
+})
+
+/** A prompt in Settings: prose on the input colour, scrolling past 18rem rather than growing. */
+export const promptEditorTheme = EditorView.theme({
+  '&.cm-editor': { maxHeight: '18rem' },
+  '&': { fontSize: 'var(--text-2xs)', backgroundColor: 'var(--color-input)' },
+  '.cm-gutters': { backgroundColor: 'var(--color-input)' },
+  '.cm-placeholder': { color: 'var(--color-muted)' }
 })
