@@ -62,6 +62,9 @@ export function beginTexture(
         0
       )
     : displaced
+  // The paint is shared: a mask pass may have left it blending DstIn or filtering colour.
+  r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
+  r.effectLayerPaint.setColorFilter(null)
   r.effectLayerPaint.setImageFilter(filter)
   canvas.saveLayer(
     r.effectLayerPaint,

@@ -73,6 +73,47 @@ describe('texture effects', () => {
     expect(clipped.missing).toBeLessThan(40)
   })
 
+  test('let a textured mask show what it masks', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0].id
+    const frame = graph.createNode('FRAME', page, { width: 100, height: 100, fills: [] })
+    graph.createNode('RECTANGLE', frame.id, {
+      width: 100,
+      height: 100,
+      isMask: true,
+      maskType: 'ALPHA',
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }],
+      effects: [texture({ noiseSize: 2, radius: 4 })]
+    })
+    graph.createNode('RECTANGLE', frame.id, {
+      width: 100,
+      height: 100,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+    })
+    // A fresh renderer, so nothing a previous render cached hides the mask pass.
+    const cold = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1)))
+    try {
+      const png = renderNodesToImage(ck, cold, graph, page, [frame.id], {
+        scale: 1,
+        format: 'PNG'
+      })
+      const image = expectDefined(ck.MakeImageFromEncoded(expectDefined(png)))
+      const pixels = expectDefined(
+        image.readPixels(50, 50, {
+          width: 1,
+          height: 1,
+          colorType: ck.ColorType.RGBA_8888,
+          alphaType: ck.AlphaType.Unpremul,
+          colorSpace: ck.ColorSpace.SRGB
+        })
+      )
+      image.delete()
+      expect([...pixels]).toEqual([255, 0, 0, 255])
+    } finally {
+      cold.destroy()
+    }
+  })
+
   test('restore the canvas when drawing through a texture throws', () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0].id
