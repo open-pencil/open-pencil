@@ -182,6 +182,25 @@ function characterCSS(style: CharacterStyle, decorated: boolean): DesignStyleDec
   }
 }
 
+/**
+ * What a run's span sets beyond the text's own style. A percent letter spacing is written again
+ * where the span changes the font size: CSS inherits spacing already resolved at the text's size,
+ * while the canvas spaces each run by its own size.
+ */
+function spanCSS(
+  style: CharacterStyle,
+  decorated: boolean,
+  base: DesignStyleDeclaration
+): DesignStyleDeclaration {
+  const own = characterCSS(style, decorated)
+  const css = differing(own, base)
+  const { unit, value } = style.letterSpacing
+  if (unit === 'PERCENT' && value !== 0 && 'font-size' in css) {
+    css['letter-spacing'] = own['letter-spacing']
+  }
+  return css
+}
+
 /** What `css` sets differently from `base`. */
 function differing(
   css: DesignStyleDeclaration,
@@ -242,7 +261,7 @@ function inlineContent(projection: TextProjection, start: number, end: number): 
     const from = Math.max(start, range.start)
     const to = Math.min(end, range.end)
     if (to <= from) continue
-    const css = differing(characterCSS(range.style, !decorated), base)
+    const css = spanCSS(range.style, !decorated, base)
     const text = node.text.slice(from, to)
     const previous = pieces.at(-1)
     if (previous && previous.href === range.href && isEqual(previous.css, css)) {
