@@ -8,6 +8,7 @@ import {
   withCookie
 } from '#cloud-tests/helpers/account-authentication'
 import { responseJSON } from '#cloud-tests/helpers/response'
+import { accountSecurityErrorResponseSchema } from '#cloud/contract'
 import { parseCloudServerConfig } from '#cloud/server'
 import { base32 } from '@better-auth/utils/base32'
 import { createOTP } from '@better-auth/utils/otp'
@@ -72,13 +73,16 @@ describe('deployment administrator MFA assurance', () => {
       if (!secret) throw new Error('Expected a TOTP secret')
       const rawSecret = new TextDecoder().decode(base32.decode(secret))
       const code = await createOTP(rawSecret).totp()
-      // A wrong code says so, rather than asking to sign in again as a 401 would.
+      // A wrong code says so, rather than asking to sign in again as a 401 would. Letters never
+      // match a TOTP, whose window also takes the neighbouring time steps' codes.
       const wrong = await fixture.client.api.account.mfa.totp.verify.$post(
-        { json: { code: code === '000000' ? '111111' : '000000' } },
+        { json: { code: 'abcdef' } },
         withCookie(sessionCookie)
       )
       expect(wrong.status).toBe(400)
-      expect(await wrong.json()).toEqual({ error: { code: 'code_invalid' } })
+      expect((await responseJSON(wrong, accountSecurityErrorResponseSchema)).error.code).toBe(
+        'code_invalid'
+      )
       const verificationResponse = await fixture.client.api.account.mfa.totp.verify.$post(
         { json: { code } },
         withCookie(sessionCookie)
