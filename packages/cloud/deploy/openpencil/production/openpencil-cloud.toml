@@ -4,7 +4,7 @@
 # Its database and bucket are in the EU.
 schema_version = 2
 
-# Anyone may open the editor and shared files; accounts are approved until sign-up opens.
+# Anyone may open the editor and shared files, and anyone may sign up: the beta is open to testers.
 [deployment]
 mode = "official"
 public_url = "https://cloud.openpencil.dev"
@@ -14,8 +14,7 @@ local_editor = true
 [database]
 
 [authentication.enrollment]
-mode = "approval"
-notification_emails = ["admin@openpencil.dev"]
+mode = "open"
 
 [authentication.email_password]
 enabled = false
@@ -64,8 +63,9 @@ source = "static"
 maximum_file_bytes = 1_073_741_824
 revision_history = true
 
+# 300 MB, staging's free plan.
 [entitlements.storage]
-maximum_bytes = 107_374_182_400
+maximum_bytes = 314_572_800
 
 [entitlements.sharing]
 links = true
@@ -77,10 +77,10 @@ guest_presence = true
 enabled = true
 maximum_participants = 100
 
-# 10,000 credits is $10 of model use a month per account, at 1 credit = $0.001.
+# No AI or search on the free plan.
 [entitlements.services]
-enabled = true
-monthly_credit_allowance = 10_000
+enabled = false
+monthly_credit_allowance = 0
 
 # The hosted service's own terms and privacy policy; each account accepts terms_version once before
 # using the server, and again when it changes.
