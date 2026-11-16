@@ -2,7 +2,6 @@
 import { tv } from 'tailwind-variants'
 import { useId } from 'vue'
 
-import type { CampaignContent } from '@open-pencil/feedback/contract'
 import { useDiagnosticsMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -13,16 +12,13 @@ import questionTheme from '@/theme/sharing/question'
 
 import CampaignIcon from './CampaignIcon.vue'
 import CampaignMarkdown from './CampaignMarkdown.vue'
+import type { CampaignView } from './types'
 
 /**
  * A campaign in the corner the usage stats question and the donation ask use: its title and
  * Markdown body, Not now, and its action when it has one. What the buttons do is the caller's.
  */
-const { content, kind } = defineProps<{
-  content: CampaignContent
-  /** What the campaign is about, such as `donation` or `cloud`, which picks its icon. */
-  kind?: string
-}>()
+const { content, kind } = defineProps<CampaignView>()
 const emit = defineEmits<{ dismiss: []; act: [] }>()
 
 const diagnostics = useDiagnosticsMessages()

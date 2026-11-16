@@ -4,6 +4,7 @@ import { expect, fn, userEvent, within } from 'storybook/test'
 import type { CampaignContent } from '@open-pencil/feedback/contract'
 
 import CampaignPrompt from './CampaignPrompt.vue'
+import type { CampaignViewArgs } from './types'
 
 /** Campaign copy is the server's; these stand in for what it would send. */
 const cloudOffer: CampaignContent = {
@@ -24,12 +25,7 @@ const disallowedLink: CampaignContent = {
   action: { label: 'Try Cloud', url: 'https://openpencil.dev/pricing' }
 }
 
-type Args = {
-  content: CampaignContent
-  kind?: string
-  onDismiss: () => void
-  onAct: () => void
-}
+type Args = CampaignViewArgs
 
 const meta = {
   title: 'App/Shell/Campaign Prompt',

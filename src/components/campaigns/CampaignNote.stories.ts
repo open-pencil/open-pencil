@@ -14,6 +14,7 @@ import UsageSettingsPanel from '@/components/settings/usage/UsageSettingsPanel.v
 import { floatingSurface } from '@/theme/overlay'
 
 import CampaignNote from './CampaignNote.vue'
+import type { CampaignViewArgs } from './types'
 
 /**
  * One story per placement, with copy standing in for what the server would send. Each note sits
@@ -48,12 +49,7 @@ const placements = {
   }
 } satisfies Record<string, CampaignContent>
 
-type Args = {
-  content: CampaignContent
-  kind?: string
-  onDismiss: () => void
-  onAct: () => void
-}
+type Args = CampaignViewArgs
 
 const note = `
   <CampaignNote

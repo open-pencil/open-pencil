@@ -2,7 +2,6 @@
 import { tv } from 'tailwind-variants'
 import { useId } from 'vue'
 
-import type { CampaignContent } from '@open-pencil/feedback/contract'
 import { useCommonMessages } from '@open-pencil/vue/i18n'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -11,16 +10,13 @@ import noteTheme from '@/theme/campaigns/note'
 
 import CampaignIcon from './CampaignIcon.vue'
 import CampaignMarkdown from './CampaignMarkdown.vue'
+import type { CampaignView } from './types'
 
 /**
  * A campaign as a note inside a settings tab or the share dialog: its title, Markdown body, its
  * action when it has one, and a dismiss. What the buttons do is the caller's.
  */
-const { content, kind } = defineProps<{
-  content: CampaignContent
-  /** What the campaign is about, such as `donation` or `cloud`, which picks its icon. */
-  kind?: string
-}>()
+const { content, kind } = defineProps<CampaignView>()
 const emit = defineEmits<{ dismiss: []; act: [] }>()
 
 const common = useCommonMessages()
