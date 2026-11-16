@@ -45,6 +45,21 @@ interface FakeAgentOptions {
   stalls?: { on: 'initialize' | 'newSession' | 'prompt'; as: 'exits' | 'hangs' }
 }
 
+/**
+ * The streams between a client and an in-memory agent. Aborting `stop` ends what the client reads
+ * from `output`, as a process that exits does.
+ */
+export function agentPipes() {
+  const toAgent = new TransformStream<Uint8Array, Uint8Array>()
+  const toClient = new TransformStream<Uint8Array, Uint8Array>()
+  const output = new TransformStream<Uint8Array, Uint8Array>()
+  const stop = new AbortController()
+  toClient.readable
+    .pipeTo(output.writable, { signal: stop.signal, preventCancel: true })
+    .catch(() => undefined)
+  return { toAgent, toClient, output, stop }
+}
+
 /** One in-memory ACP agent per start, standing in for the process the app would spawn. */
 export function fakeOneOffAgent({
   imageInput = true,
@@ -69,14 +84,7 @@ export function fakeOneOffAgent({
     spawn: async (options) => {
       spawns++
       cwds.push(options.cwd)
-      const toAgent = new TransformStream<Uint8Array, Uint8Array>()
-      const toClient = new TransformStream<Uint8Array, Uint8Array>()
-      // Ending the pipe ends what the client reads, as a process that exits does.
-      const output = new TransformStream<Uint8Array, Uint8Array>()
-      const stop = new AbortController()
-      toClient.readable
-        .pipeTo(output.writable, { signal: stop.signal, preventCancel: true })
-        .catch(() => undefined)
+      const { toAgent, toClient, output, stop } = agentPipes()
       const stall = async (on: NonNullable<typeof stalls>['on']) => {
         if (stalls?.on !== on) return
         if (stalls.as === 'exits') stop.abort()
