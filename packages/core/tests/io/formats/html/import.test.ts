@@ -1,6 +1,8 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { readIcon, readIconTint } from '@open-pencil/scene-graph/icons'
 import { layoutSizing } from '@open-pencil/scene-graph/layout'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
@@ -175,6 +177,62 @@ describe('reading HTML', () => {
     ])
     // A start-aligned item still covers the two columns it spans.
     expect(graph.getChildren(grid.id)[4].gridPosition).toMatchObject({ column: 1, columnSpan: 2 })
+  })
+
+  test('draws inline SVG as vectors in its color, and keeps an icon a page names as that icon', async () => {
+    const { graph } = await readHTMLDocument(
+      `<svg style="display:none"><symbol id="mark" viewBox="0 0 10 10"><rect width="10" height="10"/></symbol></svg>
+      <div style="display:flex;gap:8px;color:#cc0000">
+        <svg width="24" height="24" viewBox="0 0 24 24"><path d="M2 2h20v20H2z" fill="currentColor"/></svg>
+        <svg data-icon="lucide:square" height="20" viewBox="0 0 40 20" fill="none" stroke="currentColor"><rect x="1" y="1" width="38" height="18"/></svg>
+        <svg width="16" height="16"><use href="#mark"/></svg>
+      </div>`
+    )
+    const [row] = graph.getChildren(graph.getPages()[0].id)
+    const [plain, named, sprite] = graph.getChildren(row.id)
+    const path = (svg: SceneNode) => {
+      const [vector] = graph.getChildren(svg.id)
+      return {
+        type: vector.type,
+        size: [vector.width, vector.height],
+        paint: [...vector.fills, ...vector.strokes][0]?.color
+      }
+    }
+    const red = { r: 0.8, g: 0, b: 0, a: 1 }
+
+    expect(row.layoutMode).toBe('HORIZONTAL')
+    expect(path(plain)).toEqual({ type: 'VECTOR', size: [20, 20], paint: red })
+    // A height and a viewBox give the width, as a browser sizes the SVG.
+    expect([named.width, named.height]).toEqual([40, 20])
+    expect(readIcon(named)?.name).toBe('lucide:square')
+    expect(readIcon(plain)).toBeNull()
+    // A symbol from a sprite elsewhere in the page, fitted to the SVG drawing it.
+    expect(path(sprite)).toEqual({
+      type: 'VECTOR',
+      size: [16, 16],
+      paint: { r: 0, g: 0, b: 0, a: 1 }
+    })
+  })
+
+  test("paints inline SVG shapes as the page's CSS does, keeping their own attributes", async () => {
+    const { graph } = await readHTMLDocument(
+      `<style>.icon path { fill: currentColor } .outlined { stroke: #0000ff; stroke-width: 3 }</style>
+      <div style="color: #cc0000"><svg class="icon" width="30" height="10" viewBox="0 0 30 10">
+        <path d="M0 0h10v10H0z"/>
+        <rect class="outlined" x="12" width="6" height="6" fill="none"/>
+        <circle cx="25" cy="5" r="5" fill="#008000"/>
+      </svg></div>`
+    )
+    const [box] = graph.getChildren(graph.getPages()[0].id)
+    const [svg] = graph.getChildren(box.id)
+    const [path, rect, circle] = graph.getChildren(svg.id)
+
+    // A CSS rule's currentColor follows the text color, and stays recolorable with it.
+    expect(path.fills[0]?.color).toEqual({ r: 0.8, g: 0, b: 0, a: 1 })
+    expect(readIconTint(path)).toEqual(['fill'])
+    expect(rect.fills).toEqual([])
+    expect(rect.strokes[0]).toMatchObject({ color: { r: 0, g: 0, b: 1, a: 1 }, weight: 3 })
+    expect(circle.fills[0]?.color).toMatchObject({ r: 0, g: 128 / 255, b: 0 })
   })
 
   test('centers a block capped by its maximum width at that width, keeping auto layout', async () => {

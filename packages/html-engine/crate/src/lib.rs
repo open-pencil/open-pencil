@@ -136,6 +136,15 @@ const PROPERTIES: &[&str] = &[
     "border-collapse",
     "border-spacing",
     "caption-side",
+    "fill",
+    "fill-opacity",
+    "fill-rule",
+    "stroke",
+    "stroke-width",
+    "stroke-opacity",
+    "stroke-linecap",
+    "stroke-linejoin",
+    "stroke-dasharray",
 ];
 
 /// Properties reported as their computed values too, where the used values `style` reports lose

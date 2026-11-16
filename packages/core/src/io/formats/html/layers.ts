@@ -9,6 +9,8 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import { layoutAuthoredNodes } from '#core/layout'
 import { prepareGraphFonts } from '#core/text/prepare'
 
+import { drawInlineSVGs } from './svg'
+
 /**
  * Placing from captured boxes only turns auto layout off or fixes sizes, so it settles; each
  * pass can expose mismatches the previous layout hid, deeper in the tree.
@@ -30,7 +32,7 @@ export async function sceneGraphFromStyledHTML(
   styled: DesignDocument,
   options: { pageName?: string } = {}
 ): Promise<SceneGraph> {
-  const { graph, boxes, transforms } = designDocumentToLayers(styled, {
+  const { graph, boxes, transforms, svgs } = designDocumentToLayers(styled, {
     pageName: options.pageName
   })
   const pageIds = graph.getPages().map((page) => page.id)
@@ -40,6 +42,7 @@ export async function sceneGraphFromStyledHTML(
     if (placeLayersFromLayout(graph, boxes) === 0) break
     layoutAuthoredNodes(graph, pageIds)
   }
+  drawInlineSVGs(graph, svgs, styled)
   applyCSSTransforms(graph, transforms)
   return graph
 }

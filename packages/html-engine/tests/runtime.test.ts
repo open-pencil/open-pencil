@@ -238,6 +238,19 @@ describe('the HTML engine runtime', () => {
     expect(lines('b', 'row')).toEqual(['2', '4'])
   })
 
+  test('reports the SVG paint a stylesheet gives a shape', async () => {
+    const document = await styled(
+      '<style>.icon path { fill: currentColor; stroke: rgb(0, 0, 255); stroke-width: 2 }</style><div style="color: rgb(204, 0, 0)"><svg class="icon"><path id="p" d="M0 0h1v1z"/></svg></div>'
+    )
+    const style = elementById(document, 'p').computedStyle ?? {}
+
+    expect([style.fill, style.stroke, style['stroke-width']]).toEqual([
+      'rgb(204, 0, 0)',
+      'rgb(0, 0, 255)',
+      '2px'
+    ])
+  })
+
   test("pairs a shader layer's children past the still frame the serializer writes", async () => {
     const card: DesignDocument = {
       type: 'document',
