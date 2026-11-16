@@ -11,7 +11,7 @@ import { isUUID } from '#cloud/admin/schema'
 import { enrollmentStatusSchema } from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
 import { compact, uniq } from 'es-toolkit'
-import type { Kysely } from 'kysely'
+import { NoResultError, type Kysely } from 'kysely'
 
 import {
   enqueueEnrollmentRequested,
@@ -299,7 +299,8 @@ export function createEnrollmentService(
           })
           invited++
         } catch (error) {
-          if (!(error instanceof AdminDomainError)) throw error
+          // Decided by someone else meanwhile, or gone with an address change: skip it.
+          if (!(error instanceof AdminDomainError) && !(error instanceof NoResultError)) throw error
         }
       }
       return { invited }
