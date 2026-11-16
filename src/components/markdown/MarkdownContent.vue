@@ -42,13 +42,19 @@ let parserHighlights = highlightCode
 
 watch(
   () => [content, streaming.value, highlightCode] as const,
-  async ([text, isStreaming, highlight]) => {
+  async ([text, isStreaming, highlight], _previous, onCleanup) => {
+    // A parse that finishes after newer content arrived would show the older text.
+    let stale = false
+    onCleanup(() => {
+      stale = true
+    })
     if (!parser || parserHighlights !== highlight) {
       parser = createMarkdownParser(highlight)
       parserHighlights = highlight
     }
     const parse = await parser
-    parsed.value = await parse(text, { streaming: isStreaming })
+    const next = await parse(text, { streaming: isStreaming })
+    if (!stale) parsed.value = next
   },
   { immediate: true }
 )

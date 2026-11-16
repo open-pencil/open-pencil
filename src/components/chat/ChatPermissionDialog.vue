@@ -77,6 +77,7 @@ function handleDismiss() {
     <AppDialogBody v-if="plan || toolInput" :ui="{ body: 'pb-0' }">
       <MarkdownContent
         v-if="plan"
+        :key="permission?.request.toolCall.toolCallId"
         :content="plan"
         density="compact"
         class="max-h-72 overflow-auto rounded-md bg-input px-3 py-2 text-xs"
@@ -98,7 +99,7 @@ function handleDismiss() {
           :color="index === 0 ? 'primary' : 'neutral'"
           :variant="index === 0 ? 'solid' : 'outline'"
           size="md"
-          class="h-auto min-h-8 w-full py-1.5 text-center"
+          class="h-auto min-h-8 w-full py-1.5 whitespace-normal text-center"
           @click="respondToPermission(opt.optionId)"
         >
           {{ opt.name }}
@@ -113,7 +114,7 @@ function handleDismiss() {
       >
         <AppButton
           size="md"
-          class="h-auto min-h-8 w-full py-1.5"
+          class="h-auto min-h-8 w-full py-1.5 whitespace-normal"
           @click="respondToPermission(opt.optionId)"
         >
           {{ opt.name }}
