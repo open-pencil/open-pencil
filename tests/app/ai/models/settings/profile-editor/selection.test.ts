@@ -180,11 +180,11 @@ describe('the effort and modes of a coding agent’s profile in the editor', () 
     }
   }
 
-  /** The labels each select lists, by the select's own label. */
+  /** The values each select lists, by its option's category. */
   function listed(profile: ReturnType<typeof editor>) {
     return profile.selection.agentOptionControls.value.map((control) => [
-      control.label,
-      control.options.map((option) => option.label)
+      control.category,
+      control.options.map((option) => option.value)
     ])
   }
 
@@ -192,16 +192,20 @@ describe('the effort and modes of a coding agent’s profile in the editor', () 
     const profile = editor()
     await profile.choose('acp:claude-code')
     await profile.answer(withChoices)
+    const [effort, mode] = profile.selection.agentOptionControls.value
+    const agentDefault = effort.options[0].value
     expect(listed(profile)).toEqual([
-      ['Thinking level', ['Agent default', 'Default', 'Max']],
-      ['Mode', ['Agent default', 'Auto', 'Plan']]
+      ['thought_level', [agentDefault, 'default', 'max']],
+      ['mode', [agentDefault, 'auto', 'plan']]
     ])
+    expect(mode.options.slice(1).map((option) => option.label)).toEqual(
+      (withChoices.choices['']?.mode?.values ?? []).map((value) => value.name)
+    )
     profile.selection.setAgentOption('mode', 'plan')
     expect(profile.draft.agentChoices.mode).toBe('plan')
     expect(profile.selection.agentOptionValue('mode')).toBe('plan')
-    const [agentDefault] = profile.selection.agentOptionControls.value[1].options
-    profile.selection.setAgentOption('mode', agentDefault.value)
-    expect(profile.draft.agentChoices.mode).toBeUndefined()
+    profile.selection.setAgentOption('mode', agentDefault)
+    expect(profile.draft.agentChoices).toEqual({})
   })
 
   test('goes back to the agent’s effort when another model is chosen, and keeps the mode', async () => {

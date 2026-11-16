@@ -4,7 +4,8 @@ import {
   agentSessionChoices,
   chatAgentChoices,
   chatAgentOptions,
-  chooseAgentOption
+  chooseAgentOption,
+  chooseAgentOptions
 } from '@/app/ai/chat/thinking'
 import {
   modelSettingsSnapshot,
@@ -77,4 +78,11 @@ test('the composer’s choices go over the profile’s, for the profile they wer
   expect(chatAgentChoices.value).toEqual({ thought_level: 'low', mode: 'plan' })
   setModelRoleAssignment('design', 'model-haiku')
   expect(chatAgentChoices.value).toEqual({})
+})
+
+test('another model drops the composer’s effort for its profile, and keeps its modes', () => {
+  chooseAgentOptions({ thought_level: 'max', mode: 'plan' })
+  const [opus, haiku] = settings().models
+  replaceAIModelSettings({ ...settings(), models: [{ ...opus, modelID: 'sonnet' }, haiku] })
+  expect(chatAgentChoices.value).toEqual({ mode: 'plan' })
 })

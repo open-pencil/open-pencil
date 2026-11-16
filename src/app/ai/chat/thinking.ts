@@ -1,4 +1,4 @@
-import { pickBy } from 'es-toolkit'
+import { omit, pickBy } from 'es-toolkit'
 import { computed, shallowRef } from 'vue'
 
 import { acpAgentFor } from '@open-pencil/core/constants'
@@ -31,29 +31,45 @@ export const chatThinkingLevel = computed<ThinkingLevel>({
   }
 })
 
-/** The composer's choices of an ACP agent's options, for the Design profile they were made for. */
-const composerChoices = shallowRef<{ profileId: AIModelProfileId | null; choices: AgentChoices }>({
-  profileId: null,
-  choices: {}
-})
+/**
+ * The composer's choices of an ACP agent's options, for the Design profile and model they were
+ * made for. Each model offers its own efforts, so another model drops the effort; modes stay.
+ */
+const composerChoices = shallowRef<{
+  profileId: AIModelProfileId | null
+  modelID: string
+  choices: AgentChoices
+}>({ profileId: null, modelID: '', choices: {} })
+
+function designModelID(): string {
+  const profile = designModelProfile.value
+  return profile ? profile.customModelID || profile.modelID : ''
+}
+
+/** The composer's choices that still apply to the Design profile and its model. */
+function composerOwn(): AgentChoices {
+  const composer = composerChoices.value
+  if (composer.profileId !== (designModelProfile.value?.id ?? null)) return {}
+  if (composer.modelID === designModelID()) return composer.choices
+  return omit(composer.choices, ['thought_level'])
+}
 
 /**
  * The effort and modes the next message to an ACP agent runs on, by the agent's own values;
  * absent ones keep the agent's. The profile names them until the composer chooses others.
  */
-export const chatAgentChoices = computed<AgentChoices>(() => {
-  const profile = designModelProfile.value
-  const composer = composerChoices.value
-  const own = composer.profileId === (profile?.id ?? null) ? composer.choices : {}
-  return { ...profile?.agentChoices, ...own }
-})
+export const chatAgentChoices = computed<AgentChoices>(() => ({
+  ...designModelProfile.value?.agentChoices,
+  ...composerOwn()
+}))
 
 /** Chooses Design agent options for the next messages, as the composer does. */
 export function chooseAgentOptions(choices: AgentChoices): void {
-  const profileId = designModelProfile.value?.id ?? null
-  const composer = composerChoices.value
-  const kept = composer.profileId === profileId ? composer.choices : {}
-  composerChoices.value = { profileId, choices: { ...kept, ...choices } }
+  composerChoices.value = {
+    profileId: designModelProfile.value?.id ?? null,
+    modelID: designModelID(),
+    choices: { ...composerOwn(), ...choices }
+  }
 }
 
 export function chooseAgentOption(category: AgentChoiceCategory, value: string): void {

@@ -382,10 +382,12 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     return this.session?.chat ?? null
   }
 
-  /** Records what the session offers to choose and tells the chat, which offers it in the composer. */
+  /** Records the session's choices for the composer, and tells the chat what the agent moved. */
   private noteChoices(session: ACPSession, choices: SessionChoices): void {
+    const moved = choicesMoved(session.choices, choices)
     session.choices = choices
     this.onChoices?.(shownChoices(choices))
+    if (!isEmptyObject(moved)) this.onAgentChoices?.(moved)
   }
 
   /**
@@ -493,11 +495,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           // The agent changed its options itself, as when its model changed what it offers.
           if (update.sessionUpdate === 'config_option_update') {
             const choices = sessionChoices(update)
-            if (sessionRef) {
-              const moved = choicesMoved(sessionRef.choices, choices)
-              this.noteChoices(sessionRef, choices)
-              if (!isEmptyObject(moved)) this.onAgentChoices?.(moved)
-            } else if (openedChoices) openedChoices = choices
+            if (sessionRef) this.noteChoices(sessionRef, choices)
+            else if (openedChoices) openedChoices = choices
           }
           onUpdate?.(params)
         },
@@ -582,7 +581,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       child,
       dead: false,
       model: opened.model,
-      choices: {},
+      choices: opened.choices,
       resumed: opened.resumed,
       get onUpdate() {
         return onUpdate

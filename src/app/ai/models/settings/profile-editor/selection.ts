@@ -1,3 +1,4 @@
+import { omit } from 'es-toolkit'
 import { computed, ref, watch, type Ref } from 'vue'
 
 import {
@@ -96,11 +97,10 @@ export function useProfileModelSelection(
     return draft.agentChoices[category] || AGENT_DEFAULT_VALUE
   }
   function setAgentOption(category: AgentChoiceCategory, value: string): void {
-    draft.agentChoices = {
-      ...draft.agentChoices,
-      [category]: value === AGENT_DEFAULT_VALUE ? undefined : value
-    }
+    const kept = omit(draft.agentChoices, [category])
+    draft.agentChoices = value === AGENT_DEFAULT_VALUE ? kept : { ...kept, [category]: value }
   }
+
   const providerDisplayName = computed(() => {
     if (!isACP.value) return providerDef.value.name
     return acpAgentFor(draft.providerID)?.name ?? draft.providerID
@@ -256,7 +256,7 @@ export function useProfileModelSelection(
     }
     draft.modelID = modelID === AGENT_DEFAULT_VALUE ? '' : modelID
     // Each model offers its own efforts, so another model starts on the agent's; modes stay.
-    draft.agentChoices = { ...draft.agentChoices, thought_level: undefined }
+    draft.agentChoices = omit(draft.agentChoices, ['thought_level'])
     catalogModel.value = availableModels.value.find((model) => model.id === modelID) ?? null
     customModelSelected.value = false
     draft.customModelID = ''

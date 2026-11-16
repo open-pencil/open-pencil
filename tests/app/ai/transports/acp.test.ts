@@ -476,6 +476,19 @@ test('an option change the reply stopped waiting for is asked again once the cha
   await chat.destroy()
 })
 
+test('the chat hears of a mode the agent left while OpenPencil’s tools connected', async () => {
+  const agents = fakeAgents({
+    configOptions: MODE_OPTIONS,
+    startupOptions: [SANDBOX_OPTION, collaborationOption('default')]
+  })
+  const { transport: chat, agentChose } = transport(agents, {
+    choices: () => ({ collaboration_mode: 'plan' })
+  })
+  await send(chat, 'first')
+  expect(agentChose).toEqual([{ collaboration_mode: 'default' }])
+  await chat.destroy()
+})
+
 test('a session reports the options its agent changed while OpenPencil’s tools connected', async () => {
   const startupOptions = [{ ...EFFORT_OPTION, currentValue: 'ultra' }]
   const agents = fakeAgents({ configOptions: [EFFORT_OPTION], startupOptions })
