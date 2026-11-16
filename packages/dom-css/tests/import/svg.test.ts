@@ -51,4 +51,19 @@ describe('inline SVG import', () => {
     // Without a viewBox, its attributes size it, else the default of a replaced element.
     expect(imported(svg({ width: '16' })).frame).toMatchObject({ width: 16, height: 150 })
   })
+  it('derives the auto side from the attributes, and from a CSS aspect-ratio over the viewBox', () => {
+    // A width attribute and the viewBox ratio give the height.
+    expect(imported(svg({ width: '30', viewBox: '0 0 40 20' })).frame).toMatchObject({
+      width: 30,
+      height: 15
+    })
+    // An aspect-ratio of the box's own wins over the SVG's ratio, unless it defers with auto.
+    const sized = { width: '30px', height: 'auto' }
+    expect(
+      imported(svg({ viewBox: '0 0 40 20' }, { ...sized, 'aspect-ratio': '3 / 1' })).frame
+    ).toMatchObject({ width: 30, height: 10 })
+    expect(
+      imported(svg({ viewBox: '0 0 40 20' }, { ...sized, 'aspect-ratio': 'auto 3 / 1' })).frame
+    ).toMatchObject({ width: 30, height: 15 })
+  })
 })

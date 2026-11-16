@@ -156,6 +156,10 @@ describe('SVG XML parsing', () => {
     expect(
       extent(`<svg width="16" height="16">${symbol}<use href="#s" width="8" height="4"/></svg>`)
     ).toEqual([2, 0, 6, 4])
+    // Percentages take their share of the viewport.
+    expect(
+      extent(`<svg width="16" height="16">${symbol}<use href="#s" width="50%" height="50%"/></svg>`)
+    ).toEqual([0, 0, 8, 8])
   })
 
   test('rejects malformed SVG documents', () => {

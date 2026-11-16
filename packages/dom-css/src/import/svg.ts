@@ -1,5 +1,5 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { parseCSSNumber, splitCSSValue } from '@open-pencil/scene-graph/css'
+import { parseCSSAspectRatio, parseCSSNumber, splitCSSValue } from '@open-pencil/scene-graph/css'
 
 import type { DesignElement, DesignStyleDeclaration } from '../types'
 import { pickStyle } from './css-values'
@@ -26,29 +26,28 @@ function viewBoxRatio(element: DesignElement): number | null {
 const DEFAULT_SVG_SIZE = { width: 300, height: 150 }
 
 /**
- * Sizes inline SVG as CSS sizes a replaced element: a side its style leaves `auto` follows the
- * other by the `viewBox` ratio, else takes its `width` or `height` attribute, else the default
- * 300 by 150. Sizes its style gives are set already.
+ * Sizes inline SVG as CSS sizes a replaced element: each side takes its style's size, else its
+ * `width` or `height` attribute; a side still unsized follows the other by the box's
+ * `aspect-ratio`, else the `viewBox` ratio, the SVG's own; one with nothing to follow takes the
+ * default of 300 by 150.
  */
 export function applySVGSize(
   node: SceneNode,
   element: DesignElement,
   style: DesignStyleDeclaration
 ): void {
-  const width = parseCSSNumber(pickStyle(style, 'width'))
-  const height = parseCSSNumber(pickStyle(style, 'height'))
-  const ratio = viewBoxRatio(element)
-  const sized = (name: 'width' | 'height') => parseCSSNumber(attribute(element, name))
+  const sized = (name: 'width' | 'height') =>
+    parseCSSNumber(pickStyle(style, name)) ?? parseCSSNumber(attribute(element, name))
+  const width = sized('width')
+  const height = sized('height')
+  const aspect = parseCSSAspectRatio(pickStyle(style, 'aspect-ratio'))
+  const ratio = aspect && !aspect.auto ? aspect.ratio : viewBoxRatio(element)
+  if (width !== null) node.width = width
+  if (height !== null) node.height = height
   if (width === null) {
-    node.width =
-      height !== null && ratio !== null
-        ? height * ratio
-        : (sized('width') ?? DEFAULT_SVG_SIZE.width)
+    node.width = height !== null && ratio !== null ? height * ratio : DEFAULT_SVG_SIZE.width
   }
   if (height === null) {
-    node.height =
-      width !== null && ratio !== null
-        ? width / ratio
-        : (sized('height') ?? DEFAULT_SVG_SIZE.height)
+    node.height = width !== null && ratio !== null ? width / ratio : DEFAULT_SVG_SIZE.height
   }
 }

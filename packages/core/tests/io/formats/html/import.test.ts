@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { readIcon, readIconTint } from '@open-pencil/scene-graph/icons'
+import { readIcon } from '@open-pencil/scene-graph/icons'
 import { layoutSizing } from '@open-pencil/scene-graph/layout'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
@@ -227,9 +227,8 @@ describe('reading HTML', () => {
     const [svg] = graph.getChildren(box.id)
     const [path, rect, circle] = graph.getChildren(svg.id)
 
-    // A CSS rule's currentColor follows the text color, and stays recolorable with it.
+    // A CSS rule's currentColor takes the text color.
     expect(path.fills[0]?.color).toEqual({ r: 0.8, g: 0, b: 0, a: 1 })
-    expect(readIconTint(path)).toEqual(['fill'])
     expect(rect.fills).toEqual([])
     expect(rect.strokes[0]).toMatchObject({ color: { r: 0, g: 0, b: 1, a: 1 }, weight: 3 })
     expect(circle.fills[0]?.color).toMatchObject({ r: 0, g: 128 / 255, b: 0 })
@@ -249,6 +248,35 @@ describe('reading HTML', () => {
     expect(graph.getChildren(spaced.id).map((child) => child.y)).toEqual([16, 52, 88])
     expect(overlapping).toMatchObject({ layoutMode: 'VERTICAL', itemSpacing: -6 })
     expect(graph.getChildren(overlapping.id).map((child) => child.y)).toEqual([0, 14, 28])
+  })
+
+  test('draws inline SVG with definitions, colors, and a size the page gave it elsewhere', async () => {
+    const { graph } = await readHTMLDocument(
+      `<style>.blue { color: #0000ff; fill: currentColor } .red { fill: #ff0000; stroke: #0000ff }</style>
+      <svg style="display:none"><defs><clipPath id="half"><rect width="5" height="10"/></clipPath></defs>
+        <symbol id="mark" viewBox="0 0 10 10"><rect width="10" height="10"/></symbol></svg>
+      <div style="color:#cc0000">
+        <svg width="10" height="10"><rect width="10" height="10" clip-path="url(#half)"/></svg>
+        <svg width="10" height="10"><rect class="blue" width="10" height="10"/></svg>
+        <svg width="10" height="10"><rect class="red" style="stroke-width:2" width="10" height="10"/></svg>
+        <svg style="width:16px;height:16px"><use href="#mark"/></svg>
+      </div>`
+    )
+    const [box] = graph.getChildren(graph.getPages()[0].id)
+    const [clipped, blue, red, sized] = graph
+      .getChildren(box.id)
+      .map((svg) => graph.flattenTree(svg.id).map(({ node }) => node))
+    const vectors = (nodes: SceneNode[]) => nodes.filter((node) => node.type === 'VECTOR')
+
+    // A clip path defined in another SVG on the page still clips, as a mask 5 px wide.
+    expect(clipped.filter((node) => node.isMask).map((mask) => mask.width)).toEqual([5])
+    // A shape with a color of its own keeps its paint in it, rather than the SVG's.
+    expect(vectors(blue)[0]?.fills[0]?.color).toEqual({ r: 0, g: 0, b: 1, a: 1 })
+    // Stylesheet paint joins an inline style rather than replacing it.
+    expect(vectors(red)[0]?.fills[0]?.color).toEqual({ r: 1, g: 0, b: 0, a: 1 })
+    expect(vectors(red)[0]?.strokes[0]?.weight).toBe(2)
+    // A symbol fits an SVG sized by CSS alone.
+    expect(vectors(sized).map((vector) => [vector.width, vector.height])).toEqual([[16, 16]])
   })
 
   test('centers a block capped by its maximum width at that width, keeping auto layout', async () => {

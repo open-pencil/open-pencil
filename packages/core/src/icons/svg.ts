@@ -147,27 +147,35 @@ function appendShapePath(
   })
 }
 
-/** A length attribute in user units, or null when it is missing or not a plain number. */
-function lengthAttribute(element: Element | null, name: string): number | null {
-  const value = element?.getAttribute(name)
-  const length = value === null || value === undefined ? Number.NaN : Number.parseFloat(value)
-  return Number.isFinite(length) && !value?.trim().endsWith('%') ? length : null
+/**
+ * A length attribute in user units, a percentage resolving against `viewport`, or null when it
+ * is missing or not a number.
+ */
+function lengthAttribute(element: Element | null, name: string, viewport?: number): number | null {
+  const value = element?.getAttribute(name)?.trim()
+  if (!value) return null
+  const length = Number.parseFloat(value)
+  if (!Number.isFinite(length)) return null
+  if (!value.endsWith('%')) return length
+  return viewport === undefined ? null : (length / 100) * viewport
 }
 
 /**
  * How a `<use>` draws a `<symbol>` with a viewBox (SVG 2 §5.6): the viewBox fits the `<use>`'s
- * width and height, else the whole viewport the outermost `<svg>` sets, centered as the default
- * `preserveAspectRatio` (`xMidYMid meet`) centers it. Other targets draw as they are.
+ * width and height, which percentages take of the viewport, else the whole viewport the
+ * outermost `<svg>` sets, centered as the default `preserveAspectRatio` (`xMidYMid meet`)
+ * centers it. Other targets draw as they are.
  */
 function symbolViewBox(use: Element, target: Element, traversal: Traversal): string {
   if ((target.localName || target.tagName) !== 'symbol') return ''
   const viewBox = parseSVGViewBoxValue(target.getAttribute('viewBox'))
   if (!viewBox) return ''
-  const viewport = traversal.viewport
-  const outer = parseSVGViewBoxValue(viewport?.getAttribute('viewBox') ?? null)
-  const width = lengthAttribute(use, 'width') ?? outer?.width ?? lengthAttribute(viewport, 'width')
-  const height =
-    lengthAttribute(use, 'height') ?? outer?.height ?? lengthAttribute(viewport, 'height')
+  const svg = traversal.viewport
+  const outer = parseSVGViewBoxValue(svg?.getAttribute('viewBox') ?? null)
+  const viewportWidth = outer?.width ?? lengthAttribute(svg, 'width')
+  const viewportHeight = outer?.height ?? lengthAttribute(svg, 'height')
+  const width = lengthAttribute(use, 'width', viewportWidth ?? undefined) ?? viewportWidth
+  const height = lengthAttribute(use, 'height', viewportHeight ?? undefined) ?? viewportHeight
   if (!width || !height) return ''
   const scale = Math.min(width / viewBox.width, height / viewBox.height)
   const dx = (width - viewBox.width * scale) / 2 - viewBox.x * scale
