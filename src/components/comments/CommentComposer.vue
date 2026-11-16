@@ -54,7 +54,7 @@ useTextareaAutosize({ element: input, input: text })
 
 const messages = useCommentMessages()
 const ui = computed(() => comments({ bare }))
-const menu = useMenuUI()
+const menu = useMenuUI({ item: 'justify-start gap-2' })
 const who = useCommentAuthor()
 const empty = computed(() => text.value.trim() === '')
 
@@ -93,12 +93,18 @@ async function loadPeople(load: () => Promise<readonly MentionPerson[]>) {
     loading = null
   }
 }
+/** The text a pick wrote and the mentions it holds, until the model brings that text back. */
+let inserted: { text: string; picked: PickedMention[] } | null = null
+
 // Each mention picked moves with the text around it, and one an edit touched is no longer one.
 // It follows every change as it is made, typing, formatting, and clearing after a send alike.
+// A pick's own text comes back through the parent's v-model a moment later, and keeps its picks.
 watch(
   text,
   (next, previous) => {
-    picked.value = next === '' ? [] : shiftMentions(previous, next, picked.value)
+    if (inserted?.text === next) picked.value = inserted.picked
+    else picked.value = next === '' ? [] : shiftMentions(previous, next, picked.value)
+    inserted = null
   },
   { flush: 'sync' }
 )
@@ -116,9 +122,12 @@ function pick(person: MentionPerson) {
     person,
     picked.value
   )
-  text.value = next.text
-  // Set after the text changed, in place of what the watcher made of the change.
-  picked.value = next.picked
+  // Text the pick leaves as it was never comes back through the watcher.
+  if (next.text === text.value) picked.value = next.picked
+  else {
+    inserted = { text: next.text, picked: next.picked }
+    text.value = next.text
+  }
   const at = next.caret
   caret.value = at
   void nextTick(() => {

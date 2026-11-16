@@ -8,7 +8,7 @@ import type { MentionPerson } from '@/app/comments/mentions/links'
 
 import CommentComposer from './CommentComposer.vue'
 import CommentThreadCard from './CommentThreadCard.vue'
-import { discussed, long, resolved } from './examples/threads'
+import { discussed, long, mentioned, resolved } from './examples/threads'
 
 type Args = {
   thread: CommentThread
@@ -49,6 +49,9 @@ export const Formatted: Story = {}
 export const Resolved: Story = { args: { thread: resolved } }
 
 export const LongThread: Story = { args: { thread: long } }
+
+/** A reply that names someone shows the name as a mention, not as a link. */
+export const Mentioned: Story = { args: { thread: mentioned } }
 
 const people: MentionPerson[] = [
   { id: 'acc-ada', name: 'Ada Lovelace', image: null },
