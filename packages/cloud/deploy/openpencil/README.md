@@ -18,8 +18,10 @@ but master or a release tag, or the commit is not on master (`tools/ci/cloud-dep
 These settings outside the repository:
 
 - The `cloud-production` environment: required reviewers, deployment refs limited to `master` and tags `v*`,
-  the `CLOUD_URL` variable, and the secrets the workflow names (`NEON_MIGRATOR_DATABASE_URL`, the
-  Worker's secrets, `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `POSTHOG_CLI_API_KEY`).
+  the `CLOUD_URL` variable, and the secrets the workflow names (`NEON_MIGRATOR_DATABASE_URL` and
+  the Worker's secrets). `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, and `POSTHOG_CLI_API_KEY`
+  are repository secrets: the job that picks the commit reads production's Worker before any
+  environment's reviewers approve the deploy.
 - A Neon project in an EU region, with a restore window of at least `purge_grace_days` (7), whose
   `openpencil_cloud` database belongs to a migrator role (`NEON_MIGRATOR_DATABASE_URL`) and is
   used by a runtime role, which Hyperdrive connects as. The migrator gives the runtime role
@@ -127,8 +129,9 @@ To restore the database to an earlier time:
    that the bucket lacks, copy `deleted/<object_key>` back to `<object_key>` with any S3 client
    against the bucket's endpoint. Other `storage_object` rows can name files never written, such
    as a snapshot whose upload failed; skip them. Files deleted more than 14 days ago are gone.
-4. Put production back: run Deploy Cloud for `production` again without maintenance, which
-   promotes what staging runs. It migrates
+4. Put production back: run Deploy Cloud for `production` from master again without
+   maintenance and with **redeploy** checked, which redeploys the commit production serves
+   rather than waiting on staging. It migrates
    the restored database, so its schema matches the Worker even if the restore point predates a
    migration, deploys without the maintenance variable, and checks the pages answer.
 5. Open a document saved before the restore point.

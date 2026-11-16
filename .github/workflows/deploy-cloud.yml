@@ -15,6 +15,10 @@ on:
         description: Off the air (every request 503, no cleanup), for a database restore
         type: boolean
         default: false
+      redeploy:
+        description: Production only. Redeploy the commit production serves instead of promoting staging, as when ending a maintenance
+        type: boolean
+        default: false
 
 run-name: Deploy Cloud ${{ inputs.target }} from ${{ github.ref_name }}${{ inputs.maintenance && ' in maintenance' || '' }}
 
@@ -47,6 +51,7 @@ jobs:
         env:
           TARGET: ${{ inputs.target }}
           MAINTENANCE: ${{ inputs.maintenance }}
+          REDEPLOY: ${{ inputs.redeploy }}
           GITHUB_TOKEN: ${{ github.token }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

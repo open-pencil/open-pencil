@@ -24,8 +24,8 @@ function gitHub(deployments: { sha: string; states: string[] }[]): {
   return { get, paths }
 }
 
-function options(github: GitHubGet, serving?: string, maintenance = false) {
-  return { dispatched: DISPATCHED, maintenance, github, serving: async () => serving }
+function options(github: GitHubGet, serving?: string, keep = false) {
+  return { dispatched: DISPATCHED, keep, github, serving: async () => serving }
 }
 
 describe('deployCommit', () => {
@@ -55,7 +55,7 @@ describe('deployCommit', () => {
     )
   })
 
-  test('takes production off the air on the commit it serves, without asking staging', async () => {
+  test('keeps the commit production serves for maintenance and its end, without asking staging', async () => {
     const { get, paths } = gitHub([{ sha: STAGED, states: ['failure'] }])
     const serving = 'c5d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9'
     expect(await deployCommit('production', options(get, serving, true))).toBe(serving)

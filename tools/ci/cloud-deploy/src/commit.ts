@@ -18,7 +18,8 @@ export type GitHubGet = (path: string) => Promise<unknown>
 export type DeployCommitOptions = {
   /** The commit the run was started from. */
   dispatched: string
-  maintenance: boolean
+  /** Redeploy what production serves instead of promoting staging: maintenance, or ending it. */
+  keep: boolean
   github: GitHubGet
   /** The commit production's Worker serves, from the tag each deploy gives it; none before tags. */
   serving: () => Promise<string | undefined>
@@ -29,16 +30,16 @@ export type DeployCommitOptions = {
  * promotes what staging runs: the commit of staging's newest deployment, once that deployment
  * succeeded, so nothing reaches production that has not served from staging first.
  *
- * Taking production off the air for a restore must not wait on staging, so maintenance redeploys
- * the commit production serves, or, for a Worker deployed before deploys were tagged, the one
- * the run was started from.
+ * Taking production off the air for a restore, and putting it back, must not wait on staging, so
+ * those runs keep production's commit: the one its Worker serves, or, for a Worker deployed before
+ * deploys were tagged, the one the run was started from.
  */
 export async function deployCommit(
   target: CloudTarget,
-  { dispatched, maintenance, github, serving }: DeployCommitOptions
+  { dispatched, keep, github, serving }: DeployCommitOptions
 ): Promise<string> {
   if (target === 'staging') return dispatched
-  if (maintenance) return (await serving()) ?? dispatched
+  if (keep) return (await serving()) ?? dispatched
   const get = github
   const [newest] = v.parse(
     deploymentsSchema,
@@ -109,8 +110,15 @@ export function gitHubGet(repository: string, token: string): GitHubGet {
  */
 if (import.meta.main) {
   const [target = '', config = ''] = process.argv.slice(2)
-  const { GITHUB_OUTPUT, GITHUB_REF, GITHUB_REPOSITORY, GITHUB_SHA, GITHUB_TOKEN, MAINTENANCE } =
-    process.env
+  const {
+    GITHUB_OUTPUT,
+    GITHUB_REF,
+    GITHUB_REPOSITORY,
+    GITHUB_SHA,
+    GITHUB_TOKEN,
+    MAINTENANCE,
+    REDEPLOY
+  } = process.env
   if (!GITHUB_OUTPUT || !GITHUB_REF || !GITHUB_REPOSITORY || !GITHUB_SHA || !GITHUB_TOKEN) {
     throw new Error('Run commit.ts <target> in a workflow step, with GITHUB_TOKEN set')
   }
@@ -118,7 +126,7 @@ if (import.meta.main) {
   if (refused || !isCloudTarget(target)) throw new Error(refused)
   const commit = await deployCommit(target, {
     dispatched: GITHUB_SHA,
-    maintenance: MAINTENANCE === 'true',
+    keep: MAINTENANCE === 'true' || REDEPLOY === 'true',
     github: gitHubGet(GITHUB_REPOSITORY, GITHUB_TOKEN),
     serving: () => servingCommit(config, process.cwd())
   })
