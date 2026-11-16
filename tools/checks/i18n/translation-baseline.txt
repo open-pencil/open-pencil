@@ -560,6 +560,7 @@ fr:ai.notifyTitle
 de:settings.groupApp
 de:settings.editor
 es:settings.editor
+es:settings.prompts
 it:settings.groupApp
 it:settings.editor
 ja:settings.groupAI
@@ -567,7 +568,9 @@ ja:ai.notifyTitle
 pl:settings.groupAI
 zh-cn:settings.groupAI
 de:settings.cloud
+de:settings.prompts
 fr:settings.cloud
+fr:settings.prompts
 it:settings.cloud
 pt-br:ai.aiSetupPiCompanion
 pt-br:ai.chatReferenceSkills
@@ -632,6 +635,7 @@ pt-br:settings.editor
 pt-br:settings.groupApp
 pt-br:settings.mcp
 pt-br:settings.skills
+pt-br:settings.prompts
 pt-br:statuses.status
 pt-br:storage.bucket
 pt-br:storage.cloudTitle

@@ -63,6 +63,16 @@ describe('style runs', () => {
     ])
   })
 
+  test('moves each cut to a boundary it is given', () => {
+    const runs: StyleRun[] = [{ start: 1, length: 2, style: BOLD }]
+    const even = (index: number) => index + (index % 2)
+    expect(styleRunPieces(runs, 6, even)).toEqual([
+      { start: 0, end: 2, style: null },
+      { start: 2, end: 4, style: BOLD },
+      { start: 4, end: 6, style: null }
+    ])
+  })
+
   test('leaves out runs past the end of the text', () => {
     const runs: StyleRun[] = [{ start: 5, length: 2, style: BOLD }]
     expect(styleRunPieces(runs, 3)).toEqual([{ start: 0, end: 3, style: null }])

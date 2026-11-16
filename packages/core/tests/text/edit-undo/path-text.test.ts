@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
-import { setupTextEdit } from '#core-tests/helpers/text-edit'
+import { setupTextEdit } from '#core-tests/helpers/text/edit'
 
 import type { DerivedTextGlyph } from '@open-pencil/scene-graph'
 import { expectDefined, getNodeOrThrow } from '@open-pencil/test-support/assert'

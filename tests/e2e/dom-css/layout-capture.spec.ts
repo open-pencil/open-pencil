@@ -58,6 +58,24 @@ test.describe('@open-pencil/dom-css browser layout capture', () => {
     expect(byId(document, 'd').layout?.box).toEqual({ x: 438, y: 70, width: 30, height: 30 })
   })
 
+  test('keeps auto side margins, which center or end-align a block', async ({ page }) => {
+    const document = await captured(
+      page,
+      `<div id="centered"></div><div id="end"></div>`,
+      `body { margin: 0 }
+       div { width: 200px; height: 10px }
+       #centered { margin: 0 auto }
+       #end { margin-left: auto; margin-right: 10px }`
+    )
+    const style = (id: string) => byId(document, id).computedStyle ?? {}
+
+    expect(style('centered')['margin-left']).toBe('auto')
+    expect(style('centered')['margin-right']).toBe('auto')
+    expect(style('end')['margin-left']).toBe('auto')
+    expect(style('end')['margin-right']).not.toBe('auto')
+    expect(byId(document, 'centered').layout?.box.x).toBe(300)
+  })
+
   test('applies body rules to the top-level elements', async ({ page }) => {
     const document = await captured(
       page,
@@ -257,6 +275,39 @@ test.describe('HTML import from the browser layout', () => {
       }
     })
   }
+
+  test('keeps a table with collapsed borders in auto layout where the browser laid it out', async ({
+    page
+  }) => {
+    // Boxes of a fixed size, not text, so where the cells' content goes does not depend on fonts.
+    const cell = (id: string) =>
+      `<td id="${id}"><div style="width:${id.length * 20}px;height:12px"></div></td>`
+    const layers = await browserImportedLayers(
+      page,
+      `<style>body { margin: 0 } table { border-collapse: collapse; border: 4px solid #a2a9b1 }
+        td { border: 4px solid #a2a9b1; padding: 3px 6px }</style>
+      <table id="table"><tbody id="body"><tr id="first">${cell('a')}${cell('bb')}</tr>
+      <tr id="second">${cell('ccc')}${cell('d')}</tr></tbody></table>`,
+      VIEWPORT
+    )
+
+    expect(layers.map((layer) => layer.id)).toEqual([
+      'table',
+      'body',
+      'first',
+      'a',
+      'bb',
+      'second',
+      'ccc',
+      'd'
+    ])
+    for (const { id, captured, layer, layoutMode } of layers) {
+      expect(layoutMode, id).not.toBe('NONE')
+      for (const key of ['x', 'y', 'width', 'height'] as const) {
+        expect(Math.abs(layer[key] - captured[key]), `${id} ${key}`).toBeLessThanOrEqual(0.5)
+      }
+    }
+  })
 
   test('follows the page’s media queries at the import viewport', async ({ page }) => {
     const wide = await browserImportedLayers(page, landing, { width: 1280, height: 800 })

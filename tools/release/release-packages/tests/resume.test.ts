@@ -43,6 +43,10 @@ async function fixture() {
         ['one@1.0.0-beta.1', published],
         ['two@1.0.0-beta.1', pending]
       ]),
+    published: async () => ({
+      integrity: tarballIntegrity(registryBytes),
+      tarball: 'https://registry.npmjs.org/one/-/one-1.0.0-beta.1.tgz'
+    }),
     verify: async (name, version, release) => {
       expect(release).toEqual(source)
       verified.push(`${name}@${version}`)
@@ -83,6 +87,33 @@ test('refuses a download that does not match the registry integrity', async () =
     'does not match its integrity'
   )
   expect(await readFile(state.published, 'utf8')).toBe('rebuilt tarball')
+})
+
+test("keeps a published version that is byte for byte this run's build, without provenance", async () => {
+  const state = await fixture()
+  await writeFile(state.published, registryBytes)
+  // A run started by hand signs from the default branch, which provenance alone would refuse.
+  state.operations.verify = async (name, version) => {
+    throw new Error(`${name}@${version} provenance is not signed by the tag`)
+  }
+  state.operations.download = async () => {
+    throw new Error('identical bytes need no download')
+  }
+  expect(await adoptPublishedReleaseArtifacts('/repo', source, state.operations)).toEqual([
+    'one@1.0.0-beta.1'
+  ])
+  expect(new Uint8Array(await readFile(state.published))).toEqual(registryBytes)
+  await assertPublishedReleaseArtifacts('/repo', source, state.operations)
+})
+
+test('the check names a version another release published before reporting other bytes', async () => {
+  const state = await fixture()
+  state.operations.verify = async (name, version) => {
+    throw new Error(`${name}@${version} was not published by ${source.tag}: built from commit b`)
+  }
+  await expect(assertPublishedReleaseArtifacts('/repo', source, state.operations)).rejects.toThrow(
+    'was not published by'
+  )
 })
 
 test('stops when a published version was not published by this tag', async () => {

@@ -59,6 +59,11 @@ export function duplicateNode(
 
 export function createClipboardActions(ctx: EditorContext) {
   function duplicateSelected(selectedNodes: SceneNode[]) {
+    // One undo step for the copies and any slot they claim.
+    ctx.undo.runBatch('Duplicate', () => duplicateLayers(selectedNodes))
+  }
+
+  function duplicateLayers(selectedNodes: SceneNode[]) {
     const prevSelection = new Set(ctx.state.selectedIds)
     const selectedSet = new Set(selectedNodes.map((n) => n.id))
     const stackIndex = (node: SceneNode) =>

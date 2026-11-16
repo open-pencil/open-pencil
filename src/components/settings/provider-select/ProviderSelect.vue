@@ -8,7 +8,8 @@ import {
   AI_PROVIDERS,
   AUTOMATION_HTTP_PORT,
   IS_TAURI,
-  type AIProviderID
+  type AIProviderID,
+  providerKind
 } from '@open-pencil/core/constants'
 import { useAIMessages } from '@open-pencil/vue/i18n'
 
@@ -75,8 +76,8 @@ const providerDef = computed(
 )
 
 const displayName = computed(() => {
-  if (providerID.value === 'harness:pi') return 'Pi'
-  if (providerID.value.startsWith('acp:'))
+  if (providerKind(providerID.value) === 'harness') return 'Pi'
+  if (providerKind(providerID.value) === 'acp')
     return acpAgentFor(providerID.value)?.name ?? providerID.value
   return providerDef.value.name
 })

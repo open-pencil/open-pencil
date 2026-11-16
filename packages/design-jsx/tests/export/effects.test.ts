@@ -145,6 +145,35 @@ describe('sceneNodeToJSX effects', () => {
     )
   })
 
+  test('effect bindings follow the effects written, past one left out', () => {
+    const graph = makeGraph()
+    const collection = graph.createCollection('Elevation')
+    const blur = graph.createVariable('Blur', 'FLOAT', collection.id, 3)
+    const grain = graph.createVariable('Grain', 'FLOAT', collection.id, 1)
+    const shadow = (radius: number): Effect => ({
+      type: 'DROP_SHADOW',
+      color: { r: 0, g: 0, b: 0, a: 0.2 },
+      offset: { x: 0, y: 2 },
+      radius,
+      spread: 0,
+      visible: true
+    })
+    const figImportedType: string = 'NOISE'
+    const noise: Effect = { ...shadow(0), type: figImportedType as Effect['type'] }
+    const card = graph.createNode('RECTANGLE', pageId(graph), {
+      name: 'Card',
+      width: 10,
+      height: 10,
+      effects: [noise, shadow(3), shadow(7)],
+      boundVariables: { 'effects/0/radius': grain.id, 'effects/1/radius': blur.id }
+    })
+
+    const code = sceneNodeToJSX(card.id, graph)
+
+    // The noise's own binding has no effect left to bind, and the shadow's moves up with it.
+    expect(code).toContain('bind={{ "effects/0/radius": elevation.Blur }}')
+  })
+
   test('effects without a helper, such as an imported noise, are left out', () => {
     const graph = makeGraph()
     const figImportedType: string = 'NOISE'

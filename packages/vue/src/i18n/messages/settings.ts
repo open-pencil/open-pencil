@@ -83,6 +83,7 @@ export const settingsMessageDefaults = {
   media: 'Media',
   mcp: 'MCP',
   toolAccess: 'Tool access',
+  prompts: 'Prompts',
   capabilityShow: 'Show',
   capabilityShowAll: 'All',
   skills: 'Skills',

@@ -1,8 +1,8 @@
 import {
-  parseCreateWorkspace,
-  parseCreateWorkspaceInvitation,
-  parseUpdateWorkspace,
-  parseUpdateWorkspaceMember
+  createWorkspaceSchema,
+  createWorkspaceInvitationSchema,
+  updateWorkspaceSchema,
+  updateWorkspaceMemberSchema
 } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
@@ -109,7 +109,7 @@ export function createWorkspaceRoutes(
       const workspaces = await service.list(context.get('actor').userId)
       return context.json({ workspaces })
     })
-    .post('/', validatedJSON(parseCreateWorkspace), async (context) => {
+    .post('/', validatedJSON(createWorkspaceSchema), async (context) => {
       try {
         const workspace = await service.create(
           context.get('actor').userId,
@@ -131,7 +131,7 @@ export function createWorkspaceRoutes(
       if (!workspace) return context.json({ error: { code: 'not_found' as const } }, 404)
       return context.json({ workspace })
     })
-    .patch('/:workspaceId', workspaceParams, validatedJSON(parseUpdateWorkspace), (context) =>
+    .patch('/:workspaceId', workspaceParams, validatedJSON(updateWorkspaceSchema), (context) =>
       memberRoute(context, async () =>
         context.json({
           workspace: await members.rename(
@@ -158,7 +158,7 @@ export function createWorkspaceRoutes(
     .post(
       '/:workspaceId/invitations',
       workspaceParams,
-      validatedJSON(parseCreateWorkspaceInvitation),
+      validatedJSON(createWorkspaceInvitationSchema),
       (context) =>
         memberRoute(context, async () =>
           context.json(
@@ -195,7 +195,7 @@ export function createWorkspaceRoutes(
     .patch(
       '/:workspaceId/members/:userId',
       workspaceMemberParams,
-      validatedJSON(parseUpdateWorkspaceMember),
+      validatedJSON(updateWorkspaceMemberSchema),
       (context) =>
         memberRoute(context, async () => {
           await members.updateRole(

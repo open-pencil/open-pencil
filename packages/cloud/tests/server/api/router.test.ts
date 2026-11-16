@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { createCloudAPIRouter, type CloudActor, type CloudAPIEnvironment } from '#cloud/server'
 import { Hono } from 'hono'
+import { testClient } from 'hono/testing'
 
 const actor: CloudActor = {
   userId: 'alice',
@@ -170,11 +171,12 @@ describe('createCloudAPIRouter', () => {
       })
       .route('/', router)
 
-    const session = await app.request('/session')
+    const client = testClient(app)
+    const session = await client.session.$get()
     expect(session.status).toBe(200)
     expect(await session.json()).toEqual({ user: actor })
 
-    const workspaces = await app.request('/workspaces')
+    const workspaces = await client.workspaces.$get()
     expect(workspaces.status).toBe(200)
     expect(await workspaces.json()).toEqual({ workspaces: [] })
   })

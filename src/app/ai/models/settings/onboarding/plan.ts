@@ -1,6 +1,11 @@
 import { uniq } from 'es-toolkit'
 
-import { AI_PROVIDERS, type AIProviderID, type ModelOption } from '@open-pencil/core/constants'
+import {
+  AI_PROVIDERS,
+  type AIProviderID,
+  type ModelOption,
+  providerKind
+} from '@open-pencil/core/constants'
 import { appendAll } from '@open-pencil/scene-graph/arrays'
 
 import { modelProviderName } from '@/app/ai/models/provider-name'
@@ -115,7 +120,7 @@ const NO_CURRENT: CurrentOnboardingModels = {
 
 /** ACP agents and Pi, which run on this computer and choose their own model. */
 export function isOnboardingAgent(providerID: string): boolean {
-  return providerID.startsWith('acp:') || providerID === 'harness:pi'
+  return providerKind(providerID) !== 'api'
 }
 
 /** Whether this app can use an access: agents and subscriptions each need the desktop app. */

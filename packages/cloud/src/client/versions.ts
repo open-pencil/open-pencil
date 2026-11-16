@@ -32,7 +32,13 @@ export function createVersionRequests(
       return parseResponse(
         client.documents[':documentId'].versions.$get({
           param: { documentId },
-          query: pickBy(page, (value) => value !== undefined)
+          query: pickBy(
+            {
+              before: page.before,
+              limit: page.limit === undefined ? undefined : String(page.limit)
+            },
+            (value) => value !== undefined
+          )
         }),
         documentVersionsSchema,
         onDiagnostic
