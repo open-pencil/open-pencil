@@ -57,6 +57,7 @@ export const accountSecurityErrorCodeSchema = v.picklist([
   'last_authentication_method',
   'session_not_fresh',
   'authentication_method_failed',
+  'code_invalid',
   'email_unchanged',
   'email_change_unavailable',
   'current_session',

@@ -39,7 +39,14 @@ const messages = useCloudPortalMessages()
 /** What an account is on the server, as badges; an ordinary account has none. */
 function standing(person: PortalPerson) {
   const words = messages.value
+  const access = {
+    waiting: { label: words.statusWaiting, tone: 'warning' as const },
+    declined: { label: words.statusDeclined, tone: 'neutral' as const },
+    removed: { label: words.statusRemoved, tone: 'neutral' as const }
+  }
   return compact([
+    // An account exists from its first sign-in, before anyone approved its request.
+    person.access && access[person.access],
     person.admin && { label: words.administrator, tone: 'neutral' as const },
     person.suspended && { label: words.suspended, tone: 'error' as const },
     !person.suspended &&
