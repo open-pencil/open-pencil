@@ -77,16 +77,23 @@ export function chooseAgentOption(category: AgentChoiceCategory, value: string):
 }
 
 /**
- * What the open agent session offers to choose, as its transport reports it, with the profile it
- * started from; null without one. A session of another profile, which may be another agent or
- * model, offers other choices.
+ * What the open agent session offers to choose, as its transport reports it, with the profile and
+ * model it started from; null without one. A session of another profile or model offers other
+ * choices.
  */
 export const agentSessionChoices = shallowRef<{
   profileId: AIModelProfileId
+  modelID: string
   choices: AgentModelChoices
   /** The agent's own values, from the options the chat left to it when the session opened. */
   defaults: AgentChoices
 } | null>(null)
+
+/** The open session's choices while it runs the Design profile on that profile's model. */
+function designSessionChoices(profileId: AIModelProfileId) {
+  const session = agentSessionChoices.value
+  return session?.profileId === profileId && session.modelID === designModelID() ? session : null
+}
 
 /**
  * The values the Design agent runs on when the chat names none: as its model offered them when
@@ -97,14 +104,9 @@ export const chatAgentDefaults = computed<AgentChoices>(() => {
   const role = resolveAIModelRole('design')
   const agent = role && acpAgentFor(role.connection.providerID)
   if (!role || !agent) return {}
-  const session = agentSessionChoices.value
-  const reported = session?.profileId === role.profile.id ? session.defaults : {}
-  const offered = agentModelChoicesOffered(
-    agent,
-    role.profile.customModelID || role.profile.modelID
-  )
+  const offered = agentModelChoicesOffered(agent, designModelID())
   return {
-    ...reported,
+    ...designSessionChoices(role.profile.id)?.defaults,
     ...pickBy(
       mapValues(offered ?? {}, (choice) => choice?.current),
       Boolean
@@ -121,9 +123,8 @@ export const chatAgentOptions = computed<AgentModelChoices | null>(() => {
   const role = resolveAIModelRole('design')
   const agent = role && acpAgentFor(role.connection.providerID)
   if (!role || !agent) return null
-  const session = agentSessionChoices.value
   const offered =
-    (session?.profileId === role.profile.id ? session.choices : null) ??
-    agentModelChoicesOffered(agent, role.profile.customModelID || role.profile.modelID)
+    designSessionChoices(role.profile.id)?.choices ??
+    agentModelChoicesOffered(agent, designModelID())
   return offered && pickBy(offered, (choice) => (choice?.values.length ?? 0) > 0)
 })

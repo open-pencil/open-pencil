@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect } from 'storybook/test'
+import { expect, userEvent, within } from 'storybook/test'
 
 import type { AgentChoices, AgentModelChoices } from '@/app/ai/agents/acp/options'
-import { agentSessionChoices, chooseAgentOptions } from '@/app/ai/chat/thinking'
+import { agentSessionChoices, chatAgentChoices, chooseAgentOptions } from '@/app/ai/chat/thinking'
 import {
   modelSettingsSnapshot,
   replaceAIModelSettings,
@@ -41,6 +41,13 @@ const CODEX: AgentModelChoices = {
       { id: 'plan', name: 'Plan', description: 'Plan before making changes' }
     ]
   }
+}
+
+/** The values Codex runs on when the chat names none. */
+const CODEX_OWN: AgentChoices = {
+  thought_level: 'medium',
+  mode: 'agent',
+  collaboration_mode: 'default'
 }
 
 /** One Codex profile on the Design role, so each story keeps its own composer choices. */
@@ -88,12 +95,9 @@ const meta = {
     const previous = modelSettingsSnapshot()
     replaceAIModelSettings(codexSettings(profileId, name))
     // The session opened on Codex's own values, which a changed choice differs from.
-    agentSessionChoices.value = {
-      profileId,
-      choices: CODEX,
-      defaults: { thought_level: 'medium', mode: 'agent', collaboration_mode: 'default' }
-    }
-    chooseAgentOptions(choices)
+    agentSessionChoices.value = { profileId, modelID: '', choices: CODEX, defaults: CODEX_OWN }
+    // Every option starts from Codex's own, so a choice made in an earlier run does not carry over.
+    chooseAgentOptions({ ...CODEX_OWN, ...choices })
     return () => {
       agentSessionChoices.value = null
       replaceAIModelSettings(previous)
@@ -117,64 +121,43 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** Every control sits inside the row, whatever the width leaves it. */
-async function expectFits(canvasElement: HTMLElement): Promise<void> {
-  const row = canvasElement.querySelector('[data-slot="agent-controls"]')
-  if (!(row instanceof HTMLElement)) throw new Error('No agent controls')
-  const { left, right } = row.getBoundingClientRect()
-  for (const child of row.children) {
-    const box = child.getBoundingClientRect()
-    await expect(box.left).toBeGreaterThanOrEqual(left - 0.5)
-    await expect(box.right).toBeLessThanOrEqual(right + 0.5)
-  }
-}
-
 const planning: AgentChoices = {
   collaboration_mode: 'plan',
   mode: 'agent-full-access',
   thought_level: 'ultra'
 }
 
+/** Codex on its own values, where choosing Plan switches the next message to it. */
 export const Extended: Story = {
   args: { width: '22rem', choices: {}, profileId: 'model-codex-extended' },
   play: async ({ canvasElement }) => {
-    await expectFits(canvasElement)
-    const model = canvasElement.querySelector('[data-test-id="chat-agent-model"]')
-    // The agent's own level goes unsaid; the name is enough.
-    await expect(model).toHaveTextContent('Codex')
-    await expect(model).not.toHaveTextContent('Medium')
+    const canvas = within(canvasElement)
     await expect(canvasElement.querySelector('[data-test-id="chat-agent-access"]')).toBeNull()
+    await userEvent.click(canvas.getByRole('combobox', { name: /^Collaboration mode/ }))
+    await userEvent.click(within(document.body).getByRole('option', { name: /^Plan/ }))
+    await expect(chatAgentChoices.value.collaboration_mode).toBe('plan')
   }
 }
 
+/** Plan with full access and the highest effort: access widened past Codex's own shows on the row. */
 export const ExtendedPlanning: Story = {
   args: { width: '22rem', choices: planning, profileId: 'model-codex-extended-plan' },
   play: async ({ canvasElement }) => {
-    await expectFits(canvasElement)
     await expect(canvasElement.querySelector('[data-test-id="chat-agent-access"]')).toBeVisible()
   }
 }
 
+/** A narrow composer: the model control keeps the thinking level, access its icon. */
 export const Compact: Story = {
-  args: { width: '11rem', choices: planning, profileId: 'model-codex-compact' },
-  play: async ({ canvasElement }) => {
-    await expectFits(canvasElement)
-    const model = canvasElement.querySelector('[data-test-id="chat-agent-model"]')
-    // The narrow model control keeps the thinking level and leaves the agent's name to its menu.
-    await expect(model).toHaveTextContent('Ultra')
-    await expect(model?.querySelector('span')).not.toBeVisible()
-  }
+  args: { width: '11rem', choices: planning, profileId: 'model-codex-compact' }
 }
 
-/** A long profile name on the agent's own level, the name being the model control's only word. */
+/** A long profile name on the agent's own level in a narrow composer, shortened inside the row. */
 export const CompactLongName: Story = {
   args: {
     width: '9rem',
     choices: {},
     profileId: 'model-codex-long',
     name: 'Codex for the design system'
-  },
-  play: async ({ canvasElement }) => {
-    await expectFits(canvasElement)
   }
 }

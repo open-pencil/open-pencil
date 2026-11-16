@@ -1,3 +1,5 @@
+import { focusStyles } from '../focus/styles'
+
 /**
  * A coding agent's controls in the composer: its mode, its model with the thinking level, and
  * widened access. Every control in the row looks the same, muted text with a hover fill; state
@@ -6,11 +8,15 @@
  */
 export default {
   slots: {
-    control:
-      'flex h-6 min-w-0 shrink-0 items-center gap-1 rounded border-none bg-transparent px-1.5 text-3xs text-muted outline-none hover:bg-hover hover:text-surface focus-visible:ring-1 focus-visible:ring-accent/40 data-[state=open]:bg-hover',
+    control: [
+      'flex h-6 min-w-0 shrink-0 items-center gap-1 rounded border-none bg-transparent px-1.5 text-3xs text-muted hover:bg-hover hover:text-surface data-[state=open]:bg-hover',
+      focusStyles.ring
+    ],
     /** The model control gives way first: its name shortens before anything leaves the row. */
-    modelControl:
-      'flex h-6 min-w-0 shrink items-center gap-1 overflow-hidden rounded border-none bg-transparent px-1.5 text-3xs text-muted outline-none hover:bg-hover hover:text-surface focus-visible:ring-1 focus-visible:ring-accent/40 data-[state=open]:bg-hover',
+    modelControl: [
+      'flex h-6 min-w-0 shrink items-center gap-1 overflow-hidden rounded border-none bg-transparent px-1.5 text-3xs text-muted hover:bg-hover hover:text-surface data-[state=open]:bg-hover',
+      focusStyles.ring
+    ],
     /** The mode's name, cut short before it crowds the model control. */
     value: 'max-w-24 truncate',
     chevron: 'size-2.5 shrink-0',

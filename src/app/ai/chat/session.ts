@@ -103,12 +103,18 @@ export async function createACPTransport(
         return
       }
       const previous = agentSessionChoices.value
+      const modelID = model ?? ''
       // The first report of a session: the options the chat left to the agent are its own values.
       const defaults =
-        previous?.profileId === choices.profileId
+        previous?.profileId === choices.profileId && previous.modelID === modelID
           ? previous.defaults
           : agentOwnChoices(offered, choices.wanted())
-      agentSessionChoices.value = { profileId: choices.profileId, choices: offered, defaults }
+      agentSessionChoices.value = {
+        profileId: choices.profileId,
+        modelID,
+        choices: offered,
+        defaults
+      }
     },
     // Approving a plan can move the agent off Plan mode; the chat follows while it runs that profile.
     onAgentChoices: (moved) => {

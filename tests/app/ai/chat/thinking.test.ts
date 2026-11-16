@@ -3,6 +3,7 @@ import { afterEach, beforeEach, expect, test } from 'bun:test'
 import {
   agentSessionChoices,
   chatAgentChoices,
+  chatAgentDefaults,
   chatAgentOptions,
   chooseAgentOption,
   chooseAgentOptions
@@ -60,12 +61,30 @@ afterEach(() => {
 })
 
 test('the composer offers a session’s options only for the profile it started from', () => {
-  agentSessionChoices.value = { profileId: 'model-opus', choices: OFFERED, defaults: {} }
+  agentSessionChoices.value = {
+    profileId: 'model-opus',
+    modelID: 'opus',
+    choices: OFFERED,
+    defaults: {}
+  }
   // An option with no values to choose from is left out.
   expect(chatAgentOptions.value).toEqual({ thought_level: OFFERED.thought_level })
   // Haiku's options were never read, so it offers none until its own session reports them.
   setModelRoleAssignment('design', 'model-haiku')
   expect(chatAgentOptions.value).toBeNull()
+})
+
+test('the composer drops a session’s options once its profile runs another model', () => {
+  agentSessionChoices.value = {
+    profileId: 'model-opus',
+    modelID: 'opus',
+    choices: OFFERED,
+    defaults: { thought_level: 'max' }
+  }
+  const [opus, haiku] = settings().models
+  replaceAIModelSettings({ ...settings(), models: [{ ...opus, modelID: 'sonnet' }, haiku] })
+  expect(chatAgentOptions.value).toBeNull()
+  expect(chatAgentDefaults.value).toEqual({})
 })
 
 test('the composer’s choices go over the profile’s, for the profile they were made for', () => {
