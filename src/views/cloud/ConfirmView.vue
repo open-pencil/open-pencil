@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { usePortal } from '@/app/cloud-portal/context'
@@ -58,10 +58,18 @@ function verify(code: string) {
 
 // A session that proved its step lately, as a password sign-in with its code just did, has
 // nothing to prove here and goes on; one held, or an administrator's aged one, proves it.
+let left = false
+onBeforeUnmount(() => {
+  left = true
+})
 onMounted(async () => {
   if (portal.account.value?.state === 'two-step') return
+  // The page and where it leads, as they were when asked: an answer after the person left
+  // decides nothing.
+  const page = route.fullPath
+  const destination = redirect.value
   const mfa = (await portal.api.mfaStatus().catch(() => null))?.mfa
-  if (mfa?.assured) await router.replace(redirect.value)
+  if (mfa?.assured && !left && route.fullPath === page) await router.replace(destination)
 })
 
 // A passkey signs in anew, in a session that proved it.
