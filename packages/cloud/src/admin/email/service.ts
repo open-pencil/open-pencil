@@ -17,6 +17,7 @@ import type { Kysely } from 'kysely'
 const ENROLLMENT_MESSAGE_STATUS: Partial<Record<string, EnrollmentStatus>> = {
   'enrollment-requested': 'pending',
   'enrollment-approved': 'approved',
+  'enrollment-invited': 'approved',
   'enrollment-rejected': 'rejected',
   'enrollment-revoked': 'revoked'
 }

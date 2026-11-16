@@ -133,6 +133,9 @@ export function createCloudAdminRoutes(
     .get('/enrollments', validatedQuery(enrollmentQuerySchema), async (context) =>
       context.json(await services.enrollment.list(context.req.valid('query')))
     )
+    .post('/enrollments/invite', async (context) =>
+      context.json(await services.enrollment.invitePending(context.get('actor').userId))
+    )
     .post(
       '/enrollments/:id/approve',
       idParams,

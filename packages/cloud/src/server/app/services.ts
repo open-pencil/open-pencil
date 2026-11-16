@@ -90,7 +90,8 @@ export function createAppServices(services: CloudServices) {
     createEnrollmentService(database, {
       publicURL: config.publicURL,
       adminRecipients: config.enrollmentAdminNotificationEmails,
-      email: services.transactionalEmail
+      email: services.transactionalEmail,
+      invitations: config.deployment === 'official'
     })
   const policy =
     services.policy ??

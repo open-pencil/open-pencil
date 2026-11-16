@@ -23,7 +23,11 @@ export type EnrollmentStatus = 'pending' | 'approved' | 'rejected' | 'revoked'
 export type EnrollmentMode = 'open' | 'approval' | 'closed'
 
 export type EnrollmentRequestInput = { email: string; name?: string; reason?: string }
-export type EnrollmentReviewInput = { note?: string }
+export type EnrollmentReviewInput = {
+  note?: string
+  /** An approval that sends the founder's letter instead of the plain approval. */
+  invite?: boolean
+}
 export type EnrollmentRecord = {
   id: string
   email: string
@@ -102,7 +106,7 @@ export function createEnrollmentService(
       .executeTakeFirst()
     return row?.status ?? null
   }
-  return {
+  const service = {
     async request(input: EnrollmentRequestInput): Promise<void> {
       const emailNormalized = normalizeEnrollmentEmail(input.email)
       await database.transaction().execute(async (transaction) => {
@@ -254,10 +258,40 @@ export function createEnrollmentService(
           recipientEmail: row.emailNormalized,
           name: row.name ?? 'there',
           status,
-          reviewedAt: now
+          reviewedAt: now,
+          invite: input.invite
         })
         return enrollmentRecord(row)
       })
+    },
+    /**
+     * Approves every waiting request and sends each person the founder's letter instead of the
+     * plain approval, on the official deployment. Each approval is its own review, so one that
+     * another administrator decided meanwhile is skipped rather than undoing the rest.
+     */
+    async invitePending(actorId: string): Promise<{ invited: number }> {
+      if (!emailOptions.invitations) {
+        throw new AdminDomainError(
+          'invitations_unavailable',
+          'Only the official deployment sends invitation letters'
+        )
+      }
+      const pending = await database
+        .selectFrom('enrollment')
+        .select('id')
+        .where('status', '=', 'pending')
+        .orderBy('requestedAt')
+        .execute()
+      let invited = 0
+      for (const { id } of pending) {
+        try {
+          await service.review(actorId, id, 'approved', { invite: true })
+          invited++
+        } catch (error) {
+          if (!(error instanceof AdminDomainError)) throw error
+        }
+      }
+      return { invited }
     },
     async bindApprovedUser(email: string, userId: string): Promise<void> {
       await database
@@ -304,5 +338,6 @@ export function createEnrollmentService(
       return Number(row.count)
     }
   }
+  return service
 }
 export type EnrollmentService = ReturnType<typeof createEnrollmentService>

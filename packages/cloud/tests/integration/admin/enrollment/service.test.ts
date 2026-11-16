@@ -121,4 +121,45 @@ describe('Cloud enrollment integration', () => {
       await runtime.close()
     }
   })
+
+  test('invites everyone waiting with the letter, once, only where invitations are offered', async () => {
+    const runtime = await createCloudTestDatabase()
+    try {
+      const email = createTransactionalEmailService(runtime.database, {
+        encryptionSecret: 'enrollment-test-secret-at-least-32-characters',
+        from: 'cloud@example.com'
+      })
+      const options = { publicURL: 'https://cloud.example.com', adminRecipients: [], email }
+      const selfHosted = createEnrollmentService(runtime.database, options)
+      const official = createEnrollmentService(runtime.database, { ...options, invitations: true })
+      await official.request({ email: 'ada@example.com', name: 'Ada' })
+      await official.request({ email: 'grace@example.com', name: 'Grace' })
+      await official.request({ email: 'linus@example.com', name: 'Linus' })
+      const [declined] = (await official.list({ search: 'linus' })).enrollments
+      if (!declined) throw new Error('Expected the request to decline')
+      await official.review('admin-user', declined.id, 'rejected', {})
+
+      await expect(selfHosted.invitePending('admin-user')).rejects.toMatchObject({
+        code: 'invitations_unavailable'
+      })
+      expect(await official.invitePending('admin-user')).toEqual({ invited: 2 })
+      expect(await official.invitePending('admin-user')).toEqual({ invited: 0 })
+
+      expect(await official.isApproved('ada@example.com')).toBe(true)
+      expect(await official.isApproved('grace@example.com')).toBe(true)
+      expect(await official.statusForEmail('linus@example.com')).toBe('rejected')
+      const kinds = await runtime.database
+        .selectFrom('transactionalEmail')
+        .select(['kind', 'recipientEmailNormalized'])
+        .where('kind', 'in', ['enrollment-invited', 'enrollment-approved'])
+        .orderBy('recipientEmailNormalized')
+        .execute()
+      expect(kinds).toEqual([
+        { kind: 'enrollment-invited', recipientEmailNormalized: 'ada@example.com' },
+        { kind: 'enrollment-invited', recipientEmailNormalized: 'grace@example.com' }
+      ])
+    } finally {
+      await runtime.close()
+    }
+  })
 })
