@@ -20,6 +20,8 @@ import { AGENT_SESSION_META } from '@/app/ai/agents/acp/tools'
 import { ACPChatTransport, type ACPStartup } from '@/app/ai/transports/acp'
 import { createDeferred } from '@/app/runtime/deferred'
 
+import { agentPipes } from './fake-acp-agent'
+
 /** In-memory ACP agents behind a chat transport, for tests of what the transport asks of them. */
 
 export const resuming = expectDefined(
@@ -56,6 +58,10 @@ export interface FakeAgentOptions {
   updates?: { session?: string; update: SessionUpdate }[]
   /** What the agent offers for choosing its model; none when absent. */
   configOptions?: SessionConfigOption[]
+  /** Options the agent reports on its own while OpenPencil's tools connect. */
+  startupOptions?: SessionConfigOption[]
+  /** True to keep option changes waiting until `answerChoices`, as a slow agent does. */
+  choicesWait?: boolean
 }
 
 /** In-memory ACP agents, one per start, that record what the transport asks of them. */
@@ -68,8 +74,13 @@ export function fakeAgents({
   turn = 'answered',
   lookupWaits = false,
   updates = [],
-  configOptions
+  configOptions,
+  startupOptions,
+  choicesWait = false
 }: FakeAgentOptions = {}) {
+  const choices = createDeferred<undefined>()
+  let notifyLatest: ((update: SessionUpdate) => Promise<void>) | null = null
+  const startupNoted = createDeferred<undefined>()
   const lookup = createDeferred<undefined>()
   let offered = configOptions
   const prompts: string[] = []
@@ -91,8 +102,7 @@ export function fakeAgents({
     spawns++
     searchPaths.push(options.searchPath)
     cwds.push(options.cwd)
-    const toAgent = new TransformStream<Uint8Array, Uint8Array>()
-    const toClient = new TransformStream<Uint8Array, Uint8Array>()
+    const { toAgent, toClient, output, stop } = agentPipes()
     acpAgent()
       .onRequest(methods.agent.initialize, ({ params }) => {
         capabilities.push(params.clientCapabilities)
@@ -101,7 +111,12 @@ export function fakeAgents({
           agentCapabilities: { sessionCapabilities: { resume: {} } }
         }
       })
-      .onRequest(methods.agent.session.new, ({ params }) => {
+      .onRequest(methods.agent.session.new, ({ params, client }) => {
+        notifyLatest = (update) =>
+          client.notify(methods.client.session.update, {
+            sessionId: `session-${created.length}`,
+            update
+          })
         created.push(params)
         sessionRequested.resolve(undefined)
         if (!answersSessions) return createDeferred<never>().promise
@@ -115,8 +130,9 @@ export function fakeAgents({
           throw RequestError.invalidRequest({ reason: 'thread_active_writer' }, 'Session in use')
         return {}
       })
-      .onRequest(methods.agent.session.setConfigOption, ({ params }) => {
+      .onRequest(methods.agent.session.setConfigOption, async ({ params }) => {
         calls.push(`${params.configId} ${String(params.value)}`)
+        if (choicesWait) await choices.promise
         // The session now runs on the value, and says so with the rest of its options.
         offered = offered?.map((option) =>
           option.id === params.configId && option.type === 'select'
@@ -147,12 +163,6 @@ export function fakeAgents({
       .onRequest(methods.agent.authenticate, () => ({}))
       .onNotification(methods.agent.session.cancel, () => undefined)
       .connect(ndJsonStream(toClient.writable, toAgent.readable))
-    // Ending the pipe ends what the client reads, as a process that exits does.
-    const output = new TransformStream<Uint8Array, Uint8Array>()
-    const stop = new AbortController()
-    toClient.readable
-      .pipeTo(output.writable, { signal: stop.signal, preventCancel: true })
-      .catch(() => undefined)
     crashLatest = () => {
       stop.abort()
       options.onUnexpectedClose()
@@ -184,8 +194,18 @@ export function fakeAgents({
         chat: 'chat',
         mcpServers: [],
         meta: AGENT_SESSION_META,
-        noteUpdate: () => undefined,
-        outcome: async () => ({ connected: true }),
+        noteUpdate: (update) => {
+          if (update.sessionUpdate === 'config_option_update') startupNoted.resolve(undefined)
+        },
+        outcome: async () => {
+          // Ends only once the transport has seen the update, so it arrives while tools connect.
+          if (startupOptions) {
+            const notify = expectDefined(notifyLatest, 'an opened session')
+            await notify({ sessionUpdate: 'config_option_update', configOptions: startupOptions })
+            await startupNoted.promise
+          }
+          return { connected: true }
+        },
         stop: () => undefined
       }
     }
@@ -205,6 +225,7 @@ export function fakeAgents({
     cwds,
     defersTools,
     finishLookup: () => lookup.resolve(undefined),
+    answerChoices: () => choices.resolve(undefined),
     crash: () => expectDefined(crashLatest, 'a started agent')()
   }
 }

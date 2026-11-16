@@ -373,3 +373,38 @@ test('a session keeps the agent’s effort while the chat names none', async () 
   expect(efforts[0]?.current).toBe('medium')
   await chat.destroy()
 })
+
+test('an effort change the reply stopped waiting for is asked again once the chat names another', async () => {
+  const agents = fakeAgents({ configOptions: [EFFORT_OPTION], choicesWait: true })
+  let effort = ''
+  const { transport: chat, efforts } = transport(agents, { effort: () => effort })
+  const history = [message('user', 'first'), message('assistant', 'done')]
+  await send(chat, 'first')
+  effort = 'ultra'
+  const stop = new AbortController()
+  const stopped = send(chat, 'second', history, stop.signal)
+  stop.abort()
+  expect(stopped).rejects.toThrow('The request was stopped.')
+  await stopped.catch(() => undefined)
+  // The agent takes the change after all, then the chat goes back to the effort it ran on.
+  agents.answerChoices()
+  effort = 'medium'
+  await send(chat, 'third', history)
+  expect(agents.calls).toEqual([
+    'prompt',
+    'reasoning_effort ultra',
+    'reasoning_effort medium',
+    'prompt'
+  ])
+  expect(efforts.at(-1)?.current).toBe('medium')
+  await chat.destroy()
+})
+
+test('a session reports the efforts its agent changed while OpenPencil’s tools connected', async () => {
+  const startupOptions = [{ ...EFFORT_OPTION, currentValue: 'ultra' }]
+  const agents = fakeAgents({ configOptions: [EFFORT_OPTION], startupOptions })
+  const { transport: chat, efforts } = transport(agents)
+  await send(chat, 'first')
+  expect(efforts.map((reported) => reported?.current)).toEqual(['ultra'])
+  await chat.destroy()
+})

@@ -29,7 +29,8 @@ import {
   AgentSessionResumeError,
   AgentSessionRetryError,
   acpErrorMessage,
-  isAuthRequiredError,
+  formatConnectionError,
+  isMissingCommandError,
   openAgentSession,
   sessionRequests
 } from '@/app/ai/agents/acp/session'
@@ -116,40 +117,6 @@ export function agentTurnUsage(usage: Usage, model: string | null): AgentTurnUsa
 }
 
 const usageMetaSchema = v.object({ '_claude/model': v.string() })
-
-function isMissingCommandError(message: string): boolean {
-  const normalized = message.toLowerCase()
-  return normalized.includes('enoent') || normalized.includes('program not found')
-}
-
-function missingCommandMessage(agentDef?: ACPAgentDef): string {
-  if (!agentDef) return 'ACP agent CLI is not installed.'
-  if (!agentDef.installCommand) {
-    return `"${agentDef.command}" is not installed. Install it and restart OpenPencil.`
-  }
-  return `"${agentDef.command}" is not installed. Install it with: ${agentDef.installCommand}`
-}
-
-export function formatConnectionError(e: unknown, agentDef?: ACPAgentDef): string {
-  const msg = acpErrorMessage(e)
-  if (
-    msg.includes('ECONNREFUSED') ||
-    msg.includes('fetch failed') ||
-    msg.includes('Failed to fetch')
-  ) {
-    return 'MCP server is not running. Make sure the editor is open.'
-  }
-  if (msg.includes('timeout') || msg.includes('Timeout') || msg.includes('ETIMEDOUT')) {
-    return 'MCP server did not respond in time.'
-  }
-  if (isMissingCommandError(msg)) {
-    return missingCommandMessage(agentDef)
-  }
-  if (isAuthRequiredError(e)) {
-    return `${agentDef?.name ?? 'The agent'} is not signed in. Sign in from Set up AI, then try again.`
-  }
-  return msg
-}
 
 /** The agent never opened its session with OpenPencil's MCP server, so it has no design tools. */
 function toolsUnreachableError(agentDef: ACPAgentDef, reason: string | null): Error {
@@ -414,15 +381,23 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     const wanted = this.effort()
     const effort = session.effort
     if (!wanted || !effort || effort.current === wanted) return
-    const offered = await session.connection.forTurn(
-      sessionOptionRequests(session.connection.agent).setConfigOption({
-        sessionId: session.sessionId,
-        configId: effort.configId,
-        value: wanted
-      }),
-      signal
-    )
-    this.noteEffort(session, sessionChoice(offered, 'thought_level'))
+    const request = sessionOptionRequests(session.connection.agent).setConfigOption({
+      sessionId: session.sessionId,
+      configId: effort.configId,
+      value: wanted
+    })
+    // Unknown until the agent answers, which it may do after a Stop: the next send asks again.
+    session.effort = { ...effort, current: '' }
+    request
+      .then((offered) => {
+        if (this.session === session) {
+          this.noteEffort(session, sessionChoice(offered, 'thought_level'))
+        }
+        return undefined
+      })
+      // The turn's own wait reports a refusal.
+      .catch(() => undefined)
+    await session.connection.forTurn(request, signal)
   }
 
   async destroy(): Promise<void> {
@@ -446,6 +421,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     let onUpdate: ACPSession['onUpdate'] = null
     // Set once the session exists; the client reads it to record the model the agent names.
     let sessionRef: ACPSession | null = null
+    // The session's efforts once it opened, as later updates change them before it is ready.
+    let openedEffort: SessionChoice | null | undefined
     const agentId = this.agentDef.id
     const { agentDef, store } = this
     const ownToolApproval = createOwnToolApproval()
@@ -496,8 +473,10 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
             setAgentCommands(agentId, update.availableCommands)
           }
           // The agent changed its options itself, as when its model changed what it offers.
-          if (update.sessionUpdate === 'config_option_update' && sessionRef) {
-            this.noteEffort(sessionRef, sessionChoice(update, 'thought_level'))
+          if (update.sessionUpdate === 'config_option_update') {
+            const effort = sessionChoice(update, 'thought_level')
+            if (sessionRef) this.noteEffort(sessionRef, effort)
+            else if (openedEffort !== undefined) openedEffort = effort
           }
           onUpdate?.(params)
         },
@@ -564,6 +543,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       }
     )
 
+    openedEffort = opened.effort
     const outcome = await step(tools.outcome())
     // Destroyed while starting, as when the chat closes: the agent must not get a prompt.
     if (this.destroying) await abandon(new Error('The chat closed while its agent was starting.'))
@@ -592,7 +572,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     }
 
     sessionRef = session
-    this.noteEffort(session, opened.effort)
+    this.noteEffort(session, openedEffort ?? null)
     return session
   }
 }
