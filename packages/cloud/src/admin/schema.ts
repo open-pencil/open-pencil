@@ -27,8 +27,3 @@ export const documentTakedownSchema = v.object({
 })
 
 export type EnrollmentReview = v.InferOutput<typeof enrollmentReviewSchema>
-
-export const parseEnrollmentReview = (input: unknown) => v.parse(enrollmentReviewSchema, input)
-export const parseUserMutation = (input: unknown) => v.parse(userMutationSchema, input)
-export const parseUserRoleMutation = (input: unknown) => v.parse(userRoleMutationSchema, input)
-export const parseDocumentTakedown = (input: unknown) => v.parse(documentTakedownSchema, input)

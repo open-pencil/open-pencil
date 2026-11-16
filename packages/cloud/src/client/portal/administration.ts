@@ -28,14 +28,19 @@ export type AdminListRequest<Filter extends string> = {
   offset?: number
 }
 
+/** A count as a query string carries it. */
+function countParameter(count: number | undefined): string | undefined {
+  return count === undefined ? undefined : String(count)
+}
+
 /** The query string for `request`; an empty search asks for everything. */
 function listQuery<Filter extends string>(request: AdminListRequest<Filter>) {
   return {
     query: {
       search: request.search || undefined,
       filter: request.filter,
-      limit: request.limit,
-      offset: request.offset
+      limit: countParameter(request.limit),
+      offset: countParameter(request.offset)
     }
   }
 }

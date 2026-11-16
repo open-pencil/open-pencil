@@ -15,6 +15,7 @@ import {
   StaticEntitlementSource,
   type CloudActor
 } from '#cloud/server'
+import { testClient } from 'hono/testing'
 import * as v from 'valibot'
 
 const config = parseCloudServerConfig({
@@ -75,19 +76,14 @@ async function testApp(options: { fullHistory?: boolean } = {}) {
     onDocumentRestored: (documentId) => restoredDocuments.push(documentId),
     onDocumentVersionsChanged: (documentId) => announcements.push(documentId)
   })
-  const request = (path: string, init: { method?: string; json?: unknown } = {}) =>
-    app.request(`/api${path}`, {
-      method: init.method ?? 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      body: init.json === undefined ? undefined : JSON.stringify(init.json)
-    })
+  const client = testClient(app)
   const workspace = await responseJSON(
-    await request('/workspaces', { method: 'POST', json: { name: 'Studio' } }),
+    await client.api.workspaces.$post({ json: { name: 'Studio' } }),
     v.object({ workspace: v.object({ id: v.string() }) })
   )
   const created = await responseJSON(
-    await request(`/workspaces/${workspace.workspace.id}/documents`, {
-      method: 'POST',
+    await client.api.workspaces[':workspaceId'].documents.$post({
+      param: { workspaceId: workspace.workspace.id },
       json: { name: 'Poster' }
     }),
     documentSchema
@@ -101,8 +97,8 @@ async function testApp(options: { fullHistory?: boolean } = {}) {
     saves++
     const checksum = `${String.fromCharCode(64 + saves).repeat(43)}=`
     const upload = await responseJSON(
-      await request(`/documents/${documentId}/uploads`, {
-        method: 'POST',
+      await client.api.documents[':documentId'].uploads.$post({
+        param: { documentId },
         json: {
           baseRevisionId: current,
           byteSize: FILE_BYTES,
@@ -124,7 +120,10 @@ async function testApp(options: { fullHistory?: boolean } = {}) {
       contentType: 'application/octet-stream'
     })
     const committed = await responseJSON(
-      await request(`/uploads/${upload.id}/commit`, { method: 'POST', json: { checksum } }),
+      await client.api.uploads[':uploadId'].commit.$post({
+        param: { uploadId: upload.id },
+        json: { checksum }
+      }),
       documentSchema
     )
     current = committed.document.currentRevisionId
@@ -148,7 +147,10 @@ async function testApp(options: { fullHistory?: boolean } = {}) {
   }
 
   async function history() {
-    return responseJSON(await request(`/documents/${documentId}/versions`), versionsSchema)
+    return responseJSON(
+      await client.api.documents[':documentId'].versions.$get({ param: { documentId }, query: {} }),
+      versionsSchema
+    )
   }
 
   return {
@@ -157,7 +159,7 @@ async function testApp(options: { fullHistory?: boolean } = {}) {
     announcements,
     objects,
     policy,
-    request,
+    client,
     workspaceId: workspace.workspace.id,
     documentId,
     save,
@@ -200,8 +202,8 @@ describe('Cloud version history', () => {
       await context.save()
       const current = await context.save()
       const named = await responseJSON(
-        await context.request(`/documents/${context.documentId}/versions`, {
-          method: 'POST',
+        await context.client.api.documents[':documentId'].versions.$post({
+          param: { documentId: context.documentId },
           json: { name: 'Hand-off', description: 'Ready for review' }
         }),
         v.object({ version: versionSchema })
@@ -216,8 +218,8 @@ describe('Cloud version history', () => {
       })
 
       const cleared = await responseJSON(
-        await context.request(`/documents/${context.documentId}/versions/${named.version.id}`, {
-          method: 'PATCH',
+        await context.client.api.documents[':documentId'].versions[':versionId'].$patch({
+          param: { documentId: context.documentId, versionId: named.version.id },
           json: { name: null }
         }),
         v.object({ version: versionSchema })
@@ -227,8 +229,8 @@ describe('Cloud version history', () => {
       // The first save's checkpoint, the name, and taking it away.
       expect(context.announcements).toHaveLength(3)
 
-      const empty = await context.request(`/documents/${context.documentId}/versions`, {
-        method: 'POST',
+      const empty = await context.client.api.documents[':documentId'].versions.$post({
+        param: { documentId: context.documentId },
         json: { name: '   ' }
       })
       expect(empty.status).toBe(400)
@@ -256,8 +258,8 @@ describe('Cloud version history', () => {
       await rooms.append(room, 1, Uint8Array.from([2]))
 
       const restored = await responseJSON(
-        await context.request(`/documents/${context.documentId}/versions/${original.id}/restore`, {
-          method: 'POST'
+        await context.client.api.documents[':documentId'].versions[':versionId'].restore.$post({
+          param: { documentId: context.documentId, versionId: original.id }
         }),
         v.object({
           document: v.object({ currentRevisionId: v.string() }),
@@ -287,7 +289,9 @@ describe('Cloud version history', () => {
       const [restoredDownload, originalDownload] = await Promise.all(
         [restored.version.id, original.id].map(async (versionId) =>
           responseJSON(
-            await context.request(`/documents/${context.documentId}/versions/${versionId}`),
+            await context.client.api.documents[':documentId'].versions[':versionId'].$get({
+              param: { documentId: context.documentId, versionId }
+            }),
             v.object({
               document: v.object({ download: v.object({ url: v.string() }) }),
               version: v.object({ id: v.string() })
@@ -316,15 +320,18 @@ describe('Cloud version history', () => {
       const [version] = (await context.history()).versions
       if (!version) throw new Error('No version')
       const copy = await responseJSON(
-        await context.request(`/documents/${context.documentId}/versions/${version.id}/duplicate`, {
-          method: 'POST',
+        await context.client.api.documents[':documentId'].versions[':versionId'].duplicate.$post({
+          param: { documentId: context.documentId, versionId: version.id },
           json: { name: 'Poster copy' }
         }),
         documentSchema
       )
       expect(copy.document.id).not.toBe(context.documentId)
       const copied = await responseJSON(
-        await context.request(`/documents/${copy.document.id}/versions`),
+        await context.client.api.documents[':documentId'].versions.$get({
+          param: { documentId: copy.document.id },
+          query: {}
+        }),
         versionsSchema
       )
       expect(copied.versions).toHaveLength(1)
@@ -340,11 +347,15 @@ describe('Cloud version history', () => {
       await context.save()
       const [version] = (await context.history()).versions
       if (!version) throw new Error('No version')
-      await context.request(`/documents/${context.documentId}`, { method: 'DELETE' })
-      const copy = await context.request(
-        `/documents/${context.documentId}/versions/${version.id}/duplicate`,
-        { method: 'POST', json: { name: 'Poster copy' } }
-      )
+      await context.client.api.documents[':documentId'].$delete({
+        param: { documentId: context.documentId }
+      })
+      const copy = await context.client.api.documents[':documentId'].versions[
+        ':versionId'
+      ].duplicate.$post({
+        param: { documentId: context.documentId, versionId: version.id },
+        json: { name: 'Poster copy' }
+      })
       expect(copy.status).toBe(404)
     } finally {
       await context.runtime.close()
@@ -359,15 +370,19 @@ describe('Cloud version history', () => {
         await context.age(31 * 60_000)
       }
       const first = await responseJSON(
-        await context.request(`/documents/${context.documentId}/versions?limit=2`),
+        await context.client.api.documents[':documentId'].versions.$get({
+          param: { documentId: context.documentId },
+          query: { limit: '2' }
+        }),
         versionsSchema
       )
       expect(first.versions).toHaveLength(2)
       if (!first.nextCursor) throw new Error('Expected another page')
       const second = await responseJSON(
-        await context.request(
-          `/documents/${context.documentId}/versions?limit=2&before=${first.nextCursor}`
-        ),
+        await context.client.api.documents[':documentId'].versions.$get({
+          param: { documentId: context.documentId },
+          query: { limit: '2', before: first.nextCursor }
+        }),
         versionsSchema
       )
       const all = (await context.history()).versions.map((version) => version.id)

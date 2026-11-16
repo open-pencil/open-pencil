@@ -1,0 +1,1 @@
+- HTML import keeps tables with collapsed borders, captions, or cells spanning rows in auto layout, drawing each collapsed border once, and aligns the items of one-column grids as the page does (#2145).

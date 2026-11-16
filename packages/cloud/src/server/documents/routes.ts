@@ -1,10 +1,10 @@
 import {
-  parseCommitImageUploads,
-  parseCommitUpload,
-  parseCreateDocument,
-  parseCreateUpload,
-  parseRequestImageLinks,
-  parseRequestImageUploads
+  commitImageUploadsSchema,
+  commitUploadSchema,
+  createDocumentSchema,
+  createUploadSchema,
+  requestImageLinksSchema,
+  requestImageUploadsSchema
 } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
@@ -162,7 +162,7 @@ export function createDocumentRoutes(
     .post(
       '/workspaces/:workspaceId/documents',
       workspaceParams,
-      validatedJSON(parseCreateDocument),
+      validatedJSON(createDocumentSchema),
       async (context) => {
         try {
           const document = await service.create(
@@ -211,7 +211,7 @@ export function createDocumentRoutes(
     .post(
       '/documents/:documentId/uploads',
       documentParams,
-      validatedJSON(parseCreateUpload),
+      validatedJSON(createUploadSchema),
       (context) =>
         documentResponse(context, async () =>
           context.json(
@@ -227,7 +227,7 @@ export function createDocumentRoutes(
     .post(
       '/documents/:documentId/images/commit',
       documentParams,
-      validatedJSON(parseCommitImageUploads),
+      validatedJSON(commitImageUploadsSchema),
       (context) =>
         documentResponse(context, async () => {
           await service.commitImageUploads(
@@ -241,7 +241,7 @@ export function createDocumentRoutes(
     .post(
       '/documents/:documentId/images/links',
       documentParams,
-      validatedJSON(parseRequestImageLinks),
+      validatedJSON(requestImageLinksSchema),
       (context) =>
         documentResponse(context, async () =>
           context.json(
@@ -256,7 +256,7 @@ export function createDocumentRoutes(
     .post(
       '/documents/:documentId/images',
       documentParams,
-      validatedJSON(parseRequestImageUploads),
+      validatedJSON(requestImageUploadsSchema),
       (context) =>
         documentResponse(context, async () =>
           context.json(
@@ -272,7 +272,7 @@ export function createDocumentRoutes(
     .post(
       '/uploads/:uploadId/commit',
       uploadParams,
-      validatedJSON(parseCommitUpload),
+      validatedJSON(commitUploadSchema),
       async (context) => {
         try {
           const document = await service.commitUpload(
