@@ -6,6 +6,7 @@ import {
   type SetSessionConfigOptionRequest,
   type SetSessionConfigOptionResponse
 } from '@agentclientprotocol/sdk/unstable'
+import { mapValues, omit } from 'es-toolkit'
 
 import type { ModelOption } from '@open-pencil/core/constants'
 
@@ -24,6 +25,8 @@ export type SessionOptionValue = Pick<ModelOption, 'id' | 'name'>
 export interface SessionChoice {
   /** The option's ID, which each agent names itself: Codex's effort is `reasoning_effort`. */
   configId: string
+  /** What the agent calls the option, such as "Mode". */
+  name: string
   current: string
   values: SessionOptionValue[]
 }
@@ -40,6 +43,7 @@ export function sessionChoice(
   if (option?.type !== 'select') return null
   return {
     configId: option.id,
+    name: option.name,
     current: option.currentValue,
     values: option.options
       .flatMap((entry) => ('options' in entry ? entry.options : [entry]))
@@ -47,17 +51,48 @@ export function sessionChoice(
   }
 }
 
-/** The efforts the model a session is on offers, and the one it runs on. */
-export interface AgentEfforts {
-  current: string
-  /** Empty when the model offers no choice of effort. */
-  values: SessionOptionValue[]
+/**
+ * The session options a chat chooses besides the model, by ACP category: the thinking effort, the
+ * mode, which sets what the agent may do without asking, and Codex's own collaboration mode,
+ * which holds its Plan mode.
+ */
+export const AGENT_CHOICE_CATEGORIES = ['thought_level', 'mode', 'collaboration_mode'] as const
+
+export type AgentChoiceCategory = (typeof AGENT_CHOICE_CATEGORIES)[number]
+
+/** Values a chat names for a session's options, by the agent's own IDs; absent keeps the agent's. */
+export type AgentChoices = Partial<Record<AgentChoiceCategory, string>>
+
+/** One of a session's options as the chat offers it: its name, values, and current one. */
+export type AgentChoice = Omit<SessionChoice, 'configId'>
+
+/**
+ * What a session offers to choose besides its model, on the model it is on: each model has its
+ * own efforts. An option the session does not offer is absent.
+ */
+export type AgentModelChoices = Partial<Record<AgentChoiceCategory, AgentChoice>>
+
+/** A session's options of each category, by their IDs; one it does not offer is absent. */
+export type SessionChoices = Partial<Record<AgentChoiceCategory, SessionChoice>>
+
+/** The session's options of each category, by their IDs; one it does not offer is absent. */
+export function sessionChoices(offered: OfferedSessionOptions): SessionChoices {
+  const choices: SessionChoices = {}
+  for (const category of AGENT_CHOICE_CATEGORIES) {
+    const choice = sessionChoice(offered, category)
+    if (choice) choices[category] = choice
+  }
+  return choices
 }
 
-/** The efforts a session offers for the model it is on. */
-export function sessionEfforts(offered: OfferedSessionOptions): AgentEfforts {
-  const choice = sessionChoice(offered, 'thought_level')
-  return { current: choice?.current ?? '', values: choice?.values ?? [] }
+/** A session's choices as the chat shows them, without the IDs only the agent needs. */
+export function shownChoices(choices: SessionChoices): AgentModelChoices {
+  return mapValues(choices, (choice) => choice && omit(choice, ['configId']))
+}
+
+/** What a session offers to choose besides its model, as the chat shows it. */
+export function agentModelChoices(offered: OfferedSessionOptions): AgentModelChoices {
+  return shownChoices(sessionChoices(offered))
 }
 
 /** The agent request that changes a session option, which tests make without a connection. */

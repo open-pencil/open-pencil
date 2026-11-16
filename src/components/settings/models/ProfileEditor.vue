@@ -58,8 +58,9 @@ const {
   retryAgentModels,
   supportsCustomModel,
   supportsThinking,
-  agentEffortOptions,
-  agentEffortValue,
+  agentOptionControls,
+  agentOptionValue,
+  setAgentOption,
   modelOptions,
   selectedModelValue,
   knownModel,
@@ -369,15 +370,16 @@ async function remove() {
           v-model:tools="toolsEnabled"
           v-model:vision="visionEnabled"
           v-model:thinking-level="draft.thinkingLevel"
-          v-model:agent-effort="agentEffortValue"
           v-model:permission-mode="draft.harnessPermissionMode"
           :detected="knownModel !== null"
           :capabilities="knownCapabilities"
           :output-tokens="outputTokenRecommendation"
           :thinking="supportsThinking"
-          :agent-efforts="agentEffortOptions"
+          :agent-options="agentOptionControls"
+          :agent-option-value="agentOptionValue"
           :acp="isACP"
           :harness="isHarness"
+          @agent-option="setAgentOption"
         />
 
         <SettingsSaveFeedback :error="saveError" :result="saveResult" />

@@ -1,4 +1,4 @@
-import { uniq } from 'es-toolkit'
+import { isEmptyObject, pickBy, uniq } from 'es-toolkit'
 import * as v from 'valibot'
 import { computed, ref, watch } from 'vue'
 
@@ -10,6 +10,7 @@ import {
   providerKind
 } from '@open-pencil/core/constants'
 
+import type { AgentChoices } from '@/app/ai/agents/acp/options'
 import { agentCapabilities, isAgentProvider } from '@/app/ai/models/agent'
 import { profileModelID } from '@/app/ai/models/language-model'
 import {
@@ -86,6 +87,14 @@ function normalizedMaxOutputTokens(value: unknown): number {
 
 const capabilitySchema = v.picklist(['tools', 'vision'])
 
+/** An ACP agent's own value for one of its options; an empty one keeps the agent's. */
+const agentChoiceSchema = v.fallback(v.optional(v.pipe(v.string(), v.nonEmpty())), undefined)
+const agentChoicesSchema = v.object({
+  thought_level: agentChoiceSchema,
+  mode: agentChoiceSchema,
+  collaboration_mode: agentChoiceSchema
+}) satisfies v.GenericSchema<unknown, AgentChoices>
+
 const profileSchema = v.object({
   id: v.custom<AIModelProfileId>((id) => typeof id === 'string' && id.startsWith('model-')),
   name: v.fallback(v.string(), 'Model'),
@@ -96,7 +105,7 @@ const profileSchema = v.object({
   thinkingLevel: v.optional(v.unknown()),
   harnessThinkingLevel: v.optional(v.unknown()),
   reasoningEffort: v.optional(v.unknown()),
-  agentEffort: v.fallback(v.optional(v.pipe(v.string(), v.nonEmpty())), undefined),
+  agentChoices: v.fallback(v.optional(agentChoicesSchema), undefined),
   harnessPermissionMode: v.fallback(v.optional(v.picklist(HARNESS_PERMISSION_MODES)), undefined),
   capabilities: v.fallback(
     v.pipe(
@@ -347,7 +356,7 @@ function draftForProfile(
     cloudWorkspaceId: connection.cloudWorkspaceId,
     maxOutputTokens: profile.maxOutputTokens,
     thinkingLevel: profile.thinkingLevel,
-    agentEffort: profile.agentEffort ?? '',
+    agentChoices: { ...profile.agentChoices },
     harnessPermissionMode: profile.harnessPermissionMode ?? 'allow-edits',
     capabilities: [...profile.capabilities]
   }
@@ -368,7 +377,7 @@ function newProfileDraft(connection: AIModelConnection | null): AIModelProfileDr
     cloudWorkspaceId: connection?.cloudWorkspaceId,
     maxOutputTokens: DEFAULT_MAX_OUTPUT_TOKENS,
     thinkingLevel: 'default',
-    agentEffort: '',
+    agentChoices: {},
     harnessPermissionMode: 'allow-edits',
     capabilities: ['tools']
   }
@@ -382,11 +391,11 @@ export function createModelProfileDraft(profileId?: string): AIModelProfileDraft
   return newProfileDraft(designConnection ?? aiModelSettings.value.connections[0])
 }
 
-/** An ACP agent's effort, which only agent profiles keep; empty keeps the agent's own. */
-function draftAgentEffort(draft: AIModelProfileDraft): string | undefined {
-  return providerKind(draft.providerID) === 'acp' && draft.agentEffort
-    ? draft.agentEffort
-    : undefined
+/** An ACP agent's effort and modes, which only agent profiles keep; none keeps the agent's own. */
+function draftAgentChoices(draft: AIModelProfileDraft): AgentChoices | undefined {
+  if (providerKind(draft.providerID) !== 'acp') return undefined
+  const choices = pickBy(draft.agentChoices, Boolean)
+  return isEmptyObject(choices) ? undefined : choices
 }
 
 export function saveModelProfileDraft(draft: AIModelProfileDraft): AIModelProfile {
@@ -415,7 +424,7 @@ export function saveModelProfileDraft(draft: AIModelProfileDraft): AIModelProfil
     customModelID: draft.customModelID.trim(),
     maxOutputTokens: normalizedMaxOutputTokens(draft.maxOutputTokens),
     thinkingLevel: draft.thinkingLevel,
-    agentEffort: draftAgentEffort(draft),
+    agentChoices: draftAgentChoices(draft),
     harnessPermissionMode:
       providerKind(draft.providerID) === 'harness' ? draft.harnessPermissionMode : undefined,
     capabilities

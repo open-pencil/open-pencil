@@ -15,7 +15,7 @@ import type { UIMessage, UIMessageChunk } from 'ai'
 import { ACP_AGENTS, type ACPAgentDef } from '@open-pencil/core/constants'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
-import type { AgentEfforts } from '@/app/ai/agents/acp/options'
+import type { AgentChoices, AgentModelChoices } from '@/app/ai/agents/acp/options'
 import { AGENT_SESSION_META } from '@/app/ai/agents/acp/tools'
 import { ACPChatTransport, type ACPStartup } from '@/app/ai/transports/acp'
 import { createDeferred } from '@/app/runtime/deferred'
@@ -261,11 +261,12 @@ export function transport(
     agentDef?: ACPAgentDef
     cwd?: string
     model?: string
-    effort?: () => string
+    choices?: () => AgentChoices
   } = {}
 ) {
   const sessions: (string | null)[] = []
-  const efforts: (AgentEfforts | null)[] = []
+  /** What the session offered to choose each time it told the chat, and null once it ended. */
+  const offered: (AgentModelChoices | null)[] = []
   const agentErrors: unknown[] = []
   const created = new ACPChatTransport({
     agentDef: options.agentDef ?? resuming,
@@ -273,11 +274,11 @@ export function transport(
     startup: agents.startup,
     resume: options.resume,
     model: options.model,
-    effort: options.effort,
-    onEfforts: (reported) => efforts.push(reported),
+    choices: options.choices,
+    onChoices: (reported) => offered.push(reported),
     startTimeoutMs: options.startTimeoutMs ?? 1_000,
     onSession: (id) => sessions.push(id),
     onAgentError: (error) => agentErrors.push(error)
   })
-  return { transport: created, sessions, agentErrors, efforts }
+  return { transport: created, sessions, agentErrors, offered }
 }

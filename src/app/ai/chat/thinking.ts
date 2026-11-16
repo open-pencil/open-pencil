@@ -1,9 +1,14 @@
+import { pickBy } from 'es-toolkit'
 import { computed, shallowRef } from 'vue'
 
 import { acpAgentFor } from '@open-pencil/core/constants'
 
-import { agentModelEfforts } from '@/app/ai/agents/acp/offers'
-import type { AgentEfforts } from '@/app/ai/agents/acp/options'
+import { agentModelChoicesOffered } from '@/app/ai/agents/acp/offers'
+import type {
+  AgentChoiceCategory,
+  AgentChoices,
+  AgentModelChoices
+} from '@/app/ai/agents/acp/options'
 import { designModelProfile, resolveAIModelRole } from '@/app/ai/models'
 import type { AIModelProfileId, ThinkingLevel } from '@/app/ai/models/types'
 
@@ -26,49 +31,53 @@ export const chatThinkingLevel = computed<ThinkingLevel>({
   }
 })
 
-/** The composer's choice of an ACP agent's effort, for the Design profile it was made for. */
-const composerEffort = shallowRef<{ profileId: AIModelProfileId | null; effort: string } | null>(
-  null
-)
-
-/**
- * The effort the next message to an ACP agent runs on, by the agent's own value; empty keeps the
- * agent's. The profile names it until the composer chooses another.
- */
-export const chatAgentEffort = computed<string>({
-  get: () => {
-    const profile = designModelProfile.value
-    const choice = composerEffort.value
-    if (choice?.profileId === (profile?.id ?? null)) return choice.effort
-    return profile?.agentEffort ?? ''
-  },
-  set: (effort) => {
-    composerEffort.value = { profileId: designModelProfile.value?.id ?? null, effort }
-  }
+/** The composer's choices of an ACP agent's options, for the Design profile they were made for. */
+const composerChoices = shallowRef<{ profileId: AIModelProfileId | null; choices: AgentChoices }>({
+  profileId: null,
+  choices: {}
 })
 
 /**
- * The efforts the open agent session offers, as its transport reports them, with the profile it
- * started from; null without one. A session of another profile, which may be another agent or
- * model, offers other efforts.
+ * The effort and modes the next message to an ACP agent runs on, by the agent's own values;
+ * absent ones keep the agent's. The profile names them until the composer chooses others.
  */
-export const agentSessionEfforts = shallowRef<{
+export const chatAgentChoices = computed<AgentChoices>(() => {
+  const profile = designModelProfile.value
+  const composer = composerChoices.value
+  const own = composer.profileId === (profile?.id ?? null) ? composer.choices : {}
+  return { ...profile?.agentChoices, ...own }
+})
+
+/** Chooses one of the Design agent's options for the next messages, as the composer does. */
+export function chooseAgentOption(category: AgentChoiceCategory, value: string): void {
+  const profileId = designModelProfile.value?.id ?? null
+  const composer = composerChoices.value
+  const kept = composer.profileId === profileId ? composer.choices : {}
+  composerChoices.value = { profileId, choices: { ...kept, [category]: value } }
+}
+
+/**
+ * What the open agent session offers to choose, as its transport reports it, with the profile it
+ * started from; null without one. A session of another profile, which may be another agent or
+ * model, offers other choices.
+ */
+export const agentSessionChoices = shallowRef<{
   profileId: AIModelProfileId
-  efforts: AgentEfforts
+  choices: AgentModelChoices
 } | null>(null)
 
 /**
- * The efforts the composer offers for the Design agent: the open session's, or before it opens,
- * the ones its model offered when the profile chose it. Null for other providers and models that
- * offer none.
+ * What the composer offers to choose for the Design agent: the open session's options, or before
+ * it opens, the ones its model offered when the profile chose it. Options without values are left
+ * out; null for other providers.
  */
-export const chatAgentEfforts = computed<AgentEfforts | null>(() => {
+export const chatAgentOptions = computed<AgentModelChoices | null>(() => {
   const role = resolveAIModelRole('design')
   const agent = role && acpAgentFor(role.connection.providerID)
   if (!role || !agent) return null
-  const session = agentSessionEfforts.value
-  const efforts =
-    (session?.profileId === role.profile.id ? session.efforts : null) ??
-    agentModelEfforts(agent, role.profile.customModelID || role.profile.modelID)
-  return efforts && efforts.values.length > 0 ? efforts : null
+  const session = agentSessionChoices.value
+  const offered =
+    (session?.profileId === role.profile.id ? session.choices : null) ??
+    agentModelChoicesOffered(agent, role.profile.customModelID || role.profile.modelID)
+  return offered && pickBy(offered, (choice) => (choice?.values.length ?? 0) > 0)
 })

@@ -49,6 +49,7 @@ function requests() {
 test('an option is found by its category, whatever the agent names it', () => {
   expect(sessionChoice({ configOptions: GROUPED }, 'thought_level')).toEqual({
     configId: 'reasoning_effort',
+    name: 'Effort',
     current: 'medium',
     values: [
       { id: 'low', name: 'Low' },

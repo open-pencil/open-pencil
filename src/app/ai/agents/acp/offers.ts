@@ -6,13 +6,27 @@ import type { ACPAgentDef, ACPAgentID } from '@open-pencil/core/constants'
 import { readCacheJSON, writeCacheJSON } from '@/app/cache'
 
 import type { AgentOffer } from './oneoff'
-import type { AgentEfforts } from './options'
+import type { AgentModelChoices } from './options'
 
 const valueSchema = v.object({ id: v.string(), name: v.string() })
+const choiceSchema = v.object({
+  name: v.string(),
+  current: v.string(),
+  values: v.array(valueSchema)
+})
 const offerSchema = v.object({
   models: v.array(valueSchema),
   imageInput: v.boolean(),
-  efforts: v.record(v.string(), v.object({ current: v.string(), values: v.array(valueSchema) }))
+  choices: v.record(
+    v.string(),
+    v.partial(
+      v.object({
+        thought_level: choiceSchema,
+        mode: choiceSchema,
+        collaboration_mode: choiceSchema
+      })
+    )
+  )
 }) satisfies v.GenericSchema<unknown, AgentOffer>
 
 /** How long a remembered offer stands in for starting the agent, as a provider's catalog does. */
@@ -74,11 +88,14 @@ export function agentModelName(agent: ACPAgentDef, modelID: string): string | nu
 }
 
 /**
- * The efforts one of an agent's models offered when a profile chose it, `''` being the agent's
- * own model; null until read. Reactive, as `agentModelName` is.
+ * What one of an agent's models offered to choose besides it when a profile chose it, `''` being
+ * the agent's own model; null until read. Reactive, as `agentModelName` is.
  */
-export function agentModelEfforts(agent: ACPAgentDef, modelID: string): AgentEfforts | null {
-  return knownOffer(agent)?.efforts[modelID] ?? null
+export function agentModelChoicesOffered(
+  agent: ACPAgentDef,
+  modelID: string
+): AgentModelChoices | null {
+  return knownOffer(agent)?.choices[modelID] ?? null
 }
 
 /** Keeps an agent's offer for the next time a profile of it opens; a failed write is skipped. */

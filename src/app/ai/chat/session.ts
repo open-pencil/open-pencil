@@ -6,6 +6,7 @@ import { ref } from 'vue'
 import { acpAgentFor, AI_PROVIDERS } from '@open-pencil/core/constants'
 import type { AIProviderID } from '@open-pencil/core/constants'
 
+import type { AgentChoices } from '@/app/ai/agents/acp/options'
 import { readPiAccount } from '@/app/ai/agents/pi/settings'
 import { agentWorkspace } from '@/app/ai/agents/setup/native'
 import { AgentSetupError, assertAgentReady } from '@/app/ai/agents/setup/readiness'
@@ -13,7 +14,7 @@ import { classifyAIChatError, type AIChatFailure } from '@/app/ai/chat/failure'
 import { notifyReplyEnded } from '@/app/ai/chat/notifications'
 import { hasSteeringMessage } from '@/app/ai/chat/queue'
 import { systemPrompt } from '@/app/ai/chat/system-prompt'
-import { agentSessionEfforts, chatAgentEffort, chatThinkingLevel } from '@/app/ai/chat/thinking'
+import { agentSessionChoices, chatAgentChoices, chatThinkingLevel } from '@/app/ai/chat/thinking'
 import {
   createAIModelRuntime,
   designModelProfile,
@@ -58,11 +59,11 @@ type ChatSessionOptions = {
   getActiveEditorStore: () => EditorStore
 }
 
-/** The effort of the profile a chat's agent session starts from. */
-export interface AgentEffortLink {
+/** The effort and modes of the profile a chat's agent session starts from. */
+export interface AgentChoicesLink {
   profileId: AIModelProfileId
-  /** The effort the next prompt runs on; empty keeps the agent's. */
-  wanted: () => string
+  /** The effort and modes the next prompt runs on; absent ones keep the agent's. */
+  wanted: () => AgentChoices
 }
 
 export async function createACPTransport(
@@ -72,7 +73,7 @@ export async function createACPTransport(
   agentSession?: AgentSessionLink,
   onAgentError?: (error: unknown) => void,
   model?: string,
-  effort?: AgentEffortLink
+  choices?: AgentChoicesLink
 ) {
   const agentDef = acpAgentFor(providerID)
   if (!agentDef) throw new Error(`Unknown ACP agent: ${providerID}`)
@@ -90,10 +91,10 @@ export async function createACPTransport(
       ((id) => agentSession.record(id === null ? null : { agent: agentDef.id, id })),
     onAgentError,
     model,
-    effort: effort?.wanted,
-    onEfforts: (efforts) => {
-      agentSessionEfforts.value =
-        effort && efforts ? { profileId: effort.profileId, efforts } : null
+    choices: choices?.wanted,
+    onChoices: (offered) => {
+      agentSessionChoices.value =
+        choices && offered ? { profileId: choices.profileId, choices: offered } : null
     }
   })
 }
@@ -222,13 +223,13 @@ export function createChatSessionManager({
       agentSession,
       captureAgentError,
       profileModel,
-      // The profile's effort, or the composer's, while the chat still runs that profile; another
-      // profile's effort may not be one this agent or model offers.
+      // The profile's effort and modes, or the composer's, while the chat still runs that profile;
+      // another profile's may not be ones this agent or model offers.
       profileId === null
         ? undefined
         : {
             profileId,
-            wanted: () => (designModelProfile.value?.id === profileId ? chatAgentEffort.value : '')
+            wanted: () => (designModelProfile.value?.id === profileId ? chatAgentChoices.value : {})
           }
     )
     acpTransportInstance = transport

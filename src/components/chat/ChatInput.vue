@@ -5,13 +5,14 @@ import { providerKind } from '@open-pencil/core/constants'
 import { useSelectionState } from '@open-pencil/vue/editor/selection-state'
 import { useI18n } from '@open-pencil/vue/i18n'
 
+import { AGENT_CHOICE_CATEGORIES } from '@/app/ai/agents/acp/options'
 import { revokeImagePreviewURL } from '@/app/ai/attachment/image/prepare'
 import { MAX_IMAGE_ATTACHMENTS } from '@/app/ai/attachment/image/types'
 import { takeBackMessages } from '@/app/ai/chat/queue'
 import type { ChatSubmission } from '@/app/ai/chat/submission/types'
 import { useAIChat } from '@/app/ai/chat/use'
 import { designModelProfile } from '@/app/ai/models'
-import ChatAgentEffortSelect from '@/components/chat/ChatAgentEffortSelect.vue'
+import ChatAgentOptionSelect from '@/components/chat/ChatAgentOptionSelect.vue'
 import ChatProfileSelect from '@/components/chat/ChatProfileSelect.vue'
 import ChatThinkingSelect from '@/components/chat/ChatThinkingSelect.vue'
 import { useComposerCompletions } from '@/components/chat/composer/useComposerCompletions'
@@ -197,7 +198,13 @@ const selectedProfileName = computed(
           </template>
         </ChatProfileSelect>
         <ChatThinkingSelect v-if="!isAgentProvider" />
-        <ChatAgentEffortSelect v-else />
+        <template v-else>
+          <ChatAgentOptionSelect
+            v-for="category in AGENT_CHOICE_CATEGORIES"
+            :key="category"
+            :category="category"
+          />
+        </template>
       </div>
     </template>
   </ChatComposer>
