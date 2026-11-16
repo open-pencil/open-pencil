@@ -1,4 +1,4 @@
-import { uniqWith } from 'es-toolkit/array'
+import { uniq } from 'es-toolkit/array'
 import { isEqual } from 'es-toolkit/predicate'
 
 import type {
@@ -12,7 +12,9 @@ import {
   listNumberFormat,
   paragraphSpacingAt,
   paragraphStyleAt,
+  pixelLength,
   styleRunPieces,
+  textLengthPixels,
   textListItems,
   textParagraphRanges,
   type TextListItem,
@@ -98,16 +100,24 @@ function linkHref(link: HyperlinkTarget | null | undefined): string | null {
 
 /**
  * The letter spacing every character of a text has, from its run or the layer, or `undefined`
- * when characters differ or there are none: then no one spacing ends every line.
+ * when characters differ or there are none: then no one spacing ends every line. Characters
+ * spaced and sized as the layer is give the layer's own spacing; otherwise each spacing is
+ * resolved at its characters' font size, as CSS resolves `em` where a run sets its own size.
  */
 export function uniformLetterSpacing(node: SceneNode): TextLength | undefined {
-  const spacings = uniqWith(
-    styleRunPieces(node.styleRuns, node.text.length).map(
-      (piece) => piece.style?.letterSpacing ?? node.letterSpacing
-    ),
-    isEqual
+  const spacings = styleRunPieces(node.styleRuns, node.text.length).map(({ style }) => ({
+    length: style?.letterSpacing ?? node.letterSpacing,
+    fontSize: style?.fontSize ?? node.fontSize
+  }))
+  if (spacings.length === 0) return undefined
+  const asLayer = spacings.every(
+    ({ length, fontSize }) =>
+      isEqual(length, node.letterSpacing) &&
+      (length.unit === 'PIXELS' || fontSize === node.fontSize)
   )
-  return spacings.length === 1 ? spacings[0] : undefined
+  if (asLayer) return node.letterSpacing
+  const pixels = uniq(spacings.map(({ length, fontSize }) => textLengthPixels(length, fontSize)))
+  return pixels.length === 1 ? pixelLength(pixels[0]) : undefined
 }
 
 export function textCaseToCSS(value: SceneNode['textCase']): string | undefined {

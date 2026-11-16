@@ -239,6 +239,17 @@ describe('letter-spaced text export', () => {
     ).toMatchObject({ width: 'calc(200px + 10px)', 'margin-right': '-10px' })
   })
 
+  test('resolves percent spacing at the font size its runs set', () => {
+    // Each character is 32px and spaced 10% of that, 3.2px, which `em` on the box would not give.
+    expect(
+      style({
+        letterSpacing: { value: 10, unit: 'PERCENT' },
+        textAutoResize: 'HEIGHT',
+        styleRuns: [{ start: 0, length: 4, style: { fontSize: 32 } }]
+      })
+    ).toMatchObject({ width: 'calc(200px + 3.2px)', 'margin-right': '-3.2px' })
+  })
+
   test('makes no room in text with no characters', () => {
     const css = style({
       text: '',
