@@ -122,13 +122,25 @@ for (const { name } of existing?.assets ?? []) {
   }
 }
 
-const remote = v.parse(
-  releaseSchema,
-  await github(['release', 'view', NIGHTLY_TAG, '--repo', repository, '--json', 'assets'])
-)
-if (!isEqual(remote.assets.map(({ name }) => name).sort(), names)) {
-  throw new Error('The nightly release carries other files than this run built')
+const assetNames = async () =>
+  v
+    .parse(
+      releaseSchema,
+      await github(['release', 'view', NIGHTLY_TAG, '--repo', repository, '--json', 'assets'])
+    )
+    .assets.map(({ name }) => name)
+    .sort()
+const assertAssets = (actual: string[], expected: string[]) => {
+  if (!isEqual(actual, expected)) {
+    throw new Error('The nightly release carries other files than this run built')
+  }
 }
+
+// Until it goes up last, the manifest is the previous night's, or absent before the first one.
+assertAssets(
+  (await assetNames()).filter((name) => name !== NIGHTLY_MANIFEST),
+  published
+)
 await verifyUploadedAssets({
   github,
   repository,
@@ -137,6 +149,7 @@ await verifyUploadedAssets({
   directory: paths.output
 })
 await upload([NIGHTLY_MANIFEST])
+assertAssets(await assetNames(), names)
 await verifyUploadedAssets({
   github,
   repository,
