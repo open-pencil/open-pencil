@@ -1,51 +1,33 @@
 import { compact, isEmptyObject } from 'es-toolkit'
 
-import {
-  serializeNode,
-  type DesignDocument,
-  type DesignElement,
-  type DesignNode
-} from '@open-pencil/dom-css'
+import { serializeNode, type DesignDocument, type DesignElement } from '@open-pencil/dom-css'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
-import { parseCSSColor } from '@open-pencil/scene-graph/css'
+import { parseCSSColor, parseCSSURLReferences } from '@open-pencil/scene-graph/css'
 import { ICON_NAME } from '@open-pencil/scene-graph/icons'
+import { parseSVGViewBoxValue } from '@open-pencil/scene-graph/parse-path'
 
-import { drawIcon } from '#core/icons'
+import { drawIcon, parseIconName } from '#core/icons'
 import { svgIconPaths } from '#core/icons/artwork'
 import { extractSVGContent } from '#core/icons/svg'
 import { createSVGNodes } from '#core/io/formats/svg/import'
-import { parseSVGViewBoxValue } from '#core/io/formats/svg/metadata'
 import { svgViewportAttributes } from '#core/vector/vectorize/svg/transform'
 
-function isElement(node: DesignNode): node is DesignElement {
-  return node.type === 'element'
-}
+import { designElements } from './elements'
 
-function* elementsIn(nodes: readonly DesignNode[]): Generator<DesignElement> {
-  for (const node of nodes.filter(isElement)) {
-    yield node
-    yield* elementsIn(node.children)
-  }
-}
-
-/** The element each `href="#id"` in `element` points at. */
-/** An attribute or style value an element may not have. */
-function valueOf(values: Readonly<Record<string, string>> | undefined, name: string) {
-  return values && Object.hasOwn(values, name) ? values[name] : undefined
-}
-
-/** A local `url(#id)` reference, as `clip-path`, `mask`, `filter`, and gradient paints write it. */
-const URL_REFERENCE = /url\(\s*['"]?#([^'")\s]+)['"]?\s*\)/g
-
-/** The ids an element and what it holds refer to: by `href`, or by `url(#id)` in any attribute. */
+/**
+ * The ids an element and what it holds refer to: by `href`, as `<use>` does, or by `url(#id)`
+ * in any attribute or inline style, as clip paths, masks, filters, and paints do.
+ */
 function referencedIds(element: DesignElement): string[] {
-  return [...elementsIn([element])].flatMap((child) => {
-    const href = valueOf(child.attrs, 'href') ?? valueOf(child.attrs, 'xlink:href')
-    const linked = href?.startsWith('#') ? [href.slice(1)] : []
+  return designElements([element]).flatMap((child) => {
+    const attrs: Partial<Record<string, string>> = child.attrs
+    const href = attrs.href ?? attrs['xlink:href']
     const values = [...Object.values(child.attrs), ...Object.values(child.inlineStyle ?? {})]
-    const urls = values.flatMap((value) => [...value.matchAll(URL_REFERENCE)].map((m) => m[1]))
-    return [...linked, ...urls]
+    return [
+      ...(href?.startsWith('#') ? [href.slice(1)] : []),
+      ...values.flatMap(parseCSSURLReferences)
+    ]
   })
 }
 
@@ -57,7 +39,7 @@ function outsideReferences(
   element: DesignElement,
   byId: ReadonlyMap<string, DesignElement>
 ): DesignElement[] {
-  const inside = new Set(elementsIn([element]))
+  const inside = new Set(designElements([element]))
   const reached = new Map<string, DesignElement>()
   const pending = referencedIds(element)
   for (let id = pending.pop(); id !== undefined; id = pending.pop()) {
@@ -95,11 +77,11 @@ function withComputedPaint(
   rootColor: string | undefined
 ): DesignElement {
   const style = element.computedStyle
-  const color = valueOf(style, 'color')
+  const color = style?.color
   const own: Record<string, string> = {}
   const paint: Record<string, string> = {}
   for (const property of Object.keys(INITIAL_PAINT)) {
-    const value = valueOf(style, property)?.trim()
+    const value = style?.[property]?.trim()
     own[property] = value ?? inherited[property]
     if (value === undefined || value === inherited[property]) continue
     // The artwork's color tints `currentColor`, so only paint in that color follows it; a shape
@@ -140,7 +122,7 @@ function svgMarkup(
   byId: ReadonlyMap<string, DesignElement>,
   box: { width: number; height: number }
 ): string {
-  const color = valueOf(element.computedStyle, 'color')
+  const color = element.computedStyle?.color
   const outside = outsideReferences(element, byId).map((target) =>
     withComputedPaint(target, INITIAL_PAINT, color)
   )
@@ -159,10 +141,10 @@ function svgMarkup(
 
 /** An icon name a page gave the SVG, as OpenPencil's HTML export and Iconify write it. */
 function iconName(element: DesignElement): { prefix: string; name: string } | null {
-  const named = element.attrs['data-icon']
-  if (!named || !ICON_NAME.test(named)) return null
-  const [prefix, name] = named.split(':')
-  return { prefix, name }
+  const attrs: Partial<Record<string, string>> = element.attrs
+  const named = attrs['data-icon']
+  const parsed = named && ICON_NAME.test(named) ? parseIconName(named) : null
+  return parsed ? { prefix: parsed.prefix, name: parsed.iconName } : null
 }
 
 /** Draws a named icon's paths into its frame, tinted in its color, and records the icon. */
@@ -174,11 +156,12 @@ function drawNamedIcon(
   markup: string,
   box: { width: number; height: number }
 ): void {
-  const viewBox = valueOf(element.attrs, 'viewBox') ?? valueOf(element.attrs, 'viewbox')
+  const attrs: Partial<Record<string, string>> = element.attrs
+  const viewBox = attrs.viewBox ?? attrs.viewbox
   const space = parseSVGViewBoxValue(viewBox) ?? { x: 0, y: 0, ...box }
   const paths = svgIconPaths(extractSVGContent(markup), space, box, svgViewportAttributes(markup))
   if (paths.length === 0) return
-  const color = parseCSSColor(valueOf(element.computedStyle, 'color')) ?? BLACK
+  const color = parseCSSColor(element.computedStyle?.color) ?? BLACK
   drawIcon(graph, frameId, { ...named, ...box, paths }, Math.max(box.width, box.height), color)
 }
 
@@ -187,7 +170,7 @@ function drawNamedIcon(
  * frame: the import's own frame is dropped and its layers moved into this one.
  */
 function drawArtwork(graph: SceneGraph, frameId: string, element: DesignElement, markup: string) {
-  const defaultColor = valueOf(element.computedStyle, 'color')
+  const defaultColor = element.computedStyle?.color
   const imported = createSVGNodes(graph, frameId, markup, defaultColor ? { defaultColor } : {})
   if (!imported) return
   for (const layer of graph.getChildren(imported.id)) graph.reparentNode(layer.id, frameId)
@@ -209,7 +192,7 @@ export function drawInlineSVGs(
 ): void {
   if (svgs.size === 0) return
   const byId = new Map(
-    [...elementsIn(page.children)].flatMap((element) =>
+    designElements(page.children).flatMap((element) =>
       element.attrs.id ? [[element.attrs.id, element] as const] : []
     )
   )

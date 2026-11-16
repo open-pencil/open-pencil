@@ -1,5 +1,6 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { parseCSSAspectRatio, parseCSSNumber, splitCSSValue } from '@open-pencil/scene-graph/css'
+import { parseCSSAspectRatio, parseCSSNumber } from '@open-pencil/scene-graph/css'
+import { parseSVGViewBoxValue } from '@open-pencil/scene-graph/parse-path'
 
 import type { DesignElement, DesignStyleDeclaration } from '../types'
 import { pickStyle } from './css-values'
@@ -9,17 +10,11 @@ export function isInlineSVG(element: DesignElement): boolean {
   return element.tagName.toLowerCase() === 'svg'
 }
 
-/** An attribute the element may not have, by any of its spellings. */
-function attribute(element: DesignElement, ...names: string[]): string | undefined {
-  const name = names.find((candidate) => Object.hasOwn(element.attrs, candidate))
-  return name === undefined ? undefined : element.attrs[name]
-}
-
 /** The width over height of an SVG's `viewBox`, or null without a usable one. */
 function viewBoxRatio(element: DesignElement): number | null {
-  const value = attribute(element, 'viewBox', 'viewbox') ?? ''
-  const [, , width, height] = splitCSSValue(value.replaceAll(',', ' ')).map(Number)
-  return width > 0 && height > 0 ? width / height : null
+  const attrs: Partial<Record<string, string>> = element.attrs
+  const viewBox = parseSVGViewBoxValue(attrs.viewBox ?? attrs.viewbox)
+  return viewBox ? viewBox.width / viewBox.height : null
 }
 
 /** A CSS replaced element's size when nothing sizes it, as a browser gives inline SVG. */
@@ -36,8 +31,9 @@ export function applySVGSize(
   element: DesignElement,
   style: DesignStyleDeclaration
 ): void {
+  const attrs: Partial<Record<string, string>> = element.attrs
   const sized = (name: 'width' | 'height') =>
-    parseCSSNumber(pickStyle(style, name)) ?? parseCSSNumber(attribute(element, name))
+    parseCSSNumber(pickStyle(style, name)) ?? parseCSSNumber(attrs[name])
   const width = sized('width')
   const height = sized('height')
   const aspect = parseCSSAspectRatio(pickStyle(style, 'aspect-ratio'))

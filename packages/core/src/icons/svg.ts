@@ -1,8 +1,10 @@
 import { DOMImplementation, type Document as XMLDocument, type Element } from '@xmldom/xmldom'
 import { compact } from 'es-toolkit'
 
+import { dimension, parseCSSURLReferences } from '@open-pencil/scene-graph/css'
+import { parseSVGViewBoxValue } from '@open-pencil/scene-graph/parse-path'
+
 import { parseSVGFragment } from '#core/io/formats/svg/document'
-import { parseSVGViewBoxValue } from '#core/io/formats/svg/metadata'
 import { parseSVGGradients, type SVGGradients } from '#core/vector/vectorize/svg/gradients'
 
 import {
@@ -152,12 +154,10 @@ function appendShapePath(
  * is missing or not a number.
  */
 function lengthAttribute(element: Element | null, name: string, viewport?: number): number | null {
-  const value = element?.getAttribute(name)?.trim()
-  if (!value) return null
-  const length = Number.parseFloat(value)
-  if (!Number.isFinite(length)) return null
-  if (!value.endsWith('%')) return length
-  return viewport === undefined ? null : (length / 100) * viewport
+  const length = dimension(element?.getAttribute(name)?.trim() ?? '')
+  if (!length) return null
+  if (length.unit === '%') return viewport === undefined ? null : (length.number / 100) * viewport
+  return length.unit === '' || length.unit === 'px' ? length.number : null
 }
 
 /**
@@ -211,9 +211,9 @@ function collectClipPath(
   parentTransform: string | null,
   traversal: Traversal
 ): SVGClipPathRegion | null {
-  const match = value?.trim().match(/^url\(\s*['"]?#([^'")\s]+)['"]?\s*\)$/)
-  const target = match ? traversal.elementsById.get(match[1]) : null
-  if (!match || !target || (target.localName || target.tagName) !== 'clipPath') return null
+  const [id] = parseCSSURLReferences(value ?? undefined)
+  const target = id ? traversal.elementsById.get(id) : null
+  if (!target || (target.localName || target.tagName) !== 'clipPath') return null
 
   const units =
     target.getAttribute('clipPathUnits') === 'objectBoundingBox'
@@ -234,7 +234,7 @@ function collectClipPath(
     paths
   )
   return {
-    id: match[1],
+    id,
     paths: paths.map((path) => ({
       d: path.d,
       fillRule: path.fillRule,

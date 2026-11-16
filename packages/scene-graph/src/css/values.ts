@@ -48,3 +48,20 @@ export function splitCSSValue(value: string): string[] {
     .nodes.filter((node) => node.type !== 'space' && node.type !== 'comment')
     .map((node) => valueParser.stringify(node))
 }
+
+/**
+ * The ids a CSS value points at with local `url(#id)` references, as `clip-path`, `mask`,
+ * `filter`, and SVG paints do, quoted or not.
+ */
+export function parseCSSURLReferences(value: string | undefined): string[] {
+  const ids: string[] = []
+  if (!value) return ids
+  valueParser(value).walk((node) => {
+    if (node.type !== 'function' || node.value.toLowerCase() !== 'url') return true
+    const target = node.nodes.at(0)?.value.trim() ?? ''
+    if (target.length > 1 && target.startsWith('#')) ids.push(target.slice(1))
+    // A url() holds no further references.
+    return false
+  })
+  return ids
+}
