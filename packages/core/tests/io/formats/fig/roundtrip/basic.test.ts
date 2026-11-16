@@ -291,6 +291,57 @@ describe('roundtrip: export → re-import', () => {
     expect(expectDefined(parsedSet, 'parsedSet').type).toBe('COMPONENT_SET')
   })
 
+  test('preserves noise and texture effects, seeds included', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const base = { offset: { x: 0, y: 0 }, spread: 0, visible: true }
+    graph.createNode('RECTANGLE', page.id, {
+      name: 'Grainy',
+      width: 80,
+      height: 80,
+      effects: [
+        {
+          ...base,
+          type: 'NOISE',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          radius: 4,
+          noise: {
+            noiseType: 'DUOTONE',
+            noiseSize: { x: 2, y: 2 },
+            density: 0.5,
+            secondaryColor: { r: 1, g: 0, b: 0, a: 1 },
+            seed: 7
+          }
+        },
+        {
+          ...base,
+          type: 'TEXTURE',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          radius: 6,
+          texture: { noiseSize: { x: 3, y: 3 }, clipToShape: false }
+        }
+      ]
+    })
+
+    const figBytes = await exportFigFile(graph)
+    const parsed = await parseFigFile(figBytes.buffer as ArrayBuffer)
+    const grainy = expectDefined([...parsed.getAllNodes()].find((node) => node.name === 'Grainy'))
+
+    expect(grainy.effects).toMatchObject([
+      {
+        type: 'NOISE',
+        noise: {
+          noiseType: 'DUOTONE',
+          noiseSize: { x: 2, y: 2 },
+          density: 0.5,
+          secondaryColor: { r: 1, g: 0, b: 0, a: 1 },
+          seed: 7
+        }
+      },
+      { type: 'TEXTURE', radius: 6, texture: { noiseSize: { x: 3, y: 3 }, clipToShape: false } }
+    ])
+  })
+
   test('preserves node names', () => {
     const names = new Set(reImportedNodes.map((n) => n.name))
     expect(names.has('Container')).toBe(true)

@@ -64,10 +64,15 @@ export {
   glass,
   innerShadow,
   layerBlur,
+  noise,
+  texture,
   type BlurEffectOptions,
   type EffectColor,
   type GlassEffectOptions,
-  type ShadowEffectOptions
+  type NoiseEffectOptions,
+  type NoiseSize,
+  type ShadowEffectOptions,
+  type TextureEffectOptions
 } from './helpers/effects'
 
 export {

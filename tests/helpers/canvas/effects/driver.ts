@@ -19,3 +19,10 @@ export function shadowSilhouetteDriver(page: () => Page) {
     show: () => scenes(page).build('createShadowSilhouetteScene')
   }
 }
+
+/** Builds the noise and texture scene on the open page and leaves it unselected for a snapshot. */
+export function grainEffectsDriver(page: () => Page) {
+  return {
+    show: () => scenes(page).build('createGrainEffectsScene')
+  }
+}

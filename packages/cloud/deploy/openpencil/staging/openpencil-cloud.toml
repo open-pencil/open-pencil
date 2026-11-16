@@ -51,19 +51,30 @@ purge_grace_days = 7
 [services]
 endpoint = "https://services-staging.openpencil.dev"
 
+# OpenPencil billing's staging Worker, which sells plans and credit packs with the staging Stripe
+# sandbox and sets each account's plan through the internal API below.
+[billing]
+endpoint = "https://billing-staging.openpencil.dev"
+
+# The internal API billing writes plans through; the token is the OPENPENCIL_CLOUD_SERVICE_TOKEN
+# secret, which billing holds as CLOUD_SERVICE_TOKEN.
+[internal_api]
+
 [email]
 transport = "cloudflare"
 from = "cloud@openpencil.dev"
 
+# The free plan, which every account takes until billing stores a plan for it.
 [entitlements]
-source = "static"
+source = "database"
 
 [entitlements.documents]
 maximum_file_bytes = 1_073_741_824
 revision_history = true
 
+# 300 MB.
 [entitlements.storage]
-maximum_bytes = 107_374_182_400
+maximum_bytes = 314_572_800
 
 [entitlements.sharing]
 links = true
@@ -75,10 +86,10 @@ guest_presence = true
 enabled = true
 maximum_participants = 100
 
-# 10,000 credits is $10 of model use a month per workspace, at 1 credit = $0.001.
+# No AI or search on the free plan; a plan billing sells turns them on with its monthly credits.
 [entitlements.services]
-enabled = true
-monthly_credit_allowance = 10_000
+enabled = false
+monthly_credit_allowance = 0
 
 # The hosted service's own terms and privacy policy; each account accepts terms_version once before
 # using the server, and again when it changes.

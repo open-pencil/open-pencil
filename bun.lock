@@ -276,6 +276,7 @@
         "nanostores": "^1.5.4",
         "nodemailer": "^9.0.5",
         "posthog-node": "5.56.0",
+        "semver": "^7.8.5",
         "smol-toml": "^1.8.0",
         "ufo": "^1.6.4",
         "unhead": "^2.1.17",
@@ -291,6 +292,7 @@
         "@types/bun": "^1.3.14",
         "@types/nodemailer": "^8.0.1",
         "@types/pg": "^8.21.0",
+        "@types/semver": "^7.8.0",
         "@types/ws": "^8.18.1",
         "kysely-pglite-dialect": "1.3.1",
         "tsdown": "^0.22.14",
@@ -884,6 +886,7 @@
       "name": "@open-pencil/cloud-deploy-tools",
       "dependencies": {
         "@open-pencil/package-artifacts-tools": "workspace:*",
+        "es-toolkit": "^1.52.0",
         "valibot": "^1.5.0",
       },
     },
@@ -2731,6 +2734,8 @@
     "@types/retry": ["@types/retry@0.12.2", "", {}, "sha512-XISRgDJ2Tc5q4TRqvgJtzsRkFYNJzZrhTdtMoGVBttwzzQJkPnS3WWTFc7kuDRoPtPakl+T+OfdEUjYJj7Jbow=="],
 
     "@types/sarif": ["@types/sarif@2.1.7", "", {}, "sha512-kRz0VEkJqWLf1LLVN4pT1cg1Z9wAuvI6L97V3m2f5B76Tg8d413ddvLBPTEHAZJlnn4XSvu0FkZtViCQGVyrXQ=="],
+
+    "@types/semver": ["@types/semver@7.8.0", "", {}, "sha512-1mAINjtQCXXeLkJ9ehXkwOcBpqtLxiVtKhpUf83DdRNdQKV0iXZpaHYqRr7nj+wvxuJzoAmAwXI+sCNMv1CzLQ=="],
 
     "@types/sinonjs__fake-timers": ["@types/sinonjs__fake-timers@8.1.5", "", {}, "sha512-mQkU2jY8jJEF7YHjHvsQO8+3ughTL1mcnn96igfhONmR+fUPSKIkefQYpSe8bsly2Ep7oQbn/6VG5/9/0qcArQ=="],
 

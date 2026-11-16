@@ -16,7 +16,10 @@ import {
 import {
   chooseSessionOption,
   sessionChoice,
+  sessionEfforts,
   sessionOptionRequests,
+  type AgentEfforts,
+  type OfferedSessionOptions,
   type SessionOptionValue
 } from '@/app/ai/agents/acp/options'
 import { acpErrorMessage, AgentModelChoiceError } from '@/app/ai/agents/acp/session'
@@ -82,6 +85,12 @@ export interface AgentOffer {
   /** Empty when the agent offers no choice of model. */
   models: SessionOptionValue[]
   imageInput: boolean
+  /**
+   * The efforts of the models read so far, by model ID; `''` is the agent's own pick. Each model
+   * has its own, and reading them all would switch through dozens of models, so a model's efforts
+   * are read when a profile chooses it.
+   */
+  efforts: Record<string, AgentEfforts>
 }
 
 function takesImages(initialized: InitializeResponse): boolean {
@@ -103,14 +112,62 @@ export async function readAgentOffer(
         ? connection.agent.request(methods.agent.session.options, { cwd })
         : connection.agent.request(methods.agent.session.new, { cwd, mcpServers: [] })
     )
+    const model = sessionChoice(offered, 'model')
+    const efforts = sessionEfforts(offered)
     return {
-      models: sessionChoice(offered, 'model')?.values ?? [],
-      imageInput: takesImages(initialized)
+      models: model?.values ?? [],
+      imageInput: takesImages(initialized),
+      efforts: { '': efforts, ...(model && { [model.current]: efforts }) }
     }
   } catch (e) {
     throw agentFailure(agentDef, e)
   } finally {
     await connection.close()
+  }
+}
+
+/**
+ * Opens a session of the one-off agent on `model`, or on the agent's own pick when it is empty,
+ * and says what the session offers on it.
+ */
+async function openOneOffSession(
+  agentDef: ACPAgentDef,
+  { connection, cwd }: OneOffAgent,
+  model: string,
+  onSession?: (sessionId: string) => void
+): Promise<{ sessionId: string; offered: OfferedSessionOptions }> {
+  const opened = await connection.bounded(
+    connection.agent.request(methods.agent.session.new, { cwd, mcpServers: [] })
+  )
+  onSession?.(opened.sessionId)
+  if (!model) return { sessionId: opened.sessionId, offered: opened }
+  const chosen = await connection.bounded(
+    chooseSessionOption(
+      sessionOptionRequests(connection.agent),
+      opened.sessionId,
+      opened,
+      'model',
+      model
+    )
+  )
+  if (!chosen) throw new AgentModelChoiceError(agentDef)
+  return { sessionId: opened.sessionId, offered: chosen }
+}
+
+/** Starts the agent once to read the efforts one of its models offers, then stops it. */
+export async function readAgentEfforts(
+  agentDef: ACPAgentDef,
+  model: string,
+  options: OneOffAgentOptions = {}
+): Promise<AgentEfforts> {
+  const agent = await startOneOffAgent(agentDef, options)
+  try {
+    const { offered } = await openOneOffSession(agentDef, agent, model)
+    return sessionEfforts(offered)
+  } catch (e) {
+    throw agentFailure(agentDef, e)
+  } finally {
+    await agent.connection.close()
   }
 }
 
@@ -141,35 +198,21 @@ export async function askAgent(
 ): Promise<string> {
   let sessionId: string | null = null
   let answer = ''
-  const { connection, initialized, cwd } = await startOneOffAgent(
-    agentDef,
-    options,
-    ({ sessionId: from, update }) => {
-      // Only the session's own message is the answer; a subagent's is its working.
-      if (from !== sessionId) return
-      if (update.sessionUpdate === 'agent_message_chunk' && update.content.type === 'text') {
-        answer += update.content.text
-      }
+  const agent = await startOneOffAgent(agentDef, options, ({ sessionId: from, update }) => {
+    // Only the session's own message is the answer; a subagent's is its working.
+    if (from !== sessionId) return
+    if (update.sessionUpdate === 'agent_message_chunk' && update.content.type === 'text') {
+      answer += update.content.text
     }
-  )
+  })
+  const { connection } = agent
   try {
-    if (images.length > 0 && !takesImages(initialized)) throw new AgentImageInputError(agentDef)
-    const opened = await connection.bounded(
-      connection.agent.request(methods.agent.session.new, { cwd, mcpServers: [] })
-    )
-    sessionId = opened.sessionId
-    if (model) {
-      const chosen = await connection.bounded(
-        chooseSessionOption(
-          sessionOptionRequests(connection.agent),
-          opened.sessionId,
-          opened,
-          'model',
-          model
-        )
-      )
-      if (!chosen) throw new AgentModelChoiceError(agentDef)
+    if (images.length > 0 && !takesImages(agent.initialized)) {
+      throw new AgentImageInputError(agentDef)
     }
+    const opened = await openOneOffSession(agentDef, agent, model, (id) => {
+      sessionId = id
+    })
     await connection.bounded(
       connection.agent.request(methods.agent.session.prompt, {
         sessionId: opened.sessionId,

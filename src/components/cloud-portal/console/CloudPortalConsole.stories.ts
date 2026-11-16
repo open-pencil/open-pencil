@@ -121,6 +121,18 @@ const people: PortalPerson[] = [
     joinedOn: 'Oct 2, 2026',
     lastActive: null,
     workspaceCount: 0
+  },
+  {
+    id: 'user-joon',
+    name: 'Joon Park',
+    email: 'joon@agency.example',
+    admin: false,
+    suspended: false,
+    twoStep: false,
+    joinedOn: 'Nov 16, 2026',
+    lastActive: '1 hr. ago',
+    workspaceCount: 0,
+    access: 'waiting'
   }
 ]
 /** A console list's server for a story: every page holds `rows`, and each filter `counts`. */

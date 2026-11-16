@@ -121,6 +121,8 @@ jobs:
           S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
           POSTHOG_PROJECT_API_KEY: ${{ secrets.POSTHOG_PROJECT_API_KEY }}
           OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY: ${{ secrets.OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY }}
+          # Set only where [internal_api] is on, for the services that set plans, such as billing.
+          OPENPENCIL_CLOUD_SERVICE_TOKEN: ${{ secrets.OPENPENCIL_CLOUD_SERVICE_TOKEN }}
         run: bun --filter @open-pencil/cloud migrate
 
       - name: Collect the Worker's secrets
@@ -132,10 +134,13 @@ jobs:
           S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
           POSTHOG_PROJECT_API_KEY: ${{ secrets.POSTHOG_PROJECT_API_KEY }}
           OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY: ${{ secrets.OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY }}
+          # Set only where [internal_api] is on, for the services that set plans, such as billing.
+          OPENPENCIL_CLOUD_SERVICE_TOKEN: ${{ secrets.OPENPENCIL_CLOUD_SERVICE_TOKEN }}
         run: >-
           bun tools/ci/cloud-deploy/src/secrets.ts "$RUNNER_TEMP/cloud-secrets.json"
           BETTER_AUTH_SECRET GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET S3_ACCESS_KEY_ID
           S3_SECRET_ACCESS_KEY POSTHOG_PROJECT_API_KEY OPENPENCIL_CLOUD_SERVICES_SIGNING_KEY
+          OPENPENCIL_CLOUD_SERVICE_TOKEN?
 
       - uses: cloudflare/wrangler-action@953926a2e2182532811c01a25e53647d93bf07c0 # v4.1.3
         with:

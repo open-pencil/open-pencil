@@ -1,0 +1,16 @@
+// A texture clipped to its shape, as Figma's SVG chain draws it: the moved layer wherever any of it
+// lands, the layer's own pixel elsewhere, and nothing outside what the layer covers, so glyph
+// counters and boolean holes stay empty and a translucent fill keeps its alpha. A coverage of a
+// 127th counts in full, as Figma's alpha gains make it.
+uniform shader source;
+uniform shader displaced;
+
+half4 main(float2 p) {
+  half4 own = source.eval(p);
+  half4 moved = displaced.eval(p);
+  half inside = saturate(own.a * 127);
+  half landed = saturate(moved.a * 127);
+  half3 rgb = mix(unpremul(own).rgb, unpremul(moved).rgb, landed);
+  half alpha = mix(own.a, moved.a, landed) * inside;
+  return half4(rgb * alpha, alpha);
+}

@@ -257,8 +257,11 @@ describe('text shaping for saved glyphs', () => {
       [9, third]
     ])
 
+    // Figma saves no baseline for the empty line after a closing newline, as its files show.
     const closing = expectDefined(await shape({ text: 'one\n' }), 'text ending in a newline')
-    expect(closing.baselines).toHaveLength(2)
+    expect(closing.baselines.map((line) => [line.firstCharacter, line.endCharacter])).toEqual([
+      [0, 4]
+    ])
     expect(closing.glyphs).toHaveLength(3)
   })
 

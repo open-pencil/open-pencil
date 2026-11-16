@@ -13,6 +13,21 @@ from; production promotes the commit staging runs, once staging's newest deploym
 (`tools/ci/cloud-deploy/src/commit.ts`). Either stops before building when it is run from anything
 but master or a release tag, or the commit is not on master (`tools/ci/cloud-deploy/src/ref.ts`).
 
+## Billing
+
+A deployment whose `openpencil-cloud.toml` names `[billing]` sets plans through `[internal_api]`,
+with database entitlements whose values are the free plan; staging does. Its GitHub environment
+then holds `OPENPENCIL_CLOUD_SERVICE_TOKEN`, which the workflow passes on only where it is set,
+and the billing Worker holds the same token as `CLOUD_SERVICE_TOKEN`. Make it once and give it to
+both in your own terminal, so it is never shown:
+
+```sh
+token=$(openssl rand -base64 32)
+printf %s "$token" | gh secret set OPENPENCIL_CLOUD_SERVICE_TOKEN --env cloud-staging
+printf %s "$token" | bunx wrangler secret put CLOUD_SERVICE_TOKEN -c wrangler.billing.jsonc   # in openpencil-commerce
+unset token
+```
+
 ## Before production's first deploy
 
 These settings outside the repository:
@@ -62,6 +77,20 @@ refuses while that deployment is waiting, running, or failed, or while staging's
 `--ref vX.Y.Z` for staging.
 
 The environment's reviewers approve each run before it starts.
+
+## Administrators
+
+Deployment administrators approve sign-up requests and grant or revoke the role in the console
+(`/admin`). For a target with no administrator who can sign in, `neonctl` logged in to the team's
+Neon organization gives the admin command its database:
+
+```sh
+bun run cloud:admin production approve owner@example.com
+# after that person signs in once
+bun run cloud:admin production grant owner@example.com
+```
+
+The address never leaves the command's environment (`tools/ci/cloud-deploy/src/admin.ts`).
 
 The workflow uploads the Worker's source maps, migrates the database over its direct connection,
 deploys the Worker, and checks that `/health`, `/ready`, and the pages answer 200.

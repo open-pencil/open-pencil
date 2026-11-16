@@ -1,0 +1,1 @@
+- Desktop and browser editors keep connecting to Cloud servers that offer sign-in methods they have no button for, or name a pre-release as their minimum editor version (#2153).

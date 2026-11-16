@@ -155,6 +155,10 @@ export interface Paint {
 }
 
 export interface Effect {
+  /**
+   * Every type the schema's `EffectType` has. `LAYER_BLUR` is the plugin API's name for
+   * `FOREGROUND_BLUR`, and `GRAIN` its `TEXTURE`.
+   */
   type:
     | 'DROP_SHADOW'
     | 'INNER_SHADOW'
@@ -162,6 +166,11 @@ export interface Effect {
     | 'BACKGROUND_BLUR'
     | 'FOREGROUND_BLUR'
     | 'GLASS'
+    | 'NOISE'
+    | 'GRAIN'
+    | 'REPEAT'
+    | 'SYMMETRY'
+    | 'CUSTOM'
   color?: Color
   offset?: Vector
   radius?: number
@@ -188,6 +197,20 @@ export interface Effect {
   endOffset?: Vector
   /** A progressive blur's radius at its start; `radius` is the radius at its end. */
   startRadius?: number
+  /** A noise effect's `MONOTONE`, `DUOTONE`, or `MULTITONE`. */
+  noiseType?: 'MONOTONE' | 'DUOTONE' | 'MULTITONE'
+  /** A noise or grain effect's grain size, the same on both axes as Figma writes it. */
+  noiseSize?: Vector
+  /** A noise effect's coverage, 0 to 1. */
+  density?: number
+  /** A duotone noise effect's second colour. */
+  secondaryColor?: Color
+  /** A multitone noise effect's opacity. */
+  opacity?: number
+  /** Whether a grain effect keeps the roughened layer inside its outline. */
+  clipToShape?: boolean
+  /** Picks a noise or grain effect's pattern; Figma leaves it out for the default pattern. */
+  seed?: number
   colorVar?: VariableDataEntry
   radiusVar?: VariableDataEntry
   spreadVar?: VariableDataEntry

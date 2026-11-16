@@ -10,7 +10,7 @@ import type {
   PropertyListItemFor,
   PropertyListItemSlotProps,
   PropertyListKey,
-  PropertyListPatchFor
+  PropertyListChange
 } from './types'
 
 const {
@@ -30,7 +30,7 @@ const {
 }>()
 const emit = defineEmits<{
   update: [index: number, item: PropertyListItemFor<K>]
-  patch: [index: number, changes: PropertyListPatchFor<K>]
+  patch: [index: number, changes: PropertyListChange<K>]
   remove: [index: number]
   toggleVisibility: [index: number]
 }>()

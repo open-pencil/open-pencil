@@ -136,15 +136,18 @@ export function shapeText(
     const outlined = glyphs.every((glyph) => glyph.commands)
     return {
       glyphs: outlined ? glyphs : glyphs.map((glyph) => ({ ...glyph, commands: null })),
-      baselines: metrics.map((line) => ({
-        firstCharacter: line.startIndex,
-        endCharacter: Math.min(line.endIncludingNewline, text.length),
-        position: { x: line.left, y: line.baseline + offsetY },
-        width: line.width,
-        lineY: line.baseline - line.ascent + offsetY,
-        lineHeight: line.height,
-        lineAscent: line.ascent
-      })),
+      // Figma saves no baseline for the empty line after a closing line break.
+      baselines: metrics
+        .filter((line, index) => index === 0 || line.startIndex < text.length)
+        .map((line) => ({
+          firstCharacter: line.startIndex,
+          endCharacter: Math.min(line.endIncludingNewline, text.length),
+          position: { x: line.left, y: line.baseline + offsetY },
+          width: line.width,
+          lineY: line.baseline - line.ascent + offsetY,
+          lineHeight: line.height,
+          lineAscent: line.ascent
+        })),
       logicalIndexToCharacterOffsetMap: completeCharacterOffsets(characterOffsets)
     }
   } finally {

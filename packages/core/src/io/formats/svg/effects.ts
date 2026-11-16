@@ -7,7 +7,9 @@ import Matrix from '@open-pencil/scene-graph/matrix'
 import { subtreeRenderBounds } from '#core/geometry/render-bounds'
 import { shadowSpread } from '#core/geometry/shadows'
 
-import { formatColor, nextDefId, type SVGExportContext } from './defs'
+import { nextDefId, type SVGExportContext } from './defs'
+import { FilterBuilder, HARD_ALPHA } from './filter'
+import { noiseFilter, textureFilter } from './grain'
 import { svg, svgElement, type SVGNode } from './node'
 import { boxOutlinePath, nodeOutlinePath, round } from './paths'
 import { fillOutlines } from './regions'
@@ -49,7 +51,9 @@ const SVG_EFFECTS: ReadonlySet<string> = new Set<Effect['type']>([
   'INNER_SHADOW',
   'LAYER_BLUR',
   'FOREGROUND_BLUR',
-  'BACKGROUND_BLUR'
+  'BACKGROUND_BLUR',
+  'NOISE',
+  'TEXTURE'
 ])
 
 /** What a layer's effects add to its SVG: a filter on its content, and a backdrop blur under it. */
@@ -150,73 +154,6 @@ function feBlendMode(effect: Effect): string {
   return css && !css.startsWith('plus-') ? css : 'normal'
 }
 
-/** Every pixel the layer covers at full strength, which Figma casts its shadows from. */
-const HARD_ALPHA = 'hardAlpha'
-
-class FilterBuilder {
-  readonly primitives: SVGNode[] = []
-  private count = 0
-
-  constructor(
-    private readonly id: string,
-    private readonly ctx: SVGExportContext
-  ) {}
-
-  /** A new result name, unique in this filter. */
-  result(name: string): string {
-    this.count += 1
-    return `${this.id}_${name}${this.count}`
-  }
-
-  push(tag: string, attrs: Record<string, string | number | undefined>): void {
-    this.primitives.push(svg(tag, attrs))
-  }
-
-  /**
-   * A shadow's alpha: the layer's grown by `spread` (shrunk when negative), moved by the offset,
-   * and blurred. Returns its result name.
-   */
-  shadowAlpha(effect: Effect, spread: number): string {
-    let input = HARD_ALPHA
-    if (spread !== 0) {
-      const morphed = this.result('spread')
-      this.push('feMorphology', {
-        in: HARD_ALPHA,
-        operator: spread > 0 ? 'dilate' : 'erode',
-        radius: round(Math.abs(spread)),
-        result: morphed
-      })
-      input = morphed
-    }
-    const offset = this.result('offset')
-    this.push('feOffset', {
-      in: input,
-      dx: round(effect.offset.x),
-      dy: round(effect.offset.y),
-      result: offset
-    })
-    if (effect.radius <= 0) return offset
-    const blurred = this.result('blur')
-    this.push('feGaussianBlur', {
-      in: offset,
-      stdDeviation: round(effect.radius / 2),
-      result: blurred
-    })
-    return blurred
-  }
-
-  /** The shadow's colour inside `alpha`, under the name `result`. */
-  shadowColor(effect: Effect, alpha: string, result: string): void {
-    const color = this.result('color')
-    this.push('feFlood', {
-      'flood-color': formatColor(effect.color, 1, this.ctx.colorSpace),
-      'flood-opacity': round(effect.color.a),
-      result: color
-    })
-    this.push('feComposite', { in: color, in2: alpha, operator: 'in', result })
-  }
-}
-
 /** The filter for a layer's shadows and layer blurs, `null` when it has none to draw. */
 function effectFilter(node: SceneNode, effects: Effect[], ctx: SVGExportContext): string | null {
   const drawn = effects.filter((e) => e.type !== 'BACKGROUND_BLUR')
@@ -272,6 +209,12 @@ function effectFilter(node: SceneNode, effects: Effect[], ctx: SVGExportContext)
     shape = blended
   }
 
+  // Texture roughens the layer and noise grains it, after its shadows and before any blur.
+  for (const effect of drawn)
+    if (effect.type === 'TEXTURE') shape = textureFilter(filter, effect, shape)
+  for (const effect of drawn)
+    if (effect.type === 'NOISE') shape = noiseFilter(filter, effect, shape)
+
   // A progressive blur blurs by its end radius, as in Figma's SVG; the region holds its widest.
   for (const effect of drawn) {
     if (effect.type !== 'LAYER_BLUR' && effect.type !== 'FOREGROUND_BLUR') continue
@@ -296,8 +239,18 @@ function filterRegion(
   ctx: SVGExportContext
 ): Record<string, string | number> {
   const attrs: Record<string, string | number> = { id, 'color-interpolation-filters': 'sRGB' }
-  const region = subtreeRenderBounds(ctx.graph, node, Matrix.identity(), { reach: 'figma' })
-  if (!region) return attrs
+  const drawn = subtreeRenderBounds(ctx.graph, node, Matrix.identity(), { reach: 'figma' })
+  if (!drawn) return attrs
+  // A texture moves the layer's edges by up to its radius, so Figma's region holds that much more.
+  const roughened = maxOf(
+    node.effects.map((e) => (e.visible && e.type === 'TEXTURE' ? e.radius : 0)).concat(0)
+  )
+  const region = {
+    minX: Math.min(drawn.minX, -roughened),
+    minY: Math.min(drawn.minY, -roughened),
+    maxX: Math.max(drawn.maxX, node.width + roughened),
+    maxY: Math.max(drawn.maxY, node.height + roughened)
+  }
   return {
     id,
     x: round(region.minX),

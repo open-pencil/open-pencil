@@ -100,6 +100,12 @@ export interface AgentConnection {
   untilStopped<T>(request: Promise<T>): Promise<T>
   /** As `untilStopped`, and the request must also answer within the deadline. */
   bounded<T>(request: Promise<T>, timeoutMs?: number): Promise<T>
+  /**
+   * A request of a later turn within the deadline: it ends when the agent exits or that turn's
+   * `signal` stops it. The start's `signal` stops only the start, so a turn stopped earlier does
+   * not reject the requests of the turns after it.
+   */
+  forTurn<T>(request: Promise<T>, signal?: AbortSignal, timeoutMs?: number): Promise<T>
   /** Stops the agent. */
   close(): Promise<void>
 }
@@ -186,6 +192,19 @@ export async function connectAgent(
     untilStopped: (request) => Promise.race([request, exited, stoppedByUser]),
     bounded: (request, within = timeoutMs) =>
       withinDeadline(request, within, timedOut, exited, stoppedByUser),
+    async forTurn(request, turnSignal, within = timeoutMs) {
+      const stopped = createDeferred<never>()
+      stopped.promise.catch(() => undefined)
+      // The start's stop message names the start; a later turn's stop is just a stop.
+      const onTurnAbort = () => stopped.reject(new Error('The request was stopped.'))
+      if (turnSignal?.aborted) onTurnAbort()
+      else turnSignal?.addEventListener('abort', onTurnAbort, { once: true })
+      try {
+        return await withinDeadline(request, within, timedOut, exited, stopped.promise)
+      } finally {
+        turnSignal?.removeEventListener('abort', onTurnAbort)
+      }
+    },
     async close() {
       closing = true
       await child.kill().catch(() => undefined)

@@ -8,7 +8,8 @@ import {
   rememberedAgentOffer,
   type RememberedAgentOffer
 } from '@/app/ai/agents/acp/offers'
-import { readAgentOffer, type AgentOffer } from '@/app/ai/agents/acp/oneoff'
+import { readAgentEfforts, readAgentOffer, type AgentOffer } from '@/app/ai/agents/acp/oneoff'
+import type { AgentEfforts } from '@/app/ai/agents/acp/options'
 import type { AIModelProfileDraft } from '@/app/ai/models'
 import { canRunHostProcesses } from '@/app/tauri/capabilities'
 
@@ -20,6 +21,8 @@ export interface AgentModelSource {
   /** Agents run as processes of the desktop app only. */
   available: () => boolean
   read: (agent: ACPAgentDef) => Promise<AgentOffer>
+  /** The efforts one model offers, read when a draft chooses a model whose efforts are unknown. */
+  readEfforts?: (agent: ACPAgentDef, model: string) => Promise<AgentEfforts>
   /** What the agent offered last time, shown at once; left out, the agent is always asked. */
   remembered?: (agent: ACPAgentDef) => Promise<RememberedAgentOffer | null>
   remember?: (agent: ACPAgentDef, offer: AgentOffer) => Promise<void>
@@ -28,31 +31,42 @@ export interface AgentModelSource {
 export const HOST_AGENT_MODELS: AgentModelSource = {
   available: canRunHostProcesses,
   read: readAgentOffer,
+  readEfforts: (agent, model) => readAgentEfforts(agent, model),
   remembered: rememberedAgentOffer,
   remember: rememberAgentOffer
 }
 
 /**
- * The models an ACP agent offers while a draft uses it, and whether it takes images. What the
- * agent offered last time shows at once; the agent is started to ask only when nothing recent is
- * remembered, or on a retry. Reading fails quietly: the draft keeps the model it names, and the
- * person can retry or type a model ID.
+ * The models an ACP agent offers while a draft uses it, whether it takes images, and the efforts
+ * of the draft's model. What the agent offered last time shows at once; the agent is started to
+ * ask only when nothing recent is remembered, on a retry, or for a model whose efforts were never
+ * read. Reading fails quietly: the draft keeps the model and effort it names, and the person can
+ * retry or type a model ID. A typed model's efforts are not read, so it keeps the agent's effort.
  */
 export function useAgentModelSelection(
   draft: AIModelProfileDraft,
   source: AgentModelSource = HOST_AGENT_MODELS
 ) {
   const agent = computed(() => acpAgentFor(draft.providerID))
-  const models = ref<ModelOption[]>([])
+  const offer = ref<AgentOffer | null>(null)
+  const models = computed<ModelOption[]>(() => offer.value?.models ?? [])
   /** Null until the agent said, and while it is read again. */
-  const imageInput = ref<boolean | null>(null)
+  const imageInput = computed(() => offer.value?.imageInput ?? null)
   const state = ref<AgentModelSelectionState>('idle')
+  /** The model whose efforts the draft chooses from; null for a typed model ID. */
+  const effortModel = computed(() => (draft.customModelID.trim() ? null : draft.modelID))
+  /** The efforts of the draft's model; null until read, or for a typed model ID. */
+  const efforts = computed<AgentEfforts | null>(() => {
+    const model = effortModel.value
+    return model === null ? null : (offer.value?.efforts[model] ?? null)
+  })
+  const effortState = ref<AgentModelSelectionState>('idle')
   // An answer belongs to the read that asked for it, so a later change or close drops it.
   let reading = 0
+  let readingEfforts = 0
 
-  function show(offer: AgentOffer): void {
-    models.value = offer.models
-    imageInput.value = offer.imageInput
+  function show(next: AgentOffer): void {
+    offer.value = next
     state.value = 'ready'
   }
 
@@ -60,8 +74,7 @@ export function useAgentModelSelection(
   async function read(again = false): Promise<void> {
     const current = agent.value
     const request = ++reading
-    models.value = []
-    imageInput.value = null
+    offer.value = null
     if (!current || !source.available()) {
       state.value = 'idle'
       return
@@ -88,10 +101,42 @@ export function useAgentModelSelection(
     }
   }
 
+  /** Reads the efforts of the draft's model once the agent's offer shows it has not read them. */
+  async function readEfforts(): Promise<void> {
+    const current = agent.value
+    const model = effortModel.value
+    const shown = offer.value
+    const request = ++readingEfforts
+    if (!current || !shown || model === null || model in shown.efforts || !source.readEfforts) {
+      effortState.value = shown && model !== null && model in shown.efforts ? 'ready' : 'idle'
+      return
+    }
+    effortState.value = 'loading'
+    try {
+      const read = await source.readEfforts(current, model)
+      if (request !== readingEfforts || offer.value !== shown) return
+      const next = { ...shown, efforts: { ...shown.efforts, [model]: read } }
+      offer.value = next
+      effortState.value = 'ready'
+      void source.remember?.(current, next)
+    } catch {
+      if (request === readingEfforts) effortState.value = 'failed'
+    }
+  }
+
   watch(agent, () => read(), { immediate: true })
+  watch([offer, effortModel], () => readEfforts())
   tryOnScopeDispose(() => {
     reading++
+    readingEfforts++
   })
 
-  return { models, imageInput, state, retry: () => read(true) }
+  return {
+    models,
+    imageInput,
+    state,
+    efforts,
+    effortState,
+    retry: () => read(true)
+  }
 }

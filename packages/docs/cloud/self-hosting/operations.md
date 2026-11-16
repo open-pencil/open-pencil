@@ -7,7 +7,7 @@ description: Run operator commands, track errors, back up, upgrade, and harden a
 
 ## Operator commands
 
-Each runs from a repository checkout with the same `OPENPENCIL_CLOUD_CONFIG` and secrets as the server:
+Each runs from a repository checkout with the same `OPENPENCIL_CLOUD_CONFIG` and secrets as the server, except `admin`, which needs only `DATABASE_URL`:
 
 | Command                                           | Purpose                                         |
 | ------------------------------------------------- | ----------------------------------------------- |
@@ -15,7 +15,7 @@ Each runs from a repository checkout with the same `OPENPENCIL_CLOUD_CONFIG` and
 | `bun --filter @open-pencil/cloud cleanup`         | Run one cleanup pass outside the server worker  |
 | `bun --filter @open-pencil/cloud quota:reconcile` | Recompute stored usage from committed revisions |
 | `bun --filter @open-pencil/cloud entitlements`    | Inspect or set an account's entitlements        |
-| `bun --filter @open-pencil/cloud admin`           | Approve enrollment and grant deployment admin   |
+| `bun --filter @open-pencil/cloud admin`           | Approve and grant the first deployment admin    |
 
 ## Error tracking
 

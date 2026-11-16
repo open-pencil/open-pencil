@@ -3,6 +3,7 @@ import type { CloudServerConfig } from '#cloud/server/config'
 import type { CloudDatabase } from '#cloud/server/db'
 import { APIError } from 'better-auth'
 import type { Kysely } from 'kysely'
+import * as v from 'valibot'
 
 import { authRequestPath } from './endpoints'
 
@@ -79,6 +80,14 @@ export async function recordResponseAssurance(
  * Checks a second-step code through the two-step plugin's own endpoint, and records the session's
  * assurance when it passes.
  */
+/** Better Auth's words for a code that does not match. */
+const WRONG_CODES = new Set(['INVALID_CODE', 'INVALID_TWO_FACTOR_CODE', 'INVALID_BACKUP_CODE'])
+const authErrorSchema = v.pipe(
+  v.string(),
+  v.parseJson(),
+  v.object({ code: v.optional(v.string()) })
+)
+
 export async function verifySecondFactor(
   auth: { handler(request: Request): Promise<Response> },
   config: CloudServerConfig,
@@ -100,7 +109,14 @@ export async function verifySecondFactor(
       body: JSON.stringify({ code, trustDevice: false })
     })
   )
-  if (!response.ok) throw APIError.fromStatus(response.status as 401)
+  if (!response.ok) {
+    // A wrong code is the person's mistake, not a session to renew: say so, as a 400.
+    const answer = v.safeParse(authErrorSchema, await response.clone().text())
+    if (answer.success && WRONG_CODES.has(answer.output.code ?? '')) {
+      throw new APIError('BAD_REQUEST', { code: 'INVALID_CODE' })
+    }
+    throw APIError.fromStatus(response.status as 401)
+  }
   await recordResponseAssurance(response, method, database, assurance)
   return response
 }

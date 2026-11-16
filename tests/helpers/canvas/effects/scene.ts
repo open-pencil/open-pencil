@@ -286,3 +286,133 @@ export function createShadowSilhouetteScene(graph: SceneGraph, pageId: string): 
     fills: [green]
   })
 }
+
+/** A grain effect at Figma's defaults with `params`, built as the scene graph holds it. */
+function grain(type: 'NOISE' | 'TEXTURE', props: Partial<Effect>): Effect {
+  return {
+    type,
+    radius: 4,
+    spread: 0,
+    offset: { x: 0, y: 0 },
+    color: { r: 0, g: 0, b: 0, a: 1 },
+    visible: true,
+    ...props
+  }
+}
+
+/**
+ * Noise and texture effects on the canvas, in two rows: monotone, duotone, and multitone noise
+ * and a larger monotone grain over a light fill, then textures over stripes, unclipped and clipped
+ * to the shape.
+ */
+export function createGrainEffectsScene(graph: SceneGraph, pageId: string): void {
+  const light = solid(0.92, 0.93, 0.96)
+  const noises: Partial<Effect>[] = [
+    { noise: { noiseType: 'MONOTONE', noiseSize: { x: 1, y: 1 }, density: 0.6 } },
+    {
+      color: { r: 0.9, g: 0.2, b: 0.3, a: 1 },
+      noise: {
+        noiseType: 'DUOTONE',
+        noiseSize: { x: 1, y: 1 },
+        density: 0.8,
+        secondaryColor: { r: 0.2, g: 0.3, b: 0.9, a: 1 }
+      }
+    },
+    {
+      noise: { noiseType: 'MULTITONE', noiseSize: { x: 1, y: 1 }, density: 1, opacity: 0.8 }
+    },
+    { noise: { noiseType: 'MONOTONE', noiseSize: { x: 4, y: 4 }, density: 1 } }
+  ]
+  noises.forEach((props, index) => {
+    graph.createNode('RECTANGLE', pageId, {
+      name: `Noise ${index + 1}`,
+      x: 80 + index * 180,
+      y: 80,
+      width: 140,
+      height: 110,
+      cornerRadius: 16,
+      fills: [light],
+      effects: [grain('NOISE', props)]
+    })
+  })
+  for (const [index, clipToShape] of [false, true].entries()) {
+    const x = 80 + index * 360
+    addStripes(graph, pageId, `Under texture ${index + 1}`, x, 240)
+    graph.createNode('RECTANGLE', pageId, {
+      name: clipToShape ? 'Texture clipped' : 'Texture',
+      x: x + 20,
+      y: 260,
+      width: 80,
+      height: 80,
+      cornerRadius: 12,
+      fills: [solid(0.1, 0.12, 0.2)],
+      effects: [
+        grain('TEXTURE', { radius: 6, texture: { noiseSize: { x: 3, y: 3 }, clipToShape } })
+      ]
+    })
+  }
+  addCoverageNoises(graph, pageId)
+}
+
+/**
+ * Noise over what layers draw, as Figma grains it: a 30% fill at 30% over stripes, a stroke
+ * outside the fill, nothing at all on a layer with no fill, and a frame's children, not its gaps.
+ */
+function addCoverageNoises(graph: SceneGraph, pageId: string): void {
+  const red = grain('NOISE', {
+    color: { r: 1, g: 0, b: 0, a: 1 },
+    noise: { noiseType: 'MONOTONE', noiseSize: { x: 1, y: 1 }, density: 1 }
+  })
+  addStripes(graph, pageId, 'Under translucent noise', 80, 420)
+  graph.createNode('RECTANGLE', pageId, {
+    name: 'Translucent noise',
+    x: 90,
+    y: 440,
+    width: 100,
+    height: 80,
+    fills: [solid(1, 1, 1, 0.3)],
+    effects: [red]
+  })
+  graph.createNode('RECTANGLE', pageId, {
+    name: 'Stroked noise',
+    x: 300,
+    y: 450,
+    width: 80,
+    height: 60,
+    fills: [solid(1, 1, 1)],
+    strokes: [{ ...solid(0.2, 0.3, 0.9), weight: 12, align: 'OUTSIDE' }],
+    strokeWeight: 12,
+    strokeAlign: 'OUTSIDE',
+    effects: [red]
+  })
+  addStripes(graph, pageId, 'Under unfilled noise', 460, 420)
+  graph.createNode('RECTANGLE', pageId, {
+    name: 'Unfilled noise',
+    x: 470,
+    y: 440,
+    width: 100,
+    height: 80,
+    fills: [],
+    effects: [red]
+  })
+  const frame = graph.createNode('FRAME', pageId, {
+    name: 'Frame noise',
+    x: 640,
+    y: 420,
+    width: 160,
+    height: 120,
+    fills: [],
+    clipsContent: false,
+    effects: [red]
+  })
+  for (const x of [0, 100]) {
+    graph.createNode('RECTANGLE', frame.id, {
+      name: `Frame noise child ${x}`,
+      x,
+      y: 0,
+      width: 60,
+      height: 120,
+      fills: [solid(1, 1, 1)]
+    })
+  }
+}

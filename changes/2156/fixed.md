@@ -1,0 +1,2 @@
+- Text that ends with a line break saves no baseline for the empty line after it, as Figma saves it, and Home and End work on that line (#2156).
+- HTML and Tailwind export write a letter spacing or line height bound to a variable as its token instead of its value (#2156).

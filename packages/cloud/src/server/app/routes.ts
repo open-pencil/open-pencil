@@ -39,6 +39,7 @@ export function createAppRouters(
       enrollment: app.enrollment,
       users: createAdminUserService(database, services.auth, {
         requireMFA: config.deploymentAdminMFARequired,
+        approval: config.enrollmentMode === 'approval',
         pictures: app.pictures,
         notify: services.transactionalEmail
           ? createAuthenticationEmailService(services.transactionalEmail, config.publicURL)
