@@ -2,7 +2,11 @@ import { isEqual, pick } from 'es-toolkit'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
-import { autoLayoutSizingFields, layoutSizingUpdates } from '@open-pencil/scene-graph/layout'
+import {
+  autoLayoutSizingFields,
+  includedStrokeWeights,
+  layoutSizingUpdates
+} from '@open-pencil/scene-graph/layout'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import type { DesignElement } from '../types'
@@ -194,13 +198,6 @@ function placeChildren(graph: SceneGraph, node: SceneNode, own: CapturedBox, box
 
 type PaddingField = 'paddingTop' | 'paddingRight' | 'paddingBottom' | 'paddingLeft'
 
-/** The stroke a frame lays its children out inside of on one side, as CSS borders take room. */
-function includedStroke(node: SceneNode, side: 'Top' | 'Right' | 'Bottom' | 'Left'): number {
-  const stroke = node.strokes.find((paint) => paint.visible)
-  if (!node.strokesIncludedInLayout || stroke?.align !== 'INSIDE') return 0
-  return node.independentStrokeWeights ? node[`border${side}Weight`] : stroke.weight
-}
-
 /**
  * The stacks each import has spaced as the page did, so each is spaced once and placed after.
  * Kept per import by its captured boxes.
@@ -240,10 +237,11 @@ function respace(graph: SceneGraph, node: SceneNode, own: CapturedBox, boxes: Ca
   const fields = ['itemSpacing', start, end] as const
   const before = pick(node, fields)
   node.itemSpacing = gap
-  node[start] = first[0] - includedStroke(node, horizontal ? 'Left' : 'Top')
+  const stroke = includedStrokeWeights(node)
+  node[start] = first[0] - (horizontal ? stroke.left : stroke.top)
   if (node.primaryAxisSizing === 'HUG') {
     const size = horizontal ? own.box.width : own.box.height
-    node[end] = size - last[1] - includedStroke(node, horizontal ? 'Right' : 'Bottom')
+    node[end] = size - last[1] - (horizontal ? stroke.right : stroke.bottom)
   }
   return !isEqual(pick(node, fields), before)
 }
