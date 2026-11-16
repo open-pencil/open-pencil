@@ -40,7 +40,7 @@
   "invitationSubject": "Ora puoi provare OpenPencil Cloud",
   "invitationHeading": "Cloud è aperto",
   "invitationPreview": "OpenPencil Cloud è aperto e ora puoi accedere.",
-  "invitationThanks": "Tempo fa hai chiesto di provare OpenPencil Cloud. Grazie per la curiosità di chiederlo, e per aver aspettato. Lo stavamo ancora testando e non eravamo pronti a far entrare nessuno.",
+  "invitationThanks": "Tempo fa hai chiesto di provare OpenPencil Cloud. Grazie per averlo chiesto e per aver aspettato. Lo stavamo ancora testando e non eravamo pronti a far entrare nessuno.",
   "invitationBeta": "Ora è aperto e puoi accedere. È ancora una beta: alcune funzioni sono disattivate e qualcosa si romperà. Quando succede, rispondi a questa email e dimmelo, oppure {link} se ti trovi a tuo agio. Leggo entrambi.",
   "invitationIssueLink": "apri una issue su GitHub",
   "invitationDesktop": "Per usare Cloud nell’app desktop ti serve la versione beta, dalla {link}.",
