@@ -8,7 +8,12 @@ import {
   sceneNodesToTailwindJSXWithLayers
 } from '#dom-css/export/tailwind-jsx'
 
-import { SceneGraph, type Fill, type TextParagraphStyle } from '@open-pencil/scene-graph'
+import {
+  SceneGraph,
+  type Fill,
+  type SceneNode,
+  type TextParagraphStyle
+} from '@open-pencil/scene-graph'
 
 const RED: Fill = {
   type: 'SOLID',
@@ -241,12 +246,12 @@ describe('letter-spaced text export', () => {
 
   test('resolves percent spacing at the font size its runs set', () => {
     // Each character is 32px and spaced 10% of that, 3.2px, which `em` on the box would not give.
-    const props = {
+    const props: Partial<SceneNode> = {
       text: 'Hold',
       letterSpacing: { value: 10, unit: 'PERCENT' },
       textAutoResize: 'HEIGHT',
       styleRuns: [{ start: 0, length: 4, style: { fontSize: 32 } }]
-    } as const
+    }
     expect(style(props)).toMatchObject({
       width: 'calc(200px + 3.2px)',
       'margin-right': '-3.2px'
