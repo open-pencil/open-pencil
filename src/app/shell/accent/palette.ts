@@ -81,6 +81,12 @@ const LIGHTNESS_SHIFTS = Array.from({ length: 61 }, (_, index) =>
 /** The interface's dark text, `--color-inverted` in the dark theme and `--color-surface` in light. */
 const INK = parseColor('#1F2328')
 
+/** The panel that primary text such as a link sits on, `--color-panel` in each theme. */
+const PANEL: Readonly<Record<AccentTheme, Color>> = {
+  dark: parseColor('#2A2A2A'),
+  light: parseColor('#FFFFFF')
+}
+
 export interface AccentPalette {
   /** Hex values for each recolored CSS custom property. */
   tokens: Record<AccentToken, string>
@@ -142,11 +148,16 @@ function surfaces(base: Color, theme: AccentTheme, shift: number) {
   }
 }
 
-/** How readable a family's text is: the lower of its accent and primary text contrasts. */
-function textContrast({ accent, selected, primary }: ReturnType<typeof surfaces>): number {
-  const accentSurfaces = [accent, selected]
+/** How readable a family's fills are: the text on its accent and on a selected row. */
+function fillContrast({ accent, selected }: ReturnType<typeof surfaces>): number {
+  const fills = [accent, selected]
+  return worstContrast(accentForeground(fills), fills)
+}
+
+/** How readable primary is, both as text on the panel and as a fill under its own text. */
+function primaryContrast(primary: Color, theme: AccentTheme): number {
   return Math.min(
-    worstContrast(accentForeground(accentSurfaces), accentSurfaces),
+    contrastRatio(primary, PANEL[theme]),
     worstContrast(accentForeground([primary]), [primary])
   )
 }
@@ -154,14 +165,18 @@ function textContrast({ accent, selected, primary }: ReturnType<typeof surfaces>
 /**
  * The accent family for `theme`, derived from one base color. When its text would fall short of
  * {@link ACCENT_TEXT_CONTRAST}, the family moves by the smallest lightness shift that reaches it.
+ * Primary moves on its own, since it is also text on the panel: a light accent's fills can stay
+ * light while its links darken enough to read on a white panel.
  */
 export function deriveAccentPalette(base: Color, theme: AccentTheme): AccentPalette {
   const families = LIGHTNESS_SHIFTS.map((shift) => surfaces(base, theme, shift))
-  const family =
-    families.find((candidate) => textContrast(candidate) >= ACCENT_TEXT_CONTRAST) ??
-    maxBy(families, textContrast) ??
+  const readable = (contrast: (candidate: ReturnType<typeof surfaces>) => number) =>
+    families.find((candidate) => contrast(candidate) >= ACCENT_TEXT_CONTRAST) ??
+    maxBy(families, contrast) ??
     surfaces(base, theme, 0)
-  const { relate, reference, accent, selected, primary } = family
+  const family = readable(fillContrast)
+  const { primary } = readable((candidate) => primaryContrast(candidate.primary, theme))
+  const { relate, reference, accent, selected } = family
   const foreground = accentForeground([accent, selected])
   return {
     tokens: {
