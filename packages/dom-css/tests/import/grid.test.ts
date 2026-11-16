@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { designDocumentToSceneGraph } from '#dom-css/import/scene-graph'
+import { designDocumentToLayers, designDocumentToSceneGraph } from '#dom-css/import/scene-graph'
 import type { DesignElement, DesignStyleDeclaration } from '#dom-css/types'
 
 function box(computedStyle: DesignStyleDeclaration, children: DesignElement[] = []): DesignElement {
@@ -147,5 +147,58 @@ describe('grid import', () => {
 
     expect(gridLayer.primaryAxisAlign).toBe('CENTER')
     expect(itemLayers[0].layoutAlignSelf).toBe('CENTER')
+  })
+  it('lays a grid of several columns out as a grid layer, each item in the area it was laid out in', () => {
+    const at = (x: number, y: number, width: number, height: number) => ({
+      layout: { box: { x, y, width, height } }
+    })
+    const cellItem = (style: DesignStyleDeclaration = {}) =>
+      box({ display: 'block', 'background-color': 'rgb(200, 200, 200)', ...style })
+    const grid: DesignElement = {
+      ...box(
+        {
+          display: 'grid',
+          width: '320px',
+          'grid-template-columns': '100px 100px 100px',
+          'grid-template-rows': '40px 20px',
+          'column-gap': '10px',
+          'row-gap': '8px'
+        },
+        [
+          { ...cellItem(), ...at(0, 0, 100, 40) },
+          { ...cellItem({ width: '60px', height: '20px' }), ...at(110, 0, 60, 20) },
+          { ...cellItem(), ...at(220, 0, 100, 40) },
+          { ...cellItem(), ...at(0, 48, 210, 20) }
+        ]
+      ),
+      ...at(0, 0, 320, 68)
+    }
+    const { graph } = designDocumentToLayers({ type: 'document', children: [grid] })
+    const [gridLayer] = graph.getChildren(graph.getPages()[0].id)
+    const items = graph.getChildren(gridLayer.id)
+
+    expect(gridLayer).toMatchObject({ layoutMode: 'GRID', gridColumnGap: 10, gridRowGap: 8 })
+    expect(gridLayer.gridTemplateColumns.map((track) => track.value)).toEqual([100, 100, 100])
+    expect(gridLayer.gridTemplateRows.map((track) => track.value)).toEqual([40, 20])
+    expect(items.map((item) => item.gridPosition)).toEqual([
+      { column: 1, columnSpan: 1, row: 1, rowSpan: 1 },
+      { column: 2, columnSpan: 1, row: 1, rowSpan: 1 },
+      { column: 3, columnSpan: 1, row: 1, rowSpan: 1 },
+      { column: 1, columnSpan: 2, row: 2, rowSpan: 1 }
+    ])
+    // Stretched items fill their areas; one with a size of its own keeps it at the start.
+    expect([items[0].layoutGrow, items[0].layoutAlignSelf]).toEqual([1, 'STRETCH'])
+    expect([items[1].layoutGrow, items[1].layoutAlignSelf]).toEqual([0, 'AUTO'])
+  })
+
+  it('keeps a grid that centers its items in their areas a stack, left to placement', () => {
+    const { gridLayer } = layers(
+      box({ ...GRID, 'grid-template-columns': '200px 200px', 'justify-items': 'center' }, [
+        item(),
+        item()
+      ])
+    )
+
+    expect(gridLayer.layoutMode).toBe('VERTICAL')
   })
 })

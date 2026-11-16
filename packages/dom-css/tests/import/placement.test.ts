@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { designDocumentToLayers } from '#dom-css/import/scene-graph'
+import { designDocumentToLayers, placeLayersFromLayout } from '#dom-css/import/scene-graph'
 import type {
   DesignElement,
   DesignLayout,
@@ -65,5 +65,32 @@ describe('captured layout in the projection', () => {
     const { boxes } = designDocumentToLayers({ type: 'document', children: [plain] })
 
     expect(boxes.size).toBe(0)
+  })
+  it('places the items of a grid layer that land elsewhere than the page put them', () => {
+    const cellItem = (x: number) =>
+      element('div', { 'background-color': 'rgb(200, 200, 200)' }, { box: rect(x, 0, 100, 40) })
+    const grid = element(
+      'div',
+      {
+        display: 'grid',
+        width: '210px',
+        'grid-template-columns': '100px 100px',
+        'grid-template-rows': '40px',
+        'column-gap': '10px'
+      },
+      { box: rect(0, 0, 210, 40) },
+      [cellItem(0), cellItem(110)]
+    )
+    const { graph, boxes } = designDocumentToLayers({ type: 'document', children: [grid] })
+    const [gridLayer] = graph.getChildren(graph.getPages()[0].id)
+    expect(gridLayer.layoutMode).toBe('GRID')
+    // Not laid out, the items still sit at the grid's origin. Sizes are corrected first, then
+    // children placed, as the import repeats it.
+    for (let pass = 0; pass < 4; pass++) {
+      if (placeLayersFromLayout(graph, boxes) === 0) break
+    }
+
+    expect(gridLayer.layoutMode).toBe('NONE')
+    expect(graph.getChildren(gridLayer.id).map((item) => item.x)).toEqual([0, 110])
   })
 })
