@@ -4,8 +4,11 @@ import { ref } from 'vue'
 import { acpAgentFor, providerKind } from '@open-pencil/core/constants'
 import type { ACPAgentDef, ReasoningEffort } from '@open-pencil/core/constants'
 
-import { agentModelID } from '@/app/ai/models/agent'
-import { createLanguageModel, resolveLanguageModelID } from '@/app/ai/models/language-model'
+import {
+  createLanguageModel,
+  profileModelID,
+  resolveLanguageModelID
+} from '@/app/ai/models/language-model'
 import { resolveProviderModel } from '@/app/ai/models/reasoning/floors'
 import { modelConnection, resolveAIModelRole } from '@/app/ai/models/store'
 import type { AIModelConnection, AIModelRole, ResolvedAIModelRole } from '@/app/ai/models/types'
@@ -52,7 +55,7 @@ export async function modelConnectionCredentialStatus(
   connectionId: string
 ): Promise<CredentialStatus> {
   const connection = modelConnection(connectionId)
-  if (!connection || connection.providerID.startsWith('acp:')) return 'missing'
+  if (!connection || providerKind(connection.providerID) === 'acp') return 'missing'
   return appCredentialServices.manager.status(modelConnectionCredentialRef(connection))
 }
 
@@ -61,7 +64,7 @@ export const modelCredentialRevision = ref(0)
 
 export async function setModelConnectionAPIKey(connectionId: string, value: string): Promise<void> {
   const connection = modelConnection(connectionId)
-  if (!connection || connection.providerID.startsWith('acp:')) return
+  if (!connection || providerKind(connection.providerID) === 'acp') return
   const reference = modelConnectionCredentialRef(connection)
   const key = value.trim()
   try {
@@ -75,7 +78,7 @@ export async function setModelConnectionAPIKey(connectionId: string, value: stri
 export async function resolveModelConnectionAPIKey(connectionId: string): Promise<string | null> {
   await initializeCredentialMigration()
   const connection = modelConnection(connectionId)
-  if (!connection || connection.providerID.startsWith('acp:')) return null
+  if (!connection || providerKind(connection.providerID) === 'acp') return null
   return appCredentialServices.resolver.resolve(modelConnectionCredentialRef(connection))
 }
 
@@ -119,12 +122,12 @@ export async function createAIModelRuntime(role: AIModelRole): Promise<AIModelRu
   }
   const kind = providerKind(resolved.connection.providerID)
   if (kind === 'harness') {
-    return { kind, role: resolved, model: agentModelID(resolved.profile) }
+    return { kind, role: resolved, model: profileModelID(resolved.profile) }
   }
   if (kind === 'acp') {
     const agent = acpAgentFor(resolved.connection.providerID)
     if (!agent) throw new Error(`Unknown ACP agent: ${resolved.connection.providerID}`)
-    return { kind, role: resolved, agent, model: agentModelID(resolved.profile) }
+    return { kind, role: resolved, agent, model: profileModelID(resolved.profile) }
   }
 
   if (resolved.connection.providerID === OPENPENCIL_AI_PROVIDER) {

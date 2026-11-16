@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import type { LanguageModel } from 'ai'
 
-import { AI_PROVIDERS } from '@open-pencil/core/constants'
+import { AI_PROVIDERS, providerKind } from '@open-pencil/core/constants'
 import type { AIProviderID } from '@open-pencil/core/constants'
 
 import { resolveLanguageModelID } from '@/app/ai/models/language-model'
@@ -149,7 +149,7 @@ describe('model provider registry', () => {
   })
 
   test('registers every direct provider without handling agent runtimes as models', () => {
-    for (const provider of AI_PROVIDERS.filter((entry) => entry.id !== 'harness:pi')) {
+    for (const provider of AI_PROVIDERS.filter((entry) => providerKind(entry.id) === 'api')) {
       expect(modelProviderAdapter(provider.id).create).toBeFunction()
     }
     expect(() => modelProviderAdapter('harness:pi')).toThrow('Harness agents')

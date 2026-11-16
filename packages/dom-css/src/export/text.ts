@@ -1,12 +1,20 @@
+import { uniq } from 'es-toolkit/array'
 import { isEqual } from 'es-toolkit/predicate'
 
-import type { CharacterStyleOverride, HyperlinkTarget, SceneNode } from '@open-pencil/scene-graph'
+import type {
+  CharacterStyleOverride,
+  HyperlinkTarget,
+  SceneNode,
+  TextLength
+} from '@open-pencil/scene-graph'
 import {
   hasTextList,
   listNumberFormat,
   paragraphSpacingAt,
   paragraphStyleAt,
+  pixelLength,
   styleRunPieces,
+  textLengthPixels,
   textListItems,
   textParagraphRanges,
   type TextListItem,
@@ -90,6 +98,28 @@ function linkHref(link: HyperlinkTarget | null | undefined): string | null {
   }
 }
 
+/**
+ * The letter spacing every character of a text has, from its run or the layer, or `undefined`
+ * when characters differ or there are none: then no one spacing ends every line. Characters
+ * spaced and sized as the layer is give the layer's own spacing; otherwise each spacing is
+ * resolved at its characters' font size, as CSS resolves `em` where a run sets its own size.
+ */
+export function uniformLetterSpacing(node: SceneNode): TextLength | undefined {
+  const spacings = styleRunPieces(node.styleRuns, node.text.length).map(({ style }) => ({
+    length: style?.letterSpacing ?? node.letterSpacing,
+    fontSize: style?.fontSize ?? node.fontSize
+  }))
+  if (spacings.length === 0) return undefined
+  const asLayer = spacings.every(
+    ({ length, fontSize }) =>
+      isEqual(length, node.letterSpacing) &&
+      (length.unit === 'PIXELS' || fontSize === node.fontSize)
+  )
+  if (asLayer) return node.letterSpacing
+  const pixels = uniq(spacings.map(({ length, fontSize }) => textLengthPixels(length, fontSize)))
+  return pixels.length === 1 ? pixelLength(pixels[0]) : undefined
+}
+
 export function textCaseToCSS(value: SceneNode['textCase']): string | undefined {
   if (value === 'UPPER') return 'uppercase'
   if (value === 'LOWER') return 'lowercase'
@@ -152,6 +182,25 @@ function characterCSS(style: CharacterStyle, decorated: boolean): DesignStyleDec
   }
 }
 
+/**
+ * What a run's span sets beyond the text's own style. A percent letter spacing is written again
+ * where the span changes the font size: CSS inherits spacing already resolved at the text's size,
+ * while the canvas spaces each run by its own size.
+ */
+function spanCSS(
+  style: CharacterStyle,
+  decorated: boolean,
+  base: DesignStyleDeclaration
+): DesignStyleDeclaration {
+  const own = characterCSS(style, decorated)
+  const css = differing(own, base)
+  const { unit, value } = style.letterSpacing
+  if (unit === 'PERCENT' && value !== 0 && 'font-size' in css) {
+    css['letter-spacing'] = own['letter-spacing']
+  }
+  return css
+}
+
 /** What `css` sets differently from `base`. */
 function differing(
   css: DesignStyleDeclaration,
@@ -212,7 +261,7 @@ function inlineContent(projection: TextProjection, start: number, end: number): 
     const from = Math.max(start, range.start)
     const to = Math.min(end, range.end)
     if (to <= from) continue
-    const css = differing(characterCSS(range.style, !decorated), base)
+    const css = spanCSS(range.style, !decorated, base)
     const text = node.text.slice(from, to)
     const previous = pieces.at(-1)
     if (previous && previous.href === range.href && isEqual(previous.css, css)) {

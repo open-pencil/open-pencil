@@ -175,6 +175,28 @@ describe('the HTML engine runtime', () => {
     )
   })
 
+  test('gives a cell of a collapsed table half of each border it shares, as a browser does', async () => {
+    const document = await styled(
+      `<table id="t" style="border-collapse:collapse;border-spacing:0">
+        <tr id="r"><td id="a" style="border:2px solid;padding:0;width:40px;height:20px"></td>
+        <td id="b" style="border:2px solid;padding:0;width:40px;height:20px"></td></tr></table>`
+    )
+    const box = (id: string) => elementById(document, id).layout?.box
+    const table = box('t')
+    const [a, b] = [box('a'), box('b')]
+
+    // The table holds the outer half of the outer borders, each cell the inner half of its own.
+    expect(a).toMatchObject({
+      x: (table?.x ?? 0) + 1,
+      y: (table?.y ?? 0) + 1,
+      width: 42,
+      height: 22
+    })
+    // Cells sharing a border touch, its line centered on their edge.
+    expect(b?.x).toBe((a?.x ?? 0) + 42)
+    expect(box('r')).toMatchObject({ x: a?.x, width: 84, height: 22 })
+  })
+
   test('borders a table and its cells by its border attribute, as a browser does', async () => {
     const document = await styled('<table id="t" border="2"><tr><td id="c">x</td></tr></table>')
     const border = (id: string) => {
@@ -184,6 +206,23 @@ describe('the HTML engine runtime', () => {
 
     expect(border('t')).toEqual(['2px', 'outset'])
     expect(border('c')).toEqual(['1px', 'inset'])
+  })
+
+  test("reports a caption's side, which puts it above or below its table", async () => {
+    const document = await styled(
+      '<table><caption id="c" style="caption-side:bottom">x</caption><tr><td>a</td></tr></table>'
+    )
+
+    expect(elementById(document, 'c').computedStyle?.['caption-side']).toBe('bottom')
+  })
+
+  test("reports a grid item's alignment across, by its own or its grid's", async () => {
+    const document = await styled(
+      '<div style="display:grid;justify-items:center"><div id="a"></div><div id="b" style="justify-self:end"></div></div>'
+    )
+
+    expect(elementById(document, 'a').computedStyle?.['justify-self']).toBe('auto')
+    expect(elementById(document, 'b').computedStyle?.['justify-self']).toBe('end')
   })
 
   test("pairs a shader layer's children past the still frame the serializer writes", async () => {
