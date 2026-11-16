@@ -3,8 +3,10 @@ export { parseCSSGridTracks } from './grid'
 export {
   parseCSSAlignItems,
   parseCSSAlignSelf,
+  parseCSSAspectRatio,
   parseCSSFlexDirection,
-  parseCSSJustifyContent
+  parseCSSJustifyContent,
+  type CSSAspectRatio
 } from './layout'
 export { parseCSSShadows } from './shadows'
 export {
@@ -24,4 +26,4 @@ export {
   type CSSTransformBox,
   type CSSTransformStyle
 } from './transform'
-export { parseCSSColor, parseCSSNumber, splitCSSValue } from './values'
+export { dimension, parseCSSColor, parseCSSNumber, splitCSSValue } from './values'

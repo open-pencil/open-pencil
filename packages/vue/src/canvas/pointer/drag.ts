@@ -10,7 +10,7 @@ import { cancelNodeEditDrag, handleBendHandleMove } from '#vue/canvas/vector-inp
 import { attachModifiers, handleConnectorDrawMove } from '#vue/shared/input/connector/draw'
 import { handleDrawMove } from '#vue/shared/input/draw'
 import { cancelMove, handleMoveMove } from '#vue/shared/input/move/drag'
-import { applyResize } from '#vue/shared/input/resize'
+import { applyResize } from '#vue/shared/input/resize/apply'
 import { applySelectionResize, cancelResizeDrag } from '#vue/shared/input/resize/selection'
 import { applyScale } from '#vue/shared/input/scale'
 import { applyStickyScale } from '#vue/shared/input/sticky/scale'

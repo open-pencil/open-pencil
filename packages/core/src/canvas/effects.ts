@@ -8,7 +8,7 @@ import { ResourceCache } from '#core/cache/resource'
 import { BLACK } from '#core/constants'
 
 import { isPlainRamp, makeProgressiveBlur, progressiveBlurRamp } from './blur/progressive'
-import type { SkiaRenderer } from './renderer'
+import type { SkiaRenderer } from './renderer/skia'
 
 /**
  * Filters a renderer keeps between frames, by their parameters: shadows and blurs reuse one across

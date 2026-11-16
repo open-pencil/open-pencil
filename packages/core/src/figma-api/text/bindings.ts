@@ -15,7 +15,7 @@ import { findSharedStyle, SHARED_TEXT_STYLE_FIELDS } from '@open-pencil/scene-gr
 
 import { parseFigma } from '#core/figma-api/validation'
 import { variableAlias, type FigmaVariableAlias } from '#core/figma-api/variables/values'
-import { styleRunsWithPatch } from '#core/text/character-style'
+import { styleRunsWithPatch } from '#core/text/character/style'
 import { faceForStyle } from '#core/text/font/names'
 
 import { getStyledTextSegments } from './style'

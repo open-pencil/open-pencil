@@ -6,6 +6,7 @@ import {
 } from '@open-pencil/scene-graph/resize'
 
 import type { EditorContext } from '#core/editor/types'
+import { screenCenterInWorld } from '#core/geometry/viewport'
 
 export interface FramePresetDimensions {
   name: string
@@ -56,8 +57,7 @@ function fixedSizePatch(
 export function createFramePresetActions(ctx: EditorContext, createShape: CreateShape) {
   function createFrameFromPreset(preset: FramePresetDimensions): string {
     const { width: viewportWidth, height: viewportHeight } = ctx.getViewportSize()
-    const centerX = (viewportWidth / 2 - ctx.state.panX) / ctx.state.zoom
-    const centerY = (viewportHeight / 2 - ctx.state.panY) / ctx.state.zoom
+    const { x: centerX, y: centerY } = screenCenterInWorld(ctx.state, viewportWidth, viewportHeight)
     const previousSelection = new Set(ctx.state.selectedIds)
     const id = ctx.undo.runBatch('Create frame', () => {
       const createdId = createShape(

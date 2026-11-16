@@ -1,7 +1,7 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { editedBlurRampLayout } from '#core/editor/handles/blur-ramp'
 import type { BlurRampEdit } from '#core/editor/types'
 import type { RotationPreview } from '#core/geometry'

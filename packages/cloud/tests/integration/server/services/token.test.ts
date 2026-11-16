@@ -7,7 +7,6 @@ import { responseJSON } from '#cloud-tests/helpers/response'
 import {
   servicesTokenClaimsSchema,
   servicesTokenSchema,
-  CLOUD_SERVICES_JWKS_PATH,
   CLOUD_SERVICES_TOKEN_AUDIENCE
 } from '#cloud/contract'
 import {
@@ -19,6 +18,7 @@ import {
   StaticEntitlementSource,
   type CloudActor
 } from '#cloud/server'
+import { testClient } from 'hono/testing'
 import {
   createLocalJWKSet,
   exportPKCS8,
@@ -93,13 +93,9 @@ async function testApp(options: {
     entitlementSource: new StaticEntitlementSource(options.entitlements ?? {}),
     servicesSigningKey: await loadServicesSigningKey(config)
   })
-  const requestToken = () =>
-    app.request('/api/services/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ workspaceId })
-    })
-  return { runtime, app, workspaceId, requestToken }
+  const client = testClient(app)
+  const requestToken = () => client.api.services.token.$post({ json: { workspaceId } })
+  return { runtime, client, workspaceId, requestToken }
 }
 
 describe('Service tokens', () => {
@@ -117,7 +113,7 @@ describe('Service tokens', () => {
       const { token, expiresAt } = await responseJSON(response, servicesTokenSchema)
 
       const keys = await responseJSON(
-        await context.app.request(CLOUD_SERVICES_JWKS_PATH),
+        await context.client['.well-known']['jwks.json'].$get(),
         jwksSchema
       )
       const { payload, protectedHeader } = await jwtVerify(token, createLocalJWKSet(keys), {
@@ -152,7 +148,7 @@ describe('Service tokens', () => {
     try {
       const { token } = await responseJSON(await unlimited.requestToken(), servicesTokenSchema)
       const keys = await responseJSON(
-        await unlimited.app.request(CLOUD_SERVICES_JWKS_PATH),
+        await unlimited.client['.well-known']['jwks.json'].$get(),
         jwksSchema
       )
       const { payload } = await jwtVerify(token, createLocalJWKSet(keys))
@@ -181,7 +177,7 @@ describe('Service tokens', () => {
       entitlements: { [CLOUD_FEATURE_KEYS.cloudServices]: true }
     })
     try {
-      expect((await context.app.request(CLOUD_SERVICES_JWKS_PATH)).status).toBe(404)
+      expect((await context.client['.well-known']['jwks.json'].$get()).status).toBe(404)
       expect((await context.requestToken()).status).toBe(404)
     } finally {
       await context.runtime.close()

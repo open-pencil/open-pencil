@@ -1,4 +1,4 @@
-import type { Vector } from './primitives'
+import type { Matrix as AffineTransform, Vector } from './primitives'
 
 export type Mat3 = number[]
 
@@ -112,5 +112,18 @@ const mapPoint = (m: Mat3, p: Vector): Vector => {
   return { x: arr[0], y: arr[1] }
 }
 
-const Matrix = { identity, multiply, translated, rotated, scaled, invert, mapPoints, mapPoint }
+/** A 2 × 3 affine transform, as Figma stores gradient and image transforms, as a 3 × 3 matrix. */
+const fromAffine = (t: AffineTransform): Mat3 => [t.m00, t.m01, t.m02, t.m10, t.m11, t.m12, 0, 0, 1]
+
+const Matrix = {
+  identity,
+  multiply,
+  translated,
+  rotated,
+  scaled,
+  invert,
+  mapPoints,
+  mapPoint,
+  fromAffine
+}
 export default Matrix

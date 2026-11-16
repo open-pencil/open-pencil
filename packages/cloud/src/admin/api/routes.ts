@@ -8,10 +8,10 @@ import type { AdminOperationsService } from '#cloud/admin/operations/service'
 import type { AdminReportService } from '#cloud/admin/reports/service'
 import {
   enrollmentStatusSchema,
-  parseDocumentTakedown,
-  parseEnrollmentReview,
-  parseUserMutation,
-  parseUserRoleMutation
+  documentTakedownSchema,
+  enrollmentReviewSchema,
+  userMutationSchema,
+  userRoleMutationSchema
 } from '#cloud/admin/schema'
 import type { AdminUserService } from '#cloud/admin/users/service'
 import {
@@ -37,20 +37,19 @@ import * as v from 'valibot'
 const countSchema = v.optional(v.pipe(v.string(), v.digits(), v.toNumber(), v.safeInteger()))
 /** What an admin list reads from its query string: a search, one of `filters`, and a page. */
 function listQuery<const Filter extends string>(filters: v.PicklistSchema<Filter[], undefined>) {
-  const schema = v.object({
+  return v.object({
     search: v.optional(v.string()),
     filter: v.optional(filters),
     limit: countSchema,
     offset: countSchema
   })
-  return (input: unknown) => v.parse(schema, input)
 }
-const parseEnrollmentQuery = listQuery(enrollmentStatusSchema)
-const parseUserQuery = listQuery(cloudAdminUserFilterSchema)
-const parseEmailQuery = listQuery(cloudAdminEmailFilterSchema)
-const parseAuditQuery = listQuery(cloudAdminAuditFilterSchema)
-const parseDocumentQuery = listQuery(cloudAdminDocumentFilterSchema)
-const parseReportQuery = listQuery(cloudAdminReportFilterSchema)
+const enrollmentQuerySchema = listQuery(enrollmentStatusSchema)
+const userQuerySchema = listQuery(cloudAdminUserFilterSchema)
+const emailQuerySchema = listQuery(cloudAdminEmailFilterSchema)
+const auditQuerySchema = listQuery(cloudAdminAuditFilterSchema)
+const documentQuerySchema = listQuery(cloudAdminDocumentFilterSchema)
+const reportQuerySchema = listQuery(cloudAdminReportFilterSchema)
 /** Accounts are named by UUID; anything else names no one, rather than failing the query. */
 const accountIdSchema = v.pipe(v.string(), v.uuid())
 
@@ -129,13 +128,13 @@ export function createCloudAdminRoutes(
       }
       throw error
     })
-    .get('/enrollments', validatedQuery(parseEnrollmentQuery), async (context) =>
+    .get('/enrollments', validatedQuery(enrollmentQuerySchema), async (context) =>
       context.json(await services.enrollment.list(context.req.valid('query')))
     )
     .post(
       '/enrollments/:id/approve',
       idParams,
-      validatedJSON(parseEnrollmentReview),
+      validatedJSON(enrollmentReviewSchema),
       async (context) =>
         context.json({
           enrollment: await services.enrollment.review(
@@ -149,7 +148,7 @@ export function createCloudAdminRoutes(
     .post(
       '/enrollments/:id/reject',
       idParams,
-      validatedJSON(parseEnrollmentReview),
+      validatedJSON(enrollmentReviewSchema),
       async (context) =>
         context.json({
           enrollment: await services.enrollment.review(
@@ -163,7 +162,7 @@ export function createCloudAdminRoutes(
     .post(
       '/enrollments/:id/revoke',
       idParams,
-      validatedJSON(parseEnrollmentReview),
+      validatedJSON(enrollmentReviewSchema),
       async (context) =>
         context.json({
           enrollment: await services.enrollment.review(
@@ -174,7 +173,7 @@ export function createCloudAdminRoutes(
           )
         })
     )
-    .get('/users', validatedQuery(parseUserQuery), async (context) =>
+    .get('/users', validatedQuery(userQuerySchema), async (context) =>
       context.json(await services.users.list(context.req.valid('query')))
     )
     .get('/users/:id', idParams, async (context) => {
@@ -182,17 +181,17 @@ export function createCloudAdminRoutes(
       if (!detail) return context.json({ error: { code: 'not_found' as const } }, 404)
       return context.json(detail)
     })
-    .post('/users/reset-two-step', validatedJSON(parseUserMutation), (context) =>
+    .post('/users/reset-two-step', validatedJSON(userMutationSchema), (context) =>
       accountMutation(context, context.req.valid('json').userId, (actorId, userId) =>
         services.users.resetTwoStep(actorId, userId)
       )
     )
-    .post('/users/remove-picture', validatedJSON(parseUserMutation), (context) =>
+    .post('/users/remove-picture', validatedJSON(userMutationSchema), (context) =>
       accountMutation(context, context.req.valid('json').userId, (actorId, userId) =>
         services.users.removePicture(actorId, userId)
       )
     )
-    .post('/users/ban', validatedJSON(parseUserMutation), async (context) => {
+    .post('/users/ban', validatedJSON(userMutationSchema), async (context) => {
       const input = context.req.valid('json')
       await services.users.ban(
         context.req.raw.headers,
@@ -202,12 +201,12 @@ export function createCloudAdminRoutes(
       )
       return context.json({ ok: true as const })
     })
-    .post('/users/unban', validatedJSON(parseUserMutation), async (context) => {
+    .post('/users/unban', validatedJSON(userMutationSchema), async (context) => {
       const input = context.req.valid('json')
       await services.users.unban(context.req.raw.headers, context.get('actor').userId, input.userId)
       return context.json({ ok: true as const })
     })
-    .post('/users/revoke-sessions', validatedJSON(parseUserMutation), async (context) => {
+    .post('/users/revoke-sessions', validatedJSON(userMutationSchema), async (context) => {
       const input = context.req.valid('json')
       await services.users.revokeSessions(
         context.req.raw.headers,
@@ -216,7 +215,7 @@ export function createCloudAdminRoutes(
       )
       return context.json({ ok: true as const })
     })
-    .post('/users/set-admin', validatedJSON(parseUserRoleMutation), async (context) => {
+    .post('/users/set-admin', validatedJSON(userRoleMutationSchema), async (context) => {
       const input = context.req.valid('json')
       await services.users.setAdmin(
         context.req.raw.headers,
@@ -226,18 +225,18 @@ export function createCloudAdminRoutes(
       )
       return context.json({ ok: true as const })
     })
-    .get('/email', validatedQuery(parseEmailQuery), async (context) =>
+    .get('/email', validatedQuery(emailQuerySchema), async (context) =>
       context.json(await services.email.list(context.req.valid('query')))
     )
     .post('/email/:id/regenerate', idParams, async (context) => {
       await services.email.regenerate(context.get('actor').userId, context.req.valid('param').id)
       return context.json({ ok: true as const })
     })
-    .get('/audit', validatedQuery(parseAuditQuery), async (context) =>
+    .get('/audit', validatedQuery(auditQuerySchema), async (context) =>
       context.json(await services.audit.list(context.req.valid('query')))
     )
     .get('/operations', async (context) => context.json(await services.operations.summary()))
-    .get('/reports', validatedQuery(parseReportQuery), async (context) =>
+    .get('/reports', validatedQuery(reportQuerySchema), async (context) =>
       context.json(await services.reports.list(context.req.valid('query')))
     )
     .post('/reports/:id/dismiss', idParams, async (context) => {
@@ -256,13 +255,13 @@ export function createCloudAdminRoutes(
       )
       return context.json({ ok: true as const })
     })
-    .get('/documents', validatedQuery(parseDocumentQuery), async (context) =>
+    .get('/documents', validatedQuery(documentQuerySchema), async (context) =>
       context.json(await services.documents.list(context.req.valid('query')))
     )
     .post(
       '/documents/:id/disable',
       idParams,
-      validatedJSON(parseDocumentTakedown),
+      validatedJSON(documentTakedownSchema),
       async (context) => {
         await services.documents.disable(
           context.get('actor').userId,

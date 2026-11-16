@@ -201,3 +201,4 @@ export function drawioToSceneGraph(file: DrawIOFile): SceneGraph {
 }
 
 export { sceneGraphToDrawIO } from './export'
+export type { DrawIOExportOptions } from './export'

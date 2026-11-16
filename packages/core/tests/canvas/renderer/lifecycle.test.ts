@@ -9,7 +9,7 @@ import { createImageFilterCache, createMaskFilterCache } from '#core/canvas/effe
 import { createGlassMapCache } from '#core/canvas/glass/map'
 import { createRendererImages } from '#core/canvas/images/state'
 import { IssueMarkerStage } from '#core/canvas/issues/stage'
-import type { NodeEditPaints } from '#core/canvas/node-edit-overlay'
+import type { NodeEditPaints } from '#core/canvas/overlays/node-edit'
 import { createDashEffectCache } from '#core/canvas/overlays/outline'
 import { NodePathCaches } from '#core/canvas/paths/cache'
 import { destroyRenderer } from '#core/canvas/renderer/lifecycle'

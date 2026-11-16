@@ -1,4 +1,4 @@
-import { DEFAULT_VIEWPORT_CHROME, type ViewportInsets } from '#core/editor/viewport'
+import { DEFAULT_VIEWPORT_CHROME, type ViewportInsets } from '#core/editor/viewport/actions'
 
 type ViewportSize = { width: number; height: number }
 

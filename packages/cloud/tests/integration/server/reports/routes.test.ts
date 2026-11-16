@@ -11,6 +11,7 @@ import {
   DOCUMENT_REPORT_BUDGET,
   parseCloudServerConfig
 } from '#cloud/server'
+import { testClient } from 'hono/testing'
 
 const config = parseCloudServerConfig({
   deployment: 'self-hosted',
@@ -49,19 +50,21 @@ describe('report routes', () => {
       const capability = await context.sharing.createShare('owner', context.documentId, {
         permission: 'view'
       })
-      const request = (path: string, json?: unknown) =>
-        app.request(path, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Origin: config.publicURL },
-          body: JSON.stringify(json ?? {})
-        })
+      const client = testClient(app)
+      const sameOrigin = { headers: { Origin: config.publicURL } }
       const report = (secret = capability.secret) =>
-        request(`/api/shares/${capability.share.id}/reports`, {
-          secret,
-          guestId: 'guest-0123456789abcdef',
-          reason: 'spam-phishing',
-          description: 'A fake sign-in page'
-        })
+        client.api.shares[':shareId'].reports.$post(
+          {
+            param: { shareId: capability.share.id },
+            json: {
+              secret,
+              guestId: 'guest-0123456789abcdef',
+              reason: 'spam-phishing',
+              description: 'A fake sign-in page'
+            }
+          },
+          sameOrigin
+        )
 
       const filed = await report()
       expect(filed.status).toBe(201)
@@ -75,22 +78,24 @@ describe('report routes', () => {
 
       signedIn = true
       const listed = await responseJSON(
-        await app.request('/api/admin/reports'),
+        await client.api.admin.reports.$get({ query: {} }),
         cloudAdminReportsResponseSchema
       )
       expect(listed.counts.open).toBe(DOCUMENT_REPORT_BUDGET.perReporter)
       expect(
         (
-          await request(`/api/admin/documents/${context.documentId}/disable`, {
-            reason: 'Phishing'
-          })
+          await client.api.admin.documents[':id'].disable.$post(
+            { param: { id: context.documentId }, json: { reason: 'Phishing' } },
+            sameOrigin
+          )
         ).status
       ).toBe(200)
 
       signedIn = false
-      const opened = await request(`/api/shares/${capability.share.id}/resolve`, {
-        secret: capability.secret
-      })
+      const opened = await client.api.shares[':shareId'].resolve.$post(
+        { param: { shareId: capability.share.id }, json: { secret: capability.secret } },
+        sameOrigin
+      )
       expect(opened.status).toBe(404)
     } finally {
       await context.runtime.close()

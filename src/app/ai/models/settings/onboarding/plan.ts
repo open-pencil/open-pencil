@@ -1,6 +1,11 @@
 import { uniq } from 'es-toolkit'
 
-import { AI_PROVIDERS, type AIProviderID, type ModelOption } from '@open-pencil/core/constants'
+import {
+  AI_PROVIDERS,
+  type AIProviderID,
+  type ModelOption,
+  providerKind
+} from '@open-pencil/core/constants'
 import { appendAll } from '@open-pencil/scene-graph/arrays'
 
 import { modelProviderName } from '@/app/ai/models/provider-name'
@@ -116,7 +121,7 @@ const NO_CURRENT: CurrentOnboardingModels = {
 
 /** ACP agents and Pi, which run on this computer and choose their own model. */
 export function isOnboardingAgent(providerID: string): boolean {
-  return providerID.startsWith('acp:') || providerID === 'harness:pi'
+  return providerKind(providerID) !== 'api'
 }
 
 /** Whether this app can use an access: agents and subscriptions each need the desktop app. */
@@ -149,10 +154,6 @@ export function usableCurrentModels(
     review: reviewOrFast(current.review),
     fast: reviewOrFast(current.fast)
   }
-}
-
-function isAgentModel(model: PlannedModel | null): boolean {
-  return Boolean(model && isOnboardingAgent(model.providerID))
 }
 
 function catalogModels(providerID: AIProviderID): ModelOption[] {
@@ -209,9 +210,9 @@ function keepable(model: PlannedModel | null, access: OnboardingAccess[]): model
   return !isOnboardingAccess(model.providerID) || access.includes(model.providerID)
 }
 
-/** Whether a role may follow the design model: agents cannot, and vision needs image input. */
+/** Whether a role may follow the design model; vision needs one that accepts images. */
 export function canFollowDesign(role: AIModelRole, design: PlannedModel | null): boolean {
-  if (!design || isAgentModel(design)) return false
+  if (!design) return false
   return role !== 'vision' || hasVision(design)
 }
 
@@ -270,13 +271,11 @@ function keepRole(
   role: 'review' | 'fast',
   design: PlannedModel | null
 ) {
-  const choice = current[role]
   if (!current.configured) return false
-  if (choice === 'design') return canFollowDesign(role, design)
-  return !isAgentModel(choice)
+  return current[role] !== 'design' || canFollowDesign(role, design)
 }
 
-/** Review follows the design model, or uses the API model chosen for vision behind an agent. */
+/** Review follows the design model, or uses the model chosen for vision when there is none. */
 function planReview(
   design: PlannedModel | null,
   vision: PlannedRole,
@@ -310,8 +309,9 @@ function roleModels(plan: Omit<OnboardingPlan, 'connections'>): PlannedModel[] {
 
 /**
  * Proposes a model for each role, preferring what is already configured and then access the
- * person already has. Agents choose their own model and cannot take the other roles, so those
- * fall back to an API model. Roles the person did not ask about keep their configuration.
+ * person already has. Agents choose their own model and take no images until their profile says
+ * so, so visual review falls back to an API model. Roles the person did not ask about keep their
+ * configuration.
  */
 export function planOnboarding(answers: OnboardingAnswers, options: PlanOptions): OnboardingPlan {
   const access = availableAccess(answers, options)
@@ -375,7 +375,8 @@ export function roleChoiceKey(choice: PlannedRole): string {
 
 /**
  * Choices for a role: configured models, every suitable catalog model of a connected provider,
- * an agent or server for the design role, and for the other roles the design model or nothing.
+ * and an agent or server when it has the role's capability. Roles other than design also offer
+ * the design model, when they can follow it, or nothing.
  */
 export function roleOptions(
   role: AIModelRole,
@@ -400,9 +401,7 @@ export function roleOptions(
       )
     }
   }
-  const suitable = candidates.filter(
-    (model) => model.capabilities.includes(needs) && (role === 'design' || !isAgentModel(model))
-  )
+  const suitable = candidates.filter((model) => model.capabilities.includes(needs))
   const unique = new Map(suitable.map((model) => [roleChoiceKey(model), model]))
   const models = [...unique.values()]
   if (role === 'design') return models

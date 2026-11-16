@@ -1,5 +1,6 @@
 import { AI_PROVIDERS } from '@open-pencil/core/constants'
 
+import { profileModelID } from '@/app/ai/models/language-model'
 import type {
   AIModelConnection,
   AIModelProfile,
@@ -9,7 +10,6 @@ import type {
 
 import {
   isOnboardingAccess,
-  isOnboardingAgent,
   ONBOARDING_SERVER_PROVIDER,
   type OnboardingAccess,
   type OnboardingPlan,
@@ -40,10 +40,6 @@ export interface ApplyOnboardingResult {
   connectionIds: Partial<Record<OnboardingAccess, string>>
 }
 
-function effectiveModelID(profile: Pick<AIModelProfile, 'modelID' | 'customModelID'>): string {
-  return profile.customModelID || profile.modelID
-}
-
 function recommendedMaxOutputTokens(providerID: string, modelID: string): number {
   const provider = AI_PROVIDERS.find((definition) => definition.id === providerID)
   const model = provider?.models.find((candidate) => candidate.id === modelID)
@@ -51,7 +47,7 @@ function recommendedMaxOutputTokens(providerID: string, modelID: string): number
 }
 
 function isPlaceholder(settings: AIModelSettings, profile: AIModelProfile): boolean {
-  if (profile.id !== PLACEHOLDER_PROFILE_ID || effectiveModelID(profile)) return false
+  if (profile.id !== PLACEHOLDER_PROFILE_ID || profileModelID(profile)) return false
   const connection = settings.connections.find((candidate) => candidate.id === profile.connectionId)
   return connection?.providerID === ONBOARDING_SERVER_PROVIDER && !connection.customBaseURL
 }
@@ -67,35 +63,16 @@ export function isUnconfiguredModelSettings(settings: AIModelSettings): boolean 
   return settings.models.length === 1 && isPlaceholder(settings, settings.models[0])
 }
 
-function isAgentConnection(
-  settings: AIModelSettings,
-  profile: AIModelProfile | undefined
-): boolean {
-  const connection = settings.connections.find(
-    (candidate) => candidate.id === profile?.connectionId
-  )
-  return !connection || isOnboardingAgent(connection.providerID)
-}
-
 /**
- * Clears assignments the model settings would reject: agents only take the design role, and
- * vision needs a model that accepts images, whether assigned directly or through the design model.
+ * Clears a vision assignment the model settings would reject: vision needs a model that accepts
+ * images, whether assigned directly or through the design model.
  */
 function enforceRoleRules(settings: AIModelSettings): void {
-  const profileOf = (id: string | null) => settings.models.find((profile) => profile.id === id)
-  const design = profileOf(settings.assignments.design)
-  for (const role of ['review', 'fast', 'vision'] as const) {
-    const assignment = settings.assignments[role]
-    if (assignment === null) continue
-    const profile = assignment === 'design' ? design : profileOf(assignment)
-    if (!profile) continue
-    if (
-      isAgentConnection(settings, profile) ||
-      (role === 'vision' && !profile.capabilities.includes('vision'))
-    ) {
-      settings.assignments[role] = null
-    }
-  }
+  const assignment = settings.assignments.vision
+  if (assignment === null) return
+  const profileId = assignment === 'design' ? settings.assignments.design : assignment
+  const profile = settings.models.find((candidate) => candidate.id === profileId)
+  if (profile && !profile.capabilities.includes('vision')) settings.assignments.vision = null
 }
 
 function removeUnusedPlaceholder(settings: AIModelSettings): void {
@@ -157,7 +134,7 @@ export function applyOnboardingPlan({
     const existing = settings.models.find(
       (profile) =>
         profile.connectionId === connection.id &&
-        effectiveModelID(profile) === wanted &&
+        profileModelID(profile) === wanted &&
         model.capabilities.every((capability) => profile.capabilities.includes(capability))
     )
     if (existing) return existing.id

@@ -36,6 +36,11 @@ export interface HistoryRuntime<TChat extends HistoryChat> {
   /** The agent the chat runs on, when it continues saved sessions. */
   resumingAgent(): ACPAgentID | null
   profileId(): string | null
+  /**
+   * A title for a conversation once its first reply is in, or null to keep the one taken from
+   * its first message. Left out, conversations are never named.
+   */
+  title?(messages: UIMessage[]): Promise<string | null>
 }
 
 export interface ConversationMeta {

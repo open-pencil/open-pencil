@@ -1,1 +1,0 @@
-- `[billing]` takes `endpoint`, the billing service's address, in place of `portal_url`, and discovery's `billing` is `{ endpoint, contractVersion }` instead of `{ portalURL }`. A deployment with `[billing]` also needs the `[services]` signing key and `[internal_api]` (#2027).

@@ -1,3 +1,5 @@
+import { screenCenterInWorld } from '@open-pencil/core/geometry'
+
 import type { EditorStore } from '@/app/editor/session'
 
 import {
@@ -21,9 +23,9 @@ export function rememberDocumentView(store: ViewedDocument): void {
   const id = recentIdOf(store)
   if (!id) return
   const { width, height } = store.getViewportSize()
-  const { panX, panY, zoom, currentPageId } = store.state
+  const { zoom, currentPageId } = store.state
   if (width <= 0 || height <= 0 || zoom <= 0) return
-  const center = { x: (width / 2 - panX) / zoom, y: (height / 2 - panY) / zoom }
+  const center = screenCenterInWorld(store.state, width, height)
   // A view too far out to store as a number opens fitted instead.
   if (!Number.isFinite(center.x) || !Number.isFinite(center.y)) return
   rememberRecentDocumentView(id, { pageId: currentPageId, center, zoom })

@@ -10,7 +10,7 @@ import {
   cancelResizePreview,
   commitResizePreview,
   scaledChanges
-} from '#vue/shared/input/resize'
+} from '#vue/shared/input/resize/apply'
 import { createResizeDrag } from '#vue/shared/input/resize/start'
 import type { DragResize } from '#vue/shared/input/types'
 

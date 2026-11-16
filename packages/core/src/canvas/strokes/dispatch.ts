@@ -1,14 +1,17 @@
 import type { Canvas, Path } from '@open-pencil/canvaskit'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
 import {
   collectArrowEndpoints,
   hasTrimmedShaft,
   trimArrowShafts
 } from '@open-pencil/scene-graph/arrow-caps'
 import { strokeSideWeights } from '@open-pencil/scene-graph/geometry'
+import { addStrokeRunToPath, strokeRuns } from '@open-pencil/scene-graph/paths'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import { fillGeometryPath } from '#core/canvas/boolean'
+import { unitedOutline, unitedPath } from '#core/canvas/paths/union'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import {
   configureStrokePaint,
   drawArrowHeads,
@@ -17,18 +20,14 @@ import {
   getStrokeJoinEntity,
   normalizeDashPattern,
   withStrokeDash
-} from '#core/canvas/strokes'
+} from '#core/canvas/strokes/draw'
 import { drawIndividualSideStrokes } from '#core/canvas/strokes/sides'
-import {
-  addStrokeRunToPath,
-  strokeRuns,
-  vectorNetworkToCenterlinePath,
-  vectorNetworkToPath
-} from '#core/vector'
+import { vectorNetworkToCenterlinePath, vectorNetworkToPath } from '#core/vector'
 import { isOpenVectorNetwork } from '#core/vector/connectivity'
 
 import { drawLineStroke } from './line'
 import { drawOutlinedDashes } from './outlined-dashes'
+import { regionStrokeOutline } from './regions'
 import { drawDashedRectStroke, strokeDashesByOutline } from './sides'
 
 function drawVectorStrokeGeometry(
@@ -65,7 +64,7 @@ export function vectorStrokePaths(r: SkiaRenderer, node: SceneNode): Path[] | nu
 function strokeOutlineKey(
   node: SceneNode,
   stroke: SceneNode['strokes'][0],
-  source: 'runs' | 'regions' | 'closed' | 'open' | 'trimmed'
+  source: 'runs' | 'regions' | 'closed' | 'open' | 'trimmed' | 'united' | 'united-sided'
 ): string {
   return `${node.id}|${source}|${stroke.weight}|${stroke.cap ?? node.strokeCap}|${stroke.join ?? node.strokeJoin}|${node.strokeMiterLimit}`
 }
@@ -306,10 +305,14 @@ function drawAlignedVectorPathStrokes(
   sc: Color
 ): void {
   const miter = node.strokeMiterLimit
+  if (node.vectorNetwork && node.vectorNetwork.regions.length > 1) {
+    drawUnitedRegionStrokes(r, canvas, node, node.vectorNetwork, vectorPaths, stroke, sc)
+    return
+  }
   // `vectorNetworkToPath` lists a path for each region, then one for the open segments.
   const regions = node.vectorNetwork?.regions.length ?? 0
   const closed = vectorPaths.slice(0, regions)
-  const inside = stroke.align === 'INSIDE' && closed.length > 0 ? unitePaths(r, closed) : null
+  const inside = stroke.align === 'INSIDE' && closed.length > 0 ? unitedPath(r, closed) : null
   const sided = clipToStrokeSide(r, canvas, closed, stroke.align, inside)
   inside?.delete()
   if (!sided) {
@@ -341,6 +344,49 @@ function drawAlignedVectorPathStrokes(
     )
 }
 
+function drawUnitedRegionStrokes(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  network: VectorNetwork,
+  vectorPaths: Path[],
+  stroke: SceneNode['strokes'][0],
+  sc: Color
+): void {
+  const regions = network.regions.length
+  const closed = vectorPaths.slice(0, regions)
+  const inside =
+    stroke.align === 'INSIDE' ? unitedOutline(r, `${node.id}|inside-stroke`, closed) : null
+  const sided = clipToStrokeSide(r, canvas, closed, stroke.align, inside)
+  const key = strokeOutlineKey(node, stroke, sided ? 'united-sided' : 'united')
+  let outlines = r.nodePaths.strokeOutline.get(key)
+  if (!outlines) {
+    const outline = regionStrokeOutline(r, node, network, closed, stroke, sided)
+    outlines = outline ? [outline] : []
+    r.nodePaths.store(r.nodePaths.strokeOutline, key, outlines)
+  }
+  r.fillPaint.setColorComponents(sc.r, sc.g, sc.b, sc.a)
+  r.fillPaint.setAlphaf(stroke.opacity)
+  for (const outline of outlines) {
+    canvas.drawPath(outline, r.fillPaint)
+  }
+  if (sided) {
+    canvas.restore()
+  }
+  const open = vectorPaths.slice(regions)
+  if (open.length > 0) {
+    drawVectorPathStrokes(
+      r,
+      canvas,
+      open,
+      stroke,
+      sc,
+      node.strokeMiterLimit,
+      strokeOutlineKey(node, stroke, 'open')
+    )
+  }
+}
+
 function clipToStrokeSide(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -363,31 +409,6 @@ function clipToStrokeSide(
   return true
 }
 
-function cachedFillUnion(r: SkiaRenderer, node: SceneNode, fillPaths: Path[]): Path | null {
-  const key = `${node.id}|fill-union`
-  const cached = r.nodePaths.strokeOutline.get(key)
-  if (cached) {
-    return cached[0]
-  }
-  const united = unitePaths(r, fillPaths)
-  if (united) {
-    r.nodePaths.store(r.nodePaths.strokeOutline, key, [united])
-  }
-  return united
-}
-
-/** One path covering every path given, which a clip can keep the inside of. */
-function unitePaths(r: SkiaRenderer, paths: Path[]): Path | null {
-  let united: Path | null = paths[0]?.copy() ?? null
-  for (const path of paths.slice(1)) {
-    if (!united) break
-    const next = r.ck.Path.MakeFromOp(united, path, r.ck.PathOp.Union)
-    united.delete()
-    united = next
-  }
-  return united
-}
-
 function drawFillSideStrokeGeometry(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -398,8 +419,10 @@ function drawFillSideStrokeGeometry(
 ): void {
   const fillPaths = r.getFillGeometry(node)
   const sideable = fillPaths && !(node.vectorNetwork && isOpenVectorNetwork(node.vectorNetwork))
-  const inside = sideable && stroke.align === 'INSIDE' ? cachedFillUnion(r, node, fillPaths) : null
-  if (!sideable || !clipToStrokeSide(r, canvas, fillPaths, stroke.align, inside)) {
+  const inside = sideable && stroke.align === 'INSIDE' ? fillGeometryPath(r, node) : null
+  const sided = sideable && clipToStrokeSide(r, canvas, fillPaths, stroke.align, inside)
+  inside?.delete()
+  if (!sided) {
     drawVectorStrokeGeometry(r, canvas, sg, sc, stroke.opacity)
     return
   }

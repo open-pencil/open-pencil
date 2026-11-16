@@ -11,7 +11,8 @@ import {
   MAX_LIST_INDENTATION,
   paragraphStyleAt,
   textParagraphRanges,
-  withParagraphSpacing
+  withParagraphSpacing,
+  characterOverrides
 } from '@open-pencil/scene-graph/text'
 
 import { TEXT_CASE, TEXT_DECORATION } from '../enums'
@@ -34,19 +35,14 @@ export interface TextChildren {
  * URL it links to; a span cannot write a link to a node.
  */
 function characterStyles(node: SceneNode): SpanStyle[] {
-  const styles = Array.from({ length: node.text.length }, (): SpanStyle => ({}))
-  for (const run of node.styleRuns) {
-    const style: SpanStyle = pick(run.style, SPAN_STYLE_FIELDS)
-    if (run.style.hyperlink?.type === 'URL') style.hyperlink = run.style.hyperlink
-    const end = Math.min(run.start + run.length, styles.length)
-    for (let index = run.start; index < end; index++) styles[index] = { ...styles[index], ...style }
-  }
-  return styles.map((style) =>
-    omitBy(
+  return characterOverrides(node.styleRuns, node.text.length).map((override) => {
+    const style: SpanStyle = pick(override, SPAN_STYLE_FIELDS)
+    if (override.hyperlink?.type === 'URL') style.hyperlink = override.hyperlink
+    return omitBy(
       style,
       (value, key) => value === undefined || (key !== 'hyperlink' && isEqual(value, node[key]))
     )
-  )
+  })
 }
 
 function spanProps(style: SpanStyle, node: SceneNode): JSXProp[] {

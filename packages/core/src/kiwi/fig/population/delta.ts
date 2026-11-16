@@ -91,6 +91,11 @@ export function installFigMutationJournal(graph: SceneGraph): FigMutationJournal
   }
 }
 
+/**
+ * What a page load changed in `graph`, holding the graph's own layers and values rather than
+ * copies: the worker sends it, and sending copies it. Apply it in the same thread only to a copy
+ * (`structuredClone`), or the two graphs share layers.
+ */
 export function buildFigPopulationDelta(
   graph: SceneGraph,
   journal: FigMutationJournal,
@@ -102,15 +107,14 @@ export function buildFigPopulationDelta(
     if (!current || journal.deleted.has(id)) continue
     const changes: Partial<SceneNode> = {}
     for (const key of Object.keys(previous) as (keyof SceneNode)[]) {
-      if (!isEqual(previous[key], current[key]))
-        Object.assign(changes, { [key]: structuredClone(current[key]) })
+      if (!isEqual(previous[key], current[key])) Object.assign(changes, { [key]: current[key] })
     }
     if (Object.keys(changes).length > 0) updated.push([id, changes])
   }
   const created = [...journal.created]
     .map((id) => graph.getNode(id))
     .filter((node) => node !== undefined)
-    .map((node) => [node.id, structuredClone(node)] as [string, SceneNode])
+    .map((node) => [node.id, node] as [string, SceneNode])
   return {
     created,
     updated,

@@ -2,7 +2,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 import { lineStepPixels, paragraphSpacingAt } from '@open-pencil/scene-graph/text'
 
-import { rangeCapHeight } from '#core/text/character-face'
+import { rangeCapHeight } from '#core/text/character/face'
 import { measureTextWithFont, type MeasuredTextLines } from '#core/text/font/glyphs'
 
 export type TextMeasurer = (

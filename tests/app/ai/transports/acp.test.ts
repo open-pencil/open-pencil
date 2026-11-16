@@ -9,6 +9,7 @@ import {
   type ClientCapabilities,
   type NewSessionRequest,
   type ResumeSessionRequest,
+  type SessionConfigOption,
   type SessionUpdate
 } from '@agentclientprotocol/sdk/unstable'
 import type { UIMessage, UIMessageChunk } from 'ai'
@@ -18,11 +19,15 @@ import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { OWN_TOOLS_ALLOWED } from '@/app/ai/agents/acp/tools'
 import { SUBAGENT_PART, subagentTranscript } from '@/app/ai/chat/subagents'
-import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
+import { systemPrompt } from '@/app/ai/chat/system-prompt'
 import { ACPChatTransport, type ACPStartup } from '@/app/ai/transports/acp'
 import { restAgents, withSubagent } from '@/app/automation/agents'
 import { diagnosticErrorDetails, diagnostics } from '@/app/diagnostics'
 import { createDeferred } from '@/app/runtime/deferred'
+import { DEFAULT_APP_PREFERENCES, updatePromptPreferences } from '@/app/settings/preferences/store'
+
+import { MODEL_OPTIONS } from '#tests/helpers/ai/fake-acp-agent'
+
 const resuming = expectDefined(
   ACP_AGENTS.find((agent) => agent.resumesSessions),
   'an agent that resumes sessions'
@@ -55,6 +60,8 @@ interface FakeAgentOptions {
    * or in a subagent's session `session`.
    */
   updates?: { session?: string; update: SessionUpdate }[]
+  /** What the agent offers for choosing its model; none when absent. */
+  configOptions?: SessionConfigOption[]
 }
 
 /** In-memory ACP agents, one per start, that record what the transport asks of them. */
@@ -66,10 +73,13 @@ function fakeAgents({
   tokenHangs = false,
   turn = 'answered',
   lookupWaits = false,
-  updates = []
+  updates = [],
+  configOptions
 }: FakeAgentOptions = {}) {
   const lookup = createDeferred<undefined>()
   const prompts: string[] = []
+  /** Model changes and prompts in the order the agent got them. */
+  const calls: string[] = []
   const created: NewSessionRequest[] = []
   const resumed: ResumeSessionRequest[] = []
   const capabilities: (ClientCapabilities | undefined)[] = []
@@ -101,7 +111,7 @@ function fakeAgents({
         created.push(params)
         sessionRequested.resolve(undefined)
         if (!answersSessions) return createDeferred<never>().promise
-        return { sessionId: `session-${created.length}` }
+        return { sessionId: `session-${created.length}`, configOptions }
       })
       .onRequest(methods.agent.session.resume, ({ params }) => {
         resumed.push(params)
@@ -111,8 +121,13 @@ function fakeAgents({
           throw RequestError.invalidRequest({ reason: 'thread_active_writer' }, 'Session in use')
         return {}
       })
+      .onRequest(methods.agent.session.setConfigOption, ({ params }) => {
+        calls.push(`model ${String(params.value)}`)
+        return { configOptions: [] }
+      })
       .onRequest(methods.agent.session.prompt, async ({ params, client }) => {
         const [part] = params.prompt
+        calls.push('prompt')
         prompts.push(part?.type === 'text' ? part.text : '')
         const { sessionId } = params
         const report = (update: SessionUpdate, session = sessionId) =>
@@ -179,6 +194,7 @@ function fakeAgents({
   return {
     startup,
     prompts,
+    calls,
     created,
     resumed,
     capabilities,
@@ -220,7 +236,13 @@ async function send(
 
 function transport(
   agents: ReturnType<typeof fakeAgents>,
-  options: { resume?: string; startTimeoutMs?: number; agentDef?: ACPAgentDef; cwd?: string } = {}
+  options: {
+    resume?: string
+    startTimeoutMs?: number
+    agentDef?: ACPAgentDef
+    cwd?: string
+    model?: string
+  } = {}
 ) {
   const sessions: (string | null)[] = []
   const agentErrors: unknown[] = []
@@ -229,6 +251,7 @@ function transport(
     cwd: options.cwd,
     startup: agents.startup,
     resume: options.resume,
+    model: options.model,
     startTimeoutMs: options.startTimeoutMs ?? 1_000,
     onSession: (id) => sessions.push(id),
     onAgentError: (error) => agentErrors.push(error)
@@ -242,7 +265,7 @@ test('a new session gets the instructions once and is reported once the agent an
   await send(chat, 'first')
   await send(chat, 'second', [message('user', 'first'), message('assistant', 'done')])
   expect(agents.created).toHaveLength(1)
-  expect(agents.prompts[0]?.startsWith(SYSTEM_PROMPT)).toBe(true)
+  expect(agents.prompts[0]?.startsWith(systemPrompt())).toBe(true)
   expect(agents.prompts[0]?.endsWith('first')).toBe(true)
   expect(agents.prompts[1]).toBe('second')
   expect(sessions).toEqual(['session-1'])
@@ -310,6 +333,28 @@ test('an agent that exits continues the same session when it starts again', asyn
   expect(agents.resumed.map((request) => request.sessionId)).toEqual(['session-1'])
   expect(agents.prompts[1]).toBe('second')
   await chat.destroy()
+})
+
+test('a session started again after the agent exits gets the Design prompt the chat began with', async () => {
+  const fresh = expectDefined(
+    ACP_AGENTS.find((agent) => !agent.resumesSessions),
+    'an agent that does not resume sessions'
+  )
+  const agents = fakeAgents()
+  updatePromptPreferences({ design: { text: 'Use 8px spacing.', mode: 'add' } })
+  try {
+    const { transport: chat } = transport(agents, { agentDef: fresh })
+    const started = systemPrompt()
+    updatePromptPreferences({ design: { text: 'Use 4px spacing.', mode: 'add' } })
+    await send(chat, 'first')
+    agents.crash()
+    await send(chat, 'second', [message('user', 'first'), message('assistant', 'done')])
+    expect(agents.created).toHaveLength(2)
+    expect(agents.prompts.map((prompt) => prompt.startsWith(started))).toEqual([true, true])
+    await chat.destroy()
+  } finally {
+    updatePromptPreferences({ design: structuredClone(DEFAULT_APP_PREFERENCES.prompts.design) })
+  }
 })
 
 test('a saved session the agent cannot continue is forgotten and no new session starts', async () => {
@@ -532,4 +577,12 @@ test('a subagent’s work is known by its session and kept in its own transcript
     restAgents('acp')
     await chat.destroy()
   }
+})
+
+test('the agent is put on the profile’s model before it gets the first prompt', async () => {
+  const agents = fakeAgents({ configOptions: MODEL_OPTIONS })
+  const { transport: chat } = transport(agents, { model: 'opus' })
+  await send(chat, 'first')
+  expect(agents.calls).toEqual(['model opus', 'prompt'])
+  await chat.destroy()
 })

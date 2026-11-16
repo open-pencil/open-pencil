@@ -1,6 +1,6 @@
 {
   "name": "open-pencil-app",
-  "version": "0.17.0-beta.4",
+  "version": "0.17.0-beta.5",
   "private": true,
   "license": "MIT",
   "workspaces": [
@@ -222,6 +222,7 @@
     "hast-util-to-html": "^9.0.5",
     "idb": "^8.0.3",
     "js-base64": "^3.9.3",
+    "knap": "0.6.0",
     "lib0": "^0.2.117",
     "mdast-util-from-markdown": "^2.0.3",
     "mdast-util-gfm": "^3",

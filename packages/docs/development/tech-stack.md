@@ -22,6 +22,8 @@
 | **Formatting** | oxfmt | Rust-based formatter |
 | **Type Checking** | TypeScript 7, vue-tsc | TypeScript 7 (the native Go compiler) checks `.ts`; vue-tsc checks `.vue` on the TypeScript 6 API |
 
+vue-tsc is pinned to 3.3.11: later versions report "Cannot find name" for a `v-for` or `v-slot` variable when a component prop value in its scope contains `//` ([vuejs/language-tools#6240](https://github.com/vuejs/language-tools/issues/6240)). Lift the pin once `bun run check:vue` passes on a newer release.
+
 ## Key Dependencies
 
 ```json

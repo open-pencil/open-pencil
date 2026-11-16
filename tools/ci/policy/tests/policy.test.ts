@@ -26,7 +26,7 @@ const documentation = [
   'src/AGENTS.md',
   'tests/AGENTS.md',
   'tools/AGENTS.md',
-  'packages/docs/programmable/sdk/api/components/bindable-value.md',
+  'packages/docs/developers/sdk/api/components/bindable-value.md',
   'packages/docs/public/logo.svg',
   'skills/open-pencil/SKILL.md',
   'skills/open-pencil/references/design-authoring.md',
@@ -73,7 +73,7 @@ test('changes outside Cloud skip the Cloud suites', () => {
 test('package READMEs and public guides share the docs-only route', () => {
   expect(
     classifyPaths(
-      ['packages/vue/README.md', 'packages/docs/programmable/sdk/getting-started.md'],
+      ['packages/vue/README.md', 'packages/docs/developers/sdk/getting-started.md'],
       CLOUD_INPUTS
     )
   ).toBe('docs')

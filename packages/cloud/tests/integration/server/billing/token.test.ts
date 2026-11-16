@@ -8,7 +8,6 @@ import {
   billingTokenClaimsSchema,
   billingTokenSchema,
   CLOUD_BILLING_TOKEN_AUDIENCE,
-  CLOUD_SERVICES_JWKS_PATH,
   CLOUD_SERVICES_TOKEN_AUDIENCE
 } from '#cloud/contract'
 import {
@@ -17,6 +16,7 @@ import {
   parseCloudServerConfig,
   type CloudActor
 } from '#cloud/server'
+import { testClient } from 'hono/testing'
 import {
   createLocalJWKSet,
   exportPKCS8,
@@ -63,8 +63,9 @@ async function testApp(options: { billing: boolean }) {
     resolveSession: async () => person,
     servicesSigningKey: await loadServicesSigningKey(config)
   })
-  const requestToken = () => app.request('/api/billing/token', { method: 'POST' })
-  return { runtime, app, requestToken }
+  const client = testClient(app)
+  const requestToken = () => client.api.billing.token.$post()
+  return { runtime, app, client, requestToken }
 }
 
 describe('Billing tokens', () => {
@@ -75,7 +76,7 @@ describe('Billing tokens', () => {
       expect(response.status).toBe(200)
       const { token, expiresAt } = await responseJSON(response, billingTokenSchema)
       const keys = createLocalJWKSet(
-        await responseJSON(await context.app.request(CLOUD_SERVICES_JWKS_PATH), jwksSchema)
+        await responseJSON(await context.client['.well-known']['jwks.json'].$get(), jwksSchema)
       )
       const { payload } = await jwtVerify(token, keys, {
         issuer: 'http://localhost:8787',

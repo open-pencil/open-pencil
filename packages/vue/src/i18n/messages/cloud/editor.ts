@@ -49,8 +49,15 @@ export const cloudMessageDefaults = {
   errorNotCloudHeading: 'This isn’t an OpenPencil Cloud server',
   errorNotCloudDescription:
     'The address answered, but not as OpenPencil Cloud. Ask your team for the right one.',
-  errorOutdatedHeading: 'This server needs an update',
-  errorOutdatedDescription: 'It runs an older version of OpenPencil Cloud than this app supports.',
+  errorServerOutdatedHeading: 'This server needs an update',
+  errorServerOutdatedDescription:
+    'It runs an older version of OpenPencil Cloud than this app supports.',
+  errorEditorOutdatedHeading: 'Update OpenPencil to use this server',
+  errorEditorOutdatedDescription: 'This server needs a newer version of OpenPencil than this one.',
+  editorOutdatedBanner: params(
+    '{host} needs a newer version of OpenPencil. Update to keep working with your files there.'
+  ),
+  updateOpenPencil: 'Update OpenPencil',
   errorDeniedHeading: 'Sign-in was denied',
   errorDeniedDescription: 'The request was turned down in the browser. Start again to sign in.',
   errorExpiredHeading: 'The code expired',

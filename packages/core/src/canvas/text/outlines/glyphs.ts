@@ -1,9 +1,9 @@
 import type { Path } from '@open-pencil/canvaskit'
 import type { Fill, SceneNode } from '@open-pencil/scene-graph'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { shapeText } from '#core/canvas/text/shape'
-import { characterStyles } from '#core/text/character-style'
+import { characterStyles } from '#core/text/character/style'
 import { textDecorationRects } from '#core/text/decorations'
 import type { OutlineCommand } from '#core/text/font/glyphs'
 import { outlineInk } from '#core/text/ink'

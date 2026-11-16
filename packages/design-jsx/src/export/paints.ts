@@ -281,7 +281,24 @@ function effectShorthand(effects: Effect[]): JSXProp[] | null {
   return props
 }
 
+function hasJSXHelper(effect: Effect): boolean {
+  return Object.hasOwn(EFFECT_HELPERS, effect.type)
+}
+
+/**
+ * Each written effect's index in `node.effects` → its index among the effects JSX writes, which
+ * leaves out those it has no helper for; a binding numbered by the layer's list follows it.
+ */
+export function writtenEffectIndices(node: SceneNode): Map<number, number> {
+  const indices = new Map<number, number>()
+  for (const [index, effect] of node.effects.entries()) {
+    if (hasJSXHelper(effect)) indices.set(index, indices.size)
+  }
+  return indices
+}
+
 export function collectEffectProps(node: SceneNode, props: JSXProp[]): void {
-  if (node.effects.length === 0) return
-  appendAll(props, effectShorthand(node.effects) ?? [['effects', node.effects.map(effectValue)]])
+  const effects = node.effects.filter(hasJSXHelper)
+  if (effects.length === 0) return
+  appendAll(props, effectShorthand(effects) ?? [['effects', effects.map(effectValue)]])
 }

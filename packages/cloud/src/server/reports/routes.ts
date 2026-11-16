@@ -1,4 +1,4 @@
-import { parseFileDocumentReport } from '#cloud/contract'
+import { fileDocumentReportSchema } from '#cloud/contract'
 import { acceptedLocale } from '#cloud/email'
 import type { CloudSessionResolver } from '#cloud/server/auth'
 import { shareActor } from '#cloud/server/sharing/actor'
@@ -16,7 +16,7 @@ export function createPublicReportRoutes(
   return new Hono().post(
     '/shares/:shareId/reports',
     shareParams,
-    validatedJSON(parseFileDocumentReport),
+    validatedJSON(fileDocumentReportSchema),
     async (context) => {
       try {
         return await sharingRoute(context, async () => {

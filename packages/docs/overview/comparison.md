@@ -272,7 +272,7 @@ Open Pencil's approach is simpler and lower overhead. Penpot's approach is more 
 
 ## 11. Scripting & Extensibility
 
-OpenPencil ships with an [`eval` command](/programmable/cli/scripting) that provides a Figma-compatible Plugin API for headless scripting — batch operations, automated testing, and AI-driven modifications all run without the GUI. On top of that, **90 AI tools** are available via built-in chat, MCP server (stdio + HTTP), and the CLI — covering read, create, modify, structure, variables, vector path, analyze (color/typography/spacing/clusters), diff, boolean operations, and arrangement. Penpot has a plugin system with sandboxed execution but no headless scripting API or MCP integration.
+OpenPencil ships with an [`eval` command](/developers/cli/scripting) that provides a Figma-compatible Plugin API for headless scripting — batch operations, automated testing, and AI-driven modifications all run without the GUI. On top of that, **90 AI tools** are available via built-in chat, MCP server (stdio + HTTP), and the CLI — covering read, create, modify, structure, variables, vector path, analyze (color/typography/spacing/clusters), diff, boolean operations, and arrangement. Penpot has a plugin system with sandboxed execution but no headless scripting API or MCP integration.
 
 ## Summary
 

@@ -1,23 +1,30 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { maxOf, minOf } from '@open-pencil/scene-graph/arrays'
-import { cornerRadii, fittedCornerRadii, type CornerRadii } from '@open-pencil/scene-graph/corners'
+import {
+  cornerRadii,
+  fittedCornerRadii,
+  type CornerRadii,
+  nodeHasRadius,
+  nodeHasSmoothCorners
+} from '@open-pencil/scene-graph/corners'
 import {
   strokeOverflow as strokeReach,
   strokeAlignShare,
   strokeWeightOf
 } from '@open-pencil/scene-graph/geometry'
+import { isVisibleMask } from '@open-pencil/scene-graph/masks'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import { clipsChildren, isLayerContainer } from '@open-pencil/scene-graph/node-defaults'
 import { paintShows } from '@open-pencil/scene-graph/paints'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
-import { regionFills } from '@open-pencil/scene-graph/vector-network'
+import { textLinesReach } from '@open-pencil/scene-graph/text'
 
 import { paintBooleanOperation } from '#core/canvas/boolean'
 import { renderMaskedChildIds } from '#core/canvas/masks'
-import type { SkiaRenderer } from '#core/canvas/renderer'
-import { nodeHasRadius, nodeHasSmoothCorners } from '#core/canvas/shapes'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { nodeOrientationMatrix } from '#core/geometry'
+import { fillsCastShadow } from '#core/geometry/shadows'
 
 /**
  * What a shadow is cast from (`cast`) or hidden under when it does not show behind the node
@@ -33,11 +40,6 @@ const SILHOUETTE_PAINT: Fill = {
   color: { r: 1, g: 1, b: 1, a: 1 },
   opacity: 1,
   visible: true
-}
-
-/** Frames, groups, and the like, whose shadows Figma casts from their children as well. */
-export function fillsCastShadow(node: SceneNode): boolean {
-  return node.fills.some(paintShows) || regionFills(node.vectorNetwork).some(paintShows)
 }
 
 export function paintsCastShadow(node: SceneNode): boolean {
@@ -132,7 +134,7 @@ function drawChildSilhouettes(
       node.childIds,
       (childId) => {
         const child = graph.getNode(childId)
-        return child && drawsSilhouette(child) && child.isMask ? child.maskType : null
+        return child && !child.internalOnly && isVisibleMask(child) ? child.maskType : null
       },
       drawChild,
       drawChild,
@@ -248,18 +250,22 @@ function childrenBounds(graph: SceneGraph, node: SceneNode): Rect | null {
   return right > x && bottom > y ? { x, y, width: right - x, height: bottom - y } : null
 }
 
-/** The box the node's silhouette can cover, in its own coordinates, strokes included. */
+/**
+ * The box the node's silhouette can cover, in its own coordinates, strokes and the text lines a
+ * fixed-size box lets run past it included.
+ */
 export function silhouetteBounds(
   graph: SceneGraph,
   node: SceneNode,
   includeChildren: boolean
 ): Rect | null {
   const overflow = strokeOverflow(node)
+  const lines = textLinesReach(node)
   const own: Rect = {
     x: -overflow,
-    y: -overflow,
+    y: lines.minY - overflow,
     width: node.width + overflow * 2,
-    height: node.height + overflow * 2
+    height: lines.maxY - lines.minY + overflow * 2
   }
   if (!includeChildren || !isLayerContainer(node)) return own
   return unionRect(own, childrenBounds(graph, node))
