@@ -235,6 +235,22 @@ describe('reading HTML', () => {
     expect(circle.fills[0]?.color).toMatchObject({ r: 0, g: 128 / 255, b: 0 })
   })
 
+  test('keeps a stack whose children margins space evenly, spaced as the page did', async () => {
+    const block = (margin: string) =>
+      `<div style="height:20px;margin:${margin};background:#cccccc"></div>`
+    const { graph } = await readHTMLDocument(
+      `<div style="width:200px;display:flow-root">${block('16px 0')}${block('16px 0')}${block('16px 0')}</div>
+      <div style="width:200px;display:flow-root">${block('0')}${block('-6px 0 0')}${block('-6px 0 0')}</div>`
+    )
+    const [spaced, overlapping] = graph.getChildren(graph.getPages()[0].id)
+
+    // Collapsed margins leave 16 px between each two, and 16 px inside the edges.
+    expect(spaced).toMatchObject({ layoutMode: 'VERTICAL', itemSpacing: 16, paddingTop: 16 })
+    expect(graph.getChildren(spaced.id).map((child) => child.y)).toEqual([16, 52, 88])
+    expect(overlapping).toMatchObject({ layoutMode: 'VERTICAL', itemSpacing: -6 })
+    expect(graph.getChildren(overlapping.id).map((child) => child.y)).toEqual([0, 14, 28])
+  })
+
   test('centers a block capped by its maximum width at that width, keeping auto layout', async () => {
     const { graph } = await readHTMLDocument(
       `<div style="width:600px"><div style="max-width:300px;margin:0 auto">` +

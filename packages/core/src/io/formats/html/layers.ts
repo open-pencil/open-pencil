@@ -12,10 +12,11 @@ import { prepareGraphFonts } from '#core/text/prepare'
 import { drawInlineSVGs } from './svg'
 
 /**
- * Placing from captured boxes only turns auto layout off or fixes sizes, so it settles; each
- * pass can expose mismatches the previous layout hid, deeper in the tree.
+ * Placing from captured boxes only fixes sizes, spaces a stack once, or turns auto layout off,
+ * so it settles; each pass can expose mismatches the previous layout hid, deeper in the tree.
+ * The saved sites HTML import is measured on settle within seven.
  */
-const MAX_PLACEMENT_PASSES = 6
+const MAX_PLACEMENT_PASSES = 8
 
 /** The viewport HTML is laid out in when it is imported: a common laptop's, 1440 by 900. */
 export const HTML_IMPORT_VIEWPORT: DesignViewport = { width: 1440, height: 900 }
