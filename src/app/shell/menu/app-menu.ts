@@ -106,6 +106,7 @@ export function useAppMenu() {
     'help-docs': 'documentation',
     'help-shortcuts': 'keyboardShortcuts',
     'help-whats-new': 'whatsNew',
+    'check-updates': 'checkUpdates',
     'help-community': 'community',
     'help-github': 'github',
     save: 'save',
