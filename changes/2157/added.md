@@ -1,0 +1,1 @@
+- HTML import keeps CSS grids of several columns as grid layers, with the page's tracks, gaps, and item areas, instead of placing their items by hand (#2157).

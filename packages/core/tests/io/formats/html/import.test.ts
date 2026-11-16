@@ -149,6 +149,34 @@ describe('reading HTML', () => {
     expect(item).toMatchObject({ x: 150, y: 75, width: 100, height: 50 })
   })
 
+  test('keeps a grid of several columns a grid layer, with its items where the page put them', async () => {
+    const cellItem = (style = '') => `<div style="background:#ccc;${style}"></div>`
+    const { graph } = await readHTMLDocument(
+      `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:320px">` +
+        cellItem('height:40px') +
+        cellItem('width:60px;height:20px') +
+        cellItem() +
+        cellItem('grid-column:span 2;height:20px') +
+        cellItem('grid-column:span 2;width:60px;height:20px') +
+        `</div>`
+    )
+    const [grid] = graph.getChildren(graph.getPages()[0].id)
+    const boxes = graph
+      .getChildren(grid.id)
+      .map((item) => [item.x, item.y, item.width, item.height].map(Math.round))
+
+    expect(grid.layoutMode).toBe('GRID')
+    expect(boxes).toEqual([
+      [0, 0, 100, 40],
+      [110, 0, 60, 20],
+      [220, 0, 100, 40],
+      [0, 50, 210, 20],
+      [0, 80, 60, 20]
+    ])
+    // A start-aligned item still covers the two columns it spans.
+    expect(graph.getChildren(grid.id)[4].gridPosition).toMatchObject({ column: 1, columnSpan: 2 })
+  })
+
   test('centers a block capped by its maximum width at that width, keeping auto layout', async () => {
     const { graph } = await readHTMLDocument(
       `<div style="width:600px"><div style="max-width:300px;margin:0 auto">` +

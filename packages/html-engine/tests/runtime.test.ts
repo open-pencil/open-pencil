@@ -225,6 +225,19 @@ describe('the HTML engine runtime', () => {
     expect(elementById(document, 'b').computedStyle?.['justify-self']).toBe('end')
   })
 
+  test('reports the grid lines an item declares', async () => {
+    const document = await styled(
+      '<div style="display:grid"><div id="a" style="grid-column:span 2"></div><div id="b" style="grid-row:2 / 4"></div></div>'
+    )
+    const lines = (id: string, axis: string) => {
+      const style = elementById(document, id).computedStyle ?? {}
+      return [style[`grid-${axis}-start`], style[`grid-${axis}-end`]]
+    }
+
+    expect(lines('a', 'column')).toEqual(['span 2', 'auto'])
+    expect(lines('b', 'row')).toEqual(['2', '4'])
+  })
+
   test("pairs a shader layer's children past the still frame the serializer writes", async () => {
     const card: DesignDocument = {
       type: 'document',
