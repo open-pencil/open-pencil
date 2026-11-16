@@ -10,6 +10,7 @@ import {
   parseCloudServerConfig,
   type CloudActor
 } from '#cloud/server'
+import { testClient } from 'hono/testing'
 import * as v from 'valibot'
 
 const config = parseCloudServerConfig({
@@ -63,15 +64,16 @@ describe('Cloud workspace routes', () => {
         resolveIdentity: async () => alice,
         resolveSession: async () => alice
       })
+      const client = testClient(app)
       const statuses = await Promise.all([
-        app.request('/api/account/status'),
-        app.request('/api/account/status')
+        client.api.account.status.$get(),
+        client.api.account.status.$get()
       ])
       expect(statuses.map((response) => response.status)).toEqual([200, 200])
-      await app.request('/api/account/status')
+      await client.api.account.status.$get()
 
       const listed = await responseJSON(
-        await app.request('/api/workspaces'),
+        await client.api.workspaces.$get(),
         v.object({ workspaces: v.array(v.object({ name: v.string(), role: v.string() })) })
       )
       expect(listed.workspaces).toEqual([
@@ -85,9 +87,11 @@ describe('Cloud workspace routes', () => {
   test('requires authentication for Cloud APIs', async () => {
     const { app, runtime } = await testApp(null)
     try {
-      const response = await app.request('/api/workspaces')
+      const response = await testClient(app).api.workspaces.$get()
       expect(response.status).toBe(401)
-      expect(await response.json()).toEqual({ error: { code: 'unauthorized' } })
+      expect(
+        await responseJSON(response, v.object({ error: v.object({ code: v.string() }) }))
+      ).toEqual({ error: { code: 'unauthorized' } })
     } finally {
       await runtime.close()
     }
@@ -96,7 +100,7 @@ describe('Cloud workspace routes', () => {
   test('returns the resolved session actor', async () => {
     const { app, runtime } = await testApp(alice)
     try {
-      const response = await app.request('/api/session')
+      const response = await testClient(app).api.session.$get()
       expect(response.status).toBe(200)
       expect(await response.json()).toEqual({ user: alice })
     } finally {
@@ -107,10 +111,9 @@ describe('Cloud workspace routes', () => {
   test('creates, lists, and reads an owned workspace', async () => {
     const { app, runtime } = await testApp(alice)
     try {
-      const createResponse = await app.request('/api/workspaces', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'Design team', slug: 'design-team' })
+      const client = testClient(app)
+      const createResponse = await client.api.workspaces.$post({
+        json: { name: 'Design team', slug: 'design-team' }
       })
       expect(createResponse.status).toBe(201)
       const created = await responseJSON(
@@ -130,13 +133,15 @@ describe('Cloud workspace routes', () => {
         role: 'admin'
       })
 
-      const listResponse = await app.request('/api/workspaces')
+      const listResponse = await client.api.workspaces.$get()
       expect(listResponse.status).toBe(200)
       expect(await listResponse.json()).toMatchObject({
         workspaces: [{ id: created.workspace.id, role: 'admin' }]
       })
 
-      const getResponse = await app.request(`/api/workspaces/${created.workspace.id}`)
+      const getResponse = await client.api.workspaces[':workspaceId'].$get({
+        param: { workspaceId: created.workspace.id }
+      })
       expect(getResponse.status).toBe(200)
       expect(await getResponse.json()).toMatchObject({ workspace: created.workspace })
     } finally {
@@ -147,10 +152,8 @@ describe('Cloud workspace routes', () => {
   test('does not reveal another user workspace', async () => {
     const { app, runtime } = await testApp(alice)
     try {
-      const createResponse = await app.request('/api/workspaces', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'Private', slug: 'private-space' })
+      const createResponse = await testClient(app).api.workspaces.$post({
+        json: { name: 'Private', slug: 'private-space' }
       })
       const created = await responseJSON(
         createResponse,
@@ -164,7 +167,9 @@ describe('Cloud workspace routes', () => {
         resolveSession: async () => bob
       })
 
-      const response = await bobApp.request(`/api/workspaces/${created.workspace.id}`)
+      const response = await testClient(bobApp).api.workspaces[':workspaceId'].$get({
+        param: { workspaceId: created.workspace.id }
+      })
       expect(response.status).toBe(404)
       expect(await response.json()).toEqual({ error: { code: 'not_found' } })
     } finally {
@@ -175,25 +180,14 @@ describe('Cloud workspace routes', () => {
   test('validates workspace input and reports duplicate slugs', async () => {
     const { app, runtime } = await testApp(alice)
     try {
-      const invalid = await app.request('/api/workspaces', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: '' })
-      })
+      const client = testClient(app)
+      const invalid = await client.api.workspaces.$post({ json: { name: '' } })
       expect(invalid.status).toBe(400)
 
-      const body = JSON.stringify({ name: 'Team', slug: 'shared-team' })
-      const first = await app.request('/api/workspaces', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body
-      })
+      const json = { name: 'Team', slug: 'shared-team' }
+      const first = await client.api.workspaces.$post({ json })
       expect(first.status).toBe(201)
-      const duplicate = await app.request('/api/workspaces', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body
-      })
+      const duplicate = await client.api.workspaces.$post({ json })
       expect(duplicate.status).toBe(409)
       expect(await duplicate.json()).toEqual({ error: { code: 'slug_conflict' } })
     } finally {
@@ -204,13 +198,10 @@ describe('Cloud workspace routes', () => {
   test("counts a workspace's invitations and resends on one budget, and caps the actor across workspaces", async () => {
     const { app, runtime } = await testApp(alice)
     try {
+      const client = testClient(app)
       const createWorkspace = async (slug: string) => {
         const created = await responseJSON(
-          await app.request('/api/workspaces', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: slug, slug })
-          }),
+          await client.api.workspaces.$post({ json: { name: slug, slug } }),
           v.object({ workspace: v.object({ id: v.string() }) })
         )
         return created.workspace.id
@@ -229,10 +220,9 @@ describe('Cloud workspace routes', () => {
         ).status
       const resend = async (workspaceId: string) =>
         (
-          await app.request(
-            `/api/workspaces/${workspaceId}/invitations/${crypto.randomUUID()}/resend`,
-            { method: 'POST' }
-          )
+          await client.api.workspaces[':workspaceId'].invitations[':invitationId'].resend.$post({
+            param: { workspaceId, invitationId: crypto.randomUUID() }
+          })
         ).status
 
       const { limit } = CLOUD_RATE_LIMITS.invitationMutation

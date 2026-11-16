@@ -1,4 +1,4 @@
-import { parseCreateServicesToken } from '#cloud/contract'
+import { createServicesTokenSchema } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
 import { DocumentNotFoundError } from '#cloud/server/documents'
@@ -26,7 +26,7 @@ export function createServicesRoutes(
   }
   return router.post(
     '/services/token',
-    validatedJSON(parseCreateServicesToken),
+    validatedJSON(createServicesTokenSchema),
     async (context) => {
       if (!service) return context.json({ error: { code: 'not_found' as const } }, 404)
       try {

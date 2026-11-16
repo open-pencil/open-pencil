@@ -1,4 +1,4 @@
-import { parseCloudAccessTokenCreate, parseCloudAccessTokenRevoke } from '#cloud/contract'
+import { cloudAccessTokenCreateSchema, cloudAccessTokenRevokeSchema } from '#cloud/contract'
 import type { CloudAPIEnvironment } from '#cloud/server/api'
 import type { CloudAuthAdapter, CloudSessionResolver } from '#cloud/server/auth'
 import { validatedJSON } from '#cloud/server/validation'
@@ -31,7 +31,7 @@ export function createAccessTokenRoutes(services: AccessTokenRouteDependencies) 
     })
     .post(
       '/api/account/tokens/create',
-      validatedJSON(parseCloudAccessTokenCreate),
+      validatedJSON(cloudAccessTokenCreateSchema),
       async (context) => {
         const result = await accountAction(
           () => services.auth.createAccessToken(context.req.raw.headers, context.req.valid('json')),
@@ -42,7 +42,7 @@ export function createAccessTokenRoutes(services: AccessTokenRouteDependencies) 
     )
     .post(
       '/api/account/tokens/revoke',
-      validatedJSON(parseCloudAccessTokenRevoke),
+      validatedJSON(cloudAccessTokenRevokeSchema),
       async (context) => {
         const result = await accountAction(
           () =>

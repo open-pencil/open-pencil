@@ -1,11 +1,11 @@
 import {
-  parseAcceptDocumentInvitation,
-  parseCreateInvitationContinuation,
-  parseCreateDocumentInvitation,
-  parseCreateDocumentShare,
-  parsePutDocumentGrant,
-  parseResolveDocumentShare,
-  parseUpdateDocumentShare
+  acceptDocumentInvitationSchema,
+  createInvitationContinuationSchema,
+  createDocumentInvitationSchema,
+  createDocumentShareSchema,
+  putDocumentGrantSchema,
+  resolveDocumentShareSchema,
+  updateDocumentShareSchema
 } from '#cloud/contract'
 import type { CloudActor, CloudSessionResolver } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
@@ -77,7 +77,7 @@ export function createDocumentSharingRoutes(
     .post(
       '/documents/:documentId/shares',
       documentParams,
-      validatedJSON(parseCreateDocumentShare),
+      validatedJSON(createDocumentShareSchema),
       (context) =>
         sharingRoute(context, async () =>
           context.json(
@@ -93,7 +93,7 @@ export function createDocumentSharingRoutes(
     .patch(
       '/documents/:documentId/shares/:shareId',
       documentShareParams,
-      validatedJSON(parseUpdateDocumentShare),
+      validatedJSON(updateDocumentShareSchema),
       (context) =>
         sharingRoute(context, async () =>
           context.json({
@@ -140,7 +140,7 @@ export function createDocumentSharingRoutes(
     .put(
       '/documents/:documentId/grants/:userId',
       documentUserParams,
-      validatedJSON(parsePutDocumentGrant),
+      validatedJSON(putDocumentGrantSchema),
       (context) =>
         sharingRoute(context, async () =>
           context.json({
@@ -176,7 +176,7 @@ export function createDocumentSharingRoutes(
     .post(
       '/documents/:documentId/invitations',
       documentParams,
-      validatedJSON(parseCreateDocumentInvitation),
+      validatedJSON(createDocumentInvitationSchema),
       (context) =>
         sharingRoute(context, async () =>
           context.json(
@@ -192,7 +192,7 @@ export function createDocumentSharingRoutes(
     .post(
       '/invitations/:invitationId/accept',
       invitationParams,
-      validatedJSON(parseAcceptDocumentInvitation),
+      validatedJSON(acceptDocumentInvitationSchema),
       (context) =>
         sharingRoute(context, async () =>
           context.json({
@@ -226,7 +226,7 @@ export function createPublicSharingRoutes(
   return new Hono()
     .post(
       '/invitations/continuations',
-      validatedJSON(parseCreateInvitationContinuation),
+      validatedJSON(createInvitationContinuationSchema),
       (context) =>
         sharingRoute(context, async () =>
           context.json(await service.createInvitationContinuation(context.req.valid('json')), 201)
@@ -245,7 +245,7 @@ export function createPublicSharingRoutes(
     .post(
       '/invitations/:invitationId/preview',
       invitationParams,
-      validatedJSON(parseAcceptDocumentInvitation),
+      validatedJSON(acceptDocumentInvitationSchema),
       (context) =>
         sharingRoute(context, async () =>
           context.json({
@@ -259,7 +259,7 @@ export function createPublicSharingRoutes(
     .post(
       '/shares/:shareId/resolve',
       shareParams,
-      validatedJSON(parseResolveDocumentShare),
+      validatedJSON(resolveDocumentShareSchema),
       (context) =>
         sharingRoute(context, async () =>
           context.json({

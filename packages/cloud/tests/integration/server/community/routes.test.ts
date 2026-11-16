@@ -12,6 +12,7 @@ import {
   type CloudServerConfig
 } from '#cloud/server'
 import { zipSync } from 'fflate'
+import { testClient } from 'hono/testing'
 import { fromUint8Array, toUint8Array } from 'js-base64'
 import * as v from 'valibot'
 
@@ -58,24 +59,21 @@ async function gallery() {
       objects: objects.store,
       resolveSession: async () => (signedIn ? alice : null)
     })
-  const owner = app(config, true)
-  const request = (path: string, init: { method?: string; json?: unknown } = {}) =>
-    owner.request(`/api${path}`, {
-      method: init.method ?? 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      body: init.json === undefined ? undefined : JSON.stringify(init.json)
-    })
+  const owner = testClient(app(config, true))
 
   async function workspace(name: string) {
     const created = await responseJSON(
-      await request('/workspaces', { method: 'POST', json: { name } }),
+      await owner.api.workspaces.$post({ json: { name } }),
       v.object({ workspace: idSchema })
     )
     return created.workspace.id
   }
   async function document(workspaceId: string, name: string) {
     const created = await responseJSON(
-      await request(`/workspaces/${workspaceId}/documents`, { method: 'POST', json: { name } }),
+      await owner.api.workspaces[':workspaceId'].documents.$post({
+        param: { workspaceId },
+        json: { name }
+      }),
       documentSchema
     )
     return created.document.id
@@ -85,8 +83,8 @@ async function gallery() {
     const bytes = zipSync({ 'canvas.fig': new TextEncoder().encode(label), 'thumbnail.png': PNG })
     const checksum = await sha256(bytes)
     const upload = await responseJSON(
-      await request(`/documents/${documentId}/uploads`, {
-        method: 'POST',
+      await owner.api.documents[':documentId'].uploads.$post({
+        param: { documentId },
         json: {
           baseRevisionId,
           byteSize: bytes.byteLength,
@@ -108,7 +106,10 @@ async function gallery() {
       contentType: 'application/octet-stream'
     })
     const committed = await responseJSON(
-      await request(`/uploads/${upload.id}/commit`, { method: 'POST', json: { checksum } }),
+      await owner.api.uploads[':uploadId'].commit.$post({
+        param: { uploadId: upload.id },
+        json: { checksum }
+      }),
       documentSchema
     )
     const revision = committed.document.currentRevisionId
@@ -117,8 +118,8 @@ async function gallery() {
   }
   async function nameVersion(documentId: string, name: string, description = '') {
     const named = await responseJSON(
-      await request(`/documents/${documentId}/versions`, {
-        method: 'POST',
+      await owner.api.documents[':documentId'].versions.$post({
+        param: { documentId },
         json: { name, description }
       }),
       v.object({ version: idSchema })
@@ -131,13 +132,13 @@ async function gallery() {
   const community = app({ ...config, community: { workspaceId: communityId } }, false)
   return {
     runtime,
-    request,
+    owner,
     workspace: { community: communityId, studio: studioId },
     document,
     save,
     nameVersion,
-    visitor: (path: string, init?: RequestInit) => community.request(path, init),
-    withoutGallery: (path: string) => app(config, false).request(path)
+    visitor: testClient(community),
+    withoutGallery: testClient(app(config, false))
   }
 }
 
@@ -152,7 +153,7 @@ describe('community gallery', () => {
     await server.document(server.workspace.community, 'Draft')
     const trashed = await server.document(server.workspace.community, 'Old')
     await server.save(trashed, null, 'old')
-    await server.request(`/documents/${trashed}`, { method: 'DELETE' })
+    await server.owner.api.documents[':documentId'].$delete({ param: { documentId: trashed } })
     const removed = await server.document(server.workspace.community, 'Removed')
     await server.save(removed, null, 'removed')
     await server.runtime.database
@@ -182,7 +183,7 @@ describe('community gallery', () => {
       .execute()
 
     const listed = await responseJSON(
-      await server.visitor('/api/community'),
+      await server.visitor.api.community.$get(),
       communityDocumentsSchema
     )
 
@@ -206,8 +207,15 @@ describe('community gallery', () => {
         ]
       }
     ])
-    expect((await server.visitor(`/api/community/${spam}/document`)).status).toBe(404)
-    expect((await server.withoutGallery('/api/community')).status).toBe(404)
+    expect(
+      (
+        await server.visitor.api.community[':documentId'].document.$get({
+          param: { documentId: spam },
+          query: {}
+        })
+      ).status
+    ).toBe(404)
+    expect((await server.withoutGallery.api.community.$get()).status).toBe(404)
   })
 
   test('opens a document as it is now or as a named version, and nothing outside it', async () => {
@@ -220,14 +228,20 @@ describe('community gallery', () => {
     await server.save(secret, null, 'secret')
 
     const latest = await responseJSON(
-      await server.visitor(`/api/community/${tour}/document`),
+      await server.visitor.api.community[':documentId'].document.$get({
+        param: { documentId: tour },
+        query: {}
+      }),
       communityDownloadSchema
     )
     expect(latest.document.revisionId).toBe(current)
     expect(latest.version).toBeNull()
 
     const named = await responseJSON(
-      await server.visitor(`/api/community/${tour}/document?version=${release}`),
+      await server.visitor.api.community[':documentId'].document.$get({
+        param: { documentId: tour },
+        query: { version: release }
+      }),
       communityDownloadSchema
     )
     expect(named.document.revisionId).toBe(first)
@@ -235,20 +249,31 @@ describe('community gallery', () => {
 
     // A checkpoint is not a published version; a private document does not exist here.
     const unnamed = await server.nameVersion(tour, 'Draft')
-    await server.request(`/documents/${tour}/versions/${unnamed}`, {
-      method: 'PATCH',
+    await server.owner.api.documents[':documentId'].versions[':versionId'].$patch({
+      param: { documentId: tour, versionId: unnamed },
       json: { name: null }
     })
     expect(
-      (await server.visitor(`/api/community/${tour}/document?version=${unnamed}`)).status
+      (
+        await server.visitor.api.community[':documentId'].document.$get({
+          param: { documentId: tour },
+          query: { version: unnamed }
+        })
+      ).status
     ).toBe(404)
-    expect((await server.visitor(`/api/community/${secret}/document`)).status).toBe(404)
     expect(
       (
-        await server.visitor(`/api/community/${secret}/images`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ checksums: [`${'A'.repeat(43)}=`] })
+        await server.visitor.api.community[':documentId'].document.$get({
+          param: { documentId: secret },
+          query: {}
+        })
+      ).status
+    ).toBe(404)
+    expect(
+      (
+        await server.visitor.api.community[':documentId'].images.$post({
+          param: { documentId: secret },
+          json: { checksums: [`${'A'.repeat(43)}=`] }
         })
       ).status
     ).toBe(404)
@@ -260,7 +285,9 @@ describe('community gallery', () => {
     const first = await server.save(tour, null, 'first')
     const current = await server.save(tour, first, 'second')
 
-    const thumbnail = await server.visitor(`/api/community/thumbnails/${tour}/${current}`)
+    const thumbnail = await server.visitor.api.community.thumbnails[':documentId'][
+      ':revisionId'
+    ].$get({ param: { documentId: tour, revisionId: current } })
     expect(thumbnail.status).toBe(200)
     expect(thumbnail.headers.get('content-type')).toBe('image/png')
     // Cached no longer than the listing, so a takedown reaches every copy within minutes.
@@ -268,6 +295,12 @@ describe('community gallery', () => {
     expect([...new Uint8Array(await thumbnail.arrayBuffer())]).toEqual([...PNG])
 
     // An address for a revision that is no longer current shows nothing rather than old work.
-    expect((await server.visitor(`/api/community/thumbnails/${tour}/${first}`)).status).toBe(404)
+    expect(
+      (
+        await server.visitor.api.community.thumbnails[':documentId'][':revisionId'].$get({
+          param: { documentId: tour, revisionId: first }
+        })
+      ).status
+    ).toBe(404)
   })
 })
