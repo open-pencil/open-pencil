@@ -7,7 +7,7 @@ import type {
   CampaignPlacement
 } from '@open-pencil/feedback/contract'
 
-import { cloudServers } from '@/app/cloud/servers/store'
+import { officialCloudSignedIn } from '@/app/cloud/integration'
 import { DONATION_URL } from '@/app/donation/url'
 import {
   appPreferences,
@@ -59,8 +59,13 @@ export function campaignsFor(
   return [...own.filter((campaign) => !servedIds.has(campaign.id)), ...served]
 }
 
-/** This install's campaigns. */
-export const campaigns = computed(() => campaignsFor(servedCampaigns.value, DONATION_URL))
+/**
+ * This install's campaigns. Served ones only while the daily ping is on, as the privacy page
+ * promises: turning it off drops what earlier pings brought, while the app's own stay.
+ */
+export const campaigns = computed(() =>
+  campaignsFor(appPreferences.value.sharing.dailyPing ? servedCampaigns.value : [], DONATION_URL)
+)
 
 /** The campaign the corner prompt shows, while it shows. */
 export const promptCampaign = shallowRef<AppCampaign | null>(null)
@@ -98,14 +103,11 @@ async function campaignContext(now: number): Promise<CampaignContext> {
   carryDonationClockOver(now)
   startCampaignClock(now)
   const { installedAt, lastPromptAt, records } = appPreferences.value.campaigns
-  const signedIn = cloudServers.value.some(
-    (server) => server.kind === 'official' && server.account !== null
-  )
   return {
     now,
     installedAt: installedAt ?? now,
     build: await currentBuild(),
-    cloud: signedIn ? 'signed-in' : 'signed-out',
+    cloud: officialCloudSignedIn.value ? 'signed-in' : 'signed-out',
     records,
     lastPromptAt,
     promptedThisLaunch: promptedThisLaunch.value
@@ -122,7 +124,10 @@ export async function offerCampaignPrompt(
   now = Date.now(),
   available: readonly AppCampaign[] = campaigns.value
 ): Promise<void> {
-  const due = dueCampaign(available, 'prompt', await campaignContext(now))
+  const context = await campaignContext(now)
+  // Read after the wait, and set in the same step as choosing, so two offers at once show one.
+  if (promptedThisLaunch.value) return
+  const due = dueCampaign(available, 'prompt', { ...context, promptedThisLaunch: false })
   if (!due) return
   promptedThisLaunch.value = true
   updateCampaignPreferences({ lastPromptAt: now })

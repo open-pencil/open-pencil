@@ -5,6 +5,7 @@ import * as v from 'valibot'
 import { campaignSchema, type Campaign } from '@open-pencil/feedback/contract'
 
 import {
+  campaigns,
   campaignsFor,
   dismissCampaign,
   offerCampaignPrompt,
@@ -13,6 +14,7 @@ import {
   recordCampaignAction,
   startCampaignClock
 } from '@/app/campaigns'
+import { receiveCampaigns } from '@/app/campaigns/served'
 import { appPreferences, DEFAULT_APP_PREFERENCES } from '@/app/settings/preferences/store'
 
 const DAY = 24 * 60 * 60 * 1000
@@ -101,5 +103,20 @@ describe('campaigns in the app', () => {
   test('a served campaign with the donation ask’s ID replaces it', () => {
     const replacement = served({ id: 'donation', kind: 'donation' })
     expect(campaignsFor([replacement], URL)).toEqual([replacement])
+  })
+
+  test('shows served campaigns only while the daily ping is on', () => {
+    const cloud = served({})
+    receiveCampaigns({ campaigns: [cloud] })
+    expect(campaigns.value.map((campaign) => campaign.id)).toContain('try-cloud')
+    appPreferences.value.sharing.dailyPing = false
+    expect(campaigns.value.map((campaign) => campaign.id)).not.toContain('try-cloud')
+  })
+
+  test('two offers at once show one prompt', async () => {
+    startCampaignClock(FIRST_RUN)
+    const now = FIRST_RUN + 10 * DAY
+    await Promise.all([offerCampaignPrompt(now, [served({})]), offerCampaignPrompt(now, OWN)])
+    expect(promptCampaign.value?.id).toBe('try-cloud')
   })
 })
