@@ -1,10 +1,7 @@
 import type { VectorNetwork, VectorSegment } from '@open-pencil/scene-graph'
-import {
-  cubicExtrema as curveExtrema,
-  cubicPoint,
-  vectorNetworkBounds
-} from '@open-pencil/scene-graph/geometry'
+import { cubicExtrema as curveExtrema, cubicPoint } from '@open-pencil/scene-graph/geometry'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
+import { vectorNetworkBounds } from '@open-pencil/scene-graph/vector-bounds'
 
 export interface CubicPoints {
   p0: Vector

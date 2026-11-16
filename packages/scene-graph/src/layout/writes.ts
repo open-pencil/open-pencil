@@ -1,8 +1,8 @@
 import { SIZE_FIELDS, TRANSFORM_FIELDS } from '../fields/geometry'
-import { vectorNetworkAxisLengths } from '../geometry'
 import type { Rect } from '../primitives'
 import { createResizeSnapshot, scaledGeometryChanges } from '../resize'
 import type { SceneNode, VectorNetwork } from '../types'
+import { vectorNetworkAxisLengths } from '../vector-bounds'
 
 /**
  * The layout results a format keeps apart from what it saved once an edit moves or sizes.

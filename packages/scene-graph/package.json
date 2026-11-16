@@ -392,6 +392,12 @@
       "import": "./dist/variant-properties.js",
       "default": "./dist/variant-properties.js"
     },
+    "./vector-bounds": {
+      "types": "./dist/vector-bounds.d.ts",
+      "bun": "./src/vector-bounds.ts",
+      "import": "./dist/vector-bounds.js",
+      "default": "./dist/vector-bounds.js"
+    },
     "./vector-network": {
       "types": "./dist/vector-network.d.ts",
       "bun": "./src/vector-network.ts",

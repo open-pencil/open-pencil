@@ -67,6 +67,7 @@ export default defineConfig(
       'variables/index': './src/variables/index.ts',
       'variant-name': './src/variant-name.ts',
       'variant-properties': './src/variant-properties.ts',
+      'vector-bounds': './src/vector-bounds.ts',
       'vector-network': './src/vector-network.ts'
     },
     // Each module keeps its source path, so an entry's declarations never share a name with a chunk.
