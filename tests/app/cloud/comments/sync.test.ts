@@ -1,7 +1,14 @@
 import 'fake-indexeddb/auto'
 import { afterEach, describe, expect, test } from 'bun:test'
 
+import * as v from 'valibot'
+
 import { CloudAPIError } from '@open-pencil/cloud/client'
+import {
+  CLOUD_API_MAX_BODY_BYTES,
+  importCommentThreadsSchema,
+  type ImportCommentThreadsInput
+} from '@open-pencil/cloud/contract'
 import {
   createCommentReply,
   createCommentThread,
@@ -166,10 +173,10 @@ describe('Cloud comments in a tab', () => {
 
   test('split a file’s comments into imports the server takes', async () => {
     const server = commentServer()
-    const sizes: number[] = []
+    const sent: ImportCommentThreadsInput[] = []
     const { store, follow, pageId } = open(server, {
       importer: async () => async (input) => {
-        sizes.push(input.threads.length)
+        sent.push(input)
         return { threads: [], access: { canComment: true, canModerate: true, accountId: null } }
       }
     })
@@ -189,8 +196,15 @@ describe('Cloud comments in a tab', () => {
     )
     const follower = follow()
     await follower.idle()
-    expect(sizes.length).toBeGreaterThan(1)
-    expect(sizes.reduce((total, size) => total + size, 0)).toBe(600)
+    expect(sent.length).toBeGreaterThan(1)
+    expect(sent.reduce((total, input) => total + input.threads.length, 0)).toBe(600)
+    // Each one is a request the server takes, by its schema and by its size.
+    for (const input of sent) {
+      expect(v.is(importCommentThreadsSchema, input)).toBe(true)
+      expect(new TextEncoder().encode(JSON.stringify(input)).length).toBeLessThanOrEqual(
+        CLOUD_API_MAX_BODY_BYTES
+      )
+    }
   })
 
   test('send whom a comment names, and tell the UI what is new until it is read', async () => {
