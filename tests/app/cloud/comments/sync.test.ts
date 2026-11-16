@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto'
 import { afterEach, describe, expect, test } from 'bun:test'
 
+import { CloudAPIError } from '@open-pencil/cloud/client'
 import {
   createCommentReply,
   createCommentThread,
@@ -144,6 +145,52 @@ describe('Cloud comments in a tab', () => {
     // Under the name the file gave, never as whoever saved it.
     expect(imported).toEqual(['Carol'])
     expect(server.calls).toEqual(['list'])
+  })
+
+  test('load the document when the server refuses part of the file’s comments', async () => {
+    const server = commentServer()
+    const sent: number[] = []
+    const { store, follow, pageId } = open(server, {
+      importer: async () => async (input) => {
+        sent.push(input.threads.length)
+        throw new CloudAPIError('too large', 413, 'invalid_request')
+      }
+    })
+    addThread(store, pageId, 'From the file')
+    const follower = follow()
+    await follower.idle()
+    // Refused once, never sent again; the tab can comment on what the server holds.
+    expect(sent).toEqual([1])
+    expect(commentsKeptElsewhere.value.get(store)?.canComment).toBe(true)
+  })
+
+  test('split a file’s comments into imports the server takes', async () => {
+    const server = commentServer()
+    const sizes: number[] = []
+    const { store, follow, pageId } = open(server, {
+      importer: async () => async (input) => {
+        sizes.push(input.threads.length)
+        return { threads: [], access: { canComment: true, canModerate: true, accountId: null } }
+      }
+    })
+    // About 10 MB of comments, more than the server takes in one request.
+    const text = '😀'.repeat(4_000)
+    writeComments(
+      store.graph,
+      Array.from({ length: 600 }, () =>
+        createCommentThread(store.graph, {
+          pageId,
+          at: { x: 1, y: 1 },
+          author: { name: 'Carol' },
+          text,
+          now: NOW
+        })
+      )
+    )
+    const follower = follow()
+    await follower.idle()
+    expect(sizes.length).toBeGreaterThan(1)
+    expect(sizes.reduce((total, size) => total + size, 0)).toBe(600)
   })
 
   test('send whom a comment names, and tell the UI what is new until it is read', async () => {

@@ -8,7 +8,8 @@ export const COMMENT_BODY_MAX_LENGTH = 10_000
 export const MAX_COMMENT_THREADS_PER_DOCUMENT = 5_000
 /** The most comments one thread may hold, its first one included. */
 export const MAX_COMMENTS_PER_THREAD = 500
-const NAME_MAX_LENGTH = 255
+/** The most a page, layer or author name in a comment may hold, in characters. */
+export const COMMENT_NAME_MAX_LENGTH = 255
 const ID_MAX_LENGTH = 200
 
 /**
@@ -38,10 +39,10 @@ export type CloudComment = v.InferOutput<typeof cloudCommentSchema>
 /** Where a pin sits, as the editor places it. */
 const commentAnchorEntries = {
   pageId: v.pipe(v.string(), v.minLength(1), v.maxLength(ID_MAX_LENGTH)),
-  pageName: v.nullable(v.pipe(v.string(), v.maxLength(NAME_MAX_LENGTH))),
+  pageName: v.nullable(v.pipe(v.string(), v.maxLength(COMMENT_NAME_MAX_LENGTH))),
   /** The top-level layer the pin follows, if any. */
   nodeId: v.nullable(v.pipe(v.string(), v.minLength(1), v.maxLength(ID_MAX_LENGTH))),
-  nodeName: v.nullable(v.pipe(v.string(), v.maxLength(NAME_MAX_LENGTH))),
+  nodeName: v.nullable(v.pipe(v.string(), v.maxLength(COMMENT_NAME_MAX_LENGTH))),
   /** The pin's offset from the layer's top-left corner. */
   offsetX: v.nullable(v.pipe(v.number(), v.finite())),
   offsetY: v.nullable(v.pipe(v.number(), v.finite())),
@@ -178,7 +179,7 @@ export const importCommentThreadsSchema = v.object({
         comments: v.pipe(
           v.array(
             v.object({
-              authorName: v.pipe(v.string(), v.trim(), v.maxLength(NAME_MAX_LENGTH)),
+              authorName: v.pipe(v.string(), v.trim(), v.maxLength(COMMENT_NAME_MAX_LENGTH)),
               body: bodySchema,
               createdAt: v.pipe(v.string(), v.isoTimestamp())
             })

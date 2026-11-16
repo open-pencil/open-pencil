@@ -1,6 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { CloudCommentThread } from '@open-pencil/cloud/contract'
+import * as v from 'valibot'
+
+import {
+  COMMENT_BODY_MAX_LENGTH,
+  COMMENT_NAME_MAX_LENGTH,
+  importCommentThreadsSchema,
+  type CloudCommentThread
+} from '@open-pencil/cloud/contract'
 import type { CommentThread } from '@open-pencil/scene-graph'
 
 import {
@@ -141,6 +148,21 @@ describe('Cloud comment threads', () => {
         { authorName: '', body: 'Done', createdAt: '2026-11-16T10:05:00.000Z' }
       ]
     })
+  })
+
+  test('cut words and names longer than the server keeps, so an import is never refused', () => {
+    const local = documentThread(stored)
+    const long = `${'a'.repeat(COMMENT_BODY_MAX_LENGTH - 1)}😀 tail`
+    const [thread] = importedThreads(
+      [{ ...local, text: long, author: 'n'.repeat(300), pageName: 'p'.repeat(300) }],
+      '2026-11-16T12:00:00.000Z'
+    ).threads
+    const [first] = thread?.comments ?? []
+    // Never through the emoji, whose first half alone would be a broken character.
+    expect(first?.body).toBe('a'.repeat(COMMENT_BODY_MAX_LENGTH - 1))
+    expect(first?.authorName).toHaveLength(COMMENT_NAME_MAX_LENGTH)
+    expect(thread?.pageName).toHaveLength(COMMENT_NAME_MAX_LENGTH)
+    expect(v.is(importCommentThreadsSchema, { threads: [thread] })).toBe(true)
   })
 
   test('acknowledge a change and nothing someone else did meanwhile', () => {

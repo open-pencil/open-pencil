@@ -97,6 +97,33 @@ export function linkMentions(text: string, picked: readonly PickedMention[]): st
   return result
 }
 
+/**
+ * Text with `person` picked over the range `start`–`end`, and the mentions it then holds. A mention
+ * the range overlaps gives way to the new one, so no two ever cover the same text.
+ */
+export function insertMention(
+  text: string,
+  range: { start: number; end: number },
+  person: MentionPerson,
+  picked: readonly PickedMention[]
+): { text: string; picked: PickedMention[]; caret: number } {
+  const { start, end } = range
+  const name = `@${person.name}`
+  const delta = name.length + 1 - (end - start)
+  const kept = picked.flatMap((mention) => {
+    if (mention.end <= start) return [mention]
+    if (mention.start >= end) {
+      return [{ ...mention, start: mention.start + delta, end: mention.end + delta }]
+    }
+    return []
+  })
+  return {
+    text: `${text.slice(0, start)}${name} ${text.slice(end)}`,
+    picked: [...kept, { start, end: start + name.length, person }],
+    caret: start + name.length + 1
+  }
+}
+
 /** The `@query` being typed right before the caret, if any. */
 export function mentionQuery(text: string, caret: number): { query: string; start: number } | null {
   const match = /(?:^|[\s([])@([^\s@[\]()]*)$/.exec(text.slice(0, caret))

@@ -1,9 +1,11 @@
-import type {
-  CloudComment,
-  CloudCommentThread,
-  CommentAnchor,
-  ImportCommentThreadsInput,
-  UpdateCommentThreadInput
+import {
+  COMMENT_BODY_MAX_LENGTH,
+  COMMENT_NAME_MAX_LENGTH,
+  type CloudComment,
+  type CloudCommentThread,
+  type CommentAnchor,
+  type ImportCommentThreadsInput,
+  type UpdateCommentThreadInput
 } from '@open-pencil/cloud/contract'
 import type { CommentReply, CommentThread } from '@open-pencil/scene-graph'
 
@@ -65,13 +67,27 @@ export function documentThread(thread: CloudCommentThread): CommentThread {
   }
 }
 
-/** Where a thread's pin sits, as the server takes it. */
+/** Text cut to what the server keeps, never through a character. */
+function clip(text: string, max: number): string {
+  const trimmed = text.trim()
+  if (trimmed.length <= max) return trimmed
+  return trimmed
+    .slice(0, max)
+    .replace(/[\uD800-\uDBFF]$/, '')
+    .trimEnd()
+}
+
+function clipName(name: string | null | undefined): string | null {
+  return name == null ? null : clip(name, COMMENT_NAME_MAX_LENGTH)
+}
+
+/** Where a thread's pin sits, as the server takes it; a longer name than it keeps is cut. */
 export function threadAnchor(thread: CommentThread): CommentAnchor {
   return {
     pageId: thread.pageId,
-    pageName: thread.pageName ?? null,
+    pageName: clipName(thread.pageName),
     nodeId: thread.nodeId ?? null,
-    nodeName: thread.nodeName ?? null,
+    nodeName: clipName(thread.nodeName),
     offsetX: thread.offsetX ?? null,
     offsetY: thread.offsetY ?? null,
     x: thread.x,
@@ -146,7 +162,10 @@ function importTime(value: string, fallback: string): string {
   return Number.isNaN(Date.parse(value)) ? fallback : new Date(value).toISOString()
 }
 
-/** The threads a file brought with it, to keep on the server under the names it gave. */
+/**
+ * The threads a file brought with it, to keep on the server under the names it gave. A file may
+ * hold longer words or names than the server keeps; those are cut, so the import is never refused.
+ */
 export function importedThreads(
   threads: readonly CommentThread[],
   now = new Date().toISOString()
@@ -161,14 +180,18 @@ export function importedThreads(
           createdAt,
           resolved: thread.resolved,
           comments: [
-            { authorName: thread.author, body: thread.text.trim(), createdAt },
+            {
+              authorName: clip(thread.author, COMMENT_NAME_MAX_LENGTH),
+              body: clip(thread.text, COMMENT_BODY_MAX_LENGTH),
+              createdAt
+            },
             ...thread.replies.flatMap((reply) =>
               reply.deleted || !reply.text.trim()
                 ? []
                 : [
                     {
-                      authorName: reply.author,
-                      body: reply.text.trim(),
+                      authorName: clip(reply.author, COMMENT_NAME_MAX_LENGTH),
+                      body: clip(reply.text, COMMENT_BODY_MAX_LENGTH),
                       createdAt: importTime(reply.createdAt, createdAt)
                     }
                   ]

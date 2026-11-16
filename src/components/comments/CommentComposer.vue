@@ -12,6 +12,7 @@ import {
   type CommentEdit
 } from '@/app/comments/format'
 import {
+  insertMention,
   linkMentions,
   mentionQuery,
   shiftMentions,
@@ -109,12 +110,16 @@ function followCaret() {
 function pick(person: MentionPerson) {
   const typed = query.value
   if (!typed) return
-  const inserted = `@${person.name} `
-  const start = typed.start
-  text.value = text.value.slice(0, start) + inserted + text.value.slice(caret.value)
-  // Added after the text changed, which the watcher has already followed.
-  picked.value = [...picked.value, { start, end: start + inserted.length - 1, person }]
-  const at = start + inserted.length
+  const next = insertMention(
+    text.value,
+    { start: typed.start, end: caret.value },
+    person,
+    picked.value
+  )
+  text.value = next.text
+  // Set after the text changed, in place of what the watcher made of the change.
+  picked.value = next.picked
+  const at = next.caret
   caret.value = at
   void nextTick(() => {
     input.value?.focus()

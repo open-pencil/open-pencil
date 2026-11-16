@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import {
+  insertMention,
   linkMentions,
   mentionedAccounts,
   mentionLink,
@@ -41,6 +42,22 @@ describe('comment mentions', () => {
       { start: 7, end: 11, person: otherSam }
     ])
     expect(shiftMentions(after, ' and @Sxam', kept)).toEqual([])
+  })
+
+  test('pick a person over a mention already there, never as a second one', () => {
+    const first = insertMention('@An', { start: 0, end: 3 }, ana, [])
+    expect(first).toEqual({ text: '@Ana ', picked: [at('@Ana ', ana)], caret: 5 })
+    // Picked again with the caret at the end of the name, before the space.
+    const again = insertMention(first.text, { start: 0, end: 4 }, sam, first.picked)
+    expect(again.picked).toEqual([at(again.text, sam)])
+    expect(linkMentions(again.text, again.picked)).toBe('[@Sam](openpencil://person/acc-sam)  ')
+  })
+
+  test('move the mentions after the one picked', () => {
+    const text = 'hi @ and @Ana'
+    const next = insertMention(text, { start: 3, end: 4 }, sam, [at(text, ana)])
+    expect(next.text).toBe('hi @Sam  and @Ana')
+    expect(next.picked).toEqual([at(next.text, ana), at(next.text, sam)])
   })
 
   test('escape a name as Markdown writes a link’s text', () => {

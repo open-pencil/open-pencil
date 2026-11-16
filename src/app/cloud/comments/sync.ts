@@ -2,6 +2,7 @@ import { watch } from 'vue'
 
 import { CloudAPIError, type CloudCommentRequests } from '@open-pencil/cloud/client'
 import {
+  CLOUD_API_MAX_BODY_BYTES,
   MAX_COMMENT_AGENT_LENGTH,
   MAX_IMPORTED_COMMENT_THREADS,
   MAX_IMPORTED_COMMENTS,
@@ -82,31 +83,54 @@ function commentTarget(store: EditorStore): CloudCommentTarget | null {
   }
 }
 
+/** How much of the server's request limit one import fills, leaving room to spare. */
+const IMPORT_BYTES = CLOUD_API_MAX_BODY_BYTES * 0.75
+const utf8 = new TextEncoder()
+const sizeOf = (value: unknown) => utf8.encode(JSON.stringify(value)).length
+
+type ImportedThread = ImportCommentThreadsInput['threads'][number]
+
+/** A thread as one import takes it: whole, unless it alone is longer than an import, and says so. */
+function fitThread(thread: ImportedThread): { thread: ImportedThread; size: number } {
+  const comments: ImportedThread['comments'] = []
+  let size = sizeOf({ ...thread, comments })
+  for (const comment of thread.comments) {
+    const next = size + sizeOf(comment) + 1
+    if (comments.length >= MAX_IMPORTED_COMMENTS || next > IMPORT_BYTES) break
+    comments.push(comment)
+    size = next
+  }
+  if (comments.length < thread.comments.length) {
+    console.warn(
+      `[Cloud] A comment thread of ${thread.comments.length} comments keeps its first ${comments.length}`
+    )
+  }
+  return { thread: { ...thread, comments }, size }
+}
+
 /**
- * Splits a file's threads into imports the server takes at once. A thread comes in whole; only
- * one longer than a whole import is cut, and says so.
+ * Splits a file's threads into imports the server takes at once, by count and by size. A thread
+ * comes in whole; only one longer than a whole import is cut.
  */
 function importBatches(input: ImportCommentThreadsInput): ImportCommentThreadsInput[] {
   const batches: ImportCommentThreadsInput[] = []
-  let current: ImportCommentThreadsInput['threads'] = []
+  let current: ImportedThread[] = []
   let comments = 0
-  for (const thread of input.threads) {
-    if (thread.comments.length > MAX_IMPORTED_COMMENTS) {
-      console.warn(
-        `[Cloud] A comment thread of ${thread.comments.length} comments keeps its first ${MAX_IMPORTED_COMMENTS}`
-      )
-    }
-    const kept = { ...thread, comments: thread.comments.slice(0, MAX_IMPORTED_COMMENTS) }
+  let size = 0
+  for (const { thread, size: threadSize } of input.threads.map(fitThread)) {
     if (
       current.length >= MAX_IMPORTED_COMMENT_THREADS ||
-      comments + kept.comments.length > MAX_IMPORTED_COMMENTS
+      comments + thread.comments.length > MAX_IMPORTED_COMMENTS ||
+      size + threadSize > IMPORT_BYTES
     ) {
       if (current.length > 0) batches.push({ threads: current })
       current = []
       comments = 0
+      size = 0
     }
-    current.push(kept)
-    comments += kept.comments.length
+    current.push(thread)
+    comments += thread.comments.length
+    size += threadSize + 1
   }
   if (current.length > 0) batches.push({ threads: current })
   return batches
@@ -362,7 +386,17 @@ export function followCloudComments(
     if (plan) {
       // Each batch leaves the plan once it is in, so a retry after a failure starts at the next.
       for (const batch of plan.batches.slice()) {
-        for (const thread of (await plan.send(batch)).threads) server.set(thread.id, thread)
+        try {
+          for (const thread of (await plan.send(batch)).threads) server.set(thread.id, thread)
+        } catch (error) {
+          if (!refused(error)) throw error
+          // Sent again it would be refused again, and the document would never load; the rest
+          // still come in.
+          console.warn(
+            `[Cloud] The server refused ${batch.threads.length} comment threads from the file`,
+            error
+          )
+        }
         plan.batches.shift()
       }
     }
