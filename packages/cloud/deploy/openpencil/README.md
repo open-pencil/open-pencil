@@ -5,11 +5,13 @@ The OpenPencil team's own Cloud deployments, each a filled-in copy of `deploy/cl
 | Target       | Address                        | Deploys from        | Data                                             |
 | ------------ | ------------------------------ | ------------------- | ------------------------------------------------ |
 | `staging`    | `cloud-staging.openpencil.dev` | master or a release | Neon in `us-east-2`, R2 in eastern North America |
-| `production` | `cloud.openpencil.dev`         | a release tag only  | EU: Neon, R2, and the relay rooms                |
+| `production` | `cloud.openpencil.dev`         | what staging runs   | EU: Neon, R2, and the relay rooms                |
 
 The Deploy Cloud workflow (`.github/workflows/deploy-cloud.yml`) deploys a target with the secrets
-and reviewers of its `cloud-<target>` GitHub environment. It stops before building when the ref may
-not deploy to the target or its commit is not on master (`tools/ci/cloud-deploy/src/ref.ts`).
+and reviewers of its `cloud-<target>` GitHub environment. Staging deploys the commit it is run
+from; production promotes the commit staging runs, once staging's newest deployment succeeded
+(`tools/ci/cloud-deploy/src/commit.ts`). Either stops before building when it is run from anything
+but master or a release tag, or the commit is not on master (`tools/ci/cloud-deploy/src/ref.ts`).
 
 ## Billing
 
@@ -30,9 +32,11 @@ unset token
 
 These settings outside the repository:
 
-- The `cloud-production` environment: required reviewers, deployment refs limited to tags `v*`,
-  the `CLOUD_URL` variable, and the secrets the workflow names (`NEON_MIGRATOR_DATABASE_URL`, the
-  Worker's secrets, `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `POSTHOG_CLI_API_KEY`).
+- The `cloud-production` environment: required reviewers, deployment refs limited to `master` and tags `v*`,
+  the `CLOUD_URL` variable, and the secrets the workflow names (`NEON_MIGRATOR_DATABASE_URL` and
+  the Worker's secrets). `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, and `POSTHOG_CLI_API_KEY`
+  are repository secrets: the job that picks the commit reads production's Worker before any
+  environment's reviewers approve the deploy.
 - A Neon project in an EU region, with a restore window of at least `purge_grace_days` (7), whose
   `openpencil_cloud` database belongs to a migrator role (`NEON_MIGRATOR_DATABASE_URL`) and is
   used by a runtime role, which Hyperdrive connects as. The migrator gives the runtime role
@@ -59,27 +63,18 @@ a deployment never changes its jurisdiction while rooms are open.
 
 ## Deploying
 
-Staging deploys master whenever it needs to:
+Cloud is not released: it deploys from master whenever it needs to, a fix included, without a
+release or the desktop builds a tag starts. Deploy staging, check it, then promote it:
 
 ```sh
 gh workflow run deploy-cloud.yml --ref master -f target=staging
+# once that run succeeded
+gh workflow run deploy-cloud.yml --ref master -f target=production
 ```
 
-A release goes to staging first, and to production only once that run succeeded. `gh workflow run`
-does not wait, so watch the staging run to its end before starting production:
-
-```sh
-tag=v0.18.0
-gh workflow run deploy-cloud.yml --ref "$tag" -f target=staging && sleep 10 &&
-  run=$(gh run list --workflow deploy-cloud.yml --event workflow_dispatch --limit 20 \
-    --json databaseId,displayTitle \
-    --jq "[.[] | select(.displayTitle == \"Deploy Cloud staging from $tag\")][0].databaseId") &&
-  gh run watch --exit-status "$run" &&
-  gh workflow run deploy-cloud.yml --ref "$tag" -f target=production
-```
-
-The staging run is found by its title, which names the target and tag, and production starts only
-when that run succeeded.
+Production deploys the commit of staging's newest deployment, whatever master is by then, and
+refuses while that deployment is waiting, running, or failed, or while staging's Worker serves another commit, as after a rollback in Cloudflare, which GitHub does not record; deploy staging again then. A release deploys the same way, with
+`--ref vX.Y.Z` for staging.
 
 The environment's reviewers approve each run before it starts.
 
@@ -148,8 +143,9 @@ What holds what:
 
 To restore the database to an earlier time:
 
-1. Take production off the air: run Deploy Cloud for `production` from the deployed tag with
-   **maintenance** checked. Every request then answers 503, the cron's cleanup does nothing, so
+1. Take production off the air: run Deploy Cloud for `production` from master with
+   **maintenance** checked. It redeploys the commit production serves, which each deploy tags its
+   Worker version with, without waiting on staging. Every request then answers 503, the cron's cleanup does nothing, so
    nothing deletes what the restore brings back, and the rooms' objects refuse new sockets and
    close any open one that sends a message, so no edit reaches the database. It skips migrating
    and the health check. Wait five minutes after it finishes before restoring: Cloudflare may take
@@ -162,9 +158,16 @@ To restore the database to an earlier time:
    that the bucket lacks, copy `deleted/<object_key>` back to `<object_key>` with any S3 client
    against the bucket's endpoint. Other `storage_object` rows can name files never written, such
    as a snapshot whose upload failed; skip them. Files deleted more than 14 days ago are gone.
-4. Put production back: run Deploy Cloud again from the same tag without maintenance. It migrates
+4. Put production back: run Deploy Cloud for `production` from master again without
+   maintenance and with **redeploy** checked, which redeploys the commit production serves
+   rather than waiting on staging. It migrates
    the restored database, so its schema matches the Worker even if the restore point predates a
-   migration, deploys without the maintenance variable, and checks the pages answer.
+   migration, deploys without the maintenance variable, and checks the pages answer. Its migrate
+   step stops, and production stays in maintenance, when the restored database has run a migration
+   the served commit does not know, as after a rollback in Cloudflare (see Rolling back). Compare
+   `kysely_migration` with the migrations in `src/server/db/migrate.ts` at that commit first; if
+   the database is ahead, leave **redeploy** unchecked to promote what staging runs instead, once
+   staging runs a commit that knows them.
 5. Open a document saved before the restore point.
 
 ## Restore drill

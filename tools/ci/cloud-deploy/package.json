@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@open-pencil/package-artifacts-tools": "workspace:*",
-    "es-toolkit": "^1.52.0"
+    "es-toolkit": "^1.52.0",
+    "valibot": "^1.5.0"
   }
 }
