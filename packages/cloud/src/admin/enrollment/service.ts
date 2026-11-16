@@ -278,10 +278,11 @@ export function createEnrollmentService(
      * another administrator decided meanwhile is skipped rather than undoing the rest.
      */
     async invitePending(actorId: string): Promise<{ invited: number }> {
-      if (!emailOptions.invitations) {
+      // Approving everyone without the letters going out would be a silent bulk approval.
+      if (!emailOptions.invitations || !emailOptions.email) {
         throw new AdminDomainError(
           'invitations_unavailable',
-          'Only the official deployment sends invitation letters'
+          'Only the official deployment, with email configured, sends invitation letters'
         )
       }
       const pending = await database

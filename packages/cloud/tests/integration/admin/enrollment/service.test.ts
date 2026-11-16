@@ -139,9 +139,16 @@ describe('Cloud enrollment integration', () => {
       if (!declined) throw new Error('Expected the request to decline')
       await official.review('admin-user', declined.id, 'rejected', {})
 
-      await expect(selfHosted.invitePending('admin-user')).rejects.toMatchObject({
-        code: 'invitations_unavailable'
+      const withoutEmail = createEnrollmentService(runtime.database, {
+        ...options,
+        email: undefined,
+        invitations: true
       })
+      for (const service of [selfHosted, withoutEmail]) {
+        await expect(service.invitePending('admin-user')).rejects.toMatchObject({
+          code: 'invitations_unavailable'
+        })
+      }
       // Another administrator declined it after this reviewer saw it waiting.
       await expect(
         official.review('admin-user', declined.id, 'approved', {
