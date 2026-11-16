@@ -21,16 +21,16 @@ async function writeProducers(root: string) {
   }
 }
 
+const VERSIONS: Record<string, string> = {
+  beta: '0.16.0-beta.2',
+  nightly: '0.16.0-nightly.20261116'
+}
+
 test.each(['valid', 'beta', 'nightly', 'legacy', 'source', 'version', 'digest'])(
   'shared frontend validation: %s',
   async (scenario) => {
     const root = await mkdtemp(join(tmpdir(), 'release-frontend-'))
-    const version =
-      scenario === 'beta'
-        ? '0.16.0-beta.2'
-        : scenario === 'nightly'
-          ? '0.16.0-nightly.20261116'
-          : '0.15.0'
+    const version = VERSIONS[scenario] ?? '0.15.0'
 
     try {
       const archive = join(root, 'frontend.tar')
