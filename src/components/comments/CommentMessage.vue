@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
+import { COMMENT_MENTION, mentionPlugin } from '@/app/comments/mentions/plugin'
 import MarkdownContent from '@/components/markdown/MarkdownContent.vue'
 import PersonAvatar from '@/components/presence/PersonAvatar.vue'
 
 import { useCommentAuthor } from './author'
+import CommentMention from './CommentMention.vue'
 import CommentTime from './CommentTime.vue'
 import { comments } from './ui'
 
@@ -20,6 +22,9 @@ defineSlots<{ actions?(): unknown }>()
 
 const who = useCommentAuthor()
 const ui = comments()
+// Mentions render as names in the accent; other links stay links.
+const components = { [COMMENT_MENTION]: CommentMention }
+const plugins = [mentionPlugin()]
 </script>
 
 <template>
@@ -30,6 +35,11 @@ const ui = comments()
       <CommentTime :at="at" :class="ui.messageTime()" />
       <span v-if="$slots.actions" :class="ui.messageActions()"><slot name="actions" /></span>
     </div>
-    <MarkdownContent :content="text" :class="ui.messageText()" />
+    <MarkdownContent
+      :content="text"
+      :components="components"
+      :plugins="plugins"
+      :class="ui.messageText()"
+    />
   </article>
 </template>

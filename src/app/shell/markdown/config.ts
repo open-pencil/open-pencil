@@ -98,23 +98,27 @@ export type MarkdownParser = ReturnType<typeof createSerializedMarkdownParser>
 /**
  * The parser for one renderer. A highlighting parse that fails, as when one of Shiki's grammars
  * cannot load, resets the highlighter, so the next reply with code tries again, and this one
- * renders without highlighting rather than not at all.
+ * renders without highlighting rather than not at all. A renderer's own plugins, such as one
+ * that turns comment mentions into their component, run before the security plugin, which then
+ * checks what they made like the rest.
  */
 export async function createMarkdownParser(
   highlightCode: boolean,
-  load: () => Promise<MarkdownHighlighting | null> = loadHighlighting
+  load: () => Promise<MarkdownHighlighting | null> = loadHighlighting,
+  own: readonly ComarkPlugin[] = []
 ): Promise<MarkdownParser> {
+  const used = [...own, ...plugins]
   const plain = createSerializedMarkdownParser({
     registerDefaultPlugins: false,
     autoClose,
-    plugins
+    plugins: used
   })
   const highlight = highlightCode ? await load() : null
   if (!highlight) return plain
   const highlighted = createSerializedMarkdownParser({
     registerDefaultPlugins: false,
     autoClose,
-    plugins: [...plugins, highlight.plugin]
+    plugins: [...used, highlight.plugin]
   })
   return async (markdown, options) => {
     try {

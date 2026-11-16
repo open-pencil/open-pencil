@@ -8,6 +8,7 @@ import {
   withCookie
 } from '#cloud-tests/helpers/account-authentication'
 import { responseJSON } from '#cloud-tests/helpers/response'
+import { accountSecurityErrorResponseSchema } from '#cloud/contract'
 import { parseCloudServerConfig } from '#cloud/server'
 import { base32 } from '@better-auth/utils/base32'
 import { createOTP } from '@better-auth/utils/otp'
@@ -72,6 +73,16 @@ describe('deployment administrator MFA assurance', () => {
       if (!secret) throw new Error('Expected a TOTP secret')
       const rawSecret = new TextDecoder().decode(base32.decode(secret))
       const code = await createOTP(rawSecret).totp()
+      // A wrong code says so, rather than asking to sign in again as a 401 would. Letters never
+      // match a TOTP, whose window also takes the neighbouring time steps' codes.
+      const wrong = await fixture.client.api.account.mfa.totp.verify.$post(
+        { json: { code: 'abcdef' } },
+        withCookie(sessionCookie)
+      )
+      expect(wrong.status).toBe(400)
+      expect((await responseJSON(wrong, accountSecurityErrorResponseSchema)).error.code).toBe(
+        'code_invalid'
+      )
       const verificationResponse = await fixture.client.api.account.mfa.totp.verify.$post(
         { json: { code } },
         withCookie(sessionCookie)
@@ -140,6 +151,21 @@ describe('deployment administrator MFA assurance', () => {
         )
 
       const only = await addPasskey('only')
+      // As registering it would, the passkey counts as proved for the session that added it.
+      const session = await fixture.database
+        .selectFrom('session')
+        .select('id')
+        .where('userId', '=', account.userId)
+        .executeTakeFirstOrThrow()
+      await fixture.database
+        .insertInto('mfaAssurance')
+        .values({
+          sessionId: session.id,
+          userId: account.userId,
+          method: 'passkey',
+          verifiedAt: new Date(Date.now() - 24 * 60 * 60_000)
+        })
+        .execute()
       const refused = await deletePasskey(only)
       expect(refused.status).toBe(403)
       expect(await refused.json()).toEqual({ error: { code: 'mfa_required' } })

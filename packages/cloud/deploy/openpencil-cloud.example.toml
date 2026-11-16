@@ -13,7 +13,8 @@ local_editor = true
 # version on. Self-hosted servers leave it out.
 # listing = { minimum_editor_version = "0.14.0" }
 # The oldest editor that may use the server. Older editors ask to be updated instead of connecting,
-# and requests from older desktop editors are refused with 426 Upgrade Required.
+# and requests from older desktop editors are refused with 426 Upgrade Required. Versions compare
+# in SemVer order, where a pre-release comes before its release: name "0.18.0-beta.1" to admit betas.
 # minimum_editor_version = "0.14.0"
 
 # How the server names itself on its public pages, such as its community gallery: your name and

@@ -52,6 +52,8 @@ export function copyStroke(s: Stroke): Stroke {
 export function copyEffect(e: Effect): Effect {
   const copy: Effect = { ...e, color: { ...e.color }, offset: { ...e.offset } }
   if (e.glass) copy.glass = { ...e.glass }
+  if (e.noise) copy.noise = structuredClone(e.noise)
+  if (e.texture) copy.texture = structuredClone(e.texture)
   if (e.progressive) {
     copy.progressive = {
       startRadius: e.progressive.startRadius,

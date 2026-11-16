@@ -25,5 +25,7 @@
   "noMatches": "لا توجد تعليقات مطابقة.",
   "replyCount": "الردود: {count}",
   "commentDeleted": "تم حذف التعليق",
-  "hideComments": "إخفاء التعليقات"
+  "hideComments": "إخفاء التعليقات",
+  "mentionPeople": "أشخاص للإشارة إليهم",
+  "unread": "غير مقروء"
 }

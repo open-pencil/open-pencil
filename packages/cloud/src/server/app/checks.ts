@@ -28,7 +28,12 @@ export function createRequestResolvers(services: CloudServices) {
       services.resolveAccountSession ??
       (services.resolveSession
         ? services.resolveSession
-        : (request: Request) => services.auth.resolveAccountSession(request.headers))
+        : (request: Request) => services.auth.resolveAccountSession(request.headers)),
+    twoStepConfirmed:
+      services.twoStepConfirmed ??
+      (services.resolveIdentity
+        ? async () => true
+        : (request: Request) => services.auth.twoStepConfirmed(request.headers))
   }
 }
 

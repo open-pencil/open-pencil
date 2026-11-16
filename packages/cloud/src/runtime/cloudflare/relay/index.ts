@@ -25,6 +25,8 @@ export interface CollaborationRelayRPC extends DurableObject<CloudflareCloudEnvi
   closeDocument(documentId: string): Promise<void>
   /** Tells the document's live rooms its version history changed. */
   announceVersions(documentId: string): Promise<void>
+  /** Tells the document's live rooms one of its comment threads changed. */
+  announceComments(documentId: string, threadId: string): Promise<void>
 }
 
 /** The Durable Object class a Worker exports for collaboration rooms. */
@@ -177,6 +179,11 @@ export function createCloudflareRelayObject(
     async announceVersions(documentId: string) {
       if (!this.#sockets.active) return
       ;(await this.#sockets.open(documentId)).announceVersions(documentId)
+    }
+
+    async announceComments(documentId: string, threadId: string) {
+      if (!this.#sockets.active) return
+      ;(await this.#sockets.open(documentId)).announceComments(documentId, threadId)
     }
   }
 }

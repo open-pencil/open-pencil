@@ -1,12 +1,14 @@
 export {
   adminErrorStatus,
   AdminDomainError,
+  approveEnrollmentByEmail,
   createAdminAuditService,
   createAdminEmailService,
   createAdminOperationsService,
   createAdminUserService,
   createCloudAdminRoutes,
   createEnrollmentService,
+  grantDeploymentAdminByEmail,
   normalizeEnrollmentEmail,
   type AdminAuditService,
   type AdminErrorCode,
@@ -142,6 +144,7 @@ export {
 export {
   createCloudDatabase,
   migrateCloudDatabase,
+  pendingCloudMigrations,
   type CloudDatabase,
   type CloudDatabaseOptions,
   type Document,
@@ -180,6 +183,16 @@ export {
   LIMITED_HISTORY_DAYS,
   type DocumentVersionService
 } from './documents/versions'
+export {
+  COMMENT_EMAIL_BUDGET,
+  CommentConflictError,
+  CommentLimitError,
+  createCommentRoutes,
+  createCommentService,
+  createSharedCommentRoutes,
+  type CommentActor,
+  type CommentService
+} from './comments'
 export {
   createInvitationOutbox,
   createTransactionalEmailService,

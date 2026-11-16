@@ -14,7 +14,8 @@ test('a model is named as the agent names it once its offer is known, and by not
   expect(agentModelName(grok, 'fast')).toBeNull()
   await rememberAgentOffer(grok, {
     imageInput: true,
-    models: [{ id: 'fast', name: 'Grok Fast 4.7' }]
+    models: [{ id: 'fast', name: 'Grok Fast 4.7' }],
+    efforts: {}
   })
   expect(agentModelName(grok, 'fast')).toBe('Grok Fast 4.7')
   expect(agentModelName(grok, 'not-listed')).toBeNull()

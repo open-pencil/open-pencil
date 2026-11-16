@@ -46,6 +46,8 @@ export type PortalPerson = {
   /** When one of its sessions was last used, already worded; null when none is left. */
   lastActive: string | null
   workspaceCount: number
+  /** An account whose request to join is not approved: waiting, declined, or removed. */
+  access?: 'waiting' | 'declined' | 'removed'
   you?: boolean
 }
 

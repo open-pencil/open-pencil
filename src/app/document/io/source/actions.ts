@@ -19,6 +19,7 @@ import { createDocumentRecovery } from '@/app/document/recovery'
 import { createRecoveryCover } from '@/app/document/recovery/cover'
 import { recoveryEnabled } from '@/app/document/recovery/preferences'
 import { storageLocationOf } from '@/app/integrations/storage/location'
+import { storageKeepsComments } from '@/app/integrations/storage/providers'
 import type { StorageDocumentBinding, StorageLocation } from '@/app/integrations/storage/types'
 import { cacheRecentFileCover, drawHomeCardCover } from '@/app/recent-files'
 import { createCanvasId } from '@/app/storage/id'
@@ -86,8 +87,13 @@ export function createDocumentSourceActions({
     }
   }
 
+  /**
+   * The document as its next save writes it. Storage that keeps comments itself, as Cloud does,
+   * gets the file without them; every other target, a download included, keeps them.
+   */
   function buildFigStream() {
-    return exportFigFileStream(editor.graph, figExportOptions())
+    const withoutComments = storageKeepsComments(getStorageBinding()?.providerId)
+    return exportFigFileStream(editor.graph, { ...figExportOptions(), withoutComments })
   }
 
   /**

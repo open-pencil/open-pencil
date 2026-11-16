@@ -16,7 +16,9 @@ const ACCOUNT_SECURITY_ERROR_CODES: Record<string, AccountSecurityErrorCode> = {
   LAST_ADMIN_REQUIRED: 'last_admin_required',
   CHANGE_EMAIL_DISABLED: 'email_change_unavailable',
   CURRENT_SESSION: 'current_session',
-  EMAIL_UNCHANGED: 'email_unchanged'
+  EMAIL_UNCHANGED: 'email_unchanged',
+  // A second factor's code that does not match (`verifySecondFactor`).
+  INVALID_CODE: 'code_invalid'
 }
 
 async function accountAction<Value>(operation: () => Promise<Value>, context: Context) {

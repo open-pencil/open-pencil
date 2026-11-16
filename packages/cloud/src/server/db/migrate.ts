@@ -15,6 +15,8 @@ import * as accountIds from './migrations/011_account_ids'
 import * as emailLocales from './migrations/012_email_locales'
 import * as documentBlockEmails from './migrations/013_document_block_emails'
 import * as reportReplies from './migrations/014_report_replies'
+import * as comments from './migrations/015_comments'
+import * as commentNotifications from './migrations/016_comment_notifications'
 import type { CloudDatabase } from './tables'
 
 /**
@@ -39,7 +41,9 @@ const migrations: Record<string, CloudMigration> = {
   '011_account_ids': accountIds,
   '012_email_locales': emailLocales,
   '013_document_block_emails': documentBlockEmails,
-  '014_report_replies': reportReplies
+  '014_report_replies': reportReplies,
+  '015_comments': comments,
+  '016_comment_notifications': commentNotifications
 }
 
 /** Cloud's migrations, in order. */
@@ -95,6 +99,18 @@ export async function migrateToLatest(migrator: Migrator, failure: string): Prom
       failure
     )
   }
+}
+
+/**
+ * Cloud's migrations this database has not run, in order: none once a deployment of this
+ * version has started. A tool that only reads or writes rows checks this instead of migrating,
+ * so running it never changes the schema under a server of another version.
+ */
+export async function pendingCloudMigrations(database: Kysely<CloudDatabase>): Promise<string[]> {
+  const migrator = new Migrator({ db: database, provider: new CloudMigrationProvider() })
+  return (await migrator.getMigrations())
+    .filter((migration) => migration.executedAt === undefined)
+    .map((migration) => migration.name)
 }
 
 export async function migrateCloudDatabase(

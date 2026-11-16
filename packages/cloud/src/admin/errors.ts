@@ -4,6 +4,7 @@ export type AdminErrorCode =
   | 'self_admin_action_forbidden'
   | 'email_regeneration_unavailable'
   | 'mfa_required'
+  | 'two_step_unconfirmed'
   | 'document_not_restorable'
   | 'workspace_gone'
 

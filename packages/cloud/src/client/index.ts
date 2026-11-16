@@ -58,3 +58,4 @@ export {
   type CloudPortalClient,
   type CloudPortalClientOptions
 } from './portal/client'
+export type { CloudCommentRequests } from './comments'

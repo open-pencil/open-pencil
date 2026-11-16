@@ -58,6 +58,8 @@ const {
   retryAgentModels,
   supportsCustomModel,
   supportsThinking,
+  agentEffortOptions,
+  agentEffortValue,
   modelOptions,
   selectedModelValue,
   knownModel,
@@ -367,11 +369,13 @@ async function remove() {
           v-model:tools="toolsEnabled"
           v-model:vision="visionEnabled"
           v-model:thinking-level="draft.thinkingLevel"
+          v-model:agent-effort="agentEffortValue"
           v-model:permission-mode="draft.harnessPermissionMode"
           :detected="knownModel !== null"
           :capabilities="knownCapabilities"
           :output-tokens="outputTokenRecommendation"
           :thinking="supportsThinking"
+          :agent-efforts="agentEffortOptions"
           :acp="isACP"
           :harness="isHarness"
         />

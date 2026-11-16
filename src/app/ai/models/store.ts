@@ -96,6 +96,7 @@ const profileSchema = v.object({
   thinkingLevel: v.optional(v.unknown()),
   harnessThinkingLevel: v.optional(v.unknown()),
   reasoningEffort: v.optional(v.unknown()),
+  agentEffort: v.fallback(v.optional(v.pipe(v.string(), v.nonEmpty())), undefined),
   harnessPermissionMode: v.fallback(v.optional(v.picklist(HARNESS_PERMISSION_MODES)), undefined),
   capabilities: v.fallback(
     v.pipe(
@@ -346,6 +347,7 @@ function draftForProfile(
     cloudWorkspaceId: connection.cloudWorkspaceId,
     maxOutputTokens: profile.maxOutputTokens,
     thinkingLevel: profile.thinkingLevel,
+    agentEffort: profile.agentEffort ?? '',
     harnessPermissionMode: profile.harnessPermissionMode ?? 'allow-edits',
     capabilities: [...profile.capabilities]
   }
@@ -366,6 +368,7 @@ function newProfileDraft(connection: AIModelConnection | null): AIModelProfileDr
     cloudWorkspaceId: connection?.cloudWorkspaceId,
     maxOutputTokens: DEFAULT_MAX_OUTPUT_TOKENS,
     thinkingLevel: 'default',
+    agentEffort: '',
     harnessPermissionMode: 'allow-edits',
     capabilities: ['tools']
   }
@@ -377,6 +380,13 @@ export function createModelProfileDraft(profileId?: string): AIModelProfileDraft
   if (profile && profileConnection) return draftForProfile(profile, profileConnection)
   const designConnection = resolveAIModelRole('design')?.connection ?? null
   return newProfileDraft(designConnection ?? aiModelSettings.value.connections[0])
+}
+
+/** An ACP agent's effort, which only agent profiles keep; empty keeps the agent's own. */
+function draftAgentEffort(draft: AIModelProfileDraft): string | undefined {
+  return providerKind(draft.providerID) === 'acp' && draft.agentEffort
+    ? draft.agentEffort
+    : undefined
 }
 
 export function saveModelProfileDraft(draft: AIModelProfileDraft): AIModelProfile {
@@ -405,6 +415,7 @@ export function saveModelProfileDraft(draft: AIModelProfileDraft): AIModelProfil
     customModelID: draft.customModelID.trim(),
     maxOutputTokens: normalizedMaxOutputTokens(draft.maxOutputTokens),
     thinkingLevel: draft.thinkingLevel,
+    agentEffort: draftAgentEffort(draft),
     harnessPermissionMode:
       providerKind(draft.providerID) === 'harness' ? draft.harnessPermissionMode : undefined,
     capabilities

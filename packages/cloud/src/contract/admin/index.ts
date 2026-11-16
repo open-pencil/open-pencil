@@ -41,6 +41,8 @@ export const adminErrorCodeSchema = v.picklist([
   'self_admin_action_forbidden',
   'email_regeneration_unavailable',
   'mfa_required',
+  // Two-step is on, but this session has not proved it lately; confirming it lets it back in.
+  'two_step_unconfirmed',
   'document_not_restorable',
   'workspace_gone'
 ])
@@ -84,7 +86,12 @@ export const cloudAdminUserSchema = v.object({
   twoStep: v.boolean(),
   /** When one of the account's sessions was last used, or null when none is left. */
   lastActiveAt: nullableTimestampSchema,
-  workspaceCount: countSchema
+  workspaceCount: countSchema,
+  /**
+   * On a server that approves people, where this account's request to join stands: an account
+   * exists from its first sign-in, before anyone approved it. Absent where everyone may join.
+   */
+  request: v.optional(v.nullable(enrollmentStatusSchema))
 })
 
 /** Which accounts a list of people shows. */

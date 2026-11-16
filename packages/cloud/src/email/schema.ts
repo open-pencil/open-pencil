@@ -25,6 +25,7 @@ export type TransactionalEmailKind =
   | 'document-restored'
   | 'document-report-received'
   | 'document-report-decided'
+  | 'comment-notification'
 
 const documentInvitationEmailPayloadSchema = v.object({
   /** Null when the inviter's account is gone, so the email says someone invited you. */
@@ -104,6 +105,22 @@ const documentReportDecidedPayloadSchema = v.object({
   contactEmail: v.nullable(v.pipe(v.string(), v.email()))
 })
 
+/** To someone a comment names, or who takes part in its thread: what it says, and where. */
+const commentNotificationPayloadSchema = v.object({
+  /** The recipient's name, or null when the account has none. */
+  name: v.nullable(v.string()),
+  /** Who wrote the comment, or null when the account has no name. */
+  authorName: v.nullable(v.string()),
+  documentName: v.string(),
+  /** The comment names the recipient, or answers a thread they take part in. */
+  reason: v.picklist(['mention', 'reply']),
+  /** The start of what the comment says. */
+  excerpt: v.string(),
+  actionURL: v.string(),
+  /** Where the recipient chooses which comments they hear about. */
+  settingsURL: v.string()
+})
+
 const authenticationEmailPayloadSchema = v.object({
   name: v.string(),
   actionURL: v.optional(v.string()),
@@ -168,7 +185,8 @@ export const transactionalEmailContentSchema = v.variant('kind', [
   content('document-blocked', documentBlockedPayloadSchema),
   content('document-restored', documentRestoredPayloadSchema),
   content('document-report-received', documentReportReceivedPayloadSchema),
-  content('document-report-decided', documentReportDecidedPayloadSchema)
+  content('document-report-decided', documentReportDecidedPayloadSchema),
+  content('comment-notification', commentNotificationPayloadSchema)
 ])
 
 /** A transactional email's kind with the payload that kind renders. */
@@ -216,3 +234,4 @@ export type DocumentReportReceivedPayload = v.InferOutput<
   typeof documentReportReceivedPayloadSchema
 >
 export type DocumentReportDecidedPayload = v.InferOutput<typeof documentReportDecidedPayloadSchema>
+export type CommentNotificationPayload = v.InferOutput<typeof commentNotificationPayloadSchema>

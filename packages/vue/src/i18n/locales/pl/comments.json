@@ -25,5 +25,7 @@
   "noMatches": "Brak pasujących komentarzy.",
   "replyCount": "Odpowiedzi: {count}",
   "commentDeleted": "Usunięto komentarz",
-  "hideComments": "Ukryj komentarze"
+  "hideComments": "Ukryj komentarze",
+  "mentionPeople": "Osoby do wspomnienia",
+  "unread": "Nieprzeczytane"
 }

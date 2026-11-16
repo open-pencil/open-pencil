@@ -176,6 +176,8 @@ export function useModelProfileEditor({ profileId, keyInput, labels: ai }: Profi
     agentModelState: selection.agentModelState,
     retryAgentModels: selection.retryAgentModels,
     supportsThinking,
+    agentEffortOptions: selection.agentEffortOptions,
+    agentEffortValue: selection.agentEffortValue,
     providerDisplayName,
     modelOptions,
     selectedModelValue,

@@ -137,8 +137,9 @@ function matches(node: SceneNode, captured: CapturedBox, origin: Rect): boolean 
   return near(node.x, rect.x) && sizeMatches(node, captured)
 }
 
-function hasAutoLayout(node: SceneNode): boolean {
-  return node.layoutMode !== 'NONE' && node.layoutMode !== 'GRID'
+/** Whether a layer lays its children out, as a stack or a grid, rather than holding them where they are. */
+function laysOutChildren(node: SceneNode): boolean {
+  return node.layoutMode !== 'NONE'
 }
 
 /** Gives a layer the size it was captured at, and returns whether that changed it. */
@@ -239,7 +240,7 @@ export function placeLayersFromLayout(graph: SceneGraph, boxes: CapturedBoxes): 
   if (changed + resized > 0) return changed + resized
   for (const node of layers) {
     const own = boxes.get(node.id)
-    if (!own || !hasAutoLayout(node)) continue
+    if (!own || !laysOutChildren(node)) continue
     const misplaced = graph.getChildren(node.id).some((child) => {
       const captured = boxes.get(child.id)
       return captured !== undefined && (imposed.has(child.id) || !matches(child, captured, own.box))

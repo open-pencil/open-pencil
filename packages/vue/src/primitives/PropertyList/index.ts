@@ -14,6 +14,7 @@ export type {
   PropertyListItemSlotProps,
   PropertyListKey,
   PropertyListPartProps,
+  PropertyListChange,
   PropertyListPatchFor,
   PropertyListRootProps,
   PropertyListRootSlotProps,

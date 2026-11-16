@@ -759,10 +759,12 @@ ja:cloudPortal.sitePoweredBy
 zh-cn:cloudPortal.sitePoweredBy
 ja:cloud.errorEditorOutdatedHeading
 ja:cloud.errorEditorOutdatedDescription
+ja:cloud.betaBanner
 ja:cloud.editorOutdatedBanner
 ja:cloud.updateOpenPencil
 zh-cn:cloud.errorEditorOutdatedHeading
 zh-cn:cloud.errorEditorOutdatedDescription
+zh-cn:cloud.betaBanner
 zh-cn:cloud.editorOutdatedBanner
 zh-cn:cloud.updateOpenPencil
 ja:email.documentBlocked

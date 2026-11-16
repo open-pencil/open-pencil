@@ -25,5 +25,7 @@
   "noMatches": "一致するコメントはありません。",
   "replyCount": "返信: {count}",
   "commentDeleted": "コメントを削除しました",
-  "hideComments": "コメントを非表示"
+  "hideComments": "コメントを非表示",
+  "mentionPeople": "メンションする人",
+  "unread": "未読"
 }

@@ -25,5 +25,7 @@
   "noMatches": "没有匹配的评论。",
   "replyCount": "回复：{count}",
   "commentDeleted": "评论已删除",
-  "hideComments": "隐藏评论"
+  "hideComments": "隐藏评论",
+  "mentionPeople": "要提及的人",
+  "unread": "未读"
 }

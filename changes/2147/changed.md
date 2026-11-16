@@ -1,0 +1,1 @@
+- The chat shows that an agent is working for the whole reply, and Claude Code's thinking appears as summaries instead of being left out (#2147).
