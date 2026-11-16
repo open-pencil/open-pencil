@@ -9,7 +9,7 @@ import type {
 import { appendAll } from '@open-pencil/scene-graph/arrays'
 import { faceStyleKey } from '@open-pencil/scene-graph/font-style'
 
-import { characterStyles, TEXT_STYLE_KEYS, type CharacterStyle } from './character-style'
+import { characterStyles, TEXT_STYLE_KEYS, type CharacterStyle } from './character/style'
 import { fontDecorationMetricsSync, type FontDecorationMetrics } from './font/glyphs'
 import { savedGlyphInk, type InkSpan } from './ink'
 

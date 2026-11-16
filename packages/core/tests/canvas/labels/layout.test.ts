@@ -6,7 +6,11 @@ import Matrix from '@open-pencil/scene-graph/matrix'
 import { expectDefined } from '@open-pencil/test-support/assert'
 import { nestedGeometryFixture } from '@open-pencil/test-support/geometry'
 
-import { hitTestComponentLabel, hitTestFrameTitle } from '#core/canvas/labels/hit-test'
+import {
+  hitTestComponentLabel,
+  hitTestFrameTitle,
+  hitTestSectionTitle
+} from '#core/canvas/labels/hit-test'
 import { labelLayout } from '#core/canvas/labels/layout'
 import {
   frameLabelPlacement,
@@ -139,9 +143,43 @@ test('every frame on the page or in a section is hit by its name, selected or no
   expect(hitTestFrameTitle(graph, 124, 130, 1, page.id, font)).toBeNull()
   expect(inner.parentId).toBe(outer.id)
 
-  // Locked frames cannot be picked on the canvas, by their names either.
+  // A click passes through a locked frame's name, as in Figma; a right-click hits it.
   graph.updateNode(outer.id, { locked: true })
   expect(hitTestFrameTitle(graph, 104, 90, 1, page.id, font)).toBeNull()
+  expect(hitTestFrameTitle(graph, 104, 90, 1, page.id, font, undefined, { locked: true })?.id).toBe(
+    outer.id
+  )
+})
+
+test('a click passes through locked section and component names; a right-click hits them', () => {
+  const graph = new SceneGraph()
+  const page = expectDefined(graph.getPages()[0], 'page')
+  const section = graph.createNode('SECTION', page.id, {
+    name: 'Section',
+    x: 400,
+    y: 100,
+    width: 200,
+    height: 160,
+    locked: true
+  })
+  const component = graph.createNode('COMPONENT', page.id, {
+    name: 'Button',
+    x: 100,
+    y: 360,
+    width: 120,
+    height: 40,
+    locked: true
+  })
+  const locked = { locked: true }
+
+  expect(hitTestSectionTitle(graph, 410, 80, 1, page.id, font)).toBeNull()
+  expect(hitTestComponentLabel(graph, 108, 348, 1, page.id, font)).toBeNull()
+  expect(hitTestSectionTitle(graph, 410, 80, 1, page.id, font, undefined, locked)?.id).toBe(
+    section.id
+  )
+  expect(hitTestComponentLabel(graph, 108, 348, 1, page.id, font, undefined, locked)?.id).toBe(
+    component.id
+  )
 })
 
 test('a frame just outside the view whose name is inside it is still hit by its name', () => {

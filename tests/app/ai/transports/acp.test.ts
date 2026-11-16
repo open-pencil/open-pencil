@@ -6,9 +6,10 @@ import { ACP_AGENTS } from '@open-pencil/core/constants'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { SUBAGENT_PART, subagentTranscript } from '@/app/ai/chat/subagents'
-import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
+import { systemPrompt } from '@/app/ai/chat/system-prompt'
 import { restAgents, withSubagent } from '@/app/automation/agents'
 import { diagnosticErrorDetails, diagnostics } from '@/app/diagnostics'
+import { DEFAULT_APP_PREFERENCES, updatePromptPreferences } from '@/app/settings/preferences/store'
 
 import {
   fakeAgents,
@@ -19,6 +20,7 @@ import {
   tick,
   transport
 } from '#tests/helpers/ai/acp-agent'
+import { MODEL_OPTIONS } from '#tests/helpers/ai/fake-acp-agent'
 
 const codex = expectDefined(
   ACP_AGENTS.find((agent) => agent.id === 'codex'),
@@ -31,7 +33,7 @@ test('a new session gets the instructions once and is reported once the agent an
   await send(chat, 'first')
   await send(chat, 'second', [message('user', 'first'), message('assistant', 'done')])
   expect(agents.created).toHaveLength(1)
-  expect(agents.prompts[0]?.startsWith(SYSTEM_PROMPT)).toBe(true)
+  expect(agents.prompts[0]?.startsWith(systemPrompt())).toBe(true)
   expect(agents.prompts[0]?.endsWith('first')).toBe(true)
   expect(agents.prompts[1]).toBe('second')
   expect(sessions).toEqual(['session-1'])
@@ -84,6 +86,28 @@ test('an agent that exits continues the same session when it starts again', asyn
   expect(agents.resumed.map((request) => request.sessionId)).toEqual(['session-1'])
   expect(agents.prompts[1]).toBe('second')
   await chat.destroy()
+})
+
+test('a session started again after the agent exits gets the Design prompt the chat began with', async () => {
+  const fresh = expectDefined(
+    ACP_AGENTS.find((agent) => !agent.resumesSessions),
+    'an agent that does not resume sessions'
+  )
+  const agents = fakeAgents()
+  updatePromptPreferences({ design: { text: 'Use 8px spacing.', mode: 'add' } })
+  try {
+    const { transport: chat } = transport(agents, { agentDef: fresh })
+    const started = systemPrompt()
+    updatePromptPreferences({ design: { text: 'Use 4px spacing.', mode: 'add' } })
+    await send(chat, 'first')
+    agents.crash()
+    await send(chat, 'second', [message('user', 'first'), message('assistant', 'done')])
+    expect(agents.created).toHaveLength(2)
+    expect(agents.prompts.map((prompt) => prompt.startsWith(started))).toEqual([true, true])
+    await chat.destroy()
+  } finally {
+    updatePromptPreferences({ design: structuredClone(DEFAULT_APP_PREFERENCES.prompts.design) })
+  }
 })
 
 test('a saved session the agent cannot continue is forgotten and no new session starts', async () => {
@@ -357,4 +381,12 @@ test('closing the chat ends its reply without reporting the agent as failed', as
   expect(reply.chunks.some((chunk) => chunk.type === 'error')).toBe(false)
   expect(reply.chunks.at(-1)).toEqual({ type: 'finish', finishReason: 'stop' })
   expect(agentErrors).toEqual([])
+})
+
+test('the agent is put on the profile’s model before it gets the first prompt', async () => {
+  const agents = fakeAgents({ configOptions: MODEL_OPTIONS })
+  const { transport: chat } = transport(agents, { model: 'opus' })
+  await send(chat, 'first')
+  expect(agents.calls).toEqual(['model opus', 'prompt'])
+  await chat.destroy()
 })

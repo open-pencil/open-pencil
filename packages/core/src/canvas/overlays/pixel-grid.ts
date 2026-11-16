@@ -1,8 +1,8 @@
 import type { Canvas } from '@open-pencil/canvaskit'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import type { SkiaRenderer } from '#core/canvas/renderer'
 import { fillWithShader, keptShader } from '#core/canvas/renderer/shaders'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import { defineShader, type Float2, type Float4 } from '#core/canvas/sksl'
 
 import pixelGridSource from './pixel-grid.sksl?raw'

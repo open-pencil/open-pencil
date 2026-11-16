@@ -19,7 +19,7 @@ import {
 
 import { MIXED } from '#vue/controls/node-props/use'
 import { provideEditor } from '#vue/editor/context'
-import { applyResize } from '#vue/shared/input/resize'
+import { applyResize } from '#vue/shared/input/resize/apply'
 import type { DragResize } from '#vue/shared/input/types'
 function original(node: {
   type: ResizeSnapshot['type']

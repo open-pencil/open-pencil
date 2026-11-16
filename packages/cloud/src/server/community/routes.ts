@@ -1,7 +1,7 @@
 import {
   COMMUNITY_THUMBNAIL_PATH,
-  parseCommunityDownloadQuery,
-  parseRequestImageLinks
+  communityDownloadQuerySchema,
+  requestImageLinksSchema
 } from '#cloud/contract'
 import { documentDomainError } from '#cloud/server/documents'
 import {
@@ -43,7 +43,7 @@ export function createCommunityRoutes(community: CommunityService) {
     .get(
       '/community/:documentId/document',
       documentParams,
-      validatedQuery(parseCommunityDownloadQuery),
+      validatedQuery(communityDownloadQuerySchema),
       (context) =>
         communityRoute(context, async () => {
           const { documentId } = context.req.valid('param')
@@ -55,7 +55,7 @@ export function createCommunityRoutes(community: CommunityService) {
     .post(
       '/community/:documentId/images',
       documentParams,
-      validatedJSON(parseRequestImageLinks),
+      validatedJSON(requestImageLinksSchema),
       (context) =>
         communityRoute(context, async () =>
           context.json(

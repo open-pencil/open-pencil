@@ -58,9 +58,9 @@ export async function stageJSXPreview(
   graph.variableCollections = structuredClone(source.variableCollections)
   // One call, so components render before the roots that use them.
   if (tree.type === '' && !tree.children.some((child) => typeof child !== 'string')) return null
-  const results = await renderRoots(graph, tree, placement)
+  const rendered = await renderRoots(graph, tree, placement)
   signal?.throwIfAborted()
-  finishRenderPlacement(graph, results, placement)
+  const results = finishRenderPlacement(graph, rendered, placement)
   return {
     graph,
     pageId,

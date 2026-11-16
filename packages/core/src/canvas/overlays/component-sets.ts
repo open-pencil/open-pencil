@@ -2,7 +2,7 @@ import type { Canvas } from '@open-pencil/canvaskit'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { labelViewport } from '#core/canvas/labels/layout'
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer/skia'
 import {
   COMPONENT_SET_BORDER_WIDTH,
   COMPONENT_SET_DASH,

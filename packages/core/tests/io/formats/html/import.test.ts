@@ -79,6 +79,90 @@ describe('reading HTML', () => {
     expect(inner).toMatchObject({ x: 14, y: 14 })
   })
 
+  test('keeps a table with collapsed borders in auto layout, drawing each shared border once', async () => {
+    const { graph } = await readHTMLDocument(
+      `<table style="border-collapse:collapse;width:300px;font-family:'${TEST_FAMILY}'">
+        <tr><td style="border:1px solid #000;padding:8px">Name</td><td style="border:1px solid #000;padding:8px">Value</td></tr>
+        <tr><td style="border:1px solid #000;padding:8px">Alpha</td><td style="border:1px solid #000;padding:8px">1</td></tr>
+      </table>`
+    )
+    const frames = graph
+      .flattenTree(graph.getPages()[0].id)
+      .map(({ node }) => node)
+      .filter((node) => node.type === 'FRAME')
+    const cells = frames.filter((node) => node.name === 'td')
+
+    // Rows and cells keep auto layout: the importer lays them out where the page did.
+    expect(frames.every((node) => node.layoutMode !== 'NONE')).toBe(true)
+    expect(cells.flatMap((cell) => cell.strokes.map((stroke) => stroke.align))).toEqual([
+      'CENTER',
+      'CENTER',
+      'CENTER',
+      'CENTER'
+    ])
+    // Neighbouring cells touch, so their centered strokes draw one line.
+    const [first, second] = graph.getChildren(cells[0].parentId ?? '')
+    expect(second.x).toBe(first.x + first.width)
+  })
+
+  test('keeps a table with a caption in auto layout, the caption outside its border spacing', async () => {
+    const { graph } = await readHTMLDocument(
+      `<table style="width:400px;border-spacing:2px;font-family:'${TEST_FAMILY}'"><caption>Totals</caption>
+        <tr><td style="padding:0"><div style="width:20px;height:20px"></div></td></tr></table>`
+    )
+    const [table] = graph.getChildren(graph.getPages()[0].id)
+    const [caption, box] = graph.getChildren(table.id)
+
+    expect(table.layoutMode).toBe('VERTICAL')
+    expect(caption).toMatchObject({ name: 'caption', x: 0, y: 0, width: 400 })
+    expect(box).toMatchObject({ name: 'table box', x: 0, y: caption.height, width: 400 })
+    expect(box).toMatchObject({ layoutMode: 'VERTICAL', paddingTop: 2, itemSpacing: 2 })
+  })
+
+  test('keeps the rows of a table with a cell spanning rows in auto layout', async () => {
+    const box = (size: number) => `<div style="width:${size}px;height:20px"></div>`
+    const { graph } = await readHTMLDocument(
+      `<table style="border-spacing:2px"><tr><td rowspan="2" style="padding:0">${box(40)}</td>
+        <td style="padding:0">${box(30)}</td></tr><tr><td style="padding:0">${box(30)}</td></tr></table>`
+    )
+    const [table] = graph.getChildren(graph.getPages()[0].id)
+    const [group] = graph.getChildren(table.id)
+    const [first, second] = graph.getChildren(group.id)
+    const [tall, a] = graph.getChildren(first.id)
+    const [b] = graph.getChildren(second.id)
+
+    expect([first.layoutMode, second.layoutMode]).toEqual(['HORIZONTAL', 'HORIZONTAL'])
+    expect(tall).toMatchObject({ layoutPositioning: 'ABSOLUTE', x: 0, height: 42 })
+    // The cells beside the tall one line up in its column's right, row after row.
+    expect([a.x, b.x]).toEqual([42, 42])
+  })
+
+  test('keeps a grid that centers its item by place-items in auto layout', async () => {
+    const { graph } = await readHTMLDocument(
+      `<div style="display:grid;place-items:center;width:400px;height:200px">` +
+        `<div style="width:100px;height:50px;background:red"></div></div>`
+    )
+    const [grid] = graph.getChildren(graph.getPages()[0].id)
+    const [item] = graph.getChildren(grid.id)
+
+    expect(grid.layoutMode).toBe('VERTICAL')
+    expect(item).toMatchObject({ x: 150, y: 75, width: 100, height: 50 })
+  })
+
+  test('centers a block capped by its maximum width at that width, keeping auto layout', async () => {
+    const { graph } = await readHTMLDocument(
+      `<div style="width:600px"><div style="max-width:300px;margin:0 auto">` +
+        `<div style="width:100px;height:10px"></div></div></div>`
+    )
+    const [page] = graph.getChildren(graph.getPages()[0].id)
+    const [main] = graph.getChildren(page.id)
+
+    expect(page.layoutMode).toBe('VERTICAL')
+    expect(main).toMatchObject({ x: 150, width: 300 })
+    // It fills up to its maximum, as the page's block does, rather than holding a fixed width.
+    expect(layoutSizing(graph, main, 'HORIZONTAL')).toBe('FILL')
+  })
+
   test('a border without a style is not drawn and takes no room', async () => {
     const { graph } = await readHTMLDocument(
       '<div style="display:inline-flex;padding:10px;border-width:4px;border-color:#000;border-style:none"><div style="width:50px;height:50px;background:#f00"></div></div>'

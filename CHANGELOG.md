@@ -2,6 +2,169 @@
 
 ## Unreleased
 
+## 0.17.0-beta.5 — 2026-11-15
+
+This is a pre-release that lists changes since 0.17.0-beta.4: npm packages are published under the `next` tag, and installed apps on the stable release do not update to it. Linux package managers see `0.17.0-beta.5` as newer than `0.17.0`, so `.deb` and `.rpm` users should remove the beta before installing the final 0.17.0.
+
+### Breaking changes
+
+- `@open-pencil/scene-graph/text` no longer exports `textLinesOverflow`; `textLinesReach` gives the rows a text's lines cover, above its box as well as below (#1885).
+- `FillSwatch` from `@open-pencil/vue/primitives/Fill` no longer takes the resolved color and state attributes of an enclosing `BindableValueRoot`, and its slot no longer provides `bindingState` or `stateAttrs`; pass the root's `resolvedValue` as the fill's color and bind its `stateAttrs` to preview a bound value. It is an image only when given a `label`; without one it is hidden from assistive technology, and it no longer has an English fallback name or `aria-roledescription` (#1937, #2049).
+- `createPostHogErrorReporter`, `ErrorReporter`, `ErrorReportContext`, and `PostHogErrorReporterOptions` move from `@open-pencil/cloud/server` to `@open-pencil/cloud/errors` (#2013).
+- OpenPencil services tokens always carry `accountId`, and services refuse tokens without it; the reference services server counts a month's spend by account only, so usage recorded without an account no longer counts (#2017).
+- The Outline text command, its menu items, the editor's `outlineTextSelected`, and the `selection.outlineText` command are removed; text becomes vectors through Flatten or Outline stroke, as in Figma.
+- `[billing]` takes `endpoint`, the billing service's address, in place of `portal_url`, and discovery's `billing` is `{ endpoint, contractVersion }` instead of `{ portalURL }`. A deployment with `[billing]` also needs the `[services]` signing key and `[internal_api]` (#2027).
+- `TextAutoResize` from `@open-pencil/scene-graph` no longer includes `TRUNCATE`: a truncating text is `textAutoResize: 'NONE'` with `textTruncation: 'ENDING'`, as Figma stores it. Design JSX no longer accepts `textAutoResize="truncate"`; use `truncate` (#2028).
+- Every Cloud deployment now refuses a services or billing endpoint on plain HTTP, not only the official one, since editors send it a token that acts as the account; HTTP to a loopback address (`127.0.0.1`, `[::1]`) stays allowed for development, but not to `localhost`, which is whatever the resolver answers. `@open-pencil/cloud/client` likewise refuses to send such a token anywhere else, raising `CloudServiceInsecureEndpointError` (#2039).
+- `@open-pencil/dom-css` no longer has a headless CSS runtime: `createHeadlessCSSRuntime` is removed, and `createCSSRuntime()` throws outside a browser. Pass `createHTMLEngineRuntime()` from `@open-pencil/html-engine` as `runtime` instead; `parseHTMLDocument()` still parses HTML into DesignDOM without styles (#2065).
+- `isWholeArc` moves from `@open-pencil/core/geometry` to `@open-pencil/scene-graph/geometry`, and `isHitPaint` from `@open-pencil/scene-graph/outline` is replaced by `paintShows` from `@open-pencil/scene-graph/paints` (#2094).
+- `strokeRuns`, `addStrokeRunToPath` and `StrokeRun` move from `@open-pencil/core/vector` to `@open-pencil/scene-graph/paths`, and `outlineSVGPath` from `@open-pencil/scene-graph/polygon` to `@open-pencil/scene-graph/paths` (#2107).
+
+### Added
+
+- Frames and pages show a row in Appearance for each variable collection with more than one mode, such as Theme, so their theme can be chosen before anything inside binds a variable; what is inside inherits it.
+- The `set_variable_mode` and `get_variable_modes` tools switch layers that already exist to a mode, such as a frame to its Dark theme, and tell which mode a layer shows, over MCP, WebMCP, and the AI chat.
+- A Help menu, last in the menu bar on every platform, gathers the documentation, keyboard shortcuts, release notes, the tour, Report a problem, Diagnostics, the Discord community, and the repository; on macOS it includes the system's menu search. Report a problem now opens GitHub's bug report form, filled in with the version and platform, in builds that send no reports of their own, such as a self-hosted Cloud's editor (#2009).
+- `@open-pencil/cloud/errors` publishes the PostHog error reporter Cloud uses, `createPostHogErrorReporter`, for services beside Cloud that report errors as it does; it depends only on `posthog-node`, so importing it leaves the rest of the Cloud server out of a service's bundle (#2013).
+- OpenPencil Cloud accounts can make personal access tokens under Access tokens in their account pages, for scripts and CI: sent as `Authorization: Bearer <token>`, a token reads and saves documents as its account but never changes how it signs in, makes other tokens, or reaches administration (#2014).
+- A Cloud account that holds its whole storage allowance becomes read-only until space is freed or its plan grows: its files still open, download, and delete, but take no edits, uploads, or new files, and the editor shows **Storage full** beside the file's name, with **Manage plan** when the server has a billing portal (#2017).
+- Cloud servers that take plans from the database set the plan an account has until billing stores one, the free plan, with the same keys under `[entitlements]` as the static form (#2017).
+- Group wraps a single layer and gives layers in different parents a group in each, and Ungroup takes apart frames, boolean operations, and sections as well as groups, keeping their children in place, as in Figma (#2010, #2008, #2007).
+- Cloud servers can open one workspace to everyone as a community gallery: `[community] workspace` lets anyone, signed in or not, browse its documents at `/community`, with a page for each showing its preview and named versions and buttons that open it read-only in the browser or the desktop app, with a banner to save a copy. `/api/community` lists them with thumbnails, and Save to and Home mark the gallery workspace as public and never pick it on their own (#2051, #2085).
+- Cloud servers can advertise a billing service that sells plans and credit packs: a `[billing]` table names its `endpoint`, `POST /api/billing/token` signs a token for the signed-in person's own account, and editors link to the server's plan page when it bills. `@open-pencil/cloud/client` adds `requestBillingToken` and `createCloudBillingClient` (#2027).
+- Coding agents can hold the Vision role as well as the Design agent: an agent profile picks one of the models its agent offers or leaves the choice to the agent, the chat composer switches between agent profiles, and an agent that holds Vision analyzes attached images and inspects rendered designs (#2032).
+- When a coding agent such as Claude Code or Codex hands work to subagents, each one that works on the canvas shows as its own agent, with its own cursor and callsign, and leaves when it finishes; the chat shows a card for each where it started, named and colored as its cursor, which opens what the subagent did as a thread of its own and can follow it on the canvas. This works with agents that report their subagents over ACP through their current adapters (#2033, #2076).
+- Cloud servers that sell plans show the account's **Plan** page at `/account/plan`: what the plan includes, the storage its workspaces use, and where to subscribe, buy credits, or manage billing. `GET /api/account/entitlements` reports the signed-in account's own plan and pooled storage, and `@open-pencil/cloud/client` adds `getAccountEntitlements` (#2039).
+- Cloud emails an account's owner once when its workspaces hold all the storage its plan allows and turn read-only, whether it filled its plan or its plan shrank, and again each time it fills after freeing space. The cleanup pass sends it on deployments that send email (#2052).
+- Cloud writes each email in its reader's language: the account's own, which it takes from the app or, failing that, the browser, and for someone without an account the sender's. The email copy is translated into every language the app has, and Storybook previews every email in each (#2062).
+- The app tells each Cloud server its language when signing up and whenever the language changes, so the server's email reads in it (#2063).
+- Cloud servers can set a minimum editor version: older desktop apps offer their update instead of connecting, and the server refuses their requests (#2083).
+- When an administrator blocks a shared document, its workspace's owner gets an email with the reason given and where to contest it, and another when it's restored (#2088).
+- Someone who reports a shared document and leaves an email gets a confirmation that the report arrived, and later what the administrators decided and where to write to disagree (#2090).
+- HTML import keeps tables in auto layout as rows of cells, with `border-spacing` as their gaps and cells aligned by `vertical-align`, and centers text by `text-align` without turning auto layout off (#2105).
+- A model assigned to Fast tasks names each conversation after its first reply and, when it is an API model, writes compaction summaries in place of the Design model; "Same as Design" and no model leave both as they were (#2109).
+- `/review` asks the model assigned to Review, or the Design model, to review the selection or page as an art director, from the layers' structure and lint findings, with a render when the model reads images; text after it sets the focus, attached images are references to compare against, each AI edit's change preview offers Review this change, and Fix these sends the findings to the Design model (#2119).
+
+### Changed
+
+- Design JSX's `designMode` also takes a mode's ID, and a mode name several modes of a collection share is an error instead of picking the first; exported JSX names such a mode by its ID.
+- A new profile opens documents with design-issue markers off. View → Design issues still turns them on, and a profile that already shows them keeps that choice.
+- Download all, before deleting a Cloud account, saves large accounts in Chrome and Edge: it asks where to save the zip and writes the documents into it one at a time, so memory holds about one document instead of the whole zip.
+- Every CLI command that works on one page (`tree`, `find`, `query`, `analyze overlaps`, `export`, `eval`, `tool call`, and the `diff` commands that compare layers) takes `--page` with a page name or `--page-id` with a page ID, with a file and with the running app alike, and rejects the two together.
+- Auto layout and grid run on Taffy, the engine HTML import already lays pages out with, and size Fill layers in rows as Figma does where they came out narrower before, such as an image that fills its row (#1763).
+- Flatten turns text into a vector that keeps each character's colour, its underlines and strikethroughs, and the text's opacity, blend mode, and effects, named after the layer, and Outline stroke turns text into glyph vectors even without a stroke, as in Figma.
+- A coding agent's capabilities belong to its model profile: image input starts as the agent reports it and can be turned off, and Pi profiles have none (#2032).
+- Outside a room, each of your agents on the canvas has a color of its own instead of all sharing one (#2033).
+- An MCP, CLI, or WebMCP call that names no document works on the document its session last worked on, instead of whichever tab is in front, so agents stay in their own documents while you switch tabs; with none, while the app shows Home or a New file tab, it fails and names the open documents to pass as `document_id` instead of editing a hidden empty document.
+- Chat replies fade in word by word with layer references fading in alongside, and the copy buttons and link prompt in Markdown are translated (#2074).
+
+### Fixed
+
+- Text an outer instance overrides on a layer driven by a nested instance's text property stays after component sync, as in Figma.
+- The `zoom_to_fit` and `set_viewport` tools and `figma.viewport` in scripts move the canvas in the app. `zoom_to_fit` zooms out to fit large layers instead of setting 100%, and `figma.viewport` sets `center` and `zoom` and reads `bounds` as in Figma (#1390).
+- SVG export draws background blur behind the layer, as Figma's SVG export does, instead of blurring the layer itself, and draws shadow spread, shadows hidden behind the layer, and shadow blend modes. Effects SVG cannot draw, such as glass, are left out and listed in the export's warnings (#1423).
+- Draw.io export lists the effects its shapes leave out in the export's warnings.
+- A document read from a `.fig` saves again after one of its components swaps a layer for one of the same name before its instances sync.
+- A detached instance keeps the overrides of the instances it holds after saving and reopening, instead of showing them at their components' defaults.
+- Text in a font that is not available draws its fallback at the text's weight instead of an emboldened regular face, and saves the same outlines.
+- A rotated, flipped, shadowed or blurred mask, or a frame mask with a child past its box, masks everything it covers instead of only its unrotated box (#1808).
+- Drop shadows draw out to their faint edge instead of stopping at their blur radius or at the edge of a canvas tile, so a shadowed text whose lines run past its box no longer disappears below the box, and a rotated layer with a layer blur no longer goes missing from parts of the canvas (#1808).
+- draw.io images, page thumbnails and visual diffs hold a drop shadow or a layer blur as far as the canvas draws it, about 1.3 times its radius for an opaque shadow, where they cut it at its radius (#1808).
+- An instance of a library component set copied into a `.fig` file lists every variant of the set, as in Figma, and switches to any of them. A variant no instance uses is built from the file when an instance first switches to it, so opening costs the same as before (#1811).
+- Selecting a layer inside a nested frame no longer outlines that frame, as in Figma (#1832).
+- A pasted instance keeps the variable mode it pins on a nested layer when pasting into another document copies that mode's collection (#1845).
+- Instance texts that keep their component's text style import with the style's font, size, spacing, case, and decoration, as Figma draws them, even when the instance saved other values beside the style (#1846).
+- Exporting a frame or a masked group no longer grows the image to cover content a mask hides, such as a list scrolled past the frame: a masked group exports at its mask's size, as in Figma (#1847).
+- Video fills and strokes from `.fig` files draw their poster frame instead of nothing, in the canvas and in PNG, JPG, WebP, SVG and PDF exports, and saving into the opened file keeps the video (#1858).
+- Selection exports, copies, library copies and collaboration rooms keep the poster frame of a video fill (#1858).
+- PNG, JPG and WebP exports no longer blur an image placed at its own size on whole pixels (#1859).
+- Text ranges in imported .fig files are drawn in the paints of the fill style they name (#1871).
+- Nested instances from `.fig` files keep their own align, grow, absolute positioning and constraints instead of taking their main component's, so a component that fills its parent no longer stretches every nested copy of it (#1883).
+- Centre and bottom aligned text taller than its fixed box overflows up as well as down, as in Figma, instead of hanging from the top of the box (#1885).
+- Each row of the Apply variable picker previews its own variable's color after the field is bound to a variable, instead of every row showing the bound color (#1937).
+- A library that renames a variable mode now renames it in the documents that use the library, so layers set to that mode keep its values instead of a second mode appearing (#1913).
+- A document reloaded from disk returns to the page it showed with that page's layers, where the page showed empty.
+- Opening a `.fig` file in the macOS app no longer reloads it from disk seconds later.
+- Long agent sessions through the AI chat, MCP, or WebMCP no longer use more memory and slow editing with every tool call (#1984).
+- `openpencil tree`, `find`, and `query` with `--page-id` read that page of the running app instead of ignoring it.
+- `openpencil find` and `query` on a file report a page the document lacks as an error, as `tree` does, instead of finding nothing.
+- Text scaled with the Scale tool no longer disappears while another layer is rotated or moved, when only the lines past its box are in view (#1995).
+- Text on a path keeps its path when scaled with the Scale tool, and undo brings back the curve (#2004).
+- Large and deeply nested documents no longer exceed the JavaScript argument or call-stack limits during scene-tree traversal.
+- Wrapped auto layout from `.fig` files whose spacing between rows follows the item spacing lays its rows out that far apart, where they touched before.
+- Undoing a change to how a layer sizes in auto layout, such as setting it to Fill, gives the layer back the size it had.
+- Layout keeps working after a text measurement fails or a grid item has an invalid span, where auto layout could stop until the app was reloaded (#1928).
+- Duplicating a layer inside an auto layout frame places the copy in the flow and resizes a hugging parent immediately, including after undo and redo.
+- Text set to truncate through the plugin API or tools truncates on the canvas and saves as `.fig` instead of failing with an invalid enum value; the plugin API reads it back as `TRUNCATE`, and setting another resizing mode stops truncating, as in Figma (#2028).
+- `export_image` and other image exports work for a document whose canvas is not on screen, such as the one MCP edits while the app shows Home or one in a background tab, instead of failing with "No visible nodes to export", and include text right after a document comes to the front instead of leaving it out until its canvas loads its fonts (#1169).
+- A document opened from a `.fig` file keeps a recovery copy of its unsaved edits while autosave is off, so a crash no longer loses them; on macOS the desktop window loads the editor again when WebKit ends its page, instead of staying blank (#2037).
+- Outline stroke turns shapes with only a fill into a vector of their fill, alone or inside groups, frames, and components, as in Figma.
+- Underlines and strikethroughs across characters of different colours are drawn as Figma draws them: one line broken only around descenders, each piece in one character's colour.
+- Flatten, Outline stroke, and rounded booleans keep rounded corners and ellipses as one curve each instead of dozens of points.
+- Editing a vector's path no longer stretches its gradient when the drag ends; the gradient stays where it was, as in Figma.
+- Pages with a layer of more than about 120,000 direct children open, lay out, and save in Chrome instead of failing with a stack overflow.
+- Glass effects on rotated or skewed layers fill their edges instead of leaving a transparent band where they sample past the clip.
+- A variable font that forbids subsetting keeps its weight in PDF exports instead of falling back to its default weight.
+- AI tools refuse a size, position, gap, padding, grow factor, rotation, or font size beyond what layout can use, naming the argument and the range it accepts.
+- Design JSX reports a grid placement or track count it cannot lay out in the render's warnings, and refuses a track count above 1,000 before allocating for it.
+- HTML imported in the CLI, MCP server, and other headless hosts keeps boxes that fill their parent or hug their content as Fill and Hug, instead of fixing every size, and every layer lands where the page laid out its element.
+- A paint bound to a color variable takes the variable's color again whenever the mode set for its layer changes, even to a mode giving the same color, as in Figma, and a pasted one keeps its edited color or opacity (#2047).
+- A reply's token usage, shown on hover, stays on one line in a narrow chat instead of spilling over the reply's text: it drops its cached tokens, then the rest, whole rather than cutting a number short, and its fade runs the right way in right-to-left interfaces (#2048).
+- Screen readers no longer announce an untranslated "solid fill" for color swatches in the variable picker, Variables table and inspector, effect previews, and swatch buttons (#2049).
+- Plugin API scripts and MCP tools can no longer set a layer's position, rotation, opacity, stroke weights, corner radii, auto layout spacing, size limits, dash pattern, or transform to NaN or Infinity; they get Figma's validation error instead of a layer that blanks its page. `counterAxisSpacing` takes null, so wrapped rows follow the item spacing, as in Figma.
+- `.fig` files whose layers hold a NaN or Infinity, such as stroke weights saved by OpenPencil 0.16, open with those values at their defaults instead of a blank page.
+- CSS, HTML, and JSX exports of a Figma auto layout whose wrapped rows follow the item spacing write that spacing instead of an invalid `NaNpx` row gap or none.
+- Cloud names accounts by text in its MFA, sign-in and profile picture tables, like every other table it builds (#2053).
+- A reply's text no longer fades out and back in when the reply finishes, or when its thinking ends and the answer starts (#2054).
+- Right-clicking a frame, section, or component name on the canvas selects that layer, locked or not, so the context menu applies to it. Clicking or double-clicking a locked component's or section's name passes through it, as for locked frames.
+- HTML import keeps a link or label in a flex row as text rather than a frame around it, keeps lists in one text layer, and carries a link's underline through the bold or italic text inside it (#2065).
+- HTML import keeps a unitless line height, such as `line-height: 1.5`, as a percent of the font size (#2065).
+- Long MCP and agent sessions no longer keep growing in memory once undo history is full: steps past the history limit are freed, also in documents that are never saved (#2066).
+- Separate messages from a coding agent show as separate paragraphs in the chat instead of running together (#2067).
+- Italic text in a font that is not available draws in the default font's italic instead of a slanted upright face, and saves the same outlines.
+- A paint picked as an OkHCL solid and then made a gradient draws its stops in their own colors, not the old solid's (#2092).
+- An auto layout frame's gap tick sits in the middle of its content box, where the pointer finds it, as in Figma, and a turned frame's paddings and gaps hover where they are drawn (#2092).
+- The rulers mark a turned layer's bounds on the canvas, as in Figma (#2092).
+- Switching pages in a large `.fig` after editing it no longer freezes the editor while the page loads, and neither does switching away from a page still loading (#2093).
+- Component sets clip their variants on the canvas, and a section never clips, in hit testing and SVG and PPTX export as on the canvas, as in Figma (#2094).
+- Corners too large for their rectangle draw, export to SVG and hit-test at the radii Figma draws, each scaled by the tighter of its two edges (#2094).
+- A stroke with sides of their own weights bounds exports and shadows by each side's weight, and setting one side from a script keeps the others at the stroke's weight, as in Figma (#2094).
+- An ellipse swept less than 0.001 rad short of a whole turn draws, hit-tests and exports as a whole ellipse, as in Figma (#2094).
+- A drop shadow's spread grows the export bounds only of rectangles, ellipses and frames, and a layer whose paints are all transparent exports nothing, as in Figma (#2094).
+- Layout guides read the same on the canvas, in scripts and in export; a `.fig` guide without an alignment is dropped and one without a color is transparent, as Figma reads them (#2094).
+- A large `.fig` page loads without freezing the editor for seconds as it arrives: its layers arrive in pieces the editor keeps responding between (#2095).
+- Switching to a large page on a slow machine no longer fails with "The operation was timed out" while the page is still drawing (#2099).
+- SVG export places an image fill as the canvas draws it: a crop shows the part its transform holds, a tile repeats at its scale, and a turned image stays turned (#2107).
+- SVG export draws an ellipse or arc from the geometry Figma saved for it, as the canvas does (#2107).
+- A vector region whose loop does not connect no longer draws a line across the gap, and clicks follow an open path whose segments are stored out of order (#2107).
+- SVG export no longer paints a stroke twice where Figma saved its geometry, so translucent and dashed borders match the canvas (#2107).
+- Design JSX draws an inline `<svg>` and an `<Icon>` at the size their layer takes: `width` and `height` scale the artwork as `w` and `h` do, an `<svg>` accepts `width="20"` as its markup writes it, and an icon sized with `w` and `h` fits its box (#2078).
+- A Design JSX layer prop of the wrong kind, such as `name={9}` or `opacity="50%"`, is left out as its warning says instead of reaching the layer, so one bad name no longer breaks linting for the whole document (#2071).
+- Plugin API setters such as `name`, `characters`, `visible`, `blendMode`, the auto layout alignments, `constraints`, and `strokeCap` refuse a value of the wrong kind with Figma's message instead of storing it.
+- Swapping an icon whose frame is not square draws the new glyph square at the shorter side and centered, as Design JSX draws it, instead of stretching it to the frame.
+- A shadow, outside stroke, or blur reaching into view from a layer just off the canvas is drawn instead of dropped (#2111).
+- A click where a mask cuts a layer away falls through to the layers below it, as in Figma (#2111).
+- Layers in a frame snap to the frame's guides (#2111).
+- Where two vector handles overlap, a press picks the one drawn on top, and handles draw above the points, as in Figma (#2111).
+- Design check no longer reports a shadow, blur, or text layer that already uses a shared effect or text style.
+- Shift-dragging an already selected layer, including a nested frame, moves it, and Alt+Shift-dragging duplicates it, instead of dropping the selection (#2113).
+- MCP `get_jsx` with a `path` writes the complete JSX instead of cutting it at 12,000 characters, and JSX returned inline says when it was cut (#2114).
+- JSX export no longer fails for a layer with a Figma noise effect, or for any layer that contains one (#2115).
+- Text set in a font face that Windows lists as a family of its own, such as a Compressed or Condensed cut, loads that face instead of a stand-in, and style names with a width word keep their weight (#2123).
+
+### Performance
+
+- Opening a large .fig file with many images needs less memory, since each image is kept once instead of twice (#1788).
+- Opening a large .fig file needs less memory, since the file is no longer copied for the reader worker (#1789).
+- Opening `.fig` documents uses less memory by preparing only the active page, and the canvas tile cache stays within a share of the device's memory where the browser reports it and shrinks to the last view while the window is hidden (#1856).
+- `openpencil export --node` loads only the page that holds the node (every page for a layer inside an instance), and `openpencil eval` and `openpencil tool call` with `--page` or `--page-id` load only that page of a `.fig` and the rest as the script asks for them, so on a 24-page file with 240,000 layers a call takes about 3 seconds instead of 30 (#1988).
+- Undo history keeps only the fields of created and deleted layers that differ from a new layer's, so long agent sessions that render and delete many screens hold about a quarter of the memory (#2037).
+- Saving a document, and keeping its recovery copy, no longer hashes every image again, and a recovery copy draws its cover again only once the cover page changes (#2037).
+- PDF export of long text is much faster: a line of thousands of characters takes milliseconds instead of a large fraction of a second.
+- Glass over an ellipse no longer builds a map of its outline first, so resizing one stays smooth and exporting one takes about a quarter of the time.
+- Large `.fig` pages load about 15% sooner (#2104).
+- Pages with many component instances load about a quarter sooner (#2116).
+
 ## 0.17.0-beta.4 — 2026-11-11
 
 This is a pre-release that lists changes since 0.17.0-beta.2: npm packages are published under the `next` tag, and installed apps on the stable release do not update to it. Linux package managers see `0.17.0-beta.4` as newer than `0.17.0`, so `.deb` and `.rpm` users should remove the beta before installing the final 0.17.0. 0.17.0-beta.3 was not released because of a problem in the release pipeline; this pre-release includes all of its changes.

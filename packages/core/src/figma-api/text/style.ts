@@ -14,7 +14,7 @@ import { readVariationSettings } from '#core/figma-api/fonts/variations'
 import { toFigmaPaint, type FigmaPaint } from '#core/figma-api/paints'
 import { parseFigma, tooSmall } from '#core/figma-api/validation'
 import { variableAlias } from '#core/figma-api/variables/values'
-import { characterStyles, nodeStyle, type CharacterStyle } from '#core/text/character-style'
+import { characterStyles, nodeStyle, type CharacterStyle } from '#core/text/character/style'
 import { textStyleName } from '#core/text/font/names'
 
 /** The fields `getStyledTextSegments` takes, in the order Figma lists them. */

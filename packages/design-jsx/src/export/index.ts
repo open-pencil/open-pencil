@@ -9,7 +9,7 @@ import {
 } from '@open-pencil/scene-graph/generated'
 
 import { rekaExport, type RekaExport } from '../behaviours/export'
-import { elementTag } from '../elements'
+import { elementNodeTypeByName, elementTag } from '../elements'
 import {
   connectorExportScope,
   connectorLabelLayer,
@@ -19,6 +19,7 @@ import {
 import { shapeWithTextProps } from '../figjam/shapes-with-text'
 import { stickyBodyLayer, stickyProps } from '../figjam/stickies'
 import { refDeclarations } from '../refs'
+import { updatesInPlaceAs } from '../render/reconcile'
 import { instanceProps } from './components/instances'
 import { propertyBindingProps, withPropertyBindings } from './components/properties'
 import {
@@ -171,6 +172,68 @@ interface ExportScope {
   refs: ReadonlyMap<string, string | null>
   variables: VariableExport
   reference: ComponentReference
+  /** How deep an outline writes, when it leaves layers out. */
+  outline?: Outline
+}
+
+/** What an export that leaves deep layers out writes, and what it collects as it goes. */
+interface Outline {
+  /** The nesting below which layers are written with `keepChildren` instead of their children. */
+  depth: number
+  /** Components an instance of the export names, written whole so they render before it. */
+  whole: ReadonlySet<string>
+  /** Layers that hold one of those components, so are never written with `keepChildren`. */
+  holding: ReadonlySet<string>
+  /** The layers written with `keepChildren`, as the export writes them. */
+  kept: string[]
+}
+
+/** The layers above `id`, up to the page. */
+function ancestorIds(graph: SceneGraph, id: string): string[] {
+  const parentId = graph.getNode(id)?.parentId
+  const parent = parentId ? graph.getNode(parentId) : undefined
+  return parent && parent.type !== 'CANVAS' ? [parent.id, ...ancestorIds(graph, parent.id)] : []
+}
+
+/**
+ * A layer written with its children, or, at the outline's depth or deeper, with `keepChildren`
+ * and a comment counting what it holds instead. Rendering rebuilds a layer its tag does not update
+ * in place, such as an instance written as a frame, so neither it nor any layer under it has
+ * children to keep, and they are all written; so is a component an instance of the export names,
+ * which renders before the instance.
+ */
+function containerElement(
+  node: SceneNode,
+  graph: SceneGraph,
+  tag: string,
+  attributes: SyntaxNode[],
+  depth: number,
+  scope: ExportScope,
+  children: (childDepth: number, childScope?: ExportScope) => SyntaxNode[]
+): SyntaxNode {
+  const { outline } = scope
+  if (!updatesInPlaceAs(node.type, elementNodeTypeByName(tag)) || outline?.whole.has(node.id)) {
+    const written = children(depth + 1, { ...scope, outline: undefined })
+    return jsx.element(tag, attributes, written, depth)
+  }
+  if (
+    !outline ||
+    depth < outline.depth ||
+    node.childIds.length === 0 ||
+    outline.holding.has(node.id)
+  )
+    return jsx.element(tag, attributes, children(depth + 1), depth)
+  outline.kept.push(node.id)
+  const count = descendantCount(graph, node)
+  const note = jsx.comment(`${count} ${count === 1 ? 'layer' : 'layers'} kept, id ${node.id}`)
+  return jsx.element(tag, [...attributes, jsx.attribute('keepChildren', null)], [note], depth)
+}
+
+/** How many layers are under `node`, at any depth. */
+function descendantCount(graph: SceneGraph, node: SceneNode): number {
+  return graph
+    .getChildren(node.id)
+    .reduce((count, child) => count + 1 + descendantCount(graph, child), 0)
 }
 
 /** The layers an export writes, by the roots it starts from. */
@@ -189,10 +252,10 @@ function nodeToJSX(
   const withRef = (props: JSXProp[]): JSXProp[] =>
     ref ? [...props, ['ref', new Reference(ref)]] : props
   // Hidden children export with `visible={false}` rather than disappearing.
-  const children = (childDepth: number) =>
+  const children = (childDepth: number, childScope = scope) =>
     graph
       .getChildren(node.id)
-      .flatMap((child) => nodeToJSX(child, graph, childDepth, scope, layerIds, reka))
+      .flatMap((child) => nodeToJSX(child, graph, childDepth, childScope, layerIds, reka))
   if (reka.flatten.has(node.id)) return children(depth)
   // An icon is written by name; its paths are the icon set's to draw again.
   const icon = iconProps(node, graph)
@@ -224,7 +287,8 @@ function nodeToJSX(
   const attributes = withRef(props).map(propAttribute)
   const text =
     node.type === 'TEXT' ? textElement(node, tag, props, attributes, depth, layerIds) : null
-  return [text ?? jsx.element(tag, attributes, children(depth + 1), depth)]
+  if (text) return [text]
+  return [containerElement(node, graph, tag, attributes, depth, scope, children)]
 }
 
 /**
@@ -360,14 +424,28 @@ export interface JSXExportOptions {
    * `defineVars` and `defineMode` that define them.
    */
   declarations?: boolean
+  /**
+   * How many levels of children to write: layers this deep that have children are written with
+   * `keepChildren` and a comment counting what they hold, which rendering the JSX in place of
+   * those layers keeps. Unset writes every level.
+   */
+  maxDepth?: number
 }
 
-export function sceneNodeToJSX(nodeId: string, graph: SceneGraph): string {
-  return selectionToJSX([nodeId], graph)
+export function sceneNodeToJSX(
+  nodeId: string,
+  graph: SceneGraph,
+  options: JSXExportOptions = {}
+): string {
+  return selectionToJSX([nodeId], graph, options)
 }
 
-export function selectionToJSX(nodeIds: string[], graph: SceneGraph): string {
-  return selectionToJSXWithLayers(nodeIds, graph).code
+export function selectionToJSX(
+  nodeIds: string[],
+  graph: SceneGraph,
+  options: JSXExportOptions = {}
+): string {
+  return selectionToJSXWithLayers(nodeIds, graph, options).code
 }
 
 export function selectionToJSXWithLayers(
@@ -380,27 +458,49 @@ export function selectionToJSXWithLayers(
   // Refs are named apart from the variables declared before them.
   const taken = new Set(variables.names)
   const connectors = connectorExportScope(graph, nodeIds, declare, taken)
+  // Several roots are children of a fragment, a level in.
+  const rootDepth = nodeIds.length > 1 ? 1 : 0
   const write = (
     refs: ReadonlyMap<string, string | null>,
-    onOf?: (component: SceneNode) => void
+    whole: ReadonlySet<string>,
+    onOf?: (component: SceneNode) => void,
+    connectorScope = connectors
   ) => {
     const layerIds: Array<string | null> = []
     const reference = componentReferences(graph, refs, onOf)
-    const scope = { connectors, refs, variables, reference }
-    // Several roots are children of a fragment, a level in.
-    const depth = nodeIds.length > 1 ? 1 : 0
+    const outline: Outline | undefined =
+      options.maxDepth === undefined
+        ? undefined
+        : {
+            depth: rootDepth + options.maxDepth,
+            whole,
+            holding: new Set([...whole].flatMap((id) => ancestorIds(graph, id))),
+            kept: []
+          }
+    const scope = { connectors: connectorScope, refs, variables, reference, outline }
     const roots = compact(
       nodeIds.map((id) => {
         const node = graph.getNode(id)
-        return node ? nodeToJSX(node, graph, depth, scope, layerIds).at(0) : undefined
+        return node ? nodeToJSX(node, graph, rootDepth, scope, layerIds).at(0) : undefined
       })
     )
-    return { roots, layerIds, written: new Set(layerIds) }
+    return { roots, layerIds, written: new Set(layerIds), kept: new Set(outline?.kept) }
   }
   // A component written here that an instance names takes a ref, which needs a second pass:
-  // the first finds which components those are.
-  const named = new Set<string>()
-  const first = write(connectors.refs, (component) => named.add(component.id))
+  // the first finds which components those are. An outline writes those components whole, which
+  // can write more instances, so it writes again until no instance names another.
+  const pass = (whole: ReadonlySet<string>) => {
+    const found = new Set<string>()
+    return { written: write(connectors.refs, whole, (component) => found.add(component.id)), found }
+  }
+  let named = new Set<string>()
+  let result = pass(named)
+  while (options.maxDepth !== undefined && [...result.found].some((id) => !named.has(id))) {
+    named = new Set([...named, ...result.found])
+    result = pass(named)
+  }
+  named = new Set([...named, ...result.found])
+  const first = result.written
   const refs = declare
     ? componentRefs(
         graph,
@@ -409,12 +509,22 @@ export function selectionToJSXWithLayers(
         taken
       )
     : connectors.refs
-  const { roots, layerIds } = refs.size > connectors.refs.size ? write(refs) : first
+  const second = refs.size > connectors.refs.size ? write(refs, named) : first
+  // An outline writes an end on a layer it leaves out, under one it writes with `keepChildren`,
+  // by the layer's id, and declares no ref for it: knowing which layers those are takes a pass.
+  const left = [...connectors.joined].some((id) =>
+    ancestorIds(graph, id).some((ancestor) => second.kept.has(ancestor))
+  )
+  const written = new Set(compact(second.layerIds))
+  const kept = left ? new Map([...refs].filter(([id]) => written.has(id))) : refs
+  const { roots, layerIds } = left
+    ? write(kept, named, undefined, { ...connectors, kept: second.kept })
+    : second
   // Several roots are siblings in a fragment, so the code is one JSX expression.
   const root = roots.length > 1 ? jsx.fragment(roots, 0) : roots.at(0)
   const elements = root ? jsx.printJSX(root) : ''
   // Variables first: a ref names a layer, and nothing in a variable's definition refers to one.
-  const declarations = compact([variables.declarations(), refDeclarations(refs)]).join('\n\n')
+  const declarations = compact([variables.declarations(), refDeclarations(kept)]).join('\n\n')
   if (!declarations || !elements) return { code: elements, layerIds }
   // Statements end with `return` and the JSX.
   return { code: `${declarations}\n\nreturn ${elements}`, layerIds }

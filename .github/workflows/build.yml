@@ -68,6 +68,9 @@ jobs:
           cache-scope: desktop
       - name: Install pinned workflow tooling
         run: bun install --cwd .pipeline --frozen-lockfile
+      # The build lints the whole checkout (`oxlint .`), which would include this tooling copy; oxlint honours git excludes.
+      - name: Keep workflow tooling out of the source checkout's lint
+        run: echo /.pipeline/ >> .git/info/exclude
       - name: Generate desktop icons
         run: bun run generate:icons --target desktop
       - name: Generate the native menu
@@ -151,6 +154,11 @@ jobs:
           ref: ${{ github.workflow_sha }}
           path: .pipeline
           persist-credentials: false
+      # The release image runs as root over a checkout the runner's user owns, which git refuses as
+      # dubious ownership; checkout trusts it only for its own git calls.
+      - name: Trust the checkout inside the release image
+        if: matrix.container != ''
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 26.x
@@ -171,9 +179,6 @@ jobs:
         with:
           workspaces: . -> target
           key: ${{ matrix.target }}
-      # Packages come from kernel.org's Ubuntu mirror first, a domain apart from ubuntu.com, so an
-      # outage resolving it does not stop a release; apt verifies them against Ubuntu's key either
-      # way, and the runner's own mirrors remain the fallback.
       - uses: ./.pipeline/.github/actions/setup/workspace
         with:
           cache-scope: desktop
@@ -184,6 +189,7 @@ jobs:
         with:
           name: release-frontend
       - name: Verify shared inputs and disable only the redundant build hook
+        id: shared
         run: bun .pipeline/tools/release/release-packages/src/native/frontend.ts
       - name: Extract shared frontend, icons and menu
         run: tar -xf frontend.tar
@@ -207,7 +213,7 @@ jobs:
           # walks the tooling checked out in .pipeline and runs out of memory. The script runs in desktop.
           projectPath: desktop
           tauriScript: node ../node_modules/@tauri-apps/cli/tauri.js
-          args: --target ${{ matrix.target }} --config "${{ github.workspace }}/release-build-config.json" --verbose
+          args: --target ${{ matrix.target }} --config "${{ steps.shared.outputs.config }}" --verbose
           retryAttempts: 0
       - name: Collect only reported bundles and signatures
         env:

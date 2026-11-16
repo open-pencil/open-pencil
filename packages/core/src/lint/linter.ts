@@ -1,8 +1,9 @@
 import { uniq } from 'es-toolkit'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode, SharedStyleType } from '@open-pencil/scene-graph'
 import { colorToHex } from '@open-pencil/scene-graph/color'
 import { GENERATED_FRAME_TYPES, generatedFrameOwner } from '@open-pencil/scene-graph/generated'
+import { sharedStyleLayers, sharedStyleTypeForKind } from '@open-pencil/scene-graph/shared-styles'
 
 import { presets } from './presets'
 import { allRules } from './rules'
@@ -66,6 +67,7 @@ export class Linter {
     counts: { COLOR: 0, FLOAT: 0, STRING: 0, BOOLEAN: 0 },
     colorsByHex: new Map()
   }
+  private sharedStyleTypes: ReadonlyMap<string, SharedStyleType> = new Map()
 
   constructor(options: { config?: LintConfig; preset?: string; rules?: string[] } = {}) {
     let baseConfig: Record<
@@ -96,6 +98,7 @@ export class Linter {
     this.nodes.clear()
     this.graph = graph
     this.variables = describeVariables(graph)
+    this.sharedStyleTypes = sharedStyleTypes(graph)
     this.checks = this.ruleChecks()
     const roots = rootIds && rootIds.length > 0 ? rootIds : graph.getPages().map((p) => p.id)
     for (const id of outermostRoots(graph, roots)) {
@@ -178,7 +181,9 @@ export class Linter {
         type: effect.type,
         visible: effect.visible,
         radius: effect.radius
-      }))
+      })),
+      textStyleId: raw.textStyleId,
+      effectStyleId: raw.effectStyleId
     }
   }
 
@@ -192,6 +197,8 @@ export class Linter {
         rule,
         context: {
           variables: this.variables,
+          isSharedStyle: (kind, id) =>
+            id !== null && this.sharedStyleTypes.get(id) === sharedStyleTypeForKind(kind),
           report: ({ node, message, suggest, data, fix, suggestions }) => {
             this.messages.push({
               ruleId,
@@ -248,6 +255,14 @@ function outermostRoots(graph: SceneGraph, ids: readonly string[]): string[] {
     }
     return true
   })
+}
+
+/** The type of each shared style in the document, by the source id layers link it by. */
+function sharedStyleTypes(graph: SceneGraph): ReadonlyMap<string, SharedStyleType> {
+  const types = new Map<string, SharedStyleType>()
+  for (const [id, style] of sharedStyleLayers(graph))
+    if (style.sharedStyleType) types.set(id, style.sharedStyleType)
+  return types
 }
 
 function describeVariables(graph: SceneGraph): LintVariables {

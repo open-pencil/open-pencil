@@ -8,6 +8,7 @@ import {
   type ClientCapabilities,
   type NewSessionRequest,
   type ResumeSessionRequest,
+  type SessionConfigOption,
   type SessionUpdate,
   type StopReason
 } from '@agentclientprotocol/sdk/unstable'
@@ -49,6 +50,8 @@ interface FakeAgentOptions {
    * or in a subagent's session `session`.
    */
   updates?: { session?: string; update: SessionUpdate }[]
+  /** What the agent offers for choosing its model; none when absent. */
+  configOptions?: SessionConfigOption[]
 }
 
 /** In-memory ACP agents, one per start, that record what the transport asks of them. */
@@ -60,10 +63,13 @@ export function fakeAgents({
   tokenHangs = false,
   turn = 'answered',
   lookupWaits = false,
-  updates = []
+  updates = [],
+  configOptions
 }: FakeAgentOptions = {}) {
   const lookup = createDeferred<undefined>()
   const prompts: string[] = []
+  /** Model changes and prompts in the order the agent got them. */
+  const calls: string[] = []
   const created: NewSessionRequest[] = []
   const resumed: ResumeSessionRequest[] = []
   const capabilities: (ClientCapabilities | undefined)[] = []
@@ -101,7 +107,7 @@ export function fakeAgents({
         created.push(params)
         sessionRequested.resolve(undefined)
         if (!answersSessions) return createDeferred<never>().promise
-        return { sessionId: `session-${created.length}` }
+        return { sessionId: `session-${created.length}`, configOptions }
       })
       .onRequest(methods.agent.session.resume, ({ params }) => {
         resumed.push(params)
@@ -111,8 +117,13 @@ export function fakeAgents({
           throw RequestError.invalidRequest({ reason: 'thread_active_writer' }, 'Session in use')
         return {}
       })
+      .onRequest(methods.agent.session.setConfigOption, ({ params }) => {
+        calls.push(`model ${String(params.value)}`)
+        return { configOptions: [] }
+      })
       .onRequest(methods.agent.session.prompt, async ({ params, client }) => {
         const [part] = params.prompt
+        calls.push('prompt')
         prompts.push(part?.type === 'text' ? part.text : '')
         const { sessionId } = params
         promptedSession = sessionId
@@ -189,6 +200,7 @@ export function fakeAgents({
   return {
     startup,
     prompts,
+    calls,
     created,
     resumed,
     capabilities,
@@ -273,6 +285,7 @@ export function transport(
     startTimeoutMs?: number
     agentDef?: ACPAgentDef
     cwd?: string
+    model?: string
     yieldWhen?: () => boolean
   } = {}
 ) {
@@ -283,6 +296,7 @@ export function transport(
     cwd: options.cwd,
     startup: agents.startup,
     resume: options.resume,
+    model: options.model,
     startTimeoutMs: options.startTimeoutMs ?? 1_000,
     yieldWhen: options.yieldWhen,
     onSession: (id) => sessions.push(id),

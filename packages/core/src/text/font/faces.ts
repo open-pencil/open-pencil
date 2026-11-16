@@ -1,6 +1,7 @@
-import { uniqBy } from 'es-toolkit'
+import { partition, uniqBy } from 'es-toolkit'
 
 import {
+  namesWidth,
   parseFontStyle,
   standardStyleName,
   type ParsedFontStyle
@@ -21,13 +22,16 @@ export interface FamilyFace extends FaceWeight {
 
 /**
  * The faces named by a family's style names, such as "Bold Italic" or "Semi Bold", each keeping
- * its name. Of two names for one weight and slant, the first listed is the face's.
+ * its name, in the order listed. Of two names for one weight and slant, the first listed is the
+ * face's, and a normal-width name ("Medium") goes before a width name ("Compressed Medium").
  */
 export function facesFromStyles(styles: readonly string[]): FamilyFace[] {
-  return uniqBy(
-    styles.map((style) => ({ ...parseFontStyle(style), style })),
-    (face) => `${face.weight}${face.italic ? 'i' : ''}`
+  const faces = styles.map((style) => ({ ...parseFontStyle(style), style }))
+  const [normalWidth, otherWidth] = partition(faces, (face) => !namesWidth(face.style))
+  const slotFaces = new Set(
+    uniqBy([...normalWidth, ...otherWidth], (face) => `${face.weight}${face.italic ? 'i' : ''}`)
   )
+  return faces.filter((face) => slotFaces.has(face))
 }
 
 /** A face named as Google Fonts names it, for a source that gives weights but no names. */

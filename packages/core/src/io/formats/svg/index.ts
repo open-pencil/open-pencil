@@ -5,6 +5,7 @@ export {
   nodeOutlinePath,
   type OutlineNode
 } from './export'
+export type { ExportEffectWarning } from './effects'
 export {
   createSVGNodes,
   createSVGNodesFromImport,

@@ -10,7 +10,7 @@ import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { applyClippedBlur } from '#core/canvas/effects'
 import { renderNode } from '#core/canvas/scene'
-import { renderEffects } from '#core/canvas/shadows'
+import { renderEffects } from '#core/canvas/shadows/render'
 
 import {
   createMockCanvas,

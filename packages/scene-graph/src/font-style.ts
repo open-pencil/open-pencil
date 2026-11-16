@@ -47,15 +47,49 @@ function normalizeFontStyleName(style: string): string {
     .replace(/[^a-z0-9]+/gu, '')
 }
 
+const FONT_WIDTH_NAMES = [
+  'ultracondensed',
+  'ultracompressed',
+  'extracompressed',
+  'extracondensed',
+  'compressed',
+  'condensed',
+  'narrow',
+  'semicompressed',
+  'semicondensed',
+  'demicondensed',
+  'semiexpanded',
+  'semiextended',
+  'expanded',
+  'extended',
+  'wide',
+  'extraexpanded',
+  'extraextended',
+  'ultraexpanded',
+  'ultraextended'
+]
+
+const FONT_WIDTH_NAME = new RegExp(
+  FONT_WIDTH_NAMES.toSorted((a, b) => b.length - a.length).join('|'),
+  'u'
+)
+
+function weightOfStyleName(name: string): number {
+  const numericWeight = name.match(/(?:^|[^0-9])([1-9]00)(?:[^0-9]|$)/u)?.[1]
+  return numericWeight ? Number(numericWeight) : (FONT_WEIGHT_BY_STYLE.get(name) ?? 400)
+}
+
 export function parseFontStyle(style: string | undefined): ParsedFontStyle {
   const raw = style ?? ''
-  const italic = /(?:italic|oblique)/iu.test(raw)
   const normalized = normalizeFontStyleName(raw)
-  const numericWeight = normalized.match(/(?:^|[^0-9])([1-9]00)(?:[^0-9]|$)/u)?.[1]
   return {
-    weight: numericWeight ? Number(numericWeight) : (FONT_WEIGHT_BY_STYLE.get(normalized) ?? 400),
-    italic
+    weight: weightOfStyleName(normalized.replace(FONT_WIDTH_NAME, '')),
+    italic: /(?:italic|oblique)/iu.test(raw)
   }
+}
+
+export function namesWidth(style: string): boolean {
+  return FONT_WIDTH_NAME.test(normalizeFontStyleName(style))
 }
 
 export function styleToWeight(style: string | undefined): number {

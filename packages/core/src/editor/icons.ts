@@ -6,6 +6,7 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 import { restoreSubtree, snapshotSubtree } from '#core/editor/history/subtree'
 import type { EditorContext } from '#core/editor/types'
 import { pushCreatedSubtreesUndo } from '#core/editor/undo'
+import { screenCenterInWorld } from '#core/geometry/viewport'
 import { parseIconName } from '#core/icons/provider'
 import { detachIcon, placeIcon, recolorIcon, swapIcon } from '#core/icons/render'
 import type { IconData } from '#core/icons/types'
@@ -60,8 +61,9 @@ export function createIconActions(ctx: EditorContext) {
       parentId === ctx.state.currentPageId
         ? { x: 0, y: 0 }
         : ctx.graph.getAbsolutePosition(parentId)
-    const x = (width / 2 - ctx.state.panX) / ctx.state.zoom - origin.x - ICON_SIZE / 2
-    const y = (height / 2 - ctx.state.panY) / ctx.state.zoom - origin.y - ICON_SIZE / 2
+    const center = screenCenterInWorld(ctx.state, width, height)
+    const x = center.x - origin.x - ICON_SIZE / 2
+    const y = center.y - origin.y - ICON_SIZE / 2
     const previousSelection = new Set(ctx.state.selectedIds)
     const frame = placeIcon(ctx.graph, parentId, icon, {
       size: ICON_SIZE,

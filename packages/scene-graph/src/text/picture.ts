@@ -36,16 +36,16 @@ export function textCacheInvalidationChanges(
     keys.some((key) => GLYPH_AFFECTING_KEYS.has(key)) ||
     TEXT_LAYOUT_FIELDS.some((key) => keys.includes(key))
   if (glyphsInvalidated && !('derivedLayout' in changes)) invalidated.derivedLayout = null
-  // A successful path-text edit supplies reflowed glyphs in `changes`. Every
-  // other mutation path must drop stale baked glyphs and path identity rather
-  // than pair new text/style with old visible outlines.
-  if (node.derivedTextGlyphs && glyphsInvalidated && !changes.derivedTextGlyphs) {
+  if (glyphsInvalidated && !changes.derivedTextGlyphs) {
     // Path-text resize supplies transformed glyphs through the resize workflow. A raw box
     // preview keeps them until that workflow commits or an actual shaping edit occurs.
     const onlyPathBoxResize =
       !!node.textPathData && keys.every((key) => key === 'width' || key === 'height')
-    if (!onlyPathBoxResize) {
+    const placesPath = keys.includes('textPathBox') && !!changes.textPathBox
+    if (node.derivedTextGlyphs && !onlyPathBoxResize) {
       invalidated.derivedTextGlyphs = null
+    }
+    if (node.textPathData && !onlyPathBoxResize && !placesPath) {
       invalidated.textPathData = null
     }
   }

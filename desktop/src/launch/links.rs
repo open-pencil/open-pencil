@@ -16,13 +16,16 @@ pub struct DeepLinkJoin {
 
 /// An OpenPencil Cloud invitation or a document shared by link, from
 /// `openpencil://cloud?url=<link>#<secret>`: the web link on its server, `/<invitations|share>/<id>`,
-/// with its secret in the deep link's fragment. The server is the web link's origin.
+/// with its secret in the deep link's fragment. A community gallery document comes as
+/// `openpencil://cloud?url=<server>/community/<id>/open`, with no secret and, for one of its named
+/// versions, `?version=<id>` on the web link. The server is the web link's origin.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct CloudLink {
     pub kind: CloudLinkKind,
     pub id: String,
     pub server: String,
-    pub secret: String,
+    pub secret: Option<String>,
+    pub version: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
@@ -30,6 +33,7 @@ pub struct CloudLink {
 pub enum CloudLinkKind {
     Invitations,
     Share,
+    Community,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -88,9 +92,9 @@ fn parse_join_url(url: &Url) -> Result<DeepLinkJoin, DeepLinkError> {
     Ok(DeepLinkJoin { room })
 }
 
-/// Invitation and share IDs are UUIDs, and their secrets 32 to 128 hex characters (the Cloud
-/// sharing contract); the web link must be an `http` or `https` address without credentials,
-/// query, or fragment.
+/// Invitation, share, and community document IDs are UUIDs, and secrets 32 to 128 hex characters
+/// (the Cloud sharing contract); the web link must be an `http` or `https` address without
+/// credentials or fragment, and without a query but a community link's named version.
 fn parse_cloud_url(url: &Url) -> Option<CloudLink> {
     if !matches!(url.path(), "" | "/") {
         return None;
@@ -104,17 +108,31 @@ fn parse_cloud_url(url: &Url) -> Option<CloudLink> {
                 && link.host_str().is_some()
                 && link.username().is_empty()
                 && link.password().is_none()
-                && link.query().is_none()
                 && link.fragment().is_none()
         })?;
     let mut segments = link.path_segments()?;
     let kind = match segments.next()? {
         "invitations" => CloudLinkKind::Invitations,
         "share" => CloudLinkKind::Share,
+        "community" => CloudLinkKind::Community,
         _ => return None,
     };
     let id = segments.next().filter(|id| is_uuid(id))?.to_owned();
-    if segments.next().is_some() {
+    let server = link.origin().ascii_serialization();
+    if kind == CloudLinkKind::Community {
+        if segments.next() != Some("open") || segments.next().is_some() || url.fragment().is_some()
+        {
+            return None;
+        }
+        return Some(CloudLink {
+            kind,
+            id,
+            server,
+            secret: None,
+            version: community_version(&link)?,
+        });
+    }
+    if segments.next().is_some() || link.query().is_some() {
         return None;
     }
     let secret = url
@@ -124,9 +142,24 @@ fn parse_cloud_url(url: &Url) -> Option<CloudLink> {
     Some(CloudLink {
         kind,
         id,
-        server: link.origin().ascii_serialization(),
-        secret,
+        server,
+        secret: Some(secret),
+        version: None,
     })
+}
+
+/// The named version a community link asks for: `Some(None)` for the latest, `None` when its
+/// query holds anything but one `version` UUID.
+fn community_version(link: &Url) -> Option<Option<String>> {
+    let Some(query) = link.query() else {
+        return Some(None);
+    };
+    let mut pairs = url::form_urlencoded::parse(query.as_bytes());
+    let (key, value) = pairs.next()?;
+    if key != "version" || !is_uuid(&value) || pairs.next().is_some() {
+        return None;
+    }
+    Some(Some(value.into_owned()))
 }
 
 fn is_uuid(value: &str) -> bool {
@@ -245,7 +278,8 @@ mod tests {
                 kind: CloudLinkKind::Invitations,
                 id: CLOUD_ID.into(),
                 server: "https://cloud.example.com".into(),
-                secret: CLOUD_SECRET.into(),
+                secret: Some(CLOUD_SECRET.into()),
+                version: None,
             }))
         );
         assert!(matches!(
@@ -262,6 +296,47 @@ mod tests {
             )),
             Ok(DeepLink::Cloud(CloudLink { ref server, .. })) if server == "https://cloud.example.com"
         ));
+    }
+
+    #[test]
+    fn community_links_carry_the_document_and_its_named_version() {
+        const VERSION: &str = "5d4c3b2a-1f0e-4d9c-8b7a-6f5e4d3c2b1a";
+        assert_eq!(
+            cloud(&format!(
+                "openpencil://cloud?url=https://cloud.example.com/community/{CLOUD_ID}/open"
+            )),
+            Ok(DeepLink::Cloud(CloudLink {
+                kind: CloudLinkKind::Community,
+                id: CLOUD_ID.into(),
+                server: "https://cloud.example.com".into(),
+                secret: None,
+                version: None,
+            }))
+        );
+        assert!(matches!(
+            cloud(&format!(
+                "openpencil://cloud?url=https%3A%2F%2Fcloud.example.com%2Fcommunity%2F{CLOUD_ID}%2Fopen%3Fversion%3D{VERSION}"
+            )),
+            Ok(DeepLink::Cloud(CloudLink { kind: CloudLinkKind::Community, ref version, .. }))
+                if version.as_deref() == Some(VERSION)
+        ));
+    }
+
+    #[test]
+    fn community_links_refuse_anything_else() {
+        let site = "https%3A%2F%2Fcloud.example.com";
+        for url in [
+            format!("openpencil://cloud?url={site}%2Fcommunity%2F{CLOUD_ID}"),
+            format!("openpencil://cloud?url={site}%2Fcommunity%2Fnot-a-uuid%2Fopen"),
+            format!("openpencil://cloud?url={site}%2Fcommunity%2F{CLOUD_ID}%2Fopen%2Fextra"),
+            format!(
+                "openpencil://cloud?url={site}%2Fcommunity%2F{CLOUD_ID}%2Fopen%3Fversion%3Dlatest"
+            ),
+            format!("openpencil://cloud?url={site}%2Fcommunity%2F{CLOUD_ID}%2Fopen%3Fx%3D1"),
+            format!("openpencil://cloud?url={site}%2Fcommunity%2F{CLOUD_ID}%2Fopen#{CLOUD_SECRET}"),
+        ] {
+            assert_eq!(cloud(&url), Err(DeepLinkError::BadCloudLink), "{url}");
+        }
     }
 
     #[test]

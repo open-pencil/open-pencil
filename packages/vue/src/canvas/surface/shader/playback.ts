@@ -9,6 +9,7 @@ import {
   type EditorState
 } from '@open-pencil/core'
 import type { SkiaRenderer } from '@open-pencil/core/canvas'
+import { worldRectToScreen } from '@open-pencil/core/geometry'
 import { maxOf } from '@open-pencil/scene-graph/arrays'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 import {
@@ -153,15 +154,17 @@ export function useShaderPlayback(options: {
   }
 
   function onScreen(bounds: Rect[]): boolean {
-    const { panX, panY, zoom } = getView()
+    const transform = getView()
     const view = getViewport()
-    return bounds.some(
-      (rect) =>
-        rect.x * zoom + panX < view.width &&
-        (rect.x + rect.width) * zoom + panX > 0 &&
-        rect.y * zoom + panY < view.height &&
-        (rect.y + rect.height) * zoom + panY > 0
-    )
+    return bounds.some((bound) => {
+      const rect = worldRectToScreen(transform, bound)
+      return (
+        rect.x < view.width &&
+        rect.x + rect.width > 0 &&
+        rect.y < view.height &&
+        rect.y + rect.height > 0
+      )
+    })
   }
 
   /**

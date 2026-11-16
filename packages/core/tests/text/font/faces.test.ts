@@ -24,6 +24,22 @@ test('reads faces from style names, once each, keeping each name', () => {
   ])
 })
 
+test('a normal-width face takes its weight and slant over a width face listed before it', () => {
+  const faces = facesFromStyles([
+    'Compressed Medium',
+    'Condensed Medium Italic',
+    'Medium',
+    'Medium Italic',
+    'Wide Black'
+  ])
+  expect(faces).toEqual([
+    { weight: 500, italic: false, style: 'Medium' },
+    { weight: 500, italic: true, style: 'Medium Italic' },
+    { weight: 900, italic: false, style: 'Wide Black' }
+  ])
+  expect(nearestFamilyFace(faces, 500, false)).toMatchObject({ style: 'Medium' })
+})
+
 test('the nearest face keeps the slant, as Figma picks one on a family switch', () => {
   expect(nearestFamilyFace(lora, 100, false)).toMatchObject({ weight: 400, italic: false })
   expect(nearestFamilyFace(lora, 900, false)).toMatchObject({ weight: 700, italic: false })

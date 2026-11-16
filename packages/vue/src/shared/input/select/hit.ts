@@ -6,7 +6,7 @@ import {
 } from '@open-pencil/core/geometry'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
-import type { HitTestFns } from '#vue/shared/input/select'
+import type { HitTestFns } from '#vue/shared/input/select/press'
 
 /** The layer whose label is under a point; labels are drawn frames first, so the topmost is first. */
 export function hitTestLabel(
