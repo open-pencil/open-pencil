@@ -20,6 +20,7 @@ import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
+import { settingsSelectUI } from '@/theme/settings/controls'
 
 const updates = useUpdateMessages()
 // A package whose store delivers updates has no built-in check to switch.
@@ -68,7 +69,7 @@ const channelOptions = computed(() => [
           v-model="channel"
           :label="updates.channel"
           :options="channelOptions"
-          :ui="{ trigger: 'w-full sm:w-52' }"
+          :ui="settingsSelectUI"
           data-test-id="settings-update-channel"
         />
       </SettingsRow>
