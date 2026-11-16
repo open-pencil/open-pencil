@@ -48,11 +48,16 @@ function defaultEntitlements(config: CloudDeploymentConfig) {
 function emailConfig(config: CloudDeploymentConfig, environment: CloudEnvironment) {
   if (config.email.transport === 'none') return { emailTransport: 'none' as const }
   if (config.email.transport === 'cloudflare') {
-    return { emailTransport: 'cloudflare' as const, emailFrom: config.email.from }
+    return {
+      emailTransport: 'cloudflare' as const,
+      emailFrom: config.email.from,
+      emailReplyTo: config.email.reply_to
+    }
   }
   return {
     emailTransport: 'smtp' as const,
     emailFrom: config.email.from,
+    emailReplyTo: config.email.reply_to,
     smtpHost: config.email.smtp.host,
     smtpPort: config.email.smtp.port,
     smtpSecure: config.email.smtp.secure,

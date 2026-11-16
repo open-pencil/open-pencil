@@ -20,6 +20,7 @@ export function createNodemailerTransactionalEmailTransport(
     async send(message) {
       const result = (await options.transporter.sendMail({
         from: message.from,
+        replyTo: message.replyTo,
         to: message.to,
         subject: message.subject,
         html: message.html,

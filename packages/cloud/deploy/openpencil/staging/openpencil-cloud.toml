@@ -63,6 +63,8 @@ endpoint = "https://billing-staging.openpencil.dev"
 [email]
 transport = "cloudflare"
 from = "cloud@openpencil.dev"
+# Replies reach the team's inbox; cloud@ receives nothing.
+reply_to = "hello@openpencil.dev"
 
 # The free plan, which every account takes until billing stores a plan for it.
 [entitlements]

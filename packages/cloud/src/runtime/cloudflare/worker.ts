@@ -73,6 +73,7 @@ function cloudServices(
   const queued = createTransactionalEmailService(database, {
     encryptionSecret: config.authSecret,
     from: config.emailFrom ?? '',
+    replyTo: config.emailReplyTo,
     transport
   })
   // Mail is sent once the request is done rather than by a polling worker, so sign-in links

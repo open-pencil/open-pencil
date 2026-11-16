@@ -78,6 +78,8 @@ export function createTransactionalEmailService(
   options: {
     encryptionSecret: string
     from: string
+    /** Where replies go; mail clients answer `from` without it. */
+    replyTo?: string
     transport?: TransactionalEmailTransport
   }
 ): TransactionalEmailService {
@@ -217,6 +219,7 @@ export function createTransactionalEmailService(
           const sent = await options.transport.send({
             deliveryId: message.id,
             from: options.from,
+            replyTo: options.replyTo,
             to: message.recipientEmailNormalized,
             subject: rendered.subject,
             html: rendered.html,
