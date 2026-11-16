@@ -89,8 +89,9 @@ export function portalDestination(
   if (!account) return { name: 'sign-in', query: { redirect: to.fullPath } }
   const standing = standingPath(account)
   if (standing && to.path !== standing) return standingDestination(standing, to.fullPath)
-  // An active account has nothing waiting or declined to read about.
-  if (!standing && STANDING_PAGES.has(to.path)) return PORTAL_HOME
+  // An active account has nothing waiting or declined to read about, but may be asked to prove its
+  // second step again, as an administrator is after a while.
+  if (!standing && STANDING_PAGES.has(to.path) && to.path !== CONFIRM_PAGE) return PORTAL_HOME
   if (to.meta.admin && account.user.deploymentRole !== 'admin') return ACCOUNT_PAGE
   return true
 }

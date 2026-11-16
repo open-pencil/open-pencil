@@ -98,7 +98,8 @@ describe('portal access rules', () => {
     })
     const confirm = target('/account/confirm', { account: true }, '/admin/people')
     expect(portalDestination(confirm, account('two-step'))).toBe(true)
-    expect(portalDestination(confirm, account('active'))).toBe('/')
+    // An administrator whose proof aged proves it again from an active account.
+    expect(portalDestination(confirm, account('active', 'admin'))).toBe(true)
   })
 
   test('console pages ask for a deployment administrator', () => {
