@@ -3,6 +3,7 @@ import type { Chat } from '@ai-sdk/vue'
 import type { UIMessage } from 'ai'
 import { computed, provide, shallowRef, useTemplateRef, watch } from 'vue'
 
+import { providerKind } from '@open-pencil/core/constants'
 import { useI18n } from '@open-pencil/vue/i18n'
 
 import { isAttachableImageFile, revokeImagePreviewURL } from '@/app/ai/attachment/image/prepare'
@@ -177,7 +178,7 @@ const contextPercent = computed(() =>
  * own `/compact` goes to it as written.
  */
 function compactCommand(message: ChatSubmission): LeadingCommand | null {
-  if (providerID.value.startsWith('acp:') || message.images.length > 0) return null
+  if (providerKind(providerID.value) === 'acp' || message.images.length > 0) return null
   const command = leadingCommand(message.displayText)
   return command?.name === 'compact' ? command : null
 }
@@ -537,7 +538,7 @@ function handleStop() {
           :show-continue="showContinue"
           :interrupted="Boolean(history.current.value?.interrupted) && status === 'ready'"
           :queued="queuedMessages"
-          :steers="!providerID.startsWith('acp:') && providerID !== 'harness:pi'"
+          :steers="providerKind(providerID) === 'api'"
           :sending="submission.sending.value?.displayText ?? null"
           :compacting="compaction.compacting.value"
           :reviewing="review.reviewing.value"

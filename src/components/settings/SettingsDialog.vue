@@ -9,6 +9,7 @@ import IconBookOpen from '~icons/lucide/book-open'
 import IconChartNoAxesCombined from '~icons/lucide/chart-no-axes-combined'
 import IconCloud from '~icons/lucide/cloud'
 import IconDatabase from '~icons/lucide/database'
+import IconMessageSquareText from '~icons/lucide/message-square-text'
 import IconPenTool from '~icons/lucide/pen-tool'
 import IconPlug from '~icons/lucide/plug'
 import IconSettings from '~icons/lucide/settings'
@@ -41,6 +42,7 @@ import MediaSettingsPanel from '@/components/settings/media/MediaSettingsPanel.v
 import ModelsPanel from '@/components/settings/models/ModelsPanel.vue'
 import NotificationSettingsSection from '@/components/settings/notifications/NotificationSettingsSection.vue'
 import PrivacySettingsPanel from '@/components/settings/privacy/PrivacySettingsPanel.vue'
+import PromptsSettingsPanel from '@/components/settings/prompts/PromptsSettingsPanel.vue'
 import SkillsSettingsPanel from '@/components/settings/skills/SkillsSettingsPanel.vue'
 import StorageSettingsPanel from '@/components/settings/storage/StorageSettingsPanel.vue'
 import ToolAccessSettingsPanel from '@/components/settings/tool-access/ToolAccessSettingsPanel.vue'
@@ -93,6 +95,7 @@ const groups = computed<{ label: string; sections: SectionItem[] }[]>(() => [
       { value: 'ai', label: settings.value.models, icon: IconSparkles },
       { value: 'tools', label: settings.value.toolAccess, icon: IconSlidersHorizontal },
       { value: 'skills', label: settings.value.skills, icon: IconBookOpen },
+      { value: 'prompts', label: settings.value.prompts, icon: IconMessageSquareText },
       { value: 'services', label: settings.value.integrations, icon: IconBlocks },
       { value: 'mcp', label: settings.value.mcp, icon: IconPlug },
       { value: 'usage', label: settings.value.usage, icon: IconChartNoAxesCombined }
@@ -218,6 +221,9 @@ function onOpenChange(open: boolean): void {
       </AppTabsContent>
       <AppTabsContent value="skills" as-child>
         <SkillsSettingsPanel />
+      </AppTabsContent>
+      <AppTabsContent value="prompts" as-child>
+        <PromptsSettingsPanel />
       </AppTabsContent>
       <AppTabsContent value="services" as-child>
         <MediaSettingsPanel />

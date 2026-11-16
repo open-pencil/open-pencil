@@ -1,0 +1,1 @@
+- Undoing a duplicate, a layers panel drag, or a reorder inside an instance's slot takes one step instead of two (#2143).

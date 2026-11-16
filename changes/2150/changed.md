@@ -1,0 +1,1 @@
+- `@open-pencil/cloud`'s route types take what each route's schema accepts rather than what it outputs, so a typed client may leave out an optional or defaulted field, and query strings are typed as the text they carry. The reference services server answers an `Authorization` header that is not a bearer token with 400 `invalid_request` instead of 401 (#2150).

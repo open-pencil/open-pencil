@@ -25,7 +25,6 @@ import {
   type SessionChoice
 } from '@/app/ai/agents/acp/options'
 import { requestPermissionFromUser } from '@/app/ai/agents/acp/permission'
-import type { ACPProcess } from '@/app/ai/agents/acp/process'
 import {
   AgentSessionResumeError,
   AgentSessionRetryError,
@@ -37,17 +36,16 @@ import {
 import { noteSubagents } from '@/app/ai/agents/acp/subagents'
 import { createOwnToolApproval, linkOwnTools, type OwnToolsLink } from '@/app/ai/agents/acp/tools'
 import { createSubagentTranscripts } from '@/app/ai/agents/acp/transcripts'
+import type { AgentChild } from '@/app/ai/agents/process'
 import { agentAccounts } from '@/app/ai/agents/setup/accounts'
 import { AgentNotInstalledError } from '@/app/ai/agents/setup/readiness'
 import { notifyPermissionWaiting } from '@/app/ai/chat/notifications'
-import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
+import { systemPrompt } from '@/app/ai/chat/system-prompt'
 import { endRun, forgetAgentChat, startAgentRun } from '@/app/ai/reply/run'
 import { subagentAgent } from '@/app/automation/agents'
 import { getAutomationAuthToken } from '@/app/automation/mcp/spawn'
 import { describeDiagnosticError, recordACPTransportFailure } from '@/app/diagnostics'
 import type { EditorStore } from '@/app/editor/active-store'
-
-type TauriChild = ACPProcess['child']
 
 /** What starting an agent reaches outside the transport, which tests replace. */
 export interface ACPStartup extends AgentLaunch {
@@ -80,7 +78,7 @@ interface ACPSession {
   sessionId: string
   /** The id the agent's tool calls carry, which ties them to this chat's replies. */
   chat: string
-  child: TauriChild
+  child: AgentChild
   onUpdate: ((params: SessionNotification) => void) | null
   dead: boolean
   /** The model the agent says it uses, once it has said; Codex names it, Claude in its usage. */
@@ -201,9 +199,14 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
   private agentDef: ACPAgentDef
   private cwd: string
   private sentContext = false
+  /**
+   * The Design prompt as it was when the chat started. A replacement session, after the agent
+   * restarted without resuming, gets this one too: a change in Settings applies to the next chat.
+   */
+  private readonly designPrompt = systemPrompt()
   private destroying = false
   /** The agent while it starts, before it becomes the session, so destroying can stop it. */
-  private starting: TauriChild | null = null
+  private starting: AgentChild | null = null
 
   /** The chat's document, where each reply's run records the edits the agent makes in it. */
   private store: EditorStore | null
@@ -294,7 +297,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     }
 
     const carriesContext = !this.sentContext
-    const promptText = carriesContext ? `${SYSTEM_PROMPT}\n\n${text}` : text
+    const promptText = carriesContext ? `${this.designPrompt}\n\n${text}` : text
     this.sentContext = true
 
     const { connection, sessionId } = this.session

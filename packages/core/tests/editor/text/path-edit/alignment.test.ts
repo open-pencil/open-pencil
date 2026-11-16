@@ -1,199 +1,15 @@
 import { describe, expect, test } from 'bun:test'
 
+import { straightLineNetwork } from '#core-tests/helpers/text/path'
+
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { pixelLength } from '@open-pencil/scene-graph/text'
 import { expectDefined } from '@open-pencil/test-support/assert'
-/** Straight horizontal line, in 400x100 normalized space (zero tangents = no curve). */
 
-import { pathTextEditChanges, resizedPathTextGlyphs } from '#core/editor/text/path-edit'
+import { pathTextEditChanges } from '#core/editor/text/path-edit'
 import { getGlyphOutlineMetricsSync } from '#core/text/font/glyphs'
 import { fontManager } from '#core/text/font/manager'
-import { nearestArcPoint, pointAtArc, sampleTextPath, textPathStartArc } from '#core/text/path'
-function straightLineNetwork() {
-  return {
-    vertices: [
-      { x: 0, y: 50 },
-      { x: 400, y: 50 }
-    ],
-    segments: [{ start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }],
-    regions: []
-  }
-}
-
-describe('pathTextEditChanges — reflow on character edit', () => {
-  test('re-lays out glyphs along the path instead of clearing them', async () => {
-    const font = await fontManager.fetchBundledFont('/InterVariable.ttf')
-    expect(font).toBeTruthy()
-    if (!font) return
-    await fontManager.markLoaded('Inter', 'Regular', font)
-
-    const graph = new SceneGraph()
-    const page = expectDefined(graph.getPages()[0])
-    const box = { x: 0, y: 0, width: 400, height: 100 }
-    const node = graph.createNode('TEXT', page.id, {
-      x: 0,
-      y: 0,
-      width: 400,
-      height: 100,
-      text: 'AB',
-      fontFamily: 'Inter',
-      fontWeight: 400,
-      italic: false,
-      fontSize: 40,
-      textPathBox: { ...box },
-      derivedTextGlyphs: [
-        { commandsBlob: new Uint8Array(4), x: 50, y: 50, fontSize: 40, rotation: 0 },
-        { commandsBlob: new Uint8Array(4), x: 90, y: 50, fontSize: 40, rotation: 0 }
-      ]
-    })
-    node.textPathData = {
-      network: straightLineNetwork(),
-      normalizedSize: { x: 400, y: 100 },
-      tValue: 0,
-      forward: true
-    }
-
-    const changes = pathTextEditChanges(node, { text: 'Edited' })
-
-    const glyphs = expectDefined(changes.derivedTextGlyphs, 'reflowed glyphs')
-    expect(glyphs.length).toBe('Edited'.length)
-    expect(changes.strokeGeometry).toEqual([])
-    // Glyphs walk forward along the path — not stacked at one point.
-    expect(glyphs[glyphs.length - 1].x).toBeGreaterThan(glyphs[0].x)
-    for (const g of glyphs) {
-      expect(g.commandsBlob.length).toBeGreaterThan(0)
-      expect(Number.isFinite(g.x)).toBe(true)
-      expect(Number.isFinite(g.y)).toBe(true)
-    }
-  })
-
-  test('positions glyphs as HarfBuzz shapes them', async () => {
-    const font = await fontManager.fetchBundledFont('/InterVariable.ttf')
-    expect(font).toBeTruthy()
-    if (!font) return
-    await fontManager.markLoaded('Inter', 'Regular', font)
-
-    const metrics = getGlyphOutlineMetricsSync('Inter', 'Regular', 'AV ffi', 40)
-    expect(metrics).toBeTruthy()
-    expect(metrics?.length).toBeGreaterThan(0)
-    for (let index = 1; index < (metrics?.length ?? 0); index++) {
-      expect(metrics?.[index]?.x).toBeGreaterThan(metrics?.[index - 1]?.x ?? -Infinity)
-    }
-  })
-
-  test('folds letterSpacing into the pen-walk advance', async () => {
-    const font = await fontManager.fetchBundledFont('/InterVariable.ttf')
-    expect(font).toBeTruthy()
-    if (!font) return
-    await fontManager.markLoaded('Inter', 'Regular', font)
-
-    function lastGlyphX(letterSpacing: number): number {
-      const graph = new SceneGraph()
-      const page = expectDefined(graph.getPages()[0])
-      const box = { x: 0, y: 0, width: 400, height: 100 }
-      const node = graph.createNode('TEXT', page.id, {
-        x: 0,
-        y: 0,
-        width: 400,
-        height: 100,
-        text: 'AB',
-        fontFamily: 'Inter',
-        fontWeight: 400,
-        italic: false,
-        fontSize: 40,
-        letterSpacing: pixelLength(letterSpacing),
-        textPathBox: { ...box },
-        derivedTextGlyphs: [
-          { commandsBlob: new Uint8Array(4), x: 50, y: 50, fontSize: 40, rotation: 0 },
-          { commandsBlob: new Uint8Array(4), x: 90, y: 50, fontSize: 40, rotation: 0 }
-        ]
-      })
-      node.textPathData = {
-        network: straightLineNetwork(),
-        normalizedSize: { x: 400, y: 100 },
-        tValue: 0,
-        forward: true
-      }
-      const changes = pathTextEditChanges(node, { text: 'ABCD' })
-      const glyphs = expectDefined(changes.derivedTextGlyphs, 'reflowed glyphs')
-      return glyphs[glyphs.length - 1].x
-    }
-
-    // Wider tracking pushes the last glyph further along the (straight) path.
-    expect(lastGlyphX(20)).toBeGreaterThan(lastGlyphX(0))
-  })
-
-  test('clears stale path glyphs when text becomes empty', () => {
-    const graph = new SceneGraph()
-    const page = expectDefined(graph.getPages()[0])
-    const node = graph.createNode('TEXT', page.id, {
-      text: 'AB',
-      textPathBox: { x: 0, y: 0, width: 100, height: 50 },
-      strokeGeometry: [{ windingRule: 'NONZERO', commandsBlob: new Uint8Array(4) }],
-      derivedTextGlyphs: [
-        { commandsBlob: new Uint8Array(4), x: 10, y: 20, fontSize: 20, rotation: 0 }
-      ]
-    })
-
-    expect(pathTextEditChanges(node, { text: '  ' })).toEqual({
-      derivedTextGlyphs: null,
-      strokeGeometry: []
-    })
-  })
-
-  test('falls back to {} when the node has no path data', () => {
-    const graph = new SceneGraph()
-    const page = expectDefined(graph.getPages()[0])
-    const node = graph.createNode('TEXT', page.id, {
-      text: 'AB',
-      derivedTextGlyphs: [
-        { commandsBlob: new Uint8Array(4), x: 0, y: 0, fontSize: 40, rotation: 0 }
-      ]
-    })
-    // No textPathData / textPathBox — not reflowable.
-    expect(pathTextEditChanges(node, { text: 'Edited' })).toEqual({})
-  })
-
-  test('uses pending fontSize from the same update batch', async () => {
-    const font = await fontManager.fetchBundledFont('/InterVariable.ttf')
-    expect(font).toBeTruthy()
-    if (!font) return
-    await fontManager.markLoaded('Inter', 'Regular', font)
-
-    const graph = new SceneGraph()
-    const page = expectDefined(graph.getPages()[0])
-    const box = { x: 0, y: 0, width: 400, height: 100 }
-    const node = graph.createNode('TEXT', page.id, {
-      x: 0,
-      y: 0,
-      width: 400,
-      height: 100,
-      text: 'AB',
-      fontFamily: 'Inter',
-      fontWeight: 400,
-      italic: false,
-      fontSize: 20,
-      textPathBox: { ...box },
-      derivedTextGlyphs: [
-        { commandsBlob: new Uint8Array(4), x: 50, y: 50, fontSize: 20, rotation: 0 },
-        { commandsBlob: new Uint8Array(4), x: 90, y: 50, fontSize: 20, rotation: 0 }
-      ]
-    })
-    node.textPathData = {
-      network: straightLineNetwork(),
-      normalizedSize: { x: 400, y: 100 },
-      tValue: 0,
-      forward: true
-    }
-
-    const changes = pathTextEditChanges(node, { text: 'Hi', fontSize: 48 })
-    const glyphs = expectDefined(changes.derivedTextGlyphs, 'reflowed glyphs')
-    expect(glyphs.length).toBe(2)
-    for (const g of glyphs) {
-      expect(g.fontSize).toBe(48)
-    }
-  })
-})
+import { nearestArcPoint, pointAtArc, sampleTextPath } from '#core/text/path'
 
 describe('pathTextEditChanges — alignment', () => {
   /** "OO" at 40px on a 400-long straight path, glyph 0 at x = 150, aligned as given. */
@@ -318,7 +134,11 @@ describe('aligned path text is laid out from the text path start, as in Figma', 
     return node
   }
 
-  async function edited(align: 'LEFT' | 'CENTER' | 'RIGHT' | 'JUSTIFIED', forward = true) {
+  async function edited(
+    align: 'LEFT' | 'CENTER' | 'RIGHT' | 'JUSTIFIED',
+    forward = true,
+    letterSpacing = 0
+  ) {
     const font = await fontManager.fetchBundledFont('/InterVariable.ttf')
     if (!font) throw new Error('bundled font missing')
     await fontManager.markLoaded('Inter', 'Regular', font)
@@ -327,7 +147,9 @@ describe('aligned path text is laid out from the text path start, as in Figma', 
       (sum, glyph) => sum + glyph.advance,
       0
     )
-    const changes = pathTextEditChanges(startedOnSecondSegment(align, forward), { text })
+    const node = startedOnSecondSegment(align, forward)
+    node.letterSpacing = pixelLength(letterSpacing)
+    const changes = pathTextEditChanges(node, { text })
     const glyphs = expectDefined(changes.derivedTextGlyphs, 'reflowed glyphs')
     return { first: glyphs[0].x, width }
   }
@@ -351,6 +173,18 @@ describe('aligned path text is laid out from the text path start, as in Figma', 
   test('text running backwards is centered on it from the other side', async () => {
     const { first, width } = await edited('CENTER', false)
     expect(first).toBeCloseTo(300 + width / 2, 0)
+  })
+
+  // Figma 126 aligns and fits path text by its glyphs, without the spacing after the last one:
+  // spaced HHHH centred on a line stays centred, and right-aligned ends where unspaced text does.
+  test('spaced centered text is centered by its glyphs', async () => {
+    const { first, width } = await edited('CENTER', true, 10)
+    expect(first).toBeCloseTo(300 - (width + 4 * 10) / 2, 0)
+  })
+
+  test('spaced right-aligned text ends at it by its last glyph', async () => {
+    const { first, width } = await edited('RIGHT', true, 10)
+    expect(first).toBeCloseTo(300 - (width + 4 * 10), 0)
   })
 
   test('justified text on an open path starts at the path’s start', async () => {
@@ -381,7 +215,7 @@ describe('path text that overflows its alignment’s part of the path, as in Fig
   const text = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
   /** A straight 400-wide line in two segments; the text starts at x = 300. */
-  async function overflowing(align: 'LEFT' | 'CENTER' | 'RIGHT', tValue = 0.5) {
+  async function overflowing(align: 'LEFT' | 'CENTER' | 'RIGHT', tValue = 0.5, letterSpacing = 0) {
     const font = await fontManager.fetchBundledFont('/InterVariable.ttf')
     if (!font) throw new Error('bundled font missing')
     await fontManager.markLoaded('Inter', 'Regular', font)
@@ -396,6 +230,7 @@ describe('path text that overflows its alignment’s part of the path, as in Fig
       italic: false,
       fontSize: 40,
       textAlignHorizontal: align,
+      letterSpacing: pixelLength(letterSpacing),
       textPathBox: { x: 0, y: 0, width: 400, height: 100 },
       derivedTextGlyphs: [
         { commandsBlob: new Uint8Array(4), x: 10, y: 50, fontSize: 40, rotation: 0 },
@@ -426,7 +261,7 @@ describe('path text that overflows its alignment’s part of the path, as in Fig
     const kept = metrics.slice(0, glyphs.length)
     const width = kept.reduce((sum, glyph) => sum + glyph.advance, 0)
     const next = metrics.at(glyphs.length)?.advance ?? 0
-    return { glyphs, width, next, first: expectDefined(glyphs[0]).x }
+    return { glyphs, width, next, first: expectDefined(glyphs[0]).x, metrics }
   }
 
   // Each run keeps the leading glyphs that fit its part of the path and is aligned within it, so
@@ -452,6 +287,17 @@ describe('path text that overflows its alignment’s part of the path, as in Fig
     expect(glyphs.length).toBeLessThan(text.length)
     expect(first).toBeCloseTo(300 - width / 2, 0)
     expect(width + next).toBeGreaterThan(200)
+  })
+
+  test('spaced text keeps a glyph that fits without the spacing after it', async () => {
+    // Left-aligned text has the 100 px from the start to the path's end. With this spacing "AB"
+    // fits it to within a twentieth of a pixel, counting the spacing between the two glyphs only.
+    const { metrics } = await overflowing('LEFT')
+    const [a, b] = metrics.map((glyph) => glyph.advance)
+    const fitting = 100 - a - b - 0.05
+
+    expect((await overflowing('LEFT', 0.5, fitting)).glyphs).toHaveLength(2)
+    expect((await overflowing('LEFT', 0.5, fitting + 1)).glyphs).toHaveLength(1)
   })
 
   test('a lone first glyph stays even with no room, from where its part starts', async () => {
@@ -524,67 +370,3 @@ test('overflowing text on a closed path keeps what fits one loop', async () => {
 // A 100 × 100 square path in a Figma file, text starting halfway along its top side. Resizing
 // moved old glyphs by their distance along the path, which put letters near the corners on the
 // wrong side and scrambled the run once the sides changed length.
-describe('resizedPathTextGlyphs — resize lays the text out again', () => {
-  test('a squashed or stretched square keeps every letter on the path, in order', async () => {
-    const font = await fontManager.fetchBundledFont('/InterVariable.ttf')
-    if (!font) throw new Error('expected the bundled Inter font')
-    await fontManager.markLoaded('Inter', 'Regular', font)
-
-    const corner = (x: number, y: number) => ({ x, y })
-    const side = (start: number, end: number) => ({
-      start,
-      end,
-      tangentStart: corner(0, 0),
-      tangentEnd: corner(0, 0)
-    })
-    const box = { x: 0, y: 0, width: 100, height: 100 }
-    const text = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-    const graph = new SceneGraph()
-    const node = graph.createNode('TEXT', expectDefined(graph.getPages()[0]).id, {
-      width: 100,
-      height: 100,
-      text,
-      fontFamily: 'Inter',
-      fontWeight: 400,
-      italic: false,
-      fontSize: 18,
-      textPathBox: { ...box },
-      derivedTextGlyphs: [
-        { commandsBlob: new Uint8Array(4), x: 50, y: 0, fontSize: 18, rotation: 0 }
-      ]
-    })
-    node.textPathData = {
-      network: {
-        vertices: [corner(0, 0), corner(100, 0), corner(100, 100), corner(0, 100)],
-        segments: [side(0, 1), side(1, 2), side(2, 3), side(3, 0)],
-        regions: []
-      },
-      normalizedSize: { x: 100, y: 100 },
-      tValue: 0.5,
-      forward: true,
-      startSegment: 0
-    }
-    const laidOut = expectDefined(pathTextEditChanges(node, { text }).derivedTextGlyphs)
-    node.derivedTextGlyphs = laidOut
-
-    for (const size of [
-      { width: 273, height: 126 },
-      { width: 167, height: 126 },
-      { width: 60, height: 300 }
-    ]) {
-      const resized = { x: 0, y: 0, ...size }
-      const glyphs = expectDefined(resizedPathTextGlyphs(node, laidOut, box, resized))
-      const path = expectDefined(sampleTextPath(node.textPathData, resized))
-      const start = textPathStartArc(node.textPathData, path)
-      let previous = -1
-      for (const glyph of glyphs) {
-        const point = nearestArcPoint(path, glyph.x, glyph.y)
-        expect(Math.hypot(point.x - glyph.x, point.y - glyph.y)).toBeLessThan(0.01)
-        const along = (point.s - start + path.length) % path.length
-        expect(along).toBeGreaterThan(previous)
-        previous = along
-      }
-      expect(glyphs.length).toBeGreaterThan(0)
-    }
-  })
-})

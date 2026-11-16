@@ -6,10 +6,12 @@ import {
   AI_PROVIDERS,
   DEFAULT_AI_MODEL,
   DEFAULT_AI_PROVIDER,
-  type AIProviderID
+  type AIProviderID,
+  providerKind
 } from '@open-pencil/core/constants'
 
 import { agentCapabilities, isAgentProvider } from '@/app/ai/models/agent'
+import { profileModelID } from '@/app/ai/models/language-model'
 import {
   readAIModelSettingsStorage,
   readLegacyAIModelStorage,
@@ -38,7 +40,7 @@ const DEFAULT_MAX_OUTPUT_TOKENS = 16_384
 function isProviderID(value: unknown): value is AIProviderID {
   return (
     typeof value === 'string' &&
-    (value.startsWith('acp:') || AI_PROVIDERS.some((provider) => provider.id === value))
+    (providerKind(value) === 'acp' || AI_PROVIDERS.some((provider) => provider.id === value))
   )
 }
 
@@ -199,7 +201,7 @@ function legacySettings(): AIModelSettings {
   const provider = AI_PROVIDERS.find((definition) => definition.id === providerID)
   const modelID = readLegacyAIModelStorage('ai-model') ?? provider?.defaultModel ?? DEFAULT_AI_MODEL
   const customModelID = readLegacyAIModelStorage('ai-custom-model') ?? ''
-  const displayModel = customModelID || modelID
+  const displayModel = profileModelID({ modelID, customModelID })
   const name = displayModel
     ? provider?.models.find((model) => model.id === displayModel)?.name || displayModel
     : 'Design model'
@@ -275,7 +277,8 @@ export function designModelProfiles(): AIModelProfile[] {
 }
 
 export function isACPModelProfile(profile: AIModelProfile | null): boolean {
-  return Boolean(profile && modelConnection(profile.connectionId)?.providerID.startsWith('acp:'))
+  const providerID = profile ? modelConnection(profile.connectionId)?.providerID : undefined
+  return providerID !== undefined && providerKind(providerID) === 'acp'
 }
 
 export function resolveAIModelRole(role: AIModelRole): ResolvedAIModelRole | null {
@@ -381,12 +384,12 @@ export function createModelProfileDraft(profileId?: string): AIModelProfileDraft
 
 /** An ACP agent's effort, which only agent profiles keep; empty keeps the agent's own. */
 function draftAgentEffort(draft: AIModelProfileDraft): string | undefined {
-  return draft.providerID.startsWith('acp:') && draft.agentEffort ? draft.agentEffort : undefined
+  return providerKind(draft.providerID) === 'acp' && draft.agentEffort ? draft.agentEffort : undefined
 }
 
 export function saveModelProfileDraft(draft: AIModelProfileDraft): AIModelProfile {
   const provider = AI_PROVIDERS.find((definition) => definition.id === draft.providerID)
-  const effectiveModel = draft.customModelID.trim() || draft.modelID.trim()
+  const effectiveModel = profileModelID(draft)
   if (!draft.name.trim()) throw new Error('Model name is required')
   // Agents choose their own model, and Pi falls back to its own default model.
   if (!isAgentProvider(draft.providerID) && !effectiveModel) {
@@ -412,7 +415,7 @@ export function saveModelProfileDraft(draft: AIModelProfileDraft): AIModelProfil
     thinkingLevel: draft.thinkingLevel,
     agentEffort: draftAgentEffort(draft),
     harnessPermissionMode:
-      draft.providerID === 'harness:pi' ? draft.harnessPermissionMode : undefined,
+      providerKind(draft.providerID) === 'harness' ? draft.harnessPermissionMode : undefined,
     capabilities
   }
   const index = aiModelSettings.value.models.findIndex((model) => model.id === profile.id)

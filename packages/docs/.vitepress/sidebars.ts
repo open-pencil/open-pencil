@@ -190,6 +190,7 @@ export const developmentSidebar = (
       { text: 'Demo Tour', link: '/development/demo-tour' },
       { text: 'Document Identity', link: '/development/document-identity' },
       { text: 'Navigation Performance', link: '/development/navigation-performance' },
+      { text: 'Page Memory', link: '/development/page-memory' },
       { text: 'Renderer Lifecycle', link: '/development/renderer-lifecycle' },
       { text: 'Renderer Profiler', link: '/development/renderer-profiler' },
       { text: 'Vector Conversion', link: '/development/vector-conversion' }

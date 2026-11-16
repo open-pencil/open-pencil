@@ -17,6 +17,7 @@ import {
   type ServicesConfigInput
 } from '#cloud/services'
 import { PGlite } from '@electric-sql/pglite'
+import { testClient } from 'hono/testing'
 import { createLocalJWKSet, exportJWK, generateKeyPair, SignJWT } from 'jose'
 import { InsertQueryNode, type KyselyPlugin, type QueryId } from 'kysely'
 import { PGliteDialect } from 'kysely-pglite-dialect'
@@ -143,17 +144,27 @@ async function relay(
       .setExpirationTime('10m')
       .sign(options.signingKey ?? privateKey)
   }
-  const request = async (path: string, bearer: string, init: RequestInit = {}) =>
-    app.request(path, {
-      ...init,
-      headers: { Authorization: `Bearer ${bearer}`, 'Content-Type': 'application/json' }
-    })
-  const complete = async (bearer: string, body: Record<string, unknown>) =>
-    request(CLOUD_SERVICES_API_PATHS.chatCompletions, bearer, {
+  const client = testClient(app)
+  const auth = (bearer: string) => ({ headers: { Authorization: `Bearer ${bearer}` } })
+  // The completions route reads its raw body, so it is sent untyped.
+  const complete = async (bearer: string, body: Record<string, unknown> | ReadableStream) =>
+    app.request(CLOUD_SERVICES_API_PATHS.chatCompletions, {
       method: 'POST',
-      body: JSON.stringify(body)
+      headers: { Authorization: `Bearer ${bearer}`, 'Content-Type': 'application/json' },
+      body: body instanceof ReadableStream ? body : JSON.stringify(body)
     })
-  return { app, calls, settled, backgroundErrors, token, request, complete, workspaceId, database }
+  return {
+    app,
+    calls,
+    settled,
+    backgroundErrors,
+    token,
+    client,
+    auth,
+    complete,
+    workspaceId,
+    database
+  }
 }
 
 describe('Services server', () => {
@@ -161,22 +172,22 @@ describe('Services server', () => {
     const context = await relay()
     const { privateKey: otherKey } = await generateKeyPair('ES256')
     const refused = [
-      await context.app.request(CLOUD_SERVICES_API_PATHS.catalog),
-      await context.request(CLOUD_SERVICES_API_PATHS.catalog, 'not-a-token'),
-      await context.request(
-        CLOUD_SERVICES_API_PATHS.catalog,
-        await context.token({}, { issuer: 'https://other.example.com' })
+      await context.client.v1.catalog.$get(),
+      await context.client.v1.catalog.$get({}, context.auth('not-a-token')),
+      await context.client.v1.catalog.$get(
+        {},
+        context.auth(await context.token({}, { issuer: 'https://other.example.com' }))
       ),
-      await context.request(
-        CLOUD_SERVICES_API_PATHS.catalog,
-        await context.token({}, { signingKey: otherKey })
+      await context.client.v1.catalog.$get(
+        {},
+        context.auth(await context.token({}, { signingKey: otherKey }))
       )
     ]
     for (const response of refused) {
       expect(response.status).toBe(401)
       expect((await responseJSON(response, serviceErrorSchema)).error.code).toBe('unauthorized')
     }
-    const catalog = await context.request(CLOUD_SERVICES_API_PATHS.catalog, await context.token())
+    const catalog = await context.client.v1.catalog.$get({}, context.auth(await context.token()))
     expect((await responseJSON(catalog, serviceCatalogSchema)).defaultModelID).toBe(MODEL)
   })
 
@@ -206,7 +217,7 @@ describe('Services server', () => {
 
     // 100k input tokens at 3,000 and 10k output tokens at 15,000 credits per million.
     const wallet = await responseJSON(
-      await context.request(CLOUD_SERVICES_API_PATHS.wallet, bearer),
+      await context.client.v1.wallet.$get({}, context.auth(bearer)),
       creditWalletSchema
     )
     expect(wallet).toEqual({
@@ -214,7 +225,7 @@ describe('Services server', () => {
       buckets: [{ kind: 'allowance', remaining: 550, expiresAt: '2026-11-01T00:00:00.000Z' }]
     })
     const usage = await responseJSON(
-      await context.request(CLOUD_SERVICES_API_PATHS.usage, bearer),
+      await context.client.v1.usage.$get({ query: {} }, context.auth(bearer)),
       usagePageSchema
     )
     expect(usage.entries).toMatchObject([
@@ -235,7 +246,7 @@ describe('Services server', () => {
 
     expect(context.backgroundErrors).toHaveLength(1)
     const usage = await responseJSON(
-      await context.request(CLOUD_SERVICES_API_PATHS.usage, bearer),
+      await context.client.v1.usage.$get({ query: {} }, context.auth(bearer)),
       usagePageSchema
     )
     expect(usage.entries).toEqual([])
@@ -277,7 +288,7 @@ describe('Services server', () => {
     recordCharge?.()
     expect(await text).toContain('"content":"Hi"')
     const wallet = await responseJSON(
-      await context.request(CLOUD_SERVICES_API_PATHS.wallet, bearer),
+      await context.client.v1.wallet.$get({}, context.auth(bearer)),
       creditWalletSchema
     )
     expect(wallet.balance).toBe(1000 - 18)
@@ -314,7 +325,7 @@ describe('Services server', () => {
     expect((await context.complete(other, { model: MODEL })).status).toBe(200)
     const unlimited = await context.token({ monthlyCreditAllowance: null })
     const wallet = await responseJSON(
-      await context.request(CLOUD_SERVICES_API_PATHS.wallet, unlimited),
+      await context.client.v1.wallet.$get({}, context.auth(unlimited)),
       creditWalletSchema
     )
     expect(wallet).toEqual({ balance: null, buckets: [] })
@@ -325,9 +336,9 @@ describe('Services server', () => {
     const context = await relay(() =>
       Response.json({ choices: [], usage: { prompt_tokens: 1, completion_tokens: 0 } })
     )
-    const response = await context.request(
-      CLOUD_SERVICES_API_PATHS.wallet,
-      await context.token({ accountId: null })
+    const response = await context.client.v1.wallet.$get(
+      {},
+      context.auth(await context.token({ accountId: null }))
     )
     expect(response.status).toBe(401)
   })
@@ -401,15 +412,15 @@ describe('Services server', () => {
       await Promise.all(context.settled.splice(0))
     }
     const first = await responseJSON(
-      await context.request(CLOUD_SERVICES_API_PATHS.usage, bearer),
+      await context.client.v1.usage.$get({ query: {} }, context.auth(bearer)),
       usagePageSchema
     )
     expect(first.entries).toHaveLength(50)
     expect(first.next).not.toBeNull()
     const second = await responseJSON(
-      await context.request(
-        `${CLOUD_SERVICES_API_PATHS.usage}?cursor=${encodeURIComponent(first.next ?? '')}`,
-        bearer
+      await context.client.v1.usage.$get(
+        { query: { cursor: first.next ?? '' } },
+        context.auth(bearer)
       ),
       usagePageSchema
     )
@@ -419,7 +430,7 @@ describe('Services server', () => {
     expect(seen.size).toBe(51)
     for (const cursor of ['12.not-an-id', `99999999999999999.${crypto.randomUUID()}`]) {
       expect(
-        (await context.request(`${CLOUD_SERVICES_API_PATHS.usage}?cursor=${cursor}`, bearer)).status
+        (await context.client.v1.usage.$get({ query: { cursor } }, context.auth(bearer))).status
       ).toBe(400)
     }
   })
@@ -451,15 +462,15 @@ describe('Services server', () => {
     const oversized = new TextEncoder().encode(
       JSON.stringify({ model: MODEL, messages: [{ role: 'user', content: 'x'.repeat(4096) }] })
     )
-    const response = await context.request(CLOUD_SERVICES_API_PATHS.chatCompletions, bearer, {
-      method: 'POST',
-      body: new ReadableStream({
+    const response = await context.complete(
+      bearer,
+      new ReadableStream({
         start(controller) {
           controller.enqueue(oversized)
           controller.close()
         }
       })
-    })
+    )
     expect(response.status).toBe(413)
     expect(context.calls).toHaveLength(0)
     expect((await context.complete(bearer, { model: MODEL, messages: [] })).status).not.toBe(413)

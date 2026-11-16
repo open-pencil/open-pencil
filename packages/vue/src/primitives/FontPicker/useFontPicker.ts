@@ -72,8 +72,9 @@ export function useFontPicker(options: UseFontPickerOptions) {
     return sortBy(matches, [(option) => rank(option.family, term)])
   })
 
+  /** Lists the families again on every open, so a font installed meanwhile is offered. */
   async function loadFamilies() {
-    if (families.value.length > 0 || loading.value) return
+    if (loading.value) return
     loading.value = true
     const version = ++requestVersion
     try {
@@ -87,7 +88,11 @@ export function useFontPicker(options: UseFontPickerOptions) {
   }
 
   watch(open, async (isOpen) => {
-    if (!isOpen) return
+    // A list asked for before closing may predate a font installed since: reopening asks anew.
+    if (!isOpen) {
+      cancelLoad()
+      return
+    }
     searchTerm.value = ''
     accessState.value = options.localFontAccess?.state() ?? accessState.value
     if (accessState.value === 'prompt') {

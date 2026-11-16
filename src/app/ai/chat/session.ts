@@ -12,7 +12,7 @@ import { AgentSetupError, assertAgentReady } from '@/app/ai/agents/setup/readine
 import { classifyAIChatError, type AIChatFailure } from '@/app/ai/chat/failure'
 import { notifyReplyEnded } from '@/app/ai/chat/notifications'
 import { hasSteeringMessage } from '@/app/ai/chat/queue'
-import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
+import { systemPrompt } from '@/app/ai/chat/system-prompt'
 import { agentSessionEfforts, chatAgentEffort, chatThinkingLevel } from '@/app/ai/chat/thinking'
 import {
   createAIModelRuntime,
@@ -258,7 +258,7 @@ export function createChatSessionManager({
           }),
           permissionMode: runtime.role.profile.harnessPermissionMode ?? 'allow-edits'
         },
-        instructions: SYSTEM_PROMPT,
+        instructions: systemPrompt(),
         mcpServers: await buildPiMCPServers(),
         skills: await harnessSkills()
       },
