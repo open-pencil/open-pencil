@@ -258,7 +258,7 @@
   "communityLinkFailed": "このドキュメントはもうギャラリーにありません。",
   "communityBanner": "コミュニティのサンプルを読み取り専用で開いています。",
   "communitySaveCopy": "コピーを保存",
-  "betaBanner": "OpenPencil Cloud はベータ版のため、一部の機能はまだ動作しない場合があります。デスクトップアプリではベータ版が必要です。",
+  "betaBanner": "OpenPencil Cloud はベータ版のため、まだうまく動かない部分があるかもしれません。デスクトップアプリで使うには、ベータ版をインストールしてください。",
   "betaDownload": "ベータ版をダウンロード",
   "savePublicLabel": "公開",
   "savePublicHeading": "ここに保存したものは誰でも開けます",

@@ -258,7 +258,7 @@
   "communityLinkFailed": "此文档已不在图库中。",
   "communityBanner": "社区示例，以只读方式打开。",
   "communitySaveCopy": "保存副本",
-  "betaBanner": "OpenPencil Cloud 处于测试阶段，部分功能可能尚不可用。桌面应用需要测试版。",
+  "betaBanner": "OpenPencil Cloud 正处于测试阶段，部分功能可能还无法正常使用。如需在桌面应用中使用，请安装测试版。",
   "betaDownload": "下载测试版",
   "savePublicLabel": "公开",
   "savePublicHeading": "任何人都能打开你保存在这里的内容",
