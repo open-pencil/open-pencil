@@ -16,6 +16,7 @@ import {
   type CloudActor
 } from '#cloud/server'
 import { chunk } from 'es-toolkit'
+import { testClient } from 'hono/testing'
 import * as v from 'valibot'
 
 const opened: { close(): Promise<void> }[] = []
@@ -58,66 +59,63 @@ async function testApp() {
     resolveSession: async () => alice,
     onDocumentCommentsChanged: (_documentId, threadId) => announced.push(threadId)
   })
-  const request = (path: string, init: { method?: string; json?: unknown } = {}) =>
-    app.request(`/api${path}`, {
-      method: init.method ?? 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      body: init.json === undefined ? undefined : JSON.stringify(init.json)
-    })
+  const client = testClient(app).api
   const workspace = await responseJSON(
-    await request('/workspaces', { method: 'POST', json: { name: 'Studio' } }),
+    await client.workspaces.$post({ json: { name: 'Studio' } }),
     v.object({ workspace: v.object({ id: v.string() }) })
   )
   const created = await responseJSON(
-    await request(`/workspaces/${workspace.workspace.id}/documents`, {
-      method: 'POST',
+    await client.workspaces[':workspaceId'].documents.$post({
+      param: { workspaceId: workspace.workspace.id },
       json: { name: 'Poster' }
     }),
     v.object({ document: v.object({ id: v.string() }) })
   )
-  return { runtime, request, announced, documentId: created.document.id }
+  return { app, runtime, client, announced, documentId: created.document.id }
 }
 
 describe('comment routes', () => {
   test('start, answer, resolve, and delete a thread', async () => {
-    const { request, announced, documentId } = await testApp()
-    const threads = `/documents/${documentId}/threads`
+    const { client, announced, documentId } = await testApp()
+    const threads = client.documents[':documentId'].threads
+    const document = { documentId }
 
-    const created = await request(threads, { method: 'POST', json: { ...pin, body: ' Hi ' } })
+    const created = await threads.$post({ param: document, json: { ...pin, body: ' Hi ' } })
     expect(created.status).toBe(201)
     const { thread } = await responseJSON(created, commentThreadResponseSchema)
     expect(thread.comments[0]).toMatchObject({ body: 'Hi', author: { kind: 'user', id: 'alice' } })
+    const param = { documentId, threadId: thread.id }
 
-    const replied = await request(`${threads}/${thread.id}/comments`, {
-      method: 'POST',
-      json: { body: 'Thanks' }
-    })
+    const replied = await threads[':threadId'].comments.$post({ param, json: { body: 'Thanks' } })
     expect(replied.status).toBe(201)
     const resolved = await responseJSON(
-      await request(`${threads}/${thread.id}`, { method: 'PATCH', json: { resolved: true } }),
+      await threads[':threadId'].$patch({ param, json: { resolved: true } }),
       commentThreadResponseSchema
     )
     expect(resolved.thread.resolvedBy).toBe('alice')
 
-    const listed = await responseJSON(await request(threads), commentThreadsSchema)
+    const listed = await responseJSON(await threads.$get({ param: document }), commentThreadsSchema)
     expect(listed.access).toEqual({ canComment: true, canModerate: true, accountId: 'alice' })
     expect(listed.threads.map((listedThread) => listedThread.comments.length)).toEqual([2])
 
-    const first = thread.comments[0]?.id ?? ''
-    const deleted = await request(`${threads}/${thread.id}/comments/${first}`, { method: 'DELETE' })
+    const commentId = thread.comments[0]?.id ?? ''
+    const deleted = await threads[':threadId'].comments[':commentId'].$delete({
+      param: { ...param, commentId }
+    })
     expect(deleted.status).toBe(204)
-    expect((await request(`${threads}/${thread.id}`)).status).toBe(404)
+    expect((await threads[':threadId'].$get({ param })).status).toBe(404)
     expect(announced).toEqual([thread.id, thread.id, thread.id, thread.id])
   })
 
   test('turn away empty comments, unknown documents, and a document past its threads', async () => {
-    const { request, runtime, documentId } = await testApp()
-    const threads = `/documents/${documentId}/threads`
-    expect((await request(threads, { method: 'POST', json: { ...pin, body: '  ' } })).status).toBe(
+    const { client, runtime, documentId } = await testApp()
+    const threads = client.documents[':documentId'].threads
+    const document = { documentId }
+    expect((await threads.$post({ param: document, json: { ...pin, body: '  ' } })).status).toBe(
       400
     )
-    expect((await request(`/documents/${crypto.randomUUID()}/threads`)).status).toBe(404)
-    expect((await request('/documents/not-a-uuid/threads')).status).toBe(404)
+    expect((await threads.$get({ param: { documentId: crypto.randomUUID() } })).status).toBe(404)
+    expect((await threads.$get({ param: { documentId: 'not-a-uuid' } })).status).toBe(404)
 
     const full = Array.from({ length: MAX_COMMENT_THREADS_PER_DOCUMENT }, () => ({
       id: crypto.randomUUID(),
@@ -128,26 +126,27 @@ describe('comment routes', () => {
     for (const rows of chunk(full, 500)) {
       await runtime.database.insertInto('commentThread').values(rows).execute()
     }
-    const refused = await request(threads, { method: 'POST', json: { ...pin, body: 'More' } })
+    const refused = await threads.$post({ param: document, json: { ...pin, body: 'More' } })
     expect(refused.status).toBe(409)
     expect(await refused.json()).toEqual({ error: { code: 'comment_limit_reached' } })
   })
 
   test('read and write through a share link', async () => {
-    const { request, runtime, documentId } = await testApp()
+    const { client, runtime, documentId } = await testApp()
     const link = await createDocumentSharingService(runtime.database).createShare(
       'alice',
       documentId,
       { permission: 'view' }
     )
-    const shares = `/shares/${link.share.id}/threads`
+    const shares = client.shares[':shareId'].threads
+    const param = { shareId: link.share.id }
     const share = { secret: link.secret }
 
-    const created = await request(shares, { method: 'POST', json: { share, ...pin, body: 'Hi' } })
+    const created = await shares.$post({ param, json: { share, ...pin, body: 'Hi' } })
     expect(created.status).toBe(201)
     const { thread } = await responseJSON(created, commentThreadResponseSchema)
     const listed = await responseJSON(
-      await request(`${shares}/list`, { method: 'POST', json: { share } }),
+      await shares.list.$post({ param, json: { share } }),
       commentThreadsSchema
     )
     expect(listed.threads.map((listedThread) => listedThread.id)).toEqual([thread.id])
@@ -155,38 +154,34 @@ describe('comment routes', () => {
     expect(listed.access).toEqual({ canComment: true, canModerate: false, accountId: 'alice' })
 
     const wrong = { secret: 'f'.repeat(64) }
-    expect(
-      (await request(`${shares}/list`, { method: 'POST', json: { share: wrong } })).status
-    ).toBe(404)
+    expect((await shares.list.$post({ param, json: { share: wrong } })).status).toBe(404)
   })
 
   test('read and choose notifications, list people, and mark a thread read', async () => {
-    const { request, documentId } = await testApp()
+    const { app, client, documentId } = await testApp()
+    const notifications = client.account.notifications
     const settings = v.object({ commentEmails: v.picklist(['all', 'mentions', 'off']) })
-    expect(await responseJSON(await request('/account/notifications'), settings)).toEqual({
+    expect(await responseJSON(await notifications.$get(), settings)).toEqual({
       commentEmails: 'mentions'
     })
-    const chosen = await request('/account/notifications', {
-      method: 'PUT',
-      json: { commentEmails: 'all' }
-    })
+    const chosen = await notifications.$put({ json: { commentEmails: 'all' } })
     expect(await responseJSON(chosen, settings)).toEqual({ commentEmails: 'all' })
-    expect(
-      (await request('/account/notifications', { method: 'PUT', json: { commentEmails: 'x' } }))
-        .status
-    ).toBe(400)
+    // A setting the contract does not name, which the typed client cannot send.
+    const unknown = await app.request('/api/account/notifications', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ commentEmails: 'x' })
+    })
+    expect(unknown.status).toBe(400)
 
-    const people = await request(`/documents/${documentId}/threads/people`)
-    expect(people.status).toBe(200)
+    const threads = client.documents[':documentId'].threads
+    expect((await threads.people.$get({ param: { documentId } })).status).toBe(200)
     const { thread } = await responseJSON(
-      await request(`/documents/${documentId}/threads`, {
-        method: 'POST',
-        json: { ...pin, body: 'Hi' }
-      }),
+      await threads.$post({ param: { documentId }, json: { ...pin, body: 'Hi' } }),
       commentThreadResponseSchema
     )
-    const read = await request(`/documents/${documentId}/threads/${thread.id}/read`, {
-      method: 'POST'
+    const read = await threads[':threadId'].read.$post({
+      param: { documentId, threadId: thread.id }
     })
     expect(read.status).toBe(204)
   })

@@ -157,8 +157,6 @@ export const commentEmailSettingSchema = v.picklist(['all', 'mentions', 'off'])
 export type CommentEmailSetting = v.InferOutput<typeof commentEmailSettingSchema>
 export const notificationSettingsSchema = v.object({ commentEmails: commentEmailSettingSchema })
 export type NotificationSettings = v.InferOutput<typeof notificationSettingsSchema>
-export const parseNotificationSettings = (input: unknown) =>
-  v.parse(notificationSettingsSchema, input)
 
 /** The most threads, and comments in all, one import brings in. */
 export const MAX_IMPORTED_COMMENT_THREADS = 1_000
@@ -223,22 +221,3 @@ export const sharedUpdateCommentSchema = v.object({
   ...updateCommentSchema.entries
 })
 export type SharedCommentsRequest = v.InferOutput<typeof sharedCommentsRequestSchema>
-
-export const parseCreateCommentThread = (input: unknown) =>
-  v.parse(createCommentThreadSchema, input)
-export const parseUpdateCommentThread = (input: unknown) =>
-  v.parse(updateCommentThreadSchema, input)
-export const parseImportCommentThreads = (input: unknown) =>
-  v.parse(importCommentThreadsSchema, input)
-export const parseCreateComment = (input: unknown) => v.parse(createCommentSchema, input)
-export const parseUpdateComment = (input: unknown) => v.parse(updateCommentSchema, input)
-export const parseSharedCommentsRequest = (input: unknown) =>
-  v.parse(sharedCommentsRequestSchema, input)
-export const parseSharedCreateCommentThread = (input: unknown) =>
-  v.parse(sharedCreateCommentThreadSchema, input)
-export const parseSharedUpdateCommentThread = (input: unknown) =>
-  v.parse(sharedUpdateCommentThreadSchema, input)
-export const parseSharedCreateComment = (input: unknown) =>
-  v.parse(sharedCreateCommentSchema, input)
-export const parseSharedUpdateComment = (input: unknown) =>
-  v.parse(sharedUpdateCommentSchema, input)

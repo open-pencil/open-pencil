@@ -1,15 +1,15 @@
 import {
-  parseCreateComment,
-  parseCreateCommentThread,
-  parseImportCommentThreads,
-  parseNotificationSettings,
-  parseSharedCommentsRequest,
-  parseSharedCreateComment,
-  parseSharedCreateCommentThread,
-  parseSharedUpdateComment,
-  parseSharedUpdateCommentThread,
-  parseUpdateComment,
-  parseUpdateCommentThread,
+  createCommentSchema,
+  createCommentThreadSchema,
+  importCommentThreadsSchema,
+  notificationSettingsSchema,
+  sharedCommentsRequestSchema,
+  sharedCreateCommentSchema,
+  sharedCreateCommentThreadSchema,
+  sharedUpdateCommentSchema,
+  sharedUpdateCommentThreadSchema,
+  updateCommentSchema,
+  updateCommentThreadSchema,
   type SharedCommentsRequest
 } from '#cloud/contract'
 import type { CloudSessionResolver } from '#cloud/server/auth'
@@ -74,7 +74,7 @@ export function createCommentRoutes(service: CommentService) {
     .get('/account/notifications', async (context) =>
       context.json(await service.notificationSettings(context.get('actor').userId))
     )
-    .put('/account/notifications', validatedJSON(parseNotificationSettings), async (context) =>
+    .put('/account/notifications', validatedJSON(notificationSettingsSchema), async (context) =>
       context.json(
         await service.setNotificationSettings(
           context.get('actor').userId,
@@ -95,7 +95,7 @@ export function createCommentRoutes(service: CommentService) {
     .post(
       '/documents/:documentId/threads',
       documentParams,
-      validatedJSON(parseCreateCommentThread),
+      validatedJSON(createCommentThreadSchema),
       (context) =>
         run(context, async () => {
           const actor = await as(context, context.req.valid('param').documentId)
@@ -106,7 +106,7 @@ export function createCommentRoutes(service: CommentService) {
     .post(
       '/documents/:documentId/threads/import',
       documentParams,
-      validatedJSON(parseImportCommentThreads),
+      validatedJSON(importCommentThreadsSchema),
       (context) =>
         run(context, async () => {
           const actor = await as(context, context.req.valid('param').documentId)
@@ -129,7 +129,7 @@ export function createCommentRoutes(service: CommentService) {
     .patch(
       '/documents/:documentId/threads/:threadId',
       documentThreadParams,
-      validatedJSON(parseUpdateCommentThread),
+      validatedJSON(updateCommentThreadSchema),
       (context) =>
         run(context, async () => {
           const { documentId, threadId } = context.req.valid('param')
@@ -149,7 +149,7 @@ export function createCommentRoutes(service: CommentService) {
     .post(
       '/documents/:documentId/threads/:threadId/comments',
       documentThreadParams,
-      validatedJSON(parseCreateComment),
+      validatedJSON(createCommentSchema),
       (context) =>
         run(context, async () => {
           const { documentId, threadId } = context.req.valid('param')
@@ -161,7 +161,7 @@ export function createCommentRoutes(service: CommentService) {
     .patch(
       '/documents/:documentId/threads/:threadId/comments/:commentId',
       documentCommentParams,
-      validatedJSON(parseUpdateComment),
+      validatedJSON(updateCommentSchema),
       (context) =>
         run(context, async () => {
           const { documentId, threadId, commentId } = context.req.valid('param')
@@ -221,7 +221,7 @@ export function createSharedCommentRoutes(
     .post(
       '/shares/:shareId/threads/list',
       shareParams,
-      validatedJSON(parseSharedCommentsRequest),
+      validatedJSON(sharedCommentsRequestSchema),
       (context) =>
         shared(
           context,
@@ -233,7 +233,7 @@ export function createSharedCommentRoutes(
     .post(
       '/shares/:shareId/threads',
       shareParams,
-      validatedJSON(parseSharedCreateCommentThread),
+      validatedJSON(sharedCreateCommentThreadSchema),
       (context) => {
         const { share, ...input } = context.req.valid('json')
         return shared(context, context.req.valid('param').shareId, { share }, async (actor) =>
@@ -244,7 +244,7 @@ export function createSharedCommentRoutes(
     .post(
       '/shares/:shareId/threads/:threadId/get',
       shareThreadParams,
-      validatedJSON(parseSharedCommentsRequest),
+      validatedJSON(sharedCommentsRequestSchema),
       (context) => {
         const { shareId, threadId } = context.req.valid('param')
         return shared(context, shareId, context.req.valid('json'), async (actor) =>
@@ -255,7 +255,7 @@ export function createSharedCommentRoutes(
     .post(
       '/shares/:shareId/threads/:threadId/read',
       shareThreadParams,
-      validatedJSON(parseSharedCommentsRequest),
+      validatedJSON(sharedCommentsRequestSchema),
       (context) => {
         const { shareId, threadId } = context.req.valid('param')
         return shared(context, shareId, context.req.valid('json'), async (actor) => {
@@ -267,7 +267,7 @@ export function createSharedCommentRoutes(
     .patch(
       '/shares/:shareId/threads/:threadId',
       shareThreadParams,
-      validatedJSON(parseSharedUpdateCommentThread),
+      validatedJSON(sharedUpdateCommentThreadSchema),
       (context) => {
         const { shareId, threadId } = context.req.valid('param')
         const { share, ...input } = context.req.valid('json')
@@ -279,7 +279,7 @@ export function createSharedCommentRoutes(
     .delete(
       '/shares/:shareId/threads/:threadId',
       shareThreadParams,
-      validatedJSON(parseSharedCommentsRequest),
+      validatedJSON(sharedCommentsRequestSchema),
       (context) => {
         const { shareId, threadId } = context.req.valid('param')
         return shared(context, shareId, context.req.valid('json'), async (actor) => {
@@ -291,7 +291,7 @@ export function createSharedCommentRoutes(
     .post(
       '/shares/:shareId/threads/:threadId/comments',
       shareThreadParams,
-      validatedJSON(parseSharedCreateComment),
+      validatedJSON(sharedCreateCommentSchema),
       (context) => {
         const { shareId, threadId } = context.req.valid('param')
         const { share, ...input } = context.req.valid('json')
@@ -303,7 +303,7 @@ export function createSharedCommentRoutes(
     .patch(
       '/shares/:shareId/threads/:threadId/comments/:commentId',
       shareCommentParams,
-      validatedJSON(parseSharedUpdateComment),
+      validatedJSON(sharedUpdateCommentSchema),
       (context) => {
         const { shareId, threadId, commentId } = context.req.valid('param')
         const { share, ...input } = context.req.valid('json')
@@ -315,7 +315,7 @@ export function createSharedCommentRoutes(
     .delete(
       '/shares/:shareId/threads/:threadId/comments/:commentId',
       shareCommentParams,
-      validatedJSON(parseSharedCommentsRequest),
+      validatedJSON(sharedCommentsRequestSchema),
       (context) => {
         const { shareId, threadId, commentId } = context.req.valid('param')
         return shared(context, shareId, context.req.valid('json'), async (actor) =>
