@@ -1,5 +1,5 @@
-import compareVersions from 'semver/functions/compare'
-import validVersion from 'semver/functions/valid'
+import compareVersions from 'semver/functions/compare.js'
+import validVersion from 'semver/functions/valid.js'
 import * as v from 'valibot'
 
 import { cloudBillingDiscoverySchema } from './billing'
