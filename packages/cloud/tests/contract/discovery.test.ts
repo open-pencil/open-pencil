@@ -58,11 +58,22 @@ describe('Cloud discovery contract', () => {
     expect(() => parseCloudDiscovery({ ...discovery, apiURL: '/api' })).toThrow()
   })
 
-  test('reads a minimum editor version, and refuses one that is not a release', () => {
-    expect(parseCloudDiscovery({ ...discovery, minimumEditorVersion: '0.17.0' })).toMatchObject({
-      minimumEditorVersion: '0.17.0'
+  test('reads a minimum editor version, a pre-release too, and refuses one that is not SemVer', () => {
+    for (const minimumEditorVersion of ['0.17.0', '0.18.0-beta.2', '0.18.0-alpha.20261116']) {
+      expect(parseCloudDiscovery({ ...discovery, minimumEditorVersion })).toMatchObject({
+        minimumEditorVersion
+      })
+    }
+    for (const minimumEditorVersion of ['latest', 'v0.17.0', '0.17', ' 0.17.0']) {
+      expect(() => parseCloudDiscovery({ ...discovery, minimumEditorVersion })).toThrow()
+    }
+  })
+
+  test('leaves out sign-in providers this editor has no button for', () => {
+    const authentication = { ...discovery.authentication, socialProviders: ['github', 'google'] }
+    expect(parseCloudDiscovery({ ...discovery, authentication }).authentication).toMatchObject({
+      socialProviders: ['google']
     })
-    expect(() => parseCloudDiscovery({ ...discovery, minimumEditorVersion: 'latest' })).toThrow()
   })
 
   test('compares editor versions by number, not by text', () => {
@@ -70,7 +81,17 @@ describe('Cloud discovery contract', () => {
     expect(isEditorVersionAtLeast('0.14.2', '0.14.0')).toBe(true)
     expect(isEditorVersionAtLeast('0.10.0', '0.9.5')).toBe(true)
     expect(isEditorVersionAtLeast('0.9.5', '0.10.0')).toBe(false)
-    expect(isEditorVersionAtLeast('1.0.0-beta.1', '1.0.0')).toBe(true)
     expect(isEditorVersionAtLeast('next', '1.0.0')).toBe(false)
+  })
+
+  test('orders pre-releases before their release, and nightlies by date', () => {
+    expect(isEditorVersionAtLeast('1.0.0-beta.1', '1.0.0')).toBe(false)
+    expect(isEditorVersionAtLeast('1.0.0', '1.0.0-beta.1')).toBe(true)
+    expect(isEditorVersionAtLeast('1.0.0-beta.10', '1.0.0-beta.9')).toBe(true)
+    expect(isEditorVersionAtLeast('1.0.0-alpha.20261116', '1.0.0-beta.1')).toBe(false)
+    expect(isEditorVersionAtLeast('1.0.0-beta.1', '1.0.0-alpha.20261116')).toBe(true)
+    expect(isEditorVersionAtLeast('1.0.0-alpha.20261120', '1.0.0-alpha.20261116')).toBe(true)
+    expect(isEditorVersionAtLeast('1.0.0-alpha.20261115', '1.0.0-alpha.20261116')).toBe(false)
+    expect(isEditorVersionAtLeast('1.1.0-alpha.20261201', '1.0.0')).toBe(true)
   })
 })

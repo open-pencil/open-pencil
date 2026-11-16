@@ -1,3 +1,5 @@
+import compareVersions from 'semver/functions/compare'
+import validVersion from 'semver/functions/valid'
 import * as v from 'valibot'
 
 import { cloudBillingDiscoverySchema } from './billing'
@@ -8,6 +10,22 @@ export const CLOUD_DISCOVERY_PATH = '/.well-known/openpencil' as const
 
 export const cloudDeploymentSchema = v.picklist(['official', 'self-hosted'])
 export type CloudDeployment = v.InferOutput<typeof cloudDeploymentSchema>
+
+/** The sign-in providers this editor offers buttons for. */
+const SOCIAL_PROVIDERS = ['apple', 'google'] as const
+
+function isKnownSocialProvider(value: string): value is (typeof SOCIAL_PROVIDERS)[number] {
+  return (SOCIAL_PROVIDERS as readonly string[]).includes(value)
+}
+
+/**
+ * The server's sign-in providers that this editor knows. A newer server may offer one this editor
+ * has no button for; it is left out rather than failing discovery, so the editor still connects.
+ */
+const socialProvidersSchema = v.pipe(
+  v.array(v.string()),
+  v.transform((providers) => providers.filter(isKnownSocialProvider))
+)
 
 export const cloudAuthenticationSchema = v.object({
   emailPassword: v.optional(
@@ -23,7 +41,7 @@ export const cloudAuthenticationSchema = v.object({
       )
     })
   ),
-  socialProviders: v.array(v.picklist(['apple', 'google'])),
+  socialProviders: socialProvidersSchema,
   enterpriseSSO: v.boolean(),
   enrollmentMode: v.optional(v.picklist(['open', 'approval', 'closed']), 'open'),
   mfa: v.optional(
@@ -44,8 +62,17 @@ export const cloudCapabilitiesSchema = v.object({
 })
 export type CloudCapabilities = v.InferOutput<typeof cloudCapabilitiesSchema>
 
-/** A released editor version, `major.minor.patch`. */
-export const cloudEditorVersionSchema = v.pipe(v.string(), v.regex(/^\d+\.\d+\.\d+$/))
+/**
+ * An editor version, as SemVer: a release such as `0.18.0`, or a pre-release such as
+ * `0.18.0-beta.2` or a nightly's `0.18.0-alpha.20261116`.
+ *
+ * Editors before 0.18.0 accept only `major.minor.patch` here and fail discovery on anything else,
+ * so a server names a pre-release minimum only once its minimum is already 0.18.0 or later.
+ */
+export const cloudEditorVersionSchema = v.pipe(
+  v.string(),
+  v.check((value) => validVersion(value) === value, 'Expected a SemVer version')
+)
 
 /**
  * The header desktop editors send with each request, naming their version, so a server can refuse
@@ -54,24 +81,15 @@ export const cloudEditorVersionSchema = v.pipe(v.string(), v.regex(/^\d+\.\d+\.\
  */
 export const CLOUD_EDITOR_VERSION_HEADER = 'X-OpenPencil-Editor-Version' as const
 
-function editorVersionParts(version: string): number[] | null {
-  const match = /^(\d+)\.(\d+)\.(\d+)/.exec(version)
-  return match ? match.slice(1).map(Number) : null
-}
-
 /**
- * Whether `version` is `minimum` or later, comparing `major.minor.patch` numerically; a prerelease
- * counts as its release. A version that isn't one, on either side, is not at least anything.
+ * Whether `version` is `minimum` or later, in SemVer order: a pre-release comes before its
+ * release, so `0.18.0-beta.2` is not at least `0.18.0`, and nightlies order by their date. To
+ * admit a release's pre-releases, name the earliest one, such as `0.18.0-alpha.20261116`. A
+ * version that isn't SemVer, on either side, is not at least anything.
  */
 export function isEditorVersionAtLeast(version: string, minimum: string): boolean {
-  const have = editorVersionParts(version)
-  const need = editorVersionParts(minimum)
-  if (!have || !need) return false
-  for (let index = 0; index < need.length; index++) {
-    const difference = (have[index] ?? 0) - (need[index] ?? 0)
-    if (difference !== 0) return difference > 0
-  }
-  return true
+  if (validVersion(version) !== version || validVersion(minimum) !== minimum) return false
+  return compareVersions(version, minimum) >= 0
 }
 
 /**

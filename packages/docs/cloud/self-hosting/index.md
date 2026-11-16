@@ -93,6 +93,8 @@ Without `help_url`, help goes to the OpenPencil documentation. The addresses mus
 
 When a server update needs a newer editor, set `deployment.minimum_editor_version`, such as `"0.17.0"`. An older desktop app then shows a banner offering its update instead of connecting, and the server answers its requests with `426 Upgrade Required`; a browser tab on an older editor offers a reload. Requests that name no editor version, from the CLI or MCP, are served as before.
 
+Versions compare in SemVer order, where a pre-release comes before its release: `"0.18.0"` turns away `0.18.0-beta.2`. To let a release's betas and nightlies in, name the earliest one you accept, such as `"0.18.0-beta.1"`. Editors before 0.18.0 cannot read a pre-release minimum and stop connecting, so name one only when the minimum is already 0.18.0 or later.
+
 ## Reverse proxy
 
 - Terminate TLS in front of the server and the object store, on stable hostnames.
