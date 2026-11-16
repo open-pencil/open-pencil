@@ -59,11 +59,10 @@ const note = `
     @act="args.onAct"
   />`
 
-/** A Settings tab: the note at the top with the page's padding, then the real panel. */
+/** A Settings tab: the real panel, with the note in its `campaign` slot, where it scrolls with the page. */
 const settingsTab = (panel: string) => `
   <div class="flex h-140 w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-panel">
-    <div class="px-5 pt-5 sm:px-6 sm:pt-6">${note}</div>
-    ${panel}
+    <${panel}><template #campaign>${note}</template></${panel.split(' ')[0]}>
   </div>`
 
 const meta = {
@@ -97,7 +96,7 @@ export const SettingsCloud: Story = {
   render: (args) => ({
     components: { CampaignNote, CloudSettingsPanel },
     setup: () => ({ args }),
-    template: settingsTab('<CloudSettingsPanel :servers="[]" />')
+    template: settingsTab('CloudSettingsPanel :servers="[]"')
   })
 }
 
@@ -107,7 +106,7 @@ export const SettingsModels: Story = {
   render: (args) => ({
     components: { CampaignNote, ModelsPanel },
     setup: () => ({ args }),
-    template: settingsTab('<ModelsPanel />')
+    template: settingsTab('ModelsPanel')
   })
 }
 
@@ -117,7 +116,7 @@ export const SettingsIntegrations: Story = {
   render: (args) => ({
     components: { CampaignNote, MediaSettingsPanel },
     setup: () => ({ args }),
-    template: settingsTab('<MediaSettingsPanel />')
+    template: settingsTab('MediaSettingsPanel')
   })
 }
 
