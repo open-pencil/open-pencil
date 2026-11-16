@@ -350,6 +350,8 @@
   "communityLinkFailed": "لم يعد هذا المستند في المعرض.",
   "communityBanner": "مثال من المجتمع، مفتوح للقراءة فقط.",
   "communitySaveCopy": "حفظ نسخة",
+  "betaBanner": "OpenPencil Cloud في مرحلة تجريبية، لذا قد لا يعمل كل شيء بعد. لاستخدامه في تطبيق سطح المكتب، ثبّت الإصدار التجريبي.",
+  "betaDownload": "تنزيل الإصدار التجريبي",
   "savePublicLabel": "عام",
   "savePublicHeading": "يمكن لأي شخص فتح ما تحفظه هنا",
   "savePublicDescription": "مساحة العمل هذه هي معرض المجتمع على الخادم، لذا فإن الحفظ فيها ينشر المستند.",
