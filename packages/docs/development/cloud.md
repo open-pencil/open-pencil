@@ -120,6 +120,51 @@ keeps on its own, and versions someone named (`document_version`, one per revisi
   freed file's row stays until the object store deletes it, so a failed delete is retried. With
   the `revision_history` entitlement off, a workspace keeps 30 days of versions, as on a free plan.
 
+### Comments
+
+A Cloud document's comments live on the server (`comment_thread`, `comment`), not in its file: a
+thread is a pin and whether it is resolved, and its comments are the first message and the replies,
+oldest first.
+
+- Each comment names the account that wrote it, and an agent's name when one wrote it for them; an
+  account deleted later reads as nameless. A comment brought in from a file has no account and keeps
+  the name the file gave.
+- Everyone who can read the document reads its comments, guests on a link included. Everyone signed
+  in who can read writes them, on a view link too; guests never do. Only a comment's author changes
+  what it says. Its author or anyone who can edit deletes it, for good; deleting a thread's first
+  comment deletes the thread. Anyone who comments resolves or reopens a thread, and whoever started
+  it or an editor moves its pin. These are the `comment` and `moderate` actions in
+  `src/server/auth/access-control.ts`.
+- Members reach them at `/api/documents/:id/threads`; link visitors at `/api/shares/:id/threads`,
+  with the link secret in every request's body, reads included. A document holds at most 5,000
+  threads and a thread 500 comments (`comment_limit_reached`).
+- After each change the server sends `comments`, with the thread's ID, to the document's rooms, and
+  open editors fetch that thread; peers cannot send it. Comments never enter the room's Yjs state or
+  a revision, and go with their document when it is deleted for good.
+- In the editor, a Cloud tab's document holds the server's threads, so the comment list, pins,
+  scripts, agents and Save As read them as they read a file's (`src/app/cloud/comments/`). What the
+  tab changes in them is sent as the requests that make it, under the IDs the editor chose, so a
+  retry finds what it made; a change the server refuses is taken back. Only a tombstone deletes: a
+  thread the document lacks, as a file opened in its place does, is one it has not heard of. An
+  agent's comment is the signed-in account's, naming the agent.
+- The Cloud storage provider keeps comments (`keepsComments`), so a save to it writes the file
+  without them, while Save As, a download, and the portal's Download all write them in. A document
+  this device has not uploaded yet, as one just saved to Cloud, brings its file's threads along
+  under the names the file gave (`POST /api/documents/:id/threads/import`, editors only).
+- A mention is a Markdown link to the account, `[@Ana](openpencil://person/<id>)`, as chat writes
+  its references; the composer shows `@Ana` and offers, for `@`, the people who can open the
+  document (`GET /api/documents/:id/threads/people`: names and pictures, never addresses). Each
+  request lists the accounts it names, and the server keeps those who can read the document
+  (`comment_mention`), at most 50 a comment.
+- Email (`comment-notification`) goes to the people a comment names, and, for a reply, to the
+  thread's other writers who chose every comment; an edit tells only the people it adds. Each
+  account chooses all, mentions (the default), or none at `/account/notifications`
+  (`GET`/`PUT /api/account/notifications`). One person's comments send at most 200 such emails a
+  day and one account receives at most 50 (`comment_email`); past either a mention is still kept,
+  only not emailed. The email links to `/documents/:id?comment=<thread>`, which opens the thread.
+- A thread is unread for an account while someone else wrote in it after the account last read it
+  (`comment_read`); opening it, or writing in it, reads it. Pins and the list mark unread threads.
+
 ## Authentication and authorization
 
 Better Auth owns users, sessions, social sign-in, email and password, passkeys, TOTP, and recovery
@@ -669,3 +714,9 @@ same rule.
 `cloud_` prefix the rest never had; they lose it, and only a name Better Auth already uses gets a
 qualifier (`api_rate_limit` beside its `rate_limit`). Migrations that shipped before the rename
 type their queries against the names they ran with, so their SQL never changes.
+
+**2026-11 · Comments on Cloud documents belong to the server.** Kept in the file, a comment's author
+is a name anyone who can edit may type, deleting one only marks it while its text stays in every
+revision, viewers cannot comment without being able to edit, and the server cannot tell anyone they
+were mentioned. Files written from a Cloud document still carry its comments, so leaving Cloud loses
+none; local files and peer-to-peer rooms keep theirs in the document.

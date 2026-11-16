@@ -206,8 +206,8 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
   ) {
     const readOnly = peer.authorization.permission === 'view'
     if (readOnly && !VIEWER_ACTIONS.has(namespace)) return
-    // Only the server says the history changed.
-    if (namespace === COLLAB_ACTIONS.versions) return
+    // Only the server says the history or the comments changed.
+    if (namespace === COLLAB_ACTIONS.versions || namespace === COLLAB_ACTIONS.comments) return
 
     let forwarded = payload
     if (namespace === COLLAB_ACTIONS.awareness) {
@@ -250,6 +250,19 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
   /** The sockets of peers whose tickets still hold. */
   function deliverable(peers: Iterable<RelayPeer>): RelaySocket[] {
     return [...peers].filter(current).map((peer) => peer.socket)
+  }
+
+  /** Sends a server message to every peer in the document's rooms. */
+  function announce(documentId: string, namespace: string, payload: Uint8Array) {
+    const frame: RelayServerFrame = { type: 'message', namespace, from: RELAY_SERVER_PEER, payload }
+    sendAll(
+      deliverable(
+        [...rooms.values()]
+          .filter((room) => room.identity.documentId === documentId)
+          .flatMap((room) => [...room.peers.values()])
+      ),
+      frame
+    )
   }
 
   function remember(peer: RelayPeer) {
@@ -456,20 +469,12 @@ export function createCollaborationRelay(options: CollaborationRelayOptions) {
 
     /** Tells everyone in a document's rooms that its version history changed. */
     announceVersions(documentId: string) {
-      const frame: RelayServerFrame = {
-        type: 'message',
-        namespace: COLLAB_ACTIONS.versions,
-        from: RELAY_SERVER_PEER,
-        payload: new Uint8Array()
-      }
-      sendAll(
-        deliverable(
-          [...rooms.values()]
-            .filter((room) => room.identity.documentId === documentId)
-            .flatMap((room) => [...room.peers.values()])
-        ),
-        frame
-      )
+      announce(documentId, COLLAB_ACTIONS.versions, new Uint8Array())
+    },
+
+    /** Tells everyone in a document's rooms that one of its comment threads changed. */
+    announceComments(documentId: string, threadId: string) {
+      announce(documentId, COLLAB_ACTIONS.comments, new TextEncoder().encode(threadId))
     },
 
     /** Saves every open room and closes its sockets, as the runtime shuts down. */

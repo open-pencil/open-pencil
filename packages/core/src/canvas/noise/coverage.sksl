@@ -1,0 +1,6 @@
+// A noise over the layer it grains, as Figma draws it (live-measured): the noise, scaled by how
+// much the layer covers each pixel, source-over the layer. Where the layer draws nothing, the
+// noise draws nothing; over a 30% fill it shows at 30%.
+half4 main(half4 src, half4 dst) {
+  return src * dst.a + dst * (1 - src.a * dst.a);
+}

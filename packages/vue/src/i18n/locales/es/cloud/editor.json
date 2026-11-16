@@ -266,6 +266,7 @@
   "savePublicHeading": "Cualquiera puede abrir lo que guardes aquí",
   "savePublicDescription": "Este espacio de trabajo es la galería de la comunidad del servidor, así que guardar aquí publica el documento.",
   "documentLinkFailed": "No se pudo abrir este documento. Pide acceso a su propietario.",
+  "commentLinkFailed": "No se encontró este comentario. Puede que se haya eliminado.",
   "documentLinkUnknownServer": "Inicia sesión en {host} para abrir este enlace.",
   "connectServerHeading": "Conecta el servidor de tu equipo",
   "connectServerDescription": "Escribe la dirección que usa tu equipo para OpenPencil Cloud.",

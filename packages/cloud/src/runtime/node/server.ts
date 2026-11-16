@@ -142,6 +142,8 @@ async function startConfiguredServer(
     onDocumentRestored: (documentId) => relay.startOver(documentId),
     onDocumentTakenDown: (documentId) => relay.closeDocument(documentId),
     onDocumentVersionsChanged: (documentId) => relay.announceVersions(documentId),
+    onDocumentCommentsChanged: (documentId, threadId) =>
+      relay.announceComments(documentId, threadId),
     reportError,
     forwardedRequestId: proxyRequestId
   })

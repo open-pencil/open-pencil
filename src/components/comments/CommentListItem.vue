@@ -19,13 +19,16 @@ const {
   thread,
   number,
   pageName = '',
-  active = false
+  active = false,
+  unread = false
 } = defineProps<{
   thread: CommentThread
   /** Its place among the document's threads, as Figma numbers them. */
   number: number
   pageName?: string
   active?: boolean
+  /** Someone else wrote in it since this account read it. */
+  unread?: boolean
 }>()
 
 const emit = defineEmits<{ select: [] }>()
@@ -53,6 +56,7 @@ const people = computed<PresencePersonRow[]>(() =>
     data-slot="comment-list-item"
     :data-active="active || undefined"
     :data-resolved="thread.resolved || undefined"
+    :data-unread="unread || undefined"
     :class="ui.item()"
   >
     <button type="button" :class="ui.itemButton()" @click="emit('select')">
@@ -65,6 +69,9 @@ const people = computed<PresencePersonRow[]>(() =>
         <span :class="ui.itemPlace()">#{{ number }} · {{ pageName }}</span>
       </span>
       <span :class="ui.itemMeta()">
+        <span v-if="unread" :class="ui.unreadDot({ inline: true })">
+          <span class="sr-only">{{ messages.unread }}</span>
+        </span>
         <span :class="ui.messageAuthor()">{{ author.name(thread.author) }}</span>
         <CommentTime :at="thread.createdAt" :class="ui.messageTime()" />
       </span>

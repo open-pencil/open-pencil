@@ -266,6 +266,7 @@
   "savePublicHeading": "Tout le monde peut ouvrir ce que vous enregistrez ici",
   "savePublicDescription": "Cet espace de travail est la galerie de la communauté du serveur : y enregistrer publie le document.",
   "documentLinkFailed": "Impossible d’ouvrir ce document. Demandez l’accès à son propriétaire.",
+  "commentLinkFailed": "Ce commentaire est introuvable. Il a peut-être été supprimé.",
   "documentLinkUnknownServer": "Connectez-vous d’abord à {host} pour ouvrir ce lien.",
   "connectServerHeading": "Connecter le serveur de votre équipe",
   "connectServerDescription": "Saisissez l’adresse que votre équipe utilise pour OpenPencil Cloud.",

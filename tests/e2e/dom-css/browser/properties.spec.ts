@@ -17,7 +17,7 @@ test.describe('@open-pencil/dom-css browser runtime properties', () => {
       #caption { caption-side: bottom }
       #cell { vertical-align: bottom }
       #grid { display: grid; grid-template-columns: 40px 60px; justify-items: center }
-      #item { flex-grow: 2; margin-top: 6px; text-decoration-style: dashed; justify-self: end }
+      #item { flex-grow: 2; margin-top: 6px; text-decoration-style: dashed; justify-self: end; grid-column: span 2 }
     `
     const computed = await browserRuntimeComputeStyles(page, document, css, 'iframe')
     const style = (id: string) => {
@@ -42,6 +42,7 @@ test.describe('@open-pencil/dom-css browser runtime properties', () => {
     })
     expect(style('item')).toMatchObject({
       'justify-self': 'end',
+      'grid-column-start': 'span 2',
       'flex-grow': '2',
       'margin-top': '6px',
       'text-decoration-style': 'dashed'

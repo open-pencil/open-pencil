@@ -419,7 +419,7 @@ function layOutTablesAndGrids(
     wrapTableGrid(graph, node, parts, recorded.boxes)
   }
   if (isTableRow(display)) layOutRowSpans(node, parts, recorded.boxes)
-  if (isGrid(display)) alignGridItems(graph, node, parts, style)
+  if (isGrid(display)) alignGridItems(graph, node, parts, style, recorded.boxes)
 }
 
 /**

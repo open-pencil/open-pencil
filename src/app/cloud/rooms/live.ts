@@ -26,6 +26,7 @@ import {
 import { onStorageWorkspaceEvent } from '@/app/storage/workspace/events'
 import { allTabs, getTabForStore, getTabsSnapshot, reloadStorageDocumentInTab } from '@/app/tabs'
 
+import { cloudCommentsChanged } from '../comments/followers'
 import { isCloudBinding } from '../documents/status'
 import { cloudConnection, cloudConnections, type CloudSessionState } from '../sessions/connection'
 import { cloudShareTarget } from '../sharing/document'
@@ -258,6 +259,8 @@ export function openCloudDocumentRoom(
     followRelay(store, session)
     // Someone named, renamed, or saved a checkpoint anywhere: an open history loads it again.
     onScopeDispose(session.onVersionsChanged(() => versionsChanged(store)))
+    // Someone changed a comment thread: the tab fetches it from the server, which keeps them.
+    onScopeDispose(session.onCommentsChanged((threadId) => cloudCommentsChanged(store, threadId)))
     const stopSynced = session.onSynced((peerId) => {
       if (peerId !== RELAY_SERVER_PEER) return
       stopSynced()

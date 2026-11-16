@@ -229,7 +229,23 @@ function withEffects(
       bounds = swept(bounds, matrix, { minX: -by, minY: -by, maxX: by, maxY: by })
     }
   }
-  return bounds
+  const by = textureReach(node)
+  return by > 0 ? swept(bounds, matrix, { minX: -by, minY: -by, maxX: by, maxY: by }) : bounds
+}
+
+/**
+ * How far a texture moves the layer's edges out: its radius, unless it is clipped to the layer's
+ * shape. Figma's exports count it (an unclipped texture of radius 4 grows a 100 px layer's
+ * export to 108 px, Figma desktop 126).
+ */
+export function textureReach(node: SceneNode): number {
+  let reach = 0
+  for (const effect of node.effects) {
+    if (effect.visible && effect.type === 'TEXTURE' && effect.texture?.clipToShape === false) {
+      reach = Math.max(reach, effect.radius)
+    }
+  }
+  return reach
 }
 
 /**
@@ -238,7 +254,7 @@ function withEffects(
  * shadows too, grows all of it to where its kernel ends (`blurReach`).
  */
 function withDrawnEffects(node: SceneNode, content: VisualBounds, matrix: Mat3): VisualBounds {
-  const blur = drawnLayerBlurReach(node)
+  const blur = drawnLayerBlurReach(node) + textureReach(node)
   return swept(withDrawnShadows(node, content, matrix), matrix, {
     minX: -blur,
     minY: -blur,

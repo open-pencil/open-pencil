@@ -149,6 +149,18 @@ export const cloudPortalMessageDefaults = {
   securityDescription: params('How you sign in to {host}.'),
   sessions: 'Sessions',
   sessionsDescription: 'Where your account is signed in, and when it was.',
+  notifications: 'Notifications',
+  notificationsDescription: 'Which comments you hear about by email.',
+  commentEmails: 'Comment emails',
+  commentEmailsAll: 'All comments',
+  commentEmailsAllDescription:
+    'Comments that mention you, and replies in threads you started or replied to.',
+  commentEmailsMentions: 'Mentions only',
+  commentEmailsMentionsDescription: 'Comments that mention you.',
+  commentEmailsOff: 'None',
+  commentEmailsOffDescription:
+    'No email about comments. You still see them, and new ones, in the editor.',
+  notificationsSaved: 'Notification settings saved',
   ...accessTokenPortalMessageDefaults,
   ...communityPortalMessageDefaults,
   ...planPortalMessageDefaults,

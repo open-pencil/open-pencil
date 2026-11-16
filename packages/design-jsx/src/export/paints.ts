@@ -1,10 +1,11 @@
 import type { Effect, Fill, GradientTransform, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { appendAll } from '@open-pencil/scene-graph/arrays'
-import { UNSET_GLASS } from '@open-pencil/scene-graph/constants'
+import { UNSET_GLASS, UNSET_NOISE, UNSET_TEXTURE } from '@open-pencil/scene-graph/constants'
 import {
   gradientTransformRows,
   isIdentityGradientTransform
 } from '@open-pencil/scene-graph/gradient'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { shaderOfPaint } from '@open-pencil/scene-graph/shaders'
 
 import { STROKE_ALIGN, STROKE_CAP, STROKE_JOIN } from '../enums'
@@ -203,7 +204,14 @@ const EFFECT_HELPERS: Record<Effect['type'], string> = {
   LAYER_BLUR: 'layerBlur',
   BACKGROUND_BLUR: 'backgroundBlur',
   FOREGROUND_BLUR: 'foregroundBlur',
-  GLASS: 'glass'
+  GLASS: 'glass',
+  NOISE: 'noise',
+  TEXTURE: 'texture'
+}
+
+/** A grain size as one number when both axes match, as Figma's plugin API writes it. */
+function noiseSizeValue(size: Vector): JSXValue {
+  return size.x === size.y ? size.x : { x: size.x, y: size.y }
 }
 
 function effectValue(effect: Effect): HelperCall {
@@ -234,6 +242,37 @@ function effectValue(effect: Effect): HelperCall {
         lightIntensity: lens.lightIntensity,
         dispersion: lens.dispersion,
         radius: effect.radius,
+        visible
+      })
+    )
+  }
+  if (effect.type === 'NOISE') {
+    const grain = effect.noise ?? UNSET_NOISE
+    return helperCall(
+      EFFECT_HELPERS.NOISE,
+      options({
+        noiseType: grain.noiseType,
+        noiseSize: noiseSizeValue(grain.noiseSize),
+        density: grain.density,
+        color: formatColor(effect.color, effect.color.a),
+        secondaryColor: grain.secondaryColor
+          ? formatColor(grain.secondaryColor, grain.secondaryColor.a)
+          : undefined,
+        opacity: grain.opacity,
+        seed: grain.seed,
+        visible
+      })
+    )
+  }
+  if (effect.type === 'TEXTURE') {
+    const grain = effect.texture ?? UNSET_TEXTURE
+    return helperCall(
+      EFFECT_HELPERS.TEXTURE,
+      options({
+        noiseSize: noiseSizeValue(grain.noiseSize),
+        radius: effect.radius,
+        clipToShape: grain.clipToShape,
+        seed: grain.seed,
         visible
       })
     )

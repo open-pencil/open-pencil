@@ -6,6 +6,7 @@ import type {
 } from '#cloud/server/auth'
 import { createBillingTokenService } from '#cloud/server/billing'
 import { createCollaborationTicketService } from '#cloud/server/collaboration'
+import { createCommentService } from '#cloud/server/comments'
 import { createCommunityService } from '#cloud/server/community'
 import { CloudConfigError, type CloudServerConfig } from '#cloud/server/config'
 import type { CloudDatabase } from '#cloud/server/db'
@@ -62,6 +63,8 @@ export type CloudServices = {
   onDocumentTakenDown?: (documentId: string) => void
   /** Tells a document's live rooms its version history changed, on the relay this runtime runs. */
   onDocumentVersionsChanged?: (documentId: string) => void
+  /** Tells a document's live rooms one of its comment threads changed, on this runtime's relay. */
+  onDocumentCommentsChanged?: (documentId: string, threadId: string) => void
   /** Logs errors no route handled, and reports them when the deployment configures error tracking. */
   reportError?: CloudErrorReporter
   /** The request ID this runtime trusts from what stands in front of it, such as `cf-ray`. */
@@ -158,6 +161,13 @@ export function createAppServices(services: CloudServices) {
           lifetimeSeconds: config.servicesTokenLifetimeSeconds
         })
       : undefined
+  const comments = createCommentService(database, {
+    sharing,
+    onCommentsChanged: services.onDocumentCommentsChanged,
+    notifier: services.transactionalEmail
+      ? { email: services.transactionalEmail, publicURL: config.publicURL }
+      : undefined
+  })
   const reports = createDocumentReportService(database, {
     sharing,
     email: services.transactionalEmail,
@@ -178,6 +188,7 @@ export function createAppServices(services: CloudServices) {
     collaboration,
     servicesTokens,
     billingTokens,
+    comments,
     reports
   }
 }

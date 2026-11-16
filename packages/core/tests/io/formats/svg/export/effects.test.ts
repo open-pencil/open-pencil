@@ -1,11 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
 import type { ExportEffectWarning } from '@open-pencil/core/io/formats/svg'
+import { noise, texture } from '@open-pencil/design-jsx'
 import type { Effect, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { SceneGraph as Graph } from '@open-pencil/scene-graph'
 import { polygonBlob } from '@open-pencil/test-support/geometry'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '#core/io'
+import { noiseDensityTable } from '#core/io/formats/svg/grain'
 
 import { svgOf } from './helpers'
 
@@ -52,6 +54,11 @@ function exported(
 /** The opening tags of `tag` elements in `svg`. */
 function elements(svg: string, tag: string): string[] {
   return Array.from(svg.matchAll(new RegExp(`<${tag}\\b[^>]*>`, 'g')), ([element]) => element)
+}
+
+/** `count` steps of `value` in a noise table. */
+function steps(count: number, value: number): number[] {
+  return Array.from({ length: count }, () => value)
 }
 
 describe('SVG export effects, as Figma exports them', () => {
@@ -209,16 +216,85 @@ describe('SVG export effects, as Figma exports them', () => {
   })
 
   test('an effect the scene graph does not model is left out with a warning, not blurred', () => {
-    // A `.fig` file's noise reaches `effects` under a type `Effect` does not list.
-    const noiseType: string = 'NOISE'
+    // Only a document built outside the scene graph's types can hold a repeat.
+    const repeatType: string = 'REPEAT'
     const { svg, warnings } = exported([
-      effect(noiseType as Effect['type'], { radius: 4 }),
+      effect(repeatType as Effect['type'], { radius: 4 }),
       effect('DROP_SHADOW', { radius: 8 })
     ])
 
     expect(svg).toContain('<feOffset')
     expect(svg).not.toContain('feGaussianBlur stdDeviation="2"')
-    expect(warnings).toEqual([expect.objectContaining({ effect: 'NOISE' })])
+    expect(warnings).toEqual([expect.objectContaining({ effect: 'REPEAT' })])
+  })
+
+  test('a noise grains the layer in a band of fractal noise that its density widens', () => {
+    const { svg, warnings } = exported([
+      noise({ color: '#000000', noiseSize: { x: 2, y: 5 }, density: 0.2 })
+    ])
+
+    expect(warnings).toEqual([])
+    expect(elements(svg, 'feTurbulence')[0]).toContain('baseFrequency="0.5 0.2"')
+    // Figma's table for density 0.2, read in 32-bit floats: 19 off, 11 on, 70 off.
+    expect(noiseDensityTable(0.2)).toBe(
+      [...steps(19, 0), ...steps(11, 1), ...steps(70, 0)].join(' ')
+    )
+    expect(noiseDensityTable(1)).toBe([...steps(51, 1), ...steps(49, 0)].join(' '))
+    expect(noiseDensityTable(0)).toBe([...steps(25, 0), 1, ...steps(74, 0)].join(' '))
+  })
+
+  test('a duotone noise adds the opposite band in its second colour; a multitone its own colours', () => {
+    const duotone = exported([
+      noise({ noiseType: 'DUOTONE', color: '#000000', secondaryColor: '#ff0000' })
+    ]).svg
+    const colors = elements(duotone, 'feFlood').flatMap(
+      (flood) => flood.match(/flood-color="([^"]+)"/)?.[1] ?? []
+    )
+    expect(colors).toEqual(['#000000', '#FF0000'])
+    expect(duotone).toContain(`tableValues="${noiseDensityTable(1, true)}"`)
+
+    const multitone = exported([noise({ noiseType: 'MULTITONE', opacity: 0.4 })]).svg
+    expect(elements(multitone, 'feFuncR')).toEqual([
+      '<feFuncR type="linear" slope="2" intercept="-0.5"/>'
+    ])
+    expect(multitone).toContain('tableValues="0 0.4"')
+  })
+
+  test('a texture displaces the layer by twice its radius, clipped to its shape when asked', () => {
+    const loose = exported([texture({ noiseSize: 2, radius: 4, clipToShape: false })])
+    expect(elements(loose.svg, 'feDisplacementMap')).toEqual([expect.stringContaining('scale="8"')])
+    // Unclipped, the edges may move out by the radius, so the export grows by it on every side.
+    expect(loose.svg).toContain('width="108" height="108"')
+    expect(elements(loose.svg, 'filter')[0]).toContain('x="-4" y="-4" width="108" height="108"')
+
+    const clipped = exported([texture({ noiseSize: 2, radius: 4, clipToShape: true })])
+    expect(elements(clipped.svg, 'feDisplacementMap')).toHaveLength(3)
+    expect(clipped.svg).toContain('width="100" height="100"')
+    expect(loose.warnings.concat(clipped.warnings)).toEqual([])
+  })
+
+  test('a flood carries its alpha once, in Display P3 too', () => {
+    const half = { r: 1, g: 0, b: 0, a: 0.5 }
+    const svg = svgOf(
+      (graph: SceneGraph, pageId: string) => [
+        graph.createNode('RECTANGLE', pageId, {
+          width: 100,
+          height: 100,
+          fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }],
+          effects: [
+            effect('DROP_SHADOW', { radius: 8, color: half }),
+            noise({ color: half, density: 1 })
+          ]
+        }).id
+      ],
+      { colorSpace: 'display-p3' }
+    )
+    const floods = elements(svg, 'feFlood').filter((flood) => flood.includes('flood-color'))
+    expect(floods).toHaveLength(2)
+    for (const flood of floods) {
+      expect(flood).toContain('flood-opacity="0.5"')
+      expect(flood).not.toMatch(/flood-color="[^"]*\/\s*0\.5/)
+    }
   })
 
   test('a hidden effect is neither drawn nor reported', () => {

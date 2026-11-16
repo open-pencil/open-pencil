@@ -8,6 +8,7 @@ import { addOpenSegmentsToPath } from '@open-pencil/scene-graph/paths'
 import { getTextOutlineSupport } from '#core/text/outlines'
 import { isOpenVectorNetwork } from '#core/vector/connectivity'
 
+import { renderLeafWithEffects } from './effects'
 import { clearFillShader } from './fills/paint'
 import { sharedPath } from './paths/shared'
 import { curvePathData } from './paths/svg-data'
@@ -546,7 +547,7 @@ export function renderBooleanOperation(
   node: SceneNode,
   graph: SceneGraph
 ): void {
-  r.renderEffects(canvas, node, graph, 'behind')
-  paintBooleanOperation(r, canvas, node, graph, () => r.renderEffects(canvas, node, graph, 'inner'))
-  r.renderEffects(canvas, node, graph, 'front')
+  renderLeafWithEffects(r, canvas, node, graph, (inner) =>
+    paintBooleanOperation(r, canvas, node, graph, inner)
+  )
 }

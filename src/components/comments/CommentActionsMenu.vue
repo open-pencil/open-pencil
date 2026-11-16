@@ -74,9 +74,10 @@ async function copyText() {
     <icon-lucide-copy :class="menuCls.icon" />
     <span>{{ messages.copyText }}</span>
   </component>
-  <component :is="Separator" :class="menuCls.separator" />
+  <component v-if="comments.canDelete(thread.id)" :is="Separator" :class="menuCls.separator" />
   <component
     :is="Item"
+    v-if="comments.canDelete(thread.id)"
     :class="menuCls.item"
     data-command="comment-delete"
     @select="comments.requestDelete(thread.id)"

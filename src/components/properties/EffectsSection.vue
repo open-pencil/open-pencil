@@ -10,7 +10,11 @@ import {
   useColorBindingProvider,
   type BindingTarget
 } from '@open-pencil/vue/controls/binding-provider'
-import { type BlurKind, useEffectsControls } from '@open-pencil/vue/controls/effects'
+import {
+  type BlurKind,
+  type EffectChange,
+  useEffectsControls
+} from '@open-pencil/vue/controls/effects'
 import { useI18n } from '@open-pencil/vue/i18n'
 import {
   BindableValueRoot,
@@ -26,6 +30,8 @@ import {
   useBlendModeGroups
 } from '@/components/properties/blend-mode/use'
 import { useBlurRampEditing } from '@/components/properties/effects/blur-ramp'
+import NoiseSettings from '@/components/properties/effects/NoiseSettings.vue'
+import TextureSettings from '@/components/properties/effects/TextureSettings.vue'
 import PropertyItemRow from '@/components/properties/item-list/PropertyItemRow.vue'
 import { applyPaintMutation, commitPaintMutation } from '@/components/properties/paint/binding'
 import PaintValue from '@/components/properties/paint/PaintValue.vue'
@@ -81,19 +87,22 @@ function updateEffectColor(
   if (applyPaintMutation(binding, flush, update)) commitPaintMutation(binding)
 }
 
-/** `effect` with one glass value changed, the rest kept. */
+/** One glass value changed on each selected layer, the rest of each layer's kept. */
 function glassChange<K extends keyof GlassEffectParams>(
-  effect: Effect,
   key: K,
   value: GlassEffectParams[K]
-): Partial<Effect> {
-  return { glass: { ...(effect.glass ?? UNSET_GLASS), [key]: value } }
+): EffectChange {
+  return (effect) => ({ glass: { ...(effect.glass ?? UNSET_GLASS), [key]: value } })
 }
 
-/** `effect`, a progressive blur, starting at `radius`; Figma keeps a start over 100 at 100. */
-function startRadiusChange(effect: Effect, radius: number): Partial<Effect> {
-  if (!effect.progressive) return {}
-  return { progressive: { ...effect.progressive, startRadius: Math.min(Math.max(radius, 0), 100) } }
+/**
+ * Each selected progressive blur starting at `radius`, its own ramp otherwise kept; Figma keeps a
+ * start over 100 at 100.
+ */
+function startRadiusChange(radius: number): EffectChange {
+  const startRadius = Math.min(Math.max(radius, 0), 100)
+  return (effect) =>
+    effect.progressive ? { progressive: { ...effect.progressive, startRadius } } : {}
 }
 
 /** A percentage field's value as Figma's 0–1 glass amount. */
@@ -191,6 +200,14 @@ function effectPreview(effect: Effect): Fill {
                     class="size-full border-0"
                   />
                   <icon-lucide-gem v-else-if="effect.type === 'GLASS'" class="size-3 text-muted" />
+                  <icon-lucide-square-dashed
+                    v-else-if="effect.type === 'NOISE'"
+                    class="size-3 text-muted"
+                  />
+                  <icon-lucide-grip
+                    v-else-if="effect.type === 'TEXTURE'"
+                    class="size-3 text-muted"
+                  />
                   <icon-lucide-layers-2
                     v-else-if="effect.type === 'BACKGROUND_BLUR'"
                     class="size-3 text-muted"
@@ -384,11 +401,9 @@ function effectPreview(effect: Effect): Fill {
                   :model-value="(effect.glass ?? UNSET_GLASS).lightAngle"
                   data-property="glass-light-angle"
                   @update:model-value="
-                    effectsCtx.scrubEffect(index, glassChange(effect, 'lightAngle', $event))
+                    effectsCtx.scrubEffect(index, glassChange('lightAngle', $event))
                   "
-                  @commit="
-                    effectsCtx.commitEffect(index, glassChange(effect, 'lightAngle', $event))
-                  "
+                  @commit="effectsCtx.commitEffect(index, glassChange('lightAngle', $event))"
                 >
                   <template #icon><icon-lucide-rotate-cw class="size-3" /></template>
                 </NumberField>
@@ -403,16 +418,10 @@ function effectPreview(effect: Effect): Fill {
                   :max="100"
                   data-property="glass-light-intensity"
                   @update:model-value="
-                    effectsCtx.scrubEffect(
-                      index,
-                      glassChange(effect, 'lightIntensity', fraction($event))
-                    )
+                    effectsCtx.scrubEffect(index, glassChange('lightIntensity', fraction($event)))
                   "
                   @commit="
-                    effectsCtx.commitEffect(
-                      index,
-                      glassChange(effect, 'lightIntensity', fraction($event))
-                    )
+                    effectsCtx.commitEffect(index, glassChange('lightIntensity', fraction($event)))
                   "
                 >
                   <template #icon><icon-lucide-sun class="size-3" /></template>
@@ -430,16 +439,10 @@ function effectPreview(effect: Effect): Fill {
                   :max="100"
                   data-property="glass-refraction"
                   @update:model-value="
-                    effectsCtx.scrubEffect(
-                      index,
-                      glassChange(effect, 'refraction', fraction($event))
-                    )
+                    effectsCtx.scrubEffect(index, glassChange('refraction', fraction($event)))
                   "
                   @commit="
-                    effectsCtx.commitEffect(
-                      index,
-                      glassChange(effect, 'refraction', fraction($event))
-                    )
+                    effectsCtx.commitEffect(index, glassChange('refraction', fraction($event)))
                   "
                 >
                   <template #icon><icon-lucide-waves class="size-3" /></template>
@@ -453,10 +456,8 @@ function effectPreview(effect: Effect): Fill {
                   :min="1"
                   :max="100"
                   data-property="glass-depth"
-                  @update:model-value="
-                    effectsCtx.scrubEffect(index, glassChange(effect, 'depth', $event))
-                  "
-                  @commit="effectsCtx.commitEffect(index, glassChange(effect, 'depth', $event))"
+                  @update:model-value="effectsCtx.scrubEffect(index, glassChange('depth', $event))"
+                  @commit="effectsCtx.commitEffect(index, glassChange('depth', $event))"
                 >
                   <template #icon><icon-lucide-arrow-down-to-line class="size-3" /></template>
                 </NumberField>
@@ -473,16 +474,10 @@ function effectPreview(effect: Effect): Fill {
                   :max="100"
                   data-property="glass-dispersion"
                   @update:model-value="
-                    effectsCtx.scrubEffect(
-                      index,
-                      glassChange(effect, 'dispersion', fraction($event))
-                    )
+                    effectsCtx.scrubEffect(index, glassChange('dispersion', fraction($event)))
                   "
                   @commit="
-                    effectsCtx.commitEffect(
-                      index,
-                      glassChange(effect, 'dispersion', fraction($event))
-                    )
+                    effectsCtx.commitEffect(index, glassChange('dispersion', fraction($event)))
                   "
                 >
                   <template #icon><icon-lucide-rainbow class="size-3" /></template>
@@ -506,6 +501,23 @@ function effectPreview(effect: Effect): Fill {
             </PanelGrid>
           </template>
 
+          <NoiseSettings
+            v-else-if="effect.type === 'NOISE'"
+            :effect="effect"
+            @scrub="effectsCtx.scrubEffect(index, $event)"
+            @commit="effectsCtx.commitEffect(index, $event)"
+            @patch="actions.patch(index, $event)"
+          />
+
+          <TextureSettings
+            v-else-if="effect.type === 'TEXTURE'"
+            :effect="effect"
+            :index="index"
+            :node-ids="selectedNodeIds"
+            @scrub="effectsCtx.scrubEffect(index, $event)"
+            @commit="effectsCtx.commitEffect(index, $event)"
+          />
+
           <template v-else>
             <SegmentedControl
               :model-value="effect.progressive ? 'PROGRESSIVE' : 'UNIFORM'"
@@ -525,10 +537,8 @@ function effectPreview(effect: Effect): Fill {
                   :min="0"
                   :max="100"
                   data-property="effect-blur-start"
-                  @update:model-value="
-                    effectsCtx.scrubEffect(index, startRadiusChange(effect, $event))
-                  "
-                  @commit="effectsCtx.commitEffect(index, startRadiusChange(effect, $event))"
+                  @update:model-value="effectsCtx.scrubEffect(index, startRadiusChange($event))"
+                  @commit="effectsCtx.commitEffect(index, startRadiusChange($event))"
                 >
                   <template #icon><icon-lucide-droplet class="size-3" /></template>
                 </NumberField>
