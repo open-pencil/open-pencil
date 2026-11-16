@@ -3,6 +3,7 @@ import { afterEach, describe, expect, spyOn, test } from 'bun:test'
 import { fetchStub } from '@open-pencil/test-support/fetch'
 
 import { cloudOfficialListed, checkCloudAvailability } from '@/app/cloud/availability'
+import { APP_VERSION } from '@/app/runtime/version'
 import { OFFICIAL_CLOUD_URL } from '@/constants'
 
 import { cloudDiscoveryFixture } from '#tests/helpers/cloud/discovery'
@@ -39,8 +40,7 @@ describe('Cloud availability', () => {
       Response.json({
         ...cloudDiscoveryFixture(OFFICIAL_CLOUD_URL),
         deployment: 'official',
-        // Tests run as editor version 0.0.0.
-        listing: { minimumEditorVersion: '0.0.0' }
+        listing: { minimumEditorVersion: APP_VERSION }
       })
     )
     await checkCloudAvailability(EDITOR)
