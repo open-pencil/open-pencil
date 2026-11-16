@@ -345,25 +345,30 @@ const EFFORT_OPTION: SessionConfigOption = {
   options: ['medium', 'ultra'].map((value) => ({ value, name: value.toUpperCase() }))
 }
 
-/** Codex's modes: its sandbox presets, and Plan in an option of its own. */
-const MODE_OPTIONS: SessionConfigOption[] = [
-  {
-    id: 'mode',
-    name: 'Mode',
-    type: 'select',
-    category: 'mode',
-    currentValue: 'agent',
-    options: ['read-only', 'agent'].map((value) => ({ value, name: value }))
-  },
-  {
+/** Codex's collaboration mode, which holds its Plan mode, on `current`. */
+function collaborationOption(current: string): SessionConfigOption {
+  return {
     id: 'collaboration_mode',
     name: 'Collaboration mode',
     type: 'select',
     category: 'collaboration_mode',
-    currentValue: 'default',
+    currentValue: current,
     options: ['default', 'plan'].map((value) => ({ value, name: value }))
   }
-]
+}
+
+/** Codex's sandbox presets. */
+const SANDBOX_OPTION: SessionConfigOption = {
+  id: 'mode',
+  name: 'Mode',
+  type: 'select',
+  category: 'mode',
+  currentValue: 'agent',
+  options: ['read-only', 'agent'].map((value) => ({ value, name: value }))
+}
+
+/** Codex's modes: its sandbox presets, and Plan in an option of its own. */
+const MODE_OPTIONS = [SANDBOX_OPTION, collaborationOption('default')]
 
 const later = [message('user', 'first'), message('assistant', 'done')]
 
@@ -410,6 +415,22 @@ test('a session opens on the chat’s modes, and Plan applies before the next pr
   const last = offered.at(-1)
   expect([last?.mode?.current, last?.collaboration_mode?.current]).toEqual(['read-only', 'plan'])
   expect(last?.mode?.name).toBe('Mode')
+  await chat.destroy()
+})
+
+test('the chat hears of a mode the agent left on its own, but not of one it asked for', async () => {
+  // Approving the plan moves Codex back to its default collaboration mode during the turn.
+  const left = [SANDBOX_OPTION, collaborationOption('default')]
+  const agents = fakeAgents({
+    configOptions: MODE_OPTIONS,
+    updates: [{ update: { sessionUpdate: 'config_option_update', configOptions: left } }]
+  })
+  let choices: AgentChoices = {}
+  const { transport: chat, agentChose } = transport(agents, { choices: () => choices })
+  await send(chat, 'first')
+  choices = { collaboration_mode: 'plan' }
+  await send(chat, 'second', later)
+  expect(agentChose).toEqual([{ collaboration_mode: 'default' }])
   await chat.destroy()
 })
 

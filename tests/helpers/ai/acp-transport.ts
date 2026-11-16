@@ -267,6 +267,8 @@ export function transport(
   const sessions: (string | null)[] = []
   /** What the session offered to choose each time it told the chat, and null once it ended. */
   const offered: (AgentModelChoices | null)[] = []
+  /** The values the agent moved to on its own, each time it did. */
+  const agentChose: AgentChoices[] = []
   const agentErrors: unknown[] = []
   const created = new ACPChatTransport({
     agentDef: options.agentDef ?? resuming,
@@ -276,9 +278,10 @@ export function transport(
     model: options.model,
     choices: options.choices,
     onChoices: (reported) => offered.push(reported),
+    onAgentChoices: (moved) => agentChose.push(moved),
     startTimeoutMs: options.startTimeoutMs ?? 1_000,
     onSession: (id) => sessions.push(id),
     onAgentError: (error) => agentErrors.push(error)
   })
-  return { transport: created, sessions, agentErrors, offered }
+  return { transport: created, sessions, agentErrors, offered, agentChose }
 }

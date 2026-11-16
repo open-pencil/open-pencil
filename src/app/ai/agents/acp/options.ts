@@ -85,6 +85,21 @@ export function sessionChoices(offered: OfferedSessionOptions): SessionChoices {
   return choices
 }
 
+/**
+ * The values a session moved to on its own between two reports, as when approving a plan leaves
+ * Claude Code's Plan mode. An option whose change the chat still waits on (`current` empty) is
+ * left out, since the chat asked for it.
+ */
+export function choicesMoved(before: SessionChoices, after: SessionChoices): AgentChoices {
+  const moved: AgentChoices = {}
+  for (const category of AGENT_CHOICE_CATEGORIES) {
+    const was = before[category]?.current
+    const now = after[category]?.current
+    if (was && now && was !== now) moved[category] = now
+  }
+  return moved
+}
+
 /** A session's choices as the chat shows them, without the IDs only the agent needs. */
 export function shownChoices(choices: SessionChoices): AgentModelChoices {
   return mapValues(choices, (choice) => choice && omit(choice, ['configId']))

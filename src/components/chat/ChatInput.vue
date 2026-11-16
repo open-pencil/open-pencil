@@ -10,6 +10,7 @@ import { revokeImagePreviewURL } from '@/app/ai/attachment/image/prepare'
 import { MAX_IMAGE_ATTACHMENTS } from '@/app/ai/attachment/image/types'
 import { takeBackMessages } from '@/app/ai/chat/queue'
 import type { ChatSubmission } from '@/app/ai/chat/submission/types'
+import { chatAgentOptions } from '@/app/ai/chat/thinking'
 import { useAIChat } from '@/app/ai/chat/use'
 import { designModelProfile } from '@/app/ai/models'
 import ChatAgentOptionSelect from '@/components/chat/ChatAgentOptionSelect.vue'
@@ -105,6 +106,13 @@ defineExpose({ restoreDraft, dropFiles })
 
 /** A coding agent sets its own thinking effort, so the composer offers none for one. */
 const isAgentProvider = computed(() => providerKind(providerID.value) !== 'api')
+/**
+ * Two or more of an agent's selects leave a narrow composer no room for the profile's name, so it
+ * shows only its icon there; the name stays for assistive technology.
+ */
+const agentSelectsCrowd = computed(
+  () => isAgentProvider.value && Object.keys(chatAgentOptions.value ?? {}).length > 1
+)
 const isCustomProvider = computed(
   () => providerID.value === 'openai-compatible' || providerID.value === 'anthropic-compatible'
 )
@@ -194,7 +202,11 @@ const selectedProfileName = computed(
       <div class="@container flex min-w-0 items-center">
         <ChatProfileSelect>
           <template #value>
-            <span class="min-w-0 truncate">{{ selectedProfileName }}</span>
+            <span
+              :class="['min-w-0 truncate', agentSelectsCrowd && 'sr-only @[14rem]:not-sr-only']"
+            >
+              {{ selectedProfileName }}
+            </span>
           </template>
         </ChatProfileSelect>
         <ChatThinkingSelect v-if="!isAgentProvider" />

@@ -48,12 +48,16 @@ export const chatAgentChoices = computed<AgentChoices>(() => {
   return { ...profile?.agentChoices, ...own }
 })
 
-/** Chooses one of the Design agent's options for the next messages, as the composer does. */
-export function chooseAgentOption(category: AgentChoiceCategory, value: string): void {
+/** Chooses Design agent options for the next messages, as the composer does. */
+export function chooseAgentOptions(choices: AgentChoices): void {
   const profileId = designModelProfile.value?.id ?? null
   const composer = composerChoices.value
   const kept = composer.profileId === profileId ? composer.choices : {}
-  composerChoices.value = { profileId, choices: { ...kept, [category]: value } }
+  composerChoices.value = { profileId, choices: { ...kept, ...choices } }
+}
+
+export function chooseAgentOption(category: AgentChoiceCategory, value: string): void {
+  chooseAgentOptions({ [category]: value })
 }
 
 /**

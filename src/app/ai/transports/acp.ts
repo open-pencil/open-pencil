@@ -6,6 +6,7 @@ import {
   type Usage
 } from '@agentclientprotocol/sdk/unstable'
 import type { ChatTransport, UIMessage, UIMessageChunk } from 'ai'
+import { isEmptyObject } from 'es-toolkit'
 import * as v from 'valibot'
 
 import type { ACPAgentDef } from '@open-pencil/core/constants'
@@ -20,6 +21,7 @@ import {
 import { createUpdateMapper } from '@/app/ai/agents/acp/events'
 import {
   AGENT_CHOICE_CATEGORIES,
+  choicesMoved,
   sessionChoices,
   sessionOptionRequests,
   shownChoices,
@@ -189,6 +191,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
   private model: string
   private choices: () => AgentChoices
   private onChoices: ((choices: AgentModelChoices | null) => void) | null
+  private onAgentChoices: ((choices: AgentChoices) => void) | null
   private startTimeoutMs: number | undefined
 
   constructor(options: {
@@ -219,6 +222,11 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     choices?: () => AgentChoices
     /** Told what the session offers to choose whenever it changes, and null once it ends. */
     onChoices?: (choices: AgentModelChoices | null) => void
+    /**
+     * Told the values the agent moved to on its own, as when approving a plan leaves Plan mode,
+     * so the chat follows them instead of putting the agent back on the next message.
+     */
+    onAgentChoices?: (choices: AgentChoices) => void
     startup?: ACPStartup
     startTimeoutMs?: number
   }) {
@@ -233,6 +241,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     this.model = options.model ?? ''
     this.choices = options.choices ?? (() => ({}))
     this.onChoices = options.onChoices ?? null
+    this.onAgentChoices = options.onAgentChoices ?? null
     this.startTimeoutMs = options.startTimeoutMs
   }
 
@@ -480,8 +489,11 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           // The agent changed its options itself, as when its model changed what it offers.
           if (update.sessionUpdate === 'config_option_update') {
             const choices = sessionChoices(update)
-            if (sessionRef) this.noteChoices(sessionRef, choices)
-            else if (openedChoices) openedChoices = choices
+            if (sessionRef) {
+              const moved = choicesMoved(sessionRef.choices, choices)
+              this.noteChoices(sessionRef, choices)
+              if (!isEmptyObject(moved)) this.onAgentChoices?.(moved)
+            } else if (openedChoices) openedChoices = choices
           }
           onUpdate?.(params)
         },

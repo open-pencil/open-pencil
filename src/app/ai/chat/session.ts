@@ -14,7 +14,12 @@ import { classifyAIChatError, type AIChatFailure } from '@/app/ai/chat/failure'
 import { notifyReplyEnded } from '@/app/ai/chat/notifications'
 import { hasSteeringMessage } from '@/app/ai/chat/queue'
 import { systemPrompt } from '@/app/ai/chat/system-prompt'
-import { agentSessionChoices, chatAgentChoices, chatThinkingLevel } from '@/app/ai/chat/thinking'
+import {
+  agentSessionChoices,
+  chatAgentChoices,
+  chatThinkingLevel,
+  chooseAgentOptions
+} from '@/app/ai/chat/thinking'
 import {
   createAIModelRuntime,
   designModelProfile,
@@ -95,6 +100,10 @@ export async function createACPTransport(
     onChoices: (offered) => {
       agentSessionChoices.value =
         choices && offered ? { profileId: choices.profileId, choices: offered } : null
+    },
+    // Approving a plan can move the agent off Plan mode; the chat follows while it runs that profile.
+    onAgentChoices: (moved) => {
+      if (choices && designModelProfile.value?.id === choices.profileId) chooseAgentOptions(moved)
     }
   })
 }
