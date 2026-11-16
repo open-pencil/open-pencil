@@ -1,4 +1,4 @@
-import { computed, shallowRef } from 'vue'
+import { computed, shallowRef, toRaw } from 'vue'
 
 import type {
   BuiltInCampaignId,
@@ -86,7 +86,8 @@ export function startCampaignClock(now = Date.now()): void {
 function carryDonationClockOver(now: number): void {
   const { promptAfter } = appPreferences.value.donation
   if (promptAfter === null) return
-  const { records, installedAt } = appPreferences.value.campaigns
+  const { installedAt } = appPreferences.value.campaigns
+  const records = toRaw(appPreferences.value.campaigns.records)
   updateCampaignPreferences({
     installedAt: installedAt ?? now - DONATION.timing.afterInstallDays * DAY,
     records: Object.hasOwn(records, 'donation')
@@ -115,7 +116,7 @@ async function campaignContext(now: number): Promise<CampaignContext> {
 }
 
 function record(id: string, change: { dismissedAt?: number; actedAt?: number }): void {
-  const { records } = appPreferences.value.campaigns
+  const records = toRaw(appPreferences.value.campaigns.records)
   updateCampaignPreferences({ records: { ...records, [id]: { ...records[id], ...change } } })
 }
 

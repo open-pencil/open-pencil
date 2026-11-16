@@ -357,17 +357,26 @@ export const appPreferences = useLocalStorage<AppPreferences>(
   { mergeDefaults: (storageValue) => parseAppPreferences(storageValue) }
 )
 
+/**
+ * The preferences as stored, for updates to spread. Reading `appPreferences` wraps every section
+ * in a reactive proxy; spread into the next value, those would be stored too and make the
+ * preferences impossible to clone or save.
+ */
+function stored(): AppPreferences {
+  return toRaw(appPreferences.value)
+}
+
 export function updateAnimationPreference(animations: AnimationPreference): void {
   appPreferences.value = {
-    ...appPreferences.value,
-    appearance: { ...appPreferences.value.appearance, animations }
+    ...stored(),
+    appearance: { ...stored().appearance, animations }
   }
 }
 
 export function updateAccentPreference(accent: AccentPreference): void {
   appPreferences.value = {
-    ...appPreferences.value,
-    appearance: { ...appPreferences.value.appearance, accent }
+    ...stored(),
+    appearance: { ...stored().appearance, accent }
   }
 }
 
@@ -378,48 +387,48 @@ export function updateRecoveryEnabled(enabled: boolean): void {
 }
 
 export function updateAISetupState(aiSetup: AISetupState): void {
-  appPreferences.value = { ...appPreferences.value, onboarding: { aiSetup } }
+  appPreferences.value = { ...stored(), onboarding: { aiSetup } }
 }
 
 export function updateSharingPreferences(changes: Partial<SharingPreferences>): void {
   appPreferences.value = {
-    ...appPreferences.value,
-    sharing: { ...appPreferences.value.sharing, ...changes }
+    ...stored(),
+    sharing: { ...stored().sharing, ...changes }
   }
 }
 
 export function updateDonationPreferences(changes: Partial<DonationPreferences>): void {
   appPreferences.value = {
-    ...appPreferences.value,
-    donation: { ...appPreferences.value.donation, ...changes }
+    ...stored(),
+    donation: { ...stored().donation, ...changes }
   }
 }
 
 export function updateCampaignPreferences(changes: Partial<CampaignPreferences>): void {
   appPreferences.value = {
-    ...appPreferences.value,
-    campaigns: { ...appPreferences.value.campaigns, ...changes }
+    ...stored(),
+    campaigns: { ...stored().campaigns, ...changes }
   }
 }
 
 export function updateNotificationPreferences(changes: Partial<NotificationPreferences>): void {
   appPreferences.value = {
-    ...appPreferences.value,
-    notifications: { ...appPreferences.value.notifications, ...changes }
+    ...stored(),
+    notifications: { ...stored().notifications, ...changes }
   }
 }
 
 export function updateZoomSpeed(zoomSpeed: ZoomSpeed): void {
-  appPreferences.value = { ...appPreferences.value, navigation: { zoomSpeed } }
+  appPreferences.value = { ...stored(), navigation: { zoomSpeed } }
 }
 
 export function updateSnappingPreferences(changes: Partial<SnappingPreferences>): void {
   appPreferences.value = {
-    ...appPreferences.value,
+    ...stored(),
     editing: {
-      ...appPreferences.value.editing,
+      ...stored().editing,
       snapping: {
-        ...appPreferences.value.editing.snapping,
+        ...stored().editing.snapping,
         ...changes
       }
     }
@@ -428,47 +437,47 @@ export function updateSnappingPreferences(changes: Partial<SnappingPreferences>)
 
 export function updateDesignCheckPreferences(changes: Partial<DesignCheckPreferences>): void {
   appPreferences.value = {
-    ...appPreferences.value,
-    designCheck: { ...appPreferences.value.designCheck, ...changes }
+    ...stored(),
+    designCheck: { ...stored().designCheck, ...changes }
   }
 }
 
 export function updateCommentPreferences(changes: Partial<CommentPreferences>): void {
   appPreferences.value = {
-    ...appPreferences.value,
-    comments: { ...appPreferences.value.comments, ...changes }
+    ...stored(),
+    comments: { ...stored().comments, ...changes }
   }
 }
 
 export function updateToolbarLayout(toolbar: ToolbarLayout): void {
-  appPreferences.value = { ...appPreferences.value, toolbar }
+  appPreferences.value = { ...stored(), toolbar }
 }
 
 export function updateToolbarDock(changes: Partial<ToolbarDock>): void {
   appPreferences.value = {
-    ...appPreferences.value,
-    toolbarDock: { ...appPreferences.value.toolbarDock, ...changes }
+    ...stored(),
+    toolbarDock: { ...stored().toolbarDock, ...changes }
   }
 }
 
 export function updateInterfaceScale(interfaceScale: InterfaceScale): void {
   appPreferences.value = {
-    ...appPreferences.value,
-    appearance: { ...appPreferences.value.appearance, interfaceScale }
+    ...stored(),
+    appearance: { ...stored().appearance, interfaceScale }
   }
 }
 
 export function updateMirrorInterface(mirrorInterface: boolean): void {
   appPreferences.value = {
-    ...appPreferences.value,
-    appearance: { ...appPreferences.value.appearance, mirrorInterface }
+    ...stored(),
+    appearance: { ...stored().appearance, mirrorInterface }
   }
 }
 
 export function updateStartupUpdateCheck(checkOnStartup: boolean): void {
   appPreferences.value = {
-    ...appPreferences.value,
-    updates: { ...appPreferences.value.updates, checkOnStartup }
+    ...stored(),
+    updates: { ...stored().updates, checkOnStartup }
   }
 }
 

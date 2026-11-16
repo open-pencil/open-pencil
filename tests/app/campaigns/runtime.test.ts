@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, test } from 'bun:test'
 
 import * as v from 'valibot'
+import { toRaw } from 'vue'
 
 import { campaignSchema, type Campaign } from '@open-pencil/feedback/contract'
 
@@ -118,5 +119,17 @@ describe('campaigns in the app', () => {
     const now = FIRST_RUN + 10 * DAY
     await Promise.all([offerCampaignPrompt(now, [served({})]), offerCampaignPrompt(now, OWN)])
     expect(promptCampaign.value?.id).toBe('try-cloud')
+  })
+
+  test('keeps the preferences plain, so they can be cloned and saved', async () => {
+    startCampaignClock(FIRST_RUN)
+    const shown = FIRST_RUN + 3 * DAY
+    await promptAt(shown)
+    const ask = promptCampaign.value
+    if (!ask) throw new Error('The donation ask shows')
+    dismissCampaign(ask, 'prompt', shown)
+    recordCampaignAction('other', shown)
+    await promptAt(shown + 30 * DAY)
+    expect(() => structuredClone(toRaw(appPreferences.value))).not.toThrow()
   })
 })
