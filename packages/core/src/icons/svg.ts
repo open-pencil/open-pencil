@@ -1,6 +1,8 @@
 import { DOMImplementation, type Document as XMLDocument, type Element } from '@xmldom/xmldom'
+import { compact } from 'es-toolkit'
 
 import { parseSVGFragment } from '#core/io/formats/svg/document'
+import { parseSVGViewBoxValue } from '#core/io/formats/svg/metadata'
 import { parseSVGGradients, type SVGGradients } from '#core/vector/vectorize/svg/gradients'
 
 import {
@@ -145,6 +147,34 @@ function appendShapePath(
   })
 }
 
+/** A length attribute in user units, or null when it is missing or not a plain number. */
+function lengthAttribute(element: Element | null, name: string): number | null {
+  const value = element?.getAttribute(name)
+  const length = value === null || value === undefined ? Number.NaN : Number.parseFloat(value)
+  return Number.isFinite(length) && !value?.trim().endsWith('%') ? length : null
+}
+
+/**
+ * How a `<use>` draws a `<symbol>` with a viewBox (SVG 2 §5.6): the viewBox fits the `<use>`'s
+ * width and height, else the whole viewport the outermost `<svg>` sets, centered as the default
+ * `preserveAspectRatio` (`xMidYMid meet`) centers it. Other targets draw as they are.
+ */
+function symbolViewBox(use: Element, target: Element, traversal: Traversal): string {
+  if ((target.localName || target.tagName) !== 'symbol') return ''
+  const viewBox = parseSVGViewBoxValue(target.getAttribute('viewBox'))
+  if (!viewBox) return ''
+  const viewport = traversal.viewport
+  const outer = parseSVGViewBoxValue(viewport?.getAttribute('viewBox') ?? null)
+  const width = lengthAttribute(use, 'width') ?? outer?.width ?? lengthAttribute(viewport, 'width')
+  const height =
+    lengthAttribute(use, 'height') ?? outer?.height ?? lengthAttribute(viewport, 'height')
+  if (!width || !height) return ''
+  const scale = Math.min(width / viewBox.width, height / viewBox.height)
+  const dx = (width - viewBox.width * scale) / 2 - viewBox.x * scale
+  const dy = (height - viewBox.height * scale) / 2 - viewBox.y * scale
+  return `translate(${dx} ${dy}) scale(${scale})`
+}
+
 function collectUsePaths(
   element: Element,
   scope: Scope,
@@ -153,10 +183,11 @@ function collectUsePaths(
 ): void {
   const x = num(element, 'x')
   const y = num(element, 'y')
-  const transform =
-    x !== 0 || y !== 0 ? `${scope.transform ?? ''} translate(${x} ${y})`.trim() : scope.transform
   const href = element.getAttribute('href') ?? element.getAttribute('xlink:href')
   const target = href?.startsWith('#') ? traversal.elementsById.get(href.slice(1)) : null
+  const moved = x !== 0 || y !== 0 ? `translate(${x} ${y})` : ''
+  const placed = [scope.transform, moved, target ? symbolViewBox(element, target, traversal) : '']
+  const transform = compact(placed).join(' ') || null
   if (target && !scope.useStack.has(target)) {
     collectPaths(
       target,
