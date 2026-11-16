@@ -197,7 +197,8 @@ function gridLine(value: string | undefined): GridLine | null {
 
 /**
  * The start track and span an item's `grid-column-*` or `grid-row-*` declare by number, as CSS
- * Grid §8.3.1 resolves them: two lines in either order bound the area, a span on the start wins
+ * Grid §8.3.1 resolves them: two lines in either order bound the area (equal ones one track), a
+ * span on the start wins
  * over one on the end, and a span against a line counts back or on from it. A span shows how
  * many tracks an item at the start of its area covers, which its box does not; what is left
  * undeclared, or named, its box fills in.
@@ -206,14 +207,21 @@ function declaredArea(
   item: DesignStyleDeclaration,
   axis: 'column' | 'row'
 ): { track?: number; span?: number } {
-  const start = gridLine(pickStyle(item, `grid-${axis}-start`))
-  const end = gridLine(pickStyle(item, `grid-${axis}-end`))
+  const startValue = pickStyle(item, `grid-${axis}-start`)
+  const endValue = pickStyle(item, `grid-${axis}-end`)
+  const start = gridLine(startValue)
+  const end = gridLine(endValue)
+  // A side the importer cannot resolve, such as a negative or named line, leaves both to the box.
+  const unresolved = (value: string | undefined, line: GridLine | null) =>
+    line === null && value !== undefined && value.trim().toLowerCase() !== 'auto'
+  if (unresolved(startValue, start) || unresolved(endValue, end)) return {}
   const startLine = start && 'line' in start ? start.line : null
   const endLine = end && 'line' in end ? end.line : null
   const spanOf = (line: GridLine | null) => (line && 'span' in line ? line.span : null)
   const span = spanOf(start) ?? spanOf(end)
-  if (startLine !== null && endLine !== null && startLine !== endLine) {
-    return { track: Math.min(startLine, endLine), span: Math.abs(endLine - startLine) }
+  if (startLine !== null && endLine !== null) {
+    // Equal lines leave the end out, and the item spans one track.
+    return { track: Math.min(startLine, endLine), span: Math.max(1, Math.abs(endLine - startLine)) }
   }
   if (startLine !== null) return span === null ? { track: startLine } : { track: startLine, span }
   if (endLine !== null && span !== null) return { track: Math.max(1, endLine - span), span }

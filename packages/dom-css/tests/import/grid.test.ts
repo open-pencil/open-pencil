@@ -258,7 +258,11 @@ describe('grid import', () => {
           // A number among named lines counts only those, so the box says where it is.
           placed('2 foo', 'auto', 220, 60),
           // A span against an end line counts back from it.
-          placed('span 2', '4', 110, 60)
+          placed('span 2', '4', 110, 60),
+          // Equal lines span one track, whatever the box overflows into.
+          placed('1', '1', 0, 210),
+          // A negative line is left, with its start, to the box.
+          placed('3', '-3', 110, 60)
         ]
       ),
       layout: { box: { x: 0, y: 0, width: 320, height: 80 } }
@@ -274,7 +278,9 @@ describe('grid import', () => {
       [1, 2],
       [1, 2],
       [3, 1],
-      [2, 2]
+      [2, 2],
+      [1, 1],
+      [2, 1]
     ])
   })
 })
