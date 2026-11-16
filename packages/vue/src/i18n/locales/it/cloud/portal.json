@@ -506,6 +506,7 @@
   "errorAccountSoleAdmin": "Sei ancora l’unico amministratore di uno spazio di lavoro usato da altri. Prima nomina un altro amministratore.",
   "errorSelfAction": "Non puoi farlo sul tuo account.",
   "errorTwoStepRequired": "Prima attiva la verifica in due passaggi.",
+  "errorTwoStepUnconfirmed": "Conferma che sei tu con il secondo passaggio, poi riprova.",
   "errorNotAllowed": "Non hai l’autorizzazione per farlo.",
   "errorNetwork": "Impossibile raggiungere il server. Controlla la connessione.",
   "errorAlreadyDecided": "Qualcuno ha già deciso su questa richiesta. Aggiorna per vederla.",

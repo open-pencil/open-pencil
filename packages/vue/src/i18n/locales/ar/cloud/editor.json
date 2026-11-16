@@ -256,6 +256,8 @@
   "settingsSignedOut": "تم تسجيل الخروج",
   "settingsWaitingForApproval": "بانتظار موافقة أحد المسؤولين على حسابك",
   "settingsAccessClosed": "رفض أحد المسؤولين وصولك أو أزاله",
+  "settingsConfirmTwoStep": "أكّد هويتك بالخطوة الثانية لمواصلة استخدام هذا الخادم",
+  "settingsConfirm": "تأكيد",
   "settingsAcceptTerms": "اقبل شروط هذا الخادم لمواصلة استخدامه",
   "settingsReviewTerms": "مراجعة الشروط",
   "settingsOptionsFor": "خيارات {host}",

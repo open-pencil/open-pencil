@@ -506,6 +506,7 @@
   "errorAccountSoleAdmin": "Vous êtes encore le seul administrateur d’un espace de travail que d’autres utilisent. Nommez d’abord un autre administrateur.",
   "errorSelfAction": "Vous ne pouvez pas faire cela sur votre propre compte.",
   "errorTwoStepRequired": "Activez d’abord la connexion en deux étapes.",
+  "errorTwoStepUnconfirmed": "Confirmez votre identité avec votre deuxième étape, puis réessayez.",
   "errorNotAllowed": "Vous n’avez pas l’autorisation de faire cela.",
   "errorNetwork": "Impossible de joindre le serveur. Vérifiez votre connexion.",
   "errorAlreadyDecided": "Quelqu’un a déjà statué sur cette demande. Actualisez pour voir la décision.",

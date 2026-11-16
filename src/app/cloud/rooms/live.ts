@@ -514,7 +514,13 @@ async function rejoinCloudRoom(store: EditorStore): Promise<void> {
  * Sessions that ended for good, unlike a check in progress or a server out of reach for now; one
  * whose terms changed ends until they are accepted, and its rooms with it.
  */
-const ENDED: ReadonlySet<CloudSessionState> = new Set(['signed-out', 'expired', 'closed', 'terms'])
+const ENDED: ReadonlySet<CloudSessionState> = new Set([
+  'signed-out',
+  'expired',
+  'closed',
+  'two-step',
+  'terms'
+])
 
 /**
  * Whether the tab's room was joined as someone the server no longer has signed in here: a session

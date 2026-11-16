@@ -29,11 +29,18 @@ export function continuationURL(path: string, redirect: string): string {
 /** Where an account accepts the server's current terms, then goes on to what it asked for. */
 export const TERMS_PAGE = '/account/terms'
 
+/**
+ * Where a session proves its account's second step, as one made by signing in through Google
+ * must, or an administrator's must again after a while; it then goes on to what it asked for.
+ */
+export const CONFIRM_PAGE = '/account/confirm'
+
 const STANDING_PATHS: Record<CloudAccountStatus['state'], string | null> = {
   active: null,
   pending: '/account/pending',
   rejected: '/account/closed',
   revoked: '/account/closed',
+  'two-step': CONFIRM_PAGE,
   terms: TERMS_PAGE
 }
 
@@ -58,7 +65,7 @@ export interface PortalRouteTarget {
  * leads on, as accepting the terms does.
  */
 function standingDestination(standing: string, continuation: string): RouteLocationRaw {
-  return standing === TERMS_PAGE && continuation !== PORTAL_HOME
+  return (standing === TERMS_PAGE || standing === CONFIRM_PAGE) && continuation !== PORTAL_HOME
     ? { path: standing, query: { redirect: continuation } }
     : standing
 }

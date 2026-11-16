@@ -506,6 +506,7 @@
   "errorAccountSoleAdmin": "Du bist noch der einzige Admin eines Arbeitsbereichs, den andere nutzen. Mach zuerst jemand anderen zum Admin.",
   "errorSelfAction": "Das kannst du nicht mit deinem eigenen Konto tun.",
   "errorTwoStepRequired": "Aktiviere zuerst die zweistufige Anmeldung.",
+  "errorTwoStepUnconfirmed": "Bestätige mit deinem zweiten Schritt, dass du es bist, und versuche es dann erneut.",
   "errorNotAllowed": "Dazu bist du nicht berechtigt.",
   "errorNetwork": "Der Server ist nicht erreichbar. Prüfe deine Verbindung.",
   "errorAlreadyDecided": "Über diese Anfrage wurde bereits entschieden. Aktualisiere die Seite, um das Ergebnis zu sehen.",

@@ -181,6 +181,8 @@
   "settingsSignedOut": "Wylogowano",
   "settingsWaitingForApproval": "Twoje konto czeka na zatwierdzenie przez administratora",
   "settingsAccessClosed": "Administrator odrzucił Twoją prośbę lub odebrał Ci dostęp",
+  "settingsConfirmTwoStep": "Potwierdź swoją tożsamość drugim krokiem, aby dalej korzystać z tego serwera",
+  "settingsConfirm": "Potwierdź",
   "settingsAcceptTerms": "Zaakceptuj warunki tego serwera, aby dalej z niego korzystać",
   "settingsReviewTerms": "Przejrzyj warunki",
   "settingsOptionsFor": "Opcje: {host}",

@@ -516,6 +516,7 @@
   "errorAccountSoleAdmin": "Wciąż jesteś jedynym administratorem obszaru roboczego, z którego korzystają inni. Najpierw nadaj komuś innemu rolę administratora.",
   "errorSelfAction": "Nie możesz tego zrobić z własnym kontem.",
   "errorTwoStepRequired": "Najpierw włącz logowanie dwuetapowe.",
+  "errorTwoStepUnconfirmed": "Potwierdź swoją tożsamość drugim krokiem, a potem spróbuj ponownie.",
   "errorNotAllowed": "Nie masz uprawnień do wykonania tej czynności.",
   "errorNetwork": "Nie udało się połączyć z serwerem. Sprawdź połączenie.",
   "errorAlreadyDecided": "Ktoś już rozpatrzył tę prośbę. Odśwież stronę, aby zobaczyć decyzję.",

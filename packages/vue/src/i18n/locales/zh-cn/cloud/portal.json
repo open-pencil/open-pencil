@@ -496,6 +496,7 @@
   "errorAccountSoleAdmin": "你仍是一个他人正在使用的工作区的唯一管理员。请先让其他人成为管理员。",
   "errorSelfAction": "你不能对自己的账号执行此操作。",
   "errorTwoStepRequired": "请先开启两步验证。",
+  "errorTwoStepUnconfirmed": "请先用第二步验证确认是你本人，然后重试。",
   "errorNotAllowed": "你没有执行此操作的权限。",
   "errorNetwork": "无法连接到服务器。请检查网络连接。",
   "errorAlreadyDecided": "已有人处理了此申请。请刷新查看。",

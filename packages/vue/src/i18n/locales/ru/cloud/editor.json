@@ -181,6 +181,8 @@
   "settingsSignedOut": "Выход выполнен",
   "settingsWaitingForApproval": "Ваш аккаунт ждёт одобрения администратора",
   "settingsAccessClosed": "Администратор отклонил заявку или закрыл вам доступ",
+  "settingsConfirmTwoStep": "Подтвердите вход вторым шагом, чтобы продолжить пользоваться этим сервером",
+  "settingsConfirm": "Подтвердить",
   "settingsAcceptTerms": "Примите условия этого сервера, чтобы продолжить им пользоваться",
   "settingsReviewTerms": "Открыть условия",
   "settingsOptionsFor": "Параметры: {host}",

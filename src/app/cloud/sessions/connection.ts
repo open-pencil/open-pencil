@@ -32,7 +32,7 @@ import { clearCloudSessionToken, readCloudSessionToken } from './token'
 
 /**
  * Where this app stands with a server: signed in, waiting for an administrator, refused, asked to
- * accept the server's current terms, signed out after having been signed in, never signed in, or
+ * prove its second step in the browser, asked to accept the server's current terms, signed out after having been signed in, never signed in, or
  * out of reach.
  */
 export type CloudSessionState =
@@ -40,6 +40,7 @@ export type CloudSessionState =
   | 'signed-in'
   | 'pending'
   | 'closed'
+  | 'two-step'
   | 'terms'
   | 'expired'
   | 'signed-out'
@@ -177,8 +178,17 @@ async function signedInConnection(
     image: status.user.image ?? null
   }
   rememberCloudAccount(server.id, account)
+  if (status.state === 'two-step' && (await readCloudSessionToken(server.id))) {
+    // A desktop app's own session counts as proved once a browser that proved it approved the
+    // sign-in; one from before that never will, so the app signs in again.
+    await clearCloudSessionToken(server.id)
+    return { ...INITIAL, state: 'expired', discovery, account }
+  }
   if (status.state !== 'active') {
-    const state = status.state === 'pending' || status.state === 'terms' ? status.state : 'closed'
+    const state =
+      status.state === 'pending' || status.state === 'terms' || status.state === 'two-step'
+        ? status.state
+        : 'closed'
     return { ...INITIAL, state, discovery, account }
   }
   const { workspaces } = await cloudAPIClient(server, discovery).listWorkspaces()

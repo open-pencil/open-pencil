@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 import { usePortal } from '@/app/cloud-portal/context'
+import { CONFIRM_PAGE } from '@/app/cloud-portal/navigation'
 import PortalConsoleLayout from '@/components/cloud-portal/layout/PortalConsoleLayout.vue'
 import { PORTAL_SECTION_ICONS } from '@/components/cloud-portal/layout/sections'
 import AccessTokensSection from '@/components/cloud-portal/sections/AccessTokensSection.vue'
@@ -203,6 +204,21 @@ async function signOut() {
 }
 
 onMounted(() => void refreshWaiting())
+
+// The server's pages ask an administrator's session to have proved its second step lately; one
+// that has not, and has a second step, proves it first and comes back.
+const adminPage = computed(() => personId.value !== null || isAdminSection(active.value))
+watch(
+  () => adminPage.value && route.fullPath,
+  async (page) => {
+    if (!page) return
+    const mfa = (await portal.api.mfaStatus().catch(() => null))?.mfa
+    if (mfa?.required && mfa.enabled) {
+      await router.replace({ path: CONFIRM_PAGE, query: { redirect: page } })
+    }
+  },
+  { immediate: true }
+)
 </script>
 
 <template>

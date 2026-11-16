@@ -48,6 +48,8 @@ export type AccountRouteDependencies = {
   terms: TermsService
   resolveIdentity: CloudIdentityResolver
   resolveSession: CloudSessionResolver
+  /** Whether the request's session proved its account's second step, or the account has none. */
+  twoStepConfirmed: (request: Request) => Promise<boolean>
   requireActiveSession: MiddlewareHandler<CloudAPIEnvironment>
   /** Lets an account with terms to accept reach what leaving needs; see `resolveAccountSession`. */
   requireAccountSession: MiddlewareHandler<CloudAPIEnvironment>
@@ -60,6 +62,7 @@ export function createAccountRoutes(services: AccountRouteDependencies) {
     workspaces,
     resolveIdentity,
     resolveSession,
+    twoStepConfirmed,
     requireActiveSession,
     authenticatedMutationLimiter
   } = services
@@ -81,10 +84,14 @@ export function createAccountRoutes(services: AccountRouteDependencies) {
           services.config.enrollmentMode !== 'approval' || enrollmentStatus === 'approved'
             ? null
             : (enrollmentStatus ?? 'pending')
-        // Terms come after approval: an account still waiting has nothing to accept yet.
+        // The second step comes after approval, and terms after it: an account still waiting has
+        // nothing to prove or accept yet.
         let state: CloudAccountStatus['state'] = enrollmentState ?? 'active'
-        if (!enrollmentState && !(await services.terms.hasAccepted(identity.userId)))
+        if (!enrollmentState && !(await twoStepConfirmed(context.req.raw))) {
+          state = 'two-step'
+        } else if (!enrollmentState && !(await services.terms.hasAccepted(identity.userId))) {
           state = 'terms'
+        }
         if (state === 'active') await workspaces.ensurePersonal(identity)
         return context.json({ user: identity, state })
       })
@@ -100,8 +107,9 @@ export function createAccountRoutes(services: AccountRouteDependencies) {
         }
         return context.json({ ok: true as const })
       })
+      // A session still proving its second step reads which ways it has, and proves one.
       .get('/api/account/mfa', async (context) => {
-        const actor = await resolveSession(context.req.raw)
+        const actor = await resolveIdentity(context.req.raw)
         if (!actor) return context.json({ error: { code: 'unauthorized' as const } }, 401)
         const mfa = await services.auth.mfaStatus(context.req.raw.headers)
         return mfa
@@ -119,7 +127,7 @@ export function createAccountRoutes(services: AccountRouteDependencies) {
         }
       )
       .post('/api/account/mfa/totp/verify', validatedJSON(cloudMFAVerifySchema), (context) =>
-        verifiedMFAAction(context, resolveSession, () =>
+        verifiedMFAAction(context, resolveIdentity, () =>
           services.auth.verifyTOTP(context.req.raw.headers, context.req.valid('json').code)
         )
       )

@@ -151,6 +151,21 @@ describe('deployment administrator MFA assurance', () => {
         )
 
       const only = await addPasskey('only')
+      // As registering it would, the passkey counts as proved for the session that added it.
+      const session = await fixture.database
+        .selectFrom('session')
+        .select('id')
+        .where('userId', '=', account.userId)
+        .executeTakeFirstOrThrow()
+      await fixture.database
+        .insertInto('mfaAssurance')
+        .values({
+          sessionId: session.id,
+          userId: account.userId,
+          method: 'passkey',
+          verifiedAt: new Date(Date.now() - 24 * 60 * 60_000)
+        })
+        .execute()
       const refused = await deletePasskey(only)
       expect(refused.status).toBe(403)
       expect(await refused.json()).toEqual({ error: { code: 'mfa_required' } })

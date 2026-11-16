@@ -36,6 +36,7 @@ const emit = defineEmits<{
   signIn: [id: string]
   manageAccount: [id: string]
   reviewTerms: [id: string]
+  confirmTwoStep: [id: string]
   showOnHome: [id: string]
   signOut: [id: string]
   remove: [id: string]
@@ -47,6 +48,7 @@ const hasSession = (server: CloudServerEntry) =>
   server.session === 'signed-in' ||
   server.session === 'pending' ||
   server.session === 'closed' ||
+  server.session === 'two-step' ||
   server.session === 'terms'
 const menuUI = menu()
 const t = useCloudMessages()
@@ -124,6 +126,10 @@ const title = (server: CloudServerEntry) =>
               <icon-lucide-circle-x class="size-3 shrink-0" />
               {{ t.settingsAccessClosed }}
             </p>
+            <p v-else-if="server.session === 'two-step'" :class="ui.expired()">
+              <icon-lucide-shield-check class="size-3 shrink-0" />
+              {{ t.settingsConfirmTwoStep }}
+            </p>
             <p v-else-if="server.session === 'terms'" :class="ui.expired()">
               <icon-lucide-scroll-text class="size-3 shrink-0" />
               {{ t.settingsAcceptTerms }}
@@ -148,6 +154,14 @@ const title = (server: CloudServerEntry) =>
               @click="emit('signIn', server.id)"
             >
               {{ t.signIn }}
+            </AppButton>
+            <AppButton
+              v-else-if="server.session === 'two-step'"
+              size="sm"
+              variant="outline"
+              @click="emit('confirmTwoStep', server.id)"
+            >
+              {{ t.settingsConfirm }}
             </AppButton>
             <AppButton
               v-else-if="server.session === 'terms'"

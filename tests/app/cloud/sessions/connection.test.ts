@@ -127,6 +127,17 @@ describe('Cloud connections', () => {
     expect(await readCloudSessionToken(target.id)).toBeNull()
   })
 
+  test('send a browser to prove its second step, and sign a desktop app in again instead', async () => {
+    const target = await server()
+    answers['/api/account/status'] = { status: 200, body: { user, state: 'two-step' } }
+    // The browser's session proves it on the server's page.
+    expect((await refreshCloudConnection(target)).state).toBe('two-step')
+    // A desktop app's session from before the server asked never will; it signs in again.
+    await saveCloudSessionToken(target.id, 'device-token')
+    expect((await refreshCloudConnection(target)).state).toBe('expired')
+    expect(await readCloudSessionToken(target.id)).toBeNull()
+  })
+
   test('call a remembered account whose session ended expired', async () => {
     answers['/api/account/status'] = { status: 200, body: { user, state: 'active' } }
     answers['/api/workspaces'] = { status: 200, body: { workspaces: [] } }
