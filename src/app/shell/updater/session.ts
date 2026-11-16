@@ -85,15 +85,26 @@ export function createUpdaterSession(backend: UpdaterBackend): UpdaterSession {
     await update?.close()
   }
 
+  // Each check's number: a recheck can start while an earlier one runs, and the earlier one,
+  // asked of the other channel, must not replace what the newer one finds.
+  let checks = 0
+
   async function check() {
+    const current = ++checks
     state.value = { status: 'checking' }
     try {
       await release()
-      pending = await backend.check()
+      const update = await backend.check()
+      if (current !== checks) {
+        await update?.close()
+        return
+      }
+      pending = update
       state.value = pending
         ? { status: 'available', release: releaseInfo(pending) }
         : { status: 'up-to-date' }
     } catch (error) {
+      if (current !== checks) return
       state.value = { status: 'failed', step: 'check', error: errorMessage(error) }
     }
   }

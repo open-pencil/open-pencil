@@ -109,6 +109,31 @@ describe('createUpdaterSession', () => {
     expect(busy.state.value).toEqual({ status: 'installed', release })
   })
 
+  test('keeps the newest check’s update when an earlier one finishes after it', async () => {
+    const older = { ...fakeUpdate().update, version: '0.17.0' }
+    const earlier = createDeferred<typeof older>()
+    const closed: string[] = []
+    older.close = async () => {
+      closed.push(older.version)
+    }
+    const newer = { ...fakeUpdate().update, version: '0.18.0-nightly.20261116' }
+    const answers = [earlier.promise, Promise.resolve(newer)]
+    const session = createUpdaterSession(
+      fakeBackend(() => answers.shift() ?? Promise.resolve(null)).backend
+    )
+
+    const first = session.check()
+    await session.recheck()
+    earlier.resolve(older)
+    await first
+
+    expect(session.state.value).toMatchObject({
+      status: 'available',
+      release: { version: '0.18.0-nightly.20261116' }
+    })
+    expect(closed).toEqual(['0.17.0'])
+  })
+
   test('retries a failed check', async () => {
     const { update } = fakeUpdate()
     let attempts = 0
