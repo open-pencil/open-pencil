@@ -30,6 +30,21 @@ export const MODEL_OPTIONS: SessionConfigOption[] = [
   }
 ]
 
+/**
+ * A fake agent process's pipes. `stop` ends what the client reads, as a process that exits does,
+ * and `stop.abort(error)` makes that read fail with the error.
+ */
+export function agentPipes() {
+  const toAgent = new TransformStream<Uint8Array, Uint8Array>()
+  const toClient = new TransformStream<Uint8Array, Uint8Array>()
+  const output = new TransformStream<Uint8Array, Uint8Array>()
+  const stop = new AbortController()
+  toClient.readable
+    .pipeTo(output.writable, { signal: stop.signal, preventCancel: true })
+    .catch(() => undefined)
+  return { toAgent, toClient, output, stop }
+}
+
 interface FakeAgentOptions {
   /** Whether the agent takes images in a prompt, as its initialize answer says. */
   imageInput?: boolean
@@ -66,14 +81,7 @@ export function fakeOneOffAgent({
     spawn: async (options) => {
       spawns++
       cwds.push(options.cwd)
-      const toAgent = new TransformStream<Uint8Array, Uint8Array>()
-      const toClient = new TransformStream<Uint8Array, Uint8Array>()
-      // Ending the pipe ends what the client reads, as a process that exits does.
-      const output = new TransformStream<Uint8Array, Uint8Array>()
-      const stop = new AbortController()
-      toClient.readable
-        .pipeTo(output.writable, { signal: stop.signal, preventCancel: true })
-        .catch(() => undefined)
+      const { toAgent, toClient, output, stop } = agentPipes()
       const stall = async (on: NonNullable<typeof stalls>['on']) => {
         if (stalls?.on !== on) return
         if (stalls.as === 'exits') stop.abort()

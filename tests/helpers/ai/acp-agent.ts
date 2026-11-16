@@ -21,6 +21,8 @@ import { OWN_TOOLS_ALLOWED } from '@/app/ai/agents/acp/tools'
 import { ACPChatTransport, type ACPStartup } from '@/app/ai/transports/acp'
 import { createDeferred } from '@/app/runtime/deferred'
 
+import { agentPipes } from '#tests/helpers/ai/fake-acp-agent'
+
 export const resuming = expectDefined(
   ACP_AGENTS.find((agent) => agent.resumesSessions),
   'an agent that resumes sessions'
@@ -93,8 +95,7 @@ export function fakeAgents({
     spawns++
     searchPaths.push(options.searchPath)
     cwds.push(options.cwd)
-    const toAgent = new TransformStream<Uint8Array, Uint8Array>()
-    const toClient = new TransformStream<Uint8Array, Uint8Array>()
+    const { toAgent, toClient, output, stop } = agentPipes()
     latest = acpAgent()
       .onRequest(methods.agent.initialize, ({ params }) => {
         capabilities.push(params.clientCapabilities)
@@ -153,12 +154,6 @@ export function fakeAgents({
         heldTurn.resolve('cancelled')
       })
       .connect(ndJsonStream(toClient.writable, toAgent.readable))
-    // Ending the pipe ends what the client reads, as a process that exits does.
-    const output = new TransformStream<Uint8Array, Uint8Array>()
-    const stop = new AbortController()
-    toClient.readable
-      .pipeTo(output.writable, { signal: stop.signal, preventCancel: true })
-      .catch(() => undefined)
     crashLatest = () => {
       // What the process pipe reports when the agent exits (`src/app/ai/agents/acp/process.ts`).
       stop.abort(new Error('Agent process exited unexpectedly.'))
