@@ -5,17 +5,19 @@ The OpenPencil team's own Cloud deployments, each a filled-in copy of `deploy/cl
 | Target       | Address                        | Deploys from        | Data                                             |
 | ------------ | ------------------------------ | ------------------- | ------------------------------------------------ |
 | `staging`    | `cloud-staging.openpencil.dev` | master or a release | Neon in `us-east-2`, R2 in eastern North America |
-| `production` | `cloud.openpencil.dev`         | a release tag only  | EU: Neon, R2, and the relay rooms                |
+| `production` | `cloud.openpencil.dev`         | what staging runs   | EU: Neon, R2, and the relay rooms                |
 
 The Deploy Cloud workflow (`.github/workflows/deploy-cloud.yml`) deploys a target with the secrets
-and reviewers of its `cloud-<target>` GitHub environment. It stops before building when the ref may
-not deploy to the target or its commit is not on master (`tools/ci/cloud-deploy/src/ref.ts`).
+and reviewers of its `cloud-<target>` GitHub environment. Staging deploys the commit it is run
+from; production promotes the commit staging runs, once staging's newest deployment succeeded
+(`tools/ci/cloud-deploy/src/commit.ts`). Either stops before building when it is run from anything
+but master or a release tag, or the commit is not on master (`tools/ci/cloud-deploy/src/ref.ts`).
 
 ## Before production's first deploy
 
 These settings outside the repository:
 
-- The `cloud-production` environment: required reviewers, deployment refs limited to tags `v*`,
+- The `cloud-production` environment: required reviewers, deployment refs limited to `master` and tags `v*`,
   the `CLOUD_URL` variable, and the secrets the workflow names (`NEON_MIGRATOR_DATABASE_URL`, the
   Worker's secrets, `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `POSTHOG_CLI_API_KEY`).
 - A Neon project in an EU region, with a restore window of at least `purge_grace_days` (7), whose
@@ -44,27 +46,18 @@ a deployment never changes its jurisdiction while rooms are open.
 
 ## Deploying
 
-Staging deploys master whenever it needs to:
+Cloud is not released: it deploys from master whenever it needs to, a fix included, without a
+release or the desktop builds a tag starts. Deploy staging, check it, then promote it:
 
 ```sh
 gh workflow run deploy-cloud.yml --ref master -f target=staging
+# once that run succeeded
+gh workflow run deploy-cloud.yml --ref master -f target=production
 ```
 
-A release goes to staging first, and to production only once that run succeeded. `gh workflow run`
-does not wait, so watch the staging run to its end before starting production:
-
-```sh
-tag=v0.18.0
-gh workflow run deploy-cloud.yml --ref "$tag" -f target=staging && sleep 10 &&
-  run=$(gh run list --workflow deploy-cloud.yml --event workflow_dispatch --limit 20 \
-    --json databaseId,displayTitle \
-    --jq "[.[] | select(.displayTitle == \"Deploy Cloud staging from $tag\")][0].databaseId") &&
-  gh run watch --exit-status "$run" &&
-  gh workflow run deploy-cloud.yml --ref "$tag" -f target=production
-```
-
-The staging run is found by its title, which names the target and tag, and production starts only
-when that run succeeded.
+Production deploys the commit of staging's newest deployment, whatever master is by then, and
+refuses while that deployment is waiting, running, or failed. A release deploys the same way, with
+`--ref vX.Y.Z` for staging.
 
 The environment's reviewers approve each run before it starts.
 

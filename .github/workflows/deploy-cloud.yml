@@ -2,8 +2,8 @@ name: Deploy Cloud
 
 # Deploys an official OpenPencil Cloud deployment: packages/cloud/deploy/openpencil/<target>, with
 # the secrets and reviewers of the cloud-<target> GitHub environment. Run it from master or a
-# release tag for staging, and from a release tag for production (tools/ci/cloud-deploy/src/ref.ts).
-# The runbook is packages/cloud/deploy/openpencil/README.md.
+# release tag: staging deploys that commit, and production promotes the commit staging runs
+# (tools/ci/cloud-deploy/src/commit.ts). The runbook is packages/cloud/deploy/openpencil/README.md.
 on:
   workflow_dispatch:
     inputs:
@@ -23,7 +23,33 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  commit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      deployments: read
+    outputs:
+      commit: ${{ steps.commit.outputs.commit }}
+    steps:
+      # Master's history, to check the chosen commit is on it.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup/workspace
+
+      # This ref's rules, even when production promotes a commit whose tooling had others.
+      - name: Choose the commit to deploy
+        id: commit
+        env:
+          TARGET: ${{ inputs.target }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: bun tools/ci/cloud-deploy/src/commit.ts "$TARGET"
+
   deploy:
+    needs: commit
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment:
@@ -34,21 +60,16 @@ jobs:
       deployments: write
     env:
       DEPLOYMENT: packages/cloud/deploy/openpencil/${{ inputs.target }}
+      COMMIT: ${{ needs.commit.outputs.commit }}
     steps:
-      # Master's history, to check the commit is on it.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
+          ref: ${{ needs.commit.outputs.commit }}
           persist-credentials: false
 
       - uses: ./.github/actions/setup/workspace
         with:
           packages: 'true'
-
-      - name: Check the ref may deploy to this target
-        env:
-          TARGET: ${{ inputs.target }}
-        run: bun tools/ci/cloud-deploy/src/ref.ts "$TARGET"
 
       # The editor's demo document draws its shader fills at build time in a headless Chromium.
       - uses: ./.github/actions/setup/playwright
@@ -74,7 +95,7 @@ jobs:
           POSTHOG_CLI_HOST: https://eu.posthog.com
         run: >-
           bun tools/release/release-packages/src/sourcemaps/publish.ts --dist "$RUNNER_TEMP/worker"
-          --release-name openpencil-cloud --release-version "$GITHUB_SHA" --linked
+          --release-name openpencil-cloud --release-version "$COMMIT" --linked
 
       # Migrations run before the new code, over the direct connection rather than Hyperdrive. The
       # config reads every secret it names, so only this step and the next one see them.

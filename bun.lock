@@ -881,6 +881,7 @@
       "name": "@open-pencil/cloud-deploy-tools",
       "dependencies": {
         "@open-pencil/package-artifacts-tools": "workspace:*",
+        "valibot": "^1.5.0",
       },
     },
     "tools/ci/images": {
