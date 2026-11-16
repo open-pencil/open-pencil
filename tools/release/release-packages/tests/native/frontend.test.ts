@@ -21,11 +21,16 @@ async function writeProducers(root: string) {
   }
 }
 
-test.each(['valid', 'beta', 'legacy', 'source', 'version', 'digest'])(
+const VERSIONS: Record<string, string> = {
+  beta: '0.16.0-beta.2',
+  nightly: '0.16.0-nightly.20261116'
+}
+
+test.each(['valid', 'beta', 'nightly', 'legacy', 'source', 'version', 'digest'])(
   'shared frontend validation: %s',
   async (scenario) => {
     const root = await mkdtemp(join(tmpdir(), 'release-frontend-'))
-    const version = scenario === 'beta' ? '0.16.0-beta.2' : '0.15.0'
+    const version = VERSIONS[scenario] ?? '0.15.0'
 
     try {
       const archive = join(root, 'frontend.tar')
@@ -42,7 +47,8 @@ test.each(['valid', 'beta', 'legacy', 'source', 'version', 'digest'])(
 
       const sourceCommit = 'a'.repeat(40)
       const identity = {
-        tag: `v${version}`,
+        tag: scenario === 'nightly' ? 'nightly' : `v${version}`,
+        version,
         sourceCommit,
         workflowCommit: 'b'.repeat(40),
         runId: '123',
@@ -81,6 +87,15 @@ test.each(['valid', 'beta', 'legacy', 'source', 'version', 'digest'])(
         expect(JSON.parse(await readFile(config, 'utf8'))).toEqual({
           build: { beforeBuildCommand: null },
           bundle: {}
+        })
+      } else if (scenario === 'nightly') {
+        await operation
+        expect(JSON.parse(await readFile(config, 'utf8'))).toEqual({
+          build: { beforeBuildCommand: null },
+          bundle: {
+            targets: ['app', 'dmg', 'nsis', 'appimage', 'deb', 'rpm'],
+            resources: expect.any(Object)
+          }
         })
       } else if (scenario === 'beta') {
         await operation
