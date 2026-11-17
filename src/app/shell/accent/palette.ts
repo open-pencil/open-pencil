@@ -73,18 +73,21 @@ export const ACCENT_LIGHTNESS_RANGE = { min: 0.4, max: 0.75 } as const
 /** WCAG AA contrast for normal text, which every accent's text keeps against its surface. */
 export const ACCENT_TEXT_CONTRAST = 4.5
 
-/** Lightness steps tried, nearest first, when a color's text would fall short of that contrast. */
-const LIGHTNESS_SHIFTS = Array.from({ length: 61 }, (_, index) =>
+/** Lightness steps tried, nearest first and up to 0.3, when a color's text would fall short of that contrast. */
+const LIGHTNESS_SHIFTS = Array.from({ length: 121 }, (_, index) =>
   index % 2 === 0 ? index / 2 / 200 : -(index + 1) / 2 / 200
 )
 
 /** The interface's dark text, `--color-inverted` in the dark theme and `--color-surface` in light. */
 const INK = parseColor('#1F2328')
 
-/** The panel that primary text such as a link sits on, `--color-panel` in each theme. */
-const PANEL: Readonly<Record<AccentTheme, Color>> = {
-  dark: parseColor('#2A2A2A'),
-  light: parseColor('#FFFFFF')
+/**
+ * The surfaces primary text such as a link sits on in each theme, from `src/theme/tokens.css`:
+ * the panel, the secondary panel, a hovered row or table header, and a field.
+ */
+const TEXT_SURFACES: Readonly<Record<AccentTheme, readonly Color[]>> = {
+  dark: ['#2A2A2A', '#242424', '#353535', '#383838'].map((hex) => parseColor(hex)),
+  light: ['#FFFFFF', '#F7F8FA', '#EEF1F5', '#F0F1F3'].map((hex) => parseColor(hex))
 }
 
 export interface AccentPalette {
@@ -154,10 +157,10 @@ function fillContrast({ accent, selected }: ReturnType<typeof surfaces>): number
   return worstContrast(accentForeground(fills), fills)
 }
 
-/** How readable primary is, both as text on the panel and as a fill under its own text. */
+/** How readable primary is, both as text on the panels and as a fill under its own text. */
 function primaryContrast(primary: Color, theme: AccentTheme): number {
   return Math.min(
-    contrastRatio(primary, PANEL[theme]),
+    worstContrast(primary, [...TEXT_SURFACES[theme]]),
     worstContrast(accentForeground([primary]), [primary])
   )
 }
