@@ -107,28 +107,31 @@ describe('Cloud connections', () => {
   test("forget the last account's recent documents once another signs in", async () => {
     await clearRecentFiles()
     const stop = watchCloudAccountSwitches()
-    answers['/api/account/status'] = { status: 200, body: { user, state: 'active' } }
-    answers['/api/workspaces'] = { status: 200, body: { workspaces: [workspace] } }
-    await refreshCloudConnection(await server())
-    const [target] = cloudServers.value
-    if (!target) throw new Error('No server')
-    rememberRecentStorageDocument(
-      { providerId: CLOUD_STORAGE_PROVIDER_ID, profileId: target.id, documentId: 'doc-1' },
-      "Ada's design",
-      'design'
-    )
+    try {
+      answers['/api/account/status'] = { status: 200, body: { user, state: 'active' } }
+      answers['/api/workspaces'] = { status: 200, body: { workspaces: [workspace] } }
+      await refreshCloudConnection(await server())
+      const [target] = cloudServers.value
+      if (!target) throw new Error('No server')
+      rememberRecentStorageDocument(
+        { providerId: CLOUD_STORAGE_PROVIDER_ID, profileId: target.id, documentId: 'doc-1' },
+        "Ada's design",
+        'design'
+      )
 
-    await refreshCloudConnection(target)
-    expect(recentFiles.value.map(({ name }) => name)).toEqual(["Ada's design"])
+      await refreshCloudConnection(target)
+      expect(recentFiles.value.map(({ name }) => name)).toEqual(["Ada's design"])
 
-    answers['/api/account/status'] = {
-      status: 200,
-      body: { user: { ...user, userId: 'user-2', email: 'grace@example.com' }, state: 'active' }
+      answers['/api/account/status'] = {
+        status: 200,
+        body: { user: { ...user, userId: 'user-2', email: 'grace@example.com' }, state: 'active' }
+      }
+      await refreshCloudConnection(target)
+      await nextTick()
+      expect(recentFiles.value).toEqual([])
+    } finally {
+      stop()
     }
-    await refreshCloudConnection(target)
-    await nextTick()
-    expect(recentFiles.value).toEqual([])
-    stop()
   })
 
   test('tell the server the language picked while it was being checked', async () => {

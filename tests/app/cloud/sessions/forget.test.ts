@@ -74,14 +74,17 @@ describe('forgetting a Cloud account on this device', () => {
       ...store,
       listMetas: () => Promise.reject(new Error('Storage is closed'))
     })
-    spyOn(console, 'warn').mockImplementation(() => undefined)
+    const warn = spyOn(console, 'warn').mockImplementation(() => undefined)
+    try {
+      await signOutOfCloud(server.id, cloudDiscoveryFixture('https://cloud.example.com'), {
+        revoke: () => Promise.resolve(),
+        clear: () => Promise.resolve()
+      })
 
-    await signOutOfCloud(server.id, cloudDiscoveryFixture('https://cloud.example.com'), {
-      revoke: () => Promise.resolve(),
-      clear: () => Promise.resolve()
-    })
-
-    expect(recentFiles.value).toEqual([])
-    expect(cloudServers.value[0]?.account).toBeNull()
+      expect(recentFiles.value).toEqual([])
+      expect(cloudServers.value[0]?.account).toBeNull()
+    } finally {
+      warn.mockRestore()
+    }
   })
 })
