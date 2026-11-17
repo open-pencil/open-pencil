@@ -27,11 +27,13 @@ export const CORE_AUTH_PATHS: CorePaths<
   | 'sendVerificationEmail'
   | 'signInEmail'
   | 'signUpEmail'
+  | 'unlinkAccount'
   | 'verifyEmail'
 > = {
   callbackOAuth: '/callback/:id',
   deleteUser: '/delete-user',
   deleteUserCallback: '/delete-user/callback',
+  unlinkAccount: '/unlink-account',
   requestPasswordReset: '/request-password-reset',
   sendVerificationEmail: '/send-verification-email',
   signInEmail: '/sign-in/email',

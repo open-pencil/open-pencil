@@ -413,6 +413,7 @@ export function createAdminUserService(
       const removed = await removeSignInMethod(database, {
         userId,
         methodId,
+        block: true,
         also: (transaction, removed) =>
           transaction
             .insertInto('adminAuditEvent')
@@ -437,7 +438,6 @@ export function createAdminUserService(
         // A method of another account, or none, names nothing here, as an unknown person does.
         throw new NoResultError(database.selectFrom('account').toOperationNode())
       })
-      await auth.blockSignInMethod(userId, removed)
       const user = await database
         .selectFrom('user')
         .select(['id', 'email', 'name'])

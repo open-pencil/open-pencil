@@ -124,4 +124,46 @@ describe('account authentication methods', () => {
       await fixture.close()
     }
   })
+
+  // Its own unlink skips the fresh session and the lock an administrator's removal takes too.
+  test('is not reachable through Better Auth’s own unlink endpoint', async () => {
+    const fixture = await createAccountAuthenticationFixture()
+    try {
+      const account = await createVerifiedCredentialAccount(fixture, {
+        email: 'unlink@example.com',
+        name: 'Unlink',
+        password: 'the original long password',
+        approved: true
+      })
+      await fixture.database
+        .insertInto('account')
+        .values({
+          id: crypto.randomUUID(),
+          userId: account.userId,
+          providerId: 'google',
+          accountId: 'google-unlink',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .execute()
+      const direct = await fixture.app.fetch(
+        accountAuthenticationRequest(
+          '/api/auth/unlink-account',
+          { providerId: 'google', accountId: 'google-unlink' },
+          account.sessionCookie
+        )
+      )
+      expect(direct.status).toBe(404)
+      expect(
+        await fixture.database
+          .selectFrom('account')
+          .select('providerId')
+          .where('userId', '=', account.userId)
+          .orderBy('providerId')
+          .execute()
+      ).toEqual([{ providerId: 'credential' }, { providerId: 'google' }])
+    } finally {
+      await fixture.close()
+    }
+  })
 })

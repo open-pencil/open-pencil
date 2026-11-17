@@ -13,8 +13,7 @@ function complete(): Promise<void> {
   return Promise.resolve()
 }
 
-/** `blocked` collects the identities the service keeps from linking back, as `user:provider`. */
-function authAdapter(blocked: string[] = []) {
+function authAdapter() {
   return {
     schemaVersion: 'test',
     async banUser() {
@@ -67,9 +66,6 @@ function authAdapter(blocked: string[] = []) {
     },
     async unlinkAuthenticationMethod() {
       return complete()
-    },
-    async blockSignInMethod(userId: string, method: { provider: string }) {
-      blocked.push(`${userId}:${method.provider}`)
     },
     async deleteAccount() {
       return new Headers()
@@ -467,8 +463,7 @@ describe('deployment admin user safety', () => {
         )
         .execute()
       const notices: string[] = []
-      const blocked: string[] = []
-      const service = createAdminUserService(runtime.database, authAdapter(blocked), {
+      const service = createAdminUserService(runtime.database, authAdapter(), {
         notify: {
           ...ignoredSecurityNotices,
           sendVerification: complete,
@@ -498,7 +493,13 @@ describe('deployment admin user safety', () => {
       expect(left).toEqual([{ providerId: 'credential' }])
       expect(notices).toEqual(['grace@example.com:sign-in-method-removed:google'])
       // The Google account can't link itself back by Grace's email at its next sign-in.
-      expect(blocked).toEqual([`${USER_ID}:google`])
+      const blocks = await runtime.database
+        .selectFrom('verification')
+        .select(['identifier', 'value'])
+        .execute()
+      expect(blocks).toEqual([
+        { identifier: `sign-in-method-block:${USER_ID}:google`, value: google.id }
+      ])
 
       // The account keeps a way in.
       await expect(

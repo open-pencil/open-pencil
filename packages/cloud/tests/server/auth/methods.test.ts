@@ -1,21 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import {
-  allowSignInMethod,
-  blockSignInMethod,
-  signInMethodAllowed,
-  signInMethodHooks,
-  type SignInMethodBlockStore
-} from '#cloud/server/auth/methods'
+import { signInMethodAllowed, type SignInMethodBlockStore } from '#cloud/server/auth/methods'
 
-/** Better Auth's keyed values, kept in memory. */
-function memoryStore(): SignInMethodBlockStore & { values: Map<string, string> } {
-  const values = new Map<string, string>()
+/** Better Auth's keyed values, holding one administrator's block on Grace's lost Google account. */
+function blockedStore(): SignInMethodBlockStore {
+  const values = new Map([['sign-in-method-block:grace:google', 'google-lost']])
   return {
-    values,
-    async createVerificationValue(data) {
-      values.set(data.identifier, data.value)
-    },
     async findVerificationValue(identifier) {
       const value = values.get(identifier)
       return value === undefined ? null : { value }
@@ -26,45 +16,30 @@ function memoryStore(): SignInMethodBlockStore & { values: Map<string, string> }
   }
 }
 
+const lost = { userId: 'grace', providerId: 'google', accountId: 'google-lost' }
+const nobodyLinking = async () => null
+
 describe('sign-in method blocks', () => {
   test('keep an identity an administrator removed from linking itself back', async () => {
-    const store = memoryStore()
-    const lost = { userId: 'grace', providerId: 'google', accountId: 'google-lost' }
-    expect(await signInMethodAllowed(store, lost)).toBe(true)
-
-    await blockSignInMethod(store, 'grace', { provider: 'google', accountId: 'google-lost' })
-    expect(await signInMethodAllowed(store, lost)).toBe(false)
-    // Another Google account of hers, and the same one on someone else's account, still link.
-    expect(await signInMethodAllowed(store, { ...lost, accountId: 'google-new' })).toBe(true)
-    expect(await signInMethodAllowed(store, { ...lost, userId: 'ada' })).toBe(true)
-
-    // Adding Google again from her security page lifts it.
-    await allowSignInMethod(store, 'grace', 'google')
-    expect(await signInMethodAllowed(store, lost)).toBe(true)
+    const store = blockedStore()
+    // A sign-in with the lost Google account, which would link by Grace's email.
+    expect(await signInMethodAllowed(store, lost, nobodyLinking)).toBe(false)
+    // Someone else linking it to Grace's account is no better.
+    expect(await signInMethodAllowed(store, lost, async () => 'ada')).toBe(false)
   })
 
-  test('leave a removed password nothing to block', async () => {
-    const store = memoryStore()
-    await blockSignInMethod(store, 'grace', { provider: 'credential', accountId: 'grace' })
-    expect(store.values.size).toBe(0)
-  })
-
-  // Better Auth hands its hook the store with the endpoint that creates the account.
-  test('let an account be made where Better Auth gives no store', async () => {
-    const before = signInMethodHooks.account?.create?.before
-    const now = new Date()
+  test('let other identities link as before', async () => {
+    const store = blockedStore()
     expect(
-      await before?.(
-        {
-          id: 'new',
-          userId: 'grace',
-          providerId: 'google',
-          accountId: 'google-lost',
-          createdAt: now,
-          updatedAt: now
-        },
-        null
-      )
-    ).toBeUndefined()
+      await signInMethodAllowed(store, { ...lost, accountId: 'google-new' }, nobodyLinking)
+    ).toBe(true)
+    expect(await signInMethodAllowed(store, { ...lost, providerId: 'apple' }, nobodyLinking)).toBe(
+      true
+    )
+    expect(await signInMethodAllowed(store, { ...lost, userId: 'ada' }, nobodyLinking)).toBe(true)
+  })
+
+  test('let the owner link it again from their own security page', async () => {
+    expect(await signInMethodAllowed(blockedStore(), lost, async () => 'grace')).toBe(true)
   })
 })
