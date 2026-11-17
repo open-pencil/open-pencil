@@ -7,6 +7,7 @@ import {
   cloudPersonSchema,
   cloudSignInSchema
 } from '../account'
+import { documentKindSchema } from '../documents'
 import { documentReportReasonSchema } from '../reports'
 import { workspaceRoleSchema } from '../workspaces'
 
@@ -183,6 +184,8 @@ export const adminAuditResponseSchema = v.object({
 export const cloudAdminDocumentSchema = v.object({
   id: v.string(),
   name: v.string(),
+  /** A design or a board. Servers from before send none, and had only designs. */
+  kind: v.optional(documentKindSchema, 'design'),
   workspace: v.object({ id: v.string(), name: v.string() }),
   /** Who made it, while the server knows them. */
   owner: v.nullable(v.object({ id: v.string(), name: v.string(), email: v.string() })),
@@ -197,7 +200,20 @@ export const cloudAdminDocumentSchema = v.object({
    * can still restore it. Servers from before Trash send neither.
    */
   purgedAt: v.optional(nullableTimestampSchema, null),
-  destroyedAt: v.optional(nullableTimestampSchema, null)
+  destroyedAt: v.optional(nullableTimestampSchema, null),
+  /**
+   * The saved revision whose thumbnail previews it; null before its first save. Servers from
+   * before previews send none.
+   */
+  revisionId: v.optional(v.nullable(v.string()), null),
+  /**
+   * Who beyond its workspace can open it: anyone, in the community gallery, and whoever holds one
+   * of its live share links, `editLinks` of which let them edit. Servers from before send none.
+   */
+  exposure: v.optional(
+    v.object({ community: v.boolean(), links: countSchema, editLinks: countSchema }),
+    { community: false, links: 0, editLinks: 0 }
+  )
 })
 /** Which documents a list shows: live ones, or those deleted forever an administrator can restore. */
 export const cloudAdminDocumentFilterSchema = v.picklist(['all', 'reported', 'disabled', 'purged'])

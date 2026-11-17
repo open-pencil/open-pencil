@@ -29,6 +29,11 @@ const DOCUMENT_CONCURRENCY = 3
  */
 const EXTENSIONS = { design: 'fig', board: 'jam' } as const satisfies Record<DocumentKind, string>
 
+/** The name a document is saved under when it leaves Cloud: `Poster.fig`, or `Retro.jam`. */
+export function documentFileName(name: string, kind: DocumentKind): string {
+  return `${name}.${EXTENSIONS[kind]}`
+}
+
 export type AccountArchiveProgress = { done: number; total: number }
 
 /** How far Download all got: files saved so far of all of them, and the names it couldn't get. */
@@ -110,7 +115,7 @@ export async function saveAccountArchive(
     const lean = await downloadCloudDocument(stored, objectFetch, { signal: options.signal })
     // The server keeps the comments; the file taken out of Cloud carries them again.
     const bytes = await withCloudComments(lean, comments.threads)
-    return { bytes, fileName: `${document.name}.${EXTENSIONS[stored.document.kind]}` }
+    return { bytes, fileName: documentFileName(document.name, stored.document.kind) }
   }
   if (file) {
     let writable: WritableStream<Uint8Array> | null = null

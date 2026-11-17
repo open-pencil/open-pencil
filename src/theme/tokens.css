@@ -160,7 +160,8 @@ html[data-theme='light'] {
   --color-warning-bg: rgb(245 158 11 / 0.14);
   --color-warning-border: rgb(245 158 11 / 0.32);
   --color-warning-action: #78350f;
-  --color-success: #15803d;
+  /* Dark enough to read at AA on its own tint, as status badges draw it. */
+  --color-success: #166534;
   --color-error: #b91c1c;
   --color-error-bg: rgb(185 28 28 / 0.08);
   --color-error-border: rgb(185 28 28 / 0.28);
