@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, jest, test } from 'bun:test'
 
 import { useI18n } from '@open-pencil/vue/i18n'
 
+import { createDeferred } from '@/app/runtime/deferred'
 import {
   appPreferences,
   DEFAULT_APP_PREFERENCES,
@@ -105,10 +106,7 @@ describe('checkForAppUpdate', () => {
   })
 
   test('shows the answer to Check for Updates asked while the launch check runs', async () => {
-    let answer: (value: null) => void = () => {}
-    const pending = new Promise<null>((resolve) => {
-      answer = resolve
-    })
+    const { promise: pending, resolve: answer } = createDeferred<null>()
     let asked = 0
     await mockTauriIPC((cmd) => {
       if (cmd !== 'check_for_update') return null
