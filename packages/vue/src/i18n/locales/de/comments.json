@@ -27,5 +27,9 @@
   "commentDeleted": "Kommentar gelöscht",
   "hideComments": "Kommentare ausblenden",
   "mentionPeople": "Personen zum Erwähnen",
-  "unread": "Ungelesen"
+  "unread": "Ungelesen",
+  "notifyMention": "Erwähnungen in Kommentaren",
+  "notifyReply": "Antworten auf deine Kommentare",
+  "notifyReplyHint": "Jemand antwortet in einem Kommentar-Thread, in dem du geschrieben hast.",
+  "notifyTitle": "{author} · {document}"
 }

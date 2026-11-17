@@ -95,6 +95,10 @@ export interface NotificationPreferences {
   agentFinished: boolean
   /** An AI reply ended with an error. */
   agentFailed: boolean
+  /** Someone names the person in a comment on a Cloud document. */
+  commentMention: boolean
+  /** Someone replies in a Cloud comment thread the person wrote in. */
+  commentReply: boolean
 }
 
 /** How the person's Design instructions meet OpenPencil's: added after them, or in their place. */
@@ -200,7 +204,13 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
   onboarding: { aiSetup: 'pending' },
   sharing: { dailyPing: true, usageStats: 'unset' },
   donation: { promptAfter: null },
-  notifications: { agentNeedsInput: true, agentFinished: false, agentFailed: false },
+  notifications: {
+    agentNeedsInput: true,
+    agentFinished: false,
+    agentFailed: false,
+    commentMention: true,
+    commentReply: false
+  },
   updates: { checkOnStartup: true, channel: 'build' },
   prompts: { review: null, title: null, summary: null, design: { mode: 'add', text: '' } }
 }
@@ -303,7 +313,9 @@ const appPreferencesSchema = section({
   notifications: section({
     agentNeedsInput: v.fallback(v.boolean(), defaults.notifications.agentNeedsInput),
     agentFinished: v.fallback(v.boolean(), defaults.notifications.agentFinished),
-    agentFailed: v.fallback(v.boolean(), defaults.notifications.agentFailed)
+    agentFailed: v.fallback(v.boolean(), defaults.notifications.agentFailed),
+    commentMention: v.fallback(v.boolean(), defaults.notifications.commentMention),
+    commentReply: v.fallback(v.boolean(), defaults.notifications.commentReply)
   }),
   updates: section({
     checkOnStartup: v.fallback(v.boolean(), defaults.updates.checkOnStartup),

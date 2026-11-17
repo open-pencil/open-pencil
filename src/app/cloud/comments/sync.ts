@@ -25,6 +25,7 @@ import { cloudConnections } from '../sessions/connection'
 import { cloudShareTarget } from '../sharing/document'
 import { shareLinkClient } from '../sharing/link'
 import { followers, type CloudCommentFollower } from './followers'
+import { commentNotice, notifyComment } from './notifications'
 import {
   acknowledged,
   changedThreadId,
@@ -434,8 +435,12 @@ export function followCloudComments(
     key: target.key,
     async changed(threadId) {
       if (!loaded || stopped) return
+      const before = server.get(threadId)
       try {
-        remember(await (await api()).get(threadId), threadId)
+        const after = await (await api()).get(threadId)
+        remember(after, threadId)
+        const notice = commentNotice(before, after, accountId)
+        if (notice) notifyComment(store, threadId, notice)
       } catch (error) {
         if (!(error instanceof CloudAPIError && error.status === 404)) throw error
         server.delete(threadId)
