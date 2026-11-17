@@ -558,6 +558,7 @@
   "columnReported": "Denunciado",
   "columnOwner": "Proprietário",
   "columnUpdated": "Última alteração",
+  "columnAccess": "Acesso",
   "reportReasonSpam": "Spam ou phishing",
   "reportReasonIllegal": "Conteúdo ilegal",
   "reportReasonCopyright": "Direitos autorais",

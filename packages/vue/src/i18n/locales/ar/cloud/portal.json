@@ -578,6 +578,7 @@
   "columnReported": "تاريخ البلاغ",
   "columnOwner": "المالك",
   "columnUpdated": "آخر تغيير",
+  "columnAccess": "الوصول",
   "reportReasonSpam": "رسائل مزعجة أو تصيّد احتيالي",
   "reportReasonIllegal": "محتوى غير قانوني",
   "reportReasonCopyright": "حقوق النشر",

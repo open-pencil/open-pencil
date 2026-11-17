@@ -17,6 +17,7 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 import AppDataTable from '@/components/ui/table/AppDataTable.vue'
 
 import PortalSessions from '../account/PortalSessions.vue'
+import { portalColumnMeta } from '../table/columns'
 import PortalStatusCell from '../table/PortalStatusCell.vue'
 import PortalTextCell from '../table/PortalTextCell.vue'
 import type { PortalPersonAction, PortalPersonDetail } from '../types'
@@ -72,13 +73,13 @@ const workspaces = usePortalRows(() => detail.workspaces, {
     column.display({
       id: 'role',
       header: () => messages.value.columnRole,
-      meta: { class: 'w-32' },
+      meta: { role: 'tag', always: true },
       cell: ({ row: { original: workspace } }) =>
         h(PortalStatusCell, { statuses: [{ label: roleLabel(workspace.role), tone: 'neutral' }] })
     }),
     column.accessor('memberCount', {
       header: () => messages.value.columnMembers,
-      meta: { class: 'w-24 text-right tabular-nums' }
+      meta: { role: 'count', always: true }
     })
   ])
 })
@@ -146,7 +147,11 @@ const workspaces = usePortalRows(() => detail.workspaces, {
 
     <SettingsSection>
       <template #title>{{ messages.personWorkspaces }}</template>
-      <AppDataTable :table="workspaces" :label="messages.personWorkspaces">
+      <AppDataTable
+        :table="workspaces"
+        :column-meta="portalColumnMeta"
+        :label="messages.personWorkspaces"
+      >
         <template #empty>
           <p class="text-center text-xs text-muted">{{ messages.personWorkspacesEmpty }}</p>
         </template>

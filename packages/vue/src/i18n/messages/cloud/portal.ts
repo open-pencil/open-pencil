@@ -519,6 +519,7 @@ export const cloudPortalMessageDefaults = {
   columnReported: 'Reported',
   columnOwner: 'Owner',
   columnUpdated: 'Last changed',
+  columnAccess: 'Access',
   reportReasonSpam: 'Spam or phishing',
   reportReasonIllegal: 'Illegal content',
   reportReasonCopyright: 'Copyright',

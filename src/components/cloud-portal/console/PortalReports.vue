@@ -72,7 +72,7 @@ const reports = usePortalList<CloudAdminReportFilter, PortalReportRow>({
     column.display({
       id: 'document',
       header: () => messages.value.columnDocument,
-      meta: { class: 'w-1/4' },
+      meta: { role: 'subject', always: true },
       cell: ({ row: { original: report } }) =>
         h(PortalDocumentCell, {
           name: report.document.name,
@@ -99,12 +99,12 @@ const reports = usePortalList<CloudAdminReportFilter, PortalReportRow>({
     }),
     column.accessor('reportedOn', {
       header: () => messages.value.columnReported,
-      meta: { class: 'hidden w-28 whitespace-nowrap text-muted @xl/table:table-cell' }
+      meta: { role: 'date' }
     }),
     column.display({
       id: 'status',
       header: () => messages.value.columnStatus,
-      meta: { class: 'hidden w-32 @2xl/table:table-cell' },
+      meta: { role: 'tag' },
       cell: ({ row: { original: report } }) =>
         h(PortalStatusCell, {
           statuses: [statuses.value[report.status]],
@@ -114,7 +114,7 @@ const reports = usePortalList<CloudAdminReportFilter, PortalReportRow>({
     column.display({
       id: 'actions',
       header: () => messages.value.columnActions,
-      meta: { class: 'w-px whitespace-nowrap text-right', actions: true },
+      meta: { role: 'actions' },
       cell: ({ row: { original: report } }) =>
         h(PortalRowMenu<PortalContentAction>, {
           label: messages.value.actionsFor({ name: report.document.name }),

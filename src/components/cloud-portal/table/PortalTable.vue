@@ -13,6 +13,7 @@ import AppDataTable from '@/components/ui/table/AppDataTable.vue'
 import AppTablePagination from '@/components/ui/table/AppTablePagination.vue'
 
 import PortalLoadAlert from '../layout/PortalLoadAlert.vue'
+import { portalColumnMeta } from './columns'
 import { portalTable } from './ui'
 
 /**
@@ -98,6 +99,7 @@ function countOf(value: string) {
     </div>
     <AppDataTable
       :table="table"
+      :column-meta="portalColumnMeta"
       :label="label"
       :hidden="hidden"
       :loading="loading"

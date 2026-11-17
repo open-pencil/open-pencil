@@ -548,6 +548,7 @@
   "columnReported": "報告日",
   "columnOwner": "所有者",
   "columnUpdated": "最終更新",
+  "columnAccess": "アクセス",
   "reportReasonSpam": "スパムまたはフィッシング",
   "reportReasonIllegal": "違法なコンテンツ",
   "reportReasonCopyright": "著作権",

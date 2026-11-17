@@ -95,32 +95,28 @@ export function contentConfirmation(
   }
 }
 
-type Status = { label: string; tone: 'neutral' | 'warning' | 'error' }
+type Problem = { label: string; tone: 'warning' | 'error' }
 
 /**
- * Where a document stands: deleted forever, taken down, or reported, and, unless deleted, who
- * beyond its workspace can open it, in the community gallery or through its links, or nobody.
+ * The most serious thing an administrator should know about a document, or null when nothing is
+ * wrong: deleted forever, then taken down, then reported.
  */
-export function documentStatuses(messages: Messages, document: PortalDocumentRow): Status[] {
-  const problems: Status[] = [
-    ...(document.deletedForever
-      ? [{ label: messages.deletedForever, tone: 'error' as const }]
-      : []),
-    ...(document.takenDown ? [{ label: messages.takenDown, tone: 'error' as const }] : []),
-    ...(document.openReports
-      ? [{ label: messages.openReports(document.openReports), tone: 'warning' as const }]
-      : [])
-  ]
-  // Nobody can open a document deleted forever, so who could does not matter any more.
-  if (document.deletedForever) return problems
+export function documentProblem(messages: Messages, document: PortalDocumentRow): Problem | null {
+  if (document.deletedForever) return { label: messages.deletedForever, tone: 'error' }
+  if (document.takenDown) return { label: messages.takenDown, tone: 'error' }
+  if (document.openReports) {
+    return { label: messages.openReports(document.openReports), tone: 'warning' }
+  }
+  return null
+}
+
+/** How far a document reaches, from the widest: anyone, through links, or its workspace alone. */
+export type DocumentAccess = 'community' | 'edit-link' | 'link' | 'private'
+
+/** The widest way beyond its workspace someone can open a document. */
+export function documentAccess(document: PortalDocumentRow): DocumentAccess {
   const { community, links, editLinks } = document.exposure
-  const linkLabel = editLinks ? messages.editableByLink : messages.sharedByLink
-  const reach: Status[] = [
-    ...(community ? [{ label: messages.inCommunity, tone: 'neutral' as const }] : []),
-    ...(links ? [{ label: linkLabel, tone: 'neutral' as const }] : [])
-  ]
-  return [
-    ...problems,
-    ...(reach.length ? reach : [{ label: messages.privateDocument, tone: 'neutral' as const }])
-  ]
+  if (community) return 'community'
+  if (editLinks) return 'edit-link'
+  return links ? 'link' : 'private'
 }

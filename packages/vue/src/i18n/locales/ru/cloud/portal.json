@@ -568,6 +568,7 @@
   "columnReported": "Поступила",
   "columnOwner": "Владелец",
   "columnUpdated": "Изменён",
+  "columnAccess": "Доступ",
   "reportReasonSpam": "Спам или фишинг",
   "reportReasonIllegal": "Незаконный контент",
   "reportReasonCopyright": "Авторские права",

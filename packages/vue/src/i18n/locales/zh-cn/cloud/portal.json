@@ -548,6 +548,7 @@
   "columnReported": "举报时间",
   "columnOwner": "所有者",
   "columnUpdated": "最近修改",
+  "columnAccess": "访问权限",
   "reportReasonSpam": "垃圾信息或钓鱼",
   "reportReasonIllegal": "违法内容",
   "reportReasonCopyright": "版权",
