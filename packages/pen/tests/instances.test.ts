@@ -493,4 +493,69 @@ describe('parsePenFile — instances', () => {
     expect(getNodeOrThrow(graph, 'AB').fills[0]?.color).toEqual(light)
     expect(getNodeOrThrow(graph, 'label').fills[0]?.color).toEqual(light)
   })
+
+  // A swap's theme reaches the component it swaps in, not the screen theme from before the swap.
+  test('resolves a swapped nested instance in the theme the replacement sets', () => {
+    const dark = { r: 0x22 / 255, g: 0x22 / 255, b: 0x22 / 255, a: 1 }
+    const light = { r: 1, g: 1, b: 1, a: 1 }
+    const graph = parseDocument(
+      [
+        {
+          id: 'B',
+          type: 'frame',
+          reusable: true,
+          fill: '$surface',
+          children: [{ id: 'bLabel', type: 'text', content: 'B', fill: '$surface' }]
+        },
+        {
+          id: 'C',
+          type: 'frame',
+          reusable: true,
+          fill: '$surface',
+          children: [{ id: 'cLabel', type: 'text', content: 'C', fill: '$surface' }]
+        },
+        {
+          id: 'A',
+          type: 'frame',
+          reusable: true,
+          children: [{ id: 'AB', type: 'ref', ref: 'B' }]
+        },
+        {
+          id: 'Dark',
+          type: 'frame',
+          theme: { semantic: 'dark' },
+          fill: '$surface',
+          children: [
+            {
+              id: 'placed',
+              type: 'ref',
+              ref: 'A',
+              descendants: { AB: { type: 'ref', ref: 'C', theme: { semantic: 'light' } } }
+            }
+          ]
+        }
+      ],
+      {
+        themes: { semantic: ['light', 'dark'] },
+        variables: {
+          surface: {
+            type: 'color',
+            value: [
+              { value: '#FFFFFF', theme: { semantic: 'light' } },
+              { value: '#222222', theme: { semantic: 'dark' } }
+            ]
+          }
+        }
+      }
+    )
+    const swapped = expectDefined(graph.getChildren('placed')[0], 'swapped AB')
+
+    expect(getNodeOrThrow(graph, 'Dark').fills[0]?.color).toEqual(dark)
+    expect(swapped).toMatchObject({ type: 'INSTANCE', componentId: 'C' })
+    expect(swapped.fills[0]?.color).toEqual(light)
+    expect(copyOf(graph, swapped.id, 'cLabel').fills[0]?.color).toEqual(light)
+    // The component keeps the default theme it was read in.
+    expect(getNodeOrThrow(graph, 'C').fills[0]?.color).toEqual(light)
+    expect(getNodeOrThrow(graph, 'cLabel').fills[0]?.color).toEqual(light)
+  })
 })

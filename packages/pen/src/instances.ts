@@ -142,8 +142,13 @@ function swapLayer(
     descendants: _descendants,
     ...fields
   } = component
-  effective.set(target.id, { ...fields, id: target.id })
   const { ref: _ref, type: _type, id: _id, descendants, ...own } = replacement
+  // The replacement's theme is part of the theme its copies are read in, as a ref's theme is.
+  const theme = own.theme ? mergeTheme(fields.theme, own.theme) : fields.theme
+  effective.set(
+    target.id,
+    theme ? { ...fields, id: target.id, theme } : { ...fields, id: target.id }
+  )
   inheritCopyFields(build, target, descendantThemes(build, target, descendants))
   overrideLayer(build, target, own)
   applyDescendants(build, target, descendants, populate)
