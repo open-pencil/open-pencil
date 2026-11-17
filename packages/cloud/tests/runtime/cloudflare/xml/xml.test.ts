@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
+import { responseJSON } from '#cloud-tests/helpers/response'
 import * as v from 'valibot'
 
 // worker.ts under `wrangler dev`, bundled as Wrangler bundles a deployment and run in workerd.
@@ -58,8 +59,10 @@ afterAll(async () => {
 
 describe('S3 errors on Workers', () => {
   test('keep their code when Wrangler bundles the SDK for the browser', async () => {
-    const response = await fetch(url)
-    const { name } = v.parse(v.object({ name: v.nullable(v.string()) }), await response.json())
+    const { name } = await responseJSON(
+      await fetch(url),
+      v.object({ name: v.nullable(v.string()) })
+    )
     expect(name).toBe('AccessDenied')
   })
 })
