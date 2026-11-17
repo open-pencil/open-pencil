@@ -7,6 +7,8 @@ import {
   type PackageDiagnostic
 } from '@open-pencil/package-artifacts-tools'
 
+import { validateFunding } from './funding'
+
 export async function validatePackageMetadata(root: string): Promise<PackageDiagnostic[]> {
   const packages = await discoverPublicPackages(root)
   if (packages.length === 0) {
@@ -16,7 +18,10 @@ export async function validatePackageMetadata(root: string): Promise<PackageDiag
   }
 
   const { version: expectedVersion } = await readPackageManifest(join(root, 'package.json'))
-  const diagnostics = packages.flatMap(({ manifest }) => validateManifest(manifest))
+  const diagnostics = packages.flatMap(({ manifest }) => [
+    ...validateManifest(manifest),
+    ...validateFunding(manifest)
+  ])
   for (const { manifest } of packages) {
     if (manifest.version !== expectedVersion) {
       diagnostics.push({

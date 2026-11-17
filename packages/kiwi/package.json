@@ -7,6 +7,7 @@
     "url": "git+https://github.com/open-pencil/open-pencil.git",
     "directory": "packages/kiwi"
   },
+  "funding": "https://ko-fi.com/dannote",
   "files": [
     "dist",
     "src",
