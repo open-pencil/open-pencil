@@ -266,6 +266,60 @@ describe('Cloud comments in a tab', () => {
     expect(notices).toEqual([`commentMention:${mine.id}`])
   })
 
+  test('tell once about a mention an older fetch brings back after a newer answer', async () => {
+    const server = commentServer()
+    const notices: string[] = []
+    const { store, follow, pageId } = open(server, {
+      notify: (threadId, notice) => notices.push(`${notice.event}:${threadId}`)
+    })
+    const follower = follow()
+    await follower.idle()
+    const mine = addThread(store, pageId, 'Tighten it')
+    await follower.idle()
+    // A fetch that reads the thread now and answers after the tab's next write.
+    const read = createDeferred<undefined>()
+    const released = createDeferred<undefined>()
+    const get = server.requests.get
+    server.requests.get = async (threadId) => {
+      const snapshot = await get(threadId)
+      read.resolve(undefined)
+      await released.promise
+      return snapshot
+    }
+    const stale = follower.changed(mine.id)
+    await read.promise
+    server.othersReply(mine.id, '[@Ana](openpencil://person/ana) look', ['ana'])
+    const [current] = readComments(store.graph)
+    if (!current) throw new Error('The thread is missing')
+    const reply = createCommentReply({ name: 'Ana' }, 'And the body', NOW)
+    writeComments(store.graph, [{ ...current, replies: [reply] }])
+    await follower.idle()
+    released.resolve(undefined)
+    await stale
+    server.requests.get = get
+    await follower.changed(mine.id)
+    expect(notices).toEqual([`commentMention:${mine.id}`])
+  })
+
+  test('tell about a mention the reload after a refused change brings', async () => {
+    const server = commentServer()
+    const notices: string[] = []
+    const { store, follow, pageId } = open(server, {
+      notify: (threadId, notice) => notices.push(`${notice.event}:${threadId}`)
+    })
+    const id = server.others(pageId, 'Ben’s words')
+    const follower = follow()
+    await follower.idle()
+    server.othersReply(id, '[@Ana](openpencil://person/ana) see above', ['ana'])
+    const [theirs] = readComments(store.graph)
+    if (!theirs) throw new Error('The thread is missing')
+    // Refused, so the tab reads every thread again.
+    writeComments(store.graph, [{ ...theirs, text: 'Words put in Ben’s mouth' }])
+    await follower.idle()
+    await follower.changed(id)
+    expect(notices).toEqual([`commentMention:${id}`])
+  })
+
   test('tell nothing about a thread fetched after the tab stopped following', async () => {
     const server = commentServer()
     const notices: string[] = []

@@ -17,25 +17,24 @@ const writtenBy = (comment: CloudComment, accountId: string) =>
   comment.author.kind === 'user' && comment.author.id === accountId
 
 /**
- * The comment to tell the person about once a thread changed from `before` to `after`, as the
- * server tells them by email: a new comment by someone else that names them, or else one in a
- * thread they wrote in. Edits, comments brought in from a file, and the person's own add nothing.
+ * The comment of `thread` to tell the person about, as the server tells them by email: one not
+ * `heard` before, by someone else, that names them, or else one in a thread they wrote in. Edits,
+ * comments brought in from a file, and the person's own add nothing.
  */
 export function commentNotice(
-  before: CloudCommentThread | undefined,
-  after: CloudCommentThread | null,
-  accountId: string | null
+  thread: CloudCommentThread | null,
+  accountId: string | null,
+  heard: ReadonlySet<string>
 ): CommentNotice | null {
-  if (!after || !accountId) return null
-  const known = new Set(before?.comments.map((comment) => comment.id))
-  const added = after.comments.filter(
+  if (!thread || !accountId) return null
+  const added = thread.comments.filter(
     (comment) =>
-      !known.has(comment.id) && comment.author.kind === 'user' && !writtenBy(comment, accountId)
+      !heard.has(comment.id) && comment.author.kind === 'user' && !writtenBy(comment, accountId)
   )
   const mention = added.findLast((comment) => comment.mentions.includes(accountId))
   if (mention) return { event: 'commentMention', comment: mention }
   const reply = added.at(-1)
-  const wroteHere = after.comments.some((comment) => writtenBy(comment, accountId))
+  const wroteHere = thread.comments.some((comment) => writtenBy(comment, accountId))
   return reply && wroteHere ? { event: 'commentReply', comment: reply } : null
 }
 

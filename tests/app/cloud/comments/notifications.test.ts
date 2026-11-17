@@ -51,7 +51,8 @@ const notice = (
   after: CloudCommentThread | null,
   accountId: string | null = ME
 ) => {
-  const found = commentNotice(before, after, accountId)
+  const heard = new Set(before?.comments.map((entry) => entry.id))
+  const found = commentNotice(after, accountId, heard)
   return found && [found.event, found.comment.id.at(-1)]
 }
 

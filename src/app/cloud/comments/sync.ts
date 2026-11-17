@@ -261,13 +261,24 @@ export function followCloudComments(
   }
 
   /**
-   * Keeps the server's answer about one thread, first telling the person about anyone else's new
-   * comment in it. Compared with the thread as last heard, so a comment notifies once, whether a
-   * fetch or the answer to the tab's own write brought it.
+   * Every comment the tab has heard of, by ID, kept apart from the threads: an answer that is
+   * older than the one kept still never brings a comment back as new.
+   */
+  const heardComments = new Set<string>()
+
+  function noteHeard(thread: CloudCommentThread) {
+    for (const comment of thread.comments) heardComments.add(comment.id)
+  }
+
+  /**
+   * Keeps the server's answer about one thread, first telling the person about anyone else's
+   * comment in it the tab had not heard of, whether a fetch, a reload, or the answer to the
+   * tab's own write brought it.
    */
   function heard(thread: CloudCommentThread | null, threadId: string) {
-    const notice = commentNotice(server.get(threadId), thread, accountId)
+    const notice = commentNotice(thread, accountId, heardComments)
     remember(thread, threadId)
+    if (thread) noteHeard(thread)
     if (notice && following()) target.notify?.(threadId, notice)
   }
 
@@ -324,10 +335,10 @@ export function followCloudComments(
   async function reload() {
     const listed = await (await api()).list()
     server.clear()
-    for (const thread of listed.threads) server.set(thread.id, thread)
     canComment = listed.access.canComment
     accountId = listed.access.accountId
     canModerate = listed.access.canModerate
+    for (const thread of listed.threads) heard(thread, thread.id)
   }
 
   /**
@@ -417,6 +428,8 @@ export function followCloudComments(
         plan.batches.shift()
       }
     }
+    // What the document held when it opened is no news.
+    for (const thread of server.values()) noteHeard(thread)
     loaded = true
     show()
   }
