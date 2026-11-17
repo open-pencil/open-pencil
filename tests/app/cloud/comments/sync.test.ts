@@ -21,6 +21,7 @@ import { followCloudComments, type CloudCommentTarget } from '@/app/cloud/commen
 import { commentsKeptElsewhere } from '@/app/comments/document'
 import type { EditorStore } from '@/app/editor/session'
 import { createEditorStore } from '@/app/editor/session/create'
+import { createDeferred } from '@/app/runtime/deferred'
 
 import { COMMENT_TIME as NOW, commentServer } from '#tests/helpers/cloud/comments'
 
@@ -227,6 +228,44 @@ describe('Cloud comments in a tab', () => {
     const mine = addThread(store, pageId, '[@Ben](openpencil://person/acc-ben) look')
     await follower.idle()
     expect(server.threads.get(mine.id)?.comments[0]?.mentions).toEqual(['acc-ben'])
+  })
+
+  test('tell the person once about a reply two room messages announce', async () => {
+    const server = commentServer()
+    const notices: string[] = []
+    const { store, follow, pageId } = open(server, {
+      notify: (threadId, notice) => notices.push(`${notice.event}:${threadId}`)
+    })
+    const follower = follow()
+    await follower.idle()
+    const mine = addThread(store, pageId, 'Tighten it')
+    await follower.idle()
+    server.othersReply(mine.id, 'Done')
+    await Promise.all([follower.changed(mine.id), follower.changed(mine.id)])
+    expect(notices).toEqual([`commentReply:${mine.id}`])
+  })
+
+  test('tell nothing about a thread fetched after the tab stopped following', async () => {
+    const server = commentServer()
+    const notices: string[] = []
+    const released = createDeferred<undefined>()
+    const get = server.requests.get
+    const { follow, pageId } = open(server, {
+      notify: (threadId) => notices.push(threadId)
+    })
+    const follower = follow()
+    await follower.idle()
+    const id = server.others(pageId, 'Look')
+    server.othersReply(id, '[@Ana](openpencil://person/ana) you too', ['ana'])
+    server.requests.get = async (threadId) => {
+      await released.promise
+      return get(threadId)
+    }
+    const changing = follower.changed(id)
+    follower.stop()
+    released.resolve(undefined)
+    await changing
+    expect(notices).toEqual([])
   })
 
   test('keep sending after a document change that touched no comment', async () => {

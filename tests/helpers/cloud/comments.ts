@@ -128,6 +128,15 @@ export function commentServer() {
         comments: [comment(crypto.randomUUID(), body, 'Ben')]
       })
       return id
+    },
+    /** Someone else replies in a thread, naming `mentions`. */
+    othersReply(threadId: string, body: string, mentions: string[] = []) {
+      const thread = found(threadId)
+      put({
+        ...thread,
+        unread: true,
+        comments: [...thread.comments, { ...comment(crypto.randomUUID(), body, 'Ben'), mentions }]
+      })
     }
   }
 }

@@ -25,7 +25,7 @@ import { cloudConnections } from '../sessions/connection'
 import { cloudShareTarget } from '../sharing/document'
 import { shareLinkClient } from '../sharing/link'
 import { followers, type CloudCommentFollower } from './followers'
-import { commentNotice, notifyComment } from './notifications'
+import { commentNotice, notifyComment, type CommentNotice } from './notifications'
 import {
   acknowledged,
   changedThreadId,
@@ -55,6 +55,8 @@ export type CloudCommentTarget = {
    * yet; null for any other.
    */
   importer?: () => Promise<ImportThreads | null>
+  /** Tells the person about someone else's new comment; guests through a link hear nothing. */
+  notify?: (threadId: string, notice: CommentNotice) => void
 }
 
 function commentTarget(store: EditorStore): CloudCommentTarget | null {
@@ -68,6 +70,7 @@ function commentTarget(store: EditorStore): CloudCommentTarget | null {
       requests: async () => client.documentComments(documentId),
       people: () => client.commentPeople(documentId),
       onServer: (request) => onceOnServer(documentId, request),
+      notify: (threadId, notice) => notifyComment(store, threadId, notice),
       importer: async () => {
         const meta = await getLocalCanvasStore().getMeta(documentId)
         if (!meta || meta.remoteRevision) return null
@@ -187,6 +190,8 @@ export function followCloudComments(
   let people: Promise<readonly MentionPerson[]> | null = null
   /** Requests saying a thread was read, which `idle` waits for too. */
   const reading = new Set<Promise<void>>()
+  /** Whether the follower still runs, read after an await, where `stopped` may have changed. */
+  const following = () => !stopped
 
   /** Tells the comment UI what this tab may do and which threads are new to it. */
   function publish() {
@@ -435,12 +440,14 @@ export function followCloudComments(
     key: target.key,
     async changed(threadId) {
       if (!loaded || stopped) return
-      const before = server.get(threadId)
       try {
         const after = await (await api()).get(threadId)
+        if (!following()) return
+        // Read once the fetch is back: of two fetches for one thread, the later compares with the
+        // earlier's answer, so one new comment notifies once.
+        const notice = commentNotice(server.get(threadId), after, accountId)
         remember(after, threadId)
-        const notice = commentNotice(before, after, accountId)
-        if (notice) notifyComment(store, threadId, notice)
+        if (notice) target.notify?.(threadId, notice)
       } catch (error) {
         if (!(error instanceof CloudAPIError && error.status === 404)) throw error
         server.delete(threadId)
