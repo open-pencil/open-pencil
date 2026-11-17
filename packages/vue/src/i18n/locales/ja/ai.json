@@ -171,6 +171,7 @@
   "modelSignedOut": "サインアウト済み",
   "modelToolsUnreachable": "ツールに接続できません",
   "thinkingLevel": "思考レベル",
+  "agentAccess": "アクセス",
   "thinkingLevelDescription": "回答前にモデルが推論する量です。チャットでメッセージごとに変更できます。",
   "thinkingDefault": "既定",
   "thinkingOff": "オフ",

@@ -6,7 +6,7 @@ import { expectDefined } from '@open-pencil/test-support/assert'
 import {
   AgentImageInputError,
   askAgent,
-  readAgentEfforts,
+  readAgentChoices,
   readAgentOffer
 } from '@/app/ai/agents/acp/oneoff'
 import { AgentModelChoiceError } from '@/app/ai/agents/acp/session'
@@ -32,10 +32,7 @@ describe('reading what an agent offers', () => {
         { id: 'default', name: 'Default' },
         { id: 'opus', name: 'Opus' }
       ],
-      efforts: {
-        '': { current: '', values: [] },
-        default: { current: '', values: [] }
-      }
+      choices: { '': {}, default: {} }
     })
     expect(fake.kills()).toBe(1)
   })
@@ -60,11 +57,11 @@ describe('reading what an agent offers', () => {
     expect(await readAgentOffer(agent, fake.startup)).toEqual({
       models: [],
       imageInput: false,
-      efforts: { '': { current: '', values: [] } }
+      choices: { '': {} }
     })
   })
 
-  test('reads the efforts of one model by putting a session on it, then stops the agent', async () => {
+  test('reads the effort and modes of one model by putting a session on it, then stops the agent', async () => {
     const fake = fakeOneOffAgent({
       configOptions: MODEL_OPTIONS,
       afterChoice: () => [
@@ -78,15 +75,27 @@ describe('reading what an agent offers', () => {
             { value: 'medium', name: 'Medium' },
             { value: 'ultra', name: 'Ultra' }
           ]
+        },
+        {
+          id: 'mode',
+          name: 'Mode',
+          type: 'select',
+          category: 'mode',
+          currentValue: 'agent',
+          options: [{ value: 'agent', name: 'Auto review' }]
         }
       ]
     })
-    expect(await readAgentEfforts(agent, 'opus', fake.startup)).toEqual({
-      current: 'medium',
-      values: [
-        { id: 'medium', name: 'Medium' },
-        { id: 'ultra', name: 'Ultra' }
-      ]
+    expect(await readAgentChoices(agent, 'opus', fake.startup)).toEqual({
+      thought_level: {
+        name: 'Effort',
+        current: 'medium',
+        values: [
+          { id: 'medium', name: 'Medium' },
+          { id: 'ultra', name: 'Ultra' }
+        ]
+      },
+      mode: { name: 'Mode', current: 'agent', values: [{ id: 'agent', name: 'Auto review' }] }
     })
     expect(fake.configured).toEqual([{ sessionId: 'session-1', configId: 'model', value: 'opus' }])
     expect(fake.kills()).toBe(1)

@@ -1,6 +1,13 @@
 import { afterEach, beforeEach, expect, test } from 'bun:test'
 
-import { agentSessionEfforts, chatAgentEfforts } from '@/app/ai/chat/thinking'
+import {
+  agentSessionChoices,
+  chatAgentChoices,
+  chatAgentDefaults,
+  chatAgentOptions,
+  chooseAgentOption,
+  chooseAgentOptions
+} from '@/app/ai/chat/thinking'
 import {
   modelSettingsSnapshot,
   replaceAIModelSettings,
@@ -8,7 +15,10 @@ import {
   type AIModelSettings
 } from '@/app/ai/models'
 
-const EFFORTS = { current: 'max', values: [{ id: 'max', name: 'Max' }] }
+const OFFERED = {
+  thought_level: { name: 'Effort', current: 'max', values: [{ id: 'max', name: 'Max' }] },
+  mode: { name: 'Mode', current: 'auto', values: [] }
+}
 
 let original: AIModelSettings
 
@@ -46,13 +56,52 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  agentSessionEfforts.value = null
+  agentSessionChoices.value = null
   replaceAIModelSettings(original)
 })
 
-test('the composer offers a session’s efforts only for the profile it started from', () => {
-  agentSessionEfforts.value = { profileId: 'model-opus', efforts: EFFORTS }
-  expect(chatAgentEfforts.value).toEqual(EFFORTS)
+test('the composer offers a session’s options only for the profile it started from', () => {
+  agentSessionChoices.value = {
+    profileId: 'model-opus',
+    modelID: 'opus',
+    choices: OFFERED,
+    defaults: {}
+  }
+  // An option with no values to choose from is left out.
+  expect(chatAgentOptions.value).toEqual({ thought_level: OFFERED.thought_level })
+  // Haiku's options were never read, so it offers none until its own session reports them.
   setModelRoleAssignment('design', 'model-haiku')
-  expect(chatAgentEfforts.value).toBeNull()
+  expect(chatAgentOptions.value).toBeNull()
+})
+
+test('the composer drops a session’s options once its profile runs another model', () => {
+  agentSessionChoices.value = {
+    profileId: 'model-opus',
+    modelID: 'opus',
+    choices: OFFERED,
+    defaults: { thought_level: 'max' }
+  }
+  const [opus, haiku] = settings().models
+  replaceAIModelSettings({ ...settings(), models: [{ ...opus, modelID: 'sonnet' }, haiku] })
+  expect(chatAgentOptions.value).toBeNull()
+  expect(chatAgentDefaults.value).toEqual({})
+})
+
+test('the composer’s choices go over the profile’s, for the profile they were made for', () => {
+  const [opus, haiku] = settings().models
+  replaceAIModelSettings({
+    ...settings(),
+    models: [{ ...opus, agentChoices: { thought_level: 'low', mode: 'auto' } }, haiku]
+  })
+  chooseAgentOption('mode', 'plan')
+  expect(chatAgentChoices.value).toEqual({ thought_level: 'low', mode: 'plan' })
+  setModelRoleAssignment('design', 'model-haiku')
+  expect(chatAgentChoices.value).toEqual({})
+})
+
+test('another model drops the composer’s effort for its profile, and keeps its modes', () => {
+  chooseAgentOptions({ thought_level: 'max', mode: 'plan' })
+  const [opus, haiku] = settings().models
+  replaceAIModelSettings({ ...settings(), models: [{ ...opus, modelID: 'sonnet' }, haiku] })
+  expect(chatAgentChoices.value).toEqual({ mode: 'plan' })
 })

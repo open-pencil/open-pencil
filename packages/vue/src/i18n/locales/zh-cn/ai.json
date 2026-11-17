@@ -171,6 +171,7 @@
   "modelSignedOut": "未登录",
   "modelToolsUnreachable": "无法连接工具",
   "thinkingLevel": "思考级别",
+  "agentAccess": "访问权限",
   "thinkingLevelDescription": "模型在回答前进行推理的程度。可以在聊天中为每条消息单独更改。",
   "thinkingDefault": "默认",
   "thinkingOff": "关闭",

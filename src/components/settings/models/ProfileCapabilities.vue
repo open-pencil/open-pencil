@@ -3,7 +3,9 @@ import { computed } from 'vue'
 
 import { useI18n } from '@open-pencil/vue/i18n'
 
+import type { AgentChoiceCategory } from '@/app/ai/agents/acp/options'
 import type { AIModelCapability, HarnessPermissionMode, ThinkingLevel } from '@/app/ai/models'
+import type { AgentOptionControl } from '@/app/ai/models/settings/profile-editor/selection'
 import { thinkingLevelOptions as buildThinkingLevelOptions } from '@/app/ai/models/thinking'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
@@ -21,7 +23,8 @@ const {
   capabilities,
   outputTokens,
   thinking = false,
-  agentEfforts = [],
+  agentOptions = [],
+  agentOptionValue = () => '',
   acp = false,
   harness = false
 } = defineProps<{
@@ -31,8 +34,10 @@ const {
   outputTokens: number
   /** The provider takes a thinking level. */
   thinking?: boolean
-  /** The efforts an ACP agent offers for the model, by its own values; empty when it offers none. */
-  agentEfforts?: { value: string; label: string }[]
+  /** The ACP agent's options for the model, such as its effort and mode; empty when it offers none. */
+  agentOptions?: AgentOptionControl[]
+  /** The value the profile names for one of the agent's options. */
+  agentOptionValue?: (category: AgentChoiceCategory) => string
   /** The model runs through an ACP coding agent, which always has tools and sets its own limits. */
   acp?: boolean
   /**
@@ -44,8 +49,9 @@ const {
 const tools = defineModel<boolean>('tools', { required: true })
 const vision = defineModel<boolean>('vision', { required: true })
 const thinkingLevel = defineModel<ThinkingLevel>('thinkingLevel', { required: true })
-const agentEffort = defineModel<string>('agentEffort', { required: true })
 const permissionMode = defineModel<HarnessPermissionMode>('permissionMode', { required: true })
+
+const emit = defineEmits<{ agentOption: [category: AgentChoiceCategory, value: string] }>()
 
 const { ai, common } = useI18n()
 const thinkingLevelOptions = computed(() => buildThinkingLevelOptions(ai.value))
@@ -105,17 +111,19 @@ const support = (capability: AIModelCapability) =>
       />
     </ProviderSettingsField>
     <ProviderSettingsField
-      v-if="agentEfforts.length > 0"
+      v-for="option in agentOptions"
+      :key="option.category"
       v-slot="{ control }"
-      :label="ai.thinkingLevel"
-      :hint="ai.thinkingLevelDescription"
+      :label="option.label"
+      :hint="option.category === 'thought_level' ? ai.thinkingLevelDescription : undefined"
     >
       <AppSelect
         v-bind="control"
-        v-model="agentEffort"
-        :label="ai.thinkingLevel"
-        :options="agentEfforts"
-        data-test-id="profile-agent-effort"
+        :model-value="agentOptionValue(option.category)"
+        :label="option.label"
+        :options="option.options"
+        :data-test-id="`profile-agent-option-${option.category}`"
+        @update:model-value="emit('agentOption', option.category, $event)"
       />
     </ProviderSettingsField>
     <ProviderSettingsField v-if="harness" v-slot="{ control }" :label="ai.harnessToolPermissions">
