@@ -435,4 +435,62 @@ describe('parsePenFile — instances', () => {
     expect(nested.fills[0]?.color).toEqual(green)
     expect(nested.itemSpacing).toBe(16)
   })
+
+  // The override themes the copy and the layers under it, not the screen theme from before it.
+  test('resolves a nested instance in the theme a descendant override sets', () => {
+    const dark = { r: 0x22 / 255, g: 0x22 / 255, b: 0x22 / 255, a: 1 }
+    const light = { r: 1, g: 1, b: 1, a: 1 }
+    const graph = parseDocument(
+      [
+        {
+          id: 'B',
+          type: 'frame',
+          reusable: true,
+          fill: '$surface',
+          children: [{ id: 'label', type: 'text', content: 'Label', fill: '$surface' }]
+        },
+        {
+          id: 'A',
+          type: 'frame',
+          reusable: true,
+          children: [{ id: 'AB', type: 'ref', ref: 'B' }]
+        },
+        {
+          id: 'Dark',
+          type: 'frame',
+          theme: { semantic: 'dark' },
+          fill: '$surface',
+          children: [
+            {
+              id: 'placed',
+              type: 'ref',
+              ref: 'A',
+              descendants: { AB: { theme: { semantic: 'light' } } }
+            }
+          ]
+        }
+      ],
+      {
+        themes: { semantic: ['light', 'dark'] },
+        variables: {
+          surface: {
+            type: 'color',
+            value: [
+              { value: '#FFFFFF', theme: { semantic: 'light' } },
+              { value: '#222222', theme: { semantic: 'dark' } }
+            ]
+          }
+        }
+      }
+    )
+    const nested = copyOf(graph, 'placed', 'AB')
+
+    expect(getNodeOrThrow(graph, 'Dark').fills[0]?.color).toEqual(dark)
+    expect(nested.fills[0]?.color).toEqual(light)
+    expect(copyOf(graph, nested.id, 'label').fills[0]?.color).toEqual(light)
+    // The component keeps the default theme it was read in.
+    expect(getNodeOrThrow(graph, 'B').fills[0]?.color).toEqual(light)
+    expect(getNodeOrThrow(graph, 'AB').fills[0]?.color).toEqual(light)
+    expect(getNodeOrThrow(graph, 'label').fills[0]?.color).toEqual(light)
+  })
 })

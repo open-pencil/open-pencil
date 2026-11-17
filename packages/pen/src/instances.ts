@@ -51,6 +51,14 @@ function resolvePath(graph: SceneGraph, instance: SceneNode, path: string): Scen
   return current
 }
 
+/** A theme laid over another, axis by axis. The one on top wins where both set an axis. */
+function mergeTheme(
+  base: Record<string, string> | undefined,
+  overlay: Record<string, string>
+): Record<string, string> {
+  return { ...base, ...overlay }
+}
+
 /** The themes from the page down through `id`, as each layer was read. */
 function themesThrough(build: Build, id: string): Record<string, string>[] {
   const ids: string[] = []
@@ -135,8 +143,8 @@ function swapLayer(
     ...fields
   } = component
   effective.set(target.id, { ...fields, id: target.id })
-  inheritCopyFields(build, target)
   const { ref: _ref, type: _type, id: _id, descendants, ...own } = replacement
+  inheritCopyFields(build, target, descendantThemes(build, target, descendants))
   overrideLayer(build, target, own)
   applyDescendants(build, target, descendants, populate)
   return true
@@ -178,6 +186,8 @@ function overrideLayer(build: Build, target: SceneNode, override: PenOverride): 
   const base = effective.get(target.id) ?? { type: 'frame', id: target.id }
   const { descendants: _descendants, children, ...fields } = override
   const merged: PenNode = { ...base, ...fields, type: base.type, id: base.id }
+  // A theme names axes. It merges over the layer's own, as a ref's theme does.
+  if (fields.theme) merged.theme = mergeTheme(base.theme, fields.theme)
   const before = structuredClone(pick(target, INSTANCE_OVERRIDE_FIELDS))
   inAncestorThemes(build, target, () => {
     const leave = merged.theme ? ctx.enterTheme(merged.theme) : undefined
@@ -228,26 +238,57 @@ function applyDescendants(
 }
 
 /**
+ * Themes descendant overrides set on copies inside `instance`, by that copy. A copy is read
+ * before those overrides apply, so a theme one of them sets has to be on the copy already or the
+ * layers under it are read in the theme from before the override.
+ */
+function descendantThemes(
+  build: Build,
+  instance: SceneNode,
+  descendants: PenNode['descendants']
+): Map<string, Record<string, string>> | undefined {
+  if (!descendants) return undefined
+  let themes: Map<string, Record<string, string>> | undefined
+  for (const [path, override] of Object.entries(descendants)) {
+    // A replacement is built in the override's theme; only an existing subtree needs it early.
+    if (!override.theme || override.type || override.children) continue
+    const target = resolvePath(build.graph, instance, path)
+    if (!target) continue
+    themes ??= new Map()
+    themes.set(target.id, override.theme)
+  }
+  return themes
+}
+
+/**
  * Gives each copy inside `root` the pen.dev fields and placement of the layer it copies.
  * A copy is cloned from its source as that source was read, which may be outside the theme of
  * the screen this instance is placed in, so a copy in another theme is read again there.
+ * `themes` merges a descendant override's theme over the copy it names, so the layers under that
+ * copy are read in the theme the override leaves.
  */
-function inheritCopyFields(build: Build, root: SceneNode): void {
+function inheritCopyFields(
+  build: Build,
+  root: SceneNode,
+  themes?: ReadonlyMap<string, Record<string, string>>
+): void {
   const { graph, effective, placements, ctx } = build
   const copies = graph.getChildren(root.id)
   for (const copy of copies) {
     const source = copy.componentId
     const fields = source ? effective.get(source) : undefined
-    if (fields) effective.set(copy.id, fields)
+    const theme = themes?.get(copy.id)
+    const pen = fields && theme ? { ...fields, theme: mergeTheme(fields.theme, theme) } : fields
+    if (pen) effective.set(copy.id, pen)
     const placement = source ? placements.get(source) : undefined
     if (placement) placements.set(copy.id, placement)
     if (source && build.groupIds.has(source)) build.groupIds.add(copy.id)
     if (source && build.aroundIds.has(source)) build.aroundIds.add(copy.id)
-    if (fields && source && !isEqual(themesThrough(build, copy.id), themesThrough(build, source))) {
+    if (pen && source && !isEqual(themesThrough(build, copy.id), themesThrough(build, source))) {
       inAncestorThemes(build, copy, () => {
-        const leave = fields.theme ? ctx.enterTheme(fields.theme) : undefined
+        const leave = pen.theme ? ctx.enterTheme(pen.theme) : undefined
         try {
-          applyPenProperties(copy, fields, build)
+          applyPenProperties(copy, pen, build)
         } finally {
           leave?.()
         }
@@ -279,7 +320,7 @@ export function populateInstances(build: Build): void {
     }
     populateInstanceChildren(graph, instance.id, component.id)
     recordOwnFields(graph, instance, ref)
-    inheritCopyFields(build, instance)
+    inheritCopyFields(build, instance, descendantThemes(build, instance, ref.descendants))
     applyDescendants(build, instance, ref.descendants, populate)
     // Before anything copies this instance, so the copies are of what it became.
     detachReplacingInstances(build)
