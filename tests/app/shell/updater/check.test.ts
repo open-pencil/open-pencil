@@ -104,6 +104,27 @@ describe('checkForAppUpdate', () => {
     expect(toast.toasts.value.map((entry) => entry.message)).toEqual([messages.value.upToDate])
   })
 
+  test('shows the answer to Check for Updates asked while the launch check runs', async () => {
+    let answer: (value: null) => void = () => {}
+    const pending = new Promise<null>((resolve) => {
+      answer = resolve
+    })
+    let asked = 0
+    await mockTauriIPC((cmd) => {
+      if (cmd !== 'check_for_update') return null
+      asked += 1
+      return pending
+    })
+
+    const launch = checkForAppUpdate({ silent: true, messages })
+    const menu = checkForAppUpdate({ messages })
+    answer(null)
+    await Promise.all([launch, menu])
+
+    expect(asked).toBe(1)
+    expect(toast.toasts.value.map((entry) => entry.message)).toEqual([messages.value.upToDate])
+  })
+
   test('opens the Software Update window for an available update', async () => {
     const calls: Array<{ cmd: string; args: unknown }> = []
     await mockTauriIPC((cmd, args) => {
