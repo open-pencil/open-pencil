@@ -116,12 +116,12 @@ export function createBetterAuthAdapter(
       ...Object.values(accessTokens.endpoints).map((endpoint) => endpoint.path),
       passkeys.endpoints.deletePasskey.path,
       twoStep.endpoints.disableTwoFactor.path,
-      // Accounts are deleted through `/api/account/delete`, which an account awaiting approval
-      // cannot reach either.
+      // Accounts are deleted through `/api/account/delete`, closed to accounts awaiting approval.
       CORE_AUTH_PATHS.deleteUser,
       CORE_AUTH_PATHS.deleteUserCallback,
       // Linking and unlinking go through `/api/account/authentication`, with a fresh session.
-      ...[CORE_AUTH_PATHS.linkSocialAccount, CORE_AUTH_PATHS.unlinkAccount]
+      CORE_AUTH_PATHS.linkSocialAccount,
+      CORE_AUTH_PATHS.unlinkAccount
     ],
     secret: config.authSecret,
     database: {
