@@ -29,6 +29,7 @@ import type { AuthenticationEmailService } from './email'
 import { AUTH_BASE_PATH, CORE_AUTH_PATHS, authRequestPath } from './endpoints'
 import { enrollmentOptions } from './enrollment'
 import { betterAuthLogger } from './logger'
+import { signInMethodActions, signInMethodHooks } from './methods'
 import { createMFAAssuranceService, createProofRecorder, verifySecondFactor } from './mfa-assurance'
 import { passwordOptions } from './passwords'
 import { APPLE_AUDIENCE, socialProviders } from './social-providers'
@@ -94,6 +95,13 @@ export function createBetterAuthAdapter(
     rateLimit: { enabled: false },
     enableSessionForAPIKeys: false
   })
+  const joining = enrollmentOptions(
+    config,
+    database,
+    enrollment,
+    authenticationEmail,
+    emailChangeAvailable
+  )
   const auth = betterAuth({
     appName: 'OpenPencil Cloud',
     logger: betterAuthLogger,
@@ -156,7 +164,7 @@ export function createBetterAuthAdapter(
       }
     },
     emailAndPassword: passwordOptions(config, authenticationEmail),
-    ...enrollmentOptions(config, database, enrollment, authenticationEmail, emailChangeAvailable),
+    ...joining,
     plugins: [
       ...(config.captchaProvider && config.captchaSecretKey
         ? [
@@ -189,6 +197,8 @@ export function createBetterAuthAdapter(
       accessTokens
     ],
     socialProviders: socialProviders(config),
+    // Accounts join with their language set, and a removed sign-in identity doesn't link back.
+    databaseHooks: { ...joining.databaseHooks, ...signInMethodHooks },
     trustedOrigins: [
       config.publicURL,
       ...config.trustedOrigins,
@@ -410,19 +420,12 @@ export function createBetterAuthAdapter(
         })
       }
     },
-    async startSocialLink(headers, input) {
-      await freshSession(headers)
-      const response = await auth.api.linkSocialAccount({
-        headers,
-        body: {
-          provider: input.provider,
-          callbackURL: input.callbackURL,
-          errorCallbackURL: input.callbackURL,
-          disableRedirect: true
-        }
-      })
-      return response.url
-    },
+    ...signInMethodActions({
+      database,
+      store: async () => (await auth.$context).internalAdapter,
+      freshSession,
+      link: (headers, body) => auth.api.linkSocialAccount({ headers, body })
+    }),
     async deleteAccount(headers, password) {
       const { headers: answer } = await auth.api.deleteUser({
         headers,
@@ -430,9 +433,6 @@ export function createBetterAuthAdapter(
         returnHeaders: true
       })
       return answer
-    },
-    async unlinkAuthenticationMethod(headers, methodId) {
-      await auth.api.unlinkAccount({ headers, body: { accountId: methodId } })
     },
     async banUser(headers, userId, reason) {
       await auth.api.banUser({ headers, body: { userId, banReason: reason } })

@@ -6,6 +6,8 @@ import type {
 } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth/session'
 
+import type { RemovedSignInMethod } from './methods'
+
 export type CloudMFAStatus = {
   required: boolean
   enabled: boolean
@@ -76,6 +78,8 @@ export interface CloudAuthAdapter {
     input: { provider: 'google' | 'apple'; callbackURL: string }
   ): Promise<string>
   unlinkAuthenticationMethod(headers: Headers, methodId: string): Promise<void>
+  /** Keeps a sign-in identity an administrator removed from linking itself back. */
+  blockSignInMethod(userId: string, method: RemovedSignInMethod): Promise<void>
   banUser(headers: Headers, userId: string, reason?: string): Promise<void>
   unbanUser(headers: Headers, userId: string): Promise<void>
   revokeUserSessions(headers: Headers, userId: string): Promise<void>

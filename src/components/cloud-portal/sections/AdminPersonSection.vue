@@ -52,9 +52,14 @@ const detail = computed<PortalPersonDetail | null>(() => {
   }
 })
 
+// A change can take effect and still fail after, as a removal whose email can't be sent does, so
+// the page reads the account again either way; the error still shows.
 const action = usePortalAction(async (change: () => Promise<unknown>) => {
-  await change()
-  await loaded.reload()
+  try {
+    await change()
+  } finally {
+    await loaded.reload()
+  }
 })
 const error = computed(() => action.error.value)
 

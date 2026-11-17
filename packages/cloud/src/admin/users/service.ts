@@ -20,9 +20,11 @@ import {
   type AuthenticationEmailService,
   type CloudAuthAdapter
 } from '#cloud/server/auth'
+import { removeSignInMethod } from '#cloud/server/auth/methods'
 import type { CloudDatabase } from '#cloud/server/db'
 import type { UserPictureService } from '#cloud/server/pictures'
 import { dateString } from '#cloud/server/sharing/contracts'
+import { APIError } from 'better-auth'
 import { countBy, groupBy, keyBy } from 'es-toolkit'
 import { NoResultError, type ExpressionBuilder, type Kysely } from 'kysely'
 
@@ -408,44 +410,43 @@ export function createAdminUserService(
      */
     async removeSignInMethod(actorId: string, userId: string, methodId: string): Promise<void> {
       refuseSelf(actorId, userId, 'remove a sign-in method from')
-      const removed = await database.transaction().execute(async (transaction) => {
-        const target = await transaction
-          .selectFrom('user')
-          .select(['id', 'email', 'name'])
-          .where('id', '=', userId)
-          .forUpdate()
-          .executeTakeFirstOrThrow()
-        const methods = await transaction
-          .selectFrom('account')
-          .select(['id', 'providerId'])
-          .where('userId', '=', userId)
-          .execute()
-        const method = methods.find((candidate) => candidate.id === methodId)
-        if (!method) throw new NoResultError(transaction.selectFrom('account').toOperationNode())
-        if (methods.length <= 1) {
+      const removed = await removeSignInMethod(database, {
+        userId,
+        methodId,
+        also: (transaction, removed) =>
+          transaction
+            .insertInto('adminAuditEvent')
+            .values({
+              id: crypto.randomUUID(),
+              actorUserId: actorId,
+              action: 'user.sign-in-method-removed',
+              subjectType: 'user',
+              subjectId: userId,
+              metadata: { provider: removed }
+            })
+            .execute()
+            .then(() => undefined)
+      }).catch((error: unknown) => {
+        if (!(error instanceof APIError)) throw error
+        if (error.body?.code === 'FAILED_TO_UNLINK_LAST_ACCOUNT') {
           throw new AdminDomainError(
             'last_authentication_method',
             'Cannot remove an account’s last sign-in method'
           )
         }
-        await transaction.deleteFrom('account').where('id', '=', methodId).execute()
-        await transaction
-          .insertInto('adminAuditEvent')
-          .values({
-            id: crypto.randomUUID(),
-            actorUserId: actorId,
-            action: 'user.sign-in-method-removed',
-            subjectType: 'user',
-            subjectId: userId,
-            metadata: { provider: method.providerId }
-          })
-          .execute()
-        return { ...target, provider: method.providerId }
+        // A method of another account, or none, names nothing here, as an unknown person does.
+        throw new NoResultError(database.selectFrom('account').toOperationNode())
       })
+      await auth.blockSignInMethod(userId, removed)
+      const user = await database
+        .selectFrom('user')
+        .select(['id', 'email', 'name'])
+        .where('id', '=', userId)
+        .executeTakeFirstOrThrow()
       await options.notify?.sendTwoStepChanged({
-        email: removed.email,
-        name: removed.name,
-        userId: removed.id,
+        email: user.email,
+        name: user.name,
+        userId: user.id,
         change: 'sign-in-method-removed',
         method: removed.provider
       })
