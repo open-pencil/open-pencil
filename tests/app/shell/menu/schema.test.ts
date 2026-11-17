@@ -63,6 +63,7 @@ describe('APP_MENU_SCHEMA', () => {
       'help-shortcuts',
       'help-whats-new',
       'open-tour',
+      'check-updates',
       'report-problem',
       'diagnostics',
       'help-community',
@@ -85,7 +86,7 @@ describe('APP_MENU_SCHEMA', () => {
   })
 
   // Last on every platform, as each one expects; getting help is never a File command.
-  test('ends with a Help menu holding guides, reporting, and the community', () => {
+  test('ends with a Help menu holding guides, updates, reporting, and the community', () => {
     const help = APP_MENU_SCHEMA.at(-1)
     const ids = (help ? actionItems(help.items) : []).map((entry) =>
       'type' in entry ? '' : entry.id
@@ -98,6 +99,7 @@ describe('APP_MENU_SCHEMA', () => {
       'help-shortcuts',
       'help-whats-new',
       'open-tour',
+      'check-updates',
       'report-problem',
       'diagnostics',
       'help-community',
@@ -109,6 +111,12 @@ describe('APP_MENU_SCHEMA', () => {
       'type' in entry ? '' : entry.id
     )
     for (const id of ids) expect(fileIds).not.toContain(id)
+    // Only where the app installs its own updates; macOS keeps it in the application menu.
+    expect(
+      help?.items.find((entry) => 'id' in entry && entry.id === 'check-updates')
+    ).toMatchObject({
+      feature: 'self-update'
+    })
   })
 
   test('exposes recent files through the native File menu', () => {

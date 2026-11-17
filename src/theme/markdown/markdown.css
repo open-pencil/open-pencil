@@ -22,7 +22,7 @@
   }
 
   :where(a) {
-    @apply cursor-pointer text-accent underline [overflow-wrap:anywhere];
+    @apply cursor-pointer text-primary underline [overflow-wrap:anywhere];
   }
 
   :where(ul) {

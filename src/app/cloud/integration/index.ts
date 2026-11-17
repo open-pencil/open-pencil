@@ -22,6 +22,7 @@ export { saveDocument } from '../drafts/save'
 export { openCloudShare } from '../sharing/dialog'
 export { cloudSaveDestinations, cloudUploadFailure, signInToSaveTo } from '../documents/save'
 export { useHomeCloud } from '../home'
+export { officialCloudSignedIn } from '../servers/official'
 export { openingCloudLink } from '../sessions/startup'
 export { CLOUD_STORAGE_PROVIDER_ID } from '../sessions/token'
 export {

@@ -33,6 +33,7 @@ export function createNodeTransactionalEmailRuntime(
   const email = createTransactionalEmailService(database, {
     encryptionSecret: config.authSecret,
     from: config.emailFrom ?? '',
+    replyTo: config.emailReplyTo,
     transport
   })
   return {

@@ -74,6 +74,15 @@ describe('the releases a build shows', () => {
     expect(older.beta).toBeNull()
   })
 
+  test('never offer the rolling nightly, though it is the newest pre-release', () => {
+    const { beta } = latestReleases([
+      release('0.17.0-beta.5', '2026-11-15T00:00:00Z', true),
+      { tag_name: 'nightly', published_at: '2026-11-16T03:30:00Z', prerelease: true },
+      release('0.16.2', '2026-11-01T00:00:00Z')
+    ])
+    expect(beta?.tag_name).toBe('v0.17.0-beta.5')
+  })
+
   test('show a beta without any stable release', () => {
     const { stable, beta } = latestReleases([release('0.1.0-beta.1', '2026-01-01T00:00:00Z', true)])
     expect(stable).toBeNull()

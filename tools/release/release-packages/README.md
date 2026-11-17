@@ -17,6 +17,12 @@ Workflow tooling is checked out separately in `.pipeline` and installed from its
 
 A `vX.Y.Z-beta.N` tag runs the same workflow. npm packages publish under the `next` dist-tag, so `latest` stays on the last stable release, and the draft is marked pre-release and never latest. The desktop updater and download links follow GitHub's latest release, and the Homebrew cask only matches stable tags, so neither picks up a beta. The app and docs deploy workflows skip pre-release tags. The changelog section is headed `## X.Y.Z-beta.N — YYYY-MM-DD` like any release.
 
+## Nightlies
+
+Every night `build.yml` builds master as a nightly, and a dispatch with **nightly** builds one at once; a night when master is the commit the last complete nightly built, which its release manifest names, builds nothing (`src/nightly/plan.ts`). The version is `X.Y.Z-nightly.YYYYMMDD`, `.N` for a day's second build on, where `X.Y.Z` is the release master heads for: its version while a beta, else the next minor. SemVer puts it after that release's betas and before the release. Master keeps its version; the frontend and native jobs write the nightly's into the checkout's root manifest and Tauri config (`src/nightly/stamp.ts`).
+
+A nightly builds, signs, notarizes, verifies, and attests exactly as a release does, with three differences. It publishes no npm packages. Windows bundles NSIS only, which also answers the platform's own updater key, since an MSI version must be numbers only (`NIGHTLY_BUNDLES`). Its notes name the commit it builds (`src/nightly/notes.ts`). It goes to one rolling pre-release, published at once, whose `nightly` tag moves to each nightly's commit and whose files this run's replace, the updater feed after them and the release manifest last, once every byte is checked, so a nightly that fails partway is built again the next night (`src/nightly/publish.ts`). Desktop apps on the Nightly update channel read that release's `latest.json` (`desktop/src/updates.rs`); the download page leaves it out. A release that the workflow token publishes starts no other workflow, so a nightly deploys neither the docs nor a Cloud image.
+
 ## Draft publication
 
 The workflow leaves the GitHub Release **draft**. After successful verification, publish it with the exact tagged changelog body and publish any accompanying security advisory separately. Never move a release tag to repair CI.

@@ -40,6 +40,9 @@ function authAdapter() {
     async resolveAccountSession() {
       return null
     },
+    async twoStepConfirmed() {
+      return true
+    },
     async resolveAccessToken() {
       return null
     },

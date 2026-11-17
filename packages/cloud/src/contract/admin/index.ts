@@ -41,6 +41,8 @@ export const adminErrorCodeSchema = v.picklist([
   'self_admin_action_forbidden',
   'email_regeneration_unavailable',
   'mfa_required',
+  // Two-step is on, but this session has not proved it lately; confirming it lets it back in.
+  'two_step_unconfirmed',
   'document_not_restorable',
   'workspace_gone'
 ])
@@ -71,6 +73,10 @@ export const enrollmentsResponseSchema = v.object({
   ...listTotals(enrollmentStatusSchema.options)
 })
 export const enrollmentReviewResponseSchema = v.object({ enrollment: enrollmentSchema })
+/** How many waiting requests were approved with the official deployment's invitation letter. */
+export const enrollmentInviteResponseSchema = v.object({
+  invited: v.pipe(v.number(), v.integer(), v.minValue(0))
+})
 
 export const cloudAdminSessionResponseSchema = v.object({ user: cloudIdentitySchema })
 

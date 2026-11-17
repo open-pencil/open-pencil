@@ -318,10 +318,16 @@ export interface PasskeyTable {
   aaguid: string | null
 }
 
+/**
+ * How a session proved its second step: a code, a recovery code, a passkey, or for a desktop app,
+ * a device sign-in that only a session which proved it could approve.
+ */
+export type MFAAssuranceMethod = 'totp' | 'recovery-code' | 'passkey' | 'device'
+
 export interface MFAAssuranceTable {
   sessionId: string
   userId: string
-  method: 'totp' | 'recovery-code' | 'passkey'
+  method: MFAAssuranceMethod
   verifiedAt: TimestampColumn
 }
 

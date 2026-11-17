@@ -94,6 +94,8 @@ export const IS_CLOUD_SITE =
   typeof __OPENPENCIL_CLOUD_SITE__ === 'boolean' && __OPENPENCIL_CLOUD_SITE__
 /** Where the desktop app's installers are published. */
 export const DESKTOP_DOWNLOAD_URL = 'https://github.com/open-pencil/open-pencil/releases/latest'
+/** The download page's beta section, with the newest desktop beta's installers. */
+export const DESKTOP_BETA_DOWNLOAD_URL = 'https://openpencil.dev/download#beta'
 export const NODE_DOWNLOAD_URL = 'https://nodejs.org/en/download'
 
 /**

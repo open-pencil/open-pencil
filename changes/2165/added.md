@@ -1,0 +1,1 @@
+- Cloud: the official server's editor says Cloud is in beta and links the desktop beta (#2165).

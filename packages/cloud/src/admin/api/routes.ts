@@ -108,7 +108,9 @@ export function createCloudAdminRoutes(
       if (security.requireMFA) {
         const status = await security.auth.mfaStatus(context.req.raw.headers)
         if (!status?.assured) {
-          return context.json({ error: { code: 'mfa_required' as const } }, 403)
+          // Someone with two-step only has to prove it again; someone without has to turn it on.
+          const code = status?.enabled ? 'two_step_unconfirmed' : 'mfa_required'
+          return context.json({ error: { code } }, 403)
         }
       }
       return next()
@@ -130,6 +132,9 @@ export function createCloudAdminRoutes(
     })
     .get('/enrollments', validatedQuery(enrollmentQuerySchema), async (context) =>
       context.json(await services.enrollment.list(context.req.valid('query')))
+    )
+    .post('/enrollments/invite', async (context) =>
+      context.json(await services.enrollment.invitePending(context.get('actor').userId))
     )
     .post(
       '/enrollments/:id/approve',

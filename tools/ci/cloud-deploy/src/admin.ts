@@ -17,7 +17,7 @@ export const NEON_DATABASES: Record<
 }
 
 const DATABASE = 'openpencil_cloud'
-const OPERATIONS = ['approve', 'grant'] as const
+const OPERATIONS = ['approve', 'grant', 'request'] as const
 
 /** The `neonctl` arguments that print a target's connection string. */
 export function connectionStringArgs(target: CloudTarget): string[] {
@@ -58,10 +58,10 @@ export async function runOfficialAdmin(
   cwd: string,
   execute = runCommand
 ): Promise<void> {
-  const [target = '', operation = '', email] = args
+  const [target = '', operation = '', email, ...rest] = args
   if (!isTarget(target) || !(OPERATIONS as readonly string[]).includes(operation) || !email) {
     throw new Error(
-      `Usage: cloud:admin <${CLOUD_TARGETS.join('|')}> <${OPERATIONS.join('|')}> <email>`
+      `Usage: cloud:admin <${CLOUD_TARGETS.join('|')}> <${OPERATIONS.join('|')}> <email> [name]`
     )
   }
   let connectionString: string
@@ -76,7 +76,7 @@ export async function runOfficialAdmin(
   try {
     await execute({
       command: 'bun',
-      args: ['--filter', '@open-pencil/cloud', 'admin', operation, email],
+      args: ['--filter', '@open-pencil/cloud', 'admin', operation, email, ...rest],
       cwd,
       env: { ...process.env, DATABASE_URL: connectionString },
       output: 'inherit'

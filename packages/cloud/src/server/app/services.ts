@@ -4,6 +4,7 @@ import type {
   CloudIdentityResolver,
   CloudSessionResolver
 } from '#cloud/server/auth'
+import { enrollmentEmailOptions } from '#cloud/server/auth'
 import { createBillingTokenService } from '#cloud/server/billing'
 import { createCollaborationTicketService } from '#cloud/server/collaboration'
 import { createCommentService } from '#cloud/server/comments'
@@ -44,6 +45,11 @@ export type CloudServices = {
    * documents and deleting the account. Defaults to `resolveSession` when that is given.
    */
   resolveAccountSession?: CloudSessionResolver
+  /**
+   * Whether the request's session proved its account's second step, or the account has none.
+   * Defaults to the auth adapter's, or to yes when `resolveIdentity` stands in for signing in.
+   */
+  twoStepConfirmed?: (request: Request) => Promise<boolean>
   invitationDelivery?: InvitationDelivery
   invitationOutbox?: InvitationOutbox
   transactionalEmail?: TransactionalEmailService
@@ -82,11 +88,7 @@ export function createAppServices(services: CloudServices) {
   })
   const enrollment =
     services.enrollment ??
-    createEnrollmentService(database, {
-      publicURL: config.publicURL,
-      adminRecipients: config.enrollmentAdminNotificationEmails,
-      email: services.transactionalEmail
-    })
+    createEnrollmentService(database, enrollmentEmailOptions(config, services.transactionalEmail))
   const policy =
     services.policy ??
     (services.entitlementSource

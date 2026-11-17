@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { SELECTION_COLOR } from '@open-pencil/core/constants'
+import { minOf } from '@open-pencil/scene-graph/arrays'
 import { contrastRatio, parseColor, rgbaToOkHCL } from '@open-pencil/scene-graph/color'
 
 import {
@@ -12,6 +13,16 @@ import {
 import { ACCENT_PRESETS } from '@/app/shell/accent/schema'
 
 const THEMES: AccentTheme[] = ['dark', 'light']
+/** The panel, secondary panel, hovered row, and field in each theme, which primary text sits on. */
+const TEXT_SURFACES: Record<AccentTheme, string[]> = {
+  dark: ['#2A2A2A', '#242424', '#353535', '#383838'],
+  light: ['#FFFFFF', '#F7F8FA', '#EEF1F5', '#F0F1F3']
+}
+
+function primaryOnPanel(tokens: Record<string, string>, theme: AccentTheme): number {
+  const primary = parseColor(tokens['--color-primary'] ?? '')
+  return minOf(TEXT_SURFACES[theme].map((surface) => contrastRatio(primary, parseColor(surface))))
+}
 
 function palette(color: string, theme: AccentTheme) {
   return deriveAccentPalette(accentBaseColor({ kind: 'custom', color }), theme)
@@ -60,9 +71,10 @@ describe('deriveAccentPalette', () => {
     for (const theme of THEMES) {
       const { tokens, selection } = palette('#FFEE00', theme)
       expect(tokens['--color-on-accent']).toBe('#1F2328')
-      expect(tokens['--color-on-primary']).toBe('#1F2328')
       expect(selection.foreground).toEqual(parseColor('#1F2328'))
     }
+    // On the dark panel primary stays light too; the light theme darkens it (below).
+    expect(palette('#FFEE00', 'dark').tokens['--color-on-primary']).toBe('#1F2328')
   })
 
   test('pulls near-black and near-white picks into a visible lightness', () => {
@@ -87,6 +99,26 @@ describe('deriveAccentPalette', () => {
         ).toBeGreaterThanOrEqual(4.5)
       }
     }
+  })
+
+  test('primary text such as a link reads on every panel surface for every preset and custom accent', () => {
+    const presets = ACCENT_PRESETS.map((preset) => accentBaseColor({ kind: 'preset', preset }))
+    const customs = ['#FFEE00', '#FFFF00', '#00FFFF', '#808080', '#1A1A1A'].map((color) =>
+      accentBaseColor({ kind: 'custom', color })
+    )
+    for (const base of [...presets, ...customs]) {
+      for (const theme of THEMES) {
+        const { tokens } = deriveAccentPalette(base, theme)
+        expect(primaryOnPanel(tokens, theme)).toBeGreaterThanOrEqual(4.5)
+      }
+    }
+  })
+
+  test('a light accent keeps its light fills while its links darken on the light panel', () => {
+    const { tokens } = palette('#FFEE00', 'light')
+    expect(tokens['--color-on-accent']).toBe('#1F2328')
+    expect(primaryOnPanel(tokens, 'light')).toBeGreaterThanOrEqual(4.5)
+    expect(tokens['--color-on-primary']).toBe('#FFFFFF')
   })
 
   test('the unfocused selection tint keeps the panel lightness and takes the accent hue', () => {

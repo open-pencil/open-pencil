@@ -47,6 +47,7 @@ describe('transactional email outbox', () => {
       const email = createTransactionalEmailService(runtime.database, {
         encryptionSecret: secret,
         from: 'OpenPencil <cloud@example.com>',
+        replyTo: 'hello@example.com',
         transport: {
           id: 'memory',
           async send(message) {
@@ -71,6 +72,7 @@ describe('transactional email outbox', () => {
       expect(sent).toHaveLength(1)
       expect(sent[0]).toMatchObject({
         to: 'person@example.com',
+        replyTo: 'hello@example.com',
         subject: 'Alice invited you to view “Homepage”'
       })
       expect(

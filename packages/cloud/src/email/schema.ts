@@ -13,6 +13,7 @@ export type TransactionalEmailKind =
   | 'enrollment-approved'
   | 'enrollment-rejected'
   | 'enrollment-revoked'
+  | 'enrollment-invited'
   | 'email-verification'
   | 'password-reset'
   | 'password-changed'
@@ -174,6 +175,7 @@ export const transactionalEmailContentSchema = v.variant('kind', [
   content('enrollment-approved', enrollmentEmailPayloadSchema),
   content('enrollment-rejected', enrollmentEmailPayloadSchema),
   content('enrollment-revoked', enrollmentEmailPayloadSchema),
+  content('enrollment-invited', enrollmentEmailPayloadSchema),
   content('email-verification', authenticationEmailPayloadSchema),
   content('password-reset', authenticationEmailPayloadSchema),
   content('password-changed', authenticationEmailPayloadSchema),

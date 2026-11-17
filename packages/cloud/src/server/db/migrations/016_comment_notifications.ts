@@ -12,6 +12,9 @@ const REPORT_REPLY_EMAIL_KINDS = [
 
 export const COMMENT_EMAIL_SETTINGS = ['all', 'mentions', 'off']
 
+/** Every kind of transactional email once this migration has run. */
+export const COMMENT_EMAIL_KINDS = [...REPORT_REPLY_EMAIL_KINDS, 'comment-notification']
+
 /**
  * Who a comment names, who has read a thread up to when, and which comments each account hears
  * about by email: everything in threads it takes part in, only what names it, or nothing. Email
@@ -57,9 +60,7 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     ['comment_email', ['sender_id', 'sent_at']],
     ['comment_email', ['recipient_id', 'sent_at']]
   ])
-  await replaceChecks(database, 'widen', [
-    ['transactional_email', 'kind', [...REPORT_REPLY_EMAIL_KINDS, 'comment-notification']]
-  ])
+  await replaceChecks(database, 'widen', [['transactional_email', 'kind', COMMENT_EMAIL_KINDS]])
 }
 
 export async function down(database: Kysely<unknown>): Promise<void> {

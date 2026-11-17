@@ -307,6 +307,8 @@ export const cloudMessageDefaults = {
   settingsSignedOut: 'Signed out',
   settingsWaitingForApproval: 'Waiting for an administrator to approve your account',
   settingsAccessClosed: 'An administrator declined or removed your access',
+  settingsConfirmTwoStep: 'Confirm it’s you with your second step to keep using this server',
+  settingsConfirm: 'Confirm',
   settingsAcceptTerms: 'Accept this server’s terms to keep using it',
   settingsReviewTerms: 'Review terms',
   settingsOptionsFor: params('Options for {host}'),
@@ -398,6 +400,9 @@ export const cloudMessageDefaults = {
   communityLinkFailed: 'This document isn’t in the gallery any more.',
   communityBanner: 'A community example, open read-only.',
   communitySaveCopy: 'Save a copy',
+  betaBanner:
+    'OpenPencil Cloud is in beta, so some things may not work yet. To use it in the desktop app, install the beta.',
+  betaDownload: 'Download the beta',
   savePublicLabel: 'Public',
   savePublicHeading: 'Anyone can open what you save here',
   savePublicDescription:
