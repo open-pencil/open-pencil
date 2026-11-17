@@ -107,6 +107,43 @@ describe('naming icons by how they draw', () => {
   })
 })
 
+describe('naming icons after a failure', () => {
+  test('loads the index again on the next call after it failed', async () => {
+    spyOn(console, 'warn').mockImplementation(noop)
+    const index = mock(testIndex)
+    index.mockImplementationOnce(() => Promise.reject(new Error('offline')))
+    const match = createIconMatcher({ index, icons: testIcons(), draw })
+    const house = ICONS['lucide:house'] ?? ''
+
+    expect(await match([house])).toEqual([null])
+    expect(await match([house])).toEqual(['lucide:house'])
+  })
+
+  test('leaves an SVG unnamed when drawing it fails, and draws it again on the next call', async () => {
+    spyOn(console, 'warn').mockImplementation(noop)
+    let failing = true
+    const flaky: IconMatcherServices['draw'] = (...args) =>
+      failing ? Promise.reject(new Error('context lost')) : draw(...args)
+    const match = createIconMatcher({ index: testIndex, icons: testIcons(), draw: flaky })
+    const house = ICONS['lucide:house'] ?? ''
+
+    // The index is hashed with the working renderer; only the matcher's draws fail.
+    expect(await match([house])).toEqual([null])
+    failing = false
+    expect(await match([house])).toEqual(['lucide:house'])
+  })
+
+  test('does not keep a miss from comparing with only some of its icons', async () => {
+    const icons = testIcons()
+    icons.previews.mockImplementationOnce(async () => new Map())
+    const match = createIconMatcher({ index: testIndex, icons, draw })
+    const house = ICONS['lucide:house'] ?? ''
+
+    expect(await match([house])).toEqual([null])
+    expect(await match([house])).toEqual(['lucide:house'])
+  })
+})
+
 describe('coverage', () => {
   test('centers an image in its box, as darkness on white', () => {
     // One opaque pixel and one half covered, in a 2 by 1 image.

@@ -235,6 +235,21 @@ describe('reading HTML', () => {
     expect(readIcon(artwork)).toBeNull()
   })
 
+  test('keeps an icon that clips its shapes as artwork, with its clip', async () => {
+    const { graph } = await readHTMLDocument(
+      `<svg data-icon="lucide:square" width="24" height="24" viewBox="0 0 24 24">
+        <defs><clipPath id="half"><rect width="12" height="24"/></clipPath></defs>
+        <rect width="24" height="24" clip-path="url(#half)"/>
+      </svg>`,
+      { matchIcon: async (svgs) => svgs.map(() => 'lucide:square') }
+    )
+    const [svg] = graph.getChildren(graph.getPages()[0].id)
+    const masks = [...graph.getAllNodes()].filter((node) => node.isMask)
+
+    expect(readIcon(svg)).toBeNull()
+    expect(masks).toHaveLength(1)
+  })
+
   test("paints inline SVG shapes as the page's CSS does, keeping their own attributes", async () => {
     const { graph } = await readHTMLDocument(
       `<style>.icon path { fill: currentColor } .outlined { stroke: #0000ff; stroke-width: 3 }</style>

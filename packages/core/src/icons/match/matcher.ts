@@ -84,56 +84,89 @@ interface Shortlisted {
 /**
  * Names the icons SVG draws: whaticon's hash of the SVG drawn as OpenPencil draws it shortlists
  * icons, and the one that draws most alike, if alike enough, names it. Answers, drawings, and the
- * index are kept, so a page that repeats an icon pays for it once. Without its index or the
- * shortlisted icons, as offline, the matcher names nothing and says why.
+ * index are kept, so a page that repeats an icon pays for it once. What could not be loaded or
+ * drawn, as offline, leaves its SVG unnamed and is tried again by the next call; the matcher says
+ * why once.
  */
 export function createIconMatcher(services: IconMatcherServices): IconMatcher {
-  let index: Promise<IconIndex | null> | undefined
+  let index: Promise<IconIndex> | undefined
+  let warned = false
   const answers = new Map<string, string | null>()
-  const drawn = new Map<string, Promise<Uint8Array | null>>()
+  const drawn = new Map<string, Promise<Uint8Array | null | undefined>>()
 
-  function loadIndex(): Promise<IconIndex | null> {
-    index ??= services.index().catch((error: unknown) => {
-      console.warn('Icons are not named: whaticon’s index did not load', error)
-      return null
-    })
-    return index
+  function warn(reason: string, error: unknown): void {
+    if (warned) return
+    warned = true
+    console.warn(`Icons are not named: ${reason}`, error)
   }
 
-  const coverage = (svg: string, width: number, height: number) =>
-    svgCoverage(services.draw, svg, width, height)
+  async function loadIndex(): Promise<IconIndex | null> {
+    index ??= services.index()
+    try {
+      return await index
+    } catch (error) {
+      index = undefined
+      warn('whaticon’s index did not load', error)
+      return null
+    }
+  }
 
-  async function shortlist(svg: string, icons: IconIndex): Promise<Shortlisted | null> {
+  /** An SVG as coverage: null when it draws nothing, undefined when drawing it failed. */
+  async function coverage(
+    svg: string,
+    width: number,
+    height: number
+  ): Promise<Uint8Array | null | undefined> {
+    try {
+      return await svgCoverage(services.draw, svg, width, height)
+    } catch (error) {
+      warn('an SVG could not be drawn to compare', error)
+      return undefined
+    }
+  }
+
+  /** The SVG's shortlist: null when no icon comes close, undefined when it could not be drawn. */
+  async function shortlist(svg: string, icons: IconIndex): Promise<Shortlisted | null | undefined> {
     const grid = await coverage(svg, DEFAULT_SIZE + 1, DEFAULT_SIZE)
-    if (!grid) return null
+    if (!grid) return grid
     // Icons with identical hashes are copies; the first stands for them all.
     const names = findMatchesByHash(dHashFromPixels(grid), icons, SHORTLIST).map((m) => m.name)
     if (names.length === 0) return null
     const drawing = await coverage(svg, COMPARED_SIZE, COMPARED_SIZE)
-    return drawing ? { drawing, names } : null
+    return drawing && { drawing, names }
   }
 
-  function drawnIcon(name: string, svg: string): Promise<Uint8Array | null> {
+  function drawnIcon(name: string, svg: string): Promise<Uint8Array | null | undefined> {
     const known = drawn.get(name)
     if (known) return known
-    const drawing = coverage(svg, COMPARED_SIZE, COMPARED_SIZE)
+    // A drawing that failed is forgotten, so the next call draws it again.
+    const drawing = coverage(svg, COMPARED_SIZE, COMPARED_SIZE).then((result) => {
+      if (result === undefined) drawn.delete(name)
+      return result
+    })
     drawn.set(name, drawing)
     return drawing
   }
 
+  /**
+   * The shortlisted icon that draws most like the SVG, if alike enough, and whether every one
+   * was compared: an answer from fewer is not kept unless it names an icon.
+   */
   async function closest(
     { drawing, names }: Shortlisted,
     previews: ReadonlyMap<string, string>
-  ): Promise<string | null> {
+  ): Promise<{ name: string | null; complete: boolean }> {
     let best: { name: string; similarity: number } | null = null
+    let complete = true
     for (const name of names) {
       const preview = previews.get(name)
-      const candidate = preview ? await drawnIcon(name, preview) : null
+      const candidate = preview ? await drawnIcon(name, preview) : undefined
+      if (candidate === undefined) complete = false
       if (!candidate) continue
       const similarity = coverageSimilarity(drawing, candidate)
       if (!best || similarity > best.similarity) best = { name, similarity }
     }
-    return best && best.similarity >= NAMED_AT ? best.name : null
+    return { name: best && best.similarity >= NAMED_AT ? best.name : null, complete }
   }
 
   async function previewsOf(names: readonly string[]): Promise<ReadonlyMap<string, string> | null> {
@@ -141,9 +174,17 @@ export function createIconMatcher(services: IconMatcherServices): IconMatcher {
     try {
       return await services.icons.previews(names)
     } catch (error) {
-      console.warn('Icons are not named: the icons to compare with did not load', error)
+      warn('the icons to compare with did not load', error)
       return null
     }
+  }
+
+  async function answer(
+    listed: Shortlisted | null | undefined,
+    previews: ReadonlyMap<string, string>
+  ): Promise<{ name: string | null; complete: boolean }> {
+    if (listed === undefined) return { name: null, complete: false }
+    return listed ? closest(listed, previews) : { name: null, complete: true }
   }
 
   return async (svgs) => {
@@ -152,12 +193,13 @@ export function createIconMatcher(services: IconMatcherServices): IconMatcher {
     if (icons) {
       const shortlists = await Promise.all(unknown.map((svg) => shortlist(svg, icons)))
       const previews = await previewsOf(uniq(shortlists.flatMap((listed) => listed?.names ?? [])))
-      // Not remembered, so a later import asks again once the icons can be fetched.
-      if (!previews) return svgs.map((svg) => answers.get(svg) ?? null)
-      const named = await Promise.all(
-        shortlists.map((listed) => (listed ? closest(listed, previews) : Promise.resolve(null)))
-      )
-      unknown.forEach((svg, i) => answers.set(svg, named[i] ?? null))
+      if (previews) {
+        const results = await Promise.all(shortlists.map((listed) => answer(listed, previews)))
+        unknown.forEach((svg, i) => {
+          const { name, complete } = results[i]
+          if (name || complete) answers.set(svg, name)
+        })
+      }
     }
     return svgs.map((svg) => answers.get(svg) ?? null)
   }

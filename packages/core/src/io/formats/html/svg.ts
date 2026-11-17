@@ -167,7 +167,11 @@ function iconName(element: DesignElement): { prefix: string; name: string } | nu
   return parsed ? { prefix: parsed.prefix, name: parsed.iconName } : null
 }
 
-/** Draws a named icon's paths into its frame, tinted in its color, and records the icon. */
+/**
+ * Draws a named icon's paths into its frame, tinted in its color, and records the icon. Icon
+ * paths have no clips or text, so SVG that clips its shapes or sets text is not drawn as an
+ * icon, which would lose them; returns whether it was.
+ */
 function drawNamedIcon(
   graph: SceneGraph,
   frameId: string,
@@ -175,14 +179,17 @@ function drawNamedIcon(
   named: { prefix: string; name: string },
   markup: string,
   box: { width: number; height: number }
-): void {
+): boolean {
+  const content = extractSVGContent(markup)
+  if (content.texts.length > 0 || content.paths.some((path) => path.clipPaths?.length)) return false
   const attrs: Partial<Record<string, string>> = element.attrs
   const viewBox = attrs.viewBox ?? attrs.viewbox
   const space = parseSVGViewBoxValue(viewBox) ?? { x: 0, y: 0, ...box }
-  const paths = svgIconPaths(extractSVGContent(markup), space, box, svgViewportAttributes(markup))
-  if (paths.length === 0) return
+  const paths = svgIconPaths(content, space, box, svgViewportAttributes(markup))
+  if (paths.length === 0) return true
   const color = parseCSSColor(element.computedStyle?.color) ?? BLACK
   drawIcon(graph, frameId, { ...named, ...box, paths }, Math.max(box.width, box.height), color)
+  return true
 }
 
 /**
@@ -231,7 +238,8 @@ export async function drawInlineSVGs(
     const name = found.get(frameId)
     const parsed = name ? parseIconName(name) : null
     const icon = iconName(element) ?? (parsed && { prefix: parsed.prefix, name: parsed.iconName })
-    if (icon) drawNamedIcon(graph, frameId, element, icon, markup, box)
-    else drawArtwork(graph, frameId, element, markup)
+    if (!icon || !drawNamedIcon(graph, frameId, element, icon, markup, box)) {
+      drawArtwork(graph, frameId, element, markup)
+    }
   }
 }
