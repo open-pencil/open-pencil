@@ -26,7 +26,10 @@ async function keepCopy(id: string, profileId: string, syncStatus: LocalSyncStat
   })
 }
 
-beforeEach(() => resetLocalCanvasStoreForTests(createMemoryLocalCanvasStore()))
+beforeEach(async () => {
+  resetLocalCanvasStoreForTests(createMemoryLocalCanvasStore())
+  await clearRecentFiles()
+})
 afterEach(async () => {
   for (const server of cloudServers.value) removeCloudServer(server.id)
   await clearRecentFiles()

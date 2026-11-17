@@ -105,6 +105,7 @@ describe('Cloud connections', () => {
   })
 
   test("forget the last account's recent documents once another signs in", async () => {
+    await clearRecentFiles()
     const stop = watchCloudAccountSwitches()
     answers['/api/account/status'] = { status: 200, body: { user, state: 'active' } }
     answers['/api/workspaces'] = { status: 200, body: { workspaces: [workspace] } }
