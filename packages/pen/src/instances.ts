@@ -51,14 +51,29 @@ function resolvePath(graph: SceneGraph, instance: SceneNode, path: string): Scen
   return current
 }
 
+/** The themes from the page down through `id`, as each layer was read. */
+function themesThrough(build: Build, id: string): Record<string, string>[] {
+  const ids: string[] = []
+  for (
+    let current: string | null = id;
+    current;
+    current = build.graph.getNode(current)?.parentId ?? null
+  ) {
+    ids.push(current)
+  }
+  const chain: Record<string, string>[] = []
+  for (const layerId of ids.toReversed()) {
+    const theme = build.effective.get(layerId)?.theme
+    if (theme) chain.push(theme)
+  }
+  return chain
+}
+
 /** Runs `apply` in the merged theme of a layer's ancestors, as the layer was read in. */
 export function inAncestorThemes<T>(build: Build, node: SceneNode, apply: () => T): T {
-  const chain: Record<string, string>[] = []
-  for (let id = node.parentId; id; id = build.graph.getNode(id)?.parentId ?? null) {
-    const theme = build.effective.get(id)?.theme
-    if (theme) chain.unshift(theme)
-  }
-  const leave = chain.map((theme) => build.ctx.enterTheme(theme))
+  const leave = (node.parentId ? themesThrough(build, node.parentId) : []).map((theme) =>
+    build.ctx.enterTheme(theme)
+  )
   try {
     return apply()
   } finally {
@@ -212,9 +227,13 @@ function applyDescendants(
   }
 }
 
-/** Gives each copy inside `root` the pen.dev fields and placement of the layer it copies. */
+/**
+ * Gives each copy inside `root` the pen.dev fields and placement of the layer it copies.
+ * A copy is cloned from its source as that source was read, which may be outside the theme of
+ * the screen this instance is placed in, so a copy in another theme is read again there.
+ */
 function inheritCopyFields(build: Build, root: SceneNode): void {
-  const { graph, effective, placements } = build
+  const { graph, effective, placements, ctx } = build
   const copies = graph.getChildren(root.id)
   for (const copy of copies) {
     const source = copy.componentId
@@ -224,6 +243,16 @@ function inheritCopyFields(build: Build, root: SceneNode): void {
     if (placement) placements.set(copy.id, placement)
     if (source && build.groupIds.has(source)) build.groupIds.add(copy.id)
     if (source && build.aroundIds.has(source)) build.aroundIds.add(copy.id)
+    if (fields && source && !isEqual(themesThrough(build, copy.id), themesThrough(build, source))) {
+      inAncestorThemes(build, copy, () => {
+        const leave = fields.theme ? ctx.enterTheme(fields.theme) : undefined
+        try {
+          applyPenProperties(copy, fields, build)
+        } finally {
+          leave?.()
+        }
+      })
+    }
     for (const child of graph.getChildren(copy.id)) copies.push(child)
   }
 }

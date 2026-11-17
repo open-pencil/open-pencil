@@ -307,4 +307,132 @@ describe('parsePenFile — instances', () => {
     ])
     expect(getNodeOrThrow(graph, 'use')).toMatchObject({ type: 'RECTANGLE', x: 40, width: 20 })
   })
+
+  // pen.dev 2.21: a screen's theme reaches an instance nested in the component placed there (#2170).
+  test('resolves a nested instance in the theme of the screen it is placed in', () => {
+    const dark = { r: 0x22 / 255, g: 0x22 / 255, b: 0x22 / 255, a: 1 }
+    const light = { r: 1, g: 1, b: 1, a: 1 }
+    const graph = parseDocument(
+      [
+        {
+          id: 'Card',
+          type: 'frame',
+          reusable: true,
+          layout: 'vertical',
+          gap: '$space',
+          width: 100,
+          height: 60,
+          fill: '$surface',
+          children: [{ id: 'caption', type: 'text', content: 'Caption', fill: '$surface' }]
+        },
+        {
+          id: 'Row',
+          type: 'frame',
+          reusable: true,
+          layout: 'horizontal',
+          children: [{ id: 'RowCard', type: 'ref', ref: 'Card' }]
+        },
+        {
+          id: 'Dark',
+          type: 'frame',
+          theme: { semantic: 'dark' },
+          fill: '$surface',
+          children: [
+            { id: 'DirectCard', type: 'ref', ref: 'Card' },
+            { id: 'RowInst', type: 'ref', ref: 'Row' }
+          ]
+        }
+      ],
+      {
+        themes: { semantic: ['light', 'dark'] },
+        variables: {
+          surface: {
+            type: 'color',
+            value: [
+              { value: '#FFFFFF', theme: { semantic: 'light' } },
+              { value: '#222222', theme: { semantic: 'dark' } }
+            ]
+          },
+          space: {
+            type: 'number',
+            value: [
+              { value: 4, theme: { semantic: 'light' } },
+              { value: 16, theme: { semantic: 'dark' } }
+            ]
+          }
+        }
+      }
+    )
+    const fill = (id: string) => getNodeOrThrow(graph, id).fills[0]?.color
+    const nested = copyOf(graph, 'RowInst', 'RowCard')
+
+    expect(fill('DirectCard')).toEqual(dark)
+    expect(fill('Dark')).toEqual(dark)
+    expect(nested.fills[0]?.color).toEqual(dark)
+    expect(nested.itemSpacing).toBe(16)
+    expect(copyOf(graph, nested.id, 'caption').fills[0]?.color).toEqual(dark)
+    expect(copyOf(graph, 'DirectCard', 'caption').fills[0]?.color).toEqual(dark)
+    // The component keeps the default theme it was read in.
+    expect(fill('Card')).toEqual(light)
+    expect(getNodeOrThrow(graph, 'RowCard').fills[0]?.color).toEqual(light)
+    expect(getNodeOrThrow(graph, 'RowCard').itemSpacing).toBe(4)
+  })
+
+  test('merges the screen theme under a theme the nested instance sets', () => {
+    const graph = parseDocument(
+      [
+        {
+          id: 'Card',
+          type: 'frame',
+          reusable: true,
+          layout: 'vertical',
+          gap: '$gap',
+          width: 40,
+          height: 40,
+          fill: '$accent'
+        },
+        {
+          id: 'Row',
+          type: 'frame',
+          reusable: true,
+          children: [{ id: 'RowCard', type: 'ref', ref: 'Card', theme: { density: 'cozy' } }]
+        },
+        {
+          id: 'Dark',
+          type: 'frame',
+          theme: { mode: 'dark' },
+          children: [
+            { id: 'DirectCard', type: 'ref', ref: 'Card', theme: { density: 'cozy' } },
+            { id: 'RowInst', type: 'ref', ref: 'Row' }
+          ]
+        }
+      ],
+      {
+        themes: { mode: ['light', 'dark'], density: ['compact', 'cozy'] },
+        variables: {
+          accent: {
+            type: 'color',
+            value: [
+              { value: '#CC0000', theme: { mode: 'light', density: 'compact' } },
+              { value: '#00CC00', theme: { mode: 'dark' } },
+              { value: '#0000CC', theme: { mode: 'light', density: 'cozy' } }
+            ]
+          },
+          gap: {
+            type: 'number',
+            value: [
+              { value: 4, theme: { density: 'compact' } },
+              { value: 16, theme: { density: 'cozy' } }
+            ]
+          }
+        }
+      }
+    )
+    const nested = copyOf(graph, 'RowInst', 'RowCard')
+    const green = { r: 0, g: 0.8, b: 0, a: 1 }
+
+    expect(getNodeOrThrow(graph, 'DirectCard').fills[0]?.color).toEqual(green)
+    expect(nested.fills[0]?.color).toEqual(green)
+    expect(nested.itemSpacing).toBe(16)
+  })
 })

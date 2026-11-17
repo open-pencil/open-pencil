@@ -1,0 +1,1 @@
+- An instance nested inside another component uses the theme of the screen it is placed in (#2170).
