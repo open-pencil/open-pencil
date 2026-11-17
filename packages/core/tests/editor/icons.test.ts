@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { createEditor } from '@open-pencil/core'
 import { parseIconName, type IconProvider } from '@open-pencil/core/icons'
 import { SceneGraph } from '@open-pencil/scene-graph'
-import { isIconModified, readIcon } from '@open-pencil/scene-graph/icons'
+import { isIconModified, readIcon, type IconOptions } from '@open-pencil/scene-graph/icons'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 import { getNodeOrThrow } from '@open-pencil/test-support/assert'
 
@@ -166,11 +166,8 @@ describe('icon commands across a document change', () => {
   })
 })
 
-/**
- * An editor whose icons draw at once, except those asked for with the option `hold`, which wait
- * until `release` is called.
- */
-function setupHeld() {
+/** An editor whose icons draw at once, except those `holds` names, which wait for `release`. */
+function setupHeld(holds: (names: readonly string[], options?: IconOptions) => boolean) {
   let release: () => void = () => undefined
   const held = new Promise<void>((resolve) => {
     release = resolve
@@ -180,7 +177,7 @@ function setupHeld() {
     icons: {
       ...provider,
       async icons(names, size, options) {
-        if (options?.hold) await held
+        if (holds(names, options)) await held
         return provider.icons(names, size, options)
       }
     }
@@ -189,22 +186,38 @@ function setupHeld() {
 }
 
 describe('icon redraws that finish late', () => {
-  test('an option redraw that loads past a swap leaves the swapped icon', async () => {
-    const { editor, release } = setupHeld()
+  test('an option change and a swap made after it both apply, in order', async () => {
+    const { editor, release } = setupHeld((_, options) => options?.weight === 'bold')
     const id = await insert(editor, 'test:square')
-    const redraw = editor.setIconOptions(id, { hold: 1 })
-    await editor.swapIconGlyph(id, 'test:lines')
+    const changing = editor.setIconOptions(id, { weight: 'bold' })
+    const swapping = editor.swapIconGlyph(id, 'test:lines')
     release()
-    await redraw
-    expect(readIcon(getNodeOrThrow(editor.graph, id))?.name).toBe('test:lines')
+    await Promise.all([changing, swapping])
+    expect(readIcon(getNodeOrThrow(editor.graph, id))).toMatchObject({
+      name: 'test:lines',
+      options: { weight: 'bold' }
+    })
   })
 
-  test('an option change queued when the document is replaced is not applied to the new one', async () => {
-    const { editor, release } = setupHeld()
+  test('a swap and an option change made after it both apply, in order', async () => {
+    const { editor, release } = setupHeld((names) => names.includes('test:lines'))
+    const id = await insert(editor, 'test:square')
+    const swapping = editor.swapIconGlyph(id, 'test:lines')
+    const changing = editor.setIconOptions(id, { weight: 'bold' })
+    release()
+    await Promise.all([swapping, changing])
+    expect(readIcon(getNodeOrThrow(editor.graph, id))).toMatchObject({
+      name: 'test:lines',
+      options: { weight: 'bold' }
+    })
+  })
+
+  test('a redraw queued when the document is replaced is not applied to the new one', async () => {
+    const { editor, release } = setupHeld((_, options) => options?.weight === 'bold')
     const id = await insert(editor, 'test:square')
     const frame = getNodeOrThrow(editor.graph, id)
-    const first = editor.setIconOptions(id, { hold: 1 })
-    const queued = editor.setIconOptions(id, { weight: 'bold' })
+    const first = editor.setIconOptions(id, { weight: 'bold' })
+    const queued = editor.setIconOptions(id, { scale: 'large' })
     // A copy of the same file, whose icon keeps its ID.
     const replacement = new SceneGraph()
     replacement.createNodeWithId(id, 'FRAME', replacement.getPages()[0].id, {

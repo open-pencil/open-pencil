@@ -86,53 +86,69 @@ export function createIconActions(ctx: EditorContext) {
     if (!frame || !drawn) return
     const icon = await fetchIcon(name, Math.min(frame.width, frame.height), options)
     // The document or the frame may have been replaced while the icon loaded, or the icon drawn
-    // again, such as by a swap that finished first; this older drawing then gives way.
+    // again by something outside these commands, such as a plugin; this drawing then gives way.
     if (ctx.graph !== graph || graph.getNode(frameId) !== frame) return
     if (!isEqual(readIcon(frame), drawn)) return
     changeIcon(label, frameId, () => swapIcon(graph, frameId, icon))
+  }
+
+  /** The icon redraws asked for and not yet done, in the order they were asked. */
+  let redraws: Promise<void> = Promise.resolve()
+
+  /**
+   * Runs `redraw` once the redraws asked for before it are done, so it reads the icon as they left
+   * it: a swap and an option change made while an icon is still loading both apply, in order. A
+   * redraw that fails does not hold up the next, and one asked for in a document that has since
+   * been replaced is not run in the new one.
+   */
+  function queueRedraw(redraw: () => Promise<void>): Promise<void> {
+    const graph = ctx.graph
+    const previous = redraws
+    const next = (async () => {
+      await Promise.allSettled([previous])
+      if (ctx.graph === graph) await redraw()
+    })()
+    redraws = next
+    return next
+  }
+
+  /** The icon `frameId` records now, or null when it is no icon. */
+  function currentIcon(frameId: string) {
+    const frame = ctx.graph.getNode(frameId)
+    return frame ? readIcon(frame) : null
   }
 
   /**
    * Draws the icon `name` in the icon `frameId`, keeping its size, position, and color, and how
    * it is drawn when the new icon is from the same set.
    */
-  async function swapIconGlyph(frameId: string, name: string) {
-    const frame = ctx.graph.getNode(frameId)
-    const current = frame && readIcon(frame)
-    const sameSet = current && parseIconName(current.name)?.prefix === parseIconName(name)?.prefix
-    await drawIcon('Swap icon', frameId, name, sameSet ? current.options : undefined)
+  function swapIconGlyph(frameId: string, name: string): Promise<void> {
+    return queueRedraw(async () => {
+      const current = currentIcon(frameId)
+      if (!current) return
+      const sameSet = parseIconName(current.name)?.prefix === parseIconName(name)?.prefix
+      await drawIcon('Swap icon', frameId, name, sameSet ? current.options : undefined)
+    })
   }
 
   /** Draws the icon `frameId` was placed as afresh, undoing edits to its paths. */
-  async function resetIcon(frameId: string) {
-    const frame = ctx.graph.getNode(frameId)
-    const icon = frame && readIcon(frame)
-    if (icon) await drawIcon('Reset icon', frameId, icon.name, icon.options)
+  function resetIcon(frameId: string): Promise<void> {
+    return queueRedraw(async () => {
+      const icon = currentIcon(frameId)
+      if (icon) await drawIcon('Reset icon', frameId, icon.name, icon.options)
+    })
   }
-
-  /** The option changes waiting to draw, in the order they were made. */
-  let optionChanges: Promise<void> = Promise.resolve()
 
   /**
    * Draws the icon `frameId` afresh with `changes` to how it is drawn, such as its weight, keeping
    * the options it has otherwise. Edits to its paths are given up, as when it is reset.
    */
   function setIconOptions(frameId: string, changes: IconOptions): Promise<void> {
-    // One change at a time, each from the options the last one left, so two made while an icon
-    // is still being drawn both apply; a change that fails does not hold up the next.
-    const graph = ctx.graph
-    const previous = optionChanges
-    const next = (async () => {
-      await Promise.allSettled([previous])
-      // A change made in a document that has since been replaced is not applied to the new one.
-      if (ctx.graph !== graph) return
-      const frame = graph.getNode(frameId)
-      const icon = frame && readIcon(frame)
+    return queueRedraw(async () => {
+      const icon = currentIcon(frameId)
       if (icon)
         await drawIcon('Change icon options', frameId, icon.name, { ...icon.options, ...changes })
-    })()
-    optionChanges = next
-    return next
+    })
   }
 
   /** Makes the icon `frameId` plain artwork that keeps its paths; see `detachIcon`. */
