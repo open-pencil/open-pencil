@@ -10,6 +10,7 @@ import type {
   AgentModelChoices
 } from '@/app/ai/agents/acp/options'
 import { designModelProfile, resolveAIModelRole } from '@/app/ai/models'
+import { profileModelID } from '@/app/ai/models/language-model'
 import type { AIModelProfileId, ThinkingLevel } from '@/app/ai/models/types'
 
 /** The composer's choice applies to the Design profile it was made for; switching profiles drops it. */
@@ -43,7 +44,7 @@ const composerChoices = shallowRef<{
 
 function designModelID(): string {
   const profile = designModelProfile.value
-  return profile ? profile.customModelID || profile.modelID : ''
+  return profile ? profileModelID(profile) : ''
 }
 
 /** The composer's choices that still apply to the Design profile and its model. */

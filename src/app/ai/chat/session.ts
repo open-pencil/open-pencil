@@ -26,7 +26,7 @@ import {
   resolveModelConnectionAPIKey,
   type AIModelProfileId
 } from '@/app/ai/models'
-import { resolveLanguageModelID } from '@/app/ai/models/language-model'
+import { profileModelID, resolveLanguageModelID } from '@/app/ai/models/language-model'
 import { cloudCreditRefusal } from '@/app/ai/providers/openpencil/failure'
 import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
 import { settleMessage } from '@/app/ai/reply/settle'
@@ -247,13 +247,17 @@ export function createChatSessionManager({
       agentSession,
       captureAgentError,
       profileModel,
-      // The profile's effort and modes, or the composer's, while the chat still runs that profile;
-      // another profile's may not be ones this agent or model offers.
+      // The profile's effort and modes, or the composer's, while the chat still runs that profile
+      // on that model; another profile's or model's may not be ones this agent offers.
       profileId === null
         ? undefined
         : {
             profileId,
-            wanted: () => (designModelProfile.value?.id === profileId ? chatAgentChoices.value : {})
+            wanted: () => {
+              const profile = designModelProfile.value
+              const same = profile?.id === profileId && profileModelID(profile) === profileModel
+              return same ? chatAgentChoices.value : {}
+            }
           }
     )
     acpTransportInstance = transport

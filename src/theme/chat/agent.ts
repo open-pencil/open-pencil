@@ -29,7 +29,7 @@ export default {
     level: 'shrink-0 @[16rem]:before:me-1 @[16rem]:before:content-["·"]',
     /** Widened access: its words when there is room, its warning icon always. */
     accessIcon: 'size-3 shrink-0 text-warning',
-    accessLabel: 'hidden truncate @[16rem]:inline',
+    accessLabel: 'hidden max-w-24 truncate @[16rem]:inline',
     modeContent: 'w-64 max-w-[calc(100vw-1rem)]',
     description: 'block text-4xs text-muted whitespace-normal',
     menuValue: 'ms-auto text-2xs text-muted',
