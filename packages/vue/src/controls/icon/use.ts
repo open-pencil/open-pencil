@@ -92,13 +92,6 @@ export function useIcon() {
     editor.detachIcon(node.id)
   }
 
-  async function swap(next: string) {
-    const node = selectedNode.value
-    if (!node || !name.value || name.value === next) return
-    batch.flush()
-    await editor.swapIconGlyph(node.id, next)
-  }
-
   /**
    * The option values asked for and not yet drawn, by icon and key, so a value is compared with
    * the last one asked for rather than the one an icon still loading was drawn with. Each request
@@ -107,6 +100,16 @@ export function useIcon() {
   const requested = new Map<string, { value: IconOptions[string]; token: symbol }>()
   // Another document's icons may share these IDs.
   useEditorEvent('graph:replaced', () => requested.clear())
+
+  async function swap(next: string) {
+    const node = selectedNode.value
+    if (!node || !name.value || name.value === next) return
+    // A swap to another set draws with that set's defaults, so values asked for before it no
+    // longer say what the icon will be drawn with.
+    for (const id of requested.keys()) if (id.startsWith(`${node.id}/`)) requested.delete(id)
+    batch.flush()
+    await editor.swapIconGlyph(node.id, next)
+  }
 
   /** Draws the icon afresh with the option `key` set to `value`, as one undo step. */
   async function setOption(key: string, value: IconOptions[string]) {

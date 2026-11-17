@@ -52,7 +52,7 @@ async function mountIcon() {
         names.map((name): [string, IconData] => [
           name,
           {
-            prefix: 'test',
+            prefix: name.slice(0, name.indexOf(':')),
             name: name.slice(name.indexOf(':') + 1),
             width: size,
             height: size,
@@ -107,6 +107,22 @@ describe('Icon section controls', () => {
     await Promise.all([again, last])
     const node = editor.graph.getNode(id)
     expect(node && readIcon(node)?.options).toEqual({ weight: 'regular' })
+  })
+
+  test('a value asked for again after a swap to another set is drawn', async () => {
+    const { control, id, release } = await mountIcon()
+    const first = control.setOption('weight', 'bold')
+    // Another set draws the swapped icon with its own defaults.
+    const swapping = control.swap('other:circle')
+    const again = control.setOption('weight', 'bold')
+    await release()
+    await release()
+    await Promise.all([first, swapping, again])
+    const node = editor.graph.getNode(id)
+    expect(node && readIcon(node)).toMatchObject({
+      name: 'other:circle',
+      options: { weight: 'bold' }
+    })
   })
 
   test('an option set back while the icon is still drawing the last value is set back', async () => {

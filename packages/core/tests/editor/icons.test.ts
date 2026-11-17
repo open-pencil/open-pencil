@@ -244,7 +244,7 @@ describe('icon redraws that finish late', () => {
     const first = editor.setIconOptions(id, { weight: 'bold' })
     const queued = editor.setIconOptions(id, { scale: 'large' })
     await started
-    // A copy of the same file, whose icon keeps its ID.
+    // A copy of the same file, whose icon keeps its ID and its paths, unedited.
     const replacement = new SceneGraph()
     replacement.createNodeWithId(id, 'FRAME', replacement.getPages()[0].id, {
       name: frame.name,
@@ -252,6 +252,9 @@ describe('icon redraws that finish late', () => {
       height: frame.height,
       pluginData: frame.pluginData
     })
+    for (const path of editor.graph.getChildren(id))
+      replacement.createNodeWithId(path.id, path.type, id, { ...path, childIds: [] })
+    expect(isIconModified(replacement, getNodeOrThrow(replacement, id))).toBe(false)
     editor.replaceGraph(replacement)
     release()
     await Promise.all([first, queued])
