@@ -105,6 +105,17 @@ export function createIconActions(ctx: EditorContext) {
     if (icon) await drawIcon('Reset icon', frameId, icon.name, icon.options)
   }
 
+  /**
+   * Draws the icon `frameId` afresh with `changes` to how it is drawn, such as its weight, keeping
+   * the options it has otherwise. Edits to its paths are given up, as when it is reset.
+   */
+  async function setIconOptions(frameId: string, changes: IconOptions) {
+    const frame = ctx.graph.getNode(frameId)
+    const icon = frame && readIcon(frame)
+    if (icon)
+      await drawIcon('Change icon options', frameId, icon.name, { ...icon.options, ...changes })
+  }
+
   /** Makes the icon `frameId` plain artwork that keeps its paths; see `detachIcon`. */
   function detachIconFrame(frameId: string) {
     const frame = ctx.graph.getNode(frameId)
@@ -136,6 +147,7 @@ export function createIconActions(ctx: EditorContext) {
     insertIcon,
     swapIconGlyph,
     resetIcon,
+    setIconOptions,
     detachIcon: detachIconFrame,
     setIconColor
   }

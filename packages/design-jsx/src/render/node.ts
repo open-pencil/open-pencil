@@ -1,9 +1,10 @@
 import { omitBy, range } from 'es-toolkit'
+import * as v from 'valibot'
 
 import type { NodeType, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { parseColor } from '@open-pencil/scene-graph/color'
 import { parseCSSNumber } from '@open-pencil/scene-graph/css'
-import { centerGlyph } from '@open-pencil/scene-graph/icons'
+import { centerGlyph, iconOptionsSchema } from '@open-pencil/scene-graph/icons'
 import type { Size } from '@open-pencil/scene-graph/primitives'
 
 import type { RekaScope } from '../behaviours'
@@ -139,7 +140,10 @@ async function renderIconNode<Artwork>(
   // An icon is square, so it fits the smaller side of its box and sits in the middle of the other.
   const box = artworkBox(props)
   const size = Math.min(box.width, box.height)
-  const artwork = await graph.waitOutsideEdit(services.icon(iconName, size))
+  const options = v.safeParse(iconOptionsSchema, props.options ?? {})
+  if (!options.success)
+    throw new Error('<Icon> options map option names to numbers or strings (e.g. { wght: 600 })')
+  const artwork = await graph.waitOutsideEdit(services.icon(iconName, size, options.output))
   if (!artwork) throw new Error(`Icon "${iconName}" not found`)
   const node = placeArtwork(services, graph, artwork, props, size, parentId)
   centerGlyph(graph, node.id, size)

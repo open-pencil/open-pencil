@@ -2,27 +2,40 @@
 import { tv } from 'tailwind-variants'
 import { ref, watch } from 'vue'
 
-import { iconLayerName } from '@open-pencil/scene-graph/icons'
+import type { IconOption } from '@open-pencil/core/icons'
+import { colorToHex, parseColor } from '@open-pencil/scene-graph/color'
+import { iconLayerName, type IconOptions } from '@open-pencil/scene-graph/icons'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 import { useIcon } from '@open-pencil/vue/controls/icon'
-import { usePanelMessages } from '@open-pencil/vue/i18n'
+import { useCommonMessages, usePanelMessages } from '@open-pencil/vue/i18n'
 
 import ColorInput from '@/components/ColorPicker/ColorInput.vue'
 import IconPicker from '@/components/icon-picker/IconPicker.vue'
 import IconPreview from '@/components/icon-picker/IconPreview.vue'
+import NumberField from '@/components/inputs/NumberField.vue'
+import ExternalLink from '@/components/links/ExternalLink.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { AppConfirmationDialog } from '@/components/ui/dialog'
 import { useHeldContent } from '@/components/ui/overlay/held'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
+import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
+import { SF_SYMBOLS_DOCS_URL } from '@/constants'
 import theme from '@/theme/select/app'
 
 const panels = usePanelMessages()
+const common = useCommonMessages()
 const {
   frameId,
   name,
   color,
   preview,
   setName,
+  options,
+  controls,
+  unavailable,
+  setOption,
   modified,
   swap,
   reset,
@@ -32,24 +45,65 @@ const {
 } = useIcon()
 const styles = tv(theme)()
 
-/** An icon picked to replace an edited one, waiting for the edits to be given up. */
-const pendingSwap = ref<string | null>(null)
-const swapShown = useHeldContent(pendingSwap)
+/**
+ * A change that draws the icon afresh, waiting for its edits to be given up: another icon, or
+ * another value for one of the options it is drawn with.
+ */
+type PendingChange = { icon: string } | { key: string; value: IconOptions[string] }
+const pending = ref<PendingChange | null>(null)
+const pendingShown = useHeldContent(pending)
 // The question is about the icon selected when it was asked; another selection drops it, so a
-// confirmation never swaps an icon it did not describe.
+// confirmation never changes an icon it did not describe.
 watch(frameId, () => {
-  pendingSwap.value = null
+  pending.value = null
 })
 
-function pick(next: string) {
-  if (modified.value) pendingSwap.value = next
-  else void swap(next)
+function apply(change: PendingChange) {
+  if ('icon' in change) void swap(change.icon)
+  else void setOption(change.key, change.value)
 }
 
-function confirmSwap() {
-  const next = pendingSwap.value
-  pendingSwap.value = null
-  if (next) void swap(next)
+function request(change: PendingChange) {
+  if (modified.value) pending.value = change
+  else apply(change)
+}
+
+function confirmPending() {
+  const change = pending.value
+  pending.value = null
+  if (change) apply(change)
+}
+
+/** The value the icon is drawn with for `option`, or the option's default. */
+function optionValue(option: IconOption) {
+  return options.value[option.key] ?? option.default
+}
+
+/** A value of a choice as a menu shows it: `semibold` as Semibold. */
+function valueLabel(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1)
+}
+
+// An option color is drawn again when the open picker closes, rather than for every color a drag
+// passes through; a color typed in while it is closed is drawn at once.
+const pickingOption = ref<string | null>(null)
+const pickedColor = ref<string | null>(null)
+
+function setOptionColor(key: string, next: Color) {
+  const hex = colorToHex(next)
+  if (pickingOption.value === key) pickedColor.value = hex
+  else request({ key, value: hex })
+}
+
+function setOptionColorPicking(key: string, open: boolean) {
+  if (open) {
+    pickingOption.value = key
+    return
+  }
+  const hex = pickedColor.value
+  pickingOption.value = null
+  pickedColor.value = null
+  if (hex) request({ key, value: hex })
 }
 </script>
 
@@ -71,7 +125,7 @@ function confirmSwap() {
         :heading="panels.swapIcon"
         :selected="name"
         :set="name.slice(0, name.indexOf(':'))"
-        @select="pick"
+        @select="request({ icon: $event })"
       >
         <template #trigger>
           <button
@@ -100,14 +154,65 @@ function confirmSwap() {
         @open-change="setColorPicking"
       />
     </PanelFieldGroup>
+    <p v-if="unavailable" class="mt-1.5 text-2xs text-muted" data-property="icon-unavailable">
+      {{ unavailable === 'host' ? panels.sfSymbolsNeedMacApp : panels.sfSymbolsNeedNewerMacOS }}
+      <ExternalLink :href="SF_SYMBOLS_DOCS_URL">{{ common.learnMore }}</ExternalLink>
+    </p>
+    <PanelGrid
+      v-else-if="controls.length > 0"
+      :columns="2"
+      class="mt-1.5"
+      data-property="icon-options"
+    >
+      <PanelFieldGroup v-for="option in controls" :key="option.key" :label="option.name">
+        <NumberField
+          v-if="'min' in option"
+          :model-value="Number(optionValue(option))"
+          :aria-label="option.name"
+          :min="option.min"
+          :max="option.max"
+          :step="option.step"
+          :data-property="`icon-option-${option.key}`"
+          @commit="(value: number) => request({ key: option.key, value })"
+        />
+        <AppSelect
+          v-else-if="'values' in option"
+          :label="option.name"
+          :model-value="String(optionValue(option))"
+          :options="option.values.map((value) => ({ value, label: valueLabel(value) }))"
+          :data-property="`icon-option-${option.key}`"
+          @update:model-value="request({ key: option.key, value: $event })"
+        />
+        <ColorInput
+          v-else
+          :color="
+            parseColor(
+              pickingOption === option.key && pickedColor
+                ? pickedColor
+                : String(optionValue(option))
+            )
+          "
+          editable
+          :data-property="`icon-option-${option.key}`"
+          @update="setOptionColor(option.key, $event)"
+          @open-change="setOptionColorPicking(option.key, $event)"
+        />
+      </PanelFieldGroup>
+    </PanelGrid>
     <AppConfirmationDialog
-      :open="pendingSwap !== null"
+      :open="pending !== null"
       :heading="panels.swapEditedIconHeading"
-      :description="panels.swapEditedIconDescription({ name: iconLayerName(swapShown ?? '') })"
-      :confirm-label="panels.swapIcon"
+      :description="
+        pendingShown && 'key' in pendingShown
+          ? panels.redrawEditedIconDescription
+          : panels.swapEditedIconDescription({
+              name: iconLayerName(pendingShown && 'icon' in pendingShown ? pendingShown.icon : '')
+            })
+      "
+      :confirm-label="pendingShown && 'key' in pendingShown ? panels.redrawIcon : panels.swapIcon"
       tone="warning"
-      @update:open="(open: boolean) => !open && (pendingSwap = null)"
-      @confirm="confirmSwap"
+      @update:open="(open: boolean) => !open && (pending = null)"
+      @confirm="confirmPending"
     />
   </PanelSection>
 </template>

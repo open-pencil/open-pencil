@@ -15,14 +15,17 @@ const BODIES: Record<string, string> = {
   'test:lines': '<path fill="none" stroke="currentColor" d="M4 4h16M4 12h16"/>'
 }
 
-/** Icons drawn from fixed bodies, so the commands run without the network. */
+/**
+ * Icons drawn from fixed bodies, so the commands run without the network; they record the options
+ * asked for, as a set drawn from its own source does.
+ */
 const provider: IconProvider = {
   search: async () => ({ icons: Object.keys(BODIES), total: 2, collections: {} }),
   collections: async () => [],
   browse: async () => Object.keys(BODIES),
   previews: async (names) =>
     new Map(names.flatMap((name) => (BODIES[name] ? [[name, `<svg>${BODIES[name]}</svg>`]] : []))),
-  async icons(names, size) {
+  async icons(names, size, options) {
     const found = new Map()
     for (const name of names) {
       const parsed = parseIconName(name)
@@ -30,7 +33,10 @@ const provider: IconProvider = {
       if (parsed && body)
         found.set(
           name,
-          buildIconData({ body, width: 24, height: 24 }, parsed.prefix, parsed.iconName, size)
+          Object.assign(
+            buildIconData({ body, width: 24, height: 24 }, parsed.prefix, parsed.iconName, size),
+            options && { options: { ...options } }
+          )
         )
     }
     return found
@@ -141,9 +147,9 @@ describe('icon commands across a document change', () => {
     })
     const slow: IconProvider = {
       ...provider,
-      async icons(names, size) {
+      async icons(names, size, options) {
         await loaded
-        return provider.icons(names, size)
+        return provider.icons(names, size, options)
       }
     }
     const editor = createEditor({
@@ -191,6 +197,21 @@ describe('editing an icon', () => {
 
     editor.undo.undo()
     expect(editor.graph.getChildren(id)).toHaveLength(2)
+  })
+
+  test('options draw the icon again with them, keeping its others and its color, in one undo step', async () => {
+    const editor = setup()
+    const id = await insert(editor, 'test:square', RED)
+    await editor.setIconOptions(id, { weight: 'bold' })
+    await editor.setIconOptions(id, { scale: 'large' })
+    expect(readIcon(getNodeOrThrow(editor.graph, id))?.options).toEqual({
+      weight: 'bold',
+      scale: 'large'
+    })
+    expect(editor.graph.getChildren(id)[0]?.fills[0]?.color).toEqual(RED)
+
+    editor.undo.undo()
+    expect(readIcon(getNodeOrThrow(editor.graph, id))?.options).toEqual({ weight: 'bold' })
   })
 
   test('detach makes the icon artwork, in one undo step', async () => {
