@@ -120,8 +120,8 @@ export function createBetterAuthAdapter(
       // cannot reach either.
       CORE_AUTH_PATHS.deleteUser,
       CORE_AUTH_PATHS.deleteUserCallback,
-      // Unlinking goes through `/api/account/authentication/unlink`, locked as admins' removals are.
-      CORE_AUTH_PATHS.unlinkAccount
+      // Linking and unlinking go through `/api/account/authentication`, with a fresh session.
+      ...[CORE_AUTH_PATHS.linkSocialAccount, CORE_AUTH_PATHS.unlinkAccount]
     ],
     secret: config.authSecret,
     database: {

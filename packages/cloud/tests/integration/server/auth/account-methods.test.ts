@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import {
+  accountAuthenticationConfig,
   accountAuthenticationRequest,
   createAccountAuthenticationFixture,
   createVerifiedCredentialAccount,
@@ -162,6 +163,37 @@ describe('account authentication methods', () => {
           .orderBy('providerId')
           .execute()
       ).toEqual([{ providerId: 'credential' }, { providerId: 'google' }])
+    } finally {
+      await fixture.close()
+    }
+  })
+
+  // Its own link skips the fresh session, which would let a stale one lift an administrator's
+  // block on a removed identity.
+  test('is not reachable through Better Auth’s own link endpoint', async () => {
+    // With Google offered, so a refusal is the path's own and not a missing provider's.
+    const fixture = await createAccountAuthenticationFixture({
+      config: {
+        ...accountAuthenticationConfig,
+        googleClientId: 'google-client',
+        googleClientSecret: 'google-secret'
+      }
+    })
+    try {
+      const account = await createVerifiedCredentialAccount(fixture, {
+        email: 'link@example.com',
+        name: 'Link',
+        password: 'the original long password',
+        approved: true
+      })
+      const direct = await fixture.app.fetch(
+        accountAuthenticationRequest(
+          '/api/auth/link-social',
+          { provider: 'google', callbackURL: '/account/security' },
+          account.sessionCookie
+        )
+      )
+      expect(direct.status).toBe(404)
     } finally {
       await fixture.close()
     }

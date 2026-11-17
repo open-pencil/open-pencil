@@ -23,6 +23,7 @@ export const CORE_AUTH_PATHS: CorePaths<
   | 'callbackOAuth'
   | 'deleteUser'
   | 'deleteUserCallback'
+  | 'linkSocialAccount'
   | 'requestPasswordReset'
   | 'sendVerificationEmail'
   | 'signInEmail'
@@ -33,6 +34,7 @@ export const CORE_AUTH_PATHS: CorePaths<
   callbackOAuth: '/callback/:id',
   deleteUser: '/delete-user',
   deleteUserCallback: '/delete-user/callback',
+  linkSocialAccount: '/link-social',
   unlinkAccount: '/unlink-account',
   requestPasswordReset: '/request-password-reset',
   sendVerificationEmail: '/send-verification-email',
