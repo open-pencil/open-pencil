@@ -239,7 +239,7 @@ export type AdminDocumentServiceOptions = {
   /** Where documents are stored, for their thumbnails; without it none has one. */
   objects?: Pick<ObjectStore, 'readRange'>
   /** Documents' downloads; without it none can be downloaded. */
-  documents?: Pick<DocumentService, 'downloadShared'>
+  documents?: Pick<DocumentService, 'downloadRetained'>
   /**
    * Tells the owner of a document's workspace when it is blocked and restored. Without it, or
    * without the server's address its link needs, nobody is told.
@@ -312,6 +312,17 @@ export function createAdminDocumentService(
      * as the community gallery reads its own; null when that revision is not current any more,
      * its file is gone, or it carries none.
      */
+    /** Whether `revisionId` is still the document's saved state, so a copy of its thumbnail holds. */
+    async isCurrentRevision(documentId: string, revisionId: string): Promise<boolean> {
+      const row = await database
+        .selectFrom('document')
+        .select('id')
+        .where('id', '=', documentId)
+        .where('currentRevisionId', '=', revisionId)
+        .executeTakeFirst()
+      return row !== undefined
+    },
+
     async thumbnail(documentId: string, revisionId: string): Promise<Uint8Array | null> {
       const { objects } = options
       if (!objects) return null
@@ -342,11 +353,13 @@ export function createAdminDocumentService(
 
     /**
      * Links to download a document as it is now, its file and images, for an administrator to look
-     * at it outside any editor, recorded in the audit log. A document never saved has none.
+     * at it outside any editor, taken down or in Trash included, recorded in the audit log. A
+     * document never saved has none.
      */
     async download(actorId: string, documentId: string): Promise<DocumentDownload> {
       if (!options.documents) throw new DocumentNotFoundError()
-      const download = await options.documents.downloadShared(documentId)
+      // A taken-down document too: looking at it is what moderating it takes.
+      const download = await options.documents.downloadRetained(documentId)
       await auditContentAction(database, actorId, 'document.downloaded', {
         type: 'document',
         id: documentId

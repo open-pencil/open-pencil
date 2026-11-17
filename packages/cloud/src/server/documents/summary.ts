@@ -36,3 +36,18 @@ export async function getDocumentSummaryRow(
     .where('disabledAt', 'is', null)
     .executeTakeFirst()
 }
+
+/**
+ * A document the server still keeps, even one in Trash or taken down, which only a deployment
+ * administrator may reach; ordinary access goes through `getDocumentSummaryRow`.
+ */
+export async function getRetainedDocumentSummaryRow(
+  database: DocumentDatabase,
+  documentId: string
+): Promise<DocumentSummaryRow | undefined> {
+  return database
+    .selectFrom('document')
+    .select(SUMMARY_COLUMNS)
+    .where('id', '=', documentId)
+    .executeTakeFirst()
+}

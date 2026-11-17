@@ -291,16 +291,25 @@ export function createCloudAdminRoutes(
         await services.documents.enable(context.get('actor').userId, context.req.valid('param').id)
         return context.json({ ok: true as const })
       })
-      // Its address names the revision it shows, so a copy never goes stale and stays in this
-      // administrator's browser alone.
+      // Its address names the revision it shows, which is also its ETag. The browser asks again
+      // each time, so the administrator and two-step checks always run, even for another account
+      // later in the same browser; an unchanged thumbnail answers 304 without reading storage.
       .get(
         '/documents/:documentId/thumbnails/:revisionId',
         documentRevisionParams,
         async (context) => {
           const { documentId, revisionId } = context.req.valid('param')
+          const etag = `"${revisionId}"`
+          context.header('Cache-Control', 'private, no-cache')
+          context.header('ETag', etag)
+          if (
+            context.req.header('If-None-Match') === etag &&
+            (await services.documents.isCurrentRevision(documentId, revisionId))
+          ) {
+            return context.body(null, 304)
+          }
           const thumbnail = await services.documents.thumbnail(documentId, revisionId)
           if (!thumbnail) return context.json({ error: { code: 'not_found' as const } }, 404)
-          context.header('Cache-Control', 'private, max-age=31536000, immutable')
           context.header('Content-Type', 'image/png')
           context.header('X-Content-Type-Options', 'nosniff')
           context.header('Content-Security-Policy', "default-src 'none'; sandbox")

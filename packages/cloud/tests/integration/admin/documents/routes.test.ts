@@ -147,8 +147,15 @@ describe('admin documents', () => {
     const shown = await thumbnail.$get({ param: { documentId: brief, revisionId: current } })
     expect(shown.status).toBe(200)
     expect(shown.headers.get('Content-Type')).toBe('image/png')
-    expect(shown.headers.get('Cache-Control')).toBe('private, max-age=31536000, immutable')
+    // Asked again on each view, so the administrator checks always run; the revision is its ETag.
+    expect(shown.headers.get('Cache-Control')).toBe('private, no-cache')
+    expect(shown.headers.get('ETag')).toBe(`"${current}"`)
     expect([...new Uint8Array(await shown.arrayBuffer())]).toEqual([...THUMBNAIL_PNG])
+    const unchanged = await thumbnail.$get(
+      { param: { documentId: brief, revisionId: current } },
+      { headers: { 'If-None-Match': `"${current}"` } }
+    )
+    expect(unchanged.status).toBe(304)
 
     // An older revision's address shows nothing, so a stale copy is never mistaken for it.
     expect((await thumbnail.$get({ param: { documentId: brief, revisionId: first } })).status).toBe(
@@ -178,6 +185,7 @@ describe('admin documents', () => {
       await runtime.database
         .selectFrom('adminAuditEvent')
         .select(['action', 'subjectType', 'subjectId', 'actorUserId'])
+        .where('action', '=', 'document.downloaded')
         .execute()
     ).toEqual([
       {
@@ -187,6 +195,15 @@ describe('admin documents', () => {
         actorUserId: 'alice'
       }
     ])
+
+    // Taken down, it still downloads: looking at it is what moderating it takes.
+    const taken = await admin.documents[':id'].disable.$post({ param: { id: brief }, json: {} })
+    expect(taken.status).toBe(200)
+    const blocked = await responseJSON(
+      await admin.documents[':id'].download.$post({ param: { id: brief } }),
+      documentDownloadSchema
+    )
+    expect(blocked.revisionId).toBe(current)
 
     // Never saved, so there is no file; an ordinary account may not download anyone's.
     const draft = await document(workspace.studio, 'Draft')
