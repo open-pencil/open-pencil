@@ -172,6 +172,27 @@ describe('a saved inside-stroke outline on a nested instance', () => {
     expect([boolean.width, boolean.height]).toEqual([200, 200])
     expect(endpoint(boolean.fillGeometry[0])).toEqual([200, 200])
   })
+
+  test('scales a fill whose curve follows a close from the contour start', () => {
+    const graph = new SceneGraph()
+    const boolean = graph.createNode('BOOLEAN_OPERATION', graph.getPages()[0].id, {
+      width: 100,
+      height: 100,
+      fillGeometry: [closedThenCubic()]
+    })
+
+    graph.withLayoutMutations(() => {
+      graph.updateNode(boolean.id, { width: 0, height: 0 })
+    })
+    expect(endpoint(boolean.fillGeometry[0])).toEqual([100, 100])
+
+    graph.withLayoutMutations(() => {
+      graph.updateNode(boolean.id, { width: 200, height: 200 })
+    })
+
+    expect([boolean.width, boolean.height]).toEqual([200, 200])
+    expect(endpoint(boolean.fillGeometry[0])).toEqual([200, 200])
+  })
 })
 
 /** A move to the origin and a line to (`x`, `y`). */
@@ -182,6 +203,36 @@ function span(x: number, y: number) {
   commandsBlob[9] = 2
   view.setFloat32(10, x, true)
   view.setFloat32(14, y, true)
+  return { windingRule: 'NONZERO' as const, commandsBlob }
+}
+
+/**
+ * `M 0 0 L 100 100 Z C 400/3 10 400/3 20 0 30 Z`. Close returns the pen to (0, 0), so the curve
+ * peaks at x = 100. Starting it at the line's end instead peaks near x = 118.5.
+ */
+function closedThenCubic() {
+  const commandsBlob = new Uint8Array(45)
+  const view = new DataView(commandsBlob.buffer)
+  let offset = 0
+  const command = (code: number) => {
+    commandsBlob[offset] = code
+    offset += 1
+  }
+  const pair = (x: number, y: number) => {
+    view.setFloat32(offset, x, true)
+    view.setFloat32(offset + 4, y, true)
+    offset += 8
+  }
+  command(1)
+  pair(0, 0)
+  command(2)
+  pair(100, 100)
+  command(0)
+  command(4)
+  pair(400 / 3, 10)
+  pair(400 / 3, 20)
+  pair(0, 30)
+  command(0)
   return { windingRule: 'NONZERO' as const, commandsBlob }
 }
 

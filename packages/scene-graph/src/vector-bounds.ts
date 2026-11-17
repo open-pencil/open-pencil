@@ -1,11 +1,7 @@
 import { cubicExtrema, cubicPoint } from './cubic'
-import { computeBounds, GeometryCommand, readGeometryBlob } from './geometry'
+import { GeometryCommand, readGeometryBlob } from './geometry'
 import type { Rect, Vector } from './primitives'
 import type { GeometryPath, VectorNetwork } from './types'
-
-function pointBounds(point: Vector): Rect {
-  return { x: point.x, y: point.y, width: 0, height: 0 }
-}
 
 function eachNetworkPoint(network: VectorNetwork, visit: (point: Vector) => void): void {
   for (const vertex of network.vertices) visit(vertex)
@@ -26,15 +22,37 @@ function eachNetworkPoint(network: VectorNetwork, visit: (point: Vector) => void
   }
 }
 
+type Axis = { min: number; max: number }
+
+/** A comparison with NaN is false, so that coordinate stays out of its axis. */
+function includeFinite(axis: Axis, value: number): void {
+  if (value < axis.min) axis.min = value
+  if (value > axis.max) axis.max = value
+}
+
+function freshAxis(): Axis {
+  return { min: Infinity, max: -Infinity }
+}
+
+/** Each axis of a network, with a non-finite coordinate left out of its own axis. */
+function networkAxes(network: VectorNetwork): { x: Axis; y: Axis } {
+  const x = freshAxis()
+  const y = freshAxis()
+  eachNetworkPoint(network, (point) => {
+    includeFinite(x, point.x)
+    includeFinite(y, point.y)
+  })
+  return { x, y }
+}
+
 /**
- * The tight box of a vector network, including where its curves peak. A zero side scales from
- * this, which is the size the path was drawn at.
+ * The tight box of a vector network, including where its curves peak. A non-finite coordinate is
+ * left out of its axis, so one of them does not erase a finite side or the coordinates on it.
  */
 export function vectorNetworkBounds(network: VectorNetwork): Rect {
   if (network.vertices.length === 0) return { x: 0, y: 0, width: 0, height: 0 }
-  const points: Rect[] = []
-  eachNetworkPoint(network, (point) => points.push(pointBounds(point)))
-  return computeBounds(points)
+  const { x, y } = networkAxes(network)
+  return { x: x.min, y: y.min, width: x.max - x.min, height: y.max - y.min }
 }
 
 /**
@@ -42,24 +60,8 @@ export function vectorNetworkBounds(network: VectorNetwork): Rect {
  * An empty or infinite axis is not a finite length, and it does not erase the other axis.
  */
 export function vectorNetworkAxisLengths(network: VectorNetwork): Pick<Rect, 'width' | 'height'> {
-  let minX = Infinity
-  let maxX = -Infinity
-  let minY = Infinity
-  let maxY = -Infinity
-  eachNetworkPoint(network, ({ x, y }) => {
-    if (x < minX) minX = x
-    if (x > maxX) maxX = x
-    if (y < minY) minY = y
-    if (y > maxY) maxY = y
-  })
-  return { width: maxX - minX, height: maxY - minY }
-}
-
-type Axis = { min: number; max: number }
-
-function includeFinite(axis: Axis, value: number): void {
-  if (value < axis.min) axis.min = value
-  if (value > axis.max) axis.max = value
+  const { x, y } = networkAxes(network)
+  return { width: x.max - x.min, height: y.max - y.min }
 }
 
 /** Where a cubic is level, not its handles. A handle can sit outside the curve. */
@@ -99,33 +101,44 @@ function includeQuadratic(
   includeCubic(xAxis, yAxis, start, c1, c2, end)
 }
 
+/** Where the pen is, and the point a close returns to: the start of the open contour. */
+interface PathPen {
+  current: Vector | null
+  contour: Vector | null
+}
+
 function includeCommand(
   xAxis: Axis,
   yAxis: Axis,
-  current: Vector | null,
+  pen: PathPen,
   command: number,
   coords: readonly number[]
-): Vector | null {
-  if (command === GeometryCommand.CLOSE) return current
+): void {
+  // A close returns the pen to the contour start, as a path builder does, so the next curve
+  // leaves from there rather than from the point before the close.
+  if (command === GeometryCommand.CLOSE) {
+    pen.current = pen.contour
+    return
+  }
   const end = { x: coords[coords.length - 2], y: coords[coords.length - 1] }
-  if (command === GeometryCommand.MOVE || command === GeometryCommand.LINE || !current) {
+  const start = pen.current
+  if (command === GeometryCommand.MOVE || command === GeometryCommand.LINE || !start) {
     includeFinite(xAxis, end.x)
     includeFinite(yAxis, end.y)
-    return end
-  }
-  if (command === GeometryCommand.QUAD) {
-    includeQuadratic(xAxis, yAxis, current, { x: coords[0], y: coords[1] }, end)
+  } else if (command === GeometryCommand.QUAD) {
+    includeQuadratic(xAxis, yAxis, start, { x: coords[0], y: coords[1] }, end)
   } else if (command === GeometryCommand.CUBIC) {
     includeCubic(
       xAxis,
       yAxis,
-      current,
+      start,
       { x: coords[0], y: coords[1] },
       { x: coords[2], y: coords[3] },
       end
     )
   }
-  return end
+  if (command === GeometryCommand.MOVE) pen.contour = end
+  pen.current = end
 }
 
 /**
@@ -135,12 +148,12 @@ function includeCommand(
 export function geometryAxisLengths(
   paths: readonly GeometryPath[]
 ): Pick<Rect, 'width' | 'height'> | null {
-  const xAxis: Axis = { min: Infinity, max: -Infinity }
-  const yAxis: Axis = { min: Infinity, max: -Infinity }
+  const xAxis = freshAxis()
+  const yAxis = freshAxis()
   for (const path of paths) {
-    let current: Vector | null = null
+    const pen: PathPen = { current: null, contour: null }
     readGeometryBlob(path.commandsBlob, (command, coords) => {
-      current = includeCommand(xAxis, yAxis, current, command, coords)
+      includeCommand(xAxis, yAxis, pen, command, coords)
     })
   }
   const width = xAxis.max - xAxis.min

@@ -149,6 +149,31 @@ test('resizeWithoutConstraints recovers a collapsed width when one vertex coordi
   expect(vertices?.[2]?.y).toBe(50)
 })
 
+test('resizeWithoutConstraints does not scale from an infinite axis length', () => {
+  const graph = new SceneGraph()
+  const node = graph.createNode('VECTOR', graph.getPages()[0].id, {
+    width: 0,
+    height: 0,
+    vectorNetwork: {
+      vertices: [
+        { x: 0, y: 0 },
+        { x: Number.POSITIVE_INFINITY, y: 80 }
+      ],
+      segments: [],
+      regions: []
+    }
+  })
+  const vector = new FigmaAPI(graph).getNodeById(node.id)
+  if (!vector) throw new Error('Vector proxy was not found')
+
+  vector.resizeWithoutConstraints(200, 200)
+
+  const vertices = vector.vectorNetwork?.vertices
+  expect(vertices?.[0]).toMatchObject({ x: 0, y: 0 })
+  expect(vertices?.[1]?.x).toBe(Number.POSITIVE_INFINITY)
+  expect(vertices?.[1]?.y).toBe(200)
+})
+
 test('resizeWithoutConstraints to a zero side keeps the path, so the shape comes back', () => {
   const vector = importedVector()
   vector.resizeWithoutConstraints(0, 64)

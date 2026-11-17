@@ -388,6 +388,29 @@ describe('a vector layout resizes', () => {
     expect(endpoint(node.strokeGeometry[0])).toEqual([200, 200])
   })
 
+  test('keeps an outline-only vector stroke that cannot be measured', () => {
+    const outline = { windingRule: 'NONZERO' as const, commandsBlob: new Uint8Array([1, 2, 3, 4]) }
+    const graph = new SceneGraph()
+    const vector = graph.createNode('VECTOR', graph.getPages()[0].id, {
+      width: 100,
+      height: 100,
+      vectorNetwork: null,
+      strokeGeometry: [outline]
+    })
+
+    graph.withLayoutMutations(() => {
+      graph.updateNode(vector.id, { width: 0, height: 0 })
+    })
+    expect(vector.strokeGeometry).toEqual([outline])
+
+    graph.withLayoutMutations(() => {
+      graph.updateNode(vector.id, { width: 200, height: 200 })
+    })
+
+    expect([vector.width, vector.height]).toEqual([200, 200])
+    expect(vector.strokeGeometry).toEqual([outline])
+  })
+
   test('keeps its path when layout flattens a side, so resizing it back restores the shape', () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0].id

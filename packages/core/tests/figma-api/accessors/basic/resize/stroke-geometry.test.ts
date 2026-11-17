@@ -59,6 +59,36 @@ function humpWidth(path: SceneNode['fillGeometry'][number] | undefined): number 
   return max
 }
 
+/**
+ * `M 0 0 L 100 100 Z C 400/3 10 400/3 20 0 30 Z`. Close returns the pen to (0, 0), so the curve
+ * peaks at x = 100. Starting the cubic at the line's end instead peaks near x = 118.5.
+ */
+function closedThenCubic() {
+  const commandsBlob = new Uint8Array(45)
+  const view = new DataView(commandsBlob.buffer)
+  let offset = 0
+  const command = (code: number) => {
+    commandsBlob[offset] = code
+    offset += 1
+  }
+  const pair = (x: number, y: number) => {
+    view.setFloat32(offset, x, true)
+    view.setFloat32(offset + 4, y, true)
+    offset += 8
+  }
+  command(1)
+  pair(0, 0)
+  command(2)
+  pair(100, 100)
+  command(0)
+  command(4)
+  pair(400 / 3, 10)
+  pair(400 / 3, 20)
+  pair(0, 30)
+  command(0)
+  return { windingRule: 'NONZERO' as const, commandsBlob }
+}
+
 test('resize drops a saved stroke outline on a frame instead of leaving it at the old size', () => {
   const graph = new SceneGraph()
   const frame = new FigmaAPI(graph).createFrame()
@@ -115,4 +145,26 @@ test('resizeWithoutConstraints scales a curved saved fill from the curve, not it
 
   expect(graph.getNode(node.id)?.width).toBe(150)
   expect(humpWidth(graph.getNode(node.id)?.fillGeometry[0])).toBeCloseTo(150, 4)
+})
+
+test('resizeWithoutConstraints starts a curve after a close at the contour start', () => {
+  const graph = new SceneGraph()
+  const fill = closedThenCubic()
+  const node = graph.createNode('BOOLEAN_OPERATION', graph.getPages()[0].id, {
+    width: 100,
+    height: 100,
+    fillGeometry: [fill]
+  })
+  const boolean = new FigmaAPI(graph).getNodeById(node.id)
+  if (!boolean) throw new Error('Boolean proxy was not found')
+  const control = new DataView(fill.commandsBlob.buffer).getFloat32(20, true)
+  expect(control).toBeGreaterThan(100)
+
+  boolean.resizeWithoutConstraints(0, 0)
+  expect(endpoint(graph.getNode(node.id)?.fillGeometry[0])).toEqual([100, 100])
+
+  boolean.resizeWithoutConstraints(200, 200)
+
+  expect(graph.getNode(node.id)?.width).toBe(200)
+  expect(endpoint(graph.getNode(node.id)?.fillGeometry[0])).toEqual([200, 200])
 })
