@@ -119,8 +119,12 @@ export const Finishing: Story = {
     </div>`
   }),
   play: async ({ canvasElement }) => {
-    const markdown = canvasElement.querySelector('[data-markdown-mode]')
-    await expect(markdown).toHaveAttribute('data-markdown-mode', 'streaming')
+    // Comark renders inside a Suspense, so the document appears after the first paint.
+    const markdown = await waitFor(async () => {
+      const found = canvasElement.querySelector('[data-markdown-mode]')
+      await expect(found).toHaveAttribute('data-markdown-mode', 'streaming')
+      return found
+    })
     await userEvent.click(within(canvasElement).getByRole('button', { name: 'Finish' }))
     await waitFor(() => expect(markdown).toHaveAttribute('data-markdown-mode', 'static'))
     // Still the element that streamed: a new one would fade the read text in again.

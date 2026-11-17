@@ -107,7 +107,7 @@ const setFor = computed(() =>
         })
       }}
       <button
-        class="cursor-pointer border-none bg-transparent p-0 text-2xs text-accent hover:underline"
+        class="cursor-pointer border-none bg-transparent p-0 text-2xs text-primary hover:underline"
         @click="remove"
       >
         {{ messages.remove }}
