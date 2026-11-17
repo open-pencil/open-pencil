@@ -126,4 +126,29 @@ describe('a saved inside-stroke outline on a nested instance', () => {
       { windingRule: 'NONZERO' }
     ])
   })
+
+  test('is dropped when a pathless frame expands after layout flattened it', () => {
+    const graph = new SceneGraph()
+    const frame = graph.createNode('FRAME', graph.getPages()[0].id, {
+      width: 100,
+      height: 100,
+      strokes: [INSIDE],
+      strokeAlign: 'INSIDE',
+      strokeWeight: 1,
+      strokeGeometry: [OUTLINE]
+    })
+
+    graph.withLayoutMutations(() => {
+      graph.updateNode(frame.id, { width: 0, height: 0 })
+    })
+    expect(frame.strokeGeometry).toEqual([OUTLINE])
+
+    graph.withLayoutMutations(() => {
+      graph.updateNode(frame.id, { width: 200, height: 200 })
+    })
+
+    expect([frame.width, frame.height]).toEqual([200, 200])
+    expect(frame.strokeGeometry).toEqual([])
+    expect(frame.source.editedFields).toContain('strokeGeometry')
+  })
 })

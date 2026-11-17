@@ -56,13 +56,67 @@ function keptSizeGeometry(node: SceneNode, before: Partial<SceneNode>): Partial<
   const extent = width > 0 && height > 0 ? null : collapsedPathExtent(outlinesNetwork(node, before))
   const fromWidth = width > 0 ? width : finiteLength(extent?.width)
   const fromHeight = height > 0 ? height : finiteLength(extent?.height)
-  return scaledGeometryChanges(
-    createResizeSnapshot(node),
+  return withoutUnscalableStroke(
+    node,
     fromWidth,
     fromHeight,
-    node.width > 0 ? node.width : fromWidth,
-    node.height > 0 ? node.height : fromHeight
+    scaledGeometryChanges(
+      createResizeSnapshot(node),
+      fromWidth,
+      fromHeight,
+      node.width > 0 ? node.width : fromWidth,
+      node.height > 0 ? node.height : fromHeight
+    )
   )
+}
+
+/**
+ * A pathless shape has nothing to measure once a side is already zero, so its saved stroke cannot
+ * be scaled into the new box. Drop that outline and let the stroke draw at the new size.
+ */
+function withoutUnscalableStroke(
+  node: SceneNode,
+  fromWidth: number,
+  fromHeight: number,
+  changes: Partial<SceneNode>
+): Partial<SceneNode> {
+  const pathless = (node.vectorNetwork?.segments.length ?? 0) === 0
+  const expanding = (fromWidth <= 0 && node.width > 0) || (fromHeight <= 0 && node.height > 0)
+  if (
+    pathless &&
+    expanding &&
+    node.strokeGeometry.length > 0 &&
+    !Object.hasOwn(changes, 'strokeGeometry')
+  ) {
+    return { ...changes, strokeGeometry: [] }
+  }
+  return changes
+}
+
+/** Geometry this pass already replaced sits in the new box, so it is not scaled from the old one. */
+function replacedGeometry(
+  node: SceneNode,
+  before: Partial<SceneNode>,
+  changed: ReadonlySet<keyof SceneNode>,
+  geometry: Partial<SceneNode>
+): Partial<SceneNode> {
+  const outlines: Partial<SceneNode> = {}
+  const replacedFill =
+    changed.has('fillGeometry') && !Object.is(node.fillGeometry, before.fillGeometry)
+  const replacedStroke =
+    changed.has('strokeGeometry') && !Object.is(node.strokeGeometry, before.strokeGeometry)
+  const replacedNetwork =
+    changed.has('vectorNetwork') && !Object.is(node.vectorNetwork, before.vectorNetwork)
+  if (!replacedFill && Object.hasOwn(geometry, 'fillGeometry')) {
+    outlines.fillGeometry = geometry.fillGeometry
+  }
+  if (!replacedStroke && Object.hasOwn(geometry, 'strokeGeometry')) {
+    outlines.strokeGeometry = geometry.strokeGeometry
+  }
+  if (!replacedNetwork && Object.hasOwn(geometry, 'vectorNetwork')) {
+    outlines.vectorNetwork = geometry.vectorNetwork
+  }
+  return outlines
 }
 
 interface LayerWrites {
@@ -119,18 +173,10 @@ export class LayoutWrites {
         node.type !== 'TEXT' &&
         (['width', 'height'] as const).some((key) => edited.has(key) && key in changes)
       if (keptSize) {
-        // Saved outlines scale with the box. A vector network this layout replaced, such as a
+        // Saved outlines scale with the box. A network or outline this layout replaced, such as a
         // connector's route, is already in the box. One it left still describes the old box, and
         // the renderer rebuilds an inside, centered, or outside stroke from it.
-        const geometry = keptSizeGeometry(node, before)
-        const outlines: Partial<SceneNode> = {}
-        if ('fillGeometry' in geometry) outlines.fillGeometry = geometry.fillGeometry
-        if ('strokeGeometry' in geometry) outlines.strokeGeometry = geometry.strokeGeometry
-        const replacedNetwork =
-          changed.has('vectorNetwork') && !Object.is(node.vectorNetwork, before.vectorNetwork)
-        if (!replacedNetwork && 'vectorNetwork' in geometry) {
-          outlines.vectorNetwork = geometry.vectorNetwork
-        }
+        const outlines = replacedGeometry(node, before, changed, keptSizeGeometry(node, before))
         Object.assign(node, outlines)
         Object.assign(changes, outlines)
         for (const key of Object.keys(outlines) as (keyof SceneNode)[]) {

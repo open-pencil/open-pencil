@@ -84,6 +84,32 @@ describe('a vector layout resizes', () => {
     expect(vector.source.editedFields).toContain('vectorNetwork')
   })
 
+  test('keeps a fill and stroke this layout already replaced', () => {
+    const graph = new SceneGraph()
+    const vector = graph.createNode('VECTOR', graph.getPages()[0].id, {
+      width: 100,
+      height: 100,
+      vectorNetwork: squareNetwork(100),
+      fillGeometry: [moveTo(100, 100)],
+      strokeGeometry: [moveTo(100, 100)]
+    })
+
+    graph.withLayoutMutations(() => {
+      graph.updateNode(vector.id, {
+        width: 200,
+        height: 200,
+        fillGeometry: [moveTo(200, 200)],
+        strokeGeometry: [moveTo(200, 200)]
+      })
+    })
+
+    const node = expectDefined(graph.getNode(vector.id))
+    expect([node.width, node.height]).toEqual([200, 200])
+    expect(point(node.fillGeometry[0])).toEqual([200, 200])
+    expect(point(node.strokeGeometry[0])).toEqual([200, 200])
+    expect(node.vectorNetwork?.vertices[2]).toEqual({ x: 200, y: 200 })
+  })
+
   test('keeps a network this layout already replaced, such as a connector route', () => {
     const graph = new SceneGraph()
     const vector = graph.createNode('VECTOR', graph.getPages()[0].id, {

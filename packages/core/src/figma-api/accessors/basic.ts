@@ -3,7 +3,7 @@ import * as v from 'valibot'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { TRANSFORM_FIELDS as NODE_TRANSFORM_FIELDS } from '@open-pencil/scene-graph/fields'
-import { visualBoundsToRect } from '@open-pencil/scene-graph/geometry'
+import { geometryBlobBounds, visualBoundsToRect } from '@open-pencil/scene-graph/geometry'
 import { findInstanceAncestor, recordInstanceOverride } from '@open-pencil/scene-graph/instances'
 import { recapturedAspectRatio } from '@open-pencil/scene-graph/layout'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
@@ -322,29 +322,47 @@ function descendants(scene: SceneGraph, node: SceneNode): SceneNode[] {
 }
 
 /**
+ * The box a zero side scales from. A vector uses its network. Any other layer uses its saved fill,
+ * which is the shape a childless boolean draws.
+ */
+function collapsedFillExtent(node: SceneNode): Pick<Rect, 'width' | 'height'> | null {
+  if (node.type === 'VECTOR') {
+    return node.vectorNetwork ? computeAccurateBounds(node.vectorNetwork) : null
+  }
+  return geometryBlobBounds(node.fillGeometry)
+}
+
+/**
  * Geometry that follows a new size, as Figma's resize and a handle resize do. A vector's path
  * scales, and its stroke keeps its weight: with a path to stroke, the saved stroke outline goes
  * and the stroke draws from the scaled path; without one, the outline is all that draws the
  * stroke, so it scales. Any other layer drops a saved outline the same way, so an inside stroke
- * follows the new box. Text lays its outlines out again instead of scaling them.
+ * follows the new box. Text lays its outlines out again instead of scaling them. A side set to
+ * zero keeps the saved fill's coordinates, and the next size scales them from that fill.
  */
 function resizedNodeGeometry(node: SceneNode, width: number, height: number): Partial<SceneNode> {
   if (node.type === 'TEXT') return {}
-  if (node.type !== 'VECTOR') {
-    return scaledGeometryChanges(createResizeSnapshot(node), node.width, node.height, width, height)
-  }
-  // A side at zero keeps the path along it, as in Figma, so the next resize scales the path from
-  // its own extent and gets the shape back.
-  const bounds = node.vectorNetwork ? computeAccurateBounds(node.vectorNetwork) : null
+  const bounds = collapsedFillExtent(node)
   const fromWidth = node.width > 0 ? node.width : (bounds?.width ?? 0)
   const fromHeight = node.height > 0 ? node.height : (bounds?.height ?? 0)
-  return scaledGeometryChanges(
+  const changes = scaledGeometryChanges(
     createResizeSnapshot(node),
     fromWidth,
     fromHeight,
     width || fromWidth,
     height || fromHeight
   )
+  // A non-vector drops its stroke outline whenever the box changes. Holding a zero side at the
+  // fill's old extent leaves the scale at 1, which would otherwise keep the outline.
+  if (
+    node.type !== 'VECTOR' &&
+    node.strokeGeometry.length > 0 &&
+    (width !== node.width || height !== node.height) &&
+    !Object.hasOwn(changes, 'strokeGeometry')
+  ) {
+    return { ...changes, strokeGeometry: [] }
+  }
+  return changes
 }
 
 /** The least size Figma's `resize` gives a side; `resizeWithoutConstraints` allows zero. */
