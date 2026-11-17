@@ -16,7 +16,11 @@ const exact = computed(() => dates.format(at, 'dateTime'))
 </script>
 
 <template>
+  <!-- Screen readers get the exact time as well; the tooltip shows it to the pointer, and a
+       timestamp is no stop for the keyboard. -->
   <Tip :label="exact" as-child>
-    <time v-bind="$attrs" :datetime="at">{{ label }}</time>
+    <time v-bind="$attrs" :datetime="at"
+      >{{ label }}<span class="sr-only">, {{ exact }}</span></time
+    >
   </Tip>
 </template>

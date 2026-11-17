@@ -52,7 +52,8 @@ watch(
 
 <template>
   <div :class="ui.root()">
-    <HoverCardRoot v-if="thumbnail && !failed" :open-delay="300" :close-delay="100">
+    <!-- A tap opens it on a touch screen, which neither hovers nor focuses a tapped button. -->
+    <HoverCardRoot v-if="thumbnail && !failed" :open-delay="300" :close-delay="100" enable-touch>
       <!-- A button, so the keyboard can open the preview as hovering does. -->
       <HoverCardTrigger as-child>
         <button
