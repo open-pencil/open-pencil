@@ -1,0 +1,1 @@
+- Agents can keep editing through MCP while the macOS desktop app is hidden or the screen is locked, instead of every call timing out.
