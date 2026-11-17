@@ -251,7 +251,7 @@
     "ufo": "^1.6.4",
     "unifont": "1.0.3",
     "valibot": "^1.5.0",
-    "whaticon": "^0.2.0",
+    "whaticon": "^0.3.0",
     "woff2-encoder": "2.0.0"
   },
   "devDependencies": {

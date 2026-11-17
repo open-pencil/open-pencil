@@ -7,7 +7,7 @@ import { parseIndex, type IconIndex } from 'whaticon/hash'
  * as the `whaticon/hash` Core depends on hashes; moving it with that dependency picks up the sets'
  * newer icons.
  */
-const INDEX = 'https://cdn.jsdelivr.net/npm/whaticon@0.2.0/data'
+const INDEX = 'https://cdn.jsdelivr.net/npm/whaticon@0.3.0/data'
 
 async function fetchGzipped(fetcher: typeof globalThis.fetch, file: string): Promise<Uint8Array> {
   const response = await fetcher(`${INDEX}/${file}`)
