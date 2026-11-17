@@ -27,5 +27,9 @@
   "commentDeleted": "评论已删除",
   "hideComments": "隐藏评论",
   "mentionPeople": "要提及的人",
-  "unread": "未读"
+  "unread": "未读",
+  "notifyMention": "评论中的提及",
+  "notifyReply": "对你评论的回复",
+  "notifyReplyHint": "有人在你参与过的评论串中回复。",
+  "notifyTitle": "{author} · {document}"
 }
