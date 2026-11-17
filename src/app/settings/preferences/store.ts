@@ -117,6 +117,8 @@ export interface NotificationPreferences {
   commentMention: boolean
   /** Someone replies in a Cloud comment thread the person wrote in. */
   commentReply: boolean
+  /** An automatic save of an open document failed. */
+  saveFailed: boolean
 }
 
 /** How the person's Design instructions meet OpenPencil's: added after them, or in their place. */
@@ -229,7 +231,8 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
     agentFinished: false,
     agentFailed: false,
     commentMention: true,
-    commentReply: false
+    commentReply: false,
+    saveFailed: true
   },
   updates: { checkOnStartup: true, channel: 'build' },
   prompts: { review: null, title: null, summary: null, design: { mode: 'add', text: '' } }
@@ -348,7 +351,8 @@ const appPreferencesSchema = section({
     agentFinished: v.fallback(v.boolean(), defaults.notifications.agentFinished),
     agentFailed: v.fallback(v.boolean(), defaults.notifications.agentFailed),
     commentMention: v.fallback(v.boolean(), defaults.notifications.commentMention),
-    commentReply: v.fallback(v.boolean(), defaults.notifications.commentReply)
+    commentReply: v.fallback(v.boolean(), defaults.notifications.commentReply),
+    saveFailed: v.fallback(v.boolean(), defaults.notifications.saveFailed)
   }),
   updates: section({
     checkOnStartup: v.fallback(v.boolean(), defaults.updates.checkOnStartup),

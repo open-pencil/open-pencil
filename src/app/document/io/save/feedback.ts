@@ -15,9 +15,51 @@ export interface SaveFeedbackOptions {
 
 const failureToasts = new WeakMap<object, number>()
 
+/** What a failed save says went wrong. */
+export const saveErrorText = (error: unknown) =>
+  error instanceof Error ? error.message : String(error)
+
+/** Removes the failure shown for `key`, as a later successful save of it does. */
+export function clearSaveFailure(key: object): void {
+  const failure = failureToasts.get(key)
+  if (failure === undefined) return
+  toast.remove(failure)
+  failureToasts.delete(key)
+}
+
+/**
+ * Shows that a save failed until it is retried or a later save of `key` succeeds; a newer failure
+ * of the same document takes the place of the one shown. Returns whether one was shown already.
+ */
+export function showSaveFailure(
+  message: string,
+  retry: () => void,
+  options: SaveFeedbackOptions = {}
+): boolean {
+  const { key } = options
+  const shown = key !== undefined && failureToasts.has(key)
+  if (key) clearSaveFailure(key)
+  const id = toast.error(
+    message,
+    {
+      label: notificationMessages.get().saveFailedRetry,
+      run: (toastId) => {
+        toast.remove(toastId)
+        if (key) failureToasts.delete(key)
+        if (options.isOpen && !options.isOpen()) return
+        retry()
+      }
+    },
+    { sticky: true }
+  )
+  if (key) failureToasts.set(key, id)
+  return shown
+}
+
 /**
  * Runs a save started by the person and reports a failure where they can see it. Saves started by
- * a room, an autosave, or the automation bridge keep their own error handling.
+ * a room or the automation bridge keep their own error handling; an autosave reports through
+ * `useAutosaveFeedback`.
  */
 export async function saveWithFeedback(
   save: () => Promise<unknown>,
@@ -25,30 +67,14 @@ export async function saveWithFeedback(
 ): Promise<boolean> {
   try {
     const result = await save()
-    if (options.key) {
-      const failure = failureToasts.get(options.key)
-      if (failure !== undefined) {
-        toast.remove(failure)
-        failureToasts.delete(options.key)
-      }
-    }
+    if (options.key) clearSaveFailure(options.key)
     return result !== false
   } catch (error) {
-    const messages = notificationMessages.get()
-    const id = toast.error(
-      messages.operationFailed({ error: error instanceof Error ? error.message : String(error) }),
-      {
-        label: messages.saveFailedRetry,
-        run: (toastId) => {
-          toast.remove(toastId)
-          if (options.key) failureToasts.delete(options.key)
-          if (options.isOpen && !options.isOpen()) return
-          void saveWithFeedback(save, options)
-        }
-      },
-      { sticky: true }
+    showSaveFailure(
+      notificationMessages.get().operationFailed({ error: saveErrorText(error) }),
+      () => void saveWithFeedback(save, options),
+      options
     )
-    if (options.key) failureToasts.set(options.key, id)
     return false
   }
 }

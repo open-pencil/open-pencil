@@ -12,7 +12,10 @@ function deferred() {
   return { promise, resolve: () => resolve?.() }
 }
 
-function setup(saveCurrentDocument: (version: number) => Promise<void>) {
+function setup(
+  saveCurrentDocument: (version: number) => Promise<void>,
+  report: { onFailed?: (error: unknown) => void; onSaved?: () => void } = {}
+) {
   const state = reactive({ autosaveEnabled: true, roomKeepsEdits: false })
   const version = ref(0)
   let savedVersion = 0
@@ -25,7 +28,8 @@ function setup(saveCurrentDocument: (version: number) => Promise<void>) {
     saveCurrentDocument: async (version) => {
       await saveCurrentDocument(version)
       savedVersion = version
-    }
+    },
+    ...report
   })
   return {
     state,
@@ -191,5 +195,65 @@ describe('document autosave', () => {
     } finally {
       jest.useRealTimers()
     }
+  })
+
+  test('reports an edit’s failed save, then the retry that saves it', async () => {
+    jest.useFakeTimers()
+    try {
+      const events: string[] = []
+      let fail = true
+      const { version, autosave } = setup(
+        async (saved) => {
+          if (fail) throw new Error(`write ${saved} failed`)
+        },
+        {
+          onFailed: (error) => events.push(error instanceof Error ? error.message : 'unknown'),
+          onSaved: () => events.push('saved')
+        }
+      )
+      const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
+      version.value = 1
+      await nextTick()
+      jest.advanceTimersByTime(3_000)
+      await Promise.resolve()
+      await Promise.resolve()
+      expect(events).toEqual(['write 1 failed'])
+
+      fail = false
+      version.value = 2
+      autosave.retry()
+      await Promise.resolve()
+      await Promise.resolve()
+      expect(events).toEqual(['write 1 failed', 'saved'])
+      warn.mockRestore()
+      autosave.disposeAutosave()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  test('reports nothing for a save its caller awaits, or after it is disposed', async () => {
+    const failed: unknown[] = []
+    const save = deferred()
+    const { version, autosave } = setup(
+      async () => {
+        await save.promise
+        throw new Error('write failed')
+      },
+      { onFailed: (error) => failed.push(error) }
+    )
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
+    version.value = 1
+    const awaited = autosave.requestSave(1)
+    save.resolve()
+    await expect(awaited).rejects.toThrow('write failed')
+
+    autosave.retry()
+    autosave.disposeAutosave()
+    // The retry's write fails once every pending callback has run.
+    await Bun.sleep(0)
+    expect(failed).toEqual([])
+    expect(warn).toHaveBeenCalledTimes(1)
+    warn.mockRestore()
   })
 })

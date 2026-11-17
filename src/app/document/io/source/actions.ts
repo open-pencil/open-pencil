@@ -156,6 +156,8 @@ export function createDocumentSourceActions({
     onDownloadSuccess: (version) => recovery.markProtectedVersion(version)
   })
 
+  const autosaveFailed = createEventHook<unknown>()
+  const autosaved = createEventHook()
   const autosave = createAutosave({
     state,
     version: changes.revision,
@@ -163,7 +165,9 @@ export function createDocumentSourceActions({
     hasWritableSource,
     saveCurrentDocument: async (version) => {
       await saveAndTrack(async () => writeFile(await buildFigStream(), version))
-    }
+    },
+    onFailed: (error) => void autosaveFailed.trigger(error),
+    onSaved: () => void autosaved.trigger()
   })
 
   function markDocumentSaved() {
@@ -313,6 +317,9 @@ export function createDocumentSourceActions({
   return {
     renameDocument,
     onDocumentRenamed: renamed.on,
+    onAutosaveFailed: autosaveFailed.on,
+    onAutosaved: autosaved.on,
+    retryAutosave: () => autosave.retry(),
     setDocumentSource,
     setStorageDocumentSource,
     setPlannedFilePath,

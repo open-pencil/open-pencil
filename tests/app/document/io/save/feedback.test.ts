@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { saveWithFeedback } from '@/app/document/io/save/feedback'
+import { saveWithFeedback, showSaveFailure } from '@/app/document/io/save/feedback'
 import { toast } from '@/app/shell/ui'
 
 afterEach(() => {
@@ -58,5 +58,17 @@ describe('save feedback', () => {
 
     expect(attempts).toBe(1)
     expect(toast.toasts.value).toHaveLength(0)
+  })
+
+  test('shows one failure per document, the latest, and says when one was showing', async () => {
+    const key = {}
+    const retry = () => undefined
+    expect(showSaveFailure('first', retry, { key })).toBe(false)
+    expect(showSaveFailure('second', retry, { key })).toBe(true)
+    expect(toast.toasts.value.map((entry) => entry.message)).toEqual(['second'])
+
+    await expect(saveWithFeedback(async () => true, { key })).resolves.toBe(true)
+    expect(toast.toasts.value).toHaveLength(0)
+    expect(showSaveFailure('third', retry, { key })).toBe(false)
   })
 })
