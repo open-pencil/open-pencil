@@ -76,6 +76,15 @@ export const EMAIL_SAMPLES: TransactionalEmailContent[] = [
     payload: { name: 'Ada', change: 'passkey-added', actionURL: EMAIL_SAMPLE_URL }
   },
   {
+    kind: 'two-step-changed',
+    payload: {
+      name: 'Ada',
+      change: 'sign-in-method-removed',
+      method: 'google',
+      actionURL: EMAIL_SAMPLE_URL
+    }
+  },
+  {
     kind: 'document-report',
     payload: {
       documentName: 'Homepage',

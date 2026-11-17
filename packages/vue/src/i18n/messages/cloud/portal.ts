@@ -79,6 +79,8 @@ export const cloudPortalMessageDefaults = {
 
   pendingTitle: 'Your request is with an administrator',
   pendingDescription: params('We email {email} when you can sign in. Nothing else to do for now.'),
+  pendingHiddenEmail:
+    'Already have an account here? Sign out and sign in to it as you usually do: Apple hid your email, so this one is new.',
   closedTitle: 'You can’t use this server',
   closedDescription:
     'An administrator declined or removed your access. Ask them if you think this is a mistake.',
@@ -365,6 +367,7 @@ export const cloudPortalMessageDefaults = {
   columnPerson: 'Person',
   columnRole: 'Role',
   columnWorkspaces: 'Workspaces',
+  columnSignIn: 'Sign-in',
   columnWorkspace: 'Workspace',
   columnMembers: 'Members',
   columnLastActive: 'Last active',
@@ -401,6 +404,10 @@ export const cloudPortalMessageDefaults = {
   resetTwoStepHeading: params('Reset two-step sign-in for {name}?'),
   resetTwoStepDescription:
     'Their authenticator app, recovery codes, and passkeys are removed, so they can sign in with their password or a linked account and set them up again. They get an email saying so.',
+  removeSignInMethod: 'Remove',
+  removeSignInMethodHeading: params('Remove {provider} from {name}’s ways to sign in?'),
+  removeSignInMethodDescription:
+    'They can’t sign in with it again unless they add it back, and they get an email saying so. Devices already signed in stay signed in until you sign them out everywhere.',
   removePersonPicture: 'Remove picture',
   removePersonPictureHeading: params('Remove {name}’s picture?'),
   removePersonPictureDescription:
@@ -500,6 +507,7 @@ export const cloudPortalMessageDefaults = {
   activityEmailRetried: 'retried an email to',
   activityTwoStepReset: 'reset two-step sign-in for',
   activityPictureRemoved: 'removed the picture of',
+  activitySignInMethodRemoved: 'removed a way to sign in from',
   activityReason: params('Reason: {reason}'),
   activityChanged: 'changed',
   reports: 'Reports',

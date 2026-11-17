@@ -35,6 +35,7 @@ export function portalPerson(
     joinedOn: dates.format(user.createdAt, 'date'),
     lastActive: user.lastActiveAt ? dates.relative(user.lastActiveAt) : null,
     workspaceCount: user.workspaceCount,
+    methods: user.methods,
     ...(user.request && user.request !== 'approved' && { access: ACCESS[user.request] }),
     you: user.id === you
   }

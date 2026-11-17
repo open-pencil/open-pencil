@@ -626,5 +626,11 @@
   "sitePoweredBy": "Propulsé par OpenPencil",
   "siteSourceCode": "Code source",
   "communityNoDesigns": "Pas encore de designs ici.",
-  "communityNoBoards": "Pas encore de tableaux ici."
+  "communityNoBoards": "Pas encore de tableaux ici.",
+  "pendingHiddenEmail": "Vous avez déjà un compte ici ? Déconnectez-vous et connectez-vous à ce compte comme d’habitude : Apple a masqué votre adresse e-mail, ce compte-ci est donc nouveau.",
+  "columnSignIn": "Connexion",
+  "removeSignInMethod": "Retirer",
+  "removeSignInMethodHeading": "Retirer {provider} des moyens de connexion de {name} ?",
+  "removeSignInMethodDescription": "Cette personne ne pourra plus se connecter avec ce moyen tant qu’elle ne l’aura pas ajouté à nouveau, et elle recevra un e-mail à ce sujet. Les appareils déjà connectés le restent jusqu’à ce que vous la déconnectiez partout.",
+  "activitySignInMethodRemoved": "a retiré un moyen de connexion de"
 }

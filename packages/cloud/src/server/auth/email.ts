@@ -47,6 +47,8 @@ export type AuthenticationEmailService = {
     name: string
     userId: string
     change: TwoStepChange
+    /** For a removed sign-in method, which one. */
+    method?: string
   }): Promise<void>
 }
 
@@ -120,6 +122,7 @@ export function createAuthenticationEmailService(
         payload: {
           name: input.name,
           change: input.change,
+          ...(input.method && { method: input.method }),
           actionURL: new URL('/account/security', publicURL).href
         }
       })

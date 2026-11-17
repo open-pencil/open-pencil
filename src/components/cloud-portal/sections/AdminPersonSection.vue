@@ -40,6 +40,7 @@ const detail = computed<PortalPersonDetail | null>(() => {
     person: portalPerson(value.user, portal.account.value?.user.userId, dates),
     emailVerified: value.user.emailVerified,
     methods: value.methods.map((method) => ({
+      id: method.id,
       provider: method.provider,
       linkedOn: dates.format(method.createdAt, 'date')
     })),
@@ -60,6 +61,10 @@ const error = computed(() => action.error.value)
 function act(kind: PortalPersonAction, reason?: string) {
   const person = detail.value?.person
   if (person) void action.run(() => personAction(portal.api, person, kind, reason))
+}
+
+function removeMethod(methodId: string) {
+  void action.run(() => portal.api.removeSignInMethod(userId, methodId))
 }
 
 watch(
@@ -95,6 +100,7 @@ watch(
       :detail="detail"
       :busy="action.busy.value"
       @act="act"
+      @remove-method="removeMethod"
       @back="emit('back')"
     />
     <PortalPageSkeleton v-else-if="loaded.status.value === 'loading'" avatar :groups="[5, 2]" />

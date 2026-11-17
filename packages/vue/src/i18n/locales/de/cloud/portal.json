@@ -626,5 +626,11 @@
   "sitePoweredBy": "Bereitgestellt mit OpenPencil",
   "siteSourceCode": "Quellcode",
   "communityNoDesigns": "Hier gibt es noch keine Designs.",
-  "communityNoBoards": "Hier gibt es noch keine Boards."
+  "communityNoBoards": "Hier gibt es noch keine Boards.",
+  "pendingHiddenEmail": "Du hast hier schon ein Konto? Melde dich ab und wie gewohnt dort an: Apple hat deine E-Mail-Adresse verborgen, daher ist dieses Konto neu.",
+  "columnSignIn": "Anmeldung",
+  "removeSignInMethod": "Entfernen",
+  "removeSignInMethodHeading": "{provider} aus den Anmeldemethoden von {name} entfernen?",
+  "removeSignInMethodDescription": "Die Person kann sich damit nicht mehr anmelden, bis sie es wieder hinzufügt, und erhält dazu eine E-Mail. Bereits angemeldete Geräte bleiben angemeldet, bis du sie überall abmeldest.",
+  "activitySignInMethodRemoved": "entfernte eine Anmeldemethode von"
 }

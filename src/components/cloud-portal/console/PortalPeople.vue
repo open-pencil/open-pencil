@@ -14,6 +14,7 @@ import {
 } from '@/app/cloud-portal/list'
 
 import PortalIdentityCell from '../table/PortalIdentityCell.vue'
+import PortalSignInMethodsCell from '../table/PortalSignInMethodsCell.vue'
 import PortalStatusCell from '../table/PortalStatusCell.vue'
 import PortalTable from '../table/PortalTable.vue'
 import type { PortalPerson, PortalPersonAction } from '../types'
@@ -87,6 +88,13 @@ const people = usePortalList<CloudAdminUserFilter, PortalPerson>({
           detail: person.suspendedReason
         })
     }),
+    column.display({
+      id: 'methods',
+      header: () => messages.value.columnSignIn,
+      meta: { class: 'hidden w-24 @lg/table:table-cell' },
+      cell: ({ row: { original: person } }) =>
+        h(PortalSignInMethodsCell, { methods: person.methods })
+    }),
     column.accessor('workspaceCount', {
       header: () => messages.value.columnWorkspaces,
       meta: { class: 'hidden w-24 text-right tabular-nums @2xl/table:table-cell' }
@@ -118,7 +126,10 @@ const filters = computed(() => [
   { value: 'all' as const, label: messages.value.filterEveryone },
   { value: 'administrators' as const, label: messages.value.filterAdministrators },
   { value: 'suspended' as const, label: messages.value.filterSuspended },
-  { value: 'without-two-step' as const, label: messages.value.filterWithoutTwoStep }
+  { value: 'without-two-step' as const, label: messages.value.filterWithoutTwoStep },
+  { value: 'password' as const, label: messages.value.password },
+  { value: 'google' as const, label: messages.value.providerGoogle },
+  { value: 'apple' as const, label: messages.value.providerApple }
 ])
 
 defineExpose({ reload: people.reload })

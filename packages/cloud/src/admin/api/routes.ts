@@ -10,6 +10,7 @@ import {
   enrollmentStatusSchema,
   documentTakedownSchema,
   enrollmentReviewSchema,
+  signInMethodMutationSchema,
   userMutationSchema,
   userRoleMutationSchema
 } from '#cloud/admin/schema'
@@ -191,6 +192,12 @@ export function createCloudAdminRoutes(
         services.users.resetTwoStep(actorId, userId)
       )
     )
+    .post('/users/remove-sign-in-method', validatedJSON(signInMethodMutationSchema), (context) => {
+      const { userId, methodId } = context.req.valid('json')
+      return accountMutation(context, userId, (actorId, id) =>
+        services.users.removeSignInMethod(actorId, id, methodId)
+      )
+    })
     .post('/users/remove-picture', validatedJSON(userMutationSchema), (context) =>
       accountMutation(context, context.req.valid('json').userId, (actorId, userId) =>
         services.users.removePicture(actorId, userId)

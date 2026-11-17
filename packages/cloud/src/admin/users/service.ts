@@ -22,13 +22,25 @@ import {
 import type { CloudDatabase } from '#cloud/server/db'
 import type { UserPictureService } from '#cloud/server/pictures'
 import { dateString } from '#cloud/server/sharing/contracts'
-import { countBy, keyBy } from 'es-toolkit'
-import type { ExpressionBuilder, Kysely } from 'kysely'
+import { countBy, groupBy, keyBy } from 'es-toolkit'
+import { NoResultError, type ExpressionBuilder, type Kysely } from 'kysely'
 
 /** The sign-ins a person's page lists. */
 const DETAIL_SIGN_INS = 20
 
 type UserExpression = ExpressionBuilder<CloudDatabase, 'user'>
+
+/** The accounts that sign in with a provider: `credential` is a password. */
+function signsInWith(provider: string) {
+  return (expression: UserExpression) =>
+    expression.exists(
+      expression
+        .selectFrom('account')
+        .select('account.id')
+        .whereRef('account.userId', '=', 'user.id')
+        .where('account.providerId', '=', provider)
+    )
+}
 
 /** A search for part of a name or email, matched literally and without case. */
 function searchCondition(search: string) {
@@ -56,7 +68,10 @@ const FILTERS: ListFilters<CloudAdminUserFilter, 'user'> = {
             .whereRef('passkey.userId', '=', 'user.id')
         )
       )
-    ])
+    ]),
+  password: signsInWith('credential'),
+  google: signsInWith('google'),
+  apple: signsInWith('apple')
 }
 
 export type AdminUserQuery = AdminListQuery<CloudAdminUserFilter>
@@ -147,8 +162,14 @@ export function createAdminUserService(
   async function accountSummaries(rows: UserRow[]): Promise<CloudAdminUser[]> {
     const ids = rows.map((row) => row.id)
     if (ids.length === 0) return []
-    const [passkeys, sessions, memberships, requests] = await Promise.all([
+    const [passkeys, accounts, sessions, memberships, requests] = await Promise.all([
       database.selectFrom('passkey').select('userId').where('userId', 'in', ids).execute(),
+      database
+        .selectFrom('account')
+        .select(['userId', 'providerId'])
+        .where('userId', 'in', ids)
+        .orderBy('createdAt')
+        .execute(),
       database
         .selectFrom('session')
         .select(({ fn }) => ['session.userId', fn.max('session.updatedAt').as('lastActiveAt')])
@@ -173,6 +194,7 @@ export function createAdminUserService(
     const withPasskeys = new Set(passkeys.map((passkey) => passkey.userId))
     const lastActive = keyBy(sessions, (session) => session.userId)
     const workspaceCounts = countBy(memberships, (membership) => membership.userId)
+    const methods = groupBy(accounts, (account) => account.userId)
     return rows.map((row) => ({
       id: row.id,
       name: row.name,
@@ -185,6 +207,7 @@ export function createAdminUserService(
       twoStep: row.twoFactorEnabled === true || withPasskeys.has(row.id),
       lastActiveAt: dateString(lastActive[row.id]?.lastActiveAt ?? null),
       workspaceCount: workspaceCounts[row.id] ?? 0,
+      methods: (methods[row.id] ?? []).map((account) => account.providerId),
       ...(options.approval && {
         request: requestStatus[normalizeEnrollmentEmail(row.email)]?.status ?? null
       })
@@ -236,7 +259,7 @@ export function createAdminUserService(
         accountSummaries([row]),
         database
           .selectFrom('account')
-          .select(['providerId', 'createdAt'])
+          .select(['id', 'providerId', 'createdAt'])
           .where('userId', '=', userId)
           .orderBy('createdAt')
           .execute(),
@@ -269,6 +292,7 @@ export function createAdminUserService(
       return {
         user: { ...summary, emailVerified: row.emailVerified },
         methods: methods.map((method) => ({
+          id: method.id,
           provider: method.providerId,
           createdAt: dateString(method.createdAt) ?? ''
         })),
@@ -367,6 +391,55 @@ export function createAdminUserService(
         name: user.name,
         userId: user.id,
         change: 'reset-by-administrator'
+      })
+    },
+
+    /**
+     * Removes one way an account signs in, such as a Google account its owner lost control of.
+     * The account keeps at least one; sessions already signed in stay until revoked.
+     */
+    async removeSignInMethod(actorId: string, userId: string, methodId: string): Promise<void> {
+      refuseSelf(actorId, userId, 'remove a sign-in method from')
+      const removed = await database.transaction().execute(async (transaction) => {
+        const target = await transaction
+          .selectFrom('user')
+          .select(['id', 'email', 'name'])
+          .where('id', '=', userId)
+          .forUpdate()
+          .executeTakeFirstOrThrow()
+        const methods = await transaction
+          .selectFrom('account')
+          .select(['id', 'providerId'])
+          .where('userId', '=', userId)
+          .execute()
+        const method = methods.find((candidate) => candidate.id === methodId)
+        if (!method) throw new NoResultError(transaction.selectFrom('account').toOperationNode())
+        if (methods.length <= 1) {
+          throw new AdminDomainError(
+            'last_authentication_method',
+            'Cannot remove an account’s last sign-in method'
+          )
+        }
+        await transaction.deleteFrom('account').where('id', '=', methodId).execute()
+        await transaction
+          .insertInto('adminAuditEvent')
+          .values({
+            id: crypto.randomUUID(),
+            actorUserId: actorId,
+            action: 'user.sign-in-method-removed',
+            subjectType: 'user',
+            subjectId: userId,
+            metadata: { provider: method.providerId }
+          })
+          .execute()
+        return { ...target, provider: method.providerId }
+      })
+      await options.notify?.sendTwoStepChanged({
+        email: removed.email,
+        name: removed.name,
+        userId: removed.id,
+        change: 'sign-in-method-removed',
+        method: removed.provider
       })
     },
 

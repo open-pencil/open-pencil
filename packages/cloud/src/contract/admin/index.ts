@@ -39,6 +39,8 @@ export const adminErrorCodeSchema = v.picklist([
   'invalid_enrollment_transition',
   'last_admin_required',
   'self_admin_action_forbidden',
+  // The sign-in method is the account's last, so removing it would lock its owner out.
+  'last_authentication_method',
   'email_regeneration_unavailable',
   'mfa_required',
   // Two-step is on, but this session has not proved it lately; confirming it lets it back in.
@@ -91,6 +93,8 @@ export const cloudAdminUserSchema = v.object({
   /** When one of the account's sessions was last used, or null when none is left. */
   lastActiveAt: nullableTimestampSchema,
   workspaceCount: countSchema,
+  /** How the account signs in: `credential` for a password, or a provider such as `google`. */
+  methods: v.array(v.string()),
   /**
    * On a server that approves people, where this account's request to join stands: an account
    * exists from its first sign-in, before anyone approved it. Absent where everyone may join.
@@ -98,12 +102,15 @@ export const cloudAdminUserSchema = v.object({
   request: v.optional(v.nullable(enrollmentStatusSchema))
 })
 
-/** Which accounts a list of people shows. */
+/** Which accounts a list of people shows, including those that sign in a given way. */
 export const cloudAdminUserFilterSchema = v.picklist([
   'all',
   'administrators',
   'suspended',
-  'without-two-step'
+  'without-two-step',
+  'password',
+  'google',
+  'apple'
 ])
 export const cloudAdminUsersResponseSchema = v.object({
   users: v.array(cloudAdminUserSchema),
@@ -115,7 +122,7 @@ export const cloudAdminUserDetailSchema = v.object({
     ...cloudAdminUserSchema.entries,
     emailVerified: v.boolean()
   }),
-  methods: v.array(v.object({ provider: v.string(), createdAt: timestampSchema })),
+  methods: v.array(v.object({ id: v.string(), provider: v.string(), createdAt: timestampSchema })),
   authenticator: v.boolean(),
   passkeyCount: countSchema,
   sessions: v.array(cloudAccountSessionSchema),

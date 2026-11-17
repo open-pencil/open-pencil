@@ -109,6 +109,15 @@ export function createAdministrationAPI(call: CloudCall, { admin, api }: PortalR
         signal
       )
     },
+    /** Removes one of an account's sign-in methods; the server keeps its last. */
+    removeSignInMethod(userId: string, methodId: string, signal?: AbortSignal) {
+      return call(
+        (options) =>
+          admin.users['remove-sign-in-method'].$post({ json: { userId, methodId } }, options),
+        adminMutationResponseSchema,
+        signal
+      )
+    },
     setAdmin(userId: string, enabled: boolean, signal?: AbortSignal) {
       return call(
         (options) => admin.users['set-admin'].$post({ json: { userId, enabled } }, options),
