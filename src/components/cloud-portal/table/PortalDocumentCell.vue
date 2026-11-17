@@ -36,7 +36,8 @@ const messages = useCloudPortalMessages()
 const { files } = useI18n()
 const endSide = useInlineSide('end')
 const table = portalTable()
-const ui = computed(() => tv(documentCellTheme)({ kind }))
+const documentCell = tv(documentCellTheme)
+const ui = computed(() => documentCell({ kind }))
 const kindLabel = computed(
   () => ({ design: files.value.createDesign, board: files.value.createBoard })[kind]
 )
@@ -52,10 +53,16 @@ watch(
 <template>
   <div :class="ui.root()">
     <HoverCardRoot v-if="thumbnail && !failed" :open-delay="300" :close-delay="100">
+      <!-- A button, so the keyboard can open the preview as hovering does. -->
       <HoverCardTrigger as-child>
-        <span data-test-id="document-miniature" :class="ui.miniature()">
+        <button
+          type="button"
+          data-test-id="document-miniature"
+          :aria-label="messages.documentPreview({ name })"
+          :class="ui.trigger()"
+        >
           <img :src="thumbnail" alt="" loading="lazy" :class="ui.image()" @error="failed = true" />
-        </span>
+        </button>
       </HoverCardTrigger>
       <HoverCardPortal>
         <HoverCardContent

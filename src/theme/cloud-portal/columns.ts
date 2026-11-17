@@ -21,3 +21,9 @@ export const PORTAL_COLUMN_HIDING = {
   count: 'hidden @2xl/table:table-cell',
   actions: ''
 } as const
+
+/**
+ * A cell's line standing in for its row's `text` column while a narrow table hides it, such as an
+ * email's recipient under its message: shown until that column is.
+ */
+export const PORTAL_TEXT_STAND_IN = '@3xl/table:hidden'

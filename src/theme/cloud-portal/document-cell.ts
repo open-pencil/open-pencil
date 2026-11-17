@@ -1,3 +1,4 @@
+import { focusStyles } from '@/theme/focus/styles'
 import { motionStyles } from '@/theme/motion/styles'
 import { floatingSurface } from '@/theme/overlay'
 
@@ -10,6 +11,10 @@ export default {
     root: 'flex min-w-0 items-center gap-3',
     miniature:
       'flex h-9 w-12 shrink-0 items-center justify-center overflow-hidden rounded border border-border bg-canvas',
+    trigger: [
+      'flex h-9 w-12 shrink-0 cursor-default items-center justify-center overflow-hidden rounded border border-border bg-canvas',
+      focusStyles.ringStrong
+    ],
     image: 'size-full object-contain',
     fallback: 'size-4',
     body: 'min-w-0',

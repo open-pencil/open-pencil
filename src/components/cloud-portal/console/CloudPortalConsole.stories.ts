@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, waitFor, within } from 'storybook/test'
+import { expect, waitFor, within } from 'storybook/test'
 
 import { svgDataURL } from '@open-pencil/scene-graph/images'
 
@@ -574,12 +574,11 @@ export const Documents: Story = {
     await expect(canvas.getByText('Private')).toBeVisible()
     const miniature = canvasElement.querySelector('[data-test-id="document-miniature"]')
     if (!(miniature instanceof HTMLElement)) throw new Error('No document shows a miniature')
-    await userEvent.hover(miniature)
     // The preview opens in a portal, outside the story's canvas.
-    await waitFor(() =>
-      expect(
-        canvasElement.ownerDocument.querySelector('[data-test-id="document-preview"] img')
-      ).toHaveAttribute('alt', 'Preview of Spring campaign')
-    )
+    const preview = () =>
+      canvasElement.ownerDocument.querySelector('[data-test-id="document-preview"] img')
+    // Focusing the miniature opens it, so the keyboard reaches it as hovering does.
+    miniature.focus()
+    await waitFor(() => expect(preview()).toHaveAttribute('alt', 'Preview of Spring campaign'))
   }
 }

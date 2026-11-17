@@ -22,7 +22,7 @@ import PortalStatusCell from '../table/PortalStatusCell.vue'
 import PortalTable from '../table/PortalTable.vue'
 import PortalTextCell from '../table/PortalTextCell.vue'
 import type { PortalContentAction, PortalDocumentRow } from '../types'
-import { contentActions, documentAccess, documentProblem } from './content'
+import { contentActions, documentAccess, documentProblem, needsConfirmation } from './content'
 import PortalContentConfirm from './PortalContentConfirm.vue'
 
 /**
@@ -46,6 +46,11 @@ function confirm(reason?: string) {
   const chosen = pending.value
   pending.value = null
   if (chosen) emit('act', chosen.action, chosen.document, reason)
+}
+/** Does what asks nothing at once, such as Download, and asks first about the rest. */
+function choose(action: PortalContentAction, document: PortalDocumentRow) {
+  if (needsConfirmation(action)) pending.value = { action, document }
+  else emit('act', action, document)
 }
 
 const column = createColumnHelper<PortalTableFeatures, PortalDocumentRow>()
@@ -113,7 +118,7 @@ const documents = usePortalList<CloudAdminDocumentFilter, PortalDocumentRow>({
           label: messages.value.actionsFor({ name: document.name }),
           items: contentActions(messages.value, document),
           disabled: busy === document.id,
-          onSelect: (action: PortalContentAction) => (pending.value = { action, document })
+          onSelect: (action: PortalContentAction) => choose(action, document)
         })
     })
   ])
