@@ -17,7 +17,10 @@ import {
 } from '@open-pencil/scene-graph/resize'
 import { rescaleNodeTree } from '@open-pencil/scene-graph/scaling'
 import { slotPropertyId } from '@open-pencil/scene-graph/slots'
-import { geometryAxisLengths } from '@open-pencil/scene-graph/vector-bounds'
+import {
+  geometryAxisLengths,
+  vectorNetworkAxisLengths
+} from '@open-pencil/scene-graph/vector-bounds'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import {
@@ -47,7 +50,6 @@ import { syncVariantName } from '#core/figma-api/variants'
 import { figmaRotation } from '#core/geometry/figma'
 import { absoluteRenderBounds } from '#core/geometry/render-bounds'
 import { restoredHuggedSize } from '#core/layout/apply'
-import { computeAccurateBounds } from '#core/vector/curve-math'
 
 const TRANSFORM_FIELDS: ReadonlySet<string> = new Set(NODE_TRANSFORM_FIELDS)
 
@@ -323,14 +325,22 @@ function descendants(scene: SceneGraph, node: SceneNode): SceneNode[] {
 }
 
 /**
- * The box a zero side scales from. A vector uses its network. Any other layer uses its saved fill,
+ * The box a zero side scales from. A vector uses its network, each axis on its own, so one
+ * non-finite coordinate leaves the other measurable. Any other layer uses its saved fill,
  * on the curve rather than its handles. That fill is the shape a childless boolean draws.
  */
 function collapsedFillExtent(node: SceneNode): Pick<Rect, 'width' | 'height'> | null {
   if (node.type === 'VECTOR') {
-    return node.vectorNetwork ? computeAccurateBounds(node.vectorNetwork) : null
+    return node.vectorNetwork && node.vectorNetwork.vertices.length > 0
+      ? vectorNetworkAxisLengths(node.vectorNetwork)
+      : null
   }
   return geometryAxisLengths(node.fillGeometry)
+}
+
+/** A length a collapsed side can scale from. A non-finite one is no usable length. */
+function finiteLength(size: number | undefined): number {
+  return typeof size === 'number' && Number.isFinite(size) ? size : 0
 }
 
 /**
@@ -344,8 +354,8 @@ function collapsedFillExtent(node: SceneNode): Pick<Rect, 'width' | 'height'> | 
 function resizedNodeGeometry(node: SceneNode, width: number, height: number): Partial<SceneNode> {
   if (node.type === 'TEXT') return {}
   const bounds = collapsedFillExtent(node)
-  const fromWidth = node.width > 0 ? node.width : (bounds?.width ?? 0)
-  const fromHeight = node.height > 0 ? node.height : (bounds?.height ?? 0)
+  const fromWidth = node.width > 0 ? node.width : finiteLength(bounds?.width)
+  const fromHeight = node.height > 0 ? node.height : finiteLength(bounds?.height)
   const changes = scaledGeometryChanges(
     createResizeSnapshot(node),
     fromWidth,

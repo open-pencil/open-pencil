@@ -118,6 +118,37 @@ test('resize keeps a vector side above zero, so the shape comes back', () => {
   ])
 })
 
+test('resizeWithoutConstraints recovers a collapsed width when one vertex coordinate is NaN', () => {
+  const graph = new SceneGraph()
+  const node = graph.createNode('VECTOR', graph.getPages()[0].id, {
+    width: 100,
+    height: 100,
+    vectorNetwork: {
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 100, y: 100 },
+        { x: Number.NaN, y: 50 }
+      ],
+      segments: [],
+      regions: []
+    }
+  })
+  const vector = new FigmaAPI(graph).getNodeById(node.id)
+  if (!vector) throw new Error('Vector proxy was not found')
+
+  vector.resizeWithoutConstraints(0, 100)
+  expect(vector.width).toBe(0)
+  expect(vector.vectorNetwork?.vertices[1]).toMatchObject({ x: 100, y: 100 })
+
+  vector.resizeWithoutConstraints(200, 100)
+
+  const vertices = vector.vectorNetwork?.vertices
+  expect(vector.width).toBe(200)
+  expect(vertices?.[1]).toMatchObject({ x: 200, y: 100 })
+  expect(vertices?.[2]?.x).toBeNaN()
+  expect(vertices?.[2]?.y).toBe(50)
+})
+
 test('resizeWithoutConstraints to a zero side keeps the path, so the shape comes back', () => {
   const vector = importedVector()
   vector.resizeWithoutConstraints(0, 64)
