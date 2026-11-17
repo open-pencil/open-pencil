@@ -166,6 +166,60 @@ describe('icon commands across a document change', () => {
   })
 })
 
+/**
+ * An editor whose icons draw at once, except those asked for with the option `hold`, which wait
+ * until `release` is called.
+ */
+function setupHeld() {
+  let release: () => void = () => undefined
+  const held = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const editor = createEditor({
+    getViewportSize: () => ({ width: 1000, height: 800 }),
+    icons: {
+      ...provider,
+      async icons(names, size, options) {
+        if (options?.hold) await held
+        return provider.icons(names, size, options)
+      }
+    }
+  })
+  return { editor, release: () => release() }
+}
+
+describe('icon redraws that finish late', () => {
+  test('an option redraw that loads past a swap leaves the swapped icon', async () => {
+    const { editor, release } = setupHeld()
+    const id = await insert(editor, 'test:square')
+    const redraw = editor.setIconOptions(id, { hold: 1 })
+    await editor.swapIconGlyph(id, 'test:lines')
+    release()
+    await redraw
+    expect(readIcon(getNodeOrThrow(editor.graph, id))?.name).toBe('test:lines')
+  })
+
+  test('an option change queued when the document is replaced is not applied to the new one', async () => {
+    const { editor, release } = setupHeld()
+    const id = await insert(editor, 'test:square')
+    const frame = getNodeOrThrow(editor.graph, id)
+    const first = editor.setIconOptions(id, { hold: 1 })
+    const queued = editor.setIconOptions(id, { weight: 'bold' })
+    // A copy of the same file, whose icon keeps its ID.
+    const replacement = new SceneGraph()
+    replacement.createNodeWithId(id, 'FRAME', replacement.getPages()[0].id, {
+      name: frame.name,
+      width: frame.width,
+      height: frame.height,
+      pluginData: frame.pluginData
+    })
+    editor.replaceGraph(replacement)
+    release()
+    await Promise.all([first, queued])
+    expect(readIcon(getNodeOrThrow(replacement, id))?.options).toBeUndefined()
+  })
+})
+
 describe('icon layer names', () => {
   test('a swap renames a layer named after its icon, old style or new, but keeps a given name', async () => {
     const editor = setup()

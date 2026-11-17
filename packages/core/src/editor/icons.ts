@@ -1,3 +1,5 @@
+import { isEqual } from 'es-toolkit'
+
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import { readIcon, type IconOptions } from '@open-pencil/scene-graph/icons'
@@ -80,10 +82,13 @@ export function createIconActions(ctx: EditorContext) {
   async function drawIcon(label: string, frameId: string, name: string, options?: IconOptions) {
     const graph = ctx.graph
     const frame = graph.getNode(frameId)
-    if (!frame || !readIcon(frame)) return
+    const drawn = frame && readIcon(frame)
+    if (!frame || !drawn) return
     const icon = await fetchIcon(name, Math.min(frame.width, frame.height), options)
-    // The document or the frame may have been replaced while the icon loaded.
+    // The document or the frame may have been replaced while the icon loaded, or the icon drawn
+    // again, such as by a swap that finished first; this older drawing then gives way.
     if (ctx.graph !== graph || graph.getNode(frameId) !== frame) return
+    if (!isEqual(readIcon(frame), drawn)) return
     changeIcon(label, frameId, () => swapIcon(graph, frameId, icon))
   }
 
@@ -115,10 +120,13 @@ export function createIconActions(ctx: EditorContext) {
   function setIconOptions(frameId: string, changes: IconOptions): Promise<void> {
     // One change at a time, each from the options the last one left, so two made while an icon
     // is still being drawn both apply; a change that fails does not hold up the next.
+    const graph = ctx.graph
     const previous = optionChanges
     const next = (async () => {
       await Promise.allSettled([previous])
-      const frame = ctx.graph.getNode(frameId)
+      // A change made in a document that has since been replaced is not applied to the new one.
+      if (ctx.graph !== graph) return
+      const frame = graph.getNode(frameId)
       const icon = frame && readIcon(frame)
       if (icon)
         await drawIcon('Change icon options', frameId, icon.name, { ...icon.options, ...changes })
