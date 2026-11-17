@@ -316,6 +316,8 @@ describe('Cloud comments in a tab', () => {
     // Refused, so the tab reads every thread again.
     writeComments(store.graph, [{ ...theirs, text: 'Words put in Ben’s mouth' }])
     await follower.idle()
+    expect(notices).toEqual([`commentMention:${id}`])
+    // The room's message after it finds the mention heard.
     await follower.changed(id)
     expect(notices).toEqual([`commentMention:${id}`])
   })
