@@ -52,6 +52,21 @@ export function newStrokeGeometry(
   return { weight: first?.weight ?? node.strokeWeight, align: first?.align ?? node.strokeAlign }
 }
 
+/** A caller's list, or a fresh empty one: a list default belongs to the one layer it was made for. */
+function ownList<T>(given: T[] | undefined): T[] {
+  return given ?? []
+}
+
+/** A caller's record, or a fresh empty one, for the same reason. */
+function ownRecord<V>(given: Record<string, V> | undefined): Record<string, V> {
+  return given ?? {}
+}
+
+/** A new layer's fills: black on text, none elsewhere. */
+function defaultFills(type: NodeType): SceneNode['fills'] {
+  return type === 'TEXT' ? [{ type: 'SOLID', color: BLACK, opacity: 1, visible: true }] : []
+}
+
 export function createDefaultNode(
   generateId: () => string,
   type: NodeType,
@@ -60,13 +75,13 @@ export function createDefaultNode(
   // A literal ending in a spread is built one field at a time, and V8 keeps an object given this
   // many fields that way in dictionary mode, about 3 KB more per layer; a spread copy of a
   // finished literal keeps fast fields, in JavaScriptCore as well.
-  // Imports already supply many collections: don't allocate defaults the final spread replaces.
+  // Imports supply most lists and records, so a default is made only where the caller gives none.
   const defaults = {
     id: generateId(),
     type,
     name: type.charAt(0) + type.slice(1).toLowerCase(),
     parentId: null,
-    childIds: overrides.childIds ?? [],
+    childIds: ownList(overrides.childIds),
     x: 0,
     y: 0,
     width: 100,
@@ -74,15 +89,11 @@ export function createDefaultNode(
     rotation: 0,
     source: overrides.source ?? createDefaultSourceMetadata(),
     derivedLayout: null,
-    fills:
-      overrides.fills ??
-      (type === 'TEXT'
-        ? [{ type: 'SOLID' as const, color: BLACK, opacity: 1, visible: true }]
-        : []),
-    strokes: overrides.strokes ?? [],
-    effects: overrides.effects ?? [],
-    layoutGrids: overrides.layoutGrids ?? [],
-    guides: overrides.guides ?? [],
+    fills: overrides.fills ?? defaultFills(type),
+    strokes: ownList(overrides.strokes),
+    effects: ownList(overrides.effects),
+    layoutGrids: ownList(overrides.layoutGrids),
+    guides: ownList(overrides.guides),
     fillStyleId: null,
     strokeStyleId: null,
     textStyleId: null,
@@ -131,8 +142,8 @@ export function createDefaultNode(
     layoutAlignSelf: 'AUTO',
     vectorNetwork: null,
     handleMirroring: 'NONE',
-    fillGeometry: overrides.fillGeometry ?? [],
-    strokeGeometry: overrides.strokeGeometry ?? [],
+    fillGeometry: ownList(overrides.fillGeometry),
+    strokeGeometry: ownList(overrides.strokeGeometry),
     arcData: null,
     textAlignVertical: 'TOP',
     textAutoResize: 'NONE',
@@ -140,24 +151,24 @@ export function createDefaultNode(
     textDecoration: 'NONE',
     textDecorationStyle: 'SOLID',
     textDecorationThickness: null,
-    textDecorationFills: overrides.textDecorationFills ?? [],
+    textDecorationFills: ownList(overrides.textDecorationFills),
     textDecorationSkipInk: true,
     textUnderlineOffset: null,
     maxLines: null,
-    textParagraphs: overrides.textParagraphs ?? [],
+    textParagraphs: ownList(overrides.textParagraphs),
     listSpacing: 0,
     paragraphSpacing: 0,
     paragraphIndent: 0,
     hangingList: false,
-    styleRuns: overrides.styleRuns ?? [],
-    fontVariations: overrides.fontVariations ?? [],
+    styleRuns: ownList(overrides.styleRuns),
+    fontVariations: ownList(overrides.fontVariations),
     opticalSizeFromFontSize: true,
-    fontFeatures: overrides.fontFeatures ?? [],
+    fontFeatures: ownList(overrides.fontFeatures),
     horizontalConstraint: 'MIN',
     verticalConstraint: 'MIN',
     strokeCap: 'NONE',
     strokeJoin: 'MITER',
-    dashPattern: overrides.dashPattern ?? [],
+    dashPattern: ownList(overrides.dashPattern),
     borderTopWeight: 0,
     borderRightWeight: 0,
     borderBottomWeight: 0,
@@ -176,14 +187,14 @@ export function createDefaultNode(
     connectorLineType: 'ELBOWED',
     connectorStartCap: 'ROUND',
     connectorEndCap: 'ARROW_LINES',
-    connectorControlPoints: overrides.connectorControlPoints ?? [],
+    connectorControlPoints: ownList(overrides.connectorControlPoints),
     connectorCurveHandles: null,
     connectorLabelPosition: null,
     isMask: false,
     maskType: 'ALPHA',
     maskIsOutline: false,
-    gridTemplateColumns: overrides.gridTemplateColumns ?? [],
-    gridTemplateRows: overrides.gridTemplateRows ?? [],
+    gridTemplateColumns: ownList(overrides.gridTemplateColumns),
+    gridTemplateRows: ownList(overrides.gridTemplateRows),
     gridColumnGap: 0,
     gridRowGap: 0,
     gridPosition: null,
@@ -201,10 +212,10 @@ export function createDefaultNode(
     shapeTruncates: false,
     componentId: null,
     instanceOverrides: overrides.instanceOverrides ?? createInstanceOverrideState(),
-    componentPropertyDefinitions: overrides.componentPropertyDefinitions ?? [],
-    componentPropertyReferences: overrides.componentPropertyReferences ?? [],
-    componentPropertyAssignments: overrides.componentPropertyAssignments ?? {},
-    componentPropertyValues: overrides.componentPropertyValues ?? {},
+    componentPropertyDefinitions: ownList(overrides.componentPropertyDefinitions),
+    componentPropertyReferences: ownList(overrides.componentPropertyReferences),
+    componentPropertyAssignments: ownRecord(overrides.componentPropertyAssignments),
+    componentPropertyValues: ownRecord(overrides.componentPropertyValues),
     componentKey: null,
     sourceLibraryKey: null,
     publishId: null,
@@ -217,17 +228,17 @@ export function createDefaultNode(
     isSymbolPublishable: false,
     isExposedInstance: false,
     symbolDescription: '',
-    symbolLinks: overrides.symbolLinks ?? [],
-    variantPropSpecs: overrides.variantPropSpecs ?? [],
-    boundVariables: overrides.boundVariables ?? {},
-    variableBindingScales: overrides.variableBindingScales ?? {},
-    variableAssignmentScales: overrides.variableAssignmentScales ?? {},
+    symbolLinks: ownList(overrides.symbolLinks),
+    variantPropSpecs: ownList(overrides.variantPropSpecs),
+    boundVariables: ownRecord(overrides.boundVariables),
+    variableBindingScales: ownRecord(overrides.variableBindingScales),
+    variableAssignmentScales: ownRecord(overrides.variableAssignmentScales),
     componentScale: 1,
-    variableModes: overrides.variableModes ?? {},
-    exportSettings: overrides.exportSettings ?? [],
+    variableModes: ownRecord(overrides.variableModes),
+    exportSettings: ownList(overrides.exportSettings),
     status: null,
-    pluginData: overrides.pluginData ?? [],
-    pluginRelaunchData: overrides.pluginRelaunchData ?? [],
+    pluginData: ownList(overrides.pluginData),
+    pluginRelaunchData: ownList(overrides.pluginRelaunchData),
     internalOnly: false,
     flipX: false,
     flipY: false,
