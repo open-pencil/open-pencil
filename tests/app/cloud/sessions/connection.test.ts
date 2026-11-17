@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
 
 import * as v from 'valibot'
+import { nextTick } from 'vue'
 
 import { cloudLocaleUpdateSchema } from '@open-pencil/cloud/contract'
 import { fetchStub } from '@open-pencil/test-support/fetch'
@@ -13,7 +14,13 @@ import {
   recheckedCloudConnection,
   refreshCloudConnection
 } from '@/app/cloud/sessions/connection'
-import { readCloudSessionToken, saveCloudSessionToken } from '@/app/cloud/sessions/token'
+import { watchCloudAccountSwitches } from '@/app/cloud/sessions/forget'
+import {
+  CLOUD_STORAGE_PROVIDER_ID,
+  readCloudSessionToken,
+  saveCloudSessionToken
+} from '@/app/cloud/sessions/token'
+import { clearRecentFiles, recentFiles, rememberRecentStorageDocument } from '@/app/recent-files'
 
 import { cloudDiscoveryFixture } from '#tests/helpers/cloud/discovery'
 const ORIGIN = 'https://cloud.example.com'
@@ -71,8 +78,9 @@ beforeEach(() => {
   )
 })
 
-afterEach(() => {
+afterEach(async () => {
   for (const server of cloudServers.value) removeCloudServer(server.id)
+  await clearRecentFiles()
   localeSetting.set(undefined)
 })
 
@@ -94,6 +102,32 @@ describe('Cloud connections', () => {
       email: 'ada@example.com',
       image: null
     })
+  })
+
+  test("forget the last account's recent documents once another signs in", async () => {
+    const stop = watchCloudAccountSwitches()
+    answers['/api/account/status'] = { status: 200, body: { user, state: 'active' } }
+    answers['/api/workspaces'] = { status: 200, body: { workspaces: [workspace] } }
+    await refreshCloudConnection(await server())
+    const [target] = cloudServers.value
+    if (!target) throw new Error('No server')
+    rememberRecentStorageDocument(
+      { providerId: CLOUD_STORAGE_PROVIDER_ID, profileId: target.id, documentId: 'doc-1' },
+      "Ada's design",
+      'design'
+    )
+
+    await refreshCloudConnection(target)
+    expect(recentFiles.value.map(({ name }) => name)).toEqual(["Ada's design"])
+
+    answers['/api/account/status'] = {
+      status: 200,
+      body: { user: { ...user, userId: 'user-2', email: 'grace@example.com' }, state: 'active' }
+    }
+    await refreshCloudConnection(target)
+    await nextTick()
+    expect(recentFiles.value).toEqual([])
+    stop()
   })
 
   test('tell the server the language picked while it was being checked', async () => {
