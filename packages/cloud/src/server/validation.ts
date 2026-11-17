@@ -75,7 +75,8 @@ export const shareThreadParams = validatedParams(
 export const shareCommentParams = validatedParams(
   v.object({ shareId: uuidParamSchema, threadId: uuidParamSchema, commentId: uuidParamSchema })
 )
-export const communityThumbnailParams = validatedParams(
+/** A document and one of its revisions, as a thumbnail's address names them. */
+export const documentRevisionParams = validatedParams(
   v.object({ documentId: uuidParamSchema, revisionId: uuidParamSchema })
 )
 export const invitationParams = validatedParams(v.object({ invitationId: uuidParamSchema }))
