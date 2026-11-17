@@ -105,15 +105,26 @@ export function createIconActions(ctx: EditorContext) {
     if (icon) await drawIcon('Reset icon', frameId, icon.name, icon.options)
   }
 
+  /** The option changes waiting to draw, in the order they were made. */
+  let optionChanges: Promise<void> = Promise.resolve()
+
   /**
    * Draws the icon `frameId` afresh with `changes` to how it is drawn, such as its weight, keeping
    * the options it has otherwise. Edits to its paths are given up, as when it is reset.
    */
-  async function setIconOptions(frameId: string, changes: IconOptions) {
-    const frame = ctx.graph.getNode(frameId)
-    const icon = frame && readIcon(frame)
-    if (icon)
-      await drawIcon('Change icon options', frameId, icon.name, { ...icon.options, ...changes })
+  function setIconOptions(frameId: string, changes: IconOptions): Promise<void> {
+    // One change at a time, each from the options the last one left, so two made while an icon
+    // is still being drawn both apply; a change that fails does not hold up the next.
+    const previous = optionChanges
+    const next = (async () => {
+      await Promise.allSettled([previous])
+      const frame = ctx.graph.getNode(frameId)
+      const icon = frame && readIcon(frame)
+      if (icon)
+        await drawIcon('Change icon options', frameId, icon.name, { ...icon.options, ...changes })
+    })()
+    optionChanges = next
+    return next
   }
 
   /** Makes the icon `frameId` plain artwork that keeps its paths; see `detachIcon`. */

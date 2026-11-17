@@ -51,11 +51,17 @@ const styles = tv(theme)()
  */
 type PendingChange = { icon: string } | { key: string; value: IconOptions[string] }
 const pending = ref<PendingChange | null>(null)
+/** The option color being picked in an open picker, drawn when it closes. */
+const pickingOption = ref<string | null>(null)
+const pickedColor = ref<string | null>(null)
 const pendingShown = useHeldContent(pending)
 // The question is about the icon selected when it was asked; another selection drops it, so a
 // confirmation never changes an icon it did not describe.
 watch(frameId, () => {
   pending.value = null
+  // A color still being picked for the last icon is not applied to this one.
+  pickingOption.value = null
+  pickedColor.value = null
 })
 
 function apply(change: PendingChange) {
@@ -86,9 +92,6 @@ function valueLabel(value: string) {
 
 // An option color is drawn again when the open picker closes, rather than for every color a drag
 // passes through; a color typed in while it is closed is drawn at once.
-const pickingOption = ref<string | null>(null)
-const pickedColor = ref<string | null>(null)
-
 function setOptionColor(key: string, next: Color) {
   const hex = colorToHex(next)
   if (pickingOption.value === key) pickedColor.value = hex

@@ -214,6 +214,19 @@ describe('editing an icon', () => {
     expect(readIcon(getNodeOrThrow(editor.graph, id))?.options).toEqual({ weight: 'bold' })
   })
 
+  test('options changed while the icon is still drawing both apply', async () => {
+    const editor = setup()
+    const id = await insert(editor, 'test:square')
+    await Promise.all([
+      editor.setIconOptions(id, { weight: 'bold' }),
+      editor.setIconOptions(id, { scale: 'large' })
+    ])
+    expect(readIcon(getNodeOrThrow(editor.graph, id))?.options).toEqual({
+      weight: 'bold',
+      scale: 'large'
+    })
+  })
+
   test('detach makes the icon artwork, in one undo step', async () => {
     const editor = setup()
     const id = await insert(editor, 'test:square')
