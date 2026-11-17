@@ -767,3 +767,10 @@ zh-cn:cloud.editorOutdatedBanner
 zh-cn:cloud.updateOpenPencil
 ja:email.documentBlocked
 zh-cn:email.documentBlocked
+ja:panels.iconSetMacAppOnly
+ja:panels.iconSetNeedsNewerMacOS
+ja:panels.sfSymbolsNeedMacApp
+ja:panels.sfSymbolsNeedNewerMacOS
+zh-cn:panels.iconSetMacAppOnly
+zh-cn:panels.sfSymbolsNeedMacApp
+zh-cn:panels.sfSymbolsNeedNewerMacOS

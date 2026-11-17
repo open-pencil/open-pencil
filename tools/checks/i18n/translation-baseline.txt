@@ -714,3 +714,12 @@ pl:panels.noiseMulti
 pt-br:panels.noiseMono
 pt-br:panels.noiseDuo
 pt-br:panels.noiseMulti
+ar:panels.iconSetNeedsNewerMacOS
+de:panels.iconSetNeedsNewerMacOS
+es:panels.iconSetNeedsNewerMacOS
+fr:panels.iconSetNeedsNewerMacOS
+it:panels.iconSetNeedsNewerMacOS
+pl:panels.iconSetNeedsNewerMacOS
+pt-br:panels.iconSetNeedsNewerMacOS
+ru:panels.iconSetNeedsNewerMacOS
+zh-cn:panels.iconSetNeedsNewerMacOS
