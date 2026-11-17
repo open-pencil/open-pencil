@@ -52,6 +52,24 @@ function point(path: SceneNode['fillGeometry'][number] | undefined): [number, nu
   return [view.getFloat32(1, true), view.getFloat32(5, true)]
 }
 
+/** A move to the origin and a line to (`x`, `y`). */
+function span(x: number, y: number) {
+  const commandsBlob = new Uint8Array(18)
+  const view = new DataView(commandsBlob.buffer)
+  commandsBlob[0] = 1
+  commandsBlob[9] = 2
+  view.setFloat32(10, x, true)
+  view.setFloat32(14, y, true)
+  return { windingRule: 'NONZERO' as const, commandsBlob }
+}
+
+function endpoint(path: { commandsBlob: Uint8Array } | undefined): [number, number] {
+  const blob = path?.commandsBlob
+  if (!blob) throw new Error('Expected saved geometry')
+  const view = new DataView(blob.buffer, blob.byteOffset, blob.byteLength)
+  return [view.getFloat32(10, true), view.getFloat32(14, true)]
+}
+
 describe('a vector layout resizes', () => {
   test('scales its network with the box, so the stroke can follow the new outline', () => {
     const graph = new SceneGraph()
@@ -344,6 +362,30 @@ describe('a vector layout resizes', () => {
     const node = expectDefined(graph.getNode(vector.id))
     expect(node.vectorNetwork?.vertices[1]?.x).toBeCloseTo((100 * 200) / bounds.width, 3)
     expect(point(node.fillGeometry[0])[1]).toBeCloseTo((10 * 200) / bounds.height, 3)
+  })
+
+  test('scales an outline-only vector stroke when layout expands it from nothing', () => {
+    const graph = new SceneGraph()
+    const vector = graph.createNode('VECTOR', graph.getPages()[0].id, {
+      width: 100,
+      height: 100,
+      vectorNetwork: null,
+      strokeGeometry: [span(100, 100)]
+    })
+
+    graph.withLayoutMutations(() => {
+      graph.updateNode(vector.id, { width: 0, height: 0 })
+    })
+    expect(endpoint(vector.strokeGeometry[0])).toEqual([100, 100])
+
+    graph.withLayoutMutations(() => {
+      graph.updateNode(vector.id, { width: 200, height: 200 })
+    })
+
+    const node = expectDefined(graph.getNode(vector.id))
+    expect([node.width, node.height]).toEqual([200, 200])
+    expect(node.strokeGeometry).toHaveLength(1)
+    expect(endpoint(node.strokeGeometry[0])).toEqual([200, 200])
   })
 
   test('keeps its path when layout flattens a side, so resizing it back restores the shape', () => {

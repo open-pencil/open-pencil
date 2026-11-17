@@ -3,7 +3,7 @@ import * as v from 'valibot'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { TRANSFORM_FIELDS as NODE_TRANSFORM_FIELDS } from '@open-pencil/scene-graph/fields'
-import { geometryBlobBounds, visualBoundsToRect } from '@open-pencil/scene-graph/geometry'
+import { visualBoundsToRect } from '@open-pencil/scene-graph/geometry'
 import { findInstanceAncestor, recordInstanceOverride } from '@open-pencil/scene-graph/instances'
 import { recapturedAspectRatio } from '@open-pencil/scene-graph/layout'
 import type { Mat3 } from '@open-pencil/scene-graph/matrix'
@@ -17,6 +17,7 @@ import {
 } from '@open-pencil/scene-graph/resize'
 import { rescaleNodeTree } from '@open-pencil/scene-graph/scaling'
 import { slotPropertyId } from '@open-pencil/scene-graph/slots'
+import { geometryAxisLengths } from '@open-pencil/scene-graph/vector-bounds'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
 import {
@@ -323,13 +324,13 @@ function descendants(scene: SceneGraph, node: SceneNode): SceneNode[] {
 
 /**
  * The box a zero side scales from. A vector uses its network. Any other layer uses its saved fill,
- * which is the shape a childless boolean draws.
+ * on the curve rather than its handles. That fill is the shape a childless boolean draws.
  */
 function collapsedFillExtent(node: SceneNode): Pick<Rect, 'width' | 'height'> | null {
   if (node.type === 'VECTOR') {
     return node.vectorNetwork ? computeAccurateBounds(node.vectorNetwork) : null
   }
-  return geometryBlobBounds(node.fillGeometry)
+  return geometryAxisLengths(node.fillGeometry)
 }
 
 /**

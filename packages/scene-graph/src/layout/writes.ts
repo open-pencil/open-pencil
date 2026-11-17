@@ -2,7 +2,7 @@ import { SIZE_FIELDS, TRANSFORM_FIELDS } from '../fields/geometry'
 import type { Rect } from '../primitives'
 import { createResizeSnapshot, scaledGeometryChanges } from '../resize'
 import type { SceneNode, VectorNetwork } from '../types'
-import { vectorNetworkAxisLengths } from '../vector-bounds'
+import { geometryAxisLengths, vectorNetworkAxisLengths } from '../vector-bounds'
 
 /**
  * The layout results a format keeps apart from what it saved once an edit moves or sizes.
@@ -24,10 +24,39 @@ function outlinesNetwork(node: SceneNode, before: Partial<SceneNode>): VectorNet
   return node.vectorNetwork
 }
 
-/** The size a zero side scales from, with each axis measured on its own. */
-function collapsedPathExtent(network: VectorNetwork | null): Pick<Rect, 'width' | 'height'> | null {
-  if (!network || network.vertices.length === 0) return null
-  return vectorNetworkAxisLengths(network)
+/** A length a collapsed side can scale from. Zero and non-finite lengths are not one. */
+function positiveLength(size: number | undefined): number | undefined {
+  return typeof size === 'number' && Number.isFinite(size) && size > 0 ? size : undefined
+}
+
+/** The first usable length, preferring the network, then the fill, then an outline-only stroke. */
+function axisExtent(
+  network: number | undefined,
+  fill: number | undefined,
+  stroke: number | undefined
+): number | undefined {
+  return positiveLength(network) ?? positiveLength(fill) ?? positiveLength(stroke)
+}
+
+/**
+ * The size a zero side scales from, with each axis measured on its own. A network wins. Saved
+ * fill covers a childless boolean, on the curve rather than its handles. An outline-only vector
+ * has only its stroke to measure.
+ */
+function collapsedPathExtent(
+  node: SceneNode,
+  before: Partial<SceneNode>
+): Pick<Rect, 'width' | 'height'> | null {
+  const network = outlinesNetwork(node, before)
+  const fromNetwork =
+    network && network.vertices.length > 0 ? vectorNetworkAxisLengths(network) : null
+  const fromFill = geometryAxisLengths(node.fillGeometry)
+  const outlineOnly = node.type === 'VECTOR' && (network?.segments.length ?? 0) === 0
+  const fromStroke = outlineOnly ? geometryAxisLengths(node.strokeGeometry) : null
+  const width = axisExtent(fromNetwork?.width, fromFill?.width, fromStroke?.width)
+  const height = axisExtent(fromNetwork?.height, fromFill?.height, fromStroke?.height)
+  if (width === undefined && height === undefined) return null
+  return { width: width ?? 0, height: height ?? 0 }
 }
 
 /** A length a collapsed side can scale from. A non-finite one is no usable length. */
@@ -53,7 +82,7 @@ function keptSizeGeometry(node: SceneNode, before: Partial<SceneNode>): Partial<
   // bring the shape back. A side already at zero lost the box the path was drawn in, so that
   // side scales from the tight box of the path it kept. A side that still has a size keeps it.
   // A bound that is not finite, which a decoded network can hold, is not a size to scale from.
-  const extent = width > 0 && height > 0 ? null : collapsedPathExtent(outlinesNetwork(node, before))
+  const extent = width > 0 && height > 0 ? null : collapsedPathExtent(node, before)
   const fromWidth = width > 0 ? width : finiteLength(extent?.width)
   const fromHeight = height > 0 ? height : finiteLength(extent?.height)
   return withoutUnscalableStroke(
@@ -71,19 +100,22 @@ function keptSizeGeometry(node: SceneNode, before: Partial<SceneNode>): Partial<
 }
 
 /**
- * A pathless shape has nothing to measure once a side is already zero, so its saved stroke cannot
- * be scaled into the new box. Drop that outline and let the stroke draw at the new size.
+ * A shape that draws its stroke again from its own outline can drop a saved one it cannot scale.
+ * A vector that has only that saved outline cannot: deleting it removes the stroke.
  */
+function canRedrawStroke(node: SceneNode): boolean {
+  return node.type !== 'VECTOR'
+}
+
 function withoutUnscalableStroke(
   node: SceneNode,
   fromWidth: number,
   fromHeight: number,
   changes: Partial<SceneNode>
 ): Partial<SceneNode> {
-  const pathless = (node.vectorNetwork?.segments.length ?? 0) === 0
   const expanding = (fromWidth <= 0 && node.width > 0) || (fromHeight <= 0 && node.height > 0)
   if (
-    pathless &&
+    canRedrawStroke(node) &&
     expanding &&
     node.strokeGeometry.length > 0 &&
     !Object.hasOwn(changes, 'strokeGeometry')

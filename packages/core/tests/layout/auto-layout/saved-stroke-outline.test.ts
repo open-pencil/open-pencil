@@ -151,4 +151,43 @@ describe('a saved inside-stroke outline on a nested instance', () => {
     expect(frame.strokeGeometry).toEqual([])
     expect(frame.source.editedFields).toContain('strokeGeometry')
   })
+
+  test('scales a childless boolean fill when layout expands it from nothing', () => {
+    const graph = new SceneGraph()
+    const boolean = graph.createNode('BOOLEAN_OPERATION', graph.getPages()[0].id, {
+      width: 100,
+      height: 100,
+      fillGeometry: [span(100, 100)]
+    })
+
+    graph.withLayoutMutations(() => {
+      graph.updateNode(boolean.id, { width: 0, height: 0 })
+    })
+    expect(endpoint(boolean.fillGeometry[0])).toEqual([100, 100])
+
+    graph.withLayoutMutations(() => {
+      graph.updateNode(boolean.id, { width: 200, height: 200 })
+    })
+
+    expect([boolean.width, boolean.height]).toEqual([200, 200])
+    expect(endpoint(boolean.fillGeometry[0])).toEqual([200, 200])
+  })
 })
+
+/** A move to the origin and a line to (`x`, `y`). */
+function span(x: number, y: number) {
+  const commandsBlob = new Uint8Array(18)
+  const view = new DataView(commandsBlob.buffer)
+  commandsBlob[0] = 1
+  commandsBlob[9] = 2
+  view.setFloat32(10, x, true)
+  view.setFloat32(14, y, true)
+  return { windingRule: 'NONZERO' as const, commandsBlob }
+}
+
+function endpoint(path: { commandsBlob: Uint8Array } | undefined): [number, number] {
+  const blob = path?.commandsBlob
+  if (!blob) throw new Error('Expected saved fill geometry')
+  const view = new DataView(blob.buffer, blob.byteOffset, blob.byteLength)
+  return [view.getFloat32(10, true), view.getFloat32(14, true)]
+}
