@@ -1,1 +1,1 @@
-Windows and Linux have Check for Updates… in the Help menu, which only the macOS application menu had.
+- Windows and Linux have Check for Updates… in the Help menu, which only the macOS application menu had.
