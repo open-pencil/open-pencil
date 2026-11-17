@@ -212,6 +212,17 @@ describe('icon redraws that finish late', () => {
     })
   })
 
+  test('a redraw gives way to path edits made while its icon loads', async () => {
+    const { editor, release } = setupHeld((_, options) => options?.weight === 'bold')
+    const id = await insert(editor, 'test:square')
+    const changing = editor.setIconOptions(id, { weight: 'bold' })
+    editor.graph.createNode('RECTANGLE', id, { width: 4, height: 4 })
+    release()
+    await changing
+    expect(editor.graph.getChildren(id)).toHaveLength(2)
+    expect(readIcon(getNodeOrThrow(editor.graph, id))?.options).toBeUndefined()
+  })
+
   test('a redraw queued when the document is replaced is not applied to the new one', async () => {
     const { editor, release } = setupHeld((_, options) => options?.weight === 'bold')
     const id = await insert(editor, 'test:square')

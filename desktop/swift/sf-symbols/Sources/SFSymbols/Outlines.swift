@@ -101,6 +101,9 @@ private func formOutlines(
 ) -> [Outline] {
   let nested = Reader()
   nested.state.transform = matrix(form).concatenating(transform)
+  // A form starts with the colour in effect where it is drawn, as PDF's graphics state does.
+  nested.state.gray = reader.state.gray
+  nested.state.color = reader.state.color
   guard let dictionary = CGPDFStreamGetDictionary(form) else { return [] }
   var resources: CGPDFDictionaryRef?
   CGPDFDictionaryGetDictionary(dictionary, "Resources", &resources)

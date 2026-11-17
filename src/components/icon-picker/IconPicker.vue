@@ -125,7 +125,10 @@ const items = computed<AppPickerItem[]>(() => {
   if (unavailableSet.value) return []
   if (query.value.trim()) return visible.value.map((name) => item(name))
   const prefix = search.set.value
-  const inSet = (name: string) => !prefix || name.startsWith(`${prefix}:`)
+  // Icons from a set this host cannot draw, such as SF Symbols in the browser, are left out.
+  const inSet = (name: string) =>
+    (!prefix || name.startsWith(`${prefix}:`)) &&
+    !setsByPrefix.value.get(name.slice(0, name.indexOf(':')))?.unavailable
   const inFile = placed.value.filter(inSet)
   const recent = recentIcons.value.filter((name) => inSet(name) && !inFile.includes(name))
   const shown = new Set([...inFile, ...recent])

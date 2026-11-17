@@ -98,12 +98,26 @@ export function useIcon() {
     await editor.swapIconGlyph(node.id, next)
   }
 
+  /**
+   * The option values asked for and not yet drawn, by icon and key, so a value is compared with
+   * the last one asked for rather than the one an icon still loading was drawn with.
+   */
+  const requested = new Map<string, IconOptions[string]>()
+
   /** Draws the icon afresh with the option `key` set to `value`, as one undo step. */
   async function setOption(key: string, value: IconOptions[string]) {
     const node = selectedNode.value
-    if (!node || !name.value || options.value[key] === value) return
+    if (!node || !name.value) return
+    const id = `${node.id}/${key}`
+    const current = requested.has(id) ? requested.get(id) : options.value[key]
+    if (current === value) return
+    requested.set(id, value)
     batch.flush()
-    await editor.setIconOptions(node.id, { [key]: value })
+    try {
+      await editor.setIconOptions(node.id, { [key]: value })
+    } finally {
+      if (requested.get(id) === value) requested.delete(id)
+    }
   }
 
   // A drag in the open color picker sends many colors; they undo as one step, committed when
