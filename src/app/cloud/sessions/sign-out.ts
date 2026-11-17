@@ -32,8 +32,12 @@ export async function signOutOfCloud(
 ): Promise<void> {
   await dependencies.revoke(discovery, { fetch: cloudServerFetch(serverId) })
   await dependencies.clear(serverId)
-  await forgetCloudAccountCopies(serverId)
   rememberCloudAccount(serverId, null)
   forgetCloudConnection(serverId)
+  // The session is over either way. Recent is cleared first, and a copy this could not remove is
+  // listed only in its own account's workspaces.
+  await forgetCloudAccountCopies(serverId).catch((error: unknown) => {
+    console.warn('[Cloud] Could not forget the account on this device', error)
+  })
   if (IS_CLOUD_SITE && isCloudSiteServer(serverId)) leaveAfterSignOut(discovery.localEditor)
 }

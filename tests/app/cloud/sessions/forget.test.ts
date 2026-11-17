@@ -1,6 +1,8 @@
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
 
+import { addCloudServer, cloudServers, removeCloudServer } from '@/app/cloud/servers/store'
 import { forgetCloudAccountCopies } from '@/app/cloud/sessions/forget'
+import { signOutOfCloud } from '@/app/cloud/sessions/sign-out'
 import { CLOUD_STORAGE_PROVIDER_ID } from '@/app/cloud/sessions/token'
 import { clearRecentFiles, recentFiles, rememberRecentStorageDocument } from '@/app/recent-files'
 import {
@@ -9,6 +11,8 @@ import {
   resetLocalCanvasStoreForTests,
   type LocalSyncStatus
 } from '@/app/storage/local-store'
+
+import { cloudDiscoveryFixture } from '#tests/helpers/cloud/discovery'
 
 async function keepCopy(id: string, profileId: string, syncStatus: LocalSyncStatus) {
   await getLocalCanvasStore().writeCanvas({
@@ -23,7 +27,10 @@ async function keepCopy(id: string, profileId: string, syncStatus: LocalSyncStat
 }
 
 beforeEach(() => resetLocalCanvasStoreForTests(createMemoryLocalCanvasStore()))
-afterEach(() => clearRecentFiles())
+afterEach(async () => {
+  for (const server of cloudServers.value) removeCloudServer(server.id)
+  await clearRecentFiles()
+})
 
 describe('forgetting a Cloud account on this device', () => {
   test("drops the server's recent documents and keeps everything else", async () => {
@@ -50,5 +57,28 @@ describe('forgetting a Cloud account on this device', () => {
 
     const kept = await getLocalCanvasStore().listMetas(true)
     expect(kept.map(({ id }) => id).toSorted()).toEqual(['other-server', 'unsent'])
+  })
+
+  test('signs out even when the copies cannot be removed', async () => {
+    const server = await addCloudServer({ kind: 'self-hosted', url: 'https://cloud.example.com' })
+    rememberRecentStorageDocument(
+      { providerId: CLOUD_STORAGE_PROVIDER_ID, profileId: server.id, documentId: 'd1' },
+      'Ada',
+      'design'
+    )
+    const store = createMemoryLocalCanvasStore()
+    resetLocalCanvasStoreForTests({
+      ...store,
+      listMetas: () => Promise.reject(new Error('Storage is closed'))
+    })
+    spyOn(console, 'warn').mockImplementation(() => undefined)
+
+    await signOutOfCloud(server.id, cloudDiscoveryFixture('https://cloud.example.com'), {
+      revoke: () => Promise.resolve(),
+      clear: () => Promise.resolve()
+    })
+
+    expect(recentFiles.value).toEqual([])
+    expect(cloudServers.value[0]?.account).toBeNull()
   })
 })

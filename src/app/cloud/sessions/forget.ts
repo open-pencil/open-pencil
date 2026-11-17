@@ -40,7 +40,7 @@ export function watchCloudAccountSwitches(): () => void {
         const before = previous.get(serverId)
         if (before && accountId && before !== accountId) {
           forgetCloudAccountCopies(serverId).catch((error: unknown) => {
-            console.warn('[Cloud] Could not forget the last account on this device', error)
+            console.warn('[Cloud] Could not forget the account on this device', error)
           })
         }
       }

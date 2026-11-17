@@ -187,6 +187,22 @@ describe('Cloud connections', () => {
     expect(await readCloudSessionToken(target.id)).toBe('newer-token')
   })
 
+  test('keep the account a newer check found over the one a late check brings back', async () => {
+    const target = await server()
+    const grace = { ...user, userId: 'user-2', email: 'grace@example.com' }
+    answers['/api/account/status'] = { status: 200, body: { user, state: 'active' } }
+    answers['/api/workspaces'] = { status: 200, body: { workspaces: [] } }
+    // The first check's answer is held while a second, after Grace signed in, finishes first.
+    duringStatus = async () => {
+      duringStatus = undefined
+      answers['/api/account/status'] = { status: 200, body: { user: grace, state: 'active' } }
+      await refreshCloudConnection(target)
+      answers['/api/account/status'] = { status: 200, body: { user, state: 'active' } }
+    }
+    await refreshCloudConnection(target)
+    expect(cloudServers.value[0]?.account?.id).toBe('user-2')
+  })
+
   test('call a remembered account whose session ended expired', async () => {
     answers['/api/account/status'] = { status: 200, body: { user, state: 'active' } }
     answers['/api/workspaces'] = { status: 200, body: { workspaces: [] } }
