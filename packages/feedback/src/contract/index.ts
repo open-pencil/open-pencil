@@ -1,5 +1,6 @@
 export * from './schema'
 export * from './inbox/schema'
+export * from './campaigns/schema'
 export {
   describeBuildFields,
   describePingFields,

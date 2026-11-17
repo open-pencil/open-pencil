@@ -36,7 +36,7 @@ export default {
     unreadDot:
       'pointer-events-none absolute -top-0.5 -inset-e-0.5 size-2.5 rounded-full bg-accent ring-2 ring-panel',
     // Someone a comment names, in the accent, as Figma marks mentions.
-    mention: 'font-medium text-accent',
+    mention: 'font-medium text-primary',
     composerSlot: 'border-t border-border p-2',
     // One line with the send button beside it, growing as the comment does, as in Figma.
     // People offered for an `@`, just above the composer, as menus are drawn.

@@ -22,6 +22,9 @@ export { CLOUD_STORAGE_PROVIDER_ID } from '@/app/cloud/sessions/token'
 /** Nothing opens from a Cloud link without Cloud. */
 export const openingCloudLink = computed(() => false)
 
+/** No account on OpenPencil Cloud without Cloud. */
+export const officialCloudSignedIn = computed(() => false)
+
 export type { CloudAIWorkspace } from '@/app/cloud/ai/access'
 
 export const cloudAIAvailable = computed(() => false)

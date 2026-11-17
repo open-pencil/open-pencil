@@ -34,11 +34,11 @@ function counts() {
 
 describe('ping', () => {
   test('counts pings per day and build, never per install', async () => {
-    expect((await service.client.ping.$post({ json: BUILD })).status).toBe(204)
-    expect((await service.client.ping.$post({ json: BUILD })).status).toBe(204)
+    expect((await service.client.ping.$post({ json: BUILD })).status).toBe(200)
+    expect((await service.client.ping.$post({ json: BUILD })).status).toBe(200)
     expect(
       (await service.client.ping.$post({ json: { ...BUILD, version: '0.15.1' } })).status
-    ).toBe(204)
+    ).toBe(200)
 
     expect(await counts()).toEqual([
       {

@@ -88,6 +88,7 @@
   "supportDescription": "OpenPencil を気に入っていただけましたか？無料のオープンソースです。寄付は開発のスピードアップと、動作に必要なサーバーやサービスの費用に役立ちます。",
   "supportNotNow": "今はしない",
   "supportDonate": "寄付する",
+  "campaignNotNow": "今はしない",
   "sharingLocalData": "使用状況と診断の記録はこのデバイスに保存されます。診断が外部に送られるのは、あなたが送信を選んだレポートの中だけです。",
   "reportError": "報告…",
   "reportErrorTitle": "このエラーを報告",
