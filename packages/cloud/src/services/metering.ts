@@ -11,6 +11,12 @@ const usageSchema = v.object({
 
 const usageBodySchema = v.pipe(v.string(), v.parseJson(), usageSchema)
 
+/**
+ * The most an event may buffer before metering gives up, in characters. Stream events carry a
+ * small delta each, so only an upstream that never ends an event reaches it.
+ */
+const MAX_EVENT_CHARACTERS = 1024 * 1024
+
 function usageOf(text: string): TokenUsage | null {
   const parsed = v.safeParse(usageBodySchema, text)
   if (!parsed.success) return null
@@ -42,7 +48,7 @@ export async function meteredUsage(
   let usage: TokenUsage | null = null
   const events = body
     .pipeThrough(new TextDecoderStream())
-    .pipeThrough(new EventSourceParserStream())
+    .pipeThrough(new EventSourceParserStream({ maxBufferSize: MAX_EVENT_CHARACTERS }))
   for await (const event of events) {
     if (event.data !== '[DONE]') usage = usageOf(event.data) ?? usage
   }
