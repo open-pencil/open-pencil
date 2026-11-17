@@ -77,7 +77,7 @@ describe('Material Symbols', () => {
     const name = 'material-symbols-rounded:home'
     const thin = (await provider.icons([name], 40, { wght: 100 })).get(name)
     const bold = (await provider.icons([name], 40, { wght: 900 })).get(name)
-    expect(thin?.options).toEqual({ opsz: 24, wght: 100, FILL: 0, GRAD: 0 })
+    expect(thin?.options).toEqual({ opsz: 40, wght: 100, FILL: 0, GRAD: 0 })
     // Past the axis, the weight is the axis' end.
     expect(bold?.options).toMatchObject({ wght: 700 })
     const box = (icon: typeof thin) => {
@@ -94,6 +94,17 @@ describe('Material Symbols', () => {
     expect(thin?.paths[0]?.tint).toEqual(['fill'])
     // One region of closed contours, so the inner ones cut the house's holes.
     expect(thin?.paths[0]?.vectorNetwork.regions[0]?.loops.length).toBeGreaterThan(1)
+  })
+
+  test('draws an icon at the optical size of its size, within the axis, unless one is set', async () => {
+    const { provider } = await setup()
+    const name = 'material-symbols-rounded:home'
+    const opsz = async (size: number, options?: { opsz: number }) =>
+      (await provider.icons([name], size, options)).get(name)?.options?.opsz
+    expect(await opsz(20)).toBe(20)
+    expect(await opsz(16)).toBe(20)
+    expect(await opsz(64)).toBe(48)
+    expect(await opsz(64, { opsz: 24 })).toBe(24)
   })
 
   test('keeps the icons of the fonts that loaded when another font of the set fails', async () => {
@@ -114,9 +125,10 @@ describe('Material Symbols', () => {
   test('fills an icon at the axes its fill sets, as fontTools draws the font', async () => {
     const { provider } = await setup()
     const name = 'material-symbols-rounded:home'
-    // At the font's own 960-unit em, so the outline reads in font units, y from the top.
-    const outlined = (await provider.icons([name], 960)).get(name)
-    const filled = (await provider.icons([name], 960, { FILL: 1 })).get(name)
+    // At the font's own 960-unit em, so the outline reads in font units, y from the top, and at
+    // the default optical size, which fontTools draws.
+    const outlined = (await provider.icons([name], 960, { opsz: 24 })).get(name)
+    const filled = (await provider.icons([name], 960, { opsz: 24, FILL: 1 })).get(name)
     const vertices = (icon: typeof filled) => icon?.paths[0]?.vectorNetwork.vertices ?? []
     const box = (icon: typeof filled) => [
       bounds(vertices(icon).map((v) => v.x)),
