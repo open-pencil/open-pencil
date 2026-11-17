@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url'
 
 import { defineCommand } from 'citty'
 
+import { createHeadlessIconMatcher } from '@open-pencil/core/icons/match'
 import { readHTMLDocument, type ReadHTMLResult } from '@open-pencil/core/io/formats/html/import'
 
 import { requireFile } from '#cli/app/client'
@@ -57,7 +58,8 @@ async function importHTML(args: ImportArgs): Promise<ReadHTMLResult> {
     baseURL: pathToFileURL(resolve(file)).href,
     cssText: await cssTextForArgs(args),
     tailwind: await tailwindCandidatesForArgs(args),
-    pageName: args.pageName
+    pageName: args.pageName,
+    matchIcon: createHeadlessIconMatcher()
   })
 }
 

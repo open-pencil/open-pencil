@@ -56,4 +56,14 @@ Resizing the icon or changing its color doesn't count as an edit.
 - **HTML** writes it as inline SVG marked with `data-icon`, with its paths painted in `currentColor` and the icon's color set on the `<svg>`, so changing that one `color` recolors it.
 - **SVG and images** draw it like any other vector.
 
+## Icons in Imported HTML
+
+Importing HTML keeps the icons a page draws as icons, in the page's own paths and color:
+
+- Inline SVG marked with `data-icon`, as OpenPencil's HTML export writes it, becomes that icon.
+- Other inline SVG becomes the icon from a popular Iconify set it draws, when it draws one closely enough: it's compared with the icons whose shapes come closest, drawn the same way.
+- Anything else stays artwork.
+
+Naming icons this way downloads an index of the popular sets, about 2 MB, and the icons it compares with; without a connection, inline SVG stays artwork.
+
 Icons placed by AI agents, MCP clients, and design JSX are icons in the same way, so the Icon section works on them too.

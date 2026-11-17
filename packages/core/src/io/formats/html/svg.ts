@@ -10,6 +10,7 @@ import { parseSVGViewBoxValue } from '@open-pencil/scene-graph/parse-path'
 
 import { drawIcon, parseIconName } from '#core/icons'
 import { svgIconPaths } from '#core/icons/artwork'
+import type { IconMatcher } from '#core/icons/match'
 import { extractSVGContent } from '#core/icons/svg'
 import { createSVGNodes } from '#core/io/formats/svg/import'
 import { svgViewportAttributes } from '#core/vector/vectorize/svg/transform'
@@ -199,29 +200,38 @@ function drawArtwork(graph: SceneGraph, frameId: string, element: DesignElement,
 /**
  * Draws each inline SVG HTML import built a frame for into that frame, at the size layout and
  * placement gave it, with `currentColor` in the element's color, `<use>` and `url()` reaching
- * definitions elsewhere in the page, and the paint the page's CSS gives each shape. An SVG a page
- * names as an icon, as `data-icon="lucide:save"`, becomes that icon, drawn through the path
- * pipeline Iconify icons use, so it can be swapped, recolored, and exported by name; other SVG
- * is artwork, drawn as SVG import draws it.
+ * definitions elsewhere in the page, and the paint the page's CSS gives each shape. An SVG that
+ * is an icon, because the page names it, as `data-icon="lucide:save"`, or because `matchIcon`
+ * finds the Iconify icon it draws, becomes that icon: its own paths drawn through the pipeline
+ * Iconify icons use, so it can be swapped, recolored, and exported by name. Other SVG is artwork,
+ * drawn as SVG import draws it.
  */
-export function drawInlineSVGs(
+export async function drawInlineSVGs(
   graph: SceneGraph,
   svgs: ReadonlyMap<string, DesignElement>,
-  page: DesignDocument
-): void {
+  page: DesignDocument,
+  matchIcon?: IconMatcher
+): Promise<void> {
   if (svgs.size === 0) return
   const byId = new Map(
     designElements(page.children).flatMap((element) =>
       element.attrs.id ? [[element.attrs.id, element] as const] : []
     )
   )
-  for (const [frameId, element] of svgs) {
+  const drawn = [...svgs].flatMap(([frameId, element]) => {
     const frame = graph.getNode(frameId)
-    if (!frame || frame.width <= 0 || frame.height <= 0) continue
+    if (!frame || frame.width <= 0 || frame.height <= 0) return []
     const box = { width: frame.width, height: frame.height }
-    const markup = svgMarkup(element, byId, box)
-    const named = iconName(element)
-    if (named) drawNamedIcon(graph, frameId, element, named, markup, box)
+    return [{ frameId, element, box, markup: svgMarkup(element, byId, box) }]
+  })
+  const unnamed = drawn.filter(({ element }) => !iconName(element))
+  const matched = matchIcon ? await matchIcon(unnamed.map(({ markup }) => markup)) : []
+  const found = new Map(unnamed.map(({ frameId }, i) => [frameId, matched[i] ?? null]))
+  for (const { frameId, element, box, markup } of drawn) {
+    const name = found.get(frameId)
+    const parsed = name ? parseIconName(name) : null
+    const icon = iconName(element) ?? (parsed && { prefix: parsed.prefix, name: parsed.iconName })
+    if (icon) drawNamedIcon(graph, frameId, element, icon, markup, box)
     else drawArtwork(graph, frameId, element, markup)
   }
 }

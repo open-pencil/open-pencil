@@ -6,6 +6,7 @@ import {
 } from '@open-pencil/dom-css/scene-graph'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
+import type { IconMatcher } from '#core/icons/match'
 import { layoutAuthoredNodes } from '#core/layout'
 import { prepareGraphFonts } from '#core/text/prepare'
 
@@ -27,11 +28,12 @@ export const HTML_IMPORT_VIEWPORT: DesignViewport = { width: 1440, height: 900 }
  * browser or the HTML engine; building and laying out the layers happens here for every
  * caller. When the runtime recorded where it laid each element out, auto layout is kept only
  * where it reproduces those boxes, and the rest is placed at them. Transforms turn and move
- * the laid-out layers last, as CSS applies them. Safe to bundle for the browser.
+ * the laid-out layers last, as CSS applies them. `matchIcon` names the icons inline SVG draws
+ * without the page naming them. Safe to bundle for the browser.
  */
 export async function sceneGraphFromStyledHTML(
   styled: DesignDocument,
-  options: { pageName?: string } = {}
+  options: { pageName?: string; matchIcon?: IconMatcher } = {}
 ): Promise<SceneGraph> {
   const { graph, boxes, transforms, svgs } = designDocumentToLayers(styled, {
     pageName: options.pageName
@@ -43,7 +45,7 @@ export async function sceneGraphFromStyledHTML(
     if (placeLayersFromLayout(graph, boxes) === 0) break
     layoutAuthoredNodes(graph, pageIds)
   }
-  drawInlineSVGs(graph, svgs, styled)
+  await drawInlineSVGs(graph, svgs, styled, options.matchIcon)
   applyCSSTransforms(graph, transforms)
   return graph
 }

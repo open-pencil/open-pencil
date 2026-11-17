@@ -14,6 +14,7 @@ import {
 } from '@open-pencil/html-engine'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
+import { createHeadlessIconMatcher, type IconMatcher } from '#core/icons/match'
 import type { IOFormatAdapter } from '#core/io/types'
 
 import {
@@ -39,6 +40,8 @@ export interface ReadHTMLOptions {
   readAsset?: (path: string) => Promise<Uint8Array | null>
   /** The viewport the page is laid out in. */
   viewport?: DesignViewport
+  /** Names the icons inline SVG draws without the page naming them, as `createHeadlessIconMatcher`. */
+  matchIcon?: IconMatcher
 }
 
 export interface ReadHTMLResult {
@@ -199,7 +202,11 @@ export async function readHTMLDocument(
   }
   let styled = await style()
   if (await registerLayerFonts(engine, designDocumentToLayers(styled).graph)) styled = await style()
-  return { styled, graph: await sceneGraphFromStyledHTML(styled, { pageName: options.pageName }) }
+  const graph = await sceneGraphFromStyledHTML(styled, {
+    pageName: options.pageName,
+    matchIcon: options.matchIcon
+  })
+  return { styled, graph }
 }
 
 /** Reads HTML files where the HTML engine can load, as in the CLI and the MCP server. */
@@ -215,7 +222,8 @@ export const headlessHTMLReader: IOFormatAdapter<'html'> = {
     const { graph } = await readHTMLDocument(new TextDecoder().decode(input.data), {
       readAsset: input.readAsset
         ? async (path) => (await input.readAsset?.(path)) ?? null
-        : undefined
+        : undefined,
+      matchIcon: createHeadlessIconMatcher()
     })
     return { graph, sourceFormat: 'html' }
   }

@@ -1,1 +1,1 @@
-- HTML import draws inline SVG as vector artwork in the page's colors, reaching icon sprites elsewhere on the page, keeps an icon named by `data-icon` as that icon, and keeps stacks spaced by their children's margins in auto layout (#2164).
+- HTML import draws inline SVG as vector artwork in the page's colors, reaching icon sprites elsewhere on the page, keeps an icon named by `data-icon` as that icon, names other inline SVG after the Iconify icon it draws, and keeps stacks spaced by their children's margins in auto layout (#2164).

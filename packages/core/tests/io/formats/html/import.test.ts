@@ -6,6 +6,7 @@ import { readIcon } from '@open-pencil/scene-graph/icons'
 import { layoutSizing } from '@open-pencil/scene-graph/layout'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
+import { iconColor } from '#core/icons'
 import { readHTMLDocument } from '#core/io/formats/html/import'
 import { fontManager } from '#core/text/font/manager'
 
@@ -212,6 +213,26 @@ describe('reading HTML', () => {
       size: [16, 16],
       paint: { r: 0, g: 0, b: 0, a: 1 }
     })
+  })
+
+  test('keeps an icon the matcher finds an SVG draws as that icon, in its own paths', async () => {
+    const { graph } = await readHTMLDocument(
+      `<div style="display:flex;gap:8px;color:#cc0000">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4h16v16H4z"/></svg>
+        <svg width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>
+      </div>`,
+      {
+        matchIcon: async (svgs) =>
+          svgs.map((svg) => (svg.includes('<path') ? 'lucide:square' : null))
+      }
+    )
+    const [row] = graph.getChildren(graph.getPages()[0].id)
+    const [matched, artwork] = graph.getChildren(row.id)
+
+    expect(readIcon(matched)?.name).toBe('lucide:square')
+    expect(iconColor(graph, matched)).toEqual({ r: 0.8, g: 0, b: 0, a: 1 })
+    expect(graph.getChildren(matched.id)).toHaveLength(1)
+    expect(readIcon(artwork)).toBeNull()
   })
 
   test("paints inline SVG shapes as the page's CSS does, keeping their own attributes", async () => {
