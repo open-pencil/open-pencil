@@ -310,6 +310,15 @@ describe('editing an icon', () => {
     expect(readIcon(getNodeOrThrow(editor.graph, id))?.options).toEqual({ weight: 'bold' })
   })
 
+  test('options the icon is already drawn with draw nothing and add no undo step', async () => {
+    const editor = setup()
+    const id = await insert(editor, 'test:square')
+    await editor.setIconOptions(id, { weight: 'bold' })
+    await editor.setIconOptions(id, { weight: 'bold' })
+    editor.undo.undo()
+    expect(readIcon(getNodeOrThrow(editor.graph, id))?.options).toBeUndefined()
+  })
+
   test('options changed while the icon is still drawing both apply', async () => {
     const editor = setup()
     const id = await insert(editor, 'test:square')

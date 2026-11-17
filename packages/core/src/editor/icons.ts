@@ -157,12 +157,15 @@ export function createIconActions(ctx: EditorContext) {
 
   /**
    * Draws the icon `frameId` afresh with `changes` to how it is drawn, such as its weight, keeping
-   * the options it has otherwise. Edits to its paths are given up, as when it is reset.
+   * the options it has otherwise. Edits to its paths are given up, as when it is reset. Changes the
+   * icon is already drawn with, once the redraws before them are done, draw nothing.
    */
   function setIconOptions(frameId: string, changes: IconOptions): Promise<void> {
-    return queueRedraw(frameId, (icon, edited) =>
-      drawIcon('Change icon options', frameId, icon.name, { ...icon.options, ...changes }, edited)
-    )
+    return queueRedraw(frameId, async (icon, edited) => {
+      const options = { ...icon.options, ...changes }
+      if (isEqual(options, icon.options)) return
+      await drawIcon('Change icon options', frameId, icon.name, options, edited)
+    })
   }
 
   /** Makes the icon `frameId` plain artwork that keeps its paths; see `detachIcon`. */

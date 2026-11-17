@@ -7,7 +7,6 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { useUndoBatch } from '#vue/controls/undo-batch/use'
 import { useEditor } from '#vue/editor/context'
-import { useEditorEvent } from '#vue/editor/events/use'
 import { useSelectionState } from '#vue/editor/selection-state/use'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
 
@@ -92,41 +91,22 @@ export function useIcon() {
     editor.detachIcon(node.id)
   }
 
-  /**
-   * The option values asked for and not yet drawn, by icon and key, so a value is compared with
-   * the last one asked for rather than the one an icon still loading was drawn with. Each request
-   * owns its entry by a token, so an earlier request of the same value finishing leaves it.
-   */
-  const requested = new Map<string, { value: IconOptions[string]; token: symbol }>()
-  // Another document's icons may share these IDs.
-  useEditorEvent('graph:replaced', () => requested.clear())
-
   async function swap(next: string) {
     const node = selectedNode.value
     if (!node || !name.value || name.value === next) return
-    // A swap to another set draws with that set's defaults, so values asked for before it no
-    // longer say what the icon will be drawn with.
-    for (const id of requested.keys()) if (id.startsWith(`${node.id}/`)) requested.delete(id)
     batch.flush()
     await editor.swapIconGlyph(node.id, next)
   }
 
-  /** Draws the icon afresh with the option `key` set to `value`, as one undo step. */
+  /**
+   * Draws the icon afresh with the option `key` set to `value`, as one undo step. Every request is
+   * sent: the editor draws them in order and skips one the icon is already drawn with by then.
+   */
   async function setOption(key: string, value: IconOptions[string]) {
     const node = selectedNode.value
     if (!node || !name.value) return
-    const id = `${node.id}/${key}`
-    const pending = requested.get(id)
-    const current = pending ? pending.value : options.value[key]
-    if (current === value) return
-    const token = Symbol(id)
-    requested.set(id, { value, token })
     batch.flush()
-    try {
-      await editor.setIconOptions(node.id, { [key]: value })
-    } finally {
-      if (requested.get(id)?.token === token) requested.delete(id)
-    }
+    await editor.setIconOptions(node.id, { [key]: value })
   }
 
   // A drag in the open color picker sends many colors; they undo as one step, committed when

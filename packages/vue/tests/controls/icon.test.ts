@@ -109,6 +109,23 @@ describe('Icon section controls', () => {
     expect(node && readIcon(node)?.options).toEqual({ weight: 'regular' })
   })
 
+  test('a value set back after a swap within the set, while both still draw, is set back', async () => {
+    const { control, id, release } = await mountIcon()
+    const bold = control.setOption('weight', 'bold')
+    // The same set keeps the icon's options through the swap.
+    const swapping = control.swap('test:circle')
+    const back = control.setOption('weight', 'regular')
+    // The swap is drawn bold too, as the change before it left the icon.
+    await release()
+    await release()
+    await Promise.all([bold, swapping, back])
+    const node = editor.graph.getNode(id)
+    expect(node && readIcon(node)).toMatchObject({
+      name: 'test:circle',
+      options: { weight: 'regular' }
+    })
+  })
+
   test('a value asked for again after a swap to another set is drawn', async () => {
     const { control, id, release } = await mountIcon()
     const first = control.setOption('weight', 'bold')
