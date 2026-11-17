@@ -622,5 +622,6 @@
   "removeSignInMethod": "削除",
   "removeSignInMethodHeading": "{name}のサインイン方法から {provider} を削除しますか？",
   "removeSignInMethodDescription": "再度追加されるまで、この方法ではサインインできなくなります。本人にはメールでお知らせします。サインイン済みのデバイスは、すべての場所からサインアウトさせるまでそのままです。",
-  "activitySignInMethodRemoved": "がサインイン方法を削除:"
+  "activitySignInMethodRemoved": "がサインイン方法を削除:",
+  "signInAny": "すべてのサインイン"
 }

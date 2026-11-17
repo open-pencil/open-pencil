@@ -368,6 +368,7 @@ export const cloudPortalMessageDefaults = {
   columnRole: 'Role',
   columnWorkspaces: 'Workspaces',
   columnSignIn: 'Sign-in',
+  signInAny: 'Any sign-in',
   columnWorkspace: 'Workspace',
   columnMembers: 'Members',
   columnLastActive: 'Last active',

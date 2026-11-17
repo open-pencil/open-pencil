@@ -622,5 +622,6 @@
   "removeSignInMethod": "移除",
   "removeSignInMethodHeading": "从 {name} 的登录方式中移除 {provider}？",
   "removeSignInMethodDescription": "除非重新添加，否则对方将无法再用这种方式登录，并会收到一封邮件告知。已登录的设备会保持登录，直到你让对方退出所有设备。",
-  "activitySignInMethodRemoved": "移除了登录方式："
+  "activitySignInMethodRemoved": "移除了登录方式：",
+  "signInAny": "任意登录方式"
 }

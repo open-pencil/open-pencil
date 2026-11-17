@@ -9,7 +9,15 @@ import {
   type Updater
 } from '@tanstack/vue-table'
 import { refDebounced } from '@vueuse/core'
-import { computed, ref, shallowRef, toValue, watch, type MaybeRefOrGetter } from 'vue'
+import {
+  computed,
+  ref,
+  shallowRef,
+  toValue,
+  watch,
+  type MaybeRefOrGetter,
+  type WatchSource
+} from 'vue'
 
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
@@ -69,6 +77,8 @@ export function usePortalList<Filter extends string, Row extends RowData>(option
   load: (request: PortalListRequest<Filter>) => Promise<PortalListPage<Filter, Row>>
   rowId: (row: Row) => string
   columns: PortalColumn<Row>[]
+  /** Another input `load` reads, such as a narrowing the list offers beside its filters. */
+  scope?: WatchSource
 }) {
   const messages = useCloudPortalMessages()
   const query = ref('')
@@ -107,7 +117,7 @@ export function usePortalList<Filter extends string, Row extends RowData>(option
     }
   })
 
-  watch([search, filter], () => {
+  watch([search, filter, ...(options.scope ? [options.scope] : [])], () => {
     if (pagination.value.pageIndex === 0) void list.reload()
     else pagination.value = { ...pagination.value, pageIndex: 0 }
   })

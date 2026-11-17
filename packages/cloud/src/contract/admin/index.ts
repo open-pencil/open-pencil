@@ -102,16 +102,15 @@ export const cloudAdminUserSchema = v.object({
   request: v.optional(v.nullable(enrollmentStatusSchema))
 })
 
-/** Which accounts a list of people shows, including those that sign in a given way. */
+/** Which accounts a list of people shows. */
 export const cloudAdminUserFilterSchema = v.picklist([
   'all',
   'administrators',
   'suspended',
-  'without-two-step',
-  'password',
-  'google',
-  'apple'
+  'without-two-step'
 ])
+/** Narrows a list of people, under any filter, to those who sign in a given way. */
+export const cloudAdminUserMethodSchema = v.picklist(['password', 'google', 'apple'])
 export const cloudAdminUsersResponseSchema = v.object({
   users: v.array(cloudAdminUserSchema),
   ...listTotals(cloudAdminUserFilterSchema.options)
@@ -254,6 +253,7 @@ export type Enrollment = v.InferOutput<typeof enrollmentSchema>
 export type CloudAdminSessionResponse = v.InferOutput<typeof cloudAdminSessionResponseSchema>
 export type CloudAdminUser = v.InferOutput<typeof cloudAdminUserSchema>
 export type CloudAdminUserFilter = v.InferOutput<typeof cloudAdminUserFilterSchema>
+export type CloudAdminUserMethod = v.InferOutput<typeof cloudAdminUserMethodSchema>
 export type CloudAdminEmailFilter = v.InferOutput<typeof cloudAdminEmailFilterSchema>
 export type CloudAdminAuditFilter = v.InferOutput<typeof cloudAdminAuditFilterSchema>
 export type EnrollmentStatus = v.InferOutput<typeof enrollmentStatusSchema>

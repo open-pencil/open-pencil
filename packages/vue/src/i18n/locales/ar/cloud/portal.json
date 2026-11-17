@@ -672,5 +672,6 @@
   "removeSignInMethod": "إزالة",
   "removeSignInMethodHeading": "إزالة {provider} من طرق تسجيل دخول {name}؟",
   "removeSignInMethodDescription": "لن يتمكن من تسجيل الدخول بها مجددًا ما لم يُضفها من جديد، وسيصله بريد إلكتروني بذلك. تبقى الأجهزة المسجّل دخولها حاليًا متصلة حتى تسجّل خروجه من كل مكان.",
-  "activitySignInMethodRemoved": "أزال طريقة لتسجيل الدخول من"
+  "activitySignInMethodRemoved": "أزال طريقة لتسجيل الدخول من",
+  "signInAny": "أي طريقة دخول"
 }

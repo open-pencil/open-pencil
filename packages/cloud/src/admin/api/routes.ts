@@ -20,7 +20,8 @@ import {
   cloudAdminDocumentFilterSchema,
   cloudAdminEmailFilterSchema,
   cloudAdminReportFilterSchema,
-  cloudAdminUserFilterSchema
+  cloudAdminUserFilterSchema,
+  cloudAdminUserMethodSchema
 } from '#cloud/contract'
 import type { CloudAPIEnvironment } from '#cloud/server/api'
 import type { CloudAuthAdapter } from '#cloud/server/auth'
@@ -46,7 +47,10 @@ function listQuery<const Filter extends string>(filters: v.PicklistSchema<Filter
   })
 }
 const enrollmentQuerySchema = listQuery(enrollmentStatusSchema)
-const userQuerySchema = listQuery(cloudAdminUserFilterSchema)
+const userQuerySchema = v.object({
+  ...listQuery(cloudAdminUserFilterSchema).entries,
+  method: v.optional(cloudAdminUserMethodSchema)
+})
 const emailQuerySchema = listQuery(cloudAdminEmailFilterSchema)
 const auditQuerySchema = listQuery(cloudAdminAuditFilterSchema)
 const documentQuerySchema = listQuery(cloudAdminDocumentFilterSchema)

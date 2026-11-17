@@ -632,5 +632,6 @@
   "removeSignInMethod": "Entfernen",
   "removeSignInMethodHeading": "{provider} aus den Anmeldemethoden von {name} entfernen?",
   "removeSignInMethodDescription": "Die Person kann sich damit nicht mehr anmelden, bis sie es wieder hinzufügt, und erhält dazu eine E-Mail. Bereits angemeldete Geräte bleiben angemeldet, bis du sie überall abmeldest.",
-  "activitySignInMethodRemoved": "entfernte eine Anmeldemethode von"
+  "activitySignInMethodRemoved": "entfernte eine Anmeldemethode von",
+  "signInAny": "Jede Anmeldung"
 }

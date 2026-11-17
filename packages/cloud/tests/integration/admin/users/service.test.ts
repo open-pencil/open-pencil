@@ -274,10 +274,7 @@ describe('deployment admin user safety', () => {
         all: 3,
         administrators: 1,
         suspended: 1,
-        'without-two-step': 1,
-        password: 2,
-        google: 1,
-        apple: 1
+        'without-two-step': 1
       })
       expect(everyone.users.map((user) => user.twoStep)).toEqual([true, false, true])
       expect(everyone.users.map((user) => user.methods)).toEqual([
@@ -285,13 +282,19 @@ describe('deployment admin user safety', () => {
         ['google', 'apple'],
         ['credential']
       ])
-      expect((await service.list({ filter: 'apple' })).users.map((user) => user.id)).toEqual([
+      expect((await service.list({ method: 'apple' })).users.map((user) => user.id)).toEqual([
         USER_ID
       ])
-      expect((await service.list({ filter: 'password' })).users.map((user) => user.id)).toEqual([
-        ADMIN_ID,
-        SUSPENDED_ID
-      ])
+      // A sign-in method narrows every filter, and the counts follow it.
+      const passwords = await service.list({ method: 'password' })
+      expect(passwords.users.map((user) => user.id)).toEqual([ADMIN_ID, SUSPENDED_ID])
+      expect(passwords.counts).toEqual({
+        all: 2,
+        administrators: 1,
+        suspended: 1,
+        'without-two-step': 0
+      })
+      expect((await service.list({ filter: 'suspended', method: 'google' })).users).toEqual([])
       expect(everyone.users[1]).toMatchObject({
         image: 'https://images.example.com/grace.png',
         workspaceCount: 1,

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { createColumnHelper } from '@tanstack/vue-table'
 import { compact } from 'es-toolkit'
-import { computed, h } from 'vue'
+import { computed, h, ref } from 'vue'
 
-import type { CloudAdminUserFilter } from '@open-pencil/cloud/contract'
+import type { CloudAdminUserFilter, CloudAdminUserMethod } from '@open-pencil/cloud/contract'
 import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 import {
@@ -12,6 +12,7 @@ import {
   type PortalListRequest,
   type PortalTableFeatures
 } from '@/app/cloud-portal/list'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 import PortalIdentityCell from '../table/PortalIdentityCell.vue'
 import PortalSignInMethodsCell from '../table/PortalSignInMethodsCell.vue'
@@ -26,7 +27,8 @@ import PortalPersonActions from './PortalPersonActions.vue'
  */
 const { load, busy = false } = defineProps<{
   load: (
-    request: PortalListRequest<CloudAdminUserFilter>
+    request: PortalListRequest<CloudAdminUserFilter>,
+    method?: CloudAdminUserMethod
   ) => Promise<PortalListPage<CloudAdminUserFilter, PortalPerson>>
   busy?: boolean
 }>()
@@ -56,10 +58,14 @@ function standing(person: PortalPerson) {
   ])
 }
 
+/** Narrows any filter to people who sign in one way; `any` leaves it as it is. */
+const method = ref<CloudAdminUserMethod | 'any'>('any')
+
 const column = createColumnHelper<PortalTableFeatures, PortalPerson>()
 const people = usePortalList<CloudAdminUserFilter, PortalPerson>({
   filter: 'all',
-  load: (request) => load(request),
+  load: (request) => load(request, method.value === 'any' ? undefined : method.value),
+  scope: method,
   rowId: (person) => person.id,
   columns: column.columns([
     column.display({
@@ -126,7 +132,10 @@ const filters = computed(() => [
   { value: 'all' as const, label: messages.value.filterEveryone },
   { value: 'administrators' as const, label: messages.value.filterAdministrators },
   { value: 'suspended' as const, label: messages.value.filterSuspended },
-  { value: 'without-two-step' as const, label: messages.value.filterWithoutTwoStep },
+  { value: 'without-two-step' as const, label: messages.value.filterWithoutTwoStep }
+])
+const methods = computed(() => [
+  { value: 'any' as const, label: messages.value.signInAny },
   { value: 'password' as const, label: messages.value.password },
   { value: 'google' as const, label: messages.value.providerGoogle },
   { value: 'apple' as const, label: messages.value.providerApple }
@@ -145,5 +154,14 @@ defineExpose({ reload: people.reload })
     :empty-description="messages.noPeopleFoundDescription"
   >
     <template #icon><icon-lucide-users class="size-5" /></template>
+    <template #toolbar>
+      <AppSelect
+        v-model="method"
+        :label="messages.columnSignIn"
+        :options="methods"
+        size="md"
+        class="w-36"
+      />
+    </template>
   </PortalTable>
 </template>

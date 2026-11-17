@@ -149,10 +149,7 @@ const loadPeople = serve(people, {
   all: 24,
   administrators: 2,
   suspended: 1,
-  'without-two-step': 9,
-  password: 15,
-  google: 11,
-  apple: 3
+  'without-two-step': 9
 })
 const loadRequests = serve(requests, { pending: 3, approved: 18, rejected: 2, revoked: 1 })
 const loadNoRequests = serve<AccessRequest['status'], AccessRequest>([], {

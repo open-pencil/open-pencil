@@ -16,6 +16,7 @@ import {
   type CloudAdminReportFilter,
   type CloudAdminEmailFilter,
   type CloudAdminUserFilter,
+  type CloudAdminUserMethod,
   type EnrollmentStatus
 } from '#cloud/contract'
 
@@ -83,9 +84,14 @@ export function createAdministrationAPI(call: CloudCall, { admin, api }: PortalR
         signal
       )
     },
-    users(request: AdminListRequest<CloudAdminUserFilter>, signal?: AbortSignal) {
+    /** A page of people; `method` narrows any filter to those who sign in that way. */
+    users(
+      request: AdminListRequest<CloudAdminUserFilter> & { method?: CloudAdminUserMethod },
+      signal?: AbortSignal
+    ) {
+      const { query } = listQuery(request)
       return call(
-        (options) => admin.users.$get(listQuery(request), options),
+        (options) => admin.users.$get({ query: { ...query, method: request.method } }, options),
         cloudAdminUsersResponseSchema,
         signal
       )
