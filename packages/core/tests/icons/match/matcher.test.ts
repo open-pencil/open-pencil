@@ -133,6 +133,19 @@ describe('naming icons after a failure', () => {
     expect(await match([house])).toEqual(['lucide:house'])
   })
 
+  test('draws an SVG again on the next call when the renderer drew no image of it', async () => {
+    spyOn(console, 'warn').mockImplementation(noop)
+    let drawing = false
+    const blank: IconMatcherServices['draw'] = (...args) =>
+      drawing ? draw(...args) : Promise.resolve(null)
+    const match = createIconMatcher({ index: testIndex, icons: testIcons(), draw: blank })
+    const house = ICONS['lucide:house'] ?? ''
+
+    expect(await match([house])).toEqual([null])
+    drawing = true
+    expect(await match([house])).toEqual(['lucide:house'])
+  })
+
   test('does not keep a miss from comparing with only some of its icons', async () => {
     const icons = testIcons()
     icons.previews.mockImplementationOnce(async () => new Map())

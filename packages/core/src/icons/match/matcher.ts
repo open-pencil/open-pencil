@@ -45,7 +45,8 @@ export interface IconMatcherServices {
 
 /**
  * An SVG drawn as OpenPencil draws it, fitted and centered in `width` by `height`, as coverage:
- * what the matcher hashes and compares.
+ * what the matcher hashes and compares. Null when the SVG has no size to draw; throws when the
+ * renderer draws no image of it.
  */
 export async function svgCoverage(
   draw: IconMatcherServices['draw'],
@@ -60,13 +61,11 @@ export async function svgCoverage(
   if (!node || node.width <= 0 || node.height <= 0) return null
   // SVG import gives its frame a white fill, which would cover the whole box.
   graph.updateNode(node.id, { fills: [] })
-  const image = await draw(
-    graph,
-    page.id,
-    node.id,
-    Math.min(width / node.width, height / node.height)
-  )
-  return image ? coverageGrid(image, width, height) : null
+  const scale = Math.min(width / node.width, height / node.height)
+  const image = await draw(graph, page.id, node.id, scale)
+  // A sized frame always has something to draw, so no image means drawing it failed.
+  if (!image) throw new Error('The renderer drew no image of the SVG')
+  return coverageGrid(image, width, height)
 }
 
 /**
