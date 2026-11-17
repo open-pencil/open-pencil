@@ -13,6 +13,7 @@ import {
   type PortalTableFeatures
 } from '@/app/cloud-portal/list'
 
+import PortalDocumentCell from '../table/PortalDocumentCell.vue'
 import PortalRowMenu from '../table/PortalRowMenu.vue'
 import PortalStatusCell from '../table/PortalStatusCell.vue'
 import PortalTable from '../table/PortalTable.vue'
@@ -73,11 +74,12 @@ const reports = usePortalList<CloudAdminReportFilter, PortalReportRow>({
       header: () => messages.value.columnDocument,
       meta: { class: 'w-1/4' },
       cell: ({ row: { original: report } }) =>
-        h(PortalTextCell, {
-          text: report.document.name,
-          strong: true,
-          badge: report.document.takenDown ? messages.value.takenDown : null,
-          detail: report.document.workspace
+        h(PortalDocumentCell, {
+          name: report.document.name,
+          kind: report.document.kind,
+          workspace: report.document.workspace,
+          thumbnail: report.document.thumbnail,
+          badge: report.document.takenDown ? messages.value.takenDown : null
         })
     }),
     column.display({

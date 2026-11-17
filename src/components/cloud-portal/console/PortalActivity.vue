@@ -40,6 +40,7 @@ const actions = computed<Record<string, string>>(() => ({
   'document.disabled': messages.value.activityTookDown,
   'document.enabled': messages.value.activityRestoredDocument,
   'document.undeleted': messages.value.activityUndeletedDocument,
+  'document.downloaded': messages.value.activityDownloadedDocument,
   'document-share.revoked': messages.value.activityRevokedLink,
   'document-report.dismissed': messages.value.activityDismissedReport,
   'document-report.actioned': messages.value.activityActionedReport

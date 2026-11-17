@@ -11,14 +11,16 @@ import {
   type PortalListRequest,
   type PortalTableFeatures
 } from '@/app/cloud-portal/list'
+import RelativeTime from '@/components/date/RelativeTime.vue'
 
+import PortalDocumentCell from '../table/PortalDocumentCell.vue'
 import PortalIdentityCell from '../table/PortalIdentityCell.vue'
 import PortalRowMenu from '../table/PortalRowMenu.vue'
 import PortalStatusCell from '../table/PortalStatusCell.vue'
 import PortalTable from '../table/PortalTable.vue'
 import PortalTextCell from '../table/PortalTextCell.vue'
 import type { PortalContentAction, PortalDocumentRow } from '../types'
-import { contentActions } from './content'
+import { contentActions, documentStatuses } from './content'
 import PortalContentConfirm from './PortalContentConfirm.vue'
 
 /**
@@ -54,7 +56,12 @@ const documents = usePortalList<CloudAdminDocumentFilter, PortalDocumentRow>({
       id: 'document',
       header: () => messages.value.columnDocument,
       cell: ({ row: { original: document } }) =>
-        h(PortalTextCell, { text: document.name, strong: true, detail: document.workspace })
+        h(PortalDocumentCell, {
+          name: document.name,
+          kind: document.kind,
+          workspace: document.workspace,
+          thumbnail: document.thumbnail
+        })
     }),
     column.display({
       id: 'owner',
@@ -70,9 +77,10 @@ const documents = usePortalList<CloudAdminDocumentFilter, PortalDocumentRow>({
             })
           : h(PortalTextCell, { text: messages.value.someoneElse })
     }),
-    column.accessor('updated', {
+    column.accessor('updatedAt', {
       header: () => messages.value.columnUpdated,
-      meta: { class: 'hidden w-32 whitespace-nowrap text-muted @2xl/table:table-cell' }
+      meta: { class: 'hidden w-32 whitespace-nowrap text-muted @2xl/table:table-cell' },
+      cell: ({ getValue }) => h(RelativeTime, { at: getValue() })
     }),
     column.display({
       id: 'status',
@@ -80,22 +88,7 @@ const documents = usePortalList<CloudAdminDocumentFilter, PortalDocumentRow>({
       meta: { class: 'w-40' },
       cell: ({ row: { original: document } }) =>
         h(PortalStatusCell, {
-          statuses: [
-            ...(document.deletedForever
-              ? [{ label: messages.value.deletedForever, tone: 'error' as const }]
-              : []),
-            ...(document.takenDown
-              ? [{ label: messages.value.takenDown, tone: 'error' as const }]
-              : []),
-            ...(document.openReports
-              ? [
-                  {
-                    label: messages.value.openReports(document.openReports),
-                    tone: 'warning' as const
-                  }
-                ]
-              : [])
-          ],
+          statuses: documentStatuses(messages.value, document),
           detail: document.destroyed
             ? messages.value.destroyedOn({ date: document.destroyed })
             : document.takenDownReason
