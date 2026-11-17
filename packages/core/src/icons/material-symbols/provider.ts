@@ -102,7 +102,8 @@ export function createMaterialSymbolsProvider(
     const glyph = loaded.get(name)
     const parsed = parseIconName(name)
     if (!glyph || !parsed) return null
-    const axes = materialSymbolsOptions(options)
+    // The optical size follows the size an icon is drawn at unless it is set, as Google advises.
+    const axes = materialSymbolsOptions({ opsz: size, ...options })
     return {
       prefix: parsed.prefix,
       name: parsed.iconName,

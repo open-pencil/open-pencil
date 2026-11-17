@@ -49,6 +49,12 @@ export interface CloudAuthAdapter {
    */
   resolveAccountSession(headers: Headers): Promise<CloudActor | null>
   /**
+   * Whether the signed-in session proved its account's second step, or the account has none.
+   * Neither resolver above accepts a session that has not: signing in through a linked account
+   * such as Google never asks for it.
+   */
+  twoStepConfirmed(headers: Headers): Promise<boolean>
+  /**
    * The account a personal access token stands for, from `Authorization: Bearer`, once it is held
    * to what a session would be. Only the document API reads tokens.
    */

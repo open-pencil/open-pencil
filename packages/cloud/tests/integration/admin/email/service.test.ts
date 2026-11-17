@@ -63,6 +63,58 @@ describe('admin email regeneration', () => {
       await runtime.close()
     }
   })
+  test('a regenerated invitation letter still opens Cloud, not the sign-in page', async () => {
+    const runtime = await createCloudTestDatabase()
+    const sent: Array<{ text: string }> = []
+    try {
+      await runtime.database
+        .insertInto('enrollment')
+        .values({
+          id: crypto.randomUUID(),
+          emailNormalized: 'person@example.com',
+          name: 'Person',
+          reason: null,
+          status: 'approved',
+          reviewedAt: new Date(),
+          reviewedBy: 'admin',
+          reviewNote: null,
+          approvedUserId: null
+        })
+        .execute()
+      const email = createTransactionalEmailService(runtime.database, {
+        encryptionSecret: 'regeneration-secret-at-least-32-characters',
+        from: 'cloud@example.com',
+        transport: {
+          id: 'memory',
+          async send(message) {
+            sent.push(message)
+            return { transportMessageId: 'message-id', acceptedAt: new Date().toISOString() }
+          }
+        }
+      })
+      const original = await email.enqueue({
+        idempotencyKey: 'original-invitation',
+        kind: 'enrollment-invited',
+        recipientEmail: 'person@example.com',
+        payload: { name: 'Person', actionURL: CLOUD_LINKS.publicURL }
+      })
+      await runtime.database
+        .updateTable('transactionalEmail')
+        .set({ status: 'failed', payloadEncrypted: null })
+        .where('id', '=', original)
+        .execute()
+      await createAdminEmailService(runtime.database, email, CLOUD_LINKS).regenerate(
+        'admin',
+        original
+      )
+      await email.deliverPending({ batchSize: 10, leaseDurationMs: 60_000 })
+      expect(sent).toHaveLength(1)
+      expect(sent[0]?.text).toContain(CLOUD_LINKS.publicURL)
+      expect(sent[0]?.text).not.toContain('/auth/sign-in')
+    } finally {
+      await runtime.close()
+    }
+  })
   test('rejects regeneration when authoritative data is unavailable', async () => {
     const runtime = await createCloudTestDatabase()
     try {

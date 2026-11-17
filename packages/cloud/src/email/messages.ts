@@ -52,6 +52,19 @@ export const emailMessageDefaults = {
   enrollmentRevokedPreview: 'Your OpenPencil Cloud access is no longer active.',
   enrollmentRevoked: 'Your OpenPencil Cloud access is no longer active.',
   enrollmentRevokedAction: 'Open OpenPencil',
+  invitationSubject: 'You can try OpenPencil Cloud now',
+  invitationHeading: 'Cloud is open',
+  invitationPreview: 'OpenPencil Cloud is open, and you can sign in now.',
+  invitationThanks:
+    'A while ago you asked to try OpenPencil Cloud. Thanks for being curious enough to ask, and for waiting. We were still testing it then and weren’t ready to let anyone in.',
+  invitationBeta:
+    'It’s open now, and you can sign in. It’s still a beta: some features are switched off, and some things will break. When they do, reply to this email and tell me, or {link} if you’re comfortable with that. I read both.',
+  invitationIssueLink: 'open an issue on GitHub',
+  invitationDesktop: 'To use Cloud in the desktop app, you need the beta release from the {link}.',
+  invitationDownloadLink: 'download page',
+  invitationAction: 'Open Cloud',
+  invitationSignatureName: 'Danila',
+  invitationSignatureRole: 'Founder of OpenPencil',
 
   enrollmentNotificationSubject: 'New OpenPencil Cloud access request',
   enrollmentNotificationHeading: 'New access request',
@@ -185,6 +198,17 @@ export const emailMessageDefaults = {
   reportDisagree: params('If you disagree, write to {email}.'),
   reportDisagreeAdministrators:
     'If you disagree, ask the server’s administrators to look at it again.',
+
+  commentMentionSubject: params('{author} mentioned you in “{document}”'),
+  commentReplySubject: params('{author} replied in “{document}”'),
+  commentMentionHeading: 'You were mentioned',
+  commentReplyHeading: 'New reply',
+  commentMention: params('{author} mentioned you in a comment on “{document}”:'),
+  commentReply: params('{author} replied in a thread you’re part of on “{document}”:'),
+  commentSomeone: 'Someone',
+  openComment: 'Open the comment',
+  commentSettings: 'You get these emails as your notification settings say. Change them in {link}.',
+  commentSettingsLink: 'your account settings',
 
   waitlistSubject: 'Confirm your place on the OpenPencil Cloud waitlist',
   waitlistHeading: 'Confirm your email',

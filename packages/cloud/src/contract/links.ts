@@ -138,3 +138,8 @@ export function cloudCommunityDesktopLinkURL(
     url: cloudCommunityURL(serverURL, documentId, versionId)
   })
 }
+
+/** A comment thread on a document, `/documents/:id?comment=…`, which opens it. */
+export function cloudCommentURL(serverURL: string, documentId: string, threadId: string): string {
+  return serverLink(serverURL, cloudDocumentPath(documentId), { comment: threadId })
+}

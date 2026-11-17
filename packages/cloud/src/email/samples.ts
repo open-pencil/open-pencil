@@ -33,7 +33,8 @@ export const EMAIL_SAMPLES: TransactionalEmailContent[] = [
       'enrollment-requested',
       'enrollment-approved',
       'enrollment-rejected',
-      'enrollment-revoked'
+      'enrollment-revoked',
+      'enrollment-invited'
     ] as const
   ).map((kind): TransactionalEmailContent => ({
     kind,
@@ -111,5 +112,17 @@ export const EMAIL_SAMPLES: TransactionalEmailContent[] = [
   {
     kind: 'document-report-decided',
     payload: { documentName: 'Homepage', outcome: 'blocked', contactEmail: 'abuse@example.com' }
+  },
+  {
+    kind: 'comment-notification',
+    payload: {
+      name: 'Ada',
+      authorName: 'Grace',
+      documentName: 'Homepage',
+      reason: 'mention',
+      excerpt: '@Ada can we tighten the heading before launch?',
+      actionURL: EMAIL_SAMPLE_URL,
+      settingsURL: EMAIL_SAMPLE_URL
+    }
   }
 ]

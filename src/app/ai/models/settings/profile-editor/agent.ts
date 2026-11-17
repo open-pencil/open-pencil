@@ -8,8 +8,8 @@ import {
   rememberedAgentOffer,
   type RememberedAgentOffer
 } from '@/app/ai/agents/acp/offers'
-import { readAgentEfforts, readAgentOffer, type AgentOffer } from '@/app/ai/agents/acp/oneoff'
-import type { AgentEfforts } from '@/app/ai/agents/acp/options'
+import { readAgentChoices, readAgentOffer, type AgentOffer } from '@/app/ai/agents/acp/oneoff'
+import type { AgentModelChoices } from '@/app/ai/agents/acp/options'
 import type { AIModelProfileDraft } from '@/app/ai/models'
 import { canRunHostProcesses } from '@/app/tauri/capabilities'
 
@@ -21,8 +21,8 @@ export interface AgentModelSource {
   /** Agents run as processes of the desktop app only. */
   available: () => boolean
   read: (agent: ACPAgentDef) => Promise<AgentOffer>
-  /** The efforts one model offers, read when a draft chooses a model whose efforts are unknown. */
-  readEfforts?: (agent: ACPAgentDef, model: string) => Promise<AgentEfforts>
+  /** The effort and modes one model offers, read when a draft chooses a model not read yet. */
+  readChoices?: (agent: ACPAgentDef, model: string) => Promise<AgentModelChoices>
   /** What the agent offered last time, shown at once; left out, the agent is always asked. */
   remembered?: (agent: ACPAgentDef) => Promise<RememberedAgentOffer | null>
   remember?: (agent: ACPAgentDef, offer: AgentOffer) => Promise<void>
@@ -31,17 +31,17 @@ export interface AgentModelSource {
 export const HOST_AGENT_MODELS: AgentModelSource = {
   available: canRunHostProcesses,
   read: readAgentOffer,
-  readEfforts: (agent, model) => readAgentEfforts(agent, model),
+  readChoices: (agent, model) => readAgentChoices(agent, model),
   remembered: rememberedAgentOffer,
   remember: rememberAgentOffer
 }
 
 /**
  * The models an ACP agent offers while a draft uses it, whether it takes images, and the efforts
- * of the draft's model. What the agent offered last time shows at once; the agent is started to
- * ask only when nothing recent is remembered, on a retry, or for a model whose efforts were never
- * read. Reading fails quietly: the draft keeps the model and effort it names, and the person can
- * retry or type a model ID. A typed model's efforts are not read, so it keeps the agent's effort.
+ * and modes of the draft's model. What the agent offered last time shows at once; the agent is
+ * started to ask only when nothing recent is remembered, on a retry, or for a model never read.
+ * Reading fails quietly: the draft keeps the model, effort, and modes it names, and the person can
+ * retry or type a model ID. A typed model's choices are not read, so it keeps the agent's own.
  */
 export function useAgentModelSelection(
   draft: AIModelProfileDraft,
@@ -53,17 +53,17 @@ export function useAgentModelSelection(
   /** Null until the agent said, and while it is read again. */
   const imageInput = computed(() => offer.value?.imageInput ?? null)
   const state = ref<AgentModelSelectionState>('idle')
-  /** The model whose efforts the draft chooses from; null for a typed model ID. */
-  const effortModel = computed(() => (draft.customModelID.trim() ? null : draft.modelID))
-  /** The efforts of the draft's model; null until read, or for a typed model ID. */
-  const efforts = computed<AgentEfforts | null>(() => {
-    const model = effortModel.value
-    return model === null ? null : (offer.value?.efforts[model] ?? null)
+  /** The model whose effort and modes the draft chooses from; null for a typed model ID. */
+  const choicesModel = computed(() => (draft.customModelID.trim() ? null : draft.modelID))
+  /** The effort and modes of the draft's model; null until read, or for a typed model ID. */
+  const choices = computed<AgentModelChoices | null>(() => {
+    const model = choicesModel.value
+    return model === null ? null : (offer.value?.choices[model] ?? null)
   })
-  const effortState = ref<AgentModelSelectionState>('idle')
+  const choicesState = ref<AgentModelSelectionState>('idle')
   // An answer belongs to the read that asked for it, so a later change or close drops it.
   let reading = 0
-  let readingEfforts = 0
+  let readingChoices = 0
 
   function show(next: AgentOffer): void {
     offer.value = next
@@ -101,42 +101,42 @@ export function useAgentModelSelection(
     }
   }
 
-  /** Reads the efforts of the draft's model once the agent's offer shows it has not read them. */
-  async function readEfforts(): Promise<void> {
+  /** Reads the choices of the draft's model once the agent's offer shows it has not read them. */
+  async function readChoices(): Promise<void> {
     const current = agent.value
-    const model = effortModel.value
+    const model = choicesModel.value
     const shown = offer.value
-    const request = ++readingEfforts
-    if (!current || !shown || model === null || model in shown.efforts || !source.readEfforts) {
-      effortState.value = shown && model !== null && model in shown.efforts ? 'ready' : 'idle'
+    const request = ++readingChoices
+    if (!current || !shown || model === null || model in shown.choices || !source.readChoices) {
+      choicesState.value = shown && model !== null && model in shown.choices ? 'ready' : 'idle'
       return
     }
-    effortState.value = 'loading'
+    choicesState.value = 'loading'
     try {
-      const read = await source.readEfforts(current, model)
-      if (request !== readingEfforts || offer.value !== shown) return
-      const next = { ...shown, efforts: { ...shown.efforts, [model]: read } }
+      const read = await source.readChoices(current, model)
+      if (request !== readingChoices || offer.value !== shown) return
+      const next = { ...shown, choices: { ...shown.choices, [model]: read } }
       offer.value = next
-      effortState.value = 'ready'
+      choicesState.value = 'ready'
       void source.remember?.(current, next)
     } catch {
-      if (request === readingEfforts) effortState.value = 'failed'
+      if (request === readingChoices) choicesState.value = 'failed'
     }
   }
 
   watch(agent, () => read(), { immediate: true })
-  watch([offer, effortModel], () => readEfforts())
+  watch([offer, choicesModel], () => readChoices())
   tryOnScopeDispose(() => {
     reading++
-    readingEfforts++
+    readingChoices++
   })
 
   return {
     models,
     imageInput,
     state,
-    efforts,
-    effortState,
+    choices,
+    choicesState,
     retry: () => read(true)
   }
 }

@@ -43,6 +43,7 @@ export {
   createAuthenticationEmailService,
   createAccountAuthenticationService,
   createCloudAuthenticationRuntime,
+  enrollmentEmailOptions,
   createBetterAuthAdapter,
   createCloudIdentityResolver,
   createCloudSessionResolver,
@@ -183,6 +184,16 @@ export {
   LIMITED_HISTORY_DAYS,
   type DocumentVersionService
 } from './documents/versions'
+export {
+  COMMENT_EMAIL_BUDGET,
+  CommentConflictError,
+  CommentLimitError,
+  createCommentRoutes,
+  createCommentService,
+  createSharedCommentRoutes,
+  type CommentActor,
+  type CommentService
+} from './comments'
 export {
   createInvitationOutbox,
   createTransactionalEmailService,

@@ -1,4 +1,5 @@
 import type { Component } from 'vue'
+import IconBell from '~icons/lucide/bell'
 import IconCreditCard from '~icons/lucide/credit-card'
 import IconFileText from '~icons/lucide/file-text'
 import IconFlag from '~icons/lucide/flag'
@@ -16,6 +17,7 @@ import IconUsers from '~icons/lucide/users'
 export const PORTAL_SECTION_ICONS = {
   profile: IconUserRound,
   plan: IconCreditCard,
+  notifications: IconBell,
   security: IconShieldCheck,
   sessions: IconMonitorSmartphone,
   tokens: IconKeyRound,

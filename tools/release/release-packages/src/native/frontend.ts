@@ -3,11 +3,12 @@ import { appendFile, writeFile } from 'node:fs/promises'
 import { join, relative } from 'node:path'
 
 import { DESKTOP_RUST_NOTICES } from '#release/notices/artifacts'
-import { msiVersion } from '#release/version'
+import { isNightlyVersion, msiVersion } from '#release/version'
 import { isEmptyObject } from 'es-toolkit'
 
 import { readPackageManifest, runCommand } from '@open-pencil/package-artifacts-tools'
 
+import { NIGHTLY_BUNDLES } from './catalog.ts'
 import { releaseCommands } from './commands.ts'
 import { createReleaseContext } from './context.ts'
 import { digestFile } from './manifest.ts'
@@ -87,7 +88,8 @@ export async function prepareSharedFrontend(
   if (manifest.version !== version) throw new Error('Source version does not match release tag')
   if (archive.sha256 !== identity.frontendSha256) throw new Error('Shared frontend digest mismatch')
 
-  const wixVersion = msiVersion(version)
+  const nightly = isNightlyVersion(version)
+  const wixVersion = nightly ? undefined : msiVersion(version)
   const resources = desktopResources(paths.root)
   const config = join(paths.root, 'release-build-config.json')
   await writeFile(
@@ -95,6 +97,7 @@ export async function prepareSharedFrontend(
     JSON.stringify({
       build: { beforeBuildCommand: null },
       bundle: {
+        ...(nightly && { targets: NIGHTLY_BUNDLES }),
         ...(!isEmptyObject(resources) && { resources }),
         ...(wixVersion && { windows: { wix: { version: wixVersion } } })
       }

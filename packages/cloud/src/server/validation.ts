@@ -45,6 +45,12 @@ export const documentParams = validatedParams(v.object({ documentId: uuidParamSc
 export const documentVersionParams = validatedParams(
   v.object({ documentId: uuidParamSchema, versionId: uuidParamSchema })
 )
+export const documentThreadParams = validatedParams(
+  v.object({ documentId: uuidParamSchema, threadId: uuidParamSchema })
+)
+export const documentCommentParams = validatedParams(
+  v.object({ documentId: uuidParamSchema, threadId: uuidParamSchema, commentId: uuidParamSchema })
+)
 export const documentShareParams = validatedParams(
   v.object({ documentId: uuidParamSchema, shareId: uuidParamSchema })
 )
@@ -63,7 +69,14 @@ export const workspaceMemberParams = validatedParams(
 )
 export const accountParams = validatedParams(v.object({ userId: uuidParamSchema }))
 export const shareParams = validatedParams(v.object({ shareId: uuidParamSchema }))
-export const communityThumbnailParams = validatedParams(
+export const shareThreadParams = validatedParams(
+  v.object({ shareId: uuidParamSchema, threadId: uuidParamSchema })
+)
+export const shareCommentParams = validatedParams(
+  v.object({ shareId: uuidParamSchema, threadId: uuidParamSchema, commentId: uuidParamSchema })
+)
+/** A document and one of its revisions, as a thumbnail's address names them. */
+export const documentRevisionParams = validatedParams(
   v.object({ documentId: uuidParamSchema, revisionId: uuidParamSchema })
 )
 export const invitationParams = validatedParams(v.object({ invitationId: uuidParamSchema }))

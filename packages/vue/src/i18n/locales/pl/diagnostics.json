@@ -88,6 +88,7 @@
   "supportDescription": "Podoba ci się OpenPencil? Jest darmowy i otwartoźródłowy, a darowizna pomaga przyspieszyć jego rozwój i pokrywa koszty serwerów oraz usług, na których działa.",
   "supportNotNow": "Nie teraz",
   "supportDonate": "Wesprzyj",
+  "campaignNotNow": "Nie teraz",
   "sharingLocalData": "Użycie i Diagnostyka przechowują swoje dane na tym urządzeniu. Dane diagnostyczne opuszczają je tylko w zgłoszeniu, które sam zdecydujesz się wysłać.",
   "reportError": "Zgłoś…",
   "reportErrorTitle": "Zgłoś ten błąd",

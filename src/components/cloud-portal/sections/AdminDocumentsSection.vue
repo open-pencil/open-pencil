@@ -20,7 +20,13 @@ const list = useTemplateRef('list')
 
 async function load(request: PortalListRequest<CloudAdminDocumentFilter>) {
   const { documents, total, counts } = await portal.api.documents(request)
-  return { rows: documents.map((document) => documentRow(document, locale.value)), total, counts }
+  return {
+    rows: documents.map((document) =>
+      documentRow(document, locale.value, portal.api.documentThumbnailURL)
+    ),
+    total,
+    counts
+  }
 }
 
 const {

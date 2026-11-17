@@ -38,6 +38,9 @@ function services() {
       downloadShared: async () => {
         throw new Error('not used')
       },
+      downloadRetained: async () => {
+        throw new Error('not used')
+      },
       download: async () => {
         throw new Error('not used')
       },
@@ -73,6 +76,23 @@ function services() {
       downloadNamedShared: notUsed,
       restore: notUsed,
       duplicate: notUsed
+    },
+    comments: {
+      forMember: notUsed,
+      forShare: notUsed,
+      importThreads: notUsed,
+      markRead: notUsed,
+      people: notUsed,
+      notificationSettings: notUsed,
+      setNotificationSettings: notUsed,
+      list: notUsed,
+      get: notUsed,
+      createThread: notUsed,
+      updateThread: notUsed,
+      deleteThread: notUsed,
+      reply: notUsed,
+      updateComment: notUsed,
+      deleteComment: notUsed
     },
     community: {
       enabled: false,

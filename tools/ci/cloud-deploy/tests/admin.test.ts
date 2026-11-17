@@ -51,6 +51,12 @@ describe('runOfficialAdmin', () => {
     expect(admin?.output).toBe('inherit')
   })
 
+  test('passes a request’s name on to the admin command', async () => {
+    const { requests, execute } = recorder()
+    await runOfficialAdmin(['production', 'request', 'ada@example.com', 'Ada'], '/repo', execute)
+    expect(requests[1]?.args?.slice(3)).toEqual(['request', 'ada@example.com', 'Ada'])
+  })
+
   test('refuses unknown targets and operations before asking neonctl', async () => {
     const { requests, execute } = recorder()
     for (const args of [

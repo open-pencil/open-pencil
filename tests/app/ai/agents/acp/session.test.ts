@@ -14,7 +14,7 @@ import { ACP_AGENTS } from '@open-pencil/core/constants'
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import {
-  AgentEffortChoiceError,
+  AgentOptionChoiceError,
   AgentModelChoiceError,
   AgentSessionResumeError,
   AgentSessionRetryError,
@@ -145,7 +145,7 @@ test('a chat without a saved session starts a new one', async () => {
   expect(opened).toEqual({
     sessionId: 'new-session',
     model: 'opus',
-    effort: null,
+    choices: {},
     resumed: false
   })
   expect(fake.created).toEqual([{ cwd: '/workspace', mcpServers: [], _meta: AGENT_SESSION_META }])
@@ -155,7 +155,7 @@ test('a chat without a saved session starts a new one', async () => {
 test('a saved session resumes with the same folder and OpenPencil tools', async () => {
   const fake = connection()
   const opened = await openAgentSession(fake, resuming, resumes, { ...request, resume: 'saved' })
-  expect(opened).toEqual({ sessionId: 'saved', model: 'sonnet', effort: null, resumed: true })
+  expect(opened).toEqual({ sessionId: 'saved', model: 'sonnet', choices: {}, resumed: true })
   expect(fake.resumed).toEqual([
     { sessionId: 'saved', cwd: '/workspace', mcpServers: [], _meta: AGENT_SESSION_META }
   ])
@@ -210,15 +210,16 @@ test('the effort is set after the model, from the efforts that model offers', as
   const opened = await openAgentSession(fake, claude, resumes, {
     ...request,
     model: 'opus',
-    effort: 'max',
+    choices: { thought_level: 'max' },
     resume: null
   })
   expect(fake.configured).toEqual([
     { sessionId: 'new-session', configId: 'model', value: 'opus' },
     { sessionId: 'new-session', configId: 'effort', value: 'max' }
   ])
-  expect(opened.effort).toEqual({
+  expect(opened.choices.thought_level).toEqual({
     configId: 'effort',
+    name: 'Effort',
     current: 'max',
     values: [
       { id: 'default', name: 'DEFAULT' },
@@ -232,14 +233,18 @@ test('a session keeps the agent’s effort when the chat names none, and reports
   const fake = connection({ configOptions: [...MODEL_OPTIONS, effortOption('low', ['low'])] })
   const opened = await openAgentSession(fake, claude, resumes, { ...request, resume: null })
   expect(fake.configured).toEqual([])
-  expect(opened.effort?.current).toBe('low')
+  expect(opened.choices.thought_level?.current).toBe('low')
 })
 
 test('a model that offers no choice of effort refuses a chat that names one', async () => {
   const fake = connection({ configOptions: MODEL_OPTIONS })
   await expect(
-    openAgentSession(fake, claude, resumes, { ...request, effort: 'max', resume: null })
-  ).rejects.toBeInstanceOf(AgentEffortChoiceError)
+    openAgentSession(fake, claude, resumes, {
+      ...request,
+      choices: { thought_level: 'max' },
+      resume: null
+    })
+  ).rejects.toBeInstanceOf(AgentOptionChoiceError)
   expect(fake.configured).toEqual([])
 })
 
@@ -250,11 +255,56 @@ test('a saved session is put on the chat’s effort again', async () => {
   })
   const opened = await openAgentSession(fake, resuming, resumes, {
     ...request,
-    effort: 'high',
+    choices: { thought_level: 'high' },
     resume: 'saved'
   })
   expect(fake.configured).toEqual([{ sessionId: 'saved', configId: 'effort', value: 'high' }])
-  expect(opened.effort?.current).toBe('high')
+  expect(opened.choices.thought_level?.current).toBe('high')
+})
+
+/** A mode option of the kind Claude's adapter offers, the same on every model. */
+function modeOption(current: string): SessionConfigOption {
+  return {
+    id: 'mode',
+    name: 'Mode',
+    category: 'mode',
+    type: 'select',
+    currentValue: current,
+    options: ['default', 'plan'].map((value) => ({ value, name: value }))
+  }
+}
+
+test('a session is put on the chat’s mode after its model, and reports both', async () => {
+  const fake = connection({
+    configOptions: [...MODEL_OPTIONS, modeOption('default')],
+    afterChoice: ({ configId, value }) => [
+      modelOption(configId === 'model' ? String(value) : 'opus'),
+      modeOption(configId === 'mode' ? String(value) : 'default')
+    ]
+  })
+  const opened = await openAgentSession(fake, claude, resumes, {
+    ...request,
+    model: 'opus',
+    choices: { mode: 'plan' },
+    resume: null
+  })
+  expect(fake.configured.map(({ configId, value }) => `${configId} ${String(value)}`)).toEqual([
+    'model opus',
+    'mode plan'
+  ])
+  expect(opened.choices.mode?.current).toBe('plan')
+})
+
+test('an agent that offers no modes refuses a chat that names one', async () => {
+  const fake = connection({ configOptions: MODEL_OPTIONS })
+  const opening = openAgentSession(fake, claude, resumes, {
+    ...request,
+    choices: { mode: 'plan' },
+    resume: null
+  })
+  expect(opening).rejects.toThrow(`${claude.name} does not let OpenPencil choose its mode.`)
+  await opening.catch(() => undefined)
+  expect(fake.configured).toEqual([])
 })
 
 test('a saved session never silently becomes a new one', async () => {

@@ -1,4 +1,5 @@
 import type { SceneGraph, SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
+import type { IconOptions } from '@open-pencil/scene-graph/icons'
 import type { Color, Rect, Size } from '@open-pencil/scene-graph/primitives'
 
 import type { TreeNode } from './tree'
@@ -23,11 +24,18 @@ export interface ArtworkPlacement {
  * vector paths; the renderer only passes it from `icon`/`svg` to `createArtwork`.
  */
 export interface DesignJSXServices<Artwork> {
-  /** A named icon such as `lucide:heart` at `size`, or null when it does not exist. */
-  icon(name: string, size: number): Promise<Artwork | null>
+  /**
+   * A named icon such as `lucide:heart` at `size`, drawn with `options` where its set takes them,
+   * or null when it does not exist.
+   */
+  icon(name: string, size: number, options?: IconOptions): Promise<Artwork | null>
   /** Inline SVG mapped into `box`, the layer's own size, or null when it has no supported shapes. */
   svg(source: SVGSource, box: Size): Artwork | null
-  /** Vector nodes for the artwork, created under the placement's parent. */
+  /**
+   * Vector nodes for the artwork, created under the placement's parent. A path whose paint takes
+   * `placement.color` records it as iconTint plugin data (`withIconTint`), so a color drawn from a
+   * variable binds to that variable; paints without it keep their own colors.
+   */
   createArtwork(graph: SceneGraph, artwork: Artwork, placement: ArtworkPlacement): SceneNode
   /**
    * Prepare the fonts the rendered roots' text uses, before they are laid out, so layout measures

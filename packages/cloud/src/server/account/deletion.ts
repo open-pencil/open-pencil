@@ -256,10 +256,24 @@ export function createAccountDeletionService(database: Kysely<CloudDatabase>) {
           'termsAcceptance',
           'userPicture',
           'signIn',
-          'mfaAssurance'
+          'mfaAssurance',
+          'notificationSetting',
+          'commentRead',
+          'commentMention'
         ] as const) {
           await transaction.deleteFrom(table).where('userId', '=', user.id).execute()
         }
+        // Comments the account wrote stay, nameless, in the threads others keep; what it was
+        // emailed about them goes.
+        await transaction
+          .deleteFrom('commentEmail')
+          .where((expression) =>
+            expression.or([
+              expression('senderId', '=', user.id),
+              expression('recipientId', '=', user.id)
+            ])
+          )
+          .execute()
         // Personal access tokens have no key to cascade from, since Cloud builds their table.
         await transaction.deleteFrom('apikey').where('referenceId', '=', user.id).execute()
         await transaction

@@ -150,28 +150,34 @@ describe('AI model profiles and role assignments', () => {
     expect(modelSettingsSnapshot().connections).toHaveLength(2)
   })
 
-  test('keeps an agent’s effort by its own value, and none for other providers', () => {
+  test('keeps an agent’s effort and modes by its own values, and none for other providers', () => {
     const agent = createModelProfileDraft()
     Object.assign(agent, {
       name: 'Codex Ultra',
       providerID: 'acp:codex',
       modelID: 'gpt-5.6-sol',
-      agentEffort: 'ultra'
+      agentChoices: { thought_level: 'ultra', collaboration_mode: 'plan', mode: '' }
     })
     const saved = saveModelProfileDraft(agent)
-    expect(saved.agentEffort).toBe('ultra')
-    expect(createModelProfileDraft(saved.id).agentEffort).toBe('ultra')
+    const kept = { thought_level: 'ultra', collaboration_mode: 'plan' }
+    expect(saved.agentChoices).toEqual(kept)
+    expect(createModelProfileDraft(saved.id).agentChoices).toEqual(kept)
     const reloaded = parseAIModelSettings(modelSettingsSnapshot())
-    expect(reloaded?.models.find((model) => model.id === saved.id)?.agentEffort).toBe('ultra')
+    const reread = reloaded?.models.find((model) => model.id === saved.id)?.agentChoices
+    expect([reread?.thought_level, reread?.mode, reread?.collaboration_mode]).toEqual([
+      'ultra',
+      undefined,
+      'plan'
+    ])
 
     const api = createModelProfileDraft()
     Object.assign(api, {
       name: 'API',
       providerID: 'anthropic',
       modelID: 'claude-opus-4-6-20260301',
-      agentEffort: 'ultra'
+      agentChoices: { thought_level: 'ultra' }
     })
-    expect(saveModelProfileDraft(api).agentEffort).toBeUndefined()
+    expect(saveModelProfileDraft(api).agentChoices).toBeUndefined()
   })
 
   test('stores multiple Harness provider profiles with independent model IDs', () => {

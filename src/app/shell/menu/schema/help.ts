@@ -1,6 +1,12 @@
-import type { AppMenuGroupSchema } from './types'
+import type { AppMenuActionItem, AppMenuGroupSchema } from './types'
 
-/** The Help menu: documentation, the tour, reports and diagnostics, and the community. */
+/** Check for Updates…, where each platform expects it: the macOS application menu, otherwise Help. */
+export const CHECK_UPDATES_MENU_ITEM = {
+  id: 'check-updates',
+  label: 'Check for Updates…'
+} satisfies AppMenuActionItem
+
+/** The Help menu: documentation, the tour, updates outside macOS, reports and diagnostics, and the community. */
 export const HELP_MENU: AppMenuGroupSchema = {
   // Last, where every platform expects it; macOS adds its menu search here (`desktop/src/menu`).
   label: 'Help',
@@ -24,6 +30,12 @@ export const HELP_MENU: AppMenuGroupSchema = {
       palette: { keywords: ['release notes', 'changelog', 'version', 'updates'] }
     },
     { id: 'open-tour', label: 'Open the Tour', handler: 'shell' },
+    {
+      ...CHECK_UPDATES_MENU_ITEM,
+      feature: 'self-update',
+      handler: 'shell',
+      palette: { keywords: ['update', 'upgrade', 'version', 'nightly'] }
+    },
     { type: 'separator' },
     {
       id: 'report-problem',
