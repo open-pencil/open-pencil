@@ -1,1 +1,1 @@
-- Links, comment mentions, and other accent-colored text meet WCAG AA contrast in the dark theme (#2166).
+- Links, comment mentions, and other accent-colored text meet WCAG AA contrast in both themes, including with a light custom accent (#2166).
