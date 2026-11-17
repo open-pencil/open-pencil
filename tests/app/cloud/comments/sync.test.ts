@@ -245,6 +245,27 @@ describe('Cloud comments in a tab', () => {
     expect(notices).toEqual([`commentReply:${mine.id}`])
   })
 
+  test('tell the person about a mention the answer to their own reply brings', async () => {
+    const server = commentServer()
+    const notices: string[] = []
+    const { store, follow, pageId } = open(server, {
+      notify: (threadId, notice) => notices.push(`${notice.event}:${threadId}`)
+    })
+    const follower = follow()
+    await follower.idle()
+    const mine = addThread(store, pageId, 'Tighten it')
+    await follower.idle()
+    // Ben names Ana while her reply is on its way, so the room's message comes after its answer.
+    server.othersReply(mine.id, '[@Ana](openpencil://person/ana) look', ['ana'])
+    const [current] = readComments(store.graph)
+    if (!current) throw new Error('The thread is missing')
+    const reply = createCommentReply({ name: 'Ana' }, 'And the body', NOW)
+    writeComments(store.graph, [{ ...current, replies: [reply] }])
+    await follower.idle()
+    await follower.changed(mine.id)
+    expect(notices).toEqual([`commentMention:${mine.id}`])
+  })
+
   test('tell nothing about a thread fetched after the tab stopped following', async () => {
     const server = commentServer()
     const notices: string[] = []

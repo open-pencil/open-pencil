@@ -260,6 +260,17 @@ export function followCloudComments(
     else server.delete(threadId)
   }
 
+  /**
+   * Keeps the server's answer about one thread, first telling the person about anyone else's new
+   * comment in it. Compared with the thread as last heard, so a comment notifies once, whether a
+   * fetch or the answer to the tab's own write brought it.
+   */
+  function heard(thread: CloudCommentThread | null, threadId: string) {
+    const notice = commentNotice(server.get(threadId), thread, accountId)
+    remember(thread, threadId)
+    if (notice && following()) target.notify?.(threadId, notice)
+  }
+
   /** Sends one change, and answers the thread as the server holds it after; null once gone. */
   async function request(change: CloudCommentChange): Promise<CloudCommentThread | null> {
     const cloud = await api()
@@ -303,7 +314,7 @@ export function followCloudComments(
     const threadId = changedThreadId(change)
     const before = shown.get(threadId)
     const after = await request(change)
-    remember(after, threadId)
+    heard(after, threadId)
     const next = acknowledged(before, change, after)
     if (next) shown.set(threadId, next)
     else shown.delete(threadId)
@@ -442,12 +453,9 @@ export function followCloudComments(
       if (!loaded || stopped) return
       try {
         const after = await (await api()).get(threadId)
-        if (!following()) return
-        // Read once the fetch is back: of two fetches for one thread, the later compares with the
-        // earlier's answer, so one new comment notifies once.
-        const notice = commentNotice(server.get(threadId), after, accountId)
-        remember(after, threadId)
-        if (notice) target.notify?.(threadId, notice)
+        // Compared once the fetch is back: of two fetches for one thread, the later compares
+        // with the earlier's answer.
+        heard(after, threadId)
       } catch (error) {
         if (!(error instanceof CloudAPIError && error.status === 404)) throw error
         server.delete(threadId)
