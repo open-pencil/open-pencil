@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { IS_TAURI } from '@open-pencil/core/constants'
-import { useI18n } from '@open-pencil/vue/i18n'
+import { useCommentMessages, useI18n } from '@open-pencil/vue/i18n'
 
 import { DEFAULT_APP_PREFERENCES } from '@/app/settings/preferences/store'
 import {
@@ -16,9 +16,12 @@ import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 const { ai, settings } = useI18n()
+const comments = useCommentMessages()
 const needsInput = notificationPreference('agentNeedsInput')
 const finished = notificationPreference('agentFinished')
 const failed = notificationPreference('agentFailed')
+const mention = notificationPreference('commentMention')
+const reply = notificationPreference('commentReply')
 const defaults = DEFAULT_APP_PREFERENCES.notifications
 </script>
 
@@ -63,6 +66,21 @@ const defaults = DEFAULT_APP_PREFERENCES.notifications
         @reset="failed = defaults.agentFailed"
       >
         <AppSwitch v-model="failed" :label="ai.notifyFailed" />
+      </SettingsRow>
+      <SettingsRow
+        :label="comments.notifyMention"
+        :modified="mention !== defaults.commentMention"
+        @reset="mention = defaults.commentMention"
+      >
+        <AppSwitch v-model="mention" :label="comments.notifyMention" />
+      </SettingsRow>
+      <SettingsRow
+        :label="comments.notifyReply"
+        :description="comments.notifyReplyHint"
+        :modified="reply !== defaults.commentReply"
+        @reset="reply = defaults.commentReply"
+      >
+        <AppSwitch v-model="reply" :label="comments.notifyReply" />
       </SettingsRow>
     </SettingsGroup>
     <AppAlert

@@ -19,15 +19,20 @@ interface UpdateCheckOptions {
 
 let startupCheckStarted = false
 let updateCheckInFlight: Promise<void> | null = null
+/** Whether the check in flight shows its outcome: one the person asked for joined it. */
+let reportInFlight = false
 
 export async function checkForAppUpdate(options: UpdateCheckOptions) {
   // Off in the browser and in packages whose store delivers updates.
   if (!canSelfUpdate()) return
+  const { silent = false, messages } = options
+  // A Check for Updates while the launch check runs shares its answer and still shows it.
+  if (!silent) reportInFlight = true
   if (updateCheckInFlight) return updateCheckInFlight
 
-  const { silent = false, messages } = options
-  updateCheckInFlight = runUpdateCheck(silent, messages).finally(() => {
+  updateCheckInFlight = runUpdateCheck(messages).finally(() => {
     updateCheckInFlight = null
+    reportInFlight = false
   })
   return updateCheckInFlight
 }
@@ -50,19 +55,19 @@ export function resetStartupUpdateCheckForTests(): void {
 
 // The main window only learns whether an update exists; the Software Update
 // window checks again for its own handle, then shows the notes and installs.
-async function runUpdateCheck(silent: boolean, messages: Ref<UpdaterMessages>) {
+async function runUpdateCheck(messages: Ref<UpdaterMessages>) {
   try {
     const update = await checkUpdateChannel(
       resolveUpdateChannel(appPreferences.value.updates.channel)
     )
     if (!update) {
-      if (!silent) toast.info(messages.value.upToDate)
+      if (reportInFlight) toast.info(messages.value.upToDate)
       return
     }
     await update.close()
     await openUpdaterWindow(messages.value.windowTitle)
   } catch (error) {
-    if (!silent) {
+    if (reportInFlight) {
       const message = error instanceof Error ? error.message : String(error)
       toast.warning(updateFailureText(messages.value, 'check', message))
     }

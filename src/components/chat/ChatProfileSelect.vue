@@ -1,60 +1,23 @@
 <script setup lang="ts">
-import { compact } from 'es-toolkit/array'
 import { computed } from 'vue'
 
-import { providerKind } from '@open-pencil/core/constants'
 import { useI18n } from '@open-pencil/vue/i18n'
 
-import {
-  aiModelSettings,
-  designModelProfiles,
-  modelConnection,
-  setModelRoleAssignment
-} from '@/app/ai/models'
-import type { AIModelProfile, AIModelProfileId } from '@/app/ai/models'
-import { profileModelName } from '@/app/ai/models/profile-model-name'
-import { modelProviderName } from '@/app/ai/models/provider-name'
-import { openSettingsDialog } from '@/app/settings/dialog'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
+import { useDesignProfiles } from './input/useDesignProfiles'
 import { chatProfileTheme } from './ui'
 
 const { ai } = useI18n()
 const ui = chatProfileTheme()
 const selectUI = { content: ui.content(), item: ui.item() }
 
-/** The profile's model and where it runs; an agent profile that names no model leaves it to the agent. */
-function profileMetadata(profile: AIModelProfile): string {
-  const providerID = modelConnection(profile.connectionId)?.providerID
-  const agent = providerID !== undefined && providerKind(providerID) !== 'api'
-  return compact([
-    profileModelName(profile) || (agent ? ai.value.agentDefaultModel : ''),
-    providerID && modelProviderName(providerID)
-  ]).join(' · ')
-}
-
-/** The profiles the Design role can take, as the shared select lists them. */
-const profiles = computed(() =>
-  designModelProfiles().map((profile) => ({
-    value: profile.id,
-    label: profile.name,
-    metadata: profileMetadata(profile),
-    takesImages: profile.capabilities.includes('vision')
-  }))
-)
+const { profiles, selectedProfileId, profileOf, manageModels: openModels } = useDesignProfiles()
 const groups = computed(() => [{ label: ai.value.modelRoleDesign, options: profiles.value }])
-function profileOf(id: AIModelProfileId) {
-  return profiles.value.find((profile) => profile.value === id)
-}
-
-const selectedProfileId = computed({
-  get: () => aiModelSettings.value.assignments.design,
-  set: (profileId: AIModelProfileId) => setModelRoleAssignment('design', profileId)
-})
 
 function manageModels(close: () => void): void {
   close()
-  openSettingsDialog('ai')
+  openModels()
 }
 </script>
 

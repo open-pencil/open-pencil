@@ -30,6 +30,7 @@
     "url": "git+https://github.com/open-pencil/open-pencil.git",
     "directory": "packages/drawio"
   },
+  "funding": "https://ko-fi.com/dannote",
   "publishConfig": {
     "access": "public",
     "provenance": true

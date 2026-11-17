@@ -27,5 +27,9 @@
   "commentDeleted": "تم حذف التعليق",
   "hideComments": "إخفاء التعليقات",
   "mentionPeople": "أشخاص للإشارة إليهم",
-  "unread": "غير مقروء"
+  "unread": "غير مقروء",
+  "notifyMention": "الإشارات في التعليقات",
+  "notifyReply": "الردود على تعليقاتك",
+  "notifyReplyHint": "يرد أحدهم في سلسلة تعليقات كتبتَ فيها.",
+  "notifyTitle": "{author} · {document}"
 }

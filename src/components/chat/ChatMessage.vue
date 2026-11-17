@@ -144,7 +144,7 @@ function groupKey(group: MessagePartGroup): string {
         <!-- A reverted reply's edits are gone; its content stays, dimmed, under its actions. Text
              dims to the muted color rather than through opacity, so it still reads at 4.5:1. -->
         <div
-          class="space-y-2 data-[reverted=true]:**:text-muted data-[reverted=true]:[&_img]:opacity-50"
+          class="@container/reply space-y-2 data-[reverted=true]:**:text-muted data-[reverted=true]:[&_img]:opacity-50"
           data-slot="chat-reply-content"
           :data-reverted="reverted"
         >
@@ -185,22 +185,14 @@ function groupKey(group: MessagePartGroup): string {
             <div
               v-else-if="isTextUIPart(group.part) && group.part.text"
               data-test-id="chat-text-bubble"
-              class="group/response @container/reply relative rounded-xl rounded-ss-md bg-hover px-3 py-2 text-xs leading-relaxed text-surface"
+              :class="ui.bubble()"
             >
               <ChatMarkdown :content="group.part.text" :mode="markdownMode" />
-              <!-- With usage shown on hover, the usage and the copy button appear in the last
-                   text's corner over the bubble's own colour, fading the line's end out under
-                   them, so they take no room at rest; otherwise the button sits there alone.
-                   The usage shows the parts that fit whole, so a narrow reply drops its last. -->
-              <div
-                v-if="showsUsage(group.index) || group.index === copyPartIndex"
-                :class="ui.corner({ usage: showsUsage(group.index) })"
-              >
-                <span
-                  v-if="usageOnHover && showsUsage(group.index)"
-                  :class="ui.parts({ usage: true })"
-                  data-slot="chat-reply-usage"
-                >
+              <!-- With usage shown on hover, the usage appears in the last text's corner over the
+                   bubble's own colour, fading the line's end out under it, so it takes no room at
+                   rest. It shows the parts that fit whole, so a narrow reply drops its last. -->
+              <div v-if="usageOnHover && showsUsage(group.index)" :class="ui.corner()">
+                <span :class="ui.parts()" data-slot="chat-reply-usage">
                   <span class="h-6" aria-hidden="true" />
                   <span
                     v-for="(part, index) in usageOnHover"
@@ -211,15 +203,17 @@ function groupKey(group: MessagePartGroup): string {
                     {{ index === 0 ? part : `· ${part}` }}
                   </span>
                 </span>
-                <AppCopyButton
-                  v-if="group.index === copyPartIndex"
-                  :class="ui.copy({ usage: showsUsage(group.index) })"
-                  icon
-                  :value="assistantText"
-                  :label="ai.copyResponse"
-                  :copied-label="ai.responseCopied"
-                />
               </div>
+              <!-- Beside the bubble's end, where a short reply leaves it room, as the edit button
+                   sits beside a request. -->
+              <AppCopyButton
+                v-if="group.index === copyPartIndex"
+                :class="ui.copy()"
+                icon
+                :value="assistantText"
+                :label="ai.copyResponse"
+                :copied-label="ai.responseCopied"
+              />
             </div>
           </template>
         </div>

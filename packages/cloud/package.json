@@ -8,6 +8,7 @@
     "url": "git+https://github.com/open-pencil/open-pencil.git",
     "directory": "packages/cloud"
   },
+  "funding": "https://ko-fi.com/dannote",
   "bin": {
     "openpencil-services": "./dist/bin/services.mjs",
     "openpencil-cloud": "./dist/bin/server.mjs"

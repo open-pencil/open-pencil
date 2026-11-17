@@ -171,6 +171,7 @@
   "modelSignedOut": "غير مسجّل الدخول",
   "modelToolsUnreachable": "تعذّر الوصول إلى الأدوات",
   "thinkingLevel": "مستوى التفكير",
+  "agentAccess": "الوصول",
   "thinkingLevelDescription": "مقدار استدلال النموذج قبل الإجابة. يمكنك تغييره لكل رسالة في المحادثة.",
   "thinkingDefault": "افتراضي",
   "thinkingOff": "إيقاف",

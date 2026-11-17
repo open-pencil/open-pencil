@@ -27,5 +27,9 @@
   "commentDeleted": "Commentaire supprimé",
   "hideComments": "Masquer les commentaires",
   "mentionPeople": "Personnes à mentionner",
-  "unread": "Non lu"
+  "unread": "Non lu",
+  "notifyMention": "Mentions dans les commentaires",
+  "notifyReply": "Réponses à vos commentaires",
+  "notifyReplyHint": "Quelqu’un répond dans un fil de commentaires où vous avez écrit.",
+  "notifyTitle": "{author} · {document}"
 }

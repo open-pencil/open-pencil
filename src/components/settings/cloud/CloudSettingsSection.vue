@@ -19,6 +19,7 @@ import { cloudConnection, forgetCloudConnection } from '@/app/cloud/sessions/con
 import { signOutOfCloud } from '@/app/cloud/sessions/sign-out'
 import { clearCloudSessionToken } from '@/app/cloud/sessions/token'
 import { openExternalLink, toast } from '@/app/shell/ui'
+import CampaignNoteHost from '@/components/campaigns/CampaignNoteHost.vue'
 import AppConfirmationDialog from '@/components/ui/dialog/AppConfirmationDialog.vue'
 import { useHeldContent } from '@/components/ui/overlay/held'
 
@@ -119,6 +120,7 @@ async function remove() {
       @sign-out="signOut"
       @remove="askToRemove"
     >
+      <template #campaign><CampaignNoteHost placement="settings-cloud" /></template>
       <template #hosted><CloudWaitlist /></template>
     </CloudSettingsPanel>
     <AppConfirmationDialog

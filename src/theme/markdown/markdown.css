@@ -22,7 +22,7 @@
   }
 
   :where(a) {
-    @apply cursor-pointer text-accent underline [overflow-wrap:anywhere];
+    @apply cursor-pointer text-primary underline [overflow-wrap:anywhere];
   }
 
   :where(ul) {
@@ -227,4 +227,14 @@
 
 .markdown-content[data-markdown-density='comfortable'] [data-markdown='table-controls'] {
   @apply top-1;
+}
+
+/* The first and last blocks keep no outer margin, so a message's own padding is all around its
+   text: one paragraph sits in its bubble as a request's text does. */
+.markdown-content[data-markdown-density] > :first-child {
+  @apply mt-0;
+}
+
+.markdown-content[data-markdown-density] > :last-child {
+  @apply mb-0;
 }
