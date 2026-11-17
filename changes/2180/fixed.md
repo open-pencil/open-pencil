@@ -1,0 +1,1 @@
+- Cloud console pages no longer skip a heading level for screen readers, and green "Sent" and other success badges read at WCAG AA contrast in the light theme (#2180).
