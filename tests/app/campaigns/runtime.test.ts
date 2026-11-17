@@ -6,6 +6,7 @@ import { toRaw } from 'vue'
 import { campaignSchema, type Campaign } from '@open-pencil/feedback/contract'
 
 import {
+  campaignNote,
   campaigns,
   campaignsFor,
   dismissCampaign,
@@ -131,5 +132,28 @@ describe('campaigns in the app', () => {
     recordCampaignAction('other', shown)
     await promptAt(shown + 30 * DAY)
     expect(() => structuredClone(toRaw(appPreferences.value))).not.toThrow()
+  })
+
+  test("a note shows its placement's served campaign, beside a prompt, until dismissed", async () => {
+    startCampaignClock(FIRST_RUN)
+    const now = FIRST_RUN + 10 * DAY
+    const note = served({ id: 'cloud-models', placement: 'settings-models' })
+    const available = [...OWN, note]
+    await offerCampaignPrompt(now, available)
+    expect(promptCampaign.value?.id).toBe('donation')
+
+    expect((await campaignNote('settings-models', now, available))?.id).toBe('cloud-models')
+    expect(await campaignNote('settings-cloud', now, available)).toBeNull()
+    dismissCampaign(note, 'settings-models', now)
+    expect(await campaignNote('settings-models', now + DAY, available)).toBeNull()
+    expect((await campaignNote('settings-models', now + 31 * DAY, available))?.id).toBe(
+      'cloud-models'
+    )
+  })
+
+  test("a note never shows the app's own campaigns", async () => {
+    startCampaignClock(FIRST_RUN)
+    const own = OWN.map((campaign) => ({ ...campaign, placement: 'share' }))
+    expect(await campaignNote('share', FIRST_RUN + 10 * DAY, own)).toBeNull()
   })
 })

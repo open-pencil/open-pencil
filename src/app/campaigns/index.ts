@@ -136,6 +136,29 @@ export async function offerCampaignPrompt(
   trackUsage({ name: 'campaign_shown', campaign: due.id, placement: 'prompt' })
 }
 
+/** The notes shown this launch, by campaign and placement, so reopening a tab counts once. */
+const notesShown = new Set<string>()
+
+/**
+ * The served campaign a note in `placement` shows now, if any, counted the first time this launch.
+ * Notes show only served campaigns: the app's own speak through the corner prompt.
+ */
+export async function campaignNote(
+  placement: Exclude<CampaignPlacement, 'prompt'>,
+  now = Date.now(),
+  available: readonly AppCampaign[] = campaigns.value
+): Promise<Campaign | null> {
+  const served = available.filter((campaign): campaign is Campaign => !isBuiltInCampaign(campaign))
+  const due = dueCampaign(served, placement, await campaignContext(now))
+  if (!due) return null
+  const key = `${due.id}\n${placement}`
+  if (!notesShown.has(key)) {
+    notesShown.add(key)
+    trackUsage({ name: 'campaign_shown', campaign: due.id, placement })
+  }
+  return due
+}
+
 /** Not now, or closed: the campaign comes back as its timing says. */
 export function dismissCampaign(
   campaign: AppCampaign,
