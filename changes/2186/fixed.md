@@ -1,0 +1,1 @@
+- A dashed stroke set in the properties panel keeps its dash pattern when a document is saved and reopened.
