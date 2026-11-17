@@ -7,6 +7,7 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { useUndoBatch } from '#vue/controls/undo-batch/use'
 import { useEditor } from '#vue/editor/context'
+import { useEditorEvent } from '#vue/editor/events/use'
 import { useSelectionState } from '#vue/editor/selection-state/use'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
 
@@ -100,23 +101,28 @@ export function useIcon() {
 
   /**
    * The option values asked for and not yet drawn, by icon and key, so a value is compared with
-   * the last one asked for rather than the one an icon still loading was drawn with.
+   * the last one asked for rather than the one an icon still loading was drawn with. Each request
+   * owns its entry by a token, so an earlier request of the same value finishing leaves it.
    */
-  const requested = new Map<string, IconOptions[string]>()
+  const requested = new Map<string, { value: IconOptions[string]; token: symbol }>()
+  // Another document's icons may share these IDs.
+  useEditorEvent('graph:replaced', () => requested.clear())
 
   /** Draws the icon afresh with the option `key` set to `value`, as one undo step. */
   async function setOption(key: string, value: IconOptions[string]) {
     const node = selectedNode.value
     if (!node || !name.value) return
     const id = `${node.id}/${key}`
-    const current = requested.has(id) ? requested.get(id) : options.value[key]
+    const pending = requested.get(id)
+    const current = pending ? pending.value : options.value[key]
     if (current === value) return
-    requested.set(id, value)
+    const token = Symbol(id)
+    requested.set(id, { value, token })
     batch.flush()
     try {
       await editor.setIconOptions(node.id, { [key]: value })
     } finally {
-      if (requested.get(id) === value) requested.delete(id)
+      if (requested.get(id)?.token === token) requested.delete(id)
     }
   }
 

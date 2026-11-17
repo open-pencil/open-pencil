@@ -21,14 +21,22 @@ afterEach(() => {
 })
 
 /**
- * The Icon section's controls for a selected icon from a set that records its weight, whose bold
- * drawing waits until `release` is called.
+ * The Icon section's controls for a selected icon from a set that records its weight. Each bold
+ * drawing waits until `release` lets the oldest waiting one through.
  */
 async function mountIcon() {
-  let release: () => void = () => undefined
-  const held = new Promise<void>((resolve) => {
-    release = resolve
-  })
+  const waiting: (() => void)[] = []
+  /** Lets the oldest bold drawing through, once one has begun loading. */
+  async function release() {
+    // Redraws load one at a time, so the next waits for the redraws queued before it.
+    for (let turn = 0; waiting.length === 0 && turn < 50; turn++)
+      await new Promise((resolve) => {
+        setTimeout(resolve, 0)
+      })
+    const next = waiting.shift()
+    if (!next) throw new Error('No bold drawing is loading')
+    next()
+  }
   const icons: IconProvider = {
     search: async () => ({ icons: [], total: 0, collections: {} }),
     collections: async () => [],
@@ -36,7 +44,10 @@ async function mountIcon() {
     previews: async () => new Map(),
     async icons(names, size, options) {
       const weight = options?.weight ?? 'regular'
-      if (weight === 'bold') await held
+      if (weight === 'bold')
+        await new Promise<void>((resolve) => {
+          waiting.push(resolve)
+        })
       return new Map(
         names.map((name): [string, IconData] => [
           name,
@@ -79,15 +90,30 @@ async function mountIcon() {
   app.mount(hostNode())
   unmount = () => app.unmount()
   if (!control) throw new Error('Expected the Icon controls')
-  return { control, id, release: () => release() }
+  return { control, id, release }
 }
 
 describe('Icon section controls', () => {
+  test('a value set back while a later request of the first value still draws is set back', async () => {
+    const { control, id, release } = await mountIcon()
+    const first = control.setOption('weight', 'bold')
+    const back = control.setOption('weight', 'regular')
+    const again = control.setOption('weight', 'bold')
+    await release()
+    await Promise.all([first, back])
+    // `again` is still drawing bold, so regular differs from the last value asked for.
+    const last = control.setOption('weight', 'regular')
+    await release()
+    await Promise.all([again, last])
+    const node = editor.graph.getNode(id)
+    expect(node && readIcon(node)?.options).toEqual({ weight: 'regular' })
+  })
+
   test('an option set back while the icon is still drawing the last value is set back', async () => {
     const { control, id, release } = await mountIcon()
     const bold = control.setOption('weight', 'bold')
     const back = control.setOption('weight', 'regular')
-    release()
+    await release()
     await Promise.all([bold, back])
     const node = editor.graph.getNode(id)
     expect(node && readIcon(node)?.options).toEqual({ weight: 'regular' })

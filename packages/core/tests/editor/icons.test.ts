@@ -166,31 +166,42 @@ describe('icon commands across a document change', () => {
   })
 })
 
-/** An editor whose icons draw at once, except those `holds` names, which wait for `release`. */
+/**
+ * An editor whose icons draw at once, except those `holds` names, which wait for `release`;
+ * `started` settles once such an icon has begun loading.
+ */
 function setupHeld(holds: (names: readonly string[], options?: IconOptions) => boolean) {
   let release: () => void = () => undefined
+  let begin: () => void = () => undefined
   const held = new Promise<void>((resolve) => {
     release = resolve
+  })
+  const started = new Promise<void>((resolve) => {
+    begin = resolve
   })
   const editor = createEditor({
     getViewportSize: () => ({ width: 1000, height: 800 }),
     icons: {
       ...provider,
       async icons(names, size, options) {
-        if (holds(names, options)) await held
+        if (holds(names, options)) {
+          begin()
+          await held
+        }
         return provider.icons(names, size, options)
       }
     }
   })
-  return { editor, release: () => release() }
+  return { editor, started, release: () => release() }
 }
 
 describe('icon redraws that finish late', () => {
   test('an option change and a swap made after it both apply, in order', async () => {
-    const { editor, release } = setupHeld((_, options) => options?.weight === 'bold')
+    const { editor, started, release } = setupHeld((_, options) => options?.weight === 'bold')
     const id = await insert(editor, 'test:square')
     const changing = editor.setIconOptions(id, { weight: 'bold' })
     const swapping = editor.swapIconGlyph(id, 'test:lines')
+    await started
     release()
     await Promise.all([changing, swapping])
     expect(readIcon(getNodeOrThrow(editor.graph, id))).toMatchObject({
@@ -200,10 +211,11 @@ describe('icon redraws that finish late', () => {
   })
 
   test('a swap and an option change made after it both apply, in order', async () => {
-    const { editor, release } = setupHeld((names) => names.includes('test:lines'))
+    const { editor, started, release } = setupHeld((names) => names.includes('test:lines'))
     const id = await insert(editor, 'test:square')
     const swapping = editor.swapIconGlyph(id, 'test:lines')
     const changing = editor.setIconOptions(id, { weight: 'bold' })
+    await started
     release()
     await Promise.all([swapping, changing])
     expect(readIcon(getNodeOrThrow(editor.graph, id))).toMatchObject({
@@ -213,9 +225,11 @@ describe('icon redraws that finish late', () => {
   })
 
   test('a redraw gives way to path edits made while its icon loads', async () => {
-    const { editor, release } = setupHeld((_, options) => options?.weight === 'bold')
+    const { editor, started, release } = setupHeld((_, options) => options?.weight === 'bold')
     const id = await insert(editor, 'test:square')
     const changing = editor.setIconOptions(id, { weight: 'bold' })
+    // The edit lands while the redraw's icon loads, past the check made before loading.
+    await started
     editor.graph.createNode('RECTANGLE', id, { width: 4, height: 4 })
     release()
     await changing
@@ -224,11 +238,12 @@ describe('icon redraws that finish late', () => {
   })
 
   test('a redraw queued when the document is replaced is not applied to the new one', async () => {
-    const { editor, release } = setupHeld((_, options) => options?.weight === 'bold')
+    const { editor, started, release } = setupHeld((_, options) => options?.weight === 'bold')
     const id = await insert(editor, 'test:square')
     const frame = getNodeOrThrow(editor.graph, id)
     const first = editor.setIconOptions(id, { weight: 'bold' })
     const queued = editor.setIconOptions(id, { scale: 'large' })
+    await started
     // A copy of the same file, whose icon keeps its ID.
     const replacement = new SceneGraph()
     replacement.createNodeWithId(id, 'FRAME', replacement.getPages()[0].id, {
