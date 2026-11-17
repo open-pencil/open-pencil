@@ -41,6 +41,8 @@ const vectorProvider = computed(() =>
     </template>
     <SettingsPage>
       <div class="flex flex-col gap-6">
+        <!-- A campaign's note, such as web search coming with Cloud. -->
+        <slot name="campaign" />
         <SettingsSection>
           <template #title>{{ media.stockPhotos }}</template>
           <AppActionRow

@@ -74,6 +74,8 @@ const title = (server: CloudServerEntry) =>
         </AppButton>
       </template>
 
+      <!-- A campaign's note, such as what OpenPencil Cloud offers, for an install signed out. -->
+      <slot name="campaign" />
       <div v-if="!servers.length" :class="ui.choices()">
         <slot v-if="!listed" name="hosted" />
         <AppActionRow v-else @click="emit('connect', 'official')">
