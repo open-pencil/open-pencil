@@ -63,6 +63,8 @@ export async function enqueueEnrollmentReview(
     reviewedAt: Date
     /** An approval that sends the letter instead of the plain approval. */
     invite?: boolean
+    /** The person joined openpencil.dev's waitlist rather than asking here; the letter says so. */
+    waitlist?: boolean
   }
 ): Promise<void> {
   if (!options.email) return
@@ -80,7 +82,8 @@ export async function enqueueEnrollmentReview(
         actionURL:
           input.status === 'approved'
             ? options.publicURL
-            : new URL('/auth/sign-in', options.publicURL).href
+            : new URL('/auth/sign-in', options.publicURL).href,
+        ...(kind === 'enrollment-invited' && input.waitlist && { waitlist: true as const })
       }
     },
     transaction

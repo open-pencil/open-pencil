@@ -810,3 +810,9 @@ ja:settings.importingDescription
 zh-cn:settings.importingDescription
 ja:cloudPortal.pendingHiddenEmail
 zh-cn:cloudPortal.pendingHiddenEmail
+ja:email.invitationWaitlistSubject
+ja:email.invitationWaitlistPreview
+ja:email.invitationWaitlistThanks
+zh-cn:email.invitationWaitlistSubject
+zh-cn:email.invitationWaitlistPreview
+zh-cn:email.invitationWaitlistThanks

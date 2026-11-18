@@ -22,7 +22,13 @@ import {
 export type EnrollmentStatus = 'pending' | 'approved' | 'rejected' | 'revoked'
 export type EnrollmentMode = 'open' | 'approval' | 'closed'
 
-export type EnrollmentRequestInput = { email: string; name?: string; reason?: string }
+export type EnrollmentRequestInput = {
+  email: string
+  name?: string
+  reason?: string
+  /** Someone an administrator recorded from openpencil.dev's waitlist, who asked nowhere here. */
+  source?: 'waitlist'
+}
 export type EnrollmentReviewInput = {
   note?: string
   /** An approval that sends the founder's letter instead of the plain approval. */
@@ -130,7 +136,8 @@ export function createEnrollmentService(
           reviewedAt: null,
           reviewedBy: null,
           reviewNote: null,
-          requestRevision: revision
+          requestRevision: revision,
+          source: input.source ?? null
         }
         let row: EnrollmentRow
         if (existing) {
@@ -267,7 +274,8 @@ export function createEnrollmentService(
           name: row.name ?? 'there',
           status,
           reviewedAt: now,
-          invite: input.invite
+          invite: input.invite,
+          waitlist: row.source === 'waitlist'
         })
         return enrollmentRecord(row)
       })

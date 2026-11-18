@@ -61,7 +61,7 @@ export async function runOfficialAdmin(
   const [target = '', operation = '', email, ...rest] = args
   if (!isTarget(target) || !(OPERATIONS as readonly string[]).includes(operation) || !email) {
     throw new Error(
-      `Usage: cloud:admin <${CLOUD_TARGETS.join('|')}> <${OPERATIONS.join('|')}> <email> [name]`
+      `Usage: cloud:admin <${CLOUD_TARGETS.join('|')}> <${OPERATIONS.join('|')}> <email> [name] [--waitlist]`
     )
   }
   let connectionString: string

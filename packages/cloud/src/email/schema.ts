@@ -49,7 +49,9 @@ const workspaceInvitationEmailPayloadSchema = v.object({
 const enrollmentEmailPayloadSchema = v.object({
   /** Null when the request named no one, so the email greets no one by name. */
   name: v.nullable(v.string()),
-  actionURL: v.string()
+  actionURL: v.string(),
+  /** An invitation letter to someone from openpencil.dev's waitlist, who asked nowhere else. */
+  waitlist: v.optional(v.literal(true))
 })
 
 const adminEnrollmentNotificationPayloadSchema = v.object({
