@@ -101,14 +101,20 @@ describe('applyOnboardingPlan', () => {
         modelID: defaultModel('openrouter'),
         capabilities: ['tools', 'vision']
       }),
-      expect.objectContaining({ id: 'model-id-3', connectionId: 'connection-id-1' })
+      // The models the provider recommends for reviews and for quick work.
+      expect.objectContaining({
+        id: 'model-id-3',
+        connectionId: 'connection-id-1',
+        modelID: 'anthropic/claude-opus-5.5'
+      }),
+      expect.objectContaining({ id: 'model-id-4', connectionId: 'connection-id-1' })
     ])
-    expect(isFastToolModel('openrouter', settings.models[1]?.modelID ?? '')).toBe(true)
+    expect(isFastToolModel('openrouter', settings.models[2]?.modelID ?? '')).toBe(true)
     expect(settings.connections.map((connection) => connection.id)).toEqual(['connection-id-1'])
     expect(settings.assignments).toEqual({
       design: 'model-id-2',
-      review: 'design',
-      fast: 'model-id-3',
+      review: 'model-id-3',
+      fast: 'model-id-4',
       vision: 'design'
     })
     expect(connectionIds).toEqual({ openrouter: 'connection-id-1' })

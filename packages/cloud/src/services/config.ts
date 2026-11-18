@@ -67,6 +67,16 @@ const servicesConfigSchema = v.object({
   }),
   catalog: v.object({
     default_model: textSchema,
+    /** The model for each of the editor's roles; a role left out uses the default model. */
+    roles: v.optional(
+      v.object({
+        design: v.optional(textSchema),
+        review: v.optional(textSchema),
+        fast: v.optional(textSchema),
+        vision: v.optional(textSchema)
+      }),
+      {}
+    ),
     models: v.pipe(v.array(modelSchema), v.minLength(1))
   })
 })
@@ -88,8 +98,26 @@ function catalogFrom(input: v.InferOutput<typeof servicesConfigSchema>['catalog'
   if (!ids.has(input.default_model)) {
     throw new ServicesConfigError(`Default model ${input.default_model} is not in the catalog`)
   }
+  const byID = new Map(input.models.map((model) => [model.id, model]))
+  const role = (name: string, id: string, needs: 'tools' | 'vision' | null) => {
+    const model = byID.get(id)
+    if (!model) throw new ServicesConfigError(`The ${name} model ${id} is not in the catalog`)
+    if (needs && !model[needs]) {
+      throw new ServicesConfigError(`The ${name} model ${id} has no ${needs}`)
+    }
+    return id
+  }
+  const design = role('design', input.roles.design ?? input.default_model, 'tools')
+  // Vision falls back to the design model when it reads images, and is left out when none can.
+  const visionID = input.roles.vision ?? (byID.get(design)?.vision ? design : undefined) ?? null
   return v.parse(serviceCatalogSchema, {
     defaultModelID: input.default_model,
+    roleModels: {
+      design,
+      review: role('review', input.roles.review ?? design, null),
+      fast: role('fast', input.roles.fast ?? design, 'tools'),
+      vision: visionID === null ? null : role('vision', visionID, 'vision')
+    },
     models: input.models.map((model) => ({
       id: model.id,
       label: model.label,

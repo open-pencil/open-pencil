@@ -188,7 +188,23 @@ function plannedModel(providerID: OnboardingAccess, serverVision = false): Plann
 }
 
 /** The provider's model tagged as fast, for low-cost background work. */
+/**
+ * The model the provider recommends for `role` (`ProviderRoleModels` in Core), if it names one
+ * its catalog lists.
+ */
+function recommendedModel(
+  providerID: AIProviderID,
+  role: Exclude<AIModelRole, 'design'>
+): PlannedModel | null {
+  const id = AI_PROVIDERS.find((definition) => definition.id === providerID)?.roles?.[role]
+  const model = id ? catalogModels(providerID).find((candidate) => candidate.id === id) : null
+  return model ? fromCatalog(providerID, model) : null
+}
+
+/** The provider's model for quick work: the one it recommends, or else one tagged Fast. */
 function fastModel(providerID: AIProviderID): PlannedModel | null {
+  const recommended = recommendedModel(providerID, 'fast')
+  if (recommended?.capabilities.includes('tools')) return recommended
   const model = catalogModels(providerID).find(
     (candidate) => candidate.tag === 'Fast' && candidate.capabilities?.includes('tools')
   )
@@ -240,6 +256,13 @@ function planVision(
   current: PlannedRole
 ): PlannedRole {
   if (current !== null && current !== 'design' && keepable(current, access)) return current
+  // Images already going to a design model that reads them keep going there.
+  if (current === 'design' && canFollowDesign('vision', design)) return 'design'
+  // The design model's provider may recommend another of its models for images.
+  const recommended = design ? recommendedModel(design.providerID, 'vision') : null
+  if (recommended && hasVision(recommended) && recommended.modelID !== design?.modelID) {
+    return recommended
+  }
   if (canFollowDesign('vision', design)) return 'design'
   // A local server that reads images is preferred over a paid account, and a subscription
   // already paid for over one billed by use.
@@ -281,6 +304,9 @@ function planReview(
   current: CurrentOnboardingModels
 ): PlannedRole {
   if (keepRole(current, 'review', design)) return current.review
+  // A provider may recommend a stronger, or image-reading, model for reviews.
+  const recommended = design ? recommendedModel(design.providerID, 'review') : null
+  if (recommended && recommended.modelID !== design?.modelID) return recommended
   if (canFollowDesign('review', design)) return 'design'
   return vision !== 'design' && vision?.capabilities.includes('tools') ? vision : null
 }

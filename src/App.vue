@@ -9,6 +9,7 @@ import { useRouter } from 'vue-router'
 import { provideEditor } from '@open-pencil/vue'
 import { useI18n } from '@open-pencil/vue/i18n'
 
+import { watchCloudAISetup } from '@/app/ai/providers/openpencil/setup'
 import { startCloud } from '@/app/cloud/integration'
 import { useDocumentCloseProtection } from '@/app/document/close/use'
 import { endRecoverySession, startRecoverySession } from '@/app/document/recovery/session'
@@ -79,6 +80,8 @@ onMounted(() => {
       saveTo: (store, serverId) => openSaveTo(store, { profileId: serverId })
     })
   )
+  // Signing in to a Cloud plan with AI sets the models up, so nobody has to choose one.
+  onUnmounted(watchCloudAISetup())
 })
 </script>
 

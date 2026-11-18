@@ -4,13 +4,11 @@ import { effectScope, nextTick, reactive, ref, type EffectScope } from 'vue'
 
 import type { ServiceCatalog } from '@open-pencil/cloud/contract'
 
-import {
-  useCloudModelSelection,
-  type CloudModelSource
-} from '@/app/ai/models/settings/profile-editor/cloud'
+import { useCloudModelSelection } from '@/app/ai/models/settings/profile-editor/cloud'
 import { createModelProfileDraft } from '@/app/ai/models/store'
 import type { AIModelProfileDraft } from '@/app/ai/models/types'
 import { OPENPENCIL_AI_PROVIDER } from '@/app/ai/providers/openpencil/provider'
+import type { CloudAISource } from '@/app/ai/providers/openpencil/source'
 import type { CloudAIWorkspace } from '@/app/cloud/integration'
 import { createDeferred, type Deferred } from '@/app/runtime/deferred'
 
@@ -38,7 +36,7 @@ function homeCloud() {
   const identity = ref<string | null>(ALICE)
   const workspaceAnswers: Deferred<CloudAIWorkspace[]>[] = []
   const catalogAnswers: Deferred<ServiceCatalog>[] = []
-  const source: CloudModelSource = {
+  const source: CloudAISource = {
     identity,
     workspaces: () => {
       const next = createDeferred<CloudAIWorkspace[]>()
@@ -61,13 +59,13 @@ afterEach(() => {
   for (const scope of scopes.splice(0)) scope.stop()
 })
 
-function select(source: CloudModelSource) {
+function select(source: CloudAISource) {
   const draft = reactive(createModelProfileDraft())
   draft.providerID = OPENPENCIL_AI_PROVIDER
   return selectDraft(draft, source)
 }
 
-function selectDraft(draft: AIModelProfileDraft, source: CloudModelSource) {
+function selectDraft(draft: AIModelProfileDraft, source: CloudAISource) {
   const scope = effectScope()
   scopes.push(scope)
   const selection = scope.run(() =>

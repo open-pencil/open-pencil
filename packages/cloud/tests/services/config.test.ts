@@ -32,6 +32,34 @@ vision = true
 `
 
 describe('Services server configuration', () => {
+  test('takes a model for each role, checked against what the role needs', () => {
+    const haiku = `
+[[catalog.models]]
+id = "anthropic/claude-haiku-5-5"
+label = "Claude Haiku 5.5"
+credits_per_million_input_tokens = 100
+credits_per_million_output_tokens = 500
+context_tokens = 1000000
+vision = false
+`
+    const withRoles = (roles: string) =>
+      parseServicesTOML(
+        source.replace(
+          'default_model = "anthropic/claude-sonnet-5-5"',
+          `default_model = "anthropic/claude-sonnet-5-5"\n\n[catalog.roles]\n${roles}`
+        ) + haiku,
+        environment
+      )
+    expect(withRoles('fast = "anthropic/claude-haiku-5-5"').catalog.roleModels).toEqual({
+      design: 'anthropic/claude-sonnet-5-5',
+      review: 'anthropic/claude-sonnet-5-5',
+      fast: 'anthropic/claude-haiku-5-5',
+      vision: 'anthropic/claude-sonnet-5-5'
+    })
+    expect(() => withRoles('vision = "anthropic/claude-haiku-5-5"')).toThrow(ServicesConfigError)
+    expect(() => withRoles('review = "openai/gpt-unknown"')).toThrow(ServicesConfigError)
+  })
+
   test('reads the catalog, resolves secrets, and normalizes URLs', () => {
     const config = parseServicesTOML(source, environment)
     expect(config).toMatchObject({
@@ -45,6 +73,13 @@ describe('Services server configuration', () => {
     })
     expect(config.catalog).toEqual({
       defaultModelID: 'anthropic/claude-sonnet-5-5',
+      // Without roles, every role takes the default model, which reads images too.
+      roleModels: {
+        design: 'anthropic/claude-sonnet-5-5',
+        review: 'anthropic/claude-sonnet-5-5',
+        fast: 'anthropic/claude-sonnet-5-5',
+        vision: 'anthropic/claude-sonnet-5-5'
+      },
       models: [
         {
           id: 'anthropic/claude-sonnet-5-5',

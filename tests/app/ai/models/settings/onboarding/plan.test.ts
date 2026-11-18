@@ -263,15 +263,24 @@ describe('planOnboarding with configured models', () => {
 })
 
 describe('planOnboarding for review and fast work', () => {
-  test('gives fast work the provider model tagged as fast', () => {
+  test('gives review and fast work the models the provider recommends for them', () => {
     const plan = planOnboarding(answers({ access: ['openrouter'] }), desktop)
-    expect(plan.review).toBe('design')
+    expect(plan.review).toMatchObject({
+      providerID: 'openrouter',
+      modelID: 'anthropic/claude-opus-5.5'
+    })
     expect(plan.fast).toMatchObject({ providerID: 'openrouter' })
     expect(isFastToolModel('openrouter', plannedModelID(plan.fast))).toBe(true)
+    // A provider whose design model reads no images reviews with one of its models that does.
+    expect(planOnboarding(answers({ access: ['deepseek'] }), desktop).review).toMatchObject({
+      modelID: 'deepseek-flash'
+    })
   })
 
-  test('follows the design model when its provider has no separate fast model', () => {
-    expect(planOnboarding(answers({ access: ['google'] }), desktop).fast).toBe('design')
+  test('follows the design model when its provider recommends no other model', () => {
+    const plan = planOnboarding(answers({ access: ['minimax'] }), desktop)
+    expect(plan.review).toBe('design')
+    expect(plan.fast).toBe('design')
   })
 
   test('lets review and fast work follow an agent design model', () => {

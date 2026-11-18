@@ -27,6 +27,15 @@ base_url = "https://openrouter.ai/api/v1"
 [catalog]
 default_model = "anthropic/claude-sonnet-5-5"
 
+# Optional: the model for each of the editor's roles, which an editor signed in to Cloud sets
+# itself up with. A role left out uses default_model; vision is left out when that model reads no
+# images.
+# [catalog.roles]
+# design = "anthropic/claude-sonnet-5-5"
+# review = "anthropic/claude-sonnet-5-5"
+# fast = "anthropic/claude-haiku-5-5"
+# vision = "anthropic/claude-sonnet-5-5"
+
 [[catalog.models]]
 id = "anthropic/claude-sonnet-5-5"
 label = "Claude Sonnet 5.5"

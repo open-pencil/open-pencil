@@ -35,8 +35,8 @@ import {
 } from '@/app/ai/models/types'
 
 const LEGACY_CONNECTION_ID = 'connection-default'
-const LEGACY_MODEL_ID: AIModelProfileId = 'model-default'
-const DEFAULT_MAX_OUTPUT_TOKENS = 16_384
+export const LEGACY_MODEL_ID: AIModelProfileId = 'model-default'
+export const DEFAULT_MAX_OUTPUT_TOKENS = 16_384
 
 function isProviderID(value: unknown): value is AIProviderID {
   return (
@@ -259,11 +259,11 @@ export const aiModelSettings = ref<AIModelSettings>(loadSettings())
 
 watch(aiModelSettings, (settings) => writeAIModelSettingsStorage(settings), { deep: true })
 
-function createConnectionId(): string {
+export function createConnectionId(): string {
   return `connection-${crypto.randomUUID()}`
 }
 
-function createModelId(): AIModelProfileId {
+export function createModelId(): AIModelProfileId {
   return `model-${crypto.randomUUID()}`
 }
 

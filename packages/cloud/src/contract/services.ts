@@ -85,9 +85,27 @@ export type ChatModel = v.InferOutput<typeof chatModelSchema>
 export const searchPricingSchema = v.object({ creditsPerRequest: creditsSchema })
 export type SearchPricing = v.InferOutput<typeof searchPricingSchema>
 
+const modelIDSchema = v.pipe(v.string(), v.minLength(1))
+
+/**
+ * The model the service recommends for each of the editor's roles: Design runs the chat, Review
+ * critiques designs, Fast does quick tasks such as naming conversations, and Vision reads images.
+ * An editor signed in to the service sets itself up with them, so nobody has to choose a model.
+ * Vision is `null` when no model in the catalog reads images.
+ */
+export const roleModelsSchema = v.object({
+  design: modelIDSchema,
+  review: modelIDSchema,
+  fast: modelIDSchema,
+  vision: v.nullable(modelIDSchema)
+})
+export type RoleModels = v.InferOutput<typeof roleModelsSchema>
+
 export const serviceCatalogSchema = v.object({
   models: v.array(chatModelSchema),
-  defaultModelID: v.pipe(v.string(), v.minLength(1)),
+  defaultModelID: modelIDSchema,
+  /** Absent from a service that predates it; editors then use `defaultModelID` for every role. */
+  roleModels: v.optional(roleModelsSchema),
   search: v.optional(searchPricingSchema)
 })
 export type ServiceCatalog = v.InferOutput<typeof serviceCatalogSchema>
