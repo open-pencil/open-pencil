@@ -83,9 +83,12 @@ export async function cloudAIWorkspaces(): Promise<CloudAIWorkspace[]> {
 export async function firstCloudAIWorkspace(): Promise<CloudAIWorkspace | null> {
   const home = homeAI.value
   if (!home) return null
+  const identity = cloudAIIdentity.value
   const api = cloudAPIClient(home.server, home.discovery)
   for (const workspace of home.connection.workspaces) {
     const entitlements = await api.getWorkspaceEntitlements(workspace.id)
+    // Another sign-in meanwhile owns none of these workspaces, so stop asking for them.
+    if (cloudAIIdentity.value !== identity) return null
     if (entitlements.features.cloudServices) return { id: workspace.id, name: workspace.name }
   }
   return null

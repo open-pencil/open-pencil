@@ -28,20 +28,39 @@ function choice(catalog: ServiceCatalog, modelID: string | null): RoleModelChoic
 }
 
 /**
+ * Whether the models are as a fresh install leaves them: its unset Design model, and the other
+ * roles as they start, so a role the person already changed, such as Fast tasks turned off, is
+ * never overridden.
+ */
+function untouched(): boolean {
+  const settings = aiModelSettings.value
+  const { review, fast, vision } = settings.assignments
+  return (
+    isUnconfiguredModelSettings(settings) &&
+    review === 'design' &&
+    fast === 'design' &&
+    vision === null
+  )
+}
+
+/**
  * Sets AI up on Cloud's service for the signed-in account, with the model its catalog recommends
  * for each role, paid for by the first workspace whose plan includes AI. Only over a fresh
- * install's unset model, so a model the person set up is never replaced. Says whether it did.
+ * install's untouched models, so nothing the person set up is replaced, and only while
+ * `current` holds, so a caller that stopped waiting gets no write. Says whether it did.
  */
-export async function setUpCloudAI(cloud: CloudAISource = HOME_CLOUD_AI): Promise<boolean> {
+export async function setUpCloudAI(
+  cloud: CloudAISource = HOME_CLOUD_AI,
+  current: () => boolean = () => true
+): Promise<boolean> {
   const identity = cloud.identity.value
-  if (!identity || !isUnconfiguredModelSettings(aiModelSettings.value)) return false
+  if (!identity || !untouched()) return false
   const workspace = await cloud.firstWorkspace()
   const client = workspace ? cloud.client(workspace.id) : null
   if (!workspace || !client) return false
   const catalog = await client.catalog()
   // Another sign-in, or a model the person set up meanwhile, wins over this answer.
-  if (cloud.identity.value !== identity || !isUnconfiguredModelSettings(aiModelSettings.value))
-    return false
+  if (!current() || cloud.identity.value !== identity || !untouched()) return false
   const roles = catalogRoleModels(catalog)
   const design = choice(catalog, roles.design)
   if (!design?.capabilities.includes('tools')) return false
@@ -71,19 +90,26 @@ export function watchCloudAISetup(
   retryDelaysMs: readonly number[] = SETUP_RETRY_DELAYS_MS
 ): () => void {
   let timer: ReturnType<typeof setTimeout> | undefined
+  // Each sign-in starts a run, and stopping or the next sign-in ends it, so a late answer from an
+  // ended run neither writes the models nor schedules another try.
+  let run = 0
   const stopRetrying = () => {
+    run += 1
     clearTimeout(timer)
     timer = undefined
   }
   const attempt = (identity: string, tries: number) => {
-    setUpCloudAI(cloud).catch((error: unknown) => {
+    const mine = run
+    const current = () => mine === run
+    setUpCloudAI(cloud, current).catch((error: unknown) => {
       const delay = retryDelaysMs.at(tries)
+      if (!current()) return
       if (delay === undefined || cloud.identity.value !== identity) {
         console.warn('[Cloud AI] Could not set up the models', error)
         return
       }
       timer = setTimeout(() => {
-        if (cloud.identity.value === identity) attempt(identity, tries + 1)
+        if (current() && cloud.identity.value === identity) attempt(identity, tries + 1)
       }, delay)
     })
   }

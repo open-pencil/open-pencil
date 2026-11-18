@@ -8,6 +8,7 @@ export function cloudCatalogModel(model: ChatModel): ModelOption & {
   return {
     id: model.id,
     name: model.label,
+    contextWindow: model.contextTokens,
     capabilities: [
       ...(model.capabilities.tools ? (['tools'] as const) : []),
       ...(model.capabilities.vision ? (['vision'] as const) : [])

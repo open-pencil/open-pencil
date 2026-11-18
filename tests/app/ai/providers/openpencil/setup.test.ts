@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
-import { shallowRef } from 'vue'
+import { shallowRef, watch } from 'vue'
 
 import type { ServiceCatalog } from '@open-pencil/cloud/contract'
 
@@ -17,6 +17,7 @@ import {
   watchCloudAISetup
 } from '@/app/ai/providers/openpencil/setup'
 import type { CloudAISource } from '@/app/ai/providers/openpencil/source'
+import { createDeferred } from '@/app/runtime/deferred'
 
 import { freshInstallModelSettings } from '#tests/helpers/ai/settings'
 
@@ -107,6 +108,15 @@ describe('setting Cloud AI up on sign-in', () => {
     expect(modelSettingsSnapshot()).toEqual(settings)
   })
 
+  test('keeps a role the person already changed, such as Fast tasks turned off', async () => {
+    const settings = freshInstall()
+    settings.assignments.fast = null
+    replaceAIModelSettings(settings)
+
+    expect(await setUpCloudAI(cloud().source)).toBe(false)
+    expect(modelSettingsSnapshot()).toEqual(settings)
+  })
+
   test('does nothing for an account whose plan includes no AI', async () => {
     expect(await setUpCloudAI(cloud(CATALOG, []).source)).toBe(false)
     expect(modelSettingsSnapshot()).toEqual(freshInstall())
@@ -128,30 +138,54 @@ describe('setting Cloud AI up on sign-in', () => {
   })
 })
 
+/** Resolves once the Design model is `modelID`, however long the watcher takes to get there. */
+function designBecomes(modelID: string): Promise<void> {
+  return new Promise((resolve) => {
+    const stop = watch(
+      () => resolveAIModelRole('design')?.profile.modelID,
+      (id) => {
+        if (id !== modelID) return
+        stop()
+        resolve()
+      },
+      { immediate: true }
+    )
+  })
+}
+
 describe('watching for sign-ins', () => {
   test('tries a failed setup again while the same account stays signed in', async () => {
     const { source } = cloud()
     let failures = 1
     const flaky: CloudAISource = {
       ...source,
-      client: (id) => ({
+      client: () => ({
         catalog: async () => {
           if (failures-- > 0) throw new Error('The server is out of reach')
-          const catalog = await source.client(id)?.catalog()
-          if (!catalog) throw new Error('No catalog')
-          return catalog
+          return CATALOG
         }
       })
     }
     const stop = watchCloudAISetup(flaky, [0])
     try {
-      await new Promise((resolve) => {
-        setTimeout(resolve, 20)
-      })
-      expect(resolveAIModelRole('design')?.profile.modelID).toBe(SONNET)
+      await designBecomes(SONNET)
+      expect(failures).toBe(-1)
     } finally {
       stop()
     }
+  })
+
+  test('writes nothing for an answer that arrives after it stopped', async () => {
+    const { source } = cloud()
+    const answer = createDeferred<ServiceCatalog>()
+    const slow: CloudAISource = { ...source, client: () => ({ catalog: () => answer.promise }) }
+    const stop = watchCloudAISetup(slow, [])
+    stop()
+    answer.resolve(CATALOG)
+    await answer.promise
+    await Promise.resolve()
+
+    expect(modelSettingsSnapshot()).toEqual(freshInstall())
   })
 })
 

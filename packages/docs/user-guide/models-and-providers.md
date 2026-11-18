@@ -13,7 +13,7 @@ The [AI chat](./ai-chat) uses a model you connect: a [coding agent](./coding-age
 
 Add a model from **Settings → Models**, or let guided setup do it. On a fresh install, signing in to OpenPencil Cloud with a plan that includes AI sets it up by itself; a model you already set up stays as it is.
 
-Guided setup also gives each kind of work the model the provider recommends for it, unless what you have already assigned still works: **Design** runs the chat, **Review** critiques designs from screenshots, **Fast tasks** does quick work such as naming chats, and **Vision** reads images. A provider whose main model reads no images, such as DeepSeek or Z.ai, reviews and reads images with one of its models that does, where it has one. You can change any of them under **Assignments** in **Settings → Models**.
+Guided setup also gives each kind of work the model the provider recommends for it, unless what you have already assigned still works: **Design** runs the chat, **Review** critiques designs from screenshots, **Fast tasks** does quick work such as naming chats, and **Vision** reads images. Vision is set up only when you say you want to work with images. A provider whose main model reads no images, such as DeepSeek or Z.ai, reviews designs, and reads images when you ask for that, with one of its models that does, where it has one. You can change any of them under **Assignments** in **Settings → Models**.
 
 ## Providers
 

@@ -137,6 +137,8 @@ describe('planOnboarding', () => {
     )
     expect(plan.design).toMatchObject({ providerID: 'openai-compatible', modelID: '' })
     expect(plan.vision).toBeNull()
+    // With no Fast model to recommend, Fast tasks take the server's model rather than turn off.
+    expect(plan.fast).toMatchObject({ providerID: 'openai-compatible' })
   })
 
   test('plans only the roles that were asked for', () => {
@@ -271,11 +273,15 @@ describe('planOnboarding for review and fast work', () => {
 
   test('gives fast work its recommended model even when it is the design model', () => {
     // Fast tasks run only with a model of their own, so following Design would turn them off.
-    const plan = planOnboarding(answers({ access: ['minimax'] }), desktop)
-    const roles = recommendedRoles('minimax')
-    expect(roles.fast).toBe(roles.design)
-    expect(plan.review).toBe('design')
-    expect(plan.fast).toMatchObject({ providerID: 'minimax', modelID: roles.fast })
+    const roles = recommendedRoles('openrouter')
+    const fast = roles.fast
+    roles.fast = roles.design
+    try {
+      const plan = planOnboarding(answers({ access: ['openrouter'] }), desktop)
+      expect(plan.fast).toMatchObject({ providerID: 'openrouter', modelID: roles.design })
+    } finally {
+      roles.fast = fast
+    }
   })
 
   test('lets review and fast work follow an agent design model', () => {

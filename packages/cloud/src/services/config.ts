@@ -71,8 +71,9 @@ const servicesConfigSchema = v.object({
      * The model for each of the editor's roles. Design left out is the default model; Review and
      * Fast left out follow Design, and Vision left out does too when Design reads images.
      */
+    // Strict, so a misspelled role fails at start instead of quietly following Design.
     roles: v.optional(
-      v.object({
+      v.strictObject({
         design: v.optional(textSchema),
         review: v.optional(textSchema),
         fast: v.optional(textSchema),

@@ -40,6 +40,14 @@ describe('Services server configuration', () => {
     expect(textOnly.catalog.roleModels).toBeUndefined()
   })
 
+  test('refuses a role it does not know, such as a misspelled one', () => {
+    const misspelled = source.replace(
+      'default_model = "anthropic/claude-sonnet-5-5"',
+      'default_model = "anthropic/claude-sonnet-5-5"\n\n[catalog.roles]\nfasst = "anthropic/claude-sonnet-5-5"'
+    )
+    expect(() => parseServicesTOML(misspelled, environment)).toThrow()
+  })
+
   test('takes a model for each role, checked against what the role needs', () => {
     const haiku = `
 [[catalog.models]]

@@ -176,8 +176,9 @@ export interface AIProviderDef {
   /** Absent for a provider whose models the person or the agent chooses. */
   roles?: ProviderRoleModels
   /**
-   * Models the list no longer offers, never shown, so profiles saved with them still send what
-   * the model accepts, such as its lowest reasoning effort.
+   * Models dropped from `models`, still looked up for profiles saved with them, so they keep
+   * what the model accepts, such as its lowest reasoning effort and whether it reads images. An
+   * account's own model list may still offer them.
    */
   retiredModels?: ModelOption[]
   supportsCustomBaseURL?: boolean
@@ -211,8 +212,18 @@ const OPENAI_MODELS: ModelOption[] = [
 ]
 
 const RETIRED_OPENAI_MODELS: ModelOption[] = [
-  { id: 'gpt-6.1-sol', name: 'GPT-6.1 Sol', minReasoningEffort: 'low' },
-  { id: 'gpt-6-astra', name: 'GPT-6 Astra', minReasoningEffort: 'low' }
+  {
+    id: 'gpt-6.1-sol',
+    name: 'GPT-6.1 Sol',
+    capabilities: ['tools', 'vision'],
+    minReasoningEffort: 'low'
+  },
+  {
+    id: 'gpt-6-astra',
+    name: 'GPT-6 Astra',
+    capabilities: ['tools', 'vision'],
+    minReasoningEffort: 'low'
+  }
 ]
 
 const OPENAI_ROLES: ProviderRoleModels = {
@@ -387,7 +398,12 @@ export const AI_PROVIDERS: AIProviderDef[] = [
     keyURL: 'https://aistudio.google.com/apikey',
     defaultModel: 'gemini-4-argon',
     retiredModels: [
-      { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro', minReasoningEffort: 'low' }
+      {
+        id: 'gemini-3.1-pro-preview',
+        name: 'Gemini 3.1 Pro',
+        capabilities: ['tools', 'vision'],
+        minReasoningEffort: 'low'
+      }
     ],
     roles: {
       design: 'gemini-4-argon',

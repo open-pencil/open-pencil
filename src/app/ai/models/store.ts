@@ -142,7 +142,9 @@ function curatedModelCapabilities(
   providerID: AIProviderID,
   modelID: string
 ): AIModelCapability[] | null {
-  const model = AI_PROVIDERS.find((provider) => provider.id === providerID)?.models.find(
+  const provider = AI_PROVIDERS.find((candidate) => candidate.id === providerID)
+  // A model since retired keeps what it could do for the settings that still name it.
+  const model = [...(provider?.models ?? []), ...(provider?.retiredModels ?? [])].find(
     (candidate) => candidate.id === modelID
   )
   return model?.capabilities ? [...model.capabilities] : null

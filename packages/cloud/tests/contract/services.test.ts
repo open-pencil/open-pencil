@@ -65,6 +65,29 @@ describe('Cloud services contract', () => {
     ).toEqual({ creditsPerRequest: 7 })
   })
 
+  test('a catalog recommends only models it lists', () => {
+    const model = {
+      id: 'model',
+      label: 'Model',
+      creditsPerMillionInputTokens: 1,
+      creditsPerMillionOutputTokens: 1,
+      contextTokens: 1,
+      capabilities: { reasoning: false, vision: false, tools: true }
+    }
+    const catalog = {
+      models: [model],
+      defaultModelID: 'model',
+      roleModels: { design: 'model', review: 'model', fast: 'model', vision: null }
+    }
+    expect(v.is(serviceCatalogSchema, catalog)).toBe(true)
+    expect(
+      v.is(serviceCatalogSchema, {
+        ...catalog,
+        roleModels: { ...catalog.roleModels, review: 'missing' }
+      })
+    ).toBe(false)
+  })
+
   test('a search asks for a trimmed query and at most ten results, five by default', () => {
     expect(parseSearchRequest({ query: '  design systems ' })).toEqual({
       query: 'design systems',

@@ -91,7 +91,7 @@ const modelIDSchema = v.pipe(v.string(), v.minLength(1))
  * The model the service recommends for each of the editor's roles: Design runs the chat, Review
  * critiques designs, Fast does quick tasks such as naming conversations, and Vision reads images.
  * An editor signed in to the service with no model of its own yet sets itself up with them, so
- * nobody has to choose one. Vision is `null` when the service has no model for reading images.
+ * nobody has to choose one. Vision `null` recommends none, and the editor leaves it unassigned.
  */
 export const roleModelsSchema = v.object({
   design: modelIDSchema,
@@ -101,16 +101,28 @@ export const roleModelsSchema = v.object({
 })
 export type RoleModels = v.InferOutput<typeof roleModelsSchema>
 
-export const serviceCatalogSchema = v.object({
-  models: v.array(chatModelSchema),
-  defaultModelID: modelIDSchema,
-  /**
-   * Absent from a service that predates it, or whose default model can't run the chat. Editors
-   * then use `defaultModelID` for every role, except Vision when that model reads no images.
-   */
-  roleModels: v.optional(roleModelsSchema),
-  search: v.optional(searchPricingSchema)
-})
+export const serviceCatalogSchema = v.pipe(
+  v.object({
+    models: v.array(chatModelSchema),
+    defaultModelID: modelIDSchema,
+    /**
+     * Absent from a service that predates it, or whose default model can't run the chat. Editors
+     * then use `defaultModelID` for every role, except Vision when that model reads no images.
+     */
+    roleModels: v.optional(roleModelsSchema),
+    search: v.optional(searchPricingSchema)
+  }),
+  // Every recommendation names a model the catalog lists, so an editor never sets up a role
+  // with a model it can't describe.
+  v.check(
+    ({ models, roleModels }) =>
+      !roleModels ||
+      Object.values(roleModels).every(
+        (id) => id === null || models.some((model) => model.id === id)
+      ),
+    'A recommended model is not in the catalog'
+  )
+)
 export type ServiceCatalog = v.InferOutput<typeof serviceCatalogSchema>
 
 export const creditBucketSchema = v.object({

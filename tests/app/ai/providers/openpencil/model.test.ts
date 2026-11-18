@@ -35,14 +35,14 @@ describe('OpenPencil Cloud models', () => {
     expect(await requests[0]?.json()).toMatchObject({ model: 'anthropic/claude-sonnet-5-5' })
   })
 
-  test('lists the catalog with the capabilities the picker records', () => {
+  test('lists the catalog with the capabilities and context window the picker records', () => {
     const capabilities = (tools: boolean, vision: boolean) => ({ reasoning: false, tools, vision })
     const model = (id: string, tools: boolean, vision: boolean) => ({
       id,
       label: id.toUpperCase(),
       creditsPerMillionInputTokens: 1,
       creditsPerMillionOutputTokens: 1,
-      contextTokens: 1,
+      contextTokens: 200_000,
       capabilities: capabilities(tools, vision)
     })
     expect(
@@ -51,9 +51,9 @@ describe('OpenPencil Cloud models', () => {
         models: [model('a', true, true), model('b', true, false), model('c', false, false)]
       })
     ).toEqual([
-      { id: 'a', name: 'A', capabilities: ['tools', 'vision'] },
-      { id: 'b', name: 'B', capabilities: ['tools'] },
-      { id: 'c', name: 'C', capabilities: [] }
+      { id: 'a', name: 'A', contextWindow: 200_000, capabilities: ['tools', 'vision'] },
+      { id: 'b', name: 'B', contextWindow: 200_000, capabilities: ['tools'] },
+      { id: 'c', name: 'C', contextWindow: 200_000, capabilities: [] }
     ])
   })
 })
