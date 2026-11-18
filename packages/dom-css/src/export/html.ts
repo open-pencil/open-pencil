@@ -90,9 +90,11 @@ function serializeAttrs(node: DesignElement, options: SerializeHTMLOptions): str
   const attrs: Record<string, string | undefined> = { ...sourceAttrs }
   if (tailwindClass) attrs.class = mergeClassNames(node.attrs.class, tailwindClass)
   if (style && options.style !== 'tailwind') attrs.style = style
+  // An attribute without a value, such as `hidden` or a scoped style's `data-v-1a2b3c`, keeps its
+  // name: selectors such as `[data-v-1a2b3c]` match it, and dropping it unstyles the element.
   const serialized = Object.entries(attrs)
-    .filter((entry): entry is [string, string] => typeof entry[1] === 'string' && entry[1] !== '')
-    .map(([name, value]) => `${name}="${escapeAttribute(value)}"`)
+    .filter((entry): entry is [string, string] => typeof entry[1] === 'string')
+    .map(([name, value]) => (value === '' ? name : `${name}="${escapeAttribute(value)}"`))
 
   if (serialized.length === 0) return ''
   return ` ${serialized.join(' ')}`
