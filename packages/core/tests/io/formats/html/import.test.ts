@@ -464,6 +464,46 @@ describe('reading HTML', () => {
     expect(image).toMatchObject({ width: view.getUint32(16), height: view.getUint32(20) })
   })
 
+  test('lays a list of inline-block items out in a row, without markers', async () => {
+    const { graph } = await readHTMLDocument(
+      `<ul style="margin:0;padding:0;font-family:'${TEST_FAMILY}'">
+        <li style="display:inline-block">Status</li>
+        <li style="display:inline-block;margin-left:10px">API</li>
+      </ul>`
+    )
+    const [list] = graph.getChildren(graph.getPages()[0].id)
+    const items = graph.getChildren(list.id)
+    const texts = graph
+      .flattenTree(graph.getPages()[0].id)
+      .flatMap(({ node }) => (node.type === 'TEXT' ? [node.text] : []))
+
+    // Each link is a layer of its own, side by side, as a browser lays the row out.
+    expect(texts).toEqual(['Status', 'API'])
+    expect(items).toHaveLength(2)
+    expect(items[1].y).toBe(items[0].y)
+    expect(items[1].x).toBeGreaterThan(items[0].x + items[0].width)
+  })
+
+  test('draws an SVG picture as vector layers at the size the page shows it', async () => {
+    const logo =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 10"><rect width="20" height="10" fill="#0969da"/></svg>'
+    const inline = `data:image/svg+xml,${encodeURIComponent(logo)}`
+    const { graph } = await readHTMLDocument(
+      `<img src="logo.svg" style="display:block;width:80px;height:40px"><img src="${inline}" style="display:block;width:40px;height:20px">`,
+      { readAsset: async (path) => (path === 'logo.svg' ? new TextEncoder().encode(logo) : null) }
+    )
+    const [linked, written] = graph.getChildren(graph.getPages()[0].id)
+    const vectors = (id: string) =>
+      graph
+        .flattenTree(id)
+        .filter(({ node }) => node.type === 'VECTOR' || node.type === 'RECTANGLE')
+
+    expect(linked).toMatchObject({ width: 80, height: 40 })
+    expect(vectors(linked.id).length).toBeGreaterThan(0)
+    expect(written).toMatchObject({ width: 40, height: 20 })
+    expect(vectors(written.id).length).toBeGreaterThan(0)
+  })
+
   test('a page from the web reads no file from the computer', async () => {
     const png = join(FIXTURES, 'absolute-constraint-figma.png')
     const fileURL = pathToFileURL(png).href

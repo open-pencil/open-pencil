@@ -10,6 +10,7 @@ import type { IconMatcher } from '#core/icons/match'
 import { layoutAuthoredNodes } from '#core/layout'
 import { prepareGraphFonts } from '#core/text/prepare'
 
+import { resolvePageFontFamilies } from './fonts'
 import { drawInlineSVGs } from './svg'
 
 /**
@@ -35,6 +36,10 @@ export async function sceneGraphFromStyledHTML(
   styled: DesignDocument,
   options: { pageName?: string; matchIcon?: IconMatcher } = {}
 ): Promise<SceneGraph> {
+  // Text is set in the first family of its `font-family` list there is a font for, as a browser
+  // sets it, rather than naming one the editor cannot draw, such as `Helvetica Neue` on a system
+  // without it. Families the HTML engine already resolved name a single font that loads.
+  await resolvePageFontFamilies(styled)
   const { graph, boxes, transforms, svgs } = designDocumentToLayers(styled, {
     pageName: options.pageName
   })

@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test'
+import { join } from 'node:path'
 
 import { sceneGraphFromStyledHTML } from '@open-pencil/core/io/formats/html/layers'
 import type {
@@ -8,6 +9,9 @@ import type {
   DesignStyleDeclaration
 } from '@open-pencil/dom-css'
 import { layoutSizing } from '@open-pencil/scene-graph/layout'
+import { FIXTURES } from '@open-pencil/test-support/paths'
+
+import { fontManager } from '#core/text/font/manager'
 
 function element(
   computedStyle: DesignStyleDeclaration,
@@ -198,5 +202,25 @@ describe('laying out HTML from its captured layout', () => {
     const labelLayer = graph.getChildren(graph.getPages()[0].id)[0]
 
     expect(labelLayer.layoutMode).toBe('VERTICAL')
+  })
+})
+
+describe('fonts of HTML styled in a browser', () => {
+  test('sets text in the first family of its list there is a font for', async () => {
+    const family = 'OpenPencil Stack Test'
+    const font = await Bun.file(join(FIXTURES, 'fonts', 'InterVariable-Latin.ttf')).arrayBuffer()
+    await fontManager.markLoaded(family, 'Regular', font)
+    // A browser on a system with neither of the first two falls through to the third.
+    const paragraph = element(
+      { 'font-family': `"Helvetica Neue", "No Such Family", "${family}", sans-serif` },
+      { box: rect(0, 0, 200, 20) },
+      [{ type: 'text', text: 'Hosted directly from your repository' }]
+    )
+    const graph = await sceneGraphFromStyledHTML({ type: 'document', children: [paragraph] })
+    const text = graph
+      .flattenTree(graph.getPages()[0].id)
+      .find(({ node }) => node.type === 'TEXT')?.node
+
+    expect(text?.fontFamily).toBe(family)
   })
 })
