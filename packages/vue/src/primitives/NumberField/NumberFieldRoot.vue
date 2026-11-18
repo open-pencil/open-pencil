@@ -92,6 +92,7 @@ let absoluteDraft: string | null = null
 let stopMove: (() => void) | undefined
 let stopUp: (() => void) | undefined
 let stopCancel: (() => void) | undefined
+let stopLost: (() => void) | undefined
 let scrubTarget: Element | undefined
 let scrubPointerId: number | undefined
 
@@ -226,9 +227,11 @@ function stopScrubListeners() {
   stopMove?.()
   stopUp?.()
   stopCancel?.()
+  stopLost?.()
   stopMove = undefined
   stopUp = undefined
   stopCancel = undefined
+  stopLost = undefined
   if (scrubTarget && scrubPointerId != null && scrubTarget.hasPointerCapture(scrubPointerId)) {
     scrubTarget.releasePointerCapture(scrubPointerId)
   }
@@ -292,6 +295,11 @@ function startScrub(event: PointerEvent) {
   })
   stopCancel = useEventListener(listenerTarget, 'pointercancel', (cancelEvent: PointerEvent) => {
     if (cancelEvent.pointerId === event.pointerId) finish(true)
+  })
+  // Taken away before the release, as Escape in a picker does, the scrub puts its value back:
+  // the release may land elsewhere and never reach the field.
+  stopLost = useEventListener(listenerTarget, 'lostpointercapture', (lostEvent: PointerEvent) => {
+    if (lostEvent.pointerId === event.pointerId) finish(true)
   })
 }
 

@@ -99,7 +99,7 @@ test('Cmd+Z undoes a colour change while the picker stays open', async () => {
 
 test('Cmd+Z undoes the first change of a document with no history', async () => {
   await openPickerOnNewRect()
-  await fill.clearHistory()
+  await canvas.clearHistory()
   const before = await selectedFillColor()
   await changeHue()
   await page.keyboard.press('ControlOrMeta+z')
@@ -108,7 +108,7 @@ test('Cmd+Z undoes the first change of a document with no history', async () => 
 
 test('each drag in the picker is one undo step, and Escape keeps them', async () => {
   await openPickerOnNewRect()
-  await fill.clearHistory()
+  await canvas.clearHistory()
   const before = await selectedFillColor()
   await dragHue(0.2, 0.4)
   const first = await selectedFillColor()
@@ -128,7 +128,7 @@ test('each drag in the picker is one undo step, and Escape keeps them', async ()
 
 test('Escape during a drag puts back only that drag and leaves the picker open', async () => {
   await openPickerOnNewRect()
-  await fill.clearHistory()
+  await canvas.clearHistory()
   const before = await selectedFillColor()
   await dragHue(0.2, 0.4)
   const kept = await selectedFillColor()
@@ -158,7 +158,7 @@ test('Escape during a drag puts back only that drag and leaves the picker open',
 
 test('Escape keeps a paint type chosen in the picker, which undoes as one step', async () => {
   await openPickerOnNewRect()
-  await fill.clearHistory()
+  await canvas.clearHistory()
   await page.getByTestId('fill-picker-tab-gradient').click()
   await expect.poll(async () => (await fill.selectedPaint())?.type).toBe('GRADIENT_LINEAR')
 

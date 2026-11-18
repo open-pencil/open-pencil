@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test'
 
+import type { Vector } from '@open-pencil/scene-graph'
+
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { effectDriver } from '#tests/helpers/properties/effect-driver'
 
@@ -326,15 +328,19 @@ test('turn a layer blur progressive and drag where it ends', async ({ page }) =>
   await expect.poll(async () => (await blur())?.progressive).toBeUndefined()
 })
 
-// Figma desktop 126: a drag in a colour picker is one undo step, and Escape closes the picker keeping it.
-test('a drag in a shadow’s colour picker is one undo step that Escape keeps', async ({ page }) => {
+// Figma desktop 126: each drag in a colour picker is one undo step, and Escape closes the picker
+// keeping them.
+test('each drag in a shadow’s colour picker is one undo step that Escape keeps', async ({
+  page
+}) => {
   await page.goto('/?test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   const shadow = effectDriver(() => page)
   await shadow.build()
-  await page.evaluate(() => window.openPencil?.getStore?.().undo.clear())
-  const before = (await shadow.effect())?.color
+  await canvas.clearHistory()
+  const color = async () => (await shadow.effect())?.color
+  const before = await color()
 
   const section = page.getByRole('region', { name: 'Effects', exact: true })
   await section.getByRole('button', { name: 'Expand effect settings' }).click()
@@ -345,17 +351,26 @@ test('a drag in a shadow’s colour picker is one undo step that Escape keeps', 
   const area = page.locator('[data-picker-content] .cursor-crosshair').first()
   const box = await area.boundingBox()
   if (!box) throw new Error('Missing colour area')
-  await page.mouse.move(box.x + box.width * 0.9, box.y + box.height * 0.1)
-  await page.mouse.down()
-  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.4, { steps: 8 })
-  await page.mouse.up()
-  const dragged = (await shadow.effect())?.color
-  expect(dragged).not.toEqual(before)
+  const at = (x: number, y: number) => ({ x: box.x + box.width * x, y: box.y + box.height * y })
+  async function drag(from: Vector, to: Vector) {
+    await page.mouse.move(from.x, from.y)
+    await page.mouse.down()
+    await page.mouse.move(to.x, to.y, { steps: 8 })
+    await page.mouse.up()
+  }
+  await drag(at(0.9, 0.1), at(0.5, 0.4))
+  const first = await color()
+  await drag(at(0.5, 0.4), at(0.2, 0.3))
+  const second = await color()
+  expect(first).not.toEqual(before)
+  expect(second).not.toEqual(first)
 
   await page.keyboard.press('Escape')
   await expect(page.locator('[data-picker-content]')).toBeHidden()
-  expect((await shadow.effect())?.color).toEqual(dragged)
+  expect(await color()).toEqual(second)
   await canvas.undo()
-  await expect.poll(async () => (await shadow.effect())?.color).toEqual(before)
+  await expect.poll(color).toEqual(first)
+  await canvas.undo()
+  await expect.poll(color).toEqual(before)
   canvas.assertNoErrors()
 })

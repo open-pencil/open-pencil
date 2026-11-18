@@ -173,7 +173,11 @@ function updateSolidColor(
                       actions.update(index, next)
                     )
                   "
-                  @update-shader="store.setShaderPaint(selectedNodeIds, 'fills', index, $event)"
+                  @update-shader="
+                    applyPaintMutation(binding.actions, flush, () =>
+                      store.setShaderPaint(selectedNodeIds, 'fills', index, $event)
+                    )
+                  "
                   @open-change="onPickerOpenChange(selectedNodeIds, index, $event, binding.actions)"
                   @commit="commitPaintMutation(binding.actions)"
                   @cancel="cancelPaintMutation(binding.actions)"

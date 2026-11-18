@@ -3,6 +3,7 @@ import { expect, test, type Page } from '@playwright/test'
 import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { fillDriver } from '#tests/helpers/canvas/fill-driver'
 import { waitForDemo } from '#tests/helpers/demo'
 import { propertyItems, propertySection } from '#tests/helpers/properties'
 
@@ -169,38 +170,20 @@ test('bound stroke picker is non-destructive, keeps a detaching edit on Escape, 
   })
   await canvas.waitForRender()
 
+  const stroke = fillDriver(() => page)
   await openStrokePicker(page)
-  expect(
-    await page.evaluate(() => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('OpenPencil store not initialized')
-      const id = [...store.state.selectedIds][0]
-      return id ? store.getNode(id)?.boundVariables['strokes/0/color'] : undefined
-    })
-  ).toBe(before.binding)
+  expect(await stroke.boundPaint('strokes')).toEqual(before)
 
   await dragSlider(page, canvas, 'color-slider-hue', 0.55)
+  const edited = await stroke.boundPaint('strokes')
+  expect(edited.binding).toBeUndefined()
+  expect(edited.color).not.toEqual(before.color)
+
   await page.keyboard.press('Escape')
   await expect(page.locator('[data-picker-content]')).toBeHidden()
   await canvas.waitForRender()
-  const afterEscape = await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    const id = [...store.state.selectedIds][0]
-    const node = id ? store.getNode(id) : null
-    return { color: node?.strokes[0]?.color, binding: node?.boundVariables['strokes/0/color'] }
-  })
-  expect(afterEscape.binding).toBeUndefined()
-  expect(afterEscape.color).not.toEqual(before.color)
+  expect(await stroke.boundPaint('strokes')).toEqual(edited)
 
   await canvas.undo()
-  await canvas.waitForRender()
-  const restored = await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    const id = [...store.state.selectedIds][0]
-    const node = id ? store.getNode(id) : null
-    return { color: node?.strokes[0]?.color, binding: node?.boundVariables['strokes/0/color'] }
-  })
-  expect(restored).toEqual(before)
+  expect(await stroke.boundPaint('strokes')).toEqual(before)
 })

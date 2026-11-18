@@ -38,8 +38,9 @@ const emit = defineEmits<{
   /** Ends the edit made so far as one undo step: a press's release, or a change with none held. */
   commit: []
   /**
-   * Escape during a press, or the picker put away during one: the colour from before the press
-   * has just come back through `update`, and a listener that batches the press can roll it back.
+   * Escape during a press that changed the colour, or the picker closing during one: the colour
+   * from before the press has just come back through `update`, and a listener that batches the
+   * press can roll it back.
    */
   cancel: []
 }>()
@@ -47,6 +48,10 @@ const emit = defineEmits<{
 const swatchBg = computed(() => colorToCSS(color))
 let pressColor: Color = { ...color }
 const gesture = usePickerGesture({
+  open: () => popupOpen.value,
+  start: () => {
+    pressColor = { ...color }
+  },
   commit: () => emit('commit'),
   cancel: () => {
     emit('update', pressColor)
@@ -55,16 +60,14 @@ const gesture = usePickerGesture({
 })
 const { open: popupOpen, portalActive } = useRetainedPopup(
   undefined,
-  () => {
-    gesture.abort()
-    emit('openChange', false)
-  },
+  () => onOpenChange(false),
   'picker'
 )
 
-function onPointerDown(event: PointerEvent) {
-  pressColor = { ...color }
-  gesture.onPointerDown(event)
+/** A press still held when the picker closes is put back, whichever way it closes. */
+function onOpenChange(open: boolean) {
+  if (!open) gesture.abort()
+  emit('openChange', open)
 }
 
 function update(next: Color) {
@@ -75,7 +78,7 @@ const outside = pickerOutsideHandlers(() => keepOpen)
 </script>
 
 <template>
-  <PopoverRoot v-model:open="popupOpen" @update:open="emit('openChange', $event)">
+  <PopoverRoot v-model:open="popupOpen" @update:open="onOpenChange">
     <PopoverTrigger as-child>
       <slot name="trigger" :style="{ background: swatchBg }">
         <button
@@ -93,7 +96,6 @@ const outside = pickerOutsideHandlers(() => keepOpen)
         :side-offset="4"
         :side="side"
         data-picker-content
-        @pointerdown.capture="onPointerDown"
         @pointer-down-outside="outside.onPointerDownOutside"
         @focus-outside="outside.onFocusOutside"
       >

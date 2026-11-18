@@ -72,23 +72,45 @@ const emit = defineEmits<{
   /** Puts back what the press being held has changed, on Escape or when the picker is put away. */
   cancel: []
 }>()
-const gesture = usePickerGesture({ commit: () => emit('commit'), cancel: () => emit('cancel') })
+const gesture = usePickerGesture({
+  open: () => popupOpen.value,
+  commit: () => emit('commit'),
+  cancel: () => emit('cancel')
+})
 const { open: popupOpen, portalActive } = useRetainedPopup(
   undefined,
-  () => {
-    gesture.abort()
-    emit('openChange', false)
-  },
+  () => onOpenChange(false),
   'picker'
 )
+
+/** A press still held when the picker closes is put back, whichever way it closes. */
+function onOpenChange(open: boolean) {
+  if (!open) gesture.abort()
+  emit('openChange', open)
+}
 
 function update(next: Fill) {
   gesture.change(() => emit('update', next))
 }
 
+/** An image arrives once its file is read, a step of its own even if a press is held by then. */
+function updateImage(next: Fill) {
+  gesture.step(() => emit('update', next))
+}
+
 function updateShader(preset: ShaderPreset) {
   gesture.change(() => emit('updateShader', preset))
 }
+
+/** OkHCL changes skip `update`, so they are routed through the press too. */
+const pickerOkhcl = computed<OkHCLControls | null>(() =>
+  okhcl
+    ? {
+        ...okhcl,
+        updateOkHCL: (patch) => gesture.change(() => okhcl.updateOkHCL(patch))
+      }
+    : null
+)
 const cls = usePopoverUI({
   content: 'max-h-(--reka-popover-content-available-height) w-60 overflow-y-auto p-2'
 })
@@ -101,11 +123,7 @@ const outside = pickerOutsideHandlers(() => keepPickerOpen)
 
 <template>
   <FillRoot :fill="fill" @update="update" v-slot="root">
-    <AppPopoverRoot
-      v-model:open="popupOpen"
-      overlay-kind="picker"
-      @update:open="emit('openChange', $event)"
-    >
+    <AppPopoverRoot v-model:open="popupOpen" overlay-kind="picker" @update:open="onOpenChange">
       <PopoverTrigger as-child>
         <FillSwatchTrigger
           :fill="fill"
@@ -121,7 +139,6 @@ const outside = pickerOutsideHandlers(() => keepPickerOpen)
           :side-offset="4"
           :side="startSide"
           data-picker-content
-          @pointerdown.capture="gesture.onPointerDown"
           @pointer-down-outside="outside.onPointerDownOutside"
           @focus-outside="outside.onFocusOutside"
         >
@@ -175,7 +192,7 @@ const outside = pickerOutsideHandlers(() => keepPickerOpen)
           <ColorPickerPanel
             v-if="root.category === 'SOLID'"
             :color="root.fill.color"
-            :okhcl="okhcl"
+            :okhcl="pickerOkhcl"
             eyedropper
             @update="update(applySolidFillColor(root.fill, $event))"
           />
@@ -194,6 +211,7 @@ const outside = pickerOutsideHandlers(() => keepPickerOpen)
             :fill="root.fill"
             :layer-size="layerSize"
             @update="update"
+            @image="updateImage"
           />
         </PopoverContent>
       </PopoverPortal>

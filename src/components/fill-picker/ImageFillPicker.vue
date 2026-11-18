@@ -32,7 +32,11 @@ const { fill, layerSize = null } = defineProps<{
   /** The layer the fill is on, which a new crop starts by covering, as Fill does. */
   layerSize?: { width: number; height: number } | null
 }>()
-const emit = defineEmits<{ update: [fill: Fill] }>()
+const emit = defineEmits<{
+  update: [fill: Fill]
+  /** A chosen, dropped, or downloaded image, which arrives once it is read. */
+  image: [fill: Fill]
+}>()
 
 const store = useEditorStore()
 const { panels } = useI18n()
@@ -50,7 +54,7 @@ const { open: pickImage, onChange: onFileChange } = useFileDialog({
 
 function fillWith(bytes: Uint8Array) {
   const hash = store.storeImage(bytes)
-  emit('update', {
+  emit('image', {
     ...fill,
     type: 'IMAGE',
     imageHash: hash,

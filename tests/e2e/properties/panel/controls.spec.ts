@@ -1,10 +1,12 @@
 import { expectDefined } from '@open-pencil/test-support/assert'
 
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
+import { fillDriver } from '#tests/helpers/canvas/fill-driver'
 import { propertyField, propertyItems, propertySection } from '#tests/helpers/properties'
 import { getPageChildren, getSelectedNode } from '#tests/helpers/store'
 
 const editor = useEditorSetup()
+const fill = fillDriver(() => editor.page)
 
 test('property sections are always expanded (no collapse on title click)', async () => {
   await editor.canvas.clearCanvas()
@@ -358,37 +360,22 @@ test('bound fill picker opens non-destructively, and Escape keeps a detaching co
   await fillItem.getByTestId('fill-picker-swatch').click()
   await expect(fillItem.getByText('rollback-brand')).toBeVisible()
 
-  const opened = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    const id = [...store.state.selectedIds][0]
-    const node = id ? store.getNode(id) : null
-    return { color: node?.fills[0]?.color, binding: node?.boundVariables['fills/0/color'] }
-  })
-  expect(opened).toEqual(before)
+  expect(await fill.boundPaint()).toEqual(before)
 
   const area = editor.page.locator('.cursor-crosshair').first()
   const box = expectDefined(await area.boundingBox(), 'color area bounds')
   await editor.page.mouse.click(box.x + box.width - 8, box.y + 8)
+  const edited = await fill.boundPaint()
+  expect(edited.binding).toBeUndefined()
+  expect(edited.color).not.toEqual(before.color)
+
   await editor.page.keyboard.press('Escape')
   await expect(editor.page.locator('[data-picker-content]')).toBeHidden()
   await editor.canvas.waitForRender()
-
-  const boundFill = () =>
-    editor.page.evaluate(() => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('OpenPencil store not initialized')
-      const id = [...store.state.selectedIds][0]
-      const node = id ? store.getNode(id) : null
-      return { color: node?.fills[0]?.color, binding: node?.boundVariables['fills/0/color'] }
-    })
-  const after = await boundFill()
-  expect(after.binding).toBeUndefined()
-  expect(after.color).not.toEqual(before.color)
+  expect(await fill.boundPaint()).toEqual(edited)
 
   await editor.canvas.undo()
-  await editor.canvas.waitForRender()
-  expect(await boundFill()).toEqual(before)
+  expect(await fill.boundPaint()).toEqual(before)
   await expect(fillItem.getByText('rollback-brand')).toBeVisible()
   editor.canvas.assertNoErrors()
 })

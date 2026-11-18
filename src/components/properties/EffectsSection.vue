@@ -83,8 +83,8 @@ function effectTargets(
 }
 
 /**
- * A bound colour edits its variable in the layer's mode; an unbound one edits the effect. The
- * picker's `commit` ends the step, so a drag is one.
+ * Changes the effect's colour, detaching a bound one on its first change. The picker's `commit`
+ * ends the step, so a drag is one.
  */
 function updateEffectColor(
   binding: BindableValueActions<Color>,
