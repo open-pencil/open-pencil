@@ -20,7 +20,7 @@ import {
   type AuthenticationEmailService,
   type CloudAuthAdapter
 } from '#cloud/server/auth'
-import { removeSignInMethod } from '#cloud/server/auth/methods'
+import { canRemoveSignInMethod, removeSignInMethod } from '#cloud/server/auth/methods'
 import type { CloudDatabase } from '#cloud/server/db'
 import type { UserPictureService } from '#cloud/server/pictures'
 import { dateString } from '#cloud/server/sharing/contracts'
@@ -306,7 +306,8 @@ export function createAdminUserService(
         methods: methods.map((method) => ({
           id: method.id,
           provider: method.providerId,
-          createdAt: dateString(method.createdAt) ?? ''
+          createdAt: dateString(method.createdAt) ?? '',
+          canRemove: canRemoveSignInMethod(method, methods, options.signInProviders)
         })),
         authenticator: row.twoFactorEnabled === true,
         passkeyCount: Number(passkeys.count),

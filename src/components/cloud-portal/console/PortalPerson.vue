@@ -42,8 +42,6 @@ const messages = useCloudPortalMessages()
 const person = computed(() => detail.person)
 
 const methodLabel = usePortalSignInMethodLabel()
-// An account keeps one way in, and administrators change their own on their security page.
-const canRemoveMethod = computed(() => detail.methods.length > 1 && !person.value.you)
 const removing = ref<PortalPersonDetail['methods'][number] | null>(null)
 const removingShown = useHeldContent(removing)
 // The console keeps a page it leaves; a confirmation must not outlive the visit that opened it.
@@ -161,8 +159,9 @@ const workspaces = usePortalRows(() => detail.workspaces, {
           :label="methodLabel(method.provider)"
           :description="messages.linkedOn({ date: method.linkedOn })"
         >
+          <!-- Administrators change their own ways in on their security page. -->
           <AppButton
-            v-if="canRemoveMethod"
+            v-if="method.canRemove && !person.you"
             size="sm"
             variant="outline"
             :disabled="busy"

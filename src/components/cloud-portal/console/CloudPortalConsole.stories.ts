@@ -370,8 +370,8 @@ const person: PortalPersonDetail = {
   person: people[2] ?? people[0],
   emailVerified: true,
   methods: [
-    { id: 'method-password', provider: 'credential', linkedOn: 'Jun 12, 2026' },
-    { id: 'method-google', provider: 'google', linkedOn: 'Jul 1, 2026' }
+    { id: 'method-password', provider: 'credential', linkedOn: 'Jun 12, 2026', canRemove: true },
+    { id: 'method-google', provider: 'google', linkedOn: 'Jul 1, 2026', canRemove: true }
   ],
   authenticator: false,
   passkeyCount: 0,

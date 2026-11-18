@@ -100,7 +100,8 @@ export type PortalSignIn = PortalDevice & {
 export type PortalPersonDetail = {
   person: PortalPerson
   emailVerified: boolean
-  methods: { id: string; provider: string; linkedOn: string }[]
+  /** `canRemove`: the server says the account keeps a working way in without it. */
+  methods: { id: string; provider: string; linkedOn: string; canRemove: boolean }[]
   authenticator: boolean
   passkeyCount: number
   workspaces: { id: string; name: string; role: WorkspaceRole; memberCount: number }[]

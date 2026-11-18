@@ -12,7 +12,14 @@ import * as v from 'valibot'
 
 describe('account authentication methods', () => {
   test('lists and unlinks methods while preserving another sign-in method', async () => {
-    const fixture = await createAccountAuthenticationFixture()
+    // Both are ways in: a Google account the server no longer offers would not count as one.
+    const fixture = await createAccountAuthenticationFixture({
+      config: {
+        ...accountAuthenticationConfig,
+        googleClientId: 'google-client',
+        googleClientSecret: 'google-secret'
+      }
+    })
     try {
       const account = await createVerifiedCredentialAccount(fixture, {
         email: 'active@example.com',
@@ -53,6 +60,43 @@ describe('account authentication methods', () => {
           )
         ).status
       ).toBe(200)
+    } finally {
+      await fixture.close()
+    }
+  })
+
+  test('keeps the only method the server still signs in with', async () => {
+    // Passwords only: the Google account was linked before the server stopped offering Google.
+    const fixture = await createAccountAuthenticationFixture()
+    try {
+      const account = await createVerifiedCredentialAccount(fixture, {
+        email: 'kept@example.com',
+        name: 'Kept',
+        password: 'the original long password',
+        approved: true
+      })
+      await fixture.database
+        .insertInto('account')
+        .values({
+          id: crypto.randomUUID(),
+          userId: account.userId,
+          providerId: 'google',
+          accountId: 'google-kept',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .execute()
+      const response = await fixture.client.api.account.authentication.$get(
+        undefined,
+        withCookie(account.sessionCookie)
+      )
+      const body = v.parse(cloudAuthenticationMethodsResponseSchema, await response.json())
+      expect(body.methods.map((method) => [method.provider, method.canUnlink])).toEqual(
+        expect.arrayContaining([
+          ['credential', false],
+          ['google', true]
+        ])
+      )
     } finally {
       await fixture.close()
     }
@@ -170,7 +214,7 @@ describe('account authentication methods', () => {
 
   // Its own link skips the fresh session, which would let a stale one lift an administrator's
   // block on a removed identity.
-  test('is not reachable through Better Auth’s own link endpoint', async () => {
+  test('links through Cloud’s route with its state cookie, not Better Auth’s own endpoint', async () => {
     // With Google offered, so a refusal is the path's own and not a missing provider's.
     const fixture = await createAccountAuthenticationFixture({
       config: {
@@ -194,6 +238,20 @@ describe('account authentication methods', () => {
         )
       )
       expect(direct.status).toBe(404)
+
+      // Cloud's own route starts it, and hands the browser the state cookie the callback checks.
+      const started = await fixture.app.fetch(
+        accountAuthenticationRequest(
+          '/api/account/authentication/link-social',
+          {
+            provider: 'google',
+            callbackURL: `${accountAuthenticationConfig.publicURL}/account/security`
+          },
+          account.sessionCookie
+        )
+      )
+      expect(started.status).toBe(200)
+      expect(started.headers.getSetCookie().some((cookie) => cookie.includes('state='))).toBe(true)
     } finally {
       await fixture.close()
     }

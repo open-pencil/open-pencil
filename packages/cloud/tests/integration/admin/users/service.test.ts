@@ -62,7 +62,7 @@ function authAdapter() {
       return complete()
     },
     async startSocialLink() {
-      return 'https://accounts.example.com/link'
+      return { url: 'https://accounts.example.com/link', headers: new Headers() }
     },
     async unlinkAuthenticationMethod() {
       return complete()

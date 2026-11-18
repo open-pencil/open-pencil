@@ -327,8 +327,7 @@ export function createBetterAuthAdapter(
    */
   const activeAccountPaths = new Set(
     [
-      // Approving a desktop sign-in hands the app a session of its own, recorded as having proved
-      // the second step, so only a session that did may approve one.
+      // The desktop session it grants counts as two-step proved; only a proved session may grant one.
       auth.api.deviceApprove,
       auth.api.deviceDeny,
       auth.api.generatePasskeyRegistrationOptions,
@@ -424,7 +423,8 @@ export function createBetterAuthAdapter(
     async startSocialLink(headers, input) {
       await freshSession(headers)
       const body = { ...input, errorCallbackURL: input.callbackURL, disableRedirect: true }
-      return (await auth.api.linkSocialAccount({ headers, body })).url
+      const link = await auth.api.linkSocialAccount({ headers, body, returnHeaders: true })
+      return { url: link.response.url, headers: link.headers }
     },
     async unlinkAuthenticationMethod(headers, methodId) {
       const session = await freshSession(headers)

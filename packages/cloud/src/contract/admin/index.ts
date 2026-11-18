@@ -122,7 +122,15 @@ export const cloudAdminUserDetailSchema = v.object({
     ...cloudAdminUserSchema.entries,
     emailVerified: v.boolean()
   }),
-  methods: v.array(v.object({ id: v.string(), provider: v.string(), createdAt: timestampSchema })),
+  /** `canRemove`: the account keeps a way in that still works without it. */
+  methods: v.array(
+    v.object({
+      id: v.string(),
+      provider: v.string(),
+      createdAt: timestampSchema,
+      canRemove: v.boolean()
+    })
+  ),
   authenticator: v.boolean(),
   passkeyCount: countSchema,
   sessions: v.array(cloudAccountSessionSchema),

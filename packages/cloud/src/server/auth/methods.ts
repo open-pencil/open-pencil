@@ -1,4 +1,4 @@
-import type { CloudServerConfig } from '#cloud/server/config'
+import { configuredSocialProviders, type CloudServerConfig } from '#cloud/server/config'
 import type { CloudDatabase } from '#cloud/server/db'
 import { APIError, type BetterAuthOptions } from 'better-auth'
 import { getOAuthState } from 'better-auth/api'
@@ -24,11 +24,25 @@ export type SignInMethodBlockStore = {
  * its provider was turned off stays on the account but no longer lets anyone in.
  */
 export function signInProviders(config: CloudServerConfig): ReadonlySet<string> {
-  const providers = new Set<string>()
+  const providers = new Set<string>(configuredSocialProviders(config))
   if (config.emailPasswordEnabled) providers.add('credential')
-  if (config.googleClientId && config.googleClientSecret) providers.add('google')
-  if (config.appleClientId) providers.add('apple')
   return providers
+}
+
+/**
+ * Whether `method` can come off an account holding `methods`: the account keeps at least one, and,
+ * with `providers`, one whose provider is turned on. Taking away a provider that is off changes
+ * nothing, so it can always go while another method remains.
+ */
+export function canRemoveSignInMethod(
+  method: { id: string; providerId: string },
+  methods: readonly { id: string; providerId: string }[],
+  providers?: ReadonlySet<string>
+): boolean {
+  const counts = (provider: string) => !providers || providers.has(provider)
+  const others = methods.filter((candidate) => candidate.id !== method.id)
+  if (others.length === 0) return false
+  return !counts(method.providerId) || others.some((other) => counts(other.providerId))
 }
 
 /** The sign-in method a removal took away: its provider (`credential` for a password). */
@@ -67,13 +81,7 @@ export async function removeSignInMethod(
     if (!method) {
       throw APIError.from('NOT_FOUND', { code: 'ACCOUNT_NOT_FOUND', message: 'No such method' })
     }
-    const counts = (provider: string) => !input.providers || input.providers.has(provider)
-    const others = methods.filter((candidate) => candidate.id !== method.id)
-    // Taking away a provider that is off changes nothing; the last working one has to stay.
-    if (
-      others.length === 0 ||
-      (counts(method.providerId) && !others.some((other) => counts(other.providerId)))
-    ) {
+    if (!canRemoveSignInMethod(method, methods, input.providers)) {
       // Better Auth's own word, which the account routes already answer for.
       throw APIError.from('BAD_REQUEST', {
         code: 'FAILED_TO_UNLINK_LAST_ACCOUNT',

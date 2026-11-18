@@ -42,7 +42,8 @@ const detail = computed<PortalPersonDetail | null>(() => {
     methods: value.methods.map((method) => ({
       id: method.id,
       provider: method.provider,
-      linkedOn: dates.format(method.createdAt, 'date')
+      linkedOn: dates.format(method.createdAt, 'date'),
+      canRemove: method.canRemove
     })),
     authenticator: value.authenticator,
     passkeyCount: value.passkeyCount,
