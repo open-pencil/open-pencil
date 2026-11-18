@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path'
 
 import { noop } from 'es-toolkit'
 import { loadIndex } from 'whaticon'
-import { DEFAULT_SIZE, dHashFromPixels, parseIndex } from 'whaticon/hash'
+import { DEFAULT_SIZE, HASH_BYTES, dHashFromPixels, parseIndex } from 'whaticon/hash'
 import { coverageFromRGBA } from 'whaticon/match'
 
 import { getCanvasKit } from '#core/canvaskit'
@@ -111,6 +111,31 @@ describe('naming icons by how they draw', () => {
     expect(await match([house])).toEqual(['lucide:house'])
   })
 
+  test("names an icon when another set's icons fail, whatever the provider does with a batch", async () => {
+    const icons = testIcons()
+    // A provider that fails a whole call when any of its names fails.
+    icons.previews.mockImplementation((names: readonly string[]) => {
+      if (names.some((name) => name.startsWith('other:'))) throw new Error('timed out')
+      return Promise.resolve(
+        new Map(names.flatMap((name) => (ICONS[name] ? [[name, ICONS[name]] as const] : [])))
+      )
+    })
+    // Another set's copy of the house hashes as the house does, so it is shortlisted beside it.
+    const index = async () => {
+      const own = await testIndex()
+      const at = own.names.indexOf('lucide:house') * HASH_BYTES
+      const house = own.hashes.subarray(at, at + HASH_BYTES)
+      return parseIndex(
+        [...own.names, 'other:house'].join('\n'),
+        new Uint8Array([...own.hashes, ...house])
+      )
+    }
+    const match = createIconMatcher({ index, icons, draw })
+
+    expect(await match([ICONS['lucide:house'] ?? ''])).toEqual(['lucide:house'])
+    expect(icons.previews).toHaveBeenCalledWith(['other:house'])
+  })
+
   test("names an icon against whaticon's published index", async () => {
     // The index the package ships, which jsDelivr serves for its version, read offline.
     const data = join(dirname(Bun.resolveSync('whaticon', import.meta.dir)), '..', 'data')
@@ -138,6 +163,7 @@ describe("whaticon's index", () => {
     const withPreconnect = Object.assign(fetcher, { preconnect: fetch.preconnect })
 
     expect(await fetchIconIndex(withPreconnect, 20).catch(String)).toContain('stopped')
+    expect(signals).toHaveLength(2)
     expect(signals.every((signal) => signal.aborted)).toBe(true)
   })
 

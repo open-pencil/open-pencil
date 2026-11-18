@@ -1,8 +1,9 @@
+import { groupBy } from 'es-toolkit'
 import { createMatcher, fetchIndex, type Matcher } from 'whaticon/match'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import type { IconProvider } from '#core/icons/provider'
+import { parseIconName, type IconProvider } from '#core/icons/provider'
 import type { RGBAImage } from '#core/io/formats/raster/pixels'
 import { createSVGNodes } from '#core/io/formats/svg/import'
 
@@ -93,6 +94,25 @@ export async function drawSVG(
 }
 
 /**
+ * The icons' SVG from `provider`, asked for a set at a time, so a provider that fails a whole call
+ * leaves out only that set's icons, which the matcher compares with next time; throws only when
+ * every set fails.
+ */
+async function previewsBySet(
+  provider: IconProvider,
+  names: readonly string[]
+): Promise<Map<string, string>> {
+  const sets = Object.values(groupBy(names, (name) => parseIconName(name)?.prefix ?? ''))
+  // Each set is asked inside an async call, so a provider that throws at once fails that set only.
+  const settled = await Promise.allSettled(sets.map(async (set) => provider.previews(set)))
+  const failed = settled.find((result) => result.status === 'rejected')
+  if (failed && settled.every((result) => result.status === 'rejected')) throw failed.reason
+  return new Map(
+    settled.flatMap((result) => (result.status === 'fulfilled' ? [...result.value] : []))
+  )
+}
+
+/**
  * Names the icons SVG draws with whaticon's matcher, drawing each SVG and candidate icon as
  * OpenPencil draws it and taking candidates from `icons`. What could not be loaded or drawn, as
  * offline, leaves its SVG unnamed, is tried again by the next call, and is warned about once.
@@ -101,8 +121,7 @@ export function createIconMatcher(services: IconMatcherServices): IconMatcher {
   return createMatcher({
     index: services.index,
     draw: (svg, width, height) => drawSVG(services.draw, svg, width, height),
-    // Previews leave out icons whose request failed, which the matcher compares with next time.
-    icons: (names) => services.icons.previews(names),
+    icons: (names) => previewsBySet(services.icons, names),
     onError: (reason, error) => console.warn(`Icons are not named: ${reason}`, error)
   })
 }
