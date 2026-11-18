@@ -92,7 +92,12 @@ describe('usePortalPlan', () => {
     expect(page.opening.error.value).toBeNull()
     fails = true
     await page.openBilling()
-    expect(page.opening.error.value).not.toBeNull()
+    expect(page.opening.error.value).toEqual(expect.stringMatching(/\S/))
+    // A retry that works opens billing and clears the failure.
+    fails = false
+    await page.openBilling()
+    expect(opened).toEqual(['billing', 'billing'])
+    expect(page.opening.error.value).toBeNull()
   })
 
   test('drops a handoff still waiting for its token once the person leaves the page', async () => {
