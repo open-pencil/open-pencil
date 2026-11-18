@@ -32,17 +32,17 @@ test("a changed switch row's text still works its switch, not Reset", async ({ p
   await page.keyboard.press(process.platform === 'darwin' ? 'Meta+,' : 'Control+,')
   await page.getByTestId('settings-section-editor').click()
   const editor = page.getByTestId('settings-editor-panel')
-  const toggle = page.getByTestId('settings-snap-geometry')
+  const toggle = editor.getByRole('switch', { name: 'Snap to geometry', exact: true })
   await toggle.click()
   await expect(toggle).toHaveAttribute('aria-checked', 'false')
 
   const row = editor.locator('[data-slot=settings-row]').filter({ hasText: 'Snap to geometry' })
   await expect(row.getByRole('button', { name: 'Reset to default' })).toHaveCount(1)
-  // The label's control is the switch even with Reset shown, so its text works the switch.
-  const control = await row
-    .locator('label')
-    .evaluate((label: HTMLLabelElement) => label.control?.getAttribute('data-test-id'))
-  expect(control).toBe('settings-snap-geometry')
+  // The label's control is the switch even with Reset shown, so the row works the switch.
+  const control = await row.evaluate((label: HTMLLabelElement) =>
+    label.control?.getAttribute('role')
+  )
+  expect(control).toBe('switch')
   await row.getByText('Snap to geometry', { exact: true }).click()
   await expect(toggle).toHaveAttribute('aria-checked', 'true')
 })

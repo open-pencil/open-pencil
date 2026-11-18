@@ -5,9 +5,8 @@ import SettingsResetButton from './SettingsResetButton.vue'
 
 /**
  * One line of a `SettingsGroup`: a label, an optional description, and its control on the right.
- * As a `label`, clicking the text works the control, as a switch row does. A `modified` row offers
- * Reset to default before its control, emitting `reset`, outside the label so the text still works
- * the control.
+ * As a `label`, clicking the row works the control, as a switch row does. A `modified` row offers
+ * Reset to default beside its control, emitting `reset`.
  */
 const {
   label,
@@ -28,26 +27,30 @@ const emit = defineEmits<{ reset: [] }>()
 </script>
 
 <template>
-  <div class="flex items-center gap-1 px-3 py-2.5" data-slot="settings-row">
-    <!-- Reset stays out of the label, whose control is then the setting's own rather than the
-         first button in it; `order` still shows it between the text and the control. -->
-    <SettingsResetButton
-      v-if="modified"
-      class="order-2"
-      :disabled="resetDisabled"
-      @reset="emit('reset')"
-    />
-    <Primitive :as="as" class="contents">
-      <span class="order-1 me-3 block min-w-0 flex-1">
-        <span class="block text-xs font-medium text-surface"
-          ><slot name="label">{{ label }}</slot></span
-        >
-        <span v-if="description" class="mt-1 block text-2xs leading-relaxed text-muted">{{
-          description
-        }}</span>
-        <slot name="description" />
-      </span>
-      <span class="order-3 flex shrink-0 items-center"><slot /></span>
-    </Primitive>
-  </div>
+  <Primitive
+    :as="as"
+    class="flex items-center justify-between gap-4 px-3 py-2.5"
+    data-slot="settings-row"
+  >
+    <span class="block min-w-0 flex-1">
+      <span class="block text-xs font-medium text-surface"
+        ><slot name="label">{{ label }}</slot></span
+      >
+      <span v-if="description" class="mt-1 block text-2xs leading-relaxed text-muted">{{
+        description
+      }}</span>
+      <slot name="description" />
+    </span>
+    <span class="flex shrink-0 items-center gap-1">
+      <slot />
+      <!-- After the control, so a label row's control is the setting's own, its first labelable
+           element, and Reset reads after the setting it resets; shown before the control. -->
+      <SettingsResetButton
+        v-if="modified"
+        class="order-first"
+        :disabled="resetDisabled"
+        @reset="emit('reset')"
+      />
+    </span>
+  </Primitive>
 </template>
