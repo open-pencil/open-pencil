@@ -256,3 +256,23 @@ test('a gradient stop’s colour opens a picker beside this one, and one undo pu
   await canvas.undo()
   await expect.poll(stops).toEqual(before)
 })
+
+test('a press in the picker while a list in it is open closes only the list', async () => {
+  await page.keyboard.press('Escape')
+  await canvas.clearCanvas()
+  await canvas.drawRect(100, 100, 160, 120)
+  await canvas.waitForRender()
+  await openFillPicker()
+  await page.getByTestId('color-format-select').click()
+  await expect(page.getByRole('option')).not.toHaveCount(0)
+
+  // Over the canvas, which takes context-menu presses, the press must not reach it.
+  const picker = page.locator('[data-picker-content]')
+  const box = await picker.boundingBox()
+  if (!box) throw new Error('Missing picker')
+  await page.mouse.click(box.x + box.width - 24, box.y + 24)
+
+  await expect(page.getByRole('option')).toHaveCount(0)
+  await expect(picker).toBeVisible()
+  expect(await getSelectedFill()).not.toBeNull()
+})
