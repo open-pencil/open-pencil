@@ -138,7 +138,7 @@ function openCluster(event: MouseEvent, cluster: PinCluster<(typeof pins.value)[
 
 /**
  * Moves focus from a cluster to its first pin once the cluster is gone, which can be a drawn
- * frame later; leaving the cluster's focus first cancels it.
+ * frame later; focus the user moved elsewhere in the meantime stays where they put it.
  */
 function handFocusOnSplit(button: HTMLElement, cluster: PinCluster<{ thread: { id: string } }>) {
   const stop = watch(
@@ -149,6 +149,8 @@ function handFocusOnSplit(button: HTMLElement, cluster: PinCluster<{ thread: { i
         return
       }
       stop()
+      // Removing the cluster drops focus to the page; focus anywhere else was the user's move.
+      if (document.activeElement && document.activeElement !== document.body) return
       const id = CSS.escape(cluster.pins[0].thread.id)
       pinsLayer.value
         ?.querySelector<HTMLElement>(`[data-thread-id="${id}"], [data-cluster~="${id}"]`)
