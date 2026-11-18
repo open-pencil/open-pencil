@@ -23,9 +23,9 @@ function elementById(document: DesignDocument, id: string): DesignElement {
   return element
 }
 
-async function styled(html: string) {
+async function styled(html: string, baseURL?: string) {
   return htmlToDesignDocument(html, {
-    runtime: createHTMLEngineRuntime({ engine: engineWithInter }),
+    runtime: createHTMLEngineRuntime({ engine: engineWithInter, baseURL }),
     compute: { layout: true, viewport: { width: 800, height: 600 } }
   })
 }
@@ -249,6 +249,18 @@ describe('the HTML engine runtime', () => {
       'rgb(0, 0, 255)',
       '2px'
     ])
+  })
+
+  test('reports a url() into the page as its fragment, as browsers do, and others resolved', async () => {
+    const html =
+      '<style>.a { fill: url(#fade); clip-path: url("#clip") } .b { fill: url(other.svg#fade) }</style><svg><path class="a" id="a" d="M0 0h1v1z"/><path class="b" id="b" d="M0 0h1v1z"/></svg>'
+    for (const baseURL of [undefined, 'https://example.test/page.html']) {
+      const document = await styled(html, baseURL)
+      const style = (id: string) => elementById(document, id).computedStyle ?? {}
+
+      expect([style('a').fill, style('a')['clip-path']]).toEqual(['url("#fade")', 'url("#clip")'])
+      expect(style('b').fill).not.toBe('url("#fade")')
+    }
   })
 
   test("pairs a shader layer's children past the still frame the serializer writes", async () => {

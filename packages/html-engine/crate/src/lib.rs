@@ -12,6 +12,7 @@ use blitz_dom::{BaseDocument, DocumentConfig, Node, StyleThreading};
 use blitz_html::HtmlDocument;
 use blitz_traits::net::{Bytes, NetHandler, NetProvider, Request};
 use blitz_traits::shell::{ColorScheme, Viewport};
+use cssparser::{ParseError, Parser, ToCss, Token, serialize_string};
 use parley::fontique::{Blob, FontInfoOverride, GenericFamily};
 use parley::{FontContext, PositionedLayoutItem};
 use serde_json::{Map, Value, json};
@@ -19,6 +20,7 @@ use style::computed_values::border_collapse::T as BorderCollapse;
 use style::properties::{LonghandId, PropertyDeclarationId};
 use style::values::generics::font::LineHeight;
 use style::values::specified::box_::DisplayInside;
+use url::{Position, Url};
 
 /// Computed properties the importer reads. Everything else is left out to keep captures small.
 /// Those in `default_styles` are reported only when they differ from their initial value; the
@@ -351,7 +353,7 @@ fn styles(doc: &BaseDocument, node: &Node) -> Value {
     let defaults = default_styles();
     let mut out = Map::new();
     for property in PROPERTIES {
-        let value = doc.resolved_style_value(node.id, property);
+        let value = local_urls(doc.resolved_style_value(node.id, property), doc.base_url());
         // Stylo answers a property it does not implement with an empty value.
         if value.is_empty() {
             continue;
@@ -363,6 +365,67 @@ fn styles(doc: &BaseDocument, node: &Node) -> Value {
         out.insert((*property).into(), value.into());
     }
     Value::Object(out)
+}
+
+/// `value` with each `url()` that points into the document itself written as its fragment,
+/// `url("#fade")`, as browsers report a local reference such as `fill: url(#fade)`. Stylo
+/// resolves it against the document's base URL, which reads as a link to another file.
+fn local_urls(value: String, base: &Url) -> String {
+    if !value.contains("url(") {
+        return value;
+    }
+    let mut out = String::new();
+    write_local_urls(&mut Parser::new(&value), base, &mut out);
+    out
+}
+
+fn write_local_urls(input: &mut Parser<'_>, base: &Url, out: &mut String) {
+    while let Ok(token) = input.next_including_whitespace_and_comments() {
+        let token = token.clone();
+        let closing = match &token {
+            Token::UnquotedUrl(url) => {
+                write_url(url, base, out);
+                continue;
+            }
+            Token::Function(name) if name.eq_ignore_ascii_case("url") => {
+                let quoted = input.parse_nested_block(|block| {
+                    block
+                        .expect_string()
+                        .map(|url| url.as_ref().to_owned())
+                        .map_err(ParseError::<()>::from)
+                });
+                if let Ok(url) = quoted {
+                    write_url(&url, base, out);
+                    continue;
+                }
+                ")"
+            }
+            Token::Function(_) | Token::ParenthesisBlock => ")",
+            Token::SquareBracketBlock => "]",
+            Token::CurlyBracketBlock => "}",
+            _ => {
+                let _ = token.to_css(out);
+                continue;
+            }
+        };
+        let _ = token.to_css(out);
+        let _ = input.parse_nested_block(|block| {
+            write_local_urls(block, base, out);
+            Ok::<(), ParseError<()>>(())
+        });
+        out.push_str(closing);
+    }
+}
+
+/// `url("…")`, as a fragment when `raw` points into the document at `base`.
+fn write_url(raw: &str, base: &Url, out: &mut String) {
+    let local = Url::parse(raw)
+        .ok()
+        .filter(|url| url[..Position::AfterQuery] == base[..Position::AfterQuery])
+        .and_then(|url| url.fragment().map(|fragment| format!("#{fragment}")));
+    out.push_str("url(");
+    let _ = serialize_string(local.as_deref().unwrap_or(raw), out);
+    out.push(')');
 }
 
 /// Initial values of the captured properties that are not inherited. An inherited property is

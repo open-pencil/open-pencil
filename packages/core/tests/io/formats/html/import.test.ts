@@ -7,9 +7,7 @@ import { layoutSizing } from '@open-pencil/scene-graph/layout'
 import { FIXTURES } from '@open-pencil/test-support/paths'
 
 import { iconColor } from '#core/icons'
-import { designElements } from '#core/io/formats/html/elements'
 import { readHTMLDocument } from '#core/io/formats/html/import'
-import { sceneGraphFromStyledHTML } from '#core/io/formats/html/layers'
 import { fontManager } from '#core/text/font/manager'
 
 /** A family the tests give the font manager a font for, so which text finds a font does not depend on the machine. */
@@ -253,17 +251,13 @@ describe('reading HTML', () => {
   })
 
   test('reaches a definition elsewhere on the page that a stylesheet paints with', async () => {
-    const { styled } = await readHTMLDocument(
+    const { graph } = await readHTMLDocument(
       `<style>.shape { fill: url(#fade) }</style>
       <svg style="display:none"><defs><linearGradient id="fade">
         <stop offset="0" stop-color="#ff0000"/><stop offset="1" stop-color="#0000ff"/>
       </linearGradient></defs></svg>
       <svg width="20" height="20" viewBox="0 0 20 20"><rect class="shape" width="20" height="20"/></svg>`
     )
-    // As a browser computes it; the HTML engine resolves the URL against the stylesheet's own.
-    const rect = designElements(styled.children).find((element) => element.tagName === 'rect')
-    if (rect?.computedStyle) rect.computedStyle.fill = 'url("#fade")'
-    const graph = await sceneGraphFromStyledHTML(styled)
     const fills = [...graph.getAllNodes()].flatMap((node) =>
       node.type === 'VECTOR' || node.type === 'RECTANGLE' ? node.fills.map((fill) => fill.type) : []
     )
