@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { PopoverContent, PopoverPortal, PopoverTrigger } from 'reka-ui'
 import { tv } from 'tailwind-variants'
-import { computed, useTemplateRef } from 'vue'
+import { computed } from 'vue'
 
 import type { Fill } from '@open-pencil/scene-graph'
 import type { ShaderPaint, ShaderPreset } from '@open-pencil/scene-graph/shaders'
@@ -28,7 +28,6 @@ import Tip from '@/components/ui/overlay/Tip.vue'
 import FillSwatchTrigger from '@/components/ui/paint/FillSwatchTrigger.vue'
 import fillPickerTheme from '@/theme/fill-picker'
 
-import { useSteadyPlacement } from './steady-placement'
 import { useImageFill } from './useImageFill'
 
 const startSide = useInlineSide('start')
@@ -84,12 +83,9 @@ const { open: popupOpen, portalActive } = useRetainedPopup(
   'picker'
 )
 
-const placement = useSteadyPlacement(useTemplateRef('swatch'))
-
 /** A press still held when the picker closes is put back, whichever way it closes. */
 function onOpenChange(open: boolean) {
   if (!open) gesture.abort()
-  placement.release()
   emit('openChange', open)
 }
 
@@ -130,7 +126,6 @@ const outside = pickerOutsideHandlers(() => keepPickerOpen)
     <AppPopoverRoot v-model:open="popupOpen" overlay-kind="picker" @update:open="onOpenChange">
       <PopoverTrigger as-child>
         <FillSwatchTrigger
-          ref="swatch"
           :fill="fill"
           :label="label ?? panels.fill"
           :background="swatchBackground ?? imageBackground"
@@ -139,14 +134,14 @@ const outside = pickerOutsideHandlers(() => keepPickerOpen)
       </PopoverTrigger>
 
       <PopoverPortal v-if="portalActive">
+        <!-- Top-aligned, so switching paint types changes only its bottom, as in Figma; the
+             collision shift moves it only to stay in the window. -->
         <PopoverContent
           :class="cls.content"
           :side-offset="4"
           :side="startSide"
-          :align="placement.align.value"
-          :reference="placement.reference.value"
+          align="start"
           data-picker-content
-          @pointerdown.capture="placement.hold"
           @pointer-down-outside="outside.onPointerDownOutside"
           @focus-outside="outside.onFocusOutside"
         >

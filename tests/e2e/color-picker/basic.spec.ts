@@ -192,6 +192,9 @@ test('okhcl channels preserve intent metadata while updating the fill', async ()
 })
 
 test('switching paint types keeps the tab row where it was', async () => {
+  // Tall enough for every type to fit below the swatch; one that does not is shifted up to fit.
+  const viewport = page.viewportSize()
+  await page.setViewportSize({ width: viewport?.width ?? 1280, height: 1000 })
   await page.keyboard.press('Escape')
   await canvas.clearCanvas()
   await canvas.drawRect(100, 100, 160, 120)
@@ -218,4 +221,5 @@ test('switching paint types keeps the tab row where it was', async () => {
     await expect(page.getByTestId(`fill-picker-tab-${type}`)).toHaveAttribute('data-active', 'true')
     expect(await tabRow()).toBeCloseTo(at, 0)
   }
+  if (viewport) await page.setViewportSize(viewport)
 })
