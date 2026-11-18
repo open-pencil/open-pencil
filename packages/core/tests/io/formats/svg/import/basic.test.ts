@@ -104,6 +104,18 @@ describe('import_svg', () => {
     expect(exported.match(/fill="url\(#/g)).toHaveLength(2)
   })
 
+  test('a paint server the import does not read falls back as SVG does, not to black', async () => {
+    const result = (await importSVG.execute(figma, {
+      svg: `<svg viewBox="0 0 30 10"><defs><pattern id="p" width="2" height="2" patternUnits="userSpaceOnUse"><path d="M0 0h1v1H0z"/></pattern></defs><rect width="10" height="10" fill="url(#p)"/><rect x="10" width="10" height="10" fill="url(#p) rgb(255, 0, 0)"/><rect x="20" width="10" height="10" fill="#00f" stroke="url(#p)"/></svg>`
+    })) as { id: string }
+    const [plain, fallback, stroked] = graph.getChildren(result.id)
+
+    // With no fallback it paints nothing; with one, the fallback; a stroke likewise.
+    expect(plain?.fills ?? []).toEqual([])
+    expect(expectDefined(fallback?.fills[0]).color).toMatchObject({ r: 1, g: 0, b: 0 })
+    expect(stroked?.strokes ?? []).toEqual([])
+  })
+
   // Gradients export in Figma's convention with an exact gradientTransform, so a turned gradient on
   // a stretched layer comes back with the transform it left with.
   test('a turned linear gradient survives an SVG round trip', async () => {
