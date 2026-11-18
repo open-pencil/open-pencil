@@ -70,4 +70,42 @@ describe('duplicate type shapes', () => {
       )
     ).toEqual([])
   })
+
+  test('tells function and method signatures apart by their types and optional parameters', () => {
+    expect(
+      duplicates([
+        'src/a.ts',
+        'let a: Node & { map: (x: string) => string }\nlet b: Node & { map: (x: number) => number }'
+      ])
+    ).toEqual([])
+    expect(
+      duplicates([
+        'src/a.ts',
+        'let a: Node & { run(value: string): void }\nlet b: Node & { run(value?: string): void }'
+      ])
+    ).toEqual([])
+    // Parameter names don't change the contract.
+    expect(
+      duplicates([
+        'src/a.ts',
+        'let a: Node & { run(value: string): void }\nlet b: Node & { run(input: string): void }'
+      ])
+    ).toHaveLength(1)
+  })
+
+  test('reads a parenthesized part of an intersection as the part itself', () => {
+    expect(
+      duplicates(['src/a.ts', 'let a: Node & ({ y: number })\nlet b: Node & { y: number }'])
+    ).toHaveLength(1)
+  })
+
+  test('keeps each tool its own workspace', () => {
+    const intersection = 'let a: Node & { y: number }'
+    expect(
+      duplicates(
+        ['tools/checks/type-shapes/src/a.ts', intersection, false],
+        ['tools/checks/docs/src/b.ts', intersection, false]
+      )
+    ).toEqual([])
+  })
 })

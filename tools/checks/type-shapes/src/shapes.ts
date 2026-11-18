@@ -21,8 +21,26 @@ function literalText(node: ts.LiteralTypeNode) {
   return ts.SyntaxKind[literal.kind]
 }
 
+/** Parameters as a call sees them: types, and which are optional or rest; names don't matter. */
+function parametersText(parameters: ts.NodeArray<ts.ParameterDeclaration>): string {
+  return parameters
+    .map(
+      (parameter) =>
+        `${parameter.dotDotDotToken ? '...' : ''}${typeText(parameter.type)}${parameter.questionToken ? '?' : ''}`
+    )
+    .join(',')
+}
+
+/** `node` without the parentheses around it, which change nothing about the type. */
+function unwrap(node: ts.TypeNode): ts.TypeNode {
+  return ts.isParenthesizedTypeNode(node) ? unwrap(node.type) : node
+}
+
 function typeText(node: ts.TypeNode | undefined): string {
   if (!node) return 'unknown'
+  if (ts.isFunctionTypeNode(node)) {
+    return `fn(${parametersText(node.parameters)}):${typeText(node.type)}`
+  }
   if (ts.isTypeReferenceNode(node)) {
     return `ref:${entityNameText(node.typeName)}<${(node.typeArguments ?? []).map(typeText).join(',')}>`
   }
@@ -52,8 +70,7 @@ function memberText(member: ts.TypeElement): string | null {
   if (ts.isMethodSignature(member)) {
     const key = keyText(member.name)
     if (!key) return null
-    const parameters = member.parameters.map((parameter) => typeText(parameter.type)).join(',')
-    return `method:${key}${member.questionToken ? '?' : ''}(${parameters}):${typeText(member.type)}`
+    return `method:${key}${member.questionToken ? '?' : ''}(${parametersText(member.parameters)}):${typeText(member.type)}`
   }
   if (ts.isIndexSignatureDeclaration(member)) {
     return `index:${member.parameters.map((param) => typeText(param.type)).join(',')}:${typeText(member.type)}`
@@ -71,15 +88,19 @@ function membersText(members: ts.NodeArray<ts.TypeElement>) {
 
 /** An intersection that adds members of its own to a named type, such as `Node & { y: number }`. */
 function extendsInline(node: ts.IntersectionTypeNode): boolean {
-  return (
-    node.types.some(ts.isTypeLiteralNode) && node.types.some((part) => !ts.isTypeLiteralNode(part))
-  )
+  const parts = node.types.map(unwrap)
+  return parts.some(ts.isTypeLiteralNode) && parts.some((part) => !ts.isTypeLiteralNode(part))
 }
 
-/** The package a path belongs to, within which an inline intersection must not repeat. */
+/**
+ * The workspace a path belongs to, within which an inline intersection must not repeat: a
+ * package, a tool such as `tools/checks/docs`, or the app's own `src` or `tests`.
+ */
 function packageOf(path: string): string {
-  const [root, name] = path.split(/[\\/]/)
-  return root === 'packages' && name ? `packages/${name}` : (root ?? path)
+  const [root, group, name] = path.split(/[\\/]/)
+  if (root === 'packages' && group) return `packages/${group}`
+  if (root === 'tools' && group && name) return `tools/${group}/${name}`
+  return root ?? path
 }
 
 function collectShape(
