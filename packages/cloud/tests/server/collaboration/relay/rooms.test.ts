@@ -88,7 +88,7 @@ describe('collaboration relay rooms', () => {
     const peer = await join(hub, { principal: user(userId) })
     expect(peer.closed?.code).toBe(RELAY_CLOSE.protocol)
     expect(reports).toEqual([
-      { message: 'Admitting a collaboration peer failed', ids: { documentId, userId } }
+      { message: 'Checking a collaboration ticket failed', ids: { documentId, userId } }
     ])
   })
 

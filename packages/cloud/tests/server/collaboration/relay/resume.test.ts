@@ -233,4 +233,43 @@ describe('resuming collaboration peers', () => {
     expect(readRelayPeerState({ peerId: 'not-a-uuid' })).toBeNull()
     expect(readRelayPeerState(null)).toBeNull()
   })
+
+  test('names the refreshed ticket’s document and person when a refresh fails', async () => {
+    const memory = memoryStateStore()
+    const alice = await joinRemembered(hubOver(memory.store))
+    const saved = readRelayPeerState(alice.remembered.state)
+    if (!saved) throw new Error('Expected a remembered peer')
+    const reports: unknown[] = []
+    const second = createCollaborationRelay({
+      authSecret: relaySecret,
+      store: memory.store,
+      maximumMessageBytes: 1_048_576,
+      maximumConnectionsPerRoom: 100,
+      onError: (message, _error, ids) => reports.push({ message, ids })
+    })
+    const resumed = connectTestClient((socket) =>
+      second.resume(
+        {
+          ...socket,
+          remember: () => {
+            throw new Error('Attachment too large')
+          }
+        },
+        saved
+      )
+    )
+    const { principal } = saved.authorization
+    resumed.send({
+      type: 'auth',
+      token: await relayTicket({ documentId, permission: 'edit', principal })
+    })
+    await until(() => reports.length > 0)
+    expect(reports).toEqual([
+      {
+        message: 'Checking a collaboration ticket failed',
+        ids: { documentId, userId: principal.kind === 'user' ? principal.userId : undefined }
+      }
+    ])
+    await second.close()
+  })
 })
