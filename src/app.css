@@ -15,6 +15,28 @@
 }
 
 /*
+ * Where text breaks into lines. Headings and captions balance their lines; paragraphs and list
+ * items avoid a lone word on the last line; centered text, such as an empty state or a notice,
+ * balances whatever it holds, so a short message does not end on a stray word or split a phrase.
+ * Every rule has no specificity, so a component's own `text-*` wrap class still wins, and each
+ * sets only the style, never whether text wraps (`pre`, `truncate`). Browsers without these values
+ * wrap as before.
+ */
+@layer base {
+  :where(h1, h2, h3, h4, h5, h6, caption, figcaption, legend) {
+    text-wrap-style: balance;
+  }
+
+  :where(p, li, dd, blockquote) {
+    text-wrap-style: pretty;
+  }
+
+  :where(.text-center, .text-center *) {
+    text-wrap-style: balance;
+  }
+}
+
+/*
  * An icon that points along the line of text (back and next, a submenu, a disclosure, a sidebar)
  * says so with data-direction="reading" and turns around in a right-to-left interface, matched as
  * Tailwind matches `rtl:`. One that names a canvas side says data-direction="physical" and keeps
