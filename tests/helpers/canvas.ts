@@ -1,14 +1,6 @@
 import type { Page, Locator } from '@playwright/test'
 
-import { OFFICIAL_CLOUD_URL } from '@/constants'
-
 import { CanvasPointer } from './canvas/pointer'
-
-/**
- * The app asks the official Cloud server whether Cloud is open yet and carries on without an
- * answer, so a request to it that fails is the network's, not the app's.
- */
-const OFFICIAL_CLOUD_ORIGIN = new URL(OFFICIAL_CLOUD_URL).origin
 
 export class CanvasHelper extends CanvasPointer {
   readonly page: Page
@@ -22,7 +14,6 @@ export class CanvasHelper extends CanvasPointer {
     page.on('pageerror', (err) => this.errors.push(err.message))
     page.on('console', (msg) => {
       if (msg.type() !== 'error') return
-      if (msg.location().url.startsWith(OFFICIAL_CLOUD_ORIGIN)) return
       this.errors.push(msg.text())
     })
   }

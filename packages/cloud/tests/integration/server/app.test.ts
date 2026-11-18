@@ -395,15 +395,16 @@ describe('createCloudApp', () => {
     })
   })
 
-  test('allows credentialed CORS for trusted origins only', async () => {
+  test('lets any editor read discovery, without credentials', async () => {
     const cloud = testClient(createCloudApp(services()))
-    const trustedDiscovery = await cloud['.well-known'].openpencil.$get(undefined, {
-      headers: { Origin: 'https://app.example.com' }
+    const discovery = await cloud['.well-known'].openpencil.$get(undefined, {
+      headers: { Origin: 'https://editor.example.org' }
     })
-    expect(trustedDiscovery.headers.get('access-control-allow-origin')).toBe(
-      'https://app.example.com'
-    )
+    expect(discovery.headers.get('access-control-allow-origin')).toBe('*')
+    expect(discovery.headers.get('access-control-allow-credentials')).toBeNull()
+  })
 
+  test('allows credentialed CORS for trusted origins only', async () => {
     const trusted = await createCloudApp(services()).request('/api/session', {
       method: 'OPTIONS',
       headers: {
