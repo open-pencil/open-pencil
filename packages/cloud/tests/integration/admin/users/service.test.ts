@@ -484,6 +484,18 @@ describe('deployment admin user safety', () => {
         service.removeSignInMethod(ADMIN_ID, USER_ID, adminPassword.id)
       ).rejects.toThrow()
 
+      // A notice that cannot be queued takes the removal back with it, so a retry still finds it.
+      const unqueued = createAdminUserService(runtime.database, authAdapter(), {
+        notify: {
+          ...ignoredSecurityNotices,
+          sendVerification: complete,
+          sendPasswordReset: complete,
+          sendPasswordChanged: complete,
+          sendTwoStepChanged: () => Promise.reject(new Error('queue down'))
+        }
+      })
+      await expect(unqueued.removeSignInMethod(ADMIN_ID, USER_ID, google.id)).rejects.toThrow()
+
       await service.removeSignInMethod(ADMIN_ID, USER_ID, google.id)
       const left = await runtime.database
         .selectFrom('account')

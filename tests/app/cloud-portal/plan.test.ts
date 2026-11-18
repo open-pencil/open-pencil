@@ -2,16 +2,11 @@ import { describe, expect, test } from 'bun:test'
 
 import { effectScope, nextTick } from 'vue'
 
-import type {
-  AccountEntitlements,
-  BillingAccount,
-  BillingCatalog
-} from '@open-pencil/cloud/contract'
+import type { AccountEntitlements } from '@open-pencil/cloud/contract'
 
 import {
-  planCreditPacks,
-  planOffers,
   portalPlan,
+  billingSessionForm,
   usePortalPlan,
   type PortalPlanServices
 } from '@/app/cloud-portal/plan'
@@ -37,60 +32,11 @@ const entitlements: AccountEntitlements = {
   usage: { committedStorageBytes: 212 * MB, reservedStorageBytes: 0 }
 }
 
-const catalog: BillingCatalog = {
-  plans: [
-    {
-      id: 'pro',
-      name: 'Pro',
-      monthlyPriceCents: 1000,
-      storageBytes: 10_240 * MB,
-      monthlyCredits: 3000
-    }
-  ],
-  creditPacks: [{ id: 'credits-5k', credits: 5000, priceCents: 500, validDays: 365 }]
-}
-
-const subscribed: BillingAccount = {
-  subscription: {
-    planId: 'pro',
-    status: 'active',
-    currentPeriodEnd: '2026-12-12T00:00:00.000Z',
-    cancelsAtPeriodEnd: false
-  }
-}
-
-const day = (iso: string) => iso.slice(0, 10)
-
 async function settle() {
   await nextTick()
   await new Promise((resolve) => {
     setTimeout(resolve, 0)
   })
-}
-
-/** Services answering as each test says, recording what the page asked billing for and opened. */
-function services(answers: {
-  account?: () => Promise<BillingAccount>
-  catalog?: () => Promise<BillingCatalog>
-}) {
-  const calls: string[] = []
-  const value: PortalPlanServices = {
-    entitlements: async () => entitlements,
-    billing: {
-      account: answers.account ?? (async () => subscribed),
-      catalog: answers.catalog ?? (async () => catalog),
-      async checkout(request) {
-        calls.push(`checkout ${JSON.stringify(request)}`)
-        return 'https://checkout.stripe.com/session'
-      },
-      async portal() {
-        calls.push('portal')
-        return 'https://billing.stripe.com/session'
-      }
-    },
-    openPage: (url) => calls.push(`open ${url}`)
-  }
-  return { value, calls }
 }
 
 function plan(value: PortalPlanServices) {
@@ -100,87 +46,139 @@ function plan(value: PortalPlanServices) {
 }
 
 describe('portalPlan', () => {
-  test('names the subscribed plan, and calls an account without one Free', () => {
-    expect(portalPlan(entitlements, subscribed, catalog, day)).toMatchObject({
-      known: true,
-      name: 'Pro',
-      status: 'active',
-      periodEnd: '2026-12-12',
+  test('shows the storage used against the limit, and the monthly credits', () => {
+    expect(portalPlan(entitlements)).toEqual({
       storage: { usedBytes: 212 * MB, totalBytes: 10_240 * MB },
+      services: true,
       monthlyCredits: 3000
     })
-    expect(portalPlan(entitlements, { subscription: null }, catalog, day)).toMatchObject({
-      known: true,
-      name: null,
-      status: null
-    })
   })
 
-  test('names no plan until billing has said what the account subscribes to', () => {
-    expect(portalPlan(entitlements, null, catalog, day)).toMatchObject({
-      known: false,
-      name: null,
-      status: null
-    })
-  })
-
-  test('falls back to the plan ID when the catalog doesn’t list it or can’t be read', () => {
-    expect(portalPlan(entitlements, subscribed, null, day).name).toBe('pro')
-    expect(portalPlan(entitlements, subscribed, { plans: [], creditPacks: [] }, day).name).toBe(
-      'pro'
-    )
-  })
-
-  test('shows no monthly credits on a plan without services', () => {
+  test('tells a plan without services from one whose services have no monthly limit', () => {
     const withoutServices = {
       ...entitlements,
       features: { ...entitlements.features, cloudServices: false }
     }
-    expect(portalPlan(withoutServices, subscribed, catalog, day).monthlyCredits).toBeNull()
-  })
-
-  test('offers nothing without a catalog', () => {
-    expect(planOffers(null)).toEqual([])
-    expect(planCreditPacks(null)).toEqual([])
-    expect(planOffers(catalog).map((offer) => offer.id)).toEqual(['pro'])
-    expect(planCreditPacks(catalog).map((pack) => pack.id)).toEqual(['credits-5k'])
+    expect(portalPlan(withoutServices).services).toBe(false)
+    const unlimited = {
+      ...entitlements,
+      limits: { ...entitlements.limits, monthlyCreditAllowance: null }
+    }
+    expect(portalPlan(unlimited)).toMatchObject({ services: true, monthlyCredits: null })
   })
 })
 
 describe('usePortalPlan', () => {
-  test('keeps the subscription, and Manage billing, while only the catalog fails', async () => {
-    const page = plan(services({ catalog: () => Promise.reject(new Error('catalog down')) }).value)
+  test('sells nothing on a server without billing', async () => {
+    const page = plan({ entitlements: async () => entitlements, openBilling: null })
     await settle()
-    expect(page.plan.value).toMatchObject({ known: true, name: 'pro', status: 'active' })
-    expect(page.offers.value).toEqual([])
-    expect(page.creditPacks.value).toEqual([])
-    expect(page.billingError.value).not.toBeNull()
-  })
-
-  test('shows Cloud’s limits without naming a plan when billing can’t be reached', async () => {
-    const down = () => Promise.reject(new Error('billing down'))
-    const page = plan(services({ account: down, catalog: down }).value)
-    await settle()
-    expect(page.plan.value).toMatchObject({ known: false, name: null })
+    expect(page.sells).toBe(false)
     expect(page.plan.value?.storage.usedBytes).toBe(212 * MB)
-    expect(page.billingError.value).not.toBeNull()
   })
 
-  test('opens the provider’s page for what the person chose', async () => {
-    const { value, calls } = services({})
-    const page = plan(value)
+  test('opens billing, and reports why it could not', async () => {
+    const opened: string[] = []
+    let fails = false
+    const page = plan({
+      entitlements: async () => entitlements,
+      async openBilling(wanted) {
+        if (fails) throw new Error('No token')
+        if (wanted()) opened.push('billing')
+      }
+    })
     await settle()
-    await page.subscribe('pro')
-    await page.buy('credits-5k')
-    await page.manage()
-    expect(calls).toEqual([
-      'checkout {"planId":"pro"}',
-      'open https://checkout.stripe.com/session',
-      'checkout {"creditPackId":"credits-5k"}',
-      'open https://checkout.stripe.com/session',
-      'portal',
-      'open https://billing.stripe.com/session'
-    ])
+    await page.openBilling()
+    expect(opened).toEqual(['billing'])
     expect(page.opening.error.value).toBeNull()
+    fails = true
+    await page.openBilling()
+    expect(page.opening.error.value).toEqual(expect.stringMatching(/\S/))
+    // A retry that works opens billing and clears the failure.
+    fails = false
+    await page.openBilling()
+    expect(opened).toEqual(['billing', 'billing'])
+    expect(page.opening.error.value).toBeNull()
+  })
+
+  test('drops a handoff still waiting for its token once the person leaves the page', async () => {
+    const opened: string[] = []
+    const token = Promise.withResolvers<undefined>()
+    const page = plan({
+      entitlements: async () => entitlements,
+      async openBilling(wanted) {
+        await token.promise
+        if (wanted()) opened.push('billing')
+      }
+    })
+    await settle()
+    const opening = page.openBilling()
+    expect(page.opening.busy.value).toBe(true)
+    page.cancelBilling()
+    // Free again at once, not once the token it no longer wants arrives.
+    expect(page.opening.busy.value).toBe(false)
+    token.resolve(undefined)
+    await opening
+    expect(opened).toEqual([])
+  })
+
+  test('a handoff started again before the left one settles is the one that counts', async () => {
+    const opened: number[] = []
+    const tokens = [Promise.withResolvers<undefined>(), Promise.withResolvers<undefined>()]
+    let calls = 0
+    const page = plan({
+      entitlements: async () => entitlements,
+      async openBilling(wanted) {
+        const call = calls++
+        await tokens[call]?.promise
+        if (call === 0) throw new Error('The first token failed')
+        if (wanted()) opened.push(call)
+      }
+    })
+    await settle()
+    const first = page.openBilling()
+    page.cancelBilling()
+    const second = page.openBilling()
+    tokens[0]?.resolve(undefined)
+    await first
+    // The left handoff's failure stays out of sight, and the new one is still under way.
+    expect(page.opening.error.value).toBeNull()
+    expect(page.opening.busy.value).toBe(true)
+    tokens[1]?.resolve(undefined)
+    await second
+    expect(opened).toEqual([1])
+    expect(page.opening.busy.value).toBe(false)
+  })
+
+  test('reports nothing of a handoff the person left behind', async () => {
+    const token = Promise.withResolvers<undefined>()
+    const page = plan({
+      entitlements: async () => entitlements,
+      async openBilling() {
+        await token.promise
+        throw new Error('No token')
+      }
+    })
+    await settle()
+    const opening = page.openBilling()
+    page.cancelBilling()
+    token.resolve(undefined)
+    await opening
+    expect(page.opening.error.value).toBeNull()
+  })
+})
+
+describe('billingSessionForm', () => {
+  test("posts the token in a form to billing's session page, never in the address", () => {
+    expect(billingSessionForm('https://billing.example.com', 'signed-token')).toEqual({
+      action: 'https://billing.example.com/session',
+      method: 'POST',
+      fields: { token: 'signed-token' }
+    })
+  })
+
+  test("keeps the endpoint's path and leaves its query and fragment out", () => {
+    expect(
+      billingSessionForm('https://billing.example.com/billing/?tenant=acme#top', 'token').action
+    ).toBe('https://billing.example.com/billing/session')
   })
 })

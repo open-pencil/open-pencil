@@ -14,11 +14,9 @@ import type {
   PortalActivityEntry,
   PortalEmail,
   PortalPerson,
-  PortalCreditPack,
   PortalDocumentRow,
   PortalPersonDetail,
   PortalPlan as PortalPlanType,
-  PortalPlanOffer,
   PortalSection,
   PortalSession,
   PortalSignIn
@@ -384,30 +382,15 @@ const person: PortalPersonDetail = {
 }
 const MB = 1024 * 1024
 const freePlan: PortalPlanType = {
-  known: true,
-  name: null,
-  status: null,
-  periodEnd: null,
-  cancels: false,
   storage: { usedBytes: 212 * MB, totalBytes: 300 * MB },
+  services: false,
   monthlyCredits: null
 }
 const paidPlan: PortalPlanType = {
-  known: true,
-  name: 'Pro',
-  status: 'active',
-  periodEnd: 'Dec 12, 2026',
-  cancels: false,
   storage: { usedBytes: 3482 * MB, totalBytes: 10240 * MB },
+  services: true,
   monthlyCredits: 3000
 }
-const planOffers: PortalPlanOffer[] = [
-  { id: 'pro', name: 'Pro', price: '$10.00', storage: '10 GB', credits: '3,000' }
-]
-const creditPacks: PortalCreditPack[] = [
-  { id: 'credits-5k', credits: '5,000', price: '$5.00', validDays: 365 },
-  { id: 'credits-20k', credits: '20,000', price: '$20.00', validDays: 365 }
-]
 const components = {
   PortalConsoleLayout,
   PortalAccountSecurity,
@@ -455,8 +438,6 @@ const story = (
       loadDocuments,
       freePlan,
       paidPlan,
-      planOffers,
-      creditPacks,
       ...extra
     }),
     template: `
@@ -478,13 +459,13 @@ export const PlanFree = story(
   'plan',
   'Plan',
   'What your account includes, and what you pay for.',
-  `<PortalPlan :plan="freePlan" :offers="planOffers" />`
+  `<PortalPlan :plan="freePlan" sells />`
 )
 export const PlanPaid = story(
   'plan',
   'Plan',
   'What your account includes, and what you pay for.',
-  `<PortalPlan :plan="paidPlan" :offers="planOffers" :credit-packs="creditPacks" />`
+  `<PortalPlan :plan="paidPlan" sells />`
 )
 export const Sessions = story(
   'sessions',

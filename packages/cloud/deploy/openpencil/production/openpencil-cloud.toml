@@ -99,7 +99,7 @@ monthly_credit_allowance = 0
 [legal]
 terms_url = "https://openpencil.dev/cloud/legal/terms"
 privacy_url = "https://openpencil.dev/cloud/legal/privacy"
-terms_version = "2026-11-15"
+terms_version = "2026-11-18"
 require_acceptance = true
 abuse_email = "abuse@openpencil.dev"
 minimum_age = 16
