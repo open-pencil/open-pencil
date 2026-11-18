@@ -82,17 +82,17 @@ const requests = usePortalList<AccessRequestStatus, AccessRequest>({
     column.display({
       id: 'reason',
       header: () => messages.value.columnReason,
-      meta: { class: 'hidden w-2/5 @2xl/table:table-cell' },
+      meta: { role: 'text' },
       cell: ({ row: { original: request } }) => h(PortalTextCell, { quote: request.reason })
     }),
     column.accessor('requestedOn', {
       header: () => messages.value.columnRequested,
-      meta: { class: 'hidden w-28 whitespace-nowrap text-muted @xl/table:table-cell' }
+      meta: { role: 'date' }
     }),
     column.display({
       id: 'decision',
       header: () => messages.value.columnDecision,
-      meta: { class: 'hidden @3xl/table:table-cell' },
+      meta: { role: 'tag' },
       cell: ({ row: { original: request } }) =>
         h(PortalTextCell, {
           text: request.reviewedBy
@@ -107,7 +107,7 @@ const requests = usePortalList<AccessRequestStatus, AccessRequest>({
     column.display({
       id: 'actions',
       header: () => messages.value.columnActions,
-      meta: { class: 'w-px whitespace-nowrap text-right', actions: true },
+      meta: { role: 'actions' },
       cell: ({ row: { original: request } }) =>
         h(PortalRequestActions, {
           request,

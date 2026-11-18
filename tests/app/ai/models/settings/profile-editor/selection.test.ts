@@ -16,7 +16,8 @@ const labels = ref({
   latest: 'Latest',
   customModelGroup: 'Custom',
   customModel: 'Custom model…',
-  agentDefaultModel: 'Agent default'
+  agentDefaultModel: 'Agent default',
+  thinkingLevel: 'Thinking level'
 })
 
 const claudeCode: AgentOffer = {
@@ -26,7 +27,7 @@ const claudeCode: AgentOffer = {
     { id: 'opus', name: 'Opus' },
     { id: 'sonnet', name: 'Sonnet' }
   ],
-  efforts: {}
+  choices: {}
 }
 
 const scopes: EffectScope[] = []
@@ -154,66 +155,96 @@ describe('the model of a coding agent’s profile in the editor', () => {
   })
 })
 
-describe('the effort of a coding agent’s profile in the editor', () => {
-  const withEfforts: AgentOffer = {
+describe('the effort and modes of a coding agent’s profile in the editor', () => {
+  const withChoices: AgentOffer = {
     ...claudeCode,
-    efforts: {
+    choices: {
       '': {
-        current: 'default',
-        values: [
-          { id: 'default', name: 'Default' },
-          { id: 'max', name: 'Max' }
-        ]
+        thought_level: {
+          name: 'Effort',
+          current: 'default',
+          values: [
+            { id: 'default', name: 'Default' },
+            { id: 'max', name: 'Max' }
+          ]
+        },
+        mode: {
+          name: 'Mode',
+          current: 'auto',
+          values: [
+            { id: 'auto', name: 'Auto' },
+            { id: 'plan', name: 'Plan' }
+          ]
+        }
       }
     }
   }
 
-  test('lists the agent’s own pick first, then the model’s efforts by the agent’s names', async () => {
-    const profile = editor()
-    await profile.choose('acp:claude-code')
-    await profile.answer(withEfforts)
-    expect(profile.selection.agentEffortOptions.value.map((option) => option.label)).toEqual([
-      'Agent default',
-      'Default',
-      'Max'
+  /** The values each select lists, by its option's category. */
+  function listed(profile: ReturnType<typeof editor>) {
+    return profile.selection.agentOptionControls.value.map((control) => [
+      control.category,
+      control.options.map((option) => option.value)
     ])
-    profile.selection.agentEffortValue.value = 'max'
-    expect(profile.draft.agentEffort).toBe('max')
-    profile.selection.agentEffortValue.value = profile.selection.agentEffortOptions.value[0].value
-    expect(profile.draft.agentEffort).toBe('')
-  })
+  }
 
-  test('goes back to the agent’s own when another model is chosen', async () => {
+  test('lists the agent’s own pick first, then each option’s values by the agent’s names', async () => {
     const profile = editor()
     await profile.choose('acp:claude-code')
-    await profile.answer(withEfforts)
-    profile.selection.agentEffortValue.value = 'max'
+    await profile.answer(withChoices)
+    const [effort, mode] = profile.selection.agentOptionControls.value
+    const agentDefault = effort.options[0].value
+    expect(listed(profile)).toEqual([
+      ['thought_level', [agentDefault, 'default', 'max']],
+      ['mode', [agentDefault, 'auto', 'plan']]
+    ])
+    expect(mode.options.slice(1).map((option) => option.label)).toEqual(
+      (withChoices.choices['']?.mode?.values ?? []).map((value) => value.name)
+    )
+    profile.selection.setAgentOption('mode', 'plan')
+    expect(profile.draft.agentChoices.mode).toBe('plan')
+    expect(profile.selection.agentOptionValue('mode')).toBe('plan')
+    profile.selection.setAgentOption('mode', agentDefault)
+    expect(profile.draft.agentChoices).toEqual({})
+  })
+
+  test('goes back to the agent’s effort when another model is chosen, and keeps the mode', async () => {
+    const profile = editor()
+    await profile.choose('acp:claude-code')
+    await profile.answer(withChoices)
+    profile.selection.setAgentOption('thought_level', 'max')
+    profile.selection.setAgentOption('mode', 'plan')
     profile.pick('Opus')
-    expect(profile.draft.agentEffort).toBe('')
+    expect(profile.draft.agentChoices.thought_level).toBeUndefined()
+    expect(profile.draft.agentChoices.mode).toBe('plan')
   })
 
-  test('offers none for a custom model, whose efforts are never read', async () => {
+  test('offers none for a custom model, whose options are never read', async () => {
     const profile = editor()
     await profile.choose('acp:claude-code')
-    await profile.answer(withEfforts)
+    await profile.answer(withChoices)
     profile.pick('Custom model…')
-    expect(profile.selection.agentEffortOptions.value).toEqual([])
+    expect(profile.selection.agentOptionControls.value).toEqual([])
   })
 
-  test('keeps a saved effort the model no longer offers, so it can be cleared', async () => {
-    const profile = editor({ providerID: 'acp:claude-code', agentEffort: 'ultra' })
-    await profile.answer({ ...claudeCode, efforts: { '': { current: '', values: [] } } })
-    const [agentDefault, ...saved] = profile.selection.agentEffortOptions.value
+  test('keeps a saved value the model no longer offers, so it can be cleared', async () => {
+    const profile = editor({
+      providerID: 'acp:claude-code',
+      agentChoices: { thought_level: 'ultra' }
+    })
+    await profile.answer({ ...claudeCode, choices: { '': {} } })
+    const [effort] = profile.selection.agentOptionControls.value
+    const [agentDefault, ...saved] = effort.options
     expect(saved.map((option) => option.value)).toEqual(['ultra'])
-    expect(profile.selection.agentEffortValue.value).toBe('ultra')
-    profile.selection.agentEffortValue.value = agentDefault.value
-    expect(profile.draft.agentEffort).toBe('')
+    expect(profile.selection.agentOptionValue('thought_level')).toBe('ultra')
+    profile.selection.setAgentOption('thought_level', agentDefault.value)
+    expect(profile.draft.agentChoices.thought_level).toBeUndefined()
   })
 
-  test('offers nothing while the model’s efforts are unknown or the model has none', async () => {
+  test('offers nothing while the model’s options are unknown or the model has none', async () => {
     const profile = editor()
     await profile.choose('acp:claude-code')
     await profile.answer(claudeCode)
-    expect(profile.selection.agentEffortOptions.value).toEqual([])
+    expect(profile.selection.agentOptionControls.value).toEqual([])
   })
 })

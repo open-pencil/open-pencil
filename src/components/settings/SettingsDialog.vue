@@ -29,6 +29,7 @@ import {
   type SettingsSection
 } from '@/app/settings/dialog'
 import { provideSettingsNavigation } from '@/app/settings/navigation/use'
+import CampaignNoteHost from '@/components/campaigns/CampaignNoteHost.vue'
 import { CloudSettingsSection } from '@/components/cloud/integration'
 import ChatSettingsSection from '@/components/settings/chat/ChatSettingsSection.vue'
 import DiagnosticsSettingsPanel from '@/components/settings/diagnostics/DiagnosticsSettingsPanel.vue'
@@ -212,6 +213,7 @@ function onOpenChange(open: boolean): void {
       <AppTabsContent value="ai" as-child>
         <section class="flex min-h-0 min-w-0 flex-1 flex-col" data-test-id="settings-ai-panel">
           <ModelsPanel>
+            <template #campaign><CampaignNoteHost placement="settings-models" /></template>
             <ChatSettingsSection />
           </ModelsPanel>
         </section>
@@ -226,13 +228,19 @@ function onOpenChange(open: boolean): void {
         <PromptsSettingsPanel />
       </AppTabsContent>
       <AppTabsContent value="services" as-child>
-        <MediaSettingsPanel />
+        <MediaSettingsPanel>
+          <template #campaign><CampaignNoteHost placement="settings-integrations" /></template>
+        </MediaSettingsPanel>
       </AppTabsContent>
       <AppTabsContent value="mcp" as-child>
         <MCPWorkspacePanel />
       </AppTabsContent>
       <AppTabsContent value="usage" as-child>
-        <SettingsPage><UsageSettingsPanel /></SettingsPage>
+        <SettingsPage>
+          <UsageSettingsPanel>
+            <template #campaign><CampaignNoteHost placement="settings-usage" /></template>
+          </UsageSettingsPanel>
+        </SettingsPage>
       </AppTabsContent>
       <AppTabsContent value="privacy" as-child>
         <SettingsPage><PrivacySettingsPanel /></SettingsPage>

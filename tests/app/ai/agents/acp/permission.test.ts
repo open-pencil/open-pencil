@@ -53,6 +53,23 @@ describe('acp-permission', () => {
     respondToPermission('allow')
   })
 
+  test('a stopped turn takes its request off the dialog and answers it cancelled', async () => {
+    const stop = new AbortController()
+    const promise = requestPermissionFromUser(makeRequest(), undefined, stop.signal)
+    expect(permissionQueue.value).toHaveLength(1)
+    stop.abort()
+    expect(permissionQueue.value).toHaveLength(0)
+    expect((await promise).outcome.outcome).toBe('cancelled')
+  })
+
+  test('a turn already stopped puts no request on the dialog', async () => {
+    const stop = new AbortController()
+    stop.abort()
+    const response = await requestPermissionFromUser(makeRequest(), undefined, stop.signal)
+    expect(response.outcome.outcome).toBe('cancelled')
+    expect(permissionQueue.value).toHaveLength(0)
+  })
+
   test('respondToPermission resolves with selected optionId', async () => {
     const promise = requestPermissionFromUser(makeRequest())
     respondToPermission('allow')

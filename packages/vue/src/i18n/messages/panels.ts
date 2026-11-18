@@ -134,6 +134,14 @@ export const panelMessageDefaults = {
   swapEditedIconDescription: params(
     'Swapping draws {name} in place of this icon and discards the changes made to its paths.'
   ),
+  iconSetMacAppOnly: 'Mac app',
+  iconSetNeedsNewerMacOS: 'macOS 14+',
+  sfSymbolsNeedMacApp:
+    'SF Symbols are drawn by macOS, so they are offered in the OpenPencil app for Mac.',
+  sfSymbolsNeedNewerMacOS: 'SF Symbols need macOS 14 or later, which draws them as outlines.',
+  redrawIcon: 'Redraw icon',
+  redrawEditedIconDescription:
+    'Drawing this icon with another option discards the changes made to its paths.',
   export: 'Export',
   typography: 'Typography',
   fontFamily: 'Font family',

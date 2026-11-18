@@ -1,0 +1,1 @@
+- Cloud on Cloudflare Workers reports S3 errors by their code instead of `ReferenceError: DOMParser is not defined` (#2185).

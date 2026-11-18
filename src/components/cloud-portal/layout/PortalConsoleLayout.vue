@@ -8,6 +8,7 @@ import { useCloudPortalMessages } from '@open-pencil/vue/i18n'
 
 import BrandMark from '@/components/brand/BrandMark.vue'
 import AccountAvatar from '@/components/presence/AccountAvatar.vue'
+import { provideSettingsSectionHeading } from '@/components/settings/layout/heading'
 import { useAppButtonUI } from '@/components/ui/button/button'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppSkeleton from '@/components/ui/feedback/AppSkeleton.vue'
@@ -40,6 +41,8 @@ const emit = defineEmits<{ select: [id: string]; signOut: [] }>()
 
 const ui = portalLayout()
 const messages = useCloudPortalMessages()
+// The page's title is its h1, so the sections under it are h2.
+provideSettingsSectionHeading('h2')
 const side = sideList()
 const groups = () => uniq(sections.map((section) => section.group))
 const editorLink = useAppButtonUI({ variant: 'outline', size: 'sm' })

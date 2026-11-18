@@ -1,10 +1,6 @@
 <script setup lang="ts">
-import {
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogDescription,
-  AlertDialogTitle
-} from 'reka-ui'
+import { AlertDialogAction, AlertDialogCancel } from 'reka-ui'
+import * as v from 'valibot'
 import { computed } from 'vue'
 
 import { useI18n } from '@open-pencil/vue/i18n'
@@ -15,7 +11,9 @@ import {
   rejectCurrentPermission,
   respondToPermission
 } from '@/app/ai/agents/acp/permission'
-import { AppAlertDialogRoot } from '@/components/ui/dialog'
+import MarkdownContent from '@/components/markdown/MarkdownContent.vue'
+import AppButton from '@/components/ui/button/AppButton.vue'
+import { AppAlertDialogRoot, AppDialogBody, AppDialogHeader } from '@/components/ui/dialog'
 import { useHeldContent } from '@/components/ui/overlay/held'
 
 const open = computed(() => currentPermission.value !== null)
@@ -33,9 +31,16 @@ const toolCall = computed(
 
 const toolName = computed(() => toolCall.value.title ?? ai.value.unknownTool)
 
+/** A plan the agent asks to carry out, as Claude Code's leaves Plan mode with, shown as Markdown. */
+const planInputSchema = v.object({ plan: v.pipe(v.string(), v.nonEmpty()) })
+const plan = computed(() => {
+  const input = v.safeParse(planInputSchema, toolCall.value.rawInput)
+  return input.success ? input.output.plan : null
+})
+
 const toolInput = computed(() => {
   const raw = toolCall.value.rawInput
-  if (!raw) return null
+  if (!raw || plan.value) return null
   try {
     return JSON.stringify(raw, null, 2)
   } catch {
@@ -59,43 +64,61 @@ function handleDismiss() {
 <template>
   <AppAlertDialogRoot
     :open="open"
-    :ui="{ overlay: 'z-50', content: 'w-80 rounded-lg p-4 shadow-xl' }"
+    :size="plan ? 'md' : 'sm'"
     data-test-id="acp-permission-dialog"
     @overlay-click="handleDismiss"
     @escape-key-down="handleDismiss"
   >
-    <AlertDialogTitle class="text-sm font-semibold text-surface">
-      {{ ai.permissionRequestTitle }}
-    </AlertDialogTitle>
+    <AppDialogHeader
+      :heading="ai.permissionRequestTitle"
+      :description="ai.permissionRequest({ tool: toolName })"
+      :show-close="false"
+    />
+    <AppDialogBody v-if="plan || toolInput" :ui="{ body: 'pb-0' }">
+      <MarkdownContent
+        v-if="plan"
+        :key="permission?.request.toolCall.toolCallId"
+        :content="plan"
+        density="compact"
+        class="max-h-72 overflow-auto rounded-md bg-input px-3 py-2 text-xs"
+      />
+      <pre v-else class="max-h-32 overflow-auto rounded-md bg-input p-2 text-3xs text-muted">{{
+        toolInput
+      }}</pre>
+    </AppDialogBody>
 
-    <AlertDialogDescription class="mt-2 text-xs text-muted">
-      {{ ai.permissionRequest({ tool: toolName }) }}
-    </AlertDialogDescription>
-
-    <pre
-      v-if="toolInput"
-      class="mt-2 max-h-32 overflow-auto rounded bg-input p-2 text-3xs text-muted"
-      >{{ toolInput }}</pre>
-
-    <div class="mt-4 flex flex-col gap-2">
+    <!-- The agent's first allowing answer leads; its others and the refusal stay quieter. -->
+    <div class="flex flex-col gap-1.5 p-4">
       <AlertDialogAction
-        v-for="opt in allowOptions"
+        v-for="(opt, index) in allowOptions"
         :key="opt.optionId"
         v-test-id="acpPermissionOptionTestId(opt.kind)"
-        class="w-full rounded bg-accent px-3 py-1.5 text-xs font-medium text-on-accent hover:bg-accent/90"
-        @click="respondToPermission(opt.optionId)"
+        as-child
       >
-        {{ opt.name }}
+        <AppButton
+          :color="index === 0 ? 'primary' : 'neutral'"
+          :variant="index === 0 ? 'solid' : 'outline'"
+          size="md"
+          class="h-auto min-h-8 w-full py-1.5 whitespace-normal text-center"
+          @click="respondToPermission(opt.optionId)"
+        >
+          {{ opt.name }}
+        </AppButton>
       </AlertDialogAction>
 
       <AlertDialogCancel
         v-for="opt in rejectOptions"
         :key="opt.optionId"
         v-test-id="acpPermissionOptionTestId(opt.kind)"
-        class="w-full rounded border border-border bg-canvas px-3 py-1.5 text-xs text-muted hover:bg-hover hover:text-surface"
-        @click="respondToPermission(opt.optionId)"
+        as-child
       >
-        {{ opt.name }}
+        <AppButton
+          size="md"
+          class="h-auto min-h-8 w-full py-1.5 whitespace-normal"
+          @click="respondToPermission(opt.optionId)"
+        >
+          {{ opt.name }}
+        </AppButton>
       </AlertDialogCancel>
     </div>
   </AppAlertDialogRoot>

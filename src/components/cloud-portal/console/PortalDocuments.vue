@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { createColumnHelper } from '@tanstack/vue-table'
+import { compact } from 'es-toolkit'
 import { computed, h, ref } from 'vue'
 
 import type { CloudAdminDocumentFilter } from '@open-pencil/cloud/contract'
@@ -11,14 +12,17 @@ import {
   type PortalListRequest,
   type PortalTableFeatures
 } from '@/app/cloud-portal/list'
+import RelativeTime from '@/components/date/RelativeTime.vue'
 
+import PortalAccessCell from '../table/PortalAccessCell.vue'
+import PortalDocumentCell from '../table/PortalDocumentCell.vue'
 import PortalIdentityCell from '../table/PortalIdentityCell.vue'
 import PortalRowMenu from '../table/PortalRowMenu.vue'
 import PortalStatusCell from '../table/PortalStatusCell.vue'
 import PortalTable from '../table/PortalTable.vue'
 import PortalTextCell from '../table/PortalTextCell.vue'
 import type { PortalContentAction, PortalDocumentRow } from '../types'
-import { contentActions } from './content'
+import { contentActions, documentAccess, documentProblem, needsConfirmation } from './content'
 import PortalContentConfirm from './PortalContentConfirm.vue'
 
 /**
@@ -43,6 +47,11 @@ function confirm(reason?: string) {
   pending.value = null
   if (chosen) emit('act', chosen.action, chosen.document, reason)
 }
+/** Does what asks nothing at once, such as Download, and asks first about the rest. */
+function choose(action: PortalContentAction, document: PortalDocumentRow) {
+  if (needsConfirmation(action)) pending.value = { action, document }
+  else emit('act', action, document)
+}
 
 const column = createColumnHelper<PortalTableFeatures, PortalDocumentRow>()
 const documents = usePortalList<CloudAdminDocumentFilter, PortalDocumentRow>({
@@ -54,12 +63,17 @@ const documents = usePortalList<CloudAdminDocumentFilter, PortalDocumentRow>({
       id: 'document',
       header: () => messages.value.columnDocument,
       cell: ({ row: { original: document } }) =>
-        h(PortalTextCell, { text: document.name, strong: true, detail: document.workspace })
+        h(PortalDocumentCell, {
+          name: document.name,
+          kind: document.kind,
+          workspace: document.workspace,
+          thumbnail: document.thumbnail
+        })
     }),
     column.display({
       id: 'owner',
       header: () => messages.value.columnOwner,
-      meta: { class: 'hidden w-1/4 @xl/table:table-cell' },
+      meta: { role: 'subject' },
       cell: ({ row: { original: document } }) =>
         document.owner
           ? h(PortalIdentityCell, {
@@ -70,32 +84,26 @@ const documents = usePortalList<CloudAdminDocumentFilter, PortalDocumentRow>({
             })
           : h(PortalTextCell, { text: messages.value.someoneElse })
     }),
-    column.accessor('updated', {
+    column.accessor('updatedAt', {
       header: () => messages.value.columnUpdated,
-      meta: { class: 'hidden w-32 whitespace-nowrap text-muted @2xl/table:table-cell' }
+      meta: { role: 'date' },
+      cell: ({ getValue }) => h(RelativeTime, { at: getValue() })
+    }),
+    column.display({
+      id: 'access',
+      header: () => messages.value.columnAccess,
+      meta: { role: 'tag' },
+      // Who can open one deleted forever no longer matters: nobody can.
+      cell: ({ row: { original: document } }) =>
+        document.deletedForever ? null : h(PortalAccessCell, { access: documentAccess(document) })
     }),
     column.display({
       id: 'status',
       header: () => messages.value.columnStatus,
-      meta: { class: 'w-40' },
+      meta: { role: 'tag', always: true },
       cell: ({ row: { original: document } }) =>
         h(PortalStatusCell, {
-          statuses: [
-            ...(document.deletedForever
-              ? [{ label: messages.value.deletedForever, tone: 'error' as const }]
-              : []),
-            ...(document.takenDown
-              ? [{ label: messages.value.takenDown, tone: 'error' as const }]
-              : []),
-            ...(document.openReports
-              ? [
-                  {
-                    label: messages.value.openReports(document.openReports),
-                    tone: 'warning' as const
-                  }
-                ]
-              : [])
-          ],
+          statuses: compact([documentProblem(messages.value, document)]),
           detail: document.destroyed
             ? messages.value.destroyedOn({ date: document.destroyed })
             : document.takenDownReason
@@ -104,13 +112,13 @@ const documents = usePortalList<CloudAdminDocumentFilter, PortalDocumentRow>({
     column.display({
       id: 'actions',
       header: () => messages.value.columnActions,
-      meta: { class: 'w-px whitespace-nowrap text-right', actions: true },
+      meta: { role: 'actions' },
       cell: ({ row: { original: document } }) =>
         h(PortalRowMenu<PortalContentAction>, {
           label: messages.value.actionsFor({ name: document.name }),
           items: contentActions(messages.value, document),
           disabled: busy === document.id,
-          onSelect: (action: PortalContentAction) => (pending.value = { action, document })
+          onSelect: (action: PortalContentAction) => choose(action, document)
         })
     })
   ])

@@ -120,7 +120,7 @@ export const SettingsIntegrations: Story = {
   })
 }
 
-/** `settings-usage`: in Settings › Usage, inside the page above the usage history. */
+/** `settings-usage`: in Settings › Usage, under its heading, above the usage history. */
 export const SettingsUsage: Story = {
   args: { content: placements.usage },
   render: (args) => ({
@@ -129,10 +129,7 @@ export const SettingsUsage: Story = {
     template: `
       <div class="flex h-140 w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-panel">
         <SettingsPage>
-          <div class="flex flex-col gap-6">
-            ${note}
-            <UsageSettingsPanel />
-          </div>
+          <UsageSettingsPanel><template #campaign>${note}</template></UsageSettingsPanel>
         </SettingsPage>
       </div>`
   })

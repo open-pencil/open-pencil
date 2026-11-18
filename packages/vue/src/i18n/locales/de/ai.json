@@ -171,6 +171,7 @@
   "modelSignedOut": "Abgemeldet",
   "modelToolsUnreachable": "Werkzeuge nicht erreichbar",
   "thinkingLevel": "Denkstufe",
+  "agentAccess": "Zugriff",
   "thinkingLevelDescription": "Wie viel das Modell vor der Antwort nachdenkt. Im Chat lässt sich die Stufe für jede Nachricht ändern.",
   "thinkingDefault": "Standard",
   "thinkingOff": "Aus",
